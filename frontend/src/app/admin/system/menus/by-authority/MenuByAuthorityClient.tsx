@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo, use } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useRouter } from 'next/navigation';
 import { 
  ChevronRight, 
  Folder, 
@@ -70,10 +71,13 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  // [P1: Waterfall Elimination] Resolve authors data via use()
  const initialAuthorsData = use(authorsPromise);
  
+ const queryClient = useQueryClient();
+ const router = useRouter();
+
  const [selectedAuthority, setSelectedAuthority] = useState<string>('');
  const [expandedMenus, setExpandedMenus] = useState<Set<number>>(new Set());
 
- const { data: authorData } = useQuery({
+ const { data: authorData, isFetching: isAuthorFetching } = useQuery({
  queryKey: ['admin-authorities-all'],
  queryFn: () => authorAdminService.getAuthorList({ pageNo: 1, searchCondition: '1', searchKeyword: '' } as any),
  initialData: initialAuthorsData,
@@ -82,7 +86,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
 
  const authorities = (authorData as any)?.list || [] as AuthorInfo[];
 
- const { data: rawMenus = [], isLoading: isMenuLoading } = useQuery({
+ const { data: rawMenus = [], isLoading: isMenuLoading, isFetching: isMenuFetching } = useQuery({
  queryKey: ['admin-menu-tree', selectedAuthority],
  queryFn: async () => {
  const data = await authorAdminService.getAuthorMenus(selectedAuthority);
@@ -92,6 +96,15 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  });
 
  const menuTree = useMemo(() => buildMenuTree(rawMenus), [rawMenus]);
+
+ const isRefreshing = isAuthorFetching || isMenuFetching;
+
+ // 새로고침은 이 화면이 소비하는 두 질의(권한 목록 · 선택 권한의 메뉴 트리)를 모두 무효화한다.
+ // 메뉴 트리는 selectedAuthority 를 키에 포함하므로 접두 키로 일괄 무효화한다.
+ const handleRefresh = () => {
+ queryClient.invalidateQueries({ queryKey: ['admin-authorities-all'] });
+ queryClient.invalidateQueries({ queryKey: ['admin-menu-tree'] });
+ };
 
  const toggleExpand = (menuNo: number) => {
  setExpandedMenus(prev => {
@@ -181,12 +194,18 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <div className="flex gap-4 p-2 items-center">
  <Button
  variant="ghost"
- onClick={() => {}}
+ onClick={handleRefresh}
+ disabled={isRefreshing}
+ title="권한 목록과 메뉴 트리를 다시 조회합니다"
  className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
- <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
+ <RefreshCcw size={22} className={cn("transition-transform duration-700", isRefreshing ? "animate-spin" : "group-hover:rotate-180")} />
  </Button>
- <Button className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group">
+ <Button
+ onClick={() => router.push('/admin/security/authority')}
+ title="보안 거버넌스 허브의 역할 인벤토리로 이동합니다"
+ className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+ >
  <ShieldCheck size={20} className="group-hover:scale-110 transition-transform duration-500" /> 권한 인벤토리
  </Button>
  </div>

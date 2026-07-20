@@ -2,17 +2,17 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sparkles,  
- ShieldAlert,  
- TrendingUp,  
- Zap,  
- CheckCircle2, 
- ChevronRight, 
- Maximize2 } from 'lucide-react';
+import { Sparkles,
+ ShieldAlert,
+ TrendingUp,
+ Zap,
+ CheckCircle2,
+ ChevronRight,
+ Info } from 'lucide-react';
+import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { Button } from '@/components/ui/button';
 
-interface InsightMessage {
+export interface InsightMessage {
  id: string;
  type: 'SECURITY' | 'TRAFFIC' | 'SYSTEM' | 'OPTIMIZATION';
  severity: 'INFO' | 'WARNING' | 'CRITICAL';
@@ -21,55 +21,33 @@ interface InsightMessage {
  action?: string;
 }
 
+interface InsightBannerProps {
+ /**
+  * 분석 엔진이 실제로 산출한 인사이트만 전달한다.
+  * ⚠ 샘플·목업·플레이스홀더 주입 금지 — 관리자는 이 배너를 실제 탐지 결과로 읽는다.
+  * 거짓 보안 신호는 (a) 실재하지 않는 침해 조사를 유발하고 (b) 관리자를 둔감화시켜
+  * 진짜 경보를 무시하게 만든다.
+  */
+ insights?: InsightMessage[];
+}
+
 /**
- * AI-Driven 인텔리전스 인사이트 배너
- * 로그 기반 분석 엔진을 통해 생성된 지능형 요약 정보를 관리자에게 제공합니다.
+ * 인텔리전스 인사이트 배너
+ *
+ * 상위에서 전달된 실제 분석 결과만 렌더한다. 자체적으로 데이터를 만들어내지 않는다.
+ * 전달된 인사이트가 없으면 "데이터 없음"을 명시하는 빈 상태를 보여준다.
  */
-export const InsightBanner: React.FC = () => {
+export const InsightBanner: React.FC<InsightBannerProps> = ({ insights = [] }) => {
  const [currentIndex, setCurrentIndex] = useState(0);
- 
- // 가공된 지능형 인사이트 데이터 (추후 API 연동 예정)
- const insights: InsightMessage[] = [
- {
- id: '1',
- type: 'SECURITY',
- severity: 'WARNING',
- message: "비정상적인 로그인 시도 감지: 지난 10분간 특정 국가(US) IP에서의 접근이 25% 급증했습니다.",
- timestamp: "방금 전",
- action: "방화벽 정책 검토"
- },
- {
- id: '2',
- type: 'TRAFFIC',
- severity: 'INFO',
- message: "인프라 최적화 성공: 캐싱 서비스 도입 이후 평균 응답 속도가 14.2ms 개선되었습니다.",
- timestamp: "12분 전"
- },
- {
- id: '3',
- type: 'SYSTEM',
- severity: 'CRITICAL',
- message: "DB 커넥션 풀 한계치 도달: 현재 할당량의 88%를 점유 중입니다. 인스턴스 확장을 권장합니다.",
- timestamp: "5분 전",
- action: "스택 트레이스 실행"
- },
- {
- id: '4',
- type: 'OPTIMIZATION',
- severity: 'INFO',
- message: "정상 가동 중: 전사 시스템 무결성 검사가 완료되었으며, 발견된 이상 징후가 없습니다.",
- timestamp: "1시간 전"
- }
- ];
+ const hasInsights = insights.length > 0;
 
  useEffect(() => {
+ if (insights.length <= 1) return;
  const timer = setInterval(() => {
  setCurrentIndex((prev) => (prev + 1) % insights.length);
  }, 8000);
  return () => clearInterval(timer);
  }, [insights.length]);
-
- const activeInsight = insights[currentIndex];
 
  const getSeverityStyles = (severity: string) => {
  switch (severity) {
@@ -90,10 +68,48 @@ export const InsightBanner: React.FC = () => {
  }
  };
 
+ /*
+  * 빈 상태: "이상 없음"이 아니라 "데이터 없음"이다.
+  * 두 문구를 혼동하면 정상 신호를 위장한 또 다른 거짓 경보가 된다.
+  */
+ if (!hasInsights) {
+ return (
+ <div
+ className="relative min-h-[140px] rounded-lg border border-dashed border-border bg-card/60 p-10 flex flex-col lg:flex-row items-center gap-8 text-left"
+ role="region"
+ aria-label="시스템 인텔리전스 인사이트"
+ >
+ <div className="flex-shrink-0 w-16 h-11 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
+ <Info size={28} />
+ </div>
+
+ <div className="flex-1 space-y-3 text-center lg:text-left">
+ <p className="text-lg font-bold tracking-tight text-foreground">
+ 표시할 인사이트가 없습니다
+ </p>
+ <p className="text-xs font-medium text-muted-foreground leading-relaxed max-w-2xl">
+ 인사이트 분석 엔진이 아직 연동되지 않았습니다. 이 영역은 시스템 상태나 보안 이상 유무를
+ 나타내지 않으므로, <strong className="font-bold">정상 여부의 근거로 사용하지 마십시오.</strong>
+ </p>
+ <Link
+ href="/admin/system/audit"
+ className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline underline-offset-4 uppercase tracking-widest"
+ >
+ 실제 보안 감사 이력 보기
+ <ChevronRight size={14} />
+ </Link>
+ </div>
+ </div>
+ );
+ }
+
+ // 목록이 줄어들어도 인덱스가 범위를 벗어나지 않도록 읽는 시점에 보정한다.
+ const activeInsight = insights[currentIndex % insights.length];
+
  return (
  <div className="relative group text-left">
  <div className="absolute -inset-1 bg-gradient-to-r from-primary/20 via-hub-indigo/10 to-primary/20 rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
- 
+
  <div className={cn(
  "relative min-h-[140px] rounded-lg border-2 bg-card/80 backdrop-blur-3xl p-10 flex flex-col lg:flex-row items-center gap-10 transition-all duration-700 overflow-hidden shadow-2xl hover:shadow-primary/5",
  getSeverityStyles(activeInsight.severity)
@@ -122,7 +138,7 @@ export const InsightBanner: React.FC = () => {
  <div className="w-1.5 h-1.5 rounded-full bg-current animate-ping" />
  <span className="text-xs font-bold opacity-100 uppercase tracking-widest">{activeInsight.timestamp}</span>
  </div>
- 
+
  <AnimatePresence mode="wait">
  <motion.div
  key={activeInsight.id}
@@ -135,39 +151,34 @@ export const InsightBanner: React.FC = () => {
  <p className="text-2xl font-bold tracking-tighter text-foreground leading-tight line-clamp-2 text-left">
  {activeInsight.message}
  </p>
- 
+
+ {/* 동작하지 않는 버튼은 조치가 수행됐다는 오해를 부르므로 정적 안내 문구로 노출한다. */}
  {activeInsight.action && (
- <div className="flex items-center justify-center lg:justify-start gap-4">
- <Button 
- variant="link" 
- className="p-0 h-auto text-xs font-bold tracking-[0.3em] uppercase group/act flex items-center gap-2"
- >
- {activeInsight.action}
- <ChevronRight size={14} className="group-hover/act:translate-x-1 transition-transform" />
- </Button>
- </div>
+ <p className="flex items-center justify-center lg:justify-start gap-2 text-xs font-bold tracking-[0.2em] uppercase text-muted-foreground">
+ <ChevronRight size={14} />
+ 권장 조치: {activeInsight.action}
+ </p>
  )}
  </motion.div>
  </AnimatePresence>
  </div>
 
  {/* Controls */}
+ {insights.length > 1 && (
  <div className="flex-shrink-0 flex flex-col items-center gap-3 relative z-10">
  <div className="flex gap-1.5">
- {insights.map((_, idx) => (
- <div 
- key={idx} 
+ {insights.map((insight, idx) => (
+ <div
+ key={insight.id}
  className={cn(
  "w-2 h-2 rounded-full transition-all duration-500",
- idx === currentIndex ? "w-6 bg-surface-inverse" : "bg-muted"
- )} 
+ idx === currentIndex % insights.length ? "w-6 bg-surface-inverse" : "bg-muted"
+ )}
  />
  ))}
  </div>
- <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border/60 text-muted-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all" aria-label="인사이트 상세보기">
- <Maximize2 size={16} />
- </Button>
  </div>
+ )}
  </div>
  </div>
  );

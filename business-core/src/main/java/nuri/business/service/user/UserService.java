@@ -14,6 +14,7 @@ import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.user.dto.UserDto;
 import nuri.business.service.user.dto.UserResponse;
+import nuri.business.service.user.dto.UserSearchDto;
 import nuri.business.service.user.dto.UserSignupRequest;
 import nuri.business.service.user.event.UserDeletionEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -104,6 +105,48 @@ public class UserService extends BaseAbstractService {
                 return userRepository.getPagedUserList(searchKeyword, required(pageable, "Pageable 은 null 일 수 없습니다"));
         }
 
+
+        /** 담당자 검색이 요구하는 최소 검색어 길이. 1자("김")면 사실상 전 직원 목록이라 2자를 요구한다. */
+        public static final int PIC_SEARCH_MIN_KEYWORD_LENGTH = 2;
+
+        /** 담당자 검색 1회 최대 반환 건수. 클라이언트가 무엇을 보내든 이 값을 넘지 않는다. */
+        public static final int PIC_SEARCH_MAX_RESULTS = 20;
+
+        /**
+         * 담당자 지정용 사용자 검색.
+         *
+         * <p><b>이 메서드는 전 직원 인명부를 일반 사용자에게 여는 유일한 창구다.</b>
+         * 관리자 전용인 {@link #getPagedUserList} 와 달리 로그인만 하면 누구나 호출할 수 있으므로,
+         * 다음 세 가지를 구조적으로 강제한다.</p>
+         * <ol>
+         *   <li><b>최소 검색어 길이</b>({@value #PIC_SEARCH_MIN_KEYWORD_LENGTH}자) — 빈 검색어나 1자로
+         *       전체를 덤프하지 못하게 한다. 미달 시 예외가 아니라 <b>빈 목록</b>을 돌려준다.
+         *       타이핑 중(1자 입력 상태)에 폼이 붉게 물드는 건 오류가 아니라 정상 흐름이기 때문이다.</li>
+         *   <li><b>건수 상한</b>({@value #PIC_SEARCH_MAX_RESULTS}건) + <b>offset 부재</b> — 페이지를
+         *       넘겨가며 전량 수집하는 경로 자체를 만들지 않는다. 총 건수도 반환하지 않는다.</li>
+         *   <li><b>최소 필드</b> — {@link UserSearchDto} 3필드(esntlId·성명·부서명)뿐이다.
+         *       연락처·이메일·주소·생년월일은 담기지 않는다.</li>
+         * </ol>
+         *
+         * <p>서비스 레이어 인가 재검증(백엔드 헌법 제8조): 컨트롤러의 {@code @Authenticated} 와 짝을 이뤄
+         * 인증 주체 존재를 여기서 다시 확인한다. 컨트롤러를 우회해 이 서비스를 호출하는 경로
+         * (배치·내부 호출 등)가 생기더라도 익명 컨텍스트에서는 인명부가 나가지 않도록 하는 이중 방어다.</p>
+         *
+         * @param keyword 성명 일부
+         * @return 최대 {@value #PIC_SEARCH_MAX_RESULTS}건. 검색어가 짧으면 빈 목록.
+         */
+        public List<UserSearchDto> searchAssignableUsers(String keyword) {
+                if (nuri.business.security.util.SecurityUtil.getCurrentEsntlId().isEmpty()) {
+                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+                }
+
+                String trimmed = keyword == null ? "" : keyword.trim();
+                if (trimmed.length() < PIC_SEARCH_MIN_KEYWORD_LENGTH) {
+                        return List.of();
+                }
+
+                return userRepository.searchAssignableUsers(trimmed, PIC_SEARCH_MAX_RESULTS);
+        }
 
         /**
          * 사용자 목록 페이지 조회 (검색어 없음)

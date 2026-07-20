@@ -83,6 +83,33 @@ public class UserApiController {
         return ResponseEntity.ok(ApiResponse.success(userService.checkIdDplct(userId)));
     }
 
+    /**
+     * 담당자 지정 UI(부서 업무 등록·수정 등)를 위한 사용자 검색.
+     *
+     * <p>종전에는 사용자 목록 API 가 아래 {@code /admin/system/users}(관리자 전용) 하나뿐이라
+     * 담당자 선택 UI 를 만들 수 없었다. 그 경로를 일반 사용자에게 개방하는 대안은 기각됐다 —
+     * {@code UserDto} 는 주소·휴대폰·이메일·생년월일까지 실어 나르는 전체 인적사항 레코드라
+     * 담당자 한 명 고르자고 전 직원 개인정보를 여는 꼴이 되기 때문이다.
+     *
+     * <p>대신 <b>최소 정보만</b>({@link UserSearchDto} — esntlId·성명·부서명) 돌려주는 전용 창구를 둔다.
+     * 인가는 {@code @Authenticated}(로그인 사용자)이고, 인명부 전량 수집은
+     * 검색어 최소 길이·건수 상한·offset 부재로 서비스 레이어에서 막는다
+     * ({@code UserService#searchAssignableUsers}).
+     *
+     * <p>응답을 {@code PageResponse} 로 감싸지 않은 것은 의도다. 페이지 번호를 받는 순간
+     * 넘겨가며 전부 긁는 경로가 생기고, 총 건수는 그 자체로 조직 규모 정보다.
+     */
+    @Operation(summary = "담당자 검색", description = """
+            담당자 지정용 사용자 검색. 성명 부분일치로 조회하며 식별자·성명·부서명만 반환합니다.
+            검색어는 2자 이상이어야 하고(미달 시 빈 목록), 최대 20건까지만 반환합니다.
+            개인정보(연락처·이메일·주소·생년월일)는 포함하지 않습니다.""")
+    @Authenticated
+    @GetMapping("/users/search")
+    public ResponseEntity<ApiResponse<List<UserSearchDto>>> searchAssignableUsers(
+            @Parameter(description = "성명 검색어(2자 이상)") @RequestParam(required = false) String keyword) {
+        return ResponseEntity.ok(ApiResponse.success(userService.searchAssignableUsers(keyword)));
+    }
+
     // --- [관리자 전용 기능] /api/v1/admin/system/users ---
 
     @Operation(summary = "사용자 목록 조회", description = "전체 사용자 목록을 페이징하여 조회합니다.")

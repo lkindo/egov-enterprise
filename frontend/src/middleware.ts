@@ -116,6 +116,53 @@ async function verifyAndExtractRole(token: string): Promise<string | null> {
   }
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// [보안] /admin 접근 통제 — 기본값 = ADMIN 전용 (deny-by-default)
+//
+// 과거에는 5개 접두사(system/user/security/stats/workflow)만 ADMIN 을 요구하는 화이트리스트였다.
+// 그 결과 /admin 아래 세그먼트 17개 중 12개(collaboration·community·help·notifications·
+// observability·operation·sanctn·survey·uss·work-hub·workspace·components)가 게이트 밖이었고,
+// 무엇보다 **관리 화면을 새로 추가할 때마다 "로그인만 하면 누구나 진입"이 기본값**이었다.
+// 기본값을 뒤집어, 아래 목록에 명시된 경로만 일반 사용자에게 연다.
+//
+// ⚠ 이 미들웨어는 1차 방어(관리자 UI 셸 진입 차단)일 뿐이며 진짜 방어선이 아니다. 권한의 authoritative
+//   집행자는 백엔드다 — ApiSecurityConfig 가 /api/v1/admin/** 를 ROLE_ADMIN·ROLE_SYSTEM 으로 강제하고,
+//   컨트롤러/서비스의 @PreAuthorize 가 함수 단위로 재검증한다(백엔드 헌법 제8조).
+//   여기서 통과했다는 사실이 데이터 접근 권한을 뜻하지 않으며, 반대로 이 게이트가 뚫려도 데이터는 백엔드가 막는다.
+// ────────────────────────────────────────────────────────────────────────────
+
+/**
+ * 일반 사용자(비-ADMIN)에게 열어 두는 /admin 하위 경로.
+ *
+ * 🚨 여기에 경로를 추가하면 로그인한 모든 사용자에게 그 화면이 열린다. 추가 전 반드시 확인할 것:
+ *   ① 그 화면이 AdminService(= `/api/v1/admin/**`, 백엔드가 ROLE_ADMIN 강제)를 호출하지 않는가?
+ *      호출한다면 열어 봐야 화면만 뜨고 데이터는 403 이다 — 열지 마라.
+ *   ② 전사 데이터 CRUD·일괄 발송·정책 변경 같은 '관리 콘솔'이 아닌가?
+ * 판단이 애매하면 추가하지 마라. 빠뜨리면 관리자만 쓰지만, 잘못 넣으면 전원에게 열린다.
+ */
+const USER_ACCESSIBLE_ADMIN_PATHS = [
+  '/admin/work-hub',                  // 개인·부서 업무/보고/일정 (dept-jobs·work-reports). 로그인 기본 착지점
+  '/admin/collaboration',             // 쪽지·주소록·스크랩·메일 (notes·address-books·scraps·mails)
+  '/admin/help',                      // 지식/FAQ/Q&A 열람 (WIKI·FAQ 는 화면 내부에서 별도 admin 제한 중)
+  '/admin/community',                 // 커뮤니티 게시판 열람·작성 (관리 콘솔은 아래에서 도려낸다)
+  '/admin/survey/polls/participate',  // 온라인 여론조사 '참여'(투표). 설문 '관리'는 열지 않는다
+] as const;
+
+/**
+ * 위 허용 경로 안쪽이지만 관리자 전용으로 되돌리는 예외 — 허용 목록보다 우선한다.
+ * (허용한 세그먼트가 하위에 관리 콘솔을 품고 있는 경우에만 사용)
+ */
+const ADMIN_ONLY_SUBPATHS = [
+  '/admin/community/boards/master',   // 게시판 마스터 콘솔 (boardAdminService)
+  '/admin/community/boards/maker',    // 게시판 생성 마법사 (boardAdminService)
+  '/admin/community/templates',       // 템플릿 관리 (templateAdminService)
+] as const;
+
+/** 세그먼트 경계까지 맞춰 비교한다 — '/admin/help' 가 '/admin/helpdesk' 를 잡지 않도록. */
+function matchesPrefix(pathname: string, prefix: string): boolean {
+  return pathname === prefix || pathname.startsWith(`${prefix}/`);
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -151,22 +198,28 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(loginUrl);
   }
 
-  // 4. 관리자/사용자경로 관리(/admin 경로 보호)
-  if (pathname.startsWith('/admin')) {
+  // 4. /admin 접근 통제 — 기본 ADMIN 전용, USER_ACCESSIBLE_ADMIN_PATHS 에 명시된 경로만 일반 사용자 개방.
+  //    라우트 대소문자를 흉내낸 우회(/Admin/system)와 접두사 오매칭(/administrators)을 모두 막기 위해
+  //    소문자로 정규화한 뒤 세그먼트 경계로 비교한다.
+  const normalizedPath = pathname.toLowerCase();
+  if (matchesPrefix(normalizedPath, '/admin')) {
     const normalizedRole = userRole.toUpperCase();
-    const isAdmin = normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN';
+    // 백엔드(ApiSecurityConfig)가 ROLE_ADMIN 과 동급으로 취급하는 ROLE_SYSTEM 을 함께 인정한다.
+    // deny-by-default 로 뒤집힌 이상, 여기서 빠뜨리면 API 는 통과하는데 화면만 막히는 비대칭이 생긴다.
+    const isAdmin =
+      normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN' ||
+      normalizedRole === 'SYSTEM' || normalizedRole === 'ROLE_SYSTEM';
 
-    // 시스템 사용자 보안 민감관리경로
-    const isSensitivePath = pathname.startsWith('/admin/system') ||
-      pathname.startsWith('/admin/user') ||
-      pathname.startsWith('/admin/security') ||
-      pathname.startsWith('/admin/stats') ||
-      pathname.startsWith('/admin/workflow');
+    if (!isAdmin) {
+      const isUserAccessible =
+        USER_ACCESSIBLE_ADMIN_PATHS.some((p) => matchesPrefix(normalizedPath, p)) &&
+        !ADMIN_ONLY_SUBPATHS.some((p) => matchesPrefix(normalizedPath, p));
 
-    if (isSensitivePath && !isAdmin) {
-      const fallbackUrl = new URL('/', request.url);
-      fallbackUrl.searchParams.set('auth_error', 'unauthorized');
-      return NextResponse.redirect(fallbackUrl);
+      if (!isUserAccessible) {
+        const fallbackUrl = new URL('/', request.url);
+        fallbackUrl.searchParams.set('auth_error', 'unauthorized');
+        return NextResponse.redirect(fallbackUrl);
+      }
     }
   }
 

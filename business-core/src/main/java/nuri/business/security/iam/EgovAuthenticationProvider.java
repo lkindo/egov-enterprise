@@ -9,6 +9,7 @@ import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -19,6 +20,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+
 @Slf4j
 @Component
 @RequiredArgsConstructor
@@ -28,8 +31,32 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
     private final PasswordEncoder passwordEncoder;
     private final EgovPasswordEncoder egovPasswordEncoder;
 
+    /**
+     * 연속 인증 실패 허용 횟수. 이 횟수에 <b>도달</b>하면 계정을 잠근다(기본 5).
+     *
+     * <p><b>0 이하이면 잠금 기능을 비활성화</b>한다 — 오설정·장애로 정상 사용자가 대량 잠기는
+     * 사고를 운영에서 재배포 없이 즉시 회피하기 위한 스위치다(가용성 우선 탈출구).
+     */
+    @Value("${nuri.security.login.max-failures:5}")
+    private int maxLoginFailures;
+
+    /** 잠금 지속(분, 기본 15). 잠금 시각으로부터 이 시간이 지나면 다음 로그인 시도에서 자동 해제된다. */
+    @Value("${nuri.security.login.lock-minutes:15}")
+    private long lockMinutes;
+
+    /**
+     * <b>[트랜잭션 주의] {@code noRollbackFor = BadCredentialsException.class} 는 이 기능의 핵심이다.</b>
+     *
+     * <p>{@code BadCredentialsException} 은 {@code RuntimeException} 이므로 기본 롤백 규칙에 걸린다.
+     * 이 애노테이션이 없으면 실패 경로에서 증가시킨 실패 카운터와 잠금 플래그가 <b>예외와 함께 전부
+     * 롤백되어 DB 에 남지 않는다</b>(잠금이 영원히 발동하지 않는 무음 결함). 비밀번호 불일치는
+     * 시스템 장애가 아니라 <b>업무적 결과</b>이므로 커밋되어야 한다.
+     *
+     * <p>계정 잠금 예외({@code AccountStatusException})는 목록에 없으므로 그대로 롤백된다 — 해당
+     * 경로는 쓰기가 없어 무해하다.
+     */
     @Override
-    @Transactional
+    @Transactional(noRollbackFor = BadCredentialsException.class)
     public Authentication authenticate(Authentication authentication) throws AuthenticationException {
         String userId = authentication.getName();
         String password = (String) authentication.getCredentials();
@@ -99,6 +126,14 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             if (!isMatched) {
                 log.warn(">>> Password mismatch for user: {}", userId);
                 userEntity.incrementLockCount();
+                // 임계값 도달 → 잠금. lock() 이 잠금 시각까지 남기므로 lockMinutes 경과 후 스스로 풀린다.
+                // save() 는 잠금 판정 '뒤'에 와야 lckYn/lckLastPnttm 이 같은 커밋에 함께 실린다.
+                Integer failures = userEntity.getLckCnt();
+                if (maxLoginFailures > 0 && failures != null && failures >= maxLoginFailures) {
+                    userEntity.lock();
+                    log.warn(">>> Account locked for user: {} (연속 실패 {}회 도달, {}분 후 자동 해제)",
+                            userId, failures, lockMinutes);
+                }
                 userRepository.save(userEntity);
                 throw new BadCredentialsException("Invalid User ID or Password");
             }
@@ -141,17 +176,40 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             log.error(">>> Authentication failed for user {}: {}", userId, e.getMessage());
             throw e;
         } catch (Exception e) {
+            // [주의] 이 경로도 BadCredentialsException 으로 변환되므로 noRollbackFor 에 걸려 커밋된다.
+            // 이 메서드의 쓰기는 '자기 자신의 사용자 행'의 인증 상태 필드(비밀번호 마이그레이션·잠금
+            // 카운터)로 한정되므로 부분 커밋의 영향 범위가 좁고, 잠금 카운터는 다음 시도에서 정정된다.
             log.error(">>> Unexpected error during authentication for user {}: ", userId, e);
             throw new BadCredentialsException("Authentication service error");
         }
     }
 
+    /**
+     * 계정 잠금 상태 검사 + <b>잠금 기간 만료 시 자동 해제</b>.
+     *
+     * <p>잠금은 관리자 개입 없이 {@code lockMinutes} 경과 후 스스로 풀려야 한다. 그렇지 않으면
+     * 공격자가 임의 계정에 실패를 퍼부어 정상 사용자를 영구 차단하는 DoS 가 성립한다.
+     */
     private void validateAccountStatus(User user) {
-        if ("Y".equalsIgnoreCase(user.getLckYn())) {
-            throw new AccountStatusException("User account is locked.") {
-                private static final long serialVersionUID = 1L;
-            };
+        if (!user.isLocked()) {
+            return;
         }
+
+        if (user.hasLockExpired(Duration.ofMinutes(lockMinutes))) {
+            // 잠금 기간 경과 → 해제하고 정상 인증 절차를 계속 진행한다.
+            // [의도적] 여기서 별도 save() 를 하지 않는다. 해제된 상태는 이어지는 성공 경로(unlock+save)
+            // 또는 실패 경로(카운터 저장)의 커밋에 그대로 실려 영속되므로, 인증 전(前) 단계에서
+            // 미인증 요청마다 쓰기를 유발하지 않는 편이 안전하다.
+            user.unlock();
+            log.info(">>> 잠금 기간 경과로 계정 자동 해제: {}", user.getUserId());
+            return;
+        }
+
+        // [의도적] 잠긴 상태에서의 재시도는 잠금 시각을 갱신하지 않는다(고정창 방식).
+        // 시도할 때마다 연장하면 공격자가 반복 시도만으로 정상 사용자를 무기한 잠글 수 있다.
+        throw new AccountStatusException("User account is locked.") {
+            private static final long serialVersionUID = 1L;
+        };
     }
 
     @Override

@@ -5,6 +5,14 @@
 > SOP(`docs/03-guides/orchestration-protocol.md`) §2.2 위임 패킷 형식(Task Spec·헌법·파일맵·제약·완료기준)을 따른다.
 > **⚠ 보안 불변식**: 이 작업은 접근제어(access control)를 바꾼다. **어느 단계도 인가를 약화시키면 안 되며**, Expand-Contract + 섀도우(shadow) 검증 없이 enforce 를 전환하는 것을 금지한다.
 
+> ### 🔴 현재 상태 (실측 2026-07-20 · 문서 정정 세션)
+> **본문 §2 는 착수 시점(2026-07-16 오전)의 스냅샷이며, 그 이후 구현이 시행되어 현재와 어긋난다.**
+> Phase 1~3 구현은 커밋 `405d919`(2026-07-16) 로 시행됐고 **enforce 는 이미 DB 인가로 전환돼 있다**
+> — `api-server/src/main/resources/application.yml` `rbac.db-auth.enabled: true`, `rbac.shadow.enabled: false`.
+> 인가 사슬 테이블도 채워졌다(라이브 OCI 실측: `tb_prgrm_lst` 1→**25행**, `tb_role_prgrm_map` **48행**, `tb_authrt_role_map` 0→**3행**, `flyway_schema_history` V2_11 success=1).
+> **다만 §7 완료 기준 5개는 실측 결과 어느 것도 완전 충족에 이르지 못했다** — 특히 **제약 §5-3(섀도우 불일치 0 증명 전 enforce 전환 금지)이 지켜지지 않은 채 전환**됐다. 항목별 실측치·미달 사유·재개 조건은 §7 참조.
+> *(본문 §1~§6 은 위임 패킷 원본으로 보존한다. 사후 정정은 이 블록과 §7 에만 기록한다.)*
+
 ---
 
 ## 1. TASK (목표·범위)
@@ -118,11 +126,27 @@
 ---
 
 ## 7. 완료 기준 (Done Criteria · 객관 증거)
+> **검증 갱신 2026-07-20 (Claude Code · 문서 전용, 코드 무수정)**: 5개 기준을 하나씩 실측했다.
+> **어느 것도 완전 충족에 이르지 못해 전부 미체크로 둔다.** 항목별로 실측치·미달 사유·재개 조건을 남긴다.
+> 본 세션은 빌드·테스트 실행이 금지된 정정 세션이므로 **테스트 그린 여부는 재검증하지 않았다**(정직 보류, SOP §4.1).
+
 - [ ] `grep -rE "hasRole\(|hasAnyRole\(|@PreAuthorize" api-server/src/main` → 인가 하드코딩 **0건**(또는 DB 구동 표현식만).
+  - **실측 41건 / 5파일 — 미달.** SQL 시드 32건(`V2_3` 2 · `V2_11` 30 = 시드 데이터라 무해) + Java 9건.
+  - Java 내역: `RoleHierarchyConfig` 2건(**Javadoc 본문**, 코드 아님) · `ApiSecurityConfig` 4건(L119 섀도우 분기 · L135·L137 하드코딩 폴백 분기 = `db-auth.enabled: true` 하에서 **비활성 사문** · **L213 springdoc prod 문서 경로 = legacy 체인이라 DB 인가 미커버, 실잔존**) · `DeptJobApiController` 3건(`isAuthenticated()` = 인증이므로 롤 하드코딩 아님).
+  - **⚠ 기준식 사각(별도 결함)**: 메타애노테이션 도입(`6164f417d`) 이후 `@AdminOrSystem` 3건(`DeptJobApiController` L64·75·87)이 **이 grep 패턴에 잡히지 않는 롤 인가**다. 즉 현 기준식은 롤 인가를 전수 포착하지 못한다 — `@AdminOnly|@AdminOrSystem` 을 포함하도록 **기준식 자체를 갱신**해야 한다.
+  - **미달 사유**: Phase 3 의 Contract(폴백 제거)가 미실행. **재개 조건**: ① 폴백 분기 3곳 제거 승인·시행 ② springdoc 경로를 DB 인가에 편입하거나 예외로 명문화 ③ 기준 grep 식 갱신 후 재측정.
 - [ ] DB 시드로 보호 자원×요구롤 매핑이 **이전 하드코딩과 동일**(권한 상승 0) — 섀도우 불일치 0 로그 증적.
+  - **(a) 시드 동일성·권한 상승 0 — 충족.** 라이브 OCI 실측(2026-07-20): V2_11 success=1 · `tb_prgrm_lst` **25행** · `tb_role_prgrm_map` **48행** · `tb_authrt_role_map` **3행**. 프로그램 부여 롤은 **ROLE_ADMIN 24 / ROLE_SYSTEM 24 뿐이고 그 외 롤 0건** → 기존 `hasAnyRole(ADMIN, SYSTEM)` 과 동일, **권한 상승 0 확인**.
+  - **(b) 섀도우 불일치 0 로그 증적 — 미달.** 운영 프로필은 `rbac.shadow.enabled: false` 로, **섀도우 단계를 실 구동으로 거치지 않고 곧장 `db-auth.enabled: true` 로 전환**됐다. `.gemini/tasks/` 내 섀도우 로그 아티팩트 **0건**. (`ShadowAuthorizationLogger` 구현과 테스트 프로필 `shadow.enabled: true` 는 존재하나, 실 트래픽 대조 로그가 없다.)
+  - **⚠ 제약 위반 기록**: §5-3(불일치 0 증명 전 enforce 전환 금지)이 지켜지지 않았다. **재개 조건**: `rbac.shadow.enabled=true` + `db-auth.enabled=false` 로 서버 재구동 → 인가 회귀 트래픽 투입 → 불일치 0 로그 캡처(사후 보완). 또는 리스크 수용을 사용자가 명시 결정.
 - [ ] 롤별 접근 매트릭스 통합테스트(200/403) **그린**, 컴파일 게이트 그린.
+  - **테스트는 존재하나 그린 증적 미첨부 — 미달.** `api-server/src/test/java/nuri/security/RbacAuthorizationMatrixTest.java`(`405d919` 동시 도입)가 ADMIN(비403)·일반 USER(403)·익명(401) × 보호경로 6종(`/api/v1/admin/system/users`, `/surveys`, `/main-images`, `/help`, `/faqs`, `/calendar/holidays`)을 검증한다.
+  - **재개 조건**: `./gradlew :api-server:test --tests "*RbacAuthorizationMatrixTest"` + `./gradlew compileJava compileTestJava` 실행 로그를 이 문서에 첨부.
 - [ ] `/security-review`(owasp) — fail-open·권한상승·우회 **없음** 확인.
+  - **실행 증적 0건 — 미달.** 저장소·태스크 기록 어디에도 본 작업 대상의 `/security-review` 결과가 없다. 권한 상승 0 은 위 (a) 로 부분 확인됐으나 **fail-open(매핑 부재 시 허용 여부)·우회 경로는 미검증**.
+  - **재개 조건**: `/security-review` 실행 후 결과 첨부. 특히 `DbUrlAuthorizationManager` 의 매핑 부재·DB 조회 실패 시 deny 여부(제약 §5-1 fail-closed)를 집중 확인.
 - [ ] `.gemini/tasks/` 에 검증 로그(섀도우 불일치 0, 매트릭스 결과) 첨부.
+  - **미첨부 — 미달.** 본 문서가 유일한 기록이며 섀도우 로그·매트릭스 실행 결과 파일이 없다. 위 2·3번이 해소돼야 첨부 가능.
 - **별건(비범위, 후속 티켓)**: `tb_login_policy` 시드(로그인 정책 DB화), 감사자 `webmaster` 하드코딩 정리, FE 미들웨어 DB 인가.
 
 ---
@@ -133,4 +157,6 @@
 - 각 Phase 는 **메인 오퍼레이터가 게이트(컴파일·인가 매트릭스·security-review)를 직접 재실행**해야 완료 인정(SOP §2.3).
 
 ---
-**1줄 요약**: 현재 인가는 단일-롤 + `@PreAuthorize` 63곳·URL 리터럴 하드코딩으로 결정되고 DB 인가 사슬(`authrt_role_map`·`prgrm_lst`)은 비어 미사용이다 — Phase 0(의미론·규칙 인벤토리)→1(현규칙 그대로 DB 시드)→2(DB 인가 구현+섀도우 불일치0)→3(전환·하드코딩 제거)의 Expand-Contract 로, 인가를 약화하지 않고 DB 일원화한다.
+**1줄 요약 (착수 시점 2026-07-16, 원문 보존)**: 현재 인가는 단일-롤 + `@PreAuthorize` 63곳·URL 리터럴 하드코딩으로 결정되고 DB 인가 사슬(`authrt_role_map`·`prgrm_lst`)은 비어 미사용이다 — Phase 0(의미론·규칙 인벤토리)→1(현규칙 그대로 DB 시드)→2(DB 인가 구현+섀도우 불일치0)→3(전환·하드코딩 제거)의 Expand-Contract 로, 인가를 약화하지 않고 DB 일원화한다.
+
+**1줄 요약 (실측 2026-07-20 · 현재)**: DB 인가는 이미 구현·시드·enforce 전환까지 완료됐고 권한 상승도 0으로 확인되나(사슬 25/48/3행, ADMIN·SYSTEM 외 부여 0), **섀도우 불일치 0 증명 없이 전환된 제약 §5-3 위반**과 **Contract 미완(폴백 분기·springdoc 리터럴 잔존, 메타애노테이션이 기준 grep 에 미포착)** 때문에 §7 완료 기준 5개는 전부 미충족 상태다.

@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 ;
-import { LayoutGrid,  BarChart3,  HelpCircle,  Users,  FileStack,  Settings2,  Zap,  Plus, 
+import { LayoutGrid,  BarChart3,  Users,  Zap,  Plus,
  Layers,  Activity } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
@@ -21,10 +21,37 @@ import { statsAdminService } from '@/services/foundation/system/StatsAdminServic
 import PollManagePage from '../manage/page';
 import SurveyStatsPage from '../stats/page';
 
+// 허브 탭 정의 — 아래 TabsList/TabsContent 와 1:1 로 유지한다.
+//
+// [감춘 탭 — 되살리는 방법]
+// questions('질문 라이브러리') / respondents('응답 그룹') / templates('템플릿') /
+// settings('시스템 연동') 네 탭은 내용이 없는 껍데기(PlaceholderCard "준비 중")였다.
+// 클릭하면 "아직 제공되지 않는 기능입니다" 만 나오는 탭을 상시 노출하는 것은 정직하지 않아
+// 구현 범위가 정해질 때까지 탭 목록에서 내린다.
+// 되살릴 때: 아래 SURVEY_TABS 에 키를 추가하고 TabsList 에 TabTrigger, 본문에 실제 화면을
+// 렌더하는 TabsContent 를 함께 넣는다(껍데기 카드는 다시 만들지 않는다).
+// 같은 릴리스의 V2_30 마이그레이션이 이 탭들을 가리키던 메뉴 행도 use_yn='N' 으로 감췄으므로,
+// 구현 시 그 메뉴도 use_yn='Y' 로 되돌려야 사이드바에 다시 나타난다.
+const SURVEY_TABS = ['manage', 'stats'] as const;
+type SurveyTab = (typeof SURVEY_TABS)[number];
+
+const DEFAULT_TAB: SurveyTab = 'manage';
+
+/**
+ * 알 수 없는 tab 값(오타·구메뉴·감춘 탭)이 와도 빈 화면 대신 기본 탭을 렌더한다.
+ * 감춘 탭 URL(?tab=questions 등)과 허브에 존재한 적 없는 ?tab=items(구 메뉴 2010600)로
+ * 들어오는 북마크·딥링크가 여기서 모두 흡수된다.
+ */
+function resolveTab(raw: string | null): SurveyTab {
+ if (!raw) return DEFAULT_TAB;
+ if ((SURVEY_TABS as readonly string[]).includes(raw)) return raw as SurveyTab;
+ return DEFAULT_TAB;
+}
+
 export function SurveyHubClient() {
  const router = useRouter();
  const searchParams = useSearchParams();
- const currentTab = searchParams.get('tab') || 'manage';
+ const currentTab = resolveTab(searchParams.get('tab'));
 
  // 1. Data Fetching
  const { data: surveyData, isLoading: isSurveyLoading } = useQuery({
@@ -112,10 +139,6 @@ export function SurveyHubClient() {
  <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
  <TabTrigger value="manage" icon={LayoutGrid} label="설문 관리" />
  <TabTrigger value="stats" icon={BarChart3} label="결과 통계" />
- <TabTrigger value="questions" icon={HelpCircle} label="질문 라이브러리" />
- <TabTrigger value="respondents" icon={Users} label="응답 그룹" />
- <TabTrigger value="templates" icon={FileStack} label="템플릿" />
- <TabTrigger value="settings" icon={Settings2} label="시스템 연동" />
  </TabsList>
  </div>
 
@@ -134,22 +157,6 @@ export function SurveyHubClient() {
 
  <TabsContent value="stats" className="m-0 focus-visible:outline-none">
  <SurveyStatsPage />
- </TabsContent>
-
- <TabsContent value="questions" className="m-0 focus-visible:outline-none">
- <PlaceholderCard title="질문 및 문항 라이브러리" description="설문 구성을 위한 핵심 질문 및 선택지 구조를 관리합니다." icon={HelpCircle} />
- </TabsContent>
-
- <TabsContent value="respondents" className="m-0 focus-visible:outline-none">
- <PlaceholderCard title="응답 그룹 관리" description="설문 조사 대상인 사용자 집단 및 세그먼트를 정의합니다." icon={Users} />
- </TabsContent>
-
- <TabsContent value="templates" className="m-0 focus-visible:outline-none">
- <PlaceholderCard title="설문 템플릿 관리" description="표준화된 설문 양식을 생성하고 재사용 가능한 설문 세트를 관리합니다." icon={FileStack} />
- </TabsContent>
-
- <TabsContent value="settings" className="m-0 focus-visible:outline-none">
- <PlaceholderCard title="대외 기관 연동 설정" description="시스템 간의 설문 데이터 연동 프로토콜을 관리합니다." icon={Settings2} />
  </TabsContent>
  </motion.div>
  </AnimatePresence>
@@ -216,27 +223,5 @@ function MetricCardSkeleton() {
       </div>
     </div>
   );
-}
-
-function PlaceholderCard({ title, description, icon: Icon }: any) {
- return (
- <div className="hub-glass-premium p-32 rounded-lg border-4 border-dashed border-border flex flex-col items-center justify-center text-center space-y-8 group relative overflow-hidden">
- <div className="absolute top-0 right-0 p-12 opacity-[0.03] grayscale pointer-events-none group-hover:opacity-10 transition-opacity">
- <Icon size={180} />
- </div>
- <div className="w-24 h-24 rounded-lg bg-muted shadow-2xl flex items-center justify-center text-rose-500 border-2 border-border group-hover:scale-110 group-hover:rotate-12 transition-all relative z-10">
- <Icon size={40} />
- </div>
- <div className="space-y-4 relative z-10">
- <h3 className="text-3xl font-bold tracking-tighter text-foreground leading-none">{title}</h3>
- <p className="text-sm font-bold text-muted-foreground max-w-sm mx-auto tracking-tight">{description}</p>
- </div>
- <div className="flex gap-4 relative z-10 pt-4">
- <div className="h-1.5 w-8 rounded-lg bg-rose-500/20" />
- <div className="h-1.5 w-8 rounded-lg bg-rose-500/40" />
- <div className="h-1.5 w-8 rounded-lg bg-rose-500/20" />
- </div>
- </div>
- );
 }
 

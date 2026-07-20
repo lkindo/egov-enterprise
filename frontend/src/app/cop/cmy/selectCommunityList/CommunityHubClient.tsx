@@ -29,6 +29,7 @@ import { communityService } from '@/services/business/community/communityService
 import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';
 import { useToast } from '@/app/components/ui/toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 export default function CommunityHubClient({ 
@@ -38,9 +39,13 @@ export default function CommunityHubClient({
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isPending, startTransition] = useTransition();
   const [page, setPage] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState('');
+  // 'managed' = 내가 개설한(= 목록의 '관리자' 열) 커뮤니티. 서버에 소유자 필터 파라미터가 없어
+  // 현재 조회된 페이지 안에서만 추리는 클라이언트 필터다.
+  const [filter, setFilter] = useState<'all' | 'managed'>('all');
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['communities', searchKeyword, page],
@@ -49,8 +54,14 @@ export default function CommunityHubClient({
   });
 
   const communities = useMemo(() => {
-    return (data?.list || []) as CommunityVO[];
-  }, [data]);
+    const list = (data?.list || []) as CommunityVO[];
+    // frstRgtrId 는 JPA 감사(LoginUserAuditorAware)가 심는 로그인 ID 이고, useAuth().user.id 는
+    // /auth/me 가 내려주는 로그인 ID 라 동일 축이다.
+    if (filter === 'managed') {
+      return user?.id ? list.filter((item) => item.frstRgtrId === user.id) : [];
+    }
+    return list;
+  }, [data, filter, user?.id]);
 
   const columns: Column<CommunityVO>[] = [
     {
@@ -164,9 +175,27 @@ export default function CommunityHubClient({
             </div>
 
             <div className="rounded-[var(--radius-hub-widget)] bg-white border-2 border-border shadow-xl p-4 flex flex-col gap-4">
-               <NavButton icon={<LayoutGrid size={22} />} label="전체 목록" active={true} onClick={() => {}} />
-               <NavButton icon={<Users size={22} />} label="내 가입 커뮤니티" active={false} onClick={() => {}} />
-               <NavButton icon={<ShieldCheck size={22} />} label="관리 중인 공간" active={false} onClick={() => {}} />
+               <NavButton
+                 icon={<LayoutGrid size={22} />}
+                 label="전체 목록"
+                 active={filter === 'all'}
+                 onClick={() => setFilter('all')}
+               />
+               {/* 가입 여부는 tb_cmnty_user_map 에만 있고 목록 응답(CommunityDto)·조회 API 어디에도
+                   내려오지 않는다. 가짜로 동작시키지 않고 사유를 밝혀 비활성화한다. */}
+               <NavButton
+                 icon={<Users size={22} />}
+                 label="내 가입 커뮤니티"
+                 disabled
+                 title="가입 여부를 내려주는 API가 아직 없어 사용할 수 없습니다"
+               />
+               <NavButton
+                 icon={<ShieldCheck size={22} />}
+                 label="관리 중인 공간"
+                 active={filter === 'managed'}
+                 onClick={() => setFilter('managed')}
+                 title="내가 개설한 커뮤니티만 현재 페이지에서 추립니다"
+               />
             </div>
           </div>
 
@@ -210,7 +239,7 @@ export default function CommunityHubClient({
                 <div className="overflow-hidden">
                   <AnimatePresence mode="wait">
                     <motion.div
-                      key={page + searchKeyword}
+                      key={page + searchKeyword + filter}
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
@@ -223,7 +252,9 @@ export default function CommunityHubClient({
                         error={error as Error | null}
                         onRetry={() => refetch()}
                         keyField="cmntyId"
-                        emptyMessage="검색된 커뮤니티 공간이 존재하지 않습니다."
+                        emptyMessage={filter === 'managed'
+                          ? "이 페이지에는 내가 개설한 커뮤니티가 없습니다."
+                          : "검색된 커뮤니티 공간이 존재하지 않습니다."}
                         isPremium={true}
                         className="border-none shadow-none bg-transparent"
                         pagination={{
@@ -253,15 +284,21 @@ function MetricItem({ label, value }: { label: string, value: string | number })
   );
 }
 
-function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
+function NavButton({ icon, label, active = false, onClick, disabled = false, title }: { icon: React.ReactNode, label: string, active?: boolean, onClick?: () => void, disabled?: boolean, title?: string }) {
   return (
     <button
+      type="button"
       onClick={onClick}
+      disabled={disabled}
+      title={title}
+      aria-pressed={disabled ? undefined : active}
       className={cn(
         "w-full group p-6 rounded-[var(--radius-hub-item)] border-2 transition-all flex items-center gap-5 relative overflow-hidden",
-        active
-          ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10"
-          : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
+        disabled
+          ? "bg-transparent border-transparent text-muted-foreground opacity-40 cursor-not-allowed"
+          : active
+            ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10"
+            : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
       )}
     >
       <div className={cn(

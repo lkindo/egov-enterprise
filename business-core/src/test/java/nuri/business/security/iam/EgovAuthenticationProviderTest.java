@@ -15,8 +15,11 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.test.util.ReflectionTestUtils;
 
+import java.time.LocalDateTime;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -45,6 +48,10 @@ class EgovAuthenticationProviderTest {
 
     private User testUser;
 
+    /** 잠금 정책: 연속 5회 실패 시 15분 잠금 (application.yml 기본값과 동일). */
+    private static final int MAX_FAILURES = 5;
+    private static final long LOCK_MINUTES = 15;
+
     @BeforeEach
     void setUp() {
         testUser = User.builder()
@@ -54,6 +61,16 @@ class EgovAuthenticationProviderTest {
                 .userNm("Test User")
                 .lckYn("N")
                 .build();
+        // @Value 필드는 @InjectMocks 가 주입하지 않는다 (LogRetentionSchedulerTest 와 동일 관례).
+        ReflectionTestUtils.setField(authenticationProvider, "maxLoginFailures", MAX_FAILURES);
+        ReflectionTestUtils.setField(authenticationProvider, "lockMinutes", LOCK_MINUTES);
+    }
+
+    /** 비밀번호 불일치로 1회 실패시킨다. */
+    private void attemptWithWrongPassword(String userId) {
+        Authentication auth = new UsernamePasswordAuthenticationToken(userId, "wrongpassword");
+        assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
+                .isInstanceOf(BadCredentialsException.class);
     }
 
     @Test
@@ -155,5 +172,134 @@ class EgovAuthenticationProviderTest {
 
         // Then
         assertThat(result.getAuthorities()).extracting("authority").contains("ROLE_ADMIN");
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // 계정 잠금 정책 (연속 5회 실패 → 15분 잠금, 경과 후 자동 해제)
+    // ──────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("잠금 - 임계값 미만(4회) 실패는 잠기지 않는다")
+    void lockout_belowThreshold_notLocked() {
+        // Given
+        lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(egovPasswordEncoder.encode(anyString(), anyString())).thenReturn("wrongHash");
+        lenient().when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+
+        // When — 임계값 직전(4회)까지 실패
+        for (int i = 0; i < MAX_FAILURES - 1; i++) {
+            attemptWithWrongPassword("testuser");
+        }
+
+        // Then — 카운터만 오르고 잠기지 않는다 (정상 사용자 오타 4회는 서비스 차단이 아니다)
+        assertThat(testUser.getLckCnt()).isEqualTo(MAX_FAILURES - 1);
+        assertThat(testUser.isLocked()).isFalse();
+        assertThat(testUser.getLckLastPnttm()).isNull();
+    }
+
+    @Test
+    @DisplayName("잠금 - 임계값(5회)째 실패에서 잠기고 잠금 시각이 기록된다")
+    void lockout_atThreshold_locks() {
+        // Given
+        lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(egovPasswordEncoder.encode(anyString(), anyString())).thenReturn("wrongHash");
+        lenient().when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+
+        // When — 5회 실패 (5회째까지는 잠금 검사를 통과하므로 전부 BadCredentials)
+        for (int i = 0; i < MAX_FAILURES; i++) {
+            attemptWithWrongPassword("testuser");
+        }
+
+        // Then — 잠금 성립 + 자동 해제 기준 시각 존재
+        // (뮤턴트: lock() 호출을 지우면 lckYn 이 'N' 으로 남아 이 어서션이 킬)
+        assertThat(testUser.getLckCnt()).isEqualTo(MAX_FAILURES);
+        assertThat(testUser.isLocked()).isTrue();
+        assertThat(testUser.getLckLastPnttm()).isNotNull();
+        // 잠금 상태가 반드시 영속되어야 한다 (@Transactional 롤백에 휩쓸리면 기능 자체가 무음 실패)
+        verify(userRepository, times(MAX_FAILURES)).save(any(User.class));
+
+        // 그리고 이후 시도는 BadCredentials 가 아니라 잠금 예외로 전환된다
+        Authentication next = new UsernamePasswordAuthenticationToken("testuser", "wrongpassword");
+        assertThatThrownBy(() -> authenticationProvider.authenticate(next))
+                .isInstanceOf(AccountStatusException.class)
+                .hasMessageContaining("locked");
+    }
+
+    @Test
+    @DisplayName("잠금 - 잠긴 계정은 '올바른' 비밀번호로도 거부된다")
+    void lockout_locked_rejectsEvenCorrectPassword() {
+        // Given — 방금 잠긴 계정 (잠금 시각 = now)
+        User lockedUser = User.builder()
+                .userId("lockeduser")
+                .esntlId("USR_0000000000002")
+                .pswd("{egov}hashedPassword")
+                .userNm("Locked User")
+                .lckYn("Y")
+                .lckCnt(MAX_FAILURES)
+                .lckLastPnttm(LocalDateTime.now())
+                .build();
+        lenient().when(userRepository.findById("lockeduser")).thenReturn(Optional.of(lockedUser));
+        // 비밀번호는 '정답'이지만 잠금 검사가 먼저다
+        lenient().when(egovPasswordEncoder.encode("password", "lockeduser")).thenReturn("hashedPassword");
+
+        Authentication auth = new UsernamePasswordAuthenticationToken("lockeduser", "password");
+
+        // When & Then
+        assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
+                .isInstanceOf(AccountStatusException.class)
+                .hasMessageContaining("locked");
+        // 잠금 유지 + 재시도가 잠금 시각을 연장하지 않는다(연장하면 영구 DoS 가 성립)
+        assertThat(lockedUser.isLocked()).isTrue();
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("잠금 - 잠금기간(15분) 경과 후에는 자동 해제되어 인증에 성공한다")
+    void lockout_afterDuration_autoUnlocksAndAuthenticates() {
+        // Given — 16분 전에 잠긴 계정 (실제 sleep 대신 잠금 시각을 과거로 세팅)
+        User expiredLockUser = User.builder()
+                .userId("expireduser")
+                .esntlId("USR_0000000000003")
+                .pswd("{egov}hashedPassword")
+                .userNm("Expired Lock User")
+                .lckYn("Y")
+                .lckCnt(MAX_FAILURES)
+                .lckLastPnttm(LocalDateTime.now().minusMinutes(LOCK_MINUTES + 1))
+                .build();
+        lenient().when(userRepository.findById("expireduser")).thenReturn(Optional.of(expiredLockUser));
+        lenient().when(egovPasswordEncoder.encode("password", "expireduser")).thenReturn("hashedPassword");
+        lenient().when(passwordEncoder.encode(anyString())).thenReturn("{bcrypt}migrated");
+
+        Authentication auth = new UsernamePasswordAuthenticationToken("expireduser", "password");
+
+        // When — 관리자 개입 없이 스스로 풀려야 한다
+        Authentication result = authenticationProvider.authenticate(auth);
+
+        // Then
+        assertThat(result).isNotNull();
+        assertThat(result.getName()).isEqualTo("USR_0000000000003");
+        // (뮤턴트: 자동 해제 분기를 지우면 AccountStatusException 이 나서 이 테스트가 킬)
+        assertThat(expiredLockUser.isLocked()).isFalse();
+        assertThat(expiredLockUser.getLckCnt()).isEqualTo(0);
+        assertThat(expiredLockUser.getLckLastPnttm()).isNull();
+    }
+
+    @Test
+    @DisplayName("잠금 - max-failures<=0 이면 잠금 비활성(가용성 탈출구)")
+    void lockout_disabledWhenThresholdNotPositive() {
+        // Given — 운영 긴급 회피 스위치
+        ReflectionTestUtils.setField(authenticationProvider, "maxLoginFailures", 0);
+        lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        lenient().when(egovPasswordEncoder.encode(anyString(), anyString())).thenReturn("wrongHash");
+        lenient().when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+
+        // When — 임계값을 훌쩍 넘겨 실패
+        for (int i = 0; i < MAX_FAILURES + 3; i++) {
+            attemptWithWrongPassword("testuser");
+        }
+
+        // Then — 카운터는 오르되 잠기지 않는다
+        assertThat(testUser.getLckCnt()).isEqualTo(MAX_FAILURES + 3);
+        assertThat(testUser.isLocked()).isFalse();
     }
 }

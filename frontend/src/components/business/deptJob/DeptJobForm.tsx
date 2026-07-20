@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/select';
 import { DeptJobDtoSchema } from '@/types/generated-zod';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
+import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { useQuery } from '@tanstack/react-query';
 import { cn } from '@/lib/utils';
 
@@ -65,6 +66,12 @@ interface DeptJobFormProps {
 /** 업무함 미지정을 나타내는 Select 값. Radix Select 는 빈 문자열 value 를 허용하지 않는다. */
 const NO_BOX = '__none__';
 
+/**
+ * 담당자 검색을 시작하는 최소 글자 수. 서버(`UserService.PIC_SEARCH_MIN_KEYWORD_LENGTH`)와 같은 값이다.
+ * 서버도 미달 시 빈 목록을 돌려주지만, 애초에 요청을 보내지 않는 편이 인명부 조회 횟수를 줄인다.
+ */
+const PIC_SEARCH_MIN_KEYWORD = 2;
+
 export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }: DeptJobFormProps) {
     const isEdit = mode === 'edit';
 
@@ -77,6 +84,29 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
     });
     const boxes = boxData?.list ?? [];
 
+    // ── 담당자 검색 ──────────────────────────────────────────────────────────
+    // 검색어는 폼 값이 아니라 로컬 상태다. 제출되는 값은 어디까지나 picId 하나다.
+    const [picQuery, setPicQuery] = React.useState('');
+    const [picQueryDebounced, setPicQueryDebounced] = React.useState('');
+    // 선택된 담당자의 표시용 이름. 화면 표시 전용이며 제출 대상이 아니다
+    // (서버는 picId 만 읽고 picNm 은 조회 시 스스로 채워 준다).
+    // 수정 모드에서는 이미 지정된 담당자 이름이 initialData 로 들어온다.
+    const [picNm, setPicNm] = React.useState(initialData?.picNm ?? '');
+
+    React.useEffect(() => {
+        const timer = setTimeout(() => setPicQueryDebounced(picQuery), 300);
+        return () => clearTimeout(timer);
+    }, [picQuery]);
+
+    const picKeyword = picQueryDebounced.trim();
+    const { data: picCandidates, isFetching: isPicSearching } = useQuery({
+        queryKey: ['user-search', picKeyword],
+        queryFn: () => userSearchService.searchAssignableUsers(picKeyword),
+        enabled: picKeyword.length >= PIC_SEARCH_MIN_KEYWORD,
+        staleTime: 60 * 1000,
+    });
+    const candidates: UserSearchResult[] = picCandidates ?? [];
+
     const form = useAppForm(deptJobFormSchema, {
         defaultValues: {
             deptTaskNm: initialData?.deptTaskNm ?? '',
@@ -86,9 +116,11 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
             // 업무함은 서버에서 nullable 이다. 수정 시 기존 값을 잃지 않도록 폼에 실어 왕복시킨다
             // (보내지 않으면 update 가 null 로 덮어써 소속이 소리 없이 사라진다).
             deptTaskBoxId: initialData?.deptTaskBoxId,
-            // 담당자 선택 UI 는 아직 없다. 사용자 목록 API 가 /admin/system/users 뿐이라
-            // 일반 사용자에게 조직 인명부를 여는 보안 결정이 선행되어야 한다.
-            // 그때까지 등록 시에는 서버가 등록자를 담당자로 채우고, 수정 시에는 기존 값을 왕복시킨다.
+            // 담당자. 업무함과 마찬가지로 nullable 이므로 수정 시 기존 값을 폼에 실어 왕복시킨다
+            // (보내지 않으면 update 가 null 로 덮어써 담당자가 소리 없이 사라진다).
+            // 등록 시 미지정으로 두면 서버가 등록자를 담당자로 채운다 — 그 동작을 유지하기 위해
+            // 빈 문자열이 아니라 undefined 로 둔다(서버는 blank 도 미지정으로 보지만 수정 경로에서는
+            // 빈 문자열이 그대로 저장되므로 축을 맞춘다).
             picId: initialData?.picId,
             atchFileId: initialData?.atchFileId,
         },
@@ -169,6 +201,99 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
                                     ))}
                                 </SelectContent>
                             </Select>
+                            <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
+                        </FormItem>
+                    )}
+                />
+
+                {/*
+                  담당자 선택. 목록을 통째로 내려받아 Select 로 고르는 방식이 아니라 검색형이다.
+                  전 직원 명부를 화면에 미리 붓지 않기 위한 것으로, 서버도 같은 전제로 만들어졌다
+                  (GET /api/v1/users/search — 2자 이상 검색어 요구, 최대 20건, 페이징 없음).
+                  폼에 실리는 값은 picId(esntlId) 하나이며, 이름은 표시용 로컬 상태로만 다룬다.
+                */}
+                <FormField
+                    control={form.control}
+                    name="picId"
+                    render={({ field }) => (
+                        <FormItem>
+                            <FormLabel className="text-xs font-bold text-foreground uppercase tracking-tight ml-1">담당자</FormLabel>
+
+                            {field.value ? (
+                                <div className="flex items-center justify-between gap-3 h-11 px-3 rounded-lg border border-border bg-muted/40">
+                                    <span className="text-sm font-bold tracking-tight truncate">
+                                        {/* 수정 화면 진입 직후에는 이름이 없을 수 있다(목록에서 picNm 을 못 받은 경우).
+                                            그때는 식별자라도 보여 줘 담당자가 '비어 있는 것처럼' 보이지 않게 한다. */}
+                                        {picNm || field.value}
+                                    </span>
+                                    <Button
+                                        type="button"
+                                        variant="ghost"
+                                        className="h-8 px-3 rounded-md text-xs font-bold shrink-0"
+                                        onClick={() => {
+                                            // 빈 문자열이 아니라 undefined 로 되돌린다. 등록 경로에서는 둘 다
+                                            // '미지정'으로 처리되지만 수정 경로는 빈 문자열을 그대로 저장한다.
+                                            field.onChange(undefined);
+                                            setPicNm('');
+                                            setPicQuery('');
+                                        }}
+                                    >
+                                        변경
+                                    </Button>
+                                </div>
+                            ) : (
+                                <>
+                                    <FormControl>
+                                        {/* field 를 spread 하지 않는다. 이 입력창의 값은 검색어이지 picId 가 아니다. */}
+                                        <Input
+                                            value={picQuery}
+                                            onChange={(e) => setPicQuery(e.target.value)}
+                                            className="h-11 rounded-lg text-sm font-bold tracking-tight"
+                                            placeholder={`담당자 이름을 ${PIC_SEARCH_MIN_KEYWORD}자 이상 입력하세요`}
+                                            autoComplete="off"
+                                        />
+                                    </FormControl>
+
+                                    {picKeyword.length >= PIC_SEARCH_MIN_KEYWORD && (
+                                        <div className="mt-2 max-h-56 overflow-y-auto rounded-lg border border-border">
+                                            {isPicSearching ? (
+                                                <p className="px-3 py-3 text-xs font-bold text-muted-foreground">검색 중…</p>
+                                            ) : candidates.length === 0 ? (
+                                                <p className="px-3 py-3 text-xs font-bold text-muted-foreground">일치하는 사용자가 없습니다.</p>
+                                            ) : (
+                                                <ul>
+                                                    {candidates.map((user) => (
+                                                        <li key={user.esntlId}>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    // picId 가 담는 축은 esntlId 다(로그인 ID 가 아니다).
+                                                                    field.onChange(user.esntlId);
+                                                                    setPicNm(user.userNm ?? '');
+                                                                    setPicQuery('');
+                                                                }}
+                                                                className="w-full flex items-center justify-between gap-3 px-3 py-2.5 text-left hover:bg-accent focus-visible:bg-accent focus-visible:outline-none"
+                                                            >
+                                                                <span className="text-sm font-bold tracking-tight truncate">{user.userNm}</span>
+                                                                {user.deptNm && (
+                                                                    <span className="text-xs font-bold text-muted-foreground shrink-0">{user.deptNm}</span>
+                                                                )}
+                                                            </button>
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {!isEdit && (
+                                        <p className="text-xs font-bold text-muted-foreground mt-1 ml-1">
+                                            지정하지 않으면 등록한 본인이 담당자가 됩니다.
+                                        </p>
+                                    )}
+                                </>
+                            )}
+
                             <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
                         </FormItem>
                     )}

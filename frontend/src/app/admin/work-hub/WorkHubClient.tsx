@@ -64,6 +64,9 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   // 목록 페이지(1-based). 종전에는 페이저가 없어 상위 N건만 보이고 나머지는 도달할 수 없었다.
   const [jobPage, setJobPage] = useState(1);
   const [reportPage, setReportPage] = useState(1);
+  // 업무 목록의 소유 스코프. 기본은 '내 업무'(내가 담당자인 업무)이고, 토글로 부서 전체를 볼 수 있다.
+  // 서버도 scope 미지정을 'mine' 으로 해석하므로 기본값이 양쪽에서 일치한다.
+  const [jobScope, setJobScope] = useState<'mine' | 'dept'>('mine');
   const PAGE_UNIT = 10;
   // 캘린더 탭의 표시 기준 월. 월 이동 시 해당 월의 일정을 다시 조회한다.
   const [currentDate, setCurrentDate] = useState(new Date());
@@ -113,8 +116,10 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   //   탭 설명("부서별 업무 흐름")과 등록 동작이 모두 부서 업무를 가리키므로 목록을 그쪽에 맞춘다.
   //   업무함은 부서 단위 구조물이고 CRUD 가 관리자 전용(@AdminOrSystem)이라 이 화면의 대상이 아니다.
   const { data: jobData, isLoading: isJobLoading } = useQuery({
-    queryKey: ['work-jobs', searchKeyword, jobPage],
-    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: searchKeyword, pageIndex: jobPage, pageUnit: PAGE_UNIT }),
+    // jobScope 를 queryKey 에 포함해야 토글 시 재조회된다. 빠뜨리면 캐시된 이전 스코프 결과가
+    // 그대로 남아 "토글이 먹지 않는" 것처럼 보인다.
+    queryKey: ['work-jobs', searchKeyword, jobPage, jobScope],
+    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: searchKeyword, pageIndex: jobPage, pageUnit: PAGE_UNIT, scope: jobScope }),
     enabled: activeTab === 'job'
   });
   const jobs = jobData?.list || [];
@@ -417,10 +422,8 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                  일정
                </Button>
              </div>
-            {/* 일정 탭에서는 일정 등록 다이얼로그를 연다. 다른 탭의 '새 업무 생성'은 아직 미구현이라
-                동작을 바꾸지 않는다(이번 범위 밖). */}
-            {/* 탭마다 '생성'의 대상이 다르다. 종전에는 캘린더 외 탭에서 onClick 이 없어 死버튼이었다.
-                업무 워크플로우는 전용 등록 화면이 이미 있어 그리로 보내고, 보고는 다이얼로그로 받는다. */}
+            {/* 탭마다 '생성'의 대상이 다르다. 일정·보고는 다이얼로그로 받고,
+                업무 워크플로우는 전용 등록 화면이 이미 있어 그리로 보낸다. */}
             <Button
               onClick={
                 activeTab === 'calendar'
@@ -463,6 +466,31 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                   placeholder="검색어를 입력하십시오..."
                 />
               </div>
+
+              {/* 업무 탭에만 소유 스코프 토글을 둔다. 보고 탭은 별도 소유 모델이라 대상이 아니다.
+                  상단 탭 전환과 동일한 pill 패턴을 재사용해 조작 방식을 일관되게 한다. */}
+              {activeTab === 'job' && (
+                <div className="flex bg-muted p-1 rounded-xl border border-border/50 shrink-0">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-pressed={jobScope === 'mine'}
+                    className={cn("h-8 rounded-lg px-5 text-[10px] font-black uppercase transition-all", jobScope === 'mine' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
+                    onClick={() => { setJobScope('mine'); setJobPage(1); }}
+                  >
+                    내 업무
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    aria-pressed={jobScope === 'dept'}
+                    className={cn("h-8 rounded-lg px-5 text-[10px] font-black uppercase transition-all", jobScope === 'dept' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
+                    onClick={() => { setJobScope('dept'); setJobPage(1); }}
+                  >
+                    부서 전체
+                  </Button>
+                </div>
+              )}
             </div>
           )}
 
@@ -522,7 +550,13 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                 columns={activeTab === 'job' ? jobColumns : reportColumns}
                 data={activeTab === 'job' ? jobs : reports}
                 loading={activeTab === 'job' ? isJobLoading : isReportLoading}
-                emptyMessage="식별된 데이터 유닛이 없습니다."
+                // 목록이 '내 업무'로 좁혀진 상태의 빈 화면은 데이터 유실처럼 보이기 쉽다.
+                // 왜 비었는지와 다음 행동('부서 전체' 토글)을 문구로 알려 준다.
+                emptyMessage={
+                  activeTab === 'job' && jobScope === 'mine'
+                    ? '내가 담당자인 업무가 없습니다. 부서 전체를 보려면 상단의 \'부서 전체\'를 선택하십시오.'
+                    : '식별된 데이터 유닛이 없습니다.'
+                }
                 isPremium={true}
                 className="border-none bg-transparent shadow-none"
                 // StandardDataTable 은 처음부터 pagination 을 지원했는데 전달하지 않고 있었다.

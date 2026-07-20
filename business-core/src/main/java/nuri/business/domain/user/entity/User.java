@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.lang.NonNull;
 import java.io.Serializable;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
@@ -293,8 +294,36 @@ public class User extends BaseEntity implements Serializable {
         this.role = role;
     }
 
+    /**
+     * 계정을 잠근다. <b>잠금 시각(lckLastPnttm)을 반드시 함께 기록</b>한다.
+     *
+     * <p>시각 없이 {@code lckYn} 만 세우면 자동 해제의 기준 시점이 없어 <b>영구 잠금</b>이 되고,
+     * 사용자는 관리자 개입 없이는 복구할 수 없다(과거 결함).
+     */
     public void lock() {
         this.lckYn = "Y";
+        this.lckLastPnttm = LocalDateTime.now();
+    }
+
+    /** 현재 잠금 상태 여부. */
+    public boolean isLocked() {
+        return "Y".equalsIgnoreCase(this.lckYn);
+    }
+
+    /**
+     * 잠금 유효기간이 지났는지 여부(자동 해제 판정용). 경계값(정확히 lockDuration 경과)은 만료로 본다.
+     *
+     * <p><b>[결정] lckLastPnttm 이 null 이면 '만료'로 간주한다.</b> 잠금 시각을 남기지 않던 시절에
+     * 잠긴 레거시 행이나 DB 에서 직접 {@code lck_yn='Y'} 로 세팅된 행을 <b>영구 잠금으로 방치하지
+     * 않기 위한</b> 의도적 선택이다. 자동 해제되어도 인증은 그대로 비밀번호 검증을 거치므로
+     * 공격자가 얻는 것은 '실패 카운터 재시작'뿐이며 인증 우회는 성립하지 않는다.
+     * (관리자에 의한 영구 정지가 제품 요구로 생기면 lckYn 이 아니라 userSttsCd 로 표현할 것.)
+     */
+    public boolean hasLockExpired(Duration lockDuration) {
+        if (this.lckLastPnttm == null) {
+            return true;
+        }
+        return !this.lckLastPnttm.plus(lockDuration).isAfter(LocalDateTime.now());
     }
 
     // [P2 키 규약, 2026-07-17] changeUserId 제거 — loginId(user_id) 는 불변으로 선언한다.

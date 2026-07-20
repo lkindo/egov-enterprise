@@ -72,6 +72,12 @@ class DeptJobUserService extends UserService {
       searchCondition?: string;
       deptJobbxId?: string;
       deptId?: string;
+      /**
+       * 소유 스코프. 'mine'(기본) = 내가 담당자인 업무만, 'dept' = 부서 전체.
+       * 서버도 미지정 시 'mine' 으로 해석하지만, 의도가 드러나도록 항상 명시해 보낸다
+       * (서버 기본값이 바뀌어도 화면 토글 상태가 그대로 반영되게).
+       */
+      scope?: 'mine' | 'dept';
     },
     config?: AxiosRequestConfig
   ): Promise<PageResponse<DeptJobVO>> {
@@ -83,6 +89,7 @@ class DeptJobUserService extends UserService {
       params: {
         pageIndex: params.pageIndex ?? 1,
         pageUnit: params.pageUnit ?? 10,
+        scope: params.scope ?? 'mine',
         ...(params.searchWrd ? { searchWrd: params.searchWrd } : {}),
         ...(params.searchCondition ? { searchCondition: params.searchCondition } : {}),
         ...(params.deptJobbxId ? { deptJobbxId: params.deptJobbxId } : {}),

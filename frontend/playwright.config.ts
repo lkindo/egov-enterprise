@@ -185,6 +185,14 @@ export default defineConfig({
             dependencies: ['setup'],
         },
         {
+            // 부서 업무(등록·상세·수정·삭제, 목록이 업무함 아닌 부서 업무를 보는지) ↔
+            // 업무 보고(제목 검색·페이지 크기·페이저·행 수정/삭제) 회귀 방어
+            name: 'tier-25-deptjob-workreport',
+            testMatch: /25-deptjob-workreport-journey\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
             name: 'full-suite',
             testMatch: /.*\.spec\.ts/,
             use: { ...devices['Desktop Chrome'] },

@@ -142,10 +142,39 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     void getDeptJobList_Success() throws Exception {
         Page<DeptJobDto> page = new PageImpl<>(List.of(DeptJobDto.builder().deptTaskId("TASK_1").build()));
-        given(deptJobService.getDeptJobList(any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
+        given(deptJobService.getDeptJobList(any(), any(), any(), any(), anyBoolean(), any(Pageable.class)))
+                .willReturn(page);
 
         mockMvc.perform(get("/api/v1/dept-jobs"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("[소유 스코프] scope 미지정이면 '내 업무만'(mineOnly=true)으로 조회한다")
+    @WithMockCustomUser
+    void getDeptJobList_defaultsToMineOnly() throws Exception {
+        // 기본값이 전체로 새면 토글을 달아도 실제 노출은 부서 전체가 된다.
+        // eq(true) 로만 스텁했으므로, 컨트롤러가 false 를 넘기면 스텁이 매칭되지 않아 실패한다.
+        Page<DeptJobDto> page = new PageImpl<>(List.of(DeptJobDto.builder().deptTaskId("TASK_1").build()));
+        given(deptJobService.getDeptJobList(any(), any(), any(), any(), eq(true), any(Pageable.class)))
+                .willReturn(page);
+
+        mockMvc.perform(get("/api/v1/dept-jobs"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].deptTaskId").value("TASK_1"));
+    }
+
+    @Test
+    @DisplayName("[소유 스코프] scope=dept 일 때만 부서 전체(mineOnly=false)로 조회한다")
+    @WithMockCustomUser
+    void getDeptJobList_deptScopeWidens() throws Exception {
+        Page<DeptJobDto> page = new PageImpl<>(List.of(DeptJobDto.builder().deptTaskId("TASK_1").build()));
+        given(deptJobService.getDeptJobList(any(), any(), any(), any(), eq(false), any(Pageable.class)))
+                .willReturn(page);
+
+        mockMvc.perform(get("/api/v1/dept-jobs").param("scope", "dept"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].deptTaskId").value("TASK_1"));
     }
 
     @Test

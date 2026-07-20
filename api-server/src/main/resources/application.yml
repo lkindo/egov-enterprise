@@ -93,6 +93,15 @@ nuri:
       login-months: 24          # 로그인 이력 2년(기록경로 복원 시 유효)
       user-months: 24           # 개인 사용통계 백스톱 2년(주 정리는 사용자 삭제 시 즉시)
 
+  # 로그인 무차별 대입(brute-force) 방어 — 연속 실패 N회 도달 시 계정 잠금, M분 경과 후 자동 해제.
+  # 판정/해제 주체: EgovAuthenticationProvider. 잠금 시각은 tb_user_info.lck_last_pnttm 에 기록된다.
+  # ⚠ max-failures 를 0 이하로 두면 잠금이 비활성화된다 — 오설정으로 정상 사용자가 대량 잠기는
+  #   가용성 사고를 재배포 없이 즉시 회피하기 위한 운영 탈출구다(평시에는 반드시 1 이상 유지).
+  security:
+    login:
+      max-failures: ${LOGIN_MAX_FAILURES:5}   # 연속 실패 5회째에 잠금
+      lock-minutes: ${LOGIN_LOCK_MINUTES:15}  # 잠금 지속 15분(경과 후 다음 시도에서 자동 해제)
+
 logging:
   level:
     root: warn

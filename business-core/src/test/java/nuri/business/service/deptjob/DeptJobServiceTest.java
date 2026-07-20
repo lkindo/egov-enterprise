@@ -104,7 +104,7 @@ class DeptJobServiceTest {
         when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
         mockToDtoDependencies();
 
-        Page<DeptJobDto> result = deptJobService.getDeptJobList(null, "BOX1", "0", "keyword", PageRequest.of(0, 10));
+        Page<DeptJobDto> result = deptJobService.getDeptJobList(null, "BOX1", "0", "keyword", false, PageRequest.of(0, 10));
 
         assertEquals(1, result.getTotalElements());
     }
@@ -117,7 +117,7 @@ class DeptJobServiceTest {
         when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
         mockToDtoDependencies();
 
-        Page<DeptJobDto> result = deptJobService.getDeptJobList("DEPT1", null, "1", "keyword", PageRequest.of(0, 10));
+        Page<DeptJobDto> result = deptJobService.getDeptJobList("DEPT1", null, "1", "keyword", false, PageRequest.of(0, 10));
 
         assertEquals(1, result.getTotalElements());
     }
@@ -129,9 +129,23 @@ class DeptJobServiceTest {
         Page<DeptJob> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
         when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
 
-        Page<DeptJobDto> result = deptJobService.getDeptJobList("DEPT2", null, "2", "keyword", PageRequest.of(0, 10));
+        Page<DeptJobDto> result = deptJobService.getDeptJobList("DEPT2", null, "2", "keyword", false, PageRequest.of(0, 10));
 
         assertEquals(0, result.getTotalElements());
+    }
+
+    @Test
+    @DisplayName("[보안] '내 업무만' 조회는 신원을 확정할 수 없으면 전체로 승격되지 않고 빈 결과가 된다")
+    void getDeptJobList_mineOnly_failsClosedWithoutIdentity() {
+        // 조건을 붙이지 못했을 때 그냥 통과시키면 '내 업무만' 요청이 조용히 전체 목록이 되어
+        // 소유 스코프가 이름만 남는다. fail-closed 여야 한다.
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            Page<DeptJobDto> result = deptJobService.getDeptJobList(
+                    null, null, "0", null, true, PageRequest.of(0, 10));
+
+            assertEquals(0, result.getTotalElements());
+        }
+        verify(deptJobRepository, never()).findAll(any(Predicate.class), any(PageRequest.class));
     }
 
     @Test
@@ -225,12 +239,74 @@ class DeptJobServiceTest {
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("Updated Job");
 
-        // 소유권 가드(정적)는 단위 테스트에서 no-op 처리(SecurityContext 부재) — WorkReportServiceTest 선례.
+        // 소유권 가드는 담당자(pic_id=esntlId) 기준이다. SecurityContext 가 없는 단위 테스트에서는
+        // getCurrentEsntlId() 를 담당자 본인으로 세워 통과 경로를 재현한다.
         try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                    .thenReturn(Optional.of("USER1"));
             deptJobService.updateDeptJob("JOB1", dto);
         }
 
         assertEquals("Updated Job", deptJob.getDeptTaskNm());
+    }
+
+    @Test
+    @DisplayName("부서업무 수정 - 담당자도 관리자도 아니면 403")
+    void updateDeptJob_deniedForNonPic() {
+        when(deptJobRepository.findById("JOB1")).thenReturn(Optional.of(deptJob)); // picId = USER1
+
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("남의 업무 수정 시도");
+
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                    .thenReturn(Optional.of("USER_INTRUDER"));
+
+            assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob("JOB1", dto));
+        }
+
+        assertEquals("Test Job", deptJob.getDeptTaskNm(), "인가 실패 시 값이 바뀌면 안 된다");
+    }
+
+    @Test
+    @DisplayName("[회귀] 담당자가 비어 있는 업무는 등록자 기준으로 판정한다")
+    void updateDeptJob_fallsBackToRegistrantWhenPicIsNull() {
+        // pic_id 는 nullable 이다. 담당자 검사만 걸면 담당자 공석 행은 관리자 외 아무도 손댈 수 없는
+        // 고아 데이터가 된다. 등록자 폴백이 그 경로를 살려 두는지 확인한다.
+        DeptJob noPic = DeptJob.builder()
+                .deptTaskId("TASK_NOPIC")
+                .deptTaskNm("담당자 없는 업무")
+                .build();
+        when(deptJobRepository.findById("TASK_NOPIC")).thenReturn(Optional.of(noPic));
+
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("등록자가 수정");
+
+        // 등록자 폴백은 assertOwnerOrAdmin(loginId 축)에 위임되며 mockStatic 하에서 no-op 이다.
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            assertDoesNotThrow(() -> deptJobService.updateDeptJob("TASK_NOPIC", dto));
+        }
+
+        assertEquals("등록자가 수정", noPic.getDeptTaskNm());
+    }
+
+    @Test
+    @DisplayName("[회귀] 수정 시 담당자를 보내지 않으면 기존 담당자를 유지한다")
+    void updateDeptJob_keepsExistingPicWhenOmitted() {
+        // update() 는 전달값을 그대로 덮어쓴다. 담당자 필드를 보내지 않는 폼이 저장하면
+        // pic_id 가 null 로 지워져 담당자 본인이 되레 수정 권한을 잃는다.
+        when(deptJobRepository.findById("JOB1")).thenReturn(Optional.of(deptJob));
+
+        DeptJobDto dto = new DeptJobDto();
+        dto.setDeptTaskNm("담당자 미전송 수정");
+
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                    .thenReturn(Optional.of("USER1"));
+            deptJobService.updateDeptJob("JOB1", dto);
+        }
+
+        assertEquals("USER1", deptJob.getPicId(), "담당자를 보내지 않았다고 소유권이 지워지면 안 된다");
     }
 
     @Test
@@ -240,10 +316,27 @@ class DeptJobServiceTest {
         when(deptJobRepository.findById("JOB1")).thenReturn(Optional.of(deptJob));
 
         try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                    .thenReturn(Optional.of("USER1")); // 담당자 본인
             deptJobService.deleteDeptJob("JOB1");
         }
 
         verify(deptJobRepository, times(1)).delete(deptJob);
+    }
+
+    @Test
+    @DisplayName("부서업무 삭제 - 담당자도 관리자도 아니면 403")
+    void deleteDeptJob_deniedForNonPic() {
+        when(deptJobRepository.findById("JOB1")).thenReturn(Optional.of(deptJob)); // picId = USER1
+
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                    .thenReturn(Optional.of("USER_INTRUDER"));
+
+            assertThrows(BusinessException.class, () -> deptJobService.deleteDeptJob("JOB1"));
+        }
+
+        verify(deptJobRepository, never()).delete(any(DeptJob.class));
     }
 
     @Test

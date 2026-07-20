@@ -37,8 +37,14 @@
 ### 2-D. CSP `unsafe-inline` 제거
 - prod CSP 에서 `unsafe-eval` 은 제거됨. `unsafe-inline` 은 **Next RSC nonce/PPR 인프라 도입**이 선행돼야 제거 가능(아키텍처 결정, 이전에 Phase4 포기).
 
-### 2-E. RBAC 데이터주도化 (참고 — 이미 결정됨)
-- `hasRole` 하드코딩 24건. **2026-07-11 "하이브리드 유지"로 이미 제품결정**(단일 SI 엔 완전 DB인가 과설계). 방향을 바꾸려면 재결정. (기본: 현행 유지)
+### 2-E. RBAC 데이터주도化 — **⚠ 기록 정정(2026-07-20 실측): "하이브리드 유지" 는 STALE**
+- **이전 기록**: "`hasRole` 하드코딩 24건 · 2026-07-11 '하이브리드 유지'로 제품결정 · 기본 현행 유지".
+- **실제**: 그 결정 이후 **RBAC DB 일원화가 실제로 구현·전환됐다** — 커밋 `405d91932`(2026-07-16) + `V2_11__seed_authorization_chain.sql`, 그리고 `application.yml` 에 **`rbac.db-auth.enabled: true`(enforce)** 가 설정돼 있다. 즉 URL 인가는 이미 DB(`tb_prgrm_lst`↔`tb_role_prgrm_map`) 구동이다. 라이브 실측: 프로그램 25 · 롤-프로그램 매핑 48(ROLE_ADMIN 24 / ROLE_SYSTEM 24, **그 외 롤 0 = 권한 상승 0**).
+- **"24건" 수치도 무효**: 현 실측 — 저장소 전체에서 롤 기반 `@PreAuthorize` **선언은 2건**(`foundation` 의 메타애노테이션 `@AdminOnly`·`@AdminOrSystem` 정의)이고 적용 지점 7곳(`DeptJobApiController` 3 · `InstitutionCodeService` 3 · `CommonCodeService` 1). 그 외 `SecurityUtil.hasRole(...)` 호출 17회(16개 지점: `UserService` 8 · `OnlinePollService` 3 · `BoardService` 2 · `SecurityUtil` 내부 4)는 **백엔드 헌법 제8조가 요구하는 서비스단 이중검증**이라 제거 대상이 아니다.
+- **[결정 대기] 진짜 남은 것**은 방향 재결정이 아니라 **Phase 3 마무리 2건**이다:
+  1. **Contract(폴백 제거)** — `ApiSecurityConfig` 의 하드코딩 폴백 분기(L119·L135·L137, 현재 비활성 사문)와 springdoc prod 리터럴(L213, legacy 체인이라 DB 미커버) 처리 승인.
+  2. **섀도우 검증 공백** — 태스크 제약 §5-3(불일치 0 증명 전 enforce 전환 금지)을 **어긴 채 전환**됐다(운영 `rbac.shadow.enabled: false`, 섀도우 로그 0건). 사후 섀도우 재현으로 보완할지, 리스크를 수용할지 결정 필요.
+- 상세 실측·재개 조건: `.gemini/tasks/20260716-rbac-db-unification.md` §7.
 
 ---
 
@@ -56,8 +62,13 @@
 ### 3-D. 뮤테이션 게이트 STRICT flip
 - 현재 report-only(`STRICT_MUTATION=false`·`mutationThreshold=0`). **임계값은 헌법·게이트·문서 전반 75%로 통일**(2026-07-18). 75% 하드게이트 활성은 **각 대상 클래스 실측 스코어 ≥75% 확인 후** `STRICT_MUTATION=true` 전환. **미달 상태 flip = 빌드 즉시 파손**이라 제품/품질 결정(사용자 선택: report-only 유지). (문서엔 report-only 정직 명시 완료)
 
-### 3-E. DB 표준화 잔여 (이전 세션, 제품결정성)
-- `biz_cd`/`etc_cd` 용도·로그 테이블 개인정보 보존정책·`leader_id` FK 부여 등. 비즈니스 요건 결정 사안.
+### 3-E. DB 표준화 잔여 (이전 세션, 제품결정성) — **부분 종결(2026-07-20 실측 정정)**
+원 항목은 `biz_cd`·`etc_cd`·로그 개인정보 보존정책·`leader_id` FK 4건 묶음이었다. 실측 결과 **2건은 이미 해소**되어 아래로 좁힌다.
+
+- ~~**`biz_cd` 용도** — 해소~~: `V2_22__event_info_remodel_biz_cd_to_evnt_nm.sql`(커밋 `1ae18fa2c`)로 `tb_event_info.biz_cd`(코드컬럼 오용, 실데이터 0행) → `evnt_nm` 재모델링 후 **DROP**. 라이브 OCI 실측(2026-07-20) `information_schema` 전체 스키마에 **`biz_cd` 컬럼 0건**. 결정할 것 없음.
+- ~~**`leader_id` FK 부여** — 해소~~: `V2_23__drop_leader_domain.sql`(동일 커밋, 사용자 개별 승인)로 간부일정(LSM) 死도메인 자체를 제거(`tb_leader_schdl`·`tb_leader_stts` 0행·인바운드 FK 0 실측 후 DROP). 라이브 실측 **`leader_id` 컬럼 0건** → FK 부여 대상이 소멸. 결정할 것 없음.
+- **[결정 대기] `etc_cd` 원천 스펙**: `tb_inst_cd_rcptn_log.etc_cd`(varchar 20) 1건만 잔존(라이브 실측). `V2_18` 에서 **DEFER("원천 스펙" 미확정)** 로 남긴 것 — 기관코드 수신 연계의 외부 제공 스펙이 확정돼야 용도·길이·표준용어를 확정할 수 있다. **필요 결정**: 외부 스펙 제공 또는 컬럼 폐기.
+- **[결정 대기] 로그 테이블 개인정보 보존정책 — 기구는 완비, 수치·활성화만 미정**: `LogRetentionScheduler`(business-app) + 술어 인덱스 `V2_20` + 정책 문서 `docs/04-operations/log-retention-policy.md` 까지 구축 완료. 다만 **기본 비활성**(`nuri.log.retention.enabled=false`)이고 테이블별 보존월(`{web,sys,login,user}-months`)이 **0(미확정)** 이다 — 코드 주석대로 "인수처가 보존기간 수치를 확정한 뒤 명시적으로 켠다". **필요 결정**: 테이블별 법정/사내 보존월 수치 + 활성화 시점.
 
 ---
 
@@ -87,11 +98,12 @@
 
 ## 6. 참고: 이미 결정됨 / cosmetic (별도 조치 불요)
 
-- **이미 결정**: RBAC 하이브리드 유지 · 멀티테넌시 단일 테넌트 by design · 콘텐츠 보존정책(사용자 삭제 시 webmaster 재귀속).
+- **이미 결정**: 멀티테넌시 단일 테넌트 by design · 콘텐츠 보존정책(사용자 삭제 시 webmaster 재귀속).
+  - ~~RBAC 하이브리드 유지~~ — **철회(2026-07-20 정정)**: 2026-07-11 의 "하이브리드 유지" 결정은 2026-07-16 DB 일원화 구현·enforce 전환(`405d91932`)으로 **사실상 뒤집혔다**. 현행은 URL 인가 DB 구동. 상세는 §2-E.
 - **cosmetic(이름만, 안 해도 됨)**: `EgovProperty/MessageConfig`·`EgovPasswordEncoder`·`EgovAuthenticationProvider` 개명 — egov 라이브러리를 설정/사용하는 것이라 이름이 정직(개명=false-completion 경계).
 - **전환기 필연(제거 불가)**: ARIA 데이터암호(`ariacryptoService`)·`EgovFileScrty` 레거시 해시 검증(로그인 시 BCrypt 마이그레이션 경로).
 
 ---
 
 > **처리 방법**: 위 항목 중 결정을 내리시면(예: "1-A는 (c) 템플릿 브랜치로", "3-B route_mdfcn_yn 을 mfcn_cd 로 rename") 해당 작업을 지시해 주시면 진행합니다.
-> *Last updated: 2026-07-18 (session: §2 현행화 + 점수향상 발굴 + 승인군 A~E 완료 직후)*
+> *Last updated: 2026-07-20 (실태 대조 정정 — 3-E 중 `biz_cd`·`leader_id` FK 종결[V2_22·V2_23, `1ae18fa2c`, 라이브 컬럼 0건 실측], 2-E "RBAC 하이브리드 유지" STALE 판정[`405d91932` 로 DB 일원화 실제 전환됨] 및 §6 동반 정정. 이전: 2026-07-18 §2 현행화 + 점수향상 발굴 + 승인군 A~E)*
