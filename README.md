@@ -53,7 +53,7 @@ egov-enterprise/
 └── frontend/          # Next.js 16 (App Router) 프런트엔드
 ```
 - **의존 방향**: `api-server → business-app → business-core → foundation` (단방향·비순환). 형제 도메인 간 결합은 `DomainIsolationTest`(ArchUnit)로 차단 → 프로젝트 고유 도메인의 안전한 삭제 지원.
-- **엔티티↔DTO 매핑**: MapStruct `@Mapper` 표준(수기 `from()` 대체). 신규 도메인은 스캐폴드 제너레이터 + `BaseCrudController/Service` 상속으로 생성.
+- **엔티티↔DTO 매핑**: MapStruct `@Mapper` 표준(수기 `from()` 대체). 신규 도메인은 스캐폴드 제너레이터(`scripts/generate-domain.ps1`)로 골격을 뽑되, Service·Controller 는 [getting-started §5.2.1](docs/03-guides/getting-started.md) 의 실존 관례(`ApiResponse` 래퍼·`@PreAuthorize`·`@Transactional(readOnly=true)`·MapStruct)대로 작성한다. *(제네릭 CRUD 베이스 클래스는 미구현 — 스캐폴드가 상속하는 `BaseCrudController/Service` 는 저장소에 존재하지 않는다.)*
 
 ---
 

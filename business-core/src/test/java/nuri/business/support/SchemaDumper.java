@@ -21,6 +21,15 @@ import java.util.regex.Pattern;
 /**
  * JPA 엔티티 정보를 기반으로 무결한 H2-PostgreSQL DDL 마이그레이션 스크립트를 생성하고,
  * H2 고유의 불순물 설정 쿼리를 정규식(Regex)으로 정밀 필터링하여 순수 DDL 구조만 추출하는 고성능 유틸리티 하네스.
+ *
+ * <p><b>[동기화 주의 — 정본(canonical) 사본]</b> 본 클래스는
+ * {@code business-app/src/test/java/nuri/business/support/SchemaDumper.java} 와 <b>바이트 동일한 복제본</b>이다.
+ * 두 모듈의 {@code test} 소스셋은 서로를 볼 수 없고(모듈 간 test 소스는 Gradle 기본 비공유, 상호
+ * {@code testImplementation testFixtures(...)} 의존도 없음), 이 클래스는 {@code testFixtures} 가 아닌
+ * {@code test} 소스셋에 있어 현 빌드 구성으로는 공유가 불가능하다. 따라서 중복은 build.gradle 변경 없이는 해소되지 않는다.
+ * <b>한쪽을 고치면 반드시 다른 쪽도 동일하게 고쳐라.</b>
+ * 문서({@code docs/03-guides/testing-guide.md})가 가리키는 정본은 business-core 사본이다.
+ * 근본 해소책: 본 클래스를 공용 {@code testFixtures} 로 승격하고 소비 모듈에 testFixtures 의존을 추가 → 사본 1개로 통합.
  */
 @SpringBootTest
 @ActiveProfiles("test-dump")

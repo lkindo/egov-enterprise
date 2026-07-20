@@ -95,6 +95,6 @@ rbac:
     enabled: true
   db-auth:
     enabled: false
-    secure-paths: "/api/v1/admin/**,/actuator/**,/api/v1/surveys,/api/v1/surveys/**,/api/v1/leader-schedules,/api/v1/leader-schedules/**,/api/v1/main-images,/api/v1/main-images/**,/api/v1/help,/api/v1/help/**,/api/v1/faqs,/api/v1/faqs/**,/api/v1/calendar/holidays,/api/v1/calendar/holidays/**"
+    secure-paths: "/api/v1/admin/**,/actuator/**,/api/v1/surveys,/api/v1/surveys/**,/api/v1/main-images,/api/v1/main-images/**,/api/v1/help,/api/v1/help/**,/api/v1/faqs,/api/v1/faqs/**,/api/v1/calendar/holidays,/api/v1/calendar/holidays/**"
 
 

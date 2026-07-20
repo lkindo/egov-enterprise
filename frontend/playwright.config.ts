@@ -49,6 +49,14 @@ export default defineConfig({
             dependencies: ['setup'],
         },
         {
+            // 03-board-master-management.spec.ts 는 전용 project 가 없어 tier 단위 실행 시
+            // 조용히 누락되고 full-suite 에서만 돌았다. 동일 tier-3 계열로 별도 project 를 부여한다.
+            name: 'tier-3-board-master',
+            testMatch: /03-board-master-management\.spec\.ts/,
+            use: { ...devices['Desktop Chrome'] },
+            dependencies: ['setup'],
+        },
+        {
             name: 'tier-4-quality',
             testMatch: /04-quality-resilience\.spec\.ts/,
             use: { ...devices['Desktop Chrome'] },

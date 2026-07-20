@@ -3,6 +3,8 @@
 > 작성: 2026-07-17 · 방법론: 7항목 병렬 코드/DB 실측 조사(각 high-effort) → 항목당 2렌즈 적대적 검증(Paranoid Engineer / Migration-Ops) → 누락·의존 점검(Completeness Critic) → **메인 에이전트 직접 재검증**(SOP §2.3). 총 22개 서브에이전트, 오류 0.
 > 관련: [quality-score-root-cause-analysis.md](quality-score-root-cause-analysis.md)(A~H 근본원인), [framework-reusability-assessment.md](framework-reusability-assessment.md), [user-reference-key-policy.md](user-reference-key-policy.md)
 > ⚠ 이 문서는 **결정 자료**다. 파괴적 항목(leader 도메인 제거, biz_cd DROP, 가비지 DML)은 착수 전 **개별 명시 승인** 필요(글로벌 §5).
+>
+> **Last Updated: 2026-07-20** — 이후 실제 집행 결과를 반영해 상태 갱신(§3-6 deptjob '소생' 결판 + 인가 모델 확정, §4 열린 질문 3-6.① 종결, §5 실행 순서 1·2·4 완료 확정 및 마이그레이션 번호표 소진 경고). **§1.2 번호 배정표(V2_20~V2_24)는 무효** — 실측 최신 = V2_29. 본문 §0~§3 의 "현황" 서술은 **2026-07-17 조사 시점** 기준이므로 그대로 읽지 말 것.
 
 ---
 
@@ -41,7 +43,9 @@ log-privacy ◀──사용자 삭제 훅 공유(UserDeletionEvent)──▶ not
 biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호는 공유 자원)
 ```
 
-### 1.2 마이그레이션 번호 배정 — ⚠ 최신 적용본은 **V2_19**(이번 세션 완료). 5항목이 V2_20+ 경합
+### 1.2 마이그레이션 번호 배정 — 🚫 **표 무효(2026-07-20): 배정 번호 전량 소진**
+
+> **⚠ 아래 표를 그대로 쓰지 말 것.** 작성 시점(2026-07-17) 최신은 V2_19 였으나, **2026-07-20 `flyway_schema_history` 실측 결과 최신 적용본은 V2_29**(V2_16~V2_29 전부 `success=true`)다. 표가 예약한 V2_20~V2_24 는 **다른 내용으로 이미 적용**됐다 — V2_20=log-retention 인덱스 · V2_21=note del_yn · V2_22=biz_cd 재모델링 · V2_23=leader DROP · V2_24=yn check+meta fk index. 신규 마이그레이션은 **착수 시점 최신 rank 재실측 후 V2_30 이상**으로 배정한다. (아래 표는 당시 계획 이력으로만 보존)
 공유 OCI DB + 이중 오퍼레이터 환경이라 번호 충돌 시 Flyway 파손. **한 항목씩 순차 적용·커밋** 원칙, 착수 시점 `flyway_schema_history` 최신 rank 재실측 후 다음 번호 배정:
 
 | 항목 | 제안 버전 | DDL 성격 | ZeroDowntime 린터 |
@@ -175,6 +179,21 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 **검증 반영(필수)**: ①물리 테이블명 `tb_dept_job_bx`+`tb_dept_task_info`(FK안 정확명 확인) ②`deleteDeptJobBox`가 산하 task 정리 없이 삭제 → Phase2 FK 후 산하 task 존재 시 삭제가 500 표면화 → **산하 task 검사 후 409** 로직 동반 ③allow-list 제거를 Phase1 커밋에 원자적 포함(누락 시 무가드 재유입 계속 통과) ④V2_20 적용 직전 0행 재실측(E2E 잔여 554행 선례).
 
+> **✅ 결판 (2026-07-20) — 열린 질문 3-6.① "소생 vs 폐기" = 소생(revive)**
+> 제품결정이 **구현으로 결판**났다. 3연속 커밋이 부서업무(task)를 죽은 표면에서 **동작하는 사용자 대면 기능**으로 복구했다:
+> - [`f02c35295`](../../) — API 경로 복구: 컨트롤러에 `dept-jobs` CRUD 매핑 부재(서비스 5본은 구현돼 있었음)·PK 미채번(할당식 `dept_task_id` 를 클라이언트에서 수령)·nullable 컬럼에 `required()` 오용 3중 결함 수정.
+> - [`8b2b656a1`](../../) — 상세·수정 화면 신설, **목록이 업무'함'(box)을 조회해 등록한 업무가 영원히 안 보이던 엔티티 불일치** 정정, 목록 파라미터(`pageUnit`/`searchKeyword`/`searchCondition`) 정합.
+> - [`0452fd4f8`](../../) — 업무 보고 탭 결함 3종 + 페이저 부재 + 업무함 선택 UI.
+>
+> **인가 모델 확정 — 추천안 (c)의 정제형**: 두 엔티티를 분리 판정한다(2026-07-20 컨트롤러 실측).
+> | 대상 | 인가 | 근거 |
+> |---|---|---|
+> | 업무**함** `/boxes` 쓰기 3본 | `@AdminOrSystem` | 부서 단위 **구조물** — (c) 원안대로 관리자 전용 |
+> | 부서**업무** `/dept-jobs` 쓰기 3본 | `@PreAuthorize("isAuthenticated()")` | 소생된 **사용자 대면** 기능 — 일반 사용자 생성이 전제 |
+>
+> 즉 (c)의 "무가드 봉쇄"는 달성하되, 소생 결정에 따라 task 쓰기는 관리자 전용이 아닌 인증 필수로 착지했다. **린터 allow-list 는 졸업 완료**([SecurityAuthAnnotationLinterTest.java:193](../../api-server/src/test/java/nuri/api/harness/SecurityAuthAnnotationLinterTest.java#L193) "졸업(2026-07-17)" 주석, deptjob 등재 0건).
+> **잔여**: 검증 반영 ②(산하 task 존재 시 409)·Phase2 V2_20 FK 위생은 별도 확인 필요 — 본 갱신은 소생 결판과 인가 상태만 확정한다. ※ §1.2 마이그레이션 번호표의 deptjob V2_20 배정은 **이미 소진**됨(V2_20 = log-retention 인덱스로 적용, 현재 최신 V2_29) — 재개 시 번호 재배정 필수.
+
 ---
 
 ### 3-7. leader-stts — 死도메인 처분
@@ -208,17 +227,22 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 | 3-5.① | log-privacy | **보존기간 수치**: 접속기록 1년 vs 2년(고유식별정보/5만명↑=2년) | 인수처 프로파일(공공/기업) |
 | 3-5.② | log-privacy | 법적 트랙: 보존의무 원형보존 vs 사용자삭제 시 가명화 추가 | 얹으면 전 감사컬럼 일관성 범위도 결정 |
 | 3-5.③ | log-privacy | tb_login_log 기록경로 복원 vs 死코드 제거 | 0행+호출자0(어느쪽도 데이터 무파손) |
-| 3-6.① | deptjob | 부서업무(task) 대면기능 **소생 vs 폐기** | 소생=부서배정 프로세스 전제, 폐기=페이지5+서비스 삭제 |
-| 3-7.① | leader | **'간부일정' 데모 도메인 유지 가치?** (assessment B등급 vs 실측 파손 쇼케이스) | 유지=(c)계약수리, 폐기=(b)제거 |
+| ~~3-6.①~~ | deptjob | ~~부서업무(task) 대면기능 **소생 vs 폐기**~~ → ✅ **결판: 소생(2026-07-19~20 구현)** — 상세는 §3-6 갱신 참조 | — |
+| ~~3-7.①~~ | leader | ~~**'간부일정' 데모 도메인 유지 가치?**~~ → ✅ **결판: 폐기(b) 시행 완료** — **V2_23** `drop leader domain` 라이브 적용(`success=true`, 2026-07-17) + LSM 메뉴/프로그램 시드 정리. **2026-07-20 재실측**: Java/TSX `*Leader*` 잔존 0, FE 라우트 `admin/system/lsm` 부재 | — |
 
 ---
 
 ## 5. 권장 실행 순서
 
-1. **즉시(P0)**: fe-auth Phase 0 — UI 로그인 파손 런타임 확증 + 수정 (다른 모든 것에 선행).
-2. **저위험·독립 (승인 불요, 파손0)**: deptjob (c) → log-privacy (a) → note-rcptn (a). 무결성·인가·정책 결손 해소.
-3. **하드닝**: fe-auth Phase 1-3 → fe-csp Phase 1-3(auth 후행).
-4. **파괴적 (개별 승인)**: biz_cd DROP → leader 도메인 제거.
-5. **고비용 조건부 (제품결정 후)**: fe-csp Phase 4(PPR 결정) · fe-auth Phase 4(admin 커버리지) · deptjob 소생/폐기 · leader 유지/제거.
+1. ~~**즉시(P0)**: fe-auth Phase 0~~ → ✅ **완료** (이중 프리픽스 수정 + Phase 1-3 하드닝, 미들웨어 Web Crypto 서명검증·쿠키삭제·계약축소).
+2. ~~**저위험·독립**: deptjob (c) → log-privacy (a) → note-rcptn (a)~~ → ✅ **완료** (deptjob 인가 확정 + 린터 allow-list 졸업 · **V2_20** log-retention 인덱스 · **V2_21** note_rcptn del_yn).
+3. **하드닝**: ~~fe-auth Phase 1-3~~ ✅ 완료 → **fe-csp Phase 1 부분 완료**(prod `unsafe-eval` 제거). **Phase 2-3 잔여**.
+4. ~~**파괴적 (개별 승인)**: biz_cd DROP → leader 도메인 제거~~ → ✅ **완료, 개별 승인 취득** (**V2_22** `biz_cd`→`evnt_nm` 재모델링 · **V2_23** leader 도메인 DROP ×2 + LSM 메뉴/프로그램 시드 정리).
+5. **고비용 조건부 (제품결정 후)** — 부분 결판:
+   - ✅ **deptjob 소생/폐기 → 소생으로 결판**(2026-07-19~20 구현 3커밋, §3-6 결판 블록 참조)
+   - ✅ **leader 유지/제거 → 제거로 결판**(V2_23 적용, 코드/FE 라우트 잔존 0 실측)
+   - ⏸ **잔여(제품결정)**: fe-csp Phase 4(PPR 포기 여부) · fe-auth Phase 4(admin 게이트 커버리지) — [열린 질문](#4-열린-질문-집약) 3-1.①·3-2.① 유지
+
+> **📌 마이그레이션 실측 (2026-07-20, `flyway_schema_history`)**: **V2_16~V2_29 전부 `success=true`** 로 라이브 적용 완료. **§1.2 번호 배정표는 전면 소진·무효** — 표가 예약한 V2_20~V2_24 는 다른 내용으로 이미 적용됐다(V2_20=log-retention 인덱스, V2_21=note del_yn, V2_22=biz_cd 재모델링, V2_23=leader DROP, V2_24=yn check+meta fk index). 신규 마이그레이션은 **착수 시점 최신 rank 재실측 후 V2_30 이상**으로 배정할 것.
 
 > 각 항목은 SOP 파이프라인(Dispatch→Execution→Audit→Verification) + §0.6 HARD 게이트(tsc/next build/gradle) + 해당 시 bootRun Flyway 수렴으로 집행한다.

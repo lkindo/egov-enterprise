@@ -116,7 +116,110 @@ npx --prefix frontend tsc --noEmit        # (또는) cd frontend && npx tsc --no
 ./scripts/generate-domain.ps1 -DomainName "product" -FieldName "title"
 ```
 
-> `business-app`에 Entity(`BaseTimeEntity` 상속)·DTO·Service·Repository·API 골격을 생성한다. 생성 후 QueryDSL Q타입 재생성을 위해 `./gradlew clean :business-app:compileJava` 권장. 제네릭 CRUD가 필요하면 `business-core`의 `BaseCrudController`/`BaseCrudService`를 상속한다.
+> `business-app`에 Entity(`BaseTimeEntity` 상속)·Dto·SearchDto·Repository·Service·Controller 골격을 생성한다. 생성 후 QueryDSL Q타입 재생성을 위해 `./gradlew clean :business-app:compileJava` 권장.
+
+> ⚠ **스캐폴드 산출물은 그대로는 컴파일되지 않는다 (2026-07-20 실측).**
+> `generate-domain.ps1`이 찍어내는 Service·Controller 는 `nuri.business.core.crud.BaseCrudService` / `BaseCrudController` 를 상속하지만, **이 두 클래스는 저장소에 존재하지 않는다.** (`BaseCrud` 전수 검색 결과 Java 정의 0건 — 참조처는 이 스크립트와 일부 문서뿐. 배경은 [quality-score-root-cause-analysis.md](../02-architecture/quality-score-root-cause-analysis.md) "Generic CRUD: 채택 0" 항목.)
+> 따라서 **생성된 `*Service.java`·`*Controller.java` 두 파일은 아래 §5.2.1의 실존 관례대로 다시 작성**해야 한다. Entity·Dto·SearchDto·Repository 골격은 그대로 사용 가능하다.
+
+#### 5.2.1 컨트롤러·서비스 작성 관례 (실존 코드 기준)
+
+아래는 **저장소에 실제로 있는 코드에서 발췌·요약**한 것이다. 원본을 직접 열어 대조할 것.
+
+- 참조 컨트롤러: [`DeptJobApiController`](../../api-server/src/main/java/nuri/api/controller/business/smarttoolkit/DeptJobApiController.java)(인가·로그인 주체 주입 포함), [`FaqApiController`](../../api-server/src/main/java/nuri/api/controller/business/faq/FaqApiController.java)(최소 CRUD)
+- 참조 서비스: [`DeptJobService`](../../business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java)(채번·소유권 가드), [`FaqService`](../../business-app/src/main/java/nuri/business/service/faq/FaqService.java)(최소 CRUD)
+
+**Controller** — `api-server` 에 둔다(백엔드 헌법 제1조 4항). 비즈니스 로직은 넣지 않는다.
+
+```java
+@Tag(name = "Product", description = "상품 관리 API")           // springdoc
+@RestController
+@RequestMapping("/api/v1/products")
+@RequiredArgsConstructor                                        // 생성자 주입
+public class ProductApiController {
+
+    private final ProductService productService;
+
+    @Operation(summary = "상품 목록 조회")
+    @GetMapping
+    public ResponseEntity<ApiResponse<PageResponse<ProductDto>>> getProducts(
+            @RequestParam(required = false) String keyword,
+            @PageableDefault(size = 10) Pageable pageable) {
+        return ResponseEntity.ok(ApiResponse.success(
+                PageResponse.of(productService.getProductList(keyword, pageable))));
+    }
+
+    @Operation(summary = "상품 등록")
+    @PreAuthorize("isAuthenticated()")                          // 또는 @AdminOnly / @AdminOrSystem
+    @PostMapping
+    public ResponseEntity<ApiResponse<String>> createProduct(
+            @LoginUser CustomUserDetails userDetails,           // 로그인 주체 주입
+            @Valid @RequestBody ProductDto dto) {
+        return ResponseEntity.ok(ApiResponse.success(
+                productService.createProduct(userDetails.getEsntlId(), dto)));
+    }
+}
+```
+
+| 규약 | 실체 | 근거 |
+|---|---|---|
+| 응답은 **항상** `ResponseEntity<ApiResponse<T>>` | `nuri.foundation.core.response.ApiResponse` — `ApiResponse.success(data)` | BE 헌법 제6조 |
+| 페이징 응답은 `PageResponse.of(page)` 로 감싼다 | `nuri.foundation.core.response.PageResponse` | BE 헌법 제6조 |
+| Entity 를 반환하지 않는다 (DTO 전용) | `ArchitectureTest.controller_should_not_depend_on_entity`(ArchUnit) | BE 헌법 제3조 |
+| 쓰기(POST/PUT/DELETE/PATCH)에 `@PreAuthorize` 필수 | `@AdminOnly`·`@AdminOrSystem`(`nuri.foundation.security.annotation`) 메타 애노테이션 사용 가능 | BE 헌법 제8조 1항 |
+| 로그인 주체는 `@LoginUser CustomUserDetails` 로 받는다 | `nuri.business.security.annotation.LoginUser` | — |
+| 요청 본문 검증은 `@Valid @RequestBody` | jakarta validation | — |
+
+> 🔒 **인가 누락은 빌드를 깨뜨린다.** `SecurityAuthAnnotationLinterTest`(`api-server/src/test/java/nuri/api/harness/`)가 모든 엔드포인트를 리플렉션으로 전수 조사해, 화이트리스트·DB 구동 인가(`/admin/**` URL 시큐리티) 대상이 아닌 **쓰기 엔드포인트에 `@PreAuthorize`/`@Secured` 가 없으면 실패**시킨다. 스캐폴드가 생성하는 컨트롤러에는 이 애노테이션이 없으므로 반드시 직접 추가할 것.
+
+**Service** — 재사용 admin 코어면 `business-core`, 프로젝트 고유 도메인이면 `business-app`(BE 헌법 제1조).
+
+```java
+@Service
+@RequiredArgsConstructor
+@Transactional(readOnly = true)                 // 클래스 기본값: 읽기 전용
+public class ProductService extends BaseAbstractService {
+
+    private final ProductRepository productRepository;
+    private final ProductMapper productMapper;  // MapStruct
+
+    public ProductDto getProduct(String id) {
+        return productRepository.findById(id)
+                .map(productMapper::toDto)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+    }
+
+    @Transactional                              // 쓰기 메서드만 오버라이드
+    public String createProduct(String userId, ProductDto dto) {
+        // 할당식 PK(@GeneratedValue 없음)는 서버가 채번한다. 접두사+길이 합이 컬럼 상한 이하여야 한다.
+        String id = IdGenerationUtil.generateUniqueId("PROD_", 15, productRepository::existsById);
+        productRepository.save(Product.builder().productId(id) /* ... */ .build());
+        return id;
+    }
+
+    @Transactional
+    public void updateProduct(String id, ProductDto dto) {
+        Product entity = productRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());   // IDOR 방어(서비스 계층 재검증)
+        entity.update(dto.getTitle() /* ... */);                   // 더티 체킹 — save() 재호출 불필요
+    }
+}
+```
+
+| 규약 | 실체 | 근거 |
+|---|---|---|
+| 클래스에 `@Transactional(readOnly = true)`, 쓰기 메서드만 `@Transactional` | `ServiceReadOnlyTransactionalLinterTest`(api-server 하네스)가 신규 `@Service` 누락을 빌드 실패 처리 | BE 헌법 제9조 1항 |
+| Entity↔DTO 변환은 **MapStruct** `@Mapper(componentModel = "spring")` | 예: `DeptJobMapper` — 수기 `from()` 대체 | README §프로젝트 구조 |
+| 미존재 리소스는 `new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND)` → 전역 핸들러가 404 변환 | `GlobalExceptionHandler` | BE 헌법 제7조 |
+| 소유권 재검증은 `SecurityUtil.assertOwnerOrAdmin(...)` / `assertAdmin()` | `nuri.business.security.util.SecurityUtil` | BE 헌법 제8조 |
+| 소유자 축(`loginId` vs `esntlId`)을 **대상 컬럼이 실제 저장하는 축과 일치**시킨다 | `IdentityAxisLinterTest` 가 `getCurrentUserId()` 사용을 차단 | BE 헌법 제8조 2항 · [identity-model-guide.md](identity-model-guide.md) |
+| 상태 전이 로직은 엔티티 메서드(`entity.update(...)`)에 캡슐화 | — | BE 헌법 제5조 |
+| 공통 가드(`required`/`notBlank`/`toPage`)는 `BaseAbstractService` 상속으로 사용 | `business-core/.../core/service/BaseAbstractService.java` | — |
+
+> ⚠ `required(...)` 는 **프로그래밍 오류를 잡는 가드**다. 물리 스키마상 nullable 인 도메인 값에 걸면 데이터가 생기는 순간 조회가 400 으로 깨진다(`DeptJobService.toDto` 주석의 실제 사고 사례 참조).
+
+**DB 테이블** — 스캐폴드는 `@Table(name = "tb_<domain>")` 를 찍지만 **테이블을 만들어 주지는 않는다.** `api-server/src/main/resources/db/migration/` 에 다음 버전(현재 최신 `V2_29`)으로 `V2_NN__create_tb_product.sql` 을 추가한다. 컬럼·객체 명명은 DB 헌법 제1~3조와 `meta_standard_words` 실조회를 따른다. Hibernate `ddl-auto: validate` 이므로 테이블이 없으면 **기동이 거부**된다.
 
 ---
 
@@ -140,7 +243,8 @@ npx --prefix frontend tsc --noEmit        # (또는) cd frontend && npx tsc --no
 - 브랜딩 토큰화가 대부분 반영(커밋 `7f2958179`)됐으나 일부 admin 화면에 `slate-*`/`gray-*` 잔존. 브랜드 색 완전 교체는 잔여 컴포넌트 치환 필요.
 
 ### 6.5 진행 중 (프레임워크化 확장, 2026-07-11 결정)
-- **생산성 전면화**: MapStruct + 제네릭 CRUD를 **기존 도메인까지 전면 마이그레이션** 진행 중(수기 `from()`·복붙 CRUD 제거).
+- **생산성 전면화**: MapStruct `@Mapper` 표준을 기존 도메인까지 마이그레이션 진행 중(수기 `from()` 제거).
+- ⚠ **제네릭 CRUD(`BaseCrudController`/`BaseCrudService`)는 구현되지 않았다** — 클래스 자체가 저장소에 없다(2026-07-20 실측). `generate-domain.ps1` 만 이를 상속하는 코드를 생성하므로 스캐폴드 산출물은 손봐야 컴파일된다(§5.2). CRUD 는 §5.2.1 의 명시적 관례로 작성한다.
 - **레거시 데이터 이관 도구**: 범용 소스↔표준 스키마 매핑·ETL·검증 골격 **선제 구축** 착수.
 - 도입 완료: i18n `next-intl`(seam + 로케일 카탈로그 `messages/{ko,en}.json`), 감사 로그 영속(`WebAuditLogListener` @Async), 도메인 이벤트 seam, 시크릿 외부화.
 
@@ -157,4 +261,4 @@ npx --prefix frontend tsc --noEmit        # (또는) cd frontend && npx tsc --no
 | 보안 | `/security-review`(수동) + gitleaks pre-commit | — |
 
 ---
-*Last Updated: 2026-07-11 (Claude Code — 온보딩 런북 신설. 실측 스크립트/명령 기준, 미결 제약 명시.)*
+*Last Updated: 2026-07-20 (Claude Code — §5.2 정정: 존재하지 않는 `BaseCrudController`/`BaseCrudService` 상속 지시를 제거하고, 실존 코드(`DeptJobApiController`·`DeptJobService`·`FaqService`)에서 발췌한 §5.2.1 컨트롤러·서비스 관례로 대체. §6.5 제네릭 CRUD 현황 정직화. 이전: 2026-07-11 온보딩 런북 신설.)*

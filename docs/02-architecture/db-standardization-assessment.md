@@ -4,6 +4,8 @@
 > **대상**: OCI PostgreSQL 17 `egovdb` `public` 스키마 (테이블 104 · 컬럼 1,155 · 시퀀스 8 · FK 18) + 리포지토리 하네스
 > **기준**: [DB 표준화 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md) 10조 전문 + [예외 대장](db-naming-exceptions.md)
 > **방법**: 전 수치 db-bridge SELECT 실측(추정 0건), Supabase 플랫폼 스키마 제외, CRITICAL 판정은 메인 에이전트가 독립 쿼리로 재확인
+>
+> **⏱ 현행화 (2026-07-20)**: §4 로드맵의 **잔여 4건이 이후 전부 해소**되어 상태를 갱신했다(P1 fk 명명 · P3 terms→domains 매핑 · P4 죽은 스캐너 삭제 · P5 길이스윕/ddl-auto/uk_ 승격). 근거는 각 행에 병기. 본문 §1~§3 의 점수·수치는 **2026-07-16 진단 시점** 스냅샷이며 재측정하지 않았다(잔여 해소분 미반영 — 실제 현행 점수는 이보다 높다).
 
 ---
 
@@ -61,7 +63,7 @@
 ### 🟡 MEDIUM — 정리 대상 부채
 - **타입 분열 25건(5.1%)**: cross-type 3건(pst_id varchar↔bigint, noti_sn, prcs_tm) 은 FK/조인 파손급 · varchar(30) 이상치 클러스터(tb_event_info 중심 6컬럼) · `*_cd` 길이 이탈 17건 · `*ymd*` 이탈 9건 · fax_no 4종 길이 등
 - **고아 테이블 10개**(전부 0행·코드 참조 0 — tb_role_lyr는 tb_role_hierarchy와 개념 중복) + 고아 시퀀스 sq_ntt_id + 死엔티티 board/Template.java(NOT NULL 미매핑 지뢰) + tb_ognz_info 이중 매핑
-- **tb_indv_pg_set PK 부재**(유일, 0행이라 무피해 — 지금이 적기) · fk_role_prgrm_map_* 2건 명명 이탈(V2_11, history 미기록인 지금이 정정 적기)
+- **tb_indv_pg_set PK 부재**(유일, 0행이라 무피해 — 지금이 적기) · ~~fk_role_prgrm_map_* 2건 명명 이탈~~ → ✅ **완료(2026-07-17)**: 라이브 `RENAME CONSTRAINT` + V2_11 파일 치환 원자 시행. 2026-07-20 db-bridge 재실측 — `tb_role_prgrm_map` 제약 = `fk_tb_role_prgrm_map_tb_role_info` / `fk_tb_role_prgrm_map_tb_prgrm_lst` / `pk_tb_role_prgrm_map`(구명칭 0건)
 - **ddl-auto=validate가 기본 profile뿐**: prod/dev/local/e2e 전부 none — 부팅 드리프트 검출 꺼짐
 - **린터 사각지대**: ALTER SEQUENCE RENAME/DROP TABLE 무검출, RENAME CONSTRAINT 오탐으로 V2_7이 disable-file 전체 우회. 헌법 제7조 3항 명세(환경 차등·델타 한정)와 구현 불일치
 - **fresh-DB 경로 NOT VALID 잔존**: V2_6 FK 5건은 V2_9 VALIDATE 대상에서 빠져 신규 DB에서 카탈로그 상태가 라이브와 갈라짐
@@ -74,11 +76,11 @@
 | 순위 | 작업 | 근거 | 성격 |
 |:---:|---|---|---|
 | ~~**P0**~~ | ~~고아행 정리(729행) + 보안 매핑 FK~~ — ✅ **완료(2026-07-16, V2_12)**: 고아 0건·FK 7건 VALIDATED·재발 방지 코드 결속 | CRITICAL 2 + HIGH | 완료 |
-| ~~**P1**~~ | ~~FK 배치 확장~~ — ✅ **대부분 완료(2026-07-17, V2_13·V2_14)**: FK 25→58(+33, 전건 VALIDATED)·인덱스 37 보강·타입 정렬 2건·부모 삭제 플로우 앱 결속 10종(설문 연쇄·권한/그룹/메뉴 가드·키 혼용 정정 포함). **잔여**: fk_role_prgrm_map_* 명명 정정(사용자 보류 — 라이브 RENAME+V2_11 치환 원자 시행 필요), DEFER 2건(leader_schdl — 관계 불성립/부모 사경화). 상세: [.gemini/tasks/20260717-fk-batch-expansion-p1.md](../../.gemini/tasks/20260717-fk-batch-expansion-p1.md) | HIGH | 완료(보류 1) |
+| ~~**P1**~~ | ~~FK 배치 확장~~ — ✅ **대부분 완료(2026-07-17, V2_13·V2_14)**: FK 25→58(+33, 전건 VALIDATED)·인덱스 37 보강·타입 정렬 2건·부모 삭제 플로우 앱 결속 10종(설문 연쇄·권한/그룹/메뉴 가드·키 혼용 정정 포함). ~~**잔여**: fk_role_prgrm_map_* 명명 정정(사용자 보류)~~ → ✅ **완료(2026-07-17, 사용자 승인)**: 라이브 RENAME + V2_11 치환 원자 시행([V2_11:53-70](../../api-server/src/main/resources/db/migration/V2_11__seed_authorization_chain.sql) 신명칭 가드). **2026-07-20 db-bridge 실측 확증**(신명칭 2건 존재·구명칭 0). 잔여 DEFER 2건(leader_schdl — 관계 불성립/부모 사경화, ※ leader 도메인은 V2_23 로 DROP 되어 소멸). 상세: [.gemini/tasks/20260717-fk-batch-expansion-p1.md](../../.gemini/tasks/20260717-fk-batch-expansion-p1.md) | HIGH | ✅ 완료 |
 | **P2** | 사용자 참조 키 esntl_id 단일화 규약 확정(진행 중 RBAC unification 태스크 연계) → 로그 테이블 백필 | HIGH(구조) | 제품 결정 |
-| ~~**P3**~~ | ~~SSOT 정비~~ — ✅ **대부분 완료(2026-07-17, V2_15)**: 중복 4행 제거·**무결성 제약 4종**(words 복합 PK 등)·CHAR 도메인 **0/126** 정정·rprs_yn 대표약어(67그룹 자동, 2그룹 양쪽 Y). **잔여**: terms→domains 정확 매핑은 원천(행안부 공통표준용어) 리포 부재 실측 확정 — 웹 확보 시도 예정(승인됨). 상세: [.gemini/tasks/20260717-p3-p5-ssot-and-cleanup.md](../../.gemini/tasks/20260717-p3-p5-ssot-and-cleanup.md) | HIGH(거버넌스) | 완료(매핑 보류) |
-| ~~**P4**~~ | ~~집행 하네스~~ — ✅ **완료(2026-07-17)**: SchemaNamingLinterTest 신설(명명·char금지·감사컬럼 델타 정적검사) + ZeroDowntime 린터 결함 3종 수정. **🚨 뮤테이션 검증에서 기존 게이트가 workingDir 결함으로 처음부터 silent-skip(false-green)이었음을 실증** — 경로 이중해석+미발견 즉시실패+빌드입력 등록으로 정정, 위반 주입→검출→그린 3단계 증명. 잔여: 죽은 스캐너 2파일 삭제(사용자 승인 대기), 헌법 제7조3항 명세-구현 정합(헌법 개정 사안). 상세: [.gemini/tasks/20260717-db-standard-enforcement-harness.md](../../.gemini/tasks/20260717-db-standard-enforcement-harness.md) | HIGH(집행) | 완료 |
-| ~~**P5**~~ | ~~고아·cross-type·死엔티티~~ — ✅ **핵심 완료(2026-07-17, V2_16)**: 고아 테이블 10 DROP(**104→94**)·sq_ntt_id DROP·cross-type 3건 전부 해소(pst_id varchar 정렬·prcs_tm bigint 통일·noti_sn 자연해소)·ognz 계약 3자 일치·死코드 정리(재검증 반전: Template.java 는 QTemplate 실사용으로 KEEP). **잔여**: varchar(30) 클러스터·cd/ymd 이상치·fax_no 등 길이 분열 스윕, dev/local ddl-auto=validate 복원, uk_ 인덱스 제약 승격 | MEDIUM | 대부분 완료 |
+| ~~**P3**~~ | ~~SSOT 정비~~ — ✅ **대부분 완료(2026-07-17, V2_15)**: 중복 4행 제거·**무결성 제약 4종**(words 복합 PK 등)·CHAR 도메인 **0/126** 정정·rprs_yn 대표약어(67그룹 자동, 2그룹 양쪽 Y). ~~**잔여**: terms→domains 정확 매핑(원천 리포 부재)~~ → ✅ **완료(2026-07-17, 사용자 승인, V2_17)**: 행안부 '공공데이터 공통표준용어' 2025-11판(data.go.kr 15156379) 확보 → `meta_standard_terms.domain_name` 컬럼 추가 + 전량 백필 + NOT NULL + FK. **2026-07-20 db-bridge 실측: 13,173 / 13,173 매핑(100%, NULL 0)** → 헌법 제5조 3단계(도메인 강제) 기계검증 활성화. 상세: [.gemini/tasks/20260717-p3-p5-ssot-and-cleanup.md](../../.gemini/tasks/20260717-p3-p5-ssot-and-cleanup.md) | HIGH(거버넌스) | ✅ 완료 |
+| ~~**P4**~~ | ~~집행 하네스~~ — ✅ **완료(2026-07-17)**: SchemaNamingLinterTest 신설(명명·char금지·감사컬럼 델타 정적검사) + ZeroDowntime 린터 결함 3종 수정. **🚨 뮤테이션 검증에서 기존 게이트가 workingDir 결함으로 처음부터 silent-skip(false-green)이었음을 실증** — 경로 이중해석+미발견 즉시실패+빌드입력 등록으로 정정, 위반 주입→검출→그린 3단계 증명. ~~잔여: 죽은 스캐너 2파일 삭제(사용자 승인 대기)~~ → ✅ **완료**: 루트 `check-db-standard.js`·`refactor-db-standard.js` 2파일 삭제 확인(커밋 `4daa9b16f`·`4323ee46d`, 2026-07-20 파일시스템 재확인 — 저장소 내 잔존 0). 잔여: 헌법 제7조3항 명세-구현 정합(헌법 개정 사안 — 에이전트 단독 수정 불가). 상세: [.gemini/tasks/20260717-db-standard-enforcement-harness.md](../../.gemini/tasks/20260717-db-standard-enforcement-harness.md) | HIGH(집행) | ✅ 완료 |
+| ~~**P5**~~ | ~~고아·cross-type·死엔티티~~ — ✅ **핵심 완료(2026-07-17, V2_16)**: 고아 테이블 10 DROP(**104→94**)·sq_ntt_id DROP·cross-type 3건 전부 해소(pst_id varchar 정렬·prcs_tm bigint 통일·noti_sn 자연해소)·ognz 계약 3자 일치·死코드 정리(재검증 반전: Template.java 는 QTemplate 실사용으로 KEEP). ~~**잔여**: 길이 분열 스윕 · dev/local ddl-auto=validate 복원 · uk_ 인덱스 제약 승격~~ → ✅ **전부 완료(2026-07-17, V2_18 + 후미 V2_19)**: ①길이 분열 스윕 — [V2_18](../../api-server/src/main/resources/db/migration/V2_18__normalize_column_lengths_finalize.sql) 3개 컬럼군 병렬 실측(전 항목 target ≥ 데이터 max, 무손실) + 엔티티 `@Column` ~25파일 동기화. DEFER 2건(biz_cd→V2_22 재모델링 완료, etc_cd 원천 스펙). ②ddl-auto — `application-dev.yml:31`·`application-local.yml:13` 둘 다 `validate` 복원(주석 "[P5 후미]" 표기 확인). ③uk_ 제약 승격 — V2_18 §2 로 최후 1건 승격(나머지 4건은 V2_16 테이블 DROP 으로 소멸). **2026-07-20 db-bridge 실측: uk_ 유니크 제약 9 = uk_ 인덱스 9(제약 미배킹 bare 인덱스 0)**, `sq_ntt_id` 부재 확인 | MEDIUM | ✅ 완료 |
 
 ## 5. 판정 요약
 

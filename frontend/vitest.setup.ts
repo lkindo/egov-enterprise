@@ -69,15 +69,49 @@ vi.mock('@/components/ui/tooltip', () => ({
   TooltipProvider: ({ children }: any) => children,
 }));
 
-vi.mock('@/components/ui/dialog', () => ({
-  Dialog: ({ children }: any) => children,
-  DialogTrigger: ({ children }: any) => children,
-  DialogContent: ({ children }: any) => children,
-  DialogHeader: ({ children }: any) => children,
-  DialogTitle: ({ children }: any) => children,
-  DialogDescription: ({ children }: any) => children,
-  DialogFooter: ({ children }: any) => children,
-}));
+// Radix Dialog 모킹 — ⚠ open 을 반드시 존중해야 한다.
+// 종전 모킹은 open 과 무관하게 children 을 **항상** 렌더했다. 그 결과 "다이얼로그가 닫혔는가"를
+// DOM 으로 관측할 수 없었고, 다이얼로그 테스트가 열림/닫힘을 구분하지 못한 채 green 이 됐다
+// (session-expiry-warning.test.tsx 는 바로 이 때문에 파일 로컬 모킹으로 우회해야 했다).
+//
+// 실제 Radix 의 구조를 최소한으로 흉내낸다:
+//   - Dialog: 열림 상태를 컨텍스트로 내려주되 children 은 항상 렌더한다.
+//     (Dialog 자체를 감추면 닫혀 있을 때 DialogTrigger 까지 사라져, 트리거를 눌러 여는
+//      시나리오를 아예 쓸 수 없게 된다. 실제 Radix 도 트리거는 닫힘 상태에서 계속 보인다.)
+//   - DialogContent: 열려 있을 때만 렌더한다. Header/Title/Description/Footer 는 Content 의
+//     자식이므로 함께 사라진다.
+//
+// [의도적 한계] open 을 주지 않은 비제어(uncontrolled) 사용은 '열림'으로 취급한다. 이 모킹에는
+// 트리거→열림 상태 기계가 없어 닫힘으로 두면 그런 다이얼로그를 영영 열 수 없기 때문이다.
+// 저장소의 실제 사용처는 전부 제어 방식(open={state})이라 이 한계에 걸리는 곳은 현재 없다.
+vi.mock('@/components/ui/dialog', () => {
+  const React = require('react');
+  const DialogOpenContext = React.createContext(true);
+
+  function Dialog({ children, open }: any) {
+    return React.createElement(DialogOpenContext.Provider, { value: open !== false }, children);
+  }
+
+  function DialogContent({ children }: any) {
+    return React.useContext(DialogOpenContext) ? children : null;
+  }
+
+  const passthrough = (name: string) => {
+    const Component = ({ children }: any) => children;
+    Component.displayName = name;
+    return Component;
+  };
+
+  return {
+    Dialog,
+    DialogContent,
+    DialogTrigger: passthrough('DialogTrigger'),
+    DialogHeader: passthrough('DialogHeader'),
+    DialogTitle: passthrough('DialogTitle'),
+    DialogDescription: passthrough('DialogDescription'),
+    DialogFooter: passthrough('DialogFooter'),
+  };
+});
 
 vi.mock('@/components/ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: any) => children,

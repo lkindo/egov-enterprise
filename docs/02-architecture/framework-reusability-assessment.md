@@ -3,7 +3,7 @@
 > **문서 목적**: 이 저장소를 **신규 SI 구축 / 기존 프로젝트 재개발의 베이스 프레임워크**로 재사용(포팅 → 불필요 기능 삭제 → 신규 구축·레거시 마이그레이션 이식)하려는 목표에 비추어, **현재의 한계점**과 **확장 가능한 개선안**을 진단한다.
 > **분석 관점(렌즈)**: 일반 코드 품질이 아니라 오직 **재사용성 · 모듈 추출성 · 확장성** — "이 코드베이스를 새 프로젝트의 출발점으로 복제할 때, 무엇이 재사용을 방해하고 무엇을 고치면 이식이 쉬워지는가".
 > **분석 방법**: 10개 아키텍처 차원을 병렬 심층 감사(파일 실측 기반) + 완결성 비평(cross-cutting) + 최상위 파급 주장 3건 메인 오퍼레이터 직접 재검증.
-> **작성일**: 2026-07-11 · **작성**: Claude Code (dual-operator) · **등급**: L2 (다중 모듈·아키텍처 분석)
+> **작성일**: 2026-07-11 · **작성**: Claude Code (dual-operator) · **등급**: L2 (다중 모듈·아키텍처 분석) · **Last Updated: 2026-07-20** (잔여 병목 재실측 — 아래 🔄 블록)
 
 > **⏱ 현행화 노트 (2026-07-12)**: 본 문서는 **2026-07-11 리팩터 착수 전 스냅샷**이다. §6 로드맵(Phase 1~3)은 이후 실행되어 아래 구조 변경이 **완료**되었으므로, §0~§5·§7 본문의 "현재 한계" 서술(특히 `business-suite` 모놀리스·빈 DB 부팅 불가·foundation 껍데기)은 **진단 시점(before) 기준**으로 읽는다.
 > - **모듈 분할**: `business-suite` 모놀리스 → **`business-core`**(재사용 admin 코어) + **`business-app`**(프로젝트 도메인) 분할, **`migration-tool`**(레거시 이관 ETL CLI, foundation 미의존) 신설. 현 모듈 = `foundation`·`business-core`·`business-app`·`api-server`·`migration-tool`.
@@ -15,8 +15,14 @@
 > **✅ 실태 재검증 (2026-07-18, `framework-reusability-audit-2026-07-18`)**: 4-에이전트 감사로 본문 진단을 현재 코드와 대조. **구조적 진단은 대부분 FIXED로 확증, 재사용 준비도 ≈50 → ≈70**.
 > - **STALE(해소 확증)**: ①§2 foundation 껍데기 → foundation 38파일이 계약3종·JWT백본·`UserAuthPort`/`DashboardItemProvider` 포트·`BaseEntity` 실체 커널, business 도메인 import 0. ②§7/§8 빈 DB 부팅불가 → **거짓**: `V2_0__baseline`(101테이블 DDL)+`R__seed_framework`(webmaster/`USRCNFRM_00000000001`/ROLE_ADMIN, BCrypt 멱등) → 빈 Postgres 마이그레이션→validate(엔티티 84 @Table 누락0)→admin 로그인→메뉴 렌더 성립, **하드 블로커 0**. ③§1 business-suite 모놀리스 → business-core(필수16)/business-app(샘플20) 물리분할·단방향 비순환·business-core→app import 0. ④§10 ErrorCode 도메인 혼입 → 도메인별 enum 분해.
 > - **결합 2건 역전(2026-07-18 커밋)**: §3 지적 "코어/대시보드 하드결합"의 잔재 — `DashboardApiController`→`BoardService` 를 `BoardDashboardProvider`(DashboardItemProvider 포트)로, `UserService`(필수)→`CommunityUserRepository`(샘플) 를 `UserDeletionEvent` 리스너로 역전 + `ServiceLayerIsolationTest`(서비스레이어 격리 ArchUnit 게이트) 신설.
-> - **⚠ 위 2026-07-12 노트의 false-completion 정정**: "제네릭 CRUD(BaseCrudController/BaseCrudService)" → 실측 **0파일**(미이행). "브랜딩 토큰화" → **2026-07-18 부분 이행**(중립 861건 토큰화·surface-inverse 토큰 신설, ~214 의도적 잔여·액센트 별도 — [design-tokens.md](../03-guides/design-tokens.md)). "graphify-out 제거"(Phase1) → foundation/src/main/java/graphify-out **345파일 git 재추적(회귀)**. RBAC DB일원화 → `hasRole` 하드코딩 83 + webmaster 분기 23(장식적). 이 4건은 로드맵 [x] 이나 **미이행**.
-> - **현 3대 병목(구조→파라미터화로 위상 상승)**: (1) RBAC 코드 하드코딩(데이터주도 미실현), (2) 프론트 브랜딩 비-토큰화(slate/gray 917), (3) 위생 회귀(graphify-out 재추적)+스캐폴드 제너레이터 부재. **핵심 잔여인 "필수/샘플 제품 확정(샘플 삭제·추출)"은 제품결정**이다.
+> - **⚠ 위 2026-07-12 노트의 false-completion 정정**: "제네릭 CRUD(BaseCrudController/BaseCrudService)" → 실측 **0파일**(미이행, 2026-07-20 재확인도 0). "브랜딩 토큰화" → **2026-07-18 부분 이행**(중립 861건 토큰화·surface-inverse 토큰 신설, ~214 의도적 잔여·액센트 별도 — [design-tokens.md](../03-guides/design-tokens.md)). ~~"graphify-out 제거"(Phase1) → 345파일 git 재추적(회귀)~~ → **✅ 해소(아래 참조)**. RBAC DB일원화 → 여전히 코드 판정(미이행). 
+>
+> **🔄 잔여 병목 재실측 (2026-07-20)**: 위 "현 3대 병목" 중 **(3)이 전부 해소**되어 상태를 갱신한다.
+> - ✅ **위생 회귀(graphify-out 재추적) 해소** — 커밋 [`4721e9054`](../../) "chore(hygiene): graphify-out 345파일 git 언트랙"(2026-07-18). **2026-07-20 재실측: `git ls-files '*graphify-out*'` = 0건, 디스크에도 부재.** `.gitignore`(`**/graphify-out/`) 와 정합.
+> - ✅ **스캐폴드 제너레이터 부재 해소** — [`scripts/generate-domain.ps1`](../../scripts/generate-domain.ps1)(195줄, Entity/Service/Repository/API 일괄 생성) + [`scripts/delete-domain.ps1`](../../scripts/delete-domain.ps1)(55줄) + [`scripts/rename-project.ps1`](../../scripts/rename-project.ps1) 실존(커밋 `797baa7e4`). ※ B7 의 나머지 축인 **제네릭 CRUD·`maven-publish`/BOM(코어 버전드 전파)은 여전히 미이행**이므로 B7 전체가 닫힌 것은 아니다.
+> - ⏸ **(1) RBAC 코드 하드코딩 — 미해소(유지)**: 판정이 여전히 코드측(`@PreAuthorize` 27 · 메타애노테이션 `@AdminOnly`/`@AdminOrSystem`/`@Authenticated` 11곳 · raw `hasRole/hasAnyRole` 12). 메타애노테이션 수렴으로 **개수는 줄었으나(구 실측 83) 데이터주도(`tb_role_info` 런타임 판정)는 미실현** — 성격상 여전히 병목.
+> - ⏸ **(2) 프론트 브랜딩 — 부분 해소(수치 정정)**: 2026-07-18 토큰화 이후 **2026-07-20 재실측 `frontend/src` raw `slate|gray-\d+` = 182건 / 59파일**(구 표기 917 은 토큰화 이전 수치라 stale). 잔여는 대체로 §design-tokens 가 명시한 **의도적 잔여**이나, ESLint 금지 규칙 미도입이라 재유입 방지 게이트는 없음.
+> - **핵심 잔여인 "필수/샘플 제품 확정(샘플 삭제·추출)"은 여전히 제품결정**이다.
 
 ---
 
