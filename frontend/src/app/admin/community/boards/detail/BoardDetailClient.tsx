@@ -7,7 +7,7 @@ import {
   ArrowLeft, Edit3, Trash2,
   Download,
   Calendar, Eye, User,
-  FileText, Share2, Quote,
+  FileText, Quote, AlertTriangle,
   Package, Plus, ThumbsUp
 } from 'lucide-react';
 import DOMPurify from 'isomorphic-dompurify';
@@ -15,8 +15,10 @@ import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { knowledgeService, KnowledgeDto } from '@/services/business/knowledge/knowledgeService';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
+import { fileService } from '@/services/foundation/file/FileService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
 import { BoardMaster } from '@/services/foundation/system/BoardAdminService';
 import CommentSection from '@/components/features/comment/CommentSection';
@@ -28,6 +30,8 @@ interface BoardDetailClientProps {
     article: KnowledgeDto | null;
     masterInfo: BoardMaster | null;
     initialComments: CommentVO[];
+    /** 감사 P1-1: 서버 조회 실패 사유. null 이면 정상(또는 404 = 실제로 없는 글). */
+    fetchError: string | null;
   }>;
 }
 
@@ -37,6 +41,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   const initialData = use(dataPromise);
   const router = useRouter();
   const { toast } = useToast();
+  const confirm = useConfirm();
   const searchParams = useSearchParams();
   const bbsId = searchParams.get('bbsId');
   const pstId = searchParams.get('pstId');
@@ -57,7 +62,20 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     enabled: !!initialData.article,
   });
 
-  const tmpltId = (masterInfo as any)?.tmpltId || (masterInfo as any)?.tmplat_id || 'TMPLT_LIST';
+  // 감사 P1-5/P1-6: 첨부 영역은 과거 "Technical_Spec_Unit_XXXX.pdf · 3.4 MB" 라는 존재하지 않는 파일을
+  // 하드코딩해 보여주고, 다운로드 아이콘에는 핸들러조차 없었다. 이미 있는 fileService 로 실제 목록을 배선한다.
+  const atchFileId = article?.atchFileId;
+  const {
+    data: attachments = [],
+    isError: isAttachmentError,
+    refetch: refetchAttachments,
+  } = useQuery({
+    queryKey: ['article-files', atchFileId],
+    queryFn: () => fileService.getFileList(atchFileId!),
+    enabled: !!atchFileId,
+  });
+
+  const tmpltId = masterInfo?.tmpltId || 'TMPLT_LIST';
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -85,7 +103,24 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[600px] space-y-6">
         <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-        <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase animate-pulse">Initializing Knowledge Node...</p>
+        <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase animate-pulse">게시글을 불러오는 중...</p>
+      </div>
+    );
+  }
+
+  // 감사 P1-1: 조회 장애(fetchError)와 '실제로 없는 글'(404)을 구분해 표시한다.
+  if (!article && initialData.fetchError) {
+    return (
+      <div role="alert" className="flex flex-col items-center justify-center min-h-[600px] space-y-6 text-center px-6">
+        <AlertTriangle size={48} className="text-destructive" aria-hidden="true" />
+        <div className="space-y-2">
+          <p className="text-xl font-bold text-foreground">게시글을 불러오지 못했습니다</p>
+          <p className="text-sm font-medium text-muted-foreground max-w-md">{initialData.fetchError}</p>
+        </div>
+        <div className="flex gap-3">
+          <Button onClick={() => router.refresh()}>다시 시도</Button>
+          <Button variant="outline" onClick={() => router.back()}>목록으로 돌아가기</Button>
+        </div>
       </div>
     );
   }
@@ -93,8 +128,8 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   if (!article) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[600px] space-y-6">
-        <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">Knowledge Node Not Found</p>
-        <Button onClick={() => router.back()} aria-label="뒤로 가기">Go Back</Button>
+        <p className="text-sm font-bold tracking-widest text-muted-foreground">게시글을 찾을 수 없습니다. 삭제되었거나 주소가 올바르지 않습니다.</p>
+        <Button onClick={() => router.back()} aria-label="뒤로 가기">목록으로 돌아가기</Button>
       </div>
     );
   }
@@ -124,7 +159,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               <div className="p-2 bg-card rounded-xl shadow-sm border border-border group-hover:shadow-md transition-all">
                 <ArrowLeft className="group-hover:-translate-x-1 transition-transform" size={20} />
               </div>
-              <span className="text-xs font-black tracking-[0.4em] uppercase">Return to Hub</span>
+              <span className="text-xs font-black tracking-[0.4em] uppercase">목록으로</span>
             </Button>
           </motion.div>
 
@@ -136,10 +171,10 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               className="flex items-center gap-4"
             >
               <Badge className="rounded-xl bg-primary/10 text-primary border-primary/20 font-black text-[10px] tracking-[0.2em] py-2 px-5 uppercase leading-none shadow-sm">
-                {bbsId === 'BBSMSTR_AAAAAAAAAAAA' ? 'WIKI ARCHIVE' : 'TECH COMMUNITY'}
+                {masterInfo?.bbsTtl || '게시판'}
               </Badge>
               <div className="h-[2px] w-10 bg-gradient-to-r from-primary/30 to-transparent" />
-              <span className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase">NODE_REF: {pstId?.slice(-8)}</span>
+              <span className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase">게시글 번호: {pstId}</span>
             </motion.div>
             <motion.h1 
               initial={{ y: 20, opacity: 0 }}
@@ -147,7 +182,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               transition={{ delay: 0.2 }}
               className="text-6xl md:text-7xl font-black text-foreground tracking-tighter leading-[0.85] uppercase max-w-4xl"
             >
-              {article.pstTtl || (article as any).knoNm}
+              {article.pstTtl || article.knoNm}
             </motion.h1>
           </div>
         </div>
@@ -164,7 +199,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 수정"
           >
-            <Edit3 size={20} className="text-primary" /> Edit Node
+            <Edit3 size={20} className="text-primary" /> 수정
           </Button>
           <Button
             variant="outline"
@@ -172,7 +207,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 답글 작성"
           >
-            <Plus size={20} className="text-primary" /> Fork Thread
+            <Plus size={20} className="text-primary" /> 답글
           </Button>
           <Button
             variant="outline"
@@ -183,13 +218,30 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           >
             <ThumbsUp size={20} className="text-primary" /> 추천 {(article.likeCnt ?? 0) + likeDelta}
           </Button>
+          {/*
+            감사 P1-9: native confirm() → useConfirm(변형 destructive).
+            본문에 대상 게시글 제목을 노출하고, 실패(res.success === false)도 삼키지 않고 토스트로 드러낸다.
+          */}
           <form action={async (formData) => {
-            if(!confirm('정말로 이 지식 노드를 삭제하시겠습니까?')) return;
-            const res = await deleteBoardArticle(null, formData);
-            if (res.success) {
-              toast('지식 노드가 성공적으로 제거되었습니다.', 'success');
-              queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
-              router.push(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
+            const isConfirmed = await confirm({
+              title: '게시글 삭제',
+              message: `[${article.pstTtl || '제목 없음'}] 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+              confirmText: '삭제',
+              variant: 'destructive'
+            });
+            if (!isConfirmed) return;
+
+            try {
+              const res = await deleteBoardArticle(null, formData);
+              if (res.success) {
+                toast('게시글이 삭제되었습니다.', 'success');
+                queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+                router.push(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
+              } else {
+                toast(res.message || '게시글 삭제에 실패했습니다.', 'error');
+              }
+            } catch (err: unknown) {
+              toast(err instanceof Error && err.message ? err.message : '게시글 삭제 중 오류가 발생했습니다.', 'error');
             }
           }}>
             <input type="hidden" name="bbsId" value={bbsId ?? ""} />
@@ -211,12 +263,13 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="grid grid-cols-2 lg:grid-cols-4 gap-8 p-12 bg-card/60 backdrop-blur-xl rounded-3xl border-white border shadow-2xl ring-1 ring-black/5"
+        /* 감사 P1-5: 'Integrity: Verified Node' 는 어떤 검증도 수행하지 않는 고정 문구라 카드 자체를 삭제하고,
+           실제 응답 필드로 계산 가능한 3개만 남긴다. */
+        className="grid grid-cols-1 sm:grid-cols-3 gap-8 p-12 bg-card/60 backdrop-blur-xl rounded-3xl border border-border shadow-2xl ring-1 ring-black/5"
       >
-        <MetaItem icon={<User size={20} />} label="Contributor" value={article.frstRgtrId || 'System'} />
-        <MetaItem icon={<Calendar size={20} />} label="Timestamp" value={article.crtDt || 'Today'} />
-        <MetaItem icon={<Eye size={20} />} label="Global Reach" value={`${(article.inqCnt || 0).toLocaleString()} Views`} />
-        <MetaItem icon={<Share2 size={20} />} label="Integrity" value="Verified Node" />
+        <MetaItem icon={<User size={20} />} label="작성자" value={article.frstRegisterNm || article.frstRgtrId || '-'} />
+        <MetaItem icon={<Calendar size={20} />} label="등록일" value={article.crtDt || '-'} />
+        <MetaItem icon={<Eye size={20} />} label="조회수" value={`${(article.inqCnt || 0).toLocaleString()}회`} />
       </motion.div>
 
       {/* --- CONTENT AREA --- */}
@@ -238,7 +291,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               <div className="flex items-center gap-6">
                 <span className="h-[3px] w-16 bg-gradient-to-r from-primary to-transparent rounded-full" />
                 <p className="text-[10px] font-black tracking-[0.8em] text-primary uppercase leading-none ">
-                  {tmpltId === 'TMPLT_QNA' ? (article.qnaCatCd || 'Q&A_TECHNICAL_CONSULT') : 'CORE_KNOWLEDGE_PAYLOAD'}
+                  {tmpltId === 'TMPLT_QNA' ? (article.qnaCatCd || 'Q&A') : '본문'}
                 </p>
               </div>
             </div>
@@ -253,7 +306,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
                 "prose-blockquote:border-l-[8px] prose-blockquote:border-primary prose-blockquote:bg-primary/5 prose-blockquote:px-14 prose-blockquote:py-12 prose-blockquote:rounded-3xl prose-blockquote:not-italic prose-blockquote:text-foreground prose-blockquote:font-black",
                 "prose-code:bg-muted prose-code:p-1.5 prose-code:rounded-lg prose-code:font-black prose-pre:bg-surface-inverse prose-pre:p-10 prose-pre:rounded-3xl prose-pre:shadow-2xl"
               )}
-              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.pstCn || (article as any).knoCn || '') }}
+              dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(article.pstCn || article.knoCn || '') }}
             />
 
             <div className="pt-32 flex items-center justify-center opacity-10">
@@ -265,43 +318,66 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         </motion.div>
       </div>
 
-      {/* --- Attachments Section --- */}
-      {article.atchFileId && (
-        <motion.div 
+      {/* --- 첨부파일 --- */}
+      {atchFileId && (
+        <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6 }}
           className="bg-surface-inverse rounded-[2.5rem] p-16 shadow-2xl relative overflow-hidden group border border-white/10"
         >
           <div className="absolute top-0 right-0 p-12 opacity-5 group-hover:scale-125 group-hover:rotate-12 transition-transform duration-1000">
-            <Package size={120} className="text-surface-inverse-foreground" />
+            <Package size={120} className="text-surface-inverse-foreground" aria-hidden="true" />
           </div>
           <div className="relative z-10 space-y-12">
             <div className="flex items-center gap-6">
               <div className="w-16 h-16 rounded-2xl bg-white/10 flex items-center justify-center text-primary border border-white/5 shadow-inner">
-                <Download size={32} />
+                <Download size={32} aria-hidden="true" />
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-black tracking-[0.4em] text-primary uppercase">Encrypted_Assets</p>
-                <h3 className="text-2xl font-black text-surface-inverse-foreground tracking-tighter uppercase">Associated Data Payloads</h3>
+                <p className="text-[10px] font-black tracking-[0.4em] text-primary">첨부</p>
+                <h3 className="text-2xl font-black text-surface-inverse-foreground tracking-tighter">첨부파일 {attachments.length > 0 ? `${attachments.length}건` : ''}</h3>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="flex items-center justify-between p-8 bg-white/5 rounded-2xl border border-white/10 hover:bg-white hover:text-foreground transition-all cursor-pointer group/file shadow-lg">
-                <div className="flex items-center gap-5">
-                  <div className="p-3 bg-primary/10 rounded-xl group-hover/file:bg-primary/20 transition-colors">
-                    <FileText size={24} className="text-primary" />
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-sm font-black tracking-tight leading-none mb-1">Technical_Spec_Unit_{pstId?.slice(-4)}.pdf</span>
-                    <span className="text-[10px] font-bold opacity-40 uppercase tracking-widest">3.4 MB • PDF Document</span>
-                  </div>
-                </div>
-                <div className="p-3 bg-white/10 rounded-xl group-hover/file:bg-surface-inverse group-hover/file:text-surface-inverse-foreground transition-all">
-                  <Download size={20} aria-label="파일 다운로드" />
-                </div>
+
+            {isAttachmentError ? (
+              <div role="alert" className="flex flex-wrap items-center gap-4 p-8 bg-white/5 rounded-2xl border border-destructive/40">
+                <span className="text-sm font-bold text-surface-inverse-foreground">첨부파일 목록을 불러오지 못했습니다.</span>
+                <Button type="button" variant="outline" onClick={() => void refetchAttachments()} className="h-10 px-6 rounded-xl">
+                  다시 시도
+                </Button>
               </div>
-            </div>
+            ) : attachments.length === 0 ? (
+              <p className="text-sm font-bold text-surface-inverse-foreground/60">등록된 첨부파일이 없습니다.</p>
+            ) : (
+              <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {attachments.map((file) => (
+                  <li key={`${file.atchFileId}-${file.fileSn}`}>
+                    <button
+                      type="button"
+                      onClick={() => fileService.downloadFile(file.atchFileId, file.fileSn)}
+                      aria-label={`${file.orignlFileNm} 다운로드`}
+                      className="w-full flex items-center justify-between text-left p-8 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all group/file shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                    >
+                      <div className="flex items-center gap-5 min-w-0">
+                        <div className="p-3 bg-primary/10 rounded-xl group-hover/file:bg-primary/20 transition-colors shrink-0">
+                          <FileText size={24} className="text-primary" aria-hidden="true" />
+                        </div>
+                        <div className="flex flex-col min-w-0">
+                          <span className="text-sm font-black tracking-tight leading-none mb-1 text-surface-inverse-foreground truncate">{file.orignlFileNm}</span>
+                          <span className="text-[10px] font-bold text-surface-inverse-foreground/50 tracking-widest">
+                            {formatFileSize(file.fileMg)}{file.fileExtsn ? ` · ${file.fileExtsn.toUpperCase()}` : ''}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="p-3 bg-white/10 rounded-xl text-surface-inverse-foreground shrink-0">
+                        <Download size={20} aria-hidden="true" />
+                      </div>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </motion.div>
       )}
@@ -320,6 +396,19 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       </motion.div>
     </motion.div>
   );
+}
+
+/** 바이트 단위 파일 크기를 사람이 읽는 표기로 변환한다. */
+function formatFileSize(bytes?: number): string {
+  if (!bytes || bytes <= 0) return '크기 정보 없음';
+  const units = ['B', 'KB', 'MB', 'GB'];
+  let value = bytes;
+  let unitIndex = 0;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
 }
 
 function MetaItem({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {

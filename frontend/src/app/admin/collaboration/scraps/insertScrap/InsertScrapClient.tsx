@@ -2,19 +2,19 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-;
 import axios from '@/lib/api/client';
-import { toast } from 'sonner';
+import { useToast } from '@/app/components/ui/toast';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Bookmark,  Send,  ArrowLeft,  FileText,  Globe,  Info } from "lucide-react";
+import { Bookmark, Send, ArrowLeft, FileText, Globe, Info } from "lucide-react";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
 const InsertScrapClient = () => {
   const router = useRouter();
+  const { toast } = useToast();
   const [formData, setFormData] = useState({
     scrapNm: '',
     scrapUrl: '',
@@ -27,15 +27,15 @@ const InsertScrapClient = () => {
 
     // Basic Validation
     if (!formData.scrapNm.trim()) {
-      toast.error('스크랩명을 입력해주세요.');
+      toast('스크랩명을 입력해주세요.', 'error');
       return;
     }
     if (!formData.scrapUrl.trim()) {
-      toast.error('URL을 입력해주세요.');
+      toast('URL을 입력해주세요.', 'error');
       return;
     }
-    if (!formData.scrapUrl.startsWith('http')) {
-      toast.error('올바른 URL 형식이 아닙니다. (http:// 또는 https:// 로 시작해야 합니다)');
+    if (!/^https?:\/\//i.test(formData.scrapUrl)) {
+      toast('올바른 URL 형식이 아닙니다. (http:// 또는 https:// 로 시작해야 합니다)', 'error');
       return;
     }
 
@@ -43,34 +43,34 @@ const InsertScrapClient = () => {
     try {
       // useYn 은 서버 DTO 필수값(@NotBlank)이다 — 누락 시 등록이 100% 400 으로 실패한다.
       // 소유자(userId)는 서버가 인증 주체에서 파생하므로 전송하지 않는다.
-      await axios.post('/scraps', { ...formData, useYn: 'Y' });
-      toast.success('등록되었습니다.');
+      await axios.post<void>('/scraps', { ...formData, useYn: 'Y' });
+      toast('스크랩이 등록되었습니다.', 'success');
       router.push('/admin/collaboration/scraps/selectScrapList');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || '등록에 실패했습니다.');
+    } catch (error) {
+      toast(error instanceof Error && error.message ? error.message : '등록에 실패했습니다.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
       <DynamicBreadcrumb />
 
-      <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-white ring-1 ring-border">
+      <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-card ring-1 ring-border">
         <form onSubmit={handleSubmit}>
-          <CardHeader className="border-b bg-gradient-to-tr from-hub-indigo/5 via-slate-50 to-white pb-12 pt-12 px-10">
+          <CardHeader className="border-b bg-muted/40 pb-12 pt-12 px-10">
             <div className="flex items-center gap-5">
-              <div className="p-4 bg-hub-indigo rounded-lg shadow-xl shadow-hub-indigo/20 animate-bounce-slow">
+              <div className="p-4 bg-hub-indigo rounded-lg shadow-xl shadow-hub-indigo/20">
                 <Bookmark className="w-8 h-8 text-white fill-white/20" />
               </div>
               <div className="space-y-1">
-                <CardTitle className="text-3xl font-bold tracking-tighter text-foreground ">
-                  New Scrap Archive
+                <CardTitle className="text-3xl font-bold tracking-tighter text-foreground">
+                  스크랩 신규 등록
                 </CardTitle>
                 <div className="flex items-center gap-3">
                   <div className="h-1 w-12 bg-hub-indigo rounded-lg" />
-                  <p className="text-sm font-bold text-muted-foreground tracking-tight">새로운 지식 조각을 아카이빙합니다</p>
+                  <p className="text-sm font-bold text-muted-foreground tracking-tight">자주 보는 링크와 자료를 보관합니다.</p>
                 </div>
               </div>
             </div>
@@ -80,8 +80,8 @@ const InsertScrapClient = () => {
             <div className="grid gap-8">
               {/* Scrap Name */}
               <div className="group space-y-3">
-                <Label htmlFor="scrapNm" className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
-                  Scrap Name
+                <Label htmlFor="scrapNm" className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
+                  스크랩명 <span className="text-destructive">*</span>
                 </Label>
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-muted-foreground transition-colors group-focus-within:text-hub-indigo">
@@ -92,15 +92,16 @@ const InsertScrapClient = () => {
                     placeholder="스크랩 명을 입력하세요"
                     value={formData.scrapNm}
                     onChange={(e) => setFormData({ ...formData, scrapNm: e.target.value })}
-                    className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-white focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    required
                   />
                 </div>
               </div>
 
               {/* Scrap URL */}
               <div className="group space-y-3">
-                <Label htmlFor="scrapUrl" className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
-                  Reference URL
+                <Label htmlFor="scrapUrl" className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
+                  참조 URL <span className="text-destructive">*</span>
                 </Label>
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-muted-foreground transition-colors group-focus-within:text-hub-indigo">
@@ -111,22 +112,23 @@ const InsertScrapClient = () => {
                     placeholder="https://example.com"
                     value={formData.scrapUrl}
                     onChange={(e) => setFormData({ ...formData, scrapUrl: e.target.value })}
-                    className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-white focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    required
                   />
                 </div>
               </div>
 
               {/* Scrap Description */}
               <div className="group space-y-3">
-                <Label htmlFor="scrapExpln" className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
-                  Knowledge Description
+                <Label htmlFor="scrapExpln" className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
+                  설명
                 </Label>
                 <Textarea
                   id="scrapExpln"
-                  placeholder="이 지식에 대한 상세한 기록을 남겨주세요..."
+                  placeholder="이 자료에 대한 설명을 입력하세요."
                   value={formData.scrapExpln}
                   onChange={(e) => setFormData({ ...formData, scrapExpln: e.target.value })}
-                  className="min-h-[180px] p-6 rounded-lg border-2 border-border bg-muted/30 focus:bg-white focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-medium leading-relaxed resize-none shadow-inner"
+                  className="min-h-[180px] p-6 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-medium leading-relaxed resize-none shadow-inner"
                 />
               </div>
             </div>
@@ -135,8 +137,10 @@ const InsertScrapClient = () => {
               <div className="p-2 bg-hub-indigo/10 text-hub-indigo rounded-lg shrink-0">
                 <Info size={16} />
               </div>
+              {/* 스크랩은 등록자 본인만 조회한다(ScrapService 가 등록자 기준으로 필터링). 과거 문구는 '전사 공유'로 잘못 안내했다. */}
               <p className="text-xs text-muted-foreground leading-relaxed font-medium">
-                스크랩된 정보는 전사적으로 공유되며, 나중에 <span className="text-hub-indigo font-bold">마이페이지 &gt; 스크랩 관리</span> 섹션에서 언제든지 다시 확인하고 분류할 수 있습니다.
+                등록한 스크랩은 <span className="text-hub-indigo font-bold">본인만</span> 조회할 수 있으며,
+                <span className="text-hub-indigo font-bold"> 협업 &gt; 스크랩 목록</span>에서 언제든지 다시 확인할 수 있습니다.
               </p>
             </div>
           </CardContent>
@@ -148,7 +152,7 @@ const InsertScrapClient = () => {
               onClick={() => router.back()}
               className="w-full md:w-auto h-11 px-10 rounded-lg border-2 font-bold text-muted-foreground hover:bg-muted transition-all flex items-center gap-2 group"
             >
-              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> 취소 및 돌아가기
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> 취소
             </Button>
             <Button
               type="submit"
@@ -161,7 +165,7 @@ const InsertScrapClient = () => {
                 </>
               ) : (
                 <>
-                  <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 스크랩 아카이빙 완료
+                  <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 스크랩 등록
                 </>
               )}
             </Button>

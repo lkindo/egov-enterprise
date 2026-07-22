@@ -31,9 +31,11 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { ScheduleCreateForm, type ScheduleFormValues } from '@/components/business/schedule/ScheduleCreateForm';
 import { ReportCreateForm, type ReportFormValues } from '@/components/business/report/ReportCreateForm';
 import { PRIORITY_LABEL } from '@/components/business/deptJob/DeptJobForm';
-import { toast } from 'sonner';
+// sonner 직접 호출은 문자열 정규화 페일세이프가 없어 객체가 들어오면 '[object Object]' 가 노출된다.
+import { useToast } from '@/app/components/ui/toast';
 import { getDeptScheduleMonthList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule/deptScheduleService';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import type { DeptSchedule } from '@/types/business/schedule';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -61,6 +63,9 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
 
   const [activeTab, setTabState] = useState<'job' | 'report' | 'calendar'>(initialTab);
   const [searchKeyword, setSearchKeyword] = useState('');
+  // 타이핑 한 글자마다 서버 요청이 나가던 것을 300ms 디바운스한다.
+  // 입력 컨트롤에는 원본 상태를, queryKey/요청 파라미터에는 디바운스 값만 쓴다.
+  const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
   // 목록 페이지(1-based). 종전에는 페이저가 없어 상위 N건만 보이고 나머지는 도달할 수 없었다.
   const [jobPage, setJobPage] = useState(1);
   const [reportPage, setReportPage] = useState(1);
@@ -80,6 +85,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const [isReportModalOpen, setReportModalOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<any | null>(null);
   const confirm = useConfirm();
+  const { toast } = useToast();
 
   // URL 의 tab 쿼리와 탭 상태를 동기화한다.
   // activeTab 은 useState(initialTab) 이라 '최초 마운트' 때만 쿼리를 읽는다. 그래서 이미 이 화면에
@@ -115,19 +121,31 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   //   부서 업무(DeptJob)를 만든다 — 서로 다른 엔티티라, 등록한 업무가 목록에 영원히 나타나지 않았다.
   //   탭 설명("부서별 업무 흐름")과 등록 동작이 모두 부서 업무를 가리키므로 목록을 그쪽에 맞춘다.
   //   업무함은 부서 단위 구조물이고 CRUD 가 관리자 전용(@AdminOrSystem)이라 이 화면의 대상이 아니다.
-  const { data: jobData, isLoading: isJobLoading } = useQuery({
+  const {
+    data: jobData,
+    isLoading: isJobLoading,
+    isError: isJobError,
+    error: jobError,
+    refetch: refetchJobs,
+  } = useQuery({
     // jobScope 를 queryKey 에 포함해야 토글 시 재조회된다. 빠뜨리면 캐시된 이전 스코프 결과가
     // 그대로 남아 "토글이 먹지 않는" 것처럼 보인다.
-    queryKey: ['work-jobs', searchKeyword, jobPage, jobScope],
-    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: searchKeyword, pageIndex: jobPage, pageUnit: PAGE_UNIT, scope: jobScope }),
+    queryKey: ['work-jobs', debouncedKeyword, jobPage, jobScope],
+    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: debouncedKeyword, pageIndex: jobPage, pageUnit: PAGE_UNIT, scope: jobScope }),
     enabled: activeTab === 'job'
   });
   const jobs = jobData?.list || [];
   const jobTotalPages = jobData?.totalPage ?? 1;
 
-  const { data: reportData, isLoading: isReportLoading } = useQuery({
-    queryKey: ['work-reports', searchKeyword, reportPage],
-    queryFn: () => reportService.getReports({ pageIndex: reportPage, pageUnit: PAGE_UNIT, searchWrd: searchKeyword }),
+  const {
+    data: reportData,
+    isLoading: isReportLoading,
+    isError: isReportError,
+    error: reportError,
+    refetch: refetchReports,
+  } = useQuery({
+    queryKey: ['work-reports', debouncedKeyword, reportPage],
+    queryFn: () => reportService.getReports({ pageIndex: reportPage, pageUnit: PAGE_UNIT, searchWrd: debouncedKeyword }),
     enabled: activeTab === 'report'
   });
   const reports = reportData?.list || [];
@@ -138,7 +156,13 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   //   varchar(8) 'yyyyMMdd' 컬럼과 문자열 비교하므로, 'yyyy-MM' 을 보내면 예외 없이 조용히 0건이 된다.
   //   (deptScheduleService 의 JSDoc 이 'YYYY-MM' 이라 적혀 있으나 오기다.)
   const yearMonth = format(currentDate, 'yyyyMM');
-  const { data: scheduleData, isLoading: isScheduleLoading } = useQuery({
+  const {
+    data: scheduleData,
+    isLoading: isScheduleLoading,
+    isError: isScheduleError,
+    error: scheduleError,
+    refetch: refetchSchedules,
+  } = useQuery({
     queryKey: ['work-schedules', yearMonth],
     queryFn: () => getDeptScheduleMonthList({ yearMonth }),
     enabled: activeTab === 'calendar',
@@ -168,16 +192,16 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
     try {
       if (editingReport?.rptId) {
         await reportService.updateReport(editingReport.rptId, values);
-        toast.success('업무 보고가 수정되었습니다.');
+        toast('업무 보고가 수정되었습니다.', 'success');
       } else {
         await reportService.createReport(values as Parameters<typeof reportService.createReport>[0]);
-        toast.success('업무 보고가 등록되었습니다.');
+        toast('업무 보고가 등록되었습니다.', 'success');
       }
       setReportModalOpen(false);
       setEditingReport(null);
       await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : '업무 보고 저장 중 오류가 발생했습니다.');
+      toast(error instanceof Error ? error.message : '업무 보고 저장 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -192,10 +216,10 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
     if (!ok) return;
     try {
       await reportService.deleteReport(item.rptId);
-      toast.success('업무 보고가 삭제되었습니다.');
+      toast('업무 보고가 삭제되었습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
     } catch (error) {
-      toast.error('삭제에 실패했습니다. 작성자 본인 또는 관리자만 삭제할 수 있습니다.');
+      toast('삭제에 실패했습니다. 작성자 본인 또는 관리자만 삭제할 수 있습니다.', 'error');
     }
   };
 
@@ -207,17 +231,17 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
     try {
       if (editingSchedule?.schdlId) {
         await updateDeptSchedule(editingSchedule.schdlId, values as Parameters<typeof updateDeptSchedule>[1]);
-        toast.success('일정이 수정되었습니다.');
+        toast('일정이 수정되었습니다.', 'success');
       } else {
         await createDeptSchedule(values as Parameters<typeof createDeptSchedule>[0]);
-        toast.success('일정이 등록되었습니다.');
+        toast('일정이 등록되었습니다.', 'success');
       }
       setScheduleModalOpen(false);
       setEditingSchedule(null);
       // 현재 보고 있는 달의 일정을 다시 불러온다.
       await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : '일정 저장 중 오류가 발생했습니다.');
+      toast(error instanceof Error ? error.message : '일정 저장 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -233,10 +257,10 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
     if (!ok) return;
     try {
       await deleteDeptSchedule(item.schdlId);
-      toast.success('일정이 삭제되었습니다.');
+      toast('일정이 삭제되었습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : '일정 삭제 중 오류가 발생했습니다.');
+      toast(error instanceof Error ? error.message : '일정 삭제 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -267,6 +291,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
             variant="ghost"
             size="sm"
             data-testid="schedule-edit"
+            aria-label={`${item.schdlNm || '제목 없음'} 일정 수정`}
             className="h-8 px-3 text-[10px] font-black uppercase"
             onClick={() => { setEditingSchedule(item); setScheduleModalOpen(true); }}
           >
@@ -276,6 +301,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
             variant="ghost"
             size="sm"
             data-testid="schedule-delete"
+            aria-label={`${item.schdlNm || '제목 없음'} 일정 삭제`}
             className="h-8 px-3 text-[10px] font-black uppercase text-rose-500 hover:bg-rose-500 hover:text-white"
             onClick={() => handleDeleteSchedule(item)}
           >
@@ -325,6 +351,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
             variant="ghost"
             size="sm"
             className="h-9 font-bold text-[11px]"
+            aria-label={`${item.deptTaskNm || '업무'} 상세 보기`}
             onClick={() => router.push(`/smart-toolkit/dept-job/${item.deptTaskId}`)}
           >
             상세
@@ -364,6 +391,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
             variant="ghost"
             size="sm"
             className="h-9 font-bold text-[11px]"
+            aria-label={`${item.rptTtl || '제목 없음'} 보고 수정`}
             onClick={() => { setEditingReport(item); setReportModalOpen(true); }}
           >
             수정
@@ -372,6 +400,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
             variant="ghost"
             size="sm"
             className="h-9 font-bold text-[11px] text-rose-600 hover:text-rose-700"
+            aria-label={`${item.rptTtl || '제목 없음'} 보고 삭제`}
             onClick={() => handleDeleteReport(item)}
           >
             삭제
@@ -400,7 +429,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                <Button
                  variant="ghost"
                  size="sm"
-                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'job' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
+                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'job' ? "bg-card shadow-sm text-primary" : "text-muted-foreground")}
                  onClick={() => setTab('job')}
                >
                  워크플로우
@@ -408,7 +437,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                <Button
                  variant="ghost"
                  size="sm"
-                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'report' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
+                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'report' ? "bg-card shadow-sm text-primary" : "text-muted-foreground")}
                  onClick={() => setTab('report')}
                >
                  업무 보고
@@ -416,7 +445,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                <Button
                  variant="ghost"
                  size="sm"
-                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'calendar' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
+                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'calendar' ? "bg-card shadow-sm text-primary" : "text-muted-foreground")}
                  onClick={() => setTab('calendar')}
                >
                  일정
@@ -440,11 +469,12 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
         }
       />
 
-      <HubMetricGrid>
-        <HubMetricCard title="업무 노드" value={jobData?.total ?? jobs.length} icon={Layers} color="primary" />
-        <HubMetricCard title="보고 데이터" value={reportData?.total ?? reports.length} icon={FileText} color="amber" />
-        <HubMetricCard title="이번 달 일정" value={schedules.length} icon={CalendarDays} color="indigo" />
-        <HubMetricCard title="동기화 빈도" value="매일" icon={RefreshCcw} color="indigo" />
+      {/* 지표는 서버 총건수(total)만 표기한다.
+          종전의 '동기화 빈도: 매일' 카드는 동기화 주기를 산출하는 근거가 없는 고정 문자열이라 제거했다. */}
+      <HubMetricGrid className="lg:grid-cols-3">
+        <HubMetricCard title="업무 노드" value={isJobError ? '조회 실패' : (jobData?.total ?? jobs.length)} icon={Layers} color="primary" />
+        <HubMetricCard title="보고 데이터" value={isReportError ? '조회 실패' : (reportData?.total ?? reports.length)} icon={FileText} color="amber" />
+        <HubMetricCard title="이번 달 일정" value={isScheduleError ? '조회 실패' : schedules.length} icon={CalendarDays} color="indigo" />
       </HubMetricGrid>
 
       <HubSectionCard
@@ -475,7 +505,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                     variant="ghost"
                     size="sm"
                     aria-pressed={jobScope === 'mine'}
-                    className={cn("h-8 rounded-lg px-5 text-[10px] font-black uppercase transition-all", jobScope === 'mine' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
+                    className={cn("h-8 rounded-lg px-5 text-[10px] font-black uppercase transition-all", jobScope === 'mine' ? "bg-card shadow-sm text-primary" : "text-muted-foreground")}
                     onClick={() => { setJobScope('mine'); setJobPage(1); }}
                   >
                     내 업무
@@ -484,7 +514,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                     variant="ghost"
                     size="sm"
                     aria-pressed={jobScope === 'dept'}
-                    className={cn("h-8 rounded-lg px-5 text-[10px] font-black uppercase transition-all", jobScope === 'dept' ? "bg-white shadow-sm text-primary" : "text-muted-foreground")}
+                    className={cn("h-8 rounded-lg px-5 text-[10px] font-black uppercase transition-all", jobScope === 'dept' ? "bg-card shadow-sm text-primary" : "text-muted-foreground")}
                     onClick={() => { setJobScope('dept'); setJobPage(1); }}
                   >
                     부서 전체
@@ -542,6 +572,9 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                     emptyMessage="등록된 일정이 없습니다."
                     isPremium={true}
                     className="border-none bg-transparent shadow-none"
+                    // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
+                    error={isScheduleError ? (scheduleError instanceof Error ? scheduleError : new Error('일정을 불러오지 못했습니다.')) : null}
+                    onRetry={() => void refetchSchedules()}
                   />
                 </div>
               </div>
@@ -559,12 +592,21 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
                 }
                 isPremium={true}
                 className="border-none bg-transparent shadow-none"
+                // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
+                error={
+                  activeTab === 'job'
+                    ? (isJobError ? (jobError instanceof Error ? jobError : new Error('업무 목록을 불러오지 못했습니다.')) : null)
+                    : (isReportError ? (reportError instanceof Error ? reportError : new Error('업무 보고를 불러오지 못했습니다.')) : null)
+                }
+                onRetry={() => void (activeTab === 'job' ? refetchJobs() : refetchReports())}
                 // StandardDataTable 은 처음부터 pagination 을 지원했는데 전달하지 않고 있었다.
                 // 그래서 첫 페이지 밖의 데이터에 도달할 방법이 아예 없었다.
                 pagination={{
                   currentPage: activeTab === 'job' ? jobPage : reportPage,
                   totalPages: Math.max(1, activeTab === 'job' ? jobTotalPages : reportTotalPages),
                   onPageChange: (p: number) => (activeTab === 'job' ? setJobPage(p) : setReportPage(p)),
+                  totalCount: activeTab === 'job' ? jobData?.total : reportData?.total,
+                  pageSize: PAGE_UNIT,
                 }}
               />
             )}

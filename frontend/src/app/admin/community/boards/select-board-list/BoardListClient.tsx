@@ -8,10 +8,8 @@ import { useSearchParams, usePathname, useRouter } from 'next/navigation';
 import { useBoardList } from '@/hooks/api/use-board-list';
 import { Card, CardContent, CardHeader, CardTitle, CardAction } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
-import { MessageSquare, Plus, Settings2, BookOpen, X } from "lucide-react";
-import dynamic from 'next/dynamic';
+import { MessageSquare, Plus, Settings2, BookOpen, X, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from "@/lib/utils";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
@@ -31,10 +29,8 @@ import {
   BoardSkeleton
 } from './components/BoardTemplates';
 
-const BoardStats = dynamic(() => import('./BoardStats').then(mod => mod.BoardStats), {
- ssr: false,
- loading: () => <Skeleton className="h-[280px] w-full rounded-lg" />
-});
+// 감사 P1-5: `BoardStats` 는 7일 트래픽·작성자 분포를 하드코딩 배열로 그리면서 '실시간' 배지까지 달고 있었다
+// (백엔드에 대응 API 없음). 근거 없는 지표라 컴포넌트와 호출부를 함께 제거했다.
 
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -102,8 +98,6 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
 
  const masterInfo = initialData.masterInfo || null;
  const tmpltId = masterInfo?.tmpltId || 'TMPLT_LIST';
- // 관리자 대시보드용이 아닌 실제 서비스용 위치 확인
- const isManagementView = pathname?.includes('/admin/system/board-masters') || !bbsId?.startsWith('BBSMSTR_');
 
  // 실제 API 요청에 사용할 파라미터들 (URL 파라미터를 최우선으로 함)
  const querySearchWrd = searchParams.get('searchWrd') || "";
@@ -129,7 +123,8 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const queryKey = ['boardList', bbsId, currentParams];
 
  // useQuery는 URL 파라미터가 변경될 때만 실행됨 (조회 버튼 클릭 시 router.push로 트리거)
- const { data, isLoading: loading } = useBoardList({
+ // 감사 P1-1: isError/error/refetch 를 구조분해해 조회 실패를 "게시글 0건"으로 위장하지 않는다.
+ const { data, isLoading: loading, isError, error, refetch } = useBoardList({
   bbsId,
   page: queryPage,
   pageUnit: 10,
@@ -199,11 +194,42 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    router.push(`${pathname}?${params.toString()}`);
  };
 
+ // SSR 경로(BoardListServer)가 실패했을 때 전달하는 사유. 필터가 걸리지 않은 첫 렌더는 SSR 결과를
+ // initialData 로 그대로 쓰므로, 이 값이 없으면 실패가 "0건"으로 위장된다(감사 P1-1).
+ const ssrFetchError: string | null = hasFilter ? null : (initialData?.fetchError ?? null);
+ const listError: string | null = isError
+   ? (error instanceof Error && error.message ? error.message : '게시글 목록을 불러오지 못했습니다.')
+   : ssrFetchError;
+
  const renderTemplate = () => {
    if (loading) {
      return (
        <div className="rounded-2xl border border-white/20 overflow-hidden shadow-2xl bg-white/40 backdrop-blur-xl mb-10">
          <BoardSkeleton tmpltId={tmpltId} />
+       </div>
+     );
+   }
+
+   if (listError) {
+     return (
+       <div
+         role="alert"
+         className="rounded-2xl border-2 border-destructive/30 overflow-hidden shadow-2xl bg-card mb-10"
+       >
+         <div className="flex flex-col items-center justify-center h-80 gap-5 text-center px-6">
+           <AlertTriangle className="w-12 h-12 text-destructive" aria-hidden="true" />
+           <div className="space-y-2">
+             <p className="text-xl font-bold text-foreground">게시글을 불러오지 못했습니다.</p>
+             <p className="text-sm font-medium text-muted-foreground max-w-md">{listError}</p>
+           </div>
+           <Button
+             type="button"
+             onClick={() => { void refetch(); router.refresh(); }}
+             className="font-bold"
+           >
+             다시 시도
+           </Button>
+         </div>
        </div>
      );
    }
@@ -323,17 +349,6 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  </motion.p>
  </div>
 
- {/* 관리자 뷰에서만 통계 리포트 호출 */}
- {isAdmin && isManagementView && (
-   <motion.div
-     initial={{ y: 20, opacity: 0 }}
-     animate={{ y: 0, opacity: 1 }}
-     transition={{ delay: 0.2 }}
-   >
-     <BoardStats />
-   </motion.div>
- )}
-
  <Card className="border border-white/40 shadow-2xl overflow-hidden rounded-3xl bg-white/70 backdrop-blur-2xl ring-1 ring-black/5">
  <CardHeader className="py-12 px-12 md:px-20 flex flex-col md:flex-row items-center justify-between gap-10 border-b border-border/50 relative overflow-hidden">
    {/* Header Gradient Decoration */}
@@ -354,7 +369,10 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    {masterInfo?.bbsTtl || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
  </span>
  </CardTitle>
- <p className="text-muted-foreground font-bold text-lg ml-1">총 <span className="text-primary font-black">{(totalCount || 0).toLocaleString()}개</span>의 소중한 이야기가 담겨있습니다.</p>
+ {/* 감사 P1-5: 조회가 실패한 상태에서 "총 0개"라고 단정하지 않는다. */}
+ <p className="text-muted-foreground font-bold text-lg ml-1">
+ {listError ? '게시글 수를 확인할 수 없습니다.' : <>총 <span className="text-primary font-black">{(totalCount || 0).toLocaleString()}개</span>의 게시글이 등록되어 있습니다.</>}
+ </p>
  </div>
  <CardAction className="flex items-center gap-4 relative z-10">
  {mounted && (

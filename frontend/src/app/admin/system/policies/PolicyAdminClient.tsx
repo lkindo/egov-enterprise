@@ -18,7 +18,7 @@ const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
 });
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
-import { toast } from 'sonner';
+import { useToast } from '@/app/components/ui/toast';
 import {
  Form,
  FormControl,
@@ -37,9 +37,19 @@ const policySchema = GeneratedPolicySchema.extend({
 
 type PolicyFormValues = z.infer<typeof policySchema>;
 
+/** 조회 실패 사유를 Error 로 정규화한다(StandardDataTable 의 error prop 계약). */
+function toError(value: unknown): Error {
+ if (value instanceof Error) return value;
+ if (typeof value === 'string' && value) return new Error(value);
+ return new Error('정책 목록을 불러오지 못했습니다.');
+}
+
 export default function PolicyAdminClient() {
+ const { toast } = useToast();
  const [policies, setPolicies] = useState<SystemPolicy[]>([]);
  const [loading, setLoading] = useState(true);
+ // 조회 실패를 "등록된 정책 없음"으로 위장하지 않기 위해 실패 사유를 목록 영역에 그대로 노출한다.
+ const [error, setError] = useState<Error | null>(null);
  const [selectedPolicy, setSelectedPolicy] = useState<SystemPolicy | null>(null);
  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -52,12 +62,15 @@ export default function PolicyAdminClient() {
 
  const fetchPolicies = async () => {
  setLoading(true);
+ setError(null);
  try {
  const data = await policyAdminService.getPolicies();
  setPolicies(data);
- } catch (error) {
- console.error('Failed to fetch policies:', error);
- toast.error('정책 목록을 불러오는 데 실패했습니다.');
+ } catch (err) {
+ console.error('Failed to fetch policies:', err);
+ setError(toError(err));
+ setPolicies([]);
+ toast('정책 목록을 불러오는 데 실패했습니다.', 'error');
  } finally {
  setLoading(false);
  }
@@ -80,7 +93,7 @@ export default function PolicyAdminClient() {
  if (!selectedPolicy) return;
  // 정책 유형 코드가 없으면 PUT 경로가 잘못 구성되므로 사전 차단한다.
  if (!selectedPolicy.plcyTypeCd) {
- toast.error('정책 유형 코드가 없어 저장할 수 없습니다.');
+ toast('정책 유형 코드가 없어 저장할 수 없습니다.', 'error');
  return;
  }
  try {
@@ -88,12 +101,12 @@ export default function PolicyAdminClient() {
  plcyTtl: values.plcyTtl,
  plcyCn: values.plcyCn
  });
- toast.success('정책이 성공적으로 수정되었습니다');
+ toast('정책이 성공적으로 수정되었습니다', 'success');
  setIsEditModalOpen(false);
  fetchPolicies();
- } catch (error) {
- console.error('Failed to update policy:', error);
- toast.error('정책 수정에 실패했습니다.');
+ } catch (err) {
+ console.error('Failed to update policy:', err);
+ toast('정책 수정에 실패했습니다.', 'error');
  }
  };
 
@@ -117,7 +130,11 @@ export default function PolicyAdminClient() {
  header: '내용 요약',
  accessor: (item) => (
  <div className="max-w-xs truncate text-muted-foreground opacity-60 text-left">
- {(item.plcyCn || '').replace(/<[^>]*>?/gm, '').substring(0, 50)}...
+ {(() => {
+ const plain = (item.plcyCn || '').replace(/<[^>]*>?/gm, '');
+ if (!plain) return '내용 없음';
+ return plain.length > 50 ? `${plain.substring(0, 50)}...` : plain;
+ })()}
  </div>
  )
  },
@@ -126,9 +143,10 @@ export default function PolicyAdminClient() {
  className: 'text-right',
  accessor: (item) => (
  <div className="flex justify-end">
- <Button 
- variant="ghost" 
- size="sm" 
+ <Button
+ variant="ghost"
+ size="sm"
+ aria-label={`${item.plcyTtl || item.plcyTypeCd} 정책 수정`}
  onClick={() => handleEdit(item)}
  className="hover:bg-primary/10 hover:text-primary rounded-lg"
  >
@@ -140,7 +158,8 @@ export default function PolicyAdminClient() {
  ];
 
  return (
- <div className="p-10 space-y-10 animate-in fade-in duration-1000">
+ // 루트 레이아웃이 이미 max-w-7xl · p-6/md:p-12/lg:p-16 을 제공하므로 화면 단위 p-10 이중 여백을 제거한다.
+ <div className="space-y-10 animate-in fade-in duration-1000">
  <HubHeader 
  title="시스템 정책" 
  highlight="관리" 
@@ -159,10 +178,12 @@ export default function PolicyAdminClient() {
  </Button>
  </div>
 
- <StandardDataTable 
- columns={columns} 
- data={policies} 
+ <StandardDataTable
+ columns={columns}
+ data={policies}
  loading={loading}
+ error={error}
+ onRetry={fetchPolicies}
  keyField="plcyTypeCd"
  emptyMessage="등록된 시스템 정책이 없습니다."
  />

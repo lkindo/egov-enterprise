@@ -3,30 +3,32 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
-import { TransferLog, SearchParams, PageResponse } from '@/types/foundation/system';
+import { TransferLog, PageResponse } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { Share2, Tag, Calendar, Box } from 'lucide-react';
+import { usePageParam } from '../use-log-url-state';
+
+const PAGE_SIZE = 10;
 
 const SystemLogsTransferClient = () => {
-    const [params, setParams] = useState<SearchParams>({
-        page: 1,
-        size: 10,
-        searchKeyword: '',
-    });
+    const [page, setPage] = usePageParam();
+    const [searchKeyword, setSearchKeyword] = useState('');
 
-    const { data, isLoading } = useQuery<PageResponse<TransferLog>>({
-        queryKey: ['admin-logs-transfer', params],
+    const { data, isLoading, error, refetch } = useQuery<PageResponse<TransferLog>>({
+        queryKey: ['admin-logs-transfer', page, searchKeyword],
+        // 서비스가 `pageIndex`(1-base)만 읽는다. 기존 `page: page - 1` 전달은 1페이지 요청 시 pageIndex=0 이 됐다.
         queryFn: () => systemLogAdminService.getTransferLogs({
-            page: (Number(params.page) || 1) - 1,
-            size: params.size || 10,
-            searchKeyword: params.searchKeyword,
+            pageIndex: page,
+            size: PAGE_SIZE,
+            searchKeyword,
         }),
     });
 
     const logs = (data?.list || []) as TransferLog[];
     const totalPageCount = data?.totalPage || 1;
+    const totalCount = Number(data?.total || 0);
 
     const columns: Column<TransferLog>[] = [
         {
@@ -73,10 +75,12 @@ const SystemLogsTransferClient = () => {
             header: '결과',
             accessor: (item: TransferLog) => (
                 <div className="flex justify-center">
-                    <span className={`px-2 py-0.5 rounded-md text-xs font-bold border uppercase ${
-                        item.result === 'SUCCESS' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100'
+                    <span className={`px-2 py-0.5 rounded-md text-xs font-bold border ${
+                        item.result === 'SUCCESS'
+                            ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                            : 'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
                     }`}>
-                        {item.result}
+                        {item.result || '-'}
                     </span>
                 </div>
             ),
@@ -112,14 +116,21 @@ const SystemLogsTransferClient = () => {
                 columns={columns}
                 data={logs}
                 loading={isLoading}
+                error={error}
+                onRetry={() => refetch()}
+                keyField="logId"
                 pagination={{
-                    currentPage: (params.page || 1) as number,
+                    currentPage: page,
                     totalPages: totalPageCount,
-                    onPageChange: (page: number) => setParams({ ...params, page: page }),
+                    onPageChange: setPage,
+                    totalCount,
+                    pageSize: PAGE_SIZE,
                 }}
                 search={{
                     placeholder: '기관코드, 시스템 검색..',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page: 1 }),
+                    value: searchKeyword,
+                    onSearch: (keyword: string) => { setSearchKeyword(keyword); setPage(1); },
+                    onClear: () => { setSearchKeyword(''); setPage(1); },
                 }}
             />
         </div>

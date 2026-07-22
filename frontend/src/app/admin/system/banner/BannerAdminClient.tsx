@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Image from 'next/image';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -104,7 +105,29 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
   const { toast } = useToast();
  const confirm = useConfirm();
- const [activeTab, setTab] = useState<'banner' | 'popup'>('banner');
+
+ /*
+  * [P1-7] 탭·페이지를 URL 에 반영한다. activeTab/page 는 URL 파생값이라
+  * 공유·새로고침·뒤로가기가 그대로 복원되고 사이드바 활성 표시도 유지된다.
+  * (검색어는 이 화면에 없으므로 URL 반영 대상 자체가 없다.)
+  */
+ const router = useRouter();
+ const pathname = usePathname();
+ const searchParams = useSearchParams();
+
+ const activeTab: 'banner' | 'popup' = searchParams.get('tab') === 'popup' ? 'popup' : 'banner';
+ const page = Math.max(1, Number(searchParams.get('page')) || 1);
+
+ const syncUrl = useCallback((tab: 'banner' | 'popup', nextPage: number) => {
+ const params = new URLSearchParams(searchParams.toString());
+ params.set('tab', tab);
+ params.set('page', String(nextPage));
+ router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+ }, [router, pathname, searchParams]);
+
+ /** 탭 전환 시 페이지는 1로 리셋한다(3페이지에서 탭을 바꾸면 빈 목록이 되던 문제). */
+ const setTab = useCallback((tab: 'banner' | 'popup') => syncUrl(tab, 1), [syncUrl]);
+ const setPage = useCallback((nextPage: number) => syncUrl(activeTab, nextPage), [syncUrl, activeTab]);
 
  const [isModalOpen, setIsOpen] = useState(false);
  const [editingItem, setEditingItem] = useState<Banner | Popup | null>(null);
@@ -162,29 +185,34 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  }
  }, [isModalOpen, activeTab, editingItem, bannerForm, popupForm]);
 
-  const [bannerPage, setBannerPage] = useState(1);
-  const [popupPage, setPopupPage] = useState(1);
+  /** 비활성 탭은 지표(전체 건수)만 필요하므로 항상 1페이지를 조회한다. */
+  const bannerPage = activeTab === 'banner' ? page : 1;
+  const popupPage = activeTab === 'popup' ? page : 1;
 
   /*
    * 배너/팝업 컨트롤러는 모두 Spring Pageable(page/size, 0-based)만 읽는다.
    * 종전의 pageUnit:999 는 바인딩 대상이 아니라 그대로 무시됐고, 실제로는 서버 기본값(size=10)만
    * 내려와 11번째 자산부터는 수정·게시중단이 UI 상 불가능했다. 정상 페이징 + 페이저 연결로 정정한다.
    */
-  const { data: bannerPageData, isLoading: isBannersLoading, refetch: refetchBanners } = useQuery({
+  const { data: bannerPageData, isLoading: isBannersLoading, error: bannerError, refetch: refetchBanners } = useQuery({
   queryKey: ['admin-banners', bannerPage],
   queryFn: () => bannerAdminService.getBannerList({ page: bannerPage - 1, size: PAGE_SIZE })
   });
 
-  const { data: popupPageData, isLoading: isPopupsLoading, refetch: refetchPopups } = useQuery({
+  const { data: popupPageData, isLoading: isPopupsLoading, error: popupError, refetch: refetchPopups } = useQuery({
   queryKey: ['admin-popups', popupPage],
   queryFn: () => popupAdminService.getPopupList({ page: popupPage - 1, size: PAGE_SIZE })
   });
 
-  const banners: Banner[] = bannerPageData?.list ?? initialBanners;
-  const popups: Popup[] = popupPageData?.list ?? initialPopups;
+  /*
+   * [P1-1] 조회 실패 시에는 SSR 초기값으로 되돌아가 "데이터가 있는 척" 하지 않는다.
+   * 실패는 StandardDataTable 의 error/onRetry 로 화면에 드러낸다.
+   */
+  const banners: Banner[] = bannerPageData?.list ?? (bannerError ? [] : initialBanners);
+  const popups: Popup[] = popupPageData?.list ?? (popupError ? [] : initialPopups);
   /** 지표는 현재 페이지 길이가 아니라 서버가 내려준 전체 건수(total)를 쓴다. */
-  const bannerTotal = bannerPageData?.total ?? initialBanners.length;
-  const popupTotal = popupPageData?.total ?? initialPopups.length;
+  const bannerTotal = bannerPageData?.total ?? (bannerError ? 0 : initialBanners.length);
+  const popupTotal = popupPageData?.total ?? (popupError ? 0 : initialPopups.length);
 
  const handleCreate = () => {
  setEditingItem(null);
@@ -198,10 +226,12 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  setIsOpen(true);
  };
 
- const handleDelete = async (id: string) => {
+ /** [P1-9] 확인 본문에 대상 식별자(명칭)를 노출해 오삭제를 막는다. */
+ const handleDelete = async (id: string, name: string) => {
+ const kind = activeTab === 'banner' ? '배너' : '팝업';
  const ok = await confirm({
- title: '프로모션 자산 삭제 확인',
- message: '해당 배너 또는 팝업 데이터를 시스템에서 영구적으로 삭제하시겠습니까? 게시 중인 경우 즉시 중단됩니다.',
+ title: `${kind} 삭제 확인`,
+ message: `‘${name}’ ${kind}을(를) 시스템에서 영구적으로 삭제합니다. 게시 중인 경우 즉시 중단되며 되돌릴 수 없습니다.`,
  variant: 'destructive',
  confirmText: '삭제'
  });
@@ -363,11 +393,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className: 'text-right',
  accessor: (item: Banner) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
- <Settings size={16} />
+ <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
+ <Settings size={16} aria-hidden="true" />
  </Button>
- <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.bnrId)}>
- <Trash2 size={16} />
+ <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.bnrId, item.bnrNm)}>
+ <Trash2 size={16} aria-hidden="true" />
  </Button>
  </div>
  )
@@ -376,7 +406,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  const popupColumns: Column<Popup>[] = [
  {
- header: '팝업 명세 (Architecture)',
+ header: '팝업 명세',
  accessor: (item: Popup) => (
  <div className="flex flex-col gap-2 py-4">
  <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight">{item.popupTtlNm}</span>
@@ -392,7 +422,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  )
  },
  {
- header: '화면 해상도(Resolution)',
+ header: '화면 크기',
  accessor: (item: Popup) => (
  <div className="flex flex-col gap-1.5">
  <div className="flex items-center gap-3">
@@ -403,7 +433,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  <div className="flex items-center gap-2 pl-11">
  <div className="w-1 h-1 rounded-full bg-slate-300" />
- <span className="text-xs font-bold text-muted-foreground/40 ">Coordinates: (X:{item.popupWdthPstn}, Y:{item.popupVrtcPstn})</span>
+ <span className="text-xs font-bold text-muted-foreground/40 ">표시 좌표 (X:{item.popupWdthPstn}, Y:{item.popupVrtcPstn})</span>
  </div>
  </div>
  ),
@@ -419,11 +449,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className: 'text-right w-32',
  accessor: (item: Popup) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
- <Settings size={16} />
+ <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
+ <Settings size={16} aria-hidden="true" />
  </Button>
- <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.popupId)}>
- <Trash2 size={16} />
+ <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.popupId, item.popupTtlNm)}>
+ <Trash2 size={16} aria-hidden="true" />
  </Button>
  </div>
  )
@@ -464,7 +494,14 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <div className="grid grid-cols-12 gap-12">
  <div className="col-span-12 lg:col-span-3 h-full">
  <div className="rounded-lg bg-card border-2 border-border shadow-xl h-full p-4 flex flex-col gap-4">
+ {/*
+ * 토글 버튼 시맨틱(aria-pressed)을 부여한다. role="tab" 은 쓰지 않는다 —
+ * e2e POM(PromotionPage.ts)이 getByRole('button', {name:/배너 설정/}) 로 잡고 있어
+ * 역할을 바꾸면 타 소유 파일(e2e)까지 동반 수정해야 한다.
+ */}
  <button
+ type="button"
+ aria-pressed={activeTab === 'banner'}
  onClick={() => setTab('banner')}
  className={cn(
  "w-full group p-8 rounded-lg border-2 transition-all flex items-center gap-6 relative overflow-hidden",
@@ -481,6 +518,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  {activeTab === 'banner' && <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-lg blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />}
  </button>
  <button
+ type="button"
+ aria-pressed={activeTab === 'popup'}
  onClick={() => setTab('popup')}
  className={cn(
  "w-full group p-8 rounded-lg border-2 transition-all flex items-center gap-6 relative overflow-hidden",
@@ -524,20 +563,44 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  icon={activeTab === 'banner' ? ImageIcon : Monitor}
  >
  <div className="overflow-hidden">
- <StandardDataTable<Banner | Popup>
- columns={activeTab === 'banner' ? (bannerColumns as Column<Banner | Popup>[]) : (popupColumns as Column<Banner | Popup>[])}
- data={activeTab === 'banner' ? banners : popups}
- loading={activeTab === 'banner' ? isBannersLoading : isPopupsLoading}
- onRetry={() => activeTab === 'banner' ? refetchBanners() : refetchPopups()}
- keyField={(activeTab === 'banner' ? 'bnrId' : 'popupId') as any}
- emptyMessage={`등록된 ${activeTab === 'banner' ? '배너' : '팝업'} 자산이 존재하지 않습니다.`}
+ {/* 배너/팝업은 키 필드가 달라 union 캐스팅 대신 타입별로 분리 렌더한다(as any 제거). */}
+ {activeTab === 'banner' ? (
+ <StandardDataTable<Banner>
+ columns={bannerColumns}
+ data={banners}
+ loading={isBannersLoading}
+ error={bannerError}
+ onRetry={() => refetchBanners()}
+ keyField="bnrId"
+ emptyMessage="등록된 배너 자산이 존재하지 않습니다."
  className="border-none bg-transparent"
  pagination={{
- currentPage: activeTab === 'banner' ? bannerPage : popupPage,
- totalPages: (activeTab === 'banner' ? bannerPageData?.totalPage : popupPageData?.totalPage) || 1,
- onPageChange: (p) => activeTab === 'banner' ? setBannerPage(p) : setPopupPage(p)
+ currentPage: page,
+ totalPages: bannerPageData?.totalPage || 1,
+ totalCount: bannerTotal,
+ pageSize: PAGE_SIZE,
+ onPageChange: setPage
  }}
  />
+ ) : (
+ <StandardDataTable<Popup>
+ columns={popupColumns}
+ data={popups}
+ loading={isPopupsLoading}
+ error={popupError}
+ onRetry={() => refetchPopups()}
+ keyField="popupId"
+ emptyMessage="등록된 팝업 자산이 존재하지 않습니다."
+ className="border-none bg-transparent"
+ pagination={{
+ currentPage: page,
+ totalPages: popupPageData?.totalPage || 1,
+ totalCount: popupTotal,
+ pageSize: PAGE_SIZE,
+ onPageChange: setPage
+ }}
+ />
+ )}
  </div>
  </HubSectionCard>
  </motion.div>

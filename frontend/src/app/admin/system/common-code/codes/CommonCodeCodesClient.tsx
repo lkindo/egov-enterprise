@@ -13,7 +13,7 @@ export default function CommonCodeCodesClient() {
  return (
  <div className="flex items-center justify-center min-h-[400px]">
  <div className="p-8 rounded-lg bg-muted border border-border animate-pulse">
- <p className="text-sm font-medium text-muted-foreground">통합 관리님붾㈃쇰줈 ?대룞 중..</p>
+ <p className="text-sm font-medium text-muted-foreground">통합 관리 화면으로 이동 중...</p>
  </div>
  </div>
  );

@@ -9,29 +9,44 @@ export const metadata = {
   description: '시스템에서 발생하는 약식 결재 요청을 승인 또는 반려 처리합니다',
 };
 
+/**
+ * 서버 페치 실패 메시지 추출.
+ * 실패를 빈 배열로 삼키면 화면이 "결재 건이 0건"이라고 거짓말한다(감사 P1-1).
+ * 따라서 사유를 클라이언트로 내려 StandardDataTable 의 error/onRetry 로 노출한다.
+ */
+function toFetchErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) return error.message;
+  return '약식 결재 목록을 불러오지 못했습니다.';
+}
+
 export default async function InformalSanctionPage() {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  let rawData: any = { list: [] as InformalSanctionDto[], total: 0, totalPage: 0 };
+  let list: InformalSanctionDto[] = [];
+  let fetchError: string | null = null;
 
   try {
-    rawData = await ismAdminService.getPendingList({ page: 0, size: 50 }, axiosConfig);
+    const rawData = await ismAdminService.getPendingList({ page: 0, size: 50 }, axiosConfig);
+    list = rawData?.list ?? [];
   } catch (error) {
-    console.error('Server-side fetch ism failed:', error);
+    fetchError = toFetchErrorMessage(error);
   }
 
   // [Server Serialization Optimization]
   // 키 목록은 생성 DTO(InformalSanctionDto)의 실제 필드명과 일치해야 한다.
   // (과거 로컬 인터페이스 기준의 존재하지 않는 키만 나열해 전 행이 {} 로 비던 결함 수정)
-  const optimizedContent = selectFieldsList((rawData.list ?? []) as InformalSanctionDto[], [
+  const optimizedContent = selectFieldsList(list, [
     'ifmlAtrzId', 'taskSeCd', 'taskSeNm', 'aplcntId', 'aplcntNm', 'aprvrId', 'aprvYn', 'reqYmd', 'rjctRsnCn'
   ] as (keyof InformalSanctionDto)[]);
 
   return (
     <Suspense fallback={<IsmLoading />}>
-      <IsmClient initialData={{ ...rawData, list: optimizedContent as InformalSanctionDto[] }} />
+      <IsmClient
+        initialData={{ list: optimizedContent as InformalSanctionDto[] }}
+        fetchError={fetchError}
+      />
     </Suspense>
   );
 }

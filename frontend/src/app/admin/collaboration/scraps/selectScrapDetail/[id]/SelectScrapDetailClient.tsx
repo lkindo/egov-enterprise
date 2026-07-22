@@ -1,17 +1,22 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-;
+import { useQuery } from '@tanstack/react-query';
 import axios from '@/lib/api/client';
-import { toast } from 'sonner';
+import type { components } from '@/types/generated-api';
+import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Bookmark,  Globe,  FileText,  ArrowLeft,  Send,  Trash2 } from "lucide-react";
+import { Bookmark, Globe, FileText, ArrowLeft, Send, Trash2, AlertTriangle } from "lucide-react";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
+
+/** 스크랩 계약의 SSOT 는 생성 타입이다(로컬 인터페이스 재선언 금지). */
+type Scrap = components['schemas']['ScrapDto'];
 
 /** 폼이 다루는 필드(서버 응답의 파생 필드 scrapId/userId/crtDt 는 폼 상태로 끌어오지 않는다). */
 interface ScrapForm {
@@ -21,10 +26,14 @@ interface ScrapForm {
   useYn: string;
 }
 
+const LIST_PATH = '/admin/collaboration/scraps/selectScrapList';
+
 const SelectScrapDetailClient = () => {
   const router = useRouter();
   const params = useParams();
-  const id = params.id;
+  const id = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : '';
+  const { toast } = useToast();
+  const confirm = useConfirm();
 
   const [formData, setFormData] = useState<ScrapForm>({
     scrapNm: '',
@@ -33,74 +42,73 @@ const SelectScrapDetailClient = () => {
     useYn: 'Y'
   });
   const [loading, setLoading] = useState(false);
-  const [fetching, setFetching] = useState(true);
 
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['scrap-detail', id],
+    queryFn: () => axios.get<Scrap>(`/scraps/${id}`),
+    enabled: Boolean(id),
+  });
+
+  // [방어] 응답 전면 교체(setFormData(response))는 응답에 없는 키를 undefined 로 만들어
+  // 이후 formData.scrapUrl.trim() 에서 TypeError 를 유발했다 → 기존 상태에 병합한다.
   useEffect(() => {
-    if (id) {
-      const fetchDetail = async () => {
-        try {
-          const response = (await axios.get(`/scraps/${id}`)) as Partial<ScrapForm> | null;
-          // [방어] 응답 전면 교체(setFormData(response))는 응답에 없는 키를 undefined 로 만들어
-          // 이후 formData.scrapUrl.trim() 에서 TypeError 를 유발했다 → 기존 상태에 병합한다.
-          setFormData((prev) => ({
-            ...prev,
-            scrapNm: response?.scrapNm ?? prev.scrapNm,
-            scrapUrl: response?.scrapUrl ?? prev.scrapUrl,
-            scrapExpln: response?.scrapExpln ?? prev.scrapExpln,
-            useYn: response?.useYn ?? prev.useYn
-          }));
-        } catch (error) {
-          console.error('Failed to fetch scrap detail', error);
-          toast.error('스크랩 정보를 불러오지 못했습니다.');
-        } finally {
-          setFetching(false);
-        }
-      };
-      fetchDetail();
-    }
-  }, [id]);
+    if (!data) return;
+    setFormData((prev) => ({
+      scrapNm: data.scrapNm ?? prev.scrapNm,
+      scrapUrl: data.scrapUrl ?? prev.scrapUrl,
+      scrapExpln: data.scrapExpln ?? prev.scrapExpln,
+      useYn: data.useYn ?? prev.useYn
+    }));
+  }, [data]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.scrapNm?.trim()) {
-      toast.error('스크랩명을 입력해주세요.');
+      toast('스크랩명을 입력해주세요.', 'error');
       return;
     }
     if (!formData.scrapUrl?.trim()) {
-      toast.error('URL을 입력해주세요.');
+      toast('URL을 입력해주세요.', 'error');
       return;
     }
 
     setLoading(true);
     try {
       // useYn 은 서버 DTO 필수값(@NotBlank) — 상태에 항상 보유하고 그대로 전송한다.
-      await axios.put(`/scraps/${id}`, { ...formData, useYn: formData.useYn || 'Y' });
-      toast.success('수정되었습니다.');
-      router.push('/admin/collaboration/scraps/selectScrapList');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || '수정에 실패했습니다.');
+      await axios.put<void>(`/scraps/${id}`, { ...formData, useYn: formData.useYn || 'Y' });
+      toast('스크랩이 수정되었습니다.', 'success');
+      router.push(LIST_PATH);
+    } catch (err) {
+      toast(err instanceof Error && err.message ? err.message : '수정에 실패했습니다.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
+  /** [P1-9] native confirm → useConfirm. 본문에 대상 스크랩명을 노출한다. */
   const handleDelete = async () => {
-    if (!confirm('정말로 삭제하시겠습니까?')) return;
+    const ok = await confirm({
+      title: '스크랩 삭제',
+      message: `'${formData.scrapNm || '제목 없음'}' 스크랩을 삭제합니다. 삭제한 항목은 복구할 수 없습니다.`,
+      confirmText: '삭제',
+      variant: 'destructive',
+    });
+    if (!ok) return;
 
     setLoading(true);
     try {
-      await axios.delete(`/scraps/${id}`);
-      toast.success('삭제되었습니다.');
-      router.push('/admin/collaboration/scraps/selectScrapList');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || '삭제에 실패했습니다.');
+      await axios.delete<void>(`/scraps/${id}`);
+      toast('스크랩이 삭제되었습니다.', 'success');
+      router.push(LIST_PATH);
+    } catch (err) {
+      toast(err instanceof Error && err.message ? err.message : '삭제에 실패했습니다.', 'error');
     } finally {
       setLoading(false);
     }
   };
 
-  if (fetching) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="w-10 h-10 border-4 border-hub-indigo border-t-transparent rounded-full animate-spin" />
@@ -108,32 +116,49 @@ const SelectScrapDetailClient = () => {
     );
   }
 
+  // [P1-1] 조회 실패를 빈 폼으로 위장하지 않는다 — 빈 폼에서 저장하면 원본이 덮어써진다.
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-center">
+        <AlertTriangle className="w-10 h-10 text-rose-500" />
+        <p className="text-sm font-bold text-foreground">스크랩 정보를 불러오지 못했습니다.</p>
+        <p className="text-xs text-muted-foreground">{(error as Error)?.message}</p>
+        <div className="flex gap-3">
+          <Button variant="outline" onClick={() => { void refetch(); }}>다시 시도</Button>
+          <Button variant="ghost" onClick={() => router.push(LIST_PATH)}>목록으로</Button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex flex-col gap-6 p-6 max-w-4xl mx-auto w-full">
+    <div className="flex flex-col gap-6 max-w-4xl mx-auto w-full">
       <DynamicBreadcrumb />
 
-      <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-white ring-1 ring-border">
+      <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-card ring-1 ring-border">
         <form onSubmit={handleSubmit}>
-          <CardHeader className="border-b bg-gradient-to-tr from-hub-indigo/5 via-slate-50 to-white pb-12 pt-12 px-10">
-            <div className="flex items-center justify-between">
+          <CardHeader className="border-b bg-muted/40 pb-12 pt-12 px-10">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div className="flex items-center gap-5">
                 <div className="p-4 bg-hub-indigo rounded-lg shadow-xl shadow-hub-indigo/20">
                   <Bookmark className="w-8 h-8 text-white fill-white/20" />
                 </div>
                 <div className="space-y-1">
-                  <CardTitle className="text-3xl font-bold tracking-tighter text-foreground ">
-                    Scrap Archive Detail
+                  <CardTitle className="text-3xl font-bold tracking-tighter text-foreground">
+                    스크랩 상세
                   </CardTitle>
                   <p className="text-sm font-bold text-muted-foreground leading-relaxed tracking-tight">
-                    저장된 지식 조각을 확인하고 수정할 수 있습니다
+                    저장된 스크랩을 확인하고 수정할 수 있습니다.
                   </p>
                 </div>
               </div>
               <Button
                 type="button"
                 variant="destructive"
-                onClick={handleDelete}
-                className="rounded-lg h-12 gap-2 shadow-lg shadow-rose-100"
+                aria-label={`${formData.scrapNm || '스크랩'} 삭제`}
+                onClick={() => { void handleDelete(); }}
+                disabled={loading}
+                className="rounded-lg h-12 gap-2 shadow-lg shrink-0"
               >
                 <Trash2 size={16} /> 삭제
               </Button>
@@ -143,8 +168,8 @@ const SelectScrapDetailClient = () => {
           <CardContent className="p-10 space-y-10">
             <div className="grid gap-8">
               <div className="group space-y-3">
-                <Label htmlFor="scrapNm" className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
-                  Scrap Name
+                <Label htmlFor="scrapNm" className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
+                  스크랩명 <span className="text-destructive">*</span>
                 </Label>
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-muted-foreground transition-colors group-focus-within:text-hub-indigo">
@@ -155,14 +180,15 @@ const SelectScrapDetailClient = () => {
                     placeholder="스크랩 명을 입력하세요"
                     value={formData.scrapNm}
                     onChange={(e) => setFormData({ ...formData, scrapNm: e.target.value })}
-                    className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-white focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    required
                   />
                 </div>
               </div>
 
               <div className="group space-y-3">
-                <Label htmlFor="scrapUrl" className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
-                  Reference URL
+                <Label htmlFor="scrapUrl" className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
+                  참조 URL <span className="text-destructive">*</span>
                 </Label>
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-muted-foreground transition-colors group-focus-within:text-hub-indigo">
@@ -173,21 +199,22 @@ const SelectScrapDetailClient = () => {
                     placeholder="https://example.com"
                     value={formData.scrapUrl}
                     onChange={(e) => setFormData({ ...formData, scrapUrl: e.target.value })}
-                    className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-white focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    required
                   />
                 </div>
               </div>
 
               <div className="group space-y-3">
-                <Label htmlFor="scrapExpln" className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
-                  Knowledge Description
+                <Label htmlFor="scrapExpln" className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
+                  설명
                 </Label>
                 <Textarea
                   id="scrapExpln"
-                  placeholder="이 지식에 대한 상세한 기록을 남겨주세요..."
+                  placeholder="이 자료에 대한 설명을 입력하세요."
                   value={formData.scrapExpln}
                   onChange={(e) => setFormData({ ...formData, scrapExpln: e.target.value })}
-                  className="min-h-[180px] p-6 rounded-lg border-2 border-border bg-muted/30 focus:bg-white focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-medium leading-relaxed resize-none shadow-inner"
+                  className="min-h-[180px] p-6 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-medium leading-relaxed resize-none shadow-inner"
                 />
               </div>
             </div>
@@ -200,7 +227,7 @@ const SelectScrapDetailClient = () => {
               onClick={() => router.back()}
               className="w-full md:w-auto h-11 px-10 rounded-lg border-2 font-bold text-muted-foreground hover:bg-muted transition-all flex items-center gap-2 group"
             >
-              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> 목록으로 돌아가기
+              <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" /> 목록으로
             </Button>
             <Button
               type="submit"
@@ -213,7 +240,7 @@ const SelectScrapDetailClient = () => {
                 </>
               ) : (
                 <>
-                  <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 스크랩 수정 완료
+                  <Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 수정 완료
                 </>
               )}
             </Button>

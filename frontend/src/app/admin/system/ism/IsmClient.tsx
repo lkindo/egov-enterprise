@@ -56,7 +56,14 @@ type IsmFormValues = z.infer<typeof ismSchema>;
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
-export default function IsmClient({ initialData }: { initialData: { list: InformalSanctionDto[] } }) {
+export default function IsmClient({
+ initialData,
+ fetchError = null,
+}: {
+ initialData: { list: InformalSanctionDto[] };
+ /** 서버 컴포넌트에서 목록 조회가 실패한 사유(성공 시 null). 빈 목록 위장을 막기 위해 표시한다. */
+ fetchError?: string | null;
+}) {
  const router = useRouter();
  const { toast } = useToast();
 
@@ -71,6 +78,12 @@ export default function IsmClient({ initialData }: { initialData: { list: Inform
  });
 
  const ismList = initialData.list || [];
+ /** 조회 실패는 '데이터 없음'이 아니라 오류로 드러낸다(재시도는 서버 컴포넌트 재실행). */
+ const listError = fetchError ? new Error(fetchError) : null;
+
+ const pendingCount = ismList.filter(i => isSanctionPending(i.aprvYn)).length;
+ const approvedCount = ismList.filter(i => i.aprvYn === SANCTION_STATUS.APPROVED).length;
+ const rejectedCount = ismList.filter(i => i.aprvYn === SANCTION_STATUS.REJECTED).length;
 
  const handleOpenConfirm = (sanctn: InformalSanctionDto) => {
  setSelectedSanctn(sanctn);
@@ -89,7 +102,9 @@ export default function IsmClient({ initialData }: { initialData: { list: Inform
  setIsOpen(false);
  router.refresh();
  } catch (error) {
- toast('프로세스 처리 중 오류가 발생했습니다.', 'error');
+ // 서버가 사유를 내려주면 그대로 노출한다(권한·상태 불일치 등 원인 파악 가능).
+ const message = error instanceof Error && error.message ? error.message : '';
+ toast(message || '결재 처리 중 오류가 발생했습니다.', 'error');
  } finally {
  setLoading(false);
  }
@@ -132,7 +147,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Inform
  className: 'w-56'
  },
  {
- header: '결재 대기 (PENDING)',
+ header: '결재 상태',
  accessor: (item: InformalSanctionDto) => {
  let status: '활성' | 'DISABLED' | 'INACTIVE' = 'INACTIVE';
  if (item.aprvYn === SANCTION_STATUS.APPROVED) status = '활성';
@@ -180,27 +195,34 @@ export default function IsmClient({ initialData }: { initialData: { list: Inform
  subtitle="규격화되지 않은 비정형 결재 요청을 유연하게 검증하고 전사 의사결정 체계를 통합 관리합니다." 
  icon={ShieldCheck} 
  actions={
- <div className="flex gap-4 p-2 items-center">
- <div className="px-6 py-3 bg-emerald-50 border-2 border-emerald-100 rounded-lg flex items-center gap-4 shadow-sm">
- <div className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
- <span className="text-xs font-bold text-emerald-700 tracking-widest uppercase">의사결정_허브: 온라인</span>
- </div>
+ // [P1-5] '의사결정_허브: 온라인' 고정 배지 제거 — 실제 가동 상태를 계측하지 않으면서
+ // 상시 초록 'ONLINE' 을 표시해 장애를 은폐하던 근거 없는 지표였다.
  <Button
  variant="ghost"
+ aria-label="약식 결재 목록 새로고침"
  onClick={() => router.refresh()}
- className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
  <Activity size={22} className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
- </div>
  }
  />
 
+ {/*
+ [P1-5] 지표 배지는 근거 없는 고정 문구('주의'/'최적') 대신 실제 목록 집계에서 파생시킨다.
+ 값·배지 모두 현재 조회된 결재 대기함(최대 50건) 기준이라는 사실을 문구로 밝힌다.
+ */}
  <HubMetricGrid>
- <HubMetricCard title="결재_대기_시퀀스" value={ismList.filter(i => isSanctionPending(i.aprvYn)).length} icon={Clock} color="amber" status="주의" />
- <HubMetricCard title="승인_자산_수" value={ismList.filter(i => i.aprvYn === SANCTION_STATUS.APPROVED).length} icon={CheckCircle2} color="emerald" status="최적" />
- <HubMetricCard title="반려_로그_수" value={ismList.filter(i => i.aprvYn === SANCTION_STATUS.REJECTED).length} icon={XCircle} color="rose" />
- <HubMetricCard title="전체_의사결정_수" value={ismList.length} icon={FileText} color="primary" />
+ <HubMetricCard
+ title="결재_대기_시퀀스"
+ value={pendingCount}
+ icon={Clock}
+ color="amber"
+ status={pendingCount > 0 ? '조치 필요' : '대기 없음'}
+ />
+ <HubMetricCard title="승인_자산_수" value={approvedCount} icon={CheckCircle2} color="emerald" status="조회분 집계" />
+ <HubMetricCard title="반려_로그_수" value={rejectedCount} icon={XCircle} color="rose" status="조회분 집계" />
+ <HubMetricCard title="전체_의사결정_수" value={ismList.length} icon={FileText} color="primary" status="조회분 집계" />
  </HubMetricGrid>
 
  <div className="grid grid-cols-12 gap-12 text-left">
@@ -222,14 +244,19 @@ export default function IsmClient({ initialData }: { initialData: { list: Inform
  모든 약식 결재 아키텍처는 데이터 무결성 검증을 거치며 결정 근거는 분산 저장되어 영구적으로 기록되어 감사가 가능합니다.
  </p>
 
+ {/*
+ [P1-5] '로직_허브_무결성: 정상' / '보안_프로토콜: ENF_2.0' 고정 지표 제거.
+ 어떤 계측도 하지 않으면서 상시 '정상'을 표시해 운영자에게 거짓 확신을 주었다.
+ 대신 실제 조회 결과에서 파생되는 대기 건수를 노출한다.
+ */}
  <div className="space-y-6 pt-12 border-t border-white/5">
  <div className="flex items-center justify-between group/stat">
- <span className="text-xs font-bold text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">로직_허브_무결성</span>
- <span className="text-lg font-bold font-mono tracking-tighter text-emerald-500">정상</span>
+ <span className="text-xs font-bold text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">결재 대기 건수</span>
+ <span className="text-lg font-bold font-mono tracking-tighter text-primary">{pendingCount}</span>
  </div>
  <div className="flex items-center justify-between group/stat">
- <span className="text-xs font-bold text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-amber-500 transition-colors">보안_프로토콜</span>
- <span className="text-lg font-bold font-mono tracking-tighter">ENF_2.0</span>
+ <span className="text-xs font-bold text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-amber-500 transition-colors">조회된 총 건수</span>
+ <span className="text-lg font-bold font-mono tracking-tighter">{ismList.length}</span>
  </div>
  </div>
  </div>
@@ -244,7 +271,10 @@ export default function IsmClient({ initialData }: { initialData: { list: Inform
  columns={columns}
  data={ismList}
  loading={loading}
- emptyMessage="조회된 약식 결재 프로토콜이 현재 클러스터에 존재하지 않습니다."
+ keyField="ifmlAtrzId"
+ error={listError}
+ onRetry={() => router.refresh()}
+ emptyMessage="결재 대기 중인 약식 결재 요청이 없습니다."
  className="border-none bg-transparent"
  />
  </div>
@@ -313,7 +343,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Inform
  <textarea
  {...field}
  placeholder="결재 또는 반려 사유를 입력하세요..."
- className="w-full min-h-[200px] p-10 rounded-lg border-2 bg-muted font-bold text-lg outline-none focus:bg-white focus:ring-[12px] focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner leading-relaxed resize-none placeholder:text-muted-foreground"
+ className="w-full min-h-[200px] p-10 rounded-lg border-2 bg-muted font-bold text-lg outline-none focus:bg-card focus:ring-[12px] focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner leading-relaxed resize-none placeholder:text-muted-foreground"
  />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />

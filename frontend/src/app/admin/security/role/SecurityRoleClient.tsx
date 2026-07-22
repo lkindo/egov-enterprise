@@ -7,7 +7,6 @@ import { Loader2,
  Trash2,
  ShieldCheck,
  Lock,
- Activity,
  Search,
  RefreshCcw,
  Zap,
@@ -34,15 +33,25 @@ import { Textarea } from '@/components/ui/textarea';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { FormField } from '@/app/components/ui/standard-form';
 import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 ;
+
+/** 이 화면이 소유한 쿼리 키. 새로고침/무효화는 반드시 이 범위로만 좁힌다. */
+const ROLES_QUERY_KEY = ['admin-roles'] as const;
 
 export default function SecurityRoleClient() {
  const queryClient = useQueryClient();
  const { toast } = useToast();
- const [params, setParams] = useState<SearchParams>({
- pageNo: 1,
- searchKeyword: '',
- });
+ const confirm = useConfirm();
+ const [page, setPage] = useState(1);
+ /**
+  * 입력 컨트롤에는 원본(searchInput)을, 서버 요청/queryKey 에는 디바운스 값만 쓴다.
+  * 종전에는 searchKeyword 가 queryKey 인 params 에 직접 들어가 타이핑 한 글자마다 요청이 나갔다.
+  */
+ const [searchInput, setSearchInput] = useState('');
+ const searchKeyword = useDebouncedValue(searchInput, 300);
+ const params: SearchParams = { pageNo: page, searchKeyword };
  const [isDialogOpen, setIsDialogOpen] = useState(false);
  const [formData, setFormData] = useState<RoleManage>({
     roleId: '',
@@ -53,8 +62,9 @@ export default function SecurityRoleClient() {
     roleSort: '',
   });
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-roles', params],
+  // 조회 실패를 '데이터 없음'으로 위장하지 않는다 — error/onRetry 를 테이블까지 내려보낸다.
+  const { data, isLoading, error, refetch } = useQuery({
+    queryKey: [...ROLES_QUERY_KEY, page, searchKeyword],
     queryFn: () => roleAdminService.getRoleList(params),
     staleTime: 5 * 60 * 1000,
   });
@@ -70,7 +80,7 @@ export default function SecurityRoleClient() {
   const createMutation = useMutation({
     mutationFn: (data: RoleManage) => roleAdminService.createRole(data),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
+      queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
       setIsDialogOpen(false);
       toast('신규 세분화 보안 롤(Role)이 성공적으로 설정되었습니다.', 'success');
     },
@@ -80,15 +90,16 @@ export default function SecurityRoleClient() {
   const deleteMutation = useMutation({
     mutationFn: (roleCode: string) => roleAdminService.deleteRole(roleCode),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-roles'] });
+      queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
       toast('보안 롤 프로필이 영구적으로 파기되었습니다.', 'success');
     },
     onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error')
   });
 
+  /** 검색은 항상 1페이지부터 — 3페이지에서 검색하면 빈 화면이 되는 결함 방지. */
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setParams(prev => ({ ...prev, pageNo: 1 }));
+    setPage(1);
   };
 
   const handleCreate = () => {
@@ -103,9 +114,16 @@ export default function SecurityRoleClient() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (roleCode: string) => {
-    if (!confirm('정말 삭제하시겠습니까?')) return;
-    deleteMutation.mutate(roleCode);
+  /** 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상 롤 명칭을 노출한다. */
+  const handleDelete = async (role: RoleManage) => {
+    const ok = await confirm({
+      title: '보안 롤 삭제',
+      message: `'${role.roleNm || role.roleId}'(${role.roleId}) 롤을 삭제하시겠습니까? 이 롤에 연결된 접근 패턴이 함께 사라집니다.`,
+      confirmText: '삭제',
+      variant: 'destructive',
+    });
+    if (!ok) return;
+    deleteMutation.mutate(role.roleId);
   };
 
   const handleSubmit = async () => {
@@ -141,7 +159,7 @@ export default function SecurityRoleClient() {
       )
     },
     {
-      header: 'RANK',
+      header: '우선순위',
       accessor: (item: RoleManage) => (
         <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground font-mono tracking-tighter">
           <ListOrdered size={12} className="opacity-40" />
@@ -151,12 +169,19 @@ export default function SecurityRoleClient() {
       className: 'w-32'
     },
     {
-      header: 'MANAGEMENT',
+      header: '관리',
       className: 'text-right w-32',
       accessor: (item: RoleManage) => (
         <div className="flex justify-end gap-2 pr-4">
-          <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(item.roleId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all shadow-sm">
-            <Trash2 size={16} />
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={deleteMutation.isPending}
+            onClick={() => handleDelete(item)}
+            aria-label={`${item.roleNm || item.roleId} 롤 삭제`}
+            className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all shadow-sm"
+          >
+            <Trash2 size={16} aria-hidden="true" />
           </Button>
         </div>
       )
@@ -179,10 +204,11 @@ export default function SecurityRoleClient() {
  <div className="flex gap-4 p-2 items-center">
  <Button
  variant="ghost"
- onClick={() => queryClient.invalidateQueries()}
- className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ onClick={() => refetch()}
+ aria-label="보안 롤 목록 새로고침"
+ className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
- <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
+ <RefreshCcw size={22} aria-hidden="true" className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
  <Button
  onClick={handleCreate}
@@ -194,11 +220,13 @@ export default function SecurityRoleClient() {
  }
  />
 
+ {/*
+   지표는 서버가 실제로 내려준 값만 노출한다.
+   종전의 '프로브 상태=정상' · '권한 흐름=확인됨' 은 산출 근거가 없는 고정 문자열이라 삭제했다.
+ */}
  <HubMetricGrid>
- <HubMetricCard title="롤 정의" value={roles.length} icon={Database} color="indigo" />
- <HubMetricCard title="패턴 노드" value={pagination?.totalRecordCount || 0} icon={Layers} color="primary" />
- <HubMetricCard title="프로브 상태" value="정상" icon={Activity} color="emerald" status="동기화됨" />
- <HubMetricCard title="권한 흐름" value="확인됨" icon={Workflow} color="amber" />
+ <HubMetricCard title="전체 보안 롤" value={pagination?.totalRecordCount ?? 0} icon={Database} color="indigo" status="서버 집계" />
+ <HubMetricCard title="현재 페이지 표시" value={roles.length} icon={Layers} color="primary" status={`${params.pageNo ?? 1} 페이지`} />
  </HubMetricGrid>
 
  <HubSectionCard
@@ -212,10 +240,11 @@ export default function SecurityRoleClient() {
  <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
+ aria-label="롤코드 또는 롤명 검색"
  placeholder="롤코드 또는 롤명으로 검색"
- className="w-[450px] h-11 pl-16 rounded-lg border-2 bg-muted/50 text-sm font-bold tracking-tight shadow-inner"
- value={params.searchKeyword || ''}
- onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
+ className="w-full sm:w-[450px] h-11 pl-16 rounded-lg border-2 bg-muted/50 text-sm font-bold tracking-tight shadow-inner"
+ value={searchInput}
+ onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
  />
  <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">패턴 분석</Button>
  </form>
@@ -231,6 +260,8 @@ export default function SecurityRoleClient() {
  columns={columns}
  data={roles}
  loading={isLoading}
+ error={error as Error | null}
+ onRetry={() => refetch()}
  emptyMessage="식별된 보안 롤 패턴 리소스가 존재하지 않습니다."
  className="border-none bg-transparent"
  />
@@ -240,7 +271,7 @@ export default function SecurityRoleClient() {
  <div className="mt-12 flex justify-center">
  <PagePagination
  pagination={pagination}
- onPageChange={(page) => setParams(prev => ({ ...prev, pageNo: page }))}
+ onPageChange={(p) => setPage(p)}
  />
  </div>
  )}
@@ -256,7 +287,7 @@ export default function SecurityRoleClient() {
  >
  <div className="p-4 space-y-12">
  <div className="grid grid-cols-2 gap-10">
-      <FormField label="보안 롤 식별값(Role Code)" required description="보안 레이어 내의 유일한 규칙 식별자">
+      <FormField htmlFor="roleId" label="보안 롤 식별값(Role Code)" required description="보안 레이어 내의 유일한 규칙 식별자">
         <div className="relative group/id">
           <Key size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
           <Input
@@ -268,7 +299,7 @@ export default function SecurityRoleClient() {
           />
         </div>
       </FormField>
- <FormField label="롤 레이블 명칭" required description="보안 아카이브에서 식별될 규칙 명칭">
+ <FormField htmlFor="roleNm" label="롤 레이블 명칭" required description="보안 아카이브에서 식별될 규칙 명칭">
  <div className="relative group/nm">
  <Lock size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
  <Input
@@ -282,7 +313,7 @@ export default function SecurityRoleClient() {
  </FormField>
  </div>
 
-  <FormField label="접근 패턴 (URL/Resource Pattern)" required description="보안 필터가 인터셉트할 리소스 경로 규칙">
+  <FormField htmlFor="rolePatrn" label="접근 패턴 (URL/Resource Pattern)" required description="보안 필터가 인터셉트할 리소스 경로 규칙">
     <div className="relative group/ptn">
       <Workflow size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/ptn:opacity-100 transition-opacity" />
       <Input
@@ -296,7 +327,7 @@ export default function SecurityRoleClient() {
   </FormField>
 
  <div className="grid grid-cols-2 gap-10">
-  <FormField label="롤 아키텍처 타입" description="보안 규칙이 적용될 기술 레이어">
+  <FormField htmlFor="roleTypeCd" label="롤 아키텍처 타입" description="보안 규칙이 적용될 기술 레이어">
     <select
       id="roleTypeCd"
       value={formData.roleTypeCd || ''}
@@ -308,7 +339,7 @@ export default function SecurityRoleClient() {
       <option value="api">REST_ENDPOINT</option>
     </select>
   </FormField>
- <FormField label="우선순위 (Sort Order)" description="보안 필터 체인에서의 적용 우선순위">
+ <FormField htmlFor="roleSort" label="우선순위 (Sort Order)" description="보안 필터 체인에서의 적용 우선순위">
  <div className="relative group/sort">
  <ListOrdered size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/sort:opacity-100 transition-opacity" />
  <Input
@@ -323,7 +354,7 @@ export default function SecurityRoleClient() {
  </FormField>
  </div>
 
-  <FormField label="롤 정책 상세 명세" description="해당 보안 롤의 구체적인 정책 범위 및 비즈니스 요건">
+  <FormField htmlFor="roleExpln" label="롤 정책 상세 명세" description="해당 보안 롤의 구체적인 정책 범위 및 비즈니스 요건">
     <div className="relative group/dc">
       <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
       <Textarea
@@ -340,7 +371,7 @@ export default function SecurityRoleClient() {
   <button
     type="button"
     onClick={() => setIsDialogOpen(false)}
-    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
+    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
   >
     취소
   </button>

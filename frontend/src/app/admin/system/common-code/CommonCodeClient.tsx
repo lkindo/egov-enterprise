@@ -39,6 +39,7 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { useAppForm } from '@/hooks/useAppForm';
 ;
 import { 
@@ -142,14 +143,14 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  : "hover:bg-muted border border-transparent",
  isSelected && isCluster && "bg-surface-inverse text-surface-inverse-foreground shadow-xl border-surface-inverse-border",
  isSelected && !isCluster && "bg-primary text-white shadow-lg shadow-primary/20 border-primary/20",
- isOverlay && "bg-white shadow-2xl border-primary ring-4 ring-primary/5 scale-105"
+ isOverlay && "bg-card shadow-2xl border-primary ring-4 ring-primary/5 scale-105"
  )}
  >
  <div className="flex items-center gap-3 truncate relative z-10 w-full">
  <div className={cn(
  "w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0",
  isCluster 
- ? (isSelected ? "bg-primary/20 text-primary" : "bg-white text-muted-foreground border border-border shadow-sm")
+ ? (isSelected ? "bg-primary/20 text-primary" : "bg-card text-muted-foreground border border-border shadow-sm")
  : (isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground group-hover:text-primary")
  )}>
  {isCluster ? <Layers size={14} /> : <Tag size={14} />}
@@ -172,7 +173,7 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  <div className="ml-auto">
  <div className={cn(
  "w-1.5 h-1.5 rounded-full",
- isCluster ? "bg-primary animate-pulse" : "bg-white animate-pulse"
+ isCluster ? "bg-primary animate-pulse" : "bg-primary-foreground animate-pulse"
  )} />
  </div>
  )}
@@ -270,7 +271,39 @@ export default function CommonCodeClient({
 
  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
  const [selectedGroup, setSelectedGroup] = useState<GroupCode | null>(null);
- const [detailsLoading, setDetailsLoading] = useState(false);
+
+ /*
+  * [P1-1] 상세코드 조회를 useQuery 로 옮긴다.
+  * 종전에는 catch→toast 후 직전 목록이 그대로 남아 "조회 성공"처럼 보였고 재시도 수단이 없었다.
+  * 이제 실패는 StandardDataTable 의 error/onRetry 로 화면에 드러난다.
+  */
+ const selectedCdId = selectedGroup?.cdId ?? null;
+ const {
+ data: detailRows,
+ isFetching: detailsLoading,
+ error: detailsError,
+ refetch: refetchDetails,
+ } = useQuery({
+ queryKey: ['cmmn-detail-codes', selectedCdId],
+ enabled: !!selectedCdId,
+ queryFn: async () => {
+ const res = await codeAdminService.getDetailCodeList({
+ cdId: selectedCdId as string,
+ searchKeyword: selectedCdId as string,
+ searchCondition: '1',
+ pageUnit: 999
+ });
+ // 페일세이프: 백엔드가 전체를 반환하는 경우를 대비해 클라이언트에서도 그룹으로 한 번 더 거른다.
+ return (res.list || []).filter(item => item && item.cdId === selectedCdId);
+ },
+ /*
+  * SSR 로 이미 받아 둔 상세 목록만 자리표시자로 재사용한다.
+  * 직전 그룹의 데이터(prev)를 넘기면 다른 그룹의 코드가 잠깐 노출되므로 쓰지 않는다.
+  */
+ placeholderData: selectedCdId && selectedCdId === selectedGroupId ? details : undefined,
+ });
+
+ const detailList: CmmnDetailCode[] = detailRows ?? [];
 
  // D&D Handlers
  const sensors = useSensors(
@@ -331,34 +364,9 @@ export default function CommonCodeClient({
  }
  };
 
- // Fetch Details on the client side to avoid full page reloads
- const loadGroupDetails = async (group: GroupCode) => {
- try {
- setDetailsLoading(true);
-
- // 1. Fetch details from API with robust filtering parameters
- const res = await codeAdminService.getDetailCodeList({
- cdId: group.cdId,
- searchKeyword: group.cdId,
- searchCondition: '1',
- pageUnit: 999
- });
-
- // Failsafe: Filter details on client side just in case backend returns all items
- const fetchedDetails = (res.list || []).filter(item =>
- item && (item as CmmnDetailCode).cdId === group.cdId
- );
-
- // 2. Update state directly
- setSelectedGroup({
- ...group,
- details: fetchedDetails as CmmnDetailCode[]
- });
- } catch (error) {
- toast('상세 코드를 불러오는 중 오류가 발생했습니다.', 'error');
- } finally {
- setDetailsLoading(false);
- }
+ /** 그룹 선택 — 상세 목록은 useQuery(queryKey=cdId)가 담당한다. */
+ const selectGroup = (group: GroupCode) => {
+ setSelectedGroup(group);
  };
 
  // Synchronize initial state from props
@@ -370,12 +378,12 @@ export default function CommonCodeClient({
  const group = (cluster.groups || []).find(g => g?.cdId === selectedGroupId);
  if (group) {
  setSelectedClusterId(cluster.id);
- setSelectedGroup({ ...group, details: (details || []) as CmmnDetailCode[] });
+ setSelectedGroup(group);
  }
  }
  }
  }
- }, [selectedGroupId, details, initialClusters, selectedGroup]);
+ }, [selectedGroupId, initialClusters, selectedGroup]);
 
  // Filtered Nodes
  const visibleNodes = React.useMemo(() => {
@@ -399,23 +407,24 @@ export default function CommonCodeClient({
  setIsOpen(true);
  };
 
- const handleDeleteDetail = async (dtlCd: string) => {
+ /** [P1-9] 확인 본문에 대상 식별자(코드·명칭)를 노출해 오삭제를 막는다. */
+ const handleDeleteDetail = async (detail: CmmnDetailCode) => {
  if (!selectedGroup) return;
 
  const ok = await confirm({
- title: '상세 코드 명세 삭제',
- message: '해당 코드 정보를 데이터베이스에서 영구히 삭제하시겠습니까?',
+ title: '상세 코드 삭제',
+ message: `‘${detail.dtlCdNm}’(코드 ${detail.dtlCd}) 를 ${selectedGroup.cdIdNm} 그룹에서 영구히 삭제합니다. 되돌릴 수 없습니다.`,
  variant: 'destructive',
  confirmText: '삭제'
  });
 
  if (ok) {
  try {
- const res = await deleteCodeDetail(null, { cdId: selectedGroup.cdId, dtlCd });
+ const res = await deleteCodeDetail(null, { cdId: selectedGroup.cdId, dtlCd: detail.dtlCd });
  if (res.success) {
  toast(res.message, 'success');
  // 삭제 성공 후 우측 구성 명세 목록 실시간 리로드
- loadGroupDetails(selectedGroup);
+ refetchDetails();
  } else {
  toast(res.message, 'error');
  }
@@ -447,9 +456,7 @@ export default function CommonCodeClient({
  toast(res.message, 'success');
  setIsOpen(false);
  // 저장 성공 후 우측 구성 명세 목록 실시간 리로드
- if (selectedGroup) {
-   loadGroupDetails(selectedGroup);
- }
+ refetchDetails();
  } else {
  toast(res.message, 'error');
  }
@@ -469,7 +476,7 @@ export default function CommonCodeClient({
  accessor: (item: CmmnDetailCode) => (
  <div className="flex flex-col gap-0.5">
  <span className="font-black text-foreground tracking-tighter text-sm">{item.dtlCdNm}</span>
- <span className="text-[10px] font-bold text-muted-foreground line-clamp-1 uppercase tracking-tight">{item.dtlCdExpln || 'No description available'}</span>
+ <span className="text-[10px] font-bold text-muted-foreground line-clamp-1 uppercase tracking-tight">{item.dtlCdExpln || '등록된 설명 없음'}</span>
  </div>
  ),
  className: 'py-4'
@@ -488,19 +495,21 @@ export default function CommonCodeClient({
  type="button"
  variant="ghost"
  size="icon"
+ aria-label={`${item.dtlCdNm} 코드 수정`}
  className="h-8 w-8 hover:bg-muted rounded-lg transition-colors"
  onClick={(e) => { e.preventDefault(); handleEditDetail(item); }}
  >
- <Settings size={14} className="text-muted-foreground" />
+ <Settings size={14} className="text-muted-foreground" aria-hidden="true" />
  </Button>
  <Button
  type="button"
  variant="ghost"
  size="icon"
+ aria-label={`${item.dtlCdNm} 코드 삭제`}
  className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
- onClick={(e) => { e.preventDefault(); handleDeleteDetail(item.dtlCd); }}
+ onClick={(e) => { e.preventDefault(); handleDeleteDetail(item); }}
  >
- <Trash2 size={14} />
+ <Trash2 size={14} aria-hidden="true" />
  </Button>
  </div>
  )
@@ -527,11 +536,14 @@ export default function CommonCodeClient({
  </div>
  <div className="flex items-center gap-2">
  {hasExplorerChanges && (
- <button 
+ <button
+ type="button"
  onClick={handleSaveExplorerChanges}
- className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center gap-1.5 shadow-md active:scale-95"
+ disabled={isSaving}
+ aria-label="변경한 코드 계층 구조 저장"
+ className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
  >
- <Save size={12} /> Save
+ <Save size={12} aria-hidden="true" /> {isSaving ? '저장 중…' : 'Save'}
  </button>
  )}
  <span className="px-2.5 py-1 rounded-lg bg-white/60 text-muted-foreground text-[10px] font-black tracking-widest border border-white/80 uppercase shadow-sm">
@@ -540,9 +552,11 @@ export default function CommonCodeClient({
  </div>
  </div>
  <div className="relative group">
- <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" />
+ <Search size={16} aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+ {/* 이 검색은 이미 받아 둔 트리를 클라이언트에서 거르는 필터라 서버 요청이 없다 → 디바운스 대상 아님 */}
  <Input
- placeholder="검색어를 입력하세요..."
+ placeholder="분류·그룹명 또는 코드로 검색"
+ aria-label="코드 분류·그룹 검색"
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
  className="h-10 pl-12 pr-6 bg-white/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
@@ -553,10 +567,10 @@ export default function CommonCodeClient({
  <div className="flex-1 overflow-y-auto p-3 custom-scrollbar max-h-[600px]">
  {visibleNodes.length === 0 ? (
  <div className="py-20 text-center space-y-4">
- <div className="w-16 h-10 rounded-xl bg-muted flex items-center justify-center mx-auto text-slate-200 border border-border shadow-inner">
- <SearchSlash size={32} />
+ <div className="w-16 h-10 rounded-xl bg-muted flex items-center justify-center mx-auto text-muted-foreground/40 border border-border shadow-inner">
+ <SearchSlash size={32} aria-hidden="true" />
  </div>
- <p className="text-[10px] font-black tracking-widest uppercase text-muted-foreground">No results found</p>
+ <p className="text-[10px] font-black tracking-widest text-muted-foreground">검색 결과가 없습니다</p>
  </div>
  ) : (
  <DndContext
@@ -579,7 +593,7 @@ export default function CommonCodeClient({
  setSelectedGroup(null);
  } else {
  setSelectedClusterId(node.parentId);
- loadGroupDetails(node.data);
+ selectGroup(node.data);
  }
  }}
  />
@@ -642,30 +656,35 @@ export default function CommonCodeClient({
  )}>
  <div className="p-6 border-b border-border/50 flex items-center justify-between bg-muted/30">
  <div className="flex items-center gap-3">
- <div className="w-9 h-9 rounded-xl bg-white border border-border flex items-center justify-center text-primary shadow-sm">
+ <div className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-primary shadow-sm">
  {detailsLoading ? <RefreshCcw size={16} className="animate-spin" /> : <Layers size={16} />}
  </div>
  <div className="text-left">
  <h3 className="text-xs font-black tracking-widest text-foreground uppercase leading-none mb-1.5">구성 명세</h3>
- <p className="text-[10px] font-bold text-muted-foreground leading-none uppercase">
- {detailsLoading ? 'Syncing...' : `Total ${selectedGroup.details?.length || 0} Units`}
+ <p className="text-[10px] font-bold text-muted-foreground leading-none">
+ {detailsLoading ? '불러오는 중…' : `총 ${detailList.length}건`}
  </p>
  </div>
  </div>
- <div>
+ {/*
+   * [P1-5] 'Integrity 99.9%' 지표 삭제 — 무결성을 측정하는 소스가 없는 고정 문구였다.
+   * 대신 실측 가능한 사용/미사용 건수를 노출한다.
+   */}
  <div className="flex flex-col items-end pr-4 text-right">
- <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1.5">Integrity</span>
- <div className="flex items-center gap-1">
- <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
- <span className="text-[10px] font-black text-emerald-500 tracking-widest">99.9%</span>
- </div>
- </div>
+ <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1.5">사용 / 미사용</span>
+ <span className="text-[10px] font-black text-foreground tracking-widest tabular-nums">
+ {detailList.filter(d => d.useYn === 'Y').length} / {detailList.filter(d => d.useYn !== 'Y').length}
+ </span>
  </div>
  </div>
  <div className="p-2">
  <StandardDataTable<CmmnDetailCode>
  columns={columns}
- data={selectedGroup.details || []}
+ data={detailList}
+ loading={detailsLoading && detailList.length === 0}
+ error={detailsError}
+ onRetry={() => refetchDetails()}
+ keyField="dtlCd"
  emptyMessage="데이터가 존재하지 않습니다."
  className="border-none shadow-none bg-transparent"
  isPremium={true}
@@ -675,20 +694,20 @@ export default function CommonCodeClient({
  </div>
  ) : (
  <div className="h-full flex flex-col items-center justify-center p-12 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5 min-h-[500px]">
- <div className="w-24 h-20 rounded-2xl bg-white border border-border flex items-center justify-center text-slate-200 mb-8 shadow-xl group hover:rotate-6 transition-transform">
+ <div className="w-24 h-20 rounded-2xl bg-card border border-border flex items-center justify-center text-muted-foreground/40 mb-8 shadow-xl group hover:rotate-6 transition-transform">
  <Database size={40} className="opacity-20 group-hover:opacity-100 transition-opacity" />
  </div>
- <h3 className="text-xl font-black tracking-widest text-slate-200 uppercase mb-4">No Selection</h3>
- <p className="text-[10px] font-black text-slate-300 text-center max-w-sm leading-relaxed mb-10 uppercase tracking-widest">
- Select a domain or group from the explorer<br />to begin management
+ <h3 className="text-xl font-black tracking-widest text-muted-foreground/60 mb-4">선택된 코드 없음</h3>
+ <p className="text-xs font-black text-muted-foreground/70 text-center max-w-sm leading-relaxed mb-10">
+ 좌측 탐색기에서 분류 또는 코드 그룹을 선택하면<br />상세 코드를 관리할 수 있습니다.
  </p>
  <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
  <div className="p-6 rounded-xl bg-white/60 border border-white/80 flex flex-col gap-2 items-start shadow-sm">
- <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">Domains</span>
+ <span className="text-[10px] font-black text-muted-foreground tracking-widest">코드 분류</span>
  <span className="text-2xl font-black text-foreground ">{initialClusters.length}</span>
  </div>
  <div className="p-6 rounded-xl bg-white/60 border border-white/80 flex flex-col gap-2 items-start shadow-sm">
- <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">Groups</span>
+ <span className="text-[10px] font-black text-muted-foreground tracking-widest">코드 그룹</span>
  <span className="text-2xl font-black text-foreground ">{groups.length}</span>
  </div>
  </div>
@@ -720,11 +739,15 @@ export default function CommonCodeClient({
  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10 pt-4">
  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
  <div className="space-y-8">
+ {/* [P2] 폼 컨트롤이 아닌 읽기 전용 표시라 <label> 이 아닌 <span> + aria-describedby 로 연결한다. */}
  <div className="space-y-1.5 p-0.5">
- <label className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <span id="cmmn-parent-group-label" className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
  상위 그룹 식별자
- </label>
- <div className="h-11 flex items-center px-6 rounded-lg bg-muted border-none font-mono text-xs font-bold shadow-inner text-muted-foreground">
+ </span>
+ <div
+ aria-labelledby="cmmn-parent-group-label"
+ className="h-11 flex items-center px-6 rounded-lg bg-muted border-none font-mono text-xs font-bold shadow-inner text-muted-foreground"
+ >
  {selectedGroup?.cdId}
  </div>
  </div>
@@ -742,7 +765,7 @@ export default function CommonCodeClient({
  {...field}
  readOnly={!!editingDetail}
  maxLength={12}
- className="h-11 rounded-lg font-mono text-xs font-bold shadow-inner border-none bg-muted focus:bg-white transition-all text-left"
+ className="h-11 rounded-lg font-mono text-xs font-bold shadow-inner border-none bg-muted focus:bg-card transition-all text-left"
  placeholder="Unique code indicator (최대 12자)"
  />
  </FormControl>
@@ -763,7 +786,7 @@ export default function CommonCodeClient({
  <Input
  {...field}
  maxLength={100}
- className="h-11 rounded-lg text-sm font-bold tracking-tight shadow-inner border-none bg-muted focus:bg-white transition-all text-left"
+ className="h-11 rounded-lg text-sm font-bold tracking-tight shadow-inner border-none bg-muted focus:bg-card transition-all text-left"
  placeholder="레이블 명칭 입력 (최대 100자)"
  />
  </FormControl>

@@ -3,30 +3,32 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
-import { WebLog, SearchParams, PageResponse } from '@/types/foundation/system';
+import { WebLog, PageResponse } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { Globe, Clock, Terminal, Link } from 'lucide-react';
+import { usePageParam } from '../use-log-url-state';
+
+const PAGE_SIZE = 10;
 
 const SystemLogsWebClient = () => {
-    const [params, setParams] = useState<SearchParams>({
-        page: 1,
-        size: 10,
-        searchKeyword: '',
-    });
+    const [page, setPage] = usePageParam();
+    const [searchKeyword, setSearchKeyword] = useState('');
 
-    const { data, isLoading } = useQuery<PageResponse<WebLog>>({
-        queryKey: ['admin-logs-web', params],
+    const { data, isLoading, error, refetch } = useQuery<PageResponse<WebLog>>({
+        queryKey: ['admin-logs-web', page, searchKeyword],
+        // 서비스가 `pageIndex`(1-base)만 읽는다. 기존 `pageNo` 전달은 무시돼 항상 1페이지가 조회됐다.
         queryFn: () => systemLogAdminService.getWebLogs({
-            pageNo: Number(params.page) || 1,
-            size: params.size || 10,
-            searchKeyword: params.searchKeyword,
+            pageIndex: page,
+            size: PAGE_SIZE,
+            searchKeyword,
         }),
     });
 
     const logs = (data?.list || []) as WebLog[];
     const totalPageCount = data?.totalPage || 1;
+    const totalCount = Number(data?.total || 0);
 
     const columns: Column<WebLog>[] = [
         {
@@ -40,7 +42,7 @@ const SystemLogsWebClient = () => {
             className: 'w-40'
         },
         {
-            header: 'URL',
+            header: '요청 URL',
             accessor: (item: WebLog) => (
                 <div className="flex items-center gap-2">
                     <Link size={12} className="text-primary/40 shrink-0" />
@@ -49,14 +51,14 @@ const SystemLogsWebClient = () => {
             )
         },
         {
-            header: 'Method',
+            header: '메소드',
             accessor: (item: WebLog) => (
                 <div className="flex justify-start">
                     <code className={`px-2 py-1 rounded border font-mono text-xs font-bold ${
                         item.method === 'GET' ? 'bg-info/10 text-info border-info/20' :
-                        item.method === 'POST' ? 'bg-emerald-50 text-emerald-600 border-emerald-100' :
-                        item.method === 'PUT' ? 'bg-amber-50 text-amber-600 border-amber-100' :
-                        'bg-red-50 text-red-600 border-red-100'
+                        item.method === 'POST' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' :
+                        item.method === 'PUT' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' :
+                        'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
                     }`}>
                         {item.method}
                     </code>
@@ -69,8 +71,8 @@ const SystemLogsWebClient = () => {
             accessor: (item: WebLog) => (
                 <div className="flex items-center gap-1.5 font-bold text-muted-foreground">
                     <Clock size={12} className="opacity-30" />
-                    <span className="text-xs tabular-nums">{item.processTime}</span>
-                    <span className="text-xs text-muted-foreground">ms</span>
+                    <span className="text-xs tabular-nums">{item.processTime ?? '-'}</span>
+                    {item.processTime !== undefined && item.processTime !== null ? <span className="text-xs text-muted-foreground">ms</span> : null}
                 </div>
             ),
             className: 'w-28'
@@ -114,14 +116,21 @@ const SystemLogsWebClient = () => {
                 columns={columns}
                 data={logs}
                 loading={isLoading}
+                error={error}
+                onRetry={() => refetch()}
+                keyField="webLogId"
                 pagination={{
-                    currentPage: (params.page || 1) as number,
+                    currentPage: page,
                     totalPages: totalPageCount,
-                    onPageChange: (page: number) => setParams({ ...params, page: page }),
+                    onPageChange: setPage,
+                    totalCount,
+                    pageSize: PAGE_SIZE,
                 }}
                 search={{
                     placeholder: 'URL, IP 검색..',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page: 1 }),
+                    value: searchKeyword,
+                    onSearch: (keyword: string) => { setSearchKeyword(keyword); setPage(1); },
+                    onClear: () => { setSearchKeyword(''); setPage(1); },
                 }}
             />
         </div>

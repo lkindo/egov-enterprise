@@ -3,30 +3,32 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
-import { UserLog, SearchParams, PageResponse } from '@/types/foundation/system';
+import { UserLog, PageResponse } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { History, Terminal, FileText, Calendar } from 'lucide-react';
+import { usePageParam } from '../use-log-url-state';
+
+const PAGE_SIZE = 10;
 
 const SystemLogsUserClient = () => {
-    const [params, setParams] = useState<SearchParams>({
-        page: 1,
-        size: 10,
-        searchKeyword: '',
-    });
+    const [page, setPage] = usePageParam();
+    const [searchKeyword, setSearchKeyword] = useState('');
 
-    const { data, isLoading } = useQuery<PageResponse<UserLog>>({
-        queryKey: ['admin-logs-user', params],
+    const { data, isLoading, error, refetch } = useQuery<PageResponse<UserLog>>({
+        queryKey: ['admin-logs-user', page, searchKeyword],
+        // 서비스가 `pageIndex`(1-base)만 읽는다. 기존 `pageNo` 전달은 무시돼 항상 1페이지가 조회됐다.
         queryFn: () => systemLogAdminService.getUserLogs({
-            pageNo: Number(params.page) || 1,
-            size: params.size || 10,
-            searchKeyword: params.searchKeyword,
+            pageIndex: page,
+            size: PAGE_SIZE,
+            searchKeyword,
         }),
     });
 
     const logs = (data?.list || []) as UserLog[];
     const totalPageCount = data?.totalPage || 1;
+    const totalCount = Number(data?.total || 0);
 
     const columns: Column<UserLog>[] = [
         {
@@ -61,7 +63,7 @@ const SystemLogsUserClient = () => {
         {
             header: '요청자ID',
             accessor: (item: UserLog) => (
-                <div className="flex items-center gap-2 px-3 py-1 bg-white border rounded-lg w-fit shadow-sm">
+                <div className="flex items-center gap-2 px-3 py-1 bg-card border rounded-lg w-fit shadow-sm">
                     <span className="text-xs font-bold text-foreground">{item.rqesterId}</span>
                 </div>
             ),
@@ -97,14 +99,21 @@ const SystemLogsUserClient = () => {
                 columns={columns}
                 data={logs}
                 loading={isLoading}
+                error={error}
+                onRetry={() => refetch()}
+                keyField="userLogId"
                 pagination={{
-                    currentPage: (params.page || 1) as number,
+                    currentPage: page,
                     totalPages: totalPageCount,
-                    onPageChange: (page: number) => setParams({ ...params, page: page }),
+                    onPageChange: setPage,
+                    totalCount,
+                    pageSize: PAGE_SIZE,
                 }}
                 search={{
-                    placeholder: '서비스설명, 요청자명 검색..',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page: 1 }),
+                    placeholder: '서비스설명, 요청자ID 검색..',
+                    value: searchKeyword,
+                    onSearch: (keyword: string) => { setSearchKeyword(keyword); setPage(1); },
+                    onClear: () => { setSearchKeyword(''); setPage(1); },
                 }}
             />
         </div>

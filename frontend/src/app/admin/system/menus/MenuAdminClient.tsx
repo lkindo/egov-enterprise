@@ -20,10 +20,12 @@ import {
   ChevronsDownUp,
   ChevronsUpDown,
   SearchCode,
-  ShieldCheck,
   Network,
   Database,
-  GripVertical
+  GripVertical,
+  AlertTriangle,
+  RefreshCcw,
+  Unlink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
@@ -77,6 +79,15 @@ import { flattenTree,  FlattenedItem,  getProjection,  listToTree } from './tree
 
 type MenuFormValues = z.infer<typeof menuSchema>;
 
+/**
+ * 서버 조회 결과 봉투.
+ * 실패를 빈 배열로 삼켜 "데이터 0건"으로 위장하지 않기 위해, 사유를 함께 실어 나른다.
+ */
+export type FetchResult<T> = { data: T; error: string | null };
+
+/** 메뉴에 연결할 수 있는 프로그램(자동완성 후보) */
+export type ProgramOption = { prgrmFileNm?: string; prgrmKornNm?: string };
+
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
 const INDENTATION_WIDTH = 32;
@@ -101,7 +112,7 @@ interface SortableMenuNodeProps {
     isSaving: boolean;
     onEdit: (item: MenuInfo) => void;
     onCreate: (id: number) => void;
-    onDelete: (id: number) => void;
+    onDelete: (item: FlattenedItem) => void;
     onToggle: (id: number) => void;
     isExpanded: boolean;
     hasChildren: boolean;
@@ -164,9 +175,10 @@ const SortableMenuNode = ({
                 !isOverlay && depth > 0 && "ml-3"
             )}>
                 <div className="flex items-center gap-5 relative z-10 w-full">
-                    <div 
-                        {...attributes} 
-                        {...listeners} 
+                    <div
+                        {...attributes}
+                        {...listeners}
+                        aria-label={`${item.menuNm} 순서 이동 핸들`}
                         className={cn(
                           "p-2 hover:bg-muted rounded-lg cursor-grab active:cursor-grabbing transition-colors",
                           depth === 0 ? "text-muted-foreground hover:text-surface-inverse-foreground" : "text-muted-foreground hover:text-primary"
@@ -179,6 +191,9 @@ const SortableMenuNode = ({
                         <div className="flex items-center">
                             {hasChildren && (
                                 <button
+                                    type="button"
+                                    aria-label={`${item.menuNm} 하위 메뉴 ${isExpanded ? '접기' : '펼치기'}`}
+                                    aria-expanded={isExpanded}
                                     onClick={(e) => { e.stopPropagation(); onToggle(item.menuNo); }}
                                     className={cn(
                                       "p-2 hover:bg-muted rounded-lg transition-colors mr-2",
@@ -191,7 +206,7 @@ const SortableMenuNode = ({
                             {!hasChildren && depth < 2 ? <div className="w-10" /> : null}
                             <div className={cn(
                                 "w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
-                                depth === 0 ? "bg-white text-foreground" : depth === 1 ? "bg-surface-inverse text-surface-inverse-foreground" : "bg-card text-muted-foreground border border-border shadow-sm"
+                                depth === 0 ? "bg-card text-foreground" : depth === 1 ? "bg-surface-inverse text-surface-inverse-foreground" : "bg-card text-muted-foreground border border-border shadow-sm"
                             )}>
                                 {depth === 0 ? <FolderTree size={20} className="stroke-[2.5]" /> : depth === 1 ? <Layers size={16} /> : <FileCode size={14} />}
                             </div>
@@ -231,6 +246,7 @@ const SortableMenuNode = ({
                         {depth < 2 && (
                             <Button
                                 variant="ghost" size="icon"
+                                aria-label={`${item.menuNm} 하위 메뉴 추가`}
                                 onClick={() => onCreate(item.menuNo)}
                                 className={cn(
                                   "h-9 w-9 rounded-lg",
@@ -242,17 +258,19 @@ const SortableMenuNode = ({
                         )}
                         <Button
                             variant="ghost" size="icon"
+                            aria-label={`${item.menuNm} 수정`}
                             onClick={() => onEdit(item)}
                             className={cn(
                               "h-9 w-9 rounded-lg",
-                              depth === 0 ? "bg-slate-800 text-muted-foreground hover:bg-white hover:text-foreground" : "bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground"
+                              depth === 0 ? "bg-slate-800 text-muted-foreground hover:bg-card hover:text-foreground" : "bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground"
                             )}
                         >
                             <Settings size={14} />
                         </Button>
                         <Button
                             variant="ghost" size="icon"
-                            onClick={() => onDelete(item.menuNo)}
+                            aria-label={`${item.menuNm} 삭제`}
+                            onClick={() => onDelete(item)}
                             className={cn(
                               "h-9 w-9 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white rounded-lg",
                               depth === 0 && "bg-rose-950/30 hover:bg-rose-500"
@@ -281,15 +299,15 @@ const SortableMenuNode = ({
 /*                                Main Component                              */
 /* -------------------------------------------------------------------------- */
 
-export default function MenuAdminClient({ 
-  menusPromise, 
-  programsPromise 
-}: { 
-  menusPromise: Promise<MenuInfo[]>; 
-  programsPromise: Promise<any[]>; 
+export default function MenuAdminClient({
+  menusPromise,
+  programsPromise
+}: {
+  menusPromise: Promise<FetchResult<MenuInfo[]>>;
+  programsPromise: Promise<FetchResult<ProgramOption[]>>;
 }) {
-  const initialMenus = use(menusPromise);
-  const programs = use(programsPromise);
+  const { data: initialMenus, error: menusError } = use(menusPromise);
+  const { data: programs, error: programsError } = use(programsPromise);
   const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -446,9 +464,16 @@ export default function MenuAdminClient({
     finally { setIsSaving(false); }
   };
 
-  const handleDelete = async (id: number) => {
-    if (await confirm({ title: '메뉴 삭제', message: '하위 메뉴가 포함될 수 있습니다.', variant: 'destructive' })) {
-        const res = await deleteMenuAction(null, id);
+  const handleDelete = async (target: FlattenedItem) => {
+    const childCount = flattenedMenus.filter(m => m.parentId === target.menuNo).length;
+    const isConfirmed = await confirm({
+      title: '메뉴 삭제',
+      message: `[${target.menuNm}] 메뉴를 삭제하시겠습니까?${childCount > 0 ? ` 하위 메뉴 ${childCount}건이 함께 삭제될 수 있습니다.` : ''} 이 작업은 되돌릴 수 없습니다.`,
+      confirmText: '삭제 실행',
+      variant: 'destructive'
+    });
+    if (isConfirmed) {
+        const res = await deleteMenuAction(null, target.menuNo);
         if (res.success) { toast(res.message, 'success'); router.refresh(); }
         else { toast(res.message, 'error'); }
     }
@@ -471,11 +496,33 @@ export default function MenuAdminClient({
         }
       />
 
+      {/*
+        조회 실패를 "데이터 0건"으로 위장하지 않는다. 서버 조회가 실패했으면 그 사실과 사유를 그대로 노출하고
+        재시도(서버 컴포넌트 재실행) 수단을 제공한다.
+      */}
+      {(menusError || programsError) && (
+        <div role="alert" className="flex flex-col gap-3 rounded-lg border-2 border-destructive/30 bg-destructive/5 p-6 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-start gap-3">
+            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-destructive" aria-hidden="true" />
+            <div className="space-y-1">
+              <p className="text-sm font-black text-destructive">데이터를 불러오지 못했습니다</p>
+              <p className="text-xs font-semibold text-muted-foreground">
+                {menusError ? `메뉴 트리: ${menusError}` : `프로그램 목록: ${programsError}`}
+                {menusError ? ' — 아래 트리는 비어 있거나 최신 상태가 아닐 수 있습니다.' : ' — 프로그램 자동완성 후보가 비어 있습니다.'}
+              </p>
+            </div>
+          </div>
+          <Button variant="outline" onClick={() => router.refresh()} className="h-10 shrink-0 gap-2 rounded-lg font-bold">
+            <RefreshCcw size={16} /> 다시 시도
+          </Button>
+        </div>
+      )}
+
       <HubMetricGrid>
         <HubMetricCard title="전체 노드" value={flattenedMenus.length} icon={Database} color="primary" />
         <HubMetricCard title="계층 깊이" value={Math.max(...flattenedMenus.map(m => m.depth), 0) + 1} icon={Layers} color="indigo" />
-        <HubMetricCard title="활성 경로" value={flattenedMenus.filter(m => !!m.modernRoute).length} icon={Network} color="emerald" />
-        <HubMetricCard title="연결성" value="최적" icon={ShieldCheck} color="amber" />
+        <HubMetricCard title="라우트 연결" value={flattenedMenus.filter(m => !!m.modernRoute).length} icon={Network} color="emerald" />
+        <HubMetricCard title="라우트 미지정" value={flattenedMenus.filter(m => !m.modernRoute).length} icon={Unlink} color="amber" />
       </HubMetricGrid>
 
       <HubSectionCard
@@ -485,12 +532,12 @@ export default function MenuAdminClient({
         action={
           <div className="flex gap-3 items-center">
             <div className="flex bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/60 shadow-sm ring-1 ring-black/5">
-              <Button variant="ghost" className="h-8 px-4 text-[10px] font-black uppercase tracking-widest hover:bg-white/50" onClick={() => setExpandedIds(new Set(flattenedMenus.map(m => m.menuNo)))}><ChevronsUpDown size={14} className="mr-1.5" /> Expand</Button>
-              <Button variant="ghost" className="h-8 px-4 text-[10px] font-black uppercase tracking-widest hover:bg-white/50" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-1.5" /> Collapse</Button>
+              <Button variant="ghost" className="h-8 px-4 text-[10px] font-black tracking-widest hover:bg-white/50" onClick={() => setExpandedIds(new Set(flattenedMenus.map(m => m.menuNo)))}><ChevronsUpDown size={14} className="mr-1.5" /> 전체 펼치기</Button>
+              <Button variant="ghost" className="h-8 px-4 text-[10px] font-black tracking-widest hover:bg-white/50" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-1.5" /> 전체 접기</Button>
             </div>
             {hasChanges && (
-                <Button onClick={handleSaveChanges} disabled={isSaving} className="bg-emerald-500 text-white hover:bg-emerald-600 h-9 px-5 rounded-lg font-black text-[10px] tracking-widest gap-2 shadow-lg scale-in-center active:scale-95 uppercase">
-                    {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save size={14} />} Save Layout
+                <Button onClick={handleSaveChanges} disabled={isSaving} className="bg-emerald-500 text-white hover:bg-emerald-600 h-9 px-5 rounded-lg font-black text-[10px] tracking-widest gap-2 shadow-lg scale-in-center active:scale-95">
+                    {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save size={14} />} 구조 저장
                 </Button>
             )}
           </div>
@@ -590,6 +637,34 @@ export default function MenuAdminClient({
                 </FormItem>
               )}
             />
+            {/* 서버에서 받아온 프로그램 목록을 자동완성 후보로 소비한다(연결 프로그램 미입력 시 그룹 노드). */}
+            <ShadcnFormField
+              control={form.control} name="prgrmFileNm"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold text-foreground ml-1">연결 프로그램</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      value={field.value ?? ''}
+                      list="menu-program-options"
+                      className="h-11 rounded-lg font-bold px-5"
+                      placeholder="프로그램 파일명을 선택하거나 입력 (선택)"
+                    />
+                  </FormControl>
+                  <datalist id="menu-program-options">
+                    {programs
+                      .filter((p) => !!p.prgrmFileNm)
+                      .map((p) => (
+                        <option key={p.prgrmFileNm} value={p.prgrmFileNm}>
+                          {p.prgrmKornNm ?? ''}
+                        </option>
+                      ))}
+                  </datalist>
+                  <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
+                </FormItem>
+              )}
+            />
             <ShadcnFormField
               control={form.control} name="menuExpln"
               render={({ field }) => (
@@ -612,7 +687,7 @@ export default function MenuAdminClient({
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-foreground ml-1">상위 노드</FormLabel>
                   <div className="h-11 rounded-lg border-2 border-border flex items-center px-5 text-xs font-bold bg-muted/50 text-muted-foreground">
-                    {form.getValues('upperMenuId') === 0 ? 'SYSTEM_ROOT' : `NODE_${form.getValues('upperMenuId')}`}
+                    {form.getValues('upperMenuId') === 0 ? '최상위(루트)' : `상위 메뉴 ID ${form.getValues('upperMenuId')}`}
                   </div>
                 </FormItem>
                 <ShadcnFormField

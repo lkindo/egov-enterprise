@@ -3,17 +3,14 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Plus,  
-  Settings2,  
-  Layers, 
-  Rocket, 
-  ArrowRight, 
-  TrendingUp, 
-  Zap, 
-  ShieldCheck, 
-  MoreVertical, 
-  Trash2, 
-  AlertTriangle, 
+import { Plus,
+  Settings2,
+  Layers,
+  Rocket,
+  ArrowRight,
+  Zap,
+  Trash2,
+  AlertTriangle,
   Lock } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +84,12 @@ export function BoardMasterListClient() {
     queryFn: () => boardAdminService.getBoardMasterList({ searchWrd })
   });
   const boardList = (boardData?.list || []) as BoardMaster[];
+
+  // 감사 P1-5: 과거 "32 / 1.2k / Optimal / L4" 는 어떤 데이터에서도 산출되지 않는 고정 문자열이었다.
+  // 실제 조회 결과로 계산 가능한 지표만 남기고 나머지 카드는 삭제했다.
+  const totalCount = boardData?.total ?? boardList.length;
+  const activeCount = boardList.filter((b) => b.useYn === 'Y').length;
+  const standbyCount = boardList.filter((b) => b.useYn !== 'Y').length;
 
   /**
    * 편집 모달 진입.
@@ -254,16 +257,8 @@ export function BoardMasterListClient() {
       ),
       className: 'text-center'
     },
-    {
-      header: '사용량',
-      accessor: (_board: BoardMaster) => (
-        <div className="space-y-1 text-center">
-          <p className="text-xl font-bold text-foreground ">0</p>
-          <p className="text-xs font-bold text-muted-foreground/40 uppercase leading-none">게시글 수</p>
-        </div>
-      ),
-      className: 'text-center'
-    },
+    // 감사 P1-5: '사용량' 열은 데이터 원천 없이 항상 "0 게시글 수"를 렌더해 모든 게시판이 비어 있는 것처럼
+    // 보이게 했다(게시글 수를 주는 API 가 없음). 근거가 생길 때까지 열 자체를 제거한다.
     {
       header: '작업 컨트롤',
       accessor: (board: BoardMaster) => (
@@ -273,8 +268,8 @@ export function BoardMasterListClient() {
             disabled={isDetailLoading}
             size="icon"
             variant="ghost"
-            title="게시판 설정 편집"
-            aria-label="게시판 설정 편집"
+            title={`${board.bbsTtl} 설정 편집`}
+            aria-label={`${board.bbsTtl} 설정 편집`}
             className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-primary hover:text-white transition-all shadow-sm"
           >
             <Settings2 size={20} />
@@ -289,16 +284,18 @@ export function BoardMasterListClient() {
                 ? "hover:bg-amber-500 hover:text-white" 
                 : "hover:bg-rose-600 hover:text-white"
             )}
-            title={board.useYn === 'Y' ? '대기 상태로 비활성화' : 'DB에서 영구 물리삭제'}
-            aria-label={board.useYn === 'Y' ? '대기 상태로 비활성화' : 'DB에서 영구 물리삭제'}
+            title={board.useYn === 'Y' ? `${board.bbsTtl} 대기 상태로 비활성화` : `${board.bbsTtl} DB에서 영구 물리삭제`}
+            aria-label={board.useYn === 'Y' ? `${board.bbsTtl} 대기 상태로 비활성화` : `${board.bbsTtl} DB에서 영구 물리삭제`}
           >
             <Trash2 size={20} />
           </Button>
-          <Button 
+          <Button
             onClick={() => router.push(`/admin/community/boards/select-board-list?bbsId=${board.bbsId}`)}
-            size="icon" 
-            variant="ghost" 
-            className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-slate-900 dark:hover:bg-white dark:hover:text-foreground hover:text-white transition-all shadow-sm"
+            size="icon"
+            variant="ghost"
+            title={`${board.bbsTtl} 게시글 목록 열기`}
+            aria-label={`${board.bbsTtl} 게시글 목록 열기`}
+            className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-sm"
           >
             <ArrowRight size={20} />
           </Button>
@@ -308,8 +305,9 @@ export function BoardMasterListClient() {
     }
   ];
 
+  // 감사 P2: 루트 layout(max-w-7xl p-6/md:p-12/lg:p-16)과 겹치던 화면별 폭/여백(max-w-[1600px] mx-auto px-4) 제거.
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000 max-w-[1600px] mx-auto px-4">
+    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader 
         title="게시판 마스터" 
         breadcrumbs={[{ label: '커뮤니티' }, { label: '게시판 관리' }, { label: '마스터 콘솔' }]} 
@@ -338,12 +336,11 @@ export function BoardMasterListClient() {
         variants={container}
         initial="hidden"
         animate="show"
-        className="grid grid-cols-1 md:grid-cols-4 gap-8"
+        className="grid grid-cols-1 md:grid-cols-3 gap-8"
       >
-        <InsightCard label="총계" value="32" desc="Active Board Masters" icon={Layers} color="text-hub-indigo" />
-        <InsightCard label="교류" value="1.2k" desc="Engagement Traffic" icon={TrendingUp} color="text-rose-500" />
-        <InsightCard label="시스템" value="Optimal" desc="Storage Status" icon={Zap} color="text-emerald-500" />
-        <InsightCard label="보안" value="L4" desc="Encrypted Access" icon={ShieldCheck} color="text-amber-500" />
+        <InsightCard label="전체 게시판" value={isLoading ? '—' : totalCount.toLocaleString()} desc="등록된 게시판 마스터 수" icon={Layers} color="text-hub-indigo" />
+        <InsightCard label="활성" value={isLoading ? '—' : activeCount.toLocaleString()} desc="사용 여부 Y (서비스 중)" icon={Zap} color="text-emerald-500" />
+        <InsightCard label="대기" value={isLoading ? '—' : standbyCount.toLocaleString()} desc="사용 여부 N (비활성)" icon={Lock} color="text-amber-500" />
       </motion.div>
 
       <div className="hub-table-container">
@@ -466,7 +463,7 @@ export function BoardMasterListClient() {
           
           <div className="p-10 space-y-8 bg-card transition-colors">
             <div className="space-y-3">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시판 명칭</Label>
+              <Label htmlFor="modal-bbs-name" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시판 명칭</Label>
               <Input 
                 id="modal-bbs-name"
                 value={editData.bbsTtl || ''} 
@@ -476,7 +473,7 @@ export function BoardMasterListClient() {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시판 소개</Label>
+              <Label htmlFor="modal-bbs-description" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시판 소개</Label>
               <Input 
                 id="modal-bbs-description"
                 value={editData.bbsExpln || ''} 
@@ -487,7 +484,7 @@ export function BoardMasterListClient() {
 
             <div className="flex items-center justify-between p-6 bg-muted rounded-lg border border-border transition-colors">
               <div className="space-y-1">
-                <p className="font-bold text-foreground transition-colors">서비스 활성화 상태</p>
+                <label htmlFor="modal-bbs-use-at" className="font-bold text-foreground transition-colors block cursor-pointer">서비스 활성화 상태</label>
                 <p className="text-xs text-muted-foreground font-bold uppercase tracking-tighter transition-colors text-left">활성화 시 모든 연결된 메뉴에서 서비스가 재개됩니다.</p>
               </div>
               <Switch 
@@ -525,14 +522,13 @@ function InsightCard({ label, value, desc, icon: Icon, color }: InsightCardProps
     <motion.div variants={item} className="hub-card-premium p-8 space-y-6 group hover:ring-[30px] hover:ring-border/30 transition-all border-2 border-border/50">
       <div className="flex items-center justify-between">
         <div className={cn("w-14 h-11 rounded-lg bg-muted flex items-center justify-center border border-border group-hover:scale-110 transition-transform text-muted-foreground", color)}>
-          <Icon size={28} />
+          <Icon size={28} aria-hidden="true" />
         </div>
-        <MoreVertical className="text-slate-200 dark:text-foreground" size={20} />
       </div>
       <div className="space-y-1">
-        <p className="text-xs font-bold text-muted-foreground uppercase tracking-widest leading-none text-left">{label}</p>
+        <p className="text-xs font-bold text-muted-foreground tracking-widest leading-none text-left">{label}</p>
         <h4 className="text-4xl font-bold text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors text-left">{value}</h4>
-        <p className="text-xs font-bold text-muted-foreground/60 uppercase leading-none mt-2 text-left">{desc}</p>
+        <p className="text-xs font-bold text-muted-foreground/60 leading-none mt-2 text-left">{desc}</p>
       </div>
     </motion.div>
   );

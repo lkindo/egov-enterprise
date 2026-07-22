@@ -1,15 +1,16 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { Building2,  
-  Database,  
-  FileCode, 
-  MapPin, 
-  ShieldCheck, 
-  Zap, 
-  Code2, 
-  Timer, 
+import { AlertTriangle,
+  Building2,
+  Database,
+  FileCode,
+  Layers,
+  MapPin,
+  PowerOff,
+  Code2,
   LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,18 +24,48 @@ import InstitutionCodeClient from '../codes/institution/InstitutionCodeClient';
 // --- Types ---
 type CodeHubTab = 'STANDARD' | 'ADMINIST' | 'INSTITUTION';
 
-export default function CommonCodeHubClient({ 
-  clCodes, 
-  groups, 
-  details, 
-  selectedGroupId 
-}: { 
-  clCodes: CmmnClCode[]; 
-  groups: CmmnCode[]; 
-  details: CmmnDetailCode[]; 
-  selectedGroupId: string | null 
+const TABS: CodeHubTab[] = ['STANDARD', 'ADMINIST', 'INSTITUTION'];
+
+function resolveTab(raw: string | null): CodeHubTab {
+  const upper = (raw || '').toUpperCase() as CodeHubTab;
+  return TABS.includes(upper) ? upper : 'STANDARD';
+}
+
+export default function CommonCodeHubClient({
+  clCodes,
+  groups,
+  details,
+  selectedGroupId,
+  fetchError = false
+}: {
+  clCodes: CmmnClCode[];
+  groups: CmmnCode[];
+  details: CmmnDetailCode[];
+  selectedGroupId: string | null;
+  /** [P1-1] 서버 컴포넌트의 초기 조회가 실패했음을 알린다(실패를 '0건'으로 위장하지 않기 위함). */
+  fetchError?: boolean;
 }) {
-  const [activeTab, setActiveTab] = useState<CodeHubTab>('STANDARD');
+  /*
+   * [P1-7] 활성 탭을 URL(?tab=) 파생값으로 만든다.
+   * 공유·새로고침·뒤로가기가 복원되고 사이드바 활성 표시도 유지된다.
+   */
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeTab = resolveTab(searchParams.get('tab'));
+
+  const setActiveTab = useCallback((tab: CodeHubTab) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('tab', tab);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }, [router, pathname, searchParams]);
+
+  /*
+   * [P1-5] 지표는 실제 계산 가능한 값만 노출한다.
+   * 종전 '표준 상태 가용성: 활성' / '메타데이터 건전성: 99.8%' / '노드 연동 속도: 1.2s' 는
+   * 산출 근거가 없는 고정 문구여서 삭제하고, 분류/그룹/미사용 실측값으로 교체했다.
+   */
+  const inactiveGroupCount = groups.filter(g => g.useYn === 'N').length;
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
@@ -51,39 +82,68 @@ export default function CommonCodeHubClient({
           icon={Database} 
         />
 
-        {/* --- Multi-Level Hub Switcher --- */}
-        <div className="bg-muted/80 backdrop-blur-md p-2 rounded-lg flex flex-wrap gap-2 border border-border/50 shadow-inner">
-          <HubTabButton 
-            icon={FileCode} 
-            label="표준 코드" 
-            active={activeTab === 'STANDARD'} 
-            onClick={() => setActiveTab('STANDARD')} 
+        {/* --- Multi-Level Hub Switcher ([P2] tablist 시맨틱) --- */}
+        <div role="tablist" aria-label="코드 유형 전환" className="bg-muted/80 backdrop-blur-md p-2 rounded-lg flex flex-wrap gap-2 border border-border/50 shadow-inner">
+          <HubTabButton
+            id="code-hub-tab-standard"
+            panelId="code-hub-panel"
+            icon={FileCode}
+            label="표준 코드"
+            active={activeTab === 'STANDARD'}
+            onClick={() => setActiveTab('STANDARD')}
           />
-          <HubTabButton 
-            icon={MapPin} 
-            label="행정 표준" 
-            active={activeTab === 'ADMINIST'} 
-            onClick={() => setActiveTab('ADMINIST')} 
+          <HubTabButton
+            id="code-hub-tab-administ"
+            panelId="code-hub-panel"
+            icon={MapPin}
+            label="행정 표준"
+            active={activeTab === 'ADMINIST'}
+            onClick={() => setActiveTab('ADMINIST')}
           />
-          <HubTabButton 
-            icon={Building2} 
-            label="기관 노드" 
-            active={activeTab === 'INSTITUTION'} 
-            onClick={() => setActiveTab('INSTITUTION')} 
+          <HubTabButton
+            id="code-hub-tab-institution"
+            panelId="code-hub-panel"
+            icon={Building2}
+            label="기관 노드"
+            active={activeTab === 'INSTITUTION'}
+            onClick={() => setActiveTab('INSTITUTION')}
           />
         </div>
       </div>
 
-      {/* Code Metrics Section */}
+      {/* [P1-1] 서버 초기 조회 실패를 화면에 드러낸다 — 빈 목록을 '0건'으로 오인하지 않도록 */}
+      {fetchError && (
+        <div
+          role="alert"
+          className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-6 py-4 text-sm font-bold text-destructive"
+        >
+          <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
+          <span>
+            코드 목록을 불러오지 못했습니다. 아래 목록이 비어 있는 것은 등록된 코드가 없어서가 아니라 조회 실패 때문입니다.
+            잠시 후 페이지를 새로고침해 주세요.
+          </span>
+        </div>
+      )}
+
+      {/* Code Metrics Section — 전량 실측값 */}
       <HubMetricGrid>
-        <HubMetricCard title="현재 등록 코드" value={groups.length + details.length} icon={Code2} color="primary" />
-        <HubMetricCard title="표준 상태 가용성" value="활성" icon={ShieldCheck} color="emerald" status="동기화됨" />
-        <HubMetricCard title="메타데이터 건전성" value="99.8%" icon={Zap} color="amber" />
-        <HubMetricCard title="노드 연동 속도" value="1.2s" icon={Timer} color="indigo" />
+        <HubMetricCard title="코드 분류" value={clCodes.length} icon={Layers} color="primary" />
+        <HubMetricCard title="코드 그룹" value={groups.length} icon={Code2} color="indigo" />
+        <HubMetricCard title="미사용 그룹" value={inactiveGroupCount} icon={PowerOff} color="amber" />
+        <HubMetricCard title="선택 그룹 상세코드" value={selectedGroupId ? details.length : 0} icon={Database} color="emerald" />
       </HubMetricGrid>
 
       {/* --- Viewport Content --- */}
-      <div className="px-2">
+      <div
+        className="px-2"
+        role="tabpanel"
+        id="code-hub-panel"
+        aria-labelledby={
+          activeTab === 'STANDARD' ? 'code-hub-tab-standard'
+            : activeTab === 'ADMINIST' ? 'code-hub-tab-administ'
+              : 'code-hub-tab-institution'
+        }
+      >
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
@@ -124,18 +184,22 @@ export default function CommonCodeHubClient({
 
 // --- Sub-components ---
 
-function HubTabButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon, label: string, active: boolean, onClick: () => void }) {
+function HubTabButton({ id, panelId, icon: Icon, label, active, onClick }: { id: string, panelId: string, icon: LucideIcon, label: string, active: boolean, onClick: () => void }) {
   return (
-    <button 
+    <button
       type="button"
+      role="tab"
+      id={id}
+      aria-selected={active}
+      aria-controls={panelId}
       onClick={(e) => {
         e.preventDefault();
         onClick();
       }}
       className={cn(
         "relative flex items-center gap-3 px-10 py-4 rounded-lg text-xs font-bold tracking-tight transition-all active:scale-95 overflow-hidden group",
-        active 
-          ? "bg-white text-foreground shadow-2xl ring-1 ring-border"
+        active
+          ? "bg-card text-foreground shadow-2xl ring-1 ring-border"
           : "text-muted-foreground hover:text-foreground hover:bg-white/50"
       )}
     >
@@ -143,7 +207,7 @@ function HubTabButton({ icon: Icon, label, active, onClick }: { icon: LucideIcon
         "transition-all duration-500 group-hover:rotate-12",
         active ? "scale-110 text-primary" : "opacity-70"
       )}>
-        <Icon size={18} />
+        <Icon size={18} aria-hidden="true" />
       </div>
       <span className="relative z-10">{label}</span>
       {active && (

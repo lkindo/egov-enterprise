@@ -15,7 +15,7 @@ export const flattenDeptTree = (
     return [
       ...acc,
       { ...item, parentId, depth, index } as FlattenedDept,
-      ...flattenDeptTree((item as any).children || [], item.ognzId || null, depth + 1),
+      ...flattenDeptTree(item.children || [], item.ognzId || null, depth + 1),
     ];
   }, []);
 };

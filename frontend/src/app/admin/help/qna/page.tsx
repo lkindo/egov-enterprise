@@ -1,6 +1,10 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import KnowledgeHubClient from '../KnowledgeHubClient';
 
 export default function QNAPage() {
- return <KnowledgeHubClient defaultTab="QNA" />;
+  return (
+    <Suspense fallback={<div className="h-[60vh] animate-pulse rounded-lg bg-muted" />}>
+      <KnowledgeHubClient defaultTab="QNA" />
+    </Suspense>
+  );
 }

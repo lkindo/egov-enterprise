@@ -1,5 +1,6 @@
 import { Suspense } from 'react';
-import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
+import { codeAdminService, InstitutionCode } from '@/services/foundation/system/CodeAdminService';
+import { PageResponse } from '@/types/foundation/system';
 import InstitutionCodeClient from './InstitutionCodeClient';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -16,12 +17,18 @@ export default async function InstitutionCodePage() {
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  let initialData: any = { list: [], total: 0 };
+  /*
+   * [P1-1] 실패를 빈 배열로 삼켜 '0건'으로 굳히지 않는다.
+   * 클라이언트가 마운트 직후 같은 엔드포인트를 useQuery 로 재조회하고,
+   * 실패하면 StandardDataTable 의 error/onRetry 로 화면에 드러난다.
+   */
+  let initialData: Partial<PageResponse<InstitutionCode>> = { list: [], total: 0 };
   try {
     // 변수명 pageNo로 정규화
     initialData = await codeAdminService.getInstitutionCodeList({ pageNo: 1, pageUnit: 10 }, axiosConfig);
-  } catch (error: any) {
-    if (error.response?.status === 401) {
+  } catch (error: unknown) {
+    const status = (error as { response?: { status?: number } })?.response?.status;
+    if (status === 401) {
       redirect('/login?expired=true&redirect=/admin/system/codes/institution');
     }
     console.error('Failed to fetch initial institution codes:', error);

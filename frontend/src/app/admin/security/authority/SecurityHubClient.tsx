@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, use, useTransition } from 'react';
+import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ShieldCheck, 
   Users, 
@@ -14,11 +15,11 @@ import { ShieldCheck,
   CheckCircle2, 
   UserPlus, 
   Key, 
-  Activity, 
   Lock, 
   Fingerprint, 
   RotateCcw, 
   ArrowUpRight, 
+  AlertTriangle, 
   Settings } from 'lucide-react';
 import {
   Tooltip,
@@ -37,6 +38,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 ;
 ;
 import { Input } from '@/components/ui/input';
@@ -66,10 +68,19 @@ export default function SecurityHubClient({
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
   const [selectedAuthorCode, setSelectedAuthorCode] = useState<string>('');
-  const [userSearchKeyword, setUserSearchKeyword] = useState('');
-  const [roleSearchKeyword, setRoleSearchKeyword] = useState('');
+  /**
+   * 입력 컨트롤에는 원본을, 서버 요청/queryKey 에는 디바운스 값만 쓴다.
+   * 종전에는 검색어가 queryKey 에 직접 들어가 타이핑 한 글자마다 요청이 나갔다.
+   */
+  const [userSearchInput, setUserSearchInput] = useState('');
+  const [roleSearchInput, setRoleSearchInput] = useState('');
+  const userSearchKeyword = useDebouncedValue(userSearchInput, 300);
+  const roleSearchKeyword = useDebouncedValue(roleSearchInput, 300);
 
   const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
   const [authorMode, setAuthorMode] = useState<'create' | 'edit'>('create');
@@ -80,12 +91,35 @@ export default function SecurityHubClient({
   const [tempMenuMappings, setTempMenuMappings] = useState<Set<number>>(new Set());
 
   // --- Matrix Mode States ---
-  const [viewMode, setViewMode] = useState<'TOPOLOGY' | 'MATRIX'>('TOPOLOGY');
   const [globalMappings, setGlobalMappings] = useState<Map<string, Set<number>>>(new Map());
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
 
+  /**
+   * 뷰 전환(토폴로지/매트릭스)과 역할 페이지는 URL 파생값이다.
+   * 공유·새로고침·뒤로가기에서 화면 상태가 복원되고, 사이드바 활성 표시도 유지된다.
+   * (검색어는 URL 에 싣지 않는다 — 개인정보 노출 우려로 제품 보류 항목이다.)
+   */
+  const viewMode: 'TOPOLOGY' | 'MATRIX' = searchParams.get('view') === 'matrix' ? 'MATRIX' : 'TOPOLOGY';
+  const rolePage = Math.max(1, Number(searchParams.get('page') ?? '1') || 1);
+
+  const updateUrlState = (next: { view?: 'TOPOLOGY' | 'MATRIX'; page?: number }) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (next.view !== undefined) {
+      if (next.view === 'MATRIX') params.set('view', 'matrix');
+      else params.delete('view');
+    }
+    if (next.page !== undefined) {
+      if (next.page > 1) params.set('page', String(next.page));
+      else params.delete('page');
+    }
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
+
+  const setViewMode = (view: 'TOPOLOGY' | 'MATRIX') => updateUrlState({ view });
+  const setRolePage = (page: number) => updateUrlState({ page });
+
   // --- Pagination States ---
-  const [rolePage, setRolePage] = useState(1);
   const [userPage, setUserPage] = useState(1);
 
   const { data: authorsData, isLoading: isAuthorsLoading, error: authorsError, refetch: refetchAuthors } = useQuery({
@@ -107,7 +141,7 @@ export default function SecurityHubClient({
   });
   const users = usersData?.list || [];
 
-  const { data: menusData, isLoading: isMenusLoading } = useQuery({
+  const { data: menusData, isLoading: isMenusLoading, error: menusError, refetch: refetchMenus } = useQuery({
     queryKey: ['admin-author-menus', selectedAuthorCode],
     queryFn: async () => {
       const allMenus = await menuAdminService.getAllMenus();
@@ -241,6 +275,11 @@ export default function SecurityHubClient({
     onSuccess: () => {
       toast('메뉴 접근 권한이 업데이트되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus', selectedAuthorCode] });
+    },
+    // onError 가 없으면 저장 실패가 무음으로 지나가고 화면은 반영된 것처럼 남는다.
+    onError: () => {
+      toast('메뉴 접근 권한 저장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
+      queryClient.invalidateQueries({ queryKey: ['admin-author-menus', selectedAuthorCode] });
     }
   });
 
@@ -262,6 +301,19 @@ export default function SecurityHubClient({
       setIsGlobalLoading(false);
     }
   };
+
+  /**
+   * 매트릭스 뷰는 버튼 클릭뿐 아니라 `?view=matrix` 딥링크로도 진입한다.
+   * 로드 트리거를 클릭 핸들러가 아니라 뷰 상태에 결속해야 두 경로가 모두 동작한다.
+   */
+  useEffect(() => {
+    if (viewMode !== 'MATRIX') return;
+    if (globalMappings.size > 0 || isGlobalLoading) return;
+    if (!authorities.length) return;
+    loadGlobalMappings();
+    // loadGlobalMappings 는 매 렌더 재생성되므로 의존성에 넣지 않는다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, authorities.length]);
 
   const handleToggleGlobal = (authorCode: string, menuNo: number) => {
     setGlobalMappings(prev => {
@@ -333,10 +385,11 @@ export default function SecurityHubClient({
     setIsAuthorModalOpen(true);
   };
 
-  const handleAuthorDelete = async (code: string) => {
+  const handleAuthorDelete = async (auth: AuthorInfo) => {
+    const code = auth.authrtCd;
     const ok = await confirm({
       title: '권한 삭제',
-      message: `'${code}' 권한을 삭제하시겠습니까? 관련 할당 정보가 모두 사라집니다.`,
+      message: `'${auth.authrtNm || code}'(${code}) 권한을 삭제하시겠습니까? 관련 할당 정보가 모두 사라집니다.`,
       confirmText: '삭제',
       variant: 'destructive',
     });
@@ -353,7 +406,7 @@ export default function SecurityHubClient({
 
   const roleColumns: Column<AuthorInfo>[] = [
     {
-      header: 'ROLE_MANIFEST',
+      header: '역할',
       accessor: (auth) => (
         <div className="flex items-center justify-between w-full group/role-item py-1">
           <div className="flex flex-col gap-1">
@@ -365,8 +418,22 @@ export default function SecurityHubClient({
             </span>
           </div>
           <div className={cn("flex gap-1", selectedAuthorCode === auth.authrtCd ? "opacity-100" : "opacity-0 group-hover/role-item:opacity-100 transition-opacity")}>
-            <button onClick={(e) => { e.stopPropagation(); handleOpenAuthorEdit(auth); }} className="p-2 hover:bg-white/10 rounded-lg transition-all"><Settings size={12} /></button>
-            <button onClick={(e) => { e.stopPropagation(); handleAuthorDelete(auth.authrtCd); }} className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-all"><Trash2 size={12} /></button>
+            <button
+              type="button"
+              aria-label={`${auth.authrtNm || auth.authrtCd} 역할 수정`}
+              onClick={(e) => { e.stopPropagation(); handleOpenAuthorEdit(auth); }}
+              className="p-2 hover:bg-white/10 rounded-lg transition-all"
+            >
+              <Settings size={12} aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              aria-label={`${auth.authrtNm || auth.authrtCd} 역할 삭제`}
+              onClick={(e) => { e.stopPropagation(); handleAuthorDelete(auth); }}
+              className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-all"
+            >
+              <Trash2 size={12} aria-hidden="true" />
+            </button>
           </div>
         </div>
       )
@@ -375,7 +442,7 @@ export default function SecurityHubClient({
 
   const userColumns: Column<AuthorGroupProjection>[] = [
     {
-      header: 'IDENTITY_PROBE',
+      header: '사용자',
       accessor: (user) => (
         <div className="flex items-center justify-between w-full py-1">
           <div className="flex items-center gap-4 relative z-10">
@@ -409,9 +476,12 @@ export default function SecurityHubClient({
         transition={{ delay: idx * 0.02 }}
         className="space-y-1"
       >
-        <div
+        <button
+          type="button"
+          aria-pressed={tempMenuMappings.has(node.menuNo)}
+          aria-label={`${node.menuNm} 메뉴 접근 권한 ${tempMenuMappings.has(node.menuNo) ? '해제' : '부여'}`}
           className={cn(
-            "group flex items-center gap-4 py-3 px-6 rounded-lg transition-all cursor-pointer relative overflow-hidden group active:scale-[0.99]",
+            "w-full text-left group flex items-center gap-4 py-3 px-6 rounded-lg transition-all cursor-pointer relative overflow-hidden group active:scale-[0.99]",
             tempMenuMappings.has(node.menuNo) ? "bg-surface-inverse border-none shadow-xl text-surface-inverse-foreground" : "hover:bg-muted border border-transparent"
           )}
           style={{ marginLeft: `${depth * 24}px` }}
@@ -419,7 +489,7 @@ export default function SecurityHubClient({
         >
           <div className={cn(
             "w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all",
-            tempMenuMappings.has(node.menuNo) ? "bg-primary border-primary scale-110 shadow-[0_0_10px_rgba(255,255,255,0.3)]" : "border-border bg-white"
+            tempMenuMappings.has(node.menuNo) ? "bg-primary border-primary scale-110 shadow-[0_0_10px_rgba(255,255,255,0.3)]" : "border-border bg-card"
           )}>
             {tempMenuMappings.has(node.menuNo) && <ShieldCheck size={12} className="text-white" />}
           </div>
@@ -452,7 +522,7 @@ export default function SecurityHubClient({
           )}>
             <ArrowUpRight size={10} />
           </div>
-        </div>
+        </button>
         {node.children && renderMenuTreeNodes(node.children, depth + 1)}
       </motion.div>
     ));
@@ -473,10 +543,14 @@ export default function SecurityHubClient({
         icon={Lock}
         actions={
           <div className="flex gap-4 p-2 items-center">
-            <div className="flex items-center gap-1 bg-muted p-1 rounded-lg mr-4 border-2 border-border">
+            <div role="tablist" aria-label="보안 허브 보기 전환" className="flex items-center gap-1 bg-muted p-1 rounded-lg mr-4 border-2 border-border">
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    role="tab"
+                    id="security-tab-topology"
+                    aria-selected={viewMode === 'TOPOLOGY'}
+                    aria-controls="security-panel-topology"
                     variant="ghost"
                     onClick={() => startTransition(() => setViewMode('TOPOLOGY'))}
                     className={cn(
@@ -484,7 +558,7 @@ export default function SecurityHubClient({
                       viewMode === 'TOPOLOGY' ? "bg-surface-inverse text-surface-inverse-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    TOPOLOGY_VIEW
+                    계층 토폴로지
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
@@ -495,14 +569,18 @@ export default function SecurityHubClient({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button
+                    role="tab"
+                    id="security-tab-matrix"
+                    aria-selected={viewMode === 'MATRIX'}
+                    aria-controls="security-panel-matrix"
                     variant="ghost"
-                    onClick={() => startTransition(() => { setViewMode('MATRIX'); loadGlobalMappings(); })}
+                    onClick={() => startTransition(() => setViewMode('MATRIX'))}
                     className={cn(
                       "h-10 px-6 rounded-lg text-xs font-bold tracking-tight transition-all",
                       viewMode === 'MATRIX' ? "bg-surface-inverse text-surface-inverse-foreground shadow-lg" : "text-muted-foreground hover:text-foreground"
                     )}
                   >
-                    MATRIX_PLANE
+                    권한 매트릭스
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
@@ -515,10 +593,16 @@ export default function SecurityHubClient({
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
-                  onClick={() => queryClient.invalidateQueries()}
-                  className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+                  aria-label="보안 정책 정보 새로고침"
+                  onClick={() => {
+                    // 무인자 invalidateQueries 는 메뉴·알림 등 무관한 쿼리까지 전역 재요청한다.
+                    queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
+                    queryClient.invalidateQueries({ queryKey: ['admin-user-authorities'] });
+                    queryClient.invalidateQueries({ queryKey: ['admin-author-menus'] });
+                  }}
+                  className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
                 >
-                  <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
+                  <RefreshCcw size={22} aria-hidden="true" className="group-hover:rotate-180 transition-transform duration-700" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
@@ -543,17 +627,24 @@ export default function SecurityHubClient({
         }
       />
 
+      {/*
+        지표는 서버가 실제로 내려준 값만 노출한다.
+        - 'ACTIVE_SESSIONS = PROBING…(ONLINE)' 은 세션을 조회하는 경로가 없는 고정 문자열이라 삭제했다.
+        - 'IDENTITY_POOL' 은 현재 페이지 배열 길이를 전체 풀처럼 표기했으므로 서버 total 로 교체했다.
+      */}
       <HubMetricGrid>
-        <HubMetricCard title="SECURITY_ROLES" value={authorities.length} icon={Key} color="indigo" />
-        <HubMetricCard title="ACTIVE_SESSIONS" value="PROBING..." icon={Activity} color="emerald" status="ONLINE" />
-        <HubMetricCard title="ACCESS_ENTITIES" value={tempMenuMappings.size} icon={Layers} color="primary" />
-        <HubMetricCard title="IDENTITY_POOL" value={users.length || "IDLE"} icon={Fingerprint} color="amber" />
+        <HubMetricCard title="보안 역할" value={authorsData?.total ?? authorities.length} icon={Key} color="indigo" status="서버 집계" />
+        <HubMetricCard title="선택 역할의 접근 노드" value={tempMenuMappings.size} icon={Layers} color="primary" status={selectedAuthorCode || '역할 미선택'} />
+        <HubMetricCard title="선택 역할의 대상 사용자" value={selectedAuthorCode ? (usersData?.total ?? 0) : 0} icon={Fingerprint} color="amber" status={selectedAuthorCode ? '서버 집계' : '역할 미선택'} />
       </HubMetricGrid>
 
       <AnimatePresence mode="wait">
         {viewMode === 'MATRIX' ? (
           <motion.div
             key="matrix-view"
+            role="tabpanel"
+            id="security-panel-matrix"
+            aria-labelledby="security-tab-matrix"
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.98 }}
@@ -571,6 +662,9 @@ export default function SecurityHubClient({
         ) : (
           <motion.div
             key="topology-view"
+            role="tabpanel"
+            id="security-panel-topology"
+            aria-labelledby="security-tab-topology"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -581,13 +675,15 @@ export default function SecurityHubClient({
             <div className="col-span-12 lg:col-span-3 space-y-8 h-full">
               <HubSectionCard title="역할 인벤토리" description="시스템 접근 권한을 정의하는 보안 프로파일 리스트입니다." icon={Lock}>
                 <div className="space-y-8 pt-4">
+                  {/* 검색어 변경 시 항상 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되는 결함 방지. */}
                   <div className="relative group/search">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={16} />
                     <Input
+                      aria-label="역할 검색(ID, 명칭)"
                       className="pl-12 h-11 bg-muted/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
                       placeholder="역할 검색(ID, 명칭)..."
-                      value={roleSearchKeyword}
-                      onChange={(e) => setRoleSearchKeyword(e.target.value)}
+                      value={roleSearchInput}
+                      onChange={(e) => { setRoleSearchInput(e.target.value); setRolePage(1); }}
                     />
                   </div>
 
@@ -627,7 +723,7 @@ export default function SecurityHubClient({
                         disabled={!selectedAuthorCode}
                         className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                       >
-                        <Save size={14} /> COMMIT_ENTITY
+                        <Save size={14} aria-hidden="true" /> 사용자 할당 저장
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
@@ -640,10 +736,11 @@ export default function SecurityHubClient({
                   <div className="relative group/search mb-8">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={16} />
                     <Input
+                      aria-label="사용자 검색(ID, 성명)"
                       className="pl-12 h-11 bg-muted/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
                       placeholder="사용자 검색(ID, 성명)..."
-                      value={userSearchKeyword}
-                      onChange={(e) => setUserSearchKeyword(e.target.value)}
+                      value={userSearchInput}
+                      onChange={(e) => { setUserSearchInput(e.target.value); setUserPage(1); }}
                     />
                   </div>
 
@@ -652,10 +749,10 @@ export default function SecurityHubClient({
                       {!selectedAuthorCode ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center p-20 text-center space-y-6">
                           <div className="w-20 h-11 rounded-lg bg-muted flex items-center justify-center text-slate-200">
-                            <Users size={40} className="관리자 권한" />
+                            <Users size={40} className="opacity-20" aria-hidden="true" />
                           </div>
                           <div className="space-y-2">
-                            <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">Identity_Idle</h4>
+                            <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">역할을 선택하세요</h4>
                             <p className="text-xs font-bold text-slate-200 tracking-tight leading-relaxed">보안 역할을 선택하여 식별자 프로브를 활성화하십시오</p>
                           </div>
                         </motion.div>
@@ -697,7 +794,7 @@ export default function SecurityHubClient({
                         disabled={!selectedAuthorCode}
                         className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                       >
-                        <RefreshCcw size={14} /> SYNC_POLICY
+                        <RefreshCcw size={14} aria-hidden="true" /> 메뉴 권한 저장
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
@@ -730,9 +827,16 @@ export default function SecurityHubClient({
                             <Layers size={40} className="opacity-20" />
                           </div>
                           <div className="space-y-2">
-                            <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">Topology_Idle</h4>
+                            <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">역할을 선택하세요</h4>
                             <p className="text-xs font-bold text-slate-200 tracking-tight leading-relaxed">보안 거버넌스 역할을 선택하여 계층 노드를 로드하십시오</p>
                           </div>
+                        </motion.div>
+                      ) : menusError ? (
+                        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} role="alert" className="flex flex-col items-center justify-center py-24 gap-4 text-center">
+                          <AlertTriangle size={40} className="text-rose-500 opacity-70" aria-hidden="true" />
+                          <p className="text-sm font-bold text-foreground">메뉴 접근 정책을 불러오지 못했습니다.</p>
+                          <p className="text-xs font-medium text-muted-foreground">네트워크 상태를 확인한 뒤 다시 시도해 주세요.</p>
+                          <Button variant="outline" onClick={() => refetchMenus()} className="h-10 px-6 rounded-lg text-xs font-bold">다시 시도</Button>
                         </motion.div>
                       ) : isMenusLoading ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24 gap-6">

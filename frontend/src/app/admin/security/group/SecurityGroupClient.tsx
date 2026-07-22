@@ -11,8 +11,6 @@ import { Trash2,
  RefreshCcw,
  Zap,
  Database,
- Lock,
- Activity,
  Fingerprint,
  Binary,
  Network,
@@ -34,15 +32,25 @@ import { Textarea } from '@/components/ui/textarea';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { FormField } from '@/app/components/ui/standard-form';
 import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 ;
+
+/** 이 화면이 소유한 쿼리 키. 새로고침/무효화는 반드시 이 범위로만 좁힌다. */
+const GROUPS_QUERY_KEY = ['admin-groups'] as const;
 
 export default function SecurityGroupClient() {
  const queryClient = useQueryClient();
  const { toast } = useToast();
- const [params, setParams] = useState<SearchParams>({
- pageNo: 1,
- searchKeyword: '',
- });
+ const confirm = useConfirm();
+ const [page, setPage] = useState(1);
+ /**
+  * 입력 컨트롤에는 원본(searchInput)을, 서버 요청/queryKey 에는 디바운스 값만 쓴다.
+  * 종전에는 searchKeyword 가 queryKey 인 params 에 직접 들어가 타이핑 한 글자마다 요청이 나갔다.
+  */
+ const [searchInput, setSearchInput] = useState('');
+ const searchKeyword = useDebouncedValue(searchInput, 300);
+ const params: SearchParams = { pageNo: page, searchKeyword };
  const [isDialogOpen, setIsDialogOpen] = useState(false);
  const [editingGroup, setEditingGroup] = useState<GroupManage | null>(null);
  const [formData, setFormData] = useState<GroupManage>({
@@ -51,8 +59,9 @@ export default function SecurityGroupClient() {
  groupDc: '',
  });
 
- const { data, isLoading } = useQuery({
- queryKey: ['admin-groups', params],
+ // 조회 실패를 '데이터 없음'으로 위장하지 않는다 — error/onRetry 를 테이블까지 내려보낸다.
+ const { data, isLoading, error, refetch } = useQuery({
+ queryKey: [...GROUPS_QUERY_KEY, page, searchKeyword],
  queryFn: () => groupAdminService.getGroupList(params),
  });
 
@@ -67,7 +76,7 @@ export default function SecurityGroupClient() {
  const createMutation = useMutation({
  mutationFn: (data: GroupManage) => groupAdminService.createGroup(data),
  onSuccess: () => {
- queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
+ queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
  setIsDialogOpen(false);
  toast('신규 보안 그룹 아키텍처가 설정되었습니다.', 'success');
  },
@@ -77,7 +86,7 @@ export default function SecurityGroupClient() {
  const updateMutation = useMutation({
  mutationFn: (data: GroupManage) => groupAdminService.updateGroup(data.groupId, data),
  onSuccess: () => {
- queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
+ queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
  setIsDialogOpen(false);
  toast('보안 그룹 명세가 성공적으로 수정되었습니다.', 'success');
  },
@@ -87,15 +96,16 @@ export default function SecurityGroupClient() {
  const deleteMutation = useMutation({
  mutationFn: (groupId: string) => groupAdminService.deleteGroup(groupId),
  onSuccess: () => {
- queryClient.invalidateQueries({ queryKey: ['admin-groups'] });
+ queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
  toast('보안 그룹 프로필이 영구적으로 파기되었습니다.', 'success');
  },
  onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error')
  });
 
+ /** 검색은 항상 1페이지부터 — 3페이지에서 검색하면 빈 화면이 되는 결함 방지. */
  const handleSearch = (e: React.FormEvent) => {
  e.preventDefault();
- setParams(prev => ({ ...prev, pageNo: 1 }));
+ setPage(1);
  };
 
  const handleCreate = () => {
@@ -110,9 +120,16 @@ export default function SecurityGroupClient() {
  setIsDialogOpen(true);
  };
 
- const handleDelete = async (groupId: string) => {
- if (!confirm('정말 삭제하시겠습니까?')) return;
- deleteMutation.mutate(groupId);
+ /** 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상 그룹 명칭을 노출한다. */
+ const handleDelete = async (group: GroupManage) => {
+ const ok = await confirm({
+ title: '보안 그룹 삭제',
+ message: `'${group.groupNm || group.groupId}'(${group.groupId}) 그룹을 삭제하시겠습니까? 이 그룹에 연결된 접근 정책이 함께 사라집니다.`,
+ confirmText: '삭제',
+ variant: 'destructive',
+ });
+ if (!ok) return;
+ deleteMutation.mutate(group.groupId);
  };
 
  const handleSubmit = async () => {
@@ -149,7 +166,7 @@ export default function SecurityGroupClient() {
  )
  },
  {
- header: 'PROVISION_DATE',
+  header: '등록일',
  accessor: (item: GroupManage) => (
  <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground font-mono tracking-tighter">
  <Calendar size={12} className="opacity-40" />
@@ -159,15 +176,15 @@ export default function SecurityGroupClient() {
  className: 'w-48'
  },
  {
- header: 'MANAGEMENT',
+  header: '관리',
  className: 'text-right w-32',
  accessor: (item: GroupManage) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold shadow-sm group">
- <Settings size={16} className="group-hover:rotate-45 transition-transform" />
+ <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} aria-label={`${item.groupNm || item.groupId} 그룹 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold shadow-sm group">
+ <Settings size={16} aria-hidden="true" className="group-hover:rotate-45 transition-transform" />
  </Button>
- <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(item.groupId)} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all shadow-sm">
- <Trash2 size={16} />
+ <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(item)} aria-label={`${item.groupNm || item.groupId} 그룹 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all shadow-sm">
+ <Trash2 size={16} aria-hidden="true" />
  </Button>
  </div>
  )
@@ -190,10 +207,11 @@ export default function SecurityGroupClient() {
  <div className="flex gap-4 p-2 items-center">
  <Button
  variant="ghost"
- onClick={() => queryClient.invalidateQueries()}
- className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ onClick={() => refetch()}
+ aria-label="보안 그룹 목록 새로고침"
+ className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
- <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
+ <RefreshCcw size={22} aria-hidden="true" className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
  <Button
  onClick={handleCreate}
@@ -205,11 +223,13 @@ export default function SecurityGroupClient() {
  }
  />
 
+ {/*
+   지표는 서버가 실제로 내려준 값만 노출한다.
+   종전의 'SYNC_STATUS=STEADY' · 'SECURITY_TIER=TIER_1' 은 산출 근거가 없는 고정 문자열이라 삭제했다.
+ */}
  <HubMetricGrid>
- <HubMetricCard title="ACTIVE_GROUPS" value={groups.length} icon={Database} color="indigo" />
- <HubMetricCard title="ENTITY_NODES" value={pagination?.totalRecordCount || 0} icon={LayoutGrid} color="primary" />
- <HubMetricCard title="SYNC_STATUS" value="STEADY" icon={Activity} color="emerald" status="동기화됨" />
- <HubMetricCard title="SECURITY_TIER" value="TIER_1" icon={Lock} color="amber" />
+ <HubMetricCard title="전체 보안 그룹" value={pagination?.totalRecordCount ?? 0} icon={Database} color="indigo" status="서버 집계" />
+ <HubMetricCard title="현재 페이지 표시" value={groups.length} icon={LayoutGrid} color="primary" status={`${page} 페이지`} />
  </HubMetricGrid>
 
  <HubSectionCard
@@ -221,14 +241,15 @@ export default function SecurityGroupClient() {
  <div className="flex items-center justify-between px-2 pt-2 border-b border-border pb-10 mb-8">
  <div className="flex items-center gap-8">
  <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search">
- <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within/search:text-primary transition-colors" size={18} />
+ <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
  <Input
+ aria-label="그룹ID 또는 그룹명 검색"
  placeholder="그룹ID 또는 그룹명으로 검색"
- className="w-[450px] h-11 pl-16 rounded-lg border-2 bg-muted/50 text-sm font-bold tracking-tight shadow-inner"
- value={params.searchKeyword || ''}
- onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
+ className="w-full sm:w-[450px] h-11 pl-16 rounded-lg border-2 bg-muted/50 text-sm font-bold tracking-tight shadow-inner"
+ value={searchInput}
+ onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
  />
- <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">ANALYZE_RESOURCES</Button>
+ <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">그룹 검색</Button>
  </form>
  </div>
  <div>
@@ -238,9 +259,12 @@ export default function SecurityGroupClient() {
 
  <div className="min-h-[500px]">
  <StandardDataTable
+ keyField="groupId"
  columns={columns}
  data={groups}
  loading={isLoading}
+ error={error as Error | null}
+ onRetry={() => refetch()}
  emptyMessage="식별된 보안 그룹 리소스가 존재하지 않습니다."
  className="border-none bg-transparent"
  />
@@ -250,7 +274,7 @@ export default function SecurityGroupClient() {
  <div className="mt-12 flex justify-center">
  <PagePagination
  pagination={pagination}
- onPageChange={(page) => setParams(prev => ({ ...prev, pageNo: page }))}
+ onPageChange={(p) => setPage(p)}
  />
  </div>
  )}
@@ -266,7 +290,7 @@ export default function SecurityGroupClient() {
  >
  <div className="p-4 space-y-12">
  <div className="grid grid-cols-2 gap-10">
- <FormField label="도메인 그룹 식별자(Group ID)" required description="보안 레이어 내의 유일한 논리 식별자">
+ <FormField htmlFor="groupId" label="도메인 그룹 식별자(Group ID)" required description="보안 레이어 내의 유일한 논리 식별자">
  <div className="relative group/id">
  <Fingerprint size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
  <Input
@@ -279,7 +303,7 @@ export default function SecurityGroupClient() {
  />
  </div>
  </FormField>
- <FormField label="그룹 레이블 명칭" required description="UI 상에 노출될 그룹 리터럴 이름">
+ <FormField htmlFor="groupNm" label="그룹 레이블 명칭" required description="UI 상에 노출될 그룹 리터럴 이름">
  <div className="relative group/nm">
  <Users size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
  <Input
@@ -293,7 +317,7 @@ export default function SecurityGroupClient() {
  </FormField>
  </div>
 
- <FormField label="그룹 정책 상세 명세" description="해당 보안 그룹의 비즈니스 목적 및 데이터 접근 범위 명세">
+ <FormField htmlFor="groupDc" label="그룹 정책 상세 명세" description="해당 보안 그룹의 비즈니스 목적 및 데이터 접근 범위 명세">
  <div className="relative group/dc">
  <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
  <Textarea
@@ -310,7 +334,7 @@ export default function SecurityGroupClient() {
   <button
     type="button"
     onClick={() => setIsDialogOpen(false)}
-    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-white hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
+    className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
   >
     취소
   </button>

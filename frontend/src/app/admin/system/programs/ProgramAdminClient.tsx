@@ -12,17 +12,14 @@ import { PageResponse } from '@/types/foundation/system';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { Plus, 
- Trash2, 
- Settings, 
- Cpu, 
- ShieldCheck, 
- Link as LinkIcon, 
- Search, 
- RefreshCcw, 
- Box, 
- Layers, 
- Zap, 
+import { Plus,
+ Trash2,
+ Settings,
+ Cpu,
+ Link as LinkIcon,
+ Search,
+ Box,
+ Layers,
  SearchCode } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
@@ -53,7 +50,35 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 /** 서버(BaseSearchDto)의 기본 페이지 크기와 동일하게 맞춘다. */
 const PAGE_SIZE = 10;
 
-export default function ProgramAdminClient({ initialData, searchWrd }: { initialData: PageResponse<Program>; searchWrd: string }) {
+/** 조회 실패 사유를 Error 로 정규화한다(StandardDataTable 의 error prop 계약). */
+function toError(value: unknown): Error {
+ if (value instanceof Error) return value;
+ if (typeof value === 'string' && value) return new Error(value);
+ return new Error('데이터를 불러오는 중 오류가 발생했습니다.');
+}
+
+/** 현재 페이지를 URL 에 반영한다(공유·새로고침 복원). 서버 재실행 없이 주소만 갱신한다. */
+function syncPageToUrl(page: number) {
+ if (typeof window === 'undefined') return;
+ const url = new URL(window.location.href);
+ if (page <= 1) url.searchParams.delete('page');
+ else url.searchParams.set('page', String(page));
+ window.history.replaceState(null, '', `${url.pathname}${url.search}`);
+}
+
+export default function ProgramAdminClient({
+ initialData,
+ searchWrd,
+ initialError = null,
+ initialPage = 1,
+}: {
+ initialData: PageResponse<Program>;
+ searchWrd: string;
+ /** 서버 컴포넌트 조회 실패 사유. 실패를 빈 목록으로 위장하지 않기 위해 그대로 전달받는다. */
+ initialError?: string | null;
+ /** URL `?page=` 로 복원된 초기 페이지(1-base) */
+ initialPage?: number;
+}) {
  const { toast } = useToast();
  const confirm = useConfirm();
 
@@ -79,8 +104,9 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  const [totalPage, setTotalPage] = useState<number>(() => {
  return initialData?.totalPage || 1;
  });
- const [page, setPage] = useState(1);
+ const [page, setPage] = useState(initialPage);
  const [loading, setLoading] = useState(false);
+ const [error, setError] = useState<Error | null>(initialError ? toError(initialError) : null);
  const [currentSearchWrd, setCurrentSearchWrd] = useState(searchWrd);
 
  /**
@@ -92,6 +118,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  const loadData = async (wrd: string = currentSearchWrd, targetPage: number = 1) => {
  try {
  setLoading(true);
+ setError(null);
  const res = await programAdminService.getProgramList({
  page: targetPage - 1,
  size: PAGE_SIZE,
@@ -106,7 +133,11 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  setTotal(totalCount);
  setTotalPage(res.totalPage || 1);
  setPage(targetPage);
- } catch (error: unknown) {
+ syncPageToUrl(targetPage);
+ } catch (err: unknown) {
+ // 실패를 "데이터 없음"으로 위장하지 않는다 — 목록 영역에 오류와 재시도 수단을 노출한다.
+ setError(toError(err));
+ setData([]);
  toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
  } finally {
  setLoading(false);
@@ -128,16 +159,16 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  setIsOpen(true);
  };
 
- const handleDelete = async (name: string) => {
+ const handleDelete = async (program: Program) => {
  const isConfirmed = await confirm({
  title: '프로그램 삭제',
- message: `[${name}] 프로그램을 삭제하시겠습니까? 해당 프로그램과 연결된 모든 메뉴 연동이 해제될 수 있습니다.`,
+ message: `[${program.prgrmKornNm}] (${program.prgrmFileNm}) 프로그램을 삭제하시겠습니까? 해당 프로그램과 연결된 모든 메뉴 연동이 해제될 수 있습니다.`,
  variant: 'destructive',
  confirmText: '삭제 실행'
  });
  if (isConfirmed) {
  try {
- await programAdminService.deleteProgram(name);
+ await programAdminService.deleteProgram(program.prgrmFileNm);
  toast('프로그램이 삭제되었습니다.', 'success');
  loadData(currentSearchWrd, page);
  } catch (err: any) {
@@ -155,8 +186,11 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <Cpu size={20} />
  </div>
  <div className="text-left">
- <span className="font-bold tracking-tighter text-foreground block text-md uppercase leading-none">{item.prgrmKornNm}</span>
- <span className="text-xs font-bold text-muted-foreground tracking-[0.3em] mt-2 uppercase opacity-100 text-left">SYSTEM_MODULE</span>
+ <span className="font-bold tracking-tighter text-foreground block text-md leading-none">{item.prgrmKornNm}</span>
+ {/* 근거 없는 고정 문구(SYSTEM_MODULE) 대신 실제 저장 경로를 노출한다. */}
+ <span className="text-xs font-bold text-muted-foreground tracking-tight mt-2 opacity-100 text-left font-mono">
+ {item.prgrmStrgPath || '저장 경로 미지정'}
+ </span>
  </div>
  </div>
  )
@@ -189,7 +223,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <div className="flex justify-end gap-2 pr-4">
  <Tooltip>
  <TooltipTrigger asChild>
- <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border text-muted-foreground hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
+ <Button size="icon" aria-label={`${item.prgrmKornNm} 프로그램 수정`} className="h-10 w-10 rounded-lg bg-muted border border-border text-muted-foreground hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
  <Settings size={16} />
  </Button>
  </TooltipTrigger>
@@ -200,7 +234,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
 
  <Tooltip>
  <TooltipTrigger asChild>
- <Button size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all rounded-lg" onClick={() => handleDelete(item.prgrmFileNm)}>
+ <Button size="icon" aria-label={`${item.prgrmKornNm} 프로그램 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all rounded-lg" onClick={() => handleDelete(item)}>
  <Trash2 size={16} />
  </Button>
  </TooltipTrigger>
@@ -243,11 +277,14 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  }
  />
 
- <HubMetricGrid>
- <HubMetricCard title="활성_프로그램_수" value={total} icon={Layers} color="primary" />
- <HubMetricCard title="시스템 무결성" value="정상" icon={ShieldCheck} color="emerald" status="확인됨" />
- <HubMetricCard title="서비스 가동시간" value="99.9%" icon={Zap} color="amber" />
- <HubMetricCard title="인벤토리 동기화" value="실시간" icon={RefreshCcw} color="indigo" />
+ {/*
+   근거 없는 고정 지표('시스템 무결성 정상' · '가동시간 99.9%' · '동기화 실시간')는 산출 근거가 없어 삭제했다.
+   남긴 카드는 모두 서버 응답(total/totalPage)과 현재 목록에서 실제로 계산되는 값이다.
+ */}
+ <HubMetricGrid className="lg:grid-cols-3">
+ <HubMetricCard title="전체 프로그램" value={total} icon={Layers} color="primary" />
+ <HubMetricCard title="현재 페이지" value={`${page} / ${Math.max(totalPage, 1)}`} icon={Box} color="indigo" />
+ <HubMetricCard title="현재 페이지 표시 건수" value={data.length} icon={Cpu} color="emerald" />
  </HubMetricGrid>
 
  <HubSectionCard 
@@ -260,6 +297,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  <div className="relative group/search">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
  <Input
+ aria-label="프로그램 검색어"
  placeholder="프로그램명 또는 파일명을 입력하여 검색.."
  value={currentSearchWrd}
  onChange={(e) => setCurrentSearchWrd(e.target.value)}
@@ -278,11 +316,16 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  columns={columns}
  data={data}
  loading={loading}
+ error={error}
+ onRetry={() => loadData(currentSearchWrd, page)}
+ keyField="prgrmFileNm"
  emptyMessage="시스템에 등록된 프로그램 자산이 존재하지 않습니다."
  className="border-none bg-transparent"
  pagination={{
  currentPage: page,
  totalPages: totalPage,
+ totalCount: total,
+ pageSize: PAGE_SIZE,
  onPageChange: (p) => loadData(currentSearchWrd, p)
  }}
  />

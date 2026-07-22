@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck,  
  Lock,  
@@ -54,6 +54,16 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  const [searchMenu, setSearchMenu] = useState('');
  const [isFullscreen, setIsFullscreen] = useState(false);
 
+ /** 전체화면은 ESC 로 빠져나올 수 있어야 한다(수제 오버레이라 Radix 의 ESC 처리가 없다). */
+ useEffect(() => {
+ if (!isFullscreen) return;
+ const onKeyDown = (e: KeyboardEvent) => {
+ if (e.key === 'Escape') setIsFullscreen(false);
+ };
+ window.addEventListener('keydown', onKeyDown);
+ return () => window.removeEventListener('keydown', onKeyDown);
+ }, [isFullscreen]);
+
  const filteredMenus = menus.filter(m => String(m.menuNm || '').toLowerCase().includes(searchMenu.toLowerCase()));
 
  // 통계 계산
@@ -64,7 +74,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  return (
  <div className={cn(
  "relative flex flex-col gap-6 transition-all duration-700",
- isFullscreen ? "fixed inset-0 z-[100] bg-white p-12 overflow-y-auto" : ""
+ isFullscreen ? "fixed inset-0 z-[100] bg-card p-12 overflow-y-auto" : ""
  )}>
  {/* UI Header / Stats */}
  <div className="flex flex-col lg:flex-row items-center justify-between gap-8 bg-surface-inverse rounded-lg p-10 shadow-2xl relative overflow-hidden group">
@@ -97,20 +107,22 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </div>
 
  <div className="flex gap-4 relative z-10 self-stretch lg:self-center">
- <Button 
- variant="ghost" 
- size="icon" 
+ <Button
+ variant="ghost"
+ size="icon"
+ aria-label={isFullscreen ? '매트릭스 전체화면 종료 (ESC)' : '매트릭스 전체화면 보기'}
+ aria-pressed={isFullscreen}
  onClick={() => setIsFullscreen(!isFullscreen)}
- className="h-11 w-14 rounded-lg bg-white/10 text-surface-inverse-foreground border border-white/10 hover:bg-white hover:text-foreground transition-all shadow-xl"
+ className="h-11 w-14 rounded-lg bg-white/10 text-surface-inverse-foreground border border-white/10 hover:bg-card hover:text-foreground transition-all shadow-xl"
  >
- {isFullscreen ? <Minimize2 size={24} /> : <Maximize2 size={24} />}
+ {isFullscreen ? <Minimize2 size={24} aria-hidden="true" /> : <Maximize2 size={24} aria-hidden="true" />}
  </Button>
  <Button 
  onClick={onSave}
  disabled={isSaving}
  className="h-11 px-10 rounded-lg bg-primary text-white font-bold text-xs tracking-widest uppercase shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-1 gap-3 group"
  >
- <Save size={18} className={cn(isSaving && "animate-spin")} /> {isSaving ? 'SYNCING...' : 'COMMIT_CHANGES'}
+ <Save size={18} aria-hidden="true" className={cn(isSaving && "animate-spin")} /> {isSaving ? '저장 중…' : '변경사항 저장'}
  </Button>
  </div>
  </div>
@@ -120,7 +132,8 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <div className="flex items-center gap-6">
  <div className="relative flex-1 group/search">
  <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={20} />
- <Input 
+ <Input
+ aria-label="메뉴 노드 검색(명칭, ID)"
  className="h-11 pl-16 rounded-lg border-none shadow-xl text-md font-bold tracking-tight focus:ring-8 focus:ring-primary/5"
  placeholder="메뉴 노드 검색(명칭, ID)..."
  value={searchMenu}
@@ -129,24 +142,25 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </div>
  </div>
 
- <div className="overflow-x-auto rounded-lg border-2 border-border bg-white shadow-2xl custom-scrollbar relative">
+ <div className="overflow-x-auto rounded-lg border-2 border-border bg-card shadow-2xl custom-scrollbar relative">
  <table className="w-full border-collapse table-fixed min-w-[1000px]">
+ <caption className="sr-only">역할별 메뉴 접근 권한 매트릭스. 각 셀은 해당 역할의 메뉴 접근 허용 여부를 토글합니다.</caption>
  <thead>
  <tr className="border-b-2 border-border divide-x-2 divide-border">
- <th className="sticky left-0 top-0 z-30 w-[240px] bg-surface-inverse p-8 text-left border-r-4 border-surface-inverse-border">
+ <th scope="col" className="sticky left-0 top-0 z-30 w-[240px] bg-surface-inverse p-8 text-left border-r-4 border-surface-inverse-border">
  <div className="flex items-center gap-3">
- <Monitor size={16} className="text-primary" />
- <span className="text-xs font-bold text-white/40 tracking-[0.4em] uppercase ">Entity_Map</span>
+ <Monitor size={16} className="text-primary" aria-hidden="true" />
+ <span className="text-xs font-bold text-white/40 tracking-widest">메뉴 노드</span>
  </div>
  </th>
  {authors.map((auth) => {
  const code = auth.authrtCd;
  const name = auth.authrtNm;
  return (
- <th key={code} className="p-8 bg-muted/50 min-w-[150px] transition-colors hover:bg-muted">
- <div className="flex flex-col items-center gap-2 group/header cursor-pointer">
- <div className="w-10 h-10 rounded-lg bg-white border-2 border-border flex items-center justify-center text-muted-foreground transition-all group-hover/header:bg-slate-900 group-hover/header:text-white group-hover/header:scale-110 shadow-sm">
- <Lock size={14} />
+ <th key={code} scope="col" className="p-8 bg-muted/50 min-w-[150px] transition-colors hover:bg-muted">
+ <div className="flex flex-col items-center gap-2 group/header">
+ <div className="w-10 h-10 rounded-lg bg-card border-2 border-border flex items-center justify-center text-muted-foreground transition-all group-hover/header:bg-surface-inverse group-hover/header:text-surface-inverse-foreground group-hover/header:scale-110 shadow-sm">
+ <Lock size={14} aria-hidden="true" />
  </div>
  <span className="text-xs font-bold text-foreground tracking-tighter truncate w-full text-center">{name}</span>
  <span className="text-xs font-bold text-muted-foreground tracking-widest font-mono uppercase">{code}</span>
@@ -159,20 +173,20 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <tbody className="divide-y-2 divide-border">
  {filteredMenus.map((menu) => (
  <tr key={menu.menuNo} className="divide-x-2 divide-border hover:bg-muted/50 transition-colors group/row">
- <td className="sticky left-0 z-20 bg-white p-6 border-r-4 border-border group-hover/row:bg-muted transition-colors">
+ <th scope="row" className="sticky left-0 z-20 bg-card p-6 border-r-4 border-border text-left font-normal group-hover/row:bg-muted transition-colors">
  <div className="flex items-center gap-4">
  <div className={cn(
  "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
  menu.upMenuSn === 0 ? "bg-amber-50 text-amber-500" : "bg-muted text-muted-foreground"
  )}>
- {menu.upMenuSn === 0 ? <Database size={14} /> : <ChevronRight size={14} />}
+ {menu.upMenuSn === 0 ? <Database size={14} aria-hidden="true" /> : <ChevronRight size={14} aria-hidden="true" />}
  </div>
  <div className="flex flex-col min-w-0">
  <span className="text-sm font-bold text-foreground truncate tracking-tight">{menu.menuNm}</span>
  <span className="text-xs font-bold text-muted-foreground tracking-widest font-mono uppercase">NODE_{menu.menuNo}</span>
  </div>
  </div>
- </td>
+ </th>
  {authors.map((auth) => {
  const code = auth.authrtCd;
  const isSelected = mappings.get(code)?.has(menu.menuNo);
@@ -184,12 +198,14 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <motion.button
  whileHover={{ scale: 0.98 }}
  whileTap={{ scale: 0.95 }}
+ aria-label={`${auth.authrtNm || code} 역할의 '${menu.menuNm}' 메뉴 접근 ${isSelected ? '허용됨' : '차단됨'}`}
+ aria-pressed={!!isSelected}
  onClick={() => onToggle(code, menu.menuNo)}
  className={cn(
  "w-full h-11 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden group/cell",
- isSelected 
- ? "bg-slate-900 shadow-xl border-none" 
- : "bg-white hover:bg-muted border-2 border-dashed border-border hover:border-border"
+ isSelected
+ ? "bg-surface-inverse shadow-xl border-none"
+ : "bg-card hover:bg-muted border-2 border-dashed border-border hover:border-border"
  )}
  >
  <AnimatePresence mode="wait">
@@ -200,8 +216,8 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  exit={{ scale: 0, rotate: 20 }}
  className="flex flex-col items-center gap-1"
  >
- <ShieldCheck size={20} className="text-primary" />
- <span className="text-xs font-bold text-white/50 tracking-tighter uppercase ">AUTHORIZED</span>
+ <ShieldCheck size={20} className="text-primary" aria-hidden="true" />
+ <span className="text-xs font-bold text-surface-inverse-foreground/60 tracking-tight">허용</span>
  </motion.div>
  ) : (
  <motion.div
@@ -209,8 +225,8 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  animate={{ opacity: 0.2 }}
  className="flex flex-col items-center gap-1 group-hover/cell:opacity-100 transition-opacity"
  >
- <Lock size={16} className="text-muted-foreground" />
- <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase">DENIED</span>
+ <Lock size={16} className="text-muted-foreground" aria-hidden="true" />
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">차단</span>
  </motion.div>
  )}
  </AnimatePresence>
@@ -232,13 +248,13 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
 
  {/* Footer / Guide */}
  <div className="flex items-center gap-6 p-8 bg-muted border-2 border-border border-dashed rounded-lg">
- <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center text-primary shadow-sm border border-border shrink-0">
- <Info size={24} />
+ <div className="w-12 h-12 rounded-lg bg-card flex items-center justify-center text-primary shadow-sm border border-border shrink-0">
+ <Info size={24} aria-hidden="true" />
  </div>
  <div className="space-y-1">
  <p className="text-sm font-bold text-foreground tracking-tight leading-none uppercase underline decoration-primary/20 decoration-4 underline-offset-4">Governance_Protocol_Guide</p>
  <p className="text-xs font-medium text-muted-foreground">
- 각 격자(Cell)를 클릭하여 해당 역할에 대한 메뉴 접근 권한을 토글합니다. 변경 사항은 우측 상단의 <span className="text-foreground font-bold">COMMIT_CHANGES</span> 버튼을 눌러 실제 아키텍처에 반영해야 합니다.
+ 각 격자(Cell)를 클릭하여 해당 역할에 대한 메뉴 접근 권한을 토글합니다. 변경 사항은 우측 상단의 <span className="text-foreground font-bold">변경사항 저장</span> 버튼을 눌러 실제 아키텍처에 반영해야 합니다.
  </p>
  </div>
  </div>

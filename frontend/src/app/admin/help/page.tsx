@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { Suspense } from 'react';
 import KnowledgeHubClient from './KnowledgeHubClient';
 
 export default function KnowledgeArchiveHubPage() {
- return (
- <div className="space-y-6">
- <KnowledgeHubClient />
- </div>
- );
+  // 카테고리를 URL(?tab=)에서 파생시키므로 useSearchParams 를 사용한다 → Suspense 경계 필요.
+  return (
+    <Suspense fallback={<div className="h-[60vh] animate-pulse rounded-lg bg-muted" />}>
+      <KnowledgeHubClient />
+    </Suspense>
+  );
 }

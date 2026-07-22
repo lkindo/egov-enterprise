@@ -2,12 +2,12 @@
 
 import React from 'react';
 import dynamic from 'next/dynamic';
+import { useQuery } from '@tanstack/react-query';
 import { Activity,
   BarChart3,
   Clock,
   AlertTriangle,
   RefreshCcw,
-  ExternalLink,
   Zap,
   Layers } from 'lucide-react';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -15,6 +15,7 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { Button } from '@/components/ui/button';
+import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 
 // P2: Dynamic Import for the heavy Topology visualization
 const ServiceTopology = dynamic(() => import('./components/ServiceTopology'), {
@@ -66,17 +67,28 @@ function measurementValue(metric: ActuatorMetric | null, statistic: string): num
   return m ? m.value : null;
 }
 
-export default function ObservabilityPage() {
-  const [metrics, setMetrics] = React.useState<MetricsState>({
-    traffic: PLACEHOLDER,
-    latency: PLACEHOLDER,
-    errorRate: PLACEHOLDER,
-    cpuUsage: PLACEHOLDER,
-    healthStatus: 'UNKNOWN',
-    live: false,
-  });
+const IDLE_METRICS: MetricsState = {
+  traffic: PLACEHOLDER,
+  latency: PLACEHOLDER,
+  errorRate: PLACEHOLDER,
+  cpuUsage: PLACEHOLDER,
+  healthStatus: 'UNKNOWN',
+  live: false,
+};
 
-  const fetchMetrics = React.useCallback(async () => {
+/** CSV 반출 컬럼(현재 화면에 표시 중인 실측 지표 그대로) */
+const METRIC_EXPORT_HEADERS = [
+  { label: '수집시각', key: 'collectedAt' },
+  { label: '글로벌 트래픽(Req/s)', key: 'traffic' },
+  { label: '시스템 지연시간(ms)', key: 'latency' },
+  { label: '에러 발생률(%)', key: 'errorRate' },
+  { label: '노드 부하율(%)', key: 'cpuUsage' },
+  { label: 'Health', key: 'healthStatus' },
+  { label: '실측여부', key: 'live' },
+];
+
+export default function ObservabilityPage() {
+  const fetchMetrics = React.useCallback(async (): Promise<MetricsState> => {
     // same-origin /actuator 프록시를 통해 실측 액추에이터 메트릭을 병렬 조회한다.
     const [health, cpu, httpReq, uptime, httpErr] = await Promise.all([
       fetch('/actuator/health', { cache: 'no-store' })
@@ -117,21 +129,26 @@ export default function ObservabilityPage() {
         ? (((errCount ?? 0) / reqCount) * 100).toFixed(2)
         : PLACEHOLDER;
 
-    setMetrics({
+    return {
       traffic,
       latency,
       errorRate,
       cpuUsage,
       healthStatus: health?.status || (live ? 'UNKNOWN' : 'DOWN'),
       live,
-    });
+    };
   }, []);
 
-  React.useEffect(() => {
-    fetchMetrics();
-    const timer = setInterval(fetchMetrics, 5000);
-    return () => clearInterval(timer);
-  }, [fetchMetrics]);
+  // [P2] 수기 setInterval(5s) 은 탭이 백그라운드여도 액추에이터를 계속 두드렸다.
+  //      TanStack Query 로 이관해 백그라운드 폴링 중단·중복 요청 dedup 을 확보한다
+  //      (FE 헌법 제4조: 서버 상태는 TanStack Query 전용).
+  const { data: metrics = IDLE_METRICS, refetch, isFetching } = useQuery({
+    queryKey: ['observability-actuator-metrics'],
+    queryFn: fetchMetrics,
+    refetchInterval: 5000,
+    refetchIntervalInBackground: false,
+    staleTime: 4000,
+  });
 
   // fabricated delta('+12.4%' 등)를 제거하고, 실측 여부를 정직하게 표기한다.
   // 값이 플레이스홀더면 '미가용', 실측이면 'LIVE' 배지를 노출한다.
@@ -151,13 +168,31 @@ export default function ObservabilityPage() {
         subtitle="전체 분산 아키텍처의 흐름과 인프라 상태를 실시간으로 모니터링합니다."
         icon={Zap}
         actions={
+          // [P1-6] '데이터 익스포트'는 onClick 이 없는 死버튼이었다.
+          //        동작 검증된 DataExportExcel(UTF-8 BOM CSV)로 현재 실측 지표를 반출하도록 배선한다.
           <div className="flex gap-4">
-            <Button onClick={fetchMetrics} variant="outline" className="h-11 px-8 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
-                <RefreshCcw size={18} /> 실시간 동기화
+            <Button
+              onClick={() => { void refetch(); }}
+              disabled={isFetching}
+              variant="outline"
+              className="h-11 px-8 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
+            >
+                <RefreshCcw size={18} aria-hidden="true" /> 지표 새로고침
             </Button>
-            <Button className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
-                <ExternalLink size={18} /> 데이터 익스포트
-            </Button>
+            <DataExportExcel
+              data={[{
+                collectedAt: new Date().toISOString(),
+                traffic: metrics.traffic,
+                latency: metrics.latency,
+                errorRate: metrics.errorRate,
+                cpuUsage: metrics.cpuUsage,
+                healthStatus: metrics.healthStatus,
+                live: metrics.live ? '실측' : '미가용',
+              }]}
+              headers={METRIC_EXPORT_HEADERS}
+              filename="관제지표"
+              className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl flex items-center gap-2"
+            />
           </div>
         }
       />
@@ -169,9 +204,10 @@ export default function ObservabilityPage() {
         <HubMetricCard title="노드 부하율" value={metrics.cpuUsage} unit="%" icon={Activity} color="amber" status={metrics.cpuUsage === PLACEHOLDER ? '미가용' : `Health: ${metrics.healthStatus}`} />
       </HubMetricGrid>
 
+      {/* [P1-5] '실시간 트래픽 플로우'는 사실이 아니다 — 토폴로지는 실측 API 미연동 상태의 구성도다. */}
       <HubSectionCard
-        title="서비스 토폴로지 맵"
-        description="분산 마이크로서비스 간의 상관관계 및 실시간 트래픽 플로우를 시각화합니다."
+        title="서비스 토폴로지 맵 (샘플 구성도)"
+        description="분산 마이크로서비스 간의 구성 관계를 나타낸 참고용 구성도입니다. 실측 트래픽/지연 데이터는 아직 연동되지 않았습니다."
         icon={Layers}
         className="bg-surface-inverse border-none shadow-2xl rounded-[2.5rem] overflow-hidden"
       >

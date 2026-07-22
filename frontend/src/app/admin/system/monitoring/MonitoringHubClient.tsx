@@ -8,32 +8,32 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 ;
-import { Activity,  
-  ShieldAlert,  
-  Terminal,  
-  MessageSquare,  
-  Search,  
-  RefreshCcw,  
-  Bell, 
-  Zap, 
-  LogIn, 
-  Cpu, 
-  Server, 
-  Download, 
-  Trash2, 
-  ShieldCheck, 
-  ChevronRight, 
-  MonitorCheck, 
-  Database, 
-  Network, 
-  CheckCircle2, 
-  AlertCircle, 
-  Share2, 
-  FileText } from 'lucide-react';
+import { Activity,
+  ShieldAlert,
+  Terminal,
+  MessageSquare,
+  Search,
+  RefreshCcw,
+  Zap,
+  LogIn,
+  Cpu,
+  Download,
+  Trash2,
+  ShieldCheck,
+  MonitorCheck,
+  Database,
+  Network,
+  CheckCircle2,
+  AlertCircle,
+  Share2 } from 'lucide-react';
+import Link from 'next/link';
 
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+import { DataExportExcel } from '@/app/components/ui/data-export-excel';
+import { Skeleton } from '@/components/ui/skeleton';
 import { auditAdminService } from '@/services/foundation/system/AuditAdminService';
 import { commentAdminService } from '@/services/foundation/system/CommentAdminService';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
@@ -41,9 +41,19 @@ import { monitoringAdminService } from '@/services/foundation/system/MonitoringA
 import { motion, AnimatePresence } from 'framer-motion';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import dynamic from 'next/dynamic';
-const GaugeChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.GaugeChart), { ssr: false });
-const RealtimeSparkline = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.RealtimeSparkline), { ssr: false });
-const SystemStatusRadar = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.SystemStatusRadar), { ssr: false });
+// dynamic fallback 은 실제 차트와 동일 높이를 잡아 청크 도착 시 레이아웃 시프트(CLS)를 없앤다.
+const GaugeChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.GaugeChart), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[240px] w-full rounded-lg" />
+});
+const RealtimeSparkline = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.RealtimeSparkline), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[110px] w-full rounded-lg" />
+});
+const SystemStatusRadar = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.SystemStatusRadar), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[420px] w-full rounded-lg" />
+});
 
 const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').then(mod => mod.TopologyMap), {
   ssr: false,
@@ -55,75 +65,214 @@ const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').the
   )
 });
 import { StandardModal } from '@/app/components/ui/standard-modal';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
 type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS' | 'TOPOLOGY' | 'HARNESS';
+
+const MONITORING_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN', 'OBSERVABILITY', 'COMMENTS', 'TOPOLOGY', 'HARNESS'];
+
+/** 목록 탭(서버 데이터 조회 + 페이저를 쓰는 탭) 여부 */
+const LIST_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN', 'COMMENTS'];
+
+const PAGE_SIZE = 50;
+
+/**
+ * 에이전트 하네스 아틀라스의 스킬 카탈로그.
+ * ⚠ 실측 계측이 아니라 저장소 문서(GEMINI.md §6.1)를 옮겨둔 **정적 카탈로그**다.
+ * 과거 이 배열이 렌더 함수와 상세 조회에 각각 중복 정의되어 있어 한쪽만 수정되는 사고가 있었다.
+ */
+const HARNESS_SKILLS = [
+  { id: "SKILL_ENG_01", name: "Deep Context Mapper", desc: "1M+ 대용량 메모리 기반 다중 모듈 및 DB 위상 맵 로드", status: "ACTIVE", type: "SKILL" as const },
+  { id: "SKILL_ENG_02", name: "API Contract Guardian", desc: "DB 제약조건 ➔ BE DTO ➔ FE Zod 스키마 연쇄 거울 동기화", status: "ACTIVE", type: "SKILL" as const },
+  { id: "SKILL_ENG_03", name: "OWASP Security Auditor", desc: "Spring Security, Next.js 미들웨어, JWT Red Team 검증", status: "ACTIVE", type: "SKILL" as const },
+  { id: "SKILL_ENG_04", name: "Resilience Debugger", desc: "DB Bridge 및 로컬 프로세스 좀비 포트 정리 및 자가복구", status: "ACTIVE", type: "SKILL" as const },
+  { id: "SKILL_ENG_05", name: "Zero-Downtime Planner", desc: "PostgreSQL 스키마 변경 시 무중단 Expand-and-Contract 설계", status: "ACTIVE", type: "SKILL" as const },
+  { id: "SKILL_ENG_06", name: "Mutation Testing Auditor", desc: "의도적 버그 주입으로 단위/통합 테스트 방어력 실증", status: "ACTIVE", type: "SKILL" as const },
+  { id: "SKILL_ENG_07", name: "Visual Auditor", desc: "브라우저 subagent 네이티브 픽셀 비교 regression 오디팅", status: "ACTIVE", type: "SKILL" as const },
+  { id: "SKILL_ENG_08", name: "Docs-as-Code Sync", desc: "로직 변경에 따른 Markdown 가이드 및 Mermaid 다이어그램 동적 갱신", status: "ACTIVE", type: "SKILL" as const }
+];
+
+/**
+ * JPA 가드레일 계측 예시 로그.
+ * ⚠ 실측 소스가 없는 **샘플 데이터**다. 화면에서도 '샘플' 배지로 명시한다.
+ */
+const HARNESS_SAMPLE_TESTS = [
+  { id: "TEST_01", testName: "QueryCountGuardrailIntegrationTest.queryCountGuardrail_successWithinLimit", queries: 12, max: 15, status: "SAFE", time: "방금 전", type: "TEST" as const },
+  { id: "TEST_02", testName: "ScheduleServiceTest.deleteSchedule_fail_notCreator", queries: 2, max: 10, status: "SAFE", time: "3분 전", type: "TEST" as const },
+  { id: "TEST_03", testName: "NoteServiceImplTest.getReceivedNotes", queries: 4, max: 10, status: "SAFE", time: "8분 전", type: "TEST" as const },
+  { id: "TEST_04", testName: "InstitutionCodeServiceTest.verifyCodeRetrievalWithCaching", queries: 1, max: 5, status: "SAFE", time: "15분 전", type: "TEST" as const }
+];
+
+/** CSV 반출 컬럼 매핑 — 백엔드 DTO(SysLogDto / LoginLog / CommentDetail)의 실제 필드명을 따른다. */
+const SYS_LOG_EXPORT_HEADERS = [
+  { label: '요청ID', key: 'dmndId' },
+  { label: '서비스명', key: 'srvcNm' },
+  { label: '메서드', key: 'methodNm' },
+  { label: '처리구분', key: 'prcsSeCd' },
+  { label: '요청자', key: 'dmndUserId' },
+  { label: '요청IP', key: 'rqesterIp' },
+  { label: '발생일자', key: 'ocrnYmd' },
+  { label: '처리시간(ms)', key: 'prcsTm' }
+];
+
+const LOGIN_LOG_EXPORT_HEADERS = [
+  { label: '로그ID', key: 'logId' },
+  { label: '로그인ID', key: 'loginId' },
+  { label: '사용자명', key: 'loginNm' },
+  { label: '로그인방식', key: 'loginMthd' },
+  { label: '접속IP', key: 'loginIp' },
+  { label: '일시', key: 'creatDt' }
+];
+
+const COMMENT_EXPORT_HEADERS = [
+  { label: '댓글번호', key: 'ansSn' },
+  { label: '내용', key: 'ansCn' },
+  { label: '작성자ID', key: 'wrterId' },
+  { label: '작성자명', key: 'wrterNm' },
+  { label: '작성일시', key: 'crtDt' },
+  { label: '게시판ID', key: 'bbsId' },
+  { label: '게시글ID', key: 'pstId' }
+];
+
+/**
+ * 목록 탭의 조회 상태 묶음.
+ * 탭마다 행 타입이 달라(SysLogDto / LoginLog / CommentDetail) 단일 제네릭으로 좁힐 수 없으므로,
+ * 파일 내 기존 `Column<any>` 규약과 동일하게 느슨한 행 타입을 유지한다.
+ */
+interface ListTabConfig {
+  columns: Column<any>[];
+  data: any[];
+  loading: boolean;
+  error: Error | null;
+  refetch: () => void;
+  keyField: string;
+  rowId: (item: any) => string | number;
+  totalPage: number;
+  totalCount?: number;
+  searchable: boolean;
+  emptyMessage: string;
+  exportName: string;
+  exportHeaders: { label: string; key: string }[];
+  label: string;
+}
+
+/** 실측 소스가 없는 위젯에 붙이는 공용 '샘플 데이터' 배지 */
+function SampleDataBadge({ className }: { className?: string }) {
+  return (
+    <span className={cn(
+      "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border border-amber-200 bg-amber-50 text-amber-700 text-[10px] font-black tracking-widest uppercase dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-900/40",
+      className
+    )}>
+      <AlertCircle size={11} aria-hidden="true" /> 샘플 데이터 · 실측 미연동
+    </span>
+  );
+}
 
 export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defaultTab?: MonitoringTab }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const confirm = useConfirm();
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
-  
+
   const rawTab = searchParams.get('tab')?.toUpperCase();
   const queryTab = (rawTab === 'HEALTH' ? 'OBSERVABILITY' : rawTab === 'POLICY' ? 'LOGIN' : rawTab) as MonitoringTab;
-  
-  const activeTab = (queryTab && ['SECURITY', 'SYSTEM', 'LOGIN', 'OBSERVABILITY', 'COMMENTS', 'TOPOLOGY', 'HARNESS'].includes(queryTab)) 
-    ? queryTab 
+
+  const activeTab = (queryTab && MONITORING_TABS.includes(queryTab))
+    ? queryTab
     : defaultTab;
+
+  // [P1-7] 페이지도 URL 파생값으로 둔다 → 공유·새로고침·뒤로가기가 조회 위치까지 복원한다.
+  //        (검색어는 개인정보 노출 우려로 URL 에 싣지 않는다 — 감사 D-13 절충안)
+  const page = Math.max(1, Number(searchParams.get('page')) || 1);
 
   const [isPending, startTransition] = useTransition();
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [page, setPage] = useState(1);
 
-  const setActiveTab = (tab: MonitoringTab) => {
+  // [P1-8] 타이핑 한 글자마다 서버 요청이 나가던 문제 → 300ms 디바운스 후에만 조회한다.
+  const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
+
+  /**
+   * 현재 경로를 유지한 채 쿼리스트링만 바꾼다.
+   * 과거에는 `/admin/system/monitoring` 로 하드코딩 push 해서 `/hub`·`/admin/system/comments`
+   * 진입 시 사이드바 활성 메뉴가 풀리고 중복 라우트로 이탈했다(감사 mr-04 / sys-mon-18).
+   */
+  const updateQuery = (updates: Record<string, string | null>) => {
+    const params = new URLSearchParams(searchParams.toString());
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null) params.delete(key);
+      else params.set(key, value);
+    });
+    const queryString = params.toString();
     startTransition(() => {
-      const params = new URLSearchParams(searchParams);
-      params.set('tab', tab.toLowerCase());
-      router.push(`/admin/system/monitoring?${params.toString()}`, { scroll: false });
-      setSelectedItemId(null);
-      setPage(1);
+      router.replace(queryString ? `${pathname}?${queryString}` : pathname, { scroll: false });
     });
   };
 
-  const { data: auditData, isLoading: isAuditLoading } = useQuery({
-    queryKey: ['admin-audit-logs', searchKeyword, page],
-    queryFn: () => auditAdminService.getAuditLogs({ page: page - 1, size: 50, keyword: searchKeyword }),
+  const setActiveTab = (tab: MonitoringTab) => {
+    setSelectedItemId(null);
+    setSearchKeyword('');
+    updateQuery({ tab: tab.toLowerCase(), page: null });
+  };
+
+  const setPage = (nextPage: number) => {
+    updateQuery({ page: nextPage <= 1 ? null : String(nextPage) });
+  };
+
+  /** [P1-8] 검색어 변경 시 페이지를 1로 되돌린다(3페이지에서 검색 → 빈 화면 방지). */
+  const handleSearchKeywordChange = (value: string) => {
+    setSearchKeyword(value);
+    if (page !== 1) setPage(1);
+  };
+
+  const { data: auditData, isLoading: isAuditLoading, error: auditError, refetch: refetchAudit } = useQuery({
+    queryKey: ['admin-audit-logs', debouncedKeyword, page],
+    queryFn: () => auditAdminService.getAuditLogs({ page: page - 1, size: PAGE_SIZE, keyword: debouncedKeyword }),
     enabled: activeTab === 'SECURITY'
   });
   const auditLogs = useMemo(() => auditData?.list || [], [auditData]);
 
-  const { data: systemLogData, isLoading: isSystemLoading } = useQuery({
-    queryKey: ['admin-system-logs', searchKeyword, page],
-    queryFn: () => systemLogAdminService.getSystemLogs({ page: page - 1, size: 50, searchWrd: searchKeyword }),
+  const { data: systemLogData, isLoading: isSystemLoading, error: systemLogError, refetch: refetchSystemLogs } = useQuery({
+    queryKey: ['admin-system-logs', debouncedKeyword, page],
+    queryFn: () => systemLogAdminService.getSystemLogs({ page: page - 1, size: PAGE_SIZE, searchWrd: debouncedKeyword }),
     enabled: activeTab === 'SYSTEM'
   });
   const systemLogs = useMemo(() => systemLogData?.list || [], [systemLogData]);
 
-  const { data: loginLogData, isLoading: isLoginLoading } = useQuery({
-    queryKey: ['admin-login-logs', searchKeyword, page],
-    queryFn: () => systemLogAdminService.getLoginLogs({ page: page - 1, size: 50, searchWrd: searchKeyword }),
+  const { data: loginLogData, isLoading: isLoginLoading, error: loginLogError, refetch: refetchLoginLogs } = useQuery({
+    queryKey: ['admin-login-logs', debouncedKeyword, page],
+    queryFn: () => systemLogAdminService.getLoginLogs({ page: page - 1, size: PAGE_SIZE, searchWrd: debouncedKeyword }),
     enabled: activeTab === 'LOGIN'
   });
   const loginLogs = useMemo(() => loginLogData?.list || [], [loginLogData]);
 
-  const { data: commentData, isLoading: isCommentLoading } = useQuery({
-    queryKey: ['admin-comments', searchKeyword, page],
-    queryFn: () => commentAdminService.getComments({ page: page - 1, size: 50, searchWrd: searchKeyword }),
+  // ⚠ 백엔드 CommentApiController 는 키워드 검색을 지원하지 않는다(CommentAdminService 주석 참조).
+  //    따라서 COMMENTS 탭에서는 검색 입력을 렌더하지 않고, queryKey 에도 검색어를 넣지 않는다.
+  const { data: commentData, isLoading: isCommentLoading, error: commentError, refetch: refetchComments } = useQuery({
+    queryKey: ['admin-comments', page],
+    queryFn: () => commentAdminService.getComments({ page: page - 1, size: PAGE_SIZE }),
     enabled: activeTab === 'COMMENTS'
   });
   const comments = useMemo(() => commentData?.list || [], [commentData]);
 
   // Real-time Metrics Queries
-  const { data: healthData } = useQuery({
+  const { data: healthData, error: healthError, isLoading: isHealthLoading, refetch: refetchHealth } = useQuery({
     queryKey: ['admin-health'],
     queryFn: () => monitoringAdminService.getHealth(),
     refetchInterval: 30000,
     enabled: activeTab === 'OBSERVABILITY'
   });
+
+  /**
+   * [P1-1] 액추에이터 조회 실패를 '0%'/'정상'으로 위장하지 않는다.
+   * ⚠ CPU·메모리 게이지는 `MonitoringAdminService` 가 내부 catch 로 0 을 반환해 실패와 유휴가
+   *   구분되지 않는다(서비스 파일 소유자 정정 필요 — `number | null` 반환으로 승격).
+   *   여기서는 health 조회 실패를 근거로 액추에이터 미가용을 화면에 명시한다.
+   */
+  const isActuatorUnavailable = activeTab === 'OBSERVABILITY' && !isHealthLoading && (Boolean(healthError) || !healthData);
 
   const { data: cpuUsage = 0 } = useQuery({
     queryKey: ['admin-metrics-cpu'],
@@ -174,26 +323,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     if (!selectedItemId) return null;
     const idStr = String(selectedItemId);
     if (idStr.startsWith('SKILL_')) {
-      const skills = [
-        { id: "SKILL_ENG_01", name: "Deep Context Mapper", desc: "1M+ 대용량 메모리 기반 다중 모듈 및 DB 위상 맵 로드", status: "ACTIVE", type: "SKILL" },
-        { id: "SKILL_ENG_02", name: "API Contract Guardian", desc: "DB 제약조건 ➔ BE DTO ➔ FE Zod 스키마 연쇄 거울 동기화", status: "ACTIVE", type: "SKILL" },
-        { id: "SKILL_ENG_03", name: "OWASP Security Auditor", desc: "Spring Security, Next.js 미들웨어, JWT Red Team 검증", status: "ACTIVE", type: "SKILL" },
-        { id: "SKILL_ENG_04", name: "Resilience Debugger", desc: "DB Bridge 및 로컬 프로세스 좀비 포트 정리 및 자가복구", status: "ACTIVE", type: "SKILL" },
-        { id: "SKILL_ENG_05", name: "Zero-Downtime Planner", desc: "PostgreSQL 스키마 변경 시 무중단 Expand-and-Contract 설계", status: "ACTIVE", type: "SKILL" },
-        { id: "SKILL_ENG_06", name: "Mutation Testing Auditor", desc: "의도적 버그 주입으로 단위/통합 테스트 방어력 실증", status: "ACTIVE", type: "SKILL" },
-        { id: "SKILL_ENG_07", name: "Visual Auditor", desc: "브라우저 subagent 네이티브 픽셀 비교 regression 오디팅", status: "ACTIVE", type: "SKILL" },
-        { id: "SKILL_ENG_08", name: "Docs-as-Code Sync", desc: "로직 변경에 따른 Markdown 가이드 및 Mermaid 다이어그램 동적 갱신", status: "ACTIVE", type: "SKILL" }
-      ];
-      return skills.find(s => s.id === idStr) || null;
+      return HARNESS_SKILLS.find(s => s.id === idStr) || null;
     }
     if (idStr.startsWith('TEST_')) {
-      const testLogs = [
-        { id: "TEST_01", testName: "QueryCountGuardrailIntegrationTest.queryCountGuardrail_successWithinLimit", queries: 12, max: 15, status: "SAFE", time: "방금 전", type: "TEST" },
-        { id: "TEST_02", testName: "ScheduleServiceTest.deleteSchedule_fail_notCreator", queries: 2, max: 10, status: "SAFE", time: "3분 전", type: "TEST" },
-        { id: "TEST_03", testName: "NoteServiceImplTest.getReceivedNotes", queries: 4, max: 10, status: "SAFE", time: "8분 전", type: "TEST" },
-        { id: "TEST_04", testName: "InstitutionCodeServiceTest.verifyCodeRetrievalWithCaching", queries: 1, max: 5, status: "SAFE", time: "15분 전", type: "TEST" }
-      ];
-      return testLogs.find(t => t.id === idStr) || null;
+      return HARNESS_SAMPLE_TESTS.find(t => t.id === idStr) || null;
     }
     if (activeTab === 'COMMENTS') return comments.find(c => c.ansSn === selectedItemId);
     if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.dmndId) === idStr);
@@ -204,7 +337,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const auditColumns: Column<any>[] = [
     {
-      header: 'SECURITY_AUDIT',
+      header: '보안 감사 로그',
       accessor: (log) => (
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
@@ -227,7 +360,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const systemLogColumns: Column<any>[] = [
     {
-      header: 'SYSTEM_ENGINE',
+      header: '시스템 로그',
       accessor: (log) => (
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
@@ -250,7 +383,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const loginLogColumns: Column<any>[] = [
     {
-      header: 'UNIFIED_LOGIN',
+      header: '접속 이력',
       accessor: (log) => (
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
@@ -273,7 +406,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const commentColumns: Column<any>[] = [
     {
-      header: 'FEEDBACK_STREAM',
+      header: '댓글 및 피드백',
       accessor: (c) => (
         <div className="flex items-center gap-5 py-2 w-full pr-4">
           <div className={cn(
@@ -305,35 +438,69 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const renderObservability = () => (
     <div className="space-y-10 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="grid grid-cols-2 gap-6">
+      {isActuatorUnavailable && (
+        <div role="alert" className="flex items-start gap-4 p-6 rounded-lg border-2 border-rose-200 bg-rose-50 dark:bg-rose-950/30 dark:border-rose-900/40">
+          <AlertCircle size={20} aria-hidden="true" className="text-rose-500 shrink-0 mt-0.5" />
+          <div className="space-y-2">
+            <p className="text-sm font-bold text-rose-900 dark:text-rose-300 leading-none">액추에이터 지표를 가져오지 못했습니다</p>
+            <p className="text-xs font-medium text-rose-800/80 dark:text-rose-300/80 leading-relaxed">
+              아래 CPU·메모리 수치는 <strong>실측값이 아닐 수 있습니다</strong>. 백엔드 `/actuator` 가용 여부를 확인해 주세요.
+            </p>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => { void refetchHealth(); }}
+              className="h-9 rounded-lg text-xs font-bold"
+            >
+              다시 시도
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* 실측(액추에이터) 기반 지표 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <GaugeChart value={Number(cpuUsage.toFixed(1))} title="CPU_LOAD" unit="%" color="#10B981" />
         <GaugeChart value={Number(memUsage.toFixed(1))} title="MEMORY_ALLOC" unit="%" color="#3B82F6" />
       </div>
 
-      <div className="grid grid-cols-2 gap-6">
-         <RealtimeSparkline 
-            label="NETWORK_TRAFFIC (PPS)" 
-            data={[ {value: 30}, {value: 45}, {value: 32}, {value: 67}, {value: 55}, {value: 89}, {value: 24} ]} 
-            color="#F59E0B"
-         />
-         <RealtimeSparkline 
-            label="DB_LATENCY (MS)" 
-            data={[ {value: 12}, {value: 15}, {value: 14}, {value: 18}, {value: 15}, {value: 13}, {value: 15} ]} 
-            color="#8B5CF6"
-         />
-      </div>
+      {/*
+        [P1-5] 아래 스파크라인 2종과 레이더 차트는 실측 소스가 없는 고정 배열이다.
+        삭제 대신 '샘플 데이터' 배지를 명시해 운영 판단 근거로 오인되지 않게 한다(원칙 (c)).
+        실제 배선 시 actuator 의 http.server.requests / hikaricp.connections 등으로 교체할 것.
+      */}
+      <div className="space-y-4 rounded-lg border-2 border-dashed border-amber-200 dark:border-amber-900/40 p-6">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">추세 · 다차원 상태(미연동)</h4>
+          <SampleDataBadge />
+        </div>
 
-      <SystemStatusRadar 
-         title="HEURISTIC_SYSTEM_HEALTH"
-         data={[
-            { subject: '가용성', A: healthData?.status === 'UP' ? 100 : 0 },
-            { subject: '보안성', A: 95 },
-            { subject: '응답속도', A: 88 },
-            { subject: '무결성', A: 100 },
-            { subject: '확장성', A: 75 },
-            { subject: '안정성', A: 92 },
-         ]}
-      />
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+           <RealtimeSparkline
+              label="NETWORK_TRAFFIC (PPS)"
+              data={[ {value: 30}, {value: 45}, {value: 32}, {value: 67}, {value: 55}, {value: 89}, {value: 24} ]}
+              color="#F59E0B"
+           />
+           <RealtimeSparkline
+              label="DB_LATENCY (MS)"
+              data={[ {value: 12}, {value: 15}, {value: 14}, {value: 18}, {value: 15}, {value: 13}, {value: 15} ]}
+              color="#8B5CF6"
+           />
+        </div>
+
+        <SystemStatusRadar
+           title="HEURISTIC_SYSTEM_HEALTH (샘플)"
+           data={[
+              { subject: '가용성', A: healthData?.status === 'UP' ? 100 : 0 },
+              { subject: '보안성', A: 95 },
+              { subject: '응답속도', A: 88 },
+              { subject: '무결성', A: 100 },
+              { subject: '확장성', A: 75 },
+              { subject: '안정성', A: 92 },
+           ]}
+        />
+      </div>
 
       <div className="rounded-lg p-12 bg-surface-inverse text-surface-inverse-foreground shadow-2xl relative overflow-hidden group border-none">
         <div className="absolute top-0 right-0 p-16 opacity-10 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
@@ -350,9 +517,11 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            {/* [P1-5] Redis 는 고정 '안정' 표기였으나 실제 health 컴포넌트를 조회하도록 정정.
+                액추에이터에 해당 컴포넌트가 없으면 'UNKNOWN'(주황)으로 정직하게 표기된다. */}
             <StatusIndicator label="API Microservices" status={healthData?.status || 'UNKNOWN'} icon={Network} />
             <StatusIndicator label="PostgreSQL Cluster" status={healthData?.components?.db?.status || 'UNKNOWN'} icon={Database} />
-            <StatusIndicator label="Redis Cache Fabric" status="안정" icon={CheckCircle2} />
+            <StatusIndicator label="Redis Cache Fabric" status={healthData?.components?.redis?.status || 'UNKNOWN'} icon={CheckCircle2} />
           </div>
         </div>
       </div>
@@ -360,37 +529,22 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   );
 
   const renderHarness = () => {
-    // Recent performance guardrail test runs
-    const testLogs = [
-      { id: "TEST_01", testName: "QueryCountGuardrailIntegrationTest.queryCountGuardrail_successWithinLimit", queries: 12, max: 15, status: "SAFE", time: "방금 전" },
-      { id: "TEST_02", testName: "ScheduleServiceTest.deleteSchedule_fail_notCreator", queries: 2, max: 10, status: "SAFE", time: "3분 전" },
-      { id: "TEST_03", testName: "NoteServiceImplTest.getReceivedNotes", queries: 4, max: 10, status: "SAFE", time: "8분 전" },
-      { id: "TEST_04", testName: "InstitutionCodeServiceTest.verifyCodeRetrievalWithCaching", queries: 1, max: 5, status: "SAFE", time: "15분 전" }
-    ];
-
-    const skills = [
-      { id: "SKILL_ENG_01", name: "Deep Context Mapper", desc: "1M+ 대용량 메모리 기반 다중 모듈 및 DB 위상 맵 로드", status: "ACTIVE" },
-      { id: "SKILL_ENG_02", name: "API Contract Guardian", desc: "DB 제약조건 ➔ BE DTO ➔ FE Zod 스키마 연쇄 거울 동기화", status: "ACTIVE" },
-      { id: "SKILL_ENG_03", name: "OWASP Security Auditor", desc: "Spring Security, Next.js 미들웨어, JWT Red Team 검증", status: "ACTIVE" },
-      { id: "SKILL_ENG_04", name: "Resilience Debugger", desc: "DB Bridge 및 로컬 프로세스 좀비 포트 정리 및 자가복구", status: "ACTIVE" },
-      { id: "SKILL_ENG_05", name: "Zero-Downtime Planner", desc: "PostgreSQL 스키마 변경 시 무중단 Expand-and-Contract 설계", status: "ACTIVE" },
-      { id: "SKILL_ENG_06", name: "Mutation Testing Auditor", desc: "의도적 버그 주입으로 단위/통합 테스트 방어력 실증", status: "ACTIVE" },
-      { id: "SKILL_ENG_07", name: "Visual Auditor", desc: "브라우저 subagent 네이티브 픽셀 비교 regression 오디팅", status: "ACTIVE" },
-      { id: "SKILL_ENG_08", name: "Docs-as-Code Sync", desc: "로직 변경에 따른 Markdown 가이드 및 Mermaid 다이어그램 동적 갱신", status: "ACTIVE" }
-    ];
-
     return (
       <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 font-sans text-foreground">
         {/* --- Section 1: 8대 독점 네이티브 엔진 리스트 (2열 배치) --- */}
         <div className="space-y-4">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">8대 네이티브 오케스트레이션 엔진</h4>
+            <SampleDataBadge />
             <div className="h-px bg-muted flex-1" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {skills.map((skill, index) => (
-              <button 
-                key={skill.id} 
+            {HARNESS_SKILLS.map((skill, index) => (
+              <button
+                key={skill.id}
+                type="button"
+                aria-label={`${skill.name} 엔진 상세 보기`}
+                aria-pressed={selectedItemId === skill.id}
                 onClick={() => setSelectedItemId(skill.id)}
                 className={cn(
                   "p-5 rounded-lg bg-muted border-2 transition-all flex flex-col justify-between group text-left outline-none cursor-pointer",
@@ -416,28 +570,29 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         </div>
 
         {/* --- Section 2: JPA 성능 가드레일 계측 패널 (가로 전체 활용) --- */}
-        <div className="rounded-xl border-2 border-border bg-white p-6 shadow-xl space-y-6">
-          <div className="flex items-center justify-between border-b border-border pb-4">
+        <div className="rounded-xl border-2 border-border bg-card p-6 shadow-xl space-y-6">
+          <div className="flex items-center justify-between gap-4 flex-wrap border-b border-border pb-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg text-primary">
                 <Zap size={18} />
               </div>
               <div>
                 <h4 className="text-sm font-bold text-foreground leading-none">JPA Performance Guardrail Telemetry</h4>
-                <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-tight">실시간 테스트-타임 SQL 쿼리 가드레일 계측 보드</p>
+                {/* '실시간 계측'이라는 표현은 사실이 아니므로 제거 — 아래 목록은 예시 로그다. */}
+                <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-tight">테스트-타임 SQL 쿼리 가드레일 예시 보드</p>
               </div>
             </div>
-            <div className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-100 rounded-lg text-[10px] font-black flex items-center gap-1.5 shadow-sm">
-              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              ACTIVE PROTECTION
-            </div>
+            <SampleDataBadge />
           </div>
 
           {/* Test list */}
           <div className="space-y-3 max-h-[350px] overflow-y-auto pr-2 custom-scrollbar">
-            {testLogs.map(log => (
+            {HARNESS_SAMPLE_TESTS.map(log => (
               <button
                 key={log.id}
+                type="button"
+                aria-label={`${log.testName} 계측 상세 보기`}
+                aria-pressed={selectedItemId === log.id}
                 onClick={() => setSelectedItemId(log.id)}
                 className={cn(
                   "w-full p-4 rounded-lg border text-left flex items-center justify-between transition-all group outline-none cursor-pointer",
@@ -469,7 +624,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           </div>
 
           <div className="p-4 bg-hub-indigo/5 border border-hub-indigo/10 rounded-lg flex items-center gap-4">
-            <div className="p-3 bg-white rounded-lg shadow-sm border border-hub-indigo/20 text-primary shrink-0">
+            <div className="p-3 bg-card rounded-lg shadow-sm border border-hub-indigo/20 text-primary shrink-0">
               <CheckCircle2 size={20} />
             </div>
             <div className="space-y-0.5">
@@ -484,6 +639,104 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     );
   };
 
+  /**
+   * 현재 탭의 목록 상태(데이터·로딩·오류·재시도·페이저·반출 스키마)를 한 곳에 모은다.
+   * 과거에는 4중 삼항 연산자가 prop 마다 반복돼 error/onRetry 를 붙일 자리가 없었고,
+   * 그 결과 404·500 이 전부 '데이터가 없습니다'로 위장됐다(감사 P1-1 / sys-mon-05).
+   */
+  const listConfig: ListTabConfig | null = LIST_TABS.includes(activeTab)
+    ? ((): ListTabConfig => {
+        switch (activeTab) {
+          case 'SYSTEM':
+            return {
+              columns: systemLogColumns,
+              data: systemLogs,
+              loading: isSystemLoading,
+              error: systemLogError,
+              refetch: () => { void refetchSystemLogs(); },
+              keyField: 'dmndId',
+              rowId: (item: any) => item.dmndId,
+              totalPage: systemLogData?.totalPage || 1,
+              totalCount: systemLogData?.total,
+              searchable: true,
+              emptyMessage: '조회 조건에 해당하는 시스템 로그가 없습니다.',
+              exportName: '시스템로그',
+              exportHeaders: SYS_LOG_EXPORT_HEADERS,
+              label: '시스템 로그 엔진'
+            };
+          case 'LOGIN':
+            return {
+              columns: loginLogColumns,
+              data: loginLogs,
+              loading: isLoginLoading,
+              error: loginLogError,
+              refetch: () => { void refetchLoginLogs(); },
+              keyField: 'logId',
+              rowId: (item: any) => item.logId,
+              totalPage: loginLogData?.totalPage || 1,
+              totalCount: loginLogData?.total,
+              searchable: true,
+              emptyMessage: '조회 조건에 해당하는 접속 이력이 없습니다.',
+              exportName: '접속이력',
+              exportHeaders: LOGIN_LOG_EXPORT_HEADERS,
+              label: '인증 접속 히스토리'
+            };
+          case 'COMMENTS':
+            return {
+              columns: commentColumns,
+              data: comments,
+              loading: isCommentLoading,
+              error: commentError,
+              refetch: () => { void refetchComments(); },
+              keyField: 'ansSn',
+              rowId: (item: any) => item.ansSn,
+              totalPage: commentData?.totalPage || 1,
+              totalCount: commentData?.total,
+              // 백엔드가 댓글 키워드 검색을 지원하지 않아 검색 입력을 노출하지 않는다.
+              searchable: false,
+              emptyMessage: '등록된 댓글이 없습니다.',
+              exportName: '댓글목록',
+              exportHeaders: COMMENT_EXPORT_HEADERS,
+              label: '서비스 피드백 관리'
+            };
+          case 'SECURITY':
+          default:
+            return {
+              columns: auditColumns,
+              data: auditLogs,
+              loading: isAuditLoading,
+              error: auditError,
+              refetch: () => { void refetchAudit(); },
+              keyField: 'dmndId',
+              rowId: (item: any) => item.dmndId,
+              totalPage: auditData?.totalPage || 1,
+              totalCount: auditData?.total,
+              searchable: true,
+              emptyMessage: '조회 조건에 해당하는 감사 로그가 없습니다.',
+              exportName: '보안감사로그',
+              exportHeaders: SYS_LOG_EXPORT_HEADERS,
+              label: '보안 감사 매트릭스'
+            };
+        }
+      })()
+    : null;
+
+  /**
+   * [P2] 인자 없는 `invalidateQueries()` 는 메뉴·알림까지 앱 전역 쿼리를 재요청한다.
+   * 현재 탭의 쿼리만 다시 가져오도록 좁힌다.
+   */
+  const handleRefreshActiveTab = () => {
+    if (listConfig) {
+      listConfig.refetch();
+      return;
+    }
+    if (activeTab === 'OBSERVABILITY') {
+      void queryClient.invalidateQueries({ queryKey: ['admin-health'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin-metrics-cpu'] });
+      void queryClient.invalidateQueries({ queryKey: ['admin-metrics-mem'] });
+    }
+  };
+
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <PageHeader
@@ -491,23 +744,23 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         breadcrumbs={[{ label: '시스템관리' }, { label: '모니터링 허브' }]}
       />
 
-      <HubHeader 
-        title="Auditing" 
-        highlight="Intelligence" 
-        subtitle="전사 인프라 로깅 프로토콜 및 실시간 데이터 무결성 관찰 시스템" 
-        icon={Activity} 
+      <HubHeader
+        title="Auditing"
+        highlight="Intelligence"
+        subtitle="전사 인프라 로깅 프로토콜 및 데이터 무결성 관찰 시스템"
+        icon={Activity}
         actions={
+          // [P1-6] 핸들러가 없던 '알림 정책' 버튼 제거(백엔드 알림 정책 API 부재).
+          //        '리포트 스냅샷'은 삭제 대신 실제 CSV 반출(DataExportExcel)로 배선했다.
           <div className="flex gap-4 p-2">
-            <button 
+            <button
+                type="button"
                 onClick={() => setIsReportModalOpen(true)}
-                className="h-11 px-8 rounded-lg border-2 border-border bg-white text-foreground font-bold text-xs tracking-tight gap-3 hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-sm flex items-center justify-center group outline-none cursor-pointer"
+                className="h-11 px-8 rounded-lg border-2 border-border bg-card text-foreground font-bold text-xs tracking-tight gap-3 hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-sm flex items-center justify-center group outline-none cursor-pointer"
             >
-              <Download size={18} className="group-hover:translate-y-0.5 transition-transform shrink-0" />
+              <Download size={18} aria-hidden="true" className="group-hover:translate-y-0.5 transition-transform shrink-0" />
               <span>리포트 스냅샷</span>
             </button>
-            <Button size="lg" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3">
-              <Bell size={20} /> 알림 정책
-            </Button>
           </div>
         }
       />
@@ -515,57 +768,83 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       <div className="grid grid-cols-12 gap-12 px-2 min-h-[900px]">
         {/* --- Navigation Side Panel --- */}
         <div className="col-span-12 lg:col-span-3 space-y-8 h-fit lg:sticky lg:top-8">
-          <div className="rounded-lg p-4 bg-white/40 backdrop-blur-xl border-2 border-border shadow-xl space-y-3">
-            <NavButton icon={<ShieldAlert size={22} />} label="보안 감사 매트릭스" active={activeTab === 'SECURITY'} onClick={() => { setActiveTab('SECURITY'); setSelectedItemId(null); }} />
-            <NavButton icon={<Terminal size={22} />} label="시스템 로그 엔진" active={activeTab === 'SYSTEM'} onClick={() => { setActiveTab('SYSTEM'); setSelectedItemId(null); }} />
-            <NavButton icon={<LogIn size={22} />} label="인증 접속 히스토리" active={activeTab === 'LOGIN'} onClick={() => { setActiveTab('LOGIN'); setSelectedItemId(null); }} />
-            <NavButton icon={<MonitorCheck size={22} />} label="인프라 가동성 정보" active={activeTab === 'OBSERVABILITY'} onClick={() => { setActiveTab('OBSERVABILITY'); setSelectedItemId(null); }} />
-            <NavButton icon={<Share2 size={22} />} label="인프라 토폴로지 맵" active={activeTab === 'TOPOLOGY'} onClick={() => { setActiveTab('TOPOLOGY'); setSelectedItemId(null); }} />
-            <NavButton icon={<Zap size={22} className={activeTab === 'HARNESS' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'} />} label="에이전트 하네스 아틀라스" active={activeTab === 'HARNESS'} onClick={() => { setActiveTab('HARNESS'); setSelectedItemId(null); }} />
-            <NavButton icon={<MessageSquare size={22} />} label="서비스 피드백 관리" active={activeTab === 'COMMENTS'} onClick={() => { setActiveTab('COMMENTS'); setSelectedItemId(null); }} />
+          {/* [P2] 수제 탭에 WAI-ARIA 탭 시맨틱 부여 — 스크린리더가 '탭 3/7'로 읽고 방향키 탐색이 가능해진다. */}
+          <div
+            role="tablist"
+            aria-label="모니터링 허브 영역 선택"
+            aria-orientation="vertical"
+            className="rounded-lg p-4 bg-card/40 backdrop-blur-xl border-2 border-border shadow-xl space-y-3"
+          >
+            <NavButton tab="SECURITY" icon={<ShieldAlert size={22} />} label="보안 감사 매트릭스" active={activeTab === 'SECURITY'} onClick={() => setActiveTab('SECURITY')} />
+            <NavButton tab="SYSTEM" icon={<Terminal size={22} />} label="시스템 로그 엔진" active={activeTab === 'SYSTEM'} onClick={() => setActiveTab('SYSTEM')} />
+            <NavButton tab="LOGIN" icon={<LogIn size={22} />} label="인증 접속 히스토리" active={activeTab === 'LOGIN'} onClick={() => setActiveTab('LOGIN')} />
+            <NavButton tab="OBSERVABILITY" icon={<MonitorCheck size={22} />} label="인프라 가동성 정보" active={activeTab === 'OBSERVABILITY'} onClick={() => setActiveTab('OBSERVABILITY')} />
+            <NavButton tab="TOPOLOGY" icon={<Share2 size={22} />} label="인프라 토폴로지 맵" active={activeTab === 'TOPOLOGY'} onClick={() => setActiveTab('TOPOLOGY')} />
+            <NavButton tab="HARNESS" icon={<Zap size={22} className={activeTab === 'HARNESS' ? 'text-primary' : 'text-muted-foreground group-hover:text-primary'} />} label="에이전트 하네스 아틀라스" active={activeTab === 'HARNESS'} onClick={() => setActiveTab('HARNESS')} />
+            <NavButton tab="COMMENTS" icon={<MessageSquare size={22} />} label="서비스 피드백 관리" active={activeTab === 'COMMENTS'} onClick={() => setActiveTab('COMMENTS')} />
           </div>
 
+          {/*
+            [P1-5] '보안 수준: 최상' 고정 문구 제거 — 어떤 보안 계측도 하지 않으면서
+            운영자에게 상시 안전 신호를 주던 근거 없는 지표였다.
+            권한 정책 실 관리 화면으로 이동하는 딥링크로 대체한다(P1-6 '권한 설정' 배선 규약).
+          */}
           <div className="bg-surface-inverse text-surface-inverse-foreground rounded-lg p-10 space-y-6 text-center shadow-2xl relative overflow-hidden flex flex-col items-center">
             <div className="w-20 h-11 bg-white/10 rounded-lg flex items-center justify-center border border-white/5 shadow-inner transition-transform hover:rotate-12 duration-500">
-              <ShieldCheck size={40} className="text-primary" />
+              <ShieldCheck size={40} className="text-primary" aria-hidden="true" />
             </div>
             <div className="space-y-2">
                 <h3 className="text-xl font-bold tracking-tighter">감사 프로토콜</h3>
-                <p className="text-xs font-bold text-white/30 tracking-tight">보안 수준: 최상</p>
+                <p className="text-xs font-bold text-white/40 tracking-tight leading-relaxed">
+                  로그·접속 이력은 좌측 탭에서 조회합니다.<br />권한 부여 정책은 별도 화면에서 관리합니다.
+                </p>
             </div>
-            <div className="flex justify-center gap-2 opacity-20 mt-2">
-              {[1,2,3,4,5,6,7,8].map(i => <div key={i} className="w-1.5 h-6 bg-white rounded-lg animate-pulse" style={{ animationDelay: `${i * 0.1}s` }} />)}
-            </div>
+            <Link
+              href="/admin/security/authority"
+              className="text-xs font-bold tracking-tight px-6 py-3 rounded-lg bg-white/10 hover:bg-primary hover:text-white transition-colors"
+            >
+              권한 정책 관리로 이동
+            </Link>
           </div>
         </div>
 
         {/* --- Central Intelligence Stream --- */}
         <div className="col-span-12 lg:col-span-5 flex flex-col gap-8 h-full">
-          <div className="rounded-lg bg-white border-2 border-border shadow-2xl flex-1 flex flex-col p-12 space-y-10 relative overflow-hidden">
+          <div
+            role="tabpanel"
+            id={`monitoring-panel-${activeTab}`}
+            aria-labelledby={`monitoring-tab-${activeTab}`}
+            className="rounded-lg bg-card border-2 border-border shadow-2xl flex-1 flex flex-col p-12 space-y-10 relative overflow-hidden"
+          >
             <div className="flex items-center justify-between border-b border-border pb-8 relative z-10">
               <div className="space-y-1">
                 <h3 className="text-xs font-bold text-muted-foreground tracking-tight">데이터 스트림</h3>
                 <p className="text-2xl font-bold tracking-tighter text-foreground">인베스티게이션</p>
               </div>
-              <Button 
-                variant="ghost" 
-                size="icon" 
+              <Button
+                variant="ghost"
+                size="icon"
                 aria-label="데이터 스트림 새로고침"
-                onClick={() => queryClient.invalidateQueries()} 
+                onClick={handleRefreshActiveTab}
                 className="h-11 w-14 rounded-lg bg-muted hover:bg-primary hover:text-white transition-all shadow-inner group"
               >
-                <RefreshCcw size={20} className="group-active:rotate-180 transition-transform duration-500" />
+                <RefreshCcw size={20} aria-hidden="true" className="group-active:rotate-180 transition-transform duration-500" />
               </Button>
             </div>
-            
-            {activeTab !== 'OBSERVABILITY' && (
-              <div className="relative group/search relative z-10">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
-                <Input 
-                  className="pl-16 h-11 bg-muted border-none rounded-lg text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground" 
-                  placeholder="로그 객체 필터링.." 
+
+            {/*
+              [P1-8] 검색은 디바운스된 값으로만 서버에 나간다.
+              COMMENTS 탭은 백엔드가 키워드 검색을 지원하지 않아(입력해도 결과 불변) 입력 자체를 노출하지 않는다.
+            */}
+            {listConfig?.searchable && (
+              <div className="relative group/search z-10">
+                <Search aria-hidden="true" className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
+                <Input
+                  className="pl-16 h-11 bg-muted border-none rounded-lg text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
+                  placeholder="서비스명·메서드·계정 검색.."
+                  aria-label="로그 검색어"
                   value={searchKeyword}
-                  onChange={(e) => setSearchKeyword(e.target.value)}
+                  onChange={(e) => handleSearchKeywordChange(e.target.value)}
                 />
               </div>
             )}
@@ -579,22 +858,28 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                   exit={{ opacity: 0, y: -10 }}
                   transition={{ duration: 0.5, ease: "circOut" }}
                 >
-                  {activeTab === 'OBSERVABILITY' ? renderObservability() : activeTab === 'TOPOLOGY' ? <TopologyMap /> : activeTab === 'HARNESS' ? renderHarness() : (
+                  {activeTab === 'OBSERVABILITY' ? renderObservability() : activeTab === 'TOPOLOGY' ? <TopologyMap /> : activeTab === 'HARNESS' ? renderHarness() : listConfig ? (
                     <StandardDataTable
-                        columns={(activeTab === 'SECURITY' ? auditColumns : activeTab === 'SYSTEM' ? systemLogColumns : activeTab === 'LOGIN' ? loginLogColumns : commentColumns) as any}
-                        data={(activeTab === 'SECURITY' ? auditLogs : activeTab === 'SYSTEM' ? systemLogs : activeTab === 'LOGIN' ? loginLogs : comments) as any}
-                        loading={activeTab === 'SECURITY' ? isAuditLoading : activeTab === 'SYSTEM' ? isSystemLoading : activeTab === 'LOGIN' ? isLoginLoading : isCommentLoading}
-                        onRowClick={(item) => setSelectedItemId(activeTab === 'SECURITY' ? item.dmndId : activeTab === 'SYSTEM' ? item.dmndId : activeTab === 'LOGIN' ? item.logId : item.ansSn)}
-                        keyField={activeTab === 'SECURITY' ? 'dmndId' : activeTab === 'SYSTEM' ? 'dmndId' : activeTab === 'LOGIN' ? 'logId' : 'ansSn'}
+                        columns={listConfig.columns}
+                        data={listConfig.data}
+                        loading={listConfig.loading || isPending}
+                        /* [P1-1] 조회 실패를 '데이터가 없습니다'로 위장하지 않는다 — 오류 + 재시도 노출 */
+                        error={listConfig.error}
+                        onRetry={listConfig.refetch}
+                        onRowClick={(item) => setSelectedItemId(listConfig.rowId(item))}
+                        keyField={listConfig.keyField}
                         isPremium={false}
                         className="bg-transparent border-none shadow-none"
+                        emptyMessage={listConfig.emptyMessage}
                         pagination={{
                             currentPage: page,
-                            totalPages: (activeTab === 'SECURITY' ? auditData : activeTab === 'SYSTEM' ? systemLogData : activeTab === 'LOGIN' ? loginLogData : commentData)?.totalPage || 1,
+                            totalPages: listConfig.totalPage,
+                            totalCount: listConfig.totalCount,
+                            pageSize: PAGE_SIZE,
                             onPageChange: (p) => setPage(p)
                         }}
                     />
-                  )}
+                  ) : null}
                 </motion.div>
               </AnimatePresence>
             </div>
@@ -619,12 +904,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 transition={{ duration: 0.6, ease: "circOut" }}
                 className="h-full"
               >
-                <div className="rounded-lg bg-white border-2 border-slate-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] h-full p-14 space-y-12 flex flex-col relative overflow-hidden">
+                <div className="rounded-lg bg-card border-2 border-border shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] h-full p-14 space-y-12 flex flex-col relative overflow-hidden">
                   <div className="border-b border-border pb-12 relative z-10">
                     <div className="flex items-center gap-3 mb-6">
                         <div className="w-3 h-3 rounded-full bg-primary shadow-lg shadow-primary/40" />
                         <h3 className="text-xs font-bold text-muted-foreground tracking-tight">
-                          {selectedItem && (selectedItem as any).type === 'SKILL' ? '아틀라스 엔진 명세' : selectedItem && (selectedItem as any).type === 'TEST' ? 'JPA SQL 실시간 계측' : '인스턴스 메타데이터'}
+                          {selectedItem && (selectedItem as any).type === 'SKILL' ? '아틀라스 엔진 명세' : selectedItem && (selectedItem as any).type === 'TEST' ? 'JPA SQL 계측 예시' : '인스턴스 메타데이터'}
                         </h3>
                     </div>
                     <h2 className="text-4xl font-bold text-foreground tracking-tighter leading-none mb-4">
@@ -654,26 +939,18 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                     )}
                   </div>
 
-                  <div className="pt-12 mt-auto border-t border-border space-y-8 relative z-10">
-                    <div className="flex items-center justify-between px-6">
-                       <span className="text-xs font-bold text-muted-foreground tracking-tight">결정 매트릭스</span>
-                       <Activity size={20} className="text-primary animate-pulse" />
-                    </div>
-                    <Button className="w-full h-11 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold tracking-tight text-xs shadow-2xl shadow-primary/30 hover:bg-primary transition-all hover:-translate-y-2 group overflow-hidden">
-                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-                      유지보수 파이프라인 실행
-                    </Button>
-                  </div>
-                  
+                  {/* [P1-6] 핸들러가 없던 '유지보수 파이프라인 실행' 버튼과 '결정 매트릭스' 장식 제거
+                       (백엔드에 대응 엔드포인트가 없어 클릭해도 아무 일도 일어나지 않았다). */}
+
                   <div className="absolute left-0 top-0 w-full h-2 bg-primary/10" />
                 </div>
               </motion.div>
             ) : activeTab === 'HARNESS' ? (
-              <HarnessDashboardOverview selectedItemId={selectedItemId} setSelectedItemId={setSelectedItemId} />
+              <HarnessDashboardOverview />
             ) : (
-              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-40 select-none grayscale rounded-lg border-4 border-dashed border-border bg-muted/50 group transition-all hover:bg-white hover:border-primary/20 duration-1000">
-                <div className="w-24 h-24 rounded-lg bg-white border-2 border-border flex items-center justify-center mb-10 shadow-xl group-hover:rotate-12 transition-transform duration-700">
-                    <Activity size={100} className="text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all" />
+              <div className="h-full flex flex-col items-center justify-center p-20 text-center opacity-40 select-none grayscale rounded-lg border-4 border-dashed border-border bg-muted/50 group transition-all hover:bg-card hover:border-primary/20 duration-1000">
+                <div className="w-24 h-24 rounded-lg bg-card border-2 border-border flex items-center justify-center mb-10 shadow-xl group-hover:rotate-12 transition-transform duration-700">
+                    <Activity size={100} aria-hidden="true" className="text-muted-foreground opacity-20 group-hover:opacity-100 group-hover:text-primary transition-all" />
                 </div>
                 <h3 className="text-4xl font-bold text-foreground tracking-tighter mb-4">인텔리전스 대기 중</h3>
                 <p className="text-xs font-bold text-muted-foreground tracking-tight leading-relaxed max-w-xs">분석할 로그 객체를 스트림에서 캡처하십시오</p>
@@ -689,29 +966,37 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
          title="Intelligence Report Generator"
          maxWidth="xl"
       >
-         <div className="p-10 space-y-10 font-sans">
-            <div className="space-y-4">
-               <h4 className="text-xs font-bold text-muted-foreground tracking-tight px-2">_ SELECT_REPORT_PROTOCOL</h4>
-               <div className="grid grid-cols-1 gap-4">
-                  <ReportOption icon={<FileText size={20} />} title="Executive Overview" description="시스템 가동 및 보안 지표 통합 요약 (PDF)" />
-                  <ReportOption icon={<Activity size={20} />} title="Infrastructure Metrics" description="리소스 점유율 및 성능 추이 데이터 (XLSX)" />
-               </div>
+         {/*
+            [P1-6] '리포트 스냅샷'은 과거 PDF/XLSX 생성을 약속하고 아무 핸들러도 없는 껍데기였다
+            (진행 바까지 그려 생성 중인 것처럼 보였다). 백엔드 리포트 엔드포인트가 없으므로,
+            이미 동작이 검증된 CSV 반출 컴포넌트(DataExportExcel, UTF-8 BOM)로 실제 기능을 부여한다.
+         */}
+         <div className="p-10 space-y-8 font-sans">
+            <div className="space-y-2">
+               <h4 className="text-sm font-bold text-foreground tracking-tight">현재 조회 결과 반출</h4>
+               <p className="text-xs font-medium text-muted-foreground leading-relaxed">
+                  {listConfig
+                    ? `‘${listConfig.label}’ 탭에서 현재 조회된 ${listConfig.data.length}건을 엑셀(CSV · UTF-8 BOM)로 내려받습니다. 서버 전량 반출은 지원하지 않으며, 페이지를 이동한 뒤 다시 실행하면 해당 페이지가 반출됩니다.`
+                    : '현재 탭은 목록 데이터가 없어 반출할 수 없습니다. 보안 감사·시스템 로그·접속 이력·서비스 피드백 탭에서 실행해 주세요.'}
+               </p>
             </div>
 
-            <div className="p-8 bg-muted rounded-lg border-2 border-border space-y-4">
-               <div className="flex items-center justify-between">
-                  <span className="text-xs font-bold text-foreground">_ Reconciliation Range</span>
-                  <span className="text-xs font-bold text-primary px-3 py-1 bg-primary/10 rounded-lg">LAST_24_HOURS</span>
+            {listConfig && listConfig.data.length > 0 ? (
+               <DataExportExcel
+                  data={listConfig.data}
+                  headers={listConfig.exportHeaders}
+                  filename={listConfig.exportName}
+                  className="w-full h-11 flex items-center justify-center gap-2 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all"
+               />
+            ) : (
+               <div className="p-6 rounded-lg border-2 border-dashed border-border bg-muted/40 text-xs font-bold text-muted-foreground text-center">
+                  반출할 데이터가 없습니다.
                </div>
-               <div className="h-2 bg-muted rounded-lg overflow-hidden">
-                  <div className="h-full bg-primary w-2/3 animate-pulse" />
-               </div>
-               <p className="text-xs text-muted-foreground font-medium">데이터 수집 및 통합성 검증이 백그라운드에서 실행됩니다</p>
-            </div>
+            )}
 
             <div className="flex gap-4">
-               <Button onClick={() => setIsReportModalOpen(false)} className="flex-1 h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all">
-                  INITIALIZE_GENERATION
+               <Button variant="outline" onClick={() => setIsReportModalOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight">
+                  닫기
                </Button>
             </div>
          </div>
@@ -720,35 +1005,25 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   );
 }
 
-function ReportOption({ icon, title, description }: any) {
+function NavButton({ tab, icon, label, active, onClick }: { tab: MonitoringTab, icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
-    <div className="flex items-center gap-5 p-6 rounded-lg border-2 border-border hover:border-primary/30 hover:bg-primary/5 transition-all cursor-pointer group">
-       <div className="w-12 h-12 rounded-lg bg-white shadow-md flex items-center justify-center text-muted-foreground group-hover:text-primary transition-colors">
-          {icon}
-       </div>
-       <div>
-          <h5 className="text-sm font-bold text-foreground tracking-tight">{title}</h5>
-          <p className="text-xs font-bold text-muted-foreground">{description}</p>
-       </div>
-       <ChevronRight size={16} className="ml-auto text-slate-100 group-hover:text-primary/30 transition-colors" />
-    </div>
-  );
-}
-
-function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
-  return (
-    <button 
+    <button
+      type="button"
+      role="tab"
+      id={`monitoring-tab-${tab}`}
+      aria-selected={active}
+      aria-controls={`monitoring-panel-${tab}`}
       onClick={onClick}
       className={cn(
         "w-full group p-5 rounded-lg border-2 transition-all flex items-center gap-6",
-        active 
+        active
           ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10"
-          : "bg-transparent border-transparent hover:bg-white hover:border-border text-muted-foreground hover:text-foreground"
+          : "bg-transparent border-transparent hover:bg-card hover:border-border text-muted-foreground hover:text-foreground"
       )}
     >
-      <div className={cn(
+      <div aria-hidden="true" className={cn(
         "w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg",
-        active ? "bg-white/10 text-surface-inverse-foreground" : "bg-white text-slate-300 group-hover:bg-primary group-hover:text-white"
+        active ? "bg-white/10 text-surface-inverse-foreground" : "bg-card text-muted-foreground group-hover:bg-primary group-hover:text-white"
       )}>
         {icon}
       </div>
@@ -791,67 +1066,45 @@ function StatusIndicator({ label, status, icon: Icon }: { label: string, status:
   );
 }
 
-function HarnessDashboardOverview({ selectedItemId, setSelectedItemId }: any) {
+// 선택 상태를 쓰지 않는 개요 패널 — 과거 미사용 props(selectedItemId/setSelectedItemId)를 받고 있었다(死코드).
+function HarnessDashboardOverview() {
   return (
-    <div className="rounded-lg bg-white border-2 border-slate-900 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] h-full p-10 space-y-10 flex flex-col relative overflow-hidden text-left font-sans">
+    <div className="rounded-lg bg-card border-2 border-border shadow-[0_50px_100px_-20px_rgba(0,0,0,0.15)] h-full p-10 space-y-10 flex flex-col relative overflow-hidden text-left font-sans">
       <div className="border-b border-border pb-6 relative z-10">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-3 h-3 rounded-full bg-emerald-500 shadow-lg shadow-emerald-400/40 animate-pulse" />
+        <div className="flex items-center gap-3 mb-3 flex-wrap">
           <h3 className="text-xs font-bold text-muted-foreground tracking-tight">Harness Governance SSOT</h3>
+          <SampleDataBadge />
         </div>
         <h2 className="text-3xl font-black text-foreground tracking-tighter leading-none mb-3">아틀라스 통합 관제</h2>
-        <p className="text-xs font-bold text-muted-foreground tracking-tight">AI 오케스트레이션 & 3대 기술 헌법 실시간 지표 요약</p>
+        {/* '실시간 지표'라는 표현은 사실이 아니다 — 아래는 저장소 규범 문서를 요약한 정적 안내다. */}
+        <p className="text-xs font-bold text-muted-foreground tracking-tight">AI 오케스트레이션 & 3대 기술 헌법 규범 요약(정적 문서 기반)</p>
       </div>
 
       <div className="flex-1 space-y-8 overflow-y-auto pr-2 custom-scrollbar relative z-10">
-        {/* Core Stats */}
-        <div className="p-6 bg-surface-inverse rounded-lg text-surface-inverse-foreground space-y-4 shadow-inner relative overflow-hidden group border-none">
-          <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
-            <ShieldCheck size={120} className="text-primary" />
-          </div>
-          <div className="space-y-0.5">
-            <span className="text-[9px] font-black tracking-widest text-primary uppercase">ORCHESTRATION SCORE</span>
-            <div className="text-3xl font-black text-surface-inverse-foreground font-mono leading-none">99.8<span className="text-sm font-bold text-muted-foreground">%</span></div>
-          </div>
-          <div className="grid grid-cols-2 gap-4 pt-3 border-t border-white/10">
-            <div>
-              <span className="text-[9px] font-black text-muted-foreground block uppercase">N+1 GUARDRAIL</span>
-              <span className="text-[10px] font-black text-emerald-400 leading-none">ACTIVE PROTECTION</span>
-            </div>
-            <div>
-              <span className="text-[9px] font-black text-muted-foreground block uppercase">MUTATION TIER</span>
-              <span className="text-[10px] font-black text-primary leading-none">TIER 1 SECURE</span>
-            </div>
-          </div>
-        </div>
+        {/*
+          [P1-5] 'ORCHESTRATION SCORE 99.8%' · 'TIER 1 SECURE' 등 산출 근거가 전무한 점수 카드 삭제.
+          측정 파이프라인이 생기기 전까지 숫자를 만들어 보여주지 않는다.
+        */}
 
-        {/* 3대 기술 헌법 수호 패널 */}
+        {/* 3대 기술 헌법 수호 패널 — 조문 수는 CLAUDE.md/GEMINI.md §3 기준 */}
         <div className="space-y-4">
-          <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">3대 기술 헌법 무결성</h4>
+          <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">3대 기술 헌법 개요</h4>
           <div className="space-y-3">
             <div className="p-4 rounded-lg bg-muted border border-border flex flex-col gap-1 relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-black uppercase tracking-wider text-rose-500">DATABASE</span>
-                <span className="text-[9px] font-black text-emerald-600">COMPLIANT</span>
-              </div>
+              <span className="text-[9px] font-black uppercase tracking-wider text-rose-500">DATABASE</span>
               <h5 className="text-xs font-bold text-foreground">DB 표준화 헌법 (10조)</h5>
               <p className="text-[10px] text-muted-foreground leading-tight">물리 테이블 tb_ 접두사, CHAR(1) 플래그, 메타 데이터 명세 보증</p>
             </div>
             <div className="p-4 rounded-lg bg-muted border border-border flex flex-col gap-1 relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-black uppercase tracking-wider text-primary">BACKEND</span>
-                <span className="text-[9px] font-black text-emerald-600">COMPLIANT</span>
-              </div>
+              <span className="text-[9px] font-black uppercase tracking-wider text-primary">BACKEND</span>
               <h5 className="text-xs font-bold text-foreground">백엔드 API 헌법 (18조)</h5>
               <p className="text-[10px] text-muted-foreground leading-tight">엔티티 노출 금지, UnifiedResponse 보증, JWT 2차 보안 아키텍처</p>
             </div>
             <div className="p-4 rounded-lg bg-muted border border-border flex flex-col gap-1 relative overflow-hidden">
-              <div className="flex items-center justify-between">
-                <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600">FRONTEND</span>
-                <span className="text-[9px] font-black text-emerald-600">COMPLIANT</span>
-              </div>
-              <h5 className="text-xs font-bold text-foreground">프론트엔드 UX 헌법 (15조)</h5>
-              <p className="text-[10px] text-muted-foreground leading-tight">Server Component 우선, HSL 디자인 토큰, 프리미엄 글래스모피즘 에스테틱</p>
+              <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600">FRONTEND</span>
+              {/* 조문 수 오기 정정: 15조 → 17조 */}
+              <h5 className="text-xs font-bold text-foreground">프론트엔드 UX 헌법 (17조)</h5>
+              <p className="text-[10px] text-muted-foreground leading-tight">Server Component 우선, HSL 디자인 토큰, 반응형·접근성 준수</p>
             </div>
           </div>
         </div>
@@ -859,23 +1112,22 @@ function HarnessDashboardOverview({ selectedItemId, setSelectedItemId }: any) {
         {/* Ralph Loop 2.0 Trace 패널 */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">Ralph Loop 2.0 Trace</h4>
-            <span className="text-[9px] font-black text-emerald-600">100% PERFECT</span>
+            <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">Ralph Loop 2.0 절차</h4>
           </div>
           <div className="p-6 rounded-lg bg-muted border border-border space-y-4">
             <div className="relative pl-5 border-l-2 border-border space-y-4 py-1">
               <div className="relative">
-                <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-white bg-slate-900 shadow-sm" />
+                <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-card bg-surface-inverse shadow-sm" />
                 <span className="text-[9px] font-black uppercase tracking-wider text-muted-foreground">STEP 1. Stop & Diagnose</span>
                 <p className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5">에러 시 즉각 중단 및 오판 진단(False Assumption) 도출</p>
               </div>
               <div className="relative">
-                <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-white bg-primary shadow-sm animate-pulse" />
+                <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-card bg-primary shadow-sm animate-pulse" />
                 <span className="text-[9px] font-black uppercase tracking-wider text-primary">STEP 2. Evidence Probe</span>
                 <p className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5">E2E DOM 상태, DB Bridge를 통한 물리 근본 원인 획득</p>
               </div>
               <div className="relative">
-                <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-white bg-emerald-500 shadow-sm" />
+                <div className="absolute -left-[27px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-card bg-emerald-500 shadow-sm" />
                 <span className="text-[9px] font-black uppercase tracking-wider text-emerald-600">STEP 3. Reflection & Healing</span>
                 <p className="text-[10px] text-muted-foreground font-medium leading-tight mt-0.5">성찰 리포트 발행 및 콤팩트 픽스 및 무결성 재통과</p>
               </div>
@@ -1017,7 +1269,7 @@ function SkillDetailView({ skill }: { skill: any }) {
         <div className="relative pl-6 border-l-2 border-border space-y-4 py-2">
           {currentMeta.flow.map((step, idx) => (
             <div key={idx} className="relative">
-              <div className="absolute -left-[30px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-white bg-slate-900 shadow-sm flex items-center justify-center text-[7px] font-black text-white font-mono">
+              <div className="absolute -left-[30px] top-0.5 w-3.5 h-3.5 rounded-full border-4 border-card bg-surface-inverse shadow-sm flex items-center justify-center text-[7px] font-black text-surface-inverse-foreground font-mono">
                 {idx + 1}
               </div>
               <p className="text-xs font-bold text-foreground leading-tight">{step}</p>

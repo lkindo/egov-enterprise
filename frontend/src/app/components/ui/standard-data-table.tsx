@@ -1,8 +1,8 @@
-import React, { useState, useMemo, memo, useCallback } from 'react';
+import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { List, Search, RefreshCw, ChevronLeft, ChevronRight, AlertCircle } from "lucide-react";
+import { Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { ErrorStateDisplay, EmptyStateDisplay } from './status-displays';
@@ -34,13 +34,25 @@ export interface StandardDataTableProps<T> {
   error?: Error | null;
   onRetry?: () => void;
   pagination?: {
+    /** 1-base 현재 페이지 번호 */
     currentPage: number;
     totalPages: number;
     onPageChange: (page: number) => void;
+    /** 서버가 내려준 총 건수. 주면 '총 N건 · n/m 페이지' 요약이 노출된다. */
+    totalCount?: number;
+    /** 페이지당 건수(요약/페이저 계산 보조). 미지정 시 10 */
+    pageSize?: number;
   };
   search?: {
     placeholder?: string;
     onSearch: (keyword: string) => void;
+    /**
+     * 외부에서 검색어를 주입/초기화할 때 사용(URL 쿼리·필터 리셋 등).
+     * 값이 바뀌면 내부 입력값이 동기화된다. 미지정 시 컴포넌트 내부 상태로 동작(기존 계약).
+     */
+    value?: string;
+    /** 지우기 버튼 동작. 미지정 시 onSearch('') 로 대체된다. */
+    onClear?: () => void;
   };
   stickyHeader?: boolean;
   rowTestId?: string;
@@ -168,7 +180,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   emptyMessage = "데이터가 없습니다.",
   enableSelection = false,
   bulkActions = [],
-  keyField = 'id' as keyof T,
+  keyField: keyFieldProp,
   className,
   isPremium = true,
   error = null,
@@ -179,8 +191,45 @@ export function StandardDataTable<T extends { [key: string]: any }>({
   rowTestId
 }: StandardDataTableProps<T>) {
 
+  const keyField = (keyFieldProp ?? ('id' as keyof T)) as keyof T;
+
   const [selectedIds, setSelectedIds] = useState<Set<any>>(new Set());
-  const [searchKeyword, setSearchKeyword] = useState("");
+  const [searchKeyword, setSearchKeyword] = useState(search?.value ?? "");
+  /** 실제로 서버/상위에 제출된 검색어 (빈 결과 문구·선택 초기화 기준) */
+  const [appliedKeyword, setAppliedKeyword] = useState(search?.value ?? "");
+
+  // 외부 주입값(search.value) 변화를 내부 입력값에 동기화 — 렌더 중 조정 패턴(effect 불필요)
+  const externalKeyword = search?.value;
+  const [syncedKeyword, setSyncedKeyword] = useState(externalKeyword);
+  if (externalKeyword !== syncedKeyword) {
+    setSyncedKeyword(externalKeyword);
+    setSearchKeyword(externalKeyword ?? "");
+    setAppliedKeyword(externalKeyword ?? "");
+  }
+
+  const currentPage = pagination?.currentPage;
+
+  // 페이지/검색 변경 시 선택 초기화 — 현재 페이지 밖 항목이 선택 카운트에만 남아
+  // "8개 선택됨인데 3건만 처리"되는 데이터 정합 결함 방지
+  useEffect(() => {
+    setSelectedIds(prev => (prev.size > 0 ? new Set() : prev));
+  }, [currentPage, appliedKeyword]);
+
+  // keyField 미전달 경고 (개발 모드 전용, 1회만)
+  const keyFieldWarnedRef = React.useRef(false);
+  useEffect(() => {
+    if (process.env.NODE_ENV === 'production' || keyFieldProp !== undefined || keyFieldWarnedRef.current) return;
+    const rows = data || [];
+    if (rows.length > 0) keyFieldWarnedRef.current = true;
+    if (rows.length > 0 && rows.some(item => item && item['id'] === undefined)) {
+      console.warn(
+        '[StandardDataTable] keyField 가 지정되지 않아 기본값 "id" 를 사용하는데 데이터에 id 가 없습니다. ' +
+        '행 key 와 선택 상태가 인덱스로 대체되어 정렬/페이지 이동 시 오작동할 수 있습니다. keyField 를 명시하세요.'
+      );
+    } else if (enableSelection && rows.length > 0) {
+      console.warn('[StandardDataTable] enableSelection 사용 시 keyField 를 명시하는 것을 권장합니다(현재 기본값 "id").');
+    }
+  }, [keyFieldProp, data, enableSelection]);
 
   const selectedItems = useMemo(() =>
     (data || []).filter(item => item && selectedIds.has(item?.[keyField])),
@@ -206,22 +255,71 @@ export function StandardDataTable<T extends { [key: string]: any }>({
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setAppliedKeyword(searchKeyword);
     search?.onSearch(searchKeyword);
   };
+
+  const handleSearchClear = () => {
+    setSearchKeyword("");
+    setAppliedKeyword("");
+    if (search?.onClear) search.onClear();
+    else search?.onSearch("");
+  };
+
+  const resolvedEmptyMessage = search && appliedKeyword
+    ? `"${appliedKeyword}"에 대한 검색 결과가 없습니다.`
+    : emptyMessage;
+
+  // 페이지 번호 윈도우 (PagePagination 과 동일 규칙: 최대 5개 + 앞뒤 생략부호)
+  const totalPages = Math.max(pagination?.totalPages ?? 0, 0);
+  const pageNumbers = useMemo(() => {
+    if (!currentPage || totalPages < 1) return [] as number[];
+    const maxVisible = 5;
+    let start = Math.max(1, currentPage - 2);
+    const end = Math.min(totalPages, start + maxVisible - 1);
+    if (end - start + 1 < maxVisible) start = Math.max(1, end - maxVisible + 1);
+    const pages: number[] = [];
+    for (let i = start; i <= end; i += 1) pages.push(i);
+    return pages;
+  }, [currentPage, totalPages]);
+
+  // 현재 페이지가 보여주는 레코드 구간 (totalCount + pageSize 를 모두 준 경우에만)
+  const totalCount = pagination?.totalCount;
+  const pageSize = pagination?.pageSize;
+  const rowRange = (currentPage && pageSize && pageSize > 0 && totalCount !== undefined && totalCount > 0)
+    ? { from: (currentPage - 1) * pageSize + 1, to: Math.min(currentPage * pageSize, totalCount) }
+    : null;
 
   return (
     <div className={cn("space-y-6", isPremium ? "animate-in fade-in slide-in-from-bottom-4 duration-700" : "", className)}>
       {/* Search Bar integration if provided */}
       {search && (
-        <form onSubmit={handleSearchSubmit} className="relative group max-w-md">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
+        <form onSubmit={handleSearchSubmit} role="search" className="relative group max-w-md">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" aria-hidden="true" />
           <Input
             placeholder={search.placeholder || "검색어 입력..."}
-            className="h-12 pl-12 rounded-lg border-2 bg-card ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
+            className="h-12 pl-12 pr-28 rounded-lg border-2 bg-card ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             aria-label="데이터 검색"
           />
+          <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            {searchKeyword.length > 0 && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="w-8 h-8 rounded-lg text-muted-foreground hover:text-foreground"
+                onClick={handleSearchClear}
+                aria-label="검색어 지우기"
+              >
+                <X className="w-4 h-4" aria-hidden="true" />
+              </Button>
+            )}
+            <Button type="submit" size="sm" className="h-8 px-3 rounded-lg text-xs font-bold tracking-wider">
+              검색
+            </Button>
+          </div>
         </form>
       )}
 
@@ -268,6 +366,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedIds(new Set())}
+                aria-label={`선택한 ${selectedIds.size}개 항목 전체 해제`}
                 className="w-full sm:w-auto h-10 sm:h-12 px-6 rounded-xl text-[10px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white/5 text-white/40 hover:text-surface-inverse-foreground transition-colors"
               >
                 전체 해제
@@ -333,7 +432,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
               ) : (data || []).length === 0 ? (
                 <tr>
                   <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="px-6 py-20 text-center" data-testid="empty-table-msg">
-                    <EmptyStateDisplay message={emptyMessage} />
+                    <EmptyStateDisplay message={resolvedEmptyMessage} />
                   </td>
                 </tr>
               ) : (
@@ -372,7 +471,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           </div>
         ) : (data || []).length === 0 ? (
           <div className="p-16 bg-card border-2 border-dashed border-border/60 rounded-lg text-center shadow-inner">
-            <EmptyStateDisplay message={emptyMessage} />
+            <EmptyStateDisplay message={resolvedEmptyMessage} />
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-5">
@@ -396,36 +495,107 @@ export function StandardDataTable<T extends { [key: string]: any }>({
         )}
       </div>
 
-      {/* Pagination Controls */}
-      {pagination && pagination.totalPages > 1 && (
-        <div className="flex items-center justify-center gap-3 pt-8 pb-4">
-          <Button
-            variant="outline"
-            size="icon"
-            className="w-12 h-12 rounded-lg border-2"
-            disabled={pagination.currentPage === 1}
-            onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-            aria-label="이전 페이지"
-          >
-            <ChevronLeft size={20} />
-          </Button>
+      {/* Pagination Controls — 총 건수·페이지 번호 노출 (PagePagination 과 동일한 윈도우 규칙) */}
+      {pagination && (pagination.totalPages > 1 || pagination.totalCount !== undefined) && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 pb-4">
+          <p className="text-xs font-bold text-muted-foreground tracking-wider order-2 sm:order-1" aria-live="polite">
+            {pagination.totalCount !== undefined && (
+              <>
+                총 <span className="text-foreground font-black">{pagination.totalCount.toLocaleString()}</span>건
+                <span className="mx-2 opacity-40">·</span>
+              </>
+            )}
+            {rowRange && (
+              <>
+                {rowRange.from.toLocaleString()}–{rowRange.to.toLocaleString()}번째
+                <span className="mx-2 opacity-40">·</span>
+              </>
+            )}
+            <span className="text-foreground font-black">{pagination.currentPage}</span>
+            {' / '}
+            {Math.max(pagination.totalPages, 1)} 페이지
+          </p>
 
-          <div className="flex items-center gap-2 px-6 h-12 bg-card border-2 rounded-lg">
-            <span className="text-sm font-bold">{pagination.currentPage}</span>
-            <span className="text-xs font-bold text-foreground uppercase">of</span>
-            <span className="text-sm font-bold text-foreground">{pagination.totalPages}</span>
-          </div>
+          {pagination.totalPages > 1 && (
+            <nav
+              role="navigation"
+              aria-label="페이지 탐색"
+              className="order-1 sm:order-2 flex items-center gap-1.5"
+            >
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-10 h-10 rounded-lg border-2"
+                disabled={pagination.currentPage <= 1}
+                onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
+                aria-label="이전 페이지"
+              >
+                <ChevronLeft size={18} aria-hidden="true" />
+              </Button>
 
-          <Button
-            variant="outline"
-            size="icon"
-            className="w-12 h-12 rounded-lg border-2"
-            disabled={pagination.currentPage === pagination.totalPages}
-            onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-            aria-label="다음 페이지"
-          >
-            <ChevronRight size={20} />
-          </Button>
+              {pageNumbers[0] > 1 && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-10 h-10 rounded-lg font-bold"
+                    onClick={() => pagination.onPageChange(1)}
+                    aria-label="1 페이지"
+                  >
+                    1
+                  </Button>
+                  {pageNumbers[0] > 2 && (
+                    <span className="px-1 text-muted-foreground" aria-hidden="true">…</span>
+                  )}
+                </>
+              )}
+
+              {pageNumbers.map((pageNo) => (
+                <Button
+                  key={`page-${pageNo}`}
+                  variant={pageNo === pagination.currentPage ? "outline" : "ghost"}
+                  size="icon"
+                  className={cn(
+                    "w-10 h-10 rounded-lg font-bold",
+                    pageNo === pagination.currentPage && "border-2 border-primary text-primary"
+                  )}
+                  onClick={() => pagination.onPageChange(pageNo)}
+                  aria-label={`${pageNo} 페이지`}
+                  aria-current={pageNo === pagination.currentPage ? "page" : undefined}
+                >
+                  {pageNo}
+                </Button>
+              ))}
+
+              {pageNumbers[pageNumbers.length - 1] < totalPages && (
+                <>
+                  {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
+                    <span className="px-1 text-muted-foreground" aria-hidden="true">…</span>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="w-10 h-10 rounded-lg font-bold"
+                    onClick={() => pagination.onPageChange(totalPages)}
+                    aria-label={`${totalPages} 페이지`}
+                  >
+                    {totalPages}
+                  </Button>
+                </>
+              )}
+
+              <Button
+                variant="outline"
+                size="icon"
+                className="w-10 h-10 rounded-lg border-2"
+                disabled={pagination.currentPage >= pagination.totalPages}
+                onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
+                aria-label="다음 페이지"
+              >
+                <ChevronRight size={18} aria-hidden="true" />
+              </Button>
+            </nav>
+          )}
         </div>
       )}
     </div>

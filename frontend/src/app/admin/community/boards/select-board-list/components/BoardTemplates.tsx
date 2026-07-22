@@ -6,7 +6,7 @@ import { BoardPost } from '@/types/business/board';
 import { HighlightText } from './HighlightText';
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
-import { BookOpen,  Clock,  Eye,  MessageSquare,  ChevronRight,  ThumbsUp,  Share2,  
+import { BookOpen,  Clock,  Eye,  MessageSquare,  ChevronRight,  ThumbsUp,
   HelpCircle,  CheckCircle2,  ChevronDown } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +71,7 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
             <div className="absolute bottom-[-10%] left-[-5%] w-64 h-64 bg-hub-indigo/10 blur-[100px] rounded-full" />
             
             <div className="relative z-10 space-y-8">
-              <Badge className="bg-white/10 backdrop-blur-md text-white border-white/20 font-black tracking-[0.4em] uppercase py-2 px-6 text-xs rounded-full">FEATURED_KNOWLEDGE</Badge>
+              <Badge className="bg-white/10 backdrop-blur-md text-white border-white/20 font-black tracking-[0.4em] uppercase py-2 px-6 text-xs rounded-full">대표 게시글</Badge>
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${list[0].pstId}`}>
                 <h3 className="text-5xl font-black tracking-tighter leading-none group-hover:text-primary transition-all cursor-pointer decoration-primary/30 group-hover:underline underline-offset-8 decoration-4">{list[0].pstTtl}</h3>
               </Link>
@@ -79,19 +79,19 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center text-primary font-black text-sm border border-white/10 shadow-xl">OP</div>
                   <div className="flex flex-col">
-                    <span className="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mb-1">Author</span>
+                    <span className="text-xs font-bold text-white/40 uppercase tracking-[0.2em] mb-1">작성자</span>
                     <span className="text-lg font-black">{list[0].userNm}</span>
                   </div>
                 </div>
                 <div className="h-10 w-px bg-white/10 hidden md:block" />
                 <div className="flex items-center gap-3 text-white/60">
                   <Clock size={20} className="text-primary" />
-                  <span className="text-sm font-bold tracking-tight">{list[0].crtDt ? String(list[0].crtDt).substring(0, 10) : 'Just now'}</span>
+                  <span className="text-sm font-bold tracking-tight">{list[0].crtDt ? String(list[0].crtDt).substring(0, 10) : '-'}</span>
                 </div>
                 <div className="h-10 w-px bg-white/10 hidden md:block" />
                 <div className="flex items-center gap-3 text-white/60">
                   <Eye size={20} className="text-primary" />
-                  <span className="text-sm font-bold tracking-tight">{(list[0].inqCnt || 0).toLocaleString()} views</span>
+                  <span className="text-sm font-bold tracking-tight">{(list[0].inqCnt || 0).toLocaleString()}회 조회</span>
                 </div>
               </div>
             </div>
@@ -107,20 +107,20 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
                 <BookOpen size={80} />
               </div>
               <div className="flex items-center justify-between mb-2">
-                <Badge variant="secondary" className="bg-muted/80 text-muted-foreground font-bold px-3 py-1 rounded-lg">KNOWLEDGE</Badge>
-                <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">UNIT_{String(item.pstId).slice(-4)}</span>
+                <Badge variant="secondary" className="bg-muted/80 text-muted-foreground font-bold px-3 py-1 rounded-lg">게시글</Badge>
+                <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">No.{String(item.pstId).slice(-6)}</span>
               </div>
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
                 <h4 className="font-black text-foreground text-xl leading-tight line-clamp-2 group-hover:text-primary transition-colors tracking-tighter">{item.pstTtl}</h4>
               </Link>
               <div className="flex justify-between items-center pt-6 border-t border-border/50">
                 <div className="flex gap-4">
-                  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><Eye size={16} className="text-slate-300" /> {item.inqCnt}</div>
-                  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><MessageSquare size={16} className="text-slate-300" /> 0</div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><Eye size={16} className="text-muted-foreground/50" /> {item.inqCnt}</div>
+                  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><MessageSquare size={16} className="text-muted-foreground/50" aria-hidden="true" /> {item.commentCnt ?? 0}</div>
                 </div>
                 <motion.div 
                   whileHover={{ x: 5 }}
-                  className="w-12 h-12 rounded-2xl bg-white border border-border flex items-center justify-center text-slate-300 group-hover:bg-primary group-hover:text-white group-hover:border-primary shadow-sm transition-all"
+                  className="w-12 h-12 rounded-2xl bg-card border border-border flex items-center justify-center text-muted-foreground/50 group-hover:bg-primary group-hover:text-white group-hover:border-primary shadow-sm transition-all"
                 >
                   <ChevronRight size={20} />
                 </motion.div>
@@ -148,10 +148,10 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
             <div className="h-72 overflow-hidden relative bg-muted">
               <div className="w-full h-full flex items-center justify-center bg-muted overflow-hidden relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-100 via-white to-purple-100 group-hover:scale-110 transition-transform duration-1000" />
-                <BookOpen size={140} className="text-slate-200 opacity-40 relative z-10 group-hover:rotate-12 transition-transform duration-700" />
+                <BookOpen size={140} className="text-muted-foreground/40 opacity-40 relative z-10 group-hover:rotate-12 transition-transform duration-700" />
                 <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/5 transition-colors duration-500" />
               </div>
-              <div className="absolute top-8 right-8 px-5 py-2 bg-surface-inverse/80 backdrop-blur-xl rounded-2xl text-surface-inverse-foreground text-[10px] font-black tracking-[0.3em] uppercase border border-white/10 shadow-2xl">INSIGHT_NODE</div>
+              <div className="absolute top-8 right-8 px-5 py-2 bg-surface-inverse/80 backdrop-blur-xl rounded-2xl text-surface-inverse-foreground text-[10px] font-black tracking-[0.3em] uppercase border border-white/10 shadow-2xl">갤러리</div>
             </div>
             <CardContent className="p-10 space-y-8">
               <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
@@ -170,18 +170,17 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                   </div>
                 </div>
                 <div className="flex gap-4">
-                  <motion.button 
+                  {/* 감사 P1-6: 옆에 있던 공유(Share2) 버튼은 onClick 이 없는 死버튼이라 삭제했다. */}
+                  <motion.button
+                    type="button"
                     whileTap={{ scale: 0.9 }}
                     onClick={(e) => handleLike(e, String(item.pstId))}
-                    className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
-                    aria-label="좋아요"
+                    className="flex items-center gap-2 px-4 py-2 bg-card rounded-xl border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
+                    aria-label={`${item.pstTtl} 추천`}
                   >
-                    <ThumbsUp size={18} className={cn(isLikePending && "animate-bounce")} />
+                    <ThumbsUp size={18} className={cn(isLikePending && "animate-bounce")} aria-hidden="true" />
                     <span className="text-sm font-black text-foreground">{item.likeCnt || 0}</span>
                   </motion.button>
-                  <Button variant="ghost" size="icon" className="rounded-xl bg-muted hover:bg-muted text-muted-foreground">
-                    <Share2 size={20} />
-                  </Button>
                 </div>
               </div>
             </CardContent>
@@ -217,12 +216,12 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
               <span className={cn(
                 "text-[10px] font-black uppercase tracking-[0.3em]",
                 item.qnaSttsCd === 'SOLVED' ? "text-emerald-500" : "text-amber-500"
-              )}>{item.qnaSttsCd === 'SOLVED' ? 'Solved' : 'Awaiting'}</span>
+              )}>{item.qnaSttsCd === 'SOLVED' ? '해결됨' : '답변 대기'}</span>
             </div>
             <div className="flex-1 space-y-5">
               <div className="flex items-center gap-5">
                 <Badge className="bg-amber-500/10 text-amber-600 hover:bg-amber-500/20 border-none text-[10px] font-black px-4 py-1.5 rounded-lg tracking-widest uppercase">
-                  {item.qnaCatCd || 'GENERAL_QNA'}
+                  {item.qnaCatCd || '일반 문의'}
                 </Badge>
                 <div className="w-1.5 h-1.5 rounded-full bg-muted" />
                 <span className="text-[10px] font-black text-muted-foreground flex items-center gap-2 tracking-widest uppercase"><Clock size={14} className="text-amber-400" /> {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
@@ -242,17 +241,17 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                 <div className="h-4 w-px bg-muted" />
                 <div className="flex items-center gap-2.5 text-muted-foreground font-black text-[10px] tracking-widest uppercase">
                   <MessageSquare size={16} className="text-amber-400" />
-                  <span>{item.commentCnt || 0} Responses</span>
+                  <span>답변 {item.commentCnt || 0}</span>
                 </div>
                 <div className="h-4 w-px bg-muted" />
                 <motion.button 
                   whileTap={{ scale: 0.9 }}
                   onClick={(e) => handleLike(e, String(item.pstId))}
                   className="flex items-center gap-2.5 text-muted-foreground hover:text-amber-500 font-black text-[10px] tracking-widest uppercase transition-all"
-                  aria-label="좋아요"
+                  aria-label={`${item.pstTtl} 추천`}
                 >
                   <ThumbsUp size={16} className={cn(isLikePending && "animate-bounce")} />
-                  <span>{item.likeCnt || 0} Appreciations</span>
+                  <span>추천 {item.likeCnt || 0}</span>
                 </motion.button>
               </div>
             </div>
@@ -301,7 +300,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
       >
         <div className="absolute top-0 right-0 w-64 h-64 bg-primary/20 blur-[100px] rounded-full" />
         <div className="space-y-2 relative z-10">
-          <p className="text-primary font-black tracking-[0.4em] text-[10px] uppercase">Node Timeline Matrix</p>
+          <p className="text-primary font-black tracking-[0.4em] text-[10px] uppercase">일정 보기</p>
           <h3 className="text-5xl font-black tracking-tighter uppercase bg-clip-text text-transparent bg-gradient-to-r from-white to-white/40">
             {format(currentViewDate, "MMMM yyyy", { locale: ko })}
           </h3>
@@ -310,7 +309,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
           <Button 
             variant="outline" 
             onClick={onPrevMonth}
-            className="h-16 w-16 border-white/10 bg-white/5 hover:bg-white hover:text-foreground rounded-2xl transition-all"
+            className="h-16 w-16 border-white/10 bg-white/5 hover:bg-card hover:text-foreground rounded-2xl transition-all"
             aria-label="이전 달"
           >
             <ChevronRight className="rotate-180" size={24} />
@@ -318,7 +317,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
           <Button 
             variant="outline" 
             onClick={onNextMonth}
-            className="h-16 w-16 border-white/10 bg-white/5 hover:bg-white hover:text-foreground rounded-2xl transition-all"
+            className="h-16 w-16 border-white/10 bg-white/5 hover:bg-card hover:text-foreground rounded-2xl transition-all"
             aria-label="다음 달"
           >
             <ChevronRight size={24} />
@@ -332,8 +331,8 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
         animate="visible"
         className="grid grid-cols-7 gap-1 md:gap-4 lg:gap-5"
       >
-        {['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'].map(d => (
-          <div key={d} className="text-center font-black text-slate-300 text-[8px] md:text-[10px] tracking-[0.1em] md:tracking-[0.4em] pb-2 md:pb-6 border-b-2 border-border uppercase">{d}</div>
+        {['일', '월', '화', '수', '목', '금', '토'].map(d => (
+          <div key={d} className="text-center font-black text-muted-foreground/50 text-[8px] md:text-[10px] tracking-[0.1em] md:tracking-[0.4em] pb-2 md:pb-6 border-b-2 border-border uppercase">{d}</div>
         ))}
         {Array.from({ length: 42 }, (_, i) => i - firstDayOfMonth + 1).map((day, i) => {
           const isCurrentMonth = day > 0 && day <= daysInMonth;
@@ -353,7 +352,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
               <div className="flex justify-between items-start mb-2 md:mb-6">
                 <span className={cn(
                   "text-xs md:text-xl lg:text-2xl font-black tracking-tighter", 
-                  isToday ? "text-primary" : "text-slate-200 group-hover:text-foreground",
+                  isToday ? "text-primary" : "text-muted-foreground/40 group-hover:text-foreground",
                   (i % 7 === 0) && isCurrentMonth ? "text-rose-400" : "", // Sunday
                   (i % 7 === 6) && isCurrentMonth ? "text-hub-indigo" : "" // Saturday
                 )}>
@@ -372,8 +371,9 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
                     key={post.pstId}
                     href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${post.pstId}`}
                     className={cn(
-                      "block p-2.5 text-[10px] font-black leading-none rounded-lg shadow-sm transition-all hover:scale-105 cursor-pointer truncate uppercase tracking-tight",
-                      (post as any).noticeYn === 'Y' ? "bg-gradient-to-r from-rose-500 to-rose-600 text-white shadow-rose-500/20" : "bg-white border border-border text-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground"
+                      // 감사 死코드: `(post as any).noticeYn` 은 BoardDto 에 없는 필드라 항상 false 였다(공지 강조가 실제로 동작한 적 없음).
+                      "block p-2.5 text-[10px] font-black leading-none rounded-lg shadow-sm transition-all hover:scale-105 cursor-pointer truncate tracking-tight",
+                      "bg-card border border-border text-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground"
                     )}
                     title={post.pstTtl}
                   >
@@ -383,7 +383,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
               </div>
 
               {isCurrentMonth && (
-                <div className="absolute bottom-1 right-2 lg:bottom-5 lg:right-6 text-[8px] lg:text-[10px] font-black text-slate-100 group-hover:text-slate-200 transition-all uppercase tracking-widest opacity-0 group-hover:opacity-100 invisible md:visible">
+                <div className="absolute bottom-1 right-2 lg:bottom-5 lg:right-6 text-[8px] lg:text-[10px] font-black text-muted-foreground/30 group-hover:text-muted-foreground/40 transition-all uppercase tracking-widest opacity-0 group-hover:opacity-100 invisible md:visible">
                   {`${year}.${month + 1}.${day}`}
                 </div>
               )}
@@ -403,17 +403,20 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
       <Card 
         className={cn(
           "overflow-hidden transition-all duration-500 rounded-3xl border border-white shadow-xl ring-1 ring-black/5",
-          isOpen ? "bg-white/80 backdrop-blur-xl shadow-2xl border-indigo-200" : "bg-white/40 hover:bg-white hover:border-border"
+          isOpen ? "bg-white/80 backdrop-blur-xl shadow-2xl border-indigo-200" : "bg-white/40 hover:bg-card hover:border-border"
         )}
       >
-        <div 
-          className="p-8 cursor-pointer flex items-center justify-between group"
+        {/* 감사 P1-10: onClick 만 있던 비인터랙티브 div → button 으로 교체(키보드 조작·상태 노출 가능). */}
+        <button
+          type="button"
+          className="w-full text-left p-8 cursor-pointer flex items-center justify-between group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-3xl"
           onClick={() => setIsOpen(!isOpen)}
+          aria-expanded={isOpen}
         >
           <div className="flex items-center gap-8">
             <div className={cn(
               "w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl transition-all shadow-xl",
-              isOpen ? "bg-hub-indigo text-white shadow-hub-indigo/20 rotate-12" : "bg-white text-slate-300 group-hover:bg-indigo-50 group-hover:text-hub-indigo group-hover:shadow-hub-indigo/10"
+              isOpen ? "bg-hub-indigo text-white shadow-hub-indigo/20 rotate-12" : "bg-card text-muted-foreground/50 group-hover:bg-indigo-50 group-hover:text-hub-indigo group-hover:shadow-hub-indigo/10"
             )}>
               Q
             </div>
@@ -428,13 +431,13 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
             animate={{ rotate: isOpen ? 180 : 0 }}
             className={cn(
               "transition-colors",
-              isOpen ? "text-hub-indigo" : "text-slate-300"
+              isOpen ? "text-hub-indigo" : "text-muted-foreground/50"
             )}
           >
-            <ChevronDown size={32} />
+            <ChevronDown size={32} aria-hidden="true" />
           </motion.div>
-        </div>
-        
+        </button>
+
         <AnimatePresence>
           {isOpen && (
             <motion.div
@@ -453,10 +456,10 @@ const FAQItem = ({ item }: { item: BoardPost }) => {
                     <p className="text-muted-foreground font-bold leading-relaxed text-xl whitespace-pre-wrap tracking-tight">
                       {item.pstCn}
                     </p>
-                    <div className="flex flex-wrap items-center gap-6 text-[10px] font-black text-slate-300 uppercase tracking-[0.3em] pt-6 border-t border-border">
-                      <span className="flex items-center gap-2"><Clock size={12} /> Sync: {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
+                    <div className="flex flex-wrap items-center gap-6 text-[10px] font-black text-muted-foreground/50 uppercase tracking-[0.3em] pt-6 border-t border-border">
+                      <span className="flex items-center gap-2"><Clock size={12} aria-hidden="true" /> 등록: {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
                       <div className="w-1.5 h-1.5 rounded-full bg-muted" />
-                      <span className="flex items-center gap-2"><Eye size={12} /> Reach: {item.inqCnt} Units</span>
+                      <span className="flex items-center gap-2"><Eye size={12} aria-hidden="true" /> 조회 {item.inqCnt ?? 0}회</span>
                     </div>
                   </div>
                 </div>
@@ -504,8 +507,8 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
               </div>
               <div className="flex-1 p-10 space-y-6">
                 <div className="flex items-center gap-5">
-                  <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground rounded-lg border-border px-4 py-1.5">Documentation_v3.0</Badge>
-                  <span className="text-[10px] font-black text-slate-300 tracking-widest uppercase">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
+                  <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground rounded-lg border-border px-4 py-1.5">문서</Badge>
+                  <span className="text-[10px] font-black text-muted-foreground/50 tracking-widest uppercase">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
                 </div>
                 <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
                   <h4 className="text-2xl font-black text-foreground leading-tight group-hover:text-primary transition-all tracking-tighter uppercase truncate">
@@ -515,13 +518,13 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
                 <p className="text-muted-foreground font-bold text-lg line-clamp-2 leading-relaxed tracking-tight">{item.pstCn}</p>
                 <div className="flex items-center gap-10 pt-8 border-t border-border">
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Compiler</span>
+                    <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">작성자</span>
                     <span className="text-xs font-black text-foreground uppercase tracking-tight">
                        <HighlightText text={item.userNm} highlight={querySearchWrd} />
                     </span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Global_Index</span>
+                    <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">조회수</span>
                     <span className="text-xs font-black text-foreground uppercase tracking-tight">{(item.inqCnt || 0).toLocaleString()}</span>
                   </div>
                 </div>
@@ -561,7 +564,7 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                   </div>
                   <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                     <span className="h-[1px] w-5 bg-primary/30" />
-                    <span className="text-[9px] font-black text-primary uppercase tracking-wider">Node Details</span>
+                    <span className="text-[9px] font-black text-primary uppercase tracking-wider">자세히 보기</span>
                   </div>
                 </Link>
               </TableCell>
@@ -584,8 +587,8 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={(e) => handleLike(e, String(item.pstId))}
-                    className="font-bold text-[10px] text-muted-foreground bg-white px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-border shadow-sm hover:bg-primary hover:text-white hover:border-primary transition-all"
-                    aria-label="좋아요"
+                    className="font-bold text-[10px] text-muted-foreground bg-card px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-border shadow-sm hover:bg-primary hover:text-white hover:border-primary transition-all"
+                    aria-label={`${item.pstTtl} 추천`}
                   >
                     <ThumbsUp size={12} className={cn("opacity-50", isLikePending && "animate-bounce")} />
                     <span>{item.likeCnt || 0}</span>

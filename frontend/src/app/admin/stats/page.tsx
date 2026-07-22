@@ -9,6 +9,15 @@ export const metadata = {
   description: '시스템 전반의 활동 데이터와 메트릭스를 실시간으로 분석합니다',
 };
 
+/** 집계 수치 정규화 — 숫자가 아니면 0. (문자열 숫자도 허용) */
+function toCount(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string' && value.trim() !== '' && Number.isFinite(Number(value))) {
+    return Number(value);
+  }
+  return 0;
+}
+
 export default async function AdminStatsPage() {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
@@ -29,7 +38,14 @@ export default async function AdminStatsPage() {
       statsAdminService.getConnectStats(undefined, axiosConfig),
     ]);
 
-    initialSummary = sumRes as unknown as SummaryStats;
+    // `getSummary()` 의 반환 타입은 `Record<string, unknown>` 이다(서비스 계약).
+    // 이중 캐스팅(`as unknown as SummaryStats`)으로 덮지 않고 실제 값 형태를 검사해 정규화한다.
+    // 백엔드 SummaryStatsDto 는 {totalUsers, totalPosts, todayConnects} 3개 long 필드다.
+    initialSummary = {
+      totalUsers: toCount(sumRes?.totalUsers),
+      totalPosts: toCount(sumRes?.totalPosts),
+      todayConnects: toCount(sumRes?.todayConnects),
+    };
 
     // Transform connect data for area chart / table
     initialConnectData = (Array.isArray(connRes) ? connRes : []).map((item) => {
@@ -62,7 +78,8 @@ export default async function AdminStatsPage() {
 
 function AdminStatsLoading() {
   return (
-    <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-24 p-6">
+    /* 루트 layout 이 이미 `max-w-7xl mx-auto p-6/md:p-12/lg:p-16` 을 주므로 여기서 여백을 다시 주지 않는다(감사 P2) */
+    <div className="space-y-12 animate-pulse pb-24">
       <div className="h-11 w-96 bg-muted rounded-lg" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {[1, 2, 3, 4].map(i => <div key={`stats-skeleton-${i}`} className="h-56 bg-muted rounded-lg" />)}

@@ -1,170 +1,190 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Search, BarChart3, PieChart, TrendingUp, Calendar, FileBarChart } from "lucide-react";
-import { getPollList } from '@/services/business/user/poll/PollUserService';
-import { OnlinePollManageVO, PollSearchParams } from '@/types/business/poll';
-import { TableSkeleton } from "@/components/common/TableSkeleton";
-import { PagePagination } from "@/components/common/PagePagination";
-import { Card,  CardContent,  CardHeader } from "@/components/ui/card";
+import { Search, TrendingUp, FileBarChart, MessageSquare } from "lucide-react";
+import { onlinePollAdminService, type OnlinePollDto } from '@/services/foundation/system/OnlinePollAdminService';
+import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { Card } from "@/components/ui/card";
+import { toDisplayYmd, todayStorageYmd } from '@/lib/format-date';
+import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+
+const PAGE_SIZE = 10;
+
+/** 설문 1건의 총 응답 수 = 항목별 득표수 합계. 관리자 목록 API 가 pollArticles.pollIemCo 를 채워 내려준다. */
+function totalResponses(poll: OnlinePollDto): number {
+  return poll.pollArticles?.reduce((sum, item) => sum + (item.pollIemCo || 0), 0) ?? 0;
+}
 
 export default function SurveyStatsClient() {
-  const router = useRouter();
-  const [params, setParams] = useState<PollSearchParams>({
-    page: 0,
-    searchKeyword: '',
+  const [page, setPage] = useState(0); // 0-base (서버 Pageable 과 동일)
+  const [keyword, setKeyword] = useState('');
+  const debouncedKeyword = useDebouncedValue(keyword, 300);
+
+  // 상태 판정 기준일은 저장 포맷과 같은 'yyyyMMdd' 8자. SSR 시각을 쓰면 하이드레이션이 어긋나므로 마운트 후 세팅.
+  const [todayYmd, setTodayYmd] = useState<string>('');
+  useEffect(() => {
+    setTodayYmd(todayStorageYmd());
+  }, []);
+
+  // 응답 수는 관리자 목록 API 만 내려준다(pollArticles.pollIemCo).
+  // 종전 화면은 사용자 API 를 호출하고 '응답 수' 칸에 리터럴 0 을 찍고 있었다 — 거짓 지표(P1-5).
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['admin-survey-stats', page, debouncedKeyword],
+    queryFn: () => onlinePollAdminService.getPollList({ keyword: debouncedKeyword, page, size: PAGE_SIZE }),
   });
 
-  const { data, isLoading } = useQuery({
-    queryKey: ['admin-survey-stats', params],
-    queryFn: () => getPollList(params),
-  });
-
-  const polls: OnlinePollManageVO[] = data?.list || [];
+  const polls: OnlinePollDto[] = data?.list || [];
   const totalCount = data?.total || 0;
+  const pageResponseSum = polls.reduce((sum, poll) => sum + totalResponses(poll), 0);
+
+  /** 검색 시 항상 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(P1-8). */
+  const handleKeywordChange = (value: string) => {
+    setKeyword(value);
+    setPage(0);
+  };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    setParams(prev => ({ ...prev, page: 0 }));
+    setPage(0);
   };
 
+  const columns: Column<OnlinePollDto>[] = [
+    {
+      header: '번호',
+      accessor: (_, index) => (
+        <span className="font-mono text-xs font-bold text-muted-foreground">
+          {(index !== undefined ? index + 1 + page * PAGE_SIZE : 0)}
+        </span>
+      ),
+      className: 'w-20 text-center',
+    },
+    {
+      header: '설문 주제',
+      accessor: (poll) => (
+        <span className="text-sm font-bold text-foreground group-hover:text-amber-600 transition-colors tracking-tight">
+          {poll.pollNm}
+        </span>
+      ),
+    },
+    {
+      header: '응답 수',
+      accessor: (poll) => (
+        <span className="font-mono font-bold text-foreground tabular-nums">
+          {totalResponses(poll).toLocaleString()}
+        </span>
+      ),
+      className: 'w-32 text-center',
+    },
+    {
+      header: '조사 기간',
+      accessor: (poll) => (
+        <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
+          {toDisplayYmd(poll.pollBgngYmd)} ~ {toDisplayYmd(poll.pollEndYmd)}
+        </span>
+      ),
+      className: 'w-56 text-center',
+    },
+    {
+      header: '진행 상태',
+      accessor: (poll) => {
+        // 종전에는 전 행에 '집계중' 배지를 고정 렌더했다 — 종료된 설문도 집계중으로 보였다(P1-5).
+        const status = getPollStatus(poll, todayYmd);
+        const tone =
+          status === 'active'
+            ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20'
+            : status === 'scheduled'
+              ? 'bg-amber-500/10 text-amber-600 border-amber-500/20'
+              : 'bg-muted text-muted-foreground border-border';
+        return (
+          <span className={`inline-flex items-center rounded-md border px-3 py-1 text-[10px] font-bold tracking-widest ${tone}`}>
+            {POLL_STATUS_LABEL[status]}
+          </span>
+        );
+      },
+      className: 'w-32 text-center',
+    },
+  ];
+
   return (
-    <div className="p-8 space-y-10 animate-in fade-in duration-700">
+    // 루트 admin 레이아웃이 이미 max-w-7xl + p-6/md:p-12/lg:p-16 을 준다 — 화면별 p-8 은 이중 여백이라 제거(P2).
+    <div className="space-y-10 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div className="space-y-2">
-            <div className="flex items-center gap-3">
-                <div className="p-2 bg-amber-500/10 rounded-lg text-amber-600">
-                    <TrendingUp size={18} />
-                </div>
-                <span className="text-sm font-bold text-amber-600 tracking-tight uppercase">Data Analytics</span>
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-amber-500/10 rounded-lg text-amber-600">
+              <TrendingUp size={18} />
             </div>
-            <h1 className="text-4xl font-bold tracking-tighter text-foreground ">설문 통계 <span className="text-amber-500">분석</span></h1>
-            <p className="text-muted-foreground font-bold text-sm max-w-lg">실시간 응답 현황을 다각도로 분석하여 데이터 인사이트를 도출합니다.</p>
+            <span className="text-sm font-bold text-amber-600 tracking-tight">데이터 분석</span>
+          </div>
+          <h2 className="text-4xl font-bold tracking-tighter text-foreground">설문 통계 <span className="text-amber-500">분석</span></h2>
+          <p className="text-muted-foreground font-bold text-sm max-w-lg">등록된 설문별 응답 수와 진행 상태를 확인합니다.</p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="rounded-lg border-none shadow-sm bg-surface-inverse text-surface-inverse-foreground p-8 space-y-4 text-left">
-                <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center">
-                    <FileBarChart size={24} className="text-amber-400" />
-                </div>
-                <div className="text-left">
-                    <p className="text-muted-foreground text-xs font-bold tracking-widest uppercase text-left">Targeted Polls</p>
-                    <h3 className="text-4xl font-bold text-left">{totalCount}</h3>
-                </div>
-            </Card>
-            <Card className="rounded-lg border-none shadow-sm bg-card p-8 space-y-4 ring-1 ring-border text-left">
-                <div className="w-12 h-12 rounded-lg bg-amber-100 flex items-center justify-center">
-                    <TrendingUp size={24} className="text-amber-600" />
-                </div>
-                <div className="text-left">
-                    <p className="text-muted-foreground text-xs font-bold tracking-widest uppercase text-left">Response Rate</p>
-                    <h3 className="text-4xl font-bold text-left">78.4<span className="text-lg text-muted-foreground font-bold ml-1">%</span></h3>
-                </div>
-            </Card>
-            <Card className="rounded-lg border-none shadow-sm bg-card p-8 space-y-4 ring-1 ring-border text-left">
-                <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-left">
-                    <PieChart size={24} className="text-muted-foreground" />
-                </div>
-                <div className="text-left">
-                    <p className="text-muted-foreground text-xs font-bold tracking-widest uppercase text-left">Active Analytics</p>
-                    <h3 className="text-4xl font-bold text-left uppercase">Live</h3>
-                </div>
-            </Card>
+      {/* 근거 없는 카드 2개('Response Rate 78.4%', 'Active Analytics: Live')는 삭제했다(P1-5).
+          남은 두 값은 서버 응답에서 직접 계산된다. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <Card className="rounded-lg border-none shadow-sm bg-surface-inverse text-surface-inverse-foreground p-8 space-y-4 text-left">
+          <div className="w-12 h-12 rounded-lg bg-white/10 flex items-center justify-center">
+            <FileBarChart size={24} className="text-amber-400" />
+          </div>
+          <div>
+            <p className="text-xs font-bold tracking-widest opacity-60">전체 설문</p>
+            <h3 className="text-4xl font-bold tabular-nums">{totalCount.toLocaleString()}<span className="text-lg font-bold ml-1 opacity-60">건</span></h3>
+          </div>
+        </Card>
+        <Card className="rounded-lg border-none shadow-sm bg-card p-8 space-y-4 ring-1 ring-border text-left">
+          <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center">
+            <MessageSquare size={24} className="text-amber-600" />
+          </div>
+          <div>
+            <p className="text-muted-foreground text-xs font-bold tracking-widest">현재 페이지 응답 합계</p>
+            <h3 className="text-4xl font-bold tabular-nums">{pageResponseSum.toLocaleString()}<span className="text-lg text-muted-foreground font-bold ml-1">건</span></h3>
+          </div>
+        </Card>
       </div>
 
       <Card className="border-none shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] overflow-hidden rounded-lg bg-card ring-1 ring-border">
-        <CardHeader className="bg-muted/50 border-b p-8 text-left">
-            <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-center gap-4">
-                <div className="relative flex-1 w-full group">
-                    <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-amber-500 transition-colors" />
-                    <Input
-                        placeholder="분석할 설문명을 입력하세요"
-                        className="h-11 pl-14 rounded-lg border-2 border-transparent bg-card shadow-sm focus:border-amber-500 focus:ring-0 transition-all font-bold text-left"
-                        value={params.searchKeyword || ''}
-                        onChange={(e) => setParams(prev => ({ ...prev, searchKeyword: e.target.value }))}
-                    />
-                </div>
-                <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-sm shadow-sm transition-all active:scale-95">분석 조회</Button>
-            </form>
-        </CardHeader>
-        <CardContent className="p-0 text-left">
-          <Table>
-            <TableHeader className="bg-muted/50 text-left">
-              <TableRow className="hover:bg-transparent border-none">
-                <TableHead className="w-[80px] text-center font-bold text-muted-foreground text-xs py-6">번호</TableHead>
-                <TableHead className="font-bold text-foreground text-xs py-6 px-4 text-left">설문 주제 (Survey Subject)</TableHead>
-                <TableHead className="w-[120px] font-bold text-muted-foreground text-xs py-6 text-center">응답 수</TableHead>
-                <TableHead className="w-[250px] font-bold text-muted-foreground text-xs py-6 text-center">조사 기간</TableHead>
-                <TableHead className="w-[120px] font-bold text-muted-foreground text-xs py-6 text-center">진행 상태</TableHead>
-                <TableHead className="w-[150px] font-bold text-muted-foreground text-xs py-6 text-right px-8">통계 리포트</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody className="text-left border-none">
-              {isLoading ? (
-                <TableSkeleton columnCount={6} rowCount={10} />
-              ) : polls.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={6} className="h-48 text-center text-muted-foreground font-bold tracking-tight opacity-40">
-                    통계 데이터가 존재하지 않습니다.
-                  </TableCell>
-                </TableRow>
-              ) : (
-                polls.map((poll, index) => (
-                  <TableRow key={poll.pollId} className="hover:bg-amber-50/30 transition-all border-b last:border-0 group border-border">
-                    <TableCell className="text-center font-mono text-sm text-muted-foreground py-6">
-                        {index + 1 + (params.page || 0) * 10}
-                    </TableCell>
-                    <TableCell className="px-4 py-6 text-left">
-                        <span className="text-[17px] font-bold text-foreground group-hover:text-amber-600 transition-colors uppercase text-left">{poll.pollNm}</span>
-                    </TableCell>
-                    <TableCell className="text-center py-6">
-                        <span className="font-mono font-bold text-foreground text-center">0</span>
-                    </TableCell>
-                    <TableCell className="text-center py-6 uppercase">
-                        <div className="inline-flex items-center gap-2 text-muted-foreground font-bold text-xs uppercase text-center">
-                          <Calendar className="w-3.5 h-3.5 opacity-40 text-amber-500" /> {poll.pollBgngYmd} ~ {poll.pollEndYmd}
-                        </div>
-                    </TableCell>
-                    <TableCell className="text-center py-6">
-                        <Badge variant="outline" className="rounded-md font-bold px-3 border-amber-200 text-amber-600 bg-amber-50 group-hover:bg-amber-100 transition-colors">집계중</Badge>
-                    </TableCell>
-                    <TableCell className="text-right px-8 py-6">
-                      <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/survey/stats/${poll.pollId}`)} className="rounded-lg font-bold text-xs gap-2 group-hover:bg-amber-500 group-hover:text-white transition-all">
-                        <BarChart3 className="h-4 w-4" /> 결과 리포트
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-
-      {data && (
-        <div className="flex justify-center pt-10 pb-20">
-            <PagePagination
-                total={data.total}
-                page={data.page}
-                size={data.size}
-                onPageChange={(page) => setParams(prev => ({ ...prev, page: page - 1 }))}
-            />
+        <div className="bg-muted/50 border-b p-8">
+          <form onSubmit={handleSearch} className="flex flex-col md:flex-row items-center gap-4">
+            <div className="relative flex-1 w-full group">
+              <label htmlFor="survey-stats-search" className="sr-only">분석할 설문명 검색</label>
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-amber-500 transition-colors" />
+              <Input
+                id="survey-stats-search"
+                placeholder="분석할 설문명을 입력하세요"
+                className="h-11 pl-14 rounded-lg border-2 border-transparent bg-card shadow-sm focus:border-amber-500 focus:ring-0 transition-all font-bold"
+                value={keyword}
+                onChange={(e) => handleKeywordChange(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-sm shadow-sm transition-all active:scale-95">분석 조회</Button>
+          </form>
         </div>
-      )}
+
+        <StandardDataTable
+          columns={columns}
+          data={polls}
+          loading={isLoading}
+          // 조회 실패를 '통계 데이터가 존재하지 않습니다'로 위장하지 않는다(P1-1).
+          error={isError ? error : null}
+          onRetry={() => void refetch()}
+          keyField="pollId"
+          emptyMessage="집계할 설문이 없습니다."
+          className="border-none bg-transparent shadow-none"
+          pagination={{
+            currentPage: page + 1,
+            totalPages: Math.ceil(totalCount / PAGE_SIZE),
+            onPageChange: (p) => setPage(p - 1),
+            totalCount,
+            pageSize: PAGE_SIZE,
+          }}
+        />
+      </Card>
     </div>
   );
 }

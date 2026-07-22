@@ -3,30 +3,32 @@
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
-import { PrivacyLog, SearchParams, PageResponse } from '@/types/foundation/system';
+import { PrivacyLog, PageResponse } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { ShieldAlert, Calendar, User, Tag } from 'lucide-react';
+import { usePageParam } from '../use-log-url-state';
+
+const PAGE_SIZE = 10;
 
 const SystemLogsPrivacyClient = () => {
-    const [params, setParams] = useState<SearchParams>({
-        page: 1,
-        size: 10,
-        searchKeyword: '',
-    });
+    const [page, setPage] = usePageParam();
+    const [searchKeyword, setSearchKeyword] = useState('');
 
-    const { data, isLoading } = useQuery<PageResponse<PrivacyLog>>({
-        queryKey: ['admin-logs-privacy', params],
+    const { data, isLoading, error, refetch } = useQuery<PageResponse<PrivacyLog>>({
+        queryKey: ['admin-logs-privacy', page, searchKeyword],
+        // 서비스가 `pageIndex`(1-base)만 읽는다. 기존 `pageNo` 전달은 무시돼 항상 1페이지가 조회됐다.
         queryFn: () => systemLogAdminService.getPrivacyLogs({
-            pageNo: Number(params.page) || 1,
-            size: params.size || 10,
-            searchKeyword: params.searchKeyword,
+            pageIndex: page,
+            size: PAGE_SIZE,
+            searchKeyword,
         }),
     });
 
     const logs = (data?.list || []) as PrivacyLog[];
     const totalPageCount = data?.totalPage || 1;
+    const totalCount = Number(data?.total || 0);
 
     const columns: Column<PrivacyLog>[] = [
         {
@@ -63,7 +65,7 @@ const SystemLogsPrivacyClient = () => {
         {
             header: '처리 구분',
             accessor: (item: PrivacyLog) => (
-                <span className="px-2 py-0.5 bg-orange-50 text-orange-600 text-xs font-bold rounded-md border border-orange-100">
+                <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-md border border-amber-500/20">
                     {item.processSeCode}
                 </span>
             ),
@@ -72,7 +74,7 @@ const SystemLogsPrivacyClient = () => {
         {
             header: '요청자ID',
             accessor: (item: PrivacyLog) => (
-                <div className="px-3 py-1 bg-white border rounded-lg w-fit shadow-sm text-xs font-bold text-foreground">
+                <div className="px-3 py-1 bg-card border rounded-lg w-fit shadow-sm text-xs font-bold text-foreground">
                     {item.rqesterId}
                 </div>
             ),
@@ -108,14 +110,21 @@ const SystemLogsPrivacyClient = () => {
                 columns={columns}
                 data={logs}
                 loading={isLoading}
+                error={error}
+                onRetry={() => refetch()}
+                keyField="logId"
                 pagination={{
-                    currentPage: (params.page || 1) as number,
+                    currentPage: page,
                     totalPages: totalPageCount,
-                    onPageChange: (page: number) => setParams({ ...params, page: page }),
+                    onPageChange: setPage,
+                    totalCount,
+                    pageSize: PAGE_SIZE,
                 }}
                 search={{
                     placeholder: '대상명, 요청자 검색..',
-                    onSearch: (keyword: string) => setParams({ ...params, searchKeyword: keyword, page: 1 }),
+                    value: searchKeyword,
+                    onSearch: (keyword: string) => { setSearchKeyword(keyword); setPage(1); },
+                    onClear: () => { setSearchKeyword(''); setPage(1); },
                 }}
             />
         </div>

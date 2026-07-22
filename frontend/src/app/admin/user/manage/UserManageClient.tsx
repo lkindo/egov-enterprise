@@ -2,23 +2,18 @@
 
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Users,  
- Search,  
- UserPlus,  
- Shield,  
- MoreHorizontal, 
- RefreshCw, 
- Database, 
- ArrowUpRight, 
- UserCheck, 
- UserX, 
- History, 
- Lock, 
- Zap, 
- LayoutGrid, 
- List, 
- ChevronRight, 
- Edit2, 
+import { Users,
+ Search,
+ UserPlus,
+ Shield,
+ MoreHorizontal,
+ RefreshCw,
+ Database,
+ UserCheck,
+ Zap,
+ LayoutGrid,
+ List,
+ Edit2,
  Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,25 +28,38 @@ import {
 } from '@/components/ui/table';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { UserManage, UserSearchParams } from '@/types/foundation/user';
-;
-;
+import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
+import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { cn } from '@/lib/utils';
+
+/** 계정 상태 코드(userSttsCd) → 표시 라벨. 종전에는 전 행이 'OPERATIONAL' 로 고정돼 있었다(감사 P1-5). */
+const USER_STATUS_LABELS: Record<string, { label: string; className: string }> = {
+  P: { label: '정상', className: 'bg-emerald-500/10 text-emerald-600' },
+  A: { label: '승인 대기', className: 'bg-amber-500/10 text-amber-700' },
+  D: { label: '비활성', className: 'bg-muted text-muted-foreground' },
+};
 
 export default function UserManageClient() {
  const [viewMode, setViewMode] = useState<'table' | 'grid'>('table');
- const [searchParams, setSearchParams] = useState<UserSearchParams>({
- pageIndex: 1,
- size: 10,
- searchCondition: '1',
- searchKeyword: ''
- });
+ const [keyword, setKeyword] = useState('');
+ /** 타이핑마다 서버를 때리지 않도록 300ms 디바운스(감사 P1-8). */
+ const debouncedKeyword = useDebouncedValue(keyword, 300);
+ const [pageIndex, setPageIndex] = useState(1);
 
- const { data, isLoading, refetch } = useQuery({
- queryKey: ['users', searchParams],
+ const searchParams: UserSearchParams = {
+   pageIndex,
+   size: 10,
+   searchCondition: '1',
+   searchKeyword: debouncedKeyword,
+ };
+
+ const { data, isLoading, isError, error, refetch } = useQuery({
+ queryKey: ['users', debouncedKeyword, pageIndex],
  queryFn: () => userAdminService.getUserList(searchParams),
  });
 
  const users = data?.list || [];
+ const totalPage = data?.totalPage || 1;
 
   return (
     <div className="space-y-8">
@@ -90,9 +98,15 @@ export default function UserManageClient() {
               그리드
             </Button>
           </div>
-          <Button className="h-10 rounded-xl px-5 bg-surface-inverse hover:bg-black text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-lg transition-all hover:scale-105 active:scale-95 group">
-            <UserPlus size={16} className="mr-2 group-hover:rotate-12 transition-transform" />
-            사용자 추가
+          {/* 등록 폼이 이 화면에 배선돼 있지 않다. 눌리는 死버튼 대신 '준비 중'을 명시한다(감사 P1-6). */}
+          <Button
+            disabled
+            title="준비 중"
+            aria-disabled="true"
+            className="h-10 rounded-xl px-5 bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-lg opacity-60 cursor-not-allowed group"
+          >
+            <UserPlus size={16} className="mr-2" />
+            사용자 추가 (준비 중)
           </Button>
         </div>
       </div>
@@ -116,30 +130,16 @@ export default function UserManageClient() {
  <div className="space-y-4">
  <div className="relative group/input">
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/input:text-primary transition-colors" size={18} />
- <Input 
- placeholder="아이덴티티 검색..." 
+ <Input
+ placeholder="사용자명 또는 아이디 검색..."
+ aria-label="사용자 검색"
  className="bg-white/5 border-white/10 h-11 pl-12 rounded-lg text-lg font-bold placeholder:text-muted-foreground focus:ring-primary focus:border-primary transition-all"
- value={searchParams.searchKeyword}
- onChange={(e) => setSearchParams((prev: UserSearchParams) => ({ ...prev, searchKeyword: e.target.value }))}
+ value={keyword}
+ // 검색 시 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(감사 P1-8).
+ onChange={(e) => { setKeyword(e.target.value); setPageIndex(1); }}
  />
  </div>
- 
- <div className="grid grid-cols-2 gap-3">
- <div className="p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/opt">
- <p className="text-xs font-bold text-muted-foreground mb-2 group-hover/opt:text-primary tracking-widest">FILTER_BY</p>
- <div className="flex items-center justify-between font-bold text-xs">
- <span>상태</span>
- <ChevronRight size={12} className="opacity-40" />
- </div>
- </div>
- <div className="p-4 rounded-lg bg-white/5 border border-white/10 hover:bg-white/10 transition-colors cursor-pointer group/opt">
- <p className="text-xs font-bold text-muted-foreground mb-2 group-hover/opt:text-primary tracking-widest">SORT_BY</p>
- <div className="flex items-center justify-between font-bold text-xs">
- <span>최근 활동</span>
- <ChevronRight size={12} className="opacity-40" />
- </div>
- </div>
- </div>
+ {/* 종전의 FILTER_BY / SORT_BY 카드는 핸들러가 없는데 cursor-pointer 로 클릭 가능한 척했다 → 제거(감사 P1-6). */}
  </div>
  </div>
 
@@ -173,7 +173,14 @@ export default function UserManageClient() {
  <span className="w-1.5 h-1.5 rounded-full bg-primary" />
  <span className="text-xs font-bold text-muted-foreground">전체 {data?.total || 0}</span>
  </div>
- <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-muted">
+ {/* 종전의 ⋮ 더보기 버튼은 핸들러가 없는 死버튼이었다 → 실제 동작(새로고침)에 배선(감사 P1-6). */}
+ <Button
+ variant="ghost"
+ size="icon"
+ aria-label="사용자 목록 새로고침"
+ onClick={() => refetch()}
+ className="h-8 w-8 rounded-lg hover:bg-muted"
+ >
  <MoreHorizontal size={14} />
  </Button>
  </div>
@@ -183,15 +190,23 @@ export default function UserManageClient() {
  <Table className="relative">
  <TableHeader>
  <TableRow className="hover:bg-transparent border-border">
- <TableHead className="w-[80px] py-6 text-xs font-bold text-muted-foreground uppercase text-center">Protocol</TableHead>
- <TableHead className="py-6 text-xs font-bold text-muted-foreground uppercase">Core Identity</TableHead>
- <TableHead className="py-6 text-xs font-bold text-muted-foreground uppercase">Clearance</TableHead>
- <TableHead className="py-6 text-xs font-bold text-muted-foreground uppercase">State</TableHead>
- <TableHead className="py-6 text-xs font-bold text-muted-foreground uppercase text-right">관리</TableHead>
+ {/* 영문 조어 헤더(Protocol/Core Identity/Clearance/State)를 한글로 정정(감사 P2). */}
+ <TableHead className="w-[80px] py-6 text-xs font-bold text-muted-foreground text-center">번호</TableHead>
+ <TableHead className="py-6 text-xs font-bold text-muted-foreground">사용자 정보</TableHead>
+ <TableHead className="py-6 text-xs font-bold text-muted-foreground">소속</TableHead>
+ <TableHead className="py-6 text-xs font-bold text-muted-foreground">상태</TableHead>
+ <TableHead className="py-6 text-xs font-bold text-muted-foreground text-right">관리</TableHead>
  </TableRow>
  </TableHeader>
  <TableBody>
- {isLoading ? (
+ {isError ? (
+ /* 조회 실패를 '검색 결과 없음'으로 위장하지 않는다(감사 P1-1). */
+ <TableRow>
+ <TableCell colSpan={5} className="py-16">
+ <ErrorStateDisplay error={error} onRetry={() => refetch()} />
+ </TableCell>
+ </TableRow>
+ ) : isLoading ? (
  [...Array(5)].map((_, i) => (
  <TableRow key={`skeleton-${i}`} className="animate-pulse">
  <TableCell colSpan={5} className="py-10">
@@ -203,7 +218,7 @@ export default function UserManageClient() {
  users.map((user: UserManage, idx: number) => (
  <TableRow key={user.esntlId} className="group hover:bg-muted transition-colors border-border">
  <TableCell className="text-center font-mono text-xs font-bold text-muted-foreground group-hover:text-primary transition-colors">
- #{idx + 1 + ((searchParams.pageIndex || 1) - 1) * (searchParams.size || 10)}
+ #{idx + 1 + (pageIndex - 1) * 10}
  </TableCell>
  <TableCell className="py-5">
  <div className="flex items-center gap-4">
@@ -217,25 +232,45 @@ export default function UserManageClient() {
  </div>
  </TableCell>
  <TableCell>
- <div className="flex flex-col gap-1">
+ {/* 종전에는 전 행이 'Level_04 / Global Admin Access' 로 고정돼 실제 권한과 무관한
+ 거짓 정보를 보여줬다 → 실제 데이터(부서 ID)만 표시한다(감사 P1-5). */}
  <div className="flex items-center gap-2">
  <Shield size={10} className="text-muted-foreground" />
- <span className="text-xs font-bold text-muted-foreground uppercase tracking-tighter">Level_04</span>
- </div>
- <span className="text-xs font-bold text-muted-foreground ">Global Admin Access</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tighter">{user.ognzId || '미지정'}</span>
  </div>
  </TableCell>
  <TableCell>
- <Badge variant="outline" className="rounded-lg bg-emerald-500/10 text-emerald-600 border-none font-bold text-xs tracking-widest px-3 py-1">
- OPERATIONAL
+ {(() => {
+ const status = USER_STATUS_LABELS[user.userSttsCd] ?? { label: user.userSttsCd || '-', className: 'bg-muted text-muted-foreground' };
+ return (
+ <Badge variant="outline" className={cn("rounded-lg border-none font-bold text-xs tracking-widest px-3 py-1", status.className)}>
+ {status.label}
  </Badge>
+ );
+ })()}
  </TableCell>
  <TableCell className="text-right">
+ {/* 편집·삭제 배선이 이 화면에 없다. 누르면 아무 일도 없는 死버튼 대신 '준비 중'으로 명시한다(감사 P1-6).
+ 아이콘 전용 버튼에는 대상명을 포함한 접근명을 부여한다(감사 P1-10). */}
  <div className="flex items-center justify-end gap-2">
- <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border text-muted-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all">
+ <Button
+ size="icon"
+ disabled
+ aria-disabled="true"
+ title="준비 중"
+ aria-label={`${user.userNm} 수정 (준비 중)`}
+ className="h-10 w-10 rounded-lg bg-muted border border-border text-muted-foreground opacity-50 cursor-not-allowed"
+ >
  <Edit2 size={16} />
  </Button>
- <Button size="icon" className="h-10 w-10 rounded-lg bg-muted border border-border text-rose-500 hover:bg-rose-500 hover:text-white transition-all">
+ <Button
+ size="icon"
+ disabled
+ aria-disabled="true"
+ title="준비 중"
+ aria-label={`${user.userNm} 삭제 (준비 중)`}
+ className="h-10 w-10 rounded-lg bg-muted border border-border text-rose-500 opacity-50 cursor-not-allowed"
+ >
  <Trash2 size={16} />
  </Button>
  </div>
@@ -256,11 +291,22 @@ export default function UserManageClient() {
  </Table>
  </div>
  
+ {/* 종전 페이저는 항상 1·2·3 을 그리고 클릭해도 아무 일이 없었으며,
+ 좌측 문구('Encryption Standard: AES-256-GCM')도 근거 없는 고정 텍스트였다(감사 P1-5·P1-6). */}
  <div className="px-8 py-6 border-t border-border flex items-center justify-between bg-muted/50">
- <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase">Encryption Standard: AES-256-GCM</p>
+ <p className="text-xs font-bold text-muted-foreground tracking-widest">
+ 총 {data?.total || 0}건 · {pageIndex}/{totalPage} 페이지
+ </p>
  <div className="flex items-center gap-2">
- {[1, 2, 3].map(p => (
- <Button key={p} variant="outline" className={cn("w-8 h-8 p-0 rounded-lg font-bold text-xs", p === 1 && "bg-surface-inverse text-surface-inverse-foreground border-none shadow-lg")}>
+ {Array.from({ length: totalPage }, (_, i) => i + 1).slice(0, 10).map(p => (
+ <Button
+ key={p}
+ variant="outline"
+ aria-label={`${p}페이지로 이동`}
+ aria-current={p === pageIndex ? 'page' : undefined}
+ onClick={() => setPageIndex(p)}
+ className={cn("w-8 h-8 p-0 rounded-lg font-bold text-xs", p === pageIndex && "bg-surface-inverse text-surface-inverse-foreground border-none shadow-lg")}
+ >
  {p}
  </Button>
  ))}
@@ -270,51 +316,8 @@ export default function UserManageClient() {
  </div>
  </div>
 
- {/* 🚀 System Analytics Row (Bento Bottom) */}
- <div className="grid grid-cols-12 gap-6">
- <div className="col-span-12 md:col-span-4">
- <div className="hub-bento-card p-8 group hover:border-primary/50">
- <div className="flex items-center justify-between mb-6">
- <div className="w-12 h-12 rounded-lg bg-rose-500/10 flex items-center justify-center text-rose-600">
- <UserX size={20} />
- </div>
- <ArrowUpRight size={16} className="text-slate-300 group-hover:text-primary transition-colors" />
- </div>
- <h4 className="text-base font-bold tracking-tight mb-1 uppercase">Dormant Streams</h4>
- <p className="text-xs font-bold text-muted-foreground leading-relaxed">
- 최근 90일간 활동이 없는 12개의 아이덴티티가 발견되었습니다. 보안 프로토콜에 따른 정리가 권장됩니다.
- </p>
- </div>
- </div>
- <div className="col-span-12 md:col-span-4">
- <div className="hub-bento-card p-8 group hover:border-hub-indigo/50">
- <div className="flex items-center justify-between mb-6">
- <div className="w-12 h-12 rounded-lg bg-hub-indigo/10 flex items-center justify-center text-hub-indigo">
- <Lock size={20} />
- </div>
- <ArrowUpRight size={16} className="text-slate-300 group-hover:text-hub-indigo transition-colors" />
- </div>
- <h4 className="text-base font-bold tracking-tight mb-1 uppercase">Security Lockdowns</h4>
- <p className="text-xs font-bold text-muted-foreground leading-relaxed">
- 비정상적 접근 시도로 인해 일시 격리된 3개의 계정이 존재합니다. 관리자 검토가 필요합니다.
- </p>
- </div>
- </div>
- <div className="col-span-12 md:col-span-4">
- <div className="hub-bento-card p-8 group hover:border-amber-500/50">
- <div className="flex items-center justify-between mb-6">
- <div className="w-12 h-12 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-600">
- <History size={20} />
- </div>
- <ArrowUpRight size={16} className="text-slate-300 group-hover:text-amber-500 transition-colors" />
- </div>
- <h4 className="text-base font-bold tracking-tight mb-1 uppercase">Audit Trailing</h4>
- <p className="text-xs font-bold text-muted-foreground leading-relaxed">
- 전체 시스템 무결성 검사가 완료되었습니다. 모든 아이덴티티 변경 사항이 중앙 감사 로그에 기록되었습니다.
- </p>
- </div>
- </div>
- </div>
+ {/* 종전 하단 3카드(Dormant Streams/Security Lockdowns/Audit Trailing)는 12건·3건 같은
+     수치와 "무결성 검사 완료" 문구가 어떤 조회 결과와도 연결돼 있지 않은 고정 텍스트였다 → 제거(감사 P1-5). */}
  </div>
  );
 }

@@ -1,23 +1,20 @@
 'use client';
 
-import React, { useEffect, useState, Suspense } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import React, { Suspense } from 'react';
+import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { BoardPost } from '@/types/business/board';
-import { useToast } from '@/app/components/ui/toast';
 import { useSearchState } from '@/lib/hooks/use-search-state';
-import { Plus, Eye, Megaphone, Loader2 } from 'lucide-react';
+import { Plus, Eye } from 'lucide-react';
 
 const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 공지사항 기본값
 
 function CommunityDetailContent() {
     const router = useRouter();
-    const params = useParams();
-    const communityId = params.id as string;
-    const { toast } = useToast();
 
     const { values, setSearchValues } = useSearchState({
         bbsId: DEFAULT_BBS_ID,
@@ -26,41 +23,28 @@ function CommunityDetailContent() {
         page: '0'
     });
 
-    const [loading, setLoading] = useState(true);
-    const [data, setData] = useState<BoardPost[]>([]);
-    const [total, setTotal] = useState(0);
+    // 감사 P1-1: 과거 useEffect + try/catch 라 조회 실패 시 toast 만 뜨고 목록은 빈 배열로 남아
+    // "게시글이 존재하지 않습니다"(= 데이터 0건)로 위장됐다. useQuery 로 옮겨 isError/error/refetch 를
+    // StandardDataTable 의 error/onRetry 로 그대로 전달한다.
+    const { data, isLoading, isError, error, refetch } = useQuery({
+        queryKey: ['communityPosts', values.bbsId, values.searchWrd, values.searchCnd, values.page],
+        queryFn: () => boardUserService.getPosts(values.bbsId, {
+            page: Number(values.page) || 0,
+            size: 10,
+            searchWrd: values.searchWrd,
+            searchCnd: values.searchCnd
+        })
+    });
 
-    useEffect(() => {
-        async function loadPosts() {
-            try {
-                setLoading(true);
-                // 실제로 communityId에 따른 bbsId를 조회해야 할 수도 있으나
-                // 기존 로직은 고정된 경로로 인식합니다
-                const res = await boardUserService.getPosts(values.bbsId, {
-                    page: parseInt(values.page),
-                    size: 10,
-                    searchWrd: values.searchWrd,
-                    searchCnd: values.searchCnd
-                });
-                setData(res.list || []);
-                setTotal(res.total || 0);
-            } catch (error: any) {
-                toast('목록을 불러오는 중 오류가 발생했습니다.', 'error');
-            } finally {
-                setLoading(false);
-            }
-        }
-        loadPosts();
-    }, [values, toast, communityId]);
+    const posts: BoardPost[] = data?.list || [];
+    const total = data?.total || 0;
 
     const columns = [
         {
+            // 감사 死코드: 과거 `(item as any).noticeYn` 분기는 BoardDto(generated-api.d.ts)에 없는 필드를
+            // 캐스팅으로 읽어 항상 false 였다(공지 표시가 한 번도 렌더되지 않음). 계약에 있는 값만 표시한다.
             header: '번호',
-            accessor: (item: BoardPost) => (
-                (item as any).noticeYn === 'Y' ?
-                    <span className="flex items-center gap-1.5 text-hub-blue font-bold"><Megaphone size={14} /> 공지</span> :
-                    item.pstId
-            ),
+            accessor: (item: BoardPost) => item.pstId,
             className: 'w-20'
         },
         {
@@ -136,17 +120,22 @@ function CommunityDetailContent() {
 
             <StandardDataTable
                 columns={columns}
-                data={data}
-                loading={loading}
+                data={posts}
+                loading={isLoading}
+                error={isError ? error : null}
+                onRetry={() => void refetch()}
                 onRowClick={(item) => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId}&pstId=${item.pstId}`)}
                 emptyMessage="게시글이 존재하지 않습니다."
             />
 
-            <div className="flex justify-center pt-4">
-                <p className="text-sm text-muted-foreground font-medium">
-                    총 <span className="text-foreground font-bold">{total}</span> 개의 게시글이 있습니다.
-                </p>
-            </div>
+            {/* 감사 P1-5: 조회가 실패한 상태에서 "총 0 개"라고 단정하지 않도록 성공 시에만 건수를 표기한다. */}
+            {!isError && (
+                <div className="flex justify-center pt-4">
+                    <p className="text-sm text-muted-foreground font-medium">
+                        총 <span className="text-foreground font-bold">{total.toLocaleString()}</span> 개의 게시글이 있습니다.
+                    </p>
+                </div>
+            )}
         </div>
     );
 }

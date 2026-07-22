@@ -1,8 +1,10 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { codeAdminService, AdministCode } from '@/services/foundation/system/CodeAdminService';
+import { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
 import { Plus, 
  MapPin, 
@@ -51,14 +53,16 @@ const administCodeSchema = AdministCodeDtoSchema.extend({
 
 type AdministCodeFormValues = z.infer<typeof administCodeSchema>;
 
-export default function AdministCodeClient({ initialData }: { initialData: any }) {
- const [data, setData] = useState(initialData?.list || []);
- const [total, setTotal] = useState(initialData?.total || 0);
- const [loading, setLoading] = useState(false);
+/** 서버 페이지 크기(백엔드 기본 pageUnit). PagePagination 계산과 동일해야 한다. */
+const PAGE_SIZE = 10;
+
+export default function AdministCodeClient({ initialData }: { initialData?: Partial<PageResponse<AdministCode>> }) {
  const [isModalOpen, setIsModalOpen] = useState(false);
  const [registerLoading, setRegisterLoading] = useState(false);
  const { toast } = useToast();
+ /** 입력 중인 검색어 / 실제 서버에 제출된 검색어 (이 화면은 제출형 검색이라 디바운스 대상이 아니다) */
  const [searchWrd, setSearchWrd] = useState('');
+ const [appliedSearch, setAppliedSearch] = useState('');
  const [pageNumber, setPageNumber] = useState(1);
 
  const form = useAppForm(administCodeSchema, {
@@ -71,19 +75,35 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
    }
  });
 
- const loadData = async (wrd: string = searchWrd, page: number = pageNumber) => {
- try {
- setLoading(true);
- const res = await codeAdminService.getAdministCodeList({ searchWrd: wrd, pageNo: page });
- setData(res.list || []);
- setTotal(res.total || 0);
- setPageNumber(page);
- } catch (error) {
- toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
- } finally {
- setLoading(false);
- }
- };
+ /*
+  * [P1-1] 종전에는 수동 fetch + catch→toast 였다.
+  * 실패해도 목록 state 가 그대로 남아 "조회 성공"처럼 보였고, 재시도 수단도 없었다.
+  * useQuery 로 옮겨 error/refetch 를 StandardDataTable 에 그대로 전달한다.
+  */
+ const seedList: AdministCode[] = initialData?.list ?? [];
+ const {
+ data: pageData,
+ isLoading,
+ error,
+ refetch,
+ } = useQuery({
+ queryKey: ['administ-codes', appliedSearch, pageNumber],
+ queryFn: () => codeAdminService.getAdministCodeList({ searchWrd: appliedSearch, pageNo: pageNumber }),
+ placeholderData: (prev) => prev ?? (
+ pageNumber === 1 && appliedSearch === '' && seedList.length > 0
+ ? { list: seedList, total: initialData?.total ?? seedList.length, page: 1, size: PAGE_SIZE, totalPage: 1 }
+ : undefined
+ ),
+ });
+
+ const data: AdministCode[] = pageData?.list ?? [];
+ const total = pageData?.total ?? 0;
+
+ /** [P1-8] 검색 실행 시 페이지를 1로 되돌린다(3페이지에서 검색하면 빈 화면이 되던 결함). */
+ const handleSearchSubmit = useCallback((keyword: string) => {
+ setAppliedSearch(keyword);
+ setPageNumber(1);
+ }, []);
 
  const onRegisterSubmit = async (values: AdministCodeFormValues) => {
    try {
@@ -92,7 +112,8 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
      toast('행정 구역 코드가 등록되었습니다.', 'success');
      setIsModalOpen(false);
      form.reset();
-     loadData(searchWrd, 1);
+     setPageNumber(1);
+     refetch();
    } catch (error) {
      toast('코드 등록 중 오류가 발생했습니다.', 'error');
    } finally {
@@ -100,26 +121,31 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
    }
  };
 
+ /*
+  * [P1-5] 지표는 실제 계산 가능한 값만 남긴다.
+  * 법정동/행정동/사용중 비율은 서버 집계 API 가 없어 현재 페이지 기준이며, 제목에 그 사실을 명시한다.
+  */
  const stats = useMemo(() => {
- const totalCount = total || 0;
- const legalDist = (data || []).filter((item: any) => item?.admdstSeCd === '1').length;
- const adminDist = (data || []).filter((item: any) => item?.admdstSeCd === '2').length;
- const syncStatus = ((data || []).filter((item: any) => item?.useYn === 'Y').length / ((data || []).length || 1) * 100).toFixed(0);
- 
- return { totalCount, legalDist, adminDist, syncStatus };
+ const legalDist = data.filter(item => item?.admdstSeCd === '1').length;
+ const adminDist = data.filter(item => item?.admdstSeCd === '2').length;
+ const activeRate = data.length > 0
+ ? Math.round(data.filter(item => item?.useYn === 'Y').length / data.length * 100)
+ : 0;
+
+ return { totalCount: total, legalDist, adminDist, activeRate };
  }, [total, data]);
 
  const columns: Column<AdministCode>[] = [
  { 
  header: '식별 코드', 
- accessor: (item: any) => (
+ accessor: (item: AdministCode) => (
  <div className="flex items-center gap-4 py-2">
  <div className="w-10 h-9 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg group-hover:rotate-6 transition-transform">
  <MapPin size={18} />
  </div>
  <div className="flex flex-col gap-0.5">
  <span className="font-black text-foreground tracking-tighter text-xs uppercase">{item.admdstCd}</span>
- <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ADMIN_CODE</span>
+ <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">행정 코드</span>
  </div>
  </div>
  ),
@@ -127,7 +153,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  },
  { 
  header: '구분', 
- accessor: (item: any) => (
+ accessor: (item: AdministCode) => (
  <div className={cn(
  "px-3 py-1 rounded-lg border w-fit text-[10px] font-black tracking-widest uppercase shadow-sm",
  item.admdstSeCd === '1' ? 'bg-surface-inverse text-surface-inverse-foreground border-surface-inverse-border' : 'bg-muted text-muted-foreground border-border'
@@ -139,12 +165,12 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  },
  { 
  header: '행정구역명', 
- accessor: (item: any) => (
+ accessor: (item: AdministCode) => (
  <div className="flex flex-col gap-0.5 py-4">
  <span className="font-black text-foreground tracking-tighter text-sm leading-tight uppercase">{item.admdstZoneNm}</span>
  <div className="flex items-center gap-1.5 mt-1">
  <Compass size={10} className="text-primary opacity-40" />
- <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase leading-none">Namespace</span>
+ <span className="text-[10px] font-bold text-muted-foreground tracking-widest uppercase leading-none">표준 명칭</span>
  </div>
  </div>
  ),
@@ -152,16 +178,16 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  },
  { 
  header: '상위 코드', 
- accessor: (item: any) => (
+ accessor: (item: AdministCode) => (
  <div className="font-black text-muted-foreground tabular-nums tracking-widest text-[10px] uppercase">
- {item.upAdmdstCd || 'ROOT'}
+ {item.upAdmdstCd || '최상위'}
  </div>
  ), 
  className: 'w-32 py-4' 
  },
  { 
  header: '상태', 
- accessor: (item: any) => (
+ accessor: (item: AdministCode) => (
  <HubStatusBadge status={item.useYn === 'Y' ? '활성' : '중단'} />
  ),
  className: 'w-24 py-4'
@@ -180,10 +206,11 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  <div className="flex gap-3 p-1 items-center">
  <Button
  variant="ghost"
- onClick={() => loadData()}
- className="h-10 w-12 rounded-xl bg-white border border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-sm group active:scale-95 px-4"
+ aria-label="행정 구역 목록 새로고침"
+ onClick={() => refetch()}
+ className="h-10 w-12 rounded-xl bg-card border border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-sm group active:scale-95 px-4"
  >
- <RefreshCcw size={20} className="group-hover:rotate-180 transition-transform duration-700" />
+ <RefreshCcw size={20} aria-hidden="true" className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
  <Button 
   onClick={() => setIsModalOpen(true)}
@@ -197,9 +224,9 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
 
  <HubMetricGrid>
  <HubMetricCard title="전체 구역" value={stats.totalCount} icon={Database} color="primary" />
- <HubMetricCard title="법정동" value={stats.legalDist} icon={Map} color="indigo" />
- <HubMetricCard title="행정동" value={stats.adminDist} icon={Compass} color="amber" />
- <HubMetricCard title="동기화" value={`${stats.syncStatus}%`} icon={ShieldCheck} color="emerald" status="최적" />
+ <HubMetricCard title="법정동 (현재 페이지)" value={stats.legalDist} icon={Map} color="indigo" />
+ <HubMetricCard title="행정동 (현재 페이지)" value={stats.adminDist} icon={Compass} color="amber" />
+ <HubMetricCard title="사용 중 비율 (현재 페이지)" value={`${stats.activeRate}%`} icon={ShieldCheck} color="emerald" />
  </HubMetricGrid>
 
  <div className="grid grid-cols-12 gap-8">
@@ -218,17 +245,21 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  </div>
  
  <p className="text-xs font-bold text-muted-foreground leading-relaxed border-l-4 border-primary pl-6">
- 행정구역코드 체계(KAS)는 전국 공간정보 통합 관리 체계와 실시간으로 동기화됩니다.
+ 행정구역코드는 법정동·행정동 체계를 코드로 관리하는 표준 메타데이터입니다.
  </p>
 
+ {/*
+   * [P1-5] '데이터 수집 엔진: Normal' / '동기화 빈도: Daily 00:00' 두 지표를 삭제했다.
+   * 배치·수집 스케줄러가 실재하지 않아 근거 없는 고정 문구였다.
+   */}
  <div className="space-y-5 pt-10 border-t border-border/50">
- <div className="flex items-center justify-between group/stat">
- <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase group-hover/stat:text-primary transition-colors">데이터 수집 엔진</span>
- <span className="text-sm font-black text-emerald-500 uppercase tracking-widest">Normal</span>
+ <div className="flex items-center justify-between">
+ <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">현재 페이지 건수</span>
+ <span className="text-sm font-black text-foreground tabular-nums">{data.length}건</span>
  </div>
- <div className="flex items-center justify-between group/stat">
- <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase group-hover/stat:text-amber-500 transition-colors">동기화 빈도</span>
- <span className="text-sm font-black text-foreground uppercase tracking-widest">Daily 00:00</span>
+ <div className="flex items-center justify-between">
+ <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">전체 등록 건수</span>
+ <span className="text-sm font-black text-foreground tabular-nums">{stats.totalCount}건</span>
  </div>
  </div>
  </div>
@@ -239,11 +270,12 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
  <HubSectionCard title="행정 코드 탐색기" description="행정 구역 및 법정동 메타데이터 상세 정보입니다." icon={SearchCode}>
  <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl p-8 mb-8 ring-1 ring-black/5">
- <form onSubmit={(e) => { e.preventDefault(); loadData(searchWrd, 1); }} className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+ <form role="search" onSubmit={(e) => { e.preventDefault(); handleSearchSubmit(searchWrd); }} className="flex flex-col md:flex-row md:items-center justify-between gap-6">
  <div className="relative group/search flex-1">
- <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
+ <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} aria-hidden="true" />
  <Input
  placeholder="행정구역명을 입력하세요..."
+ aria-label="행정구역명 검색"
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
  className="h-10 pl-14 pr-6 w-full bg-muted/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
@@ -259,16 +291,19 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  <div className="overflow-hidden min-h-[500px] p-2">
  <AnimatePresence mode="wait">
  <motion.div
- key={searchWrd + pageNumber}
+ key={appliedSearch + pageNumber}
  initial={{ opacity: 0, scale: 0.99 }}
  animate={{ opacity: 1, scale: 1 }}
  exit={{ opacity: 0, scale: 1.01 }}
  transition={{ duration: 0.4, ease: "circOut" }}
  >
- <StandardDataTable
+ <StandardDataTable<AdministCode>
  columns={columns}
  data={data}
- loading={loading}
+ loading={isLoading}
+ error={error}
+ onRetry={() => refetch()}
+ keyField="admdstCd"
  emptyMessage="데이터가 존재하지 않습니다."
  className="border-none bg-transparent shadow-none"
  isPremium={true}
@@ -281,9 +316,9 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
  <div className="mt-10 flex justify-center">
  <PagePagination
  total={total}
- size={10}
+ size={PAGE_SIZE}
  page={pageNumber}
- onPageChange={(p) => loadData(searchWrd, p)}
+ onPageChange={setPageNumber}
  />
  </div>
  </HubSectionCard>
@@ -330,7 +365,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
            <FormItem>
              <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">구분</FormLabel>
              <FormControl>
-               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-muted border-border focus:bg-white text-sm outline-none">
+               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-muted border-border focus:bg-card text-sm outline-none">
                  <option value="1">법정동</option>
                  <option value="2">행정동</option>
                </select>
@@ -372,7 +407,7 @@ export default function AdministCodeClient({ initialData }: { initialData: any }
            <FormItem>
              <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">사용 여부</FormLabel>
              <FormControl>
-               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-muted border-border focus:bg-white text-sm outline-none">
+               <select {...field} className="w-full h-11 px-3 rounded-lg border bg-muted border-border focus:bg-card text-sm outline-none">
                  <option value="Y">활성 (사용함)</option>
                  <option value="N">중단 (사용안함)</option>
                </select>

@@ -26,6 +26,7 @@ import { Plus,
 import type { Network } from '@/services/foundation/system/NetworkAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useRouter } from 'next/navigation';
 import {
     saveNetworkAction as saveNetworkNodeAction,
     deleteNetworkAction as deleteNetworkNodeAction
@@ -33,19 +34,30 @@ import {
 
 interface NetworkAdminClientProps {
     initialNetworks: Network[];
+    /** 서버 컴포넌트 조회 실패 사유(성공 시 null). 빈 목록 위장 방지용(P1-1). */
+    fetchError?: string | null;
 }
 
-export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClientProps) {
+export default function NetworkAdminClient({ initialNetworks, fetchError = null }: NetworkAdminClientProps) {
+    const router = useRouter();
     const { toast } = useToast();
     const confirm = useConfirm();
     const [searchTerm, setSearchTerm] = useState('');
     const [isModalOpen, setIsOpen] = useState(false);
     const [editingNode, setEditingNode] = useState<Network | null>(null);
 
-    const filteredNodes = (initialNetworks || []).filter(node => node && (
-        String(node.manageIem || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        String(node.ntwrkId || '').toLowerCase().includes(searchTerm.toLowerCase())
+    // 검색은 서버 요청이 아니라 이미 내려받은 목록의 클라이언트 필터라 디바운스가 불필요하다.
+    const nodes = (initialNetworks || []).filter(Boolean);
+    const normalizedTerm = searchTerm.trim().toLowerCase();
+    const filteredNodes = nodes.filter(node => (
+        String(node.manageIem || '').toLowerCase().includes(normalizedTerm) ||
+        String(node.ntwrkId || '').toLowerCase().includes(normalizedTerm)
     ));
+
+    const listError = fetchError ? new Error(fetchError) : null;
+    const activeNodeCount = nodes.filter(n => n.useYn === 'Y').length;
+    const inactiveNodeCount = nodes.length - activeNodeCount;
+    const assignedIpCount = nodes.filter(n => n.ntwrkIp).length;
 
     const handleCreate = () => {
         setEditingNode(null);
@@ -57,24 +69,28 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
         setIsOpen(true);
     };
 
-    const handleDelete = async (id: string) => {
+    const handleDelete = async (node: Network) => {
+        // 파괴적 액션 확인 본문에는 반드시 대상 식별자(노드명/ID)를 노출한다(P1-9).
+        const label = node.manageIem || node.ntwrkId || '알 수 없는 노드';
         const ok = await confirm({
             title: '인프라 노드 영구 삭제',
-            message: '선택한 네트워크 노드를 시스템에서 제거하시겠습니까? 이 작업은 되돌릴 수 없으며 관련 연결이 즉시 차단됩니다.',
+            message: `"${label}"(ID: ${node.ntwrkId}) 노드를 시스템에서 제거하시겠습니까? 이 작업은 되돌릴 수 없으며 관련 연결이 즉시 차단됩니다.`,
             variant: 'destructive',
             confirmText: '자산 삭제'
         });
 
         if (ok) {
             try {
-                const res = await deleteNetworkNodeAction(id);
+                const res = await deleteNetworkNodeAction(node.ntwrkId);
                 if (res.success) {
                     toast(res.message, 'success');
+                    router.refresh();
                 } else {
                     toast(res.message, 'error');
                 }
             } catch (error) {
-                toast('삭제 중 시스템 오류가 발생했습니다.', 'error');
+                const message = error instanceof Error && error.message ? error.message : '';
+                toast(message || '삭제 중 시스템 오류가 발생했습니다.', 'error');
             }
         }
     };
@@ -121,11 +137,23 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
             className: 'text-right w-32',
             accessor: (item: Network) => (
                 <div className="flex justify-end gap-2 pr-4">
-                    <Button variant="ghost" size="icon" className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
-                        <Settings size={16} />
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`${item.manageIem || item.ntwrkId} 노드 수정`}
+                        className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold"
+                        onClick={() => handleEdit(item)}
+                    >
+                        <Settings size={16} aria-hidden="true" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.ntwrkId)}>
-                        <Trash2 size={16} />
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`${item.manageIem || item.ntwrkId} 노드 삭제`}
+                        className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all"
+                        onClick={() => handleDelete(item)}
+                    >
+                        <Trash2 size={16} aria-hidden="true" />
                     </Button>
                 </div>
             )
@@ -151,11 +179,16 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                 }
             />
 
+            {/*
+              [P1-5] '네트워크 가용성 99.9%' / '평균 응답 속도 4ms' 카드 삭제.
+              두 값 모두 어떤 계측 소스도 없는 고정 문자열이라 운영 판단 근거가 될 수 없었다.
+              대신 목록에서 실제 산출 가능한 운영/중지 노드 수로 대체한다.
+            */}
             <HubMetricGrid>
-                <HubMetricCard title="관리 대상 노드" value={(initialNetworks || []).filter(Boolean).length} icon={Server} color="primary" />
-                <HubMetricCard title="할당 고정 IP" value={(initialNetworks || []).filter(n => n?.ntwrkIp).length} icon={Database} color="emerald" status="안전" />
-                <HubMetricCard title="네트워크 가용성" value="99.9%" icon={Activity} color="amber" />
-                <HubMetricCard title="평균 응답 속도" value="4ms" icon={Zap} color="indigo" />
+                <HubMetricCard title="관리 대상 노드" value={nodes.length} icon={Server} color="primary" status="등록 건수" />
+                <HubMetricCard title="운영 중 노드" value={activeNodeCount} icon={Activity} color="emerald" status="useYn=Y" />
+                <HubMetricCard title="운영 중지 노드" value={inactiveNodeCount} icon={Zap} color="amber" status="useYn=N" />
+                <HubMetricCard title="IP 할당 노드" value={assignedIpCount} icon={Database} color="indigo" status="IP 보유" />
             </HubMetricGrid>
 
             <HubSectionCard 
@@ -177,11 +210,14 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                     </div>
                 </div>
 
-                <StandardDataTable 
-                    columns={columns} 
-                    data={filteredNodes} 
-                    emptyMessage="조회된 네트워크 자산이 없습니다." 
-                    className="border-none bg-transparent" 
+                <StandardDataTable
+                    columns={columns}
+                    data={filteredNodes}
+                    keyField="ntwrkId"
+                    error={listError}
+                    onRetry={() => router.refresh()}
+                    emptyMessage="조회된 네트워크 자산이 없습니다."
+                    className="border-none bg-transparent"
                 />
             </HubSectionCard>
 
@@ -206,14 +242,15 @@ export default function NetworkAdminClient({ initialNetworks }: NetworkAdminClie
                                 if (res.success) {
                                     toast(res.message, 'success');
                                     setIsOpen(false);
-                                    // Note: In a real app, we might need to refresh data or use optimistic updates
-                                    // Here we assume Server Action triggers revalidation or we refresh manually
-                                    window.location.reload(); 
+                                    // 전체 새로고침(window.location.reload)은 검색어·스크롤을 날리고 깜빡임을 만든다.
+                                    // 서버 컴포넌트 데이터만 재요청하도록 router.refresh() 에 위임한다.
+                                    router.refresh();
                                 } else {
                                     toast(res.message, 'error');
                                 }
                             } catch (error) {
-                                toast('데이터 유효성 검증 및 반영에 실패했습니다.', 'error');
+                                const message = error instanceof Error && error.message ? error.message : '';
+                                toast(message || '데이터 유효성 검증 및 반영에 실패했습니다.', 'error');
                             }
                         }}
                     />

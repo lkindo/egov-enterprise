@@ -29,7 +29,7 @@ import {
  SelectTrigger,
  SelectValue,
 } from "@/components/ui/select";
-import { toast } from 'sonner';
+import { useToast } from '@/app/components/ui/toast';
 
 export default function TemplateAdminClient({
  templatesPromise
@@ -37,7 +37,11 @@ export default function TemplateAdminClient({
  templatesPromise: Promise<TmplatInfo[]>
 }) {
  const initialTemplates = use(templatesPromise);
+ const { toast } = useToast();
  const [loading, setLoading] = useState(false);
+ // 감사 P1-1: 새로고침 조회가 실패했을 때 목록을 그대로 두고 "0건"으로 위장하지 않도록
+ // 실패를 상태로 보관해 StandardDataTable 의 error/onRetry 로 노출한다.
+ const [loadError, setLoadError] = useState<Error | null>(null);
  const [templates, setTemplates] = useState(initialTemplates);
  const [isAddOpen, setIsAddOpen] = useState(false);
  const [newTemplate, setNewTemplate] = useState<TmplatInfo>({
@@ -52,8 +56,10 @@ export default function TemplateAdminClient({
  try {
  const res = await templateAdminService.getTemplateList();
  setTemplates(res);
- } catch {
- toast.error('템플릿 목록을 불러오지 못했습니다.');
+ setLoadError(null);
+ } catch (err: unknown) {
+ setLoadError(err instanceof Error ? err : new Error('템플릿 목록을 불러오지 못했습니다.'));
+ toast('템플릿 목록을 불러오지 못했습니다.', 'error');
  } finally {
  setLoading(false);
  }
@@ -61,18 +67,18 @@ export default function TemplateAdminClient({
 
  const handleAdd = async () => {
  if (!newTemplate.tmpltNm || !newTemplate.tmpltPath) {
- toast.error('템플릿 명과 경로를 입력해주세요.');
+ toast('템플릿 명과 경로를 입력해주세요.', 'error');
  return;
  }
 
  setLoading(true);
  try {
  await templateAdminService.createTemplate(newTemplate);
- toast.success('새 템플릿을 등록했습니다.');
+ toast('새 템플릿을 등록했습니다.', 'success');
  setIsAddOpen(false);
- handleRefresh();
- } catch {
- toast.error('템플릿 등록에 실패했습니다.');
+ await handleRefresh();
+ } catch (err: unknown) {
+ toast(err instanceof Error && err.message ? err.message : '템플릿 등록에 실패했습니다.', 'error');
  } finally {
  setLoading(false);
  }
@@ -128,15 +134,19 @@ export default function TemplateAdminClient({
  ];
 
  return (
- <div className="max-w-6xl mx-auto space-y-12 px-4 md:px-0 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+ {/* 감사 P2: 루트 layout 이 이미 `max-w-7xl p-6/md:p-12/lg:p-16` 를 주므로 화면별 이중 여백(px-4)·폭 제한을 제거하고 상속한다. */}
+ <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
  <PageHeader
  title="템플릿 시스템 아키텍처"
  breadcrumbs={[{ label: '시스템관리' }, { label: '커뮤니티관리' }, { label: '템플릿관리' }]}
  actions={
  <div className="flex items-center gap-4">
  <Button
- onClick={handleRefresh}
+ onClick={() => void handleRefresh()}
+ disabled={loading}
  variant="outline"
+ aria-label="템플릿 목록 새로고침"
+ title="템플릿 목록 새로고침"
  className="h-11 w-14 rounded-lg border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95"
  >
  <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
@@ -168,6 +178,8 @@ export default function TemplateAdminClient({
  columns={columns}
  data={templates}
  loading={loading}
+ error={loadError}
+ onRetry={() => void handleRefresh()}
  emptyMessage="시스템에 등록된 템플릿이 없습니다."
  className="border-none bg-muted/50 rounded-lg p-8"
  />
@@ -175,7 +187,7 @@ export default function TemplateAdminClient({
  </div>
 
  <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
- <DialogContent className="sm:max-w-[500px] rounded-lg p-10 border-none shadow-2xl bg-white">
+ <DialogContent className="sm:max-w-[500px] rounded-lg p-10 border-none shadow-2xl bg-card">
  <DialogHeader className="space-y-4">
  <div className="w-16 h-11 bg-primary text-white rounded-lg flex items-center justify-center shadow-2xl shadow-primary/20 mx-auto">
  <Plus size={28} />
@@ -188,23 +200,24 @@ export default function TemplateAdminClient({
 
  <div className="space-y-8 py-8">
  <div className="space-y-3">
- <label className="text-xs font-bold text-muted-foreground tracking-tight ml-2">템플릿 명칭</label>
+ <label htmlFor="tmplt-nm" className="text-xs font-bold text-muted-foreground tracking-tight ml-2">템플릿 명칭</label>
  <Input
+ id="tmplt-nm"
  placeholder="템플릿 명..."
  value={newTemplate.tmpltNm}
  onChange={(e) => setNewTemplate(prev => ({ ...prev, tmpltNm: e.target.value }))}
- className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
  />
  </div>
 
  <div className="grid grid-cols-2 gap-6">
  <div className="space-y-3">
- <label className="text-xs font-bold text-muted-foreground tracking-tight ml-2">카테고리</label>
+ <label htmlFor="tmplt-se-cd" className="text-xs font-bold text-muted-foreground tracking-tight ml-2">카테고리</label>
  <Select
  value={newTemplate.tmpltSeCd}
  onValueChange={(v) => setNewTemplate(prev => ({ ...prev, tmpltSeCd: v }))}
  >
- <SelectTrigger className="h-11 rounded-lg border-2 border-border bg-muted/50 font-bold text-xs tracking-tight focus:bg-white">
+ <SelectTrigger id="tmplt-se-cd" className="h-11 rounded-lg border-2 border-border bg-muted/50 font-bold text-xs tracking-tight focus:bg-card">
  <SelectValue placeholder="카테고리 선택" />
  </SelectTrigger>
  <SelectContent className="rounded-lg border-none shadow-2xl">
@@ -215,12 +228,12 @@ export default function TemplateAdminClient({
  </Select>
  </div>
  <div className="space-y-3">
- <label className="text-xs font-bold text-muted-foreground tracking-tight ml-2">상태</label>
+ <label htmlFor="tmplt-use-yn" className="text-xs font-bold text-muted-foreground tracking-tight ml-2">상태</label>
  <Select
  value={newTemplate.useYn}
  onValueChange={(v) => setNewTemplate(prev => ({ ...prev, useYn: v }))}
  >
- <SelectTrigger className="h-11 rounded-lg border-2 border-border bg-muted/50 font-bold text-xs tracking-tight focus:bg-white">
+ <SelectTrigger id="tmplt-use-yn" className="h-11 rounded-lg border-2 border-border bg-muted/50 font-bold text-xs tracking-tight focus:bg-card">
  <SelectValue placeholder="상태 선택" />
  </SelectTrigger>
  <SelectContent className="rounded-lg border-none shadow-2xl">
@@ -232,14 +245,15 @@ export default function TemplateAdminClient({
  </div>
 
  <div className="space-y-3">
- <label className="text-xs font-bold text-muted-foreground tracking-tight ml-2">소스 경로</label>
+ <label htmlFor="tmplt-path" className="text-xs font-bold text-muted-foreground tracking-tight ml-2">소스 경로</label>
  <div className="relative">
- <Code className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={18} />
+ <Code className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-300" size={18} aria-hidden="true" />
  <Input
+ id="tmplt-path"
  placeholder="/src/templates/..."
  value={newTemplate.tmpltPath}
  onChange={(e) => setNewTemplate(prev => ({ ...prev, tmpltPath: e.target.value }))}
- className="h-11 pl-16 pr-8 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+ className="h-11 pl-16 pr-8 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
  />
  </div>
  </div>

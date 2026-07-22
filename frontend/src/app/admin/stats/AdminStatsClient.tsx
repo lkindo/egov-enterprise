@@ -10,31 +10,21 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { BarChart3,
-  Globe,
   RefreshCcw,
   Cpu,
   Activity,
-  ArrowUpRight,
   Database,
   ShieldCheck,
   CloudLightning,
   AlertTriangle,
   CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import dynamic from 'next/dynamic';
-
-const NationalDistributionMap = dynamic(() => import('@/app/components/ui/national-distribution-map').then(mod => mod.NationalDistributionMap), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[480px] flex flex-col items-center justify-center bg-white rounded-lg space-y-4">
-      <div className="w-12 h-12 border-4 border-border border-t-hub-indigo rounded-full animate-spin" />
-      <p className="text-xs font-bold tracking-[0.4em] text-muted-foreground uppercase animate-pulse">Mapping Regional Traffic Intelligence...</p>
-    </div>
-  )
-});
+import { toDisplayYmd } from '@/lib/format-date';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-;
+
+/** 일자별 접속 통계 표의 페이지당 건수 */
+const CONNECT_PAGE_SIZE = 10;
 
 export default function AdminStatsClient({
   initialSummary,
@@ -47,21 +37,26 @@ export default function AdminStatsClient({
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [page, setPage] = useState(1);
 
   const connectData = initialConnectData || [];
   // 상대 비중(막대 길이)은 기간 내 최댓값 기준으로만 계산한다 — 임의 상수 금지.
   const maxConnect = Math.max(1, ...connectData.map(d => d.statsCo || 0));
+
+  // 표는 앞 10건만 잘라 보여주고 나머지는 UI 로 도달 불가였다(감사 P0-28/P1-4).
+  // 총 건수를 노출하고 페이저로 전 구간에 도달할 수 있게 한다.
+  const totalPages = Math.max(1, Math.ceil(connectData.length / CONNECT_PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedConnectData = connectData.slice(
+    (currentPage - 1) * CONNECT_PAGE_SIZE,
+    currentPage * CONNECT_PAGE_SIZE
+  );
 
   const handleRefresh = async () => {
     setLoading(true);
     router.refresh();
     setTimeout(() => setLoading(false), 800);
   };
-
-  const formatStatsDate = (statsDate: string) =>
-    statsDate && statsDate.length === 8
-      ? `${statsDate.substring(0, 4)}-${statsDate.substring(4, 6)}-${statsDate.substring(6, 8)}`
-      : (statsDate || '-');
 
   const connectColumns = [
     {
@@ -72,8 +67,8 @@ export default function AdminStatsClient({
             <CalendarDays size={18} />
           </div>
           <div>
-            <span className="font-bold tracking-tighter text-foreground block text-lg tabular-nums leading-none">{formatStatsDate(item.statsDate)}</span>
-            <span className="text-xs font-bold text-muted-foreground tracking-[0.3em] mt-2 uppercase">SOURCE: CONNECT_LOG</span>
+            <span className="font-bold tracking-tighter text-foreground block text-lg tabular-nums leading-none">{toDisplayYmd(item.statsDate)}</span>
+            <span className="text-xs font-bold text-muted-foreground tracking-tight mt-2 block">출처: 접속 로그</span>
           </div>
         </div>
       )
@@ -141,6 +136,7 @@ export default function AdminStatsClient({
         icon={BarChart3}
         actions={
           <div className="flex gap-4 p-2 items-center">
+            {/* aria-label 은 e2e POM(StatsPage.refresh)이 셀렉터로 쓰므로 문구를 바꾸지 않는다 */}
             <Button
               variant="outline"
               size="lg"
@@ -179,7 +175,7 @@ export default function AdminStatsClient({
           >
             <div className="p-4 bg-muted/50 rounded-lg border border-border/30 overflow-hidden group">
               <StandardChartWrapper
-                title="NETWORK TRAFFIC EVOLUTION"
+                title="일자별 접속 건수 추이"
                 type="area"
                 data={connectData}
                 dataKeys={['statsCo']}
@@ -192,20 +188,13 @@ export default function AdminStatsClient({
         </div>
       </div>
 
-      <div className="grid grid-cols-12 gap-10 px-2">
-        <div className="col-span-12 flex flex-col gap-10">
-          <HubSectionCard
-            title="지리적 트래픽 분포"
-            description="익명화된 데이터 기반 네트워크 지리적 기원지 매핑입니다"
-            icon={Globe}
-          >
-            <div className="p-4 bg-white rounded-lg border-2 border-border flex items-center justify-center min-h-[480px] shadow-sm relative overflow-hidden">
-              <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0)', backgroundSize: '16px 16px' }} />
-              <NationalDistributionMap />
-            </div>
-          </HubSectionCard>
-        </div>
-      </div>
+      {/*
+        [삭제] '지리적 트래픽 분포' 섹션 (감사 P1-5 — 근거 없는 지표).
+        `NationalDistributionMap` 은 `MOCK_MAP_DATA`(서울 1250 · 경상 1050 …) 하드코딩을
+        "실시간 지리적 접속 및 업무 분포(분석 엔진 기반)" 이라고 표기한다. 백엔드에 지역 집계
+        소스가 없어 실제 값으로 대체할 수 없고, 컴포넌트 내부 문구는 이 화면에서 고칠 수 없으므로
+        (소유 경로 밖) '카드 삭제' 원칙을 적용한다. 지역 통계 집계 API 가 생기면 재도입할 것.
+      */}
 
       <HubSectionCard
         title="일자별 접속 통계"
@@ -216,81 +205,84 @@ export default function AdminStatsClient({
         }
       >
         <div className="px-2 overflow-x-auto">
+          {/* 조회 실패를 "데이터 없음"으로 위장하지 않는다 — error/onRetry 전달(감사 P1-1) */}
           <StandardDataTable
             columns={connectColumns}
-            data={connectData.slice(0, 10)}
+            data={pagedConnectData}
             loading={loading}
-            emptyMessage={loadError ? '조회에 실패하여 데이터를 표시할 수 없습니다.' : '조회된 접속 통계가 없습니다.'}
+            error={loadError ? new Error(loadError) : null}
+            onRetry={handleRefresh}
+            pagination={{
+              currentPage,
+              totalPages,
+              onPageChange: setPage,
+              totalCount: connectData.length,
+              pageSize: CONNECT_PAGE_SIZE
+            }}
+            emptyMessage="조회된 접속 통계가 없습니다."
             className="border-none rounded-none bg-transparent min-w-[700px]"
           />
         </div>
       </HubSectionCard>
 
-      <div className="relative group rounded-lg overflow-hidden bg-surface-inverse shadow-2xl p-24 border border-white/5">
+      {/*
+        과거 이 영역에는 핸들러가 없는 'Execute Global Report' 버튼과 근거 없는 영문 카피가 있었다(감사 P1-6/P1-5).
+        버튼은 제거하고, 실제 수집 결과만 문장으로 요약한다.
+      */}
+      <div className="relative group rounded-lg overflow-hidden bg-surface-inverse shadow-2xl p-8 md:p-14 lg:p-20 border border-white/5">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-hub-indigo/5 opacity-50" />
         <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-primary/20 blur-[120px] rounded-lg group-hover:scale-150 transition-transform duration-[3s]" />
-        <div className="relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16">
-          <div className="space-y-10 flex-1 text-center lg:text-left">
-            <div className="space-y-4">
-              <h2 className="text-xs font-bold tracking-[0.6em] text-surface-inverse-foreground/80 uppercase leading-none">시스템 무결성 요약</h2>
-              <h3 className="text-5xl lg:text-8xl font-bold tracking-tighter text-surface-inverse-foreground leading-[0.9] uppercase tabular-nums">
-                Optimized <br />
-                <span className="text-primary">_ Intelligence</span> Core
-              </h3>
-            </div>
-            <p className="text-lg lg:text-xl text-surface-inverse-foreground/90 font-bold max-w-3xl leading-relaxed tracking-tight">
-              최근 1개월 간 {connectData.length}일치 접속 집계를 수집했습니다. 상세 지표는 상단 차트와 일자별 접속 통계 표에서 확인할 수 있습니다.
-            </p>
-          </div>
-          <div className="shrink-0">
-            <Button className="h-24 px-16 bg-white text-foreground rounded-lg font-bold text-lg tracking-[0.2em] shadow-2xl hover:bg-primary hover:text-white transition-all hover:-translate-y-2 active:scale-95 flex items-center gap-6 group/btn uppercase border-none">
-              Execute Global Report
-              <ArrowUpRight size={28} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
-            </Button>
-          </div>
+        <div className="relative z-10 space-y-6 text-center lg:text-left">
+          <h2 className="text-xs font-bold tracking-[0.4em] text-surface-inverse-foreground/80 leading-none">시스템 무결성 요약</h2>
+          <h3 className="text-3xl lg:text-5xl font-bold tracking-tighter text-surface-inverse-foreground leading-tight">
+            최근 1개월 <span className="text-primary tabular-nums">{connectData.length}일</span>치 접속 집계 수집 완료
+          </h3>
+          <p className="text-base lg:text-lg text-surface-inverse-foreground/90 font-bold max-w-3xl leading-relaxed tracking-tight">
+            상세 지표는 상단 차트와 일자별 접속 통계 표에서 확인할 수 있으며, 원본 수치는 우측 상단 &lsquo;엑셀 내보내기&rsquo;로 반출할 수 있습니다.
+          </p>
         </div>
       </div>
     </div>
   );
 }
 
-function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
-  const iconBgMap: any = {
-    slate: "bg-surface-inverse text-surface-inverse-foreground shadow-xl",
-    primary: "bg-primary text-white shadow-xl shadow-primary/20",
-    indigo: "bg-hub-indigo text-white shadow-xl shadow-hub-indigo/20",
-    rose: "bg-white text-rose-600 shadow-sm"
-  };
+type StatCardColor = 'slate' | 'primary' | 'indigo';
 
+const STAT_ICON_BG: Record<StatCardColor, string> = {
+  slate: "bg-surface-inverse text-surface-inverse-foreground shadow-xl",
+  primary: "bg-primary text-primary-foreground shadow-xl shadow-primary/20",
+  indigo: "bg-hub-indigo text-primary-foreground shadow-xl shadow-hub-indigo/20",
+};
+
+/**
+ * 요약 지표 카드.
+ * ⚠ 증감(trend) 배지는 두지 않는다 — 백엔드가 비교 기준 기간을 제공하지 않아
+ *   과거 하드코딩 배지가 거짓 지표였다(감사 P1-5).
+ */
+function LuxuryStatCard({ title, value, icon, color }: {
+  title: string;
+  value: number;
+  icon: React.ReactNode;
+  color: StatCardColor;
+}) {
   return (
-    <div className={cn(
-      "hub-table-container p-12 group hover:scale-[1.05] transition-all relative overflow-hidden bg-white border-border/50",
-      isAlert && value > 0 && "ring-4 ring-rose-500/10"
-    )}>
+    <div className="hub-table-container p-8 md:p-12 group hover:scale-[1.05] transition-all relative overflow-hidden bg-card border-border/50">
       <div className="flex justify-between items-start mb-10 relative z-10">
-        <div className={cn("w-16 h-11 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform shadow-2xl", iconBgMap[color])}>
+        <div className={cn("w-16 h-11 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform shadow-2xl", STAT_ICON_BG[color])}>
           {icon}
         </div>
-        {trend && (
-          <div className="flex flex-col items-end">
-            <span className={cn(
-              "text-xs font-bold px-3 py-1 rounded-lg tracking-widest uppercase",
-              color === 'rose' ? "bg-white text-rose-600 shadow-inner" : "bg-emerald-500/10 text-emerald-800 border border-emerald-500/20 shadow-sm"
-            )}>
-              {trend}
-            </span>
-          </div>
-        )}
       </div>
       <div className="relative z-10">
         <h3 className="text-4xl font-bold tracking-tighter tabular-nums leading-none text-foreground">{value?.toLocaleString() ?? 0}</h3>
-        <p className="text-xs font-bold text-muted-foreground tracking-[0.4em] mt-5 flex items-center gap-3 uppercase leading-none">
+        <p className="text-xs font-bold text-muted-foreground tracking-[0.4em] mt-5 flex items-center gap-3 leading-none">
           <span className="w-6 h-0.5 bg-current opacity-100" />
           {title}
         </p>
       </div>
-      <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] -rotate-12 group-hover:rotate-0 transition-all duration-1000 grayscale">
-        {React.isValidElement(icon) ? React.cloneElement(icon as React.ReactElement<any>, { size: 240 }) : null}
+      <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] -rotate-12 group-hover:rotate-0 transition-all duration-1000 grayscale" aria-hidden="true">
+        {React.isValidElement<{ size?: number }>(icon)
+          ? React.cloneElement(icon, { size: 240 })
+          : null}
       </div>
     </div>
   );

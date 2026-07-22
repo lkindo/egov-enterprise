@@ -26,6 +26,11 @@ export default async function CommonCodePage({
   let clCodes: CmmnClCode[] = [];
   let groups: CmmnCode[] = [];
   let details: CmmnDetailCode[] = [];
+  /*
+   * [P1-1] 조회 실패를 빈 배열로 삼켜 "등록된 코드 0건"으로 위장하지 않는다.
+   * 실패 사실을 클라이언트로 넘겨 화면 상단 경고로 노출한다.
+   */
+  let fetchError = false;
 
   try {
     const [clRes, groupsRes, detailsRes] = await Promise.all([
@@ -39,11 +44,13 @@ export default async function CommonCodePage({
     clCodes = clRes.list || [];
     groups = groupsRes.list || [];
     details = (detailsRes.list || []) as CmmnDetailCode[];
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Server-side fetch common codes failed:', error);
-    if (error.response?.status === 401 || !accessToken) {
+    const status = (error as { response?: { status?: number } })?.response?.status;
+    if (status === 401 || !accessToken) {
       redirect('/login?expired=true');
     }
+    fetchError = true;
   }
 
   return (
@@ -53,14 +60,16 @@ export default async function CommonCodePage({
         groups={groups}
         details={details}
         selectedGroupId={groupId}
+        fetchError={fetchError}
       />
     </Suspense>
   );
 }
 
+/** [P2] 루트 레이아웃(max-w-7xl p-6/md:p-12/lg:p-16)이 이미 여백을 주므로 화면별 p-8 이중 여백은 제거했다. */
 function CommonCodeLoading() {
   return (
-    <div className="space-y-12 animate-pulse p-8">
+    <div className="space-y-12 animate-pulse">
       <div className="flex items-center gap-6 mb-12">
         <div className="h-11 w-16 bg-muted rounded-lg" />
         <div className="space-y-4">

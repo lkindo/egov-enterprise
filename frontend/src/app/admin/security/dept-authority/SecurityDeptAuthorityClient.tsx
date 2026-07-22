@@ -1,10 +1,11 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { ShieldCheck,  
  Users,  
  ChevronRight,  
@@ -13,11 +14,9 @@ import { ShieldCheck,
  Search,  
  CheckCircle, 
  Building2, 
- Workflow, 
  RefreshCcw, 
  Database, 
  Lock, 
- Activity, 
  ShieldAlert } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -42,21 +41,21 @@ const DEPT_LIST_SIZE = 1000;
 const ROLE_PAGE_SIZE = 10;
 
 export default function SecurityDeptAuthorityClient() {
- const queryClient = useQueryClient();
  const { toast } = useToast();
+ const confirm = useConfirm();
  const [selectedDept, setSelectedDept] = useState<string | null>(null);
  const [searchKeyword, setSearchKeyword] = useState('');
  const [selectedAuthorCode, setSelectedAuthorCode] = useState<string | null>(null);
  const [rolePage, setRolePage] = useState(1);
 
- const { data: deptsData, isLoading: deptsLoading } = useQuery({
+ const { data: deptsData, isLoading: deptsLoading, error: deptsError, refetch: refetchDepts } = useQuery({
  queryKey: [...DEPTS_KEY, DEPT_LIST_SIZE],
  // 서버는 keyword + Spring Pageable(page/size, 0-based)을 읽는다.
  queryFn: () => deptAdminService.getDeptList({ page: 0, size: DEPT_LIST_SIZE }),
  staleTime: 5 * 60 * 1000,
  });
 
- const { data: rolesData, isLoading: rolesLoading } = useQuery({
+ const { data: rolesData, isLoading: rolesLoading, error: rolesError, refetch: refetchRoles } = useQuery({
  queryKey: [...ROLES_KEY, rolePage],
  // 서버는 @ModelAttribute BaseSearchDto(pageIndex 1-based / pageUnit)로 받는다.
  // pageIndex 직접 계산은 금지 — AuthorAdminService/ApiService 의 page(0-based) 자동 매핑에 위임한다.
@@ -73,7 +72,7 @@ export default function SecurityDeptAuthorityClient() {
  String(d.ognzId || '').toLocaleLowerCase().includes(searchKeyword.toLocaleLowerCase())
  );
 
- const loading = deptsLoading || rolesLoading;
+ const loading = rolesLoading;
 
  const saveMutation = useMutation({
  mutationFn: (authrtId: string) =>
@@ -110,7 +109,7 @@ export default function SecurityDeptAuthorityClient() {
       )
     },
     {
-      header: 'SELECTION',
+      header: '선택',
       className: 'text-center w-32',
       accessor: (item: AuthorInfo) => {
         const isSelected = selectedAuthorCode === item.authrtCd;
@@ -118,16 +117,18 @@ export default function SecurityDeptAuthorityClient() {
           <div className="flex justify-center">
             <button
               type="button"
+              aria-label={`${item.authrtNm || item.authrtCd} 권한 선택`}
+              aria-pressed={isSelected}
               onClick={(e) => {
                 e.stopPropagation();
                 setSelectedAuthorCode(item.authrtCd);
               }}
               className={cn(
                 "relative flex items-center justify-center w-8 h-8 rounded-lg transition-all duration-500 outline-none border-2",
-                isSelected ? "bg-primary border-primary shadow-xl shadow-primary/30 rotate-0 scale-110" : "bg-white border-border hover:border-primary/40 rotate-12"
+                isSelected ? "bg-primary border-primary shadow-xl shadow-primary/30 rotate-0 scale-110" : "bg-card border-border hover:border-primary/40 rotate-12"
               )}
             >
-              <CheckCircle size={16} className={cn("transition-all duration-700", isSelected ? "text-white scale-100 opacity-100 rotate-0" : "text-transparent scale-50 opacity-0 rotate-45")} />
+              <CheckCircle size={16} aria-hidden="true" className={cn("transition-all duration-700", isSelected ? "text-white scale-100 opacity-100 rotate-0" : "text-transparent scale-50 opacity-0 rotate-45")} />
             </button>
           </div>
         );
@@ -135,17 +136,32 @@ export default function SecurityDeptAuthorityClient() {
     }
   ];
 
- const handleSave = () => {
+ /**
+  * 부서 전 구성원의 기존 개별 권한을 파기하는 파괴적 액션이다.
+  * native confirm 대신 useConfirm 을 쓰고, 본문에 대상 부서명·권한명을 그대로 노출한다.
+  */
+ const handleSave = async () => {
  if (!selectedDept) {
- return toast('설정할 부서를 먼저 선택해 주세요.', 'info');
+ toast('설정할 부서를 먼저 선택해 주세요.', 'info');
+ return;
  }
  if (!selectedAuthorCode) {
- return toast('부여할 권한을 선택해 주세요.', 'info');
+ toast('부여할 권한을 선택해 주세요.', 'info');
+ return;
  }
 
- if (confirm(`선택한 조직의 모든 구성원에게 '${selectedAuthorCode}' 보안 정책을 전역적으로 강제 적용하시겠습니까?`)) {
+ const deptName = depts.find(d => d.ognzId === selectedDept)?.ognzNm || selectedDept;
+ const roleName = roles.find(r => r.authrtCd === selectedAuthorCode)?.authrtNm || selectedAuthorCode;
+
+ const ok = await confirm({
+ title: '조직 권한 일괄 배포',
+ message: `'${deptName}' 부서의 모든 구성원에게 '${roleName}'(${selectedAuthorCode}) 권한을 강제 적용합니다. 구성원이 보유한 기존 개별 권한은 파기됩니다. 계속하시겠습니까?`,
+ confirmText: '배포',
+ variant: 'destructive',
+ });
+ if (!ok) return;
+
  saveMutation.mutate(selectedAuthorCode);
- }
  };
 
  const currentDept = depts.find(d => d.ognzId === selectedDept);
@@ -166,10 +182,11 @@ export default function SecurityDeptAuthorityClient() {
  <div className="flex gap-4 p-2 items-center">
  <Button
  variant="ghost"
- onClick={() => queryClient.invalidateQueries()}
- className="h-11 w-14 rounded-lg bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ onClick={() => { refetchDepts(); refetchRoles(); }}
+ aria-label="부서·권한 목록 새로고침"
+ className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
  >
- <RefreshCcw size={22} className="group-hover:rotate-180 transition-transform duration-700" />
+ <RefreshCcw size={22} aria-hidden="true" className="group-hover:rotate-180 transition-transform duration-700" />
  </Button>
  <Button
  onClick={handleSave}
@@ -181,12 +198,13 @@ export default function SecurityDeptAuthorityClient() {
  }
  />
 
+ {/*
+   지표는 현재 페이지 길이가 아니라 서버 전체 건수(total) 기준.
+   종전의 'SYNC_PROBE(ONLINE)' · 'TOPOLOGY_FLOW=STEADY' 는 산출 근거가 없는 고정 문자열이라 삭제했다.
+ */}
  <HubMetricGrid>
- {/* 지표는 현재 페이지 길이가 아니라 서버 전체 건수(total) 기준 */}
- <HubMetricCard title="ACTIVE_RESOURCES" value={deptsData?.total ?? depts.length} icon={Building2} color="indigo" />
- <HubMetricCard title="AUTHORITY_SCHEMAS" value={rolesData?.total ?? roles.length} icon={Lock} color="primary" />
- <HubMetricCard title="SYNC_PROBE" value={selectedDept ? "DEPT_READY" : "IDLE"} icon={Activity} color="emerald" status="ONLINE" />
- <HubMetricCard title="TOPOLOGY_FLOW" value="STEADY" icon={Workflow} color="amber" />
+ <HubMetricCard title="전체 부서" value={deptsData?.total ?? depts.length} icon={Building2} color="indigo" status="서버 집계" />
+ <HubMetricCard title="전체 권한 그룹" value={rolesData?.total ?? roles.length} icon={Lock} color="primary" status="서버 집계" />
  </HubMetricGrid>
 
  <div className="grid grid-cols-12 gap-12 min-h-[850px]">
@@ -197,6 +215,7 @@ export default function SecurityDeptAuthorityClient() {
  <div className="relative group/search">
  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={16} />
  <Input
+ aria-label="부서명 검색"
  placeholder="부서명 검색..."
  className="pl-12 h-11 bg-muted/50 border-none rounded-lg text-sm font-bold tracking-tight shadow-inner"
  value={searchKeyword}
@@ -206,10 +225,25 @@ export default function SecurityDeptAuthorityClient() {
 
  <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
  <AnimatePresence mode="wait">
- {filteredDepts.length === 0 ? (
+ {/*
+   테이블이 아닌 목록이라 StandardDataTable 의 error/onRetry 를 쓸 수 없다.
+   실패를 '부서 없음'으로 위장하지 않도록 오류/로딩/빈 상태를 각각 구분해 노출한다.
+ */}
+ {deptsError ? (
+ <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} role="alert" className="p-12 text-center space-y-4">
+ <ShieldAlert size={48} className="mx-auto text-rose-500 opacity-60" aria-hidden="true" />
+ <p className="text-sm font-bold text-foreground">부서 목록을 불러오지 못했습니다.</p>
+ <p className="text-xs font-medium text-muted-foreground">네트워크 상태를 확인한 뒤 다시 시도해 주세요.</p>
+ <Button variant="outline" onClick={() => refetchDepts()} className="h-10 px-6 rounded-lg text-xs font-bold">다시 시도</Button>
+ </motion.div>
+ ) : deptsLoading ? (
  <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-12 text-center space-y-4">
- <Users size={48} className="mx-auto opacity-10 scale-125" />
- <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.4em]">Resource_Not_Found</p>
+ <p className="text-xs font-bold text-muted-foreground tracking-widest">부서 목록을 불러오는 중…</p>
+ </motion.div>
+ ) : filteredDepts.length === 0 ? (
+ <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-12 text-center space-y-4">
+ <Users size={48} className="mx-auto opacity-10 scale-125" aria-hidden="true" />
+ <p className="text-xs font-bold text-muted-foreground">조건에 맞는 부서가 없습니다.</p>
  </motion.div>
  ) : (
  filteredDepts.map((d, idx) => (
@@ -226,7 +260,7 @@ export default function SecurityDeptAuthorityClient() {
  "group flex items-center justify-between p-6 w-full rounded-lg border-2 transition-all duration-300 relative overflow-hidden",
  selectedDept === d.ognzId
  ? "bg-surface-inverse border-surface-inverse-border shadow-2xl"
- : "bg-white border-border hover:border-border"
+ : "bg-card border-border hover:border-border"
  )}
  >
  <div className="flex items-center gap-4 relative z-10">
@@ -309,11 +343,13 @@ export default function SecurityDeptAuthorityClient() {
  </div>
  </div>
 
-    <div className="min-h-[500px] bg-white rounded-lg border-2 border-border p-4">
+    <div className="min-h-[500px] bg-card rounded-lg border-2 border-border p-4">
       <StandardDataTable
         columns={columns}
         data={roles}
         loading={loading}
+        error={rolesError as Error | null}
+        onRetry={() => refetchRoles()}
         keyField="authrtCd"
         emptyMessage="시스템에 등록된 권한 그룹 정보가 없습니다."
         onRowClick={(item) => setSelectedAuthorCode(item.authrtCd)}
@@ -327,7 +363,7 @@ export default function SecurityDeptAuthorityClient() {
     </div>
 
  <div className="p-8 flex items-center gap-6 rounded-lg bg-muted border-2 border-dashed border-border">
- <div className="w-12 h-12 bg-white rounded-lg shadow-xl flex items-center justify-center shrink-0 border border-border">
+ <div className="w-12 h-12 bg-card rounded-lg shadow-xl flex items-center justify-center shrink-0 border border-border">
  <ShieldAlert size={24} className="text-rose-500" />
  </div>
  <div className="space-y-1">

@@ -28,7 +28,9 @@ vi.mock('lucide-react', () => {
         ChevronsDownUp: Icon('ChevronsDownUp'),
         ChevronsUpDown: Icon('ChevronsUpDown'),
         SearchCode: Icon('SearchCode'),
-        ShieldCheck: Icon('ShieldCheck'),
+        AlertTriangle: Icon('AlertTriangle'),
+        RefreshCcw: Icon('RefreshCcw'),
+        Unlink: Icon('Unlink'),
         Network: Icon('Network'),
         Database: Icon('Database'),
         GripVertical: Icon('GripVertical'),
@@ -91,15 +93,15 @@ describe('MenuAdminClient Component', () => {
     const mockInitialMenus = [
       { menuNo: 1, menuNm: 'Main Menu', upperMenuNo: 0, upperMenuId: 0, menuOrdr: 1, progrmFileNm: 'prog1' },
     ] as any;
-    const mockPrograms = [{ progrmFileNm: 'prog1', progrmNm: 'Program 1' }];
+    const mockPrograms = [{ prgrmFileNm: 'prog1', prgrmKornNm: 'Program 1' }];
 
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
   it('renders correctly', async () => {
-    const menusPromise = Promise.resolve(mockInitialMenus);
-    const programsPromise = Promise.resolve(mockPrograms);
+    const menusPromise = Promise.resolve({ data: mockInitialMenus, error: null });
+    const programsPromise = Promise.resolve({ data: mockPrograms, error: null });
     await act(async () => {
       render(
         <React.Suspense fallback={<div>Loading...</div>}>
@@ -111,8 +113,8 @@ describe('MenuAdminClient Component', () => {
   });
 
   it('opens create modal on "신규 등록" click', async () => {
-    const menusPromise = Promise.resolve(mockInitialMenus);
-    const programsPromise = Promise.resolve(mockPrograms);
+    const menusPromise = Promise.resolve({ data: mockInitialMenus, error: null });
+    const programsPromise = Promise.resolve({ data: mockPrograms, error: null });
     await act(async () => {
       render(
         <React.Suspense fallback={<div>Loading...</div>}>

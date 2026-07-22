@@ -24,10 +24,14 @@ import { CalendarIcon, Plus, Send, ArrowLeft, Sparkles } from "lucide-react";
 import { createPoll } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO } from '@/types/business/poll';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from 'sonner';
+// sonner 직접 호출 대신 useToast 로 수렴한다 — 문자열 정규화 페일세이프가 없으면
+// 에러 객체가 그대로 넘어가 '[object Object]' 가 노출된다(P2).
+import { useToast } from '@/app/components/ui/toast';
 
 export default function SurveyManageCreateClient() {
   const router = useRouter();
+  const { success, error: toastError } = useToast();
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState<OnlinePollManageVO>({
     pollNm: '',
     pollBgngYmd: '',
@@ -40,13 +44,14 @@ export default function SurveyManageCreateClient() {
   const [endDate, setEndDate] = useState<Date | undefined>();
 
   const handleSave = async () => {
+    if (isSaving) return; // 연타 시 같은 설문이 두 건 등록되는 것을 막는다
     if (!formData.pollNm || !beginDate || !endDate) {
-      toast.error('필수 항목을 입력해주세요.');
+      toastError('필수 항목을 입력해주세요.');
       return;
     }
 
     if (beginDate && endDate && beginDate > endDate) {
-      toast.error('설문 시작일은 종료일보다 빨라야 합니다.');
+      toastError('설문 시작일은 종료일보다 빨라야 합니다.');
       return;
     }
 
@@ -64,18 +69,21 @@ export default function SurveyManageCreateClient() {
       ]
     };
 
+    setIsSaving(true);
     try {
       await createPoll(payload);
-      toast.success('설문이 등록되었습니다. 상세 페이지에서 설문 항목을 추가해주세요.');
+      success('설문이 등록되었습니다.');
       router.push('/admin/survey/manage');
     } catch (error) {
-      console.error(error);
-      toast.error('설문 등록에 실패했습니다.');
+      toastError(error instanceof Error ? error.message : '설문 등록에 실패했습니다.');
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
-    <div className="p-6 max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
+    // 루트 admin 레이아웃이 이미 여백을 준다 — 화면별 p-6 은 이중 여백이라 제거(P2).
+    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={() => router.back()} className="rounded-lg font-bold gap-2 hover:bg-muted transition-all">
             <ArrowLeft className="w-4 h-4" /> 뒤로가기
@@ -92,8 +100,8 @@ export default function SurveyManageCreateClient() {
                     <Plus className="w-3.5 h-3.5 text-primary-foreground" />
                     <span className="text-xs font-bold tracking-widest uppercase">Survey System</span>
                 </div>
-                <CardTitle className="text-3xl font-bold tracking-tighter capitalize ">설문 등록</CardTitle>
-                <p className="text-muted-foreground font-medium lowercase">새로운 온라인 설문을 성격에 맞게 등록합니다.</p>
+                <CardTitle className="text-3xl font-bold tracking-tighter">설문 등록</CardTitle>
+                <p className="font-medium opacity-70">새로운 온라인 설문을 성격에 맞게 등록합니다.</p>
             </div>
         </CardHeader>
         <CardContent className="p-10 space-y-10">
@@ -104,16 +112,17 @@ export default function SurveyManageCreateClient() {
               value={formData.pollNm}
               onChange={(e) => setFormData(prev => ({ ...prev, pollNm: e.target.value }))}
               placeholder="설문 주제를 입력하세요"
-              className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-white transition-all font-bold px-6"
+              className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-card transition-all font-bold px-6"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <Label className="text-sm font-bold text-muted-foreground ml-1">시작일</Label>
+              <Label htmlFor="poll-begin-date" className="text-sm font-bold text-muted-foreground ml-1">시작일</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
+                    id="poll-begin-date"
                     variant={"outline"}
                     className={cn(
                       "h-11 w-full justify-start text-left font-bold rounded-lg border-2 bg-muted/50 px-6",
@@ -136,10 +145,11 @@ export default function SurveyManageCreateClient() {
             </div>
 
             <div className="space-y-3">
-              <Label className="text-sm font-bold text-muted-foreground ml-1">종료일</Label>
+              <Label htmlFor="poll-end-date" className="text-sm font-bold text-muted-foreground ml-1">종료일</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
+                    id="poll-end-date"
                     variant={"outline"}
                     className={cn(
                       "h-11 w-full justify-start text-left font-bold rounded-lg border-2 bg-muted/50 px-6",
@@ -163,12 +173,12 @@ export default function SurveyManageCreateClient() {
           </div>
 
           <div className="space-y-3">
-            <Label className="text-sm font-bold text-muted-foreground ml-1">설문 유형</Label>
+            <Label htmlFor="poll-knd-cd" className="text-sm font-bold text-muted-foreground ml-1">설문 유형</Label>
             <Select
               value={formData.pollKndCd}
               onValueChange={(value) => setFormData(prev => ({ ...prev, pollKndCd: value }))}
             >
-              <SelectTrigger className="h-11 rounded-lg border-2 bg-muted/50 font-bold px-6">
+              <SelectTrigger id="poll-knd-cd" className="h-11 rounded-lg border-2 bg-muted/50 font-bold px-6">
                 <SelectValue placeholder="유형 선택" />
               </SelectTrigger>
               <SelectContent className="rounded-lg border-none shadow-2xl">
@@ -179,8 +189,12 @@ export default function SurveyManageCreateClient() {
           </div>
 
           <div className="flex pt-6">
-            <Button onClick={handleSave} className="w-full h-11 rounded-lg bg-slate-900 border-none text-white font-bold text-lg tracking-widest uppercase shadow-2xl hover:bg-slate-800 transition-all active:scale-95 gap-3">
-                <Send className="w-5 h-5" /> 설문 등록 완료
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="w-full h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-lg tracking-widest shadow-2xl hover:bg-primary transition-all active:scale-95 gap-3"
+            >
+                <Send className="w-5 h-5" /> {isSaving ? '등록 중…' : '설문 등록 완료'}
             </Button>
           </div>
         </CardContent>

@@ -15,11 +15,14 @@ interface NodeProps {
   icon: React.ReactNode;
   x: number;
   y: number;
+  /**
+   * 노드 상태. 실측 소스(액추에이터 health components)가 연동되기 전까지는 기본값 'idle'(중립 회색)이다.
+   * 기본값을 'active'(초록)로 두면 계측 없이 전 노드가 정상으로 보여 장애를 은폐한다.
+   */
   status?: 'active' | 'warning' | 'idle';
-  latency?: string;
 }
 
-const TopologyNode = ({ label, icon, x, y, status = 'active', latency }: NodeProps) => {
+const TopologyNode = ({ label, icon, x, y, status = 'idle' }: NodeProps) => {
   const statusColor = status === 'active' ? 'text-emerald-400' : status === 'warning' ? 'text-amber-400' : 'text-muted-foreground';
   const glowColor = status === 'active' ? 'rgba(52, 211, 153, 0.4)' : status === 'warning' ? 'rgba(251, 191, 36, 0.4)' : 'rgba(148, 163, 184, 0.2)';
 
@@ -50,12 +53,6 @@ const TopologyNode = ({ label, icon, x, y, status = 'active', latency }: NodePro
 
       <div className="text-center">
         <p className="text-xs font-bold text-surface-inverse-foreground uppercase tracking-tighter opacity-90">{label}</p>
-        {latency && (
-          <div className="flex items-center justify-center gap-1 mt-0.5">
-            <Activity size={10} className="text-emerald-400" />
-            <span className="text-xs text-emerald-400/80 font-medium">{latency}</span>
-          </div>
-        )}
       </div>
     </motion.div>
   );
@@ -116,12 +113,15 @@ const ConnectionLine = ({ start, end, duration = 3 }: { start: [number, number],
 };
 
 export default function ServiceTopology() {
+  // [P1-5] 노드별 지연시간(12ms/4ms/24ms/128ms/2ms)과 'warning' 상태는 계측값이 아니라 고정 문자열이었다.
+  //        관제 화면에서 특정 노드가 느리다고 오인하게 만들므로 제거하고, 구성 관계만 남긴다.
+  //        실측 배선 시 /actuator/health components 또는 토폴로지 API 결과로 status·latency 를 채운다.
   const nodes = [
-    { id: 'user', label: 'Global Traffic', x: 15, y: 50, icon: <Users />, latency: '12ms' },
-    { id: 'front', label: 'Edge Network', x: 35, y: 50, icon: <Monitor />, latency: '4ms' },
-    { id: 'api', label: 'API Gateway', x: 55, y: 35, icon: <ShieldCheck />, latency: '24ms' },
-    { id: 'worker', label: 'App Nodes', x: 55, y: 65, icon: <Cpu />, latency: '128ms', status: 'warning' },
-    { id: 'db', label: 'Primary DB', x: 85, y: 50, icon: <Database />, latency: '2ms' },
+    { id: 'user', label: 'Global Traffic', x: 15, y: 50, icon: <Users /> },
+    { id: 'front', label: 'Edge Network', x: 35, y: 50, icon: <Monitor /> },
+    { id: 'api', label: 'API Gateway', x: 55, y: 35, icon: <ShieldCheck /> },
+    { id: 'worker', label: 'App Nodes', x: 55, y: 65, icon: <Cpu /> },
+    { id: 'db', label: 'Primary DB', x: 85, y: 50, icon: <Database /> },
   ];
 
   return (
@@ -147,22 +147,20 @@ export default function ServiceTopology() {
         <TopologyNode key={node.id} {...node as NodeProps} />
       ))}
 
-      {/* Metrics Legend */}
-      <div className="absolute bottom-6 left-8 flex gap-6">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-          <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Health: 100%</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-xs text-muted-foreground font-bold uppercase tracking-wider">Traffic: 2.1k/s</span>
-        </div>
+      {/*
+        [P1-5] 'Health: 100%' · 'Traffic: 2.1k/s' 고정 범례 제거 —
+        어떤 계측도 없이 상시 100% 정상을 표시해 장애를 은폐하는 지표였다.
+      */}
+      <div className="absolute bottom-6 left-8">
+        <span className="text-xs text-surface-inverse-muted font-bold uppercase tracking-wider">
+          서비스 구성 관계도 (참고용)
+        </span>
       </div>
 
       <div className="absolute top-6 right-8">
         <div className="px-3 py-1 bg-white/5 rounded-lg border border-white/10 backdrop-blur-md flex items-center gap-2">
-          <Activity size={12} className="text-emerald-400" />
-          <span className="text-xs text-surface-inverse-muted font-bold tracking-tight">System Map v2.1</span>
+          <Activity size={12} aria-hidden="true" className="text-amber-400" />
+          <span className="text-xs text-surface-inverse-muted font-bold tracking-tight">샘플 데이터 · 실측 미연동</span>
         </div>
       </div>
     </div>

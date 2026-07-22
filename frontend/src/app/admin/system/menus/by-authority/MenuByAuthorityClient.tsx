@@ -18,10 +18,10 @@ import {
  Fingerprint,
  RefreshCcw,
  Milestone,
- SearchCode,
  LayoutGrid,
  Activity
 } from "lucide-react";
+import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { MenuByAuthority } from '@/types/foundation/security';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -63,39 +63,77 @@ function buildMenuTree(menuList: MenuByAuthority[]): MenuByAuthority[] {
  return rootMenus;
 }
 
+/**
+ * 서버 조회 결과 봉투.
+ * 실패를 빈 배열로 삼켜 "데이터 0건"으로 위장하지 않기 위해, 사유를 함께 실어 나른다.
+ */
+export type FetchResult<T> = { data: T; error: string | null };
+
 interface MenuByAuthorityClientProps {
- authorsPromise: Promise<any>;
+ authorsPromise: Promise<FetchResult<AuthorInfo[]>>;
 }
 
 export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorityClientProps) {
  // [P1: Waterfall Elimination] Resolve authors data via use()
- const initialAuthorsData = use(authorsPromise);
- 
+ const initialAuthors = use(authorsPromise);
+
  const queryClient = useQueryClient();
  const router = useRouter();
 
  const [selectedAuthority, setSelectedAuthority] = useState<string>('');
  const [expandedMenus, setExpandedMenus] = useState<Set<number>>(new Set());
 
- const { data: authorData, isFetching: isAuthorFetching } = useQuery({
+ const {
+ data: authorities = [],
+ isFetching: isAuthorFetching,
+ isError: isAuthorError,
+ error: authorError,
+ refetch: refetchAuthorities,
+ } = useQuery({
  queryKey: ['admin-authorities-all'],
- queryFn: () => authorAdminService.getAuthorList({ pageNo: 1, searchCondition: '1', searchKeyword: '' } as any),
- initialData: initialAuthorsData,
- staleTime: 5 * 60 * 1000,
+ queryFn: async () => {
+ const res = await authorAdminService.getAuthorList({ pageNo: 1, searchCondition: '1', searchKeyword: '' });
+ return res?.list ?? [];
+ },
+ initialData: initialAuthors.data,
+ // 서버 조회가 실패했다면 캐시를 즉시 stale 로 두어 클라이언트 재조회가 가능하게 한다.
+ staleTime: initialAuthors.error ? 0 : 5 * 60 * 1000,
  });
 
- const authorities = (authorData as any)?.list || [] as AuthorInfo[];
+ /** 서버(SSR) 실패 또는 클라이언트 재조회 실패 — 둘 중 하나라도 있으면 사용자에게 드러낸다. */
+ const authorityErrorMessage = isAuthorError
+ ? (authorError instanceof Error ? authorError.message : '네트워크 상태를 확인한 뒤 다시 시도해 주세요.')
+ : initialAuthors.error;
 
- const { data: rawMenus = [], isLoading: isMenuLoading, isFetching: isMenuFetching } = useQuery({
+ const {
+ data: rawMenus = [],
+ isLoading: isMenuLoading,
+ isFetching: isMenuFetching,
+ isError: isMenuError,
+ error: menuError,
+ refetch: refetchMenus,
+ } = useQuery({
  queryKey: ['admin-menu-tree', selectedAuthority],
  queryFn: async () => {
  const data = await authorAdminService.getAuthorMenus(selectedAuthority);
- return ((data as any)?.list || (data as any)?.resultList || data || []) as MenuByAuthority[];
+ if (Array.isArray(data)) return data;
+ const envelope = data as unknown as { list?: MenuByAuthority[]; resultList?: MenuByAuthority[] };
+ return envelope?.list ?? envelope?.resultList ?? [];
  },
  enabled: !!selectedAuthority,
  });
 
  const menuTree = useMemo(() => buildMenuTree(rawMenus), [rawMenus]);
+
+ /** 실제 트리에서 계산한 최대 계층 깊이(선택 전에는 0). */
+ const treeDepth = useMemo(() => {
+ const walk = (nodes: MenuByAuthority[], depth: number): number =>
+ nodes.reduce(
+ (max, node) => Math.max(max, node.children && node.children.length > 0 ? walk(node.children, depth + 1) : depth),
+ depth,
+ );
+ return menuTree.length > 0 ? walk(menuTree, 1) : 0;
+ }, [menuTree]);
 
  const isRefreshing = isAuthorFetching || isMenuFetching;
 
@@ -118,7 +156,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  });
  };
 
- const currentAuth = authorities.find((a: AuthorInfo) => a.authrtCd === selectedAuthority);
+ const currentAuth = authorities.find((a) => a.authrtCd === selectedAuthority);
 
  const renderMenuTree = (menus: MenuByAuthority[], depth: number = 0) => {
  return menus.map((menu, idx) => {
@@ -132,13 +170,28 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  animate={{ opacity: 1, x: 0 }}
  transition={{ delay: idx * 0.05 }}
  >
+ {/* onClick 만 달린 비인터랙티브 div 였다 — 키보드 사용자가 트리를 펼칠 수 없어 role/키 핸들러를 부여한다. */}
  <div
+ role={hasChildren ? 'button' : undefined}
+ tabIndex={hasChildren ? 0 : undefined}
+ aria-expanded={hasChildren ? isExpanded : undefined}
+ aria-label={hasChildren ? `${menu.menuNm} 하위 메뉴 ${isExpanded ? '접기' : '펼치기'}` : undefined}
  className={cn(
- "flex items-center gap-4 py-4 px-6 hover:bg-muted cursor-pointer rounded-lg transition-all group relative overflow-hidden active:scale-[0.99]",
+ "flex items-center gap-4 py-4 px-6 rounded-lg transition-all group relative overflow-hidden",
+ hasChildren
+ ? "hover:bg-muted cursor-pointer active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+ : "cursor-default",
  isExpanded && hasChildren ? "bg-muted/50" : ""
  )}
  style={{ paddingLeft: `${depth * 32 + 24}px` }}
- onClick={() => hasChildren && toggleExpand(menu.menuNo)}
+ onClick={() => { if (hasChildren) toggleExpand(menu.menuNo); }}
+ onKeyDown={(e) => {
+ if (!hasChildren) return;
+ if (e.key === 'Enter' || e.key === ' ') {
+ e.preventDefault();
+ toggleExpand(menu.menuNo);
+ }
+ }}
  >
  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-card shadow-sm border border-border group-hover:border-primary/30 transition-colors">
  {hasChildren ? (
@@ -160,7 +213,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  "font-bold text-sm tracking-tight truncate",
  hasChildren ? "text-foreground" : "text-muted-foreground group-hover:text-foreground"
  )}>{menu.menuNm}</span>
- <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.2em] font-mono uppercase truncate">{menu.prgrmFileNm || 'NODE_ENDPOINT'}</span>
+ <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.2em] font-mono uppercase truncate">{menu.prgrmFileNm || '프로그램 미연결'}</span>
  </div>
  
  <div className="hidden md:flex items-center gap-2 px-3 py-1 rounded-lg bg-card border border-border shadow-sm opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
@@ -212,11 +265,27 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  }
  />
 
- <HubMetricGrid>
- <HubMetricCard title="활성_권한" value={authorities.length} icon={Database} color="primary" />
- <HubMetricCard title="할당_메뉴_수" value={rawMenus.length} icon={LayoutGrid} color="amber" />
- <HubMetricCard title="계층_깊이" value={selectedAuthority ? "팩터_준비" : "대기"} icon={Compass} color="indigo" />
- <HubMetricCard title="보안_상태" value="최적" icon={Lock} color="emerald" status="정상" />
+ {/* 권한 목록 조회 실패는 "역할 0건"으로 위장하지 않고 사유와 재시도 수단을 노출한다. */}
+ {authorityErrorMessage && (
+ <div role="alert" className="flex flex-col gap-3 rounded-lg border-2 border-destructive/30 bg-destructive/5 p-6 sm:flex-row sm:items-center sm:justify-between">
+ <div className="flex items-start gap-3">
+ <ShieldAlert size={20} className="mt-0.5 shrink-0 text-destructive" aria-hidden="true" />
+ <div className="space-y-1">
+ <p className="text-sm font-bold text-destructive">권한 목록을 불러오지 못했습니다</p>
+ <p className="text-xs font-semibold text-muted-foreground">{authorityErrorMessage}</p>
+ </div>
+ </div>
+ <Button variant="outline" onClick={() => refetchAuthorities()} className="h-10 shrink-0 gap-2 rounded-lg font-bold">
+ <RefreshCcw size={16} /> 다시 시도
+ </Button>
+ </div>
+ )}
+
+ {/* 근거 없는 고정 지표('보안_상태 최적' · '계층_깊이 팩터_준비')는 삭제하고, 실제 트리에서 계산되는 값만 남긴다. */}
+ <HubMetricGrid className="lg:grid-cols-3">
+ <HubMetricCard title="등록 역할" value={authorities.length} icon={Database} color="primary" />
+ <HubMetricCard title="할당 메뉴" value={rawMenus.length} icon={LayoutGrid} color="amber" />
+ <HubMetricCard title="계층 깊이" value={treeDepth} icon={Compass} color="indigo" />
  </HubMetricGrid>
 
  <div className="grid grid-cols-12 gap-12">
@@ -224,16 +293,16 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <HubSectionCard title="역할 선택" description="메뉴 구조를 분석할 보안 역할을 식별하세요" icon={Lock}>
  <div className="space-y-8">
  <div className="space-y-4 pt-4">
- <label className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase ml-2">보안 역할 (Access Role)</label>
+ <label htmlFor="authority-select" className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] ml-2">보안 역할</label>
  <Select value={selectedAuthority} onValueChange={setSelectedAuthority}>
- <SelectTrigger className="h-11 px-8 rounded-lg bg-muted/50 border-none shadow-inner text-sm font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
+ <SelectTrigger id="authority-select" className="h-11 px-8 rounded-lg bg-muted/50 border-none shadow-inner text-sm font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all group active:scale-[0.98]">
  <div className="flex items-center gap-4">
  <Fingerprint size={20} className="text-primary opacity-40 group-hover:opacity-100 transition-opacity" />
  <SelectValue placeholder="역할을 선택하십시오..." />
  </div>
  </SelectTrigger>
  <SelectContent className="rounded-lg border-none shadow-2xl p-2 bg-surface-inverse text-surface-inverse-foreground">
- {authorities.map((auth: AuthorInfo) => (
+ {authorities.map((auth) => (
  <SelectItem 
  key={auth.authrtCd} 
  value={auth.authrtCd}
@@ -256,7 +325,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  </div>
  <div className="space-y-3">
  <h4 className="text-2xl font-bold tracking-tighter leading-tight uppercase">메뉴 매핑<br />인텔리전스</h4>
- <p className="text-xs text-surface-inverse-muted font-bold tracking-[0.3em] uppercase font-mono">Real-time Hierarchy Analysis</p>
+ <p className="text-xs text-surface-inverse-muted font-bold tracking-[0.3em] uppercase font-mono">선택한 역할의 메뉴 계층 실시간 분석</p>
  </div>
  </div>
  </div>
@@ -266,18 +335,16 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
 
  <div className="col-span-12 lg:col-span-8 h-full">
  <HubSectionCard 
- title={currentAuth ? `[${currentAuth.authorNm}] 메뉴 아키텍처` : "아키텍처 분석"} 
+ title={currentAuth ? `[${currentAuth.authrtNm}] 메뉴 아키텍처` : "아키텍처 분석"}
  description="선택된 권한에 할당된 전체 메뉴의 위계적 구조입니다." 
  icon={Network}
  >
  <div className="space-y-8">
  <div className="flex items-center justify-between px-2 pt-2 border-b border-border pb-8">
- <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono ">기능 노드 트리 (Functional Node Tree)</span>
+ <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] font-mono">기능 노드 트리</span>
+ {/* 핸들러가 없어 눌러도 아무 일도 일어나지 않던 '노드 검색' 버튼을 제거했다(구현 계획 없음). */}
  <div className="flex items-center gap-4">
  {isMenuLoading && <Loader2 className="h-6 w-6 animate-spin text-primary opacity-40" />}
- <Button variant="ghost" size="sm" className="h-12 rounded-lg px-6 text-xs font-bold tracking-widest gap-2 hover:bg-slate-900 hover:text-white bg-muted border border-border transition-all uppercase group shadow-sm">
- <SearchCode size={16} className="group-hover:rotate-12 transition-transform" /> 노드 검색
- </Button>
  </div>
  </div>
 
@@ -303,6 +370,15 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  >
  <Loader2 size={48} className="text-primary animate-spin opacity-40" />
  <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.4em] uppercase">데이터 매핑 중...</span>
+ </motion.div>
+ ) : isMenuError ? (
+ // 조회 실패를 '할당된 메뉴 없음'으로 위장하지 않는다.
+ <motion.div
+ initial={{ opacity: 0 }}
+ animate={{ opacity: 1 }}
+ className="absolute inset-0 flex items-center justify-center"
+ >
+ <ErrorStateDisplay error={menuError} onRetry={() => refetchMenus()} />
  </motion.div>
  ) : menuTree.length === 0 ? (
  <motion.div 

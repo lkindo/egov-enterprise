@@ -218,7 +218,8 @@ export default function LayoutManagerClient() {
   };
 
   return (
-    <div className="flex flex-col gap-8 p-10 max-w-[1600px] mx-auto min-h-screen bg-transparent">
+    // 루트 레이아웃이 이미 max-w-7xl · p-6/md:p-12/lg:p-16 을 제공하므로 화면 단위 p-10/max-w 이중 지정을 제거한다.
+    <div className="flex flex-col gap-8 bg-transparent">
       {/* 테마 관리 헤더 */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -226,10 +227,9 @@ export default function LayoutManagerClient() {
         className="flex items-center justify-between border-b pb-8 border-border"
       >
         <div>
+          {/* 근거 없는 버전 표기('v2.0 Beta')는 산출 출처가 없어 제거했다. */}
           <div className="flex items-center gap-3 mb-2">
-            <Badge className="bg-primary/10 text-primary border-none font-bold px-4 py-1 rounded-lg uppercase tracking-tighter">System Design Engine</Badge>
-            <span className="text-border">|</span>
-            <span className="text-sm font-bold text-muted-foreground">v2.0 Beta</span>
+            <Badge className="bg-primary/10 text-primary border-none font-bold px-4 py-1 rounded-lg tracking-tighter">디자인 토큰 엔진</Badge>
           </div>
           <h1 className="text-4xl font-bold tracking-tighter flex items-center gap-4 text-foreground">
             <Settings2 className="w-10 h-10 text-primary" />
@@ -269,11 +269,12 @@ export default function LayoutManagerClient() {
               <CardContent className="space-y-8 pt-8">
                 <div className="space-y-6">
                   <div className="flex justify-between items-end px-2">
-                    <Label className="text-sm font-bold text-muted-foreground uppercase tracking-widest">Base Factor</Label>
+                    <Label htmlFor="theme-base-radius" className="text-sm font-bold text-muted-foreground tracking-widest">기준 곡률</Label>
                     <span className="text-4xl font-bold text-primary tabular-nums">{themeConfig.borderRadius}<span className="text-lg">rem</span></span>
                   </div>
                   <div className="px-2">
                     <input
+                      id="theme-base-radius"
                       type="range" min="0" max="1.5" step="0.05"
                       value={themeConfig.borderRadius}
                       onChange={(e) => setThemeConfig({ ...themeConfig, borderRadius: e.target.value })}
@@ -283,11 +284,11 @@ export default function LayoutManagerClient() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-6 bg-muted rounded-lg border border-border">
-                      <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Section Scale</p>
+                      <p className="text-xs font-bold text-muted-foreground mb-2">섹션 곡률</p>
                       <p className="text-2xl font-bold">{(baseRadius * RADIUS_MULTIPLIER.section).toFixed(2)}<span className="text-xs ml-1">rem</span></p>
                     </div>
                     <div className="p-6 bg-muted rounded-lg border border-border">
-                      <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Item Scale</p>
+                      <p className="text-xs font-bold text-muted-foreground mb-2">아이템 곡률</p>
                       <p className="text-2xl font-bold">{(baseRadius * RADIUS_MULTIPLIER.item).toFixed(2)}<span className="text-xs ml-1">rem</span></p>
                     </div>
                   </div>
@@ -318,6 +319,7 @@ export default function LayoutManagerClient() {
                 </div>
                 <div className="flex gap-4 p-1">
                   <Input
+                    id="theme-primary-color"
                     type="color" value={themeConfig.primaryColor}
                     aria-label="브랜드 기본 색상"
                     onChange={(e) => setThemeConfig({ ...themeConfig, primaryColor: e.target.value })}
@@ -353,7 +355,7 @@ export default function LayoutManagerClient() {
             <div className="absolute top-10 left-12 flex items-center gap-4">
               <Badge variant="outline" className="bg-card/80 backdrop-blur-md border-none font-bold px-5 py-2.5 rounded-lg flex gap-3 shadow-lg">
                 <Monitor size={16} className="text-primary" />
-                System Real-time Simulator
+                실시간 시뮬레이터
               </Badge>
             </div>
 
@@ -392,20 +394,25 @@ export default function LayoutManagerClient() {
                       className="h-11 bg-muted flex items-center justify-center font-bold text-muted-foreground border border-border text-lg"
                       style={{ borderRadius: 'var(--radius-hub-item)' }}
                     >
-                      COMPONENT {i}
+                      구성요소 {i}
                     </div>
                   ))}
                 </div>
 
-                <Button
-                  className="w-full h-11 text-2xl font-bold gap-4 shadow-2xl transition-all hover:scale-[1.02] active:scale-95 px-10 bg-primary text-primary-foreground"
+                {/*
+                  미리보기 전용 표본이다. 과거에는 핸들러 없는 <Button> 이라 눌러도 아무 일도 일어나지 않는 死버튼이었다.
+                  실제로 수행할 동작이 없으므로 상호작용 요소가 아닌 표현 요소로 낮춘다(스크린리더에도 버튼으로 읽히지 않는다).
+                */}
+                <div
+                  role="presentation"
+                  className="w-full h-11 text-2xl font-bold gap-4 shadow-2xl px-10 bg-primary text-primary-foreground inline-flex items-center justify-center select-none"
                   style={{
                     borderRadius: 'var(--radius-hub-item)',
                     boxShadow: '0 25px 50px hsl(var(--primary) / 0.25)',
                   }}
                 >
-                  시뮬레이션 완료 및 진입 <ChevronRight size={32} strokeWidth={3} />
-                </Button>
+                  버튼 미리보기 <ChevronRight size={32} strokeWidth={3} />
+                </div>
               </motion.div>
             </AnimatePresence>
 

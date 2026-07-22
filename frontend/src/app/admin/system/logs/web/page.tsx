@@ -1,5 +1,11 @@
+import React, { Suspense } from 'react';
 import SystemLogsWebClient from './SystemLogsWebClient';
 
 export default function Page() {
-    return <SystemLogsWebClient />;
+    // 클라이언트가 useSearchParams(URL 페이지 동기화)를 사용하므로 Suspense 경계가 필요하다.
+    return (
+        <Suspense fallback={<div className="p-24 text-center text-xs font-bold tracking-widest text-muted-foreground animate-pulse">웹 로그를 불러오는 중...</div>}>
+            <SystemLogsWebClient />
+        </Suspense>
+    );
 }
