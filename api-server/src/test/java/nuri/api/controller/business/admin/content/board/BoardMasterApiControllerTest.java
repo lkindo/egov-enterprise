@@ -91,4 +91,104 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
+
+    // --- 화면이 호출하고 있었으나 매핑이 없어 404 로 떨어지던 4종 (감사 D-9) ---
+
+    @Test
+    @DisplayName("영구 삭제 가능 여부 조회 - 서비스 판정을 그대로 전달")
+    void isBoardMasterDeletable_Success() throws Exception {
+        given(boardMasterService.isDeletable("BBS_001")).willReturn(true);
+
+        mockMvc.perform(get("/api/v1/admin/system/board-masters/BBS_001/deletable")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value(true));
+    }
+
+    @Test
+    @DisplayName("영구 삭제 가능 여부 조회 - 삭제 불가(게시글 잔존)")
+    void isBoardMasterDeletable_False() throws Exception {
+        given(boardMasterService.isDeletable("BBS_001")).willReturn(false);
+
+        mockMvc.perform(get("/api/v1/admin/system/board-masters/BBS_001/deletable")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(false));
+    }
+
+    @Test
+    @DisplayName("게시판 영구 삭제 성공 - 논리 삭제 경로와 구분되어 호출된다")
+    void deleteBoardMasterPhysically_Success() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/system/board-masters/BBS_001/physical")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        // /{bbsId} 논리 삭제가 아니라 물리 삭제가 호출되어야 한다(경로 흡수 회귀 방지)
+        org.mockito.Mockito.verify(boardMasterService).deleteBoardMasterPhysically(anyString(), eq("BBS_001"));
+        org.mockito.Mockito.verify(boardMasterService, org.mockito.Mockito.never())
+                .deleteBoardMaster(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("사용여부 일괄 변경 성공")
+    void updateBoardMasterStatusInBatch_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/board-masters/batch/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"bbsIds\":[\"BBS_001\",\"BBS_002\"],\"useYn\":\"N\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        org.mockito.Mockito.verify(boardMasterService)
+                .updateBoardMasterStatusInBatch(anyString(), eq(List.of("BBS_001", "BBS_002")), eq("N"));
+    }
+
+    @Test
+    @DisplayName("사용여부 일괄 변경 - 빈 목록은 400")
+    void updateBoardMasterStatusInBatch_EmptyIds() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/board-masters/batch/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"bbsIds\":[],\"useYn\":\"N\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("사용여부 일괄 변경 - Y/N 이외 값은 400")
+    void updateBoardMasterStatusInBatch_InvalidUseYn() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/board-masters/batch/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"bbsIds\":[\"BBS_001\"],\"useYn\":\"X\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    @DisplayName("일괄 영구 삭제 성공")
+    void deleteBoardMastersInBatch_Success() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/board-masters/batch/delete")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"bbsIds\":[\"BBS_001\",\"BBS_002\"]}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        org.mockito.Mockito.verify(boardMasterService)
+                .deleteBoardMastersInBatch(anyString(), eq(List.of("BBS_001", "BBS_002")));
+    }
+
+    @Test
+    @DisplayName("일괄 영구 삭제 - 빈 목록은 400 (전건 삭제 사고 방지)")
+    void deleteBoardMastersInBatch_EmptyIds() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/board-masters/batch/delete")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"bbsIds\":[]}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        org.mockito.Mockito.verify(boardMasterService, org.mockito.Mockito.never())
+                .deleteBoardMastersInBatch(anyString(), any());
+    }
 }
