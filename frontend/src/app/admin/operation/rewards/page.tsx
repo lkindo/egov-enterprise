@@ -1,5 +1,10 @@
 import { Suspense } from 'react';
-import { operationAdminService } from '@/services/foundation/operation/OperationAdminService';
+import {
+  operationAdminService,
+  emptyPage,
+  type Reward,
+} from '@/services/foundation/operation/OperationAdminService';
+import type { PageResponse } from '@/types/foundation/system';
 import RewardManageClient from './RewardManageClient';
 
 export const metadata = {
@@ -7,18 +12,20 @@ export const metadata = {
   description: '운영 관리 포상 및 상훈 정보를 관리합니다.',
 };
 
+const PAGE_SIZE = 10;
+
 export default async function RewardManagePage() {
-  let initialData: any[] = [];
+  let initialPage: PageResponse<Reward> = emptyPage<Reward>(PAGE_SIZE);
   try {
-    const res = await operationAdminService.getRewardList();
-    initialData = res.list || [];
+    // 서버는 0-based Pageable 을 받는다 (page=0 → 1페이지)
+    initialPage = await operationAdminService.getRewardList({ page: 0, size: PAGE_SIZE });
   } catch (error) {
     console.warn('Failed to fetch initial reward info', error);
   }
 
   return (
     <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]">로딩 중..</div>}>
-      <RewardManageClient initialData={initialData} />
+      <RewardManageClient initialPage={initialPage} />
     </Suspense>
   );
 }

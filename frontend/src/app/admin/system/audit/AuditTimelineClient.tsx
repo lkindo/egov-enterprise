@@ -135,12 +135,14 @@ export function AuditTimelineClient() {
                    [1,2,3,4,5].map(i => <div key={i} className="h-40 bg-muted rounded-lg animate-pulse mb-8" />)
                 ) : logs.length > 0 ? (
                    logs.map((log, idx) => (
-                      <TimelineItem 
-                         key={log.requstId} 
-                         log={log} 
-                         index={idx} 
+                      <TimelineItem
+                         key={log.dmndId ?? `audit-log-${idx}`}
+                         log={log}
+                         index={idx}
                          onInspect={handleInspect}
-                         isSelected={selectedLog?.requstId === log.requstId}
+                         // dmndId 가 없으면(undefined) 비교가 undefined === undefined 로 참이 되어
+                         // 미선택 상태에서 전 카드가 강조된다. 반드시 null 가드를 선행한다.
+                         isSelected={!!selectedLog?.dmndId && !!log.dmndId && selectedLog.dmndId === log.dmndId}
                       />
                    ))
                 ) : (
@@ -162,7 +164,7 @@ export function AuditTimelineClient() {
            <AnimatePresence mode="wait">
               {selectedLog ? (
                  <motion.div
-                    key={selectedLog.requstId}
+                    key={selectedLog.dmndId ?? 'audit-detail'}
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -20 }}
@@ -177,7 +179,7 @@ export function AuditTimelineClient() {
                           </div>
                           <h2 className="text-5xl font-bold text-white tracking-tighter leading-none mb-6">행위 상세 <br /> 인스펙터</h2>
                           <p className="text-xs font-mono font-bold text-primary/80 tracking-widest uppercase">
-                             REQUEST_ID: {selectedLog.requstId}
+                             REQUEST_ID: {selectedLog.dmndId}
                           </p>
                        </div>
 

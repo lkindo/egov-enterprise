@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { operationAdminService } from '@/services/foundation/operation/OperationAdminService';
+import { operationAdminService, type ExternalHr } from '@/services/foundation/operation/OperationAdminService';
+import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
 import { Plus, Search, Users, ShieldCheck, Zap, RefreshCcw, Layers } from 'lucide-react';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -38,8 +39,13 @@ const externalHrSchema = ExternalHrDtoSchema.extend({
 
 type ExternalHrFormValues = z.infer<typeof externalHrSchema>;
 
-export default function ExternalHrClient({ initialData }: { initialData: any[] }) {
-    const [data, setData] = useState(initialData || []);
+const PAGE_SIZE = 10;
+
+export default function ExternalHrClient({ initialPage }: { initialPage: PageResponse<ExternalHr> }) {
+    const [data, setData] = useState<ExternalHr[]>(initialPage?.list || []);
+    const [totalItems, setTotalItems] = useState(initialPage?.total || 0);
+    const [totalPages, setTotalPages] = useState(initialPage?.totalPage || 0);
+    const [page, setPage] = useState(initialPage?.page || 1);
     const [loading, setLoading] = useState(false);
     const [searchKeyword, setSearchKeyword] = useState('');
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -58,16 +64,37 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
         }
     });
 
-    const loadData = async (name: string = searchKeyword) => {
+    /**
+     * 목록 조회. 서버 응답은 PageResponse(list/total/page/size/totalPage) 이며,
+     * Spring Data Pageable 은 0-based 이므로 targetPage(1-based) - 1 을 전송한다.
+     */
+    const loadData = async (name: string = searchKeyword, targetPage: number = page) => {
         try {
             setLoading(true);
-            const res = await operationAdminService.getExternalHrList({ name });
-            setData(res.list || []);
+            const res = await operationAdminService.getExternalHrList({
+                name,
+                page: targetPage - 1,
+                size: PAGE_SIZE,
+            });
+            setData(res?.list || []);
+            setTotalItems(res?.total || 0);
+            setTotalPages(res?.totalPage || 0);
+            setPage(res?.page || targetPage);
         } catch (error) {
             toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
         } finally {
             setLoading(false);
         }
+    };
+
+    const handleSearch = () => {
+        setPage(1);
+        loadData(searchKeyword, 1);
+    };
+
+    const handlePageChange = (nextPage: number) => {
+        setPage(nextPage);
+        loadData(searchKeyword, nextPage);
     };
 
     const onRegisterSubmit = async (values: ExternalHrFormValues) => {
@@ -84,7 +111,9 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
             toast('성공적으로 등록되었습니다.', 'success');
             setIsModalOpen(false);
             form.reset();
-            loadData();
+            // 최신 등록건은 crtDt DESC 정렬로 1페이지 선두에 노출된다
+            setPage(1);
+            loadData(searchKeyword, 1);
         } catch (error) {
             toast('등록 중 오류가 발생했습니다.', 'error');
         } finally {
@@ -92,59 +121,58 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
         }
     };
 
-    const columns: Column<any>[] = [
-        { 
-            header: '번호', 
+    // 컬럼 접근자는 백엔드 ExternalHrDto 필드명(SSOT)만 사용한다.
+    const columns: Column<ExternalHr>[] = [
+        {
+            header: '번호',
             accessor: (_, index) => (
                 <span className="font-mono text-xs font-bold text-muted-foreground">
-                    {(index !== undefined ? index + 1 : 0).toString().padStart(2, '0')}
+                    {(index !== undefined ? index + 1 + (page - 1) * PAGE_SIZE : 0).toString().padStart(2, '0')}
                 </span>
             ),
             className: 'w-20 text-center'
         },
-        { 
-            header: '성명', 
-            accessor: (item: any) => (
+        {
+            header: '성명',
+            accessor: (item) => (
                 <span className="font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
-                    {item.otsdHrNm || item.extrlHrNm || '미지정'}
+                    {item.otsdHrNm || '미지정'}
                 </span>
             )
         },
-        { 
-            header: '소속기관', 
-            accessor: (item: any) => (
+        {
+            header: '소속기관',
+            accessor: (item) => (
                 <span className="text-xs font-bold text-muted-foreground uppercase tracking-tight">
-                    {item.ogdpInstNm || item.psitnInsttNm || '미지정'}
+                    {item.ogdpInstNm || '미지정'}
                 </span>
             )
         },
-        { 
-            header: '연락처', 
-            accessor: (item: any) => {
-                const area = item.areaNo || item.areaNo;
-                const middle = item.mdTelno || item.middleTelno;
-                const end = item.endTelno || item.endTelno;
+        {
+            header: '연락처',
+            accessor: (item) => {
+                const { areaNo, mdTelno, endTelno } = item;
                 return (
                     <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
-                        {area && middle && end ? `${area}-${middle}-${end}` : '미등록'}
+                        {areaNo && mdTelno && endTelno ? `${areaNo}-${mdTelno}-${endTelno}` : '미등록'}
                     </span>
                 );
             },
             className: 'w-40'
         },
-        { 
-            header: '이메일', 
-            accessor: (item: any) => (
+        {
+            header: '이메일',
+            accessor: (item) => (
                 <span className="text-xs font-bold text-muted-foreground tracking-tight">
-                    {item.emlAddr || item.emailAdres || '-'}
+                    {item.emlAddr || '-'}
                 </span>
             )
         },
-        { 
-            header: '생년월일', 
-            accessor: (item: any) => (
+        {
+            header: '생년월일',
+            accessor: (item) => (
                 <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-widest">
-                    {item.brdtYmd || item.brthdy || '-'}
+                    {item.brdtYmd || '-'}
                 </span>
             ),
             className: 'w-32 text-right pr-8'
@@ -183,9 +211,9 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
             />
 
             <HubMetricGrid>
-                <HubMetricCard title="전체 인사" value={data.length} icon={Layers} color="primary" />
+                <HubMetricCard title="전체 인사" value={totalItems} icon={Layers} color="primary" />
                 <HubMetricCard title="보안 검증" value="PASS" icon={ShieldCheck} color="emerald" status="안전함" />
-                <HubMetricCard title="활성 노드" value={data.filter(i => i.emlAddr || i.emailAdres).length} icon={Zap} color="amber" />
+                <HubMetricCard title="활성 노드" value={data.filter(i => !!i.emlAddr).length} icon={Zap} color="amber" />
                 <HubMetricCard title="데이터 상태" value="정상" icon={RefreshCcw} color="indigo" />
             </HubMetricGrid>
 
@@ -197,7 +225,7 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
             >
                 <div className="space-y-8">
                     <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
-                        <form onSubmit={(e) => { e.preventDefault(); loadData(); }} className="flex items-center gap-4 relative group/search max-w-xl w-full">
+                        <form onSubmit={(e) => { e.preventDefault(); handleSearch(); }} className="flex items-center gap-4 relative group/search max-w-xl w-full">
                             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
                             <Input
                                 placeholder="인사 성명으로 검색..."
@@ -217,6 +245,11 @@ export default function ExternalHrClient({ initialData }: { initialData: any[] }
                             emptyMessage="등록된 외부인사 정보가 없습니다."
                             isPremium={true}
                             className="border-none bg-transparent shadow-none"
+                            pagination={{
+                                currentPage: page,
+                                totalPages: totalPages,
+                                onPageChange: handlePageChange
+                            }}
                         />
                     </div>
                 </div>

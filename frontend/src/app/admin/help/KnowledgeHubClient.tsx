@@ -30,12 +30,19 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  const [sortBy, setSortBy] = useState('latest'); 
  const [isScanning, setIsScanning] = useState(false);
  
- const getInitialCategory = () => {
+ const getInitialCategory = (): KnowledgeCategory => {
  const bbsId = searchParams.get('bbsId');
  if (bbsId === 'BBSMSTR_CCCCCCCCCCCC') return 'COMMUNITY';
  if (bbsId === 'BBSMSTR_AAAAAAAAAAAA') return 'FAQ';
  if (bbsId === 'BBSMSTR_DDDDDDDDDDDD') return 'QNA';
  if (bbsId === 'BBSMSTR_EEEEEEEEEEEE') return 'WIKI';
+
+ // 메뉴(tb_menu_info)가 위키·FAQ·Q&A 를 모두 /admin/help/faq?tab=* 로 보내는데
+ // 이 값을 읽지 않아 서로 다른 3개 메뉴가 전부 FAQ 화면으로 착지했다.
+ const tab = searchParams.get('tab')?.toUpperCase();
+ if (tab === 'WIKI' || tab === 'FAQ' || tab === 'QNA' || tab === 'COMMUNITY') {
+ return tab;
+ }
  return defaultTab || 'WIKI';
  };
 

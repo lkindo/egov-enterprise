@@ -2,6 +2,7 @@ package nuri.business.service.code;
 import nuri.business.domain.code.exception.CodeErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.code.CommonCode;
 import nuri.business.domain.code.CommonCodeRepository;
@@ -24,6 +25,7 @@ import nuri.business.domain.code.CommonCodeGroup;
 import nuri.business.domain.code.CommonCodeGroupRepository;
 import nuri.business.service.code.dto.CmmnClCodeDto;
 import nuri.business.service.code.dto.CmmnCodeDto;
+import nuri.business.service.code.dto.CmmnCodeHierarchyDto;
 import nuri.business.service.code.dto.CmmnDetailCodeDto;
 import nuri.business.domain.common.BaseSearchDto;
 import org.springframework.data.domain.Page;
@@ -217,6 +219,53 @@ public class CommonCodeService extends BaseAbstractService {
                                                         dto.getUseYn(),
                                                         dto.getLastMdfrId());
                                 });
+        }
+
+        /**
+         * 코드 탐색기 편집(드래그앤드롭) 결과를 일괄 반영한다. 코드그룹의 소속 분류(clsfCd)만 갱신하며
+         * 명칭·설명·사용여부는 건드리지 않는다.
+         *
+         * <p>종전에는 프론트가 존재하지 않는 PUT /cmmn/batch-hierarchy 를 호출했고, 그 경로가
+         * PUT /cmmn/{codeId} 에 codeId="batch-hierarchy" 로 흡수되면서 배열 본문을 CmmnCodeDto 로
+         * 역직렬화하다 400 이 났다. 결과적으로 재배치 작업이 통째로 소실됐다.
+         *
+         * <p>순환 참조는 분류(tb_com_clsf_cd)와 코드그룹(tb_com_cd)이 서로 다른 테이블인 2단 고정 계층이라
+         * 구조적으로 발생하지 않지만, 잘못된 payload 로 인한 자기참조·유령 부모는 아래에서 명시적으로 막는다.
+         */
+        @Transactional
+        @CacheEvict(value = "commonCodes", allEntries = true)
+        public void updateCmmnCodeHierarchy(List<CmmnCodeHierarchyDto> items) {
+                if (items == null || items.isEmpty()) {
+                        return;
+                }
+                for (CmmnCodeHierarchyDto item : items) {
+                        String cdId = item.getCdId();
+                        String clsfCd = item.getClsfCd();
+
+                        // @Valid 는 List 원소까지 캐스케이드되지 않으므로(컨트롤러 애노테이션은 문서화 의도) 여기서 실검증한다.
+                        if (cdId == null || cdId.isBlank()) {
+                                throw new BusinessException("코드 ID 는 필수입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
+                        }
+                        // 분류가 비면 트리에서 사라져(목록이 clsfCd 로 매칭) 조용한 데이터 유실이 된다. 루트 이동은 허용하지 않는다.
+                        if (clsfCd == null || clsfCd.isBlank()) {
+                                throw new BusinessException("코드그룹은 반드시 분류코드에 소속되어야 합니다: " + cdId,
+                                                CommonErrorCode.INVALID_INPUT_VALUE);
+                        }
+                        if (clsfCd.equals(cdId)) {
+                                throw new BusinessException("자기 자신을 상위 분류로 지정할 수 없습니다: " + cdId,
+                                                CommonErrorCode.INVALID_INPUT_VALUE);
+                        }
+                        if (!commonCodeCategoryRepository.existsById(clsfCd)) {
+                                throw new BusinessException("상위 분류코드가 존재하지 않습니다: " + clsfCd,
+                                                CommonErrorCode.RESOURCE_NOT_FOUND);
+                        }
+
+                        CommonCodeGroup entity = commonCodeGroupRepository.findById(cdId)
+                                        .orElseThrow(() -> new BusinessException(
+                                                        "코드그룹이 존재하지 않습니다: " + cdId,
+                                                        CodeErrorCode.CODE_NOT_FOUND));
+                        entity.updateClassification(clsfCd);
+                }
         }
 
         @Transactional

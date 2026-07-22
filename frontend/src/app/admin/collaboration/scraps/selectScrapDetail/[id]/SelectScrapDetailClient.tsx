@@ -13,15 +13,24 @@ import { Textarea } from "@/components/ui/textarea";
 import { Bookmark,  Globe,  FileText,  ArrowLeft,  Send,  Trash2 } from "lucide-react";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 
+/** 폼이 다루는 필드(서버 응답의 파생 필드 scrapId/userId/crtDt 는 폼 상태로 끌어오지 않는다). */
+interface ScrapForm {
+  scrapNm: string;
+  scrapUrl: string;
+  scrapExpln: string;
+  useYn: string;
+}
+
 const SelectScrapDetailClient = () => {
   const router = useRouter();
   const params = useParams();
   const id = params.id;
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<ScrapForm>({
     scrapNm: '',
     scrapUrl: '',
-    scrapExpln: ''
+    scrapExpln: '',
+    useYn: 'Y'
   });
   const [loading, setLoading] = useState(false);
   const [fetching, setFetching] = useState(true);
@@ -30,10 +39,19 @@ const SelectScrapDetailClient = () => {
     if (id) {
       const fetchDetail = async () => {
         try {
-          const response = (await axios.get(`/scraps/${id}`)) as any;
-          setFormData(response);
+          const response = (await axios.get(`/scraps/${id}`)) as Partial<ScrapForm> | null;
+          // [방어] 응답 전면 교체(setFormData(response))는 응답에 없는 키를 undefined 로 만들어
+          // 이후 formData.scrapUrl.trim() 에서 TypeError 를 유발했다 → 기존 상태에 병합한다.
+          setFormData((prev) => ({
+            ...prev,
+            scrapNm: response?.scrapNm ?? prev.scrapNm,
+            scrapUrl: response?.scrapUrl ?? prev.scrapUrl,
+            scrapExpln: response?.scrapExpln ?? prev.scrapExpln,
+            useYn: response?.useYn ?? prev.useYn
+          }));
         } catch (error) {
           console.error('Failed to fetch scrap detail', error);
+          toast.error('스크랩 정보를 불러오지 못했습니다.');
         } finally {
           setFetching(false);
         }
@@ -45,18 +63,19 @@ const SelectScrapDetailClient = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.scrapNm.trim()) {
+    if (!formData.scrapNm?.trim()) {
       toast.error('스크랩명을 입력해주세요.');
       return;
     }
-    if (!formData.scrapUrl.trim()) {
+    if (!formData.scrapUrl?.trim()) {
       toast.error('URL을 입력해주세요.');
       return;
     }
 
     setLoading(true);
     try {
-      await axios.put(`/scraps/${id}`, formData);
+      // useYn 은 서버 DTO 필수값(@NotBlank) — 상태에 항상 보유하고 그대로 전송한다.
+      await axios.put(`/scraps/${id}`, { ...formData, useYn: formData.useYn || 'Y' });
       toast.success('수정되었습니다.');
       router.push('/admin/collaboration/scraps/selectScrapList');
     } catch (error: any) {

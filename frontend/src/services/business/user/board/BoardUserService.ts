@@ -7,7 +7,22 @@ class BoardUserService extends UserService {
     super('/boards');
   }
 
-  async getPosts(bbsId: string, params: { page?: number; size?: number; searchWrd?: string; searchCnd?: string }): Promise<PageResponse<BoardPost>> {
+  /**
+   * 게시글 목록 조회.
+   * `page` 는 Spring Pageable 규약대로 0-based 다(호출부에서 1-based UI 값을 변환해 전달할 것).
+   * orderBy/startDate/endDate/qnaStatus/qnaCategory 는 BoardApiController#getPosts 가 지원하는 필터다.
+   */
+  async getPosts(bbsId: string, params: {
+    page?: number;
+    size?: number;
+    searchWrd?: string;
+    searchCnd?: string;
+    orderBy?: string;
+    startDate?: string;
+    endDate?: string;
+    qnaStatus?: string;
+    qnaCategory?: string;
+  }): Promise<PageResponse<BoardPost>> {
     return this.get<PageResponse<BoardPost>>(`/${bbsId}`, { params });
   }
 

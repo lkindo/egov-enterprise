@@ -111,13 +111,15 @@ class OperationApiControllerTest {
     @Test
     @DisplayName("외부인력 조회 - 분기 검증")
     void hr_list_branch() throws Exception {
+        when(hrService.getExternalHrList(any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+
         // Without name
         hrMockMvc.perform(get("/api/v1/admin/operation/external-hr")).andExpect(status().isOk());
         // With name
         hrMockMvc.perform(get("/api/v1/admin/operation/external-hr").param("name", "John")).andExpect(status().isOk());
-        
-        verify(hrService).getAllExternalHr();
-        verify(hrService).searchByName("John");
+
+        verify(hrService).getExternalHrList(isNull(), any());
+        verify(hrService).getExternalHrList(eq("John"), any());
     }
 
     @Test
@@ -131,13 +133,15 @@ class OperationApiControllerTest {
     @Test
     @DisplayName("포상관리 조회 - 분기 검증")
     void reward_list_branch() throws Exception {
+        when(rewardService.getRewardList(any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+
         // Without name
         rewardMockMvc.perform(get("/api/v1/admin/operation/rewards")).andExpect(status().isOk());
         // With name
         rewardMockMvc.perform(get("/api/v1/admin/operation/rewards").param("name", "Award")).andExpect(status().isOk());
-        
-        verify(rewardService).getAllRewards();
-        verify(rewardService).searchByName("Award");
+
+        verify(rewardService).getRewardList(isNull(), any());
+        verify(rewardService).getRewardList(eq("Award"), any());
     }
 
     @Test

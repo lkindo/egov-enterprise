@@ -14,12 +14,16 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { PageHeader } from '@/app/components/layout/page-header';
+import { toDisplayYmd, todayStorageYmd } from '@/lib/format-date';
+import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
 
 export default function SurveyManageClient() {
   const router = useRouter();
-  const [now, setNow] = useState<Date | null>(null);
+  // 기준일은 저장 포맷과 동일한 'yyyyMMdd' 문자열로 고정한다.
+  // (SSR 시점 시각을 쓰면 하이드레이션 불일치가 나므로 마운트 후 세팅)
+  const [todayYmd, setTodayYmd] = useState<string>('');
   useEffect(() => {
-    setNow(new Date());
+    setTodayYmd(todayStorageYmd());
   }, []);
 
   const [params, setParams] = useState<PollSearchParams>({
@@ -67,7 +71,7 @@ export default function SurveyManageClient() {
       header: '설문 기간',
       accessor: (poll) => (
         <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
-          {poll.pollBgngYmd} ~ {poll.pollEndYmd}
+          {toDisplayYmd(poll.pollBgngYmd)} ~ {toDisplayYmd(poll.pollEndYmd)}
         </span>
       ),
       className: 'w-48'
@@ -75,14 +79,18 @@ export default function SurveyManageClient() {
     {
       header: '상태',
       accessor: (poll) => {
-        const end = new Date(poll.pollEndYmd);
-        const isActive = now ? end >= now : false;
-        return (
-          <div className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${isActive
+        // 저장값은 'yyyyMMdd' 8자다. new Date('20260722') 는 Invalid Date 라
+        // 종전 판정은 전건 '종료'로 무너져 있었다. 판정은 poll-status 유틸로 단일화한다.
+        const status = getPollStatus(poll, todayYmd);
+        const tone =
+          status === 'active'
             ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-            : 'bg-muted text-muted-foreground border border-border'
-          }`}>
-            {isActive ? '진행중' : '종료'}
+            : status === 'scheduled'
+              ? 'bg-amber-500/10 text-amber-600 border border-amber-500/20'
+              : 'bg-muted text-muted-foreground border border-border';
+        return (
+          <div className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${tone}`}>
+            {POLL_STATUS_LABEL[status]}
           </div>
         );
       },
@@ -136,7 +144,7 @@ export default function SurveyManageClient() {
 
       <HubMetricGrid>
         <HubMetricCard title="전체 설문" value={data?.total || 0} icon={Layers} color="primary" />
-        <HubMetricCard title="진행중" value={now ? polls.filter(p => new Date(p.pollEndYmd) >= now).length : 0} icon={Zap} color="emerald" status="활성" />
+        <HubMetricCard title="진행중" value={todayYmd ? polls.filter(p => getPollStatus(p, todayYmd) === 'active').length : 0} icon={Zap} color="emerald" status="활성" />
         <HubMetricCard title="참여 노드" value="2.4k" icon={Activity} color="indigo" />
         <HubMetricCard title="데이터 상태" value="Normal" icon={RefreshCcw} color="amber" />
       </HubMetricGrid>

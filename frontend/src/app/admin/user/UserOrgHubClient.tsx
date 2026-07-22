@@ -84,6 +84,14 @@ import { flattenDeptTree, listToDeptTree, getDeptProjection, FlattenedDept } fro
 
 const INDENTATION_WIDTH = 24;
 
+/**
+ * 부서 목록 조회 크기.
+ * 조직도(D&D 트리)와 '부서 이동' 모달의 대상 선택은 계층 전체가 있어야 성립한다 — 페이징과 상극이다.
+ * 서버는 Spring Pageable(page/size, 0-based)을 그대로 받으므로 충분히 큰 size 로 전량을 끌어온다.
+ * (종전 size:10 → 11번째 부서부터 트리에서도 모달에서도 보이지 않았다.)
+ */
+const DEPT_LIST_SIZE = 1000;
+
 const dropAnimation: DropAnimation = {
     sideEffects: defaultDropAnimationSideEffects({
         styles: {
@@ -229,13 +237,32 @@ export default function UserOrgHubClient({
     return (Array.isArray(list) ? list.filter(Boolean) : []) as UserManage[];
   }, [usersData]);
 
+  /**
+   * 검색 입력은 사용자/부서 탭이 공유한다. USERS 탭에서 입력한 사용자 검색어가 부서 조회에 섞이면
+   * '부서 이동' 모달의 대상 목록이 그 키워드로 걸러져 비어 버린다 — 부서 탭에서만 키워드를 태운다.
+   */
+  const deptKeyword = activeTab === 'DEPTS' ? searchKeyword : '';
+
+  /**
+   * 서버 프리페치(page.tsx)는 size=10 으로 잘린 목록일 수 있다. 잘린 시드를 initialData 로 쓰면
+   * 전역 staleTime(60s) 동안 재조회가 일어나지 않아 10건 절단이 그대로 유지된다.
+   * 전량(total)을 담고 있을 때만 시드로 채택한다.
+   */
+  const initialDeptsSeed = useMemo(() => {
+    const list = initialDepts?.list;
+    const total = initialDepts?.total;
+    return Array.isArray(list) && typeof total === 'number' && list.length >= total ? initialDepts : undefined;
+  }, [initialDepts]);
+
   const { data: deptsData, isLoading: isDeptsLoading, error: _deptsError, refetch: refetchDepts } = useQuery({
-    queryKey: ['admin-depts', searchKeyword, deptPage],
+    queryKey: ['admin-depts', deptKeyword, deptPage],
     // 서버는 keyword + Spring Pageable(page/size, 0-based)을 읽는다. 종전의 {pageNo, searchKeyword}는
     // ApiService 매핑 대상이 아니라 그대로 전달돼 무시됐고, 검색어가 서버에 닿지 않았다.
-    queryFn: () => deptAdminService.getDeptList({ keyword: searchKeyword, page: deptPage - 1, size: 10 }),
-    enabled: activeTab === 'DEPTS',
-    initialData: (deptPage === 1 && !searchKeyword) ? initialDepts : undefined
+    queryFn: () => deptAdminService.getDeptList({ keyword: deptKeyword, page: deptPage - 1, size: DEPT_LIST_SIZE }),
+    // 부서 탭뿐 아니라 '부서 이동' 모달·사용자 등록/수정 폼(소속 부서 선택)에서도 목록이 필요하다.
+    // 종전에는 DEPTS 탭에서만 조회해 USERS 탭의 모달이 항상 빈 상자였다.
+    enabled: activeTab === 'DEPTS' || isBulkMoveModalOpen || isUserModalOpen,
+    initialData: (deptPage === 1 && !deptKeyword) ? initialDeptsSeed : undefined
   });
 
   // D&D States for Depts
@@ -270,13 +297,13 @@ export default function UserOrgHubClient({
     return (Array.isArray(list) ? list.filter(Boolean) : []) as Department[];
   }, [deptsData]);
 
+  // 평탄화는 탭과 무관하게 수행한다. 종전에는 DEPTS 탭 조건이 걸려 있어 USERS 탭의
+  // '부서 이동' 모달이 렌더하는 flattenedDepts 가 언제나 빈 배열이었다.
   useEffect(() => {
-    if (activeTab === 'DEPTS' && departments.length > 0) {
-        // Build tree and flatten it for D&D
-        const tree = listToDeptTree(departments as any);
-        setFlattenedDepts(flattenDeptTree(tree));
-    }
-  }, [departments, activeTab]);
+    // Build tree and flatten it for D&D
+    const tree = listToDeptTree(departments as any);
+    setFlattenedDepts(flattenDeptTree(tree));
+  }, [departments]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -973,6 +1000,11 @@ export default function UserOrgHubClient({
           <div className="space-y-4">
             <label className="text-xs font-bold text-foreground tracking-tight">이동할 대상 부서 선택</label>
             <div className="max-h-[400px] overflow-y-auto border-2 border-border rounded-lg p-4 custom-scrollbar bg-muted/30">
+              {flattenedDepts.length === 0 && (
+                <p className="py-10 text-center text-xs font-bold tracking-tight text-muted-foreground">
+                  {isDeptsLoading ? '부서 목록을 불러오는 중입니다...' : '이동할 수 있는 부서가 없습니다.'}
+                </p>
+              )}
               {flattenedDepts.map((node) => (
                 <div
                   key={node.ognzId}

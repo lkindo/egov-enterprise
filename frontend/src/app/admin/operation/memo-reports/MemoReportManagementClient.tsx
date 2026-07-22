@@ -15,15 +15,21 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { PageHeader } from '@/app/components/layout/page-header';
+import { useAuth } from '@/contexts/AuthContext';
 
 type ReportTab = 'MY' | 'RECEIVED' | 'ALL';
 
 export default function MemoReportManagementClient() {
  const { toast } = useToast();
+ const { user } = useAuth();
  const [page, setPage] = useState(1);
  const size = 10;
  const [activeTab, setActiveTab] = useState<ReportTab>('RECEIVED');
  const [searchKeyword, setSearchKeyword] = useState('');
+
+ // '전체' 탭은 조직 전체의 비정형 보고를 조회하므로 관리자 전용이다.
+ // (백엔드 GET /memo-reports 에 관리자 인가가 걸려 있어, 비관리자에게 노출하면 403 으로 무언 실패한다)
+ const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
 
  const handleTabChange = (tab: ReportTab) => {
  setActiveTab(tab);
@@ -39,6 +45,8 @@ export default function MemoReportManagementClient() {
  if (activeTab === 'RECEIVED') return memoReportService.getReceivedReports(params);
  return memoReportService.getMemoReports(params);
  },
+ // 비관리자가 '전체'로 진입해 403 을 맞는 상황 자체를 만들지 않는다.
+ enabled: activeTab !== 'ALL' || isAdmin,
  });
 
  const displayItems = (reportsData?.list || []) as MemoReportInfo[];
@@ -141,14 +149,16 @@ export default function MemoReportManagementClient() {
  >
  발신함
  </Button>
- <Button 
- variant="ghost" 
- size="sm" 
+ {isAdmin && (
+ <Button
+ variant="ghost"
+ size="sm"
  className={cn("h-9 rounded-lg px-6 font-bold text-xs", activeTab === 'ALL' && "bg-white shadow-sm text-primary")}
  onClick={() => handleTabChange('ALL')}
  >
  전체
  </Button>
+ )}
  </div>
  <Button className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
  <Plus size={18} /> 신규 보고

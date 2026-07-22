@@ -3,7 +3,6 @@ package nuri.api.controller.foundation.controller.menu;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.service.menu.MenuService;
 import nuri.business.service.menu.dto.MenuDto;
-import nuri.business.service.program.dto.ProgramDto;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -47,37 +46,8 @@ public class MenuUserApiController {
         return ResponseEntity.ok(ApiResponse.success(data));
     }
 
-    @Operation(summary = "메뉴 목록 테스트 - DTO 반환")
-    @GetMapping("/test/raw")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getRawMenus() {
-        log.info("getRawMenus called");
-        try {
-            List<MenuDto> menus = menuService.getAllMenus();
-            log.info("getRawMenus returned {} items", menus.size());
-
-            Map<String, Object> result = new HashMap<>();
-            result.put("count", menus.size());
-            result.put("menus", menus);
-            return ResponseEntity.ok(ApiResponse.success(result));
-        } catch (Exception e) {
-            throw new nuri.foundation.core.exception.BusinessException("처리 중 오류가 발생했습니다.", nuri.foundation.core.exception.CommonErrorCode.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @Operation(summary = "메뉴 목록 테스트 - Program 조회")
-    @GetMapping("/test/programs")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getPrograms() {
-        log.info("getPrograms called");
-        try {
-            List<ProgramDto> programs = menuService.getAllPrograms();
-            log.info("getPrograms returned {} items", programs.size());
-
-            Map<String, Object> result = new HashMap<>();
-            result.put("count", programs.size());
-            result.put("programs", programs);
-            return ResponseEntity.ok(ApiResponse.success(result));
-        } catch (Exception e) {
-            throw new nuri.foundation.core.exception.BusinessException("처리 중 오류가 발생했습니다.", nuri.foundation.core.exception.CommonErrorCode.INTERNAL_SERVER_ERROR);
-        }
-    }
+    // [보안] 개발 중 임시 추가됐던 디버그 덤프(GET /test/raw, /test/programs)는 제거했다.
+    // 권한 필터를 거치지 않는 getAllMenus()/getAllPrograms() 를 인증만 되면 노출해,
+    // 비활성 메뉴와 관리자 전용 modernRoute 를 일반 사용자가 열거할 수 있는 정찰 창구였다.
+    // 관리 목적의 전체 메뉴 조회는 /api/v1/admin/** (URL 시큐리티로 ADMIN 제한) 경로를 사용한다.
 }

@@ -35,6 +35,7 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { saveMenuAction, updateMenuOrdersAction, deleteMenuAction } from '@/app/actions/menuActions';
 import { menuSchema } from '@/lib/validation/schemas';
+import { Textarea } from '@/components/ui/textarea';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
@@ -355,7 +356,7 @@ export default function MenuAdminClient({
 
   const form = useAppForm(menuSchema, {
     defaultValues: {
-      menuNo: 0, menuNm: '', menuOrdr: 0, upperMenuId: 0, prgrmFileNm: '', modernRoute: '', menuDc: '', useYn: 'Y' as 'Y' | 'N'
+      menuNo: 0, menuNm: '', menuOrdr: 0, upperMenuId: 0, prgrmFileNm: '', modernRoute: '', menuExpln: '', useYn: 'Y' as 'Y' | 'N'
     }
   });
 
@@ -416,13 +417,13 @@ export default function MenuAdminClient({
 
   const handleOpenCreate = (parentId: number = 0) => {
     setMode('create');
-    form.reset({ menuNo: Date.now(), menuNm: '', menuOrdr: 999, upperMenuId: parentId, prgrmFileNm: '', modernRoute: '', menuDc: '', useYn: 'Y' as 'Y' | 'N' });
+    form.reset({ menuNo: Date.now(), menuNm: '', menuOrdr: 999, upperMenuId: parentId, prgrmFileNm: '', modernRoute: '', menuExpln: '', useYn: 'Y' as 'Y' | 'N' });
     setIsOpen(true);
   };
 
   const handleOpenEdit = (menu: MenuInfo) => {
     setMode('edit');
-    form.reset({ menuNo: menu.menuNo, menuNm: menu.menuNm, menuOrdr: menu.menuOrdr || 0, upperMenuId: menu.upMenuSn ?? menu.upperMenuId ?? 0, prgrmFileNm: menu.prgrmFileNm || '', modernRoute: menu.modernRoute || '', menuDc: menu.menuDc || '', useYn: (menu.useYn || 'Y') as 'Y' | 'N' });
+    form.reset({ menuNo: menu.menuNo, menuNm: menu.menuNm, menuOrdr: menu.menuOrdr || 0, upperMenuId: menu.upMenuSn ?? menu.upperMenuId ?? 0, prgrmFileNm: menu.prgrmFileNm || '', modernRoute: menu.modernRoute || '', menuExpln: menu.menuExpln ?? menu.menuDc ?? '', useYn: (menu.useYn || 'Y') as 'Y' | 'N' });
     setIsOpen(true);
   };
 
@@ -436,7 +437,7 @@ export default function MenuAdminClient({
     try {
       setIsSaving(true);
       const submitData = flattenedMenus.map((item, idx) => ({
-        menuNo: item.menuNo, menuOrdr: idx + 1, upMenuSn: item.parentId === 0 ? null : item.parentId, menuNm: item.menuNm, prgrmFileNm: item.prgrmFileNm || '', modernRoute: item.modernRoute || '', menuDc: item.menuDc || '', id: item.menuNo, useYn: item.useYn || 'Y'
+        menuNo: item.menuNo, menuOrdr: idx + 1, upMenuSn: item.parentId === 0 ? null : item.parentId, menuNm: item.menuNm, prgrmFileNm: item.prgrmFileNm || '', modernRoute: item.modernRoute || '', menuExpln: item.menuExpln ?? item.menuDc ?? '', id: item.menuNo, useYn: item.useYn || 'Y'
       }));
       const res = await updateMenuOrdersAction(submitData as any);
       if (res.success) { toast(res.message, 'success'); setHasChanges(false); router.refresh(); }
@@ -564,6 +565,45 @@ export default function MenuAdminClient({
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-foreground ml-1">메뉴 명칭 *</FormLabel>
                   <FormControl><Input {...field} className="h-11 rounded-lg font-bold px-5" placeholder="메뉴 이름 입력" /></FormControl>
+                  <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
+                </FormItem>
+              )}
+            />
+            {/*
+              라우트·설명 입력이 아예 없어서, 신규 등록한 메뉴는 클릭해도 이동하지 않는 죽은 메뉴가 됐고
+              설명(menu_expln)은 화면에서 채울 방법 자체가 없었다. 두 필드를 노출한다.
+            */}
+            <ShadcnFormField
+              control={form.control} name="modernRoute"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold text-foreground ml-1">연결 라우트</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      value={field.value ?? ''}
+                      className="h-11 rounded-lg font-bold px-5"
+                      placeholder="/admin/system/menus 형식으로 입력 (비우면 그룹 노드)"
+                    />
+                  </FormControl>
+                  <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
+                </FormItem>
+              )}
+            />
+            <ShadcnFormField
+              control={form.control} name="menuExpln"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold text-foreground ml-1">메뉴 설명</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      value={field.value ?? ''}
+                      rows={2}
+                      className="rounded-lg font-semibold px-5 py-3"
+                      placeholder="메뉴의 용도를 입력합니다 (선택)"
+                    />
+                  </FormControl>
                   <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
                 </FormItem>
               )}

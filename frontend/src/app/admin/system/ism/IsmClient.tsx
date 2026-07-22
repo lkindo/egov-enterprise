@@ -7,16 +7,19 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { ismAdminService, InfrmlSanctn } from '@/services/foundation/system/IsmAdminService';
+import {
+ ismAdminService,
+ InformalSanctionDto,
+ SANCTION_STATUS,
+ isSanctionPending,
+} from '@/services/foundation/system/IsmAdminService';
 import { useToast } from '@/app/components/ui/toast';
-import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { ShieldCheck, 
- FileText, 
- CheckCircle2, 
- XCircle, 
- Clock, 
- Trash2, 
- Activity, 
+import { ShieldCheck,
+ FileText,
+ CheckCircle2,
+ XCircle,
+ Clock,
+ Activity,
  Terminal, 
  Cpu, 
  Fingerprint, 
@@ -53,13 +56,12 @@ type IsmFormValues = z.infer<typeof ismSchema>;
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
-export default function IsmClient({ initialData }: { initialData: { list: InfrmlSanctn[] } }) {
+export default function IsmClient({ initialData }: { initialData: { list: InformalSanctionDto[] } }) {
  const router = useRouter();
  const { toast } = useToast();
- const confirm = useConfirm();
 
  const [isModalOpen, setIsOpen] = useState(false);
- const [selectedSanctn, setSelectedSanctn] = useState<InfrmlSanctn | null>(null);
+ const [selectedSanctn, setSelectedSanctn] = useState<InformalSanctionDto | null>(null);
  const [loading, setLoading] = useState(false);
 
  const form = useAppForm(ismSchema, {
@@ -70,7 +72,7 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
 
  const ismList = initialData.list || [];
 
- const handleOpenConfirm = (sanctn: InfrmlSanctn) => {
+ const handleOpenConfirm = (sanctn: InformalSanctionDto) => {
  setSelectedSanctn(sanctn);
  form.reset({
  rjctRsnCn: ''
@@ -78,12 +80,12 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  setIsOpen(true);
  };
 
- const onFormSubmit = async (values: IsmFormValues, status: 'C' | 'R') => {
- if (!selectedSanctn) return;
+ const onFormSubmit = async (values: IsmFormValues, aprvYn: 'C' | 'R') => {
+ if (!selectedSanctn?.ifmlAtrzId) return;
  try {
  setLoading(true);
- await ismAdminService.confirmInfrmlSanctn(selectedSanctn.infrmlSanctnId, status, values.rjctRsnCn);
- toast(`결재 시퀀스가 ${status === 'C' ? '성공적으로 승인' : '반려'} 처리되었습니다.`, 'success');
+ await ismAdminService.confirmInfrmlSanctn(selectedSanctn.ifmlAtrzId, aprvYn, values.rjctRsnCn);
+ toast(`결재 시퀀스가 ${aprvYn === SANCTION_STATUS.APPROVED ? '성공적으로 승인' : '반려'} 처리되었습니다.`, 'success');
  setIsOpen(false);
  router.refresh();
  } catch (error) {
@@ -93,56 +95,37 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  }
  };
 
- const handleDeleteIsm = async (id: string, name: string) => {
-    const isConfirmed = await confirm({
-      title: '결재 시퀀스 삭제',
-      message: `[${name}] 결재 요청 데이터를 정말로 데이터베이스에서 영구 삭제하시겠습니까?`,
-      confirmText: '삭제',
-      cancelText: '취소',
-      variant: 'destructive',
-    });
+ // [삭제 버튼 제거] 서버는 '신청자 본인 + 신청(A) 상태'에서만 삭제를 허용한다.
+ // 본 화면은 결재 대기함(type=received, 결재자 시점)이므로 삭제는 구조적으로 항상 403이며
+ // 결재함의 유효 동작이 아니다. 삭제는 신청함 화면의 책임으로 남긴다.
 
-    if (!isConfirmed) return;
-
-    try {
-      setLoading(true);
-      await ismAdminService.deleteInfrmlSanctn(id);
-      toast('성공적으로 삭제되었습니다.', 'success');
-      router.refresh();
-    } catch (error) {
-      toast('삭제 처리 중 오류가 발생했습니다.', 'error');
-    } finally {
-      setLoading(false);
-    }
-  };
-
- const columns: Column<InfrmlSanctn>[] = [
+ const columns: Column<InformalSanctionDto>[] = [
  {
  header: '도메인 및 아키텍처',
- accessor: (item: InfrmlSanctn) => (
+ accessor: (item: InformalSanctionDto) => (
  <div className="flex items-center gap-5 py-4">
  <div className="w-12 h-12 rounded-lg bg-surface-inverse flex items-center justify-center text-white/40 shadow-xl group-hover:scale-110 transition-transform">
  <Layers size={18} />
  </div>
  <div className="flex flex-col gap-1 text-left">
  <span className="px-3 py-1 bg-muted text-foreground rounded-lg text-xs font-bold tracking-tight border border-border w-fit">
- {(item?.jobSe || item?.jobSeCode) || 'STATIC_NODE'}
+ {item?.taskSeCd || 'STATIC_NODE'}
  </span>
- <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item?.sancltNm || 'Untitled Sequence'}</span>
+ <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item?.taskSeNm || item?.taskSeCd || 'Untitled Sequence'}</span>
  </div>
  </div>
  )
  },
  {
  header: '결재 아이덴티티',
- accessor: (item: InfrmlSanctn) => (
+ accessor: (item: InformalSanctionDto) => (
  <div className="flex items-center gap-4">
  <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground shadow-inner group-hover:bg-primary/5 group-hover:text-primary transition-colors">
  <Fingerprint size={16} />
  </div>
  <div className="flex flex-col text-left">
- <span className="text-sm font-bold text-foreground tracking-tight">{item?.applcntId || 'UNKNOWN'}</span>
- <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.3em] font-mono ">ID: {item?.infrmlSanctnId?.slice(0, 8) || 'N/A'}</span>
+ <span className="text-sm font-bold text-foreground tracking-tight">{item?.aplcntNm || item?.aplcntId || 'UNKNOWN'}</span>
+ <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.3em] font-mono ">ID: {item?.ifmlAtrzId?.slice(0, 8) || 'N/A'}</span>
  </div>
  </div>
  ),
@@ -150,11 +133,11 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  },
  {
  header: '결재 대기 (PENDING)',
- accessor: (item: InfrmlSanctn) => {
+ accessor: (item: InformalSanctionDto) => {
  let status: '활성' | 'DISABLED' | 'INACTIVE' = 'INACTIVE';
- if (item.confmAt === 'Y') status = '활성';
- if (item.confmAt === 'R') status = 'DISABLED';
- 
+ if (item.aprvYn === SANCTION_STATUS.APPROVED) status = '활성';
+ if (item.aprvYn === SANCTION_STATUS.REJECTED) status = 'DISABLED';
+
  return (
  <HubStatusBadge 
  status={status} 
@@ -167,24 +150,18 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  {
  header: '관리 조정',
  className: 'text-right w-48',
- accessor: (item: InfrmlSanctn) => (
+ accessor: (item: InformalSanctionDto) => (
  <div className="flex justify-end gap-3 pr-4">
- {(item.confmAt === 'N' || item.confmAt === 'A') && (
+ {isSanctionPending(item.aprvYn) ? (
  <Button
  onClick={() => handleOpenConfirm(item)}
  className="h-10 px-6 bg-surface-inverse text-surface-inverse-foreground rounded-lg text-xs font-bold tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl flex items-center gap-2 group"
  >
  <ShieldCheck size={16} className="group-hover:rotate-12 transition-transform" /> 승인 실행
  </Button>
+ ) : (
+ <span className="text-xs font-bold text-muted-foreground/50 tracking-widest uppercase">처리 완료</span>
  )}
- <Button
- variant="ghost"
- size="icon"
- className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all opacity-40 hover:opacity-100"
- onClick={() => handleDeleteIsm(item.infrmlSanctnId, item.sancltNm)}
- >
- <Trash2 size={16} />
- </Button>
  </div>
  )
  }
@@ -220,9 +197,9 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  />
 
  <HubMetricGrid>
- <HubMetricCard title="결재_대기_시퀀스" value={ismList.filter(i => i.confmAt === 'N' || i.confmAt === 'A').length} icon={Clock} color="amber" status="주의" />
- <HubMetricCard title="승인_자산_수" value={ismList.filter(i => i.confmAt === 'Y').length} icon={CheckCircle2} color="emerald" status="최적" />
- <HubMetricCard title="반려_로그_수" value={ismList.filter(i => i.confmAt === 'R').length} icon={XCircle} color="rose" />
+ <HubMetricCard title="결재_대기_시퀀스" value={ismList.filter(i => isSanctionPending(i.aprvYn)).length} icon={Clock} color="amber" status="주의" />
+ <HubMetricCard title="승인_자산_수" value={ismList.filter(i => i.aprvYn === SANCTION_STATUS.APPROVED).length} icon={CheckCircle2} color="emerald" status="최적" />
+ <HubMetricCard title="반려_로그_수" value={ismList.filter(i => i.aprvYn === SANCTION_STATUS.REJECTED).length} icon={XCircle} color="rose" />
  <HubMetricCard title="전체_의사결정_수" value={ismList.length} icon={FileText} color="primary" />
  </HubMetricGrid>
 
@@ -284,14 +261,14 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  <div className="flex w-full gap-4">
  <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">조사_취소</Button>
  <Button 
- onClick={form.handleSubmit((v) => onFormSubmit(v, 'R'))}
+ onClick={form.handleSubmit((v) => onFormSubmit(v, SANCTION_STATUS.REJECTED))}
  disabled={loading}
  className="flex-1 h-11 bg-rose-50 text-rose-500 rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-rose-500 hover:text-white transition-all active:scale-95 border-2 border-rose-100 flex items-center justify-center gap-3"
  >
  <XCircle size={18} strokeWidth={3} /> 시퀀스 반려
  </Button>
  <Button
- onClick={form.handleSubmit((v) => onFormSubmit(v, 'C'))}
+ onClick={form.handleSubmit((v) => onFormSubmit(v, SANCTION_STATUS.APPROVED))}
  disabled={loading}
  className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-2 hover:bg-primary transition-all active:scale-95 group"
  >
@@ -310,14 +287,14 @@ export default function IsmClient({ initialData }: { initialData: { list: Infrml
  </div>
  <span className="text-xs text-primary/60 font-bold tracking-[0.4em] uppercase">Target_Sequence_Probe</span>
  </div>
- <h4 className="text-3xl font-bold text-surface-inverse-foreground tracking-tighter uppercase leading-tight">{selectedSanctn?.sancltNm}</h4>
+ <h4 className="text-3xl font-bold text-surface-inverse-foreground tracking-tighter uppercase leading-tight">{selectedSanctn?.taskSeNm || selectedSanctn?.taskSeCd}</h4>
  <div className="flex items-center gap-6 pt-4 border-t border-white/5">
  <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-lg border border-white/5">
  <User size={14} className="text-muted-foreground" />
- <span className="text-xs font-bold text-surface-inverse-muted uppercase tracking-widest">{selectedSanctn?.applcntId}</span>
+ <span className="text-xs font-bold text-surface-inverse-muted uppercase tracking-widest">{selectedSanctn?.aplcntNm || selectedSanctn?.aplcntId}</span>
  </div>
  <div className="flex items-center gap-3">
- <span className="text-xs font-bold text-white/20 tracking-[0.3em] font-mono uppercase ">UUID: {selectedSanctn?.infrmlSanctnId}</span>
+ <span className="text-xs font-bold text-white/20 tracking-[0.3em] font-mono uppercase ">UUID: {selectedSanctn?.ifmlAtrzId}</span>
  </div>
  </div>
  </div>

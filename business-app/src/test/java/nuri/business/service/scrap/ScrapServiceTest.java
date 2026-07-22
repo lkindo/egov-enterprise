@@ -3,11 +3,14 @@ package nuri.business.service.scrap;
 import nuri.business.domain.scrap.Scrap;
 import nuri.business.domain.scrap.ScrapRepository;
 import nuri.business.service.scrap.dto.ScrapDto;
+import nuri.business.service.scrap.dto.ScrapMapper;
+import nuri.business.service.scrap.dto.ScrapMapperImpl;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -17,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
@@ -36,6 +38,10 @@ class ScrapServiceTest {
 
     @Mock
     private ScrapRepository scrapRepository;
+
+    // 매핑은 실제 MapStruct 구현으로 검증한다(모킹 시 URL/설명 누락 회귀를 잡지 못함).
+    @Spy
+    private ScrapMapper scrapMapper = new ScrapMapperImpl();
 
     @InjectMocks
     private ScrapService scrapService;
@@ -56,10 +62,10 @@ class ScrapServiceTest {
     }
 
     @Test
-    @DisplayName("스크랩 상세 조회")
+    @DisplayName("스크랩 상세 조회 — 응답에 URL·설명이 포함된다")
     void getScrap_Success() {
         // Given
-        Scrap entity = Scrap.builder().scrapId("S1").build();
+        Scrap entity = Scrap.builder().scrapId("S1").scrapUrl("https://example.com").scrapExpln("설명").build();
         given(scrapRepository.findById("S1")).willReturn(Optional.of(entity));
 
         // When
@@ -67,26 +73,60 @@ class ScrapServiceTest {
 
         // Then
         assertThat(result.getScrapId()).isEqualTo("S1");
+        assertThat(result.getScrapUrl()).isEqualTo("https://example.com"); // [회귀가드] 과거 convertToDto 누락
+        assertThat(result.getScrapExpln()).isEqualTo("설명");
     }
 
     @Test
-    @DisplayName("스크랩 등록")
+    @DisplayName("스크랩 등록 — URL·설명·사용여부가 저장 엔티티까지 전달된다")
     void createScrap_Success() throws Exception {
         // Given
-        ScrapDto dto = ScrapDto.builder().scrapNm("New").build();
+        ScrapDto dto = ScrapDto.builder()
+                .scrapNm("New")
+                .scrapUrl("https://example.com")
+                .scrapExpln("설명")
+                .useYn("Y")
+                .build();
 
         // when
         scrapService.createScrap("user1", dto);
 
         // then
-        verify(scrapRepository).save(any(Scrap.class));
+        org.mockito.ArgumentCaptor<Scrap> captor = org.mockito.ArgumentCaptor.forClass(Scrap.class);
+        verify(scrapRepository).save(captor.capture());
+        Scrap saved = captor.getValue();
+        assertThat(saved.getScrapId()).startsWith("SCRAP_");
+        assertThat(saved.getScrapNm()).isEqualTo("New");
+        assertThat(saved.getScrapUrl()).isEqualTo("https://example.com"); // [회귀가드] 과거 builder 누락으로 항상 null
+        assertThat(saved.getScrapExpln()).isEqualTo("설명");
+        assertThat(saved.getUseYn()).isEqualTo("Y");
     }
 
     @Test
-    @DisplayName("스크랩 수정")
+    @DisplayName("스크랩 수정 — DTO 값이 실제로 반영된다")
     void updateScrap_Success() {
         // Given
-        Scrap entity = Scrap.builder().scrapId("S1").build();
+        Scrap entity = Scrap.builder().scrapId("S1").scrapNm("Old").scrapUrl("https://old.example.com")
+                .scrapExpln("옛 설명").useYn("Y").build();
+        given(scrapRepository.findById("S1")).willReturn(Optional.of(entity));
+        ScrapDto dto = ScrapDto.builder().scrapId("S1").scrapNm("Updated")
+                .scrapUrl("https://new.example.com").scrapExpln("새 설명").useYn("Y").build();
+
+        // when
+        scrapService.updateScrap("user1", dto);
+
+        // Then
+        assertThat(entity.getScrapNm()).isEqualTo("Updated");
+        assertThat(entity.getScrapUrl()).isEqualTo("https://new.example.com"); // [회귀가드] 과거 자기값 재대입으로 무동작
+        assertThat(entity.getScrapExpln()).isEqualTo("새 설명");
+        assertThat(entity.getUseYn()).isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("스크랩 수정 — useYn 미전달 시 기존 값 보존(목록에서 증발 방지)")
+    void updateScrap_KeepsUseYnWhenAbsent() {
+        // Given
+        Scrap entity = Scrap.builder().scrapId("S1").scrapNm("Old").useYn("Y").build();
         given(scrapRepository.findById("S1")).willReturn(Optional.of(entity));
         ScrapDto dto = ScrapDto.builder().scrapId("S1").scrapNm("Updated").build();
 
@@ -94,7 +134,7 @@ class ScrapServiceTest {
         scrapService.updateScrap("user1", dto);
 
         // Then
-        assertThat(entity.getScrapNm()).isEqualTo("Updated");
+        assertThat(entity.getUseYn()).isEqualTo("Y");
     }
 
     @Test

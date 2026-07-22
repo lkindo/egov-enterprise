@@ -78,8 +78,13 @@ export default function PolicyAdminClient() {
 
  const onFormSubmit = async (values: PolicyFormValues) => {
  if (!selectedPolicy) return;
+ // 정책 유형 코드가 없으면 PUT 경로가 잘못 구성되므로 사전 차단한다.
+ if (!selectedPolicy.plcyTypeCd) {
+ toast.error('정책 유형 코드가 없어 저장할 수 없습니다.');
+ return;
+ }
  try {
- await policyAdminService.updatePolicy(selectedPolicy.plcyTypeCd || '', {
+ await policyAdminService.updatePolicy(selectedPolicy.plcyTypeCd, {
  plcyTtl: values.plcyTtl,
  plcyCn: values.plcyCn
  });

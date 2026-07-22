@@ -16,11 +16,7 @@ import { ShieldCheck,
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
-interface Author {
- authorCode: string;
- authorNm: string;
-}
+import type { AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 
 interface Menu {
  menuNo: number;
@@ -29,10 +25,15 @@ interface Menu {
 }
 
 interface SecurityMatrixVisualizerProps {
- authors: Author[];
+ /**
+  * 권한(역할) 목록. 축은 authrtCd 하나뿐이다.
+  * 과거 이 컴포넌트만 {authorCode,authorNm}이라는 존재하지 않는 계약을 선언해
+  * 헤더 공백·전 셀 DENIED·undefined 키 저장을 유발했다. AuthorInfo(=서버 계약)로 통일한다.
+  */
+ authors: AuthorInfo[];
  menus: Menu[];
- mappings: Map<string, Set<number>>; // authorCode -> set of menuNos
- onToggle: (authorCode: string, menuNo: number) => void;
+ mappings: Map<string, Set<number>>; // authrtCd -> set of menuNos
+ onToggle: (authrtCd: string, menuNo: number) => void;
  onSave: () => void;
  isSaving?: boolean;
 }
@@ -138,17 +139,21 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <span className="text-xs font-bold text-white/40 tracking-[0.4em] uppercase ">Entity_Map</span>
  </div>
  </th>
- {authors.map((auth) => (
- <th key={auth.authorCode} className="p-8 bg-muted/50 min-w-[150px] transition-colors hover:bg-muted">
+ {authors.map((auth) => {
+ const code = auth.authrtCd;
+ const name = auth.authrtNm;
+ return (
+ <th key={code} className="p-8 bg-muted/50 min-w-[150px] transition-colors hover:bg-muted">
  <div className="flex flex-col items-center gap-2 group/header cursor-pointer">
  <div className="w-10 h-10 rounded-lg bg-white border-2 border-border flex items-center justify-center text-muted-foreground transition-all group-hover/header:bg-slate-900 group-hover/header:text-white group-hover/header:scale-110 shadow-sm">
  <Lock size={14} />
  </div>
- <span className="text-xs font-bold text-foreground tracking-tighter truncate w-full text-center">{auth.authorNm}</span>
- <span className="text-xs font-bold text-muted-foreground tracking-widest font-mono uppercase">{auth.authorCode}</span>
+ <span className="text-xs font-bold text-foreground tracking-tighter truncate w-full text-center">{name}</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-widest font-mono uppercase">{code}</span>
  </div>
  </th>
- ))}
+ );
+ })}
  </tr>
  </thead>
  <tbody className="divide-y-2 divide-border">
@@ -169,16 +174,17 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </div>
  </td>
  {authors.map((auth) => {
- const isSelected = mappings.get(auth.authorCode)?.has(menu.menuNo);
+ const code = auth.authrtCd;
+ const isSelected = mappings.get(code)?.has(menu.menuNo);
  return (
  <td 
- key={`${auth.authorCode}-${menu.menuNo}`} 
+ key={`${code}-${menu.menuNo}`} 
  className="p-1 min-w-[150px]"
  >
  <motion.button
  whileHover={{ scale: 0.98 }}
  whileTap={{ scale: 0.95 }}
- onClick={() => onToggle(auth.authorCode, menu.menuNo)}
+ onClick={() => onToggle(code, menu.menuNo)}
  className={cn(
  "w-full h-11 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden group/cell",
  isSelected 

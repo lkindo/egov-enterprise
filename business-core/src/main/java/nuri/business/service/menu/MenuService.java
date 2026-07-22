@@ -311,10 +311,14 @@ public class MenuService {
     @Transactional
     @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
     public void insertMenuManage(@NonNull MenuDto vo) {
-        if (vo.getPrgrmFileNm() != null && !programRepository.existsById(vo.getPrgrmFileNm())) {
+        // FE 가 "연결 프로그램 없음"을 빈 문자열로 보내므로 null 로 정규화한다.
+        // (정규화하지 않으면 아래 existsById("") 가 false 라 PK 가 빈 문자열인 쓰레기 Program 행이 생성된다)
+        String prgrmFileNm = normalizePrgrmFileNm(vo.getPrgrmFileNm());
+
+        if (prgrmFileNm != null && !programRepository.existsById(prgrmFileNm)) {
             nuri.business.domain.program.Program p = nuri.business.domain.program.Program
                     .builder()
-                    .prgrmFileNm(vo.getPrgrmFileNm())
+                    .prgrmFileNm(prgrmFileNm)
                     .prgrmKornNm("자동생성메뉴(" + vo.getMenuNm() + ")")
                     .url(vo.getModernRoute())
                     .prgrmStrgPath("/auto-generated")
@@ -325,7 +329,7 @@ public class MenuService {
         Menu menu = Menu.builder()
                 .menuSn(vo.getMenuNo())
                 .menuNm(vo.getMenuNm())
-                .prgrmFileNm(vo.getPrgrmFileNm())
+                .prgrmFileNm(prgrmFileNm)
                 .upMenuSn(normalizeUpMenuSn(vo.getUpMenuSn()))
                 .menuOrdr(vo.getMenuOrdr())
                 .menuExpln(vo.getMenuExpln())
@@ -346,10 +350,34 @@ public class MenuService {
     public void updateMenuManage(@NonNull MenuDto vo) {
         Menu menu = menuRepository.findById(Objects.requireNonNull(vo.getMenuNo()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
-        menu.updateWithModernRoute(vo.getMenuNm(), vo.getPrgrmFileNm(), normalizeUpMenuSn(vo.getUpMenuSn()),
+        // Menu.update 는 null-safe 병합이다 — 전달되지 않은(null) 값은 기존 값을 유지하고, 빈 문자열이면 비운다.
+        menu.updateWithModernRoute(vo.getMenuNm(), normalizePrgrmFileNm(vo.getPrgrmFileNm()),
+                normalizeUpMenuSn(vo.getUpMenuSn()),
                 vo.getMenuOrdr(),
                 vo.getMenuExpln(),
                 vo.getRelImgPath(), vo.getRelImgNm(), vo.getModernRoute(), vo.getUseYn() != null ? vo.getUseYn() : "Y");
+    }
+
+    /**
+     * 메뉴 순서/계층 일괄 저장.
+     * <p>
+     * 트리 드래그 후 'Save Layout' 은 전 노드를 순회하므로, 전체 갱신(updateMenuManage)을 쓰면
+     * 페이로드에 없는 컬럼(menu_expln/rel_img_path/rel_img_nm)이 전 노드에서 한 번에 소실됐다.
+     * 정렬 저장은 상위메뉴/순서만 건드리도록 전용 경로로 분리한다.
+     */
+    @Transactional
+    @CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap", "allMenuDtos", "rootMenuIdByUrl" }, allEntries = true)
+    public void updateMenuOrders(@NonNull List<MenuDto> menuList) {
+        for (MenuDto vo : menuList) {
+            Long menuNo = vo.getMenuNo() != null ? vo.getMenuNo() : vo.getId();
+            if (menuNo == null) {
+                throw new BusinessException("메뉴 번호가 없는 항목은 순서를 저장할 수 없습니다.",
+                        CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            Menu menu = menuRepository.findById(menuNo)
+                    .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
+            menu.updateOrder(normalizeUpMenuSn(vo.getUpMenuSn()), vo.getMenuOrdr());
+        }
     }
 
     /**
@@ -359,6 +387,13 @@ public class MenuService {
      */
     private static Long normalizeUpMenuSn(Long upMenuSn) {
         return (upMenuSn != null && upMenuSn == 0L) ? null : upMenuSn;
+    }
+
+    /**
+     * 프로그램 미연결(빈 문자열) → null 정규화. FE 셀렉트의 "연결 없음" 선택이 빈 문자열로 오기 때문이다.
+     */
+    private static String normalizePrgrmFileNm(String prgrmFileNm) {
+        return (prgrmFileNm == null || prgrmFileNm.isBlank()) ? null : prgrmFileNm;
     }
 
 

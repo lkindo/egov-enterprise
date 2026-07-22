@@ -54,6 +54,13 @@ const item = {
   show: { y: 0, opacity: 1 }
 };
 
+/**
+ * 첨부 파일 허용 용량 기본값(5MB).
+ * 백엔드 BoardMasterDto 는 atchPsbltyFileSz 에 @NotNull 을 요구하지만 물리 컬럼은 nullable 이라
+ * 레거시 행은 null 일 수 있다. 생성 마법사(BoardMakerWizard)와 동일한 기본값으로 보정한다.
+ */
+const DEFAULT_ATCH_PSBLTY_FILE_SZ = 5242880;
+
 interface InsightCardProps {
   label: string;
   value: string;
@@ -73,6 +80,7 @@ export function BoardMasterListClient() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<BoardMaster | null>(null);
   const [editData, setEditData] = useState<Partial<BoardMaster>>({});
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
 
   const { data: boardData, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['boardMasters', searchWrd],
@@ -80,25 +88,74 @@ export function BoardMasterListClient() {
   });
   const boardList = (boardData?.list || []) as BoardMaster[];
 
-  const handleEdit = (board: BoardMaster) => {
-    setSelectedBoard(board);
-    setEditData({
-      bbsTtl: board.bbsTtl,
-      bbsExpln: board.bbsExpln,
-      useYn: board.useYn
-    });
-    setIsModalOpen(true);
+  /**
+   * 편집 모달 진입.
+   * 목록 API 의 프로젝션(BoardMasterService#toDto)은 bbsId/bbsTtl/bbsTypeCd/bbsAtrbCd/tmpltId/useYn/crtDt 만 담고
+   * bbsExpln·atchPsbltyFileSz 등은 누락한다. 따라서 상세 조회로 전체 필드를 확보한 뒤 시드해야
+   * 저장 시 필수 필드(@NotBlank bbsTypeCd/bbsAtrbCd, @NotNull atchPsbltyFileSz)가 유실되지 않는다.
+   */
+  const handleEdit = async (board: BoardMaster) => {
+    if (!board.bbsId) return;
+    setIsDetailLoading(true);
+    try {
+      const detail = await boardAdminService.getBoardMaster(board.bbsId);
+      setSelectedBoard(detail);
+      setEditData({ ...detail });
+    } catch (err: any) {
+      // 상세 조회 실패 시에도 편집은 가능하게 하되, 목록 값만으로는 필수 필드가 부족할 수 있음을 알린다.
+      setSelectedBoard(board);
+      setEditData({ ...board });
+      toast(err?.message || '게시판 상세 정보를 불러오지 못했습니다. 일부 설정이 누락된 상태로 표시됩니다.', 'error');
+    } finally {
+      setIsDetailLoading(false);
+      setIsModalOpen(true);
+    }
   };
 
   const handleSave = async () => {
     if (!selectedBoard || !selectedBoard.bbsId) return;
+
+    // 백엔드 BoardMasterDto 는 bbsTypeCd/bbsAtrbCd(@NotBlank), atchPsbltyFileSz(@NotNull), useYn(@NotBlank) 을
+    // 모두 요구한다. 모달이 편집하는 3개 필드만 보내면 @Valid 단계에서 항상 400 이 떨어지므로 기존 값을 병합한다.
+    // 단, spring.jackson `fail-on-unknown-properties: true` 이고 crtDt/mdfcnDt 는 LocalDateTime 이므로
+    // 응답 객체를 통째로 되돌려보내지 않고 서버가 실제로 사용하는 필드만 명시적으로 조립한다.
+    const merged = { ...selectedBoard, ...editData };
+    const payload: Partial<BoardMaster> = {
+      bbsId: selectedBoard.bbsId,
+      bbsTtl: merged.bbsTtl,
+      bbsExpln: merged.bbsExpln,
+      bbsTypeCd: merged.bbsTypeCd,
+      bbsAtrbCd: merged.bbsAtrbCd,
+      ansPsbltyYn: merged.ansPsbltyYn,
+      fileAtchPsbltyYn: merged.fileAtchPsbltyYn,
+      atchPsbltyFileQty: merged.atchPsbltyFileQty,
+      atchPsbltyFileSz: merged.atchPsbltyFileSz ?? DEFAULT_ATCH_PSBLTY_FILE_SZ,
+      tmpltId: merged.tmpltId,
+      useYn: merged.useYn,
+      ansYn: merged.ansYn,
+      stsfdgYn: merged.stsfdgYn
+    };
+
+    const missingFields = [
+      !payload.bbsTtl?.trim() ? '게시판 명칭' : null,
+      !payload.bbsTypeCd ? '게시판 유형 코드(bbsTypeCd)' : null,
+      !payload.bbsAtrbCd ? '게시판 속성 코드(bbsAtrbCd)' : null,
+      !payload.useYn ? '사용 여부' : null
+    ].filter(Boolean) as string[];
+
+    if (missingFields.length > 0) {
+      toast(`필수 항목이 누락되어 저장할 수 없습니다: ${missingFields.join(', ')}. 생성 마법사에서 게시판 기본 설정을 먼저 완료해주십시오.`, 'error');
+      return;
+    }
+
     try {
-      await boardAdminService.updateBoardMaster(selectedBoard.bbsId, editData);
+      await boardAdminService.updateBoardMaster(selectedBoard.bbsId, payload);
       toast('게시판 설정이 업데이트되었습니다.', 'success');
       setIsModalOpen(false);
       refetch();
-    } catch (error) {
-      toast('업데이트 중 오류가 발생했습니다.', 'error');
+    } catch (err: any) {
+      // client.ts 인터셉터가 백엔드 message 를 Error.message 로 승격하므로 그대로 노출해 원인이 보이게 한다.
+      toast(err?.message || '업데이트 중 오류가 발생했습니다.', 'error');
     }
   };
 
@@ -211,10 +268,13 @@ export function BoardMasterListClient() {
       header: '작업 컨트롤',
       accessor: (board: BoardMaster) => (
         <div className="flex items-center justify-end gap-3 pr-6">
-          <Button 
-            onClick={() => handleEdit(board)}
-            size="icon" 
-            variant="ghost" 
+          <Button
+            onClick={() => void handleEdit(board)}
+            disabled={isDetailLoading}
+            size="icon"
+            variant="ghost"
+            title="게시판 설정 편집"
+            aria-label="게시판 설정 편집"
             className="w-12 h-12 rounded-lg text-muted-foreground hover:bg-primary hover:text-white transition-all shadow-sm"
           >
             <Settings2 size={20} />

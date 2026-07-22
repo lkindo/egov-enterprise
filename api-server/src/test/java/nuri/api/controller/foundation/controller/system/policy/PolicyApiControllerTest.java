@@ -13,8 +13,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.Mockito.when;
@@ -64,7 +62,9 @@ class PolicyApiControllerTest {
 
         mockMvc.perform(get("/api/v1/admin/system/policies/copyright"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.title").value("저작권"));
+                .andExpect(jsonPath("$.data.plcyTtl").value("저작권"))
+                .andExpect(jsonPath("$.data.plcyCn").value("내용"))
+                .andExpect(jsonPath("$.data.plcyTypeCd").value("copyright"));
     }
 
     @Test
@@ -74,7 +74,7 @@ class PolicyApiControllerTest {
 
         mockMvc.perform(get("/api/v1/admin/system/policies/copyright"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.title").value("저작권 보호 정책"));
+                .andExpect(jsonPath("$.data.plcyTtl").value("저작권 보호 정책"));
     }
 
     @Test
@@ -84,19 +84,34 @@ class PolicyApiControllerTest {
 
         mockMvc.perform(get("/api/v1/admin/system/policies/privacy"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.title").value("개인정보 처리 방침"));
+                .andExpect(jsonPath("$.data.plcyTtl").value("개인정보 처리 방침"));
     }
 
     @Test
-    @DisplayName("정책 수정 성공")
+    @DisplayName("정책 수정 성공 - 화면 계약(plcyTtl/plcyCn)")
     void testUpdatePolicy() throws Exception {
-        Map<String, String> policyMap = new HashMap<>();
-        policyMap.put("title", "New Title");
-        policyMap.put("content", "New Content");
+        mockMvc.perform(put("/api/v1/admin/system/policies/copyright")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"plcyTtl\":\"New Title\", \"plcyCn\":\"New Content\"}"))
+                .andExpect(status().isOk());
 
+        org.mockito.Mockito.verify(policyService).updatePolicy("copyright", "New Title", "New Content");
+    }
+
+    @Test
+    @DisplayName("[회귀] 구(舊) 계약(title/content)은 400 — 본문 무음 소실 재발 차단")
+    void testUpdatePolicy_legacyPayloadRejected() throws Exception {
+        // 과거 컨트롤러는 Map 으로 title/content 를 읽어, 화면이 보내는 plcyTtl/plcyCn 을
+        // 조용히 버리고 제목=타입코드·본문=빈문자열로 덮어썼다(성공 토스트까지 떴다).
+        // 이제는 계약 불일치가 400 으로 드러나야 한다.
         mockMvc.perform(put("/api/v1/admin/system/policies/copyright")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("{\"title\":\"New Title\", \"content\":\"New Content\"}"))
-                .andExpect(status().isOk());
+                .andExpect(status().isBadRequest());
+
+        org.mockito.Mockito.verify(policyService, org.mockito.Mockito.never())
+                .updatePolicy(org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.anyString(),
+                        org.mockito.ArgumentMatchers.anyString());
     }
 }

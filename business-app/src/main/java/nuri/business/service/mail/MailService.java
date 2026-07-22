@@ -25,17 +25,17 @@ public class MailService {
     private final SentMailRepository sentMailRepository;
     private final MailAsyncProcessor mailAsyncProcessor;
 
+    /** 제목 키워드 조회. 검색조건 "1"(제목)로 위임하여 발신자 스코프가 동일하게 적용되도록 한다. */
     public Page<SentMailDto> getSentMailList(String keyword, Pageable pageable) {
-        log.debug("Fetching sent mail list with keyword: {}", keyword);
-        if (keyword == null || keyword.isEmpty()) {
-            return sentMailRepository.findAll(Objects.requireNonNull(pageable)).map(SentMailDto::from);
-        }
-        return sentMailRepository.findBySjContaining(keyword, Objects.requireNonNull(pageable)).map(SentMailDto::from);
+        return getSentMailList("1", keyword, Objects.requireNonNull(pageable));
     }
 
     public Page<SentMailDto> getSentMailList(String searchCondition, String searchKeyword, Pageable pageable) {
         log.debug("Searching sent mails with condition: {}, keyword: {}", searchCondition, searchKeyword);
-        return sentMailRepository.searchSentMails(searchCondition, searchKeyword, Objects.requireNonNull(pageable))
+        // [IDOR] 일반 사용자는 자신이 발송한 건만, 관리자는 전건 — 발송메일 전건 노출 차단
+        String senderLoginId = resolveSenderScope();
+        return sentMailRepository
+                .searchSentMails(senderLoginId, searchCondition, searchKeyword, Objects.requireNonNull(pageable))
                 .map(SentMailDto::from);
     }
 
@@ -43,7 +43,25 @@ public class MailService {
         log.debug("Fetching mail details for ID: {}", mssageId);
         SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(mssageId))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(sentMail.getFrstRgtrId()); // [IDOR] 발신자/관리자만 열람
         return SentMailDto.from(sentMail);
+    }
+
+    /**
+     * 발송메일 조회 스코프를 결정한다. 관리자(ADMIN/SYSTEM)는 전건({@code null}),
+     * 일반 사용자는 자신의 loginId 로 한정한다.
+     *
+     * <p>소유 축은 감사 컬럼 {@code frstRgtrId}(=loginId, {@code LoginUserAuditorAware})이며
+     * esntlId 가 아니다. — 백엔드 헌법 제8조(서비스 레이어 권한 재검증)</p>
+     */
+    private String resolveSenderScope() {
+        if (nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)
+                || nuri.business.security.util.SecurityUtil
+                        .hasRole(nuri.business.security.AuthorityConstants.ROLE_SYSTEM)) {
+            return null;
+        }
+        return nuri.business.security.util.SecurityUtil.getCurrentLoginId()
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
     }
 
     @Transactional
@@ -87,6 +105,7 @@ public class MailService {
     public void deleteMail(String mssageId) {
         SentMail sentMail = sentMailRepository.findById(Objects.requireNonNull(mssageId))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(sentMail.getFrstRgtrId()); // [IDOR] 발신자/관리자만 삭제
         sentMailRepository.delete(Objects.requireNonNull(sentMail));
     }
 }

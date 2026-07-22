@@ -60,54 +60,19 @@ class MenuUserApiControllerTest {
     }
 
     @Test
-    @DisplayName("메뉴 목록 테스트 - DTO 반환 성공")
-    void getRawMenus_Success() throws Exception {
-        given(menuService.getAllMenus()).willReturn(new ArrayList<>());
+    @DisplayName("[보안] 권한 필터를 우회하던 디버그 덤프 핸들러가 컨트롤러에 존재하지 않는다")
+    void debugDumpEndpoints_Removed() {
+        // /test/raw·/test/programs 는 인증만 통과하면 비활성 메뉴·관리자 전용 라우트와 전체 프로그램을
+        // 그대로 덤프해 정찰 창구가 됐다. 재추가 방지 가드.
+        // (standalone MockMvc 는 미매핑 경로에 404 가 아닌 500 을 내므로 요청이 아니라 매핑 자체를 검사한다)
+        boolean hasDebugMapping = java.util.Arrays.stream(MenuUserApiController.class.getDeclaredMethods())
+                .map(m -> m.getAnnotation(org.springframework.web.bind.annotation.GetMapping.class))
+                .filter(java.util.Objects::nonNull)
+                .flatMap(a -> java.util.Arrays.stream(a.value()))
+                .anyMatch(path -> path.contains("/test"));
 
-        mockMvc.perform(get("/api/v1/menus/test/raw"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.code").exists())
-                .andExpect(jsonPath("$.data.count").value(0))
-                .andExpect(jsonPath("$.data.menus").exists());
-    }
-
-    @Test
-    @DisplayName("메뉴 목록 테스트 - DTO 반환 실패")
-    void getRawMenus_Fail() throws Exception {
-        given(menuService.getAllMenus()).willThrow(new RuntimeException("Error"));
-
-        mockMvc.perform(get("/api/v1/menus/test/raw"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.status").value(500))
-                .andExpect(jsonPath("$.code").exists());
-    }
-
-    @Test
-    @DisplayName("프로그램 목록 테스트 - DTO 반환 성공")
-    void getPrograms_Success() throws Exception {
-        given(menuService.getAllPrograms()).willReturn(new ArrayList<>());
-
-        mockMvc.perform(get("/api/v1/menus/test/programs"))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.status").value(200))
-                .andExpect(jsonPath("$.code").exists())
-                .andExpect(jsonPath("$.data.count").value(0))
-                .andExpect(jsonPath("$.data.programs").exists());
-    }
-
-    @Test
-    @DisplayName("프로그램 목록 테스트 - DTO 반환 실패")
-    void getPrograms_Fail() throws Exception {
-        given(menuService.getAllPrograms()).willThrow(new RuntimeException("Error"));
-
-        mockMvc.perform(get("/api/v1/menus/test/programs"))
-                .andExpect(status().isInternalServerError())
-                .andExpect(jsonPath("$.success").value(false))
-                .andExpect(jsonPath("$.status").value(500))
-                .andExpect(jsonPath("$.code").exists());
+        org.assertj.core.api.Assertions.assertThat(hasDebugMapping)
+                .as("컨트롤러 매핑 경로에 /test 세그먼트가 있으면 디버그 엔드포인트가 되살아난 것이다")
+                .isFalse();
     }
 }

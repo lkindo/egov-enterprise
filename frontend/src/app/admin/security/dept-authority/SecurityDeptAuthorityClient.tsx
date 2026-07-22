@@ -33,27 +33,40 @@ import { motion, AnimatePresence } from 'framer-motion';
 const DEPTS_KEY = ['admin', 'departments'] as const;
 const ROLES_KEY = ['admin', 'authorities'] as const;
 
+/**
+ * 부서 선택기는 전량이 있어야 한다(클라이언트 필터로 좁히는 UI). 서버 기본값(size=10)이면
+ * 11번째 부서부터는 선택 자체가 불가능하다 — 충분히 큰 size 로 한 번에 받는다.
+ */
+const DEPT_LIST_SIZE = 1000;
+/** 권한 그룹 목록은 서버(BaseSearchDto) 기본 페이지 크기와 동일하게 페이징한다. */
+const ROLE_PAGE_SIZE = 10;
+
 export default function SecurityDeptAuthorityClient() {
  const queryClient = useQueryClient();
  const { toast } = useToast();
  const [selectedDept, setSelectedDept] = useState<string | null>(null);
  const [searchKeyword, setSearchKeyword] = useState('');
  const [selectedAuthorCode, setSelectedAuthorCode] = useState<string | null>(null);
+ const [rolePage, setRolePage] = useState(1);
 
  const { data: deptsData, isLoading: deptsLoading } = useQuery({
- queryKey: DEPTS_KEY,
- queryFn: () => deptAdminService.getDeptList(),
+ queryKey: [...DEPTS_KEY, DEPT_LIST_SIZE],
+ // 서버는 keyword + Spring Pageable(page/size, 0-based)을 읽는다.
+ queryFn: () => deptAdminService.getDeptList({ page: 0, size: DEPT_LIST_SIZE }),
  staleTime: 5 * 60 * 1000,
  });
 
  const { data: rolesData, isLoading: rolesLoading } = useQuery({
- queryKey: ROLES_KEY,
- queryFn: () => authorAdminService.getAuthorList(),
+ queryKey: [...ROLES_KEY, rolePage],
+ // 서버는 @ModelAttribute BaseSearchDto(pageIndex 1-based / pageUnit)로 받는다.
+ // pageIndex 직접 계산은 금지 — AuthorAdminService/ApiService 의 page(0-based) 자동 매핑에 위임한다.
+ queryFn: () => authorAdminService.getAuthorList({ page: rolePage - 1, pageUnit: ROLE_PAGE_SIZE }),
  staleTime: 5 * 60 * 1000,
  });
 
- const depts: Department[] = (deptsData as any)?.list || (deptsData as any)?.resultList || deptsData || [];
- const roles: AuthorInfo[] = (rolesData as any)?.list || (rolesData as any)?.resultList || rolesData || [];
+ const depts: Department[] = deptsData?.list || [];
+ const roles: AuthorInfo[] = rolesData?.list || [];
+ const rolesTotalPage = rolesData?.totalPage || 1;
 
  const filteredDepts = depts.filter(d =>
  String(d.ognzNm || '').toLocaleLowerCase().includes(searchKeyword.toLocaleLowerCase()) ||
@@ -169,8 +182,9 @@ export default function SecurityDeptAuthorityClient() {
  />
 
  <HubMetricGrid>
- <HubMetricCard title="ACTIVE_RESOURCES" value={depts.length} icon={Building2} color="indigo" />
- <HubMetricCard title="AUTHORITY_SCHEMAS" value={roles.length} icon={Lock} color="primary" />
+ {/* 지표는 현재 페이지 길이가 아니라 서버 전체 건수(total) 기준 */}
+ <HubMetricCard title="ACTIVE_RESOURCES" value={deptsData?.total ?? depts.length} icon={Building2} color="indigo" />
+ <HubMetricCard title="AUTHORITY_SCHEMAS" value={rolesData?.total ?? roles.length} icon={Lock} color="primary" />
  <HubMetricCard title="SYNC_PROBE" value={selectedDept ? "DEPT_READY" : "IDLE"} icon={Activity} color="emerald" status="ONLINE" />
  <HubMetricCard title="TOPOLOGY_FLOW" value="STEADY" icon={Workflow} color="amber" />
  </HubMetricGrid>
@@ -304,6 +318,11 @@ export default function SecurityDeptAuthorityClient() {
         emptyMessage="시스템에 등록된 권한 그룹 정보가 없습니다."
         onRowClick={(item) => setSelectedAuthorCode(item.authrtCd)}
         className="border-none bg-transparent"
+        pagination={{
+          currentPage: rolePage,
+          totalPages: rolesTotalPage,
+          onPageChange: (p) => setRolePage(p)
+        }}
       />
     </div>
 

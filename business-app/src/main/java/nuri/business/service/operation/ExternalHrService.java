@@ -4,11 +4,12 @@ import nuri.business.domain.operation.ExternalHr;
 import nuri.business.repository.operation.ExternalHrRepository;
 import nuri.business.service.operation.dto.ExternalHrDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -17,16 +18,16 @@ public class ExternalHrService {
 
     private final ExternalHrRepository externalHrRepository;
 
-    public List<ExternalHrDto> getAllExternalHr() {
-        return externalHrRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    public List<ExternalHrDto> searchByName(String name) {
-        return externalHrRepository.findByOtsdHrNmContaining(name).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+    /**
+     * 외부인사 목록 조회(페이징). 성명(name)이 주어지면 부분일치 검색한다.
+     * 목록 응답은 컨트롤러에서 {@code PageResponse.of(...)} 로 표준화된다.
+     */
+    public Page<ExternalHrDto> getExternalHrList(String name, Pageable pageable) {
+        Pageable page = Objects.requireNonNull(pageable);
+        if (name == null || name.trim().isEmpty()) {
+            return externalHrRepository.findAll(page).map(this::convertToDto);
+        }
+        return externalHrRepository.findByOtsdHrNmContaining(name, page).map(this::convertToDto);
     }
 
     @Transactional

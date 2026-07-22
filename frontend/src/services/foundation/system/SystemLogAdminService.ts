@@ -1,20 +1,16 @@
 import { AdminService } from '@/services/core/ApiService';
 import { PageResponse,  SearchParams,  UserLog,  WebLog,  PrivacyLog,  TransferLog } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
+import type { components } from '@/types/generated-api';
 
-export interface SysLog {
-  requstId: string;
-  occcrrncDe: string;
-  srvcNm: string;
-  methodNm: string;
-  processSeCode: string;
-  processSeCodeNm: string;
-  processTime: string;
-  rqesterIp: string;
-  rqesterId: string;
-  rqsterNm: string;
-  trgetMenuNm?: string;
-}
+/**
+ * 시스템 로그 DTO — 백엔드 `SysLogDto` 의 생성 타입을 SSOT 로 삼는다.
+ * [FE 헌법] `generated-api.d.ts` 가 API 계약의 SSOT 이며, 로컬 인터페이스 재선언은 금지한다.
+ * (과거 로컬 `SysLog { requstId, occcrrncDe, processTime, rqesterId, processSeCode ... }` 재선언이
+ *  실제 계약 `{ dmndId, ocrnYmd, prcsTm, dmndUserId, prcsSeCd }` 와 전면 불일치하여
+ *  시스템 로그/감사 타임라인 필드가 전량 공백으로 렌더됐다.)
+ */
+export type SysLog = components['schemas']['SysLogDto'];
 
 export interface LoginLog {
   logId: string;
@@ -50,8 +46,8 @@ class SystemLogAdminService extends AdminService {
   /**
    * 시스템 로그 상세 조회
    */
-  async getSystemLog(requstId: string, config?: AxiosRequestConfig): Promise<SysLog> {
-    return this.get<SysLog>(`/system/${requstId}`, config);
+  async getSystemLog(dmndId: string, config?: AxiosRequestConfig): Promise<SysLog> {
+    return this.get<SysLog>(`/system/${dmndId}`, config);
   }
 
   /**

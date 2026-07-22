@@ -21,7 +21,7 @@ import { RefreshCcw,
  MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
-import { mailService, SentMail } from '@/services/business/mail/MailService';
+import { mailService, SentMail, MAIL_SEND_RESULT } from '@/services/business/mail/MailService';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -54,8 +54,22 @@ export default function MailHistoryHubClient() {
       searchCondition: '1' 
     }),
   });
-  const mails = (mailData as any)?.list || [];
+  const mails: SentMail[] = mailData?.list || [];
   // Debug logs removed to comply with zero-tolerance clean console requirement
+
+  /** 발송 결과 코드(S/F/P) → 배지 표기. '1' 같은 임의 코드는 서버가 생성하지 않는다. */
+  const getSendResultBadge = (code?: string) => {
+    switch (code) {
+      case MAIL_SEND_RESULT.SUCCESS:
+        return { label: 'SUCCESS', className: 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20' };
+      case MAIL_SEND_RESULT.PENDING:
+        return { label: 'PENDING', className: 'bg-amber-500/10 text-amber-600 border border-amber-500/20' };
+      case MAIL_SEND_RESULT.FAILURE:
+        return { label: 'FAILED', className: 'bg-rose-500/10 text-rose-600 border border-rose-500/20' };
+      default:
+        return { label: 'UNKNOWN', className: 'bg-muted text-muted-foreground border border-border' };
+    }
+  };
 
   // --- Mutations ---
   const deleteMutation = useMutation({
@@ -110,7 +124,7 @@ export default function MailHistoryHubClient() {
  header: '발송 일시',
  accessor: (mail) => (
  <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
- {mail.crtDt}
+ {mail.sndngDe}
  </span>
  ),
  className: 'w-48'
@@ -120,9 +134,9 @@ export default function MailHistoryHubClient() {
  accessor: (mail) => (
  <div className={cn(
  "inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase",
- mail.sndngResultCode === '1' ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-rose-500/10 text-rose-600 border border-rose-500/20"
+ getSendResultBadge(mail.sndngResultCode).className
  )}>
- {mail.sndngResultCode === '1' ? 'SUCCESS' : 'FAILED'}
+ {getSendResultBadge(mail.sndngResultCode).label}
  </div>
  ),
  className: 'w-32 text-center'
@@ -282,7 +296,7 @@ export default function MailHistoryHubClient() {
                       <Clock size={14} />
                       <span className="text-[10px] font-bold uppercase tracking-widest">Timestamp</span>
                     </div>
-                    <p className="text-sm font-bold text-surface-inverse-foreground">{selectedMail.crtDt}</p>
+                    <p className="text-sm font-bold text-surface-inverse-foreground">{selectedMail.sndngDe}</p>
                   </div>
                 </div>
 
@@ -293,7 +307,7 @@ export default function MailHistoryHubClient() {
                   </div>
                   <div className="text-sm text-white/70 leading-relaxed font-medium">
                     시스템 아키텍처에 의해 암호화된 메시지 본문입니다. <br />
-                    전송 상태: {selectedMail.sndngResultCode === '1' ? 'SUCCESS_AUTHORIZED' : 'FAILURE_REJECTED'}
+                    전송 상태: {getSendResultBadge(selectedMail.sndngResultCode).label}
                   </div>
                 </div>
 

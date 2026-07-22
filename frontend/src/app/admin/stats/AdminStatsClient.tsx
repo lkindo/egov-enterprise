@@ -5,22 +5,21 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardChartWrapper } from '@/app/components/ui/standard-chart-wrapper';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
-import { SummaryStats, MenuStats } from '@/types/foundation/stats';
+import { SummaryStats, ConnectPoint } from '@/types/foundation/stats';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { BarChart3, 
-  Globe, 
-  RefreshCcw, 
-  Layout, 
-  Cpu, 
-  Activity, 
-  ArrowUpRight, 
-  Database, 
-  ShieldCheck, 
-  CloudLightning, 
-  Monitor, 
-  Target } from 'lucide-react';
+import { BarChart3,
+  Globe,
+  RefreshCcw,
+  Cpu,
+  Activity,
+  ArrowUpRight,
+  Database,
+  ShieldCheck,
+  CloudLightning,
+  AlertTriangle,
+  CalendarDays } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 
@@ -40,20 +39,18 @@ import { Button } from '@/components/ui/button';
 export default function AdminStatsClient({
   initialSummary,
   initialConnectData,
-  initialMenuData
+  loadError = null
 }: {
   initialSummary: SummaryStats | null;
-  initialConnectData: any[];
-  initialMenuData: MenuStats[];
+  initialConnectData: ConnectPoint[];
+  loadError?: string | null;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [browserData] = useState([
-    { name: 'Chrome', count: 6542 },
-    { name: 'Safari', count: 2120 },
-    { name: 'Edge', count: 1250 },
-    { name: 'Others', count: 580 }
-  ]);
+
+  const connectData = initialConnectData || [];
+  // 상대 비중(막대 길이)은 기간 내 최댓값 기준으로만 계산한다 — 임의 상수 금지.
+  const maxConnect = Math.max(1, ...connectData.map(d => d.statsCo || 0));
 
   const handleRefresh = async () => {
     setLoading(true);
@@ -61,43 +58,51 @@ export default function AdminStatsClient({
     setTimeout(() => setLoading(false), 800);
   };
 
-  const menuColumns = [
+  const formatStatsDate = (statsDate: string) =>
+    statsDate && statsDate.length === 8
+      ? `${statsDate.substring(0, 4)}-${statsDate.substring(4, 6)}-${statsDate.substring(6, 8)}`
+      : (statsDate || '-');
+
+  const connectColumns = [
     {
-      header: '인텔리전스 노드',
-      accessor: (item: MenuStats) => (
+      header: '집계 일자',
+      accessor: (item: ConnectPoint) => (
         <div className="flex items-center gap-4 py-2">
           <div className="w-12 h-12 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg transition-transform group-hover:scale-110">
-            <Layout size={18} />
+            <CalendarDays size={18} />
           </div>
           <div>
-            <span className="font-bold tracking-tighter text-foreground block text-lg uppercase leading-none">{item.menuNm}</span>
-            <span className="text-xs font-bold text-muted-foreground tracking-[0.3em] mt-2 uppercase">NODE_TYPE: CORE_MODULE</span>
+            <span className="font-bold tracking-tighter text-foreground block text-lg tabular-nums leading-none">{formatStatsDate(item.statsDate)}</span>
+            <span className="text-xs font-bold text-muted-foreground tracking-[0.3em] mt-2 uppercase">SOURCE: CONNECT_LOG</span>
           </div>
         </div>
       )
     },
     {
-      header: '상호작용 횟수',
-      accessor: (item: MenuStats) => (
+      header: '접속 건수',
+      accessor: (item: ConnectPoint) => (
         <div className="flex items-center gap-2">
           <Activity size={14} className="text-primary opacity-100" />
-          <span className="font-mono font-bold text-primary text-lg tracking-tighter tabular-nums underline decoration-primary/20 decoration-4 underline-offset-4">{item?.statsCo?.toLocaleString() || '0'}</span>
+          <span className="font-mono font-bold text-primary text-lg tracking-tighter tabular-nums underline decoration-primary/20 decoration-4 underline-offset-4">{(item?.statsCo ?? 0).toLocaleString()}</span>
         </div>
       )
     },
     {
-      header: '영향력 매트릭스',
-      accessor: (item: MenuStats) => (
-        <div className="flex items-center gap-6 min-w-[240px]">
-          <div className="flex-1 h-3 bg-muted dark:bg-muted/30 rounded-lg overflow-hidden shadow-inner border border-border/10">
-            <div
-              className="h-full bg-gradient-to-r from-primary via-hub-indigo to-hub-purple transition-all duration-1000 ease-out shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]"
-              style={{ width: `${item?.percentage || 0}%` }}
-            />
+      header: '기간 내 상대 비중',
+      accessor: (item: ConnectPoint) => {
+        const ratio = Math.round(((item?.statsCo || 0) / maxConnect) * 100);
+        return (
+          <div className="flex items-center gap-6 min-w-[240px]">
+            <div className="flex-1 h-3 bg-muted dark:bg-muted/30 rounded-lg overflow-hidden shadow-inner border border-border/10">
+              <div
+                className="h-full bg-gradient-to-r from-primary via-hub-indigo to-hub-purple transition-all duration-1000 ease-out shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]"
+                style={{ width: `${ratio}%` }}
+              />
+            </div>
+            <span className="text-[12px] font-bold text-foreground w-12 text-right tracking-tighter tabular-nums">{ratio}%</span>
           </div>
-          <span className="text-[12px] font-bold text-foreground w-12 text-right tracking-tighter tabular-nums">{item?.percentage || 0}%</span>
-        </div>
-      )
+        );
+      }
     }
   ];
 
@@ -108,6 +113,27 @@ export default function AdminStatsClient({
         breadcrumbs={[{ label: '시스템관리' }, { label: '분석 대시보드' }]}
       />
 
+      {loadError && (
+        <div
+          role="alert"
+          className="mx-2 flex items-start gap-4 rounded-lg border-2 border-rose-500/30 bg-rose-500/5 p-6"
+        >
+          <AlertTriangle size={22} className="mt-0.5 shrink-0 text-rose-600" />
+          <div className="space-y-2">
+            <p className="text-sm font-bold tracking-tight text-rose-700">통계 데이터 조회 실패</p>
+            <p className="text-xs font-bold tracking-tight text-rose-600/90">{loadError}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefresh}
+              className="mt-2 h-9 rounded-lg border-2 text-xs font-bold tracking-tight"
+            >
+              다시 시도
+            </Button>
+          </div>
+        </div>
+      )}
+
       <HubHeader
         title="시스템 분석"
         highlight="매트릭스"
@@ -115,14 +141,6 @@ export default function AdminStatsClient({
         icon={BarChart3}
         actions={
           <div className="flex gap-4 p-2 items-center">
-            <select 
-              className="h-12 px-6 rounded-lg border-2 border-border bg-white font-bold text-xs tracking-widest uppercase outline-none focus:ring-4 focus:ring-primary/10 transition-all cursor-pointer shadow-sm"
-              aria-label="통계 조회 기간 선택"
-            >
-              <option>REALTIME_FLOW (14D)</option>
-              <option>MONTHLY_BATCH (30D)</option>
-              <option>QUARTERLY_ANALYSIS</option>
-            </select>
             <Button
               variant="outline"
               size="lg"
@@ -134,13 +152,12 @@ export default function AdminStatsClient({
             </Button>
             <div className="hidden sm:block">
               <DataExportExcel
-                data={initialMenuData || []}
+                data={connectData}
                 headers={[
-                  { label: '메뉴명', key: 'menuNm' },
-                  { label: '사용자 수', key: 'statsCo' },
-                  { label: '비중(%)', key: 'percentage' }
+                  { label: '집계 일자', key: 'statsDate' },
+                  { label: '접속 건수', key: 'statsCo' }
                 ]}
-                filename="system_intelligence_stats"
+                filename="system_connect_stats"
               />
             </div>
           </div>
@@ -148,77 +165,35 @@ export default function AdminStatsClient({
       />
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-2">
-        <LuxuryStatCard title="누적 데이터 노드" value={initialSummary?.totalUsers || 0} icon={<Database size={26} />} trend="+2.5%" color="slate" />
-        <LuxuryStatCard title="활성 커넥션" value={initialSummary?.todayConnects || 0} icon={<CloudLightning size={26} />} trend="+12%" color="primary" />
-        <LuxuryStatCard title="데이터 영속성" value={initialSummary?.totalPosts || 0} icon={<ShieldCheck size={26} />} trend="+0.8%" color="indigo" />
+        <LuxuryStatCard title="누적 사용자" value={initialSummary?.totalUsers ?? 0} icon={<Database size={26} />} color="slate" />
+        <LuxuryStatCard title="금일 접속" value={initialSummary?.todayConnects ?? 0} icon={<CloudLightning size={26} />} color="primary" />
+        <LuxuryStatCard title="누적 게시물" value={initialSummary?.totalPosts ?? 0} icon={<ShieldCheck size={26} />} color="indigo" />
       </div>
 
       <div className="grid grid-cols-12 gap-10 px-2 mt-4">
-        <div className="col-span-12 lg:col-span-8 flex flex-col gap-10">
+        <div className="col-span-12 flex flex-col gap-10">
           <HubSectionCard
             title="네트워크 트래픽 진화"
-            description="시스템 전반에 걸친 데이터 스트림의 흐름 및 진화 양상을 분석합니다"
+            description="최근 1개월 간 일자별 접속 건수 추이입니다"
             icon={Activity}
           >
             <div className="p-4 bg-muted/50 rounded-lg border border-border/30 overflow-hidden group">
               <StandardChartWrapper
                 title="NETWORK TRAFFIC EVOLUTION"
                 type="area"
-                data={initialConnectData || []}
+                data={connectData}
                 dataKeys={['statsCo']}
                 loading={loading}
                 height={350}
                 className="relative z-10"
               />
-            </div>
-          </HubSectionCard>
-        </div>
-
-        <div className="col-span-12 lg:col-span-4 flex flex-col gap-10">
-          <HubSectionCard
-            title="환경 기기 분포"
-            description="사용자 접속 환경의 프로파일링 및 기기별 세션 비중입니다"
-            icon={Monitor}
-          >
-            <div className="bg-surface-inverse text-surface-inverse-foreground rounded-lg p-8 shadow-2xl relative overflow-hidden group min-h-[440px] flex items-center justify-center">
-              <div className="absolute inset-x-0 top-0 h-1 bg-primary/20 blur-[40px] pointer-events-none" />
-              <StandardChartWrapper
-                title="ENVIRONMENT DISTRIBUTION"
-                type="pie"
-                data={browserData}
-                dataKeys={['statsCo']}
-                loading={loading}
-                height={350}
-                className="relative z-10"
-              />
-              <div className="absolute left-[-20%] bottom-[-20%] opacity-10 rotate-12 pointer-events-none grayscale">
-                <Globe size={240} />
-              </div>
             </div>
           </HubSectionCard>
         </div>
       </div>
 
       <div className="grid grid-cols-12 gap-10 px-2">
-        <div className="col-span-12 lg:col-span-6 flex flex-col gap-10">
-          <HubSectionCard
-            title="최다 상호작용 서비스"
-            description="사용자의 의도가 가장 밀집된 핵심 상호작용 지점 분석입니다"
-            icon={Target}
-          >
-            <div className="p-8 bg-muted rounded-lg border border-border/30 shadow-inner">
-              <StandardChartWrapper
-                title="HIGH-INTERACTION SERVICES"
-                type="bar"
-                data={(initialMenuData || []).slice(0, 5).map(m => ({ name: m?.menuNm || 'Unknown', statsCo: m?.statsCo || 0 }))}
-                dataKeys={['statsCo']}
-                loading={loading}
-                height={380}
-              />
-            </div>
-          </HubSectionCard>
-        </div>
-        <div className="col-span-12 lg:col-span-6 flex flex-col gap-10">
+        <div className="col-span-12 flex flex-col gap-10">
           <HubSectionCard
             title="지리적 트래픽 분포"
             description="익명화된 데이터 기반 네트워크 지리적 기원지 매핑입니다"
@@ -233,19 +208,19 @@ export default function AdminStatsClient({
       </div>
 
       <HubSectionCard
-        title="운영 매트릭스 보고"
-        description="시스템 전반에 걸친 마이크로 상호작용 노드들의 세부 데이터 보고서입니다."
+        title="일자별 접속 통계"
+        description="차트에 사용된 접속 집계의 원본 수치입니다."
         icon={Cpu}
         statusBadges={
-          <HubStatusBadge label="고밀도 스트림" variant="success" className="bg-emerald-500/10 text-emerald-800 border-none animate-pulse text-xs font-bold tracking-widest" />
+          <HubStatusBadge label={`${connectData.length}일 집계`} variant="success" className="bg-emerald-500/10 text-emerald-800 border-none text-xs font-bold tracking-widest" />
         }
       >
         <div className="px-2 overflow-x-auto">
           <StandardDataTable
-            columns={menuColumns}
-            data={(initialMenuData || []).slice(0, 10)}
+            columns={connectColumns}
+            data={connectData.slice(0, 10)}
             loading={loading}
-            emptyMessage="시스템 패턴 분석 중..."
+            emptyMessage={loadError ? '조회에 실패하여 데이터를 표시할 수 없습니다.' : '조회된 접속 통계가 없습니다.'}
             className="border-none rounded-none bg-transparent min-w-[700px]"
           />
         </div>
@@ -264,7 +239,7 @@ export default function AdminStatsClient({
               </h3>
             </div>
             <p className="text-lg lg:text-xl text-surface-inverse-foreground/90 font-bold max-w-3xl leading-relaxed tracking-tight">
-              시스템 자원의 99.9%가 효율적으로 관리되고 있습니다. 인텔리전스 엔진은 실시간 주요 이벤트를 추적하여 최적의 성능 프로파일을 동적으로 생성하고 있습니다.
+              최근 1개월 간 {connectData.length}일치 접속 집계를 수집했습니다. 상세 지표는 상단 차트와 일자별 접속 통계 표에서 확인할 수 있습니다.
             </p>
           </div>
           <div className="shrink-0">
@@ -280,13 +255,6 @@ export default function AdminStatsClient({
 }
 
 function LuxuryStatCard({ title, value, icon, trend, isAlert, color }: any) {
-  const colorMap: any = {
-    slate: "bg-white text-foreground border-border/50 shadow-md",
-    primary: "bg-white text-primary border-primary/10 shadow-md",
-    indigo: "bg-white text-hub-indigo border-indigo-100 shadow-md",
-    rose: "bg-rose-50 text-rose-600 border-rose-100 shadow-md"
-  };
-
   const iconBgMap: any = {
     slate: "bg-surface-inverse text-surface-inverse-foreground shadow-xl",
     primary: "bg-primary text-white shadow-xl shadow-primary/20",

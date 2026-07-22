@@ -1,13 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Palette,  
-  CheckCircle2,  
-  Info,  
-  ChevronRight,  
-  Image as ImageIcon, 
-  Monitor, 
-  Settings2, 
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { Palette,
+  CheckCircle2,
+  Info,
+  ChevronRight,
+  Image as ImageIcon,
+  Monitor,
+  RotateCcw,
+  Settings2,
   Brush } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,66 +20,207 @@ import { Label } from '@/components/ui/label';
 
 import { useToast } from '@/app/components/ui/toast';
 
+const STORAGE_KEY = 'hub-theme-config';
+
+type ThemeConfig = {
+  primaryColor: string;
+  borderRadius: string;
+  layoutMode: 'MODERN';
+  sidebarWidth: number;
+};
+
+/**
+ * 곡률 배수 — globals.css 의 기본값과 정합해야 한다.
+ * base 0.5rem 기준: section 1rem / widget 0.75rem / item 0.5rem (globals.css :root 기본값과 동일).
+ */
+const RADIUS_MULTIPLIER = { section: 2, widget: 1.5, item: 1 } as const;
+const DEFAULT_BASE_RADIUS = 0.5;
+const MAX_BASE_RADIUS = 1.5; // 슬라이더 상한과 동일
+
+/** globals.css `--primary: 221.2 100% 50%` 와 동일한 폴백 채널 */
+const FALLBACK_HSL = { h: 221.2, s: 100, l: 50 } as const;
+
 // --- 디자인 토큰 기본값 ---
-const DEFAULT_THEME_CONFIG = {
-  primaryColor: '#3b82f6',
-  borderRadius: '1.2', // rem 단위 베이스
-  layoutMode: 'MODERN' as const,
+// primaryColor 는 globals.css 의 `--primary: 221.2 100% 50%` 를 HEX 로 환산한 값(왕복 변환 시 동일 채널값 복원).
+const DEFAULT_THEME_CONFIG: ThemeConfig = {
+  primaryColor: '#0050ff',
+  borderRadius: String(DEFAULT_BASE_RADIUS), // rem 단위 베이스
+  layoutMode: 'MODERN',
   sidebarWidth: 260,
 };
+
+// 색상 선택지(브랜드 후보값 데이터일 뿐, 스타일 하드코딩이 아니다)
+const PRESET_COLORS = ['#0050ff', '#10b981', '#f43f5e', '#8b5cf6'] as const;
+
+const HEX_PATTERN = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i;
+
+/** #rgb | #rrggbb → { h, s, l } (실패 시 null) */
+function hexToHsl(hex: string): { h: number; s: number; l: number } | null {
+  const matched = HEX_PATTERN.exec(hex.trim());
+  if (!matched) return null;
+
+  let raw = matched[1];
+  if (raw.length === 3) raw = raw.split('').map((c) => c + c).join('');
+
+  const r = parseInt(raw.slice(0, 2), 16) / 255;
+  const g = parseInt(raw.slice(2, 4), 16) / 255;
+  const b = parseInt(raw.slice(4, 6), 16) / 255;
+
+  const max = Math.max(r, g, b);
+  const min = Math.min(r, g, b);
+  const delta = max - min;
+  const l = (max + min) / 2;
+
+  let h = 0;
+  let s = 0;
+  if (delta !== 0) {
+    s = delta / (1 - Math.abs(2 * l - 1));
+    if (max === r) h = ((g - b) / delta) % 6;
+    else if (max === g) h = (b - r) / delta + 2;
+    else h = (r - g) / delta + 4;
+    h *= 60;
+    if (h < 0) h += 360;
+  }
+
+  const round1 = (n: number) => Math.round(n * 10) / 10;
+  return { h: round1(h), s: round1(s * 100), l: round1(l * 100) };
+}
+
+/**
+ * globals.css 의 색상 토큰(`--primary` 등)은 **완성색이 아니라 HSL 채널 문자열**(예: `221.2 100% 50%`)이다.
+ * `hsl(var(--primary))` 형태로 소비되므로 HEX 를 그대로 주입하면 `hsl(#3b82f6)` 이 되어 색이 통째로 무효화된다.
+ */
+function toHslChannel(hsl: { h: number; s: number; l: number }): string {
+  return `${hsl.h} ${hsl.s}% ${hsl.l}%`;
+}
+
+/** 배경 밝기에 따른 전경색 채널(globals.css 의 foreground 토큰과 동일한 값 사용) */
+function foregroundChannelFor(hsl: { h: number; s: number; l: number }): string {
+  return hsl.l > 60 ? '222.2 47.4% 11.2%' : '210 40% 98%';
+}
+
+function parseBaseRadius(value: string): number {
+  const parsed = Number.parseFloat(value);
+  if (!Number.isFinite(parsed) || parsed < 0) return DEFAULT_BASE_RADIUS;
+  return Math.min(parsed, MAX_BASE_RADIUS);
+}
+
+/** #rgb → #rrggbb (input[type=color] 는 6자리 HEX 만 허용) */
+function expandHex(hex: string): string {
+  const normalized = hex.trim().toLowerCase().replace(/^#?/, '#');
+  if (normalized.length === 4) {
+    return `#${normalized.slice(1).split('').map((c) => c + c).join('')}`;
+  }
+  return normalized;
+}
+
+/**
+ * 설정 → CSS 변수 맵.
+ * 주의: Tailwind v4 `@theme` 의 `--color-primary: hsl(var(--primary))` 는 :root 에서 **치환이 끝난 값**이 상속된다.
+ * 따라서 하위 스코프(미리보기 컨테이너)에서 `--primary` 만 바꾸면 `bg-primary` 계열 유틸리티는 따라오지 않으므로
+ * 완성색 토큰(`--color-*`)도 함께 덮어써야 스코프 미리보기가 성립한다.
+ */
+function buildTokenVars(config: ThemeConfig): Record<string, string> {
+  const base = parseBaseRadius(config.borderRadius);
+  const hsl = hexToHsl(config.primaryColor) ?? FALLBACK_HSL;
+  const channel = toHslChannel(hsl);
+  const foreground = foregroundChannelFor(hsl);
+
+  return {
+    '--radius-hub-section': `${+(base * RADIUS_MULTIPLIER.section).toFixed(3)}rem`,
+    '--radius-hub-widget': `${+(base * RADIUS_MULTIPLIER.widget).toFixed(3)}rem`,
+    '--radius-hub-item': `${+(base * RADIUS_MULTIPLIER.item).toFixed(3)}rem`,
+    '--primary': channel,
+    '--primary-foreground': foreground,
+    '--ring': channel,
+    '--color-primary': `hsl(${channel})`,
+    '--color-primary-foreground': `hsl(${foreground})`,
+    '--color-ring': `hsl(${channel})`,
+  };
+}
+
+const TOKEN_KEYS = Object.keys(buildTokenVars(DEFAULT_THEME_CONFIG));
+
+/** localStorage 등 외부 입력을 신뢰하지 않고 안전한 형태로 정규화한다. */
+function normalizeConfig(raw: unknown): ThemeConfig {
+  const input = (raw ?? {}) as Partial<ThemeConfig>;
+  const color = typeof input.primaryColor === 'string' && HEX_PATTERN.test(input.primaryColor)
+    ? input.primaryColor
+    : DEFAULT_THEME_CONFIG.primaryColor;
+  const radius = typeof input.borderRadius === 'string' || typeof input.borderRadius === 'number'
+    ? String(parseBaseRadius(String(input.borderRadius)))
+    : DEFAULT_THEME_CONFIG.borderRadius;
+
+  return {
+    primaryColor: expandHex(color),
+    borderRadius: radius,
+    layoutMode: 'MODERN',
+    sidebarWidth: typeof input.sidebarWidth === 'number' && input.sidebarWidth > 0
+      ? input.sidebarWidth
+      : DEFAULT_THEME_CONFIG.sidebarWidth,
+  };
+}
 
 /**
  * 시스템 테마 및 디자인 토큰 제어 센터 (어드민 반영 버전)
  * - 배너 관리는 기존 '배너 및 팝업관리' 전용 메뉴로 통합되었습니다.
  * - 본 페이지는 플랫폼의 핵심 디자인 변곡점(곡률, 컬러)을 전역적으로 제어하는 엔진 역할을 수행합니다.
+ * - 편집 중 미리보기는 우측 시뮬레이터 **스코프에만** 적용되며, 전역(:root) 주입은 [전체 플랫폼 적용]을 눌렀을 때만 일어난다.
  */
 export default function LayoutManagerClient() {
   const { toast } = useToast();
-  
+
   // --- 디자인 토큰 상태 ---
-  const [themeConfig, setThemeConfig] = useState(DEFAULT_THEME_CONFIG);
+  const [themeConfig, setThemeConfig] = useState<ThemeConfig>(DEFAULT_THEME_CONFIG);
 
-  // 로컬스토리지 반영 및 실제 CSS 변수 적용
-  const applyDesignTokens = (config: typeof DEFAULT_THEME_CONFIG) => {
+  // 미리보기 전용 CSS 변수 (전역 오염 없음)
+  // CSS 커스텀 프로퍼티는 React.CSSProperties 에 인덱스 시그니처가 없어 이중 캐스팅이 필요하다.
+  const previewVars = useMemo(
+    () => buildTokenVars(themeConfig) as unknown as React.CSSProperties,
+    [themeConfig],
+  );
+
+  const baseRadius = parseBaseRadius(themeConfig.borderRadius);
+
+  // 전역 주입은 명시적 저장 시에만 수행한다.
+  const applyGlobalTokens = useCallback((config: ThemeConfig) => {
     const root = document.documentElement;
-    const baseRadius = parseFloat(config.borderRadius) || 1.2;
-    
-    // 전역 CSS 변수 주입
-    root.style.setProperty('--radius-hub-section', `${baseRadius * 3.5}rem`);
-    root.style.setProperty('--radius-hub-widget', `${baseRadius * 2.0}rem`);
-    root.style.setProperty('--radius-hub-item', `${baseRadius * 1.5}rem`);
-    root.style.setProperty('--primary', config.primaryColor);
-    
-    // 영구 저장 (브라우저 수준)
-    localStorage.setItem('hub-theme-config', JSON.stringify(config));
-  };
+    Object.entries(buildTokenVars(config)).forEach(([key, value]) => {
+      root.style.setProperty(key, value);
+    });
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(config));
+  }, []);
 
-  // 초기 로드 시 설정 동기화
+  // 초기 로드 시 저장된 설정을 폼 상태로만 복원한다.
+  // (전역 복원은 앱 전역 테마 프로바이더의 책임이며 현재 미구현 — 이 화면 진입만으로 전역 토큰을 바꾸지 않는다.)
   useEffect(() => {
-    const saved = localStorage.getItem('hub-theme-config');
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        setThemeConfig(parsed);
-        applyDesignTokens(parsed);
-      } catch (e) {
-        console.error('Failed to load theme config', e);
-      }
-    } else {
-      applyDesignTokens(DEFAULT_THEME_CONFIG);
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (!saved) return;
+    try {
+      setThemeConfig(normalizeConfig(JSON.parse(saved)));
+    } catch (e) {
+      console.error('Failed to load theme config', e);
     }
   }, []);
 
   // --- 핸들러 ---
   const handleThemeSave = () => {
-    applyDesignTokens(themeConfig);
+    applyGlobalTokens(themeConfig);
     toast('디자인 시스템 동기화 성공: 설정하신 곡률과 색상이 플랫폼 전반의 UI 인프라에 즉각 적용되었습니다.', 'success');
+  };
+
+  const handleThemeReset = () => {
+    const root = document.documentElement;
+    TOKEN_KEYS.forEach((key) => root.style.removeProperty(key));
+    localStorage.removeItem(STORAGE_KEY);
+    setThemeConfig(DEFAULT_THEME_CONFIG);
+    toast('디자인 토큰을 기본값(globals.css)으로 되돌렸습니다.', 'success');
   };
 
   return (
     <div className="flex flex-col gap-8 p-10 max-w-[1600px] mx-auto min-h-screen bg-transparent">
       {/* 테마 관리 헤더 */}
-      <motion.div 
+      <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="flex items-center justify-between border-b pb-8 border-border"
@@ -86,7 +228,7 @@ export default function LayoutManagerClient() {
         <div>
           <div className="flex items-center gap-3 mb-2">
             <Badge className="bg-primary/10 text-primary border-none font-bold px-4 py-1 rounded-lg uppercase tracking-tighter">System Design Engine</Badge>
-            <span className="text-slate-300">|</span>
+            <span className="text-border">|</span>
             <span className="text-sm font-bold text-muted-foreground">v2.0 Beta</span>
           </div>
           <h1 className="text-4xl font-bold tracking-tighter flex items-center gap-4 text-foreground">
@@ -96,8 +238,16 @@ export default function LayoutManagerClient() {
           <p className="mt-3 text-muted-foreground font-bold text-lg">플랫폼의 시각적 일관성을 유지하기 위해 전역 에지(Edge) 곡률 및 브랜드 컬러 토큰을 정의합니다.</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button 
-            onClick={handleThemeSave} 
+          <Button
+            variant="outline"
+            onClick={handleThemeReset}
+            className="h-11 px-6 rounded-lg font-bold gap-2"
+          >
+            <RotateCcw size={18} />
+            기본값 복원
+          </Button>
+          <Button
+            onClick={handleThemeSave}
             className="h-11 px-10 rounded-lg font-bold gap-3 shadow-2xl shadow-primary/30 text-lg bg-primary hover:scale-105 transition-transform"
           >
             <CheckCircle2 size={22} />
@@ -109,13 +259,13 @@ export default function LayoutManagerClient() {
       <div className="grid grid-cols-12 gap-10 mt-4">
         {/* 좌측: 디자인 토큰 조절 패널 */}
         <div className="col-span-12 lg:col-span-4 space-y-10">
-          
+
           <section className="space-y-6">
             <h3 className="text-xl font-bold flex items-center gap-2 text-foreground">
               <Palette size={20} className="text-primary" />
               곡률 시스템 (Radius Scale)
             </h3>
-            <Card className="rounded-lg border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-white/60 backdrop-blur-3xl p-2 overflow-hidden">
+            <Card className="rounded-lg border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-card/60 backdrop-blur-3xl p-2 overflow-hidden">
               <CardContent className="space-y-8 pt-8">
                 <div className="space-y-6">
                   <div className="flex justify-between items-end px-2">
@@ -123,25 +273,22 @@ export default function LayoutManagerClient() {
                     <span className="text-4xl font-bold text-primary tabular-nums">{themeConfig.borderRadius}<span className="text-lg">rem</span></span>
                   </div>
                   <div className="px-2">
-                    <input 
-                      type="range" min="0" max="3" step="0.1" 
+                    <input
+                      type="range" min="0" max="1.5" step="0.05"
                       value={themeConfig.borderRadius}
-                      onChange={(e) => {
-                        const newConfig = { ...themeConfig, borderRadius: e.target.value };
-                        setThemeConfig(newConfig);
-                        applyDesignTokens(newConfig); 
-                      }}
+                      onChange={(e) => setThemeConfig({ ...themeConfig, borderRadius: e.target.value })}
                       className="w-full h-3 bg-muted rounded-lg appearance-none cursor-pointer accent-primary"
+                      aria-label="곡률 베이스 값(rem)"
                     />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="p-6 bg-muted rounded-lg border border-border">
                       <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Section Scale</p>
-                      <p className="text-2xl font-bold">{(parseFloat(themeConfig.borderRadius) * 3.5).toFixed(1)}<span className="text-xs ml-1">rem</span></p>
+                      <p className="text-2xl font-bold">{(baseRadius * RADIUS_MULTIPLIER.section).toFixed(2)}<span className="text-xs ml-1">rem</span></p>
                     </div>
                     <div className="p-6 bg-muted rounded-lg border border-border">
                       <p className="text-xs font-bold text-muted-foreground uppercase mb-2">Item Scale</p>
-                      <p className="text-2xl font-bold">{(parseFloat(themeConfig.borderRadius) * 1.5).toFixed(1)}<span className="text-xs ml-1">rem</span></p>
+                      <p className="text-2xl font-bold">{(baseRadius * RADIUS_MULTIPLIER.item).toFixed(2)}<span className="text-xs ml-1">rem</span></p>
                     </div>
                   </div>
                 </div>
@@ -154,30 +301,26 @@ export default function LayoutManagerClient() {
               <Brush size={20} className="text-primary" />
               브랜드 아이덴티티 (Color)
             </h3>
-            <Card className="rounded-lg border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-white/60 backdrop-blur-3xl p-2">
+            <Card className="rounded-lg border-none shadow-[0_32px_80px_rgba(0,0,0,0.06)] bg-card/60 backdrop-blur-3xl p-2">
               <CardContent className="space-y-6 pt-8">
                 <div className="grid grid-cols-4 gap-4">
-                  {['#3b82f6', '#10b981', '#f43f5e', '#8b5cf6'].map((color) => (
+                  {PRESET_COLORS.map((color) => (
                     <button
                       key={color}
-                      onClick={() => {
-                        const newConfig = { ...themeConfig, primaryColor: color };
-                        setThemeConfig(newConfig);
-                        applyDesignTokens(newConfig);
-                      }}
+                      type="button"
+                      aria-label={`브랜드 색상 ${color} 선택`}
+                      aria-pressed={themeConfig.primaryColor === color}
+                      onClick={() => setThemeConfig({ ...themeConfig, primaryColor: color })}
                       className={`h-11 rounded-lg transition-all border-4 ${themeConfig.primaryColor === color ? 'border-primary ring-8 ring-primary/10 scale-105' : 'border-transparent'}`}
                       style={{ backgroundColor: color }}
                     />
                   ))}
                 </div>
                 <div className="flex gap-4 p-1">
-                  <Input 
+                  <Input
                     type="color" value={themeConfig.primaryColor}
-                    onChange={(e) => {
-                      const newConfig = { ...themeConfig, primaryColor: e.target.value };
-                      setThemeConfig(newConfig);
-                      applyDesignTokens(newConfig);
-                    }}
+                    aria-label="브랜드 기본 색상"
+                    onChange={(e) => setThemeConfig({ ...themeConfig, primaryColor: e.target.value })}
                     className="h-11 w-24 cursor-pointer p-2 rounded-lg border-none shadow-inner bg-muted"
                   />
                   <div className="flex-1 h-11 bg-muted rounded-lg flex items-center px-6 font-bold text-lg text-foreground justify-center tracking-widest border border-border">
@@ -188,52 +331,52 @@ export default function LayoutManagerClient() {
             </Card>
           </section>
 
-          <div className="p-8 bg-amber-50 rounded-lg border-2 border-dashed border-amber-200 space-y-3">
-            <div className="flex items-center gap-2 text-amber-700 font-bold">
-              <Info size={18} />
+          <div className="p-8 bg-warning/10 rounded-lg border-2 border-dashed border-warning/40 space-y-3">
+            <div className="flex items-center gap-2 text-foreground font-bold">
+              <Info size={18} className="text-hub-amber" />
               <span>안내 사항</span>
             </div>
-            <p className="text-sm font-bold text-amber-600/80 leading-relaxed">
-              본 페이지에서 설정하는 값은 플랫폼 전체의 디자인 가이드라인에 즉시 동기화됩니다. <br/>
+            <p className="text-sm font-bold text-muted-foreground leading-relaxed">
+              편집 중에는 우측 시뮬레이터에만 반영되며, <b>[전체 플랫폼 적용]</b>을 눌러야 플랫폼 전역 토큰에 주입됩니다. <br/>
+              현재 값은 브라우저(localStorage)에만 보관되므로 다른 기기·다른 사용자에게는 전파되지 않습니다. <br/>
               <b>프로모션 배너 및 팝업 자산</b> 관리는 전문 메뉴인 <span className="underline decoration-2">[콘텐츠 운영]</span> 탭을 이용해 주세요.
             </p>
           </div>
         </div>
 
-        {/* 우측: 시각적 시뮬레이터 */}
+        {/* 우측: 시각적 시뮬레이터 — 토큰 미리보기는 이 컨테이너 스코프로 한정된다. */}
         <div className="col-span-12 lg:col-span-8">
-          <div className="h-full min-h-[700px] bg-muted/40 rounded-lg border-4 border-dashed border-border flex flex-col items-center justify-center p-12 relative overflow-hidden group">
+          <div
+            style={previewVars}
+            className="h-full min-h-[700px] bg-muted/40 rounded-lg border-4 border-dashed border-border flex flex-col items-center justify-center p-12 relative overflow-hidden group"
+          >
             <div className="absolute top-10 left-12 flex items-center gap-4">
-              <Badge variant="outline" className="bg-white/80 backdrop-blur-md border-none font-bold px-5 py-2.5 rounded-lg flex gap-3 shadow-lg">
-                <Monitor size={16} className="text-primary" /> 
+              <Badge variant="outline" className="bg-card/80 backdrop-blur-md border-none font-bold px-5 py-2.5 rounded-lg flex gap-3 shadow-lg">
+                <Monitor size={16} className="text-primary" />
                 System Real-time Simulator
               </Badge>
             </div>
-            
+
             <AnimatePresence mode="wait">
               <motion.div
                 key={`${themeConfig.borderRadius}-${themeConfig.primaryColor}`}
                 initial={{ scale: 0.9, opacity: 0, rotateY: -10 }}
                 animate={{ scale: 1, opacity: 1, rotateY: 0 }}
-                className="bg-white shadow-[0_60px_120px_rgba(0,0,0,0.12)] p-14 w-[580px] flex flex-col items-center text-center gap-12 transition-all"
-                style={{ 
+                className="bg-card shadow-[0_60px_120px_rgba(0,0,0,0.12)] p-14 w-[580px] flex flex-col items-center text-center gap-12 transition-all"
+                style={{
                   borderRadius: 'var(--radius-hub-section)',
-                  borderColor: 'var(--primary)',
+                  borderColor: 'hsl(var(--primary))',
                 }}
               >
-                <div 
-                  className="w-32 h-32 flex items-center justify-center shadow-inner transition-transform duration-700 group-hover:rotate-12"
-                  style={{ 
-                    borderRadius: 'var(--radius-hub-widget)', 
-                    backgroundColor: `${themeConfig.primaryColor}15`,
-                    color: themeConfig.primaryColor
-                  }}
+                <div
+                  className="w-32 h-32 flex items-center justify-center shadow-inner transition-transform duration-700 group-hover:rotate-12 bg-primary/10 text-primary"
+                  style={{ borderRadius: 'var(--radius-hub-widget)' }}
                 >
                   <ImageIcon className="w-14 h-11" />
                 </div>
-                
+
                 <div className="space-y-5">
-                  <h3 className="text-5xl font-bold tracking-tighter" style={{ color: themeConfig.primaryColor }}>
+                  <h3 className="text-5xl font-bold tracking-tighter text-primary">
                     UX 토큰 미리보기
                   </h3>
                   <p className="text-muted-foreground font-bold text-xl leading-relaxed">
@@ -241,12 +384,12 @@ export default function LayoutManagerClient() {
                     실제 플랫폼 컴포넌트로 구현된 모습입니다.
                   </p>
                 </div>
-                
+
                 <div className="grid grid-cols-2 gap-6 w-full">
                   {[1, 2].map(i => (
-                    <div 
-                      key={i} 
-                      className="h-11 bg-muted flex items-center justify-center font-bold text-muted-foreground border border-border text-lg" 
+                    <div
+                      key={i}
+                      className="h-11 bg-muted flex items-center justify-center font-bold text-muted-foreground border border-border text-lg"
                       style={{ borderRadius: 'var(--radius-hub-item)' }}
                     >
                       COMPONENT {i}
@@ -254,12 +397,11 @@ export default function LayoutManagerClient() {
                   ))}
                 </div>
 
-                <Button 
-                  className="w-full h-11 text-2xl font-bold gap-4 shadow-2xl transition-all hover:scale-[1.02] active:scale-95 px-10"
-                  style={{ 
-                    borderRadius: 'var(--radius-hub-item)', 
-                    backgroundColor: themeConfig.primaryColor,
-                    boxShadow: `0 25px 50px ${themeConfig.primaryColor}40`
+                <Button
+                  className="w-full h-11 text-2xl font-bold gap-4 shadow-2xl transition-all hover:scale-[1.02] active:scale-95 px-10 bg-primary text-primary-foreground"
+                  style={{
+                    borderRadius: 'var(--radius-hub-item)',
+                    boxShadow: '0 25px 50px hsl(var(--primary) / 0.25)',
                   }}
                 >
                   시뮬레이션 완료 및 진입 <ChevronRight size={32} strokeWidth={3} />
@@ -270,7 +412,7 @@ export default function LayoutManagerClient() {
             {/* 메타 정보 */}
             <div className="mt-16 flex items-center gap-3 text-muted-foreground font-bold">
               <Info size={18} />
-              <span>현재 시각화된 섹션 곡률 수치: {((parseFloat(themeConfig.borderRadius) || 0) * 3.5).toFixed(1)} rem</span>
+              <span>현재 시각화된 섹션 곡률 수치: {(baseRadius * RADIUS_MULTIPLIER.section).toFixed(2)} rem</span>
             </div>
           </div>
         </div>

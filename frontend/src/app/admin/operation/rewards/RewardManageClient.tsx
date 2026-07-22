@@ -8,7 +8,8 @@ import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { operationAdminService } from '@/services/foundation/operation/OperationAdminService';
+import { operationAdminService, type Reward } from '@/services/foundation/operation/OperationAdminService';
+import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -38,14 +39,15 @@ const rewardSchema = RewardManageDtoSchema.extend({
 
 type RewardFormValues = z.infer<typeof rewardSchema>;
 
-export default function RewardManageClient({ initialData }: { initialData: any[] }) {
+export default function RewardManageClient({ initialPage }: { initialPage: PageResponse<Reward> }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [page, setPage] = useState(1);
+  const [searchTerm, setSearchTerm] = useState('');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
-  const size = 10;
+  const size = initialPage?.size || 10;
 
   const form = useAppForm(rewardSchema, {
     defaultValues: {
@@ -58,18 +60,20 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
   });
 
   const { data, isLoading } = useQuery({
-    queryKey: ['admin-rewards', searchKeyword, page],
+    queryKey: ['admin-rewards', searchKeyword, page, size],
+    // 서버 계약: name(포상명 부분일치) + Spring Data Pageable(page 는 0-based)
     queryFn: () => operationAdminService.getRewardList({
-      searchKeyword,
-      pageNo: page,
-      pageSize: size
+      name: searchKeyword,
+      page: page - 1,
+      size
     }),
-    initialData: { list: initialData, total: initialData.length, totalPage: Math.ceil(initialData.length / size), page: 1, size },
+    // SSR 프리페치 결과는 검색어 없는 1페이지에 한해서만 초기값으로 사용한다
+    initialData: (!searchKeyword && page === 1) ? initialPage : undefined,
   });
 
   const rewards = data?.list || [];
   const totalItems = data?.total || 0;
-  const totalPages = data?.totalPage || Math.ceil(totalItems / size);
+  const totalPages = data?.totalPage ?? Math.ceil(totalItems / size);
 
   const onRegisterSubmit = async (values: RewardFormValues) => {
     try {
@@ -87,6 +91,8 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
       toast('포상 기록이 성공적으로 등록되었습니다.', 'success');
       setIsModalOpen(false);
       form.reset();
+      // 최신 등록건은 crtDt DESC 정렬로 1페이지 선두에 노출된다
+      setPage(1);
       queryClient.invalidateQueries({ queryKey: ['admin-rewards'] });
     } catch (error) {
       toast('포상 기록 등록 중 오류가 발생했습니다.', 'error');
@@ -95,7 +101,8 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
     }
   };
 
-  const columns: Column<any>[] = [
+  // 컬럼 접근자는 백엔드 RewardManageDto 필드명(SSOT)만 사용한다.
+  const columns: Column<Reward>[] = [
     {
       header: '번호',
       accessor: (_, index) => (
@@ -114,8 +121,6 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
           </span>
           <div className="flex items-center gap-2 opacity-60">
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">{item.rwardCode}</span>
-            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter">•</span>
-            <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-widest">{item.rwardLevel || 'STANDARD'}</span>
           </div>
         </div>
       )
@@ -156,6 +161,7 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setPage(1);
+    setSearchKeyword(searchTerm.trim());
   };
 
   return (
@@ -209,8 +215,8 @@ export default function RewardManageClient({ initialData }: { initialData: any[]
               <Input
                 placeholder="포상 명칭 또는 대상자 식별자로 분석..."
                 className="h-11 pl-16 rounded-xl border-none bg-muted/50 text-sm font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
               />
               <Button type="submit" className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">ANALYZE</Button>
             </form>

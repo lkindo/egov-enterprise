@@ -50,6 +50,9 @@ type ProgramFormValues = z.infer<typeof programSchema>;
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
+/** 서버(BaseSearchDto)의 기본 페이지 크기와 동일하게 맞춘다. */
+const PAGE_SIZE = 10;
+
 export default function ProgramAdminClient({ initialData, searchWrd }: { initialData: PageResponse<Program>; searchWrd: string }) {
  const { toast } = useToast();
  const confirm = useConfirm();
@@ -73,25 +76,45 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  const [total, setTotal] = useState<number>(() => {
  return initialData?.total || 0;
  });
+ const [totalPage, setTotalPage] = useState<number>(() => {
+ return initialData?.totalPage || 1;
+ });
+ const [page, setPage] = useState(1);
  const [loading, setLoading] = useState(false);
  const [currentSearchWrd, setCurrentSearchWrd] = useState(searchWrd);
 
- const loadData = async (wrd: string = currentSearchWrd, page: number = 1) => {
+ /**
+  * 목록 조회. 서버는 @ModelAttribute BaseSearchDto(pageIndex 1-based / pageUnit / searchKeyword)로 받는다.
+  * pageIndex 는 직접 계산하지 않고 ApiService 의 자동 매핑(page 0-based → pageIndex = page+1)에 위임한다.
+  * 페이지 크기는 BaseSearchDto.pageUnit 이 결정하므로 pageUnit 을 함께 보낸다(size 는 recordCountPerPage 로만 매핑됨).
+  * 검색어도 BaseSearchDto.searchKeyword 로 실어야 서버에 닿는다(searchWrd 는 바인딩 대상이 아니다).
+  */
+ const loadData = async (wrd: string = currentSearchWrd, targetPage: number = 1) => {
  try {
  setLoading(true);
- const res = await programAdminService.getProgramList({ page: page - 1, size: 10, searchWrd: wrd });
+ const res = await programAdminService.getProgramList({
+ page: targetPage - 1,
+ size: PAGE_SIZE,
+ pageUnit: PAGE_SIZE,
+ searchKeyword: wrd
+ });
 
  const list = (res.list || []) as Program[];
  const totalCount = res.total || 0;
 
  setData(list);
  setTotal(totalCount);
+ setTotalPage(res.totalPage || 1);
+ setPage(targetPage);
  } catch (error: unknown) {
  toast('데이터를 불러오는 중 오류가 발생했습니다.', 'error');
  } finally {
  setLoading(false);
  }
  };
+
+ /** 검색은 항상 1페이지부터 — 3페이지에서 검색하면 빈 화면이 되는 결함 방지. */
+ const handleSearch = () => loadData(currentSearchWrd, 1);
 
  const handleOpenCreate = () => {
  setMode('create');
@@ -116,7 +139,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  try {
  await programAdminService.deleteProgram(name);
  toast('프로그램이 삭제되었습니다.', 'success');
- loadData();
+ loadData(currentSearchWrd, page);
  } catch (err: any) {
  toast(err.message || '삭제 중 오류가 발생했습니다.', 'error');
  }
@@ -240,12 +263,12 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  placeholder="프로그램명 또는 파일명을 입력하여 검색.."
  value={currentSearchWrd}
  onChange={(e) => setCurrentSearchWrd(e.target.value)}
- onKeyDown={(e) => e.key === 'Enter' && loadData()}
+ onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
  className="h-11 pl-16 pr-8 w-full bg-muted/50 border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
  />
  </div>
  </div>
- <Button onClick={() => loadData()} size="lg" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2">
+ <Button onClick={handleSearch} size="lg" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2">
  <Search size={18} /> 검색
  </Button>
  </div>
@@ -257,6 +280,11 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  loading={loading}
  emptyMessage="시스템에 등록된 프로그램 자산이 존재하지 않습니다."
  className="border-none bg-transparent"
+ pagination={{
+ currentPage: page,
+ totalPages: totalPage,
+ onPageChange: (p) => loadData(currentSearchWrd, p)
+ }}
  />
  </div>
  </HubSectionCard>
@@ -272,7 +300,7 @@ export default function ProgramAdminClient({ initialData, searchWrd }: { initial
  onOpenChange={setIsOpen}
  data={mode === 'edit' ? (form.getValues() as any) : undefined}
  onSuccess={() => {
- loadData();
+ loadData(currentSearchWrd, page);
  setIsOpen(false);
  }}
  />

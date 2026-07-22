@@ -16,7 +16,8 @@ import { Vote,
 import { Button } from '@/components/ui/button';
 ;
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { toDisplayYmd, todayStorageYmd } from '@/lib/format-date';
+import { getPollStatus, POLL_STATUS_LABEL, isPollActive } from '@/lib/poll-status';
 import { toast } from 'sonner';
 
 export default function OnlinePollParticipateClient() {
@@ -30,7 +31,8 @@ export default function OnlinePollParticipateClient() {
  const [todayStr, setTodayStr] = useState<string>('');
 
  useEffect(() => {
- setTodayStr(format(new Date(), 'yyyy-MM-dd'));
+ // 저장 포맷과 같은 'yyyyMMdd' 8자 기준일. 10자로 두면 8자 저장값과의 비교가 무너진다.
+ setTodayStr(todayStorageYmd());
  fetchPolls();
  }, []);
 
@@ -54,11 +56,12 @@ export default function OnlinePollParticipateClient() {
  setPollItems(items || []);
  setSelectedPoll(poll);
  setSelectedItemId(null);
- 
- if (todayStr > (poll.pollEndYmd || '9999-12-31')) {
- setViewMode('result');
- } else {
+
+ // 기간 밖이거나 판정 불가(손상 값)면 투표를 열지 않고 결과만 보여준다.
+ if (isPollActive(poll.pollBgngYmd, poll.pollEndYmd, todayStr, poll.pollDsuseYn)) {
  setViewMode('vote');
+ } else {
+ setViewMode('result');
  }
  } catch (error) {
  toast.error('설문 상세 정보를 불러오지 못했습니다.');
@@ -146,7 +149,7 @@ export default function OnlinePollParticipateClient() {
  </div>
  <div className="px-4 py-1 bg-primary/20 rounded-lg border border-primary/20 flex items-center gap-2">
  <Calendar size={14} className="text-primary" />
- <span className="text-xs font-bold tracking-tighter uppercase font-mono ">{selectedPoll.pollBgngYmd} - {selectedPoll.pollEndYmd}</span>
+ <span className="text-xs font-bold tracking-tighter uppercase font-mono ">{toDisplayYmd(selectedPoll.pollBgngYmd)} - {toDisplayYmd(selectedPoll.pollEndYmd)}</span>
  </div>
  </div>
  <h2 className="text-4xl font-bold tracking-tighter leading-none">{selectedPoll.pollNm}</h2>
@@ -205,7 +208,9 @@ export default function OnlinePollParticipateClient() {
 }
 
 function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, todayStr: string, onSelect: () => void }) {
- const isClosed = todayStr > (poll.pollEndYmd || '9999-12-31');
+ const status = getPollStatus(poll, todayStr);
+ const isLive = status === 'active';
+ const label = isLive ? 'Live Now' : status === 'closed' ? 'Closed' : POLL_STATUS_LABEL[status];
 
  return (
  <div 
@@ -218,9 +223,13 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
  </div>
  <div className={cn(
  "px-4 py-1.5 rounded-lg border text-xs font-bold tracking-widest uppercase shadow-sm",
- isClosed ? "bg-muted text-muted-foreground border-border" : "bg-emerald-50 text-emerald-500 border-emerald-100"
+ isLive
+ ? "bg-emerald-50 text-emerald-500 border-emerald-100"
+ : status === 'scheduled'
+ ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+ : "bg-muted text-muted-foreground border-border"
  )}>
- {isClosed ? 'Closed' : 'Live Now'}
+ {label}
  </div>
  </div>
 
@@ -228,7 +237,7 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
  <h3 className="text-2xl font-bold tracking-tighter leading-none group-hover:text-primary transition-colors uppercase">{poll.pollNm}</h3>
  <div className="flex items-center gap-3 font-mono text-xs font-bold text-muted-foreground tracking-tighter ">
  <Calendar size={14} className="opacity-40" />
- {poll.pollBgngYmd} <span className="opacity-20">/</span> {poll.pollEndYmd}
+ {toDisplayYmd(poll.pollBgngYmd)} <span className="opacity-20">/</span> {toDisplayYmd(poll.pollEndYmd)}
  </div>
  </div>
 

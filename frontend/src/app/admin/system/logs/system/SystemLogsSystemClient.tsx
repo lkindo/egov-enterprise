@@ -35,7 +35,7 @@ const SystemLogsSystemClient = () => {
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
                     <Terminal size={12} className="opacity-30" />
-                    {item.requstId}
+                    {item.dmndId}
                 </div>
             ),
             className: 'w-40'
@@ -44,7 +44,7 @@ const SystemLogsSystemClient = () => {
             header: '발생일자',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
-                    {(item as any).occcrrncDe || '-'}
+                    {item.ocrnYmd || '-'}
                 </div>
             ),
             className: 'w-52'
@@ -73,7 +73,7 @@ const SystemLogsSystemClient = () => {
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-1.5 font-bold text-muted-foreground">
                     <Clock size={12} className="opacity-30" />
-                    <span className="text-xs">{item.processTime}</span>
+                    <span className="text-xs">{item.prcsTm}</span>
                     <span className="text-xs text-muted-foreground font-medium">ms</span>
                 </div>
             ),

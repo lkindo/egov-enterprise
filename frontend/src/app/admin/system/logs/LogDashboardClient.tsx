@@ -74,7 +74,8 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
             <div className="w-8 h-8 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-muted shadow-sm">
               <Clock size={14} />
             </div>
-            <span className="text-xs font-black text-muted-foreground tracking-tight">{item.creatDt || item.occcrrncDe || '-'}</span>
+            {/* SysLogDto 의 발생일자는 `ocrnYmd` 다(과거 `occcrrncDe` 는 계약에 존재하지 않아 SYS 탭이 전건 '-' 였다). */}
+            <span className="text-xs font-black text-muted-foreground tracking-tight">{item.creatDt || item.ocrnYmd || '-'}</span>
           </div>
         ),
         className: 'w-48 py-4'
@@ -119,7 +120,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
         header: '요청자',
         className: 'w-32 py-4',
         accessor: (item: any) => (
-          <span className="text-xs font-black text-foreground tracking-tight">{item.rqsterNm || item.rqesterId || 'SYSTEM'}</span>
+          <span className="text-xs font-black text-foreground tracking-tight">{item.rqsterNm || item.rqesterId || item.dmndUserId || 'SYSTEM'}</span>
         )
       },
       {
@@ -250,7 +251,7 @@ export default function LogDashboardClient({ systemLogsPromise }: { systemLogsPr
               </div>
               <div className="text-left">
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1.5">ID</p>
-                <p className="text-sm font-black text-foreground tracking-tight leading-none uppercase">{selectedLog?.logId || selectedLog?.requstId || 'None'}</p>
+                <p className="text-sm font-black text-foreground tracking-tight leading-none uppercase">{selectedLog?.logId || selectedLog?.dmndId || 'None'}</p>
               </div>
             </div>
             <HubStatusBadge status="확인됨" />

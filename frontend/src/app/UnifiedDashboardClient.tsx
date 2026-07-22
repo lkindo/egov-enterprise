@@ -170,7 +170,7 @@ export default function UnifiedDashboardClient({
         <HubSummaryCard
           key="summary-visitors"
           title="오늘의 방문자"
-          value={connectStats.length > 0 ? connectStats[connectStats.length-1].statsCo.toString() : '0'}
+          value={String(connectStats[connectStats.length - 1]?.statsCo ?? 0)}
           description="실시간 접속 데이터 기반"
           icon={<BarChart3 size={24} />}
           trend={5}

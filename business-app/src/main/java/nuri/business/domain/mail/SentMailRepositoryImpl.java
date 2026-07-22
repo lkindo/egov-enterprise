@@ -17,22 +17,29 @@ public class SentMailRepositoryImpl implements SentMailRepositoryCustom {
     private final JPAQueryFactory queryFactory;
 
     @Override
-    public Page<SentMail> searchSentMails(String searchCondition, String searchKeyword, Pageable pageable) {
+    public Page<SentMail> searchSentMails(String senderLoginId, String searchCondition, String searchKeyword,
+            Pageable pageable) {
         List<SentMail> content = queryFactory
                 .selectFrom(sentMail)
-                .where(searchExpression(searchCondition, searchKeyword))
+                .where(senderEq(senderLoginId), searchExpression(searchCondition, searchKeyword))
                 .orderBy(sentMail.msgId.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
 
-        long total = queryFactory
+        Long total = queryFactory
                 .select(sentMail.count())
                 .from(sentMail)
-                .where(searchExpression(searchCondition, searchKeyword))
+                .where(senderEq(senderLoginId), searchExpression(searchCondition, searchKeyword))
                 .fetchOne();
 
-        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable), total);
+        return new PageImpl<>(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
+                total != null ? total : 0L);
+    }
+
+    /** 발신자(등록자) 한정 조건. 감사 컬럼 frstRgtrId 에는 loginId 가 저장된다. */
+    private BooleanExpression senderEq(String senderLoginId) {
+        return StringUtils.hasText(senderLoginId) ? sentMail.frstRgtrId.eq(senderLoginId) : null;
     }
 
     private BooleanExpression searchExpression(String searchCondition, String searchKeyword) {

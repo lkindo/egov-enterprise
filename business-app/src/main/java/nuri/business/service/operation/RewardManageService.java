@@ -4,11 +4,12 @@ import nuri.business.domain.operation.RewardManage;
 import nuri.business.repository.operation.RewardManageRepository;
 import nuri.business.service.operation.dto.RewardManageDto;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -17,16 +18,16 @@ public class RewardManageService {
 
     private final RewardManageRepository rewardManageRepository;
 
-    public List<RewardManageDto> getAllRewards() {
-        return rewardManageRepository.findAll().stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
-    }
-
-    public List<RewardManageDto> searchByName(String name) {
-        return rewardManageRepository.findByRwrdNmContaining(name).stream()
-                .map(this::convertToDto)
-                .collect(Collectors.toList());
+    /**
+     * 포상 목록 조회(페이징). 포상명(name)이 주어지면 부분일치 검색한다.
+     * 목록 응답은 컨트롤러에서 {@code PageResponse.of(...)} 로 표준화된다.
+     */
+    public Page<RewardManageDto> getRewardList(String name, Pageable pageable) {
+        Pageable page = Objects.requireNonNull(pageable);
+        if (name == null || name.trim().isEmpty()) {
+            return rewardManageRepository.findAll(page).map(this::convertToDto);
+        }
+        return rewardManageRepository.findByRwrdNmContaining(name, page).map(this::convertToDto);
     }
 
     @Transactional

@@ -93,6 +93,9 @@ interface BannerAdminClientProps {
  initialPopups: Popup[];
 }
 
+/** 화면 페이지 크기. 서버는 Spring Pageable 의 size 를 그대로 수용한다(@PageableDefault size=10 은 미지정 시 기본값). */
+const PAGE_SIZE = 20;
+
 export default function BannerAdminClient({ initialBanners, initialPopups }: BannerAdminClientProps) {
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => {
@@ -159,23 +162,29 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  }
  }, [isModalOpen, activeTab, editingItem, bannerForm, popupForm]);
 
-  const { data: banners = initialBanners, isLoading: isBannersLoading, refetch: refetchBanners } = useQuery({
-  queryKey: ['admin-banners'],
-  queryFn: async () => {
-    const res = await bannerAdminService.getBannerList({ pageUnit: 999 });
-    return (res.list || []) as Banner[];
-  },
-  enabled: activeTab === 'banner'
+  const [bannerPage, setBannerPage] = useState(1);
+  const [popupPage, setPopupPage] = useState(1);
+
+  /*
+   * 배너/팝업 컨트롤러는 모두 Spring Pageable(page/size, 0-based)만 읽는다.
+   * 종전의 pageUnit:999 는 바인딩 대상이 아니라 그대로 무시됐고, 실제로는 서버 기본값(size=10)만
+   * 내려와 11번째 자산부터는 수정·게시중단이 UI 상 불가능했다. 정상 페이징 + 페이저 연결로 정정한다.
+   */
+  const { data: bannerPageData, isLoading: isBannersLoading, refetch: refetchBanners } = useQuery({
+  queryKey: ['admin-banners', bannerPage],
+  queryFn: () => bannerAdminService.getBannerList({ page: bannerPage - 1, size: PAGE_SIZE })
   });
 
-  const { data: popups = initialPopups, isLoading: isPopupsLoading, refetch: refetchPopups } = useQuery({
-  queryKey: ['admin-popups'],
-  queryFn: async () => {
-    const res = await popupAdminService.getPopupList({ pageUnit: 999 });
-    return (res.list || []) as Popup[];
-  },
-  enabled: activeTab === 'popup'
+  const { data: popupPageData, isLoading: isPopupsLoading, refetch: refetchPopups } = useQuery({
+  queryKey: ['admin-popups', popupPage],
+  queryFn: () => popupAdminService.getPopupList({ page: popupPage - 1, size: PAGE_SIZE })
   });
+
+  const banners: Banner[] = bannerPageData?.list ?? initialBanners;
+  const popups: Popup[] = popupPageData?.list ?? initialPopups;
+  /** 지표는 현재 페이지 길이가 아니라 서버가 내려준 전체 건수(total)를 쓴다. */
+  const bannerTotal = bannerPageData?.total ?? initialBanners.length;
+  const popupTotal = popupPageData?.total ?? initialPopups.length;
 
  const handleCreate = () => {
  setEditingItem(null);
@@ -444,11 +453,12 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  }
  />
 
+ {/* 지표는 전체 건수(total) 기준. 게시/예약 여부는 서버 집계가 없어 현재 페이지 기준임을 제목에 명시한다. */}
  <HubMetricGrid>
- <HubMetricCard title="활성 배너" value={banners.filter(b => b.rfltYn === 'Y').length} icon={ImageIcon} color="primary" />
- <HubMetricCard title="활성 팝업" value={popups.filter(p => p.ntceYn === 'Y').length} icon={Monitor} color="emerald" status="게시 중" />
- <HubMetricCard title="예약 자산" value={now ? popups.filter(p => new Date(p.ntceBgnde) > now).length : 0} icon={Calendar} color="amber" />
- <HubMetricCard title="전체 자산" value={banners.length + popups.length} icon={Layers} color="indigo" />
+ <HubMetricCard title="전체 배너" value={bannerTotal} icon={ImageIcon} color="primary" />
+ <HubMetricCard title="전체 팝업" value={popupTotal} icon={Monitor} color="emerald" status="등록됨" />
+ <HubMetricCard title="예약 자산 (현재 페이지)" value={now ? popups.filter(p => new Date(p.ntceBgnde) > now).length : 0} icon={Calendar} color="amber" />
+ <HubMetricCard title="전체 자산" value={bannerTotal + popupTotal} icon={Layers} color="indigo" />
  </HubMetricGrid>
 
  <div className="grid grid-cols-12 gap-12">
@@ -522,6 +532,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  keyField={(activeTab === 'banner' ? 'bnrId' : 'popupId') as any}
  emptyMessage={`등록된 ${activeTab === 'banner' ? '배너' : '팝업'} 자산이 존재하지 않습니다.`}
  className="border-none bg-transparent"
+ pagination={{
+ currentPage: activeTab === 'banner' ? bannerPage : popupPage,
+ totalPages: (activeTab === 'banner' ? bannerPageData?.totalPage : popupPageData?.totalPage) || 1,
+ onPageChange: (p) => activeTab === 'banner' ? setBannerPage(p) : setPopupPage(p)
+ }}
  />
  </div>
  </HubSectionCard>

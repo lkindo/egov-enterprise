@@ -8,7 +8,9 @@ import { PageResponse } from '@/types/foundation/system';
 export interface OnlinePollDto {
   pollId?: string;
   pollNm: string;
+  /** 저장 포맷 'yyyyMMdd' (varchar(8) / @Size(max = 8)) — 10자 전송은 400 */
   pollBgngYmd: string;
+  /** 저장 포맷 'yyyyMMdd' */
   pollEndYmd: string;
   pollKndCd: string;
   pollDsuseYn: string;

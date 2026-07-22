@@ -5,6 +5,7 @@ export interface MenuInfo {
  upMenuSn: number;
  menuOrdr: number;
  menuDc?: string;
+ menuExpln?: string;
  relImgPath?: string;
  relImgNm?: string;
  prgrmFileNm?: string;

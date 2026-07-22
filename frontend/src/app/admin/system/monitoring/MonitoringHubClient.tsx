@@ -33,6 +33,7 @@ import { Activity,
 
 import { cn } from '@/lib/utils';
 import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { auditAdminService } from '@/services/foundation/system/AuditAdminService';
 import { commentAdminService } from '@/services/foundation/system/CommentAdminService';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
@@ -61,6 +62,7 @@ type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMEN
 export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defaultTab?: MonitoringTab }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const confirm = useConfirm();
   const router = useRouter();
   const searchParams = useSearchParams();
   
@@ -143,8 +145,30 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       toast('댓글이 성공적으로 삭제되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-comments'] });
       if (selectedItemId) setSelectedItemId(null);
+    },
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : '';
+      toast(message || '댓글 삭제 중 오류가 발생했습니다.', 'error');
     }
   });
+
+  /**
+   * 댓글 삭제(복구 불가·물리 삭제)는 반드시 확인 모달을 거친다.
+   * 과거에는 서비스 경로 오조립(404)으로 삭제가 "잠복"해 있었을 뿐, 무확인 1클릭 삭제 구조였다.
+   */
+  const handleDeleteComment = async (comment: { ansSn?: number | null; ansCn?: string; wrterId?: string }) => {
+    if (comment?.ansSn === undefined || comment?.ansSn === null) return;
+    const ansSn = comment.ansSn;
+    const preview = (comment.ansCn || '').trim();
+    const isConfirmed = await confirm({
+      title: '댓글 영구 삭제',
+      message: `${preview ? `"${preview.length > 60 ? `${preview.slice(0, 60)}…` : preview}" ` : ''}댓글(작성자: ${comment.wrterId || '알 수 없음'})을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+      confirmText: '영구 삭제',
+      variant: 'destructive'
+    });
+    if (!isConfirmed) return;
+    deleteCommentMutation.mutate(ansSn);
+  };
 
   const selectedItem = useMemo(() => {
     if (!selectedItemId) return null;
@@ -172,8 +196,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       return testLogs.find(t => t.id === idStr) || null;
     }
     if (activeTab === 'COMMENTS') return comments.find(c => c.ansSn === selectedItemId);
-    if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.requstId) === idStr);
-    if (activeTab === 'SYSTEM') return systemLogs.find(l => String(l.requstId) === idStr);
+    if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.dmndId) === idStr);
+    if (activeTab === 'SYSTEM') return systemLogs.find(l => String(l.dmndId) === idStr);
     if (activeTab === 'LOGIN') return loginLogs.find(l => String(l.logId) === idStr);
     return null;
   }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs, comments]);
@@ -185,16 +209,16 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
             "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === log.requstId ? "bg-white/10 text-white" : "bg-primary/5 text-primary"
+            selectedItemId === log.dmndId ? "bg-white/10 text-white" : "bg-primary/5 text-primary"
           )}>
             <ShieldAlert size={20} />
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.requstId ? "text-white" : "text-primary")}>{log.sysNm}</span>
-                <span className="text-xs font-bold opacity-20">{log.occrrncDe}</span>
+                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.dmndId ? "text-white" : "text-primary")}>{log.srvcNm}</span>
+                <span className="text-xs font-bold opacity-20">{log.ocrnYmd?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}</span>
             </div>
-            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.requstId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
+            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.dmndId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
           </div>
         </div>
       )
@@ -208,16 +232,16 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
             "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === log.requstId ? "bg-white/10 text-white" : "bg-emerald-50 text-emerald-600"
+            selectedItemId === log.dmndId ? "bg-white/10 text-white" : "bg-emerald-50 text-emerald-600"
           )}>
             <Terminal size={20} />
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.requstId ? "text-white" : "text-emerald-700")}>{log.srvcNm}</span>
+                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.dmndId ? "text-white" : "text-emerald-700")}>{log.srvcNm}</span>
                 <span className="text-xs font-bold opacity-20">{log.ocrnYmd?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}</span>
             </div>
-            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.requstId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
+            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.dmndId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
           </div>
         </div>
       )
@@ -267,7 +291,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 variant="ghost" 
                 size="icon" 
                 aria-label="댓글 삭제"
-                onClick={(e) => { e.stopPropagation(); deleteCommentMutation.mutate(c.ansSn); }} 
+                disabled={deleteCommentMutation.isPending}
+                onClick={(e) => { e.stopPropagation(); void handleDeleteComment(c); }}
                 className="text-white bg-rose-500/20 hover:bg-rose-500/40 rounded-lg transition-all relative z-10 shrink-0 h-10 w-10"
             >
               <Trash2 size={16} />
@@ -559,8 +584,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                         columns={(activeTab === 'SECURITY' ? auditColumns : activeTab === 'SYSTEM' ? systemLogColumns : activeTab === 'LOGIN' ? loginLogColumns : commentColumns) as any}
                         data={(activeTab === 'SECURITY' ? auditLogs : activeTab === 'SYSTEM' ? systemLogs : activeTab === 'LOGIN' ? loginLogs : comments) as any}
                         loading={activeTab === 'SECURITY' ? isAuditLoading : activeTab === 'SYSTEM' ? isSystemLoading : activeTab === 'LOGIN' ? isLoginLoading : isCommentLoading}
-                        onRowClick={(item) => setSelectedItemId(activeTab === 'SECURITY' ? item.requstId : activeTab === 'SYSTEM' ? item.requstId : activeTab === 'LOGIN' ? item.logId : item.ansSn)}
-                        keyField={activeTab === 'SECURITY' ? 'requstId' : activeTab === 'SYSTEM' ? 'requstId' : activeTab === 'LOGIN' ? 'logId' : 'ansSn'}
+                        onRowClick={(item) => setSelectedItemId(activeTab === 'SECURITY' ? item.dmndId : activeTab === 'SYSTEM' ? item.dmndId : activeTab === 'LOGIN' ? item.logId : item.ansSn)}
+                        keyField={activeTab === 'SECURITY' ? 'dmndId' : activeTab === 'SYSTEM' ? 'dmndId' : activeTab === 'LOGIN' ? 'logId' : 'ansSn'}
                         isPremium={false}
                         className="bg-transparent border-none shadow-none"
                         pagination={{
@@ -733,6 +758,11 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
 }
 
 function StatusIndicator({ label, status, icon: Icon }: { label: string, status: string, icon: any }) {
+  // 상태 표시등 분기 — 코어 엔진 인디케이터(healthData.status === 'UP')와 동일 규약.
+  // 정상('UP'/'안정')만 초록, 미상('UNKNOWN'/빈값)은 주황, 그 외(DOWN/OUT_OF_SERVICE 등)는 적색으로 장애를 드러낸다.
+  const isUp = status === 'UP' || status === '안정';
+  const isUnknown = !isUp && (!status || status === 'UNKNOWN');
+
   return (
     <div className="p-8 rounded-lg bg-white/5 border border-white/5 space-y-6 group hover:bg-white/10 transition-colors">
       <div className="flex items-center justify-between">
@@ -740,8 +770,22 @@ function StatusIndicator({ label, status, icon: Icon }: { label: string, status:
           <Icon size={16} className="text-white/20 group-hover:text-primary transition-colors" />
       </div>
       <div className="flex items-center gap-4">
-        <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)] animate-pulse" />
-        <span className="text-2xl font-bold tracking-tighter text-surface-inverse-foreground">{status}</span>
+        <div
+          className={cn(
+            "w-2.5 h-2.5 rounded-full animate-pulse",
+            isUp
+              ? "bg-emerald-500 shadow-[0_0_15px_rgba(16,185,129,1)]"
+              : isUnknown
+                ? "bg-amber-500 shadow-[0_0_15px_rgba(245,158,11,1)]"
+                : "bg-rose-500 shadow-[0_0_15px_rgba(244,63,94,1)]"
+          )}
+        />
+        <span className={cn(
+          "text-2xl font-bold tracking-tighter",
+          isUp ? "text-surface-inverse-foreground" : isUnknown ? "text-amber-300" : "text-rose-300"
+        )}>
+          {status}
+        </span>
       </div>
     </div>
   );

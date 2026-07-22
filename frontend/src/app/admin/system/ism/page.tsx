@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { cookies } from 'next/headers';
-import { ismAdminService, InfrmlSanctn } from '@/services/foundation/system/IsmAdminService';
+import { ismAdminService, InformalSanctionDto } from '@/services/foundation/system/IsmAdminService';
 import IsmClient from './IsmClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
 
@@ -14,7 +14,7 @@ export default async function InformalSanctionPage() {
   const accessToken = cookieStore.get('accessToken')?.value;
   const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-  let rawData: any = { list: [] as InfrmlSanctn[], total: 0, totalPage: 0 };
+  let rawData: any = { list: [] as InformalSanctionDto[], total: 0, totalPage: 0 };
 
   try {
     rawData = await ismAdminService.getPendingList({ page: 0, size: 50 }, axiosConfig);
@@ -23,13 +23,15 @@ export default async function InformalSanctionPage() {
   }
 
   // [Server Serialization Optimization]
-  const optimizedContent = selectFieldsList(rawData.list as InfrmlSanctn[], [
-    'infrmlSanctnId', 'jobSe', 'jobSeCode', 'applcntId', 'confmAt', 'sancltNm'
-  ] as (keyof InfrmlSanctn)[]);
+  // 키 목록은 생성 DTO(InformalSanctionDto)의 실제 필드명과 일치해야 한다.
+  // (과거 로컬 인터페이스 기준의 존재하지 않는 키만 나열해 전 행이 {} 로 비던 결함 수정)
+  const optimizedContent = selectFieldsList((rawData.list ?? []) as InformalSanctionDto[], [
+    'ifmlAtrzId', 'taskSeCd', 'taskSeNm', 'aplcntId', 'aplcntNm', 'aprvrId', 'aprvYn', 'reqYmd', 'rjctRsnCn'
+  ] as (keyof InformalSanctionDto)[]);
 
   return (
     <Suspense fallback={<IsmLoading />}>
-      <IsmClient initialData={{ ...rawData, list: optimizedContent as InfrmlSanctn[] }} />
+      <IsmClient initialData={{ ...rawData, list: optimizedContent as InformalSanctionDto[] }} />
     </Suspense>
   );
 }

@@ -10,6 +10,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,33 +30,37 @@ class RewardManageServiceTest {
     @InjectMocks
     private RewardManageService rewardManageService;
 
+    private static final Pageable PAGEABLE = PageRequest.of(0, 10);
+
     @Test
-    @DisplayName("포상 전체 조회")
-    void getAllRewards_Success() {
+    @DisplayName("포상 전체 조회 - 페이징")
+    void getRewardList_Success() {
         // Given
         RewardManage entity = RewardManage.builder().rwrdId("R1").rwrdNm("Excellence").build();
-        given(rewardManageRepository.findAll()).willReturn(List.of(entity));
+        given(rewardManageRepository.findAll(PAGEABLE)).willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
 
         // When
-        List<RewardManageDto> result = rewardManageService.getAllRewards();
+        var result = rewardManageService.getRewardList(null, PAGEABLE);
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getRwardNm()).isEqualTo("Excellence");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).getRwardNm()).isEqualTo("Excellence");
     }
 
     @Test
-    @DisplayName("이름으로 포상 검색")
-    void searchByName_Success() {
+    @DisplayName("이름으로 포상 검색 - 페이징")
+    void getRewardList_SearchByName() {
         // Given
         RewardManage entity = RewardManage.builder().rwrdId("R1").rwrdNm("Gold Prize").build();
-        given(rewardManageRepository.findByRwrdNmContaining("Gold")).willReturn(List.of(entity));
+        given(rewardManageRepository.findByRwrdNmContaining("Gold", PAGEABLE))
+                .willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
 
         // When
-        List<RewardManageDto> result = rewardManageService.searchByName("Gold");
+        var result = rewardManageService.getRewardList("Gold", PAGEABLE);
 
         // Then
-        assertThat(result).hasSize(1);
+        assertThat(result.getContent()).hasSize(1);
     }
 
     @Test

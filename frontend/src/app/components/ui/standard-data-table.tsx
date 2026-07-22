@@ -217,7 +217,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
           <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
           <Input
             placeholder={search.placeholder || "검색어 입력..."}
-            className="h-12 pl-12 rounded-lg border-2 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
+            className="h-12 pl-12 rounded-lg border-2 bg-card ring-offset-0 focus:ring-4 focus:ring-primary/5 transition-all font-bold text-sm"
             value={searchKeyword}
             onChange={(e) => setSearchKeyword(e.target.value)}
             aria-label="데이터 검색"
@@ -232,7 +232,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             initial={{ y: 100, opacity: 0, scale: 0.95 }}
             animate={{ y: 0, opacity: 1, scale: 1 }}
             exit={{ y: 100, opacity: 0, scale: 0.95 }}
-            className="fixed bottom-6 sm:bottom-12 left-1/2 -translate-x-1/2 z-[100] flex flex-col sm:flex-row items-center justify-between w-[95vw] sm:w-auto sm:min-w-[580px] max-w-[95vw] p-3 sm:p-2 bg-surface-inverse/95 backdrop-blur-2xl text-white rounded-2xl shadow-2xl border border-white/10 overflow-hidden gap-3 sm:gap-0"
+            className="fixed bottom-6 sm:bottom-12 left-1/2 -translate-x-1/2 z-[100] flex flex-col sm:flex-row items-center justify-between w-[95vw] sm:w-auto sm:min-w-[580px] max-w-[95vw] p-3 sm:p-2 bg-surface-inverse/95 backdrop-blur-2xl text-surface-inverse-foreground rounded-2xl shadow-2xl border border-white/10 overflow-hidden gap-3 sm:gap-0"
             role="toolbar"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 via-transparent to-primary/20 opacity-30 pointer-events-none" />
@@ -253,7 +253,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                   <Button
                     key={`bulk-action-${idx}`}
                     size="sm"
-                    className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl font-bold text-[10px] sm:text-xs tracking-widest gap-2 bg-white/10 hover:bg-white text-white hover:text-foreground transition-all border border-white/5 hover:border-white shadow-xl group whitespace-nowrap"
+                    className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl font-bold text-[10px] sm:text-xs tracking-widest gap-2 bg-white/10 hover:bg-surface-inverse-foreground text-surface-inverse-foreground hover:text-surface-inverse transition-all border border-white/5 hover:border-surface-inverse-foreground shadow-xl group whitespace-nowrap"
                     onClick={() => action.onClick(selectedItems)}
                   >
                     {action.icon && <span className="group-hover:scale-110 transition-transform shrink-0">{action.icon}</span>}
@@ -268,7 +268,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                 variant="ghost"
                 size="sm"
                 onClick={() => setSelectedIds(new Set())}
-                className="w-full sm:w-auto h-10 sm:h-12 px-6 rounded-xl text-[10px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white/5 text-white/40 hover:text-white transition-colors"
+                className="w-full sm:w-auto h-10 sm:h-12 px-6 rounded-xl text-[10px] sm:text-xs font-bold tracking-widest uppercase hover:bg-white/5 text-white/40 hover:text-surface-inverse-foreground transition-colors"
               >
                 전체 해제
               </Button>
@@ -410,7 +410,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             <ChevronLeft size={20} />
           </Button>
 
-          <div className="flex items-center gap-2 px-6 h-12 bg-white border-2 rounded-lg">
+          <div className="flex items-center gap-2 px-6 h-12 bg-card border-2 rounded-lg">
             <span className="text-sm font-bold">{pagination.currentPage}</span>
             <span className="text-xs font-bold text-foreground uppercase">of</span>
             <span className="text-sm font-bold text-foreground">{pagination.totalPages}</span>

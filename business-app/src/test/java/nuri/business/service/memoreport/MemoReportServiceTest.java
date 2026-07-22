@@ -48,18 +48,21 @@ class MemoReportServiceTest {
     }
 
     @Test
-    @DisplayName("메모보고 목록 조회")
+    @DisplayName("메모보고 전체 목록 조회 - 관리자 가드 통과 시 제목 검색으로 위임")
     void getMemoReportList() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
         MemoReport entity = MemoReport.builder().rptId("R1").build();
-        given(memoReportRepository.searchMemoReports(any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
+        // 검색어 null 은 빈 문자열로 정규화되어 전달된다(널이면 LIKE 가 전건 누락된다)
+        given(memoReportRepository.searchByTitle(eq(""), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
         Page<MemoReportDto> result = memoReportService.getMemoReportList(null, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
+        // 조직 전체 열람은 관리자 전용이어야 한다(컨트롤러 @PreAuthorize 와 짝을 이루는 2차 가드)
+        __secUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.assertAdmin());
     }
 
     @Test
@@ -95,12 +98,14 @@ class MemoReportServiceTest {
     }
 
     @Test
-    @DisplayName("메모보고 상세 조회")
+    @DisplayName("메모보고 상세 조회 - 작성자 본인은 열람 가능")
     void getMemoReport() {
-        // given
+        // given — 참여자 축은 esntlId(userId/rptrId)다. loginId(frstRgtrId)가 아니다.
         String reprtId = "R1";
-        MemoReport entity = MemoReport.builder().rptId(reprtId).build();
+        MemoReport entity = MemoReport.builder().rptId(reprtId).userId("esntl-me").build();
         given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(entity));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-me"));
 
         // when
         MemoReportDto result = memoReportService.getMemoReport(reprtId);
@@ -108,6 +113,38 @@ class MemoReportServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getRptId()).isEqualTo(reprtId);
+    }
+
+    @Test
+    @DisplayName("[IDOR] 메모보고 상세 조회 - 작성자도 수신자도 아니면 ACCESS_DENIED")
+    void getMemoReport_nonParticipant_denied() {
+        // given
+        String reprtId = "R1";
+        MemoReport entity = MemoReport.builder().rptId(reprtId).userId("esntl-owner").rptrId("esntl-receiver").build();
+        given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(entity));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-stranger"));
+
+        // when / then
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.getMemoReport(reprtId))
+                .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
+    }
+
+    @Test
+    @DisplayName("메모보고 상세 조회 - 수신자도 열람 가능(loginId 축 가드를 쓰면 여기서 오탐이 난다)")
+    void getMemoReport_receiver_allowed() {
+        // given
+        String reprtId = "R1";
+        MemoReport entity = MemoReport.builder().rptId(reprtId).userId("esntl-owner").rptrId("esntl-me").build();
+        given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(entity));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-me"));
+
+        // when
+        MemoReportDto result = memoReportService.getMemoReport(reprtId);
+
+        // then
+        assertThat(result).isNotNull();
     }
 
     @Test
@@ -177,6 +214,10 @@ class MemoReportServiceTest {
         String reprtId = "MEMO_000000000000001";
         MemoReport entity = mock(MemoReport.class);
         when(memoReportRepository.findById(reprtId)).thenReturn(Optional.of(entity));
+        // 열람 표시도 참여자만 가능하다 — 작성자 본인으로 세팅
+        when(entity.getUserId()).thenReturn("esntl-me");
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("esntl-me"));
 
         // when
         memoReportService.readMemoReport(reprtId);

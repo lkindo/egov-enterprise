@@ -3,6 +3,7 @@ package nuri.api.controller.foundation.controller.code;
 import nuri.business.service.code.CommonCodeService;
 import nuri.business.service.code.dto.CmmnClCodeDto;
 import nuri.business.service.code.dto.CmmnCodeDto;
+import nuri.business.service.code.dto.CmmnCodeHierarchyDto;
 import nuri.business.service.code.dto.CmmnDetailCodeDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
@@ -87,6 +88,15 @@ public class CommonCodeApiController {
     @PostMapping("/cmmn")
     public ResponseEntity<ApiResponse<Void>> createCmmnCode(@Valid @RequestBody CmmnCodeDto vo) throws Exception {
         commonCodeService.insertCmmnCode(vo);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "공통코드 계층 일괄 저장",
+            description = "코드 탐색기 편집 결과(코드그룹의 소속 분류코드)를 일괄 반영합니다. 각 항목의 cdId·clsfCd 는 필수입니다.")
+    @PutMapping("/cmmn/batch-hierarchy")
+    public ResponseEntity<ApiResponse<Void>> updateCmmnCodeHierarchy(
+            @Valid @RequestBody List<CmmnCodeHierarchyDto> items) {
+        commonCodeService.updateCmmnCodeHierarchy(items);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

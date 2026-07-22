@@ -10,6 +10,10 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -26,33 +30,37 @@ class ExternalHrServiceTest {
     @InjectMocks
     private ExternalHrService externalHrService;
 
+    private static final Pageable PAGEABLE = PageRequest.of(0, 10);
+
     @Test
-    @DisplayName("외부 인력 전체 조회")
-    void getAllExternalHr_Success() {
+    @DisplayName("외부 인력 전체 조회 - 페이징")
+    void getExternalHrList_Success() {
         // Given
         ExternalHr entity = ExternalHr.builder().otsdHrId("HR1").otsdHrNm("Name").build();
-        given(externalHrRepository.findAll()).willReturn(List.of(entity));
+        given(externalHrRepository.findAll(PAGEABLE)).willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
 
         // When
-        List<ExternalHrDto> result = externalHrService.getAllExternalHr();
+        var result = externalHrService.getExternalHrList(null, PAGEABLE);
 
         // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getOtsdHrNm()).isEqualTo("Name");
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).getOtsdHrNm()).isEqualTo("Name");
     }
 
     @Test
-    @DisplayName("이름으로 외부 인력 검색")
-    void searchByName_Success() {
+    @DisplayName("이름으로 외부 인력 검색 - 페이징")
+    void getExternalHrList_SearchByName() {
         // Given
         ExternalHr entity = ExternalHr.builder().otsdHrId("HR1").otsdHrNm("Tester").build();
-        given(externalHrRepository.findByOtsdHrNmContaining("Test")).willReturn(List.of(entity));
+        given(externalHrRepository.findByOtsdHrNmContaining("Test", PAGEABLE))
+                .willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
 
         // When
-        List<ExternalHrDto> result = externalHrService.searchByName("Test");
+        var result = externalHrService.getExternalHrList("Test", PAGEABLE);
 
         // Then
-        assertThat(result).hasSize(1);
+        assertThat(result.getContent()).hasSize(1);
     }
 
     @Test

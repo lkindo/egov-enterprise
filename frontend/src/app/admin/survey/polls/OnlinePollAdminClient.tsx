@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { onlinePollAdminService,  OnlinePollDto } from '@/services/foundation/system/OnlinePollAdminService';
@@ -34,7 +34,14 @@ import {
  DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import {
+ fromDateInputValue,
+ toDateInputValue,
+ toDisplayYmd,
+ toStorageYmd,
+ todayStorageYmd,
+} from '@/lib/format-date';
+import { getPollStatus, POLL_STATUS_LABEL, type PollStatus } from '@/lib/poll-status';
 import { motion } from 'framer-motion';
 
 export default function OnlinePollAdminClient({ 
@@ -48,10 +55,17 @@ export default function OnlinePollAdminClient({
  const [searchKeyword, setSearchKeyword] = useState('');
  
  const [isAddOpen, setIsAddOpen] = useState(false);
+ // 기간 기준일. 저장 포맷과 동일한 'yyyyMMdd' 문자열로 비교해야 상태 판정이 맞는다.
+ const [todayYmd, setTodayYmd] = useState<string>('');
+ useEffect(() => {
+ setTodayYmd(todayStorageYmd());
+ }, []);
+
+ // 날짜는 varchar(8) / @Size(max = 8) 라 'yyyyMMdd' 8자로 저장한다(10자 전송은 400).
  const [newPoll, setNewPoll] = useState<OnlinePollDto>({
  pollNm: '',
- pollBgngYmd: format(new Date(), 'yyyy-MM-dd'),
- pollEndYmd: format(new Date(new Date().setDate(new Date().getDate() + 7)), 'yyyy-MM-dd'),
+ pollBgngYmd: toStorageYmd(new Date()),
+ pollEndYmd: toStorageYmd(new Date(new Date().setDate(new Date().getDate() + 7))),
  pollKndCd: 'POLL01',
  pollDsuseYn: 'N',
  pollArticles: [{ pollArtclNm: '' }, { pollArtclNm: '' }]
@@ -90,6 +104,16 @@ export default function OnlinePollAdminClient({
  return;
  }
 
+ // 날짜는 'yyyyMMdd' 8자여야 서버 @Size(max = 8) 를 통과한다.
+ if (!newPoll.pollBgngYmd || !newPoll.pollEndYmd) {
+ toast.error('설문 시작일과 종료일을 입력해주세요.');
+ return;
+ }
+ if (newPoll.pollBgngYmd > newPoll.pollEndYmd) {
+ toast.error('설문 시작일은 종료일보다 빨라야 합니다.');
+ return;
+ }
+
  setLoading(true);
  try {
  await onlinePollAdminService.createPoll(newPoll);
@@ -123,7 +147,7 @@ export default function OnlinePollAdminClient({
  accessor: (item: OnlinePollDto) => (
  <div className="flex items-center gap-3 font-mono text-xs font-bold text-muted-foreground/60 tracking-tighter ">
  <Calendar size={14} className="text-primary opacity-40" />
- {item.pollBgngYmd} <span className="text-xs opacity-20 mx-1">/</span> {item.pollEndYmd}
+ {toDisplayYmd(item.pollBgngYmd)} <span className="text-xs opacity-20 mx-1">/</span> {toDisplayYmd(item.pollEndYmd)}
  </div>
  )
  },
@@ -150,34 +174,23 @@ export default function OnlinePollAdminClient({
  {
  header: '상태',
  accessor: (item: OnlinePollDto) => {
- const today = format(new Date(), 'yyyy-MM-dd');
- let status = '종료';
- let variant = 'closed';
- 
- if (item.pollDsuseYn === 'N') {
- if (today < (item.pollBgngYmd || '')) {
- status = '예정';
- variant = 'scheduled';
- } else if (today > (item.pollEndYmd || '')) {
- status = '종료';
- variant = 'closed';
- } else {
- status = 'Live';
- variant = 'live';
- }
- }
+ // 종전에는 10자 'yyyy-MM-dd' 기준일과 8자 저장값을 문자열 비교해 전건 오판정이었다.
+ // 판정은 poll-status 유틸(8자 기준)로 단일화한다.
+ const status: PollStatus = getPollStatus(item, todayYmd);
+ const label = status === 'active' ? 'Live' : POLL_STATUS_LABEL[status];
 
  return (
  <div className={cn(
  "flex items-center gap-2 px-4 py-1.5 rounded-lg border w-fit shadow-sm transition-all",
- variant === 'live' && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
- variant === 'scheduled' && "bg-amber-500/10 text-amber-500 border-amber-500/20",
- variant === 'closed' && "bg-muted text-muted-foreground border-border/50"
+ status === 'active' && "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+ status === 'scheduled' && "bg-amber-500/10 text-amber-500 border-amber-500/20",
+ status === 'unknown' && "bg-rose-500/10 text-rose-500 border-rose-500/20",
+ (status === 'closed' || status === 'suspended') && "bg-muted text-muted-foreground border-border/50"
  )}>
- {variant === 'live' && <Zap size={14} className="animate-pulse" />}
- {variant === 'scheduled' && <Clock size={14} />}
- {variant === 'closed' && <XCircle size={14} />}
- <span className="text-xs font-bold tracking-[0.2em] uppercase ">{status}</span>
+ {status === 'active' && <Zap size={14} className="animate-pulse" />}
+ {status === 'scheduled' && <Clock size={14} />}
+ {(status === 'closed' || status === 'suspended' || status === 'unknown') && <XCircle size={14} />}
+ <span className="text-xs font-bold tracking-[0.2em] uppercase ">{label}</span>
  </div>
  );
  }
@@ -311,10 +324,11 @@ export default function OnlinePollAdminClient({
  <label className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase ml-2">시작일시</label>
  <div className="relative group">
  <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+ {/* input[type=date] 는 'yyyy-MM-dd' 를 요구하고 저장은 'yyyyMMdd' 다 — 경계에서 변환한다. */}
  <Input
  type="date"
- value={newPoll.pollBgngYmd}
- onChange={(e) => setNewPoll(prev => ({ ...prev, pollBgngYmd: e.target.value }))}
+ value={toDateInputValue(newPoll.pollBgngYmd)}
+ onChange={(e) => setNewPoll(prev => ({ ...prev, pollBgngYmd: fromDateInputValue(e.target.value) }))}
  className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-card transition-all shadow-inner"
  />
  </div>
@@ -325,8 +339,8 @@ export default function OnlinePollAdminClient({
  <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
  <Input
  type="date"
- value={newPoll.pollEndYmd}
- onChange={(e) => setNewPoll(prev => ({ ...prev, pollEndYmd: e.target.value }))}
+ value={toDateInputValue(newPoll.pollEndYmd)}
+ onChange={(e) => setNewPoll(prev => ({ ...prev, pollEndYmd: fromDateInputValue(e.target.value) }))}
  className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-card transition-all shadow-inner"
  />
  </div>

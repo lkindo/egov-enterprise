@@ -102,18 +102,51 @@ public class Menu extends BaseEntity {
     }
 
     /**
-     * 메뉴 정보 수정
+     * 메뉴 정보 수정 (null-safe 병합).
+     * <p>
+     * 병합 규칙 — 부분(partial) 페이로드로 인한 무음 데이터 소실을 막기 위한 것이다.
+     * <ul>
+     *   <li>{@code upMenuSn}, {@code prgrmFileNm} : 전달값을 그대로 반영한다.
+     *       null 자체가 "루트로 이동" / "연결 프로그램 없음"이라는 유효한 의미를 갖기 때문이다.</li>
+     *   <li>그 외 값 필드 : null 이면 <b>기존 값을 유지</b>한다. 값을 비우려면 null 이 아니라 빈 문자열을 전달한다.
+     *       (화면에 노출되지 않는 menuExpln/relImgPath/relImgNm 이 수정 1회로 조용히 null 이 되던 문제 차단)</li>
+     * </ul>
      */
     public void update(String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr, String menuExpln,
                        String relImgPath, String relImgNm, String useYn) {
-        this.menuNm = menuNm;
-        this.prgrmFileNm = prgrmFileNm;
         this.upMenuSn = upMenuSn;
-        this.menuOrdr = menuOrdr;
-        this.menuExpln = menuExpln;
-        this.relImgPath = relImgPath;
-        this.relImgNm = relImgNm;
-        this.useYn = useYn;
+        this.prgrmFileNm = prgrmFileNm;
+        if (menuNm != null) {
+            this.menuNm = menuNm;
+        }
+        if (menuOrdr != null) {
+            this.menuOrdr = menuOrdr;
+        }
+        if (menuExpln != null) {
+            this.menuExpln = menuExpln;
+        }
+        if (relImgPath != null) {
+            this.relImgPath = relImgPath;
+        }
+        if (relImgNm != null) {
+            this.relImgNm = relImgNm;
+        }
+        if (useYn != null) {
+            this.useYn = useYn;
+        }
+    }
+
+    /**
+     * 순서/계층 전용 수정.
+     * <p>
+     * 트리 일괄 정렬 저장(batch-order)이 설명·아이콘 등 다른 컬럼을 함께 덮어쓰지 않도록 분리한 메서드다.
+     * upMenuSn 은 null(=루트)도 유효한 값이므로 그대로 반영하고, menuOrdr 은 NOT NULL 컬럼이라 null 이면 무시한다.
+     */
+    public void updateOrder(Long upMenuSn, Integer menuOrdr) {
+        this.upMenuSn = upMenuSn;
+        if (menuOrdr != null) {
+            this.menuOrdr = menuOrdr;
+        }
     }
 
     /**
@@ -124,11 +157,14 @@ public class Menu extends BaseEntity {
     }
 
     /**
-     * 메뉴 정보 수정 (modern_route 포함)
+     * 메뉴 정보 수정 (modern_route 포함).
+     * modernRoute 역시 {@link #update} 와 동일한 병합 규칙(null=유지, 빈 문자열=비움)을 따른다.
      */
     public void updateWithModernRoute(String menuNm, String prgrmFileNm, Long upMenuSn, Integer menuOrdr,
                                        String menuExpln, String relImgPath, String relImgNm, String modernRoute, String useYn) {
         this.update(menuNm, prgrmFileNm, upMenuSn, menuOrdr, menuExpln, relImgPath, relImgNm, useYn);
-        this.modernRoute = modernRoute;
+        if (modernRoute != null) {
+            this.modernRoute = modernRoute;
+        }
     }
 }

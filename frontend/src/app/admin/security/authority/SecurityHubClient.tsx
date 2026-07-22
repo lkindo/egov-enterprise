@@ -29,10 +29,12 @@ import {
 import { cn } from '@/lib/utils';
 import { SecurityMatrixVisualizer } from './components/SecurityMatrixVisualizer';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
+import type { PageResponse } from '@/types/foundation/system';
 import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/foundation/system/UserAuthorityAdminService';
 import { menuAdminService, Menu } from '@/services/foundation/system/MenuAdminService';
 import { MenuByAuthority } from '@/types/foundation/security';
 import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 ;
@@ -53,14 +55,17 @@ interface MenuNode extends Menu {
   isChecked?: boolean;
 }
 
-export default function SecurityHubClient({ 
-  authoritiesPromise 
-}: { 
-  authoritiesPromise: Promise<any> 
+export default function SecurityHubClient({
+  authoritiesPromise
+}: {
+  // Promise<any> 로 두면 authorities 가 any[] 가 되어 자식 컴포넌트와의 필드명 불일치를
+  // tsc 가 잡지 못한다(매트릭스 헤더 공백·undefined 키 저장의 근본 원인이었다).
+  authoritiesPromise: Promise<PageResponse<AuthorInfo>>
 }) {
   const initialAuthorities = use(authoritiesPromise);
   const queryClient = useQueryClient();
   const { toast } = useToast();
+  const confirm = useConfirm();
   const [isPending, startTransition] = useTransition();
   const [selectedAuthorCode, setSelectedAuthorCode] = useState<string>('');
   const [userSearchKeyword, setUserSearchKeyword] = useState('');
@@ -68,6 +73,8 @@ export default function SecurityHubClient({
 
   const [isAuthorModalOpen, setIsAuthorModalOpen] = useState(false);
   const [authorMode, setAuthorMode] = useState<'create' | 'edit'>('create');
+  // 수정 모달이 편집 중인 역할. selectedAuthorCode(좌측 선택)와 독립이어야 한다.
+  const [editingAuthor, setEditingAuthor] = useState<AuthorInfo | null>(null);
   
   const [tempUserMappings, setTempUserMappings] = useState<Set<string>>(new Set());
   const [tempMenuMappings, setTempMenuMappings] = useState<Set<number>>(new Set());
@@ -167,6 +174,21 @@ export default function SecurityHubClient({
     }
   };
 
+  /**
+   * 현재 페이지에서 서버가 '부여됨'으로 내려준 사용자 목록.
+   * 회수(delete) 대상 계산의 기준선이며, 페이지 단위로만 판단해 다른 페이지의 할당은 건드리지 않는다.
+   */
+  const grantedUserIdsOnPage = useMemo(
+    () => users.filter(u => u?.regYn === 'Y').map(u => u.scrtyDcsnTrgtId),
+    [users]
+  );
+
+  /** 체크 해제된 기존 부여자 = 회수 대상. */
+  const revokeTargets = useMemo(
+    () => grantedUserIdsOnPage.filter(id => !tempUserMappings.has(id)),
+    [grantedUserIdsOnPage, tempUserMappings]
+  );
+
   const saveUserMappingMutation = useMutation({
     mutationFn: async () => {
       const mappings: UserAuthorityDto[] = Array.from(tempUserMappings).map(uid => ({
@@ -174,13 +196,45 @@ export default function SecurityHubClient({
         authrtId: selectedAuthorCode,
         mbrTypeCd: users.find(u => u.scrtyDcsnTrgtId === uid)?.mbrTypeCd || 'USR'
       }));
-      return userAuthorityAdminService.saveUserAuthorities(mappings);
+
+      // 저장 API 는 업서트 전용이라, 체크를 해제해도 기존 행이 남아 권한이 회수되지 않았다.
+      // (성공 토스트 후 invalidate 하면 서버 상태가 다시 체크된 채 돌아오던 원인)
+      // tb_user_authrt_map 의 PK 는 scrty_dcsn_trgt_id 단일이므로 삭제 = 그 사용자의 권한 할당 해제다.
+      await Promise.all([
+        ...(mappings.length > 0 ? [userAuthorityAdminService.saveUserAuthorities(mappings)] : []),
+        ...(revokeTargets.length > 0 ? [userAuthorityAdminService.deleteUserAuthorities(revokeTargets)] : []),
+      ]);
+      return { granted: mappings.length, revoked: revokeTargets.length };
     },
-    onSuccess: () => {
-      toast('사용자 권한 할당이 반영되었습니다.', 'success');
+    onSuccess: ({ revoked }) => {
+      toast(
+        revoked > 0
+          ? `사용자 권한 할당이 반영되었습니다. (회수 ${revoked}건 포함)`
+          : '사용자 권한 할당이 반영되었습니다.',
+        'success'
+      );
+      queryClient.invalidateQueries({ queryKey: ['admin-user-authorities', selectedAuthorCode] });
+    },
+    onError: () => {
+      toast('권한 할당 저장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
+      // 실패 시 화면이 저장된 것처럼 남지 않도록 서버 상태로 되돌린다.
       queryClient.invalidateQueries({ queryKey: ['admin-user-authorities', selectedAuthorCode] });
     }
   });
+
+  /** 회수가 포함되면 확인을 받는다(권한 회수는 되돌리기 어려운 파괴적 변경이다). */
+  const handleSaveUserMapping = async () => {
+    if (revokeTargets.length > 0) {
+      const ok = await confirm({
+        title: '권한 회수 확인',
+        message: `${revokeTargets.length}명의 '${selectedAuthorCode}' 권한이 회수됩니다. 계속하시겠습니까?`,
+        confirmText: '회수하고 저장',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+    }
+    saveUserMappingMutation.mutate();
+  };
 
   const saveMenuMappingMutation = useMutation({
     mutationFn: () => menuAdminService.saveMenuCreation(selectedAuthorCode, Array.from(tempMenuMappings)),
@@ -195,7 +249,7 @@ export default function SecurityHubClient({
     setIsGlobalLoading(true);
     try {
       const allMappings = new Map<string, Set<number>>();
-      const promises = (authorities as AuthorInfo[]).map(async (auth) => {
+      const promises = authorities.map(async (auth) => {
         const menus = await authorAdminService.getAuthorMenus(auth.authrtCd);
         const menuList = Array.isArray(menus) ? menus : [];
         allMappings.set(auth.authrtCd, new Set(menuList.map(m => m.menuNo)));
@@ -263,17 +317,30 @@ export default function SecurityHubClient({
   };
 
   const handleOpenAuthorCreate = () => {
+    setEditingAuthor(null);
     setAuthorMode('create');
     setIsAuthorModalOpen(true);
   };
 
+  /**
+   * 수정 대상은 반드시 클릭한 행(auth)이다.
+   * 종전에는 인자를 무시하고 좌측에서 '선택된' 역할(selectedAuthorCode)로 폼을 채워,
+   * B 역할의 톱니를 눌러 저장하면 A 역할이 덮어써지는 사고가 났다.
+   */
   const handleOpenAuthorEdit = (auth: AuthorInfo) => {
+    setEditingAuthor(auth);
     setAuthorMode('edit');
     setIsAuthorModalOpen(true);
   };
 
   const handleAuthorDelete = async (code: string) => {
-    if (!confirm('권한을 삭제하시겠습니까? 관련 할당 정보가 모두 사라집니다.')) return;
+    const ok = await confirm({
+      title: '권한 삭제',
+      message: `'${code}' 권한을 삭제하시겠습니까? 관련 할당 정보가 모두 사라집니다.`,
+      confirmText: '삭제',
+      variant: 'destructive',
+    });
+    if (!ok) return;
     try {
       await authorAdminService.deleteAuthor(code);
       toast('권한이 삭제되었습니다.', 'success');
@@ -390,8 +457,6 @@ export default function SecurityHubClient({
       </motion.div>
     ));
   };
-
-  const currentAuth = (authorities as AuthorInfo[]).find((a) => a.authrtCd === selectedAuthorCode);
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -529,7 +594,7 @@ export default function SecurityHubClient({
                   <div className="max-h-[650px] overflow-y-auto pr-2 custom-scrollbar">
                     <StandardDataTable<AuthorInfo>
                       columns={roleColumns}
-                      data={authorities as AuthorInfo[]}
+                      data={authorities}
                       loading={isAuthorsLoading}
                       error={authorsError as Error | null}
                       onRetry={() => refetchAuthors()}
@@ -558,7 +623,7 @@ export default function SecurityHubClient({
                     <TooltipTrigger asChild>
                       <Button
                         size="sm"
-                        onClick={() => saveUserMappingMutation.mutate()}
+                        onClick={handleSaveUserMapping}
                         disabled={!selectedAuthorCode}
                         className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                       >
@@ -696,7 +761,7 @@ export default function SecurityHubClient({
       >
         <AuthorForm
           mode={authorMode}
-          initialData={authorMode === 'edit' ? (currentAuth as AuthorInfo) : undefined}
+          initialData={authorMode === 'edit' ? (editingAuthor ?? undefined) : undefined}
           onSubmit={onAuthorSubmit}
           onCancel={() => setIsAuthorModalOpen(false)}
         />

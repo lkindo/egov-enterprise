@@ -48,12 +48,18 @@ const loginPolicySchema = LoginPolicyDtoSchema.extend({
 
 type LoginPolicyFormValues = z.infer<typeof loginPolicySchema>;
 
+/** 서버(BaseSearchDto.pageUnit) 기본 페이지 크기와 동일하게 맞춘다. */
+const PAGE_SIZE = 10;
+
 export default function LoginPolicyAdminClient() {
   const [data, setData] = useState<LoginPolicy[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedPolicy, setSelectedPolicy] = useState<LoginPolicy | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [totalPage, setTotalPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   const form = useAppForm<typeof loginPolicySchema>(loginPolicySchema, {
     defaultValues: {
@@ -65,11 +71,22 @@ export default function LoginPolicyAdminClient() {
     }
   });
 
-  const fetchData = async () => {
+  /**
+   * 목록 조회. 서버는 @ModelAttribute BaseSearchDto(pageIndex 1-based / pageUnit / searchKeyword)로 받는다.
+   * pageIndex 는 직접 계산하지 않고 LoginPolicyAdminService·ApiService 의 page(0-based) 자동 매핑에 위임한다.
+   */
+  const fetchData = async (targetPage: number = 1, keyword: string = searchTerm) => {
     setLoading(true);
     try {
-      const response = await loginPolicyAdminService.getLoginPolicyList({ searchKeyword: searchTerm });
-      setData(response.list);
+      const response = await loginPolicyAdminService.getLoginPolicyList({
+        page: targetPage - 1,
+        pageUnit: PAGE_SIZE,
+        searchKeyword: keyword,
+      });
+      setData(response.list || []);
+      setTotalPage(response.totalPage || 1);
+      setTotal(response.total || 0);
+      setPage(targetPage);
     } catch (error) {
       toast.error('로그인 정책 목록을 불러오는 데 실패했습니다.');
     } finally {
@@ -77,8 +94,13 @@ export default function LoginPolicyAdminClient() {
     }
   };
 
+  /** 검색은 항상 1페이지부터 — 3페이지에서 검색하면 빈 화면이 되는 결함 방지. */
+  const handleSearch = () => fetchData(1, searchTerm);
+
   useEffect(() => {
-    fetchData();
+    fetchData(1, '');
+    // 최초 1회 로드. 이후 조회는 검색·페이지 이동 핸들러가 담당한다.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleEdit = (policy: LoginPolicy) => {
@@ -99,7 +121,7 @@ export default function LoginPolicyAdminClient() {
       await loginPolicyAdminService.saveLoginPolicy(selectedPolicy.userId, values as Partial<LoginPolicy>);
       toast.success('로그인 정책이 성공적으로 업데이트되었습니다.');
       setIsEditModalOpen(false);
-      fetchData();
+      fetchData(page, searchTerm);
     } catch (error) {
       toast.error('정책 저장 중 오류가 발생했습니다.');
     }
@@ -184,7 +206,8 @@ export default function LoginPolicyAdminClient() {
       />
 
       <HubMetricGrid>
-        <HubMetricCard title="전체 정책 수" value={data.length} icon={ShieldAlert} color="primary" />
+        {/* 지표는 현재 페이지 길이가 아니라 서버 전체 건수(total) 기준 */}
+        <HubMetricCard title="전체 정책 수" value={total} icon={ShieldAlert} color="primary" />
         <HubMetricCard title="OTP 활성 계정" value={otpEnabledCount} icon={Fingerprint} color="emerald" status="SECURE" />
         <HubMetricCard title="접속 제한 계정" value={restrictedCount} icon={ShieldAlert} color="rose" />
         <HubMetricCard title="평균 보안 레벨" value="HIGH" icon={Key} color="amber" />
@@ -198,11 +221,11 @@ export default function LoginPolicyAdminClient() {
               placeholder="사용자 ID 또는 성명 검색..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && fetchData()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               className="h-11 pl-16 pr-8 rounded-lg bg-muted border-2 border-border font-bold text-md tracking-tight shadow-inner" 
             />
           </div>
-          <Button onClick={fetchData} variant="outline" className="h-11 w-16 rounded-lg border-2 border-border bg-white hover:bg-muted transition-all shadow-xl active:scale-95 group">
+          <Button onClick={handleSearch} variant="outline" className="h-11 w-16 rounded-lg border-2 border-border bg-white hover:bg-muted transition-all shadow-xl active:scale-95 group">
             <RefreshCcw size={24} className="text-muted-foreground group-hover:rotate-180 transition-transform duration-700" />
           </Button>
         </div>
@@ -214,6 +237,11 @@ export default function LoginPolicyAdminClient() {
           keyField="userId"
           emptyMessage="등록된 로그인 정책이 없습니다."
           className="border-none bg-transparent"
+          pagination={{
+            currentPage: page,
+            totalPages: totalPage,
+            onPageChange: (p) => fetchData(p, searchTerm)
+          }}
         />
       </HubSectionCard>
 

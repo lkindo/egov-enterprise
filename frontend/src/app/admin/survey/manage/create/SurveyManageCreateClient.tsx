@@ -19,7 +19,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { format } from "date-fns";
+import { toDisplayYmd, toStorageYmd } from "@/lib/format-date";
 import { CalendarIcon, Plus, Send, ArrowLeft, Sparkles } from "lucide-react";
 import { createPoll } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO } from '@/types/business/poll';
@@ -50,10 +50,12 @@ export default function SurveyManageCreateClient() {
       return;
     }
 
+    // 저장 포맷은 'yyyyMMdd' 8자다. 컬럼이 varchar(8)/DTO 가 @Size(max = 8) 이라
+    // 'yyyy-MM-dd'(10자)를 보내면 등록이 100% 400 으로 실패한다.
     const payload = {
       ...formData,
-      pollBgngYmd: format(beginDate, 'yyyy-MM-dd'),
-      pollEndYmd: format(endDate, 'yyyy-MM-dd'),
+      pollBgngYmd: toStorageYmd(beginDate),
+      pollEndYmd: toStorageYmd(endDate),
       pollArticles: [
         { pollArtclNm: '매우 만족 (Highly Satisfied)' },
         { pollArtclNm: '만족 (Satisfied)' },
@@ -119,7 +121,7 @@ export default function SurveyManageCreateClient() {
                     )}
                   >
                     <CalendarIcon className="mr-3 h-5 w-5 opacity-40" />
-                    {beginDate ? format(beginDate, "yyyy-MM-dd") : <span>날짜 선택</span>}
+                    {beginDate ? toDisplayYmd(toStorageYmd(beginDate)) : <span>날짜 선택</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 rounded-lg border-none shadow-2xl overflow-hidden">
@@ -145,7 +147,7 @@ export default function SurveyManageCreateClient() {
                     )}
                   >
                     <CalendarIcon className="mr-3 h-5 w-5 opacity-40" />
-                    {endDate ? format(endDate, "yyyy-MM-dd") : <span>날짜 선택</span>}
+                    {endDate ? toDisplayYmd(toStorageYmd(endDate)) : <span>날짜 선택</span>}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0 rounded-lg border-none shadow-2xl overflow-hidden">

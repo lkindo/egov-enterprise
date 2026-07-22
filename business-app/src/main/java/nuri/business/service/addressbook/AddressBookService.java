@@ -39,6 +39,10 @@ public class AddressBookService {
     public AddressBookDto getAddressBook(@NonNull String adbkId) {
         AddressBook entity = addressBookRepository.findById(adbkId)
                 .orElseThrow(() -> new BusinessException("주소록을 찾을 수 없습니다: " + adbkId, CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [IDOR] 소유자/관리자만 열람(PII) — 목록(searchAddressBooks)이 wrterId 로만 스코핑되므로 상세도 동일 가드가 필요하다.
+        // 공개범위(rlsScopeCd) 예외는 두지 않는다: 코드값이 표준화돼 있지 않고('P'/'G'/'PUBLIC'/'COMPANY' 혼재)
+        // 목록 조회도 타인의 '공개' 주소록을 노출하지 않으므로, 상세만 여는 것은 열거 취약점이 된다.
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
 
         AddressBookDto dto = convertToDto(entity);
         List<AddressBookUser> users = addressBookUserRepository.findByAdbkId(adbkId);

@@ -67,6 +67,15 @@ public class CommonCodeGroup extends BaseEntity implements Serializable {
         this.lastMdfrId = lastUpdusrId;
     }
 
+    /**
+     * 코드 탐색기(드래그앤드롭)의 계층 재배치 결과를 반영한다.
+     * update() 는 clsfCd 를 건드리지 않으므로 소속 분류 이동 전용 메서드를 둔다.
+     * 정렬 순서는 tb_com_cd 에 물리 컬럼이 없어 반영 대상이 아니다.
+     */
+    public void updateClassification(@NonNull String clsfCd) {
+        this.clsfCd = Objects.requireNonNull(clsfCd);
+    }
+
     public void delete() {
         this.useYn = "N";
     }
