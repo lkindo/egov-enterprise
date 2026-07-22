@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { BoardPreview } from './BoardPreview';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
  Select,
  SelectContent,
@@ -39,9 +39,7 @@ import {
  BookOpen,
  List,
  ImageIcon,
- Lock,
- UserCircle,
- UserMinus,
+ ArrowUpRight,
  Info
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -51,7 +49,7 @@ import { menuAdminService } from '@/services/foundation/system/MenuAdminService'
 const STEPS = [
  { id: 1, title: '기본 설정', description: '게시판의 이름과 설명을 입력하세요', icon: Settings2 },
  { id: 2, title: '템플릿 선택', description: '용도에 맞는 UI 스타일을 선택하세요', icon: Layout },
- { id: 3, title: '권한 매트릭스', description: '사용자 그룹별 권한을 설정하세요', icon: ShieldCheck },
+ { id: 3, title: '접근 권한 안내', description: '이 게시판의 접근 권한이 어떻게 결정되는지 확인하세요', icon: ShieldCheck },
  { id: 4, title: '메뉴 배포', description: '사이트 메뉴에 게시판을 연결하세요', icon: Rocket },
 ];
 
@@ -114,26 +112,12 @@ const TEMPLATES = [
  },
 ];
 
-const ROLES = [
- { id: 'ROLE_ADMIN', name: '시스템 관리자', icon: Lock, color: 'text-rose-500' },
- { id: 'ROLE_USER', name: '일반 임직원', icon: UserCircle, color: 'text-hub-blue' },
- { id: 'ROLE_ANONYMOUS', name: '익명 사용자', icon: UserMinus, color: 'text-muted-foreground' },
-];
-
-const PERMISSIONS = [
- { id: 'list', name: '목록 조회' },
- { id: 'read', name: '글 읽기' },
- { id: 'write', name: '글 쓰기' },
- { id: 'comment', name: '댓글 작성' },
-];
-
 import { BoardMasterDtoSchema } from '@/types/generated-zod';
 
 const formSchema = BoardMasterDtoSchema.extend({
  bbsTtl: z.string().min(2, '게시판 명칭은 최소 2글자 이상이어야 합니다'),
  ansPsbltyYn: z.boolean(),
  fileAtchPsbltyYn: z.boolean(),
- permissions: z.record(z.string(), z.array(z.string())),
  menuNm: z.string(),
  upperMenuNo: z.string(),
  menuOrdr: z.number(),
@@ -163,11 +147,6 @@ export function BoardMakerWizard() {
  tmpltId: 'TMPLT_HUB',
  useYn: 'Y',
  cmntyId: '',
- permissions: {
- 'ROLE_ADMIN': ['list', 'read', 'write', 'comment'],
- 'ROLE_USER': ['list', 'read', 'write', 'comment'],
- 'ROLE_ANONYMOUS': ['list', 'read'],
- },
  menuNm: '',
  upperMenuNo: '2000000',
  menuOrdr: 1,
@@ -175,7 +154,6 @@ export function BoardMakerWizard() {
  });
 
  const selectedTemplate = watch('tmpltId');
- const permissions = watch('permissions');
  const bbsTtl = watch('bbsTtl');
  const bbsExpln = watch('bbsExpln');
 
@@ -186,18 +164,6 @@ export function BoardMakerWizard() {
  setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
  };
  const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
-
- const togglePermission = (roleId: string, permId: string) => {
- const rolePerms = (permissions[roleId] as string[]) || [];
- const newPerms = rolePerms.includes(permId)
- ? rolePerms.filter(p => p !== permId)
- : [...rolePerms, permId];
-
- setValue('permissions', {
- ...permissions,
- [roleId]: newPerms
- });
- };
 
  const onSubmit = async (data: FormValues) => {
  if (currentStep < STEPS.length) {
@@ -486,66 +452,56 @@ export function BoardMakerWizard() {
  )}
 
  {currentStep === 3 && (
+ /*
+  * 이 단계에는 역할×권한 체크박스 매트릭스가 있었으나, 게시판별 권한은 저장할 테이블도
+  * API 도 존재하지 않아 선택값이 서버로 전송되지 않고 브라우저에서 사라졌다.
+  * 운영자는 '익명 쓰기 금지'를 설정했다고 믿지만 실제로는 아무 정책도 적용되지 않는
+  * 보안 오인 상태였다. 실제 통제 지점(메뉴 권한)을 안내하도록 대체한다.
+  */
  <div className="space-y-8 text-left">
- <div className="rounded-lg border-2 border-border overflow-hidden shadow-inner bg-muted/30">
- <div className="overflow-x-auto">
- <table className="w-full min-w-[800px]">
- <thead>
- <tr className="bg-muted border-b">
- <th className="p-8 text-left font-bold text-muted-foreground text-sm tracking-widest uppercase">사용자 그룹 (Roles)</th>
- {PERMISSIONS.map(p => (
- <th key={p.id} className="p-8 text-center font-bold text-muted-foreground text-sm tracking-widest uppercase">{p.name}</th>
- ))}
- </tr>
- </thead>
- <tbody className="divide-y divide-border">
- {ROLES.map(role => {
- const RoleIcon = role.icon;
- const rolePerms = (permissions[role.id] as string[]) || [];
+ <div className="p-8 bg-muted/30 rounded-lg border-2 border-border shadow-inner space-y-6 text-left">
+ <div className="flex items-start gap-4">
+ <div className="p-3 rounded-lg bg-card shadow-sm border border-border text-primary shrink-0">
+ <ShieldCheck size={24} aria-hidden="true" />
+ </div>
+ <div className="space-y-2 text-left">
+ <p className="font-bold text-foreground text-lg text-left">이 게시판의 접근 권한은 메뉴 권한을 따릅니다</p>
+ <p className="text-sm text-muted-foreground font-bold tracking-tight text-left">
+ 게시판은 다음 단계에서 선택하는 상위 메뉴 아래에 등록됩니다. 어떤 역할이 이 게시판을
+ 볼 수 있는지는 그 메뉴에 부여된 권한으로 결정되며, 게시판 단위의 별도 권한 설정은
+ 현재 제공하지 않습니다.
+ </p>
+ </div>
+ </div>
 
- return (
- <tr key={role.id} className="group hover:bg-white transition-colors">
- <td className="p-8">
- <div className="flex items-center gap-4 text-left">
- <div className={cn("p-3 rounded-lg bg-white shadow-sm border border-border shadow-inner-sm", role.color)}>
- <RoleIcon size={24} />
+ <div className="rounded-lg border-2 border-border bg-card p-6 space-y-3 text-left">
+ <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase">현재 적용되는 규칙</p>
+ <ul className="space-y-2 text-sm font-bold text-foreground list-disc pl-5">
+ <li>비로그인 사용자는 게시글을 작성할 수 없습니다(인증 필수).</li>
+ <li>메뉴가 보이지 않는 역할은 해당 게시판 화면에 접근하지 않습니다.</li>
+ <li>읽기·쓰기·댓글을 역할별로 나누어 제한하는 기능은 제공되지 않습니다.</li>
+ </ul>
  </div>
- <div className="text-left">
- <p className="font-bold text-foreground text-lg text-left">{role.name}</p>
- <p className="text-xs text-muted-foreground font-bold uppercase text-left">{role.id}</p>
- </div>
- </div>
- </td>
- {PERMISSIONS.map(perm => {
- const isChecked = rolePerms.includes(perm.id);
- return (
- <td key={perm.id} className="p-8 text-center text-left">
- <div className="flex items-center justify-center">
- <Checkbox
- checked={isChecked}
- onCheckedChange={() => togglePermission(role.id, perm.id)}
- className={cn(
- "w-8 h-8 rounded-lg transition-all border-2",
- isChecked ? "bg-primary border-primary text-white scale-110 shadow-lg shadow-primary/20" : "bg-white border-border"
- )}
- />
- </div>
- </td>
- );
- })}
- </tr>
- );
- })}
- </tbody>
- </table>
- </div>
+
+ <Link
+ href="/admin/security/authority"
+ target="_blank"
+ rel="noopener noreferrer"
+ className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
+ >
+ 권한 정책 관리에서 메뉴 권한 설정하기
+ <ArrowUpRight size={16} aria-hidden="true" />
+ </Link>
  </div>
 
  <div className="p-8 bg-amber-50 rounded-lg border-2 border-amber-100 flex items-start gap-4 shadow-sm text-left">
- <Info className="w-8 h-8 text-amber-500 shrink-0" />
+ <Info className="w-8 h-8 text-amber-500 shrink-0" aria-hidden="true" />
  <div className="text-left">
- <p className="font-bold text-amber-900 text-lg text-left">보안 정책 안내</p>
- <p className="text-sm text-muted-foreground font-bold tracking-tight text-left">관리자 그룹은 모든 권한이 기본적으로 부여됩니다. 익명 사용자에게 쓰기 권한을 부여할 경우 스팸 게시물에 주의가 필요합니다.</p>
+ <p className="font-bold text-amber-900 text-lg text-left">게시판 생성 후 확인하세요</p>
+ <p className="text-sm text-muted-foreground font-bold tracking-tight text-left">
+ 게시판과 함께 생성된 메뉴는 기본적으로 권한이 부여되지 않은 상태일 수 있습니다.
+ 생성 직후 권한 정책 관리에서 해당 메뉴를 담당 역할에 배정해야 사용자에게 노출됩니다.
+ </p>
  </div>
  </div>
  </div>
