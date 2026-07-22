@@ -45,6 +45,20 @@ public class DeptApiController {
         )));
     }
 
+    /**
+     * 조직도(트리) 전용 전량 조회. 조직도는 페이징과 본질적으로 상극이므로 Pageable.unpaged() 로 전량을 반환한다.
+     * 프론트엔드가 size=1000 같은 임의값에 의존하지 않게 하여, 부서가 늘어나도 누락 없이 트리를 구성할 수 있다.
+     * (D-11: 종전에는 size=10 기본값으로 11건 초과 시 트리가 잘렸고, 계층 저장 시 sortOrdr 충돌 위험이 잠복했다.)
+     */
+    @Operation(summary = "부서 전량 조회 (조직도 트리용)", description = "페이징 없이 전체 부서 목록을 조회합니다. 조직도 편집 화면 전용.")
+    @GetMapping("/tree")
+    public ResponseEntity<ApiResponse<java.util.List<DeptManageDto>>> getDeptTree(
+            @RequestParam(required = false) String keyword) {
+
+        Page<DeptManageDto> result = deptManageService.getDeptManageList(keyword, Pageable.unpaged());
+        return ResponseEntity.ok(ApiResponse.success(result.getContent()));
+    }
+
     @Operation(summary = "부서 상세 조회", description = "특정 부서 ID에 해당하는 상세 정보를 조회합니다.")
     @GetMapping("/{deptId}")
     public ResponseEntity<ApiResponse<DeptManageDto>> getDept(

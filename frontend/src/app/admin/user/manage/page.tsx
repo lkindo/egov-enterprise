@@ -18,8 +18,9 @@ export default async function UserManagePage() {
       console.error('[user-hub] 사용자 목록 프리페치 실패:', error);
       return null;
     });
+  // 조직도 전량 로드(D-11). 서버는 keyword + Spring Pageable(page/size, 0-based)을 읽는다.
   const deptsPromise = deptAdminService
-    .getDeptList({ pageNo: 1, searchKeyword: '' }, axiosConfig)
+    .getDeptList({ keyword: '', page: 0, size: 1000 }, axiosConfig)
     .catch((error) => {
       console.error('[user-hub] 부서 목록 프리페치 실패:', error);
       return null;

@@ -18,9 +18,10 @@ export default async function DeptManagePage() {
       console.error('[user-hub] 사용자 목록 프리페치 실패:', error);
       return null;
     });
-  // 서버는 keyword + Spring Pageable(page/size, 0-based)을 읽는다. (pageNo/searchKeyword 는 무시됐다)
+  // 조직도(D&D 트리)는 페이징과 상극 — 전량 로드해야 한다. 클라이언트(DEPT_LIST_SIZE=1000)와 동일한 size 를 쓴다.
+  // 종전 size:10 → 11번째 부서부터 프리페치 시드에서 누락돼 불필요 재조회가 발생했다(D-11).
   const deptsPromise = deptAdminService
-    .getDeptList({ keyword: '', page: 0, size: 10 }, axiosConfig)
+    .getDeptList({ keyword: '', page: 0, size: 1000 }, axiosConfig)
     .catch((error) => {
       console.error('[user-hub] 부서 목록 프리페치 실패:', error);
       return null;
