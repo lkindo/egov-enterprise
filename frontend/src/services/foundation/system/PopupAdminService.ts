@@ -35,11 +35,6 @@ class PopupAdminService extends AdminService {
   async deletePopup(popupId: string, config?: AxiosRequestConfig): Promise<void> {
     return this.delete(`/${popupId}`, config);
   }
-
-  /** 팝업李님쇨큵 님젣 */
-  async deletePopups(popupIds: string[], config?: AxiosRequestConfig): Promise<void> {
-    return this.post('/delete', { popupIds }, config);
-  }
 }
 
 export const popupAdminService = new PopupAdminService();
