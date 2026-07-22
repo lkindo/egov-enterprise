@@ -134,8 +134,8 @@ export default function TemplateAdminClient({
  ];
 
  return (
- {/* 감사 P2: 루트 layout 이 이미 `max-w-7xl p-6/md:p-12/lg:p-16` 를 주므로 화면별 이중 여백(px-4)·폭 제한을 제거하고 상속한다. */}
  <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
+ {/* 감사 P2: 루트 layout 이 이미 `max-w-7xl p-6/md:p-12/lg:p-16` 를 주므로 화면별 이중 여백(px-4)·폭 제한을 제거하고 상속한다. */}
  <PageHeader
  title="템플릿 시스템 아키텍처"
  breadcrumbs={[{ label: '시스템관리' }, { label: '커뮤니티관리' }, { label: '템플릿관리' }]}
