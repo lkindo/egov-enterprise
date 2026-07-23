@@ -3,7 +3,7 @@
 > **목적**: 기존(레거시) 프로젝트를 본 프레임워크로 **재개발**할 때, 레거시 소스 DB의 데이터를 본 프레임워크의 **표준 스키마(V2_0 baseline)** 로 안전하게 이관한다.
 > **위치**: 재사용성 로드맵 §5의 최상위 공백 "레거시 데이터 이관 지원"의 실체화. 본 문서는 **Phase 4a(설계)** 이며, **Phase 4b(골격 구현)** 의 계약(contract)을 확정한다.
 > **작성**: 2026-07-11 · Claude Code · **등급**: L2(신규 서브시스템 설계)
-> **⚠ 현황(2026-07-23)**: Phase 4b(골격)은 **이미 구현됨** — `migration-tool` 모듈에 `SourceIntrospector`·`MappingValidator`·`EtlExecutor`·`MigrationVerifier` 등 14 클래스 + `MigrationPipelineTest`(2026-07-11 `17042a105`). 본 문서 §5 는 그 구현의 근거 설계이며, §6 의 "코드 변경 없음" 서술은 착수 이전 시점 기록이다.
+> **⚠ 현황(2026-07-23)**: Phase 4b 골격(2026-07-11 `17042a105`, 14 클래스)에 더해 **2026-07-23 완성도 보강**이 적재됐다 — 키 재매핑 레지스트리(keystone)·`idStrategy`/`type` 死 DSL 활성화·FK 위상정렬·스트리밍/배치/트랜잭션 write·실증 검증기(PASS/WARN/FAIL). 구현 현황과 잔여 로드맵은 **§7**을 SSOT 로 참조한다. (§5/§6 은 초기 골격 시점 기록으로 보존.)
 
 ---
 
@@ -122,4 +122,36 @@ codemaps:
 - 관련: [framework-reusability-assessment.md](./framework-reusability-assessment.md) §5, [getting-started.md](../03-guides/getting-started.md) §6.5.
 
 ---
-*1줄 요약: 레거시 이관은 소스 무지·표준 강제 원칙 아래 **선언적 매핑 DSL**을 중심으로 introspect→validate(meta표준)→ETL(dry-run/commit·재개)→verify(리포트) 4단계로 구성하며, Phase 4b는 매핑 검증기부터 구현한다.*
+
+## 7. 구현 현황 & 잔여 로드맵 (2026-07-23 — 완성도 보강 후 SSOT)
+
+> 8차원 복합-시나리오 감사(Workflow) 결과를 기준으로, 초기 골격(PoC ≈ happy-path PG→PG 1:1)에서 **참조 무결성·엔진 견고성·실증 검증** 축을 끌어올렸다. 아래가 실제 코드 기준 현황이다.
+
+### 7.1 이번에 구현된 것 (테스트로 증명 — `:migration-tool:test` 15/15 green)
+| 역량 | 내용 | 클래스 |
+|---|---|---|
+| **키 재매핑 레지스트리 (keystone)** | 레거시키→신규 esntl_id 대응을 인메모리+타깃(`tb_migration_key_map`)에 영속. 재실행 시 preload 로 동일 키 재사용(멱등). | `keymap/KeyMapRegistry`·`StandardIdGenerator` |
+| **`idStrategy` 활성화** | 부모 PK 채번(死 DSL → 실동작). `sourceKey` 신설로 레거시 PK 컬럼 지정. | `EtlExecutor.transformRow` |
+| **`fkRef` FK 재작성** | 자식 FK 값을 부모 키맵으로 신규 키에 번역 → **대리키 재생성 시 참조 무결성 보존**. 고아는 예외로 격리. | `ColumnMapping.fkRef`·`EtlExecutor.applyFkRef` |
+| **FK 위상정렬** | `fkRef` 간선으로 Kahn 정렬 → 부모 먼저 적재(선언 순서 무관). 자기참조 제외. | `etl/TableOrderer` |
+| **`type` 타입 강제 활성화** | 死 DSL → int/long/decimal/boolean(Y/N)/date(YYYYMMDD)/timestamp/uuid 변환. | `transform/TypeConverter` |
+| **스트리밍 + 배치 + 트랜잭션 write** | `SELECT *` 전량 로드 → fetchSize 스트리밍(메모리 상한). 행단위 autocommit → JDBC 배치 + 청크 트랜잭션(배치 실패 시 행단위 폴백으로 나쁜 행 격리). | `EtlExecutor.runTable/writeBatch` |
+| **실증 검증기 (false-green 제거)** | 18줄 카운트-에코 stub → 타깃 재조회 행수 대조 + 조회↔변환↔기록 정합 → **PASS/WARN/FAIL** 등급. | `verify/MigrationVerifier`·`MigrationReport` |
+| **스키마 한정 식별자** | `schema.table`(SCOTT.EMP/dbo.USERS) 수용(인젝션 안전). | `SourceIntrospector.qualifiedIdent` |
+| **검증 강화** | `fkRef` 부모 실재·`type` 알려짐·`idStrategy.sourceKey` 유무 사전 검증. | `MappingValidator` |
+
+### 7.2 잔여 로드맵 (미착수 — 실검증 환경·제품 결정 필요)
+| 우선순위 | 항목 | 사유(보류) |
+|---|---|---|
+| **P0 연결성** | 멀티-DBMS 드라이버 외부 로더(ojdbc/Tibero) · **`SourceDialect` SPI**(Oracle=`ALL_TAB_COLUMNS`, DB2=`SYSCAT`) · PK/FK/UNIQUE 메타 추출 · **문자셋/인코딩 채널**(EUC-KR/CP949 mojibake 방어) · 비ASCII/한글 식별자 quoting | 실 Oracle/Tibero 없이는 검증 불가. 드라이버 재배포 제약. 현재 PG/H2 만 실동작. |
+| **P2 스케일-잔여** | keyset PK **seek**(현재 fetchSize 스트리밍) · PG **COPY** 고속경로 · 테이블간/내 병렬 · 체크포인트 재개(`migration_checkpoint`) | 대용량 성능 튜닝은 실측 데이터 필요. |
+| **P3 잔여** | **PII 재암호화 SPI**(ARIA `ariacryptoService` + `crypto-key-rotation` 연계) · BLOB/CLOB 스트림 바인딩 · **dead-letter 격리 테이블**(현재 오류 리스트) · 멱등 upsert(`ON CONFLICT`) | 보안/키 관리 제품 결정. LOB 는 대용량 실측. |
+| **P4 잔여** | 고아 FK/NOT-NULL/UNIQUE 스캔 · `meta_standard_domains` 도메인 적합성 · 집계 체크섬 parity · 샘플 diff · `tb_migration_run` 감사 레코드 | 검증 심화(현재 행수 parity + 정합까지). |
+| **P5 무중단** | **DELTA 모드**(high-watermark) · 재조정 게이트 · 롤백/스냅샷 · 커트오버 런북 | 무중단 컷오버는 운영 절차·제품 결정. [zero-downtime-migration.md](./zero-downtime-migration.md)(스키마 진화)와 별개. |
+| **P6 DX/구조** | 구조 연산자(N:1/1:N split·discriminator route·EAV) · **매핑 스캐폴딩**(introspection→starter yml) · 시크릿 외부화 · testcontainers e2e | 대규모(200테이블) 저작 생산성. |
+
+### 7.3 완성도 평가
+- 초기 PoC(감사 평가 ≈11%, 블로커 가중) → **참조 무결성·엔진 견고성·실증 검증 축 확보**로 상향. 단 **P0 연결성 미해소**로 여전히 실 Oracle/Tibero 레거시는 미대응(PG/H2 실동작). 즉 "표준 스키마로 **정확하고 무결하게** 이관하는 엔진"은 성립했고, "**다양한 소스에 물리적으로 붙는** 범위"가 남은 최대 축이다.
+
+---
+*1줄 요약: 레거시 이관은 소스 무지·표준 강제 원칙 아래 **선언적 매핑 DSL**을 중심으로 introspect→validate(meta표준)→ETL(스트리밍·배치·트랜잭션·키맵 FK재작성)→verify(PASS/WARN/FAIL) 4단계로 구성한다. 2026-07-23 보강으로 **참조 무결성 keystone·타입강제·위상정렬·실증 검증**을 확보했고(§7.1, 테스트 15/15), 잔여 최대 축은 **P0 멀티-DBMS 연결성**이다(§7.2).*

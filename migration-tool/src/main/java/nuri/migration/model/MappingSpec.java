@@ -46,6 +46,8 @@ public record MappingSpec(
     /**
      * 컬럼 매핑. {@code source} 없이 {@code constant} 만 있으면 상수 주입(표준 감사컬럼 등).
      * {@code transform}(변환기명)·{@code codemap}(코드맵명)·{@code type}(타입변환 힌트)은 선택.
+     * {@code fkRef}(부모 소스 테이블명)가 있으면 이 컬럼의 소스 값을 그 부모의 키맵으로 번역해
+     * 신규 대리키(esntl_id 등)로 재작성한다 — 부모 PK 재생성 시 자식 FK 무결성 보존의 핵심.
      */
     @JsonIgnoreProperties(ignoreUnknown = true)
     public record ColumnMapping(
@@ -54,10 +56,15 @@ public record MappingSpec(
             String transform,
             String type,
             String codemap,
+            String fkRef,
             @JsonProperty("const") String constant
     ) {}
 
-    /** 표준 ID 생성 전략(생성기 prefix 연동). */
+    /**
+     * 표준 ID 생성 전략. {@code column}=타깃 PK 컬럼, {@code generator}=ID prefix,
+     * {@code sourceKey}=레거시 PK 를 담은 소스 컬럼(키맵 키로 사용). 생성된 키는 키맵에 적재돼
+     * 자식 테이블의 {@code fkRef} 번역에 쓰인다.
+     */
     @JsonIgnoreProperties(ignoreUnknown = true)
-    public record IdStrategy(String column, String generator) {}
+    public record IdStrategy(String column, String generator, String sourceKey) {}
 }

@@ -6,12 +6,14 @@ import nuri.migration.etl.EtlExecutor;
 import nuri.migration.etl.MigrationMode;
 import nuri.migration.model.MappingLoader;
 import nuri.migration.model.MappingSpec;
+import nuri.migration.source.SourceIntrospector;
 import nuri.migration.validate.MappingValidator;
 import nuri.migration.validate.ValidationResult;
 import nuri.migration.verify.MigrationReport;
 import nuri.migration.verify.MigrationVerifier;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.nio.file.Path;
@@ -30,6 +32,7 @@ public class MigrationRunner implements ApplicationRunner {
     private final MappingValidator validator;
     private final EtlExecutor executor;
     private final MigrationVerifier verifier;
+    private final SourceIntrospector introspector;
 
     @Override
     public void run(ApplicationArguments args) {
@@ -53,8 +56,14 @@ public class MigrationRunner implements ApplicationRunner {
 
         log.info("이관 시작: mode={}, tables={}", mode, spec.tables().size());
         List<EtlExecutor.TableResult> results = executor.execute(spec, mode);
-        MigrationReport report = verifier.verify(results);
+
+        JdbcTemplate targetJt = (mode == MigrationMode.COMMIT && spec.target() != null)
+                ? introspector.jdbc(spec.target()) : null;
+        MigrationReport report = verifier.verify(results, targetJt);
         log.info(System.lineSeparator() + report.toSummary());
+        if (report.overall() == MigrationReport.Status.FAIL) {
+            log.error("검증 실패(FAIL) — 리포트를 확인하고 원인을 해소한 뒤 재실행하세요.");
+        }
     }
 
     private static String optionOrNull(ApplicationArguments args, String name) {
