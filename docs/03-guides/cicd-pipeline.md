@@ -31,8 +31,9 @@ push/PR
         └─ JaCoCo 커버리지
         │
         ├─ frontend-build (needs: backend-build)
-        │   ├─ npm ci
+        │   ├─ pnpm install --frozen-lockfile
         │   ├─ codegen:verify / codegen:verify:zod (계약 드리프트 게이트 → 불일치 시 FAIL)
+        │   ├─ pnpm audit --audit-level high (보안 감사, continue-on-error)
         │   ├─ Next.js 빌드
         │   └─ 단위 테스트
         │
@@ -94,21 +95,29 @@ push/PR
 ### Node.js 설정
 
 ```yaml
+- name: Set up pnpm
+  uses: pnpm/action-setup@v4
+  with:
+    version: 9
+
 - name: Set up Node.js
   uses: actions/setup-node@v4
   with:
-    node-version: "20"
-    cache: "npm"
-    cache-dependency-path: frontend/package-lock.json
+    node-version: ${{ env.NODE_VERSION }}
+    cache: "pnpm"
+    cache-dependency-path: frontend/pnpm-lock.yaml
 ```
 
 ### 실행 명령어
 
 ```bash
 cd frontend
-npm ci
-npm run build
-npm run test
+pnpm install --frozen-lockfile
+pnpm run codegen:verify        # 계약 드리프트 게이트 (spec ↔ 생성 타입)
+pnpm run codegen:verify:zod    # 계약 드리프트 게이트 (spec ↔ Zod)
+pnpm audit --audit-level high  # 보안 감사 (continue-on-error)
+pnpm run build
+pnpm run test
 ```
 
 ### 생성 아티팩트
@@ -148,14 +157,14 @@ strategy:
 3. **Playwright 테스트 실행**
    ```bash
    cd frontend
-   npm run dev -- -p 3001 &
+   pnpm run dev -- -p 3001 &
    npx wait-on http://127.0.0.1:3001/login
    npx playwright test --shard=1/3
    ```
 
 ### 리포트 병합
 
-- **23-Tier 아키텍처**: 01-core-base부터 23-security-auth-supplement까지 총 23개 계층으로 테스트가 정의되어 있으며(계층 정의의 SSOT는 [testing-guide.md](./testing-guide.md) §E2E), 각 티어는 독립적으로 또는 병합되어 실행됩니다.
+- **25-Tier 아키텍처**: 01-core-base부터 25-deptjob-workreport-journey까지 총 25개 계층(tier 프로젝트 26개)으로 테스트가 정의되어 있으며(계층 정의의 SSOT는 [testing-guide.md](./testing-guide.md) §E2E), 각 티어는 독립적으로 또는 병합되어 실행됩니다.
 - **Sharding (병렬 실행)**: CI 환경에서 전체 테스트 스위트를 3개의 Shard로 분할하여 병렬로 실행함으로써 전체 테스트 시간을 단축합니다.
 
 #### 병합 리포트 생성 (`ci.yml`)
@@ -256,7 +265,7 @@ dependencyCheck {
 ### Playwright 브라우저
 
 - **위치**: `/tmp/playwright-browsers`
-- **키**: `runner.os-playwright-{package-lock.json 해시}`
+- **키**: `runner.os-playwright-{pnpm-lock.yaml 해시}`
 - **효과**: 매번 설치하지 않고 재사용
 
 ---
@@ -274,13 +283,13 @@ dependencyCheck {
 
 # 3. 프론트엔드 빌드
 cd frontend
-npm ci
-npm run build
-npm run test
+pnpm install --frozen-lockfile
+pnpm run build
+pnpm run test
 
 # 4. E2E 테스트 (Docker 필요)
 docker-compose up -d db api
-npm run test:e2e:full
+pnpm run test:e2e:full
 ```
 
 > [!TIP]
@@ -291,7 +300,7 @@ npm run test:e2e:full
 > # 1. 백엔드(8080)와 프론트엔드(3001) 서버가 로컬 OCI DB 환경에서 수동 구동 중인지 확인
 > # 2. E2E 테스트만 직접 단독 실행
 > cd frontend
-> npm run test:e2e:full
+> pnpm run test:e2e:full
 > ```
 
 ### JaCoCo 커버리지 확인
@@ -318,7 +327,7 @@ CI가 실행되기 전, 저장소에 포함된 공유 pre-push HARD 게이트가
 git config core.hooksPath .githooks
 ```
 
-- **pre-push (❌ 차단)**: `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` — 컴파일/타입 무결성 게이트.
+- **pre-push (❌ 차단)**: `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` + codegen 드리프트 게이트(`codegen:verify`/`codegen:verify:zod` — api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합) — 컴파일/타입/계약 무결성 게이트. (CI 과금차단 상태라 로컬 pre-push 가 계약 드리프트의 사실상 유일 관문)
 - **pre-commit (⚠ 경고, 비차단)**: DTO/Controller/api-docs.json/생성 타입 스테이징 시 codegen 드리프트 점검.
 - **우회**: `git push --no-verify` 또는 `SKIP_HOOKS=1 git push`.
 

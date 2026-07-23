@@ -3,7 +3,7 @@
   "summary": "egov-enterprise 프로젝트의 모든 DB 설계(테이블, 컬럼, 인덱스 등)에 적용되는 근본 원칙과 명명 규칙 및 데이터 표준 가이드입니다.",
   "category": "Architecture",
   "tags": ["DB", "Constitution", "Naming", "Standard", "PostgreSQL"],
-  "updatedAt": "2026-06-15T00:00:00Z",
+  "updatedAt": "2026-07-18T00:00:00Z",
   "references": [
     "table://public.meta_standard_words",
     "table://public.meta_standard_terms",

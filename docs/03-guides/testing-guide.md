@@ -136,9 +136,9 @@ class MenuServiceIntegrationTest {
 
 ## E2E 테스트 (Playwright)
 
-### 계층형 아키텍처 (23-Tier Architecture)
+### 계층형 아키텍처 (25-Tier Architecture)
 
-본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **23개 계층(Tier)**으로 테스트를 관리합니다.
+본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **25개 계층(Tier)**(Playwright tier 프로젝트 26개 — 별도 `tier-3-board-master` 포함)으로 테스트를 관리합니다.
 
 | 그룹 | Tier | 파일 | 검증 범위 |
 |------|------|------|-----------|
@@ -165,6 +165,8 @@ class MenuServiceIntegrationTest {
 | | 21 | `21-advanced-resilience.spec.ts` | API 및 DB 장애 극복 회복탄력성 검증 |
 | | 22 | `22-deep-security-guard.spec.ts` | 심층 보안 통제 및 가디언 동작 검증 |
 | | 23 | `23-security-auth-supplement.spec.ts` | 인증/세션/RBAC 보완(E2E 감사 Phase4) |
+| **Integration** | 24 | `24-org-schedule-journey.spec.ts` | 조직 ↔ 일정 통합 사슬 회귀 방어 (2026-07-19 신설) |
+| | 25 | `25-deptjob-workreport-journey.spec.ts` | 부서업무 ↔ 업무보고 통합 여정 (2026-07-20 신설) |
 
 ### 실행 명령어
 
@@ -508,5 +510,5 @@ PostgreSQL 운영 스키마가 바뀜에 따라 H2 테스트 DDL인 `V1__init_te
 - [성능 최적화 가이드](../04-operations/performance-optimization-guide.md)
 
 ---
-*Last Updated: 2026-05-26 (Updated via Antigravity — Production-ready Git Pre-Push Hook Installer & Non-E2E Verification Guide Integrated)*
+*Last Updated: 2026-07-23 (E2E 계층 현행화 — Tier 24(조직↔일정)·Tier 25(부서업무↔업무보고) 추가, 23→25-Tier. 이전: 2026-05-26 Pre-Push Hook Installer & Non-E2E Verification Guide)*
 

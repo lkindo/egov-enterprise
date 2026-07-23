@@ -36,6 +36,7 @@
 ### 제5조 (도메인 캡슐화)
 1. 비즈니스 규칙과 상태 전이 로직은 가급적 엔티티(Entity) 내부에 캡슐화하여 도메인 모델의 자율성을 보장한다.
 2. 서비스 레이어는 트랜잭션 경계 관리와 계층 간 흐름 제어에 집중한다.
+3. **엔티티 빌더·생성자 규범 (Phase 5.2 빌더 규범)**: 영속 엔티티(`@Entity`)는 Lombok `@SuperBuilder` 상속 필드 섀도잉(빌드는 성공하나 런타임에 값이 유실되는 결함)을 원천 차단하기 위해 다음을 준수한다. — **(a)** 클래스 레벨 `@SuperBuilder`/`@Builder`/`@AllArgsConstructor` 선언을 금지하고, 빌더는 정적 팩토리(`create(...)`)에 `@Builder` 를 배치한다. **(b)** 수동 빌더 클래스 내부에 인스턴스 필드를 선언하지 않고 Lombok 이 생성한 빌더 메서드로 위임 체이닝한다(`this.field(value)` 형태 — 로컬 필드 대입 금지). **(c)** 엔티티 기본 생성자는 non-public(`@NoArgsConstructor(access = PROTECTED)`)으로 선언하여 JPA 프록시 보장 및 무분별한 외부 인스턴스화를 방지한다. **집행**: 규칙(c)는 `EntityConventionArchTest`(business-core·business-app, ArchUnit)가 회귀 차단하며, 규칙(a)·(b)는 Lombok 애노테이션이 `RetentionPolicy.SOURCE` 라 바이트코드에 흔적이 남지 않아 ArchUnit 으로 탐지 불가하므로 코드리뷰·Checkstyle 로 보완한다. (상세 메커니즘·골든 패턴: `.agent/knowledge/lombok-superbuilder-shadowing`)
 
 ---
 
@@ -98,6 +99,7 @@
    - **XToOne(1:1, N:1) 관계**: 기존과 동일하게 **Fetch Join**을 필수 적용하여 쿼리 폭증(N+1 문제)을 단일 쿼리로 최우선 차단한다.
    - **XToMany(1:N) 관계 및 페이징 동반 쿼리**: 컬렉션 조회 및 `Pageable` 페이징이 동반된 조회 쿼리에서는 `Fetch Join` 사용을 **절대 금지**하여 메모리 페이징 참사를 막는다. 대신 `application.yml`의 `default_batch_fetch_size` 혹은 엔티티의 `@BatchSize`를 적용한 **In-clause 병합 지연 로딩(Lazy + Batch)** 방식을 표준 방어 기제로 채택한다.
 2. JPA 엔티티에는 `del_yn` 또는 `use_yn` 등 논리 삭제 여부가 명시적으로 설계된 도메인 엔티티에 한하여 `@Where(clause = "use_yn = 'Y'")` 또는 글로벌 필터를 선택 적용하며, 물리 삭제(Hard Delete)를 기본으로 설계된 도메인 테이블의 경우 해당 필터 적용 대상에서 철저히 제외하여 아키텍처 크래시를 원천 방어한다.
+3. 본 조의 배치-페치/N+1 방어 전략은 `QueryCountGuardrailIntegrationTest`(`@QueryCountGuard(max = N)`)로 회귀 검증한다 — 대표 조회 경로의 실제 쿼리 실행 횟수를 상한으로 못박아 N+1 재발을 탐지하는 **표적 통합 가드레일**(전 엔티티를 훑는 보편 ArchUnit 린터가 아니라 `AddressBookService` 등 대표 경로 스팟체크)이다. 신규 컬렉션 조회 경로 추가 시 해당 가드레일 커버리지 확장을 함께 검토한다.
 
 ---
 
@@ -108,7 +110,7 @@
 2. 트랜잭션 충돌 비용이 극도로 높은 크리티컬 섹션 로직에 대해서는 **비관적 락(Pessimistic Lock)** 또는 Redis 기반 분산 락 정책을 명시적으로 설계하여 반영해야 한다.
 
 ### 제16조 (Data Validation 연쇄 동기화 및 돌연변이 테스트 증명)
-1. 백엔드 DTO 및 프론트엔드 Zod 유효성 검증의 최대 길이(max) 및 필수 여부(NotNull)는 DB 물리 스키마(meta_standard_domains)의 상한 제약조건을 초과할 수 없다. DB→DTO→Zod 로 이어지는 **계약의 동기화**(스펙 신선도 및 산출물 재생성 일치)는 빌드 단계에서 기계 강제된다 — CI(`.github/workflows/ci.yml`)가 커밋된 `api-docs.json` 의 신선도를 `git diff --exit-code api-docs.json` 으로 검증하고, 프론트엔드 `codegen:verify`(`generated-api.d.ts` 재생성 diff)·`codegen:verify:zod`(`generated-zod.ts` 재생성 diff)로 스펙↔산출물의 일치를 확인한다. 다만 **물리 상한(max/NotNull) 초과 여부를 `meta_standard_domains` 와 직접 대조하는 전용 하네스는 현재 존재하지 않으므로**(인접 하네스 `UniqueConstraintMirrorLinterTest` 는 UNIQUE 제약 미러링만, `SchemaNamingLinterTest` 는 명명 규칙만 검증한다), 상한선 초과 방지는 설계·리뷰 단계의 규범 준수로 보증하며 이의 하네스화는 향후 과제로 둔다. 단, 비즈니스 사양에 의해 DB 한계보다 더 좁은 길이로 제한하거나 정규식 등의 논리 검증이 필요할 경우 각 레이어에서 독립적으로 선언하여 도메인 간의 결합도를 완화한다.
+1. 백엔드 DTO 및 프론트엔드 Zod 유효성 검증의 최대 길이(max) 및 필수 여부(NotNull)는 DB 물리 스키마(meta_standard_domains)의 상한 제약조건을 초과할 수 없다. DB→DTO→Zod 로 이어지는 **계약의 동기화**(스펙 신선도 및 산출물 재생성 일치)는 빌드 단계에서 기계 강제된다 — CI(`.github/workflows/ci.yml`)가 커밋된 `api-docs.json` 의 신선도를 `git diff --exit-code api-docs.json` 으로 검증하고, 프론트엔드 `codegen:verify`(`generated-api.d.ts` 재생성 diff)·`codegen:verify:zod`(`generated-zod.ts` 재생성 diff)로 스펙↔산출물의 일치를 확인한다. 나아가 계약체인 **최상류**(백엔드 Controller `@*Mapping` ↔ `api-docs.json` 경로 커버리지)는 `ApiDocsPathCoverageLinterTest` 가 **오프라인(순수 정적, live 서버 불요)** 으로 보호하여, 컨트롤러는 존재하나 스펙에 누락된(또는 그 역의) 경로 드리프트를 차단한다. 다만 **물리 상한(max/NotNull) 초과 여부를 `meta_standard_domains` 와 직접 대조하는 전용 하네스는 현재 존재하지 않으므로**(인접 하네스 `UniqueConstraintMirrorLinterTest` 는 UNIQUE 제약 미러링만, `SchemaNamingLinterTest` 는 명명 규칙만 검증한다), 상한선 초과 방지는 설계·리뷰 단계의 규범 준수로 보증하며 이의 하네스화는 향후 과제로 둔다. 단, 비즈니스 사양에 의해 DB 한계보다 더 좁은 길이로 제한하거나 정규식 등의 논리 검증이 필요할 경우 각 레이어에서 독립적으로 선언하여 도메인 간의 결합도를 완화한다.
 2. 테스트 코드 무결성을 검증하기 위한 돌연변이 테스트(Mutation Testing)는 전체 모듈이 아닌 핵심 크리티컬 비즈니스 서비스(결제, 보안, 데이터 정합성 등) 및 Git Diff로 탐지된 변경분(Delta)에 한하여 증분식 검증(Incremental Mutation Strategy)을 수행하며, 핵심 서비스 기준 **Mutation Score 75% 이상**을 품질 기준으로 삼는다. 이 기준은 `build.gradle` 의 `mutationThreshold=75`(환경변수 `STRICT_MUTATION=true` 시)로 기계 강제할 수 있으나, **현행 CI 는 리포트 전용(`STRICT_MUTATION=false` → `mutationThreshold=0`)으로 운영되어 스코어 미달이 빌드를 파손하지 않는다.** 각 대상 클래스의 실측 스코어가 75%를 상회함을 확인한 뒤 `STRICT_MUTATION=true` 로 전환하여 하드 게이트화하며, 미달 상태에서의 전환은 빌드 파손을 유발하므로 금지한다. 일반 보조 비즈니스 서비스 및 단순 CRUD 로직은 돌연변이 테스트 강제 의무에서 영구히 면제한다.
 
 

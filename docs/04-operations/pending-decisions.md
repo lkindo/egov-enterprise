@@ -30,9 +30,11 @@
 
 ### 2-B. ssh 개인키 GitHub 커밋 history 퍼지
 - 개인키가 커밋(`11366ca48`)에 잔존(언트랙만 됨). **키 로테이션 + history 퍼지** 대기 — 사용자 조치. (이전 pull-sync incident)
+- ⚠ **언트랙은 재발성**: 2026-07-16 머지가 언트랙 조치를 되돌려 07-20 재조치했다(`9217bc27c`). 머지마다 조용히 되살아나므로 **언트랙 의존이 아니라 history 퍼지 + 키 로테이션 우선순위화**가 근본 대책.
 
-### 2-C. 미들웨어 admin 민감경로 커버리지
-- 미들웨어가 `/admin/{system,user,security,stats,workflow}` 만 ADMIN 강제, 그 외 /admin/* 는 인증만. **어느 경로가 ADMIN 전용인지** 보안 판단(백엔드 @PreAuthorize 가 실 게이트라 심층방어 완성도 문제).
+### 2-C. 미들웨어 admin 민감경로 커버리지 — **✅ 해소(2026-07-20, `401c43f4c`)**
+- **이전 기록**: 미들웨어가 `/admin/{system,user,security,stats,workflow}` 5개 접두사만 ADMIN 강제(allow-by-default), 그 외 /admin/* 는 인증만.
+- **실제**: `401c43f4c`(2026-07-20)로 **deny-by-default 반전** 완료 — `/admin/**` 는 기본 ADMIN/SYSTEM 전용이며, `USER_ACCESSIBLE_ADMIN_PATHS`(work-hub·collaboration·help·community·survey polls participate) 화이트리스트 + `ADMIN_ONLY_SUBPATHS` 역예외로 통제(`frontend/src/middleware.ts`). **남은 것은 결정이 아니라 allow-list 큐레이션**(관리 콘솔 신규 추가 시 유지보수).
 
 ### 2-D. CSP `unsafe-inline` 제거
 - prod CSP 에서 `unsafe-eval` 은 제거됨. `unsafe-inline` 은 **Next RSC nonce/PPR 인프라 도입**이 선행돼야 제거 가능(아키텍처 결정, 이전에 Phase4 포기).
@@ -68,7 +70,7 @@
 - ~~**`biz_cd` 용도** — 해소~~: `V2_22__event_info_remodel_biz_cd_to_evnt_nm.sql`(커밋 `1ae18fa2c`)로 `tb_event_info.biz_cd`(코드컬럼 오용, 실데이터 0행) → `evnt_nm` 재모델링 후 **DROP**. 라이브 OCI 실측(2026-07-20) `information_schema` 전체 스키마에 **`biz_cd` 컬럼 0건**. 결정할 것 없음.
 - ~~**`leader_id` FK 부여** — 해소~~: `V2_23__drop_leader_domain.sql`(동일 커밋, 사용자 개별 승인)로 간부일정(LSM) 死도메인 자체를 제거(`tb_leader_schdl`·`tb_leader_stts` 0행·인바운드 FK 0 실측 후 DROP). 라이브 실측 **`leader_id` 컬럼 0건** → FK 부여 대상이 소멸. 결정할 것 없음.
 - **[결정 대기] `etc_cd` 원천 스펙**: `tb_inst_cd_rcptn_log.etc_cd`(varchar 20) 1건만 잔존(라이브 실측). `V2_18` 에서 **DEFER("원천 스펙" 미확정)** 로 남긴 것 — 기관코드 수신 연계의 외부 제공 스펙이 확정돼야 용도·길이·표준용어를 확정할 수 있다. **필요 결정**: 외부 스펙 제공 또는 컬럼 폐기.
-- **[결정 대기] 로그 테이블 개인정보 보존정책 — 기구는 완비, 수치·활성화만 미정**: `LogRetentionScheduler`(business-app) + 술어 인덱스 `V2_20` + 정책 문서 `docs/04-operations/log-retention-policy.md` 까지 구축 완료. 다만 **기본 비활성**(`nuri.log.retention.enabled=false`)이고 테이블별 보존월(`{web,sys,login,user}-months`)이 **0(미확정)** 이다 — 코드 주석대로 "인수처가 보존기간 수치를 확정한 뒤 명시적으로 켠다". **필요 결정**: 테이블별 법정/사내 보존월 수치 + 활성화 시점.
+- ~~**로그 테이블 개인정보 보존정책 — 수치·활성화 미정** — 해소~~: `LogRetentionScheduler`(business-app) + 술어 인덱스 `V2_20` + 정책 문서 `docs/04-operations/log-retention-policy.md` 구축에 더해, **보존기간이 2026-07-17 확정·활성화**됐다(`228bddb5d`) — `application.yml` `nuri.log.retention.enabled=true`(기본), 테이블별 보존월 `{web,sys,login,user}-months=24`(2년). 형제 문서 `log-retention-policy.md` §3/§5 와 정합. **[결정 대기] 남은 것**은 (1) 가명화 법적 트랙, (2) `tb_login_log` 접속기록 경로 복원 vs 제거 결정(log-retention-policy.md §5) 2건뿐.
 
 ---
 
@@ -105,5 +107,25 @@
 
 ---
 
+## 7. 관리자 전수감사 잔여 (2026-07-22 — `.gemini/tasks/20260722-admin-menu-completeness-ux-audit.md` §6)
+
+294건 전수감사에서 **에이전트 단독 판단 불가(제품/보안 결정 필요)** 로 분류된 항목. D-9/D-10/D-11/D-14 는 이미 해소(`9504e1380`·`1e1ef8b7b`·`a5dad2b48`·`a73ab2eab`).
+
+- **[결정 대기] 미결 D 항목(10건)** — (삭제 vs 구현) 결정 선행:
+  - **D-1 로그 4종**(사용자/웹/개인정보/전송) — 컨트롤러 4개 신설 vs 라우트·서비스·타입 삭제. 개인정보 접근·전송 로그는 컴플라이언스 증적.
+  - **D-2 네트워크 관리**(`/admin/system/network`) — GET도 mock 6건이라 도메인 자체 신설 vs CUD 501·화면 비활성.
+  - **D-3 결재 양식/워크플로우 스튜디오** — 데모 스캐폴드가 최상위 메뉴 노출 중. 메뉴 하차/재매핑 vs `tb_sanctn_form`+컨트롤러 신설.
+  - **D-4 설문 도메인 전체** — 문항·항목 CRUD 15엔드포인트 배선 vs 껍데기 5라우트 삭제(실데이터 존재).
+  - **D-5 미노출 백엔드 API 4종**(휴일·상담·ISG·메인이미지) — 관리 화면 신설 vs 샘플 모듈 분리(재사용성 직결, 휴일 우선순위 높음).
+  - **D-6 메뉴 SSOT 재편** — 중복 18메뉴·고아 19라우트·부모/자식 동일경로. 마이그레이션 1건이나 정보구조 결정 필요.
+  - **D-7 테마 설정 저장 위치** — 사이트 테마 테이블+API+SSR vs "내 브라우저만" 문구 정직화(현 localStorage뿐인데 "전체 적용" 안내).
+  - **D-8 댓글/평가 관리** — 만족도 도메인 실존·API 미노출. 컨트롤러 신설 vs 메뉴명 '댓글 관리'로 정정.
+  - **D-12 FAQ 정본 경로** — 전용 `/api/v1/faqs` 채택(하드코딩 bbsId 제거) vs 게시판 통합 유지(FaqApiController 작성자 하드코딩·`@PreAuthorize` 부재 보강 선행).
+  - **D-13 로그 검색조건 URL 반영** — 검색어 URL 포함 여부(개인정보 vs 공유편의). 페이지·탭만 URL 절충안 가능.
+- **[승인 필요] 보안 사안**(코드 변경 전 사용자 승인 — 감사 §C.3): **F-2 · F-3 · F-5**.
+- **i18n(F-1)**: 신규 항목 아님 — 위 **5-D. i18n 실채택**과 동일 이슈로 통합 추적.
+
+---
+
 > **처리 방법**: 위 항목 중 결정을 내리시면(예: "1-A는 (c) 템플릿 브랜치로", "3-B route_mdfcn_yn 을 mfcn_cd 로 rename") 해당 작업을 지시해 주시면 진행합니다.
-> *Last updated: 2026-07-20 (실태 대조 정정 — 3-E 중 `biz_cd`·`leader_id` FK 종결[V2_22·V2_23, `1ae18fa2c`, 라이브 컬럼 0건 실측], 2-E "RBAC 하이브리드 유지" STALE 판정[`405d91932` 로 DB 일원화 실제 전환됨] 및 §6 동반 정정. 이전: 2026-07-18 §2 현행화 + 점수향상 발굴 + 승인군 A~E)*
+> *Last updated: 2026-07-23 (현행화 감사 반영 — 2-C 미들웨어 deny-by-default 해소[`401c43f4c`]·3-E 로그보존 2026-07-17 확정 종결[`228bddb5d`, 24개월]·§7 관리자 전수감사 잔여(미결 D 10건 + 보안 F-2/3/5) 신설·2-B ssh 언트랙 재발 명시. 이전: 2026-07-20 3-E `biz_cd`·`leader_id` FK 종결·2-E "RBAC 하이브리드 유지" STALE 정정, 2026-07-18 §2 현행화 + 승인군 A~E)*

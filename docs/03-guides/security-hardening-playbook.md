@@ -122,22 +122,29 @@ export async function middleware(request: NextRequest) {
         return NextResponse.redirect(loginUrl);
     }
 
-    // 4. 관리자 민감 경로(/admin/system|user|security|stats|workflow) 비관리자 차단 — 검증된 payload.role 로만 판정
-    if (pathname.startsWith('/admin')) {
+    // 4. /admin 접근 통제 — 기본값 = ADMIN/SYSTEM 전용(deny-by-default).
+    //    2026-07-20(401c43f4c)에 과거의 5-접두사(system/user/security/stats/workflow) allow-by-default
+    //    화이트리스트를 뒤집었다. 일반 사용자에게는 명시 허용 경로만 열고, 그 안의 관리 콘솔은 다시 도려낸다.
+    //    (실제 목록·헬퍼는 frontend/src/middleware.ts — 발췌라 상수 정의는 생략)
+    const normalizedPath = pathname.toLowerCase(); // /Admin 대소문자 우회 차단
+    if (matchesPrefix(normalizedPath, '/admin')) {
         const normalizedRole = userRole.toUpperCase();
-        const isAdmin = normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN';
-        const isSensitivePath =
-            pathname.startsWith('/admin/system') ||
-            pathname.startsWith('/admin/user') ||
-            pathname.startsWith('/admin/security') ||
-            pathname.startsWith('/admin/stats') ||
-            pathname.startsWith('/admin/workflow');
+        // 백엔드(ApiSecurityConfig)가 ROLE_ADMIN 과 동급 취급하는 ROLE_SYSTEM 도 함께 인정
+        const isAdmin =
+            normalizedRole === 'ADMIN' || normalizedRole === 'ROLE_ADMIN' ||
+            normalizedRole === 'SYSTEM' || normalizedRole === 'ROLE_SYSTEM';
 
-        // 권한 부족 시 홈(/)으로 auth_error 쿼리를 붙여 리다이렉트
-        if (isSensitivePath && !isAdmin) {
-            const fallbackUrl = new URL('/', request.url);
-            fallbackUrl.searchParams.set('auth_error', 'unauthorized');
-            return NextResponse.redirect(fallbackUrl);
+        if (!isAdmin) {
+            // USER_ACCESSIBLE_ADMIN_PATHS: work-hub·collaboration·help·community·survey polls participate
+            // ADMIN_ONLY_SUBPATHS: community/boards/master·maker·templates (허용 경로 안의 관리 콘솔 역예외)
+            const isUserAccessible =
+                USER_ACCESSIBLE_ADMIN_PATHS.some((p) => matchesPrefix(normalizedPath, p)) &&
+                !ADMIN_ONLY_SUBPATHS.some((p) => matchesPrefix(normalizedPath, p));
+            if (!isUserAccessible) {
+                const fallbackUrl = new URL('/', request.url);
+                fallbackUrl.searchParams.set('auth_error', 'unauthorized');
+                return NextResponse.redirect(fallbackUrl);
+            }
         }
     }
 

@@ -199,5 +199,5 @@ public class DocumentService {
 - 일시적 네트워크 장애로 인한 실패는 `@Retryable`을 활용해 방어하며, 장애가 지속될 경우 `Resilience4j` 등의 서킷 브레이커를 통해 외부 호출을 즉시 차단(Fail-Fast)하여 시스템을 보호한다.
 
 ---
-*Last Updated: 2026-07-12 (모듈 재편 현행화: business-suite → business-core/business-app 분할, migration-tool 신설, MapStruct 매핑 표준화, foundation 공통계약·BaseEntity 승격. 이전: 2026-05-19)*
+*Last Updated: 2026-07-18 (뮤테이션 임계값 현행화: Mutation Score 85% → 75% 통일[헌법 제16조]. 2026-07-12 모듈 재편: business-suite → business-core/business-app 분할, migration-tool 신설, MapStruct 매핑 표준화, foundation 공통계약·BaseEntity 승격. 이전: 2026-05-19)*
 *Governed by: Backend API Governance Constitution (18 Articles)*

@@ -19,7 +19,7 @@ if [ -f frontend/package.json ]; then
   # CI(ci.yml)에도 있으나 CI 과금차단 상태라 로컬 pre-push 가 사실상 유일 관문 → 여기서도 강제.
   # 커밋된 api-docs.json 기반(오프라인·결정적)이라 백엔드 재빌드 불요.
   echo "  → frontend: codegen drift gate (api-docs.json ↔ generated types/zod)"
-  ( cd frontend && npm run codegen:verify && npm run codegen:verify:zod ) \
+  ( cd frontend && pnpm run codegen:verify && pnpm run codegen:verify:zod ) \
     || { echo "❌ codegen 드리프트 — api-docs.json 과 generated-api.d.ts/generated-zod.ts 불일치. 'pnpm -C frontend codegen:file && pnpm -C frontend codegen:zod' 로 재생성 후 커밋하세요 (계약 드리프트 방어)"; exit 1; }
 fi
 

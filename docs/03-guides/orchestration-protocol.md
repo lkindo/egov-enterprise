@@ -124,7 +124,7 @@
 #### 4.1 필수 증거 (현행 게이트 명시)
 | 작업 도메인 | 증거 유형 |
 |:---|:---|
-| **UI/Frontend** | `npx tsc --noEmit`(정적 타입) + `next build`(RSC 서버/클라이언트 경계) — GEMINI.md §0.6 HARD 게이트. 추가로 런타임 거동은 Playwright 테스트 로그·브라우저 스크린샷·스토리북 렌더링 결과. |
+| **UI/Frontend** | `npx tsc --noEmit`(정적 타입) — GEMINI.md §0.6 HARD 게이트(pre-push 기계강제) + 계약 드리프트 게이트 `codegen:verify`/`codegen:verify:zod`(api-docs.json ↔ generated-api.d.ts/generated-zod.ts, pre-push HARD 차단). `next build`/`pnpm run build`(RSC 서버/클라이언트 경계)는 **CI 게이트**(ci.yml)로, CI 과금차단 시 §4.1 보류 규정에 따라 정직 보류. 추가로 런타임 거동은 Playwright 테스트 로그·브라우저 스크린샷·스토리북 렌더링 결과. |
 | **Backend/API** | `./gradlew compileJava compileTestJava`(컴파일 무결성) — §0.6 HARD 게이트. 추가로 JUnit/ArchUnit 결과 로그, API 응답 데이터 덤프(JSON). |
 | **Database** | `db-bridge` 쿼리 실행 결과·행(Row) 수, `flyway_schema_history` 확인, `EXPLAIN ANALYZE` 결과, 스키마 변경 확인 로그. |
 | **아키텍처/규칙** | 신설·수정한 ArchUnit/린트 게이트가 그린임을 대상 테스트 직접 실행(`--tests`)으로 증명. |
@@ -161,5 +161,5 @@
 - **정직한 보고** — *신설*: 실패·스킵·보류는 있는 그대로 보고한다. 인프라 상태·검증 결과를 추정으로 단정하거나, 미검증을 완료로 선언하지 않는다(§3.1-2, §4.1 보류 규정과 정합).
 
 ---
-*Last Updated: 2026-07-07 (Updated via Claude Code — 현행 실태 반영: 이중 오퍼레이터 전제 명문화, 실행 방식을 **Direct vs 위임(서브에이전트·워크플로우)** 으로 단순화[규율 못 하던 "Mode A/B/C" 번호 체계 제거, 위임의 불변 규칙=컨텍스트 패킷+메인 재검증만 유지], 포괄 승인(Standing Approval), 인프라 상태 실측 의무(§3.1-2), 현행 컴파일 게이트(tsc/next build/gradle) 및 런타임 불가 시 정직 보류, 공유 트리 커밋 규율. 이전: 2026-05-18 Antigravity.)*
+*Last Updated: 2026-07-23 (§4.1 게이트 정정 — `next build`를 §0.6 HARD 가 아닌 CI 게이트로 재귀속, pre-push codegen 드리프트 게이트 명시. 2026-07-08 정합성 감사 pass[Stage 2.1 Mode→Direct/위임]. 2026-07-07 현행 실태 반영: 이중 오퍼레이터 전제 명문화, 실행 방식을 **Direct vs 위임(서브에이전트·워크플로우)** 으로 단순화["Mode A/B/C" 제거, 위임 불변 규칙=컨텍스트 패킷+메인 재검증], 포괄 승인(Standing Approval), 인프라 상태 실측 의무(§3.1-2), 런타임 불가 시 정직 보류, 공유 트리 커밋 규율. 이전: 2026-05-18 Antigravity.)*
 *Governed by: Enterprise Governance Constitution*

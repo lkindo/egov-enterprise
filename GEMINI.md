@@ -76,11 +76,11 @@
 | 명령 | 경로 | 설명 |
 |------|------|------|
 | `npm run dev` | Root | 전체 개발 서버 실행 |
-| `npm run codegen:ts` | `frontend/` | OpenAPI 명세 기반 TS 타입 생성 |
-| `npm run analyze` | `frontend/` | Next.js 번들 사이즈 분석 |
-| `pnpm run storybook` | `frontend/` | UI 컴포넌트 격리 개발 환경 |
+| `pnpm -C frontend codegen:ts` | `frontend/` | OpenAPI 명세 기반 TS 타입 생성 (로컬 서버 :8080 필요; 오프라인 기본은 `codegen:file`) |
+| `pnpm -C frontend analyze` | `frontend/` | Next.js 번들 사이즈 분석 |
+| `pnpm -C frontend storybook` | `frontend/` | UI 컴포넌트 격리 개발 환경 |
 | `make coverage` | Root | 백엔드 테스트 커버리지 리포트 생성 |
-| `npm run test:e2e` | `frontend/` | E2E 테스트 전체 실행 (상세: `docs/03-guides/e2e-test-guide.md`) |
+| `pnpm -C frontend test:e2e` | `frontend/` | E2E 테스트 전체 실행 (상세: `docs/03-guides/e2e-test-guide.md`) |
 
 
 ## 6. 확장 가이드 참조 (Extended Guides)
@@ -130,6 +130,6 @@
   - **E2E 교차 검증 의무**: Playwright E2E 테스트 실패 시, 콘솔 로그만 분석하지 않고 반드시 브라우저 실행 결과 아티팩트(DOM 상태, S크린샷, WebP 비디오)와 JVM 에러 로그를 상호 교차 검증하여 실패 원인을 증명한다.
 
 ---
-*Last Updated: 2026-07-06 (하네스 정합성 감사 반영 — 헌법 링크(relative)·프론트 조문수(17)·codegen 안내·L0 정의 정합. Claude 브리지 CLAUDE.md/AGENTS.md 신설)*
+*Last Updated: 2026-07-23 (현행화 — §5 프론트 명령 pnpm 정합·푸터 날짜 정정. 2026-07-18 뮤테이션 임계값 75% report-only 통일[a5c40b69a]. 2026-07-06 하네스 정합성 감사: 헌법 링크(relative)·프론트 조문수(17)·codegen 안내·L0 정의 정합·Claude 브리지 CLAUDE.md/AGENTS.md 신설)*
 
 

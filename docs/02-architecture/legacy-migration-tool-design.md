@@ -3,6 +3,7 @@
 > **목적**: 기존(레거시) 프로젝트를 본 프레임워크로 **재개발**할 때, 레거시 소스 DB의 데이터를 본 프레임워크의 **표준 스키마(V2_0 baseline)** 로 안전하게 이관한다.
 > **위치**: 재사용성 로드맵 §5의 최상위 공백 "레거시 데이터 이관 지원"의 실체화. 본 문서는 **Phase 4a(설계)** 이며, **Phase 4b(골격 구현)** 의 계약(contract)을 확정한다.
 > **작성**: 2026-07-11 · Claude Code · **등급**: L2(신규 서브시스템 설계)
+> **⚠ 현황(2026-07-23)**: Phase 4b(골격)은 **이미 구현됨** — `migration-tool` 모듈에 `SourceIntrospector`·`MappingValidator`·`EtlExecutor`·`MigrationVerifier` 등 14 클래스 + `MigrationPipelineTest`(2026-07-11 `17042a105`). 본 문서 §5 는 그 구현의 근거 설계이며, §6 의 "코드 변경 없음" 서술은 착수 이전 시점 기록이다.
 
 ---
 
@@ -103,7 +104,7 @@ codemaps:
 
 ---
 
-## 5. Phase 4b 구현 계획 (골격 순서)
+## 5. Phase 4b 구현 (골격 순서 — 2026-07-11 `17042a105` 구현 완료)
 1. `migration-tool` 모듈 + Spring Boot CLI 골격(`ApplicationRunner`, `--mode` 옵션).
 2. `mapping.yml` 스키마 + Jackson 바인딩 + `MappingValidator`(meta 표준 대조) — **가장 먼저**(잘못된 매핑을 조기 차단).
 3. `SourceIntrospector`(information_schema) + `SourceCatalog`.
@@ -117,7 +118,7 @@ codemaps:
 ---
 
 ## 6. 검증 로그
-- 본 문서는 **설계(Phase 4a)** 이며 코드 변경 없음. 4b 착수 전 DB 헌법(제2조 메타 SSOT) 및 §4 자산 재조회 필요.
+- 본 문서는 **설계(Phase 4a)** 로 작성됐고, **Phase 4b(골격)는 2026-07-11 `17042a105` 로 구현 완료**(migration-tool 14 클래스 + `MigrationPipelineTest`). 실 레거시 소스 확보 시 transform/codemap 규칙·성능 튜닝을 확정하며, 그 전 DB 헌법(제2조 메타 SSOT) 및 §4 자산 재조회가 필요하다.
 - 관련: [framework-reusability-assessment.md](./framework-reusability-assessment.md) §5, [getting-started.md](../03-guides/getting-started.md) §6.5.
 
 ---

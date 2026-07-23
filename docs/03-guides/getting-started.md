@@ -81,7 +81,7 @@ docker compose up -d db     # postgres:17 (docker-compose.yml)
 
 ```bash
 # 개발 서버(백엔드+프론트 동시)
-npm run dev              # = concurrently(API bootRun + pnpm -C frontend dev)
+npm run dev              # = node scripts/dev.mjs (루트 .env 로드 후 API bootRun + FE 동시 기동; JWT_SECRET 대칭 주입으로 서명검증 비대칭 로그인 루프 방지)
 
 # 개별
 npm run backend          # gradlew :api-server:bootRun
@@ -219,7 +219,7 @@ public class ProductService extends BaseAbstractService {
 
 > ⚠ `required(...)` 는 **프로그래밍 오류를 잡는 가드**다. 물리 스키마상 nullable 인 도메인 값에 걸면 데이터가 생기는 순간 조회가 400 으로 깨진다(`DeptJobService.toDto` 주석의 실제 사고 사례 참조).
 
-**DB 테이블** — 스캐폴드는 `@Table(name = "tb_<domain>")` 를 찍지만 **테이블을 만들어 주지는 않는다.** `api-server/src/main/resources/db/migration/` 에 다음 버전(현재 최신 `V2_29`)으로 `V2_NN__create_tb_product.sql` 을 추가한다. 컬럼·객체 명명은 DB 헌법 제1~3조와 `meta_standard_words` 실조회를 따른다. Hibernate `ddl-auto: validate` 이므로 테이블이 없으면 **기동이 거부**된다.
+**DB 테이블** — 스캐폴드는 `@Table(name = "tb_<domain>")` 를 찍지만 **테이블을 만들어 주지는 않는다.** `api-server/src/main/resources/db/migration/` 에 **최신 파일 다음 번호**(2026-07 기준 `V2_30` 이후)로 `V2_NN__create_tb_product.sql` 을 추가한다. 컬럼·객체 명명은 DB 헌법 제1~3조와 `meta_standard_words` 실조회를 따른다. Hibernate `ddl-auto: validate` 이므로 테이블이 없으면 **기동이 거부**된다.
 
 ---
 
