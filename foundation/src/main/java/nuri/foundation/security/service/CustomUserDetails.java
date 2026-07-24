@@ -38,7 +38,6 @@ public class CustomUserDetails implements UserDetails {
     @Builder.Default
     private final List<String> authorityCodes = null;
 
-    @SuppressWarnings("unused") // Lombok @Builder가 생성하는 생성자와 정합
     private CustomUserDetails(String userId, String esntlId, String userNm, String password,
                               String roleName, String lockAt, String authorCode,
                               List<String> authorityCodes) {

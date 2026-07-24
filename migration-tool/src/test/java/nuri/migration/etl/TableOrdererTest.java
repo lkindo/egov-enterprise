@@ -31,7 +31,7 @@ class TableOrdererTest {
 
         List<TableMapping> ordered = TableOrderer.order(List.of(child, parent));
 
-        assertThat(ordered).extracting(TableMapping::source).containsExactly("PARENT", "CHILD");
+        assertThat(ordered).extracting(t -> t.source()).containsExactly("PARENT", "CHILD");
     }
 
     @Test
@@ -43,7 +43,7 @@ class TableOrdererTest {
 
         List<TableMapping> ordered = TableOrderer.order(List.of(grand, parent, child));
 
-        assertThat(ordered).extracting(TableMapping::source)
+        assertThat(ordered).extracting(t -> t.source())
                 .containsExactly("PARENT", "CHILD", "GRANDCHILD");
     }
 
@@ -54,6 +54,6 @@ class TableOrdererTest {
 
         List<TableMapping> ordered = TableOrderer.order(List.of(tree));
 
-        assertThat(ordered).extracting(TableMapping::source).containsExactly("ORG");
+        assertThat(ordered).extracting(t -> t.source()).containsExactly("ORG");
     }
 }

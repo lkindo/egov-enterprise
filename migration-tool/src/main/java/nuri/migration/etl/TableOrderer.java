@@ -49,7 +49,7 @@ final class TableOrderer {
                     continue; // 자기참조·외부참조는 위상 간선에서 제외
                 }
                 children.get(parent).add(self);
-                indegree.merge(self, 1, Integer::sum);
+                indegree.merge(self, 1, (a, b) -> Integer.sum(a, b));
             }
         }
 
@@ -70,7 +70,7 @@ final class TableOrderer {
             }
             ordered.add(byName.get(n));
             for (String child : children.getOrDefault(n, List.of())) {
-                if (indegree.merge(child, -1, Integer::sum) == 0) {
+                if (indegree.merge(child, -1, (a, b) -> Integer.sum(a, b)) == 0) {
                     queue.add(child);
                 }
             }

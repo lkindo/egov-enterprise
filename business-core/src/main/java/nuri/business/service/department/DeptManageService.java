@@ -122,7 +122,7 @@ public class DeptManageService {
             if (cursor.equals(ognzId)) {
                 throw new BusinessException("순환 참조가 발생하는 상위 부서입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
             }
-            cursor = deptManageRepository.findById(cursor).map(DeptManage::getUpOgnzId).orElse(null);
+            cursor = deptManageRepository.findById(cursor).map(d -> d.getUpOgnzId()).orElse(null);
         }
     }
 }

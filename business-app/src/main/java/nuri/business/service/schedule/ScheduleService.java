@@ -3,7 +3,6 @@ import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.business.domain.schedule.Schedule;
 import nuri.business.domain.schedule.ScheduleRepository;
-import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.business.service.schedule.dto.ScheduleMapper;
@@ -43,7 +42,7 @@ public class ScheduleService extends BaseAbstractService {
             return DEFAULT_ORG_ID;
         }
         return userRepository.findByUserId(loginId)
-                .map(User::getOgnzId)
+                .map(u -> u.getOgnzId())
                 .filter(ognzId -> ognzId != null && !ognzId.isBlank())
                 .orElse(DEFAULT_ORG_ID);
     }
