@@ -156,6 +156,13 @@ jobs:
           pnpm run codegen:verify:zod
         working-directory: frontend
 
+      # [정적 품질 게이트] ESLint error 규칙(jsx-a11y 3종 + React Compiler 계열)을 CI 에서 강제한다.
+      # 2026-07-26 기준 error 0 건 달성(warning 515 건은 점진 정리 백로그라 실패시키지 않는다).
+      # error 가 1 건이라도 유입되면 실패한다 — 임계를 낮추지 말고 위반을 고칠 것.
+      - name: Lint (ESLint)
+        run: pnpm run lint
+        working-directory: frontend
+
       - name: Security Audit
         run: pnpm audit --audit-level high
         working-directory: frontend

@@ -53,15 +53,20 @@ export default function CommunityHubClient({
     initialData: (page === 1 && !searchKeyword) ? initialData : undefined
   });
 
+  // 옵셔널 체이닝 결과를 memo 밖에서 스칼라로 고정한다. memo 안에서 user?.id 와 user.id 를
+  // 섞어 읽으면 컴파일러가 의존성을 확정하지 못해 메모 보존에 실패한다
+  // (react-hooks/preserve-manual-memoization → 컴포넌트 전체 최적화 스킵).
+  const currentUserId = user?.id;
+
   const communities = useMemo(() => {
     const list = (data?.list || []) as CommunityVO[];
     // frstRgtrId 는 JPA 감사(LoginUserAuditorAware)가 심는 로그인 ID 이고, useAuth().user.id 는
     // /auth/me 가 내려주는 로그인 ID 라 동일 축이다.
     if (filter === 'managed') {
-      return user?.id ? list.filter((item) => item.frstRgtrId === user.id) : [];
+      return currentUserId ? list.filter((item) => item.frstRgtrId === currentUserId) : [];
     }
     return list;
-  }, [data, filter, user?.id]);
+  }, [data, filter, currentUserId]);
 
   const columns: Column<CommunityVO>[] = [
     {

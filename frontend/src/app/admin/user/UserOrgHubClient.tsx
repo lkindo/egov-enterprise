@@ -516,12 +516,23 @@ export default function UserOrgHubClient({
   // 조회 실패는 목록 영역에 ErrorStateDisplay(다시 시도 버튼 포함)로 상주 노출한다.
   // 사라지는 토스트만으로는 "데이터 없음"과 구분되지 않는다(감사 P1-1).
 
-  const selectedItem = useMemo(() => {
-    if (!selectedItemId) return null;
-    if (activeTab === 'USERS' || activeTab === 'ABSENCES') return (users || []).find(u => u?.userId === selectedItemId);
-    if (activeTab === 'DEPTS') return (departments || []).find(d => d?.ognzId === selectedItemId);
-    return null;
-  }, [selectedItemId, activeTab, users, departments]);
+  // 탭 분기를 memo 안에 두면 분기마다 계산이 달라 컴파일러가 단일 메모 스코프로 보존하지 못한다
+  // (react-hooks/preserve-manual-memoization → 컴포넌트 전체 최적화 스킵).
+  // 조회는 컬렉션별로 선형 memo 로 분리하고, 탭 선택은 할당 없는 삼항으로 밖에서 처리한다.
+  // 부수 효과로 activeTab 만 바뀔 때 find() 를 다시 돌지 않는다.
+  const selectedUser = useMemo(
+    () => (selectedItemId ? (users || []).find(u => u?.userId === selectedItemId) : undefined),
+    [selectedItemId, users]
+  );
+  const selectedDept = useMemo(
+    () => (selectedItemId ? (departments || []).find(d => d?.ognzId === selectedItemId) : undefined),
+    [selectedItemId, departments]
+  );
+  const selectedItem =
+    !selectedItemId ? null
+      : activeTab === 'DEPTS' ? (selectedDept ?? null)
+        : (activeTab === 'USERS' || activeTab === 'ABSENCES') ? (selectedUser ?? null)
+          : null;
 
   const userColumns: Column<UserManage>[] = [
     {
