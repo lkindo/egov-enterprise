@@ -102,6 +102,73 @@ class BoardServiceTest {
     }
 
     @Test
+    @DisplayName("게시글 목록 조회 - 검색 조건이 하나도 누락되지 않고 리포지토리까지 전달된다")
+    void getBoardPosts_passesAllSearchCriteria() {
+        String bbsId = "BBS_01";
+        Pageable pageable = PageRequest.of(0, 10);
+        given(boardMasterRepository.findById(bbsId))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
+
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
+                org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), eq(pageable)))
+                .willReturn(new PageImpl<BoardSearchResult>(Collections.emptyList()));
+
+        boardService.getBoardPosts(bbsId, "0", "공지", "views", "2026-01-01", "2026-12-31", "R", "CAT1", pageable);
+
+        // 한 항목이라도 전달이 끊기면 사용자가 건 필터가 조용히 무시된 채 전체 목록이 반환된다.
+        BoardSearchCondition cond = captor.getValue();
+        assertThat(cond.getBbsId()).isEqualTo(bbsId);
+        assertThat(cond.getUseYn()).isEqualTo("Y"); // 삭제글 노출 방지
+        assertThat(cond.getSearchCnd()).isEqualTo("0");
+        assertThat(cond.getSearchWrd()).isEqualTo("공지");
+        assertThat(cond.getOrderBy()).isEqualTo("views");
+        assertThat(cond.getQnaSttsCd()).isEqualTo("R");
+        assertThat(cond.getQnaCatCd()).isEqualTo("CAT1");
+        // 종료일은 그날 자정이 아니라 하루 끝까지 포함해야 당일 글이 누락되지 않는다.
+        assertThat(cond.getStartDate()).isEqualTo(java.time.LocalDate.of(2026, 1, 1).atStartOfDay());
+        assertThat(cond.getEndDate()).isEqualTo(java.time.LocalDate.of(2026, 12, 31).atTime(java.time.LocalTime.MAX));
+    }
+
+    @Test
+    @DisplayName("게시글 목록 조회 - 역전된 기간은 조회 전에 거부한다")
+    void getBoardPosts_rejectsInvertedDateRange() {
+        String bbsId = "BBS_01";
+        Pageable pageable = PageRequest.of(0, 10);
+        given(boardMasterRepository.findById(bbsId))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
+
+        // 검증이 빠지면 항상 0건이 반환돼 "글이 없다" 는 오해를 유발한다.
+        assertThatThrownBy(() -> boardService.getBoardPosts(
+                bbsId, null, null, null, "2026-12-31", "2026-01-01", null, null, pageable))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        verify(boardRepository, never()).searchArticles(any(BoardSearchCondition.class), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("게시글 목록 조회(검색어 오버로드) - 기간·정렬 없이도 검색어가 전달된다")
+    void getBoardPosts_keywordOverloadDelegates() {
+        String bbsId = "BBS_01";
+        Pageable pageable = PageRequest.of(0, 10);
+        given(boardMasterRepository.findById(bbsId))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
+
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
+                org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), eq(pageable)))
+                .willReturn(new PageImpl<>(Collections.singletonList(
+                        BoardSearchResult.builder().pstId("1").build())));
+
+        Page<BoardDto> result = boardService.getBoardPosts(bbsId, "0", "공지", pageable);
+
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(captor.getValue().getSearchWrd()).isEqualTo("공지");
+        assertThat(captor.getValue().getOrderBy()).isNull();
+    }
+
+    @Test
     @DisplayName("게시글 수정 - 관리자가 아니지만 본인인 경우")
     void updateBoard_Self_Success() {
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("user1"));

@@ -310,15 +310,18 @@ jobs:
 
   # ── 증분 뮤테이션 테스트 (PIT) ──
   # 리팩토링 대상 도메인으로 targetClasses 를 한정한 증분(Incremental) 분석.
-  # 현재는 '리포트 전용'(STRICT_MUTATION: false → mutationThreshold=0)이며, 각 대상 클래스의
-  # 뮤테이션 스코어 75% 달성을 확인한 뒤 STRICT_MUTATION: 'true' 로 전환하면
-  # build.gradle 의 mutationThreshold=75 하드 게이트가 강제된다. (백엔드 헌법 제16조)
+  # STRICT_MUTATION: 'true' → build.gradle 의 mutationThreshold=75 하드 게이트 강제. (백엔드 헌법 제16조)
   #
-  # [실측 2026-07-26] 로컬 증분 측정 결과 business-app 뮤테이션 스코어 = 70% (195/278 killed,
-  # 라인커버리지 90%, test strength 79%). 임계 75% 에 5%p 미달이므로 STRICT_MUTATION 전환 보류.
-  # ⚠ 아울러 아래 run 의 `:business-core:pitest` 는 PIT_TARGET_CLASSES(domain.board/domain.file/
-  # service.board/service.file)가 business-core 에 존재하지 않아 "no mutations" 로 exit 1 실패한다.
-  # STRICT_MUTATION 전환 전 이 잡 구성부터 정정할 것(대상 모듈을 business-app 으로 한정).
+  # [실측 이력 2026-07-26] 69.8%(194/278) → 테스트 보강 → **80.2%(223/278)**.
+  # 임계 75%(=209 kill) 대비 14 뮤턴트 여유를 확보한 뒤 하드 게이트를 켰다.
+  # 보강 지점: BoardMaster 부분수정 null-병합 가드 전수 단언, BoardMasterOption @PrePersist 기본값,
+  #            BoardSearchCondition 기간 검증, BoardService.getBoardPosts 검색조건 전달 전수 검증.
+  # 스코어가 떨어져 이 잡이 빨간불이면, 임계를 낮추지 말고 죽지 않은 뮤턴트에 단언을 추가할 것.
+  #
+  # [잡 구성 정정 2026-07-26] 종전에는 `:business-core:pitest :business-app:pitest` 를 함께 돌렸으나,
+  # PIT_TARGET_CLASSES(domain.board/domain.file/service.board/service.file)는 전부 business-app 소속이라
+  # business-core 에서는 "no mutations" 로 exit 1 이 나 스코어와 무관하게 잡이 항상 실패했다.
+  # 대상이 실재하는 business-app 으로 한정한다.
   mutation-test:
     needs: backend-build
     runs-on: ubuntu-latest
@@ -346,11 +349,11 @@ jobs:
             pit-history-
 
       - name: Incremental Mutation Test (refactored scope)
-        run: ./gradlew :business-core:pitest :business-app:pitest
+        run: ./gradlew :business-app:pitest
         env:
           PIT_TARGET_CLASSES: "nuri.business.domain.file.*,nuri.business.domain.board.*,nuri.business.service.file.*,nuri.business.service.board.*"
           PIT_TARGET_TESTS: "nuri.business.*"
-          STRICT_MUTATION: "false"
+          STRICT_MUTATION: "true"
 
       - name: Upload PIT report
         if: always()

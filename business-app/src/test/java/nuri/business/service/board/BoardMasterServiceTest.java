@@ -292,11 +292,66 @@ class BoardMasterServiceTest {
         // 전부 null인 상태로 update
         boardMasterService.updateBoardMaster("user01", dto);
 
-        // 엔티티 값이 보존되는지 확인
+        // 엔티티 값이 보존되는지 확인 — 부분수정(PATCH) 의미이므로 미전송 필드는 전부 유지돼야 한다.
+        // 한 필드라도 단언에서 빠지면 해당 null-병합 가드가 사라져도 테스트가 통과해 버린다.
         assertThat(entity.getBbsTtl()).isEqualTo("Old Title");
         assertThat(entity.getBbsExpln()).isEqualTo("Old Expln");
         assertThat(entity.getAnsPsbltyYn()).isEqualTo("N");
+        assertThat(entity.getFileAtchPsbltyYn()).isEqualTo("N");
         assertThat(entity.getAtchPsbltyFileQty()).isEqualTo(1);
+        assertThat(entity.getAtchPsbltyFileSz()).isEqualTo(100L);
+        assertThat(entity.getTmpltId()).isEqualTo("TMPLT_001");
+        assertThat(entity.getUseYn()).isEqualTo("Y");
+        assertThat(entity.getAnsYn()).isEqualTo("Y");
+        assertThat(entity.getStsfdgYn()).isEqualTo("N");
+        // 수정자 기록은 누가 고쳤는지에 대한 유일한 증적이다.
+        assertThat(entity.getLastMdfrId()).isEqualTo("user01");
+    }
+
+    @Test
+    @DisplayName("게시판 수정 - DTO 에 담긴 값은 기존 값을 덮어쓴다")
+    void updateBoardMaster_appliesProvidedValues() {
+        BoardMaster entity = BoardMaster.builder()
+                .bbsId("BBSMSTR_000000000001")
+                .bbsTtl("Old Title")
+                .bbsExpln("Old Expln")
+                .ansPsbltyYn("N")
+                .fileAtchPsbltyYn("N")
+                .atchPsbltyFileQty(1)
+                .atchPsbltyFileSz(100L)
+                .tmpltId("TMPLT_001")
+                .useYn("Y")
+                .ansYn("N")
+                .stsfdgYn("N")
+                .build();
+        when(boardMasterRepository.findById("BBSMSTR_000000000001")).thenReturn(Optional.of(entity));
+
+        BoardMasterDto dto = new BoardMasterDto();
+        dto.setBbsId("BBSMSTR_000000000001");
+        dto.setBbsTtl("New Title");
+        dto.setBbsExpln("New Expln");
+        dto.setAnsPsbltyYn("Y");
+        dto.setFileAtchPsbltyYn("Y");
+        dto.setAtchPsbltyFileQty(5);
+        dto.setAtchPsbltyFileSz(999L);
+        dto.setTmpltId("TMPLT_002");
+        dto.setUseYn("N");
+        dto.setAnsYn("Y");
+        dto.setStsfdgYn("Y");
+
+        boardMasterService.updateBoardMaster("user02", dto);
+
+        assertThat(entity.getBbsTtl()).isEqualTo("New Title");
+        assertThat(entity.getBbsExpln()).isEqualTo("New Expln");
+        assertThat(entity.getAnsPsbltyYn()).isEqualTo("Y");
+        assertThat(entity.getFileAtchPsbltyYn()).isEqualTo("Y");
+        assertThat(entity.getAtchPsbltyFileQty()).isEqualTo(5);
+        assertThat(entity.getAtchPsbltyFileSz()).isEqualTo(999L);
+        assertThat(entity.getTmpltId()).isEqualTo("TMPLT_002");
+        assertThat(entity.getUseYn()).isEqualTo("N");
+        assertThat(entity.getAnsYn()).isEqualTo("Y");
+        assertThat(entity.getStsfdgYn()).isEqualTo("Y");
+        assertThat(entity.getLastMdfrId()).isEqualTo("user02");
     }
 
     @Test
@@ -306,6 +361,57 @@ class BoardMasterServiceTest {
         dto.setBbsId("CUSTOM_BBS_ID");
         boardMasterService.createBoardMaster("user01", dto);
         verify(entityManager).persist(any(BoardMaster.class));
+    }
+
+    @Test
+    @DisplayName("게시판 생성 - bbsId 가 비어 있으면 표준 접두사로 채번한다")
+    void createBoardMaster_generatesIdWhenBlank() {
+        given(boardMasterRepository.existsById(anyString())).willReturn(false);
+
+        BoardMasterDto dto = new BoardMasterDto();
+        dto.setBbsId(""); // 빈 문자열도 null 과 동일하게 채번 대상이다
+        dto.setAnsYn("Y");
+        dto.setStsfdgYn("Y");
+
+        String bbsId = boardMasterService.createBoardMaster("user01", dto);
+
+        org.mockito.ArgumentCaptor<BoardMaster> captor = org.mockito.ArgumentCaptor.forClass(BoardMaster.class);
+        verify(entityManager).persist(captor.capture());
+        BoardMaster persisted = captor.getValue();
+
+        assertThat(bbsId).isNotEmpty().startsWith("BBSMSTR_");
+        assertThat(persisted.getBbsId()).isEqualTo(bbsId);
+        // registerOption 이 빠지면 옵션 행이 없어 답변/만족도 설정이 통째로 유실된다.
+        assertThat(persisted.getOption()).isNotNull();
+        assertThat(persisted.getOption().getAnsYn()).isEqualTo("Y");
+        assertThat(persisted.getOption().getStsfdgYn()).isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("게시판 목록 조회 - 검색 조건/키워드가 리포지토리까지 전달된다")
+    void getBoardMasterList_passesSearchConditionThrough() {
+        org.mockito.ArgumentCaptor<BoardMasterSearchCondition> captor =
+                org.mockito.ArgumentCaptor.forClass(BoardMasterSearchCondition.class);
+        given(boardMasterRepository.searchBoardMasters(captor.capture(), any(Pageable.class)))
+                .willReturn(new PageImpl<BoardMasterSearchResult>(List.of()));
+
+        boardMasterService.getBoardMasterList("1", "공지", Pageable.ofSize(10));
+
+        // 조건 전달이 끊기면 검색어를 무시한 전체 목록이 조용히 반환된다.
+        assertThat(captor.getValue().getSearchCnd()).isEqualTo("1");
+        assertThat(captor.getValue().getSearchWrd()).isEqualTo("공지");
+    }
+
+    @Test
+    @DisplayName("게시판 목록 조회(비페이징 오버로드) - 페이지 내용을 그대로 돌려준다")
+    void getBoardMasterList_unpagedOverloadReturnsContent() {
+        given(boardMasterRepository.searchBoardMasters(any(BoardMasterSearchCondition.class), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(mockSearchResult("BBS_01", "공지사항"))));
+
+        List<BoardMasterDto> result = boardMasterService.getBoardMasterList("1", "공지");
+
+        assertThat(result).hasSize(1);
+        assertThat(result.get(0).getBbsTtl()).isEqualTo("공지사항");
     }
 
     @Test

@@ -89,21 +89,50 @@ if (sourceOrigin.contains("localhost") || sourceOrigin.contains("127.0.0.1")) �
 
 ---
 
-## 5. P1-2 뮤테이션 하드게이트 (실측 후 보류)
+## 5. P1-2 뮤테이션 하드게이트 (실측 → 보강 → 활성화)
 
-로컬 증분 pitest 실측:
-
+### 5.1 1차 실측: 미달로 보류
 | 지표 | 값 |
 |---|---|
-| Mutation Score | **70%** (195/278 killed) |
+| Mutation Score | **69.8%** (194/278 killed) |
 | Line Coverage | 90% (1056/1171) |
 | Test strength | 79% |
 
-임계 75% 에 5%p 미달 → `STRICT_MUTATION` report-only 로 원복.
+임계 75% 미달 → 일단 report-only 로 원복.
 
-**추가 발견**: CI 의 `./gradlew :business-core:pitest` 는 `PIT_TARGET_CLASSES`(domain.board/domain.file/
+**동시 발견**: CI 의 `./gradlew :business-core:pitest` 는 `PIT_TARGET_CLASSES`(domain.board/domain.file/
 service.board/service.file)가 business-core 에 **존재하지 않아** 점수와 무관하게 exit 1 로 실패한다.
-전환 전 잡 구성부터 정정해야 한다. 두 사실 모두 `ci.yml` 주석에 기록했다.
+→ 잡 구성을 `:business-app:pitest` 로 정정(대상이 실재하는 모듈로 한정).
+
+### 5.2 보강: 생존 뮤턴트 표적 사격
+리포트를 파싱해 미처치 83건(SURVIVED 52 / NO_COVERAGE 31)의 클래스·메서드·라인·뮤테이터를 특정한 뒤
+밀도가 높은 순으로 처리했다.
+
+| 표적 | 원인 | 조치 |
+|---|---|---|
+| `BoardMasterService#updateBoardMaster` | 부분수정 null-병합 가드 10개 중 **4개만 단언** | 나머지 6필드 + `lastMdfrId` 단언, 덮어쓰기 방향 테스트 신설 |
+| `BoardMasterOption#onCreateOption` | `@PrePersist` 기본값 보정 전체가 테스트 미도달 | `BoardMasterOptionTest` 신설 |
+| `BoardSearchCondition#validateDates` | 역전 기간 검증 미확인 | `BoardSearchConditionTest` 신설 |
+| `BoardMasterService` 채번/목록 | 채번 분기·조건 전달·오버로드 미검증 | ArgumentCaptor 기반 3케이스 |
+| `BoardService#getBoardPosts` | 검색조건 7개 전달·기간 파싱·역전 거부 미검증 | ArgumentCaptor 전수 검증 3케이스 |
+
+> `BoardMasterOption` 은 필드 초기값(`= "N"`) 때문에 정적 팩토리 경로로는 null 분기에 도달할 수 없다.
+> 실제 위험 경로인 "JPA 기본 생성자로 만들어져 필드가 빈 상태" 를 리플렉션으로 재현해야 보정 로직을 검증할 수 있다.
+
+### 5.3 결과: 하드게이트 활성화
+| 단계 | Score |
+|---|---|
+| 보강 전 | 69.8% (194/278) |
+| 1차 보강 후 | 77.0% (214/278) |
+| 2차 보강 후 | **80.2% (223/278)** |
+
+임계 75%(=209 kill) 대비 **14 뮤턴트 여유** 확보 후 `STRICT_MUTATION: "true"` 활성화.
+점수만 보고 켠 것이 아니라 `STRICT_MUTATION=true` 로 직접 실행해 **BUILD SUCCESSFUL(224/278=81%)** 을 확인했다.
+(223↔224 편차는 PIT 실행 간 정상 변동이며, 여유를 둔 판단의 근거이기도 하다.)
+
+**교훈**: 미처치 뮤턴트의 다수는 "테스트가 없다" 가 아니라 **"단언이 부족하다"** 였다.
+`updateBoardMaster_NullDtoValues` 는 이미 존재했지만 10개 필드 중 4개만 검증해,
+나머지 6개 가드는 삭제돼도 통과하는 상태였다.
 
 ---
 
@@ -159,8 +188,10 @@ service.board/service.file)가 business-core 에 **존재하지 않아** 점수�
 
 - `react-hooks` 오류 2건 — `UserOrgHubClient.tsx`, `CommunityHubClient.tsx`. 이번 작업 미변경 파일에서
   발생하는 **기존 red**(React Compiler memoization bailout).
-- 뮤테이션 70% → 75% 도달을 위한 테스트 보강.
-- CI `mutation-test` 잡의 `:business-core:pitest` 대상 모듈 정정.
+- 뮤테이션 잔여 미처치 55건(SURVIVED 31 / NO_COVERAGE 23) — 임계는 넘겼으나 여전히 개선 여지가 있다.
+  다음 표적은 `BoardService#replyPost`(5)·`#createPost`(4)·`#parseDateTime`(4 NC),
+  `BoardMasterRepositoryImpl#searchBoardMasters`(3).
+- PIT 대상 범위가 board/file 도메인에 한정돼 있다 — 핵심 서비스 전반으로 넓히려면 별도 계획이 필요하다.
 
 ---
 
