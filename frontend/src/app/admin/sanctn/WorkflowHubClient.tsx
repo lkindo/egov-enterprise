@@ -127,7 +127,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
                     </CardTitle>
                     <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">Enterprise Resource List</p>
                   </div>
-                  <Button size="icon" className="w-10 h-10 bg-surface-inverse rounded-lg shadow-lg hover:-translate-y-1 transition-all"><Plus size={20} /></Button>
+                  <Button size="icon" aria-label="양식 추가" className="w-10 h-10 bg-surface-inverse rounded-lg shadow-lg hover:-translate-y-1 transition-all"><Plus size={20} /></Button>
                 </div>
                 <div className="relative group">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={14} />
@@ -138,7 +138,15 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
                 {forms.map((form) => (
                   <div 
                     key={form.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => setSelectedFormId(form.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setSelectedFormId(form.id);
+                      }
+                    }}
                     className={cn(
                       "group p-5 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
                       selectedFormId === form.id 

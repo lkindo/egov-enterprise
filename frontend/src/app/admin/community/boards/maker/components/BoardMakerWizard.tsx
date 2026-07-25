@@ -405,9 +405,18 @@ export function BoardMakerWizard() {
  return (
  <div
  key={tpl.id}
+ role="button"
+ tabIndex={0}
  onClick={() => {
  setValue('tmpltId', tpl.id);
  setValue('bbsTypeCd', tpl.typeCode);
+ }}
+ onKeyDown={(e) => {
+ if (e.key === 'Enter' || e.key === ' ') {
+ e.preventDefault();
+ setValue('tmpltId', tpl.id);
+ setValue('bbsTypeCd', tpl.typeCode);
+ }
  }}
  className={cn(
  "group relative p-8 rounded-lg border-2 transition-all duration-500 cursor-pointer flex items-center gap-6",

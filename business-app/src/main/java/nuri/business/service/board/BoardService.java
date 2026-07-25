@@ -325,14 +325,8 @@ public class BoardService extends BaseAbstractService {
                                 .findById(required(pstId, "pstId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
-                // [보안] 권한 확인 (작성자 본인 또는 관리자)
-                String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
-                                .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
-                boolean isAdmin = nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN);
-
-                if (!isAdmin && !currentUserId.equals(board.getUserId())) {
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-                }
+                // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
+                nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(board.getUserId());
 
                 java.time.LocalDateTime eventDate = null;
                 if (StringUtils.hasText(request.evntDt())) {
@@ -383,14 +377,8 @@ public class BoardService extends BaseAbstractService {
                                 .findById(required(pstId, "pstId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
-                // [보안] 권한 확인 (작성자 본인 또는 관리자)
-                String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
-                                .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
-                boolean isAdmin = nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN);
-
-                if (!isAdmin && !currentUserId.equals(board.getUserId())) {
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-                }
+                // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
+                nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(board.getUserId());
 
                 board.delete();
         }

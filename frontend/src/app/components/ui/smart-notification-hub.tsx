@@ -131,7 +131,7 @@ export function SmartNotificationHub() {
       header: '관리',
       accessor: () => (
         <div className="flex items-center justify-end pr-4">
-          <Button variant="ghost" size="icon" className="w-10 h-10 rounded-lg">
+          <Button variant="ghost" size="icon" aria-label="알림 옵션" className="w-10 h-10 rounded-lg">
             <MoreVertical size={16} className="text-muted-foreground" />
           </Button>
         </div>
@@ -165,7 +165,7 @@ export function SmartNotificationHub() {
                  </Button>
                ))}
              </div>
-             <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
+             <Button variant="outline" size="icon" aria-label="알림 스트림 새로고침" className="h-10 w-10 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
                 <RefreshCw size={18} />
              </Button>
           </div>

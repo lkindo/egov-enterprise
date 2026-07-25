@@ -33,7 +33,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
     void getScheduleList_Success() throws Exception {
         // Given
         Page<ScheduleDto> page = new PageImpl<>(List.of(ScheduleDto.builder().schdlId("SCH1").schdlNm("Meeting").build()));
-        given(egovScheduleService.getScheduleList(anyString(), any(PageRequest.class))).willReturn(page);
+        given(egovScheduleService.getScheduleList(anyString(), nullable(String.class), any(PageRequest.class))).willReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/v1/schedules")
@@ -66,7 +66,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
         // Given
         setMockUser("USER_01");
         Page<ScheduleDto> page = new PageImpl<>(List.of(ScheduleDto.builder().schdlId("SCH2").schdlNm("Dept Meeting").build()));
-        given(egovScheduleService.getScheduleList(eq("1"), eq("USER_01"), any(PageRequest.class))).willReturn(page);
+        given(egovScheduleService.getDeptScheduleList(eq("1"), eq("USER_01"), nullable(String.class), any(PageRequest.class))).willReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/v1/schedules/dept")

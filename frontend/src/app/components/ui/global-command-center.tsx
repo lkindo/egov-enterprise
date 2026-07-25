@@ -177,11 +177,23 @@ export function GlobalCommandCenter() {
   return (
     <div className="fixed inset-0 z-[10000] flex items-start justify-center pt-[12vh] px-4 md:px-6">
       <div
+        role="button"
+        tabIndex={0}
+        aria-label="커맨드 센터 닫기"
         className="fixed inset-0 bg-[#020617] animate-in fade-in duration-300"
         onClick={() => setIsOpen(false)}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+            e.preventDefault();
+            setIsOpen(false);
+          }
+        }}
       />
 
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="글로벌 커맨드 센터"
         className="relative w-full max-w-3xl bg-card border-2 border-primary/20 rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-500 ring-1 ring-white/30"
         onKeyDown={handleKeyDown}
       >
@@ -192,6 +204,7 @@ export function GlobalCommandCenter() {
           </div>
           <input
             ref={inputRef}
+            aria-label="글로벌 커맨드 센터 검색어 입력"
             placeholder="검색..."
             className="flex-1 bg-transparent border-none outline-none text-2xl font-bold placeholder:text-muted-foreground/30 tracking-tight"
             value={search}

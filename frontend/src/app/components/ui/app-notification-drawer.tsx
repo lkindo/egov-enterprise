@@ -139,6 +139,9 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                 filteredNotifications.map((notif, idx) => (
                   <div
                     key={notif.id}
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`알림: ${notif.title || '알림 항목'}`}
                     className={cn(
                       "group relative p-6 rounded-lg border transition-all duration-300 cursor-pointer overflow-hidden backdrop-blur-sm",
                       notif.isRead
@@ -147,6 +150,12 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                       !notif.isRead && notif.type === 'SECURITY' && "border-rose-100 dark:border-rose-950 bg-rose-50/20 dark:bg-rose-950/10"
                     )}
                     onClick={() => !notif.isRead && onMarkRead(notif.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        if (!notif.isRead) onMarkRead(notif.id);
+                      }
+                    }}
                   >
                     <div className="flex justify-between items-start gap-4 relative z-10">
                       <div className={cn(

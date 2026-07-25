@@ -208,67 +208,84 @@ export default function OnlinePollParticipateClient() {
 }
 
 function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, todayStr: string, onSelect: () => void }) {
- const status = getPollStatus(poll, todayStr);
- const isLive = status === 'active';
- const label = isLive ? 'Live Now' : status === 'closed' ? 'Closed' : POLL_STATUS_LABEL[status];
+  const status = getPollStatus(poll, todayStr);
+  const isLive = status === 'active';
+  const label = isLive ? 'Live Now' : status === 'closed' ? 'Closed' : POLL_STATUS_LABEL[status];
 
- return (
- <div 
- onClick={onSelect}
- className="group cursor-pointer bg-card rounded-lg p-10 border border-border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden"
- >
- <div className="flex justify-between items-start mb-10">
- <div className="w-16 h-11 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-xl transition-transform group-hover:rotate-6">
- <Vote size={28} />
- </div>
- <div className={cn(
- "px-4 py-1.5 rounded-lg border text-xs font-bold tracking-widest uppercase shadow-sm",
- isLive
- ? "bg-emerald-50 text-emerald-500 border-emerald-100"
- : status === 'scheduled'
- ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
- : "bg-muted text-muted-foreground border-border"
- )}>
- {label}
- </div>
- </div>
+  return (
+    <div 
+      role="button"
+      tabIndex={0}
+      onClick={onSelect}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className="group cursor-pointer bg-card rounded-lg p-10 border border-border shadow-[0_20px_50px_-12px_rgba(0,0,0,0.05)] hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all relative overflow-hidden"
+    >
+      <div className="flex justify-between items-start mb-10">
+        <div className="w-16 h-11 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-xl transition-transform group-hover:rotate-6">
+          <Vote size={28} />
+        </div>
+        <div className={cn(
+          "px-4 py-1.5 rounded-lg border text-xs font-bold tracking-widest uppercase shadow-sm",
+          isLive
+            ? "bg-emerald-50 text-emerald-500 border-emerald-100"
+            : status === 'scheduled'
+            ? "bg-amber-500/10 text-amber-500 border-amber-500/20"
+            : "bg-muted text-muted-foreground border-border"
+        )}>
+          {label}
+        </div>
+      </div>
 
- <div className="space-y-4">
- <h3 className="text-2xl font-bold tracking-tighter leading-none group-hover:text-primary transition-colors uppercase">{poll.pollNm}</h3>
- <div className="flex items-center gap-3 font-mono text-xs font-bold text-muted-foreground tracking-tighter ">
- <Calendar size={14} className="opacity-40" />
- {toDisplayYmd(poll.pollBgngYmd)} <span className="opacity-20">/</span> {toDisplayYmd(poll.pollEndYmd)}
- </div>
- </div>
+      <div className="space-y-4">
+        <h3 className="text-2xl font-bold tracking-tighter leading-none group-hover:text-primary transition-colors uppercase">{poll.pollNm}</h3>
+        <div className="flex items-center gap-3 font-mono text-xs font-bold text-muted-foreground tracking-tighter ">
+          <Calendar size={14} className="opacity-40" />
+          {toDisplayYmd(poll.pollBgngYmd)} <span className="opacity-20">/</span> {toDisplayYmd(poll.pollEndYmd)}
+        </div>
+      </div>
 
- <div className="mt-10 pt-8 border-t border-border flex items-center justify-between">
- <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
- <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase opacity-60">Ready for Interaction</span>
- </div>
- <ChevronRight size={18} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
- </div>
+      <div className="mt-10 pt-8 border-t border-border flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase opacity-60">Ready for Interaction</span>
+        </div>
+        <ChevronRight size={18} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+      </div>
 
- <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.02] group-hover:scale-110 transition-all duration-700 grayscale">
- <Vote size={200} />
- </div>
- </div>
- );
+      <div className="absolute right-[-10%] bottom-[-10%] opacity-[0.02] group-hover:scale-110 transition-all duration-700 grayscale">
+        <Vote size={200} />
+      </div>
+    </div>
+  );
 }
 
 function PollItem({ item, totalVotes, isSelected, onSelect, mode, index, testId }: any) {
- const percentage = totalVotes > 0 ? Math.round((item.pollIemCo || 0) / totalVotes * 100) : 0;
- 
- return (
- <div 
- onClick={onSelect}
- data-testid={testId}
- className={cn(
- "relative p-8 rounded-lg border-2 transition-all group overflow-hidden cursor-pointer",
- isSelected ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-muted/50 hover:border-border",
- mode === 'result' && "cursor-default border-border bg-card"
- )}
- >
+  const percentage = totalVotes > 0 ? Math.round(((item.pollIemCo || 0) / totalVotes) * 100) : 0;
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      aria-label={item.pollArtclNm}
+      data-testid={testId}
+      onClick={mode === 'vote' ? onSelect : undefined}
+      onKeyDown={(e) => {
+        if (mode !== 'vote') return;
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onSelect();
+        }
+      }}
+      className={cn(
+        "relative p-8 rounded-lg border-2 transition-all group overflow-hidden cursor-pointer",
+        isSelected ? "border-primary bg-primary/5 shadow-lg" : "border-border bg-muted/50 hover:border-border",
+        mode === 'result' && "cursor-default border-border bg-card"
+      )}
+    >
  <div className="flex items-center justify-between relative z-10">
  <div className="flex items-center gap-6">
  <div className={cn(

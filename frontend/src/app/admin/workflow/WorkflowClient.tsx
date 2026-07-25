@@ -85,7 +85,7 @@ export default function WorkflowClient() {
                                     <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase">Active_Process:</span>
                                     <span className="text-sm font-bold text-foreground">연차/휴가 결재 v1.2</span>
                                 </div>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">
+                                <Button variant="ghost" size="icon" aria-label="프로세스 캔버스 새로고침" className="h-8 w-8 rounded-lg">
                                     <RefreshCcw size={14} className="text-muted-foreground" />
                                 </Button>
                             </div>

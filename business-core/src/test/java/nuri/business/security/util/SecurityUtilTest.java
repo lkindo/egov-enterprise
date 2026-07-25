@@ -140,4 +140,65 @@ class SecurityUtilTest {
         authenticateAs("adminUser", "ADMIN");
         assertThatCode(() -> SecurityUtil.assertOwnerOrAdmin("someoneElse")).doesNotThrowAnyException();
     }
+
+    // --- 소유권 가드(assertOwnerOrAdminByEsntlId) / esntlId ---
+
+    @Test
+    @DisplayName("assertOwnerOrAdminByEsntlId - 소유자(esntlId 일치)는 통과")
+    void assertOwnerOrAdminByEsntlId_owner_passes() {
+        authenticateAs("loginA");
+        assertThatCode(() -> SecurityUtil.assertOwnerOrAdminByEsntlId("ESNTL_loginA")).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("assertOwnerOrAdminByEsntlId - 비(非)소유자는 ACCESS_DENIED (IDOR 차단)")
+    void assertOwnerOrAdminByEsntlId_nonOwner_throwsAccessDenied() {
+        authenticateAs("loginA");
+        assertThatThrownBy(() -> SecurityUtil.assertOwnerOrAdminByEsntlId("ESNTL_loginB"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("assertOwnerOrAdminByEsntlId - 관리자(ADMIN)는 소유자가 아니어도 우회")
+    void assertOwnerOrAdminByEsntlId_admin_bypasses() {
+        authenticateAs("adminUser", "ADMIN");
+        assertThatCode(() -> SecurityUtil.assertOwnerOrAdminByEsntlId("ESNTL_someoneElse")).doesNotThrowAnyException();
+    }
+
+    // --- 엄격 소유권 가드(assertOwnerByEsntlId) / 관리자 우회 불가 ---
+
+    @Test
+    @DisplayName("assertOwnerByEsntlId - 본인(esntlId 일치)은 통과")
+    void assertOwnerByEsntlId_owner_passes() {
+        authenticateAs("loginA");
+        assertThatCode(() -> SecurityUtil.assertOwnerByEsntlId("ESNTL_loginA")).doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("assertOwnerByEsntlId - 타인은 ACCESS_DENIED (IDOR 차단)")
+    void assertOwnerByEsntlId_nonOwner_throwsAccessDenied() {
+        authenticateAs("loginA");
+        assertThatThrownBy(() -> SecurityUtil.assertOwnerByEsntlId("ESNTL_loginB"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("assertOwnerByEsntlId - 관리자(ADMIN)도 우회하지 못한다 (결재·신청 대리 차단)")
+    void assertOwnerByEsntlId_admin_isNotBypassed() {
+        authenticateAs("adminUser", "ADMIN");
+        assertThatThrownBy(() -> SecurityUtil.assertOwnerByEsntlId("ESNTL_someoneElse"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("assertOwnerByEsntlId - 미인증은 ACCESS_DENIED (fail-closed)")
+    void assertOwnerByEsntlId_noAuthentication_throwsAccessDenied() {
+        assertThatThrownBy(() -> SecurityUtil.assertOwnerByEsntlId("ESNTL_loginA"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+    }
 }
+

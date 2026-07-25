@@ -123,7 +123,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 등록 - 성공 (모든 조건 및 길이 초과)")
     void insertPoll() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
 
@@ -150,7 +150,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 등록 - 실패 (시작일 > 종료일)")
     void insertPoll_Fail_InvalidDates() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollNm("New Poll")
@@ -165,7 +165,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 등록 - 실패 (권한 없음)")
     void insertPoll_Fail_NoAdmin() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             OnlinePollManageDto dto = OnlinePollManageDto.builder().build();
 
@@ -176,7 +176,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 수정 - 성공 (모든 조건 및 길이 초과)")
     void updatePoll_Success() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
 
@@ -206,7 +206,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 수정 - 성공 (Articles null)")
     void updatePoll_Success_NullArticles() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
 
             OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Old").build();
@@ -227,7 +227,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 수정 - 실패 (데이터 없음)")
     void updatePoll_Fail() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             given(pollManageRepository.findById("P99")).willReturn(Optional.empty());
             OnlinePollManageDto dto = OnlinePollManageDto.builder().pollId("P99").build();
@@ -238,7 +238,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 수정 - 실패 (권한 없음)")
     void updatePoll_Fail_NoAdmin() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             OnlinePollManageDto dto = OnlinePollManageDto.builder().build();
 
@@ -249,7 +249,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 삭제 - 성공")
     void deletePoll() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             onlinePollService.deletePoll("P1");
             verify(pollManageRepository, times(1)).deleteById("P1");
@@ -259,7 +259,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 삭제 - 실패 (권한 없음)")
     void deletePoll_Fail_NoAdmin() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             assertThrows(BusinessException.class, () -> onlinePollService.deletePoll("P1"));
@@ -410,7 +410,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 등록 - 빈 문자열에 대한 fallback 검증 및 빈항목 무시")
     void insertPoll_EmptyStringsFallback() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
 
@@ -438,7 +438,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 수정 - 기존 항목과 새 항목 병합")
     void updatePoll_MergeArticles() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
 
@@ -502,7 +502,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("insertPollItem - pollManage를 찾지 못할 때 예외")
     void insertPollItem_Fail_NotFound() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
             
             given(pollManageRepository.findById("P99")).willReturn(Optional.empty());
@@ -515,7 +515,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("updatePollItem - 내용이 빈 문자열일 때")
     void updatePollItem_EmptyContent() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
 
             OnlinePollArticle entity = OnlinePollArticle.builder().pollArtclId("I1").pollArtclNm("Old").build();
@@ -533,7 +533,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 항목 수정 - 성공")
     void updatePollItem_Success() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
 
             OnlinePollArticle entity = OnlinePollArticle.builder().pollArtclId("I1").pollArtclNm("Old").build();
@@ -557,7 +557,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 등록 - 시작일, 종료일 null 테스트")
     void insertPoll_DatesNull() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
                     .pollNm("New Poll")
@@ -573,7 +573,7 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 등록 - 설문종류코드(pollKndCd)가 null 또는 짧은 경우")
     void insertPoll_PollKndCd_NullOrShort() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             
             // Null case

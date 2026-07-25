@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
 import { revalidatePath } from 'next/cache';
+import { extractErrorMessage } from './actionUtils';
 
 interface ActionResponse {
   success: boolean;
@@ -43,8 +44,8 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
     } else {
       return { success: false, message: '댓글 등록에 실패했습니다.' };
     }
-  } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : '오류가 발생했습니다.';
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '오류가 발생했습니다.');
     console.error('Comment Create Error:', error);
     return { success: false, message: errorMessage };
   }
@@ -68,8 +69,8 @@ export async function deleteComment(prevState: unknown, formData: FormData): Pro
     } else {
       return { success: false, message: '삭제에 실패했습니다.' };
     }
-  } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : '삭제 중 오류가 발생했습니다.';
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '삭제 중 오류가 발생했습니다.');
     console.error('Comment Delete Error:', error);
     return { success: false, message: errorMessage };
   }
@@ -104,8 +105,8 @@ export async function updateComment(prevState: unknown, formData: FormData): Pro
     } else {
       return { success: false, message: '수정에 실패했습니다.' };
     }
-  } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : '수정 중 오류가 발생했습니다.';
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '수정 중 오류가 발생했습니다.');
     console.error('Comment Update Error:', error);
     return { success: false, message: errorMessage };
   }

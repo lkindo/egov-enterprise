@@ -139,7 +139,7 @@ class DeptJobServiceTest {
     void getDeptJobList_mineOnly_failsClosedWithoutIdentity() {
         // 조건을 붙이지 못했을 때 그냥 통과시키면 '내 업무만' 요청이 조용히 전체 목록이 되어
         // 소유 스코프가 이름만 남는다. fail-closed 여야 한다.
-        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             Page<DeptJobDto> result = deptJobService.getDeptJobList(
                     null, null, "0", null, true, PageRequest.of(0, 10));
 
@@ -241,7 +241,7 @@ class DeptJobServiceTest {
 
         // 소유권 가드는 담당자(pic_id=esntlId) 기준이다. SecurityContext 가 없는 단위 테스트에서는
         // getCurrentEsntlId() 를 담당자 본인으로 세워 통과 경로를 재현한다.
-        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                     .thenReturn(Optional.of("USER1"));
             deptJobService.updateDeptJob("JOB1", dto);
@@ -258,7 +258,7 @@ class DeptJobServiceTest {
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("남의 업무 수정 시도");
 
-        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                     .thenReturn(Optional.of("USER_INTRUDER"));
 
@@ -282,8 +282,14 @@ class DeptJobServiceTest {
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("등록자가 수정");
 
-        // 등록자 폴백은 assertOwnerOrAdmin(loginId 축)에 위임되며 mockStatic 하에서 no-op 이다.
-        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        // 등록자 폴백은 loginId 축 가드(assertOwnerOrAdmin)에 위임된다. 그 가드의 판정 로직 자체는
+        // SecurityUtilTest 가 검증하므로 여기서는 통과로 둔다.
+        // 이 통과 자체가 축(axis) 검증이다 — 서비스가 esntlId 축 가드를 탔다면 getCurrentEsntlId() 가
+        // 비어 있어 ACCESS_DENIED 로 떨어지므로 아래 assertDoesNotThrow 가 실패한다.
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            mocked.when(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(any()))
+                    .thenAnswer(invocation -> null);
+
             assertDoesNotThrow(() -> deptJobService.updateDeptJob("TASK_NOPIC", dto));
         }
 
@@ -300,7 +306,7 @@ class DeptJobServiceTest {
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskNm("담당자 미전송 수정");
 
-        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                     .thenReturn(Optional.of("USER1"));
             deptJobService.updateDeptJob("JOB1", dto);
@@ -315,7 +321,7 @@ class DeptJobServiceTest {
         // 종전에는 deleteById 로 존재 확인도 소유권 검증도 없이 지웠다.
         when(deptJobRepository.findById("JOB1")).thenReturn(Optional.of(deptJob));
 
-        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                     .thenReturn(Optional.of("USER1")); // 담당자 본인
             deptJobService.deleteDeptJob("JOB1");
@@ -329,7 +335,7 @@ class DeptJobServiceTest {
     void deleteDeptJob_deniedForNonPic() {
         when(deptJobRepository.findById("JOB1")).thenReturn(Optional.of(deptJob)); // picId = USER1
 
-        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mocked = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mocked.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                     .thenReturn(Optional.of("USER_INTRUDER"));
 

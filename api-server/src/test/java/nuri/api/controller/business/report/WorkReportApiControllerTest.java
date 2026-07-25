@@ -22,6 +22,7 @@ import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -53,7 +54,7 @@ class WorkReportApiControllerTest {
     @DisplayName("업무보고 목록 조회")
     void getWorkReportList() throws Exception {
         Page<WorkReportDto> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
-        when(workReportService.getWorkReportList(anyString(), any(), any(), any())).thenReturn(page);
+        when(workReportService.getWorkReportList(nullable(String.class), nullable(String.class), any(), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/work-reports")
                         .param("searchKeyword", "test")

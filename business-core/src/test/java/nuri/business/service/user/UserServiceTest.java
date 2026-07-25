@@ -103,7 +103,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 등록 테스트 - 성공")
     void registerUserSuccessTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             given(userRepository.findByUserId("testuser")).willReturn(Optional.empty());
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
@@ -119,7 +119,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 등록 테스트 - 실패 (ID 중복)")
     void registerUserDuplicateIdTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             given(userRepository.findByUserId("testuser")).willReturn(Optional.of(mock(User.class)));
             
@@ -159,8 +159,10 @@ class UserServiceTest {
     void updateUserSelfSuccessTest() {
         User user = mock(User.class);
         given(userRepository.findById("user1")).willReturn(Optional.of(user));
-        
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        // 소유권 가드는 esntlId 축으로 비교한다. 대상 사용자의 esntlId 를 세워야 '본인' 이 성립한다.
+        given(user.getEsntlId()).willReturn("user1");
+
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
@@ -175,7 +177,7 @@ class UserServiceTest {
         User user = mock(User.class);
         given(userRepository.findById("user2")).willReturn(Optional.of(user));
         
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
@@ -235,7 +237,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 삭제 테스트 - 관리자 성공")
     void deleteUserSuccessTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user = mock(User.class);
             given(user.getEsntlId()).willReturn("USR_TEST_ESNTL_0001");
@@ -252,7 +254,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 삭제 테스트 - 관리자 권한 없음")
     void deleteUserNoAuthTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             assertThrows(BusinessException.class, () -> userService.deleteUser("user1"));
@@ -262,7 +264,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 삭제 테스트 - 존재하지 않음")
     void deleteUserNotFoundTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             given(userRepository.findByUserId("user1")).willReturn(Optional.empty());
             given(userRepository.existsById("user1")).willReturn(false);
@@ -274,7 +276,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 다중 삭제 - 성공")
     void deleteUserListSuccessTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user1 = mock(User.class);
             User user2 = mock(User.class);
@@ -292,7 +294,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 상태 다중 변경 - 성공")
     void updateUsersStatusSuccessTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user = mock(User.class);
             given(userRepository.findAllById(anyList())).willReturn(List.of(user));
@@ -306,10 +308,10 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 부서 다중 변경 - 성공")
     void moveUsersToDeptSuccessTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user = mock(User.class);
-            given(userRepository.findAllById(anyList())).willReturn(List.of(user));
+            given(userRepository.findByUserIdIn(anyList())).willReturn(List.of(user));
             
             userService.moveUsersToDept(List.of("user1"), "DEPT1");
             verify(user).updateOrgnztId("DEPT1");
@@ -320,7 +322,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 역할 다중 변경 - 성공 (기존 권한 있음)")
     void updateUsersRoleSuccessTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user = mock(User.class);
             given(user.getEsntlId()).willReturn("ESNTL1");
@@ -339,7 +341,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 역할 다중 변경 - 성공 (기존 권한 없음)")
     void updateUsersRoleNoExistingAuthTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user = mock(User.class);
             given(user.getEsntlId()).willReturn("ESNTL1");
@@ -356,7 +358,7 @@ class UserServiceTest {
     @Test
     @DisplayName("관리자 비밀번호 변경 - 성공")
     void updatePasswordByAdminSuccessTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user = mock(User.class);
             given(userRepository.findById("user1")).willReturn(Optional.of(user));
@@ -377,7 +379,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 등록 테스트 - 잘못된 역할 이름으로 폴백")
     void registerUserInvalidRoleTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             given(userRepository.findByUserId("testuser")).willReturn(Optional.empty());
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
@@ -392,7 +394,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 등록 테스트 - 관리자 권한 없음")
     void registerUserNoAuthTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             assertThrows(BusinessException.class, () -> 
@@ -403,7 +405,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 다중 삭제 - 관리자 권한 없음")
     void deleteUserListNoAuthTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             assertThrows(BusinessException.class, () -> userService.deleteUserList(List.of("user1", "user2")));
@@ -413,7 +415,7 @@ class UserServiceTest {
     @Test
     @DisplayName("관리자 비밀번호 변경 - 관리자 권한 없음")
     void updatePasswordByAdminNoAuthTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             assertThrows(BusinessException.class, () -> userService.updatePasswordByAdmin("user1", "newpwd"));
@@ -423,7 +425,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 상태 다중 변경 - 관리자 권한 없음")
     void updateUsersStatusNoAuthTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             assertThrows(BusinessException.class, () -> userService.updateUsersStatus(List.of("user1"), "ACTIVE"));
@@ -433,7 +435,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 부서 다중 변경 - 관리자 권한 없음")
     void moveUsersToDeptNoAuthTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             assertThrows(BusinessException.class, () -> userService.moveUsersToDept(List.of("user1"), "DEPT1"));
@@ -443,7 +445,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 역할 다중 변경 - 관리자 권한 없음")
     void updateUsersRoleNoAuthTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             assertThrows(BusinessException.class, () -> userService.updateUsersRole(List.of("user1"), nuri.business.domain.user.entity.Role.ADMIN));
@@ -462,7 +464,7 @@ class UserServiceTest {
     @Test
     @DisplayName("사용자 등록 테스트 - 롤 파라미터가 null/empty인 경우")
     void registerUserEmptyRoleTest() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             given(userRepository.findByUserId("testuser2")).willReturn(Optional.empty());
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");

@@ -66,7 +66,7 @@ describe('boardActions', () => {
       const mockCookies = {
         get: vi.fn().mockReturnValue({ value: 'token' }),
       };
-      (vi.mocked(cookies)).mockResolvedValue(mockCookies as any);
+      (vi.mocked(cookies)).mockResolvedValue(mockCookies as unknown as Awaited<ReturnType<typeof cookies>>);
 
       (vi.mocked(client.post)).mockResolvedValue('100');
 
@@ -76,7 +76,7 @@ describe('boardActions', () => {
         pstTtl: 'title',
         pstCn: 'content',
         bbsId: 'BBS_001'
-      }), expect.any(Object));
+      }), expect.anything());
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/select-board-list');
       expect(result.success).toBe(true);
       expect(result.message).toBe('게시글이 성공적으로 등록되었습니다.');
@@ -93,7 +93,7 @@ describe('boardActions', () => {
       const mockCookies = {
         get: vi.fn().mockReturnValue({ value: 'token' }),
       };
-      (vi.mocked(cookies)).mockResolvedValue(mockCookies as any);
+      (vi.mocked(cookies)).mockResolvedValue(mockCookies as unknown as Awaited<ReturnType<typeof cookies>>);
 
       (vi.mocked(client.put)).mockResolvedValue({ success: true });
 
@@ -103,7 +103,7 @@ describe('boardActions', () => {
         pstTtl: 'title edited',
         pstCn: 'content edited',
         bbsId: 'BBS_001'
-      }), expect.any(Object));
+      }), expect.anything());
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/select-board-list');
       expect(result.success).toBe(true);
       expect(result.message).toBe('게시글이 성공적으로 수정되었습니다.');
@@ -116,7 +116,7 @@ describe('boardActions', () => {
       formData.append('pstCn', 'content');
       formData.append('bbsId', 'BBS_001');
 
-      (vi.mocked(cookies)).mockResolvedValue({ get: vi.fn() } as any);
+      (vi.mocked(cookies)).mockResolvedValue({ get: vi.fn() } as unknown as Awaited<ReturnType<typeof cookies>>);
       (vi.mocked(client.post)).mockResolvedValue(null);
 
       const result = await saveBoardArticle({}, formData);
@@ -148,7 +148,7 @@ describe('boardActions', () => {
       formData.append('pstId', '100');
       formData.append('bbsId', 'BBS_001');
 
-      (vi.mocked(cookies)).mockResolvedValue({ get: vi.fn().mockReturnValue({ value: 'token' }) } as any);
+      (vi.mocked(cookies)).mockResolvedValue({ get: vi.fn().mockReturnValue({ value: 'token' }) } as unknown as Awaited<ReturnType<typeof cookies>>);
       (vi.mocked(client.delete)).mockResolvedValue({ success: true });
 
       const result = await deleteBoardArticle({}, formData);
@@ -163,7 +163,7 @@ describe('boardActions', () => {
       formData.append('pstId', '100');
       formData.append('bbsId', 'BBS_001');
 
-      (vi.mocked(cookies)).mockResolvedValue({ get: vi.fn() } as any);
+      (vi.mocked(cookies)).mockResolvedValue({ get: vi.fn() } as unknown as Awaited<ReturnType<typeof cookies>>);
       (vi.mocked(client.delete)).mockRejectedValue(new Error('삭제 중 오류가 발생했습니다.'));
 
       const result = await deleteBoardArticle({}, formData);

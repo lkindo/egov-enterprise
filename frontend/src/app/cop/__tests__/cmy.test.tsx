@@ -5,6 +5,16 @@ vi.mock('next/config', () => ({
   }),
 }));
 
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({
+    user: { id: 'test-user', userNm: '테스트' },
+    loading: false,
+    login: vi.fn(),
+    logout: vi.fn(),
+    checkAuth: vi.fn(),
+  }),
+}));
+
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import { describe,  it,  expect,  vi } from 'vitest';

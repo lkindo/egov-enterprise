@@ -61,7 +61,7 @@ class BoardServiceTest {
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
-        securityUtilMock = mockStatic(nuri.business.security.util.SecurityUtil.class);
+        securityUtilMock = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS);
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole(anyString())).thenReturn(false);
         meterRegistry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
         boardService = new BoardService(

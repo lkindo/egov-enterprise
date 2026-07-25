@@ -137,7 +137,7 @@ class JwtTokenProviderTest {
         assertThat(setCookieHeader).isNotNull();
         assertThat(setCookieHeader).contains("refreshToken=ref-token");
         assertThat(setCookieHeader).contains("HttpOnly");
-        assertThat(setCookieHeader).contains("SameSite=Lax");
+        assertThat(setCookieHeader).contains("SameSite=Strict");
     }
 
     @Test
@@ -167,6 +167,6 @@ class JwtTokenProviderTest {
         String setCookieHeader = response.getHeader(org.springframework.http.HttpHeaders.SET_COOKIE);
         assertThat(setCookieHeader).isNotNull();
         assertThat(setCookieHeader).contains("Max-Age=0");
-        assertThat(setCookieHeader).contains("SameSite=Lax");
+        assertThat(setCookieHeader).contains("SameSite=Strict");
     }
 }

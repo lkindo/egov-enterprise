@@ -119,6 +119,43 @@ public class SecurityUtil {
     }
 
     /**
+     * 리소스 소유권(작성자) 검증. 관리자(ADMIN/SYSTEM)는 우회한다.
+     * 소유자 식별은 <b>esntlId</b> 기준(User 엔티티 PK)이다. — IDOR 방어 표준 가드.
+     * ({@code InformalSanction.aplcntId}, {@code Board.userId} 등 esntlId 를 저장하는 도메인용)
+     *
+     * @param ownerEsntlId 리소스 작성자의 esntlId
+     * @throws BusinessException ACCESS_DENIED — 관리자가 아니고 현재 사용자가 소유자가 아닐 때
+     */
+    public static void assertOwnerOrAdminByEsntlId(String ownerEsntlId) {
+        if (hasRole(AuthorityConstants.ROLE_ADMIN) || hasRole(AuthorityConstants.ROLE_SYSTEM)) {
+            return;
+        }
+        String current = getCurrentEsntlId().orElse(null);
+        if (current == null || !current.equals(ownerEsntlId)) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
+    }
+
+
+    /**
+     * 리소스 소유권(본인) 검증. <b>관리자도 우회하지 못한다.</b> — 대리 수행이 허용되지 않는
+     * 인격 귀속 행위(결재자 본인 승인, 신청자 본인 정정 등)용 엄격 가드.
+     * 소유자 식별은 <b>esntlId</b> 기준(User 엔티티 PK)이다.
+     *
+     * <p>관리자 우회가 필요한 일반 소유권 검증은 {@link #assertOwnerOrAdminByEsntlId(String)} 를 쓴다.
+     * 두 헬퍼를 혼동해 이 자리에 관리자 우회를 도입하면 결재 무결성이 깨지므로 주의한다.</p>
+     *
+     * @param ownerEsntlId 리소스 귀속 주체의 esntlId
+     * @throws BusinessException ACCESS_DENIED — 현재 주체가 그 본인이 아닐 때(미인증 포함, fail-closed)
+     */
+    public static void assertOwnerByEsntlId(String ownerEsntlId) {
+        String current = getCurrentEsntlId().orElse(null);
+        if (current == null || !current.equals(ownerEsntlId)) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        }
+    }
+
+    /**
      * 관리자(ADMIN/SYSTEM) 전용 자원에 대한 서비스 레이어 2차 인가 가드.
      * 컨트롤러의 {@code @PreAuthorize}(1차)와 짝을 이루는 이중 검증(백엔드 헌법 제8조)이다.
      * 소유 모델이 없는 공유 관리 자원(예: 부서 업무함)의 쓰기 경로에서 사용한다.

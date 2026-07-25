@@ -68,7 +68,7 @@ export default function CommunityDetailHubClient({
             <div className="flex gap-4 p-2 items-center">
                <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="lg" className="h-11 w-14 rounded-[var(--radius-hub-item)] bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
+                  <Button variant="ghost" size="lg" aria-label="커뮤니티 공유하기" className="h-11 w-14 rounded-[var(--radius-hub-item)] bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
                     <Share2 size={22} />
                   </Button>
                 </TooltipTrigger>

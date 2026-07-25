@@ -76,7 +76,7 @@ class UserServiceAdditionalTest {
     @Test
     @DisplayName("사용자 정보 수정 성공")
     void updateUser_success() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("ADMIN"));
             // Given
@@ -105,7 +105,7 @@ class UserServiceAdditionalTest {
     @Test
     @DisplayName("사용자 정보 수정 실패 - 존재하지 않는 사용자")
     void updateUser_fail_userNotFound() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("ADMIN"));
             // Given
@@ -171,7 +171,7 @@ class UserServiceAdditionalTest {
     @Test
     @DisplayName("사용자 삭제 성공 - 종속 데이터(권한매핑·토큰) 정리 후 이벤트 발행과 함께 삭제 (V2_12 FK 결속)")
     void deleteUser_success() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             String userId = "testUser";
             User user = createBaseUser(userId).build();
@@ -198,7 +198,7 @@ class UserServiceAdditionalTest {
     @Test
     @DisplayName("사용자 삭제 실패 - 존재하지 않는 사용자")
     void deleteUser_fail_userNotFound() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             // Given
             String userId = "nonexistent";
@@ -214,7 +214,7 @@ class UserServiceAdditionalTest {
     @Test
     @DisplayName("사용자 삭제 금지 - 시스템 관리자(webmaster)는 콘텐츠 재귀속 종착 계정이므로 삭제 불가")
     void deleteUser_fail_systemAdminProtected() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User webmaster = User.builder()
                     .userId("webmaster")
@@ -234,7 +234,7 @@ class UserServiceAdditionalTest {
     @Test
     @DisplayName("사용자 일괄 삭제 - loginId 목록을 esntlId 로 해석해 실제 삭제 (기존 침묵 no-op 버그 회귀 방지)")
     void deleteUserList_resolvesLoginIdsToEsntlIds() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User userA = createBaseUser("loginA").build();
             User userB = createBaseUser("loginB").build();
@@ -254,7 +254,7 @@ class UserServiceAdditionalTest {
     @Test
     @DisplayName("사용자 일괄 삭제 - 존재하지 않는 ID 는 멱등 의미론으로 건너뜀")
     void deleteUserList_skipsMissingIds() {
-        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User userA = createBaseUser("loginA").build();
             when(userRepository.findByUserId("loginA")).thenReturn(Optional.of(userA));

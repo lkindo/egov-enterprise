@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
 import { Banner, Popup } from '@/types/foundation/banner';
+import { extractErrorMessage } from './actionUtils';
 
 interface ActionResponse {
     success: boolean;
@@ -32,8 +33,8 @@ export async function saveBannerAction(prevState: unknown, { mode, data, id }: S
         revalidatePath('/admin/system/banner');
         revalidatePath('/');
         return { success: true, message: `배너가 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
-    } catch (error: any) {
-        const errorMessage = error instanceof Error ? error.message : '저장 중 오류 발생';
+    } catch (error) {
+        const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
         console.error('Save Banner Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -49,8 +50,8 @@ export async function deleteBannerAction(prevState: unknown, id: string): Promis
 
         revalidatePath('/admin/system/banner');
         return { success: true, message: '배너가 삭제되었습니다.' };
-    } catch (error: any) {
-        const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
+    } catch (error) {
+        const errorMessage = extractErrorMessage(error, '삭제 중 오류 발생');
         console.error('Delete Banner Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -72,8 +73,8 @@ export async function savePopupAction(prevState: unknown, { mode, data, id }: Sa
         revalidatePath('/admin/system/banner');
         revalidatePath('/');
         return { success: true, message: `팝업이 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
-    } catch (error: any) {
-        const errorMessage = error instanceof Error ? error.message : '저장 중 오류 발생';
+    } catch (error) {
+        const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
         console.error('Save Popup Error:', error);
         return { success: false, message: errorMessage };
     }
@@ -89,8 +90,8 @@ export async function deletePopupAction(prevState: unknown, id: string): Promise
 
         revalidatePath('/admin/system/banner');
         return { success: true, message: '팝업이 삭제되었습니다.' };
-    } catch (error: any) {
-        const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
+    } catch (error) {
+        const errorMessage = extractErrorMessage(error, '삭제 중 오류 발생');
         console.error('Delete Popup Error:', error);
         return { success: false, message: errorMessage };
     }

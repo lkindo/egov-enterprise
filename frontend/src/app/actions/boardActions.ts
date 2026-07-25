@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
 import { revalidatePath } from 'next/cache';
+import { extractErrorMessage } from './actionUtils';
 
 interface ActionResponse {
   success: boolean;
@@ -30,6 +31,21 @@ interface BoardArticle {
   // extra fields for form logic
   replyYn?: string;
   parnts?: string;
+}
+
+function extractTargetId(response: unknown, fallbackId: string): string {
+  if (typeof response === 'string' && response.trim() !== '') {
+    return response;
+  }
+  if (typeof response === 'number') {
+    return String(response);
+  }
+  if (response && typeof response === 'object') {
+    const obj = response as Record<string, unknown>;
+    if (obj.pstId != null) return String(obj.pstId);
+    if (obj.id != null) return String(obj.id);
+  }
+  return fallbackId;
 }
 
 export async function saveBoardArticle(prevState: unknown, formData: FormData): Promise<ActionResponse> {
@@ -77,11 +93,11 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       articleData.parnts = parnts;
     }
 
-    // Extract files if any
+    // Extract attached files
     const files = formData.getAll('files') as File[];
     const hasFiles = files.some(file => file && file.size > 0);
 
-    let response: any;
+    let response: unknown;
     
     if (hasFiles) {
       // Backend currently doesn't have @RequestPart in BoardApiController,
@@ -116,15 +132,15 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
     }
 
     revalidatePath(`/admin/community/boards/select-board-list`);
-    const targetId = isEdit ? pstId : (response as any);
+    const targetId = isEdit ? pstId : extractTargetId(response, pstId);
     
     return {
       success: true,
       message: isEdit ? '게시글이 성공적으로 수정되었습니다.' : '게시글이 성공적으로 등록되었습니다.',
       redirect: `/admin/community/boards/detail?bbsId=${bbsId}&pstId=${targetId}`
     };
-  } catch (error: any) {
-    const errorMessage = error.response?.data?.message || error.message || '알 수 없는 오류가 발생했습니다.';
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '알 수 없는 오류가 발생했습니다.');
     console.error('Save Action Error:', error);
     return { success: false, message: errorMessage };
   }
@@ -139,12 +155,12 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const response = await client.delete(`/boards/${bbsId}/posts/${pstId}`, axiosConfig);
+    await client.delete(`/boards/${bbsId}/posts/${pstId}`, axiosConfig);
     
     revalidatePath(`/admin/community/boards/select-board-list`);
     return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
-  } catch (error: any) {
-    const errorMessage = error.response?.data?.message || error.message || '삭제 중 오류가 발생했습니다.';
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '삭제 중 오류가 발생했습니다.');
     console.error('Delete Action Error:', error);
     return { success: false, message: errorMessage };
   }

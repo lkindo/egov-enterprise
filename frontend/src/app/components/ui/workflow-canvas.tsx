@@ -105,6 +105,9 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
         {nodes.map(node => (
           <div
             key={node.id}
+            role="button"
+            tabIndex={0}
+            aria-label={`노드: ${node.label}`}
             className={cn(
               "absolute w-56 p-5 rounded-lg border-2 transition-all duration-500 cursor-pointer flex flex-col gap-3 group/node",
               node.status === 'current' ? "bg-card border-primary shadow-[0_20px_40px_rgba(59,130,246,0.15)] scale-105" :
@@ -115,6 +118,12 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
             onMouseEnter={() => setHoveredNode(node.id)}
             onMouseLeave={() => setHoveredNode(null)}
             onClick={() => onNodeClick?.(node)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onNodeClick?.(node);
+              }
+            }}
           >
             <div className="flex items-center justify-between">
               <span className={cn(
@@ -144,7 +153,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
               "absolute top-2 -right-12 flex flex-col gap-2 transition-all",
               hoveredNode === node.id ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4 pointer-events-none"
             )}>
-              <button className="p-2 bg-card border rounded-lg shadow-lg text-muted-foreground hover:text-primary transition-colors">
+              <button aria-label="노드 옵션" className="p-2 bg-card border rounded-lg shadow-lg text-muted-foreground hover:text-primary transition-colors">
                 <MoreVertical size={14} />
               </button>
             </div>

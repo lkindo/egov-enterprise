@@ -43,10 +43,20 @@ export function UserPicker({
 
  const renderUserItem = (user: NameCard) => (
  <div
+ role="button"
+ tabIndex={0}
+ aria-label={`사용자 선택: ${user.nm}`}
  className="flex items-center justify-between px-6 py-3 border-b hover:bg-primary/5 transition-colors cursor-pointer group"
  onClick={() => {
  onSelect(user);
  onClose();
+ }}
+ onKeyDown={(e) => {
+ if (e.key === 'Enter' || e.key === ' ') {
+ e.preventDefault();
+ onSelect(user);
+ onClose();
+ }
  }}
  >
  <div className="flex items-center gap-3">
@@ -77,6 +87,7 @@ export function UserPicker({
  <Search className="absolute left-3 top-2.5 text-muted-foreground" size={18} />
  <input
  type="text"
+ aria-label="사용자 검색어 입력"
  value={keyword}
  onChange={(e) => setKeyword(e.target.value)}
  placeholder="이름, 부서, ID 검색..."

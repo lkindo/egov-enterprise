@@ -181,6 +181,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
           <div className="flex gap-4">
             <Button
               variant="outline"
+              aria-label="포상 목록 새로고침"
               onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-rewards'] })}
               className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm active:scale-95"
             >

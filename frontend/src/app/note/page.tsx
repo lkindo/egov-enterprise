@@ -131,6 +131,7 @@ export default function NotePage() {
       accessor: (item: Note) => (
         <button
           onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
+          aria-label={`${item.noteSj || '쪽지'} 삭제`}
           className="p-2 hover:bg-rose-50 text-rose-400 rounded-lg transition-colors group"
         >
           <Trash2 size={18} className="group-hover:scale-110 transition-transform" />
@@ -211,6 +212,7 @@ export default function NotePage() {
                 <UserPlus size={18} className="absolute left-6 top-5 text-slate-300 group-hover:text-primary transition-colors" />
                 <input
                   type="text"
+                  aria-label="수신 대상자"
                   value={formData.rcverNm ? `${formData.rcverNm} (${formData.rcverId})` : ''}
                   placeholder="대상자를 식별하십시오..."
                   readOnly
@@ -228,6 +230,7 @@ export default function NotePage() {
           <FormField label="시스템 제목" required>
             <input
               type="text"
+              aria-label="시스템 제목"
               value={formData.noteSj}
               onChange={(e) => setFormData({ ...formData, noteSj: e.target.value })}
               placeholder="쪽지 아키텍처 제목을 입력하세요."
@@ -236,6 +239,7 @@ export default function NotePage() {
           </FormField>
           <FormField label="데이터 바디 (내용)">
             <textarea
+              aria-label="데이터 바디 (내용)"
               value={formData.noteCn}
               onChange={(e) => setFormData({ ...formData, noteCn: e.target.value })}
               className="w-full min-h-[200px] p-8 rounded-lg bg-muted border-none text-base font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none leading-relaxed"

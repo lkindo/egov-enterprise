@@ -36,7 +36,7 @@ function StatsContent() {
   return (
     <div className="container mx-auto py-8 max-w-5xl space-y-6">
       <div className="flex items-center space-x-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push('/survey/response')}>
+        <Button variant="ghost" size="icon" aria-label="뒤로 가기" onClick={() => router.push('/survey/response')}>
           <ArrowLeft className="h-5 w-5" />
         </Button>
         <div>

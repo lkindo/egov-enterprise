@@ -160,13 +160,14 @@ export default function SurveyResponseClient() {
                       <TableCell>
                         <div className="flex justify-center space-x-1">
                           <Link href={`/survey/response/${item.qestnrQesitmId}`}>
-                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <Button variant="ghost" size="icon" aria-label={`${item.respondNm || '설문'} 응답 상세보기`} className="h-8 w-8">
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
                           <Button
                             variant="ghost"
                             size="icon"
+                            aria-label={`${item.respondNm || '설문'} 응답 삭제`}
                             className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={() => handleDelete(item.qestnrQesitmId, item.respondNm)}
                           >

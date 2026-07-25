@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { UserManage } from '@/types/foundation/user';
+import { extractErrorMessage } from './actionUtils';
 
 interface ActionResponse {
   success: boolean;
@@ -20,8 +21,8 @@ async function createUserAction(prevState: unknown, formData: UserManage): Promi
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: '사용자가 등록되었습니다.' };
-  } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : '등록 중 오류 발생';
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '등록 중 오류 발생');
     console.error('Create User Error:', error);
     return { success: false, message: errorMessage };
   }
@@ -37,8 +38,8 @@ async function updateUserAction(prevState: unknown, formData: UserManage): Promi
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: '사용자 정보가 수정되었습니다.' };
-  } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : '수정 중 오류 발생';
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '수정 중 오류 발생');
     console.error('Update User Error:', error);
     return { success: false, message: errorMessage };
   }
@@ -54,8 +55,8 @@ async function deleteUserAction(prevState: unknown, userId: string): Promise<Act
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: '사용자가 삭제되었습니다.' };
-  } catch (error: any) {
-    const errorMessage = error instanceof Error ? error.message : '삭제 중 오류 발생';
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '삭제 중 오류 발생');
     console.error('Delete User Error:', error);
     return { success: false, message: errorMessage };
   }
@@ -71,9 +72,10 @@ export async function bulkUpdateUserStatusAction(userIds: string[], status: stri
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: `${userIds.length}명의 사용자 상태가 변경되었습니다.` };
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '상태 변경 중 오류 발생');
     console.error('Bulk Update Status Error:', error);
-    return { success: false, message: '상태 변경 중 오류 발생' };
+    return { success: false, message: errorMessage };
   }
 }
 
@@ -87,9 +89,10 @@ export async function bulkMoveUserDeptAction(userIds: string[], ognzId: string):
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: `${userIds.length}명의 사용자가 부서 이동되었습니다.` };
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '부서 이동 중 오류 발생');
     console.error('Bulk Move Dept Error:', error);
-    return { success: false, message: '부서 이동 중 오류 발생' };
+    return { success: false, message: errorMessage };
   }
 }
 
@@ -103,9 +106,10 @@ export async function bulkDeleteUsersAction(userIds: string[]): Promise<ActionRe
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: `${userIds.length}명의 사용자가 삭제되었습니다.` };
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '일괄 삭제 중 오류 발생');
     console.error('Bulk Delete Users Error:', error);
-    return { success: false, message: '일괄 삭제 중 오류 발생' };
+    return { success: false, message: errorMessage };
   }
 }
 
@@ -119,8 +123,9 @@ export async function bulkUpdateUserRoleAction(userIds: string[], role: string):
 
     revalidatePath('/admin/user/manage');
     return { success: true, message: `${userIds.length}명의 사용자 권한이 변경되었습니다.` };
-  } catch (error: any) {
+  } catch (error) {
+    const errorMessage = extractErrorMessage(error, '권한 변경 중 오류 발생');
     console.error('Bulk Update Role Error:', error);
-    return { success: false, message: '권한 변경 중 오류 발생' };
+    return { success: false, message: errorMessage };
   }
 }

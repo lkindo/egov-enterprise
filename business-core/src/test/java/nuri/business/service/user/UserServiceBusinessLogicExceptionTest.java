@@ -122,7 +122,7 @@ class UserServiceBusinessLogicExceptionTest {
         @Test
         @DisplayName("사용자 등록 실패 - DB 저장 오류")
         void registerUser_fail_withDatabaseSaveError() {
-                try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+                try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
                         mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
                         // Given
                         when(passwordEncoder.encode("password123!")).thenReturn("encodedPassword");
@@ -154,7 +154,7 @@ class UserServiceBusinessLogicExceptionTest {
         @Test
         @DisplayName("사용자 등록 실패 - 필수 필드(UserId) 누락")
         void registerUser_fail_withNullUserId() {
-                try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+                try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
                         mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
                         // When & Then
                         assertThatThrownBy(() -> userService.registerUser(null, "password123!", "테스트사용자", "hint", "answer",
@@ -166,7 +166,7 @@ class UserServiceBusinessLogicExceptionTest {
         @Test
         @DisplayName("사용자 등록 실패 - 필수 필드(UserNm) 누락")
         void registerUser_fail_withNullUserNm() {
-                try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+                try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
                         mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
                         // When & Then
                         assertThatThrownBy(() -> userService.registerUser("newUser", "password123!", null, "hint", "answer",
@@ -178,7 +178,7 @@ class UserServiceBusinessLogicExceptionTest {
         @Test
         @DisplayName("사용자 등록 실패 - 비밀번호 인코딩 오류")
         void registerUser_fail_withPasswordEncodingError() {
-                try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+                try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
                         mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
                         // Given
                         when(passwordEncoder.encode("password123!"))

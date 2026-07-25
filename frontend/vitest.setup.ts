@@ -86,14 +86,63 @@ vi.mock('@/components/ui/tooltip', () => ({
 // 저장소의 실제 사용처는 전부 제어 방식(open={state})이라 이 한계에 걸리는 곳은 현재 없다.
 vi.mock('@/components/ui/dialog', () => {
   const React = require('react');
-  const DialogOpenContext = React.createContext(true);
+  const DialogOpenContext = React.createContext({ open: true, onOpenChange: (_open: boolean) => {} });
 
-  function Dialog({ children, open }: any) {
-    return React.createElement(DialogOpenContext.Provider, { value: open !== false }, children);
+  function Dialog({ children, open, onOpenChange }: any) {
+    const isOpened = open !== false;
+    const value = React.useMemo(() => ({ open: isOpened, onOpenChange }), [isOpened, onOpenChange]);
+    return React.createElement(DialogOpenContext.Provider, { value }, children);
   }
 
-  function DialogContent({ children }: any) {
-    return React.useContext(DialogOpenContext) ? children : null;
+  function DialogContent({ children, showCloseButton = true, ...props }: any) {
+    const ctx = React.useContext(DialogOpenContext);
+
+    React.useEffect(() => {
+      if (ctx.open) {
+        document.body.style.overflow = 'hidden';
+        return () => {
+          document.body.style.overflow = 'unset';
+        };
+      }
+    }, [ctx.open]);
+
+    if (!ctx.open) return null;
+
+    return React.createElement(
+      'div',
+      null,
+      React.createElement('div', {
+        'data-slot': 'dialog-overlay',
+        onClick: () => ctx.onOpenChange && ctx.onOpenChange(false),
+      }),
+      React.createElement('div', { role: 'dialog', 'aria-modal': 'true', ...props }, children)
+    );
+  }
+
+  function DialogClose({ children, onClick, ...props }: any) {
+    const ctx = React.useContext(DialogOpenContext);
+    const handleClick = (e: any) => {
+      if (onClick) onClick(e);
+      if (ctx.onOpenChange) ctx.onOpenChange(false);
+    };
+
+    if (React.isValidElement(children)) {
+      const childProps = children.props as any;
+      return React.cloneElement(children as React.ReactElement<any>, {
+        onClick: (e: any) => {
+          if (childProps && typeof childProps.onClick === 'function') {
+            childProps.onClick(e);
+          }
+          handleClick(e);
+        },
+      });
+    }
+
+    return React.createElement('button', { type: 'button', onClick: handleClick, ...props }, children);
+  }
+
+  function DialogTitle({ children, ...props }: any) {
+    return React.createElement('h2', props, children);
   }
 
   const passthrough = (name: string) => {
@@ -105,11 +154,14 @@ vi.mock('@/components/ui/dialog', () => {
   return {
     Dialog,
     DialogContent,
+    DialogClose,
     DialogTrigger: passthrough('DialogTrigger'),
     DialogHeader: passthrough('DialogHeader'),
-    DialogTitle: passthrough('DialogTitle'),
+    DialogTitle,
     DialogDescription: passthrough('DialogDescription'),
     DialogFooter: passthrough('DialogFooter'),
+    DialogOverlay: passthrough('DialogOverlay'),
+    DialogPortal: passthrough('DialogPortal'),
   };
 });
 

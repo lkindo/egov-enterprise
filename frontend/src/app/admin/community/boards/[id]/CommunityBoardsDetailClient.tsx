@@ -79,6 +79,7 @@ export default function CommunityBoardsDetailClient() {
                     <FormField label="게시글 제목" required>
                         <input
                             type="text"
+                            aria-label="게시글 제목"
                             value={formData.pstTtl}
                             onChange={(e) => setFormData({ ...formData, pstTtl: e.target.value })}
                             placeholder="제목을 입력해 주세요."
@@ -119,6 +120,7 @@ export default function CommunityBoardsDetailClient() {
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <input
                                     type="checkbox"
+                                    aria-label="중요 공지로 등록"
                                     checked={formData.noticeAt === 'Y'}
                                     onChange={(e) => setFormData({ ...formData, noticeAt: e.target.checked ? 'Y' : 'N' })}
                                     className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
@@ -128,6 +130,7 @@ export default function CommunityBoardsDetailClient() {
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <input
                                     type="checkbox"
+                                    aria-label="비밀글로 설정"
                                     checked={formData.secretAt === 'Y'}
                                     onChange={(e) => setFormData({ ...formData, secretAt: e.target.checked ? 'Y' : 'N' })}
                                     className="w-4 h-4 rounded border-border text-primary focus:ring-primary"

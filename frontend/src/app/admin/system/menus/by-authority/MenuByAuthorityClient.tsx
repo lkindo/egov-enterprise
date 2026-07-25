@@ -170,12 +170,11 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  animate={{ opacity: 1, x: 0 }}
  transition={{ delay: idx * 0.05 }}
  >
- {/* onClick 만 달린 비인터랙티브 div 였다 — 키보드 사용자가 트리를 펼칠 수 없어 role/키 핸들러를 부여한다. */}
  <div
- role={hasChildren ? 'button' : undefined}
- tabIndex={hasChildren ? 0 : undefined}
+ role="button"
+ tabIndex={hasChildren ? 0 : -1}
  aria-expanded={hasChildren ? isExpanded : undefined}
- aria-label={hasChildren ? `${menu.menuNm} 하위 메뉴 ${isExpanded ? '접기' : '펼치기'}` : undefined}
+ aria-label={hasChildren ? `${menu.menuNm} 하위 메뉴 ${isExpanded ? '접기' : '펼치기'}` : menu.menuNm}
  className={cn(
  "flex items-center gap-4 py-4 px-6 rounded-lg transition-all group relative overflow-hidden",
  hasChildren
@@ -184,7 +183,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  isExpanded && hasChildren ? "bg-muted/50" : ""
  )}
  style={{ paddingLeft: `${depth * 32 + 24}px` }}
- onClick={() => { if (hasChildren) toggleExpand(menu.menuNo); }}
+ onClick={hasChildren ? () => toggleExpand(menu.menuNo) : undefined}
  onKeyDown={(e) => {
  if (!hasChildren) return;
  if (e.key === 'Enter' || e.key === ' ') {

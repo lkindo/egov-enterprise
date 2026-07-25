@@ -198,9 +198,7 @@ public class UserService extends BaseAbstractService {
                 required(userNm, "사용자 이름 은 null 일 수 없습니다");
 
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-                }
+                nuri.business.security.util.SecurityUtil.assertAdmin();
 
                 // [안정성] ID 중복 체크 (통합 테이블 내 userId 필드 기준)
                 if (userRepository.findByUserId(userId).isPresent()) {
@@ -254,11 +252,7 @@ public class UserService extends BaseAbstractService {
                                 .orElseThrow(() -> new BusinessException(UserErrorCode.USER_NOT_FOUND));
 
                 // [보안] 본인 또는 관리자만 수정 가능
-                String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
-                                .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
-                if (!currentUserId.equals(userId) && !nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-                }
+                nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(user.getEsntlId());
 
                 user.update(
                                 userDto.userNm(),
@@ -310,9 +304,7 @@ public class UserService extends BaseAbstractService {
         @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUser(@NonNull String userId) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-                }
+                nuri.business.security.util.SecurityUtil.assertAdmin();
 
                 if (!userRepository.findByUserId(userId).isPresent() && !userRepository.existsById(userId)) {
                         throw new BusinessException(UserErrorCode.USER_NOT_FOUND);
@@ -424,9 +416,7 @@ public class UserService extends BaseAbstractService {
         @CacheEvict(value = { "users" }, allEntries = true)
         public void deleteUserList(@NonNull List<String> userIds) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-                }
+                nuri.business.security.util.SecurityUtil.assertAdmin();
                 required(userIds, "사용자 ID 목록은 null 일 수 없습니다");
 
                 // [버그수정] 기존 deleteAllByIdInBatch(userIds)는 PK(esntlId) 기준이라, FE(UserOrgHubClient)가
@@ -457,9 +447,7 @@ public class UserService extends BaseAbstractService {
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updatePasswordByAdmin(@NonNull String userId, @NonNull String newPassword) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-                }
+                nuri.business.security.util.SecurityUtil.assertAdmin();
 
                 User user = userRepository.findByUserId(userId)
                                 .or(() -> userRepository.findById(userId))
@@ -474,9 +462,7 @@ public class UserService extends BaseAbstractService {
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUsersStatus(@NonNull List<String> userIds, @NonNull String status) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-                }
+                nuri.business.security.util.SecurityUtil.assertAdmin();
                 List<User> users = userRepository.findAllById(required(userIds));
                 users.forEach(user -> user.updateStatus(status));
                 userRepository.saveAll(users);
@@ -489,9 +475,7 @@ public class UserService extends BaseAbstractService {
         @CacheEvict(value = { "users" }, allEntries = true)
         public void moveUsersToDept(@NonNull List<String> userIds, @NonNull String ognzId) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-                }
+                nuri.business.security.util.SecurityUtil.assertAdmin();
                 // [정체성 축] 화면은 loginId(user_id) 목록을 넘긴다. findAllById 는 esntlId(PK) 기준이라
                 //   그대로 쓰면 매칭이 0건이 되어 아무것도 바뀌지 않고 에러도 나지 않는다(조용한 no-op).
                 //   실제로 이 때문에 전 사용자의 ognz_id 가 null 로 남아 있었다. loginId 축으로 조회한다.
@@ -507,9 +491,7 @@ public class UserService extends BaseAbstractService {
         @CacheEvict(value = { "users" }, allEntries = true)
         public void updateUsersRole(@NonNull List<String> userIds, @NonNull Role role) {
                 // [보안] 관리자 권한 확인
-                if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
-                        throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-                }
+                nuri.business.security.util.SecurityUtil.assertAdmin();
                 List<User> users = userRepository.findAllById(required(userIds));
                 String authorCode = "ROLE_" + role.name();
 

@@ -33,27 +33,27 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
         <div className="w-px h-6 bg-border/60 mx-2" />
         
         <div className="flex items-center gap-1">
-            <EditorButton onClick={() => applyStyle('bullet')} icon={<List size={16} />} />
-            <EditorButton onClick={() => applyStyle('number')} icon={<ListOrdered size={16} />} />
+            <EditorButton onClick={() => applyStyle('bullet')} icon={<List size={16} />} label="글머리 기호" />
+            <EditorButton onClick={() => applyStyle('number')} icon={<ListOrdered size={16} />} label="번호 매기기" />
         </div>
         
         <div className="w-px h-6 bg-border/60 mx-2" />
         
         <div className="flex items-center gap-1">
-            <EditorButton onClick={() => applyStyle('link')} icon={<Link size={16} />} />
-            <EditorButton onClick={() => applyStyle('image')} icon={<ImageIcon size={16} />} />
+            <EditorButton onClick={() => applyStyle('link')} icon={<Link size={16} />} label="링크 추가" />
+            <EditorButton onClick={() => applyStyle('image')} icon={<ImageIcon size={16} />} label="이미지 추가" />
         </div>
         
         <div className="flex-1" />
         
         <div className="flex items-center gap-1 bg-white/50 dark:bg-black/20 p-1 rounded-lg border border-border/40">
-            <EditorButton onClick={() => applyStyle('left')} icon={<AlignLeft size={16} />} />
-            <EditorButton onClick={() => applyStyle('center')} icon={<AlignCenter size={16} />} />
-            <EditorButton onClick={() => applyStyle('right')} icon={<AlignRight size={16} />} />
+            <EditorButton onClick={() => applyStyle('left')} icon={<AlignLeft size={16} />} label="왼쪽 정렬" />
+            <EditorButton onClick={() => applyStyle('center')} icon={<AlignCenter size={16} />} label="중앙 정렬" />
+            <EditorButton onClick={() => applyStyle('right')} icon={<AlignRight size={16} />} label="오른쪽 정렬" />
         </div>
         
         <div className="w-px h-6 bg-border/60 mx-2" />
-        <EditorButton onClick={() => applyStyle('full')} icon={<Maximize2 size={16} />} className="text-primary" />
+        <EditorButton onClick={() => applyStyle('full')} icon={<Maximize2 size={16} />} label="전체 화면" className="text-primary" />
       </div>
 
       {/* Content Area */}
@@ -63,6 +63,7 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
           </div>
           <textarea
             ref={textareaRef}
+            aria-label="에디터 본문 내용"
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder || "엔터프라이즈 인사이트를 입력하십시오..."}
@@ -73,10 +74,10 @@ export function StandardEditor({ value, onChange, placeholder, minHeight = "300p
 
       {/* Status Footer */}
       <div className="px-6 py-3 border-t bg-muted/30 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-              <span className="text-xs font-bold text-muted-foreground tracking-[0.2em] uppercase">_ Editor_Core_v1.0</span>
-              <span className="text-xs font-bold text-emerald-500 tracking-[0.2em] uppercase flex items-center gap-1">
-                  <div className="w-1 h-1 bg-emerald-500 rounded-full animate-pulse" /> Live_Sync_Active
+          <div className="flex items-center gap-3">
+              <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase">
+                Ready for Production
               </span>
           </div>
           <div className="text-xs font-bold text-muted-foreground tracking-widest uppercase">
@@ -93,6 +94,7 @@ function EditorButton({ onClick, icon, label, className }: any) {
             type="button" 
             onClick={onClick} 
             title={label}
+            aria-label={label || "에디터 도구"}
             className={cn(
                 "p-2.5 hover:bg-card rounded-lg transition-all hover:shadow-md hover:scale-110 active:scale-95 text-muted-foreground hover:text-primary border border-transparent hover:border-border/40",
                 className

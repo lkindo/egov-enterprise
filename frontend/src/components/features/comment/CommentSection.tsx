@@ -172,13 +172,13 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                           {editingId === comment.ansSn ? (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(comment.ansSn)} className="h-10 w-10 p-0 rounded-xl text-green-600 hover:bg-green-50" data-testid="edit-save-button"><Check className="w-5 h-5" /></Button>
-                              <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted" data-testid="edit-cancel-button"><X className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleEdit(comment.ansSn)} aria-label="댓글 수정 저장" className="h-10 w-10 p-0 rounded-xl text-green-600 hover:bg-green-50" data-testid="edit-save-button"><Check className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} aria-label="댓글 수정 취소" className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted" data-testid="edit-cancel-button"><X className="w-5 h-5" /></Button>
                             </>
                           ) : (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => { setEditingId(comment.ansSn); setEditCn(comment.ansCn); }} className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted" data-testid="comment-edit-button"><Edit2 className="w-5 h-5" /></Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDelete(comment.ansSn)} className="h-10 w-10 p-0 rounded-xl text-rose-400 hover:bg-rose-50" data-testid="comment-delete-button"><Trash2 className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => { setEditingId(comment.ansSn); setEditCn(comment.ansCn); }} aria-label="댓글 수정" className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted" data-testid="comment-edit-button"><Edit2 className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleDelete(comment.ansSn)} aria-label="댓글 삭제" className="h-10 w-10 p-0 rounded-xl text-rose-400 hover:bg-rose-50" data-testid="comment-delete-button"><Trash2 className="w-5 h-5" /></Button>
                             </>
                           )}
                         </div>
@@ -186,6 +186,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
 
                       {editingId === comment.ansSn ? (
                         <Textarea
+                          aria-label="댓글 수정 내용"
                           value={editCn}
                           onChange={(e) => setEditCn(e.target.value)}
                           className="min-h-[120px] rounded-2xl border-border focus:ring-slate-900 border-2 text-foreground font-bold text-lg p-6 bg-muted/50"
@@ -223,6 +224,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
             </div>
             <Textarea
               name="ansCn"
+              aria-label="새 댓글 작성"
               placeholder="Inject your thoughts into the collective knowledge..."
               value={ansCn}
               onChange={(e) => setAnsCn(e.target.value)}

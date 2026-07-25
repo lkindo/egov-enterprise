@@ -195,7 +195,10 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
         <span className={cn("truncate", depth > 0 && "text-[13px]")}>{item.menuNm}</span>
       </div>
       {hasChildren && (
-        <div
+        <button
+          type="button"
+          aria-label={`${item.menuNm} 서브메뉴 ${isOpen ? '접기' : '펼치기'}`}
+          aria-expanded={isOpen}
           className="p-1 hover:bg-white/10 rounded-md transition-colors"
           onClick={(e) => {
             if (!isDummyLink) {
@@ -208,11 +211,10 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
           <motion.div
             animate={{ rotate: isOpen ? 180 : 0 }}
             transition={{ duration: 0.2 }}
-            className="opacity-100"
           >
-            <ChevronDown size={14} />
+            <ChevronDown size={14} className="opacity-60" />
           </motion.div>
-        </div>
+        </button>
       )}
     </div>
   );

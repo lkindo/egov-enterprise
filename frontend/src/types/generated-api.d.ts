@@ -198,7 +198,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/ism/{informalSanctionId}": {
+    "/api/v1/informal-sanctions/{informalSanctionId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -226,7 +226,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/informal-sanctions/{informalSanctionId}": {
+    "/api/v1/admin/system/ism/{informalSanctionId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -343,13 +343,13 @@ export interface paths {
         get: operations["getDeptJob"];
         /**
          * 부서 업무 수정
-         * @description 부서 업무를 수정합니다. 작성자 본인 또는 관리자만 가능합니다.
+         * @description 부서 업무를 수정합니다. 담당자 본인 또는 관리자만 가능합니다.
          */
         put: operations["updateDeptJob"];
         post?: never;
         /**
          * 부서 업무 삭제
-         * @description 부서 업무를 삭제합니다. 작성자 본인 또는 관리자만 가능합니다.
+         * @description 부서 업무를 삭제합니다. 담당자 본인 또는 관리자만 가능합니다.
          */
         delete: operations["deleteDeptJob"];
         options?: never;
@@ -593,7 +593,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}": {
+    "/api/v1/admin/system/surveys/{srvyId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -612,7 +612,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}": {
+    "/api/v1/surveys/{srvyId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -631,7 +631,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/templates/{tmpltId}": {
+    "/api/v1/admin/system/surveys/templates/{tmpltId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -650,7 +650,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/templates/{tmpltId}": {
+    "/api/v1/surveys/templates/{tmpltId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -669,7 +669,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/admin/system/surveys/questions/items/{srvyItemId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -687,7 +687,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/surveys/questions/items/{srvyItemId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -857,7 +857,7 @@ export interface paths {
         get?: never;
         /**
          * 메뉴 순서 일괄 변경
-         * @description 여러 메뉴의 순서를 일괄적으로 업데이트합니다.
+         * @description 여러 메뉴의 상위메뉴·순서만 일괄 반영합니다. 명칭·설명·아이콘 등 다른 컬럼은 변경하지 않습니다.
          */
         put: operations["updateMenuOrder"];
         post?: never;
@@ -1020,6 +1020,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/codes/cmmn/batch-hierarchy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 공통코드 계층 일괄 저장
+         * @description 코드 탐색기 편집 결과(코드그룹의 소속 분류코드)를 일괄 반영합니다. 각 항목의 cdId·clsfCd 는 필수입니다.
+         */
+        put: operations["updateCmmnCodeHierarchy"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/codes/cl/{clCode}": {
         parameters: {
             query?: never;
@@ -1070,7 +1090,10 @@ export interface paths {
         /** 게시판 마스터 수정 */
         put: operations["updateBoardMaster"];
         post?: never;
-        /** 게시판 마스터 삭제 */
+        /**
+         * 게시판 마스터 삭제
+         * @description 논리 삭제(비활성화)입니다. 행을 말소하려면 /{bbsId}/physical 을 사용합니다.
+         */
         delete: operations["deleteBoardMaster"];
         options?: never;
         head?: never;
@@ -1414,7 +1437,7 @@ export interface paths {
         };
         /**
          * 메모보고 목록 조회
-         * @description 전체 메모보고 목록을 페이징하여 조회합니다.
+         * @description 전체 메모보고 목록을 페이징하여 조회합니다. (관리자 전용)
          */
         get: operations["getMemoReports"];
         put?: never;
@@ -1573,6 +1596,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 파일 업로드
+         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         */
+        post: operations["uploadFiles"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 파일 업로드
+         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         */
+        post: operations["uploadFiles_1"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 파일 업로드
+         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         */
+        post: operations["uploadFiles_2"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/operation/files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 파일 업로드
+         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         */
+        post: operations["uploadFiles_3"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/faqs": {
         parameters: {
             query?: never;
@@ -1600,7 +1703,7 @@ export interface paths {
         };
         /**
          * 부서 업무 목록 조회
-         * @description 부서 업무 목록을 페이징하여 조회합니다.
+         * @description 부서 업무 목록을 페이징하여 조회합니다. 기본값은 '내가 담당자인 업무'이며, scope=dept 로 부서 전체를 조회할 수 있습니다.
          */
         get: operations["getDeptJobList"];
         put?: never;
@@ -1992,7 +2095,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys": {
+    "/api/v1/admin/system/surveys": {
         parameters: {
             query?: never;
             header?: never;
@@ -2010,7 +2113,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys": {
+    "/api/v1/surveys": {
         parameters: {
             query?: never;
             header?: never;
@@ -2414,6 +2517,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/board-masters/batch/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 게시판 마스터 사용여부 일괄 변경 */
+        post: operations["updateBoardMasterStatusInBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/board-masters/batch/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 게시판 마스터 일괄 영구 삭제
+         * @description 대상마다 비활성·게시글 0건을 재검증하며, 하나라도 어긋나면 전체가 롤백됩니다.
+         */
+        post: operations["deleteBoardMastersInBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/banners": {
         parameters: {
             query?: never;
@@ -2521,89 +2661,17 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 포상 목록 조회
+         * @description 포상 정보를 페이징하여 조회한다. name 지정 시 포상명 부분일치 검색.
+         */
         get: operations["getAllRewards"];
         put?: never;
+        /**
+         * 포상 등록
+         * @description 포상 정보를 등록한다.
+         */
         post: operations["createReward"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
-         */
-        post: operations["uploadFiles"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/content/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
-         */
-        post: operations["uploadFiles_1"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/operation/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
-         */
-        post: operations["uploadFiles_2"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/files": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
-         */
-        post: operations["uploadFiles_3"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2617,8 +2685,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
+        /**
+         * 외부인사 목록 조회
+         * @description 외부인사 정보를 페이징하여 조회한다. name 지정 시 성명 부분일치 검색.
+         */
         get: operations["getAllExternalHr"];
         put?: never;
+        /**
+         * 외부인사 등록
+         * @description 외부인사 정보를 등록한다.
+         */
         post: operations["createExternalHr"];
         delete?: never;
         options?: never;
@@ -2873,6 +2949,28 @@ export interface paths {
         head?: never;
         /** 상담 답변 처리 */
         patch: operations["answerConsultation"];
+        trace?: never;
+    };
+    "/api/v1/users/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 담당자 검색
+         * @description 담당자 지정용 사용자 검색. 성명 부분일치로 조회하며 식별자·성명·부서명만 반환합니다.
+         *     검색어는 2자 이상이어야 하고(미달 시 빈 목록), 최대 20건까지만 반환합니다.
+         *     개인정보(연락처·이메일·주소·생년월일)는 포함하지 않습니다.
+         */
+        get: operations["searchAssignableUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/api/v1/users/check-id": {
@@ -3159,40 +3257,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/menus/test/raw": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 메뉴 목록 테스트 - DTO 반환 */
-        get: operations["getRawMenus"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/menus/test/programs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 메뉴 목록 테스트 - Program 조회 */
-        get: operations["getPrograms"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/menus/left": {
         parameters: {
             query?: never;
@@ -3323,6 +3387,166 @@ export interface paths {
          * @description API 서버의 동작 상태를 확인합니다.
          */
         get: operations["checkHealth"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/{atchFileId}/{fileSn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 다운로드
+         * @description 특정 파일을 다운로드합니다.
+         */
+        get: operations["downloadFile"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/files/{atchFileId}/{fileSn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 다운로드
+         * @description 특정 파일을 다운로드합니다.
+         */
+        get: operations["downloadFile_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/files/{atchFileId}/{fileSn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 다운로드
+         * @description 특정 파일을 다운로드합니다.
+         */
+        get: operations["downloadFile_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/operation/files/{atchFileId}/{fileSn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 다운로드
+         * @description 특정 파일을 다운로드합니다.
+         */
+        get: operations["downloadFile_3"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/files/{atchFileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 목록 조회
+         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         */
+        get: operations["getFileList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/files/{atchFileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 목록 조회
+         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         */
+        get: operations["getFileList_1"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/content/files/{atchFileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 목록 조회
+         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         */
+        get: operations["getFileList_2"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/operation/files/{atchFileId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 파일 목록 조회
+         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         */
+        get: operations["getFileList_3"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3822,6 +4046,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/departments/tree": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 부서 전량 조회 (조직도 트리용)
+         * @description 페이징 없이 전체 부서 목록을 조회합니다. 조직도 편집 화면 전용.
+         */
+        get: operations["getDeptTree"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/codes/institution": {
         parameters: {
             query?: never;
@@ -3882,6 +4126,26 @@ export interface paths {
         };
         /** 상담 상세 조회 */
         get: operations["getConsultation"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/board-masters/{bbsId}/deletable": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 게시판 마스터 영구 삭제 가능 여부
+         * @description 비활성(useYn='N') 이고 소속 게시글이 0건일 때만 true 입니다. 화면이 영구 삭제 전 사전 안내에 사용합니다.
+         */
+        get: operations["isBoardMasterDeletable"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3970,166 +4234,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/operation/files/{atchFileId}/{fileSn}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 다운로드
-         * @description 특정 파일을 다운로드합니다.
-         */
-        get: operations["downloadFile"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/files/{atchFileId}/{fileSn}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 다운로드
-         * @description 특정 파일을 다운로드합니다.
-         */
-        get: operations["downloadFile_1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/files/{atchFileId}/{fileSn}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 다운로드
-         * @description 특정 파일을 다운로드합니다.
-         */
-        get: operations["downloadFile_2"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/content/files/{atchFileId}/{fileSn}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 다운로드
-         * @description 특정 파일을 다운로드합니다.
-         */
-        get: operations["downloadFile_3"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/system/files/{atchFileId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
-         */
-        get: operations["getFileList"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/files/{atchFileId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
-         */
-        get: operations["getFileList_1"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/operation/files/{atchFileId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
-         */
-        get: operations["getFileList_2"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/admin/content/files/{atchFileId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
-         */
-        get: operations["getFileList_3"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/content/community/portlet": {
         parameters: {
             query?: never;
@@ -4202,6 +4306,26 @@ export interface paths {
          * @description 수신 또는 발신 목록에서 쪽지를 삭제합니다.
          */
         delete: operations["deleteNote"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/board-masters/{bbsId}/physical": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 게시판 마스터 영구 삭제
+         * @description 행을 물리 삭제합니다. 활성 게시판이거나 게시글이 남아 있으면 거부됩니다(서비스 레이어 재검증).
+         */
+        delete: operations["deleteBoardMasterPhysically"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4306,7 +4430,7 @@ export interface components {
             scrapUrl?: string;
             scrapExpln?: string;
             useYn: string;
-            userId: string;
+            userId?: string;
             frstRgtrId?: string;
             /** Format: date-time */
             crtDt?: string;
@@ -4845,6 +4969,13 @@ export interface components {
              */
             crtDt?: string;
         };
+        /** @description 시스템 정책 수정 요청 DTO */
+        PolicyUpdateRequest: {
+            /** @description 정책 제목 */
+            plcyTtl: string;
+            /** @description 정책 내용 */
+            plcyCn: string;
+        };
         NetworkDto: {
             ntwrkId?: string;
             manageIem?: string;
@@ -5023,6 +5154,13 @@ export interface components {
             frstRgtrId?: string;
             /** @description 최종수정자 ID */
             lastMdfrId?: string;
+        };
+        /** @description 공통코드 계층 일괄 저장 항목 */
+        CmmnCodeHierarchyDto: {
+            /** @description 코드 ID (이동 대상 코드그룹) */
+            cdId: string;
+            /** @description 이동 후 소속 분류코드 */
+            clsfCd: string;
         };
         /** @description 공통 분류 코드 정보 DTO */
         CmmnClCodeDto: {
@@ -5730,6 +5868,21 @@ export interface components {
              */
             crtDt?: string;
         };
+        /** @description 게시판 마스터 사용여부 일괄 변경 요청 */
+        BoardMasterBatchStatusRequest: {
+            /** @description 대상 게시판 ID 목록 */
+            bbsIds: string[];
+            /**
+             * @description 사용여부(Y: 활성, N: 비활성)
+             * @enum {string}
+             */
+            useYn?: "Y" | "N";
+        };
+        /** @description 게시판 마스터 일괄 영구 삭제 요청 */
+        BoardMasterBatchDeleteRequest: {
+            /** @description 대상 게시판 ID 목록 */
+            bbsIds: string[];
+        };
         /** @description SMS 데이터 전송 객체 */
         SmsDto: {
             /** @description SMS ID */
@@ -5789,6 +5942,16 @@ export interface components {
             /** Format: date-time */
             mdfcnDt?: string;
         };
+        ApiResponseRewardManageDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["RewardManageDto"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
         ExternalHrDto: {
             evntId?: string;
             otsdHrId?: string;
@@ -5807,6 +5970,16 @@ export interface components {
             /** Format: date-time */
             mdfcnDt?: string;
             lastMdfrId?: string;
+        };
+        ApiResponseExternalHrDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["ExternalHrDto"];
+            /** Format: date-time */
+            timestamp?: string;
         };
         ApiResponseCommunityDto: {
             success?: boolean;
@@ -5885,6 +6058,21 @@ export interface components {
             data?: components["schemas"]["WorkReportDto"];
             /** Format: date-time */
             timestamp?: string;
+        };
+        ApiResponseListUserSearchDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["UserSearchDto"][];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        UserSearchDto: {
+            esntlId?: string;
+            userNm?: string;
+            deptNm?: string;
         };
         ApiResponseUserDto: {
             success?: boolean;
@@ -6362,6 +6550,30 @@ export interface components {
             data?: components["schemas"]["HpcmDto"];
             /** Format: date-time */
             timestamp?: string;
+        };
+        ApiResponseListFileDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["FileDto"][];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        FileDto: {
+            atchFileId?: string;
+            /** Format: int32 */
+            fileSn?: number;
+            fileStreCours?: string;
+            streFileNm?: string;
+            orignlFileNm?: string;
+            fileExtsn?: string;
+            /** Format: int64 */
+            fileMg?: number;
+            fileCn?: string;
+            /** Format: date-time */
+            crtDt?: string;
         };
         ApiResponsePageResponseFaqDto: {
             success?: boolean;
@@ -7000,15 +7212,13 @@ export interface components {
             plcyTtl?: string;
             plcyCn?: string;
         };
-        ApiResponseMapStringString: {
+        ApiResponsePolicy: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: {
-                [key: string]: string;
-            };
+            data?: components["schemas"]["Policy"];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -7369,6 +7579,16 @@ export interface components {
             code?: string;
             message?: string;
             data?: components["schemas"]["DeptManageDto"];
+            /** Format: date-time */
+            timestamp?: string;
+        };
+        ApiResponseListDeptManageDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["DeptManageDto"][];
             /** Format: date-time */
             timestamp?: string;
         };
@@ -7796,29 +8016,47 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
         };
-        ApiResponseListFileDto: {
+        ApiResponsePageResponseRewardManageDto: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["FileDto"][];
+            data?: components["schemas"]["PageResponseRewardManageDto"];
             /** Format: date-time */
             timestamp?: string;
         };
-        FileDto: {
-            atchFileId?: string;
-            /** Format: int32 */
-            fileSn?: number;
-            fileStreCours?: string;
-            streFileNm?: string;
-            orignlFileNm?: string;
-            fileExtsn?: string;
+        PageResponseRewardManageDto: {
+            list?: components["schemas"]["RewardManageDto"][];
             /** Format: int64 */
-            fileMg?: number;
-            fileCn?: string;
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
+        };
+        ApiResponsePageResponseExternalHrDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseExternalHrDto"];
             /** Format: date-time */
-            crtDt?: string;
+            timestamp?: string;
+        };
+        PageResponseExternalHrDto: {
+            list?: components["schemas"]["ExternalHrDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
         };
         ApiResponsePageResponseEventInfoDto: {
             success?: boolean;
@@ -10112,7 +10350,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseMapStringString"];
+                    "*/*": components["schemas"]["ApiResponsePolicy"];
                 };
             };
         };
@@ -10128,9 +10366,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": {
-                    [key: string]: string;
-                };
+                "application/json": components["schemas"]["PolicyUpdateRequest"];
             };
         };
         responses: {
@@ -10750,6 +10986,30 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    updateCmmnCodeHierarchy: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CmmnCodeHierarchyDto"][];
+            };
+        };
         responses: {
             /** @description OK */
             200: {
@@ -12000,6 +12260,110 @@ export interface operations {
             };
         };
     };
+    uploadFiles: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    uploadFiles_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    uploadFiles_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
+    uploadFiles_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "multipart/form-data": {
+                    files: string[];
+                };
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseString"];
+                };
+            };
+        };
+    };
     getFaqList: {
         parameters: {
             query: {
@@ -12053,6 +12417,7 @@ export interface operations {
                 deptJobbxId?: string;
                 searchCondition?: string;
                 searchWrd?: string;
+                scope?: string;
                 pageIndex?: number;
                 pageUnit?: number;
             };
@@ -13845,6 +14210,54 @@ export interface operations {
             };
         };
     };
+    updateBoardMasterStatusInBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardMasterBatchStatusRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteBoardMastersInBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardMasterBatchDeleteRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getBanners: {
         parameters: {
             query: {
@@ -14064,8 +14477,9 @@ export interface operations {
     };
     getAllRewards: {
         parameters: {
-            query?: {
+            query: {
                 name?: string;
+                pageable: components["schemas"]["Pageable"];
             };
             header?: never;
             path?: never;
@@ -14079,7 +14493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": Record<string, never>;
+                    "*/*": components["schemas"]["ApiResponsePageResponseRewardManageDto"];
                 };
             };
         };
@@ -14103,119 +14517,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": Record<string, never>;
-                };
-            };
-        };
-    };
-    uploadFiles: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": {
-                    files: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
-                };
-            };
-        };
-    };
-    uploadFiles_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": {
-                    files: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
-                };
-            };
-        };
-    };
-    uploadFiles_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": {
-                    files: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
-                };
-            };
-        };
-    };
-    uploadFiles_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "multipart/form-data": {
-                    files: string[];
-                };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "*/*": components["schemas"]["ApiResponseRewardManageDto"];
                 };
             };
         };
     };
     getAllExternalHr: {
         parameters: {
-            query?: {
+            query: {
                 name?: string;
+                pageable: components["schemas"]["Pageable"];
             };
             header?: never;
             path?: never;
@@ -14229,7 +14540,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": Record<string, never>;
+                    "*/*": components["schemas"]["ApiResponsePageResponseExternalHrDto"];
                 };
             };
         };
@@ -14253,7 +14564,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": Record<string, never>;
+                    "*/*": components["schemas"]["ApiResponseExternalHrDto"];
                 };
             };
         };
@@ -14635,6 +14946,29 @@ export interface operations {
             };
         };
     };
+    searchAssignableUsers: {
+        parameters: {
+            query?: {
+                /** @description 성명 검색어(2자 이상) */
+                keyword?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListUserSearchDto"];
+                };
+            };
+        };
+    };
     checkIdDplct: {
         parameters: {
             query: {
@@ -14974,46 +15308,6 @@ export interface operations {
             };
         };
     };
-    getRawMenus: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseMapStringObject"];
-                };
-            };
-        };
-    };
-    getPrograms: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseMapStringObject"];
-                };
-            };
-        };
-    };
     getLeftMenu: {
         parameters: {
             query: {
@@ -15181,6 +15475,186 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseMapStringObject"];
+                };
+            };
+        };
+    };
+    downloadFile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+                fileSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    downloadFile_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+                fileSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    downloadFile_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+                fileSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    downloadFile_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+                fileSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": string;
+                };
+            };
+        };
+    };
+    getFileList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListFileDto"];
+                };
+            };
+        };
+    };
+    getFileList_1: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListFileDto"];
+                };
+            };
+        };
+    };
+    getFileList_2: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListFileDto"];
+                };
+            };
+        };
+    };
+    getFileList_3: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                atchFileId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListFileDto"];
                 };
             };
         };
@@ -15795,6 +16269,28 @@ export interface operations {
             };
         };
     };
+    getDeptTree: {
+        parameters: {
+            query?: {
+                keyword?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseListDeptManageDto"];
+                };
+            };
+        };
+    };
     getInstitutionCodeList: {
         parameters: {
             query: {
@@ -15879,6 +16375,28 @@ export interface operations {
                 };
                 content: {
                     "*/*": components["schemas"]["ApiResponseCnsltManageDto"];
+                };
+            };
+        };
+    };
+    isBoardMasterDeletable: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseBoolean"];
                 };
             };
         };
@@ -15971,186 +16489,6 @@ export interface operations {
             };
         };
     };
-    downloadFile: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-                fileSn: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
-                };
-            };
-        };
-    };
-    downloadFile_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-                fileSn: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
-                };
-            };
-        };
-    };
-    downloadFile_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-                fileSn: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
-                };
-            };
-        };
-    };
-    downloadFile_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-                fileSn: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": string;
-                };
-            };
-        };
-    };
-    getFileList: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
-                };
-            };
-        };
-    };
-    getFileList_1: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
-                };
-            };
-        };
-    };
-    getFileList_2: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
-                };
-            };
-        };
-    };
-    getFileList_3: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                atchFileId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
-                };
-            };
-        };
-    };
     getCommunityPortlet: {
         parameters: {
             query?: never;
@@ -16229,6 +16567,28 @@ export interface operations {
             path: {
                 /** @description 관계 ID */
                 relationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "*/*": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteBoardMasterPhysically: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
             };
             cookie?: never;
         };

@@ -76,13 +76,13 @@ export function HubChartCard({
         <div className="flex items-center gap-3">
           {actions || (
             <>
-              <button className="w-12 h-12 rounded-lg bg-muted dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
+              <button type="button" aria-label="필터" className="w-12 h-12 rounded-lg bg-muted dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
                 <Filter size={18} />
               </button>
-              <button className="w-12 h-12 rounded-lg bg-muted dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
+              <button type="button" aria-label="다운로드" className="w-12 h-12 rounded-lg bg-muted dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
                 <Download size={18} />
               </button>
-              <button className="w-12 h-12 rounded-lg bg-muted dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
+              <button type="button" aria-label="전체 화면" className="w-12 h-12 rounded-lg bg-muted dark:bg-white/5 flex items-center justify-center text-muted-foreground hover:bg-primary/10 hover:text-primary transition-all border border-transparent hover:border-primary/20">
                 <Maximize2 size={18} />
               </button>
             </>

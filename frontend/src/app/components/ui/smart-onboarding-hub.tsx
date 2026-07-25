@@ -140,6 +140,7 @@ export function SmartOnboardingHub() {
         <div className="flex-1 p-12 flex flex-col justify-between">
           <button
             onClick={handleComplete}
+            aria-label="온보딩 닫기"
             data-testid="onboarding-close"
             className="absolute top-8 right-8 p-3 hover:bg-white/5 rounded-lg transition-colors group"
           >

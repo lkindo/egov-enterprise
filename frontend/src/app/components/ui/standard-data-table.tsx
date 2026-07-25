@@ -93,7 +93,7 @@ const DataRow = memo(function DataRow({
       onClick={() => onRowClick?.(item)}
     >
       {enableSelection && (
-        <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()}>
+        <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
@@ -145,7 +145,8 @@ const MobileCard = memo(function MobileCard({
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3 flex-1 overflow-hidden">
           {enableSelection && (
-            <div onClick={(e) => e.stopPropagation()} className="relative z-10">
+            // 상위 카드(button)로의 이벤트 전파만 차단하는 래퍼 — 자체는 조작 대상이 아니므로 presentation
+            <div role="presentation" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="relative z-10">
               <Checkbox checked={isSelected} onCheckedChange={onToggle} className="w-6 h-6 rounded-lg" aria-label="항목 선택" />
             </div>
           )}
@@ -390,7 +391,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             <thead className="relative z-20">
               <tr className="bg-muted/80 backdrop-blur-xl border-b-2 border-border/80">
                 {enableSelection && (
-                  <th className="px-6 py-5 w-16 text-center" scope="col">
+                  <th className="px-6 py-5 w-16 text-center" scope="col" aria-label="전체 항목 선택">
                     <Checkbox
                       checked={(data || []).length > 0 && selectedIds.size === (data || []).length}
                       onCheckedChange={toggleAll}
@@ -402,7 +403,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
                   <th key={`header-${idx}`} className={cn(
                     "px-6 py-5 font-bold text-foreground text-xs uppercase tracking-[0.25em] whitespace-nowrap",
                     column.className
-                  )} scope="col">
+                  )} scope="col" aria-label={typeof column.header === 'string' && column.header ? column.header : '열'}>
                     <div className="flex items-center gap-2">
                       {column.header}
                       <div className="w-1 h-1 bg-primary/30 rounded-full" />
@@ -414,10 +415,14 @@ export function StandardDataTable<T extends { [key: string]: any }>({
             <tbody className="divide-y divide-border/40">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={`loading-row-${i}`} className="animate-pulse">
-                    {enableSelection ? <td className="px-6 py-5 text-center"><div className="w-5 h-5 bg-muted rounded m-auto opacity-50" /></td> : null}
+                  // 로딩 스켈레톤은 순수 장식이므로 접근성 트리에서 제외한다(중복 낭독 방지).
+                  <tr key={`loading-row-${i}`} className="animate-pulse" aria-hidden="true">
+                    {/* control-has-associated-label 은 빈 td 를 컨트롤로 오판한다. 이 행은 aria-hidden 장식이라 라벨 대상이 아니다. */}
+                    {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
+                    {enableSelection ? <td role="presentation" className="px-6 py-5 text-center"><div className="w-5 h-5 bg-muted rounded m-auto opacity-50" /></td> : null}
                     {columns.map((_, j) => (
-                      <td key={`loading-cell-${j}`} className="px-6 py-5">
+                      // eslint-disable-next-line jsx-a11y/control-has-associated-label
+                      <td key={`loading-cell-${j}`} role="presentation" className="px-6 py-5">
                         <div className="h-4 bg-muted/40 rounded-lg w-3/4" />
                       </td>
                     ))}

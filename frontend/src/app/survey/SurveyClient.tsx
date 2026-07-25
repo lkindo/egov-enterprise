@@ -60,6 +60,7 @@ export default function SurveyClient() {
             e.stopPropagation();
             router.push(`/survey/${item.srvyId}`);
           }}
+          aria-label={`${item.srvyTtl || '설문'} 상세 이동`}
           className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-all"
         >
           <ArrowRight size={18} />

@@ -110,7 +110,7 @@ export default function CommunityHubClient({
       header: '이동',
       accessor: (item) => (
         <Link href={`/cop/cmy/selectCommunityDetail/${item.cmntyId}`}>
-          <Button size="sm" className="h-10 w-10 rounded-[var(--radius-hub-item)] bg-muted border border-border/60 text-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all group">
+          <Button size="sm" aria-label={`${item.cmntyNm || '커뮤니티'} 상세 보기`} className="h-10 w-10 rounded-[var(--radius-hub-item)] bg-muted border border-border/60 text-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all group">
             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Button>
         </Link>
@@ -135,7 +135,7 @@ export default function CommunityHubClient({
             <div className="flex gap-4 p-2 items-center">
                <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="lg" className="h-11 w-14 rounded-[var(--radius-hub-item)] bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
+                  <Button variant="ghost" size="lg" aria-label="AI 추천 커뮤니티 탐색" className="h-11 w-14 rounded-[var(--radius-hub-item)] bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
                     <Sparkles size={22} className="group-hover:rotate-12 transition-transform" />
                   </Button>
                 </TooltipTrigger>

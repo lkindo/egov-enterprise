@@ -166,6 +166,34 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // [Zero-Trust] Origin/Referer 검증: POST, PUT, DELETE, PATCH 요청 시 Origin 헤더가 존재하면 허용된 Host인지 확인
+  if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method) && pathname.startsWith('/api')) {
+    const origin = request.headers.get('origin');
+    if (origin) {
+      const host = request.headers.get('host') || '';
+      const hostDomain = host.split(':')[0];
+      // 부분문자열(includes) 비교는 `https://localhost.attacker.com` 같은 접미사 도메인을
+      // 통과시키므로, Origin 을 파싱해 hostname 을 정확히 비교한다.
+      let originHostname: string | null = null;
+      try {
+        originHostname = new URL(origin).hostname;
+      } catch {
+        originHostname = null;
+      }
+      const isAllowed =
+        originHostname !== null &&
+        ['localhost', '127.0.0.1', hostDomain].some(
+          (allowed) => allowed && allowed.toLowerCase() === originHostname.toLowerCase()
+        );
+      if (!isAllowed) {
+        return new NextResponse(
+          JSON.stringify({ success: false, code: 'INVALID_ORIGIN', message: 'Access denied: untrusted Origin header' }),
+          { status: 403, headers: { 'content-type': 'application/json' } }
+        );
+      }
+    }
+  }
+
   // 1. 백엔드 API 요청 Proxy Header Injection
   // 브라우저 클라이언트에서 withCredentials 로 동봉한 accessToken HttpOnly 쿠키를 읽어 백엔드 시큐리티가
   // 읽을 수 있도록 Authorization: Bearer <token> 헤더를 주입한다. (서명 재검증은 백엔드가 authoritative

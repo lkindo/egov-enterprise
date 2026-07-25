@@ -128,13 +128,11 @@ public class JwtTokenProvider {
     }
 
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {
-        org.springframework.http.ResponseCookie responseCookie = org.springframework.http.ResponseCookie.from("refreshToken", refreshToken)
-                .httpOnly(true)
-                .secure(cookieSecure)
-                .path("/")
-                .maxAge(refreshTokenValidityInMilliseconds / 1000)
-                .sameSite("Lax")
-                .build();
+        org.springframework.http.ResponseCookie responseCookie = nuri.foundation.security.util.CookieUtil.createRefreshTokenCookie(
+                refreshToken,
+                cookieSecure,
+                refreshTokenValidityInMilliseconds / 1000
+        );
         response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, responseCookie.toString());
     }
 
@@ -148,13 +146,7 @@ public class JwtTokenProvider {
     }
 
     public void removeRefreshTokenCookie(HttpServletResponse response) {
-        org.springframework.http.ResponseCookie responseCookie = org.springframework.http.ResponseCookie.from("refreshToken", "")
-                .httpOnly(true)
-                .secure(cookieSecure)
-                .path("/")
-                .maxAge(0)
-                .sameSite("Lax")
-                .build();
+        org.springframework.http.ResponseCookie responseCookie = nuri.foundation.security.util.CookieUtil.deleteRefreshTokenCookie(cookieSecure);
         response.addHeader(org.springframework.http.HttpHeaders.SET_COOKIE, responseCookie.toString());
     }
 

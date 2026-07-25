@@ -164,6 +164,7 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
               <label className="flex items-center gap-3 cursor-pointer select-none rounded-lg border border-border bg-muted/40 px-4 py-3">
                 <input
                   type="checkbox"
+                  aria-label="부서 일정으로 공유"
                   className="h-4 w-4 accent-primary"
                   checked={field.value === '1'}
                   onChange={(e) => field.onChange(e.target.checked ? '1' : '2')}

@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { deptAdminService } from '@/services/foundation/system/DeptAdminService';
 import type { FlattenedDept } from '@/app/admin/user/departments/treeUtils';
+import { extractErrorMessage } from './actionUtils';
 
 interface ActionResponse {
   success: boolean;
@@ -37,7 +38,7 @@ export async function saveDeptHierarchyAction(flattenedDepts: FlattenedDept[]): 
     revalidatePath('/admin/user/departments');
     return { success: true, message: '조직 아키텍처 구조가 동기화되었습니다.' };
   } catch (error) {
-    const message = error instanceof Error ? error.message : '계층 구조 저장 중 오류 발생';
+    const message = extractErrorMessage(error, '계층 구조 저장 중 오류 발생');
     return { success: false, message };
   }
 }

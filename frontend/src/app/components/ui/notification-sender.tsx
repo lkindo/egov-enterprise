@@ -123,6 +123,7 @@ export function NotificationSender() {
             </div>
 
             <textarea
+              aria-label="메시지 내용"
               className="flex-1 w-full bg-transparent border-none outline-none resize-none text-xl font-bold placeholder:text-muted-foreground/10 custom-scrollbar leading-relaxed"
               placeholder="메시지 내용을 입력하거나 AI 드래프트를 활용하세요..."
               value={message}
@@ -131,8 +132,8 @@ export function NotificationSender() {
 
             <div className="pt-6 border-t border-primary/5 flex items-center justify-between">
               <div className="flex gap-2">
-                <Button variant="outline" size="icon" className="h-10 w-10 rounded-lg border-2"><Bot size={16} /></Button>
-                <Button variant="outline" size="icon" className="h-10 w-10 rounded-lg border-2"><Calendar size={16} /></Button>
+                <Button variant="outline" size="icon" aria-label="AI 봇 옵션" className="h-10 w-10 rounded-lg border-2"><Bot size={16} /></Button>
+                <Button variant="outline" size="icon" aria-label="예약 시간 설정" className="h-10 w-10 rounded-lg border-2"><Calendar size={16} /></Button>
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold text-muted-foreground opacity-40">Words: {message.length}</span>

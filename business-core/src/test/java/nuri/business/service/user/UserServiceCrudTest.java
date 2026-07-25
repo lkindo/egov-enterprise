@@ -83,7 +83,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 생성 성공")
   void createUser_success() {
-    try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+    try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
       mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
       when(passwordEncoder.encode(any())).thenReturn("encoded");
       when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -97,7 +97,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 생성 실패 - null 값 포함")
   void createUser_fail_withNullValues() {
-    try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+    try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
       mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
       assertThatThrownBy(() -> userService.registerUser(null, "pw", "name", "h", "c", "USER"))
           .isInstanceOf(IllegalArgumentException.class);

@@ -207,7 +207,7 @@ export function StandardFileUploader({
             최대 {maxFiles}개 파일 / {maxSizeMB}MB 제한
           </p>
         </div>
-        <input name={name} type="file" className="hidden" multiple accept={accept} onChange={handleFileChange} />
+        <input name={name} type="file" aria-label="파일 첨부 선택" className="hidden" multiple accept={accept} onChange={handleFileChange} />
         
         {/* Animated Background Pulse */}
         <AnimatePresence>
@@ -280,6 +280,7 @@ export function StandardFileUploader({
                   ) : null}
                   <button
                     type="button"
+                    aria-label={`${fs.file.name} 첨부 파일 삭제`}
                     onClick={() => removeFile(fs.id)}
                     className="p-2 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-500 rounded-lg transition-all opacity-0 group-hover:opacity-100"
                   >

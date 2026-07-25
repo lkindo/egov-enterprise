@@ -237,6 +237,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                 type="button" 
                 variant="ghost" 
                 onClick={handleDelete}
+                aria-label="프로그램 삭제"
                 className="h-11 w-12 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-50 transition-all flex items-center justify-center p-0"
               >
                 <Trash2 size={20} />

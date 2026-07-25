@@ -185,10 +185,10 @@ export default function ScheduleDeptClient() {
                                     <TableCell className="text-sm text-muted-foreground font-medium">{schedule.schdlPlcNm}</TableCell>
                                     <TableCell className="text-center">
                                         <div className="flex justify-center gap-1">
-                                            <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)} className="rounded-lg hover:bg-primary/10">
+                                            <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)} aria-label={`${schedule.schdlNm || '일정'} 수정`} className="rounded-lg hover:bg-primary/10">
                                                 <Pencil className="h-4 w-4 text-primary" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(schedule.schdlId!)} className="rounded-lg hover:bg-destructive/10">
+                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(schedule.schdlId!)} aria-label={`${schedule.schdlNm || '일정'} 삭제`} className="rounded-lg hover:bg-destructive/10">
                                                 <Trash2 className="h-4 w-4 text-destructive" />
                                             </Button>
                                         </div>

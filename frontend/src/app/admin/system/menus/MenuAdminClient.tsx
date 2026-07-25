@@ -709,13 +709,13 @@ export default function MenuAdminClient({
                   <FormControl>
                     <div className="flex gap-4 items-center">
                       <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer">
-                        <input type="radio" className="w-4 h-4 text-primary focus:ring-primary accent-primary" 
+                        <input type="radio" aria-label="활성화 (Y)" className="w-4 h-4 text-primary focus:ring-primary accent-primary" 
                                checked={field.value === 'Y'} 
                                onChange={() => field.onChange('Y')} />
                         활성화 (Y)
                       </label>
                       <label className="flex items-center gap-2 text-sm font-semibold cursor-pointer text-muted-foreground">
-                        <input type="radio" className="w-4 h-4 text-primary focus:ring-primary accent-primary" 
+                        <input type="radio" aria-label="비활성화 (N)" className="w-4 h-4 text-primary focus:ring-primary accent-primary" 
                                checked={field.value === 'N'} 
                                onChange={() => field.onChange('N')} />
                         비활성화 (N)

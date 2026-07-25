@@ -68,6 +68,7 @@ export function PopupManager() {
                             <span className="text-sm font-bold truncate">{popup.popupTtlNm}</span>
                             <button
                                 onClick={() => closePopup(popup.popupId)}
+                                aria-label={`${popup.popupTtlNm || '팝업'} 닫기`}
                                 className="p-1 hover:bg-muted rounded-lg transition-colors"
                             >
                                 <X size={16} />

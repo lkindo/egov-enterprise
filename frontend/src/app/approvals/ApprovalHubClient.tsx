@@ -292,13 +292,14 @@ export default function ApprovalHubClient() {
                   <CardTitle className="text-xs font-bold text-muted-foreground tracking-tight">
                     결재 스트림
                   </CardTitle>
-                  <Button variant="ghost" size="icon" className="rounded-lg hover:bg-muted">
+                  <Button variant="ghost" size="icon" aria-label="결재 스트림 새로고침" className="rounded-lg hover:bg-muted">
                     <RefreshCcw size={18} className="text-muted-foreground" />
                   </Button>
                 </div>
                 <div className="relative">
                   <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
                   <Input 
+                    aria-label="결재 요청 검색어 입력"
                     className="pl-12 h-11 bg-white/50 border-white/20 rounded-lg text-sm font-bold shadow-inner" 
                     placeholder="결재 요청 검색..."
                     value={searchWrd}

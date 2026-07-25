@@ -86,12 +86,8 @@ public class InformalSanctionService {
                 .findById(Objects.requireNonNull(dto.getIfmlAtrzId()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
-        // [보안] 권한 확인 (신청자 본인)
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
-        if (!currentUserId.equals(entity.getAplcntId())) {
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-        }
+        // [보안] 권한 확인 (신청자 본인) — 신청서 정정·철회는 대리 불가이므로 관리자도 우회하지 않는다.
+        nuri.business.security.util.SecurityUtil.assertOwnerByEsntlId(entity.getAplcntId());
 
         // [안정성] 상태 전이 가드 (신청 상태에서만 수정 가능)
         if (!"A".equals(entity.getAprvYn())) {
@@ -107,12 +103,8 @@ public class InformalSanctionService {
                 .findById(Objects.requireNonNull(ifmlAtrzId))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
-        // [보안] 권한 확인 (신청자 본인)
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
-        if (!currentUserId.equals(entity.getAplcntId())) {
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-        }
+        // [보안] 권한 확인 (신청자 본인) — 신청서 정정·철회는 대리 불가이므로 관리자도 우회하지 않는다.
+        nuri.business.security.util.SecurityUtil.assertOwnerByEsntlId(entity.getAplcntId());
 
         // [안정성] 상태 전이 가드 (신청 상태에서만 삭제 가능)
         if (!"A".equals(entity.getAprvYn())) {
@@ -127,12 +119,8 @@ public class InformalSanctionService {
         InformalSanction entity = informalSanctionRepository.findById(Objects.requireNonNull(ifmlAtrzId))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
-        // [보안] 권한 확인 (결재자 본인)
-        String currentUserId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
-        if (!currentUserId.equals(entity.getAprvrId())) {
-            throw new BusinessException("접근 권한이 없습니다.", CommonErrorCode.ACCESS_DENIED);
-        }
+        // [보안] 권한 확인 (결재자 본인) — 결재는 대리 불가이므로 관리자도 우회하지 않는다.
+        nuri.business.security.util.SecurityUtil.assertOwnerByEsntlId(entity.getAprvrId());
 
         // [안정성] 상태 전이 가드 및 비즈니스 행위 위임
         if (SanctionStatus.APPROVED.getCode().equals(aprvYn)) {

@@ -96,9 +96,7 @@ public class OnlinePollService {
 
     @Transactional
     public void insertPoll(OnlinePollManageDto dto) {
-        if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-        }
+        nuri.business.security.util.SecurityUtil.assertAdmin();
         
         String beginDe = normalizeDate(dto.getPollBgngYmd());
         String endDe = normalizeDate(dto.getPollEndYmd());
@@ -141,9 +139,7 @@ public class OnlinePollService {
 
     @Transactional
     public void updatePoll(OnlinePollManageDto dto) {
-        if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-        }
+        nuri.business.security.util.SecurityUtil.assertAdmin();
 
         String beginDe = normalizeDate(dto.getPollBgngYmd());
         String endDe = normalizeDate(dto.getPollEndYmd());
@@ -179,9 +175,7 @@ public class OnlinePollService {
 
     @Transactional
     public void deletePoll(String pollId) {
-        if (!nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)) {
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-        }
+        nuri.business.security.util.SecurityUtil.assertAdmin();
 
         // [V2_13 결속] 투표 결과 선정리 — fk_tb_onln_poll_rslt_*(NO ACTION) 하에서 결과 보유 투표 삭제가
         // 409 로 파손되던 기왕 부채 해소 (항목은 pollArticles cascade 가 정리)

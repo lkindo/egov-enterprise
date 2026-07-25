@@ -56,7 +56,7 @@ class InformalSanctionServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        securityUtilMock = mockStatic(SecurityUtil.class);
+        securityUtilMock = mockStatic(SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS);
     }
 
     @AfterEach

@@ -157,7 +157,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  const code = auth.authrtCd;
  const name = auth.authrtNm;
  return (
- <th key={code} scope="col" className="p-8 bg-muted/50 min-w-[150px] transition-colors hover:bg-muted">
+ <th key={code} scope="col" aria-label={`권한: ${name} (${code})`} className="p-8 bg-muted/50 min-w-[150px] transition-colors hover:bg-muted">
  <div className="flex flex-col items-center gap-2 group/header">
  <div className="w-10 h-10 rounded-lg bg-card border-2 border-border flex items-center justify-center text-muted-foreground transition-all group-hover/header:bg-surface-inverse group-hover/header:text-surface-inverse-foreground group-hover/header:scale-110 shadow-sm">
  <Lock size={14} aria-hidden="true" />
@@ -173,7 +173,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <tbody className="divide-y-2 divide-border">
  {filteredMenus.map((menu) => (
  <tr key={menu.menuNo} className="divide-x-2 divide-border hover:bg-muted/50 transition-colors group/row">
- <th scope="row" className="sticky left-0 z-20 bg-card p-6 border-r-4 border-border text-left font-normal group-hover/row:bg-muted transition-colors">
+ <th scope="row" aria-label={`메뉴: ${menu.menuNm}`} className="sticky left-0 z-20 bg-card p-6 border-r-4 border-border text-left font-normal group-hover/row:bg-muted transition-colors">
  <div className="flex items-center gap-4">
  <div className={cn(
  "w-8 h-8 rounded-lg flex items-center justify-center transition-all",

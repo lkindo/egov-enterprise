@@ -99,6 +99,7 @@ export default function ApprovalDraftHubClient() {
           <div className="flex items-center gap-6">
             <Button 
                 variant="ghost" 
+                aria-label="뒤로가기"
                 onClick={() => step === 'CATALOG' ? router.back() : setStep('CATALOG')}
                 className="w-14 h-11 rounded-lg bg-card shadow-xl hover:bg-muted transition-all border-none"
             >
@@ -258,6 +259,7 @@ export default function ApprovalDraftHubClient() {
                           <Plus size={16} className="text-primary" /> Core Subject Header
                        </label>
                        <Input 
+                          aria-label="문서 제목"
                           value={subject}
                           onChange={(e) => setSubject(e.target.value)}
                           placeholder="상신할 문서의 제목을 입력하십시오..." 
@@ -270,6 +272,7 @@ export default function ApprovalDraftHubClient() {
                           <FileText size={16} className="text-primary" /> Intelligent Payload
                        </label>
                        <textarea 
+                          aria-label="결재 상세 사유 및 전달 사항"
                           value={content}
                           onChange={(e) => setContent(e.target.value)}
                           placeholder="결재 상세 사유 및 전달 사항을 기술하십시오..." 

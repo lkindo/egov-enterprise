@@ -104,8 +104,8 @@ export const ScrapDtoSchema = z.object({
   scrapNm: z.string().min(0).max(100).optional(),
   scrapUrl: z.string().min(0).max(1000).optional(),
   scrapExpln: z.string().optional(),
-  useYn: z.string().min(0).max(1),
-  userId: z.string().min(0).max(20),
+  useYn: z.string().min(0).max(1).regex(new RegExp("[YN]")),
+  userId: z.string().min(0).max(20).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
 });
@@ -482,6 +482,15 @@ export const PopupDtoSchema = z.object({
 export type PopupDto = z.infer<typeof PopupDtoSchema>;
 
 // ==========================================================================
+// PolicyUpdateRequest Schema
+// ==========================================================================
+export const PolicyUpdateRequestSchema = z.object({
+  plcyTtl: z.string().min(0).max(100),
+  plcyCn: z.string().min(0).max(4000),
+});
+export type PolicyUpdateRequest = z.infer<typeof PolicyUpdateRequestSchema>;
+
+// ==========================================================================
 // NetworkDto Schema
 // ==========================================================================
 export const NetworkDtoSchema = z.object({
@@ -603,6 +612,15 @@ export const CmmnCodeDtoSchema = z.object({
   lastMdfrId: z.string().optional(),
 });
 export type CmmnCodeDto = z.infer<typeof CmmnCodeDtoSchema>;
+
+// ==========================================================================
+// CmmnCodeHierarchyDto Schema
+// ==========================================================================
+export const CmmnCodeHierarchyDtoSchema = z.object({
+  cdId: z.string().min(0).max(20),
+  clsfCd: z.string().min(0).max(12),
+});
+export type CmmnCodeHierarchyDto = z.infer<typeof CmmnCodeHierarchyDtoSchema>;
 
 // ==========================================================================
 // CmmnClCodeDto Schema
@@ -1041,6 +1059,23 @@ export const CnsltManageDtoSchema = z.object({
 export type CnsltManageDto = z.infer<typeof CnsltManageDtoSchema>;
 
 // ==========================================================================
+// BoardMasterBatchStatusRequest Schema
+// ==========================================================================
+export const BoardMasterBatchStatusRequestSchema = z.object({
+  bbsIds: z.array(z.string()),
+  useYn: z.enum(["Y","N"]).optional(),
+});
+export type BoardMasterBatchStatusRequest = z.infer<typeof BoardMasterBatchStatusRequestSchema>;
+
+// ==========================================================================
+// BoardMasterBatchDeleteRequest Schema
+// ==========================================================================
+export const BoardMasterBatchDeleteRequestSchema = z.object({
+  bbsIds: z.array(z.string()),
+});
+export type BoardMasterBatchDeleteRequest = z.infer<typeof BoardMasterBatchDeleteRequestSchema>;
+
+// ==========================================================================
 // SmsDto Schema
 // ==========================================================================
 export const SmsDtoSchema = z.object({
@@ -1091,6 +1126,19 @@ export const RewardManageDtoSchema = z.object({
 export type RewardManageDto = z.infer<typeof RewardManageDtoSchema>;
 
 // ==========================================================================
+// ApiResponseRewardManageDto Schema
+// ==========================================================================
+export const ApiResponseRewardManageDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => RewardManageDtoSchema).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponseRewardManageDto = z.infer<typeof ApiResponseRewardManageDtoSchema>;
+
+// ==========================================================================
 // ExternalHrDto Schema
 // ==========================================================================
 export const ExternalHrDtoSchema = z.object({
@@ -1111,6 +1159,19 @@ export const ExternalHrDtoSchema = z.object({
   lastMdfrId: z.string().optional(),
 });
 export type ExternalHrDto = z.infer<typeof ExternalHrDtoSchema>;
+
+// ==========================================================================
+// ApiResponseExternalHrDto Schema
+// ==========================================================================
+export const ApiResponseExternalHrDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => ExternalHrDtoSchema).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponseExternalHrDto = z.infer<typeof ApiResponseExternalHrDtoSchema>;
 
 // ==========================================================================
 // ApiResponseCommunityDto Schema
@@ -1215,6 +1276,29 @@ export const ApiResponseWorkReportDtoSchema = z.object({
   timestamp: z.string().optional(),
 });
 export type ApiResponseWorkReportDto = z.infer<typeof ApiResponseWorkReportDtoSchema>;
+
+// ==========================================================================
+// ApiResponseListUserSearchDto Schema
+// ==========================================================================
+export const ApiResponseListUserSearchDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => UserSearchDtoSchema)).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponseListUserSearchDto = z.infer<typeof ApiResponseListUserSearchDtoSchema>;
+
+// ==========================================================================
+// UserSearchDto Schema
+// ==========================================================================
+export const UserSearchDtoSchema = z.object({
+  esntlId: z.string().optional(),
+  userNm: z.string().optional(),
+  deptNm: z.string().optional(),
+});
+export type UserSearchDto = z.infer<typeof UserSearchDtoSchema>;
 
 // ==========================================================================
 // ApiResponseUserDto Schema
@@ -1789,6 +1873,35 @@ export const ApiResponseHpcmDtoSchema = z.object({
   timestamp: z.string().optional(),
 });
 export type ApiResponseHpcmDto = z.infer<typeof ApiResponseHpcmDtoSchema>;
+
+// ==========================================================================
+// ApiResponseListFileDto Schema
+// ==========================================================================
+export const ApiResponseListFileDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => FileDtoSchema)).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponseListFileDto = z.infer<typeof ApiResponseListFileDtoSchema>;
+
+// ==========================================================================
+// FileDto Schema
+// ==========================================================================
+export const FileDtoSchema = z.object({
+  atchFileId: z.string().min(0).max(30).optional(),
+  fileSn: z.number().optional(),
+  fileStreCours: z.string().optional(),
+  streFileNm: z.string().optional(),
+  orignlFileNm: z.string().optional(),
+  fileExtsn: z.string().optional(),
+  fileMg: z.number().optional(),
+  fileCn: z.string().min(0).max(4000).optional(),
+  crtDt: z.string().optional(),
+});
+export type FileDto = z.infer<typeof FileDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseFaqDto Schema
@@ -2493,17 +2606,17 @@ export const PolicySchema = z.object({
 export type Policy = z.infer<typeof PolicySchema>;
 
 // ==========================================================================
-// ApiResponseMapStringString Schema
+// ApiResponsePolicy Schema
 // ==========================================================================
-export const ApiResponseMapStringStringSchema = z.object({
+export const ApiResponsePolicySchema = z.object({
   success: z.boolean().optional(),
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.record(z.string(), z.any()).optional(),
+  data: z.lazy(() => PolicySchema).optional(),
   timestamp: z.string().optional(),
 });
-export type ApiResponseMapStringString = z.infer<typeof ApiResponseMapStringStringSchema>;
+export type ApiResponsePolicy = z.infer<typeof ApiResponsePolicySchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseNetworkStatusDetailedDto Schema
@@ -2941,6 +3054,19 @@ export const ApiResponseDeptManageDtoSchema = z.object({
   timestamp: z.string().optional(),
 });
 export type ApiResponseDeptManageDto = z.infer<typeof ApiResponseDeptManageDtoSchema>;
+
+// ==========================================================================
+// ApiResponseListDeptManageDto Schema
+// ==========================================================================
+export const ApiResponseListDeptManageDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => DeptManageDtoSchema)).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponseListDeptManageDto = z.infer<typeof ApiResponseListDeptManageDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseInstitutionCodeDto Schema
@@ -3431,33 +3557,54 @@ export const ApiResponseListSmsRecptnDtoSchema = z.object({
 export type ApiResponseListSmsRecptnDto = z.infer<typeof ApiResponseListSmsRecptnDtoSchema>;
 
 // ==========================================================================
-// ApiResponseListFileDto Schema
+// ApiResponsePageResponseRewardManageDto Schema
 // ==========================================================================
-export const ApiResponseListFileDtoSchema = z.object({
+export const ApiResponsePageResponseRewardManageDtoSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.array(z.lazy(() => FileDtoSchema)).optional(),
+  data: z.lazy(() => PageResponseRewardManageDtoSchema).optional(),
   timestamp: z.string().optional(),
 });
-export type ApiResponseListFileDto = z.infer<typeof ApiResponseListFileDtoSchema>;
+export type ApiResponsePageResponseRewardManageDto = z.infer<typeof ApiResponsePageResponseRewardManageDtoSchema>;
 
 // ==========================================================================
-// FileDto Schema
+// PageResponseRewardManageDto Schema
 // ==========================================================================
-export const FileDtoSchema = z.object({
-  atchFileId: z.string().min(0).max(30).optional(),
-  fileSn: z.number().optional(),
-  fileStreCours: z.string().optional(),
-  streFileNm: z.string().optional(),
-  orignlFileNm: z.string().optional(),
-  fileExtsn: z.string().optional(),
-  fileMg: z.number().optional(),
-  fileCn: z.string().min(0).max(4000).optional(),
-  crtDt: z.string().optional(),
+export const PageResponseRewardManageDtoSchema = z.object({
+  list: z.array(z.lazy(() => RewardManageDtoSchema)).optional(),
+  total: z.number().optional(),
+  page: z.number().optional(),
+  size: z.number().optional(),
+  totalPage: z.number().optional(),
 });
-export type FileDto = z.infer<typeof FileDtoSchema>;
+export type PageResponseRewardManageDto = z.infer<typeof PageResponseRewardManageDtoSchema>;
+
+// ==========================================================================
+// ApiResponsePageResponseExternalHrDto Schema
+// ==========================================================================
+export const ApiResponsePageResponseExternalHrDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseExternalHrDtoSchema).optional(),
+  timestamp: z.string().optional(),
+});
+export type ApiResponsePageResponseExternalHrDto = z.infer<typeof ApiResponsePageResponseExternalHrDtoSchema>;
+
+// ==========================================================================
+// PageResponseExternalHrDto Schema
+// ==========================================================================
+export const PageResponseExternalHrDtoSchema = z.object({
+  list: z.array(z.lazy(() => ExternalHrDtoSchema)).optional(),
+  total: z.number().optional(),
+  page: z.number().optional(),
+  size: z.number().optional(),
+  totalPage: z.number().optional(),
+});
+export type PageResponseExternalHrDto = z.infer<typeof PageResponseExternalHrDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseEventInfoDto Schema

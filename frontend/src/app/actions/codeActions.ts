@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import { codeAdminService, type CmmnCodeHierarchyItem } from '@/services/foundation/system/CodeAdminService';
 import { CmmnDetailCode, CmmnClCode, CmmnCode } from '@/types/foundation/system';
 import type { FlattenedCodeNode } from '@/app/admin/system/common-code/treeUtils';
+import { extractErrorMessage } from './actionUtils';
 
 export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetailCode> & { isNew?: boolean }) {
   try {
@@ -25,8 +26,8 @@ export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetai
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '상세 코드가 저장되었습니다.' };
-  } catch (error: any) {
-    const message = error instanceof Error ? error.message : '저장 중 오류 발생';
+  } catch (error) {
+    const message = extractErrorMessage(error, '저장 중 오류 발생');
     console.error('Save Code Detail Error:', error);
     return { success: false, message };
   }
@@ -42,8 +43,8 @@ export async function deleteCodeDetail(prevState: unknown, { cdId, dtlCd }: { cd
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '상세 코드가 삭제되었습니다.' };
-  } catch (error: any) {
-    const message = error instanceof Error ? error.message : '삭제 중 오류 발생';
+  } catch (error) {
+    const message = extractErrorMessage(error, '삭제 중 오류 발생');
     console.error('Delete Code Detail Error:', error);
     return { success: false, message };
   }
@@ -69,8 +70,8 @@ async function saveClCode(prevState: unknown, data: Partial<CmmnClCode> & { isNe
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '분류 코드가 저장되었습니다.' };
-  } catch (error: any) {
-    const message = error instanceof Error ? error.message : '저장 중 오류 발생';
+  } catch (error) {
+    const message = extractErrorMessage(error, '저장 중 오류 발생');
     return { success: false, message };
   }
 }
@@ -83,8 +84,8 @@ async function deleteClCode(prevState: unknown, clsfCd: string) {
     await codeAdminService.deleteClCode(clsfCd, config);
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '분류 코드가 삭제되었습니다.' };
-  } catch (error: any) {
-    const message = error instanceof Error ? error.message : '삭제 중 오류 발생';
+  } catch (error) {
+    const message = extractErrorMessage(error, '삭제 중 오류 발생');
     return { success: false, message };
   }
 }
@@ -109,8 +110,8 @@ async function saveCmmnCode(prevState: unknown, data: Partial<CmmnCode> & { isNe
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '공통 코드가 저장되었습니다.' };
-  } catch (error: any) {
-    const message = error instanceof Error ? error.message : '저장 중 오류 발생';
+  } catch (error) {
+    const message = extractErrorMessage(error, '저장 중 오류 발생');
     return { success: false, message };
   }
 }
@@ -123,8 +124,8 @@ async function deleteCmmnCode(prevState: unknown, cdId: string) {
     await codeAdminService.deleteCmmnCode(cdId, config);
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '공통 코드가 삭제되었습니다.' };
-  } catch (error: any) {
-    const message = error instanceof Error ? error.message : '삭제 중 오류 발생';
+  } catch (error) {
+    const message = extractErrorMessage(error, '삭제 중 오류 발생');
     return { success: false, message };
   }
 }
@@ -162,8 +163,8 @@ export async function saveCmmnCodeHierarchyAction(flattenedNodes: FlattenedCodeN
 
     revalidatePath('/admin/system/common-code');
     return { success: true, message: '공통코드 도메인 구조가 동기화되었습니다.' };
-  } catch (error: any) {
-    const message = error instanceof Error ? error.message : '계층 구조 저장 중 오류 발생';
+  } catch (error) {
+    const message = extractErrorMessage(error, '계층 구조 저장 중 오류 발생');
     return { success: false, message };
   }
 }

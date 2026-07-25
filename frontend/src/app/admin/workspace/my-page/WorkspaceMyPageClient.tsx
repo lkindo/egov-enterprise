@@ -64,14 +64,15 @@ export default function WorkspaceMyPage() {
     },
     {
       header: '상태',
-      accessor: (item) => (
-        <button
+      accessor: (item: any) => (
+        <button 
           onClick={(e) => { e.stopPropagation(); toggleStatus(item); }}
-          className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${item.cntntsUseYn === 'Y'
-            ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-            : 'bg-muted text-muted-foreground border border-border'
+          aria-label={`${item.cntntsNm || '콘텐츠'} 상태 변경`}
+          className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
+            item.cntntsUseYn === 'Y' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-muted text-muted-foreground border border-border'
           }`}
         >
+          <span className={`w-2 h-2 rounded-full ${item.cntntsUseYn === 'Y' ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'}`} />
           {item.cntntsUseYn === 'Y' ? '활성' : '중단'}
         </button>
       ),
@@ -81,7 +82,7 @@ export default function WorkspaceMyPage() {
       header: '관리',
       accessor: () => (
         <div className="flex justify-end pr-4">
-          <Button variant="ghost" size="icon" className="h-10 w-10 rounded-lg hover:bg-muted">
+          <Button variant="ghost" size="icon" aria-label="위젯 추가 옵션" className="h-10 w-10 rounded-lg hover:bg-muted">
             <MoreVertical size={16} className="text-muted-foreground" />
           </Button>
         </div>
@@ -104,7 +105,7 @@ export default function WorkspaceMyPage() {
         icon={LayoutGrid}
         actions={
           <div className="flex gap-4">
-            <Button variant="outline" onClick={() => window.location.reload()} className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
+            <Button variant="outline" aria-label="마이페이지 새로고침" onClick={() => window.location.reload()} className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
               <RefreshCcw size={20} />
             </Button>
             <Button className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">

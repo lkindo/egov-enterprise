@@ -27,7 +27,7 @@ class NetworkAdminService extends AdminService {
  }
 
  /** ㅽ듃?뚰겕 등록 */
- async createNetwork(data: Network, config?: AxiosRequestConfig): Promise<void> {
+ async createNetwork(data: Partial<Network>, config?: AxiosRequestConfig): Promise<void> {
  return this.post('', data, config);
  }
 

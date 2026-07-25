@@ -212,12 +212,6 @@ public class DeptJobService extends BaseAbstractService {
      *         존재하지 않는 id 는 호출부에서 이미 RESOURCE_NOT_FOUND(404)로 갈린다.
      */
     private void assertPicOrAdmin(DeptJob deptJob) {
-        if (nuri.business.security.util.SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)
-                || nuri.business.security.util.SecurityUtil
-                        .hasRole(nuri.business.security.AuthorityConstants.ROLE_SYSTEM)) {
-            return;
-        }
-
         String picId = deptJob.getPicId();
         if (picId == null || picId.isBlank()) {
             // 담당자 공석 — 등록자 기준(loginId)으로 판정한다.
@@ -225,12 +219,9 @@ public class DeptJobService extends BaseAbstractService {
             return;
         }
 
-        String currentEsntlId = nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.UNAUTHORIZED));
-        if (!currentEsntlId.equals(picId)) {
-            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
-        }
+        nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(picId);
     }
+
 
     private DeptJobDto toDto(DeptJob entity) {
         DeptJobDto dto = deptJobMapper.toDto(entity);

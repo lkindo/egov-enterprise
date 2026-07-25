@@ -81,6 +81,7 @@ export default function HelpClient() {
             <Search className="absolute left-6 top-5 text-muted-foreground/40 group-focus-within:text-primary transition-colors" size={24} />
             <input
                 type="text"
+                aria-label="도움말 키워드 검색"
                 placeholder="키워드로 신속하게 검색하세요..."
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}

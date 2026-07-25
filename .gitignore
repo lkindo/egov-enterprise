@@ -219,3 +219,16 @@ database/dumps/
 
 # graphify cache
 **/graphify-out/
+
+# ----- 에이전트 세션 산출물 (저장소 자산 아님) -----
+# 오케스트레이터/서브에이전트 작업 상태. 이중 오퍼레이터 환경에서 타 세션 상태가
+# `git add -A` 로 혼입되는 것을 막는다.
+.agents/
+
+# 일회성 a11y 감사 스캔 스크립트·리포트 (재발 방지는 eslint jsx-a11y 규칙이 담당)
+frontend/a11y_report.json
+frontend/fast_a11y_report.json
+frontend/unlabelled_buttons.json
+frontend/check-a11y.mjs
+frontend/find-all-a11y.mjs
+frontend/scan-components.mjs

@@ -115,25 +115,16 @@ const eslintConfig = [
     }
   },
   {
-    // 접근성 정적 게이트(감사 P1-10): 아이콘 전용 버튼 aria-label 누락 66건 + onClick 만 달린 비인터랙티브 div 7건
-    // (특히 OnlinePollParticipateClient 는 키보드만으로 투표를 완료할 수 없다)의 재발을 차단한다.
-    //
-    // 플러그인 등록 주의: 'jsx-a11y' 는 eslint-config-next(dist/index.js: plugins['jsx-a11y'])가 이미 등록한다.
-    // ESLint 9 flat config 는 동일 네임스페이스를 다른 객체로 재등록하면 "Cannot redefine plugin" 으로 크래시하므로,
-    // 여기서는 import·plugins 재선언 없이 규칙만 켠다. (package.json 에는 명시적 devDependency 로 고정해 전이 의존 이탈을 막는다)
-    //
-    // ⚠ severity 가 'warn' 인 이유: 세 규칙을 error 로 켜면 기존 위반 66건+ 이 즉시 린트를 빨갛게 만들어
-    // `pnpm lint` 게이트가 통과 불가가 되고, 그 압력은 결국 규칙 비활성화(=게이트 무력화)로 귀결된다.
-    // 목적은 "기존 부채 일괄 차단"이 아니라 "신규 위반 유입 차단"이므로 repo 규범(warn 기반, react-hooks 완화 선례와 동일)에 맞춰 warn 으로 시작한다.
-    // TODO(a11y): 기존 위반 정리(감사 P1-10 배치) 완료 후 아래 3개 규칙을 "error" 로 승격할 것.
+    // 접근성 정적 게이트(감사 P1-10): 아이콘 전용 버튼 aria-label 누락 및 onClick 만 달린 비인터랙티브 div 정리 완료.
+    // 재발 방지를 위해 3개 접근성 규칙을 "error" 로 승격한다.
     files: ["**/*.jsx", "**/*.tsx"],
     rules: {
       // 아이콘 전용 버튼(수정/삭제 ⋮ 등)에 접근 가능한 이름이 없는 경우 — 스크린리더에서 전부 "버튼"으로 읽혀 오삭제 위험
-      "jsx-a11y/control-has-associated-label": "warn",
+      "jsx-a11y/control-has-associated-label": "error",
       // onClick 만 있고 키보드 핸들러가 없는 요소 — 키보드 사용자가 조작 자체를 완료할 수 없음
-      "jsx-a11y/click-events-have-key-events": "warn",
+      "jsx-a11y/click-events-have-key-events": "error",
       // div/span 등 비인터랙티브 요소에 마우스 핸들러만 부착 — button/role 로 승격 필요
-      "jsx-a11y/no-static-element-interactions": "warn",
+      "jsx-a11y/no-static-element-interactions": "error",
     }
   },
   {

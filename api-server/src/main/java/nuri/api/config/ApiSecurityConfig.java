@@ -92,6 +92,7 @@ public class ApiSecurityConfig {
 
         @Bean
         @Order(1)
+        @SuppressWarnings({"deprecation", "removal"})
         public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, EgovAuthenticationProvider egovAuthenticationProvider) throws Exception {
                 http
                                 .securityMatchers(matchers -> matchers.requestMatchers(
@@ -166,6 +167,8 @@ public class ApiSecurityConfig {
                                                 .referrerPolicy(referrer -> referrer.policy(
                                                                 org.springframework.security.web.header.writers.ReferrerPolicyHeaderWriter.ReferrerPolicy.STRICT_ORIGIN_WHEN_CROSS_ORIGIN)))
                                 .authenticationProvider(egovAuthenticationProvider)
+                                .addFilterBefore(new nuri.foundation.security.filter.OriginValidationFilter(allowedOrigins),
+                                                UsernamePasswordAuthenticationFilter.class)
                                 .addFilterBefore(new JwtAuthenticationFilter(jwtTokenProvider),
                                                 UsernamePasswordAuthenticationFilter.class);
                 return http.build();
