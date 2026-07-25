@@ -100,9 +100,15 @@ if (sourceOrigin.contains("localhost") || sourceOrigin.contains("127.0.0.1")) �
 
 임계 75% 미달 → 일단 report-only 로 원복.
 
-**동시 발견**: CI 의 `./gradlew :business-core:pitest` 는 `PIT_TARGET_CLASSES`(domain.board/domain.file/
-service.board/service.file)가 business-core 에 **존재하지 않아** 점수와 무관하게 exit 1 로 실패한다.
-→ 잡 구성을 `:business-app:pitest` 로 정정(대상이 실재하는 모듈로 한정).
+**동시 발견**: CI 의 `./gradlew :business-core:pitest` 가 점수와 무관하게 exit 1 로 실패하고 있었다.
+
+> ⚠️ **자기 정정 (2026-07-26 후속 확인)**: 최초 진단은 "대상 클래스가 business-core 에 존재하지 않음"
+> 이었으나 **틀렸다.** `nuri.business.service.file.*`(FileService/LocalFileStorageService)는 business-core 에
+> 실재한다. 실제 원인은 **당시 business-core 테스트가 red 였던 것**(§6.2 mockStatic 이슈)이다.
+> PIT 는 커버리지 수집 단계에서 대상 테스트를 실행하므로, 테스트가 깨져 있으면 분석이 중단된다.
+> 테스트를 고친 뒤 같은 명령을 다시 돌리자 **53 뮤턴트 / 70% 로 정상 동작**했다.
+> → 교훈: "잡 실패 = 구성 오류" 로 단정하지 말고 선행 조건(테스트 그린)부터 확인할 것.
+> 그 결과 file 도메인을 게이트에서 빼는 대신 **테스트를 보강해 81% 로 올려 게이트에 복귀**시켰다.
 
 ### 5.2 보강: 생존 뮤턴트 표적 사격
 리포트를 파싱해 미처치 83건(SURVIVED 52 / NO_COVERAGE 31)의 클래스·메서드·라인·뮤테이터를 특정한 뒤
@@ -184,14 +190,59 @@ service.board/service.file)가 business-core 에 **존재하지 않아** 점수�
 
 ---
 
+## 6.3 `react-hooks/preserve-manual-memoization` 2건 — ESLint error 0 달성
+
+`pnpm lint` 은 오래도록 exit 1 이었고, 그 원인 2건은 이번 작업과 무관한 기존 부채였다.
+수동 `useMemo` 를 React Compiler 가 보존하지 못해 **해당 컴포넌트 전체 최적화가 스킵**되는 상태였다.
+
+- `UserOrgHubClient` — 하나의 memo 안에서 `activeTab` 으로 분기해 컬렉션마다 다른 계산을 수행.
+  단일 메모 스코프로 보존이 불가능하다. 컬렉션별 선형 memo 로 분리하고 탭 선택은 memo 밖 삼항으로 처리.
+  (부수 효과: `activeTab` 만 바뀔 때 `find()` 재실행 안 함)
+- `CommunityHubClient` — memo 안에서 `user?.id` 와 `user.id` 를 섞어 읽어 의존성 미확정.
+  옵셔널 접근을 memo 밖 스칼라로 고정.
+
+> React Compiler 는 빌드에 **미활성**이다. 따라서 "수동 memo 를 제거하고 컴파일러에 맡긴다" 는
+> 흔한 처방은 여기서 **실제 메모이제이션을 없애는 성능 회귀**가 된다. 규칙을 warn 으로 내리지도,
+> memo 를 걷어내지도 않고 구조를 고친 이유다.
+
+**게이트화**: CI 프론트엔드 잡에는 lint 단계가 **아예 없었다**(a11y error 승격분도 실제로는 미강제).
+error 0 건인 지금 `pnpm run lint` 단계를 추가해 재유입을 차단했다.
+
+---
+
 ## 7. 잔여 부채 (이번 범위 밖)
 
-- `react-hooks` 오류 2건 — `UserOrgHubClient.tsx`, `CommunityHubClient.tsx`. 이번 작업 미변경 파일에서
-  발생하는 **기존 red**(React Compiler memoization bailout).
-- 뮤테이션 잔여 미처치 55건(SURVIVED 31 / NO_COVERAGE 23) — 임계는 넘겼으나 여전히 개선 여지가 있다.
-  다음 표적은 `BoardService#replyPost`(5)·`#createPost`(4)·`#parseDateTime`(4 NC),
-  `BoardMasterRepositoryImpl#searchBoardMasters`(3).
-- PIT 대상 범위가 board/file 도메인에 한정돼 있다 — 핵심 서비스 전반으로 넓히려면 별도 계획이 필요하다.
+*(2026-07-26 후속 작업으로 아래 3건은 모두 해소했다 — §6.3 및 §5.4 참조)*
+
+- ~~`react-hooks` 오류 2건~~ → 해소. `pnpm lint` exit 0 달성 후 CI 게이트화 (§6.3).
+- ~~뮤테이션 잔여 미처치~~ → `createPost`/`replyPost`/`parseDateTime` 보강으로 board 범위 83.8% 달성.
+- ~~PIT 범위 한정~~ → 전수 실측 기반으로 13 패키지 편입(518 뮤턴트/83%) + file 도메인 복귀(53/81%) (§5.4).
+
+**현재 남은 백로그** (측정 점수순, 편입 시 전체 75% 유지 확인 후 추가):
+`faq 70` · `template 63` · `memoreport 61` · `addressbook 59` · `help 58` · `report 56`
+· `schedule 39` · `scrap 39` · `stats 29` · `user.listener 0`
+
+---
+
+## 5.4 PIT 대상 범위 확대 (데이터 기반)
+
+**문제**: 종전 대상은 board/file 4패턴뿐이었고, 그중 **file 2패턴은 business-app 에 존재하지 않아
+(FileService 는 business-core 소속) 실제로는 board 만 측정**되고 있었다. 이름은 "board/file" 인데
+업로드 경로는 한 번도 게이트에 든 적이 없었다.
+
+**방법**: `nuri.business.service.*` 전수를 report-only 로 실측(729 뮤턴트 / 73.1%)한 뒤
+패키지별 점수를 산출하고, 임계를 안정적으로 상회하는 패키지만 편입했다.
+
+| 범위 | 뮤턴트 | 점수 |
+|---|---|---|
+| 종전 (board 만 실측됨) | 278 | 83.8% |
+| 확대 후보 전체 (`service.*`) | 729 | 73.1% ← 전면 확대는 임계 미달 |
+| **채택 (13 패키지)** | **518** | **83%** |
+| business-core file 도메인 | 53 | 81% (보강 전 70%) |
+
+채택 범위는 board 외에 note(쪽지)·mail·sms·notification·informalsanction(결재)·comment·image·
+calendar·isg·log·operation 을 포함한다 — 보안·개인정보 민감 경로가 대부분 편입됐다.
+게이트 총 커버리지는 278 → 571 뮤턴트로 **2.05배**가 됐다.
 
 ---
 

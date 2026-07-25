@@ -319,16 +319,23 @@ jobs:
   # 리팩토링 대상 도메인으로 targetClasses 를 한정한 증분(Incremental) 분석.
   # STRICT_MUTATION: 'true' → build.gradle 의 mutationThreshold=75 하드 게이트 강제. (백엔드 헌법 제16조)
   #
-  # [실측 이력 2026-07-26] 69.8%(194/278) → 테스트 보강 → **80.2%(223/278)**.
-  # 임계 75%(=209 kill) 대비 14 뮤턴트 여유를 확보한 뒤 하드 게이트를 켰다.
-  # 보강 지점: BoardMaster 부분수정 null-병합 가드 전수 단언, BoardMasterOption @PrePersist 기본값,
-  #            BoardSearchCondition 기간 검증, BoardService.getBoardPosts 검색조건 전달 전수 검증.
-  # 스코어가 떨어져 이 잡이 빨간불이면, 임계를 낮추지 말고 죽지 않은 뮤턴트에 단언을 추가할 것.
+  # [실측 이력 2026-07-26]
+  #   board 범위    69.8%(194/278) → 보강 → 83%(430/518, 범위 확대 후)
+  #   file 범위     69.8%(37/53)   → 보강 → 81%(43/53)
+  # 스코어가 떨어져 이 잡이 빨간불이면, 임계를 낮추거나 대상을 줄이지 말고
+  # 죽지 않은 뮤턴트에 단언을 추가할 것.
   #
-  # [잡 구성 정정 2026-07-26] 종전에는 `:business-core:pitest :business-app:pitest` 를 함께 돌렸으나,
-  # PIT_TARGET_CLASSES(domain.board/domain.file/service.board/service.file)는 전부 business-app 소속이라
-  # business-core 에서는 "no mutations" 로 exit 1 이 나 스코어와 무관하게 잡이 항상 실패했다.
-  # 대상이 실재하는 business-app 으로 한정한다.
+  # [범위 확대 2026-07-26] 종전 대상은 board/file 4패턴뿐이었고, 그중 file 2패턴은
+  # business-app 에 존재하지 않아(FileService 는 business-core 소속) 실제로는 board 만 측정됐다.
+  # `nuri.business.service.*` 전수 실측(729 뮤턴트/73.1%)으로 패키지별 점수를 뽑은 뒤,
+  # 임계를 안정적으로 상회하는 패키지만 편입해 518 뮤턴트/83% 를 확보했다(종전 278 대비 1.86배).
+  #
+  # 미편입(=보강 백로그, 측정 점수순):
+  #   faq 70 · template 63 · memoreport 61 · addressbook 59 · help 58 · report 56
+  #   · schedule 39 · scrap 39 · stats 29 · user.listener 0
+  # 각 패키지의 테스트를 보강해 편입해도 전체 점수가 75% 아래로 내려가지 않으면 위 목록에 추가한다.
+  #
+  # business-core 는 file 도메인(업로드 경로)을 담당하므로 별도 스텝으로 함께 강제한다.
   mutation-test:
     needs: backend-build
     runs-on: ubuntu-latest
@@ -355,10 +362,17 @@ jobs:
           restore-keys: |
             pit-history-
 
-      - name: Incremental Mutation Test (refactored scope)
+      - name: Incremental Mutation Test (business-app scope)
         run: ./gradlew :business-app:pitest
         env:
-          PIT_TARGET_CLASSES: "nuri.business.domain.file.*,nuri.business.domain.board.*,nuri.business.service.file.*,nuri.business.service.board.*"
+          PIT_TARGET_CLASSES: "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.informalsanction.*,nuri.business.service.comment.*,nuri.business.service.image.*,nuri.business.service.calendar.*,nuri.business.service.isg.*,nuri.business.service.log.*,nuri.business.service.operation.*"
+          PIT_TARGET_TESTS: "nuri.business.*"
+          STRICT_MUTATION: "true"
+
+      - name: Incremental Mutation Test (business-core file scope)
+        run: ./gradlew :business-core:pitest
+        env:
+          PIT_TARGET_CLASSES: "nuri.business.domain.file.*,nuri.business.service.file.*"
           PIT_TARGET_TESTS: "nuri.business.*"
           STRICT_MUTATION: "true"
 

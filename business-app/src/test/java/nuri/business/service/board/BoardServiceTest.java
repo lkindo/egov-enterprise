@@ -283,6 +283,115 @@ class BoardServiceTest {
         assertThat(pstId).isNotBlank();
     }
 
+    /** BoardSaveRequest(bbsId, pstTtl, pstCn, pstBgngYmd, pstEndYmd, atchFileId, evntDt, qnaSttsCd, qnaCatCd, scrtYn, useYn, pswd) */
+    private BoardSaveRequest saveRequest(String evntDt, String qnaSttsCd, String useYn) {
+        return new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null,
+                evntDt, qnaSttsCd, null, null, useYn, null);
+    }
+
+    private Board captureSavedBoard() {
+        org.mockito.ArgumentCaptor<Board> captor = org.mockito.ArgumentCaptor.forClass(Board.class);
+        verify(boardRepository).save(captor.capture());
+        return captor.getValue();
+    }
+
+    private void givenCreatePostContext(long maxSortOrdr) {
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
+        given(userService.getUserById("user1")).willReturn(UserDto.builder().userId("user1").userNm("Tester").build());
+        given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(maxSortOrdr);
+        given(boardRepository.getNextPstId()).willReturn(1L);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    @Test
+    @DisplayName("게시글 생성 - 정렬순서는 현재 최대값 다음이고, 미전송 플래그는 기본값을 쓴다")
+    void createPost_appliesDefaultsAndNextSortOrder() {
+        givenCreatePostContext(7L);
+
+        boardService.createPost("user1", saveRequest(null, null, null));
+
+        Board saved = captureSavedBoard();
+        // 최대값을 그대로 쓰면(+1 누락) 기존 글과 정렬순서가 충돌해 목록 순서가 뒤섞인다.
+        assertThat(saved.getSortOrdr()).isEqualTo(8L);
+        assertThat(saved.getUseYn()).isEqualTo("Y");       // 미전송 시 노출이 기본
+        assertThat(saved.getQnaSttsCd()).isEqualTo("OPEN"); // 미전송 시 미해결이 기본
+    }
+
+    @Test
+    @DisplayName("게시글 생성 - 전송된 플래그는 기본값을 덮어쓴다")
+    void createPost_honorsExplicitFlags() {
+        givenCreatePostContext(0L);
+
+        boardService.createPost("user1", saveRequest(null, "SOLVED", "N"));
+
+        Board saved = captureSavedBoard();
+        assertThat(saved.getUseYn()).isEqualTo("N");
+        assertThat(saved.getQnaSttsCd()).isEqualTo("SOLVED");
+    }
+
+    @Test
+    @DisplayName("게시글 생성 - 행사일자(날짜만)는 그날 0시로 해석한다")
+    void createPost_parsesDateOnlyEventDate() {
+        givenCreatePostContext(0L);
+
+        boardService.createPost("user1", saveRequest("2026-03-01", null, null));
+
+        assertThat(captureSavedBoard().getEvntDt())
+                .isEqualTo(java.time.LocalDate.of(2026, 3, 1).atStartOfDay());
+    }
+
+    @Test
+    @DisplayName("게시글 생성 - 행사일자(시각 포함)는 시각까지 보존한다")
+    void createPost_parsesDateTimeEventDate() {
+        givenCreatePostContext(0L);
+
+        boardService.createPost("user1", saveRequest("2026-03-01T09:30:00", null, null));
+
+        assertThat(captureSavedBoard().getEvntDt())
+                .isEqualTo(java.time.LocalDateTime.of(2026, 3, 1, 9, 30, 0));
+    }
+
+    @Test
+    @DisplayName("게시글 생성 - 행사일자가 없거나 형식이 깨졌으면 null 로 두고 등록은 계속한다")
+    void createPost_tolerplatesMissingOrMalformedEventDate() {
+        givenCreatePostContext(0L);
+
+        boardService.createPost("user1", saveRequest(null, null, null));
+        assertThat(captureSavedBoard().getEvntDt()).isNull();
+
+        // 형식 오류로 등록 자체가 실패하면 사용자는 원인을 알 수 없는 500 을 만난다.
+        reset(boardRepository);
+        givenCreatePostContext(0L);
+        boardService.createPost("user1", saveRequest("2026/03/01 아무거나", null, null));
+        assertThat(captureSavedBoard().getEvntDt()).isNull();
+    }
+
+    @Test
+    @DisplayName("답글 생성 - 답변순번은 형제 최대값 다음이고, 부모/기본 플래그가 정확히 설정된다")
+    void replyPost_appliesDefaultsAndNextAnswerSeq() {
+        String parentId = "1";
+        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
+        given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
+        given(userService.getUserById("user1")).willReturn(UserDto.builder().userId("user1").userNm("Tester").build());
+        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(3L);
+        given(boardRepository.getNextPstId()).willReturn(9L);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+
+        boardService.replyPost("user1", parentId, saveRequest(null, null, null));
+
+        Board saved = captureSavedBoard();
+        // +1 이 빠지면 형제 답글과 순번이 겹쳐 스레드 정렬이 깨진다.
+        assertThat(saved.getAnsSn()).isEqualTo(4L);
+        assertThat(saved.getUpPstId()).isEqualTo(parentId);
+        assertThat(saved.getUseYn()).isEqualTo("Y");
+        assertThat(saved.getQnaSttsCd()).isEqualTo("OPEN");
+        // 답글도 원글과 동일하게 알림 이벤트를 발행해야 한다(커밋 후 발행).
+        verify(eventPublisher, times(1)).publishEvent(any(PostCreatedEvent.class));
+    }
+
     @Test
     @DisplayName("게시글 상세 조회")
     void getPostDetail() {

@@ -189,6 +189,73 @@ class FileServiceTest {
     }
 
     @Test
+    @DisplayName("파일 수정 - 하나라도 금지 확장자면 어떤 파일도 디스크에 쓰지 않는다 (고아 파일 방지)")
+    void updateFiles_rejectsAllWhenAnyExtensionForbidden() {
+        String atchFileId = "FILE_123";
+        FileMaster master = new FileMaster(atchFileId);
+        given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
+        given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.emptyList());
+
+        // 첫 파일은 정상, 두 번째가 실행파일. 선(先)검증 패스가 없으면 첫 파일이 이미 저장된 뒤
+        // 두 번째에서 터져 디스크에 고아 파일이 남는다.
+        List<MultipartFile> files = List.of(
+                new MockMultipartFile("files", "ok.jpg", "image/jpeg", "content".getBytes()),
+                new MockMultipartFile("files", "evil.exe", "application/octet-stream", "payload".getBytes()));
+
+        assertThatThrownBy(() -> fileService.updateFiles(atchFileId, files))
+                .isInstanceOf(BusinessException.class);
+
+        verify(storageService, never()).store(any(MultipartFile.class), anyString());
+        verify(fileDetailRepository, never()).save(any(FileDetail.class));
+    }
+
+    @Test
+    @DisplayName("파일 수정 - 첨부 순번은 기존 최대값 다음부터 연속 부여된다")
+    void updateFiles_continuesSequenceFromExistingMax() throws IOException {
+        String atchFileId = "FILE_123";
+        FileMaster master = new FileMaster(atchFileId);
+        given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
+        given(fileDetailRepository.findByFileMaster(master))
+                .willReturn(List.of(FileDetail.builder().atchFileSeq(3).build()));
+        given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored.jpg");
+
+        List<MultipartFile> files = List.of(
+                new MockMultipartFile("files", "a.jpg", "image/jpeg", "a".getBytes()),
+                new MockMultipartFile("files", "b.png", "image/png", "b".getBytes()));
+
+        fileService.updateFiles(atchFileId, files);
+
+        // 순번이 겹치면 동일 첨부그룹 안에서 파일이 서로를 가린다.
+        org.mockito.ArgumentCaptor<FileDetail> captor = org.mockito.ArgumentCaptor.forClass(FileDetail.class);
+        verify(fileDetailRepository, times(2)).save(captor.capture());
+        assertThat(captor.getAllValues()).extracting(FileDetail::getAtchFileSeq).containsExactly(4, 5);
+    }
+
+    @Test
+    @DisplayName("전체 파일 목록 - 검색어 유무에 따라 조회 경로가 갈리고 항상 페이지를 돌려준다")
+    void getAllFileList_switchesByKeyword() {
+        org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
+        FileDetail detail = FileDetail.builder()
+                .fileMaster(new FileMaster("FILE_123"))
+                .atchFileSeq(1)
+                .orgnlFileNm("보고서.pdf")
+                .build();
+
+        given(fileDetailRepository.findByOrgnlFileNmContaining("보고", pageable))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(List.of(detail)));
+        given(fileDetailRepository.findAll(pageable))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(List.of(detail)));
+
+        assertThat(fileService.getAllFileList(pageable, "보고")).isNotNull().hasSize(1);
+        assertThat(fileService.getAllFileList(pageable, null)).isNotNull().hasSize(1);
+        assertThat(fileService.getAllFileList(pageable, "")).isNotNull().hasSize(1);
+
+        // 빈 문자열은 '검색 없음' 으로 취급해야 한다 — 아니면 전체 목록이 빈 키워드로 걸러진다.
+        verify(fileDetailRepository, times(1)).findByOrgnlFileNmContaining(anyString(), any());
+        verify(fileDetailRepository, times(2)).findAll(any(org.springframework.data.domain.Pageable.class));
+    }
+
+    @Test
     @DisplayName("파일 목록 조회 - ID가 null인 경우 빈 목록 반환")
     void getFileList_NullId() {
         List<FileDto> result = fileService.getFileList(null);
