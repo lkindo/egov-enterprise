@@ -87,6 +87,13 @@ jobs:
       # 하네스 오프라인 린터(EntitySchemaConformanceLinterTest)와 상보 관계이며, 이쪽은 Docker 가 필요해
       # CI/localGate 계층에 둔다. runner 에는 Docker 가 항상 있으므로 조건부 스킵하지 않는다.
       # 순서: 빌드/테스트 뒤에 둔다 — Docker 환경 문제가 본 빌드 신호를 가리지 않도록.
+      # [이미지 선(先)내림] 러너에서 postgres:17 pull 이 Testcontainers 내부 대기 시간을 넘겨
+      #   ContainerFetchException ← ConditionTimeoutException 으로 죽었다(2026-07-26 실측).
+      #   pull 을 별 스텝으로 분리하면 ① Testcontainers 는 로컬 이미지를 그대로 쓰고
+      #   ② pull 자체가 실패할 때(레이트리밋 등) 원인이 그 스텝에서 명확히 드러난다.
+      - name: Pre-pull PostgreSQL image for Testcontainers
+        run: docker pull --quiet postgres:17 || (sleep 15 && docker pull --quiet postgres:17)
+
       - name: Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)
         id: schema-validation
         run: |
@@ -94,6 +101,7 @@ jobs:
           ./gradlew :api-server:schemaValidationTest 2>&1 | tee /tmp/schema-validation.log
 
       - name: Verify committed api-docs.json is fresh (contract drift gate)
+        id: api-docs-gate
         run: git diff --exit-code api-docs.json
 
       # [2026-07-26 삭제] "Export OpenAPI Spec" 스텝 제거.
@@ -146,8 +154,10 @@ jobs:
             MSG=$(tail -c 3000 "$2" | tr -d '\r' | sed ':a;N;$!ba;s/\n/%0A/g')
             echo "::error title=$1::$MSG"
           }
-          emit "Build and Test 실패 (마지막 출력)" /tmp/build-and-test.log
-          emit "Schema Validation 실패 (마지막 출력)" /tmp/schema-validation.log
+          # 어떤 스텝이 실제로 실패했는지 먼저 명시 — 로그 tail 만 보면 통과한 스텝을 오인한다
+          echo "::error title=실패 스텝 판정::build-and-test=${{ steps.build-and-test.outcome }} / schema-validation=${{ steps.schema-validation.outcome }} / api-docs-gate=${{ steps.api-docs-gate.outcome }}"
+          emit "Build and Test 마지막 출력" /tmp/build-and-test.log
+          emit "Schema Validation 마지막 출력" /tmp/schema-validation.log
           # 실패한 JUnit 테스트의 클래스·메시지를 최대 5건 노출
           grep -rl '<failure\|<error message' --include='*.xml' */build/test-results 2>/dev/null | head -5 | while read f; do
             CLS=$(basename "$f" .xml)
