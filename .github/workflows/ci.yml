@@ -274,9 +274,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # build 와 up 을 분리한다 — 실패가 이미지 빌드인지 컨테이너 기동인지 한 회차로 구분되고,
+      # 출력을 파일로 남겨 애노테이션에 실을 수 있다(로그 다운로드는 admin 권한 필요).
+      - name: Build API image
+        id: e2e-build
+        run: |
+          set -o pipefail
+          docker compose build api 2>&1 | tee /tmp/compose-build.log
+
       - name: Start Docker Infrastructure (DB & API)
         id: e2e-compose
-        run: docker compose up -d db api
+        run: |
+          set -o pipefail
+          docker compose up -d db api 2>&1 | tee /tmp/compose-up.log
 
       - name: Wait for API and Prometheus Metrics
         id: e2e-wait
@@ -367,7 +377,11 @@ jobs:
       - name: Surface failure detail (annotations)
         if: failure()
         run: |
-          echo "::error title=실패 스텝 판정::compose=${{ steps.e2e-compose.outcome }} / wait=${{ steps.e2e-wait.outcome }} / run=${{ steps.e2e-run.outcome }}"
+          echo "::error title=실패 스텝 판정::build=${{ steps.e2e-build.outcome }} / compose=${{ steps.e2e-compose.outcome }} / wait=${{ steps.e2e-wait.outcome }} / run=${{ steps.e2e-run.outcome }}"
+          for f in /tmp/compose-build.log /tmp/compose-up.log; do
+            [ -f "$f" ] || continue
+            echo "::error title=$(basename $f) 마지막 출력::$(tail -c 2000 "$f" | paste -sd' ' -)"
+          done
           echo "::error title=컨테이너 상태::$(docker compose ps -a 2>&1 | paste -sd' ' -)"
           echo "::error title=API 컨테이너 로그(마지막)::$(docker compose logs --tail=40 api 2>&1 | tail -c 2000 | paste -sd' ' -)"
 
