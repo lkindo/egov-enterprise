@@ -86,9 +86,72 @@ Testcontainers Docker 워크어라운드(`DOCKER_HOST`/API 버전 강제)도 **W
 
 ---
 
-## 3. 남은 것
+## 3. 히스토리 purge 실행 결과 (사용자 승인 — "키 파일만 제거")
 
-1. **키 교체**(위 §1) — 사용자 조치, 최우선.
-2. **첫 그린 CI 도달** — E2E 잡은 과금차단 기간 동안 한 번도 실행되지 않았다. 알려진 플레이키 tier 가
+`git filter-repo --invert-paths --path ssh-key-2026-01-18.key` 를 **원격 미러 클론**에서 수행했다
+(작업 저장소를 건드리지 않고, 실행 전 미러 전체를 `egov-backup.git` 으로 복사).
+
+| 검증 | 결과 |
+|---|---|
+| 키 파일 이력 | **0건** (전 ref) |
+| 커밋 `11366ca48` | 제거 확인 |
+| `main` 트리 해시 | `79603898…` — 재작성 전과 **동일**(파일 내용 무손실 증명) |
+| `commit-map` | 2669건 중 **드롭 1건** = `9217bc27c`(키 삭제만 하던 커밋 → 파일이 사라져 빈 커밋) |
+| 원격 재클론 재검증 | 키 이력 0건 · 키 커밋 부재 확인 |
+
+### 3.1 커밋 수 2543 → 1409 은 손실이 아니다
+`main` 고유 커밋은 **1410 → 1409**(위 드롭 1건)이다. 원래 2543 중 **1133건이 완전 중복**이었다 —
+2026-07-16 pull-sync 사고로 옛 계보가 한 번 더 머지돼 들어온 것([egov-pull-sync-incident] 참조).
+재작성으로 두 사본이 동일 SHA 로 수렴해 하나가 됐다(`commit-map`: `7fd15e69 → d4cddd27`,
+`d4cddd27 → d4cddd27`). 옛 계보 커밋(`5d3ac83d`)은 재작성본에서도 여전히 `main` 조상이다.
+→ 사고 부산물이 덤으로 정리됐다.
+
+### 3.2 함정
+- **룰셋 차단**: `main` 은 ruleset `12501346`(`non_fast_forward`)으로 force-push 거부됐다.
+  `template/reusable-base` 만 먼저 반영되고 main 은 대기 → 사용자가 일시 해제 후 반영.
+  **완료 후 즉시 재활성화 필요**.
+- **미러 시점 누락**: 미러를 뜬 뒤 작업 저장소에 새 커밋(CI 관측 커밋)이 쌓였는데, 미러를 force-push 하면
+  그 커밋이 밀려난다. 실제로 밀려나서 `git cherry-pick` 으로 재적용했다.
+  → 재작성 푸시 직전에 **미러와 원격의 tip 일치**를 확인할 것.
+- **키 교체는 대체 불가**: 퍼블릭 기간 노출·GitHub dangling 객체 캐시·포크 가능성이 남는다.
+
+---
+
+## 4. CI 첫 실제 실패의 원인 — 시간대 의존 테스트
+
+과금차단이 풀린 뒤 backend-build 가 **380초 실행 후 실패**(2초 즉시 실패와 구분됨)했다.
+잡 로그는 admin 권한이 필요해(403) 읽을 수 없었으므로, **error 애노테이션으로 원인을 밖으로
+꺼내는 스텝**을 심어 다음 실행에서 규명했다.
+
+```
+테스트 실패: LoginPolicyManageServiceTest
+AssertionFailedError: Unexpected exception thrown:
+  BusinessException: 제한된 접속 시간입니다.
+→ Execution failed for task ':business-core:test'
+```
+
+**근본 원인**: 서비스는 `LocalTime.now(ZoneId.of("Asia/Seoul"))` 로 접속 허용창을 판정하는데
+([LoginPolicyManageService.java:116](../../business-core/src/main/java/nuri/business/service/login/LoginPolicyManageService.java#L116)),
+테스트는 `LocalTime.now()` 로 **JVM 기본 시간대** 기준 창을 만들었다. KST 로컬에서는 두 값이 일치해
+통과하지만 **UTC 러너에서는 9시간 어긋나** 허용창을 벗어나 성공 경로가 예외를 던진다.
+
+**검증(양방향)**: 교정 전 `-Duser.timezone=UTC` → exit 1(CI 재현) / 교정 후 UTC → exit 0 /
+교정 후 KST → exit 0. 시간대를 고정하는 서비스는 전수 조사 결과 이 한 곳뿐이라, 테스트 3개소만
+서비스와 동일한 기준시로 통일했다(서비스의 KST 고정은 도메인상 정당).
+
+### 4.1 부수 조치
+- `load-test.yml` 은 `on:` 에서 push 를 제거한 뒤에도 **커밋 3회분 동안 계속 push 로 실행**됐다
+  (GitHub 트리거 설정 캐시. 원격 파일은 schedule 전용임을 확인). 정의 반영을 기다리지 않도록
+  **잡 레벨 `if` 가드**를 추가 — 실행돼도 skipped 로 끝난다.
+
+---
+
+## 5. 남은 것
+
+1. **키 교체**(§1) — 사용자 조치, 최우선. 히스토리 정리로 대체되지 않는다.
+2. **룰셋 재활성화** — force-push 차단 복원.
+3. **첫 그린 CI 도달** — E2E 잡은 과금차단 기간 동안 한 번도 실행되지 않았다. 알려진 플레이키 tier 가
    있어([e2e-test-guide.md](../../docs/03-guides/e2e-test-guide.md)) 몇 차례 반복 교정이 필요할 수 있다.
-3. **브랜치 보호 + CODEOWNERS 실효화** — 퍼블릭 저장소는 외부 PR 이 들어올 수 있어 우선순위가 올라갔다.
+4. **테스트 JVM 시간대 UTC 고정 검토** — 이 계열 결함이 로컬에서 즉시 드러나게 한다.
+   전 스위트 영향 확인 후 별건으로 판단.
+5. **브랜치 보호 + CODEOWNERS 실효화** — 퍼블릭 저장소는 외부 PR 이 들어올 수 있어 우선순위가 올라갔다.
