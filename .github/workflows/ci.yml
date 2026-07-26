@@ -65,20 +65,24 @@ jobs:
         if: steps.schema-changes.outputs.schema == 'true'
         run: ./gradlew :foundation:test --no-build-cache
 
+      - name: Build and Test with Gradle
+        id: build-and-test
+        run: |
+          set -o pipefail
+          ./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json 2>&1 | tee /tmp/build-and-test.log
+
       # [스키마 진짜 검증] 빈 PostgreSQL 17 에 Flyway 전량 적용 → Hibernate ddl-auto:validate.
       # 단위 테스트는 H2 + create-drop 이라 엔티티↔물리 스키마 불일치를 원리적으로 못 잡는다
       # (2026-07-26 사고: 36자 UUID ↔ varchar(7) 가 전부 그린이었다).
       # 하네스 오프라인 린터(EntitySchemaConformanceLinterTest)와 상보 관계이며, 이쪽은 Docker 가 필요해
       # CI/localGate 계층에 둔다. runner 에는 Docker 가 항상 있으므로 조건부 스킵하지 않는다.
+      # 순서: 빌드/테스트 뒤에 둔다 — Docker 환경 문제가 본 빌드 신호를 가리지 않도록.
       - name: Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)
-        run: ./gradlew :api-server:schemaValidationTest
+        id: schema-validation
+        run: |
+          set -o pipefail
+          ./gradlew :api-server:schemaValidationTest 2>&1 | tee /tmp/schema-validation.log
 
-      - name: Build and Test with Gradle
-        run: ./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json
-
-      # [계약 드리프트 게이트] 위 build 가 -Dopenapi.export.path 로 api-docs.json 을 재생성한다.
-      # 커밋된 api-docs.json 이 실제 DTO/컨트롤러와 어긋나면(=stale) 여기서 diff 로 빌드를 실패시킨다.
-      # (예: 신설 엔드포인트가 커밋된 스펙에 누락된 채 머지되는 상황 차단)
       - name: Verify committed api-docs.json is fresh (contract drift gate)
         run: git diff --exit-code api-docs.json
 
@@ -147,6 +151,29 @@ jobs:
         with:
           name: openapi-spec
           path: api-docs.json
+
+      # [실패 관측] 잡 로그 다운로드는 admin 권한을 요구해 외부에서 원인을 볼 수 없다(2026-07-26 실측: 403).
+      # 실패 시 마지막 출력과 JUnit 실패 메시지를 **error 애노테이션**으로 올려, 권한 없이도 원인이 보이게 한다.
+      - name: Surface failure detail (annotations)
+        if: failure()
+        run: |
+          emit() { # $1=title  $2=file
+            [ -f "$2" ] || return 0
+            MSG=$(tail -c 3000 "$2" | tr -d '\r' | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=$1::$MSG"
+          }
+          emit "Build and Test 실패 (마지막 출력)" /tmp/build-and-test.log
+          emit "Schema Validation 실패 (마지막 출력)" /tmp/schema-validation.log
+          # 실패한 JUnit 테스트의 클래스·메시지를 최대 5건 노출
+          grep -rl '<failure\|<error message' --include='*.xml' */build/test-results 2>/dev/null | head -5 | while read f; do
+            CLS=$(basename "$f" .xml)
+            DETAIL=$(grep -o 'message="[^"]\{0,300\}"' "$f" | head -2 | tr -d '\r' | sed ':a;N;$!ba;s/\n/%0A/g')
+            echo "::error title=테스트 실패: $CLS::$DETAIL"
+          done
+          # 계약 드리프트 게이트가 붉을 때 무엇이 달라졌는지도 노출
+          if ! git diff --quiet api-docs.json 2>/dev/null; then
+            echo "::error title=api-docs.json 드리프트::$(git diff --stat api-docs.json)"
+          fi
 
   frontend-build:
     needs: backend-build
