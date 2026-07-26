@@ -38,13 +38,20 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # [2026-07-26 정정] 종전 필터의 'foundation/src/main/java/**/entity/**' 는 실존하지 않는 경로였고
+      # (엔티티는 business-core/business-app 소속), 실제 마이그레이션도 api-server 아래에 있다.
+      # 즉 이름은 "Schema Integrity" 인데 스키마 변경을 감지하지 못하는 필터였다.
       - name: Detect Schema and JPA Entity Changes
         id: schema-changes
         uses: dorny/paths-filter@v3
         with:
           filters: |
             schema:
-              - 'foundation/src/main/java/**/entity/**'
+              - 'api-server/src/main/resources/db/migration/**'
+              - 'business-core/src/main/java/**/domain/**'
+              - 'business-app/src/main/java/**/domain/**'
+              - 'foundation/src/main/java/**/domain/**'
+              - 'api-server/src/test/resources/application-tc.yml'
               - 'foundation/src/test/resources/db/migration/**'
               - 'foundation/build.gradle'
               - 'foundation/src/test/resources/application-test.yml'
@@ -53,6 +60,14 @@ jobs:
       - name: Strict Schema Integrity Validation (No Cache Gateway)
         if: steps.schema-changes.outputs.schema == 'true'
         run: ./gradlew :foundation:test --no-build-cache
+
+      # [스키마 진짜 검증] 빈 PostgreSQL 17 에 Flyway 전량 적용 → Hibernate ddl-auto:validate.
+      # 단위 테스트는 H2 + create-drop 이라 엔티티↔물리 스키마 불일치를 원리적으로 못 잡는다
+      # (2026-07-26 사고: 36자 UUID ↔ varchar(7) 가 전부 그린이었다).
+      # 하네스 오프라인 린터(EntitySchemaConformanceLinterTest)와 상보 관계이며, 이쪽은 Docker 가 필요해
+      # CI/localGate 계층에 둔다. runner 에는 Docker 가 항상 있으므로 조건부 스킵하지 않는다.
+      - name: Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)
+        run: ./gradlew :api-server:schemaValidationTest
 
       - name: Build and Test with Gradle
         run: ./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json

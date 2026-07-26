@@ -23,4 +23,17 @@ if [ -f frontend/package.json ]; then
     || { echo "❌ codegen 드리프트 — api-docs.json 과 generated-api.d.ts/generated-zod.ts 불일치. 'pnpm -C frontend codegen:file && pnpm -C frontend codegen:zod' 로 재생성 후 커밋하세요 (계약 드리프트 방어)"; exit 1; }
 fi
 
-echo "[pre-push] ✅ 컴파일 + 계약 게이트 통과"
+# [하네스 게이트] 헌법/표준 린터를 실제로 실행한다.
+# 이 단계가 없던 동안 하네스 린터(PK 채번 표준·인가 애노테이션·동결 목록 무결성 등)는 CI(과금차단)에만
+# 걸려 있어 사실상 어디서도 실행되지 않았다 — 2026-07-26 감사에서 "게이트가 있는데 돌지 않는" 상태로 확인.
+# 린터를 새로 다는 것보다 '돌게 만드는 것'이 우선이라 pre-push 로 승격한다.
+# 우회: SKIP_HARNESS=1 git push  (Spring 컨텍스트 기동 포함이라 1~2분 소요)
+if [ -z "$SKIP_HARNESS" ]; then
+  echo "  → harness: ./gradlew :api-server:harnessTest (약 2분 — 실측 1m58s)"
+  ./gradlew :api-server:harnessTest -q \
+    || { echo "❌ 하네스 게이트 실패 — 헌법/표준 린터 위반. 리포트: api-server/build/reports/tests/test/index.html"; echo "   ⚠ 목록(동결·예외)을 고쳐 신호를 지우는 것은 수정이 아니라 은폐다 (GEMINI.md §0.7-H2)"; exit 1; }
+else
+  echo "  ⚠ harness 게이트 건너뜀(SKIP_HARNESS) — CI 또는 로컬에서 별도 실행 필요"
+fi
+
+echo "[pre-push] ✅ 컴파일 + 계약 + 하네스 게이트 통과"

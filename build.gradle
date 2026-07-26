@@ -268,3 +268,55 @@ tasks.register('jacocoRootCoverageVerification', JacocoCoverageVerification) {
         }
     }
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 게이트 실행 경로 (GEMINI.md §0.7-H5 — "게이트는 실행 경로가 있어야 게이트다")
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * 공유 git 훅 자동 설치. 훅은 `core.hooksPath` 로 활성화되는데 이 설정은 **클론별 로컬 값이라
+ * 커밋되지 않는다** — 즉 새 클론·새 operator 환경에서는 모든 게이트가 조용히 꺼진 상태로 시작한다.
+ * 빌드 시 미설정일 때만 설정하며, 이미 다른 값이면 존중한다.
+ * 비활성화: NO_HOOK_INSTALL=1 (또는 `git config core.hooksPath ''` 로 빈 값 지정)
+ */
+tasks.register('installGitHooks') {
+    description = '공유 git 훅(.githooks)을 core.hooksPath 에 연결 — 미설정 클론에서 게이트가 꺼지는 것을 방지'
+    group = 'Verification'
+    onlyIf { System.getenv('NO_HOOK_INSTALL') == null && file("${rootDir}/.git").exists() }
+    doLast {
+        // Gradle 9 에서 Project.exec 가 제거돼 ProcessBuilder 를 직접 쓴다.
+        def git = { List<String> args ->
+            def p = new ProcessBuilder(['git'] + args).directory(rootDir).redirectErrorStream(true).start()
+            def out = p.inputStream.text.trim()
+            [code: p.waitFor(), out: out]
+        }
+        def current = git(['config', '--get', 'core.hooksPath'])
+        if (current.code != 0 || current.out.isEmpty()) {
+            def set = git(['config', 'core.hooksPath', '.githooks'])
+            if (set.code == 0) {
+                logger.lifecycle('[installGitHooks] core.hooksPath=.githooks 설정 — pre-commit/pre-push 게이트 활성화')
+            } else {
+                logger.warn("[installGitHooks] 설정 실패: ${set.out}")
+            }
+        } else {
+            logger.info("[installGitHooks] core.hooksPath 가 이미 '${current.out}' 로 설정돼 있어 변경하지 않음")
+        }
+    }
+}
+
+/**
+ * 로컬 전체 게이트. CI 과금차단 상태에서 pre-push 는 컴파일·계약·하네스까지만 본다
+ * (business 모듈 테스트는 약 8분이라 push 마다 돌릴 수 없다 — 2026-07-26 실측).
+ * 병합·릴리스 전에 이 태스크로 한 번 전수 확인한다.
+ */
+tasks.register('localGate') {
+    description = '로컬 전체 게이트: 하네스 린터 + 실PG 스키마 검증(Docker) + 전 모듈 테스트 (약 10분)'
+    group = 'Verification'
+    dependsOn ':api-server:harnessTest', ':api-server:schemaValidationTest',
+            ':business-core:test', ':business-app:test', ':foundation:test'
+}
+
+// 모든 빌드에서 훅 설치 상태를 보정한다 — "새 클론에서 게이트가 조용히 꺼져 있는" 상태를 없앤다.
+subprojects {
+    tasks.matching { it.name == 'compileJava' }.configureEach { dependsOn ':installGitHooks' }
+}

@@ -49,6 +49,11 @@ dependencies {
     testImplementation testFixtures(project(':business-app'))
     testRuntimeOnly libs.h2
     // ArchUnit (architecture tests — active)
+    // [스키마 검증] 실 PostgreSQL(Testcontainers) + Flyway migrate + Hibernate validate 게이트용.
+    // 단위 테스트 프로파일은 H2 + create-drop 이라 물리 스키마 불일치를 원리적으로 못 잡는다(2026-07-26 사고).
+    testImplementation 'org.testcontainers:postgresql:1.20.4'
+    testImplementation 'org.testcontainers:jdbc:1.20.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
     testImplementation libs.archunit.junit5
     testImplementation libs.archunit
 }
@@ -67,4 +72,62 @@ test {
     // Gradle 증분 빌드가 SQL 단독 변경을 감지하도록 테스트 입력에 명시 등록한다.
     // (미등록 시 마이그레이션 파일만 바뀐 커밋에서 테스트가 UP-TO-DATE 스킵 → 린터 게이트 무력화)
     inputs.dir('src/main/resources/db/migration').withPropertyName('flywayMigrations')
+}
+
+/**
+ * 하네스 게이트 전용 실행 태스크 — pre-push 훅과 localGate 가 사용한다.
+ * 이름 있는 태스크로 둬야 게이트가 발견 가능하고(`./gradlew :api-server:harnessTest`),
+ * 훅이 문자열 필터를 직접 들고 있지 않아도 된다.
+ */
+tasks.register('harnessTest', Test) {
+    description = '헌법/표준 하네스 린터만 실행 (nuri.api.harness.*)'
+    group = 'Verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    filter { includeTestsMatching 'nuri.api.harness.*' }
+
+    // [필수] 이 린터들은 **타 모듈의 소스 텍스트와 마이그레이션 SQL 을 직접 읽어** 판정한다.
+    // 그 파일들은 이 태스크의 입력으로 선언돼 있지 않아, 감사 대상이 바뀌어도 Gradle 은
+    // UP-TO-DATE 로 판단해 태스크를 건너뛴다 — 게이트가 "돌았다고 표시되지만 실제로는 돌지 않는"
+    // false-green 이 된다(2026-07-26 자체 검증에서 실측: business-core 테스트 소스에 예외 목록을
+    // 주입했는데 harnessTest 가 UP-TO-DATE 로 통과). 2분짜리 게이트이므로 항상 실행한다.
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+}
+
+/**
+ * 실 PostgreSQL 스키마 검증 게이트 — Docker 필요라 pre-push 가 아닌 localGate/CI 계층.
+ * 기본 `test` 태스크에서는 태그로 제외해, Docker 없는 환경의 일반 테스트를 깨지 않는다.
+ */
+tasks.named('test') {
+    useJUnitPlatform { excludeTags 'schema-validation' }
+}
+
+tasks.register('schemaValidationTest', Test) {
+    description = '실 PostgreSQL(Testcontainers) + Flyway migrate + Hibernate ddl-auto:validate 스키마 검증'
+    group = 'Verification'
+    testClassesDirs = sourceSets.test.output.classesDirs
+    classpath = sourceSets.test.runtimeClasspath
+    useJUnitPlatform { includeTags 'schema-validation' }
+    outputs.upToDateWhen { false }
+    outputs.cacheIf { false }
+
+    // Windows/Docker Desktop 은 데몬이 `desktop-linux` 컨텍스트 파이프에 붙는데 Testcontainers 는
+    // 기본적으로 `//./pipe/docker_engine` 만 찾아 "Could not find a valid Docker environment" 로 죽는다.
+    // (2026-07-26 실측 — CLI 는 붙는데 Testcontainers 만 실패해 원인 파악에 시간이 든다.)
+    // 리눅스 CI 에서는 아무것도 설정하지 않아 유닉스 소켓 기본 탐색을 그대로 쓴다.
+    def dockerHost = System.getenv('DOCKER_HOST') ?: project.findProperty('dockerHost')
+    if (!dockerHost && System.getProperty('os.name').toLowerCase().contains('win')) {
+        dockerHost = 'npipe:////./pipe/dockerDesktopLinuxEngine'
+    }
+    if (dockerHost) {
+        environment 'DOCKER_HOST', dockerHost
+    }
+
+    // Docker Engine 29 는 MinAPIVersion=1.44 인데 Testcontainers 1.20.4(docker-java)가 협상하는
+    // 기본 API 는 그보다 낮아 데몬이 400 을 돌려준다 — "Could not find a valid Docker environment" 로만
+    // 보여서 원인이 드러나지 않는다(2026-07-26 실측: `docker version` 은 정상인데 컨테이너만 못 띄움).
+    // 더 낮은 엔진을 쓰는 환경에서는 DOCKER_API_VERSION 으로 덮어쓸 수 있다.
+    environment 'DOCKER_API_VERSION', System.getenv('DOCKER_API_VERSION') ?: '1.44'
+    systemProperty 'api.version', System.getenv('DOCKER_API_VERSION') ?: '1.44'
 }

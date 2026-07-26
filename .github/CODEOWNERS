@@ -1,0 +1,36 @@
+# CODEOWNERS — 게이트·규칙 자산의 리뷰 강제
+#
+# [왜] 저장소 안의 어떤 린터도 "저장소를 편집할 수 있는 주체"를 막지 못한다.
+#   HarnessBaselineIntegrityTest 는 동결 목록 변경을 **드러나게(tamper-evident)** 만들 뿐,
+#   막지는(tamper-proof) 못한다. 실제 차단은 원격 측 통제에서만 가능하다.
+#
+# [작동 조건 — 저장소 설정 필요]
+#   GitHub → Settings → Branches → Branch protection rule (main)
+#     ☑ Require a pull request before merging
+#     ☑ Require review from Code Owners
+#   위 설정 없이는 이 파일은 '알림' 이상의 효력이 없다. (2026-07-26 기준 미설정)
+#
+# 대상은 "신호를 지울 수 있는 자산" 으로 한정한다 — 일반 코드까지 걸면 리뷰가 형식화된다.
+
+# 게이트 하네스 + 동결 매니페스트 (은폐가 발생한 지점)
+/api-server/src/test/java/nuri/api/harness/       @lkindo
+/api-server/src/test/resources/harness/           @lkindo
+/business-app/src/test/java/nuri/business/architecture/   @lkindo
+/business-core/src/test/java/nuri/business/architecture/  @lkindo
+/foundation/src/test/java/nuri/foundation/ArchunitTest.java @lkindo
+
+# 게이트 실행 경로 (훅·CI·빌드 태스크) — 여기를 고치면 게이트 전체가 꺼진다
+/.githooks/            @lkindo
+/.github/workflows/    @lkindo
+/build.gradle          @lkindo
+/api-server/build.gradle @lkindo
+
+# 규칙 원본(SSOT)과 3대 헌법 — 에이전트 단독 수정 금지 자산
+/GEMINI.md             @lkindo
+/CLAUDE.md             @lkindo
+/AGENTS.md             @lkindo
+/docs/03-guides/orchestration-protocol.md   @lkindo
+/.agent/knowledge/**/artifacts/constitution.md @lkindo
+
+# DB 물리 스키마 — 되돌리기 어려운 변경
+/api-server/src/main/resources/db/migration/  @lkindo

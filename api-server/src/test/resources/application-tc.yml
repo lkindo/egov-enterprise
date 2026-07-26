@@ -1,0 +1,44 @@
+# 실 PostgreSQL 스키마 검증 프로파일 (Testcontainers)
+#
+# [왜] 단위 테스트 프로파일(application-test.yml)은 H2 + ddl-auto: create-drop 이다.
+#   Hibernate 가 엔티티 정의대로 스키마를 새로 만들기 때문에 운영 PostgreSQL 과의 불일치를
+#   **원리적으로 검출하지 못한다** — 2026-07-26 사고(36자 UUID ↔ varchar(7))가 전부 그린이었던 이유다.
+#   이 프로파일은 정반대로 간다: 빈 PostgreSQL 에 **Flyway 로 실제 마이그레이션을 적용**한 뒤
+#   **ddl-auto: validate** 로 엔티티 매핑이 그 스키마에 들어맞는지 Hibernate 에게 직접 확인시킨다.
+#
+# [사용] @ActiveProfiles({"test", "tc"}) — test 프로파일 위에 datasource/JPA/Flyway 만 덮어쓴다.
+#   Docker 필요. `./gradlew :api-server:schemaValidationTest` 또는 localGate/CI 에서 실행.
+
+spring:
+  datasource:
+    # Testcontainers JDBC 드라이버가 URL 만으로 컨테이너를 기동한다(운영과 동일 메이저 = PostgreSQL 17).
+    url: jdbc:tc:postgresql:17:///egovdb
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    username: egov
+    password: egov123
+    hikari:
+      maximum-pool-size: 4
+
+  jpa:
+    hibernate:
+      # [핵심] create-drop 이 아니라 validate — 스키마를 만들지 않고 '맞는지 확인'만 한다.
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: false
+    open-in-view: false
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: true
+
+logging:
+  level:
+    org.hibernate.SQL: WARN
+    org.hibernate.tool.schema: INFO
+    org.flywaydb: INFO
+    org.testcontainers: INFO
