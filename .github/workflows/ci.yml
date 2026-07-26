@@ -417,12 +417,21 @@ jobs:
           pattern: playwright-report-shard-*
           merge-multiple: true
 
+      # [연쇄 실패 제거] E2E 가 **리포트를 만들기 전에** 죽으면 다운로드할 아티팩트가 없어
+      #   `merge-reports` 가 "Directory does not exist" 로 실패한다. 그러면 상류 실패 1건이 red 2건으로
+      #   보여 신호가 오염된다(2026-07-26 실측). 병합할 것이 없으면 경고만 남기고 통과시킨다 —
+      #   E2E 자체의 실패는 e2e-tests 잡이 이미 red 로 보고하므로 은폐가 아니다.
       - name: Merge reports
         run: |
+          if [ ! -d ./playwright-reports ] || [ -z "$(ls -A ./playwright-reports 2>/dev/null)" ]; then
+            echo "::warning title=병합할 Playwright 리포트 없음::E2E 가 리포트 생성 전에 실패했습니다. 병합을 생략합니다(원인은 e2e-tests 잡 참조)."
+            exit 0
+          fi
           npx playwright merge-reports --reporter html ./playwright-reports
         working-directory: frontend
 
       - name: Upload merged report
+        if: hashFiles('frontend/playwright-report/**') != ''
         uses: actions/upload-artifact@v4
         with:
           name: playwright-report-merged

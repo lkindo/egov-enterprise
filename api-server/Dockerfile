@@ -19,6 +19,12 @@ COPY api-server/build.gradle /app/api-server/
 COPY migration-tool/build.gradle /app/migration-tool/
 COPY gradle/libs.versions.toml /app/gradle/
 
+# [방어] gradlew 의 실행 비트가 없으면 `/bin/sh: ./gradlew: Permission denied` 로 빌드가 죽는다.
+#   git 인덱스 모드를 100755 로 교정했지만(2026-07-26), Windows 체크아웃 등으로 모드가 유실되는
+#   경로가 있어 이미지 안에서 한 번 더 보장한다. Windows 로컬 Docker 빌드는 exec 비트가 없어
+#   임의로 755 를 부여하므로 **이 결함을 재현하지 못한다** — 로컬 성공이 CI 성공을 보장하지 않았다.
+RUN chmod +x ./gradlew
+
 # Build dependencies only
 RUN ./gradlew :api-server:classes --no-daemon || true
 
