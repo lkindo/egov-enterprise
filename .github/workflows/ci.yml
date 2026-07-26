@@ -267,7 +267,9 @@ jobs:
   e2e-tests:
     needs: [backend-build, frontend-build]
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # [2026-07-26 상향] 20분은 api 이미지 소스 빌드(docker-compose build) + Playwright 설치 + 샤드 실행을
+    # 담기에 부족하다. 샤드마다 동일 이미지를 재빌드하는 비효율은 별건(빌드 1회 후 공유)으로 분리.
+    timeout-minutes: 40
     strategy:
       fail-fast: false
       matrix:
@@ -282,7 +284,10 @@ jobs:
       - name: Wait for API and Prometheus Metrics
         run: |
           echo "Waiting for backend to be healthy..."
-          max_retries=20
+          # [2026-07-26 상향] 종전 20회×5초=100초. docker-compose 가 api 이미지를 소스에서 빌드한 뒤
+          # Spring 컨텍스트가 Flyway 마이그레이션까지 끝내야 health 가 200 이 된다(로컬 실측 50~130초).
+          # 100초는 러너에서 상시 부족해 "Timeout waiting for healthcheck" 로 E2E 전체가 죽는다.
+          max_retries=60
           count=0
           until $(curl --output /dev/null --silent --head --fail http://localhost:8080/actuator/health); do
             printf '.'
