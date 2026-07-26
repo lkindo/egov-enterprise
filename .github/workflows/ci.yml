@@ -259,7 +259,7 @@ jobs:
   e2e-tests:
     needs: [backend-build, frontend-build]
     runs-on: ubuntu-latest
-    # [2026-07-26 상향] 20분은 api 이미지 소스 빌드(docker-compose build) + Playwright 설치 + 샤드 실행을
+    # [2026-07-26 상향] 20분은 api 이미지 소스 빌드(docker compose build) + Playwright 설치 + 샤드 실행을
     # 담기에 부족하다. 샤드마다 동일 이미지를 재빌드하는 비효율은 별건(빌드 1회 후 공유)으로 분리.
     timeout-minutes: 40
     strategy:
@@ -271,12 +271,14 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Start Docker Infrastructure (DB & API)
-        run: docker-compose up -d db api
+        id: e2e-compose
+        run: docker compose up -d db api
 
       - name: Wait for API and Prometheus Metrics
+        id: e2e-wait
         run: |
           echo "Waiting for backend to be healthy..."
-          # [2026-07-26 상향] 종전 20회×5초=100초. docker-compose 가 api 이미지를 소스에서 빌드한 뒤
+          # [2026-07-26 상향] 종전 20회×5초=100초. docker compose 가 api 이미지를 소스에서 빌드한 뒤
           # Spring 컨텍스트가 Flyway 마이그레이션까지 끝내야 health 가 200 이 된다(로컬 실측 50~130초).
           # 100초는 러너에서 상시 부족해 "Timeout waiting for healthcheck" 로 E2E 전체가 죽는다.
           max_retries=60
@@ -334,6 +336,7 @@ jobs:
         continue-on-error: true
 
       - name: Run E2E Tests (Sharded)
+        id: e2e-run
         run: |
           # Start frontend in background
           pnpm run dev -- -p 3001 &
@@ -355,6 +358,15 @@ jobs:
           include-hidden-files: true
 
   # E2E 테스트 결과를 하나로 병합하는 잡 (선택 사항)
+      # [실패 관측] E2E 는 과금차단 기간 내내 미실행이라 실패 지점이 불투명하다. 어느 스텝이 죽었는지와
+      # 컨테이너 상태·API 로그를 애노테이션으로 노출한다(로그 다운로드는 admin 권한 필요).
+      - name: Surface failure detail (annotations)
+        if: failure()
+        run: |
+          echo "::error title=실패 스텝 판정::compose=${{ steps.e2e-compose.outcome }} / wait=${{ steps.e2e-wait.outcome }} / run=${{ steps.e2e-run.outcome }}"
+          echo "::error title=컨테이너 상태::$(docker compose ps -a 2>&1 | paste -sd' ' -)"
+          echo "::error title=API 컨테이너 로그(마지막)::$(docker compose logs --tail=40 api 2>&1 | tail -c 2000 | paste -sd' ' -)"
+
   e2e-merge-reports:
     needs: e2e-tests
     runs-on: ubuntu-latest

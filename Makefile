@@ -66,10 +66,10 @@ clean:
 
 # Docker commands
 docker-build:
-	docker-compose build
+	docker compose build
 
 docker-up:
-	docker-compose up -d
+	docker compose up -d
 
 docker-down:
-	docker-compose down
+	docker compose down
