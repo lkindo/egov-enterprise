@@ -122,7 +122,10 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 유효성 검증 - 시간 불일치 (이전)")
     void validateLoginPolicyTimeBeforeTest() {
-        LocalTime now = LocalTime.now();
+        // [시간대 고정] 서비스는 LocalTime.now(ZoneId.of("Asia/Seoul")) 로 판정한다.
+        // 테스트가 JVM 기본 시간대를 쓰면 UTC 러너(CI)에서 9시간 어긋나 허용창 밖이 된다
+        // — 2026-07-26 CI 실패의 원인. 서비스와 동일한 기준시로 창을 계산한다.
+        LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
         String start = now.plusHours(1).format(DateTimeFormatter.ofPattern("HH:mm"));
         String end = now.plusHours(2).format(DateTimeFormatter.ofPattern("HH:mm"));
 
@@ -142,7 +145,10 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 유효성 검증 - 성공")
     void validateLoginPolicySuccessTest() {
-        LocalTime now = LocalTime.now();
+        // [시간대 고정] 서비스는 LocalTime.now(ZoneId.of("Asia/Seoul")) 로 판정한다.
+        // 테스트가 JVM 기본 시간대를 쓰면 UTC 러너(CI)에서 9시간 어긋나 허용창 밖이 된다
+        // — 2026-07-26 CI 실패의 원인. 서비스와 동일한 기준시로 창을 계산한다.
+        LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
         LocalTime startTimeVal = now.getHour() == 0 ? LocalTime.MIN : now.minusHours(1);
         LocalTime endTimeVal = now.getHour() == 23 ? LocalTime.MAX : now.plusHours(1);
 
@@ -226,7 +232,10 @@ class LoginPolicyManageServiceTest {
     @Test
     @DisplayName("로그인 정책 유효성 검증 - 콜론 없는 4자리 시간 처리")
     void validateLoginPolicyTimeNoColonTest() {
-        LocalTime now = LocalTime.now();
+        // [시간대 고정] 서비스는 LocalTime.now(ZoneId.of("Asia/Seoul")) 로 판정한다.
+        // 테스트가 JVM 기본 시간대를 쓰면 UTC 러너(CI)에서 9시간 어긋나 허용창 밖이 된다
+        // — 2026-07-26 CI 실패의 원인. 서비스와 동일한 기준시로 창을 계산한다.
+        LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
         LocalTime startTimeVal = now.getHour() == 0 ? LocalTime.MIN : now.minusHours(1);
         LocalTime endTimeVal = now.getHour() == 23 ? LocalTime.MAX : now.plusHours(1);
 
