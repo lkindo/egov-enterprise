@@ -132,7 +132,15 @@ export default function RootLayout({
               disableTransitionOnChange
               enableColorScheme
             >
-              <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">보안 세션을 확인하는 중...</div>}>
+              {/* [a11y] 이 폴백은 최외곽이라 표시되는 동안 헤더/사이드바/main 이 전혀 렌더되지 않는다.
+                  종전 순수 div 였던 탓에 이 상태에서는 landmark-one-main·region·page-has-heading-one 이
+                  모두 위반이었다(2026-07-27 axe 감사에서 실제로 이 노드가 지목됨).
+                  로딩 상태도 랜드마크 안에 있어야 하고, 진행 상황은 스크린리더에 알려야 한다. */}
+              <Suspense fallback={
+                <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
+                  <p role="status" aria-live="polite">보안 세션을 확인하는 중...</p>
+                </main>
+              }>
                 <ProvidersWithAuth>
                   {children}
                 </ProvidersWithAuth>

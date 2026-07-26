@@ -42,9 +42,12 @@ export function HubHeader({
             시각 스케일은 hub-title-main 토큰을 그대로 유지해 변화가 없다.
             "전자정부" 접두 라벨과 "HUB" 접미 하드코딩 문구는 제거 — 제목은 title/highlight prop 만으로 구성한다.
           */}
-          <h2 className="hub-title-main flex items-center gap-3">
+          {/* [a11y] 페이지 제목이므로 h1 이다. 종전 h2 라 axe `page-has-heading-one`(문서에 레벨1 제목
+              없음)이 관리자 전 화면에서 위반이었다. HubHeader 는 페이지당 1회 쓰이는 헤더이며
+              시각 스케일은 hub-title-main 토큰이 담당하므로 태그 변경으로 디자인은 달라지지 않는다. */}
+          <h1 className="hub-title-main flex items-center gap-3">
              {title} {highlight && <span className="text-primary">{highlight}</span>}
-          </h2>
+          </h1>
           {subtitle && (
             <p className="hub-subtitle-label mt-2 tracking-tight">
                {subtitle}

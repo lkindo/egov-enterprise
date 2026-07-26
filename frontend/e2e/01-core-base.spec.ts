@@ -59,6 +59,10 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         });
 
         test('Accessibility Audit for Admin Dashboard', async ({ page }) => {
+            // [2026-07-27] 렌더 완료를 먼저 기다린다. 종전에는 최외곽 Suspense 폴백("보안 세션을 확인하는 중...")
+            // 상태에서 감사가 돌아 **스피너를 검사**했고, 그래서 landmark/heading 위반이 나왔다(감사 대상 오인).
+            // 페이지 제목(h1)이 뜨면 레이아웃·본문이 모두 렌더된 상태다.
+            await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible({ timeout: 30000 });
             const a11y = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze(); // color-contrast: CI 테마 가변성 방어
             expect(a11y.violations, JSON.stringify(a11y.violations.map((v) => v.id))).toEqual([]);
         });

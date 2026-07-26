@@ -194,7 +194,20 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
         )}
         <span className={cn("truncate", depth > 0 && "text-[13px]")}>{item.menuNm}</span>
       </div>
-      {hasChildren && (
+      {/* [a11y] isDummyLink 인 경우 바깥 래퍼가 이미 <button>(하위 메뉴 토글)이다. 그 안에 다시 토글
+          <button> 을 두면 **버튼 중첩**이 되어 axe `nested-interactive` 위반이자 유효하지 않은 HTML 이며,
+          React 도 개발 모드에서 "<button> cannot contain a nested <button>" 경고를 냈다(2026-07-27 확인).
+          게다가 두 버튼은 같은 동작(setIsOpen)이라 기능적으로도 중복이다.
+          → 래퍼가 버튼인 경우 셰브론은 **장식**으로만 렌더하고, 링크인 경우에만 독립 토글 버튼을 둔다
+            (링크는 이동, 버튼은 펼침으로 역할이 갈리므로 그때는 중첩이 아니다). */}
+      {hasChildren && isDummyLink && (
+        <span aria-hidden="true" className="p-1">
+          <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
+            <ChevronDown size={14} className="opacity-60" />
+          </motion.div>
+        </span>
+      )}
+      {hasChildren && !isDummyLink && (
         <button
           type="button"
           aria-label={`${item.menuNm} 서브메뉴 ${isOpen ? '접기' : '펼치기'}`}
