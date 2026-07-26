@@ -12,6 +12,13 @@ on:
 permissions:
   contents: read
 
+# [중복 실행 정리] 같은 ref 에 연속 푸시하면 이전 실행이 그대로 살아 있어 동일 파이프라인이 3개까지
+# 동시에 돌았다(2026-07-26 실측). 검증 대상은 항상 **최신 커밋**이므로 앞선 실행을 취소해 러너 시간과
+# 신호 혼선을 줄인다. 중간 커밋의 결과가 사라지지만, 그 커밋의 결함은 최신 실행에서 동일하게 드러난다.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   # 공통 환경 변수
   NODE_VERSION: "20"
