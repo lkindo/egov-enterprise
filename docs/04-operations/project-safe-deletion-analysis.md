@@ -28,8 +28,10 @@
 
 **`ssh-key-2026-01-18.key`** — RSA 개인키(`-----BEGIN RSA PRIVATE KEY-----`)가 리포지토리에 **커밋·푸시**되어 있었다. 이는 시크릿 유출이다.
 
-- **이번 조치(완료)**: git 추적 제거(`git rm --cached`) + `.gitignore`에 `*.key`/`*.pem` 추가.
-- **남은 필수 조치(승인 필요·파괴적)**: ① **키 로테이션**(이미 노출 — `docs/04-operations/crypto-key-rotation.md` 절차 연계), ② **git 히스토리 purge**(`git filter-repo`/BFG + force-push — 이미 origin에 존재), ③ 물리 파일 삭제(현재 로컬 permission-denied로 잔존, gitignore돼 재커밋은 방지됨).
+- **1차 조치(완료)**: git 추적 제거(`git rm --cached`) + `.gitignore`에 `*.key`/`*.pem` 추가.
+- **✅ 히스토리 purge 완료 (2026-07-26, 사용자 승인)**: `git filter-repo --invert-paths --path ssh-key-2026-01-18.key` 를 미러 클론에서 수행하고 `main`·`template/reusable-base` 를 force-push. **원격 재클론 검증**: 키 파일 이력 0건 · 커밋 `11366ca48` 부재 · `main` 트리 해시 재작성 전과 동일(내용 무손실). 상세·함정은 [20260726-public-repo-exposure-and-ci-restore.md](../../.gemini/tasks/20260726-public-repo-exposure-and-ci-restore.md).
+- **🔴 남은 필수 조치 — 키 로테이션(미완, 사용자만 가능)**: 히스토리 제거는 노출을 **되돌리지 못한다.** ① 저장소가 2026-07-26 **퍼블릭으로 전환**돼 그 사이 크롤링 가능성, ② GitHub 은 force-push 후에도 dangling 객체를 일정 기간 제공(Support 캐시 purge 요청 필요), ③ 포크·기존 클론 존재 가능성. 따라서 **해당 공개키를 `authorized_keys` 에서 제거한 서버 전수 확인 + 신규 키페어 발급 + 접속 로그 점검**이 반드시 선행돼야 한다(`docs/04-operations/crypto-key-rotation.md` 절차 연계). 파급 범위 실측: 저장소 내 사용처 **0건**(문서 언급뿐) → 외부 서버 접속용으로 추정.
+- **재발 방지**: `.githooks/pre-commit` 의 gitleaks 스캔은 **gitleaks 가 설치된 환경에서만** 동작한다(미설치 시 무해 통과). 퍼블릭 저장소이므로 GitHub **Secret scanning + Push protection**(무료) 활성화를 함께 권장.
 
 ---
 
