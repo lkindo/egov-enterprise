@@ -274,6 +274,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # [양쪽 대칭 시크릿] 프론트 미들웨어는 prod 에서 JWT_SECRET 미설정이면 모듈 로드 시 throw 한다
+      #   (공개된 dev 기본값으로 조용히 서명 검증하는 최악 상태 방지). 그리고 백엔드는 같은 시크릿의
+      #   raw bytes 로 서명하므로 **좌우가 같아야** 검증이 성립한다 — 어긋나면 로그인 후 곧바로 /login 으로
+      #   되돌아가는 무음 실패가 된다(middleware.ts 주석의 2026-07-19 사례).
+      #   개발 모드에서는 이 가드가 발동하지 않아 프로덕션 전환에서 처음 드러났다(2026-07-26 CI 실측).
+      #   회차마다 임시 시크릿을 만들어 compose(api 컨테이너)와 프론트 빌드/기동에 동일하게 공급한다.
+      #   (hex 88자 = dev 기본값과 동일 길이대 → HS512 로 추론된다)
+      - name: Generate ephemeral JWT secret (backend/frontend 대칭)
+        run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
+
       # build 와 up 을 분리한다 — 실패가 이미지 빌드인지 컨테이너 기동인지 한 회차로 구분되고,
       # 출력을 파일로 남겨 애노테이션에 실을 수 있다(로그 다운로드는 admin 권한 필요).
       - name: Build API image
