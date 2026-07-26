@@ -31,6 +31,11 @@ env:
 
 jobs:
   load-test:
+    # [이중 가드] 위 on: 에서 push/pull_request 를 제거했는데도 GitHub 이 트리거 설정을 캐시해
+    # 커밋 3회분 동안 계속 push 이벤트로 실행했다(2026-07-26 실측: event=push, path=load-test.yml).
+    # 워크플로우 정의 반영을 기다리지 않고 잡 레벨에서 확실히 차단한다 — 이렇게 하면 실행되더라도
+    # skipped 로 끝나 CI 신호를 오염시키지 않는다.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
