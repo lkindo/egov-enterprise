@@ -51,4 +51,26 @@ VALUES
   ('USRCNFRM_00000000002', 'ROLE_USER', 'USR', CURRENT_TIMESTAMP)
 ON CONFLICT (scrty_dcsn_trgt_id) DO NOTHING;
 
+-- =====================================================================
+-- [E2E 픽스처] 게시판 마스터 3종
+-- =====================================================================
+-- 왜 필요한가: E2E 스펙 5개(03·04·15·21·22)가 BBSMSTR_AAAAAAAAAAAA(10회)·DDDDDDDDDDDD·EEEEEEEEEEEE 를
+--   **하드코딩**한다. 그런데 시드에는 BBSMSTR_000000000120/160 만 있어, 공유 OCI DB 에 누적된 이 3종은
+--   신규 DB(CI 컨테이너)에 존재하지 않는다 — 2026-07-26 CI 의 cleanup 로그가 이미
+--   "Board BBSMSTR_AAAAAAAAAAAA cleanup skipped: 게시판을 찾을 수 없습니다" 로 증언했다.
+--   TEST1 계정과 동일한 "로컬은 축적된 상태 덕에 통과" 유형이다.
+-- 값 출처: 라이브 DB 실측을 그대로 미러링(bbs_ttl/type/atrb/tmplt 등).
+-- 안전성: tb_bbs_master 에 FK 없음(CHECK+PK 만) · ON CONFLICT (bbs_id) DO NOTHING 이므로
+--   R__ 재실행 시 라이브 행을 건드리지 않는다. (tmplt_id 일부는 라이브에서도 dangling — FK 없어 무해)
+-- ⚠ 한계: 게시글은 시드하지 않는다. 라이브 3종에 371행이 누적돼 있고 대부분 E2E 잔재라 미러링이
+--   무의미하다. 특정 pstId 를 하드코딩한 테스트(예: pstId=1108)는 **자체 생성으로 전환**해야 한다.
+INSERT INTO tb_bbs_master
+  (bbs_id, bbs_ttl, bbs_type_cd, bbs_atrb_cd, use_yn, ans_yn, file_atch_psblty_yn,
+   atch_psblty_file_qty, tmplt_id, stsfdg_yn, ans_psblty_yn, crt_dt, frst_rgtr_id)
+VALUES
+  ('BBSMSTR_AAAAAAAAAAAA', '공지사항',    'BBST01', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLAT_BOARD_DEFAULT', 'N', 'Y', CURRENT_TIMESTAMP, 'SYSTEM'),
+  ('BBSMSTR_DDDDDDDDDDDD', 'Q&A 게시판',  'BBST03', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLT_QNA',            'N', 'Y', CURRENT_TIMESTAMP, 'SYSTEM'),
+  ('BBSMSTR_EEEEEEEEEEEE', '일정 게시판', 'BBST04', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLT_CALENDAR',       'N', 'N', CURRENT_TIMESTAMP, 'SYSTEM')
+ON CONFLICT (bbs_id) DO NOTHING;
+
 SELECT 1; -- Placeholder to ensure valid trailing SQL
