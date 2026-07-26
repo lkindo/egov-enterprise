@@ -198,7 +198,13 @@ export async function middleware(request: NextRequest) {
   // 브라우저 클라이언트에서 withCredentials 로 동봉한 accessToken HttpOnly 쿠키를 읽어 백엔드 시큐리티가
   // 읽을 수 있도록 Authorization: Bearer <token> 헤더를 주입한다. (서명 재검증은 백엔드가 authoritative
   // 하게 수행하므로 여기서는 주입만 — 미들웨어 검증은 페이지 접근 게이트의 심층방어 계층이다. 헌법 제8조.)
-  if (pathname.startsWith('/api/v1') || pathname.startsWith('/actuator')) {
+  // [2026-07-26] `/ws` 추가 — SockJS/STOMP 프록시 경로다(next.config.ts 가 :8080/ws 로 rewrite,
+  //   백엔드 WebSocketConfig 가 `/ws` 엔드포인트를 withSockJS 로 노출). 종전에는 제외 목록에 없어
+  //   미들웨어가 `/ws/**` 를 페이지로 보고 `/login?redirect=%2Fws%2Fiframe.html` 로 리다이렉트했다.
+  //   그러면 SockJS 는 iframe 폴백에 HTML 로그인 페이지를 받고, CSP `frame-ancestors 'none'` 이
+  //   그 iframe 을 차단해 net::ERR_BLOCKED_BY_RESPONSE 가 난다(2026-07-26 CI 실측).
+  //   인증 집행은 /api/v1·/actuator 와 동일하게 **백엔드가 authoritative** 하므로 여기서는 토큰만 주입한다.
+  if (pathname.startsWith('/api/v1') || pathname.startsWith('/actuator') || pathname.startsWith('/ws')) {
     const accessToken = request.cookies.get('accessToken')?.value;
     if (accessToken) {
       const requestHeaders = new Headers(request.headers);
