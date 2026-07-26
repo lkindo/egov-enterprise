@@ -14,7 +14,11 @@ export default defineConfig({
     },
     fullyParallel: false, // Disable parallel execution for stability
     forbidOnly: !!process.env.CI,
-    retries: 0, // Disable retries to prevent port locks and resource exhaustion on failure
+    // 로컬은 0 유지(포트 점유·자원 고갈로 재시도가 오히려 해로웠던 이력). CI 는 2회 재시도한다 —
+    // 러너는 매 실행이 새 컨테이너라 포트 점유 문제가 없고, 재시도 없이는 플레이키 1건이 즉시
+    // 전체 red 가 되어 신호가 무의미해진다. 재시도로 통과한 테스트는 리포트에 flaky 로 남으므로
+    // 은폐가 아니라 **가시화**다(반복 flaky 는 별건으로 추적).
+    retries: process.env.CI ? 2 : 0,
     workers: 1, // Limit workers to 1 to prevent OOM and connection refused errors
     reporter: 'html',
     use: {

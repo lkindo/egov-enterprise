@@ -370,7 +370,12 @@ jobs:
           #   그 결과 wait-on 이 60초를 기다린 뒤 타임아웃했다(실제 원인은 기동 실패).
           #   출력을 파일로 남긴다 — 종전에는 dev 가 즉사해도 wait-on 이 60초 뒤 "Timed out" 만 남겨
           #   **진짜 원인이 가려졌다**. 대기 시간도 러너의 콜드 컴파일을 감안해 120초로 올린다.
-          pnpm run dev > /tmp/next-dev.log 2>&1 &
+          # [프로덕션 모드] 종전에는 `next dev` 로 띄웠다. 이 저장소에는 *next-dev 의 Server-Action
+          #   transport 플레이키(앱 버그 아님 · 프로덕션 빌드로만 해소)* 기록이 있어, E2E 를 개발 서버에
+          #   붙이는 한 article CRUD 계열이 간헐 실패한다. 위 'Restore Next.js build cache' 가 살아 있어
+          #   빌드 비용도 상당 부분 회수된다.
+          pnpm run build > /tmp/next-build.log 2>&1
+          pnpm run start:3001 > /tmp/next-start.log 2>&1 &
           npx wait-on http://127.0.0.1:3001/login --timeout 120000
           # Run tests with sharding for parallel execution
           npx playwright test --shard=${{ matrix.shard }}
@@ -398,7 +403,7 @@ jobs:
         if: failure()
         run: |
           echo "::error title=실패 스텝 판정::build=${{ steps.e2e-build.outcome }} / compose=${{ steps.e2e-compose.outcome }} / wait=${{ steps.e2e-wait.outcome }} / run=${{ steps.e2e-run.outcome }}"
-          for f in /tmp/compose-build.log /tmp/compose-up.log /tmp/next-dev.log; do
+          for f in /tmp/compose-build.log /tmp/compose-up.log /tmp/next-build.log /tmp/next-start.log; do
             [ -f "$f" ] || continue
             echo "::error title=$(basename $f) 마지막 출력::$(tail -c 2000 "$f" | paste -sd' ' -)"
           done
