@@ -24,4 +24,31 @@ VALUES
   ('SEED_SYSLOG_012','TEST1','127.0.0.1','likePost','BoardService','U','200','N',NULL,'11', CURRENT_TIMESTAMP - INTERVAL '3 day', to_char(CURRENT_DATE - 3,'YYYYMMDD'),'SYSTEM')
 ON CONFLICT (dmnd_id) DO NOTHING;
 
+-- =====================================================================
+-- [E2E 픽스처] 일반 사용자 계정 TEST1
+-- =====================================================================
+-- 왜 필요한가: E2E 의 auth.setup.ts 는 관리자(webmaster)와 **일반 사용자(TEST1)** 두 세션을 만든다.
+--   그런데 계정을 시드하는 곳은 R__seed_framework.sql 이고 거기에는 webmaster 만 있다.
+--   공유 OCI DB 에는 TEST1 이 누적돼 있어 로컬 E2E 는 통과했지만, **신규 DB(CI 컨테이너)에서는
+--   존재하지 않아** 로그인이 401 로 실패했다(2026-07-26 CI 실측: "Backend unreachable for TEST1 (401)").
+--   즉 "로컬은 축적된 상태 덕에 통과" 유형의 결함이므로, 빈 DB 에서도 성립하도록 시드에 명시한다.
+-- 라이브 정합: 라이브 DB 실측 결과 USRCNFRM_00000000002 = TEST1 / ROLE_USER 로 동일하다.
+--   ON CONFLICT DO NOTHING 이므로 R__ 재실행 시에도 기존 행을 건드리지 않는다(user_id UNIQUE 충돌 없음).
+-- ⚠ 알려진 갭: flyway locations 가 classpath:db/migration 단일이라 이 demo 시드는 **모든 환경**에
+--   적용된다(운영 포함). 기본 자격증명(webmaster/1) 도 이미 같은 조건이다. 프로파일별 시드 위치 분리는
+--   별건 결정 과제로 남긴다 — docs/04-operations/pending-decisions.md 참조.
+INSERT INTO tb_user_info
+  (esntl_id, user_id, user_nm, user_type_cd, pswd, user_stts_cd, sbscrb_ymd)
+VALUES
+  ('USRCNFRM_00000000002', 'TEST1', 'E2E 일반사용자', 'EMP',
+   '{bcrypt}$2a$10$C3g3CUhTf4f0xG1jJ1LYh.zoesF5XjPevWU2Yg8i24.eoiD4uhYxu', 'P',
+   to_char(CURRENT_DATE, 'YYYYMMDD'))
+ON CONFLICT (esntl_id) DO NOTHING;
+
+INSERT INTO tb_user_authrt_map
+  (scrty_dcsn_trgt_id, authrt_id, mbr_type_cd, crt_dt)
+VALUES
+  ('USRCNFRM_00000000002', 'ROLE_USER', 'USR', CURRENT_TIMESTAMP)
+ON CONFLICT (scrty_dcsn_trgt_id) DO NOTHING;
+
 SELECT 1; -- Placeholder to ensure valid trailing SQL
