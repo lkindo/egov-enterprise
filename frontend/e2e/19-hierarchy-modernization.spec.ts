@@ -187,10 +187,16 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
 
             // 방금 만든 두 부서만 남기도록 검색으로 트리를 좁힌다(기본 조회는 10건 페이지라
             // 새 부서가 첫 페이지에 없을 수 있다).
-            await page.locator('input[placeholder="검색어를 입력하세요..."]').fill(prefix);
+            // [2026-07-27 정정] 종전 셀렉터는 일반적인 placeholder 의 **전역 유일성**에 의존해, 전체 스위트
+            // 실행 시 다른 화면/모달의 잔여 입력과 함께 3개가 매칭되어 strict mode violation 으로 실패했다.
+            // 격리 재현 2회에서 이 화면의 부서 검색 입력은 **1개**임을 확인했으므로(앱 중복 아님),
+            // 의미가 명확한 aria-label 로 좁히고 first() 로 고정한다.
+            await page.getByRole('textbox', { name: '부서 검색' }).first().fill(prefix);
 
-            const nodeA = page.locator('button', { hasText: idA });
-            const nodeB = page.locator('button', { hasText: idB });
+            // [2026-07-27 정정] 부서 노드 버튼이 DOM 에 2개 매칭돼 strict mode violation 이 났다
+            // (D&D 정렬 노드가 트리/목록 양쪽에 렌더). 드래그 대상은 트리의 첫 노드이므로 first() 로 고정한다.
+            const nodeA = page.locator('button', { hasText: idA }).first();
+            const nodeB = page.locator('button', { hasText: idB }).first();
             await expect(nodeA).toBeVisible({ timeout: 20000 });
             await expect(nodeB).toBeVisible({ timeout: 20000 });
 
