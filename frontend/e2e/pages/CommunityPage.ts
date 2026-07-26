@@ -6,7 +6,9 @@ export class CommunityPage {
     async goto() {
         console.log('>>> [Community] Navigating to Community Matrix');
         await this.page.goto('/admin/community');
-        await expect(this.page.getByRole('heading', { name: /엔터프라이즈 지식 매트릭스/i })).toBeVisible({ timeout: 15000 });
+        // [2026-07-27 정정] 제목에서 '엔터프라이즈' 접두어가 제거됐다(브랜딩 정리 잔재). 실제 렌더는
+        // KnowledgeHubClient 의 '지식 매트릭스' 이며, /admin/community 는 이 클라이언트를 그대로 렌더한다.
+        await expect(this.page.getByRole('heading', { name: /지식 매트릭스/i })).toBeVisible({ timeout: 15000 });
     }
 
     async selectCategory(category: 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY') {

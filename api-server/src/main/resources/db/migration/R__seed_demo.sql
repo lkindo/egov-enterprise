@@ -70,7 +70,12 @@ INSERT INTO tb_bbs_master
 VALUES
   ('BBSMSTR_AAAAAAAAAAAA', '공지사항',    'BBST01', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLAT_BOARD_DEFAULT', 'N', 'Y', CURRENT_TIMESTAMP, 'SYSTEM'),
   ('BBSMSTR_DDDDDDDDDDDD', 'Q&A 게시판',  'BBST03', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLT_QNA',            'N', 'Y', CURRENT_TIMESTAMP, 'SYSTEM'),
-  ('BBSMSTR_EEEEEEEEEEEE', '일정 게시판', 'BBST04', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLT_CALENDAR',       'N', 'N', CURRENT_TIMESTAMP, 'SYSTEM')
+  ('BBSMSTR_EEEEEEEEEEEE', '일정 게시판', 'BBST04', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLT_CALENDAR',       'N', 'N', CURRENT_TIMESTAMP, 'SYSTEM'),
+  -- [2026-07-27 추가] BBSMSTR_CCCCCCCCCCCC 는 **앱이 하드코딩**한다(KnowledgeHubClient 의 COMMUNITY 카테고리,
+  --   커뮤니티 게시판 선택지 등 6개소). 신규 DB 에 없으면 /admin/community 진입만으로 404 가 6건 난다.
+  --   라이브 실측값 미러링. ※ 앱이 참조하는 BBSMSTR_BBBBBBBBBBBB·NNNNNNNNNNNN·000000000001 은
+  --   라이브에도 존재하지 않는다 — 선택지에 죽은 게시판이 노출되는 별도 결함으로 기록.
+  ('BBSMSTR_CCCCCCCCCCCC', '업무게시판',  'BBST01', 'BBSA01', 'Y', 'N', 'Y', 3, 'TMPLAT_BOARD_DEFAULT', 'N', 'Y', CURRENT_TIMESTAMP, 'SYSTEM')
 ON CONFLICT (bbs_id) DO NOTHING;
 
 SELECT 1; -- Placeholder to ensure valid trailing SQL

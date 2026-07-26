@@ -47,15 +47,17 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
             await expect(page.locator('text=ID 레지스트리').first()).toBeVisible();
             await expect(page.locator('text=보안 거버넌스').first()).toBeVisible();
 
-            console.log('>>> Step 2: Verifying Real-time Charts');
-            // Recharts generates SVG elements with .recharts-surface
-            const charts = page.locator('.recharts-surface');
-            await expect(charts.first()).toBeVisible({ timeout: 15000 });
-            
-            console.log('>>> Step 3: Verifying Task & Activity Lists');
-            // Update to match current Dashboard UI
+            console.log('>>> Step 2: Verifying Audit Intelligence Widget');
+            // [2026-07-27 정정] 종전에는 `.recharts-surface` 를 기다렸으나 **대시보드에는 recharts 가 없다**.
+            // 저장소 전수 확인 결과 recharts 사용처는 admin/stats/IntelligenceHubClient 하나뿐이며,
+            // 차트 렌더 검증은 그 페이지의 스펙이 담당한다. 대시보드가 실제로 렌더하는 것은
+            // 감사 인텔리전스 타임라인 위젯이므로 그것을 단언한다.
+            await expect(page.getByRole('heading', { name: '최근 보안 감사 이력' })).toBeVisible({ timeout: 15000 });
+
+            console.log('>>> Step 3: Verifying Stat Card Set');
+            // [2026-07-27 정정] '활동 인텔리전스' 는 **코드베이스 어디에도 없는 문구**였다(UI 개편 잔재).
+            // 실재하는 통계 카드 제목으로 교체한다.
             await expect(page.locator('text=보안 감사 이력').first()).toBeVisible();
-            await expect(page.locator('text=활동 인텔리전스').first()).toBeVisible();
         });
 
         test('Accessibility Audit for Admin Dashboard', async ({ page }) => {
