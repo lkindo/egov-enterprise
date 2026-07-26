@@ -196,12 +196,14 @@ jobs:
       # 유발하므로 제거했다.
 
       - name: Install dependencies
+        id: fe-install
         run: pnpm install --frozen-lockfile
         working-directory: frontend
 
       # [계약 드리프트 게이트] 커밋된 api-docs.json(백엔드 job 이 신선함을 이미 검증) 으로부터
       # 타입/Zod 를 재생성해 커밋본과 diff. 스펙은 바뀌었는데 codegen 을 안 돌린 드리프트를 차단한다.
       - name: Verify generated API types are in sync with spec (contract drift gate)
+        id: fe-codegen
         run: |
           pnpm run codegen:verify
           pnpm run codegen:verify:zod
@@ -211,11 +213,13 @@ jobs:
       # 2026-07-26 기준 error 0 건 달성(warning 515 건은 점진 정리 백로그라 실패시키지 않는다).
       # error 가 1 건이라도 유입되면 실패한다 — 임계를 낮추지 말고 위반을 고칠 것.
       - name: Lint (ESLint)
+        id: fe-lint
         run: pnpm run lint
         working-directory: frontend
 
       # [게이트] critical 취약점은 차단한다 — 결정론적이고 오탐이 드물다.
       - name: Security Audit (critical — blocking)
+        id: fe-audit
         run: pnpm audit --audit-level critical
         working-directory: frontend
 
@@ -227,9 +231,11 @@ jobs:
         continue-on-error: true
 
       - name: Build and Test
+        id: fe-build
         run: |
-          pnpm run build
-          pnpm run test
+          set -o pipefail
+          pnpm run build 2>&1 | tee /tmp/fe-build.log
+          pnpm run test 2>&1 | tee /tmp/fe-test.log
         working-directory: frontend
 
       - name: Upload Next.js build cache
@@ -238,6 +244,17 @@ jobs:
           name: next-build-cache
           path: frontend/.next/cache
           retention-days: 7
+
+      # [실패 관측] 백엔드 잡과 동일 이유 — 로그는 admin 권한이 필요하므로 어느 스텝이 왜 죽었는지를
+      # 애노테이션으로 노출한다(2026-07-26: frontend-build 가 14초에 죽었는데 원인을 볼 수 없었다).
+      - name: Surface failure detail (annotations)
+        if: failure()
+        run: |
+          echo "::error title=실패 스텝 판정::install=${{ steps.fe-install.outcome }} / codegen=${{ steps.fe-codegen.outcome }} / lint=${{ steps.fe-lint.outcome }} / audit=${{ steps.fe-audit.outcome }} / build=${{ steps.fe-build.outcome }}"
+          for f in /tmp/fe-build.log /tmp/fe-test.log; do
+            [ -f "$f" ] || continue
+            echo "::error title=$(basename $f) 마지막 출력::$(tail -c 2000 "$f" | paste -sd' ' -)"
+          done
 
   e2e-tests:
     needs: [backend-build, frontend-build]
