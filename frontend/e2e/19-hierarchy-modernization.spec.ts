@@ -98,7 +98,7 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         console.log('>>> Common Code Explorer UI: PASS');
     });
 
-    test('Department Topology Tree (Hub)', async ({ page }) => {
+    test('Department Topology Tree (Hub)', async ({ page, request }) => {
         console.log('\n>>> Testing Department Topology Tree in Hub');
         await page.goto('/admin/user/manage');
         
@@ -111,8 +111,23 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         await expect(page.locator('text=조직 구조').first()).toBeVisible({ timeout: 20000 });
         
         // Check for topology nodes (e.g., ORGNZT_0000000000001)
-        const deptNodes = page.getByText(/ORGNZT_\d+/);
-        await expect(deptNodes.first()).toBeVisible({ timeout: 15000 });
+        // [2026-07-27 정정] 종전에는 기존 부서(ORGNZT_*)가 화면에 있다고 **가정**했다. 그러나 신규 DB
+        // (CI 컨테이너)에는 부서가 0건이라(tb_ognz_info count=0 실측) 트리에 표시할 노드가 없어 실패했다.
+        // 공유 DB 의 누적 데이터에 의존하던 형태다. 같은 스펙의 D&D 테스트가 이미 쓰는 방식대로
+        // **자체 생성**으로 전환한다 — 시드로 채우면 누적 쓰레기가 다시 쌓인다.
+        const auth = { Authorization: `Bearer ${getAdminBearerToken()}` };
+        const deptName = `E2E19T${Date.now().toString().slice(-8)}`;
+        const created = await request.post('/api/v1/admin/system/departments', {
+            headers: auth,
+            data: { ognzNm: deptName },
+        });
+        expect(created.ok(), '토폴로지 검증용 부서 생성이 성공해야 한다').toBeTruthy();
+        await page.reload();
+        await page.locator('button:has-text("부서 관리")').first().click();
+        // [2026-07-27 정정] 종전 단언은 /ORGNZT_\d+/ 였다. 그러나 채번 통일 이후 부서 ID 는
+        // ORGNZT_EAF12DAFF8A14 처럼 **16진수**라 `\d+` 에 매칭되지 않는다(실측). 게다가 트리는 ID 가 아니라
+        // 부서명을 렌더하고 ID 는 상세 패널의 '부서 코드' 에만 나온다. 방금 만든 부서명으로 단언한다.
+        await expect(page.getByText(deptName, { exact: false }).first()).toBeVisible({ timeout: 20000 });
         
         console.log('>>> Department Topology Tree UI: PASS');
     });
@@ -195,6 +210,11 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
 
             // [2026-07-27 정정] 부서 노드 버튼이 DOM 에 2개 매칭돼 strict mode violation 이 났다
             // (D&D 정렬 노드가 트리/목록 양쪽에 렌더). 드래그 대상은 트리의 첫 노드이므로 first() 로 고정한다.
+            // 검색은 디바운스로 트리를 다시 렌더한다. 노드를 잡은 직후 재렌더가 오면
+            // scrollIntoViewIfNeeded 단계에서 "Element is not attached to the DOM" 으로 깨진다(실측).
+            // 재렌더가 끝난 뒤 노드를 잡도록 목록이 안정화될 때까지 기다린다.
+            await page.waitForLoadState('networkidle').catch(() => undefined);
+            await page.waitForTimeout(1200);
             const nodeA = page.locator('button', { hasText: idA }).first();
             const nodeB = page.locator('button', { hasText: idB }).first();
             await expect(nodeA).toBeVisible({ timeout: 20000 });
