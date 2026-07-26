@@ -116,8 +116,12 @@ tasks.register('schemaValidationTest', Test) {
     // 기본적으로 `//./pipe/docker_engine` 만 찾아 "Could not find a valid Docker environment" 로 죽는다.
     // (2026-07-26 실측 — CLI 는 붙는데 Testcontainers 만 실패해 원인 파악에 시간이 든다.)
     // 리눅스 CI 에서는 아무것도 설정하지 않아 유닉스 소켓 기본 탐색을 그대로 쓴다.
+    // 워크어라운드는 **Windows/Docker Desktop 에서만** 적용한다. 리눅스 CI 러너는 유닉스 소켓 기본
+    // 탐색과 기본 API 협상이 정상 동작하므로, 여기서 값을 강제하면 오히려 러너의 엔진 버전에 따라
+    // 깨질 수 있다(불필요한 결합). 필요한 환경은 DOCKER_HOST / DOCKER_API_VERSION 으로 덮어쓴다.
+    def isWindows = System.getProperty('os.name').toLowerCase().contains('win')
     def dockerHost = System.getenv('DOCKER_HOST') ?: project.findProperty('dockerHost')
-    if (!dockerHost && System.getProperty('os.name').toLowerCase().contains('win')) {
+    if (!dockerHost && isWindows) {
         dockerHost = 'npipe:////./pipe/dockerDesktopLinuxEngine'
     }
     if (dockerHost) {
@@ -127,7 +131,9 @@ tasks.register('schemaValidationTest', Test) {
     // Docker Engine 29 는 MinAPIVersion=1.44 인데 Testcontainers 1.20.4(docker-java)가 협상하는
     // 기본 API 는 그보다 낮아 데몬이 400 을 돌려준다 — "Could not find a valid Docker environment" 로만
     // 보여서 원인이 드러나지 않는다(2026-07-26 실측: `docker version` 은 정상인데 컨테이너만 못 띄움).
-    // 더 낮은 엔진을 쓰는 환경에서는 DOCKER_API_VERSION 으로 덮어쓸 수 있다.
-    environment 'DOCKER_API_VERSION', System.getenv('DOCKER_API_VERSION') ?: '1.44'
-    systemProperty 'api.version', System.getenv('DOCKER_API_VERSION') ?: '1.44'
+    def apiVersion = System.getenv('DOCKER_API_VERSION') ?: (isWindows ? '1.44' : null)
+    if (apiVersion) {
+        environment 'DOCKER_API_VERSION', apiVersion
+        systemProperty 'api.version', apiVersion
+    }
 }

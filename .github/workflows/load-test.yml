@@ -1,10 +1,12 @@
 name: Performance Load Test
 
+# [2026-07-26 트리거 축소] 종전에는 main/develop 의 **모든 push 와 PR** 마다 부하 테스트가 돌았다.
+#   ① 부하 테스트는 코드 정합성 게이트가 아니라 성능 관측이라 커밋 단위로 돌릴 필요가 없고
+#   ② 대상 BASE_URL 이 없는 환경에서는 매 푸시마다 실패해 CI 신호를 오염시켰다(전량 red).
+#   주간 스케줄 + 수동 실행으로 전환한다.
 on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
+  schedule:
+    - cron: "0 17 * * 0" # 매주 일요일 02:00 KST
   workflow_dispatch:
     inputs:
       load_level:

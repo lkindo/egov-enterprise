@@ -211,9 +211,13 @@ tasks.register('jacocoRootReport', JacocoReport) {
     description = 'Generates an aggregate report from all subprojects using explicit paths'
     group = 'Verification'
 
-    // 모든 하위 프로젝트 및 루트 프로젝트의 테스트 태스크에 의존
-    dependsOn subprojects.collect { it.tasks.withType(Test) } + tasks.named('test')
-    mustRunAfter subprojects.collect { it.tasks.withType(Test) } + tasks.named('test')
+    // 모든 하위 프로젝트 및 루트 프로젝트의 테스트 태스크에 의존.
+    // 단 schemaValidationTest 는 **Docker 필수**라 제외한다 — 포함하면 커버리지 집계(`make coverage`)가
+    // Docker 없는 환경에서 실패하고, 커버리지에 기여하지도 않는다(컨텍스트 부팅 검증 성격).
+    // 2026-07-26: 커스텀 Test 태스크를 추가하자 이 collect 가 자동으로 끌어가 발생한 회귀를 교정.
+    def coverageTests = { p -> p.tasks.withType(Test).matching { it.name != 'schemaValidationTest' } }
+    dependsOn subprojects.collect(coverageTests) + tasks.named('test')
+    mustRunAfter subprojects.collect(coverageTests) + tasks.named('test')
  
     // 소스 디렉토리 통합 (물리적 경로로 명시)
     sourceDirectories.setFrom(subprojects.collect { 

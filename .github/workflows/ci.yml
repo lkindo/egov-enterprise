@@ -5,6 +5,9 @@ on:
     branches: [main, master, "feature/**"]
   pull_request:
     branches: [main, master]
+  # 수동 실행 — 더미 커밋 없이 파이프라인을 재확인할 수 있어야 한다.
+  # (2026-07-26: 과금차단 해제 후 상태 확인을 위해 빈 커밋을 밀어야 했던 문제)
+  workflow_dispatch:
 
 permissions:
   contents: read
@@ -18,6 +21,7 @@ env:
 jobs:
   backend-build:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
 
@@ -78,9 +82,12 @@ jobs:
       - name: Verify committed api-docs.json is fresh (contract drift gate)
         run: git diff --exit-code api-docs.json
 
-      - name: Export OpenAPI Spec
-        run: ./gradlew :api-server:bootRun & sleep 30 && curl -s http://localhost:8080/v3/api-docs > openapi-generated.json || true
-        continue-on-error: true
+      # [2026-07-26 삭제] "Export OpenAPI Spec" 스텝 제거.
+      #   ./gradlew :api-server:bootRun & sleep 30 && curl ... || true  형태로,
+      #   ① 위 build 의 -Dopenapi.export.path 오프라인 내보내기와 완전히 중복이고
+      #   ② `|| true` + continue-on-error 라 어떤 실패도 보고하지 않았으며
+      #   ③ 산출물 openapi-generated.json 을 참조하는 곳이 저장소에 0건이었고
+      #   ④ 백그라운드 서버가 러너에 남아 후속 잡을 방해할 수 있었다.
 
       - name: Check OpenAPI Spec Changes
         id: openapi-changes
@@ -92,7 +99,7 @@ jobs:
               - 'foundation/**'
               - 'business-core/**'
               - 'business-app/**'
-        continue-on-error: true
+        continue-on-error: true # 아티팩트 업로드 판정용 — 게이트 아님
 
       - name: Upload OpenAPI Spec (if changed)
         if: steps.openapi-changes.outputs.api == 'true'
@@ -101,9 +108,13 @@ jobs:
           name: openapi-spec-changed
           path: api-docs.json
           retention-days: 30
-        continue-on-error: true
+        continue-on-error: true # 아티팩트 업로드 — 게이트 아님
 
-      - name: OWASP Dependency-Check Security Scan
+      # ⚠ [비게이트 / advisory] 실패해도 빌드를 막지 않는다. NVD 데이터 다운로드가 레이트리밋·네트워크에
+      #   좌우돼 결정론적이지 않기 때문이다. 신뢰성을 원하면 secrets.NVD_API_KEY 를 발급·주입한 뒤
+      #   continue-on-error 를 제거해 게이트로 승격할 것. 지금 상태를 "의존성 취약점 게이트가 있다"고
+      #   말하면 거짓 안전감이다(GEMINI.md §0.7-H5).
+      - name: OWASP Dependency-Check (advisory, non-blocking)
         run: ./gradlew dependencyCheckAnalyze --info
         continue-on-error: true
 
@@ -140,6 +151,7 @@ jobs:
   frontend-build:
     needs: backend-build
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
 
@@ -178,7 +190,14 @@ jobs:
         run: pnpm run lint
         working-directory: frontend
 
-      - name: Security Audit
+      # [게이트] critical 취약점은 차단한다 — 결정론적이고 오탐이 드물다.
+      - name: Security Audit (critical — blocking)
+        run: pnpm audit --audit-level critical
+        working-directory: frontend
+
+      # ⚠ [비게이트 / advisory] high 는 신규 권고 등재만으로도 코드 변경 없이 붉어져 CI 를 시간폭탄으로
+      #   만들기에 차단하지 않는다. 로그로만 노출하며, 이 스텝의 통과는 "high 취약점 없음"을 뜻하지 않는다.
+      - name: Security Audit (high — advisory, non-blocking)
         run: pnpm audit --audit-level high
         working-directory: frontend
         continue-on-error: true
@@ -293,7 +312,11 @@ jobs:
   e2e-merge-reports:
     needs: e2e-tests
     runs-on: ubuntu-latest
-    if: always()
+    timeout-minutes: 15
+    # [2026-07-26 정정] 종전 `if: always()` 는 e2e-tests 가 **스킵된 경우에도** 실행돼,
+    # 병합할 리포트가 없으니 반드시 실패했다 — 상류 실패 1건이 CI 에 red 2건으로 보이게 만드는
+    # 신호 오염이었다. 실제로 실행된 경우에만 병합한다(실패한 e2e 의 리포트는 여전히 병합 대상).
+    if: always() && needs.e2e-tests.result != 'skipped' && needs.e2e-tests.result != 'cancelled'
     steps:
       - uses: actions/checkout@v4
 
@@ -354,6 +377,7 @@ jobs:
   mutation-test:
     needs: backend-build
     runs-on: ubuntu-latest
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
 
