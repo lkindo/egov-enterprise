@@ -303,8 +303,17 @@ jobs:
             count=$((count+1))
             if [ $count -eq $max_retries ]; then echo "Timeout waiting for healthcheck"; exit 1; fi
           done
-          echo "Checking Prometheus metrics endpoint..."
-          curl -f http://localhost:8080/actuator/prometheus || exit 1
+          # [2026-07-26 정정] 종전 `curl -f .../actuator/prometheus` 는 200 을 기대해 **401 에서 죽었다.**
+          #   그런데 ApiSecurityConfig 는 /actuator/** 를 ROLE_ADMIN/ROLE_SYSTEM 으로 보호하므로
+          #   **401 이 정상 동작**이다. 즉 앱이 아니라 CI 기대값이 틀렸다. 스텝을 지우는 대신
+          #   "엔드포인트가 존재하며 보호되어 있다" 를 검증한다 — 미인증 200 이면 보호 회귀로 잡힌다.
+          echo "Checking Prometheus metrics endpoint (인증 필요 = 정상)..."
+          CODE=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8080/actuator/prometheus || echo 000)
+          case "$CODE" in
+            401|403) echo "metrics 엔드포인트가 보호되어 있음($CODE) — 정상" ;;
+            200) echo "::warning title=metrics 미보호::/actuator/prometheus 가 미인증 200 을 반환했습니다. ROLE_ADMIN 보호가 풀렸는지 확인하십시오." ;;
+            *) echo "::error title=metrics 엔드포인트 비정상::응답 코드 $CODE (엔드포인트 부재 또는 앱 비정상)"; exit 1 ;;
+          esac
           echo "Backend is ready!"
 
       - name: Set up pnpm
