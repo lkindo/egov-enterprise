@@ -263,9 +263,11 @@ jobs:
   e2e-tests:
     needs: [backend-build, frontend-build]
     runs-on: ubuntu-latest
-    # [2026-07-26 상향] 20분은 api 이미지 소스 빌드(docker compose build) + Playwright 설치 + 샤드 실행을
-    # 담기에 부족하다. 샤드마다 동일 이미지를 재빌드하는 비효율은 별건(빌드 1회 후 공유)으로 분리.
-    timeout-minutes: 40
+    # [2026-07-26 재상향] 40분에서 "The operation was canceled" 로 끊겼다(실측). 비용 구조가 곱셈이다:
+    #   샤드마다 (api 이미지 빌드 + Next 프로덕션 빌드) + 테스트당 최대 300초 타임아웃 × 재시도 2회.
+    #   현재는 실패가 많아 재시도가 비용을 3배로 만들며, 그 결과 **실패 목록조차 못 받고 취소**됐다.
+    #   목록을 확보하는 것이 우선이므로 예산을 올린다. 실패를 정리한 뒤 되돌릴 값이다(항구 설정 아님).
+    timeout-minutes: 75
     strategy:
       fail-fast: false
       matrix:
