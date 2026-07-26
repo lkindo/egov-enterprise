@@ -362,8 +362,16 @@ jobs:
         id: e2e-run
         run: |
           # Start frontend in background
-          pnpm run dev -- -p 3001 &
-          npx wait-on http://127.0.0.1:3001/login --timeout 60000
+          # [2026-07-26 정정] dev 스크립트에 이미 `-p 3001` 이 들어 있다
+          #   (cross-env NODE_OPTIONS=... next dev -p 3001).
+          #   종전 `pnpm run dev -- -p 3001` 은 인자를 덧붙여 `next dev -p 3001 -- -p 3001` 이 되고,
+          #   Next 가 `-p` 를 **프로젝트 디렉터리**로 해석해 즉사했다:
+          #   "Invalid project directory provided, no such directory: .../frontend/-p"
+          #   그 결과 wait-on 이 60초를 기다린 뒤 타임아웃했다(실제 원인은 기동 실패).
+          #   출력을 파일로 남긴다 — 종전에는 dev 가 즉사해도 wait-on 이 60초 뒤 "Timed out" 만 남겨
+          #   **진짜 원인이 가려졌다**. 대기 시간도 러너의 콜드 컴파일을 감안해 120초로 올린다.
+          pnpm run dev > /tmp/next-dev.log 2>&1 &
+          npx wait-on http://127.0.0.1:3001/login --timeout 120000
           # Run tests with sharding for parallel execution
           npx playwright test --shard=${{ matrix.shard }}
         working-directory: frontend
@@ -387,7 +395,7 @@ jobs:
         if: failure()
         run: |
           echo "::error title=실패 스텝 판정::build=${{ steps.e2e-build.outcome }} / compose=${{ steps.e2e-compose.outcome }} / wait=${{ steps.e2e-wait.outcome }} / run=${{ steps.e2e-run.outcome }}"
-          for f in /tmp/compose-build.log /tmp/compose-up.log; do
+          for f in /tmp/compose-build.log /tmp/compose-up.log /tmp/next-dev.log; do
             [ -f "$f" ] || continue
             echo "::error title=$(basename $f) 마지막 출력::$(tail -c 2000 "$f" | paste -sd' ' -)"
           done
