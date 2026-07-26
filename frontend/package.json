@@ -117,5 +117,10 @@
     "vitest": "^4.0.18",
     "winston": "^3.19.0",
     "yargs-parser": "^22.0.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "websocket-driver": ">=0.7.5"
+    }
   }
 }
