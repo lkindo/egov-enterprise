@@ -169,43 +169,8 @@ jobs:
             echo "::error title=api-docs.json 드리프트::$(git diff --stat api-docs.json)"
           fi
 
-  # ⚠ [비게이트 / advisory] 의존성 취약점 스캔. backend-build 안에 있을 때는 NVD 데이터 다운로드가
-  #   잡 시간을 지배해 45분 timeout 의 주요 원인이었다. 별 잡으로 분리해 병렬 실행하고, 잡 레벨
-  #   continue-on-error 로 파이프라인을 막지 않는다. NVD 는 레이트리밋·네트워크에 좌우돼 결정론적이지
-  #   않으므로 게이트로 승격하려면 secrets.NVD_API_KEY 주입이 선행돼야 한다(§0.7-H5: 게이트인 척 금지).
-  dependency-check:
-    runs-on: ubuntu-latest
-    timeout-minutes: 45
-    continue-on-error: true
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up JDK 21
-        uses: actions/setup-java@v4
-        with:
-          java-version: "21"
-          distribution: "temurin"
-
-      - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
-
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
-
-      - name: OWASP Dependency-Check (advisory)
-        run: ./gradlew dependencyCheckAnalyze
-        continue-on-error: true
-
-      - name: Upload OWASP Security Report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: owasp-security-report
-          path: |
-            **/build/reports/dependency-check-report.html
-            **/build/reports/dependency-check-report.xml
-          retention-days: 30
-        continue-on-error: true
+  # [분리됨] OWASP Dependency-Check → .github/workflows/dependency-check.yml (주간 스케줄).
+  #   매 푸시 43분을 태우고 취소되던 advisory 스캔을 커밋 단위 파이프라인에서 제거했다(2026-07-26 실측).
 
   frontend-build:
     needs: backend-build

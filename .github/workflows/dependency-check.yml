@@ -1,0 +1,58 @@
+name: OWASP Dependency-Check (advisory)
+
+# [2026-07-26 분리] 종전에는 ci.yml 의 backend-build 안에 있었고, NVD 데이터 다운로드가 잡 시간을
+#   지배해 45분 timeout 의 주된 원인이었다. 병렬 잡으로 떼어냈지만 그마저 **매 푸시 2620초(43분)를
+#   태우고 취소**됐다(실측) — advisory 스캔이 커밋 단위 러너 시간을 독식할 이유가 없다.
+#   주간 스케줄 + 수동 실행으로 옮긴다. 커밋 단위 게이트는 ci.yml 이 담당한다.
+#
+# ⚠ 이 워크플로우는 **게이트가 아니다**. NVD 다운로드가 레이트리밋·네트워크에 좌우돼 결정론적이지
+#   않기 때문이다. 게이트로 승격하려면 secrets.NVD_API_KEY 를 발급·주입해 다운로드를 안정화한 뒤
+#   continue-on-error 를 제거해야 한다(GEMINI.md §0.7-H5 — 게이트인 척하는 스텝 금지).
+
+on:
+  schedule:
+    - cron: "0 18 * * 0" # 매주 일요일 03:00 KST
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-check:
+    # 스케줄/수동 외에는 돌지 않는다(워크플로우 정의 반영 지연에 대비한 이중 가드)
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: OWASP Dependency-Check
+        run: ./gradlew dependencyCheckAnalyze
+        env:
+          # 설정돼 있으면 NVD API 키로 다운로드가 안정화·가속된다(미설정이어도 동작).
+          NVD_API_KEY: ${{ secrets.NVD_API_KEY }}
+        continue-on-error: true
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: owasp-security-report
+          path: |
+            **/build/reports/dependency-check-report.html
+            **/build/reports/dependency-check-report.xml
+          retention-days: 30
+        continue-on-error: true
