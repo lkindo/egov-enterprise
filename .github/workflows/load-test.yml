@@ -42,6 +42,8 @@ jobs:
       BASE_URL: ${{ secrets.LOAD_TEST_BASE_URL || 'http://localhost:8080' }}
       TEST_USERNAME: ${{ secrets.LOAD_TEST_USERNAME || 'testuser' }}
       TEST_PASSWORD: ${{ secrets.LOAD_TEST_PASSWORD || 'testpass123!' }}
+      # if: 조건에서 판정하려면 secrets 가 아니라 env 로 노출돼 있어야 한다(아래 Dashboard 스텝 참조)
+      K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
 
     services:
       postgres:
@@ -204,8 +206,12 @@ jobs:
             test/load-tests/results/*.html
           retention-days: 30
 
+      # ⚠ if: 조건에서는 secrets 컨텍스트를 쓸 수 없다(사용 가능: github·env·steps·needs·job·runner·vars·inputs).
+      #   종전 `if: always() && secrets.K6_CLOUD_TOKEN != ''` 이 **파일 전체를 무효(startup_failure)** 로
+      #   만들고 있었다 — 이것이 load-test 가 한 번도 실행되지 못한 두 번째 원인이다(첫째는 workflow-level
+      #   env 의 secrets 참조). 잡 레벨 env 로 승격한 값을 env 컨텍스트로 판정한다.
       - name: Upload k6 results to Dashboard (optional)
-        if: always() && secrets.K6_CLOUD_TOKEN != ''
+        if: always() && env.K6_CLOUD_TOKEN != ''
         run: |
           # Convert to k6 Cloud format if token is available
           echo "K6 Cloud upload skipped (configure K6_CLOUD_TOKEN secret to enable)"
