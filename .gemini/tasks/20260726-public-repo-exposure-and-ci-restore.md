@@ -146,6 +146,34 @@ AssertionFailedError: Unexpected exception thrown:
 
 ---
 
+## 4.2 CI 복구 궤적 — 실패 원인 6단계 연속 제거
+
+과금차단 해제 후 실행할 수 있게 되자, **오래 실행되지 않아 축적된 breakage** 가 한 층씩 드러났다.
+각 회차의 실패 지점이 앞으로 전진한 것이 앞 원인이 실제로 해소됐다는 증거다.
+
+| 회차 | 잡 | 실패 지점 | 원인 | 조치 |
+|---|---|---|---|---|
+| 1 | backend 362s | `:business-core:test` | KST 고정 서비스 ↔ 기본 시간대 테스트 | 테스트를 서비스 기준시로 통일 + 테스트 JVM UTC 고정 |
+| 2 | backend 2721s | timeout | NVD 스캔이 잡 시간 지배 | dependency-check 주간 워크플로우로 분리 · timeout 75분 |
+| 3 | backend 698s | 스키마 검증 | Testcontainers 이미지 pull 타임아웃 | `docker pull postgres:17` 선(先)내림 스텝 |
+| 4 | **backend 443s** | — | — | ✅ **첫 성공**(테스트+실PG 검증+계약 게이트) |
+| 5 | frontend 14s | audit | **내가 세운 critical 게이트가 red**(websocket-driver) | 게이트 완화 대신 override 로 취약점 제거 |
+| 6 | **frontend 156s** · **mutation 536s** | — | — | ✅ 성공(뮤테이션 75% 하드게이트 CI 통과) |
+| 7 | e2e 3샤드 6~7s | compose | **exit 127** — 러너에서 `docker-compose`(v1) 제거됨 | 전역 `docker compose`(v2) 교체 |
+
+### 관측 장치가 전제였다
+잡 로그는 admin 권한이 필요해(403) 외부에서 읽을 수 없다. 위 규명은 전부 **error 애노테이션**으로
+실패 스텝·JUnit 메시지·컨테이너 로그를 밖으로 꺼낸 뒤에야 가능했다. 관측 없이는 매 회차가 추측이 된다.
+
+### 부수 발견
+- `zap-scan.yml` 도 같은 `docker-compose` v1 호출이라 **주간 스캔이 계속 실패해 왔다**(같이 교정).
+- E2E 는 앱을 `pnpm run dev`(개발 모드)로 띄운다. 이 저장소에는 *next-dev Server-Action transport
+  플레이키(앱 버그 아님, 프로덕션 빌드로만 해소)* 기록이 있으므로, E2E 가 통과하더라도
+  **프로덕션 모드 전환**을 별도 과제로 남긴다.
+- 러너 경고: `actions/*@v4` 가 Node 20 타깃이라 Node 24 로 강제 실행되고 있다(현재는 경고).
+
+---
+
 ## 5. 남은 것
 
 1. **키 교체**(§1) — 사용자 조치, 최우선. 히스토리 정리로 대체되지 않는다.
