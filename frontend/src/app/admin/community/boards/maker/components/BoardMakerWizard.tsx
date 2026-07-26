@@ -298,7 +298,11 @@ export function BoardMakerWizard() {
 
  {/* Main Content Card */}
  <Card className="border-none shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/80 backdrop-blur-xl ring-1 ring-border/50">
- <form onSubmit={handleSubmit(onSubmit, (errors) => console.log('>>> [Validation Error] ', errors))}>
+ {/* [2026-07-26] 프로덕션 코드에 남아 있던 디버그 로그 제거. 검증 실패는 폼 UI(필드별 메시지)가
+     이미 사용자에게 알리므로 콘솔 출력은 정보 가치가 없다. 게다가 E2E 의 콘솔 오류 가드가 이를
+     금지 로그로 잡아 테스트를 실패시켰다(Validation Edge Case: Creation Failure with Empty Name).
+     진단이 필요하면 개발 모드 조건부로 출력할 것. */}
+ <form onSubmit={handleSubmit(onSubmit)}>
  <CardHeader className="bg-muted p-12 text-foreground relative border-b border-border transition-colors">
  <div className="space-y-2 relative z-10 text-left">
  <h3 className="text-4xl font-bold tracking-tighter text-left">

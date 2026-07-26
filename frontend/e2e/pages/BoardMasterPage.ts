@@ -196,7 +196,12 @@ export class BoardMasterPage {
     await expect(deleteBtn).toBeVisible({ timeout: 10000 });
     await deleteBtn.click();
 
-    const confirmBtn = this.page.getByRole('button', { name: '삭제' });
+    // [2026-07-26 정정] 앱은 2단계 삭제다(BoardMasterListClient):
+    //   활성(use_yn='Y') → 확인 모달 '게시판 서비스 비활성화' / 확인 버튼 **'비활성화'** (소프트 → 대기)
+    //   대기(use_yn='N') → '게시판 영구 물리 삭제' / 확인 버튼 **'영구 삭제'** (게시글 있으면 거부)
+    // 종전 셀렉터는 '삭제' 만 찾아, 활성 게시판의 '비활성화' 버튼을 못 찾고 실패했다(로컬 재현으로 확인:
+    // 모달은 떠 있고 버튼명만 달랐다). 이 테스트는 마지막에 '대기' 를 단언하므로 소프트 경로가 의도다.
+    const confirmBtn = this.page.getByRole('button', { name: /비활성화|영구 삭제|삭제/ });
     await expect(confirmBtn).toBeVisible({ timeout: 5000 });
     
     const deleteResponse = this.page.waitForResponse(
