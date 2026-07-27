@@ -85,6 +85,8 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   // 게시글 추천(좋아요) — 낙관적 UI: 클릭 즉시 카운트 증가 후 서버 반영(실패 시 롤백)
   const [likeDelta, setLikeDelta] = useState(0);
   const [liking, setLiking] = useState(false);
+  // 폼 제출(useFormStatus)을 쓰지 않게 되면서 중복 클릭 방지를 명시적으로 관리한다.
+  const [deleting, setDeleting] = useState(false);
   const handleLike = async () => {
     if (liking || !bbsId || !pstId) return;
     setLiking(true);
@@ -222,39 +224,54 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             감사 P1-9: native confirm() → useConfirm(변형 destructive).
             본문에 대상 게시글 제목을 노출하고, 실패(res.success === false)도 삼키지 않고 토스트로 드러낸다.
           */}
-          <form action={async (formData) => {
-            const isConfirmed = await confirm({
-              title: '게시글 삭제',
-              message: `[${article.pstTtl || '제목 없음'}] 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-              confirmText: '삭제',
-              variant: 'destructive'
-            });
-            if (!isConfirmed) return;
+          {/*
+            [2026-07-27 결함 수정] 종전에는 `<form action={async (fd) => { await confirm(...) ... }}>` 였고,
+            그 구조에서는 **삭제가 전혀 동작하지 않았다.** React 19 의 form action 은 transition 으로
+            실행되는데, `confirm()` 이 일으키는 모달 open state 갱신이 그 transition 에 묶인다. 액션은
+            모달의 응답을 기다리고, 모달의 렌더는 액션이 끝나야 커밋되므로 서로를 막는 **교착**이 된다.
+            실측(프로덕션 빌드): 클릭 시 액션 진입 로그는 찍히는데 dialog 는 0개, 재클릭·requestSubmit
+            모두 동일. 콘솔 오류도 없어 "눌러도 아무 일이 없는" 증상으로만 드러났다.
+            → 확인을 transition 밖(onClick)에서 먼저 받고, 확정된 뒤에 서버 액션을 호출한다.
+              폼이 없어졌으므로 FormData 는 직접 구성한다(종전 hidden input 과 동일한 키).
+          */}
+          <Button
+            type="button"
+            variant="outline"
+            disabled={deleting}
+            onClick={async () => {
+              const isConfirmed = await confirm({
+                title: '게시글 삭제',
+                message: `[${article.pstTtl || '제목 없음'}] 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+                confirmText: '삭제',
+                variant: 'destructive'
+              });
+              if (!isConfirmed) return;
 
-            try {
-              const res = await deleteBoardArticle(null, formData);
-              if (res.success) {
-                toast('게시글이 삭제되었습니다.', 'success');
-                queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
-                router.push(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
-              } else {
-                toast(res.message || '게시글 삭제에 실패했습니다.', 'error');
+              const formData = new FormData();
+              formData.append('bbsId', bbsId ?? '');
+              formData.append('pstId', pstId ?? '');
+
+              setDeleting(true);
+              try {
+                const res = await deleteBoardArticle(null, formData);
+                if (res.success) {
+                  toast('게시글이 삭제되었습니다.', 'success');
+                  queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+                  router.push(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
+                } else {
+                  toast(res.message || '게시글 삭제에 실패했습니다.', 'error');
+                }
+              } catch (err: unknown) {
+                toast(err instanceof Error && err.message ? err.message : '게시글 삭제 중 오류가 발생했습니다.', 'error');
+              } finally {
+                setDeleting(false);
               }
-            } catch (err: unknown) {
-              toast(err instanceof Error && err.message ? err.message : '게시글 삭제 중 오류가 발생했습니다.', 'error');
-            }
-          }}>
-            <input type="hidden" name="bbsId" value={bbsId ?? ""} />
-            <input type="hidden" name="pstId" value={pstId ?? ""} />
-            <Button
-              type="submit"
-              variant="outline"
-              className="h-14 w-20 rounded-2xl border-2 text-rose-500 border-rose-100 bg-rose-50/30 hover:bg-rose-500 hover:text-white shadow-xl hover:-translate-y-2 transition-all active:scale-95"
-              aria-label="게시글 삭제"
-            >
-              <Trash2 size={24} />
-            </Button>
-          </form>
+            }}
+            className="h-14 w-20 rounded-2xl border-2 text-rose-500 border-rose-100 bg-rose-50/30 hover:bg-rose-500 hover:text-white shadow-xl hover:-translate-y-2 transition-all active:scale-95"
+            aria-label="게시글 삭제"
+          >
+            <Trash2 size={24} />
+          </Button>
         </motion.div>
       </div>
 

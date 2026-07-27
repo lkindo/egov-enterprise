@@ -205,23 +205,22 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 // Navigate to detail for deletion
                 await page.locator('a[href*="pstId="]', { hasText: `${articleTitle} [Updated]` }).first().click();
                 
-                const deleteBtn = page.locator('button:has-text("삭제"), [aria-label="게시글 삭제"], button:has-text("Delete")').first();
+                const deleteBtn = page.locator('[aria-label="게시글 삭제"], button:has-text("Delete")').first();
                 await deleteBtn.waitFor({ state: 'visible', timeout: 15000 });
                 await deleteBtn.click();
 
-                // 🚨 [2026-07-27 미해결 결함 — 이 단계는 삭제를 증명하지 못한다]
-                //   삭제는 확인 모달(useConfirm)을 통과해야 실제로 실행된다
-                //   (BoardDetailClient: `const isConfirmed = await confirm({...}); if (!isConfirmed) return;`).
-                //   그런데 아래 검증은 모달을 확인하지 않는다 — **삭제 액션은 실행되지 않는다.**
-                //   그럼에도 통과하는 이유는 대상이 목록 1페이지 밖이면 locator 가 아무것도 잡지 못해
-                //   toBeHidden 이 성립하기 때문이다. 즉 이 그린은 삭제의 증거가 아니라 페이지네이션의
-                //   부산물이다(false-green).
-                //
-                //   모달을 확인하도록 고치는 시도는 보류했다 — 클릭 직후 버튼은 포커스를 받지만
-                //   (`[active]`) 모달이 열리지 않아 15분 타임아웃까지 매달렸다. 하이드레이션 완료 전
-                //   `<form action={fn}>` 의 네이티브 submit 이 조용히 삼켜지는 것으로 의심되며,
-                //   그 자체가 앱 측 조사 대상이다(빠른 클릭에 삭제가 무반응). 별도 과제로 남긴다.
-                //
+                // [2026-07-27 false-green 제거] 삭제는 확인 모달(useConfirm)을 통과해야 실행된다.
+                //   종전 코드는 모달을 확인하지 않고 곧바로 목록으로 이동해 '사라졌는지'만 봤다 —
+                //   **삭제 액션은 실행되지 않았다.** 그럼에도 통과할 수 있었던 것은 대상이 목록 1페이지
+                //   밖이면 locator 가 아무것도 잡지 못해 toBeHidden 이 성립하기 때문이다. 그린은 삭제의
+                //   증거가 아니라 페이지네이션의 부산물이었다.
+                //   (이 단계를 제대로 고치는 과정에서 **앱의 삭제가 아예 동작하지 않는 결함**이 드러나
+                //    함께 수정했다 — BoardDetailClient 의 form action ↔ confirm 교착. 상세는 그 주석 참조.)
+                const confirmDialog = page.getByRole('dialog');
+                await confirmDialog.getByRole('button', { name: '삭제', exact: true }).click();
+                // 삭제 성공 시 앱은 목록으로 되돌아간다 — 이것을 완료 신호로 기다린 뒤 검증한다.
+                await page.waitForURL((url) => url.href.includes('select-board-list'), { timeout: 30000 });
+
                 // 2. Anti-flaky: 스마트 재시도 로직 (목록에서 완전히 사라졌는지 확인)
                 await expect(async () => {
                     await page.goto(`/admin/community/boards/select-board-list?bbsId=${template.id}`);

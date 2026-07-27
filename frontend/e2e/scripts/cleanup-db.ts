@@ -138,10 +138,15 @@ async function cleanup() {
         params: { keyword: 'E2E', size: 100 } 
       });
       const banners = bannersRes.data.data?.list || bannersRes.data.data?.content || [];
-      const testBanners = banners.filter((b: any) => b.bannerNm?.startsWith('E2E Banner') || b.bannerNm?.startsWith('Debug'));
+      // [2026-07-27 정정] 필드명이 틀려 **한 건도 지워지지 않고 있었다**. BannerDto 의 실제 필드는
+      //   `bnrNm`·`bnrId` 인데 `bannerNm`·`bannerId` 로 필터해 testBanners 가 항상 빈 배열이었고,
+      //   그래서 로그는 늘 "0 banner(s) cleaned" 를 찍으며 **청소된 것처럼 보였다**(false-green).
+      //   그 결과 E2E 배너가 무한 누적됐고, 메인 배너는 한 번에 1개만 보여주는 캐러셀이라
+      //   새로 만든 배너가 뒤로 밀려 05 Portal Promotion Flow 가 결정적으로 실패하게 됐다.
+      const testBanners = banners.filter((b: any) => b.bnrNm?.startsWith('E2E Banner') || b.bnrNm?.startsWith('Debug'));
       for (const banner of testBanners) {
-        process.stdout.write(`  - Deleting Banner: ${banner.bannerNm} (${banner.bannerId})... `);
-        await axios.delete(`${API_BASE}/admin/system/banners/${banner.bannerId}`, { headers });
+        process.stdout.write(`  - Deleting Banner: ${banner.bnrNm} (${banner.bnrId})... `);
+        await axios.delete(`${API_BASE}/admin/system/banners/${banner.bnrId}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testBanners.length} banner(s) cleaned.`);

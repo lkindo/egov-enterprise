@@ -79,12 +79,25 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             // 보이지 않으면 생성이 조용히 실패했거나 노출 로직이 깨진 것이므로 실패 처리한다.
             await expect(popupTitleLoc.first()).toBeVisible({ timeout: 10000 });
 
+            // [2026-07-27 결정적 검증] 메인 배너는 **한 번에 한 장만** 렌더하는 캐러셀이다
+            //   (BannerSlider: `banners[currentIndex]`, 5초마다 회전). 그래서 "새 배너가 보이는가"를
+            //   리로드로만 확인하면 슬라이드 순서에 운을 맡기게 된다 — 리로드는 currentIndex 를 0 으로
+            //   되돌리므로 새 배너가 뒤쪽이면 **몇 번을 새로고침해도 영원히 보이지 않는다.**
+            //   (실제로 E2E 배너가 7건까지 누적되자 이 테스트는 격리 실행에서도 100% 실패했다.)
+            //   → 순서에 의존하지 않도록 '다음 슬라이드'로 한 바퀴 순회하며 찾는다.
             const bannerTitleLoc = userPage.getByText(bannerTitle).first();
-            for (let i = 0; i < 3; i++) {
-                if (await bannerTitleLoc.isVisible({ timeout: 5000 }).catch(() => false)) break;
-                console.log(`>>> [Promotion] Banner not found (attempt ${i+1}), reloading...`);
-                await userPage.reload();
-                await userPage.waitForTimeout(2000);
+            const nextSlideBtn = userPage.getByRole('button', { name: '다음 슬라이드' });
+
+            if (!(await bannerTitleLoc.isVisible({ timeout: 5000 }).catch(() => false))) {
+                // 슬라이드가 1장뿐이면 이동 버튼이 없다(그 경우 위 검사로 이미 판정된다).
+                const hasNext = await nextSlideBtn.isVisible({ timeout: 5000 }).catch(() => false);
+                if (hasNext) {
+                    // 한 바퀴 돌면 반드시 만난다. 여유를 두되 무한 루프는 만들지 않는다.
+                    for (let i = 0; i < 20; i++) {
+                        await nextSlideBtn.click();
+                        if (await bannerTitleLoc.isVisible({ timeout: 1000 }).catch(() => false)) break;
+                    }
+                }
             }
 
             await expect(bannerTitleLoc).toBeVisible({ timeout: 10000 });
