@@ -100,10 +100,27 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 await commitBtn.click();
 
                 console.log('>>> Waiting for navigation and toast...');
-                // Wait for either navigation or a success toast
+                // [2026-07-27 근본수정] 이 race 의 두 번째 갈래가 오래 red 로 남던 flaky 의 정체였다.
+                //   `text=/성공|저장|완료/` 는 토스트가 아니라 **제출 버튼 자신**(<span>저장</span>,
+                //   제출 중에는 '저장 중...')에 매칭된다. 실측: 제출을 하지 않아도 1152ms 만에 풀린다.
+                //   → race 가 즉시 끝나고, URL 은 아직 등록 페이지이므로 아래 '아직 등록 페이지면 목록으로'
+                //     분기가 **액션이 날아가는 중에** page.goto 를 실행해 앱의 Server Action 요청을 끊었다
+                //     (net::ERR_ABORTED). 앱은 정상 저장에도 `TypeError: Failed to fetch` 를 콘솔에 남기고
+                //     ConsoleGuard 가 테스트를 실패시켰다. 부하가 높을수록 액션이 늦어져 창이 넓어지는 것이
+                //     "full-suite 에서만 실패하고 격리 실행은 전부 통과"의 정체다. **앱 결함이 아니었다.**
+                //   토스트는 `await saveBoardArticle()` 이 resolve 된 뒤에만 뜨므로, 토스트를 진짜로
+                //   기다리면 액션 완료가 보장된다. sonner 컨테이너로 범위를 좁혀 버튼과 분리한다.
+                //
+                //   ※ race 를 걷어내고 URL 전환만 기다리는 안(더 빠르고 pstId 도 얻는다)을 실측해 봤으나
+                //     채택하지 않았다 — 그러면 이후 단계의 진입 페이지가 목록→상세로 바뀌면서 Step 4
+                //     삭제가 깨졌다. 삭제 단계에도 **완료를 기다리지 않고 goto 하는 같은 계열의 결함**이
+                //     잠재해 있다는 뜻이다(별도 과제). 여기서는 원인(버튼 매칭)만 제거하고 흐름은 보존한다.
                 await Promise.race([
                     page.waitForURL((url) => !url.href.includes('insert-board-article'), { timeout: 60000, waitUntil: 'domcontentloaded' }),
-                    page.waitForSelector('text=/성공|저장|완료/', { timeout: 30000 })
+                    page.waitForSelector(
+                        '[data-sonner-toast]:has-text("저장"), [data-sonner-toast]:has-text("완료"), [data-sonner-toast]:has-text("성공")',
+                        { timeout: 30000 },
+                    ),
                 ]);
                 
                 page.off('response', responseHandler);
@@ -161,9 +178,15 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 await saveButton.click();
                 
                 // Wait for save action completion (navigation or toast success)
+                // [2026-07-27] 위 등록 단계와 동일한 결함이 여기에도 있었다 — 셀렉터가 제출 버튼('저장')에
+                //   즉시 매칭돼 저장 완료를 기다리지 않고 통과했고, 바로 아래 검증 단계의 page.goto 가
+                //   진행 중인 수정 액션을 끊었다. 동일하게 sonner 컨테이너로 범위를 좁힌다.
                 await Promise.race([
                     page.waitForURL((url) => !url.href.includes('updateBoardArticle') && !url.href.includes('insert-board-article'), { timeout: 30000, waitUntil: 'domcontentloaded' }),
-                    page.waitForSelector('text=/성공|저장|완료/', { timeout: 15000 })
+                    page.waitForSelector(
+                        '[data-sonner-toast]:has-text("저장"), [data-sonner-toast]:has-text("완료"), [data-sonner-toast]:has-text("성공")',
+                        { timeout: 15000 },
+                    ),
                 ]).catch(() => {
                     console.log('>>> Warning: Save action completion wait timed out, continuing...');
                 });
@@ -185,7 +208,20 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 const deleteBtn = page.locator('button:has-text("삭제"), [aria-label="게시글 삭제"], button:has-text("Delete")').first();
                 await deleteBtn.waitFor({ state: 'visible', timeout: 15000 });
                 await deleteBtn.click();
-                
+
+                // 🚨 [2026-07-27 미해결 결함 — 이 단계는 삭제를 증명하지 못한다]
+                //   삭제는 확인 모달(useConfirm)을 통과해야 실제로 실행된다
+                //   (BoardDetailClient: `const isConfirmed = await confirm({...}); if (!isConfirmed) return;`).
+                //   그런데 아래 검증은 모달을 확인하지 않는다 — **삭제 액션은 실행되지 않는다.**
+                //   그럼에도 통과하는 이유는 대상이 목록 1페이지 밖이면 locator 가 아무것도 잡지 못해
+                //   toBeHidden 이 성립하기 때문이다. 즉 이 그린은 삭제의 증거가 아니라 페이지네이션의
+                //   부산물이다(false-green).
+                //
+                //   모달을 확인하도록 고치는 시도는 보류했다 — 클릭 직후 버튼은 포커스를 받지만
+                //   (`[active]`) 모달이 열리지 않아 15분 타임아웃까지 매달렸다. 하이드레이션 완료 전
+                //   `<form action={fn}>` 의 네이티브 submit 이 조용히 삼켜지는 것으로 의심되며,
+                //   그 자체가 앱 측 조사 대상이다(빠른 클릭에 삭제가 무반응). 별도 과제로 남긴다.
+                //
                 // 2. Anti-flaky: 스마트 재시도 로직 (목록에서 완전히 사라졌는지 확인)
                 await expect(async () => {
                     await page.goto(`/admin/community/boards/select-board-list?bbsId=${template.id}`);
