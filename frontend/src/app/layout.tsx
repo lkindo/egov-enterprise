@@ -90,7 +90,7 @@ async function ProvidersWithAuth({ children }: { children: React.ReactNode }) {
   if (accessToken) {
     try {
       initialUser = await authService.getCurrentUser();
-    } catch (e) {
+    } catch {
       initialUser = null;
     }
   }

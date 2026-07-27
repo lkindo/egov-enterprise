@@ -42,7 +42,7 @@ export default function OnlinePollParticipateClient() {
  const res = await pollUserService.getPollList({ page: 0, size: 100 });
  // Support both Spring Data JPA Page (content) and legacy list format
  setPolls(res.list || []);
- } catch (error) {
+ } catch {
  toast.error('설문 목록을 불러오지 못했습니다.');
  } finally {
  setLoading(false);
@@ -63,7 +63,7 @@ export default function OnlinePollParticipateClient() {
  } else {
  setViewMode('result');
  }
- } catch (error) {
+ } catch {
  toast.error('설문 상세 정보를 불러오지 못했습니다.');
  } finally {
  setLoading(false);

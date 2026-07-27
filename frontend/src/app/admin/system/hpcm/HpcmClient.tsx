@@ -67,7 +67,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
       setIsModalOpen(false);
       form.reset();
       router.refresh();
-    } catch (error) {
+    } catch {
       toast('도움말 등록 중 오류가 발생했습니다.', 'error');
     } finally {
       setRegisterLoading(false);

@@ -34,7 +34,7 @@ export function AuthProvider({
       } else {
         setUser(null);
       }
-    } catch (error) {
+    } catch {
       // 401 등 세션 만료 시 처리
       setUser(null);
     } finally {

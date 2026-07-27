@@ -1,9 +1,8 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Trophy, Search, Plus, Clock, Layers, RefreshCcw, ShieldCheck, Zap, Activity, Filter } from 'lucide-react';
+import { Trophy, Search, Plus, Layers, RefreshCcw, ShieldCheck, Zap, Activity, Filter } from 'lucide-react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -95,7 +94,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
       // 최신 등록건은 crtDt DESC 정렬로 1페이지 선두에 노출된다
       setPage(1);
       queryClient.invalidateQueries({ queryKey: ['admin-rewards'] });
-    } catch (error) {
+    } catch {
       toast('포상 기록 등록 중 오류가 발생했습니다.', 'error');
     } finally {
       setRegisterLoading(false);

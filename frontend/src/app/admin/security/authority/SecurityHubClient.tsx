@@ -203,7 +203,7 @@ export default function SecurityHubClient({
       }
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
       setIsAuthorModalOpen(false);
-    } catch (error) {
+    } catch {
       toast('저장 중 오류가 발생했습니다. 입력을 확인해주세요.', 'error');
     }
   };
@@ -295,7 +295,7 @@ export default function SecurityHubClient({
       });
       await Promise.all(promises);
       setGlobalMappings(allMappings);
-    } catch (e) {
+    } catch {
       toast('글로벌 매트릭스 데이터 로드 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsGlobalLoading(false);
@@ -339,7 +339,7 @@ export default function SecurityHubClient({
       await Promise.all(promises);
       toast('글로벌 보안 정책이 전사적으로 동기화되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus'] });
-    } catch (e) {
+    } catch {
       toast('글로벌 정책 저장 중 오류가 발생했습니다.', 'error');
     } finally {
       setIsGlobalLoading(false);
@@ -399,7 +399,7 @@ export default function SecurityHubClient({
       toast('권한이 삭제되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
       if (selectedAuthorCode === code) setSelectedAuthorCode('');
-    } catch (e) {
+    } catch {
       toast('삭제 중 오류가 발생했습니다.', 'error');
     }
   };

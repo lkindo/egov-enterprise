@@ -179,7 +179,7 @@ export function BoardMasterListClient() {
           await boardAdminService.deleteBoardMaster(board.bbsId, 'admin');
           toast('게시판이 비활성화(대기) 상태로 전환되었습니다.', 'success');
           refetch();
-        } catch (error) {
+        } catch {
           toast('비활성화 처리 중 오류가 발생했습니다.', 'error');
         }
       }

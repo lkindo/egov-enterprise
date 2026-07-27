@@ -127,7 +127,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       // 최신 등록건은 crtDt DESC 정렬로 1페이지 선두에 노출된다
       if (page !== 1) setPage(1);
       queryClient.invalidateQueries({ queryKey: ['admin-external-hr'] });
-    } catch (error) {
+    } catch {
       toast('등록 중 오류가 발생했습니다.', 'error');
     } finally {
       setRegisterLoading(false);

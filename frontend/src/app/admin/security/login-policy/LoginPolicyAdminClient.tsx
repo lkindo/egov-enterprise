@@ -115,7 +115,7 @@ export default function LoginPolicyAdminClient() {
       toast('로그인 정책이 성공적으로 업데이트되었습니다.', 'success');
       setIsEditModalOpen(false);
       queryClient.invalidateQueries({ queryKey: LOGIN_POLICIES_QUERY_KEY });
-    } catch (error) {
+    } catch {
       toast('정책 저장 중 오류가 발생했습니다.', 'error');
     }
   };

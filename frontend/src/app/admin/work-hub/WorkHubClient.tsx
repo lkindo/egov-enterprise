@@ -218,7 +218,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
       await reportService.deleteReport(item.rptId);
       toast('업무 보고가 삭제되었습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
-    } catch (error) {
+    } catch {
       toast('삭제에 실패했습니다. 작성자 본인 또는 관리자만 삭제할 수 있습니다.', 'error');
     }
   };

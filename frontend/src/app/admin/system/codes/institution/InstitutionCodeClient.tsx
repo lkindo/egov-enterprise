@@ -103,7 +103,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData?: P
  });
  toast('성공적으로 반영되었습니다.', 'success');
  receptionQuery.refetch();
- } catch (error) {
+ } catch {
  toast('반영 처리 중 오류가 발생했습니다.', 'error');
  }
  };

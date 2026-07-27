@@ -59,7 +59,7 @@ describe('DashboardPage Server Component', () => {
 
     try {
       await DashboardPage();
-    } catch (e) {
+    } catch {
       // Catch redirect throw
     }
 

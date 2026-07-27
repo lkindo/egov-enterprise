@@ -428,7 +428,7 @@ export default function CommonCodeClient({
  } else {
  toast(res.message, 'error');
  }
- } catch (error) {
+ } catch {
  toast('네트워크 오류가 발생했습니다.', 'error');
  }
  }
@@ -460,7 +460,7 @@ export default function CommonCodeClient({
  } else {
  toast(res.message, 'error');
  }
- } catch (error) {
+ } catch {
  toast('서버 통신 중 오류가 발생했습니다.', 'error');
  }
  };

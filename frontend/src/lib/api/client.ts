@@ -43,7 +43,7 @@ axiosInstance.interceptors.request.use(
         const { cookies } = await import('next/headers');
         const cookieStore = await cookies();
         token = cookieStore.get('accessToken')?.value || null;
-      } catch (e) {
+      } catch {
         // 빌드 타임이나 만료된 세션 시 cookies() 접근 불가 상황 대응
         token = null;
       }

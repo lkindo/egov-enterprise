@@ -86,8 +86,6 @@ const popupSchema = PopupDtoSchema.extend({
  path: ['ntceEndde']
  });
 
-type BannerFormValues = z.infer<typeof bannerSchema>;
-type PopupFormValues = z.infer<typeof popupSchema>;
 
 interface BannerAdminClientProps {
  initialBanners: Banner[];
@@ -249,7 +247,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  } else {
  toast(res.message, 'error');
  }
- } catch (error) {
+ } catch {
  toast('자산 삭제 처리 중 예외가 발생했습니다.', 'error');
  }
  };
@@ -285,7 +283,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  } else {
  toast(res.message, 'error');
  }
- } catch (error) {
+ } catch {
  toast('데이터 처리 중 오류가 발생했습니다.', 'error');
  }
  };
@@ -328,7 +326,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  } else {
  toast(res.message, 'error');
  }
- } catch (error) {
+ } catch {
  toast('데이터 처리 중 오류가 발생했습니다.', 'error');
  }
  };

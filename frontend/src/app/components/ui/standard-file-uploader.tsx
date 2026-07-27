@@ -95,7 +95,7 @@ export function StandardFileUploader({
       setFileStates(prev => prev.map(f => 
         f.id === fileState.id ? { ...f, progress: 100, status: 'completed' } : f
       ));
-    } catch (e) {
+    } catch {
       setFileStates(prev => prev.map(f => 
         f.id === fileState.id ? { ...f, status: 'error' } : f
       ));

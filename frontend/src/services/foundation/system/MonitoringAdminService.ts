@@ -58,7 +58,7 @@ class MonitoringAdminService {
     try {
       const data = await this.getMetric('system.cpu.usage');
       return (data.measurements[0].value * 100) || 0;
-    } catch (e) {
+    } catch {
       return 0;
     }
   }
@@ -74,7 +74,7 @@ class MonitoringAdminService {
       const usedValue = used.measurements[0].value;
       if (maxValue <= 0) return 0;
       return (usedValue / maxValue) * 100;
-    } catch (e) {
+    } catch {
       return 0;
     }
   }
@@ -86,7 +86,7 @@ class MonitoringAdminService {
     try {
       const data = await this.getMetric('process.uptime');
       return data.measurements[0].value; // seconds
-    } catch (e) {
+    } catch {
       return 0;
     }
   }

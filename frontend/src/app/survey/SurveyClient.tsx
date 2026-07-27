@@ -23,7 +23,7 @@ export default function SurveyClient() {
         setLoading(true);
         const res = await surveyAdminService.getSurveys({ page: 0, size: 10 });
         setData(res.list || []);
-      } catch (error) {
+      } catch {
         toast('설문 목록을 불러오지 못했습니다.', 'error');
       } finally {
         setLoading(false);

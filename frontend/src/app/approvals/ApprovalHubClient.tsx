@@ -73,7 +73,7 @@ export default function ApprovalHubClient() {
       await approvalUserService.confirm(item.approvalId, status);
       toast(`성공적으로 ${actionNm}되었습니다.`, 'success');
       queryClient.invalidateQueries({ queryKey: ['approvals'] });
-    } catch (error) {
+    } catch {
       toast(`${actionNm} 처리 중 오류가 발생했습니다.`, 'error');
     }
   };

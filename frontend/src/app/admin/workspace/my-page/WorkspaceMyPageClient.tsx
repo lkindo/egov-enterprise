@@ -23,7 +23,7 @@ export default function WorkspaceMyPage() {
       try {
         const data = await myPageAdminService.getContents({ all: true });
         setContents(data || []);
-      } catch (error) {
+      } catch {
         toast('콘텐츠 정보를 불러오지 못했습니다.', 'error');
       } finally {
         setLoading(false);
@@ -38,7 +38,7 @@ export default function WorkspaceMyPage() {
       await myPageAdminService.updateContent(item.cntntsId, { ...item, cntntsUseYn: newStatus });
       setContents(contents.map(c => c.cntntsId === item.cntntsId ? { ...c, cntntsUseYn: newStatus } : c));
       toast(`${item.cntntsNm} 상태가 변경되었습니다.`, 'success');
-    } catch (error) {
+    } catch {
       toast('상태 변경 중 오류가 발생했습니다.', 'error');
     }
   };
