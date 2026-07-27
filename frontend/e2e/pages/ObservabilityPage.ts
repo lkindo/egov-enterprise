@@ -25,8 +25,12 @@ export class ObservabilityPage {
     }
 
     async verifyTopology() {
-        // 허브의 토폴로지는 별도 탭(인프라 토폴로지 맵, tab=topology)
-        await this.page.getByRole('button', { name: /인프라 토폴로지 맵/i }).first().click();
+        // 허브의 토폴로지는 별도 탭(인프라 토폴로지 맵, tab=topology).
+        // [2026-07-27 정정] 종전엔 getByRole('button') 으로 잡았다. 그러나 MonitoringHubClient 의 NavButton 은
+        // <button type="button" role="tab"> 이고 **명시적 role 이 암시적 button 역할을 덮어쓴다** — 원리적으로
+        // 매칭될 수 없어 5분 타임아웃까지 대기했다. (같은 위험을 BannerAdminClient 는 이미 인지해 role="tab" 을
+        // 의도적으로 피하고 주석으로 남겨 뒀다. monitoring 허브는 그 갱신이 누락된 것.)
+        await this.page.getByRole('tab', { name: /인프라 토폴로지 맵/i }).first().click();
         const loading = this.page.getByText('Initializing Topology Stream...');
         try {
             await loading.waitFor({ state: 'visible', timeout: 2000 });

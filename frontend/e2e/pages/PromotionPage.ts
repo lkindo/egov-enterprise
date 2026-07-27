@@ -32,10 +32,21 @@ export class PromotionPage {
 
         // Select 'YES' for 'Notice Status' (게시 설정) - It's a Select component
         console.log('>>> [Promotion] Setting Notice Status to YES');
+        // [2026-07-27 정정] 종전엔 무조건 콤보박스를 열고 '게시 (LIVE)' 옵션을 클릭했다. 그런데
+        //  ① 폼 기본값이 이미 ntceYn: 'Y'(게시 LIVE) 라 클릭 자체가 불필요하고
+        //  ② 다이얼로그 안의 Radix Select 옵션 클릭이 dialog-overlay 에 가로채여
+        //     "element is visible, enabled and stable" → 오버레이 히트 를 **542회** 반복한 뒤
+        //     5분 타임아웃으로 죽었다(실측 call log).
+        // 현재 값이 이미 게시면 건드리지 않고, 다를 때만 키보드로 선택한다(오버레이 히트테스트 회피).
         const noticeStatusTrigger = this.page.locator('label').filter({ hasText: /게시 설정/ }).locator('..').locator('button[role="combobox"]');
         if (await noticeStatusTrigger.isVisible()) {
-            await noticeStatusTrigger.click();
-            await this.page.getByRole('option', { name: /게시 \(LIVE\)/i }).click();
+            const current = (await noticeStatusTrigger.textContent()) ?? '';
+            if (!/게시/.test(current)) {
+                await noticeStatusTrigger.click();
+                await this.page.getByRole('option', { name: /게시 \(LIVE\)/i }).press('Enter');
+            } else {
+                console.log('>>> [Promotion] 게시 설정이 이미 게시(LIVE) — 콤보박스를 열지 않는다.');
+            }
         }
 
         // Mandatory Coordinates and Size

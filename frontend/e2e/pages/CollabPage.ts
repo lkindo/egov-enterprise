@@ -13,14 +13,30 @@ export class CollabPage {
         await expect(this.page.getByRole('heading', { name: /협업 및 네트워크 허브/i })).toBeVisible({ timeout: 60000 });
     }
 
-    async switchTab(tab: 'MESSAGES' | 'CONTACTS' | 'CALENDAR' | 'SCRAPS') {
+    /**
+     * [2026-07-27 정정] 종전 시그니처는 'MESSAGES' | 'CONTACTS' | 'CALENDAR' | 'SCRAPS' 였고
+     * 그 영문 문자열을 **탭 이름 그대로** getByRole('button') 으로 찾았다. 실제 UI 와 두 겹으로 어긋난다:
+     *   ① CollaborationHubClient 의 탭은 COLLABORATION_TABS = MESSAGES | ADDRESS_BOOK | SCRAPS 이고
+     *      화면에 찍히는 라벨은 TAB_LABEL 의 한글(쪽지 / 주소록 / 스크랩)이다. 'CONTACTS' 와 'CALENDAR' 는
+     *      저장소 어디에도 없는 팬텀이었다(CALENDAR 탭은 존재조차 하지 않는다).
+     *   ② 탭은 <Button role="tab"> 이라 **명시적 role 이 암시적 button 역할을 덮어쓴다** — getByRole('button')
+     *      으로는 원리적으로 잡히지 않는다. 그래서 5분 타임아웃까지 그냥 기다렸다.
+     */
+    async switchTab(tab: 'MESSAGES' | 'ADDRESS_BOOK' | 'SCRAPS') {
         console.log(`>>> [Collab] Switching to tab: ${tab}`);
-        const label = tab === 'MESSAGES' ? 'MESSAGES' : tab === 'CONTACTS' ? 'CONTACTS' : tab === 'SCRAPS' ? 'SCRAPS' : 'CALENDAR';
-        // 페이지 전환 중 동일 탭 버튼이 일시적으로 2개 존재(strict-mode 위반) → exact + first로 방어
-        await this.page.getByRole('button', { name: label, exact: true }).first().click();
+        const label = tab === 'MESSAGES' ? '쪽지' : tab === 'ADDRESS_BOOK' ? '주소록' : '스크랩';
+        // 페이지 전환 중 동일 탭이 일시적으로 2개 존재(strict-mode 위반) → exact + first로 방어
+        await this.page.getByRole('tab', { name: label, exact: true }).first().click();
         await this.page.waitForTimeout(1000);
     }
 
+    /**
+     * ⚠ [2026-07-27] 이 메서드는 **어떤 스펙에서도 호출되지 않는다**(호출부 0). 아래 셀렉터 중
+     * `/신규 전송/i`(실제는 '신규 발송') · `/Target Locked/i`(실제는 selected-recipient-badge / 'N명 선택됨')
+     * · `/성공적으로 발송되었습니다/i`(실제는 '메일이 발송 요청되었습니다.') 는 저장소에 존재하지 않는
+     * 팬텀이다. 실행 경로가 없어 검증할 수 없으므로 추측으로 고쳐 두지 않고 사실만 남긴다 —
+     * 되살릴 때 위 실측 문구로 교체하고 실제로 돌려서 확인할 것.
+     */
     async sendNote(recipient: string = 'webmaster', subject: string, content: string) {
         console.log(`>>> [Collab] Sending Note to: ${recipient}`);
         await this.switchTab('MESSAGES');
@@ -64,9 +80,10 @@ export class CollabPage {
 
     async createContact(name: string, email: string, tel: string = '01000000000') {
         console.log(`>>> [Collab] Creating Contact: ${name}`);
-        await this.switchTab('CONTACTS');
-        
-        await this.page.getByRole('button', { name: /신규 연락처/i }).first().click();
+        await this.switchTab('ADDRESS_BOOK');
+
+        // 종전 /신규 연락처/i 는 실존하지 않는 문구. 실측 headerAction 라벨은 '주소록 등록'.
+        await this.page.getByRole('button', { name: /주소록 등록/i }).first().click();
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/insert-address-book/);
         
         // soft-nav 전환 중 이전/이후 라우트 DOM이 잠깐 공존해 testid가 2개로 잡히므로 first()로 방어
@@ -86,14 +103,19 @@ export class CollabPage {
         await telInput.fill(tel);
         
         await this.page.getByTestId('commit-identity-button').click();
-        await expect(this.page.getByText(/등록되었습니다/i)).toBeVisible({ timeout: 60000 });
+        await expect(this.page.getByText(/주소록이 등록되었습니다/i)).toBeVisible({ timeout: 60000 });
     }
 
     async verifyIdentityInList(name: string) {
         console.log(`>>> [Collab] Verifying visibility in Network Index: ${name}`);
-        await this.switchTab('CONTACTS');
-        
-        const searchInput = this.page.getByPlaceholder(/검색어를 입력하십시오/i);
+        // 등록 직후에는 주소록 목록 라우트에 있어 허브 탭이 없다. 정규 인덱스(허브)로 명시 이동한 뒤 검증한다.
+        await this.page.goto('/admin/collaboration?tab=ADDRESS_BOOK');
+        await expect(this.page.getByRole('heading', { name: /협업 및 네트워크 허브/i })).toBeVisible({ timeout: 60000 });
+        await this.switchTab('ADDRESS_BOOK');
+
+        // 허브 검색창 placeholder 는 `${TAB_LABEL[activeTab]} 검색어를 입력하세요.` 다.
+        // 종전 /검색어를 입력하십시오/i 는 WorkHubClient 의 문구이며 이 화면에는 없다.
+        const searchInput = this.page.getByPlaceholder(/검색어를 입력하세요/i);
         await expect(searchInput).toBeVisible();
         
         await searchInput.click();
