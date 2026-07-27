@@ -10,6 +10,21 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { eventService, EventInfo } from '@/services/foundation/operation/eventService';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+
+/**
+ * `<input type="date">` 는 `2026-05-01`(10자)을 준다. 그러나 evnt_bgng_ymd/evnt_end_ymd 는
+ * length=8 YYYYMMDD 컬럼이고 DTO 도 @Size(max = 8) 이라, 종전에는 등록 요청이 **항상 400
+ * (C001 "size must be between 0 and 8")** 으로 실패했다 = 행사 등록 기능이 동작한 적이 없다.
+ * 저장소의 기존 관례(ScheduleCreateForm·ReportCreateForm·ScheduleDeptClient)와 동일하게
+ * 경계에서 하이픈을 제거한다.
+ */
+const inputToYmd = (value?: string) => (value ?? '').replace(/-/g, '');
+
+/** 반대 방향 — 저장된 YYYYMMDD 를 사람이 읽는 형태로. 등록이 가능해지면서 실제로 노출된다. */
+const ymdToDisplay = (value?: string) => {
+  const ymd = inputToYmd(value);
+  return ymd.length === 8 ? `${ymd.slice(0, 4)}.${ymd.slice(4, 6)}.${ymd.slice(6, 8)}` : (value ?? '-');
+};
 import { Input } from '@/components/ui/input';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -95,8 +110,10 @@ export default function EventManagementClient() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const bizYr = form.evntBgngYmd ? form.evntBgngYmd.substring(0, 4) : new Date().getFullYear().toString();
-    createMutation.mutate({ ...form, bizYr });
+    const bgngYmd = inputToYmd(form.evntBgngYmd);
+    const endYmd = inputToYmd(form.evntEndYmd);
+    const bizYr = bgngYmd ? bgngYmd.substring(0, 4) : new Date().getFullYear().toString();
+    createMutation.mutate({ ...form, evntBgngYmd: bgngYmd, evntEndYmd: endYmd, bizYr });
   };
 
   const handleSearchChange = (value: string) => {
@@ -134,7 +151,7 @@ export default function EventManagementClient() {
             {event.evntNm}
           </span>
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-            {event.evntBgngYmd} ~ {event.evntEndYmd}
+            {ymdToDisplay(event.evntBgngYmd)} ~ {ymdToDisplay(event.evntEndYmd)}
           </span>
         </div>
       )

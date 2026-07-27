@@ -49,8 +49,15 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             console.log('>>> Step 3: Selecting department via native select');
             const deptSelect = page.locator('select[name="ognzId"]');
             await expect(deptSelect).toBeVisible({ timeout: 5000 });
-            // Select the first real department option (index 1, index 0 is "소속 없음 / GLOBAL")
-            await deptSelect.selectOption({ index: 1 });
+            // index 0 은 "소속 없음 / GLOBAL"(value=''), 그 뒤가 실제 부서다. 부서가 0건인 신규 DB
+            // (CI 기본값)에서는 index 1 이 존재하지 않아 selectOption 이 깨졌다. ognzId 는 스키마상
+            // optional 이므로 부서가 없으면 '소속 없음' 을 그대로 둔다.
+            const deptOptionCount = await deptSelect.locator('option').count();
+            if (deptOptionCount > 1) {
+                await deptSelect.selectOption({ index: 1 });
+            } else {
+                console.log('>>> Step 3: 등록된 부서가 없어 소속 없음(GLOBAL)으로 진행');
+            }
             await page.waitForTimeout(500);
 
             // --- Step 4: Submit ---
@@ -82,18 +89,22 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await page.locator(`text=${testName}`).first().click();
             await page.waitForTimeout(1000);
 
-            // The button text is "접근 차단"
-            const deleteBtn = page.locator('button:has-text("접근 차단")').first();
+            // [2026-07-27 정정] 종전 셀렉터는 '접근 차단' / '접근차단실행' / 토스트 '말소' 였다.
+            // 그러나 앱이 의도적으로 문구를 고쳤다 — UserOrgHubClient 주석: "실제 동작은 계정 삭제다.
+            // '접근 차단'은 무엇을 하는지 오인시킨다"(관리자 메뉴 감사 P1). 실측 문구로 맞춘다.
+            //   버튼='사용자 삭제'(부서 탭이면 '부서 삭제') · 확인=confirmText '삭제' · 토스트='… 삭제했습니다.'
+            const deleteBtn = page.getByRole('button', { name: '사용자 삭제' }).first();
             await expect(deleteBtn).toBeVisible({ timeout: 10000 });
             await deleteBtn.click();
 
-            // Confirm Text is "접근차단실행"
-            const confirmBtn = page.locator('button:has-text("접근차단실행")').first();
+            // 확인 버튼 이름('삭제')은 상세 패널의 '사용자 삭제' 에도 부분일치하므로 다이얼로그로 한정한다.
+            const confirmBtn = page.getByRole('dialog').getByRole('button', { name: '삭제', exact: true });
             await expect(confirmBtn).toBeVisible({ timeout: 5000 });
             await confirmBtn.click();
 
-            // Deletion success toast (text: '아이덴티티가 성공적으로 말소되었습니다.')
-            const deleteSuccessAlert = page.locator('[data-sonner-toast][data-type="success"]').filter({ hasText: '말소' });
+            const deleteSuccessAlert = page
+                .locator('[data-sonner-toast][data-type="success"]')
+                .filter({ hasText: '삭제했습니다' });
             await expect(deleteSuccessAlert.first()).toBeVisible({ timeout: 15000 });
             console.log('>>> User Lifecycle Completed Successfully');
         });
@@ -143,9 +154,7 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
                 desc: 'Automated E2E Test Event Description',
                 capacity: 100,
                 startDate: '2026-05-01',
-                endDate: '2026-05-03',
-                recruitDate: '2026-04-29',
-                recruitEndDate: '2026-04-30'
+                endDate: '2026-05-03'
             });
             
             // 2. Search and Delete
