@@ -140,8 +140,8 @@ export type ScheduleDto = z.infer<typeof ScheduleDtoSchema>;
 // OnlinePollArticleDto Schema
 // ==========================================================================
 export const OnlinePollArticleDtoSchema = z.object({
-  pollArtclId: z.string().min(0).max(20),
-  pollId: z.string().min(0).max(20),
+  pollArtclId: z.string().min(0).max(20).optional(),
+  pollId: z.string().min(0).max(20).optional(),
   pollArtclNm: z.string().min(0).max(100),
   pollIemCo: z.number().optional(),
   frstRgtrId: z.string().optional(),

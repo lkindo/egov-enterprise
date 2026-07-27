@@ -4460,9 +4460,9 @@ export interface components {
         /** @description 온라인 설문 항목 DTO (표준화) */
         OnlinePollArticleDto: {
             /** @description 설문 항목 ID */
-            pollArtclId: string;
+            pollArtclId?: string;
             /** @description 설문 ID */
-            pollId: string;
+            pollId?: string;
             /** @description 설문 항목 명 */
             pollArtclNm: string;
             /**
