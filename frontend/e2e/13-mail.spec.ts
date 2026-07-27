@@ -59,9 +59,12 @@ test.describe('Tier 13: Enterprise Mail System E2E', () => {
         const recipientInput = page.getByTestId('mail-recipient-input');
         await recipientInput.fill('NON_EXISTENT_USER_XYZ_123');
         
-        // Expect "No Matches Found" message in the search results dropdown
-        const noMatches = page.locator('span', { hasText: /No Matches Found/i });
+        // [2026-07-27 정정] 'No Matches Found' 는 저장소에 존재하지 않는 팬텀 문구다.
+        // 실측 문구는 '검색 결과가 없습니다.' 이며, MailSendHubClient 는 [P1-1] 에 따라
+        // **검색 실패(사용자 검색에 실패했습니다.)와 결과 없음을 구분**한다. 후자만 통과로 인정한다.
+        const noMatches = page.getByText('검색 결과가 없습니다.');
         await expect(noMatches).toBeVisible({ timeout: 10000 });
+        await expect(page.getByText('사용자 검색에 실패했습니다.')).toHaveCount(0);
         
         console.log('>>> Invalid recipient search caught correctly (No Matches Found)');
     });

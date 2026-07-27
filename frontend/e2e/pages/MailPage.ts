@@ -84,21 +84,25 @@ export class MailPage {
         console.log('[E2E] Clicking mail item...');
         await mailItem.click();
         
-        // 3. Verify detail panel with retry if it stays in empty state
-        const detailPanel = this.page.locator('.lg\\:col-span-7');
-        const emptyStateText = detailPanel.locator('h3').filter({ hasText: 'Select Dispatch Node' });
-        
+        // 3. 상세 패널 확인
+        // [2026-07-27 정정] 종전엔 .lg:col-span-7 을 상세 패널로 봤다. 실제 MailHistoryHubClient 는
+        //   목록 = col-span-7(메일 선택 시) / col-span-12(미선택) · 상세 = col-span-5
+        // 라 좌표가 뒤바뀌어 있었고, 그래서 목록 제목 '발신 로그 목록' 을 읽고 'Mail Intelligence' 와
+        // 비교해 실패했다. 'Mail Intelligence' 와 'Select Dispatch Node' 는 저장소에 없는 팬텀 문구다.
+        // 상세 패널은 selectedMail 일 때만 마운트되므로(AnimatePresence) 빈 상태 요소 자체가 없다 —
+        // '패널이 나타났는가' 로 확인한다.
+        const detailPanel = this.page.locator('.lg\\:col-span-5');
+
         try {
-            // Wait for empty state to disappear
-            await expect(emptyStateText).not.toBeVisible({ timeout: 5000 });
+            await expect(detailPanel).toBeVisible({ timeout: 5000 });
         } catch (e) {
             console.log('[E2E] Detail panel not updating, clicking again...');
             await mailItem.click();
-            await expect(emptyStateText).not.toBeVisible({ timeout: 10000 });
+            await expect(detailPanel).toBeVisible({ timeout: 10000 });
         }
 
         // 4. Final verification of content
-        await expect(detailPanel.locator('h2')).toHaveText('Mail Intelligence', { timeout: 15000 });
+        await expect(detailPanel.getByText('발신 상세')).toBeVisible({ timeout: 15000 });
         const detailSubject = detailPanel.locator('h3');
         await expect(detailSubject).toContainText(subject, { timeout: 20000 });
         
@@ -118,17 +122,19 @@ export class MailPage {
         await mailItem.waitFor({ state: 'visible', timeout: 10000 });
         await mailItem.click();
         
-        const detailPanel = this.page.locator('.lg\\:col-span-7');
-        await expect(detailPanel.locator('h2').first()).toHaveText('Mail Intelligence', { timeout: 10000 });
-
-        this.page.once('dialog', async dialog => {
-            console.log(`[E2E] Confirming delete dialog: ${dialog.message()}`);
-            await dialog.accept();
-        });
+        const detailPanel = this.page.locator('.lg\\:col-span-5');
+        await expect(detailPanel.getByText('발신 상세')).toBeVisible({ timeout: 10000 });
 
         const deleteBtn = detailPanel.getByTestId('delete-mail-btn');
         await deleteBtn.waitFor({ state: 'visible', timeout: 5000 });
         await deleteBtn.click();
+
+        // [2026-07-27 정정] 종전엔 page.once('dialog') 로 네이티브 window.confirm 을 수락하려 했다.
+        // 그러나 MailHistoryHubClient 는 커스텀 확인 다이얼로그(useConfirm, confirmText '삭제')를 쓴다 —
+        // 핸들러가 한 번도 불리지 않는 死코드였고 확인 버튼을 아무도 누르지 않았다.
+        const confirmBtn = this.page.getByRole('dialog').getByRole('button', { name: '삭제', exact: true });
+        await expect(confirmBtn).toBeVisible({ timeout: 10000 });
+        await confirmBtn.click();
         
         await expect(mailItem).not.toBeVisible({ timeout: 15000 });
         console.log('[E2E] Mail deleted successfully.');
