@@ -100,7 +100,14 @@ export class PromotionPage {
         await submitBtn.waitFor({ state: 'visible', timeout: 5000 });
         await submitBtn.click({ force: true });
         console.log('>>> [Promotion] Submit button clicked, waiting for response...');
-        await this.page.waitForTimeout(3000);
+        // [2026-07-27] 종전에는 3초 blind wait 이었다. 그러면 **등록이 실패해도 그냥 지나간다** —
+        //   검증 대상이 "무엇이 일어났는가"가 아니라 "시간이 지났는가"였기 때문이다.
+        //   실제 완료 신호는 모달이 닫히는 것이다(성공 시에만 닫힌다). 실패하면 모달이 열린 채
+        //   남으므로 여기서 즉시·명확하게 실패한다.
+        await expect(
+            submitBtn,
+            '등록 모달이 닫히지 않았다 — 제출이 실패했거나 유효성 오류가 남아 있다',
+        ).toBeHidden({ timeout: 15000 });
         console.log('>>> [Promotion] Creation step completed');
     }
 
