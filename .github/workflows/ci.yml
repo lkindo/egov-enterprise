@@ -390,7 +390,12 @@ jobs:
           pnpm run start:3001 > /tmp/next-start.log 2>&1 &
           npx wait-on http://127.0.0.1:3001/login --timeout 120000
           # Run tests with sharding for parallel execution
-          npx playwright test --shard=${{ matrix.shard }}
+          # [2026-07-27] 출력을 파일로 남긴다. 종전에는 어디에도 남기지 않아, 잡이 75분
+          #   timeout 으로 잘렸을 때(= conclusion 이 failure 가 아니라 cancelled) **어느 테스트가
+          #   예산을 먹었는지 알 방법이 전혀 없었다.** 로그 조회는 권한이 필요하므로 annotations
+          #   경로로 꺼내 쓸 수 있게 해 둔다(백엔드 잡의 tee 관례와 동일).
+          set -o pipefail
+          npx playwright test --shard=${{ matrix.shard }} 2>&1 | tee /tmp/e2e-run.log
         working-directory: frontend
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
@@ -412,10 +417,15 @@ jobs:
       # [실패 관측] E2E 는 과금차단 기간 내내 미실행이라 실패 지점이 불투명하다. 어느 스텝이 죽었는지와
       # 컨테이너 상태·API 로그를 애노테이션으로 노출한다(로그 다운로드는 admin 권한 필요).
       - name: Surface failure detail (annotations)
-        if: failure()
+        # [2026-07-27 정정] 종전 `if: failure()` 는 **timeout 으로 잘린 경우를 통과시켰다.**
+        #   GitHub 은 timeout-minutes 초과 잡을 failure 가 아니라 **cancelled** 로 표시하므로,
+        #   실제로 2026-07-27 실행에서 e2e 3샤드가 75분 timeout 으로 잘렸을 때 이 스텝이 통째로
+        #   skip 됐고 **원인 신호가 하나도 남지 않았다**. 진단이 가장 필요한 경우에 진단이 꺼지는
+        #   구조였다. cancelled 까지 포함한다(성공 시엔 여전히 돌지 않는다).
+        if: failure() || cancelled()
         run: |
           echo "::error title=실패 스텝 판정::build=${{ steps.e2e-build.outcome }} / compose=${{ steps.e2e-compose.outcome }} / wait=${{ steps.e2e-wait.outcome }} / run=${{ steps.e2e-run.outcome }}"
-          for f in /tmp/compose-build.log /tmp/compose-up.log /tmp/next-build.log /tmp/next-start.log; do
+          for f in /tmp/e2e-run.log /tmp/compose-build.log /tmp/compose-up.log /tmp/next-build.log /tmp/next-start.log; do
             [ -f "$f" ] || continue
             echo "::error title=$(basename $f) 마지막 출력::$(tail -c 2000 "$f" | paste -sd' ' -)"
           done
