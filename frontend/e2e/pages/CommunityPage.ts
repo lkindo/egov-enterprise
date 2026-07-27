@@ -12,14 +12,21 @@ export class CommunityPage {
     }
 
     async selectCategory(category: 'WIKI' | 'FAQ' | 'QNA' | 'COMMUNITY') {
+        // [2026-07-27 정정] 두 겹으로 어긋나 있었다.
+        //  ① 라벨: 'Global Wiki'·'고객지원' 은 저장소에 없는 팬텀. KnowledgeHubClient 의 CategoryCard 는
+        //     '위키' · '자주 묻는 질문' · '기술 Q&A' · '커뮤니티' 로 렌더한다.
+        //  ② 역할: CategoryCard 는 <button type="button" role="tab"> 이라 **명시적 role 이 암시적 button
+        //     역할을 덮어쓴다** — getByRole('button') 으로는 원리적으로 잡히지 않아 5분 타임아웃까지 대기했다.
+        //     (monitoring·collaboration 허브와 동일한 드리프트. 종전 스윕은 이 호출이 정규식 리터럴이 아니라
+        //      변수(categoryMap[category])여서 걸러내지 못했다.)
         const categoryMap: Record<string, string> = {
-            'WIKI': 'Global Wiki',
-            'FAQ': '고객지원',
+            'WIKI': '위키',
+            'FAQ': '자주 묻는 질문',
             'QNA': '기술 Q&A',
             'COMMUNITY': '커뮤니티'
         };
         console.log(`>>> [Community] Selecting category: ${category}`);
-        await this.page.getByRole('button', { name: categoryMap[category] }).click();
+        await this.page.getByRole('tab', { name: categoryMap[category] }).click();
         await this.page.waitForTimeout(1000);
     }
 
@@ -36,7 +43,8 @@ export class CommunityPage {
 
     async gotoMaster() {
         console.log('>>> [Community] Navigating to Community Master Console');
-        await this.page.getByRole('button', { name: /Master Console/i }).click();
+        // 종전 /Master Console/i 는 실존하지 않는 문구. 실측 라벨은 '게시판 관리'(관리자에게만 노출).
+        await this.page.getByRole('button', { name: /게시판 관리/ }).click();
         await expect(this.page).toHaveURL(/\/admin\/community\/boards\/master/);
     }
 }
