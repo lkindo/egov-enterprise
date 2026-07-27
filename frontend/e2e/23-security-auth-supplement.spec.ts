@@ -134,11 +134,22 @@ test.describe('Tier 23-E4: Middleware sensitive-path RBAC redirect', () => {
         });
     }
 
-    test('[documented contract] non-sensitive admin route is NOT redirected by middleware', async ({ page }) => {
-        // 미들웨어 민감목록에 없는 /admin/community 는 리다이렉트되지 않고 통과한다(백엔드 RBAC에 위임).
-        // 이 테스트는 현재의 프론트/백엔드 RBAC 분담 계약을 고정한다 — 동작이 바뀌면 의도적으로 재검토할 것.
-        await page.goto('/admin/community/boards/master');
+    // [2026-07-27 계약 갱신] 이 테스트는 **낡은 계약**을 박제하고 있었다. 종전 주석은 "민감목록에 없는
+    // /admin/community 는 통과한다(백엔드 RBAC 에 위임)" 였으나, 미들웨어는 그 사이 **deny-by-default**
+    // 로 뒤집혔다 — `/admin/**` 는 기본 차단이고 `USER_ACCESSIBLE_ADMIN_PATHS` 에 명시된 경로만 열린다.
+    // 게다가 `/admin/community` 는 열려 있지만 그 하위 관리 콘솔인 `/admin/community/boards/master` 는
+    // `ADMIN_ONLY_SUBPATHS` 로 **다시 도려내져** 허용목록보다 우선 적용된다(middleware.ts §4).
+    // 즉 실패는 앱 회귀가 아니라 테스트 드리프트였다. 강화된 현행 계약을 **양방향**으로 고정한다.
+    test('[documented contract] allow-listed admin route is NOT redirected for non-admin', async ({ page }) => {
+        // 허용목록에 명시된 경로(개인 협업 영역)는 일반 사용자에게 열려 있어야 한다 — 과잉차단 회귀 방어.
+        await page.goto('/admin/collaboration');
         await expect(page).not.toHaveURL(/auth_error=unauthorized/);
+    });
+
+    test('[documented contract] admin-only carve-out inside an allow-listed path IS redirected', async ({ page }) => {
+        // 허용된 /admin/community 안쪽이라도 관리 콘솔(boards/master)은 차단된다 — 허용목록보다 우선한다.
+        await page.goto('/admin/community/boards/master');
+        await expect(page).toHaveURL(/auth_error=unauthorized/, { timeout: 15000 });
     });
 });
 
@@ -180,6 +191,28 @@ test.describe('Tier 23-E11: Accessibility (login page, strict)', () => {
         // 단, 감사 범위를 로그인 본문(<main id="main-content">)으로 스코프한다. 루트 레이아웃(AppShell)이 모든
         // 페이지를 전역 chrome(헤더 EG 로고/사이드바)으로 감싸므로, 그 chrome에서 발생하는 color-contrast 위반은
         // 이 테스트(제목대로 '로그인 폼' 감사)의 대상이 아니다. 로그인 폼 본문 자체는 이미 clean하다.
+        //
+        // [2026-07-27] color-contrast 가 회차마다 갈렸다. 원인은 설계가 아니라 **감사 시점**이었다 —
+        // 로그인 카드는 framer-motion 진입 애니메이션(opacity 0→1, 0.8s + 아이콘 0.3s 지연) 안에 있고,
+        // 페이드 도중에는 전경·배경이 모두 합성돼 대비가 낮게 나온다
+        // (실측: 전경 #404a59 → #686e78/#9ca2ac, 배경 순백 → #cfd4da/#e0e3e7).
+        // 정착 상태를 브라우저에서 직접 측정하면 카드 설명 rgb(64,74,89) on 순백 ≈ 8.2:1,
+        // 푸터 rgb(2,8,23) on #f1f5f9 로 **둘 다 기준을 크게 넘는다**. 즉 앱은 정상이다.
+        //
+        // 대기만으로는 부족했다(2.5s + 조상 opacity 검사에도 부하 시 재발). 감사 대상 영역의 진입
+        // 애니메이션을 명시적으로 무력화해 **정착 상태를 강제**한 뒤 감사한다 — 사용자가 실제로 보는
+        // 상태를 재는 것이 이 테스트의 의도이며, 과도기 프레임을 재는 것은 의도가 아니다.
+        await page.waitForLoadState('networkidle');
+        await page.addStyleTag({
+            content: `main#main-content, main#main-content * {
+                opacity: 1 !important;
+                transform: none !important;
+                animation: none !important;
+                transition: none !important;
+            }`,
+        });
+        await page.waitForTimeout(300);
+
         const results = await new AxeBuilder({ page }).include('main#main-content').analyze();
         expect(
             results.violations,

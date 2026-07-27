@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures/base-test';
 import { AxeBuilder } from '@axe-core/playwright';
+import { getAdminBearerToken } from './utils/admin-token';
 
 /**
  * [Tier 4] Quality & Resilience: Security, UX, A11y, Visual
@@ -48,9 +49,26 @@ test.describe('Tier 4: Quality & Resilience', () => {
     test.describe('Advanced UX & Performance', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
 
-        test('Optimistic UI: Post Like/Reaction', async ({ page }) => {
+        test('Optimistic UI: Post Like/Reaction', async ({ page, request }) => {
             const bbsId = 'BBSMSTR_AAAAAAAAAAAA';
-            await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=1108`); // Existing post
+
+            // [2026-07-27 정정] 종전에는 pstId=1108 을 하드코딩했다("Existing post"). 신규 DB(CI 기본)에는
+            // 그 글이 없어 상세 페이지가 렌더되지 않았고, 추천 버튼을 영원히 찾지 못했다.
+            // 시드로 채우면 누적 쓰레기가 재발하므로 이 테스트가 쓸 글을 **직접 만든다**.
+            const token = getAdminBearerToken();
+            const created = await request.post('/api/v1/boards/posts', {
+                headers: { Authorization: `Bearer ${token}` },
+                data: {
+                    bbsId,
+                    pstTtl: `E2E Like ${Date.now()}`,
+                    pstCn: '<p>Optimistic UI 추천 검증용 게시글</p>',
+                },
+            });
+            expect(created.ok(), '추천 검증용 게시글 생성이 성공해야 한다').toBeTruthy();
+            const pstId = String((await created.json())?.data ?? '').trim();
+            expect(pstId, '생성된 게시글 ID 를 받아야 한다').not.toBe('');
+
+            await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${pstId}`);
             
             // [E2E 감사 B] isVisible 가드 제거 — 추천 버튼이 없으면 실패시킨다(과거: 가드로 무단언 통과).
             const likeBtn = page.locator('button').filter({ hasText: /추천|좋아요|Like/i }).first();
@@ -100,6 +118,17 @@ test.describe('Tier 4: Quality & Resilience', () => {
         });
 
         test('Visual Regression Baseline', async ({ page }) => {
+            // [2026-07-27 정책 결정: CI(리눅스) 전용] 스크린샷은 폰트 렌더링·안티에일리어싱이 OS 마다
+            // 달라 win32 에서 만든 기준선은 ubuntu 러너에서 **반드시** 실패한다(파일명이 …-win32.png 인
+            // 것이 그 증거다). 기준선은 CI 플랫폼에서 한 번 생성해 커밋하고, 검증도 그 플랫폼에서만 한다.
+            // 로컬(비-리눅스)에서는 skip — '통과'로 위장하지 않고 건너뛴 사실을 리포트에 남긴다.
+            test.skip(
+                process.platform !== 'linux',
+                '비주얼 회귀는 CI(리눅스) 전용이다 — OS 별 렌더 차이로 로컬 기준선은 러너에서 의미가 없다. '
+                + '기준선 생성: CI 에서 `pnpm exec playwright test -g "Visual Regression Baseline" --update-snapshots` '
+                + '후 생성된 e2e/04-quality-resilience.spec.ts-snapshots/ 를 커밋한다.',
+            );
+
             await page.goto('/admin');
             // Wait for charts to animate
             await page.waitForTimeout(3000);

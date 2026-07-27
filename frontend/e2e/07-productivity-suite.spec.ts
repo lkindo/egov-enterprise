@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures/base-test';
 import { ProductivitySuitePage } from './pages/ProductivitySuitePage';
+import { getAdminBearerToken } from './utils/admin-token';
 
 /**
  * Tier 7: Productivity Suite
@@ -51,14 +52,41 @@ test.describe('Tier 7: Productivity Suite (Business Tools)', () => {
         // 그 409를 단언하는 자기충족 목. 실제 일정 중복 충돌은 백엔드 통합 테스트에서 검증한다.
     });
 
-    test('Smart Toolkit: Business Extensions (Dept Job & Work Report)', async ({ adminPage }) => {
+    test('Smart Toolkit: Business Extensions (Dept Job & Work Report)', async ({ adminPage, request }) => {
         const prodPage = new ProductivitySuitePage(adminPage);
 
+        // [2026-07-27 정정] 종전 단언은 `/식별된 데이터 유닛이 없습니다|부서: /` 였다. 실패 원인은 앱 회귀가
+        // 아니라 **테스트 드리프트**다 — 업무 탭에 소유 스코프('내 업무'/'부서 전체')가 생기면서 기본
+        // 스코프의 빈 문구가 "내가 담당자인 업무가 없습니다…"로 분기됐고(WorkHubClient §emptyMessage),
+        // 낡은 문구는 그 분기 밖에만 남았다. 즉 종전 테스트는 **빈 목록만 통과**하는 단언이었다.
+        // 빈 화면을 단언하는 대신 이 테스트가 쓸 업무를 **직접 만들어** 목록에 실제로 뜨는지 검증한다
+        // (시드로 풀면 누적 쓰레기가 재발한다 — 04 스펙의 자체생성 전환과 동일 방침).
+        // 백엔드는 담당자 미지정 시 등록자를 담당자(pic_id = esntlId)로 넣으므로 기본 '내 업무'에 잡힌다.
+        const token = getAdminBearerToken();
+        const jobName = `E2E DeptJob ${Date.now()}`;
+        let createdJobId = '';
+
         await test.step('Admin: Navigate and Verify Departmental Jobs', async () => {
+            const created = await request.post('/api/v1/dept-jobs', {
+                headers: { Authorization: `Bearer ${token}` },
+                data: { deptTaskNm: jobName, deptTaskCn: '부서 업무 목록 렌더 검증용 업무', prrtyRnk: '1' },
+            });
+            expect(created.ok(), '검증용 부서 업무 생성이 성공해야 한다').toBeTruthy();
+            createdJobId = String((await created.json())?.data ?? '').trim();
+            expect(createdJobId, '생성된 부서 업무 ID 를 받아야 한다').not.toBe('');
+
             await prodPage.gotoDeptJob();
             await prodPage.verifyWorkflowHubTabs();
-            // In Workflow Hub, the job list is visible by default for Dept Job
-            await expect(adminPage.getByText(/식별된 데이터 유닛이 없습니다|부서: /i).first()).toBeVisible();
+            // 기본 스코프('내 업무')에 방금 만든 업무가 실제로 렌더되어야 한다.
+            await expect(adminPage.getByText(jobName).first()).toBeVisible({ timeout: 15000 });
+        });
+
+        // cleanup-db.ts 는 부서 업무를 청소하지 않는다(대상 목록에 없음). 자체 생성분은 직접 회수한다.
+        await test.step('Cleanup: remove the dept job created by this test', async () => {
+            const deleted = await request.delete(`/api/v1/dept-jobs/${createdJobId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            expect(deleted.ok(), '검증용 부서 업무 삭제가 성공해야 한다').toBeTruthy();
         });
 
         await test.step('Admin: Navigate and Verify Work Reports', async () => {
