@@ -1,0 +1,38 @@
+-- eGov 레거시 채번(ID generation) 상태 테이블 2종을 제거한다 — 코드는 이미 떠났고 테이블만 남았다.
+--
+-- [배경]
+-- 2026-07 채번 통일(D1①)로 `EgovIdGnrService` 계열을 전면 제거하고 `IdGenerationUtil`(foundation)로
+-- 일원화했다. 그러나 그 채번기가 상태를 보관하던 물리 테이블 `ids`·`ecopseq` 는 스키마에 그대로
+-- 남았다. 코드-스키마 비대칭이며, 남아 있는 한 "아직 쓰이는 것"으로 오해될 여지가 있다.
+--
+-- [실사용 0 증거 — 2026-07-27 실측]
+--   · `EgovIdGnrService` 참조                     0건
+--   · `EgovIdGnrConfig`/`IdGnrService` 문자열 매치 4파일 → **전부 주석**(살아 있는 호출부 0)
+--   · `@Table(name="ids"|"ecopseq")` 엔티티 매핑   0건
+--   · 런타임 코드 참조                             0건
+--       (남은 언급처는 V2_0 baseline 의 정의와 `database/dumps/` 의 과거 덤프뿐 — 둘 다 이력 자산)
+--   · 현행 채번                                    IdGenerationUtil 이 전담
+--   · 라이브 행 수                                 ids 7행 · ecopseq 117행
+--
+-- 행이 남아 있는 것은 **과거에 쓰였다**는 뜻일 뿐, 현재 이를 읽거나 쓰는 코드가 없다는 사실과
+-- 모순되지 않는다. 삭제 근거는 행 수가 아니라 참조 0 이다.
+--
+-- [되돌리기]
+-- 구조는 `V2_0__baseline.sql` 의 정의(ids: table_name/next_id/…, ecopseq: table_name/next_id)를
+-- 복사해 재생성할 수 있으나 **행 데이터는 복구되지 않는다**. 레거시 채번기가 사라진 이상 그 상태값은
+-- 재사용처가 없으므로 보존하지 않는다(보존이 필요하면 `database/dumps/` 의 과거 덤프에 남아 있다).
+--
+-- [영향]
+-- DB 표준 명명 비준수 테이블이 7 → 5 로 줄어든다(잔여 5 는 flyway_schema_history · revinfo(Envers)
+-- · meta_standard_words/terms/domains 로, 전부 인프라·메타 자산이라 `tb_` 접두 대상이 아니다).
+
+-- [Zero-Downtime 린터 예외 사유 — Expand-and-Contract 의 Contract 단계]
+-- ZeroDowntimeMigrationLinterTest 는 DROP TABLE 을 최상위 파괴 DDL 로 차단하고, Contract 최종
+-- 릴리스에서만 `-- linter:ignore` 와 함께 허용한다. 이 마이그레이션이 그 Contract 에 해당한다:
+--   · Expand/Migrate 는 이미 끝났다 — 2026-07 채번 통일(D1①)이 EgovIdGnrService 계열을 제거하고
+--     IdGenerationUtil 로 대체했다(커밋 48b82196a). 그 이후 이 두 테이블을 읽거나 쓰는 코드는 없다.
+--   · 소비처 0건은 위 5축 실측으로 확인했다(참조 0 · 엔티티 매핑 0 · 살아 있는 호출부 0).
+--   · 따라서 무중단 관점의 위험(구 버전 인스턴스가 아직 이 테이블을 참조)이 성립하지 않는다.
+-- 마커는 린터의 신호를 지우는 우회가 아니라, 린터가 Contract 단계를 위해 마련한 정규 경로다.
+DROP TABLE IF EXISTS public.ids; -- linter:ignore
+DROP TABLE IF EXISTS public.ecopseq; -- linter:ignore
