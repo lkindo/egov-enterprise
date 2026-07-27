@@ -12,6 +12,7 @@ import { User, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck, Zap } from "lucid
 import { useMessage } from '@/hooks/useMessage';
 import { motion, AnimatePresence } from 'framer-motion';
 
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 function LoginContent() {
     const { t } = useMessage();
     const [id, setId] = useState('');
@@ -73,10 +74,10 @@ function LoginContent() {
             // 과거 이 갱신은 router.refresh() 가 대신했으나, 두 번째 replace 와 동시 발사되어 진행 중이던
             // 전환을 무효화시키는 무한 "인증중" 고착의 원인이었다. 하드 전환은 그 부작용 없이 목적을 이룬다.
             window.location.replace(redirectUrl);
-        } catch (err: any) {
+        } catch (err) {
             justLoggedIn.current = false;
             console.error(err);
-            setError(err.message || t('login.errorFailed'));
+            setError(extractErrorMessage(err, t('login.errorFailed')));
             setIsSubmitting(false);
             setAuthStep(0);
         }

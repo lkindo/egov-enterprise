@@ -35,6 +35,7 @@ import { useAppForm } from '@/hooks/useAppForm';
 
 import { ProgramDtoSchema } from '@/types/generated-zod';
 
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 const programSchema = ProgramDtoSchema.extend({
  prgrmFileNm: z.string().min(1).max(60),
  prgrmStrgPath: z.string().max(100).optional().or(z.literal('')),
@@ -171,8 +172,8 @@ export default function ProgramAdminClient({
  await programAdminService.deleteProgram(program.prgrmFileNm);
  toast('프로그램이 삭제되었습니다.', 'success');
  loadData(currentSearchWrd, page);
- } catch (err: any) {
- toast(err.message || '삭제 중 오류가 발생했습니다.', 'error');
+ } catch (err) {
+ toast(extractErrorMessage(err, '삭제 중 오류가 발생했습니다.'), 'error');
  }
  }
  };

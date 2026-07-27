@@ -36,6 +36,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { LucideIcon } from 'lucide-react';
 
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 const container = {
   hidden: { opacity: 0 },
   show: {
@@ -104,11 +105,11 @@ export function BoardMasterListClient() {
       const detail = await boardAdminService.getBoardMaster(board.bbsId);
       setSelectedBoard(detail);
       setEditData({ ...detail });
-    } catch (err: any) {
+    } catch (err) {
       // 상세 조회 실패 시에도 편집은 가능하게 하되, 목록 값만으로는 필수 필드가 부족할 수 있음을 알린다.
       setSelectedBoard(board);
       setEditData({ ...board });
-      toast(err?.message || '게시판 상세 정보를 불러오지 못했습니다. 일부 설정이 누락된 상태로 표시됩니다.', 'error');
+      toast(extractErrorMessage(err, '게시판 상세 정보를 불러오지 못했습니다. 일부 설정이 누락된 상태로 표시됩니다.'), 'error');
     } finally {
       setIsDetailLoading(false);
       setIsModalOpen(true);
@@ -156,9 +157,9 @@ export function BoardMasterListClient() {
       toast('게시판 설정이 업데이트되었습니다.', 'success');
       setIsModalOpen(false);
       refetch();
-    } catch (err: any) {
+    } catch (err) {
       // client.ts 인터셉터가 백엔드 message 를 Error.message 로 승격하므로 그대로 노출해 원인이 보이게 한다.
-      toast(err?.message || '업데이트 중 오류가 발생했습니다.', 'error');
+      toast(extractErrorMessage(err, '업데이트 중 오류가 발생했습니다.'), 'error');
     }
   };
 
@@ -210,8 +211,8 @@ export function BoardMasterListClient() {
           toast('게시판 마스터 데이터가 완전히 말소되었습니다.', 'success');
           refetch();
         }
-      } catch (error: any) {
-        const errMsg = error.message || '영구 삭제 처리 중 오류가 발생했습니다.';
+      } catch (error) {
+        const errMsg = extractErrorMessage(error, '영구 삭제 처리 중 오류가 발생했습니다.');
         toast(errMsg, 'error');
       }
     }
@@ -363,8 +364,8 @@ export function BoardMasterListClient() {
                   await boardAdminService.batchUpdateBoardMasterStatus(ids, 'Y');
                   toast(`${items.length}개의 게시판이 일괄 활성화되었습니다.`, 'success');
                   refetch();
-                } catch (err: any) {
-                  toast(err.message || '일괄 활성화 중 오류가 발생했습니다.', 'error');
+                } catch (err) {
+                  toast(extractErrorMessage(err, '일괄 활성화 중 오류가 발생했습니다.'), 'error');
                 }
               }
             },
@@ -378,8 +379,8 @@ export function BoardMasterListClient() {
                   await boardAdminService.batchUpdateBoardMasterStatus(ids, 'N');
                   toast(`${items.length}개의 게시판이 일괄 비활성화되었습니다.`, 'info');
                   refetch();
-                } catch (err: any) {
-                  toast(err.message || '일괄 비활성화 중 오류가 발생했습니다.', 'error');
+                } catch (err) {
+                  toast(extractErrorMessage(err, '일괄 비활성화 중 오류가 발생했습니다.'), 'error');
                 }
               }
             },
@@ -416,8 +417,8 @@ export function BoardMasterListClient() {
                     await boardAdminService.batchDeleteBoardMastersPhysically(ids);
                     toast('선택한 게시판 마스터 데이터가 모두 영구 말소되었습니다.', 'success');
                     refetch();
-                  } catch (err: any) {
-                    toast(err.message || '일괄 영구 삭제 중 오류가 발생했습니다.', 'error');
+                  } catch (err) {
+                    toast(extractErrorMessage(err, '일괄 영구 삭제 중 오류가 발생했습니다.'), 'error');
                   }
                 }
               }
