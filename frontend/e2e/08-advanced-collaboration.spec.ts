@@ -36,15 +36,18 @@ test.describe('Tier 8: Advanced Collaboration & Intelligence', () => {
         
         await statsPage.goto();
         await statsPage.verifyChartsVisible();
-        
-        // 기간 변경 및 새로고침
-        await statsPage.changePeriod('MONTHLY_BATCH (30D)');
+
+        // [2026-07-27] 종전의 `changePeriod('MONTHLY_BATCH (30D)')` 를 걷어냈다 — 그 셀렉트는
+        // onChange 없는 장식 컨트롤이었고 감사 P0(4dcee3014)에서 제거됐다. 상세는 StatsPage 주석.
         await statsPage.refresh();
-        
+
         // 엑셀 내보내기 검증
         console.log('>>> Verifying Excel Export capability');
         const download = await statsPage.exportExcel();
-        expect(download.suggestedFilename()).toContain('system_intelligence_stats');
+        // [2026-07-27 정정] 기대 파일명이 'system_intelligence_stats' 로 굳어 있었으나 실제 산출물은
+        // `system_connect_stats_YYYY-MM-DD.csv` 다(AdminStatsClient 의 DataExportExcel filename).
+        // 접속 집계를 내보내는 버튼이므로 현행 이름이 내용과 더 맞는다 — 단언을 실물에 맞춘다.
+        expect(download.suggestedFilename()).toContain('system_connect_stats');
     });
 
     // [E2E 감사 Phase3 중복제거] 삭제됨: 'Exploratory: Tier-1 User Portal Coverage Gap Check' —
