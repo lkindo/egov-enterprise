@@ -24,7 +24,10 @@ export class SurveyPage {
 
     async gotoManage() {
         await this.page.goto('/admin/survey/manage');
-        await expect(this.page.getByText(/설문.*관리|설문.*인벤토리/i).first()).toBeVisible();
+        // [2026-07-27 정정] 종전 getByText(/설문.*관리/).first() 는 **전역 메가메뉴의 숨겨진 링크**
+        // '설문 및 여론조사 관리' 를 DOM 순서상 먼저 집었다. 그 요소는 접힌 메뉴 안이라 영원히 visible 이
+        // 되지 않아 60초 타임아웃으로 죽었다(페이지는 정상 렌더됐다). 페이지 자신의 heading 으로 단언한다.
+        await expect(this.page.getByRole('heading', { name: '설문 및 거버넌스 관리' })).toBeVisible({ timeout: 30000 });
     }
 
     async gotoCreate() {
