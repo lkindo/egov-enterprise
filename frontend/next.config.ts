@@ -38,8 +38,18 @@ const nextConfig = {
     //    bare 'ws: wss:'(모든 호스트 허용=XSS 유출 채널)는 dev HMR 에서만 유지.
     //  - img-src: grainy-gradients(참조 0 실측) 제거.
     //  - 위반 리포팅: /api/security/csp('csp-report' 문자열 회피 — 광고차단기 오차단 방지).
-    const cspProd = `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://images.unsplash.com blob: data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; report-uri /api/security/csp; report-to csp-endpoint;`;
-    const cspDev = `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' https://images.unsplash.com blob: data:; font-src 'self' https://fonts.gstatic.com; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`;
+    //  - style-src/font-src: Google Fonts 도메인 2개 제거(2026-07-29).
+    //    앱 본체는 layout.tsx 가 next/font/google 을 쓰므로 Next 가 빌드타임에 폰트를 받아
+    //    /_next/static 으로 셀프호스팅한다 — 런타임에 fonts.googleapis/gstatic 으로 나가는 요청이 없다.
+    //    ⚠ 단, 앱 소스(src/) 밖에 예외가 하나 있었다: public/governance_harness_atlas.html 이
+    //    두 도메인을 실제로 참조하고 있었다(게다가 Pretendard 를 받는 cdn.jsdelivr 은 CSP 에 등재된
+    //    적이 없어 이미 차단 중이었다 — 그 문서는 CSP 와 어긋난 상태였다). 그 파일의 외부 폰트 의존을
+    //    함께 끊어 시스템 폰트로 전환했기에 여기서 두 출처를 지울 수 있다.
+    //    → public/ 에 정적 HTML 을 추가할 때 이 CSP 가 그대로 적용된다는 점에 주의할 것.
+    //    폰트 세분화(style-src-elem/attr)는 sonner·framer-motion 런타임 <style> 주입 검증이
+    //    선행돼야 하므로 Phase 3 잔여로 둔다.
+    const cspProd = `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' https://images.unsplash.com blob: data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; report-uri /api/security/csp; report-to csp-endpoint;`;
+    const cspDev = `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' https://images.unsplash.com blob: data:; font-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`;
     return [
       {
         source: '/:path*',
