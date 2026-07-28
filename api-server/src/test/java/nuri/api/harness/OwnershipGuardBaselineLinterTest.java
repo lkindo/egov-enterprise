@@ -82,7 +82,13 @@ class OwnershipGuardBaselineLinterTest {
             "ScrapService#assertOwnerOrAdmin=3",
             "UserService#assertAdmin=7",
             "UserService#assertOwnerOrAdminByEsntlId=1",
-            "WorkReportService#assertOwnerOrAdmin=2"));
+            // [2026-07-29 상향 2→3] 조회 IDOR 차단으로 **가드를 추가**했다(약화가 아니라 강화).
+            //   종전: update(53행)·delete(66행) 2곳만 가드. getWorkReport(상세)는 무가드라
+            //   인증만 되면 누구나 임의 rptId 로 타인 보고 본문을 읽을 수 있었다.
+            //   추가한 3번째 호출은 그 상세 조회이며, 쓰기 2곳이 이미 쓰던 것과 **동일한 가드**다
+            //   (관리자 대리 열람 허용 — 도메인 판정은 쓰기와 같다, §0.7-H3).
+            //   ⚠ 이 숫자를 내리는 변경은 가드 소실이므로 반드시 사유를 남길 것.
+            "WorkReportService#assertOwnerOrAdmin=3"));
 
     @Test
     @DisplayName("🔐 소유권/권한 가드 census 동결 — 인가 완화(엄격→관리자우회)·가드 소실 차단")
