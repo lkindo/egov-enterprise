@@ -23,13 +23,25 @@ COPY gradle/libs.versions.toml /app/gradle/
 #   git 인덱스 모드를 100755 로 교정했지만(2026-07-26), Windows 체크아웃 등으로 모드가 유실되는
 #   경로가 있어 이미지 안에서 한 번 더 보장한다. Windows 로컬 Docker 빌드는 exec 비트가 없어
 #   임의로 755 를 부여하므로 **이 결함을 재현하지 못한다** — 로컬 성공이 CI 성공을 보장하지 않았다.
-RUN chmod +x ./gradlew
+#
+# [방어 2 / 2026-07-28 신설] CR 제거. 실행비트가 있어도 줄바꿈이 CRLF 면 shebang 이 `#!/bin/sh\r`
+#   로 읽혀 커널이 인터프리터를 찾지 못하고 **exit 127** 로 죽는다(Permission denied 가 아니라
+#   "not found" 라 원인이 전혀 달라 보인다). 실측(2026-07-28): core.autocrlf=true 인 Windows
+#   체크아웃에서 정확히 이 증상으로 이미지 빌드가 실패했다. 근본 해결은 `.gitattributes` 의
+#   `gradlew text eol=lf` 이며, 여기서는 그 설정이 없는 클론에서도 빌드가 서도록 한 번 더 막는다.
+RUN sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew
 
 # Build dependencies only
 RUN ./gradlew :api-server:classes --no-daemon || true
 
 # Copy source and build
 COPY . .
+
+# [필수] 위 `COPY . .` 가 gradlew 를 호스트 원본으로 **다시 덮어쓴다** — 앞선 sed/chmod 방어는
+#   이 시점에 통째로 무효화된다. 따라서 소스 복사 직후 한 번 더 보장해야 실효가 있다.
+#   (이 줄이 없으면 위의 방어는 vacuous 하며, 실제 실패 지점은 언제나 아래 bootJar 였다.)
+RUN sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew
+
 RUN ./gradlew :api-server:bootJar -x test --no-daemon
 
 # Stage 2: Run
