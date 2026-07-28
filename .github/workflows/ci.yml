@@ -375,12 +375,27 @@ jobs:
         run: npx playwright install-deps chromium
         working-directory: frontend
 
-      - name: Restore Next.js build cache
-        uses: actions/download-artifact@v4
-        with:
-          name: next-build-cache
-          path: frontend/.next/cache
-        continue-on-error: true
+      # [2026-07-28 제거] `Restore Next.js build cache` 를 쓰지 않는다.
+      #
+      #   미들웨어는 **Edge Runtime** 이고, Next 는 Edge 번들의 `process.env` 를 **빌드 시점에
+      #   인라인**한다. 그런데 `frontend-build` 잡에는 JWT_SECRET 생성 스텝이 없어, 그 잡이
+      #   업로드하는 캐시에는 **DEV_JWT_SECRET 이 박힌 미들웨어**가 들어간다. e2e 잡이 그 캐시를
+      #   복원하면 미들웨어 청크가 **재빌드되지 않아** 옛 시크릿이 그대로 살아나고, 백엔드의
+      #   `openssl rand -hex 44` 와 **비대칭**이 되어 서명 검증이 전량 실패한다.
+      #   결과는 "로그인은 200 인데 모든 페이지 진입이 /login 으로 되돌아가는" 무음 루프다.
+      #
+      #   실증(2026-07-28, 로컬):
+      #     ① JWT_SECRET 없이 빌드            → 번들에 DEV_JWT_SECRET 박힘
+      #     ② .next/cache 만 남기고 새 시크릿으로 재빌드
+      #          DEV_JWT_SECRET  → 번들에 **그대로 존재**
+      #          새 시크릿        → 번들에 **없음**
+      #
+      #   증상이 미들웨어에만 나타나는 이유: 서버 컴포넌트는 런타임 env 를 읽으므로 정상 동작한다
+      #   (실패 스크린샷에서 헤더의 "최고관리자"와 좌측 메뉴는 멀쩡히 렌더됐다). 백엔드 API 도
+      #   Authorization 헤더를 쓰므로 무사하다. 오직 쿠키를 자체 검증하는 미들웨어만 죽는다.
+      #
+      #   빌드 41초를 아끼려다 잡 간 시크릿 오염을 산 셈이라 캐시를 포기한다. 캐시를 되살리려면
+      #   frontend-build 와 e2e 가 **같은 JWT_SECRET 으로 빌드**되도록 먼저 보장해야 한다.
 
       # [2026-07-28 분리] 종전에는 프론트 빌드·기동·테스트가 **한 run 블록**이었다. 그래서 잡이
       #   70분을 썼을 때 **그 중 빌드가 몇 분인지조차 알 수 없었다** — 스텝 단위 소요시간은 API 로
@@ -451,6 +466,16 @@ jobs:
             echo "::error title=JWT 시크릿 비대칭::프론트 $FE != 백엔드 $BE — 서명 검증이 전량 실패한다"
           else
             echo "::warning title=백엔드 지문 미검출::컨테이너 로그에서 fingerprint 를 찾지 못했다"
+          fi
+          echo ""
+          echo "── 미들웨어 번들에 박힌 시크릿 (Edge 는 빌드 시 인라인된다) ──"
+          # ⚠ 위의 지문 대조는 **셸 변수**를 계산한 것이라 "빌드에 박힌 값"과 다를 수 있다.
+          #   2026-07-28 실제 사고: 셸 지문은 대칭인데 번들에는 DEV 시크릿이 박혀 있었다
+          #   (빌드 캐시 복원이 미들웨어 재빌드를 스킵시켰다). 그래서 번들을 직접 확인한다.
+          if grep -rq 'dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQ' frontend/.next/server/edge --include=*.js 2>/dev/null; then
+            echo "::error title=미들웨어에 DEV 시크릿이 박힘::빌드가 옛 시크릿을 굳혔다(캐시 복원 등). 서명 검증이 전량 실패해 모든 진입이 /login 으로 되돌아간다."
+          else
+            echo "DEV 기본 시크릿 미검출 — 정상(런타임 JWT_SECRET 이 인라인됨)"
           fi
           echo ""
           echo "── 백엔드 직접 로그인 (auth.setup 과 동일 경로) ──"
