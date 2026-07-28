@@ -1,0 +1,143 @@
+# 비주얼 회귀(VRT) 기준선 갱신 — 수동 트리거 전용
+#
+# [존재 이유] 스크린샷 기준선은 **캡처한 OS 에서만 의미가 있다.** 한글 UI 는 Windows(맑은 고딕
+#   계열)와 Ubuntu(Noto Sans CJK 계열)의 자형·자간이 아예 달라, win32 에서 만든 기준선은
+#   ubuntu 러너에서 글자 영역 픽셀이 통째로 어긋나 **반드시** 실패한다(안티에일리어싱 수준의
+#   미세 차이가 아니다). 통과시키려면 maxDiffPixelRatio 를 크게 올려야 하는데, 그 값은 이미
+#   E2E 감사 C6 에서 "사실상 VRT 를 무력화했음"으로 판정돼 30% → 1% 로 강화한 값이다.
+#   되돌리면 게이트가 있는 척하는 스텝이 된다.
+#
+#   그래서 기준선은 **CI(리눅스)에서 생성해 커밋**해야 한다. 종전에는 이 사실이 스펙 주석에만
+#   적혀 있고 실행 수단이 없어, 기준선이 win32 두 장뿐인 채로 CI 가 계속 red 였다
+#   (2026-07-28 실측: run 30279822185 의 Visual Regression Baseline 실패).
+#
+# [자동 실행하지 않는 이유] 기준선 갱신은 "현재 화면을 정답으로 굳히는" 행위다. 자동으로 돌면
+#   의도치 않은 UI 회귀까지 정답으로 박제된다. 사람이 UI 변경을 의도했을 때만 누른다.
+name: Update Visual Regression Baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      commit:
+        description: "생성된 기준선을 현재 브랜치에 커밋할지 (false 면 아티팩트로만 받는다)"
+        type: boolean
+        default: true
+
+# 기준선 커밋을 위해 write 가 필요하다. 이 워크플로에만 부여한다(ci.yml 은 contents: read 유지).
+permissions:
+  contents: write
+
+env:
+  NODE_VERSION: "20"
+  PLAYWRIGHT_BROWSERS_PATH: /tmp/playwright-browsers
+
+jobs:
+  update-baseline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      # 백엔드/프론트가 같은 시크릿으로 서명·검증해야 한다(ci.yml e2e 잡과 동일 규율).
+      # 어긋나면 로그인 후 곧바로 /login 으로 되돌아가 대시보드를 캡처할 수 없다.
+      - name: Generate ephemeral JWT secret (backend/frontend 대칭)
+        run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
+
+      - name: Build API image
+        run: docker compose build api
+
+      - name: Start Docker Infrastructure (DB & API)
+        run: docker compose up -d db api
+
+      - name: Wait for API healthy
+        run: |
+          max_retries=60
+          count=0
+          until $(curl --output /dev/null --silent --head --fail http://localhost:8080/actuator/health); do
+            printf '.'
+            sleep 5
+            count=$((count+1))
+            if [ $count -eq $max_retries ]; then echo "Timeout waiting for healthcheck"; exit 1; fi
+          done
+          echo "Backend is ready!"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+
+      # 프로덕션 빌드로 캡처한다 — dev 서버는 렌더 타이밍이 달라 기준선으로 부적합하다.
+      - name: Build frontend (production)
+        run: pnpm run build
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+
+      - name: Start frontend and wait for readiness
+        run: |
+          nohup pnpm run start:3001 > /tmp/next-start.log 2>&1 &
+          disown || true
+          npx wait-on http://127.0.0.1:3001/login --timeout 120000
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+
+      # -g 로 VRT 만 돌린다. 스냅샷은 project 별로 파일이 갈리므로(full-suite / tier-4-quality)
+      # project 를 고정하지 않는다 — 양쪽 모두 생성되어야 CI 가 그린이 된다.
+      - name: Regenerate baselines (--update-snapshots)
+        run: npx playwright test -g "Visual Regression Baseline" --update-snapshots
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+          PLAYWRIGHT_BROWSERS_PATH: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
+
+      - name: Show generated baselines
+        run: |
+          echo "생성된 기준선:"
+          find e2e -name '*-snapshots' -type d -exec ls -la {} \;
+        working-directory: frontend
+
+      # 커밋하지 않더라도 사람이 이미지를 눈으로 확인할 수 있어야 한다.
+      # "현재 화면을 정답으로 굳히는" 행위이므로 확인 경로를 반드시 남긴다.
+      - name: Upload generated baselines (확인용)
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: visual-baselines
+          path: frontend/e2e/**/*-snapshots/
+          retention-days: 30
+          include-hidden-files: true
+
+      - name: Commit baselines to current branch
+        if: ${{ inputs.commit }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add frontend/e2e/**/*-snapshots/ || true
+          if git diff --cached --quiet; then
+            echo "::notice title=변경 없음::기준선이 기존과 동일해 커밋할 것이 없습니다."
+            exit 0
+          fi
+          git commit -m "chore(e2e): 비주얼 회귀 기준선 갱신 (linux)
+
+          Update Visual Regression Baseline 워크플로가 ubuntu 러너에서 생성했다.
+          기준선은 캡처한 OS 에서만 의미가 있어 CI 플랫폼에서 만들어야 한다
+          (win32 기준선은 한글 폰트 차이로 ubuntu 에서 반드시 실패한다).
+
+          run: ${{ github.run_id }}"
+          git push origin HEAD:${{ github.ref_name }}
