@@ -48,13 +48,16 @@ public class UserService extends BaseAbstractService {
         private final LoginPolicyRepository loginPolicyRepository;
         private final nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository;
         private final nuri.business.domain.log.UserLogRepository userLogRepository;
+        private final nuri.business.domain.deptjob.DeptJobRepository deptJobRepository;
         private final PasswordEncoder passwordEncoder;
         private final ApplicationEventPublisher eventPublisher;
 
         public UserService(UserRepository userRepository, UserAuthorityRepository userAuthorityRepository,
                         RefreshTokenRepository refreshTokenRepository, LoginPolicyRepository loginPolicyRepository,
                         nuri.business.domain.user.repository.UserAbsenceRepository userAbsenceRepository,
-                        nuri.business.domain.log.UserLogRepository userLogRepository, PasswordEncoder passwordEncoder,
+                        nuri.business.domain.log.UserLogRepository userLogRepository,
+                        nuri.business.domain.deptjob.DeptJobRepository deptJobRepository,
+                        PasswordEncoder passwordEncoder,
                         ApplicationEventPublisher eventPublisher) {
                 this.userRepository = required(userRepository, "UserRepository 는 null 일 수 없습니다");
                 this.userAuthorityRepository = required(userAuthorityRepository,
@@ -66,6 +69,7 @@ public class UserService extends BaseAbstractService {
                 this.userAbsenceRepository = required(userAbsenceRepository,
                                 "UserAbsenceRepository 는 null 일 수 없습니다");
                 this.userLogRepository = required(userLogRepository, "UserLogRepository 는 null 일 수 없습니다");
+                this.deptJobRepository = required(deptJobRepository, "DeptJobRepository 는 null 일 수 없습니다");
                 this.passwordEncoder = required(passwordEncoder, "PasswordEncoder 는 null 일 수 없습니다");
                 this.eventPublisher = required(eventPublisher, "ApplicationEventPublisher 는 null 일 수 없습니다");
         }
@@ -355,6 +359,10 @@ public class UserService extends BaseAbstractService {
                 // [log-privacy] 사용통계 로그 정리 — fk_tb_user_log_tb_user_info(dmnd_user_id→esntl_id) 잠복 결함 해소.
                 // 개인 단위 통계이므로 파기 대상(보존기간 정책은 접속기록 web/sys/login 에만 적용). 사용자 삭제 前 선행.
                 userLogRepository.deleteByDmndUserIdIn(esntlIds);
+                // [V2_32 결속] 부서업무 담당자 참조 해제 — fk_tb_dept_task_info_tb_user_info(pic_id→esntl_id, NO ACTION).
+                // 업무는 삭제하지 않는다. 부서 자산이므로 담당자만 공석(NULL)으로 되돌리며, 공석 업무의 인가는
+                // 등록자(frstRgtrId) 기준으로 판정된다(DeptJobService.assertPicOrAdmin — 이미 정상 상태로 설계됨).
+                deptJobRepository.releasePicByPicIdIn(esntlIds);
                 eventPublisher.publishEvent(new UserDeletionEvent(esntlIds));
                 userRepository.deleteAllInBatch(users);
         }

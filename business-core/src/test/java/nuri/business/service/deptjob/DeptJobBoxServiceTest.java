@@ -4,6 +4,7 @@ import nuri.business.domain.deptjob.DeptJobBox;
 import nuri.business.domain.deptjob.DeptJobBoxRepository;
 import nuri.business.service.deptjob.dto.DeptJobBoxDto;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -33,6 +34,9 @@ class DeptJobBoxServiceTest {
 
     @Mock
     private DeptJobBoxRepository deptJobBoxRepository;
+
+    @Mock
+    private nuri.business.domain.deptjob.DeptJobRepository deptJobRepository;
 
     @InjectMocks
     private DeptJobBoxService deptJobBoxService;
@@ -149,13 +153,31 @@ class DeptJobBoxServiceTest {
     }
 
     @Test
-    @DisplayName("부서함 삭제")
+    @DisplayName("부서함 삭제 - 산하 업무 없음")
     void deleteDeptJobBox() {
+        when(deptJobRepository.existsByDeptTaskBoxId("BOX1")).thenReturn(false);
         doNothing().when(deptJobBoxRepository).deleteById("BOX1");
 
         deptJobBoxService.deleteDeptJobBox("BOX1");
 
         verify(deptJobBoxRepository, times(1)).deleteById("BOX1");
+    }
+
+    /**
+     * [V2_32 결속] 업무함과 업무는 별개 엔티티라 연쇄 삭제가 없다. 검사 없이 지우면 업무함 id 만
+     * 들고 있는 업무가 고아로 남아 목록에서 업무함/부서가 빈 채 떠돈다 — 500 조차 나지 않아 더 조용하다.
+     * 삭제를 막고 409 로 되돌리는 것이 이 가드의 존재 이유다.
+     */
+    @Test
+    @DisplayName("부서함 삭제 - 산하 업무가 있으면 409(RESOURCE_IN_USE) 로 차단하고 삭제하지 않는다")
+    void deleteDeptJobBox_conflictWhenTasksExist() {
+        when(deptJobRepository.existsByDeptTaskBoxId("BOX1")).thenReturn(true);
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> deptJobBoxService.deleteDeptJobBox("BOX1"));
+
+        assertEquals(CommonErrorCode.RESOURCE_IN_USE, ex.getErrorCode());
+        verify(deptJobBoxRepository, never()).deleteById(anyString());
     }
 
     // ── 서비스 2차 가드(assertAdmin): 비관리자(USER)의 쓰기는 ACCESS_DENIED 로 차단, 저장소는 미접촉 ──

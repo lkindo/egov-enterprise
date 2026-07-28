@@ -44,6 +44,9 @@ class UserServiceAdditionalTest {
     private nuri.business.domain.log.UserLogRepository userLogRepository;
 
     @Mock
+    private nuri.business.domain.deptjob.DeptJobRepository deptJobRepository;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
@@ -55,7 +58,7 @@ class UserServiceAdditionalTest {
     void setUp() {
         userService = new UserService(userRepository, userAuthorityRepository, refreshTokenRepository,
                 loginPolicyRepository, userAbsenceRepository,
-                userLogRepository, passwordEncoder, eventPublisher);
+                userLogRepository, deptJobRepository, passwordEncoder, eventPublisher);
     }
 
     private User.UserBuilder createBaseUser(String userId) {
@@ -187,6 +190,9 @@ class UserServiceAdditionalTest {
             verify(refreshTokenRepository, never()).deleteByUserId(userId);
             // [log-privacy] 사용통계 로그도 사용자 삭제 前 정리(FK 잠복결함 해소)
             verify(userLogRepository).deleteByDmndUserIdIn(java.util.List.of("ESNTL_" + userId));
+            // [V2_32 결속] 부서업무는 부서 자산이라 삭제하지 않고 담당자만 공석(NULL)으로 해제한다.
+            // 해제를 빠뜨리면 fk_tb_dept_task_info_tb_user_info(NO ACTION) 때문에 사용자 삭제 자체가 실패한다.
+            verify(deptJobRepository).releasePicByPicIdIn(java.util.List.of("ESNTL_" + userId));
             var eventCaptor = org.mockito.ArgumentCaptor
                     .forClass(nuri.business.service.user.event.UserDeletionEvent.class);
             verify(eventPublisher).publishEvent(eventCaptor.capture());
