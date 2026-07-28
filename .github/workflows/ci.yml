@@ -455,6 +455,59 @@ jobs:
           NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
           PLAYWRIGHT_BROWSERS_PATH: ${{ env.PLAYWRIGHT_BROWSERS_PATH }}
 
+      # [2026-07-28 신설] 인증 진단 — "CI 에서만 로그인이 깨진다"를 관측 가능하게 만든다.
+      #   실측 배경: 실패 29건 전부가 대상 화면이 아니라 **로그인 폼**을 렌더했고, auth.setup(API 직접
+      #   로그인)은 통과하는데 UI 로그인과 페이지 진입만 실패했다. 완전히 같은 명령·같은 샤드·같은
+      #   빈 DB 에서 로컬은 3.7분에 39건 전량 통과한다. 즉 CI 고유 요인인데, 원인을 볼 수단이 없었다:
+      #     ① 잡 로그에는 컨테이너 로그가 안 들어온다(백엔드 지문이 안 보임)
+      #     ② 미들웨어의 지문 경고는 `if (!IS_DEV) return` 이라 **프로덕션에서 침묵**한다
+      #        — 정확히 이 문제가 나는 환경에서 진단이 꺼져 있다
+      #     ③ 애노테이션은 마지막 2000자만 잘라 보여주는데 지문은 기동 직후에 찍힌다
+      #   그래서 지문을 **스텝에서 직접 계산**해 대조하고, 로그인 경로를 두 갈래로 직접 때려 본다.
+      #   성공/실패와 무관하게 항상 돈다 — 그린일 때의 정상값을 알아야 red 를 해석할 수 있다.
+      - name: Diagnose auth (지문 대조 · 로그인 응답)
+        if: always()
+        run: |
+          echo "── JWT 시크릿 지문 대조 ──"
+          FE=$(printf '%s' "$JWT_SECRET" | sha256sum | cut -c1-8)
+          BE=$(docker compose logs api 2>/dev/null | grep -o 'fingerprint = [0-9a-f]*' | head -1 | awk '{print $3}')
+          echo "프론트(env 에서 계산): $FE"
+          echo "백엔드(컨테이너 로그): ${BE:-<로그에서 못 찾음>}"
+          if [ -n "$BE" ] && [ "$FE" = "$BE" ]; then
+            echo "판정: 대칭 — 시크릿 비대칭은 원인이 아니다"
+          elif [ -n "$BE" ]; then
+            echo "::error title=JWT 시크릿 비대칭::프론트 $FE != 백엔드 $BE — 서명 검증이 전량 실패한다"
+          else
+            echo "::warning title=백엔드 지문 미검출::컨테이너 로그에서 fingerprint 를 찾지 못했다"
+          fi
+          echo ""
+          echo "── 백엔드 직접 로그인 (auth.setup 과 동일 경로) ──"
+          curl -s -o /tmp/login-be.json -w "HTTP=%{http_code}\n" -X POST http://localhost:8080/api/v1/auth/login \
+            -H 'Content-Type: application/json' -d '{"userId":"webmaster","password":"1"}' || true
+          head -c 300 /tmp/login-be.json 2>/dev/null || true; echo ""
+          echo ""
+          echo "── Next 프록시 경유 로그인 (UI 로그인과 동일 경로) ──"
+          curl -s -o /tmp/login-fe.json -w "HTTP=%{http_code}\n" -X POST http://localhost:3001/api/auth/login \
+            -H 'Content-Type: application/json' -d '{"userId":"webmaster","password":"1"}' || true
+          head -c 300 /tmp/login-fe.json 2>/dev/null || true; echo ""
+          echo ""
+          echo "── next-start.log 앞부분(기동 직후 = 지문·경고가 찍히는 구간) ──"
+          head -60 /tmp/next-start.log 2>/dev/null || echo "(파일 없음)"
+
+      # 잘리지 않은 원본 로그를 남긴다 — 애노테이션의 2000자 제한이 이번 진단을 세 번 막았다.
+      - name: Upload diagnostic logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-diagnostics-shard-${{ strategy.job-index }}
+          path: |
+            /tmp/next-start.log
+            /tmp/next-build.log
+            /tmp/e2e-run.log
+            /tmp/compose-up.log
+          retention-days: 7
+          if-no-files-found: warn
+
       - name: Upload Playwright Report
         uses: actions/upload-artifact@v4
         if: always()
