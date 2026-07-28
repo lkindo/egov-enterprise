@@ -101,8 +101,15 @@ const nextConfig = {
         destination: `${(process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080/').replace(/api\/v1\/?$/, '')}actuator/:path*`,
       },
       {
+        // [2026-07-28 정정] 종전에는 백엔드 주소를 **하드코딩**했다. 바로 위 두 rewrite 는 모두
+        //   BACKEND_API_URL / NEXT_PUBLIC_API_URL 을 따르는데 ws 만 예외라, 백엔드를 다른 포트에
+        //   띄우면 WebSocket 만 엉뚱한 곳(그 포트를 점유한 무관한 서비스)으로 프록시된다.
+        //   실측(2026-07-28): api 를 18080 으로 옮겨 E2E 를 재현하자 /ws/* 가 8080 의 다른 앱으로
+        //   흘러 그 앱의 index.html(200)이 돌아왔고, 브라우저가 SockJS 핸드셰이크 실패와
+        //   MIME 오류를 연쇄로 뿜어 **콘솔 가드가 131건을 잡고 테스트가 무더기로 red** 가 됐다.
+        //   위 actuator rewrite 와 동일한 규칙으로 베이스를 유도한다.
         source: '/ws/:path*',
-        destination: 'http://127.0.0.1:8080/ws/:path*',
+        destination: `${(process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8080/').replace(/api\/v1\/?$/, '')}ws/:path*`,
       },
     ]
   },
