@@ -435,6 +435,12 @@ jobs:
         working-directory: frontend
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+          # [2026-07-28] 미들웨어가 쓰는 값은 **이 프로세스의 런타임 env** 다(빌드 시 인라인 아님 — 실측).
+          #   GITHUB_ENV 로 이미 상속되지만 명시한다: 2026-07-28 조사에서 "미들웨어가 어떤 시크릿을
+          #   쥐었는지" 가 마지막까지 미관측 변수로 남았고, 그 후보를 하나라도 줄이는 편이 낫다.
+          JWT_SECRET: ${{ env.JWT_SECRET }}
+          # 프로덕션에서도 시크릿 지문 진단을 켠다(값이 아니라 SHA-256 앞 8자만 출력).
+          E2E_DIAG: "true"
 
       # [2026-07-27] 출력을 파일로 남긴다. 종전에는 어디에도 남기지 않아, 잡이 75분
       #   timeout 으로 잘렸을 때(= conclusion 이 failure 가 아니라 cancelled) **어느 테스트가
@@ -467,16 +473,13 @@ jobs:
           else
             echo "::warning title=백엔드 지문 미검출::컨테이너 로그에서 fingerprint 를 찾지 못했다"
           fi
-          echo ""
-          echo "── 미들웨어 번들에 박힌 시크릿 (Edge 는 빌드 시 인라인된다) ──"
-          # ⚠ 위의 지문 대조는 **셸 변수**를 계산한 것이라 "빌드에 박힌 값"과 다를 수 있다.
-          #   2026-07-28 실제 사고: 셸 지문은 대칭인데 번들에는 DEV 시크릿이 박혀 있었다
-          #   (빌드 캐시 복원이 미들웨어 재빌드를 스킵시켰다). 그래서 번들을 직접 확인한다.
-          if grep -rq 'dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQ' frontend/.next/server/edge --include=*.js 2>/dev/null; then
-            echo "::error title=미들웨어에 DEV 시크릿이 박힘::빌드가 옛 시크릿을 굳혔다(캐시 복원 등). 서명 검증이 전량 실패해 모든 진입이 /login 으로 되돌아간다."
-          else
-            echo "DEV 기본 시크릿 미검출 — 정상(런타임 JWT_SECRET 이 인라인됨)"
-          fi
+          # [2026-07-28 제거] 번들에서 DEV 시크릿 문자열을 grep 하던 검사를 삭제한다.
+          #   그 검사는 **항상 위양성**이었다: `DEV_JWT_SECRET` 은 middleware.ts 의 소스 리터럴이라
+          #   올바른 JWT_SECRET 으로 빌드해도 `.next/server/edge/chunks/*.js` 에 그대로 남는다(로컬 실증).
+          #   즉 `::error 빌드가 옛 시크릿을 굳혔다` 가 매 회차 무조건 떴고, 그 오신호가 "빌드 캐시가
+          #   원인"이라는 가설을 낳아 조사를 한 바퀴 헛돌게 했다.
+          #   또한 전제 자체가 틀렸다 — Edge 는 이 변수를 빌드 시 인라인하지 않는다. 빌드=A/실행=B 로
+          #   기동해 실측하면 **B 로 서명한 토큰만 통과**한다(= 런타임 조회). 대신 아래에서 결과를 직접 잰다.
           echo ""
           echo "── 백엔드 직접 로그인 (auth.setup 과 동일 경로) ──"
           curl -s -o /tmp/login-be.json -w "HTTP=%{http_code}\n" -X POST http://localhost:8080/api/v1/auth/login \
@@ -487,6 +490,24 @@ jobs:
           curl -s -o /tmp/login-fe.json -w "HTTP=%{http_code}\n" -X POST http://localhost:3001/api/auth/login \
             -H 'Content-Type: application/json' -d '{"userId":"webmaster","password":"1"}' || true
           head -c 300 /tmp/login-fe.json 2>/dev/null || true; echo ""
+          echo ""
+          echo "── 미들웨어 판정 (E2E 실패의 직접 재현 · 한 줄로 확정된다) ──"
+          # 2026-07-28 트레이스 실측: 같은 쿠키로 백엔드는 200(/api/v1/auth/me), 미들웨어는 307.
+          #   즉 "미들웨어만 토큰을 거부"가 실패의 전부였고, E2E 40분을 돌려야 알 수 있었다.
+          #   여기서 백엔드가 방금 발급한 진짜 토큰을 쿠키로 물려 페이지에 직접 진입해 본다.
+          #     200 = 미들웨어가 수락(정상)  /  307 = 거부(= 이번 사고)  /  500 = JWT_SECRET 부재 fail-fast
+          MW_TOKEN=$(jq -r '.data.accessToken // empty' /tmp/login-be.json 2>/dev/null)
+          if [ -z "$MW_TOKEN" ]; then
+            echo "::warning title=미들웨어 판정 생략::백엔드 로그인 응답에서 accessToken 을 얻지 못했다"
+          else
+            MW_CODE=$(curl -s -o /dev/null -w '%{http_code}' --cookie "accessToken=$MW_TOKEN" http://localhost:3001/admin/work-hub || echo 000)
+            case "$MW_CODE" in
+              200) echo "미들웨어가 백엔드 토큰을 수락함($MW_CODE) — 정상" ;;
+              307|302) echo "::error title=미들웨어가 유효 토큰을 거부::/admin/work-hub 가 $MW_CODE 로 /login 에 되돌렸다. 백엔드는 같은 토큰을 수락하므로 미들웨어가 쥔 JWT_SECRET 이 다르다 — 아래 next-start.log 의 '[Middleware] JWT 검증' 지문을 위 백엔드 지문과 대조할 것." ;;
+              500) echo "::error title=미들웨어 fail-fast::JWT_SECRET 이 next start 프로세스에 전달되지 않았다(모듈 로드 시 throw)." ;;
+              *)   echo "::warning title=미들웨어 판정 불명::응답 코드 $MW_CODE" ;;
+            esac
+          fi
           echo ""
           echo "── next-start.log 앞부분(기동 직후 = 지문·경고가 찍히는 구간) ──"
           head -60 /tmp/next-start.log 2>/dev/null || echo "(파일 없음)"

@@ -28,7 +28,15 @@ const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', 
 // JwtTokenProvider 도 기동 시 같은 규칙의 지문을 찍는다. 두 지문이 다르면 그것이 곧 원인이다.
 // ────────────────────────────────────────────────────────────────────────────
 const IS_DEV = process.env.NODE_ENV !== 'production';
-let secretFingerprint = '(계산 전)';
+
+// [2026-07-28] 진단을 프로덕션에서도 열 수 있게 한다.
+//   종전 게이트는 `if (!IS_DEV) return` 이라 **프로덕션에서만 서명 검증이 깨지는** 상황에서
+//   정확히 진단이 꺼져 있었다. 2026-07-28 CI 조사가 여기서 아홉 번 막혔다 — 백엔드는 같은 토큰을
+//   200 으로 수락하는데(/api/v1/auth/me) 미들웨어만 307 로 되돌리는 것까지 트레이스로 확인했으나,
+//   "미들웨어가 실제로 쥔 시크릿"은 끝내 관측할 수단이 없었다. CI 진단 스텝이 재던 것은
+//   셸 변수 `$JWT_SECRET` 이지 이 모듈이 쓰는 값이 아니다.
+//   남기는 것은 값이 아니라 SHA-256 앞 8자뿐이므로 로그로 시크릿이 새지 않는다.
+const DIAG = IS_DEV || process.env.E2E_DIAG === 'true';
 let fingerprintLogged = false;
 
 async function sha256Prefix(input: string): Promise<string> {
@@ -39,14 +47,19 @@ async function sha256Prefix(input: string): Promise<string> {
     .join('');
 }
 
-/** dev 에서 서명 검증이 실패했을 때 단 한 번만, 원인 후보와 지문을 함께 알린다. */
-async function warnSignatureMismatchOnce(): Promise<void> {
-  if (!IS_DEV || fingerprintLogged) return;
+/**
+ * 미들웨어가 실제로 쥔 시크릿의 지문을 최초 1회만 남긴다.
+ *
+ * ⚠ 성공·실패와 **무관하게** 남긴다. 그린일 때의 정상값을 모르면 red 를 해석할 수 없고,
+ *   실패 시에만 찍으면 "로그가 없다"가 정상인지 진단 미발동인지 구분되지 않는다.
+ */
+async function logSecretFingerprintOnce(outcome: string): Promise<void> {
+  if (!DIAG || fingerprintLogged) return;
   fingerprintLogged = true;
-  secretFingerprint = await sha256Prefix(JWT_SECRET);
+  const fingerprint = await sha256Prefix(JWT_SECRET);
   const source = process.env.JWT_SECRET ? '환경변수 JWT_SECRET' : '내장 dev 기본값(DEV_JWT_SECRET)';
   console.warn(
-    `[Middleware] JWT 서명 검증 실패. 미들웨어가 쓰는 시크릿 출처=${source}, 지문=${secretFingerprint}.\n` +
+    `[Middleware] JWT 검증 ${outcome}. 미들웨어가 쓰는 시크릿 출처=${source}, 지문=${fingerprint}.\n` +
       `  백엔드 기동 로그의 "JWT secret fingerprint" 와 이 값이 다르면 좌우 시크릿 비대칭이 원인입니다.\n` +
       `  (한쪽만 루트 .env 를 받은 경우 발생. 'npm run dev' 로 함께 띄우면 대칭이 보장됩니다.)`
   );
@@ -102,11 +115,9 @@ async function verifyAndExtractRole(token: string): Promise<string | null> {
       base64UrlToArrayBuffer(sigB64),
       utf8ToArrayBuffer(`${headerB64}.${payloadB64}`)
     );
-    if (!valid) {
-      // 서명 불일치. 위조일 수도, 좌우 시크릿 비대칭일 수도 있다 — dev 에서만 후자를 짚어준다.
-      await warnSignatureMismatchOnce();
-      return null;
-    }
+    // 서명 불일치는 위조일 수도, 좌우 시크릿 비대칭일 수도 있다. 어느 쪽인지는 지문 대조로만 갈린다.
+    await logSecretFingerprintOnce(valid ? '성공' : '실패(서명 불일치)');
+    if (!valid) return null;
 
     const payload = JSON.parse(base64UrlDecodeToString(payloadB64));
     if (payload.exp && Date.now() >= payload.exp * 1000) return null; // 만료(정상 흐름이므로 경고하지 않는다)
