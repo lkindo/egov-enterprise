@@ -21,21 +21,22 @@
 ### 구조
 
 ```
-push/PR
+push/PR / workflow_dispatch
     │
-    └─ backend-build (Ubuntu)
-        ├─ Gradle 빌드 및 테스트 (build jacocoRootReport check)
+    └─ backend-build (Ubuntu, timeout 75분, concurrency 중복취소)
         ├─ Strict Schema Integrity Validation (엔티티/마이그레이션 변경 시, --no-build-cache)
+        ├─ Gradle 빌드 및 테스트 (build jacocoRootReport check -Dopenapi.export.path=api-docs.json)
+        ├─ Pre-pull postgres:17 & Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)
         ├─ api-docs.json 신선도 게이트 (git diff --exit-code → 계약 드리프트 시 FAIL)
-        ├─ OWASP Dependency-Check
-        └─ JaCoCo 커버리지
+        └─ JaCoCo 커버리지 업로드
         │
         ├─ frontend-build (needs: backend-build)
         │   ├─ pnpm install --frozen-lockfile
         │   ├─ codegen:verify / codegen:verify:zod (계약 드리프트 게이트 → 불일치 시 FAIL)
-        │   ├─ pnpm audit --audit-level high (보안 감사, continue-on-error)
-        │   ├─ Next.js 빌드
-        │   └─ 단위 테스트
+        │   ├─ Lint (ESLint, error 0건 하드게이트)
+        │   ├─ Security Audit (critical — blocking / high — advisory)
+        │   ├─ Next.js 빌드 및 Vitest 단위 테스트
+        │   └─ Next.js build cache 업로드
         │
         ├─ mutation-test (needs: backend-build)
         │   └─ 증분 PIT (business-core / business-app, report-only: STRICT_MUTATION=false)
@@ -48,15 +49,17 @@ push/PR
 
 > **CI 전용 게이트 (로컬 pre-commit 과 구분)**: CI 는 로컬 훅에 없는 **드리프트/무결성 게이트**를 추가로 강제한다.
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
-> - **스키마 무결성 (HARD, CI FAIL)**: 엔티티/마이그레이션 변경이 감지되면 `Strict Schema Integrity Validation` 이 `--no-build-cache` 로 `:foundation:test` 를 강제 실행.
+> - **스키마 무결성 (HARD, CI FAIL)**: 엔티티/마이그레이션 변경 감지 시 `Strict Schema Integrity Validation` 이 `--no-build-cache` 로 `:foundation:test` 를 강제 실행하며, Testcontainers 기반 `Real PostgreSQL 17 Schema Validation` 이 Flyway 전량 적용 + Hibernate `ddl-auto:validate` 로 물리 스키마 정합성을 검증.
+> - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 규칙 0건 유지(`pnpm run lint`) 및 `pnpm audit --audit-level critical` 차단.
 > - **증분 뮤테이션 (report-only)**: `mutation-test` 잡은 현재 `STRICT_MUTATION=false`(mutationThreshold=0) 로 **리포트만 산출하며 CI 를 실패시키지 않는다**. 대상 클래스가 75% 를 달성하면 `STRICT_MUTATION=true` 로 전환해 75% 하드 게이트화한다. (백엔드 헌법 제16조)
->
-> 반면 로컬 `.githooks/` 의 pre-commit codegen 드리프트 점검은 **경고(⚠, 비차단)** 로, 위 CI 게이트가 최종 방어선이다. (하단 [로컬 사전 게이트](#로컬-사전-게이트-git-hooks) 참조)
+> - **OWASP Dependency-Check 분리**: 매 푸시 파이프라인 병목 방지를 위해 별도의 주간 스케줄 워크플로우(`.github/workflows/dependency-check.yml`)로 분리 운용 중.
 
 ### 실행 트리거
 
 - **Push**: `main`, `master`, `feature/**` 브랜치
 - **Pull Request**: `main`, `master` 대상
+- **Workflow Dispatch**: GitHub UI / CLI 에서 수동 실행 지원 (`workflow_dispatch`)
+- **Concurrency**: 동일 ref 연속 푸시 시 이전 실행 자동 중단 (`concurrency: group: ci-${{ github.ref }}, cancel-in-progress: true`)
 
 ---
 
@@ -76,7 +79,17 @@ push/PR
 ### 실행 명령어
 
 ```bash
+# 1. 스키마/엔티티 변경 감지 시 (dorny/paths-filter)
+./gradlew :foundation:test --no-build-cache
+
+# 2. 메인 빌드 및 테스트 (OpenAPI Spec 정적 추출 포함)
 ./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json
+
+# 3. 물리 PostgreSQL 17 스키마 실측 검증 (Testcontainers + Flyway + Hibernate validate)
+./gradlew :api-server:schemaValidationTest
+
+# 4. 계약 드리프트 검증 (백엔드 스펙 신선도 확인)
+git diff --exit-code api-docs.json
 ```
 
 ### 생성 아티팩트
@@ -84,9 +97,8 @@ push/PR
 | 이름 | 경로 | 보존 기간 |
 |------|------|-----------|
 | `openapi-spec` | `api-docs.json` | 90 일 |
-| `owasp-security-report` | `**/build/reports/dependency-check-report.*` | 30 일 |
 | `jacoco-report` | `build/reports/jacoco/aggregated` | 30 일 |
-| `quality-reports` | `**/build/reports/dependency-check` | 30 일 |
+| `openapi-spec-changed` | `api-docs.json` (변경 감지 시) | 30 일 |
 
 ---
 
@@ -115,7 +127,9 @@ cd frontend
 pnpm install --frozen-lockfile
 pnpm run codegen:verify        # 계약 드리프트 게이트 (spec ↔ 생성 타입)
 pnpm run codegen:verify:zod    # 계약 드리프트 게이트 (spec ↔ Zod)
-pnpm audit --audit-level high  # 보안 감사 (continue-on-error)
+pnpm run lint                  # ESLint error 규칙 0건 게이트
+pnpm audit --audit-level critical # 보안 감사 (critical 차단)
+pnpm audit --audit-level high # 보안 감사 (high 권고, advisory)
 pnpm run build
 pnpm run test
 ```
@@ -200,7 +214,9 @@ strategy:
 
 ## 보안 스캔
 
-### OWASP Dependency-Check
+### OWASP Dependency-Check (분리 워크플로우)
+
+매 Commit 푸시 빌드의 타임아웃/병목 방지를 위해 OWASP 취약점 스캔은 주간 정기 스케줄 워크플로우(`.github/workflows/dependency-check.yml`)로 분리 운용 중입니다.
 
 #### 설정 (`build.gradle`)
 
