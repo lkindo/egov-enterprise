@@ -425,11 +425,31 @@ jobs:
       #   timeout 으로 잘렸을 때(= conclusion 이 failure 가 아니라 cancelled) **어느 테스트가
       #   예산을 먹었는지 알 방법이 전혀 없었다.** 로그 조회는 권한이 필요하므로 annotations
       #   경로로 꺼내 쓸 수 있게 해 둔다(백엔드 잡의 tee 관례와 동일).
+      # [2026-07-28 결정적 정정] `--project=full-suite` 를 반드시 지정한다.
+      #   playwright.config 의 project 구성은 **tier-N-* (파일 단위) + full-suite (전 스펙)** 이고,
+      #   full-suite 의 testMatch 가 `/.*\.spec\.ts/` 라 **모든 스펙을 재매칭**한다. 따라서 project 를
+      #   지정하지 않으면 같은 테스트가 두 번 실행된다 — 실측 226건 = full-suite 112 + tier-* 112 + setup 2.
+      #
+      #   그 결과 두 가지가 동시에 터졌다:
+      #     ① 시간 2배 — shard 2 가 56.8분(테스트 스텝만)
+      #     ② full-suite 전량 실패 — config 상 full-suite 가 마지막이라 항상 나중에 도는데,
+      #        앞서 tier-* 가 사용자 CRUD(02)·로그인 정책(06) 등으로 상태를 바꿔 놓은 뒤라
+      #        **UI 로그인 자체가 실패**한다. CI 리포트 실측:
+      #          expect(page).toHaveURL(/\/admin/) → 60회 내내 "/login?redirect=%2Fadmin%2Fwork-hub"
+      #        실패 29건이 전부 [full-suite] 였고 tier-* 는 통과했다는 사실이 이를 뒷받침한다.
+      #
+      #   로컬 실측 대조(2026-07-28, 동일 스택):
+      #     project 미지정 shard 2/3 → CI 와 같은 계열의 실패
+      #     --project=full-suite 전량 → 104 passed / 8 failed / 7.0분
+      #       (남은 8건도 6건은 로컬 포트 우회 탓, 1건은 SMTP 부재, 1건만 실 조사 대상)
+      #
+      #   ⚠ full-suite 하나로 전 스펙이 커버되므로 tier-* 를 빼도 커버리지 손실이 없다.
+      #     tier-* 는 로컬에서 특정 tier 만 빠르게 돌리기 위한 것이다.
       - name: Run E2E Tests (Sharded)
         id: e2e-run
         run: |
           set -o pipefail
-          npx playwright test --shard=${{ matrix.shard }} 2>&1 | tee /tmp/e2e-run.log
+          npx playwright test --project=full-suite --shard=${{ matrix.shard }} 2>&1 | tee /tmp/e2e-run.log
         working-directory: frontend
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
