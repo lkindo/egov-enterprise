@@ -113,11 +113,34 @@ public class GlobalExceptionHandler {
             org.springframework.dao.DataIntegrityViolationException e) {
         Throwable cause = e.getMostSpecificCause();
         log.warn(">>> Data Integrity Violation: {}", cause != null ? cause.getMessage() : e.getMessage());
+
+        // [2026-07-28 §2.D] 제약의 **종류**로 나눈다. 종전에는 모든 무결성 위반을 409 "이미 존재하거나
+        //   사용 중인 값" 으로 뭉갰다. 그런데 V2_24 로 `_yn` 컬럼 60개에 CHECK 가 생기면서, 클라이언트가
+        //   `dltYn:"X"` 같은 **허용되지 않는 값**을 보내도 "중복입니다" 라는 **의미가 틀린 409** 가 나갔다.
+        //   불변식이 DB 에만 있고 API 응답 의미로 전파되지 않던 것(§2.D "불변식이 한 레이어에만 존재").
+        //   DTO 56곳에 @Pattern 을 뿌리는 대신(§0.7-H4 일괄치환 회피) 여기서 SQLState 로 갈라
+        //   CHECK/NOT NULL 은 400 으로 정정한다. UNIQUE/FK 는 종전대로 409(의미가 맞다).
+        String sqlState = extractSqlState(cause);
+        if ("23514".equals(sqlState) || "23502".equals(sqlState)) { // check_violation / not_null_violation
+            return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE,
+                    resolve("handler.constraint_invalid_value", null,
+                            "허용되지 않는 값이 포함되어 있습니다. 입력값을 확인해 주십시오.")));
+        }
         return new ResponseEntity<>(
                 ApiResponse.error(CommonErrorCode.DUPLICATE_RESOURCE,
                         resolve("handler.data_integrity", null,
                                 "요청이 기존 데이터 제약과 충돌합니다. 이미 존재하거나 사용 중인 값일 수 있습니다.")),
                 HttpStatus.CONFLICT);
+    }
+
+    /** 원인 체인에서 SQLState 를 찾는다(Postgres: 23514=CHECK, 23502=NOT NULL, 23505=UNIQUE, 23503=FK). */
+    private static String extractSqlState(Throwable cause) {
+        for (Throwable t = cause; t != null; t = t.getCause() == t ? null : t.getCause()) {
+            if (t instanceof java.sql.SQLException sqlEx && sqlEx.getSQLState() != null) {
+                return sqlEx.getSQLState();
+            }
+        }
+        return null;
     }
 
     /**

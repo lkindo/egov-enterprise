@@ -504,6 +504,13 @@ jobs:
             echo "::warning title=미들웨어 판정 생략::백엔드 로그인 응답에서 accessToken 을 얻지 못했다"
           else
             MW_CODE=$(curl -s -o /dev/null -w '%{http_code}' --cookie "accessToken=$MW_TOKEN" http://localhost:3001/admin/work-hub || echo 000)
+            # [2026-07-28(3)] 미들웨어가 붙이는 x-mw-auth 헤더 — console 진단이 세 번 침묵해서 채널을 바꿨다.
+            #   cookie=0        → 미들웨어가 쿠키를 아예 못 봤다(전송/파싱 문제)
+            #   v=sig-mismatch  → 서명 불일치(= 좌우 시크릿 비대칭)
+            #   v=throw-*       → 검증 중 예외를 catch 가 삼켰다(지금까지 신호가 없던 유력 후보)
+            #   v=alg-*/parts-* → 토큰 구조 문제
+            MW_DIAG=$(curl -s -D - -o /dev/null --cookie "accessToken=$MW_TOKEN" http://localhost:3001/admin/work-hub 2>/dev/null | tr -d '\r' | grep -i '^x-mw-auth:' || true)
+            echo "미들웨어 진단 헤더: ${MW_DIAG:-<헤더 없음 — 이 빌드에 진단이 없거나 리다이렉트가 아님>}"
             case "$MW_CODE" in
               200) echo "미들웨어가 백엔드 토큰을 수락함($MW_CODE) — 정상" ;;
               307|302) echo "::error title=미들웨어가 유효 토큰을 거부::/admin/work-hub 가 $MW_CODE 로 /login 에 되돌렸다. 백엔드는 같은 토큰을 수락하므로 미들웨어가 쥔 JWT_SECRET 이 다르다 — 아래 next-start.log 의 '[Middleware] JWT 검증' 지문을 위 백엔드 지문과 대조할 것." ;;

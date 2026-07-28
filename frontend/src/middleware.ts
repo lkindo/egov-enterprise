@@ -38,6 +38,17 @@ const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', 
 //   로그로 시크릿이 새지 않는다.
 let fingerprintLogged = false;
 
+/**
+ * 직전 토큰 검증이 **어디서** 끝났는지. `/login` 리다이렉트 응답 헤더로 내보낸다.
+ *
+ * ⚠ 왜 응답 헤더인가: console 진단이 세 번 침묵했다(dev 게이트 → env 게이트 → 무조건화 후에도
+ *   CI 로그에 미출현). 그래서 **삼켜질 수 없는 채널**로 옮긴다. 지금까지 신호를 지운 진짜 범인은
+ *   `verifyAndExtractRole` 의 `catch { return null }` 일 가능성이 크다 — 서명 불일치라면 위 로그가
+ *   찍혔어야 하는데 찍히지 않은 채 307 이 나왔기 때문이다.
+ *   시크릿·토큰 조각은 절대 싣지 않는다. 실리는 것은 "쿠키 유무 + 검증이 끝난 지점" 뿐이다.
+ */
+let lastVerifyOutcome = 'none';
+
 async function sha256Prefix(input: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', utf8ToArrayBuffer(input));
   return Array.from(new Uint8Array(digest))
@@ -101,12 +112,18 @@ function utf8ToArrayBuffer(input: string): ArrayBuffer {
 async function verifyAndExtractRole(token: string): Promise<string | null> {
   try {
     const parts = token.split('.');
-    if (parts.length !== 3) return null;
+    if (parts.length !== 3) {
+      lastVerifyOutcome = `parts-${parts.length}`;
+      return null;
+    }
     const [headerB64, payloadB64, sigB64] = parts;
 
     const header = JSON.parse(base64UrlDecodeToString(headerB64));
     const hash = HMAC_HASH[header.alg];
-    if (!hash) return null; // alg=none·RS*(비대칭) 등 화이트리스트 밖은 거부
+    if (!hash) {
+      lastVerifyOutcome = 'alg-unsupported';
+      return null; // alg=none·RS*(비대칭) 등 화이트리스트 밖은 거부
+    }
 
     const key = await crypto.subtle.importKey(
       'raw',
@@ -123,12 +140,22 @@ async function verifyAndExtractRole(token: string): Promise<string | null> {
     );
     // 서명 불일치는 위조일 수도, 좌우 시크릿 비대칭일 수도 있다. 어느 쪽인지는 지문 대조로만 갈린다.
     await logSecretFingerprintOnce(valid ? '성공' : '실패(서명 불일치)');
-    if (!valid) return null;
+    if (!valid) {
+      lastVerifyOutcome = 'sig-mismatch';
+      return null;
+    }
 
     const payload = JSON.parse(base64UrlDecodeToString(payloadB64));
-    if (payload.exp && Date.now() >= payload.exp * 1000) return null; // 만료(정상 흐름이므로 경고하지 않는다)
+    if (payload.exp && Date.now() >= payload.exp * 1000) {
+      lastVerifyOutcome = 'expired';
+      return null; // 만료(정상 흐름이므로 경고하지 않는다)
+    }
+    lastVerifyOutcome = 'ok';
     return payload.role || null;
-  } catch {
+  } catch (e) {
+    // ⚠ 이 catch 가 지금까지 모든 신호를 삼켰다. 예외 종류만이라도 남긴다(메시지는 남기지 않는다 —
+    //   토큰 조각이 섞여 나올 수 있다).
+    lastVerifyOutcome = `throw-${(e as { name?: string })?.name ?? 'unknown'}`;
     return null;
   }
 }
@@ -246,7 +273,10 @@ export async function middleware(request: NextRequest) {
   if (!userRole) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    return NextResponse.redirect(loginUrl);
+    const redirect = NextResponse.redirect(loginUrl);
+    // [진단] 이 리다이렉트가 왜 났는지를 응답 헤더로 남긴다. 비밀값 없음 — 쿠키 유무와 검증 종료 지점뿐.
+    redirect.headers.set('x-mw-auth', `cookie=${accessToken ? 1 : 0};v=${lastVerifyOutcome}`);
+    return redirect;
   }
 
   // 4. /admin 접근 통제 — 기본 ADMIN 전용, USER_ACCESSIBLE_ADMIN_PATHS 에 명시된 경로만 일반 사용자 개방.

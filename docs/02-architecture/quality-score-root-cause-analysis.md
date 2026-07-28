@@ -203,7 +203,10 @@ eGovFrame 5.0 레거시를 Spring Boot 3.4/Java 21 로 "현대화"했으나 **�
 ### D. SSOT(단일 진실원) 전파 미정합 — 불변식이 한 레이어에만 존재
 DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 논다.**
 - **증거**: 이번에 추가한 UNIQUE 제약(V2_4/V2_5)이 **JPA `@Table(uniqueConstraints)` 에 미러링 안 됨**(불변식이 SQL 에만) · DTO↔Zod wire-shape 드리프트를 계약게이트가 **backend-shape↔api-docs 괴리는 탐지 못함** · ~~meta_standard 가 명명 SSOT 라면서 빌드게이트 미강제~~.
-- **✅ 부분 해소(2026-07-17)**: meta_standard **terms→domains 매핑 부재**(당시 5컬럼뿐)가 V2_17 로 100% 복원(13,173/13,173 + FK) → **헌법 제5조 3단계 기계검증 원천 확보**. 명명 검증은 **SchemaNamingLinterTest 신설(P4)** 로 빌드게이트화. **잔여**: UNIQUE↔JPA 미러링·DTO↔Zod backend-shape 게이트는 미해결(계약체인 캡 유지).
+- **✅ 부분 해소(2026-07-17)**: meta_standard **terms→domains 매핑 부재**(당시 5컬럼뿐)가 V2_17 로 100% 복원(13,173/13,173 + FK) → **헌법 제5조 3단계 기계검증 원천 확보**. 명명 검증은 **SchemaNamingLinterTest 신설(P4)** 로 빌드게이트화.
+- **✅ 위 '증거' 2건은 2026-07-28 기준 전부 해소됨 — 서술이 stale 이었다**: ① **UNIQUE↔JPA 미러링**은 `UniqueConstraintMirrorLinterTest`(2026-07-17 신설, 3가지 인정방식+vacuous 가드)가 이미 기계강제 중이며 green. ② **backend-shape↔api-docs 괴리**는 `ApiDocsPathCoverageLinterTest`(07-18, **경로**)에 이어 **`ApiDocsSchemaFieldLinterTest`(07-28, **필드**)** 로 닫혔다 — DTO 필드 추가·삭제·개명 후 api-docs 재생성을 잊으면 red 가 된다(스키마 271건 중 매칭 DTO 87건 검사, 동결 0건).
+- **✅ 추가 해소(2026-07-28) — 제약의 '종류'가 API 응답 의미로 전파되지 않던 갭**: V2_24 로 `_yn` 컬럼 **60개에 CHECK** 가 생겼으나 DTO 측 Y/N 검증은 **4곳**뿐이었고, `GlobalExceptionHandler` 는 **모든 무결성 위반을 409 "이미 존재하거나 사용 중인 값"** 으로 뭉갰다. 즉 클라이언트가 `dltYn:"X"` 같은 **허용되지 않는 값**을 보내도 "중복입니다" 라는 **의미가 틀린 409** 를 받았다 — 불변식이 DB 에만 살아 있고 API 로 전파되지 않은 전형이다. DTO 56곳에 `@Pattern` 을 뿌리는 대신(§0.7-H4 일괄치환 회피) **SQLState 로 분기**해 CHECK(23514)·NOT NULL(23502) → **400**, UNIQUE(23505)·FK(23503) → 409 유지로 정정했다. 한 곳 수정으로 CHECK 60개 전부가 정합된다. 회귀 가드 4건 포함(분기 무력화 시 2건 red 확인).
+- **잔여**: Entity↔DTO 필드 대조(투영 관계라 시맨틱 — 기계검증 부적합) · 길이 제약의 앱단 미러(`@Column(length=)` **578** vs DTO `@Size` **426**, 필드 단위 대응은 미측정).
 - **누르는 점수**: SEAM 계약체인(65, 사실상 정체)·추적성(54). "한 곳 바꾸면 나머지가 자동 정합"이 안 되므로 계약체인 점수가 근본적으로 낮다. *(DB 축 연결부는 §1.1 재측정에서 79→88 로 상승 — SSOT 매핑 복원 반영.)*
 
 ### E. 정체성 모델의 근원적 혼란 (esntlId vs loginId)

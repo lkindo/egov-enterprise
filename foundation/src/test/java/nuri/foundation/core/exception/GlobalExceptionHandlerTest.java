@@ -152,4 +152,51 @@ class GlobalExceptionHandlerTest {
         assertFalse(response.getBody().success());
         assertEquals("C008", response.getBody().code());
     }
+
+    // ── §2.D 불변식 전파: DB 제약의 **종류**가 API 응답 의미로 이어져야 한다 ──────────────
+    // V2_24 로 `_yn` 컬럼 60개에 CHECK 가 생겼는데, 종전에는 모든 무결성 위반이 409 "이미 존재하거나
+    // 사용 중인 값" 으로 뭉개졌다. 허용되지 않는 **값**을 보낸 클라이언트에게 "중복" 이라 답하는 것은
+    // 의미가 틀리다. SQLState 로 갈라 CHECK/NOT NULL 은 400 으로 돌려준다.
+
+    private static org.springframework.dao.DataIntegrityViolationException dive(String sqlState, String msg) {
+        return new org.springframework.dao.DataIntegrityViolationException(
+                msg, new java.sql.SQLException(msg, sqlState));
+    }
+
+    @Test
+    @DisplayName("CHECK 제약 위반(23514)은 409 가 아니라 400 이다 — '중복' 이 아니라 '허용되지 않는 값'")
+    void testCheckViolationMapsToBadRequest() {
+        ResponseEntity<ApiResponse<Void>> response = handler.handleDataIntegrityViolation(
+                dive("23514", "new row violates check constraint \"ck_tb_x_dlt_yn\""));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertFalse(response.getBody().success());
+        assertEquals("C001", response.getBody().code());
+    }
+
+    @Test
+    @DisplayName("NOT NULL 제약 위반(23502)도 400 이다")
+    void testNotNullViolationMapsToBadRequest() {
+        ResponseEntity<ApiResponse<Void>> response = handler.handleDataIntegrityViolation(
+                dive("23502", "null value in column \"x\" violates not-null constraint"));
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("C001", response.getBody().code());
+    }
+
+    @Test
+    @DisplayName("UNIQUE 위반(23505)은 종전대로 409 를 유지한다 — 이 경우엔 '중복' 이 맞는 의미다")
+    void testUniqueViolationStaysConflict() {
+        ResponseEntity<ApiResponse<Void>> response = handler.handleDataIntegrityViolation(
+                dive("23505", "duplicate key value violates unique constraint \"uk_x\""));
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals("C008", response.getBody().code());
+    }
+
+    @Test
+    @DisplayName("FK 위반(23503)은 409 를 유지한다 — 참조 무결성 충돌은 '충돌' 이 맞다")
+    void testForeignKeyViolationStaysConflict() {
+        ResponseEntity<ApiResponse<Void>> response = handler.handleDataIntegrityViolation(
+                dive("23503", "violates foreign key constraint \"fk_x\""));
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+        assertEquals("C008", response.getBody().code());
+    }
 }
