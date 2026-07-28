@@ -40,13 +40,19 @@ public class JwtTokenProvider {
      * 통째로 red 였다. 만료 토큰을 주입해 동일 증상을 재현·확증했다.
      * 러너가 느려질수록 더 많은 테스트가 만료 구간에 들어가는 구조라, 테스트를 개별로 고쳐도
      * 재발한다. E2E 환경에서만 수명을 늘릴 수 있도록 주입 지점을 만든다.
+     *
+     * ⚠ **필드 초기화값을 반드시 함께 유지한다.** `@Value` 는 Spring 이 주입할 때만 채워지므로,
+     * 컨텍스트 없이 `new JwtTokenProvider()` 로 만드는 경로(단위 테스트 등)에서는 0 이 되어
+     * **토큰이 발급 즉시 만료된다**. 실측(2026-07-28): 상수를 @Value 로 바꾸면서 초기화값을
+     * 빠뜨려 JwtTokenProviderTest 3건이 `ExpiredJwtException: JWT expired 716 milliseconds ago`
+     * 로 깨졌다. 컴파일은 통과하므로 `compileTestJava` 만으로는 잡히지 않는다.
      */
     @Value("${jwt.access-token-validity-ms:3600000}")
-    private long accessTokenValidityInMilliseconds;
+    private long accessTokenValidityInMilliseconds = 3600000L; // 1 hour
 
-    /** 리프레시 토큰 수명(ms). 기본 7일. */
+    /** 리프레시 토큰 수명(ms). 기본 7일. 위와 같은 이유로 초기화값을 유지한다. */
     @Value("${jwt.refresh-token-validity-ms:604800000}")
-    private long refreshTokenValidityInMilliseconds;
+    private long refreshTokenValidityInMilliseconds = 604800000L; // 7 days
 
     private SecretKey key;
 
@@ -58,6 +64,13 @@ public class JwtTokenProvider {
     protected void init() {
         if (secretKey == null || secretKey.trim().isEmpty()) {
             throw new IllegalStateException("JWT Secret is not configured.");
+        }
+        // [2026-07-28] 수명이 0 이하면 토큰이 발급 즉시 만료돼 "로그인은 되는데 곧바로 /login" 이라는
+        //   원인을 알 수 없는 증상이 된다. 조용히 통과시키지 않고 기동 시점에 즉시 실패시킨다.
+        if (accessTokenValidityInMilliseconds <= 0 || refreshTokenValidityInMilliseconds <= 0) {
+            throw new IllegalStateException("JWT token validity must be positive (access="
+                    + accessTokenValidityInMilliseconds + "ms, refresh="
+                    + refreshTokenValidityInMilliseconds + "ms)");
         }
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
         log.info("JWT secret fingerprint = {} (sha256[:8], 값 아님)", secretFingerprint());

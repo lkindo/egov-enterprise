@@ -50,6 +50,52 @@ class JwtTokenProviderTest {
         assertThrows(IllegalStateException.class, () -> ReflectionTestUtils.invokeMethod(provider, "init"));
     }
 
+    /**
+     * [회귀 방지 / 2026-07-28] 토큰 수명을 상수에서 `@Value` 주입으로 바꾸면서 **필드 초기화값을
+     * 빠뜨려** 이 클래스의 3개 테스트가 `ExpiredJwtException: JWT expired 716 milliseconds ago`
+     * 로 깨진 사고가 있었다(CI run 30320684270). `@Value` 는 Spring 이 주입할 때만 채워지므로
+     * 컨텍스트 없이 `new JwtTokenProvider()` 로 만들면 0 이 되어 토큰이 발급 즉시 만료된다.
+     * 컴파일은 통과하므로 `compileTestJava` 만으로는 잡히지 않는다 — 그래서 테스트로 못박는다.
+     */
+    @Test
+    @DisplayName("Spring 주입이 없어도 기본 수명이 유지된다 (필드 초기화값 누락 회귀 방지)")
+    void defaultValidity_survivesWithoutSpringInjection() {
+        JwtTokenProvider provider = new JwtTokenProvider();
+        ReflectionTestUtils.setField(provider, "secretKey", secretKey);
+        // 수명 필드는 일부러 주입하지 않는다 — 초기화값이 없으면 init() 이 즉시 예외를 던진다.
+        ReflectionTestUtils.invokeMethod(provider, "init");
+
+        String token = provider.createAccessToken("testuser", "ROLE_USER");
+        assertThat(provider.validateToken(token)).isTrue();
+    }
+
+    @Test
+    @DisplayName("설정된 액세스 토큰 수명이 exp 에 그대로 반영된다")
+    void accessTokenValidity_isReflectedInExpiration() {
+        ReflectionTestUtils.setField(jwtTokenProvider, "accessTokenValidityInMilliseconds", 120_000L);
+
+        String token = jwtTokenProvider.createAccessToken("testuser", "ROLE_USER");
+
+        io.jsonwebtoken.Claims claims = Jwts.parser()
+                .verifyWith(jwtTokenProvider.getKeyForTest())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
+        long validityMs = claims.getExpiration().getTime() - claims.getIssuedAt().getTime();
+        assertThat(validityMs).isEqualTo(120_000L);
+    }
+
+    @Test
+    @DisplayName("토큰 수명이 0 이하이면 기동 시점에 실패한다")
+    void init_Fail_whenValidityNotPositive() {
+        JwtTokenProvider provider = new JwtTokenProvider();
+        ReflectionTestUtils.setField(provider, "secretKey", secretKey);
+        ReflectionTestUtils.setField(provider, "accessTokenValidityInMilliseconds", 0L);
+
+        // 조용히 통과해 "로그인은 되는데 곧바로 /login" 이 되는 것을 막는다.
+        assertThrows(IllegalStateException.class, () -> ReflectionTestUtils.invokeMethod(provider, "init"));
+    }
+
     @Test
     @DisplayName("액세스 토큰 생성 및 검증 성공")
     void createToken_and_validate_success() {
