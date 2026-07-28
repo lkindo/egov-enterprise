@@ -18,7 +18,7 @@
 | 3 | 트랜잭션 경계 | ✅ **`AsyncTransactionalListenerArchTest`** + **`ServiceReadOnlyTransactionalLinterTest`**(2026-07-18 신설) | 본 §3 | 동결 11서비스 readOnly 검토 |
 | 4 | 동시성(check-then-act) | `GlobalExceptionHandler`(409 backstop) + `UniqueConstraintMirrorLinterTest` | 본 §4 | 패턴 자체는 시맨틱 → 문서 |
 | 5 | PK 채번 | `PkGenerationStandardLinterTest`(신규 엔티티) | 본 §5 | 수동채번 통일은 시맨틱 → 문서 |
-| 6 | 캐싱(Caching) | (없음) | 본 §6(캐시명 SSOT 지향) | 게이트 0·상수화 선행 필요 |
+| 6 | 캐싱(Caching) | ✅ **`CachingInvalidationMatrixLinterTest`**(채움↔무효화 양방향, 2026-07-28 신설) | 본 §6(캐시명 SSOT 지향) | 캐시명 상수화(리터럴 산발) |
 
 ---
 
@@ -84,8 +84,9 @@
 |---|---|
 | **관례(지향 — 현재 미확립)** | ① 캐노니컬 CacheManager는 `foundation/.../config/CacheConfig.java`(Caffeine, `@Profile("!test")`, expireAfterWrite 10분·maxSize 500) 단일. ② **캐시명은 중앙 상수(SSOT)에서만 참조** — 현재 미확립(아래 갭). ③ 무효화는 `allEntries=true`(coarse, 안전측) 기본. ④ 교차서비스 무효화는 소유 서비스가 공개한 상수를 통해서만. |
 | **근거** | §1.2 CacheConfig 스텁 삭제, 캐시명 리터럴 산발 실측. |
-| **집행 게이트(없음)** | 게이트 0. |
-| **미집행 갭(문서 0·게이트 0 — 체계화 최약)** | ① 캐시명 **문자열 리터럴 산발**(`UserService "users"`, `CommonCodeService "commonCodes"`, `MenuService "menuHierarchy"/"allMenuDtos"/"rootMenuIdByUrl"`). ② **교차서비스 evict 결합 위험**: `ProgramService`가 Menu 소유 캐시를 **문자열로 중복** evict — 한쪽 rename 시 무음 미스. ③ `CaffeineCacheManager` 동적 생성 → 오타 시 조용히 새 캐시 생성·영구 미무효화 footgun. **1차 대응=아래 캐시명 SSOT 상수화+무효화 매트릭스**, 2차=얇은 린트(캐시명은 상수클래스에서만). |
+| **집행 게이트** | ✅ **`CachingInvalidationMatrixLinterTest`**(2026-07-28 신설, pre-push `harnessTest`). 양방향 매트릭스 — `NO_EVICT`(채우는데 지우는 곳 없음 = 영구 stale) · `DEAD_EVICT`(지우는데 채우는 곳 없음 = 오타·잔재). TTL 만으로 충분한 캐시는 `TTL_ONLY_CACHES` 에 **사유와 함께** 등재(현재 0건). |
+| **게이트가 실제로 잡은 것** | 신설 첫 실행에서 **`institutionCodes` DEAD_EVICT** 검출 — `InstitutionCodeService.insertInstitutionCodeRecptn` 에 `@CacheEvict("institutionCodes")` 가 있는데 그 이름을 채우는 `@Cacheable` 이 저장소 어디에도 없었다. 위치도 틀려 있었다(수신 로그 등록 메서드이며, 기관코드 CRUD 는 별도 3메서드). **제거 완료.** ⚠ `CacheConfig` 가 `@Profile("!test")` 라 테스트에서는 캐싱이 꺼져 있어 **어떤 테스트도 이 계열을 잡을 수 없다** — 정적 게이트만이 유효하다. |
+| **잔여 갭(상수화)** | ① 캐시명 **문자열 리터럴 산발**(`UserService "users"`, `CommonCodeService "commonCodes"`, `MenuService "menuHierarchy"/"allMenuDtos"/"rootMenuIdByUrl"`). ② **교차서비스 evict 결합**: `ProgramService`가 Menu 소유 캐시를 문자열로 중복 evict — 한쪽 rename 시 무음 미스. ③ `CaffeineCacheManager` 동적 생성 → 오타 시 조용히 새 캐시 생성. <br>→ **①②③ 의 실질 위험은 위 매트릭스 게이트가 이미 차단한다**(오타난 이름은 한쪽 집합에만 나타나므로 rename 무음미스도 red 가 된다). 상수화는 남은 가독성·응집도 개선이며, 44개 애노테이션 일괄 치환이라 §0.7-H4(일괄 치환 금지) 상 별도 판단 사항이다. |
 
 ### 6.1 캐시명 SSOT / 무효화 매트릭스 (권장 도입)
 

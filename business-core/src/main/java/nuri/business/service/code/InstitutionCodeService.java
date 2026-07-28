@@ -9,7 +9,6 @@ import nuri.business.domain.code.InstitutionCodeRecptnLogRepository;
 import nuri.business.repository.code.InstitutionCodeRepository;
 import nuri.business.service.code.dto.InstitutionCodeDto;
 import nuri.business.service.code.dto.InstitutionCodeRecptnDto;
-import org.springframework.cache.annotation.CacheEvict;
 import nuri.foundation.security.annotation.AdminOnly;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,8 +44,15 @@ public class InstitutionCodeService extends BaseAbstractService {
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
     }
 
+    // [2026-07-28 제거] `@CacheEvict(value = "institutionCodes", allEntries = true)` 를 삭제한다.
+    //   그 이름을 채우는 `@Cacheable` 이 저장소 어디에도 없었다 — 즉 **아무것도 무효화하지 않으면서**
+    //   "캐시를 관리하고 있다"는 거짓 안전감만 주는 死 애노테이션이었다. Caffeine 은 캐시명을 동적
+    //   생성하므로 예외 없이 조용히 통과한다.
+    //   ⚠ 위치도 틀려 있었다 — 이 메서드는 **수신 로그(Recptn) 등록**이고, 기관코드 자체의 CRUD 는
+    //     insertInstitutionCode/updateInstitutionCode/deleteInstitutionCode 다. 훗날 조회 캐싱을
+    //     도입한다면 무효화는 그 3곳에 붙어야 하며, 그때 CachingInvalidationMatrixLinterTest 가
+    //     짝을 강제한다(현재 이 서비스에 캐싱은 없다).
     @Transactional
-    @CacheEvict(value = "institutionCodes", allEntries = true)
     public void insertInstitutionCodeRecptn(InstitutionCodeRecptnDto dto) {
         String occrrncDe = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId
