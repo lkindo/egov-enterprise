@@ -4,6 +4,31 @@
 [ -n "$SKIP_HOOKS" ] && exit 0
 set -e
 
+# [스마트 Fast-pass] 문서/비코드 파일만 변경된 푸시는 컴파일 및 하네스 검증 생략
+# stdin으로 들어오는 푸시 대상 범위(local_sha, remote_sha) 추출
+RANGE=""
+while read local_ref local_sha remote_ref remote_sha; do
+  if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
+    RANGE="origin/main..$local_sha"
+  else
+    RANGE="$remote_sha..$local_sha"
+  fi
+done
+
+if [ -n "$RANGE" ]; then
+  CHANGED_FILES=$(git diff --name-only $RANGE 2>/dev/null || true)
+  if [ -n "$CHANGED_FILES" ]; then
+    # 코드/설정 관련 주요 파일 확장자 감지
+    CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -E '\.(java|ts|tsx|js|jsx|gradle|sql|yml|yaml|json|xml)$|^Dockerfile' || true)
+    if [ -z "$CODE_CHANGES" ]; then
+      echo "[pre-push] 📝 문서/비코드 변경만 감지됨 — 컴파일 및 하네스 검증 생략 (Fast-pass)"
+      echo "  → 변경 파일:"
+      echo "$CHANGED_FILES" | sed 's/^/     - /'
+      exit 0
+    fi
+  fi
+fi
+
 echo "[pre-push] §0.6 Compilation Integrity Gate"
 
 echo "  → backend: ./gradlew compileJava compileTestJava"
