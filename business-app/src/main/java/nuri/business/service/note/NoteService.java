@@ -9,7 +9,6 @@ import nuri.business.domain.note.NoteTrnsmit;
 import nuri.business.domain.note.NoteTrnsmitDomainRepository;
 import nuri.business.service.note.dto.NoteDto;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.core.service.BaseAbstractService;
 import nuri.foundation.core.util.IdGenerationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +22,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class NoteService extends BaseAbstractService {
+public class NoteService {
 
     private final NoteDomainRepository noteRepository;
     private final NoteTrnsmitDomainRepository noteTrnsmitRepository;

@@ -6,7 +6,6 @@ import nuri.business.domain.memoreport.MemoReportRepository;
 import nuri.business.service.memoreport.dto.MemoReportDto;
 import nuri.business.service.memoreport.dto.MemoReportMapper;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +18,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class MemoReportService extends BaseAbstractService {
+public class MemoReportService {
 
     private final MemoReportRepository memoReportRepository;
     private final MemoReportMapper memoReportMapper;

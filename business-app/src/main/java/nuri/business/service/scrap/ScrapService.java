@@ -6,7 +6,6 @@ import nuri.business.domain.scrap.ScrapRepository;
 import nuri.business.service.scrap.dto.ScrapDto;
 import nuri.business.service.scrap.dto.ScrapMapper;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.core.service.BaseAbstractService;
 import nuri.business.security.util.SecurityUtil;
 import nuri.foundation.core.util.IdGenerationUtil;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +20,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ScrapService extends BaseAbstractService {
+public class ScrapService {
 
     private final ScrapRepository scrapRepository;
     /** 엔티티↔DTO 매핑 단일 창구(MapStruct). 수기 매핑의 필드 누락(스크랩 URL/설명 소실) 재발 방지. */

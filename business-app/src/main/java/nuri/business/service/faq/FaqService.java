@@ -6,7 +6,6 @@ import nuri.business.domain.faq.FaqRepository;
 import nuri.business.service.faq.dto.FaqDto;
 import nuri.business.service.faq.dto.FaqMapper;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,7 +18,7 @@ import java.util.Objects;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class FaqService extends BaseAbstractService {
+public class FaqService {
 
     private final FaqRepository faqRepository;
     private final FaqMapper faqMapper;

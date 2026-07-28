@@ -6,7 +6,6 @@ import nuri.business.domain.board.SatisfactionRepository;
 import nuri.business.service.board.dto.SatisfactionDto;
 import nuri.business.service.board.dto.SatisfactionMapper;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,7 +17,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class SatisfactionService extends BaseAbstractService {
+public class SatisfactionService {
 
     private final SatisfactionRepository satisfactionRepository;
     private final SatisfactionMapper satisfactionMapper;

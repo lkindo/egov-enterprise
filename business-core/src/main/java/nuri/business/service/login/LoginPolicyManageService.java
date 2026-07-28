@@ -3,7 +3,6 @@ import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
-import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.login.LoginPolicy;
 import nuri.business.domain.login.LoginPolicyRepository;
 import nuri.business.domain.user.entity.User;
@@ -22,7 +21,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true) // 조회 기본 read-only; 쓰기(insert/update/delete)는 메서드 @Transactional 이 오버라이드
-public class LoginPolicyManageService extends BaseAbstractService {
+public class LoginPolicyManageService {
 
     private final LoginPolicyRepository loginPolicyRepository;
     private final UserRepository userRepository;

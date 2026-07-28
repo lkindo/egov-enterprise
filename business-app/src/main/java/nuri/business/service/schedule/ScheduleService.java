@@ -8,7 +8,6 @@ import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.business.service.schedule.dto.ScheduleMapper;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.util.IdGenerationUtil;
-import nuri.business.core.service.BaseAbstractService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -23,7 +22,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
-public class ScheduleService extends BaseAbstractService {
+public class ScheduleService {
 
     private final ScheduleRepository scheduleRepository;
     private final ScheduleMapper scheduleMapper;
