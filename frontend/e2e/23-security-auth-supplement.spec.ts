@@ -21,7 +21,13 @@ import path from 'path';
  */
 
 const USER_AUTH = path.join(__dirname, '..', 'playwright', '.auth', 'user.json');
-const API = 'http://localhost:8080/api/v1';
+// [2026-07-28 정정] 백엔드 주소를 하드코딩하고 있었다. auth.setup.ts·cleanup-db.ts 는 이미
+//   `process.env.NEXT_PUBLIC_API_URL || 기본값` 패턴을 쓰는데 이 파일만 예외였고, 그 결과
+//   백엔드를 다른 포트에 띄우면 **그 포트를 점유한 무관한 서비스로 요청이 새어** RBAC 단언이
+//   거짓 통과/거짓 실패한다(실측: 8080 을 다른 앱이 물고 있을 때 모든 경로가 200 을 돌려줘
+//   "admin 엔드포인트가 비관리자에게 노출됨" 으로 3건이 red 가 됐다).
+//   보안 단언이 환경에 따라 뒤집히는 것은 게이트로서 치명적이므로 저장소 표준 패턴에 맞춘다.
+const API = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
 
 function readAccessToken(authFile: string): string {
     const data = JSON.parse(fs.readFileSync(authFile, 'utf-8'));

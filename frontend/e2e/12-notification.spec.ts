@@ -3,6 +3,12 @@ import { NotificationPage } from './pages/NotificationPage';
 import fs from 'fs';
 import path from 'path';
 
+// [2026-07-28 정정] 백엔드 주소를 세 곳에 하드코딩하고 있었다. auth.setup.ts·cleanup-db.ts 는 이미
+//   `process.env.NEXT_PUBLIC_API_URL || 기본값` 패턴을 쓰는데 이 파일만 예외였다. 백엔드를 다른
+//   포트에 띄우면 시드 POST 가 엉뚱한 서비스로 새어 알림이 생성되지 않고, 그 뒤 UI 단언이 전부
+//   무너진다(실측 3건 red). 저장소 표준 패턴에 맞춘다.
+const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
+
 test.describe('Tier 12: Notification & Communication Intelligence', () => {
     test.use({ storageState: path.join(__dirname, '..', 'playwright', '.auth', 'admin.json') });
     let notificationPage: NotificationPage;
@@ -34,7 +40,7 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
 
         console.log('>>> Step 1: Creating notification via API');
         // Create notification for the current user (webmaster)
-        const response = await request.post('http://localhost:8080/api/v1/notifications', {
+        const response = await request.post(`${API_BASE}/notifications`, {
             headers: {
                 'Authorization': `Bearer ${adminToken}`,
                 'Content-Type': 'application/json'
@@ -86,7 +92,7 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         const testMessage = 'A'.repeat(500) + ' [END]'; // Very long content
 
         console.log('>>> Step 1: Creating long notification');
-        await request.post('http://localhost:8080/api/v1/notifications', {
+        await request.post(`${API_BASE}/notifications`, {
             headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
             data: { notiTtlNm: testTitle, notiCn: testMessage, rcvrId: 'webmaster' }
         });
@@ -115,7 +121,7 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         // [E2E 감사 B] isVisible 가드 + count>=0(수학적 항상참) 제거 —
         // 고유 태그 알림을 seed한 뒤 검색해 실제로 필터링되어 노출되는지 단언한다.
         const uniqueTag = `HubSearch_${Date.now()}`;
-        const seedRes = await request.post('http://localhost:8080/api/v1/notifications', {
+        const seedRes = await request.post(`${API_BASE}/notifications`, {
             headers: { 'Authorization': `Bearer ${adminToken}`, 'Content-Type': 'application/json' },
             data: { notiTtlNm: uniqueTag, notiCn: 'Hub search filter validation payload.', readYn: 'N', rcvrId: 'webmaster' }
         });
