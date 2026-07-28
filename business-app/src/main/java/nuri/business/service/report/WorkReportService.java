@@ -7,6 +7,8 @@ import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.util.IdGenerationUtil;
 import nuri.business.core.service.BaseAbstractService;
+import nuri.business.security.AuthorityConstants;
+import nuri.business.security.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -68,14 +70,47 @@ public class WorkReportService extends BaseAbstractService {
         workReportRepository.delete(entity);
     }
 
+    /**
+     * 업무보고 목록.
+     *
+     * <p>[2026-07-29 IDOR 수정] 종전에는 작성자 필터 없이 <b>전원의 보고서를 본문(rptCn)까지</b> 반환했다.
+     * 이 엔드포인트의 유일한 소비처는 개인 착지점인 {@code /admin/work-hub} 이고(별도 관리자 콘솔 없음),
+     * 같은 엔티티의 수정·삭제는 이미 {@link SecurityUtil#assertOwnerOrAdmin} 로 작성자에 묶여 있다.
+     * 읽기만 전원 공개인 것은 비대칭이므로 쓰기와 같은 경계로 좁힌다 — <b>작성자 본인, 관리자는 전체</b>.
+     *
+     * <p>⚠ 축 정합: {@code searchId} 는 리포지토리에서 {@code userId.eq(...)} 로 쓰이고 그 {@code userId} 는
+     * 등록 시 {@code getCurrentLoginId()} 로 고정된다. 쓰기 가드가 보는 {@code frstRgtrId} 도 loginId 축이라
+     * 두 축이 일치한다(정체성 축 혼용 함정 없음).
+     *
+     * <p>부서 단위 열람이 필요해지면 dept-jobs 처럼 <b>명시적 스코프 파라미터</b>로 넓혀야 한다.
+     * 무제한 공개로 되돌리지 말 것.
+     */
     public Page<WorkReportDto> getWorkReportList(String searchId, String searchSe, String searchWrd, @NonNull Pageable pageable) {
-        return workReportRepository.searchWorkReports(searchId, null, null, null, null, searchWrd, null, searchSe, Objects.requireNonNull(pageable))
+        String scopedId = searchId;
+        if (!SecurityUtil.hasRole(AuthorityConstants.ROLE_ADMIN) && !SecurityUtil.hasRole(AuthorityConstants.ROLE_SYSTEM)) {
+            scopedId = SecurityUtil.getCurrentLoginId().orElse(null);
+            if (scopedId == null) {
+                // 인증 주체를 알 수 없으면 열지 않는다(무인증 전량 조회 방지).
+                return Page.empty(pageable);
+            }
+        }
+        return workReportRepository.searchWorkReports(scopedId, null, null, null, null, searchWrd, null, searchSe, Objects.requireNonNull(pageable))
                 .map(this::toDto);
     }
 
+    /**
+     * 업무보고 상세.
+     *
+     * <p>[2026-07-29 IDOR 수정] 종전에는 {@code findById} 결과를 무가드로 반환해, 인증만 되면 누구나
+     * 임의 {@code rptId} 로 타인의 보고 본문을 읽을 수 있었다. 같은 엔티티의 update(53행)·delete(66행)가
+     * 이미 쓰는 가드를 읽기에도 동일하게 적용한다(관리자 대리 열람은 허용 — 쓰기와 같은 판정).
+     */
     public WorkReportDto getWorkReport(@NonNull String rptId) {
         return workReportRepository.findById(rptId)
-                .map(this::toDto)
+                .map(entity -> {
+                    SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
+                    return toDto(entity);
+                })
                 .orElse(null);
     }
 

@@ -27,6 +27,16 @@ const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', 
 //
 // JwtTokenProvider 도 기동 시 같은 규칙의 지문을 찍는다. 두 지문이 다르면 그것이 곧 원인이다.
 // ────────────────────────────────────────────────────────────────────────────
+// 🚨 [2026-07-29 실증] **Edge 런타임의 console 출력은 `next start` 의 stdout 에 도달하지 않는다.**
+//   CI 실측 증거: 같은 next-start.log 에 라우트 핸들러(Node 런타임)의
+//   `[API Proxy Login Error] ...`(app/api/auth/login/route.ts:64, console.error)는 찍히는데,
+//   아래 console.warn 은 무조건 실행되는 위치인데도 단 한 줄도 나오지 않았다.
+//   → 세 차례의 "진단 침묵"(dev 게이트 → E2E_DIAG 게이트 → 무조건화)은 전부 이 한 가지가 원인이었다.
+//   → **미들웨어 진단은 console 로 하지 마라.** 관측 채널은 아래 `lastVerifyOutcome` 을 실은
+//      `x-mw-auth` 응답 헤더다. console.warn 은 로컬(dev/next start 직접 실행)에서만 보인다.
+//   ⚠ 따라서 "로그가 없다"는 사실로는 **아무것도 배제할 수 없다.** 2026-07-28 에 그 부재를 근거로
+//      "실패는 서명 비교 이전"이라 추론했는데 그 추론은 성립하지 않는다.
+//
 // [2026-07-28] 이 진단에는 **조건을 걸지 않는다.**
 //   같은 함정을 두 번 밟았다. 처음엔 `if (!IS_DEV) return` 이라 프로덕션에서 침묵했고,
 //   그것을 `E2E_DIAG` 환경변수 게이트로 바꿨더니 이번엔 **CI 의 Edge 샌드박스가 그 변수를

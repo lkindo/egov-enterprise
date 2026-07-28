@@ -464,6 +464,10 @@ jobs:
       - name: Diagnose auth (지문 대조 · 로그인 응답)
         if: always()
         run: |
+          # [2026-07-29] 이 스텝의 출력을 **파일로도 남긴다.** 종전에는 잡 로그에만 있어서,
+          #   run 이 진행 중이면(다른 샤드가 아직 돌면) `gh run view --log` 가 거부해 값을 못 봤다.
+          #   진단이 가장 필요한 순간에 진단 결과에 손이 닿지 않는 구조였다. 아티팩트로 즉시 꺼낼 수 있게 한다.
+          exec > >(tee /tmp/auth-diag.log) 2>&1
           echo "── JWT 시크릿 지문 대조 ──"
           FE=$(printf '%s' "$JWT_SECRET" | sha256sum | cut -c1-8)
           BE=$(docker compose logs api 2>/dev/null | grep -o 'fingerprint = [0-9a-f]*' | head -1 | awk '{print $3}')
@@ -559,6 +563,7 @@ jobs:
         with:
           name: e2e-diagnostics-shard-${{ strategy.job-index }}
           path: |
+            /tmp/auth-diag.log
             /tmp/next-start.log
             /tmp/next-build.log
             /tmp/e2e-run.log
