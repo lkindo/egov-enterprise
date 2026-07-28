@@ -4,7 +4,9 @@
 > 관련: [quality-score-root-cause-analysis.md](quality-score-root-cause-analysis.md)(A~H 근본원인), [framework-reusability-assessment.md](framework-reusability-assessment.md), [user-reference-key-policy.md](user-reference-key-policy.md)
 > ⚠ 이 문서는 **결정 자료**다. 파괴적 항목(leader 도메인 제거, biz_cd DROP, 가비지 DML)은 착수 전 **개별 명시 승인** 필요(글로벌 §5).
 >
-> **Last Updated: 2026-07-20** — 이후 실제 집행 결과를 반영해 상태 갱신(§3-6 deptjob '소생' 결판 + 인가 모델 확정, §4 열린 질문 3-6.① 종결, §5 실행 순서 1·2·4 완료 확정 및 마이그레이션 번호표 소진 경고). **§1.2 번호 배정표(V2_20~V2_24)는 무효** — 실측 최신 = V2_29. 본문 §0~§3 의 "현황" 서술은 **2026-07-17 조사 시점** 기준이므로 그대로 읽지 말 것.
+> **Last Updated: 2026-07-29** — 잔여 항목 전수 실측 후 갱신. **문서가 "대기"로 들고 있던 3건은 이미 결판**나 있었다(§4 3-1.① admin 게이트 = deny-by-default 전환으로 해소, §4 3-5.① 보존기간 = 24개월 확정, 마이그레이션 최신 = V2_30). §3-6 deptjob 잔여(409 가드·FK 위생)와 §3-2 fe-csp 폰트 출처 정리를 집행했다. 상세는 [§6 집행 로그](#6-집행-로그-2026-07-29).
+> 이전: 2026-07-20 (§3-6 deptjob '소생' 결판 + 인가 모델 확정, §4 3-6.① 종결, §5 1·2·4 완료 확정).
+> ⚠ **§1.2 번호 배정표(V2_20~V2_24)는 무효**. 본문 §0~§3 의 "현황" 서술은 **2026-07-17 조사 시점** 기준이므로 그대로 읽지 말 것 — 각 절의 갱신 블록을 함께 읽어야 한다.
 
 ---
 
@@ -167,6 +169,11 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 **테스트**: user_log 삭제 시 FK 위반 없음(현 테스트 갭 보강), months=0/음수/미설정 no-op, 고정 Clock 경계일.
 
+> **갱신 (2026-07-29) — 집행 완료분과 남은 갭**
+> Phase 1-4 는 완료됐다: `UserService` 가 사용자 삭제 前 user_log 를 정리하고, [LogRetentionScheduler](../../business-app/src/main/java/nuri/business/service/log/LogRetentionScheduler.java) 가 web/sys/login/user 4종을 정리하며, **months 하한 가드**(법정 최저 12개월 미만이면 skip+WARN)가 "전량파기 사고"를 코드로 막는다. 보존기간은 **24개월 확정**(3-5.① 결판), 정책 문서는 [log-retention-policy.md](../04-operations/log-retention-policy.md).
+>
+> ⚠ **남은 갭 — `tb_privacy_log` 는 보존체계에 편입되지 않았다**(검증 반영 ② 미이행). `PrivacyLogRepository` 에 `deleteOldLogs` 가 없고 스케줄러도 이 테이블을 다루지 않는다. **의도적 보류**다: 2026-07-29 실측 `tb_privacy_log` 0행이고 **기록 경로가 아직 死** 라, 지금 편입해도 검증할 수 없는 코드만 늘어난다. **재개 조건**: 개인정보 조회로그 기록 경로가 활성화되는 시점 — 그때 편입하지 않으면 개인정보 조회 이력(dmnd_user_id·IP)이 무기한 보존된다. 이 갭을 완료로 오독하지 않도록 여기에 명시해 둔다(SOP §4.1 정직 보류).
+
 ---
 
 ### 3-6. deptjob — 부서업무 소유모델
@@ -192,7 +199,20 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 > | 부서**업무** `/dept-jobs` 쓰기 3본 | `@PreAuthorize("isAuthenticated()")` | 소생된 **사용자 대면** 기능 — 일반 사용자 생성이 전제 |
 >
 > 즉 (c)의 "무가드 봉쇄"는 달성하되, 소생 결정에 따라 task 쓰기는 관리자 전용이 아닌 인증 필수로 착지했다. **린터 allow-list 는 졸업 완료**([SecurityAuthAnnotationLinterTest.java:193](../../api-server/src/test/java/nuri/api/harness/SecurityAuthAnnotationLinterTest.java#L193) "졸업(2026-07-17)" 주석, deptjob 등재 0건).
-> **잔여**: 검증 반영 ②(산하 task 존재 시 409)·Phase2 V2_20 FK 위생은 별도 확인 필요 — 본 갱신은 소생 결판과 인가 상태만 확정한다. ※ §1.2 마이그레이션 번호표의 deptjob V2_20 배정은 **이미 소진**됨(V2_20 = log-retention 인덱스로 적용, 현재 최신 V2_29) — 재개 시 번호 재배정 필수.
+> ~~**잔여**: 검증 반영 ②(산하 task 존재 시 409)·Phase2 V2_20 FK 위생~~ → ✅ **완결(2026-07-29, V2_32)**. 아래 참조.
+
+> **✅ 잔여 완결 (2026-07-29) — 고아 업무 봉쇄 + FK 위생**
+> 2026-07-20 시점의 잔여 2건을 집행했다. 착수 근거는 **데이터 0행이라는 시한부 조건**이다 — 실측 `tb_dept_job_bx` 0행 · `tb_dept_task_info` 0행. 소생된 기능이라 데이터가 쌓이기 시작하면 FK 부착이 데이터 정합 작업으로 비용이 급등한다.
+>
+> **실측으로 드러난 정정**: 검증 반영 ②는 "FK 추가 후 산하 task 존재 시 삭제가 **500**으로 표면화된다"고 예상했으나, FK 가 없는 상태에서는 500조차 나지 않았다. `tb_dept_task_info` 는 업무함 id 를 **값으로만** 들고 있어(연관관계 매핑도 FK 도 없음) 함을 지워도 오류 없이 **고아 업무**가 남는, 더 조용한 결함이었다.
+>
+> | 조치 | 내용 |
+> |---|---|
+> | 삭제 가드 | [DeptJobBoxService.deleteDeptJobBox](../../business-core/src/main/java/nuri/business/service/deptjob/DeptJobBoxService.java) — 산하 업무 존재 시 **409 `RESOURCE_IN_USE`** 선검사(제약 위반을 500 이 아니라 의미 있는 409 로 표면화) |
+> | FK 2건 | **V2_32** — `fk_tb_dept_task_info_tb_dept_job_bx`(dept_task_box_id→업무함) · `fk_tb_dept_task_info_tb_user_info`(pic_id→esntl_id). 자식 인덱스 2건 동반. 0행이라 `NOT VALID`→즉시 `VALIDATE` |
+> | 사용자 삭제 결속 | [UserService.cleanupDependentsAndDelete](../../business-core/src/main/java/nuri/business/service/user/UserService.java) — 담당자 참조 해제(`pic_id`→NULL). **업무는 삭제하지 않는다**(부서 자산). 담당자 공석은 이미 정상 상태이며 그 경우 인가는 등록자 기준으로 판정되므로([assertPicOrAdmin](../../business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java)) 공석화는 권한 완화가 아니다(§0.7-H3 도메인 맥락 판정) |
+>
+> ⚠ **FK 는 부모 삭제 경로와 반드시 결속한다**(V2_14 선례). `pic_id` FK 만 걸고 사용자 삭제 정리를 빠뜨리면 **사용자 삭제 자체가 FK 위반으로 실패**한다 — 이 결속이 이번 변경의 핵심이며, FK 만 따로 떼어 적용해서는 안 된다.
 
 ---
 
@@ -216,7 +236,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 | # | 항목 | 결정 포인트 | 판단 재료 |
 |---|---|---|---|
-| 3-1.① | fe-auth | **admin 게이트 커버리지**: /admin 17세그먼트 중 work-hub·workspace·collaboration은 일반 사용자 기능(메뉴 92행 중 79행이 /admin 하위). 현 5 sensitive prefix 외 편입 범위 or URL 재편(/admin 관리자 전용 분리)? | 로그인 기본 리다이렉트가 /admin/work-hub |
+| ~~3-1.①~~ | fe-auth | ~~**admin 게이트 커버리지**~~ → ✅ **결판: deny-by-default 전환으로 해소**(2026-07-29 실측). 5접두사 화이트리스트를 뒤집어 `/admin` 전체를 ADMIN 기본으로 두고, 일반 사용자용 5경로만 `USER_ACCESSIBLE_ADMIN_PATHS` 로 열고 그 안의 관리 콘솔 3개를 `ADMIN_ONLY_SUBPATHS` 로 도려냈다([middleware.ts:174-213](../../frontend/src/middleware.ts#L174-L213)). "화면을 추가할 때마다 전원 공개가 기본값"이던 구조가 역전됐다 | — |
 | 3-1.② | fe-auth | **바디 accessToken 최종 제거(순수 쿠키 계약)** 여부 — 비브라우저 소비자(E2E setup·cleanup·향후 외부연동) 지원 정책 | "API 직접 소비자 지원" 정책 |
 | 3-2.① | fe-csp | **strict nonce CSP 위해 PPR(cacheComponents) 포기?** 성능 vs 보안 순수 트레이드오프 | HttpOnly 전환 완료로 토큰탈취면 이미 축소 |
 | 3-2.② | fe-csp | CSP 위반 리포트 수집처: 자체 winston vs 외부(Sentry) | 현재 외부 수집기 부재 |
@@ -224,7 +244,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 | 3-3.② | note-rcptn | '회수(recall)' 기능(미개봉 한정) 제품 채택 여부 | 삭제정책과 독립 |
 | 3-4.① | biz_cd | '사업코드' 개념 향후 지원? (별도 BIZ 마스터 연계 로드맵) | 현 코드·데이터·SSOT 어디에도 흔적 0 |
 | 3-4.② | biz_cd | biz_yr(실질 '행사연도')도 evnt_yr 개명 동승? | EVNT_YR 표준 존재 |
-| 3-5.① | log-privacy | **보존기간 수치**: 접속기록 1년 vs 2년(고유식별정보/5만명↑=2년) | 인수처 프로파일(공공/기업) |
+| ~~3-5.①~~ | log-privacy | ~~**보존기간 수치**: 1년 vs 2년~~ → ✅ **결판: 2년(24개월)**. [application.yml:93-101](../../api-server/src/main/resources/application.yml#L93-L101) `enabled: true`·`web-months: 24`, 법정 최저 12개월 미만이면 삭제를 건너뛰는 하한 가드가 코드로 강제([LogRetentionScheduler.java:67-76](../../business-app/src/main/java/nuri/business/service/log/LogRetentionScheduler.java#L67-L76)) | — |
 | 3-5.② | log-privacy | 법적 트랙: 보존의무 원형보존 vs 사용자삭제 시 가명화 추가 | 얹으면 전 감사컬럼 일관성 범위도 결정 |
 | 3-5.③ | log-privacy | tb_login_log 기록경로 복원 vs 死코드 제거 | 0행+호출자0(어느쪽도 데이터 무파손) |
 | ~~3-6.①~~ | deptjob | ~~부서업무(task) 대면기능 **소생 vs 폐기**~~ → ✅ **결판: 소생(2026-07-19~20 구현)** — 상세는 §3-6 갱신 참조 | — |
@@ -236,13 +256,66 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 1. ~~**즉시(P0)**: fe-auth Phase 0~~ → ✅ **완료** (이중 프리픽스 수정 + Phase 1-3 하드닝, 미들웨어 Web Crypto 서명검증·쿠키삭제·계약축소).
 2. ~~**저위험·독립**: deptjob (c) → log-privacy (a) → note-rcptn (a)~~ → ✅ **완료** (deptjob 인가 확정 + 린터 allow-list 졸업 · **V2_20** log-retention 인덱스 · **V2_21** note_rcptn del_yn).
-3. **하드닝**: ~~fe-auth Phase 1-3~~ ✅ 완료 → **fe-csp Phase 1 부분 완료**(prod `unsafe-eval` 제거). **Phase 2-3 잔여**.
+3. **하드닝**: ~~fe-auth Phase 1-3~~ ✅ 완료 → **fe-csp Phase 1 완료**(prod `unsafe-eval` 제거 · `connect-src` bare ws 제거 · `X-XSS-Protection: 0` · 리포트 엔드포인트 [/api/security/csp](../../frontend/src/app/api/security/csp/route.ts) 방어설계 · **2026-07-29 외부 폰트 출처 2개 제거**). **Phase 2(Report-Only 계측)·Phase 3 잔여분(style-src 세분화) 잔여**.
 4. ~~**파괴적 (개별 승인)**: biz_cd DROP → leader 도메인 제거~~ → ✅ **완료, 개별 승인 취득** (**V2_22** `biz_cd`→`evnt_nm` 재모델링 · **V2_23** leader 도메인 DROP ×2 + LSM 메뉴/프로그램 시드 정리).
 5. **고비용 조건부 (제품결정 후)** — 부분 결판:
    - ✅ **deptjob 소생/폐기 → 소생으로 결판**(2026-07-19~20 구현 3커밋, §3-6 결판 블록 참조)
    - ✅ **leader 유지/제거 → 제거로 결판**(V2_23 적용, 코드/FE 라우트 잔존 0 실측)
-   - ⏸ **잔여(제품결정)**: fe-csp Phase 4(PPR 포기 여부) · fe-auth Phase 4(admin 게이트 커버리지) — [열린 질문](#4-열린-질문-집약) 3-1.①·3-2.① 유지
+   - ✅ **fe-auth Phase 4(admin 게이트 커버리지) → deny-by-default 로 해소**(열린 질문 3-1.① 종결)
+   - ⏸ **잔여(제품결정)**: fe-csp Phase 4(PPR 포기 여부) — [열린 질문](#4-열린-질문-집약) 3-2.① 유지
 
-> **📌 마이그레이션 실측 (2026-07-20, `flyway_schema_history`)**: **V2_16~V2_29 전부 `success=true`** 로 라이브 적용 완료. **§1.2 번호 배정표는 전면 소진·무효** — 표가 예약한 V2_20~V2_24 는 다른 내용으로 이미 적용됐다(V2_20=log-retention 인덱스, V2_21=note del_yn, V2_22=biz_cd 재모델링, V2_23=leader DROP, V2_24=yn check+meta fk index). 신규 마이그레이션은 **착수 시점 최신 rank 재실측 후 V2_30 이상**으로 배정할 것.
+> **📌 마이그레이션 실측 (2026-07-29, `flyway_schema_history`)**: 적용 최신 = **V2_30**(`hide unimplemented survey menus`, `installed_rank` 35). **V2_31**(레거시 채번 테이블 DROP)은 커밋됐으나 **DB 미적용 대기**(bootRun 시 수렴). 본 갱신에서 **V2_32**(deptjob FK)를 신설했다.
+> **§1.2 번호 배정표는 전면 소진·무효** — 표가 예약한 V2_20~V2_24 는 다른 내용으로 이미 적용됐다(V2_20=log-retention 인덱스, V2_21=note del_yn, V2_22=biz_cd 재모델링, V2_23=leader DROP, V2_24=yn check+meta fk index). 신규 마이그레이션은 **착수 시점 최신 rank 재실측 후 V2_33 이상**으로 배정할 것.
 
 > 각 항목은 SOP 파이프라인(Dispatch→Execution→Audit→Verification) + §0.6 HARD 게이트(tsc/next build/gradle) + 해당 시 bootRun Flyway 수렴으로 집행한다.
+
+---
+
+## 6. 집행 로그 (2026-07-29)
+
+2026-07-20 이후 잔여 항목을 전수 실측하고 **저비용·시한부 3건**을 집행했다. 나머지는 보류 근거를 함께 남긴다.
+
+### 6.1 실측으로 드러난 문서 stale (집행 전 정정)
+
+문서가 "결정 대기"로 들고 있던 3건은 **이미 결판나 있었다.** stale 문서는 다음 세션이 끝난 일을 다시 판단하게 만들므로 별도 항목으로 기록한다.
+
+| 문서 서술 | 실측 |
+|---|---|
+| §5 "⏸ fe-auth Phase 4(admin 게이트)" · 3-1.① | deny-by-default 전환 완료 — 화이트리스트가 역전됨 |
+| 3-5.① "보존기간 1년 vs 2년" | 24개월 확정 + 스케줄러 활성(`enabled: true`) |
+| §5 "최신 V2_29" | 적용 최신 **V2_30**(rank 35), V2_31 미적용 대기 |
+
+### 6.2 집행분
+
+| # | 항목 | 내용 | 근거 |
+|---|---|---|---|
+| 1 | **deptjob 고아 봉쇄** | 409 선검사 + **V2_32** FK 2건·인덱스 2건 + 사용자 삭제 시 담당자 공석 해제 | 두 테이블 **0행**이라 FK 부착 비용 0 — 소생된 기능이라 데이터가 쌓이면 비용 급등(시한부) |
+| 2 | **CSP 외부 폰트 출처 제거** | `style-src`/`font-src` 에서 `fonts.googleapis`·`fonts.gstatic` 제거 → **CSP 외부 출처 0** | 앱은 `next/font` 빌드타임 셀프호스팅이라 런타임 외부 요청 없음 |
+| 3 | **문서 현행화** | 본 §6 및 각 절 갱신 블록 | — |
+
+**⚠ 2번의 근거 정정 (기록으로 남긴다)**: 최초 판단은 "참조 0 = 죽은 allowance"였으나 그 grep 은 `frontend/src` 범위였고 **`public/` 을 놓쳤다**. [governance_harness_atlas.html](../../frontend/public/governance_harness_atlas.html) 이 두 도메인을 실제로 사용하고 있었다 — 즉 *앱에는* 죽었고 *atlas 문서에는* 살아 있었다. 부수적으로, atlas 가 Pretendard 를 받는 `cdn.jsdelivr.net` 은 CSP 에 등재된 적이 없어 **이미 차단**되고 있었다(문서가 CSP 와 어긋난 채 본문 폰트가 조용히 fallback 되던 상태). 사용자 결정에 따라 **atlas 의 외부 폰트 의존을 끊고**(시스템 폰트 스택 + `@font-face` 별칭, fallback 이 정의돼 있어 가독성 유지) CSP 출처를 제거해 **자산과 CSP 를 정합**시켰다.
+
+> ⚠ **재발 위험(추적 필요)**: atlas 는 방치된 파일이 아니라 **정기 유지보수되는 활성 자산**이다 — 111KB, 최종 갱신 2026-07-24, `.gemini/tasks/` 에 동기화 기록 3건(`harness-html-sync`·`harness-atlas-alignment`·`update-governance-atlas`), 그리고 [middleware.ts:272](../../frontend/src/middleware.ts#L272) 가 **인증 면제 공개 경로**로 명시 등재한다. 따라서 다음 갱신 때 CDN `<link>` 가 다시 유입되면 CSP 가 차단하되 **오류 없이 조용히 fallback** 되어 아무도 모른 채 지나간다(Pretendard 가 실제로 그렇게 죽어 있었다). 현재 방어는 해당 파일 상단의 경고 주석뿐이며 **기계 게이트는 없다**. 항구적 방어가 필요하면 `public/*.html` 의 외부 출처 `<link>`/`<script>` 를 차단하는 린터를 신설해야 한다(GEMINI.md §0.7-H5: 실행 경로 없는 규칙은 규칙을 어긴 주체를 막지 못한다).
+
+### 6.3 검증 증적
+
+| 게이트 | 결과 |
+|---|---|
+| `./gradlew compileJava compileTestJava` | ✅ exit 0 |
+| `npx tsc --noEmit`(frontend) | ✅ exit 0 |
+| `./gradlew :api-server:harnessTest` | ✅ BUILD SUCCESSFUL (1m 22s, 실제 실행 — UP-TO-DATE 스킵 아님) |
+| `:business-core:test`(대상 2클래스) | ✅ 21 tests, 0 failed |
+| **뮤테이션 자가검증**(§0.4·§0.7-H5) | ✅ 409 가드 무력화·담당자 해제 누락 **2건 주입 → 정확히 해당 2 테스트만 FAILED** → 원복 후 green. 신설 테스트가 vacuous 하지 않음을 증명 |
+
+**⏸ 정직 보류(SOP §4.1)** — 정적 증거로 확증한 범위 밖:
+- **V2_32 는 작성·린터 통과했으나 라이브 DB 미적용**이다(V2_31 도 적용 대기). 재개 조건: `bootRun` 또는 Flyway 수렴 시 적용되며, 그때 `flyway_schema_history` 에서 `success=true` 확인 필요. FK 의 실제 거동(고아 차단·사용자 삭제 통과)은 적용 후에만 런타임 검증된다.
+- **CSP 헤더 실측 미수행** — prod 빌드 서버를 기동하지 않았다. 헤더 문자열 변경은 정적으로 확인했으나 브라우저 적용 결과(atlas 폰트 렌더 포함)는 미검증. 재개 조건: `next build && next start` 후 응답 헤더·atlas 화면 확인.
+- fe-csp **Phase 2(Report-Only 계측)·Phase 3 잔여분(style-src 세분화)** 은 미착수. 원안의 "전 22티어 prod 빌드 1사이클" 계측은 CI 과금차단 + E2E 인증 불안정 상황에서 신뢰도가 낮으므로, **Phase 3 의 sonner·framer-motion 런타임 `<style>` 검증과 묶어 로컬 prod 빌드 1회로 합칠 것**을 권고한다.
+
+### 6.4 보류 항목과 근거
+
+| 항목 | 보류 근거 |
+|---|---|
+| fe-csp **Phase 4**(nonce+strict-dynamic) | 대가가 `cacheComponents`(PPR) 포기다. `unsafe-inline` 잔존의 실제 위험은 HttpOnly 쿠키 전환으로 토큰 탈취면이 이미 축소돼 2-4d 를 쓸 근거가 약하다. 제품결정 3-2.① 유지 |
+| log-privacy **`tb_privacy_log` 편입** | 0행 + 기록경로 死 — 지금 편입하면 검증 불가 코드만 는다. 재개 조건은 §3-5 갱신 블록에 명시 |
+| **열린 질문 8건**(3-1.②·3-2.①②·3-3.①②·3-4.①②·3-5.②③) | 전부 인수처 프로파일이 있어야 답이 나오는 순수 제품 결정. 코드로 더 좁힐 수 없다 |
