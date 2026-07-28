@@ -79,6 +79,16 @@ jwt:
   # 운영은 application-prod.yml에서 무기본값(${JWT_SECRET})으로 재선언해 미설정 시 기동 실패(fail-fast)시킨다.
   # (빈 기본값 ${JWT_SECRET:}는 base=default 프로파일 부팅[npm run dev]까지 JwtTokenProvider.init에서 죽이므로 지양)
   secret: ${JWT_SECRET:dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
+  # [2026-07-28 신설] 토큰 수명. **기본값은 종전 상수와 동일**(액세스 1시간 / 리프레시 7일)이며
+  # 운영 동작은 달라지지 않는다. 환경변수로만 재정의할 수 있게 열어 두는 것이 목적이다.
+  #
+  # 근거: E2E 전체 실행이 액세스 토큰 수명을 넘기면 그 시점 이후 테스트가 전부 /login 으로
+  # 리다이렉트돼 무더기로 실패한다(Playwright storageState 는 1회 생성 후 갱신되지 않고,
+  # 미들웨어는 exp 경과 시 재발급 없이 로그인으로 보낸다). CI run 30279822185 실측에서
+  # shard 2 가 66분 걸리며 04 후반~07 전량이 이 이유로 red 였다. CI 의 E2E 잡에서만
+  # JWT_ACCESS_TOKEN_VALIDITY_MS 로 늘려 이 구조적 실패를 제거한다.
+  access-token-validity-ms: ${JWT_ACCESS_TOKEN_VALIDITY_MS:3600000}
+  refresh-token-validity-ms: ${JWT_REFRESH_TOKEN_VALIDITY_MS:604800000}
 
 # 로그 보존정책 (LogRetentionScheduler) — 접속기록 보존기간 확정: 2년(24개월, 2026-07-17 제품 결정).
 # 근거: 개인정보의 안전성 확보조치 기준 제8조. months < 12(법정 최저) 이면 스케줄러가 삭제를 건너뛰어(전량파기 방지)

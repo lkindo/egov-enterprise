@@ -286,6 +286,18 @@ jobs:
       - name: Generate ephemeral JWT secret (backend/frontend 대칭)
         run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
 
+      # [2026-07-28 신설] 액세스 토큰 수명을 이 잡에서만 6시간으로 늘린다(운영 기본값 1시간은 불변).
+      #   근거(실측 · CI run 30279822185): shard 2 가 **66분** 걸렸고, 토큰 수명 1시간을 넘긴
+      #   시점부터 04 후반·05·06·07 이 통째로 red 였다. Playwright 의 storageState 는 setup 에서
+      #   1회 생성되고 갱신되지 않으며, 프론트 미들웨어는 exp 경과 시 재발급 없이 /login 으로
+      #   돌린다. 그래서 실패가 "셀렉터를 못 찾음"으로 보이지만 실제 렌더된 것은 로그인 폼이다.
+      #   만료 토큰을 주입해 동일 증상을 재현·확증했다(2026-07-28).
+      #   ⚠ 이것은 개별 테스트 결함을 덮는 우회가 아니다 — 잡이 느려질수록 더 많은 테스트가
+      #     만료 구간에 들어가는 **구조적 실패**라, 테스트를 하나씩 고쳐도 재발한다.
+      #     실행 시간 자체를 줄이는 과제와는 별개로 이 축을 먼저 제거한다.
+      - name: Extend access token lifetime for E2E (운영 기본값은 불변)
+        run: echo "JWT_ACCESS_TOKEN_VALIDITY_MS=21600000" >> "$GITHUB_ENV"
+
       # build 와 up 을 분리한다 — 실패가 이미지 빌드인지 컨테이너 기동인지 한 회차로 구분되고,
       # 출력을 파일로 남겨 애노테이션에 실을 수 있다(로그 다운로드는 admin 권한 필요).
       - name: Build API image
@@ -370,30 +382,52 @@ jobs:
           path: frontend/.next/cache
         continue-on-error: true
 
+      # [2026-07-28 분리] 종전에는 프론트 빌드·기동·테스트가 **한 run 블록**이었다. 그래서 잡이
+      #   70분을 썼을 때 **그 중 빌드가 몇 분인지조차 알 수 없었다** — 스텝 단위 소요시간은 API 로
+      #   조회할 수 있지만 블록 내부는 나눠지지 않는다(실측 진단에서 실제로 막혔다).
+      #   실패 지점 판별에도 같은 문제가 있었다: 빌드 실패인지 기동 실패인지 테스트 실패인지가
+      #   한 스텝의 outcome 하나로 뭉개졌다. 셋으로 나눠 각각을 관측·판정 가능하게 만든다.
+      # [프로덕션 모드] `next dev` 가 아니라 프로덕션 빌드로 띄운다. 이 저장소에는 *next-dev 의
+      #   Server-Action transport 플레이키(앱 버그 아님 · 프로덕션 빌드로만 해소)* 기록이 있어,
+      #   E2E 를 개발 서버에 붙이는 한 article CRUD 계열이 간헐 실패한다. 위 'Restore Next.js
+      #   build cache' 가 살아 있어 빌드 비용도 상당 부분 회수된다.
+      - name: Build frontend (production)
+        id: e2e-fe-build
+        run: |
+          set -o pipefail
+          pnpm run build 2>&1 | tee /tmp/next-build.log
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+
+      # [2026-07-26 정정] dev 스크립트에 이미 `-p 3001` 이 들어 있다
+      #   (cross-env NODE_OPTIONS=... next dev -p 3001).
+      #   종전 `pnpm run dev -- -p 3001` 은 인자를 덧붙여 `next dev -p 3001 -- -p 3001` 이 되고,
+      #   Next 가 `-p` 를 **프로젝트 디렉터리**로 해석해 즉사했다:
+      #   "Invalid project directory provided, no such directory: .../frontend/-p"
+      #   그 결과 wait-on 이 60초를 기다린 뒤 타임아웃했다(실제 원인은 기동 실패).
+      #   출력을 파일로 남긴다 — 종전에는 dev 가 즉사해도 wait-on 이 60초 뒤 "Timed out" 만 남겨
+      #   **진짜 원인이 가려졌다**. 대기 시간도 러너의 콜드 부팅을 감안해 120초로 둔다.
+      # ⚠ `nohup` 필수: 스텝을 분리하면 각 스텝이 별도 셸이라, 그냥 `&` 로 띄운 프로세스는 스텝
+      #   종료 시 정리 대상이 될 수 있다. 다음 스텝에서도 살아 있어야 하므로 세션에서 떼어낸다.
+      - name: Start frontend and wait for readiness
+        id: e2e-fe-start
+        run: |
+          nohup pnpm run start:3001 > /tmp/next-start.log 2>&1 &
+          disown || true
+          npx wait-on http://127.0.0.1:3001/login --timeout 120000
+          echo "프론트 기동 확인: $(curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:3001/login)"
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
+
+      # [2026-07-27] 출력을 파일로 남긴다. 종전에는 어디에도 남기지 않아, 잡이 75분
+      #   timeout 으로 잘렸을 때(= conclusion 이 failure 가 아니라 cancelled) **어느 테스트가
+      #   예산을 먹었는지 알 방법이 전혀 없었다.** 로그 조회는 권한이 필요하므로 annotations
+      #   경로로 꺼내 쓸 수 있게 해 둔다(백엔드 잡의 tee 관례와 동일).
       - name: Run E2E Tests (Sharded)
         id: e2e-run
         run: |
-          # Start frontend in background
-          # [2026-07-26 정정] dev 스크립트에 이미 `-p 3001` 이 들어 있다
-          #   (cross-env NODE_OPTIONS=... next dev -p 3001).
-          #   종전 `pnpm run dev -- -p 3001` 은 인자를 덧붙여 `next dev -p 3001 -- -p 3001` 이 되고,
-          #   Next 가 `-p` 를 **프로젝트 디렉터리**로 해석해 즉사했다:
-          #   "Invalid project directory provided, no such directory: .../frontend/-p"
-          #   그 결과 wait-on 이 60초를 기다린 뒤 타임아웃했다(실제 원인은 기동 실패).
-          #   출력을 파일로 남긴다 — 종전에는 dev 가 즉사해도 wait-on 이 60초 뒤 "Timed out" 만 남겨
-          #   **진짜 원인이 가려졌다**. 대기 시간도 러너의 콜드 컴파일을 감안해 120초로 올린다.
-          # [프로덕션 모드] 종전에는 `next dev` 로 띄웠다. 이 저장소에는 *next-dev 의 Server-Action
-          #   transport 플레이키(앱 버그 아님 · 프로덕션 빌드로만 해소)* 기록이 있어, E2E 를 개발 서버에
-          #   붙이는 한 article CRUD 계열이 간헐 실패한다. 위 'Restore Next.js build cache' 가 살아 있어
-          #   빌드 비용도 상당 부분 회수된다.
-          pnpm run build > /tmp/next-build.log 2>&1
-          pnpm run start:3001 > /tmp/next-start.log 2>&1 &
-          npx wait-on http://127.0.0.1:3001/login --timeout 120000
-          # Run tests with sharding for parallel execution
-          # [2026-07-27] 출력을 파일로 남긴다. 종전에는 어디에도 남기지 않아, 잡이 75분
-          #   timeout 으로 잘렸을 때(= conclusion 이 failure 가 아니라 cancelled) **어느 테스트가
-          #   예산을 먹었는지 알 방법이 전혀 없었다.** 로그 조회는 권한이 필요하므로 annotations
-          #   경로로 꺼내 쓸 수 있게 해 둔다(백엔드 잡의 tee 관례와 동일).
           set -o pipefail
           npx playwright test --shard=${{ matrix.shard }} 2>&1 | tee /tmp/e2e-run.log
         working-directory: frontend
@@ -424,7 +458,7 @@ jobs:
         #   구조였다. cancelled 까지 포함한다(성공 시엔 여전히 돌지 않는다).
         if: failure() || cancelled()
         run: |
-          echo "::error title=실패 스텝 판정::build=${{ steps.e2e-build.outcome }} / compose=${{ steps.e2e-compose.outcome }} / wait=${{ steps.e2e-wait.outcome }} / run=${{ steps.e2e-run.outcome }}"
+          echo "::error title=실패 스텝 판정::api-build=${{ steps.e2e-build.outcome }} / compose=${{ steps.e2e-compose.outcome }} / api-wait=${{ steps.e2e-wait.outcome }} / fe-build=${{ steps.e2e-fe-build.outcome }} / fe-start=${{ steps.e2e-fe-start.outcome }} / run=${{ steps.e2e-run.outcome }}"
           for f in /tmp/e2e-run.log /tmp/compose-build.log /tmp/compose-up.log /tmp/next-build.log /tmp/next-start.log; do
             [ -f "$f" ] || continue
             echo "::error title=$(basename $f) 마지막 출력::$(tail -c 2000 "$f" | paste -sd' ' -)"

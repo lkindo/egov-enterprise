@@ -55,6 +55,10 @@ services:
           }
         }
       JWT_SECRET: ${JWT_SECRET:-dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
+      # [2026-07-28 신설] 액세스 토큰 수명(ms). 기본값은 종전과 동일한 1시간이며, E2E 처럼 실행이
+      #   1시간을 넘길 수 있는 환경에서만 바깥에서 늘린다(CI 의 e2e 잡이 주입). 늘리지 않으면
+      #   토큰이 중간에 만료돼 이후 테스트가 전부 /login 리다이렉트로 죽는다(실측: CI shard 2, 66분).
+      JWT_ACCESS_TOKEN_VALIDITY_MS: ${JWT_ACCESS_TOKEN_VALIDITY_MS:-3600000}
     depends_on:
       db:
         condition: service_healthy

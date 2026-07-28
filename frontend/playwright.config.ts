@@ -12,7 +12,17 @@ export default defineConfig({
     //   더 조이지 않는 이유: 90s 로 내리면 50s 짜리가 CI 에서 2배만 느려져도 죽는다.
     timeout: 180000,
     expect: {
-        timeout: 60000,
+        // [2026-07-28 하향: 60s → 20s] 종전 60초는 Playwright 기본값(5초)의 12배였다.
+        //   요소가 **없는** 실패에서는 60초를 기다려도 결과가 바뀌지 않는다 — 순수 낭비다.
+        //   그리고 위 test timeout(180s)과 곱해지는 쪽이 실제 예산을 태운다: 단언 3개가 연달아
+        //   실패하면 그것만으로 test timeout 을 채우고, CI 는 retries 1 이라 비용이 2배가 된다.
+        //   실측(run 30279822185): shard 2 의 실패 13건이 이 방식으로 잡의 67분 중 대부분을 먹었다.
+        //   근거값: 성공 경로의 테스트는 로컬에서 건당 1.5~15초이며(06:1.5~3.8s, 07:2.7~4.2s,
+        //   05:8~15.7s) 단일 단언은 그보다 훨씬 짧다. 20초는 CI 러너가 로컬보다 3배 느려도
+        //   정상 단언을 죽이지 않으면서 실패 비용을 1/3로 줄인다.
+        //   ⚠ 특정 화면이 구조적으로 느리다면 전역값을 되돌리지 말고 **그 단언에만**
+        //     `{ timeout: N }` 을 주고 이유를 남길 것(전역 완화는 모든 실패를 다시 비싸게 만든다).
+        timeout: 20000,
         toHaveScreenshot: {
             maxDiffPixels: 100, // Allow minor differences (anti-aliasing, etc.)
             threshold: 0.1, // Pixel comparison threshold (0-1)
