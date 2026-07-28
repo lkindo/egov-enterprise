@@ -15,8 +15,11 @@ import nuri.foundation.core.config.FullBeanNameGenerator;
                 org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration.class
 })
 // [§2.A D4 2026-07-18] 컴포넌트스캔 "벽" 해체 — basePackages 에서 egovframework/org.egovframe 제거.
-// 실측 근거: nuri main 이 소비하는 egov 는 전부 우리 @Configuration(EgovPropertyConfig/EgovMessageConfig/
+// 실측 근거: nuri main 이 소비하는 egov 는 전부 우리 @Configuration(EgovMessageConfig/
 // ProjectCryptoConfig/EgovPasswordEncoder) 이 정의하는 라이브러리 인스턴스 + static EgovFileScrty 뿐이며,
+// [정정 2026-07-28] 종전 이 목록에 있던 `EgovPropertyConfig` 는 **저장소에 실존하지 않는 클래스**였다
+//   (`find -name EgovPropertyConfig.java` = 0). 아키텍처 결정의 근거로 팬텀 클래스를 인용하고 있었으므로
+//   제거한다 — 실존하지 않는 것을 인용한 근거는 근거가 아니다(§2.G 死주석).
 // 스캔으로 등록되는 egov @Component 를 주입/소비하는 코드는 0(import egovframework/org.egovframe grep 6건 전부
 // @Bean 정의·static util). 따라서 egov 스캔은 원치 않는 컨트롤러/auto-config 만 끌어와 다시 배제하던 순부담이라
 // 스캔·제외필터(22 REGEX + 3 egov ASSIGNABLE) 통째 제거. 우리 egov @Bean 은 그대로 유지된다.

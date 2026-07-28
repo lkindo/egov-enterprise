@@ -27,16 +27,15 @@ const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', 
 //
 // JwtTokenProvider 도 기동 시 같은 규칙의 지문을 찍는다. 두 지문이 다르면 그것이 곧 원인이다.
 // ────────────────────────────────────────────────────────────────────────────
-const IS_DEV = process.env.NODE_ENV !== 'production';
-
-// [2026-07-28] 진단을 프로덕션에서도 열 수 있게 한다.
-//   종전 게이트는 `if (!IS_DEV) return` 이라 **프로덕션에서만 서명 검증이 깨지는** 상황에서
-//   정확히 진단이 꺼져 있었다. 2026-07-28 CI 조사가 여기서 아홉 번 막혔다 — 백엔드는 같은 토큰을
-//   200 으로 수락하는데(/api/v1/auth/me) 미들웨어만 307 로 되돌리는 것까지 트레이스로 확인했으나,
-//   "미들웨어가 실제로 쥔 시크릿"은 끝내 관측할 수단이 없었다. CI 진단 스텝이 재던 것은
-//   셸 변수 `$JWT_SECRET` 이지 이 모듈이 쓰는 값이 아니다.
-//   남기는 것은 값이 아니라 SHA-256 앞 8자뿐이므로 로그로 시크릿이 새지 않는다.
-const DIAG = IS_DEV || process.env.E2E_DIAG === 'true';
+// [2026-07-28] 이 진단에는 **조건을 걸지 않는다.**
+//   같은 함정을 두 번 밟았다. 처음엔 `if (!IS_DEV) return` 이라 프로덕션에서 침묵했고,
+//   그것을 `E2E_DIAG` 환경변수 게이트로 바꿨더니 이번엔 **CI 의 Edge 샌드박스가 그 변수를
+//   보지 못해** 또 침묵했다(2026-07-28 실측: 미들웨어가 307 을 내는데도 next-start.log 에
+//   이 줄이 없었다 — `!valid` 경로를 탔으므로 함수는 호출됐고 게이트만 false 였다).
+//   두 번 다 **정작 문제가 나는 환경에서만 진단이 꺼지는** 구조였다.
+//   조건을 없애면 "진단이 켜졌는가"라는 변수 자체가 방정식에서 사라진다.
+//   비용은 프로세스당 1회이고, 남기는 것은 SHA-256 앞 8자와 env **존재 여부**(값 아님)뿐이라
+//   로그로 시크릿이 새지 않는다.
 let fingerprintLogged = false;
 
 async function sha256Prefix(input: string): Promise<string> {
@@ -54,12 +53,19 @@ async function sha256Prefix(input: string): Promise<string> {
  *   실패 시에만 찍으면 "로그가 없다"가 정상인지 진단 미발동인지 구분되지 않는다.
  */
 async function logSecretFingerprintOnce(outcome: string): Promise<void> {
-  if (!DIAG || fingerprintLogged) return;
+  if (fingerprintLogged) return;
   fingerprintLogged = true;
   const fingerprint = await sha256Prefix(JWT_SECRET);
   const source = process.env.JWT_SECRET ? '환경변수 JWT_SECRET' : '내장 dev 기본값(DEV_JWT_SECRET)';
+  // Edge 샌드박스가 **어떤 env 를 보는가** 자체가 미관측 변수였다(E2E_DIAG 가 전달됐는데도 안 보였다).
+  // 값이 아니라 존재 여부만 남겨 다음 회차에 그 변수를 확정한다.
+  const envSeen =
+    `NODE_ENV=${process.env.NODE_ENV ?? '(없음)'} · ` +
+    `JWT_SECRET=${process.env.JWT_SECRET ? '있음' : '없음'} · ` +
+    `E2E_DIAG=${process.env.E2E_DIAG ?? '(없음)'}`;
   console.warn(
     `[Middleware] JWT 검증 ${outcome}. 미들웨어가 쓰는 시크릿 출처=${source}, 지문=${fingerprint}.\n` +
+      `  Edge env 가시성: ${envSeen}\n` +
       `  백엔드 기동 로그의 "JWT secret fingerprint" 와 이 값이 다르면 좌우 시크릿 비대칭이 원인입니다.\n` +
       `  (한쪽만 루트 .env 를 받은 경우 발생. 'npm run dev' 로 함께 띄우면 대칭이 보장됩니다.)`
   );
