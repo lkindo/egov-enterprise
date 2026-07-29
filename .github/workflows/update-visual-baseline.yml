@@ -128,8 +128,20 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/e2e/**/*-snapshots/ || true
+          # ⚠ [2026-07-29 수정] 종전 패턴 `frontend/e2e/**/*-snapshots/` 는 **아무것도 add 하지 못했다.**
+          #   bash 는 `globstar` 없이 `**` 를 재귀 glob 으로 처리하지 않아 `frontend/e2e/*/*-snapshots/`
+          #   가 되는데, 실제 경로는 `frontend/e2e/04-quality-resilience.spec.ts-snapshots/` 라
+          #   중간 디렉터리가 없어 매치되지 않는다. `|| true` 가 그 실패까지 삼켜, 파일이 정상
+          #   생성됐는데도 "변경 없음" 으로 성공 종료했다(run 30418022585 실측 — 거짓 green).
+          #   디렉터리를 통째로 넘겨 glob 자체를 없앤다.
+          git add -A -- frontend/e2e
+
           if git diff --cached --quiet; then
+            # 파일은 생겼는데 스테이징이 비었다면 add 경로가 틀린 것이다 — 조용히 넘기지 않는다.
+            if find frontend/e2e -name '*-linux.png' | grep -q .; then
+              echo "::error title=기준선이 스테이징되지 않았다::리눅스 기준선 파일은 존재하는데 git add 결과가 비었다. add 경로 패턴을 확인하라(이 스텝이 성공으로 끝나면 거짓 green 이 된다)."
+              exit 1
+            fi
             echo "::notice title=변경 없음::기준선이 기존과 동일해 커밋할 것이 없습니다."
             exit 0
           fi
