@@ -67,7 +67,7 @@ let fingerprintLogged = false;
 type VerifyVerdict = { role: string | null; outcome: string };
 
 async function sha256Prefix(input: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', utf8ToArrayBuffer(input));
+  const digest = await crypto.subtle.digest('SHA-256', utf8ToBytes(input));
   return Array.from(new Uint8Array(digest))
     .slice(0, 4)
     .map((b) => b.toString(16).padStart(2, '0'))
@@ -109,17 +109,36 @@ function base64UrlDecodeToString(input: string): string {
   );
 }
 
-function base64UrlToArrayBuffer(input: string): ArrayBuffer {
+// 🚨 [2026-07-29] Web Crypto 에는 **Uint8Array 를 그대로** 넘긴다. `.buffer` 를 꺼내지 마라.
+//
+//   종전에는 두 함수가 `bytes.buffer` / `u.buffer.slice(...)` 로 ArrayBuffer 를 꺼내 넘겼는데,
+//   그것이 CI 인증 전량 실패의 원인이었다. Next.js Edge 런타임은 별도 VM realm 에서 돌아가
+//   샌드박스가 만든 ArrayBuffer 가 호스트의 `crypto.subtle` 이 아는 ArrayBuffer 와 **다른 realm**
+//   이 된다. Node 20 의 Web Crypto 는 이 cross-realm ArrayBuffer 를 거부해 TypeError 를 던졌고,
+//   `catch { return null }` 이 그것을 삼켜 **미인증**으로 처리 → 307 /login 리다이렉트가 됐다.
+//
+//   실측(2026-07-29, CI 와 동일 조합을 로컬 컨테이너로 재현):
+//     · 순수 Node 20 / 22        → verify OK        (Node 자체는 무관)
+//     · Node 22 + Edge (로컬)    → v=ok             (그래서 로컬에서만 통과했다)
+//     · Node 20 + Edge (= CI)    → v=throw-TypeError@verify
+//   즉 "로컬은 되는데 CI 만 깨진다"의 정체는 **Node 메이저 × Edge realm** 조합이었다.
+//
+//   Web Crypto 는 BufferSource(ArrayBuffer | ArrayBufferView)를 받으므로 TypedArray 를 그대로
+//   넘기는 것이 표준이고, 불필요한 복사(.slice)도 사라진다. `.buffer` 로 되돌리지 말 것.
+function base64UrlToBytes(input: string): Uint8Array<ArrayBuffer> {
   const b64 = input.replace(/-/g, '+').replace(/_/g, '/');
   const bin = atob(b64);
   const bytes = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-  return bytes.buffer;
+  return bytes;
 }
 
-function utf8ToArrayBuffer(input: string): ArrayBuffer {
-  const u = new TextEncoder().encode(input);
-  return u.buffer.slice(u.byteOffset, u.byteOffset + u.byteLength) as ArrayBuffer;
+// 반환 타입을 `Uint8Array<ArrayBuffer>` 로 좁힌다. TS 5.7 부터 Uint8Array 가 제네릭이 되어
+// `TextEncoder().encode()` 는 `Uint8Array<ArrayBufferLike>` 로 추론되는데, Web Crypto 의 BufferSource
+// 는 SharedArrayBuffer 기반을 허용하지 않아 그대로는 타입이 맞지 않는다(빌드 실패).
+// TextEncoder 는 언제나 일반 ArrayBuffer 를 쓰므로 런타임 의미는 바뀌지 않는다.
+function utf8ToBytes(input: string): Uint8Array<ArrayBuffer> {
+  return new TextEncoder().encode(input) as Uint8Array<ArrayBuffer>;
 }
 
 /**
@@ -127,6 +146,10 @@ function utf8ToArrayBuffer(input: string): ArrayBuffer {
  * 서명 위조·만료·구조 이상·알 수 없는 alg 는 전부 null(=미인증)로 처리한다.
  */
 async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
+  // 예외가 났을 때 **어느 호출에서** 났는지까지 남긴다. 종전에는 예외 종류만 남겨
+  // `throw-TypeError` 로만 보였는데, 그것만으로는 디코딩·키생성·검증 중 어디인지 알 수 없어
+  // 원인 특정이 한 단계 더 필요했다(2026-07-29 CI 실측).
+  let stage = 'split';
   try {
     const parts = token.split('.');
     if (parts.length !== 3) {
@@ -134,6 +157,7 @@ async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
     }
     const [headerB64, payloadB64, sigB64] = parts;
 
+    stage = 'decode-header';
     const header = JSON.parse(base64UrlDecodeToString(headerB64));
     const hash = HMAC_HASH[header.alg];
     if (!hash) {
@@ -141,25 +165,28 @@ async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
       return { role: null, outcome: 'alg-unsupported' };
     }
 
+    stage = 'import-key';
     const key = await crypto.subtle.importKey(
       'raw',
-      utf8ToArrayBuffer(JWT_SECRET),
+      utf8ToBytes(JWT_SECRET),
       { name: 'HMAC', hash: { name: hash } },
       false,
       ['verify']
     );
-    const valid = await crypto.subtle.verify(
-      'HMAC',
-      key,
-      base64UrlToArrayBuffer(sigB64),
-      utf8ToArrayBuffer(`${headerB64}.${payloadB64}`)
-    );
+    stage = 'decode-sig';
+    const sigBytes = base64UrlToBytes(sigB64);
+    stage = 'encode-data';
+    const dataBytes = utf8ToBytes(`${headerB64}.${payloadB64}`);
+    stage = 'verify';
+    const valid = await crypto.subtle.verify('HMAC', key, sigBytes, dataBytes);
     // 서명 불일치는 위조일 수도, 좌우 시크릿 비대칭일 수도 있다. 어느 쪽인지는 지문 대조로만 갈린다.
+    stage = 'fingerprint';
     await logSecretFingerprintOnce(valid ? '성공' : '실패(서명 불일치)');
     if (!valid) {
       return { role: null, outcome: 'sig-mismatch' };
     }
 
+    stage = 'decode-payload';
     const payload = JSON.parse(base64UrlDecodeToString(payloadB64));
     if (payload.exp && Date.now() >= payload.exp * 1000) {
       return { role: null, outcome: 'expired' }; // 만료(정상 흐름이므로 경고하지 않는다)
@@ -171,9 +198,9 @@ async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
     }
     return { role: payload.role, outcome: 'ok' };
   } catch (e) {
-    // ⚠ 이 catch 가 지금까지 모든 신호를 삼켰다. 예외 종류만이라도 남긴다(메시지는 남기지 않는다 —
-    //   토큰 조각이 섞여 나올 수 있다).
-    return { role: null, outcome: `throw-${(e as { name?: string })?.name ?? 'unknown'}` };
+    // ⚠ 이 catch 가 지금까지 모든 신호를 삼켰다. 예외 종류 + 발생 단계를 남긴다
+    //   (메시지는 남기지 않는다 — 토큰 조각이 섞여 나올 수 있다).
+    return { role: null, outcome: `throw-${(e as { name?: string })?.name ?? 'unknown'}@${stage}` };
   }
 }
 
