@@ -517,7 +517,11 @@ jobs:
             echo "미들웨어 진단 헤더: ${MW_DIAG:-<헤더 없음 — 이 빌드에 진단이 없거나 리다이렉트가 아님>}"
             case "$MW_CODE" in
               200) echo "미들웨어가 백엔드 토큰을 수락함($MW_CODE) — 정상" ;;
-              307|302) echo "::error title=미들웨어가 유효 토큰을 거부::/admin/work-hub 가 $MW_CODE 로 /login 에 되돌렸다. 백엔드는 같은 토큰을 수락하므로 미들웨어가 쥔 JWT_SECRET 이 다르다 — 아래 next-start.log 의 '[Middleware] JWT 검증' 지문을 위 백엔드 지문과 대조할 것." ;;
+              # ⚠ [2026-07-29 정정] 종전 메시지는 307 을 보면 무조건 "JWT_SECRET 이 다르다"고 단정했다.
+              #   실제 원인은 시크릿이 아니라 **Edge realm 의 ArrayBuffer 를 Web Crypto 가 거부**해
+              #   verify 가 TypeError 를 던진 것이었고(지문은 대칭이었다), 이 단정이 조사를 여러 회차
+              #   엉뚱한 방향으로 끌었다. 307 의 원인은 위 `x-mw-auth` 의 v= 값으로만 갈린다.
+              307|302) echo "::error title=미들웨어가 유효 토큰을 거부::/admin/work-hub 가 $MW_CODE 로 /login 에 되돌렸다. **원인은 위 x-mw-auth 의 v= 값으로 판정할 것** — sig-mismatch=시크릿 비대칭(지문 대조) · throw-*@단계=해당 호출에서 예외(2026-07-29 사례: throw-TypeError@verify = cross-realm ArrayBuffer) · ok-no-role=role 클레임 부재 · expired=만료 · no-cookie=쿠키 미도달." ;;
               500) echo "::error title=미들웨어 fail-fast::JWT_SECRET 이 next start 프로세스에 전달되지 않았다(모듈 로드 시 throw)." ;;
               *)   echo "::warning title=미들웨어 판정 불명::응답 코드 $MW_CODE" ;;
             esac
