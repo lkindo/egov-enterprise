@@ -642,12 +642,21 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: frontend
 
+      # [2026-07-29] `merge-multiple: true` 를 쓰지 않는다 — **동시 추출 경쟁**이 원인이었다.
+      #   실측(run 30419863030, 재실행 포함 2회 동일 재현):
+      #     shard-0 (b232…) → 성공 / shard-2 (fa7f…) → 성공 / shard-1 (6123…) → 5회 재시도 후 실패
+      #     로그의 "Starting download of artifact to: .../playwright-reports" 가 **3번 모두 같은 경로**다.
+      #   merge-multiple 은 여러 아티팩트를 한 디렉터리에 합쳐 푸는데, blob 리포터 산출물은
+      #   샤드 간 파일명이 겹쳐 동시 추출이 충돌한다. "3개 중 1개만, 매번, 25초 뒤 실패" 는
+      #   랜덤 인프라 장애가 아니라 경쟁 조건의 전형이다(아티팩트 자체는 77/68/54KB 로 멀쩡했다).
+      #   옵션을 빼면 각 아티팩트가 `playwright-reports/playwright-report-shard-N/` 로 분리 추출되어
+      #   충돌이 사라진다. `merge-reports` 는 디렉터리를 재귀 탐색하므로 병합에는 지장이 없다.
+      #   ⚠ 실패를 continue-on-error 로 덮지 않는다 — 덮으면 구성 오류와 인프라 장애가 구분되지 않는다.
       - name: Download all reports
         uses: actions/download-artifact@v4
         with:
           path: frontend/playwright-reports
           pattern: playwright-report-shard-*
-          merge-multiple: true
 
       # [연쇄 실패 제거] E2E 가 **리포트를 만들기 전에** 죽으면 다운로드할 아티팩트가 없어
       #   `merge-reports` 가 "Directory does not exist" 로 실패한다. 그러면 상류 실패 1건이 red 2건으로
