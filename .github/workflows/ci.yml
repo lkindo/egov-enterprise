@@ -550,11 +550,19 @@ jobs:
       #
       #   ⚠ full-suite 하나로 전 스펙이 커버되므로 tier-* 를 빼도 커버리지 손실이 없다.
       #     tier-* 는 로컬에서 특정 tier 만 빠르게 돌리기 위한 것이다.
+      # [2026-07-29] `--reporter=blob,line` 을 명시한다.
+      #   `merge-reports` 는 **blob 리포트만** 병합할 수 있는데, playwright.config 의 기본
+      #   reporter 가 'html' 이라 각 샤드가 HTML 을 만들었고 병합 잡은 항상
+      #   "No report files found" 로 실패했다 — 상류 성패와 무관한 **구성상 성립 불가**였다.
+      #   지금까지는 e2e 가 늘 red 라 "상류 결손으로 인한 파생 실패"로 오분류돼 있었고,
+      #   e2e 3샤드가 전부 green 이 된 run 30418746787 에서야 자체 결함으로 드러났다.
+      #   `line` 을 함께 두는 이유: blob 만 지정하면 콘솔 진행 출력이 사라져 아래 tee 로 남기는
+      #   /tmp/e2e-run.log 가 비고, 실패 스펙 목록을 로그로 추적하던 경로가 끊긴다.
       - name: Run E2E Tests (Sharded)
         id: e2e-run
         run: |
           set -o pipefail
-          npx playwright test --project=full-suite --shard=${{ matrix.shard }} 2>&1 | tee /tmp/e2e-run.log
+          npx playwright test --project=full-suite --shard=${{ matrix.shard }} --reporter=blob,line 2>&1 | tee /tmp/e2e-run.log
         working-directory: frontend
         env:
           NEXT_PUBLIC_API_URL: http://localhost:8080/api/v1
@@ -583,7 +591,10 @@ jobs:
           # (2026-07-26 실측: "The artifact name is not valid ... Forward slash /").
           # strategy.job-index(0,1,2)를 쓰면 download 의 pattern(playwright-report-shard-*)도 그대로 맞는다.
           name: playwright-report-shard-${{ strategy.job-index }}
-          path: frontend/playwright-report/
+          # [2026-07-29] blob 리포터 산출물은 `playwright-report/` 가 아니라 `blob-report/` 에 쌓인다.
+          #   경로를 바꾸지 않으면 병합 잡이 받을 파일이 없어 계속 실패한다(아티팩트 이름은 유지 —
+          #   download 의 pattern `playwright-report-shard-*` 이 그대로 맞아야 한다).
+          path: frontend/blob-report/
           retention-days: 30
           include-hidden-files: true
 
