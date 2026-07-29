@@ -47,6 +47,11 @@ class UserServiceTest {
     @Mock
     private nuri.business.domain.log.UserLogRepository userLogRepository;
 
+    // [V2_32 결속] UserService 가 사용자 삭제 시 부서업무 담당자 참조를 해제한다.
+    // 생성자에 required() 가드가 있어 mock 이 없으면 @InjectMocks 가 null 을 넣어 전 테스트가 즉사한다.
+    @Mock
+    private nuri.business.domain.deptjob.DeptJobRepository deptJobRepository;
+
     @Mock
     private PasswordEncoder passwordEncoder;
 

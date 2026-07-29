@@ -49,6 +49,10 @@ class UserServiceBusinessLogicExceptionTest {
         @Mock
         private nuri.business.domain.log.UserLogRepository userLogRepository;
 
+        // [V2_32 결속] UserService 생성자의 required() 가드 — mock 이 없으면 null 주입으로 전 테스트가 즉사한다.
+        @Mock
+        private nuri.business.domain.deptjob.DeptJobRepository deptJobRepository;
+
         @Mock
         private PasswordEncoder passwordEncoder;
 
