@@ -49,15 +49,22 @@ const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', 
 let fingerprintLogged = false;
 
 /**
- * 직전 토큰 검증이 **어디서** 끝났는지. `/login` 리다이렉트 응답 헤더로 내보낸다.
+ * 토큰 검증 결과 — 역할과 **검증이 끝난 지점**을 함께 돌려준다.
  *
- * ⚠ 왜 응답 헤더인가: console 진단이 세 번 침묵했다(dev 게이트 → env 게이트 → 무조건화 후에도
- *   CI 로그에 미출현). 그래서 **삼켜질 수 없는 채널**로 옮긴다. 지금까지 신호를 지운 진짜 범인은
- *   `verifyAndExtractRole` 의 `catch { return null }` 일 가능성이 크다 — 서명 불일치라면 위 로그가
- *   찍혔어야 하는데 찍히지 않은 채 307 이 나왔기 때문이다.
+ * ⚠ 왜 응답 헤더로 내보내는가: console 진단이 세 번 침묵했다(dev 게이트 → env 게이트 → 무조건화
+ *   후에도 CI 로그에 미출현). Edge 런타임 console 은 `next start` stdout 에 도달하지 않으므로
+ *   **삼켜질 수 없는 채널**이 필요하다.
+ *
+ * ⚠ [2026-07-29] 종전에는 이 값을 **모듈 스코프 전역**(`let lastVerifyOutcome`)에 담았는데
+ *   두 가지 결함이 있었다. 진단이 또 거짓 신호를 주면 조사가 다시 막히므로 구조를 바꾼다:
+ *   ① **경쟁 조건** — 한 프로세스가 요청을 동시 처리하면(프리페치·RSC·병렬 탭) 다른 요청의
+ *      결과가 섞여, 헤더에 실린 값이 그 응답의 것이라는 보장이 없었다.
+ *   ② **`ok` 인데 거부되는 경로** — 서명·만료를 통과해도 payload 에 role 이 없으면 null 을
+ *      돌려 미인증 처리되는데, outcome 은 `ok` 로 남아 **"검증 성공"이라 보고하면서 307** 을 냈다.
+ *      관측자가 "ok 인데 왜 튕기지"에서 또 헤맬 구조라 `ok-no-role` 로 분리한다.
  *   시크릿·토큰 조각은 절대 싣지 않는다. 실리는 것은 "쿠키 유무 + 검증이 끝난 지점" 뿐이다.
  */
-let lastVerifyOutcome = 'none';
+type VerifyVerdict = { role: string | null; outcome: string };
 
 async function sha256Prefix(input: string): Promise<string> {
   const digest = await crypto.subtle.digest('SHA-256', utf8ToArrayBuffer(input));
@@ -119,20 +126,19 @@ function utf8ToArrayBuffer(input: string): ArrayBuffer {
  * accessToken 의 HMAC 서명과 만료(exp)를 모두 검증하고 payload.role 을 반환한다.
  * 서명 위조·만료·구조 이상·알 수 없는 alg 는 전부 null(=미인증)로 처리한다.
  */
-async function verifyAndExtractRole(token: string): Promise<string | null> {
+async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
   try {
     const parts = token.split('.');
     if (parts.length !== 3) {
-      lastVerifyOutcome = `parts-${parts.length}`;
-      return null;
+      return { role: null, outcome: `parts-${parts.length}` };
     }
     const [headerB64, payloadB64, sigB64] = parts;
 
     const header = JSON.parse(base64UrlDecodeToString(headerB64));
     const hash = HMAC_HASH[header.alg];
     if (!hash) {
-      lastVerifyOutcome = 'alg-unsupported';
-      return null; // alg=none·RS*(비대칭) 등 화이트리스트 밖은 거부
+      // alg=none·RS*(비대칭) 등 화이트리스트 밖은 거부
+      return { role: null, outcome: 'alg-unsupported' };
     }
 
     const key = await crypto.subtle.importKey(
@@ -151,22 +157,23 @@ async function verifyAndExtractRole(token: string): Promise<string | null> {
     // 서명 불일치는 위조일 수도, 좌우 시크릿 비대칭일 수도 있다. 어느 쪽인지는 지문 대조로만 갈린다.
     await logSecretFingerprintOnce(valid ? '성공' : '실패(서명 불일치)');
     if (!valid) {
-      lastVerifyOutcome = 'sig-mismatch';
-      return null;
+      return { role: null, outcome: 'sig-mismatch' };
     }
 
     const payload = JSON.parse(base64UrlDecodeToString(payloadB64));
     if (payload.exp && Date.now() >= payload.exp * 1000) {
-      lastVerifyOutcome = 'expired';
-      return null; // 만료(정상 흐름이므로 경고하지 않는다)
+      return { role: null, outcome: 'expired' }; // 만료(정상 흐름이므로 경고하지 않는다)
     }
-    lastVerifyOutcome = 'ok';
-    return payload.role || null;
+    // ⚠ 서명·만료를 통과했는데 role 클레임이 없으면 여기서 미인증이 된다. `ok` 로 뭉뚱그리면
+    //   "검증 성공인데 307" 이라는 해석 불가 신호가 되므로 반드시 구분한다.
+    if (!payload.role) {
+      return { role: null, outcome: 'ok-no-role' };
+    }
+    return { role: payload.role, outcome: 'ok' };
   } catch (e) {
     // ⚠ 이 catch 가 지금까지 모든 신호를 삼켰다. 예외 종류만이라도 남긴다(메시지는 남기지 않는다 —
     //   토큰 조각이 섞여 나올 수 있다).
-    lastVerifyOutcome = `throw-${(e as { name?: string })?.name ?? 'unknown'}`;
-    return null;
+    return { role: null, outcome: `throw-${(e as { name?: string })?.name ?? 'unknown'}` };
   }
 }
 
@@ -275,7 +282,15 @@ export async function middleware(request: NextRequest) {
 
   const accessToken = request.cookies.get('accessToken')?.value;
   // [보안] 서명 + 만료를 실제로 검증한다. 위조 토큰의 role=ADMIN 통과(관리자 UI 셸 열람)를 차단.
-  const userRole = accessToken ? await verifyAndExtractRole(accessToken) : null;
+  const verdict: VerifyVerdict = accessToken
+    ? await verifyAndExtractRole(accessToken)
+    : { role: null, outcome: 'no-cookie' };
+  const userRole = verdict.role;
+
+  // [진단] 검증이 끝난 지점을 응답 헤더로 남긴다. 비밀값 없음 — 쿠키 유무와 종료 지점뿐.
+  //   ⚠ 성공 응답에도 붙인다: 그린일 때의 정상값(`v=ok`)을 모르면 red 를 해석할 수 없고,
+  //     "헤더가 없다"가 정상인지 미들웨어 미실행인지 구분되지 않는다(진단이 세 번 침묵한 전례).
+  const authDiag = `cookie=${accessToken ? 1 : 0};v=${verdict.outcome}`;
 
   // 3. 유효(서명·만료 검증 통과) 토큰이 없으면 로그인으로.
   //    ⚠ 쿠키를 삭제하지 않는다 — 여기서 삭제하면 프리페치/RSC/전환적 요청 한 번의 검증 실패가
@@ -284,8 +299,7 @@ export async function middleware(request: NextRequest) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     const redirect = NextResponse.redirect(loginUrl);
-    // [진단] 이 리다이렉트가 왜 났는지를 응답 헤더로 남긴다. 비밀값 없음 — 쿠키 유무와 검증 종료 지점뿐.
-    redirect.headers.set('x-mw-auth', `cookie=${accessToken ? 1 : 0};v=${lastVerifyOutcome}`);
+    redirect.headers.set('x-mw-auth', authDiag);
     return redirect;
   }
 
@@ -309,12 +323,17 @@ export async function middleware(request: NextRequest) {
       if (!isUserAccessible) {
         const fallbackUrl = new URL('/', request.url);
         fallbackUrl.searchParams.set('auth_error', 'unauthorized');
-        return NextResponse.redirect(fallbackUrl);
+        const denied = NextResponse.redirect(fallbackUrl);
+        // 인증은 됐고 **권한**이 부족한 경우다. /login 리다이렉트와 구분돼야 진단이 성립한다.
+        denied.headers.set('x-mw-auth', `${authDiag};deny=role`);
+        return denied;
       }
     }
   }
 
-  return NextResponse.next();
+  const pass = NextResponse.next();
+  pass.headers.set('x-mw-auth', authDiag);
+  return pass;
 }
 
 export const config = {
