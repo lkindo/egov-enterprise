@@ -662,6 +662,30 @@ jobs:
       #   `merge-reports` 가 "Directory does not exist" 로 실패한다. 그러면 상류 실패 1건이 red 2건으로
       #   보여 신호가 오염된다(2026-07-26 실측). 병합할 것이 없으면 경고만 남기고 통과시킨다 —
       #   E2E 자체의 실패는 e2e-tests 잡이 이미 red 로 보고하므로 은폐가 아니다.
+      # [2026-07-29] blob 파일을 최상위로 평탄화한다.
+      #   `merge-multiple` 을 뺀 뒤 다운로드는 정상화됐지만(3/3 성공) 병합이 다시 실패했다:
+      #     Error: No report files found in .../playwright-reports
+      #   `merge-reports <dir>` 는 그 디렉터리 **바로 아래**의 blob 만 찾는데, 분리 추출로 파일이
+      #   `playwright-reports/playwright-report-shard-N/` 하위에 놓였기 때문이다
+      #   ("재귀 탐색하므로 지장 없다" 던 앞선 판단은 틀렸다 — run 30421402885 실측).
+      #   즉 merge-multiple 은 동시 추출 충돌을, 빼면 경로 불일치를 낳는다. 평탄화로 둘 다 피한다.
+      #   샤드 디렉터리명을 접두사로 붙여 파일명이 겹쳐도 덮어쓰지 않는다.
+      - name: Flatten blob reports
+        run: |
+          echo "── 다운로드 구조(진단) ──"
+          find playwright-reports -type f | head -20
+          for d in playwright-reports/*/; do
+            [ -d "$d" ] || continue
+            n=$(basename "$d")
+            for f in "$d"*; do
+              [ -f "$f" ] || continue
+              mv "$f" "playwright-reports/${n}-$(basename "$f")"
+            done
+          done
+          echo "── 평탄화 후 ──"
+          ls -la playwright-reports/
+        working-directory: frontend
+
       - name: Merge reports
         run: |
           if [ ! -d ./playwright-reports ] || [ -z "$(ls -A ./playwright-reports 2>/dev/null)" ]; then
