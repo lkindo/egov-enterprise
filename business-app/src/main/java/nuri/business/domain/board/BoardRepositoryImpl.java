@@ -99,7 +99,11 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.qnaSttsCd,
                                                  QBoard.board.qnaCatCd))
                                 .from(QBoard.board)
-                                .leftJoin(QUser.user).on(QBoard.board.frstRgtrId.eq(QUser.user.esntlId))
+                                // [W1-25 P3④] 사용하지 않는 leftJoin(QUser) 제거 — 가장 뜨거운 목록 쿼리가
+                                //   content/count 양쪽에서 tb_user_info 를 조인하고 있었으나 셀렉트(86-100행)는
+                                //   전부 QBoard.board.*, where(BoardPredicate)도 작성자 검색조차
+                                //   QBoard.board.userNm 을 쓰며, orderBy 도 QBoard 전용이라 기여가 0이었다.
+                                //   조인 조건의 esntlId 는 User 의 @Id 라 매칭이 최대 1건 → 행 수도 불변이다.
                                 .where(builder)
                                 .orderBy(orderSpecifier, QBoard.board.ansSn.asc())
                                 .offset(pageable.getOffset())
@@ -109,7 +113,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 Long total = queryFactory
                                 .select(QBoard.board.count())
                                 .from(QBoard.board)
-                                .leftJoin(QUser.user).on(QBoard.board.frstRgtrId.eq(QUser.user.esntlId))
+                                // [W1-25 P3④] 동일 — count 쿼리는 select 가 count() 하나라 더 명백하다.
                                 .where(builder)
                                 .fetchOne();
 

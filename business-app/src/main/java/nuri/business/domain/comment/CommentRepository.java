@@ -16,8 +16,9 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
 
     Page<Comment> findByAnsCnContaining(String ansCn, Pageable pageable);
 
-    @Query("SELECT COALESCE(MAX(c.ansSn), 0L) FROM Comment c")
-    Long findMaxId();
+    // [W1-25 P3② 삭제] findMaxId() 제거 — 저장소 전역 호출부 0(선언 1건뿐).
+    //   WHERE 절이 전혀 없는 **전역** MAX(ans_sn) 채번이라, 살아 있었다면 게시글 경계를 넘어
+    //   댓글 순번이 뒤엉키는 구조였다. 실제 댓글 PK 는 JpaRepository<Comment, Long> 표준 경로를 쓴다.
 
     long countByBbsIdAndPstIdAndUseYn(String bbsId, String pstId, String useYn);
 

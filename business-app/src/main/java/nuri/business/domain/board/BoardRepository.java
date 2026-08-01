@@ -60,6 +60,17 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
         @Query("SELECT b FROM Board b WHERE b.pstId = :pstId")
         Optional<Board> findByPstIdWithPessimisticLock(@Param("pstId") String pstId);
 
+        /**
+         * 좋아요 수 원자 증가.
+         *
+         * <p>⚠ [배선 대기 — 死코드 아님] 현재 호출부가 0이지만 삭제하지 말 것.
+         * 실제 좋아요 경로인 {@code BoardService.increaseLikeCount()} 는
+         * 엔티티를 읽어 필드를 증가시키는 **비원자 read-modify-write**({@code Board.increaseLikeCnt()})라
+         * 동시 요청에서 증가분이 유실된다. 이 메서드가 그 결함의 올바른 구현이며 배선만 남아 있다.
+         * 배선 시 반환값은 영향 행 수이므로, 갱신 후 카운트를 응답에 실으려면 재조회가 필요하고
+         * {@code clearAutomatically = true} 로 1차 캐시의 스테일 엔티티를 비워야 한다.
+         * (조회수 {@code inqCnt} 의 동일 결함과 함께 처리할 항목 — Wave 1 W1-17)
+         */
         @org.springframework.data.jpa.repository.Modifying
         @Query("UPDATE Board b SET b.likeCnt = COALESCE(b.likeCnt, 0) + 1 WHERE b.pstId = :pstId")
         int incrementLikeCntAtomic(@Param("pstId") String pstId);
