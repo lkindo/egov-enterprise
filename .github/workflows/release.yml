@@ -1,38 +1,93 @@
 name: Docker Release
 
+# [W0-11] 공급망 하드닝 (2026-08-01)
+#   ① 모든 서드파티 액션을 커밋 SHA 로 핀했다. 이 워크플로는 contents:write 와 DOCKERHUB_TOKEN 을
+#      쥔 채 실행되므로, 가변 major 태그(@v3 등)는 업스트림이 태그를 옮기는 것만으로 임의 코드가
+#      릴리스·배포 권한과 함께 실행되는 경로가 된다.
+#      SHA 핀은 자동 보안패치를 멈추므로 .github/dependabot.yml 의 github-actions 엔트리와 **세트**로만
+#      의미가 있다. 둘 중 하나만 있으면 핀이 곧 방치가 된다.
+#   ② 릴리스가 검증 없이 나가던 문제를 막기 위해 build-and-push 앞에 verify 잡을 둔다.
+#      ci.yml 은 `push: branches` 만 트리거하므로 **태그 푸시에는 전혀 돌지 않았다** — 즉 red 인
+#      커밋에 v* 태그를 달면 그대로 Docker Hub 에 배포되고 GitHub Release 가 발행됐다.
+#      태그마다 75분 E2E 를 돌리는 비용은 피하고, §0.6 컴파일 무결성 + 하네스 게이트만 전제 조건으로 건다.
+
 on:
   push:
     tags:
       - 'v*'
 
 permissions:
-  contents: write
-  packages: write
+  # [W0-11] packages:write 제거 — 이미지는 Docker Hub 로 push 되고 GHCR 을 쓰지 않아 사용처가 0이었다.
+  contents: write   # softprops/action-gh-release 가 릴리스를 생성한다
 
 jobs:
+  # [W0-11] 릴리스 전제 조건. 실패하면 배포도 릴리스도 발행되지 않는다.
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@d7793b545071e98d581d3bf084a51c3213318a07  # v4
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70  # v3
+
+      - name: Compilation integrity gate (GEMINI.md §0.6)
+        run: ./gradlew compileJava compileTestJava
+
+      - name: Harness gate (헌법/표준 린터)
+        run: ./gradlew :api-server:harnessTest
+
+      - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1  # v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: "20"
+          cache: pnpm
+          cache-dependency-path: frontend/pnpm-lock.yaml
+
+      - name: Frontend type gate
+        run: |
+          pnpm -C frontend install --frozen-lockfile
+          pnpm -C frontend exec tsc --noEmit
+
   build-and-push:
+    needs: verify
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
         with:
           fetch-depth: 0
 
       - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130  # v3
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f  # v3
 
+      # 트리거가 태그 푸시 단독이라 종전의 `if: github.event_name != 'pull_request'` 는 항상 참인 死조건이었다.
+      # 그 死조건이 가리고 있던 진짜 문제: 이 스텝에는 시크릿 존재 가드가 없어, DOCKERHUB_* 미설정 시
+      # 뒤 스텝들의 우아한 저하(secrets.DOCKERHUB_TOKEN != '')에 도달하기 전에 login 이 먼저 죽는다.
+      # secrets 컨텍스트는 스텝 `if:` 에서 쓸 수 없으므로 잡 레벨 env 로 승격해 참조한다.
       - name: Login to Docker Hub
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        if: env.DOCKERHUB_TOKEN != ''
+        env:
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9  # v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Extract metadata (tags, labels) for Backend
         id: meta-backend
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051  # v5
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME || 'egov' }}/egov-api
           tags: |
@@ -41,11 +96,11 @@ jobs:
             type=sha
 
       - name: Build and push Backend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25  # v5
         with:
           context: .
           file: api-server/Dockerfile
-          push: ${{ github.event_name != 'pull_request' && secrets.DOCKERHUB_TOKEN != '' }}
+          push: ${{ secrets.DOCKERHUB_TOKEN != '' }}
           tags: ${{ steps.meta-backend.outputs.tags }}
           labels: ${{ steps.meta-backend.outputs.labels }}
           cache-from: type=gha
@@ -53,7 +108,7 @@ jobs:
 
       - name: Extract metadata (tags, labels) for Frontend
         id: meta-frontend
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@c299e40c65443455700f0fdfc63efafe5b349051  # v5
         with:
           images: ${{ secrets.DOCKERHUB_USERNAME || 'egov' }}/egov-frontend
           tags: |
@@ -62,10 +117,10 @@ jobs:
             type=sha
 
       - name: Build and push Frontend
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25  # v5
         with:
           context: ./frontend
-          push: ${{ github.event_name != 'pull_request' && secrets.DOCKERHUB_TOKEN != '' }}
+          push: ${{ secrets.DOCKERHUB_TOKEN != '' }}
           tags: ${{ steps.meta-frontend.outputs.tags }}
           labels: ${{ steps.meta-frontend.outputs.labels }}
           cache-from: type=gha
@@ -73,9 +128,9 @@ jobs:
           build-args: |
             NEXT_PUBLIC_API_URL=/api/v1
 
+      # 트리거가 tags/v* 단독이라 종전의 `if: startsWith(github.ref, 'refs/tags/')` 도 항상 참이었다.
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
-        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65  # v2
         with:
           generate_release_notes: true
           draft: false

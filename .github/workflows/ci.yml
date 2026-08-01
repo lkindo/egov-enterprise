@@ -26,6 +26,29 @@ env:
   PLAYWRIGHT_BROWSERS_PATH: /tmp/playwright-browsers
 
 jobs:
+  # [W0-08] 시크릿 스캔에 실행 경로를 부여한다.
+  #   종전에는 .githooks/pre-commit 의 `command -v gitleaks` 조건부 블록이 유일한 배선이었고,
+  #   미설치 머신에서는 조건 자체를 건너뛰어 **아무데서도 돌지 않았다**(GEMINI.md §0.7-H5).
+  #   continue-on-error 를 붙이지 않는다 — 붙이는 순간 게이트가 아니라 장식이 된다.
+  #   액션 대신 바이너리를 직접 받는 이유: gitleaks-action 은 조직 저장소에서 라이선스를 요구하고,
+  #   가변 major 태그라 그 자체가 새로운 공급망 노출이 된다.
+  secret-scan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # detect 는 히스토리 전체를 본다. shallow clone 이면 과거 유입을 보지 못한다.
+          fetch-depth: 0
+
+      - name: Run gitleaks (history scan)
+        run: |
+          set -euo pipefail
+          VERSION=8.28.0
+          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
+            | tar -xz gitleaks
+          ./gitleaks detect --source . --no-banner --redact --exit-code 1
+
   backend-build:
     runs-on: ubuntu-latest
     # [2026-07-26 상향] 45분에서 timeout 으로 cancelled 됐다(실측 2721초). 테스트는 통과했고 잡이 길었을
@@ -102,7 +125,12 @@ jobs:
 
       - name: Verify committed api-docs.json is fresh (contract drift gate)
         id: api-docs-gate
-        run: git diff --exit-code api-docs.json
+        # [W0-12] tracked 여부를 먼저 확인한다. `git diff --exit-code` 는 대상이 언트랙이면
+        #   무조건 exit 0 이라, 계약 SSOT 를 `git rm --cached` 하는 것만으로 이 게이트와
+        #   codegen:verify / codegen:verify:zod 3중 결속이 동시에 vacuous 통과가 된다.
+        run: |
+          git ls-files --error-unmatch api-docs.json
+          git diff --exit-code api-docs.json
 
       # [2026-07-26 삭제] "Export OpenAPI Spec" 스텝 제거.
       #   ./gradlew :api-server:bootRun & sleep 30 && curl ... || true  형태로,

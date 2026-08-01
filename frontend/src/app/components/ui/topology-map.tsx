@@ -48,8 +48,24 @@ const INITIAL_LINKS: Link[] = [
 ];
 
 export const TopologyMap = () => {
-  const { data: realData } = useTopologyData();
+  const { data: realData, isLoading } = useTopologyData();
   const [hoveredNode, setHoveredNode] = useState<string | null>(null);
+
+  // [W0-06] 계측 소스가 없으면 다이어그램을 그리지 않는다.
+  //   종전에는 API 가 빈 목록을 주거나 실패해도 아래 NODES 6건을 status='up' 기본값으로 칠해
+  //   '인프라 전부 정상'이라는 거짓 화면을 렌더했다. 관리자가 이 그림을 보고 운영 판단을 한다.
+  //   훅 순서 규칙상 useState 이후에 조기 반환한다.
+  if (!isLoading && (!realData || realData.length === 0)) {
+    return (
+      <div className="flex h-full min-h-[300px] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border p-8 text-center">
+        <Radio className="text-muted-foreground" size={28} />
+        <p className="text-sm font-medium text-foreground">연동된 토폴로지 계측 소스가 없습니다</p>
+        <p className="text-xs text-muted-foreground">
+          인프라 노드 관리 기능이 아직 구현되지 않아 표시할 실시간 상태가 없습니다.
+        </p>
+      </div>
+    );
+  }
 
   const getRealNodeStatus = (type: Node['type'], index: number): Node['status'] => {
      if (!realData || realData.length === 0) return 'up';

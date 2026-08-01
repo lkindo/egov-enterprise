@@ -25,31 +25,15 @@ VALUES
 ON CONFLICT (dmnd_id) DO NOTHING;
 
 -- =====================================================================
--- [E2E 픽스처] 일반 사용자 계정 TEST1
+-- [E2E 픽스처] 일반 사용자 계정 TEST1 — 이설됨
 -- =====================================================================
--- 왜 필요한가: E2E 의 auth.setup.ts 는 관리자(webmaster)와 **일반 사용자(TEST1)** 두 세션을 만든다.
---   그런데 계정을 시드하는 곳은 R__seed_framework.sql 이고 거기에는 webmaster 만 있다.
---   공유 OCI DB 에는 TEST1 이 누적돼 있어 로컬 E2E 는 통과했지만, **신규 DB(CI 컨테이너)에서는
---   존재하지 않아** 로그인이 401 로 실패했다(2026-07-26 CI 실측: "Backend unreachable for TEST1 (401)").
---   즉 "로컬은 축적된 상태 덕에 통과" 유형의 결함이므로, 빈 DB 에서도 성립하도록 시드에 명시한다.
--- 라이브 정합: 라이브 DB 실측 결과 USRCNFRM_00000000002 = TEST1 / ROLE_USER 로 동일하다.
---   ON CONFLICT DO NOTHING 이므로 R__ 재실행 시에도 기존 행을 건드리지 않는다(user_id UNIQUE 충돌 없음).
--- ⚠ 알려진 갭: flyway locations 가 classpath:db/migration 단일이라 이 demo 시드는 **모든 환경**에
---   적용된다(운영 포함). 기본 자격증명(webmaster/1) 도 이미 같은 조건이다. 프로파일별 시드 위치 분리는
---   별건 결정 과제로 남긴다 — docs/04-operations/pending-decisions.md 참조.
-INSERT INTO tb_user_info
-  (esntl_id, user_id, user_nm, user_type_cd, pswd, user_stts_cd, sbscrb_ymd)
-VALUES
-  ('USRCNFRM_00000000002', 'TEST1', 'E2E 일반사용자', 'EMP',
-   '{bcrypt}$2a$10$C3g3CUhTf4f0xG1jJ1LYh.zoesF5XjPevWU2Yg8i24.eoiD4uhYxu', 'P',
-   to_char(CURRENT_DATE, 'YYYYMMDD'))
-ON CONFLICT (esntl_id) DO NOTHING;
-
-INSERT INTO tb_user_authrt_map
-  (scrty_dcsn_trgt_id, authrt_id, mbr_type_cd, crt_dt)
-VALUES
-  ('USRCNFRM_00000000002', 'ROLE_USER', 'USR', CURRENT_TIMESTAMP)
-ON CONFLICT (scrty_dcsn_trgt_id) DO NOTHING;
+-- [W0-02] 이 블록은 알려진 비밀번호(bcrypt('1'))를 포함하므로 운영 마이그레이션 경로에서 제거하고
+--   dev/local/e2e 전용 위치로 옮겼다:
+--     → api-server/src/main/resources/db/seed-dev/R__zz_seed_dev_credentials.sql
+--   해당 위치는 spring.flyway.locations 가 확장된 프로파일(dev/local/e2e)과 개발용 compose 에서만 적재된다.
+--   종전 주석이 '알려진 갭'으로 남겨 두었던 "demo 시드가 운영 포함 모든 환경에 적용된다" 문제의 계정 부분이
+--   이로써 해소된다. 게시판/로그 데모 시드는 앱이 BBSMSTR_* 를 하드코딩하고 있어 함께 옮기면
+--   도움말·지식허브 화면이 빈다 — 별건으로 남긴다.
 
 -- =====================================================================
 -- [E2E 픽스처] 게시판 마스터 3종

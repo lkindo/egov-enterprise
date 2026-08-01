@@ -82,8 +82,7 @@ class RequestResponseSchemaValidationTest extends BaseControllerTest {
                   "pswd": "ValidPass123!",
                   "userNm": "테스트사용자이름",
                   "pswdHint": "password hint",
-                  "pswdCrans": "password answer",
-                  "role": "USER"
+                  "pswdCrans": "password answer"
                 }
                 """;
 

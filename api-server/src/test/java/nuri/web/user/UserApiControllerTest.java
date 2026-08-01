@@ -119,8 +119,7 @@ class UserApiControllerTest extends BaseControllerTest {
                 "pswd", "password123!",
                 "userNm", "테스트사용자",
                 "pswdHint", "hint",
-                "pswdCrans", "answer",
-                "role", "USER");
+                "pswdCrans", "answer");
 
         mockMvc.perform(post("/api/v1/users/signup")
                 .contentType(MediaType.APPLICATION_JSON)

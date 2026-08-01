@@ -25,12 +25,22 @@
 
 ## 2. 보안
 
-### 2-A. webmaster 기본 비밀번호 '1'
-- 시드 계정(R__seed_framework)의 dev 편의용 약한 비번. **운영 전환 시 로테이션/최초 강제변경 정책** 필요. (보안 결정)
+### 2-A. webmaster 기본 비밀번호 '1' — **✅ 코드 경로 해소(2026-08-01, Wave 0 W0-02)**
+- **이전 기록**: 시드 계정(R__seed_framework)의 dev 편의용 약한 비번. 운영 전환 시 로테이션/최초 강제변경 정책 필요.
+- **조치**: `R__seed_framework.sql` 은 이제 비밀번호를 시드하지 않는다 — 로그인 불가 sentinel(`{disabled}…`)을 넣는다. 알려진 개발 비밀번호와 `TEST1` 계정은 `db/seed-dev/R__zz_seed_dev_credentials.sql` 로 이설했고, 이 위치는 dev/local/e2e 프로파일과 개발용 compose 에서만 적재된다. 운영 최초 진입은 `ADMIN_INITIAL_PASSWORD` → `AdminPasswordProvisioner`(business-core) 가 1회 설정한다(이미 설정된 비밀번호는 덮어쓰지 않는다).
+- **재발 방지 게이트**: `SeedLocationLinterTest` — 운영 마이그레이션 경로에 해시 리터럴이 있으면 pre-push 에서 red.
+- **잔여(미결)**: 공유 OCI DB(129.154.54.178)의 기존 `webmaster`/`TEST1` 행은 `ON CONFLICT DO NOTHING` 이라 그대로다. 다만 이 DB 는 `application-e2e.yml` 기본값·db-bridge 가 **sandbox 로 명시한 개발/E2E DB** 이고, 그 비밀번호는 이제 `seed-dev` 가 의도적으로 제공하는 값이다 — 로테이션하면 양 오퍼레이터의 E2E 만 깨지고 보안 이득이 없어 수행하지 않았다. **별도의 실 운영 DB 를 세우는 시점에 이 판단을 재확인할 것.**
 
-### 2-B. ssh 개인키 GitHub 커밋 history 퍼지
-- 개인키가 커밋(`11366ca48`)에 잔존(언트랙만 됨). **키 로테이션 + history 퍼지** 대기 — 사용자 조치. (이전 pull-sync incident)
-- ⚠ **언트랙은 재발성**: 2026-07-16 머지가 언트랙 조치를 되돌려 07-20 재조치했다(`9217bc27c`). 머지마다 조용히 되살아나므로 **언트랙 의존이 아니라 history 퍼지 + 키 로테이션 우선순위화**가 근본 대책.
+### 2-B. ssh 개인키 — **⚠ 기록 정정(2026-08-01 실측)**
+- **이전 기록**: "개인키가 커밋(`11366ca48`)에 잔존(언트랙만 됨). 키 로테이션 + history 퍼지 대기."
+- **실측 정정**: history 퍼지는 **원격 전 ref 기준 이미 완료**돼 있다 — 원격 5개 브랜치(`main`/`dev`/`template/reusable-base`/`feature/e2e-token-expiry-and-ci-timing`/`fix/e2e-hardcoded-api-url`) 전부에서 키 blob(`9a6c923df…`) 도달 0건. 2026-08-01 12축 감사가 주장한 "`template/reusable-base` 브랜치에 키가 남아 있다" 는 **거짓**이며, 그 브랜치를 지우는 것은 보안 효과 0 이다.
+- **2026-08-01 조치(완료)**:
+  - 로컬 `dev`·`template/reusable-base` 가 **재작성 이전 계보를 들고 있었고 HEAD 트리에 실물 키 파일을 포함**하고 있었다(force-push 하면 즉시 재공개되는 상태). origin 으로 정렬 + `reflog expire` + `gc --prune=now` 로 로컬 객체DB 에서 제거 완료.
+  - 워킹트리 루트의 실물 키 `ssh-key-2026-01-18.key`(1675 bytes) 삭제. `.gitignore` 의 `*.key` 때문에 `git status` 에 보이지 않아 정리 목록에서 영구 누락되던 파일이다.
+  - 저장소 **Secret scanning + Push protection 활성화**, ruleset `12501346` `enforcement: active`(force-push·브랜치 삭제 차단) — 재공개 경로를 서버 측에서 차단.
+- **잔여(사용자 조치 — 대체 불가)**:
+  1. **키 실물 로테이션**. 저장소가 PUBLIC 인 채로 최소 수일~수주 노출됐으므로 "이미 수집됐다"를 전제로 배포 대상 서버의 `~/.ssh/authorized_keys` 에서 해당 공개키를 제거하고 재발급할 것. 어느 서버에 배포됐는지는 사용자만 안다.
+  2. **GitHub dangling 객체 purge**. 커밋 `11366ca480f927bfbe250f0261cb3aa3ce78784b` / blob `9a6c923df57290d3e2a42a3589e5be9376ad66ea` 가 어떤 ref 에서도 도달 불가인데 **PUBLIC API 로 여전히 200 을 반환한다**(2026-08-01 실측: blob size 1675). GitHub Support 티켓만이 유일 경로이며, 저장소 소유자도 API 로 수행할 수 없다. 따라서 키 교체가 시간적으로 선행돼야 한다.
 
 ### 2-C. 미들웨어 admin 민감경로 커버리지 — **✅ 해소(2026-07-20, `401c43f4c`)**
 - **이전 기록**: 미들웨어가 `/admin/{system,user,security,stats,workflow}` 5개 접두사만 ADMIN 강제(allow-by-default), 그 외 /admin/* 는 인증만.

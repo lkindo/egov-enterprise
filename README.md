@@ -189,7 +189,14 @@ refactor: apply optimized JPA/Hibernate configurations (Batch Size, OSIV False)
 #### 2. 환경 설정 및 데이터베이스 자동 부트스트랩 (Flyway 표준 베이스라인)
 최신 뼈대 아키텍처는 빈 PostgreSQL 데이터베이스만 준비되면 **Flyway 마이그레이션이 스키마(101개 테이블) 및 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)를 자동으로 구성**합니다.
 
-> ⚠ **빈 DB 부팅 시 repeatable 마이그레이션 `R__seed_framework` 가 `webmaster`/`ROLE_ADMIN` 활성 계정(esntl_id `USRCNFRM_00000000001`, user_stts_cd `P`)을 dev 기본 비밀번호 `1`(bcrypt)로 자동 시드**합니다. 운영 전환 시에는 반드시 이 계정의 비밀번호 로테이션·최초 강제변경을 수행해야 합니다(`docs/04-operations/pending-decisions.md` §2-A 연계). V2_2 는 `ROLE_ADMIN` 등 권한/메뉴 구조를 시드합니다.
+> ⚠ **관리자 계정 자격증명 정책 (2026-08-01 변경)**
+>
+> 빈 DB 부팅 시 repeatable 마이그레이션 `R__seed_framework` 가 `webmaster`/`ROLE_ADMIN` 활성 계정(esntl_id `USRCNFRM_00000000001`, user_stts_cd `P`)을 생성하지만, **비밀번호는 시드하지 않습니다** — 어떤 입력과도 매칭되지 않는 로그인 불가 sentinel 이 들어갑니다. 종전에는 dev 기본 비밀번호 `1`(bcrypt)이 운영 마이그레이션 경로에 동봉되어, 이 저장소로 배포된 모든 시스템이 공개된 관리자 비밀번호를 갖고 출발했습니다.
+>
+> - **dev / local / e2e**: `spring.flyway.locations` 가 `classpath:db/seed-dev` 를 함께 적재하여 종전과 동일한 개발용 비밀번호(`1`)와 `TEST1` 계정을 넣습니다. 개발 흐름은 바뀌지 않습니다.
+> - **운영**: `ADMIN_INITIAL_PASSWORD` 환경변수를 주고 기동하면 `AdminPasswordProvisioner` 가 최초 1회 비밀번호를 설정합니다. 이미 설정된 비밀번호는 절대 덮어쓰지 않으며(재기동마다 되돌아가면 그 자체가 백도어), 로그인 후 즉시 변경하고 환경변수를 제거하십시오. 미설정 시 이 계정은 로그인 불가 상태로 남고 기동 로그에 경고가 남습니다.
+>
+> V2_2 는 `ROLE_ADMIN` 등 권한/메뉴 구조를 시드합니다.
 
 아래 원클릭 부트스트랩 명령을 실행하면 이 모든 설정 파일 복사 및 환경 구축이 자동 수행됩니다.
 ```bash

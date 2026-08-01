@@ -26,7 +26,6 @@ class UserValidatorTest {
         .userId(null)
         .pswd("password123!")
         .userNm("테스트사용자")
-        .role("USER")
         .pswdHint("hint")
         .pswdCrans("answer")
         .build();
@@ -43,7 +42,6 @@ class UserValidatorTest {
         .userId("validUserId")
         .pswd("short")
         .userNm("테스트사용자")
-        .role("USER")
         .pswdHint("hint")
         .pswdCrans("answer")
         .build();

@@ -1,0 +1,62 @@
+# [W0-10] 의존성 자동 업데이트 압력.
+#
+# [존재 이유] 이 저장소는 CVE 가시성이 사실상 0이었다 — dependency-check 는 주간 스케줄이고
+#   리포트가 0건이었으며, Spring Boot 는 3.4.1 에 고정, Node 는 EOL 라인이다.
+#   Dependabot 은 그 공백을 커밋 단위가 아니라 '시간' 축에서 메운다.
+#
+# [전제] security-update(취약점 기반 긴급 PR)는 저장소의 Dependabot alerts 가 켜져 있어야 발생한다.
+#   version-update 만으로는 CVE 대응이 되지 않는다.
+#
+# [주의] directories 는 실측 경로다 — Dependabot 은 Gradle 서브프로젝트를 자동 재귀하지 않는다.
+#   open-pull-requests-limit 을 낮게 유지한다. 첫 주에 PR 이 폭증하면 아무도 보지 않는 노이즈가 된다.
+
+version: 2
+updates:
+  # ── GitHub Actions ──
+  #   전 워크플로 uses: 참조가 가변 major 태그다(SHA 핀 0건). 태그가 이동하면 릴리스 권한을 쥔 채
+  #   임의 코드가 실행된다. release.yml 의 SHA 핀과 세트로 동작해야 핀이 방치로 굳지 않는다.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # ── Gradle ── 루트 build.gradle + gradle/libs.versions.toml + 5개 서브모듈
+  - package-ecosystem: "gradle"
+    directories:
+      - "/"
+      - "/api-server"
+      - "/business-app"
+      - "/business-core"
+      - "/foundation"
+      - "/migration-tool"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      # 카탈로그 한 줄이 다중 모듈을 동시에 깨뜨릴 수 있으므로, 관련 업데이트를 묶어
+      # CI 가 한 번에 판정하게 한다.
+      spring:
+        patterns:
+          - "org.springframework*"
+      test-tooling:
+        patterns:
+          - "org.junit*"
+          - "org.mockito*"
+          - "org.testcontainers*"
+
+  # ── npm (frontend) ── pnpm-lock.yaml (npm 생태계가 pnpm 락을 처리)
+  #   ci.yml 의 `pnpm install --frozen-lockfile` 이 락 정합을 즉시 판정하므로,
+  #   첫 몇 건은 락 갱신이 어긋나지 않는지 직접 확인할 것.
+  - package-ecosystem: "npm"
+    directory: "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+
+  # ── npm (루트) ── package-lock.json (deps 는 cross-env, pg 2개뿐이라 한도를 낮게 둔다)
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 2

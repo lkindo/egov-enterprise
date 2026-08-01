@@ -796,7 +796,6 @@ export const UserSignupRequestSchema = z.object({
   userNm: z.string().regex(new RegExp("^[a-zA-Z0-9가-힣\\s]{2,50}$")),
   pswdHint: z.string().optional(),
   pswdCrans: z.string().optional(),
-  role: z.string().optional(),
 });
 export type UserSignupRequest = z.infer<typeof UserSignupRequestSchema>;
 

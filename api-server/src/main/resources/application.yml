@@ -31,6 +31,23 @@ spring:
     username: ${DB_USERNAME:egov}
     password: ${DB_PASSWORD:egov123}
     driver-class-name: org.postgresql.Driver
+
+    # ⚠[W0-13 실측] 아래 `hikari:` 하위 키는 **런타임에 적용되지 않는다**.
+    #   LegacyConfig.dataSource() 가 @Primary + @ConfigurationProperties(prefix="spring.datasource") 로
+    #   HikariDataSource 에 직접 바인딩하므로 Boot 의 DataSourceAutoConfiguration(= spring.datasource.hikari.* 를
+    #   읽는 주체)이 backoff 한다. HikariConfig 에는 setHikari() 가 없어 nested 블록은 조용히 무시된다
+    #   (@ConfigurationProperties 기본 ignoreUnknownFields=true). 위 29·30행이 url/jdbc-url 을 중복 선언한 것도
+    #   같은 제약의 흔적이다(HikariConfig 에 setUrl 부재 → jdbc-url 만 먹는다).
+    #   따라서 실제로 적용하려면 아래처럼 **flat 키**여야 한다.
+    #
+    # [W0-13 ②] 커넥션 획득 대기 상한. 종전 실효값은 Hikari 기본 30초였고, 그 거절이 500 으로 나갔다.
+    #   ①(GlobalExceptionHandler.handleConnectionUnavailable → 503 + Retry-After)을 먼저 넣은 뒤에만
+    #   이 값을 낮춰야 한다. 순서를 뒤집으면 대량 500 이 발생한다.
+    connection-timeout: 3000
+
+    # [미정합 — 별도 항목] maximum-pool-size/minimum-idle/leak-detection-threshold 등을 함께 flat 으로 올리면
+    #   실효값이 pool 10→20, leak-detection off→on 으로 한꺼번에 바뀐다(§0.7-H4 다중 파라미터 동시 변경).
+    #   공유 OCI PG 의 max_connections 예산과 함께 판단해야 하므로 이 웨이브에서는 손대지 않는다.
     hikari:
       jdbc-url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
       maximum-pool-size: 20
@@ -152,10 +169,17 @@ management:
   endpoints:
     web:
       exposure:
-        include: "health,info,metrics,prometheus,env,beans"
+        # [W0-04] env,beans 제거. /actuator/** 는 ROLE_ADMIN 으로 보호되지만, 배포 형상이
+        #   base 프로파일로 굳는 경로(compose 에 SPRING_PROFILES_ACTIVE 부재)가 있는 한
+        #   DB 자격증명·ALGORITHM_KEY 가 한 겹의 인가 실수만으로 노출된다. 기본값에서 뺀다.
+        #   필요한 디버깅은 프로파일별로 명시 추가할 것(목록 축소이므로 §0.7-H2 의 예외목록 확대와 반대 방향).
+        include: "health,info,metrics,prometheus"
   endpoint:
     health:
-      show-details: always
+      # [W0-04] /actuator/health 는 security.whitelist 에 있어 **미인증 접근이 허용**된다.
+      #   always 면 익명 사용자가 DB·디스크 등 컴포넌트 상세를 읽는다.
+      #   CI 대기 로직과 컨테이너 healthcheck 는 상태코드만 보므로(curl --head / wget --spider) 무해하다.
+      show-details: when_authorized
   health:
     mail:
       enabled: false

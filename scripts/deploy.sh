@@ -3,7 +3,9 @@
 # Configuration
 APP_NAME="egov-enterprise"
 WORKSPACE_DIR=$(pwd)
-DOCKER_COMPOSE_FILE="docker-compose.yml"
+# [W0-04] 운영 오버레이를 항상 함께 적용한다. base 단독으로 올리면 application-prod.yml 이
+#   한 번도 적용되지 않아 개발 형상(dev 시크릿·actuator 확대 노출·비-graceful 종료)이 그대로 운영이 된다.
+COMPOSE_FILES="-f docker-compose.yml -f docker-compose.prod.yml"
 
 # Colors
 GREEN='\033[0;32m'
@@ -12,10 +14,21 @@ NC='\033[0m' # No Color
 
 echo -e "${BLUE}=== Starting Deployment for ${APP_NAME} ===${NC}"
 
-# 1. Check for JWT_SECRET
-if [ -z "$JWT_SECRET" ]; then
-    echo "Warning: JWT_SECRET is not set. Using default secret for development."
-    export JWT_SECRET="dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg=="
+# 1. 배포 필수 시크릿 검증
+#    [W0-04] 종전에는 JWT_SECRET 미설정 시 **저장소에 커밋된 dev 키를 경고만 남기고 그대로 주입**했다.
+#    공개 저장소의 서명 키로 운영 토큰을 서명하면 임의 esntlId 를 subject 로 하는 토큰을 누구나 위조할 수 있다.
+#    조용한 대체를 금지하고 배포를 중단한다.
+MISSING=""
+for v in JWT_SECRET ALGORITHM_KEY DB_URL DB_USERNAME DB_PASSWORD ADMIN_INITIAL_PASSWORD; do
+    eval "val=\${$v:-}"
+    if [ -z "$val" ]; then
+        MISSING="$MISSING $v"
+    fi
+done
+if [ -n "$MISSING" ]; then
+    echo "ERROR: 다음 필수 시크릿이 설정되지 않았습니다:$MISSING" >&2
+    echo "       배포를 중단합니다. 개발용 기본값으로 대체하지 않습니다." >&2
+    exit 1
 fi
 
 # 2. Build Backend (Local build to ensure artifacts are ready if not using Docker builder)
@@ -24,7 +37,8 @@ fi
 
 # 3. Docker Compose Build and Up
 echo -e "${GREEN}Building and Starting Docker Containers...${NC}"
-docker-compose -f ${DOCKER_COMPOSE_FILE} up --build -d
+# docker-compose(v1) 는 GitHub 러너·최신 Docker 배포에서 제거됐다 — v2 서브커맨드를 쓴다.
+docker compose ${COMPOSE_FILES} up --build -d
 
 # 4. Wait for Healthchecks
 echo -e "${GREEN}Waiting for services to be healthy...${NC}"
@@ -48,4 +62,4 @@ fi
 echo -e "${BLUE}=== Deployment Completed Successfully ===${NC}"
 echo -e "Frontend: http://localhost:3000"
 echo -e "Backend API: http://localhost:8080/api/v1"
-echo -e "Swagger UI: http://localhost:8080/swagger-ui/index.html"
+# prod 프로파일은 springdoc 을 비활성화하므로 Swagger UI 안내를 출력하지 않는다.

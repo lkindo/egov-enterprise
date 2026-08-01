@@ -394,7 +394,9 @@ public class UserService extends BaseAbstractService {
                                 .esntlId(esntlId)
                                 .pswdHint(request.getPswdHint())
                                 .pswdCrans(request.getPswdCrans())
-                                .role(request.getRole() != null ? Role.valueOf(request.getRole()) : Role.USER)
+                                // [보안] 공개 엔드포인트이므로 권한을 요청에서 받지 않고 USER 로 고정한다.
+                                //   관리자 계정 생성은 assertAdmin() 이 걸린 registerUser() 경로만 사용한다.
+                                .role(Role.USER)
                                 .build();
 
                 userRepository.save(required(user));

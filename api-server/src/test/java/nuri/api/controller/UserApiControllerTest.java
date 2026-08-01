@@ -128,7 +128,6 @@ public class UserApiControllerTest extends BaseControllerTest {
                 .userId("newUser")
                 .pswd("ValidPass123!")
                 .userNm("Name")
-                .role("USER")
                 .pswdHint("hint")
                 .pswdCrans("ValidPass123!")
                 .build();

@@ -5,9 +5,19 @@ server:
 spring:
   datasource:
     url: ${DB_URL}
+    # ⚠[W0-04 실측·기동 차단 수정] jdbc-url 이 없으면 prod 는 기동하지 못한다.
+    #   LegacyConfig.dataSource() 가 @Primary + @ConfigurationProperties("spring.datasource") 로
+    #   HikariDataSource 에 직접 바인딩하는데 HikariConfig 에는 setUrl() 이 없다 → `url` 은 바인딩되지 않고
+    #   jdbcUrl 이 null 인 채 driverClassName 만 세팅되어 HikariConfig.validate() 가
+    #   "jdbcUrl is required with driverClassName." 로 실패한다. base(application.yml)가 url·jdbc-url 을
+    #   중복 선언하고 있는 것이 이 제약의 흔적이다.
+    jdbc-url: ${DB_URL}
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
+    # ⚠ 아래 nested `hikari:` 블록은 위와 같은 이유로 런타임에 적용되지 않는다(HikariConfig 에 setHikari 부재).
+    #   실효를 가지려면 flat 키여야 한다. 값 재정합은 pool 크기 동시 변경을 수반하므로 별도 항목으로 분리했고,
+    #   커넥션 획득 상한은 base 의 flat `spring.datasource.connection-timeout` 이 담당한다.
     hikari:
       maximum-pool-size: 20
       minimum-idle: 5

@@ -28,6 +28,34 @@ class GlobalExceptionHandlerTest {
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     @Test
+    @DisplayName("[W0-13] 커넥션 풀 고갈(CannotCreateTransactionException)은 500 이 아니라 503 + Retry-After")
+    void testHandleConnectionUnavailable_transaction() {
+        var cause = new java.sql.SQLTransientConnectionException(
+                "Connection is not available, request timed out after 30000ms");
+        var ex = new org.springframework.transaction.CannotCreateTransactionException("pool exhausted", cause);
+
+        ResponseEntity<ApiResponse<Void>> response = handler.handleConnectionUnavailable(ex);
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertEquals("5", response.getHeaders().getFirst(org.springframework.http.HttpHeaders.RETRY_AFTER));
+        assertFalse(response.getBody().success());
+        assertEquals("S002", response.getBody().code());
+        // envelope 의 status 와 실제 전송 status 가 일치해야 한다(정합성 H5).
+        assertEquals(503, response.getBody().status());
+    }
+
+    @Test
+    @DisplayName("[W0-13] 쿼리 중 커넥션 유실(DataAccessResourceFailureException)도 503")
+    void testHandleConnectionUnavailable_dataAccess() {
+        var ex = new org.springframework.dao.DataAccessResourceFailureException("db down");
+
+        ResponseEntity<ApiResponse<Void>> response = handler.handleConnectionUnavailable(ex);
+
+        assertEquals(HttpStatus.SERVICE_UNAVAILABLE, response.getStatusCode());
+        assertEquals("5", response.getHeaders().getFirst(org.springframework.http.HttpHeaders.RETRY_AFTER));
+    }
+
+    @Test
     @DisplayName("BusinessException 처리 테스트")
     void testHandleBusinessException() {
         BusinessException ex = new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);

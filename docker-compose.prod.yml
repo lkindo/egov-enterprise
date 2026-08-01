@@ -1,0 +1,31 @@
+# 운영 배포 오버레이 (docker-compose.yml 위에 겹쳐 쓴다)
+#
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# [존재 이유 — W0-04] docker-compose.yml 은 CI E2E·ZAP 스캔·로컬 개발이 공유하는 개발 스택이다.
+#   그 파일의 기본값을 prod 로 바꾸면 개발·CI 경로가 전부 깨지므로, 운영 형상은 오버레이로 분리한다.
+#   이 오버레이 없이 배포하면 application-prod.yml(무기본값 fail-fast, actuator 축소, graceful shutdown,
+#   쿠키 secure, swagger off)이 **한 번도 적용되지 않는다** — 잘 작성된 prod 설정을 배포 경로가 쓰지
+#   않는 것이 이 저장소에서 가장 위험한 단일 지점이었다.
+#
+# ⚠ 필수: SPRING_APPLICATION_JSON 을 통째로 교체한다.
+#   Spring 의 외부화 설정 우선순위상 SPRING_APPLICATION_JSON 은 OS 환경변수와 application-prod.yml 보다
+#   **상위**다. base compose 의 JSON 이 datasource 를 db:5432/egov/egov123 으로 못 박고 있어,
+#   이 키를 교체하지 않으면 DB_URL 을 주입해도 조용히 무시된 채 개발 DB 로 붙는다.
+
+services:
+  api:
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      # base 의 datasource 고정 JSON 을 무력화한다. 운영 접속 정보는 아래 개별 변수로만 들어온다.
+      SPRING_APPLICATION_JSON: '{"management":{"health":{"mail":{"enabled":false}}}}'
+      # 운영에는 dev 시드(알려진 비밀번호)를 적재하지 않는다.
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+      # 미설정 시 기동 중단 — 저장소에 커밋된 dev 기본값으로 조용히 대체되는 경로를 원천 차단한다.
+      DB_URL: ${DB_URL:?DB_URL 이 필요합니다}
+      DB_USERNAME: ${DB_USERNAME:?DB_USERNAME 이 필요합니다}
+      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 가 필요합니다}
+      JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 필요합니다}
+      ALGORITHM_KEY: ${ALGORITHM_KEY:?ALGORITHM_KEY 가 필요합니다 (PII 암호화 마스터 키)}
+      # 최초 기동 시 관리자 비밀번호 프로비저닝. 미설정이면 webmaster 계정은 로그인 불가 상태로 남는다.
+      ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:?ADMIN_INITIAL_PASSWORD 가 필요합니다 (최초 관리자 비밀번호)}

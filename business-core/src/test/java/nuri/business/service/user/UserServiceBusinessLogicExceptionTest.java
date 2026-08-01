@@ -70,7 +70,6 @@ class UserServiceBusinessLogicExceptionTest {
                                 .userId("newUser")
                                 .pswd("password123!")
                                 .userNm("테스트사용자")
-                                .role("USER")
                                 .pswdHint("hint")
                                 .pswdCrans("answer")
                                 .build();

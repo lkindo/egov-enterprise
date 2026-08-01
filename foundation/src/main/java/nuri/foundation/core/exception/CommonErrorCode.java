@@ -37,7 +37,12 @@ public enum CommonErrorCode implements ErrorCode {
     LOGIN_POLICY_TIME_RESTRICTED(HttpStatus.FORBIDDEN, "A008", "Login Policy Restricted (Time Out of Range)"),
 
     INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "S001", "Internal Server Error"),
-    SERVER_OVERLOAD(HttpStatus.SERVICE_UNAVAILABLE, "S002", "Server Overload");
+    SERVER_OVERLOAD(HttpStatus.SERVICE_UNAVAILABLE, "S002", "Server Overload"),
+    /**
+     * 경로는 존재하나 뒤에 구현이 없을 때. 저장하지 않고 200 을 돌려주는 '거짓 성공' 을 금지하기 위한 코드다.
+     * 미구현을 200 으로 위장하면 운영자가 저장됐다고 믿고 판단하게 된다.
+     */
+    NOT_IMPLEMENTED(HttpStatus.NOT_IMPLEMENTED, "S003", "Not Implemented");
 
     private final HttpStatus status;
     private final String code;

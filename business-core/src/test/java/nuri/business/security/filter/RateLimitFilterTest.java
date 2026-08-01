@@ -68,4 +68,30 @@ class RateLimitFilterTest {
         filter.doFilter(request, blockedResponse, filterChain);
         assertEquals(429, blockedResponse.getStatus());
     }
+
+    /**
+     * [W0-14 회귀 게이트] 버킷 맵 무한 증가 차단.
+     *
+     * <p>버킷 키는 클라이언트 IP 이고 X-Forwarded-For 는 검증 없이 신뢰되므로, 헤더만 바꿔 보내는
+     * 요청으로 엔트리를 무한 생성시켜 OOM 을 만들 수 있었다. 상한(100,000)의 2배를 주입해
+     * 맵이 유한하게 유지되는지 확인한다.
+     *
+     * <p>위반 주입 검증: {@code buckets} 를 ConcurrentHashMap 으로 되돌리면 이 단언이 red 가 된다.
+     */
+    @Test
+    @DisplayName("[W0-14] 서로 다른 IP 가 대량 유입돼도 버킷 맵은 상한 내로 유지된다")
+    void testBucketMapIsBounded() throws ServletException, IOException {
+        final int injected = 200_000;
+        for (int i = 0; i < injected; i++) {
+            MockHttpServletRequest req = new MockHttpServletRequest();
+            req.setRequestURI("/api/v1/board/list");
+            req.addHeader("X-Forwarded-For",
+                    "10." + ((i >> 16) & 0xFF) + "." + ((i >> 8) & 0xFF) + "." + (i & 0xFF));
+            filter.doFilter(req, new MockHttpServletResponse(), filterChain);
+        }
+
+        long size = filter.bucketCountForTest();
+        org.junit.jupiter.api.Assertions.assertTrue(size <= 100_000L,
+                "버킷 맵이 상한을 초과했다(=무한 증가 회귀): size=" + size + ", 주입=" + injected);
+    }
 }

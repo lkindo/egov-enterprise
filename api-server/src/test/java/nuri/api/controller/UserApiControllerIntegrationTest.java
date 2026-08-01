@@ -41,8 +41,7 @@ class UserApiControllerIntegrationTest extends BaseControllerTest {
                   "pswd": "password123!",
                   "userNm": "새로운사용자",
                   "pswdHint": "hint",
-                  "pswdCrans": "answer",
-                  "role": "USER"
+                  "pswdCrans": "answer"
                 }
                 """;
 
@@ -54,6 +53,38 @@ class UserApiControllerIntegrationTest extends BaseControllerTest {
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.userId").value("newUser"))
                 .andExpect(jsonPath("$.data.userNm").value("새로운사용자"));
+    }
+
+    /**
+     * [W0-01 회귀 게이트] 공개 signup 으로의 권한 상승 차단.
+     *
+     * <p>과거 UserSignupRequest 에 role 필드가 있어 미인증 요청 1건으로 ROLE_ADMIN 자가 발급이
+     * 가능했다. 필드를 삭제했으므로 role 을 실은 요청은 알 수 없는 속성으로 거부되어야 한다.
+     * 이 단언은 운영 설정과 정합한다 — application.yml 의
+     * {@code spring.jackson.deserialization.fail-on-unknown-properties: true} 와
+     * BaseControllerTest 의 failOnUnknownProperties(true) 가 동일 값이다.
+     */
+    @Test
+    @DisplayName("POST /api/v1/users/signup - role 주입 시도는 거부된다 (권한 상승 차단)")
+    void signup_rejectsRoleInjection() throws Exception {
+        String attack = """
+                {
+                  "userId": "attacker",
+                  "pswd": "password123!",
+                  "userNm": "공격자",
+                  "pswdHint": "hint",
+                  "pswdCrans": "answer",
+                  "role": "ADMIN"
+                }
+                """;
+
+        mockMvc.perform(post("/api/v1/users/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(attack))
+                .andExpect(status().isBadRequest());
+
+        // 서비스까지 도달하지 않아야 한다 — 역직렬화 단계에서 잘려야 권한 상승 경로가 없다.
+        verify(userService, never()).signup(any(UserSignupRequest.class));
     }
 
     @Test

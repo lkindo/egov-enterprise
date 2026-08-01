@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.dao.OptimisticLockingFailureException;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -206,6 +207,35 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ApiResponse<Void>> handleNoResourceFound(
             org.springframework.web.servlet.resource.NoResourceFoundException e) {
         return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.RESOURCE_NOT_FOUND, resolve(CommonErrorCode.RESOURCE_NOT_FOUND)), HttpStatus.NOT_FOUND);
+    }
+
+    /**
+     * DB 커넥션 획득 실패(Hikari 풀 고갈 / DB 다운) — 500 이 아닌 503(Service Unavailable).
+     *
+     * <p>풀 고갈은 '서버 고장'이 아니라 '지금 처리 불가'다. 500 으로 내보내면 LB·클라이언트가
+     * 재시도 가능한 상황인지 판단할 수 없고, 모니터링에서도 애플리케이션 버그와 구분되지 않는다.
+     * 표준 {@code Retry-After} 를 함께 내려 재시도 가능함을 알린다.
+     *
+     * <p>HikariCP 의 {@code SQLTransientConnectionException} 은 Spring 예외 변환을 거쳐 도달하므로
+     * 그 타입을 직접 잡으면 매칭되지 않는다. 실제 도달 경로는 두 갈래다:
+     * <ul>
+     *   <li>트랜잭션 시작 시점 → {@code CannotCreateTransactionException}</li>
+     *   <li>쿼리 실행 중 → {@code DataAccessResourceFailureException}</li>
+     * </ul>
+     *
+     * <p>[순서] 이 핸들러가 connection-timeout 단축보다 반드시 먼저 들어가야 한다.
+     * 타임아웃만 줄이면 거절이 대량 500 으로 표면화된다.
+     */
+    @ExceptionHandler({
+            org.springframework.transaction.CannotCreateTransactionException.class,
+            org.springframework.dao.DataAccessResourceFailureException.class })
+    protected ResponseEntity<ApiResponse<Void>> handleConnectionUnavailable(Exception e) {
+        log.error(">>> DB connection unavailable (pool exhausted or DB down): {}", e.getMessage(), e);
+        return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE)
+                .header(HttpHeaders.RETRY_AFTER, "5")
+                .body(ApiResponse.error(CommonErrorCode.SERVER_OVERLOAD,
+                        resolve("handler.service_unavailable", null,
+                                "일시적으로 요청을 처리할 수 없습니다. 잠시 후 다시 시도해 주세요.")));
     }
 
     /**

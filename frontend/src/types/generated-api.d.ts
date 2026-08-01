@@ -809,10 +809,16 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        /** 네트워크 정보 수정 */
+        /**
+         * 네트워크 정보 수정
+         * @description 미구현 — 501 을 반환한다.
+         */
         put: operations["updateNetwork"];
         post?: never;
-        /** 네트워크 정보 삭제 */
+        /**
+         * 네트워크 정보 삭제
+         * @description 미구현 — 501 을 반환한다.
+         */
         delete: operations["deleteNetwork"];
         options?: never;
         head?: never;
@@ -2243,10 +2249,16 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 네트워크 서비스 상태 목록 조회 */
+        /**
+         * 네트워크 서비스 상태 목록 조회
+         * @description 계측 소스가 연결되기 전까지 항상 빈 목록을 반환한다. 하드코딩된 가짜 헬스 상태를 내리지 않는다.
+         */
         get: operations["getStatus"];
         put?: never;
-        /** 네트워크 기초 정보 등록 */
+        /**
+         * 네트워크 기초 정보 등록
+         * @description 미구현 — 501 을 반환한다(저장 없이 200 을 주지 않는다).
+         */
         post: operations["createNetwork"];
         delete?: never;
         options?: never;
@@ -5502,8 +5514,6 @@ export interface components {
             pswdHint?: string;
             /** @description 비밀번호 정답 */
             pswdCrans?: string;
-            /** @description 사용자 역할 */
-            role?: string;
         };
         ApiResponseUserResponse: {
             success?: boolean;

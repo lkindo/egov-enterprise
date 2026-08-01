@@ -63,8 +63,12 @@ class SchemaNamingLinterTest {
             .compile("(?i)\\bCREATE\\s+SEQUENCE\\s+(?:IF\\s+NOT\\s+EXISTS\\s+)?(?:public\\.)?([\"\\w]+)");
     private static final Pattern CREATE_INDEX = Pattern
             .compile("(?i)\\bCREATE\\s+(?:UNIQUE\\s+)?INDEX\\s+(?:CONCURRENTLY\\s+)?(?:IF\\s+NOT\\s+EXISTS\\s+)?(?:public\\.)?([\"\\w]+)");
+    // [파서 버그 수정 2026-08-01] `DROP CONSTRAINT IF EXISTS <name>` 는 유효한 PostgreSQL 인데
+    //   종전 정규식은 IF 를 제약명으로 오인식해 **거짓 위반**을 냈다(V2_33 에서 실측 3건).
+    //   위 CREATE_TABLE/SEQUENCE/INDEX 가 이미 `IF NOT EXISTS` 를 흡수하는 것과 동일한 보완이며,
+    //   탐지 범위를 줄이지 않는다 — 오탐만 제거한다(예외 목록 확장이 아님, GEMINI.md §0.7-H2).
     private static final Pattern CONSTRAINT_NAME = Pattern
-            .compile("(?i)\\bCONSTRAINT\\s+([\"\\w]+)");
+            .compile("(?i)\\bCONSTRAINT\\s+(?:IF\\s+EXISTS\\s+)?([\"\\w]+)");
     // RENAME CONSTRAINT old TO new — 구명칭은 정정 대상이므로 신명칭(TO 뒤)만 검사
     private static final Pattern RENAME_CONSTRAINT = Pattern
             .compile("(?i)\\bRENAME\\s+CONSTRAINT\\s+[\"\\w]+\\s+TO\\s+([\"\\w]+)");

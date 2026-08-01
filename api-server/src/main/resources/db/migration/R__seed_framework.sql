@@ -11,11 +11,25 @@ VALUES ('ROLE_USER', '일반 사용자', '비즈니스 서비스 접근 권한�
 ON CONFLICT (role_id) DO NOTHING;
 
 -- 기본 어드민 사용자 생성 (webmaster / USRCNFRM_00000000001)
--- 비밀번호: 1 ({bcrypt}$2a$10$C3g3CUhTf4f0xG1jJ1LYh.zoesF5XjPevWU2Yg8i24.eoiD4uhYxu)
-INSERT INTO tb_user_info 
+--
+-- [W0-02] 비밀번호를 여기서 시드하지 않는다.
+--   종전에는 bcrypt('1') 해시가 이 운영 마이그레이션 경로에 동봉되어, 이 저장소로 배포된 모든
+--   시스템이 공개된 관리자 비밀번호를 갖고 출발했다(저장소가 public 이므로 해시도 평문도 공개).
+--   여기서 넣는 값은 어떤 입력과도 매칭되지 않는 sentinel 이다.
+--   · pswd 는 NOT NULL 이라 NULL 을 넣을 수 없다.
+--   · '{' 로 시작하므로 egov 레거시 해시 분기를 타지 않고, DelegatingPasswordEncoder 의
+--     미매핑 prefix 예외로 귀결되어 401(BadCredentials)이 된다 — 500 이 아니다.
+--
+--   행 자체는 남긴다. Constants.SYSTEM_ADMIN_ESNTL_ID 와 탈퇴 사용자 콘텐츠 재귀속의 종착지라
+--   행을 지우면 FK 로 탈퇴 처리가 깨진다.
+--
+--   운영 최초 로그인: ADMIN_INITIAL_PASSWORD 환경변수를 주면 기동 시 1회 설정된다
+--   (AdminPasswordProvisioner). 미설정이면 이 계정은 로그인 불가 상태로 남는다.
+--   dev/local/e2e 의 알려진 비밀번호는 classpath:db/seed-dev 에만 존재하며 운영 locations 에 없다.
+INSERT INTO tb_user_info
   (esntl_id, user_id, user_nm, user_type_cd, pswd, user_stts_cd, sbscrb_ymd)
-VALUES 
-  ('USRCNFRM_00000000001', 'webmaster', '최고관리자', 'EMP', '{bcrypt}$2a$10$C3g3CUhTf4f0xG1jJ1LYh.zoesF5XjPevWU2Yg8i24.eoiD4uhYxu', 'P', to_char(CURRENT_DATE, 'YYYYMMDD'))
+VALUES
+  ('USRCNFRM_00000000001', 'webmaster', '최고관리자', 'EMP', '{disabled}NO-LOGIN-PASSWORD-NOT-PROVISIONED', 'P', to_char(CURRENT_DATE, 'YYYYMMDD'))
 ON CONFLICT (esntl_id) DO NOTHING;
 
 -- 최고관리자 역할 매핑 (webmaster -> ROLE_ADMIN)

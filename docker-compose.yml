@@ -54,6 +54,17 @@ services:
             }
           }
         }
+      # [W0-04] 활성 프로파일 주입 지점.
+      #   이 compose 는 운영 배포 전용이 아니다 — CI e2e(.github/workflows/ci.yml), 주간 ZAP 스캔,
+      #   로컬 개발이 모두 이 스택을 쓴다. 따라서 기본값을 prod 로 바꾸면 ALGORITHM_KEY 무기본값
+      #   fail-fast 로 컨테이너가 기동조차 못 하고, jwt.cookie.secure=true 라 http://localhost E2E 의
+      #   로그인 플로우가 전멸한다. 기본값은 빈 문자열(= 종전과 동일한 base 단독 구동)로 두고,
+      #   운영 배포는 docker-compose.prod.yml 오버레이로 prod 를 주입한다.
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-}
+      # [W0-02] 알려진 개발 자격증명(webmaster/TEST1 비밀번호)은 운영 마이그레이션 경로에서 분리되어
+      #   classpath:db/seed-dev 로 이설됐다. 이 스택은 개발·E2E 용이므로 그 시드를 적재한다.
+      #   운영 오버레이(docker-compose.prod.yml)는 이 값을 db/migration 단독으로 되돌린다.
+      SPRING_FLYWAY_LOCATIONS: ${SPRING_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/seed-dev}
       JWT_SECRET: ${JWT_SECRET:-dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==}
       # [2026-07-28 신설] 액세스 토큰 수명(ms). 기본값은 종전과 동일한 1시간이며, E2E 처럼 실행이
       #   1시간을 넘길 수 있는 환경에서만 바깥에서 늘린다(CI 의 e2e 잡이 주입). 늘리지 않으면

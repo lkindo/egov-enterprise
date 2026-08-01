@@ -38,11 +38,22 @@ allprojects {
             'testAnnotationProcessor'
         ]
         
-        // NVD API 키 (선택사항, 있으면 업데이트 속도 향상)
-        // nvd.apiKey = System.getenv('NVD_API_KEY')
-        
+        // [W0-09] NVD API 키 — 종전에는 주석 처리돼 있었다.
+        //   플러그인은 환경변수를 스스로 읽지 않으므로, **시크릿만 등록하는 조치는 무효**였다.
+        //   키가 없으면 익명 레이트리밋(50req/30s)에 걸려 NVD 동기화가 수십 분으로 늘어나고,
+        //   그 결과 스캔이 사실상 완주하지 못해 리포트 0건 상태가 지속됐다.
+        //   빈 문자열 주입 시 401 이 되므로 값이 있을 때만 설정한다(로컬/오프라인 보호).
+        nvd {
+            def key = System.getenv('NVD_API_KEY')
+            if (key) {
+                apiKey = key
+            }
+        }
+
         // 리포트 설정
-        formats = ['HTML', 'JUNIT']
+        //   XML 추가 근거: dependency-check.yml 의 업로드 스텝이 dependency-check-report.xml 을 참조하는데
+        //   HTML/JUNIT 만으로는 그 파일이 생성되지 않아 XML 아티팩트가 항상 비어 있었다.
+        formats = ['HTML', 'JUNIT', 'XML']
         
         // 스캔 제외 파일 패턴
         suppressionFile = file('config/dependency-check/suppressions.xml').absolutePath
