@@ -383,14 +383,33 @@ public class BoardService extends BaseAbstractService {
                 board.delete();
         }
 
+        /**
+         * 좋아요 수 증가.
+         *
+         * <p>[W1-17 재작성] 종전에는 비관적 쓰기 락으로 행을 잡고 엔티티 필드를 증가시켰다.
+         * 증분 유실은 없었지만 두 가지 대가가 있었다.
+         * <ol>
+         *   <li><b>{@code @Version} 이 올라간다.</b> 좋아요가 눌릴 때마다 버전이 오르므로,
+         *       인기글을 편집하던 사용자가 <b>아무도 고치지 않았는데</b> 409 편집 충돌을 받았다.
+         *       조회수와 정확히 같은 뿌리의 증상이다.</li>
+         *   <li>행 락을 잡고 있어 같은 글에 대한 좋아요가 직렬화된다.</li>
+         * </ol>
+         * 원자 UPDATE 는 둘 다 없앤다 — version 을 건드리지 않고 락도 잡지 않는다.
+         *
+         * <p>갱신 후 값을 응답에 실어야 하므로 재조회한다. 리포지토리 메서드가
+         * {@code clearAutomatically} 라 1차 캐시가 비워져 있어 이 조회는 실제 값을 읽는다.
+         * 그 사이 다른 사용자의 증가분이 포함될 수 있는데, 그것은 오차가 아니라 더 최신 값이다.
+         */
         @Transactional
         public Integer incrementLike(@NonNull String bbsId, @NonNull String pstId) {
-                Board board = boardRepository
-                                .findByPstIdWithPessimisticLock(required(pstId, "pstId 는 null 일 수 없습니다"))
+                String id = required(pstId, "pstId 는 null 일 수 없습니다");
+                int affected = boardRepository.incrementLikeCntAtomic(id);
+                if (affected == 0) {
+                        throw new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND);
+                }
+                return boardRepository.findById(id)
+                                .map(Board::getLikeCnt)
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
-
-                board.increaseLikeCnt();
-                return board.getLikeCnt();
         }
 
         /**

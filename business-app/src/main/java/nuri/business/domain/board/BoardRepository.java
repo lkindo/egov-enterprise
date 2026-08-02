@@ -61,19 +61,42 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
         Optional<Board> findByPstIdWithPessimisticLock(@Param("pstId") String pstId);
 
         /**
-         * 좋아요 수 원자 증가.
+         * 좋아요 수 원자 증가. [W1-17 배선 완료]
          *
-         * <p>⚠ [배선 대기 — 死코드 아님] 현재 호출부가 0이지만 삭제하지 말 것.
-         * 실제 좋아요 경로인 {@code BoardService.increaseLikeCount()} 는
-         * 엔티티를 읽어 필드를 증가시키는 **비원자 read-modify-write**({@code Board.increaseLikeCnt()})라
-         * 동시 요청에서 증가분이 유실된다. 이 메서드가 그 결함의 올바른 구현이며 배선만 남아 있다.
-         * 배선 시 반환값은 영향 행 수이므로, 갱신 후 카운트를 응답에 실으려면 재조회가 필요하고
-         * {@code clearAutomatically = true} 로 1차 캐시의 스테일 엔티티를 비워야 한다.
-         * (조회수 {@code inqCnt} 의 동일 결함과 함께 처리할 항목 — Wave 1 W1-17)
+         * <p>종전 경로({@code Board.increaseLikeCnt()})는 엔티티를 읽어 필드를 증가시키는
+         * <b>비원자 read-modify-write</b> 라 동시 요청에서 증가분이 유실됐다.
+         *
+         * <p>네이티브인 이유는 아래 {@link #increaseInqCntAtomic} 과 같다 — {@code version} 컬럼을
+         * 건드리지 않아 편집자의 낙관적 락을 오염시키지 않는다.
+         * {@code clearAutomatically} 로 1차 캐시의 스테일 엔티티를 비워, 갱신 후 재조회가 실제 값을 읽게 한다.
          */
-        @org.springframework.data.jpa.repository.Modifying
-        @Query("UPDATE Board b SET b.likeCnt = COALESCE(b.likeCnt, 0) + 1 WHERE b.pstId = :pstId")
+        @org.springframework.transaction.annotation.Transactional
+        @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+        @Query(value = "UPDATE tb_bbs_item SET like_cnt = COALESCE(like_cnt, 0) + 1 WHERE pst_id = :pstId",
+                        nativeQuery = true)
         int incrementLikeCntAtomic(@Param("pstId") String pstId);
+
+        /**
+         * 조회수 원자 증가. [W1-17]
+         *
+         * <p>[왜 네이티브인가 — 두 가지]
+         * <ol>
+         *   <li><b>{@code version} 을 건드리지 않는다.</b> JPQL 벌크 UPDATE 나 엔티티 저장은 낙관적 락
+         *       버전을 올린다. 조회수는 초 단위로 오르므로, 그때마다 version 이 올라가면
+         *       <b>아무도 고치지 않았는데 인기글 편집이 409 로 실패</b>한다 — 실제로 그랬다.</li>
+         *   <li>이 리포지토리의 소프트 삭제 필터 영향을 받지 않는다(같은 파일 상단 주석 참조).</li>
+         * </ol>
+         *
+         * <p>메서드 레벨 {@code @Transactional} 은 이 파일의 {@code deleteById} 선례를 따른다.
+         * 건별 트랜잭션이라 한 건의 실패가 배치 전체를 되돌리지 않는다.
+         *
+         * @return 영향 행 수. 0 이면 해당 게시글이 없다(삭제된 글의 조회수 등).
+         */
+        @org.springframework.transaction.annotation.Transactional
+        @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+        @Query(value = "UPDATE tb_bbs_item SET inq_cnt = COALESCE(inq_cnt, 0) + :delta WHERE pst_id = :pstId",
+                        nativeQuery = true)
+        int increaseInqCntAtomic(@Param("pstId") String pstId, @Param("delta") int delta);
 
         // [V2_12 결속] 사용자 삭제 시 게시글 저자를 시스템 계정으로 재귀속 — 콘텐츠 보존 정책
         // (fk_tb_bbs_item_tb_user_info NO ACTION 하에서 저자 행 삭제 전 필수)

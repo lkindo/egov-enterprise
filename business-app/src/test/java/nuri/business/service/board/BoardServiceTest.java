@@ -453,21 +453,36 @@ class BoardServiceTest {
     }
 
     @Test
-    @DisplayName("추천수 증가")
+    @DisplayName("[W1-17] 추천수 증가는 원자 UPDATE 로 처리하고 version 을 올리지 않는다")
     void incrementLike() {
         // given
         String bbsId = "BBS_01";
         String pstId = "1";
-        Board board = Board.builder().pstId(pstId).likeCnt(0).build();
+        Board updated = Board.builder().pstId(pstId).likeCnt(1).build();
 
-        given(boardRepository.findByPstIdWithPessimisticLock(pstId)).willReturn(Optional.of(board));
+        // 종전에는 비관적 락으로 엔티티를 잡고 필드를 증가시켰다. 유실은 없었지만 저장이 @Version 을
+        // 올려, 인기글 편집자가 아무도 고치지 않았는데 409 를 받았다(조회수와 같은 뿌리).
+        given(boardRepository.incrementLikeCntAtomic(pstId)).willReturn(1);
+        given(boardRepository.findById(pstId)).willReturn(Optional.of(updated));
 
         // when
         Integer result = boardService.incrementLike(bbsId, pstId);
 
         // then
         assertThat(result).isEqualTo(1);
-        assertThat(board.getLikeCnt()).isEqualTo(1);
+        verify(boardRepository, times(1)).incrementLikeCntAtomic(pstId);
+        // 행 락을 잡지 않는다 — 같은 글의 좋아요가 더 이상 직렬화되지 않는다.
+        verify(boardRepository, never()).findByPstIdWithPessimisticLock(anyString());
+    }
+
+    @Test
+    @DisplayName("[W1-17] 존재하지 않는 게시글의 추천은 404 로 거부한다")
+    void incrementLike_notFound() {
+        given(boardRepository.incrementLikeCntAtomic("nope")).willReturn(0);
+
+        assertThatThrownBy(() -> boardService.incrementLike("BBS_01", "nope"))
+                .isInstanceOf(BusinessException.class);
+        verify(boardRepository, never()).findById(anyString());
     }
 
     @Test

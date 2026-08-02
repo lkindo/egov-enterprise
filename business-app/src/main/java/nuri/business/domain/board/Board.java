@@ -26,6 +26,12 @@ import java.io.Serializable;
     )
 })
 @Filter(name = "softDeleteFilter", condition = "use_yn = :useYn")
+// [W1-17] 변경된 컬럼만 UPDATE 한다.
+//   조회수·좋아요는 원자 네이티브 UPDATE 로 빠졌지만, 그것만으로는 부족하다 —
+//   편집자가 엔티티를 저장하면 전(全)컬럼 UPDATE 가 나가면서 **자기 트랜잭션 시작 시점의 inqCnt** 를
+//   되써, 편집 중에 쌓인 조회수를 지운다. 변경 컬럼만 쓰면 그 손실창이 사라진다.
+//   같은 패키지 BoardMaster 에 선례가 있다.
+@org.hibernate.annotations.DynamicUpdate
 public class Board extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 

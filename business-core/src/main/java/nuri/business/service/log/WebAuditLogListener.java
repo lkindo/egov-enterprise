@@ -29,7 +29,25 @@ public class WebAuditLogListener {
 
     private final WebLogRepository webLogRepository;
 
-    @Async
+    /**
+     * 영속화에 실패한 감사 건수. [W1-E2]
+     *
+     * <p>감사 로그를 best-effort 로 두는 것 자체는 정당한 설계 선택이다 — 준-필수로 올리려면
+     * 별도 저장(데드레터·파일 appender)이 필요해 범위가 급격히 커진다.
+     * 다만 <b>유실이 보이지 않는 것</b>은 정당하지 않다. 얼마나 잃었는지 셀 수 없으면
+     * "감사 로그가 있다"는 진술 자체를 신뢰할 수 없기 때문이다.
+     */
+    private final java.util.concurrent.atomic.AtomicLong persistFailureCount =
+            new java.util.concurrent.atomic.AtomicLong();
+
+    /**
+     * [W1-E2] {@code auditExecutor} 로 한정한다.
+     *
+     * <p>종전의 한정자 없는 {@code @Async} 는 api-server 의 {@code taskExecutor} 로 해소되어
+     * <b>메일·SMS 발송과 같은 풀</b>을 썼다. 모든 API 요청이 감사 INSERT 를 유발하므로
+     * 트래픽이 몰리면 감사가 풀을 채워 발송을 굶겼다.
+     */
+    @Async("auditExecutor")
     @EventListener
     @Transactional
     public void onAuditEvent(AuditEvent event) {
@@ -43,7 +61,14 @@ public class WebAuditLogListener {
                     event.durationMs());
             webLogRepository.save(webLog);
         } catch (Exception e) {
-            log.warn("웹 감사 로그 영속화 실패(요청 처리에는 영향 없음): {}", e.toString());
+            // 요청 처리에는 영향을 주지 않되(비파괴 원칙), 유실을 셀 수 있게 남긴다.
+            long total = persistFailureCount.incrementAndGet();
+            log.error("웹 감사 로그 영속화 실패(요청 처리에는 영향 없음) — 누적 유실 {}건: {}", total, e.toString());
         }
+    }
+
+    /** 테스트·운영 점검용 유실 누계. */
+    public long getPersistFailureCount() {
+        return persistFailureCount.get();
     }
 }

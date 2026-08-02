@@ -41,6 +41,28 @@ public class AsyncConfig implements AsyncConfigurer {
     }
 
     /**
+     * 웹 감사 로그 전용 실행자. [W1-E2]
+     *
+     * <p>[왜 분리하는가] 감사 로그 영속화는 종전에 한정자 없는 {@code @Async} 였고, 그것은
+     * api-server 의 {@code taskExecutor} 로 해소되어 <b>메일·SMS 발송과 같은 풀</b>을 썼다.
+     * 모든 API 요청이 감사 INSERT 를 하나씩 유발하므로, 트래픽이 몰리면 감사가 풀을 채워
+     * 메일·SMS 를 굶기고 그 풀의 {@code CallerRunsPolicy} 가 요청 스레드로 작업을 되돌렸다.
+     *
+     * <p>감사가 "메일/SMS 와 같은 풀을 쓴다"는 사실 때문에 거부 정책 변경
+     * ({@code CallerRunsPolicy → AbortPolicy})이 논쟁거리였다 — 바꾸면 포화 시 발송이 조용히
+     * 유실되고, 그것은 2026-07-17 에 고친 "SMS/Mail silent drop" 의 정확한 재발이기 때문이다.
+     * <b>풀을 물리적으로 나누면 그 논쟁 자체가 사라진다.</b> 거부 정책은 건드리지 않았다.
+     */
+    @Bean(name = "auditExecutor")
+    public Executor auditExecutor() {
+        SimpleAsyncTaskExecutor executor = new SimpleAsyncTaskExecutor("AuditAsync-");
+        executor.setVirtualThreads(true);
+        executor.setConcurrencyLimit(LOG_EXECUTOR_CONCURRENCY_LIMIT);
+        executor.setTaskDecorator(new ThreadLocalCopyTaskDecorator());
+        return executor;
+    }
+
+    /**
      * [회복탄력성] void 반환 @Async(감사 로그·알림 발송 등)에서 던져진 예외는 기본 핸들러가 단순 로깅만 하고
      * 유실되기 쉽다. 메서드·컨텍스트와 함께 명시적으로 기록해 원인 추적을 보장한다.
      * (필요 시 MeterRegistry 카운터/데드레터 연동 지점)

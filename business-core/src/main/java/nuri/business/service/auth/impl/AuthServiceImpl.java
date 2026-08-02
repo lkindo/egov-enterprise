@@ -32,6 +32,8 @@ public class AuthServiceImpl implements AuthService {
     private final nuri.business.service.login.LoginPolicyManageService loginPolicyManageService;
     private final nuri.business.domain.login.LoginPolicyRepository loginPolicyRepository;
     private final nuri.business.service.auth.OtpService otpService;
+    /** [W1-E2] 로그인 감사 기록. 이 배선 전까지 tb_login_log 는 영구히 비어 있었다. */
+    private final nuri.business.service.log.LogService logService;
 
     @Override
     @Transactional
@@ -88,7 +90,13 @@ public class AuthServiceImpl implements AuthService {
                         .exprtnDt(java.time.Instant.now().plus(java.time.Duration.ofDays(7)))
                         .build());
         refreshTokenRepository.save(rt);
-        
+
+        // [W1-E2] 로그인 감사 기록. 종전에는 LogService.logLogin 의 프로덕션 호출부가 **0건**이라
+        //   tb_login_log 가 영구히 비어 있었다 — 개인정보 열람 이력과 같은 계열의 **법정 기록 부재**다.
+        //   "감사 추적이 약하다"가 아니라 "기록이 존재하지 않는다"가 정확한 서술이었다.
+        //   비동기(logExecutor)이고 내부에서 예외를 흡수하므로 로그인 응답을 지연·차단하지 않는다.
+        logService.logLogin(loginId, clientIp, "WEB", "N", null);
+
         return new TokenResponse(accessToken, refreshToken, finalRole);
     }
 

@@ -91,7 +91,10 @@ class BoardConcurrencyTest {
     }
 
     @Test
-    @DisplayName("고부하 동시성 검증 - 100명이 동시에 좋아요 누를 시 비관적 락을 통해 추천수가 유실 없이 정확히 100만큼 증가함")
+    // [W1-17] 메커니즘이 '비관적 락'에서 '원자 UPDATE'로 바뀌었다. 불변식(유실 0)은 그대로이므로
+    //   단언은 유지하고 서술만 정정한다 — 이 테스트가 원자 방식의 정확성을 실증하는 근거다.
+    //   원자 UPDATE 는 행 락을 잡지 않으므로 같은 글의 좋아요가 직렬화되지도 않는다.
+    @DisplayName("고부하 동시성 검증 - 100명이 동시에 좋아요 누를 시 원자 UPDATE 로 추천수가 유실 없이 정확히 100만큼 증가함")
     @WithMockCustomUser(username = "tester", role = "USER", esntlId = "tester")
     void incrementLike_concurrencySafelyControlled() throws InterruptedException {
         // Given: 100개의 동시 요청 준비

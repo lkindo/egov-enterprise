@@ -56,6 +56,11 @@ class AuthServiceTest {
     @Mock
     private nuri.business.service.auth.OtpService otpService;
 
+    @Mock
+
+     private nuri.business.service.log.LogService logService;
+
+
     @InjectMocks
     private AuthServiceImpl authService;
 
