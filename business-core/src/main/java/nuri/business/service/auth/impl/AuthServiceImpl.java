@@ -103,7 +103,8 @@ public class AuthServiceImpl implements AuthService {
     @Override
     @Transactional
     public TokenResponse reissue(String refreshToken) {
-        if (refreshToken == null || !jwtTokenProvider.validateToken(refreshToken)) {
+        // [W1-06] 리프레시 자리에는 리프레시 토큰만. 액세스 토큰을 제시하면 거부한다.
+        if (refreshToken == null || !jwtTokenProvider.validateRefreshToken(refreshToken)) {
             throw new BusinessException(CommonErrorCode.INVALID_TOKEN);
         }
         
@@ -127,7 +128,20 @@ public class AuthServiceImpl implements AuthService {
         String finalRole = authorCode.startsWith("ROLE_") ? authorCode : "ROLE_" + authorCode;
         String newAccessToken = jwtTokenProvider.createAccessToken(userId, finalRole);
 
-        return new TokenResponse(newAccessToken, refreshToken, finalRole);
+        // [W1-06] 리프레시 토큰 회전.
+        //   종전에는 같은 리프레시 토큰을 계속 돌려줬다. 탈취된 토큰은 만료(최대 7일)까지 유효했고,
+        //   정상 사용자와 공격자가 동일한 토큰을 무한히 함께 쓸 수 있었다.
+        //   회전하면 재발급 시점에 이전 토큰이 무효가 되어 창이 재발급 주기로 좁혀진다.
+        //
+        //   ⚠ **절대 만료를 유지한다** — 최초 로그인 시점에 정해진 exprtnDt 를 그대로 물려준다.
+        //   회전할 때마다 7일을 새로 주면(슬라이딩 세션) 탈취된 토큰이 무기한 연장되어 회전의 목적이 사라진다.
+        java.time.Instant absoluteExpiry = storedToken.getExprtnDt();
+        String rotatedRefreshToken = jwtTokenProvider.createRefreshToken(
+                userId, java.util.Date.from(absoluteExpiry));
+        storedToken.updateToken(rotatedRefreshToken, absoluteExpiry);
+        refreshTokenRepository.save(storedToken);
+
+        return new TokenResponse(newAccessToken, rotatedRefreshToken, finalRole);
     }
 
     @Override

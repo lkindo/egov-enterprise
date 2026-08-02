@@ -109,7 +109,43 @@ class JwtTokenProviderTest {
     void createRefreshToken_success() {
         String token = jwtTokenProvider.createRefreshToken("testuser");
         assertThat(token).isNotNull();
-        assertThat(jwtTokenProvider.validateToken(token)).isTrue();
+        assertThat(jwtTokenProvider.validateRefreshToken(token)).isTrue();
+    }
+
+    @Test
+    @DisplayName("[W1-06] 리프레시 토큰은 액세스 토큰 자리에서 거부된다")
+    void refreshToken_isRejectedAsAccessToken() {
+        String refresh = jwtTokenProvider.createRefreshToken("testuser");
+
+        // 종전에는 이 단언이 true 였다 — 두 토큰이 같은 키로 서명되고 구조가 같아 구분할 근거가 없었고,
+        // 그래서 7일짜리 리프레시 토큰을 그대로 Authorization: Bearer 로 쓸 수 있었다.
+        assertThat(jwtTokenProvider.validateToken(refresh)).isFalse();
+    }
+
+    @Test
+    @DisplayName("[W1-06] 액세스 토큰은 재발급 자리에서 거부된다 (반대 방향)")
+    void accessToken_isRejectedAsRefreshToken() {
+        String access = jwtTokenProvider.createAccessToken("testuser", "ROLE_USER");
+
+        assertThat(jwtTokenProvider.validateRefreshToken(access)).isFalse();
+    }
+
+    @Test
+    @DisplayName("[W1-06] typ 이 없는 구(舊) 토큰은 양쪽 모두 통과한다 (롤링 배포 호환)")
+    void legacyTokenWithoutTypeClaim_isAccepted() {
+        // deny-list 로 판정하는 이유의 근거. allow-list(typ=="access" 를 요구)로 만들면
+        // 배포 이전에 발급된 무-typ 액세스 토큰이 신 노드에서 전량 401 이 되어
+        // 롤링 배포 중 대량 로그아웃이 난다.
+        // 프로바이더와 같은 방식으로 키를 유도해(JwtTokenProvider.init 참조) typ 클레임 없는 토큰을 만든다.
+        String legacy = io.jsonwebtoken.Jwts.builder()
+                .subject("testuser")
+                .issuedAt(new java.util.Date())
+                .expiration(new java.util.Date(System.currentTimeMillis() + 60_000))
+                .signWith(io.jsonwebtoken.security.Keys.hmacShaKeyFor(secretKey.getBytes()))
+                .compact();
+
+        assertThat(jwtTokenProvider.validateToken(legacy)).isTrue();
+        assertThat(jwtTokenProvider.validateRefreshToken(legacy)).isTrue();
     }
 
     @Test

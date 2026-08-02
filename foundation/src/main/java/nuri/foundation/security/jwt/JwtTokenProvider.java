@@ -98,12 +98,23 @@ public class JwtTokenProvider {
         }
     }
 
+    /**
+     * 토큰 종류 클레임. [W1-06]
+     *
+     * <p>이 클레임이 없던 동안 <b>7일짜리 리프레시 토큰을 그대로 {@code Authorization: Bearer} 로
+     * 사용할 수 있었다</b> — 두 토큰이 같은 키로 서명되고 구조가 같아 구분할 근거가 없었기 때문이다.
+     */
+    private static final String CLAIM_TOKEN_TYPE = "typ";
+    private static final String TYPE_ACCESS = "access";
+    private static final String TYPE_REFRESH = "refresh";
+
     public String createAccessToken(String userId, String role) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + accessTokenValidityInMilliseconds);
         return Jwts.builder()
                 .subject(userId)
                 .claim("role", role)
+                .claim(CLAIM_TOKEN_TYPE, TYPE_ACCESS)
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key)
@@ -111,12 +122,22 @@ public class JwtTokenProvider {
     }
 
     public String createRefreshToken(@org.springframework.lang.NonNull String userId) {
-        Date now = new Date();
-        Date validity = new Date(now.getTime() + refreshTokenValidityInMilliseconds);
+        return createRefreshToken(userId, new Date(System.currentTimeMillis() + refreshTokenValidityInMilliseconds));
+    }
+
+    /**
+     * 만료 시각을 명시해 리프레시 토큰을 발급한다. [W1-06 회전용]
+     *
+     * <p>회전 시 <b>절대 만료를 유지</b>하기 위해 존재한다. 회전할 때마다 수명을 새로 7일 주면
+     * 탈취된 토큰이 무기한 연장되어(슬라이딩 세션) 회전의 목적이 사라진다.
+     * 최초 로그인 시점에 정해진 만료를 그대로 물려준다.
+     */
+    public String createRefreshToken(@org.springframework.lang.NonNull String userId, Date expiresAt) {
         return Jwts.builder()
                 .subject(userId)
-                .issuedAt(now)
-                .expiration(validity)
+                .claim(CLAIM_TOKEN_TYPE, TYPE_REFRESH)
+                .issuedAt(new Date())
+                .expiration(expiresAt)
                 .signWith(key)
                 .compact();
     }
@@ -143,9 +164,25 @@ public class JwtTokenProvider {
         return null;
     }
 
+    /**
+     * 액세스 토큰으로서 유효한지 검증한다. [W1-06]
+     *
+     * <p><b>deny-list 로 판정한다</b> — {@code typ} 이 refresh 인 것만 거부하고, 부재하거나 access 면 통과.
+     * allow-list(typ=="access" 를 <i>요구</i>)로 만들면 배포 이전에 발급된 무-typ 액세스 토큰이
+     * 신 노드에서 전량 401 이 되어 <b>롤링 배포 중 대량 로그아웃</b>이 난다.
+     * deny-list 는 같은 취약면(리프레시를 Bearer 로 사용)을 닫으면서 그 사고를 피한다.
+     *
+     * <p>⚠ 정직한 한계: 배포 이전에 발급된 <b>무-typ 리프레시 토큰은 최대 7일간 여전히 통용</b>된다.
+     * 즉시 전량 차단이 필요하면 리프레시 토큰 테이블을 비워야 하고 그것은 전원 재로그인을 뜻한다.
+     * 이 한계를 '해결됨' 으로 보고하지 말 것.
+     */
     public boolean validateToken(String token) {
         try {
-            Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
+            var claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+            if (TYPE_REFRESH.equals(claims.get(CLAIM_TOKEN_TYPE, String.class))) {
+                log.warn(">>> [JWT] 리프레시 토큰이 액세스 토큰 자리에 제시되었습니다 — 거부합니다.");
+                return false;
+            }
             return true;
         // [W1-13] 로그 레벨 규율.
         //   이 세 예외는 전부 **공격자가 제어할 수 있는 입력**으로 발생시킬 수 있다. ERROR 로 두면
@@ -164,6 +201,34 @@ public class JwtTokenProvider {
             log.error(">>> [JWT] Validation failed: {} - {}", e.getClass().getSimpleName(), e.getMessage());
         }
         return false;
+    }
+
+    /**
+     * 리프레시 토큰으로서 유효한지 검증한다. [W1-06]
+     *
+     * <p>반대 방향도 막는다 — 액세스 토큰({@code typ=access})을 재발급 자리에 제시하면 거부한다.
+     * {@code typ} 부재는 허용한다(배포 이전 발급분 호환).
+     */
+    public boolean validateRefreshToken(String token) {
+        try {
+            var claims = Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload();
+            if (TYPE_ACCESS.equals(claims.get(CLAIM_TOKEN_TYPE, String.class))) {
+                log.warn(">>> [JWT] 액세스 토큰이 재발급 자리에 제시되었습니다 — 거부합니다.");
+                return false;
+            }
+            return true;
+        } catch (io.jsonwebtoken.ExpiredJwtException e) {
+            log.debug(">>> [JWT] Expired refresh token: {}", e.getMessage());
+        } catch (Exception e) {
+            log.warn(">>> [JWT] Refresh token validation failed: {} - {}",
+                    e.getClass().getSimpleName(), e.getMessage());
+        }
+        return false;
+    }
+
+    /** 토큰의 만료 시각. 회전 시 절대 만료를 물려주기 위해 쓴다. */
+    public Date getExpiration(String token) {
+        return Jwts.parser().verifyWith(key).build().parseSignedClaims(token).getPayload().getExpiration();
     }
 
     public void addRefreshTokenCookie(HttpServletResponse response, String refreshToken) {

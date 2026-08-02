@@ -97,7 +97,7 @@ class AuthServiceTest {
     void testReissueSuccess() {
         // Given
         String refreshToken = "valid_refresh_token";
-        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
+        when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
         when(jwtTokenProvider.getUserId(refreshToken)).thenReturn("user");
         
         nuri.business.domain.auth.RefreshToken rt = nuri.business.domain.auth.RefreshToken.builder()
@@ -125,7 +125,7 @@ class AuthServiceTest {
         String userId = "user123";
         String esntlId = "USR_0000001";
         
-        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
+        when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
         when(jwtTokenProvider.getUserId(refreshToken)).thenReturn(userId);
         
         User user = mock(User.class);
@@ -162,7 +162,7 @@ class AuthServiceTest {
         String userId = "user123";
         String esntlId = "USR_0000001";
 
-        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
+        when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
         when(jwtTokenProvider.getUserId(refreshToken)).thenReturn(userId);
 
         User user = mock(User.class);
@@ -220,7 +220,7 @@ class AuthServiceTest {
     void testReissueFail() {
         // Given
         String refreshToken = "invalid_refresh_token";
-        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(false);
+        when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(false);
 
         // When & Then
         BusinessException exception = assertThrows(BusinessException.class, () -> authService.reissue(refreshToken));
@@ -319,7 +319,7 @@ class AuthServiceTest {
     void testReissueExpired() {
         // Given
         String refreshToken = "expired_token";
-        when(jwtTokenProvider.validateToken(refreshToken)).thenReturn(true);
+        when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
         
         nuri.business.domain.auth.RefreshToken rt = mock(nuri.business.domain.auth.RefreshToken.class);
         when(rt.getExprtnDt()).thenReturn(java.time.Instant.now().minusSeconds(10));

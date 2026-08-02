@@ -3,6 +3,19 @@ server:
   shutdown: graceful
 
 spring:
+  # [W1-05] 운영에서는 스키마 baseline 을 자동으로 잡지 않는다.
+  #   base 는 baseline-on-migrate: true 라, **이력 테이블 없는 비어있지-않은 스키마**를 만나면
+  #   V2_0(baseline)·V2_1(메타 시드)을 **조용히 건너뛰고** 그 이후만 적용한 뒤 정상 기동한다.
+  #   결과는 "스키마가 맞다고 믿는 채로 뜬 서버" 이고, 불일치는 한참 뒤 런타임 오류로 드러난다.
+  #   false 면 같은 상황에서 즉시 기동 실패한다 — 시끄러운 실패가 조용한 손상보다 낫다.
+  #
+  #   ⚠ 운영 절차상 'pg_dump 를 수동 복원한 뒤 앱을 붙이는' 경로가 있다면 그 경로가 정확히 여기에
+  #     걸린다. 그 경우 복원 스크립트에 flyway baseline 수동 수행을 명문화해야 한다.
+  #   ⚠ base(dev/local/e2e)는 true 를 유지한다 — 이력 없는 로컬 DB 를 가진 개발자가 즉시
+  #     부팅 불가가 되는 것을 피하기 위해서다.
+  flyway:
+    baseline-on-migrate: false
+
   # [W1-13] SMTP 무기본값 강제 — 미설정 시 기동 실패.
   #   근거: spring.mail.host 가 없으면 LoggingEmailSender 가 활성화되는데, 그 구현은 이름 그대로
   #   **메일을 보내지 않고 로그만 남긴다**. 비밀번호 재발급·알림이 전부 나가지 않는 상태로 운영에
