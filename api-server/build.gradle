@@ -51,9 +51,9 @@ dependencies {
     // ArchUnit (architecture tests — active)
     // [스키마 검증] 실 PostgreSQL(Testcontainers) + Flyway migrate + Hibernate validate 게이트용.
     // 단위 테스트 프로파일은 H2 + create-drop 이라 물리 스키마 불일치를 원리적으로 못 잡는다(2026-07-26 사고).
-    testImplementation 'org.testcontainers:postgresql:1.20.4'
-    testImplementation 'org.testcontainers:jdbc:1.20.4'
-    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+    testImplementation 'org.testcontainers:postgresql:1.21.4'
+    testImplementation 'org.testcontainers:jdbc:1.21.4'
+    testImplementation 'org.testcontainers:junit-jupiter:1.21.4'
     testImplementation libs.archunit.junit5
     testImplementation libs.archunit
 }

@@ -49,8 +49,8 @@ dependencies {
     testFixturesApi 'org.springframework.security:spring-security-test'
     testFixturesApi 'com.h2database:h2'
     testFixturesApi 'org.flywaydb:flyway-core'
-    testFixturesApi 'org.testcontainers:postgresql:1.20.4'
-    testFixturesApi 'org.testcontainers:jdbc:1.20.4'
+    testFixturesApi 'org.testcontainers:postgresql:1.21.4'
+    testFixturesApi 'org.testcontainers:jdbc:1.21.4'
     testFixturesApi platform(libs.spring.ai.bom)
     testFixturesApi libs.spring.ai.openai
     testFixturesApi libs.spring.ai.ollama

@@ -148,7 +148,7 @@ subprojects {
     dependencyManagement {
         imports {
             mavenBom "org.springframework.boot:spring-boot-dependencies:3.4.1"
-            mavenBom "org.junit:junit-bom:5.12.2"
+            mavenBom "org.junit:junit-bom:6.1.2"
         }
     }
 
