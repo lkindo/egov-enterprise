@@ -25,16 +25,16 @@ jobs:
     timeout-minutes: 90
     continue-on-error: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@d7793b545071e98d581d3bf084a51c3213318a07  # v4
         with:
           java-version: "21"
           distribution: "temurin"
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v3
+        uses: gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70  # v3
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -43,7 +43,7 @@ jobs:
       #   매 실행 NVD 전량을 다시 받았고, 그것이 43분 소진의 구조적 원인이었다.
       #   API 키만 넣고 캐시를 넣지 않으면 개선폭이 제한된다.
       - name: Cache NVD data
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
         with:
           path: build/dependency-check-cache
           key: nvd-${{ github.run_id }}
@@ -76,7 +76,7 @@ jobs:
 
       - name: Upload report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
           name: owasp-security-report
           path: |

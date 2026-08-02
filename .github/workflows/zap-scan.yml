@@ -11,7 +11,7 @@ jobs:
     name: Scan the application
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
       
       - name: Start Docker Infrastructure
         run: docker compose up -d db api frontend
@@ -22,14 +22,14 @@ jobs:
           sleep 30
           
       - name: ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0.12.0
+        uses: zaproxy/action-baseline@66042c8e7e24680119199a017e5b0e8603bf4dae  # v0.12.0
         with:
           target: 'http://localhost:3000'
           rules_file_name: '.zap/rules.tsv'
           cmd_options: '-a'
           
       - name: ZAP Full Scan for API
-        uses: zaproxy/action-full-scan@v0.12.0
+        uses: zaproxy/action-full-scan@75ee1686750ab1511a73b26b77a2aedd295053ed  # v0.12.0
         with:
           target: 'http://localhost:8080/v3/api-docs'
           allow_issue_writing: false
