@@ -210,6 +210,29 @@ public class GlobalExceptionHandler {
     }
 
     /**
+     * 미매핑 경로 — {@code NoHandlerFoundException} 경유. 위 {@code NoResourceFoundException} 과 짝이다.
+     *
+     * <p>[W1-04 발견] 둘 중 어느 예외가 던져지는지는 {@code spring.web.resources.add-mappings} 에 갈린다.
+     * <ul>
+     *   <li>add-mappings=true(운영 기본값) → 정적 리소스 핸들러가 받아 {@code NoResourceFoundException}</li>
+     *   <li>add-mappings=false(테스트 프로파일) → {@code NoHandlerFoundException}</li>
+     * </ul>
+     * 종전에는 전자만 처리해 후자가 최상위 {@code Exception} 핸들러로 떨어졌고, 그 결과
+     * <b>존재하지 않는 API 경로가 404 가 아니라 500</b> 으로 응답했다.
+     * 테스트 프로파일에서만 발현하던 잠복 결함이지만, 정적 리소스 매핑을 끄는 순간
+     * 운영에서도 모든 404 가 500 이 된다 — 두 예외를 같은 결론으로 묶어 그 분기를 없앤다.
+     *
+     * <p>이 갭은 인가 테스트의 단언을 {@code not(403)} 에서 강화하면서 드러났다.
+     * 종전 단언은 500 응답도 '인가 통과' 로 계상했기 때문에 존재하지 않는 경로를 검사하고 있다는
+     * 사실 자체가 보이지 않았다.
+     */
+    @ExceptionHandler(org.springframework.web.servlet.NoHandlerFoundException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleNoHandlerFound(
+            org.springframework.web.servlet.NoHandlerFoundException e) {
+        return new ResponseEntity<>(ApiResponse.error(CommonErrorCode.RESOURCE_NOT_FOUND, resolve(CommonErrorCode.RESOURCE_NOT_FOUND)), HttpStatus.NOT_FOUND);
+    }
+
+    /**
      * DB 커넥션 획득 실패(Hikari 풀 고갈 / DB 다운) — 500 이 아닌 503(Service Unavailable).
      *
      * <p>풀 고갈은 '서버 고장'이 아니라 '지금 처리 불가'다. 500 으로 내보내면 LB·클라이언트가

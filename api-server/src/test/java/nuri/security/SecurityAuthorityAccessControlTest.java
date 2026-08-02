@@ -112,12 +112,16 @@ class SecurityAuthorityAccessControlTest {
                 .roleName("ADMIN") // 🛡️ ADMIN 권한 가짐
                 .build();
 
-        // When & Then: 어드민 메뉴 목록 API 접근 시 권한 검사를 정상 통과(200 OK 등)하는지 검증
-        // (단, 여기서는 모킹된 서비스 빈이 있으나 단순 시큐리티 권한 차단을 넘어서는 것이 목적이므로 403 Forbidden만 안 뱉으면 됨)
+        // When & Then: 어드민 API 접근 시 인가를 통과하는지 검증.
+        // [W1-04 단언 강화] 종전에는 not(403) 하나뿐이라 401 도, 500 도 '통과' 로 계상됐다 —
+        //   즉 '인가됨' 이 아니라 '403이 아님' 만 확인했고 엔드포인트가 터져도 초록이었다.
+        //   '인가 통과(403·401 아님)' + '터지지 않음(5xx 아님)' 으로 분리해 고정한다.
         mockMvc.perform(get("/api/v1/admin/menus")
                         .with(user(mockAdmin))
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().is(org.hamcrest.Matchers.not(403))); // 🛡️ 403 Forbidden이 아님을 검증 (권한 차단 가볍게 통과)
+                .andExpect(status().is(org.hamcrest.Matchers.not(403)))
+                .andExpect(status().is(org.hamcrest.Matchers.not(401)))
+                .andExpect(status().is(org.hamcrest.Matchers.lessThan(500)));
     }
 
     @Test
@@ -132,8 +136,16 @@ class SecurityAuthorityAccessControlTest {
     @Test
     @DisplayName("보안 검증 - [Phase1 방어심층] 일반 USER가 비-admin alias(/api/v1/surveys)로 관리자 설문 등록 시도 시 403 (URL alias 우회 차단)")
     void surveyAdminAlias_shouldBeForbidden_forNormalUser() throws Exception {
-        // Given: 일반 USER. /api/v1/surveys 는 URL admin 규칙(/api/v1/admin/**) 밖이라 URL 인가는 통과하지만,
-        //        SurveyApiController의 클래스 레벨 @PreAuthorize(ADMIN/SYSTEM)로 차단되어야 한다(방어심층).
+        // Given: 일반 USER 가 admin 별칭 경로(/api/v1/surveys)로 접근한다.
+        //
+        // ⚠[W1-04 주석 정정 — 거짓 안전감 제거] 종전 주석은 "SurveyApiController 의 클래스 레벨
+        //   @PreAuthorize(ADMIN/SYSTEM)로 차단되어야 한다(방어심층)" 이라고 적혀 있었으나 **사실이 아니다**.
+        //   SurveyApiController 에는 클래스·메서드 레벨 인가 애노테이션이 하나도 없다(실측).
+        //   이 요청이 실제로 차단되는 유일한 이유는 rbac.db-auth.secure-paths(application.yml)에
+        //   '/api/v1/surveys' 가 열거돼 있어 DbUrlAuthorizationManager 가 fail-closed 로 거부하기 때문이다.
+        //   즉 방어 계층은 **1겹뿐**이며, 그 문자열 목록에서 이 경로가 빠지는 순간(신규 도메인 추가 시
+        //   목록을 갱신하지 않는 경우가 정확히 그렇다 — W1-22 fail-open) 인증만으로 접근 가능해진다.
+        //   테스트 자체는 유지한다. 고친 것은 '무엇이 우리를 지키고 있는가' 에 대한 서술이다.
         CustomUserDetails normalUser = CustomUserDetails.builder()
                 .userId("normal_user")
                 .esntlId("USR_001")

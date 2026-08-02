@@ -28,6 +28,23 @@ class GlobalExceptionHandlerTest {
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
 
     @Test
+    @DisplayName("[W1-04] 미매핑 경로(NoHandlerFoundException)는 500 이 아니라 404")
+    void testHandleNoHandlerFound() {
+        var ex = new org.springframework.web.servlet.NoHandlerFoundException(
+                "GET", "/api/v1/does-not-exist", new org.springframework.http.HttpHeaders());
+
+        ResponseEntity<ApiResponse<Void>> response = handler.handleNoHandlerFound(ex);
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertFalse(response.getBody().success());
+        assertEquals("C007", response.getBody().code());
+        // 짝이 되는 NoResourceFoundException 과 결론이 같아야 한다 —
+        // 어느 예외가 던져지는지는 spring.web.resources.add-mappings 에 갈리는데,
+        // 그 설정 하나로 404 가 500 으로 바뀌면 안 된다.
+        assertEquals(404, response.getBody().status());
+    }
+
+    @Test
     @DisplayName("[W0-13] 커넥션 풀 고갈(CannotCreateTransactionException)은 500 이 아니라 503 + Retry-After")
     void testHandleConnectionUnavailable_transaction() {
         var cause = new java.sql.SQLTransientConnectionException(

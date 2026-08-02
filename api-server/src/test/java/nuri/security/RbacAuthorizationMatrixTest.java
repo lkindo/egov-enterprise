@@ -121,10 +121,18 @@ class RbacAuthorizationMatrixTest {
                 .build();
 
         for (String path : SECURE_TEST_PATHS) {
+            // [W1-04 단언 강화] 종전에는 not(403) 하나뿐이라 401 도, 500 도 '통과' 로 계상됐다.
+            //   즉 인가가 아니라 '403이 아님' 만 검증했고, 엔드포인트가 터져도 초록이었다.
+            //   세 단언으로 분리해 실패 시 무엇이 틀렸는지가 메시지로 드러나게 한다.
+            //   ⚠ 정확한 기대 상태코드(200/404 등)로 못 박지 않는 이유: 이 테스트는 H2 + create-drop 이라
+            //     데이터가 0행이고 경로마다 200/404 가 갈린다. 실측 없이 핀으로 박으면 거짓 red 가 된다.
+            //     대신 '인가 통과(403·401 아님)' + '터지지 않음(5xx 아님)' 을 고정한다.
             mockMvc.perform(get(path)
                             .with(user(mockAdmin))
                             .contentType(MediaType.APPLICATION_JSON))
-                    .andExpect(status().is(org.hamcrest.Matchers.not(403)));
+                    .andExpect(status().is(org.hamcrest.Matchers.not(403)))
+                    .andExpect(status().is(org.hamcrest.Matchers.not(401)))
+                    .andExpect(status().is(org.hamcrest.Matchers.lessThan(500)));
         }
     }
 
