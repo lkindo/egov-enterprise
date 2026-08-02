@@ -26,11 +26,34 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * 🔐 Spring Security API 권한 제어 어노테이션 유실 방지 하네스
- * 
- * 모든 REST 컨트롤러의 엔드포인트를 리플렉션 기술로 전수 조사하여,
- * 화이트리스트(Public API) 또는 DB 구동 인가 대상(URL 매핑)을 제외한 모든 비공개 비즈니스 API에
- * @PreAuthorize 또는 @Secured 와 같은 보안 어노테이션이 반드시 선언되어 있는지 오딧합니다.
- * 이를 통해 개발자가 실수로 특정 API에 권한 제어를 누락하는 것을 차단합니다.
+ *
+ * <p>화이트리스트(Public API) 또는 DB 구동 인가 대상(URL 매핑)을 제외한 비공개 비즈니스 API 에
+ * {@code @PreAuthorize}/{@code @Secured} 등 인가 애노테이션이 선언돼 있는지 리플렉션으로 오딧한다.
+ *
+ * <p><b>⚠ [2026-08-02 커버리지 정정] 이 게이트가 실제로 보는 범위</b>
+ * <p>종전 javadoc 은 "모든 REST 컨트롤러의 엔드포인트를 전수 조사" 라고 서술했다. <b>사실이 아니었다.</b>
+ * 실측(2026-08-02): {@code nuri.api.controller} 하위 컨트롤러 64개 / 핸들러 326개 / URL쌍 358개 중
+ * 아래 {@link #auditSecurityAnnotationsOnRestControllers}(Test#1)는
+ * {@code .business}·{@code .foundation} 두 패키지를 통째로 skip 하여 <b>URL쌍 25개(7.0%)</b>만 감사한다.
+ * 서술이 집행보다 넓으면 그 서술 자체가 거짓 안전감이므로, 서술을 집행에 맞춘다.
+ *
+ * <p><b>두 테스트의 실제 분담과 그 사이의 사각지대</b>
+ * <ul>
+ *   <li>Test#1 — 패키지 skip 있음. 읽기·쓰기 모두 보지만 <b>3개 클래스만</b>.</li>
+ *   <li>Test#2({@link #auditWriteEndpointAuthorizationOnNonAdminPaths}) — 패키지 skip 없음(전 컨트롤러).
+ *       단 <b>쓰기(POST/PUT/DELETE/PATCH)만</b> 보고, {@code /api/v1/admin/} 접두는 URL 시큐리티에 위임해 skip.</li>
+ *   <li><b>사각지대</b>: {@code .business}/{@code .foundation} 패키지의 <b>읽기</b> 엔드포인트.
+ *       Test#1 은 패키지로, Test#2 는 HTTP 메서드로 각각 제외해 <b>어느 쪽도 보지 않는다</b>(실측 49건).
+ *       읽기 IDOR(타인 상세 조회)은 현재 이 게이트가 잡지 못한다 — 커버리지 확장은 별건으로 분리한다.</li>
+ * </ul>
+ *
+ * <p><b>이 게이트가 보장하지 <u>않는</u> 것</b>
+ * <ul>
+ *   <li>애노테이션의 <b>내용</b>은 보지 않는다. {@code @PreAuthorize("permitAll()")} 도 통과한다.
+ *       역할 값 정합은 {@code RbacAuthorizationMatrixTest} 가 담당한다.</li>
+ *   <li>DB 구동 인가 판정은 테스트 프로파일에서 {@code tb_prgrm_lst} 가 비어 있어
+ *       사실상 {@code rbac.db-auth.secure-paths} 만으로 이뤄진다({@link #initDbProtectedUrls} 의 조회 실패 경로 참조).</li>
+ * </ul>
  */
 @SpringBootTest(classes = nuri.ApiServerApplication.class)
 @ActiveProfiles("test")
@@ -170,28 +193,54 @@ class SecurityAuthAnnotationLinterTest {
     }
 
     /**
-     * 비-admin 경로 쓰기 엔드포인트 중 클래스/메서드 @PreAuthorize 대신 <b>다른 계층에서 인가</b>하는 컨트롤러.
-     * (서비스 계층 소유권 가드 SecurityUtil.assertOwnerOrAdmin, 또는 자기서비스/공개, 또는 서비스 내부 hasRole 검사)
+     * 비-admin 경로 쓰기 엔드포인트 중 클래스/메서드 {@code @PreAuthorize} 대신
+     * <b>다른 계층에서 인가</b>하는 컨트롤러. (서비스 계층 소유권 가드, 자기서비스, 서비스 내부 hasRole 검사)
+     *
+     * <p><b>[2026-08-02] 단순명 → FQCN 전환.</b> 종전에는 {@code getSimpleName()} 으로 매칭해
+     * <b>동명이인 클래스가 면제를 상속</b>했다. 실측 반례: {@code CommentApiController} 가
+     * {@code business.comment}(사용자용)와 {@code business.admin}(관리자용) 두 곳에 실재하며,
+     * 등재 사유("익명 댓글은 비밀번호")는 전자를 가리키는데 후자까지 면제됐다.
+     * FQCN 으로 바꾸면 등재한 그 클래스만 면제된다.
+     *
+     * <p>⚠ <b>이 목록은 여전히 클래스 단위라 담요 사면(blanket amnesty)이다</b> — 등재된 클래스에
+     * 새 쓰기 메서드를 추가하면 자동으로 면제된다. 엔드포인트 단위 판정으로 좁히는 것은 별건으로 분리한다.
+     * 등재 사유를 확장 해석하지 말 것: 아래 사유는 <b>현재 존재하는</b> 핸들러에 대한 판정이다.
      */
     private static final Set<String> WRITE_AUTHZ_GUARDED_ELSEWHERE = Set.of(
-            "AddressBookApiController",   // 소유권 가드(assertOwnerOrAdmin)
-            "ScrapApiController",         // 소유권 가드
-            "ScheduleApiController",      // 소유권 가드
-            "MemoReportApiController",    // 소유권 가드
-            "CommentApiController",       // 소유권 가드(익명 댓글은 비밀번호)
-            "WorkReportApiController",    // 소유권 가드(assertOwnerOrAdmin)
-            "NoteApiController",          // 소유권 가드(by-id 스코프)
-            "MailApiController",          // 사용자 본인 메일
-            "NotificationApiController",  // 사용자 본인 알림
-            "BbsApiController",           // 게시글 작성=자기서비스, 수정/삭제=소유권 가드
-            "BoardApiController",         // 동상
-            "PollApiController",          // 투표=자기서비스, 관리 CRUD=서비스 hasRole(ADMIN)
-            "CommunityUserApiController", // 커뮤니티 가입=자기서비스
-            "ApprovalApiController",          // 결재 확정=서비스 소유권(aprvrId) 검사
-            "InformalSanctionApiController",  // 결재(비정형)=서비스 소유권(confirm=aprvrId, update/delete=aplcntId) 검사
-            "FileApiController"               // 파일 업로드=자기서비스(본인 첨부)
-            // DeptJobApiController — 졸업(2026-07-17): 쓰기 3본에 @PreAuthorize(ADMIN/SYSTEM) 명시,
-            //   더 이상 allow-list 예외가 아니라 린터가 직접 오딧하는 대상이다.
+            "nuri.api.controller.business.addressbook.AddressBookApiController",  // 소유권 가드(assertOwnerOrAdmin)
+            "nuri.api.controller.business.smarttoolkit.ScrapApiController",       // 소유권 가드
+            "nuri.api.controller.business.smarttoolkit.ScheduleApiController",    // 소유권 가드
+            "nuri.api.controller.business.memoreport.MemoReportApiController",    // 소유권 가드
+            "nuri.api.controller.business.comment.CommentApiController",          // 소유권 가드(익명 댓글은 비밀번호)
+            "nuri.api.controller.business.report.WorkReportApiController",        // 소유권 가드(assertOwnerOrAdmin)
+            "nuri.api.controller.business.note.NoteApiController",                // 소유권 가드(by-id 스코프)
+            "nuri.api.controller.business.mail.MailApiController",                // 사용자 본인 메일
+            "nuri.api.controller.business.notification.NotificationApiController",// 사용자 본인 알림
+            "nuri.api.controller.business.board.BbsApiController",                // 작성=자기서비스, 수정/삭제=소유권 가드
+            "nuri.api.controller.business.board.BoardApiController",              // 동상
+            "nuri.api.controller.business.poll.PollApiController",                // 투표=자기서비스, 관리 CRUD=서비스 hasRole(ADMIN)
+            "nuri.api.controller.business.community.CommunityUserApiController",  // 커뮤니티 가입=자기서비스
+            "nuri.api.controller.business.approval.ApprovalApiController",        // 결재 확정=서비스 소유권(aprvrId) 검사
+            "nuri.api.controller.business.approval.InformalSanctionApiController",// 비정형 결재=서비스 소유권(confirm=aprvrId, update/delete=aplcntId)
+
+            // FileApiController — [2026-08-02 사유 정정] 종전 사유는 "파일 업로드=자기서비스(본인 첨부)" 였으나
+            //   실측 결과 FileService 에 소유권 가드 호출이 **0건**이고 업로드 시 소유자를 기록하지도 않는다.
+            //   즉 "자기서비스" 라는 사유는 성립하지 않는다. 그럴듯한 대체 사유를 발명하지 않고
+            //   **미판정(unadjudicated)** 임을 명시한다 — 이 항목이 여기 있는 이유는 안전이 증명돼서가 아니라
+            //   아직 판정되지 않았기 때문이며, 이 게이트가 green 이어도 파일 접근 인가는 검증된 바 없다.
+            //   (덧붙여 이 컨트롤러는 /api/v1/admin/{system,content,operation}/files 에도 매핑돼 있어
+            //    그 경로들은 Test#2 의 /api/v1/admin/ 접두 skip 으로 별도 면제된다 — 이중 면제 상태다.)
+            "nuri.api.controller.business.file.FileApiController"
+
+            // 등재하지 않는 것 ─────────────────────────────────────────────
+            // · nuri.api.controller.business.admin.CommentApiController
+            //     DELETE /api/v1/admin/comments/{id}. 관리자의 댓글 삭제는 도메인상 정당한 대리 수행이며
+            //     (§0.7-H3), 경로가 /api/v1/admin/ 이라 Test#2 의 접두 skip 과 DB URL 인가가 덮는다.
+            //     "소유권 가드" 사유로 등재하면 거짓 사유가 되므로 등재하지 않는다.
+            // · nuri.api.controller.business.smarttoolkit.DeptJobApiController
+            //     졸업(2026-07-17). [2026-08-02 서술 정정] 종전 주석은 "쓰기 3본에 @PreAuthorize(ADMIN/SYSTEM)"
+            //     라고 적었으나 실제로는 쓰기가 6본이고, /boxes 3본은 @AdminOrSystem,
+            //     업무 3본은 @PreAuthorize("isAuthenticated()") + 서비스 assertPicOrAdmin 이중검증이다.
     );
 
     @Test
@@ -245,8 +294,9 @@ class SecurityAuthAnnotationLinterTest {
                 if (hasPreAuthorize || hasSecured) {
                     continue;
                 }
-                // 다른 계층(서비스 소유권/자기서비스)에서 인가하는 것으로 명시된 컨트롤러
-                if (WRITE_AUTHZ_GUARDED_ELSEWHERE.contains(controllerClass.getSimpleName())) {
+                // 다른 계층(서비스 소유권/자기서비스)에서 인가하는 것으로 명시된 컨트롤러.
+                // getSimpleName() 이 아니라 FQCN 으로 매칭한다 — 동명이인 면제 상속을 막기 위해서다(위 상수 javadoc 참조).
+                if (WRITE_AUTHZ_GUARDED_ELSEWHERE.contains(controllerClass.getName())) {
                     continue;
                 }
 
@@ -274,9 +324,17 @@ class SecurityAuthAnnotationLinterTest {
         }
     }
 
+    /**
+     * 화이트리스트 매칭. <b>경로 세그먼트 경계</b>를 인식한다.
+     *
+     * <p>[2026-08-02] 종전에는 경계 없는 {@code startsWith} 라 {@code /api/v1/menus} 화이트리스트가
+     * {@code /api/v1/menus-admin/...} 같은 <b>다른 리소스</b>까지 면제했다. 현재 저장소에 그런 경로는
+     * 없으나(실측 181개 리터럴 중 0건), 신규 경로가 조용히 면제되는 통로이므로 닫는다.
+     * 정확 일치 또는 {@code 화이트패턴 + "/"} 접두만 인정한다.
+     */
     private boolean isWhitelisted(String pattern) {
         for (String whitePattern : PUBLIC_PATH_WHITELIST) {
-            if (pattern.startsWith(whitePattern) || pattern.equals(whitePattern)) {
+            if (pattern.equals(whitePattern) || pattern.startsWith(whitePattern + "/")) {
                 return true;
             }
         }
