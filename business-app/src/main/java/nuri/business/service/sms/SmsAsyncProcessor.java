@@ -50,7 +50,7 @@ public class SmsAsyncProcessor {
             try {
                 self.sendToRecipient(recptn.getSmsId(), recptn.getRcptnTelno(), senderTel, content);
             } catch (Exception e) {
-                log.error("Final failure for SMS to: {}, error: {}", recptn.getRcptnTelno(), e.getMessage());
+                log.error("Final failure for SMS to: {}, error: {}", nuri.foundation.core.util.PiiMaskUtil.phone(recptn.getRcptnTelno()), e.getMessage());
             }
         }
 
@@ -67,7 +67,7 @@ public class SmsAsyncProcessor {
         backoff = @org.springframework.retry.annotation.Backoff(delay = 1000)
     )
     public void sendToRecipient(String smsId, String rcptnTelno, String senderTel, String content) {
-        log.debug("Attempting to send SMS to: {}", rcptnTelno);
+        log.debug("Attempting to send SMS to: {}", nuri.foundation.core.util.PiiMaskUtil.phone(rcptnTelno));
         boolean success = smsSender.send(rcptnTelno, content, senderTel);
 
         if (success) {
@@ -84,7 +84,7 @@ public class SmsAsyncProcessor {
      */
     @org.springframework.retry.annotation.Recover
     public void recoverSmsSending(Exception e, String smsId, String rcptnTelno, String senderTel, String content) {
-        log.error("All retries failed for SMS to: {}, error: {}", rcptnTelno, e.getMessage());
+        log.error("All retries failed for SMS to: {}, error: {}", nuri.foundation.core.util.PiiMaskUtil.phone(rcptnTelno), e.getMessage());
         self.updateResult(smsId, rcptnTelno, "F", "Final Failure: " + e.getMessage());
         meterRegistry.counter("sms.dispatch.total", "result", "failure").increment();
     }

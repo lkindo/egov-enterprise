@@ -54,7 +54,7 @@ public class SmsService {
 
     @Transactional
     public String sendSms(String userId, SmsDto dto) {
-        log.info("Sending SMS requested by user: {}, sender: {}", userId, dto.getSndngTelno());
+        log.info("Sending SMS requested by user: {}, sender: {}", userId, nuri.foundation.core.util.PiiMaskUtil.phone(dto.getSndngTelno()));
         String smsId = nuri.foundation.core.util.IdGenerationUtil.generateSmsId();
 
         Sms sms = Sms.builder()

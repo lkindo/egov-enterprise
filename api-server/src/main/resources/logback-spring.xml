@@ -4,35 +4,37 @@
     <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
 
     <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="egov-api-server"/>
-    <springProperty scope="context" name="lokiUrl" source="logging.loki.url" defaultValue="http://localhost:3100/loki/api/v1/push"/>
 
+    <!--
+      [W1-11] 로그 출력 정책 (2026-08-02)
 
-    <property name="LOG_FILE" value="${LOG_FILE:-logs/backend.log}"/>
-    <include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
-    
+      운영은 **stdout 단독**이다. 파일 appender 와 LOKI appender 를 prod 에서 제거했다.
+
+      · 파일 로그를 뺀 이유: prod 기본 경로가 /var/log/egov 였는데 컨테이너는 USER spring 으로 실행되고
+        그 디렉터리는 이미지 어디서도 생성·chown 되지 않는다(Dockerfile 이 만드는 것은 /app/logs 다).
+        즉 **운영 파일 로그는 처음부터 기록 불가**였고, 사고가 나도 사후 분석 대상이 남지 않았다.
+        경로만 고칠 수도 있었지만, 그러면 볼륨·권한·로테이션을 컨테이너 안에서 다시 관리해야 한다 —
+        컨테이너 밖에서 이미 해결된 문제다. stdout 은 `docker logs` 로 즉시 접근 가능하고
+        수집기(로깅 드라이버·사이드카)를 붙이는 지점이 표준화돼 있다.
+
+      · LOKI appender 를 뺀 이유: 수집 스택이 저장소에 존재하지 않는다(compose 에 loki 서비스 0건).
+        존재하지 않는 호스트로 매 로그 이벤트를 밀어 넣어 loki4j 내부 오류를 상시 발생시켰다 —
+        관측을 위한 장치가 스스로 잡음을 만드는 상태였다. 수집 스택을 실제로 세우는 시점에
+        되살리되, 그때는 compose 에 loki 서비스를 함께 넣어야 한다.
+
+      · 비-prod 는 파일 appender 를 유지한다. 로컬 개발에서 로그 파일을 뒤지는 흐름이 있고,
+        기본 경로(logs/backend.log)는 작업 디렉터리 기준이라 권한 문제가 없다.
+    -->
+
     <springProfile name="prod">
-        <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
-            <http>
-                <url>${lokiUrl}</url>
-            </http>
-            <format>
-                <label>
-                    <pattern>app=${appName},host=${HOSTNAME},level=%level</pattern>
-                </label>
-                <message>
-                    <pattern>${CONSOLE_LOG_PATTERN}</pattern>
-                </message>
-                <sortByTime>true</sortByTime>
-            </format>
-        </appender>
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
-            <appender-ref ref="FILE"/>
-            <appender-ref ref="LOKI"/>
         </root>
     </springProfile>
-    
+
     <springProfile name="!prod">
+        <property name="LOG_FILE" value="${LOG_FILE:-logs/backend.log}"/>
+        <include resource="org/springframework/boot/logging/logback/file-appender.xml"/>
         <root level="INFO">
             <appender-ref ref="CONSOLE"/>
             <appender-ref ref="FILE"/>

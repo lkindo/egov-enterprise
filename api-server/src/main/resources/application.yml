@@ -186,8 +186,14 @@ management:
   metrics:
     tags:
       application: ${spring.application.name:egov-enterprise}
-    export:
-      prometheus:
+  # [W1-12] Boot2 팬텀 키 정정.
+  #   종전에는 management.metrics.export.prometheus.enabled 로 적혀 있었는데, Boot 3 에서 이 키는
+  #   management.prometheus.metrics.export.enabled 로 이동했다. 즉 **아무것도 설정하지 않는 문자열**이
+  #   설정처럼 보이는 상태였다(기본값이 true 라 거동은 우연히 맞았다).
+  #   거동 변화는 없고, 의도를 실제 키에 결속시키는 정정이다.
+  prometheus:
+    metrics:
+      export:
         enabled: true
 
 Globals:

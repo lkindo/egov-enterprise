@@ -29,3 +29,9 @@ services:
       ALGORITHM_KEY: ${ALGORITHM_KEY:?ALGORITHM_KEY 가 필요합니다 (PII 암호화 마스터 키)}
       # 최초 기동 시 관리자 비밀번호 프로비저닝. 미설정이면 webmaster 계정은 로그인 불가 상태로 남는다.
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:?ADMIN_INITIAL_PASSWORD 가 필요합니다 (최초 관리자 비밀번호)}
+      # [W1-13] SMTP 미설정이면 메일이 로그로만 나간다(LoggingEmailSender). 운영에서는 그 상태를 금지한다.
+      MAIL_HOST: ${MAIL_HOST:?MAIL_HOST 가 필요합니다 (미설정 시 메일이 발송되지 않고 로그로만 남습니다)}
+      # [W1-12] 관리(actuator) 포트. 컨테이너 네트워크 안에서만 접근한다 — ports 로 호스트에 노출하지 않는다.
+      #   스크레이퍼는 egov-net 안에서 api:9090 으로 접근한다.
+      MANAGEMENT_PORT: ${MANAGEMENT_PORT:-9090}
+      MANAGEMENT_ADDRESS: ${MANAGEMENT_ADDRESS:-0.0.0.0}

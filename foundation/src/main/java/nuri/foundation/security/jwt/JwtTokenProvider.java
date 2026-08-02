@@ -147,13 +147,20 @@ public class JwtTokenProvider {
         try {
             Jwts.parser().verifyWith(key).build().parseSignedClaims(token);
             return true;
+        // [W1-13] 로그 레벨 규율.
+        //   이 세 예외는 전부 **공격자가 제어할 수 있는 입력**으로 발생시킬 수 있다. ERROR 로 두면
+        //   ① 정상 동작이 오류로 계상돼 알람이 무뎌지고 ② 임의 요청으로 ERROR 로그를 무한 생성하는
+        //   로그 볼륨 공격면이 된다. 등급을 사실에 맞춘다.
         } catch (io.jsonwebtoken.security.SignatureException e) {
-            log.error(">>> [JWT] Invalid signature: {}", e.getMessage());
+            // 서명 불일치 = 변조 또는 키 로테이션 직후. 조사 가치가 있으나 서버 결함은 아니다.
+            log.warn(">>> [JWT] Invalid signature: {}", e.getMessage());
         } catch (io.jsonwebtoken.ExpiredJwtException e) {
-            log.error(">>> [JWT] Expired token: {}", e.getMessage());
+            // 만료는 **정상적인 수명 종료**다. 모든 사용자가 매 세션마다 최소 한 번 겪는다.
+            log.debug(">>> [JWT] Expired token: {}", e.getMessage());
         } catch (io.jsonwebtoken.MalformedJwtException e) {
-            log.error(">>> [JWT] Malformed token: {}", e.getMessage());
+            log.warn(">>> [JWT] Malformed token: {}", e.getMessage());
         } catch (Exception e) {
+            // 분류되지 않은 실패만 ERROR 로 남긴다 — 여기 쌓이면 실제로 확인할 가치가 있다.
             log.error(">>> [JWT] Validation failed: {} - {}", e.getClass().getSimpleName(), e.getMessage());
         }
         return false;

@@ -54,7 +54,7 @@ public class SanctionEventListener {
                                 .build()))
                         .build();
                 smsService.sendSms("SYSTEM", smsDto);
-                log.info("SMS notification sent to {}", user.mblTelno());
+                log.info("SMS notification sent to {}", nuri.foundation.core.util.PiiMaskUtil.phone(user.mblTelno()));
             }
 
             // Mail 발송
