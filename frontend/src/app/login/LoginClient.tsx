@@ -6,7 +6,6 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck, Zap } from "lucide-react";
 import { useMessage } from '@/hooks/useMessage';
@@ -33,6 +32,10 @@ function LoginContent() {
     // 이번 제출로 인증된 것인지(=세션 경계), 이미 인증된 상태로 이 페이지를 방문한 것인지 구분한다.
     // 두 경우는 필요한 이동 방식이 다르다(아래 각 주석 참조). ref 이므로 렌더를 유발하지 않는다.
     const justLoggedIn = React.useRef(false);
+
+    // [W1-24] 로그인 실패 시 포커스를 되돌릴 대상. 실패해도 포커스가 '로그인' 버튼에 머물러 있어서
+    //   키보드·스크린리더 사용자는 오류 위치도 재입력 위치도 알 수 없었다.
+    const idInputRef = React.useRef<HTMLInputElement>(null);
 
     // [소프트 전환] 이미 인증된 상태로 로그인 페이지에 온 경우의 자동 이동.
     // 이때는 루트 레이아웃이 이미 토큰을 가진 채 렌더되어 메뉴도 적재된 상태이므로 소프트 전환으로 충분하다.
@@ -80,6 +83,10 @@ function LoginContent() {
             setError(extractErrorMessage(err, t('login.errorFailed')));
             setIsSubmitting(false);
             setAuthStep(0);
+            // [W1-24] 포커스 복귀는 setIsSubmitting(false) **이후**여야 한다.
+            //   isSubmitting 이 true 인 동안은 전체 오버레이가 떠 있어, 그 상태에서 포커스를 옮기면
+            //   가려진 요소에 포커스가 가서 사용자가 더 길을 잃는다.
+            idInputRef.current?.focus();
         }
     };
 
@@ -164,6 +171,7 @@ function LoginContent() {
                                     <Input
                                         id="id"
                                         name="id"
+                                        ref={idInputRef}
                                         placeholder="아이디를 입력하세요..."
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
@@ -205,25 +213,24 @@ function LoginContent() {
                                 </div>
                             </motion.div>
 
-                            <motion.div
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: 0.6 }}
-                                className="flex items-center justify-between px-1"
-                            >
-                                <div className="flex items-center space-x-2">
-                                    <Checkbox id="remember" className="rounded-md border-border" />
-                                    <Label htmlFor="remember" className="text-xs font-bold text-muted-foreground tracking-normal uppercase font-mono cursor-pointer select-none">
-                                        로그인 상태 유지
-                                    </Label>
-                                </div>
-                                <Button variant="link" className="text-xs font-bold text-primary tracking-tight p-0 h-auto">비밀번호를 잊으셨나요?</Button>
-                            </motion.div>
+                            {/* [W1-24] 동작하지 않던 컨트롤 2종 제거.
+                                · '로그인 상태 유지' 체크박스 — checked/onCheckedChange/name 이 전무해 값을 읽는 곳이
+                                  하나도 없었다(전수 grep: 소비처 0, e2e 참조 0). 실제로 동작시키려면 리프레시 토큰
+                                  수명 정책을 바꿔야 하는데, 그것은 절대 만료 유지 결정과 충돌한다.
+                                · '비밀번호를 잊으셨나요?' — 재설정 라우트도 백엔드 엔드포인트도 저장소에 없다
+                                  (전수 검색 히트 1건 = 이 문자열 자신). 게다가 type 이 없어 form 안에서 submit 로
+                                  동작했다 — 클릭하면 진짜 로그인 시도가 발사돼 로그인 로그를 오염시키고
+                                  계정 잠금 카운터를 소모했다. 동작하지 않는 컨트롤은 사용자에게 거짓말을 한다. */}
 
                             {error && (
                                 <motion.div
                                     initial={{ opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
+                                    // [W1-24] role="alert" 는 aria-live="assertive" 를 함의한다.
+                                    //   이 블록은 error 가 false→true 로 바뀌며 노드가 새로 삽입되는 구조라,
+                                    //   라이브 리전이 없으면 보조기술에 어떤 알림도 가지 않는다
+                                    //   (시각 사용자만 animate-shake 로 인지했다).
+                                    role="alert"
                                     data-testid="login-error"
                                     className="text-xs font-bold text-rose-500 text-center bg-rose-50 p-4 rounded-[var(--radius-hub-item)] border border-rose-100 animate-shake uppercase font-mono"
                                 >

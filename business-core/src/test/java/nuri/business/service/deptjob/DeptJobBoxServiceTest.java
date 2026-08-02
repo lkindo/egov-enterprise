@@ -149,7 +149,11 @@ class DeptJobBoxServiceTest {
 
         DeptJobBoxDto dto = new DeptJobBoxDto();
 
-        assertThrows(IllegalArgumentException.class, () -> deptJobBoxService.updateDeptJobBox("BOX99", "user1", dto));
+        // [W1-F3] 미존재는 400 이 아니라 404 다.
+        BusinessException notFound = assertThrows(BusinessException.class,
+                () -> deptJobBoxService.updateDeptJobBox("BOX99", "user1", dto));
+        org.junit.jupiter.api.Assertions.assertEquals(
+                nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, notFound.getErrorCode());
     }
 
     @Test

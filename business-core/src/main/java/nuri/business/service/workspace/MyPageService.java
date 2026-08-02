@@ -3,6 +3,8 @@ package nuri.business.service.workspace;
 import nuri.business.domain.mypage.MyPageContent;
 import nuri.business.repository.workspace.MyPageContentRepository;
 import nuri.business.service.workspace.dto.MyPageContentDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,7 +47,7 @@ public class MyPageService {
     @Transactional
     public void updateContent(String id, MyPageContentDto dto) {
         MyPageContent entity = myPageContentRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("MyPage content not found: " + id));
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "마이페이지 콘텐츠를 찾을 수 없습니다: " + id));
         entity.update(dto.getCntntsNm(), dto.getCntcUrl(), dto.getCntntsUseAt(), dto.getCntntsLinkUrl(), dto.getCntntsDc());
     }
 

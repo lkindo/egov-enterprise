@@ -62,7 +62,7 @@ public class DeptJobBoxService {
     public void updateDeptJobBox(String deptTaskBoxId, String userId, DeptJobBoxDto dto) {
         SecurityUtil.assertAdmin();
         DeptJobBox entity = deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxId))
-                .orElseThrow(() -> new IllegalArgumentException("DeptJobBox not found: " + deptTaskBoxId));
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "부서업무함을 찾을 수 없습니다: " + deptTaskBoxId));
 
         entity.update(
                 dto.getDeptTaskBoxNm(),

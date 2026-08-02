@@ -3,6 +3,8 @@ package nuri.business.service.code;
 import nuri.business.domain.code.AdministCode;
 import nuri.business.repository.code.AdministCodeRepository;
 import nuri.business.service.code.dto.AdministCodeDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -48,7 +50,7 @@ public class AdministCodeService {
     @Transactional
     public void updateAdministCode(String code, AdministCodeDto dto, String userId) {
         AdministCode entity = administCodeRepository.findById(code)
-                .orElseThrow(() -> new IllegalArgumentException("Administrative code not found: " + code));
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "행정구역 코드를 찾을 수 없습니다: " + code));
         entity.update(dto.getAdmdstSeCd(), dto.getAdmdstZoneNm(), dto.getUpAdmdstCd(), dto.getUseYn(), userId);
     }
 

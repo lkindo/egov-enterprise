@@ -5,6 +5,8 @@ import nuri.business.domain.group.GroupManage;
 import nuri.business.domain.group.GroupManageRepository;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.group.dto.GroupManageDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -62,7 +64,7 @@ public class GroupManageService {
     public GroupManageDto selectGroup(String groupId) {
         return groupManageRepository.findById(Objects.requireNonNull(groupId))
                 .map(this::toDto)
-                .orElseThrow(() -> new RuntimeException("Group not found: " + groupId));
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "그룹을 찾을 수 없습니다: " + groupId));
     }
 
     /**
@@ -91,7 +93,7 @@ public class GroupManageService {
     @Transactional
     public void updateGroup(GroupManageDto dto) {
         GroupManage entity = groupManageRepository.findById(Objects.requireNonNull(dto.getGroupId()))
-                .orElseThrow(() -> new RuntimeException("Group not found: " + dto.getGroupId()));
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "그룹을 찾을 수 없습니다: " + dto.getGroupId()));
         entity.update(dto.getGroupNm(), dto.getGroupDc());
     }
 

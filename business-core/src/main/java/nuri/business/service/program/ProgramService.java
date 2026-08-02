@@ -29,6 +29,29 @@ public class ProgramService {
     private final ProgramMapper programMapper;
 
     /**
+     * URL 인가 매니저. 이 서비스가 쓰는 {@code tb_prgrm_lst} 가 그 매니저의 URL→롤 매핑 원천이다.
+     *
+     * <p>[W1-04 후속] {@code DbUrlAuthorizationManager.evictCache()} 는 배선 전까지 <b>프로덕션 호출부가
+     * 0건</b>이었다. 그래서 관리 화면에서 프로그램(URL)을 바꿔도 최대 5분(expireAfterWrite) 동안
+     * 구(舊) 인가가 그대로 적용됐다 — 권한을 회수했는데 5분간 열려 있는 상태다.
+     *
+     * <p>{@code ObjectProvider} 인 이유: 이 빈은 api-server 의 {@code ApiSecurityConfig} 가 만들고
+     * 그 설정에는 프로파일 조건이 걸려 있다. business-core 단독 컨텍스트(단위 테스트 등)에는 없다.
+     */
+    private final org.springframework.beans.factory.ObjectProvider<
+            nuri.business.security.authorization.DbUrlAuthorizationManager> authorizationManagerProvider;
+
+    /**
+     * 인가 캐시를 무효화한다. <b>반드시 커밋 이후</b>여야 한다 —
+     * 커밋 전에 비우면 아직 보이지 않는 데이터를 다시 캐싱해 무효화가 무의미해진다.
+     */
+    private void evictAuthorizationCacheAfterCommit() {
+        nuri.foundation.core.util.TransactionUtils.runAfterCommit(
+                () -> authorizationManagerProvider.ifAvailable(
+                        nuri.business.security.authorization.DbUrlAuthorizationManager::evictCache));
+    }
+
+    /**
      * 프로그램 목록 조회
      */
     public List<ProgramDto> selectProgrmList(BaseSearchDto searchVO) {
@@ -91,6 +114,7 @@ public class ProgramService {
                 .prgrmExpln(dto.getPrgrmExpln())
                 .build();
         programRepository.save(Objects.requireNonNull(program));
+        evictAuthorizationCacheAfterCommit();
     }
 
     /**
@@ -102,6 +126,7 @@ public class ProgramService {
         Program program = programRepository.findById(Objects.requireNonNull(dto.getPrgrmFileNm()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
         program.update(dto.getPrgrmStrgPath(), dto.getPrgrmKornNm(), dto.getUrl(), dto.getPrgrmExpln());
+        evictAuthorizationCacheAfterCommit();
     }
 
     /**
@@ -111,6 +136,7 @@ public class ProgramService {
     @CacheEvict(value = { "menuHierarchy", "rootMenuIdByUrl", "allMenuDtos" }, allEntries = true)
     public void deleteProgrm(ProgramDto dto) {
         programRepository.deleteById(Objects.requireNonNull(dto.getPrgrmFileNm()));
+        evictAuthorizationCacheAfterCommit();
     }
 
     /**
@@ -123,5 +149,6 @@ public class ProgramService {
             return;
         List<String> delProgrmFileNm = Arrays.asList(checkedProgrmFileNmForDel.split(","));
         programRepository.deleteAllByIdInBatch(Objects.requireNonNull(delProgrmFileNm));
+        evictAuthorizationCacheAfterCommit();
     }
 }

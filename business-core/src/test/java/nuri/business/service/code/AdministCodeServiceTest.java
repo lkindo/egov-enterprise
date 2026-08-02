@@ -137,9 +137,12 @@ class AdministCodeServiceTest {
         AdministCodeDto dto = AdministCodeDto.builder().build();
 
         // when & then
-        org.junit.jupiter.api.Assertions.assertThrows(IllegalArgumentException.class, () -> {
-            administCodeService.updateAdministCode("NOT_FOUND", dto, "admin");
-        });
+        // [W1-F3] 미존재는 400 이 아니라 404 다.
+        nuri.foundation.core.exception.BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class,
+                () -> administCodeService.updateAdministCode("NOT_FOUND", dto, "admin"));
+        org.junit.jupiter.api.Assertions.assertEquals(
+                nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, ex.getErrorCode());
     }
 
     @Test

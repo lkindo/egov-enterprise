@@ -38,6 +38,15 @@ class ProgramServiceTest {
     @Spy
     private ProgramMapper programMapper = new ProgramMapperImpl();
 
+    /**
+     * 인가 캐시 무효화용 프로바이더. 쓰기 메서드가 커밋 후 evictCache() 를 호출하므로
+     * 목이 없으면 @InjectMocks 가 null 을 넣어 NPE 가 된다.
+     * 프로덕션에서는 api-server 의 ApiSecurityConfig 가 실제 빈을 공급한다.
+     */
+    @Mock
+    private org.springframework.beans.factory.ObjectProvider<
+            nuri.business.security.authorization.DbUrlAuthorizationManager> authorizationManagerProvider;
+
     @InjectMocks
     private ProgramService programService;
 

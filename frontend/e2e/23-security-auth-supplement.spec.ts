@@ -79,9 +79,24 @@ test.describe('Tier 23-E2: Login failure (negative auth)', () => {
         await page.locator('button[type="submit"]').click();
 
         // LoginClient는 실패 시 data-testid="login-error"로 오류를 표시하고 /admin으로 이동하지 않는다.
-        await expect(page.getByTestId('login-error')).toBeVisible({ timeout: 15000 });
+        const loginError = page.getByTestId('login-error');
+        await expect(loginError).toBeVisible({ timeout: 15000 });
         await expect(page).not.toHaveURL(/\/admin/);
         await expect(page).toHaveURL(/\/login/);
+
+        // [W1-24] 오류가 보조기술에 통보되는지 고정한다.
+        //   role="alert" 는 aria-live="assertive" 를 함의한다. 이 블록은 조건부 렌더라 노드가 새로
+        //   삽입되는 구조이고, 라이브 리전이 없으면 스크린리더에 아무 알림도 가지 않는다.
+        await expect(loginError).toHaveAttribute('role', 'alert');
+
+        // [W1-24] 실패 후 포커스가 아이디 입력으로 돌아오는지.
+        //   종전에는 '로그인' 버튼에 머물러 키보드 사용자가 재입력 위치를 찾지 못했다.
+        await expect(page.locator('input[name="id"]')).toBeFocused();
+
+        // [W1-24] 死 컨트롤 2종이 사라졌는지. 특히 '비밀번호 찾기' 는 type 누락으로 form 을 제출해
+        //   클릭 시 진짜 로그인 시도가 발사됐다(로그인 로그 오염·잠금 카운터 소모).
+        await expect(page.getByText('비밀번호를 잊으셨나요?')).toHaveCount(0);
+        await expect(page.locator('#remember')).toHaveCount(0);
     });
 
     // 계정 잠금(lockout)은 로그인 정책(시도 횟수/잠금 임계)에 의존 → 서버 기동 후 정책 확인하여 구현.

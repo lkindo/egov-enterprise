@@ -6,6 +6,8 @@ import nuri.business.domain.auth.AuthorityRoleRepository;
 import nuri.business.domain.auth.MenuAuthorityRepository;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.auth.dto.AuthorManageDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -78,7 +80,7 @@ public class AuthorManageService {
     @Transactional
     public void updateAuthor(@NonNull AuthorManageDto dto) {
         Authority entity = authorityRepository.findById(Objects.requireNonNull(dto.getAuthrtCd()))
-                .orElseThrow(() -> new RuntimeException("Authority not found: " + dto.getAuthrtCd()));
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "권한을 찾을 수 없습니다: " + dto.getAuthrtCd()));
         entity.update(dto.getAuthrtNm(), dto.getAuthrtExpln());
     }
 

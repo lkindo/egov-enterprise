@@ -150,7 +150,13 @@ class GroupManageServiceTest {
         given(groupManageRepository.findById("G1")).willReturn(Optional.empty());
 
         // When & Then
-        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () -> groupManageService.selectGroup("G1"));
+        // [W1-F3] RuntimeException 단언은 vacuous 였다 — BusinessException 이 그 하위라
+        //   404 로 고쳐도 그대로 green 이어서 이 수정이 게이트로 증명되지 않는다.
+        //   타입과 ErrorCode 를 함께 조여야 '미존재는 404' 라는 계약이 고정된다.
+        nuri.foundation.core.exception.BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class, () -> groupManageService.selectGroup("G1"));
+        org.junit.jupiter.api.Assertions.assertEquals(
+                nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, ex.getErrorCode());
     }
 
     @Test
@@ -175,7 +181,10 @@ class GroupManageServiceTest {
         GroupManageDto dto = GroupManageDto.builder().groupId("G1").groupNm("Updated Name").build();
 
         // When & Then
-        org.junit.jupiter.api.Assertions.assertThrows(RuntimeException.class, () -> groupManageService.updateGroup(dto));
+        nuri.foundation.core.exception.BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(
+                nuri.foundation.core.exception.BusinessException.class, () -> groupManageService.updateGroup(dto));
+        org.junit.jupiter.api.Assertions.assertEquals(
+                nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, ex.getErrorCode());
     }
 
     @Test
