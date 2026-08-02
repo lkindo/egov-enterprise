@@ -21,7 +21,20 @@ updates:
       interval: "weekly"
     open-pull-requests-limit: 5
 
+  # ── Docker ── 베이스 이미지가 다이제스트로 핀돼 있어(2026-08-02) 자동 갱신이 멈춘 상태다.
+  #   SHA/다이제스트 핀은 Dependabot 과 세트로만 의미가 있다 — 둘 중 하나만 있으면 핀이 곧 방치다.
+  - package-ecosystem: "docker"
+    directories:
+      - "/api-server"
+      - "/frontend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 3
+
   # ── Gradle ── 루트 build.gradle + gradle/libs.versions.toml + 5개 서브모듈
+  #   ⚠ version-update 는 이 설정으로 돌지만, **security-update(취약점 기반 PR)는 의존성 그래프에
+  #     maven 항목이 있어야 발생한다**. 그 그래프는 .github/workflows/dependency-submission.yml 이
+  #     채운다 — 그 워크플로가 죽으면 백엔드 CVE 가시성이 조용히 0으로 돌아간다.
   - package-ecosystem: "gradle"
     directories:
       - "/"
