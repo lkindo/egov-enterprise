@@ -4384,15 +4384,11 @@ export interface components {
             data?: Record<string, never>;
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
-        CustomUserDetails: {
-            userId?: string;
-            esntlId?: string;
-            userNm?: string;
-            roleName?: string;
-            lockAt?: string;
-            authorCode?: string;
-            authorityCodes?: string[];
+        FieldErrorItem: {
+            field?: string;
+            message?: string;
         };
         UserDto: {
             userId: string;
@@ -5524,6 +5520,7 @@ export interface components {
             data?: components["schemas"]["UserResponse"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 사용자 응답 DTO */
         UserResponse: {
@@ -5543,6 +5540,7 @@ export interface components {
             data?: string;
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 사용자 알림 DTO */
         NotificationDto: {
@@ -5650,6 +5648,7 @@ export interface components {
             data?: number;
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseInteger: {
             success?: boolean;
@@ -5661,6 +5660,7 @@ export interface components {
             data?: number;
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseTokenResponse: {
             success?: boolean;
@@ -5671,6 +5671,7 @@ export interface components {
             data?: components["schemas"]["TokenResponse"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 토큰 응답 DTO */
         TokenResponse: {
@@ -5961,6 +5962,7 @@ export interface components {
             data?: components["schemas"]["RewardManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ExternalHrDto: {
             evntId?: string;
@@ -5990,6 +5992,7 @@ export interface components {
             data?: components["schemas"]["ExternalHrDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseCommunityDto: {
             success?: boolean;
@@ -6000,6 +6003,7 @@ export interface components {
             data?: components["schemas"]["CommunityDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 관리자용 비밀번호 변경 요청 */
         AdminPasswordChangeRequest: {
@@ -6019,25 +6023,6 @@ export interface components {
             userIds: string[];
             ognzId: string;
         };
-        BaseSearchDto: {
-            searchCondition?: string;
-            searchKeyword?: string;
-            searchUseYn?: string;
-            /** Format: int32 */
-            pageIndex?: number;
-            /** Format: int32 */
-            pageUnit?: number;
-            /** Format: int32 */
-            pageSize?: number;
-            /** Format: int32 */
-            firstIndex?: number;
-            /** Format: int32 */
-            lastIndex?: number;
-            /** Format: int32 */
-            recordCountPerPage?: number;
-            searchKeywordFrom?: string;
-            searchKeywordTo?: string;
-        };
         ApiResponsePageResponseWorkReportDto: {
             success?: boolean;
             /** Format: int32 */
@@ -6047,6 +6032,7 @@ export interface components {
             data?: components["schemas"]["PageResponseWorkReportDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseWorkReportDto: {
             list?: components["schemas"]["WorkReportDto"][];
@@ -6068,6 +6054,7 @@ export interface components {
             data?: components["schemas"]["WorkReportDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListUserSearchDto: {
             success?: boolean;
@@ -6078,6 +6065,7 @@ export interface components {
             data?: components["schemas"]["UserSearchDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         UserSearchDto: {
             esntlId?: string;
@@ -6093,6 +6081,7 @@ export interface components {
             data?: components["schemas"]["UserDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseBoolean: {
             success?: boolean;
@@ -6103,6 +6092,7 @@ export interface components {
             data?: boolean;
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListStatsDto: {
             success?: boolean;
@@ -6113,6 +6103,7 @@ export interface components {
             data?: components["schemas"]["StatsDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         StatsDto: {
             fromDate?: string;
@@ -6160,6 +6151,7 @@ export interface components {
             data?: components["schemas"]["PageResponseScrapDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseScrapDto: {
             list?: components["schemas"]["ScrapDto"][];
@@ -6181,6 +6173,7 @@ export interface components {
             data?: components["schemas"]["ScrapDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseScheduleDto: {
             success?: boolean;
@@ -6191,6 +6184,7 @@ export interface components {
             data?: components["schemas"]["PageResponseScheduleDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseScheduleDto: {
             list?: components["schemas"]["ScheduleDto"][];
@@ -6212,6 +6206,7 @@ export interface components {
             data?: components["schemas"]["ScheduleDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListScheduleDto: {
             success?: boolean;
@@ -6222,6 +6217,7 @@ export interface components {
             data?: components["schemas"]["ScheduleDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePopupDto: {
             success?: boolean;
@@ -6232,6 +6228,7 @@ export interface components {
             data?: components["schemas"]["PopupDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListPopupDto: {
             success?: boolean;
@@ -6242,13 +6239,7 @@ export interface components {
             data?: components["schemas"]["PopupDto"][];
             /** Format: date-time */
             timestamp?: string;
-        };
-        Pageable: {
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            sort?: string[];
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseOnlinePollManageDto: {
             success?: boolean;
@@ -6259,6 +6250,7 @@ export interface components {
             data?: components["schemas"]["PageResponseOnlinePollManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseOnlinePollManageDto: {
             list?: components["schemas"]["OnlinePollManageDto"][];
@@ -6280,6 +6272,7 @@ export interface components {
             data?: components["schemas"]["OnlinePollManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListOnlinePollArticleDto: {
             success?: boolean;
@@ -6290,6 +6283,7 @@ export interface components {
             data?: components["schemas"]["OnlinePollArticleDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseNotificationDto: {
             success?: boolean;
@@ -6300,6 +6294,7 @@ export interface components {
             data?: components["schemas"]["PageResponseNotificationDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseNotificationDto: {
             list?: components["schemas"]["NotificationDto"][];
@@ -6321,6 +6316,7 @@ export interface components {
             data?: components["schemas"]["NotificationDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseNoteDto: {
             success?: boolean;
@@ -6331,6 +6327,7 @@ export interface components {
             data?: components["schemas"]["NoteDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseNoteDto: {
             success?: boolean;
@@ -6341,6 +6338,7 @@ export interface components {
             data?: components["schemas"]["PageResponseNoteDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseNoteDto: {
             list?: components["schemas"]["NoteDto"][];
@@ -6364,6 +6362,7 @@ export interface components {
             };
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseMemoReportDto: {
             success?: boolean;
@@ -6374,6 +6373,7 @@ export interface components {
             data?: components["schemas"]["PageResponseMemoReportDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseMemoReportDto: {
             list?: components["schemas"]["MemoReportDto"][];
@@ -6395,6 +6395,7 @@ export interface components {
             data?: components["schemas"]["MemoReportDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseMainImageDto: {
             success?: boolean;
@@ -6405,6 +6406,7 @@ export interface components {
             data?: components["schemas"]["PageResponseMainImageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseMainImageDto: {
             list?: components["schemas"]["MainImageDto"][];
@@ -6426,6 +6428,7 @@ export interface components {
             data?: components["schemas"]["MainImageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListMainImageDto: {
             success?: boolean;
@@ -6436,6 +6439,7 @@ export interface components {
             data?: components["schemas"]["MainImageDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseSentMailDto: {
             success?: boolean;
@@ -6446,6 +6450,7 @@ export interface components {
             data?: components["schemas"]["PageResponseSentMailDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseSentMailDto: {
             list?: components["schemas"]["SentMailDto"][];
@@ -6467,6 +6472,7 @@ export interface components {
             data?: components["schemas"]["SentMailDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseInformalSanctionDto: {
             success?: boolean;
@@ -6477,6 +6483,7 @@ export interface components {
             data?: components["schemas"]["InformalSanctionDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseInformalSanctionDto: {
             success?: boolean;
@@ -6487,6 +6494,7 @@ export interface components {
             data?: components["schemas"]["PageResponseInformalSanctionDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseInformalSanctionDto: {
             list?: components["schemas"]["InformalSanctionDto"][];
@@ -6508,6 +6516,7 @@ export interface components {
             data?: components["schemas"]["PageResponseOnlineManualDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseOnlineManualDto: {
             list?: components["schemas"]["OnlineManualDto"][];
@@ -6529,6 +6538,7 @@ export interface components {
             data?: components["schemas"]["OnlineManualDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseHpcmDto: {
             success?: boolean;
@@ -6539,6 +6549,7 @@ export interface components {
             data?: components["schemas"]["PageResponseHpcmDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseHpcmDto: {
             list?: components["schemas"]["HpcmDto"][];
@@ -6560,6 +6571,7 @@ export interface components {
             data?: components["schemas"]["HpcmDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListFileDto: {
             success?: boolean;
@@ -6570,6 +6582,7 @@ export interface components {
             data?: components["schemas"]["FileDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         FileDto: {
             atchFileId?: string;
@@ -6594,6 +6607,7 @@ export interface components {
             data?: components["schemas"]["PageResponseFaqDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseFaqDto: {
             list?: components["schemas"]["FaqDto"][];
@@ -6615,6 +6629,7 @@ export interface components {
             data?: components["schemas"]["FaqDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseDeptJobDto: {
             success?: boolean;
@@ -6625,6 +6640,7 @@ export interface components {
             data?: components["schemas"]["PageResponseDeptJobDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseDeptJobDto: {
             list?: components["schemas"]["DeptJobDto"][];
@@ -6646,6 +6662,7 @@ export interface components {
             data?: components["schemas"]["DeptJobDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseDeptJobBoxDto: {
             success?: boolean;
@@ -6656,6 +6673,7 @@ export interface components {
             data?: components["schemas"]["PageResponseDeptJobBoxDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseDeptJobBoxDto: {
             list?: components["schemas"]["DeptJobBoxDto"][];
@@ -6677,6 +6695,7 @@ export interface components {
             data?: components["schemas"]["DeptJobBoxDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseCommunityDto: {
             success?: boolean;
@@ -6687,6 +6706,7 @@ export interface components {
             data?: components["schemas"]["PageResponseCommunityDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseCommunityDto: {
             list?: components["schemas"]["CommunityDto"][];
@@ -6708,6 +6728,7 @@ export interface components {
             data?: components["schemas"]["PageResponseCommentDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseCommentDto: {
             list?: components["schemas"]["CommentDto"][];
@@ -6729,6 +6750,7 @@ export interface components {
             data?: components["schemas"]["PageResponseRestdeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseRestdeDto: {
             list?: components["schemas"]["RestdeDto"][];
@@ -6750,6 +6772,7 @@ export interface components {
             data?: components["schemas"]["RestdeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseBoardDto: {
             success?: boolean;
@@ -6760,6 +6783,7 @@ export interface components {
             data?: components["schemas"]["PageResponseBoardDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         BoardDto: {
             /** @description 게시글 ID */
@@ -6864,6 +6888,7 @@ export interface components {
             data?: components["schemas"]["BoardStatsResponse"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 게시판 통계 응답 DTO */
         BoardStatsResponse: {
@@ -6894,6 +6919,7 @@ export interface components {
             data?: components["schemas"]["BoardDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListBannerDto: {
             success?: boolean;
@@ -6904,6 +6930,7 @@ export interface components {
             data?: components["schemas"]["BannerDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseCurrentUserResponse: {
             success?: boolean;
@@ -6914,6 +6941,7 @@ export interface components {
             data?: components["schemas"]["CurrentUserResponse"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         CurrentUserResponse: {
             id?: string;
@@ -6931,6 +6959,7 @@ export interface components {
             data?: components["schemas"]["MyPageContentDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseUserDto: {
             success?: boolean;
@@ -6941,6 +6970,7 @@ export interface components {
             data?: components["schemas"]["PageResponseUserDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseUserDto: {
             list?: components["schemas"]["UserDto"][];
@@ -6962,6 +6992,7 @@ export interface components {
             data?: components["schemas"]["PageResponseAuthorGroupProjection"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         AuthorGroupProjection: {
             userId?: string;
@@ -6993,6 +7024,7 @@ export interface components {
             data?: components["schemas"]["UserAbsenceDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseUserAbsenceDto: {
             success?: boolean;
@@ -7003,6 +7035,7 @@ export interface components {
             data?: components["schemas"]["UserAbsenceDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListTemplateDto: {
             success?: boolean;
@@ -7013,6 +7046,7 @@ export interface components {
             data?: components["schemas"]["TemplateDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseTemplateDto: {
             success?: boolean;
@@ -7023,6 +7057,7 @@ export interface components {
             data?: components["schemas"]["TemplateDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListSurveyQuestionDto: {
             success?: boolean;
@@ -7033,6 +7068,7 @@ export interface components {
             data?: components["schemas"]["SurveyQuestionDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseSurveyInfoDto: {
             success?: boolean;
@@ -7043,6 +7079,7 @@ export interface components {
             data?: components["schemas"]["SurveyInfoDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseSurveyTemplateDto: {
             success?: boolean;
@@ -7053,6 +7090,7 @@ export interface components {
             data?: components["schemas"]["SurveyTemplateDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseSurveyTemplateDto: {
             success?: boolean;
@@ -7063,6 +7101,7 @@ export interface components {
             data?: components["schemas"]["PageResponseSurveyTemplateDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseSurveyTemplateDto: {
             list?: components["schemas"]["SurveyTemplateDto"][];
@@ -7084,6 +7123,7 @@ export interface components {
             data?: components["schemas"]["PageResponseSurveyInfoDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseSurveyInfoDto: {
             list?: components["schemas"]["SurveyInfoDto"][];
@@ -7105,6 +7145,7 @@ export interface components {
             data?: components["schemas"]["SummaryStatsDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 통계 요약 DTO */
         SummaryStatsDto: {
@@ -7133,6 +7174,7 @@ export interface components {
             data?: components["schemas"]["PageResponseRoleManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseRoleManageDto: {
             list?: components["schemas"]["RoleManageDto"][];
@@ -7154,6 +7196,7 @@ export interface components {
             data?: components["schemas"]["RoleManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseProgramDto: {
             success?: boolean;
@@ -7164,6 +7207,7 @@ export interface components {
             data?: components["schemas"]["PageResponseProgramDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseProgramDto: {
             list?: components["schemas"]["ProgramDto"][];
@@ -7185,6 +7229,7 @@ export interface components {
             data?: components["schemas"]["ProgramDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponsePopupDto: {
             success?: boolean;
@@ -7195,6 +7240,7 @@ export interface components {
             data?: components["schemas"]["PageResponsePopupDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponsePopupDto: {
             list?: components["schemas"]["PopupDto"][];
@@ -7216,6 +7262,7 @@ export interface components {
             data?: components["schemas"]["Policy"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         Policy: {
             plcyTypeCd?: string;
@@ -7231,6 +7278,7 @@ export interface components {
             data?: components["schemas"]["Policy"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseNetworkStatusDetailedDto: {
             success?: boolean;
@@ -7241,6 +7289,7 @@ export interface components {
             data?: components["schemas"]["PageResponseNetworkStatusDetailedDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         NetworkStatusDetailedDto: {
             sysNm?: string;
@@ -7269,6 +7318,7 @@ export interface components {
             data?: components["schemas"]["PageResponseMenuDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseMenuDto: {
             list?: components["schemas"]["MenuDto"][];
@@ -7290,6 +7340,7 @@ export interface components {
             data?: components["schemas"]["MenuDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListMenuCreateDto: {
             success?: boolean;
@@ -7300,6 +7351,7 @@ export interface components {
             data?: components["schemas"]["MenuCreateDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 메뉴 생성 DTO */
         MenuCreateDto: {
@@ -7335,6 +7387,7 @@ export interface components {
             data?: components["schemas"]["PageResponseMenuCreateDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseMenuCreateDto: {
             list?: components["schemas"]["MenuCreateDto"][];
@@ -7356,6 +7409,7 @@ export interface components {
             data?: components["schemas"]["MenuDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseSysLogDto: {
             success?: boolean;
@@ -7366,6 +7420,7 @@ export interface components {
             data?: components["schemas"]["PageResponseSysLogDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseSysLogDto: {
             list?: components["schemas"]["SysLogDto"][];
@@ -7397,6 +7452,7 @@ export interface components {
             data?: components["schemas"]["SysLogDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseLoginLogDto: {
             success?: boolean;
@@ -7407,6 +7463,7 @@ export interface components {
             data?: components["schemas"]["PageResponseLoginLogDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         LoginLogDto: {
             logId?: string;
@@ -7437,6 +7494,7 @@ export interface components {
             data?: components["schemas"]["LoginLogDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseLoginPolicyDto: {
             success?: boolean;
@@ -7447,6 +7505,7 @@ export interface components {
             data?: components["schemas"]["PageResponseLoginPolicyDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseLoginPolicyDto: {
             list?: components["schemas"]["LoginPolicyDto"][];
@@ -7468,6 +7527,7 @@ export interface components {
             data?: components["schemas"]["LoginPolicyDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseInternetSvcGuidanceDto: {
             success?: boolean;
@@ -7478,6 +7538,7 @@ export interface components {
             data?: components["schemas"]["PageResponseInternetSvcGuidanceDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseInternetSvcGuidanceDto: {
             list?: components["schemas"]["InternetSvcGuidanceDto"][];
@@ -7499,6 +7560,7 @@ export interface components {
             data?: components["schemas"]["InternetSvcGuidanceDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseGroupManageDto: {
             success?: boolean;
@@ -7509,6 +7571,7 @@ export interface components {
             data?: components["schemas"]["PageResponseGroupManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseGroupManageDto: {
             list?: components["schemas"]["GroupManageDto"][];
@@ -7530,6 +7593,7 @@ export interface components {
             data?: components["schemas"]["GroupManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseDeptAuthorProjection: {
             success?: boolean;
@@ -7540,6 +7604,7 @@ export interface components {
             data?: components["schemas"]["PageResponseDeptAuthorProjection"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         DeptAuthorProjection: {
             deptCode?: string;
@@ -7570,6 +7635,7 @@ export interface components {
             data?: components["schemas"]["PageResponseDeptManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseDeptManageDto: {
             list?: components["schemas"]["DeptManageDto"][];
@@ -7591,6 +7657,7 @@ export interface components {
             data?: components["schemas"]["DeptManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListDeptManageDto: {
             success?: boolean;
@@ -7601,6 +7668,7 @@ export interface components {
             data?: components["schemas"]["DeptManageDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseInstitutionCodeDto: {
             success?: boolean;
@@ -7611,6 +7679,7 @@ export interface components {
             data?: components["schemas"]["PageResponseInstitutionCodeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 기관코드 정보 DTO */
         InstitutionCodeDto: {
@@ -7682,6 +7751,7 @@ export interface components {
             data?: components["schemas"]["InstitutionCodeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseInstitutionCodeRecptnDto: {
             success?: boolean;
@@ -7692,6 +7762,7 @@ export interface components {
             data?: components["schemas"]["PageResponseInstitutionCodeRecptnDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseInstitutionCodeRecptnDto: {
             list?: components["schemas"]["InstitutionCodeRecptnDto"][];
@@ -7713,6 +7784,7 @@ export interface components {
             data?: components["schemas"]["PageResponseCmmnDetailCodeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseCmmnDetailCodeDto: {
             list?: components["schemas"]["CmmnDetailCodeDto"][];
@@ -7734,6 +7806,7 @@ export interface components {
             data?: components["schemas"]["CmmnDetailCodeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseCmmnCodeDto: {
             success?: boolean;
@@ -7744,6 +7817,7 @@ export interface components {
             data?: components["schemas"]["PageResponseCmmnCodeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseCmmnCodeDto: {
             list?: components["schemas"]["CmmnCodeDto"][];
@@ -7765,6 +7839,7 @@ export interface components {
             data?: components["schemas"]["CmmnCodeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseCmmnClCodeDto: {
             success?: boolean;
@@ -7775,6 +7850,7 @@ export interface components {
             data?: components["schemas"]["PageResponseCmmnClCodeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseCmmnClCodeDto: {
             list?: components["schemas"]["CmmnClCodeDto"][];
@@ -7796,6 +7872,7 @@ export interface components {
             data?: components["schemas"]["CmmnClCodeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseAdministCodeDto: {
             success?: boolean;
@@ -7806,6 +7883,7 @@ export interface components {
             data?: components["schemas"]["PageResponseAdministCodeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseAdministCodeDto: {
             list?: components["schemas"]["AdministCodeDto"][];
@@ -7827,6 +7905,7 @@ export interface components {
             data?: components["schemas"]["AdministCodeDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseCnsltManageDto: {
             success?: boolean;
@@ -7837,6 +7916,7 @@ export interface components {
             data?: components["schemas"]["PageResponseCnsltManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseCnsltManageDto: {
             list?: components["schemas"]["CnsltManageDto"][];
@@ -7858,6 +7938,7 @@ export interface components {
             data?: components["schemas"]["CnsltManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseBoardMasterDto: {
             success?: boolean;
@@ -7868,6 +7949,7 @@ export interface components {
             data?: components["schemas"]["PageResponseBoardMasterDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseBoardMasterDto: {
             list?: components["schemas"]["BoardMasterDto"][];
@@ -7889,6 +7971,7 @@ export interface components {
             data?: components["schemas"]["BoardMasterDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseBannerDto: {
             success?: boolean;
@@ -7899,6 +7982,7 @@ export interface components {
             data?: components["schemas"]["PageResponseBannerDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseBannerDto: {
             list?: components["schemas"]["BannerDto"][];
@@ -7920,6 +8004,7 @@ export interface components {
             data?: components["schemas"]["BannerDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseAuthorManageDto: {
             success?: boolean;
@@ -7930,6 +8015,7 @@ export interface components {
             data?: components["schemas"]["PageResponseAuthorManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseAuthorManageDto: {
             list?: components["schemas"]["AuthorManageDto"][];
@@ -7951,6 +8037,7 @@ export interface components {
             data?: components["schemas"]["AuthorManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseAuthorRoleProjection: {
             success?: boolean;
@@ -7961,6 +8048,7 @@ export interface components {
             data?: components["schemas"]["PageResponseAuthorRoleProjection"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         AuthorRoleProjection: {
             roleId?: string;
@@ -7994,6 +8082,7 @@ export interface components {
             data?: components["schemas"]["PageResponseSmsDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseSmsDto: {
             list?: components["schemas"]["SmsDto"][];
@@ -8015,6 +8104,7 @@ export interface components {
             data?: components["schemas"]["SmsDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListSmsRecptnDto: {
             success?: boolean;
@@ -8025,6 +8115,7 @@ export interface components {
             data?: components["schemas"]["SmsRecptnDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseRewardManageDto: {
             success?: boolean;
@@ -8035,6 +8126,7 @@ export interface components {
             data?: components["schemas"]["PageResponseRewardManageDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseRewardManageDto: {
             list?: components["schemas"]["RewardManageDto"][];
@@ -8056,6 +8148,7 @@ export interface components {
             data?: components["schemas"]["PageResponseExternalHrDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseExternalHrDto: {
             list?: components["schemas"]["ExternalHrDto"][];
@@ -8077,6 +8170,7 @@ export interface components {
             data?: components["schemas"]["PageResponseEventInfoDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseEventInfoDto: {
             list?: components["schemas"]["EventInfoDto"][];
@@ -8098,6 +8192,7 @@ export interface components {
             data?: components["schemas"]["EventInfoDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseListCommunityDto: {
             success?: boolean;
@@ -8108,6 +8203,7 @@ export interface components {
             data?: components["schemas"]["CommunityDto"][];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseAddressBookDto: {
             success?: boolean;
@@ -8118,6 +8214,7 @@ export interface components {
             data?: components["schemas"]["PageResponseAddressBookDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseAddressBookDto: {
             list?: components["schemas"]["AddressBookDto"][];
@@ -8139,6 +8236,7 @@ export interface components {
             data?: components["schemas"]["AddressBookDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseAddressBookUserDto: {
             success?: boolean;
@@ -8149,6 +8247,7 @@ export interface components {
             data?: components["schemas"]["PageResponseAddressBookUserDto"];
             /** Format: date-time */
             timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         PageResponseAddressBookUserDto: {
             list?: components["schemas"]["AddressBookUserDto"][];
@@ -8187,7 +8286,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseWorkReportDto"];
+                    "application/json": components["schemas"]["ApiResponseWorkReportDto"];
                 };
             };
         };
@@ -8213,7 +8312,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8235,16 +8334,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getMe: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -8257,16 +8354,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseUserDto"];
+                    "application/json": components["schemas"]["ApiResponseUserDto"];
                 };
             };
         };
     };
     updateMe: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -8283,16 +8378,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     changePassword: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -8309,7 +8402,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8331,7 +8424,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseScrapDto"];
+                    "application/json": components["schemas"]["ApiResponseScrapDto"];
                 };
             };
         };
@@ -8357,7 +8450,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8379,7 +8472,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8401,7 +8494,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseScheduleDto"];
+                    "application/json": components["schemas"]["ApiResponseScheduleDto"];
                 };
             };
         };
@@ -8427,7 +8520,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8449,7 +8542,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8472,7 +8565,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseOnlinePollManageDto"];
+                    "application/json": components["schemas"]["ApiResponseOnlinePollManageDto"];
                 };
             };
         };
@@ -8498,7 +8591,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8520,7 +8613,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8543,7 +8636,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseMemoReportDto"];
+                    "application/json": components["schemas"]["ApiResponseMemoReportDto"];
                 };
             };
         };
@@ -8569,7 +8662,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8591,7 +8684,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8614,7 +8707,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseMainImageDto"];
+                    "application/json": components["schemas"]["ApiResponseMainImageDto"];
                 };
             };
         };
@@ -8640,7 +8733,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8662,7 +8755,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8685,7 +8778,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseInformalSanctionDto"];
+                    "application/json": components["schemas"]["ApiResponseInformalSanctionDto"];
                 };
             };
         };
@@ -8712,7 +8805,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8735,7 +8828,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8758,7 +8851,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseInformalSanctionDto"];
+                    "application/json": components["schemas"]["ApiResponseInformalSanctionDto"];
                 };
             };
         };
@@ -8785,7 +8878,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8808,7 +8901,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8831,7 +8924,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseOnlineManualDto"];
+                    "application/json": components["schemas"]["ApiResponseOnlineManualDto"];
                 };
             };
         };
@@ -8857,7 +8950,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8879,7 +8972,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8902,7 +8995,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseHpcmDto"];
+                    "application/json": components["schemas"]["ApiResponseHpcmDto"];
                 };
             };
         };
@@ -8928,7 +9021,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8950,7 +9043,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -8972,7 +9065,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseFaqDto"];
+                    "application/json": components["schemas"]["ApiResponseFaqDto"];
                 };
             };
         };
@@ -8998,7 +9091,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9020,7 +9113,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9042,7 +9135,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseDeptJobDto"];
+                    "application/json": components["schemas"]["ApiResponseDeptJobDto"];
                 };
             };
         };
@@ -9068,7 +9161,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9090,7 +9183,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9112,16 +9205,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseDeptJobBoxDto"];
+                    "application/json": components["schemas"]["ApiResponseDeptJobBoxDto"];
                 };
             };
         };
     };
     updateDeptJobBox: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path: {
                 deptJobbxId: string;
@@ -9140,16 +9231,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     deleteDeptJobBox: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path: {
                 deptJobbxId: string;
@@ -9164,7 +9253,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9190,7 +9279,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9212,7 +9301,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9234,7 +9323,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseRestdeDto"];
+                    "application/json": components["schemas"]["ApiResponseRestdeDto"];
                 };
             };
         };
@@ -9260,7 +9349,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9282,7 +9371,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9313,7 +9402,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseBoardDto"];
+                    "application/json": components["schemas"]["ApiResponseBoardDto"];
                 };
             };
         };
@@ -9348,7 +9437,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9379,7 +9468,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9402,7 +9491,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseBoardDto"];
+                    "application/json": components["schemas"]["ApiResponseBoardDto"];
                 };
             };
         };
@@ -9432,7 +9521,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9455,7 +9544,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9483,7 +9572,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9509,7 +9598,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9531,7 +9620,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9554,7 +9643,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseUserDto"];
+                    "application/json": components["schemas"]["ApiResponseUserDto"];
                 };
             };
         };
@@ -9580,7 +9669,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9603,7 +9692,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9625,7 +9714,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseUserAbsenceDto"];
+                    "application/json": components["schemas"]["ApiResponseUserAbsenceDto"];
                 };
             };
         };
@@ -9651,7 +9740,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9678,7 +9767,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9700,7 +9789,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9727,7 +9816,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9749,7 +9838,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9771,7 +9860,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseSurveyInfoDto"];
+                    "application/json": components["schemas"]["ApiResponseSurveyInfoDto"];
                 };
             };
         };
@@ -9797,7 +9886,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9819,7 +9908,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9841,7 +9930,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseSurveyInfoDto"];
+                    "application/json": components["schemas"]["ApiResponseSurveyInfoDto"];
                 };
             };
         };
@@ -9867,7 +9956,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9889,7 +9978,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9911,7 +10000,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseSurveyTemplateDto"];
+                    "application/json": components["schemas"]["ApiResponseSurveyTemplateDto"];
                 };
             };
         };
@@ -9937,7 +10026,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9959,7 +10048,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -9981,7 +10070,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseSurveyTemplateDto"];
+                    "application/json": components["schemas"]["ApiResponseSurveyTemplateDto"];
                 };
             };
         };
@@ -10007,7 +10096,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10029,7 +10118,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10055,7 +10144,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10077,7 +10166,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10103,7 +10192,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10125,7 +10214,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10147,7 +10236,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseRoleManageDto"];
+                    "application/json": components["schemas"]["ApiResponseRoleManageDto"];
                 };
             };
         };
@@ -10173,7 +10262,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10195,7 +10284,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10217,7 +10306,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseProgramDto"];
+                    "application/json": components["schemas"]["ApiResponseProgramDto"];
                 };
             };
         };
@@ -10243,7 +10332,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10265,7 +10354,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10288,7 +10377,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePopupDto"];
+                    "application/json": components["schemas"]["ApiResponsePopupDto"];
                 };
             };
         };
@@ -10315,7 +10404,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10338,7 +10427,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10360,7 +10449,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePolicy"];
+                    "application/json": components["schemas"]["ApiResponsePolicy"];
                 };
             };
         };
@@ -10386,7 +10475,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10412,7 +10501,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10434,7 +10523,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10456,7 +10545,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseMenuDto"];
+                    "application/json": components["schemas"]["ApiResponseMenuDto"];
                 };
             };
         };
@@ -10482,7 +10571,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10504,7 +10593,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10528,7 +10617,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10550,7 +10639,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseLoginPolicyDto"];
+                    "application/json": components["schemas"]["ApiResponseLoginPolicyDto"];
                 };
             };
         };
@@ -10576,7 +10665,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10602,7 +10691,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10624,7 +10713,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10646,7 +10735,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseInternetSvcGuidanceDto"];
+                    "application/json": components["schemas"]["ApiResponseInternetSvcGuidanceDto"];
                 };
             };
         };
@@ -10672,7 +10761,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10694,7 +10783,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10716,7 +10805,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseGroupManageDto"];
+                    "application/json": components["schemas"]["ApiResponseGroupManageDto"];
                 };
             };
         };
@@ -10742,7 +10831,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10764,7 +10853,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10787,7 +10876,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseDeptManageDto"];
+                    "application/json": components["schemas"]["ApiResponseDeptManageDto"];
                 };
             };
         };
@@ -10813,7 +10902,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10836,7 +10925,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10860,7 +10949,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10883,7 +10972,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseCmmnDetailCodeDto"];
+                    "application/json": components["schemas"]["ApiResponseCmmnDetailCodeDto"];
                 };
             };
         };
@@ -10910,7 +10999,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10933,7 +11022,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -10955,7 +11044,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseCmmnCodeDto"];
+                    "application/json": components["schemas"]["ApiResponseCmmnCodeDto"];
                 };
             };
         };
@@ -10981,7 +11070,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11003,7 +11092,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11027,7 +11116,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11049,7 +11138,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseCmmnClCodeDto"];
+                    "application/json": components["schemas"]["ApiResponseCmmnClCodeDto"];
                 };
             };
         };
@@ -11075,7 +11164,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11097,7 +11186,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11119,7 +11208,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseAdministCodeDto"];
+                    "application/json": components["schemas"]["ApiResponseAdministCodeDto"];
                 };
             };
         };
@@ -11145,7 +11234,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11167,7 +11256,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11189,7 +11278,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseBoardMasterDto"];
+                    "application/json": components["schemas"]["ApiResponseBoardMasterDto"];
                 };
             };
         };
@@ -11215,7 +11304,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11237,7 +11326,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11260,7 +11349,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseBannerDto"];
+                    "application/json": components["schemas"]["ApiResponseBannerDto"];
                 };
             };
         };
@@ -11286,7 +11375,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11308,7 +11397,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11330,7 +11419,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseAuthorManageDto"];
+                    "application/json": components["schemas"]["ApiResponseAuthorManageDto"];
                 };
             };
         };
@@ -11356,7 +11445,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11378,7 +11467,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11404,7 +11493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseEventInfoDto"];
+                    "application/json": components["schemas"]["ApiResponseEventInfoDto"];
                 };
             };
         };
@@ -11430,7 +11519,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11452,7 +11541,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11475,7 +11564,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseCommunityDto"];
+                    "application/json": components["schemas"]["ApiResponseCommunityDto"];
                 };
             };
         };
@@ -11502,7 +11591,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11525,7 +11614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11548,7 +11637,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseAddressBookDto"];
+                    "application/json": components["schemas"]["ApiResponseAddressBookDto"];
                 };
             };
         };
@@ -11575,7 +11664,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11598,15 +11687,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getWorkReportList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -11620,7 +11719,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseWorkReportDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseWorkReportDto"];
                 };
             };
         };
@@ -11644,7 +11743,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11668,7 +11767,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseUserResponse"];
+                    "application/json": components["schemas"]["ApiResponseUserResponse"];
                 };
             };
         };
@@ -11691,7 +11790,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseScrapDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseScrapDto"];
                 };
             };
         };
@@ -11715,7 +11814,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11739,7 +11838,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseScheduleDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseScheduleDto"];
                 };
             };
         };
@@ -11763,16 +11862,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getPolls: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -11786,7 +11890,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseOnlinePollManageDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseOnlinePollManageDto"];
                 };
             };
         };
@@ -11810,7 +11914,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11833,17 +11937,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getNotifications: {
         parameters: {
-            query: {
+            query?: {
                 /** @description 검색어 */
                 searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -11857,16 +11966,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseNotificationDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseNotificationDto"];
                 };
             };
         };
     };
     createNotification: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -11883,7 +11990,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -11905,7 +12012,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -11929,16 +12036,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getMemoReports: {
         parameters: {
-            query: {
+            query?: {
                 searchKeyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -11952,7 +12064,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseMemoReportDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseMemoReportDto"];
                 };
             };
         };
@@ -11976,16 +12088,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getMainImageList: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -11999,7 +12116,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseMainImageDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseMainImageDto"];
                 };
             };
         };
@@ -12023,17 +12140,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getSentMails: {
         parameters: {
-            query: {
+            query?: {
                 searchCondition?: string;
                 searchKeyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -12047,7 +12169,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseSentMailDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseSentMailDto"];
                 };
             };
         };
@@ -12071,17 +12193,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getInformalSanctionList: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
+            query?: {
                 type?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -12095,16 +12221,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseInformalSanctionDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseInformalSanctionDto"];
                 };
             };
         };
     };
     registerInformalSanction: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -12121,17 +12245,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getInformalSanctionList_1: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
+            query?: {
                 type?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -12145,16 +12273,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseInformalSanctionDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseInformalSanctionDto"];
                 };
             };
         };
     };
     registerInformalSanction_1: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -12171,16 +12297,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getManuals: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -12194,7 +12325,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseOnlineManualDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseOnlineManualDto"];
                 };
             };
         };
@@ -12218,16 +12349,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getHpcmList: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -12241,7 +12377,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseHpcmDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseHpcmDto"];
                 };
             };
         };
@@ -12265,7 +12401,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -12291,7 +12427,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -12317,7 +12453,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -12343,7 +12479,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -12369,15 +12505,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getFaqList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -12391,7 +12537,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseFaqDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseFaqDto"];
                 };
             };
         };
@@ -12415,7 +12561,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -12443,16 +12589,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseDeptJobDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseDeptJobDto"];
                 };
             };
         };
     };
     createDeptJob: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -12469,7 +12613,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -12494,16 +12638,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseDeptJobBoxDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseDeptJobBoxDto"];
                 };
             };
         };
     };
     createDeptJobBox: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -12520,7 +12662,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -12542,7 +12684,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -12552,7 +12694,12 @@ export interface operations {
             query: {
                 pstId: string;
                 bbsId: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -12566,7 +12713,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseCommentDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseCommentDto"];
                 };
             };
         };
@@ -12590,7 +12737,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseLong"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12615,7 +12762,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseRestdeDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseRestdeDto"];
                 };
             };
         };
@@ -12639,7 +12786,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseInteger"];
+                    "application/json": components["schemas"]["ApiResponseInteger"];
                 };
             };
         };
@@ -12663,17 +12810,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getBbsList: {
         parameters: {
-            query: {
+            query?: {
                 searchCnd?: string;
                 searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path: {
@@ -12689,7 +12841,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseBoardDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseBoardDto"];
                 };
             };
         };
@@ -12718,7 +12870,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -12740,7 +12892,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseTokenResponse"];
+                    "application/json": components["schemas"]["ApiResponseTokenResponse"];
                 };
             };
         };
@@ -12760,7 +12912,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -12784,7 +12936,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseTokenResponse"];
+                    "application/json": components["schemas"]["ApiResponseTokenResponse"];
                 };
             };
         };
@@ -12806,7 +12958,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListMyPageContentDto"];
+                    "application/json": components["schemas"]["ApiResponseListMyPageContentDto"];
                 };
             };
         };
@@ -12830,16 +12982,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getUsers: {
         parameters: {
-            query: {
+            query?: {
                 searchKeyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -12853,7 +13010,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseUserDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseUserDto"];
                 };
             };
         };
@@ -12877,7 +13034,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -12901,15 +13058,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getUserAuthorities: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -12923,7 +13090,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseAuthorGroupProjection"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseAuthorGroupProjection"];
                 };
             };
         };
@@ -12947,7 +13114,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -12971,7 +13138,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -12991,7 +13158,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListTemplateDto"];
+                    "application/json": components["schemas"]["ApiResponseListTemplateDto"];
                 };
             };
         };
@@ -13015,7 +13182,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -13037,7 +13204,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListSurveyQuestionDto"];
+                    "application/json": components["schemas"]["ApiResponseListSurveyQuestionDto"];
                 };
             };
         };
@@ -13063,7 +13230,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -13085,7 +13252,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListSurveyQuestionDto"];
+                    "application/json": components["schemas"]["ApiResponseListSurveyQuestionDto"];
                 };
             };
         };
@@ -13111,16 +13278,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getTemplates: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -13134,7 +13306,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseSurveyTemplateDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseSurveyTemplateDto"];
                 };
             };
         };
@@ -13158,16 +13330,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getTemplates_1: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -13181,7 +13358,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseSurveyTemplateDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseSurveyTemplateDto"];
                 };
             };
         };
@@ -13205,7 +13382,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -13231,7 +13408,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -13257,16 +13434,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getSurveys: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -13280,7 +13462,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseSurveyInfoDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseSurveyInfoDto"];
                 };
             };
         };
@@ -13304,16 +13486,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getSurveys_1: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -13327,7 +13514,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseSurveyInfoDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseSurveyInfoDto"];
                 };
             };
         };
@@ -13351,15 +13538,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getRoles: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -13373,7 +13570,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseRoleManageDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseRoleManageDto"];
                 };
             };
         };
@@ -13397,7 +13594,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -13421,15 +13618,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getProgramList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -13443,7 +13650,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseProgramDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseProgramDto"];
                 };
             };
         };
@@ -13467,16 +13674,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getPopups: {
         parameters: {
-            query: {
+            query?: {
                 searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -13490,7 +13702,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponsePopupDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponsePopupDto"];
                 };
             };
         };
@@ -13514,16 +13726,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getPolls_1: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -13537,7 +13754,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseOnlinePollManageDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseOnlinePollManageDto"];
                 };
             };
         };
@@ -13561,7 +13778,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -13585,15 +13802,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getStatus: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -13607,7 +13834,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseNetworkStatusDetailedDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseNetworkStatusDetailedDto"];
                 };
             };
         };
@@ -13631,15 +13858,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getMenuList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -13653,7 +13890,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseMenuDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseMenuDto"];
                 };
             };
         };
@@ -13677,7 +13914,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -13699,7 +13936,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListMenuCreateDto"];
+                    "application/json": components["schemas"]["ApiResponseListMenuCreateDto"];
                 };
             };
         };
@@ -13725,16 +13962,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getIsgList: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -13748,7 +13990,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseInternetSvcGuidanceDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseInternetSvcGuidanceDto"];
                 };
             };
         };
@@ -13772,7 +14014,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -13795,7 +14037,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseGroupManageDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseGroupManageDto"];
                 };
             };
         };
@@ -13819,7 +14061,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -13843,7 +14085,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -13867,16 +14109,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getDepts: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -13890,7 +14137,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseDeptManageDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseDeptManageDto"];
                 };
             };
         };
@@ -13914,7 +14161,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -13938,15 +14185,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getDetailCodeList: {
         parameters: {
-            query: {
-                searchVO: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -13960,7 +14217,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseCmmnDetailCodeDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseCmmnDetailCodeDto"];
                 };
             };
         };
@@ -13984,15 +14241,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getCmmnCodeList: {
         parameters: {
-            query: {
-                searchVO: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -14006,7 +14273,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseCmmnCodeDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseCmmnCodeDto"];
                 };
             };
         };
@@ -14030,15 +14297,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getClCodeList: {
         parameters: {
-            query: {
-                searchVO: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -14052,7 +14329,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseCmmnClCodeDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseCmmnClCodeDto"];
                 };
             };
         };
@@ -14076,15 +14353,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getAdministCodeList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -14098,7 +14385,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseAdministCodeDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseAdministCodeDto"];
                 };
             };
         };
@@ -14122,16 +14409,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getConsultations: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -14145,7 +14437,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseCnsltManageDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseCnsltManageDto"];
                 };
             };
         };
@@ -14169,15 +14461,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getBoardMasterList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -14191,7 +14493,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseBoardMasterDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseBoardMasterDto"];
                 };
             };
         };
@@ -14215,7 +14517,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -14239,7 +14541,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14263,16 +14565,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getBanners: {
         parameters: {
-            query: {
+            query?: {
                 keyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -14286,7 +14593,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseBannerDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseBannerDto"];
                 };
             };
         };
@@ -14310,15 +14617,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getAuthors: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -14332,7 +14649,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseAuthorManageDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseAuthorManageDto"];
                 };
             };
         };
@@ -14356,7 +14673,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14380,15 +14697,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getAuthorRoles: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path: {
@@ -14404,7 +14731,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseAuthorRoleProjection"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseAuthorRoleProjection"];
                 };
             };
         };
@@ -14430,17 +14757,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getSmsList: {
         parameters: {
-            query: {
+            query?: {
                 searchCondition?: string;
                 searchKeyword?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -14454,16 +14786,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseSmsDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseSmsDto"];
                 };
             };
         };
     };
     sendSms: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -14480,16 +14810,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getAllRewards: {
         parameters: {
-            query: {
+            query?: {
                 name?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -14503,7 +14838,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseRewardManageDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseRewardManageDto"];
                 };
             };
         };
@@ -14527,16 +14862,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseRewardManageDto"];
+                    "application/json": components["schemas"]["ApiResponseRewardManageDto"];
                 };
             };
         };
     };
     getAllExternalHr: {
         parameters: {
-            query: {
+            query?: {
                 name?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -14550,7 +14890,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseExternalHrDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseExternalHrDto"];
                 };
             };
         };
@@ -14574,16 +14914,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseExternalHrDto"];
+                    "application/json": components["schemas"]["ApiResponseExternalHrDto"];
                 };
             };
         };
     };
     getEventList: {
         parameters: {
-            query: {
+            query?: {
                 searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -14597,7 +14942,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseEventInfoDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseEventInfoDto"];
                 };
             };
         };
@@ -14621,17 +14966,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
     };
     getCommunities: {
         parameters: {
-            query: {
+            query?: {
                 searchCnd?: string;
                 searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -14645,7 +14995,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseCommunityDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseCommunityDto"];
                 };
             };
         };
@@ -14669,18 +15019,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseCommunityDto"];
+                    "application/json": components["schemas"]["ApiResponseCommunityDto"];
                 };
             };
         };
     };
     getAddressBooks: {
         parameters: {
-            query: {
+            query?: {
                 trgetOgnzId?: string;
                 searchCnd?: string;
                 searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -14694,7 +15049,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseAddressBookDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseAddressBookDto"];
                 };
             };
         };
@@ -14718,7 +15073,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14744,7 +15099,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14770,7 +15125,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14796,7 +15151,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14827,7 +15182,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseInteger"];
+                    "application/json": components["schemas"]["ApiResponseInteger"];
                 };
             };
         };
@@ -14853,7 +15208,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14877,7 +15232,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14901,7 +15256,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14925,7 +15280,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14951,7 +15306,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -14974,7 +15329,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListUserSearchDto"];
+                    "application/json": components["schemas"]["ApiResponseListUserSearchDto"];
                 };
             };
         };
@@ -14996,7 +15351,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseBoolean"];
+                    "application/json": components["schemas"]["ApiResponseBoolean"];
                 };
             };
         };
@@ -15019,7 +15374,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
                 };
             };
         };
@@ -15042,7 +15397,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListScheduleDto"];
+                    "application/json": components["schemas"]["ApiResponseListScheduleDto"];
                 };
             };
         };
@@ -15064,7 +15419,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListScheduleDto"];
+                    "application/json": components["schemas"]["ApiResponseListScheduleDto"];
                 };
             };
         };
@@ -15088,7 +15443,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseScheduleDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseScheduleDto"];
                 };
             };
         };
@@ -15108,7 +15463,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -15131,7 +15486,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePopupDto"];
+                    "application/json": components["schemas"]["ApiResponsePopupDto"];
                 };
             };
         };
@@ -15151,7 +15506,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListPopupDto"];
+                    "application/json": components["schemas"]["ApiResponseListPopupDto"];
                 };
             };
         };
@@ -15173,7 +15528,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListOnlinePollArticleDto"];
+                    "application/json": components["schemas"]["ApiResponseListOnlinePollArticleDto"];
                 };
             };
         };
@@ -15195,7 +15550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseNotificationDto"];
+                    "application/json": components["schemas"]["ApiResponseNotificationDto"];
                 };
             };
         };
@@ -15217,16 +15572,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
     };
     getUnreadCount: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -15239,7 +15592,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseLong"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -15267,16 +15620,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseNoteDto"];
+                    "application/json": components["schemas"]["ApiResponseNoteDto"];
                 };
             };
         };
     };
     getSentNotes: {
         parameters: {
-            query: {
+            query?: {
                 searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -15290,16 +15648,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseNoteDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseNoteDto"];
                 };
             };
         };
     };
     getReceivedNotes: {
         parameters: {
-            query: {
+            query?: {
                 searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -15313,7 +15676,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseNoteDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseNoteDto"];
                 };
             };
         };
@@ -15335,7 +15698,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseMapStringObject"];
+                    "application/json": components["schemas"]["ApiResponseMapStringObject"];
                 };
             };
         };
@@ -15355,15 +15718,20 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseMapStringObject"];
+                    "application/json": components["schemas"]["ApiResponseMapStringObject"];
                 };
             };
         };
     };
     getReceivedReports: {
         parameters: {
-            query: {
-                pageable: components["schemas"]["Pageable"];
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -15377,15 +15745,20 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseMemoReportDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseMemoReportDto"];
                 };
             };
         };
     };
     getMyReports: {
         parameters: {
-            query: {
-                pageable: components["schemas"]["Pageable"];
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -15399,7 +15772,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseMemoReportDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseMemoReportDto"];
                 };
             };
         };
@@ -15419,7 +15792,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListMainImageDto"];
+                    "application/json": components["schemas"]["ApiResponseListMainImageDto"];
                 };
             };
         };
@@ -15442,7 +15815,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseSentMailDto"];
+                    "application/json": components["schemas"]["ApiResponseSentMailDto"];
                 };
             };
         };
@@ -15464,7 +15837,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -15484,7 +15857,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseMapStringObject"];
+                    "application/json": components["schemas"]["ApiResponseMapStringObject"];
                 };
             };
         };
@@ -15598,7 +15971,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
+                    "application/json": components["schemas"]["ApiResponseListFileDto"];
                 };
             };
         };
@@ -15620,7 +15993,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
+                    "application/json": components["schemas"]["ApiResponseListFileDto"];
                 };
             };
         };
@@ -15642,7 +16015,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
+                    "application/json": components["schemas"]["ApiResponseListFileDto"];
                 };
             };
         };
@@ -15664,7 +16037,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListFileDto"];
+                    "application/json": components["schemas"]["ApiResponseListFileDto"];
                 };
             };
         };
@@ -15684,17 +16057,22 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseMapStringObject"];
+                    "application/json": components["schemas"]["ApiResponseMapStringObject"];
                 };
             };
         };
     };
     getCommunities_1: {
         parameters: {
-            query: {
+            query?: {
                 searchCnd?: string;
                 searchWrd?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -15708,7 +16086,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseCommunityDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseCommunityDto"];
                 };
             };
         };
@@ -15731,14 +16109,14 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseCommunityDto"];
+                    "application/json": components["schemas"]["ApiResponseCommunityDto"];
                 };
             };
         };
     };
     getPosts: {
         parameters: {
-            query: {
+            query?: {
                 searchCnd?: string;
                 searchWrd?: string;
                 orderBy?: string;
@@ -15746,7 +16124,12 @@ export interface operations {
                 endDate?: string;
                 qnaStatus?: string;
                 qnaCategory?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path: {
@@ -15766,7 +16149,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseBoardDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseBoardDto"];
                 };
             };
         };
@@ -15792,7 +16175,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseBoardStatsResponse"];
+                    "application/json": components["schemas"]["ApiResponseBoardStatsResponse"];
                 };
             };
         };
@@ -15812,7 +16195,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListBannerDto"];
+                    "application/json": components["schemas"]["ApiResponseListBannerDto"];
                 };
             };
         };
@@ -15832,16 +16215,20 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseCurrentUserResponse"];
+                    "application/json": components["schemas"]["ApiResponseCurrentUserResponse"];
                 };
             };
         };
     };
     getPending: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-                pageable: components["schemas"]["Pageable"];
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -15855,16 +16242,20 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseInformalSanctionDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseInformalSanctionDto"];
                 };
             };
         };
     };
     getMyHistory: {
         parameters: {
-            query: {
-                userDetails: components["schemas"]["CustomUserDetails"];
-                pageable: components["schemas"]["Pageable"];
+            query?: {
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -15878,7 +16269,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseInformalSanctionDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseInformalSanctionDto"];
                 };
             };
         };
@@ -15898,7 +16289,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListUserAbsenceDto"];
+                    "application/json": components["schemas"]["ApiResponseListUserAbsenceDto"];
                 };
             };
         };
@@ -15920,7 +16311,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseTemplateDto"];
+                    "application/json": components["schemas"]["ApiResponseTemplateDto"];
                 };
             };
         };
@@ -15943,7 +16334,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
                 };
             };
         };
@@ -15963,7 +16354,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseSummaryStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseSummaryStatsDto"];
                 };
             };
         };
@@ -15986,7 +16377,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
                 };
             };
         };
@@ -16009,7 +16400,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
                 };
             };
         };
@@ -16033,7 +16424,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
                 };
             };
         };
@@ -16056,7 +16447,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
                 };
             };
         };
@@ -16078,7 +16469,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseOnlinePollManageDto"];
+                    "application/json": components["schemas"]["ApiResponseOnlinePollManageDto"];
                 };
             };
         };
@@ -16098,15 +16489,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListPolicy"];
+                    "application/json": components["schemas"]["ApiResponseListPolicy"];
                 };
             };
         };
     };
     getMenuCreationManageList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -16120,7 +16521,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseMenuCreateDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseMenuCreateDto"];
                 };
             };
         };
@@ -16140,15 +16541,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListMenuDto"];
+                    "application/json": components["schemas"]["ApiResponseListMenuDto"];
                 };
             };
         };
     };
     getSysLogList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -16162,7 +16573,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseSysLogDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseSysLogDto"];
                 };
             };
         };
@@ -16184,15 +16595,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseSysLogDto"];
+                    "application/json": components["schemas"]["ApiResponseSysLogDto"];
                 };
             };
         };
     };
     getLoginLogList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -16206,7 +16627,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseLoginLogDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseLoginLogDto"];
                 };
             };
         };
@@ -16228,15 +16649,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseLoginLogDto"];
+                    "application/json": components["schemas"]["ApiResponseLoginLogDto"];
                 };
             };
         };
     };
     getLoginPolicyList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -16250,15 +16681,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseLoginPolicyDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseLoginPolicyDto"];
                 };
             };
         };
     };
     getDeptAuthorities: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path: {
@@ -16274,7 +16715,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseDeptAuthorProjection"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseDeptAuthorProjection"];
                 };
             };
         };
@@ -16296,15 +16737,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListDeptManageDto"];
+                    "application/json": components["schemas"]["ApiResponseListDeptManageDto"];
                 };
             };
         };
     };
     getInstitutionCodeList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -16318,7 +16769,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseInstitutionCodeDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseInstitutionCodeDto"];
                 };
             };
         };
@@ -16340,15 +16791,25 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseInstitutionCodeDto"];
+                    "application/json": components["schemas"]["ApiResponseInstitutionCodeDto"];
                 };
             };
         };
     };
     getInstitutionCodeRecptnList: {
         parameters: {
-            query: {
-                searchDto: components["schemas"]["BaseSearchDto"];
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
             };
             header?: never;
             path?: never;
@@ -16362,7 +16823,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseInstitutionCodeRecptnDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseInstitutionCodeRecptnDto"];
                 };
             };
         };
@@ -16384,7 +16845,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseCnsltManageDto"];
+                    "application/json": components["schemas"]["ApiResponseCnsltManageDto"];
                 };
             };
         };
@@ -16406,7 +16867,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseBoolean"];
+                    "application/json": components["schemas"]["ApiResponseBoolean"];
                 };
             };
         };
@@ -16426,7 +16887,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListBannerDto"];
+                    "application/json": components["schemas"]["ApiResponseListBannerDto"];
                 };
             };
         };
@@ -16448,7 +16909,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListMenuCreateDto"];
+                    "application/json": components["schemas"]["ApiResponseListMenuCreateDto"];
                 };
             };
         };
@@ -16471,7 +16932,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseSmsDto"];
+                    "application/json": components["schemas"]["ApiResponseSmsDto"];
                 };
             };
         };
@@ -16494,7 +16955,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListSmsRecptnDto"];
+                    "application/json": components["schemas"]["ApiResponseListSmsRecptnDto"];
                 };
             };
         };
@@ -16514,18 +16975,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseListCommunityDto"];
+                    "application/json": components["schemas"]["ApiResponseListCommunityDto"];
                 };
             };
         };
     };
     getComments_1: {
         parameters: {
-            query: {
+            query?: {
                 searchKeyword?: string;
                 bbsId?: string;
                 pstId?: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -16539,7 +17005,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseCommentDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseCommentDto"];
                 };
             };
         };
@@ -16548,7 +17014,12 @@ export interface operations {
         parameters: {
             query: {
                 searchWrd: string;
-                pageable: components["schemas"]["Pageable"];
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
             };
             header?: never;
             path?: never;
@@ -16562,7 +17033,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponsePageResponseAddressBookUserDto"];
+                    "application/json": components["schemas"]["ApiResponsePageResponseAddressBookUserDto"];
                 };
             };
         };
@@ -16588,7 +17059,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -16610,7 +17081,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };
@@ -16632,7 +17103,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "*/*": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };

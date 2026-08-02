@@ -61,10 +61,22 @@ public class GlobalExceptionHandler {
     protected ResponseEntity<ApiResponse<Object>> handleMethodArgumentNotValidException(
             MethodArgumentNotValidException e) {
         log.warn(">>> Validation Failed: {}", e.getBindingResult().getObjectName());
+
+        // [W1-14] 종전에는 필드 오류들을 ", " 로 이어 붙인 문장 하나만 내려보내, 클라이언트가
+        //   **어떤 입력이 틀렸는지** 알 수 없었다. 사용자는 폼 전체를 훑으며 스스로 찾아야 했다.
+        //   message 는 그대로 두어 그것을 읽던 클라이언트를 깨지 않고, 필드 정보를 덧붙이기만 한다.
         String message = e.getBindingResult().getFieldErrors().stream()
                 .map(error -> error.getDefaultMessage())
                 .collect(Collectors.joining(", "));
-        return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE, message));
+
+        java.util.List<nuri.foundation.core.response.FieldErrorItem> fieldErrors =
+                e.getBindingResult().getFieldErrors().stream()
+                        .map(error -> new nuri.foundation.core.response.FieldErrorItem(
+                                error.getField(), error.getDefaultMessage()))
+                        .toList();
+
+        return ResponseEntity.badRequest()
+                .body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE, message, fieldErrors));
     }
 
     /**

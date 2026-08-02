@@ -22,6 +22,67 @@ import io.swagger.v3.oas.models.servers.Server;
 @Configuration
 public class OpenApiConfig {
 
+    static {
+        // [W1-15] 유령 required 파라미터 제거.
+        //
+        //   springdoc 은 @AuthenticationPrincipal 을 기본으로 무시하지만(SpringDocSecurityConfiguration),
+        //   이 프로젝트는 자체 메타애노테이션 @LoginUser 를 쓴다(14개소). springdoc 은 그것을 모르므로
+        //   CustomUserDetails 를 **클라이언트가 보내야 하는 파라미터**로 문서화했다 —
+        //   실제로는 서버가 SecurityContext 에서 주입하는 값이라, 스펙이 존재하지 않는 요구를 광고한 셈이다.
+        //   그 결과 생성된 타입·Zod 스키마에도 유령 필드가 실렸다.
+        //
+        //   타입 기준(addRequestWrapperToIgnore)으로도 막는다 — @LoginUser 없이 CustomUserDetails 를
+        //   직접 선언하는 경우까지 덮기 위해서다. 컨트롤러 파라미터는 하나도 건드리지 않는다.
+        org.springdoc.core.utils.SpringDocUtils.getConfig()
+                .addAnnotationsToIgnore(nuri.business.security.annotation.LoginUser.class)
+                .addRequestWrapperToIgnore(nuri.foundation.security.service.CustomUserDetails.class);
+    }
+
+    /**
+     * [W1-15] 표준 응답 봉투의 produces 를 와일드카드에서 {@code application/json} 으로 정정한다.
+     *
+     * <p>전 358개 응답이 와일드카드({@code *}&#47;{@code *})로 선언돼 있어, 생성된 클라이언트가
+     * 응답 타입을 좁히지 못했다.
+     * 다만 전역 {@code springdoc.default-produces-media-type} 으로 일괄 치환하면
+     * <b>파일 다운로드 4건(string/binary)까지 JSON 이라고 거짓 표기</b>한다.
+     *
+     * <p>그래서 일괄 치환 대신 <b>스키마를 근거로 개별 판정</b>한다 — 응답 스키마가
+     * 우리 표준 봉투({@code ApiResponse*})를 가리킬 때만 JSON 으로 확정하고, 그 외(바이너리 등)는
+     * 손대지 않는다. 판정 근거가 스펙 자체에 있으므로 대상이 늘거나 줄어도 자동으로 맞는다.
+     * (GEMINI.md §0.7-H4 — 의미가 다른 호출부를 같은 방식으로 쓸어담지 않는다.)
+     */
+    @Bean
+    public org.springdoc.core.customizers.OperationCustomizer jsonEnvelopeProducesCustomizer() {
+        return (operation, handlerMethod) -> {
+            io.swagger.v3.oas.models.responses.ApiResponses responses = operation.getResponses();
+            if (responses == null) {
+                return operation;
+            }
+            responses.values().forEach(response -> {
+                io.swagger.v3.oas.models.media.Content content = response.getContent();
+                if (content == null) {
+                    return;
+                }
+                io.swagger.v3.oas.models.media.MediaType wildcard = content.get("*/*");
+                if (wildcard == null || content.containsKey(APPLICATION_JSON)) {
+                    return;
+                }
+                String ref = wildcard.getSchema() == null ? null : wildcard.getSchema().get$ref();
+                if (ref == null || !ref.startsWith(ENVELOPE_REF_PREFIX)) {
+                    return; // 표준 봉투가 아니다 — 실제 미디어 타입을 모르므로 그대로 둔다.
+                }
+                content.remove("*/*");
+                content.addMediaType(APPLICATION_JSON, wildcard);
+            });
+            return operation;
+        };
+    }
+
+    private static final String APPLICATION_JSON = "application/json";
+
+    /** 표준 응답 봉투 스키마 참조 접두사 ({@code ApiResponseVoid}, {@code ApiResponseBoardDto} …). */
+    private static final String ENVELOPE_REF_PREFIX = "#/components/schemas/ApiResponse";
+
     /**
      * 전체 API 그룹 (v1)
      */

@@ -31,22 +31,18 @@ export const ApiResponseVoidSchema = z.object({
   message: z.string().optional(),
   data: z.record(z.string(), z.any()).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseVoid = z.infer<typeof ApiResponseVoidSchema>;
 
 // ==========================================================================
-// CustomUserDetails Schema
+// FieldErrorItem Schema
 // ==========================================================================
-export const CustomUserDetailsSchema = z.object({
-  userId: z.string().optional(),
-  esntlId: z.string().optional(),
-  userNm: z.string().optional(),
-  roleName: z.string().optional(),
-  lockAt: z.string().optional(),
-  authorCode: z.string().optional(),
-  authorityCodes: z.array(z.string()).optional(),
+export const FieldErrorItemSchema = z.object({
+  field: z.string().optional(),
+  message: z.string().optional(),
 });
-export type CustomUserDetails = z.infer<typeof CustomUserDetailsSchema>;
+export type FieldErrorItem = z.infer<typeof FieldErrorItemSchema>;
 
 // ==========================================================================
 // UserDto Schema
@@ -809,6 +805,7 @@ export const ApiResponseUserResponseSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => UserResponseSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseUserResponse = z.infer<typeof ApiResponseUserResponseSchema>;
 
@@ -832,6 +829,7 @@ export const ApiResponseStringSchema = z.object({
   message: z.string().optional(),
   data: z.string().optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseString = z.infer<typeof ApiResponseStringSchema>;
 
@@ -909,6 +907,7 @@ export const ApiResponseLongSchema = z.object({
   message: z.string().optional(),
   data: z.number().optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseLong = z.infer<typeof ApiResponseLongSchema>;
 
@@ -922,6 +921,7 @@ export const ApiResponseIntegerSchema = z.object({
   message: z.string().optional(),
   data: z.number().optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseInteger = z.infer<typeof ApiResponseIntegerSchema>;
 
@@ -935,6 +935,7 @@ export const ApiResponseTokenResponseSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => TokenResponseSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseTokenResponse = z.infer<typeof ApiResponseTokenResponseSchema>;
 
@@ -1134,6 +1135,7 @@ export const ApiResponseRewardManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => RewardManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseRewardManageDto = z.infer<typeof ApiResponseRewardManageDtoSchema>;
 
@@ -1169,6 +1171,7 @@ export const ApiResponseExternalHrDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => ExternalHrDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseExternalHrDto = z.infer<typeof ApiResponseExternalHrDtoSchema>;
 
@@ -1182,6 +1185,7 @@ export const ApiResponseCommunityDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => CommunityDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseCommunityDto = z.infer<typeof ApiResponseCommunityDtoSchema>;
 
@@ -1221,24 +1225,6 @@ export const BulkDeptMoveRequestSchema = z.object({
 export type BulkDeptMoveRequest = z.infer<typeof BulkDeptMoveRequestSchema>;
 
 // ==========================================================================
-// BaseSearchDto Schema
-// ==========================================================================
-export const BaseSearchDtoSchema = z.object({
-  searchCondition: z.string().min(0).max(255).optional(),
-  searchKeyword: z.string().min(0).max(255).optional(),
-  searchUseYn: z.string().min(0).max(1).optional(),
-  pageIndex: z.number().optional(),
-  pageUnit: z.number().optional(),
-  pageSize: z.number().optional(),
-  firstIndex: z.number().optional(),
-  lastIndex: z.number().optional(),
-  recordCountPerPage: z.number().optional(),
-  searchKeywordFrom: z.string().optional(),
-  searchKeywordTo: z.string().optional(),
-});
-export type BaseSearchDto = z.infer<typeof BaseSearchDtoSchema>;
-
-// ==========================================================================
 // ApiResponsePageResponseWorkReportDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseWorkReportDtoSchema = z.object({
@@ -1248,6 +1234,7 @@ export const ApiResponsePageResponseWorkReportDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseWorkReportDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseWorkReportDto = z.infer<typeof ApiResponsePageResponseWorkReportDtoSchema>;
 
@@ -1273,6 +1260,7 @@ export const ApiResponseWorkReportDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => WorkReportDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseWorkReportDto = z.infer<typeof ApiResponseWorkReportDtoSchema>;
 
@@ -1286,6 +1274,7 @@ export const ApiResponseListUserSearchDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => UserSearchDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListUserSearchDto = z.infer<typeof ApiResponseListUserSearchDtoSchema>;
 
@@ -1309,6 +1298,7 @@ export const ApiResponseUserDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => UserDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseUserDto = z.infer<typeof ApiResponseUserDtoSchema>;
 
@@ -1322,6 +1312,7 @@ export const ApiResponseBooleanSchema = z.object({
   message: z.string().optional(),
   data: z.boolean().optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseBoolean = z.infer<typeof ApiResponseBooleanSchema>;
 
@@ -1335,6 +1326,7 @@ export const ApiResponseListStatsDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => StatsDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListStatsDto = z.infer<typeof ApiResponseListStatsDtoSchema>;
 
@@ -1377,6 +1369,7 @@ export const ApiResponsePageResponseScrapDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseScrapDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseScrapDto = z.infer<typeof ApiResponsePageResponseScrapDtoSchema>;
 
@@ -1402,6 +1395,7 @@ export const ApiResponseScrapDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => ScrapDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseScrapDto = z.infer<typeof ApiResponseScrapDtoSchema>;
 
@@ -1415,6 +1409,7 @@ export const ApiResponsePageResponseScheduleDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseScheduleDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseScheduleDto = z.infer<typeof ApiResponsePageResponseScheduleDtoSchema>;
 
@@ -1440,6 +1435,7 @@ export const ApiResponseScheduleDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => ScheduleDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseScheduleDto = z.infer<typeof ApiResponseScheduleDtoSchema>;
 
@@ -1453,6 +1449,7 @@ export const ApiResponseListScheduleDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => ScheduleDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListScheduleDto = z.infer<typeof ApiResponseListScheduleDtoSchema>;
 
@@ -1466,6 +1463,7 @@ export const ApiResponsePopupDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PopupDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePopupDto = z.infer<typeof ApiResponsePopupDtoSchema>;
 
@@ -1479,18 +1477,9 @@ export const ApiResponseListPopupDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => PopupDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListPopupDto = z.infer<typeof ApiResponseListPopupDtoSchema>;
-
-// ==========================================================================
-// Pageable Schema
-// ==========================================================================
-export const PageableSchema = z.object({
-  page: z.number().min(0).optional(),
-  size: z.number().min(1).optional(),
-  sort: z.array(z.string()).optional(),
-});
-export type Pageable = z.infer<typeof PageableSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseOnlinePollManageDto Schema
@@ -1502,6 +1491,7 @@ export const ApiResponsePageResponseOnlinePollManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseOnlinePollManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseOnlinePollManageDto = z.infer<typeof ApiResponsePageResponseOnlinePollManageDtoSchema>;
 
@@ -1527,6 +1517,7 @@ export const ApiResponseOnlinePollManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => OnlinePollManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseOnlinePollManageDto = z.infer<typeof ApiResponseOnlinePollManageDtoSchema>;
 
@@ -1540,6 +1531,7 @@ export const ApiResponseListOnlinePollArticleDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => OnlinePollArticleDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListOnlinePollArticleDto = z.infer<typeof ApiResponseListOnlinePollArticleDtoSchema>;
 
@@ -1553,6 +1545,7 @@ export const ApiResponsePageResponseNotificationDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseNotificationDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseNotificationDto = z.infer<typeof ApiResponsePageResponseNotificationDtoSchema>;
 
@@ -1578,6 +1571,7 @@ export const ApiResponseNotificationDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => NotificationDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseNotificationDto = z.infer<typeof ApiResponseNotificationDtoSchema>;
 
@@ -1591,6 +1585,7 @@ export const ApiResponseNoteDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => NoteDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseNoteDto = z.infer<typeof ApiResponseNoteDtoSchema>;
 
@@ -1604,6 +1599,7 @@ export const ApiResponsePageResponseNoteDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseNoteDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseNoteDto = z.infer<typeof ApiResponsePageResponseNoteDtoSchema>;
 
@@ -1629,6 +1625,7 @@ export const ApiResponseMapStringObjectSchema = z.object({
   message: z.string().optional(),
   data: z.record(z.string(), z.any()).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseMapStringObject = z.infer<typeof ApiResponseMapStringObjectSchema>;
 
@@ -1642,6 +1639,7 @@ export const ApiResponsePageResponseMemoReportDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseMemoReportDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseMemoReportDto = z.infer<typeof ApiResponsePageResponseMemoReportDtoSchema>;
 
@@ -1667,6 +1665,7 @@ export const ApiResponseMemoReportDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => MemoReportDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseMemoReportDto = z.infer<typeof ApiResponseMemoReportDtoSchema>;
 
@@ -1680,6 +1679,7 @@ export const ApiResponsePageResponseMainImageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseMainImageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseMainImageDto = z.infer<typeof ApiResponsePageResponseMainImageDtoSchema>;
 
@@ -1705,6 +1705,7 @@ export const ApiResponseMainImageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => MainImageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseMainImageDto = z.infer<typeof ApiResponseMainImageDtoSchema>;
 
@@ -1718,6 +1719,7 @@ export const ApiResponseListMainImageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => MainImageDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListMainImageDto = z.infer<typeof ApiResponseListMainImageDtoSchema>;
 
@@ -1731,6 +1733,7 @@ export const ApiResponsePageResponseSentMailDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseSentMailDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseSentMailDto = z.infer<typeof ApiResponsePageResponseSentMailDtoSchema>;
 
@@ -1756,6 +1759,7 @@ export const ApiResponseSentMailDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => SentMailDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseSentMailDto = z.infer<typeof ApiResponseSentMailDtoSchema>;
 
@@ -1769,6 +1773,7 @@ export const ApiResponseInformalSanctionDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => InformalSanctionDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseInformalSanctionDto = z.infer<typeof ApiResponseInformalSanctionDtoSchema>;
 
@@ -1782,6 +1787,7 @@ export const ApiResponsePageResponseInformalSanctionDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseInformalSanctionDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseInformalSanctionDto = z.infer<typeof ApiResponsePageResponseInformalSanctionDtoSchema>;
 
@@ -1807,6 +1813,7 @@ export const ApiResponsePageResponseOnlineManualDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseOnlineManualDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseOnlineManualDto = z.infer<typeof ApiResponsePageResponseOnlineManualDtoSchema>;
 
@@ -1832,6 +1839,7 @@ export const ApiResponseOnlineManualDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => OnlineManualDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseOnlineManualDto = z.infer<typeof ApiResponseOnlineManualDtoSchema>;
 
@@ -1845,6 +1853,7 @@ export const ApiResponsePageResponseHpcmDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseHpcmDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseHpcmDto = z.infer<typeof ApiResponsePageResponseHpcmDtoSchema>;
 
@@ -1870,6 +1879,7 @@ export const ApiResponseHpcmDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => HpcmDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseHpcmDto = z.infer<typeof ApiResponseHpcmDtoSchema>;
 
@@ -1883,6 +1893,7 @@ export const ApiResponseListFileDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => FileDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListFileDto = z.infer<typeof ApiResponseListFileDtoSchema>;
 
@@ -1912,6 +1923,7 @@ export const ApiResponsePageResponseFaqDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseFaqDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseFaqDto = z.infer<typeof ApiResponsePageResponseFaqDtoSchema>;
 
@@ -1937,6 +1949,7 @@ export const ApiResponseFaqDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => FaqDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseFaqDto = z.infer<typeof ApiResponseFaqDtoSchema>;
 
@@ -1950,6 +1963,7 @@ export const ApiResponsePageResponseDeptJobDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseDeptJobDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseDeptJobDto = z.infer<typeof ApiResponsePageResponseDeptJobDtoSchema>;
 
@@ -1975,6 +1989,7 @@ export const ApiResponseDeptJobDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => DeptJobDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseDeptJobDto = z.infer<typeof ApiResponseDeptJobDtoSchema>;
 
@@ -1988,6 +2003,7 @@ export const ApiResponsePageResponseDeptJobBoxDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseDeptJobBoxDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseDeptJobBoxDto = z.infer<typeof ApiResponsePageResponseDeptJobBoxDtoSchema>;
 
@@ -2013,6 +2029,7 @@ export const ApiResponseDeptJobBoxDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => DeptJobBoxDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseDeptJobBoxDto = z.infer<typeof ApiResponseDeptJobBoxDtoSchema>;
 
@@ -2026,6 +2043,7 @@ export const ApiResponsePageResponseCommunityDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseCommunityDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseCommunityDto = z.infer<typeof ApiResponsePageResponseCommunityDtoSchema>;
 
@@ -2051,6 +2069,7 @@ export const ApiResponsePageResponseCommentDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseCommentDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseCommentDto = z.infer<typeof ApiResponsePageResponseCommentDtoSchema>;
 
@@ -2076,6 +2095,7 @@ export const ApiResponsePageResponseRestdeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseRestdeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseRestdeDto = z.infer<typeof ApiResponsePageResponseRestdeDtoSchema>;
 
@@ -2101,6 +2121,7 @@ export const ApiResponseRestdeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => RestdeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseRestdeDto = z.infer<typeof ApiResponseRestdeDtoSchema>;
 
@@ -2114,6 +2135,7 @@ export const ApiResponsePageResponseBoardDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseBoardDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseBoardDto = z.infer<typeof ApiResponsePageResponseBoardDtoSchema>;
 
@@ -2173,6 +2195,7 @@ export const ApiResponseBoardStatsResponseSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => BoardStatsResponseSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseBoardStatsResponse = z.infer<typeof ApiResponseBoardStatsResponseSchema>;
 
@@ -2197,6 +2220,7 @@ export const ApiResponseBoardDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => BoardDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseBoardDto = z.infer<typeof ApiResponseBoardDtoSchema>;
 
@@ -2210,6 +2234,7 @@ export const ApiResponseListBannerDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => BannerDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListBannerDto = z.infer<typeof ApiResponseListBannerDtoSchema>;
 
@@ -2223,6 +2248,7 @@ export const ApiResponseCurrentUserResponseSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => CurrentUserResponseSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseCurrentUserResponse = z.infer<typeof ApiResponseCurrentUserResponseSchema>;
 
@@ -2248,6 +2274,7 @@ export const ApiResponseListMyPageContentDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => MyPageContentDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListMyPageContentDto = z.infer<typeof ApiResponseListMyPageContentDtoSchema>;
 
@@ -2261,6 +2288,7 @@ export const ApiResponsePageResponseUserDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseUserDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseUserDto = z.infer<typeof ApiResponsePageResponseUserDtoSchema>;
 
@@ -2286,6 +2314,7 @@ export const ApiResponsePageResponseAuthorGroupProjectionSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseAuthorGroupProjectionSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseAuthorGroupProjection = z.infer<typeof ApiResponsePageResponseAuthorGroupProjectionSchema>;
 
@@ -2326,6 +2355,7 @@ export const ApiResponseListUserAbsenceDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => UserAbsenceDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListUserAbsenceDto = z.infer<typeof ApiResponseListUserAbsenceDtoSchema>;
 
@@ -2339,6 +2369,7 @@ export const ApiResponseUserAbsenceDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => UserAbsenceDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseUserAbsenceDto = z.infer<typeof ApiResponseUserAbsenceDtoSchema>;
 
@@ -2352,6 +2383,7 @@ export const ApiResponseListTemplateDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => TemplateDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListTemplateDto = z.infer<typeof ApiResponseListTemplateDtoSchema>;
 
@@ -2365,6 +2397,7 @@ export const ApiResponseTemplateDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => TemplateDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseTemplateDto = z.infer<typeof ApiResponseTemplateDtoSchema>;
 
@@ -2378,6 +2411,7 @@ export const ApiResponseListSurveyQuestionDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => SurveyQuestionDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListSurveyQuestionDto = z.infer<typeof ApiResponseListSurveyQuestionDtoSchema>;
 
@@ -2391,6 +2425,7 @@ export const ApiResponseSurveyInfoDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => SurveyInfoDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseSurveyInfoDto = z.infer<typeof ApiResponseSurveyInfoDtoSchema>;
 
@@ -2404,6 +2439,7 @@ export const ApiResponseSurveyTemplateDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => SurveyTemplateDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseSurveyTemplateDto = z.infer<typeof ApiResponseSurveyTemplateDtoSchema>;
 
@@ -2417,6 +2453,7 @@ export const ApiResponsePageResponseSurveyTemplateDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseSurveyTemplateDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseSurveyTemplateDto = z.infer<typeof ApiResponsePageResponseSurveyTemplateDtoSchema>;
 
@@ -2442,6 +2479,7 @@ export const ApiResponsePageResponseSurveyInfoDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseSurveyInfoDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseSurveyInfoDto = z.infer<typeof ApiResponsePageResponseSurveyInfoDtoSchema>;
 
@@ -2467,6 +2505,7 @@ export const ApiResponseSummaryStatsDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => SummaryStatsDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseSummaryStatsDto = z.infer<typeof ApiResponseSummaryStatsDtoSchema>;
 
@@ -2490,6 +2529,7 @@ export const ApiResponsePageResponseRoleManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseRoleManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseRoleManageDto = z.infer<typeof ApiResponsePageResponseRoleManageDtoSchema>;
 
@@ -2515,6 +2555,7 @@ export const ApiResponseRoleManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => RoleManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseRoleManageDto = z.infer<typeof ApiResponseRoleManageDtoSchema>;
 
@@ -2528,6 +2569,7 @@ export const ApiResponsePageResponseProgramDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseProgramDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseProgramDto = z.infer<typeof ApiResponsePageResponseProgramDtoSchema>;
 
@@ -2553,6 +2595,7 @@ export const ApiResponseProgramDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => ProgramDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseProgramDto = z.infer<typeof ApiResponseProgramDtoSchema>;
 
@@ -2566,6 +2609,7 @@ export const ApiResponsePageResponsePopupDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponsePopupDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponsePopupDto = z.infer<typeof ApiResponsePageResponsePopupDtoSchema>;
 
@@ -2591,6 +2635,7 @@ export const ApiResponseListPolicySchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => PolicySchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListPolicy = z.infer<typeof ApiResponseListPolicySchema>;
 
@@ -2614,6 +2659,7 @@ export const ApiResponsePolicySchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PolicySchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePolicy = z.infer<typeof ApiResponsePolicySchema>;
 
@@ -2627,6 +2673,7 @@ export const ApiResponsePageResponseNetworkStatusDetailedDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseNetworkStatusDetailedDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseNetworkStatusDetailedDto = z.infer<typeof ApiResponsePageResponseNetworkStatusDetailedDtoSchema>;
 
@@ -2664,6 +2711,7 @@ export const ApiResponsePageResponseMenuDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseMenuDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseMenuDto = z.infer<typeof ApiResponsePageResponseMenuDtoSchema>;
 
@@ -2689,6 +2737,7 @@ export const ApiResponseMenuDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => MenuDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseMenuDto = z.infer<typeof ApiResponseMenuDtoSchema>;
 
@@ -2702,6 +2751,7 @@ export const ApiResponseListMenuCreateDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => MenuCreateDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListMenuCreateDto = z.infer<typeof ApiResponseListMenuCreateDtoSchema>;
 
@@ -2730,6 +2780,7 @@ export const ApiResponsePageResponseMenuCreateDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseMenuCreateDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseMenuCreateDto = z.infer<typeof ApiResponsePageResponseMenuCreateDtoSchema>;
 
@@ -2755,6 +2806,7 @@ export const ApiResponseListMenuDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => MenuDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListMenuDto = z.infer<typeof ApiResponseListMenuDtoSchema>;
 
@@ -2768,6 +2820,7 @@ export const ApiResponsePageResponseSysLogDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseSysLogDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseSysLogDto = z.infer<typeof ApiResponsePageResponseSysLogDtoSchema>;
 
@@ -2808,6 +2861,7 @@ export const ApiResponseSysLogDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => SysLogDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseSysLogDto = z.infer<typeof ApiResponseSysLogDtoSchema>;
 
@@ -2821,6 +2875,7 @@ export const ApiResponsePageResponseLoginLogDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseLoginLogDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseLoginLogDto = z.infer<typeof ApiResponsePageResponseLoginLogDtoSchema>;
 
@@ -2860,6 +2915,7 @@ export const ApiResponseLoginLogDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => LoginLogDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseLoginLogDto = z.infer<typeof ApiResponseLoginLogDtoSchema>;
 
@@ -2873,6 +2929,7 @@ export const ApiResponsePageResponseLoginPolicyDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseLoginPolicyDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseLoginPolicyDto = z.infer<typeof ApiResponsePageResponseLoginPolicyDtoSchema>;
 
@@ -2898,6 +2955,7 @@ export const ApiResponseLoginPolicyDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => LoginPolicyDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseLoginPolicyDto = z.infer<typeof ApiResponseLoginPolicyDtoSchema>;
 
@@ -2911,6 +2969,7 @@ export const ApiResponsePageResponseInternetSvcGuidanceDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseInternetSvcGuidanceDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseInternetSvcGuidanceDto = z.infer<typeof ApiResponsePageResponseInternetSvcGuidanceDtoSchema>;
 
@@ -2936,6 +2995,7 @@ export const ApiResponseInternetSvcGuidanceDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => InternetSvcGuidanceDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseInternetSvcGuidanceDto = z.infer<typeof ApiResponseInternetSvcGuidanceDtoSchema>;
 
@@ -2949,6 +3009,7 @@ export const ApiResponsePageResponseGroupManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseGroupManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseGroupManageDto = z.infer<typeof ApiResponsePageResponseGroupManageDtoSchema>;
 
@@ -2974,6 +3035,7 @@ export const ApiResponseGroupManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => GroupManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseGroupManageDto = z.infer<typeof ApiResponseGroupManageDtoSchema>;
 
@@ -2987,6 +3049,7 @@ export const ApiResponsePageResponseDeptAuthorProjectionSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseDeptAuthorProjectionSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseDeptAuthorProjection = z.infer<typeof ApiResponsePageResponseDeptAuthorProjectionSchema>;
 
@@ -3026,6 +3089,7 @@ export const ApiResponsePageResponseDeptManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseDeptManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseDeptManageDto = z.infer<typeof ApiResponsePageResponseDeptManageDtoSchema>;
 
@@ -3051,6 +3115,7 @@ export const ApiResponseDeptManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => DeptManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseDeptManageDto = z.infer<typeof ApiResponseDeptManageDtoSchema>;
 
@@ -3064,6 +3129,7 @@ export const ApiResponseListDeptManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => DeptManageDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListDeptManageDto = z.infer<typeof ApiResponseListDeptManageDtoSchema>;
 
@@ -3077,6 +3143,7 @@ export const ApiResponsePageResponseInstitutionCodeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseInstitutionCodeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseInstitutionCodeDto = z.infer<typeof ApiResponsePageResponseInstitutionCodeDtoSchema>;
 
@@ -3131,6 +3198,7 @@ export const ApiResponseInstitutionCodeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => InstitutionCodeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseInstitutionCodeDto = z.infer<typeof ApiResponseInstitutionCodeDtoSchema>;
 
@@ -3144,6 +3212,7 @@ export const ApiResponsePageResponseInstitutionCodeRecptnDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseInstitutionCodeRecptnDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseInstitutionCodeRecptnDto = z.infer<typeof ApiResponsePageResponseInstitutionCodeRecptnDtoSchema>;
 
@@ -3169,6 +3238,7 @@ export const ApiResponsePageResponseCmmnDetailCodeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseCmmnDetailCodeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseCmmnDetailCodeDto = z.infer<typeof ApiResponsePageResponseCmmnDetailCodeDtoSchema>;
 
@@ -3194,6 +3264,7 @@ export const ApiResponseCmmnDetailCodeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => CmmnDetailCodeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseCmmnDetailCodeDto = z.infer<typeof ApiResponseCmmnDetailCodeDtoSchema>;
 
@@ -3207,6 +3278,7 @@ export const ApiResponsePageResponseCmmnCodeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseCmmnCodeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseCmmnCodeDto = z.infer<typeof ApiResponsePageResponseCmmnCodeDtoSchema>;
 
@@ -3232,6 +3304,7 @@ export const ApiResponseCmmnCodeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => CmmnCodeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseCmmnCodeDto = z.infer<typeof ApiResponseCmmnCodeDtoSchema>;
 
@@ -3245,6 +3318,7 @@ export const ApiResponsePageResponseCmmnClCodeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseCmmnClCodeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseCmmnClCodeDto = z.infer<typeof ApiResponsePageResponseCmmnClCodeDtoSchema>;
 
@@ -3270,6 +3344,7 @@ export const ApiResponseCmmnClCodeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => CmmnClCodeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseCmmnClCodeDto = z.infer<typeof ApiResponseCmmnClCodeDtoSchema>;
 
@@ -3283,6 +3358,7 @@ export const ApiResponsePageResponseAdministCodeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseAdministCodeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseAdministCodeDto = z.infer<typeof ApiResponsePageResponseAdministCodeDtoSchema>;
 
@@ -3308,6 +3384,7 @@ export const ApiResponseAdministCodeDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => AdministCodeDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseAdministCodeDto = z.infer<typeof ApiResponseAdministCodeDtoSchema>;
 
@@ -3321,6 +3398,7 @@ export const ApiResponsePageResponseCnsltManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseCnsltManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseCnsltManageDto = z.infer<typeof ApiResponsePageResponseCnsltManageDtoSchema>;
 
@@ -3346,6 +3424,7 @@ export const ApiResponseCnsltManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => CnsltManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseCnsltManageDto = z.infer<typeof ApiResponseCnsltManageDtoSchema>;
 
@@ -3359,6 +3438,7 @@ export const ApiResponsePageResponseBoardMasterDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseBoardMasterDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseBoardMasterDto = z.infer<typeof ApiResponsePageResponseBoardMasterDtoSchema>;
 
@@ -3384,6 +3464,7 @@ export const ApiResponseBoardMasterDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => BoardMasterDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseBoardMasterDto = z.infer<typeof ApiResponseBoardMasterDtoSchema>;
 
@@ -3397,6 +3478,7 @@ export const ApiResponsePageResponseBannerDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseBannerDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseBannerDto = z.infer<typeof ApiResponsePageResponseBannerDtoSchema>;
 
@@ -3422,6 +3504,7 @@ export const ApiResponseBannerDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => BannerDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseBannerDto = z.infer<typeof ApiResponseBannerDtoSchema>;
 
@@ -3435,6 +3518,7 @@ export const ApiResponsePageResponseAuthorManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseAuthorManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseAuthorManageDto = z.infer<typeof ApiResponsePageResponseAuthorManageDtoSchema>;
 
@@ -3460,6 +3544,7 @@ export const ApiResponseAuthorManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => AuthorManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseAuthorManageDto = z.infer<typeof ApiResponseAuthorManageDtoSchema>;
 
@@ -3473,6 +3558,7 @@ export const ApiResponsePageResponseAuthorRoleProjectionSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseAuthorRoleProjectionSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseAuthorRoleProjection = z.infer<typeof ApiResponsePageResponseAuthorRoleProjectionSchema>;
 
@@ -3514,6 +3600,7 @@ export const ApiResponsePageResponseSmsDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseSmsDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseSmsDto = z.infer<typeof ApiResponsePageResponseSmsDtoSchema>;
 
@@ -3539,6 +3626,7 @@ export const ApiResponseSmsDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => SmsDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseSmsDto = z.infer<typeof ApiResponseSmsDtoSchema>;
 
@@ -3552,6 +3640,7 @@ export const ApiResponseListSmsRecptnDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => SmsRecptnDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListSmsRecptnDto = z.infer<typeof ApiResponseListSmsRecptnDtoSchema>;
 
@@ -3565,6 +3654,7 @@ export const ApiResponsePageResponseRewardManageDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseRewardManageDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseRewardManageDto = z.infer<typeof ApiResponsePageResponseRewardManageDtoSchema>;
 
@@ -3590,6 +3680,7 @@ export const ApiResponsePageResponseExternalHrDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseExternalHrDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseExternalHrDto = z.infer<typeof ApiResponsePageResponseExternalHrDtoSchema>;
 
@@ -3615,6 +3706,7 @@ export const ApiResponsePageResponseEventInfoDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseEventInfoDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseEventInfoDto = z.infer<typeof ApiResponsePageResponseEventInfoDtoSchema>;
 
@@ -3640,6 +3732,7 @@ export const ApiResponseEventInfoDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => EventInfoDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseEventInfoDto = z.infer<typeof ApiResponseEventInfoDtoSchema>;
 
@@ -3653,6 +3746,7 @@ export const ApiResponseListCommunityDtoSchema = z.object({
   message: z.string().optional(),
   data: z.array(z.lazy(() => CommunityDtoSchema)).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseListCommunityDto = z.infer<typeof ApiResponseListCommunityDtoSchema>;
 
@@ -3666,6 +3760,7 @@ export const ApiResponsePageResponseAddressBookDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseAddressBookDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseAddressBookDto = z.infer<typeof ApiResponsePageResponseAddressBookDtoSchema>;
 
@@ -3691,6 +3786,7 @@ export const ApiResponseAddressBookDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => AddressBookDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseAddressBookDto = z.infer<typeof ApiResponseAddressBookDtoSchema>;
 
@@ -3704,6 +3800,7 @@ export const ApiResponsePageResponseAddressBookUserDtoSchema = z.object({
   message: z.string().optional(),
   data: z.lazy(() => PageResponseAddressBookUserDtoSchema).optional(),
   timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponsePageResponseAddressBookUserDto = z.infer<typeof ApiResponsePageResponseAddressBookUserDtoSchema>;
 

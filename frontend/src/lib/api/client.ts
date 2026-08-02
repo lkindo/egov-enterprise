@@ -2,12 +2,23 @@ import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
 import { cache } from 'react';
 
+/** 필드 단위 검증 오류 1건. [W1-14] */
+export interface FieldErrorItem {
+  field: string;
+  message: string;
+}
+
 // 백엔드 공통 응답 포맷
+// [W1-14] 종전에는 백엔드 6필드 중 4개만 선언해 이미 드리프트 중이었다. 함께 정합시킨다.
 export interface ApiResponse<T = unknown> {
   success: boolean;
+  status?: number;
   code: string;
   message: string;
   data: T;
+  timestamp?: string;
+  /** 검증 실패 응답에만 존재한다(그 외에는 직렬화에서 아예 빠진다). */
+  errors?: FieldErrorItem[];
 }
 
 const getBaseURL = () => {

@@ -16,7 +16,18 @@ public record ApiResponse<T>(
         String message,
         T data,
         @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
-        LocalDateTime timestamp) {
+        LocalDateTime timestamp,
+        /**
+         * 필드 단위 검증 오류. [W1-14]
+         *
+         * <p>검증 실패가 아닌 응답에서는 {@code null} 이고, {@code NON_NULL} 이라 직렬화에서 아예 빠진다 —
+         * 즉 기존 응답의 JSON 모양은 바뀌지 않는다.
+         *
+         * <p>{@code message} 는 종전 그대로 남긴다(오류들을 이어 붙인 문장). 그것을 읽던 클라이언트가
+         * 깨지지 않게 하기 위해서다. 새 정보는 <b>덧붙이기만</b> 한다.
+         */
+        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+        java.util.List<FieldErrorItem> errors) {
 
     public static <T> ApiResponse<T> success(T data) {
         return ApiResponse.<T>builder()
@@ -47,6 +58,25 @@ public record ApiResponse<T>(
                 .code(errorCode.getCode())
                 .message(message)
                 .data(null)
+                .timestamp(LocalDateTime.now())
+                .build();
+    }
+
+    /**
+     * 필드 단위 검증 오류를 함께 싣는 에러 팩토리. [W1-14]
+     *
+     * <p>기존 3개 팩토리는 {@code errors} 를 채우지 않으므로(=null) 호출부를 하나도 고치지 않는다.
+     * 이 오버로드는 검증 실패 핸들러 한 곳에서만 쓴다.
+     */
+    public static <T> ApiResponse<T> error(ErrorCode errorCode, String message,
+            java.util.List<FieldErrorItem> errors) {
+        return ApiResponse.<T>builder()
+                .success(false)
+                .status(errorCode.getStatus().value())
+                .code(errorCode.getCode())
+                .message(message)
+                .data(null)
+                .errors(errors)
                 .timestamp(LocalDateTime.now())
                 .build();
     }

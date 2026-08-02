@@ -20,7 +20,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @org.springframework.test.context.TestPropertySource(properties = {
     "springdoc.api-docs.enabled=true",
-    "springdoc.swagger-ui.enabled=true"
+    "springdoc.swagger-ui.enabled=true",
+    // [W1-15] `src/test/resources/application.yml` 이 main 을 shadow 하므로, main 에 선언한 springdoc
+    //   설정은 이 컨텍스트에 도달하지 못한다 — 산출 api-docs.json 이 런타임 스펙과 달라진다.
+    //   @TestPropertySource 는 그 shadow 보다 우선하므로 여기서 다시 못박는다.
+    //   ⚠ main application.yml 의 springdoc 블록과 반드시 동일하게 유지할 것.
+    "springdoc.default-flat-param-object=true"
 })
 class OpenApiDocumentationTest {
 
