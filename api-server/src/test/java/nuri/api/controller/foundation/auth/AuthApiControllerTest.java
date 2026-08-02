@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.auth;
  
+import nuri.foundation.security.net.ClientIpResolver;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.service.auth.AuthService;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
+import org.mockito.Spy;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.http.MediaType;
@@ -48,6 +50,15 @@ class AuthApiControllerTest {
     @Mock
     private UserService userService;
  
+    /**
+     * [W1-07] 신뢰 경계 판정은 목킹하지 않고 <b>실제 구현</b>을 쓴다.
+     * 목으로 바꾸면 "어떤 IP 를 클라이언트로 보는가" 라는 이 컨트롤러의 보안 계약이 테스트에서 사라진다.
+     * MockMvc 의 기본 remoteAddr 은 127.0.0.1 이라 신뢰 대상이고, 따라서 XFF 가 읽힌다.
+     */
+    @Spy
+    private ClientIpResolver clientIpResolver = new ClientIpResolver(
+            "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16");
+
     @InjectMocks
     private AuthApiController authApiController;
  
@@ -195,7 +206,7 @@ class AuthApiControllerTest {
     }
  
     @Test
-    @DisplayName("getClientIp - X-Forwarded-For 헤더 사용")
+    @DisplayName("[W1-07] 신뢰 피어(127.0.0.1)의 X-Forwarded-For 는 채택한다")
     void testGetClientIp_XForwardedFor() throws Exception {
         LoginRequest request = LoginRequest.builder().userId("user01").password("password").build();
         when(authService.login(any(), eq("10.0.0.1"))).thenReturn(TokenResponse.builder().build());
@@ -208,10 +219,10 @@ class AuthApiControllerTest {
     }
  
     @Test
-    @DisplayName("getClientIp - Proxy-Client-IP 헤더 사용")
+    @DisplayName("[W1-07] 비표준 프록시 헤더(Proxy-Client-IP)는 더 이상 읽지 않는다 — 표준 XFF 만 신뢰")
     void testGetClientIp_ProxyClientIp() throws Exception {
         LoginRequest request = LoginRequest.builder().userId("user01").password("password").build();
-        when(authService.login(any(), eq("10.0.0.2"))).thenReturn(TokenResponse.builder().build());
+        when(authService.login(any(), eq("127.0.0.1"))).thenReturn(TokenResponse.builder().build());
  
         mockMvc.perform(post("/api/v1/auth/login")
                 .header("Proxy-Client-IP", "10.0.0.2")
@@ -221,10 +232,10 @@ class AuthApiControllerTest {
     }
  
     @Test
-    @DisplayName("getClientIp - WL-Proxy-Client-IP 헤더 사용")
+    @DisplayName("[W1-07] 비표준 프록시 헤더(WL-Proxy-Client-IP)도 읽지 않는다")
     void testGetClientIp_WlProxyClientIp() throws Exception {
         LoginRequest request = LoginRequest.builder().userId("user01").password("password").build();
-        when(authService.login(any(), eq("10.0.0.3"))).thenReturn(TokenResponse.builder().build());
+        when(authService.login(any(), eq("127.0.0.1"))).thenReturn(TokenResponse.builder().build());
  
         mockMvc.perform(post("/api/v1/auth/login")
                 .header("WL-Proxy-Client-IP", "10.0.0.3")
@@ -234,7 +245,7 @@ class AuthApiControllerTest {
     }
 
     @Test
-    @DisplayName("getClientIp - 모든 헤더가 unknown 일 때")
+    @DisplayName("[W1-07] 헤더가 unknown 이면 위조 불가한 remoteAddr 로 폴백한다")
     void testGetClientIp_UnknownHeaders() throws Exception {
         LoginRequest request = LoginRequest.builder().userId("user01").password("password").build();
         when(authService.login(any(), anyString())).thenReturn(TokenResponse.builder().build());

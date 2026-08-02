@@ -22,7 +22,12 @@ import static org.mockito.Mockito.when;
 class OperationalAuditInterceptorTest {
 
     private final ApplicationEventPublisher publisher = mock(ApplicationEventPublisher.class);
-    private final OperationalAuditInterceptor interceptor = new OperationalAuditInterceptor(publisher);
+    // [W1-07] 감사 로그의 IP 는 신뢰 경계 판정을 거친다(종전에는 XFF 무조건 신뢰 = 위조 가능).
+    //   기본 신뢰 목록으로 구성한 실제 구현을 쓴다 — 목킹하면 판정 규칙이 테스트에서 사라진다.
+    private final OperationalAuditInterceptor interceptor = new OperationalAuditInterceptor(
+            publisher,
+            new nuri.foundation.security.net.ClientIpResolver(
+                    "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"));
 
     @AfterEach
     void tearDown() {

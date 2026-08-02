@@ -21,7 +21,11 @@ class RateLimitFilterTest {
     @BeforeEach
     void setUp() {
         System.setProperty("ratelimit.capacity", "100");
-        filter = new RateLimitFilter();
+        // [W1-07] 신뢰 프록시 기본값(사설 대역 포함)으로 구성한다.
+        //   MockHttpServletRequest 의 기본 remoteAddr 은 127.0.0.1 이라 신뢰 대상이고,
+        //   따라서 X-Forwarded-For 가 읽힌다 — 아래 버킷 상한 테스트가 의도대로 서로 다른 키를 만든다.
+        filter = new RateLimitFilter(new nuri.foundation.security.net.ClientIpResolver(
+                "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"));
         filterChain = mock(FilterChain.class);
     }
 

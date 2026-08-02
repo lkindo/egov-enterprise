@@ -10,7 +10,7 @@ import nuri.business.service.auth.AuthService;
 import nuri.business.service.auth.dto.LoginRequest;
 import nuri.business.service.auth.dto.TokenResponse;
 import nuri.api.controller.foundation.auth.dto.CurrentUserResponse;
-import nuri.api.support.ClientIpResolver;
+import nuri.foundation.security.net.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -27,12 +27,15 @@ public class AuthApiController {
     
     private final AuthService authService;
     private final JwtTokenProvider jwtTokenProvider;
+    // [W1-07] 로그인 IP 제한 정책의 입력이다. XFF 를 무조건 신뢰하던 종전 구현에서는
+    //   헤더 한 줄로 IP 제한을 우회할 수 있었다.
+    private final ClientIpResolver clientIpResolver;
 
     @PostMapping("/login")
     public ApiResponse<TokenResponse> login(@Valid @RequestBody LoginRequest loginRequest,
             HttpServletRequest request,
             HttpServletResponse response) {
-        String clientIp = ClientIpResolver.resolve(request);
+        String clientIp = clientIpResolver.resolve(request);
         log.info(">>> [Login] Attempting login for userId: {} from IP: {}", loginRequest.getUserId(), clientIp);
         TokenResponse tokenResponse = authService.login(loginRequest, clientIp);
         jwtTokenProvider.addRefreshTokenCookie(response, tokenResponse.getRefreshToken());

@@ -2,7 +2,7 @@ package nuri.api.interceptor;
 
 import nuri.foundation.core.event.AuditEvent;
 import nuri.foundation.security.service.CustomUserDetails;
-import nuri.api.support.ClientIpResolver;
+import nuri.foundation.security.net.ClientIpResolver;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +30,10 @@ public class OperationalAuditInterceptor implements HandlerInterceptor {
     private static final String START_ATTR = "nuri.audit.startNanos";
 
     private final ApplicationEventPublisher eventPublisher;
+    // [W1-07] 신뢰 경계 기반 IP 판정. 정적 유틸이던 것을 foundation 빈으로 통합했다.
+    //   종전에는 X-Forwarded-For 를 무조건 신뢰해 감사 로그의 IP 를 누구나 위조할 수 있었다 —
+    //   사후 추적의 근거가 되는 값이라 위조 가능성 자체가 감사를 무의미하게 만든다.
+    private final ClientIpResolver clientIpResolver;
 
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
@@ -51,7 +55,7 @@ public class OperationalAuditInterceptor implements HandlerInterceptor {
         }
 
         eventPublisher.publishEvent(
-                new AuditEvent(reqURL, resolveUserId(), ClientIpResolver.resolve(request), durationMs, LocalDateTime.now()));
+                new AuditEvent(reqURL, resolveUserId(), clientIpResolver.resolve(request), durationMs, LocalDateTime.now()));
     }
 
     private String resolveUserId() {

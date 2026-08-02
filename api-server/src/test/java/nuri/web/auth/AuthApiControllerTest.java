@@ -36,7 +36,12 @@ class AuthApiControllerTest {
         jwtTokenProvider = mock(JwtTokenProvider.class);
         userService = mock(nuri.business.service.user.UserService.class);
 
-        mockMvc = MockMvcBuilders.standaloneSetup(new AuthApiController(authService, jwtTokenProvider, userService))
+        // [W1-07] 로그인 IP 제한의 입력이 되는 신뢰 경계 판정. 실제 구현을 기본 신뢰 목록으로 구성한다.
+        mockMvc = MockMvcBuilders.standaloneSetup(new AuthApiController(
+                authService, jwtTokenProvider,
+                new nuri.foundation.security.net.ClientIpResolver(
+                        "127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"),
+                userService))
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }

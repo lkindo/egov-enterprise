@@ -26,6 +26,13 @@ import java.util.concurrent.TimeUnit;
 @Profile("!stress-test & !bottleneck-test")
 public class RateLimitFilter implements Filter {
 
+    /** [W1-07] 감사 로그·로그인 IP 제한과 동일한 신뢰 경계 판정을 공유한다. */
+    private final nuri.foundation.security.net.ClientIpResolver clientIpResolver;
+
+    public RateLimitFilter(nuri.foundation.security.net.ClientIpResolver clientIpResolver) {
+        this.clientIpResolver = clientIpResolver;
+    }
+
     /** 버킷 맵 상한. 초과 시 W-TinyLFU 가 저빈도 키부터 축출한다. */
     private static final long MAX_BUCKETS = 100_000L;
 
@@ -98,11 +105,18 @@ public class RateLimitFilter implements Filter {
         return buckets.estimatedSize();
     }
 
+    /**
+     * [W1-07] 신뢰 경계 기반 판정으로 통합.
+     *
+     * <p>종전 구현은 {@code X-Forwarded-For} 의 <b>첫 항목을 무조건</b> 채택했다. 그 값은 클라이언트가
+     * 임의로 넣을 수 있으므로, 헤더를 바꿔가며 요청하면 매번 새 버킷이 만들어져
+     * <b>레이트리밋이 통째로 무력화</b>됐다(동시에 버킷 맵 무한 증가의 입력이기도 했다 — W0-14).
+     *
+     * <p>이제 피어가 신뢰 프록시일 때만 XFF 를 읽는다. 판정 로직은 감사 로그·로그인 IP 제한과
+     * 동일한 {@link ClientIpResolver} 를 공유한다 — 종전에는 두 벌의 서로 다른 구현이 있었고
+     * 모듈이 갈려 있어(business-core 는 api-server 를 볼 수 없다) 합칠 수 없었다.
+     */
     private String getClientIp(HttpServletRequest request) {
-        String xf = request.getHeader("X-Forwarded-For");
-        if (xf != null && !xf.isEmpty()) {
-            return xf.split(",")[0];
-        }
-        return request.getRemoteAddr();
+        return clientIpResolver.resolve(request);
     }
 }
