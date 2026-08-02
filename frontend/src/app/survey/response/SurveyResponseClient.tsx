@@ -137,7 +137,7 @@ export default function SurveyResponseClient() {
                   </TableRow>
                 ) : isError ? (
                   <TableRow>
-                    <TableCell colSpan={4} className="h-48 text-center text-destructive">
+                    <TableCell colSpan={4} className="h-48 text-center text-destructive-emphasis">
                       연결 오류: {error instanceof Error ? error.message : '데이터를 가져올 수 없습니다.'}
                     </TableCell>
                   </TableRow>
@@ -168,7 +168,7 @@ export default function SurveyResponseClient() {
                             variant="ghost"
                             size="icon"
                             aria-label={`${item.respondNm || '설문'} 응답 삭제`}
-                            className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                            className="h-8 w-8 text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10"
                             onClick={() => handleDelete(item.qestnrQesitmId, item.respondNm)}
                           >
                             <Trash2 className="h-4 w-4" />

@@ -217,7 +217,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
          className="rounded-2xl border-2 border-destructive/30 overflow-hidden shadow-2xl bg-card mb-10"
        >
          <div className="flex flex-col items-center justify-center h-80 gap-5 text-center px-6">
-           <AlertTriangle className="w-12 h-12 text-destructive" aria-hidden="true" />
+           <AlertTriangle className="w-12 h-12 text-destructive-emphasis" aria-hidden="true" />
            <div className="space-y-2">
              <p className="text-xl font-bold text-foreground">게시글을 불러오지 못했습니다.</p>
              <p className="text-sm font-medium text-muted-foreground max-w-md">{listError}</p>

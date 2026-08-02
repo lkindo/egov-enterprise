@@ -41,7 +41,7 @@ export function WorkflowCanvas({ nodes, edges, className, onNodeClick }: Workflo
     switch (status) {
       case 'completed': return <CheckCircle2 className="text-emerald-500" size={16} />;
       case 'current': return <Play className="text-primary animate-pulse" size={16} />;
-      case 'failed': return <AlertCircle className="text-destructive" size={16} />;
+      case 'failed': return <AlertCircle className="text-destructive-emphasis" size={16} />;
       default: return <Clock className="text-muted-foreground" size={16} />;
     }
   };

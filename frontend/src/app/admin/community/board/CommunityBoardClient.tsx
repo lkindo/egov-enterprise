@@ -142,7 +142,7 @@ function CommunityBoardContent() {
  role="alert"
  className="hub-glass-premium p-16 rounded-lg border-2 border-destructive/30 flex flex-col items-center justify-center text-center space-y-6"
  >
- <AlertTriangle size={48} className="text-destructive" aria-hidden="true" />
+ <AlertTriangle size={48} className="text-destructive-emphasis" aria-hidden="true" />
  <div className="space-y-2">
  <h3 className="text-xl font-bold text-foreground tracking-tight">게시글을 불러오지 못했습니다</h3>
  <p className="text-sm font-medium text-muted-foreground max-w-md mx-auto leading-relaxed">

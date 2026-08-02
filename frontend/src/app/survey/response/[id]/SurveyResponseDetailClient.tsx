@@ -33,7 +33,7 @@ export default function SurveyResponseDetailClient() {
     if (isError) {
         return (
             <div className="p-8 text-center space-y-4">
-                <div className="bg-destructive/10 text-destructive p-4 rounded-lg inline-block">
+                <div className="bg-destructive/10 text-destructive-emphasis p-4 rounded-lg inline-block">
                     {error instanceof Error ? error.message : '데이터를 불러오지 못했습니다.'}
                 </div>
                 <Button onClick={() => router.back()}>뒤로 가기</Button>

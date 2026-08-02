@@ -212,7 +212,7 @@ export function Header({
                       <Button
                         variant="ghost"
                         aria-label="로그아웃"
-                        className="w-full justify-start text-sm h-9 gap-2 text-destructive hover:text-destructive hover:bg-destructive/10 font-medium"
+                        className="w-full justify-start text-sm h-9 gap-2 text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10 font-medium"
                         onClick={() => logout().then(() => router.push('/login'))}
                       >
                         <LogOut size={14} /> 로그아웃

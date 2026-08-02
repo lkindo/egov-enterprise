@@ -145,7 +145,7 @@ const SelectAddressBookDetailClient = () => {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-3">
                                     <Label htmlFor="adbkNm" className="text-sm font-bold flex items-center gap-2 text-muted-foreground">
-                                        <span className="text-destructive">*</span> 주소록 명칭
+                                        <span className="text-destructive-emphasis">*</span> 주소록 명칭
                                     </Label>
                                     <Input
                                         id="adbkNm"

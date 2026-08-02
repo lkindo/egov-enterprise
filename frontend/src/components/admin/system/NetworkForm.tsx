@@ -48,7 +48,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                         name="manageIem"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>관리항목 <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel>관리항목 <span className="text-destructive-emphasis">*</span></FormLabel>
                                 <FormControl>
                                     <Input {...field} placeholder="예: 내부망 서버" />
                                 </FormControl>
@@ -61,7 +61,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                         name="userNm"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>사용자명 <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel>사용자명 <span className="text-destructive-emphasis">*</span></FormLabel>
                                 <FormControl>
                                     <Input {...field} placeholder="관리자 성명" />
                                 </FormControl>
@@ -74,7 +74,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                         name="ntwrkIp"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>IP 주소 <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel>IP 주소 <span className="text-destructive-emphasis">*</span></FormLabel>
                                 <FormControl>
                                     <Input {...field} placeholder="192.168.0.1" className="font-mono" />
                                 </FormControl>
@@ -87,7 +87,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                         name="subnet"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>서브넷 마스크 <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel>서브넷 마스크 <span className="text-destructive-emphasis">*</span></FormLabel>
                                 <FormControl>
                                     <Input {...field} placeholder="255.255.255.0" className="font-mono" />
                                 </FormControl>
@@ -100,7 +100,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                         name="gtwy"
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>게이트웨이 <span className="text-destructive">*</span></FormLabel>
+                                <FormLabel>게이트웨이 <span className="text-destructive-emphasis">*</span></FormLabel>
                                 <FormControl>
                                     <Input {...field} placeholder="192.168.0.254" className="font-mono" />
                                 </FormControl>
@@ -127,7 +127,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                     name="useYn"
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>사용 여부 <span className="text-destructive">*</span></FormLabel>
+                            <FormLabel>사용 여부 <span className="text-destructive-emphasis">*</span></FormLabel>
                             <FormControl>
                                 <select
                                     {...field}

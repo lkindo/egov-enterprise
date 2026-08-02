@@ -80,7 +80,7 @@ function StatsContent() {
 
       {isError && (
         <Card className="border-destructive/20 bg-destructive/5 text-center py-10">
-          <p className="text-destructive font-medium">오류 발생: {error instanceof Error ? error.message : '데이터를 가져오지 못했습니다.'}</p>
+          <p className="text-destructive-emphasis font-medium">오류 발생: {error instanceof Error ? error.message : '데이터를 가져오지 못했습니다.'}</p>
         </Card>
       )}
 

@@ -38,6 +38,8 @@
 
   --color-destructive: hsl(var(--destructive));
   --color-destructive-foreground: hsl(var(--destructive-foreground));
+  /* [I-1] 전경(텍스트·아이콘) 전용. `text-destructive-emphasis` 로 쓴다. */
+  --color-destructive-emphasis: hsl(var(--destructive-emphasis));
 
   --color-card: hsl(var(--card));
   --color-card-foreground: hsl(var(--card-foreground));
@@ -101,15 +103,23 @@
 
     --destructive: 0 84.2% 45%;
     --destructive-foreground: 210 40% 98%;
+    /* [I-1] 전경(텍스트·아이콘) 전용 위험색. --destructive 는 `bg-destructive` 용으로 설계된
+       어두운 빨강이라, 그대로 텍스트에 쓰면 다크 모드에서 대비가 1.99:1(카드 위 1.78:1)까지 떨어진다.
+       배경용과 전경용은 요구가 정반대이므로 토큰을 나눈다. 라이트에서는 기존 값이 이미 5.42:1 이라 동일. */
+    --destructive-emphasis: 0 84.2% 45%;
 
-    --success: 142.1 76.2% 36.3%;
-    --success-foreground: 355.7 100% 97.3%;
+    /* [I-1] bg-success 위 흰 전경이 4.5:1 을 넘도록 배경 명도를 36.3%→30% 로 낮췄다(3.0 → 4.62). */
+    --success: 142.1 76.2% 30%;
+    --success-foreground: 0 0% 100%;
 
+    /* [I-1] 종전 amber-100 전경은 amber-500 배경 위에서 1.92:1 이었다 — 라이트/다크 공통 실패.
+       같은 색상(hue)의 어두운 값으로 바꿔 6.67:1 확보. */
     --warning: 38 92% 50%;
-    --warning-foreground: 48 96% 89%;
+    --warning-foreground: 38 95% 12%;
 
+    /* [I-1] 종전 slate-50 전경은 sky-500 배경 위에서 2.72:1 이었다 → 5.75:1. */
     --info: 199 89% 48%;
-    --info-foreground: 210 40% 98%;
+    --info-foreground: 199 95% 10%;
 
     --border: 214.3 31.8% 91.4%;
     --input: 214.3 31.8% 91.4%;
@@ -168,6 +178,10 @@
 
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 210 40% 98%;
+    /* [I-1] 다크에서 --destructive(30.6% 명도)를 텍스트로 쓰면 배경 대비 1.99:1 · 카드 위 1.78:1 로
+       WCAG AA(4.5:1)의 절반에도 못 미친다. 전경 전용 토큰은 반대로 밝게 가야 한다 → 6.04:1 / 5.41:1.
+       (--destructive 자체를 밝히면 bg-destructive 19곳이 밝은 빨강 배경이 되어 파손된다.) */
+    --destructive-emphasis: 0 91% 65%;
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;

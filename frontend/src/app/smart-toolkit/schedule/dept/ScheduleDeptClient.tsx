@@ -189,7 +189,7 @@ export default function ScheduleDeptClient() {
                                                 <Pencil className="h-4 w-4 text-primary" />
                                             </Button>
                                             <Button variant="ghost" size="icon" onClick={() => handleDelete(schedule.schdlId!)} aria-label={`${schedule.schdlNm || '일정'} 삭제`} className="rounded-lg hover:bg-destructive/10">
-                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                                <Trash2 className="h-4 w-4 text-destructive-emphasis" />
                                             </Button>
                                         </div>
                                     </TableCell>

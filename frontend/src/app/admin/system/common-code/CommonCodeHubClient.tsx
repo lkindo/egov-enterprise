@@ -115,7 +115,7 @@ export default function CommonCodeHubClient({
       {fetchError && (
         <div
           role="alert"
-          className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-6 py-4 text-sm font-bold text-destructive"
+          className="flex items-start gap-3 rounded-lg border border-destructive/30 bg-destructive/10 px-6 py-4 text-sm font-bold text-destructive-emphasis"
         >
           <AlertTriangle size={18} className="mt-0.5 shrink-0" aria-hidden="true" />
           <span>

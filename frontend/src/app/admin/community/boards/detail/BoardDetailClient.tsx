@@ -114,7 +114,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   if (!article && initialData.fetchError) {
     return (
       <div role="alert" className="flex flex-col items-center justify-center min-h-[600px] space-y-6 text-center px-6">
-        <AlertTriangle size={48} className="text-destructive" aria-hidden="true" />
+        <AlertTriangle size={48} className="text-destructive-emphasis" aria-hidden="true" />
         <div className="space-y-2">
           <p className="text-xl font-bold text-foreground">게시글을 불러오지 못했습니다</p>
           <p className="text-sm font-medium text-muted-foreground max-w-md">{initialData.fetchError}</p>

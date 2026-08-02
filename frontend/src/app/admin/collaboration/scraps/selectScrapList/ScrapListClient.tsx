@@ -112,7 +112,7 @@ const ScrapListClient = () => {
                         size="icon"
                         aria-label={`${item.scrapNm ?? '스크랩'} 삭제`}
                         onClick={() => { void handleDelete(item); }}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive-emphasis hover:bg-destructive/10 transition-all"
                     >
                         <Trash2 className="w-4 h-4" />
                     </Button>

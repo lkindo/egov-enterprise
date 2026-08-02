@@ -503,9 +503,9 @@ export default function MenuAdminClient({
       {(menusError || programsError) && (
         <div role="alert" className="flex flex-col gap-3 rounded-lg border-2 border-destructive/30 bg-destructive/5 p-6 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-start gap-3">
-            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-destructive" aria-hidden="true" />
+            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-destructive-emphasis" aria-hidden="true" />
             <div className="space-y-1">
-              <p className="text-sm font-black text-destructive">데이터를 불러오지 못했습니다</p>
+              <p className="text-sm font-black text-destructive-emphasis">데이터를 불러오지 못했습니다</p>
               <p className="text-xs font-semibold text-muted-foreground">
                 {menusError ? `메뉴 트리: ${menusError}` : `프로그램 목록: ${programsError}`}
                 {menusError ? ' — 아래 트리는 비어 있거나 최신 상태가 아닐 수 있습니다.' : ' — 프로그램 자동완성 후보가 비어 있습니다.'}

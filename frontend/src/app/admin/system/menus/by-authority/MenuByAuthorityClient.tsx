@@ -268,9 +268,9 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  {authorityErrorMessage && (
  <div role="alert" className="flex flex-col gap-3 rounded-lg border-2 border-destructive/30 bg-destructive/5 p-6 sm:flex-row sm:items-center sm:justify-between">
  <div className="flex items-start gap-3">
- <ShieldAlert size={20} className="mt-0.5 shrink-0 text-destructive" aria-hidden="true" />
+ <ShieldAlert size={20} className="mt-0.5 shrink-0 text-destructive-emphasis" aria-hidden="true" />
  <div className="space-y-1">
- <p className="text-sm font-bold text-destructive">권한 목록을 불러오지 못했습니다</p>
+ <p className="text-sm font-bold text-destructive-emphasis">권한 목록을 불러오지 못했습니다</p>
  <p className="text-xs font-semibold text-muted-foreground">{authorityErrorMessage}</p>
  </div>
  </div>

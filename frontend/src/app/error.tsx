@@ -33,7 +33,7 @@ export default function Error({
 
             <div className="max-w-lg w-full bg-background/60 backdrop-blur-2xl border-2 border-destructive/10 rounded-lg p-12 shadow-2xl shadow-destructive/5 text-center space-y-8 animate-in slide-in-from-bottom-8 duration-700">
                 <div className="w-24 h-24 bg-destructive/10 rounded-lg flex items-center justify-center mx-auto animate-bounce duration-[3000ms]">
-                    <AlertCircle className="text-destructive" size={44} />
+                    <AlertCircle className="text-destructive-emphasis" size={44} />
                 </div>
 
                 <div className="space-y-4">

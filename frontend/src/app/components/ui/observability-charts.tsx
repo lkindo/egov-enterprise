@@ -127,7 +127,7 @@ export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', classN
         </div>
       </div>
       {value > 90 && (
-        <div className="mt-2 px-3 py-1 bg-destructive/10 text-destructive text-xs font-bold rounded-lg animate-pulse">
+        <div className="mt-2 px-3 py-1 bg-destructive/10 text-destructive-emphasis text-xs font-bold rounded-lg animate-pulse">
           CRITICAL THRESHOLD
         </div>
       )}

@@ -112,7 +112,7 @@ export default function AddressBookInsertHubClient() {
  <Zap size={20} />
  </div>
  <Label htmlFor="adbkNm" className="text-xs font-bold tracking-tight text-muted-foreground">
- 주소록 명칭 <span className="text-destructive">*</span>
+ 주소록 명칭 <span className="text-destructive-emphasis">*</span>
  </Label>
  </div>
     <Input

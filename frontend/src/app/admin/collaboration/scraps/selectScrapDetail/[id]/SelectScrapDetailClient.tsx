@@ -169,7 +169,7 @@ const SelectScrapDetailClient = () => {
             <div className="grid gap-8">
               <div className="group space-y-3">
                 <Label htmlFor="scrapNm" className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
-                  스크랩명 <span className="text-destructive">*</span>
+                  스크랩명 <span className="text-destructive-emphasis">*</span>
                 </Label>
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-muted-foreground transition-colors group-focus-within:text-hub-indigo">
@@ -188,7 +188,7 @@ const SelectScrapDetailClient = () => {
 
               <div className="group space-y-3">
                 <Label htmlFor="scrapUrl" className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
-                  참조 URL <span className="text-destructive">*</span>
+                  참조 URL <span className="text-destructive-emphasis">*</span>
                 </Label>
                 <div className="relative">
                   <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-muted rounded-lg flex items-center justify-center text-muted-foreground transition-colors group-focus-within:text-hub-indigo">
