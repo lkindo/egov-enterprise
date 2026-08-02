@@ -2,7 +2,7 @@
 egovframe = "5.0.0"
 spring-boot = "3.4.3"
 spring-doc = "2.8.5"
-spring-ai = "1.0.0-M5"
+spring-ai = "2.0.0"
 micrometer-tracing = "1.4.3"
 micrometer = "1.14.4"
 spring-boot-admin = "3.4.1"
