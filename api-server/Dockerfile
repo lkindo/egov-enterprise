@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM gradle:9.4.1-jdk21 AS builder
+FROM gradle:9.4.1-jdk21@sha256:2d34fc215310891039e1b2b7797632de8d59eab54496c134bc2da711ba651c50 AS builder
 WORKDIR /app
 # Only copy dependency files first for better caching
 COPY gradle /app/gradle
@@ -45,7 +45,7 @@ RUN sed -i 's/\r$//' ./gradlew && chmod +x ./gradlew
 RUN ./gradlew :api-server:bootJar -x test --no-daemon
 
 # Stage 2: Run
-FROM eclipse-temurin:21-jre-alpine
+FROM eclipse-temurin:21-jre-alpine@sha256:3f08b13888f595cc49edabea7250ba69499ba25602b267da591720769400e08c
 WORKDIR /app
 
 # Create non-root user and setup directory permissions
