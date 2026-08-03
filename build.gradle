@@ -1,6 +1,6 @@
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '3.4.1' apply false
+    id 'org.springframework.boot' version '3.4.13' apply false
     id 'io.spring.dependency-management' version '1.1.7'
     id 'io.freefair.lombok' version '8.12.2' apply false
     id 'jacoco'
@@ -145,9 +145,23 @@ subprojects {
         }
     }
 
+    // [2026-08-04 CVE 상환] BOM 이 주는 것보다 더 최신이 필요한 항목만 개별 상향한다.
+    //   ⚠ 이 오버라이드는 "BOM 을 더 올리면 지워야 하는" 부채다. Boot 3.4.x 라인이
+    //   해당 버전을 따라잡으면 아래 두 줄을 제거하고 BOM 판정에 되돌린다.
+    //
+    //   실측 근거(2026-08-04, `dependencyInsight` + Dependabot 알림의 first_patched_version 대조):
+    //     · tomcat-embed-core — Boot 3.4.13 은 10.1.50 을 준다. 그런데 열린 알림 중
+    //       critical 1건이 >=10.1.55, high 3건이 >=10.1.52/54/55 를 요구한다.
+    //       즉 **BOM 을 최신 패치로 올려도 최상위 심각도가 남는다.** 10.1.57 로 상향.
+    //     · jackson — BOM 은 2.18.5, 열린 high 2건(jackson-core/databind)이 >=2.18.8 요구. 2.18.9 로 상향.
+    //   (반대로 spring-security 는 BOM 이 6.4.13 을 주므로 critical >=6.4.6 이 BOM 만으로 해소된다 —
+    //    필요 없는 오버라이드를 늘리지 않기 위해 확인 후 제외했다.)
+    ext['tomcat.version'] = '10.1.57'
+    ext['jackson-bom.version'] = '2.18.9'
+
     dependencyManagement {
         imports {
-            mavenBom "org.springframework.boot:spring-boot-dependencies:3.4.1"
+            mavenBom "org.springframework.boot:spring-boot-dependencies:3.4.13"
             mavenBom "org.junit:junit-bom:5.12.2"
         }
     }

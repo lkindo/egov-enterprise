@@ -1,12 +1,19 @@
 [versions]
 egovframe = "5.0.0"
-spring-boot = "3.4.1"
+# [2026-08-04 제거] spring-boot = "3.4.1"
+#   이 항목은 `version.ref = "spring-boot"` 참조가 **0건**인 死선언이었다(전수 grep 확인).
+#   Boot 버전의 실제 출처는 build.gradle 두 곳뿐이다 —
+#     · build.gradle:3   plugins { id 'org.springframework.boot' version ... }
+#     · build.gradle:150 mavenBom "org.springframework.boot:spring-boot-dependencies:..."
+#   여기 남겨 두면 "카탈로그가 Boot 버전의 SSOT" 로 읽혀, 이 값만 고치고 실제로는 아무것도
+#   바뀌지 않는 상황이 생긴다(선언 범위 ≠ 실제 범위). 실제 출처가 아닌 선언은 지운다.
+#   ⚠ 위 두 곳은 반드시 함께 바꿔야 한다.
 spring-doc = "2.8.5"
 spring-ai = "1.0.0-M5"
 micrometer-tracing = "1.4.3"
 micrometer = "1.14.4"
 spring-boot-admin = "3.4.1"
-postgresql = "42.7.5"
+postgresql = "42.7.13"
 commons-io = "2.18.0"
 commons-lang3 = "3.17.0"
 commons-net = "3.11.1"
