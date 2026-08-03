@@ -27,17 +27,18 @@ Write-Host "Generating Domain: $domainCap in business-app" -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
 
 # 대상 경로 정의
+#   ⚠ 컨트롤러만 api-server 모듈에 생성한다(아래 6번 참조) — 도메인/서비스/리포지토리는 business-app.
+#     아키텍처 흐름(api-server Controller → business-* Service)과 인가 린터의 스캔 범위가 모두
+#     그 배치를 전제한다.
 $baseDir = "business-app/src/main/java/nuri/business"
 $domainDir = "$baseDir/domain/$domainLower"
 $serviceDir = "$baseDir/service/$domainLower"
 $repoDir = "$baseDir/repository/$domainLower"
-$apiDir = "$baseDir/api/$domainLower"
 
 # 디렉터리 보장
 New-Item -ItemType Directory -Force -Path $domainDir | Out-Null
 New-Item -ItemType Directory -Force -Path $serviceDir | Out-Null
 New-Item -ItemType Directory -Force -Path $repoDir | Out-Null
-New-Item -ItemType Directory -Force -Path $apiDir | Out-Null
 
 # Helper function to write BOM-free UTF-8 file
 function Write-Utf8File($filePath, $content) {
@@ -64,18 +65,12 @@ public class ${domainCap}Dto {
 "@
 Write-Utf8File "$serviceDir/${domainCap}Dto.java" $dtoContent
 
-# 2. SearchDto 생성
-$searchDtoContent = @"
-package nuri.business.service.$domainLower;
-
-import lombok.Data;
-
-@Data
-public class ${domainCap}SearchDto {
-    private String searchKeyword;
-}
-"@
-Write-Utf8File "$serviceDir/${domainCap}SearchDto.java" $searchDtoContent
+# 2. SearchDto — **생성하지 않는다** (2026-08-03)
+#    종전에는 `searchKeyword` 필드 하나짜리 <Domain>SearchDto 를 찍었는데, 그것을 쓰던 유일한 소비처가
+#    BaseCrudService/BaseCrudController 의 제네릭 인자였다. 그 상속을 걷어낸 지금은 **참조 0건**이 된다.
+#    참조 0건 산출물은 용량이 아니라 '살아 있는 훅으로 오인된다'는 점이 문제다(12축 감사 클러스터 D).
+#    검색 조건이 필요하면 저장소 관례인 nuri.business.domain.common.BaseSearchDto 를 @ModelAttribute 로
+#    받는다(FaqApiController 참조) — 도메인마다 같은 필드를 새로 정의하지 않는다.
 
 # 3. Entity 생성
 $entityContent = @"
@@ -127,79 +122,174 @@ public interface ${domainCap}Repository extends JpaRepository<$domainCap, Long> 
 Write-Utf8File "$repoDir/${domainCap}Repository.java" $repoContent
 
 # 5. Service 생성
+#    [G-1 수정 2026-08-03] 종전 템플릿은 `extends BaseCrudService` 였는데 그 클래스는 **저장소에
+#    존재하지 않는다**(nuri.business.core.crud 패키지 자체가 없다). 즉 스캐폴드 산출물이 컴파일되지
+#    않았다. 제네릭 CRUD 베이스를 새로 만드는 선택지는 채택하지 않는다 — 이 팀은 2026-07 에
+#    단일-impl 인터페이스 39개와 EgovIdGnrService 를 걷어내며 two-paradigm 부채를 청산했고,
+#    66개 컨트롤러의 명시(explicit) 관례 옆에 두 번째 작성 방식을 다시 들이는 것이 그 청산을 되돌린다.
+#    그래서 저장소의 실제 관례대로 **명시 CRUD** 를 찍는다.
 $serviceContent = @"
 package nuri.business.service.$domainLower;
 
 import lombok.RequiredArgsConstructor;
-import nuri.business.core.crud.BaseCrudService;
 import nuri.business.domain.$domainLower.$domainCap;
 import nuri.business.repository.$domainLower.${domainCap}Repository;
-import org.springframework.data.jpa.repository.JpaRepository;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * $domainCap 도메인 서비스 (스캐폴드 생성 초안).
+ *
+ * <p>클래스레벨 {@code @Transactional(readOnly = true)} 는 ServiceReadOnlyTransactionalLinterTest
+ * 가 신규 @Service 에 강제하는 규칙이다 — 쓰기 메서드에만 메서드레벨 {@code @Transactional} 을 얹는다.
+ */
 @Service
 @RequiredArgsConstructor
-public class ${domainCap}Service extends BaseCrudService<$domainCap, Long, ${domainCap}Dto, ${domainCap}SearchDto> {
+@Transactional(readOnly = true)
+public class ${domainCap}Service {
 
     private final ${domainCap}Repository repository;
 
-    @Override
-    protected JpaRepository<$domainCap, Long> getRepository() {
-        return repository;
+    public Page<${domainCap}Dto> getList(Pageable pageable) {
+        return repository.findAll(pageable).map(this::toDto);
     }
 
-    @Override
-    protected ${domainCap}Dto toDto($domainCap entity) {
+    public ${domainCap}Dto get(Long id) {
+        return repository.findById(id)
+                .map(this::toDto)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
+    }
+
+    @Transactional
+    public Long create(${domainCap}Dto dto) {
+        $domainCap entity = $domainCap.builder()
+                .$FieldName(dto.get$fieldCap())
+                .build();
+        return repository.save(entity).getId();
+    }
+
+    @Transactional
+    public void update(Long id, ${domainCap}Dto dto) {
+        $domainCap entity = repository.findById(id)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
+        entity.update(dto.get$fieldCap());
+    }
+
+    @Transactional
+    public void delete(Long id) {
+        if (!repository.existsById(id)) {
+            throw new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND);
+        }
+        repository.deleteById(id);
+    }
+
+    private ${domainCap}Dto toDto($domainCap entity) {
         return ${domainCap}Dto.builder()
                 .id(entity.getId())
                 .$FieldName(entity.get$fieldCap())
                 .build();
-    }
-
-    @Override
-    protected $domainCap toEntity(${domainCap}Dto dto) {
-        return $domainCap.builder()
-                .id(dto.getId())
-                .$FieldName(dto.get$fieldCap())
-                .build();
-    }
-
-    @Override
-    protected void updateEntity($domainCap entity, ${domainCap}Dto dto) {
-        entity.update(dto.get$fieldCap());
     }
 }
 "@
 Write-Utf8File "$serviceDir/${domainCap}Service.java" $serviceContent
 
 # 6. Controller 생성
+#    [G-1 수정 2026-08-03] 생성 위치를 business-app 의 `nuri.business.api.*` 에서
+#    api-server 의 `nuri.api.controller.business.*` 로 옮긴다.
+#
+#    이유: SecurityAuthAnnotationLinterTest 는 두 테스트 모두 `nuri.api.controller` 접두로
+#    오딧 대상을 고른다(현행 소스 실측). `nuri.business.api.*` 는 컴포넌트 스캔 대상이라
+#    **요청은 정상적으로 받으면서** 인가 린터의 판정 범위 밖이었다 — 저장소의 공식 도구가
+#    신규 개발자를 게이트 사각지대로 안내하는 형태였다.
+#
+#    또한 생성 즉시 린터를 통과하도록 **인가 애노테이션을 기본 부착**한다(fail-closed).
+#    권한을 넓히는 것은 개발자의 명시적 결정이어야 하며, 그 반대(기본 공개 → 나중에 조이기)는
+#    조이는 시점이 오지 않는다.
+$apiDir = "api-server/src/main/java/nuri/api/controller/business/$domainLower"
+New-Item -ItemType Directory -Force -Path $apiDir | Out-Null
+
 $controllerContent = @"
-package nuri.business.api.$domainLower;
+package nuri.api.controller.business.$domainLower;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import nuri.business.core.crud.BaseCrudController;
-import nuri.business.core.crud.BaseCrudService;
-import nuri.business.domain.$domainLower.$domainCap;
 import nuri.business.service.$domainLower.${domainCap}Dto;
-import nuri.business.service.$domainLower.${domainCap}SearchDto;
 import nuri.business.service.$domainLower.${domainCap}Service;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import nuri.foundation.core.response.ApiResponse;
+import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.security.annotation.AdminOrSystem;
+import nuri.foundation.security.annotation.Authenticated;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
+/**
+ * $domainCap API (스캐폴드 생성 초안).
+ *
+ * <p><b>인가</b>: 읽기는 {@code @Authenticated}, 쓰기는 {@code @AdminOrSystem} 을 기본으로 붙였다.
+ * 도메인 성격에 맞게 <b>좁히거나 넓히되, 지우지는 말 것</b> — 애노테이션이 없으면
+ * SecurityAuthAnnotationLinterTest 가 위반으로 잡는다. 소유권 기반(본인 데이터만) 도메인이면
+ * 서비스 레이어에 소유권 가드를 넣고 그 근거를 린터의 WRITE_AUTHZ_GUARDED_ELSEWHERE 에 등재한다.
+ */
+@Tag(name = "$domainCap", description = "$domainCap API")
 @RestController
 @RequestMapping("/api/v1/$domainLower")
 @RequiredArgsConstructor
-public class ${domainCap}Controller extends BaseCrudController<$domainCap, Long, ${domainCap}Dto, ${domainCap}SearchDto> {
+public class ${domainCap}ApiController {
 
     private final ${domainCap}Service service;
 
-    @Override
-    protected BaseCrudService<$domainCap, Long, ${domainCap}Dto, ${domainCap}SearchDto> getService() {
-        return service;
+    @Operation(summary = "$domainCap 목록 조회")
+    @Authenticated
+    @GetMapping
+    public ResponseEntity<ApiResponse<PageResponse<${domainCap}Dto>>> getList(
+            @RequestParam(defaultValue = "1") int pageIndex,
+            @RequestParam(defaultValue = "10") int pageUnit) {
+        Pageable pageable = PageRequest.of(pageIndex - 1, pageUnit);
+        Page<${domainCap}Dto> page = service.getList(pageable);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
+    }
+
+    @Operation(summary = "$domainCap 상세 조회")
+    @Authenticated
+    @GetMapping("/{id}")
+    public ResponseEntity<ApiResponse<${domainCap}Dto>> get(@PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(service.get(id)));
+    }
+
+    @Operation(summary = "$domainCap 등록")
+    @AdminOrSystem
+    @PostMapping
+    public ResponseEntity<ApiResponse<Long>> create(@Valid @RequestBody ${domainCap}Dto dto) {
+        return ResponseEntity.ok(ApiResponse.success(service.create(dto)));
+    }
+
+    @Operation(summary = "$domainCap 수정")
+    @AdminOrSystem
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> update(@PathVariable Long id, @Valid @RequestBody ${domainCap}Dto dto) {
+        service.update(id, dto);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "$domainCap 삭제")
+    @AdminOrSystem
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> delete(@PathVariable Long id) {
+        service.delete(id);
+        return ResponseEntity.ok(ApiResponse.success(null));
     }
 }
 "@
-Write-Utf8File "$apiDir/${domainCap}Controller.java" $controllerContent
+Write-Utf8File "$apiDir/${domainCap}ApiController.java" $controllerContent
 
 # 7. Flyway 마이그레이션 DDL — **파일로 쓰지 않고 콘솔에만 출력한다**
 #
@@ -241,9 +331,15 @@ Write-Host ""
 Write-Host "=============================================" -ForegroundColor Cyan
 Write-Host "Domain scaffolding generation completed successfully." -ForegroundColor Cyan
 Write-Host "=============================================" -ForegroundColor Cyan
+Write-Host "생성 위치:" -ForegroundColor Cyan
+Write-Host "  · 엔티티/서비스/리포지토리 → business-app/src/main/java/nuri/business/..." -ForegroundColor Gray
+Write-Host "  · 컨트롤러               → api-server/src/main/java/nuri/api/controller/business/$domainLower" -ForegroundColor Gray
+Write-Host ""
 Write-Host "다음 단계:" -ForegroundColor Cyan
 Write-Host "  1. 위 DDL 의 컬럼명을 표준 용어로 확정한 뒤 마이그레이션 파일로 배치" -ForegroundColor Gray
 Write-Host "  2. ./gradlew compileJava compileTestJava 로 컴파일 확인" -ForegroundColor Gray
-Write-Host "  3. 인가가 필요한 엔드포인트면 @PreAuthorize 부착" -ForegroundColor Gray
-Write-Host "     (SecurityAuthAnnotationLinterTest 는 .business/.foundation 패키지를 감사하지 않으므로" -ForegroundColor Gray
-Write-Host "      이 스캐폴드가 만든 컨트롤러의 인가 누락은 게이트가 잡아주지 않습니다)" -ForegroundColor Gray
+Write-Host "  3. 인가 애노테이션은 이미 붙어 있습니다 — 읽기 @Authenticated / 쓰기 @AdminOrSystem." -ForegroundColor Gray
+Write-Host "     도메인에 맞게 조정하되 **지우지 마십시오**. 컨트롤러가 nuri.api.controller 하위라" -ForegroundColor Gray
+Write-Host "     SecurityAuthAnnotationLinterTest 의 오딧 대상이며, 애노테이션이 없으면 게이트가 red 입니다." -ForegroundColor Gray
+Write-Host "  4. 본인 데이터만 다루는 도메인이면 서비스에 소유권 가드를 넣고, 그 근거를 린터의" -ForegroundColor Gray
+Write-Host "     WRITE_AUTHZ_GUARDED_ELSEWHERE 에 등재하십시오(사유 없는 등재 금지)." -ForegroundColor Gray

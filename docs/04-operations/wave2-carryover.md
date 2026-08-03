@@ -167,13 +167,27 @@ executor 풀 분리(순서 지뢰 2 해제)와 `logLogin` 부활은 완료. 그�
   catch 위치가 트랜잭션 커밋보다 안쪽이라 **지배적 실패 모드(커밋 시 INSERT 실패)를 세지 못한다** —
   "유실을 관측 가능하게" 라는 추천의 핵심이 실효를 갖지 못한다.
 
-### G-1 · 스캐폴드
-PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 완료. 그러나 원장이 'G-1 스캐폴드 3종 파손'의
-상황으로 명시한 나머지 2종이 남았다:
-- 존재하지 않는 상위 클래스(`BaseCrudService`/`BaseCrudController`) 상속을 제거하지 않아 **산출물이 여전히 컴파일 불가**.
-- 컨트롤러가 `nuri.business.api.*` 에 생성되어 `SecurityAuthAnnotationLinterTest` 의 `nuri.api.controller` 접두 필터
-  **밖**이다 — 인가 없는 쓰기 엔드포인트가 게이트에 잡히지 않는다. 현재는 경고 문구(`Write-Host`)로 대체돼 있는데,
-  이는 실행 경로 없는 '문서형 게이트' 라 §0.7-H5 의 반대편이다.
+### G-1 · 스캐폴드 — **해소 (2026-08-03)**
+PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료됐고, 남아 있던 2종을 이번에 닫았다.
+
+- **존재하지 않는 상위 클래스 상속** — `BaseCrudService`/`BaseCrudController` 는 저장소에 없다
+  (`nuri.business.core.crud` 패키지 자체가 부재). 제네릭 CRUD 베이스를 **신설하지 않고** 저장소의 실제
+  관례대로 명시 CRUD 를 찍도록 템플릿을 다시 썼다. 베이스를 만드는 선택은 2026-07 에 청산한
+  two-paradigm 부채(단일-impl 인터페이스 39개·`EgovIdGnrService`)를 되돌리는 방향이라 채택하지 않았다.
+- **게이트 사각지대 생성 위치** — 컨트롤러 생성 경로를 `business-app/.../nuri/business/api/<domain>` 에서
+  `api-server/src/main/java/nuri/api/controller/business/<domain>` 으로 옮겼다. 이 경로는 이미
+  `delete-domain.ps1` 이 삭제 대상으로 들고 있던 위치다 — **삭제 스크립트가 옳고 생성 스크립트가 틀려 있었다.**
+  아울러 읽기 `@Authenticated` · 쓰기 `@AdminOrSystem` 을 기본 부착해 산출물이 생성 즉시 인가 린터를
+  통과하도록 했다(fail-closed. 넓히는 것은 개발자의 명시적 결정이어야 한다).
+
+**실증**: `scaffoldprobe` 도메인을 실제로 생성 → `./gradlew compileJava` **BUILD SUCCESSFUL**
+→ `SecurityAuthAnnotationLinterTest` 통과 → **애노테이션 2종을 떼자 같은 린터 2건이 red**
+(생성물이 게이트 스캔 범위 안이라는 증거) → `delete-domain.ps1` 로 전량 삭제 확인.
+그린만 확인하면 vacuous 통과와 구분되지 않으므로 red 쪽까지 실행했다(§0.7-H5).
+
+**잔여**: 엔티티가 `BaseTimeEntity` 를 상속한다(원장은 `BaseEntity` 를 권했다 — IDOR 가드가
+`frstRgtrId` 를 전제하므로). DDL 초안에는 `frst_rgtr_id`/`last_mdfr_id` 가 있는데 엔티티에는 없어
+매핑이 어긋난다. 별도 항목으로 남긴다.
 
 ### 인가 린터 커버리지 (A-2 잔여)
 원장이 "Step A만" 이라고 명시적으로 범위를 좁힌 항목이므로 **미이행이 아니다.** 다만 다음 웨이브의 대상으로 남는다:
@@ -248,6 +262,21 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 완료. 그러나 
 | Flyway `V2_34` 중복 | `business-core` 에 새로 만든 마이그레이션이 `api-server` 것과 번호 충돌 → **Flyway 가 부팅을 거부**. 위치를 api-server 단일 소유로 되돌리고 `V2_37` 로 이전 + PG 전용 구문을 `DO $$ EXECUTE` 로 감싸 H2 파손 해소 |
 | 하네스 매니페스트 비동기 | 린터 3종 변경이 미반영이라 `harnessTest` red → **pre-push 가 막혀 push 자체가 불가능**했다. 세 항목이 모두 판정 축 확대/예외 축소임을 확인하고 사유와 함께 갱신 |
 | 린터 자기 서술이 다시 거짓 | 패키지 스킵이 삭제됐는데 javadoc 은 "3개 클래스만·7.0%" 그대로였다. **집행이 바뀌면 서술도 함께 바뀌어야 한다** — javadoc·getting-started·playbook 3곳 현행화 |
+
+### 6.5 12축 재채점 후속 (2026-08-03) — 재평가에서 새로 확정한 3건
+
+12축 점수를 다시 매기며 코드·GitHub·게이트를 실측한 결과 새로 확정한 것들이다.
+
+| 무엇 | 실측 | 조치 |
+|---|---|---|
+| **`main` CI 가 red** | frontend-build 가 lint 에러 **1건**으로 죽어 `e2e-tests`·`e2e-merge-reports` 가 **skip**. 22티어 E2E 가 통째로 돌지 않고 있었다. 원인은 `useAppForm.test.tsx` 의 `z.object(...)` — 인라인 z.object 금지 규칙이 **테스트 파일에도** 걸렸다. pre-push 는 eslint 를 돌지 않아 그대로 통과했다(§0.7-H5 의 전형) | 테스트 override 블록에 한정해 규칙 해제. 앱 코드에 위반을 주입해 **여전히 red** 임을 확인 |
+| **Hibernate 튜닝 키가 무효 위치** | `spring.jpa.hibernate.*` 는 Boot 가 `ddl-auto`/`naming` 만 바인딩한다. `order_inserts`·`order_updates`·`jdbc.batch_size` 5개가 그 아래 있어 **조용히 무시**되고 있었다. ⚠ 다만 "배치가 꺼져 있었다"는 부정확하다 — 실측하면 `getJdbcBatchSize()` 는 **15**(Hibernate 기본값)다. 실제로 무효였던 것은 크기 25 라는 **의도**와 정렬 2종(기본 false)이다 | `spring.jpa.properties.hibernate.*` 로 이설. `HibernatePropertyBindingLinterTest` 신설 — ① 양쪽 prefix 를 동시 주입해 어느 쪽이 도달하는지 **실행으로** 증명 ② 운영 yml 정적 검사 |
+| **required status checks 0개** | 저장소 자신의 `verify-branch-protection.mjs` 가 그렇게 판정한다. 하네스 21종·pre-push·CI 6잡 전부 **강제력 없는 권고** | 사용자 결정 필요(활성화 시 main 직접 push 가 막힌다) — 아래 §7 |
+
+부수 확인: 테스트 컨텍스트는 `api-server/src/test/resources/application.yml` 이 main 을 **shadow** 하므로
+운영 설정을 아예 로드하지 않는다. 그래서 운영 값을 테스트에서 단언하면 그것은 운영이 아니라
+테스트 리소스를 검증하는 false-green 이다 — 신설 게이트를 '기전 증명 + 파일 정적 검사' 두 축으로
+나눈 이유가 그것이다.
 
 ### 6.4 커밋하지 않은 것
 

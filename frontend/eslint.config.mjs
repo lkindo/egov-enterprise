@@ -146,7 +146,16 @@ const eslintConfig = [
       "@typescript-eslint/no-explicit-any": "off",
       "@typescript-eslint/no-unused-vars": "warn",
       "react-hooks/rules-of-hooks": "off",
-      "@typescript-eslint/no-unused-expressions": "off"
+      "@typescript-eslint/no-unused-expressions": "off",
+      // [2026-08-03] 인라인 z.object 금지는 **애플리케이션 코드의 SSOT 드리프트**를 막는 규칙이다
+      //   (백엔드 생성 스키마를 안 쓰고 화면에서 스키마를 새로 쓰면 계약이 갈라진다).
+      //   테스트는 배포물이 아니라 계약을 만들지 않으므로 그 위험이 성립하지 않는다. 반면
+      //   `useAppForm` 같은 **제네릭 훅**의 단위 테스트는 도메인과 무관한 최소 스키마가 필요하고,
+      //   그것을 generated-zod 에서 빌려오면 테스트가 도메인 변경에 불필요하게 결합된다.
+      //   ⚠ 범위는 테스트 파일에 한정한다 — 애플리케이션 코드는 계속 error 다(위 §99 블록).
+      //   (이 예외가 없어 2026-08-03 CI frontend-build 가 lint 에러 1건으로 red 였고,
+      //    그 결과 e2e 22티어가 통째로 skip 됐다.)
+      "no-restricted-syntax": "off"
     }
   },
   {

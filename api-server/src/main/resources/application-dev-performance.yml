@@ -7,11 +7,16 @@ spring:
       hibernate:
         # SQL 포맷팅
         format_sql: true
+        # [2026-08-03] 성능 분석 프로파일이므로 통계를 켠다. 종전에는 이 파일 최하단의 **최상위
+        #   `hibernate:` 키**(스프링이 읽지 않는 위치)에 있어 아무 효과가 없었다.
+        generate_statistics: true
         # 바인딩 변수 로그 출력
         jdbc:
           logging:
             enabled: true
-        
+        # batch_size / fetch_size / default_batch_fetch_size 는 base(application.yml)의
+        # `spring.jpa.properties.hibernate.*` 가 이미 제공한다 — 여기서 재선언하지 않는다.
+
 # Hibernate 통계 (성능 분석용)
 logging:
   level:
@@ -23,14 +28,3 @@ logging:
     org.hibernate.engine.internal.StatisticalLoggingSessionEventListener: DEBUG
     # 캐시 로그
     org.hibernate.cache: DEBUG
-
-# Hibernate 성능 분석 설정
-hibernate:
-  # 통계 활성화
-  generate_statistics: true
-  # 배치 사이즈 설정
-  jdbc:
-    batch_size: 25
-    fetch_size: 100
-  # N+1 쿼리 감지
-  default_batch_fetch_size: 100

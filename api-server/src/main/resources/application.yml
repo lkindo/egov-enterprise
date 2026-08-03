@@ -64,13 +64,12 @@ spring:
   jpa:
     open-in-view: false
     hibernate:
+      # ⚠ `spring.jpa.hibernate.*` 는 Boot 의 HibernateProperties 에 바인딩되며 **ddl-auto/naming 만** 받는다.
+      #   그 밖의 키를 여기 두면 Boot 가 조용히 무시한다(바인딩 실패도, 경고도 없다).
+      #   종전에 order-inserts / order-updates / batch-size / jdbc.batch_size / jdbc.fetch_size 가
+      #   전부 이 위치에 있었고, 그래서 **전 프로파일에서 JDBC 배치가 꺼져 있었다**(2026-08-03 실측).
+      #   Hibernate 로 실제 전달되는 경로는 아래 `properties.hibernate.*` 뿐이므로 그쪽으로 이설했다.
       ddl-auto: validate
-      order-inserts: true
-      order-updates: true
-      batch-size: 25
-      jdbc:
-        batch_size: 25
-        fetch_size: 100
     show-sql: false
     properties:
       hibernate:
@@ -78,7 +77,17 @@ spring:
         use_sql_comments: false
         generate_statistics: false
         default_batch_fetch_size: 100
+        # [2026-08-03 이설] 위 hibernate 블록에서 옮겨온 실효 키들.
+        #   order_inserts/order_updates 는 batch_size 와 짝이어야 의미가 있다 — 배치가 꺼져 있으면
+        #   정렬해 봐야 묶을 대상이 없다. 셋을 함께 옮기는 이유가 그것이다(§0.7-H4 의 '개별 판정'
+        #   대상이 아니라 하나의 기능 단위).
+        order_inserts: true
+        order_updates: true
         jdbc:
+          batch_size: 25
+          fetch_size: 100
+          # 배치와 낙관적 락(@Version)을 함께 쓰려면 필수. 이 값이 false 인 채 batch_size 를 켜면
+          # 버전 검사 대상 엔티티가 배치에서 제외된다.
           batch_versioned_data: true
           scrollable_result_set_enabled: false
           time_zone_in_legacy_mapping: false
