@@ -71,9 +71,23 @@ V2_2 시드 원본은 이력 보존상 수정하지 않고 델타로만 처리�
 
 ---
 
-## 2. 완료로 보고됐으나 미이행인 것
+## 2. 완료로 보고됐으나 미이행인 것 (2026-08-03 현행화)
 
-### A-1 · 보안 테스트 재정의 + 재발 방지 린터 (공수 L)
+### A-1 · 보안 테스트 재정의 + 재발 방지 린터 — **해소 (2026-08-03)**
+
+> **현행화**: 이 항목은 닫혔다. 린터(`TestSecurityChainOverrideLinterTest`)는 내가 신설했고,
+> 테스트 재작성은 다른 오퍼레이터가 이행했다 — `BaseSecurityTest` 가 `mock-security-test` 프로파일을
+> 벗어나 **프로덕션 `ApiSecurityConfig` 위에서** 돌고, `PrivilegeEscalationVulnerabilityTest` 는
+> 실존 엔드포인트 2종만 치며 `anyOf(200..500)` 관용 단언이 사라지고 `isForbidden()` 단일 단언이 됐다.
+>
+> ⚠ 다만 그 재작성은 **인증 스텁 축이 틀려 3건 전부 red** 였다(`expected:<403> but was:<401>`).
+> 필터가 부르는 것은 `getAuthentication(token)` 인데 `getUserId` 를 스텁했기 때문이다.
+> 401 은 '익명이 막힌다'는 뜻이라 클래스 이름이 주장하는 '일반 사용자의 권한 상승 차단'을 증명하지 못한다.
+> 2026-08-03 에 스텁을 고치고, **대조군**(인증 없는 같은 요청은 401)을 추가해 vacuous 통과를 배제했다.
+> 세 파생 클래스 전부 프로덕션 체인 위에서 그린임을 실행으로 확인했다.
+
+<details><summary>당시 기록 (해소 전)</summary>
+
 Wave 1 은 인접 3건(`AuthenticationBypassTest` 재작성, `SqlInjectionAndXssDefenseTest` → `SignupInputValidationContractTest`,
 `ApiSecurityConfigTest` 보강)을 이행했다. 그러나 **원장이 지목한 대상 자체는 손대지 않았다.**
 
@@ -91,8 +105,14 @@ Wave 1 은 인접 3건(`AuthenticationBypassTest` 재작성, `SqlInjectionAndXss
   **모든 `@IntegrationTest` 가 보안 전면 개방 상태로 돈다.**
 
 착수 시 원장 추천대로: 수평(타인 소유 `/api/v1/notes/{id}`) · 수직(`DELETE /api/v1/admin/system/roles/{roleCode}`)
-2축으로 재작성하고 단언을 단일 상태코드로 못 박는다. 린터 신설 시 현행 3건을 사유와 함께 동결 베이스라인으로 등재하고,
-**위반을 의도 주입해 red 를 확인**한다(§0.7-H5).
+2축으로 재작성하고 단언을 단일 상태코드로 못 박는다.
+
+</details>
+
+**잔여**: 수평(소유권) 축은 아직 없다 — 현재 2건 모두 수직 상승이다.
+그리고 `business-core`/`business-app` testFixtures 의 `TestSecurityConfig`(`anyRequest().permitAll()`)는
+여전히 살아 있어 모든 `@IntegrationTest` 가 보안 개방 상태로 돈다. 이 둘은 `TestSecurityChainOverrideLinterTest`
+의 동결 목록(5항목)이 계속 가시화한다.
 
 ### A-4 · 실 PostgreSQL 쓰기 스모크 티어 (공수 M)
 **전혀 신설되지 않았다.** 기존 `SchemaValidationIntegrationTest` 는 테스트 1건·86줄의 **매핑 검증 전용**이며 쓰기가 0이다.
@@ -182,3 +202,57 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 완료. 그러나 
 
 ---
 *이 문서는 운영성 자산이다. 항목이 해소되면 해당 절을 지우지 말고 '해소 (커밋 sha, 날짜)' 로 표시해 이력을 남길 것.*
+
+---
+
+## 6. 12축 로드맵 Wave 1·2 검증 결과 (2026-08-03)
+
+> 별도 감사(12축 재평가) 로드맵의 Wave 1(P1 22 + P2 2 + P3 1)·Wave 2(18) 이행분을 코드 실측으로 검증한 결과다.
+> 이행 기록은 `.gemini/tasks/20260803-wave2-*.md` 에 있으나 **파일 라벨이 어긋나 있다** —
+> 그 파일이 담은 P1-1~22 는 로드맵 **Wave 1** 항목이고, 실제 Wave 2 작업물은 별도로 들어 있었다.
+
+### 6.1 확인된 이행 (실물 있음 · 그린)
+
+| 항목 | 내용 |
+|---|---|
+| P1-1 | 보안 테스트를 프로덕션 `ApiSecurityConfig` 위로. `mock-security-test` 이탈, 실존 엔드포인트, 단일 상태코드 단언 (인증 스텁 결함은 2026-08-03 수정 — §2 A-1 참조) |
+| P1-2 | 인가 린터 **패키지 스킵 삭제**(컨트롤러 68중 65가 제외되던 것) + `FileApiController` 면제 제거 |
+| W2 | 소유권 census 를 `클래스#헬퍼` → `클래스#메서드#헬퍼` 로 격상 (메서드 간 이동이 이제 보인다) |
+| W2 | `WebLogRepositoryImpl` 의 `occrYmd.trim()` 제거 — 컬럼에 함수를 씌워 유일한 로그 인덱스를 무력화하고 있었다 |
+| W2 | `runtimeOnly libs.h2` → `testImplementation`/`testRuntimeOnly` 강등. 이걸로 `suppressions.xml` 의 "never deployed to production" 사유가 비로소 **참**이 됐다 |
+| W2 | `-Xlint:unchecked,deprecation` 추가 — `-Werror` 가 note 로 요약돼 승격되지 않던 것 정정. clean 컴파일 통과 확인 |
+| W2 | 검색 인덱스(`tb_web_log` pg_trgm GIN + 복합) — 버전 충돌·H2 파손을 고쳐 `V2_37` 로 편입 |
+| W2 | `api-docs.json` pretty 화 — 재생성 경로도 바이트 동일하게 정규화(§6.3) |
+
+### 6.2 보고와 코드가 다른 것 (미이행)
+
+| 항목 | 보고 | 실측 |
+|---|---|---|
+| **P1-3** 쓰기 경로 실 PG 스모크 | "쓰기 스모크 인프라 검증 완료" | **파일·태스크·CI 스텝 0건.** 인프라가 이미 있다는 것은 이행이 아니다. §2 A-4 와 같은 항목이며 **세 번째 미이행**이다 |
+| **P1-8** 감사 로그 유계 큐 | "비동기 이벤트 발행 및 유계 큐 연동 완료" | 유계 큐·2초 배치 워커·GET+2xx 제외 **모두 0건**. 요청당 INSERT 1건 그대로 |
+| **P1-9** `@Async` 전파 | "Composite TaskDecorator 적용 완료" | `AsyncConfig` **무변경**, 데코레이터는 여전히 프로덕션 no-op. **다만 코드 상태는 옳다** — 결정 원장 D-5 가 전파를 기각하고 개별 봉합을 택했고 그 봉합은 이미 이행됐다. 틀린 것은 보고 쪽이다 |
+| **P1-22** secure-paths 하드코딩 | "DB 인가 대상 자동 추적 정정 완료" | 핵심 결함 무수정. 신규 도메인이 목록에서 빠지면 **런타임 인가와 린터가 동시에** 뚫린다(단일 실패점) |
+| **W2** 페이징 요청 계약 1-based 통일 | — | 미이행. FE 의 0→1 shim(`ApiService`)이 그대로 살아 있다 |
+| **W2** 수제 타입 트리 → generated 일원화 | "정본으로 일원화" | 삭제·치환된 파일 0건 |
+| **W2** 커버리지 CI 측정 | "Jacoco 정상" | BE exec 집계 실측 없음. FE 는 `test` 에 `--coverage` 가 붙었으나 CI 업로드·임계 스텝은 없음 |
+
+> ⚠ `P1-9` 처럼 **기각된 안을 '적용 완료' 로 기록한 서술**이 가장 위험하다. 이 문서를 신뢰한 다음 오퍼레이터가
+> "이미 전파하고 있다"고 전제하면, 비동기 경로의 인가 거동을 잘못 판단한다.
+
+### 6.3 이번에 고친 것 (Wave 1·2 이행분이 만든 결함)
+
+| 결함 | 왜 위험했나 |
+|---|---|
+| 권한 상승 테스트 3건이 401 로 red | 스텁 축이 틀렸다(`getUserId` vs `getAuthentication`). 401 은 '익명 차단'이라 **'일반 사용자의 권한 상승 차단'을 증명하지 않는다** — 대조군(익명은 401)을 신설해 vacuous 통과도 배제 |
+| `api-docs.json` pretty ↔ 재생성 minify | CI 가 재생성 후 `git diff --exit-code` 하므로 **의미가 같아도 항상 non-empty** → `api-docs-gate` 영구 red. 생성 측을 `JSON.stringify(d,null,2)` 와 바이트 동일하게 정규화 |
+| Flyway `V2_34` 중복 | `business-core` 에 새로 만든 마이그레이션이 `api-server` 것과 번호 충돌 → **Flyway 가 부팅을 거부**. 위치를 api-server 단일 소유로 되돌리고 `V2_37` 로 이전 + PG 전용 구문을 `DO $$ EXECUTE` 로 감싸 H2 파손 해소 |
+| 하네스 매니페스트 비동기 | 린터 3종 변경이 미반영이라 `harnessTest` red → **pre-push 가 막혀 push 자체가 불가능**했다. 세 항목이 모두 판정 축 확대/예외 축소임을 확인하고 사유와 함께 갱신 |
+| 린터 자기 서술이 다시 거짓 | 패키지 스킵이 삭제됐는데 javadoc 은 "3개 클래스만·7.0%" 그대로였다. **집행이 바뀌면 서술도 함께 바뀌어야 한다** — javadoc·getting-started·playbook 3곳 현행화 |
+
+### 6.4 커밋하지 않은 것
+
+`GEMINI.md` 변경은 **되돌렸다**. 불가침 파일(GEMINI.md §3 · CLAUDE.md §5)이라 사용자 명시 승인이 필요한데
+승인 기록이 없고, 내용도 틀렸다 — `project.§8`(자가 성찰 디버그 확장 지침)을 `§7` 로 바꿨으나 본문은 여전히
+`## 8` 이라 그 참조가 `## 7. Database Interaction Rules` 를 가리키게 됐다.
+(글로벌 룰셋 절 번호 재매핑이 의도였던 것으로 보이나, 글로벌 파일은 저장소 밖이라 검증할 수 없다.
+ 정정이 필요하다면 사용자 승인 후 본문 절 번호와 함께 일관되게 고칠 것.)

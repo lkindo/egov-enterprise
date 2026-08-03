@@ -30,22 +30,39 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>화이트리스트(Public API) 또는 DB 구동 인가 대상(URL 매핑)을 제외한 비공개 비즈니스 API 에
  * {@code @PreAuthorize}/{@code @Secured} 등 인가 애노테이션이 선언돼 있는지 리플렉션으로 오딧한다.
  *
- * <p><b>⚠ [2026-08-02 커버리지 정정] 이 게이트가 실제로 보는 범위</b>
- * <p>종전 javadoc 은 "모든 REST 컨트롤러의 엔드포인트를 전수 조사" 라고 서술했다. <b>사실이 아니었다.</b>
- * 실측(2026-08-02): {@code nuri.api.controller} 하위 컨트롤러 64개 / 핸들러 326개 / URL쌍 358개 중
- * 아래 {@link #auditSecurityAnnotationsOnRestControllers}(Test#1)는
- * {@code .business}·{@code .foundation} 두 패키지를 통째로 skip 하여 <b>URL쌍 25개(7.0%)</b>만 감사한다.
- * 서술이 집행보다 넓으면 그 서술 자체가 거짓 안전감이므로, 서술을 집행에 맞춘다.
+ * <p><b>⚠ 이 게이트가 실제로 보는 범위 — 2026-08-03 재정정</b>
  *
- * <p><b>두 테스트의 실제 분담과 그 사이의 사각지대</b>
+ * <p>이 절은 두 번 틀렸다. 처음엔 "모든 엔드포인트를 전수 조사" 라는 <b>과장</b>이었고(2026-08-02 정정),
+ * 그 다음엔 정정본이 <b>낡아서</b> 틀렸다 — 패키지 skip 이 삭제됐는데 서술은 "3개 클래스만·7.0%" 로
+ * 남아 있었다. 게이트의 자기 서술은 집행이 바뀔 때마다 함께 바뀌어야 한다.
+ *
+ * <p><b>Test#1</b>({@link #auditSecurityAnnotationsOnRestControllers}) — <b>패키지 skip 없음</b>.
+ * {@code nuri.api.controller} 하위 <b>전 컨트롤러의 읽기·쓰기 모두</b>를 순회한다.
+ * ({@code .business}/{@code .foundation} 을 통째로 건너뛰던 조건은 삭제됐다.)
+ * 다만 아래 중 하나에 해당하면 통과시킨다 — <b>이것이 실질 커버리지를 결정한다</b>:
+ * <ol>
+ *   <li>{@link #PUBLIC_PATH_WHITELIST} 매칭 (공개 API)</li>
+ *   <li>{@code @PreAuthorize}/{@code @Secured} 선언이 있음 — <b>내용은 보지 않는다</b></li>
+ *   <li>{@link #isDbProtected}: {@code rbac.db-auth.secure-paths} 에 매칭 — 즉 URL 시큐리티에 위임</li>
+ *   <li>{@link #WRITE_AUTHZ_GUARDED_ELSEWHERE} 등재 클래스 — 서비스 계층 소유권 가드에 위임</li>
+ * </ol>
+ *
+ * <p><b>Test#2</b>({@link #auditWriteEndpointAuthorizationOnNonAdminPaths}) — <b>쓰기</b>
+ * (POST/PUT/DELETE/PATCH)만 보고, {@code /api/v1/admin/} 접두는 URL 시큐리티에 위임해 skip.
+ *
+ * <p><b>남아 있는 사각지대 (커버리지를 과신하지 말 것)</b>
  * <ul>
- *   <li>Test#1 — 패키지 skip 있음. 읽기·쓰기 모두 보지만 <b>3개 클래스만</b>.</li>
- *   <li>Test#2({@link #auditWriteEndpointAuthorizationOnNonAdminPaths}) — 패키지 skip 없음(전 컨트롤러).
- *       단 <b>쓰기(POST/PUT/DELETE/PATCH)만</b> 보고, {@code /api/v1/admin/} 접두는 URL 시큐리티에 위임해 skip.</li>
- *   <li><b>사각지대</b>: {@code .business}/{@code .foundation} 패키지의 <b>읽기</b> 엔드포인트.
- *       Test#1 은 패키지로, Test#2 는 HTTP 메서드로 각각 제외해 <b>어느 쪽도 보지 않는다</b>(실측 49건).
- *       읽기 IDOR(타인 상세 조회)은 현재 이 게이트가 잡지 못한다 — 커버리지 확장은 별건으로 분리한다.</li>
+ *   <li><b>3번 통과가 지배적이다.</b> 다수 엔드포인트가 {@code secure-paths} <b>문자열 목록</b> 매칭만으로
+ *       통과한다. 그 목록에서 빠진 신규 도메인은 <b>런타임 인가와 이 린터가 동시에</b> 뚫린다 —
+ *       단일 실패점이며, 로드맵 P1-22 가 지목한 미해결 항목이다.</li>
+ *   <li><b>4번은 쓰기 근거로 읽기까지 면제한다.</b> {@code WRITE_AUTHZ_GUARDED_ELSEWHERE} 의 등재 사유는
+ *       쓰기 소유권 가드인데, Test#1 에서는 같은 클래스의 <b>읽기</b> 핸들러도 함께 통과한다.
+ *       읽기 IDOR 은 그만큼 검증되지 않은 채 남는다.</li>
+ *   <li>2번은 <b>애노테이션의 존재</b>만 본다. {@code @PreAuthorize("isAuthenticated()")} 는 인증만 요구하므로
+ *       IDOR 방어력이 없다 — 그럼에도 이 게이트는 통과시킨다(예: {@code FileApiController} 첨부 다운로드).</li>
  * </ul>
+ * <p>요컨대 <b>"모든 컨트롤러를 순회한다"는 참이지만 "모든 인가를 검증한다"는 거짓</b>이다.
+ * 이 게이트의 그린은 "인가 애노테이션이 빠지지 않았다" 이지 "인가가 옳다" 가 아니다.
  *
  * <p><b>이 게이트가 보장하지 <u>않는</u> 것</b>
  * <ul>
