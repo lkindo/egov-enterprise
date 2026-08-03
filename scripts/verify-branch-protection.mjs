@@ -45,8 +45,29 @@ const allowOffline = process.argv.includes('--allow-offline');
 /**
  * required status check 로 반드시 걸려 있어야 하는 ci.yml 잡.
  * 이 목록을 줄이는 것은 강제력을 줄이는 것이다 — 줄이려면 사유를 커밋 메시지에 남길 것(§0.7-H2).
+ *
+ * [2026-08-03 · e2e-tests 제외 — 사용자 결정]
+ * 브랜치 보호를 처음 활성화하면서 required 를 이 3종으로 확정했다. e2e-tests 를 뺀 이유는
+ * **안정성이 미검증이기 때문**이다 — frontend-build 가 lint 1건으로 죽어 있던 동안 e2e 는
+ * 계속 skip 됐고, 2026-08-03 커밋 74eacd539 가 그 lint 를 고친 뒤에야 처음으로 실행됐다.
+ * 실행 이력이 사실상 없는 잡을 required 로 걸면 플레이키 1건이 병합을 상시 차단하고,
+ * 그 마찰은 곧 "우회"를 정당화한다(오탐 지배 게이트가 SKIP_HARNESS 사용을 정당화한 전례).
+ *
+ * ⚠ 이것은 **한시적 제외**다. 아래 재편입 조건을 만족하면 다시 넣는다:
+ *   · main 기준 e2e-tests 3샤드가 연속 5회 그린(재실행 없이)
+ *   · 그때 이 배열에 'e2e-tests' 를 되돌리고 ruleset 의 required 목록도 함께 갱신
+ * 조건을 적어 두는 이유는, 사유 없는 제외와 조건부 제외를 다음 사람이 구분할 수 있게 하기 위해서다.
+ * 제외 사실 자체는 아래 warn 으로 매 실행 출력된다 — 조용히 빠져 있지 않다.
  */
-const CRITICAL_JOBS = ['secret-scan', 'backend-build', 'frontend-build', 'e2e-tests'];
+const CRITICAL_JOBS = ['secret-scan', 'backend-build', 'frontend-build'];
+
+/**
+ * 한시적으로 required 에서 제외한 잡. 판정은 하지 않되 **매 실행 가시화**한다.
+ * 비어 있는 것이 정상 상태이며, 항목이 있다는 것은 강제력에 구멍이 있다는 뜻이다.
+ */
+const TEMPORARILY_EXCLUDED_JOBS = [
+  { job: 'e2e-tests', since: '2026-08-03', reason: '실행 이력 부재로 안정성 미검증 — 연속 5회 그린 시 재편입' },
+];
 
 const fail = [];
 const warn = [];
@@ -78,6 +99,13 @@ for (const job of CRITICAL_JOBS) {
   if (!definedJobs.has(job)) {
     fail.push(`ci.yml 에 필수 잡 '${job}' 이 정의되어 있지 않습니다 — required 로 걸어도 영원히 pending 이 됩니다.`);
   }
+}
+
+// 한시 제외 항목은 판정하지 않되 **매 실행 노출**한다. 제외가 조용해지는 순간
+// 다음 사람은 "이 잡도 강제되고 있다"고 오해한다(선언 범위 ≠ 실제 범위).
+for (const { job, since, reason } of TEMPORARILY_EXCLUDED_JOBS) {
+  if (!definedJobs.has(job)) continue; // ci.yml 에서 사라졌으면 제외 항목도 무의미
+  warn.push(`'${job}' 은 required 에서 **한시 제외** 중입니다 (${since}) — ${reason}`);
 }
 
 // ── 2) GitHub 실제 설정 조회 -------------------------------------------------------------
