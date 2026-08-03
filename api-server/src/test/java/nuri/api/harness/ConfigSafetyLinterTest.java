@@ -73,6 +73,9 @@ class ConfigSafetyLinterTest {
     /** [W1-12] 관리 포트 분리 여부. 이 키가 선언된 순간 헬스체크 이전·호스트 미노출 두 전제가 함께 요구된다. */
     private static final String KEY_MANAGEMENT_PORT = "management.server.port";
 
+    /** [W0-04 보완] 운영 배포 스크립트. prod 오버레이를 실제로 물고 있어야 위 모든 prod 설정이 적용된다. */
+    private static final String DEPLOY_SCRIPT = "scripts/deploy.sh";
+
     /** actuator 기본 노출에서 영구 배제할 엔드포인트 — env=환경변수 전량(DB 자격증명·ALGORITHM_KEY), beans=빈 그래프. */
     private static final Set<String> FORBIDDEN_ACTUATOR_ENDPOINTS = Set.of("env", "beans", "configprops", "*");
 
@@ -157,6 +160,9 @@ class ConfigSafetyLinterTest {
 
         // ── 8) [W1-12] 관리 포트 분리 형상의 두 전제 (헬스체크 이전 · 호스트 미노출)
         auditManagementPortSeparation(prod, composeProdSrc, composeBaseSrc, violations);
+
+        // ── 9) [W0-04 보완] 배포 스크립트가 prod 오버레이를 물고 있는가
+        auditDeployScriptUsesProdOverlay(root, violations);
 
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -352,6 +358,33 @@ class ConfigSafetyLinterTest {
                             + " 미인증 메트릭 공개가 됩니다. 스크레이퍼는 같은 네트워크 안에서 접근하게 하십시오.");
                 }
             }
+        }
+    }
+
+    /**
+     * 배포 스크립트가 prod 오버레이를 실제로 물고 있는지. [W0-04 보완 — 2026-08-03]
+     *
+     * <p>W0-04 가 만든 봉합 전체가 <b>"deploy.sh 가 오버레이를 계속 물고 있다"는 관행</b> 하나에 매달려 있다.
+     * 그 한 줄이 지워지면 운영 배포가 조용히 base 프로파일로 되돌아간다 —
+     * 쿠키 non-secure, swagger 노출, graceful shutdown 없음, dev 시드 로케이션, 그리고
+     * 무기본값 fail-fast 가 통째로 무력화된다. 그런데 이 린터의 다른 모든 검사는 여전히 그린이다.
+     *
+     * <p>그것은 W0-04 가 원래 고치려던 결함(<b>잘 쓴 prod 설정을 배포 경로가 쓰지 않는다</b>)과
+     * 정확히 같은 형태다. 관행을 게이트로 바꾼다.
+     */
+    private void auditDeployScriptUsesProdOverlay(Path root, List<String> violations) throws IOException {
+        Path script = root.resolve(DEPLOY_SCRIPT);
+        if (!Files.isRegularFile(script)) {
+            violations.add(DEPLOY_SCRIPT + " 이 없습니다 — 이 검사가 조용히 사라지지 않도록 부재도 위반으로 다룹니다."
+                    + " 배포 진입점을 옮겼다면 이 린터의 DEPLOY_SCRIPT 도 함께 갱신하십시오.");
+            return;
+        }
+        String src = stripComments(Files.readString(script, StandardCharsets.UTF_8));
+        if (!src.contains(COMPOSE_PROD)) {
+            violations.add(DEPLOY_SCRIPT + " 이 '" + COMPOSE_PROD + "' 를 참조하지 않습니다 —"
+                    + " 오버레이 없이 배포하면 application-prod.yml(무기본값 fail-fast·actuator 축소·쿠키 secure·"
+                    + "swagger off·graceful shutdown)이 **한 번도 적용되지 않습니다**. 잘 작성된 prod 설정을"
+                    + " 배포 경로가 쓰지 않는 것이 이 저장소에서 가장 위험한 단일 지점이었습니다(W0-04).");
         }
     }
 

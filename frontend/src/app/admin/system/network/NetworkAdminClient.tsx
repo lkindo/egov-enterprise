@@ -55,6 +55,20 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
     ));
 
     const listError = fetchError ? new Error(fetchError) : null;
+
+    /**
+     * [W0-P0-6 보완] 백엔드 쓰기 경로가 **미구현(501)** 이다.
+     *
+     * Wave 0 은 `NetworkMonitoringApiController` 의 POST/PUT/DELETE 를 "저장 없이 200" 에서
+     * 501 로 정직하게 바꿨다(그 전에는 저장되지 않았는데 성공 토스트가 떴다). 그런데 화면은
+     * 그대로여서, 사용자는 '신규 노드 등록' 을 누르고 폼을 전부 채운 **뒤에야** 501 을 만난다.
+     * 로드맵이 요구한 것은 "서비스 구현 또는 제거 중 택1, **유지 시 배너 + 버튼 disabled**" 였다.
+     * 실패를 늦게 알리는 것은 정직해진 것이 아니라 실패 지점만 뒤로 민 것이다.
+     *
+     * 백엔드가 구현되면 이 상수 하나를 false 로 바꾸면 된다(그리고 이 주석을 지운다).
+     */
+    const WRITE_NOT_IMPLEMENTED = true;
+    const writeDisabledReason = '백엔드 저장 기능이 아직 구현되지 않았습니다 (서버가 501을 반환합니다).';
     const activeNodeCount = nodes.filter(n => n.useYn === 'Y').length;
     const inactiveNodeCount = nodes.length - activeNodeCount;
     const assignedIpCount = nodes.filter(n => n.ntwrkIp).length;
@@ -140,7 +154,9 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
                     <Button
                         variant="ghost"
                         size="icon"
-                        aria-label={`${item.manageIem || item.ntwrkId} 노드 수정`}
+                        disabled={WRITE_NOT_IMPLEMENTED}
+                        title={WRITE_NOT_IMPLEMENTED ? writeDisabledReason : undefined}
+                        aria-label={`${item.manageIem || item.ntwrkId} 노드 수정${WRITE_NOT_IMPLEMENTED ? ' (미구현)' : ''}`}
                         className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold"
                         onClick={() => handleEdit(item)}
                     >
@@ -149,8 +165,10 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
                     <Button
                         variant="ghost"
                         size="icon"
-                        aria-label={`${item.manageIem || item.ntwrkId} 노드 삭제`}
-                        className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all"
+                        disabled={WRITE_NOT_IMPLEMENTED}
+                        title={WRITE_NOT_IMPLEMENTED ? writeDisabledReason : undefined}
+                        aria-label={`${item.manageIem || item.ntwrkId} 노드 삭제${WRITE_NOT_IMPLEMENTED ? ' (미구현)' : ''}`}
+                        className="h-10 w-10 text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all"
                         onClick={() => handleDelete(item)}
                     >
                         <Trash2 size={16} aria-hidden="true" />
@@ -173,11 +191,40 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
                 subtitle="전사 서비스 노드의 IP 할당 정책, 게이트웨이 및 서브넷 구성을 물리적으로 매핑하여 관리합니다."
                 icon={NetworkIcon}
                 actions={
-                    <Button onClick={handleCreate} size="lg" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2">
+                    <Button
+                        onClick={handleCreate}
+                        size="lg"
+                        disabled={WRITE_NOT_IMPLEMENTED}
+                        title={WRITE_NOT_IMPLEMENTED ? writeDisabledReason : undefined}
+                        className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2"
+                    >
                         <Plus size={18} /> 신규 노드 등록
                     </Button>
                 }
             />
+
+            {/*
+              [W0-P0-6 보완] 쓰기 미구현 사실을 **작업을 시작하기 전에** 알린다.
+              role="status" 로 보조기술에도 전달한다(경고가 아니라 상태 고지이므로 alert 가 아니다).
+            */}
+            {WRITE_NOT_IMPLEMENTED && (
+                <div
+                    role="status"
+                    className="flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4"
+                >
+                    {/* 아이콘은 장식이라 색으로 정보를 전달하지 않는다. `text-warning-emphasis` 같은
+                        미정의 토큰을 쓰면 Tailwind 가 클래스를 만들지 않아 색이 조용히 사라진다
+                        (globals.css 에 정의된 emphasis 토큰은 --destructive-emphasis 하나뿐이다). */}
+                    <Settings size={18} className="mt-0.5 shrink-0 text-foreground" aria-hidden="true" />
+                    <div className="text-sm leading-relaxed">
+                        <strong className="font-bold">조회 전용 화면입니다.</strong>{' '}
+                        네트워크 노드의 등록·수정·삭제는 <strong>백엔드가 아직 구현하지 않았습니다</strong>
+                        (서버가 <code className="rounded bg-muted px-1 py-0.5 text-xs">501 Not Implemented</code> 를 반환합니다).
+                        아래 목록은 실제 저장된 데이터이며, 값이 없으면 등록된 노드가 없다는 뜻입니다 —
+                        조회 실패가 빈 목록으로 위장되지는 않습니다.
+                    </div>
+                </div>
+            )}
 
             {/*
               [P1-5] '네트워크 가용성 99.9%' / '평균 응답 속도 4ms' 카드 삭제.

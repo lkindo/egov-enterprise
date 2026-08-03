@@ -20,6 +20,13 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    groups:
+      # [2026-08-03] 그룹핑이 gradle 에만 있어 나머지 생태계가 패키지당 1 PR 을 냈다 —
+      #   실측 22건 중 20건이 단건이었고, 이 파일 머리주석(11행)이 경계한 '아무도 보지 않는
+      #   노이즈' 가 그대로 실현됐다. minor/patch 를 한 덩어리로 접고 major 만 개별로 남긴다
+      #   (major 는 파괴적 변경이라 개별 판정이 필요하다).
+      minor-and-patch:
+        update-types: ["minor", "patch"]
 
   # ── Docker ── 베이스 이미지가 다이제스트로 핀돼 있어(2026-08-02) 자동 갱신이 멈춘 상태다.
   #   SHA/다이제스트 핀은 Dependabot 과 세트로만 의미가 있다 — 둘 중 하나만 있으면 핀이 곧 방치다.
@@ -30,6 +37,13 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 3
+    groups:
+      # [2026-08-03] 그룹핑이 gradle 에만 있어 나머지 생태계가 패키지당 1 PR 을 냈다 —
+      #   실측 22건 중 20건이 단건이었고, 이 파일 머리주석(11행)이 경계한 '아무도 보지 않는
+      #   노이즈' 가 그대로 실현됐다. minor/patch 를 한 덩어리로 접고 major 만 개별로 남긴다
+      #   (major 는 파괴적 변경이라 개별 판정이 필요하다).
+      minor-and-patch:
+        update-types: ["minor", "patch"]
 
   # ── Gradle ── 루트 build.gradle + gradle/libs.versions.toml + 5개 서브모듈
   #   ⚠ version-update 는 이 설정으로 돌지만, **security-update(취약점 기반 PR)는 의존성 그래프에
@@ -57,6 +71,11 @@ updates:
           - "org.junit*"
           - "org.mockito*"
           - "org.testcontainers*"
+      # [2026-08-03] 위 두 그룹에 걸리지 않는 나머지 minor/patch 도 접는다.
+      #   그룹 정의가 있어도 패턴 밖 패키지는 단건 PR 이 되므로, catch-all 이 없으면
+      #   '그룹핑했다' 는 서술과 실제 PR 수가 어긋난다(실측: gradle 단건 PR 다수).
+      other-minor-and-patch:
+        update-types: ["minor", "patch"]
 
   # ── npm (frontend) ── pnpm-lock.yaml (npm 생태계가 pnpm 락을 처리)
   #   ci.yml 의 `pnpm install --frozen-lockfile` 이 락 정합을 즉시 판정하므로,
@@ -66,6 +85,13 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    groups:
+      # [2026-08-03] 그룹핑이 gradle 에만 있어 나머지 생태계가 패키지당 1 PR 을 냈다 —
+      #   실측 22건 중 20건이 단건이었고, 이 파일 머리주석(11행)이 경계한 '아무도 보지 않는
+      #   노이즈' 가 그대로 실현됐다. minor/patch 를 한 덩어리로 접고 major 만 개별로 남긴다
+      #   (major 는 파괴적 변경이라 개별 판정이 필요하다).
+      minor-and-patch:
+        update-types: ["minor", "patch"]
 
   # ── npm (루트) ── package-lock.json (deps 는 cross-env, pg 2개뿐이라 한도를 낮게 둔다)
   - package-ecosystem: "npm"
@@ -73,3 +99,10 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 2
+    groups:
+      # [2026-08-03] 그룹핑이 gradle 에만 있어 나머지 생태계가 패키지당 1 PR 을 냈다 —
+      #   실측 22건 중 20건이 단건이었고, 이 파일 머리주석(11행)이 경계한 '아무도 보지 않는
+      #   노이즈' 가 그대로 실현됐다. minor/patch 를 한 덩어리로 접고 major 만 개별로 남긴다
+      #   (major 는 파괴적 변경이라 개별 판정이 필요하다).
+      minor-and-patch:
+        update-types: ["minor", "patch"]

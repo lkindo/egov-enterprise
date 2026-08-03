@@ -17,8 +17,8 @@ const isWin = platform() === 'win32';
 const gradlew = isWin ? '.\\gradlew.bat' : './gradlew';
 const scope = (process.argv[2] || 'all').toLowerCase();
 
-if (!['all', 'be', 'fe'].includes(scope)) {
-  console.error(`알 수 없는 범위 '${scope}' — [all|be|fe] 중 하나여야 합니다.`);
+if (!['all', 'be', 'fe', 'ops'].includes(scope)) {
+  console.error(`알 수 없는 범위 '${scope}' — [all|be|fe|ops] 중 하나여야 합니다.`);
   process.exit(2);
 }
 
@@ -37,6 +37,16 @@ try {
     run('pnpm -C frontend exec tsc --noEmit');
     run('pnpm -C frontend build');
     run('pnpm -C frontend test');
+  }
+  if (scope === 'ops') {
+    // 운영 형상: GitHub 의 **실제** 브랜치 보호 설정과 ci.yml 을 대조한다.
+    //
+    // [왜 all 에 넣지 않는가] 이 검사는 GitHub API 조회가 필요하고 ruleset 읽기는 저장소 admin
+    //   권한을 요구한다. 네트워크·토큰이 없는 환경에서 `verify all` 이 통째로 실패하면
+    //   개발 루프가 인프라 사정으로 막힌다. 반대로 조용히 skip 하면 이 저장소가 반복해서 당한
+    //   false-green 이 되므로, **별도 스코프로 분리하고 스킵은 허용하지 않는다**.
+    //   병합 전·릴리스 전 체크리스트에서 `npm run verify:ops` 로 명시 실행할 것.
+    run('node scripts/verify-branch-protection.mjs');
   }
   console.log(`\n✅ [verify:${scope}] 통합 게이트 통과 — 요청 범위 전 검증 그린`);
 } catch (e) {
