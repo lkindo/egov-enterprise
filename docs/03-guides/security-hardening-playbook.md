@@ -227,9 +227,14 @@ OWASP Top 10의 '암호화 실패(Cryptographic Failures)'를 방어하기 위�
 ### 4.2 개인 식별 정보(PII) 로그 마스킹
 - 주민등록번호, 연락처, 이메일 등의 PII 데이터는 `api-server`의 전역 로깅 인터셉터나 예외 핸들러에서 로깅(Logger.error)될 때 반드시 정규식을 통해 마스킹(Masking, 예: `010-****-1234`) 처리되어야 한다.
 
-### 4.3 MDC(Mapped Diagnostic Context) 기반 Trace 추적
-- 분산 환경에서의 정밀한 에러 추적을 위해, 백엔드 헌법 제13조에 따라 모든 들어오는 HTTP 요청에 대해 `UUID` 기반의 Trace ID를 생성하고 `MDC`에 적재해야 한다.
-- 모든 로그 출력 패턴(Logback 등)에 `%X{traceId}`를 포함시켜, 에러 로그(`Logger.error`)와 PII 마스킹 로그가 동일한 요청 내역 안에서 추적 가능하도록 결속력을 보장한다.
+### 4.3 요청 상관관계(Trace) 추적 — **2026-08-02 재작성**
+
+> ⚠ 이 절의 종전 내용(“애플리케이션이 UUID 를 만들어 `MDC` 의 `traceId` 에 적재하고, 로그 패턴에 `%X{traceId}` 를 포함시킬 것”)은 **W1-D1 이 제거한 결함을 그대로 지시하고 있었다.** 그 지시를 따르면 아래 결함이 되살아난다. 지시 자체를 폐기하고 현행 설계로 대체한다.
+
+- **traceId 소유권은 Micrometer/OTel 브리지 단독이다.** 애플리케이션 필터는 `traceId` MDC 키를 조작하지 않는다. 종전에는 필터가 8자 UUID 를, Micrometer 가 32-hex 를 **같은 키**에 써서 응답 헤더 값과 로그 값이 서로 달랐다.
+- **로그 패턴에 `%X{traceId}` 를 추가하지 말 것.** Spring Boot 가 `logging.pattern.correlation`(= `%correlationId`)으로 이미 출력하고 있다. 중복 추가하면 위 키 충돌을 되살린다.
+- **`X-Trace-Id` 응답 헤더는 유지**하되 값은 OTel 의 traceId 를 싣는다. **클라이언트가 보낸 `X-Trace-Id` 는 수신하지 않는다** — 무검증 반영은 순수한 로그 위조 벡터였다.
+- PII 마스킹(§4.2)과의 결속은 `%correlationId` 를 공통 축으로 삼는다(마스킹 유틸은 `nuri.foundation.core.util.PiiMaskUtil`).
 
 ---
 
@@ -238,8 +243,12 @@ OWASP Top 10의 '암호화 실패(Cryptographic Failures)'를 방어하기 위�
 엔드포인트 수준에서 명시적인 권한 검증 어노테이션이 누락되어 인가 우회가 일어나는 제로데이 취약점을 원천 방지하기 위해 **Auth Role Guardrail 하네스**를 구축하여 빌드 타임에 강제합니다.
 
 ### 5.1 작동 메커니즘
-- **타겟 도메인 패키지**: `nuri.api.controller` 하위 패키지에 정의된 모든 REST 컨트롤러.
-- **오딧 검증**: `@RestController` 클래스 내의 모든 HTTP 매핑 메서드(`@GetMapping`, `@PostMapping`, `@PutMapping`, `@DeleteMapping`, `@PatchMapping`)에 대하여, `@PreAuthorize` 또는 `@Secured` 어노테이션 선언이 존재하는지 정적으로 전수 조사합니다.
+- **타겟 도메인 패키지**: `nuri.api.controller` 하위 패키지에 정의된 REST 컨트롤러.
+- **오딧 검증(실제 집행 범위 — 2026-08-02 실측 정정)**: 종전 이 문서는 "모든 HTTP 매핑 메서드를 정적으로 전수 조사"라고 서술했으나 **사실이 아니었습니다**. 집행은 두 테스트로 나뉩니다.
+  - **Test#1** (`auditSecurityAnnotationsOnRestControllers`): 읽기·쓰기를 모두 보지만 `.business`·`.foundation` 패키지를 통째로 skip 합니다 → 실측 **URL쌍 358개 중 25개(7.0%)**.
+  - **Test#2** (`auditWriteEndpointAuthorizationOnNonAdminPaths`): 전 컨트롤러를 보지만 **쓰기(POST/PUT/DELETE/PATCH)만** 보며, `/api/v1/admin/` 접두는 URL 시큐리티에 위임해 skip 합니다.
+  - **사각지대**: `.business`/`.foundation` 패키지의 **읽기** 엔드포인트 **49건** — Test#1 은 패키지로, Test#2 는 HTTP 메서드로 각각 제외하므로 **어느 쪽도 보지 않습니다**. 읽기 IDOR 은 이 게이트가 잡지 못하며, 커버리지 확장은 별건입니다.
+  - 서술이 집행보다 넓으면 그 서술 자체가 거짓 안전감이 됩니다. 최신 범위는 항상 `SecurityAuthAnnotationLinterTest` 의 클래스 javadoc 을 SSOT 로 삼으십시오.
 - **예외 처리 (White-list)**: 비인가 접근이 허용되어야 하는 공개 API(예: 회원가입, 아이디 중복 확인 등)는 `SecurityAuthAnnotationLinterTest`의 `PUBLIC_PATH_WHITELIST` 상수에 등록하여 통과시키거나, `@PreAuthorize("permitAll()")`를 명시적으로 선언하도록 강제합니다.
 - **빌드 하드 스톱(Hard-Stop)**: 만약 권한 제어 어노테이션이 유실된 커스텀 API가 발견되면, JUnit 테스트 단계에서 즉시 빌드를 실패(`Hard-Stop`) 처리하고 위반 엔드포인트 명세를 상세 보고합니다.
 

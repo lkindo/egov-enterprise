@@ -170,7 +170,9 @@ public class ProductApiController {
 | 로그인 주체는 `@LoginUser CustomUserDetails` 로 받는다 | `nuri.business.security.annotation.LoginUser` | — |
 | 요청 본문 검증은 `@Valid @RequestBody` | jakarta validation | — |
 
-> 🔒 **인가 누락은 빌드를 깨뜨린다.** `SecurityAuthAnnotationLinterTest`(`api-server/src/test/java/nuri/api/harness/`)가 모든 엔드포인트를 리플렉션으로 전수 조사해, 화이트리스트·DB 구동 인가(`/admin/**` URL 시큐리티) 대상이 아닌 **쓰기 엔드포인트에 `@PreAuthorize`/`@Secured` 가 없으면 실패**시킨다. 스캐폴드가 생성하는 컨트롤러에는 이 애노테이션이 없으므로 반드시 직접 추가할 것.
+> 🔒 **인가 누락은 빌드를 깨뜨린다 — 단, 전부는 아니다.** `SecurityAuthAnnotationLinterTest`(`api-server/src/test/java/nuri/api/harness/`)가 화이트리스트·DB 구동 인가(`/admin/**` URL 시큐리티) 대상이 아닌 **쓰기(POST/PUT/DELETE/PATCH) 엔드포인트에 `@PreAuthorize`/`@Secured` 가 없으면 실패**시킨다. 스캐폴드가 생성하는 컨트롤러에는 이 애노테이션이 없으므로 반드시 직접 추가할 것.
+>
+> ⚠ **집행 범위를 정확히 알아 둘 것**(2026-08-02 실측 정정). 종전 이 문서는 "모든 엔드포인트를 리플렉션으로 전수 조사"라고 적었으나 **사실이 아니었다**. 실제 분담은 두 테스트로 갈린다 — Test#1 은 읽기·쓰기를 모두 보지만 `.business`·`.foundation` 패키지를 통째로 skip 해 **URL쌍 358개 중 25개(7.0%)** 만 본다. Test#2 는 전 컨트롤러를 보지만 **쓰기만** 본다. 그 결과 **`.business`/`.foundation` 의 읽기 엔드포인트 49건은 어느 쪽도 보지 않는다** — 읽기 IDOR(타인 상세 조회)은 이 게이트가 잡지 못하므로 직접 소유권 가드를 붙여야 한다. 최신 범위는 항상 린터 javadoc(`SecurityAuthAnnotationLinterTest` 클래스 주석)을 SSOT 로 삼을 것.
 
 **Service** — 재사용 admin 코어면 `business-core`, 프로젝트 고유 도메인이면 `business-app`(BE 헌법 제1조).
 
