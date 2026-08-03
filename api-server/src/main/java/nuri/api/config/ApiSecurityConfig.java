@@ -47,6 +47,43 @@ public class ApiSecurityConfig {
         @org.springframework.beans.factory.annotation.Value("${rbac.db-auth.secure-paths:#{T(java.util.Collections).emptyList()}}")
         private List<String> securePaths;
 
+        /**
+         * 관리(actuator) 서버 포트. 미설정이면 애플리케이션 포트와 동일 컨텍스트다.
+         * @see #managementPortSeparated()
+         */
+        @org.springframework.beans.factory.annotation.Value("${management.server.port:}")
+        private String managementServerPort;
+
+        @org.springframework.beans.factory.annotation.Value("${server.port:8080}")
+        private String serverPort;
+
+        /**
+         * 관리 엔드포인트가 <b>애플리케이션 포트에서 분리</b>됐는지 여부. [W1-12 보완]
+         *
+         * <p>[왜 이 판정이 필요한가] 원장 D-3 의 결정은 "인가가 아니라 <b>네트워크로</b> 푼다" 였다.
+         * 그런데 포트만 옮기고 인가는 그대로 두면 <b>스크레이프 불가라는 원래 문제가 그대로 남는다</b> —
+         * Boot 는 관리 자식 컨텍스트에 부모의 {@code springSecurityFilterChain} 을 그대로 등록하므로
+         * ({@code ServletManagementChildContextConfiguration.ServletManagementContextSecurityConfiguration}
+         * 이 부모 BeanFactory 에서 그 빈을 꺼내 {@code DelegatingFilterProxyRegistrationBean} 으로 다시 건다),
+         * 미인증 Prometheus 스크레이퍼는 {@code api:9090/actuator/prometheus} 에서도 여전히 401 을 받는다.
+         * 이중 차단 중 절반만 제거된 상태였다.
+         *
+         * <p>[왜 이 완화가 안전한가] 분리된 관리 포트는 compose 에서 <b>호스트로 노출되지 않는다</b>
+         * (docker-compose.prod.yml 에 {@code ports:} 매핑 없음 — 스크레이퍼는 egov-net 안에서 접근).
+         * 그리고 포트를 분리하면 {@code /actuator/**} 는 <b>애플리케이션 포트(8080)에서 사라지므로</b>,
+         * 이 permitAll 은 8080 의 표면을 넓히지 않는다. 분리되지 않은 형상(dev·local·e2e)에서는
+         * 조건이 거짓이라 종전대로 ROLE_ADMIN 이 요구된다 — 개발 형상의 인가는 완화되지 않는다.
+         *
+         * <p>이 안전 논거는 전적으로 "관리 포트가 호스트에 노출되지 않는다" 에 의존한다.
+         * 그 전제는 {@code ConfigSafetyLinterTest} 가 compose 파일을 스캔해 기계로 고정한다(§0.7-H5).
+         */
+        private boolean managementPortSeparated() {
+                return managementServerPort != null
+                                && !managementServerPort.isBlank()
+                                && !managementServerPort.equals(serverPort)
+                                && !"-1".equals(managementServerPort);
+        }
+
         public ApiSecurityConfig(
                 JwtTokenProvider jwtTokenProvider,
                 org.springframework.beans.factory.ObjectProvider<org.springframework.jdbc.core.JdbcTemplate> jdbcTemplateProvider) {
@@ -108,6 +145,17 @@ public class ApiSecurityConfig {
                                                                 .map(AntPathRequestMatcher::antMatcher)
                                                                 .toArray(AntPathRequestMatcher[]::new))
                                                                 .permitAll();
+
+                                                // [W1-12 보완] 관리 포트가 분리된 형상에서만 스크레이프 경로를 연다.
+                                                //   securePaths 보다 **먼저** 선언해야 한다 — authorizeHttpRequests 는
+                                                //   선언 순서로 매칭하므로, 뒤에 두면 `/actuator/**` 규칙이 먼저 걸려 무효가 된다.
+                                                //   판단 근거는 managementPortSeparated() javadoc 참조.
+                                                if (managementPortSeparated()) {
+                                                        log.info(">>> [W1-12] 관리 포트 분리 감지(server={}, management={}) — /actuator/prometheus 스크레이프 허용(내부망 한정)",
+                                                                        serverPort, managementServerPort);
+                                                        auth.requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/prometheus"))
+                                                                        .permitAll();
+                                                }
 
                                                 if (rbacDbAuthEnabled) {
                                                         // Phase 3: DB 인가 적용 (enforce)

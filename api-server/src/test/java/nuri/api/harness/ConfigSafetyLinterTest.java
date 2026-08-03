@@ -70,6 +70,8 @@ class ConfigSafetyLinterTest {
     private static final String KEY_SHOW_DETAILS = "management.endpoint.health.show-details";
     private static final String KEY_JDBC_URL = "spring.datasource.jdbc-url";
     private static final String KEY_CONNECTION_TIMEOUT = "spring.datasource.connection-timeout";
+    /** [W1-12] 관리 포트 분리 여부. 이 키가 선언된 순간 헬스체크 이전·호스트 미노출 두 전제가 함께 요구된다. */
+    private static final String KEY_MANAGEMENT_PORT = "management.server.port";
 
     /** actuator 기본 노출에서 영구 배제할 엔드포인트 — env=환경변수 전량(DB 자격증명·ALGORITHM_KEY), beans=빈 그래프. */
     private static final Set<String> FORBIDDEN_ACTUATOR_ENDPOINTS = Set.of("env", "beans", "configprops", "*");
@@ -92,6 +94,18 @@ class ConfigSafetyLinterTest {
 
     /** {@code ${VAR:default}} 형태에서 default 를 뽑는다(placeholder 를 숫자 파싱 실패로 오판하지 않기 위함). */
     private static final Pattern PLACEHOLDER_DEFAULT = Pattern.compile("^\\$\\{[^:}]*:([^}]*)}$");
+
+    /**
+     * [W1-12] compose 헬스체크가 찌르는 {@code /actuator/health} 의 포트. 관리 포트와 일치해야 한다.
+     * {@code http://localhost:8080/...} 과 {@code http://localhost:${MANAGEMENT_PORT:-9090}/...} 두 형태를
+     * 모두 받는다(후자의 닫는 중괄호를 허용하지 않으면 placeholder 형태가 '재정의 없음' 으로 오판된다).
+     */
+    private static final Pattern COMPOSE_HEALTHCHECK_ACTUATOR =
+            Pattern.compile("https?://[^\\s\"']*?(\\d+)\\}?/actuator/health");
+
+    /** [W1-12] compose 의 호스트 포트 매핑({@code - "9090:9090"} / {@code - 9090:9090}). */
+    private static final Pattern COMPOSE_HOST_PORT_MAPPING =
+            Pattern.compile("(?m)^\\s*-\\s*\"?(\\d+):(\\d+)\"?\\s*$");
 
     @Test
     @DisplayName("🛡️ 배포 형상 안전성 — prod 오버레이 존재·actuator 노출면·prod 기동가능성 회귀 차단 (Wave 0)")
@@ -140,6 +154,9 @@ class ConfigSafetyLinterTest {
 
         // ── 7) flat connection-timeout 상한
         auditConnectionTimeout(base, violations);
+
+        // ── 8) [W1-12] 관리 포트 분리 형상의 두 전제 (헬스체크 이전 · 호스트 미노출)
+        auditManagementPortSeparation(prod, composeProdSrc, composeBaseSrc, violations);
 
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -271,6 +288,77 @@ class ConfigSafetyLinterTest {
                     + " jdbcUrl 이 null 인 채 driverClassName 만 세팅되고 HikariConfig.validate() 가"
                     + " \"jdbcUrl is required with driverClassName.\" 로 죽습니다. url 과 함께 jdbc-url 을 선언하십시오.");
         }
+    }
+
+    /**
+     * 관리 포트 분리 형상의 두 전제를 기계로 고정한다. [W1-12 보완]
+     *
+     * <p>{@code management.server.port} 분리는 두 가지를 <b>동시에</b> 요구한다. 하나라도 어긋나면
+     * 분리 자체가 결함이 된다 — 실제로 2026-08-02 이행에서 둘 다 어긋났다.
+     * <ol>
+     *   <li><b>헬스체크 대상 이전</b>: 포트를 분리하면 {@code /actuator/**} 는 애플리케이션 포트에서
+     *       <b>사라진다</b>. base compose 의 헬스체크({@code localhost:8080/actuator/health})를 그대로 두면
+     *       운영 배포에서만 404 → retries 소진 → 컨테이너 영구 unhealthy → {@code service_healthy} 를
+     *       기다리는 frontend 가 <b>기동하지 않는다</b>. 개발 스택은 포트를 안 나누므로 무증상이라
+     *       로컬에서 절대 재현되지 않는다.</li>
+     *   <li><b>호스트 미노출</b>: {@code ApiSecurityConfig} 가 분리 형상에서 {@code /actuator/prometheus} 를
+     *       permitAll 로 여는 근거가 "이 포트는 컨테이너 네트워크 안에서만 보인다" 이다.
+     *       compose 가 이 포트를 호스트에 매핑하는 순간 그 근거가 무너지고 <b>미인증 메트릭 공개</b>가 된다.</li>
+     * </ol>
+     * 두 전제는 서로 다른 파일(yml ↔ compose)에 흩어져 있어 사람 눈으로는 어긋나도 조용하다. 그래서 게이트로 묶는다.
+     */
+    private void auditManagementPortSeparation(Map<String, String> prod, String composeProdSrc,
+                                               String composeBaseSrc, List<String> violations) {
+        String raw = prod.get(KEY_MANAGEMENT_PORT);
+        if (raw == null || unquote(raw).isEmpty()) {
+            // 분리하지 않은 형상은 이 검사의 대상이 아니다(종전 동작). 단, 분리를 되돌렸다면
+            // ApiSecurityConfig 의 permitAll 조건도 거짓이 되므로 인가가 자동으로 원복된다.
+            return;
+        }
+        String port = resolvePlaceholderDefault(unquote(raw));
+        if (port == null || !port.matches("\\d+")) {
+            violations.add("application-prod.yml: " + KEY_MANAGEMENT_PORT + " 값 '" + unquote(raw)
+                    + "' 에서 포트 숫자를 해석할 수 없습니다 — 판정 불가를 통과로 넘기면 아래 두 전제(헬스체크 이전·호스트 미노출)가"
+                    + " vacuous 하게 통과합니다. 숫자 또는 ${VAR:숫자} 형태로 두십시오.");
+            return;
+        }
+
+        // ── 전제 ①: prod 오버레이가 헬스체크를 관리 포트로 재정의했는가.
+        Matcher hc = COMPOSE_HEALTHCHECK_ACTUATOR.matcher(composeProdSrc);
+        boolean found = false;
+        while (hc.find()) {
+            found = true;
+            if (!port.equals(hc.group(1))) {
+                violations.add(COMPOSE_PROD + ": 헬스체크가 포트 " + hc.group(1) + " 의 /actuator/health 를 찌릅니다."
+                        + " 그러나 " + KEY_MANAGEMENT_PORT + " = " + port + " 로 관리 엔드포인트가 분리되어 그 경로는"
+                        + " 애플리케이션 포트에 존재하지 않습니다 → 영구 unhealthy → service_healthy 를 기다리는 서비스가"
+                        + " 기동하지 않습니다. 헬스체크 URL 의 포트를 " + port + " 로 맞추십시오.");
+            }
+        }
+        if (!found) {
+            violations.add(COMPOSE_PROD + ": " + KEY_MANAGEMENT_PORT + " = " + port + " 로 관리 포트를 분리했는데"
+                    + " 이 오버레이에 /actuator/health 헬스체크 재정의가 없습니다 — base compose 의 애플리케이션 포트"
+                    + " 헬스체크를 그대로 상속하면 운영 배포에서만 404 로 영구 unhealthy 가 됩니다(개발 스택은 무증상).");
+        }
+
+        // ── 전제 ②: 어느 compose 도 이 포트를 호스트에 매핑하지 않았는가.
+        for (Map.Entry<String, String> f : Map.of(COMPOSE_PROD, composeProdSrc, COMPOSE_BASE, composeBaseSrc).entrySet()) {
+            Matcher pm = COMPOSE_HOST_PORT_MAPPING.matcher(f.getValue());
+            while (pm.find()) {
+                if (port.equals(pm.group(1)) || port.equals(pm.group(2))) {
+                    violations.add(f.getKey() + ": 관리 포트 " + port + " 가 호스트로 매핑돼 있습니다('" + pm.group(0).trim()
+                            + "') — ApiSecurityConfig 가 분리 형상에서 /actuator/prometheus 를 permitAll 로 여는 근거는"
+                            + " **이 포트가 컨테이너 네트워크 안에서만 보인다**는 것입니다. 호스트에 노출하면 그 근거가 무너져"
+                            + " 미인증 메트릭 공개가 됩니다. 스크레이퍼는 같은 네트워크 안에서 접근하게 하십시오.");
+                }
+            }
+        }
+    }
+
+    /** {@code ${VAR:default}} 면 default 를, 아니면 값 자체를 돌려준다. */
+    private String resolvePlaceholderDefault(String value) {
+        Matcher m = PLACEHOLDER_DEFAULT.matcher(value);
+        return m.matches() ? m.group(1).trim() : value;
     }
 
     /** flat 키만 실효를 가진다(nested spring.datasource.hikari.* 는 LegacyConfig 바인딩상 조용히 무시됨). */

@@ -134,7 +134,11 @@ export default function ObservabilityPage() {
       latency,
       errorRate,
       cpuUsage,
-      healthStatus: health?.status || (live ? 'UNKNOWN' : 'DOWN'),
+      // [W1-12 보완] 액추에이터가 응답하지 않는 것은 **시스템이 죽었다는 증거가 아니다**.
+      //   운영(prod)에서는 management.server.port 가 9090/내부망으로 분리되어 브라우저가
+      //   same-origin /actuator 프록시로 도달할 수 없는 것이 정상 형상이다. 종전에는 그 상태를
+      //   'DOWN' 으로 표기해 멀쩡한 시스템을 장애로 보고했다 — 미도달과 장애를 구분한다.
+      healthStatus: health?.status || 'UNKNOWN',
       live,
     };
   }, []);

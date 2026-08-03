@@ -35,3 +35,28 @@ services:
       #   스크레이퍼는 egov-net 안에서 api:9090 으로 접근한다.
       MANAGEMENT_PORT: ${MANAGEMENT_PORT:-9090}
       MANAGEMENT_ADDRESS: ${MANAGEMENT_ADDRESS:-0.0.0.0}
+    # [W1-12 보완] 관리 포트를 분리하면 /actuator/** 는 **8080 에서 사라진다**(Spring Boot 가
+    #   management 를 별도 웹서버 컨텍스트로 띄운다). base compose 의 헬스체크는
+    #   `http://localhost:8080/actuator/health` 를 찌르므로, 오버레이를 얹은 운영 배포에서만
+    #   조용히 404 를 받아 **retries 10회를 소진한 뒤 컨테이너가 영구 unhealthy** 가 된다.
+    #   그러면 `depends_on: api: condition: service_healthy` 인 frontend 가 **아예 기동하지 않는다** —
+    #   즉 포트 분리 자체가 운영 배포를 세우는 결함이 된다(개발 스택은 포트를 안 나누므로 무증상이라
+    #   로컬에서는 절대 재현되지 않는다). 헬스체크 대상을 관리 포트로 함께 옮긴다.
+    #   `${MANAGEMENT_PORT:-9090}` 은 위 environment 항목과 **같은 호스트 환경/.env 값**으로 compose 가
+    #   파싱 시점에 치환하므로 둘이 어긋나지 않는다(컨테이너 안 셸 변수를 쓰려면 `$$` 가 필요한데,
+    #   그렇게 하면 오히려 두 값이 갈릴 수 있어 일부러 쓰지 않는다).
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:${MANAGEMENT_PORT:-9090}/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 30s
+      retries: 10
+    # [W1-13 보완] 운영 로그는 파일 appender 폐기 후 **stdout 단독**이다(logback-spring.xml).
+    #   그 결정의 대가는 "수집 스택이 없으면 컨테이너 재생성 시 로그가 전량 소실된다" 이고,
+    #   그 대가가 아직 어디에도 결속돼 있지 않았다. 보존성은 수집 스택 도입 전까지 미해결이지만
+    #   (docs/04-operations/wave2-carryover.md §4), **무제한 증가**만은 지금 막는다 —
+    #   json-file 드라이버는 기본이 무제한이라 장수명 컨테이너가 디스크를 채운다.
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "5"

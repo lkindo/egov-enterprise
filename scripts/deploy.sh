@@ -19,7 +19,10 @@ echo -e "${BLUE}=== Starting Deployment for ${APP_NAME} ===${NC}"
 #    공개 저장소의 서명 키로 운영 토큰을 서명하면 임의 esntlId 를 subject 로 하는 토큰을 누구나 위조할 수 있다.
 #    조용한 대체를 금지하고 배포를 중단한다.
 MISSING=""
-for v in JWT_SECRET ALGORITHM_KEY DB_URL DB_USERNAME DB_PASSWORD ADMIN_INITIAL_PASSWORD; do
+# [W1-13 정합] MAIL_HOST 는 docker-compose.prod.yml 이 `${MAIL_HOST:?...}` 로 이미 하드 차단한다.
+#   이 목록에서 빠져 있으면 사전 검증을 통과한 뒤 `docker compose up` 단계에서 죽어,
+#   운영자가 받는 안내가 갈린다. 차단 지점을 여기로 앞당겨 메시지를 한 곳으로 모은다.
+for v in JWT_SECRET ALGORITHM_KEY DB_URL DB_USERNAME DB_PASSWORD ADMIN_INITIAL_PASSWORD MAIL_HOST; do
     eval "val=\${$v:-}"
     if [ -z "$val" ]; then
         MISSING="$MISSING $v"
