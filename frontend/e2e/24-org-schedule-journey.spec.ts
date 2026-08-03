@@ -159,7 +159,19 @@ test.describe('Tier 24: 조직 ↔ 일정 통합 사슬', () => {
 
     test('캘린더 탭 — 일정 등록·수정·삭제 UI 가 노출된다', async ({ page, request }) => {
         // UI 검증용 일정 1건을 API 로 만들어 둔다(등록 폼 자체는 아래에서 별도로 연다).
-        const ymd = '20260716';
+        //
+        // [2026-08-03 시한폭탄 제거] 종전엔 '20260716' 하드코딩이었다. 그런데 캘린더 탭은
+        //   WorkHubClient 가 `format(currentDate, 'yyyyMM')` 로 **현재 달**만 조회한다(monthly API).
+        //   그래서 이 픽스처는 2026-07 에만 목록에 나타났고, 8월이 되자 목록이 비어
+        //   schedule-edit 버튼이 존재하지 않아 실패했다 — 제품 결함도 플레이키도 아닌
+        //   테스트가 특정 달에만 성립하도록 쓰여 있던 문제다.
+        //   (위 API 전용 테스트들의 하드코딩 날짜는 조회도 같은 yearMonth 로 하므로 자기정합적이다.)
+        //
+        //   현재 달의 15일로 만든다 — 1일/말일을 피하면 러너 TZ(UTC)와 표시 TZ 차이로
+        //   달이 넘어가는 경계 문제도 함께 없앤다. selectedDate 는 초기값이 undefined 라
+        //   그 달의 일정이면 어느 날짜든 목록에 나온다(visibleSchedules 참조).
+        const today = new Date();
+        const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}15`;
         const res = await request.post(SCHEDULE_API, {
             headers: auth,
             data: { schdlNm: `${PREFIX}UiFixture`, schdlBgngYmd: ymd, schdlEndYmd: ymd, schdlSeCd: '2' },

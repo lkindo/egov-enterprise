@@ -38,8 +38,23 @@ export class ObservabilityPage {
         } catch (e) {
             console.log('>>> Topology loader not detected or already hidden.');
         }
-        // 토폴로지 탭의 실제 노드 라벨로 검증 (svg/canvas 존재만으론 lucide 아이콘에 의해 항상 참 → 무의미)
-        await expect(this.page.getByText('PostgreSQL Primary')).toBeVisible({ timeout: 15000 });
+        // [2026-08-03 계약 전환] 종전엔 'PostgreSQL Primary' 노드가 보이는지를 단언했다.
+        //   그 라벨은 NetworkMonitoringApiController 가 **소스에 박아 두고 실시간처럼 돌려주던 가짜
+        //   6노드** 중 하나였고, Wave 0(16da54e4c)이 그 거짓 성공을 제거해 GET 이 빈 목록을 반환한다.
+        //   즉 이 단언은 "가짜 인프라가 그려지는 것"을 계약으로 동결하고 있었다 — 관리자가 존재하지
+        //   않는 노드의 상태를 보고 운영 판단을 하는 상태를 테스트가 보증한 셈이다.
+        //   (백엔드 테스트는 그때 함께 고쳤지만 이 E2E 는 놓쳤다. e2e 가 skip 되고 있어 아무도 못 봤다.)
+        //
+        //   지금 검증해야 하는 계약은 정반대다: **계측 소스가 없으면 다이어그램을 그리지 않는다.**
+        await expect(
+            this.page.getByText('연동된 토폴로지 계측 소스가 없습니다')
+        ).toBeVisible({ timeout: 15000 });
+
+        // 가짜 노드가 되살아나면 red 가 되도록 부재까지 단언한다(정상 상태만 확인하면 회귀를 못 잡는다).
+        await expect(this.page.getByText('PostgreSQL Primary')).toHaveCount(0);
+
+        // ⚠ 인프라 노드 관리가 실제로 구현되면 이 테스트는 red 가 된다. 그때 위 두 단언을
+        //   '실 노드가 그려진다' 로 바꾼다 — 구현 시점에 테스트가 손을 들게 하는 것이 의도다.
     }
 
     async refresh() {
