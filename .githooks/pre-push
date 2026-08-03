@@ -54,6 +54,24 @@ if [ -f frontend/package.json ]; then
   ( cd frontend && npx tsc --noEmit ) \
     || { echo "❌ TypeScript 타입 컴파일 실패 (GEMINI.md §0.6)"; exit 1; }
 
+  # [2026-08-04 신설] ESLint — 이 훅에 없어서 실제로 뚫린 구멍이다.
+  #
+  #   2026-08-03 실측: `useAppForm.test.tsx` 의 인라인 z.object 1건이 lint 에러였는데
+  #   pre-push 가 eslint 를 돌지 않아 그대로 push 됐다. 그 결과 CI 의 frontend-build 가 죽었고,
+  #   e2e-tests 는 frontend-build 에 needs 로 매달려 있어 **22티어가 통째로 skip** 됐다.
+  #   즉 lint 에러 1건이 E2E 전체를 재우고 있었고, 그 상태가 여러 커밋에 걸쳐 유지됐다.
+  #
+  #   tsc 가 통과해도 lint 는 떨어질 수 있다 — 이 저장소의 lint 는 타입 검사가 아니라
+  #   **계약 규칙**(예: 인라인 z.object 금지 = 백엔드 생성 스키마 SSOT 강제)을 담고 있어서
+  #   tsc 로는 원리적으로 대체되지 않는다.
+  #
+  #   ⚠ 경고는 차단하지 않는다. 현행 457건은 점진 정리 대상이고(react-hooks 계열 등),
+  #   경고까지 막으면 게이트가 오탐 지배가 되어 SKIP 사용을 정당화한다. 막는 것은 error 뿐이다.
+  echo "  → frontend: pnpm run lint (error 만 차단 — warning 은 통과)"
+  ( cd frontend && pnpm run lint ) \
+    || { echo "❌ ESLint 에러 — CI frontend-build 가 죽고 e2e 전체가 skip 됩니다(2026-08-03 실측)."; \
+         echo "   경고(warning)는 차단 대상이 아닙니다. 위 출력에서 'error' 로 표시된 항목만 고치면 됩니다."; exit 1; }
+
   # [계약 드리프트 게이트] api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합.
   # CI(ci.yml)에도 있으나 CI 과금차단 상태라 로컬 pre-push 가 사실상 유일 관문 → 여기서도 강제.
   # 커밋된 api-docs.json 기반(오프라인·결정적)이라 백엔드 재빌드 불요.
