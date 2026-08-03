@@ -77,6 +77,27 @@ class HarnessBaselineIntegrityTest {
     private static final String CLASSES_KEY = "__harness.classes";
 
     /**
+     * 훅 파일 자체의 무결성 축. [W0-P1-7 보완 — 2026-08-03]
+     *
+     * <p>Wave 0 의 P1-7 은 두 가지를 요구했다 — ① pre-push fast-pass 를 allowlist→denylist 로 반전
+     * ② <b>훅 자체의 sha256 을 매니페스트에 등재</b>. ①만 이행됐다.
+     *
+     * <p>②가 빠진 것이 치명적인 이유는 {@code .githooks/pre-push} 가 스스로 적어 둔 전제 때문이다 —
+     * "CI 에도 있으나 과금차단 상태라 로컬 pre-push 가 사실상 유일 관문". git 은 <b>워킹트리의 훅 파일을
+     * 그대로 실행</b>하므로, 훅을 무력화하는 편집(조기 return 무조건화, fast-pass 정규식 되살리기,
+     * SKIP_HARNESS 분기 반전)은 <b>그 편집된 훅이 자기 자신의 푸시를 승인</b>한다.
+     * 게이트를 끄는 편집이 게이트를 통과하는 구조다.
+     *
+     * <p>훅 내용을 매니페스트에 동결하면 그 편집이 <b>하네스 테스트에서</b> 잡힌다 —
+     * 훅이 아니라 JVM 테스트가 판정하므로 훅을 고쳐도 우회되지 않는다.
+     * 정당한 훅 변경은 매니페스트를 함께 갱신해야 하고, 그러면 두 파일이 같이 바뀌어 diff 에 의도가 드러난다.
+     */
+    private static final List<String> GATE_HOOKS = List.of(".githooks/pre-push", ".githooks/pre-commit");
+
+    /** 훅 해시 키 접두 — {@code __hooks.<파일명>} */
+    private static final String HOOKS_KEY_PREFIX = "__hooks.";
+
+    /**
      * 스캔 대상: 게이트 판정에 관여하는 {@code static final} 상수 선언.
      * <p>목록(Set/List/Collection/Map)뿐 아니라 <b>경로·스캔 베이스 문자열과 정규식(Pattern)</b>도 포함한다 —
      * 스캔 루트를 빈 경로로 바꾸거나 탐지 정규식을 무력하게 고치는 것도 동일한 은폐이기 때문이다.
@@ -131,6 +152,21 @@ class HarnessBaselineIntegrityTest {
         }
         actual.put(CLASSES_KEY, String.join(",", actualClasses));
 
+        // [W0-P1-7 보완] 훅 파일 자체를 동결한다. GATE_HOOKS javadoc 참조.
+        //   줄바꿈만 정규화하고(CRLF↔LF) 내용은 그대로 해시한다 — 주석 한 줄이 바뀌어도 드러나는 것이 목적이다.
+        //   훅이 사라진 것도 위반이다: 파일을 지우면 git 이 조용히 훅 없이 동작하므로, 부재를 통과로 넘기면
+        //   '삭제' 가 가장 값싼 우회가 된다.
+        for (String hook : GATE_HOOKS) {
+            Path hookPath = resolve(hook);
+            String hookKey = HOOKS_KEY_PREFIX + hookPath.getFileName();
+            if (!Files.isRegularFile(hookPath)) {
+                actual.put(hookKey, "MISSING");
+                continue;
+            }
+            String content = Files.readString(hookPath, StandardCharsets.UTF_8).replace("\r\n", "\n");
+            actual.put(hookKey, sha256Short(content));
+        }
+
         Properties expected = new Properties();
         if (Files.exists(manifestPath)) {
             try (var reader = Files.newBufferedReader(manifestPath, StandardCharsets.UTF_8)) {
@@ -151,11 +187,23 @@ class HarnessBaselineIntegrityTest {
                 continue;
             }
             String exp = expected.getProperty(e.getKey());
+            boolean isHook = e.getKey().startsWith(HOOKS_KEY_PREFIX);
             if (exp == null) {
-                violations.add("신설 감지 — 매니페스트에 없는 동결/예외 목록: " + e.getKey()
-                        + " (" + e.getValue() + "). 예외 목록의 '신설' 은 신호 은폐의 대표 수법입니다.");
+                violations.add(isHook
+                        ? "신설 감지 — 매니페스트에 없는 훅: " + e.getKey() + " (" + e.getValue() + ")"
+                        : "신설 감지 — 매니페스트에 없는 동결/예외 목록: " + e.getKey()
+                                + " (" + e.getValue() + "). 예외 목록의 '신설' 은 신호 은폐의 대표 수법입니다.");
             } else if (!exp.trim().equals(e.getValue())) {
-                violations.add("변경 감지 — " + e.getKey() + ": 매니페스트=" + exp.trim() + " ↔ 실제=" + e.getValue());
+                if (isHook) {
+                    violations.add("훅 변경 감지 — " + e.getKey() + ": 매니페스트=" + exp.trim()
+                            + " ↔ 실제=" + e.getValue()
+                            + ("MISSING".equals(e.getValue())
+                                    ? " (훅 파일이 사라졌습니다 — git 은 훅 없이 조용히 동작하므로 '삭제' 는 가장 값싼 우회입니다)"
+                                    : " (git 은 워킹트리의 훅을 그대로 실행하므로, 훅을 무력화하는 편집은 그 편집된 훅이"
+                                            + " 자기 자신의 푸시를 승인합니다. 정당한 변경이면 매니페스트를 함께 갱신하십시오.)"));
+                } else {
+                    violations.add("변경 감지 — " + e.getKey() + ": 매니페스트=" + exp.trim() + " ↔ 실제=" + e.getValue());
+                }
             }
         }
 

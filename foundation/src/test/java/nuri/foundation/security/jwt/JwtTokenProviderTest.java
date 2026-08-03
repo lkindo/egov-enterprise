@@ -51,6 +51,56 @@ class JwtTokenProviderTest {
     }
 
     /**
+     * [W0-P0-4-c 회귀 방지 / 2026-08-03] 저장소에 커밋된 dev 시크릿을 운영에 주입하면 기동을 거부한다.
+     *
+     * <p>종전 prod 방어({@code ${JWT_SECRET}} 무기본값)는 <b>변수의 존재</b>만 검사했다.
+     * 공개 저장소의 그 값을 그대로 주입하면 통과했고, 그 상태에서는 누구나 임의 esntlId 로
+     * 토큰을 위조할 수 있다 — 인증 체계 전체가 무의미해진다.
+     */
+    @Test
+    @DisplayName("[보안] prod 에 저장소 커밋 dev 시크릿을 주입하면 기동 거부")
+    void init_rejectsCommittedDevSecretInProd() {
+        JwtTokenProvider provider = new JwtTokenProvider();
+        ReflectionTestUtils.setField(provider, "secretKey", COMMITTED_DEV_SECRET);
+        ReflectionTestUtils.setField(provider, "activeProfiles", "prod");
+
+        IllegalStateException e = assertThrows(IllegalStateException.class,
+                () -> ReflectionTestUtils.invokeMethod(provider, "init"));
+        assertThat(e.getMessage())
+                .as("거부 사유가 메시지에 드러나야 한다")
+                .contains("커밋된 개발용 JWT_SECRET");
+    }
+
+    @Test
+    @DisplayName("[보안] 같은 시크릿이라도 dev·e2e 프로파일에서는 허용된다 (개발 경로 차단 금지)")
+    void init_allowsCommittedDevSecretOutsideProd() {
+        for (String profiles : new String[] { "", "dev", "test,e2e", "local" }) {
+            JwtTokenProvider provider = new JwtTokenProvider();
+            ReflectionTestUtils.setField(provider, "secretKey", COMMITTED_DEV_SECRET);
+            ReflectionTestUtils.setField(provider, "activeProfiles", profiles);
+            ReflectionTestUtils.invokeMethod(provider, "init"); // 예외가 나면 이 테스트가 실패한다
+        }
+    }
+
+    @Test
+    @DisplayName("[보안] prod 여도 새로 만든 시크릿이면 기동한다 — 값 기준 판정이지 프로파일 기준이 아니다")
+    void init_allowsFreshSecretInProd() {
+        JwtTokenProvider provider = new JwtTokenProvider();
+        ReflectionTestUtils.setField(provider, "secretKey",
+                "a-freshly-generated-secret-that-is-long-enough-for-hs512-hmac-key-material-0123456789");
+        ReflectionTestUtils.setField(provider, "activeProfiles", "prod");
+        ReflectionTestUtils.invokeMethod(provider, "init");
+    }
+
+    /**
+     * docker-compose.yml · application.yml · frontend/src/middleware.ts 에 있는 그 값이다.
+     * 이미 공개된 값이라 테스트에 두는 것이 새로운 노출을 만들지 않으며,
+     * 여기 두어야 "이 값이 운영에 들어오면 막힌다" 를 실제로 증명할 수 있다.
+     */
+    private static final String COMMITTED_DEV_SECRET =
+            "dGhpcy1pcy1hLXZlcnktbG9uZy1zZWNyZXQta2V5LWZvci1lZ292LWVudGVycHJpc2UtbW9kZXJuaXphdGlvbg==";
+
+    /**
      * [회귀 방지 / 2026-07-28] 토큰 수명을 상수에서 `@Value` 주입으로 바꾸면서 **필드 초기화값을
      * 빠뜨려** 이 클래스의 3개 테스트가 `ExpiredJwtException: JWT expired 716 milliseconds ago`
      * 로 깨진 사고가 있었다(CI run 30320684270). `@Value` 는 Spring 이 주입할 때만 채워지므로

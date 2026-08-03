@@ -88,12 +88,49 @@ public class RateLimitFilter implements Filter {
         if (bucket.tryConsume(tokensToConsume)) {
             chain.doFilter(request, response);
         } else {
+            recordRejection(httpRequest, clientIp, tokensToConsume);
+
             HttpServletResponse httpResponse = (HttpServletResponse) response;
             httpResponse.setStatus(429); // Too Many Requests
             httpResponse.setHeader("X-Rate-Limit-Retry-After-Seconds", "60");
             httpResponse.setContentType("application/json;charset=UTF-8");
             httpResponse.getWriter().write("{\"success\":false,\"code\":\"C429\",\"message\":\"Rate limit exceeded. Too many requests from this IP.\"}");
         }
+    }
+
+    /**
+     * 429 거절을 관측 가능하게 남긴다. [W0-P1-6 보완 — 2026-08-03]
+     *
+     * <p>Wave 0 의 P1-6 은 ① Caffeine 교체(유계화) ② <b>429 로깅·카운터</b> 를 함께 요구했는데
+     * ①만 이행됐다. 그 결과 레이트리밋이 <b>실제로 발동하는지, 누가 얼마나 맞고 있는지</b> 를
+     * 운영에서 알 방법이 없었다 — 버킷 맵을 유계로 만든 이번 조치의 부작용(축출로 인한 한도 리셋)이
+     * 실제로 일어나는지조차 사후 검증할 신호가 없다.
+     *
+     * <p>[왜 WARN 인가] 429 는 정상 동작이지만 <b>드물어야 정상</b>이다. 상시 발생하면 그 자체가
+     * 설정 오류(용량 과소)이거나 공격 신호다. INFO 로 두면 운영 로그에서 묻힌다.
+     * 반대로 ERROR 로 두면 정상 방어 동작이 알람을 무디게 만든다(W1-D4 가 고친 그 패턴).
+     *
+     * <p>[메트릭이 아니라 로그인 이유] business-core 는 Micrometer 를 선택 의존으로만 쓴다.
+     * 여기서 {@code MeterRegistry} 를 생성자 주입하면 그 빈이 없는 컨텍스트(단위 테스트 슬라이스 등)에서
+     * 필터 생성이 실패해 <b>레이트리밋이 통째로 빠진 채 테스트가 초록</b>이 되는 위험이 있다.
+     * 카운터는 프로세스 내부 {@link java.util.concurrent.atomic.AtomicLong} 으로 두고, 로그를 1차 신호로 삼는다.
+     * (Micrometer 게이지 배선은 actuator 노출면 결정과 함께 다루는 것이 맞다 — wave2-carryover 참조.)
+     */
+    private void recordRejection(HttpServletRequest request, String clientIp, int tokens) {
+        long total = rejectedCount.incrementAndGet();
+        LOG.warn("[RATE-LIMIT] 429 거절 — ip={} method={} uri={} tokens={} 누적={}",
+                clientIp, request.getMethod(), request.getRequestURI(), tokens, total);
+    }
+
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(RateLimitFilter.class);
+
+    /** 프로세스 기동 이후 누적 429 거절 수. 재시작 시 0 으로 돌아간다(장기 추세는 로그 집계로 본다). */
+    private final java.util.concurrent.atomic.AtomicLong rejectedCount =
+            new java.util.concurrent.atomic.AtomicLong();
+
+    /** 테스트 전용 — 429 카운터가 실제로 증가하는지 검증한다. */
+    long rejectedCountForTest() {
+        return rejectedCount.get();
     }
 
     /**

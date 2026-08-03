@@ -56,6 +56,27 @@ public class JwtTokenProvider {
 
     private SecretKey key;
 
+    /**
+     * 활성 프로파일. 운영에서 <b>공개된 dev 시크릿</b>을 거부하기 위해서만 쓴다.
+     * (주입 실패 시 빈 배열이라 검사가 조용히 꺼진다 — 그 경우는 아래 §운영 여부 판정 참조.)
+     */
+    @Value("${spring.profiles.active:}")
+    private String activeProfiles;
+
+    /**
+     * 저장소에 커밋된 개발 기본 시크릿의 SHA-256. [W0-P0-4-c 보완 — 2026-08-03]
+     *
+     * <p>값 자체를 상수로 두면 이 파일이 또 하나의 노출 지점이 되므로 해시만 둔다.
+     * (원본은 docker-compose.yml · application.yml · frontend/src/middleware.ts 에 있는 그 값이다.)
+     *
+     * <p>[왜 필요한가] 종전 prod 방어는 {@code ${JWT_SECRET}} 무기본값 fail-fast 뿐이었다.
+     * 그것이 검사하는 것은 <b>변수의 존재</b>이지 <b>값의 안전성</b>이 아니다 —
+     * 운영자가 저장소에 커밋된 그 값을 그대로 {@code JWT_SECRET} 에 주입하면 prod 가 정상 기동한다.
+     * 공개 저장소이므로 그 상태는 "누구나 임의 esntlId 로 토큰을 위조할 수 있음" 과 같다.
+     */
+    private static final String DEV_SECRET_SHA256 =
+            "650ca76f50223962b2c5aff96509b5dbfe4e4f8d8ee48b41ce258f9ee3bafe91";
+
     @org.springframework.beans.factory.annotation.Autowired
     @org.springframework.context.annotation.Lazy
     private UserDetailsService userDetailsService;
@@ -72,8 +93,57 @@ public class JwtTokenProvider {
                     + accessTokenValidityInMilliseconds + "ms, refresh="
                     + refreshTokenValidityInMilliseconds + "ms)");
         }
+        rejectCommittedDevSecretInProduction();
         this.key = Keys.hmacShaKeyFor(secretKey.getBytes());
         log.info("JWT secret fingerprint = {} (sha256[:8], 값 아님)", secretFingerprint());
+    }
+
+    /**
+     * 운영에서 <b>저장소에 커밋된 dev 시크릿</b>을 거부한다. [W0-P0-4-c 보완]
+     *
+     * <p>{@code ${JWT_SECRET}} 무기본값 fail-fast 는 <b>변수가 있는가</b>만 본다. 공개 저장소의
+     * 그 값을 그대로 주입하면 통과한다 — 그 상태에서는 누구나 임의 {@code esntlId} 를 subject 로 하는
+     * 토큰을 위조할 수 있으므로, 인증 체계 전체가 무의미해진다. 값 수준에서 막는다.
+     *
+     * <p>[왜 운영에서만] dev·test·e2e 는 그 값을 <b>일부러</b> 쓴다(백엔드와 프론트 미들웨어가 같은
+     * raw bytes 로 HMAC 해야 로그인이 성립한다). 전 프로파일에서 막으면 개발·CI 가 통째로 멈춘다.
+     *
+     * <p>[판정 불가는 통과로 두지 않는다] 활성 프로파일을 읽지 못하면(빈 문자열) 운영 여부를 알 수 없다.
+     * 그러나 이 경우를 실패로 다루면 프로파일 없이 뜨는 정상 개발 경로가 막히므로, <b>경고를 남기고</b>
+     * 통과시킨다 — 대신 그 경고가 로그에 남아 사후 추적이 가능하다.
+     * (운영 배포가 프로파일 없이 뜨는 경로는 {@code ConfigSafetyLinterTest} 가 별도로 차단한다.)
+     */
+    private void rejectCommittedDevSecretInProduction() {
+        boolean isProd = activeProfiles != null
+                && java.util.Arrays.stream(activeProfiles.split(","))
+                        .map(String::trim)
+                        .anyMatch("prod"::equalsIgnoreCase);
+        if (!isProd) {
+            return;
+        }
+        if (DEV_SECRET_SHA256.equals(fullSecretHash())) {
+            throw new IllegalStateException(
+                    "[SECURITY] 운영(prod) 프로파일에 **저장소에 커밋된 개발용 JWT_SECRET** 이 주입되었습니다. "
+                    + "이 값은 공개 저장소에 있으므로 누구나 임의 사용자로 토큰을 위조할 수 있습니다. "
+                    + "JWT_SECRET 을 새로 생성한 값으로 교체하십시오 "
+                    + "(예: openssl rand -base64 64). fingerprint=" + secretFingerprint());
+        }
+    }
+
+    /** 시크릿의 SHA-256 전체(16진). 비교 전용이며 로그에 남기지 않는다. */
+    private String fullSecretHash() {
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(secretKey.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            // SHA-256 은 JRE 필수 알고리즘이라 도달 불가. 도달했다면 검사를 통과시키지 않는다.
+            throw new IllegalStateException("SHA-256 을 사용할 수 없어 시크릿 안전성을 판정할 수 없습니다.", e);
+        }
     }
 
     /**

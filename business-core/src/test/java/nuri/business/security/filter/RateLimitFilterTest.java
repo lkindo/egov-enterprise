@@ -51,6 +51,24 @@ class RateLimitFilterTest {
         assertEquals(429, blockedResponse.getStatus());
         assertEquals("application/json;charset=UTF-8", blockedResponse.getContentType());
         System.out.println(">>> Blocked Response Body: " + blockedResponse.getContentAsString());
+
+        // [W0-P1-6 보완] 429 가 관측 가능해야 한다. 종전에는 거절이 어디에도 기록되지 않아
+        //   레이트리밋이 실제로 발동하는지·누가 얼마나 맞고 있는지를 운영에서 알 수 없었다.
+        assertEquals(1, filter.rejectedCountForTest(), "429 거절은 카운터에 계상되어야 한다");
+    }
+
+    @Test
+    @DisplayName("[W0-P1-6] 허용된 요청은 429 카운터를 올리지 않는다 — 카운터가 요청 수가 아니라 거절 수여야 한다")
+    void testRejectionCounterCountsOnlyRejections() throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr("192.168.0.77");
+        request.setRequestURI("/api/v1/boards");
+
+        for (int i = 0; i < 5; i++) {
+            filter.doFilter(request, new MockHttpServletResponse(), filterChain);
+        }
+
+        assertEquals(0, filter.rejectedCountForTest(), "허용된 요청은 거절 카운터에 잡히면 안 된다");
     }
 
     @Test
