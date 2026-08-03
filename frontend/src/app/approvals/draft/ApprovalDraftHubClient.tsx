@@ -81,13 +81,16 @@ export default function ApprovalDraftHubClient() {
     setStep('DETAILS');
   };
 
+  // [2026-08-04] 가짜 성공 제거.
+  //   종전 구현은 필드 검증만 하고 **어떤 API 도 호출하지 않은 채** '결재 상신이 완료되었습니다'
+  //   성공 토스트를 띄우고 목록으로 이동했다. 사용자는 상신됐다고 믿지만 서버에는 아무것도
+  //   저장되지 않는다 — 결재는 기한이 걸린 업무라 이 거짓말의 대가가 특히 크다.
+  //   (같은 부류를 Wave 0 에서 NetworkMonitoringApiController 의 '저장 없는 200' → 501 로 바꿨다.)
+  //
+  //   구현(백엔드 결재 API 연동)은 이 화면의 하드코딩 양식 4종(F01~F04)을 실제 결재 도메인
+  //   필드로 매핑하는 설계가 선행돼야 하므로 별도 과제다. 그때까지는 **성공을 흉내 내지 않는다**.
   const handleSubmit = () => {
-    if (!subject || !content) {
-      toast('모든 필드를 입력해 주세요.', 'error');
-      return;
-    }
-    toast('결재 상신이 완료되었습니다.', 'success');
-    router.push('/approvals');
+    toast('이 화면은 아직 상신을 저장하지 않습니다. 작성한 내용은 전송되지 않았습니다.', 'error');
   };
 
   return (
@@ -281,19 +284,35 @@ export default function ApprovalDraftHubClient() {
                     </div>
                   </div>
 
+                  {/* [2026-08-04] 상신 미구현을 화면에 명시하고 버튼을 비활성화한다.
+                      버튼이 눌리는 한 사용자는 "동작한다" 고 읽는다. 안내 문구만 띄우고 버튼을
+                      살려 두면 결국 같은 오해가 남으므로, 클릭 자체를 막는다. */}
+                  <div className="px-10 pt-6">
+                    <div className="rounded-lg border border-warning/40 bg-warning/10 px-6 py-5">
+                      <p className="text-sm font-bold text-foreground">상신 기능은 아직 연결되지 않았습니다.</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        이 화면은 양식 작성까지만 제공하며, 작성한 내용은 서버에 저장되지 않습니다.
+                        실제 결재 상신은 결재 목록 화면의 기존 경로를 이용해 주세요.
+                      </p>
+                    </div>
+                  </div>
+
                   <div className="p-10 bg-muted/50 border-t border-border flex items-center justify-between">
-                    <Button 
-                        variant="ghost" 
+                    <Button
+                        variant="ghost"
                         onClick={() => setStep('CATALOG')}
                         className="h-11 px-8 rounded-lg font-bold text-muted-foreground hover:text-foreground transition-all tracking-tight text-xs"
                     >
                       Abort Dispatch
                     </Button>
-                    <Button 
+                    <Button
                         onClick={handleSubmit}
-                        className="h-11 px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold shadow-2xl hover:bg-primary hover:-translate-y-1 transition-all gap-3 border-none tracking-tight text-xs"
+                        disabled
+                        aria-disabled="true"
+                        title="상신 기능이 아직 연결되지 않았습니다"
+                        className="h-11 px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold shadow-2xl transition-all gap-3 border-none tracking-tight text-xs disabled:cursor-not-allowed disabled:opacity-50"
                     >
-                      <Send size={20} /> Commit to Ledger
+                      <Send size={20} /> Commit to Ledger (미지원)
                     </Button>
                   </div>
                 </Card>

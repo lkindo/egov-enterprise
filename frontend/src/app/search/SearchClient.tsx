@@ -63,9 +63,15 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
         fetchResults();
     }, [query, initialQuery, initialResults]);
 
+    // [2026-08-04] 게시글 탭은 **미지원**이다 — 전역 게시글 검색 백엔드 엔드포인트가 없어
+    //   fetchResults 가 articles 를 항상 빈 배열로 둔다(위 주석 참조).
+    //   종전에는 `count: 0` 인 평범한 탭이라 사용자가 "검색은 됐는데 결과가 없다" 로 읽었다.
+    //   **결과 없음과 기능 없음은 다른 사실**이고, 후자를 전자로 표시하는 것이 거짓 성공이다.
+    //   라벨에 직접 드러낸다 — TabItem 은 id/label/icon 만 받으므로 플래그를 넘겨도 렌더되지 않는다
+    //   (배선되지 않는 산출물을 만들지 않는다).
     const tabs = [
         { id: 'all', label: '전체 결과', icon: <Layout size={16} /> },
-        { id: 'articles', label: '게시글', count: results.articles.length, icon: <MessageSquare size={16} /> },
+        { id: 'articles', label: '게시글 (미지원)', icon: <MessageSquare size={16} /> },
         { id: 'users', label: '임직원', count: results.users.length, icon: <UserIcon size={16} /> },
         { id: 'menus', label: '메뉴 바로가기', count: results.menus.length, icon: <FileText size={16} /> }
     ];
@@ -84,9 +90,15 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                         </h1>
                         <p className="text-muted-foreground font-medium text-lg">워크스페이스 전체에서 필요한 정보를 정확하게 찾아드립니다.</p>
                     </div>
+                        {/* [2026-08-04] '실시간 인덱스 활성화' 배지 제거.
+                            그런 인덱스는 존재하지 않는다 — 임직원 검색은 사용자 목록 API 의 키워드 조회이고,
+                            바로가기는 이 파일에 하드코딩된 2건을 필터링하며, 게시글은 전역 검색 엔드포인트가
+                            없어 항상 빈 배열이다. 운영자가 "인덱스가 돌고 있다"고 믿을 근거를 UI 가 만들면
+                            안 된다(감사 클러스터 E — 실패를 정상 상태로 번역하지 않는다).
+                            검색 범위를 사실대로 적는다. */}
                         <div className="flex items-center gap-3 bg-white/10 px-5 py-2.5 rounded-lg border border-white/10 backdrop-blur-xl">
                             <Clock className="text-primary" size={18} />
-                            <span className="text-sm font-bold text-surface-inverse-foreground tracking-tight">실시간 인덱스 활성화</span>
+                            <span className="text-sm font-bold text-surface-inverse-foreground tracking-tight">임직원 · 바로가기 검색</span>
                         </div>
                     </div>
 
@@ -143,6 +155,22 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                         onChange={setTab}
                         className="p-1.5 bg-muted/30 rounded-lg"
                     />
+
+                    {/* [2026-08-04] 게시글 검색 미지원을 화면에 명시한다.
+                        이 탭은 '결과 0건' 이 아니라 '기능 부재' 다 — 전역 게시글 검색 엔드포인트가
+                        백엔드에 없다. 구분해 적지 않으면 사용자는 검색어를 바꿔 가며 재시도하고,
+                        그 시간은 전부 헛수고가 된다.
+                        ⚠ 결과 영역 **밖**에 둔다. 아래 분기는 세 결과가 모두 비면 '일치하는 결과가
+                        없습니다' 를 먼저 렌더하므로, 안쪽에 두면 정작 필요한 순간에 가려진다. */}
+                    {activeTab === 'articles' ? (
+                        <div className="rounded-lg border border-warning/40 bg-warning/10 px-6 py-5">
+                            <p className="text-sm font-bold text-foreground">게시글 통합 검색은 아직 제공되지 않습니다.</p>
+                            <p className="mt-1 text-sm text-muted-foreground">
+                                전역 게시글 검색 API 가 준비되지 않아 이 탭은 항상 비어 있습니다.
+                                검색어를 바꿔도 결과는 달라지지 않습니다 — 게시판별 검색을 이용해 주세요.
+                            </p>
+                        </div>
+                    ) : null}
 
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-[500px]">
                         {loading ? (
