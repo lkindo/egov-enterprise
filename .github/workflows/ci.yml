@@ -21,7 +21,7 @@ concurrency:
 
 env:
   # 공통 환경 변수
-  NODE_VERSION: "20"
+  NODE_VERSION: "22"
   JAVA_VERSION: "21"
   PLAYWRIGHT_BROWSERS_PATH: /tmp/playwright-browsers
 

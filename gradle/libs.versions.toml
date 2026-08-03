@@ -1,6 +1,6 @@
 [versions]
 egovframe = "5.0.0"
-spring-boot = "3.4.3"
+spring-boot = "3.4.1"
 spring-doc = "2.8.5"
 spring-ai = "1.0.0-M5"
 micrometer-tracing = "1.4.3"

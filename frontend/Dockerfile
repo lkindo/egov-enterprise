@@ -1,5 +1,14 @@
 # Stage 1: Dependencies
-FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS deps
+# [W1-H2] Node 20(EOL) → 22 LTS. 세 스테이지 모두 같은 태그·같은 다이제스트를 쓴다.
+#   ⚠ 다이제스트 핀의 함정: 태그만 `22-alpine` 으로 바꾸고 다이제스트를 20 짜리로 두면
+#     **다이제스트가 이기므로 실제로는 여전히 Node 20 이 빌드된다**(태그는 표시용이 된다).
+#     아래 값은 2026-08-03 registry-1.docker.io 에서 library/node:22-alpine 의
+#     manifest list 다이제스트를 실조회해 넣은 것이다. 갱신 시 반드시 함께 바꾼다:
+#       T=$(curl -s "https://auth.docker.io/token?service=registry.docker.io&scope=repository:library/node:pull" | jq -r .token)
+#       curl -sI -H "Authorization: Bearer $T" \
+#         -H "Accept: application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.list.v2+json" \
+#         https://registry-1.docker.io/v2/library/node/manifests/22-alpine | grep -i docker-content-digest
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 # [W0-11] CI(ci.yml)와 동일한 pnpm --frozen-lockfile 로 통일한다.
@@ -13,7 +22,7 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 # Stage 2: Builder
-FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS builder
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS builder
 WORKDIR /app
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
@@ -31,7 +40,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN pnpm run build
 
 # Stage 3: Runner
-FROM node:20-alpine@sha256:fb4cd12c85ee03686f6af5362a0b0d56d50c58a04632e6c0fb8363f609372293 AS runner
+FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
