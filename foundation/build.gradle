@@ -61,7 +61,14 @@ dependencies {
     api libs.opentelemetry.exporter.otlp
     api libs.micrometer.registry.prometheus
     api libs.spring.boot.admin.client
-    api 'com.github.loki4j:loki-logback-appender:1.5.2'
+    // [2026-08-04 제거] loki-logback-appender
+    //   W1-D2 에서 LOKI appender 를 logback-spring.xml 에서 뺐다 — 수집 스택(loki 서비스)이
+    //   저장소에 존재하지 않아 매 로그 이벤트를 없는 호스트로 밀며 내부 오류를 상시 발생시켰다.
+    //   그 뒤 이 의존성은 **참조 0건**이 됐다(전수 grep: 주석 4곳 외 appender·Java 사용처 없음).
+    //   그럼에도 api 스코프라 전 모듈과 배포 아티팩트에 실려 있었다 —
+    //   쓰지 않는 코드가 배포물에 남으면 공급망 표면만 넓힌다(Dependabot 알림 2건도 이것이었다).
+    //   ⚠ 수집 스택을 세우기로 결정하면 이 의존성과 appender 를 **함께** 되살릴 것.
+    //     (그 결정은 docs/04-operations/wave2-carryover.md §4 D-2 에 미결로 남아 있다.)
 
     // Utils
     api libs.icu4j

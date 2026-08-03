@@ -78,7 +78,7 @@ package nuri.business.domain.$domainLower;
 
 import jakarta.persistence.*;
 import lombok.*;
-import nuri.foundation.domain.common.BaseTimeEntity;
+import nuri.foundation.domain.common.BaseEntity;
 
 @Entity
 @Table(name = "tb_$domainLower")
@@ -86,7 +86,13 @@ import nuri.foundation.domain.common.BaseTimeEntity;
 @Builder
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
-public class $domainCap extends BaseTimeEntity {
+public class $domainCap extends BaseEntity {
+    // [2026-08-04] 상위 클래스를 BaseTimeEntity -> BaseEntity 로 바꿨다.
+    //   BaseEntity 는 frstRgtrId/lastMdfrId(각 length 20)를 @CreatedBy/@LastModifiedBy 로 채운다.
+    //   아래 DDL 초안이 frst_rgtr_id/last_mdfr_id 를 만들고 있었는데 엔티티에는 그 매핑이 없어
+    //   **생성 즉시 스키마와 엔티티가 어긋난 상태**였다(실 PG + ddl-auto:validate 에서 드러난다).
+    //   더 중요한 건 소유권이다 — 이 저장소의 IDOR 가드는 frstRgtrId 를 전제로 판정하므로,
+    //   그 컬럼이 없는 엔티티는 소유권 기반 인가를 **원리적으로 걸 수 없다**.
     // [G-1] 신규 엔티티는 JPA 관리 생성(@GeneratedValue)을 쓴다.
     //   PkGenerationStandardLinterTest 가 이를 강제한다 — 기존 69종만 동결(GRANDFATHERED)돼 있고
     //   신규 수동 PK 는 위반이다. 종전 스캐폴드는 @GeneratedValue 없는 String id 를 찍어내
