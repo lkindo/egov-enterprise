@@ -60,7 +60,7 @@ export function Header({
   const { setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, error: notificationsError, markAsRead, markAllAsRead, refresh: refreshNotifications } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
 
   // 서버 prefetch 가 비어 있으면(토큰 부재·백엔드 장애) 클라이언트가 직접 조회해 GNB 를 복구한다.
@@ -235,6 +235,11 @@ export function Header({
         onClose={() => setIsNotifOpen(false)}
         onMarkRead={markAsRead}
         onMarkAllRead={markAllAsRead}
+        // [2026-08-04] 조회 실패를 드로어까지 전달한다. 이 배선이 없으면 훅이 오류를 알아도
+        //   화면은 여전히 '활성화된 알림이 없습니다' 를 렌더한다(상태만 만들고 배선하지 않는 것은
+        //   고친 것이 아니다 — 12축 감사 클러스터 D).
+        error={notificationsError}
+        onRetry={refreshNotifications}
         notifications={(notifications || []).filter(Boolean).map((n, i) => ({
           id: n.notiSn || `notif-${i}`,
           title: n.notiTtlNm,
