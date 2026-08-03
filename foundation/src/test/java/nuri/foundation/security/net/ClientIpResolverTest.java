@@ -91,13 +91,33 @@ class ClientIpResolverTest {
     }
 
     @Test
-    @DisplayName("전부 신뢰 대역이면 사내 트래픽으로 보고 가장 바깥 값을 쓴다")
-    void usesLeftmostWhenAllHopsTrusted() {
+    @DisplayName("전부 신뢰 대역이면 우리 프록시가 기록한 최우측 값을 쓴다")
+    void usesRightmostWhenAllHopsTrusted() {
         ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);
 
         String ip = resolver.resolve(request("172.18.0.4", "10.5.5.5, 172.18.0.9"));
 
-        assertEquals("10.5.5.5", ip);
+        assertEquals("172.18.0.9", ip);
+    }
+
+    @Test
+    @DisplayName("사내망 클라이언트가 XFF 를 위조해도 프록시가 기록한 값이 이긴다")
+    void forgedPrefixLosesToProxyRecordedHop() {
+        ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);
+
+        // 공격자는 XFF 앞에 덧붙일 수만 있고, 우리 프록시가 append 하는 최우측 항목은 쓸 수 없다.
+        // 종전(최좌측 채택)에는 '10.9.9.9' 가 채택되어 레이트리밋 키·감사 IP 가 오염됐다.
+        String ip = resolver.resolve(request("172.18.0.4", "10.9.9.9, 192.168.0.7"));
+
+        assertEquals("192.168.0.7", ip);
+    }
+
+    @Test
+    @DisplayName("홉이 하나뿐이면 최우측=최좌측이라 종전과 동일하다 — 회귀 없음")
+    void singleTrustedHopBehavesAsBefore() {
+        ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);
+
+        assertEquals("10.0.0.1", resolver.resolve(request("127.0.0.1", "10.0.0.1")));
     }
 
     // ------------------------------------------------------------ 형식 처리

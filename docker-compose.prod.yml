@@ -35,6 +35,13 @@ services:
       #   스크레이퍼는 egov-net 안에서 api:9090 으로 접근한다.
       MANAGEMENT_PORT: ${MANAGEMENT_PORT:-9090}
       MANAGEMENT_ADDRESS: ${MANAGEMENT_ADDRESS:-0.0.0.0}
+      # [W1-J1] 신뢰 프록시 대역. 이 한 줄이 레이트리밋 키·로그인 잠금 IP 판정·감사 IP 를 함께 정한다.
+      #   기본값(application.yml)은 사설 대역 전체 신뢰다. 운영 토폴로지가 확정되면 실제 프록시 IP 로
+      #   좁힐 것 — 좁히면 '홉이 전부 신뢰 대역' 분기(사내망 XFF 위조 표면)가 아예 발생하지 않는다.
+      #   ⚠ 비우면(XFF 전면 불신) 백엔드가 보는 IP 가 Next 서버 1개로 수렴해 레이트리밋이 전역 단일
+      #     버킷이 된다. **용량 조정을 같은 배포에 넣지 말 것**(순서 지뢰 1).
+      #   상세·미해결 질문: docs/04-operations/wave2-carryover.md
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
     # [W1-12 보완] 관리 포트를 분리하면 /actuator/** 는 **8080 에서 사라진다**(Spring Boot 가
     #   management 를 별도 웹서버 컨텍스트로 띄운다). base compose 의 헬스체크는
     #   `http://localhost:8080/actuator/health` 를 찌르므로, 오버레이를 얹은 운영 배포에서만
