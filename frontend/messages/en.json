@@ -29,7 +29,6 @@
     "idPlaceholder": "Enter your username",
     "pwLabel": "Password",
     "pwPlaceholder": "Enter your password",
-    "rememberId": "Remember username",
     "submit": "Sign in",
     "submitting": "Signing in...",
     "errorEmpty": "Please enter your username and password.",

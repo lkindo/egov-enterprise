@@ -32,7 +32,6 @@ vi.mock('@/hooks/useMessage', () => ({
             'login.pwLabel': '비밀번호',
             'login.idPlaceholder': '아이디를 입력하세요...',
             'login.pwPlaceholder': '비밀번호를 입력하세요',
-            'login.rememberId': '로그인 상태 유지',
             'login.submit': '로그인',
             'login.errorEmpty': '아이디와 패스워드를 입력해주세요',
             'login.errorFailed': '로그인에 실패했습니다',

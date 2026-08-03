@@ -29,7 +29,6 @@
     "idPlaceholder": "아이디를 입력하세요",
     "pwLabel": "비밀번호",
     "pwPlaceholder": "비밀번호를 입력하세요",
-    "rememberId": "아이디 저장",
     "submit": "로그인",
     "submitting": "로그인 중...",
     "errorEmpty": "아이디와 비밀번호를 입력해주세요.",

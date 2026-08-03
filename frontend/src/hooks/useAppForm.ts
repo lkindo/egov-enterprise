@@ -7,9 +7,27 @@ import { toast } from 'sonner';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 
 /**
+ * `useAppForm` 의 반환 타입.
+ *
+ * [W1-14 보완] 종전에는 반환 타입이 `UseFormReturn<T>` 이라 `applyServerErrors` 가
+ * **타입 표면에 없었다**. 런타임에는 존재하는데 호출하면 TS2339 로 컴파일이 깨졌고,
+ * 이 파일의 사용 예시 주석조차 그대로는 컴파일되지 않았다. 소비 호출부가 0건이라
+ * `tsc --noEmit` 는 계속 green 이었다 — 그래서 아무도 몰랐다.
+ * 헬퍼를 제공하기로 한 결정의 목적은 '후속 폼 배선의 진입점' 이므로, 진입점을 타입에 올린다.
+ */
+export type AppFormReturn<TFieldValues extends FieldValues> = UseFormReturn<TFieldValues> & {
+  /**
+   * 서버가 내려준 필드 오류를 폼에 귀속시킨다.
+   * @returns 필드 오류가 있어 처리했으면 `true`. `false` 면 일반 오류이므로 호출부가 토스트 등으로 처리한다.
+   */
+  applyServerErrors: (error: unknown) => boolean;
+};
+
+/**
  * 프로젝트 표준 폼 핸들링 훅
  * - Zod 리졸버 자동 적용
  * - 검증 실패 시 첫 번째 에러 필드로 포커스 및 토스트 알림
+ * - 서버 필드 오류 귀속(`applyServerErrors`)
  */
 export function useAppForm<
   TSchema extends z.ZodType<any, any>,
@@ -17,7 +35,7 @@ export function useAppForm<
 >(
   schema: TSchema,
   props?: Omit<UseFormProps<TFieldValues>, 'resolver'>
-): UseFormReturn<TFieldValues> {
+): AppFormReturn<TFieldValues> {
   const form = useForm<TFieldValues>({
     ...props as any,
     resolver: zodResolver(schema),
@@ -63,8 +81,8 @@ export function useAppForm<
   //
   //   사용 예: catch (e) { form.applyServerErrors(e) || toast.error(extractErrorMessage(e)) }
   //   반환값이 false 면 필드 오류가 아니므로 호출부가 일반 오류로 처리하면 된다.
-  (form as UseFormReturn<TFieldValues> & { applyServerErrors: (e: unknown) => boolean })
-      .applyServerErrors = (error: unknown): boolean => {
+  const appForm = form as AppFormReturn<TFieldValues>;
+  appForm.applyServerErrors = (error: unknown): boolean => {
     const fieldErrors = extractFieldErrors(error);
     if (!fieldErrors) {
       return false;
@@ -92,5 +110,5 @@ export function useAppForm<
     return true;
   };
 
-  return form;
+  return appForm;
 }
