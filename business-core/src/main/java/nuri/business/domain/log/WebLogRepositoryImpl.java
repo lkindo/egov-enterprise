@@ -54,7 +54,7 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
         }
         String start = searchBgnDe.replace("-", "");
         String end = searchEndDe.replace("-", "");
-        return QWebLog.webLog.occrYmd.trim().between(start, end);
+        return QWebLog.webLog.occrYmd.between(start, end);
     }
 
     @Override

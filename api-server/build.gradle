@@ -41,7 +41,6 @@ dependencies {
     implementation libs.scribejava.apis
     implementation libs.scribejava.core
 
-    runtimeOnly libs.h2
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testImplementation libs.h2

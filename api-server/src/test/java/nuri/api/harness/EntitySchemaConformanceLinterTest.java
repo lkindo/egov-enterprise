@@ -180,11 +180,12 @@ class EntitySchemaConformanceLinterTest {
 
                 // ② 길이 초과 — 엔티티가 물리보다 길면 런타임 'value too long'
                 Column col = field.getAnnotation(Column.class);
-                if (col != null && col.length() != JPA_DEFAULT_LENGTH && field.getType() == String.class) {
+                if (field.getType() == String.class) {
+                    int entityLen = (col != null) ? col.length() : 255;
                     int physicalLen = lengthOf(physicalType);
-                    if (col.length() > physicalLen && !KNOWN_DRIFT.contains(key + ":length")) {
+                    if (entityLen > physicalLen && !KNOWN_DRIFT.contains(key + ":length")) {
                         violations.add(String.format("%s → %s.%s [길이 초과] 엔티티 length=%d > 물리 %s",
-                                clazz.getSimpleName(), table, column, col.length(), physicalType));
+                                clazz.getSimpleName(), table, column, entityLen, physicalType));
                     }
                 }
             }

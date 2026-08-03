@@ -8,8 +8,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.context.annotation.Import;
-import nuri.config.SecurityTestConfig;
 
 /**
  * 시큐리티 테스트를 위한 기본 추상 클래스
@@ -20,8 +18,7 @@ import nuri.config.SecurityTestConfig;
     "springdoc.api-docs.enabled=false"
 })
 @AutoConfigureMockMvc
-@ActiveProfiles({ "test", "mock-security-test" })
-@Import(SecurityTestConfig.class)
+@ActiveProfiles("test")
 public abstract class BaseSecurityTest {
 
     @Autowired

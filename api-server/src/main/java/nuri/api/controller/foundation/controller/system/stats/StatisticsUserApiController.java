@@ -21,6 +21,7 @@ import java.util.List;
 @Tag(name = "Statistics User", description = "통계 사용자 API")
 @RestController("systemStatisticsUserApiController")
 @RequestMapping("/api/v1/statistics")
+@org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class StatisticsUserApiController {
 

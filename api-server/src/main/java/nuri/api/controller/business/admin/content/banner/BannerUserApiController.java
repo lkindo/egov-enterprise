@@ -18,6 +18,7 @@ import java.util.List;
 @Tag(name = "Banner User", description = "배너 사용자 API")
 @RestController("systemBannerUserApiController")
 @RequestMapping("/api/v1/banners")
+@org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class BannerUserApiController {
 

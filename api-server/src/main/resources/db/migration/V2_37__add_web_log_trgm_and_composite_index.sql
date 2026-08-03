@@ -29,13 +29,13 @@ BEGIN
     -- 실패를 삼키고 GIN 인덱스도 함께 건너뛴다(성능 최적화이지 정합성 요건이 아니다).
     BEGIN
         EXECUTE 'CREATE EXTENSION IF NOT EXISTS pg_trgm';
-        EXECUTE 'CREATE INDEX IF NOT EXISTS idx_tb_web_log_url_trgm '
+        EXECUTE 'CREATE INDEX IF NOT EXISTS ix_tb_web_log_url_trgm '
              || 'ON tb_web_log USING gin (url gin_trgm_ops)';
     EXCEPTION WHEN OTHERS THEN
         RAISE NOTICE 'pg_trgm 인덱스 생성을 건너뜁니다(확장 권한 부재 가능): %', SQLERRM;
     END;
 
     -- 날짜 범주 조회 + 정렬 최적화. 확장 불요라 항상 만든다.
-    EXECUTE 'CREATE INDEX IF NOT EXISTS idx_tb_web_log_occr_ymd_url '
+    EXECUTE 'CREATE INDEX IF NOT EXISTS ix_tb_web_log_occr_ymd_url '
          || 'ON tb_web_log (occr_ymd DESC, url)';
 END $$;

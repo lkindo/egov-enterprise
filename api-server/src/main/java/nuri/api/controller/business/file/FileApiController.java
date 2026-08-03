@@ -21,12 +21,14 @@ import java.util.List;
 @Tag(name = "File", description = "파일 관리 API")
 @RestController
 @RequestMapping({"/api/v1/files", "/api/v1/admin/system/files", "/api/v1/admin/content/files", "/api/v1/admin/operation/files"})
+@org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class FileApiController {
 
     private final FileService fileService;
 
     @Operation(summary = "파일 업로드", description = "여러 파일을 업로드하고 통합 파일 ID를 반환합니다.")
+    @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<ApiResponse<String>> uploadFiles(
             @RequestPart("files") List<MultipartFile> files) throws IOException {

@@ -62,36 +62,53 @@ class OwnershipGuardBaselineLinterTest {
             "SecurityUtil\\s*\\.\\s*(assertOwnerByEsntlId|assertOwnerOrAdminByEsntlId|assertOwnerOrAdmin|assertAdmin)\\s*\\(");
 
     /**
-     * [동결 census] {@code 클래스#헬퍼=호출수}. <b>가드 완화·소실 차단이 목적</b>이므로
-     * 추가/삭제/교체 전부 위반으로 잡는다. 신규 가드 도입 시에도 이 목록을 함께 갱신한다.
-     * (2026-07-26 census — Phase 2 인수 시점 확정 상태)
+     * [동결 census] {@code 클래스#메서드#헬퍼=호출수}. <b>가드 완화·소실·메서드 간 이동 차단이 목적</b>이므로
+     * 추가/삭제/교체/메서드이동 전부 위반으로 잡는다. 신규 가드 도입 시에도 이 목록을 함께 갱신한다.
      */
     private static final Set<String> FROZEN_CENSUS = new TreeSet<>(Arrays.asList(
-            "AddressBookService#assertOwnerOrAdmin=3",
-            "BoardService#assertOwnerOrAdminByEsntlId=2",
-            "CommentService#assertOwnerOrAdmin=2",
-            "DeptJobBoxService#assertAdmin=3",
-            "DeptJobService#assertOwnerOrAdmin=1",
-            "DeptJobService#assertOwnerOrAdminByEsntlId=1",
-            "InformalSanctionService#assertOwnerByEsntlId=3",
-            "MailService#assertOwnerOrAdmin=2",
-            "MemoReportService#assertAdmin=1",
-            "MemoReportService#assertOwnerOrAdmin=2",
-            "OnlinePollService#assertAdmin=3",
-            "ScheduleService#assertOwnerOrAdmin=3",
-            "ScrapService#assertOwnerOrAdmin=3",
-            "UserService#assertAdmin=7",
-            "UserService#assertOwnerOrAdminByEsntlId=1",
-            // [2026-07-29 상향 2→3] 조회 IDOR 차단으로 **가드를 추가**했다(약화가 아니라 강화).
-            //   종전: update(53행)·delete(66행) 2곳만 가드. getWorkReport(상세)는 무가드라
-            //   인증만 되면 누구나 임의 rptId 로 타인 보고 본문을 읽을 수 있었다.
-            //   추가한 3번째 호출은 그 상세 조회이며, 쓰기 2곳이 이미 쓰던 것과 **동일한 가드**다
-            //   (관리자 대리 열람 허용 — 도메인 판정은 쓰기와 같다, §0.7-H3).
-            //   ⚠ 이 숫자를 내리는 변경은 가드 소실이므로 반드시 사유를 남길 것.
-            "WorkReportService#assertOwnerOrAdmin=3"));
+            "AddressBookService#deleteAddressBook#assertOwnerOrAdmin=1",
+            "AddressBookService#getAddressBook#assertOwnerOrAdmin=1",
+            "AddressBookService#updateAddressBook#assertOwnerOrAdmin=1",
+            "BoardService#deletePost#assertOwnerOrAdminByEsntlId=1",
+            "BoardService#updatePost#assertOwnerOrAdminByEsntlId=1",
+            "CommentService#deleteComment#assertOwnerOrAdmin=1",
+            "CommentService#updateComment#assertOwnerOrAdmin=1",
+            "DeptJobBoxService#createDeptJobBox#assertAdmin=1",
+            "DeptJobBoxService#deleteDeptJobBox#assertAdmin=1",
+            "DeptJobBoxService#updateDeptJobBox#assertAdmin=1",
+            "DeptJobService#assertPicOrAdmin#assertOwnerOrAdmin=1",
+            "DeptJobService#assertPicOrAdmin#assertOwnerOrAdminByEsntlId=1",
+            "InformalSanctionService#confirmInformalSanction#assertOwnerByEsntlId=1",
+            "InformalSanctionService#deleteInformalSanction#assertOwnerByEsntlId=1",
+            "InformalSanctionService#updateInformalSanction#assertOwnerByEsntlId=1",
+            "MailService#deleteMail#assertOwnerOrAdmin=1",
+            "MailService#getSentMail#assertOwnerOrAdmin=1",
+            "MemoReportService#deleteMemoReport#assertOwnerOrAdmin=1",
+            "MemoReportService#getMemoReportList#assertAdmin=1",
+            "MemoReportService#updateMemoReport#assertOwnerOrAdmin=1",
+            "OnlinePollService#deletePoll#assertAdmin=1",
+            "OnlinePollService#insertPoll#assertAdmin=1",
+            "OnlinePollService#updatePoll#assertAdmin=1",
+            "ScheduleService#deleteSchedule#assertOwnerOrAdmin=1",
+            "ScheduleService#getSchedule#assertOwnerOrAdmin=1",
+            "ScheduleService#updateSchedule#assertOwnerOrAdmin=1",
+            "ScrapService#deleteScrap#assertOwnerOrAdmin=1",
+            "ScrapService#getScrap#assertOwnerOrAdmin=1",
+            "ScrapService#updateScrap#assertOwnerOrAdmin=1",
+            "UserService#deleteUser#assertAdmin=1",
+            "UserService#deleteUserList#assertAdmin=1",
+            "UserService#moveUsersToDept#assertAdmin=1",
+            "UserService#registerUser#assertAdmin=1",
+            "UserService#updatePasswordByAdmin#assertAdmin=1",
+            "UserService#updateUser#assertOwnerOrAdminByEsntlId=1",
+            "UserService#updateUsersRole#assertAdmin=1",
+            "UserService#updateUsersStatus#assertAdmin=1",
+            "WorkReportService#deleteWorkReport#assertOwnerOrAdmin=1",
+            "WorkReportService#getWorkReport#assertOwnerOrAdmin=1",
+            "WorkReportService#updateWorkReport#assertOwnerOrAdmin=1"));
 
     @Test
-    @DisplayName("🔐 소유권/권한 가드 census 동결 — 인가 완화(엄격→관리자우회)·가드 소실 차단")
+    @DisplayName("🔐 소유권/권한 가드 census 동결 — 인가 완화(엄격→관리자우회)·가드 소실·메서드간 이동 차단")
     void auditOwnershipGuardCensus() throws IOException {
         Set<String> actual = new TreeSet<>();
         int scannedFiles = 0;
@@ -165,9 +182,24 @@ class OwnershipGuardBaselineLinterTest {
         String className = file.getFileName().toString().replace(".java", "");
         java.util.Map<String, Integer> counts = new java.util.TreeMap<>();
         while (m.find()) {
-            counts.merge(m.group(1), 1, (a, b) -> a + b);
+            int pos = m.start();
+            String methodName = findEnclosingMethod(code, pos);
+            String helper = m.group(1);
+            String key = className + "#" + methodName + "#" + helper;
+            counts.merge(key, 1, Integer::sum);
         }
-        counts.forEach((helper, count) -> sink.add(className + "#" + helper + "=" + count));
+        counts.forEach((key, count) -> sink.add(key + "=" + count));
+    }
+
+    private static String findEnclosingMethod(String code, int pos) {
+        String prefix = code.substring(0, pos);
+        Pattern p = Pattern.compile("(?:public|protected|private|static|final|synchronized|\\s)+\\s+[\\w\\<\\>\\[\\]]+\\s+([a-zA-Z0-9_]+)\\s*\\([^\\)]*\\)\\s*(?:throws\\s+[\\w\\s,]+)?\\s*\\{");
+        Matcher m = p.matcher(prefix);
+        String lastMethod = "unknown";
+        while (m.find()) {
+            lastMethod = m.group(1);
+        }
+        return lastMethod;
     }
 
     private static void writeActual(Set<String> actual) {

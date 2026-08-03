@@ -22,6 +22,7 @@ import java.util.Map;
 @Tag(name = "Dashboard", description = "메인 대시보드 데이터 제공 API")
 @RestController
 @RequestMapping("/api/v1/dashboard")
+@org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class DashboardApiController {
 

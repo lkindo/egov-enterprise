@@ -27,6 +27,7 @@ import org.springframework.web.bind.annotation.*;
 @Slf4j
 @RestController
 @RequestMapping("/api/v1/dept-jobs")
+@PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class DeptJobApiController {
 

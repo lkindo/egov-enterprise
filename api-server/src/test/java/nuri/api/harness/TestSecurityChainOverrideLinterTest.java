@@ -94,14 +94,28 @@ class TestSecurityChainOverrideLinterTest {
      */
     private static final Set<String> FROZEN_OVERRIDES = new TreeSet<>(Arrays.asList(
             // api-server — @Primary 로 프로덕션 체인을 대체하고, admin 인가를 하드코딩한다.
+            //   ⚠ 이 설정 자체는 남아 있으나 **이제 아무도 @Import 하지 않는다**(아래 해소 기록 참조).
+            //     참조가 0인 것과 파일이 없는 것은 다르므로, 파일이 사라질 때까지는 동결 상태로 둔다.
             "SecurityTestConfig#chainBean=1",
             "SecurityTestConfig#mockProfile=1",
-            // BaseSecurityTest 를 상속하는 보안 테스트 전부가 이 프로파일 위에서 돈다(A-1 의 본체).
-            "BaseSecurityTest#mockProfile=1",
             // business-core / business-app — anyRequest().permitAll(). 두 모듈에 동일 파일명으로 존재한다.
             "TestSecurityConfig#chainBean=2",
             "TestSecurityConfig#mockProfile=2",
             "IntegrationTest#mockProfile=2"));
+
+    // ── 해소 기록 (목록에서 뺀 것은 '완화' 가 아니라 '상환' 이다) ─────────────────────────
+    //
+    // [2026-08-03 해소] `BaseSecurityTest#mockProfile=1` 제거.
+    //   Wave 1 P1-1 이행으로 BaseSecurityTest 에서 `@ActiveProfiles({"test","mock-security-test"})`
+    //   와 `@Import(SecurityTestConfig.class)` 가 빠졌다 — 이제 그 계열 보안 테스트는
+    //   **프로덕션 ApiSecurityConfig 위에서** 돈다. 이 게이트가 신설 목적으로 삼았던 바로 그 상태다.
+    //
+    //   ⚠ 이 줄을 지우는 것은 §0.7-H2 가 금지하는 '신호 지우기' 와 형태가 같으므로 근거를 남긴다:
+    //     · 제거 근거는 **실측**이다 — BaseSecurityTest 에 mock-security 문자열이 0건이고,
+    //       PrivilegeEscalationVulnerabilityTest 3건이 실존 엔드포인트에서 401 이 아니라 403 을 단언하며 그린이다.
+    //       (401 이었다면 '미인증 차단' 을 증명할 뿐 '일반 사용자의 권한 상승 차단' 은 증명하지 못한다.)
+    //     · 게이트가 이 해소를 **red 로 알려서** 목록을 줄이게 만들었다. 그것이 이 게이트의 설계 의도다
+    //       — 늘어날 때만이 아니라 줄어들 때도 손대게 해서, 목록이 실태와 조용히 어긋나지 않게 한다.
 
     @Test
     @DisplayName("🧪 테스트가 프로덕션 시큐리티 체인을 우회하는 지점 동결 — 신규 우회 차단 (Wave 1 A-1)")

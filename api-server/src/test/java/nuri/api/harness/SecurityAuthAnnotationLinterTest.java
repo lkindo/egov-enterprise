@@ -132,14 +132,8 @@ class SecurityAuthAnnotationLinterTest {
                 continue;
             }
 
-            // 2. api-server의 커스텀 신규 API 컨트롤러(nuri.api.controller)만 엄격 린트 대상 지정
-            // (레거시/공통 패키지는 글로벌 Spring Security 필터로 격리되어 오딧 대상에서 제외)
+            // 2. api-server의 커스텀 신규 API 컨트롤러(nuri.api.controller) 전수 오딧 대상 지정
             if (!controllerClass.getPackageName().startsWith("nuri.api.controller")) {
-                continue;
-            }
-
-            String packageName = controllerClass.getPackageName();
-            if (packageName.startsWith("nuri.api.controller.business") || packageName.startsWith("nuri.api.controller.foundation")) {
                 continue;
             }
 
@@ -166,9 +160,9 @@ class SecurityAuthAnnotationLinterTest {
                 boolean hasPermitAllRoute = AnnotationUtils.findAnnotation(method, nuri.foundation.core.annotation.PermitAllRoute.class) != null ||
                                              AnnotationUtils.findAnnotation(controllerClass, nuri.foundation.core.annotation.PermitAllRoute.class) != null;
 
-                // 5. 어떠한 권한 검증 어노테이션도 없으나, DB 구동 인가(프로그램 목록/securePaths)로 검증되고 있다면 통과
+                // 5. 어떠한 권한 검증 어노테이션도 없으나, DB 구동 인가(프로그램 목록/securePaths) 또는 서비스 계층 소유권 가드로 검증되고 있다면 통과
                 if (!hasPreAuthorize && !hasSecured && !hasPermitAllRoute) {
-                    if (isDbProtected(pattern)) {
+                    if (isDbProtected(pattern) || WRITE_AUTHZ_GUARDED_ELSEWHERE.contains(controllerClass.getName())) {
                         continue;
                     }
                     violations.add(String.format("Controller: %s\n   Method: %s\n   Endpoint: %s\n   -> [해결책] @PreAuthorize(\"hasRole('...')\") 또는 @PreAuthorize(\"isAuthenticated()\")를 기입하거나 DB 인가 가드 대상에 등록하십시오.",
@@ -221,16 +215,7 @@ class SecurityAuthAnnotationLinterTest {
             "nuri.api.controller.business.poll.PollApiController",                // 투표=자기서비스, 관리 CRUD=서비스 hasRole(ADMIN)
             "nuri.api.controller.business.community.CommunityUserApiController",  // 커뮤니티 가입=자기서비스
             "nuri.api.controller.business.approval.ApprovalApiController",        // 결재 확정=서비스 소유권(aprvrId) 검사
-            "nuri.api.controller.business.approval.InformalSanctionApiController",// 비정형 결재=서비스 소유권(confirm=aprvrId, update/delete=aplcntId)
-
-            // FileApiController — [2026-08-02 사유 정정] 종전 사유는 "파일 업로드=자기서비스(본인 첨부)" 였으나
-            //   실측 결과 FileService 에 소유권 가드 호출이 **0건**이고 업로드 시 소유자를 기록하지도 않는다.
-            //   즉 "자기서비스" 라는 사유는 성립하지 않는다. 그럴듯한 대체 사유를 발명하지 않고
-            //   **미판정(unadjudicated)** 임을 명시한다 — 이 항목이 여기 있는 이유는 안전이 증명돼서가 아니라
-            //   아직 판정되지 않았기 때문이며, 이 게이트가 green 이어도 파일 접근 인가는 검증된 바 없다.
-            //   (덧붙여 이 컨트롤러는 /api/v1/admin/{system,content,operation}/files 에도 매핑돼 있어
-            //    그 경로들은 Test#2 의 /api/v1/admin/ 접두 skip 으로 별도 면제된다 — 이중 면제 상태다.)
-            "nuri.api.controller.business.file.FileApiController"
+            "nuri.api.controller.business.approval.InformalSanctionApiController" // 비정형 결재=서비스 소유권(confirm=aprvrId, update/delete=aplcntId)
 
             // 등재하지 않는 것 ─────────────────────────────────────────────
             // · nuri.api.controller.business.admin.CommentApiController

@@ -17,6 +17,7 @@ import java.util.List;
 @Tag(name = "Popup User", description = "팝업 사용자 API")
 @RestController("systemPopupUserApiController")
 @RequestMapping("/api/v1/popups")
+@org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
 @RequiredArgsConstructor
 public class PopupUserApiController {
 

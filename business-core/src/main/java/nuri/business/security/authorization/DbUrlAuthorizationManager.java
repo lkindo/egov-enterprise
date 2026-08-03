@@ -58,6 +58,7 @@ public class DbUrlAuthorizationManager implements AuthorizationManager<RequestAu
     }
 
     @Override
+    @SuppressWarnings("deprecation")
     public AuthorizationDecision check(Supplier<Authentication> authentication, RequestAuthorizationContext context) {
         String requestUri = context.getRequest().getRequestURI();
         Authentication auth = authentication.get();
