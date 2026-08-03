@@ -4,7 +4,7 @@ plugins {
     id 'io.spring.dependency-management' version '1.1.7'
     id 'io.freefair.lombok' version '8.12.2' apply false
     id 'jacoco'
-    id 'org.owasp.dependencycheck' version '12.1.0'
+    id 'org.owasp.dependencycheck' version '12.2.2'
     id 'info.solidsoft.pitest' version '1.19.0' apply false
 }
 
@@ -59,7 +59,11 @@ allprojects {
         suppressionFile = file('config/dependency-check/suppressions.xml').absolutePath
         
         // 데이터베이스 디렉토리 설정
-        data.directory = file("${rootProject.buildDir}/dependency-check-cache")
+        // [2026-08-04] 플러그인 12.2.x 부터 `data.directory` 가 File → String 프로퍼티로 바뀌었다.
+        //   File 을 그대로 넣으면 루트 프로젝트 평가 단계에서
+        //   "Cannot set the value of property 'directory' of type java.lang.String using an instance of
+        //    type java.io.File" 로 **빌드 전체가 죽는다**. 경로 의미(절대경로)는 그대로 두고 타입만 맞춘다.
+        data.directory = file("${rootProject.buildDir}/dependency-check-cache").absolutePath
         
         
         /* 

@@ -20,7 +20,7 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-cache'
     api 'org.springframework.boot:spring-boot-starter-actuator'
     api libs.caffeine
-    api 'com.bucket4j:bucket4j_jdk17-core:8.18.0'
+    api 'com.bucket4j:bucket4j_jdk17-core:8.19.0'
     api 'com.warrenstrange:googleauth:1.5.0'
 
     // JWT
@@ -29,7 +29,7 @@ dependencies {
     runtimeOnly libs.jjwt.jackson
 
     // API Docs / Validation
-    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.27'
+    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.52'
 
     // QueryDSL
     api 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
@@ -97,7 +97,7 @@ dependencies {
     testImplementation libs.archunit
 
     // Logging bridge for Egovframe (Commons Logging -> SLF4J)
-    testRuntimeOnly 'org.slf4j:jcl-over-slf4j:2.0.16'
+    testRuntimeOnly 'org.slf4j:jcl-over-slf4j:2.0.18'
 
 }
 
