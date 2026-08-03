@@ -35,15 +35,23 @@ public class BoardEventListener {
     }
 
     /**
-     * 댓글 수 업데이트
+     * 댓글 수 업데이트.
+     *
+     * <p>[W1-D5] 종전에는 {@code findById → changeCmntCnt → save} 더티체킹 저장이었다.
+     * 이 메서드는 {@code @Async} 스레드에서 도는데 그 스레드에는 SecurityContext 가 없어
+     * 감사 컬럼 {@code last_mdfr_id} 가 실제 수정자를 지우고 {@code SYSTEM} 으로 덮였고,
+     * 동시에 {@code version} 이 올라 글을 편집 중이던 사용자가 409 를 맞았다.
+     * 감사 컬럼·version 을 건드리지 않는 벌크 UPDATE 로 전환한다.
      */
     private void updateCommentCount(String pstId, String bbsId) {
         long count = commentRepository.countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y");
-        
-        boardRepository.findById(pstId).ifPresent(board -> {
-            board.changeCmntCnt((int) count);
-            boardRepository.save(board);
-            log.info(">>> Updated comment count for pstId {}: {}", pstId, count);
-        });
+
+        int affected = boardRepository.syncCmntCntAtomic(pstId, (int) count);
+        if (affected == 0) {
+            // 이미 삭제된 글에 달린 댓글 등 — 정상 경로이므로 실패로 다루지 않는다.
+            log.debug(">>> comment count sync skipped (post not found): pstId={}", pstId);
+            return;
+        }
+        log.info(">>> Updated comment count for pstId {}: {}", pstId, count);
     }
 }

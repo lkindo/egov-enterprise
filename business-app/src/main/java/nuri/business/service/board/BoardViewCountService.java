@@ -68,7 +68,9 @@ public class BoardViewCountService {
                 // 리포지토리 메서드가 자기 트랜잭션을 갖는다 — 한 건의 실패가 나머지를 되돌리지 않는다.
                 int affected = boardRepository.increaseInqCntAtomic(pstId, count);
                 if (affected == 0) {
-                    // 삭제된 게시글의 조회수 등. 재적립하면 영원히 재시도하므로 버린다.
+                    // **물리 삭제된** 행의 조회수. 네이티브 UPDATE 는 softDeleteFilter 를 통과하지 않으므로
+                    // 숨김(use_yn='N') 글은 affected=1 로 계속 증가한다 — 여기 걸리는 것은 행 자체가 없을 때뿐이다.
+                    // 재적립하면 영원히 재시도하므로 버린다.
                     log.debug("View count target not found, dropping {} views for pstId {}", count, pstId);
                 }
             } catch (Exception e) {

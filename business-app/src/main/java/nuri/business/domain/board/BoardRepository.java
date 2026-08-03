@@ -69,10 +69,19 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
          * <p>네이티브인 이유는 아래 {@link #increaseInqCntAtomic} 과 같다 — {@code version} 컬럼을
          * 건드리지 않아 편집자의 낙관적 락을 오염시키지 않는다.
          * {@code clearAutomatically} 로 1차 캐시의 스테일 엔티티를 비워, 갱신 후 재조회가 실제 값을 읽게 한다.
+         *
+         * <p><b>{@code use_yn = 'Y'} 조건이 있는 이유.</b> 네이티브 쿼리는 Hibernate 의
+         * {@code softDeleteFilter} 를 통과하지 않는다(같은 파일 상단 주석 참조). 조건이 없으면
+         * <b>숨김 처리된 글에도 좋아요가 올라가고</b>, 종전 경로(엔티티 로드 → 증가)가 지키던
+         * "없는 글이면 404" 계약이 조용히 깨진다. 조건을 쿼리에 두면 {@code affected == 0} 이
+         * 그대로 404 판정 재료가 되어 원자성과 계약이 <b>한 번의 왕복</b>으로 함께 성립한다.
+         * (조회수 {@link #increaseInqCntAtomic} 는 숨김 글 집계가 무해하므로 조건을 두지 않는다 —
+         * 두 메서드의 차이는 의도한 것이다.)
          */
         @org.springframework.transaction.annotation.Transactional
         @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
-        @Query(value = "UPDATE tb_bbs_item SET like_cnt = COALESCE(like_cnt, 0) + 1 WHERE pst_id = :pstId",
+        @Query(value = "UPDATE tb_bbs_item SET like_cnt = COALESCE(like_cnt, 0) + 1 "
+                        + "WHERE pst_id = :pstId AND use_yn = 'Y'",
                         nativeQuery = true)
         int incrementLikeCntAtomic(@Param("pstId") String pstId);
 
@@ -97,6 +106,29 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
         @Query(value = "UPDATE tb_bbs_item SET inq_cnt = COALESCE(inq_cnt, 0) + :delta WHERE pst_id = :pstId",
                         nativeQuery = true)
         int increaseInqCntAtomic(@Param("pstId") String pstId, @Param("delta") int delta);
+
+        /**
+         * 댓글 수 동기화. [W1-D5]
+         *
+         * <p>[왜 벌크 UPDATE 인가] 종전 경로는 {@code BoardEventListener} 가
+         * {@code findById → changeCmntCnt → save} 로 더티체킹 저장을 했다. 그 리스너는
+         * {@code @Async} 라 <b>SecurityContext 가 전파되지 않는 스레드</b>에서 돈다(TaskDecorator 는
+         * 프로덕션에서 의도적으로 no-op 이다 — 전파하면 비동기 경로의 인가 판정 거동이 통째로 바뀐다).
+         * 그래서 저장할 때마다 감사 컬럼 {@code last_mdfr_id} 가 실제 수정자를 지우고
+         * {@code SYSTEM} 으로 덮였다. 즉 "누가 글을 고쳤는가" 가 댓글 하나로 소실됐다.
+         *
+         * <p>동시에 {@code version} 이 올라 {@link #increaseInqCntAtomic} 이 해결한 것과 <b>같은 종류의
+         * 409 위양성</b>을 만들었다 — 글을 편집 중일 때 누가 댓글을 달면 편집이 충돌로 실패했다.
+         *
+         * <p>네이티브 벌크 UPDATE 는 감사 컬럼도 {@code version} 도 건드리지 않으므로 두 문제가 함께 사라진다.
+         * (전파 대신 손해가 확정된 지점만 봉합하는 방침 — §0.7-H4 의 일괄 변경 경계와 정합한다.)
+         *
+         * @return 영향 행 수. 0 이면 해당 게시글이 없다(이미 삭제된 글에 달린 댓글 등).
+         */
+        @org.springframework.transaction.annotation.Transactional
+        @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+        @Query(value = "UPDATE tb_bbs_item SET cmnt_cnt = :cnt WHERE pst_id = :pstId", nativeQuery = true)
+        int syncCmntCntAtomic(@Param("pstId") String pstId, @Param("cnt") int cnt);
 
         // [V2_12 결속] 사용자 삭제 시 게시글 저자를 시스템 계정으로 재귀속 — 콘텐츠 보존 정책
         // (fk_tb_bbs_item_tb_user_info NO ACTION 하에서 저자 행 삭제 전 필수)

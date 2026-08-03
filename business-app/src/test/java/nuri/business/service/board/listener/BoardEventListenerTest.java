@@ -11,7 +11,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -30,52 +29,48 @@ class BoardEventListenerTest {
     private BoardEventListener boardEventListener;
 
     @Test
-    @DisplayName("포스트 생성 이벤트 수신 - 정상 처리 및 댓글 수 업데이트")
-    void handlePostCreated_success() {
+    @DisplayName("댓글 수 갱신은 감사 컬럼·version 을 건드리지 않는 벌크 UPDATE 로 나간다")
+    void handlePostCreated_syncsViaBulkUpdate() {
         // given
         String bbsId = "BBS_01";
         String pstId = "PST_01";
-        String userId = "USER_01";
-        PostCreatedEvent event = new PostCreatedEvent(this, bbsId, pstId, userId);
-
-        Board board = Board.builder()
-                .pstId(pstId)
-                .bbsId(bbsId)
-                .cmntCnt(0)
-                .build();
+        PostCreatedEvent event = new PostCreatedEvent(this, bbsId, pstId, "USER_01");
 
         given(commentRepository.countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y")).willReturn(5L);
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
-        given(boardRepository.save(any(Board.class))).willReturn(board);
+        given(boardRepository.syncCmntCntAtomic(pstId, 5)).willReturn(1);
 
         // when
         boardEventListener.handlePostCreated(event);
 
         // then
         verify(commentRepository, times(1)).countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y");
-        verify(boardRepository, times(1)).findById(pstId);
-        verify(boardRepository, times(1)).save(board);
-        org.junit.jupiter.api.Assertions.assertEquals(5, board.getCmntCnt());
+        verify(boardRepository, times(1)).syncCmntCntAtomic(pstId, 5);
+
+        // [W1-D5] 이 두 단언이 이 테스트의 본체다. 종전 경로(findById → changeCmntCnt → save)는
+        //   @Async 스레드라 SecurityContext 가 없어 last_mdfr_id 를 'SYSTEM' 으로 덮었고,
+        //   동시에 version 을 올려 편집 중인 사용자에게 409 위양성을 만들었다.
+        //   엔티티를 로드하지도 저장하지도 않아야 그 두 부작용이 원천적으로 없다.
+        verify(boardRepository, never()).findById(any());
+        verify(boardRepository, never()).save(any(Board.class));
     }
 
     @Test
-    @DisplayName("포스트 생성 이벤트 수신 - 게시글이 존재하지 않는 경우 업데이트 안함")
+    @DisplayName("대상 게시글이 없으면(영향 0행) 실패로 다루지 않고 조용히 넘어간다")
     void handlePostCreated_boardNotFound() {
         // given
         String bbsId = "BBS_01";
         String pstId = "PST_01";
-        String userId = "USER_01";
-        PostCreatedEvent event = new PostCreatedEvent(this, bbsId, pstId, userId);
+        PostCreatedEvent event = new PostCreatedEvent(this, bbsId, pstId, "USER_01");
 
         given(commentRepository.countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y")).willReturn(3L);
-        given(boardRepository.findById(pstId)).willReturn(Optional.empty());
+        given(boardRepository.syncCmntCntAtomic(pstId, 3)).willReturn(0);
 
-        // when
+        // when — 이미 삭제된 글에 달린 댓글 등. 예외를 던지면 비동기 경로가 요란해질 뿐 복구되지 않는다.
         boardEventListener.handlePostCreated(event);
 
         // then
         verify(commentRepository, times(1)).countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y");
-        verify(boardRepository, times(1)).findById(pstId);
+        verify(boardRepository, times(1)).syncCmntCntAtomic(pstId, 3);
         verify(boardRepository, never()).save(any(Board.class));
     }
 }

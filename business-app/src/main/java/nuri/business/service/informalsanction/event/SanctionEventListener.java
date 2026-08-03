@@ -33,6 +33,16 @@ public class SanctionEventListener {
         log.info(">>> [Event] Sanction Status Changed: ID={}, Applicant={}, NewStatus={}, Reason={}",
                 event.getInformalSanctionId(), event.getApplicantId(), event.getNewStatus(), event.getReason());
         
+        // [W1-D5] 이 리스너는 @Async 라 SecurityContext 가 없는 스레드에서 돈다(TaskDecorator 는
+        //   프로덕션에서 의도적 no-op — 전파하면 비동기 경로 전체의 인가 판정 거동이 바뀐다).
+        //   그래서 종전에는 발송 요청자를 리터럴 "SYSTEM" 으로 넘겨, 결재를 실제로 승인/반려한
+        //   사람이 발송 이력에서 사라졌다. 이벤트가 이미 sanctionerId 를 싣고 오므로 그것을 쓴다.
+        //   (sendSms/sendMail 의 첫 인자는 '요청자' 로그·이력 용도이며 인가 판정에 쓰이지 않는다 —
+        //    권한 완화가 아니다. §0.7-H3)
+        final String actorId = org.springframework.util.StringUtils.hasText(event.getSanctionerId())
+                ? event.getSanctionerId()
+                : "SYSTEM";
+
         try {
             nuri.business.service.user.dto.UserDto user = userService.getUserById(event.getApplicantId());
             if (user == null) {
@@ -53,7 +63,7 @@ public class SanctionEventListener {
                                 .rcptnTelno(user.mblTelno())
                                 .build()))
                         .build();
-                smsService.sendSms("SYSTEM", smsDto);
+                smsService.sendSms(actorId, smsDto);
                 log.info("SMS notification sent to {}", nuri.foundation.core.util.PiiMaskUtil.phone(user.mblTelno()));
             }
 
@@ -65,8 +75,10 @@ public class SanctionEventListener {
                         .emailCn(message)
                         .recptnPerson(user.emlAddr())
                         .build();
-                mailService.sendMail("SYSTEM", mailDto);
-                log.info("Mail notification sent to {}", user.emlAddr());
+                mailService.sendMail(actorId, mailDto);
+                // [W1-D4 잔여] 바로 위 SMS 는 마스킹하면서 메일 주소만 평문으로 남아 있었다.
+                //   같은 로그 한 쌍에서 한쪽만 가리는 것은 마스킹을 한 것이 아니다.
+                log.info("Mail notification sent to {}", nuri.foundation.core.util.PiiMaskUtil.email(user.emlAddr()));
             }
 
         } catch (Exception e) {

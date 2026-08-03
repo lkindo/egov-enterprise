@@ -57,6 +57,35 @@ class SanctionEventListenerTest {
         sanctionEventListener.handleStatusChanged(event);
 
         // Then
+        // [W1-D5] 발송 요청자는 리터럴 "SYSTEM" 이 아니라 **이벤트가 싣고 온 actor(결재자)** 여야 한다.
+        //   이 리스너는 @Async 라 SecurityContext 가 없고(TaskDecorator 는 프로덕션에서 의도적 no-op),
+        //   그래서 종전에는 실제로 승인/반려한 사람이 발송 이력에서 사라졌다.
+        //   전파(Composite 데코레이터) 대신 손해가 확정된 이 지점만 봉합한다.
+        verify(smsService).sendSms(eq("SANCTIONER_001"), any(SmsDto.class));
+        verify(mailService).sendMail(eq("SANCTIONER_001"), any(SentMailDto.class));
+    }
+
+    @Test
+    @DisplayName("actor 가 비어 있으면 SYSTEM 으로 폴백한다")
+    void fallsBackToSystemWhenActorAbsent() {
+        // Given — 배치·시스템 트리거처럼 사람 actor 가 없는 경로.
+        SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
+                "SANCTION_002", "USER_001", null,
+                nuri.business.domain.informalsanction.SanctionStatus.APPROVED, "승인되었습니다.");
+
+        UserDto userDto = UserDto.builder()
+                .userId("USER_001")
+                .userNm("홍길동")
+                .mblTelno("01011112222")
+                .emlAddr("hong@egov.com")
+                .build();
+
+        given(userService.getUserById("USER_001")).willReturn(userDto);
+
+        // When
+        sanctionEventListener.handleStatusChanged(event);
+
+        // Then
         verify(smsService).sendSms(eq("SYSTEM"), any(SmsDto.class));
         verify(mailService).sendMail(eq("SYSTEM"), any(SentMailDto.class));
     }
