@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { IMessage, StompSubscription } from '@stomp/stompjs';
 import client from '@/lib/api/client';
 import { useWebSocket } from '@/contexts/websocket-context';
@@ -19,36 +19,67 @@ export interface Notification {
 export function useNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  /** 조회 실패 사유. null 이면 정상. UI 는 이것을 '알림 없음' 과 반드시 구분해 표시해야 한다. */
+  const [error, setError] = useState<string | null>(null);
+  /** 오류 토스트 중복 억제 — 60초 폴링이라 매 실패마다 띄우면 화면이 잠긴다. */
+  const errorNotifiedRef = useRef(false);
   const { client: wsClient, isConnected } = useWebSocket();
   const { user } = useAuth();
   const { toast } = useToast();
 
   const fetchNotifications = useCallback(async () => {
-    try {
-      // client.ts 인터셉터가 이미 data.data를 떼서 주므로 바로 사용합니다.
-      const [listResult, countResult]: any[] = await Promise.all([
-        client.get('/notifications').catch(() => []),
-        client.get('/notifications/unread-count').catch(() => 0)
-      ]);
+    // [2026-08-04] 조회 실패를 '알림 없음' 으로 번역하던 경로를 제거했다.
+    //
+    //   종전 구현:
+    //     client.get('/notifications').catch(() => [])
+    //     client.get('/notifications/unread-count').catch(() => 0)
+    //
+    //   내부 .catch 가 오류를 먹어 버려서 **바깥 try/catch 가 애초에 발화하지 못했다.**
+    //   즉 아래에 있던 "알림을 불러오는데 실패했습니다" 토스트는 API 실패로는 절대 뜨지 않았고,
+    //   500 이든 네트워크 단절이든 화면에는 빈 목록 + 미읽음 0 이 표시됐다.
+    //   드로어는 그 상태를 '활성화된 알림이 없습니다' 로 렌더한다 —
+    //   **보안 알림이 오고 있는데 사용자는 조용하다고 믿는** 상황이 만들어진다.
+    //
+    //   Promise.allSettled 로 두 호출을 개별 판정한다:
+    //     · 목록 실패 → 오류 상태로 올리고 **기존 목록을 지우지 않는다**(지우는 것도 거짓말이다)
+    //     · 카운트만 실패 → 목록은 살리고 배지는 직전 값을 유지한다(0 으로 덮으면 미읽음이 사라진다)
+    const [listResult, countResult] = await Promise.allSettled([
+      client.get('/notifications'),
+      client.get('/notifications/unread-count')
+    ]);
 
-      const list = listResult as Notification[] | { list: Notification[] };
-      const countData = countResult as number | { count: number };
+    if (listResult.status === 'rejected') {
+      console.error('Failed to fetch notifications:', listResult.reason);
+      setError('알림을 불러오지 못했습니다.');
+      // 60초 폴링이라 매번 토스트를 띄우면 화면이 잠긴다. 오류 '전이' 에서만 한 번 알린다.
+      if (!errorNotifiedRef.current) {
+        errorNotifiedRef.current = true;
+        toast('알림을 불러오지 못했습니다.', 'error');
+      }
+      return;
+    }
 
-      const actualList = (Array.isArray(list) ? list : (list?.list || [])).map((n: any) => ({
-        notiSn: n.notiSn,
-        notiTtlNm: n.notiTtlNm,
-        notiCn: n.notiCn,
-        notiDt: n.notiDt || n.crtDt || new Date().toISOString(),
-        readYn: n.readYn || 'N',
-        type: n.type || (n.notiTtlNm?.includes('보안') ? 'SECURITY' : n.notiTtlNm?.includes('시스템') ? 'SYSTEM' : 'ACTIVITY')
-      }));
-      setNotifications(actualList);
+    errorNotifiedRef.current = false;
+    setError(null);
+
+    // client.ts 인터셉터가 이미 data.data를 떼서 주므로 바로 사용합니다.
+    const list = listResult.value as unknown as Notification[] | { list: Notification[] };
+    const actualList = (Array.isArray(list) ? list : (list?.list || [])).map((n: any) => ({
+      notiSn: n.notiSn,
+      notiTtlNm: n.notiTtlNm,
+      notiCn: n.notiCn,
+      notiDt: n.notiDt || n.crtDt || new Date().toISOString(),
+      readYn: n.readYn || 'N',
+      type: n.type || (n.notiTtlNm?.includes('보안') ? 'SECURITY' : n.notiTtlNm?.includes('시스템') ? 'SYSTEM' : 'ACTIVITY')
+    }));
+    setNotifications(actualList);
+
+    if (countResult.status === 'fulfilled') {
+      const countData = countResult.value as unknown as number | { count: number };
       setUnreadCount(typeof countData === 'number' ? countData : (countData?.count || 0));
-    } catch (error) {
-      // 에러 로그 출력 (프로덕션에서는 console.error 대신 에러 모니터링 서비스 사용 권장)
-      console.error('Failed to fetch notifications:', error);
-      // 사용자에게 토스트 메시지 표시
-      toast('알림을 불러오는데 실패했습니다.', 'error');
+    } else {
+      // 배지를 0 으로 떨어뜨리지 않는다 — '미읽음 없음' 은 조회 실패와 구분돼야 한다.
+      console.error('Failed to fetch unread notification count:', countResult.reason);
     }
   }, [toast]);
 
@@ -124,9 +155,13 @@ export function useNotifications() {
       toast('모든 알림을 읽음 처리했습니다.', 'success');
     } catch (error) {
       console.error('Failed to mark all notifications as read:', error);
+      // [2026-08-04] 종전에는 조용히 재조회만 했다. 사용자는 '모두 읽음' 을 눌렀는데
+      //   아무 반응이 없고 배지가 그대로라 버튼이 고장 난 것으로 읽는다.
+      //   일부만 성공했을 수도 있으므로 서버 상태로 되맞추되, 실패 사실은 알린다.
+      toast('일부 알림을 읽음 처리하지 못했습니다.', 'error');
       fetchNotifications(); // Sync with server on failure
     }
   };
 
-  return { notifications, unreadCount, markAsRead, markAllAsRead, refresh: fetchNotifications };
+  return { notifications, unreadCount, error, markAsRead, markAllAsRead, refresh: fetchNotifications };
 }

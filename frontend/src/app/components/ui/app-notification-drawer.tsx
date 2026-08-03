@@ -7,7 +7,8 @@ import { X,
   Activity,  
   Database,  
   Zap,  
-  ArrowRight, 
+  ArrowRight,
+  AlertTriangle,
   Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
@@ -28,11 +29,19 @@ interface AppNotificationDrawerProps {
   notifications: Notification[];
   onMarkRead: (id: string) => void;
   onMarkAllRead: () => void;
+  /**
+   * [2026-08-04] 조회 실패 사유. null 이면 정상.
+   * 이 값이 없던 동안 드로어는 실패와 '알림 없음' 을 **같은 화면**으로 렌더했다 —
+   * 보안 알림이 오고 있어도 사용자는 조용하다고 믿었다.
+   */
+  error?: string | null;
+  /** 오류 상태에서 사용자가 직접 재시도할 수 있게 한다(알림은 자동 폴링이 60초라 체감이 길다). */
+  onRetry?: () => void;
 }
 
 type FilterType = 'ALL' | 'SECURITY' | 'SYSTEM' | 'ACTIVITY';
 
-export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead }: AppNotificationDrawerProps) {
+export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, error, onRetry }: AppNotificationDrawerProps) {
   const [mounted, setMounted] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
 
@@ -128,8 +137,31 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
 
           {/* Notification Stream */}
           <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar relative z-10">
-             {filteredNotifications.length === 0 ? (
-                <div 
+             {/* [2026-08-04] 조회 실패를 '알림 없음' 으로 렌더하지 않는다.
+                 오류 상태를 빈 상태보다 **먼저** 판정한다 — 실패 시 목록이 비어 있는 경우가
+                 대부분이라, 순서를 뒤집으면 오류 화면이 영원히 도달하지 못한다. */}
+             {error ? (
+                <div className="flex flex-col items-center justify-center h-full gap-4 px-8 text-center">
+                  <AlertTriangle size={64} className="text-destructive-emphasis opacity-80" />
+                  <div className="space-y-1">
+                    <p className="text-sm font-bold text-foreground">{error}</p>
+                    <p className="text-sm text-muted-foreground">
+                      표시할 알림이 없는 것이 아니라 <strong>조회에 실패</strong>했습니다.
+                      읽지 않은 알림이 있을 수 있습니다.
+                    </p>
+                  </div>
+                  {onRetry ? (
+                    <button
+                      type="button"
+                      onClick={onRetry}
+                      className="mt-2 px-5 py-2 rounded-lg border border-border bg-card text-sm font-bold hover:bg-muted transition-colors"
+                    >
+                      다시 시도
+                    </button>
+                  ) : null}
+                </div>
+             ) : filteredNotifications.length === 0 ? (
+                <div
                    className="flex flex-col items-center justify-center h-full text-muted-foreground/30"
                 >
                   <Zap size={100} className="mb-8 opacity-20" />
