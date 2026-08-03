@@ -10,8 +10,21 @@ test.describe('Tier 11: Enterprise Workflow & Productivity', () => {
         viewport: { width: 1920, height: 1080 }
     });
 
-    test('Workflow: Electronic Approval Full Lifecycle', async ({ page }) => {
-        console.log('\n>>> Starting Workflow: Electronic Approval Lifecycle');
+    /*
+     * [2026-08-04 계약 전환] 이 테스트의 이름은 'Full Lifecycle' 이었고, 마지막에
+     * `text=결재 상신이 완료되었습니다` 가 보이는지를 단언했다.
+     *
+     * 그런데 그 토스트는 **어떤 API 도 호출하지 않고** 뜨던 것이다. 즉 이 테스트는
+     * 결재가 저장되는 것을 검증한 적이 없고, 오히려 **거짓 성공을 계약으로 동결**하고 있었다.
+     * (뒤이은 '목록에 항목이 보인다' 단언도 아무 항목이나 잡으므로 통과했다 —
+     *  방금 만든 것이 아니어도 통과하는, 정보량 0의 단언이었다.)
+     *
+     * 상신 경로를 정직화(버튼 비활성 + 미지원 안내)했으므로 단언을 그에 맞춘다.
+     * ⚠ 실제 상신이 구현되면 이 테스트는 red 가 된다 — 그때 '저장되고 목록에서 조회된다' 로
+     *   다시 바꾼다. 구현 시점에 테스트가 손을 들게 하는 것이 의도다.
+     */
+    test('Workflow: 결재 기안 화면은 상신 미지원을 숨기지 않는다', async ({ page }) => {
+        console.log('\n>>> Starting Workflow: Electronic Approval Draft (미지원 정직성 검증)');
         
         // 1. Navigate to Approval Hub
         await page.goto('/approvals');
@@ -32,28 +45,23 @@ test.describe('Tier 11: Enterprise Workflow & Productivity', () => {
         await page.getByPlaceholder('상신할 문서의 제목을 입력하십시오...').fill(subject);
         await page.getByPlaceholder('결재 상세 사유 및 전달 사항을 기술하십시오...').fill('This is an automated E2E test for electronic approval workflow validation.');
         
-        // 5. Submit (Commit to Ledger)
-        console.log('>>> Submitting Approval Request');
-        await page.getByRole('button', { name: 'Commit to Ledger' }).click();
-        
-        // 6. Verify Redirect & Presence in List
-        await expect(page).toHaveURL(/\/approvals/);
-        console.log(`>>> Verifying if #${subject} exists in the stream`);
-        
-        // Check for success toast
-        await expect(page.locator('text=결재 상신이 완료되었습니다')).toBeVisible();
+        // 5. 미지원 사실이 화면에 드러나야 한다 — 작성만 되고 저장되지 않는다는 것을
+        //    사용자가 **버튼을 누르기 전에** 알 수 있어야 한다.
+        console.log('>>> Verifying the unsupported-submit notice is surfaced');
+        await expect(page.getByText('상신 기능은 아직 연결되지 않았습니다.')).toBeVisible();
 
-        // Ensure we are looking at 'My History' to see our own request
-        const historyTab = page.getByRole('button', { name: /My History/i });
-        if (await historyTab.isVisible()) {
-            await historyTab.click();
-            await page.waitForLoadState('domcontentloaded');
-        }
-        
-        // Retry logic: Wait for the item to appear in the list (indexing/refresh delay)
-        const firstItem = page.locator('.group.p-5, .approval-item').first();
-        await expect(firstItem).toBeVisible({ timeout: 15000 });
-        console.log('>>> Approval successfully detected in history stream.');
+        // 6. 상신 버튼은 비활성이어야 한다.
+        //    안내 문구만 띄우고 버튼이 눌리면 사용자는 여전히 "동작한다" 고 읽는다.
+        const submitBtn = page.getByRole('button', { name: /Commit to Ledger/ });
+        await expect(submitBtn).toBeVisible();
+        await expect(submitBtn).toBeDisabled();
+
+        // 7. 회귀 차단 — 종전의 가짜 성공 토스트가 되살아나면 red 가 된다.
+        await expect(page.locator('text=결재 상신이 완료되었습니다')).toHaveCount(0);
+
+        // 8. 페이지를 벗어나지 않는다(종전에는 성공한 것처럼 목록으로 튕겼다).
+        await expect(page).toHaveURL(/\/approvals\/draft/);
+        console.log(`>>> Draft form remains on page; nothing was submitted for #${subject}`);
     });
 
     test('Productivity: Smart Toolkit - Department Schedule', async ({ page }) => {
