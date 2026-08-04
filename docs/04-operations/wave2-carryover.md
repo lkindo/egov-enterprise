@@ -142,6 +142,31 @@ Wave 1 은 인접 3건(`AuthenticationBypassTest` 재작성, `SqlInjectionAndXss
 기존 `schemaValidationTest` 태스크(실 PG + Flyway 전량 + `ddl-auto:validate`)에 편입하면 `localGate`·CI 로
 실행 경로가 자동 확보된다 — 새 태스크는 필요 없다.
 
+**해소 (2026-08-04)** — `WriteSmokeIntegrationTest` 신설. 기존 `schemaValidationTest` 태스크에
+`@Tag("schema-validation")` 으로 편입해 새 태스크를 만들지 않았다(실행 경로가 이미 확보된 곳에 붙인다).
+
+판정 축 3개: ① 애플리케이션이 자기 기본값으로 쓴 행이 실 스키마에 실제로 들어간다
+② 허용되지 않는 `_yn` 값과 varchar 길이 초과를 실 DB 가 거부한다(제약이 실재함)
+③ 모든 `%_yn` 컬럼에 CHECK 이 걸려 있다(V2_24 의 약속이 신규 컬럼에도 유지되는지).
+
+> **왜 `validate` 로 부족한가**: `ddl-auto: validate` 는 컬럼의 존재·타입·길이만 대조하고
+> **CHECK 제약은 보지 않는다**. 그래서 마이그레이션이 건 CHECK 의 허용값과 애플리케이션이 실제로
+> 쓰는 값이 어긋나도 validate 는 통과하고 운영 첫 INSERT 에서 터진다.
+
+**함께 고친 결함**: 축 ③ 을 라이브에 대조하니 `_yn` 61컬럼 중 CHECK 없는 것이 2개였고,
+그중 `meta_standard_words.rprs_yn` 은 진짜 불리언이었다(라이브 DISTINCT = {'Y','N'}).
+V2_24 가 `tb_` 접두만 훑어 `meta_` 테이블이 통째로 빠져 있었다 → **V2_39** 로 채웠다.
+스모크의 예외 목록에 적는 값싼 길을 택하지 않았다(§0.7-H2). 남는 예외는 오명명 1건
+(`tb_menu_info.route_mdfcn_yn`, 값이 '2')뿐이다.
+
+**실행 증적**: `./gradlew :api-server:schemaValidationTest` — 실 PostgreSQL 17(Testcontainers)
++ Flyway 전량 적용 후 `SchemaValidationIntegrationTest` 1건 · `WriteSmokeIntegrationTest` 3건 그린.
+**V2_39 를 제거해 축 ③ 이 red 가 되는 것까지 확인했다**(§0.7-H5 — 그린만 보면 vacuous 통과와 구분되지 않는다).
+
+> ⚠ 원장이 추천한 "결재 1건 MockMvc HTTP 계층" 은 **이번 범위에 넣지 않았다.** 축 ①~③ 이
+> 원장이 지목한 결함(CHECK 값 정합)을 직접 겨냥하는 반면, 결재 HTTP 스모크는 별도의 픽스처
+> 설계가 필요하다. 미이행으로 남긴다 — 완료로 적지 않는다.
+
 ### A-3(b) · 첨부 도달성 인가 — **해소 (2026-08-04)**
 
 <details><summary>당시 기록 (해소 전)</summary>
