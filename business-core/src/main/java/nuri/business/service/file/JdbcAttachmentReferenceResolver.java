@@ -1,0 +1,111 @@
+package nuri.business.service.file;
+
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Component;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * {@link AttachmentReferenceResolver} 의 JDBC 구현. {@link AttachmentSource} 레지스트리를 순회하며
+ * 참조 행의 존재와 열람 근거를 집계한다.
+ *
+ * <p>[네이티브 SQL 인 이유] 참조원은 4개 모듈(business-core/business-app)에 흩어진 13개 엔티티다.
+ * JPA 로 묶으려면 core 가 app 엔티티를 알아야 해 모듈 방향성이 역전된다. 인가 판정 한 곳을 위해
+ * 의존 방향을 뒤집는 대신, 물리 테이블을 직접 조회하고 그 매핑을
+ * {@code AttachmentSourceRegistryLinterTest} 로 고정한다.
+ *
+ * <p><b>[fail-closed]</b> 조회 실패(테이블 부재·권한 등)는 <b>열람 근거 없음 + 개인 참조 존재</b>로
+ * 취급한다. 즉 실패는 관리자 우회까지 막는 쪽으로 기운다 — 인가 판정에서 모르는 것은 허용이 아니다.
+ */
+@Slf4j
+@Component
+public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResolver {
+
+    private final JdbcTemplate jdbcTemplate;
+
+    public JdbcAttachmentReferenceResolver(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+    }
+
+    @Override
+    public Grants resolve(String atchFileId, String loginId, String esntlId) {
+        boolean shared = false;
+        boolean owner = false;
+        boolean personal = false;
+
+        for (AttachmentSource source : AttachmentSource.values()) {
+            if (source.sensitivity() == AttachmentSource.Sensitivity.DERIVED) {
+                // 파생 로그는 어떤 근거도 만들지 않는다 — 조회 자체를 생략한다.
+                continue;
+            }
+            try {
+                SourceHit hit = query(source, atchFileId, loginId, esntlId);
+                shared |= hit.shared();
+                owner |= hit.owner();
+                personal |= hit.referenced() && source.sensitivity() == AttachmentSource.Sensitivity.PERSONAL;
+            } catch (DataAccessException ex) {
+                log.error("[FileAccess] 참조원 조회 실패 — fail-closed 로 처리한다. source={} table={} atchFileId={}",
+                        source, source.table(), atchFileId, ex);
+                personal = true;
+            }
+        }
+        return new Grants(shared, owner, personal);
+    }
+
+    private SourceHit query(AttachmentSource source, String atchFileId, String loginId, String esntlId) {
+        List<Object> params = new ArrayList<>();
+
+        String sharedExpr = source.sharedPredicate() != null ? source.sharedPredicate() : "1 = 0";
+
+        StringBuilder ownerExpr = new StringBuilder();
+        if (source.ownerByLoginIdPredicate() != null && loginId != null) {
+            ownerExpr.append('(').append(source.ownerByLoginIdPredicate()).append(')');
+            for (int i = 0; i < countPlaceholders(source.ownerByLoginIdPredicate()); i++) {
+                params.add(loginId);
+            }
+        }
+        if (source.ownerByEsntlIdPredicate() != null && esntlId != null) {
+            if (ownerExpr.length() > 0) {
+                ownerExpr.append(" OR ");
+            }
+            ownerExpr.append('(').append(source.ownerByEsntlIdPredicate()).append(')');
+            // NOTE 의 esntlId 술어는 발신/수신 두 EXISTS 로 이뤄져 파라미터를 2개 요구한다.
+            for (int i = 0; i < countPlaceholders(source.ownerByEsntlIdPredicate()); i++) {
+                params.add(esntlId);
+            }
+        }
+        if (ownerExpr.length() == 0) {
+            ownerExpr.append("1 = 0");
+        }
+
+        // SELECT 절의 ? 가 WHERE 절보다 앞서므로 atchFileId 는 마지막에 바인딩한다.
+        params.add(atchFileId);
+
+        String sql = "SELECT COUNT(*) AS ref_cnt,"
+                + " SUM(CASE WHEN " + sharedExpr + " THEN 1 ELSE 0 END) AS shared_cnt,"
+                + " SUM(CASE WHEN " + ownerExpr + " THEN 1 ELSE 0 END) AS owner_cnt"
+                + " FROM " + source.table()
+                + " WHERE atch_file_id = ?";
+
+        return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new SourceHit(
+                rs.getLong("ref_cnt") > 0,
+                rs.getLong("shared_cnt") > 0,
+                rs.getLong("owner_cnt") > 0), params.toArray());
+    }
+
+    private static int countPlaceholders(String predicate) {
+        int count = 0;
+        for (int i = 0; i < predicate.length(); i++) {
+            if (predicate.charAt(i) == '?') {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    private record SourceHit(boolean referenced, boolean shared, boolean owner) {
+    }
+}

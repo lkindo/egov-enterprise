@@ -109,10 +109,17 @@ Wave 1 은 인접 3건(`AuthenticationBypassTest` 재작성, `SqlInjectionAndXss
 
 </details>
 
-**잔여**: 수평(소유권) 축은 아직 없다 — 현재 2건 모두 수직 상승이다.
-그리고 `business-core`/`business-app` testFixtures 의 `TestSecurityConfig`(`anyRequest().permitAll()`)는
+**잔여 ①(수평 축) — 해소 (2026-08-04)**: `PrivilegeEscalationVulnerabilityTest` 에 수평 축 2건을 신설했다
+(타인 첨부 403 + 대조군 자기 첨부 200). 대상은 A-3(b) 에서 닫은 `GET /api/v1/files/{atchFileId}` 다.
+
+**잔여 ②**: `business-core`/`business-app` testFixtures 의 `TestSecurityConfig`(`anyRequest().permitAll()`)는
 여전히 살아 있어 모든 `@IntegrationTest` 가 보안 개방 상태로 돈다. 이 둘은 `TestSecurityChainOverrideLinterTest`
 의 동결 목록(5항목)이 계속 가시화한다.
+
+> **우선순위 정정(2026-08-04 실측)**: "모든 `@IntegrationTest`" 라는 서술은 맞지만 **규모가 오해를 부른다** —
+> `@IntegrationTest` 실사용은 7개 클래스이고 전부 **서비스 레이어 직접 호출**(HTTP 미경유)이라
+> 필터 체인을 타지 않는다. 즉 `permitAll` 이 실제로 무력화하는 인가 판정은 현재 거의 없다.
+> 고쳐야 할 부채인 것은 맞으나, 이 문서를 근거로 "인가 검증이 통째로 비어 있다" 고 읽으면 과대평가다.
 
 ### A-4 · 실 PostgreSQL 쓰기 스모크 티어 (공수 M)
 **전혀 신설되지 않았다.** 기존 `SchemaValidationIntegrationTest` 는 테스트 1건·86줄의 **매핑 검증 전용**이며 쓰기가 0이다.
@@ -124,13 +131,58 @@ Wave 1 은 인접 3건(`AuthenticationBypassTest` 재작성, `SqlInjectionAndXss
 기존 `schemaValidationTest` 태스크(실 PG + Flyway 전량 + `ddl-auto:validate`)에 편입하면 `localGate`·CI 로
 실행 경로가 자동 확보된다 — 새 태스크는 필요 없다.
 
-### A-3(b) · 첨부 도달성 인가
+### A-3(b) · 첨부 도달성 인가 — **해소 (2026-08-04)**
+
+<details><summary>당시 기록 (해소 전)</summary>
+
 Wave 1 은 (a) 면제 사유의 정직화만 이행했다. (b) **게시글 열람 권한 상속 기반 도달성 검증**은 미이행이며
 원장은 이것을 "다음 웨이브의 명시 목표로 기록" 하라고 했다 — 그 기록이 이 항목이다.
 
 현재 인증만 통과하면 임의 `atchFileId` 로 남의 첨부를 읽을 수 있다. `FileMaster` 에 소유자 컬럼이 없으므로
 소유자 전용 잠금은 불가하며(적용하면 기존 첨부 전량 403), 참조원(게시글·결재 등) census 를 선행해야 한다.
 `FileApiController` 의 `GET /{atchFileId}` 가 대상이다.
+
+</details>
+
+**기록 정정 — "`FileMaster` 에 소유자 컬럼이 없다" 는 사실이 아니다.** 물리 실측(2026-08-04) 결과
+`tb_file_master` 에는 `frst_rgtr_id varchar(20)` 이 있고, `FileMaster extends BaseEntity` 이므로
+JPA auditing 이 **업로더 loginId** 를 채운다(라이브 125행 전부 채워져 있다 — NULL 0건).
+이 한 줄의 오인이 "소유자 잠금 불가 → 큰 설계 필요" 라는 결론을 만들고 있었다.
+
+**참조원 census (실측)** — `information_schema` 전수 조회로 `atch_file_id` 보유 테이블은
+저장소 자신(`tb_file_master`/`tb_file_detail`)을 빼면 **정확히 13종**이고, 코드의 `atchFileId` 보유
+`@Entity` 13종과 1:1 대응한다. (참조 실사용은 배너 2건뿐이고 `tb_file_master` 125행은 **어떤 업무 행에서도
+참조되지 않는 고아**다 — 첨부 기능이 실질적으로 쓰이지 않아 왔다는 뜻이며, fail-closed 전환의 위험도 그만큼 낮다.)
+
+**구현** — `FileAccessPolicy`(business-core)가 도달성으로 판정한다. 판정 표는 위에서부터:
+① 업로더 본인(loginId) → 허용(업로드 직후 미첨부 창) ② 참조 행의 소유자·당사자 → 허용
+③ 공유 콘텐츠(비밀글 아닌 게시글·FAQ·배너·일정 등) → 인증 사용자 허용
+④ 관리자 → 허용하되 **개인 귀속(쪽지·상벌·업무보고 등) 참조원이 하나라도 있으면 불허**(§0.7-H3 프라이버시)
+⑤ 그 외 → 403. 적용 지점은 `FileService.getFileList` / `getFileResource` / `getFileDetail` 이다
+(호출부 실측 결과 이 셋의 진입점은 `FileApiController` 2개 HTTP 경로뿐이라 폭발 반경이 좁다).
+
+**신원 축**은 컬럼별로 실측해 고정했다 — `frst_rgtr_id`=loginId, `tb_bbs_item.user_id`=esntlId(`USRCNFRM_…`),
+`tb_note_sndng.sndr_id`·`tb_note_rcptn.rcvr_id`=esntlId(`NoteApiController` 가 `getUsername()` 을 넘긴다).
+
+**게이트**
+- `FileAccessPolicyTest`(business-core, 12건) — 판정 표 전량. 참조원 조회를 포트로 분리해 **DB 없이** 검증한다.
+  가드를 무력화해 주입하면 **12건 중 5건 red**(거부 단언 전부)임을 확인했다(§0.7-H5).
+- `AttachmentSourceRegistryLinterTest`(harness, pre-push) — 레지스트리 ↔ 엔티티 정합을 누락·유령 2축으로 고정.
+  예외 목록을 두지 않는다. 레지스트리에서 `tb_bbs_item` 을 빼는 위반을 주입해 red 확인.
+- `PrivilegeEscalationVulnerabilityTest` — **수평 축 신설**(아래 A-1 잔여와 같은 항목). 프로덕션 체인 위에서
+  타인 첨부 403 + **대조군으로 자기 첨부 200**. 대조군이 없으면 "첨부가 전부 막혔다" 와 구분되지 않는다.
+- `V2_38` — 참조원 13종 + 쪽지 발신/수신 `note_id` 인덱스. 가드를 붙이면서 전수 스캔을 같이 심지 않도록 함께 넣는다.
+
+**의도적으로 남긴 보수적 지점(잔여)**
+- 개인 귀속 도메인의 소유 축은 **`frst_rgtr_id`(loginId)** 와 쪽지 발신/수신만 근거로 쓴다.
+  `tb_memo_rpt_info.user_id`·`rptr_id`, `tb_rpt_info.user_id`, `tb_rward_manage.rwrd_user_id`·`atrzr_id` 는
+  축(loginId/esntlId)이 미확정이라 **근거에서 제외**했다 — 잘못 고르면 뚫리거나 잠기는데, 잠김은 보이고
+  뚫림은 보이지 않는다. 해당 테이블 전부 라이브 0행이라 현재 영향은 없다. 축을 실측하면 근거로 편입할 것.
+- 쓰기 경로(`updateFiles`/`deleteFile(s)`)는 이번 범위에 넣지 않았다. HTTP 미노출이며(`FileApiController` 에
+  DELETE 매핑이 없다) 유일한 호출부인 `BoardService` 는 자체 인가를 선행한다.
+- **별건 발견**: 프론트가 `/api/v1/files/download?fileId=…` 를 부르는데 백엔드에 그 경로가 없다
+  (`BannerAdminClient`·`BannerSlider`). 종전부터 404 이던 것이고 이번 변경과 무관하나, 배너 이미지가
+  깨져 있다는 뜻이므로 별도 항목으로 남긴다. FE `FileService.deleteFile` 도 없는 DELETE 를 친다.
 
 ---
 

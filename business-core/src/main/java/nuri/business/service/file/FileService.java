@@ -33,6 +33,7 @@ public class FileService extends BaseAbstractService {
     private final FileMasterRepository fileMasterRepository;
     private final FileDetailRepository fileDetailRepository;
     private final FileStorageService storageService;
+    private final FileAccessPolicy accessPolicy;
 
     // [Security] 허용된 파일 확장자 화이트리스트
     private static final List<String> ALLOWED_EXTENSIONS = Arrays.asList(
@@ -43,10 +44,12 @@ public class FileService extends BaseAbstractService {
 
     public FileService(FileMasterRepository fileMasterRepository,
             FileDetailRepository fileDetailRepository,
-            FileStorageService storageService) {
+            FileStorageService storageService,
+            FileAccessPolicy accessPolicy) {
         this.fileMasterRepository = required(fileMasterRepository, "fileMasterRepository 는 null 일 수 없습니다");
         this.fileDetailRepository = required(fileDetailRepository, "fileDetailRepository 는 null 일 수 없습니다");
         this.storageService = required(storageService, "storageService 는 null 일 수 없습니다");
+        this.accessPolicy = required(accessPolicy, "accessPolicy 는 null 일 수 없습니다");
     }
 
     /**
@@ -98,6 +101,8 @@ public class FileService extends BaseAbstractService {
             return List.of();
         FileMaster master = fileMasterRepository.findById(required(atchFileId, "atchFileId 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [IDOR] 인증만으로는 부족하다 — 이 첨부에 도달할 근거가 있는 주체인지 검증한다.
+        accessPolicy.assertReadable(master);
         return fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다")).stream()
                 .map(this::convertToDto)
                 .collect(Collectors.toList());
@@ -111,6 +116,8 @@ public class FileService extends BaseAbstractService {
                 .findByFileMasterAtchFileIdAndAtchFileSeq(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
                         required(fileSn, "fileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [IDOR] 다운로드는 목록보다 노출이 크다 — 같은 도달성 기준을 적용한다.
+        accessPolicy.assertReadable(detail.getFileMaster());
 
         return storageService.loadAsResource(required(detail.getStrgFileNm(), "detail.getStrgFileNm() 는 null 일 수 없습니다"),
                 required(detail.getFileStrgPath(), "detail.getFileStrgPath() 는 null 일 수 없습니다"));
@@ -156,6 +163,8 @@ public class FileService extends BaseAbstractService {
                 .findByFileMasterAtchFileIdAndAtchFileSeq(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
                         required(fileSn, "fileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // [IDOR] 단건 상세도 같은 기준. (현재 HTTP 미노출이나, 노출 시 무가드가 되지 않도록 함께 닫는다.)
+        accessPolicy.assertReadable(detail.getFileMaster());
         return convertToDto(detail);
     }
 

@@ -47,6 +47,13 @@ class FileServiceTest {
     @Mock
     private FileStorageService storageService;
 
+    /**
+     * 도달성 인가는 {@link FileAccessPolicyTest} 가 판정 표 단위로 검증한다.
+     * 여기서는 기본 목(허용)으로 두어 이 클래스가 계속 <b>파일 입출력 계약</b>만 보게 한다.
+     */
+    @Mock
+    private FileAccessPolicy accessPolicy;
+
     @Test
     @DisplayName("파일 업로드 성공")
     void uploadFiles_Success() throws IOException {
