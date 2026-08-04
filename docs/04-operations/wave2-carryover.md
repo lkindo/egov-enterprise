@@ -191,9 +191,32 @@ JPA auditing 이 **업로더 loginId** 를 채운다(라이브 125행 전부 채
   뚫림은 보이지 않는다. 해당 테이블 전부 라이브 0행이라 현재 영향은 없다. 축을 실측하면 근거로 편입할 것.
 - 쓰기 경로(`updateFiles`/`deleteFile(s)`)는 이번 범위에 넣지 않았다. HTTP 미노출이며(`FileApiController` 에
   DELETE 매핑이 없다) 유일한 호출부인 `BoardService` 는 자체 인가를 선행한다.
-- **별건 발견**: 프론트가 `/api/v1/files/download?fileId=…` 를 부르는데 백엔드에 그 경로가 없다
-  (`BannerAdminClient`·`BannerSlider`). 종전부터 404 이던 것이고 이번 변경과 무관하나, 배너 이미지가
-  깨져 있다는 뜻이므로 별도 항목으로 남긴다. FE `FileService.deleteFile` 도 없는 DELETE 를 친다.
+- **별건 발견 — 배너/팝업 이미지가 구조적으로 깨져 있다(2겹)**. 이번 변경과 무관하며 종전부터 그렇다.
+  자동 수정하지 않았다 — 두 번째 층이 **아키텍처 결정**을 요구하기 때문이다.
+
+  **1층 · 없는 경로를 부른다.** 프론트 3개소가 `/api/v1/files/download?fileId=…` 를 만든다
+  ([BannerAdminClient.tsx:310](../../frontend/src/app/admin/system/banner/BannerAdminClient.tsx#L310)·
+  [:342](../../frontend/src/app/admin/system/banner/BannerAdminClient.tsx#L342)·
+  [BannerSlider.tsx:62](../../frontend/src/app/components/dashboard/BannerSlider.tsx#L62)).
+  백엔드 전 모듈에 `download` 매핑은 **0건**이다(실존은 `GET /{atchFileId}` 와 `GET /{atchFileId}/{fileSn}`).
+  따라서 이 요청은 `atchFileId="download"` 로 해석돼 404 가 된다.
+
+  **2층 · URL 을 고쳐도 인증이 안 된다.** `JwtTokenProvider.resolveToken` 은 `Authorization: Bearer`
+  **헤더만** 읽는다(쿠키 폴백 없음). `next.config.js` 의 `/api/v1/:path*` rewrite 는 헤더를 주입하지 않는
+  **투명 프록시**다. `<img src>` 는 헤더를 실을 수 없으므로, 경로를 `/api/v1/files/{id}/1` 로 고쳐도 401 이다.
+  같은 이유로 `FileService.downloadFile` 의 `window.open(url)` 도 인증되지 않는다.
+
+  **필요한 결정 (셋 중 하나)**
+  1. **공개 이미지 엔드포인트 시설** — 배너는 공개 콘텐츠이므로 무인증 이미지 경로를 연다.
+     가장 단순하지만 **공개 표면이 늘어난다**(첨부 도달성 인가를 우회하는 경로가 생기지 않도록,
+     배너가 참조하는 첨부로 대상을 좁혀야 한다).
+  2. **쿠키 인증 수용** — 다운로드 경로에 한해 쿠키 토큰을 허용한다. CSRF 표면이 생기므로
+     `SameSite`·메서드 제한과 함께 판단해야 한다. FE auth 클러스터(pending-decisions §2-D 계열)와 같은 축이다.
+  3. **FE 가 blob 으로 가져온다** — axios(헤더 포함)로 받아 `URL.createObjectURL` 로 렌더한다.
+     백엔드 계약 변경이 없어 가장 안전하지만, 이미지마다 JS 왕복이 생기고 `next/image` 최적화를 잃는다.
+
+  현재 상태로는 세 화면 모두 **깨진 이미지**가 보인다(라이브 배너 2건 모두 `atch_file_id` 를 갖고 있다).
+  부수: FE `FileService.deleteFile` 은 `DELETE /{atchFileId}/{fileSn}` 를 치는데 컨트롤러에 DELETE 매핑이 없다(405).
 
 ---
 
