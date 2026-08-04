@@ -19,15 +19,35 @@ while read local_ref local_sha remote_ref remote_sha; do
   fi
 done
 
+# [2026-08-04] stdin 으로 범위가 안 오는 호출 형태(IDE/GUI 푸시 등)가 있어 폴백을 둔다.
+#   폴백이 없으면 **문서 한 줄 푸시에도 전체 하네스(~2분)가 돌아** fast-pass 가 사실상 죽는다.
+#
+#   ⚠ 폴백의 유일한 규칙: **과대추정은 되어도 과소추정은 안 된다.**
+#      과대추정하면 fast-pass 를 놓쳐 느려질 뿐이지만(비용), 과소추정하면 코드 변경이 게이트를
+#      건너뛴다(사고). 아래 두 폴백은 모두 `X..HEAD` 형태의 트리 비교라 실제 푸시분을 덮거나 넘는다.
 if [ -z "$RANGES" ]; then
-  # stdin에서 범위가 읽히지 않은 경우 Fallback (업스트림 추적 브랜치 또는 HEAD~1 기준)
-  UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || echo "origin/main")
-  RANGES="$UPSTREAM..HEAD"
+  UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || true)
+  if [ -n "$UPSTREAM" ]; then
+    RANGES="$UPSTREAM..HEAD"
+  elif git rev-parse --verify -q origin/main >/dev/null 2>&1; then
+    # 업스트림이 없는 신규 브랜치의 첫 푸시. origin/main 과의 차이는 이 브랜치가 더한 것을 전부 포함한다.
+    RANGES="origin/main..HEAD"
+  fi
 fi
 
-CHANGED_FILES=$(for r in $RANGES; do git diff --name-only $r 2>/dev/null; done | sort -u)
-if [ -z "$CHANGED_FILES" ]; then
-  CHANGED_FILES=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || true)
+# [2026-08-04 안전측 정정] 범위를 특정하지 못하면 **fast-pass 하지 않는다**.
+#
+#   종전 폴백에는 `HEAD~1..HEAD` 가 있었다. 그것은 **마지막 커밋 하나만** 보는 것이라,
+#   여러 커밋을 한 번에 푸시하면 앞선 커밋의 코드 변경이 판정에서 통째로 누락된다 —
+#   마지막 커밋이 문서면 그 푸시 전체가 fast-pass 된다(과소추정).
+#   하필 그 구멍으로 나갈 수 있는 대표적 편집이 **이 훅 파일 자신**이다(매니페스트 헤더가 경고하는
+#   '편집된 훅이 자기 자신의 푸시를 승인' 하는 형태).
+#   fast-pass 는 '확실히 문서만' 일 때의 최적화이지 '모르겠을 때' 의 기본값이 아니다.
+CHANGED_FILES=""
+if [ -n "$RANGES" ]; then
+  CHANGED_FILES=$(for r in $RANGES; do git diff --name-only $r 2>/dev/null; done | sort -u)
+else
+  echo "[pre-push] ℹ 푸시 범위를 특정하지 못했습니다 — fast-pass 없이 전체 게이트를 실행합니다(안전측)."
 fi
 
 if [ -n "$CHANGED_FILES" ]; then
