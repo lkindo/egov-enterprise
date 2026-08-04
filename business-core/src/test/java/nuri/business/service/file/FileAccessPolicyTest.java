@@ -128,6 +128,28 @@ class FileAccessPolicyTest {
     }
 
     @Test
+    @DisplayName("🚨 미인증 주체는 **공유 근거가 있어도** 거부한다 — 미인증 조기 반환이 무의미하지 않음을 증명")
+    void unauthenticatedIsDeniedEvenForSharedContent() {
+        // 이 케이스가 없으면 미인증 판정(loginId·esntlId 모두 null)이 뒤쪽 fallthrough 거부와
+        // 구분되지 않는다 — 실제로 2026-08-04 pitest 에서 그 조건의 negated-conditional 뮤테이션이
+        // 살아남았다. 공유 근거가 있는 첨부(공개 게시글 등)는 그 분기를 지우면 **미인증자에게 열린다**.
+        assertThatThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(true, false, false))
+                .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .isInstanceOf(BusinessException.class)
+                .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
+    @DisplayName("loginId 만 있고 esntlId 가 없는 주체도 정상 판정된다 — 두 축 중 하나만으로 인증 성립")
+    void loginIdAloneIsSufficientToBeConsideredAuthenticated() {
+        authenticate(UPLOADER_LOGIN_ID, null, "ROLE_USER");
+
+        assertThatCode(() -> policy(grantsNone()).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .doesNotThrowAnyException();
+    }
+
+    @Test
     @DisplayName("업로더 판정은 loginId 축이다 — esntlId 가 같아도 loginId 가 다르면 근거가 되지 못한다")
     void uploaderMatchIsOnLoginIdAxis() {
         // frst_rgtr_id 에는 loginId 가 저장된다(BaseEntity). esntlId 로 비교하면 영영 일치하지 않거나
@@ -171,6 +193,29 @@ class FileAccessPolicyTest {
         void registryMatchesMeasuredSchema() {
             List<String> tables = AttachmentSource.registeredTables();
             assertThat(tables).hasSize(13).doesNotHaveDuplicates();
+        }
+
+        @Test
+        @DisplayName("각 참조원은 자기 물리 테이블명을 반환한다 — 레지스트리↔SQL 사이의 유일한 연결 고리")
+        void everySourceExposesItsPhysicalTable() {
+            assertThat(AttachmentSource.BOARD.table()).isEqualTo("tb_bbs_item");
+            assertThat(AttachmentSource.NOTE.table()).isEqualTo("tb_note_info");
+            assertThat(AttachmentSource.DATA_USE_STATS.table()).isEqualTo("tb_dta_use_stats");
+            for (AttachmentSource source : AttachmentSource.values()) {
+                assertThat(source.table())
+                        .as("%s 의 테이블명이 비었다면 SQL 이 조립되지 않는다", source)
+                        .startsWith("tb_");
+            }
+        }
+
+        @Test
+        @DisplayName("쪽지의 소유 판정은 발신·수신 두 축을 모두 본다 — 한쪽만 보면 상대가 자기 쪽지를 못 연다")
+        void notePredicateCoversBothSenderAndRecipient() {
+            String predicate = AttachmentSource.NOTE.ownerByEsntlIdPredicate();
+            assertThat(predicate).contains("tb_note_sndng").contains("tb_note_rcptn");
+            assertThat(predicate.chars().filter(c -> c == '?').count())
+                    .as("파라미터 자리표시자 수가 바뀌면 바인딩이 어긋나 SQL 이 깨진다")
+                    .isEqualTo(2);
         }
     }
 

@@ -7,6 +7,7 @@ import nuri.business.domain.file.FileMaster;
 import nuri.business.domain.file.FileMasterRepository;
 import nuri.business.service.file.dto.FileDto;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.storage.FileStorageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -108,6 +109,10 @@ class FileServiceTest {
         // then
         assertThat(result).hasSize(1);
         assertThat(result.get(0).getOrignlFileNm()).isEqualTo("test.jpg");
+        // [IDOR] 인가 가드가 실제로 불렸는지 못박는다. 이 단언이 없으면 assertReadable 호출을
+        // **지워도 이 테스트가 통과**한다(2026-08-04 pitest 실측: "removed call" 뮤테이션 SURVIVED).
+        // 정책의 내용은 FileAccessPolicyTest 가 보고, 여기서는 '경로가 가드를 통과한다'만 본다.
+        verify(accessPolicy).assertReadable(master);
     }
 
     @Test
@@ -116,7 +121,9 @@ class FileServiceTest {
         // given
         String atchFileId = "FILE_123";
         Integer fileSn = 1;
+        FileMaster master = new FileMaster(atchFileId);
         FileDetail detail = FileDetail.builder()
+                .fileMaster(master)
                 .strgFileNm("stored.jpg")
                 .fileStrgPath("path")
                 .build();
@@ -130,6 +137,49 @@ class FileServiceTest {
 
         // then
         assertThat(result).isNotNull();
+        // [IDOR] 다운로드는 목록보다 노출이 크다 — 가드 호출을 여기서도 못박는다.
+        verify(accessPolicy).assertReadable(master);
+    }
+
+    @Test
+    @DisplayName("[IDOR] 단건 상세도 인가 가드를 통과한다")
+    void getFileDetail_passesThroughAccessPolicy() {
+        String atchFileId = "FILE_123";
+        FileMaster master = new FileMaster(atchFileId);
+        FileDetail detail = FileDetail.builder()
+                .fileMaster(master)
+                .atchFileSeq(1)
+                .orgnlFileNm("test.jpg")
+                .build();
+        given(fileDetailRepository.findByFileMasterAtchFileIdAndAtchFileSeq(atchFileId, 1))
+                .willReturn(Optional.of(detail));
+
+        FileDto result = fileService.getFileDetail(atchFileId, 1);
+
+        assertThat(result.getOrignlFileNm()).isEqualTo("test.jpg");
+        verify(accessPolicy).assertReadable(master);
+    }
+
+    @Test
+    @DisplayName("[IDOR] 가드가 거부하면 저장소 접근으로 넘어가지 않는다 — 거부가 실효적임을 증명")
+    void getFileResource_deniedByPolicy_doesNotTouchStorage() {
+        String atchFileId = "FILE_123";
+        FileMaster master = new FileMaster(atchFileId);
+        FileDetail detail = FileDetail.builder()
+                .fileMaster(master)
+                .strgFileNm("stored.jpg")
+                .fileStrgPath("path")
+                .build();
+        given(fileDetailRepository.findByFileMasterAtchFileIdAndAtchFileSeq(anyString(), anyInt()))
+                .willReturn(Optional.of(detail));
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(accessPolicy).assertReadable(master);
+
+        assertThatThrownBy(() -> fileService.getFileResource(atchFileId, 1))
+                .isInstanceOf(BusinessException.class);
+
+        // 가드가 던졌는데도 파일을 읽어 왔다면 거부는 형식뿐이다.
+        verify(storageService, never()).loadAsResource(anyString(), anyString());
     }
 
     @Test
