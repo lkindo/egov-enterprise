@@ -107,6 +107,26 @@ class ConfigSafetyLinterTest {
             Pattern.compile("https?://[^\\s\"']*?(\\d+)\\}?/actuator/health");
 
     /** [W1-12] compose 의 호스트 포트 매핑({@code - "9090:9090"} / {@code - 9090:9090}). */
+    /**
+     * [J-1 · 2026-08-04] 신뢰 프록시 경계는 <b>두 파일에 걸쳐</b> 성립한다 —
+     * {@code docker-compose.yml} 의 {@code egov-net} 서브넷과 {@code docker-compose.prod.yml} 의
+     * {@code TRUSTED_PROXIES} 기본값이 같은 대역을 가리켜야 한다.
+     *
+     * <p>둘이 갈라지면 <b>양방향 모두 나쁘다</b>: 프록시가 신뢰 목록에서 빠지면 모든 클라이언트 IP 가
+     * Next 컨테이너 하나로 수렴해 레이트리밋이 전역 단일 버킷이 되고(가용성),
+     * 반대로 목록이 다시 사설 대역 전체로 넓어지면 8080 에 직접 접근하는 사내망 클라이언트가
+     * 자기 XFF 를 위조할 수 있게 된다(무결성). 어느 쪽도 red 없이 조용히 성립한다.
+     */
+    private static final Pattern COMPOSE_NET_SUBNET =
+            Pattern.compile("(?m)^\\s*-\\s*subnet\\s*:\\s*([0-9./]+)\\s*$");
+
+    private static final Pattern COMPOSE_TRUSTED_PROXIES =
+            Pattern.compile("(?m)^\\s*TRUSTED_PROXIES\\s*:\\s*\\$\\{TRUSTED_PROXIES:-([^}]*)}\\s*$");
+
+    /** 신뢰 목록에 있으면 안 되는 광역 사설 대역 — 8080 직접 도달이 가능한 형상에서 위조 표면이 된다. */
+    private static final java.util.List<String> FORBIDDEN_BROAD_TRUST = java.util.List.of(
+            "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16");
+
     private static final Pattern COMPOSE_HOST_PORT_MAPPING =
             Pattern.compile("(?m)^\\s*-\\s*\"?(\\d+):(\\d+)\"?\\s*$");
 
@@ -147,6 +167,7 @@ class ConfigSafetyLinterTest {
 
         // ── 3) base compose: 프로파일 주입 지점 존재 + 하드코딩 금지
         auditBaseProfileInjection(composeBaseSrc, violations);
+        auditTrustedProxyBoundary(composeBaseSrc, composeProdSrc, violations);
 
         // ── 4·5) prod 오버레이: 프로파일 prod 고정 + SPRING_APPLICATION_JSON 재정의
         auditProdOverlay(composeProdSrc, violations);
@@ -229,6 +250,48 @@ class ConfigSafetyLinterTest {
      * CI e2e·ZAP 스캔·로컬 개발이 같은 스택을 쓰므로 전부 깨진다(prod 하드코딩 시 ALGORITHM_KEY
      * 무기본값 fail-fast 로 기동 불가, cookie.secure=true 로 http localhost 로그인 전멸).
      */
+    /**
+     * [J-1] 신뢰 프록시 경계가 두 파일에서 정합한지 본다.
+     *
+     * <p>판정 2축: ① 운영 기본값이 광역 사설 대역을 포함하지 않는가(위조 표면)
+     * ② 그 값이 실제 컨테이너 네트워크 서브넷과 같은가(프록시가 신뢰 목록에 실제로 들어 있는가).
+     */
+    private void auditTrustedProxyBoundary(String composeBaseSrc, String composeProdSrc, List<String> violations) {
+        Matcher subnet = COMPOSE_NET_SUBNET.matcher(composeBaseSrc);
+        Matcher trusted = COMPOSE_TRUSTED_PROXIES.matcher(composeProdSrc);
+
+        if (!subnet.find()) {
+            violations.add(COMPOSE_BASE + ": egov-net 에 명시 subnet 이 없습니다 — 서브넷이 동적으로 배정되면"
+                    + " 신뢰 프록시를 특정할 수 없어, 목록을 사설 대역 전체로 넓히는 것 외에 방법이 없어집니다."
+                    + " 그 상태에서 8080 이 직접 도달 가능하면 사내망 클라이언트가 자기 XFF 를 위조할 수 있습니다(J-1).");
+            return;
+        }
+        if (!trusted.find()) {
+            violations.add(COMPOSE_PROD + ": TRUSTED_PROXIES 기본값 선언을 찾을 수 없습니다 —"
+                    + " 이 한 줄이 레이트리밋 키·로그인 IP 제한·감사 IP 를 동시에 결정합니다.");
+            return;
+        }
+
+        String subnetValue = subnet.group(1).trim();
+        String trustedValue = trusted.group(1).trim();
+
+        for (String broad : FORBIDDEN_BROAD_TRUST) {
+            if (trustedValue.contains(broad)) {
+                violations.add(COMPOSE_PROD + ": TRUSTED_PROXIES 기본값에 광역 사설 대역 '" + broad + "' 이 있습니다 —"
+                        + " 백엔드 8080 이 브라우저에서 직접 도달 가능한 형상이므로(J-1 확정), 그 대역의 클라이언트는"
+                        + " 스스로 신뢰 프록시로 판정돼 X-Forwarded-For 를 위조할 수 있습니다."
+                        + " 신뢰 대상은 프록시(Next 컨테이너)뿐이어야 합니다.");
+            }
+        }
+
+        if (!trustedValue.contains(subnetValue)) {
+            violations.add(COMPOSE_PROD + ": TRUSTED_PROXIES(" + trustedValue + ") 가 "
+                    + COMPOSE_BASE + " 의 egov-net 서브넷(" + subnetValue + ")을 포함하지 않습니다 —"
+                    + " 프록시가 신뢰 목록에서 빠지면 XFF 가 전면 불신되어 모든 클라이언트 IP 가"
+                    + " Next 컨테이너 하나로 수렴하고, 레이트리밋이 전역 단일 버킷이 됩니다(순서 지뢰 1 계열).");
+        }
+    }
+
     private void auditBaseProfileInjection(String composeBaseSrc, List<String> violations) {
         Matcher m = COMPOSE_PROFILES_ACTIVE.matcher(composeBaseSrc);
         if (!m.find()) {

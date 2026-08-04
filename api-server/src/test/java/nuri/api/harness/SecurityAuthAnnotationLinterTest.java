@@ -217,6 +217,72 @@ class SecurityAuthAnnotationLinterTest {
      * 새 쓰기 메서드를 추가하면 자동으로 면제된다. 엔드포인트 단위 판정으로 좁히는 것은 별건으로 분리한다.
      * 등재 사유를 확장 해석하지 말 것: 아래 사유는 <b>현재 존재하는</b> 핸들러에 대한 판정이다.
      */
+    /**
+     * [A-2 잔여 · 2026-08-04] <b>쓰기 사유로 통과하고 있는 읽기 엔드포인트</b>의 동결 census.
+     *
+     * <p>{@link #WRITE_AUTHZ_GUARDED_ELSEWHERE} 의 등재 사유는 전부 <b>쓰기</b> 소유권 가드다.
+     * 그런데 Test#1 은 그 클래스의 <b>읽기</b> 핸들러도 함께 통과시킨다 — 즉 "수정은 본인만" 이라는
+     * 근거로 "조회도 안전하다" 를 주장하는 셈이고, 그 둘은 다른 명제다. 읽기 IDOR 은 그만큼
+     * 검증되지 않은 채 남는다(이번 세션에 고친 첨부 IDOR 이 정확히 그 계열이었다).
+     *
+     * <p><b>이 census 가 하는 일과 하지 않는 일</b>을 분명히 한다.
+     * <ul>
+     *   <li><b>한다</b>: 그 간극을 <b>셀 수 있게</b> 만들고, <b>조용히 자라지 못하게</b> 막는다.
+     *       새 읽기 엔드포인트가 같은 면제를 타면 red 다 — 등재하려면 사람이 판단해야 한다.</li>
+     *   <li><b>하지 않는다</b>: 등재된 항목이 <b>안전하다고 주장하지 않는다.</b>
+     *       이것은 해소 목록이 아니라 <b>부채 목록</b>이다.</li>
+     * </ul>
+     *
+     * <p>양방향 동결이다 — 항목이 사라져도 red 다. 소유권 가드가 실제로 붙어 해소됐다면 그 사실이
+     * diff 에 드러나야 하고, 엔드포인트가 조용히 사라진 것이라면 그것도 알아야 한다.
+     * (신규 도메인을 통째로 면제하는 값싼 길을 막기 위해 {@code 클래스#메서드} 단위로 잘게 동결한다.)
+     */
+    private static final Set<String> READ_COVERED_BY_WRITE_RATIONALE = new java.util.TreeSet<>(java.util.Set.of(
+            // [동결 2026-08-04] 최초 census 실행 결과 — 38건.
+            //   ⚠ 원장(§4 "인가 린터 커버리지")은 이 수를 49건으로 적었다. 실측은 38건이다.
+            //   전부가 취약점인 것은 아니다 — 일부는 이미 서비스 계층에 읽기 소유권 가드가 있다
+            //   (예: NoteService.getNoteDetail 은 발신/수신 본인만 통과시킨다). 이 목록이 말하는 것은
+            //   "린터가 그 사실을 확인하지 않는다" 이지 "가드가 없다" 가 아니다.
+            //   해소는 도메인별 개별 판정이 필요하다(§0.7-H4).
+            "AddressBookApiController#getAddressBook",
+            "AddressBookApiController#getAddressBooks",
+            "AddressBookApiController#searchUsers",
+            "ApprovalApiController#getMyHistory",
+            "ApprovalApiController#getPending",
+            "BbsApiController#getBbsDetail",
+            "BbsApiController#getBbsList",
+            "BoardApiController#getPost",
+            "BoardApiController#getPosts",
+            "BoardApiController#getStats",
+            "CommentApiController#getComments",
+            "CommunityUserApiController#getCommunities",
+            "CommunityUserApiController#getCommunity",
+            "InformalSanctionApiController#getInformalSanction",
+            "InformalSanctionApiController#getInformalSanctionList",
+            "MailApiController#getSentMail",
+            "MailApiController#getSentMails",
+            "MemoReportApiController#getMemoReport",
+            "MemoReportApiController#getMyReports",
+            "MemoReportApiController#getReceivedReports",
+            "NoteApiController#getNote",
+            "NoteApiController#getReceivedNotes",
+            "NoteApiController#getSentNotes",
+            "NotificationApiController#getNotification",
+            "NotificationApiController#getNotifications",
+            "NotificationApiController#getUnreadCount",
+            "PollApiController#getPoll",
+            "PollApiController#getPollItems",
+            "PollApiController#getPolls",
+            "ScheduleApiController#getDeptScheduleList",
+            "ScheduleApiController#getMonthlySchedule",
+            "ScheduleApiController#getSchedule",
+            "ScheduleApiController#getScheduleByDateRange",
+            "ScheduleApiController#getScheduleList",
+            "ScrapApiController#getMyScrapList",
+            "ScrapApiController#getScrap",
+            "WorkReportApiController#getWorkReport",
+            "WorkReportApiController#getWorkReportList"));
+
     private static final Set<String> WRITE_AUTHZ_GUARDED_ELSEWHERE = Set.of(
             "nuri.api.controller.business.addressbook.AddressBookApiController",  // 소유권 가드(assertOwnerOrAdmin)
             "nuri.api.controller.business.smarttoolkit.ScrapApiController",       // 소유권 가드
@@ -244,6 +310,103 @@ class SecurityAuthAnnotationLinterTest {
             //     라고 적었으나 실제로는 쓰기가 6본이고, /boxes 3본은 @AdminOrSystem,
             //     업무 3본은 @PreAuthorize("isAuthenticated()") + 서비스 assertPicOrAdmin 이중검증이다.
     );
+
+    /**
+     * <b>Test#3</b> — 쓰기 사유로 통과하는 <b>읽기</b> 엔드포인트를 census 로 동결한다. [A-2 잔여]
+     *
+     * <p>Test#1 은 {@link #WRITE_AUTHZ_GUARDED_ELSEWHERE} 등재 클래스의 읽기까지 통과시킨다.
+     * 그 면제의 근거는 쓰기 소유권 가드이므로, 읽기에 대해서는 <b>아무것도 증명하지 않는다.</b>
+     * 이 테스트는 그 간극을 없애지 않는다 — <b>세고, 고정한다.</b> 없애는 것은 도메인별 개별
+     * 판정이 필요한 별개 작업이다(§0.7-H4: 일괄 치환 금지).
+     */
+    @Test
+    @DisplayName("🔍 쓰기 사유로 통과하는 읽기 엔드포인트 census 동결 — 읽기 IDOR 사각지대가 조용히 자라지 못하게")
+    void auditReadEndpointsCoveredOnlyByWriteRationale() {
+        RequestMappingHandlerMapping mapping =
+                context.getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
+
+        Set<String> actual = new java.util.TreeSet<>();
+        int scannedControllers = 0;
+
+        for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : mapping.getHandlerMethods().entrySet()) {
+            HandlerMethod handlerMethod = entry.getValue();
+            Class<?> controllerClass = handlerMethod.getBeanType();
+            Method method = handlerMethod.getMethod();
+
+            if (!controllerClass.getPackageName().startsWith("nuri.api.controller")) {
+                continue;
+            }
+            if (!WRITE_AUTHZ_GUARDED_ELSEWHERE.contains(controllerClass.getName())) {
+                continue;
+            }
+            scannedControllers++;
+
+            // 읽기만 본다. 쓰기는 Test#2 의 대상이다.
+            Set<org.springframework.web.bind.annotation.RequestMethod> methods =
+                    entry.getKey().getMethodsCondition().getMethods();
+            boolean isRead = methods.isEmpty()
+                    || methods.contains(org.springframework.web.bind.annotation.RequestMethod.GET)
+                    || methods.contains(org.springframework.web.bind.annotation.RequestMethod.HEAD);
+            if (!isRead) {
+                continue;
+            }
+
+            boolean annotated = AnnotationUtils.findAnnotation(method, PreAuthorize.class) != null
+                    || AnnotationUtils.findAnnotation(controllerClass, PreAuthorize.class) != null
+                    || AnnotationUtils.findAnnotation(method, Secured.class) != null
+                    || AnnotationUtils.findAnnotation(controllerClass, Secured.class) != null;
+            if (annotated) {
+                continue; // 애노테이션이 있으면 이 게이트의 관심사가 아니다(내용 판정은 별개).
+            }
+
+            Set<String> patterns = entry.getKey().getDirectPaths();
+            if (patterns.isEmpty()) {
+                patterns = entry.getKey().getPatternValues();
+            }
+            boolean urlProtected = patterns.stream().allMatch(p -> isWhitelisted(p) || isDbProtected(p));
+            if (urlProtected) {
+                continue; // URL 시큐리티가 덮는다.
+            }
+
+            actual.add(controllerClass.getSimpleName() + "#" + method.getName());
+        }
+
+        // 게이트 무결성(false-green 방지): 스캔이 조용히 0 에 수렴하면 vacuous 통과가 된다.
+        if (scannedControllers < 10) {
+            fail("게이트 무결성 파손: WRITE_AUTHZ_GUARDED_ELSEWHERE 컨트롤러 핸들러 스캔이 "
+                    + scannedControllers + "건 — 예상 하한(10) 미만. 스캔/컨텍스트 파손 의심.");
+        }
+
+        Set<String> added = new java.util.TreeSet<>(actual);
+        added.removeAll(READ_COVERED_BY_WRITE_RATIONALE);
+        Set<String> removed = new java.util.TreeSet<>(READ_COVERED_BY_WRITE_RATIONALE);
+        removed.removeAll(actual);
+
+        if (!added.isEmpty() || !removed.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n========================================================================\n");
+            sb.append("🔍 [READ AUTHZ CENSUS] 쓰기 사유로 통과하는 읽기 엔드포인트 목록이 변했습니다!\n");
+            sb.append("========================================================================\n");
+            for (String a : added) {
+                sb.append("❌ [신규] ").append(a)
+                        .append(" — 쓰기 소유권 가드를 근거로 읽기까지 면제되고 있습니다.\n");
+            }
+            for (String r : removed) {
+                sb.append("❌ [소멸] ").append(r)
+                        .append(" — 해소됐다면 census 에서 함께 지우십시오(이력이 diff 에 남습니다).\n");
+            }
+            sb.append("\n💡 이 목록은 '안전한 것' 이 아니라 **부채** 입니다.\n");
+            sb.append("   신규 항목을 그냥 등재하지 마십시오 — 읽기 소유권이 필요한 도메인이면 서비스 계층\n");
+            sb.append("   가드를 붙이는 것이 정답이고, 공개해도 되는 조회면 그 사유를 주석으로 남기십시오.\n");
+            sb.append("   현재 실측 census(" + actual.size() + "건): ").append(actual).append('\n');
+            fail(sb.toString());
+        }
+
+        log.info("✅ 쓰기 사유로 통과하는 읽기 엔드포인트 {}건 — 동결 census 와 일치.", actual.size());
+    }
+
+    private static final org.slf4j.Logger log =
+            org.slf4j.LoggerFactory.getLogger(SecurityAuthAnnotationLinterTest.class);
 
     @Test
     @DisplayName("🔐 비-admin 경로 쓰기 엔드포인트 인가 누락 오딧 (business/foundation 포함)")
