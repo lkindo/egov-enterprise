@@ -224,9 +224,26 @@ class JdbcAttachmentReferenceResolverTest {
         jdbc.resolver().resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
 
         for (String sql : jdbc.sqls) {
-            assertThat(sql).contains("WHERE atch_file_id = ?");
             assertThat(sql).contains("COUNT(*) AS ref_cnt");
         }
+        assertThat(jdbc.sqlFor(AttachmentSource.BOARD)).contains("WHERE atch_file_id = ?");
+        // 팝업만 연결 방식이 다르다 — URL 문자열 정확 일치.
+        assertThat(jdbc.sqlFor(AttachmentSource.POPUP))
+                .contains("WHERE (file_url = '/api/v1/files/' || ?");
+    }
+
+    @Test
+    @DisplayName("🚨 팝업 URL 안의 '?' 는 자리표시자가 아니다 — 리터럴을 세면 바인딩 개수가 어긋나 SQL 이 깨진다")
+    void popupBindsAttachmentIdForEachLinkagePlaceholder() {
+        CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
+
+        jdbc.resolver().resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+
+        // 연결 술어는 `'/api/v1/files/download?fileId=' || ?` 를 포함한다. 그 URL 안의 '?' 까지 세면
+        // 파라미터가 하나 더 붙어 JDBC 가 자리표시자 불일치로 실패한다(2026-08-04 실측).
+        // 소유(loginId) 1개 + 연결(atchFileId) 2개 = 3개여야 한다.
+        assertThat(jdbc.paramsFor(AttachmentSource.POPUP))
+                .containsExactly(LOGIN_ID, ATCH_FILE_ID, ATCH_FILE_ID);
     }
 
     @Test

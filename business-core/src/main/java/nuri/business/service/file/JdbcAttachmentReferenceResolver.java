@@ -82,13 +82,16 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         }
 
         // SELECT 절의 ? 가 WHERE 절보다 앞서므로 atchFileId 는 마지막에 바인딩한다.
-        params.add(atchFileId);
+        // 연결 술어는 참조원마다 다르고(POPUP 은 URL 비교라 자리표시자가 2개다) 개수만큼 반복 바인딩한다.
+        for (int i = 0; i < countPlaceholders(source.linkagePredicate()); i++) {
+            params.add(atchFileId);
+        }
 
         String sql = "SELECT COUNT(*) AS ref_cnt,"
                 + " SUM(CASE WHEN " + sharedExpr + " THEN 1 ELSE 0 END) AS shared_cnt,"
                 + " SUM(CASE WHEN " + ownerExpr + " THEN 1 ELSE 0 END) AS owner_cnt"
                 + " FROM " + source.table()
-                + " WHERE atch_file_id = ?";
+                + " WHERE " + source.linkagePredicate();
 
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new SourceHit(
                 rs.getLong("ref_cnt") > 0,
@@ -96,10 +99,25 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 rs.getLong("owner_cnt") > 0), params.toArray());
     }
 
+    /**
+     * 술어에 들어 있는 <b>바인드 자리표시자</b> 개수를 센다.
+     *
+     * <p><b>작은따옴표 문자열 리터럴 안의 {@code ?} 는 세지 않는다.</b> 이 구분이 없으면
+     * {@code '/api/v1/files/download?fileId=' || ?} 같은 술어에서 URL 안의 {@code ?} 까지 세어
+     * 파라미터를 하나 더 바인딩하고, JDBC 는 자리표시자 개수 불일치로 실패한다
+     * (2026-08-04 실측 — 팝업 참조원을 추가하며 드러났다. JDBC 드라이버는 리터럴 안의 {@code ?} 를
+     * 자리표시자로 보지 않으므로 이 함수도 같은 규칙을 따라야 한다).
+     *
+     * <p>SQL 표준의 이스케이프({@code ''})는 따옴표 상태를 두 번 토글해 자연히 처리된다.
+     */
     private static int countPlaceholders(String predicate) {
         int count = 0;
+        boolean inLiteral = false;
         for (int i = 0; i < predicate.length(); i++) {
-            if (predicate.charAt(i) == '?') {
+            char c = predicate.charAt(i);
+            if (c == '\'') {
+                inLiteral = !inLiteral;
+            } else if (c == '?' && !inLiteral) {
                 count++;
             }
         }

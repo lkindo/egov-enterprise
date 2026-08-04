@@ -189,10 +189,40 @@ class FileAccessPolicyTest {
         }
 
         @Test
-        @DisplayName("등록된 참조원 테이블은 중복 없이 13종이다 — 물리 스키마 실측(2026-08-04)과 일치")
+        @DisplayName("등록된 참조원 테이블은 중복 없이 14종이다 — 물리 스키마 실측(2026-08-04)과 일치")
         void registryMatchesMeasuredSchema() {
             List<String> tables = AttachmentSource.registeredTables();
-            assertThat(tables).hasSize(13).doesNotHaveDuplicates();
+            assertThat(tables).hasSize(14).doesNotHaveDuplicates();
+        }
+
+        @Test
+        @DisplayName("🚨 팝업은 URL 문자열로 첨부를 참조한다 — 전용 컬럼만 census 하면 통째로 놓친다")
+        void popupLinksByUrlNotByAttachmentIdColumn() {
+            // 2026-08-04: 최초 census 를 atch_file_id 컬럼 기준으로 돌려 이 도메인이 보이지 않았고,
+            // 그 결과 팝업 이미지가 업로더 외에는 403 이 됐다(E2E 05-public-experience 가 잡음).
+            assertThat(AttachmentSource.POPUP.linksByAttachmentIdColumn()).isFalse();
+            assertThat(AttachmentSource.POPUP.linkagePredicate()).contains("file_url");
+
+            for (AttachmentSource source : AttachmentSource.values()) {
+                if (source != AttachmentSource.POPUP) {
+                    assertThat(source.linksByAttachmentIdColumn())
+                            .as("%s 의 연결 방식이 바뀌었다면 레지스트리 린터의 판정 축도 함께 봐야 한다", source)
+                            .isTrue();
+                }
+            }
+        }
+
+        @Test
+        @DisplayName("🚨 팝업 연결 술어는 LIKE 가 아니라 정확 일치다 — 와일드카드 주입으로 전체 매칭 방지")
+        void popupLinkageRejectsWildcardInjection() {
+            String predicate = AttachmentSource.POPUP.linkagePredicate();
+            assertThat(predicate)
+                    .as("LIKE 를 쓰면 요청자가 '%%' 를 첨부 ID 로 보내 모든 팝업에 매칭시켜 공유 근거를 만든다")
+                    .doesNotContainIgnoringCase("like");
+            assertThat(predicate)
+                    .as("저장되는 두 URL 형태(정규·레거시)를 모두 비교해야 기존 행이 살아난다")
+                    .contains("'/api/v1/files/' || ?")
+                    .contains("'/api/v1/files/download?fileId=' || ?");
         }
 
         @Test

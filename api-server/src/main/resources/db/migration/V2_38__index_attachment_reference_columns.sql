@@ -37,4 +37,8 @@ BEGIN
     -- 쪽지 첨부의 소유 판정은 note_id 로 발신/수신 테이블을 조인한다. 그 축도 함께 연다.
     EXECUTE 'CREATE INDEX IF NOT EXISTS ix_tb_note_sndng_note_id ON tb_note_sndng (note_id)';
     EXECUTE 'CREATE INDEX IF NOT EXISTS ix_tb_note_rcptn_note_id ON tb_note_rcptn (note_id)';
+
+    -- 팝업은 유일하게 URL 문자열(file_url)로 첨부를 참조한다(전용 컬럼 없음).
+    -- 판정이 등가 비교라 일반 btree 로 충분하다.
+    EXECUTE 'CREATE INDEX IF NOT EXISTS ix_tb_popup_info_file_url ON tb_popup_info (file_url)';
 END $$;

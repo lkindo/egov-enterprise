@@ -66,7 +66,6 @@ class AttachmentSourceRegistryLinterTest {
         }
 
         Set<String> registered = new TreeSet<>(AttachmentSource.registeredTables());
-
         List<String> missing = new ArrayList<>();
         tableToEntity.forEach((table, entity) -> {
             if (!registered.contains(table)) {
@@ -74,10 +73,18 @@ class AttachmentSourceRegistryLinterTest {
             }
         });
 
+        // 유령 판정은 **연결 방식별로** 다르다. 전용 컬럼(atch_file_id)으로 잇는 참조원은 위 스캔에
+        // 잡혀야 하고, URL 문자열로 잇는 참조원(POPUP)은 그 스캔 대상이 아니므로 물리 테이블의
+        // 실존으로 판정한다. 이 구분이 없으면 URL 연결 참조원을 등록하는 순간 게이트가 거짓 red 가 된다.
+        Set<String> allEntityTables = scanAllEntityTables();
         List<String> phantom = new ArrayList<>();
-        for (String table : registered) {
-            if (!tableToEntity.containsKey(table)) {
-                phantom.add(table);
+        for (AttachmentSource source : AttachmentSource.values()) {
+            String table = source.table();
+            boolean present = source.linksByAttachmentIdColumn()
+                    ? tableToEntity.containsKey(table)
+                    : allEntityTables.contains(table);
+            if (!present) {
+                phantom.add(table + (source.linksByAttachmentIdColumn() ? "" : " (URL 연결)"));
             }
         }
 
@@ -103,6 +110,27 @@ class AttachmentSourceRegistryLinterTest {
 
         log.info("✅ 첨부 참조원 레지스트리 정합 — 엔티티 {}종 ↔ 등록 {}종 일치.",
                 tableToEntity.size(), registered.size());
+    }
+
+    /** 모든 {@code @Entity} 의 물리 테이블명. URL 연결 참조원의 실존 확인에 쓴다. */
+    private Set<String> scanAllEntityTables() {
+        Set<String> tables = new TreeSet<>();
+        ClassPathScanningCandidateComponentProvider scanner =
+                new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new AnnotationTypeFilter(Entity.class));
+        for (var bd : scanner.findCandidateComponents(ENTITY_SCAN_BASE)) {
+            try {
+                Class<?> clazz = Class.forName(bd.getBeanClassName());
+                Table table = AnnotationUtils.findAnnotation(clazz, Table.class);
+                if (table != null && !table.name().isBlank()) {
+                    tables.add(table.name().toLowerCase());
+                }
+            } catch (ClassNotFoundException | LinkageError ex) {
+                log.warn("[AttachmentRegistryGate] 엔티티 로드 실패(스캔 제외): {} ({})",
+                        bd.getBeanClassName(), ex.getMessage());
+            }
+        }
+        return tables;
     }
 
     /** {@code atchFileId} 필드를 보유한 {@code @Entity} 를 스캔해 (물리 테이블 → 엔티티명) 으로 환원한다. */
