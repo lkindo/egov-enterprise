@@ -19,27 +19,35 @@ while read local_ref local_sha remote_ref remote_sha; do
   fi
 done
 
-if [ -n "$RANGES" ]; then
-  CHANGED_FILES=$(for r in $RANGES; do git diff --name-only $r 2>/dev/null; done | sort -u)
-  if [ -n "$CHANGED_FILES" ]; then
-    # [W0-15] allowlist → denylist 반전.
-    #   종전 정규식은 '코드로 인정할 확장자'를 열거했다. 그 결과 확장자가 없거나 목록에 없는 파일이
-    #   전부 fast-pass 되었고, 하필 그 집합이 **게이트를 무력화할 수 있는 파일들**이었다:
-    #     .githooks/pre-push(이 파일 자신) · .githooks/pre-commit ·
-    #     api-server/src/test/resources/harness/baseline-manifest.properties(동결 기준) ·
-    #     gradle/libs.versions.toml(버전 카탈로그) · gradle/wrapper/gradle-wrapper.properties(툴체인 URL) ·
-    #     gradlew / gradlew.bat · api-server/Dockerfile · frontend/Dockerfile ·
-    #     scripts/*.mjs · scripts/*.ps1 · scripts/*.sh · *.properties · *.css
-    #   즉 '게이트를 끄는 편집'이 게이트를 통과했다 (GEMINI.md §0.7-H5).
-    #   (참고: `^Dockerfile` 은 행 시작 앵커라 하위 경로 Dockerfile 을 하나도 매칭하지 못하는 死조건이었다.)
-    #   이제는 '확실히 비코드'인 확장자만 fast-pass 하고 나머지는 전부 코드로 간주한다(안전측 기본값).
-    CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -vE '\.(md|mdx|txt|csv|png|jpe?g|gif|svg|webp|ico|pdf|woff2?|ttf|eot|mp4|webm)$' || true)
-    if [ -z "$CODE_CHANGES" ]; then
-      echo "[pre-push] 📝 문서/비코드 변경만 감지됨 — 컴파일 및 하네스 검증 생략 (Fast-pass)"
-      echo "  → 변경 파일:"
-      echo "$CHANGED_FILES" | sed 's/^/     - /'
-      exit 0
-    fi
+if [ -z "$RANGES" ]; then
+  # stdin에서 범위가 읽히지 않은 경우 Fallback (업스트림 추적 브랜치 또는 HEAD~1 기준)
+  UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || echo "origin/main")
+  RANGES="$UPSTREAM..HEAD"
+fi
+
+CHANGED_FILES=$(for r in $RANGES; do git diff --name-only $r 2>/dev/null; done | sort -u)
+if [ -z "$CHANGED_FILES" ]; then
+  CHANGED_FILES=$(git diff --name-only HEAD~1..HEAD 2>/dev/null || true)
+fi
+
+if [ -n "$CHANGED_FILES" ]; then
+  # [W0-15] allowlist → denylist 반전.
+  #   종전 정규식은 '코드로 인정할 확장자'를 열거했다. 그 결과 확장자가 없거나 목록에 없는 파일이
+  #   전부 fast-pass 되었고, 하필 그 집합이 **게이트를 무력화할 수 있는 파일들**이었다:
+  #     .githooks/pre-push(이 파일 자신) · .githooks/pre-commit ·
+  #     api-server/src/test/resources/harness/baseline-manifest.properties(동결 기준) ·
+  #     gradle/libs.versions.toml(버전 카탈로그) · gradle/wrapper/gradle-wrapper.properties(툴체인 URL) ·
+  #     gradlew / gradlew.bat · api-server/Dockerfile · frontend/Dockerfile ·
+  #     scripts/*.mjs · scripts/*.ps1 · scripts/*.sh · *.properties · *.css
+  #   즉 '게이트를 끄는 편집'이 게이트를 통과했다 (GEMINI.md §0.7-H5).
+  #   (참고: `^Dockerfile` 은 행 시작 앵커라 하위 경로 Dockerfile 을 하나도 매칭하지 못하는 死조건이었다.)
+  #   이제는 '확실히 비코드'인 확장자만 fast-pass 하고 나머지는 전부 코드로 간주한다(안전측 기본값).
+  CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -vE '\.(md|mdx|txt|csv|png|jpe?g|gif|svg|webp|ico|pdf|woff2?|ttf|eot|mp4|webm)$' || true)
+  if [ -z "$CODE_CHANGES" ]; then
+    echo "[pre-push] 📝 문서/비코드 변경만 감지됨 — 컴파일 및 하네스 검증 생략 (Fast-pass)"
+    echo "  → 변경 파일:"
+    echo "$CHANGED_FILES" | sed 's/^/     - /'
+    exit 0
   fi
 fi
 
