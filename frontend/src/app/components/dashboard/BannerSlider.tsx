@@ -6,6 +6,7 @@ import { bannerService } from '@/services/business/user/BannerService';
 import { Banner } from '@/types/foundation/banner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import { AttachmentImage } from '@/app/components/ui/attachment-image';
 
 export function BannerSlider() {
   const [banners, setBanners] = useState<Banner[]>([]);
@@ -57,21 +58,32 @@ export function BannerSlider() {
   }
 
   const currentBanner = banners[currentIndex];
-  const imageUrl = (currentBanner.bnrImgNm && currentBanner.bnrImgNm.startsWith('http'))
-    ? currentBanner.bnrImgNm
-    : `/api/v1/files/download?fileId=${currentBanner.atchFileId || currentBanner.bnrImgNm}`;
+  // 외부 URL(http/https)은 그대로 렌더한다. 그 외에는 첨부이므로 blob 으로 받아 그린다 —
+  // `<img src="/api/v1/files/…">` 는 Authorization 헤더를 실을 수 없어 원리적으로 401 이다.
+  // (종전 코드는 백엔드에 존재하지도 않는 `/api/v1/files/download?fileId=` 를 불렀다.)
+  const externalUrl = currentBanner.bnrImgNm?.startsWith('http') ? currentBanner.bnrImgNm : null;
 
   return (
     <div className="relative group w-full h-48 md:h-64 overflow-hidden rounded-lg bg-surface-inverse shadow-lg">
-      <Image
-        src={imageUrl}
-        alt={currentBanner.bnrNm}
-        fill
-        sizes="100vw"
-        className="object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
-        style={{ opacity: 0.8 }}
-        priority
-      />
+      {externalUrl ? (
+        <Image
+          src={externalUrl}
+          alt={currentBanner.bnrNm}
+          fill
+          sizes="100vw"
+          className="object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
+          style={{ opacity: 0.8 }}
+          priority
+        />
+      ) : (
+        <div className="absolute inset-0" style={{ opacity: 0.8 }}>
+          <AttachmentImage
+            atchFileId={currentBanner.atchFileId}
+            alt={currentBanner.bnrNm}
+            className="h-full w-full object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
+          />
+        </div>
+      )}
 
       <div className="absolute inset-0 bg-gradient-to-r from-black/70 to-transparent flex flex-col justify-center px-8 md:px-16 text-white">
         <h2 className="text-2xl md:text-3xl font-bold mb-2 animate-in slide-in-from-left duration-500">
