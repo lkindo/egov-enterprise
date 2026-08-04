@@ -54,6 +54,13 @@ export class MailPage {
         
         // 1. Force search to isolate the item (prevents clicking wrong item or race conditions)
         const searchInput = this.page.getByRole('textbox', { name: '메일 검색' });
+
+        // [2026-08-04] 라우트 전환 잔상 대기 — App Router 는 클라이언트 내비게이션 중 나가는 화면을
+        //   잠시 마운트한 채로 둔다. 그 순간 같은 컴포넌트가 2개 잡혀 strict mode violation 이 났다
+        //   (CI 실측: 동일한 aria-label·placeholder·클래스의 input 2개. 설계상 검색창은 하나뿐이다).
+        //   `.first()` 로 덮지 않는 이유는 그것이 **진짜 중복 UI 도 통과**시키기 때문이다.
+        //   여기서는 '하나로 수렴할 때까지' 기다린다 — 수렴하지 않으면(=실제 중복) 여전히 실패한다.
+        await expect(searchInput).toHaveCount(1, { timeout: 10000 });
         const mailItem = this.page.getByTestId('mail-item').filter({ hasText: subject }).first();
         
         // Retry loop for eventual consistency (DB sync delay)

@@ -109,28 +109,139 @@ Wave 1 은 인접 3건(`AuthenticationBypassTest` 재작성, `SqlInjectionAndXss
 
 </details>
 
-**잔여**: 수평(소유권) 축은 아직 없다 — 현재 2건 모두 수직 상승이다.
-그리고 `business-core`/`business-app` testFixtures 의 `TestSecurityConfig`(`anyRequest().permitAll()`)는
+**잔여 ①(수평 축) — 해소 (2026-08-04)**: `PrivilegeEscalationVulnerabilityTest` 에 수평 축 2건을 신설했다
+(타인 첨부 403 + 대조군 자기 첨부 200). 대상은 A-3(b) 에서 닫은 `GET /api/v1/files/{atchFileId}` 다.
+
+**잔여 ②**: `business-core`/`business-app` testFixtures 의 `TestSecurityConfig`(`anyRequest().permitAll()`)는
 여전히 살아 있어 모든 `@IntegrationTest` 가 보안 개방 상태로 돈다. 이 둘은 `TestSecurityChainOverrideLinterTest`
 의 동결 목록(5항목)이 계속 가시화한다.
 
+> **우선순위 정정(2026-08-04 실측)**: "모든 `@IntegrationTest`" 라는 서술은 맞지만 **규모가 오해를 부른다** —
+> `@IntegrationTest` 실사용은 7개 클래스이고 전부 **서비스 레이어 직접 호출**(HTTP 미경유)이라
+> 필터 체인을 타지 않는다. 즉 `permitAll` 이 실제로 무력화하는 인가 판정은 현재 거의 없다.
+> 고쳐야 할 부채인 것은 맞으나, 이 문서를 근거로 "인가 검증이 통째로 비어 있다" 고 읽으면 과대평가다.
+
 ### A-4 · 실 PostgreSQL 쓰기 스모크 티어 (공수 M)
 **전혀 신설되지 않았다.** 기존 `SchemaValidationIntegrationTest` 는 테스트 1건·86줄의 **매핑 검증 전용**이며 쓰기가 0이다.
-그 결과 V2_24 류의 CHECK 제약 값 정합 결함과, `GlobalExceptionHandler` 가 CHECK 위반(23514)을
-400 "입력이 잘못됐습니다"로 오분류하는 경로가 **여전히 무게이트**다.
+그 결과 V2_24 류의 CHECK 제약 값 정합 결함과, ~~`GlobalExceptionHandler` 가 CHECK 위반(23514)을
+400 "입력이 잘못됐습니다"로 오분류하는 경로가~~ **여전히 무게이트**다.
+
+> **실측 정정 (2026-08-04)** — 위 두 번째 근거(`GlobalExceptionHandler`)는 **두 가지 모두 사실이 아니다.**
+> ① **오분류가 아니다.** 23514/23502 → 400, 23505/23503 → 409 는 2026-07-28 §2.D 에서 **의도적으로 도입한
+> 계약**이며 근거가 코드 주석에 남아 있다. 종전에는 모든 무결성 위반을 409 "이미 존재하는 값" 으로 뭉개서
+> `dltYn:"X"` 같은 허용되지 않는 값에 **의미가 틀린 409** 가 나가고 있었고, 그것을 고친 것이다.
+> ② **무게이트가 아니다.** `GlobalExceptionHandlerTest` 에 SQLState 4분기(23514·23502·23505·23503)를
+> 각각 고정하는 테스트가 **이미 5건** 있다(191~246행). 분기를 무력화해 주입하면 red 가 된다(확인).
+>
+> 따라서 A-4 에 남는 실질은 **첫 번째 근거 하나** — "쓰기가 0" 이다. `ddl-auto: validate` 는 컬럼의
+> 존재·타입·길이만 대조하고 **CHECK 제약은 보지 않는다**. 그래서 마이그레이션이 건 CHECK 의 허용값과
+> 애플리케이션이 실제로 쓰는 값이 어긋나도 validate 는 통과하고 운영 첫 INSERT 에서 터진다.
 
 착수 시 원장 추천대로 **하이브리드**: 결재 1건만 MockMvc HTTP 계층, 나머지는 서비스 레이어 직접 호출.
 **도달 불가 7종은 스모크로 덮지 않는다**(테스트 보증을 붙이면 死코드에 존치 명분이 생긴다).
 기존 `schemaValidationTest` 태스크(실 PG + Flyway 전량 + `ddl-auto:validate`)에 편입하면 `localGate`·CI 로
 실행 경로가 자동 확보된다 — 새 태스크는 필요 없다.
 
-### A-3(b) · 첨부 도달성 인가
+**해소 (2026-08-04)** — `WriteSmokeIntegrationTest` 신설. 기존 `schemaValidationTest` 태스크에
+`@Tag("schema-validation")` 으로 편입해 새 태스크를 만들지 않았다(실행 경로가 이미 확보된 곳에 붙인다).
+
+판정 축 3개: ① 애플리케이션이 자기 기본값으로 쓴 행이 실 스키마에 실제로 들어간다
+② 허용되지 않는 `_yn` 값과 varchar 길이 초과를 실 DB 가 거부한다(제약이 실재함)
+③ 모든 `%_yn` 컬럼에 CHECK 이 걸려 있다(V2_24 의 약속이 신규 컬럼에도 유지되는지).
+
+> **왜 `validate` 로 부족한가**: `ddl-auto: validate` 는 컬럼의 존재·타입·길이만 대조하고
+> **CHECK 제약은 보지 않는다**. 그래서 마이그레이션이 건 CHECK 의 허용값과 애플리케이션이 실제로
+> 쓰는 값이 어긋나도 validate 는 통과하고 운영 첫 INSERT 에서 터진다.
+
+**함께 고친 결함**: 축 ③ 을 라이브에 대조하니 `_yn` 61컬럼 중 CHECK 없는 것이 2개였고,
+그중 `meta_standard_words.rprs_yn` 은 진짜 불리언이었다(라이브 DISTINCT = {'Y','N'}).
+V2_24 가 `tb_` 접두만 훑어 `meta_` 테이블이 통째로 빠져 있었다 → **V2_39** 로 채웠다.
+스모크의 예외 목록에 적는 값싼 길을 택하지 않았다(§0.7-H2). 남는 예외는 오명명 1건
+(`tb_menu_info.route_mdfcn_yn`, 값이 '2')뿐이다.
+
+**실행 증적**: `./gradlew :api-server:schemaValidationTest` — 실 PostgreSQL 17(Testcontainers)
++ Flyway 전량 적용 후 `SchemaValidationIntegrationTest` 1건 · `WriteSmokeIntegrationTest` 3건 그린.
+**V2_39 를 제거해 축 ③ 이 red 가 되는 것까지 확인했다**(§0.7-H5 — 그린만 보면 vacuous 통과와 구분되지 않는다).
+
+> ⚠ 원장이 추천한 "결재 1건 MockMvc HTTP 계층" 은 **이번 범위에 넣지 않았다.** 축 ①~③ 이
+> 원장이 지목한 결함(CHECK 값 정합)을 직접 겨냥하는 반면, 결재 HTTP 스모크는 별도의 픽스처
+> 설계가 필요하다. 미이행으로 남긴다 — 완료로 적지 않는다.
+
+### A-3(b) · 첨부 도달성 인가 — **해소 (2026-08-04)**
+
+<details><summary>당시 기록 (해소 전)</summary>
+
 Wave 1 은 (a) 면제 사유의 정직화만 이행했다. (b) **게시글 열람 권한 상속 기반 도달성 검증**은 미이행이며
 원장은 이것을 "다음 웨이브의 명시 목표로 기록" 하라고 했다 — 그 기록이 이 항목이다.
 
 현재 인증만 통과하면 임의 `atchFileId` 로 남의 첨부를 읽을 수 있다. `FileMaster` 에 소유자 컬럼이 없으므로
 소유자 전용 잠금은 불가하며(적용하면 기존 첨부 전량 403), 참조원(게시글·결재 등) census 를 선행해야 한다.
 `FileApiController` 의 `GET /{atchFileId}` 가 대상이다.
+
+</details>
+
+**기록 정정 — "`FileMaster` 에 소유자 컬럼이 없다" 는 사실이 아니다.** 물리 실측(2026-08-04) 결과
+`tb_file_master` 에는 `frst_rgtr_id varchar(20)` 이 있고, `FileMaster extends BaseEntity` 이므로
+JPA auditing 이 **업로더 loginId** 를 채운다(라이브 125행 전부 채워져 있다 — NULL 0건).
+이 한 줄의 오인이 "소유자 잠금 불가 → 큰 설계 필요" 라는 결론을 만들고 있었다.
+
+**참조원 census (실측)** — `information_schema` 전수 조회로 `atch_file_id` 보유 테이블은
+저장소 자신(`tb_file_master`/`tb_file_detail`)을 빼면 **정확히 13종**이고, 코드의 `atchFileId` 보유
+`@Entity` 13종과 1:1 대응한다. (참조 실사용은 배너 2건뿐이고 `tb_file_master` 125행은 **어떤 업무 행에서도
+참조되지 않는 고아**다 — 첨부 기능이 실질적으로 쓰이지 않아 왔다는 뜻이며, fail-closed 전환의 위험도 그만큼 낮다.)
+
+**구현** — `FileAccessPolicy`(business-core)가 도달성으로 판정한다. 판정 표는 위에서부터:
+① 업로더 본인(loginId) → 허용(업로드 직후 미첨부 창) ② 참조 행의 소유자·당사자 → 허용
+③ 공유 콘텐츠(비밀글 아닌 게시글·FAQ·배너·일정 등) → 인증 사용자 허용
+④ 관리자 → 허용하되 **개인 귀속(쪽지·상벌·업무보고 등) 참조원이 하나라도 있으면 불허**(§0.7-H3 프라이버시)
+⑤ 그 외 → 403. 적용 지점은 `FileService.getFileList` / `getFileResource` / `getFileDetail` 이다
+(호출부 실측 결과 이 셋의 진입점은 `FileApiController` 2개 HTTP 경로뿐이라 폭발 반경이 좁다).
+
+**신원 축**은 컬럼별로 실측해 고정했다 — `frst_rgtr_id`=loginId, `tb_bbs_item.user_id`=esntlId(`USRCNFRM_…`),
+`tb_note_sndng.sndr_id`·`tb_note_rcptn.rcvr_id`=esntlId(`NoteApiController` 가 `getUsername()` 을 넘긴다).
+
+**게이트**
+- `FileAccessPolicyTest`(business-core, 12건) — 판정 표 전량. 참조원 조회를 포트로 분리해 **DB 없이** 검증한다.
+  가드를 무력화해 주입하면 **12건 중 5건 red**(거부 단언 전부)임을 확인했다(§0.7-H5).
+- `AttachmentSourceRegistryLinterTest`(harness, pre-push) — 레지스트리 ↔ 엔티티 정합을 누락·유령 2축으로 고정.
+  예외 목록을 두지 않는다. 레지스트리에서 `tb_bbs_item` 을 빼는 위반을 주입해 red 확인.
+- `PrivilegeEscalationVulnerabilityTest` — **수평 축 신설**(아래 A-1 잔여와 같은 항목). 프로덕션 체인 위에서
+  타인 첨부 403 + **대조군으로 자기 첨부 200**. 대조군이 없으면 "첨부가 전부 막혔다" 와 구분되지 않는다.
+- `V2_38` — 참조원 13종 + 쪽지 발신/수신 `note_id` 인덱스. 가드를 붙이면서 전수 스캔을 같이 심지 않도록 함께 넣는다.
+
+**의도적으로 남긴 보수적 지점(잔여)**
+- 개인 귀속 도메인의 소유 축은 **`frst_rgtr_id`(loginId)** 와 쪽지 발신/수신만 근거로 쓴다.
+  `tb_memo_rpt_info.user_id`·`rptr_id`, `tb_rpt_info.user_id`, `tb_rward_manage.rwrd_user_id`·`atrzr_id` 는
+  축(loginId/esntlId)이 미확정이라 **근거에서 제외**했다 — 잘못 고르면 뚫리거나 잠기는데, 잠김은 보이고
+  뚫림은 보이지 않는다. 해당 테이블 전부 라이브 0행이라 현재 영향은 없다. 축을 실측하면 근거로 편입할 것.
+- 쓰기 경로(`updateFiles`/`deleteFile(s)`)는 이번 범위에 넣지 않았다. HTTP 미노출이며(`FileApiController` 에
+  DELETE 매핑이 없다) 유일한 호출부인 `BoardService` 는 자체 인가를 선행한다.
+- **별건 발견 — 배너/팝업 이미지가 구조적으로 깨져 있다(2겹)**. 이번 변경과 무관하며 종전부터 그렇다.
+  자동 수정하지 않았다 — 두 번째 층이 **아키텍처 결정**을 요구하기 때문이다.
+
+  **1층 · 없는 경로를 부른다.** 프론트 3개소가 `/api/v1/files/download?fileId=…` 를 만든다
+  ([BannerAdminClient.tsx:310](../../frontend/src/app/admin/system/banner/BannerAdminClient.tsx#L310)·
+  [:342](../../frontend/src/app/admin/system/banner/BannerAdminClient.tsx#L342)·
+  [BannerSlider.tsx:62](../../frontend/src/app/components/dashboard/BannerSlider.tsx#L62)).
+  백엔드 전 모듈에 `download` 매핑은 **0건**이다(실존은 `GET /{atchFileId}` 와 `GET /{atchFileId}/{fileSn}`).
+  따라서 이 요청은 `atchFileId="download"` 로 해석돼 404 가 된다.
+
+  **2층 · URL 을 고쳐도 인증이 안 된다.** `JwtTokenProvider.resolveToken` 은 `Authorization: Bearer`
+  **헤더만** 읽는다(쿠키 폴백 없음). `next.config.js` 의 `/api/v1/:path*` rewrite 는 헤더를 주입하지 않는
+  **투명 프록시**다. `<img src>` 는 헤더를 실을 수 없으므로, 경로를 `/api/v1/files/{id}/1` 로 고쳐도 401 이다.
+  같은 이유로 `FileService.downloadFile` 의 `window.open(url)` 도 인증되지 않는다.
+
+  **필요한 결정 (셋 중 하나)**
+  1. **공개 이미지 엔드포인트 시설** — 배너는 공개 콘텐츠이므로 무인증 이미지 경로를 연다.
+     가장 단순하지만 **공개 표면이 늘어난다**(첨부 도달성 인가를 우회하는 경로가 생기지 않도록,
+     배너가 참조하는 첨부로 대상을 좁혀야 한다).
+  2. **쿠키 인증 수용** — 다운로드 경로에 한해 쿠키 토큰을 허용한다. CSRF 표면이 생기므로
+     `SameSite`·메서드 제한과 함께 판단해야 한다. FE auth 클러스터(pending-decisions §2-D 계열)와 같은 축이다.
+  3. **FE 가 blob 으로 가져온다** — axios(헤더 포함)로 받아 `URL.createObjectURL` 로 렌더한다.
+     백엔드 계약 변경이 없어 가장 안전하지만, 이미지마다 JS 왕복이 생기고 `next/image` 최적화를 잃는다.
+
+  현재 상태로는 세 화면 모두 **깨진 이미지**가 보인다(라이브 배너 2건 모두 `atch_file_id` 를 갖고 있다).
+  부수: FE `FileService.deleteFile` 은 `DELETE /{atchFileId}/{fileSn}` 를 치는데 컨트롤러에 DELETE 매핑이 없다(405).
 
 ---
 
@@ -245,7 +356,7 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 | **P1-3** 쓰기 경로 실 PG 스모크 | "쓰기 스모크 인프라 검증 완료" | **파일·태스크·CI 스텝 0건.** 인프라가 이미 있다는 것은 이행이 아니다. §2 A-4 와 같은 항목이며 **세 번째 미이행**이다 |
 | **P1-8** 감사 로그 유계 큐 | "비동기 이벤트 발행 및 유계 큐 연동 완료" | 유계 큐·2초 배치 워커·GET+2xx 제외 **모두 0건**. 요청당 INSERT 1건 그대로 |
 | **P1-9** `@Async` 전파 | "Composite TaskDecorator 적용 완료" | `AsyncConfig` **무변경**, 데코레이터는 여전히 프로덕션 no-op. **다만 코드 상태는 옳다** — 결정 원장 D-5 가 전파를 기각하고 개별 봉합을 택했고 그 봉합은 이미 이행됐다. 틀린 것은 보고 쪽이다 |
-| **P1-22** secure-paths 하드코딩 | "DB 인가 대상 자동 추적 정정 완료" | 핵심 결함 무수정. 신규 도메인이 목록에서 빠지면 **런타임 인가와 린터가 동시에** 뚫린다(단일 실패점) |
+| **P1-22** secure-paths 하드코딩 | "DB 인가 대상 자동 추적 정정 완료" | 핵심 결함 무수정. ~~신규 도메인이 목록에서 빠지면 **런타임 인가와 린터가 동시에** 뚫린다(단일 실패점)~~ → **아래 §6.6 에서 실측 정정** |
 | **W2** 페이징 요청 계약 1-based 통일 | — | 미이행. FE 의 0→1 shim(`ApiService`)이 그대로 살아 있다 |
 | **W2** 수제 타입 트리 → generated 일원화 | "정본으로 일원화" | 삭제·치환된 파일 0건 |
 | **W2** 커버리지 CI 측정 | "Jacoco 정상" | BE exec 집계 실측 없음. FE 는 `test` 에 `--coverage` 가 붙었으나 CI 업로드·임계 스텝은 없음 |
@@ -285,3 +396,36 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 `## 8` 이라 그 참조가 `## 7. Database Interaction Rules` 를 가리키게 됐다.
 (글로벌 룰셋 절 번호 재매핑이 의도였던 것으로 보이나, 글로벌 파일은 저장소 밖이라 검증할 수 없다.
  정정이 필요하다면 사용자 승인 후 본문 절 번호와 함께 일관되게 고칠 것.)
+
+### 6.6 P1-22 `secure-paths` — **실측 정정 + 부분 조치 (2026-08-04)**
+
+§6.2 는 이 항목을 "신규 도메인이 목록에서 빠지면 **런타임 인가와 린터가 동시에** 뚫린다(단일 실패점)"
+이라고 적었다. **그 서술은 측정으로 지지되지 않는다.** 판정 로직(`SecurityAuthAnnotationLinterTest.isDbProtected`)
+을 계측해 확인한 사실은 다음과 같다.
+
+| 무엇 | 실측 (2026-08-04, `nuri.api.controller` 전 엔드포인트 계측) |
+|---|---|
+| 인가 애노테이션으로 통과 | 32 |
+| **`secure-paths` 매칭으로만 통과** | **235** |
+| 공개 화이트리스트 | 10 |
+| `secure-paths` 항목 수 | **12** |
+| 역방향 매치(엔드포인트를 패턴으로 써서 매칭)로만 통과 | **0건** |
+
+- **"동시에 뚫린다" 는 성립하지 않는다.** 신규 경로가 목록에 없으면 `isDbProtected` 가 false 가 되고,
+  애노테이션도 없으면 린터는 **red 를 낸다**. 목록에서 항목을 빼는 경우도 같다 — 해당 엔드포인트들이
+  즉시 위반으로 뜬다. 즉 린터는 누락·축소 양방향에서 신호를 낸다.
+- **역방향 매치 우려도 실측 0건**이다(`pathMatcher.match(pattern, protectedPattern)` 로 인한 거짓 보호 없음).
+- **진짜 남는 것은 다른 것이다.** ① 엔드포인트의 **67%가 12줄짜리 문자열 목록**에 얹혀 있고,
+  ② URL 단위 인가는 원리적으로 **소유권(IDOR)을 표현하지 못한다** — 등재됐다는 사실이 그 도메인의
+  인가가 충분하다는 뜻이 아니다(이번에 고친 첨부 IDOR 이 바로 그 사례다. `/api/v1/files/**` 는
+  애초에 목록에 없었고, 있었더라도 "인증된 누구나" 이상을 막지 못했을 것이다).
+  ③ 같은 값이 **세 곳에 복제**돼 있는데 동기화를 강제하는 것이 없었다.
+
+**조치**: ③만 게이트로 닫았다 — `SecurePathsDeclarationSyncLinterTest`(harness, pre-push).
+운영 `application.yml` · `application-test.yml` · `RbacAuthorizationMatrixTest` 세 선언의 일치를 강제한다.
+셋이 갈라지면 **테스트는 운영 경계가 아닌 것을 검증하게 되고 그 그린은 아무것도 증명하지 않는다.**
+테스트 프로파일에서 `/actuator/**` 를 빼는 드리프트를 주입해 red 확인.
+
+**남은 것(제품/설계 결정)**: ①②는 게이트로 닫히지 않는다. URL 목록을 잘게 쪼개는 것은 관리 비용만 늘리고
+소유권 문제를 해결하지 못한다. 방향은 **소유권이 필요한 도메인을 식별해 서비스 계층 가드로 내리는 것**이며,
+그 판정은 도메인별로 개별 수행해야 한다(§0.7-H4). 첨부(A-3(b))가 그 첫 사례다.

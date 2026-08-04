@@ -13,6 +13,7 @@ import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
+import { AttachmentImage } from '@/app/components/ui/attachment-image';
 ;
 import { Banner, Popup } from '@/types/foundation/banner';
 import { useToast } from '@/app/components/ui/toast';
@@ -307,7 +308,10 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  const uploadedFileId = typeof uploadRes === 'string' ? uploadRes : (uploadRes as any)?.data?.data || (uploadRes as any)?.data;
  
  if (uploadedFileId) {
- data.fileUrl = `/api/v1/files/download?fileId=${uploadedFileId}`;
+ // 종전에는 `/api/v1/files/download?fileId=…` 를 저장했는데 백엔드에 그 경로가 없다(매핑 0건).
+ // 실존 경로를 저장한다. 렌더는 blob 으로 하되(헤더 인증), 값 자체는 실재하는 URL 이어야
+ // 나중에 다른 소비자가 열어 보더라도 404 가 아니게 된다.
+ data.fileUrl = `/api/v1/files/${uploadedFileId}`;
  }
  } else if (editingItem) {
  data.fileUrl = (editingItem as Popup).fileUrl;
@@ -338,13 +342,14 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <div className="w-56 h-24 bg-surface-inverse rounded-lg overflow-hidden border-2 border-border shadow-xl relative group/img cursor-zoom-in transition-all duration-500 hover:scale-[1.05] hover:z-50">
  <ImageIcon size={24} className="absolute inset-0 m-auto text-white/10" />
  {item.atchFileId && (
- <Image
- src={`/api/v1/files/download?fileId=${item.atchFileId}`}
- className="object-cover z-10 group-hover/img:scale-110 transition-transform duration-1000"
- alt="banner"
- fill
- sizes="(max-width: 224px) 100vw, 224px"
+ // blob 렌더 — `<img src="/api/v1/files/…">` 는 Authorization 헤더를 실을 수 없어 401 이다.
+ <div className="absolute inset-0 z-10">
+ <AttachmentImage
+ atchFileId={item.atchFileId}
+ alt={`${item.bnrNm} 배너 이미지`}
+ className="h-full w-full object-cover group-hover/img:scale-110 transition-transform duration-1000"
  />
+ </div>
  )}
  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover/img:opacity-100 transition-opacity z-20 flex items-center justify-center">
  <Maximize2 size={24} className="text-white scale-50 group-hover/img:scale-100 transition-transform duration-500" />
