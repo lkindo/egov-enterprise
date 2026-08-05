@@ -227,6 +227,10 @@
       "description": "문자 메시지 관리 API (Admin)"
     },
     {
+      "name": "WebLog",
+      "description": "웹 로그 조회 API (Admin)"
+    },
+    {
       "name": "ExternalHr",
       "description": "외부인사정보 API"
     },
@@ -13553,6 +13557,130 @@
         }
       }
     },
+    "/api/v1/admin/system/logs/web": {
+      "get": {
+        "tags": [
+          "WebLog"
+        ],
+        "summary": "웹 로그 목록 조회",
+        "description": "URL 부분일치 검색과 페이징을 지원한다.",
+        "operationId": "getWebLogList",
+        "parameters": [
+          {
+            "name": "searchCondition",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "searchKeyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "searchUseYn",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 1,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageUnit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "firstIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "lastIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "recordCountPerPage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "searchKeywordFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "searchKeywordTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseWebLogDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/logs/system": {
       "get": {
         "tags": [
@@ -21856,6 +21984,88 @@
             "items": {
               "$ref": "#/components/schemas/FieldErrorItem"
             }
+          }
+        }
+      },
+      "ApiResponsePageResponseWebLogDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseWebLogDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "PageResponseWebLogDto": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/WebLogDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPage": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "WebLogDto": {
+        "type": "object",
+        "properties": {
+          "dmndId": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "dmndUserId": {
+            "type": "string"
+          },
+          "dmndUserIpAddr": {
+            "type": "string"
+          },
+          "occrYmd": {
+            "type": "string"
+          },
+          "prcsTm": {
+            "type": "integer",
+            "format": "int64"
           }
         }
       },

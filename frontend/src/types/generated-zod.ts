@@ -2605,6 +2605,45 @@ export const ApiResponseListMenuDtoSchema = z.object({
 export type ApiResponseListMenuDto = z.infer<typeof ApiResponseListMenuDtoSchema>;
 
 // ==========================================================================
+// ApiResponsePageResponseWebLogDto Schema
+// ==========================================================================
+export const ApiResponsePageResponseWebLogDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseWebLogDtoSchema).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponsePageResponseWebLogDto = z.infer<typeof ApiResponsePageResponseWebLogDtoSchema>;
+
+// ==========================================================================
+// PageResponseWebLogDto Schema
+// ==========================================================================
+export const PageResponseWebLogDtoSchema = z.object({
+  list: z.array(z.lazy(() => WebLogDtoSchema)).optional(),
+  total: z.number().optional(),
+  page: z.number().optional(),
+  size: z.number().optional(),
+  totalPage: z.number().optional(),
+});
+export type PageResponseWebLogDto = z.infer<typeof PageResponseWebLogDtoSchema>;
+
+// ==========================================================================
+// WebLogDto Schema
+// ==========================================================================
+export const WebLogDtoSchema = z.object({
+  dmndId: z.string().optional(),
+  url: z.string().optional(),
+  dmndUserId: z.string().optional(),
+  dmndUserIpAddr: z.string().optional(),
+  occrYmd: z.string().optional(),
+  prcsTm: z.number().optional(),
+});
+export type WebLogDto = z.infer<typeof WebLogDtoSchema>;
+
+// ==========================================================================
 // ApiResponsePageResponseSysLogDto Schema
 // ==========================================================================
 export const ApiResponsePageResponseSysLogDtoSchema = z.object({
