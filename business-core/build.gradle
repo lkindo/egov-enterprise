@@ -45,6 +45,10 @@ dependencies {
 
     // testFixtures dependencies
     testFixturesApi project(':foundation')
+    // ArchUnit — 아키텍처 규칙 본문(nuri.business.architecture.*Rules)이 testFixtures 에 산다.
+    // 규칙은 여기 한 벌만 두고, 각 모듈의 test 가 @AnalyzeClasses + ArchTests.in(...) 으로 실행한다.
+    testFixturesApi libs.archunit.junit5
+    testFixturesApi libs.archunit
     testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
     testFixturesApi 'org.springframework.security:spring-security-test'
     testFixturesApi 'com.h2database:h2'

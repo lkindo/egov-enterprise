@@ -70,7 +70,9 @@ class TestSecurityChainOverrideLinterTest {
             "business-core/src/test/java",
             "business-core/src/testFixtures/java",
             "business-app/src/test/java",
-            "business-app/src/testFixtures/java",
+            // business-app/src/testFixtures/java 는 2026-08-05 에 소멸했다 — business-core 의 것과
+            // FQN 까지 동일한 18파일 복제였고, business-app 은 이제 그것을 재노출해 쓴다.
+            // 소스가 없는 루트를 남기면 이 게이트가 '무결성 파손' 으로 하드 실패한다(설계대로다).
             "foundation/src/test/java");
 
     private static final String ACTUAL_OUT = "build/harness/test-security-override.actual.txt";
@@ -98,10 +100,11 @@ class TestSecurityChainOverrideLinterTest {
             //     참조가 0인 것과 파일이 없는 것은 다르므로, 파일이 사라질 때까지는 동결 상태로 둔다.
             "SecurityTestConfig#chainBean=1",
             "SecurityTestConfig#mockProfile=1",
-            // business-core / business-app — anyRequest().permitAll(). 두 모듈에 동일 파일명으로 존재한다.
-            "TestSecurityConfig#chainBean=2",
-            "TestSecurityConfig#mockProfile=2",
-            "IntegrationTest#mockProfile=2"));
+            // business-core — anyRequest().permitAll(). 2026-08-05 이전에는 business-app 에도
+            //   FQN 까지 동일한 사본이 있어 건수가 2였다. 사본 소멸로 1이 됐다(위반 자체는 미해소).
+            "TestSecurityConfig#chainBean=1",
+            "TestSecurityConfig#mockProfile=1",
+            "IntegrationTest#mockProfile=1"));
 
     // ── 해소 기록 (목록에서 뺀 것은 '완화' 가 아니라 '상환' 이다) ─────────────────────────
     //
@@ -116,6 +119,14 @@ class TestSecurityChainOverrideLinterTest {
     //       (401 이었다면 '미인증 차단' 을 증명할 뿐 '일반 사용자의 권한 상승 차단' 은 증명하지 못한다.)
     //     · 게이트가 이 해소를 **red 로 알려서** 목록을 줄이게 만들었다. 그것이 이 게이트의 설계 의도다
     //       — 늘어날 때만이 아니라 줄어들 때도 손대게 해서, 목록이 실태와 조용히 어긋나지 않게 한다.
+    //
+    // [2026-08-05 중복 정리] TestSecurityConfig#chainBean / #mockProfile / IntegrationTest#mockProfile 을 2 → 1.
+    //   ⚠ **위반이 해소된 것이 아니다.** `anyRequest().permitAll()` 은 business-core 사본에 그대로 살아 있다
+    //   (wave2-carryover.md §2 A-1 잔여② 미해소). 줄어든 것은 **중복** 이다 —
+    //   business-app/src/testFixtures 가 business-core 와 FQN 까지 동일한 18파일 복제였고,
+    //   api-server 가 양쪽 testFixtures 를 동시에 의존해 같은 이름의 클래스가 클래스패스 순서로
+    //   서로를 가리고 있었다. 사본을 지우고 business-app 이 business-core 것을 재노출하도록 바꿨다.
+    //   따라서 이 감소는 '상환' 이 아니라 '중복 정리' 다. **부채는 1건으로 남아 계속 red 신호를 낸다.**
 
     @Test
     @DisplayName("🧪 테스트가 프로덕션 시큐리티 체인을 우회하는 지점 동결 — 신규 우회 차단 (Wave 1 A-1)")
