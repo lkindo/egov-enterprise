@@ -3777,6 +3777,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/logs/user": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 사용자 활동 로그 목록
+         * @description 사용자명 부분일치 검색과 페이징을 지원한다. 검색 대상은 연관 사용자의 이름이다.
+         */
+        get: operations["getUserLogList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/logs/system": {
         parameters: {
             query?: never;
@@ -7024,6 +7044,47 @@ export interface components {
             occrYmd?: string;
             /** Format: int64 */
             prcsTm?: number;
+        };
+        ApiResponsePageResponseUserLogDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseUserLogDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        PageResponseUserLogDto: {
+            list?: components["schemas"]["UserLogDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
+        };
+        UserLogDto: {
+            ocrnYmd?: string;
+            dmndUserId?: string;
+            userNm?: string;
+            srvcNm?: string;
+            mthdNm?: string;
+            /** Format: int32 */
+            crtCnt?: number;
+            /** Format: int32 */
+            mdfcnCnt?: number;
+            /** Format: int32 */
+            inqCnt?: number;
+            /** Format: int32 */
+            delCnt?: number;
+            /** Format: int32 */
+            otptCnt?: number;
+            /** Format: int32 */
+            errCnt?: number;
         };
         ApiResponsePageResponseSysLogDto: {
             success?: boolean;
@@ -15720,6 +15781,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponsePageResponseWebLogDto"];
+                };
+            };
+        };
+    };
+    getUserLogList: {
+        parameters: {
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponseUserLogDto"];
                 };
             };
         };

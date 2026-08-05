@@ -36,7 +36,7 @@ const SystemLogsUserClient = () => {
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
-                    {item.occrrncDe || '-'}
+                    {item.ocrnYmd || '-'}
                 </div>
             ),
             className: 'w-40'
@@ -46,7 +46,7 @@ const SystemLogsUserClient = () => {
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
-                    <span className="font-bold text-foreground tracking-tight text-left">{item.svcNm}</span>
+                    <span className="font-bold text-foreground tracking-tight text-left">{item.srvcNm}</span>
                 </div>
             )
         },
@@ -55,29 +55,47 @@ const SystemLogsUserClient = () => {
             accessor: (item: UserLog) => (
                 <div className="text-left">
                     <code className="px-2 py-1 bg-muted rounded border font-mono text-xs text-muted-foreground">
-                        {item.methodNm}
+                        {item.mthdNm}
                     </code>
                 </div>
             )
         },
         {
-            header: '요청자ID',
+            header: '요청자',
             accessor: (item: UserLog) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-card border rounded-lg w-fit shadow-sm">
-                    <span className="text-xs font-bold text-foreground">{item.rqesterId}</span>
+                    <span className="text-xs font-bold text-foreground">{item.userNm || item.dmndUserId}</span>
                 </div>
             ),
             className: 'w-40'
         },
         {
-            header: '등록일시',
+            /*
+             * [2026-08-05] '등록일시' 컬럼을 행위 카운터로 교체했다.
+             * tb_user_log 에는 등록일시 컬럼이 없어 종전 화면은 항상 '-' 를 그렸고, 정작 이 테이블의
+             * 값인 카운터 6종(생성·수정·조회·삭제·출력·오류)은 어디에도 표시되지 않았다.
+             * 이 로그는 개별 요청 기록이 아니라 사용자×서비스×메서드×일자 집계이므로 카운터가 본체다.
+             */
+            header: '행위 (생성/수정/조회/삭제/출력/오류)',
             accessor: (item: UserLog) => (
-                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/80 tabular-nums">
+                <div className="flex items-center gap-1.5 font-mono text-xs tabular-nums">
                     <Terminal size={12} className="opacity-30" />
-                    {item.creatDt ? item.creatDt.substring(0, 10) : '-'}
+                    <span className="text-emerald-600 font-bold">{item.crtCnt ?? 0}</span>
+                    <span className="text-muted-foreground/40">/</span>
+                    <span className="text-primary font-bold">{item.mdfcnCnt ?? 0}</span>
+                    <span className="text-muted-foreground/40">/</span>
+                    <span className="text-muted-foreground font-bold">{item.inqCnt ?? 0}</span>
+                    <span className="text-muted-foreground/40">/</span>
+                    <span className="text-rose-500 font-bold">{item.delCnt ?? 0}</span>
+                    <span className="text-muted-foreground/40">/</span>
+                    <span className="text-muted-foreground font-bold">{item.otptCnt ?? 0}</span>
+                    <span className="text-muted-foreground/40">/</span>
+                    <span className={(item.errCnt ?? 0) > 0 ? 'text-rose-600 font-black' : 'text-muted-foreground/50 font-bold'}>
+                        {item.errCnt ?? 0}
+                    </span>
                 </div>
             ),
-            className: 'w-36'
+            className: 'w-64'
         }
     ];
 
@@ -101,7 +119,7 @@ const SystemLogsUserClient = () => {
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
-                keyField="userLogId"
+                keyField={undefined}
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,
@@ -110,7 +128,7 @@ const SystemLogsUserClient = () => {
                     pageSize: PAGE_SIZE,
                 }}
                 search={{
-                    placeholder: '서비스설명, 요청자ID 검색..',
+                    placeholder: '요청자명으로 검색..',
                     value: searchKeyword,
                     onSearch: (keyword: string) => { setSearchKeyword(keyword); setPage(1); },
                     onClear: () => { setSearchKeyword(''); setPage(1); },

@@ -207,6 +207,10 @@
       "description": "행정코드 관리 API"
     },
     {
+      "name": "UserLog",
+      "description": "사용자 활동 로그 조회 API (Admin)"
+    },
+    {
       "name": "Dashboard",
       "description": "메인 대시보드 데이터 제공 API"
     },
@@ -13685,6 +13689,130 @@
         }
       }
     },
+    "/api/v1/admin/system/logs/user": {
+      "get": {
+        "tags": [
+          "UserLog"
+        ],
+        "summary": "사용자 활동 로그 목록",
+        "description": "사용자명 부분일치 검색과 페이징을 지원한다. 검색 대상은 연관 사용자의 이름이다.",
+        "operationId": "getUserLogList",
+        "parameters": [
+          {
+            "name": "searchCondition",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "searchKeyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "searchUseYn",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 1,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageUnit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "firstIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "lastIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "recordCountPerPage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "searchKeywordFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "searchKeywordTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseUserLogDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/logs/system": {
       "get": {
         "tags": [
@@ -22194,6 +22322,108 @@
           "prcsTm": {
             "type": "integer",
             "format": "int64"
+          }
+        }
+      },
+      "ApiResponsePageResponseUserLogDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseUserLogDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "PageResponseUserLogDto": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UserLogDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPage": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "UserLogDto": {
+        "type": "object",
+        "properties": {
+          "ocrnYmd": {
+            "type": "string"
+          },
+          "dmndUserId": {
+            "type": "string"
+          },
+          "userNm": {
+            "type": "string"
+          },
+          "srvcNm": {
+            "type": "string"
+          },
+          "mthdNm": {
+            "type": "string"
+          },
+          "crtCnt": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mdfcnCnt": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "inqCnt": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "delCnt": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "otptCnt": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "errCnt": {
+            "type": "integer",
+            "format": "int32"
           }
         }
       },

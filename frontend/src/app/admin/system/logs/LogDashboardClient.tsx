@@ -19,7 +19,6 @@ const logCategories = [
   { id: 'LGN', label: '로그인로그', icon: <Lock size={20} />, description: '사용자 접속 및 인증 기록' },
   { id: 'USR', label: '사용자 활동', icon: <UserCheck size={20} />, description: '데이터 변경 및 권한 추적' },
   { id: 'WEB', label: '웹 로그', icon: <Globe size={20} />, description: 'HTTP 요청 및 처리 분석' },
-  { id: 'TRS', label: '전송 로그', icon: <Activity size={20} />, description: '외부 연동 및 배치 결과' },
 ] as const;
 
 type LogCategoryId = (typeof logCategories)[number]['id'];
@@ -67,8 +66,6 @@ export default function LogDashboardClient({
           return systemLogAdminService.getUserLogs(apiParams);
         case 'WEB':
           return systemLogAdminService.getWebLogs(apiParams);
-        case 'TRS':
-          return systemLogAdminService.getTransferLogs(apiParams);
         case 'SYS':
         default:
           return systemLogAdminService.getSystemLogs(apiParams);
