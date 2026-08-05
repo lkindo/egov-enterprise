@@ -249,6 +249,46 @@
 
 294건 전수감사에서 **에이전트 단독 판단 불가(제품/보안 결정 필요)** 로 분류된 항목. D-9/D-10/D-11/D-14 는 이미 해소(`9504e1380`·`1e1ef8b7b`·`a5dad2b48`·`a73ab2eab`).
 
+> ### 📊 결정 근거표 (2026-08-05 실측) — **한 항목당 "삭제/구현" 한 단어면 착수 가능**
+>
+> 각 항목의 "삭제 vs 구현" 을 판단하려면 *지금 무엇이 실재하는가* 를 알아야 하는데 그 조사가
+> 매번 반복됐다. FE 라우트(`page.tsx`)와 BE 컨트롤러(`@RequestMapping`)를 전수 대조해 고정한다.
+>
+> | 항목 | FE 화면 | BE API | 실측 판정 |
+> |---|---|---|---|
+> | **D-1** 로그 4종 | 6종 전부 존재<br/>(`logs/{login,privacy,system,transfer,user,web}`) | **2종만**<br/>(`logs/login`·`logs/system`) | **privacy·transfer·user·web 4종이 미배선** — 원장의 "로그 4종" 과 정확히 일치 |
+> | **D-2** 네트워크 관리 | `admin/system/network` | `NetworkMonitoringApiController` **실재**(엔드포인트 4) | ⚠ 원장은 "GET 도 mock 6건" 이라 했으나 **컨트롤러는 실재**한다. mock 흔적 1건 — 삭제 판단 전 그 1건이 무엇인지 확인할 것 |
+> | **D-3** 결재 양식/워크플로우 | `sanctn/forms` · `sanctn/workflow` · `admin/workflow` | `/api/v1/approvals` 만 존재<br/>(`sanctn-form` 컨트롤러 **없음**) | 결재함은 살아 있고 **양식·스튜디오만 껍데기** |
+> | **D-4** 설문 도메인 | **11 라우트**(`survey/{hub,items,manage,questions,respondents,stats,polls…}`) | 3종<br/>(`admin/system/surveys`·`admin/system/polls`·`polls`) | `questions`·`items`·`respondents` 미배선 |
+> | **D-5** 미노출 API | — | `calendar/holidays`·`admin/system/cnslt`·`main-images` | **3종 확인**(BE 있고 FE 화면 0). ⚠ **ISG 는 해당 없음** — `admin/system/ism` 화면이 실재한다. 원장의 "4종" 은 **3종이 맞다** |
+> | **D-7** 테마 설정 | `admin/system/layout` | **0** | 서버 저장 경로가 아예 없다 → 현행은 localStorage 전용이 맞다 |
+> | **D-8** 댓글/평가 | `admin/system/comments` | `/api/v1/admin/comments` **실재** | 댓글 API 는 있다. 원장이 말한 미노출은 **만족도(평가)** 쪽 — 그 도메인만 재확인 필요 |
+> | **D-12** FAQ | `admin/help/faq` | `/api/v1/faqs` **실재** | 전용 API 가 이미 있다 → "채택 vs 게시판 통합" 중 채택 쪽 실물이 갖춰져 있다 |
+> | **D-6** 메뉴 SSOT · **D-13** 검색조건 URL | — | — | 코드 실측 대상이 아님(정보구조·UX 결정) |
+>
+> **이 표가 바꾸는 것**: D-5 는 4종이 아니라 **3종**이고, D-2·D-8·D-12 는 원장이 "없다" 고 적은
+> 백엔드가 **실재**한다. 즉 이 셋은 "구현 vs 삭제" 가 아니라 **"연결 vs 삭제"** 로 질문이 바뀐다 —
+> 비용이 훨씬 낮다. 반대로 D-1·D-4 는 미배선이 실재하므로 원장 서술이 맞다.
+>
+> ### ✅ 사용자 결정 (2026-08-05): **전 항목 구현/연결** — 착수 순서와 선결 조건
+>
+> 결정은 받았으나 항목별 성격이 크게 다르다. 실측으로 확인한 착수 순서다.
+>
+> | 순위 | 항목 | 실제 할 일 | 선결 조건 |
+> |:--:|---|---|---|
+> | — | **D-8 댓글** | **없음 — 이미 연결돼 있다.** `admin/system/comments` 는 `MonitoringHubClient` COMMENTS 탭에 위임되고, 그 탭은 `commentAdminService.getComments()`/`deleteComment()` 로 `/api/v1/admin/comments` 를 실제로 친다. 원장의 "API 미노출" 은 틀렸다. **남은 것은 만족도(평가) 도메인뿐** — 별건으로 재정의할 것 | — |
+> | 1 | **D-12 FAQ** | FE 를 하드코딩 `bbsId='BBSMSTR_AAAAAAAAAAAA'`(게시판 API) 에서 전용 `/api/v1/faqs` 로 전환 | ⚠ **보안 선결**: `FaqApiController` 는 엔드포인트 5개에 **인가 애노테이션 0개**다(실측). POST/PUT/DELETE 가 메서드 인가 없이 `secure-paths` URL 인가에만 얹혀 있다 — 연결 전에 `@AdminOrSystem` 등 부착이 선행돼야 한다 |
+> | 2 | **D-5 미노출 3종** | 휴일·상담·메인이미지 관리 화면 신설(BE 는 이미 있다) | 없음. 화면당 독립 |
+> | 3 | **D-1 로그 4종** | `privacy`·`transfer`·`user`·`web` 컨트롤러 신설(FE 라우트는 이미 있다) | ⚠ 개인정보·전송 로그는 **컴플라이언스 증적**이라 보존·마스킹 정책을 함께 정할 것 |
+> | 4 | **D-4 설문** | `questions`·`items`·`respondents` 엔드포인트 배선 | 실데이터 존재 — 스키마 확인 선행 |
+> | 5 | **D-3 결재 양식** | `tb_sanctn_form` + 컨트롤러 신설 | — |
+> | 6 | **D-2 네트워크** | 컨트롤러는 실재하나 **계측 소스가 없다** — 코드가 *"계측 소스가 연결되기 전까지 항상 빈 목록을 반환한다"* 고 명시. **인프라 작업**이지 배선이 아니다 | 계측 스택 결정(§D-2 로그 수집과 같은 축) |
+> | ⚠ | **D-6 메뉴 SSOT** · **D-7 테마 서버 저장** | **DB 스키마 변경 수반** | 글로벌 §5 파괴적 경계 — **착수 전 개별 명시 승인 필요**(포괄 승인 범위 밖) |
+> | — | **D-13 검색조건 URL** | 개인정보 vs 공유편의 UX 판정 | 코드 아님 |
+>
+> **가장 값싼 시작은 D-12 가 아니라 그 선결 조건**이다 — `FaqApiController` 인가 부착은
+> 그 자체로 독립 가치가 있고(현재 무보호 쓰기 엔드포인트 3개), FAQ 연결의 전제이기도 하다.
+
 - **[결정 대기] 미결 D 항목(10건)** — (삭제 vs 구현) 결정 선행:
   - **D-1 로그 4종**(사용자/웹/개인정보/전송) — 컨트롤러 4개 신설 vs 라우트·서비스·타입 삭제. 개인정보 접근·전송 로그는 컴플라이언스 증적.
   - **D-2 네트워크 관리**(`/admin/system/network`) — GET도 mock 6건이라 도메인 자체 신설 vs CUD 501·화면 비활성.
