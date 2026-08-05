@@ -1,5 +1,6 @@
 package nuri.business;
 
+import nuri.business.architecture.LayeredArchitectureRules;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
@@ -35,7 +36,7 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
         packages = "nuri.business.service",
         importOptions = {
                 ImportOption.DoNotIncludeTests.class,
-                ArchitectureTest.ExcludeQClasses.class
+                LayeredArchitectureRules.ExcludeQClasses.class
         }
 )
 public class ServiceLayerIsolationTest {

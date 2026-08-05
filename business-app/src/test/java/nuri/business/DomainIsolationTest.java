@@ -1,5 +1,6 @@
 package nuri.business;
 
+import nuri.business.architecture.LayeredArchitectureRules;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
 import com.tngtech.archunit.junit.ArchTest;
@@ -61,7 +62,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyP
         packages = "nuri.business.domain",
         importOptions = {
                 ImportOption.DoNotIncludeTests.class,
-                ArchitectureTest.ExcludeQClasses.class
+                LayeredArchitectureRules.ExcludeQClasses.class
         }
 )
 public class DomainIsolationTest {

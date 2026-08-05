@@ -43,17 +43,11 @@ dependencies {
     testImplementation libs.archunit.junit5
     testImplementation libs.archunit
 
-    // testFixtures dependencies
-    testFixturesApi project(':business-core')
-    testFixturesApi 'org.springframework.boot:spring-boot-starter-test'
-    testFixturesApi 'org.springframework.security:spring-security-test'
-    testFixturesApi 'com.h2database:h2'
-    testFixturesApi 'org.flywaydb:flyway-core'
-    testFixturesApi 'org.testcontainers:postgresql:1.20.4'
-    testFixturesApi 'org.testcontainers:jdbc:1.20.4'
-    testFixturesApi platform(libs.spring.ai.bom)
-    testFixturesApi libs.spring.ai.openai
-    testFixturesApi libs.spring.ai.ollama
+    // testFixtures — business-core 의 것을 그대로 재노출한다.
+    // 종전에는 18개 클래스(604 LOC)를 FQN 까지 동일하게 복제해 두고 있었고, api-server 가 양쪽
+    // testFixtures 를 동시에 의존해 같은 이름의 클래스가 클래스패스 순서로 서로를 가리는 상태였다.
+    // 여기서 재노출하면 business-app 자신의 test 와 api-server 양쪽이 단일 사본을 본다.
+    testFixturesApi testFixtures(project(':business-core'))
 }
 
 bootJar { enabled = false }

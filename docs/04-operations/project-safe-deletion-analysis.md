@@ -54,6 +54,28 @@
 - base 2: `GenericMapper`·`QuerydslSupport` (extends/구현 0, XML 참조 0)
 - **검증**: `./gradlew compileJava compileTestJava` → **BUILD SUCCESSFUL**
 
+> ### ⚠ 위 목록 정정 (2026-08-05 실측) — 10건 중 3건은 삭제되지 않았다
+>
+> 파일 실재 여부를 전수 확인한 결과 위 "이번에 삭제" 목록과 코드가 어긋난다.
+> **체크박스와 코드가 갈릴 때 진실은 코드 쪽이다.**
+>
+> | 항목 | 실측 | 조치 |
+> |---|---|---|
+> | `GenericMapper` | **잔존해 있었다** | 2026-08-05 실제 삭제(PR #287) |
+> | `BoardMasterBatchDeleteRequest` | **잔존 · 살아 있는 코드** | **삭제 금지** |
+> | `BoardMasterBatchStatusRequest` | **잔존 · 살아 있는 코드** | **삭제 금지** |
+> | 나머지 7건 | 삭제 확인됨 | — |
+>
+> `BoardMasterBatch*Request` 2건은 [BoardMasterApiController:90·100](../../api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java#L90)
+> 이 `@Valid @RequestBody` 로 사용하며 `api-docs.json`·`generated-api.d.ts`·`generated-zod.ts` 에도
+> 스키마가 실재한다. **이 목록을 근거로 삭제하면 API 가 깨진다.**
+>
+> 아울러 §45 의 "false positive(활성)" 판정 중 `MenuDataInitializer` 는 **오판**이다 —
+> 근거로 든 `implements CommandLineRunner` 는 그 클래스가 **Spring 빈일 때만** 의미가 있는데
+> `@Component` 가 주석 처리돼 있어 컨테이너가 생성하지 않는다. 대상 테이블(`NMENUINFO`/`NPROGRMLIST`)도
+> 현행 스키마에 없고, 읽으려는 `egovframe-template-common-components-5.0.0/` 디렉터리도 저장소에 없다.
+> 2026-08-05 에 삭제했다(PR #287).
+
 ---
 
 ## 3. 최상위 폴더/파일
