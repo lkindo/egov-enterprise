@@ -3811,6 +3811,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/logs/privacy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 개인정보 조회 로그 목록
+         * @description 조회 대상 정보 부분일치 검색과 페이징을 지원한다. ADMIN 롤 전용이다.
+         */
+        get: operations["getPrivacyLogList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/logs/login": {
         parameters: {
             query?: never;
@@ -7047,6 +7067,37 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponsePageResponsePrivacyLogDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponsePrivacyLogDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        PageResponsePrivacyLogDto: {
+            list?: components["schemas"]["PrivacyLogDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
+        };
+        PrivacyLogDto: {
+            dmndId?: string;
+            /** Format: date-time */
+            inqDt?: string;
+            srvcNm?: string;
+            inqInfo?: string;
+            dmndUserId?: string;
+            dmndUserIpAddr?: string;
         };
         ApiResponsePageResponseLoginLogDto: {
             success?: boolean;
@@ -15723,6 +15774,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseSysLogDto"];
+                };
+            };
+        };
+    };
+    getPrivacyLogList: {
+        parameters: {
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponsePrivacyLogDto"];
                 };
             };
         };

@@ -171,6 +171,10 @@
       "description": "배너 사용자 API"
     },
     {
+      "name": "PrivacyLog",
+      "description": "개인정보 조회 로그 열람 API (Admin 전용)"
+    },
+    {
       "name": "Institution Code",
       "description": "기관코드 관리 API"
     },
@@ -13835,6 +13839,130 @@
         }
       }
     },
+    "/api/v1/admin/system/logs/privacy": {
+      "get": {
+        "tags": [
+          "PrivacyLog"
+        ],
+        "summary": "개인정보 조회 로그 목록",
+        "description": "조회 대상 정보 부분일치 검색과 페이징을 지원한다. ADMIN 롤 전용이다.",
+        "operationId": "getPrivacyLogList",
+        "parameters": [
+          {
+            "name": "searchCondition",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "searchKeyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 255,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "searchUseYn",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "maxLength": 1,
+              "minLength": 0
+            }
+          },
+          {
+            "name": "pageIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageUnit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "pageSize",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "firstIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "lastIndex",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "recordCountPerPage",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "searchKeywordFrom",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "searchKeywordTo",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponsePrivacyLogDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/logs/login": {
       "get": {
         "tags": [
@@ -22196,6 +22324,88 @@
             "items": {
               "$ref": "#/components/schemas/FieldErrorItem"
             }
+          }
+        }
+      },
+      "ApiResponsePageResponsePrivacyLogDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponsePrivacyLogDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "PageResponsePrivacyLogDto": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PrivacyLogDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPage": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "PrivacyLogDto": {
+        "type": "object",
+        "properties": {
+          "dmndId": {
+            "type": "string"
+          },
+          "inqDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "srvcNm": {
+            "type": "string"
+          },
+          "inqInfo": {
+            "type": "string"
+          },
+          "dmndUserId": {
+            "type": "string"
+          },
+          "dmndUserIpAddr": {
+            "type": "string"
           }
         }
       },
