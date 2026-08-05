@@ -86,8 +86,10 @@
 
 ## 4. 검증 / CI 인프라
 
-### 4-A. CI 빌링 복구
-- CI(ci.yml) 과금 차단 상태 — **사용자 영역**. 복구 시 신설 `verify` 게이트(및 codegen/pitest)를 CI 상시 실행하면 로컬↔CI 정합 성립.
+### 4-A. CI 빌링 복구 — **⚠ 기록 정정(2026-08-05 실측): "과금 차단" 은 STALE**
+- **이전 기록**: "CI(ci.yml) 과금 차단 상태 — 사용자 영역."
+- **실측 정정**: **CI 는 돌고 있다.** PR #287 에서 `secret-scan` 이 19초 만에 pass 하고 `backend-build` 가 실제로 기동했다. 아울러 `main` 브랜치 룰셋이 활성화되어 **PR 필수 + required status checks 3종**(`backend-build`·`frontend-build`·`secret-scan`)이 강제된다(직접 push 는 `GH013` 으로 거부됨). 상세는 [wave2-carryover.md §7](wave2-carryover.md).
+- **남은 것**: E2E 잡(22티어)까지 실제로 그린인지는 **미확인**이다. "CI 가 안 돈다" 를 전제로 보류한 작업(예: 코드 간결화 계획 Phase 4 의 FE 대규모 리팩터)은 착수 전 **E2E 실행 여부를 실측**하고 재판정할 것.
 
 ### 4-B. e2e 상시화
 - e2e 는 backend(:8080)+FE(:3001) 기동 필요라 통합 `verify` 게이트에서 제외(별도 `test:e2e`). 상시화는 CI 복구 + 환경 결정.

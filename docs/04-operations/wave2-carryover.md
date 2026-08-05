@@ -137,9 +137,14 @@ Wave 1 은 인접 3건(`AuthenticationBypassTest` 재작성, `SqlInjectionAndXss
 **잔여 ①(수평 축) — 해소 (2026-08-04)**: `PrivilegeEscalationVulnerabilityTest` 에 수평 축 2건을 신설했다
 (타인 첨부 403 + 대조군 자기 첨부 200). 대상은 A-3(b) 에서 닫은 `GET /api/v1/files/{atchFileId}` 다.
 
-**잔여 ②**: `business-core`/`business-app` testFixtures 의 `TestSecurityConfig`(`anyRequest().permitAll()`)는
-여전히 살아 있어 모든 `@IntegrationTest` 가 보안 개방 상태로 돈다. 이 둘은 `TestSecurityChainOverrideLinterTest`
-의 동결 목록(5항목)이 계속 가시화한다.
+**잔여 ②**: testFixtures 의 `TestSecurityConfig`(`anyRequest().permitAll()`)는 여전히 살아 있어
+`@IntegrationTest` 가 보안 개방 상태로 돈다. `TestSecurityChainOverrideLinterTest` 의 동결 목록이 계속 가시화한다.
+
+> **2026-08-05 정정 — "이 둘" 이 아니라 이제 하나다.** `business-app/src/testFixtures` 는 `business-core` 와
+> **FQN 까지 동일한 18파일 복제**였고(18/18 바이트 동일), `api-server` 가 양쪽을 동시에 의존해 같은 이름의
+> 클래스가 클래스패스 순서로 서로를 가리고 있었다. 사본을 제거하고 재노출 구조로 바꿨다(PR #287).
+> **⚠ 위반이 상환된 것이 아니다** — `permitAll()` 은 business-core 사본에 그대로 살아 있고,
+> 동결 건수가 2→1 로 준 것은 **중복이 사라졌기 때문**이다. 부채는 1건으로 남아 계속 신호를 낸다.
 
 > **우선순위 정정(2026-08-04 실측)**: "모든 `@IntegrationTest`" 라는 서술은 맞지만 **규모가 오해를 부른다** —
 > `@IntegrationTest` 실사용은 7개 클래스이고 전부 **서비스 레이어 직접 호출**(HTTP 미경유)이라
@@ -241,8 +246,11 @@ JPA auditing 이 **업로더 loginId** 를 채운다(라이브 125행 전부 채
   뚫림은 보이지 않는다. 해당 테이블 전부 라이브 0행이라 현재 영향은 없다. 축을 실측하면 근거로 편입할 것.
 - 쓰기 경로(`updateFiles`/`deleteFile(s)`)는 이번 범위에 넣지 않았다. HTTP 미노출이며(`FileApiController` 에
   DELETE 매핑이 없다) 유일한 호출부인 `BoardService` 는 자체 인가를 선행한다.
-- **별건 발견 — 배너/팝업 이미지가 구조적으로 깨져 있다(2겹)**. 이번 변경과 무관하며 종전부터 그렇다.
-  자동 수정하지 않았다 — 두 번째 층이 **아키텍처 결정**을 요구하기 때문이다.
+- **별건 발견 — 배너/팝업 이미지가 구조적으로 깨져 있었다(2겹)** → **해소 (`9db5e3343`, 옵션 3 채택)**.
+  아래 세 선택지 중 **3(FE 가 blob 으로 가져온다)** 으로 결정·이행됐다. 실측(2026-08-05):
+  프론트 전체에 `files/download` 호출 **0건**, `FileService.fetchBlob(atchFileId, fileSn)` 존재.
+  백엔드 계약 변경 없이 1층(없는 경로)·2층(헤더 인증)을 함께 닫았다.
+  ⚠ 아래 원 기록은 **당시 상태**이며 "현재 세 화면 모두 깨진 이미지가 보인다" 는 서술은 이제 사실이 아니다.
 
   **1층 · 없는 경로를 부른다.** 프론트 3개소가 `/api/v1/files/download?fileId=…` 를 만든다
   ([BannerAdminClient.tsx:310](../../frontend/src/app/admin/system/banner/BannerAdminClient.tsx#L310)·
@@ -453,7 +461,7 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 |---|---|---|
 | **`main` CI 가 red** | frontend-build 가 lint 에러 **1건**으로 죽어 `e2e-tests`·`e2e-merge-reports` 가 **skip**. 22티어 E2E 가 통째로 돌지 않고 있었다. 원인은 `useAppForm.test.tsx` 의 `z.object(...)` — 인라인 z.object 금지 규칙이 **테스트 파일에도** 걸렸다. pre-push 는 eslint 를 돌지 않아 그대로 통과했다(§0.7-H5 의 전형) | 테스트 override 블록에 한정해 규칙 해제. 앱 코드에 위반을 주입해 **여전히 red** 임을 확인 |
 | **Hibernate 튜닝 키가 무효 위치** | `spring.jpa.hibernate.*` 는 Boot 가 `ddl-auto`/`naming` 만 바인딩한다. `order_inserts`·`order_updates`·`jdbc.batch_size` 5개가 그 아래 있어 **조용히 무시**되고 있었다. ⚠ 다만 "배치가 꺼져 있었다"는 부정확하다 — 실측하면 `getJdbcBatchSize()` 는 **15**(Hibernate 기본값)다. 실제로 무효였던 것은 크기 25 라는 **의도**와 정렬 2종(기본 false)이다 | `spring.jpa.properties.hibernate.*` 로 이설. `HibernatePropertyBindingLinterTest` 신설 — ① 양쪽 prefix 를 동시 주입해 어느 쪽이 도달하는지 **실행으로** 증명 ② 운영 yml 정적 검사 |
-| **required status checks 0개** | 저장소 자신의 `verify-branch-protection.mjs` 가 그렇게 판정한다. 하네스 21종·pre-push·CI 6잡 전부 **강제력 없는 권고** | 사용자 결정 필요(활성화 시 main 직접 push 가 막힌다) — 아래 §7 |
+| ~~**required status checks 0개**~~ | ~~하네스 21종·pre-push·CI 6잡 전부 강제력 없는 권고~~ | **해소 (2026-08-05 실측)** — 아래 §7 참조 |
 
 부수 확인: 테스트 컨텍스트는 `api-server/src/test/resources/application.yml` 이 main 을 **shadow** 하므로
 운영 설정을 아예 로드하지 않는다. 그래서 운영 값을 테스트에서 단언하면 그것은 운영이 아니라
@@ -500,3 +508,37 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 **남은 것(제품/설계 결정)**: ①②는 게이트로 닫히지 않는다. URL 목록을 잘게 쪼개는 것은 관리 비용만 늘리고
 소유권 문제를 해결하지 못한다. 방향은 **소유권이 필요한 도메인을 식별해 서비스 계층 가드로 내리는 것**이며,
 그 판정은 도메인별로 개별 수행해야 한다(§0.7-H4). 첨부(A-3(b))가 그 첫 사례다.
+
+---
+
+## 7. 브랜치 보호 · required status checks — **해소 (2026-08-05 실측)**
+
+> ⚠ **이 절은 종전에 존재하지 않았다.** §6.5 가 "아래 §7" 로 참조했으나 문서는 §6.6 에서 끝나 있었고,
+> 그래서 **사용자 결정이 필요하다고 표시된 항목 하나가 원장에서 통째로 유실**돼 있었다.
+> 참조는 남고 대상이 사라지는 것은 조용한 실패다 — 다음 오퍼레이터가 §6.5 를 읽고 §7 을 찾다가 포기한다.
+
+**종전 기록(2026-08-03)**: 저장소 자신의 `verify-branch-protection.mjs` 가 required status checks **0개**로
+판정했다. 하네스 21종·pre-push·CI 6잡이 전부 **강제력 없는 권고**였고, 활성화는 사용자 결정 사항이었다
+(활성화하면 `main` 직접 push 가 막힌다).
+
+**실측 (2026-08-05)** — **그 사이 활성화됐다.** `main` 에 대한 직접 push 를 시도하니 원격이 거부한다:
+
+```
+remote: error: GH013: Repository rule violations found for refs/heads/main.
+remote: - Changes must be made through a pull request.
+remote: - 3 of 3 required status checks are expected.
+```
+
+필수 검사 3종 (`gh api repos/lkindo/egov-enterprise/rules/branches/main` 실측):
+`backend-build` · `frontend-build` · `secret-scan`.
+
+**부수 정정 — CI 과금 차단도 해소됐다.** [pending-decisions.md §4-A](pending-decisions.md) 는 CI 를
+"과금 차단 상태 — 사용자 영역" 으로 적고 있으나, 2026-08-05 PR #287 에서 `secret-scan` 이 19초 만에
+pass 하고 `backend-build` 가 실제로 기동했다. **CI 는 돌고 있다.** 이 서술에 의존해
+"E2E 는 어차피 안 돈다" 고 전제하면 틀린다 — 특히 [코드 간결화 계획](../../.gemini/tasks/20260805-code-simplification-plan.md)
+의 Phase 4 는 "CI 빌링 복구" 를 선결 조건으로 걸고 있는데, 그 조건이 이미 충족돼 있을 수 있다.
+(⚠ 다만 E2E 잡까지 그린인지는 이 시점에 미확인이다 — 착수 전 실측할 것.)
+
+**남은 것**: 없음. 다만 `main` 직접 push 가 막혔으므로 **모든 변경은 PR 경유**다.
+이중 오퍼레이터 환경에서 `git commit --only` 규율에 더해 **브랜치 + PR 흐름**이 강제된다는 점을
+[orchestration-protocol.md §5](../03-guides/orchestration-protocol.md) 의 공유 워킹트리 규율과 함께 읽을 것.
