@@ -482,6 +482,25 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/surveys/{srvyId}/respondents/{respondentId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 설문 응답자 단건 조회 */
+        get: operations["getRespondent"];
+        /** 설문 응답자 수정 */
+        put: operations["updateRespondent"];
+        post?: never;
+        /** 설문 응답자 삭제 */
+        delete: operations["deleteRespondent"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/surveys/{srvyId}/questions/{srvyQitemId}": {
         parameters: {
             query?: never;
@@ -1209,6 +1228,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/surveys/{srvyId}/responses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 설문 응답 제출
+         * @description 답변 N건이 응답 행 N개가 된다. 같은 사용자의 재제출은 거부한다.
+         */
+        post: operations["submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/scraps": {
         parameters: {
             query?: never;
@@ -1848,6 +1887,27 @@ export interface paths {
          * @description 새로운 게시판 템플릿 정보를 등록합니다.
          */
         post: operations["insertTmplatInfo"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/surveys/{srvyId}/respondents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 설문 응답자 목록
+         * @description 해당 설문의 응답자를 이름 부분일치로 검색한다.
+         */
+        get: operations["getRespondents"];
+        put?: never;
+        /** 설문 응답자 등록 */
+        post: operations["createRespondent"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2829,6 +2889,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/surveys/{srvyId}/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 설문 결과 통계
+         * @description 문항 × 항목 단위의 평면 분포를 반환한다. 응답이 0건인 항목도 0% 행으로 포함한다.
+         */
+        get: operations["getStats"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/statistics/connect": {
         parameters: {
             query?: never;
@@ -3462,7 +3542,7 @@ export interface paths {
          * 게시판 통계 조회
          * @description 특정 게시판의 전체 게시글 수, 조회수 총합 등의 통계 정보를 조회합니다.
          */
-        get: operations["getStats"];
+        get: operations["getStats_1"];
         put?: never;
         post?: never;
         delete?: never;
@@ -3573,6 +3653,47 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/survey-responses": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 설문 응답 목록
+         * @description 응답자명 부분일치로 검색한다.
+         */
+        get: operations["getResponses"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/survey-responses/{srvyRspnsId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 설문 응답 단건 조회 */
+        get: operations["getResponse"];
+        put?: never;
+        post?: never;
+        /**
+         * 설문 응답 삭제
+         * @description 되돌릴 수 없다. ADMIN 만 수행할 수 있다.
+         */
+        delete: operations["deleteResponse"];
         options?: never;
         head?: never;
         patch?: never;
@@ -4555,6 +4676,43 @@ export interface components {
             userId: string;
             userAbsnYn?: string;
         };
+        /** @description 설문 응답자 DTO */
+        SurveyRespondentDto: {
+            /** @description 설문 응답자 ID */
+            srvyRspdntId?: string;
+            /** @description 설문 ID */
+            srvyId: string;
+            /** @description 설문 템플릿 ID */
+            srvyTmpltId?: string;
+            /** @description 성별 코드 */
+            gndrCd?: string;
+            /** @description 직업 유형 코드 */
+            crTypeCd?: string;
+            /** @description 응답자 명 */
+            rspdntNm?: string;
+            /** @description 생년월일 */
+            brdt?: string;
+            /** @description 지역 전화번호 */
+            rgnTelno?: string;
+            /** @description 국번 전화번호 */
+            midTelno?: string;
+            /** @description 개별 전화번호 */
+            endTelno?: string;
+            /** @description 최초 등록자 ID */
+            frstRgtrId?: string;
+            /**
+             * Format: date-time
+             * @description 최초 등록 일시
+             */
+            crtDt?: string;
+            /** @description 최종 수정자 ID */
+            lastMdfrId?: string;
+            /**
+             * Format: date-time
+             * @description 최종 수정 일시
+             */
+            mdfcnDt?: string;
+        };
         /** @description 설문항목 DTO (표준화) */
         SurveyArticleDto: {
             /** @description 설문 항목 ID */
@@ -5295,6 +5453,39 @@ export interface components {
             /** @description 사용자 역할 */
             role?: string;
         };
+        /** @description 문항별 답변 */
+        Answer: {
+            /** @description 문항 ID */
+            srvyQstnId: string;
+            /** @description 항목 ID */
+            srvyArtclId: string;
+            /** @description 응답 내용 */
+            rspdntAnsCn?: string;
+            /** @description 기타 답변 */
+            etcAnsCn?: string;
+        };
+        /** @description 설문 응답 제출 요청 */
+        SurveyResponseSubmitDto: {
+            /**
+             * @description 응답자명
+             * @example 홍길동
+             */
+            rspnsNm?: string;
+            /** @description 문항별 답변 목록 */
+            answers: components["schemas"]["Answer"][];
+        };
+        ApiResponseInteger: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            /** Format: int32 */
+            data?: number;
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
         ApiResponseString: {
             success?: boolean;
             /** Format: int32 */
@@ -5706,18 +5897,6 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponseInteger: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            /** Format: int32 */
-            data?: number;
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
         /** @description 관리자용 비밀번호 변경 요청 */
         AdminPasswordChangeRequest: {
             /** @description 새 비밀번호 */
@@ -5806,6 +5985,28 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponseListSurveyStatsDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["SurveyStatsDto"][];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        SurveyStatsDto: {
+            srvyQstnId?: string;
+            qstnCn?: string;
+            qstnTypeCd?: string;
+            srvyArtclId?: string;
+            artclCn?: string;
+            /** Format: int64 */
+            count?: number;
+            /** Format: double */
+            percentage?: number;
         };
         ApiResponseListStatsDto: {
             success?: boolean;
@@ -6662,6 +6863,39 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
+        ApiResponsePageResponseSurveyRespondentDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseSurveyRespondentDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        PageResponseSurveyRespondentDto: {
+            list?: components["schemas"]["SurveyRespondentDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
+        };
+        ApiResponseSurveyRespondentDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["SurveyRespondentDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
         ApiResponseListSurveyQuestionDto: {
             success?: boolean;
             /** Format: int32 */
@@ -6738,6 +6972,52 @@ export interface components {
             size?: number;
             /** Format: int32 */
             totalPage?: number;
+        };
+        ApiResponsePageResponseSurveyResultDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseSurveyResultDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        PageResponseSurveyResultDto: {
+            list?: components["schemas"]["SurveyResultDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
+        };
+        SurveyResultDto: {
+            srvyRspnsId?: string;
+            srvyId?: string;
+            srvyTmpltId?: string;
+            srvyQstnId?: string;
+            srvyArtclId?: string;
+            rspdntAnsCn?: string;
+            rspnsNm?: string;
+            etcAnsCn?: string;
+            frstRgtrId?: string;
+            /** Format: date-time */
+            crtDt?: string;
+        };
+        ApiResponseSurveyResultDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["SurveyResultDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseSummaryStatsDto: {
             success?: boolean;
@@ -9207,6 +9487,79 @@ export interface operations {
             };
         };
     };
+    getRespondent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                srvyId: string;
+                respondentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseSurveyRespondentDto"];
+                };
+            };
+        };
+    };
+    updateRespondent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                srvyId: string;
+                respondentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurveyRespondentDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteRespondent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                srvyId: string;
+                respondentId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     updateQuestion: {
         parameters: {
             query?: never;
@@ -11234,6 +11587,32 @@ export interface operations {
             };
         };
     };
+    submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                srvyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurveyResponseSubmitDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseInteger"];
+                };
+            };
+        };
+    };
     getMyScrapList: {
         parameters: {
             query?: {
@@ -12488,6 +12867,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getRespondents: {
+        parameters: {
+            query?: {
+                keyword?: string;
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path: {
+                srvyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponseSurveyRespondentDto"];
+                };
+            };
+        };
+    };
+    createRespondent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                srvyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SurveyRespondentDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseString"];
                 };
             };
         };
@@ -14583,6 +15018,28 @@ export interface operations {
             };
         };
     };
+    getStats: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                srvyId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseListSurveyStatsDto"];
+                };
+            };
+        };
+    };
     getConnectStats: {
         parameters: {
             query?: {
@@ -15361,7 +15818,7 @@ export interface operations {
             };
         };
     };
-    getStats: {
+    getStats_1: {
         parameters: {
             query?: never;
             header?: never;
@@ -15519,6 +15976,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseTemplateDto"];
+                };
+            };
+        };
+    };
+    getResponses: {
+        parameters: {
+            query?: {
+                keyword?: string;
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponseSurveyResultDto"];
+                };
+            };
+        };
+    };
+    getResponse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                srvyRspnsId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseSurveyResultDto"];
+                };
+            };
+        };
+    };
+    deleteResponse: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                srvyRspnsId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
         };

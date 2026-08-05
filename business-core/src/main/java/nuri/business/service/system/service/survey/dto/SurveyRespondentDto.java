@@ -32,8 +32,10 @@ public class SurveyRespondentDto {
     @Size(max = 20)
     private String srvyTmpltId;
 
+    // 물리 컬럼은 varchar(12) 다(information_schema 실측 2026-08-05, 엔티티 @Column(length=12) 과도 일치).
+    // 종전 @Size(max = 30) 은 13~30자를 검증에서 통과시켜 INSERT 단계에서 터지게 만들었다.
     @Schema(description = "성별 코드")
-    @Size(max = 30)
+    @Size(max = 12)
     private String gndrCd;
 
     @Schema(description = "직업 유형 코드")

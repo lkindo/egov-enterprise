@@ -39,11 +39,20 @@ export default function SurveyResponseClient() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const queryClient = useQueryClient();
 
+  // ⚠ `as any` 를 걷어냈다. 종전에는 이 한 줄이 타입 검사를 통째로 무력화해서
+  //   ① 백엔드가 `PageResponse{list,total,...}` 를 주는데 화면이 `content`/`totalElements`
+  //      (Spring Page 형태)를 읽어 **항상 0건**으로 렌더됐고,
+  //   ② 응답 항목 필드도 실재하지 않는 이름(`respondNm`·`respondAnswerCn`·`qestnrQesitmId`)을
+  //      읽고 있었는데 tsc 가 아무것도 잡지 못했다.
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['survey-responses', pageNo, searchKeyword],
     queryFn: () => getQustnrRespondInfoList({ page: pageNo, size: 10, keyword: searchKeyword }),
     retry: false,
-  }) as any;
+  });
+
+  const responses = data?.list ?? [];
+  const totalCount = data?.total ?? 0;
+  const totalPage = data?.totalPage ?? 1;
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteQustnrRespondInfo(id),
@@ -111,7 +120,7 @@ export default function SurveyResponseClient() {
             </div>
           </div>
           <CardDescription>
-            총 {data?.totalElements || 0}건의 응답이 조회되었습니다.
+            총 {totalCount}건의 응답이 조회되었습니다.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -141,35 +150,35 @@ export default function SurveyResponseClient() {
                       연결 오류: {error instanceof Error ? error.message : '데이터를 가져올 수 없습니다.'}
                     </TableCell>
                   </TableRow>
-                ) : data?.content?.length === 0 ? (
+                ) : responses.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={4} className="h-48 text-center text-muted-foreground">
                       검색 결과가 없습니다.
                     </TableCell>
                   </TableRow>
                 ) : (
-                  data?.content?.map((item: any) => (
-                    <TableRow key={item.qestnrQesitmId} className="transition-colors hover:bg-muted/30">
-                      <TableCell className="font-medium">{item.respondNm}</TableCell>
+                  responses.map((item) => (
+                    <TableRow key={item.srvyRspnsId} className="transition-colors hover:bg-muted/30">
+                      <TableCell className="font-medium">{item.rspnsNm}</TableCell>
                       <TableCell className="text-muted-foreground">
-                        <span className="line-clamp-1">{item.respondAnswerCn}</span>
+                        <span className="line-clamp-1">{item.rspdntAnsCn}</span>
                       </TableCell>
                       <TableCell className="text-sm font-mono text-muted-foreground">
                         {item.crtDt}
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-center space-x-1">
-                          <Link href={`/survey/response/${item.qestnrQesitmId}`}>
-                            <Button variant="ghost" size="icon" aria-label={`${item.respondNm || '설문'} 응답 상세보기`} className="h-8 w-8">
+                          <Link href={`/survey/response/${item.srvyRspnsId}`}>
+                            <Button variant="ghost" size="icon" aria-label={`${item.rspnsNm || '설문'} 응답 상세보기`} className="h-8 w-8">
                               <Eye className="h-4 w-4" />
                             </Button>
                           </Link>
                           <Button
                             variant="ghost"
                             size="icon"
-                            aria-label={`${item.respondNm || '설문'} 응답 삭제`}
+                            aria-label={`${item.rspnsNm || '설문'} 응답 삭제`}
                             className="h-8 w-8 text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10"
-                            onClick={() => handleDelete(item.qestnrQesitmId, item.respondNm)}
+                            onClick={() => handleDelete(item.srvyRspnsId, item.rspnsNm)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -185,7 +194,7 @@ export default function SurveyResponseClient() {
           {/* Pagination */}
           <div className="mt-4 flex items-center justify-between">
             <p className="text-sm text-muted-foreground">
-              현재 {pageNo}페이지
+              {pageNo} / {totalPage} 페이지
             </p>
             <div className="flex items-center space-x-2">
               <Button
@@ -199,7 +208,9 @@ export default function SurveyResponseClient() {
               <Button
                 variant="outline"
                 size="sm"
-                disabled={data?.content?.length < 10 || isFetching}
+                // 종전엔 "현재 페이지가 10건 미만이면 마지막" 이라는 추정이었다.
+                // 봉투에 totalPage 가 실려 오므로 추정할 이유가 없다.
+                disabled={pageNo >= totalPage || isFetching}
                 onClick={() => setPageNo(p => p + 1)}
               >
                 다음 <ChevronRight className="h-4 w-4 ml-1" />
