@@ -20,21 +20,18 @@ import org.springframework.lang.NonNull;
 @AllArgsConstructor
 @Schema(description = "권한 관리 정보 DTO")
 public class AuthorManageDto {
-    /** 권한코드 */
     @Schema(description = "권한코드", example = "ROLE_USER")
     @NotBlank(message = "권한코드는 필수 입력 사항입니다.")
     @Size(max = 20)
     @NonNull
     private String authrtCd;
 
-    /** 권한명 */
     @Schema(description = "권한명", example = "일반사용자")
     @NotBlank(message = "권한명은 필수 입력 사항입니다.")
     @Size(max = 60)
     @NonNull
     private String authrtNm;
 
-    /** 권한설명 */
     @Schema(description = "권한설명", example = "일반 사용자 기본 권한")
     @Size(max = 200)
     private String authrtExpln;

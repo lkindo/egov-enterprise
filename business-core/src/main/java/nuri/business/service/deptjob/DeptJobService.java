@@ -1,16 +1,12 @@
 package nuri.business.service.deptjob;
-import nuri.foundation.core.exception.CommonErrorCode;
 
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.util.IdGenerationUtil;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.deptjob.DeptJob;
-
-// import java.util.List;
 import nuri.business.domain.deptjob.DeptJobRepository;
 import nuri.business.domain.deptjob.DeptJobBoxRepository;
-
-// import nuri.business.domain.deptjob.QDeptJob;
 import nuri.business.domain.organization.OrganizationManageRepository;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.deptjob.dto.DeptJobDto;
@@ -221,7 +217,6 @@ public class DeptJobService extends BaseAbstractService {
 
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(picId);
     }
-
 
     private DeptJobDto toDto(DeptJob entity) {
         DeptJobDto dto = deptJobMapper.toDto(entity);
