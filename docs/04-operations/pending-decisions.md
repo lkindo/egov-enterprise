@@ -96,10 +96,45 @@
 
 - **선택지**
   1. **Spring Boot 3.5.x 업그레이드** — critical 을 실제로 닫는 유일한 경로(Spring Security 6.5.x 동반). 다중 모듈 전체 재검증 필요(L2).
-  2. **3.4.x 최신 패치 확인 후 부분 완화** — `spring-webmvc`/`spring-expression` 6.2.19 를 포함하는 3.4.x 패치가 있다면 high 3건은 줄일 수 있다. ⚠ **critical 은 이 경로로 닫히지 않는다**(6.4.x 에 패치가 없다). 착수 전 3.4.x 최신 릴리스의 Framework 버전을 실측할 것.
+  2. ~~**3.4.x 최신 패치 확인 후 부분 완화**~~ → **불가 확정 (2026-08-05 실측)**: `3.4.13` 이 이미 **3.4.x 최종 릴리스**다(GitHub 릴리스 전수 조회). 이 경로에는 더 올릴 것이 없다.
   3. **리스크 수용** — 사내망 전용 배포 등 노출면 판단에 근거해 명시적으로 유예. 그 경우 **유예 사유와 재검토 시점을 여기 기록**할 것.
 
-- **권장**: (1). 다만 되돌리기 어려운 프레임워크 변경이라 **포괄 승인 범위 밖**이며 사용자 명시 승인이 필요하다. 착수 시 `localGate`(실 PG 스키마 검증 포함) + CI 전체(E2E 22티어 · mutation) 를 통과 기준으로 삼는다 — 2026-08-05 실측으로 **CI 는 정상 가동**함이 확인됐다(§4-A 참조).
+- **⚠ 착수 시도 결과 — 실제 범위 실측 (2026-08-05)**
+
+  **3.5.16 으로 올려 컴파일한 결과 `BUILD FAILED`.** 이것은 버전 숫자 변경이 아니라
+  **보안 필터 체인 마이그레이션**이다.
+
+  | 항목 | 실측 |
+  |---|---|
+  | 실패 원인 | `error: warnings found and -Werror specified` — 경고 **40건** |
+  | 경고 내용 | `AntPathRequestMatcher ... has been deprecated and marked for removal` (Spring Security 6.5) |
+  | 대상 개소 | **37** (`antMatcher()` 호출 28 · 메서드 참조 `::antMatcher` 3 · 기타) |
+  | 대상 파일 | **2** — `api-server/.../config/ApiSecurityConfig.java`(운영 필터 체인) · `api-server/src/test/java/nuri/config/SecurityTestConfig.java` |
+
+  **왜 단순 치환으로 처리하면 안 되는가**
+  - 대상이 **저장소에서 가장 위험한 파일**(프로덕션 인가 경계)이다.
+  - `AntPathRequestMatcher` → `PathPatternRequestMatcher` 는 **매칭 의미가 동일하지 않다**
+    (trailing slash·`**` 처리·서블릿 경로 해석). 오범하면 **인가 경계가 조용히 이동**한다 —
+    빌드는 성공하고 테스트도 대부분 통과하는데 특정 경로만 열리거나 막히는 형태다.
+  - 37개소를 같은 방식으로 바꾸는 것은 **§0.7-H4 가 금지하는 sweep** 이다.
+    각 패턴이 왜 동일한지를 개별 증명하고 예외를 선(先)식별해야 한다.
+
+  **착수 시 권장 순서**
+  1. 37개 패턴을 표로 뽑아 Ant ↔ PathPattern 의미가 **동일한 것 / 다른 것**으로 분류(개별 판정).
+  2. 의미가 갈리는 패턴은 **테스트를 먼저** 쓴다(해당 경로의 인가 결과를 현행 기준으로 고정).
+  3. 전환 후 `RbacAuthorizationMatrixTest`·`SecurityAuthAnnotationLinterTest`·
+     `SecurePathsDeclarationSyncLinterTest` + `PrivilegeEscalationVulnerabilityTest` 를 재실행하고,
+     **위반 주입 red 까지 확인**한다(§0.7-H5).
+  4. `localGate` + CI 전체(E2E 22티어 · mutation). 2026-08-05 실측으로 **CI 는 정상 가동**한다(§4-A).
+
+  > **부수 발견**: [build.gradle](../../build.gradle) 의 CVE 상환 오버라이드
+  > (`ext['tomcat.version']='10.1.57'` · `ext['jackson-bom.version']='2.18.9'`)는 주석이
+  > **"BOM 을 더 올리면 지워야 하는 부채"** 라고 명시한다. 3.5.16 BOM 이 이보다 높은 버전을 주면
+  > **오버라이드가 오히려 끌어내린다** — 업그레이드 시 이 두 줄의 유지/제거를 반드시 함께 판정할 것.
+
+- **권장**: (1). 다만 되돌리기 어려운 프레임워크 변경이며 **위 마이그레이션이 본체**다.
+  버전 한 줄 바꾸는 작업으로 착수했다가 보안 설정을 반쯤 고친 상태로 남기지 말 것 —
+  **전용 세션에서 위 4단계를 끝까지 수행할 수 있을 때 착수**한다.
 
 ### 2-D. CSP `unsafe-inline` 제거
 - prod CSP 에서 `unsafe-eval` 은 제거됨. `unsafe-inline` 은 **Next RSC nonce/PPR 인프라 도입**이 선행돼야 제거 가능(아키텍처 결정, 이전에 Phase4 포기).
