@@ -8,7 +8,7 @@ egovframe = "5.0.0"
 #   여기 남겨 두면 "카탈로그가 Boot 버전의 SSOT" 로 읽혀, 이 값만 고치고 실제로는 아무것도
 #   바뀌지 않는 상황이 생긴다(선언 범위 ≠ 실제 범위). 실제 출처가 아닌 선언은 지운다.
 #   ⚠ 위 두 곳은 반드시 함께 바꿔야 한다.
-spring-doc = "2.8.5"
+spring-doc = "3.1.0"
 spring-ai = "1.0.0-M5"
 micrometer-tracing = "1.4.3"
 micrometer = "1.14.4"
