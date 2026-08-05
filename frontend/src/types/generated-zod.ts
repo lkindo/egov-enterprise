@@ -303,6 +303,23 @@ export const BoardSaveRequestSchema = z.object({
 export type BoardSaveRequest = z.infer<typeof BoardSaveRequestSchema>;
 
 // ==========================================================================
+// SatisfactionDto Schema
+// ==========================================================================
+export const SatisfactionDtoSchema = z.object({
+  dgstfnSn: z.number().optional(),
+  bbsId: z.string().min(0).max(20).optional(),
+  pstId: z.string().min(0).max(20).optional(),
+  dgstfnCn: z.string().optional(),
+  dgstfnScr: z.number().optional(),
+  userId: z.string().optional(),
+  userNm: z.string().optional(),
+  pswd: z.string().optional(),
+  useYn: z.string().min(0).max(1),
+  crtDt: z.string().optional(),
+});
+export type SatisfactionDto = z.infer<typeof SatisfactionDtoSchema>;
+
+// ==========================================================================
 // MyPageContentDto Schema
 // ==========================================================================
 export const MyPageContentDtoSchema = z.object({
@@ -2086,6 +2103,34 @@ export const ApiResponseBoardDtoSchema = z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseBoardDto = z.infer<typeof ApiResponseBoardDtoSchema>;
+
+// ==========================================================================
+// ApiResponseListSatisfactionDto Schema
+// ==========================================================================
+export const ApiResponseListSatisfactionDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => SatisfactionDtoSchema)).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseListSatisfactionDto = z.infer<typeof ApiResponseListSatisfactionDtoSchema>;
+
+// ==========================================================================
+// ApiResponseMapStringDouble Schema
+// ==========================================================================
+export const ApiResponseMapStringDoubleSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.record(z.string(), z.any()).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseMapStringDouble = z.infer<typeof ApiResponseMapStringDoubleSchema>;
 
 // ==========================================================================
 // ApiResponseListBannerDto Schema

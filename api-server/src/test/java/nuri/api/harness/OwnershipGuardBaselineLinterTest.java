@@ -92,6 +92,14 @@ class OwnershipGuardBaselineLinterTest {
             "ScheduleService#deleteSchedule#assertOwnerOrAdmin=1",
             "ScheduleService#getSchedule#assertOwnerOrAdmin=1",
             "ScheduleService#updateSchedule#assertOwnerOrAdmin=1",
+            // [2026-08-06 추가] 만족도(D-8) 배선. 이 두 줄은 '완화' 가 아니라 '신설' 이다 —
+            // 종전 SatisfactionService 에는 인가 가드가 하나도 없었고, deleteSatisfaction 은
+            // pswd 파라미터를 받고도 검사하지 않아 ID만 알면 남의 만족도를 지울 수 있었다.
+            // 컨트롤러가 없어 도달 불가였던 덕에 노출되지 않았을 뿐이며, 배선하면서 함께 고쳤다.
+            //  · assertCanModify   → 로그인 작성분의 소유자/관리자 판정(익명 작성분은 비밀번호 분기)
+            //  · deleteByModerator → 욕설·스팸 대리 삭제. 비밀번호 없이 지우므로 관리자 전용을 명시
+            "SatisfactionService#assertCanModify#assertOwnerOrAdmin=1",
+            "SatisfactionService#deleteByModerator#assertAdmin=1",
             "ScrapService#deleteScrap#assertOwnerOrAdmin=1",
             "ScrapService#getScrap#assertOwnerOrAdmin=1",
             "ScrapService#updateScrap#assertOwnerOrAdmin=1",

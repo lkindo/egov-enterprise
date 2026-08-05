@@ -59,6 +59,10 @@
       "description": "파일 관리 API"
     },
     {
+      "name": "Satisfaction",
+      "description": "게시글 만족도 API"
+    },
+    {
       "name": "Department Management",
       "description": "시스템 부서 관리 API (Admin)"
     },
@@ -1690,6 +1694,120 @@
               "type": "string"
             },
             "example": 1
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}": {
+      "put": {
+        "tags": [
+          "Satisfaction"
+        ],
+        "summary": "만족도 수정",
+        "description": "본문의 pswd 는 소유 증명용 자격이며 저장된 비밀번호를 바꾸지 않는다.",
+        "operationId": "update",
+        "parameters": [
+          {
+            "name": "bbsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pstId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dgstfnSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SatisfactionDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Satisfaction"
+        ],
+        "summary": "만족도 삭제",
+        "description": "논리 삭제. 소유자 또는 익명 작성 비밀번호가 필요하다.",
+        "operationId": "delete",
+        "parameters": [
+          {
+            "name": "bbsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pstId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dgstfnSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "pswd",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -6840,6 +6958,93 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/CommentDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseLong"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions": {
+      "get": {
+        "tags": [
+          "Satisfaction"
+        ],
+        "summary": "만족도 목록",
+        "description": "해당 게시글의 사용 중(use_yn='Y') 만족도만 반환한다.",
+        "operationId": "getList",
+        "parameters": [
+          {
+            "name": "bbsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pstId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListSatisfactionDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Satisfaction"
+        ],
+        "summary": "만족도 등록",
+        "operationId": "create",
+        "parameters": [
+          {
+            "name": "bbsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pstId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SatisfactionDto"
               }
             }
           },
@@ -13255,6 +13460,46 @@
         }
       }
     },
+    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/average": {
+      "get": {
+        "tags": [
+          "Satisfaction"
+        ],
+        "summary": "만족도 평균",
+        "description": "응답이 없으면 null 이다 — 0 과 구분해야 한다.",
+        "operationId": "getAverage",
+        "parameters": [
+          {
+            "name": "bbsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pstId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMapStringDouble"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/banners/reflected": {
       "get": {
         "tags": [
@@ -15621,6 +15866,55 @@
         }
       }
     },
+    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}/moderate": {
+      "delete": {
+        "tags": [
+          "Satisfaction"
+        ],
+        "summary": "만족도 강제 삭제(관리자)",
+        "description": "비밀번호 없이 지운다. 욕설·스팸 정리를 위한 대리 삭제 경로다.",
+        "operationId": "moderate",
+        "parameters": [
+          {
+            "name": "bbsId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pstId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "dgstfnSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/board-masters/{bbsId}/physical": {
       "delete": {
         "tags": [
@@ -16647,6 +16941,54 @@
           "bbsId",
           "pstCn",
           "pstTtl"
+        ]
+      },
+      "SatisfactionDto": {
+        "type": "object",
+        "properties": {
+          "dgstfnSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "bbsId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "pstId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "dgstfnCn": {
+            "type": "string"
+          },
+          "dgstfnScr": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "userId": {
+            "type": "string"
+          },
+          "userNm": {
+            "type": "string"
+          },
+          "pswd": {
+            "type": "string",
+            "writeOnly": true
+          },
+          "useYn": {
+            "type": "string",
+            "maxLength": 1,
+            "minLength": 0
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": [
+          "useYn"
         ]
       },
       "MyPageContentDto": {
@@ -21566,6 +21908,75 @@
           },
           "data": {
             "$ref": "#/components/schemas/BoardDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "ApiResponseListSatisfactionDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SatisfactionDto"
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "ApiResponseMapStringDouble": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "number",
+              "format": "double"
+            }
           },
           "timestamp": {
             "type": "string",
