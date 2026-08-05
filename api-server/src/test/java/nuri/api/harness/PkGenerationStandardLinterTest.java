@@ -58,7 +58,13 @@ class PkGenerationStandardLinterTest {
             // 데이터 영속으로 전략 교체는 D1(위험-DB설계결정). 신규 엔티티는 이 목록에 추가하지 말고 @GeneratedValue 사용.
             "AddressBook", "AddressBookUser", "AdministCode", "Authority", "Banner", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CnsltManage", "CommonCodeCategory", "CommonCodeGroup",
-            "Community", "DeptJob", "DeptJobBox", "DeptManage", "Diary", "DtaUseStats", "EventInfo", "Faq",
+            "Community", "DeptJob", "DeptJobBox", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
+            // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).
+            //   FAQ 는 게시판(tb_bbs_item, bbs_id='BBSMSTR_AAAAAAAAAAAA')으로 통합돼 운영 중이고
+            //   전용 도메인은 死자산이었다. 라이브 실측: tb_faq_info 0행 / 게시판 FAQ 281행,
+            //   FE 의 /api/v1/faqs 호출 0건. V2_40 으로 테이블·RBAC 프로그램과 함께 제거했다.
+            //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다.
+            //   게이트가 red 로 알려서 목록을 줄이게 만들었고, 그것이 이 게이트의 설계 의도다.
             "FileMaster", "GroupManage", "Hpcm", "IndividualPage", "InformalSanction", "InstitutionCode",
             "InternetSvcGuidance", "LoginLog", "LoginPolicy", "MainImage", "MemoReport", "MemoTodo", "Menu",
             "MyPageContent", "Note", "NoteRecptn", "NoteTrnsmit", "Notification", "OnlineManual",

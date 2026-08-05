@@ -188,11 +188,21 @@ class FileAccessPolicyTest {
             }
         }
 
+        /**
+         * [2026-08-05] 14 → 13. <b>커버리지 축소가 아니라 대상 소멸이다.</b>
+         *
+         * <p>{@code tb_faq_info} 를 {@code V2_40} 으로 제거하면서 {@code AttachmentSource.FAQ} 도 함께
+         * 뺐다. FAQ 는 게시판({@code tb_bbs_item}, {@code bbs_id='BBSMSTR_AAAAAAAAAAAA'})으로 통합돼
+         * 운영 중이고 전용 도메인은 死자산이었다 — 라이브 실측 {@code tb_faq_info} <b>0행(첨부 0)</b>,
+         * 게시판 FAQ 281행, FE 의 {@code /api/v1/faqs} 호출 0건.
+         *
+         * <p>첨부가 0건이었으므로 도달성 판정 결과가 바뀌는 첨부는 없다.
+         */
         @Test
-        @DisplayName("등록된 참조원 테이블은 중복 없이 14종이다 — 물리 스키마 실측(2026-08-04)과 일치")
+        @DisplayName("등록된 참조원 테이블은 중복 없이 13종이다 — 물리 스키마 실측(2026-08-05)과 일치")
         void registryMatchesMeasuredSchema() {
             List<String> tables = AttachmentSource.registeredTables();
-            assertThat(tables).hasSize(14).doesNotHaveDuplicates();
+            assertThat(tables).hasSize(13).doesNotHaveDuplicates();
         }
 
         @Test
