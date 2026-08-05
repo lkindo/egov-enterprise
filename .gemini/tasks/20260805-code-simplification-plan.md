@@ -283,11 +283,38 @@ pending §3-E 의 **미결 항목**(원천 스펙 미확정)이라 그 필드는
 
 **4-4. 잔여 표준 패턴 적용** — 자체 `<table>` 9개소 → `StandardDataTable`, 수동 `handleChange` 1개소 → `useAppForm`.
 
-**선결 조건 — 정직하게 명시한다**: 이 Phase 는 **회귀 위험이 가장 크고, 현재 그것을 잡을 게이트가 없다.**
-- `npx tsc --noEmit` 은 타입만 본다. 렌더 회귀를 잡지 못한다.
-- E2E 22티어는 **CI 과금 차단으로 돌지 않는다**([pending §4-A](../../docs/04-operations/pending-decisions.md)).
-- → **CI 빌링 복구 없이 Phase 4 전면 착수는 권장하지 않는다.** 복구 전에는 4-4(저위험)와
-  4-2 의 파일 1개(순수 분할, 로직 무변경)만 파일럿으로 수행하고 나머지는 보류한다.
+**선결 조건 — 2026-08-05 해소됨**: 종전에는 "E2E 22티어가 CI 과금 차단으로 돌지 않아 회귀를 잡을 게이트가 없다"
+는 이유로 전면 착수를 보류했다. **그 전제가 틀렸다** — PR #287 에서 CI 전체가 실제로 돌았고
+**8개 잡 전부 success**(backend-build · frontend-build · secret-scan · mutation-test · e2e-tests 3샤드 · e2e-merge-reports).
+E2E 는 이번 세션의 FE 변경(`HubSkeleton` 서버 컴포넌트 전환 등)을 실제로 통과시켰다.
+→ **안전망이 작동함이 증명됐으므로 Phase 4 착수 조건은 충족이다.**
+(`npx tsc --noEmit` 은 여전히 타입만 본다 — 렌더 회귀는 E2E 가 잡는다.)
+
+**4-4 는 실측 결과 사실상 비어 있다 (2026-08-05 정정)**
+
+계획은 4-4 를 "저위험 착수 지점" 으로 잡았으나 실제 대상이 거의 없다:
+
+| 계획 서술 | 실측 |
+|---|---|
+| 자체 `<table>` 9개소 → `StandardDataTable` | **실제 대상 1~2건뿐.** 9건 중 `standard-data-table.tsx`·`components/ui/table.tsx` 는 **그 표준 컴포넌트 자신**이고, 2건은 테스트, `MonitoringHubSkeleton`·`monitoring/hub/page`·`survey/hub/page` 는 스켈레톤/정적, `SecurityMatrixVisualizer` 는 데이터 테이블이 아니라 매트릭스 시각화라 `StandardDataTable` 이 맞지 않는다 |
+| 수동 `handleChange` 1개소 → `useAppForm` | **0건.** 유일한 매치가 `components/ui/__tests__/input.test.tsx` 즉 **테스트 파일**이다 |
+
+→ **4-4 를 착수 지점으로 삼지 말 것.** Phase 4 의 실질은 4-1·4-2·4-3 이다.
+
+**파일럿 대상 확정 — `MonitoringHubClient.tsx` (2026-08-05 구조 실측)**
+
+| 후보 | LOC | useState | useEffect | useQuery | 최상위 하위 컴포넌트 |
+|---|---:|---:|---:|---:|---|
+| **`MonitoringHubClient`** | **1,387** | **4** | **0** | 9 | **6개** (`SampleDataBadge` 160 · `NavButton` 1008 · `StatusIndicator` 1035 · `HarnessDashboardOverview` 1070 · `SkillDetailView` 1155 · `TestDetailView` 1284) |
+| `UserOrgHubClient` | 1,384 | 22 | 3 | 4 | 4개 (`SortableDeptNode` 114 · `NavButton` 1285 · `OrgPolicyPanel` 1322 · `InfoBlock` 1370) |
+
+**`MonitoringHubClient` 를 먼저 하는 이유**: `useEffect=0`·`useState=4` 라 상태 결합이 얕고,
+하위 컴포넌트 6개가 이미 같은 파일 안에 **최상위로 선언**돼 있어 **로직 변경 없는 순수 이동**으로
+약 380줄(1008~1387)을 뽑아낼 수 있다. 파일럿이 요구하는 "순수 분할" 조건에 정확히 맞는다.
+`UserOrgHubClient` 는 `useState=22` 로 본체가 엉켜 있어 분할 시 상태 경계 판정이 선행돼야 한다(2순위).
+
+> ⚠ 추출 시 주의: `HarnessDashboardOverview` 가 `SampleDataBadge`(160행)를 참조하므로
+> 단순히 꼬리 380줄만 잘라내면 깨진다. 공유 하위 컴포넌트를 함께 옮기거나 export 해야 한다.
 
 **게이트**: `npx tsc --noEmit` + `next build`(RSC 경계) + `pnpm -C frontend test:e2e` 해당 티어 + Storybook 렌더
 **예상 감축**: **4,000~8,000 LOC**. **위험**: 높음.
