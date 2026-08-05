@@ -189,20 +189,26 @@ class FileAccessPolicyTest {
         }
 
         /**
-         * [2026-08-05] 14 → 13. <b>커버리지 축소가 아니라 대상 소멸이다.</b>
+         * [2026-08-05] 14 → 12. <b>커버리지 축소가 아니라 대상 소멸이다.</b> 두 번에 걸쳐 줄었다.
          *
-         * <p>{@code tb_faq_info} 를 {@code V2_40} 으로 제거하면서 {@code AttachmentSource.FAQ} 도 함께
-         * 뺐다. FAQ 는 게시판({@code tb_bbs_item}, {@code bbs_id='BBSMSTR_AAAAAAAAAAAA'})으로 통합돼
-         * 운영 중이고 전용 도메인은 死자산이었다 — 라이브 실측 {@code tb_faq_info} <b>0행(첨부 0)</b>,
-         * 게시판 FAQ 281행, FE 의 {@code /api/v1/faqs} 호출 0건.
+         * <ul>
+         *   <li><b>14 → 13</b> ({@code V2_40}): {@code AttachmentSource.FAQ}({@code tb_faq_info}).
+         *       FAQ 는 게시판({@code tb_bbs_item}, {@code bbs_id='BBSMSTR_AAAAAAAAAAAA'})으로 통합돼
+         *       운영 중이고 전용 도메인은 死자산이었다 — {@code tb_faq_info} <b>0행</b>, 게시판 FAQ 281행,
+         *       FE 의 {@code /api/v1/faqs} 호출 0건.</li>
+         *   <li><b>13 → 12</b> ({@code V2_41}): {@code AttachmentSource.CONSULT}({@code tb_dscsn_list}).
+         *       상담 도메인 전체가 미사용이었다 — 데이터 0행 · 메뉴 등록 0 · FE 호출 0 · 인가 애노테이션 0.</li>
+         * </ul>
          *
-         * <p>첨부가 0건이었으므로 도달성 판정 결과가 바뀌는 첨부는 없다.
+         * <p><b>두 테이블 모두 첨부 참조가 0건이었으므로 도달성 판정이 바뀌는 첨부는 없다.</b>
+         * 참조원이 줄어든 것이지 판정이 느슨해진 것이 아니다 —
+         * 등록되지 않은 참조원은 근거를 만들지 못하는(fail-closed) 구조이기 때문이다.
          */
         @Test
-        @DisplayName("등록된 참조원 테이블은 중복 없이 13종이다 — 물리 스키마 실측(2026-08-05)과 일치")
+        @DisplayName("등록된 참조원 테이블은 중복 없이 12종이다 — 물리 스키마 실측(2026-08-05)과 일치")
         void registryMatchesMeasuredSchema() {
             List<String> tables = AttachmentSource.registeredTables();
-            assertThat(tables).hasSize(13).doesNotHaveDuplicates();
+            assertThat(tables).hasSize(12).doesNotHaveDuplicates();
         }
 
         @Test

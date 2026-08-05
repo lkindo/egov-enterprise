@@ -13,10 +13,18 @@ import java.util.List;
  *
  * <p>[실측 근거 · 2026-08-04] {@code information_schema} 전수 조회로 {@code atch_file_id} 컬럼을 가진
  * 테이블은 {@code tb_file_master}/{@code tb_file_detail} 을 제외하면 정확히 13종이며, 코드의
- * {@code atchFileId} 보유 엔티티 13종과 1:1 로 대응한다. <b>여기에 {@link #POPUP} 하나가 더 붙어 14종이다</b> —
+ * {@code atchFileId} 보유 엔티티 13종과 1:1 로 대응한다. <b>여기에 {@link #POPUP} 하나가 더 붙어 14종이었다</b> —
  * 팝업만 전용 컬럼이 아니라 {@code file_url} 문자열로 첨부를 참조하기 때문에 컬럼 기준 census 에
  * 잡히지 않았다. 이 대응은 {@code AttachmentSourceRegistryLinterTest} 가 기계로 고정한다 —
  * 신규 도메인이 첨부를 갖는데 여기 등록되지 않으면 pre-push 가 red 다.
+ *
+ * <p><b>[2026-08-05 현행 12종]</b> 死도메인 정리로 두 참조원이 사라졌다 — 참조원이 줄어든 것이지
+ * 판정이 느슨해진 것이 아니다.
+ * <ul>
+ *   <li>{@code FAQ}({@code tb_faq_info}) — FAQ 가 게시판으로 통합돼 전용 도메인이 死자산이었다(V2_40).</li>
+ *   <li>{@code CONSULT}({@code tb_dscsn_list}) — 상담 도메인 전체가 미사용이었다(데이터 0행 · 메뉴 0 · FE 호출 0, V2_41).</li>
+ * </ul>
+ * 두 테이블 모두 첨부 참조가 0건이었으므로 도달성 판정이 바뀌는 첨부는 없다.
  *
  * <p><b>⚠ 누락의 증상은 '뚫림' 이 아니라 '잠김' 이다.</b> 등록되지 않은 참조원은 어떤 근거도 만들지
  * 못하므로(fail-closed) 정상 사용자가 403 을 맞는다. 실제로 팝업 누락은 대시보드 팝업 이미지가
@@ -64,12 +72,6 @@ public enum AttachmentSource {
 
     /** 부서 업무함. 부서 공용 자원(소유 모델 없음 — {@code SecurityUtil.assertAdmin} 계열과 동일 판정). */
     DEPT_TASK("tb_dept_task_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null),
-
-    /**
-     * 상담/토론. {@code rls_yn='Y'}(공개)일 때만 공유된다 —
-     * 비공개 상담글은 {@code wrt_pswd} 로 보호되는 성격이라 첨부도 같은 등급으로 다룬다.
-     */
-    CONSULT("tb_dscsn_list", Sensitivity.SHARED, "(rls_yn = 'Y')", "frst_rgtr_id = ?", null),
 
     /** 업무일지. 개인 귀속. */
     DIARY("tb_diary_info", Sensitivity.PERSONAL, null, "frst_rgtr_id = ?", null),

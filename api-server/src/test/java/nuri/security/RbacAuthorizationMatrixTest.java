@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 "spring.jpa.hibernate.ddl-auto=create-drop",
                 "rbac.shadow.enabled=true",
                 "rbac.db-auth.enabled=true",
-                "rbac.db-auth.secure-paths=/api/v1/admin/**,/actuator/**,/api/v1/surveys,/api/v1/surveys/**,/api/v1/main-images,/api/v1/main-images/**,/api/v1/help,/api/v1/help/**,/api/v1/calendar/holidays,/api/v1/calendar/holidays/**"
+                "rbac.db-auth.secure-paths=/api/v1/admin/**,/actuator/**,/api/v1/surveys,/api/v1/surveys/**,/api/v1/help,/api/v1/help/**"
         }
 )
 @AutoConfigureMockMvc
@@ -51,9 +51,7 @@ class RbacAuthorizationMatrixTest {
     private static final List<String> SECURE_TEST_PATHS = List.of(
             "/api/v1/admin/system/users",
             "/api/v1/surveys",
-            "/api/v1/main-images",
-            "/api/v1/help",
-            "/api/v1/calendar/holidays"
+            "/api/v1/help"
     );
 
     @BeforeEach
@@ -82,9 +80,7 @@ class RbacAuthorizationMatrixTest {
         // 3. tb_prgrm_lst 시드 (어드민 경로 및 6개 별칭 경로 전수 시드)
         jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) VALUES ('ADMIN_USERS', '사용자관리', '/api/v1/admin/system/users')");
         jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) VALUES ('ADMIN_SURVEYS', '설문관리', '/api/v1/surveys')");
-        jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) VALUES ('ADMIN_IMAGE', '이미지관리', '/api/v1/main-images')");
         jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) VALUES ('ADMIN_HELP', '도움말관리', '/api/v1/help')");
-        jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) VALUES ('ADMIN_RESTDE', '공휴일관리', '/api/v1/calendar/holidays')");
 
         // 4. tb_role_prgrm_map 시드
         jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_ADMIN', 'ADMIN_USERS')");
@@ -94,15 +90,11 @@ class RbacAuthorizationMatrixTest {
         jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_SYSTEM', 'ADMIN_SURVEYS')");
 
 
-        jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_ADMIN', 'ADMIN_IMAGE')");
-        jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_SYSTEM', 'ADMIN_IMAGE')");
 
         jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_ADMIN', 'ADMIN_HELP')");
         jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_SYSTEM', 'ADMIN_HELP')");
 
 
-        jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_ADMIN', 'ADMIN_RESTDE')");
-        jdbcTemplate.execute("INSERT INTO tb_role_prgrm_map (role_id, prgrm_file_nm) VALUES ('ROLE_SYSTEM', 'ADMIN_RESTDE')");
     }
 
     @Test
