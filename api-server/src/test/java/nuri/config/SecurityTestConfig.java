@@ -12,7 +12,7 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 
 @Configuration
 @EnableWebSecurity
@@ -25,17 +25,16 @@ public class SecurityTestConfig {
         public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtTokenProvider jwtTokenProvider)
                         throws Exception {
                 http
-                                .securityMatcher(AntPathRequestMatcher.antMatcher("/api/v1/**"))
+                                .securityMatcher(PathPatternRequestMatcher.withDefaults().matcher("/api/v1/**"))
                                 .csrf(csrf -> csrf.disable())
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
-                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/auth/**"))
+                                                .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/api/v1/auth/**"))
                                                 .permitAll()
-                                                .requestMatchers(AntPathRequestMatcher
-                                                                .antMatcher("/api/v1/users/signup"))
+                                                .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/api/v1/users/signup"))
                                                 .permitAll()
-                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**"))
+                                                .requestMatchers(PathPatternRequestMatcher.withDefaults().matcher("/api/v1/admin/**"))
                                                 .hasRole("ADMIN")
                                                 .anyRequest().authenticated())
                                 .exceptionHandling(ex -> ex

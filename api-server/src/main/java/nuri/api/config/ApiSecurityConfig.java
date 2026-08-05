@@ -16,7 +16,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
@@ -127,14 +128,26 @@ public class ApiSecurityConfig {
                 return source;
         }
 
+        /**
+         * 경로 패턴 매처. Spring Security 6.5 에서 {@code AntPathRequestMatcher} 가 제거 예정이 되어
+         * {@code PathPatternRequestMatcher} 로 전환했다(2026-08-05, Boot 3.5.16 동반).
+         *
+         * <p><b>두 매처는 의미가 완전히 같지 않다</b> — 후행 슬래시와 경로 파라미터 해석이 갈린다.
+         * 전환 전에 이 저장소가 쓰는 패턴 44개(정적 23 · whitelist 9 · secure-paths 12)를 전수 분류해
+         * <b>전부 단순 접두({@code /x/**})이거나 정확 경로</b>임을 확인했고(중간 {@code **} · 정규식 없음),
+         * 갈릴 수 있는 축은 {@code RequestMatcherBoundaryTest} 가 현행 기준으로 동결한다.
+         */
+        private static RequestMatcher pathMatcher(String pattern) {
+                return PathPatternRequestMatcher.withDefaults().matcher(pattern);
+        }
+
         @Bean
         @Order(1)
-        @SuppressWarnings({"deprecation", "removal"})
         public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, EgovAuthenticationProvider egovAuthenticationProvider) throws Exception {
                 http
                                 .securityMatchers(matchers -> matchers.requestMatchers(
-                                                AntPathRequestMatcher.antMatcher("/api/v1/**"),
-                                                AntPathRequestMatcher.antMatcher("/actuator/**")))
+                                                pathMatcher("/api/v1/**"),
+                                                pathMatcher("/actuator/**")))
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf.disable())
                                 .httpBasic(httpBasic -> httpBasic.disable())
@@ -142,8 +155,8 @@ public class ApiSecurityConfig {
                                 .logout(logout -> logout.disable())
                                 .authorizeHttpRequests(auth -> {
                                                 auth.requestMatchers(whitelist.stream()
-                                                                .map(AntPathRequestMatcher::antMatcher)
-                                                                .toArray(AntPathRequestMatcher[]::new))
+                                                                .map(ApiSecurityConfig::pathMatcher)
+                                                                .toArray(RequestMatcher[]::new))
                                                                 .permitAll();
 
                                                 // [W1-12 보완] 관리 포트가 분리된 형상에서만 스크레이프 경로를 연다.
@@ -153,15 +166,15 @@ public class ApiSecurityConfig {
                                                 if (managementPortSeparated()) {
                                                         log.info(">>> [W1-12] 관리 포트 분리 감지(server={}, management={}) — /actuator/prometheus 스크레이프 허용(내부망 한정)",
                                                                         serverPort, managementServerPort);
-                                                        auth.requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/prometheus"))
+                                                        auth.requestMatchers(pathMatcher("/actuator/prometheus"))
                                                                         .permitAll();
                                                 }
 
                                                 if (rbacDbAuthEnabled) {
                                                         // Phase 3: DB 인가 적용 (enforce)
                                                         auth.requestMatchers(securePaths.stream()
-                                                                        .map(AntPathRequestMatcher::antMatcher)
-                                                                        .toArray(AntPathRequestMatcher[]::new))
+                                                                        .map(ApiSecurityConfig::pathMatcher)
+                                                                        .toArray(RequestMatcher[]::new))
                                                                 .access(dbUrlAuthorizationManager());
                                                 } else if (rbacShadowEnabled) {
                                                         // Phase 2: 섀도우 모드 (병행 평가 및 로깅, enforce는 하드코딩)
@@ -175,14 +188,14 @@ public class ApiSecurityConfig {
                                                                 true
                                                         );
                                                         auth.requestMatchers(securePaths.stream()
-                                                                        .map(AntPathRequestMatcher::antMatcher)
-                                                                        .toArray(AntPathRequestMatcher[]::new))
+                                                                        .map(ApiSecurityConfig::pathMatcher)
+                                                                        .toArray(RequestMatcher[]::new))
                                                                 .access(shadowLogger);
                                                 } else {
                                                         // 기존 하드코딩 동작
-                                                        auth.requestMatchers(AntPathRequestMatcher.antMatcher("/api/v1/admin/**"))
+                                                        auth.requestMatchers(pathMatcher("/api/v1/admin/**"))
                                                                 .hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM)
-                                                                .requestMatchers(AntPathRequestMatcher.antMatcher("/actuator/**"))
+                                                                .requestMatchers(pathMatcher("/actuator/**"))
                                                                 .hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM);
                                                 }
 
@@ -231,34 +244,34 @@ public class ApiSecurityConfig {
                                 .csrf(csrf -> csrf
                                                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                                                 .ignoringRequestMatchers(
-                                                AntPathRequestMatcher.antMatcher("/uat/uia/actionLogin.do"),
-                                                AntPathRequestMatcher.antMatcher("/ws/**")))
+                                                pathMatcher("/uat/uia/actionLogin.do"),
+                                                pathMatcher("/ws/**")))
                                 .httpBasic(httpBasic -> httpBasic.disable())
                                 .formLogin(formLogin -> formLogin.disable())
                                 .logout(logout -> logout.disable())
                                 .authorizeHttpRequests(auth -> {
                                                 auth.requestMatchers(
-                                                                AntPathRequestMatcher.antMatcher("/css/**"),
-                                                                AntPathRequestMatcher.antMatcher("/js/**"),
-                                                                AntPathRequestMatcher.antMatcher("/images/**"),
-                                                                AntPathRequestMatcher.antMatcher("/validator.do"),
-                                                                AntPathRequestMatcher.antMatcher("/cmm/fms/getImage.do"),
-                                                                AntPathRequestMatcher.antMatcher("/uat/uia/egovLoginUsr.do"),
-                                                                AntPathRequestMatcher.antMatcher("/uat/uia/actionLogin.do"),
-                                                                AntPathRequestMatcher.antMatcher("/uat/uia/actionLogout.do"),
-                                                                AntPathRequestMatcher.antMatcher("/ws/**"),
-                                                                AntPathRequestMatcher.antMatcher("/index.jsp"),
-                                                                AntPathRequestMatcher.antMatcher("/"),
-                                                                AntPathRequestMatcher.antMatcher("/uss/olp/qri/**"),
-                                                                AntPathRequestMatcher.antMatcher("/favicon.ico"),
-                                                                AntPathRequestMatcher.antMatcher("/error"))
+                                                                pathMatcher("/css/**"),
+                                                                pathMatcher("/js/**"),
+                                                                pathMatcher("/images/**"),
+                                                                pathMatcher("/validator.do"),
+                                                                pathMatcher("/cmm/fms/getImage.do"),
+                                                                pathMatcher("/uat/uia/egovLoginUsr.do"),
+                                                                pathMatcher("/uat/uia/actionLogin.do"),
+                                                                pathMatcher("/uat/uia/actionLogout.do"),
+                                                                pathMatcher("/ws/**"),
+                                                                pathMatcher("/index.jsp"),
+                                                                pathMatcher("/"),
+                                                                pathMatcher("/uss/olp/qri/**"),
+                                                                pathMatcher("/favicon.ico"),
+                                                                pathMatcher("/error"))
                                                                 .permitAll();
                                                 // [보안 H4] Swagger/OpenAPI 문서는 운영(prod)에서 인증(ADMIN/SYSTEM) 뒤로 숨긴다
                                                 // (미인증 전체 API 스펙 노출 = 공격 표면 지도 제공 방지). dev/local 등은 편의상 공개 유지.
-                                                AntPathRequestMatcher[] docs = {
-                                                                AntPathRequestMatcher.antMatcher("/v3/api-docs/**"),
-                                                                AntPathRequestMatcher.antMatcher("/swagger-ui/**"),
-                                                                AntPathRequestMatcher.antMatcher("/swagger-ui.html")
+                                                RequestMatcher[] docs = {
+                                                                pathMatcher("/v3/api-docs/**"),
+                                                                pathMatcher("/swagger-ui/**"),
+                                                                pathMatcher("/swagger-ui.html")
                                                 };
                                                 if (environment.acceptsProfiles(org.springframework.core.env.Profiles.of("prod"))) {
                                                         auth.requestMatchers(docs).hasAnyRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN, nuri.business.security.AuthorityConstants.ROLE_SYSTEM);
