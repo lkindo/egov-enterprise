@@ -71,8 +71,6 @@ export default function OnlinePollParticipateClient() {
  };
 
  const handleVote = async () => {
- // if (!poll.pollItems || poll.pollItems.length === 0) return null;
-
  if (!selectedPoll || !selectedItemId) return;
 
  setIsVoting(true);

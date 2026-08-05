@@ -1,0 +1,88 @@
+{
+  "scale": {
+    "beMain": {
+      "files": 631,
+      "loc": 39927,
+      "comment": 4771,
+      "blank": 6413
+    },
+    "beTest": {
+      "files": 362,
+      "loc": 46219,
+      "comment": 4389,
+      "blank": 7580
+    },
+    "frontend": {
+      "files": 520,
+      "loc": 61673,
+      "comment": 3747,
+      "blank": 5701,
+      "clientFiles": 165,
+      "clientLoc": 40202
+    },
+    "totalLoc": 147819
+  },
+  "targets": {
+    "oversizedFe": 10,
+    "oversizedBe": 1,
+    "clientRatio": 65.2,
+    "dupFe": {
+      "windows": 334,
+      "files": 67
+    },
+    "dupBeMain": {
+      "windows": 115,
+      "files": 20
+    },
+    "dupBeTest": {
+      "windows": 360,
+      "files": 63
+    }
+  },
+  "oversizedFiles": [
+    {
+      "file": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+      "loc": 1388
+    },
+    {
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "loc": 1385
+    },
+    {
+      "file": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
+      "loc": 964
+    },
+    {
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "loc": 877
+    },
+    {
+      "file": "frontend/src/app/admin/system/common-code/CommonCodeClient.tsx",
+      "loc": 861
+    },
+    {
+      "file": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
+      "loc": 740
+    },
+    {
+      "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
+      "loc": 655
+    },
+    {
+      "file": "frontend/src/app/admin/community/boards/select-board-list/components/BoardTemplates.tsx",
+      "loc": 650
+    },
+    {
+      "file": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
+      "loc": 637
+    },
+    {
+      "file": "frontend/src/app/components/ui/standard-data-table.tsx",
+      "loc": 609
+    },
+    {
+      "file": "business-core/src/main/java/nuri/business/service/menu/MenuService.java",
+      "loc": 665
+    }
+  ]
+}
