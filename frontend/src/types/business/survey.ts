@@ -36,9 +36,23 @@ interface SurveyAnswer {
   crtDt: string;
 }
 
+/**
+ * 문항별 항목 응답 분포 1행. **(문항 × 항목)** 단위의 평면 행이며 중첩 구조가 아니다.
+ *
+ * <p>종전에는 `{artclCn, count, percentage}` 만 선언돼 있었으나 화면(`/survey/stats`·`/survey/[id]`)은
+ * `qstnCn`·`qstnTypeCd` 까지 렌더한다 — `as any` 로 받고 있어 이 누락이 드러나지 않았다.
+ * 3단계에서 신설할 백엔드 통계 DTO 가 이 형태를 SSOT 로 삼는다.
+ */
 export interface SurveyResultStats {
-  artclCn: string;
+  /** 문항 내용 */
+  qstnCn: string;
+  /** 문항 유형 코드 ('1'=객관식, 그 외 주관식) */
+  qstnTypeCd: string;
+  /** 항목 내용. 주관식이면 비어 있다 */
+  artclCn?: string;
+  /** 해당 항목 응답 수 */
   count: number;
+  /** 문항 내 응답 비율(%) */
   percentage: number;
 }
 

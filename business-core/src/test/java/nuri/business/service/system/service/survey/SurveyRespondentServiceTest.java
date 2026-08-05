@@ -25,6 +25,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 @org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
@@ -41,29 +42,44 @@ class SurveyRespondentServiceTest {
     private SurveyRespondentRepository surveyRespondentRepository;
 
     @Test
-    @DisplayName("설문 응답자 목록 조회 - 키워드 없음 (null)")
+    @DisplayName("설문 응답자 목록 조회 - 키워드 없음(null)이어도 srvyId 범위는 유지된다")
     void getSurveyRespondentList_NullKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         SurveyRespondent entity = SurveyRespondent.builder().srvyRspdntId("R1").rspdntNm("User1").build();
-        given(surveyRespondentRepository.findByRspdntNmContaining(eq(""), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        given(surveyRespondentRepository.searchBySrvyIdAndKeyword(eq("S1"), eq(""), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(entity)));
 
         Page<SurveyRespondentDto> result = surveyRespondentService.getSurveyRespondentList("S1", null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(surveyRespondentRepository).findByRspdntNmContaining(eq(""), eq(pageable));
+        // 키워드가 없다고 해서 설문 범위까지 풀리면 안 된다 — 그것이 종전의 동작이었다.
+        verify(surveyRespondentRepository).searchBySrvyIdAndKeyword(eq("S1"), eq(""), eq(pageable));
+        verify(surveyRespondentRepository, never()).findByRspdntNmContaining(any(), any());
     }
 
+    /**
+     * 🔒 <b>이 두 테스트는 종전에 버그를 고정하고 있었다.</b>
+     *
+     * <p>{@code srvyId="S1"} 을 넘기고서 {@code findByRspdntNmContaining}(설문 무관 전체 검색)이
+     * 호출되는 것을 {@code verify} 했다 — 즉 <b>"srvyId 는 무시된다" 를 정답으로 못 박은</b> 셈이다.
+     * 응답자 레코드는 성별·생년월일·전화번호를 담으므로 설문 간 혼입은 개인정보 노출이다.
+     * 서비스를 {@code searchBySrvyIdAndKeyword} 로 고치면서 이 단언도 함께 뒤집는다.
+     * (신호를 지운 것이 아니라, 틀린 기대값을 정정한 것이다 — 커버리지는 오히려 늘었다.)
+     */
     @Test
-    @DisplayName("설문 응답자 목록 조회 - 키워드 있음")
+    @DisplayName("설문 응답자 목록 조회 - 키워드 있음 (srvyId 로 범위 한정)")
     void getSurveyRespondentList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
         SurveyRespondent entity = SurveyRespondent.builder().srvyRspdntId("R1").rspdntNm("User1").build();
-        given(surveyRespondentRepository.findByRspdntNmContaining(eq("User"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
+        given(surveyRespondentRepository.searchBySrvyIdAndKeyword(eq("S1"), eq("User"), eq(pageable)))
+                .willReturn(new PageImpl<>(List.of(entity)));
 
         Page<SurveyRespondentDto> result = surveyRespondentService.getSurveyRespondentList("S1", "User", pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        verify(surveyRespondentRepository).findByRspdntNmContaining(eq("User"), eq(pageable));
+        verify(surveyRespondentRepository).searchBySrvyIdAndKeyword(eq("S1"), eq("User"), eq(pageable));
+        // 설문 무관 전체 검색으로 되돌아가면 즉시 red 가 된다.
+        verify(surveyRespondentRepository, never()).findByRspdntNmContaining(any(), any());
     }
 
     @Test
