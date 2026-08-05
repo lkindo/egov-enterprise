@@ -79,12 +79,19 @@ class FileService extends ApiService {
     return this.get<Blob>(`/${atchFileId}/${fileSn}`, { ...config, responseType: 'blob' });
   }
 
-  /**
-   * 파일 개별 삭제
+  /*
+   * 첨부 삭제 메서드는 두지 않는다 (2026-08-05 제거).
+   *
+   * 종전 `deleteFile` 은 `DELETE /api/v1/files/{atchFileId}/{fileSn}` 을 쳤는데 백엔드
+   * `FileApiController` 에는 DELETE 매핑이 없어(POST 1 + GET 2 가 전부) 항상 405 였다.
+   * 앱 호출부도 0개소였다 — 즉 동작한 적이 없다.
+   *
+   * 다시 넣기 전에 **백엔드 엔드포인트를 인가와 함께 먼저 설계할 것.** 첨부 삭제는
+   * 읽기보다 위험하다. A-3(b) 의 `FileAccessPolicy` 는 **도달성(읽기)** 만 판정하며
+   * 삭제 권한은 별개 명제다(업로더 본인만? 참조 행의 소유자도? 관리자는?).
+   * 여기에 메서드만 되살리면 405 를 만난 다음 사람이 '무가드 엔드포인트 추가' 를
+   * 자명한 해법으로 택하게 된다 — 그것이 이 자리에 있던 실제 위험이었다.
    */
-  async deleteFile(atchFileId: string, fileSn: number, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${atchFileId}/${fileSn}`, config);
-  }
 }
 
 export const fileService = new FileService();

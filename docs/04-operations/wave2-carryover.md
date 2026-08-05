@@ -274,7 +274,15 @@ JPA auditing 이 **업로더 loginId** 를 채운다(라이브 125행 전부 채
      백엔드 계약 변경이 없어 가장 안전하지만, 이미지마다 JS 왕복이 생기고 `next/image` 최적화를 잃는다.
 
   현재 상태로는 세 화면 모두 **깨진 이미지**가 보인다(라이브 배너 2건 모두 `atch_file_id` 를 갖고 있다).
-  부수: FE `FileService.deleteFile` 은 `DELETE /{atchFileId}/{fileSn}` 를 치는데 컨트롤러에 DELETE 매핑이 없다(405).
+  부수: ~~FE `FileService.deleteFile` 은 `DELETE /{atchFileId}/{fileSn}` 를 치는데 컨트롤러에 DELETE 매핑이 없다(405).~~
+  → **해소 (2026-08-05)**. 실측하니 계약 불일치가 1건이 아니라 **3건**이었다 —
+  `FileService.deleteFile`(405) · `FileAdminService.deleteFile`(405) · `FileAdminService.getFiles`(404).
+  셋 다 **앱 호출부 0개소**였고, `getFiles` 는 목 기반 테스트가 "calls correct endpoints" 라며
+  **존재하지 않는 경로를 올바른 것으로 단언**하고 있었다(false-green).
+  **엔드포인트를 신설하지 않고 죽은 FE 메서드를 제거했다** — 첨부 삭제는 읽기보다 위험해
+  (`FileAccessPolicy` 는 **도달성=읽기**만 판정한다) 별도 인가 설계가 선행돼야 하고,
+  405 를 만난 다음 사람이 '무가드 엔드포인트 추가' 를 자명한 해법으로 택하는 것이 실제 위험이었다.
+  제거 자리에 그 판단 근거를 주석으로 남겼다. 테스트는 실재 계약(업로드 multipart)으로 교체했다.
 
 ---
 
