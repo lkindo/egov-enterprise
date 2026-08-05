@@ -246,23 +246,6 @@ export const HpcmDtoSchema = z.object({
 export type HpcmDto = z.infer<typeof HpcmDtoSchema>;
 
 // ==========================================================================
-// FaqDto Schema
-// ==========================================================================
-export const FaqDtoSchema = z.object({
-  faqId: z.string().min(0).max(20).optional(),
-  qstnTtl: z.string().optional(),
-  qstnCn: z.string().optional(),
-  ansCn: z.string().optional(),
-  inqCnt: z.number().optional(),
-  atchFileId: z.string().min(0).max(30).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.string().optional(),
-  lastMdfrId: z.string().optional(),
-  mdfcnDt: z.string().optional(),
-});
-export type FaqDto = z.infer<typeof FaqDtoSchema>;
-
-// ==========================================================================
 // DeptJobDto Schema
 // ==========================================================================
 export const DeptJobDtoSchema = z.object({
@@ -1912,46 +1895,6 @@ export const FileDtoSchema = z.object({
   crtDt: z.string().optional(),
 });
 export type FileDto = z.infer<typeof FileDtoSchema>;
-
-// ==========================================================================
-// ApiResponsePageResponseFaqDto Schema
-// ==========================================================================
-export const ApiResponsePageResponseFaqDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PageResponseFaqDtoSchema).optional(),
-  timestamp: z.string().optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-});
-export type ApiResponsePageResponseFaqDto = z.infer<typeof ApiResponsePageResponseFaqDtoSchema>;
-
-// ==========================================================================
-// PageResponseFaqDto Schema
-// ==========================================================================
-export const PageResponseFaqDtoSchema = z.object({
-  list: z.array(z.lazy(() => FaqDtoSchema)).optional(),
-  total: z.number().optional(),
-  page: z.number().optional(),
-  size: z.number().optional(),
-  totalPage: z.number().optional(),
-});
-export type PageResponseFaqDto = z.infer<typeof PageResponseFaqDtoSchema>;
-
-// ==========================================================================
-// ApiResponseFaqDto Schema
-// ==========================================================================
-export const ApiResponseFaqDtoSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => FaqDtoSchema).optional(),
-  timestamp: z.string().optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-});
-export type ApiResponseFaqDto = z.infer<typeof ApiResponseFaqDtoSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseDeptJobDto Schema

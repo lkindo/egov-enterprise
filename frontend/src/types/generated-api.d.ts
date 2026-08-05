@@ -310,25 +310,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/faqs/{faqId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** FAQ 상세 조회 */
-        get: operations["getFaq"];
-        /** FAQ 수정 */
-        put: operations["updateFaq"];
-        post?: never;
-        /** FAQ 삭제 */
-        delete: operations["deleteFaq"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/dept-jobs/{deptTaskId}": {
         parameters: {
             query?: never;
@@ -1676,24 +1657,6 @@ export interface paths {
          * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
          */
         post: operations["uploadFiles_3"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/faqs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** FAQ 목록 조회 */
-        get: operations["getFaqList"];
-        put?: never;
-        /** FAQ 등록 */
-        post: operations["createFaq"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4647,38 +4610,6 @@ export interface components {
              */
             crtDt?: string;
         };
-        /** @description FAQ 정보 */
-        FaqDto: {
-            /** @description FAQ ID */
-            faqId?: string;
-            /** @description 질문제목 */
-            qstnTtl?: string;
-            /** @description 질문내용 */
-            qstnCn?: string;
-            /** @description 답변내용 */
-            ansCn?: string;
-            /**
-             * Format: int32
-             * @description 조회수
-             */
-            inqCnt?: number;
-            /** @description 첨부파일 ID */
-            atchFileId?: string;
-            /** @description 등록자 ID */
-            frstRgtrId?: string;
-            /**
-             * Format: date-time
-             * @description 등록일시
-             */
-            crtDt?: string;
-            /** @description 수정자 ID */
-            lastMdfrId?: string;
-            /**
-             * Format: date-time
-             * @description 수정일시
-             */
-            mdfcnDt?: string;
-        };
         DeptJobDto: {
             deptTaskId?: string;
             deptTaskBoxId?: string;
@@ -6597,39 +6528,6 @@ export interface components {
             fileCn?: string;
             /** Format: date-time */
             crtDt?: string;
-        };
-        ApiResponsePageResponseFaqDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["PageResponseFaqDto"];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
-        PageResponseFaqDto: {
-            list?: components["schemas"]["FaqDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
-        };
-        ApiResponseFaqDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["FaqDto"];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseDeptJobDto: {
             success?: boolean;
@@ -9032,76 +8930,6 @@ export interface operations {
             header?: never;
             path: {
                 hpcmId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    getFaq: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                faqId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseFaqDto"];
-                };
-            };
-        };
-    };
-    updateFaq: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                faqId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FaqDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    deleteFaq: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                faqId: string;
             };
             cookie?: never;
         };
@@ -12496,62 +12324,6 @@ export interface operations {
                 "multipart/form-data": {
                     files: string[];
                 };
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
-                };
-            };
-        };
-    };
-    getFaqList: {
-        parameters: {
-            query?: {
-                searchCondition?: string;
-                searchKeyword?: string;
-                searchUseYn?: string;
-                pageIndex?: number;
-                pageUnit?: number;
-                pageSize?: number;
-                firstIndex?: number;
-                lastIndex?: number;
-                recordCountPerPage?: number;
-                searchKeywordFrom?: string;
-                searchKeywordTo?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponsePageResponseFaqDto"];
-                };
-            };
-        };
-    };
-    createFaq: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["FaqDto"];
             };
         };
         responses: {

@@ -55,8 +55,6 @@ public enum AttachmentSource {
             "(scrt_yn IS NULL OR scrt_yn <> 'Y')",
             "frst_rgtr_id = ?", "user_id = ?"),
 
-    /** FAQ. 공개 콘텐츠. */
-    FAQ("tb_faq_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null),
 
     /** 배너 이미지. 공개 콘텐츠(비로그인 대시보드에도 노출되는 성격). */
     BANNER("tb_bnr_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null),
