@@ -46,6 +46,27 @@
 - **이전 기록**: 미들웨어가 `/admin/{system,user,security,stats,workflow}` 5개 접두사만 ADMIN 강제(allow-by-default), 그 외 /admin/* 는 인증만.
 - **실제**: `401c43f4c`(2026-07-20)로 **deny-by-default 반전** 완료 — `/admin/**` 는 기본 ADMIN/SYSTEM 전용이며, `USER_ACCESSIBLE_ADMIN_PATHS`(work-hub·collaboration·help·community·survey polls participate) 화이트리스트 + `ADMIN_ONLY_SUBPATHS` 역예외로 통제(`frontend/src/middleware.ts`). **남은 것은 결정이 아니라 allow-list 큐레이션**(관리 콘솔 신규 추가 시 유지보수).
 
+### 2-F. Spring Boot 마이너 업그레이드 — critical 취약점 해소 경로 (2026-08-05 신설)
+
+- **결정 대상**: `spring-security-web` **critical** 취약점을 해소하려면 Spring Boot **3.4.13 → 3.5.x** 마이너 업그레이드가 필요하다. 착수할 것인가, 리스크를 수용할 것인가.
+- **왜 Dependabot 이 해결하지 못하는가**: 열린 Dependabot PR **21건 중 critical/high 취약점을 해소하는 것은 0건**이다. 해당 라이브러리들은 Spring Boot BOM 이 버전을 관리하므로 **Boot 자체를 올려야** 바뀐다. Dependabot 은 그 PR 을 만들지 않았다.
+- **실측 (2026-08-05, `:api-server:dependencies` runtimeClasspath 해석 결과)**
+
+  | 패키지 | 해석된 버전 | 수정 버전 | 판정 |
+  |---|---|---|---|
+  | `spring-security-web` | **6.4.13** | **없음** (6.4.x 라인에 패치 부재) | 🔴 **critical 노출** — 취약 범위 `>=6.4.0, <=6.4.13` 의 상한에 정확히 걸려 있다 |
+  | `spring-webmvc` | 6.2.15 | 6.2.19 | 🟠 high 노출 |
+  | `spring-expression` | 6.2.15 | 6.2.19 | 🟠 high 노출 |
+  | `jackson-databind` | 2.18.9 | 2.21.4 | 🟠 high 노출 |
+  | `postgresql` | 42.7.13 | 42.7.12 | ✅ **이미 안전** (해석 버전이 수정 버전보다 높다) |
+
+- **선택지**
+  1. **Spring Boot 3.5.x 업그레이드** — critical 을 실제로 닫는 유일한 경로(Spring Security 6.5.x 동반). 다중 모듈 전체 재검증 필요(L2).
+  2. **3.4.x 최신 패치 확인 후 부분 완화** — `spring-webmvc`/`spring-expression` 6.2.19 를 포함하는 3.4.x 패치가 있다면 high 3건은 줄일 수 있다. ⚠ **critical 은 이 경로로 닫히지 않는다**(6.4.x 에 패치가 없다). 착수 전 3.4.x 최신 릴리스의 Framework 버전을 실측할 것.
+  3. **리스크 수용** — 사내망 전용 배포 등 노출면 판단에 근거해 명시적으로 유예. 그 경우 **유예 사유와 재검토 시점을 여기 기록**할 것.
+
+- **권장**: (1). 다만 되돌리기 어려운 프레임워크 변경이라 **포괄 승인 범위 밖**이며 사용자 명시 승인이 필요하다. 착수 시 `localGate`(실 PG 스키마 검증 포함) + CI 전체(E2E 22티어 · mutation) 를 통과 기준으로 삼는다 — 2026-08-05 실측으로 **CI 는 정상 가동**함이 확인됐다(§4-A 참조).
+
 ### 2-D. CSP `unsafe-inline` 제거
 - prod CSP 에서 `unsafe-eval` 은 제거됨. `unsafe-inline` 은 **Next RSC nonce/PPR 인프라 도입**이 선행돼야 제거 가능(아키텍처 결정, 이전에 Phase4 포기).
 
