@@ -37,7 +37,41 @@
 - **2026-08-01 조치(완료)**:
   - 로컬 `dev`·`template/reusable-base` 가 **재작성 이전 계보를 들고 있었고 HEAD 트리에 실물 키 파일을 포함**하고 있었다(force-push 하면 즉시 재공개되는 상태). origin 으로 정렬 + `reflog expire` + `gc --prune=now` 로 로컬 객체DB 에서 제거 완료.
   - 워킹트리 루트의 실물 키 `ssh-key-2026-01-18.key`(1675 bytes) 삭제. `.gitignore` 의 `*.key` 때문에 `git status` 에 보이지 않아 정리 목록에서 영구 누락되던 파일이다.
-  - 저장소 **Secret scanning + Push protection 활성화**, ruleset `12501346` `enforcement: active`(force-push·브랜치 삭제 차단) — 재공개 경로를 서버 측에서 차단.
+  - 저장소 **Secret scanning + Push protection 활성화**, ruleset `12501346` `enforcement: active`(force-push·브랜치 삭제 차단).
+    ~~재공개 경로를 서버 측에서 차단.~~ → **⚠ 정정 (2026-08-05 실측): 이 서술은 실제 적용 범위보다 넓다.**
+
+- **⚠ 2026-08-05 실측 정정 — 위 '조치(완료)' 2건이 실제보다 넓게 서술돼 있다**
+
+  **(가) 룰셋의 보호 범위는 `main` 하나뿐이다.**
+  `gh api repos/.../rulesets/12501346` 실측 결과 `conditions.ref_name.include = ["~DEFAULT_BRANCH"]` 이다.
+  즉 `deletion`·`non_fast_forward`(force-push 차단) 규칙은 **`main` 에만** 걸린다.
+  키 이력이 있던 `dev`·`template/reusable-base` 는 **이 보호를 받지 않으므로**,
+  재작성 이전 로컬 사본에서 그 브랜치를 force-push 하면 서버가 막지 않는다.
+  "재공개 경로를 서버 측에서 차단" 은 **`main` 에 한해서만 참**이다.
+
+  **(나) 로컬 객체DB 정리도 완료되지 않았다.**
+  `reflog expire` + `gc --prune=now` 로 제거했다고 적었으나, **키 blob 은 로컬에 살아 있다.**
+  이 워킹트리의 로컬 브랜치 **`backup/main-20260728-pre-reset`** 이 그 객체들을 붙잡고 있기 때문이다 —
+  실측: 키 blob `9a6c923df…` 가 해당 브랜치에서 **도달 가능**하고, 키 커밋 `11366ca48…` 이 그 **조상에 있다**.
+  (HEAD 트리에 실물 키 파일은 없다. 문제는 트리가 아니라 **이력**이다.)
+
+- **🔒 `backup/main-20260728-pre-reset` 취급 규칙 (2026-08-05 신설)**
+
+  이 브랜치는 **삭제해서도, 푸시해서도 안 된다.** 양방향으로 막혀 있다.
+
+  | 조치 | 왜 금지인가 |
+  |---|---|
+  | **원격 푸시** | 위 (나) — ssh 키 이력이 그대로 딸려 올라가 §2-B 가 제거했다는 키가 **재공개**된다. 룰셋도 이 브랜치를 보호하지 않는다(위 (가)). |
+  | **삭제** | `main` 에 없는 커밋 **1,247건**의 **유일한 사본**이다. 게다가 아래 §7 이 "D-9/D-10/D-11/D-14 해소" 근거로 인용한 SHA 4개(`9504e1380`·`1e1ef8b7b`·`a5dad2b48`·`a73ab2eab`)가 **`main` 에서 도달 불가**이며 이 브랜치로만 해석된다. 지우면 그 인용이 영구 미해석이 된다. |
+
+  > **왜 이런 상태가 됐나**: 2026-07-28 에 `main` 이 재작성(reset)됐고 이 브랜치가 그 직전 상태를 보존했다.
+  > **작업 내용 자체는 `main` 에 반영돼 있다** — 예컨대 D-14 가 삭제했다는 `SyncAdminService`/`syncActions` 는
+  > 현재 `main` 에 **0개 파일**로 실재하지 않는다. 즉 결과는 살아 있고 **SHA 만 갈렸다**.
+  >
+  > **근본 해소책**: §7 의 SHA 인용을 `main` 에서 도달 가능한 커밋으로 바꾸거나 SHA 없이 서술로 대체하면,
+  > 이 브랜치를 붙잡을 이유가 사라진다. 그때 삭제하면 **로컬에 남은 마지막 키 앵커도 함께 제거**되어
+  > 위 (나)가 실제로 해소된다. 이것이 §2-B 잔여를 줄이는 가장 값싼 경로다.
+
 - **잔여(사용자 조치 — 대체 불가)**:
   1. **키 실물 로테이션**. 저장소가 PUBLIC 인 채로 최소 수일~수주 노출됐으므로 "이미 수집됐다"를 전제로 배포 대상 서버의 `~/.ssh/authorized_keys` 에서 해당 공개키를 제거하고 재발급할 것. 어느 서버에 배포됐는지는 사용자만 안다.
   2. **GitHub dangling 객체 purge**. 커밋 `11366ca480f927bfbe250f0261cb3aa3ce78784b` / blob `9a6c923df57290d3e2a42a3589e5be9376ad66ea` 가 어떤 ref 에서도 도달 불가인데 **PUBLIC API 로 여전히 200 을 반환한다**(2026-08-01 실측: blob size 1675). GitHub Support 티켓만이 유일 경로이며, 저장소 소유자도 API 로 수행할 수 없다. 따라서 키 교체가 시간적으로 선행돼야 한다.
@@ -45,6 +79,27 @@
 ### 2-C. 미들웨어 admin 민감경로 커버리지 — **✅ 해소(2026-07-20, `401c43f4c`)**
 - **이전 기록**: 미들웨어가 `/admin/{system,user,security,stats,workflow}` 5개 접두사만 ADMIN 강제(allow-by-default), 그 외 /admin/* 는 인증만.
 - **실제**: `401c43f4c`(2026-07-20)로 **deny-by-default 반전** 완료 — `/admin/**` 는 기본 ADMIN/SYSTEM 전용이며, `USER_ACCESSIBLE_ADMIN_PATHS`(work-hub·collaboration·help·community·survey polls participate) 화이트리스트 + `ADMIN_ONLY_SUBPATHS` 역예외로 통제(`frontend/src/middleware.ts`). **남은 것은 결정이 아니라 allow-list 큐레이션**(관리 콘솔 신규 추가 시 유지보수).
+
+### 2-F. Spring Boot 마이너 업그레이드 — critical 취약점 해소 경로 (2026-08-05 신설)
+
+- **결정 대상**: `spring-security-web` **critical** 취약점을 해소하려면 Spring Boot **3.4.13 → 3.5.x** 마이너 업그레이드가 필요하다. 착수할 것인가, 리스크를 수용할 것인가.
+- **왜 Dependabot 이 해결하지 못하는가**: 열린 Dependabot PR **21건 중 critical/high 취약점을 해소하는 것은 0건**이다. 해당 라이브러리들은 Spring Boot BOM 이 버전을 관리하므로 **Boot 자체를 올려야** 바뀐다. Dependabot 은 그 PR 을 만들지 않았다.
+- **실측 (2026-08-05, `:api-server:dependencies` runtimeClasspath 해석 결과)**
+
+  | 패키지 | 해석된 버전 | 수정 버전 | 판정 |
+  |---|---|---|---|
+  | `spring-security-web` | **6.4.13** | **없음** (6.4.x 라인에 패치 부재) | 🔴 **critical 노출** — 취약 범위 `>=6.4.0, <=6.4.13` 의 상한에 정확히 걸려 있다 |
+  | `spring-webmvc` | 6.2.15 | 6.2.19 | 🟠 high 노출 |
+  | `spring-expression` | 6.2.15 | 6.2.19 | 🟠 high 노출 |
+  | `jackson-databind` | 2.18.9 | 2.21.4 | 🟠 high 노출 |
+  | `postgresql` | 42.7.13 | 42.7.12 | ✅ **이미 안전** (해석 버전이 수정 버전보다 높다) |
+
+- **선택지**
+  1. **Spring Boot 3.5.x 업그레이드** — critical 을 실제로 닫는 유일한 경로(Spring Security 6.5.x 동반). 다중 모듈 전체 재검증 필요(L2).
+  2. **3.4.x 최신 패치 확인 후 부분 완화** — `spring-webmvc`/`spring-expression` 6.2.19 를 포함하는 3.4.x 패치가 있다면 high 3건은 줄일 수 있다. ⚠ **critical 은 이 경로로 닫히지 않는다**(6.4.x 에 패치가 없다). 착수 전 3.4.x 최신 릴리스의 Framework 버전을 실측할 것.
+  3. **리스크 수용** — 사내망 전용 배포 등 노출면 판단에 근거해 명시적으로 유예. 그 경우 **유예 사유와 재검토 시점을 여기 기록**할 것.
+
+- **권장**: (1). 다만 되돌리기 어려운 프레임워크 변경이라 **포괄 승인 범위 밖**이며 사용자 명시 승인이 필요하다. 착수 시 `localGate`(실 PG 스키마 검증 포함) + CI 전체(E2E 22티어 · mutation) 를 통과 기준으로 삼는다 — 2026-08-05 실측으로 **CI 는 정상 가동**함이 확인됐다(§4-A 참조).
 
 ### 2-D. CSP `unsafe-inline` 제거
 - prod CSP 에서 `unsafe-eval` 은 제거됨. `unsafe-inline` 은 **Next RSC nonce/PPR 인프라 도입**이 선행돼야 제거 가능(아키텍처 결정, 이전에 Phase4 포기).
