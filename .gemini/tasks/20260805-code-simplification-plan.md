@@ -373,6 +373,65 @@ FE        520→519 파일 · 61,673→61,563 LOC
 > (같은 문서 §45 가 `MenuDataInitializer` 를 "false positive(활성)" 로 분류한 것도 오판이다 —
 > `@Component` 가 주석처리돼 있어 Spring 이 빈으로 만들지 않으므로 `CommandLineRunner` 는 호출되지 않는다.)
 
+### Phase 2 — 완료 (2026-08-05, 커밋 `798c25a72`) · 실측 **−936 LOC**
+
+**계획이 과소 추정이었다(~450 → 실측 936).** 초기 스캔이 `src/test` 만 비교해
+`src/testFixtures` 를 통째로 놓쳤기 때문이다 — 거기에 **18파일 604 LOC 가 FQN 까지 동일하게 복제**돼 있었다.
+
+| 대상 | 처리 | 근거 |
+|---|---|---|
+| `business-app/src/testFixtures` 18파일 | **전량 삭제**, business-core 것을 재노출 | 18/18 바이트 동일. 게다가 api-server 가 **양쪽 testFixtures 를 동시에 의존**해 같은 FQN 클래스 18개가 클래스패스 순서로 서로를 가리고 있었다 |
+| ArchUnit 3종 (110+114+53) | 규칙 본문만 testFixtures 로 승격, 모듈에는 `@AnalyzeClasses` + `ArchTests.in(...)` | **단순 이동은 vacuous 통과가 된다** — Gradle `test` 는 자기 모듈 산출물만 스캔하므로 공유 자산의 테스트는 어디서도 실행되지 않는다 |
+| `TestQueryDslConfig` | **양쪽 삭제** | 두 모듈 모두 참조 0건 |
+| `SchemaDumper` | **app 사본 삭제** | 차이 6줄이 전부 "정본/파생" javadoc. `testing-guide.md:501` 이 business-core 를 정본으로 명시 |
+| `BusinessIntegrationTestSupport` | **core 사본 삭제** (방향 반대) | business-app 테스트 4건이 사용, business-core 0건 |
+
+**동결 목록 갱신의 성격** — `TestSecurityConfig#chainBean` 등 2→1.
+⚠ **위반이 상환된 것이 아니다.** `anyRequest().permitAll()` 은 business-core 사본에 그대로 살아 있다
+(A-1 잔여② 미해소). 줄어든 것은 **중복**뿐이며, 부채는 1건으로 남아 계속 신호를 낸다.
+사유를 린터 클래스와 매니페스트 양쪽에 남겼다(§0.7-H2).
+
+> **게이트가 설계대로 작동한 사례 2건**
+> ① `TestSecurityChainOverrideLinterTest` 가 사라진 스캔 루트를 만나 *"조용한 skip 은 false-green 입니다"* 로
+>    하드 실패 → 그 red 가 갱신을 강제했다.
+> ② `HarnessBaselineIntegrityTest`(메타 게이트)가 동결 목록 변경을 잡아 매니페스트 동시 갱신을 강제했다.
+
+> **내가 저지른 실수 1건 (기록)**: 생성 파일 `baseline-manifest.actual.properties` 를 매니페스트에
+> **통째로 복사해 자기 문서 헤더와 각 항목의 변경 이력 주석 168줄을 날렸다.**
+> 이는 [wave2-carryover.md §5](../../docs/04-operations/wave2-carryover.md) 가 이미 기록한
+> "하네스 매니페스트 헤더 소실" 결함의 **재발**이다(그 문서가 경고한 그대로 반복했다).
+> 원본을 복원하고 2줄만 외과적으로 고쳤다. 매니페스트 헤더 자체가 §0.7-H2 가드레일의 본문이므로,
+> **actual 파일 복사 시 데이터 라인만 가져올 것** — 이 지침은 매니페스트 헤더에도 이미 적혀 있었다.
+
+**게이트 증적 (전부 그린)**
+```
+./gradlew compileJava compileTestJava        → BUILD SUCCESSFUL
+./gradlew :api-server:harnessTest            → BUILD SUCCESSFUL (린터 13종 + 매니페스트 무결성)
+./gradlew :business-core:test :business-app:test → BUILD SUCCESSFUL
+   실행 1,097건 · 실패 0 · 스킵 2  (커버리지 무감축 확인)
+ArchUnit 실행 건수: business-core 8 / business-app 8  — 통합 전과 동일
+위반 주입 red(§0.7-H5): business-app 엔티티에 FetchType.EAGER 주입
+   → business-app 만 associationsMustBeLazy FAILED, business-core green
+   → 규칙 공유 후에도 모듈별 스캔 범위가 보존됨을 증명
+```
+
+**누적 델타 (Phase 0~2)**
+```
+BE main   631→623 파일 · 39,927→39,644 LOC
+BE test   362→343 파일 · 46,219→45,283 LOC
+FE        520→519 파일 · 61,673→61,563 LOC
+합계      147,819→146,490 LOC  (−1,329)
+
+§1.3 지표:  BE test 중복 윈도우 360→78 (−78%, 목표 −50% 초과 달성)
+            중복 관련 파일 63→35
+            FE 클라이언트 비중 65.2%→64.4%
+```
+
+> ⚠ **작업 중 사고 1건**: Phase 2 진행 중 다른 오퍼레이터가 `git reset --hard HEAD~1` 을 수행해
+> **미커밋 상태이던 Phase 2 작업이 전량 소실**됐다(reflog: `reset: moving to HEAD~1`).
+> Phase 0·1 은 커밋돼 있어 무사했다. 전량 재작업 후 **게이트 통과 직후 즉시 커밋**했다.
+> 교훈: 공유 워킹트리에서는 검증 완료를 기다리지 말고 **게이트가 그린이 되는 즉시 커밋**할 것.
+
 ---
 
 ## 5. 착수 시 준수 사항 (체크리스트)
