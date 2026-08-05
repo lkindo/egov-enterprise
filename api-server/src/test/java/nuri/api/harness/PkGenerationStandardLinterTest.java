@@ -57,7 +57,7 @@ class PkGenerationStandardLinterTest {
             // String PK + 서비스레이어 채번(egov IdGnr/IdGenerationUtil/nextval)이라 대부분이 여기 해당.
             // 데이터 영속으로 전략 교체는 D1(위험-DB설계결정). 신규 엔티티는 이 목록에 추가하지 말고 @GeneratedValue 사용.
             "AddressBook", "AddressBookUser", "AdministCode", "Authority", "Banner", "Blog", "Board",
-            "BoardMaster", "BoardMasterOption", "CnsltManage", "CommonCodeCategory", "CommonCodeGroup",
+            "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptJob", "DeptJobBox", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
             // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).
             //   FAQ 는 게시판(tb_bbs_item, bbs_id='BBSMSTR_AAAAAAAAAAAA')으로 통합돼 운영 중이고
@@ -66,7 +66,7 @@ class PkGenerationStandardLinterTest {
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다.
             //   게이트가 red 로 알려서 목록을 줄이게 만들었고, 그것이 이 게이트의 설계 의도다.
             "FileMaster", "GroupManage", "Hpcm", "IndividualPage", "InformalSanction", "InstitutionCode",
-            "InternetSvcGuidance", "LoginLog", "LoginPolicy", "MainImage", "MemoReport", "MemoTodo", "Menu",
+            "InternetSvcGuidance", "LoginLog", "LoginPolicy", "MemoReport", "MemoTodo", "Menu",
             "MyPageContent", "Note", "NoteRecptn", "NoteTrnsmit", "Notification", "OnlineManual",
             "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage", "Popup",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RewardManage", "RoleInfo", "Schedule",

@@ -170,34 +170,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/main-images/{imageId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 메인 이미지 상세 조회
-         * @description 특정 메인 이미지의 상세 정보를 조회합니다.
-         */
-        get: operations["getMainImage"];
-        /**
-         * 메인 이미지 수정
-         * @description 메인 이미지 정보를 수정합니다.
-         */
-        put: operations["updateMainImage"];
-        post?: never;
-        /**
-         * 메인 이미지 삭제
-         * @description 메인 이미지 정보를 삭제합니다.
-         */
-        delete: operations["deleteMainImage"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/informal-sanctions/{informalSanctionId}": {
         parameters: {
             query?: never;
@@ -377,34 +349,6 @@ export interface paths {
         put: operations["updateComment"];
         post?: never;
         delete: operations["deleteComment"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/calendar/holidays/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 휴일 상세 조회
-         * @description 특정 휴일의 상세 정보를 조회합니다.
-         */
-        get: operations["getRestde"];
-        /**
-         * 휴일 수정
-         * @description 기존 휴일 정보를 수정합니다.
-         */
-        put: operations["updateRestde"];
-        post?: never;
-        /**
-         * 휴일 삭제
-         * @description 등록된 휴일 정보를 삭제합니다.
-         */
-        delete: operations["deleteRestde"];
         options?: never;
         head?: never;
         patch?: never;
@@ -1439,30 +1383,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/main-images": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 메인 이미지 목록 조회
-         * @description 메인 이미지 목록을 페이징하여 조회합니다.
-         */
-        get: operations["getMainImageList"];
-        put?: never;
-        /**
-         * 메인 이미지 등록
-         * @description 새로운 메인 이미지를 등록합니다.
-         */
-        post: operations["insertMainImage"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/mails": {
         parameters: {
             query?: never;
@@ -1741,30 +1661,6 @@ export interface paths {
         get: operations["getComments"];
         put?: never;
         post: operations["createComment"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/calendar/holidays": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 휴일 목록 조회
-         * @description 휴일 목록을 조건별 페이징하여 조회합니다.
-         */
-        get: operations["getRestdeList"];
-        put?: never;
-        /**
-         * 휴일 등록
-         * @description 새로운 휴일 정보를 등록합니다.
-         */
-        post: operations["createRestde"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2456,24 +2352,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/cnslt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 상담 목록 페이징 조회 */
-        get: operations["getConsultations"];
-        put?: never;
-        /** 상담 등록 */
-        post: operations["insertConsultation"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/system/board-masters": {
         parameters: {
             query?: never;
@@ -2909,23 +2787,6 @@ export interface paths {
         patch: operations["moveUsersToDept"];
         trace?: never;
     };
-    "/api/v1/admin/system/cnslt/{cnsltId}/answer": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** 상담 답변 처리 */
-        patch: operations["answerConsultation"];
-        trace?: never;
-    };
     "/api/v1/users/search": {
         parameters: {
             query?: never;
@@ -3298,26 +3159,6 @@ export interface paths {
          * @description 내가 작성한 메모보고 목록을 조회합니다.
          */
         get: operations["getMyReports"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/main-images/reflected": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * 반영된 메인 이미지 목록 조회
-         * @description 현재 반영(게시) 중인 메인 이미지 목록을 조회합니다.
-         */
-        get: operations["getReflectedMainImages"];
         put?: never;
         post?: never;
         delete?: never;
@@ -4092,23 +3933,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/cnslt/{cnsltId}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 상담 상세 조회 */
-        get: operations["getConsultation"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v1/admin/system/board-masters/{bbsId}/deletable": {
         parameters: {
             query?: never;
@@ -4513,28 +4337,6 @@ export interface components {
              */
             crtDt?: string;
         };
-        /** @description 메인 이미지 DTO */
-        MainImageDto: {
-            /** @description 이미지 ID */
-            imgId: string;
-            /** @description 이미지 명 */
-            imgNm: string;
-            /** @description 이미지 경로 */
-            mainImgFilePath?: string;
-            /** @description 이미지 파일명 */
-            imgFileNm?: string;
-            /** @description 이미지 설명 */
-            mainImgExpln?: string;
-            /** @description 반영 여부 */
-            rfltYn?: string;
-            /** @description 등록자 ID */
-            frstRgtrId?: string;
-            /**
-             * Format: date-time
-             * @description 등록 일시
-             */
-            crtDt?: string;
-        };
         /** @description 비정형 결재 DTO (표준화) */
         InformalSanctionDto: {
             /** @description 비정형 결재 ID */
@@ -4653,35 +4455,6 @@ export interface components {
             pswd?: string;
             ansCn?: string;
             crtDt?: string;
-        };
-        /** @description 휴일 관리 정보 DTO */
-        RestdeDto: {
-            /**
-             * Format: int32
-             * @description 휴일 일련번호
-             * @example 1
-             */
-            hldySn?: number;
-            /**
-             * @description 휴일 일자
-             * @example 2026-05-25
-             */
-            hldyYmd?: string;
-            /**
-             * @description 휴일 명칭
-             * @example 석가탄신일
-             */
-            hldyNm?: string;
-            /**
-             * @description 휴일 설명
-             * @example 음력 4월 8일
-             */
-            hldyExpln?: string;
-            /**
-             * @description 휴일 구분 코드
-             * @example 01
-             */
-            hldySeCd?: string;
         };
         /** @description 게시글 저장 요청 */
         BoardSaveRequest: {
@@ -5581,18 +5354,6 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponseInteger: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            /** Format: int32 */
-            data?: number;
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
         ApiResponseTokenResponse: {
             success?: boolean;
             /** Format: int32 */
@@ -5759,57 +5520,6 @@ export interface components {
             /** @description 최초등록자 ID */
             frstRgtrId?: string;
         };
-        /** @description 상담 관리 DTO */
-        CnsltManageDto: {
-            /** @description 상담 ID */
-            dscsnId?: string;
-            /** @description 상담 제목 */
-            dscsnTtl?: string;
-            /** @description 상담 내용 */
-            dscsnCn?: string;
-            /** @description 공개 여부 */
-            rlsYn?: string;
-            /** @description 작성 비밀번호 */
-            wrtPswd?: string;
-            /** @description 작성자명 */
-            wrterNm?: string;
-            /** @description 지역 번호 */
-            areaNo?: string;
-            /** @description 중간 전화번호 */
-            mdTelno?: string;
-            /** @description 끝 전화번호 */
-            endTelno?: string;
-            /** @description 최초 이동전화 번호 */
-            mblFrstTelno?: string;
-            /** @description 중간 이동전화 번호 */
-            mblMdTelno?: string;
-            /** @description 끝 이동전화 번호 */
-            mblEndTelno?: string;
-            /** @description 이메일 주소 */
-            emlAddr?: string;
-            /** @description 이메일 답변 여부 */
-            emlAnsYn?: string;
-            /**
-             * Format: int32
-             * @description 조회수
-             */
-            inqCnt?: number;
-            /** @description 처리 상태 코드 */
-            qnaProcSttsCd?: string;
-            /** @description 첨부파일 ID */
-            atchFileId?: string;
-            /** @description 처리 내용 */
-            procCn?: string;
-            /** @description 처리 일자 */
-            mngYmd?: string;
-            /** @description 등록자 ID */
-            frstRgtrId?: string;
-            /**
-             * Format: date-time
-             * @description 등록 일시
-             */
-            crtDt?: string;
-        };
         /** @description 게시판 마스터 사용여부 일괄 변경 요청 */
         BoardMasterBatchStatusRequest: {
             /** @description 대상 게시판 ID 목록 */
@@ -5932,6 +5642,18 @@ export interface components {
             code?: string;
             message?: string;
             data?: components["schemas"]["CommunityDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponseInteger: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            /** Format: int32 */
+            data?: number;
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
@@ -6328,50 +6050,6 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponsePageResponseMainImageDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["PageResponseMainImageDto"];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
-        PageResponseMainImageDto: {
-            list?: components["schemas"]["MainImageDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
-        };
-        ApiResponseMainImageDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["MainImageDto"];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
-        ApiResponseListMainImageDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["MainImageDto"][];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
         ApiResponsePageResponseSentMailDto: {
             success?: boolean;
             /** Format: int32 */
@@ -6638,39 +6316,6 @@ export interface components {
             size?: number;
             /** Format: int32 */
             totalPage?: number;
-        };
-        ApiResponsePageResponseRestdeDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["PageResponseRestdeDto"];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
-        PageResponseRestdeDto: {
-            list?: components["schemas"]["RestdeDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
-        };
-        ApiResponseRestdeDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["RestdeDto"];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseBoardDto: {
             success?: boolean;
@@ -7805,39 +7450,6 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponsePageResponseCnsltManageDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["PageResponseCnsltManageDto"];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
-        PageResponseCnsltManageDto: {
-            list?: components["schemas"]["CnsltManageDto"][];
-            /** Format: int64 */
-            total?: number;
-            /** Format: int32 */
-            page?: number;
-            /** Format: int32 */
-            size?: number;
-            /** Format: int32 */
-            totalPage?: number;
-        };
-        ApiResponseCnsltManageDto: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: components["schemas"]["CnsltManageDto"];
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
-        };
         ApiResponsePageResponseBoardMasterDto: {
             success?: boolean;
             /** Format: int32 */
@@ -8587,77 +8199,6 @@ export interface operations {
             };
         };
     };
-    getMainImage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                /** @description 이미지 ID */
-                imageId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseMainImageDto"];
-                };
-            };
-        };
-    };
-    updateMainImage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                imageId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MainImageDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    deleteMainImage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                imageId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
     getInformalSanction: {
         parameters: {
             query?: never;
@@ -9118,76 +8659,6 @@ export interface operations {
             header?: never;
             path: {
                 commentNo: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    getRestde: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseRestdeDto"];
-                };
-            };
-        };
-    };
-    updateRestde: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RestdeDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
-    deleteRestde: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: number;
             };
             cookie?: never;
         };
@@ -11921,58 +11392,6 @@ export interface operations {
             };
         };
     };
-    getMainImageList: {
-        parameters: {
-            query?: {
-                keyword?: string;
-                /** @description Zero-based page index (0..N) */
-                page?: number;
-                /** @description The size of the page to be returned */
-                size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponsePageResponseMainImageDto"];
-                };
-            };
-        };
-    };
-    insertMainImage: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["MainImageDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
     getSentMails: {
         parameters: {
             query?: {
@@ -12510,55 +11929,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseLong"];
-                };
-            };
-        };
-    };
-    getRestdeList: {
-        parameters: {
-            query?: {
-                pageIndex?: number;
-                pageUnit?: number;
-                searchCondition?: string;
-                searchKeyword?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponsePageResponseRestdeDto"];
-                };
-            };
-        };
-    };
-    createRestde: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RestdeDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseInteger"];
                 };
             };
         };
@@ -14186,58 +13556,6 @@ export interface operations {
             };
         };
     };
-    getConsultations: {
-        parameters: {
-            query?: {
-                keyword?: string;
-                /** @description Zero-based page index (0..N) */
-                page?: number;
-                /** @description The size of the page to be returned */
-                size?: number;
-                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
-                sort?: string[];
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponsePageResponseCnsltManageDto"];
-                };
-            };
-        };
-    };
-    insertConsultation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CnsltManageDto"];
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
     getBoardMasterList: {
         parameters: {
             query?: {
@@ -15057,32 +14375,6 @@ export interface operations {
             };
         };
     };
-    answerConsultation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                cnsltId: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": string;
-            };
-        };
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
-                };
-            };
-        };
-    };
     searchAssignableUsers: {
         parameters: {
             query?: {
@@ -15545,26 +14837,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponsePageResponseMemoReportDto"];
-                };
-            };
-        };
-    };
-    getReflectedMainImages: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseListMainImageDto"];
                 };
             };
         };
@@ -16596,28 +15868,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponsePageResponseInstitutionCodeRecptnDto"];
-                };
-            };
-        };
-    };
-    getConsultation: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                cnsltId: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description OK */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ApiResponseCnsltManageDto"];
                 };
             };
         };

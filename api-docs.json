@@ -91,10 +91,6 @@
       "description": "시스템 메뉴 관리 API (Admin)"
     },
     {
-      "name": "Cnslt",
-      "description": "상담 관리 API (Admin)"
-    },
-    {
       "name": "Internet Service Guidance",
       "description": "인터넷 서비스 안내 관리 API (Admin)"
     },
@@ -179,10 +175,6 @@
       "description": "기관코드 관리 API"
     },
     {
-      "name": "Calendar - Holiday",
-      "description": "휴일(공휴일) 관리 API"
-    },
-    {
       "name": "Board",
       "description": "게시판 관리 API"
     },
@@ -233,10 +225,6 @@
     {
       "name": "SMS Management",
       "description": "문자 메시지 관리 API (Admin)"
-    },
-    {
-      "name": "MainImage",
-      "description": "메인 이미지 관리 API"
     },
     {
       "name": "ExternalHr",
@@ -845,109 +833,6 @@
         "parameters": [
           {
             "name": "rptId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/main-images/{imageId}": {
-      "get": {
-        "tags": [
-          "MainImage"
-        ],
-        "summary": "메인 이미지 상세 조회",
-        "description": "특정 메인 이미지의 상세 정보를 조회합니다.",
-        "operationId": "getMainImage",
-        "parameters": [
-          {
-            "name": "imageId",
-            "in": "path",
-            "description": "이미지 ID",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseMainImageDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "MainImage"
-        ],
-        "summary": "메인 이미지 수정",
-        "description": "메인 이미지 정보를 수정합니다.",
-        "operationId": "updateMainImage",
-        "parameters": [
-          {
-            "name": "imageId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MainImageDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "MainImage"
-        ],
-        "summary": "메인 이미지 삭제",
-        "description": "메인 이미지 정보를 삭제합니다.",
-        "operationId": "deleteMainImage",
-        "parameters": [
-          {
-            "name": "imageId",
             "in": "path",
             "required": true,
             "schema": {
@@ -1642,111 +1527,6 @@
             "schema": {
               "type": "integer",
               "format": "int64"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/calendar/holidays/{id}": {
-      "get": {
-        "tags": [
-          "Calendar - Holiday"
-        ],
-        "summary": "휴일 상세 조회",
-        "description": "특정 휴일의 상세 정보를 조회합니다.",
-        "operationId": "getRestde",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseRestdeDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "Calendar - Holiday"
-        ],
-        "summary": "휴일 수정",
-        "description": "기존 휴일 정보를 수정합니다.",
-        "operationId": "updateRestde",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RestdeDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      },
-      "delete": {
-        "tags": [
-          "Calendar - Holiday"
-        ],
-        "summary": "휴일 삭제",
-        "description": "등록된 휴일 정보를 삭제합니다.",
-        "operationId": "deleteRestde",
-        "parameters": [
-          {
-            "name": "id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "format": "int32"
             }
           }
         ],
@@ -5891,102 +5671,6 @@
         }
       }
     },
-    "/api/v1/main-images": {
-      "get": {
-        "tags": [
-          "MainImage"
-        ],
-        "summary": "메인 이미지 목록 조회",
-        "description": "메인 이미지 목록을 페이징하여 조회합니다.",
-        "operationId": "getMainImageList",
-        "parameters": [
-          {
-            "name": "keyword",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "description": "Zero-based page index (0..N)",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 0,
-              "minimum": 0
-            }
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "description": "The size of the page to be returned",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 10,
-              "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponsePageResponseMainImageDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "MainImage"
-        ],
-        "summary": "메인 이미지 등록",
-        "description": "새로운 메인 이미지를 등록합니다.",
-        "operationId": "insertMainImage",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/MainImageDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/mails": {
       "get": {
         "tags": [
@@ -6979,96 +6663,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseLong"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/calendar/holidays": {
-      "get": {
-        "tags": [
-          "Calendar - Holiday"
-        ],
-        "summary": "휴일 목록 조회",
-        "description": "휴일 목록을 조건별 페이징하여 조회합니다.",
-        "operationId": "getRestdeList",
-        "parameters": [
-          {
-            "name": "pageIndex",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 1
-            }
-          },
-          {
-            "name": "pageUnit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "format": "int32",
-              "default": 10
-            }
-          },
-          {
-            "name": "searchCondition",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "searchKeyword",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponsePageResponseRestdeDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Calendar - Holiday"
-        ],
-        "summary": "휴일 등록",
-        "description": "새로운 휴일 정보를 등록합니다.",
-        "operationId": "createRestde",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RestdeDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseInteger"
                 }
               }
             }
@@ -10274,100 +9868,6 @@
         }
       }
     },
-    "/api/v1/admin/system/cnslt": {
-      "get": {
-        "tags": [
-          "Cnslt"
-        ],
-        "summary": "상담 목록 페이징 조회",
-        "operationId": "getConsultations",
-        "parameters": [
-          {
-            "name": "keyword",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "page",
-            "in": "query",
-            "description": "Zero-based page index (0..N)",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 0,
-              "minimum": 0
-            }
-          },
-          {
-            "name": "size",
-            "in": "query",
-            "description": "The size of the page to be returned",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "default": 10,
-              "minimum": 1
-            }
-          },
-          {
-            "name": "sort",
-            "in": "query",
-            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
-            "required": false,
-            "schema": {
-              "type": "array",
-              "items": {
-                "type": "string"
-              }
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponsePageResponseCnsltManageDto"
-                }
-              }
-            }
-          }
-        }
-      },
-      "post": {
-        "tags": [
-          "Cnslt"
-        ],
-        "summary": "상담 등록",
-        "operationId": "insertConsultation",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CnsltManageDto"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/admin/system/board-masters": {
       "get": {
         "tags": [
@@ -11977,47 +11477,6 @@
         }
       }
     },
-    "/api/v1/admin/system/cnslt/{cnsltId}/answer": {
-      "patch": {
-        "tags": [
-          "Cnslt"
-        ],
-        "summary": "상담 답변 처리",
-        "operationId": "answerConsultation",
-        "parameters": [
-          {
-            "name": "cnsltId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "string"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/users/search": {
       "get": {
         "tags": [
@@ -12785,28 +12244,6 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponsePageResponseMemoReportDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/main-images/reflected": {
-      "get": {
-        "tags": [
-          "MainImage"
-        ],
-        "summary": "반영된 메인 이미지 목록 조회",
-        "description": "현재 반영(게시) 중인 메인 이미지 목록을 조회합니다.",
-        "operationId": "getReflectedMainImages",
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseListMainImageDto"
                 }
               }
             }
@@ -14988,37 +14425,6 @@
         }
       }
     },
-    "/api/v1/admin/system/cnslt/{cnsltId}": {
-      "get": {
-        "tags": [
-          "Cnslt"
-        ],
-        "summary": "상담 상세 조회",
-        "operationId": "getConsultation",
-        "parameters": [
-          {
-            "name": "cnsltId",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseCnsltManageDto"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/admin/system/board-masters/{bbsId}/deletable": {
       "get": {
         "tags": [
@@ -16024,61 +15430,6 @@
           }
         }
       },
-      "MainImageDto": {
-        "type": "object",
-        "description": "메인 이미지 DTO",
-        "properties": {
-          "imgId": {
-            "type": "string",
-            "description": "이미지 ID",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "imgNm": {
-            "type": "string",
-            "description": "이미지 명",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "mainImgFilePath": {
-            "type": "string",
-            "description": "이미지 경로",
-            "maxLength": 50,
-            "minLength": 0
-          },
-          "imgFileNm": {
-            "type": "string",
-            "description": "이미지 파일명",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "mainImgExpln": {
-            "type": "string",
-            "description": "이미지 설명",
-            "maxLength": 4000,
-            "minLength": 0
-          },
-          "rfltYn": {
-            "type": "string",
-            "description": "반영 여부",
-            "maxLength": 1,
-            "minLength": 0
-          },
-          "frstRgtrId": {
-            "type": "string",
-            "description": "등록자 ID"
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "등록 일시"
-          }
-        },
-        "required": [
-          "imgId",
-          "imgNm"
-        ]
-      },
       "InformalSanctionDto": {
         "type": "object",
         "description": "비정형 결재 DTO (표준화)",
@@ -16381,46 +15732,6 @@
           },
           "crtDt": {
             "type": "string"
-          }
-        }
-      },
-      "RestdeDto": {
-        "type": "object",
-        "description": "휴일 관리 정보 DTO",
-        "properties": {
-          "hldySn": {
-            "type": "integer",
-            "format": "int32",
-            "description": "휴일 일련번호",
-            "example": 1
-          },
-          "hldyYmd": {
-            "type": "string",
-            "description": "휴일 일자",
-            "example": "2026-05-25",
-            "maxLength": 8,
-            "minLength": 0
-          },
-          "hldyNm": {
-            "type": "string",
-            "description": "휴일 명칭",
-            "example": "석가탄신일",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "hldyExpln": {
-            "type": "string",
-            "description": "휴일 설명",
-            "example": "음력 4월 8일",
-            "maxLength": 4000,
-            "minLength": 0
-          },
-          "hldySeCd": {
-            "type": "string",
-            "description": "휴일 구분 코드",
-            "example": "01",
-            "maxLength": 12,
-            "minLength": 0
           }
         }
       },
@@ -18378,38 +17689,6 @@
           }
         }
       },
-      "ApiResponseInteger": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
       "ApiResponseTokenResponse": {
         "type": "object",
         "properties": {
@@ -18766,133 +18045,6 @@
           }
         }
       },
-      "CnsltManageDto": {
-        "type": "object",
-        "description": "상담 관리 DTO",
-        "properties": {
-          "dscsnId": {
-            "type": "string",
-            "description": "상담 ID",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "dscsnTtl": {
-            "type": "string",
-            "description": "상담 제목",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "dscsnCn": {
-            "type": "string",
-            "description": "상담 내용",
-            "maxLength": 4000,
-            "minLength": 0
-          },
-          "rlsYn": {
-            "type": "string",
-            "description": "공개 여부",
-            "maxLength": 1,
-            "minLength": 0
-          },
-          "wrtPswd": {
-            "type": "string",
-            "description": "작성 비밀번호",
-            "maxLength": 200,
-            "minLength": 0,
-            "writeOnly": true
-          },
-          "wrterNm": {
-            "type": "string",
-            "description": "작성자명",
-            "maxLength": 100,
-            "minLength": 0
-          },
-          "areaNo": {
-            "type": "string",
-            "description": "지역 번호",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "mdTelno": {
-            "type": "string",
-            "description": "중간 전화번호",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "endTelno": {
-            "type": "string",
-            "description": "끝 전화번호",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "mblFrstTelno": {
-            "type": "string",
-            "description": "최초 이동전화 번호",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "mblMdTelno": {
-            "type": "string",
-            "description": "중간 이동전화 번호",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "mblEndTelno": {
-            "type": "string",
-            "description": "끝 이동전화 번호",
-            "maxLength": 4,
-            "minLength": 0
-          },
-          "emlAddr": {
-            "type": "string",
-            "description": "이메일 주소",
-            "maxLength": 50,
-            "minLength": 0
-          },
-          "emlAnsYn": {
-            "type": "string",
-            "description": "이메일 답변 여부",
-            "maxLength": 1,
-            "minLength": 0
-          },
-          "inqCnt": {
-            "type": "integer",
-            "format": "int32",
-            "description": "조회수"
-          },
-          "qnaProcSttsCd": {
-            "type": "string",
-            "description": "처리 상태 코드"
-          },
-          "atchFileId": {
-            "type": "string",
-            "description": "첨부파일 ID",
-            "maxLength": 30,
-            "minLength": 0
-          },
-          "procCn": {
-            "type": "string",
-            "description": "처리 내용",
-            "maxLength": 4000,
-            "minLength": 0
-          },
-          "mngYmd": {
-            "type": "string",
-            "description": "처리 일자",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "frstRgtrId": {
-            "type": "string",
-            "description": "등록자 ID"
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "등록 일시"
-          }
-        }
-      },
       "BoardMasterBatchStatusRequest": {
         "type": "object",
         "description": "게시판 마스터 사용여부 일괄 변경 요청",
@@ -19219,6 +18371,38 @@
           },
           "data": {
             "$ref": "#/components/schemas/CommunityDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "ApiResponseInteger": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "integer",
+            "format": "int32"
           },
           "timestamp": {
             "type": "string",
@@ -20329,129 +19513,6 @@
           }
         }
       },
-      "ApiResponsePageResponseMainImageDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/PageResponseMainImageDto"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
-      "PageResponseMainImageDto": {
-        "type": "object",
-        "properties": {
-          "list": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MainImageDto"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "page": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "size": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totalPage": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
-      "ApiResponseMainImageDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/MainImageDto"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
-      "ApiResponseListMainImageDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/MainImageDto"
-            }
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
       "ApiResponsePageResponseSentMailDto": {
         "type": "object",
         "properties": {
@@ -21172,95 +20233,6 @@
           "totalPage": {
             "type": "integer",
             "format": "int32"
-          }
-        }
-      },
-      "ApiResponsePageResponseRestdeDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/PageResponseRestdeDto"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
-      "PageResponseRestdeDto": {
-        "type": "object",
-        "properties": {
-          "list": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/RestdeDto"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "page": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "size": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totalPage": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
-      "ApiResponseRestdeDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/RestdeDto"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
           }
         }
       },
@@ -24235,95 +23207,6 @@
           },
           "data": {
             "$ref": "#/components/schemas/AdministCodeDto"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
-      "ApiResponsePageResponseCnsltManageDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/PageResponseCnsltManageDto"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
-      },
-      "PageResponseCnsltManageDto": {
-        "type": "object",
-        "properties": {
-          "list": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CnsltManageDto"
-            }
-          },
-          "total": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "page": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "size": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totalPage": {
-            "type": "integer",
-            "format": "int32"
-          }
-        }
-      },
-      "ApiResponseCnsltManageDto": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "$ref": "#/components/schemas/CnsltManageDto"
           },
           "timestamp": {
             "type": "string",

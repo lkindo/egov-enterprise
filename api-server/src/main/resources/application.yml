@@ -276,5 +276,5 @@ rbac:
     enabled: false  # true: 섀도우 평가 활성(enforce는 하드코딩 유지), false: 비활성
   db-auth:
     enabled: true   # true: DB 인가로 enforce 전환 (Phase 3), false: 하드코딩 유지
-    secure-paths: "/api/v1/admin/**,/actuator/**,/api/v1/surveys,/api/v1/surveys/**,/api/v1/main-images,/api/v1/main-images/**,/api/v1/help,/api/v1/help/**,/api/v1/calendar/holidays,/api/v1/calendar/holidays/**"
+    secure-paths: "/api/v1/admin/**,/actuator/**,/api/v1/surveys,/api/v1/surveys/**,/api/v1/help,/api/v1/help/**"
 
