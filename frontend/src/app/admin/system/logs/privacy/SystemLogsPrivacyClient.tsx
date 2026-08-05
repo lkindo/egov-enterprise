@@ -30,65 +30,60 @@ const SystemLogsPrivacyClient = () => {
     const totalPageCount = data?.totalPage || 1;
     const totalCount = Number(data?.total || 0);
 
+    /*
+     * [2026-08-05] 컬럼을 tb_privacy_log 실물에 맞췄다.
+     * 종전 컬럼(로그ID·대상명·대상구분·처리구분·요청자ID·등록일시)은 백엔드에 존재하지 않는
+     * 필드를 참조하고 있어 어떤 값도 그릴 수 없었다. 실제 컬럼은 요청ID·조회일시·서비스명·
+     * 조회대상정보·조회자ID·조회자IP 다.
+     */
     const columns: Column<PrivacyLog>[] = [
         {
-            header: '로그ID',
+            header: '조회일시',
             accessor: (item: PrivacyLog) => (
-                <div className="font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
-                    {item.logId}
+                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
+                    <Calendar size={14} className="opacity-30" />
+                    {item.inqDt ? item.inqDt.replace('T', ' ').substring(0, 19) : '-'}
                 </div>
             ),
-            className: 'w-40'
+            className: 'w-48'
         },
         {
-            header: '대상명',
+            header: '조회 대상 정보',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <User size={14} className="text-primary/40" />
-                    <span className="font-bold text-foreground">{item.trgetNm}</span>
-                    <span className="text-xs text-muted-foreground font-mono">({item.trgetId})</span>
+                    <span className="font-bold text-foreground">{item.inqInfo || '-'}</span>
                 </div>
             )
         },
         {
-            header: '대상 구분',
+            header: '서비스명',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/40" />
                     <code className="px-2 py-0.5 bg-hub-purple/10 text-hub-purple text-xs font-bold rounded border border-hub-purple/20">
-                        {item.trgetClCode}
+                        {item.srvcNm}
                     </code>
                 </div>
-            ),
-            className: 'w-32'
+            )
         },
         {
-            header: '처리 구분',
-            accessor: (item: PrivacyLog) => (
-                <span className="px-2 py-0.5 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold rounded-md border border-amber-500/20">
-                    {item.processSeCode}
-                </span>
-            ),
-            className: 'w-24'
-        },
-        {
-            header: '요청자ID',
+            header: '조회자',
             accessor: (item: PrivacyLog) => (
                 <div className="px-3 py-1 bg-card border rounded-lg w-fit shadow-sm text-xs font-bold text-foreground">
-                    {item.rqesterId}
+                    {item.dmndUserId}
                 </div>
             ),
             className: 'w-36'
         },
         {
-            header: '등록일시',
+            header: '조회자 IP',
             accessor: (item: PrivacyLog) => (
-                <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
-                    <Calendar size={14} className="opacity-30" />
-                    {item.creatDt ? item.creatDt.substring(0, 10) : '-'}
+                <div className="font-mono text-xs font-bold text-muted-foreground/70 tabular-nums">
+                    {item.dmndUserIpAddr || '-'}
                 </div>
             ),
-            className: 'w-36'
+            className: 'w-40'
         }
     ];
 
@@ -112,7 +107,7 @@ const SystemLogsPrivacyClient = () => {
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
-                keyField="logId"
+                keyField="dmndId"
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,
@@ -121,7 +116,7 @@ const SystemLogsPrivacyClient = () => {
                     pageSize: PAGE_SIZE,
                 }}
                 search={{
-                    placeholder: '대상명, 요청자 검색..',
+                    placeholder: '조회 대상 정보로 검색..',
                     value: searchKeyword,
                     onSearch: (keyword: string) => { setSearchKeyword(keyword); setPage(1); },
                     onClear: () => { setSearchKeyword(''); setPage(1); },
