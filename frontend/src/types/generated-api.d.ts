@@ -3757,6 +3757,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/logs/web": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 웹 로그 목록 조회
+         * @description URL 부분일치 검색과 페이징을 지원한다.
+         */
+        get: operations["getWebLogList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/logs/system": {
         parameters: {
             query?: never;
@@ -6953,6 +6973,37 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponsePageResponseWebLogDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseWebLogDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        PageResponseWebLogDto: {
+            list?: components["schemas"]["WebLogDto"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
+        };
+        WebLogDto: {
+            dmndId?: string;
+            url?: string;
+            dmndUserId?: string;
+            dmndUserIpAddr?: string;
+            occrYmd?: string;
+            /** Format: int64 */
+            prcsTm?: number;
         };
         ApiResponsePageResponseSysLogDto: {
             success?: boolean;
@@ -15586,6 +15637,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseListMenuDto"];
+                };
+            };
+        };
+    };
+    getWebLogList: {
+        parameters: {
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponseWebLogDto"];
                 };
             };
         };
