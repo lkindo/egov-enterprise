@@ -231,6 +231,10 @@
       "description": "도움말(안내문, 온라인 매뉴얼) API"
     },
     {
+      "name": "SurveyRespondent",
+      "description": "설문 응답자 관리 API (Admin)"
+    },
+    {
       "name": "SMS Management",
       "description": "문자 메시지 관리 API (Admin)"
     },
@@ -2105,6 +2109,129 @@
           },
           "required": true
         },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/system/surveys/{srvyId}/respondents/{respondentId}": {
+      "get": {
+        "tags": [
+          "SurveyRespondent"
+        ],
+        "summary": "설문 응답자 단건 조회",
+        "operationId": "getRespondent",
+        "parameters": [
+          {
+            "name": "srvyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "respondentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseSurveyRespondentDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "SurveyRespondent"
+        ],
+        "summary": "설문 응답자 수정",
+        "operationId": "updateRespondent",
+        "parameters": [
+          {
+            "name": "srvyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "respondentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurveyRespondentDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "SurveyRespondent"
+        ],
+        "summary": "설문 응답자 삭제",
+        "operationId": "deleteRespondent",
+        "parameters": [
+          {
+            "name": "srvyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "respondentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "OK",
@@ -7356,6 +7483,119 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/system/surveys/{srvyId}/respondents": {
+      "get": {
+        "tags": [
+          "SurveyRespondent"
+        ],
+        "summary": "설문 응답자 목록",
+        "description": "해당 설문의 응답자를 이름 부분일치로 검색한다.",
+        "operationId": "getRespondents",
+        "parameters": [
+          {
+            "name": "srvyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Zero-based page index (0..N)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "minimum": 0
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "The size of the page to be returned",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 10,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported.",
+            "required": false,
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseSurveyRespondentDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "SurveyRespondent"
+        ],
+        "summary": "설문 응답자 등록",
+        "operationId": "createRespondent",
+        "parameters": [
+          {
+            "name": "srvyId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SurveyRespondentDto"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseString"
                 }
               }
             }
@@ -16243,6 +16483,93 @@
           "userId"
         ]
       },
+      "SurveyRespondentDto": {
+        "type": "object",
+        "description": "설문 응답자 DTO",
+        "properties": {
+          "srvyRspdntId": {
+            "type": "string",
+            "description": "설문 응답자 ID",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "srvyId": {
+            "type": "string",
+            "description": "설문 ID",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "srvyTmpltId": {
+            "type": "string",
+            "description": "설문 템플릿 ID",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "gndrCd": {
+            "type": "string",
+            "description": "성별 코드",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "crTypeCd": {
+            "type": "string",
+            "description": "직업 유형 코드",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "rspdntNm": {
+            "type": "string",
+            "description": "응답자 명",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "brdt": {
+            "type": "string",
+            "description": "생년월일",
+            "maxLength": 8,
+            "minLength": 0
+          },
+          "rgnTelno": {
+            "type": "string",
+            "description": "지역 전화번호",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "midTelno": {
+            "type": "string",
+            "description": "국번 전화번호",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "endTelno": {
+            "type": "string",
+            "description": "개별 전화번호",
+            "maxLength": 4,
+            "minLength": 0
+          },
+          "frstRgtrId": {
+            "type": "string",
+            "description": "최초 등록자 ID"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "최초 등록 일시"
+          },
+          "lastMdfrId": {
+            "type": "string",
+            "description": "최종 수정자 ID"
+          },
+          "mdfcnDt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "최종 수정 일시"
+          }
+        },
+        "required": [
+          "srvyId"
+        ]
+      },
       "SurveyArticleDto": {
         "type": "object",
         "description": "설문항목 DTO (표준화)",
@@ -21305,6 +21632,95 @@
           },
           "data": {
             "$ref": "#/components/schemas/TemplateDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "ApiResponsePageResponseSurveyRespondentDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseSurveyRespondentDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "PageResponseSurveyRespondentDto": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SurveyRespondentDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalPage": {
+            "type": "integer",
+            "format": "int32"
+          }
+        }
+      },
+      "ApiResponseSurveyRespondentDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/SurveyRespondentDto"
           },
           "timestamp": {
             "type": "string",

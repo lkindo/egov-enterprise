@@ -56,6 +56,32 @@ export interface SurveyResultStats {
   percentage: number;
 }
 
+/**
+ * 설문 응답자(`tb_srvy_rspdnt`). **응답 내용이 아니라 참여자 신상**이다.
+ *
+ * <p>⚠ 성별·생년월일·전화번호를 담는 개인정보라 백엔드 API 는 `@AdminOnly` 로 좁혀져 있다.
+ * 응답 내용은 별도 테이블(`tb_srvy_rslt` → {@link QustnrRespondInfo})이며 두 테이블은
+ * ID 로 연결돼 있지 않다(응답 쪽은 이름 문자열 `rspnsNm` 만 갖는다).
+ */
+export interface SurveyRespondent {
+  srvyRspdntId: string;
+  srvyId: string;
+  srvyTmpltId?: string;
+  /** 성별 코드 */
+  gndrCd?: string;
+  /** 직업 유형 코드 */
+  crTypeCd?: string;
+  rspdntNm?: string;
+  /** 생년월일 (yyyyMMdd) */
+  brdt?: string;
+  /** 전화번호 3분할 — 물리 컬럼이 나뉘어 있다 */
+  rgnTelno?: string;
+  midTelno?: string;
+  endTelno?: string;
+  frstRgtrId?: string;
+  crtDt?: string;
+}
+
 export interface QustnrRespondInfo {
   srvyRspnsId: string;
   srvyId: string;

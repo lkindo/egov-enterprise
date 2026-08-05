@@ -325,6 +325,27 @@ export const UserAbsenceDtoSchema = z.object({
 export type UserAbsenceDto = z.infer<typeof UserAbsenceDtoSchema>;
 
 // ==========================================================================
+// SurveyRespondentDto Schema
+// ==========================================================================
+export const SurveyRespondentDtoSchema = z.object({
+  srvyRspdntId: z.string().min(0).max(20).optional(),
+  srvyId: z.string().min(0).max(20),
+  srvyTmpltId: z.string().min(0).max(20).optional(),
+  gndrCd: z.string().min(0).max(12).optional(),
+  crTypeCd: z.string().min(0).max(12).optional(),
+  rspdntNm: z.string().min(0).max(100).optional(),
+  brdt: z.string().min(0).max(8).optional(),
+  rgnTelno: z.string().min(0).max(4).optional(),
+  midTelno: z.string().min(0).max(4).optional(),
+  endTelno: z.string().min(0).max(4).optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.string().optional(),
+  lastMdfrId: z.string().optional(),
+  mdfcnDt: z.string().optional(),
+});
+export type SurveyRespondentDto = z.infer<typeof SurveyRespondentDtoSchema>;
+
+// ==========================================================================
 // SurveyArticleDto Schema
 // ==========================================================================
 export const SurveyArticleDtoSchema = z.object({
@@ -2194,6 +2215,46 @@ export const ApiResponseTemplateDtoSchema = z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseTemplateDto = z.infer<typeof ApiResponseTemplateDtoSchema>;
+
+// ==========================================================================
+// ApiResponsePageResponseSurveyRespondentDto Schema
+// ==========================================================================
+export const ApiResponsePageResponseSurveyRespondentDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseSurveyRespondentDtoSchema).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponsePageResponseSurveyRespondentDto = z.infer<typeof ApiResponsePageResponseSurveyRespondentDtoSchema>;
+
+// ==========================================================================
+// PageResponseSurveyRespondentDto Schema
+// ==========================================================================
+export const PageResponseSurveyRespondentDtoSchema = z.object({
+  list: z.array(z.lazy(() => SurveyRespondentDtoSchema)).optional(),
+  total: z.number().optional(),
+  page: z.number().optional(),
+  size: z.number().optional(),
+  totalPage: z.number().optional(),
+});
+export type PageResponseSurveyRespondentDto = z.infer<typeof PageResponseSurveyRespondentDtoSchema>;
+
+// ==========================================================================
+// ApiResponseSurveyRespondentDto Schema
+// ==========================================================================
+export const ApiResponseSurveyRespondentDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => SurveyRespondentDtoSchema).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseSurveyRespondentDto = z.infer<typeof ApiResponseSurveyRespondentDtoSchema>;
 
 // ==========================================================================
 // ApiResponseListSurveyQuestionDto Schema
