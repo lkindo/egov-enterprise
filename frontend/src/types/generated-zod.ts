@@ -797,6 +797,40 @@ export const UserResponseSchema = z.object({
 export type UserResponse = z.infer<typeof UserResponseSchema>;
 
 // ==========================================================================
+// Answer Schema
+// ==========================================================================
+export const AnswerSchema = z.object({
+  srvyQstnId: z.string().min(0).max(20),
+  srvyArtclId: z.string().min(0).max(20),
+  rspdntAnsCn: z.string().min(0).max(4000).optional(),
+  etcAnsCn: z.string().min(0).max(4000).optional(),
+});
+export type Answer = z.infer<typeof AnswerSchema>;
+
+// ==========================================================================
+// SurveyResponseSubmitDto Schema
+// ==========================================================================
+export const SurveyResponseSubmitDtoSchema = z.object({
+  rspnsNm: z.string().min(0).max(100).optional(),
+  answers: z.array(z.lazy(() => AnswerSchema)),
+});
+export type SurveyResponseSubmitDto = z.infer<typeof SurveyResponseSubmitDtoSchema>;
+
+// ==========================================================================
+// ApiResponseInteger Schema
+// ==========================================================================
+export const ApiResponseIntegerSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.number().optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseInteger = z.infer<typeof ApiResponseIntegerSchema>;
+
+// ==========================================================================
 // ApiResponseString Schema
 // ==========================================================================
 export const ApiResponseStringSchema = z.object({
@@ -1125,20 +1159,6 @@ export const ApiResponseCommunityDtoSchema = z.object({
 export type ApiResponseCommunityDto = z.infer<typeof ApiResponseCommunityDtoSchema>;
 
 // ==========================================================================
-// ApiResponseInteger Schema
-// ==========================================================================
-export const ApiResponseIntegerSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.number().optional(),
-  timestamp: z.string().optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-});
-export type ApiResponseInteger = z.infer<typeof ApiResponseIntegerSchema>;
-
-// ==========================================================================
 // AdminPasswordChangeRequest Schema
 // ==========================================================================
 export const AdminPasswordChangeRequestSchema = z.object({
@@ -1264,6 +1284,34 @@ export const ApiResponseBooleanSchema = z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseBoolean = z.infer<typeof ApiResponseBooleanSchema>;
+
+// ==========================================================================
+// ApiResponseListSurveyStatsDto Schema
+// ==========================================================================
+export const ApiResponseListSurveyStatsDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => SurveyStatsDtoSchema)).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseListSurveyStatsDto = z.infer<typeof ApiResponseListSurveyStatsDtoSchema>;
+
+// ==========================================================================
+// SurveyStatsDto Schema
+// ==========================================================================
+export const SurveyStatsDtoSchema = z.object({
+  srvyQstnId: z.string().optional(),
+  qstnCn: z.string().optional(),
+  qstnTypeCd: z.string().optional(),
+  srvyArtclId: z.string().optional(),
+  artclCn: z.string().optional(),
+  count: z.number().optional(),
+  percentage: z.number().optional(),
+});
+export type SurveyStatsDto = z.infer<typeof SurveyStatsDtoSchema>;
 
 // ==========================================================================
 // ApiResponseListStatsDto Schema
@@ -2349,6 +2397,63 @@ export const PageResponseSurveyInfoDtoSchema = z.object({
   totalPage: z.number().optional(),
 });
 export type PageResponseSurveyInfoDto = z.infer<typeof PageResponseSurveyInfoDtoSchema>;
+
+// ==========================================================================
+// ApiResponsePageResponseSurveyResultDto Schema
+// ==========================================================================
+export const ApiResponsePageResponseSurveyResultDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseSurveyResultDtoSchema).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponsePageResponseSurveyResultDto = z.infer<typeof ApiResponsePageResponseSurveyResultDtoSchema>;
+
+// ==========================================================================
+// PageResponseSurveyResultDto Schema
+// ==========================================================================
+export const PageResponseSurveyResultDtoSchema = z.object({
+  list: z.array(z.lazy(() => SurveyResultDtoSchema)).optional(),
+  total: z.number().optional(),
+  page: z.number().optional(),
+  size: z.number().optional(),
+  totalPage: z.number().optional(),
+});
+export type PageResponseSurveyResultDto = z.infer<typeof PageResponseSurveyResultDtoSchema>;
+
+// ==========================================================================
+// SurveyResultDto Schema
+// ==========================================================================
+export const SurveyResultDtoSchema = z.object({
+  srvyRspnsId: z.string().optional(),
+  srvyId: z.string().optional(),
+  srvyTmpltId: z.string().optional(),
+  srvyQstnId: z.string().optional(),
+  srvyArtclId: z.string().optional(),
+  rspdntAnsCn: z.string().optional(),
+  rspnsNm: z.string().optional(),
+  etcAnsCn: z.string().optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.string().optional(),
+});
+export type SurveyResultDto = z.infer<typeof SurveyResultDtoSchema>;
+
+// ==========================================================================
+// ApiResponseSurveyResultDto Schema
+// ==========================================================================
+export const ApiResponseSurveyResultDtoSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => SurveyResultDtoSchema).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseSurveyResultDto = z.infer<typeof ApiResponseSurveyResultDtoSchema>;
 
 // ==========================================================================
 // ApiResponseSummaryStatsDto Schema

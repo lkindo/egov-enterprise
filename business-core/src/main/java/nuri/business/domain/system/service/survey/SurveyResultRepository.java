@@ -1,7 +1,13 @@
 package nuri.business.domain.system.service.survey;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
+import java.util.List;
 
 @Repository
 public interface SurveyResultRepository extends JpaRepository<SurveyResult, String> {
@@ -13,4 +19,37 @@ public interface SurveyResultRepository extends JpaRepository<SurveyResult, Stri
     void deleteBySrvyQstnId(String srvyQstnId);
 
     void deleteBySrvyArtclId(String srvyArtclId);
+
+    /** 응답자명 부분일치(선택). 관리 목록은 설문 경계를 넘어 조회한다 — 응답 내용에는 신상이 없다. */
+    @Query("SELECT r FROM SurveyResult r WHERE :keyword = '' OR r.rspnsNm LIKE %:keyword%")
+    Page<SurveyResult> searchByRspnsNm(@Param("keyword") String keyword, Pageable pageable);
+
+    /**
+     * 항목별 응답 수 집계.
+     *
+     * <p>항목마다 {@code countBySrvyArtclId} 를 부르면 항목 수만큼 쿼리가 나간다(N+1).
+     * 설문 하나를 한 번의 group by 로 집계한다.
+     */
+    @Query("""
+            SELECT r.srvyArtclId AS srvyArtclId, COUNT(r) AS cnt
+            FROM SurveyResult r
+            WHERE r.srvyId = :srvyId
+            GROUP BY r.srvyArtclId
+            """)
+    List<ArticleCount> countGroupedByArticle(@Param("srvyId") String srvyId);
+
+    /** {@link #countGroupedByArticle} 전용 투영. */
+    interface ArticleCount {
+        String getSrvyArtclId();
+
+        long getCnt();
+    }
+
+    /**
+     * 같은 사용자가 같은 설문에 이미 응답했는지.
+     *
+     * <p>{@code frstRgtrId} 는 {@code BaseEntity} 의 {@code @CreatedBy} 감사 컬럼이다.
+     * 이 테이블에는 응답자 사용자 ID 컬럼이 따로 없어, 제출자 식별자는 사실상 이 감사 컬럼뿐이다.
+     */
+    boolean existsBySrvyIdAndFrstRgtrId(String srvyId, String frstRgtrId);
 }

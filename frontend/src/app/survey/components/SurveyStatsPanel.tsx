@@ -19,7 +19,7 @@ import { Loader2, BarChart3 } from 'lucide-react';
 export function SurveyStatsPanel({ srvyId }: { srvyId: string }) {
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ['survey-stats', srvyId],
-    queryFn: () => getSurveyStats({ srvyId, type: '1' }),
+    queryFn: () => getSurveyStats({ srvyId }),
     enabled: !!srvyId,
     retry: false,
   });
