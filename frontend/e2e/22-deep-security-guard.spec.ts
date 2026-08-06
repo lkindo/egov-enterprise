@@ -122,7 +122,20 @@ test.describe('Tier 22: Deep Security Guard', () => {
                 for (const payload of payloads) {
                     console.log(`>>> Testing Payload: ${payload}`);
                     await commentInput.fill(payload);
-                    await page.getByRole('button', { name: /Commit Response|등록/i }).click();
+                    // [2026-08-06] `/Commit Response|등록/i` 에서 '등록' 대안을 제거한다.
+                    //
+                    // 이 버튼의 라벨은 'Commit Response'(또는 전송 중 'COMMITTING...')뿐이고
+                    // **'등록' 이었던 적이 없다**(CommentSection.tsx 실측). 즉 그 대안은 이 버튼을
+                    // 맞춘 적이 없고, **다른 폼의 버튼만 잡는 오매칭원**이었다.
+                    //
+                    // 실제로 게시글 상세에 만족도 위젯이 추가되자 '등록' 버튼이 하나 더 생겨
+                    // strict mode violation(resolved to 2 elements)으로 이 XSS 검증이 죽었다.
+                    // 위젯 라벨을 '만족도 등록' 으로 바꿔도 해결되지 않는다 — 정규식이 앵커 없는
+                    // 부분 일치라 '만족도 등록' 도 여전히 `/등록/i` 에 걸린다.
+                    //
+                    // 근본 원인은 셀렉터가 대상 버튼을 특정하지 못한 것이므로 셀렉터를 좁힌다.
+                    // 이는 검증을 약화시키지 않는다 — 오히려 의도한 버튼만 정확히 누른다.
+                    await page.getByRole('button', { name: /Commit Response|COMMITTING/i }).click();
 
                     // 페이로드가 '텍스트'로 이스케이프 렌더링되어야 한다(React {value}는 자동 이스케이프).
                     await expect(
