@@ -65,8 +65,15 @@ class PkGenerationStandardLinterTest {
             //   FE 의 /api/v1/faqs 호출 0건. V2_40 으로 테이블·RBAC 프로그램과 함께 제거했다.
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다.
             //   게이트가 red 로 알려서 목록을 줄이게 만들었고, 그것이 이 게이트의 설계 의도다.
-            "FileMaster", "GroupManage", "Hpcm", "IndividualPage", "InformalSanction", "InstitutionCode",
-            "InternetSvcGuidance", "LoginLog", "LoginPolicy", "MemoReport", "MemoTodo", "Menu",
+            // [2026-08-06 제거] "IndividualPage" · "MemoTodo" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).
+            //   두 도메인은 서비스가 완성돼 있었으나 컨트롤러가 없어 도달 불가였고 FE 라우트·서비스도 0건이었다.
+            //   라이브 실측: tb_indv_pg 0행 / tb_memo_todo_info 0행 — 이 목록의 전제인 "데이터 영속" 이
+            //   성립하지 않는다. 서비스·리포지토리·DTO·테스트까지 닫힌 폐포로 함께 제거했다.
+            //   ⚠ 물리 테이블은 건드리지 않았다 — 테이블 삭제는 스키마 변경이라 별도 승인이 필요하다.
+            //     현재 상태는 "엔티티 없는 빈 테이블 2개" 이며 그 처분은 미결로 남는다.
+            //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
+            "FileMaster", "GroupManage", "Hpcm", "InformalSanction", "InstitutionCode",
+            "InternetSvcGuidance", "LoginLog", "LoginPolicy", "MemoReport", "Menu",
             "MyPageContent", "Note", "NoteRecptn", "NoteTrnsmit", "Notification", "OnlineManual",
             "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage", "Popup",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RewardManage", "RoleInfo", "Schedule",
