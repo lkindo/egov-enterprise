@@ -10,7 +10,15 @@ import lombok.*;
  * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder/@AllArgsConstructor 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
  */
 @Entity
-@Table(name = "tb_srvy_rslt")
+@Table(
+        name = "tb_srvy_rslt",
+        // V2_44 의 DB UNIQUE 를 JPA 로 미러링한다(UniqueConstraintMirrorLinterTest 강제).
+        // 입도가 (설문, 문항, 항목, 등록자)인 이유: 제출 1회가 답변 수만큼 행을 만들고 그 행들이
+        // 전부 같은 srvy_id·frst_rgtr_id 를 가지므로, 그 둘만으로 UNIQUE 를 걸면 정상 제출이 깨진다.
+        // 다중선택은 항목이 달라 통과하고, 완전 동일 행만 차단된다.
+        uniqueConstraints = @UniqueConstraint(
+                name = "uk_tb_srvy_rslt_answer",
+                columnNames = {"srvy_id", "srvy_qstn_id", "srvy_artcl_id", "frst_rgtr_id"}))
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SurveyResult extends BaseEntity {

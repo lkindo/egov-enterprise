@@ -63,11 +63,23 @@ public class SurveyResultService {
     /**
      * 설문 응답 제출. 답변 N건이 행 N개가 된다.
      *
-     * <p><b>중복 제출은 애플리케이션 레벨에서 막는다.</b> 물리 스키마에 유니크 제약이 없어
-     * (온라인 투표 {@code tb_onln_poll_rslt} 는 {@code V2_4} 로 유니크가 있지만 설문에는 없다)
-     * DB 가 이를 보장하지 못한다. 제약 추가는 스키마 변경이라 별도 승인이 필요하므로,
-     * 우선 서비스에서 차단하고 <b>동시 요청에는 취약함을 명시</b>한다 — 두 요청이 동시에
-     * 통과하면 중복 행이 생긴다. 근본 해결은 {@code (srvy_id, frst_rgtr_id)} 유니크 인덱스다.
+     * <p><b>중복 제출 방어는 두 겹이다.</b>
+     * <ol>
+     *   <li>여기 {@code existsBySrvyIdAndFrstRgtrId} — 비동시 재제출을 막는다.</li>
+     *   <li>{@code V2_44} 의 {@code uk_tb_srvy_rslt_answer}
+     *       ({@code srvy_id, srvy_qstn_id, srvy_artcl_id, frst_rgtr_id}) — 동일 답변 행의 중복을
+     *       DB 가 막는다.</li>
+     * </ol>
+     *
+     * <p><b>⚠ 종전 주석이 "근본 해결은 {@code (srvy_id, frst_rgtr_id)} 유니크 인덱스" 라고
+     * 적었는데 그것은 틀렸다.</b> 제출 1회가 답변 수만큼 행을 만들고 그 행들이 전부 같은
+     * {@code srvy_id}·{@code frst_rgtr_id} 를 가지므로, 그 조합에 UNIQUE 를 걸면 <b>정상 제출의
+     * 2번째 답변부터 거부된다</b>. 온라인 투표(V2_4)는 1인 1행이라 통했을 뿐이다.
+     *
+     * <p><b>아직 닫히지 않은 것</b>: 두 요청이 동시에 1)을 통과한 뒤 <b>서로 다른 항목</b>을 고르면
+     * 두 벌의 응답이 함께 남는다. 완전한 보장은 "이 사용자가 이 설문에 응답했다" 를 담는 단일
+     * 앵커 행이 필요하며(예: 제출 시 {@code tb_srvy_rspdnt} 행 생성 + 거기에 UNIQUE), 그것은
+     * 응답자 테이블의 성격(PII 보유)과 제출 의미론을 함께 정해야 하는 제품 결정이다.
      */
     @Transactional
     public int submitResponse(String srvyId, SurveyResponseSubmitDto dto) {
