@@ -95,6 +95,7 @@ const broken = active.filter((m) => {
 // ② 중복 — 같은 경로(쿼리 포함)를 가리키는 활성 메뉴가 둘 이상
 const byRoute = new Map();
 for (const m of active) {
+  // 빈 문자열도 falsy 라 여기서 함께 걸러진다 — 폴더 표기가 NULL/'' 로 혼재해도 안전하다.
   if (!m.modern_route) continue;
   const k = m.modern_route;
   if (!byRoute.has(k)) byRoute.set(k, []);
@@ -112,7 +113,8 @@ const parentChildSame = active.filter((m) => {
 // ④ 고아 라우트 — 실제 화면인데 어떤 활성 메뉴도 가리키지 않는다.
 //    단, 메뉴가 가리키는 화면의 **하위 경로**(상세·등록·수정 등)는 메뉴 대상이 아닌 것이 정상이므로
 //    분리해서 센다. 이 구분을 하지 않으면 "고아 65건" 같은 노이즈 숫자가 나와 판단을 흐린다.
-const menuPaths = new Set(active.map((m) => pathOf(m.modern_route)).filter(Boolean));
+// pathOf('') === '/' 가 되므로 빈 문자열은 먼저 제거한다(폴더는 경로가 아니다).
+const menuPaths = new Set(active.filter((m) => m.modern_route).map((m) => pathOf(m.modern_route)));
 const hasMenuedAncestor = (r) => {
   const segs = r.split('/').filter(Boolean);
   for (let i = segs.length - 1; i > 0; i--) {
