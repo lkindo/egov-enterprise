@@ -137,7 +137,9 @@ export default function SatisfactionSection({ bbsId, pstId }: { bbsId: string; p
           <span className="text-sm font-medium shrink-0">별점</span>
           <Stars score={score} onSelect={setScore} size={20} />
         </div>
+        {/* placeholder 는 라벨이 아니다 — 입력 중에 사라지고 스크린리더가 라벨로 읽지 않는다. */}
         <textarea
+          aria-label="만족도 의견"
           value={content}
           onChange={(e) => setContent(e.target.value)}
           placeholder="의견을 남겨주세요 (선택)"
