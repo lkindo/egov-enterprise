@@ -10,8 +10,6 @@ egovframe = "5.0.0"
 #   ⚠ 위 두 곳은 반드시 함께 바꿔야 한다.
 spring-doc = "2.8.5"
 spring-ai = "1.0.0-M5"
-micrometer-tracing = "1.4.3"
-micrometer = "1.14.4"
 spring-boot-admin = "3.4.1"
 postgresql = "42.7.13"
 commons-io = "2.22.0"
@@ -26,12 +24,10 @@ scribejava = "8.3.3"
 xmlbeans = "5.3.0"
 jdom2 = "2.0.6.1"
 dbcp2 = "2.14.0"
-jjwt = "0.12.6"
-cubrid = "11.3.2.0053"
-hibernate-dialects = "6.4.0.Final"
+jjwt = "0.13.0"
 h2 = "2.4.240"
 caffeine = "3.2.4"
-testcontainers = "1.20.4"
+testcontainers = "1.21.4"
 mapstruct = "1.6.3"
 lombok-mapstruct-binding = "0.2.0"
 
@@ -55,10 +51,14 @@ spring-ai-ollama = { group = "org.springframework.ai", name = "spring-ai-ollama-
 spring-ai-pgvector = { group = "org.springframework.ai", name = "spring-ai-pgvector-store-spring-boot-starter" }
 
 # Observability
-micrometer-tracing-bridge-otel = { group = "io.micrometer", name = "micrometer-tracing-bridge-otel", version.ref = "micrometer-tracing" }
+# [2026-08-06] 명시 버전 제거 — Spring Boot BOM 이 관리한다(실측: 1.5.12 로 해석).
+#   종전 카탈로그 값 1.4.3 은 BOM(1.5.12)에 밀려 이미 무효였고, Dependabot 이 제안한 1.7.0 은
+#   반대로 BOM 을 이겨(Gradle 최고버전 해석) Boot 3.5 관리 범위를 벗어난다.
+micrometer-tracing-bridge-otel = { group = "io.micrometer", name = "micrometer-tracing-bridge-otel" }
 opentelemetry-exporter-otlp = { group = "io.opentelemetry", name = "opentelemetry-exporter-otlp" }
 
-micrometer-registry-prometheus = { group = "io.micrometer", name = "micrometer-registry-prometheus", version.ref = "micrometer" }
+# [2026-08-06] 명시 버전 제거 — Spring Boot BOM 이 관리한다(실측: 1.15.12 로 해석).
+micrometer-registry-prometheus = { group = "io.micrometer", name = "micrometer-registry-prometheus" }
 spring-boot-admin-client = { group = "de.codecentric", name = "spring-boot-admin-starter-client", version.ref = "spring-boot-admin" }
 
 springdoc-openapi = { group = "org.springdoc", name = "springdoc-openapi-starter-webmvc-ui", version.ref = "spring-doc" }
@@ -87,8 +87,6 @@ jjwt-api = { group = "io.jsonwebtoken", name = "jjwt-api", version.ref = "jjwt" 
 jjwt-impl = { group = "io.jsonwebtoken", name = "jjwt-impl", version.ref = "jjwt" }
 jjwt-jackson = { group = "io.jsonwebtoken", name = "jjwt-jackson", version.ref = "jjwt" }
 
-cubrid-jdbc = { group = "org.cubrid", name = "cubrid-jdbc", version.ref = "cubrid" }
-hibernate-community-dialects = { group = "org.hibernate.orm", name = "hibernate-community-dialects", version.ref = "hibernate-dialects" }
 h2 = { group = "com.h2database", name = "h2", version.ref = "h2" }
 caffeine = { group = "com.github.ben-manes.caffeine", name = "caffeine", version.ref = "caffeine" }
 

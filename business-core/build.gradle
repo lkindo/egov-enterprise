@@ -34,7 +34,7 @@ dependencies {
     annotationProcessor libs.lombok.mapstruct.binding
 
     // API Docs
-    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.27'
+    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.52'
 
     // Testing
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
@@ -53,8 +53,8 @@ dependencies {
     testFixturesApi 'org.springframework.security:spring-security-test'
     testFixturesApi 'com.h2database:h2'
     testFixturesApi 'org.flywaydb:flyway-core'
-    testFixturesApi 'org.testcontainers:postgresql:1.20.4'
-    testFixturesApi 'org.testcontainers:jdbc:1.20.4'
+    testFixturesApi libs.testcontainers.postgresql
+    testFixturesApi libs.testcontainers.jdbc
     testFixturesApi platform(libs.spring.ai.bom)
     testFixturesApi libs.spring.ai.openai
     testFixturesApi libs.spring.ai.ollama

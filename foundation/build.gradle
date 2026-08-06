@@ -29,7 +29,7 @@ dependencies {
     runtimeOnly libs.jjwt.jackson
 
     // API Docs / Validation
-    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.27'
+    api 'io.swagger.core.v3:swagger-annotations-jakarta:2.2.52'
 
     // QueryDSL
     api 'com.querydsl:querydsl-jpa:5.1.0:jakarta'
@@ -87,9 +87,9 @@ dependencies {
     testImplementation 'org.flywaydb:flyway-core'
     
     // Testcontainers for integration testing with real PostgreSQL
-    testImplementation 'org.testcontainers:postgresql:1.20.4'
-    testImplementation 'org.testcontainers:jdbc:1.20.4'
-    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+    testImplementation libs.testcontainers.postgresql
+    testImplementation libs.testcontainers.jdbc
+    testImplementation libs.testcontainers.junit.jupiter
     testRuntimeOnly libs.postgresql
     
     // ArchUnit
