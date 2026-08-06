@@ -43,7 +43,7 @@ jobs:
       #   매 실행 NVD 전량을 다시 받았고, 그것이 43분 소진의 구조적 원인이었다.
       #   API 키만 넣고 캐시를 넣지 않으면 개선폭이 제한된다.
       - name: Cache NVD data
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830  # v4
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: build/dependency-check-cache
           key: nvd-${{ github.run_id }}
