@@ -22,6 +22,7 @@ import { fileService } from '@/services/foundation/file/FileService';
 import { deleteBoardArticle } from '@/app/actions/boardActions';
 import { BoardMaster } from '@/services/foundation/system/BoardAdminService';
 import CommentSection from '@/components/features/comment/CommentSection';
+import SatisfactionSection from '@/components/features/satisfaction/SatisfactionSection';
 
 import { CommentVO } from '@/types/business/comment';
 
@@ -405,11 +406,14 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.7 }}
       >
-        <CommentSection 
-          bbsId={bbsId!} 
-          pstId={pstId!} 
-          initialComments={initialData.initialComments} 
+        <CommentSection
+          bbsId={bbsId!}
+          pstId={pstId!}
+          initialComments={initialData.initialComments}
         />
+
+        {/* D-8 만족도 — 백엔드는 #302 에서 배선됐고 이 위젯이 그 짝을 맞춘다 */}
+        <SatisfactionSection bbsId={bbsId!} pstId={pstId!} />
       </motion.div>
     </motion.div>
   );
