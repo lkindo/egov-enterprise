@@ -87,9 +87,9 @@ dependencies {
     testImplementation 'org.flywaydb:flyway-core'
     
     // Testcontainers for integration testing with real PostgreSQL
-    testImplementation 'org.testcontainers:postgresql:1.20.4'
-    testImplementation 'org.testcontainers:jdbc:1.20.4'
-    testImplementation 'org.testcontainers:junit-jupiter:1.20.4'
+    testImplementation libs.testcontainers.postgresql
+    testImplementation libs.testcontainers.jdbc
+    testImplementation libs.testcontainers.junit.jupiter
     testRuntimeOnly libs.postgresql
     
     // ArchUnit
