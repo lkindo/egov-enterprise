@@ -70,7 +70,7 @@ describe('SatisfactionSection', () => {
     const user = userEvent.setup();
     renderWidget();
 
-    await user.click(await screen.findByRole('button', { name: '등록' }));
+    await user.click(await screen.findByRole('button', { name: '만족도 등록' }));
 
     expect(await screen.findByText('별점을 선택해 주세요.')).toBeInTheDocument();
     expect(mocked.create).not.toHaveBeenCalled();
@@ -82,7 +82,7 @@ describe('SatisfactionSection', () => {
     renderWidget();
 
     await user.click(await screen.findByRole('button', { name: '4점' }));
-    await user.click(screen.getByRole('button', { name: '등록' }));
+    await user.click(screen.getByRole('button', { name: '만족도 등록' }));
 
     await waitFor(() => {
       expect(mocked.create).toHaveBeenCalledWith('BBS_01', 'P1',

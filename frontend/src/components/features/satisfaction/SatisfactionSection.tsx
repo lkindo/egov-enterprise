@@ -149,8 +149,17 @@ export default function SatisfactionSection({ bbsId, pstId }: { bbsId: string; p
         />
         {error && <p className="text-sm text-destructive-emphasis">{error}</p>}
         <div className="flex justify-end">
+          {/*
+            라벨을 '만족도 등록' 으로 한정한다. 이 위젯은 게시글 상세(BoardDetailClient)에서
+            댓글 섹션과 **나란히** 놓이는데, 댓글 등록 버튼과 이름이 겹치면
+            ① 사용자가 어느 폼의 버튼인지 구분하기 어렵고
+            ② 접근성 트리에 같은 이름의 제출 버튼이 둘 생긴다.
+            실제로 종전 '등록' 라벨이 E2E 를 깨뜨렸다 — 22-deep-security-guard 의
+            getByRole('button', { name: /Commit Response|등록/i }) 가 2개로 해석돼
+            strict mode violation 이 났다. 화면의 모호함이 테스트에 먼저 드러난 것이다.
+          */}
           <Button type="submit" size="sm" disabled={createMutation.isPending}>
-            {createMutation.isPending ? '등록 중…' : '등록'}
+            {createMutation.isPending ? '만족도 등록 중…' : '만족도 등록'}
           </Button>
         </div>
       </form>
