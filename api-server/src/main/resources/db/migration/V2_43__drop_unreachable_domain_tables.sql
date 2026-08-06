@@ -1,0 +1,34 @@
+-- 도달 불가 도메인 2종의 물리 테이블 제거 — #304 가 코드만 지우고 남겨 둔 잔여의 마무리.
+--
+-- [배경]
+-- #304(UnreachableServiceLinterTest 신설)에서 생산 코드가 전혀 참조하지 않는 @Service 4건을
+-- 제거했다. 그중 둘은 도메인 전체가 죽어 있었다.
+--   · IndividualPageService  → IndividualPage 엔티티 · 리포지토리 · DTO 함께 제거
+--   · MemoTodoService        → MemoTodo 엔티티 · 리포지토리 · DTO 함께 제거
+-- 당시 물리 테이블은 건드리지 않았다 — 스키마 변경이라 별도 승인이 필요했기 때문이다.
+-- 그 승인을 받아(2026-08-06) 이제 테이블을 지운다. 현재 상태는 "엔티티 없는 빈 테이블 2개" 다.
+--
+-- [삭제 직전 라이브 실측 — 2026-08-06]
+--   tb_indv_pg          0행 · FK 참조 0 · 인덱스는 PK(pk_tb_indv_pg) 하나뿐
+--   tb_memo_todo_info   0행 · FK 참조 0 · 인덱스는 PK(pk_tb_memo_todo_info) 하나뿐
+--   두 테이블 모두 전용 시퀀스 없음 · tb_prgrm_lst 등록 0건 · tb_menu_info 참조 0건
+--   엔티티/리포지토리/서비스/DTO 는 #304 에서 이미 제거돼 코드 참조도 0
+--
+-- [⚠ 이름이 비슷한 살아 있는 테이블을 지우지 않도록 확인한 것]
+--   · tb_indv_pg_conts  — 이름은 tb_indv_pg 의 자식처럼 보이지만 **page_id 컬럼이 없다**(실측).
+--                         부모-자식 관계가 아니라 접두사만 같은 별개 테이블이며,
+--                         MyPageContent 엔티티 → MyPageContentRepository → MyPageService →
+--                         MyPageApiController 로 **완전히 배선돼 살아 있다.** 건드리지 않는다.
+--   · tb_memo_rpt_info  — 메모보고(MemoReportService)는 별개 라이브 도메인이다. 건드리지 않는다.
+--   이름 유사성만으로 묶어 지웠다면 라이브 도메인을 깨뜨렸을 것이다(§0.7-H4 — 일괄 처리 금지).
+--
+-- [linter:ignore 근거]
+-- ZeroDowntimeMigrationLinterTest 는 DROP TABLE 을 기본 차단한다(확장-축소 패턴 강제).
+-- 여기서는 축소할 확장 단계가 애초에 없다 — 이 테이블들을 읽고 쓰는 코드가 존재한 적이
+-- 없거나(0행이 그 증거) 이미 제거됐다. 위 실측을 근거로 명시적으로 무시한다.
+-- V2_16 · V2_40 · V2_41 이 같은 형식으로 선행 처리한 전례를 따른다.
+--
+-- [멱등성] IF EXISTS 로 재적용 시 통과한다.
+
+DROP TABLE IF EXISTS tb_indv_pg;        -- linter:ignore  근거: 라이브 0행 · FK 0 · 코드 참조 0 (헤더 참조)
+DROP TABLE IF EXISTS tb_memo_todo_info; -- linter:ignore  근거: 라이브 0행 · FK 0 · 코드 참조 0 (헤더 참조)
