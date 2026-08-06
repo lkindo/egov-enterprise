@@ -124,12 +124,25 @@
 #### 4.1 필수 증거 (현행 게이트 명시)
 | 작업 도메인 | 증거 유형 |
 |:---|:---|
-| **UI/Frontend** | `npx tsc --noEmit`(정적 타입) — GEMINI.md §0.6 HARD 게이트(pre-push 기계강제) + 계약 드리프트 게이트 `codegen:verify`/`codegen:verify:zod`(api-docs.json ↔ generated-api.d.ts/generated-zod.ts, pre-push HARD 차단). `next build`/`pnpm run build`(RSC 서버/클라이언트 경계)는 **CI 게이트**(ci.yml)로, CI 과금차단 시 §4.1 보류 규정에 따라 정직 보류. 추가로 런타임 거동은 Playwright 테스트 로그·브라우저 스크린샷·스토리북 렌더링 결과. |
+| **UI/Frontend** | `npx tsc --noEmit`(정적 타입) — GEMINI.md §0.6 HARD 게이트(pre-push 기계강제) + 계약 드리프트 게이트 `codegen:verify`/`codegen:verify:zod`(api-docs.json ↔ generated-api.d.ts/generated-zod.ts, pre-push HARD 차단). `next build`/`pnpm run build`(RSC 서버/클라이언트 경계)는 로컬에서도 실행 가능하다. **런타임 거동(Playwright E2E)은 CI 에서만 돌며 pre-push 에 없다** — UI 변경은 **CI 초록이 유일한 증거**다(2026-08-06 정정: 종전 "CI 과금차단" 서술은 사실이 아니었다). |
 | **Backend/API** | `./gradlew compileJava compileTestJava`(컴파일 무결성) — §0.6 HARD 게이트. **+ `./gradlew :api-server:harnessTest`**(헌법/표준 린터 13종, pre-push 기계강제·실측 ~2분). 추가로 JUnit/ArchUnit 결과 로그, API 응답 데이터 덤프(JSON). |
 | **Database** | `db-bridge` 쿼리 실행 결과·행(Row) 수, `flyway_schema_history` 확인, `EXPLAIN ANALYZE` 결과, 스키마 변경 확인 로그. **엔티티·DDL 변경 시 `./gradlew :api-server:schemaValidationTest`**(빈 PostgreSQL 17 + Flyway 전량 적용 + Hibernate `ddl-auto:validate`, Docker 필요). ⚠ 단위 테스트 프로파일은 **H2 + `create-drop`** 이라 물리 스키마 불일치를 **원리적으로 검출하지 못한다** — 그 그린을 스키마 증거로 제시하지 말 것. |
 | **아키텍처/규칙** | 신설·수정한 ArchUnit/린트 게이트가 그린임을 대상 테스트 직접 실행(`--tests`)으로 증명. **게이트를 신설·수정했다면 그린 확인만으로 부족하다 — 의도적으로 위반을 주입해 red 가 되는 것까지 증명한다**(그린만 확인하면 vacuous 통과·UP-TO-DATE 스킵과 구분되지 않는다. GEMINI.md §0.7-H5). |
 
-> **게이트 계층(2026-07-26 실측)**: pre-commit(수 초, 경고) → **pre-push**(컴파일+tsc+codegen+하네스 13종, ~2분, 차단) → **`./gradlew localGate`**(위 + 실PG 스키마 검증 + 전 모듈 테스트, ~10분, 병합 전 1회) → CI(전체+E2E+뮤테이션, *현재 과금차단*). business 모듈 테스트만 7분 48초라 pre-push 에 넣을 수 없어 `localGate` 로 분리했다 — 제외 사실을 숨기지 않기 위해 명시한다. 상세는 [.githooks/README.md](../../.githooks/README.md).
+> **게이트 계층(2026-08-06 실측 갱신)**: pre-commit(수 초, 경고) → **pre-push**(컴파일+tsc+codegen+하네스 30종, ~2분, 차단) → **`./gradlew localGate`**(위 + 실PG 스키마 검증 + 전 모듈 테스트, ~10분, 병합 전 1회) → **CI**(secret-scan · backend-build · frontend-build · mutation-test · **e2e-tests 3샤드**). business 모듈 테스트만 7분 48초라 pre-push 에 넣을 수 없어 `localGate` 로 분리했다 — 제외 사실을 숨기지 않기 위해 명시한다. 상세는 [.githooks/README.md](../../.githooks/README.md).
+>
+> ⛔ **"CI 과금차단" 서술을 삭제한다 — 사실이 아니었다.** 저장소는 **PUBLIC** 이고 워크플로우는
+> 정상 작동 중이다(2026-08-06 실측: 최근 60회 중 success 29 · failure 22 · cancelled 9).
+> 이 문구가 남아 있던 탓에 에이전트가 **문서를 근거로 인프라 상태를 단정**했고(§3.1-2 위반),
+> 로컬 pre-push 통과를 CI 통과로 보고했다. 그 결과 **E2E 파손이 8커밋 동안 누적**됐다(#305~#312).
+>
+> ⚠ **pre-push 에는 E2E 가 없다.** 로컬 게이트 전부 그린이어도 E2E 는 검증되지 않은 상태다.
+> UI 를 건드리는 변경은 **CI 초록을 확인한 뒤에** 완료로 선언할 것.
+> (실사례: 게시글 상세에 위젯을 추가하며 버튼 라벨을 기존 버튼과 같게 달았더니 Playwright
+> strict mode violation 으로 **XSS 새니타이제이션 검증**이 죽었다. 로컬 게이트로는 보이지 않는다.)
+>
+> ⚠ **PR 병합 시 `mergeStateStatus` 를 확인할 것.** `UNSTABLE` 은 "병합은 가능하나 **체크 실패**"
+> 를 뜻한다. 자동 병합 도구가 `UNSTABLE` 을 병합 가능으로 취급하면 red CI 가 그대로 들어간다.
 
 - **런타임 검증 불가 시 (정직한 보류)** — *신설*: 인프라 제약(DB 다운·엔드포인트 인증 게이트·도구 부재 등)으로 런타임 증거를 확보할 수 없는 경우, **정적 증거(코드·설정·컴파일·정적분석)로 확증 가능한 범위를 명시**하고 나머지는 **근거와 함께 보류(deferred)** 로 정직하게 보고한다. 미검증 항목을 "성공/완료"로 선언해 은폐하는 것을 엄격히 금지한다. 보류 항목은 재개 조건(예: DB 복구 후 해당 플로우 구동)을 함께 기록한다.
 
@@ -163,5 +176,5 @@
 - **정직한 보고** — *신설*: 실패·스킵·보류는 있는 그대로 보고한다. 인프라 상태·검증 결과를 추정으로 단정하거나, 미검증을 완료로 선언하지 않는다(§3.1-2, §4.1 보류 규정과 정합).
 
 ---
-*Last Updated: 2026-07-26 (사용자 승인 — §4.1 게이트 계층 현행화: `harnessTest`(pre-push 기계강제)·`schemaValidationTest`(실PG+Flyway+validate)·`localGate` 편입, H2 create-drop 그린을 스키마 증거로 쓰지 말 것 명시, 게이트 신설 시 위반 주입 red 확인 의무. 2026-07-23 §4.1 게이트 정정 — `next build`를 §0.6 HARD 가 아닌 CI 게이트로 재귀속, pre-push codegen 드리프트 게이트 명시. 2026-07-08 정합성 감사 pass[Stage 2.1 Mode→Direct/위임]. 2026-07-07 현행 실태 반영: 이중 오퍼레이터 전제 명문화, 실행 방식을 **Direct vs 위임(서브에이전트·워크플로우)** 으로 단순화["Mode A/B/C" 제거, 위임 불변 규칙=컨텍스트 패킷+메인 재검증], 포괄 승인(Standing Approval), 인프라 상태 실측 의무(§3.1-2), 런타임 불가 시 정직 보류, 공유 트리 커밋 규율. 이전: 2026-05-18 Antigravity.)*
+*Last Updated: 2026-08-06 (**"CI 과금차단" 서술 삭제 — 사실이 아니었다.** 저장소는 PUBLIC 이고 워크플로우는 정상 작동 중이다(실측: 최근 60회 중 success 29). 이 문구 탓에 에이전트가 문서를 근거로 인프라 상태를 단정해 §3.1-2 를 위반했고, 로컬 pre-push 통과를 CI 통과로 보고해 E2E 파손이 8커밋 동안 누적됐다(#305~#312). 함께 명시: pre-push 에 E2E 가 없다 · UI 변경은 CI 초록이 유일한 증거 · PR 병합 시 mergeStateStatus=UNSTABLE 은 체크 실패를 뜻한다 · 하네스 린터 13종 → 30종. 이전: 2026-07-26 (사용자 승인 — §4.1 게이트 계층 현행화: `harnessTest`(pre-push 기계강제)·`schemaValidationTest`(실PG+Flyway+validate)·`localGate` 편입, H2 create-drop 그린을 스키마 증거로 쓰지 말 것 명시, 게이트 신설 시 위반 주입 red 확인 의무. 2026-07-23 §4.1 게이트 정정 — `next build`를 §0.6 HARD 가 아닌 CI 게이트로 재귀속, pre-push codegen 드리프트 게이트 명시. 2026-07-08 정합성 감사 pass[Stage 2.1 Mode→Direct/위임]. 2026-07-07 현행 실태 반영: 이중 오퍼레이터 전제 명문화, 실행 방식을 **Direct vs 위임(서브에이전트·워크플로우)** 으로 단순화["Mode A/B/C" 제거, 위임 불변 규칙=컨텍스트 패킷+메인 재검증], 포괄 승인(Standing Approval), 인프라 상태 실측 의무(§3.1-2), 런타임 불가 시 정직 보류, 공유 트리 커밋 규율. 이전: 2026-05-18 Antigravity.))*
 *Governed by: Enterprise Governance Constitution*
