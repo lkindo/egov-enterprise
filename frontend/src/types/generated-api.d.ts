@@ -382,6 +382,30 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /**
+         * 만족도 수정
+         * @description 본문의 pswd 는 소유 증명용 자격이며 저장된 비밀번호를 바꾸지 않는다.
+         */
+        put: operations["update"];
+        post?: never;
+        /**
+         * 만족도 삭제
+         * @description 논리 삭제. 소유자 또는 익명 작성 비밀번호가 필요하다.
+         */
+        delete: operations["delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/bbs/{bbsId}/posts/{pstId}": {
         parameters: {
             query?: never;
@@ -1700,6 +1724,27 @@ export interface paths {
         get: operations["getComments"];
         put?: never;
         post: operations["createComment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 만족도 목록
+         * @description 해당 게시글의 사용 중(use_yn='Y') 만족도만 반환한다.
+         */
+        get: operations["getList"];
+        put?: never;
+        /** 만족도 등록 */
+        post: operations["create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -3551,6 +3596,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/average": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 만족도 평균
+         * @description 응답이 없으면 null 이다 — 0 과 구분해야 한다.
+         */
+        get: operations["getAverage"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/banners/reflected": {
         parameters: {
             query?: never;
@@ -4291,6 +4356,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}/moderate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /**
+         * 만족도 강제 삭제(관리자)
+         * @description 비밀번호 없이 지운다. 욕설·스팸 정리를 위한 대리 삭제 경로다.
+         */
+        delete: operations["moderate"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/board-masters/{bbsId}/physical": {
         parameters: {
             query?: never;
@@ -4663,6 +4748,21 @@ export interface components {
             useYn?: string;
             /** @description 게시글 비밀번호 */
             pswd?: string;
+        };
+        SatisfactionDto: {
+            /** Format: int64 */
+            dgstfnSn?: number;
+            bbsId?: string;
+            pstId?: string;
+            dgstfnCn?: string;
+            /** Format: int32 */
+            dgstfnScr?: number;
+            userId?: string;
+            userNm?: string;
+            pswd?: string;
+            useYn: string;
+            /** Format: date-time */
+            crtDt?: string;
         };
         MyPageContentDto: {
             cntntsId?: string;
@@ -6721,6 +6821,30 @@ export interface components {
             code?: string;
             message?: string;
             data?: components["schemas"]["BoardDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponseListSatisfactionDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["SatisfactionDto"][];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponseMapStringDouble: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: {
+                [key: string]: number;
+            };
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
@@ -9199,6 +9323,60 @@ export interface operations {
                  * @example 1
                  */
                 pstId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
+                pstId: string;
+                dgstfnSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SatisfactionDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    delete: {
+        parameters: {
+            query?: {
+                pswd?: string;
+            };
+            header?: never;
+            path: {
+                bbsId: string;
+                pstId: string;
+                dgstfnSn: number;
             };
             cookie?: never;
         };
@@ -12461,6 +12639,56 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["CommentDto"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseLong"];
+                };
+            };
+        };
+    };
+    getList: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
+                pstId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseListSatisfactionDto"];
+                };
+            };
+        };
+    };
+    create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
+                pstId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SatisfactionDto"];
             };
         };
         responses: {
@@ -15844,6 +16072,29 @@ export interface operations {
             };
         };
     };
+    getAverage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
+                pstId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseMapStringDouble"];
+                };
+            };
+        };
+    };
     getReflectedBanners: {
         parameters: {
             query?: never;
@@ -16858,6 +17109,30 @@ export interface operations {
             path: {
                 /** @description 관계 ID */
                 relationId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    moderate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
+                pstId: string;
+                dgstfnSn: number;
             };
             cookie?: never;
         };
