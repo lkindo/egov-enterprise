@@ -24,7 +24,8 @@ export interface SurveyQuestion {
   items: SurveyAnswer[];
 }
 
-interface SurveyAnswer {
+/** 문항의 선택 항목(`tb_srvy_artcl`). 문항 하위 자원이라 단독으로는 의미가 없다. */
+export interface SurveyAnswer {
   srvyArtclId: string;
   srvyQstnId: string;
   srvyId: string;

@@ -3,7 +3,7 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { LayoutGrid, BarChart3, Users, Plus, Layers, Activity, AlertTriangle, RefreshCcw } from "lucide-react";
+import { LayoutGrid, BarChart3, Users, Plus, Layers, Activity, AlertTriangle, RefreshCcw, ListChecks, LayoutTemplate, Users2 } from "lucide-react";
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
@@ -17,19 +17,21 @@ import { statsAdminService } from '@/services/foundation/system/StatsAdminServic
 // Components
 import PollManagePage from '../manage/page';
 import SurveyStatsPage from '../stats/page';
+import SurveyQuestionsPanel from '../components/SurveyQuestionsPanel';
+import SurveyTemplatesPanel from '../components/SurveyTemplatesPanel';
+import SurveyRespondentsClient from '../respondents/SurveyRespondentsClient';
 
 // 허브 탭 정의 — 아래 TabsList/TabsContent 와 1:1 로 유지한다.
 //
-// [감춘 탭 — 되살리는 방법]
-// questions('질문 라이브러리') / respondents('응답 그룹') / templates('템플릿') /
-// settings('시스템 연동') 네 탭은 내용이 없는 껍데기(PlaceholderCard "준비 중")였다.
-// 클릭하면 "아직 제공되지 않는 기능입니다" 만 나오는 탭을 상시 노출하는 것은 정직하지 않아
-// 구현 범위가 정해질 때까지 탭 목록에서 내린다.
-// 되살릴 때: 아래 SURVEY_TABS 에 키를 추가하고 TabsList 에 TabTrigger, 본문에 실제 화면을
-// 렌더하는 TabsContent 를 함께 넣는다(껍데기 카드는 다시 만들지 않는다).
-// 같은 릴리스의 V2_30 마이그레이션이 이 탭들을 가리키던 메뉴 행도 use_yn='N' 으로 감췄으므로,
-// 구현 시 그 메뉴도 use_yn='Y' 로 되돌려야 사이드바에 다시 나타난다.
-const SURVEY_TABS = ['manage', 'stats'] as const;
+// [2026-08-06] questions / templates / respondents 세 탭을 실제 화면으로 되살렸다.
+// 위 안내가 지시한 절차를 그대로 따랐다 — SURVEY_TABS 에 키 추가, TabTrigger·TabsContent 추가,
+// V2_42 로 해당 메뉴 행(2010300·2010400·2010500)의 use_yn 을 'Y' 로 복원.
+// 껍데기 카드는 만들지 않았다. 세 탭 모두 백엔드 CRUD 가 이미 존재했고 화면만 없었다.
+//
+// settings('시스템 연동') 탭은 여전히 없다 — 대응 백엔드가 없어 만들 것이 없다.
+// items('항목관리', 구 메뉴 2010600)도 탭으로 두지 않는다: 항목은 문항 하위 자원이라
+// 소속 문항 없이 의미가 없고, 문항 관리 탭 안에서 함께 다루는 것이 도메인에 맞다.
+const SURVEY_TABS = ['manage', 'questions', 'templates', 'respondents', 'stats'] as const;
 type SurveyTab = (typeof SURVEY_TABS)[number];
 
 const DEFAULT_TAB: SurveyTab = 'manage';
@@ -194,6 +196,9 @@ export function SurveyHubClient() {
  <div className="hub-glass-premium p-2 rounded-lg border-2 border-border/50 shadow-xl inline-flex w-full md:w-auto overflow-x-auto scrollbar-hide">
  <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
  <TabTrigger value="manage" icon={LayoutGrid} label="설문 관리" />
+ <TabTrigger value="questions" icon={ListChecks} label="문항 관리" />
+ <TabTrigger value="templates" icon={LayoutTemplate} label="템플릿" />
+ <TabTrigger value="respondents" icon={Users2} label="응답자" />
  <TabTrigger value="stats" icon={BarChart3} label="결과 통계" />
  </TabsList>
  </div>
@@ -209,6 +214,18 @@ export function SurveyHubClient() {
  >
  <TabsContent value="manage" className="m-0 focus-visible:outline-none">
  <PollManagePage />
+ </TabsContent>
+
+ <TabsContent value="questions" className="m-0 focus-visible:outline-none">
+ <SurveyQuestionsPanel />
+ </TabsContent>
+
+ <TabsContent value="templates" className="m-0 focus-visible:outline-none">
+ <SurveyTemplatesPanel />
+ </TabsContent>
+
+ <TabsContent value="respondents" className="m-0 focus-visible:outline-none">
+ <SurveyRespondentsClient />
  </TabsContent>
 
  <TabsContent value="stats" className="m-0 focus-visible:outline-none">
