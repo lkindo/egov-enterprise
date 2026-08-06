@@ -162,10 +162,21 @@ function normalizeConfig(raw: unknown): ThemeConfig {
 }
 
 /**
- * 시스템 테마 및 디자인 토큰 제어 센터 (어드민 반영 버전)
- * - 배너 관리는 기존 '배너 및 팝업관리' 전용 메뉴로 통합되었습니다.
- * - 본 페이지는 플랫폼의 핵심 디자인 변곡점(곡률, 컬러)을 전역적으로 제어하는 엔진 역할을 수행합니다.
- * - 편집 중 미리보기는 우측 시뮬레이터 **스코프에만** 적용되며, 전역(:root) 주입은 [전체 플랫폼 적용]을 눌렀을 때만 일어난다.
+ * 시스템 테마 및 디자인 토큰 제어 센터.
+ *
+ * <p><b>⚠ 저장 범위는 이 브라우저뿐이다.</b> 값은 {@code localStorage} 에만 보관되고 서버로 가지
+ * 않는다 — 다른 기기·다른 사용자에게는 반영되지 않는다. "전역" 이라 함은 <b>이 브라우저의
+ * {@code :root} 토큰</b>을 뜻하지 사이트 전체가 아니다.
+ *
+ * <p>[2026-08-06 문구 정정] 종전에는 버튼이 "전체 플랫폼 적용", 토스트가 "플랫폼 전반의 UI
+ * 인프라에 즉각 적용" 이라고 말했다. 같은 화면 하단 안내문("브라우저에만 보관되므로 다른
+ * 기기·다른 사용자에게는 전파되지 않습니다")과 <b>정면으로 모순</b>됐고, 버튼과 토스트가
+ * 안내문을 반박하면 사용자는 강한 쪽을 믿는다. 서버 저장을 새로 만드는 대신 문구를 실제
+ * 동작에 맞췄다 — 없는 기능을 있다고 말하는 것이 결함이지, 기능이 없는 것이 결함은 아니다.
+ *
+ * <p>배너 관리는 '배너 및 팝업관리' 전용 메뉴로 통합돼 있다.
+ * 편집 중 미리보기는 우측 시뮬레이터 <b>스코프에만</b> 적용되며, {@code :root} 주입은
+ * [이 브라우저에 적용] 을 눌렀을 때만 일어난다.
  */
 export default function LayoutManagerClient() {
   const { toast } = useToast();
@@ -206,7 +217,10 @@ export default function LayoutManagerClient() {
   // --- 핸들러 ---
   const handleThemeSave = () => {
     applyGlobalTokens(themeConfig);
-    toast('디자인 시스템 동기화 성공: 설정하신 곡률과 색상이 플랫폼 전반의 UI 인프라에 즉각 적용되었습니다.', 'success');
+    // ⚠ 문구는 실제 저장 범위와 일치해야 한다. 종전 "플랫폼 전반의 UI 인프라에 즉각 적용" 은
+    //   같은 화면 하단의 "브라우저에만 보관되므로 다른 기기·다른 사용자에게는 전파되지 않습니다"
+    //   와 정면으로 모순됐다 — 버튼과 토스트가 안내문을 반박하면 사용자는 강한 쪽(버튼)을 믿는다.
+    toast('이 브라우저에 적용했습니다. 서버에 저장되지 않으므로 다른 기기·다른 사용자에게는 반영되지 않습니다.', 'success');
   };
 
   const handleThemeReset = () => {
@@ -235,7 +249,10 @@ export default function LayoutManagerClient() {
             <Settings2 className="w-10 h-10 text-primary" />
             시스템 테마 및 디자인 토큰 제어
           </h1>
-          <p className="mt-3 text-muted-foreground font-bold text-lg">플랫폼의 시각적 일관성을 유지하기 위해 전역 에지(Edge) 곡률 및 브랜드 컬러 토큰을 정의합니다.</p>
+          <p className="mt-3 text-muted-foreground font-bold text-lg">
+            에지(Edge) 곡률 및 브랜드 컬러 토큰을 정의합니다.
+            <span className="text-hub-amber"> 설정은 이 브라우저에만 저장됩니다.</span>
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Button
@@ -251,7 +268,7 @@ export default function LayoutManagerClient() {
             className="h-11 px-10 rounded-lg font-bold gap-3 shadow-2xl shadow-primary/30 text-lg bg-primary hover:scale-105 transition-transform"
           >
             <CheckCircle2 size={22} />
-            전체 플랫폼 적용
+            이 브라우저에 적용
           </Button>
         </div>
       </motion.div>
@@ -339,8 +356,8 @@ export default function LayoutManagerClient() {
               <span>안내 사항</span>
             </div>
             <p className="text-sm font-bold text-muted-foreground leading-relaxed">
-              편집 중에는 우측 시뮬레이터에만 반영되며, <b>[전체 플랫폼 적용]</b>을 눌러야 플랫폼 전역 토큰에 주입됩니다. <br/>
-              현재 값은 브라우저(localStorage)에만 보관되므로 다른 기기·다른 사용자에게는 전파되지 않습니다. <br/>
+              편집 중에는 우측 시뮬레이터에만 반영되며, <b>[이 브라우저에 적용]</b>을 눌러야 화면 전역 토큰에 주입됩니다. <br/>
+              <b>설정은 이 브라우저에만 저장됩니다(localStorage).</b> 서버에 저장되지 않으므로 다른 기기·다른 사용자·시크릿 창에는 반영되지 않으며, 브라우저 저장소를 비우면 사라집니다. <br/>
               <b>프로모션 배너 및 팝업 자산</b> 관리는 전문 메뉴인 <span className="underline decoration-2">[콘텐츠 운영]</span> 탭을 이용해 주세요.
             </p>
           </div>
