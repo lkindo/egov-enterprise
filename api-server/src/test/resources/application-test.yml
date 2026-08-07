@@ -17,8 +17,6 @@ spring:
   mvc:
     pathmatch:
       matching-strategy: ant_path_matcher
-  autoconfigure:
-    exclude: org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration, org.springframework.ai.autoconfigure.ollama.OllamaAutoConfiguration, org.springframework.ai.autoconfigure.vectorstore.pgvector.PgVectorStoreAutoConfiguration
   jpa:
     hibernate:
       ddl-auto: create-drop
@@ -44,18 +42,8 @@ spring:
     context:
       cache:
         maxSize: 8
-  ai:
-    openai:
-      chat:
-        enabled: false
-      embedding:
-        enabled: false
-    ollama:
-      chat:
-        enabled: false
-      embedding:
-        enabled: false
-
+  # [2026-08-07] spring.ai 설정 제거 - spring-ai 의존성 자체를 걷어냈다.
+  #   없는 오토컨피그를 exclude 하거나 없는 기능을 enabled:false 로 두면 팬텀 참조가 된다.
 springdoc:
   api-docs:
     enabled: false
@@ -87,7 +75,6 @@ logging:
     org.hibernate.orm.model.mapping: DEBUG
     nuri: DEBUG
     org.springframework.boot.autoconfigure: DEBUG
-    org.springframework.ai: DEBUG
 
 # RBAC DB 인가 모드 (테스트 프로필 디폴트는 false로 두어 기존 테스트 보호, 신규 격리 테스트만 활성화)
 rbac:

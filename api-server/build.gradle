@@ -31,7 +31,8 @@ dependencies {
     implementation libs.egovframe.rte.fdl.excel
     implementation libs.egovframe.rte.fdl.security
     implementation 'org.springframework.boot:spring-boot-starter-quartz'
-    implementation libs.spring.ai.pgvector
+    // [2026-08-07 제거] spring-ai-pgvector-store — VectorStore 사용처 0건이었고,
+    //   test/e2e 프로파일은 PgVectorStoreAutoConfiguration 을 명시적으로 배제하고 있었다.
 
     implementation libs.commons.net
     implementation libs.xmlbeans

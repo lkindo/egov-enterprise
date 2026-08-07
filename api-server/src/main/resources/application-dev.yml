@@ -10,10 +10,8 @@ spring:
   config:
     activate:
       on-profile: dev
-  autoconfigure:
-    exclude:
-      - org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration
-      - org.springframework.ai.autoconfigure.openai.OpenAiConnectionDetailsAutoConfiguration
+  # [2026-08-07] spring.ai 오토컨피그 exclude 제거 - spring-ai 의존성 자체를 걷어냈다.
+  #   없는 클래스를 exclude 목록에 남기면 Boot 가 기동 시 해당 클래스를 찾지 못해 실패한다.
 
   flyway:
     # [W0-02] dev 전용: 알려진 개발 자격증명 시드를 추가 적재한다.

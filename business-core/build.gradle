@@ -55,9 +55,12 @@ dependencies {
     testFixturesApi 'org.flywaydb:flyway-core'
     testFixturesApi libs.testcontainers.postgresql
     testFixturesApi libs.testcontainers.jdbc
-    testFixturesApi platform(libs.spring.ai.bom)
-    testFixturesApi libs.spring.ai.openai
-    testFixturesApi libs.spring.ai.ollama
+    // [2026-08-07 명시화] spring-messaging — TestMessagingConfig 가 SimpMessagingTemplate 을
+    //   목(mock)으로 채운다. 이것도 spring-ai 전이에 얹혀 있었다.
+    testFixturesApi libs.spring.messaging
+    // [2026-08-07 제거] Spring AI — 이 세 줄이 존재한 유일한 이유는 TestAiConfig 가 참조하는
+    //   ChatModel/EmbeddingModel 타입을 제공하기 위해서였는데, 그 TestAiConfig 자체가
+    //   참조처 0건인 死코드여서 함께 제거했다.
 }
 
 bootJar { enabled = false }

@@ -141,21 +141,96 @@ npm 은 `frontend/package.json` 의 `pnpm.overrides` 범위를 갱신했다(12�
 
 ---
 
-## 5. 남은 과제
+## 5. 알림 상태 정리 (사용자 승인 후 실행)
 
-1. **알림 상태 정리** — 위 65건은 GitHub 상에서 여전히 `open` 이다. `inaccurate` 사유로 닫으려면
-   **사용자 승인이 필요하다**(외부에 드러나는 보안 상태 변경이고, 대량 dismissal 은 그 자체로
-   §0.7-H2 가 경계하는 행위다). 이 문서가 그 판단의 증적이다.
-2. **그래프 노이즈 축소** — `dependency-submission` 이 pitest·testCompile·annotationProcessor 등
-   전 configuration 을 제출해 요청측 좌표까지 알림이 된다. 런타임 classpath 로 한정하면
-   위양성이 구조적으로 줄어든다. 다만 **테스트 전용 의존성의 CVE 가시성을 잃는 대가**가 있어
-   상충하므로 단독 결정하지 않는다.
-3. **`spring-ai` 재검토** — `1.0.0-M5`(정식 이전 마일스톤)가 `foundation` 의 `api` 스코프로
-   전 모듈·배포 아티팩트에 실려 있다. 그런데 `ApiServerApplication` 은 `OpenAiAutoConfiguration` 을
-   **명시적으로 제외**하고 있고, 실사용처는 테스트 픽스처의 목(mock) 2개뿐이다
-   ([TestAiConfig.java](../../business-core/src/testFixtures/java/nuri/business/test/config/TestAiConfig.java)).
-   webflux 12건을 포함해 상당수 알림의 유입원이며, 제거하면 공급망 표면이 줄어든다.
-   **다만 AI 기능 도입 계획이 있는지는 제품 결정이므로 사용자 판단이 필요하다.**
+§3.2 의 65건과 §3.3 의 `artemis-project`/`jsoup` 2건, 합계 **67건을 `inaccurate` 사유로 닫았다**.
+각 건에는 **판정 근거를 코멘트로 남겼다** — 해석값, 취약 범위, 재현 절차 문서 경로.
+사유 없이 닫으면 그것이 곧 신호 은폐이므로, 코멘트 없는 dismissal 은 하지 않는다.
+
+> ⚠ **1차 시도는 코멘트가 첫 줄에서 잘렸다.** `dismissed_comment` 는 **280자 제한**이며,
+> 개행이 포함된 값을 Windows shell 경유로 넘기면 재파싱 과정에서 첫 줄만 전달된다.
+> "성공 65 / 실패 0" 이 찍혔지만 실제 저장된 코멘트는 한 문장뿐이었다.
+> 저장 결과를 되읽어 확인하지 않았다면 **근거 없는 대량 dismissal** 로 끝날 뻔했다.
+> 이미 `dismissed` 인 알림은 코멘트만 갱신할 수 없어(HTTP 409) **재개방 후 재-dismiss** 로 정정했다.
+> 교훈: 외부 상태를 바꾸는 API 는 **반환값이 아니라 저장된 상태를 되읽어** 확인한다.
+
+조치 후 상태: `open` 84 → **17**(querydsl 2 · npm 15). npm 12건은 이 변경이 기본 브랜치에
+병합되면 자동으로 닫힌다(Dependabot 은 기본 브랜치를 스캔한다).
+
+## 6. `spring-ai` 제거 (사용자 승인 후 실행)
+
+`spring-ai 1.0.0-M5`(정식 이전 마일스톤)를 **제거했다**. 판단 근거는 전부 실측이다.
+
+| 확인 항목 | 결과 |
+|---|---|
+| 프로덕션 코드 사용처 | **0건** (`ChatClient`/`ChatModel`/`EmbeddingModel`/`VectorStore`/`OpenAiApi` 전수 grep) |
+| 유일한 코드 참조 | `TestAiConfig`(테스트 픽스처) — 그마저 **참조처가 자기 선언뿐인 死코드** |
+| 오토컨피그 취급 | `ApiServerApplication` · `application-dev.yml` · `application-test.yml` · `application-e2e.yml` 이 각각 **명시적으로 배제** |
+| 전이 유입 | `spring-ai-retry` → `spring-webflux` (알림 12건의 유입원). WebFlux 는 이 저장소가 쓰지 않는다 — `Mono`/`Flux`/`WebClient` 전수 grep **0건** |
+
+즉 이 의존성의 **존재 이유가 전부 "억제"** 였다. `foundation` 의 `api` 스코프라 전 모듈과 배포
+아티팩트에 실리면서 공급망 표면과 CVE 알림만 넓히고 있었다.
+
+제거 범위: 카탈로그 5줄 · `foundation`/`business-core`/`api-server` build.gradle 7줄 ·
+`ApiServerApplication` 의 `exclude` · yml 9곳의 억제 설정 · `TestAiConfig.java` 삭제.
+
+> ⚠ **AI 기능을 도입하기로 하면 정식 릴리스(1.0.0 GA 이상)로 되살릴 것.** M5 를 그대로 되돌리지 말 것.
+
+### 6.1 제거가 드러낸 것 — 프로덕션 의존성 2종이 AI 의존성에 얹혀 있었다
+
+제거하자 컴파일이 **두 번** 깨졌다. 둘 다 선언이 없는 채로 `spring-ai` 전이에 의존하고 있었다.
+
+**(1) `spring-retry`** — `:foundation:compileJava`
+
+```
+AsyncConfig.java:9: error: package org.springframework.retry.annotation does not exist
+AsyncConfig.java:23: error: cannot find symbol  @EnableRetry
+```
+
+| 사용처 | 무엇 |
+|---|---|
+| `AsyncConfig` | `@EnableRetry` |
+| `MailAsyncProcessor` | `@Retryable` / `@Backoff` / `@Recover` |
+| `SmsAsyncProcessor` | `@Retryable` / `@Backoff` / `@Recover` |
+
+`business-app` 은 이미 `libs.spring.retry` 를 선언하고 있었다 — **`foundation` 만 빠져 있었고**,
+그 구멍을 `spring-ai-retry` 가 메우고 있었다.
+
+**(2) `spring-messaging`** — `:business-core:compileTestFixturesJava`, `:business-app:compileJava`
+
+```
+NotificationService.java:28: error: cannot find symbol  SimpMessagingTemplate
+TestMessagingConfig.java:7: error: package org.springframework.messaging.simp does not exist
+```
+
+| 사용처 | 무엇 |
+|---|---|
+| `NotificationService` (business-app) | `SimpMessagingTemplate` 로 STOMP 알림 발행 |
+| `TestMessagingConfig` (business-core testFixtures) | 위 타입의 목(mock) 빈 |
+
+`api-server` 에 `spring-boot-starter-websocket` 이 있지만 **`implementation` 스코프라 하위
+모듈로 전파되지 않는다**. 실제로 쓰는 `business-app`·`business-core` 에는 선언이 없었다.
+
+---
+
+즉 **메일·SMS 재시도와 실시간 알림 — 프로덕션 회복탄력성 기능 두 가지가 쓰지도 않는 AI
+의존성에 얹혀 있었다.** spring-ai 가 `spring-ai-retry` 를 떼거나 다른 이유로 제거되는 순간
+조용히 깨질 구조였다. 카탈로그에 `spring-messaging` 을 신설하고, 쓰는 모듈이 직접 선언하도록
+바로잡았다(버전은 둘 다 Boot BOM 관리).
+
+> 이것이 미사용 의존성을 걷어내야 하는 실질적 이유다. 안 쓰는 라이브러리는 자리만 차지하는 게
+> 아니라 **다른 것의 버팀목 노릇을 하며 의존 관계를 감춘다.** 감춰진 의존은 제거 시점이 아니라
+> 무관한 변경 시점에 터진다 — 그때는 원인이 훨씬 멀리 있다.
+
+**제거 확인**: 전 모듈 전 configuration 재수집 결과 `spring-ai` **0회**, `spring-webflux` **0회**.
+`spring-messaging` 36회 · `spring-retry` 67회로 정상 해석된다.
+
+## 7. 남은 과제
+
+**그래프 노이즈 축소** — `dependency-submission` 이 pitest·testCompile·annotationProcessor 등
+전 configuration 을 제출해 요청측 좌표까지 알림이 된다. 런타임 classpath 로 한정하면
+위양성이 구조적으로 줄어든다. 다만 **테스트 전용 의존성의 CVE 가시성을 잃는 대가**가 있어
+상충하므로 단독 결정하지 않는다.
 
 ---
 *근거 데이터: `dependabot/alerts` API(2026-08-07) + `:module:dependencies` 전 모듈 실측 + `dependency-graph/sbom`*

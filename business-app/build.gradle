@@ -17,6 +17,9 @@ dependencies {
     api 'org.springframework.boot:spring-boot-starter-mail'
     api libs.spring.retry
     api libs.spring.boot.starter.aop
+    // [2026-08-07 명시화] spring-messaging — NotificationService 가 SimpMessagingTemplate 로
+    //   STOMP 알림을 발행한다. 종전에는 선언 없이 spring-ai 전이에 얹혀 있었다.
+    api libs.spring.messaging
     
     // Domain & JPA & QueryDSL & Envers & Security
     api 'org.springframework.boot:spring-boot-starter-data-jpa'
