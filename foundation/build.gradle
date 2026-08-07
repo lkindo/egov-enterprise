@@ -51,10 +51,22 @@ dependencies {
         exclude group: 'org.apache.logging.log4j', module: 'log4j-slf4j2-impl'
     }
 
-    // Spring AI platform (v5.0 정식 가이드)
-    api platform(libs.spring.ai.bom)
-    api libs.spring.ai.openai
-    api libs.spring.ai.ollama
+    // [2026-08-07 제거] Spring AI (1.0.0-M5) — 프로덕션 사용처 0건이었다.
+    //   api 스코프라 전 모듈과 배포 아티팩트에 실렸는데, 정작 ApiServerApplication 은
+    //   OpenAiAutoConfiguration 을 exclude 하고 있었고 test/e2e 프로파일도 오토컨피그를
+    //   각각 배제하고 있었다 — 즉 이 의존성의 존재 이유가 전부 "억제" 였다.
+    //   전이로 spring-webflux(미사용)를 끌어와 공급망 표면과 CVE 알림만 넓히고 있었다.
+    //   사유·근거: docs/04-operations/dependabot-alert-census.md §6
+
+    // [2026-08-07 명시화] spring-retry.
+    //   종전에는 **선언이 없었고** `spring-ai-retry` 를 통해 전이로 들어오고 있었다.
+    //   그런데 이걸 쓰는 건 AI 가 아니라 우리 프로덕션 코드다 —
+    //   AsyncConfig 의 @EnableRetry, MailAsyncProcessor·SmsAsyncProcessor 의 @Retryable/@Recover.
+    //   즉 **메일·SMS 재시도라는 회복탄력성 기능이 무관한 AI 의존성에 얹혀 있었다.**
+    //   spring-ai 를 걷어내자 즉시 컴파일이 깨져 드러났다(foundation:compileJava, EnableRetry 미해결).
+    //   쓰는 쪽이 직접 선언한다. 버전은 Boot BOM 관리(3.5.16 -> 2.0.13).
+    //   (business-app 은 이미 같은 카탈로그 항목을 선언하고 있었다 — foundation 만 빠져 있었다.)
+    api libs.spring.retry
 
     // Observability (OTEL)
     api libs.micrometer.tracing.bridge.otel

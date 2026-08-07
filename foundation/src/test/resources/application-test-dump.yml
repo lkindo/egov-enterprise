@@ -46,13 +46,8 @@ spring:
     multipart:
       max-file-size: 10MB
       max-request-size: 10MB
-  ai:
-    openai:
-      enabled: false
-      api-key: dummy-key-for-foundation-test
-    ollama:
-      enabled: false
-
+  # [2026-08-07] spring.ai 설정 제거 - spring-ai 의존성 자체를 걷어냈다.
+  #   없는 오토컨피그를 exclude 하거나 없는 기능을 enabled:false 로 두면 팬텀 참조가 된다.
 # Logging
 logging:
   level:
