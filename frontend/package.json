@@ -34,10 +34,6 @@
     "analyze": "cross-env ANALYZE=true next build --webpack",
     "analyze:server": "cross-env ANALYZE=true npm run build",
     "analyze:browser": "cross-env ANALYZE=true npm run build",
-    "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build",
-    "storybook:test": "test-storybook",
-    "storybook:clean": "rm -rf storybook-static",
     "coverage:report": "nyc report --reporter=html --reporter=text",
     "coverage:clean": "node -e \"const fs=require('fs'); fs.rmSync('.nyc_output',{recursive:true,force:true}); fs.rmSync('coverage',{recursive:true,force:true})\"",
     "test:e2e:coverage": "node scripts/run-e2e-with-coverage.js",
@@ -88,7 +84,6 @@
     "@lhci/cli": "^0.15.1",
     "@next/bundle-analyzer": "^15.1.7",
     "@playwright/test": "^1.62.1",
-    "@storybook/nextjs": "^10.5.5",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "^7.0.0",
@@ -114,7 +109,6 @@
     "pg": "^8.22.0",
     "pretty-format": "^30.3.0",
     "shadcn": "^3.8.4",
-    "storybook": "^10.5.5",
     "tailwindcss": "^4",
     "ts-morph": "^28.0.0",
     "tw-animate-css": "^1.4.0",
@@ -125,7 +119,7 @@
     "yargs-parser": "^22.0.0"
   },
   "pnpm": {
-    "comment": "overrides 는 **전이 의존**의 취약 버전만 최소로 끌어올린다. 키를 'pkg@<취약범위>' 로 한정한 이유: 무범위 '>=X' 는 트리의 모든 인스턴스를 강제해 메이저를 넘겨 버린다 — 실제로 js-yaml 을 '>=4.3.0' 으로 두자 5.2.3 이 설치돼 @redocly/openapi-core(v4 API 인 types.merge 사용)가 깨졌고 codegen 계약 게이트가 red 가 됐다. 같은 이유로 brace-expansion(2→5)·undici(7→8)·fast-uri(3→4)도 메이저를 넘고 있었다. 각 항목은 Dependabot HIGH 알림의 vulnerable_version_range → first_patched_version 이며, 상위 패키지가 스스로 취약 범위를 벗어나면 제거할 것. 직접 의존(next·axios)은 여기가 아니라 dependencies 의 범위를 올렸다 — pnpm install 은 lockfile 이 기존 범위를 이미 만족하면 올리지 않아, 캐럿만 믿으면 취약 버전에 머문다(실측: next 16.2.6, axios 1.16.1 고착). vite 는 auto-installed peer 라 overrides 가 해석에 반영되지 않아 devDependencies 에 명시 선언했다. [2026-08-07 2차 상환] 상위 패키지가 움직여 기존 범위가 낡은 항목(fast-uri·postcss·js-yaml·tmp·hono)을 새 first_patched_version 으로 갱신하고, 신규 3건(@hono/node-server·ip-address·brace-expansion 5.x 라인)을 추가했다. brace-expansion 은 락에 1.1.18/2.1.2/5.0.6 세 인스턴스가 공존하므로 '>=3.0.0 <5.0.7' 로 5.x 만 좁혀 잡았다 — 무범위였다면 1.x 까지 5 로 끌어올려 깨졌을 것이다. **의도적 미포함 3건**: uuid(락 8.3.2 뿐인데 패치는 11.1.1 — 3메이저 도약이고 취약 API 는 buf 를 넘기는 v3/v5/v6 뿐이라 dev 도구 경로에서 도달하지 않는다), esbuild(0.27.7→0.28.1, 취약 조건이 'dev server 구동 중 Windows' 인데 esbuild dev server 를 띄우는 경로가 없다), elliptic(패치 버전 자체가 없음). [2026-08-07 추가 상환] @hono/node-server 를 2.0.5 -> 2.0.10 으로 재상향했다. 2.0.5 로 올린 직후(같은 날 02:18) '중단된 WebSocket 핸드셰이크를 통한 무인증 메모리 누수 DoS' 권고가 새로 게시되며 취약 범위가 '<=2.0.9' 로 넓어졌다 — override 는 상위 패키지가 아니라 **권고가 움직여도** 낡는다는 사례다.",
+    "comment": "overrides 는 **전이 의존**의 취약 버전만 최소로 끌어올린다. 키를 'pkg@<취약범위>' 로 한정한 이유: 무범위 '>=X' 는 트리의 모든 인스턴스를 강제해 메이저를 넘겨 버린다 — 실제로 js-yaml 을 '>=4.3.0' 으로 두자 5.2.3 이 설치돼 @redocly/openapi-core(v4 API 인 types.merge 사용)가 깨졌고 codegen 계약 게이트가 red 가 됐다. 같은 이유로 brace-expansion(2→5)·undici(7→8)·fast-uri(3→4)도 메이저를 넘고 있었다. 각 항목은 Dependabot HIGH 알림의 vulnerable_version_range → first_patched_version 이며, 상위 패키지가 스스로 취약 범위를 벗어나면 제거할 것. 직접 의존(next·axios)은 여기가 아니라 dependencies 의 범위를 올렸다 — pnpm install 은 lockfile 이 기존 범위를 이미 만족하면 올리지 않아, 캐럿만 믿으면 취약 버전에 머문다(실측: next 16.2.6, axios 1.16.1 고착). vite 는 auto-installed peer 라 overrides 가 해석에 반영되지 않아 devDependencies 에 명시 선언했다. [2026-08-07 2차 상환] 상위 패키지가 움직여 기존 범위가 낡은 항목(fast-uri·postcss·js-yaml·tmp·hono)을 새 first_patched_version 으로 갱신하고, 신규 3건(@hono/node-server·ip-address·brace-expansion 5.x 라인)을 추가했다. brace-expansion 은 락에 1.1.18/2.1.2/5.0.6 세 인스턴스가 공존하므로 '>=3.0.0 <5.0.7' 로 5.x 만 좁혀 잡았다 — 무범위였다면 1.x 까지 5 로 끌어올려 깨졌을 것이다. **의도적 미포함**: uuid(락 8.3.2 뿐인데 패치는 11.1.1 — 3메이저 도약이고 취약 API 는 buf 를 넘기는 v3/v5/v6 뿐이라 dev 도구 경로에서 도달하지 않는다), elliptic(패치 버전 자체가 없음 — **2026-08-07 Storybook 제거로 유입 경로 자체가 사라져 해소됨**). [2026-08-07 추가 상환] @hono/node-server 를 2.0.5 -> 2.0.10 으로 재상향했다. 2.0.5 로 올린 직후(같은 날 02:18) '중단된 WebSocket 핸드셰이크를 통한 무인증 메모리 누수 DoS' 권고가 새로 게시되며 취약 범위가 '<=2.0.9' 로 넓어졌다 — override 는 상위 패키지가 아니라 **권고가 움직여도** 낡는다는 사례다.",
     "overrides": {
       "websocket-driver": ">=0.7.5",
       "brace-expansion@>=2.0.0 <2.1.2": "2.1.2",
@@ -134,6 +128,7 @@
       "fast-uri@>=3.0.0 <3.1.5": "3.1.5",
       "js-yaml@>=4.0.0 <4.3.1": "4.3.1",
       "postcss@<=8.5.22": "8.5.23",
+      "esbuild@>=0.27.3 <0.28.1": "0.28.1",
       "form-data@>=4.0.0 <4.0.6": "4.0.6",
       "hono@<4.12.27": "4.12.27",
       "@hono/node-server@<2.0.10": "2.0.10",

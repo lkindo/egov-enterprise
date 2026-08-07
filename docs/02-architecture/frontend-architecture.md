@@ -49,7 +49,7 @@ graph LR
 ## 🎨 Design System & UI Consistency
 - **Styling**: **Tailwind CSS 4**와 **디자인 토큰**을 기반으로 한 유틸리티 퍼스트 디자인.
 - **Rich Aesthetics**: `Framer Motion`을 활용한 마이크로 인터렉션과 `backdrop-blur` 등 프리미엄 시각 효과를 아키텍처적으로 지원합니다.
-- **Atomic Design**: 컴포넌트를 원자 단위로 분리하여 재사용성을 극대화하고 **Storybook**을 통해 품질을 검증합니다.
+- **Atomic Design**: 컴포넌트를 원자 단위로 분리하여 재사용성을 극대화하고, **컴포넌트 단위 테스트**(Vitest + Testing Library)와 **Playwright E2E** 로 품질을 검증합니다. *(2026-08-07: 종전 서술의 Storybook 은 제거됐다 — 21개 컴포넌트 중 2개만 커버하고 CI 실행 경로가 없어 검증 수단으로 기능하지 않았다. 프론트엔드 헌법 제14조 개정 참조.)*
 
 ## 📁 Directory Structure
 ```text

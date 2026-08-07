@@ -23,7 +23,6 @@ export default defineConfig({
         'src/constants/**',
       ],
       exclude: [
-        '**/*.stories.tsx',
         '**/*.test.{ts,tsx}',
       ],
     },
