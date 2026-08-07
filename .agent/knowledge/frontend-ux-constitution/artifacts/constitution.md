@@ -104,7 +104,30 @@
 ## 제7장 품질 (Quality)
 
 ### 제14조 (검증 기반 개발)
-1. 모든 핵심 UI 컴포넌트는 **Storybook**을 통해 검증하며, 주요 시나리오는 **Playwright** 기반의 E2E 테스트를 통과해야 한다.
+1. 모든 핵심 UI 컴포넌트는 **컴포넌트 단위 테스트**(Vitest + Testing Library)로 검증하며, 주요 시나리오는 **Playwright** 기반의 E2E 테스트를 통과해야 한다. 두 계층 모두 CI(`frontend-build` / `e2e-tests` 3샤드)에서 기계 강제된다 — **검증 수단은 실행 경로를 가져야 검증이다.**
+
+> **[2026-08-07 개정 — 사용자 승인]** 본 항의 검증 수단에서 **Storybook 을 제거**했다.
+> 조문이 규범이 아니라 알리바이로 기능하고 있었기 때문이다. 개정 시점 실측:
+>
+> | 조문이 요구하는 것 | 실태 |
+> |---|---|
+> | "모든 핵심 UI 컴포넌트를 Storybook 으로 검증" | `components/ui/` **21개 중 2개**(`button`·`card`, 9.5%) |
+> | — | 스토리 2개는 2026-03-31 한 커밋에서 생성된 뒤 **4개월간 추가 0건** |
+> | — | CI 미실행. `storybook:test` 스크립트는 `@storybook/test-runner` 미설치로 **실행 자체가 불가** |
+> | — | 스토리가 있는 그 2개는 **단위 테스트도 보유** — Storybook 이 단독으로 지키는 영역 0 |
+>
+> 즉 "Storybook 으로 검증한다"는 문장이 **실제 검증 공백을 가리고 있었다.** 반면 대체 수단은
+> 실제로 돈다 — 컴포넌트 단위 테스트 28개, E2E spec 26개, 시각 회귀 스냅샷 4개가 모두 CI 게이트다.
+> 조문을 실태에 맞춰 내리는 것이 아니라, **작동하지 않는 수단을 걷어내고 작동하는 수단을 명문화**한 것이다.
+>
+> 부수 효과로 `@storybook/nextjs` 가 끌어오던 webpack 16종 · browserify/crypto 9종이 사라지며
+> **패치가 영원히 나오지 않는 `elliptic` 취약점**의 유일한 유입 경로가 제거된다
+> (`node-polyfill-webpack-plugin` 의 소비자는 Storybook 단 하나였다).
+> 근거 전문: [dependabot-alert-census.md](../../../../docs/04-operations/dependabot-alert-census.md) §9
+>
+> ⚠ **컴포넌트 카탈로그를 비개발자(기획·디자인)와 공유하는 자산으로 운영하기로 결정하면**
+> 이 판단은 재검토 대상이다. 그때는 Storybook 을 되살리되 **webpack 이 아닌 Vite 빌더**
+> (`@storybook/nextjs-vite`)로 도입해 위 취약 사슬을 다시 들이지 말 것.
 
 ---
 

@@ -85,7 +85,6 @@
 | `npm run dev` | Root | 전체 개발 서버 실행 |
 | `pnpm -C frontend codegen:ts` | `frontend/` | OpenAPI 명세 기반 TS 타입 생성 (로컬 서버 :8080 필요; 오프라인 기본은 `codegen:file`) |
 | `pnpm -C frontend analyze` | `frontend/` | Next.js 번들 사이즈 분석 |
-| `pnpm -C frontend storybook` | `frontend/` | UI 컴포넌트 격리 개발 환경 |
 | `make coverage` | Root | 백엔드 테스트 커버리지 리포트 생성 |
 | `pnpm -C frontend test:e2e` | `frontend/` | E2E 테스트 전체 실행 (상세: `docs/03-guides/e2e-test-guide.md`) |
 
