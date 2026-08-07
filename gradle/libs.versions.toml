@@ -38,6 +38,13 @@ h2 = "2.4.240"
 caffeine = "3.2.4"
 testcontainers = "1.21.4"
 mapstruct = "1.6.3"
+# [2026-08-07 신설] querydsl — 원본 `com.querydsl` 에서 유지보수 포크로 이관한다.
+#   원본은 5.1.0 이 마지막 릴리스이고 CVE-2024-49203(HQL injection via orderBy, CVSS 8.2)의
+#   패치가 **영원히 나오지 않는다**(GHSA-6q3q-6v5j-h6vg, 취약 범위 `<= 5.1.0`, first_patched=null).
+#   같은 advisory 가 포크에서는 5.6.1 / 6.10.1 로 패치돼 있다.
+#   5.x 라인을 고른 이유: 자바 패키지가 `com.querydsl.*` 로 동일하고 `jakarta` classifier 가
+#   존재해 **소스 94개 파일을 건드리지 않고 groupId 만 교체**된다(6.x/7.x 는 API 변경 동반).
+querydsl = "5.6.1"
 lombok-mapstruct-binding = "0.2.0"
 
 
@@ -100,6 +107,10 @@ testcontainers-jdbc = { group = "org.testcontainers", name = "jdbc", version.ref
 testcontainers-junit-jupiter = { group = "org.testcontainers", name = "junit-jupiter", version.ref = "testcontainers" }
 
 spring-retry = { group = "org.springframework.retry", name = "spring-retry" }
+# QueryDSL — 유지보수 포크(io.github.openfeign.querydsl). 사유는 [versions].querydsl 주석 참조.
+#   `jakarta` classifier 는 Jakarta EE 변형이다(실측: 5.6.1-jakarta.jar 의 jakarta/persistence 참조 382회).
+querydsl-jpa = { group = "io.github.openfeign.querydsl", name = "querydsl-jpa", version.ref = "querydsl" }
+querydsl-apt = { group = "io.github.openfeign.querydsl", name = "querydsl-apt", version.ref = "querydsl" }
 # [2026-08-07 신설] spring-messaging — SimpMessagingTemplate(STOMP 알림 발행).
 #   종전에는 선언이 없었고 spring-ai 가 전이로 공급하고 있었다. api-server 에는
 #   spring-boot-starter-websocket 이 있지만 `implementation` 이라 하위 모듈로 전파되지 않는다.

@@ -108,7 +108,7 @@ npm 은 `frontend/package.json` 의 `pnpm.overrides` 범위를 갱신했다(12�
 
 | # | 패키지 | 심각도 | 사유 |
 |---|---|---|---|
-| 70, 71 | `querydsl-jpa` / `querydsl-apt` 5.1.0 | **high** (CVSS 8.2, CVE-2024-49203) | 취약 범위(`<= 5.1.0`)에 **실제로 포함되며 패치 버전이 없다**. 그러나 **취약 패턴이 저장소에 없다** — 취약 조건은 사용자 입력을 `PathBuilder` 로 경로화해 `OrderSpecifier` 에 넣는 것인데, `PathBuilder` 사용처 **0건**이고 유일한 `OrderSpecifier` 사용처([BoardRepositoryImpl.java:71](../../business-app/src/main/java/nuri/business/domain/board/BoardRepositoryImpl.java#L71))는 `condition.getOrderBy()` 를 **화이트리스트 `switch`** 로 컴파일타임 Q-클래스 경로에만 매핑한다. ⚠ **QueryDSL 로 정렬을 추가할 때 이 조항을 다시 읽을 것** |
+| 70, 71 | `querydsl-jpa` / `querydsl-apt` 5.1.0 | **high** (CVSS 8.2, CVE-2024-49203) | → **§8 에서 해소**. 원본 `com.querydsl` 은 5.1.0 이 마지막이라 패치가 없었고, 유지보수 포크 `io.github.openfeign.querydsl` 로 이관했다. |
 | 4 | `uuid` 8.3.2 (npm, dev) | medium | 패치가 **11.1.1** — 3메이저 도약이다. 취약 API 는 `buf` 를 외부에서 넘기는 `v3()/v5()/v6()` 뿐이고, 8.3.2 는 `proxy-agent` 계열 dev 도구의 전이 의존이라 해당 호출 경로가 없다 |
 | 6 | `esbuild` 0.27.7 (npm, dev) | low | 취약 조건이 "**dev server 구동 중 Windows**"인데 esbuild dev server 를 띄우는 경로가 없다(vitest/storybook 은 번들러로만 사용). 0.x 마이너는 파괴적 변경 관례라 위험 대비 이득이 없다 |
 | 2 | `elliptic` 6.6.1 (npm, dev) | low | **패치 버전이 존재하지 않는다**(`first_patched_version: null`) |
@@ -234,3 +234,93 @@ TestMessagingConfig.java:7: error: package org.springframework.messaging.simp do
 
 ---
 *근거 데이터: `dependabot/alerts` API(2026-08-07) + `:module:dependencies` 전 모듈 실측 + `dependency-graph/sbom`*
+
+---
+
+## 8. querydsl 근본 해소 (2026-08-07)
+
+§3.3 에서 "취약 패턴이 없으므로 조치하지 않는다"고 판정했던 2건을 **실질적으로 해소**한다.
+
+### 8.1 유지보수 포크로 이관
+
+같은 advisory(GHSA-6q3q-6v5j-h6vg)가 포크에서는 **패치돼 있다**.
+
+| 패키지 | 취약 범위 | 패치 |
+|---|---|---|
+| `com.querydsl:querydsl-jpa` (원본) | `<= 5.1.0` | **없음** — 5.1.0 이 마지막 릴리스 |
+| `io.github.openfeign.querydsl:querydsl-jpa` | `< 5.6.1` | **5.6.1** |
+| 〃 | `>= 6.0.0.M1, < 6.10.1` | **6.10.1** |
+
+**5.x 라인을 고른 이유** — 이관 비용을 실측으로 확인했다.
+
+- 포크 `5.6.1` jar 의 자바 패키지가 **`com/querydsl/jpa` 로 동일** → `com.querydsl` 을 import 하는
+  소스 **94개 파일을 건드리지 않는다**
+- `jakarta` classifier 존재 확인(`querydsl-jpa-5.6.1-jakarta.jar` HTTP 200)이며
+  실제로 Jakarta EE 변형이다(jar 상수풀 실측: `jakarta/persistence` **382회** vs `javax/persistence` 8회)
+- 6.x/7.x 는 API 변경을 동반하므로 이번 범위에서 제외한다(7.5 의 `querydsl-jpa` 는 `jakarta`
+  classifier 자체가 없다 — HTTP 404. jakarta 네이티브로 전환됐다는 뜻이라 별도 이행 계획이 필요하다)
+
+변경 범위는 3개 모듈(`foundation`/`business-core`/`business-app`)의 **groupId 6줄**이며,
+카탈로그 항목(`querydsl-jpa`/`querydsl-apt`)으로 SSOT 를 세웠다.
+
+### 8.2 ⚠ 라이브러리 상향으로는 부족하다 — 게이트를 함께 세운다
+
+§3.3 의 판정("취약 패턴이 저장소에 없다")은 **그 시점의 관측**이었고, 재발 방지책은 문서에 적은
+*"QueryDSL 로 정렬을 추가할 때 이 조항을 다시 읽을 것"* 한 줄뿐이었다.
+
+**GEMINI.md §0.7 이 못박은 대로, prose 로만 존재하는 규칙은 그 규칙을 어길 주체를 막지 못한다.**
+즉 이 census 문서는 위반 재유입을 막는 장치를 만든 게 아니라, **새 prose 부채를 하나 만든 것**이었다.
+
+그래서 `QuerydslDynamicPathLinterTest` 를 신설해 관측을 강제로 바꾼다.
+
+| 금지 | 사유 |
+|---|---|
+| `PathBuilder` 임의 사용 | 문자열이 식별자가 되는 문. 타입 안전한 Q-클래스가 있는데 쓸 이유가 없다 |
+| `Expressions.*Path(비리터럴 인자)` | 변수를 경로명으로 넘기면 그 값이 식별자로 엮인다. 리터럴은 허용 |
+
+동적 정렬이 필요하면 **화이트리스트 `switch`/`Map` 으로 사용자 입력을 컴파일타임 Q-클래스 경로에
+매핑**한다 — 현행 `BoardRepositoryImpl#searchArticles` 가 그 형태이며 이 게이트를 통과하는 유일한 방식이다.
+
+**실행 경로**: `nuri.api.harness.*` 필터에 걸리므로 `./gradlew :api-server:harnessTest` 로 실행되며
+**pre-push 에서 기계 강제**된다(§0.7-H5 — 실행 경로 없는 게이트는 게이트가 아니다).
+
+### 8.3 게이트 검증 — 그린만으로는 증명이 아니다
+
+위반을 의도적으로 주입해 red 가 되는 것까지 확인했다(§0.7-H5).
+
+| # | 조건 | 결과 |
+|---|---|---|
+| ① | 무변경 | **green** — 생산 소스 **585개 스캔**, 위반 0 |
+| ② | `PathBuilder` 주입 | **red** (EXIT=1) |
+| ③ | `Expressions.stringPath(condition.getOrderBy())` 주입 | **red** (EXIT=1) |
+| ④ | `Expressions.stringPath("crtDt")` 리터럴 | **green** — 오탐 없음 |
+
+①의 "585개 스캔"을 함께 기록하는 이유: 스캔 대상이 0이어도 그린이므로, **건수를 보지 않으면
+vacuous 통과와 구분되지 않는다.** 게이트 자체에도 `scanned == 0` 이면 실패하는 방어를 넣었다.
+
+> ⚠ 주석 안의 `PathBuilder` 언급까지 위반으로 세면 **이 린터의 javadoc 자체가 위반**이 되는
+> 자기모순이 생긴다. 그래서 주석을 걷어낸 뒤 매칭한다(도입 시 실측으로 확인).
+
+### 8.4 메타 게이트가 신설 게이트를 차단했다 — 그리고 이전 누락을 드러냈다
+
+`HarnessBaselineIntegrityTest` 가 신설 린터의 상수 4종을 **"매니페스트에 없는 동결/예외 목록"**
+으로 판정해 red 를 냈다. 설계대로 작동한 것이다 — 목록의 무단 신설은 신호 은폐의 대표 수법이므로,
+새 목록은 **의도적으로 등재**해야 통과한다.
+
+매니페스트를 갱신하되 산출 파일을 그대로 덮어쓰지 않고 **차이를 먼저 대조**했다.
+"빨간 신호를 없애려고" 손대는 것과 구분되지 않으면 그 자체가 §0.7-H2 위반이다.
+
+| 항목 | 결과 |
+|---|---|
+| 신설 | **4건** — 전부 `QuerydslDynamicPathLinterTest` 의 탐지 패턴 상수 |
+| 소멸 | **0건** ✅ |
+| 게이트 클래스 census | 32 → **34**, 추가만 2건 · 삭제 **0건** ✅ |
+
+> **부수 발견**: 함께 등재된 2건 중 하나는 `UnreachableServiceLinterTest` 였다.
+> 2026-08-06 에 신설하고 **매니페스트에 올리지 않은 채로 남아 있었다.**
+> 메타 게이트는 신규 클래스를 INFO 로만 알리고 차단하지 않기 때문에(`추가는 허용, 갱신 권장`)
+> 지금까지 드러나지 않았다. 이번 갱신으로 함께 등재된다.
+>
+> ⚠ 즉 **게이트 클래스 census 는 "삭제"만 막고 "누락"은 막지 못한다.** 게이트를 새로 만들고
+> 매니페스트에 올리지 않으면, 나중에 그 게이트를 지워도 census 에 없으니 소멸 감지에 걸리지 않는다.
+> 신설 게이트는 반드시 같은 커밋에서 매니페스트에 등재할 것.
