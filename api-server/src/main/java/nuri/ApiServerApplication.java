@@ -11,9 +11,9 @@ import nuri.foundation.core.config.FullBeanNameGenerator;
 /**
  * 프로젝트 메인 애플리케이션 클래스
  */
-@SpringBootApplication(nameGenerator = FullBeanNameGenerator.class, exclude = {
-                org.springframework.ai.autoconfigure.openai.OpenAiAutoConfiguration.class
-})
+// [2026-08-07] `exclude = { OpenAiAutoConfiguration.class }` 제거 — spring-ai 의존성 자체를
+//   걷어냈으므로 배제할 대상이 없다. 없는 것을 배제하는 선언은 남기면 그 자체가 팬텀 참조다.
+@SpringBootApplication(nameGenerator = FullBeanNameGenerator.class)
 // [§2.A D4 2026-07-18] 컴포넌트스캔 "벽" 해체 — basePackages 에서 egovframework/org.egovframe 제거.
 // 실측 근거: nuri main 이 소비하는 egov 는 전부 우리 @Configuration(EgovMessageConfig/
 // ProjectCryptoConfig/EgovPasswordEncoder) 이 정의하는 라이브러리 인스턴스 + static EgovFileScrty 뿐이며,

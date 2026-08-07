@@ -9,7 +9,16 @@ egovframe = "5.0.0"
 #   바뀌지 않는 상황이 생긴다(선언 범위 ≠ 실제 범위). 실제 출처가 아닌 선언은 지운다.
 #   ⚠ 위 두 곳은 반드시 함께 바꿔야 한다.
 spring-doc = "2.8.5"
-spring-ai = "1.0.0-M5"
+# [2026-08-07 제거] spring-ai = "1.0.0-M5"
+#   정식 이전 마일스톤(M5)이 foundation 의 `api` 스코프로 전 모듈·배포 아티팩트에 실려 있었으나
+#   **프로덕션 사용처가 0건**이었다. 존재 이유가 전부 "억제"였다 —
+#     · ApiServerApplication 이 OpenAiAutoConfiguration 을 명시적으로 exclude
+#     · application-test.yml / application-e2e.yml 이 오토컨피그 3종을 각각 exclude
+#     · 유일한 코드 참조인 TestAiConfig 는 ChatModel/EmbeddingModel 을 목(mock)으로 채우는
+#       테스트 픽스처였고, 그마저 **참조처가 자기 선언뿐인 死코드**였다(전수 grep 1건).
+#   전이로 spring-webflux 를 끌어와 Dependabot 알림 12건의 유입원이기도 했다(WebFlux 는
+#   이 저장소가 쓰지 않는다 — Mono/Flux/WebClient 전수 grep 0건).
+#   ⚠ AI 기능을 도입하기로 하면 정식 릴리스(1.0.0 GA 이상)로 되살릴 것. M5 를 그대로 되돌리지 말 것.
 spring-boot-admin = "3.4.1"
 postgresql = "42.7.13"
 commons-io = "2.22.0"
@@ -43,12 +52,6 @@ egovframe-rte-fdl-idgnr = { group = "org.egovframe.rte", name = "egovframe-rte-f
 egovframe-rte-fdl-cmmn = { group = "org.egovframe.rte", name = "egovframe-rte-fdl-cmmn", version.ref = "egovframe" }
 egovframe-rte-fdl-excel = { group = "org.egovframe.rte", name = "egovframe-rte-fdl-excel", version.ref = "egovframe" }
 egovframe-rte-fdl-security = { group = "org.egovframe.rte", name = "egovframe-rte-fdl-security", version.ref = "egovframe" }
-
-# Spring AI
-spring-ai-bom = { group = "org.springframework.ai", name = "spring-ai-bom", version.ref = "spring-ai" }
-spring-ai-openai = { group = "org.springframework.ai", name = "spring-ai-openai-spring-boot-starter" }
-spring-ai-ollama = { group = "org.springframework.ai", name = "spring-ai-ollama-spring-boot-starter" }
-spring-ai-pgvector = { group = "org.springframework.ai", name = "spring-ai-pgvector-store-spring-boot-starter" }
 
 # Observability
 # [2026-08-06] 명시 버전 제거 — Spring Boot BOM 이 관리한다(실측: 1.5.12 로 해석).
@@ -97,5 +100,11 @@ testcontainers-jdbc = { group = "org.testcontainers", name = "jdbc", version.ref
 testcontainers-junit-jupiter = { group = "org.testcontainers", name = "junit-jupiter", version.ref = "testcontainers" }
 
 spring-retry = { group = "org.springframework.retry", name = "spring-retry" }
+# [2026-08-07 신설] spring-messaging — SimpMessagingTemplate(STOMP 알림 발행).
+#   종전에는 선언이 없었고 spring-ai 가 전이로 공급하고 있었다. api-server 에는
+#   spring-boot-starter-websocket 이 있지만 `implementation` 이라 하위 모듈로 전파되지 않는다.
+#   실사용처는 business-app 의 NotificationService 와 business-core testFixtures 의 TestMessagingConfig 다.
+#   버전은 Spring Boot BOM 관리(spring-framework 계열과 동일 라인).
+spring-messaging = { group = "org.springframework", name = "spring-messaging" }
 spring-boot-starter-aop = { group = "org.springframework.boot", name = "spring-boot-starter-aop" }
 
