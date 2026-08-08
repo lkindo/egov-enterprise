@@ -10,17 +10,22 @@ import nuri.business.domain.common.BaseSearchDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.PageImpl;
 
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
 
 @DisplayName("InstitutionCodeService 단위 테스트")
@@ -186,5 +191,74 @@ class InstitutionCodeServiceTest {
         public InstitutionCodeRecptnLogId(String ocrnYmd, String instCd, Long jobSn) {
             super(ocrnYmd, instCd, jobSn);
         }
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // [2026-08-09 뮤테이션 보강] PIT 이 8개를 살려 보냈다 — 페이징 3 · 차수변환 4 · toLogDto 1.
+    //   차수(instCycl)는 API 계약이 String, 물리 도메인이 Integer(V2_19)라 경계 변환이 있다.
+    //   그 변환은 왕복(round-trip)으로만 검증된다 — 한쪽만 보면 뮤턴트가 살아남는다.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    private Pageable capturePageable(BaseSearchDto searchVO) {
+        given(institutionCodeRepository.searchInstitutionCodes(any(), any(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of()));
+        institutionCodeService.selectInstitutionCodeList(searchVO);
+        ArgumentCaptor<Pageable> captor = ArgumentCaptor.forClass(Pageable.class);
+        verify(institutionCodeRepository).searchInstitutionCodes(any(), any(), captor.capture());
+        return captor.getValue();
+    }
+
+    @Test
+    @DisplayName("페이징: 1-based pageIndex 가 0-based 로 변환된다")
+    void pagingConvertsIndex() {
+        BaseSearchDto vo = new BaseSearchDto();
+        vo.setPageIndex(4);
+        vo.setPageUnit(20);
+        Pageable pageable = capturePageable(vo);
+        assertEquals(3, pageable.getPageNumber(), "1-based 4페이지는 0-based 3");
+        assertEquals(20, pageable.getPageSize());
+    }
+
+    @Test
+    @DisplayName("페이징: pageUnit 0 이하는 기본 10 으로 대체된다")
+    void pagingFallsBackToDefaultUnit() {
+        BaseSearchDto vo = new BaseSearchDto();
+        vo.setPageUnit(0);
+        assertEquals(10, capturePageable(vo).getPageSize(), "0 이면 기본 10");
+    }
+
+    @Test
+    @DisplayName("기관차수: String ↔ Integer 왕복 변환이 값을 보존한다")
+    void instCyclRoundTripPreservesValue() {
+        // 저장(String -> Integer) 후 조회(Integer -> String) 에서 같은 값이 나와야 한다.
+        InstitutionCodeDto input = InstitutionCodeDto.builder()
+                .instCd("INST1").allInstNm("기관1").instCycl("7").build();
+
+        given(institutionCodeRepository.existsById("INST1")).willReturn(false);
+        given(institutionCodeRepository.save(any(InstitutionCode.class)))
+                .willAnswer(inv -> inv.getArgument(0));
+
+        institutionCodeService.insertInstitutionCode(input);
+
+        ArgumentCaptor<InstitutionCode> captor = ArgumentCaptor.forClass(InstitutionCode.class);
+        verify(institutionCodeRepository).save(captor.capture());
+        // parse 가 0 을 돌려주는 뮤턴트, null 을 돌려주는 뮤턴트가 여기서 죽는다.
+        assertEquals(Integer.valueOf(7), captor.getValue().getInstCycl(), "String \"7\" 은 Integer 7 로 저장돼야 한다");
+    }
+
+    @Test
+    @DisplayName("기관차수: 빈 문자열·null 은 null 로 저장된다 (0 이 아니다)")
+    void instCyclBlankBecomesNullNotZero() {
+        given(institutionCodeRepository.existsById(anyString())).willReturn(false);
+        given(institutionCodeRepository.save(any(InstitutionCode.class)))
+                .willAnswer(inv -> inv.getArgument(0));
+
+        institutionCodeService.insertInstitutionCode(
+                InstitutionCodeDto.builder().instCd("I2").allInstNm("기관2").instCycl("   ").build());
+
+        ArgumentCaptor<InstitutionCode> captor = ArgumentCaptor.forClass(InstitutionCode.class);
+        verify(institutionCodeRepository).save(captor.capture());
+        // 조건을 뒤집은 뮤턴트는 "   " 를 Integer.valueOf 에 넘겨 예외를 낸다 → 죽는다.
+        assertNull(captor.getValue().getInstCycl(), "공백 차수는 null 이어야 한다 — 0 은 유효한 차수와 구분되지 않는다");
     }
 }
