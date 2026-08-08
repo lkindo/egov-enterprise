@@ -55,66 +55,26 @@ SyntaxError: missing ) after argument list
 
 ---
 
-## 3. 워크플로 실행 이력 전수 — 그리고 **전수 추적 결과**
+## 3. 워크플로 실행 이력 전수 (2026-08-08 실측)
 
-처음 세어본 것은 실행 횟수였다. 그 뒤 **0회·실패로 남아 있던 것들을 하나씩 실제로 돌려**
-원인을 규명했다. 결과는 아래와 같다 — **"안 도는 데는 전부 이유가 있었다."**
+같은 종류의 사각지대가 더 있는지 세어봤다.
 
-| 워크플로 | 실행 | 조사 결과 |
-|---|---:|---|
-| `ci` | 100+ | ✅ 실제로 돈다 |
-| `dependency-submission` | 65 | ✅ |
-| `update-visual-baseline` | 1 | ✅ 수동 전용(정상) |
-| `release` | 0 | ✅ 태그 푸시 없음(정상) |
-| `zap-scan` | 3 | 🔧 **수리 완료** — 4단계 파손(§1). 현재 2회 연속 완전 성공 |
-| `secret-scan-history` | 51 | ✅ **오진이었다.** 실패 10건은 전부 2026-08-03 의 invalid YAML `startup_failure` 이고 2026-08-04 에 이미 수정됨. 스케줄이 **주간 월요일**이라 수정 후 아직 안 돌았을 뿐 — 수동 실행으로 **정상 작동 확인**(leak 284건은 전부 과거 유출, 로테이션 대상) |
-| `dependency-check` | 2 | 🔧 **거짓 초록이었다** — 아래 §3.1 |
-| `load-test` | 0 | 🔧 **두 겹으로 막혀 있었다** — 아래 §3.2 |
+| 워크플로 | 실행 | 최근 결과 | 판정 |
+|---|---:|---|---|
+| `ci` | 100+ | 진행중 | ✅ 실제로 돈다 |
+| `dependency-submission` | 65 | success | ✅ |
+| `secret-scan-history` | 51 | **failure**(2026-08-03) | ⚠ 확인 필요 |
+| `zap-scan` | 3 | failure | 🔧 이번에 수리 |
+| `dependency-check` | **2** | cancelled | ⚠ 사실상 미가동 |
+| `update-visual-baseline` | **1** | success | 수동 전용(정상) |
+| `load-test` | **0** | — | ⚠ **한 번도 실행된 적 없음** |
+| `release` | **0** | — | 태그 푸시 없음(정상) |
 
-### 3.1 `dependency-check` — 스텝은 red 인데 워크플로는 green
+`load-test` 는 **0회**다. `dependency-check` 는 2회이고 최근이 cancelled 다.
+둘 다 "있으니까 돌고 있겠지" 로 읽히지만 실제 근거는 없다.
 
-수동 실행 결과(run `31257035852`):
-
-```
-OWASP Dependency-Check              : success
-Verify report was actually produced : failure   ← 리포트 0건
-결론                                 : success   ← 그런데 전체는 성공
-```
-
-실제로는 스캔이 완주하지 못했다:
-
-```
-NVD_API_KEY:                              (빈 값)
-NVD API request failures ... retrying for the 25th time
-BUILD FAILED / 생성된 dependency-check 리포트 파일 수: 0
-```
-
-원인은 **잡 레벨 `continue-on-error: true`**. Verify 스텝은 주석에 *"continue-on-error 를
-붙이지 않는다 — '리포트가 없다'는 사실만큼은 신호로 남아야 한다"* 고 적혀 있었는데,
-**잡 레벨 플래그가 그 의도를 무력화**하고 있었다. 그 워크플로가 스스로 경계한 *"거짓 안전감"* 이
-**형태만 바꿔 남아 있었다.**
-
-조치: 잡 레벨 플래그는 유지하되(NVD 다운로드는 비결정적이라 게이트로 부적절) 리포트 0건일 때
-**실행 요약 페이지에 드러나게** 했다. **로그를 파야만 보이는 신호는 없는 신호다.**
-
-> ⚠ 근본 해결은 `secrets.NVD_API_KEY` 등록이다. 키 없이는 계속 미완주하며,
-> 그것은 *"취약점 없음"* 이 아니라 **"확인 못 함"** 이다.
-
-### 3.2 `load-test` — 수동 비활성 + 스텝 순서 버그
-
-실행 0회의 이유는 스케줄이 아니었다. **워크플로가 `disabled_manually` 상태**였다
-(사용자가 의도적으로 꺼 둔 것). 활성화하고 돌리자 **첫 실행에서 즉사**했다:
-
-```
-Set up Node.js: failure
-  ##[error]Unable to locate executable file: pnpm
-```
-
-`setup-node` 의 `cache: "pnpm"` 은 캐시 경로를 알아내려고 **pnpm 실행 파일을 호출**하는데,
-pnpm 설치가 **다음 스텝**이었다. `ci.yml` 은 3곳 모두 반대 순서(pnpm → setup-node)로
-정상 동작 중이다 — `load-test.yml` 만 뒤집혀 있었고, **꺼져 있어서 아무도 몰랐다.**
-
-> 끄는 것 자체가 문제는 아니다. 문제는 **꺼진 워크플로가 그 안의 버그까지 함께 덮는다**는 것이다.
+> ⚠ 이 표는 *실행 횟수*만 본 것이다. **"돌았다"가 "제대로 검증했다"를 뜻하지도 않는다** —
+> `zap-scan` 은 3회 돌았지만 유효한 스캔은 0회였다.
 
 ---
 
@@ -131,8 +91,6 @@ pnpm 설치가 **다음 스텝**이었다. `ci.yml` 은 3곳 모두 반대 순�
 | 게이트 클래스 census | *"게이트 삭제를 막는다"* | **미등재 게이트는 지워도 안 걸렸다** |
 | `zap-scan` | 주간 보안 스캔 | **한 번도 성공한 적 없음** |
 | 프론트 도커 이미지 | 릴리스마다 발행 | **4개월간 기동 불가** |
-| `dependency-check` | 주간 CVE 스캔 | **NVD 키 부재로 매번 미완주**인데 워크플로는 초록 |
-| `load-test` | 주간 부하 테스트 | **수동 비활성** + 그 안에 스텝 순서 버그 |
 
 ---
 
@@ -161,18 +119,9 @@ done
 
 ## 6. 남은 것
 
-- **`secrets.NVD_API_KEY` 등록** — `dependency-check` 가 완주하려면 필요하다.
-  키 없이는 이 스캔이 계속 *"확인 못 함"* 상태다. 발급은 사용자 영역
-  ([NVD API Key 신청](https://nvd.nist.gov/developers/request-an-api-key)).
-- **`load-test` 의 k6 단계 검증** — 스텝 순서를 고쳐 setup 은 통과하지만, 그 뒤
-  `LOAD_TEST_BASE_URL`·`LOAD_TEST_USERNAME`/`PASSWORD` 시크릿이 필요할 수 있다.
-  **setup 통과가 부하 테스트 성공을 뜻하지 않는다** — 실행해서 확인할 것.
-- **`zap-scan` 경고 11종** — FAIL 0 이고 전수 판정 완료(4건 조치·3건 오탐·3건 조치불요·
-  1건 기결정). 다만 **스캔이 도달한 곳은 미인증 공개 페이지 5개뿐**이다.
-  로그인 뒤 `/admin/**` 은 스캔 범위 밖이며, 실제 취약점이 있다면 거기 있다.
-  인증 스캔 도입 여부는 별도 판단 사항.
-- **이미 공개된 과거 유출** — `secret-scan-history` 가 leak 284건을 보고한다.
-  전부 현재 트리에 없는 과거 파일이며 목록화가 아니라 **로테이션**으로 닫힌다
-  ([crypto-key-rotation.md](crypto-key-rotation.md) · [pending-decisions.md](pending-decisions.md) §2-B).
+- **`load-test`(0회)·`dependency-check`(2회, cancelled)** — 실제로 돌려보고 작동 여부를 판정할 것
+- **`secret-scan-history` 최근 실패**(2026-08-03) — 원인 미확인
+- **`zap-scan` 첫 성공 후 나올 경고** — 새로 생긴 취약점이 아니라 **원래 있었지만 안 보이던 것**이다.
+  미리 `.zap/rules.tsv` 에 `IGNORE` 로 덮지 않는다(§0.7-H2)
 
 관련: [dependabot-alert-census.md](dependabot-alert-census.md) §11 — 같은 세션에서 발견한 하네스 구멍 3건
