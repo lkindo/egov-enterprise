@@ -141,7 +141,7 @@ jobs:
       # 즉 이름은 "Schema Integrity" 인데 스키마 변경을 감지하지 못하는 필터였다.
       - name: Detect Schema and JPA Entity Changes
         id: schema-changes
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590  # v3
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v3
         with:
           filters: |
             schema:
@@ -202,7 +202,7 @@ jobs:
 
       - name: Check OpenAPI Spec Changes
         id: openapi-changes
-        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590  # v3
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d  # v3
         with:
           filters: |
             api:
