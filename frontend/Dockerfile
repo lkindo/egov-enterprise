@@ -61,4 +61,21 @@ USER nextjs
 
 EXPOSE 3000
 ENV PORT=3000
-CMD ["node", "node_modules/.bin/next", "start"]
+# [2026-08-08 정정] 종전: CMD ["node", "node_modules/.bin/next", "start"]
+#
+#   ⚠ **이 이미지는 4개월간 기동 자체가 불가능했다.**
+#   pnpm 이 만드는 `node_modules/.bin/next` 는 JS 파일이 아니라 **셸 스크립트 shim**(`#!/bin/sh`)이다.
+#   그것을 `node` 로 실행하면 JS 파서가 셸 스크립트를 읽어 즉시 죽는다:
+#       SyntaxError: missing ) after argument list
+#       at wrapSafe (node:internal/modules/cjs/loader)
+#   실측(2026-08-08): 컨테이너 State=exited, ExitCode=1, healthcheck 검사 **0회**.
+#
+#   왜 4개월간 아무도 몰랐나 — **이 이미지를 실제로 띄우는 경로가 하나뿐이었고 그것도 고장나 있었다.**
+#     · ci.yml E2E  : `docker compose up -d db api` 만 — 프론트는 호스트에서 `pnpm run start:3001`
+#     · release.yml : 이미지를 **빌드해서 푸시**만 한다(빌드는 성공하므로 CI 는 초록)
+#     · zap-scan.yml: 유일하게 **띄우는** 곳 — 그런데 한 번도 성공한 적이 없었다
+#   두 고장이 서로를 가리고 있었다. 즉 **레지스트리에 푸시된 이미지는 docker run 하면 즉시 죽는다.**
+#
+#   shim 은 셸로 실행해야 한다. exec 형식을 유지하면서 셸을 명시한다(PID 1 은 sh 가 되며,
+#   `exec` 로 next 프로세스가 PID 1 을 이어받아 SIGTERM 이 그대로 전달된다).
+CMD ["sh", "-c", "exec node_modules/.bin/next start"]
