@@ -7,6 +7,35 @@
 
 ---
 
+## 0. 현행 요약 (2026-08-08 실측 대조)
+
+종결 항목이 미결 사이에 섞여 있어 **무엇이 실제로 남았는지** 한눈에 보이지 않았다. 아래로 정리한다.
+
+### 🔴 실제로 결정이 필요한 것 (7)
+
+| # | 항목 | 성격 |
+|---|---|---|
+| 1-A | 필수/샘플 분리의 배포 형태 — `template/reusable-base` 를 공식 base 로 채택할지 | **가장 큰 결정** |
+| 1-B | `business-core` 내 샘플 ~50파일 처리(이관/삭제/유지) | 제품 |
+| 2-B | ssh 개인키 이력 — 백업 브랜치(`backup/main-20260728-pre-reset`) 처분 | 보안·이력 |
+| 2-D | CSP `unsafe-inline` 제거 — Next RSC nonce/PPR 선행 필요 | 아키텍처 |
+| 3-A/3-B/3-C | 코드성 컬럼 무결성 · `route_mdfcn_yn` · `etc_cd` 원천 스펙 | DB·외부 스펙 |
+| 4-C | backend-shape ↔ api-docs **필드레벨** 게이트 도입 여부 | 설계 |
+| — | **프론트엔드 런타임 성능 관측 공백** *(신규 — 아무도 재지 않는다)* | 관측 |
+
+### ✅ 종결 — 기록 보존용 (결정 불요)
+
+`2-A`(webmaster 비번) · `2-C`(미들웨어 커버리지) · **`2-F`(Spring Boot 3.5.16)** ·
+**`3-D`(뮤테이션 하드게이트)** · `3-E`(DB 표준화 부분) · `4-A`(CI 빌링) · **`4-B`(e2e 상시화)**
+
+> **⚠ 굵게 표시한 3건은 2026-08-08 에 "이미 해소됐는데 원장이 모르고 있던" 것들이다.**
+> 특히 `3-D` 는 원장·`build.gradle` 주석·`GEMINI.md` **세 곳이 2주 가까이 사실과 다른 서술**을
+> 유지했다. 이 저장소에서 **틀린 문서가 판단을 오도한 사고는 이미 두 번** 났다 —
+> "CI 과금차단" 서술로 E2E 파손이 8커밋 누적됐고, 프론트 헌법 제14조(Storybook)가
+> 4개월간 알리바이로 남아 있었다. **원장은 주기적으로 실태와 대조해야 한다.**
+
+---
+
 ## 1. 프레임워크 정체성 (§2.B — 가장 큰 결정)
 
 ### 1-A. 필수/샘플 분리의 "배포 형태"
@@ -80,7 +109,26 @@
 - **이전 기록**: 미들웨어가 `/admin/{system,user,security,stats,workflow}` 5개 접두사만 ADMIN 강제(allow-by-default), 그 외 /admin/* 는 인증만.
 - **실제**: `401c43f4c`(2026-07-20)로 **deny-by-default 반전** 완료 — `/admin/**` 는 기본 ADMIN/SYSTEM 전용이며, `USER_ACCESSIBLE_ADMIN_PATHS`(work-hub·collaboration·help·community·survey polls participate) 화이트리스트 + `ADMIN_ONLY_SUBPATHS` 역예외로 통제(`frontend/src/middleware.ts`). **남은 것은 결정이 아니라 allow-list 큐레이션**(관리 콘솔 신규 추가 시 유지보수).
 
-### 2-F. Spring Boot 마이너 업그레이드 — critical 취약점 해소 경로 (2026-08-05 신설)
+### 2-F. Spring Boot 마이너 업그레이드 — **✅ 종결(2026-08-05 실행 / 2026-08-08 확인)**
+
+> **결정은 내려졌고 실행됐다.** 아래 본문은 **당시의 판단 근거**로 보존한다 —
+> 결정 대기 항목이 아니다.
+>
+> | 항목 | 2026-08-05 기록 | 2026-08-08 실측 |
+> |---|---|---|
+> | Spring Boot | 3.4.13 | **3.5.16** (`build.gradle:190`) |
+> | `spring-security-web` | **6.4.13** (🔴 critical, 취약 범위 상한) | **6.5.11** — 취약 범위 `<=6.4.13` **밖** |
+> | 요청 매처 | `AntPathRequestMatcher` 37개소 | **`PathPatternRequestMatcher` 9개소로 전환** (잔존 2건은 주석·테스트 설명뿐) |
+> | 열린 Dependabot 알림 | 21건 중 critical/high 해소 0건 | **전체 0건** ([dependabot-alert-census.md](dependabot-alert-census.md)) |
+>
+> **어떻게 안전하게 했나** — §0.7-H4(일괄 치환 금지)를 지켰다.
+> 매처 전환 **전에** 경계 의미를 동결하는 테스트를 먼저 커밋했다(`dd67f91e9`
+> *"매처 경계 의미를 현행 기준으로 동결한다 — Spring Security 6.5 전환 안전망"*).
+> 그 뒤에 전환했다(`d9971d075`). 안전망 없이 37개소를 sweep 했다면 인가 경계가
+> 조용히 이동했을 것이다.
+
+<details>
+<summary>당시 판단 근거 (2026-08-05 기록 — 보존)</summary>
 
 - **결정 대상**: `spring-security-web` **critical** 취약점을 해소하려면 Spring Boot **3.4.13 → 3.5.x** 마이너 업그레이드가 필요하다. 착수할 것인가, 리스크를 수용할 것인가.
 - **왜 Dependabot 이 해결하지 못하는가**: 열린 Dependabot PR **21건 중 critical/high 취약점을 해소하는 것은 0건**이다. 해당 라이브러리들은 Spring Boot BOM 이 버전을 관리하므로 **Boot 자체를 올려야** 바뀐다. Dependabot 은 그 PR 을 만들지 않았다.
@@ -172,6 +220,8 @@
   버전 한 줄 바꾸는 작업으로 착수했다가 보안 설정을 반쯤 고친 상태로 남기지 말 것 —
   **전용 세션에서 위 4단계를 끝까지 수행할 수 있을 때 착수**한다.
 
+</details>
+
 ### 2-D. CSP `unsafe-inline` 제거
 - prod CSP 에서 `unsafe-eval` 은 제거됨. `unsafe-inline` 은 **Next RSC nonce/PPR 인프라 도입**이 선행돼야 제거 가능(아키텍처 결정, 이전에 Phase4 포기).
 
@@ -197,8 +247,23 @@
 ### 3-C. `tb_com_dtl_cd` 공통상세코드 값 소싱
 - 공통 상세코드(성별 M/F·게시판유형 등 드롭다운 실값) 미시드 — repo/라이브덤프에 권위 원천 부재(DB헌법 9조). **표준 코드값 export 제공** or **빈 값(드롭다운 공백) 수용** 결정.
 
-### 3-D. 뮤테이션 게이트 STRICT flip
-- 현재 report-only(`STRICT_MUTATION=false`·`mutationThreshold=0`). **임계값은 헌법·게이트·문서 전반 75%로 통일**(2026-07-18). 75% 하드게이트 활성은 **각 대상 클래스 실측 스코어 ≥75% 확인 후** `STRICT_MUTATION=true` 전환. **미달 상태 flip = 빌드 즉시 파손**이라 제품/품질 결정(사용자 선택: report-only 유지). (문서엔 report-only 정직 명시 완료)
+### 3-D. 뮤테이션 게이트 STRICT flip — **✅ 종결(2026-08-08 실측 정정): 이미 하드강제 중이었다**
+
+- **이전 기록(STALE)**: *"현재 report-only(`STRICT_MUTATION=false`·`mutationThreshold=0`) … 사용자 선택: report-only 유지"*
+- **실측 정정(2026-08-08)**: **CI 는 2026-07-26 부터 75% 하드게이트를 강제하고 있었다.**
+
+  | 층 | 실태 |
+  |---|---|
+  | `build.gradle:280` | `mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 75 : 0` |
+  | `.github/workflows/ci.yml:848,855` | **`STRICT_MUTATION: "true"`** — 두 스코프 모두 |
+  | 도입 커밋 | `2c756ca84`(2026-07-26) *"뮤테이션 스코어 69.8%→80.2% 보강 후 **75% 하드게이트 활성화**"* |
+  | 신뢰성 | 최근 `ci.yml` 15회에서 `mutation-test` **15/15 success** |
+
+- **⚠ 이 항목이 위험했던 이유**: 원장·`build.gradle` 주석·`GEMINI.md` **세 곳이 2주 가까이 "report-only" 라고 서술**하고 있었다.
+  그 사이 2026-08-08 에 `mutation-test` 가 **required status check 로 등재**되어, 이제 스코어가 75% 아래로 떨어지면 **병합이 막힌다.**
+  문서를 고치지 않았다면 다음 사람은 병합이 막힌 원인을 **문서에서 찾을 수 없었다** — 문서가 "그 게이트는 빌드를 깨지 않는다" 고 말하고 있었기 때문이다.
+- **함께 정정한 곳**: `build.gradle:278` 주석, `GEMINI.md` §6.1 뮤테이션 스킬 행.
+- **남은 결정 없음.** 임계값을 바꾸거나 스코프를 넓히려면 그때 별도 판단한다.
 
 ### 3-E. DB 표준화 잔여 (이전 세션, 제품결정성) — **부분 종결(2026-07-20 실측 정정)**
 원 항목은 `biz_cd`·`etc_cd`·로그 개인정보 보존정책·`leader_id` FK 4건 묶음이었다. 실측 결과 **2건은 이미 해소**되어 아래로 좁힌다.
@@ -215,10 +280,32 @@
 ### 4-A. CI 빌링 복구 — **⚠ 기록 정정(2026-08-05 실측): "과금 차단" 은 STALE**
 - **이전 기록**: "CI(ci.yml) 과금 차단 상태 — 사용자 영역."
 - **실측 정정**: **CI 는 돌고 있다.** PR #287 에서 `secret-scan` 이 19초 만에 pass 하고 `backend-build` 가 실제로 기동했다. 아울러 `main` 브랜치 룰셋이 활성화되어 **PR 필수 + required status checks 3종**(`backend-build`·`frontend-build`·`secret-scan`)이 강제된다(직접 push 는 `GH013` 으로 거부됨). 상세는 [wave2-carryover.md §7](wave2-carryover.md).
-- **남은 것**: E2E 잡(22티어)까지 실제로 그린인지는 **미확인**이다. "CI 가 안 돈다" 를 전제로 보류한 작업(예: 코드 간결화 계획 Phase 4 의 FE 대규모 리팩터)은 착수 전 **E2E 실행 여부를 실측**하고 재판정할 것.
+- ~~**남은 것**: E2E 잡(22티어)까지 실제로 그린인지는 **미확인**~~ → **해소(2026-08-08)**: 아래 4-B 참조.
+  최근 `ci.yml` 15회에서 `e2e-tests (1/3)`·`(2/3)`·`(3/3)`·`e2e-merge-reports` **전부 15/15 success**.
+  "CI 가 안 돈다" 를 전제로 보류했던 작업은 이제 그 전제가 성립하지 않으므로 재판정 대상이다.
+- **required status checks 도 3종 → 7종으로 확대됐다**(2026-08-08). 아래 4-B 참조.
 
-### 4-B. e2e 상시화
-- e2e 는 backend(:8080)+FE(:3001) 기동 필요라 통합 `verify` 게이트에서 제외(별도 `test:e2e`). 상시화는 CI 복구 + 환경 결정.
+### 4-B. e2e 상시화 — **✅ 종결(2026-08-08)**
+
+- **이전 기록**: *"e2e 는 backend(:8080)+FE(:3001) 기동 필요라 통합 `verify` 게이트에서 제외(별도 `test:e2e`). 상시화는 CI 복구 + 환경 결정."*
+- **현황**: 두 전제가 모두 해소됐다.
+
+  | 축 | 상태 |
+  |---|---|
+  | 실행 | CI 에서 **매 PR 마다 3샤드 병렬 실행**(`ci.yml` `e2e-tests`). 최근 15회 15/15 success |
+  | 강제 | **required status check 로 등재**(2026-08-08) — `e2e-tests (1/3)`·`(2/3)`·`(3/3)` |
+  | 커버리지 | 스펙 **26개**(tier 01~25) |
+
+- **⚠ 그전까지 무엇이 문제였나**: E2E 는 돌고 있었지만 **required 가 아니었다**.
+  즉 **E2E 가 빨개도 룰셋은 병합을 막지 않았다.** 실제로 그것을 막아준 것은 저장소 규칙이 아니라
+  병합 스크립트가 전 체크의 결론을 직접 센 것이었고, `gh pr merge` 를 직접 치면 그 보호는 없었다.
+  이는 [orchestration-protocol.md](../03-guides/orchestration-protocol.md) §4.1 의
+  *"UI 변경은 CI 초록이 유일한 증거"* 와 정합하지 않았다 — **증거로 삼겠다고 선언한 것이 강제되지 않았다.**
+- **required 목록(현행 7종)**: `backend-build` · `frontend-build` · `secret-scan` · `e2e-tests (1/3)` · `(2/3)` · `(3/3)` · `mutation-test`
+  - `e2e-merge-reports` 는 **의도적 제외** — `if: always() && needs.e2e-tests.result != 'skipped'` 조건이 있어
+    스킵될 수 있고, **스킵된 required 체크는 영원히 pending 으로 남아 병합을 잠근다.**
+- **로컬 `verify` 에서 제외하는 것은 그대로 둔다** — E2E 는 여전히 두 서버 기동이 필요하고,
+  pre-push 에 넣으면 게이트가 수 분대로 늘어난다. **로컬은 정적 게이트, 런타임 증거는 CI** 라는 계층을 유지한다.
 
 ### 4-C. backend-shape ↔ api-docs 필드레벨 게이트
 - 경로레벨 커버리지 게이트는 신설 완료(ApiDocsPathCoverageLinterTest). **필드레벨(스키마 property↔DTO 필드) 대조**는 파싱 복잡·오탐 위험이라 스코프 밖 — 도입 여부/설계 결정.

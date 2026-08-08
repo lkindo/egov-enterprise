@@ -113,7 +113,7 @@
 | **API Contract Guardian** | `.agent/skills/api-contract-guardian/` | DB 제약조건(SSOT) ➔ BE DTO ➔ FE Zod 스키마로 이어지는 **단방향 연쇄 거울 동기화** 및 OpenAPI 타입 명세 일치율 검증으로 Breaking Change 완벽 방어 |
 | **OWASP Security Auditor** | `.agent/skills/owasp-security-auditor/` | 인증(JWT), Spring Security 필터, Next.js Middleware 변경 시 Red Team 관점의 가상 침투 및 취약점 검증 |
 | **Docs-as-Code Sync** | `.agent/skills/docs-as-code-sync/` | 시스템 아키텍처 및 로직 변경 시 관련 마크다운 문서와 Mermaid 다이어그램 자율 갱신 |
-| **Mutation Testing Auditor** | `.agent/skills/mutation-testing-auditor/` | 테스트 작성 시 소스 코드에 의도적 버그를 주입하여 테스트 방어력(Robustness) 검증 — 핵심 크리티컬 서비스 기준 **Mutation Score 75% 이상**(BE 헌법 제16조, 현행 CI 는 리포트 전용·STRICT_MUTATION=true 시 75% 하드강제) *(※ 전체 빌드 대기로 인한 무한 루프 락을 막기 위해, 변경된 소스 영향 범위의 단위 테스트 클래스만 타겟팅하는 **증분식 뮤테이션 검증(Incremental Mutation Strategy)** 방식을 적극 허용 및 권장하며, 일반 보조 서비스 및 단순 CRUD는 의무 면제)* |
+| **Mutation Testing Auditor** | `.agent/skills/mutation-testing-auditor/` | 테스트 작성 시 소스 코드에 의도적 버그를 주입하여 테스트 방어력(Robustness) 검증 — 핵심 크리티컬 서비스 기준 **Mutation Score 75% 이상**(BE 헌법 제16조. **[2026-08-08 정정] 종전 서술 "현행 CI 는 리포트 전용" 은 사실이 아니었다** — ci.yml 의 mutation-test 잡은 2026-07-26[`2c756ca84`]부터 `STRICT_MUTATION: "true"` 를 설정해 **CI 에서 75% 하드게이트가 강제돼 왔고**, 2026-08-08 required status check 등재로 미달 시 병합이 막힌다. 로컬 `pitest` 는 환경변수 미설정이라 여전히 리포트 전용이다) *(※ 전체 빌드 대기로 인한 무한 루프 락을 막기 위해, 변경된 소스 영향 범위의 단위 테스트 클래스만 타겟팅하는 **증분식 뮤테이션 검증(Incremental Mutation Strategy)** 방식을 적극 허용 및 권장하며, 일반 보조 서비스 및 단순 CRUD는 의무 면제)* |
 | **Zero-Downtime Planner** | `.agent/skills/zero-downtime-migration-planner/` | DB 스키마 변경 시 Expand-and-Contract 패턴 기반의 무중단 마이그레이션 설계 |
 
 ## 7. Database Interaction Rules (via Local Bridge)
