@@ -275,8 +275,16 @@ subprojects {
         historyOutputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
 
         // 백엔드 헌법 제16조 (핵심 서비스 Mutation Score 75% 이상) — 임계값을 헌법 기준과 75% 로 통일
-        // 현행은 리포트 전용(STRICT_MUTATION 미설정 → threshold 0, 미달이 빌드 파손 안 함).
-        // 실측 스코어 ≥75% 확인 후 STRICT_MUTATION=true 로 전환하면 75% 하드 게이트가 강제된다.
+        //
+        // [2026-08-08 정정] 종전 주석은 "현행은 리포트 전용" 이라고 적혀 있었다. **사실이 아니었다.**
+        //   ci.yml 의 mutation-test 잡은 2026-07-26(커밋 2c756ca84)부터 두 스코프 모두
+        //   STRICT_MUTATION: "true" 를 설정한다 — 즉 CI 에서는 75% 하드게이트가 강제돼 왔다.
+        //   그 상태로 2026-08-08 에 mutation-test 가 required status check 로 등재됐으므로,
+        //   이제 스코어가 75% 아래로 떨어지면 **병합이 막힌다.**
+        //
+        // 정리하면:
+        //   · 로컬(`./gradlew :module:pitest`) — 환경변수 미설정 → threshold 0, 리포트 전용
+        //   · CI(mutation-test 잡)        — STRICT_MUTATION=true → threshold 75, 미달 시 빌드 파손
         mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 75 : 0
     }
 }
