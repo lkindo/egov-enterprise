@@ -50,12 +50,18 @@ jobs:
           # 스캔이 한 번도 성공한 적이 없어 드러나지 않았을 뿐이다. 리포트는 아티팩트로 남으므로
           # 이슈 자동 생성은 끄고 두 스텝의 거동을 맞춘다.
           allow_issue_writing: false
+          # [2026-08-08] 두 스텝이 기본 아티팩트명 `zap_scan` 을 공유해 두 번째 업로드가
+          #   409 Conflict 로 죽었다 — **스캔은 둘 다 성공했는데** 잡이 실패했다:
+          #     Failed to CreateArtifact: (409) an artifact with this name already exists
+          #   이름을 분리한다.
+          artifact_name: zap_baseline_frontend
           
       - name: ZAP Full Scan for API
         uses: zaproxy/action-full-scan@3c58388149901b9a03b7718852c5ba889646c27c  # v0.13.0
         with:
           target: 'http://localhost:8080/v3/api-docs'
           allow_issue_writing: false
+          artifact_name: zap_fullscan_api
           
       - name: Stop Docker Infrastructure
         if: always()
