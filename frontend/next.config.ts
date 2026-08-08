@@ -77,6 +77,26 @@ const nextConfig = {
           //   ⚠ 만약 이 앱의 자산을 다른 출처에서 임베드해야 할 일이 생기면 `cross-origin` 으로
           //   완화해야 한다 — 그때는 완화 사유를 여기 남길 것.
           { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
+          // [2026-08-08] COEP / Permissions-Policy. ZAP 2차 유효 스캔 지적분
+          //   `Cross-Origin-Embedder-Policy Header Missing [90004]` x6,
+          //   `Permissions Policy Header Not Set [10063]` x5.
+          //
+          //   COEP 값 선택 — `require-corp` 가 아니라 `credentialless` 를 쓴다.
+          //   `require-corp` 는 CORP 헤더를 안 주는 **모든** 교차출처 리소스를 차단한다.
+          //   이 앱의 교차출처 이미지는 `images.unsplash.com` 하나인데(BoardPreview 의 목 데이터),
+          //   그건 `next/image` 를 거쳐 `/_next/image` 로 프록시되므로 브라우저 입장에선
+          //   동일 출처다 — 즉 지금은 require-corp 여도 깨지지 않는다.
+          //   그럼에도 credentialless 를 고르는 이유: **다음에 누가 <img src="https://...">
+          //   를 직접 쓰면 require-corp 는 그 이미지를 조용히 깨뜨린다.** credentialless 는
+          //   자격증명 없이 로드해 같은 격리 수준(cross-origin isolation)을 얻으면서 그 함정이 없다.
+          { key: 'Cross-Origin-Embedder-Policy', value: 'credentialless' },
+          // 쓰지 않는 강력 기능은 기본적으로 끈다. 이 앱은 카메라·마이크·위치·결제를 쓰지 않는다
+          //   (전수 grep: getUserMedia·geolocation·PaymentRequest 0건).
+          //   `interest-cohort` 는 표준에서 빠졌으므로 넣지 않는다.
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()',
+          },
           { key: 'Reporting-Endpoints', value: 'csp-endpoint="/api/security/csp"' },
           { key: 'Content-Security-Policy', value: isProd ? cspProd : cspDev },
         ],
