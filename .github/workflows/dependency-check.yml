@@ -50,7 +50,9 @@ jobs:
           restore-keys: nvd-
 
       - name: OWASP Dependency-Check
-        run: ./gradlew dependencyCheckAnalyze
+        # [2026-08-08] --stacktrace 를 붙인다. 유효 키 적용 후 첫 완주에서 모듈 태스크 4개가
+        #   전부 `Analysis failed.` 한 줄만 남기고 죽었는데, 그 한 줄로는 원인을 알 수 없다.
+        run: ./gradlew dependencyCheckAnalyze --stacktrace
         env:
           # [W0-09] build.gradle 의 dependencyCheck.nvd.apiKey 가 이 값을 읽는다.
           #   플러그인은 환경변수를 스스로 읽지 않으므로, 시크릿 등록만으로는 아무 효과가 없었다.
@@ -69,6 +71,28 @@ jobs:
           COUNT=$(find . -path '*/build/reports/dependency-check-report.*' -type f | wc -l)
           echo "생성된 dependency-check 리포트 파일 수: $COUNT"
           find . -path '*/build/reports/dependency-check-report.*' -type f || true
+
+          # [2026-08-08] 모듈 커버리지도 함께 본다.
+          #   종전 판정은 "리포트가 1개라도 있으면 통과" 였다. 그런데 실측(run 31259044378)에서
+          #   **루트 리포트 2개만 생기고 모듈 4개는 전부 FAILED** 인데도 이 스텝이 초록이었다.
+          #   루트가 분석한 것은 jacoco·asm 등 빌드 도구 11개뿐 — Spring·eGovFrame·QueryDSL 같은
+          #   **실제 애플리케이션 의존성은 하나도 보지 않았다.**
+          #   `Found 0 vulnerabilities` 가 "안전하다" 로 읽히던 지점이다.
+          MODULE_REPORTS=$(find . -path '*/build/reports/dependency-check-report.xml' -type f                             -not -path './build/*' | wc -l)
+          echo "모듈 리포트 수(루트 제외): $MODULE_REPORTS / 기대 4 (foundation·business-core·business-app·api-server)"
+          if [ "$MODULE_REPORTS" -lt 4 ]; then
+            echo "::error::모듈 스캔이 완주하지 못했습니다 — 루트만 분석되면 애플리케이션 의존성은 검사되지 않습니다."
+            {
+              echo "## ⚠ 모듈 스캔 미완주"
+              echo ""
+              echo "모듈 리포트 **${MODULE_REPORTS}/4**. 루트 리포트만으로는 빌드 도구(jacoco·asm)만 검사됩니다 —"
+              echo "Spring·eGovFrame·QueryDSL 등 **실제 의존성은 스캔되지 않았습니다.**"
+              echo ""
+              echo "\`Found 0 vulnerabilities\` 를 \"안전\" 으로 읽지 마십시오."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
           if [ "$COUNT" -eq 0 ]; then
             echo "::error::dependency-check 리포트가 하나도 생성되지 않았습니다 — 스캔이 완주하지 못했습니다(NVD_API_KEY 미등록 또는 다운로드 실패 의심)."
             # [2026-08-08] 잡 서머리에도 남긴다.
