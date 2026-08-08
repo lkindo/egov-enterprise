@@ -850,7 +850,7 @@ jobs:
       - name: Incremental Mutation Test (business-core file scope)
         run: ./gradlew :business-core:pitest
         env:
-          PIT_TARGET_CLASSES: "nuri.business.domain.file.*,nuri.business.service.file.*"
+          PIT_TARGET_CLASSES: "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*"
           PIT_TARGET_TESTS: "nuri.business.*"
           STRICT_MUTATION: "true"
 
