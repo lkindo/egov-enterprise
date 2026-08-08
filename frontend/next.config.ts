@@ -6,6 +6,12 @@ const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig = {
   cacheComponents: true,
+  // [2026-08-08] Next 는 기본으로 `X-Powered-By: Next.js` 를 붙인다.
+  //   OWASP ZAP 첫 유효 스캔에서 실제로 지적됐다 — `Server Leaks Information via
+  //   "X-Powered-By" HTTP Response Header Field [10037]`.
+  //   프레임워크·버전 노출은 공격자가 알려진 취약점을 겨냥할 표면을 좁혀 주므로 끈다.
+  //   기능 영향 없음(순수 정보성 헤더).
+  poweredByHeader: false,
   // output: 'standalone', // Standalone mode causes symlink EPERM on Windows without Developer Mode/Admin. Disabling for local build verification.
   experimental: {
     // ppr: 'incremental', // Merged into cacheComponents
@@ -61,6 +67,16 @@ const nextConfig = {
           { key: 'X-Frame-Options', value: 'DENY' },
           { key: 'X-Content-Type-Options', value: 'nosniff' },
           { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          // [2026-08-08] Cross-Origin-Resource-Policy. ZAP 첫 유효 스캔 지적분
+          //   `Cross-Origin-Resource-Policy Header Missing or Invalid [90004]`.
+          //   이 헤더가 없으면 다른 출처가 우리 응답을 <img>/<script> 등으로 끌어가 담을 수 있고,
+          //   그것이 Spectre 계열 사이드채널과 XS-Leaks 의 전제가 된다.
+          //   `same-origin` 을 고른 이유: 이 앱은 정적 자산까지 전부 동일 출처에서 제공한다
+          //   (CSP 의 `default-src 'self'`·`font-src 'self'` 와 정합. 외부 출처는 img-src 의
+          //   images.unsplash.com 하나뿐인데 그건 **우리가 가져오는** 방향이라 CORP 와 무관하다).
+          //   ⚠ 만약 이 앱의 자산을 다른 출처에서 임베드해야 할 일이 생기면 `cross-origin` 으로
+          //   완화해야 한다 — 그때는 완화 사유를 여기 남길 것.
+          { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
           { key: 'Reporting-Endpoints', value: 'csp-endpoint="/api/security/csp"' },
           { key: 'Content-Security-Policy', value: isProd ? cspProd : cspDev },
         ],
