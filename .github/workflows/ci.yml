@@ -813,10 +813,95 @@ jobs:
   # 각 패키지의 테스트를 보강해 편입해도 전체 점수가 75% 아래로 내려가지 않으면 위 목록에 추가한다.
   #
   # business-core 는 file 도메인(업로드 경로)을 담당하므로 별도 스텝으로 함께 강제한다.
-  mutation-test:
+  # ── 뮤테이션 게이트 ─────────────────────────────────────────────────────────
+  #
+  # [2026-08-09 매트릭스 전환] 종전에는 6개 스코프를 **한 잡에서 순차** 실행했다.
+  #   실측 12분 04초로, e2e 체인(약 8분 41초)을 제치고 **CI 의 임계 경로**였다.
+  #   스코프별 실측:
+  #     business-app 6.1분 · code/user/common 2.3분 · file 2.2분
+  #     · auth 0.8분 · foundation 0.2분 · migration 0.1분
+  #   business-app 하나가 절반이라, 병렬화하면 전체 소요가 그 하나로 수렴한다(약 6~7분).
+  #   스코프를 더 늘려도 최장 스코프만 늘지 않으면 총 시간이 늘지 않는다 —
+  #   이 전환의 목적은 시간 단축 자체보다 **스코프 추가의 한계비용을 없애는 것**이다.
+  #
+  # ⚠ 잡 이름 `mutation-test` 는 **required status check** 다(룰셋 12501346).
+  #   매트릭스로 바꾸면 잡 이름이 `mutation-test (business-app)` 처럼 변해
+  #   `mutation-test` 라는 체크가 **영원히 나타나지 않고 모든 PR 이 병합 불가**가 된다.
+  #   그래서 실행은 아래 `mutation-scope` 매트릭스가 하고,
+  #   `mutation-test` 는 그 결과를 집계하는 잡으로 남겨 **체크 이름을 보존**한다.
+  #   (룰셋을 고치는 방법도 있으나, 매트릭스 항목이 늘 때마다 룰셋을 따라 고쳐야 하고
+  #    한 번 빠뜨리면 그 스코프는 조용히 강제력을 잃는다.)
+  mutation-scope:
     needs: backend-build
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
+    strategy:
+      # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
+      fail-fast: false
+      matrix:
+        include:
+          - scope: business-app
+            gradle: ":business-app:pitest"
+            classes: "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.informalsanction.*,nuri.business.service.comment.*,nuri.business.service.image.*,nuri.business.service.calendar.*,nuri.business.service.isg.*,nuri.business.service.log.*,nuri.business.service.operation.*"
+            tests: "nuri.business.*"
+
+          - scope: business-core-file
+            gradle: ":business-core:pitest"
+            classes: "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*"
+            tests: "nuri.business.*"
+
+          # foundation 스코프.
+          #   OriginValidationFilter 는 **상태변경 요청의 Origin/Referer 경계**다.
+          #   여기서 뮤턴트가 살아남는다는 것은 그 분기를 뒤집어도 아무도 모른다는 뜻이고,
+          #   경계 코드에서 그것은 곧 우회 경로다. 실측 61% -> 94% 보강 후 편입했다.
+          - scope: foundation-security-filter
+            gradle: ":foundation:pitest"
+            classes: "nuri.foundation.security.filter.*"
+            tests: "nuri.foundation.*"
+
+          # migration-tool 스코프.
+          #   TypeConverter/TransformerRegistry 는 마이그레이션의 **값 변환 경계**다.
+          #   경계 조건이 틀리면 예외가 아니라 **조용한 데이터 손상**으로 끝난다
+          #   (빈 문자열이 0 이 되거나, 소수점 절삭이 어긋나거나, 날짜가 밀린다).
+          #   실측 63% -> 90% 보강 후 편입했다.
+          - scope: migration-transform
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.transform.*"
+            tests: "nuri.migration.*"
+
+          # business-core 인증 스코프.
+          #   여기서 살아남던 뮤턴트는 커버리지 결손이 아니라 **과거 보안 수정의 회귀 탐지기 부재**였다:
+          #     · AuthServiceImpl 은 단위 테스트가 아예 없어, 로그인 정책 검사(IP·시간)·
+          #       리프레시 토큰 회전(W1-06)·로그인 감사기록(W1-E2) 호출을 **지워도 그린**이었다.
+          #     · OtpService 는 실패 케이스가 null/"" 뿐이라 authorize() 반환을 쓰는 줄에 닿은 적이 없어,
+          #       "어떤 코드든 통과" 로 바꿔도 그린이었다 — MFA 전면 우회다.
+          #     · LoginPolicy 의 "HHmm" 시간 형식 변환 분기는 검증된 적이 없었고,
+          #       뒤집으면 parse 실패를 catch 가 삼켜 **접속시간 제한이 통째로 무력화**된다.
+          #   실측 64% -> 98% 보강 후 편입했다.
+          - scope: business-core-auth
+            gradle: ":business-core:pitest"
+            classes: "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*"
+            tests: "nuri.business.*"
+
+          # business-core 코드·사용자·공통 스코프.
+          #   이 자리의 뮤턴트는 전부 같은 결말을 가진다 — QueryDSL 의 `where(null)` 은 오류가 아니라
+          #   "조건 없음" 이라서, 검색조건 빌더가 null 을 돌려주면 **필터 없이 전체가 조회된다**.
+          #   예외도 안 나고 화면도 정상으로 보이므로 목록이 커지기 전까지 아무도 눈치채지 못한다.
+          #     · searchAssignableUsers 는 일반 사용자에게 열린 담당자 검색이고
+          #       소스 주석이 계정 열거 방어(빈 키워드 전체반환 금지·로그인 ID 매칭 금지)를
+          #       설계 의도로 적어 두었는데 **테스트가 하나도 없었다**.
+          #     · 기존 사용자 검색 테스트는 조건마다 isNotEmpty() 만 확인해,
+          #       필터를 통째로 없앤 뮤턴트도 통과시켰다(전체 조회에도 매칭 행은 들어 있다).
+          #   실측 45% -> 94% 보강 후 편입했다.
+          #   nuri.business.domain.common.* 은 BaseSearchDto#toPageable() 때문에 들어왔다 —
+          #   종전 16개 호출부에 복제돼 있던 페이징 변환을 한 곳으로 모았으므로,
+          #   **이 한 곳이 뚫리면 16개가 한꺼번에 무방비**가 된다.
+          #   같은 패키지의 RrnoEncryptionConverter(주민번호 암복호화)도 함께 게이트에 들어온다.
+          - scope: business-core-code-user-common
+            gradle: ":business-core:pitest"
+            classes: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*"
+            tests: "nuri.business.*"
+
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
@@ -832,92 +917,48 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # 스코프마다 대상 클래스가 달라 히스토리도 분리한다 —
+      #   한 키를 공유하면 스코프끼리 서로의 증분 히스토리를 덮어써 매번 전량 재분석이 된다.
       - name: Cache PIT incremental history
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
           path: "**/build/pitest/pitHistory.txt"
-          key: pit-history-${{ github.sha }}
+          key: pit-history-${{ matrix.scope }}-${{ github.sha }}
           restore-keys: |
-            pit-history-
+            pit-history-${{ matrix.scope }}-
 
-      - name: Incremental Mutation Test (business-app scope)
-        run: ./gradlew :business-app:pitest
+      - name: Incremental Mutation Test (${{ matrix.scope }})
+        run: ./gradlew ${{ matrix.gradle }}
         env:
-          PIT_TARGET_CLASSES: "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.informalsanction.*,nuri.business.service.comment.*,nuri.business.service.image.*,nuri.business.service.calendar.*,nuri.business.service.isg.*,nuri.business.service.log.*,nuri.business.service.operation.*"
-          PIT_TARGET_TESTS: "nuri.business.*"
-          STRICT_MUTATION: "true"
-
-      - name: Incremental Mutation Test (business-core file scope)
-        run: ./gradlew :business-core:pitest
-        env:
-          PIT_TARGET_CLASSES: "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*"
-          PIT_TARGET_TESTS: "nuri.business.*"
-          STRICT_MUTATION: "true"
-
-      # [2026-08-09 신설] foundation 모듈 스코프.
-      #   OriginValidationFilter 는 **상태변경 요청의 Origin/Referer 경계**다.
-      #   여기서 뮤턴트가 살아남는다는 것은 그 분기를 뒤집어도 아무도 모른다는 뜻이고,
-      #   경계 코드에서 그것은 곧 우회 경로다. 실측 61% -> 94% 보강 후 편입한다.
-      - name: Incremental Mutation Test (foundation security filter scope)
-        run: ./gradlew :foundation:pitest
-        env:
-          PIT_TARGET_CLASSES: "nuri.foundation.security.filter.*"
-          PIT_TARGET_TESTS: "nuri.foundation.*"
-          STRICT_MUTATION: "true"
-
-      # [2026-08-09 신설] migration-tool 스코프.
-      #   TypeConverter/TransformerRegistry 는 마이그레이션의 **값 변환 경계**다.
-      #   여기서 경계 조건이 틀리면 예외가 아니라 **조용한 데이터 손상**으로 끝난다
-      #   (빈 문자열이 0 이 되거나, 소수점 절삭이 어긋나거나, 날짜가 밀린다).
-      #   실측 63% -> 90% 보강 후 편입한다.
-      - name: Incremental Mutation Test (migration transform scope)
-        run: ./gradlew :migration-tool:pitest
-        env:
-          PIT_TARGET_CLASSES: "nuri.migration.transform.*"
-          PIT_TARGET_TESTS: "nuri.migration.*"
-          STRICT_MUTATION: "true"
-
-      # [2026-08-09 신설] business-core 인증 스코프.
-      #   여기서 살아남던 뮤턴트는 커버리지 결손이 아니라 **과거 보안 수정의 회귀 탐지기 부재**였다:
-      #     · AuthServiceImpl 은 단위 테스트가 아예 없어, 로그인 정책 검사(§IP·시간)·
-      #       리프레시 토큰 회전(W1-06)·로그인 감사기록(W1-E2) 호출을 **지워도 그린**이었다.
-      #     · OtpService 는 실패 케이스가 null/"" 뿐이라 `authorize()` 반환을 쓰는 줄에 닿은 적이 없어,
-      #       "어떤 코드든 통과" 로 바꿔도 그린이었다 — MFA 전면 우회다.
-      #     · LoginPolicy 의 "HHmm" 시간 형식 변환 분기는 검증된 적이 없었고,
-      #       뒤집으면 parse 실패를 catch 가 삼켜 **접속시간 제한이 통째로 무력화**된다.
-      #   실측 64% -> 98% 보강 후 편입한다.
-      - name: Incremental Mutation Test (business-core auth scope)
-        run: ./gradlew :business-core:pitest
-        env:
-          PIT_TARGET_CLASSES: "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*"
-          PIT_TARGET_TESTS: "nuri.business.*"
-          STRICT_MUTATION: "true"
-
-      # [2026-08-09 신설] business-core 코드·사용자 저장소 스코프.
-      #   이 자리의 뮤턴트는 전부 같은 결말을 가진다 — QueryDSL 의 `where(null)` 은 오류가 아니라
-      #   "조건 없음" 이라서, 검색조건 빌더가 null 을 돌려주면 **필터 없이 전체가 조회된다**.
-      #   예외도 안 나고 화면도 정상으로 보이므로 목록이 커지기 전까지 아무도 눈치채지 못한다.
-      #     · searchAssignableUsers 는 일반 사용자에게 열린 담당자 검색이고
-      #       소스 주석이 계정 열거 방어(빈 키워드 전체반환 금지·로그인 ID 매칭 금지)를
-      #       설계 의도로 적어 두었는데 **테스트가 하나도 없었다**.
-      #     · 기존 사용자 검색 테스트는 조건마다 isNotEmpty() 만 확인해,
-      #       필터를 통째로 없앤 뮤턴트도 통과시켰다(전체 조회에도 매칭 행은 들어 있다).
-      #   실측 45% -> 94% 보강 후 편입한다.
-      #   [2026-08-09 추가] nuri.business.domain.common.* 편입.
-      #     BaseSearchDto#toPageable() 이 여기로 들어왔다 — 종전 16개 호출부에 복제돼 있던
-      #     페이징 변환을 한 곳으로 모았으므로, **이 한 곳이 뚫리면 16개가 한꺼번에 무방비**가 된다.
-      #     같은 패키지의 RrnoEncryptionConverter(주민번호 암복호화)도 함께 게이트에 들어온다.
-      - name: Incremental Mutation Test (business-core code/user/common scope)
-        run: ./gradlew :business-core:pitest
-        env:
-          PIT_TARGET_CLASSES: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*"
-          PIT_TARGET_TESTS: "nuri.business.*"
+          PIT_TARGET_CLASSES: ${{ matrix.classes }}
+          PIT_TARGET_TESTS: ${{ matrix.tests }}
           STRICT_MUTATION: "true"
 
       - name: Upload PIT report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         with:
-          name: pitest-report
+          name: pitest-report-${{ matrix.scope }}
           path: "**/build/reports/pitest"
           retention-days: 30
+
+  # required status check 이름 보존용 집계 잡.
+  #   `needs.mutation-scope.result` 는 매트릭스 **전체**의 결론이다 —
+  #   fail-fast:false 이므로 하나라도 실패하면 failure 가 된다.
+  #   ⚠ `if: always()` 가 없으면 매트릭스 실패 시 이 잡이 **skipped** 가 되고,
+  #     skipped 는 required check 판정에서 '미완료' 로 남아 PR 이 영원히 대기한다.
+  mutation-test:
+    needs: mutation-scope
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 뮤테이션 스코프 결과 집계
+        run: |
+          RESULT="${{ needs.mutation-scope.result }}"
+          echo "mutation-scope 매트릭스 결론: $RESULT"
+          if [ "$RESULT" != "success" ]; then
+            echo "::error::뮤테이션 게이트 실패 — 어느 스코프가 깨졌는지는 mutation-scope 잡별 로그를 보십시오."
+            exit 1
+          fi
+          echo "모든 뮤테이션 스코프가 임계값(75%)을 통과했습니다."
