@@ -20,6 +20,11 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import org.mockito.MockedStatic;
+import org.springframework.security.access.hierarchicalroles.RoleHierarchy;
+import nuri.foundation.core.config.ApplicationContextProvider;
+import static org.mockito.Mockito.*;
+import static org.mockito.ArgumentMatchers.anyCollection;
 
 @DisplayName("SecurityUtil 테스트")
 @SuppressWarnings("deprecation")
@@ -200,5 +205,71 @@ class SecurityUtilTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
     }
-}
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // [2026-08-09 뮤테이션 보강] hasRole 의 뮤턴트 4개가 전부 NO_COVERAGE 였다.
+    //
+    //   ⚠ 왜 기존 hasRole 테스트가 못 닿았나: roleHierarchy 는
+    //   `ApplicationContextProvider.getBean(RoleHierarchy.class)` 로 가져오는데,
+    //   단위 테스트에는 ApplicationContext 가 없어 **항상 null** 이다.
+    //   그래서 계층(hierarchy) 경로는 한 번도 실행된 적이 없었다 —
+    //   즉 **ROLE_ADMIN 이 ROLE_USER 를 포함하는지** 를 아무도 검증하지 않았다.
+    //   static 메서드이므로 mockStatic 으로 그 경로를 연다.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("역할 계층이 구성되면 상위 역할이 하위 역할을 포함한다")
+    void hasRole_withRoleHierarchy_resolvesInheritedRole() {
+        Authentication authentication = new UsernamePasswordAuthenticationToken("admin", null,
+                List.of(new SimpleGrantedAuthority("ROLE_ADMIN")));
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+
+        RoleHierarchy hierarchy = mock(RoleHierarchy.class);
+        // ROLE_ADMIN 은 ROLE_USER 로 도달 가능하다고 선언한다.
+        doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"), new SimpleGrantedAuthority("ROLE_USER")))
+                .when(hierarchy).getReachableGrantedAuthorities(anyCollection());
+
+        try (MockedStatic<ApplicationContextProvider> ctx = mockStatic(ApplicationContextProvider.class)) {
+            ctx.when(() -> ApplicationContextProvider.getBean(RoleHierarchy.class)).thenReturn(hierarchy);
+
+            // 계층 경로의 `replaced boolean return with false` 뮤턴트가 여기서 죽는다.
+            assertThat(SecurityUtil.hasRole("USER")).as("ADMIN 은 계층상 USER 를 포함한다").isTrue();
+            // `... with true` 뮤턴트는 여기서 죽는다.
+            assertThat(SecurityUtil.hasRole("SYSTEM")).as("도달 불가 역할은 false").isFalse();
+        }
+    }
+
+    @Test
+    @DisplayName("역할 계층 조회가 실패해도 평면 권한으로 판정한다 (fail-safe 폴백)")
+    void hasRole_whenHierarchyLookupThrows_fallsBackToFlatAuthorities() {
+        Authentication authentication = new UsernamePasswordAuthenticationToken("user", null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+
+        try (MockedStatic<ApplicationContextProvider> ctx = mockStatic(ApplicationContextProvider.class)) {
+            ctx.when(() -> ApplicationContextProvider.getBean(RoleHierarchy.class))
+                    .thenThrow(new IllegalStateException("no context"));
+
+            // 예외를 삼키고 평면 경로로 내려가는지 — 조건을 뒤집으면 NPE 가 된다.
+            assertThat(SecurityUtil.hasRole("USER")).isTrue();
+            assertThat(SecurityUtil.hasRole("ADMIN")).isFalse();
+        }
+    }
+
+    @Test
+    @DisplayName("ROLE_ 접두사는 있어도 없어도 같게 판정한다")
+    void hasRole_normalizesRolePrefix() {
+        Authentication authentication = new UsernamePasswordAuthenticationToken("user", null,
+                List.of(new SimpleGrantedAuthority("ROLE_USER")));
+        SecurityContext context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(authentication);
+        SecurityContextHolder.setContext(context);
+
+        assertThat(SecurityUtil.hasRole("USER")).isTrue();
+        assertThat(SecurityUtil.hasRole("ROLE_USER")).isTrue();
+    }
+}

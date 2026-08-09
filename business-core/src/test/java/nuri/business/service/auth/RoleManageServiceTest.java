@@ -21,6 +21,9 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("RoleManageService (롤 관리) 테스트")
@@ -231,5 +234,34 @@ class RoleManageServiceTest {
 
         assertThat(result.getRoleSort()).isEqualTo("5");
         assertThat(result.getCrtDt()).isNotNull();
+    }
+
+    // [2026-08-09 뮤테이션 보강] 페이징 계산과 총건수 반환이 검증되지 않았다.
+
+    @Test
+    @DisplayName("목록 조회: 1-based pageIndex 변환과 기본 페이지 크기가 적용된다")
+    void listAppliesPagingRules() {
+        BaseSearchDto vo = new BaseSearchDto();
+        vo.setPageIndex(3);
+        vo.setPageUnit(0);
+        given(roleInfoRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
+
+        roleManageService.selectRoleList(vo);
+
+        org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
+                org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
+        verify(roleInfoRepository).findAll(captor.capture());
+        assertEquals(2, captor.getValue().getPageNumber(), "1-based 3페이지는 0-based 2");
+        assertEquals(10, captor.getValue().getPageSize(), "pageUnit 0 이면 기본 10");
+    }
+
+    @Test
+    @DisplayName("총건수는 저장소 count 를 그대로 돌려준다")
+    void totalCountReflectsRepositoryCount() {
+        given(roleInfoRepository.count()).willReturn(5L);
+
+        // `replaced int return with 0` 뮤턴트가 여기서 죽는다.
+        assertEquals(5, roleManageService.selectRoleListTotCnt(new BaseSearchDto()));
     }
 }

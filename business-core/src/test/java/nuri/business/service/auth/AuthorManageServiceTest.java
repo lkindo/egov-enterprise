@@ -109,4 +109,100 @@ class AuthorManageServiceTest {
         authorManageService.deleteAuthors(codes);
         verify(authorityRepository).deleteAllById(anyList());
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // [2026-08-09 뮤테이션 보강] PIT 이 이 클래스에서 12개를 살려 보냈다.
+    //
+    //   그중 4개가 **삭제 시 매핑 선정리**(deleteAuthor·deleteAuthors)다.
+    //   authorityRoleRepository / menuAuthorityRepository 삭제 호출을 지워도 그린이었다 —
+    //   즉 "권한을 지웠는데 tb_authrt_role_map·tb_menu_crt_dtl 의 매핑이 남는" 회귀를
+    //   테스트가 감지하지 못한다. FK(NO ACTION) 때문에 삭제가 실패하거나,
+    //   최악의 경우 **삭제된 권한의 메뉴 접근 매핑이 잔존**한다.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Test
+    @DisplayName("삭제: 권한보다 먼저 역할·메뉴 매핑을 정리한다 (FK NO ACTION 통과 조건)")
+    void deleteAuthorClearsMappingsBeforeAuthority() {
+        authorManageService.deleteAuthor("ROLE_TEMP");
+
+        // 호출 하나라도 지운 뮤턴트가 여기서 죽는다.
+        org.mockito.InOrder order = inOrder(authorityRoleRepository, menuAuthorityRepository, authorityRepository);
+        order.verify(authorityRoleRepository).deleteByIdAuthrtCd("ROLE_TEMP");
+        order.verify(menuAuthorityRepository).deleteByIdAuthrtCd("ROLE_TEMP");
+        order.verify(authorityRepository).deleteById("ROLE_TEMP");
+    }
+
+    @Test
+    @DisplayName("일괄 삭제: 대상마다 매핑을 정리한 뒤 한 번에 삭제한다")
+    void deleteAuthorsClearsMappingsForEveryTarget() {
+        authorManageService.deleteAuthors(new String[] { "R1", "R2" });
+
+        for (String cd : new String[] { "R1", "R2" }) {
+            verify(authorityRoleRepository).deleteByIdAuthrtCd(cd);
+            verify(menuAuthorityRepository).deleteByIdAuthrtCd(cd);
+        }
+        verify(authorityRepository).deleteAllById(List.of("R1", "R2"));
+    }
+
+    @Test
+    @DisplayName("목록 조회: 1-based pageIndex 변환·기본 페이지 크기·정렬이 함께 적용된다")
+    void listAppliesPagingAndSort() {
+        BaseSearchDto vo = new BaseSearchDto();
+        vo.setPageIndex(3);
+        vo.setPageUnit(0);
+        given(authorityRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of()));
+
+        authorManageService.selectAuthorList(vo);
+
+        org.mockito.ArgumentCaptor<Pageable> captor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
+        verify(authorityRepository).findAll(captor.capture());
+        Pageable p = captor.getValue();
+        assertEquals(2, p.getPageNumber(), "1-based 3페이지는 0-based 2");
+        assertEquals(10, p.getPageSize(), "pageUnit 0 이면 기본 10");
+        assertNotNull(p.getSort().getOrderFor("authrtCd"), "권한코드 정렬이 유지돼야 한다");
+    }
+
+    @Test
+    @DisplayName("총건수는 저장소 count 를 그대로 돌려준다")
+    void totalCountReflectsRepositoryCount() {
+        given(authorityRepository.count()).willReturn(7L);
+
+        // `replaced int return with 0` 뮤턴트가 여기서 죽는다.
+        assertEquals(7, authorManageService.selectAuthorListTotCnt(new BaseSearchDto()));
+    }
+
+    @Test
+    @DisplayName("수정: 대상 권한이 없으면 예외로 끝난다 (조용한 무시 아님)")
+    void updateThrowsWhenAuthorityMissing() {
+        given(authorityRepository.findById("GHOST")).willReturn(Optional.empty());
+        // authrtNm 은 @NonNull — 빌더가 먼저 NPE 를 내면 서비스에 닿지도 못한다.
+        AuthorManageDto dto = AuthorManageDto.builder().authrtCd("GHOST").authrtNm("이름").build();
+
+        // orElseThrow 람다의 `replaced return value with null` 뮤턴트가 여기서 죽는다.
+        assertThrows(nuri.foundation.core.exception.BusinessException.class,
+                () -> authorManageService.updateAuthor(dto));
+    }
+
+    @Test
+    @DisplayName("생성일 표기: 8자리 숫자만 하이픈으로 재조립하고 나머지는 손대지 않는다")
+    void createdDateIsNormalizedOnlyForCompactEightDigits() {
+        // ① 8자리·하이픈 없음 → 재조립.
+        assertEquals("2026-08-09", dtoOf("20260809").getAuthrtCrtYmd());
+        // ② 이미 하이픈이 있으면 그대로 (조건을 뒤집으면 substring 이 문자열을 망가뜨린다).
+        assertEquals("2026-08-09", dtoOf("2026-08-09").getAuthrtCrtYmd());
+        // ③ 길이가 8이 아니면 그대로 — `== 8` 을 뒤집은 뮤턴트가 여기서 죽는다.
+        assertEquals("202608", dtoOf("202608").getAuthrtCrtYmd());
+        // ④ null 은 null (앞단 null 가드를 뒤집으면 NPE 로 죽는다).
+        assertNull(dtoOf(null).getAuthrtCrtYmd());
+        // ⑤ 앞뒤 공백은 제거된 뒤 판정된다.
+        assertEquals("2026-08-09", dtoOf("  20260809  ").getAuthrtCrtYmd());
+    }
+
+    /** toDto 는 private 이므로 목록 조회 경로로 간접 호출한다. */
+    private AuthorManageDto dtoOf(String crtYmd) {
+        // createRaw 는 null 을 defaultDate() 로 대체하지 않고 원본을 그대로 보존한다.
+        Authority entity = Authority.createRaw("ROLE_X", "이름", "설명", crtYmd);
+        given(authorityRepository.findById("ROLE_X")).willReturn(Optional.of(entity));
+        return authorManageService.selectAuthor("ROLE_X");
+    }
 }
