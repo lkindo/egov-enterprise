@@ -56,7 +56,16 @@ allprojects {
         formats = ['HTML', 'JUNIT', 'XML']
         
         // 스캔 제외 파일 패턴
-        suppressionFile = file('config/dependency-check/suppressions.xml').absolutePath
+        // [2026-08-09 경로 정정] 종전 `file(...)` 은 **각 서브프로젝트 디렉터리 기준**으로 해석된다.
+        //   이 블록은 allprojects 안에 있으므로 모듈마다
+        //     <module>/config/dependency-check/suppressions.xml
+        //   을 찾았고, 그 파일은 **루트에만 존재**한다. 결과:
+        //     Unable to read suppression file '.../migration-tool/config/dependency-check/suppressions.xml'
+        //     -> InitializationException -> Analysis failed -> 모듈 4개 전부 FAILED
+        //   그런데 워크플로 잡에 continue-on-error 가 붙어 있어 **실행은 초록으로 끝났다.**
+        //   즉 "CVE 스캔이 돌고 있다" 고 믿는 동안 애플리케이션 의존성은 한 번도 검사되지 않았다
+        //   (실측: 모듈 리포트 0 / 기대 4 — 루트 리포트만 생성).
+        suppressionFile = rootProject.file('config/dependency-check/suppressions.xml').absolutePath
         
         // 데이터베이스 디렉토리 설정
         // [2026-08-04] 플러그인 12.2.x 부터 `data.directory` 가 File → String 프로퍼티로 바뀌었다.
