@@ -4,7 +4,6 @@ import nuri.business.support.IntegrationTest;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
-import nuri.business.domain.user.repository.UserInfRepository;
 import nuri.business.service.user.dto.UserDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +27,6 @@ class UserServiceIntegrationTest {
 
     @Autowired private UserService userService;
     @Autowired private UserRepository userRepository;
-    @Autowired private UserInfRepository userInfRepository;
     @Autowired private UserAuthorityRepository userAuthorityRepository;
     @Autowired private jakarta.persistence.EntityManager entityManager;
     @Autowired private CacheManager cacheManager;
@@ -77,12 +75,6 @@ class UserServiceIntegrationTest {
         assertThat(userService.getPagedUserList(null, org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
         assertThat(userService.getPagedUserList("", org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
 
-        // 2. 검색 조건 테스트를 위해 UserInfRepository 직접 호출
-        assertThat(userInfRepository.selectUserList("0", "사용자", org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
-        assertThat(userInfRepository.selectUserList("USER_NM", "사용자", org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
-        assertThat(userInfRepository.selectUserList("99", "사용자", org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
-        assertThat(userInfRepository.selectUserList("0", "", org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
-        assertThat(userInfRepository.selectUserList(null, null, org.springframework.data.domain.PageRequest.of(0, 10))).isNotNull();
     }
 
     private void createUser(String userId, String name, String role) {

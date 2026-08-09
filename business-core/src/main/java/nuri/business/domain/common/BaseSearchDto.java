@@ -109,7 +109,12 @@ public class BaseSearchDto implements Serializable {
      * 0 이나 음수가 들어와도 첫 페이지로 수렴시킨다(PageRequest 는 음수를 거부한다).
      */
     private int zeroBasedPageIndex() {
-        return Math.max(0, pageIndex - 1);
+        // ⚠ `Math.max(0, pageIndex - 1)` 로 쓰면 안 된다.
+        //   pageIndex 가 Integer.MIN_VALUE 일 때 `- 1` 이 오버플로해 Integer.MAX_VALUE 가 되고,
+        //   Math.max(0, MAX_VALUE) 는 그대로 MAX_VALUE 라 **음수를 막겠다는 의도가 무력화**된다.
+        //   종전 16개 호출부가 모두 그 형태였다(2026-08-09 추출 시 테스트로 확인).
+        //   비교를 먼저 해서 뺄셈 자체를 하지 않으면 오버플로 경로가 사라진다.
+        return pageIndex <= 1 ? 0 : pageIndex - 1;
     }
 
     /**
