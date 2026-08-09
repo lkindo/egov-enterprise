@@ -869,6 +869,21 @@ jobs:
             classes: "nuri.migration.transform.*"
             tests: "nuri.migration.*"
 
+          # migration-tool 검증 스코프.
+          #   MigrationVerifier 는 "이관이 성공했는가" 를 판정하는 자리다 —
+          #   조건 하나가 뒤집히면 **행이 유실된 이관을 PASS 로 판정**하고,
+          #   PASS 는 아무도 다시 보지 않는다. 소스 javadoc 자신이 그 역사를 적어 두었다:
+          #   종전 stub 은 ok=errors==0 이라 쓰기 유실·유령 기록을 성공으로 숨겼다(false-green).
+          #   그 stub 을 실증 검증으로 바꿨는데, 정작 그 판정 로직에는 테스트가 하나도 없었다.
+          #   MappingValidator 는 **이관 실행 전** 매핑 선언의 오류를 잡는 자리다 —
+          #   여기서 놓친 오류는 예외가 아니라 잘못 이관된 데이터로 남는다
+          #   (fkRef 검사가 놓치면 소스 주석대로 "모든 자식 행이 고아가 된다").
+          #   실측 55% -> 97% 보강 후 편입한다.
+          - scope: migration-validate-verify
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.validate.*,nuri.migration.verify.*"
+            tests: "nuri.migration.*"
+
           # business-core 인증 스코프.
           #   여기서 살아남던 뮤턴트는 커버리지 결손이 아니라 **과거 보안 수정의 회귀 탐지기 부재**였다:
           #     · AuthServiceImpl 은 단위 테스트가 아예 없어, 로그인 정책 검사(IP·시간)·
