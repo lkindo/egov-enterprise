@@ -854,6 +854,17 @@ jobs:
           PIT_TARGET_TESTS: "nuri.business.*"
           STRICT_MUTATION: "true"
 
+      # [2026-08-09 신설] foundation 모듈 스코프.
+      #   OriginValidationFilter 는 **상태변경 요청의 Origin/Referer 경계**다.
+      #   여기서 뮤턴트가 살아남는다는 것은 그 분기를 뒤집어도 아무도 모른다는 뜻이고,
+      #   경계 코드에서 그것은 곧 우회 경로다. 실측 61% -> 94% 보강 후 편입한다.
+      - name: Incremental Mutation Test (foundation security filter scope)
+        run: ./gradlew :foundation:pitest
+        env:
+          PIT_TARGET_CLASSES: "nuri.foundation.security.filter.*"
+          PIT_TARGET_TESTS: "nuri.foundation.*"
+          STRICT_MUTATION: "true"
+
       - name: Upload PIT report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
