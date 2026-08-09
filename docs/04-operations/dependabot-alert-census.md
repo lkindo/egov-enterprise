@@ -526,3 +526,84 @@ mutation-test                                          (추가)
 → **[verification-blindspots.md](verification-blindspots.md)**
    (발견의 연쇄 · 워크플로 실행 이력 전수 · 반복 형태 7건 · 재발 방지)
 
+
+---
+
+## 13. OWASP 스캔 첫 유효 결과 판정 (2026-08-09)
+
+[#374](https://github.com/lkindo/egov-enterprise/pull/374) 로 CVE 스캔이 **처음으로 모듈을
+실제 검사**하기 시작했다. 종전에는 루트만 스캔했고 루트가 보는 것은 빌드 도구 11종뿐이라
+결과가 늘 "0건" 이었다 — 그 0 이 "안전" 으로 읽히던 지점이다.
+
+| 모듈 | 스캔한 의존성 | 취약점 | CVSS≥7 |
+|---|---:|---:|---:|
+| (루트) | 11 | **0** | 0 |
+| business-core | 219 | 53 | 7 |
+| business-app | 220 | 53 | 7 |
+| api-server | 279 | 53 | 7 |
+| migration-tool | 90 | 44 | 2 |
+
+모듈 간 중복을 제거하면 **고유 (JAR, CVE) 33쌍**이다. CVSS≥7 이 모듈당 7건으로 보이는 것은
+swagger-ui JAR 하나가 번들 JS 2개(`swagger-ui-bundle.js`·`swagger-ui-es-bundle.js`)로
+각각 잡히기 때문이며, 고유 기준으로는 **6건**이다.
+
+### 13.1 CVSS ≥ 7.0 전건 판정
+
+판정 근거는 전부 **리포트 본문의 설명과 영향 버전 범위**에서 인용했다 — 기억이나 추정이 아니다.
+
+| JAR | CVE | CVSS | 판정 | 근거 |
+|---|---|---:|---|---|
+| kotlin-stdlib 1.9.25 | CVE-2026-53914 | 9.8 | **비해당** | 설명이 *"code execution was possible via unsafe deserialization in **the build cache metadata**"*. **Kotlin 빌드 캐시** 취약점이다. 이 저장소는 Kotlin 을 컴파일하지 않으며 kotlin-stdlib 은 Spring Boot BOM 이 핀한 런타임 전이 의존성이다 — 공격 경로 자체가 없다 |
+| tomcat-embed-core 10.1.57 | CVE-2026-66299 | 7.5 | **비해당 · 상향 대상 없음** | 설명이 *"Apache Tomcat's **WebSocket chat example**… Users who have followed the security guidance to **remove the examples web application are not affected**"*. 임베디드 톰캣에는 examples 웹앱이 애초에 없다. 게다가 수정판 10.1.58 은 **Maven Central 미배포**(실측: 10.1.57 이 최신) — 올릴 대상이 존재하지 않는다 |
+| tomcat-embed-websocket 10.1.57 | CVE-2026-66299 | 7.5 | **비해당** | 위와 동일 CVE·동일 사유 |
+| swagger-ui 5.18.3 (번들 DOMPurify) | CVE-2026-65898 | 7.2 | **운영 미노출** | DOMPurify < 3.4.11 의 stored XSS. `application-prod.yml` 에서 `springdoc.api-docs.enabled: false` · `springdoc.swagger-ui.enabled: false` — 운영에 swagger-ui 가 뜨지 않는다. §13.2 참조 |
+| opentelemetry-semconv 1.32.0 | CVE-2026-39883 | 7.0 | **오탐(언어 불일치)** | 설명이 *"OpenTelemetry-**Go** is the Go implementation… Darwin ioreg command… BSD kenv"*. CPE 에 `:go:` 가 박혀 있다. 우리 아티팩트는 **Java** 다 |
+| opentelemetry-semconv 1.32.0 | CVE-2026-24051 | 7.0 | **오탐(언어 불일치)** | 위 CVE 가 *"the fix for CVE-2026-24051"* 로 지목한 선행 건. 동일하게 Go 구현 대상 |
+
+> **결론: 즉시 조치가 필요한 항목은 0건이다.** 다만 그 0 은 §1 과 같은 종류의 0 이 아니다 —
+> 이번엔 **279개 의존성을 실제로 검사한 뒤** 6건을 하나씩 근거를 들어 배제한 결과다.
+
+### 13.2 조치하지 않은 것과 그 사유
+
+- **swagger-ui (springdoc 2.8.5 → 2.8.16)**: 번들 DOMPurify 관련 22건을 한 번에 지울 수 있다.
+  그러나 springdoc 은 `api-docs.json` 을 생성하는 주체이고, 이 파일은 **프론트 codegen 드리프트
+  게이트**(`codegen:verify`/`codegen:verify:zod`, pre-push HARD 차단)의 입력이다.
+  버전 상향이 스펙 출력을 바꾸면 게이트가 걸리므로 **단독 태스크로 분리**한다.
+  운영에 노출되지 않는다는 점에서 긴급도는 낮다.
+- **tomcat**: 올릴 버전이 존재하지 않는다(10.1.58 미배포). 10.1.58 배포 시 재판정.
+- **kotlin-stdlib · opentelemetry-semconv**: Spring Boot BOM 관리 대상이다. 오탐/비해당을
+  이유로 BOM 을 거스르는 강제 핀을 넣지 않는다 — 그 함정은 §2026-08-05 jackson 오버라이드에서
+  이미 겪었다(우리가 끌어내리는 상한이 된다).
+
+### 13.3 스캔은 여전히 게이트가 아니다 — 의도된 상태다
+
+`dependency-check.yml` 의 스캔 스텝은 `continue-on-error: true` 이고 워크플로 이름도
+**"(advisory)"** 다. `build.gradle` 의 `failBuildOnCVSS = 7` 은 따라서 **워크플로를 막지 않는다.**
+막는 것은 `Verify report was actually produced` 스텝 하나이며, 이것이 지키는 것은
+"취약점이 없다" 가 아니라 **"스캔이 실제로 돌았다"** 이다.
+
+게이트로 승격하려면 §13.1 의 6건에 억제(suppression)를 넣어야 하는데,
+그것은 **판정 근거를 문서에 남긴 뒤에만** 정당하다(§0.7-H2 — 목록 편집은 수정이 아니다).
+이 절이 그 근거다. 승격 여부는 사용자 판단 사항으로 남긴다.
+
+### 13.4 재현 절차
+
+```bash
+# CI 아티팩트에서 리포트를 받아 XML 을 직접 읽는다 (HTML 요약을 믿지 않는다)
+gh run download <run-id> -n owasp-security-report -D ./dc
+# 모듈별 스캔 의존성 수 · 취약점 수 · CVSS>=7 건수
+python - <<'PY2'
+import xml.etree.ElementTree as ET, glob, os
+for f in sorted(glob.glob("./dc/**/dependency-check-report.xml", recursive=True)):
+    root = ET.parse(f).getroot(); ns = {'d': root.tag.split('}')[0].strip('{')}
+    vs = root.findall('.//d:vulnerability', ns)
+    hi = sum(1 for v in vs
+             if (v.find('.//d:cvssV3/d:baseScore', ns) is not None
+                 and float(v.find('.//d:cvssV3/d:baseScore', ns).text) >= 7.0))
+    print(os.path.relpath(f, "./dc").split(os.sep)[0],
+          len(root.findall('.//d:dependency', ns)), len(vs), hi)
+PY2
+```
+
+> 로컬 `./gradlew dependencyCheckAnalyze` 는 `NVD_API_KEY` 가 없으면 익명 레이트리밋에 걸려
+> 사실상 완주하지 못한다(§W0-09). 판정은 **CI 아티팩트**를 기준으로 한다.
