@@ -15,8 +15,12 @@ export const Config = {
   API_PREFIX: '/api/v1',
 
   // 테스트 데이터 설정
-  TEST_USERNAME: __ENV.TEST_USERNAME || 'admin',
-  TEST_PASSWORD: __ENV.TEST_PASSWORD || 'admin123!',
+  // [2026-08-09 정정] 종전 기본값 admin/admin123! 은 **어느 시드에도 없는 계정**이었다.
+  //   docker compose 스택이 적재하는 seed-dev 의 실제 계정은 webmaster / TEST1 이고
+  //   비밀번호는 둘 다 '1' 이다(frontend/e2e/test-credentials.ts 와 결속).
+  //   존재하지 않는 계정으로는 setup() 이 토큰을 못 얻어 시나리오가 시작조차 못 한다.
+  TEST_USERNAME: __ENV.TEST_USERNAME || 'webmaster',
+  TEST_PASSWORD: __ENV.TEST_PASSWORD || '1',
 
   /**
    * 기본 헤더 생성

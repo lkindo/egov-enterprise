@@ -153,9 +153,13 @@ export default function (data) {
  * 로그인 API 테스트
  */
 function runLoginTest() {
-  const url = `${Config.BASE_URL}${Config.API_PREFIX}/login`;
+  // [2026-08-09 계약 정정] 종전 `/api/v1/login` + `{username}` 은 실제 API 와 어긋났다.
+  //   실제는 `/api/v1/auth/login` + LoginRequest{userId, password} 다.
+  //   setup() 의 AuthTokenManager 와 같은 계약이어야 하므로 함께 맞춘다
+  //   (여기만 틀리면 전체 트래픽의 40% 가 404 를 받으면서도 "부하 테스트 성공" 으로 보고된다).
+  const url = `${Config.BASE_URL}${Config.API_PREFIX}/auth/login`;
   const payload = {
-    username: Config.TEST_USERNAME,
+    userId: Config.TEST_USERNAME,
     password: Config.TEST_PASSWORD,
   };
 
@@ -215,12 +219,15 @@ function runPostCreateTest(token) {
   const url = `${Config.BASE_URL}${Config.API_PREFIX}/boards/posts`;
   const uniqueId = Math.random().toString(36).substring(2, 10);
 
+  // [2026-08-09 계약 정정] 종전 필드명은 eGov 레거시(nttSj/nttCn/ntceBgnde/ntceEndde)였다.
+  //   현행 BoardSaveRequest 의 필수 필드는 bbsId·pstTtl·pstCn 이고 기간은 pstBgngYmd/pstEndYmd 다.
+  //   실측: 옛 필드명으로 POST 하면 **HTTP 400** 이다(검증 실패로 필수 3종이 비어 있다고 판정).
   const payload = {
     bbsId: 'BBSMSTR_AAAAAAAAAAAA',
-    nttSj: `[부하테스트] 게시글 ${uniqueId}`,
-    nttCn: `k6 부하 테스트 자동 생성 게시글 (ID: ${uniqueId})`,
-    ntceBgnde: '20260401',
-    ntceEndde: '20261231',
+    pstTtl: `[부하테스트] 게시글 ${uniqueId}`,
+    pstCn: `k6 부하 테스트 자동 생성 게시글 (ID: ${uniqueId})`,
+    pstBgngYmd: '20260401',
+    pstEndYmd: '20261231',
   };
 
   const response = http.post(url, JSON.stringify(payload), {
