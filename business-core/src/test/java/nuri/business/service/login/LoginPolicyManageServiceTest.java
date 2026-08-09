@@ -563,16 +563,27 @@ class LoginPolicyManageServiceTest {
     }
 
     @Test
-    @DisplayName("시간 형식이 깨져 있으면 예외를 삼키고 통과시킨다 (현행 거동 고정)")
-    void malformedTimeIsSwallowedAndAllows() {
-        // "abcd" → 콜론 없음·길이 4 → "ab:cd" 로 재조립 → parse 실패(DateTimeParseException).
-        //   이 경로는 BusinessException 이 아니라 일반 Exception 이라 catch 가 삼킨다.
-        //   ⚠ 즉 **시간 정책이 깨져 있으면 제한이 아예 걸리지 않는다** — fail-open 이다.
-        //   현행 거동을 테스트로 고정해 두어, 향후 fail-closed 로 바꿀 때 의도적 변경임이 드러나게 한다.
+    @DisplayName("시간 형식이 깨져 있으면 통과시키지 않고 차단한다 (fail-closed)")
+    void malformedTimeIsRejected() {
+        // [2026-08-09 fail-open → fail-closed 전환]
+        //   종전에는 파싱 실패를 삼키고 **제한이 걸리지 않은 채 통과**시켰다 —
+        //   시간 형식이 깨지면 접속시간 제한이 통째로 무력화됐다.
+        //   그때의 근거("전원 차단은 더 나쁘다")는 틀렸다. tb_login_policy 는 userId 로 키잉되므로
+        //   파손된 정책의 영향 범위는 **그 사용자 한 명**이다.
+        //   제한을 걸어 둔 데에는 이유가 있고, 규칙을 해석할 수 없을 때
+        //   "모르겠으니 통과" 는 규칙을 없애는 것과 같다.
+        //
+        //   "abcd" → 콜론 없음·길이 4 → "ab:cd" 로 재조립 → parse 실패(DateTimeParseException).
         given(loginPolicyRepository.findById("tester")).willReturn(Optional.of(
                 LoginPolicy.create("tester", null, "Y", "N", "abcd", "efgh", "N")));
 
-        assertDoesNotThrow(() -> loginPolicyManageService.validateLoginPolicy("tester", "127.0.0.1"));
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> loginPolicyManageService.validateLoginPolicy("tester", "127.0.0.1"));
+        assertEquals(CommonErrorCode.LOGIN_POLICY_TIME_RESTRICTED, ex.getErrorCode());
+        // 메시지는 정상적인 시간 제한과 구분돼야 한다 — 사용자가 "지금은 안 되는 시간" 으로
+        //   오해하면 관리자에게 문의하지 않아 파손이 방치된다.
+        assertTrue(ex.getMessage().contains("올바르지 않습니다"),
+                "설정 오류임이 드러나는 메시지여야 한다: " + ex.getMessage());
     }
 
     @Test

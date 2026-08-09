@@ -272,6 +272,21 @@ class MigrationVerifierTest {
         }
 
         @Test
+        @DisplayName("타깃 행수 0 은 '-' 가 아니라 0 으로 적는다 — 대조 불가와 구분된다")
+        void zeroTargetRowsIsPrintedAsZero() {
+            // `targetRows < 0` 의 경계를 `<= 0` 으로 옮긴 뮤턴트가 여기서 죽는다.
+            //   0 을 '-'(대조 불가)로 적으면 **타깃이 비어 있다는 사실**이 가려진다 —
+            //   그것은 유령 기록의 가장 심한 형태다.
+            JdbcTemplate jt = mock(JdbcTemplate.class);
+            given(jt.queryForObject(anyString(), eq(Long.class))).willReturn(0L);
+
+            String summary = verifier.verify(List.of(result(10, 10, 10)), jt).toSummary();
+
+            assertThat(summary).contains("targetRows=0");
+            assertThat(summary).doesNotContain("targetRows=-");
+        }
+
+        @Test
         @DisplayName("대조하지 않은 타깃 행수는 -1 이 아니라 '-' 로 적는다")
         void unmeasuredTargetRowsPrintedAsDash() {
             String summary = verifier.verify(List.of(result(10, 10, 10)), null).toSummary();
