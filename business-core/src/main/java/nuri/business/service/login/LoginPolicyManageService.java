@@ -10,6 +10,7 @@ import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.login.dto.LoginPolicyDto;
 import nuri.business.domain.common.BaseSearchDto;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -18,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true) // 조회 기본 read-only; 쓰기(insert/update/delete)는 메서드 @Transactional 이 오버라이드
@@ -132,7 +134,14 @@ public class LoginPolicyManageService {
                 } catch (BusinessException ex) {
                     throw ex;
                 } catch (Exception e) {
-                    e.printStackTrace();
+                    // ⚠ 이 catch 는 시간 정책을 **fail-open** 으로 만든다 —
+                    //   형식이 깨져 파싱에 실패하면 제한이 걸리지 않은 채 로그인이 통과한다.
+                    //   거동은 그대로 두되(정책 파손으로 전원 로그인 차단은 더 나쁘다),
+                    //   그 사실이 로그에 남아야 운영에서 발견할 수 있다.
+                    //   종전 printStackTrace 는 표준에러로만 나가 수집기에 잡히지 않았다.
+                    log.warn(">>> [LoginPolicy] 접속시간 정책 해석 실패 — 시간 제한을 적용하지 않고 통과시킨다. "
+                            + "userId={} bgngTm={} endTm={}",
+                            userId, policy.getBgngTm(), policy.getEndTm(), e);
                 }
             }
         });

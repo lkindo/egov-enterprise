@@ -3,7 +3,6 @@ package nuri.business.domain.user.repository;
 import nuri.business.domain.user.entity.DeptManage;
 import nuri.business.domain.user.entity.Role;
 import nuri.business.domain.user.entity.User;
-import nuri.business.domain.user.vo.UserInfSearchResult;
 import nuri.business.service.user.dto.UserSearchDto;
 import nuri.business.support.PersistenceTestSupport;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,6 +22,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 /**
  * 사용자·부서 검색의 <b>조건 빌더와 열거 방어</b> 테스트.
  *
+ * <p>[2026-08-09] 종전 이 클래스는 사용자정보 조회 저장소도 함께 검증했으나,
+ * 그 저장소는 프로덕션 호출부가 0건인 죽은 코드였고 별건으로 삭제했다.
+ * 해당 테스트도 함께 걷어냈다 — 지워진 코드를 지키는 테스트는 유지 비용만 남긴다.
+ *
  * <p>[2026-08-09 신설] 기존 {@code UserRepositoryTest} 는 조건별로
  * {@code assertThat(result.getContent()).isNotEmpty()} 만 확인했다.
  * 이 단언은 <b>필터를 통째로 없앤 뮤턴트도 통과시킨다</b> —
@@ -37,20 +40,12 @@ import static org.assertj.core.api.Assertions.assertThat;
  * (빈 키워드 전체반환 금지 · 로그인 ID 매칭 금지) <b>테스트가 하나도 없었다</b>.
  * 방어를 지워도 아무도 모르는 상태였다.
  */
-// UserInfRepositoryImpl 은 Spring Data 저장소가 아니라 @Repository 컴포넌트라
-//   @DataJpaTest 의 스캔 대상에서 빠진다. 명시적으로 끌어와야 주입된다.
-//
-//   ⚠ 이 과정에서 드러난 사실: UserInfRepository·UserInfRepositoryImpl·UserInfSearchResult 는
-//   **프로덕션 호출부가 0건**이다(죽은 코드). 삭제 여부는 별건으로 판단할 사항이라
-//   여기서는 현행 유지하고 검증만 붙인다.
-@org.springframework.context.annotation.Import(UserInfRepositoryImpl.class)
 @DisplayName("사용자·부서 검색조건 테스트")
 class UserSearchConditionTest extends PersistenceTestSupport {
 
     private static final Pageable PAGE = PageRequest.of(0, 50);
 
     @Autowired private UserRepository userRepository;
-    @Autowired private UserInfRepository userInfRepository;
     @Autowired private DeptManageRepository deptManageRepository;
     @Autowired private EntityManager em;
 
@@ -213,17 +208,6 @@ class UserSearchConditionTest extends PersistenceTestSupport {
     class OtherSearches {
 
         @Test
-        @DisplayName("사용자정보 목록은 성명으로 좁힌다 — 비매칭이 빠진다")
-        void userInfListFiltersByName() {
-            assertThat(userInfNames("0", "김일치")).containsExactly("김일치");
-            assertThat(userInfNames("USER_NM", "김일치")).containsExactly("김일치");
-            // 검색어가 없으면 전체.
-            assertThat(userInfNames("0", null)).hasSize(2);
-            // 알 수 없는 조건값은 필터 없음(현행 거동 고정).
-            assertThat(userInfNames("99", "김일치")).hasSize(2);
-        }
-
-        @Test
         @DisplayName("부서 검색은 부서명으로 좁히고, 대소문자를 가리지 않는다")
         void deptSearchFiltersByName() {
             assertThat(deptIds("기획")).containsExactly("ORG_MATCH");
@@ -240,11 +224,6 @@ class UserSearchConditionTest extends PersistenceTestSupport {
             // 카운트 쿼리에서만 조건이 빠지면 목록 1건인데 총건수 2건이 되어 페이징이 깨진다.
             assertThat(page.getTotalElements()).isEqualTo(1);
             assertThat(page.getContent()).hasSize(1);
-        }
-
-        private List<String> userInfNames(String condition, String keyword) {
-            return userInfRepository.selectUserList(condition, keyword, PAGE)
-                    .getContent().stream().map(UserInfSearchResult::getUserNm).toList();
         }
 
         private List<String> deptIds(String keyword) {
