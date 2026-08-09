@@ -9,6 +9,10 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+    // [2026-08-09] 미사용 선언 219건을 정리하고 켠다.
+    //   켜기 전 서버 액션 7개가 **호출될 수 없는 채로** 살아 있었고(별도 게이트로 차단),
+    //   그 외에도 미사용 import 160·타입 30·지역선언 29 가 남아 있었다.
+    "noUnusedLocals": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",

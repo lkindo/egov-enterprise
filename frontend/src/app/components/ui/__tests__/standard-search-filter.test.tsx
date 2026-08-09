@@ -8,7 +8,6 @@ vi.mock('next/config', () => ({
 import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { StandardSearchFilter } from '../standard-search-filter';
-import React from 'react';
 
 describe('StandardSearchFilter', () => {
   const mockFields: any[] = [

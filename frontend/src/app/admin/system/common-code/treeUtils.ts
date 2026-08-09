@@ -40,27 +40,6 @@ export function flattenCodeTree(clusters: DomainCluster[]): FlattenedCodeNode[] 
   return flattened;
 }
 
-function rebuildCodeTree(flattened: FlattenedCodeNode[]): DomainCluster[] {
-  const clusters: DomainCluster[] = [];
-  const clusterMap = new Map<string, DomainCluster>();
-
-  // First pass: extract clusters
-  flattened.filter(node => node.type === 'cluster').forEach(node => {
-    const cluster = { ...node.data, groups: [] };
-    clusters.push(cluster);
-    clusterMap.set(node.id, cluster);
-  });
-
-  // Second pass: assign groups to clusters
-  flattened.filter(node => node.type === 'group').forEach(node => {
-    const cluster = clusterMap.get(node.parentId || '');
-    if (cluster) {
-      cluster.groups.push({ ...node.data });
-    }
-  });
-
-  return clusters;
-}
 
 export function getCodeProjection(
   items: FlattenedCodeNode[],

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { myPageAdminService } from '@/services/foundation/workspace/MyPageAdminService';
 import { useToast } from '@/app/components/ui/toast';

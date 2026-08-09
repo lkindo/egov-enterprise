@@ -7,7 +7,6 @@ vi.mock('next/config', () => ({
 
 import { render, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import React from 'react';
 import { ScrollToTop } from '../scroll-to-top';
 
 // Mock next/navigation

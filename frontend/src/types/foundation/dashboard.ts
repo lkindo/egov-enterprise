@@ -12,10 +12,4 @@ export interface DashboardTask {
   frstRegisterPnttmStr?: string;
 }
 
-type DashboardNoti = DashboardTask;
 
-interface DashboardResponse {
- success: boolean;
- notiList: DashboardNoti[];
- taskList: DashboardTask[];
-}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -40,7 +40,7 @@ type HpcmFormValues = z.infer<typeof hpcmSchema>;
 export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[] } }) {
   const router = useRouter();
   const { toast } = useToast();
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
   const hpcmList = initialData.list || [];

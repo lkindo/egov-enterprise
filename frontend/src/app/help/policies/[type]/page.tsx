@@ -1,4 +1,3 @@
-import React from 'react';
 import DOMPurify from 'isomorphic-dompurify';
 import { policyAdminService, SystemPolicy } from '@/services/foundation/system/PolicyAdminService';
 import { HubHeader } from '@/components/ui/hub/HubHeader';

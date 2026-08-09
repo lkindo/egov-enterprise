@@ -1,6 +1,6 @@
 'use client';
 
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { SearchResultsContent } from './SearchClient';
 import { Loader2, Database } from 'lucide-react';
 

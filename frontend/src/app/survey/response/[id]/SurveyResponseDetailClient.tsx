@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getQustnrRespondInfoDetail } from '@/lib/api/survey';

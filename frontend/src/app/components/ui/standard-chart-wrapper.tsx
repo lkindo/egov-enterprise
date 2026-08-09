@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId } from 'react';
+import { useId } from 'react';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend,
     LineChart, Line, AreaChart, Area, PieChart, Pie, Cell

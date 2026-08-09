@@ -1,4 +1,3 @@
-import React from 'react';
 import { QueryClient, dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import AdminDashboardClient from './AdminDashboardClient';
 import { auditAdminService } from '@/services/foundation/system/AuditAdminService';

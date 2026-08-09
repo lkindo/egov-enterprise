@@ -11,7 +11,7 @@ import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
 import { menuService } from '@/services/business/user/MenuService';
 import { useLayout } from '@/contexts/LayoutContext';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MenuInfo } from '@/types/foundation/menu';
@@ -29,7 +29,6 @@ export function Sidebar({
 }) {
   const resolvedMenus = menusPromise ? use(menusPromise) : initialMenus;
   const { isSidebarOpen, setSidebarOpen, activeMenuNo, setActiveMenuNo } = useLayout();
-  const queryClient = useQueryClient();
 
   // Head Menus (Top Domains) Query
   // ⚠ initialData 에 빈 배열을 넘기면 React Query 는 "데이터 이미 있음"으로 판정하고 staleTime 동안

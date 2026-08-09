@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import KnowledgeHubClient from '../KnowledgeHubClient';
 
 export default function QNAPage() {

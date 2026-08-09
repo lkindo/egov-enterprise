@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { WebLog, PageResponse } from '@/types/foundation/system';

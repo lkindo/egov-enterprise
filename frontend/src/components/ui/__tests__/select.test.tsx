@@ -24,7 +24,6 @@ import {
  SelectTrigger,
  SelectValue,
 } from '../select';
-import React from 'react';
 
 describe('Select Component', () => {
  it('renders and allows selection', async () => {

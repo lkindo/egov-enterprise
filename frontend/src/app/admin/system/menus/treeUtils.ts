@@ -134,7 +134,6 @@ export const getProjection = (
   const newItems = arrayMove(items, oldIndex, newIndex);
   
   const previousItem = newItems[newIndex - 1];
-  const nextItem = newItems[newIndex + 1];
   const dragItem = newItems[newIndex];
   
   // 가로 오프셋에 따른 depth 계산

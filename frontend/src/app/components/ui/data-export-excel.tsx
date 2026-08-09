@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { Download } from 'lucide-react';
 
 interface DataExportExcelProps {

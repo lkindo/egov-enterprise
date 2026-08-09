@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useCallback, useRef, useState } from 'react';
-import { useToast } from '@/app/components/ui/toast';
 
 interface AutoSaveOptions {
   /** 임시저장 식별 키 (bbsId 등) */
@@ -27,7 +26,6 @@ interface DraftData {
  */
 export function useAutoSaveDraft(options: AutoSaveOptions) {
   const { storageKey, interval = 3000, minLength = 10, getData, onRestore } = options;
-  const { toast } = useToast();
   const fullKey = `egov-draft-${storageKey}`;
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);

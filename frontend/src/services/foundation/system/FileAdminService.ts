@@ -1,17 +1,6 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PageResponse } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
-interface FileDetail {
-  atchFileId: string;
-  fileSn: number;
-  fileStrePath: string;
-  orignlFileNm: string;
-  streFileNm: string;
-  fileExtsn: string;
-  fileSize: number;
-  crtDt: string;
-}
 
 /**
  * 파일 관리 서비스 (Admin)

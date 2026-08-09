@@ -28,7 +28,6 @@ export interface KnowledgeDto {
   knoCn?: string;
 }
 
-type BoardArticle = KnowledgeDto;
 
 /**
  * 지식 허브 서비스

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { AlertCircle, CheckCircle2, Cpu, Database, ShieldCheck } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Cpu, ShieldCheck } from 'lucide-react';
 
 /**
  * 모니터링 허브의 표시 전용 패널 모음.

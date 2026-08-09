@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useTransition } from 'react';
+import { useState, useMemo, useTransition } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 ;
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,6 @@ import { Activity,
   RefreshCcw,
   Zap,
   LogIn,
-  Cpu,
   Download,
   Trash2,
   ShieldCheck,

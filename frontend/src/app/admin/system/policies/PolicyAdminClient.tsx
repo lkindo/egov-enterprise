@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { policyAdminService, SystemPolicy } from '@/services/foundation/system/PolicyAdminService';

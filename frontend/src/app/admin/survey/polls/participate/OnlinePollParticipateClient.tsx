@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { pollUserService } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO, OnlinePollItemVO } from '@/types/business/poll';

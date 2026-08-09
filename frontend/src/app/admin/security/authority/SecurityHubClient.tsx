@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, use, useTransition } from 'react';
+import { useState, useMemo, useEffect, use, useTransition } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ShieldCheck, 
@@ -71,7 +71,7 @@ export default function SecurityHubClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const [selectedAuthorCode, setSelectedAuthorCode] = useState<string>('');
   /**
    * 입력 컨트롤에는 원본을, 서버 요청/queryKey 에는 디바운스 값만 쓴다.

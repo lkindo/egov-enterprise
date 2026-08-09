@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useWebSocket } from '@/contexts/websocket-context';
 import { useAuth } from '@/contexts/AuthContext';
 import { useDashboardConnection } from '@/hooks/useDashboardConnection';

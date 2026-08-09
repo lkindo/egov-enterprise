@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useOptimistic, useState, useTransition } from 'react';
+import { useOptimistic, useState, useTransition } from 'react';
 import { MessageSquare, User, Clock, Trash2, Edit2, Send, X, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';

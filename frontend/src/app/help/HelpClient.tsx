@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { helpUserService, FAQ, QNA } from '@/services/business/user/help/HelpUserService';
 import { useToast } from '@/app/components/ui/toast';

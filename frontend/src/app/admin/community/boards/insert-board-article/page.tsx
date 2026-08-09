@@ -1,4 +1,3 @@
-import React from 'react';
 import { BoardRegistClient } from './BoardRegistClient';
 import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
 

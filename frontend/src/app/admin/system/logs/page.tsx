@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import LogDashboardClient, { type InitialSystemLogs } from './LogDashboardClient';

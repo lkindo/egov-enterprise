@@ -133,10 +133,10 @@ export function BoardMakerWizard() {
  const [status, setStatus] = useState('');
  // 감사 P1-1/삼킴 금지: 배포 실패 시 status 문자열만 바꿨는데 그 문자열은 isSubmitting 중에만 렌더돼
  // 제출이 끝나는 순간 사라졌다(= 실패가 화면에 전혀 남지 않음). 별도 상태로 오류를 계속 노출한다.
- const [submitError, setSubmitError] = useState<string | null>(null);
+ const [, setSubmitError] = useState<string | null>(null);
  const queryClient = useQueryClient();
 
- const { register, handleSubmit, control, formState: { errors }, watch, setValue } = useForm<FormValues>({
+ const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormValues>({
  resolver: zodResolver(formSchema),
  defaultValues: {
  bbsTtl: '',

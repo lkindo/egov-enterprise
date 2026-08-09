@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import { useRef } from 'react';
 import {
   Bold, Italic, List, ListOrdered, Link,
   Image as ImageIcon, AlignLeft, AlignCenter, AlignRight,

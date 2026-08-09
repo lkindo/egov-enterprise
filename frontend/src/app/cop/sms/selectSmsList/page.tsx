@@ -1,4 +1,3 @@
-import React from 'react';
 import { smsAdminService } from '@/services/foundation/operation/SmsAdminService';
 import SmsHubClient from './SmsHubClient';
 

@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { templateAdminService } from '@/services/foundation/system/TemplateAdminService';
 import { cookies } from 'next/headers';
 import TemplateAdminClient from './TemplateAdminClient';

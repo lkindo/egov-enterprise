@@ -59,9 +59,4 @@ export const pollUserService = new PollUserService();
 
 // Individual method exports for convenience
 export const getPollList = pollUserService.getPollList.bind(pollUserService);
-const getPollDetail = pollUserService.getPollDetail.bind(pollUserService);
 export const createPoll = pollUserService.createPoll.bind(pollUserService);
-const updatePoll = pollUserService.updatePoll.bind(pollUserService);
-const deletePoll = pollUserService.deletePoll.bind(pollUserService);
-const getPollItemList = pollUserService.getPollItemList.bind(pollUserService);
-const participatePoll = pollUserService.participatePoll.bind(pollUserService);

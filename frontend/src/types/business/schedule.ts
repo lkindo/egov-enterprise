@@ -21,17 +21,7 @@ interface Schedule {
   mdfcnDt?: string;
 }
 
-interface ScheduleResponse {
-  resultList: Schedule[];
-  totalCount: number;
-  pageNo: number;
-  totalPages: number;
-}
 
-interface MonthlyScheduleResponse {
-  schedules: Schedule[];
-  yearMonth: string;
-}
 
 export interface DeptSchedule extends Schedule {
   schdlDeptId: string;
@@ -48,21 +38,4 @@ export interface ScheduleSearchParams {
   size?: number;
 }
 
-interface WorkReport {
-  rptId: string;
-  rptTtl: string;
-  rptCn: string;
-  rptSeCd: string;
-  rptYmd: string;
-  userId: string;
-  rptSttsCd: string;
-  atchFileId?: string;
-  rptTypeCd?: string;
-}
 
-interface ReportSearchParams {
-  searchWrd?: string;
-  pageNo?: number;
-  pageIndex?: number;
-  size?: number;
-}

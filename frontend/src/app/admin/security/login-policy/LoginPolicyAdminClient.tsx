@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';

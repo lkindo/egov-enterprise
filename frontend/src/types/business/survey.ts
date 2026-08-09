@@ -97,11 +97,3 @@ export interface QustnrRespondInfo {
   srvyTtl?: string; // Optionally included in detail responses
 }
 
-interface QustnrRespondInfoVO {
-  qustnrRespondInfo: QustnrRespondInfo;
-  answers: SurveyAnswer[];
-  pageNo?: number;
-  pageIndex?: number;
-  size?: number;
-  respondNm?: string;
-}

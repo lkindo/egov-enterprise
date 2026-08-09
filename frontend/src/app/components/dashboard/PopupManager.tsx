@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { popupService } from '@/services/business/user/PopupService';
 import { Popup } from '@/types/foundation/banner';

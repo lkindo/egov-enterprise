@@ -1,5 +1,4 @@
-﻿import React from 'react';
-import { LucideIcon } from 'lucide-react';
+﻿import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface HubStatusBadgeProps {

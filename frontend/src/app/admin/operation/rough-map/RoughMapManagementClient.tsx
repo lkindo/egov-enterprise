@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Search, MapPin, Navigation, Layers } from 'lucide-react';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';

@@ -28,10 +28,3 @@ export interface BoardPost {
   ansLv?: number;
 }
 
-interface BoardResponse {
-  list: BoardPost[];
-  total: number;
-  totalPage: number;
-  size: number;
-  page: number;
-}
