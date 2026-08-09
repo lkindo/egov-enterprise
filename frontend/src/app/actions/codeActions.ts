@@ -3,7 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { codeAdminService, type CmmnCodeHierarchyItem } from '@/services/foundation/system/CodeAdminService';
-import { CmmnDetailCode, CmmnClCode, CmmnCode } from '@/types/foundation/system';
+import { CmmnDetailCode } from '@/types/foundation/system';
 import type { FlattenedCodeNode } from '@/app/admin/system/common-code/treeUtils';
 import { extractErrorMessage } from './actionUtils';
 
@@ -46,86 +46,6 @@ export async function deleteCodeDetail(prevState: unknown, { cdId, dtlCd }: { cd
   } catch (error) {
     const message = extractErrorMessage(error, '삭제 중 오류 발생');
     console.error('Delete Code Detail Error:', error);
-    return { success: false, message };
-  }
-}
-
-// --- Classification Code Actions ---
-async function saveClCode(prevState: unknown, data: Partial<CmmnClCode> & { isNew?: boolean }) {
-  try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-    
-    const isNew = data.isNew !== false;
-    
-    // isNew 플래그를 백엔드 전송 DTO 객체에서 배제
-    const { isNew: _, ...pureData } = data;
-
-    if (isNew) {
-      await codeAdminService.createClCode(pureData, config);
-    } else {
-      await codeAdminService.updateClCode(pureData.clsfCd!, pureData, config);
-    }
-
-    revalidatePath('/admin/system/common-code');
-    return { success: true, message: '분류 코드가 저장되었습니다.' };
-  } catch (error) {
-    const message = extractErrorMessage(error, '저장 중 오류 발생');
-    return { success: false, message };
-  }
-}
-
-async function deleteClCode(prevState: unknown, clsfCd: string) {
-  try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-    await codeAdminService.deleteClCode(clsfCd, config);
-    revalidatePath('/admin/system/common-code');
-    return { success: true, message: '분류 코드가 삭제되었습니다.' };
-  } catch (error) {
-    const message = extractErrorMessage(error, '삭제 중 오류 발생');
-    return { success: false, message };
-  }
-}
-
-// --- Common Code (Group) Actions ---
-async function saveCmmnCode(prevState: unknown, data: Partial<CmmnCode> & { isNew?: boolean }) {
-  try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-    
-    const isNew = data.isNew !== false;
-    
-    // isNew 플래그를 백엔드 전송 DTO 객체에서 배제
-    const { isNew: _, ...pureData } = data;
-
-    if (isNew) {
-      await codeAdminService.createCmmnCode(pureData, config);
-    } else {
-      await codeAdminService.updateCmmnCode(pureData.cdId!, pureData, config);
-    }
-
-    revalidatePath('/admin/system/common-code');
-    return { success: true, message: '공통 코드가 저장되었습니다.' };
-  } catch (error) {
-    const message = extractErrorMessage(error, '저장 중 오류 발생');
-    return { success: false, message };
-  }
-}
-
-async function deleteCmmnCode(prevState: unknown, cdId: string) {
-  try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const config = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-    await codeAdminService.deleteCmmnCode(cdId, config);
-    revalidatePath('/admin/system/common-code');
-    return { success: true, message: '공통 코드가 삭제되었습니다.' };
-  } catch (error) {
-    const message = extractErrorMessage(error, '삭제 중 오류 발생');
     return { success: false, message };
   }
 }
