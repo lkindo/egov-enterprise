@@ -106,14 +106,13 @@ describe('promotionActions', () => {
       expect(result.success).toBe(true);
     });
 
-    it("⚠ 현행 거동 고정: 삭제는 공개 경로('/')를 재검증하지 않는다", async () => {
+    it("삭제도 공개 경로('/')를 재검증한다 — 지운 배너가 첫 화면에 남으면 안 된다", async () => {
       await deleteBannerAction(null, 'B7');
 
-      // ⚠ 저장(save)은 '/' 를 재검증하는데 삭제는 하지 않는다 — **비대칭이다.**
-      //   그래서 배너를 지워도 공개 첫 화면에는 캐시가 만료될 때까지 계속 보인다.
-      //   이것은 올바른 거동이 아니라 **현행을 기록한 것**이다.
-      //   고칠 때 이 단언을 함께 바꾸면 의도적 변경임이 드러난다.
-      expect(revalidatePath).not.toHaveBeenCalledWith('/');
+      // [2026-08-09 정정] 종전에는 저장만 '/' 를 재검증하고 삭제는 하지 않는 비대칭이 있었다.
+      //   그래서 배너를 지워도 공개 첫 화면에는 캐시가 만료될 때까지 계속 보였다.
+      expect(revalidatePath).toHaveBeenCalledWith(ADMIN_PATH);
+      expect(revalidatePath).toHaveBeenCalledWith('/');
     });
 
     it('삭제 실패는 메시지로 돌려준다', async () => {
@@ -144,13 +143,12 @@ describe('promotionActions', () => {
       expect(revalidatePath).toHaveBeenCalledWith('/');
     });
 
-    it("⚠ 현행 거동 고정: 팝업 삭제도 공개 경로를 재검증하지 않는다", async () => {
+    it('팝업 삭제도 공개 경로를 재검증한다', async () => {
       await deletePopupAction(null, 'P3');
 
       expect(client.delete).toHaveBeenCalledWith('/admin/system/popups/P3', AUTH);
       expect(revalidatePath).toHaveBeenCalledWith(ADMIN_PATH);
-      // 배너와 같은 비대칭이다 — 지운 팝업이 공개 화면에 계속 뜬다.
-      expect(revalidatePath).not.toHaveBeenCalledWith('/');
+      expect(revalidatePath).toHaveBeenCalledWith('/');
     });
 
     it('팝업 저장 실패는 메시지로 돌려준다', async () => {
