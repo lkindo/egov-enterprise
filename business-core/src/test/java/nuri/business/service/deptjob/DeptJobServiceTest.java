@@ -373,4 +373,74 @@ class DeptJobServiceTest {
         assertNull(dto.getDeptTaskBoxNm());
         assertNull(dto.getPicNm());
     }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // [2026-08-09 뮤테이션 보강] PIT 이 DeptJobService 에서 13개를 살려 보냈다.
+    //   그중 7개가 getDeptJobList 의 조건 분기다.
+    //
+    //   ⚠ 왜 기존 테스트가 못 잡았나: 위 테스트들은 `any(Predicate.class)` 로 받고
+    //   결과 건수만 본다. 그러면 서비스가 **어떤 조건을 만들었든** 목이 같은 Page 를
+    //   돌려주므로 분기를 뒤집어도 통과한다.
+    //   조건 생성을 검증하려면 **Predicate 를 캡처해 그 내용을 확인**해야 한다.
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** 서비스가 저장소에 넘긴 Predicate 를 문자열로 붙잡는다 — 조건 생성의 유일한 관측 지점이다. */
+    private String capturePredicate(String deptId, String boxId, String cond, String keyword) {
+        Page<DeptJob> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
+        when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
+        deptJobService.getDeptJobList(deptId, boxId, cond, keyword, false, PageRequest.of(0, 10));
+        ArgumentCaptor<Predicate> captor = ArgumentCaptor.forClass(Predicate.class);
+        verify(deptJobRepository).findAll(captor.capture(), any(PageRequest.class));
+        return String.valueOf(captor.getValue());
+    }
+
+    @Test
+    @DisplayName("검색조건 0 은 부서업무명에만 건다 (내용·담당자 아님)")
+    void searchCondition0BindsTaskNameOnly() {
+        String p = capturePredicate(null, "BOX1", "0", "KW");
+        assertTrue(p.contains("deptTaskNm"), "조건 0 은 deptTaskNm 에 걸려야 한다: " + p);
+        assertFalse(p.contains("deptTaskCn"), "조건 0 인데 내용에 걸렸다: " + p);
+        assertFalse(p.contains("picId"), "조건 0 인데 담당자에 걸렸다: " + p);
+    }
+
+    @Test
+    @DisplayName("검색조건 1 은 부서업무내용에만 건다")
+    void searchCondition1BindsTaskContentOnly() {
+        String p = capturePredicate(null, "BOX1", "1", "KW");
+        assertTrue(p.contains("deptTaskCn"), "조건 1 은 deptTaskCn 에 걸려야 한다: " + p);
+        assertFalse(p.contains("deptTaskNm"), "조건 1 인데 업무명에 걸렸다: " + p);
+    }
+
+    @Test
+    @DisplayName("검색조건 2 는 담당자ID 에만 건다")
+    void searchCondition2BindsPicIdOnly() {
+        String p = capturePredicate(null, "BOX1", "2", "KW");
+        assertTrue(p.contains("picId"), "조건 2 는 picId 에 걸려야 한다: " + p);
+        assertFalse(p.contains("deptTaskNm"), "조건 2 인데 업무명에 걸렸다: " + p);
+    }
+
+    @Test
+    @DisplayName("키워드가 비면 어떤 검색조건도 걸지 않는다")
+    void blankKeywordAddsNoSearchPredicate() {
+        String p = capturePredicate(null, "BOX1", "0", "");
+        assertFalse(p.contains("deptTaskNm"), "빈 키워드인데 조건이 붙었다: " + p);
+    }
+
+    @Test
+    @DisplayName("boxId 가 있으면 deptId 조회는 하지 않는다 (else-if 우선순위)")
+    void boxIdTakesPrecedenceOverDeptId() {
+        String p = capturePredicate("DEPT1", "BOX1", null, null);
+        assertTrue(p.contains("BOX1"), "boxId 조건이 걸려야 한다: " + p);
+        // else-if 를 if 로 바꾼 뮤턴트는 여기서 죽는다 — deptId 분기가 함께 실행되면 조회가 발생한다.
+        verify(deptJobBoxRepository, never()).findByDeptId(anyString());
+    }
+
+    @Test
+    @DisplayName("deptId 의 박스가 비면 NONE_BOX 로 잠근다 — 전체 노출을 막는 안전장치")
+    void emptyBoxListLocksToSentinel() {
+        when(deptJobBoxRepository.findByDeptId("DEPT2")).thenReturn(Collections.emptyList());
+        String p = capturePredicate("DEPT2", null, null, null);
+        // 이 분기를 뒤집으면 조건이 사라져 **부서 무관 전체가 노출**된다. 조용한 권한 확대다.
+        assertTrue(p.contains("NONE_BOX"), "박스 0건이면 NONE_BOX 센티넬로 잠가야 한다: " + p);
+    }
 }
