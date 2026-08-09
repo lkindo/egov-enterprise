@@ -53,19 +53,18 @@ class BaseSearchDtoPageableTest {
         }
 
         @Test
-        @DisplayName("⚠ 기존 결함: Integer.MIN_VALUE 는 오버플로로 clamp 를 빠져나간다")
-        void knownDefect_integerMinValueOverflowsPastTheClamp() {
-            // `pageIndex - 1` 이 Integer.MIN_VALUE 에서 오버플로해 Integer.MAX_VALUE 가 되고,
-            //   Math.max(0, MAX_VALUE) 는 그대로 MAX_VALUE 다 — "음수를 0 으로 막는다" 는 의도가 무력화된다.
+        @DisplayName("Integer.MIN_VALUE 도 첫 페이지로 수렴한다 (정수 오버플로 방어)")
+        void integerMinValueDoesNotOverflowPastTheClamp() {
+            // [2026-08-09 정정] 종전에는 `Math.max(0, pageIndex - 1)` 이라
+            //   Integer.MIN_VALUE 에서 `- 1` 이 오버플로해 Integer.MAX_VALUE 가 됐고,
+            //   Math.max(0, MAX_VALUE) 는 그대로 MAX_VALUE 라 clamp 를 빠져나갔다.
+            //   16개 호출부가 모두 갖고 있던 결함이었고, 추출로 한 곳에 모인 뒤 정정했다.
             //
-            //   ⚠ 이것은 **기존 13개 호출부가 모두 갖고 있던 결함**이며, 추출로 새로 생긴 것이 아니다.
-            //   이 PR 은 "거동 동일 추출" 이라 고치지 않고 현행을 고정한다.
-            //   **이 단언은 올바른 거동이 아니라 결함을 기록한 것이다** — 정정 시 이 테스트를 함께 바꾼다.
-            //
-            //   실제 영향: 거대한 offset 이 되어 빈 페이지가 나온다(Spring 의 getOffset() 은 long 이라
-            //   재오버플로하지는 않는다). 크래시나 권한 우회는 아니다.
+            //   비교를 먼저 해서 뺄셈 자체를 하지 않으면(`pageIndex <= 1 ? 0 : pageIndex - 1`)
+            //   오버플로 경로가 사라진다.
             assertThat(dto(Integer.MIN_VALUE, 10).toPageable().getPageNumber())
-                    .as("기존 결함 기록 — 첫 페이지(0)로 수렴하지 않는다").isEqualTo(Integer.MAX_VALUE);
+                    .as("오버플로로 clamp 를 빠져나가면 안 된다").isEqualTo(0);
+            assertThat(dto(Integer.MIN_VALUE + 1, 10).toPageable().getPageNumber()).isEqualTo(0);
         }
 
         @Test

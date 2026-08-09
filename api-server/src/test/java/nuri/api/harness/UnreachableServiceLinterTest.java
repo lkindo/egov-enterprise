@@ -42,7 +42,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <b>노출되지 않았기에 드러나지 않았다</b>. 즉 배선은 "연결" 이 아니라 그동안 검증된 적 없는 코드를
  * 처음 실전에 올리는 일이다.
  *
- * <p>[규칙] {@code @Service} 가 붙은 클래스가 <b>자기 파일을 제외한 생산 코드({@code src/main}) 어디에서도
+ * <p>[규칙] {@code @Service} 또는 {@code @Repository} 가 붙은 클래스가 <b>자기 파일을 제외한 생산 코드({@code src/main}) 어디에서도
  * 이름이 등장하지 않으면</b> 위반이다.
  *
  * <p>[오탐 0 우선 설계] {@code HandlerReachesServiceLinterTest} 의 설계 철학을 따른다 — 확실한
@@ -70,14 +70,29 @@ class UnreachableServiceLinterTest {
 
     private static final String[] MODULES = {"foundation", "business-core", "business-app", "api-server"};
 
-    /** 클래스 레벨 {@code @Service} 선언(주석 처리된 것은 제외되도록 줄 시작 기준). */
-    private static final Pattern SERVICE_ANNOTATION = Pattern.compile("(?m)^\\s*@Service\\b");
+    /**
+     * 클래스 레벨 {@code @Service} / {@code @Repository} 선언(주석 처리된 것은 제외되도록 줄 시작 기준).
+     *
+     * <p>[2026-08-09 확장] 종전에는 {@code @Service} 만 봤다. 그 사각지대에서
+     * {@code UserInfRepository}·{@code UserInfRepositoryImpl}·{@code UserInfSearchResult} 가
+     * <b>프로덕션 호출부 0건인 채로 살아남았다</b> — 이 게이트가 막으려던 바로 그 부류인데
+     * 애노테이션이 {@code @Repository} 라는 이유만으로 스캔 밖이었다.
+     * (확장 시점 위반 0건 — 위 3파일을 삭제한 뒤 넓혔다. 예외 목록 없이 출발한다.)
+     *
+     * <p>⚠ {@code @Component} 는 <b>의도적으로 넣지 않는다</b>. 실측 결과 미참조 19건이 나오는데
+     * 전부 정당하다 — 이벤트 리스너({@code @EventListener})·서블릿 필터·AOP Aspect·
+     * {@code @Scheduled} 스케줄러·{@code AuditorAware} 처럼 <b>스프링이 이름 없이 부르는</b> 부류다.
+     * 넣으면 오탐 19건으로 시작하게 되고, 그 순간 예외 목록이 필요해진다(§0.7-H2 의 서랍).
+     * 이 게이트의 '오탐 0 우선' 설계와 맞지 않는다.
+     */
+    private static final Pattern SERVICE_ANNOTATION =
+            Pattern.compile("(?m)^\\s*@(?:Service|Repository)\\b");
 
     /** {@code implements A, B} 에서 첫 인터페이스명을 뽑는다. */
     private static final Pattern IMPLEMENTS = Pattern.compile("\\bimplements\\s+([A-Za-z0-9_]+)");
 
     @Test
-    @DisplayName("🕳️ @Service 빈이 생산 코드에서 도달 가능한가 — '완성됐는데 아무도 안 부르는' 코드 차단")
+    @DisplayName("🕳️ @Service·@Repository 빈이 생산 코드에서 도달 가능한가 — '완성됐는데 아무도 안 부르는' 코드 차단")
     void auditUnreachableServices() throws IOException {
         Path root = repoRoot();
         List<Path> mainSources = new ArrayList<>();
@@ -134,7 +149,7 @@ class UnreachableServiceLinterTest {
                     simpleName, root.relativize(file).toString().replace('\\', '/')));
         }
 
-        log.info("[UNREACHABLE SERVICE LINTER] @Service {}개 스캔, 위반 {}건", serviceCount, violations.size());
+        log.info("[UNREACHABLE SERVICE LINTER] @Service/@Repository {}개 스캔, 위반 {}건", serviceCount, violations.size());
 
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
