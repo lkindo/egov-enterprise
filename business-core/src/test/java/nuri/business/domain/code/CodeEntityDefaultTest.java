@@ -52,27 +52,33 @@ class CodeEntityDefaultTest {
     }
 
     @Test
-    @DisplayName("코드분류: useYn 미지정은 형제 엔티티와 달리 null 로 남는다 (현행 거동 고정)")
-    void commonCodeCategoryUseYnHasNoDefault() {
-        // ⚠ 이 엔티티만 형제들과 다르다. 생성자가 둘인데 기본값 처리가 엇갈려 있다:
-        //     · 5-인자 생성자 — `useYn == null ? "Y" : useYn` 을 적용한다.
-        //       그러나 소스 주석이 스스로 밝히듯 **"new 사용처 없음"** 인 죽은 코드다.
-        //     · 4-인자 생성자 — 실제 create() 팩토리가 쓰는 경로인데 **기본값을 적용하지 않는다.**
-        //
-        //   그 결과 useYn 없이 만든 분류는 useYn IS NULL 이 되고,
-        //   코드그룹 검색의 `commonCodeCategory.useYn.eq("Y")` 필터에서 **조용히 사라진다.**
-        //   CommonCode·CommonCodeGroup 은 같은 자리에서 "Y" 를 넣으므로 셋의 거동이 서로 다르다.
-        //
-        //   프로덕션 거동 변경은 이 작업(테스트 보강)의 범위가 아니므로
-        //   **현행을 있는 그대로 고정**한다. 통일 여부는 별건으로 판단한다.
+    @DisplayName("코드분류: useYn 미지정은 'Y', 지정하면 지정값을 그대로 쓴다 (형제와 정렬)")
+    void commonCodeCategoryUseYnDefault() {
+        // [2026-08-09 거동 정렬] 종전 이 엔티티만 형제들과 달랐다.
+        //   기본값 "Y" 를 넣는 생성자는 죽은 코드였고, 실제로 쓰이는 생성자는 null 을 그대로 뒀다.
+        //   그 결과 useYn 없이 만든 분류는 use_yn IS NULL 이 되어
+        //   코드그룹 검색의 `commonCodeCategory.useYn.eq("Y")` 필터에서 조용히 사라졌다.
+        //   (물리 컬럼은 nullable·DEFAULT 없음 — DB 도 막아주지 않는다.)
         assertThat(CommonCodeCategory.builder()
                 .clsfCd("C").clsfCdNm("이름").build().getUseYn())
-                .as("현행은 기본값을 넣지 않는다 — 형제 엔티티와 불일치").isNull();
+                .as("미지정이면 사용중(Y) — CommonCode·CommonCodeGroup 과 동일").isEqualTo("Y");
 
+        // 조건을 뒤집은 뮤턴트를 잡으려면 지정값 보존도 함께 봐야 한다.
         assertThat(CommonCodeCategory.builder()
                 .clsfCd("C").clsfCdNm("이름").useYn("N").build().getUseYn()).isEqualTo("N");
         assertThat(CommonCodeCategory.builder()
                 .clsfCd("C").clsfCdNm("이름").useYn("Y").build().getUseYn()).isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("코드분류: update() 는 기본값을 넣지 않는다 — 세 엔티티가 동일하다")
+    void commonCodeCategoryUpdateHasNoDefault() {
+        // 생성자와 달리 update() 는 넘어온 값을 그대로 쓴다. 이건 세 엔티티가 이미 일관되며,
+        //   "명시적으로 NULL 로 되돌리기" 를 막는 것은 별개 결정이라 현행을 그대로 고정한다.
+        //   (API 경계에서는 CmmnClCodeDto.useYn 의 @NotBlank 가 NULL 을 막는다.)
+        CommonCodeCategory c = CommonCodeCategory.builder().clsfCd("C").clsfCdNm("이름").build();
+        c.update("바뀐이름", "설명", null, "tester");
+        assertThat(c.getUseYn()).as("update 는 기본값을 적용하지 않는다").isNull();
     }
 
     @Test
