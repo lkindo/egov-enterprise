@@ -1,17 +1,22 @@
 /**
  * 부하 레벨별 테스트 시나리오
- * 
+ *
  * 동시 사용자 100/500/1000 명 부하 테스트를 실행합니다.
- * 
- * 실행 방법:
- *   # 100 명 시나리오
- *   k6 run --scenario users-100 load-levels.js
- *   
- *   # 500 명 시나리오
- *   k6 run --scenario users-500 load-levels.js
- *   
- *   # 1000 명 시나리오
- *   k6 run --scenario users-1000 load-levels.js
+ *
+ * 실행 방법 (K6_SCENARIO 환경변수로 선택):
+ *   K6_SCENARIO=users-100  k6 run load-levels.js
+ *   K6_SCENARIO=users-500  k6 run load-levels.js
+ *   K6_SCENARIO=users-1000 k6 run load-levels.js
+ *
+ * [2026-08-09 정정] 종전 이 주석은 `k6 run --scenario users-100` 을 안내했다.
+ *   **k6 에 그런 플래그는 없다** — 실측: `level=error msg="unknown flag: --scenario"` (k6 v1.7.1).
+ *   워크플로도 같은 플래그를 쓰고 있어서 부하 테스트는 한 번도 완주한 적이 없다.
+ *   k6 는 시나리오를 CLI 로 고르는 수단을 제공하지 않으므로, 스크립트가 환경변수를 읽어
+ *   `options.scenarios` 를 좁히는 것이 정석이다(이 파일은 이미 __ENV.K6_SCENARIO 를
+ *   로깅에만 쓰고 있었다 — 원래 의도가 env 방식이었음을 보여준다).
+ *
+ *   ⚠ K6_SCENARIO 를 지정하지 않으면 **세 시나리오가 동시에** 돈다(합계 1600 VU · 약 20분).
+ *   의도적으로 그러는 경우가 아니라면 항상 지정할 것.
  */
 
 import http from 'k6/http';
@@ -20,18 +25,8 @@ import { Config } from '../config.js';
 import { AuthTokenManager } from '../utils.js';
 import { createHtmlReport, textSummary } from '../utils/report.js';
 
-export const options = {
-  tags: {
-    api: 'mixed',
-    test_type: 'load-level',
-  },
-
-  thresholds: {
-    http_req_duration: ['p(95)<1000'],
-    http_req_failed: ['rate<0.01'],
-  },
-
-  scenarios: {
+/** 정의된 부하 레벨 전체. K6_SCENARIO 로 이 중 하나만 골라 돌린다. */
+const ALL_SCENARIOS = {
     // 100 명 동시 사용자
     'users-100': {
       executor: 'ramping-vus',
@@ -70,7 +65,41 @@ export const options = {
       gracefulRampDown: '10s',
       tags: { load_level: '1000' },
     },
+};
+
+/**
+ * K6_SCENARIO 로 지정된 시나리오 하나만 남긴다.
+ *
+ * <p>미지정이면 전체를 돌려주는데(기존 거동 보존), 그건 1600 VU 동시 실행이라
+ * 사실상 의도한 경우가 아니다. 오타로 조용히 "전체 실행" 이 되는 사고를 막기 위해,
+ * 값이 있는데 목록에 없으면 **즉시 실패**시킨다 — 잘못된 이름으로 20분짜리를 돌리는 것보다 낫다.
+ */
+function selectedScenarios() {
+  const name = __ENV.K6_SCENARIO;
+  if (!name) {
+    return ALL_SCENARIOS;
+  }
+  const picked = ALL_SCENARIOS[name];
+  if (!picked) {
+    throw new Error(
+      `알 수 없는 K6_SCENARIO: "${name}". 가능한 값: ${Object.keys(ALL_SCENARIOS).join(', ')}`
+    );
+  }
+  return { [name]: picked };
+}
+
+export const options = {
+  tags: {
+    api: 'mixed',
+    test_type: 'load-level',
   },
+
+  thresholds: {
+    http_req_duration: ['p(95)<1000'],
+    http_req_failed: ['rate<0.01'],
+  },
+
+  scenarios: selectedScenarios(),
 };
 
 /**
