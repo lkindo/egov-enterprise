@@ -859,6 +859,20 @@ jobs:
             classes: "nuri.foundation.security.filter.*"
             tests: "nuri.foundation.*"
 
+          # foundation 공통 유틸 스코프.
+          #   PiiMaskUtil 은 **로그에 실릴 개인정보를 가리는** 유틸인데 테스트가 하나도 없었다
+          #   (이 패키지 생존 39건 중 20건이 여기였다). 소스가 존재 이유를 적어 두었다 —
+          #   이메일·휴대폰이 평문으로 로그에 적재되고 있었고(W1-13), 로그는 애플리케이션보다
+          #   오래 살고 더 넓게 복제된다. 조건 하나가 뒤집히면 가려야 할 것이 그대로 나가고
+          #   그 사실은 **로그가 유출된 뒤에야** 드러난다.
+          #   IdGenerationUtil.generateUniqueId 는 PK 충돌 방어인데 전량 미커버였다 —
+          #   재시도 루프가 무력화되면 충돌 ID 가 그대로 PK 쓰기 경로로 나간다.
+          #   실측 57% -> 89% 보강 후 편입한다.
+          - scope: foundation-core-util
+            gradle: ":foundation:pitest"
+            classes: "nuri.foundation.core.util.*"
+            tests: "nuri.foundation.*"
+
           # migration-tool 스코프.
           #   TypeConverter/TransformerRegistry 는 마이그레이션의 **값 변환 경계**다.
           #   경계 조건이 틀리면 예외가 아니라 **조용한 데이터 손상**으로 끝난다
