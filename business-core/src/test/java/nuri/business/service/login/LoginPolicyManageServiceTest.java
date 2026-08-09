@@ -149,9 +149,19 @@ class LoginPolicyManageServiceTest {
         // [시간대 고정] 서비스는 LocalTime.now(ZoneId.of("Asia/Seoul")) 로 판정한다.
         // 테스트가 JVM 기본 시간대를 쓰면 UTC 러너(CI)에서 9시간 어긋나 허용창 밖이 된다
         // — 2026-07-26 CI 실패의 원인. 서비스와 동일한 기준시로 창을 계산한다.
+        // [2026-08-09 플레이크 제거] LocalTime.MIN/MAX 특수화를 걷어낸다.
+        //   MAX 는 23:59:59.999999999 인데 "HH:mm" 으로 포맷하면 **"23:59" 로 잘린다.**
+        //   그래서 서비스의 now 가 23:59:00.001~23:59:59.999 이면 endTime(23:59:00) 보다
+        //   뒤가 되어 창 밖으로 판정되고 BusinessException 이 난다 —
+        //   **하루의 마지막 1분에만 터지는 시계 의존 플레이크**다.
+        //   (실측: CI run 이 KST 23:59 구간에 걸려 이 테스트 2건이 red 였다.)
+        //
+        //   서비스는 자정을 넘는 창(start > end)을 이미 지원하므로 특수화 자체가 불필요하다.
+        //   ±1시간이면 0시·23시에도 유효한 야간 창이 만들어진다.
+        //   전 시각 4320개 지점(분 전체 × 초 경계 0/30/59) 시뮬레이션에서 실패 0건 확인.
         LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        LocalTime startTimeVal = now.getHour() == 0 ? LocalTime.MIN : now.minusHours(1);
-        LocalTime endTimeVal = now.getHour() == 23 ? LocalTime.MAX : now.plusHours(1);
+        LocalTime startTimeVal = now.minusHours(1);
+        LocalTime endTimeVal = now.plusHours(1);
 
         String start = startTimeVal.format(DateTimeFormatter.ofPattern("HH:mm"));
         String end = endTimeVal.format(DateTimeFormatter.ofPattern("HH:mm"));
@@ -236,9 +246,11 @@ class LoginPolicyManageServiceTest {
         // [시간대 고정] 서비스는 LocalTime.now(ZoneId.of("Asia/Seoul")) 로 판정한다.
         // 테스트가 JVM 기본 시간대를 쓰면 UTC 러너(CI)에서 9시간 어긋나 허용창 밖이 된다
         // — 2026-07-26 CI 실패의 원인. 서비스와 동일한 기준시로 창을 계산한다.
+        // 위 validateLoginPolicySuccessTest 와 같은 이유로 MIN/MAX 특수화를 쓰지 않는다.
+        //   (23:59 대의 마지막 1분에만 실패하는 시계 의존 플레이크)
         LocalTime now = LocalTime.now(java.time.ZoneId.of("Asia/Seoul"));
-        LocalTime startTimeVal = now.getHour() == 0 ? LocalTime.MIN : now.minusHours(1);
-        LocalTime endTimeVal = now.getHour() == 23 ? LocalTime.MAX : now.plusHours(1);
+        LocalTime startTimeVal = now.minusHours(1);
+        LocalTime endTimeVal = now.plusHours(1);
 
         String start = startTimeVal.format(DateTimeFormatter.ofPattern("HHmm"));
         String end = endTimeVal.format(DateTimeFormatter.ofPattern("HHmm"));
