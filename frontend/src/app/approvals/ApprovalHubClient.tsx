@@ -27,7 +27,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 ;
 import { Badge } from '@/components/ui/badge';
 import { ApprovalStepper } from './ApprovalStepper';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { HubListSkeleton, HubDetailSkeleton } from '@/components/ui/hub/HubSkeleton';
 
@@ -36,7 +35,6 @@ type ApprovalTab = 'PENDING' | 'HISTORY' | 'ARCHIVE';
 const EMPTY_APPROVALS: Approval[] = [];
 
 export default function ApprovalHubClient() {
-  const router = useRouter();
   const { toast } = useToast();
   const confirm = useConfirm();
   const queryClient = useQueryClient();

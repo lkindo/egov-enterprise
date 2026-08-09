@@ -123,4 +123,3 @@ export const MESSAGES = {
   },
 } as const;
 
-type MessageKey = keyof typeof MESSAGES;

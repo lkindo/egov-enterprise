@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useTransition } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -28,7 +28,6 @@ import { cn } from '@/lib/utils';
 import { communityService } from '@/services/business/community/communityService';
 import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';
-import { useToast } from '@/app/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
@@ -38,9 +37,7 @@ export default function CommunityHubClient({
   initialData: any 
 }) {
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   const { user } = useAuth();
-  const [isPending, startTransition] = useTransition();
   const [page, setPage] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState('');
   // 'managed' = 내가 개설한(= 목록의 '관리자' 열) 커뮤니티. 서버에 소유자 필터 파라미터가 없어

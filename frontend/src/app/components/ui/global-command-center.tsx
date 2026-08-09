@@ -34,7 +34,7 @@ export function GlobalCommandCenter() {
   const [search, setSearch] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [menus, setMenus] = useState<CommandItem[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [, setIsSearching] = useState(false);
 
   const router = useRouter();
   const { logout } = useAuth();

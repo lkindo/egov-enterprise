@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { authorAdminService } from '@/services/foundation/system/AuthorAdminService';
 import SecurityHubClient from './SecurityHubClient';

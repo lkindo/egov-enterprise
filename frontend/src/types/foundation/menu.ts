@@ -15,7 +15,3 @@ export interface MenuInfo {
  children?: MenuInfo[];
 }
 
-interface MenuResponse {
- success: boolean;
- list: MenuInfo[];
-}

@@ -24,14 +24,6 @@ export function HubMetricCard({
   trend,
   className 
 }: HubMetricProps) {
-  const colorMap = {
-    primary: "text-primary bg-primary/5 border-primary/10 shadow-primary/5",
-    emerald: "text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 border-emerald-500/10 shadow-emerald-500/5",
-    rose: "text-rose-600 dark:text-rose-400 bg-rose-500/5 border-rose-500/10 shadow-rose-500/5",
-    amber: "text-amber-600 dark:text-amber-400 bg-amber-500/5 border-amber-500/10 shadow-amber-500/5",
-    indigo: "text-hub-indigo bg-hub-indigo/5 border-hub-indigo/10 shadow-hub-indigo/5",
-    slate: "text-foreground bg-muted border-border shadow-slate-900/5",
-  };
 
   const iconBgMap = {
     primary: "bg-primary text-white shadow-primary/20",

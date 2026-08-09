@@ -18,7 +18,6 @@ vi.mock('next/config', () => ({
   default: () => ({ publicRuntimeConfig: {}, serverRuntimeConfig: {} }),
 }));
 
-import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { WebSocketProvider, useWebSocket } from '../websocket-context';

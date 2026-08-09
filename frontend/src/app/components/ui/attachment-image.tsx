@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ImageOff } from 'lucide-react';
 import { fileService } from '@/services/foundation/file/FileService';
 import { cn } from '@/lib/utils';

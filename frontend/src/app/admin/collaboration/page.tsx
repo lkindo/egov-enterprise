@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import CollaborationHubClient from './CollaborationHubClient';
 import { Metadata } from 'next';
 import { HubListSkeleton } from '@/components/ui/hub/HubSkeleton';

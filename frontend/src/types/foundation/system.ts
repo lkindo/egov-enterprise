@@ -27,24 +27,7 @@ export interface PageResponse<T = unknown> {
   totalPage: number;
 }
 
-interface ApiResponse<T = unknown> {
-  success: boolean;
-  status: number;
-  code: string;
-  message: string;
-  data: T;
-  timestamp: string;
-}
 
-interface PaginationResponse<T> {
-  success?: boolean;
-  list?: T[];
-  content?: T[]; // Spring Data JPA 대응 추가
-  totalRecordCount?: number;
-  totalElements?: number; // Spring Data JPA 대응 추가
-  resultList?: T[];
-  paginationInfo?: PaginationInfo;
-}
 
 export interface SearchParams {
   /** 서버가 @RequestParam("keyword") 로 받는 검색어 (부서 목록 등). searchKeyword 와 별개 축이다. */
@@ -92,16 +75,6 @@ export interface CmmnDetailCode {
 }
 
 // Menu
-interface MenuManage {
-  menuNo: number;
-  menuOrdr: number;
-  menuNm: string;
-  upperMenuId: number;
-  menuExpln?: string;
-  relImgNm?: string;
-  relImgPath?: string;
-  prgrmFileNm: string;
-}
 
 // Program
 export interface ProgrmManage {
@@ -113,16 +86,6 @@ export interface ProgrmManage {
 }
 
 // Log
-interface SysLog {
-  dmndId: string;
-  srvcNm: string;
-  methodNm: string;
-  prcsSeCd: string;
-  prcsTm: string;
-  dmndUserId: string;
-  rqesterIp: string;
-  ocrnYmd: string;
-}
 
 /**
  * 사용자 활동 로그. 개별 요청이 아니라 **사용자 × 서비스 × 메서드 × 일자 단위 집계**다.
@@ -151,15 +114,6 @@ export interface UserLog {
 }
 
 // Login Log
-interface LoginLog {
-  logId: string;
-  loginId: string;
-  loginIp: string;
-  loginMthd: string;
-  errOccrrAt: string;
-  errorCode: string;
-  creatDt: string;
-}
 
 // Web Log
 export interface WebLog {

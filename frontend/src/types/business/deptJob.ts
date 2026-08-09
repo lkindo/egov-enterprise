@@ -28,9 +28,3 @@ export interface DeptJobBxVO {
   mdfcnDt?: string;
 }
 
-interface DeptJobSearchParams {
-  pageNo?: number;
-  searchCondition?: string;
-  searchKeyword?: string;
-  searchDeptJobBxId?: string; // 업무함필터
-}

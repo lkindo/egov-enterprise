@@ -1,4 +1,3 @@
-import React from 'react';
 import HpcmClient from './HpcmClient';
 import { hpcmAdminService, Hpcm } from '@/services/foundation/system/HpcmAdminService';
 

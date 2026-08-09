@@ -8,7 +8,6 @@ vi.mock('next/config', () => ({
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Button } from '../button';
 import { describe, it, expect, vi } from 'vitest';
-import React from 'react';
 
 describe('Button', () => {
   it('renders correctly', () => {

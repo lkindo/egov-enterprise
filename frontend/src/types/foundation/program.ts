@@ -14,10 +14,3 @@ export interface Program {
 }
 
 /** client의 ApiResponse.data를 직접 반환하도록 페이지네이션 구조 정의 */
-interface ProgramResponse {
-  list: Program[];
-  total: number;
-  totalPage: number;
-  page: number;
-  size: number;
-}

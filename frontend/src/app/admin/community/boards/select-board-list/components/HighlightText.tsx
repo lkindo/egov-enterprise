@@ -1,4 +1,3 @@
-import React from 'react';
 
 export const HighlightText = ({ text, highlight }: { text: string | undefined; highlight: string }) => {
   if (!text) return null;

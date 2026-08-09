@@ -1,4 +1,3 @@
-import React from 'react';
 import { communityService } from '@/services/business/community/communityService';
 import CommunityHubClient from './CommunityHubClient';
 

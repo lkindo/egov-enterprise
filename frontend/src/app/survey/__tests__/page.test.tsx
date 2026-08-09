@@ -7,7 +7,6 @@ vi.mock('next/config', () => ({
 
 import { vi, describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import React from 'react';
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn() }),

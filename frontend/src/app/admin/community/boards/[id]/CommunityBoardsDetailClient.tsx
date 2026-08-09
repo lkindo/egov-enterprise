@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardEditor } from '@/app/components/ui/standard-editor';
@@ -25,7 +25,7 @@ export default function CommunityBoardsDetailClient() {
         secretAt: 'N' as 'Y' | 'N'
     });
 
-    const [files, setFiles] = useState<File[]>([]);
+    const [, setFiles] = useState<File[]>([]);
 
     // 자동 저장 훅 연동
     const { clear } = useAutoSave('bbs_write', formData, (data) => setFormData(data));

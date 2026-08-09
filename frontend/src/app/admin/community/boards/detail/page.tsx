@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { BoardDetailClient } from './BoardDetailClient';
 import { getInitialBoardDetailData } from './BoardDetailServer';
 

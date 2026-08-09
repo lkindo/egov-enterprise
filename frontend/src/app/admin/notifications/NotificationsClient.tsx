@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { SmartNotificationHub } from '@/app/components/ui/smart-notification-hub';

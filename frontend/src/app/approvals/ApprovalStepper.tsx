@@ -1,6 +1,5 @@
 'use client';
 
-import React from 'react';
 import { Check, Clock, X, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -39,7 +38,6 @@ export function ApprovalStepper({ steps }: ApprovalStepperProps) {
           const isCompleted = step.status === 'completed';
           const isRejected = step.status === 'rejected';
           const isCurrent = step.status === 'current';
-          const isPending = step.status === 'pending';
 
           return (
             <div key={`step-${idx}`} className="relative flex flex-col items-center flex-1 group">

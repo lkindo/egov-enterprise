@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
@@ -44,7 +44,6 @@ const programSchema = ProgramDtoSchema.extend({
  prgrmExpln: z.string().max(200).optional().or(z.literal('')),
 });
 
-type ProgramFormValues = z.infer<typeof programSchema>;
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 

@@ -9,7 +9,6 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { StandardModal } from '../standard-modal';
-import React from 'react';
 
 /**
  * StandardModal 계약 테스트.

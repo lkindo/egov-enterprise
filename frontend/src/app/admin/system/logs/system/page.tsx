@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import SystemLogsSystemClient from './SystemLogsSystemClient';
 
 export default function Page() {

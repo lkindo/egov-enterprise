@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
 import { SurveyRespondent, Survey } from '@/types/business/survey';

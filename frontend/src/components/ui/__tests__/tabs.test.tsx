@@ -8,7 +8,6 @@ vi.mock('next/config', () => ({
 import { render, screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../tabs';
-import React from 'react';
 
 describe('Tabs Component', () => {
  it('renders tabs structure correctly', () => {

@@ -96,14 +96,6 @@ export class GroupAdminService extends AdminService {
 }
 
 const authorityAdminService = new AuthorityAdminService();
-const roleAdminService = new RoleAdminService();
-const groupAdminService = new GroupAdminService();
 
 export const getAuthorList = authorityAdminService.getAuthorList.bind(authorityAdminService);
-const getAuthor = authorityAdminService.getAuthor.bind(authorityAdminService);
-const createAuthor = authorityAdminService.createAuthor.bind(authorityAdminService);
-const updateAuthor = authorityAdminService.updateAuthor.bind(authorityAdminService);
-const deleteAuthor = authorityAdminService.deleteAuthor.bind(authorityAdminService);
 
-const getRoleList = roleAdminService.getRoleList.bind(roleAdminService);
-const getGroupList = groupAdminService.getGroupList.bind(groupAdminService);

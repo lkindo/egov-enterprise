@@ -1,4 +1,3 @@
-import React from 'react';
 import MonitoringHubClient from '@/app/admin/system/monitoring/MonitoringHubClient';
 
 export const metadata = {

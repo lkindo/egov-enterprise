@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useTransition } from 'react';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -23,7 +23,6 @@ import { Users,
 import { communityService } from '@/services/business/community/communityService';
 import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';
-import { useToast } from '@/app/components/ui/toast';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 export default function CommunityDetailHubClient({ 
@@ -33,10 +32,8 @@ export default function CommunityDetailHubClient({
   id: string;
   initialData: CommunityVO 
 }) {
-  const { toast } = useToast();
-  const [isPending, startTransition] = useTransition();
 
-  const { data: community, isLoading, error } = useQuery({
+  const { data: community } = useQuery({
     queryKey: ['community', id],
     queryFn: () => communityService.getCommunity(id),
     initialData: initialData

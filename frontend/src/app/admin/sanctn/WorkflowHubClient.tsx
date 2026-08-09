@@ -23,7 +23,6 @@ import { CheckSquare,
  Layers, 
  UserCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useToast } from '@/app/components/ui/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Types ---
@@ -38,7 +37,6 @@ interface ApprovalFormItem {
 }
 
 export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab?: ApprovalTab }) {
- const { toast } = useToast();
  const [activeTab, setActiveTab] = useState<ApprovalTab>(defaultTab);
  const [selectedFormId, setSelectedFormId] = useState<string | number | null>(null);
 

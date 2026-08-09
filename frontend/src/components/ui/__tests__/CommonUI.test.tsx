@@ -11,7 +11,6 @@ import { Badge } from '../badge';
 import { Checkbox } from '../checkbox';
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '../table';
 import { Skeleton } from '../skeleton';
-import React from 'react';
 
 describe('Common UI Components Extended', () => {
   describe('Badge', () => {

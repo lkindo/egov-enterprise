@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { deptAdminService } from '@/services/foundation/system/DeptAdminService';

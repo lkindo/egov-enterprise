@@ -23,7 +23,6 @@ import {
 import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useLayout } from '@/contexts/LayoutContext';
-import { useAuth } from '@/contexts/AuthContext';
 import { MenuInfo } from '@/types/foundation/menu';
 
 const ICON_MAP: Record<string, any> = {
@@ -139,8 +138,6 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
     }
   }, [isActive, hasChildren]);
 
-  const { user } = useAuth();
-  const isAdmin = user?.role === 'ROLE_ADMIN' || user?.userSe === 'USR';
   
   const isRestricted = false;
 

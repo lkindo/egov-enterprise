@@ -17,7 +17,6 @@ vi.mock('@/contexts/AuthContext', () => ({
 
 import { vi, describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
-import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 vi.mock('next/navigation', () => ({

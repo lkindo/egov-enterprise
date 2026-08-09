@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, use } from 'react';
+import { useMemo, useState, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { PageHeader } from '@/app/components/layout/page-header';

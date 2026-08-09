@@ -1,7 +1,3 @@
-interface ConnectStats {
-  statsDate: string; // Aligned with backend statsDate
-  statsCo: number; // Aligned with backend statsCo
-}
 
 /**
  * 접속 통계 차트/표에서 사용하는 정규화 포인트.
@@ -22,12 +18,6 @@ export interface ConnectPoint {
  * 메뉴별 통계가 필요해지면 백엔드 집계 API 신설과 함께 재도입할 것.
  */
 
-interface UserActivityStats {
-  userId: string;
-  userNm: string;
-  postCount: number;
-  commentCount: number;
-}
 
 export interface SummaryStats {
   totalUsers: number;
@@ -35,21 +25,4 @@ export interface SummaryStats {
   todayConnects: number;
 }
 
-interface StatsVO {
-  statsId: string;
-  statsSe: string;
-  statsCn: string;
-  crtDt: string;
-}
 
-interface StatsSearchParams {
-  statsSe?: string;
-  searchPeriod?: string;
-  statsKind?: string;
-  fromDate?: string;
-  toDate?: string;
-  pageNo?: number;
-  pageIndex?: number;
-  page?: number;
-  size?: number;
-}

@@ -1,4 +1,4 @@
-import React, { Suspense } from 'react';
+import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import MenuByAuthorityClient, { type FetchResult } from './MenuByAuthorityClient';
