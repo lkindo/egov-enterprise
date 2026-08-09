@@ -893,6 +893,23 @@ jobs:
           PIT_TARGET_TESTS: "nuri.business.*"
           STRICT_MUTATION: "true"
 
+      # [2026-08-09 신설] business-core 코드·사용자 저장소 스코프.
+      #   이 자리의 뮤턴트는 전부 같은 결말을 가진다 — QueryDSL 의 `where(null)` 은 오류가 아니라
+      #   "조건 없음" 이라서, 검색조건 빌더가 null 을 돌려주면 **필터 없이 전체가 조회된다**.
+      #   예외도 안 나고 화면도 정상으로 보이므로 목록이 커지기 전까지 아무도 눈치채지 못한다.
+      #     · searchAssignableUsers 는 일반 사용자에게 열린 담당자 검색이고
+      #       소스 주석이 계정 열거 방어(빈 키워드 전체반환 금지·로그인 ID 매칭 금지)를
+      #       설계 의도로 적어 두었는데 **테스트가 하나도 없었다**.
+      #     · 기존 사용자 검색 테스트는 조건마다 isNotEmpty() 만 확인해,
+      #       필터를 통째로 없앤 뮤턴트도 통과시켰다(전체 조회에도 매칭 행은 들어 있다).
+      #   실측 45% -> 94% 보강 후 편입한다.
+      - name: Incremental Mutation Test (business-core code/user repository scope)
+        run: ./gradlew :business-core:pitest
+        env:
+          PIT_TARGET_CLASSES: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*"
+          PIT_TARGET_TESTS: "nuri.business.*"
+          STRICT_MUTATION: "true"
+
       - name: Upload PIT report
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
