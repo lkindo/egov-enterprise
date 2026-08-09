@@ -134,14 +134,26 @@ public class LoginPolicyManageService {
                 } catch (BusinessException ex) {
                     throw ex;
                 } catch (Exception e) {
-                    // ⚠ 이 catch 는 시간 정책을 **fail-open** 으로 만든다 —
-                    //   형식이 깨져 파싱에 실패하면 제한이 걸리지 않은 채 로그인이 통과한다.
-                    //   거동은 그대로 두되(정책 파손으로 전원 로그인 차단은 더 나쁘다),
-                    //   그 사실이 로그에 남아야 운영에서 발견할 수 있다.
-                    //   종전 printStackTrace 는 표준에러로만 나가 수집기에 잡히지 않았다.
-                    log.warn(">>> [LoginPolicy] 접속시간 정책 해석 실패 — 시간 제한을 적용하지 않고 통과시킨다. "
+                    // [2026-08-09 fail-open → fail-closed 전환]
+                    //
+                    //   종전에는 파싱 실패를 삼키고 **제한이 걸리지 않은 채 통과**시켰다.
+                    //   즉 시간 형식이 깨지면 접속시간 제한이 통째로 무력화됐다.
+                    //   그때의 근거는 "정책 파손으로 전원 로그인 차단은 더 나쁘다" 였는데,
+                    //   **그 판단은 틀렸다** — tb_login_policy 는 userId 로 키잉되므로
+                    //   파손된 정책의 영향 범위는 **그 사용자 한 명**이다. 전원이 아니다.
+                    //
+                    //   제한을 걸어 둔 데에는 이유가 있다. 그 규칙을 해석할 수 없을 때
+                    //   "모르겠으니 통과" 는 규칙을 없애는 것과 같다. 차단하고 알린다.
+                    //   (전환 시점 실측: tb_login_policy 0행 — 현재 영향받는 사용자 없음.)
+                    //
+                    //   메시지는 정상적인 시간 제한과 구분한다 — 사용자가 "지금은 안 되는 시간"
+                    //   으로 오해하면 관리자에게 문의하지 않아 파손이 방치된다.
+                    log.warn(">>> [LoginPolicy] 접속시간 정책을 해석할 수 없어 접속을 차단한다. "
                             + "userId={} bgngTm={} endTm={}",
                             userId, policy.getBgngTm(), policy.getEndTm(), e);
+                    throw new BusinessException(
+                            "접속 시간 정책이 올바르지 않습니다. 관리자에게 문의하십시오.",
+                            CommonErrorCode.LOGIN_POLICY_TIME_RESTRICTED);
                 }
             }
         });
