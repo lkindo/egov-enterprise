@@ -3,63 +3,11 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
-import { UserManage } from '@/types/foundation/user';
 import { extractErrorMessage } from './actionUtils';
 
 interface ActionResponse {
   success: boolean;
   message: string;
-}
-
-async function createUserAction(prevState: unknown, formData: UserManage): Promise<ActionResponse> {
-  try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-    await userAdminService.createUser(formData, axiosConfig);
-
-    revalidatePath('/admin/user/manage');
-    return { success: true, message: '사용자가 등록되었습니다.' };
-  } catch (error) {
-    const errorMessage = extractErrorMessage(error, '등록 중 오류 발생');
-    console.error('Create User Error:', error);
-    return { success: false, message: errorMessage };
-  }
-}
-
-async function updateUserAction(prevState: unknown, formData: UserManage): Promise<ActionResponse> {
-  try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-    await userAdminService.updateUser(formData.userId, formData, axiosConfig);
-
-    revalidatePath('/admin/user/manage');
-    return { success: true, message: '사용자 정보가 수정되었습니다.' };
-  } catch (error) {
-    const errorMessage = extractErrorMessage(error, '수정 중 오류 발생');
-    console.error('Update User Error:', error);
-    return { success: false, message: errorMessage };
-  }
-}
-
-async function deleteUserAction(prevState: unknown, userId: string): Promise<ActionResponse> {
-  try {
-    const cookieStore = await cookies();
-    const accessToken = cookieStore.get('accessToken')?.value;
-    const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
-
-    await userAdminService.deleteUser(userId, axiosConfig);
-
-    revalidatePath('/admin/user/manage');
-    return { success: true, message: '사용자가 삭제되었습니다.' };
-  } catch (error) {
-    const errorMessage = extractErrorMessage(error, '삭제 중 오류 발생');
-    console.error('Delete User Error:', error);
-    return { success: false, message: errorMessage };
-  }
 }
 
 export async function bulkUpdateUserStatusAction(userIds: string[], status: string): Promise<ActionResponse> {
