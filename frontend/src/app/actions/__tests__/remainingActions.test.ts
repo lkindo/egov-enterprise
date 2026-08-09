@@ -81,19 +81,27 @@ describe('남은 서버 액션', () => {
       expect(result.success).toBe(true);
     });
 
-    it('⚠ 현행 거동 고정: 등록 응답이 falsy 면 성공해도 실패로 보고한다', async () => {
-      // client.post 는 ApiResponse 의 data 를 벗겨서 준다. 백엔드가 본문 없이 성공하면
-      //   여기서 null/undefined 가 되고, `if (response)` 는 그것을 실패로 읽는다.
-      //   → 댓글은 실제로 등록됐는데 화면에는 "댓글 등록에 실패했습니다" 가 뜬다.
-      //
-      //   ⚠ 삭제는 `response !== undefined` 로 판정해 이 문제가 없다 — **셋의 판정이 비대칭이다.**
-      //   거동 변경은 이 PR(테스트 보강)의 범위가 아니라 현행을 고정만 한다.
+    it('본문 없이 성공한 응답도 성공으로 본다 — 실패로 오독하면 사용자가 다시 눌러 중복된다', async () => {
+      // [2026-08-09 정정] 종전에는 `if (response)` 로 판정해 백엔드가 본문 없이 성공하면
+      //   null 이 되어 **성공을 실패로 보고**했다. 사용자는 다시 누르고, 댓글이 두 개 달렸다.
+      //   client 는 실패 시 반드시 예외를 던지므로(인터셉터 reject + extractData throw),
+      //   await 다음 줄에 도달했다면 이미 성공이다.
       vi.mocked(client.post).mockResolvedValueOnce(null as never);
 
       const result = await createComment(null, form({ pstId: 'P1', bbsId: 'B1', ansCn: '내용' }));
 
-      expect(result).toEqual({ success: false, message: '댓글 등록에 실패했습니다.' });
-      expect(revalidatePath).not.toHaveBeenCalled();
+      expect(result).toEqual({ success: true, message: '댓글이 등록되었습니다.' });
+      expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/detail');
+    });
+
+    it('수정도 본문 없는 성공을 성공으로 본다', async () => {
+      vi.mocked(client.put).mockResolvedValueOnce(null as never);
+
+      const result = await updateComment(null, form({
+        id: 'C1', bbsId: 'B1', pstId: 'P1', ansCn: '고친 내용',
+      }));
+
+      expect(result.success).toBe(true);
     });
 
     it('삭제는 본문이 없어도(undefined 가 아니면) 성공으로 본다', async () => {

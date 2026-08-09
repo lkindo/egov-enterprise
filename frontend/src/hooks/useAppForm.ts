@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef } from 'react';
 import { useForm, UseFormProps, FieldValues, UseFormReturn } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -41,6 +42,42 @@ export function useAppForm<
     resolver: zodResolver(schema),
   });
 
+  // [2026-08-09 누수 정정] 첫 오류 필드로 포커스를 옮기는 setTimeout 이 **취소되지 않았다.**
+  //   컴포넌트가 100ms 안에 사라지면(제출 직후 라우팅·모달 닫힘) 콜백이 **사라진 DOM 을 건드린다.**
+  //   테스트 환경에서는 jsdom 해체 뒤에 발동해 `ReferenceError: document is not defined` 로
+  //   드러났고(2026-08-09 CI 실측), 그때는 테스트를 가짜 타이머로 우회했다.
+  //   여기서는 원인 자체를 없앤다 — 예약한 타이머를 붙들고 언마운트 시 지운다.
+  //   두 경로(검증 실패·서버 오류)가 같은 일을 하고 있어 헬퍼로 모은다.
+  const focusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (focusTimerRef.current !== null) {
+        clearTimeout(focusTimerRef.current);
+        focusTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  /** 첫 오류 필드로 스크롤·포커스한다. 이전 예약이 남아 있으면 대체한다. */
+  const focusFirstErrorField = (fieldName: string) => {
+    if (focusTimerRef.current !== null) {
+      clearTimeout(focusTimerRef.current);
+    }
+    focusTimerRef.current = setTimeout(() => {
+      focusTimerRef.current = null;
+      const element =
+        document.getElementsByName(fieldName)[0] ||
+        document.querySelector(`[name="${fieldName}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        if (typeof (element as HTMLElement).focus === 'function') {
+          (element as HTMLElement).focus();
+        }
+      }
+    }, 100);
+  };
+
   const originalHandleSubmit = form.handleSubmit;
 
   // @ts-ignore
@@ -57,16 +94,7 @@ export function useAppForm<
           description: `항목: ${firstErrorPath}`,
         });
 
-        setTimeout(() => {
-          const element = document.getElementsByName(firstErrorPath)[0] || 
-                          document.querySelector(`[name="${firstErrorPath}"]`);
-          if (element) {
-            element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-            if (typeof (element as any).focus === 'function') {
-              (element as any).focus();
-            }
-          }
-        }, 100);
+        focusFirstErrorField(firstErrorPath);
       }
 
       if (onInvalid) onInvalid(errors);
@@ -97,15 +125,7 @@ export function useAppForm<
     // 첫 오류 필드로 포커스를 옮긴다 — 위 검증 실패 경로와 같은 거동을 유지한다.
     const firstField = entries[0]?.[0];
     if (firstField) {
-      setTimeout(() => {
-        const element = document.querySelector(`[name="${firstField}"]`);
-        if (element) {
-          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          if (typeof (element as HTMLElement).focus === 'function') {
-            (element as HTMLElement).focus();
-          }
-        }
-      }, 100);
+      focusFirstErrorField(firstField);
     }
     return true;
   };

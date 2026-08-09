@@ -49,6 +49,9 @@ export async function deleteBannerAction(prevState: unknown, id: string): Promis
         await client.delete(`/admin/system/banners/${id}`, axiosConfig);
 
         revalidatePath('/admin/system/banner');
+        // [2026-08-09 비대칭 정정] 저장은 '/' 를 재검증하는데 삭제는 하지 않았다.
+        //   그래서 배너를 지워도 **공개 첫 화면에는 캐시가 만료될 때까지 계속 보였다.**
+        revalidatePath('/');
         return { success: true, message: '배너가 삭제되었습니다.' };
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '삭제 중 오류 발생');
@@ -89,6 +92,8 @@ export async function deletePopupAction(prevState: unknown, id: string): Promise
         await client.delete(`/admin/system/popups/${id}`, axiosConfig);
 
         revalidatePath('/admin/system/banner');
+        // 배너와 같은 비대칭이었다 — 지운 팝업이 공개 화면에 계속 떴다.
+        revalidatePath('/');
         return { success: true, message: '팝업이 삭제되었습니다.' };
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '삭제 중 오류 발생');

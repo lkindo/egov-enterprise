@@ -6,7 +6,7 @@ import { useToast } from '@/app/components/ui/toast';
 interface AutoSaveOptions {
   /** 임시저장 식별 키 (bbsId 등) */
   storageKey: string;
-  /** 자동 저장 간격 (ms), 기본 30초 */
+  /** 자동 저장 간격 (ms). 기본 3000(3초) — 주석이 "30초" 라고 적혀 있었으나 실제 기본값은 3000 이다. */
   interval?: number;
   /** 저장이 활성화되는 최소 글자 수, 기본 10자 */
   minLength?: number;
