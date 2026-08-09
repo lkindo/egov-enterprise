@@ -6,7 +6,6 @@ import nuri.business.domain.auth.RoleInfoRepository;
 import nuri.business.service.auth.dto.RoleManageDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,9 +28,7 @@ public class RoleManageService {
      * 목록 조회
      */
     public List<RoleManageDto> selectRoleList(BaseSearchDto searchVO) {
-        int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
-        int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-        Pageable pageable = PageRequest.of(pageIndex, pageUnit);
+        Pageable pageable = searchVO.toPageable();
 
         Page<RoleInfo> page = roleInfoRepository.findAll(Objects.requireNonNull(pageable));
         return page.getContent().stream().map(this::toDto).collect(Collectors.toList());

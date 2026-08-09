@@ -903,10 +903,14 @@ jobs:
       #     · 기존 사용자 검색 테스트는 조건마다 isNotEmpty() 만 확인해,
       #       필터를 통째로 없앤 뮤턴트도 통과시켰다(전체 조회에도 매칭 행은 들어 있다).
       #   실측 45% -> 94% 보강 후 편입한다.
-      - name: Incremental Mutation Test (business-core code/user repository scope)
+      #   [2026-08-09 추가] nuri.business.domain.common.* 편입.
+      #     BaseSearchDto#toPageable() 이 여기로 들어왔다 — 종전 16개 호출부에 복제돼 있던
+      #     페이징 변환을 한 곳으로 모았으므로, **이 한 곳이 뚫리면 16개가 한꺼번에 무방비**가 된다.
+      #     같은 패키지의 RrnoEncryptionConverter(주민번호 암복호화)도 함께 게이트에 들어온다.
+      - name: Incremental Mutation Test (business-core code/user/common scope)
         run: ./gradlew :business-core:pitest
         env:
-          PIT_TARGET_CLASSES: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*"
+          PIT_TARGET_CLASSES: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*"
           PIT_TARGET_TESTS: "nuri.business.*"
           STRICT_MUTATION: "true"
 

@@ -42,9 +42,11 @@ public class PrivacyLogManageService extends BaseAbstractService {
      * <b>null 을 넘긴다</b> — 없는 계약을 지어내지 않는다. 기간 검색이 필요해지면 전용 검색 DTO 를 만들 것.
      */
     public Page<PrivacyLogDto> selectPrivacyLogList(@NonNull BaseSearchDto searchDto) {
-        Pageable pageable = PageRequest.of(
-                Math.max(0, searchDto.getPageIndex() - 1),
-                searchDto.getPageUnit());
+        // [2026-08-09] 종전에는 이 계산을 손수 했고, 나머지 13개소와 달리
+        //   pageUnit 하한 가드가 없어 pageUnit=0 이면 PageRequest 가 IllegalArgumentException 을 던졌다
+        //   (개인정보·사용자·웹 로그 조회에서 잘못된 질의 파라미터 하나로 500 이 났다).
+        //   toPageable() 로 옮기면서 0 이하는 기본값 10 으로 수렴한다 — 나머지 호출부와 동일해진다.
+        Pageable pageable = searchDto.toPageable();
         return privacyLogRepository
                 .searchPrivacyLogs(searchDto.getSearchKeyword(), null, null, pageable)
                 .map(PrivacyLogDto::from);
