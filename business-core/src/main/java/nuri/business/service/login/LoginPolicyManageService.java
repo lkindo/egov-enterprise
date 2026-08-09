@@ -27,9 +27,7 @@ public class LoginPolicyManageService {
     private final UserRepository userRepository;
 
     public List<LoginPolicyDto> selectLoginPolicyList(BaseSearchDto searchVO) {
-        int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
-        int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-        Pageable pageable = PageRequest.of(pageIndex, pageUnit);
+        Pageable pageable = searchVO.toPageable();
         return loginPolicyRepository.searchLoginPolicies(searchVO.getSearchKeyword(), pageable)
                 .getContent().stream()
                 .map(res -> {

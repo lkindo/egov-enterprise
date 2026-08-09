@@ -6,7 +6,6 @@ import nuri.business.domain.auth.AuthorityRoleRepository;
 import nuri.business.domain.common.BaseSearchDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,9 +28,7 @@ public class AuthorRoleManageService {
      * 특정 권한전체 롤 목록과 할당 여부 조회
      */
     public Page<AuthorRoleProjection> selectAuthorRoleList(String authrtCd, BaseSearchDto searchVO) {
-        int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
-        int pageSize = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-        Pageable pageable = PageRequest.of(pageIndex, pageSize);
+        Pageable pageable = searchVO.toPageable();
 
         return authorityRoleRepository.searchAuthorRoles(authrtCd, pageable);
     }

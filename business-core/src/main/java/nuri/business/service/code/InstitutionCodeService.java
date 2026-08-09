@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import nuri.business.domain.common.BaseSearchDto;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 
@@ -35,9 +34,7 @@ public class InstitutionCodeService extends BaseAbstractService {
 
     @Transactional(readOnly = true)
     public List<InstitutionCodeDto> selectInstitutionCodeList(@NonNull BaseSearchDto searchVO) {
-        int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
-        int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-        Pageable pageable = PageRequest.of(pageIndex, pageUnit);
+        Pageable pageable = searchVO.toPageable();
         Page<InstitutionCode> page = institutionCodeRepository.searchInstitutionCodes(
                 searchVO.getSearchCondition(), searchVO.getSearchKeyword(),
                 required(pageable, "pageable 는 null 일 수 없습니다"));

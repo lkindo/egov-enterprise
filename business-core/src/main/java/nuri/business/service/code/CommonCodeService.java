@@ -92,9 +92,7 @@ public class CommonCodeService extends BaseAbstractService {
         // --- 공통분류코드 (CmmnClCode) ---
 
         public List<CmmnClCodeDto> selectCmmnClCodeList(@NonNull BaseSearchDto searchVO) {
-                int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
-                int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-                Pageable pageable = PageRequest.of(pageIndex, pageUnit);
+                Pageable pageable = searchVO.toPageable();
                 Page<CommonCodeCategory> page = commonCodeCategoryRepository.searchCommonCodeCategories(
                                 searchVO.getSearchCondition(), searchVO.getSearchKeyword(),
                                 required(pageable, "pageable 는 null 일 수 없습니다"));
@@ -167,9 +165,7 @@ public class CommonCodeService extends BaseAbstractService {
         // --- 공통코드 (CmmnCode) ---
 
         public List<CmmnCodeDto> selectCmmnCodeList(@NonNull BaseSearchDto searchVO) {
-                int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
-                int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-                Pageable pageable = PageRequest.of(pageIndex, pageUnit);
+                Pageable pageable = searchVO.toPageable();
                 Page<nuri.business.domain.code.CommonCodeGroupProjection> page = commonCodeGroupRepository
                                 .searchCommonCodeGroups(
                                                 searchVO.getSearchCondition(), searchVO.getSearchKeyword(),
@@ -306,9 +302,7 @@ public class CommonCodeService extends BaseAbstractService {
         // --- 공통상세코드 (CmmnDetailCode) ---
 
         public List<CmmnDetailCodeDto> selectCmmnDetailCodeList(@NonNull BaseSearchDto searchVO) {
-                int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
-                int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-                Pageable pageable = PageRequest.of(pageIndex, pageUnit);
+                Pageable pageable = searchVO.toPageable();
                 Page<nuri.business.domain.code.CommonCodeDetailProjection> page = commonCodeRepository
                                 .searchCommonCodeDetails(
                                                 searchVO.getSearchCondition(), searchVO.getSearchKeyword(),

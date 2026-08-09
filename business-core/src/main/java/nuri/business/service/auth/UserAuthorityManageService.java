@@ -10,7 +10,6 @@ import nuri.business.service.auth.dto.DeptAuthorBatchRequest;
 import nuri.business.service.auth.dto.UserAuthorityDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,9 +32,7 @@ public class UserAuthorityManageService {
      * 사용자별 권한 목록 조회
      */
     public Page<AuthorGroupProjection> selectUserAuthorityList(BaseSearchDto searchVO) {
-        int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
-        int pageSize = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-        Pageable pageable = PageRequest.of(pageIndex, pageSize);
+        Pageable pageable = searchVO.toPageable();
 
         return userAuthorityRepository.searchAuthorGroups(
                 searchVO.getSearchCondition(),
@@ -47,9 +44,7 @@ public class UserAuthorityManageService {
      * 부서별 권한 목록 조회
      */
     public Page<DeptAuthorProjection> selectDeptAuthorityList(String deptCode, BaseSearchDto searchVO) {
-        int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
-        int pageSize = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-        Pageable pageable = PageRequest.of(pageIndex, pageSize);
+        Pageable pageable = searchVO.toPageable();
 
         return userAuthorityRepository.searchDeptAuthors(deptCode, pageable);
     }
