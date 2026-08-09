@@ -9,7 +9,6 @@ import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,9 +32,7 @@ public class GroupManageService {
      * 그룹 목록 조회
      */
     public List<GroupManageDto> selectGroupList(BaseSearchDto searchVO) {
-        int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
-        int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-        Pageable pageable = PageRequest.of(pageIndex, pageUnit);
+        Pageable pageable = searchVO.toPageable();
 
         Page<GroupManage> page;
         String keyword = searchVO.getSearchKeyword();

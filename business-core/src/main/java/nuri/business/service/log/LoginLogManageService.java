@@ -37,9 +37,7 @@ public class LoginLogManageService extends BaseAbstractService {
     }
 
     public List<LoginLogDto> selectLoginLogList(@NonNull BaseSearchDto searchVO) {
-        int pageIndex = Math.max(0, searchVO.getPageIndex() - 1);
-        int pageUnit = searchVO.getPageUnit() > 0 ? searchVO.getPageUnit() : 10;
-        Pageable pageable = PageRequest.of(pageIndex, pageUnit);
+        Pageable pageable = searchVO.toPageable();
         Page<LoginLog> page = loginLogRepository.searchLoginLogs(
                 searchVO.getSearchKeyword(), searchVO.getSearchKeywordFrom(), searchVO.getSearchKeywordTo(),
                 required(pageable, "pageable 는 null 일 수 없습니다"));
