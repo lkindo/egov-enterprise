@@ -11,6 +11,25 @@ import { Config } from './config.js';
 /**
  * 인증 토큰 관리 클래스
  */
+/**
+ * 로그인 응답에서 액세스 토큰을 뽑는다.
+ *
+ * 응답은 ApiResponse 래퍼다: { success, status, code, message, data: { accessToken, role }, ... }
+ * 본문이 비어 있거나(404·502) JSON 이 아니면 undefined 를 돌려준다 —
+ * 여기서 예외를 던지면 "로그인 실패" 가 "스크립트 오류" 로 둔갑해 원인이 가려진다.
+ */
+function extractAccessToken(response) {
+  if (!response || !response.body) {
+    return undefined;
+  }
+  try {
+    const parsed = JSON.parse(response.body);
+    return parsed && parsed.data ? parsed.data.accessToken : undefined;
+  } catch (e) {
+    return undefined;
+  }
+}
+
 export class AuthTokenManager {
   constructor() {
     this.token = null;
@@ -24,10 +43,18 @@ export class AuthTokenManager {
    * @returns {string} JWT 토큰
    */
   login(username, password) {
-    const url = `${Config.BASE_URL}${Config.API_PREFIX}/login`;
-    
+    // [2026-08-09 계약 정정] 종전 세 곳이 실제 API 와 어긋나 있었다.
+    //   ① 경로  — `/api/v1/login` 으로 POST 했으나 실제는 `/api/v1/auth/login` 이다.
+    //             404 라 본문이 비어서, 아래 JSON.parse 가
+    //             "SyntaxError: Unexpected end of JSON input" 으로 터졌다.
+    //   ② 필드  — `username` 을 보냈으나 LoginRequest 의 필드는 `userId` 다(@NotBlank).
+    //   ③ 응답  — `body.token` 을 읽었으나 실제는 ApiResponse 로 감싼
+    //             `body.data.accessToken` 이다(refreshToken 은 @JsonIgnore 라 본문에 없다).
+    //   셋 다 이 부하 테스트가 한 번도 완주한 적이 없어 드러나지 않았다.
+    const url = `${Config.BASE_URL}${Config.API_PREFIX}/auth/login`;
+
     const payload = {
-      username: username,
+      userId: username,
       password: password,
     };
 
@@ -42,7 +69,9 @@ export class AuthTokenManager {
 
     const loginSuccess = check(response, {
       'login status is 200': (r) => r.status === 200,
-      'login response has token': (r) => JSON.parse(r.body).token !== undefined,
+      // 본문이 비어 있으면(404 등) JSON.parse 가 예외를 던져 원인이 가려진다 —
+      //   상태코드부터 확인하고, 파싱은 방어적으로 한다.
+      'login response has token': (r) => extractAccessToken(r) !== undefined,
     });
 
     if (!loginSuccess) {
@@ -50,8 +79,7 @@ export class AuthTokenManager {
       throw new Error('Authentication failed');
     }
 
-    const responseBody = JSON.parse(response.body);
-    this.token = responseBody.token;
+    this.token = extractAccessToken(response);
     
     // 토큰 만료 시간 설정 (현재 시간 + 1 시간)
     this.tokenExpiry = Date.now() + (60 * 60 * 1000);
