@@ -41,8 +41,11 @@ jobs:
 
     env:
       BASE_URL: ${{ secrets.LOAD_TEST_BASE_URL || 'http://localhost:8080' }}
-      TEST_USERNAME: ${{ secrets.LOAD_TEST_USERNAME || 'testuser' }}
-      TEST_PASSWORD: ${{ secrets.LOAD_TEST_PASSWORD || 'testpass123!' }}
+      # [2026-08-09 정정] 기본값 testuser/testpass123! 은 **어느 시드에도 없는 계정**이었다.
+      #   이 잡은 docker compose 로 빈 DB 를 띄우므로 seed-dev 의 실제 계정만 로그인된다.
+      #   (E2E 와 같은 계정 — frontend/e2e/test-credentials.ts)
+      TEST_USERNAME: ${{ secrets.LOAD_TEST_USERNAME || 'webmaster' }}
+      TEST_PASSWORD: ${{ secrets.LOAD_TEST_PASSWORD || '1' }}
       # if: 조건에서 판정하려면 secrets 가 아니라 env 로 노출돼 있어야 한다(아래 Dashboard 스텝 참조)
       K6_CLOUD_TOKEN: ${{ secrets.K6_CLOUD_TOKEN }}
 
