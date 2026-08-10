@@ -208,9 +208,19 @@ test.describe('Tier 23-E4: Middleware /admin path policy (deny-by-default matrix
     // ── 차단되어야 하는 경로 ────────────────────────────────────────────────
     // 앞의 6건은 관리 콘솔(기본 차단), 뒤의 3건은 허용 경로 안쪽에서 다시 도려낸 carve-out 이다.
     // carve-out 은 ADMIN_ONLY_SUBPATHS 전량이다 — 목록에서 하나가 빠지면 여기서 red 가 된다.
+    //
+    // ⚠ [2026-08-10 CI 실증] 이 목록에는 **next.config 의 redirects() 에 등록된 경로를 넣지 않는다.**
+    //   Next 의 파이프라인은 `redirects()` 를 **미들웨어보다 먼저** 실행하므로, 설정 리다이렉트가
+    //   걸린 경로는 미들웨어 인증 게이트에 **도달조차 하지 않는다**.
+    //   첫 CI 에서 `/admin/system/audit` 이 정확히 이 이유로 실패했다:
+    //     Expected substring: "auth_error=unauthorized"
+    //     Received string:    "/admin/system/monitoring/hub?tab=system"
+    //   (보안 구멍은 아니다 — 목적지가 `/admin/system` 하위라 브라우저가 따라간 2차 홉에서 차단된다.
+    //    삭제된 04 의 테스트가 통과했던 것은 `page.goto()` 가 리다이렉트를 따라가 최종 URL 만 봤기 때문이다.)
+    //   → 여기에는 **실제로 존재하는 종착 경로**만 넣고, 레거시 별칭은 아래 별도 테스트가 사슬로 검증한다.
     const deniedPaths = [
         '/admin/system/menus',
-        '/admin/system/audit',
+        '/admin/system/monitoring/hub',     // 종전 `/admin/system/audit` 의 실제 종착지
         '/admin/user/manage',
         '/admin/security/authority',
         '/admin/stats',
@@ -270,6 +280,17 @@ test.describe('Tier 23-E4: Middleware /admin path policy (deny-by-default matrix
         //  그 테스트는 이름이 IDOR 였지만 실제로 검증하던 것은 이 경로 RBAC 이었다.)
         const { location } = await verdictAsUser(request, '/admin/user/manage?userId=webmaster');
         expect(location).toContain('auth_error=unauthorized');
+    });
+
+    test('레거시 별칭은 설정 리다이렉트를 거쳐도 결국 차단된다', async ({ request }) => {
+        // `next.config.redirects()` 는 미들웨어보다 먼저 돌아 게이트를 건너뛴다. 그 자체는 정상이지만,
+        // **별칭이 인증 게이트 없는 곳으로 착지하면 우회로가 된다.** 위 매트릭스는 단일 홉만 보므로
+        // 이 축은 잡히지 않는다 — 여기서만 리다이렉트를 끝까지 따라가 최종 착지를 확인한다.
+        const res = await request.get('/admin/system/audit', {
+            headers: { Cookie: `accessToken=${userToken}` },
+            // maxRedirects 를 지정하지 않으면 기본값(20)으로 끝까지 따라간다.
+        });
+        expect(res.url(), '레거시 별칭이 인증 게이트를 우회해 착지했다').toContain('auth_error=unauthorized');
     });
 
     test('토큰이 없으면 권한거부가 아니라 로그인으로 보낸다', async ({ request }) => {
