@@ -34,7 +34,7 @@
 ```
 [변경 전] npx playwright test --list              → Total: 226 tests   ← npm run test:e2e 의 실제 동작
 [변경 전] npx playwright test --list --project=full-suite → Total: 114 tests   ← ci.yml 이 쓰는 경로
-[변경 후] 두 경로 모두                            → Total: 120 tests
+[변경 후] 두 경로 모두                            → Total: 122 tests
 ```
 
 `ci.yml` 은 2026-07-28 에 `--project=full-suite` 를 붙여 이 문제를 **CI 에서만** 우회했다
@@ -173,7 +173,7 @@ exceeded" 라고만 적혀 있어, `0` 이 **예외를 던지는지** 3xx 응답
 부작용 없는 `POST /api/auth/logout` 을 쓴다(쿠키 없이 호출해도 fail-safe 200 — 세션·감사로그 무오염).
 접미사 도메인 · 무관한 외부 Origin · 동일 출처(과잉차단 방어) 3방향으로 고정.
 
-### 4.3 사용자 정보 수정 (02, 1건)
+### 4.3 사용자 정보 수정 (02, 1건) — ⚠ 실행 결과 앱 결함이 드러나 `test.fixme` 로 전환됐다(§8)
 
 테스트 이름은 줄곧 `Create-Search-Update-Delete Flow` 였으나 **Update 단계가 존재한 적이 없다**.
 그 공백 기간에 상세 패널의 '정보 수정' 버튼은 **onClick 이 없는 死버튼**이었다가 수리됐고
