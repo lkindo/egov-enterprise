@@ -27,21 +27,24 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
     // XSS/인젝션 검증은 22-deep-security-guard가 소유(실 dialog 가드 + 이스케이프 렌더 단언으로 재작성됨).
     // 기존 테스트는 body 가시성(tautology) + if(isVisible) 가드로 무단언 통과하던 false-green이었음.
 
-    test('Navigation Integrity: Rapid Menu Switching', async ({ page }) => {
+    // [2026-08-10 개명·축소] 종전 이름은 'Navigation Integrity: Rapid Menu Switching' 이었고
+    //   "rapid navigation completed without system deadlock" 을 출력했다. 그러나 각 이동을
+    //   `await page.goto()` 로 **완전히 기다렸다 다음으로 넘어가므로 rapid 하지 않고**, 교착을
+    //   판정하는 단언도 없었다 — 이름이 검증하지 않는 것을 주장하고 있었다.
+    //   경로도 4개 중 3개가 다른 스펙 소유였다:
+    //     `/admin/community/boards/master` → 03-board-master·21 / `/admin/system/menus` → 19
+    //   유일하게 아무도 보지 않던 `/admin/system/programs` 만 남기고, 이름을 실제 검증(연속 진입
+    //   후에도 관리 셸과 페이지 헤딩이 렌더된다)에 맞춘다.
+    test('Navigation Integrity: 관리 화면 연속 진입 후에도 셸과 헤딩이 렌더된다', async ({ page }) => {
         const menus = [
-            '/admin/community/boards/master',
-            '/admin/system/menus',
             '/admin/system/programs',
-            '/admin/community/boards/master'
+            '/admin/system/menus',
         ];
 
-        console.log('>>> Step 1: Rapidly switching between administrative menus');
         for (const url of menus) {
             await page.goto(url);
-            // Verify breadcrumb or page header contains relevant keywords
-            const header = page.locator('h1, h2').first();
-            await expect(header).toBeVisible();
+            await expect(page.locator('aside, nav, header').first(), `${url}: 관리 셸이 렌더되지 않음`).toBeVisible();
+            await expect(page.locator('h1, h2').first(), `${url}: 페이지 헤딩이 렌더되지 않음`).toBeVisible();
         }
-        console.log('>>> Rapid navigation completed without system deadlock');
     });
 });

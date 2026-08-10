@@ -31,16 +31,20 @@ test.describe('Tier 10: Operational Extension & Uncovered Modules', () => {
 
     test('Operational: Memo Report Matrix & Interaction', async ({ operationalPage }) => {
         await operationalPage.gotoMemoReports();
-        
-        // Tab switching
-        await operationalPage.switchReportTab('발신함');
-        await operationalPage.switchReportTab('전체');
-        await operationalPage.switchReportTab('수신함');
-        
-        // Check for empty message or data
-        const noData = await operationalPage.page.getByText('식별된 데이터 유닛이 존재하지 않습니다.').first().isVisible();
-        if (noData) {
-            console.log('>>> No memo reports found, verifying UI empty state');
+
+        // 탭 전환 — 각 전환 뒤 허브가 살아 있는지 확인한다.
+        // [2026-08-10 정정] 종전에는 마지막에 `const noData = …isVisible(); if (noData) console.log(…)`
+        //   뿐이었다. 즉 **단언이 하나도 없는 꼬리**였다: 빈 상태든 아니든, 심지어 화면이 깨져도
+        //   그 블록은 아무것도 실패시키지 않는다. 죽은 분기를 지우고, 탭 전환 후에도 허브가
+        //   유지되는지를 실제로 단언한다(전환 중 언마운트·크래시가 나면 여기서 red 가 된다).
+        //   ⚠ 이것은 스모크다 — '어느 탭이 활성인가'나 '데이터가 맞는가'는 검증하지 않는다.
+        //     그 이상을 주장하지 않기 위해 단언 범위를 명시해 둔다.
+        for (const tab of ['발신함', '전체', '수신함']) {
+            await operationalPage.switchReportTab(tab);
+            await expect(
+                operationalPage.page.getByText('메모 보고 관리').first(),
+                `'${tab}' 탭 전환 후 메모 보고 허브가 사라졌다`,
+            ).toBeVisible();
         }
     });
 

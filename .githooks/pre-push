@@ -82,6 +82,21 @@ if [ -f frontend/package.json ]; then
   ( cd frontend && npx tsc --noEmit ) \
     || { echo "❌ TypeScript 타입 컴파일 실패 (GEMINI.md §0.6)"; exit 1; }
 
+  # [2026-08-10 신설] E2E 전용 타입 게이트.
+  #
+  #   위의 `tsc --noEmit` 은 frontend/tsconfig.json 을 쓰는데, 그 exclude 에 `"e2e"` 가 들어 있다.
+  #   즉 **E2E 스펙(26개 파일·POM 24개)은 지금까지 어떤 게이트에도 타입 검사를 받은 적이 없다.**
+  #   Playwright 러너도 타입을 검사하지 않고 벗겨내기만 하므로(transpile-only), E2E 의 타입 오류는
+  #   CI 의 4분짜리 e2e 잡이 실패해야만 드러났다.
+  #
+  #   실증(2026-08-10, 이 게이트를 처음 돌린 결과): 죽은 선언 3건이 즉시 검출됐다 —
+  #     SurveyPage.selectDate(호출부 0) · SurveyPage.ensurePopoverClosed(호출부 0) ·
+  #     05-public-experience 의 미사용 지역변수. 아무도 모르는 채 남아 있던 것들이다.
+  #   위반 주입으로 red 가 되는 것도 확인했다(TS2322/TS2339 → exit 2).
+  echo "  → frontend: npx tsc -p tsconfig.e2e.json --noEmit (E2E 스펙·POM)"
+  ( cd frontend && npx tsc -p tsconfig.e2e.json --noEmit ) \
+    || { echo "❌ E2E TypeScript 타입 검사 실패 — 루트 tsconfig 는 e2e 를 exclude 하므로 이 게이트가 유일 관문입니다."; exit 1; }
+
   # [2026-08-04 신설] ESLint — 이 훅에 없어서 실제로 뚫린 구멍이다.
   #
   #   2026-08-03 실측: `useAppForm.test.tsx` 의 인라인 z.object 1건이 lint 에러였는데

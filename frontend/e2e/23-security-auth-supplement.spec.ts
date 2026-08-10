@@ -1,16 +1,34 @@
 import { test, expect } from './fixtures/base-test';
+import type { APIRequestContext } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
 import fs from 'fs';
 import path from 'path';
 
 /**
- * [Tier 23] Security & Auth Supplement (E2E 감사 Phase4 — 누락 보완)
+ * [Tier 23] Security & Auth Supplement — 인증·세션·RBAC 계약의 단일 소유자
  *
- * 앱 표면 대비 미검증이던 인증/세션/RBAC 핵심 시나리오를 보완한다.
- * (E5 stored-XSS는 22-deep-security-guard에서 실 dialog 가드 + 이스케이프 렌더 단언으로 이미 재작성됨)
+ * 이 파일은 "앱 표면 대비 미검증이던 시나리오 보완"으로 출발했으나(E2E 감사 Phase4),
+ * 2026-08-10 최적화에서 **흩어져 있던 접근통제 검증의 소유자**로 승격됐다.
+ * 종전에는 같은 미들웨어 한 줄을 네 파일이 서로 모르게 중복 검사하면서, 정작 정책 목록의
+ * 대부분은 한 번도 검증되지 않는 상태였다. 아래로 흡수·통합했다:
+ *   · 03-board-master-management  'Access Denied for Regular User'            → E4 carve-out
+ *   · 04-quality-resilience       'Denied Admin Access for Regular User'      → E4 denied 매트릭스
+ *   · 22-deep-security-guard      'Access Denied for Direct User ID …'        → E4 쿼리스트링 케이스
+ *   · 22-deep-security-guard      'API Boundary: Unauthorized Direct API …'   → E3 익명 케이스
  *
- * ⚠ 신규 추가분은 정적(tsc) 검증 완료 상태다. 런타임 통과는 백엔드(:8080)+웹(:3001) 기동 후
- *    재개 검증이 필요하다(SOP §4.1 — 정직한 보류). 셀렉터/엔드포인트는 실 소스에서 확인해 작성했다.
+ * 구성:
+ *   E0  UI 로그인 성공 (Route Handler 200 + HttpOnly 쿠키)      — 이중 프리픽스 회귀 방어
+ *   E1  위조/알고리즘 우회 토큰 거부                              — 미들웨어 서명검증 (Edge 런타임 실물)
+ *   E2  로그인 실패 (오류 노출·포커스 복귀·死 컨트롤 부재)
+ *   E3  API RBAC negative (비관리자 토큰 · 익명)                  — 백엔드가 authoritative
+ *   E4  미들웨어 /admin 경로 정책 매트릭스 (deny/allow/우회)      — HTTP 층, + E4c 브라우저 카나리아
+ *   E5  Zero-Trust Origin 가드 (접미사 도메인 우회 차단)
+ *   E11 접근성 (로그인 본문, color-contrast 포함 엄격)
+ *   E12 결정적 empty-state
+ *
+ * ⚠ 검증 층위 원칙: 미들웨어 '판정 로직'은 HTTP 로, '브라우저 배선'은 카나리아 1건으로,
+ *   '데이터 권한'은 백엔드 API 로 각각 한 층에서만 검증한다. 같은 계약을 여러 층에서
+ *   되풀이하지 않는다 — 그것이 이 파일이 통합 대상이 된 이유다.
  *
  * TODO backlog (서버 기동 후 실 UI 플로우로 구현 — 아래 fixme 참조):
  *  - E6 인증 IDOR: user A가 만든 리소스(메일/쪽지 id)를 user B가 조회/삭제 → 403/404 + 원소유자 데이터 보존.
@@ -133,44 +151,191 @@ test.describe('Tier 23-E3: RBAC negative at API (authenticated non-admin forbidd
             expect([401, 403], `admin 엔드포인트가 비관리자에게 노출됨 (status ${res.status()})`).toContain(res.status());
         });
     }
+
+    // [2026-08-10 흡수] 22-deep-security-guard 의 'API Boundary: Unauthorized Direct API Access'.
+    //   그 테스트는 토큰을 싣지 않은 **익명** 요청이었다(주석에도 "APIRequestContext 는 storageState
+    //   쿠키를 상속하지 않는다"고 적혀 있었다). 위 3건이 '인증됐지만 권한 없음'을 덮으므로,
+    //   남은 축인 '인증 자체가 없음'만 여기로 옮겨 보안 계약을 한 파일에서 읽히게 한다.
+    test('anonymous request is rejected on admin API (authentication required)', async ({ request }) => {
+        const res = await request.get(`${API}/admin/system/users/webmaster`);
+        expect([401, 403], `admin 엔드포인트가 미인증에 노출됨 (status ${res.status()})`).toContain(res.status());
+    });
 });
 
-// ───────────────── E4: 미들웨어 민감경로 RBAC 리다이렉트(non-admin) ─────────────────
-test.describe('Tier 23-E4: Middleware sensitive-path RBAC redirect', () => {
-    test.use({ storageState: USER_AUTH });
+// ───────────────── E4: 미들웨어 /admin 경로 정책 (deny-by-default 매트릭스) ─────────────────
+//
+// [2026-08-10 재작성] 종전 E4 는 민감경로 5건을 **브라우저 페이지 로드**로 하나씩 확인했고,
+//   같은 계약을 03-board-master-management(`Access Denied for Regular User`)·
+//   04-quality-resilience(`Denied Admin Access for Regular User`)·
+//   22-deep-security-guard(`Access Denied for Direct User ID Manipulation`)가 각자 다시 검사했다.
+//   네 파일이 같은 한 줄(미들웨어 §4)을 서로 모르게 중복 검증하면서, 정작 아래 것들은
+//   **한 번도 검증된 적이 없었다**:
+//     · USER_ACCESSIBLE_ADMIN_PATHS 5건 중 4건 (특히 로그인 기본 착지점 `/admin/work-hub`)
+//     · ADMIN_ONLY_SUBPATHS 3건 중 2건 (`boards/maker`, `templates`)
+//     · 대소문자 우회(`/Admin/...`) — middleware 가 toLowerCase() 로 막고 있다고 주석에 적힌 방어
+//     · 접두사 오매칭(`/admin/helpdesk` 가 허용경로 `/admin/help` 에 편승하지 못하는가)
+//   즉 중복은 많고 커버리지는 비어 있었다. 정책을 **매트릭스 한 곳**으로 모으고 공백을 메운다.
+//
+// [검증 층위] 이 계약의 집행자는 미들웨어이고 관측 지점은 리다이렉트 응답이다. 그래서 브라우저를
+//   띄우지 않고 HTTP 로 직접 묻는다 — 페이지 렌더·하이드레이션·ConsoleGuard 가 개입하지 않아
+//   판정이 결정적이고, 경로 1건당 비용이 페이지 로드에서 단순 요청으로 내려간다.
+//   브라우저 경로(실제 쿠키가 미들웨어까지 도달하는가)는 아래 카나리아 1건이 따로 지킨다.
+//
+// ⚠ 이 게이트는 1차 방어(관리자 UI 셸 진입 차단)일 뿐이다. 권한의 authoritative 집행자는
+//   백엔드이며 그쪽은 E3 가 검증한다(middleware.ts §4 주석과 정합).
+test.describe('Tier 23-E4: Middleware /admin path policy (deny-by-default matrix)', () => {
+    // ⚠ storageState 를 지정하지 않는다. Playwright 의 `request` 픽스처는 storageState 를 상속하므로,
+    //   지정하면 컨텍스트 쿠키와 아래에서 명시한 Cookie 헤더가 섞여 '어느 토큰으로 판정됐는지'가
+    //   불분명해진다. 이 매트릭스는 실어 보낸 토큰만 작용해야 성립한다.
+    let userToken = '';
+    test.beforeAll(() => {
+        userToken = readAccessToken(USER_AUTH);
+    });
 
-    // middleware.ts: /admin/system|user|security|stats|workflow + 비관리자 → /?auth_error=unauthorized
-    const sensitivePaths = [
+    /** 비관리자 토큰으로 경로에 진입했을 때 미들웨어의 판정을 리다이렉트 응답으로 관측한다. */
+    async function verdictAsUser(request: APIRequestContext, targetPath: string) {
+        const res = await request.get(targetPath, {
+            headers: { Cookie: `accessToken=${userToken}` },
+            maxRedirects: 0,
+        });
+        return { status: res.status(), location: res.headers()['location'] ?? '' };
+    }
+
+    test.beforeEach(() => {
+        expect(userToken, 'user.json accessToken 로드 실패 (auth.setup 미실행?)').toBeTruthy();
+    });
+
+    // ── 차단되어야 하는 경로 ────────────────────────────────────────────────
+    // 앞의 6건은 관리 콘솔(기본 차단), 뒤의 3건은 허용 경로 안쪽에서 다시 도려낸 carve-out 이다.
+    // carve-out 은 ADMIN_ONLY_SUBPATHS 전량이다 — 목록에서 하나가 빠지면 여기서 red 가 된다.
+    const deniedPaths = [
         '/admin/system/menus',
+        '/admin/system/audit',
         '/admin/user/manage',
         '/admin/security/authority',
         '/admin/stats',
         '/admin/workflow',
+        '/admin/community/boards/master',   // carve-out: 게시판 마스터 콘솔
+        '/admin/community/boards/maker',    // carve-out: 게시판 생성 마법사
+        '/admin/community/templates',       // carve-out: 템플릿 관리
     ];
 
-    for (const p of sensitivePaths) {
-        test(`non-admin visiting ${p} redirects to auth_error=unauthorized`, async ({ page }) => {
-            await page.goto(p);
-            await expect(page).toHaveURL(/auth_error=unauthorized/, { timeout: 15000 });
+    for (const p of deniedPaths) {
+        test(`non-admin is denied on ${p}`, async ({ request }) => {
+            const { status, location } = await verdictAsUser(request, p);
+            expect([302, 307], `리다이렉트가 아님 (status ${status})`).toContain(status);
+            expect(location, `비관리자에게 ${p} 가 열렸다`).toContain('auth_error=unauthorized');
         });
     }
 
-    // [2026-07-27 계약 갱신] 이 테스트는 **낡은 계약**을 박제하고 있었다. 종전 주석은 "민감목록에 없는
-    // /admin/community 는 통과한다(백엔드 RBAC 에 위임)" 였으나, 미들웨어는 그 사이 **deny-by-default**
-    // 로 뒤집혔다 — `/admin/**` 는 기본 차단이고 `USER_ACCESSIBLE_ADMIN_PATHS` 에 명시된 경로만 열린다.
-    // 게다가 `/admin/community` 는 열려 있지만 그 하위 관리 콘솔인 `/admin/community/boards/master` 는
-    // `ADMIN_ONLY_SUBPATHS` 로 **다시 도려내져** 허용목록보다 우선 적용된다(middleware.ts §4).
-    // 즉 실패는 앱 회귀가 아니라 테스트 드리프트였다. 강화된 현행 계약을 **양방향**으로 고정한다.
-    test('[documented contract] allow-listed admin route is NOT redirected for non-admin', async ({ page }) => {
-        // 허용목록에 명시된 경로(개인 협업 영역)는 일반 사용자에게 열려 있어야 한다 — 과잉차단 회귀 방어.
+    // ── 열려 있어야 하는 경로(과잉차단 회귀 방어) ───────────────────────────
+    // USER_ACCESSIBLE_ADMIN_PATHS 전량. 여기서 하나라도 막히면 일반 사용자는 그 화면을 잃는다.
+    // 특히 `/admin/work-hub` 는 로그인 기본 착지점이라, 막히는 순간 로그인 직후가 곧바로 깨진다.
+    const allowedPaths = [
+        '/admin/work-hub',
+        '/admin/collaboration',
+        '/admin/help',
+        '/admin/community',
+        '/admin/survey/polls/participate',
+    ];
+
+    for (const p of allowedPaths) {
+        test(`non-admin is allowed on ${p}`, async ({ request }) => {
+            const { location } = await verdictAsUser(request, p);
+            expect(location, `허용 경로 ${p} 가 비관리자에게 차단됐다 (과잉차단 회귀)`)
+                .not.toContain('auth_error=unauthorized');
+        });
+    }
+
+    // ── 우회 시도 ───────────────────────────────────────────────────────────
+    test('대소문자를 바꾼 경로로 게이트를 우회할 수 없다', async ({ request }) => {
+        // middleware 는 pathname 을 toLowerCase() 한 뒤 비교한다. 그 정규화가 사라지면
+        // `/Admin/system/menus` 가 '/admin' 접두사에 걸리지 않아 게이트를 통째로 빠져나간다.
+        for (const p of ['/Admin/system/menus', '/ADMIN/USER/MANAGE']) {
+            const { location } = await verdictAsUser(request, p);
+            expect(location, `대소문자 우회가 통과됨: ${p}`).toContain('auth_error=unauthorized');
+        }
+    });
+
+    test('허용 경로의 접두사에 편승할 수 없다', async ({ request }) => {
+        // matchesPrefix 는 세그먼트 경계까지 맞춘다. 단순 startsWith 로 되돌아가면
+        // `/admin/helpdesk` 가 허용 경로 `/admin/help` 에 편승해 열린다.
+        const { location } = await verdictAsUser(request, '/admin/helpdesk');
+        expect(location, '/admin/helpdesk 가 /admin/help 허용에 편승했다').toContain('auth_error=unauthorized');
+    });
+
+    test('쿼리스트링으로 경로 판정을 흐릴 수 없다', async ({ request }) => {
+        // 판정은 pathname 만 본다 — 쿼리는 경로를 바꾸지 못한다.
+        // (22-deep-security-guard 의 'Access Denied for Direct User ID Manipulation' 을 흡수한 케이스.
+        //  그 테스트는 이름이 IDOR 였지만 실제로 검증하던 것은 이 경로 RBAC 이었다.)
+        const { location } = await verdictAsUser(request, '/admin/user/manage?userId=webmaster');
+        expect(location).toContain('auth_error=unauthorized');
+    });
+
+    test('토큰이 없으면 권한거부가 아니라 로그인으로 보낸다', async ({ request }) => {
+        // 인증 실패(/login)와 권한 부족(/?auth_error)은 구분되어야 진단이 성립한다(middleware §3/§4).
+        const res = await request.get('/admin/work-hub', { maxRedirects: 0 });
+        expect([302, 307]).toContain(res.status());
+        const location = res.headers()['location'] ?? '';
+        expect(location, '미인증 요청이 로그인으로 가지 않았다').toContain('/login');
+        expect(location).not.toContain('auth_error=unauthorized');
+    });
+});
+
+// ── 브라우저 카나리아: 실제 브라우저 쿠키가 미들웨어까지 도달하는가 ────────────────
+// 위 매트릭스는 Cookie 헤더를 직접 실어 미들웨어 '판정 로직'을 검증한다. 그 로직이 옳아도
+// 브라우저가 쿠키를 싣지 못하면(SameSite·path·HttpOnly 설정 사고) 사용자는 여전히 튕긴다.
+// 배선 자체는 층이 다르므로 최소 1건을 실제 브라우저로 남긴다.
+test.describe('Tier 23-E4c: Browser canary for cookie→middleware wiring', () => {
+    test.use({ storageState: USER_AUTH });
+
+    test('실제 브라우저 세션의 일반 사용자는 관리 콘솔에서 차단되고 허용 경로는 통과한다', async ({ page }) => {
+        await page.goto('/admin/community/boards/master');
+        await expect(page).toHaveURL(/auth_error=unauthorized/, { timeout: 15000 });
+
         await page.goto('/admin/collaboration');
         await expect(page).not.toHaveURL(/auth_error=unauthorized/);
     });
+});
 
-    test('[documented contract] admin-only carve-out inside an allow-listed path IS redirected', async ({ page }) => {
-        // 허용된 /admin/community 안쪽이라도 관리 콘솔(boards/master)은 차단된다 — 허용목록보다 우선한다.
-        await page.goto('/admin/community/boards/master');
-        await expect(page).toHaveURL(/auth_error=unauthorized/, { timeout: 15000 });
+// ───────────── E5: Zero-Trust Origin 가드 (상태변경 /api 요청) ─────────────
+// middleware.ts 최상단은 POST/PUT/DELETE/PATCH + `/api` 요청의 Origin 헤더를 검사해
+// 신뢰할 수 없는 출처를 403(INVALID_ORIGIN)으로 끊는다. 이 방어에는 E2E 가 하나도 없었다.
+//
+// 특히 그 코드에는 **이미 한 번 고쳐진 우회**가 있다 — 종전 구현은 부분문자열(includes) 비교라
+// `https://localhost.attacker.com` 같은 **접미사 도메인**이 통과했다. 지금은 URL 을 파싱해
+// hostname 을 정확히 비교하지만, 그 수정을 지키는 회귀 방어가 없어 되돌아가도 알 수 없었다.
+test.describe('Tier 23-E5: Zero-trust Origin guard', () => {
+    // 부작용이 없는 상태변경 엔드포인트를 쓴다. 로그아웃 라우트는 쿠키 없이 호출해도
+    // fail-safe 로 200 을 돌려주므로(logout/route.ts catch 절) 세션·감사로그를 오염시키지 않는다.
+    const STATE_CHANGING_PATH = '/api/auth/logout';
+    const SAME_ORIGIN = process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001';
+
+    test('접미사 도메인 Origin 은 403 INVALID_ORIGIN 으로 거부된다', async ({ request }) => {
+        const res = await request.post(STATE_CHANGING_PATH, {
+            headers: { Origin: 'http://localhost.attacker.com' },
+            maxRedirects: 0,
+        });
+        expect(res.status(), '접미사 도메인 Origin 이 통과됨 (includes 비교로 회귀)').toBe(403);
+        expect((await res.json())?.code).toBe('INVALID_ORIGIN');
+    });
+
+    test('무관한 외부 Origin 은 403 INVALID_ORIGIN 으로 거부된다', async ({ request }) => {
+        const res = await request.post(STATE_CHANGING_PATH, {
+            headers: { Origin: 'https://evil.example.com' },
+            maxRedirects: 0,
+        });
+        expect(res.status()).toBe(403);
+        expect((await res.json())?.code).toBe('INVALID_ORIGIN');
+    });
+
+    test('동일 출처 Origin 은 통과한다 (과잉차단 회귀 방어)', async ({ request }) => {
+        // 가드가 너무 조여 정상 요청까지 막으면 앱 전체의 상태변경이 죽는다 — 양방향으로 고정한다.
+        const res = await request.post(STATE_CHANGING_PATH, {
+            headers: { Origin: SAME_ORIGIN },
+            maxRedirects: 0,
+        });
+        expect(res.status(), '동일 출처 요청이 Origin 가드에 막혔다').not.toBe(403);
     });
 });
 

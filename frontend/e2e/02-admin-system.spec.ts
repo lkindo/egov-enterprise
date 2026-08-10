@@ -84,9 +84,48 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await page.waitForTimeout(2000);
             await expect(page.locator(`text=${testName}`).first()).toBeVisible({ timeout: 15000 });
 
-            // --- Step 7: Delete ---
-            console.log('>>> Step 7: Deleting user');
+            // --- Step 7: Update ---
+            // [2026-08-10 신설] 이 테스트의 이름은 줄곧 'Create-Search-Update-Delete Flow' 였지만
+            //   **Update 단계가 존재한 적이 없다**(등록 → 검색 → 삭제뿐이었다). 그 공백 기간 동안
+            //   상세 패널의 '정보 수정' 버튼은 onClick 이 없는 **死버튼**이었다가 수리됐는데
+            //   (UserOrgHubClient: "종전에는 onClick 이 없는 死버튼이라 눌러도 아무 일도 없었다"),
+            //   그 수리를 지키는 회귀 방어는 붙지 않았다 — 다시 죽어도 아무도 알 수 없는 상태였다.
+            //   이름이 약속한 단계를 실제로 수행해 그 구멍을 메운다.
+            console.log('>>> Step 7: Updating user');
+            const updatedName = `${testName}_UPD`;
             await page.locator(`text=${testName}`).first().click();
+
+            // ⚠ '정보 수정'이라는 접근가능 이름을 가진 버튼이 상세 패널에 **둘** 있다
+            //   (연필 아이콘 버튼 aria-label + 하단 텍스트 버튼). 모달이 열리면 제출 버튼까지 셋이 된다.
+            //   이 시점에는 모달이 닫혀 있으므로 상세 패널의 첫 번째를 집는다.
+            const editTrigger = page.getByRole('button', { name: '정보 수정', exact: true }).first();
+            await expect(editTrigger).toBeVisible({ timeout: 15000 });
+            await editTrigger.click();
+
+            await expect(page.getByText('사용자 정보 수정')).toBeVisible({ timeout: 10000 });
+
+            // 편집 폼에는 기존 값이 실려 있어야 한다 — 빈 폼이 뜨면 그것은 '수정'이 아니라 재등록이다.
+            const nameInput = page.locator('input[name="userNm"]');
+            await expect(nameInput).toHaveValue(testName, { timeout: 15000 });
+            await nameInput.fill(updatedName);
+
+            // 제출 버튼의 라벨도 '정보 수정'이므로 form 스코프로 한정한다(위 등록 단계와 동일 패턴).
+            await page.locator('form button[type="submit"]').click();
+
+            const updateSuccessAlert = page
+                .locator('[data-sonner-toast][data-type="success"]')
+                .filter({ hasText: '수정되었습니다' });
+            await expect(updateSuccessAlert.first()).toBeVisible({ timeout: 20000 });
+
+            // 토스트만 보고 통과하지 않는다 — 이 저장소에는 **API 를 부르지 않고 성공 토스트만 띄우던**
+            // 결재 상신 사례가 있다(11 티어 주석). 목록에 실제로 반영됐는지까지 확인한다.
+            await searchInput.fill(updatedName);
+            await page.keyboard.press('Enter');
+            await expect(page.locator(`text=${updatedName}`).first()).toBeVisible({ timeout: 15000 });
+
+            // --- Step 8: Delete ---
+            console.log('>>> Step 8: Deleting user');
+            await page.locator(`text=${updatedName}`).first().click();
             await page.waitForTimeout(1000);
 
             // [2026-07-27 정정] 종전 셀렉터는 '접근 차단' / '접근차단실행' / 토스트 '말소' 였다.

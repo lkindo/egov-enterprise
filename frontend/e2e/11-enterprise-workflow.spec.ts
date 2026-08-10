@@ -77,18 +77,11 @@ test.describe('Tier 11: Enterprise Workflow & Productivity', () => {
         await expect(table.first()).toBeVisible();
     });
 
-    test('Productivity: Smart Toolkit - Work Report Matrix', async ({ page }) => {
-        console.log('\n>>> Starting Productivity: Smart Toolkit - Work Report');
-        
-        await page.goto('/smart-toolkit/work-report');
-        
-        // 업무보고 목록 확인 (WorkHubClient 내 탭 또는 제목)
-        await expect(page.locator('.hub-title-main, h1, h2').filter({ hasText: /워크플로우|업무보고|Work Report/i }).first()).toBeVisible();
-        
-        console.log('>>> Checking for Report Tabs (Daily/Weekly/Monthly)');
-        const tabs = page.locator('button[role="tab"], .tab-item');
-        if (await tabs.count() > 0) {
-            await expect(tabs.first()).toBeVisible();
-        }
-    });
+    // [2026-08-10 중복제거] 삭제됨: 'Productivity: Smart Toolkit - Work Report Matrix'.
+    //
+    //   `if (await tabs.count() > 0)` 가드 안에 유일한 탭 단언이 있어, **탭이 통째로 사라져도 그린**이었다
+    //   (기능이 없어질수록 조용해지는 단언 — 이 저장소가 반복해서 제거해 온 형태다).
+    //   남는 실단언은 제목 정규식 하나뿐이었는데, 그 화면(work-report)의 실질 거동은
+    //   25-deptjob-workreport-journey 가 제목 검색·pageUnit·페이저 이동·행 수정/삭제까지
+    //   서버 상태 폴링으로 검증하며 소유한다.
 });

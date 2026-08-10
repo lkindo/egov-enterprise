@@ -54,27 +54,18 @@ test.describe('Tier 21: Advanced Resilience', () => {
         await expect(page.getByRole('heading', { name: '사용자 관리' }).first()).toBeVisible();
     });
 
-    test('UI Stability: Rapid Interaction Stress Test', async ({ page }) => {
-        await page.goto('/admin/community/boards/master');
-        await expect(page.getByRole('heading', { name: '게시판 마스터' }).first()).toBeVisible();
-
-        console.log('>>> Step 1: Rapidly clicking pagination/tabs');
-        const nextBtn = page.locator('button[aria-label*="Next"], button:has-text(">")').first();
-        
-        if (await nextBtn.isVisible()) {
-            for (let i = 0; i < 5; i++) {
-                // Click rapidly without waiting for network to finish
-                await nextBtn.click({ noWaitAfter: true });
-                console.log(`>>> Rapid Click ${i + 1}`);
-            }
-        }
-
-        console.log('>>> Step 2: Verifying UI state consistency');
-        // Ensure the page didn't crash or show a white screen
-        await expect(page.locator('body')).toBeVisible();
-        await expect(page.getByRole('heading', { name: '게시판 마스터' }).first()).toBeVisible();
-        console.log('>>> System remained stable after rapid interaction.');
-    });
+    // [2026-08-10 제거] 삭제됨: 'UI Stability: Rapid Interaction Stress Test'.
+    //
+    //   스트레스의 전부가 `if (await nextBtn.isVisible())` 안에 있었다. 그런데 CI 는 매 회차
+    //   **빈 DB** 로 시작하므로 게시판 마스터 목록이 1페이지를 넘지 않고, 다음-페이지 버튼은
+    //   존재하지 않는다 → 클릭 0회. 즉 CI 에서 이 테스트가 실제로 한 일은
+    //   `expect(page.locator('body')).toBeVisible()`(항상 참)과 헤딩 재확인뿐이었다.
+    //   "빠른 상호작용에도 시스템이 안정적이다"라는 **이름이 검증하지 않는 것을 주장**하고 있었다.
+    //
+    //   되살리려면 페이저가 뜨는 조건(페이지 크기 초과)을 테스트가 **직접 성립시켜야** 한다 —
+    //   25-deptjob-workreport-journey 의 '목록에 페이저가 있고 다음 페이지로 이동한다'가
+    //   보고 11건을 시딩해 그 방식을 이미 보여 준다. 조건을 만들지 않는 스트레스 테스트는
+    //   스트레스를 주지 않는다.
 
     test('Data Integrity: Boundary Input (Huge Payload)', async ({ page, consoleGuard }) => {
         // [E2E 감사 B/C3] 광역 addIgnorePattern(/value/i, /controlled/i) 제거 — 실제 경고를 은폐하던 패턴.

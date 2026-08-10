@@ -14,6 +14,7 @@
     "start:3001": "next start -p 3001",
     "lint": "eslint src --config eslint.config.mjs --max-warnings 460",
     "type-check": "tsc --noEmit",
+    "type-check:e2e": "tsc -p tsconfig.e2e.json --noEmit",
     "codegen:ts": "openapi-typescript http://localhost:8080/v3/api-docs -o src/types/generated-api.d.ts",
     "codegen:file": "openapi-typescript ../api-docs.json -o src/types/generated-api.d.ts",
     "codegen:verify": "git ls-files --error-unmatch src/types/generated-api.d.ts && npm run codegen:file && git diff --exit-code src/types/generated-api.d.ts",
