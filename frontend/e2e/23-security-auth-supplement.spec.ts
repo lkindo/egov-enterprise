@@ -282,16 +282,15 @@ test.describe('Tier 23-E4: Middleware /admin path policy (deny-by-default matrix
         expect(location).toContain('auth_error=unauthorized');
     });
 
-    test('레거시 별칭은 설정 리다이렉트를 거쳐도 결국 차단된다', async ({ request }) => {
-        // `next.config.redirects()` 는 미들웨어보다 먼저 돌아 게이트를 건너뛴다. 그 자체는 정상이지만,
-        // **별칭이 인증 게이트 없는 곳으로 착지하면 우회로가 된다.** 위 매트릭스는 단일 홉만 보므로
-        // 이 축은 잡히지 않는다 — 여기서만 리다이렉트를 끝까지 따라가 최종 착지를 확인한다.
-        const res = await request.get('/admin/system/audit', {
-            headers: { Cookie: `accessToken=${userToken}` },
-            // maxRedirects 를 지정하지 않으면 기본값(20)으로 끝까지 따라간다.
-        });
-        expect(res.url(), '레거시 별칭이 인증 게이트를 우회해 착지했다').toContain('auth_error=unauthorized');
-    });
+    // ⚠ 레거시 별칭의 **다중 홉** 검증은 이 describe 에 둘 수 없다 — 아래 E4c(브라우저)가 소유한다.
+    //   이유(2026-08-10 스텁 서버로 실증): Playwright 의 APIRequestContext 는 **수동으로 지정한
+    //   `Cookie` 헤더를 리다이렉트 다음 홉으로 전달하지 않는다.**
+    //       /hop1  cookie=accessToken=TESTVALUE
+    //       /hop2  cookie=(없음)
+    //   그래서 여기서 체인을 따라가면 2차 홉이 **무토큰으로 도착**해, 미들웨어가 권한거부(/?auth_error)가
+    //   아니라 인증실패(/login?redirect=...) 로 판정한다. 실제 CI 실패가 정확히 그 모습이었다:
+    //       Received: "http://localhost:3001/login?redirect=%2Fadmin%2Fsystem%2Fmonitoring%2Fhub"
+    //   즉 앱이 아니라 **검증 수단이 세션을 잃은 것**이다. 쿠키 저장소를 가진 브라우저로 검증해야 한다.
 
     test('토큰이 없으면 권한거부가 아니라 로그인으로 보낸다', async ({ request }) => {
         // 인증 실패(/login)와 권한 부족(/?auth_error)은 구분되어야 진단이 성립한다(middleware §3/§4).
@@ -316,6 +315,26 @@ test.describe('Tier 23-E4c: Browser canary for cookie→middleware wiring', () =
 
         await page.goto('/admin/collaboration');
         await expect(page).not.toHaveURL(/auth_error=unauthorized/);
+    });
+
+    /**
+     * 레거시 별칭이 설정 리다이렉트를 거쳐 **최종적으로도** 차단되는지.
+     *
+     * `next.config.redirects()` 는 미들웨어보다 **먼저** 실행되므로, 별칭 경로는 인증 게이트에
+     * 도달하지 않는다. 그 자체는 정상이지만 — **별칭이 게이트 없는 곳으로 착지하면 그것이 우회로다.**
+     * 위 E4 매트릭스는 단일 홉(maxRedirects:0)만 보므로 이 축을 원리적으로 잡지 못한다.
+     *
+     * 브라우저로 검증하는 이유는 편의가 아니라 **필요** 다: APIRequestContext 는 수동 `Cookie` 헤더를
+     * 다음 홉으로 전달하지 않아(실증 완료) 체인 도중 세션을 잃는다. 브라우저는 쿠키 저장소를 쓰므로
+     * 모든 홉에 세션이 실린다 — 실제 사용자가 겪는 경로와 같다.
+     *
+     * 사슬: /admin/system/audit → (config redirect) /admin/system/monitoring/hub?tab=system
+     *       → (middleware, 비관리자) /?auth_error=unauthorized
+     */
+    test('레거시 별칭은 설정 리다이렉트를 거쳐도 최종적으로 차단된다', async ({ page }) => {
+        await page.goto('/admin/system/audit');
+        await expect(page, '레거시 별칭이 인증 게이트를 우회해 착지했다')
+            .toHaveURL(/auth_error=unauthorized/, { timeout: 15000 });
     });
 });
 
