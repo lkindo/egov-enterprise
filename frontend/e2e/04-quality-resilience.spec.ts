@@ -150,4 +150,66 @@ test.describe('Tier 4: Quality & Resilience', () => {
             console.log('>>> Audit log entry verified.');
         });
     });
+
+    /**
+     * 반응형 레이아웃 — 프론트엔드 UX 헌법 **제5조 2항**(Mobile-First · 표준 브레이크포인트 준수).
+     *
+     * [왜 필요한가 — 2026-08-11] 헌법이 명시적으로 요구하는 항목인데 **E2E 가 0 건**이었다.
+     *   전 스펙이 `devices['Desktop Chrome']` 한 종류로만 돌아, 좁은 화면에서 레이아웃이 깨져도
+     *   어떤 게이트에도 걸리지 않는다. 정적 검사(tsc·lint)는 레이아웃을 볼 수 없고,
+     *   시각 회귀(VRT)도 데스크톱 해상도 하나만 찍는다.
+     *
+     * [무엇을 보는가] 스크린샷 비교가 아니라 **구조적 사실 두 가지**만 본다 —
+     *   해상도별 픽셀 비교는 플레이키하고 유지비가 크지만, 아래 둘은 결정적이다.
+     *
+     *   ① **가로 넘침이 없다.** 모바일에서 가장 흔하고 가장 눈에 띄는 파손이며
+     *      `scrollWidth > clientWidth` 하나로 판정된다.
+     *   ② **사이드바가 브레이크포인트대로 접힌다.** 레이아웃이 `hidden lg:block` 으로 선언한
+     *      계약 그 자체다(Tailwind 기본 `lg` = 1024px). 양방향으로 고정해
+     *      "모바일에서 안 접힌다"와 "데스크톱에서 안 나온다"를 모두 잡는다.
+     */
+    test.describe('Responsive Layout (헌법 제5조 — Mobile-First 브레이크포인트)', () => {
+        test.use({ storageState: 'playwright/.auth/admin.json' });
+
+        /** 검사 대상 화면. 관리 셸이 붙는 대표 경로 두 곳이면 레이아웃 파손은 드러난다. */
+        const PATHS = ['/admin', '/admin/work-hub'];
+
+        // Tailwind 기본 브레이크포인트 기준: sm 640 · md 768 · lg 1024 · xl 1280.
+        const VIEWPORTS = [
+            { name: 'mobile', width: 375, height: 667, sidebarVisible: false },  // sm 미만
+            { name: 'tablet', width: 768, height: 1024, sidebarVisible: false }, // md (lg 미만)
+            { name: 'desktop', width: 1280, height: 800, sidebarVisible: true }, // xl
+        ];
+
+        for (const vp of VIEWPORTS) {
+            test(`${vp.name}(${vp.width}px): 가로 넘침이 없고 사이드바가 브레이크포인트대로 동작한다`, async ({ page }) => {
+                await page.setViewportSize({ width: vp.width, height: vp.height });
+
+                for (const path of PATHS) {
+                    await page.goto(path);
+                    // 셸이 렌더된 뒤에 재야 한다 — 로딩 폴백 상태의 폭을 재면 아무 의미가 없다.
+                    await expect(page.getByRole('main')).toBeVisible({ timeout: 30000 });
+
+                    const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+                        scrollWidth: document.documentElement.scrollWidth,
+                        clientWidth: document.documentElement.clientWidth,
+                    }));
+                    // 1px 여유: 소수점 레이아웃 반올림으로 1px 오차가 나는 경우가 있어 그것까지
+                    // 파손으로 보지는 않는다. 그 이상은 실제로 가로 스크롤바가 생긴다.
+                    expect(
+                        scrollWidth,
+                        `${path} 가 ${vp.width}px 에서 가로로 넘친다 (scrollWidth=${scrollWidth}, clientWidth=${clientWidth})`,
+                    ).toBeLessThanOrEqual(clientWidth + 1);
+                }
+
+                // 사이드바는 `hidden lg:block` 계약을 따른다 — 양방향으로 고정한다.
+                const sidebar = page.locator('aside').first();
+                if (vp.sidebarVisible) {
+                    await expect(sidebar, `${vp.width}px 에서 사이드바가 보여야 한다`).toBeVisible({ timeout: 15000 });
+                } else {
+                    await expect(sidebar, `${vp.width}px 에서 사이드바가 접혀야 한다 (본문을 가린다)`).toBeHidden();
+                }
+            });
+        }
+    });
 });
