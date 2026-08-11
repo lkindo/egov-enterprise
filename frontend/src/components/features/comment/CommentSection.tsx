@@ -52,11 +52,15 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
     
     startTransition(async () => {
       // Add optimistic comment
+      // [2026-08-12 수정] 식별자 필드는 `id` 가 아니라 `ansSn` 이다(CommentVO).
+      //   `id` 로 넣으면 낙관적 행의 `ansSn` 이 undefined 가 되어 ① 리스트 key 가 undefined 이고
+      //   ② `editingId === comment.ansSn` 이 `undefined === undefined` 로 **참**이 되어
+      //   엉뚱하게 편집 폼이 열린다. 임시 ID 라도 실어야 행이 자기 정체성을 갖는다.
       const tempId = Math.random();
       addOptimisticComment({
         type: 'add',
         payload: {
-          id: tempId,
+          ansSn: tempId,
           ansCn: content,
           wrterNm: 'User', // Assume current user
           crtDt: new Date().toISOString(),
@@ -169,6 +173,14 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
                             </div>
                           </div>
                         </div>
+                        {/*
+                          [2026-08-12 수정] 서버 미확정(낙관적) 행에는 수정·삭제를 노출하지 않는다.
+                          그 행에는 서버가 채번한 ID 가 없어 수정·삭제 요청 자체가 성립하지 않고,
+                          설령 편집 폼을 열어도 revalidate 로 확정 행이 도착하는 순간
+                          `editingId` 가 새 `ansSn` 과 어긋나 **폼이 조용히 접히며 입력이 유실된다.**
+                          (카드가 이미 opacity/grayscale 로 미확정임을 알리고 있었는데, 동작만 막지 않고 있었다.)
+                        */}
+                        {!(comment as any).isOptimistic && (
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                           {editingId === comment.ansSn ? (
                             <>
@@ -182,6 +194,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
                             </>
                           )}
                         </div>
+                        )}
                       </div>
 
                       {editingId === comment.ansSn ? (

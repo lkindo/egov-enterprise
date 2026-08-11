@@ -154,11 +154,69 @@ test.describe('Tier 23-E2: Login failure (negative auth)', () => {
         await expect(page.locator('#remember')).toHaveCount(0);
     });
 
-    // 계정 잠금(lockout)은 로그인 정책(시도 횟수/잠금 임계)에 의존 → 서버 기동 후 정책 확인하여 구현.
-    test.fixme('N회 연속 실패 시 계정 잠금(lockout) 상태를 표시한다', async ({ page }) => {
-        // for (let i = 0; i < 정책상_최대시도; i++) { 잘못된 비밀번호로 제출 }
-        // await expect(page.getByText(/계정.*잠금|locked|잠겼/i)).toBeVisible();
-        void page;
+    /**
+     * 계정 잠금(lockout) — 종전 `test.fixme` 를 실제 검증으로 대체한다(2026-08-11).
+     *
+     * [정책 실측] EgovAuthenticationProvider:
+     *   · `nuri.security.login.max-failures` (기본 **5**) 에 **도달**하면 lock()
+     *   · `nuri.security.login.lock-minutes` (기본 15) 경과 후 다음 시도에서 자동 해제
+     *   · 잠긴 계정은 validateAccountStatus 가 AccountStatusException 으로 막는다
+     *
+     * ⚠ **공용 계정으로 하면 안 된다.** webmaster/TEST1 을 잠그면 15분 동안 그 계정을 쓰는
+     *   모든 테스트가 무너진다 — 잠금 테스트가 스위트 전체를 인질로 잡는 구조가 된다.
+     *   그래서 **일회용 계정을 만들어 잠그고 회수**한다(23-E6 IDOR 와 같은 방식).
+     *
+     * [무엇을 단언하는가] 잠금 여부를 오류 코드로 판정하지 않는다 — 잘못된 비밀번호와 잠금이
+     *   같은 401 로 나올 수 있기 때문이다. 대신 **올바른 비밀번호로도 더 이상 로그인되지 않는다**
+     *   를 본다. 이것은 코드에 의존하지 않는 명백한 잠금의 증거다.
+     *   그 전에 **같은 자격으로 한 번은 성공**하는 것을 먼저 확인한다 — 그래야 마지막 실패가
+     *   '잠금 때문' 임이 성립한다(계정 자체가 잘못돼 실패하는 경우와 구분된다).
+     */
+    test('연속 실패가 임계에 도달하면 올바른 비밀번호로도 로그인되지 않는다 (계정 잠금)', async ({ request }) => {
+        const adminToken = readAccessToken(ADMIN_AUTH);
+        expect(adminToken, 'admin.json accessToken 로드 실패').toBeTruthy();
+        const asAdmin = { Authorization: `Bearer ${adminToken}` };
+
+        const stamp = Date.now().toString().slice(-8);
+        const victimId = `e2e_lock_${stamp}`;        // cleanup-db 의 'e2e_' 규약과 정합
+        const victimPw = 'E2eLock1!';                // UserDto.pswd 의 @Pattern 충족
+        const MAX_FAILURES = 5;                      // 위 정책 기본값
+
+        const login = (password: string) =>
+            request.post(`${API}/auth/login`, { data: { userId: victimId, password } });
+
+        let created = false;
+        try {
+            const mk = await request.post(`${API}/admin/system/users`, {
+                headers: asAdmin,
+                data: { userId: victimId, pswd: victimPw, userNm: 'E2E Lock Target', role: 'USER' },
+            });
+            expect(mk.ok(), `잠금 대상 계정 생성 실패: ${mk.status()}`).toBeTruthy();
+            created = true;
+
+            // ① 기준선 — 이 자격으로 원래는 로그인된다.
+            //    (이 성공이 lckCnt 를 0 으로 되돌리므로 아래 카운트도 깨끗하게 시작한다.)
+            const baseline = await login(victimPw);
+            expect(baseline.ok(), '잠기기 전에는 정상 로그인되어야 한다 — 아니면 이후 실패가 잠금 증거가 아니다')
+                .toBeTruthy();
+
+            // ② 임계까지 연속 실패
+            for (let i = 1; i <= MAX_FAILURES; i++) {
+                const bad = await login(`wrong-${i}-Zz9!`);
+                expect(bad.ok(), `${i}번째 잘못된 비밀번호가 로그인에 성공했다`).toBeFalsy();
+            }
+
+            // ③ 올바른 비밀번호로도 막혀야 한다 = 잠금이 실제로 발동했다.
+            const afterLock = await login(victimPw);
+            expect(
+                afterLock.ok(),
+                `연속 실패 ${MAX_FAILURES}회 뒤에도 올바른 비밀번호로 로그인됐다 — 계정 잠금이 발동하지 않는다`,
+            ).toBeFalsy();
+        } finally {
+            if (created) {
+                await request.delete(`${API}/admin/system/users/${victimId}`, { headers: asAdmin });
+            }
+        }
     });
 });
 
