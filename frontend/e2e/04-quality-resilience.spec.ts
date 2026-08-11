@@ -164,9 +164,11 @@ test.describe('Tier 4: Quality & Resilience', () => {
      *
      *   ① **가로 넘침이 없다.** 모바일에서 가장 흔하고 가장 눈에 띄는 파손이며
      *      `scrollWidth > clientWidth` 하나로 판정된다.
-     *   ② **사이드바가 브레이크포인트대로 접힌다.** 레이아웃이 `hidden lg:block` 으로 선언한
-     *      계약 그 자체다(Tailwind 기본 `lg` = 1024px). 양방향으로 고정해
-     *      "모바일에서 안 접힌다"와 "데스크톱에서 안 나온다"를 모두 잡는다.
+     *   ② **사이드바가 브레이크포인트대로 접힌다.** 레이아웃이 선언한 계약 그 자체다
+     *      (Tailwind 기본 `lg` = 1024px). 구현은 `hidden`(DOM 제거)이 아니라
+     *      **off-canvas transform**(`-translate-x-full` / `lg:translate-x-0`)이므로,
+     *      "화면 안에서 본문을 가리는가"를 경계상자로 잰다 — 아래 단언부 주석 참조.
+     *      양방향으로 고정해 "모바일에서 안 접힌다"와 "데스크톱에서 안 나온다"를 모두 잡는다.
      */
     test.describe('Responsive Layout (헌법 제5조 — Mobile-First 브레이크포인트)', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -202,12 +204,38 @@ test.describe('Tier 4: Quality & Resilience', () => {
                     ).toBeLessThanOrEqual(clientWidth + 1);
                 }
 
-                // 사이드바는 `hidden lg:block` 계약을 따른다 — 양방향으로 고정한다.
+                // 사이드바 접힘/펼침 계약 — 양방향으로 고정한다.
+                //
+                // ⚠ [2026-08-12 정정] 접힘을 `toBeHidden()` 으로 재던 종전 단언은 **이 UI 를 판정하지 못한다.**
+                //   구현은 `hidden lg:block` 이 아니라 **off-canvas transform** 이다(실측 클래스:
+                //   `... w-72 transition-transform lg:translate-x-0 -translate-x-full`).
+                //   transform 으로 밀어낸 요소는 경계상자가 남아 있어 Playwright 가 계속 `visible` 로 본다.
+                //   더 나쁜 것은 `toBeHidden()` 이 **요소가 아예 없을 때도 통과**한다는 점이다 —
+                //   그래서 aside 가 아직 렌더되기 전 타이밍에 걸리면 조용히 **vacuous 통과**했고,
+                //   실제로 이 단언은 리베이스로 타이밍이 바뀌자마자 red 가 됐다(같은 코드, 다른 결과).
+                //
+                //   계약을 사용자 관점 그대로 적는다: **"사이드바가 화면 안에서 본문을 가리는가"**.
+                //   요소 존재를 먼저 요구하므로 vacuous 통과 경로도 함께 닫힌다.
                 const sidebar = page.locator('aside').first();
+                await expect(sidebar, '사이드바(aside)가 렌더되지 않았다').toHaveCount(1);
+
+                const box = await sidebar.boundingBox();
+                expect(box, '사이드바의 경계상자를 얻지 못했다 (display:none 이거나 분리된 노드)').not.toBeNull();
+
                 if (vp.sidebarVisible) {
                     await expect(sidebar, `${vp.width}px 에서 사이드바가 보여야 한다`).toBeVisible({ timeout: 15000 });
+                    expect(
+                        box!.x,
+                        `${vp.width}px 에서 사이드바가 화면 밖으로 밀려 있다 (x=${box!.x})`,
+                    ).toBeGreaterThanOrEqual(-1);
                 } else {
-                    await expect(sidebar, `${vp.width}px 에서 사이드바가 접혀야 한다 (본문을 가린다)`).toBeHidden();
+                    // 오른쪽 끝이 뷰포트 왼쪽 경계를 넘지 않아야 한다 = 본문 위에 남지 않는다.
+                    // 1px 여유는 위 가로 넘침 단언과 같은 이유다(소수점 레이아웃 반올림).
+                    // 접힘이 풀리면 288px 가 통째로 들어오므로 이 여유로 가려지지 않는다.
+                    expect(
+                        box!.x + box!.width,
+                        `${vp.width}px 에서 사이드바가 본문을 가린다 (x=${box!.x}, width=${box!.width})`,
+                    ).toBeLessThanOrEqual(1);
                 }
             });
         }
