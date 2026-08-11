@@ -163,7 +163,6 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
 
     test('Business Logic: One Person One Vote', async ({ adminPage, userPage }) => {
         const surveyTitle = `E2E Duplicate Test ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-        const searchKeyword = surveyTitle;
         const adminSurvey = new SurveyPage(adminPage);
         const userSurvey = new SurveyPage(userPage);
         let pollId: string;

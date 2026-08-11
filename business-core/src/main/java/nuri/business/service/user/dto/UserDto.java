@@ -31,10 +31,17 @@ public record UserDto(
 
     // [보안] 비밀번호 계열 필드는 요청(write)으로만 수용하고 응답(read)에는 절대 직렬화하지 않는다.
     // UserDto 가 request/response 겸용이라 from() 이 해시를 채우더라도 WRITE_ONLY 로 응답 노출을 원천 차단한다.
+    //
+    // [2026-08-11 그룹 한정] 아래 세 제약은 **등록 경로에만** 적용한다(UserValidationGroups.OnCreate).
+    //   이 DTO 는 등록(POST /admin/system/users)과 수정(PUT /admin/system/users/{id}, PUT /users/me)이
+    //   공유하는데, UserService.updateUser 는 비밀번호를 **한 번도 읽지 않는다** — 비밀번호 변경은
+    //   전용 경로의 책임이다. 그럼에도 기본 그룹으로 걸려 있어 수정 요청이 비밀번호를 보내지 않는 한
+    //   **항상 400** 이었다(2026-08-11 E2E 로 확인: PUT /api/v1/admin/system/users/{id} → 400).
+    //   상세 근거와 새 등록 엔드포인트 추가 시 주의사항은 UserValidationGroups 참조.
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    @NotBlank(message = "비밀번호는 필수입니다")
-    @Size(min = 8, max = 100, message = "비밀번호는 8-100 자입니다")
-    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다")
+    @NotBlank(message = "비밀번호는 필수입니다", groups = UserValidationGroups.OnCreate.class)
+    @Size(min = 8, max = 100, message = "비밀번호는 8-100 자입니다", groups = UserValidationGroups.OnCreate.class)
+    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다", groups = UserValidationGroups.OnCreate.class)
     String pswd,
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
@@ -96,8 +103,22 @@ public record UserDto(
     @Size(max = 11, message = "휴대폰 번호는 최대 11 자입니다")
     String mblTelno,
 
+    // [2026-08-11 정정] 정규식 앞에 `^$|` 를 더해 **빈 문자열을 허용**한다.
+    //
+    //   emlAddr 은 선택 필드다(@NotBlank 가 없다). 그런데 Bean Validation 의 @Pattern 은
+    //   **null 은 건너뛰지만 빈 문자열("")은 검사한다.** 폼은 미입력을 null 이 아니라 "" 로 보내므로,
+    //   이메일이 없는 사용자는 **수정 자체가 불가능**했다:
+    //     {"success":false,"status":400,"errors":[{"field":"emlAddr","message":"이메일 형식이 올바르지 않습니다"}]}
+    //   (2026-08-11 CI run 31472689196 실측 — 보낸 페이로드의 emlAddr 은 "" 였다.)
+    //
+    //   ⚠ 이메일이 비는 것은 예외 상황이 아니라 **정상 경로**다: registerUser 는 emlAddr 을
+    //     인자로 받지도 않아 등록 시 아예 저장되지 않는다(mblTelno·ognzId 도 동일 — 별건 과제).
+    //     즉 방금 만든 사용자는 항상 이메일이 없고, 그래서 항상 수정할 수 없었다.
+    //
+    //   선택 필드의 형식 제약은 "값이 있으면 형식을 지켜라" 여야 한다. 값이 없는 것을 형식 위반으로
+    //   판정하면 그 필드는 사실상 필수가 된다 — @NotBlank 를 붙이지 않은 의도와 정면으로 어긋난다.
     @Size(max = 50, message = "이메일은 최대 50 자입니다")
-    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "이메일 형식이 올바르지 않습니다")
+    @Pattern(regexp = "^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "이메일 형식이 올바르지 않습니다")
     String emlAddr,
 
     @Size(max = 300, message = "직함은 최대 300 자입니다")

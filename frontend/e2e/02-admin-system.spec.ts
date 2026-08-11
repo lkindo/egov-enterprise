@@ -21,6 +21,8 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
         const testId = `e2e_${suffix}`;
         const testName = `E2E User ${suffix.toUpperCase()}`;
 
+        // 이름이 약속하는 4단계를 실제로 모두 수행한다. (2026-08-10 감사에서 Update 가 한 번도
+        // 존재한 적 없음이 드러났고, 채워 넣자 백엔드 결함이 확인돼 2026-08-11 에 함께 고쳤다.)
         test('Create-Search-Update-Delete Flow', async ({ page }) => {
             console.log(`\n>>> Starting User Lifecycle: id=${testId}, name=${testName}`);
 
@@ -84,9 +86,85 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await page.waitForTimeout(2000);
             await expect(page.locator(`text=${testName}`).first()).toBeVisible({ timeout: 15000 });
 
-            // --- Step 7: Delete ---
-            console.log('>>> Step 7: Deleting user');
+            // --- Step 7: Update ---
+            // [2026-08-10 신설 → 2026-08-11 활성화] 이 테스트의 이름은 줄곧
+            //   'Create-Search-Update-Delete Flow' 였지만 **Update 단계가 존재한 적이 없었다.**
+            //   채워 넣고 CI 에서 처음 돌리자 앱이 400 을 돌려줬다 — 등록용 DTO 를 수정에도 재사용해
+            //   `UserDto.pswd` 의 @NotBlank 가 수정 요청까지 막고 있었다(수정 폼은 비밀번호를 보내지
+            //   않는 것이 옳은 설계다 — 변경은 전용 경로 책임). 서버의 검증 그룹을 한정해 고쳤고
+            //   (UserValidationGroups.OnCreate) 이제 이 단계가 실제로 돈다.
+            //   ⚠ 이름에 밑줄을 쓰지 않는다 — UserDto.userNm 의 @Pattern 이 밑줄을 불허한다.
+            console.log('>>> Step 7: Updating user');
+            const updatedName = `${testName} UPD`;
             await page.locator(`text=${testName}`).first().click();
+
+            // ⚠ '정보 수정'이라는 접근가능 이름을 가진 버튼이 상세 패널에 **둘** 있다
+            //   (연필 아이콘 버튼 aria-label + 하단 텍스트 버튼). 모달이 열리면 제출 버튼까지 셋이 된다.
+            //   이 시점에는 모달이 닫혀 있으므로 상세 패널의 첫 번째를 집는다.
+            const editTrigger = page.getByRole('button', { name: '정보 수정', exact: true }).first();
+            await expect(editTrigger).toBeVisible({ timeout: 15000 });
+            await editTrigger.click();
+
+            await expect(page.getByText('사용자 정보 수정')).toBeVisible({ timeout: 10000 });
+
+            // 편집 폼에는 기존 값이 실려 있어야 한다 — 빈 폼이 뜨면 그것은 '수정'이 아니라 재등록이다.
+            const nameInput = page.locator('input[name="userNm"]');
+            await expect(nameInput).toHaveValue(testName, { timeout: 15000 });
+
+            // [2026-08-11 신설] 등록 때 입력한 **이메일이 실제로 저장됐는지**를 여기서 닫는다.
+            //   종전 registerUser 는 User.builder() 에 7개 필드만 넣어 폼이 보낸 이메일·연락처·소속 부서를
+            //   **오류 없이 버렸다**(성공 토스트까지 뜬 채로). 그래서 이 칸은 항상 비어 있었고,
+            //   그것이 emlAddr @Pattern 의 빈 문자열 거부와 겹쳐 "등록은 되는데 수정은 영원히 400" 을 만들었다.
+            //   서비스 계층은 UserServiceTest 가 ArgumentCaptor 로 검증한다 — 여기서는 **화면까지 오는지**를 본다
+            //   (목록 API 가 emlAddr 을 돌려주고 폼이 그것을 싣는 배선까지 포함).
+            await expect(
+                page.locator('input[name="emlAddr"]'),
+                '등록 때 입력한 이메일이 수정 폼에 실려 오지 않았다 — 등록이 입력값을 버렸을 수 있다',
+            ).toHaveValue(`${testId}@egov.kr`, { timeout: 15000 });
+
+            await nameInput.fill(updatedName);
+
+            // 제출 버튼의 라벨도 '정보 수정'이므로 form 스코프로 한정한다(등록 단계와 동일 패턴).
+            //
+            // [2026-08-11] 제출 결과를 **API 응답으로 직접** 단언한다. 종전에는 성공 토스트만 봤는데,
+            //   그 방식은 실패했을 때 "토스트가 안 떴다"까지만 알려 준다 — 실제로 2026-08-11 CI 에서
+            //   PUT 이 400 을 돌려줬는데 원인(어느 필드가 왜 거부됐는지)을 알 방법이 없어 원격
+            //   디버깅이 여러 회차 헛돌았다. 응답 본문과 요청 페이로드를 단언 메시지에 실어
+            //   **실패 자체가 원인을 말하게** 한다.
+            const [updateResponse] = await Promise.all([
+                page.waitForResponse(
+                    (r) => r.request().method() === 'PUT' && /\/api\/v1\/admin\/system\/users\//.test(r.url()),
+                    { timeout: 30000 },
+                ),
+                page.locator('form button[type="submit"]').click(),
+            ]);
+
+            if (!updateResponse.ok()) {
+                // 진단은 실패 경로에서만 수집한다(성공 시 불필요한 본문 읽기를 하지 않는다).
+                const body = await updateResponse.text().catch(() => '(본문 읽기 실패)');
+                const sent = updateResponse.request().postData() ?? '(요청 본문 없음)';
+                expect(
+                    updateResponse.ok(),
+                    `사용자 수정 PUT 이 ${updateResponse.status()} 로 실패했다.\n`
+                    + `  응답 본문: ${body}\n`
+                    + `  보낸 페이로드: ${sent}`,
+                ).toBeTruthy();
+            }
+
+            const updateSuccessAlert = page
+                .locator('[data-sonner-toast][data-type="success"]')
+                .filter({ hasText: '수정되었습니다' });
+            await expect(updateSuccessAlert.first()).toBeVisible({ timeout: 20000 });
+
+            // 토스트만 보고 통과하지 않는다 — 이 저장소에는 **API 를 부르지 않고 성공 토스트만 띄우던**
+            // 결재 상신 사례가 있다(11 티어 주석). 목록에 실제로 반영됐는지까지 확인한다.
+            await searchInput.fill(updatedName);
+            await page.keyboard.press('Enter');
+            await expect(page.locator(`text=${updatedName}`).first()).toBeVisible({ timeout: 15000 });
+
+            // --- Step 8: Delete ---
+            console.log('>>> Step 8: Deleting user');
+            await page.locator(`text=${updatedName}`).first().click();
             await page.waitForTimeout(1000);
 
             // [2026-07-27 정정] 종전 셀렉터는 '접근 차단' / '접근차단실행' / 토스트 '말소' 였다.
@@ -108,6 +186,19 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await expect(deleteSuccessAlert.first()).toBeVisible({ timeout: 15000 });
             console.log('>>> User Lifecycle Completed Successfully');
         });
+
+        // [2026-08-11 해소] 여기에 `test.fixme('User Update: … 현재 PUT 400')` 가 있었다.
+        //   원인이던 백엔드 결함(등록용 UserDto 의 pswd @NotBlank 가 수정 요청까지 막던 것)을
+        //   검증 그룹 한정으로 고쳤으므로(UserValidationGroups.OnCreate), Update 단계를 위
+        //   메인 흐름(Step 7)으로 되돌리고 fixme 를 제거한다.
+        //
+        //   ⚠ 별도 테스트로 두지 않은 이유: 이 describe 의 testName 은 메인 테스트가 만들고
+        //     **마지막에 삭제**한다. 분리된 테스트는 그 사용자를 찾지 못하는 순서 의존 결함을
+        //     안게 된다(fixme 라 한 번도 실행되지 않아 드러나지 않았다).
+        //
+        //   회귀 방어는 두 층에 있다:
+        //     · 백엔드 UserApiControllerTest — 비밀번호 없는 수정 200 / 등록은 여전히 400 (양방향)
+        //     · 여기 E2E Step 7 — 화면에서 실제로 저장되고 목록에 반영되는지
     });
 
     // [E2E 감사 Phase3 중복제거] 삭제됨: 'System Configuration'(common-code/menus 네비 스모크) 및

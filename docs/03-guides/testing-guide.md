@@ -138,7 +138,12 @@ class MenuServiceIntegrationTest {
 
 ### 계층형 아키텍처 (25-Tier Architecture)
 
-본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **25개 계층(Tier)**(Playwright tier 프로젝트 26개 — 별도 `tier-3-board-master` 포함)으로 테스트를 관리합니다.
+본 프로젝트는 테스트의 중복을 제거하고 비즈니스 도메인별 체계적 검증을 위해 총 **25개 계층(Tier)** / 26개 스펙 파일(별도 `03-board-master-management` 포함)로 테스트를 관리합니다.
+
+> **[2026-08-10] Playwright 프로젝트는 Tier 와 1:1 이 아니다.** 종전에는 스펙마다 `tier-N-*` 프로젝트가
+> 있었으나(26개), 그것들이 `full-suite`(testMatch `/.*\.spec\.ts/`)와 **이중 매칭**돼 프로젝트를 지정하지
+> 않으면 전 테스트가 두 번 돌았다(실측 226건). 프로젝트는 `setup` + `full-suite` **2개**로 축소했고,
+> 계층별 실행은 파일/제목 지정으로 한다. 아래 표의 Tier 는 **파일 식별자**이지 실행 단위가 아니다.
 
 | 그룹 | Tier | 파일 | 검증 범위 |
 |------|------|------|-----------|
@@ -163,8 +168,8 @@ class MenuServiceIntegrationTest {
 | | 19 | `19-hierarchy-modernization.spec.ts` | 부서 및 메뉴 계층 구조 최적화 검증 |
 | | 20 | `20-common-security-validation.spec.ts` | 공통 보안 취약점 및 보안 필터 검증 |
 | | 21 | `21-advanced-resilience.spec.ts` | API 및 DB 장애 극복 회복탄력성 검증 |
-| | 22 | `22-deep-security-guard.spec.ts` | 심층 보안 통제 및 가디언 동작 검증 |
-| | 23 | `23-security-auth-supplement.spec.ts` | 인증/세션/RBAC 보완(E2E 감사 Phase4) |
+| | 22 | `22-deep-security-guard.spec.ts` | XSS 새니타이제이션(저장·반사), malformed URL 내성 — **경로/API RBAC 은 23 소유** |
+| | 23 | `23-security-auth-supplement.spec.ts` | **인증·세션·접근통제 계약의 단일 소유자** — UI 로그인(E0)·위조토큰(E1)·로그인실패(E2)·API RBAC(E3)·미들웨어 경로정책 매트릭스(E4)·Origin 가드(E5)·a11y(E11)·empty-state(E12) |
 | **Integration** | 24 | `24-org-schedule-journey.spec.ts` | 조직 ↔ 일정 통합 사슬 회귀 방어 (2026-07-19 신설) |
 | | 25 | `25-deptjob-workreport-journey.spec.ts` | 부서업무 ↔ 업무보고 통합 여정 (2026-07-20 신설) |
 
@@ -177,11 +182,19 @@ npm run test:e2e
 # 클린업 포함 전체 실행 (권장)
 npm run test:e2e:full
 
-# 특정 Tier만 실행
-npx playwright test --project=tier-1-core
-npx playwright test --project=tier-18-business-ext
-npx playwright test --project=tier-21-resilience
-npx playwright test --project=tier-22-security
+# 특정 Tier만 실행 — 파일로 지정한다 (tier-N-* 프로젝트는 이중 실행 원인이라 제거됨)
+npx playwright test e2e/01-core-base.spec.ts
+npx playwright test e2e/18-business-extension.spec.ts
+npx playwright test e2e/22-deep-security-guard.spec.ts
+
+# 제목 필터 (파일을 가로지르는 관심사)
+npx playwright test -g "Middleware"
+
+# 실행 없이 목록만 확인 (서버 불필요)
+npx playwright test --list
+
+# E2E 타입 검사 (루트 tsc 는 e2e 를 exclude 하므로 이 게이트가 유일 관문)
+pnpm -C frontend type-check:e2e
 
 # UI 모드 (대화형 디버깅)
 npm run test:e2e:ui
@@ -510,5 +523,5 @@ PostgreSQL 운영 스키마가 바뀜에 따라 H2 테스트 DDL인 `V1__init_te
 - [성능 최적화 가이드](../04-operations/performance-optimization-guide.md)
 
 ---
-*Last Updated: 2026-07-23 (E2E 계층 현행화 — Tier 24(조직↔일정)·Tier 25(부서업무↔업무보고) 추가, 23→25-Tier. 이전: 2026-05-26 Pre-Push Hook Installer & Non-E2E Verification Guide)*
+*Last Updated: 2026-08-10 (E2E 최적화 감사 — Playwright 프로젝트 28개→2개(tier-N-* 이중 매칭으로 로컬 실행이 항상 2배였다: 실측 226→120건), 계층별 실행을 파일/제목 지정으로 전환, Tier 22↔23 계약 소유권 명시(경로·API RBAC 을 23 이 단독 소유), `type-check:e2e` 게이트 신설. 이전: 2026-07-23 E2E 계층 현행화 — Tier 24(조직↔일정)·Tier 25(부서업무↔업무보고) 추가, 23→25-Tier. 2026-05-26 Pre-Push Hook Installer & Non-E2E Verification Guide)*
 

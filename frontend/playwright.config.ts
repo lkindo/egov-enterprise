@@ -49,172 +49,29 @@ export default defineConfig({
         video: 'retain-on-failure',
         screenshot: 'only-on-failure',
     },
+    // ────────────────────────────────────────────────────────────────────────
+    // [2026-08-10 축소: 28개 → 2개] tier-N-* project 26개를 제거한다.
+    //
+    //   그 26개는 각각 스펙 파일 하나만 매칭했고, `full-suite` 의 testMatch 가
+    //   `/.*\.spec\.ts/` 라 **같은 스펙을 다시 전부 매칭**했다. 그래서 project 를 지정하지
+    //   않고 실행하면(= `npm run test:e2e` 의 기본 동작) 모든 테스트가 두 번 돈다.
+    //   ci.yml 이 `--project=full-suite` 를 붙이게 된 것이 바로 이 문제 때문이며, 그 커밋
+    //   본문에 실측이 남아 있다: **226건 = full-suite 112 + tier-* 112 + setup 2**.
+    //   즉 우회는 CI 에만 적용됐고 **로컬은 지금까지 계속 2배를 돌고 있었다.**
+    //
+    //   tier-* 의 존재 이유였던 "특정 tier 만 빠르게"는 파일 지정으로 동일하게 달성된다:
+    //     npx playwright test e2e/01-core-base.spec.ts
+    //     npx playwright test -g "Deep Security"           (제목 필터)
+    //   project 를 파일 단위로 복제할 필요가 없다.
+    //
+    //   `full-suite` 라는 이름은 **의도적으로 유지**한다 — ci.yml 의 `--project=full-suite`
+    //   와 스크린샷 기준선 파일명(`dashboard-baseline-full-suite-linux.png`)이 이 이름에
+    //   묶여 있어, 개명하면 CI 명령과 스냅샷 경로가 동시에 깨진다.
+    // ────────────────────────────────────────────────────────────────────────
     projects: [
         {
             name: 'setup',
             testMatch: /.*\.setup\.ts/,
-        },
-        {
-            name: 'tier-1-core',
-            testMatch: /01-core-base\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-2-admin',
-            testMatch: /02-admin-system\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-3-business',
-            testMatch: /03-board-community\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            // 03-board-master-management.spec.ts 는 전용 project 가 없어 tier 단위 실행 시
-            // 조용히 누락되고 full-suite 에서만 돌았다. 동일 tier-3 계열로 별도 project 를 부여한다.
-            name: 'tier-3-board-master',
-            testMatch: /03-board-master-management\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-4-quality',
-            testMatch: /04-quality-resilience\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-5-public',
-            testMatch: /05-public-experience\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-6-ops',
-            testMatch: /06-ops-governance\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-7-productivity',
-            testMatch: /07-productivity-suite\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-8-collaboration',
-            testMatch: /08-advanced-collaboration\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-9-observability',
-            testMatch: /09-admin-observability-workspace\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-10-extension',
-            testMatch: /10-operational-extension\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-11-workflow',
-            testMatch: /11-enterprise-workflow\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-12-notification',
-            testMatch: /12-notification\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-13-mail',
-            testMatch: /13-mail\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-14-admin-workflow',
-            testMatch: /14-admin-workflow\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-15-collaboration-ext',
-            testMatch: /15-collaboration-extension\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-16-system-obs',
-            testMatch: /16-system-observability\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-17-support',
-            testMatch: /17-support-governance\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-18-business-ext',
-            testMatch: /18-business-extension\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-19-hierarchy',
-            testMatch: /19-hierarchy-modernization\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-20-security',
-            testMatch: /20-common-security-validation\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-21-resilience',
-            testMatch: /21-advanced-resilience\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            name: 'tier-22-security',
-            testMatch: /22-deep-security-guard\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            // [E2E 감사 Phase4] 인증/세션/RBAC 누락 보완 (E1~E12)
-            name: 'tier-23-security-auth',
-            testMatch: /23-security-auth-supplement\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            // 조직(부서 생성·계층·삭제가드) ↔ 일정(등록·조회축·수정·삭제) 통합 사슬 회귀 방어
-            name: 'tier-24-org-schedule',
-            testMatch: /24-org-schedule-journey\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
-        },
-        {
-            // 부서 업무(등록·상세·수정·삭제, 목록이 업무함 아닌 부서 업무를 보는지) ↔
-            // 업무 보고(제목 검색·페이지 크기·페이저·행 수정/삭제) 회귀 방어
-            name: 'tier-25-deptjob-workreport',
-            testMatch: /25-deptjob-workreport-journey\.spec\.ts/,
-            use: { ...devices['Desktop Chrome'] },
-            dependencies: ['setup'],
         },
         {
             name: 'full-suite',

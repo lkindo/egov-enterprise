@@ -1,5 +1,4 @@
 import { test, expect } from './fixtures/base-test';
-import { AxeBuilder } from '@axe-core/playwright';
 import { getAdminBearerToken } from './utils/admin-token';
 
 /**
@@ -17,24 +16,14 @@ test.describe('Tier 4: Quality & Resilience', () => {
     test.describe('Security & RBAC Integrity', () => {
         test.use({ storageState: 'playwright/.auth/user.json' });
 
-        test('Denied Admin Access for Regular User', async ({ page }) => {
-            const adminPaths = ['/admin/user/manage', '/admin/system/audit'];
-            for (const path of adminPaths) {
-                console.log(`>>> Checking restricted access to ${path}`);
-                await page.goto(path, { waitUntil: 'domcontentloaded' });
-                // Should redirect to dashboard or show unauthorized message
-                await expect(page).not.toHaveURL(new RegExp(path), { timeout: 10000 });
-                
-                // Middleware redirects to / with auth_error=unauthorized
-                const url = page.url();
-                if (url.includes('auth_error=unauthorized') || url === 'http://localhost:3001/') {
-                    console.log(`>>> Access successfully denied for ${path} (Redirected)`);
-                } else {
-                    const bodyText = await page.innerText('body');
-                    expect(bodyText).toMatch(/권한|접근|Deny|Unauthorized|Forbidden/i);
-                }
-            }
-        });
+        // [2026-08-10 이관] 삭제됨: 'Denied Admin Access for Regular User'.
+        //   `/admin/user/manage`·`/admin/system/audit` 의 비관리자 차단은 미들웨어 §4 의 계약이며,
+        //   23-security-auth-supplement 의 E4 매트릭스가 두 경로를 모두 포함해 소유한다.
+        //   종전 구현은 그 위에 두 가지 결함이 더 있었다:
+        //     ① `url === 'http://localhost:3001/'` 하드코딩 — baseURL 을 바꾸면 조용히 else 로 샌다.
+        //     ② if/else 로 "리다이렉트됐거나 본문에 권한 문구가 있거나" — 두 갈래 모두 통과 경로라
+        //        차단 방식이 바뀌어도 red 가 나지 않았다.
+        //   E4 는 리다이렉트 Location 을 직접 단언하므로 이 두 문제가 없다.
 
         test('CSRF Protection Verification', async ({ page }) => {
             console.log('>>> Attempting state-change without valid CSRF');
@@ -108,14 +97,13 @@ test.describe('Tier 4: Quality & Resilience', () => {
     test.describe('Global Quality (A11y & Visual)', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
 
-        test('Accessibility Audit (axe-core)', async ({ page }) => {
-            await page.goto('/admin');
-            console.log('>>> Running A11y audit on Dashboard');
-            const accessibilityScanResults = await new AxeBuilder({ page })
-                .disableRules(['heading-order', 'color-contrast'])
-                .analyze();
-            expect(accessibilityScanResults.violations).toEqual([]);
-        });
+        // [2026-08-10 중복제거] 삭제됨: 'Accessibility Audit (axe-core)'.
+        //   대상(`/admin`)이 01-core-base 의 'Accessibility Audit for Admin Dashboard' 와 동일한데,
+        //   이쪽은 `heading-order` 까지 추가로 비활성화한 **엄격히 약한 부분집합**이었다 —
+        //   이 테스트가 잡을 수 있는 위반은 01 이 전부 잡고, 01 만 잡는 위반이 따로 있다.
+        //   같은 페이지에 axe 를 두 번 돌릴 이유가 없으므로 더 엄격한 쪽(01)만 남긴다.
+        //   ※ 01 은 감사 전에 h1 렌더 완료를 기다린다 — 이 테스트에는 그 대기가 없어
+        //     Suspense 폴백(스피너)을 감사할 여지도 있었다.
 
         test('Visual Regression Baseline', async ({ page }) => {
             // [2026-07-27 정책 결정: CI(리눅스) 전용] 스크린샷은 폰트 렌더링·안티에일리어싱이 OS 마다

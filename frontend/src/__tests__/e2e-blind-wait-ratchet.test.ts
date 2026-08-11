@@ -31,8 +31,19 @@ const E2E_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'e2e')
 /**
  * [동결 2026-07-27] 최초 census 69 에서 PromotionPage.clickSubmitAndWait 의 3초 blind wait 을
  * 모달 닫힘 대기로 교체해 68. 방향은 **감소만** 허용한다.
+ *
+ * [하향 2026-08-10: 68 → 63] E2E 최적화 감사의 부산물이다. 대기를 직접 손댄 것이 아니라,
+ *   **E2E 전용 타입 게이트(tsconfig.e2e.json)를 신설하자 호출부가 0인 死메서드 2개가 검출됐고**
+ *   (`SurveyPage.selectDate` · `SurveyPage.ensurePopoverClosed`), 그 안에 blind wait 5개가
+ *   들어 있었다. 죽은 코드를 지우니 census 가 함께 내려간 것이다.
+ *   종전에는 루트 tsconfig 가 `e2e` 를 exclude 해 이런 선언이 영구히 보이지 않았다.
+ *
+ *   ⚠ 하향은 이 래칫의 **설계된 동작**이다(아래 두 번째 테스트가 강제한다). 상향이라면 은폐지만,
+ *     개선분을 확정하지 않으면 되돌아갈 여지를 남겨 래칫이 이름만 남는다.
+ *   남은 63개는 여전히 의미가 제각각이라 일괄 치환하지 않는다(§0.7-H4). 인프라가 복구되면
+ *   실행 검증과 함께 하나씩 줄인다.
  */
-const BASELINE = 68;
+const BASELINE = 63;
 
 function collectFiles(dir: string): string[] {
     const out: string[] = [];

@@ -105,6 +105,89 @@ class UserServiceAdditionalTest {
         }
     }
 
+    /**
+     * 🚨 [2026-08-12 회귀 방어] **보내지 않은 필드가 지워지던 결함.**
+     *
+     * <p>{@code User.update()} 는 인자를 무조건 대입한다({@code this.emplNo = emplNo}).
+     * 그런데 관리자 수정 폼이 전송하는 것은 userId·userNm·emlAddr·mblTelno·ognzId·pswd 뿐이라,
+     * 나머지 <b>12개(사번·직함·주소·우편번호·전화 계열·팩스·그룹·기관코드)가 null 로 와서
+     * 그대로 덮어써졌다.</b> 이름 한 글자만 고쳐도 그 사용자의 주소·연락처·사번이 통째로 날아갔다.
+     *
+     * <p>폼이 값을 왕복시켜 방어하는 방법(부서 업무 방식)은 여기서 성립하지 않는다 —
+     * 목록 API 의 projection 이 10개 필드만 돌려주어 화면이 areaNo·homeAddr·zip·ognzId 등을
+     * <b>애초에 받지 못한다.</b> 왕복시킬 값이 없으므로 서버에서 막아야 한다.
+     */
+    @Test
+    @DisplayName("사용자 정보 수정 - 요청에 없는 필드는 기존 값이 보존된다 (필드 유실 회귀 방어)")
+    void updateUser_preservesFieldsAbsentFromRequest() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("ADMIN"));
+
+            String userId = "testUser";
+            User user = createBaseUser(userId)
+                    .userNm("Old Name")
+                    .emplNo("EMP-KEEP")
+                    .ofcpsNm("팀장")
+                    .homeAddr("서울시 어딘가 123")
+                    .zip("12345")
+                    .officeTelno("02-1234-5678")
+                    .build();
+
+            // 관리자 수정 폼이 실제로 보내는 필드 집합 — 나머지는 null 이다.
+            UserDto formPayload = UserDto.builder()
+                    .userId(userId)
+                    .userNm("New Name")
+                    .emlAddr("new@egov.kr")
+                    .mblTelno("01011112222")
+                    .build();
+
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+            userService.updateUser(userId, formPayload);
+
+            // 보낸 것은 바뀐다.
+            assertThat(user.getUserNm()).isEqualTo("New Name");
+            assertThat(user.getEmlAddr()).isEqualTo("new@egov.kr");
+            assertThat(user.getMblTelno()).isEqualTo("01011112222");
+
+            // 보내지 않은 것은 **살아 있어야 한다** — 종전에는 전부 null 이 됐다.
+            assertThat(user.getEmplNo()).as("사번이 지워졌다").isEqualTo("EMP-KEEP");
+            assertThat(user.getOfcpsNm()).as("직함이 지워졌다").isEqualTo("팀장");
+            assertThat(user.getHomeAddr()).as("주소가 지워졌다").isEqualTo("서울시 어딘가 123");
+            assertThat(user.getZip()).as("우편번호가 지워졌다").isEqualTo("12345");
+            assertThat(user.getOfficeTelno()).as("사무실 전화가 지워졌다").isEqualTo("02-1234-5678");
+        }
+    }
+
+    /**
+     * 위 보존 규칙이 <b>지우기까지 막아 버리면</b> 그것대로 결함이다.
+     * null(보내지 않음)과 ""(비움)의 구분이 실제로 서는지 반대 방향으로 고정한다.
+     */
+    @Test
+    @DisplayName("사용자 정보 수정 - 빈 문자열은 '지움' 의도이므로 반영된다")
+    void updateUser_emptyStringClearsField() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("ADMIN"));
+
+            String userId = "testUser";
+            User user = createBaseUser(userId).ofcpsNm("팀장").build();
+
+            UserDto clearing = UserDto.builder()
+                    .userId(userId)
+                    .userNm("Name")
+                    .ofcpsNm("")          // 사용자가 칸을 비웠다
+                    .build();
+
+            when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+            userService.updateUser(userId, clearing);
+
+            assertThat(user.getOfcpsNm()).as("비운 칸이 지워지지 않았다 — 보존 규칙이 과하다").isEmpty();
+        }
+    }
+
     @Test
     @DisplayName("사용자 정보 수정 실패 - 존재하지 않는 사용자")
     void updateUser_fail_userNotFound() {
