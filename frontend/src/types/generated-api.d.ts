@@ -37,7 +37,7 @@ export interface paths {
         get: operations["getMe"];
         /**
          * 내 프로필 수정
-         * @description 현재 로그인한 사용자의 프로필 정보를 수정합니다.
+         * @description 현재 로그인한 사용자의 프로필 정보를 수정합니다. 비밀번호는 이 API 의 대상이 아니며 보내더라도 무시됩니다(변경은 PUT /users/me/password). 스키마의 required 에 pswd 가 표시되는 것은 등록과 스키마를 공유하기 때문이며, 실제로 요구되지 않습니다.
          */
         put: operations["updateMe"];
         post?: never;
@@ -474,7 +474,7 @@ export interface paths {
         get: operations["getUser"];
         /**
          * 사용자 정보 수정
-         * @description 기존 시스템 사용자의 정보를 수정합니다. (관리자 권한)
+         * @description 기존 시스템 사용자의 정보를 수정합니다. (관리자 권한) 비밀번호는 이 API 의 대상이 아니며 보내더라도 무시됩니다(변경은 PATCH /admin/system/users/{userId}/password). 스키마의 required 에 pswd 가 표시되는 것은 등록과 스키마를 공유하기 때문이며, 실제로 요구되지 않습니다.
          */
         put: operations["updateUser"];
         post?: never;

@@ -1,5 +1,4 @@
 import { test, expect } from './fixtures/base-test';
-import { TEST_CREDENTIALS } from './test-credentials';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
@@ -12,22 +11,15 @@ import AxeBuilder from '@axe-core/playwright';
  */
 
 test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
-    
-    test('User Authentication Flow (UI based)', async ({ page }) => {
-        console.log('>>> Step 1: Login UI Check');
-        await page.goto('/login?e2e=true');
-        await expect(page.locator('input[name="id"], input[name="userId"]')).toBeVisible();
-        
-        console.log('>>> Step 2: Login Action');
-        await page.locator('input[name="id"], input[name="userId"]').fill(TEST_CREDENTIALS.admin.id);
-        await page.locator('input[name="password"]').fill(TEST_CREDENTIALS.admin.password);
-        await page.locator('button[type="submit"]').click();
-        
-        console.log('>>> Step 3: Redirection to Admin Hub');
-        await expect(page).toHaveURL(/\/admin/, { timeout: 30000 });
-        // dashboard.badge의 값인 '전자정부 5.0' 확인 (또는 실제 메인 레이블)
-        await expect(page.locator('text=전자정부 5.0').first()).toBeVisible({ timeout: 15000 });
-    });
+
+    // [2026-08-10 중복제거] 삭제됨: 'User Authentication Flow (UI based)'.
+    //   23-security-auth-supplement 의 E0 가 **같은 UI 로그인 경로의 상위집합**이다 —
+    //   폼 입력·제출·`/admin` 착지까지 동일하게 하고, 거기에 더해
+    //     · Route Handler(`/api/auth/login`) 가 실제로 200 을 돌려주는지 응답을 직접 관측하고
+    //       (이중 프리픽스 회귀 `'/api/v1/api/auth/login'` 를 정면으로 잡는다)
+    //     · accessToken 이 **HttpOnly** 쿠키로 심겼는지까지 단언한다.
+    //   이 테스트가 고유하게 보던 '로그인 후 전자정부 5.0 배지'는 아래
+    //   'Widgets and Charts Rendering' 이 저장된 세션으로 이미 검증한다.
 
     test('Accessibility Audit for Login Page', async ({ page }) => {
         await page.goto('/login?e2e=true');
@@ -82,19 +74,40 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
             // if(isVisible) 가드가 항상 스킵되던 false-green 스텝이었음. 위 사이드바/네비 단언으로 레이아웃 무결성 검증.
         });
 
-        test('Logout Redirection and Session Cleanup', async ({ page }) => {
+        // [2026-08-10 강화] 제목이 'Session Cleanup' 인데 **정리를 검증하지 않았다** — 리다이렉트만 봤다.
+        //   그런데 로그아웃의 보안적 핵심은 "화면이 바뀌는가"가 아니라 **세션이 실제로 죽는가**다.
+        //   /api/auth/logout 라우트는 accessToken·session_exp 를 만료시키고 백엔드 Set-Cookie 를
+        //   포워딩하는데(logout/route.ts), 그 만료가 누락돼도 종전 단언은 전부 그린이었다:
+        //   리다이렉트는 클라이언트가 수행하므로 쿠키가 남아 있어도 /login 으로 간다.
+        //   → 쿠키 소멸과 '보호 경로 재진입 차단'까지 확인해 제목이 약속한 것을 실제로 검증한다.
+        test('Logout Redirection and Session Cleanup', async ({ page, context }) => {
             console.log('>>> Step 1: Triggering User Menu');
             const profileTrigger = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
             await expect(profileTrigger).toBeVisible({ timeout: 15000 });
             await profileTrigger.click();
-            
+
             console.log('>>> Step 2: Logout Action');
             const logoutButton = page.getByRole('button', { name: /로그아웃|Logout/i });
             await expect(logoutButton).toBeVisible();
             await logoutButton.click();
-            
+
             console.log('>>> Step 3: Redirection Check');
             await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
+
+            console.log('>>> Step 4: 세션 쿠키가 실제로 소멸했는지');
+            // 쿠키는 응답 처리 순서상 리다이렉트 직후 잠깐 남아 있을 수 있으므로 수렴을 기다린다.
+            await expect
+                .poll(async () => {
+                    const cookies = await context.cookies();
+                    return cookies.find((c) => c.name === 'accessToken')?.value ?? '';
+                }, { timeout: 10000, message: '로그아웃 후에도 accessToken 쿠키가 살아 있다' })
+                .toBe('');
+
+            console.log('>>> Step 5: 보호 경로 재진입이 차단되는지 (뒤로가기·URL 직접입력 재사용 방어)');
+            // 쿠키가 지워졌다면 미들웨어가 유효 토큰을 찾지 못해 /login 으로 되돌려야 한다.
+            await page.goto('/admin/work-hub');
+            await expect(page, '로그아웃 뒤에도 보호 경로에 진입할 수 있다 — 세션이 살아 있다')
+                .toHaveURL(/\/login/, { timeout: 15000 });
         });
     });
 

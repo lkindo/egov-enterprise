@@ -209,6 +209,96 @@ public class UserApiControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk());
     }
 
+    // ─────────────────────────────────────────────────────────────────────────
+    // [2026-08-11 회귀 방어] 비밀번호 제약의 그룹 한정 (UserValidationGroups.OnCreate)
+    //
+    // 종전에는 UserDto.pswd 의 @NotBlank 가 기본 그룹이라 **수정 요청에도 적용**됐다.
+    // 수정 폼은 비밀번호를 보내지 않는 것이 옳은 설계이므로(변경은 전용 경로 책임),
+    // 관리자 사용자 수정은 화면에서 **항상 400** 이었다.
+    //
+    // ⚠ 위 updateUser() 테스트가 이것을 잡지 못한 이유: `pswd("ValidPass123!")` 를 실어
+    //   검증기를 만족시켰다 — 화면이 실제로 보내는 것과 무관한 페이로드였다.
+    //   아래 두 테스트는 **화면이 실제로 보내는 형태(pswd: "")** 를 그대로 쓴다.
+    //
+    // 양방향으로 고정한다 — 완화(수정 통과)만 확인하면 등록의 비밀번호 검증이 통째로
+    // 꺼져도 그린이 된다(그것이 이 변경의 유일한 위험이다).
+    // ─────────────────────────────────────────────────────────────────────────
+
+    /** 관리자 수정 화면이 실제로 보내는 페이로드. userId·pswd 를 포함하되 pswd 는 빈 문자열이다. */
+    private static final String UPDATE_PAYLOAD_AS_SENT_BY_UI = """
+            {"userId":"targetUser","userNm":"홍길동","emlAddr":"target@egov.kr","mblTelno":"01012345678","ognzId":"","pswd":""}
+            """;
+
+    @Test
+    @DisplayName("관리자: 비밀번호 없이도 사용자 정보를 수정할 수 있다 (그룹 한정 회귀 방어)")
+    void updateUser_withoutPassword_succeeds() throws Exception {
+        doNothing().when(userService).updateUser(eq("targetUser"), any(UserDto.class));
+
+        mockMvc.perform(put("/api/v1/admin/system/users/targetUser")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(UPDATE_PAYLOAD_AS_SENT_BY_UI))
+                .andExpect(status().isOk());
+
+        // 서비스까지 실제로 도달해야 한다 — 400 이던 시절에는 여기에 닿지 못했다.
+        verify(userService).updateUser(eq("targetUser"), any(UserDto.class));
+    }
+
+    @Test
+    @DisplayName("내 프로필: 비밀번호 없이도 수정할 수 있다 (같은 결함이 /users/me 에도 있었다)")
+    void updateMe_withoutPassword_succeeds() throws Exception {
+        doNothing().when(userService).updateUser(eq("testuser"), any(UserDto.class));
+
+        mockMvc.perform(put("/api/v1/users/me")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"userId":"testuser","userNm":"테스트","emlAddr":"me@egov.kr","pswd":""}
+                        """))
+                .andExpect(status().isOk());
+
+        verify(userService).updateUser(eq("testuser"), any(UserDto.class));
+    }
+
+    @Test
+    @DisplayName("등록은 여전히 비밀번호를 요구한다 (그룹 한정이 등록까지 풀지 않았는지)")
+    void insertUser_withoutPassword_isStillRejected() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"userId":"newuser1","userNm":"신규","emlAddr":"new@egov.kr","pswd":""}
+                        """))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).registerUser(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("등록은 여전히 비밀번호 형식을 검사한다 (@Pattern 이 그룹과 함께 살아 있는지)")
+    void insertUser_withWeakPassword_isStillRejected() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"userId":"newuser2","userNm":"신규","emlAddr":"new2@egov.kr","pswd":"weakpass"}
+                        """))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).registerUser(any(), any(), any(), any(), any(), any());
+    }
+
+    @Test
+    @DisplayName("등록에서 기본 그룹 제약(@Size)도 여전히 살아 있다 (Default 누락 회귀 방어)")
+    void insertUser_withOversizedField_isStillRejected() throws Exception {
+        // userId 는 @Size(min=4, max=20). `@Validated(OnCreate.class)` 를 Default 없이 쓰면
+        // 이 제약이 통째로 꺼진다 — 그 실수를 정면으로 잡는다.
+        mockMvc.perform(post("/api/v1/admin/system/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"userId":"u","userNm":"신규","emlAddr":"new3@egov.kr","pswd":"ValidPass123!"}
+                        """))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).registerUser(any(), any(), any(), any(), any(), any());
+    }
+
     @Test
     @DisplayName("관리자: 사용자 삭제 성공")
     void deleteUser() throws Exception {

@@ -11,8 +11,10 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
@@ -44,7 +46,14 @@ public class UserApiController {
         return ResponseEntity.ok(ApiResponse.success(userService.getUserById(userDetails.getUserId())));
     }
 
-    @Operation(summary = "내 프로필 수정", description = "현재 로그인한 사용자의 프로필 정보를 수정합니다.")
+    // ⚠ 스펙 주의: 요청 본문 스키마(UserDto)의 required 에는 `pswd` 가 남아 있다 — springdoc 이
+    //   Bean Validation **그룹을 반영하지 않아** @NotBlank 만 보고 표시하기 때문이다. 이 엔드포인트는
+    //   등록과 스키마를 공유할 뿐이며 비밀번호를 요구하지도, 사용하지도 않는다. 스키마가 그 차이를
+    //   표현하지 못하므로 설명에 명시한다(스펙이 거짓을 말하게 두지 않는다).
+    @Operation(summary = "내 프로필 수정",
+            description = "현재 로그인한 사용자의 프로필 정보를 수정합니다. "
+                    + "비밀번호는 이 API 의 대상이 아니며 보내더라도 무시됩니다(변경은 PUT /users/me/password). "
+                    + "스키마의 required 에 pswd 가 표시되는 것은 등록과 스키마를 공유하기 때문이며, 실제로 요구되지 않습니다.")
     @Authenticated
     @PutMapping("/users/me")
     public ResponseEntity<ApiResponse<Void>> updateMe(
@@ -128,9 +137,13 @@ public class UserApiController {
         return ResponseEntity.ok(ApiResponse.success(userService.getUserById(userId)));
     }
 
+    // [2026-08-11] 등록만 비밀번호 제약(OnCreate)을 함께 요구한다.
+    //   ⚠ `@Validated(OnCreate.class)` 단독으로 쓰면 **기본 그룹의 모든 제약(@Size·@Pattern 등)이
+    //     통째로 꺼진다.** Default 를 반드시 함께 명시할 것.
     @Operation(summary = "사용자 등록", description = "새로운 시스템 사용자를 등록합니다. (관리자 권한)")
     @PostMapping("/admin/system/users")
-    public ResponseEntity<ApiResponse<String>> insertUser(@RequestBody @Valid UserDto dto) {
+    public ResponseEntity<ApiResponse<String>> insertUser(
+            @RequestBody @Validated({ Default.class, UserValidationGroups.OnCreate.class }) UserDto dto) {
         String resultId = userService.registerUser(
                 dto.userId(),
                 dto.pswd(),
@@ -142,7 +155,11 @@ public class UserApiController {
     }
 
 
-    @Operation(summary = "사용자 정보 수정", description = "기존 시스템 사용자의 정보를 수정합니다. (관리자 권한)")
+    // ⚠ 위 updateMe 와 동일 — 스키마 required 의 pswd 는 등록과의 공유 산물이며 이 경로는 요구하지 않는다.
+    @Operation(summary = "사용자 정보 수정",
+            description = "기존 시스템 사용자의 정보를 수정합니다. (관리자 권한) "
+                    + "비밀번호는 이 API 의 대상이 아니며 보내더라도 무시됩니다(변경은 PATCH /admin/system/users/{userId}/password). "
+                    + "스키마의 required 에 pswd 가 표시되는 것은 등록과 스키마를 공유하기 때문이며, 실제로 요구되지 않습니다.")
     @PutMapping("/admin/system/users/{userId}")
     public ResponseEntity<ApiResponse<Void>> updateUser(
             @PathVariable String userId,

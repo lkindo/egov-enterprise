@@ -42,14 +42,18 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
         // Check for node elements (ID: prefix)
         const nodes = page.getByText(/ID: \d+/);
         await expect(nodes.first()).toBeVisible({ timeout: 15000 });
-        
-        // Verify that data-driven modern routes are applied (e.g. valid URLs, not # unless leaf)
-        const linkWithModernRoute = page.locator('a[href^="/admin/"]').first();
-        if (await linkWithModernRoute.isVisible()) {
-            await expect(linkWithModernRoute).toHaveAttribute('href', /^\/admin\/.+/);
-        }
 
-        console.log('>>> Menu Tree UI & Data-Driven Route: PASS');
+        // [2026-08-10 제거] 'data-driven modern routes' 블록을 걷어낸다. 세 겹으로 무의미했다:
+        //   ① 셀렉터가 `a[href^="/admin/"]` 인데 단언이 `href` 가 `/^\/admin\/.+/` 인지 — 즉
+        //      **셀렉터가 이미 보장한 것을 다시 묻는 동어반복**이었다(추가로 증명되는 것은
+        //      '/admin/' 뒤에 한 글자 이상 있다' 뿐).
+        //   ② 그 셀렉터는 페이지 전역이라 메뉴 트리가 아니라 **좌측 사이드바 링크**를 잡는다.
+        //      트리에 링크가 하나도 없어도 사이드바 덕분에 통과한다 — 검증 대상 오인이다.
+        //   ③ `if (isVisible)` 가드 안에 있어, 매칭이 없으면 아무것도 검사하지 않았다.
+        //   메뉴 트리의 실질 계약(비활성 메뉴가 LNB 에 새지 않는가)은 바로 아래
+        //   'Menu useYn State Filtering' 이 API 응답을 재귀 검증하며 소유한다.
+
+        console.log('>>> Menu Tree UI: PASS');
     });
 
     test('Menu useYn State Filtering', async ({ request }) => {

@@ -71,7 +71,7 @@ export const UserDtoSchema = z.object({
   zip: z.string().min(0).max(5).optional(),
   officeTelno: z.string().min(0).max(20).optional(),
   mblTelno: z.string().min(0).max(11).optional(),
-  emlAddr: z.string().min(0).max(50).regex(new RegExp("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional(),
+  emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional(),
   ofcpsNm: z.string().min(0).max(300).optional(),
   certDnVl: z.string().min(0).max(255).optional(),
   userSe: z.string().min(0).max(10).optional(),

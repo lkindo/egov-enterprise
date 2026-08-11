@@ -6,8 +6,12 @@ import { CommunityPage } from './pages/CommunityPage';
  */
 
 test.describe('Tier 3: Board & Community (Business Flow)', () => {
-    // 3. 병렬 실행 최적화: 워커 간 독립 실행 보장
-    test.describe.configure({ mode: 'parallel' });
+    // [2026-08-10 제거] `test.describe.configure({ mode: 'parallel' })`.
+    //   playwright.config 는 `workers: 1` 이라(공유 DB 오염·OOM 방지) 이 선언은 **아무 효과가 없었다**.
+    //   그럼에도 "병렬 실행 최적화" 라는 주석이 붙어 있어, 아래 테스트들이 워커 격리를 전제로
+    //   쓰여 있다는 잘못된 인상을 준다(실제로 `TEST_WORKER_INDEX` 를 이름에 섞는 코드가 그 인상 위에 있다).
+    //   워커를 늘리려면 config 의 `workers` 를 바꾸고 **공유 DB 상태를 쓰는 스펙부터 격리**해야 한다 —
+    //   그 판단 없이 이 한 줄만 두면 "병렬로 돌고 있다"는 착각만 남는다.
     test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test.describe('Board Master Wizard Flow', () => {
