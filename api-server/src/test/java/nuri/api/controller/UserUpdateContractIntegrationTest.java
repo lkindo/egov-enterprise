@@ -55,6 +55,15 @@ class UserUpdateContractIntegrationTest {
             {"userId":"e2e_b6n70i","userNm":"E2E User B6N70I UPD","emlAddr":"e2e_b6n70i@egov.kr","mblTelno":"","ognzId":"","pswd":""}
             """;
 
+    /**
+     * 이메일이 없는 사용자의 수정 — <b>예외가 아니라 정상 경로</b>다.
+     * {@code registerUser} 는 emlAddr 을 인자로 받지 않아 등록 시 저장되지 않으므로,
+     * 방금 만든 사용자는 항상 이메일이 비어 있다. 폼은 미입력을 {@code ""} 로 보낸다.
+     */
+    private static final String UPDATE_BODY_WITH_EMPTY_OPTIONALS = """
+            {"userId":"e2e_2na9p","userNm":"E2E User 2NA9P UPD","emlAddr":"","mblTelno":"","ognzId":"","pswd":""}
+            """;
+
     @Test
     @DisplayName("관리자 수정: 화면이 보내는 본문 그대로 400 이 아니어야 한다")
     void adminUpdate_withUiPayload_isNotRejected() throws Exception {
@@ -62,6 +71,30 @@ class UserUpdateContractIntegrationTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(UPDATE_BODY_AS_SENT_BY_UI))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("관리자 수정: 선택 필드가 빈 문자열이어도 거부되지 않는다 (emlAddr @Pattern 회귀 방어)")
+    void adminUpdate_withEmptyOptionalFields_isNotRejected() throws Exception {
+        // 종전에는 여기서 400 이 났다 — @Pattern 이 null 은 건너뛰지만 "" 는 검사하기 때문이다.
+        //   {"field":"emlAddr","message":"이메일 형식이 올바르지 않습니다"}  (CI run 31472689196)
+        // 선택 필드의 형식 제약은 "값이 있으면 형식을 지켜라" 여야 한다.
+        mockMvc.perform(put("/api/v1/admin/system/users/e2e_2na9p")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(UPDATE_BODY_WITH_EMPTY_OPTIONALS))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("이메일 형식 검사는 살아 있다 (빈 문자열 허용이 검증을 통째로 끄지 않았는지)")
+    void adminUpdate_withMalformedEmail_isStillRejected() throws Exception {
+        // 완화의 유일한 위험은 '형식 검사가 통째로 꺼지는 것' 이다 — 반대 방향으로 고정한다.
+        mockMvc.perform(put("/api/v1/admin/system/users/e2e_2na9p")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"userId":"e2e_2na9p","userNm":"E2E User","emlAddr":"not-an-email","mblTelno":"","ognzId":"","pswd":""}
+                                """))
+                .andExpect(status().isBadRequest());
     }
 
     // ⚠ `/users/me` 케이스는 이 층에서 검증하지 못한다 — 실측(2026-08-11) 결과 500 이 난다.

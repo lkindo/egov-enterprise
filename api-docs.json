@@ -16188,7 +16188,7 @@
             "type": "string",
             "maxLength": 50,
             "minLength": 0,
-            "pattern": "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
+            "pattern": "^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"
           },
           "ofcpsNm": {
             "type": "string",

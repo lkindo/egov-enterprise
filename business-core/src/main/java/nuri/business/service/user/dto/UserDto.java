@@ -103,8 +103,22 @@ public record UserDto(
     @Size(max = 11, message = "휴대폰 번호는 최대 11 자입니다")
     String mblTelno,
 
+    // [2026-08-11 정정] 정규식 앞에 `^$|` 를 더해 **빈 문자열을 허용**한다.
+    //
+    //   emlAddr 은 선택 필드다(@NotBlank 가 없다). 그런데 Bean Validation 의 @Pattern 은
+    //   **null 은 건너뛰지만 빈 문자열("")은 검사한다.** 폼은 미입력을 null 이 아니라 "" 로 보내므로,
+    //   이메일이 없는 사용자는 **수정 자체가 불가능**했다:
+    //     {"success":false,"status":400,"errors":[{"field":"emlAddr","message":"이메일 형식이 올바르지 않습니다"}]}
+    //   (2026-08-11 CI run 31472689196 실측 — 보낸 페이로드의 emlAddr 은 "" 였다.)
+    //
+    //   ⚠ 이메일이 비는 것은 예외 상황이 아니라 **정상 경로**다: registerUser 는 emlAddr 을
+    //     인자로 받지도 않아 등록 시 아예 저장되지 않는다(mblTelno·ognzId 도 동일 — 별건 과제).
+    //     즉 방금 만든 사용자는 항상 이메일이 없고, 그래서 항상 수정할 수 없었다.
+    //
+    //   선택 필드의 형식 제약은 "값이 있으면 형식을 지켜라" 여야 한다. 값이 없는 것을 형식 위반으로
+    //   판정하면 그 필드는 사실상 필수가 된다 — @NotBlank 를 붙이지 않은 의도와 정면으로 어긋난다.
     @Size(max = 50, message = "이메일은 최대 50 자입니다")
-    @Pattern(regexp = "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "이메일 형식이 올바르지 않습니다")
+    @Pattern(regexp = "^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$", message = "이메일 형식이 올바르지 않습니다")
     String emlAddr,
 
     @Size(max = 300, message = "직함은 최대 300 자입니다")
