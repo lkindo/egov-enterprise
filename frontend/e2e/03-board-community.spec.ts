@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures/base-test';
 import { CommunityPage } from './pages/CommunityPage';
+import { getAdminBearerToken } from './utils/admin-token';
 
 /**
  * [Tier 3] Business Domain: Board & Community Engagement
@@ -243,6 +244,86 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
         await communityPage.selectCategory('COMMUNITY');
         await communityPage.verifyCOPList();
         await communityPage.gotoMaster();
+    });
+
+    /**
+     * 댓글 생명주기 — 작성 → 수정 → 삭제.
+     *
+     * [왜 필요한가 — 2026-08-11] 댓글 UI 에는 수정·삭제 버튼이 있고 단위 테스트도 있지만
+     *   그쪽은 API 를 목으로 대체한다. **실 왕복은 검증된 적이 없다.**
+     *   22-deep-security-guard 가 댓글 입력을 쓰지만 그것은 XSS 새니타이제이션이 목적이라
+     *   생성 경로만 지나가고 수정·삭제는 건드리지 않는다.
+     *
+     * [무엇을 보는가] 화면 반영과 **서버 상태를 따로** 확인한다. 이 저장소에는
+     *   'API 를 부르지 않고 성공만 보여주던' 사례가 반복해서 나왔다(11 티어의 가짜 상신 토스트,
+     *   게시글 첨부 유실, 등록이 이메일을 버리던 문제). 화면만 보면 그 계열을 놓친다.
+     */
+    test('댓글: 작성 → 수정 → 삭제가 화면과 서버 양쪽에 반영된다', async ({ page, request }) => {
+        const auth = { Authorization: `Bearer ${getAdminBearerToken()}` };
+        const bbsId = 'BBSMSTR_AAAAAAAAAAAA';
+        const stamp = Date.now();
+        const original = `E2E03 댓글 원본 ${stamp}`;
+        const edited = `E2E03 댓글 수정 ${stamp}`;
+
+        // 댓글이 매달릴 게시글을 직접 만든다(시드에 의존하면 누적 쓰레기가 쌓인다 — 22·24·25 와 같은 방침).
+        const createRes = await request.post('/api/v1/boards/posts', {
+            headers: auth,
+            data: { bbsId, pstTtl: `E2E03_CMT_${stamp}`, pstCn: '댓글 생명주기 검증용 임시 게시글' },
+        });
+        expect(createRes.ok(), '검증용 게시글 시딩이 성공해야 한다').toBeTruthy();
+        const pstId = String((await createRes.json())?.data ?? '').trim();
+        expect(pstId, '서버가 채번한 게시글 ID 를 받아야 한다').not.toBe('');
+
+        /** 서버가 실제로 들고 있는 댓글 본문 목록. 화면 단언과 분리해서 본다. */
+        const serverComments = async (): Promise<string[]> => {
+            const res = await request.get(`/api/v1/comments?pstId=${pstId}&bbsId=${bbsId}&size=100`, { headers: auth });
+            const data = (await res.json())?.data;
+            const list = data?.list ?? data?.content ?? [];
+            return (list as { ansCn: string }[]).map((c) => c.ansCn);
+        };
+
+        try {
+            await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${pstId}`);
+
+            // ── 작성
+            const input = page.locator('textarea[name="ansCn"]');
+            await expect(input).toBeVisible({ timeout: 15000 });
+            await input.fill(original);
+            await page.getByRole('button', { name: /Commit Response|COMMITTING/i }).click();
+
+            const rendered = page.locator('p.whitespace-pre-wrap').filter({ hasText: original }).first();
+            await expect(rendered, '작성한 댓글이 화면에 나타나야 한다').toBeVisible({ timeout: 15000 });
+            await expect.poll(serverComments, { timeout: 15000, message: '작성이 서버에 반영되어야 한다' })
+                .toContain(original);
+
+            // ── 수정
+            await page.getByTestId('comment-edit-button').first().click();
+            const editBox = page.getByLabel('댓글 수정 내용');
+            // 편집창에 기존 본문이 실려야 한다 — 빈 칸이 뜨면 그것은 수정이 아니라 덮어쓰기다.
+            await expect(editBox, '수정 폼에 기존 본문이 실려야 한다').toHaveValue(original, { timeout: 15000 });
+            await editBox.fill(edited);
+            await page.getByTestId('edit-save-button').first().click();
+
+            await expect(
+                page.locator('p.whitespace-pre-wrap').filter({ hasText: edited }).first(),
+                '수정 결과가 화면에 반영되어야 한다',
+            ).toBeVisible({ timeout: 15000 });
+            await expect.poll(serverComments, { timeout: 15000, message: 'UI 수정이 서버에 반영되어야 한다' })
+                .toContain(edited);
+
+            // ── 삭제 (네이티브 confirm 을 쓴다 — 클릭 전에 핸들러를 걸어야 한다)
+            page.once('dialog', (dialog) => dialog.accept());
+            await page.getByTestId('comment-delete-button').first().click();
+
+            await expect(
+                page.locator('p.whitespace-pre-wrap').filter({ hasText: edited }),
+                '삭제한 댓글이 화면에서 사라져야 한다',
+            ).toHaveCount(0, { timeout: 15000 });
+            await expect.poll(serverComments, { timeout: 15000, message: 'UI 삭제가 실제 삭제로 이어져야 한다' })
+                .not.toContain(edited);
+        } finally {
+            await request.delete(`/api/v1/boards/${bbsId}/posts/${pstId}`, { headers: auth });
+        }
     });
 
     test.describe('Community Supplementary Services Smoke Check', () => {
