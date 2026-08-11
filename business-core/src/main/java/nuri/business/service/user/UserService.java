@@ -288,30 +288,63 @@ public class UserService extends BaseAbstractService {
                 // [보안] 본인 또는 관리자만 수정 가능
                 nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(user.getEsntlId());
 
+                // [2026-08-12 결함 수정] **보내지 않은 필드가 지워지던 것**을 막는다.
+                //
+                //   User.update() 는 인자를 무조건 대입한다(this.emplNo = emplNo). 그런데 관리자
+                //   수정 폼(UserManageForm)이 전송하는 것은 userId·userNm·emlAddr·mblTelno·ognzId·pswd
+                //   뿐이고, 나머지 **12개(사번·직함·주소·우편번호·사무실/지역/중간/끝 전화·팩스·
+                //   상세주소·그룹·기관코드)는 null 로 와서 그대로 덮어써졌다.**
+                //   즉 이름 한 글자만 고쳐도 그 사용자의 주소·연락처·사번이 통째로 날아갔다.
+                //
+                //   폼이 값을 왕복시켜 방어하는 방법(부서 업무에서 쓰는 방식)은 여기서는 성립하지 않는다 —
+                //   목록 API 의 projection 이 10개 필드만 돌려주어(UserRepositoryImpl) 화면이
+                //   areaNo·homeAddr·zip·ognzId 등을 **애초에 받지 못한다**. 왕복시킬 값이 없다.
+                //
+                //   그래서 서버에서 막는다: **null 은 '보내지 않음' 으로 보고 기존 값을 유지**한다.
+                //   빈 문자열("")은 '지움' 이므로 그대로 반영된다 — 폼은 비운 칸을 "" 로 보내므로
+                //   사용자가 실제로 지우려는 의도는 여전히 통한다.
+                //
+                //   ⚠ 이 규칙은 **부분 수정(partial update)** 계약이다. 필드를 null 로 만들고 싶다면
+                //     "" 를 보내야 한다. 전체 치환(PUT 의 엄격한 의미)을 원하는 클라이언트가 생기면
+                //     그때는 별도 엔드포인트로 분리할 것 — 조용한 데이터 유실보다 명시적 계약이 낫다.
                 user.update(
                                 userDto.userNm(),
                                 user.getPswdHint(),
                                 user.getPswdCrans(),
-                                userDto.emplNo(),
+                                keepIfAbsent(userDto.emplNo(), user.getEmplNo()),
                                 user.getRrno(),
                                 user.getGndrCd(),
                                 user.getBrthYmd(),
-                                userDto.areaNo(),
-                                userDto.middleTelno(),
-                                userDto.endTelno(),
-                                userDto.faxNo(),
-                                userDto.homeAddr(),
-                                userDto.daddr(),
-                                userDto.zip(),
-                                userDto.officeTelno(),
-                                userDto.mblTelno(),
-                                userDto.emlAddr(),
-                                userDto.ofcpsNm(),
-                                userDto.groupId(),
-                                userDto.ognzId(),
-                                userDto.pstinstCd(),
+                                keepIfAbsent(userDto.areaNo(), user.getAreaNo()),
+                                keepIfAbsent(userDto.middleTelno(), user.getMiddleTelno()),
+                                keepIfAbsent(userDto.endTelno(), user.getEndTelno()),
+                                keepIfAbsent(userDto.faxNo(), user.getFaxNo()),
+                                keepIfAbsent(userDto.homeAddr(), user.getHomeAddr()),
+                                keepIfAbsent(userDto.daddr(), user.getDaddr()),
+                                keepIfAbsent(userDto.zip(), user.getZip()),
+                                keepIfAbsent(userDto.officeTelno(), user.getOfficeTelno()),
+                                keepIfAbsent(userDto.mblTelno(), user.getMblTelno()),
+                                keepIfAbsent(userDto.emlAddr(), user.getEmlAddr()),
+                                keepIfAbsent(userDto.ofcpsNm(), user.getOfcpsNm()),
+                                keepIfAbsent(userDto.groupId(), user.getGroupId()),
+                                keepIfAbsent(userDto.ognzId(), user.getOgnzId()),
+                                keepIfAbsent(userDto.pstinstCd(), user.getPstinstCd()),
                                 user.getRole(),
                                 user.getCertDnVl());
+        }
+
+        /**
+         * 부분 수정 규칙 — {@code null} 이면 기존 값을 유지하고, 그 외(빈 문자열 포함)는 요청 값을 쓴다.
+         *
+         * <p>null 과 "" 를 구분하는 것이 핵심이다:
+         * <ul>
+         *   <li>{@code null} = 클라이언트가 <b>보내지 않은</b> 필드 → 건드리지 않는다.</li>
+         *   <li>{@code ""}   = 클라이언트가 <b>비운</b> 필드 → 지우려는 의도이므로 반영한다.</li>
+         * </ul>
+         * 폼은 렌더하는 칸을 비우면 "" 로 보내므로 이 구분이 사용자 의도와 그대로 맞는다.
+         */
+        private static String keepIfAbsent(String requested, String existing) {
+                return requested != null ? requested : existing;
         }
 
         /**
