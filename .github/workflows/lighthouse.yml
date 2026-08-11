@@ -55,6 +55,23 @@ jobs:
         working-directory: frontend
         run: pnpm install --frozen-lockfile
 
+      # [2026-08-09 신설 — 첫 수동 실행이 이것 때문에 실패했다]
+      #   `next start` 는 NODE_ENV=production 이고, 미들웨어는 prod 에서 JWT_SECRET 이 없으면
+      #   **모듈 로드 시점에 throw** 한다(공개된 dev 기본값으로 조용히 서명 검증하는 최악 상태 방지).
+      #   matcher 가 `/((?!_next/static|_next/image|favicon.ico).*)` 라 /login 도 그 대상이므로
+      #   **모든 페이지 요청이 500** 이 되고, Lighthouse 는 ERRORED_DOCUMENT_REQUEST 로 죽는다.
+      #   실측(run 31319613189): 리포트 0건 — 즉 이 워크플로는 성능을 **하나도 재지 못했다.**
+      #
+      #   ci.yml 의 e2e 잡이 이미 같은 문제를 같은 방식으로 풀어 뒀다(`openssl rand -hex 44`).
+      #   여기서는 백엔드와 대칭일 필요가 없다 — 로그인하지 않는 공개 화면만 재기 때문이다.
+      #   회차마다 새로 만들므로 저장소에 시크릿을 남기지 않는다.
+      #
+      # ⚠ **빌드 이전**이어야 한다. 미들웨어는 Edge Runtime 이고 Next 는 Edge 번들의
+      #   `process.env` 를 **빌드 시점에 인라인**한다(ci.yml 의 2026-07-28 캐시 오염 사례 참조).
+      #   기동 직전에 넣으면 번들에는 이미 값이 없는 상태로 박혀 있어 아무 효과가 없다.
+      - name: Generate ephemeral JWT secret (측정 전용 · 회차마다 폐기)
+        run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
+
       # lhci 가 startServerCommand 로 `next start` 를 띄우므로 빌드가 선행돼야 한다.
       - name: Build
         working-directory: frontend
