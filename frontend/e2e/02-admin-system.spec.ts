@@ -21,9 +21,9 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
         const testId = `e2e_${suffix}`;
         const testName = `E2E User ${suffix.toUpperCase()}`;
 
-        // [2026-08-10 개명] 'Create-Search-Update-Delete Flow' → 실제로 수행하는 단계로 정정.
-        //   Update 는 아래 fixme 가 소유한다(앱이 400 을 돌려주는 것이 확인됐다).
-        test('Create-Search-Delete Flow', async ({ page }) => {
+        // 이름이 약속하는 4단계를 실제로 모두 수행한다. (2026-08-10 감사에서 Update 가 한 번도
+        // 존재한 적 없음이 드러났고, 채워 넣자 백엔드 결함이 확인돼 2026-08-11 에 함께 고쳤다.)
+        test('Create-Search-Update-Delete Flow', async ({ page }) => {
             console.log(`\n>>> Starting User Lifecycle: id=${testId}, name=${testName}`);
 
             // --- Step 1: Navigate ---
@@ -86,82 +86,16 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await page.waitForTimeout(2000);
             await expect(page.locator(`text=${testName}`).first()).toBeVisible({ timeout: 15000 });
 
-            // --- Step 7: Delete ---
-            // ⚠ Update 단계는 이 테스트에 없다. 이름이 오래 'Create-Search-Update-Delete' 였음에도
-            //   Update 가 존재한 적이 없어 2026-08-10 에 추가했는데, **실행해 보니 앱이 400 을 돌려준다.**
-            //   결함을 계약으로 굳히지 않기 위해 아래 별도 `test.fixme` 로 분리해 박제했다.
-            console.log('>>> Step 7: Deleting user');
-            await page.locator(`text=${testName}`).first().click();
-            await page.waitForTimeout(1000);
-
-            // [2026-07-27 정정] 종전 셀렉터는 '접근 차단' / '접근차단실행' / 토스트 '말소' 였다.
-            // 그러나 앱이 의도적으로 문구를 고쳤다 — UserOrgHubClient 주석: "실제 동작은 계정 삭제다.
-            // '접근 차단'은 무엇을 하는지 오인시킨다"(관리자 메뉴 감사 P1). 실측 문구로 맞춘다.
-            //   버튼='사용자 삭제'(부서 탭이면 '부서 삭제') · 확인=confirmText '삭제' · 토스트='… 삭제했습니다.'
-            const deleteBtn = page.getByRole('button', { name: '사용자 삭제' }).first();
-            await expect(deleteBtn).toBeVisible({ timeout: 10000 });
-            await deleteBtn.click();
-
-            // 확인 버튼 이름('삭제')은 상세 패널의 '사용자 삭제' 에도 부분일치하므로 다이얼로그로 한정한다.
-            const confirmBtn = page.getByRole('dialog').getByRole('button', { name: '삭제', exact: true });
-            await expect(confirmBtn).toBeVisible({ timeout: 5000 });
-            await confirmBtn.click();
-
-            const deleteSuccessAlert = page
-                .locator('[data-sonner-toast][data-type="success"]')
-                .filter({ hasText: '삭제했습니다' });
-            await expect(deleteSuccessAlert.first()).toBeVisible({ timeout: 15000 });
-            console.log('>>> User Lifecycle Completed Successfully');
-        });
-
-        /**
-         * 🚨 [2026-08-10 확인된 앱 결함 — 관리자의 사용자 정보 수정이 항상 400 이다]
-         *
-         * 이 스펙의 이름은 오랫동안 'Create-Search-**Update**-Delete Flow' 였지만 Update 단계가
-         * 존재한 적이 없었다. 채워 넣고 CI 에서 처음 돌리자 곧바로 드러났다(run 31370824912, shard 1):
-         *
-         *     ❌ [HTTP 400 PUT]: http://localhost:3001/api/v1/admin/system/users/e2e_lsezbi (xhr)
-         *     Error: expect(locator).toBeVisible() failed
-         *       Locator: [data-sonner-toast][data-type="success"] filter(hasText:'수정되었습니다')
-         *
-         * ── 근본 원인 (소스 대조로 확정)
-         *   · 수정 폼(UserManageForm)은 edit 모드에서 비밀번호를 **선택**으로 두고 defaultValues 로
-         *     `pswd: ''` 를 싣는다. 비밀번호 변경은 별도 경로(PATCH .../{id}/password)의 책임이므로
-         *     이것은 폼의 올바른 설계다.
-         *   · UserAdminService.updateUser 는 폼 값을 **그대로** PUT 한다(빈 값 제거 없음).
-         *   · 그런데 백엔드 UserApiController.updateUser 는 등록과 **같은 `UserDto` 를 `@Valid`** 로 받고,
-         *     UserDto.pswd 에는 `@NotBlank` + `@Size(min=8)` + `@Pattern` 이 걸려 있다.
-         *   → 즉 수정 요청은 구조적으로 통과할 수 없다. 비밀번호를 함께 보내지 않는 한 **항상 400** 이다.
-         *
-         * ── 왜 지금까지 아무도 몰랐나
-         *   이 경로를 검증하는 테스트가 프런트·백엔드 어디에도 없었다. 화면에는 폼이 뜨고 제출도 되며
-         *   실패는 일반 에러 토스트로만 나타나므로, 눈으로 보면 '동작하는 것처럼' 보인다.
-         *   (같은 화면의 '정보 수정' 버튼은 과거 onClick 이 없는 死버튼이었다가 수리된 이력이 있다 —
-         *    UI 는 고쳐졌지만 그 아래 API 계약은 여전히 깨져 있었던 셈이다.)
-         *
-         * ── 왜 fixme 인가
-         *   고치려면 백엔드 API 계약을 바꿔야 한다(수정 전용 DTO 분리 또는 검증 그룹 도입 →
-         *   api-docs.json → generated-api.d.ts → generated-zod.ts 연쇄 재생성). 그것은 E2E 최적화와
-         *   무관한 별건이며 독자적인 설계·리뷰가 필요하다. 그렇다고 "수정하면 에러가 난다" 를 단언해
-         *   **결함을 계약으로 동결하는 것은 금지**되어 있다(11 티어의 가짜 성공 토스트 사례와 동일한 함정).
-         *   그래서 테스트는 **올바른 기대값 그대로 두고** fixme 로 표시한다.
-         *
-         *   ✅ 백엔드가 고쳐지면 `.fixme` 만 떼면 그대로 통과해야 한다.
-         *
-         * ⚠ 첫 시도에서는 수정 이름에 `_UPD` 를 붙였다가 별개의 400 도 함께 유발했다 —
-         *   UserDto.userNm 의 `@Pattern(^[a-zA-Z0-9가-힣\s]{2,50}$)` 은 **밑줄을 허용하지 않는다**.
-         *   그래서 아래에서는 공백을 쓴다. (이 경우는 앱이 옳고 테스트가 틀렸던 쪽이다.)
-         */
-        test.fixme('User Update: 관리자가 사용자 정보를 수정한다 (현재 PUT 400 — UserDto.pswd @NotBlank)', async ({ page }) => {
+            // --- Step 7: Update ---
+            // [2026-08-10 신설 → 2026-08-11 활성화] 이 테스트의 이름은 줄곧
+            //   'Create-Search-Update-Delete Flow' 였지만 **Update 단계가 존재한 적이 없었다.**
+            //   채워 넣고 CI 에서 처음 돌리자 앱이 400 을 돌려줬다 — 등록용 DTO 를 수정에도 재사용해
+            //   `UserDto.pswd` 의 @NotBlank 가 수정 요청까지 막고 있었다(수정 폼은 비밀번호를 보내지
+            //   않는 것이 옳은 설계다 — 변경은 전용 경로 책임). 서버의 검증 그룹을 한정해 고쳤고
+            //   (UserValidationGroups.OnCreate) 이제 이 단계가 실제로 돈다.
+            //   ⚠ 이름에 밑줄을 쓰지 않는다 — UserDto.userNm 의 @Pattern 이 밑줄을 불허한다.
+            console.log('>>> Step 7: Updating user');
             const updatedName = `${testName} UPD`;
-
-            await page.goto('/admin/user/manage');
-            await expect(page.getByRole('heading', { name: '사용자 관리' }).first()).toBeVisible({ timeout: 20000 });
-
-            const searchInput = page.locator('input[placeholder*="검색"], input[placeholder*="identity"]').first();
-            await searchInput.fill(testName);
-            await page.keyboard.press('Enter');
-            await expect(page.locator(`text=${testName}`).first()).toBeVisible({ timeout: 15000 });
             await page.locator(`text=${testName}`).first().click();
 
             // ⚠ '정보 수정'이라는 접근가능 이름을 가진 버튼이 상세 패널에 **둘** 있다
@@ -191,7 +125,44 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await searchInput.fill(updatedName);
             await page.keyboard.press('Enter');
             await expect(page.locator(`text=${updatedName}`).first()).toBeVisible({ timeout: 15000 });
+
+            // --- Step 8: Delete ---
+            console.log('>>> Step 8: Deleting user');
+            await page.locator(`text=${updatedName}`).first().click();
+            await page.waitForTimeout(1000);
+
+            // [2026-07-27 정정] 종전 셀렉터는 '접근 차단' / '접근차단실행' / 토스트 '말소' 였다.
+            // 그러나 앱이 의도적으로 문구를 고쳤다 — UserOrgHubClient 주석: "실제 동작은 계정 삭제다.
+            // '접근 차단'은 무엇을 하는지 오인시킨다"(관리자 메뉴 감사 P1). 실측 문구로 맞춘다.
+            //   버튼='사용자 삭제'(부서 탭이면 '부서 삭제') · 확인=confirmText '삭제' · 토스트='… 삭제했습니다.'
+            const deleteBtn = page.getByRole('button', { name: '사용자 삭제' }).first();
+            await expect(deleteBtn).toBeVisible({ timeout: 10000 });
+            await deleteBtn.click();
+
+            // 확인 버튼 이름('삭제')은 상세 패널의 '사용자 삭제' 에도 부분일치하므로 다이얼로그로 한정한다.
+            const confirmBtn = page.getByRole('dialog').getByRole('button', { name: '삭제', exact: true });
+            await expect(confirmBtn).toBeVisible({ timeout: 5000 });
+            await confirmBtn.click();
+
+            const deleteSuccessAlert = page
+                .locator('[data-sonner-toast][data-type="success"]')
+                .filter({ hasText: '삭제했습니다' });
+            await expect(deleteSuccessAlert.first()).toBeVisible({ timeout: 15000 });
+            console.log('>>> User Lifecycle Completed Successfully');
         });
+
+        // [2026-08-11 해소] 여기에 `test.fixme('User Update: … 현재 PUT 400')` 가 있었다.
+        //   원인이던 백엔드 결함(등록용 UserDto 의 pswd @NotBlank 가 수정 요청까지 막던 것)을
+        //   검증 그룹 한정으로 고쳤으므로(UserValidationGroups.OnCreate), Update 단계를 위
+        //   메인 흐름(Step 7)으로 되돌리고 fixme 를 제거한다.
+        //
+        //   ⚠ 별도 테스트로 두지 않은 이유: 이 describe 의 testName 은 메인 테스트가 만들고
+        //     **마지막에 삭제**한다. 분리된 테스트는 그 사용자를 찾지 못하는 순서 의존 결함을
+        //     안게 된다(fixme 라 한 번도 실행되지 않아 드러나지 않았다).
+        //
+        //   회귀 방어는 두 층에 있다:
+        //     · 백엔드 UserApiControllerTest — 비밀번호 없는 수정 200 / 등록은 여전히 400 (양방향)
+        //     · 여기 E2E Step 7 — 화면에서 실제로 저장되고 목록에 반영되는지
     });
 
     // [E2E 감사 Phase3 중복제거] 삭제됨: 'System Configuration'(common-code/menus 네비 스모크) 및

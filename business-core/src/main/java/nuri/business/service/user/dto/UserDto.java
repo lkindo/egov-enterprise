@@ -31,10 +31,17 @@ public record UserDto(
 
     // [보안] 비밀번호 계열 필드는 요청(write)으로만 수용하고 응답(read)에는 절대 직렬화하지 않는다.
     // UserDto 가 request/response 겸용이라 from() 이 해시를 채우더라도 WRITE_ONLY 로 응답 노출을 원천 차단한다.
+    //
+    // [2026-08-11 그룹 한정] 아래 세 제약은 **등록 경로에만** 적용한다(UserValidationGroups.OnCreate).
+    //   이 DTO 는 등록(POST /admin/system/users)과 수정(PUT /admin/system/users/{id}, PUT /users/me)이
+    //   공유하는데, UserService.updateUser 는 비밀번호를 **한 번도 읽지 않는다** — 비밀번호 변경은
+    //   전용 경로의 책임이다. 그럼에도 기본 그룹으로 걸려 있어 수정 요청이 비밀번호를 보내지 않는 한
+    //   **항상 400** 이었다(2026-08-11 E2E 로 확인: PUT /api/v1/admin/system/users/{id} → 400).
+    //   상세 근거와 새 등록 엔드포인트 추가 시 주의사항은 UserValidationGroups 참조.
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
-    @NotBlank(message = "비밀번호는 필수입니다")
-    @Size(min = 8, max = 100, message = "비밀번호는 8-100 자입니다")
-    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다")
+    @NotBlank(message = "비밀번호는 필수입니다", groups = UserValidationGroups.OnCreate.class)
+    @Size(min = 8, max = 100, message = "비밀번호는 8-100 자입니다", groups = UserValidationGroups.OnCreate.class)
+    @Pattern(regexp = "^(?=.*[a-zA-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$", message = "비밀번호는 영문, 숫자, 특수문자를 포함하여 8자 이상이어야 합니다", groups = UserValidationGroups.OnCreate.class)
     String pswd,
 
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
