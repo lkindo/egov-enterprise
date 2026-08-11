@@ -378,3 +378,94 @@ CI run 31321924801(main, 전량 success) 스텝별 실측:
 ---
 
 *작성: 2026-08-10 · Claude Code (dual-operator)*
+
+---
+
+## 11. 후속 과제 3건 처리 결과 (2026-08-11)
+
+§9 에 남겼던 후속 과제를 모두 처리했다. 처리 과정에서 **앱 결함 2건을 추가로 발견**했다.
+
+### 11.1 ✅ 사용자 수정 400 — 원인이 **두 겹**이었다
+
+| # | 원인 | 수정 |
+|---|---|---|
+| ① | `UserDto.pswd` 의 `@NotBlank`+`@Size`+`@Pattern` 이 기본 그룹이라 **수정 요청에도 적용** | `UserValidationGroups.OnCreate` 로 등록 경로에만 한정 |
+| ② | `UserDto.emlAddr` 의 `@Pattern` 이 **빈 문자열을 거부** (@Pattern 은 null 은 건너뛰지만 "" 는 검사) | 정규식에 `^$\|` 를 더해 선택 필드의 미입력을 허용 |
+
+①만 고쳤을 때 **CI 는 여전히 400** 이었다. 그때 배운 것이 이 절의 핵심이다.
+
+**standalone MockMvc 그린이 실 앱 동작을 보장하지 못했다.** `UserApiControllerTest` 는
+`BaseControllerTest` 기반이라 컨트롤러를 손으로 띄운다 — 실제 ObjectMapper·Validator 구성이
+그대로 적용된다는 보장이 없다. 그래서 `UserUpdateContractIntegrationTest`(실 `@SpringBootTest`)
+를 신설했고, 이제 이 계약은 두 층에서 검증된다.
+
+**그리고 원격 추론을 멈추고 관측을 심었다.** 02 의 수정 제출을 성공 토스트가 아니라
+**API 응답으로 직접 단언**하고, 실패 시 상태코드·응답 본문·보낸 페이로드를 단언 메시지에 싣게 했다.
+그 한 회차가 5회차 동안 못 찾던 원인을 확정했다:
+
+```
+errors: [{"field":"emlAddr","message":"이메일 형식이 올바르지 않습니다"}]
+보낸 페이로드: {..., "emlAddr":""}
+```
+
+> **교훈**: 실패가 "무엇이 안 보였다" 까지만 말하면 원격 디버깅은 추측이 된다.
+> 단언 메시지가 원인을 담게 만드는 것이 회차를 줄이는 가장 싼 방법이었다.
+> 부수적으로 단언 자체도 강해졌다 — 토스트만 보는 검증은 'API 를 부르지 않고 토스트만 띄우는'
+> 회귀를 놓친다(11 티어 전례).
+
+### 11.2 ✅ vitest 계층 배치
+
+pre-push 에 vitest 가 없어 유닛 1건이 **E2E 3샤드를 통째로 skip** 시켰다(run 31369018355 실증).
+전수는 로컬 147초라 pre-push(~2분) 예산에 맞지 않으므로 계층을 나눴다:
+
+* **pre-push** → `frontend/src/__tests__` 불변식 게이트 5파일·18건 (**10초**)
+* **localGate** → `frontendUnitTest` 태스크 신설, 전수 (147초)
+
+### 11.3 ⏸ CI 샤드 3→2 — 측정은 마쳤으나 **되돌렸다**
+
+측정상 2샤드가 두 축 모두 낫다(wall 432→~399s, runner 1008→~798s). 그러나 적용하자
+**§11.5 의 하이드레이션 결함이 드러나** CI 가 red 가 됐다. 그 결함을 고친 뒤 다시 내리기로 하고
+이번에는 3 을 유지한다. 측정값과 되돌린 사유는 `ci.yml` 주석에 그대로 남겼다.
+
+* 타임아웃 75→30분은 **유지**했다(실측 최장 7.2분의 4배 여유).
+* "이미지를 한 번만 빌드해 공유" 안은 계산상 **wall 이 나빠져** 채택하지 않았다(약 492s).
+
+---
+
+## 12. 🚨 추가로 발견한 앱 결함 2건 (별건 — 이 PR 범위 밖)
+
+### 12.1 등록이 선택 필드를 **버린다**
+
+`UserService.registerUser(userId, pswd, userNm, pswdHint, pswdCrans, roleName)` —
+인자에 **`emlAddr`·`mblTelno`·`ognzId` 가 없다.** 등록 폼은 이 값들을 수집해 전송하지만
+서비스가 저장하지 않는다. 그래서 갓 만든 사용자는 항상 이메일이 비어 있고,
+그것이 §11.1 ②를 촉발한 조건이었다.
+
+고치려면 `registerUser` 의 시그니처와 저장 로직을 바꿔야 한다(도메인 동작 변경).
+
+### 12.2 `/search` 하이드레이션 불일치 (React #418)
+
+09 티어의 `Search: Exploratory Empty Result Check` 가 **2샤드 구성에서 2회 모두** 실패했다
+(재시도 포함 결정적). 3샤드에서는 통과한다 — 즉 **실행 순서에 따라 드러나는 기존 결함**이며
+main 에 이미 존재한다.
+
+* `/search` 는 빌드 산출물에서 `◐`(PPR — 빌드시 정적 셸 + 런타임 스트리밍) 대상이다.
+* `SearchClient` 는 `useSearchParams()` 로 초기 state 를 만든다.
+* ⚠ 다만 다른 PPR 페이지는 멀쩡하므로 이 설명만으로 확증되지 않는다.
+  **추측 기반 수정을 하지 않고 원인 규명을 별건으로 남긴다.**
+
+> ⚠ `consoleGuard.addIgnorePattern` 으로 덮는 선택지는 취하지 않았다 —
+> 가드가 제 역할을 한 신호를 지우는 것이고, 이 저장소가 반복해서 금지해 온 형태다(§0.7-H2).
+
+---
+
+## 13. 변경 파일 (2026-08-11 추가분)
+
+**백엔드**: `UserApiController.java` · `UserDto.java` · `UserValidationGroups.java`(신설) ·
+`UserApiControllerTest.java` · `UserUpdateContractIntegrationTest.java`(신설)
+
+**계약**: `api-docs.json` · `generated-api.d.ts` · `generated-zod.ts`
+
+**게이트**: `.githooks/pre-push` · `build.gradle` · `baseline-manifest.properties` · `ci.yml`
+
+**E2E**: `02-admin-system.spec.ts`
