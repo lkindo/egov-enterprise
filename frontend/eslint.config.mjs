@@ -164,6 +164,31 @@ const eslintConfig = [
     rules: {
       "no-restricted-syntax": "off"
     }
+  },
+  {
+    // ────────────────────────────────────────────────────────────────────────
+    // [2026-08-11 신설] E2E(Playwright) 디렉터리.
+    //
+    // 종전 `lint` 스크립트는 `eslint src` 라 **e2e/ 가 통째로 lint 대상 밖**이었다.
+    // (같은 이유로 타입 검사도 빠져 있었고, 그쪽은 2026-08-10 tsconfig.e2e.json 으로 메웠다.)
+    // 여기서 그 마지막 사각지대를 닫는다.
+    //
+    // ⚠ `react-hooks/rules-of-hooks` 는 이 디렉터리에서 **전량 오탐**이다.
+    //   Playwright 의 fixture API 는 `use` 라는 이름의 콜백 인자를 쓴다:
+    //       bbsPage: async ({ page }, use) => { await use(new BBSPage(page)); }
+    //   eslint-plugin-react-hooks 가 그 호출을 React 의 `use` 훅으로 오인해
+    //   "React Hook \"use\" is called in function \"bbsPage\"…" 를 뱉는다.
+    //   실측(2026-08-11): e2e 의 **error 13건이 전부 이 규칙 하나**였고, 모두 base-test.ts 의
+    //   fixture 정의였다. e2e/ 에는 React 컴포넌트가 존재하지 않는다 — 규칙의 적용 대상이 아니다.
+    //   (이미 `**/__tests__/**`·`*.test.ts` 에 같은 예외가 있는데 `*.spec.ts` 만 빠져 있었다.)
+    //
+    // 인라인 z.object 금지도 테스트와 같은 이유로 끈다 — E2E 는 배포물이 아니라 계약을 만들지 않는다.
+    // ────────────────────────────────────────────────────────────────────────
+    files: ["e2e/**/*.ts"],
+    rules: {
+      "react-hooks/rules-of-hooks": "off",
+      "no-restricted-syntax": "off"
+    }
   }
 ];
 
