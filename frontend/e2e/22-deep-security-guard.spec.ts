@@ -33,46 +33,22 @@ const PREFIX = 'E2E22_';
 
 test.describe('Tier 22: Deep Security Guard', () => {
     
-    test.describe('IDOR (Insecure Direct Object Reference) Protection', () => {
-        // Use a regular user session to try and access admin-only data
-        test.use({ storageState: 'playwright/.auth/user.json' });
-
-        test('Access Denied for Direct User ID Manipulation', async ({ page, consoleGuard }) => {
-            consoleGuard.addIgnorePattern(/HTTP 401/i);
-            consoleGuard.addIgnorePattern(/401 \(Unauthorized\)/i);
-
-            // Attempt to access a specific user's edit page (webmaster) as a regular user
-            const targetUrl = '/admin/user/manage?userId=webmaster';
-            console.log(`>>> Attempting unauthorized access to: ${targetUrl}`);
-            
-            await page.goto(targetUrl);
-            
-            // Should be redirected or show unauthorized
-            await expect(page).not.toHaveURL(/.*userId=webmaster/, { timeout: 10000 });
-            
-            const url = page.url();
-            if (url.includes('auth_error=unauthorized') || url === 'http://localhost:3001/') {
-                console.log('>>> IDOR access correctly blocked (Redirected)');
-            } else {
-                const bodyText = await page.innerText('body');
-                expect(bodyText).toMatch(/권한|접근|Deny|Unauthorized|Forbidden/i);
-                console.log('>>> IDOR access correctly blocked (Error Message)');
-            }
-        });
-
-        test('API Boundary: Unauthorized Direct API Access', async ({ request }) => {
-            console.log('>>> Attempting unauthorized API call to admin system users');
-            // This assumes the user session (from storageState) is passed automatically if using 'request' from test args
-            // However, Playwright's 'request' doesn't automatically use storageState cookies for APIRequestContext 
-            // unless configured in playwright.config.ts or passed manually.
-            // In our project, it's safer to check if the API returns 403.
-            
-            const response = await request.get('/api/v1/admin/system/users/webmaster');
-            // Status should be 401 or 403
-            expect([401, 403]).toContain(response.status());
-            console.log(`>>> API Access Blocked with status: ${response.status()}`);
-        });
-    });
+    // [2026-08-10 이관] 삭제됨: 'IDOR (Insecure Direct Object Reference) Protection' describe 전체.
+    //
+    //   ⚠ 두 테스트 모두 **이름이 검증 내용과 달랐고**, 실제로 검증하던 것은 다른 파일이 이미 소유한 계약이었다.
+    //     · 'Access Denied for Direct User ID Manipulation'
+    //         → 쿼리스트링이 붙었을 뿐 `/admin/user/manage` 경로의 비관리자 차단이다. 즉 IDOR 이 아니라
+    //           **미들웨어 경로 RBAC**이며, 23-E4 매트릭스가 '쿼리스트링으로 경로 판정을 흐릴 수 없다'로 소유한다.
+    //           (종전 구현은 `url === 'http://localhost:3001/'` 하드코딩 + if/else 양방향 통과라
+    //            차단 방식이 바뀌어도 red 가 나지 않았다.)
+    //     · 'API Boundary: Unauthorized Direct API Access'
+    //         → 토큰을 싣지 않은 **익명** 요청이다(주석 스스로 인정하고 있었다). 23-E3 의
+    //           'anonymous request is rejected on admin API' 로 옮겼다. 인증된 비관리자의 권한상승 차단은
+    //           같은 E3 가 유효 토큰을 실어 3개 엔드포인트로 검증한다 — 그쪽이 더 강한 단언이다.
+    //
+    //   진짜 IDOR(사용자 A 의 리소스를 사용자 B 가 조회/삭제)은 아직 어디에도 없다.
+    //   23 파일 상단 TODO backlog 의 **E6** 로 등록돼 있다 — 이 파일이 그것을 검증한 적은 한 번도 없었으므로
+    //   삭제로 잃는 커버리지는 없다.
 
     test.describe('Advanced XSS & Payload Sanitization', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });

@@ -26,9 +26,29 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
     const query = searchParams.get('q') || initialQuery;
 
     const [activeTab, setTab] = useState('all');
-    const [searchInput, setSearchInput] = useState(query);
+
+    // [2026-08-11 하이드레이션 수정] 초기값을 `query`(= searchParams 파생)로 두면 안 된다.
+    //
+    //   이 라우트는 PPR 대상이다(next.config `cacheComponents: true`, 빌드 산출물에서 `◐ /search`).
+    //   정적 셸은 **검색 파라미터 없이** 프리렌더되므로 그 HTML 의 입력값은 항상 빈 문자열이다.
+    //   그런데 `/search?q=X` 로 진입하면 클라이언트의 첫 렌더는 value="X" 가 되어
+    //   셸과 어긋나고, React 가 트리를 통째로 다시 만들며 경고를 던진다:
+    //     🚨 Minified React error #418 (server rendered HTML didn't match the client)
+    //
+    //   실측(CI 로그 2건, 2026-08-09 · 2026-08-11): 오류는 **검색 내비게이션 직후 ~0.3초**에만
+    //   나타났고 `/search` 초기 진입에서는 한 번도 나지 않았다 — 위 설명과 정확히 일치한다.
+    //   ConsoleErrorGuard 가 이를 잡아 09 티어를 간헐 실패시켰다(때로는 재시도로 통과해 flaky).
+    //
+    //   → 첫 렌더는 서버·프리렌더와 **동일한 값**으로 두고, 마운트 후 URL 과 동기화한다.
+    //     (사용자에게는 입력칸이 즉시 채워지는 것과 구분되지 않는다.)
+    const [searchInput, setSearchInput] = useState(initialQuery);
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(initialResults);
+
+    // 마운트 이후에만 URL 의 검색어를 입력칸에 반영한다(위 주석 참조).
+    useEffect(() => {
+        setSearchInput(query);
+    }, [query]);
 
     const handleSearch = (e?: React.FormEvent) => {
         if (e) e.preventDefault();

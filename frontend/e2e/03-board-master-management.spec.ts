@@ -8,7 +8,10 @@ test.describe('Tier 3: Board Master Management (Admin Flow)', () => {
     let boardMasterPage: BoardMasterPage;
 
     test.beforeEach(async ({ page }) => {
-        test.setTimeout(300000); // 5 minutes
+        // [2026-08-10 제거] `test.setTimeout(300000)` — playwright.config 가 2026-07-28 에 전역
+        //   timeout 을 300s → 180s 로 내린 근거(실측 최장 테스트 50.2s · CI 는 retries 가 곱해져
+        //   한 테스트의 상한이 timeout×(1+retries) 가 된다)를 **이 파일만 되돌리고 있었다**.
+        //   180s 도 실측 최장의 3.6배라 여유는 충분하다. 유독 이 스펙만 5분이 필요하다는 근거는 없었다.
         boardMasterPage = new BoardMasterPage(page);
         // [E2E 감사 C5] 수동 ConsoleErrorGuard 이중 설치 제거 — base-test의 auto consoleGuard가 전역 적용됨.
 
@@ -91,49 +94,14 @@ test.describe('Tier 3: Board Master Management (Admin Flow)', () => {
     });
 });
 
-test.describe('Tier 3: Board Master Security (Unauthorized Access)', () => {
-    // Inject Regular User Session
-    test.use({ storageState: 'playwright/.auth/user.json' });
-
-    test('Access Denied for Regular User', async ({ page }) => {
-        console.log('>>> Attempting to access Admin Board Master page as regular user');
-        
-        // Use Promise.all to catch the response and handle navigation simultaneously
-        const [response] = await Promise.all([
-            page.waitForResponse(
-                res => res.url().includes('/board-masters') && (res.status() === 403 || res.status() === 401),
-                { timeout: 30000 }
-            ).catch(() => null),
-            page.goto('/admin/community/boards/master')
-        ]);
-        
-        const url = page.url();
-        console.log(`>>> Current URL: ${url}`);
-
-        if (url.includes('admin/community/boards/master')) {
-            // [EXPECT] Verify Access Denied error UI
-            const errorDisplay = page.getByTestId('error-state-display').first();
-            await expect(errorDisplay).toBeVisible({ timeout: 30000 });
-            
-            // Check for localized "Access Denied" or "로드 실패"
-            const errorText = await errorDisplay.textContent();
-            console.log(`>>> Error display text: ${errorText}`);
-            expect(errorText).toMatch(/Access Denied|Forbidden|실패|권한/i);
-            
-            if (response) {
-                console.log(`>>> Confirmed Forbidden status: ${response.status()}`);
-            }
-
-            // Additional check: Ensure sensitive action buttons are hidden
-            const wizardBtn = page.getByRole('button', { name: /생성 마법사|Wizard/i });
-            if (await wizardBtn.count() > 0) {
-                await expect(wizardBtn.first()).toBeHidden();
-            }
-            
-            console.log('>>> Access correctly restricted (Security confirmed)');
-        } else {
-            console.log(`>>> Redirected to non-admin page: ${url} (Expected behavior for some auth configs)`);
-            expect(url).not.toContain('admin');
-        }
-    });
-});
+// [2026-08-10 이관] 삭제됨: 'Tier 3: Board Master Security (Unauthorized Access)' describe.
+//
+//   `/admin/community/boards/master` 의 비관리자 차단은 미들웨어 §4 의 ADMIN_ONLY_SUBPATHS carve-out 이며,
+//   23-security-auth-supplement 의 E4 매트릭스가 carve-out 3건 전량(master·maker·templates)을 소유한다.
+//   종전 구현은 그 위에 결함이 세 겹이었다:
+//     ① 최상위가 if/else 인데 **두 갈래 모두 통과 경로**였다 — 차단되든 리다이렉트되든 그린.
+//     ② else 분기의 `expect(url).not.toContain('admin')` 은 리다이렉트 목적지가 `/?auth_error=...` 라
+//        우연히 성립하던 단언이지, 차단을 증명하지 않았다.
+//     ③ `if (await wizardBtn.count() > 0)` 가드 안의 단언은 버튼이 없으면 **아무것도 검사하지 않았다**.
+//   즉 이 테스트는 "관리자 전용 화면이 일반 사용자에게 열려도" red 가 될 수 있는 구조가 아니었다.
+//   E4 는 리다이렉트 Location 을 직접 단언하므로 그 구멍이 없다.

@@ -113,11 +113,54 @@ class UserServiceTest {
             given(userRepository.findByUserId("testuser")).willReturn(Optional.empty());
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
             
-            String userId = userService.registerUser("testuser", "password", "홍길동", null, null, "USER");
+            String userId = userService.registerUser(UserDto.builder().userId("testuser").pswd("password").userNm("홍길동").pswdHint(null).pswdCrans(null).role("USER").build());
 
             assertEquals("testuser", userId);
             verify(userRepository).save(any());
             verify(userAuthorityRepository).save(any());
+        }
+    }
+
+    /**
+     * 🚨 [2026-08-11 회귀 방어] 등록이 입력값을 **버리지 않는지**.
+     *
+     * <p>종전 registerUser 는 User.builder() 에 7개 필드만 넣었다
+     * (userId·pswd·userNm·esntlId·pswdHint·pswdCrans·role). 그래서 관리자가 등록 폼에 채운
+     * <b>이메일·연락처·소속 부서가 오류 없이 사라졌다</b> — 성공 토스트까지 뜬 채로.
+     *
+     * <p>⚠ 위 registerUserSuccessTest 가 이것을 잡지 못한 이유: {@code verify(userRepository).save(any())}
+     * 는 "저장이 호출됐다"만 본다. <b>무엇을 저장했는지는 보지 않는다.</b> 그래서 필드를 통째로
+     * 버려도 그린이었다. 여기서는 ArgumentCaptor 로 <b>저장된 엔티티의 값</b>을 직접 확인한다.
+     *
+     * <p>이 공백이 실제로 낳은 2차 피해: 갓 만든 사용자는 항상 이메일이 없었고, 그것이
+     * {@code UserDto.emlAddr} 의 @Pattern 이 빈 문자열을 거부하던 문제와 겹쳐
+     * "등록은 되는데 수정은 영원히 400" 이라는 증상을 만들었다(E2E 로 확인, 2026-08-11).
+     */
+    @Test
+    @DisplayName("사용자 등록 - 폼이 보낸 이메일·연락처·소속 부서가 실제로 저장된다 (입력값 유실 회귀 방어)")
+    void registerUser_persistsOptionalProfileFields() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            given(userRepository.findByUserId("newuser")).willReturn(Optional.empty());
+            given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
+
+            // 등록 폼(UserManageForm, create 모드)이 실제로 보내는 필드 집합이다.
+            userService.registerUser(UserDto.builder()
+                    .userId("newuser")
+                    .pswd("ValidPass123!")
+                    .userNm("홍길동")
+                    .emlAddr("newuser@egov.kr")
+                    .mblTelno("01012345678")
+                    .ognzId("ORGNZT_0000000000001")
+                    .role("USER")
+                    .build());
+
+            org.mockito.ArgumentCaptor<User> saved = org.mockito.ArgumentCaptor.forClass(User.class);
+            verify(userRepository).save(saved.capture());
+
+            assertEquals("newuser@egov.kr", saved.getValue().getEmlAddr(), "이메일이 저장되지 않았다");
+            assertEquals("01012345678", saved.getValue().getMblTelno(), "연락처가 저장되지 않았다");
+            assertEquals("ORGNZT_0000000000001", saved.getValue().getOgnzId(), "소속 부서가 저장되지 않았다");
         }
     }
 
@@ -129,7 +172,7 @@ class UserServiceTest {
             given(userRepository.findByUserId("testuser")).willReturn(Optional.of(mock(User.class)));
             
             assertThrows(BusinessException.class, () -> 
-                userService.registerUser("testuser", "password", "홍길동", null, null, "USER"));
+                userService.registerUser(UserDto.builder().userId("testuser").pswd("password").userNm("홍길동").pswdHint(null).pswdCrans(null).role("USER").build()));
         }
     }
 
@@ -389,7 +432,7 @@ class UserServiceTest {
             given(userRepository.findByUserId("testuser")).willReturn(Optional.empty());
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
             
-            String userId = userService.registerUser("testuser", "password", "홍길동", null, null, "INVALID_ROLE");
+            String userId = userService.registerUser(UserDto.builder().userId("testuser").pswd("password").userNm("홍길동").pswdHint(null).pswdCrans(null).role("INVALID_ROLE").build());
 
             assertEquals("testuser", userId);
             verify(userRepository).save(any());
@@ -403,7 +446,7 @@ class UserServiceTest {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
             assertThrows(BusinessException.class, () -> 
-                userService.registerUser("testuser", "password", "홍길동", null, null, "USER"));
+                userService.registerUser(UserDto.builder().userId("testuser").pswd("password").userNm("홍길동").pswdHint(null).pswdCrans(null).role("USER").build()));
         }
     }
 
@@ -475,7 +518,7 @@ class UserServiceTest {
             given(passwordEncoder.encode(anyString())).willReturn("encodedPassword");
             
             // roleName = ""
-            String userId = userService.registerUser("testuser2", "password", "홍길동", null, null, "");
+            String userId = userService.registerUser(UserDto.builder().userId("testuser2").pswd("password").userNm("홍길동").pswdHint(null).pswdCrans(null).role("").build());
 
             assertEquals("testuser2", userId);
             verify(userRepository).save(any());

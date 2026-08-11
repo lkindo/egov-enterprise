@@ -35,43 +35,11 @@ export class SurveyPage {
         await expect(this.page.getByText(/설문.*등록|Create.*Survey/i).first()).toBeVisible();
     }
 
-    /**
-     * 캘린더 팝업에서 날짜를 선택합니다.
-     * 종료일인 경우 기간 확보를 위해 다음 달의 특정 날짜를 선택합니다.
-     */
-    private async selectDate(trigger: Locator, isStartDate: boolean) {
-        await trigger.click();
-        await this.page.waitForTimeout(800);
-        
-        // Wait for calendar popover
-        const popover = this.page.locator('[data-radix-popper-content-wrapper], .rdp, [role="dialog"]').filter({ visible: true }).first();
-        await expect(popover).toBeVisible({ timeout: 5000 });
- 
-        // Robust selector for next month button
-        const nextBtn = popover.getByRole('button', { name: /Go to the Next Month|다음 달/i });
-        
-        if (isStartDate) {
-            console.log('>>> [DatePicker] Navigating to next month for start date');
-            if (await nextBtn.isVisible()) {
-                await nextBtn.click({ force: true });
-                await this.page.waitForTimeout(500);
-            }
-            // Select a date
-            const cells = popover.locator('button[role="gridcell"]:not([disabled])');
-            await cells.nth(15).click({ force: true });
-        } else {
-            console.log('>>> [DatePicker] Navigating even further for end date');
-            for (let i = 0; i < 3; i++) {
-                if (await nextBtn.isVisible()) {
-                    await nextBtn.click({ force: true });
-                    await this.page.waitForTimeout(500);
-                }
-            }
-            const cells = popover.locator('button[role="gridcell"]:not([disabled])');
-            await cells.nth(20).click({ force: true });
-        }
-        await this.page.waitForTimeout(800);
-    }
+    // [2026-08-10 제거] `selectDate(trigger, isStartDate)` — 호출부가 하나도 없는 死코드였다.
+    //   E2E 전용 타입 게이트(tsconfig.e2e.json)를 신설한 첫 실행에서 검출됐다. 종전에는
+    //   루트 tsconfig 가 `e2e` 를 exclude 해 이런 선언이 영구히 보이지 않았다.
+    //   내용도 캘린더 좌표('15번째 셀', '다음 달 3번 클릭')에 의존해 되살릴 가치가 없다 —
+    //   기간 입력이 다시 필요해지면 날짜를 직접 채우는 방식으로 새로 쓴다.
 
     async createBasicSurvey(title: string): Promise<string> {
         console.log(`>>> Navigating to Survey Create Page`);
@@ -149,14 +117,8 @@ export class SurveyPage {
         return pollId;
     }
 
-    /** Popover가 아직 열려있으면 강제로 닫음 */
-    private async ensurePopoverClosed() {
-        const openPopover = this.page.locator('[data-radix-popper-content-wrapper]').filter({ visible: true });
-        if (await openPopover.isVisible({ timeout: 500 }).catch(() => false)) {
-            await this.page.keyboard.press('Escape');
-            await this.page.waitForTimeout(500);
-        }
-    }
+    // [2026-08-10 제거] `ensurePopoverClosed()` — 위 selectDate 와 함께 남은 死코드(호출부 0).
+    //   달력 팝오버를 쓰지 않게 된 뒤로 존재 이유가 사라졌다.
 
     async participate(surveyTitle: string) {
         await this.page.goto('/admin/survey/polls/participate');
