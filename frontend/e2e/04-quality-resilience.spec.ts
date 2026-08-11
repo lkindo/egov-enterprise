@@ -150,4 +150,108 @@ test.describe('Tier 4: Quality & Resilience', () => {
             console.log('>>> Audit log entry verified.');
         });
     });
+
+    /**
+     * 반응형 레이아웃 — 프론트엔드 UX 헌법 **제5조 2항**(Mobile-First · 표준 브레이크포인트 준수).
+     *
+     * [왜 필요한가 — 2026-08-11] 헌법이 명시적으로 요구하는 항목인데 **E2E 가 0 건**이었다.
+     *   전 스펙이 `devices['Desktop Chrome']` 한 종류로만 돌아, 좁은 화면에서 레이아웃이 깨져도
+     *   어떤 게이트에도 걸리지 않는다. 정적 검사(tsc·lint)는 레이아웃을 볼 수 없고,
+     *   시각 회귀(VRT)도 데스크톱 해상도 하나만 찍는다.
+     *
+     * [무엇을 보는가] 스크린샷 비교가 아니라 **구조적 사실 두 가지**만 본다 —
+     *   해상도별 픽셀 비교는 플레이키하고 유지비가 크지만, 아래 둘은 결정적이다.
+     *
+     *   ① **가로 넘침이 없다.** 모바일에서 가장 흔하고 가장 눈에 띄는 파손이며
+     *      `scrollWidth > clientWidth` 하나로 판정된다.
+     *   ② **사이드바가 브레이크포인트대로 접힌다.** 레이아웃이 선언한 계약 그 자체다
+     *      (Tailwind 기본 `lg` = 1024px). 구현은 `hidden`(DOM 제거)이 아니라
+     *      **off-canvas transform**(`-translate-x-full` / `lg:translate-x-0`)이므로,
+     *      "화면 안에서 본문을 가리는가"를 경계상자로 잰다 — 아래 단언부 주석 참조.
+     *      양방향으로 고정해 "모바일에서 안 접힌다"와 "데스크톱에서 안 나온다"를 모두 잡는다.
+     */
+    test.describe('Responsive Layout (헌법 제5조 — Mobile-First 브레이크포인트)', () => {
+        test.use({ storageState: 'playwright/.auth/admin.json' });
+
+        /** 검사 대상 화면. 관리 셸이 붙는 대표 경로 두 곳이면 레이아웃 파손은 드러난다. */
+        const PATHS = ['/admin', '/admin/work-hub'];
+
+        // Tailwind 기본 브레이크포인트 기준: sm 640 · md 768 · lg 1024 · xl 1280.
+        const VIEWPORTS = [
+            { name: 'mobile', width: 375, height: 667, sidebarVisible: false },  // sm 미만
+            { name: 'tablet', width: 768, height: 1024, sidebarVisible: false }, // md (lg 미만)
+            { name: 'desktop', width: 1280, height: 800, sidebarVisible: true }, // xl
+        ];
+
+        for (const vp of VIEWPORTS) {
+            test(`${vp.name}(${vp.width}px): 가로 넘침이 없고 사이드바가 브레이크포인트대로 동작한다`, async ({ page }) => {
+                await page.setViewportSize({ width: vp.width, height: vp.height });
+
+                for (const path of PATHS) {
+                    await page.goto(path);
+                    // 셸이 렌더된 뒤에 재야 한다 — 로딩 폴백 상태의 폭을 재면 아무 의미가 없다.
+                    await expect(page.getByRole('main')).toBeVisible({ timeout: 30000 });
+
+                    const { scrollWidth, clientWidth } = await page.evaluate(() => ({
+                        scrollWidth: document.documentElement.scrollWidth,
+                        clientWidth: document.documentElement.clientWidth,
+                    }));
+                    // 1px 여유: 소수점 레이아웃 반올림으로 1px 오차가 나는 경우가 있어 그것까지
+                    // 파손으로 보지는 않는다. 그 이상은 실제로 가로 스크롤바가 생긴다.
+                    expect(
+                        scrollWidth,
+                        `${path} 가 ${vp.width}px 에서 가로로 넘친다 (scrollWidth=${scrollWidth}, clientWidth=${clientWidth})`,
+                    ).toBeLessThanOrEqual(clientWidth + 1);
+                }
+
+                // 사이드바 접힘/펼침 계약 — 양방향으로 고정한다.
+                //
+                // ⚠ [2026-08-12 정정 ①] 접힘을 `toBeHidden()` 으로 재던 최초 단언은 **이 UI 를 판정하지 못했다.**
+                //   접힘이 off-canvas transform 으로 구현된 경우(`-translate-x-full`) 경계상자가 남아
+                //   Playwright 는 계속 `visible` 로 본다. 게다가 `toBeHidden()` 은 **요소가 없을 때도 통과**해
+                //   aside 렌더 전 타이밍에 걸리면 조용히 vacuous 통과했다.
+                //
+                // ⚠ [2026-08-12 정정 ②] 그 다음 시도(경계상자 1회 샘플링 + 상자 non-null 강제)도 틀렸다.
+                //   실측 결과 이 셸의 접힘은 **한 가지 방식이 아니다** — 뷰포트/경로에 따라
+                //   경계상자가 아예 **null**(DOM 미부착 또는 `display:none`)인 경우가 있었고,
+                //   그것을 실패로 취급해 375·768px 이 red 가 됐다. 또 `transition-transform duration-500`
+                //   중에 1회만 재면 전이 도중 값을 잡아 흔들린다.
+                //
+                //   → 계약을 **구현 방식과 무관하게** 적는다: "사이드바가 화면 안에서 본문을 가리는가".
+                //     · 화면에 상자가 없다(null) = 가리지 않는다 → 통과
+                //     · 상자가 있으면 오른쪽 끝이 뷰포트 왼쪽 경계를 넘지 않아야 한다
+                //     · 전이(500ms)를 흡수하도록 **폴링**으로 정착을 기다린다
+                //
+                //   vacuous 통과 우려: 셀렉터가 깨지면 접힘 케이스는 통과할 수 있으나 **desktop 케이스가
+                //   `toBeVisible()` 로 실재를 요구**하므로 스위트 전체로는 반드시 red 가 된다.
+                const sidebar = page.locator('aside').first();
+
+                if (vp.sidebarVisible) {
+                    await expect(sidebar, `${vp.width}px 에서 사이드바가 보여야 한다`).toBeVisible({ timeout: 15000 });
+                    await expect
+                        .poll(async () => (await sidebar.boundingBox())?.x ?? null, {
+                            timeout: 15000,
+                            message: `${vp.width}px 에서 사이드바가 화면 밖으로 밀려 있다`,
+                        })
+                        // 1px 여유는 위 가로 넘침 단언과 같은 이유다(소수점 레이아웃 반올림).
+                        .toBeGreaterThanOrEqual(-1);
+                } else {
+                    await expect
+                        .poll(
+                            async () => {
+                                const b = await sidebar.boundingBox();
+                                // null = 화면에 상자가 없다 → 본문을 가릴 수 없다.
+                                return b === null ? Number.NEGATIVE_INFINITY : b.x + b.width;
+                            },
+                            {
+                                timeout: 15000,
+                                message: `${vp.width}px 에서 사이드바가 본문을 가린다`,
+                            },
+                        )
+                        // 접힘이 풀리면 288px 가 통째로 들어오므로 1px 여유로 가려지지 않는다.
+                        .toBeLessThanOrEqual(1);
+                }
+            });
+        }
+    });
 });
