@@ -11,7 +11,14 @@ import org.springframework.data.repository.query.Param;
 
 public interface CommentRepository extends JpaRepository<Comment, Long> {
 
-    @Query("SELECT c FROM Comment c WHERE c.bbsId = :bbsId AND c.pstId = :pstId")
+    // [2026-08-12 수정] `useYn = 'Y'` 조건이 **없었다.**
+    //   `CommentService.deleteComment` 는 물리 삭제가 아니라 `useYn='N'` 을 세우는 **논리 삭제**인데
+    //   이 목록 쿼리가 그것을 거르지 않아, 사용자가 댓글을 삭제해도 **목록에서 사라지지 않았다**
+    //   (버튼은 눌리고 서버는 200 을 주는데 화면은 그대로다).
+    //   같은 저장소의 `countByBbsIdAndPstIdAndUseYn(..., "Y")` 는 이미 살아 있는 것만 세고 있었다 —
+    //   '살아 있는 댓글 = useYn Y' 라는 규약은 저장소 자신이 증명한다. 목록만 그 규약에서 벗어나 있었다.
+    //   회귀 방어: CommentRepositoryTest (조건을 되돌리면 red).
+    @Query("SELECT c FROM Comment c WHERE c.bbsId = :bbsId AND c.pstId = :pstId AND c.useYn = 'Y'")
     Page<Comment> findByBbsIdAndPstId(@Param("bbsId") String bbsId, @Param("pstId") String pstId, Pageable pageable);
 
     Page<Comment> findByAnsCnContaining(String ansCn, Pageable pageable);
