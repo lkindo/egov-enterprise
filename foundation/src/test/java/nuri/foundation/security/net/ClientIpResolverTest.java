@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import org.junit.jupiter.api.Nested;
 
 /**
  * 신뢰 경계 기반 클라이언트 IP 판정 계약.
@@ -157,5 +158,179 @@ class ClientIpResolverTest {
         assertEquals("172.32.0.1", resolver.resolve(request("172.32.0.1", "203.0.113.9")),
                 "대역 밖 피어의 XFF 를 신뢰하면 안 된다");
         assertEquals("203.0.113.9", resolver.resolve(request("172.31.255.254", "203.0.113.9")));
+    }
+
+    // ─────────────────────────────────────────────────────────────────────────
+    // [2026-08-09 뮤테이션 보강] 이 스코프에 20개가 살아 있었다(실측 76%).
+    //
+    //   이 클래스의 출력은 **레이트리밋 키 · 로그인 IP 제한 · 감사 로그 IP** 세 곳에 쓰인다.
+    //   판정이 한 칸 어긋나면 셋 다 조용히 우회된다 — 예외도 로그도 없이.
+    //   특히 주소 파싱(normalize·CidrRange)은 "대충 맞으면 통과" 가 성립하지 않는 자리다:
+    //   신뢰 대역 판정이 틀리면 **신뢰하지 말아야 할 피어의 XFF 를 읽게 된다.**
+    // ─────────────────────────────────────────────────────────────────────────
+
+    @Nested
+    @DisplayName("주소 정규화 (포트·IPv6 표기)")
+    class Normalization {
+
+        @Test
+        @DisplayName("IPv4 는 포트 접미를 떼고 판정한다")
+        void stripsIpv4Port() {
+            ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);
+
+            // 프록시가 `1.2.3.4:5678` 형태로 기록하는 경우가 있다.
+            //   포트를 떼지 못하면 신뢰 대역 판정이 전부 실패해 엉뚱한 값이 클라이언트로 잡힌다.
+            assertEquals("203.0.113.9",
+                    resolver.resolve(request("10.0.0.1", "203.0.113.9:44321")));
+        }
+
+        @Test
+        @DisplayName("IPv6 는 대괄호 안쪽만 취하고, 콜론이 여럿이면 포트로 보지 않는다")
+        void handlesIpv6Forms() {
+            ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);
+
+            // `[::1]:8080` -> `::1`
+            assertEquals("::1", resolver.resolve(request("10.0.0.1", "[::1]:8080")));
+            // 대괄호 없는 IPv6 는 콜론이 여러 개다 - 첫 콜론을 포트 구분자로 오인하면 안 된다.
+            //   `2001:db8::1` 을 `2001` 로 잘라내면 **완전히 다른 주소**가 된다.
+            assertEquals("2001:db8::1", resolver.resolve(request("10.0.0.1", "2001:db8::1")));
+        }
+
+        @Test
+        @DisplayName("닫는 대괄호가 없는 값은 버린다 (앞 항목으로 넘어간다)")
+        void discardsUnclosedBracket() {
+            ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);
+
+            // 깨진 항목을 그대로 채택하면 감사 로그에 파싱 쓰레기가 남는다.
+            assertEquals("203.0.113.9",
+                    resolver.resolve(request("10.0.0.1", "203.0.113.9, [malformed")));
+        }
+
+        @Test
+        @DisplayName("빈 항목과 'unknown' 은 건너뛴다 (대소문자 무관)")
+        void skipsEmptyAndUnknown() {
+            ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);
+
+            assertEquals("203.0.113.9",
+                    resolver.resolve(request("10.0.0.1", "203.0.113.9, , UNKNOWN, unknown")));
+        }
+
+        @Test
+        @DisplayName("XFF 가 전부 버려질 값뿐이면 remoteAddr 로 떨어진다")
+        void fallsBackWhenAllHopsDiscarded() {
+            ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);
+
+            // 여기서 빈 문자열을 돌려주면 레이트리밋 키가 "" 로 수렴해 전역 단일 버킷이 된다.
+            assertEquals("10.0.0.1", resolver.resolve(request("10.0.0.1", "unknown, , unknown")));
+        }
+
+        @Test
+        @DisplayName("remoteAddr 이 없으면 'unknown' 을 돌려준다")
+        void unknownWhenNoRemoteAddr() {
+            ClientIpResolver resolver = new ClientIpResolver(DEFAULTS);
+            MockHttpServletRequest req = new MockHttpServletRequest();
+            req.setRemoteAddr(null);
+
+            // 빈 문자열이면 로그·레이트리밋에서 '값이 있다' 로 오독된다.
+            assertEquals("unknown", resolver.resolve(req));
+        }
+    }
+
+    @Nested
+    @DisplayName("CIDR 해석")
+    class CidrParsing {
+
+        @Test
+        @DisplayName("프리픽스 경계 0 과 32 를 모두 받아들인다")
+        void acceptsPrefixBoundaries() {
+            // /0 은 전 대역 신뢰 - 그러면 어떤 피어의 XFF 도 읽는다(설정자가 의도한 경우만 성립).
+            assertEquals("198.51.100.7",
+                    new ClientIpResolver("0.0.0.0/0").resolve(request("203.0.113.1", "198.51.100.7")));
+            // /32 는 정확히 그 주소 하나.
+            assertEquals("198.51.100.7",
+                    new ClientIpResolver("10.0.0.1/32").resolve(request("10.0.0.1", "198.51.100.7")));
+            // 경계 밖 주소는 신뢰하지 않는다.
+            assertEquals("10.0.0.2",
+                    new ClientIpResolver("10.0.0.1/32").resolve(request("10.0.0.2", "198.51.100.7")));
+        }
+
+        @Test
+        @DisplayName("범위를 벗어난 프리픽스는 항목을 버린다 — 잘못된 설정이 전 대역 신뢰가 되면 안 된다")
+        void rejectsOutOfRangePrefix() {
+            // /33 이나 /-1 을 관대하게 해석하면 **의도치 않은 대역을 신뢰**하게 된다.
+            //   항목이 버려지므로 신뢰 목록은 비고, XFF 는 전면 불신된다.
+            assertEquals("203.0.113.1",
+                    new ClientIpResolver("10.0.0.0/33").resolve(request("203.0.113.1", "1.2.3.4")));
+            assertEquals("10.0.0.1",
+                    new ClientIpResolver("10.0.0.0/33").resolve(request("10.0.0.1", "1.2.3.4")));
+        }
+
+        @Test
+        @DisplayName("숫자가 아닌 프리픽스도 항목을 버린다")
+        void rejectsNonNumericPrefix() {
+            assertEquals("10.0.0.1",
+                    new ClientIpResolver("10.0.0.0/abc").resolve(request("10.0.0.1", "1.2.3.4")));
+        }
+
+        @Test
+        @DisplayName("IPv4 가 아닌 항목은 문자열 정확 일치로만 취급한다")
+        void nonIpv4EntryMatchesExactlyOnly() {
+            ClientIpResolver resolver = new ClientIpResolver("::1/128");
+
+            // ::1 피어는 신뢰 - XFF 를 읽는다.
+            assertEquals("203.0.113.9", resolver.resolve(request("::1", "203.0.113.9")));
+            // 다른 IPv6 는 신뢰하지 않는다(부분 일치로 넓히면 조용히 우회된다).
+            assertEquals("::2", resolver.resolve(request("::2", "203.0.113.9")));
+        }
+
+        @Test
+        @DisplayName("옥텟이 4개가 아니거나 범위를 벗어나면 IPv4 로 보지 않는다")
+        void rejectsMalformedIpv4() {
+            // 256 은 옥텟이 아니다. 이것을 통과시키면 마스크 계산이 어긋나 엉뚱한 대역이 신뢰된다.
+            ClientIpResolver resolver = new ClientIpResolver("10.0.0.0/8");
+            assertEquals("10.256.0.1", resolver.resolve(request("10.256.0.1", "1.2.3.4")));
+            assertEquals("10.0.0", resolver.resolve(request("10.0.0", "1.2.3.4")));
+            assertEquals("10.0.0.1.2", resolver.resolve(request("10.0.0.1.2", "1.2.3.4")));
+        }
+
+        @Test
+        @DisplayName("음수 옥텟도 거부한다")
+        void rejectsNegativeOctet() {
+            ClientIpResolver resolver = new ClientIpResolver("10.0.0.0/8");
+            assertEquals("10.-1.0.1", resolver.resolve(request("10.-1.0.1", "1.2.3.4")));
+        }
+
+        @Test
+        @DisplayName("공백과 빈 항목이 섞인 목록도 해석한다")
+        void tolerantToWhitespaceInList() {
+            ClientIpResolver resolver = new ClientIpResolver(" 10.0.0.0/8 , , 192.168.0.0/16 ");
+
+            assertEquals("203.0.113.9", resolver.resolve(request("10.1.2.3", "203.0.113.9")));
+            assertEquals("203.0.113.9", resolver.resolve(request("192.168.1.1", "203.0.113.9")));
+        }
+    }
+
+    @Nested
+    @DisplayName("신뢰 목록이 비었을 때")
+    class EmptyTrustList {
+
+        @Test
+        @DisplayName("목록이 비면 XFF 를 전면 불신한다")
+        void emptyListDistrustsForwardedHeader() {
+            for (String csv : new String[] { "", "   ", null }) {
+                ClientIpResolver resolver = new ClientIpResolver(csv);
+
+                // 프록시 뒤에 있어도 remoteAddr 로 수렴한다 - 그래서 레이트리밋 용량 재설계가 필요하다.
+                assertEquals("10.0.0.1", resolver.resolve(request("10.0.0.1", "203.0.113.9")));
+            }
+        }
+
+        @Test
+        @DisplayName("해석 불가 항목만 있는 목록도 빈 목록과 같다")
+        void unparsableOnlyListBehavesEmpty() {
+            ClientIpResolver resolver = new ClientIpResolver("not-a-cidr/99, /8");
+
+            assertEquals("10.0.0.1", resolver.resolve(request("10.0.0.1", "203.0.113.9")));
+        }
     }
 }
