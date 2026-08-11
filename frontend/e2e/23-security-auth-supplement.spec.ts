@@ -1,6 +1,7 @@
 import { test, expect } from './fixtures/base-test';
 import type { APIRequestContext } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
+import { TEST_CREDENTIALS } from './test-credentials';
 import fs from 'fs';
 import path from 'path';
 
@@ -47,9 +48,45 @@ const ADMIN_AUTH = path.join(__dirname, '..', 'playwright', '.auth', 'admin.json
 //   보안 단언이 환경에 따라 뒤집히는 것은 게이트로서 치명적이므로 저장소 표준 패턴에 맞춘다.
 const API = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
 
-function readAccessToken(authFile: string): string {
+function readCookieValue(authFile: string, name: string): string {
     const data = JSON.parse(fs.readFileSync(authFile, 'utf-8'));
-    return data.cookies.find((c: { name: string; value: string }) => c.name === 'accessToken')?.value ?? '';
+    return data.cookies.find((c: { name: string; value: string }) => c.name === name)?.value ?? '';
+}
+
+function readAccessToken(authFile: string): string {
+    return readCookieValue(authFile, 'accessToken');
+}
+
+/**
+ * 재발급 검증용 refreshToken 을 **이 테스트가 직접 로그인해서** 확보한다.
+ *
+ * <p>[2026-08-12] `auth.setup` 산출물(admin.json)의 refreshToken 을 읽어 쓰면 **순서 의존**이 된다.
+ * 백엔드의 `tb_auth_rfsh_tk` 는 **PK 가 userId — 사용자당 단 1행**이고,
+ * 로그아웃(`AuthServiceImpl.logout`)은 그 행을 **삭제**한다. 재로그인·재발급 회전도 이전 토큰을 무효화한다.
+ * 그래서 같은 샤드에서 `01-core-base` 의 로그아웃 테스트가 먼저 돌면, setup 이 저장해 둔 토큰은
+ * 이미 DB 에서 사라져 **이 테스트만 401** 이 된다(실제 CI 실패 원인이었다 — accessToken 은
+ * 무상태 JWT 라 다른 테스트는 멀쩡했고 이 한 건만 죽었다).
+ *
+ * <p>재발급은 본질적으로 **"지금 유효한 토큰"** 을 요구하는 계약이므로, 그 토큰을 즉석에서 얻는 것이
+ * 검증 대상을 좁히지 않으면서 순서 독립을 얻는 방법이다.
+ */
+async function issueFreshRefreshToken(request: APIRequestContext): Promise<string> {
+    const res = await request.post(`${API}/auth/login`, {
+        data: { userId: TEST_CREDENTIALS.admin.id, password: TEST_CREDENTIALS.admin.password },
+    });
+    expect(res.ok(), `재발급 검증용 로그인이 실패했다 (status ${res.status()})`).toBeTruthy();
+
+    const body = await res.json();
+    // 바디 우선, 부재 시 Set-Cookie 에서 파싱 — auth.setup 과 같은 규약(계약 축소 대비).
+    // Playwright 는 다중 Set-Cookie 를 개행으로 합쳐 준다.
+    const fromCookie = (res.headers()['set-cookie'] ?? '')
+        .split('\n')
+        .map((line) => /^refreshToken=([^;]+)/.exec(line.trim())?.[1])
+        .find(Boolean);
+
+    const token = body?.data?.refreshToken || fromCookie || '';
+    expect(token, '로그인 응답이 refreshToken 을 바디로도 Set-Cookie 로도 주지 않았다').toBeTruthy();
+    return token;
 }
 
 // ───────── E0: 로그인 성공(회귀 방어) — 이중 프리픽스 파손(2026-07-17 확증) 재발 차단 ─────────
@@ -493,6 +530,77 @@ test.describe('Tier 23-E6: IDOR (authenticated non-owner)', () => {
                 await request.delete(`${API}/admin/system/users/${attackerId}`, { headers: asAdmin });
             }
         }
+    });
+});
+
+// ─────────── E7: 토큰 재발급(/api/auth/reissue) — 세션 연장 경로 ───────────
+//
+// [2026-08-11 신설] 이 경로는 **보안 경로인데 E2E 가 0 건**이었다.
+//   client.ts 인터셉터가 401 을 만나면 이 Route Handler 를 불러 세션을 잇는다. 즉 사용자가
+//   작업 중 로그아웃되지 않는 유일한 장치이고, 동시에 **토큰을 새로 발행하는 지점**이다.
+//   단위 테스트는 있었지만 실제 Route Handler → 백엔드 → 쿠키 재설정 사슬은 검증된 적이 없다.
+//
+// [무엇을 고정하는가] 이 라우트에는 **의도된 하드닝**이 들어 있고(reissue/route.ts 주석),
+//   그것이 되돌아가면 조용히 보안이 약해진다:
+//     · 새 accessToken 을 **응답 바디로 돌려주지 않는다** — JS 메모리 노출 차단.
+//       인터셉터는 200/success 를 신호로만 쓰고 실제 토큰은 HttpOnly 쿠키로만 전달된다.
+//     · 그 쿠키는 **HttpOnly** 여야 한다.
+//   "재발급이 된다" 뿐 아니라 **"어떻게 전달되는가"** 까지 단언하는 이유다.
+test.describe('Tier 23-E7: Token reissue', () => {
+    // storageState 를 지정하지 않는다 — 쿠키를 명시적으로 실어 '무엇으로 재발급됐는지' 를 분명히 한다.
+    const REISSUE = '/api/auth/reissue';
+
+    test('유효한 refreshToken 으로 재발급되며, 새 토큰은 바디가 아니라 HttpOnly 쿠키로만 전달된다', async ({ request }) => {
+        // setup 산출물이 아니라 즉석 로그인으로 얻는다 — 이유는 issueFreshRefreshToken 주석 참조
+        // (리프레시 토큰은 사용자당 1행이라 다른 테스트의 로그아웃 한 번에 무효가 된다).
+        const refreshToken = await issueFreshRefreshToken(request);
+
+        const res = await request.post(REISSUE, {
+            headers: { Cookie: `refreshToken=${refreshToken}` },
+            maxRedirects: 0,
+        });
+        expect(res.ok(), `재발급 실패: ${res.status()}`).toBeTruthy();
+
+        // ① 바디에 토큰이 실리면 안 된다(의도된 하드닝의 회귀 방어).
+        const body = await res.json();
+        expect(body?.success).toBe(true);
+        expect(
+            body?.data?.accessToken,
+            '재발급 토큰이 응답 바디로 노출됐다 — HttpOnly 쿠키 전용 설계가 되돌아갔다',
+        ).toBeFalsy();
+
+        // ② accessToken 이 HttpOnly 쿠키로 재설정돼야 한다.
+        //    Playwright 는 다중 Set-Cookie 를 개행으로 합쳐 준다.
+        const setCookie = res.headers()['set-cookie'] ?? '';
+        const accessCookieLine = setCookie
+            .split('\n')
+            .find((line) => line.trim().startsWith('accessToken='));
+        expect(accessCookieLine, 'accessToken 쿠키가 재설정되지 않았다').toBeTruthy();
+        expect(accessCookieLine, 'accessToken 이 HttpOnly 가 아니다 — JS 로 읽히면 탈취 표면이 열린다')
+            .toMatch(/HttpOnly/i);
+
+        // ③ 발급된 토큰이 **실제로 쓸 수 있어야** 한다 — 여기까지 봐야 "재발급됐다"가 의미를 갖는다.
+        //    (200 만 보고 통과시키면 빈 토큰을 심어도 그린이다.)
+        const newToken = /accessToken=([^;]+)/.exec(accessCookieLine ?? '')?.[1] ?? '';
+        expect(newToken, '재설정된 accessToken 값이 비어 있다').toBeTruthy();
+
+        const useIt = await request.get('/admin/system/menus', {
+            headers: { Cookie: `accessToken=${newToken}` },
+            maxRedirects: 0,
+        });
+        expect(useIt.status(), `재발급 토큰으로 보호 경로에 진입하지 못했다 (status ${useIt.status()})`).toBe(200);
+    });
+
+    test('refreshToken 없이는 재발급되지 않는다', async ({ request }) => {
+        // 자격 없이 세션이 발급되면 그것이 곧 인증 우회다.
+        const res = await request.post(REISSUE, { maxRedirects: 0 });
+        expect(res.ok(), `자격 없이 토큰이 재발급됐다 (status ${res.status()})`).toBeFalsy();
+
+        const setCookie = res.headers()['set-cookie'] ?? '';
+        const issued = setCookie
+            .split('\n')
+            .some((line) => /^accessToken=.+/.test(line.trim()) && !/accessToken=;/.test(line));
+        expect(issued, '실패 응답인데 accessToken 쿠키가 심어졌다').toBe(false);
     });
 });
 
