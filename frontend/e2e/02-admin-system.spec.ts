@@ -113,7 +113,31 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await nameInput.fill(updatedName);
 
             // 제출 버튼의 라벨도 '정보 수정'이므로 form 스코프로 한정한다(등록 단계와 동일 패턴).
-            await page.locator('form button[type="submit"]').click();
+            //
+            // [2026-08-11] 제출 결과를 **API 응답으로 직접** 단언한다. 종전에는 성공 토스트만 봤는데,
+            //   그 방식은 실패했을 때 "토스트가 안 떴다"까지만 알려 준다 — 실제로 2026-08-11 CI 에서
+            //   PUT 이 400 을 돌려줬는데 원인(어느 필드가 왜 거부됐는지)을 알 방법이 없어 원격
+            //   디버깅이 여러 회차 헛돌았다. 응답 본문과 요청 페이로드를 단언 메시지에 실어
+            //   **실패 자체가 원인을 말하게** 한다.
+            const [updateResponse] = await Promise.all([
+                page.waitForResponse(
+                    (r) => r.request().method() === 'PUT' && /\/api\/v1\/admin\/system\/users\//.test(r.url()),
+                    { timeout: 30000 },
+                ),
+                page.locator('form button[type="submit"]').click(),
+            ]);
+
+            if (!updateResponse.ok()) {
+                // 진단은 실패 경로에서만 수집한다(성공 시 불필요한 본문 읽기를 하지 않는다).
+                const body = await updateResponse.text().catch(() => '(본문 읽기 실패)');
+                const sent = updateResponse.request().postData() ?? '(요청 본문 없음)';
+                expect(
+                    updateResponse.ok(),
+                    `사용자 수정 PUT 이 ${updateResponse.status()} 로 실패했다.\n`
+                    + `  응답 본문: ${body}\n`
+                    + `  보낸 페이로드: ${sent}`,
+                ).toBeTruthy();
+            }
 
             const updateSuccessAlert = page
                 .locator('[data-sonner-toast][data-type="success"]')
