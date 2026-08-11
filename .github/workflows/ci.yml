@@ -352,16 +352,35 @@ jobs:
   e2e-tests:
     needs: [backend-build, frontend-build]
     runs-on: ubuntu-latest
-    # [2026-07-26 재상향] 40분에서 "The operation was canceled" 로 끊겼다(실측). 비용 구조가 곱셈이다:
-    #   샤드마다 (api 이미지 빌드 + Next 프로덕션 빌드) + 테스트당 최대 300초 타임아웃 × 재시도 2회.
-    #   현재는 실패가 많아 재시도가 비용을 3배로 만들며, 그 결과 **실패 목록조차 못 받고 취소**됐다.
-    #   목록을 확보하는 것이 우선이므로 예산을 올린다. 실패를 정리한 뒤 되돌릴 값이다(항구 설정 아님).
-    timeout-minutes: 75
+    # [2026-08-11 하향: 75 → 30] 종전 값은 "실패 목록조차 못 받고 취소"되던 시기의 임시 상향이었고,
+    #   그 주석 자신이 "실패를 정리한 뒤 되돌릴 값(항구 설정 아님)" 이라고 적어 두었다. 스위트가
+    #   전량 green 이 된 지금 실측 최장 잡은 **7.2분**(run 31376408790)이라 30분은 4배 여유다.
+    #   되돌리는 이유: 75분은 멈춘 잡 하나가 러너를 75분씩 점유하도록 허용한다.
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        # 3 개의 shard 로 분할하여 병렬 실행
-        shard: [1/3, 2/3, 3/3]
+        # ────────────────────────────────────────────────────────────────────
+        # [2026-08-11 축소: 3 → 2 샤드] 실측 기반 결정 (run 31376408790).
+        #
+        #   샤드당 인프라 준비가 **209초**인데(API 이미지 105s + Next 빌드 47s + compose·health 42s
+        #   + playwright deps 15s) 그것이 샤드마다 통째로 중복된다. 반면 테스트 시간은
+        #   223s / 135s / 23s 로 **9.7배 불균형**이었다 — 3번 샤드는 209초를 준비해 23초를 돌았다.
+        #
+        #   측정값 기준 비교 (wall = 가장 느린 잡, runner = 러너 점유 합):
+        #     3샤드(종전)  wall 432s · runner 1008s
+        #     2샤드(현행)  wall ~399s · runner ~798s      ← 두 축 모두 개선
+        #     1샤드        wall  590s · runner  590s      ← wall 악화
+        #
+        #   ⚠ 검토 후 **채택하지 않은 안**: "이미지를 한 번만 빌드해 아티팩트로 공유".
+        #     러너 시간은 줄지만 샤드가 빌드 잡을 **기다려야** 해서 wall 이 오히려 나빠진다
+        #     (빌드 105s + 업로드 ~40s 뒤에야 샤드 시작 → 약 492s). 현재는 세 샤드가 이미지를
+        #     동시에 빌드하므로 중복이 wall 에 더해지지 않는다. 즉 중복 자체보다 **샤드 수**가 지렛대다.
+        #
+        #   ⚠ 남은 불확실성(정직히 밝힘): Playwright 의 --shard 는 **테스트 개수** 기준이라
+        #     소요시간을 균형 맞추지 못한다. 위 ~399s 는 2등분이 시간상으로도 고르게 될 때의 값이고,
+        #     무거운 스펙이 한쪽에 몰리면 그보다 나빠질 수 있다. 러너 시간 절감(-21%)은 확정적이다.
+        shard: [1/2, 2/2]
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
 
@@ -676,9 +695,9 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
         if: always()
         with:
-          # matrix.shard 는 '1/3' 형태라 아티팩트 이름에 '/' 가 들어가 업로드가 거부된다
+          # matrix.shard 는 '1/2' 형태라 아티팩트 이름에 '/' 가 들어가 업로드가 거부된다
           # (2026-07-26 실측: "The artifact name is not valid ... Forward slash /").
-          # strategy.job-index(0,1,2)를 쓰면 download 의 pattern(playwright-report-shard-*)도 그대로 맞는다.
+          # strategy.job-index(2샤드에서는 0,1)를 쓰면 download 의 pattern(playwright-report-shard-*)도 그대로 맞는다.
           name: playwright-report-shard-${{ strategy.job-index }}
           # [2026-07-29] blob 리포터 산출물은 `playwright-report/` 가 아니라 `blob-report/` 에 쌓인다.
           #   경로를 바꾸지 않으면 병합 잡이 받을 파일이 없어 계속 실패한다(아티팩트 이름은 유지 —
