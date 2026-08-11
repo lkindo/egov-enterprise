@@ -936,6 +936,18 @@ jobs:
             classes: "nuri.foundation.security.jwt.*"
             tests: "nuri.foundation.*"
 
+          # foundation 클라이언트 IP 판정 스코프.
+          #   이 클래스의 출력은 **레이트리밋 키 · 로그인 IP 제한 · 감사 로그 IP** 세 곳에 쓰인다.
+          #   판정이 한 칸 어긋나면 셋 다 조용히 우회된다 — 예외도 로그도 없이.
+          #   특히 주소 파싱(normalize·CidrRange)은 "대충 맞으면 통과" 가 성립하지 않는 자리다:
+          #   신뢰 대역 판정이 틀리면 **신뢰하지 말아야 할 피어의 XFF 를 읽게 된다**
+          #   (소스 주석대로 헤더는 누구나 보낼 수 있다).
+          #   실측 76% -> 86% 보강 후 편입한다.
+          - scope: foundation-client-ip
+            gradle: ":foundation:pitest"
+            classes: "nuri.foundation.security.net.*"
+            tests: "nuri.foundation.*"
+
           # migration-tool 스코프.
           #   TypeConverter/TransformerRegistry 는 마이그레이션의 **값 변환 경계**다.
           #   경계 조건이 틀리면 예외가 아니라 **조용한 데이터 손상**으로 끝난다
