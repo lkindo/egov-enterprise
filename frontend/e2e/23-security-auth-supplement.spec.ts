@@ -47,9 +47,13 @@ const ADMIN_AUTH = path.join(__dirname, '..', 'playwright', '.auth', 'admin.json
 //   보안 단언이 환경에 따라 뒤집히는 것은 게이트로서 치명적이므로 저장소 표준 패턴에 맞춘다.
 const API = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
 
-function readAccessToken(authFile: string): string {
+function readCookieValue(authFile: string, name: string): string {
     const data = JSON.parse(fs.readFileSync(authFile, 'utf-8'));
-    return data.cookies.find((c: { name: string; value: string }) => c.name === 'accessToken')?.value ?? '';
+    return data.cookies.find((c: { name: string; value: string }) => c.name === name)?.value ?? '';
+}
+
+function readAccessToken(authFile: string): string {
+    return readCookieValue(authFile, 'accessToken');
 }
 
 // ───────── E0: 로그인 성공(회귀 방어) — 이중 프리픽스 파손(2026-07-17 확증) 재발 차단 ─────────
@@ -435,6 +439,79 @@ test.describe('Tier 23-E6: IDOR (authenticated non-owner)', () => {
                 await request.delete(`${API}/admin/system/users/${attackerId}`, { headers: asAdmin });
             }
         }
+    });
+});
+
+// ─────────── E7: 토큰 재발급(/api/auth/reissue) — 세션 연장 경로 ───────────
+//
+// [2026-08-11 신설] 이 경로는 **보안 경로인데 E2E 가 0 건**이었다.
+//   client.ts 인터셉터가 401 을 만나면 이 Route Handler 를 불러 세션을 잇는다. 즉 사용자가
+//   작업 중 로그아웃되지 않는 유일한 장치이고, 동시에 **토큰을 새로 발행하는 지점**이다.
+//   단위 테스트는 있었지만 실제 Route Handler → 백엔드 → 쿠키 재설정 사슬은 검증된 적이 없다.
+//
+// [무엇을 고정하는가] 이 라우트에는 **의도된 하드닝**이 들어 있고(reissue/route.ts 주석),
+//   그것이 되돌아가면 조용히 보안이 약해진다:
+//     · 새 accessToken 을 **응답 바디로 돌려주지 않는다** — JS 메모리 노출 차단.
+//       인터셉터는 200/success 를 신호로만 쓰고 실제 토큰은 HttpOnly 쿠키로만 전달된다.
+//     · 그 쿠키는 **HttpOnly** 여야 한다.
+//   "재발급이 된다" 뿐 아니라 **"어떻게 전달되는가"** 까지 단언하는 이유다.
+test.describe('Tier 23-E7: Token reissue', () => {
+    // storageState 를 지정하지 않는다 — 쿠키를 명시적으로 실어 '무엇으로 재발급됐는지' 를 분명히 한다.
+    const REISSUE = '/api/auth/reissue';
+
+    test('유효한 refreshToken 으로 재발급되며, 새 토큰은 바디가 아니라 HttpOnly 쿠키로만 전달된다', async ({ request }) => {
+        const refreshToken = readCookieValue(ADMIN_AUTH, 'refreshToken');
+        expect(
+            refreshToken,
+            'auth.setup 산출물에 refreshToken 이 없다 — 백엔드가 바디/Set-Cookie 어느 쪽으로도 주지 않았다',
+        ).toBeTruthy();
+
+        const res = await request.post(REISSUE, {
+            headers: { Cookie: `refreshToken=${refreshToken}` },
+            maxRedirects: 0,
+        });
+        expect(res.ok(), `재발급 실패: ${res.status()}`).toBeTruthy();
+
+        // ① 바디에 토큰이 실리면 안 된다(의도된 하드닝의 회귀 방어).
+        const body = await res.json();
+        expect(body?.success).toBe(true);
+        expect(
+            body?.data?.accessToken,
+            '재발급 토큰이 응답 바디로 노출됐다 — HttpOnly 쿠키 전용 설계가 되돌아갔다',
+        ).toBeFalsy();
+
+        // ② accessToken 이 HttpOnly 쿠키로 재설정돼야 한다.
+        //    Playwright 는 다중 Set-Cookie 를 개행으로 합쳐 준다.
+        const setCookie = res.headers()['set-cookie'] ?? '';
+        const accessCookieLine = setCookie
+            .split('\n')
+            .find((line) => line.trim().startsWith('accessToken='));
+        expect(accessCookieLine, 'accessToken 쿠키가 재설정되지 않았다').toBeTruthy();
+        expect(accessCookieLine, 'accessToken 이 HttpOnly 가 아니다 — JS 로 읽히면 탈취 표면이 열린다')
+            .toMatch(/HttpOnly/i);
+
+        // ③ 발급된 토큰이 **실제로 쓸 수 있어야** 한다 — 여기까지 봐야 "재발급됐다"가 의미를 갖는다.
+        //    (200 만 보고 통과시키면 빈 토큰을 심어도 그린이다.)
+        const newToken = /accessToken=([^;]+)/.exec(accessCookieLine ?? '')?.[1] ?? '';
+        expect(newToken, '재설정된 accessToken 값이 비어 있다').toBeTruthy();
+
+        const useIt = await request.get('/admin/system/menus', {
+            headers: { Cookie: `accessToken=${newToken}` },
+            maxRedirects: 0,
+        });
+        expect(useIt.status(), `재발급 토큰으로 보호 경로에 진입하지 못했다 (status ${useIt.status()})`).toBe(200);
+    });
+
+    test('refreshToken 없이는 재발급되지 않는다', async ({ request }) => {
+        // 자격 없이 세션이 발급되면 그것이 곧 인증 우회다.
+        const res = await request.post(REISSUE, { maxRedirects: 0 });
+        expect(res.ok(), `자격 없이 토큰이 재발급됐다 (status ${res.status()})`).toBeFalsy();
+
+        const setCookie = res.headers()['set-cookie'] ?? '';
+        const issued = setCookie
+            .split('\n')
+            .some((line) => /^accessToken=.+/.test(line.trim()) && !/accessToken=;/.test(line));
+        expect(issued, '실패 응답인데 accessToken 쿠키가 심어졌다').toBe(false);
     });
 });
 
