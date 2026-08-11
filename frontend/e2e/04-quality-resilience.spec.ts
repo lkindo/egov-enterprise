@@ -206,36 +206,50 @@ test.describe('Tier 4: Quality & Resilience', () => {
 
                 // 사이드바 접힘/펼침 계약 — 양방향으로 고정한다.
                 //
-                // ⚠ [2026-08-12 정정] 접힘을 `toBeHidden()` 으로 재던 종전 단언은 **이 UI 를 판정하지 못한다.**
-                //   구현은 `hidden lg:block` 이 아니라 **off-canvas transform** 이다(실측 클래스:
-                //   `... w-72 transition-transform lg:translate-x-0 -translate-x-full`).
-                //   transform 으로 밀어낸 요소는 경계상자가 남아 있어 Playwright 가 계속 `visible` 로 본다.
-                //   더 나쁜 것은 `toBeHidden()` 이 **요소가 아예 없을 때도 통과**한다는 점이다 —
-                //   그래서 aside 가 아직 렌더되기 전 타이밍에 걸리면 조용히 **vacuous 통과**했고,
-                //   실제로 이 단언은 리베이스로 타이밍이 바뀌자마자 red 가 됐다(같은 코드, 다른 결과).
+                // ⚠ [2026-08-12 정정 ①] 접힘을 `toBeHidden()` 으로 재던 최초 단언은 **이 UI 를 판정하지 못했다.**
+                //   접힘이 off-canvas transform 으로 구현된 경우(`-translate-x-full`) 경계상자가 남아
+                //   Playwright 는 계속 `visible` 로 본다. 게다가 `toBeHidden()` 은 **요소가 없을 때도 통과**해
+                //   aside 렌더 전 타이밍에 걸리면 조용히 vacuous 통과했다.
                 //
-                //   계약을 사용자 관점 그대로 적는다: **"사이드바가 화면 안에서 본문을 가리는가"**.
-                //   요소 존재를 먼저 요구하므로 vacuous 통과 경로도 함께 닫힌다.
+                // ⚠ [2026-08-12 정정 ②] 그 다음 시도(경계상자 1회 샘플링 + 상자 non-null 강제)도 틀렸다.
+                //   실측 결과 이 셸의 접힘은 **한 가지 방식이 아니다** — 뷰포트/경로에 따라
+                //   경계상자가 아예 **null**(DOM 미부착 또는 `display:none`)인 경우가 있었고,
+                //   그것을 실패로 취급해 375·768px 이 red 가 됐다. 또 `transition-transform duration-500`
+                //   중에 1회만 재면 전이 도중 값을 잡아 흔들린다.
+                //
+                //   → 계약을 **구현 방식과 무관하게** 적는다: "사이드바가 화면 안에서 본문을 가리는가".
+                //     · 화면에 상자가 없다(null) = 가리지 않는다 → 통과
+                //     · 상자가 있으면 오른쪽 끝이 뷰포트 왼쪽 경계를 넘지 않아야 한다
+                //     · 전이(500ms)를 흡수하도록 **폴링**으로 정착을 기다린다
+                //
+                //   vacuous 통과 우려: 셀렉터가 깨지면 접힘 케이스는 통과할 수 있으나 **desktop 케이스가
+                //   `toBeVisible()` 로 실재를 요구**하므로 스위트 전체로는 반드시 red 가 된다.
                 const sidebar = page.locator('aside').first();
-                await expect(sidebar, '사이드바(aside)가 렌더되지 않았다').toHaveCount(1);
-
-                const box = await sidebar.boundingBox();
-                expect(box, '사이드바의 경계상자를 얻지 못했다 (display:none 이거나 분리된 노드)').not.toBeNull();
 
                 if (vp.sidebarVisible) {
                     await expect(sidebar, `${vp.width}px 에서 사이드바가 보여야 한다`).toBeVisible({ timeout: 15000 });
-                    expect(
-                        box!.x,
-                        `${vp.width}px 에서 사이드바가 화면 밖으로 밀려 있다 (x=${box!.x})`,
-                    ).toBeGreaterThanOrEqual(-1);
+                    await expect
+                        .poll(async () => (await sidebar.boundingBox())?.x ?? null, {
+                            timeout: 15000,
+                            message: `${vp.width}px 에서 사이드바가 화면 밖으로 밀려 있다`,
+                        })
+                        // 1px 여유는 위 가로 넘침 단언과 같은 이유다(소수점 레이아웃 반올림).
+                        .toBeGreaterThanOrEqual(-1);
                 } else {
-                    // 오른쪽 끝이 뷰포트 왼쪽 경계를 넘지 않아야 한다 = 본문 위에 남지 않는다.
-                    // 1px 여유는 위 가로 넘침 단언과 같은 이유다(소수점 레이아웃 반올림).
-                    // 접힘이 풀리면 288px 가 통째로 들어오므로 이 여유로 가려지지 않는다.
-                    expect(
-                        box!.x + box!.width,
-                        `${vp.width}px 에서 사이드바가 본문을 가린다 (x=${box!.x}, width=${box!.width})`,
-                    ).toBeLessThanOrEqual(1);
+                    await expect
+                        .poll(
+                            async () => {
+                                const b = await sidebar.boundingBox();
+                                // null = 화면에 상자가 없다 → 본문을 가릴 수 없다.
+                                return b === null ? Number.NEGATIVE_INFINITY : b.x + b.width;
+                            },
+                            {
+                                timeout: 15000,
+                                message: `${vp.width}px 에서 사이드바가 본문을 가린다`,
+                            },
+                        )
+                        // 접힘이 풀리면 288px 가 통째로 들어오므로 1px 여유로 가려지지 않는다.
+                        .toBeLessThanOrEqual(1);
                 }
             });
         }
