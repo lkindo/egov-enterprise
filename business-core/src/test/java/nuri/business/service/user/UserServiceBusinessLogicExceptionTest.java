@@ -3,6 +3,7 @@ import nuri.business.domain.user.exception.UserErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.auth.UserAuthorityRepository;
+import nuri.business.service.user.dto.UserDto;
 import nuri.business.service.user.dto.UserSignupRequest;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
@@ -134,8 +135,7 @@ class UserServiceBusinessLogicExceptionTest {
 
                         // When & Then
                         assertThatThrownBy(
-                                        () -> userService.registerUser("newUser", "password123!", "테스트사용자", "hint", "answer",
-                                                        "USER"))
+                                        () -> userService.registerUser(UserDto.builder().userId("newUser").pswd("password123!").userNm("테스트사용자").pswdHint("hint").pswdCrans("answer").role("USER").build()))
                                         .isInstanceOf(RuntimeException.class)
                                         .hasMessage("Database save failed");
                 }
@@ -159,9 +159,17 @@ class UserServiceBusinessLogicExceptionTest {
         void registerUser_fail_withNullUserId() {
                 try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
                         mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-                        // When & Then
-                        assertThatThrownBy(() -> userService.registerUser(null, "password123!", "테스트사용자", "hint", "answer",
-                                        "USER"))
+                        // [2026-08-11] 빌더를 우회해 **서비스 가드**에 직접 도달시킨다.
+                        //   registerUser 가 UserDto 를 받도록 바뀌면서, Lombok @Builder 가 @NonNull 필드
+                        //   (userId·userNm)에 null 검사를 생성해 **빌더 단계에서 NPE** 가 먼저 난다.
+                        //   그것을 그대로 단언하면 이 테스트는 Lombok 을 검증하게 되고, 정작 지켜야 할
+                        //   서비스의 required() 가드는 무검증으로 남는다. Jackson 역직렬화 경로는 빌더를
+                        //   쓰지 않으므로 그 가드는 여전히 실제로 필요하다 — 목으로 직접 넘겨 검증한다.
+                        UserDto invalid = org.mockito.Mockito.mock(UserDto.class);
+                        // userId 에서 즉시 던지므로 뒤 필드는 조회되지 않는다(strict stubs — 남기면 불필요 스텁 오류).
+                        org.mockito.Mockito.when(invalid.userId()).thenReturn(null);
+
+                        assertThatThrownBy(() -> userService.registerUser(invalid))
                                         .isInstanceOf(IllegalArgumentException.class);
                 }
         }
@@ -171,9 +179,13 @@ class UserServiceBusinessLogicExceptionTest {
         void registerUser_fail_withNullUserNm() {
                 try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
                         mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-                        // When & Then
-                        assertThatThrownBy(() -> userService.registerUser("newUser", "password123!", null, "hint", "answer",
-                                        "USER"))
+                        // 빌더 우회 이유는 위 UserId 케이스 주석 참조.
+                        UserDto invalid = org.mockito.Mockito.mock(UserDto.class);
+                        org.mockito.Mockito.when(invalid.userId()).thenReturn("newUser");
+                        org.mockito.Mockito.when(invalid.pswd()).thenReturn("password123!");
+                        org.mockito.Mockito.when(invalid.userNm()).thenReturn(null);
+
+                        assertThatThrownBy(() -> userService.registerUser(invalid))
                                         .isInstanceOf(IllegalArgumentException.class);
                 }
         }
@@ -189,8 +201,7 @@ class UserServiceBusinessLogicExceptionTest {
 
                         // When & Then
                         assertThatThrownBy(
-                                        () -> userService.registerUser("newUser", "password123!", "테스트사용자", "hint", "answer",
-                                                        "USER"))
+                                        () -> userService.registerUser(UserDto.builder().userId("newUser").pswd("password123!").userNm("테스트사용자").pswdHint("hint").pswdCrans("answer").role("USER").build()))
                                         .isInstanceOf(RuntimeException.class)
                                         .hasMessage("Password encoding failed");
                 }
