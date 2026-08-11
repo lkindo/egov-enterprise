@@ -426,15 +426,52 @@ tasks.register('installGitHooks') {
 }
 
 /**
- * 로컬 전체 게이트. CI 과금차단 상태에서 pre-push 는 컴파일·계약·하네스까지만 본다
- * (business 모듈 테스트는 약 8분이라 push 마다 돌릴 수 없다 — 2026-07-26 실측).
+ * 프런트엔드 단위 테스트(vitest) 전수 실행.
+ *
+ * [2026-08-11 신설] 이 계층이 비어 있었다. pre-push 는 컴파일·tsc·lint·codegen·하네스만 돌고
+ * vitest 는 **CI 에서만** 실행됐는데, CI 의 `e2e-tests` 잡은 `needs: [backend-build, frontend-build]`
+ * 라 프런트 단위 테스트 1건이 깨지면 **E2E 3샤드가 통째로 skip** 된다.
+ * 2026-08-10 에 실제로 그렇게 됐다(run 31369018355): blind-wait 래칫 1건 때문에 E2E 가
+ * 한 번도 실행되지 않은 채 회차가 끝났다. 로컬에서 그것을 미리 볼 수단이 없었던 것이 문제다.
+ *
+ * 배치 근거(계층 모델): 전수 실행은 로컬 실측 약 147초로 pre-push(~2분) 예산에 넣기엔 크다.
+ *   · pre-push  → `frontend/src/__tests__` 의 **저장소 불변식 게이트만**(실측 10초, .githooks/pre-push)
+ *   · localGate → 여기, **전수**(147초)
+ * 이 분리는 "빠른 관문은 규약 위반을, 느린 관문은 회귀를 잡는다" 는 기존 계층 원칙과 같다.
+ */
+tasks.register('frontendUnitTest') {
+    description = '프런트엔드 vitest 전수 실행 (약 150초)'
+    group = 'Verification'
+    onlyIf { file("${rootDir}/frontend/package.json").exists() }
+    doLast {
+        // Gradle 9 에서 Project.exec 가 제거돼 ProcessBuilder 를 직접 쓴다(installGitHooks 와 동일 방식).
+        def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
+        def cmd = isWindows ? ['cmd', '/c', 'pnpm', 'test'] : ['pnpm', 'test']
+        logger.lifecycle('[frontendUnitTest] pnpm test (frontend)')
+        def proc = new ProcessBuilder(cmd)
+                .directory(file("${rootDir}/frontend"))
+                .redirectErrorStream(true)
+                .start()
+        proc.inputStream.eachLine { logger.lifecycle(it) }
+        def code = proc.waitFor()
+        if (code != 0) {
+            throw new GradleException("프런트엔드 단위 테스트 실패 (exit ${code}) — " +
+                    'CI 의 frontend-build 가 죽고 e2e-tests 3샤드가 통째로 skip 됩니다.')
+        }
+    }
+}
+
+/**
+ * 로컬 전체 게이트. pre-push 는 컴파일·계약·하네스와 프런트 불변식 게이트까지만 본다
+ * (business 모듈 테스트는 약 8분, 프런트 vitest 전수는 약 150초라 push 마다 돌릴 수 없다).
  * 병합·릴리스 전에 이 태스크로 한 번 전수 확인한다.
  */
 tasks.register('localGate') {
-    description = '로컬 전체 게이트: 하네스 린터 + 실PG 스키마 검증(Docker) + 전 모듈 테스트 (약 10분)'
+    description = '로컬 전체 게이트: 하네스 린터 + 실PG 스키마 검증(Docker) + 전 모듈 테스트 + 프런트 vitest 전수 (약 12분)'
     group = 'Verification'
     dependsOn ':api-server:harnessTest', ':api-server:schemaValidationTest',
-            ':business-core:test', ':business-app:test', ':foundation:test'
+            ':business-core:test', ':business-app:test', ':foundation:test',
+            'frontendUnitTest'
 }
 
 // 모든 빌드에서 훅 설치 상태를 보정한다 — "새 클론에서 게이트가 조용히 꺼져 있는" 상태를 없앤다.
