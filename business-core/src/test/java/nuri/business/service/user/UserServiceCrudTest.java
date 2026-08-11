@@ -91,7 +91,7 @@ class UserServiceCrudTest {
       when(passwordEncoder.encode(any())).thenReturn("encoded");
       when(userRepository.save(any())).thenAnswer(i -> i.getArgument(0));
 
-      String result = userService.registerUser("user", "pw", "name", "h", "c", "USER");
+      String result = userService.registerUser(UserDto.builder().userId("user").pswd("pw").userNm("name").pswdHint("h").pswdCrans("c").role("USER").build());
 
       assertThat(result).isEqualTo("user");
     }
@@ -102,7 +102,13 @@ class UserServiceCrudTest {
   void createUser_fail_withNullValues() {
     try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
       mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-      assertThatThrownBy(() -> userService.registerUser(null, "pw", "name", "h", "c", "USER"))
+      // 빌더는 @NonNull userId 에 null 검사를 생성해 NPE 를 먼저 던진다. 여기서 지켜야 할 것은
+      // 서비스의 required() 가드(Jackson 역직렬화 경로에서 실제로 작동한다)이므로 목으로 직접 넘긴다.
+      UserDto invalid = org.mockito.Mockito.mock(UserDto.class);
+      // userId 에서 즉시 던지므로 뒤 필드는 조회되지 않는다(strict stubs).
+      org.mockito.Mockito.when(invalid.userId()).thenReturn(null);
+
+      assertThatThrownBy(() -> userService.registerUser(invalid))
           .isInstanceOf(IllegalArgumentException.class);
     }
   }

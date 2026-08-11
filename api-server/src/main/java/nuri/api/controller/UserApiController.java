@@ -144,13 +144,9 @@ public class UserApiController {
     @PostMapping("/admin/system/users")
     public ResponseEntity<ApiResponse<String>> insertUser(
             @RequestBody @Validated({ Default.class, UserValidationGroups.OnCreate.class }) UserDto dto) {
-        String resultId = userService.registerUser(
-                dto.userId(),
-                dto.pswd(),
-                dto.userNm(),
-                dto.pswdHint(),
-                dto.pswdCrans(),
-                dto.role());
+        // [2026-08-11] DTO 를 통째로 넘긴다. 종전에는 6개 필드만 뽑아 넘겨서 폼이 보낸
+        //   이메일·연락처·소속 부서가 서비스에 **도달조차 하지 못했다**(UserService.registerUser 주석 참조).
+        String resultId = userService.registerUser(dto);
         return ResponseEntity.ok(ApiResponse.success(resultId));
     }
 

@@ -110,6 +110,18 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             // 편집 폼에는 기존 값이 실려 있어야 한다 — 빈 폼이 뜨면 그것은 '수정'이 아니라 재등록이다.
             const nameInput = page.locator('input[name="userNm"]');
             await expect(nameInput).toHaveValue(testName, { timeout: 15000 });
+
+            // [2026-08-11 신설] 등록 때 입력한 **이메일이 실제로 저장됐는지**를 여기서 닫는다.
+            //   종전 registerUser 는 User.builder() 에 7개 필드만 넣어 폼이 보낸 이메일·연락처·소속 부서를
+            //   **오류 없이 버렸다**(성공 토스트까지 뜬 채로). 그래서 이 칸은 항상 비어 있었고,
+            //   그것이 emlAddr @Pattern 의 빈 문자열 거부와 겹쳐 "등록은 되는데 수정은 영원히 400" 을 만들었다.
+            //   서비스 계층은 UserServiceTest 가 ArgumentCaptor 로 검증한다 — 여기서는 **화면까지 오는지**를 본다
+            //   (목록 API 가 emlAddr 을 돌려주고 폼이 그것을 싣는 배선까지 포함).
+            await expect(
+                page.locator('input[name="emlAddr"]'),
+                '등록 때 입력한 이메일이 수정 폼에 실려 오지 않았다 — 등록이 입력값을 버렸을 수 있다',
+            ).toHaveValue(`${testId}@egov.kr`, { timeout: 15000 });
+
             await nameInput.fill(updatedName);
 
             // 제출 버튼의 라벨도 '정보 수정'이므로 form 스코프로 한정한다(등록 단계와 동일 패턴).

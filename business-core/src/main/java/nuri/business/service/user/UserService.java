@@ -195,11 +195,14 @@ public class UserService extends BaseAbstractService {
          */
         @Transactional
         @CacheEvict(value = { Constants.Cache.USERS_CACHE }, allEntries = true)
-        public String registerUser(@NonNull String userId, @NonNull String pswd, @NonNull String userNm,
-                        String pswdHint, String pswdCrans, String roleName) {
-                required(userId, "사용자 ID 는 null 일 수 없습니다");
-                required(pswd, "비밀번호 는 null 일 수 없습니다");
-                required(userNm, "사용자 이름 은 null 일 수 없습니다");
+        public String registerUser(@NonNull UserDto dto) {
+                required(dto, "등록 요청은 null 일 수 없습니다");
+                String userId = required(dto.userId(), "사용자 ID 는 null 일 수 없습니다");
+                String pswd = required(dto.pswd(), "비밀번호 는 null 일 수 없습니다");
+                String userNm = required(dto.userNm(), "사용자 이름 은 null 일 수 없습니다");
+                String pswdHint = dto.pswdHint();
+                String pswdCrans = dto.pswdCrans();
+                String roleName = dto.role();
 
                 // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertAdmin();
@@ -221,6 +224,18 @@ public class UserService extends BaseAbstractService {
                         }
                 }
 
+                // [2026-08-11 결함 수정] 종전에는 아래 builder 에 **7개 필드만** 넣었다
+                //   (userId·pswd·userNm·esntlId·pswdHint·pswdCrans·role). 그래서 등록 폼이 채워 보낸
+                //   **이메일·연락처·소속 부서가 오류 없이 사라졌다** — 성공 토스트까지 뜬 채로.
+                //   그 결과 갓 만든 사용자는 항상 이메일이 없었고, 그것이
+                //   `UserDto.emlAddr` 의 @Pattern 이 빈 문자열을 거부하던 문제(2026-08-11 수정)와 겹쳐
+                //   "등록은 되는데 수정은 영원히 400" 이라는 증상을 만들었다.
+                //
+                //   저장 필드 집합은 **updateUser 와 동일하게** 맞춘다. 등록과 수정이 서로 다른 필드를
+                //   쓰면 "등록으로는 넣을 수 없고 수정으로만 넣을 수 있는 값"이 생겨 비대칭이 남는다.
+                //   원칙은 하나다 — **클라이언트가 보낸 것을 저장한다.**
+                //   (등록 폼이 실제로 보내는 것은 emlAddr·mblTelno·ognzId 이고, 나머지는 API 직접
+                //    호출 시에만 채워진다. 보내지 않으면 종전과 같이 null 이라 회귀가 없다.)
                 User user = User.builder()
                                 .userId(userId)
                                 .pswd(encodedPassword)
@@ -229,6 +244,21 @@ public class UserService extends BaseAbstractService {
                                 .pswdHint(pswdHint)
                                 .pswdCrans(pswdCrans)
                                 .role(role)
+                                .emlAddr(dto.emlAddr())
+                                .mblTelno(dto.mblTelno())
+                                .ognzId(dto.ognzId())
+                                .emplNo(dto.emplNo())
+                                .ofcpsNm(dto.ofcpsNm())
+                                .groupId(dto.groupId())
+                                .pstinstCd(dto.pstinstCd())
+                                .officeTelno(dto.officeTelno())
+                                .areaNo(dto.areaNo())
+                                .middleTelno(dto.middleTelno())
+                                .endTelno(dto.endTelno())
+                                .faxNo(dto.faxNo())
+                                .homeAddr(dto.homeAddr())
+                                .daddr(dto.daddr())
+                                .zip(dto.zip())
                                 .build();
 
 

@@ -184,7 +184,7 @@ public class UserApiControllerTest extends BaseControllerTest {
                 .pswd("ValidPass123!")
                 .build();
         
-        when(userService.registerUser(any(), any(), any(), any(), any(), any())).thenReturn("newUser");
+        when(userService.registerUser(any(UserDto.class))).thenReturn("newUser");
 
         mockMvc.perform(post("/api/v1/admin/system/users")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -268,7 +268,7 @@ public class UserApiControllerTest extends BaseControllerTest {
                         """))
                 .andExpect(status().isBadRequest());
 
-        verify(userService, never()).registerUser(any(), any(), any(), any(), any(), any());
+        verify(userService, never()).registerUser(any(UserDto.class));
     }
 
     @Test
@@ -281,7 +281,7 @@ public class UserApiControllerTest extends BaseControllerTest {
                         """))
                 .andExpect(status().isBadRequest());
 
-        verify(userService, never()).registerUser(any(), any(), any(), any(), any(), any());
+        verify(userService, never()).registerUser(any(UserDto.class));
     }
 
     @Test
@@ -296,7 +296,7 @@ public class UserApiControllerTest extends BaseControllerTest {
                         """))
                 .andExpect(status().isBadRequest());
 
-        verify(userService, never()).registerUser(any(), any(), any(), any(), any(), any());
+        verify(userService, never()).registerUser(any(UserDto.class));
     }
 
     @Test
