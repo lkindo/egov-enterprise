@@ -1,6 +1,7 @@
 import { test, expect } from './fixtures/base-test';
 import type { APIRequestContext } from '@playwright/test';
 import { AxeBuilder } from '@axe-core/playwright';
+import { TEST_CREDENTIALS } from './test-credentials';
 import fs from 'fs';
 import path from 'path';
 
@@ -54,6 +55,38 @@ function readCookieValue(authFile: string, name: string): string {
 
 function readAccessToken(authFile: string): string {
     return readCookieValue(authFile, 'accessToken');
+}
+
+/**
+ * 재발급 검증용 refreshToken 을 **이 테스트가 직접 로그인해서** 확보한다.
+ *
+ * <p>[2026-08-12] `auth.setup` 산출물(admin.json)의 refreshToken 을 읽어 쓰면 **순서 의존**이 된다.
+ * 백엔드의 `tb_auth_rfsh_tk` 는 **PK 가 userId — 사용자당 단 1행**이고,
+ * 로그아웃(`AuthServiceImpl.logout`)은 그 행을 **삭제**한다. 재로그인·재발급 회전도 이전 토큰을 무효화한다.
+ * 그래서 같은 샤드에서 `01-core-base` 의 로그아웃 테스트가 먼저 돌면, setup 이 저장해 둔 토큰은
+ * 이미 DB 에서 사라져 **이 테스트만 401** 이 된다(실제 CI 실패 원인이었다 — accessToken 은
+ * 무상태 JWT 라 다른 테스트는 멀쩡했고 이 한 건만 죽었다).
+ *
+ * <p>재발급은 본질적으로 **"지금 유효한 토큰"** 을 요구하는 계약이므로, 그 토큰을 즉석에서 얻는 것이
+ * 검증 대상을 좁히지 않으면서 순서 독립을 얻는 방법이다.
+ */
+async function issueFreshRefreshToken(request: APIRequestContext): Promise<string> {
+    const res = await request.post(`${API}/auth/login`, {
+        data: { userId: TEST_CREDENTIALS.admin.id, password: TEST_CREDENTIALS.admin.password },
+    });
+    expect(res.ok(), `재발급 검증용 로그인이 실패했다 (status ${res.status()})`).toBeTruthy();
+
+    const body = await res.json();
+    // 바디 우선, 부재 시 Set-Cookie 에서 파싱 — auth.setup 과 같은 규약(계약 축소 대비).
+    // Playwright 는 다중 Set-Cookie 를 개행으로 합쳐 준다.
+    const fromCookie = (res.headers()['set-cookie'] ?? '')
+        .split('\n')
+        .map((line) => /^refreshToken=([^;]+)/.exec(line.trim())?.[1])
+        .find(Boolean);
+
+    const token = body?.data?.refreshToken || fromCookie || '';
+    expect(token, '로그인 응답이 refreshToken 을 바디로도 Set-Cookie 로도 주지 않았다').toBeTruthy();
+    return token;
 }
 
 // ───────── E0: 로그인 성공(회귀 방어) — 이중 프리픽스 파손(2026-07-17 확증) 재발 차단 ─────────
@@ -460,11 +493,9 @@ test.describe('Tier 23-E7: Token reissue', () => {
     const REISSUE = '/api/auth/reissue';
 
     test('유효한 refreshToken 으로 재발급되며, 새 토큰은 바디가 아니라 HttpOnly 쿠키로만 전달된다', async ({ request }) => {
-        const refreshToken = readCookieValue(ADMIN_AUTH, 'refreshToken');
-        expect(
-            refreshToken,
-            'auth.setup 산출물에 refreshToken 이 없다 — 백엔드가 바디/Set-Cookie 어느 쪽으로도 주지 않았다',
-        ).toBeTruthy();
+        // setup 산출물이 아니라 즉석 로그인으로 얻는다 — 이유는 issueFreshRefreshToken 주석 참조
+        // (리프레시 토큰은 사용자당 1행이라 다른 테스트의 로그아웃 한 번에 무효가 된다).
+        const refreshToken = await issueFreshRefreshToken(request);
 
         const res = await request.post(REISSUE, {
             headers: { Cookie: `refreshToken=${refreshToken}` },
