@@ -21,7 +21,7 @@
 
 ## 1. 사전 요구사항
 
-- **JDK 21**, **Node ≥ 20 + pnpm**, **Docker**(로컬 DB), **PowerShell**(Windows) 또는 bash.
+- **JDK 21**, **Node ≥ 22 + pnpm**, **Docker**(로컬 DB), **PowerShell**(Windows) 또는 bash.
 - Gradle/wrapper는 저장소에 포함(`./gradlew`).
 
 ---
@@ -71,9 +71,9 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 docker compose up -d db     # postgres:17 (docker-compose.yml)
 ```
  
-> **Flyway 자동 구성**: 빈 PostgreSQL 데이터베이스만 기동해두면, 백엔드 서버 기동 시 `V2_0` baseline을 시작으로 스키마(101개 테이블) 및 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)가 자동으로 마이그레이션 및 로드됩니다. 별도의 수동 복원이나 SQL 실행이 필요하지 않습니다.
+> **Flyway 자동 구성**: 빈 PostgreSQL 데이터베이스만 기동해두면, 백엔드 서버 기동 시 `V2_0` baseline(당시 101개 테이블)을 시작으로 후속 생성·정리 마이그레이션과 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)가 자동으로 적용됩니다. 2026-08-13 최종 스키마는 **83개 테이블**이며, 별도의 수동 복원이나 SQL 실행이 필요하지 않습니다.
 >
-> ⚠ **단, 로그인 가능한 관리자 *계정*은 시드되지 않습니다.** V2_2 는 `ROLE_ADMIN` 권한/메뉴 구조만 넣고 `tb_user_info` 행은 생성하지 않습니다(계정 시드는 별도 승인·런타임 검증이 필요한 보류 항목). 최초 계정은 회원가입 플로우 또는 수동 INSERT 로 만드십시오.
+> ⚠ **관리자 행은 시드되지만 기본 비밀번호는 시드되지 않습니다.** `R__seed_framework.sql` 은 `webmaster`(`USRCNFRM_00000000001`)와 `ROLE_ADMIN` 매핑을 만들되, 비밀번호에는 로그인 불가 sentinel(`{disabled}...`)을 넣습니다. 최초 기동 전에 `ADMIN_INITIAL_PASSWORD` 환경변수를 주면 `AdminPasswordProvisioner`가 sentinel 상태일 때만 BCrypt 비밀번호를 1회 설정합니다. 설정 후에는 즉시 비밀번호를 변경하고 환경변수를 제거하십시오. 환경변수를 주지 않으면 계정은 로그인 불가 상태로 유지되며, 수동 INSERT는 필요하지 않습니다.
 
 ---
 
@@ -116,18 +116,17 @@ npx --prefix frontend tsc --noEmit        # (또는) cd frontend && npx tsc --no
 ./scripts/generate-domain.ps1 -DomainName "product" -FieldName "title"
 ```
 
-> `business-app`에 Entity(`BaseTimeEntity` 상속)·Dto·SearchDto·Repository·Service·Controller 골격을 생성한다. 생성 후 QueryDSL Q타입 재생성을 위해 `./gradlew clean :business-app:compileJava` 권장.
+> `business-app`에 Entity(`BaseEntity` 상속)·Dto·SearchDto·Repository·Service·Controller 골격을 생성한다. 생성 후 QueryDSL Q타입 재생성을 위해 `./gradlew clean :business-app:compileJava` 권장.
 
-> ⚠ **스캐폴드 산출물은 그대로는 컴파일되지 않는다 (2026-07-20 실측).**
-> `generate-domain.ps1`이 찍어내는 Service·Controller 는 `nuri.business.core.crud.BaseCrudService` / `BaseCrudController` 를 상속하지만, **이 두 클래스는 저장소에 존재하지 않는다.** (`BaseCrud` 전수 검색 결과 Java 정의 0건 — 참조처는 이 스크립트와 일부 문서뿐. 배경은 [quality-score-root-cause-analysis.md](../02-architecture/quality-score-root-cause-analysis.md) "Generic CRUD: 채택 0" 항목.)
-> 따라서 **생성된 `*Service.java`·`*Controller.java` 두 파일은 아래 §5.2.1의 실존 관례대로 다시 작성**해야 한다. Entity·Dto·SearchDto·Repository 골격은 그대로 사용 가능하다.
+> ✅ **스캐폴드는 2026-08-03부터 명시적 CRUD를 생성한다.** 존재하지 않는 `BaseCrudService` / `BaseCrudController` 상속을 제거하고, Service는 클래스레벨 `@Transactional(readOnly = true)` + 쓰기 메서드 트랜잭션, Controller는 `api-server` 배치 + 읽기 `@Authenticated` / 쓰기 `@AdminOrSystem` 관례를 직접 생성한다. Flyway DDL은 버전·표준용어 충돌을 피하려고 파일로 쓰지 않고 검토용 초안만 출력한다.
+> 생성 직후에도 도메인별 소유권·인가와 표준 용어는 사람이 확정해야 하며, `./gradlew clean compileJava compileTestJava`로 검증한다.
 
 #### 5.2.1 컨트롤러·서비스 작성 관례 (실존 코드 기준)
 
 아래는 **저장소에 실제로 있는 코드에서 발췌·요약**한 것이다. 원본을 직접 열어 대조할 것.
 
-- 참조 컨트롤러: [`DeptJobApiController`](../../api-server/src/main/java/nuri/api/controller/business/smarttoolkit/DeptJobApiController.java)(인가·로그인 주체 주입 포함), [`FaqApiController`](../../api-server/src/main/java/nuri/api/controller/business/faq/FaqApiController.java)(최소 CRUD)
-- 참조 서비스: [`DeptJobService`](../../business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java)(채번·소유권 가드), [`FaqService`](../../business-app/src/main/java/nuri/business/service/faq/FaqService.java)(최소 CRUD)
+- 참조 컨트롤러: [`DeptJobApiController`](../../api-server/src/main/java/nuri/api/controller/business/smarttoolkit/DeptJobApiController.java)(인가·로그인 주체 주입 포함), [`AddressBookApiController`](../../api-server/src/main/java/nuri/api/controller/business/addressbook/AddressBookApiController.java)(사용자 소유권 CRUD)
+- 참조 서비스: [`DeptJobService`](../../business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java)(채번·소유권 가드), [`AddressBookService`](../../business-app/src/main/java/nuri/business/service/addressbook/AddressBookService.java)(명시 CRUD·소유권)
 
 **Controller** — `api-server` 에 둔다(백엔드 헌법 제1조 4항). 비즈니스 로직은 넣지 않는다.
 
@@ -170,13 +169,13 @@ public class ProductApiController {
 | 로그인 주체는 `@LoginUser CustomUserDetails` 로 받는다 | `nuri.business.security.annotation.LoginUser` | — |
 | 요청 본문 검증은 `@Valid @RequestBody` | jakarta validation | — |
 
-> 🔒 **인가 누락은 빌드를 깨뜨린다 — 단, 전부는 아니다.** `SecurityAuthAnnotationLinterTest`(`api-server/src/test/java/nuri/api/harness/`)가 화이트리스트·DB 구동 인가(`/admin/**` URL 시큐리티) 대상이 아닌 **쓰기(POST/PUT/DELETE/PATCH) 엔드포인트에 `@PreAuthorize`/`@Secured` 가 없으면 실패**시킨다. 스캐폴드가 생성하는 컨트롤러에는 이 애노테이션이 없으므로 반드시 직접 추가할 것.
+> 🔒 **인가 누락은 빌드를 깨뜨린다 — 단, 전부는 아니다.** `SecurityAuthAnnotationLinterTest`(`api-server/src/test/java/nuri/api/harness/`)가 화이트리스트·DB 구동 인가(`/admin/**` URL 시큐리티) 대상이 아닌 **쓰기(POST/PUT/DELETE/PATCH) 엔드포인트에 인가 애노테이션이 없으면 실패**시킨다. 현 스캐폴드는 읽기에 `@Authenticated`, 쓰기에 `@AdminOrSystem`을 생성하므로 도메인 정책에 맞게 조정하되 제거하지 말 것.
 >
 > ⚠ **집행 범위를 정확히 알아 둘 것**(2026-08-03 현행화). 이 문단은 두 번 틀렸다 — 처음엔 "모든 엔드포인트를 전수 조사"라는 **과장**이었고, 그 정정본은 패키지 skip 이 삭제되면서 **낡아서** 틀렸다.
 >
 > 현재: Test#1 은 **패키지 skip 없이 전 컨트롤러의 읽기·쓰기를 순회**한다. 다만 ① 공개 화이트리스트 ② 인가 애노테이션 **존재**(내용 불문) ③ `rbac.db-auth.secure-paths` 매칭 ④ `WRITE_AUTHZ_GUARDED_ELSEWHERE` 등재 클래스 중 하나면 통과시킨다. Test#2 는 **쓰기만** 보고 `/api/v1/admin/` 은 URL 시큐리티에 위임한다.
 >
-> 그래서 **"모든 컨트롤러를 순회한다"는 참이지만 "모든 인가를 검증한다"는 거짓**이다. 특히 ③은 문자열 목록 매칭이라 목록에서 빠진 신규 도메인은 런타임 인가와 린터가 **동시에** 뚫리고, ②는 `@PreAuthorize("isAuthenticated()")` 처럼 IDOR 방어력이 0인 애노테이션도 통과시킨다. 읽기 IDOR 은 여전히 직접 소유권 가드를 붙여야 한다. 최신 범위는 항상 린터 javadoc(`SecurityAuthAnnotationLinterTest` 클래스 주석)을 SSOT 로 삼을 것.
+> 그래서 **"모든 컨트롤러를 순회한다"는 참이지만 "인가 의미까지 모두 검증한다"는 거짓**이다. 신규 경로가 `secure-paths`에서 빠지고 인가 애노테이션도 없으면 린터가 위반으로 잡으므로 조용히 통과하지 않는다. 다만 ②는 `@PreAuthorize("isAuthenticated()")`처럼 IDOR 방어력이 없는 애노테이션도 존재 조건을 만족하므로, 읽기·사용자 소유 데이터는 서비스 계층 소유권 가드를 별도로 붙여야 한다. 최신 범위는 항상 린터 javadoc(`SecurityAuthAnnotationLinterTest` 클래스 주석)을 SSOT 로 삼을 것.
 
 **Service** — 재사용 admin 코어면 `business-core`, 프로젝트 고유 도메인이면 `business-app`(BE 헌법 제1조).
 
@@ -225,7 +224,7 @@ public class ProductService extends BaseAbstractService {
 
 > ⚠ `required(...)` 는 **프로그래밍 오류를 잡는 가드**다. 물리 스키마상 nullable 인 도메인 값에 걸면 데이터가 생기는 순간 조회가 400 으로 깨진다(`DeptJobService.toDto` 주석의 실제 사고 사례 참조).
 
-**DB 테이블** — 스캐폴드는 `@Table(name = "tb_<domain>")` 를 찍지만 **테이블을 만들어 주지는 않는다.** `api-server/src/main/resources/db/migration/` 에 **최신 파일 다음 번호**(2026-07 기준 `V2_30` 이후)로 `V2_NN__create_tb_product.sql` 을 추가한다. 컬럼·객체 명명은 DB 헌법 제1~3조와 `meta_standard_words` 실조회를 따른다. Hibernate `ddl-auto: validate` 이므로 테이블이 없으면 **기동이 거부**된다.
+**DB 테이블** — 스캐폴드는 `@Table(name = "tb_<domain>")` 를 찍지만 **테이블을 만들어 주지는 않는다.** `api-server/src/main/resources/db/migration/` 에 **현재 최신 파일을 확인한 뒤 다음 번호**(2026-08-13 기준 최신 `V2_48`, 다음은 `V2_49`)로 `V2_NN__create_tb_product.sql` 을 추가한다. 컬럼·객체 명명은 DB 헌법 제1~3조와 `meta_standard_words` 실조회를 따른다. Hibernate `ddl-auto: validate` 이므로 테이블이 없으면 **기동이 거부**된다.
 
 ---
 
@@ -234,13 +233,13 @@ public class ProductService extends BaseAbstractService {
 프레임워크化가 **대부분 진척**됐다. 아래는 파생 프로젝트 착수 전 인지해야 할 현황과 **설계 결정(2026-07-11)**이다.
 
 ### 6.1 빈 DB 부트스트랩 — 해소 (2026-07-11)
-- 레거시 `V1.x` 델타를 제거하고 **`V2_0__baseline.sql`(101 테이블) + `V2_1`(메타표준) + `V2_2`(admin 시드) + `R__seed_framework`** 로 재구성했다.
+- 레거시 `V1.x` 델타를 제거하고 **`V2_0__baseline.sql`(초기 101 테이블) + `V2_1`(메타표준) + `V2_2`(프레임워크 권한·메뉴 데이터) + `R__seed_framework`** 로 재구성했다. 후속 도메인 정리까지 적용한 현재 최종 상태는 83개 테이블이다.
 - **Docker 빈 Postgres 17에 `V2_0→V2_1→V2_2→R__` 전체를 `ON_ERROR_STOP=1`로 클린 적용 실증**(문법·FK 정합). 빈 DB 부트스트랩 가능.
-- 남은 확인: 실 `bootRun`의 Hibernate `ddl-auto:validate` 무드리프트(92 엔티티 ↔ 101 테이블)는 라이브 기동 시 최종 확인 권장.
+- **CI가 매번 실 PostgreSQL 17에서 Flyway 전량 적용 → Hibernate `ddl-auto:validate` → 쓰기 smoke를 실행한다.** 현재 계약 검사는 80개 엔티티·83개 테이블·888개 컬럼을 대조하며 drift 0이다.
 
-### 6.2 RBAC 인가 — 하이브리드 (설계 결정)
-- **결정: 하이브리드 모델 유지.** 인가는 `@PreAuthorize` + `AuthorityConstants`로 중앙화된 role 리터럴 + DB(`tb_menu_crt_dtl`) 메뉴 가시성의 조합이다.
-- **완전 DB 주도 런타임 인가(경로→권한 AuthorizationManager)는 의도적 보류** — 단일 SI 규모에 과설계로 판단. 확장 지점은 열려 있다.
+### 6.2 RBAC 인가 — DB 경로 인가 집행 + 메서드 인가 병행
+- `rbac.db-auth.enabled: true`이며 `secure-paths`는 `DbUrlAuthorizationManager`가 DB 권한으로 런타임 집행한다. 이전의 “DB 주도 인가 보류” 상태가 아니다.
+- 그 밖의 세부 업무 규칙은 `@PreAuthorize`·보안 메타 애노테이션·서비스 소유권 가드가 담당하고, 메뉴 가시성은 DB(`tb_menu_crt_dtl`)에서 결정한다. 경로 인가와 도메인 소유권은 서로 대체 관계가 아니다.
 
 ### 6.3 멀티테넌시 — 단일 테넌트 (설계 결정)
 - **결정: 이 프레임워크는 단일 테넌트(single-tenant)를 전제한다.** 행-레벨 다기관 격리(`@TenantId` 등)는 **범위 밖**이며 결함(gap)이 아니다. 다기관 SI가 필요하면 파생 프로젝트에서 별도 도입한다.
@@ -250,7 +249,7 @@ public class ProductService extends BaseAbstractService {
 
 ### 6.5 진행 중 (프레임워크化 확장, 2026-07-11 결정)
 - **생산성 전면화**: MapStruct `@Mapper` 표준을 기존 도메인까지 마이그레이션 진행 중(수기 `from()` 제거).
-- ⚠ **제네릭 CRUD(`BaseCrudController`/`BaseCrudService`)는 구현되지 않았다** — 클래스 자체가 저장소에 없다(2026-07-20 실측). `generate-domain.ps1` 만 이를 상속하는 코드를 생성하므로 스캐폴드 산출물은 손봐야 컴파일된다(§5.2). CRUD 는 §5.2.1 의 명시적 관례로 작성한다.
+- ✅ **제네릭 CRUD는 채택하지 않고 명시적 CRUD로 종결했다.** `generate-domain.ps1`도 같은 관례의 컴파일 가능한 Service·Controller 초안을 생성한다(§5.2). 도메인별 소유권과 DDL 표준 용어는 생성 후 검토한다.
 - **레거시 데이터 이관 도구**: 범용 소스↔표준 스키마 매핑·ETL·검증 골격 **선제 구축** 착수.
 - 도입 완료: i18n `next-intl`(seam + 로케일 카탈로그 `messages/{ko,en}.json`), 감사 로그 영속(`WebAuditLogListener` @Async), 도메인 이벤트 seam, 시크릿 외부화.
 
@@ -260,11 +259,15 @@ public class ProductService extends BaseAbstractService {
 
 | 도메인 | 명령 | 근거 |
 |---|---|---|
-| Backend 컴파일 | `./gradlew compileJava compileTestJava` | §0.6 HARD |
-| Backend 부팅 | `./gradlew :api-server:test --tests "*SecurityAuthAnnotationLinterTest"` | 컨텍스트 로드 실증 |
+| Backend 컴파일 | `./gradlew compileJava compileTestJava --warning-mode fail` | §0.6 HARD |
+| Backend 구조·보안 하네스 | `./gradlew :api-server:harnessTest` | 29개 하네스 클래스의 구조·계약·인가 린터 |
+| 실 DB 부트스트랩·스키마 | `./gradlew :api-server:schemaValidationTest` | Docker PostgreSQL 17 + Flyway + Hibernate validate + 쓰기 smoke |
+| Backend 전체 로컬 게이트 | `./gradlew localGate` | 하네스·실 DB·전 모듈 테스트·JaCoCo·프런트 unit coverage |
+| Full-stack 통합 게이트 | `npm run verify` / `make verify` | Backend·Frontend 핵심 게이트 단일 진입점(실 DB/E2E는 별도) |
 | Frontend 타입 | `cd frontend && npx tsc --noEmit` | §0.6 HARD |
 | 커버리지 | `make coverage` / `npm run test:coverage` | JaCoCo |
-| 보안 | `/security-review`(수동) + gitleaks pre-commit | — |
+| 시크릿 스캔 | `gitleaks protect --staged --verbose`(설치 시) | pre-commit은 로컬 보조, CI `secret-scan`이 required check |
+| 브랜치 보호 정합 | `npm run verify:ops` | 저장소 명세·CI·실제 GitHub ruleset 대조(네트워크·관리 읽기 권한 필요) |
 
 ---
-*Last Updated: 2026-07-20 (Claude Code — §5.2 정정: 존재하지 않는 `BaseCrudController`/`BaseCrudService` 상속 지시를 제거하고, 실존 코드(`DeptJobApiController`·`DeptJobService`·`FaqService`)에서 발췌한 §5.2.1 컨트롤러·서비스 관례로 대체. §6.5 제네릭 CRUD 현황 정직화. 이전: 2026-07-11 온보딩 런북 신설.)*
+*Last Updated: 2026-08-13 (Codex — Node 22·관리자 최초 프로비저닝·explicit CRUD 스캐폴드·DB RBAC 집행·80엔티티/83테이블/888컬럼 실 DB 검증·현행 품질 게이트로 동기화. 삭제된 FAQ 참조를 AddressBook 예제로 교체. 이전: 2026-07-20 제네릭 CRUD 미구현 상태 정직화, 2026-07-11 온보딩 런북 신설.)*

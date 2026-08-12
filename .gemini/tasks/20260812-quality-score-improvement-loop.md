@@ -1,14 +1,15 @@
 # 프로젝트 완성도 개선 루프 — 완료 원장
 
-> 상태: 2026-08-12 개선 Wave 2 완료
-> 결과: 저장소 증거 기반 위험 가중 점수 **70.3/100 → 91.0/100**
+> 상태 판정: 개선 Wave 5 구현·로컬 검증·독립 검토 완료. 이 원장과 색상 exact 래칫을 포함한 최종 PR이 active required checks 7/7을 통과해 `main`에 병합되면 통합 완료이며, PR 브랜치에서는 통합 후보로 본다.
+> 결과 판정: 위 통합 완료 조건을 충족하면 저장소 증거 기반 위험 가중 점수 **70.3/100 → 91.9/100**으로 확정하고, 그 전에는 같은 수치를 후보로 본다.
 > 주의: 이 점수는 코드·테스트·설정·CI 증거를 평가한 값이며, 운영 배포 인증이나 실제 DR 복구 성공을 의미하지 않는다.
+> 척도 구분: 이 점수는 분야별 위험 가중치가 있는 운영 완성도다. [구조 성숙도 12축](../../docs/02-architecture/quality-score-root-cause-analysis.md#16-4축-전면-재측정-2026-08-13-07-28-이후-실물ci-재검증)의 83.1점과 목적·산식이 다르다.
 
 ## 운영 경계
 
 - 사용자는 저장소 내부의 분석·개선·검증 작업에 포괄 진행 승인을 부여했다.
 - 운영 DB DML/DDL, 실제 자격증명 회전, 배포·외부 발행은 별도 명시 승인 없이 수행하지 않았다.
-- `GEMINI.md` 및 백엔드·프론트엔드·DB constitution은 수정하지 않았다.
+- `GEMINI.md`와 프론트엔드·DB constitution은 수정하지 않았다. 백엔드 constitution은 사용자의 명시 승인 후 제16조를 실제 strict mutation 집행과 동기화했고 PR #396(`745610c24`)으로 `main`에 병합했다.
 - 기존 사용자 WIP와 stat-only 변경인 `frontend/src/hooks/useAppForm.ts`, `frontend/src/hooks/__tests__/useAppForm.test.tsx`, `frontend/src/types/generated-api.d.ts`는 보존하고 커밋 대상에서 제외했다.
 - Gradle 실행은 한 번에 하나만 수행했고, 테스트 skip·예외목록 확대·임계값 완화로 실패 신호를 숨기지 않았다.
 
@@ -18,18 +19,18 @@
 
 | 세부분야 | 가중치 | 개선 전 | 개선 후 | 증감 | 핵심 증거 |
 |---|---:|---:|---:|---:|---|
-| 백엔드/API | 12% | 74 | 92 | +18 | 알림 소유권 결속, 결재 BOLA 차단, 사용자 식별자 축 정정, 예외 계약 보강 |
-| 보안·개인정보 | 14% | 58 | 93 | +35 | WS 인증·구독 권한·Origin 방어, 비밀정보 제거/스캔, 업로드 시그니처·경로 방어 |
+| 백엔드/API | 12% | 74 | 93 | +19 | 알림·결재·쪽지 소유권 결속, 사용자 식별자 축 정정, 예외 계약 보강 |
+| 보안·개인정보 | 14% | 58 | 94 | +36 | WS 인증·구독 권한·Origin 방어, 비밀정보 제거/스캔, 업로드·쪽지 IDOR 방어 |
 | 백엔드 신뢰성·성능 | 9% | 68 | 91 | +23 | 비동기 포화/실패 상태, 인증 인프라 장애 분류, Hikari 정규화, 저장 실패 보상 |
-| 프론트 아키텍처 | 9% | 73 | 91 | +18 | 중복 WS 연결 제거, Next proxy 전환, 검색 계약·SSR/hydration·트리 타입 경계 정리 |
-| UX·접근성 | 8% | 67 | 86 | +19 | 테이블 키보드/ARIA, 대시보드 입력·제스처, 시맨틱 색상·공용 Hub 컴포넌트 보강 |
-| 프론트 보안·계약 | 8% | 83 | 95 | +12 | 공개 사용자 토픽 제거, 알림 정규화, 검색 PageResponse 계약 회귀 테스트, 타입 계약 강화 |
+| 프론트 아키텍처 | 9% | 73 | 92 | +19 | 중복 WS 제거, Next proxy, 검색·로그 생성 API 타입과 페이지 계약 정렬 |
+| UX·접근성 | 8% | 67 | 87 | +20 | 테이블 키보드/ARIA, 업로더 포커스·파일 선택 경계, 시맨틱 색상 보강 |
+| 프론트 보안·계약 | 8% | 83 | 96 | +13 | 사용자 전용 토픽, 검색·로그 PageResponse, 생성 DTO·CSV 계약 강화 |
 | 프론트 성능 | 7% | 70 | 87 | +17 | 프로덕션 빌드, 고정 gzip 번들 예산, 중복 구독 및 중복 mounted gate 제거, PPR 빌드 안정화 |
 | DB·데이터 거버넌스 | 10% | 68 | 88 | +20 | 환경변수 fail-fast, SELECT-only 단일문 DB bridge, read-only/timeout, PostgreSQL 17 스키마 검증 |
-| 테스트·품질 게이트 | 10% | 79 | 94 | +15 | JaCoCo false-green 차단, FE 371 tests와 coverage 래칫, mutation 4/4 탐지, 설정·워크플로 린터 |
-| CI/CD·운영 | 8% | 73 | 94 | +21 | main tag 릴리스 결속, 7개 필수 검사, 실제 이미지 push, 운영 의존성 감사 차단 |
-| 문서·DX·재사용성 | 5% | 64 | 85 | +21 | 오케스트레이션/보안/결정 문서와 품질 원장 동기화, 공용 테이블·트리·Hub 유틸 정리 |
-| **위험 가중 종합** | **100%** | **70.3** | **91.0** | **+20.7** | `9098 / 100 = 90.98`, 소수 첫째 자리 반올림 |
+| 테스트·품질 게이트 | 10% | 79 | 95 | +16 | JaCoCo, FE 408 tests·coverage exact 래칫, strict mutation 10범위, 하네스 29종 |
+| CI/CD·운영 | 8% | 73 | 96 | +23 | 7개 필수 검사, E2E 3샤드, Gradle 경고 실패·제한 재시도·병렬 시작 |
+| 문서·DX·재사용성 | 5% | 64 | 87 | +23 | 품질 원장 현행화, Gradle 10 호환, explicit CRUD 스캐폴드 문서 정합 |
+| **위험 가중 종합** | **100%** | **70.3** | **91.9** | **+21.5** | 원시값 `91.85 - 70.33 = 21.52`, 각 수치는 소수 첫째 자리 반올림 |
 
 ## 완료한 개선 Wave
 
@@ -76,6 +77,28 @@
 - [x] 수동 mutation audit에서 검색 결과 절단 1건, 트리 부모 링크 훼손 3건, coverage/warning 래칫 완화 2건을 주입해 모두 red가 되는지 확인한 뒤 원복(6/6 탐지)
 - [x] 하네스의 과거 임계값 정확 문자열 비교를 방향성 검사로 교정해 더 강한 coverage 하한·lint 상한은 허용하고 실제 완화만 차단
 
+### Wave 3 — 소유권·업로더·로그 계약
+
+- [x] 쪽지 읽기 컨트롤러에 인증 경계를 명시하고 타 사용자 발신/수신 relation ID 접근을 음성 테스트로 고정
+- [x] 공용 파일 업로더의 14개 경계 테스트와 실제 결함·키보드/ARIA 회귀를 수정
+- [x] 시스템·로그인·사용자·웹·개인정보 로그를 생성 OpenAPI DTO로 수렴하고 0/1-base 페이지·`pageUnit`·CSV 필드를 실제 API와 정렬
+- [x] Vitest 80파일/408테스트, coverage 22/18/17/23 하한, PR #398·#399의 backend/frontend·mutation 10범위·E2E 3샤드 green 확인
+
+### Wave 4 — Gradle 10 호환
+
+- [x] Groovy space-assignment와 서브프로젝트 version-catalog 암묵 참조 폐기 경고 제거
+- [x] 로컬 Makefile과 CI 검증 명령에 `--warning-mode fail --console=plain`을 적용해 재유입 차단
+- [x] assemble 및 전 모듈 test를 warning fail 모드로 검증
+
+### Wave 5 — CI 임계경로·캐시 호환·래칫
+
+- [x] 산출물을 공유하지 않는 frontend/backend required check를 병렬 시작하고 E2E의 양쪽 cost gate는 유지
+- [x] 성공 run 간 관측에서 후속 E2E fan-out 시작까지 **608초→428초(-180초, -29.6%)** 단축(PR #400 attempt 2 `31624861625` 대비 PR #401 최종 `31627566756`)
+- [x] `frontendUnitTest`·`harnessTest`·대표 strict PIT의 Gradle configuration cache 저장/재사용과 문제 0 확인(전역 활성화는 보류)
+- [x] Gradle 배포 서버 일시 장애가 실제로 드러낸 backend wrapper 확보 사각지대를 3회 제한 재시도와 계약 테스트로 봉합
+- [x] 하드코딩 색 실제 census 104에 기준선을 맞추고 정확 일치 래칫으로 103건의 false-green 여유 제거
+- [x] 구조 성숙도 문서의 E2E red·하네스 12종·RBAC 미전환·BaseCrud 스캐폴드 등 stale 서술 현행화
+
 ## 최종 검증 기록
 
 ### 백엔드
@@ -88,8 +111,8 @@
 
 ### 프론트엔드
 
-- Vitest: **74 files / 371 tests**, 전부 성공
-- coverage: statements **20.09%**, branches **15.82%**, functions **14.96%**, lines **20.63%** — 고정 하한 20/15/14/20% 통과
+- Vitest: **80 files / 408 tests**, 전부 성공
+- coverage: statements **22.94%**, branches **18.36%**, functions **17.80%**, lines **23.51%** — 고정 하한 22/18/17/23% 통과
 - ESLint: 오류 **0**, 경고 **292** — 강화된 고정 상한 295 통과
 - 앱 TypeScript(`tsc --noEmit`) 및 E2E TypeScript(`tsc -p tsconfig.e2e.json --noEmit`): 성공
 - Next production build: 컴파일·타입 검사·**126개 페이지 생성** 성공
@@ -116,12 +139,12 @@
 
 | 순위 | 잔여 과제 | 기대 효과 | 선행 조건/이유 |
 |---:|---|---|---|
-| 1 | 업로드 파일 외부 AV/CDR 검사와 격리 저장소 도입 | 악성 문서·매크로·압축폭탄 대응 | 스캐너/오브젝트 스토리지 인프라와 제품 정책 결정 필요 |
-| 2 | 실제 배포 스택 E2E, Lighthouse/axe, 백업 복구·DR 리허설 | 저장소 밖의 런타임·접근성·복구 증거 확보 | 실행 환경과 테스트 데이터, 운영성 작업 승인 필요 |
-| 3 | 프론트 커버리지 30% 이상 및 프로덕션 `any` 147건·effect 내 동기 상태변경 41건 추가 감축 | 회귀 탐지·타입 안정성·렌더 성능 향상 | 화면군별 점진적 리팩터링 권장; 전체 린트의 `any`는 E2E 포함 176건 |
-| 4 | CSP `unsafe-inline` 제거와 nonce/hash를 PPR 정책에 맞게 확정 | XSS 방어의 마지막 큰 잔여 위험 축소 | 렌더링/캐시 정책에 대한 제품·아키텍처 결정 필요 |
-| 5 | 실제 자격증명 회전, 운영 release/deploy, 복구 검증 | 운영 통제 완결 | 외부 상태를 바꾸므로 사용자 명시 승인 필요 |
-| 6 | Gradle 10 비호환 deprecation 제거 및 configuration cache 검토 | 장기 빌드 호환성과 속도 개선 | 플러그인/빌드 스크립트별 경고 분해 필요 |
+| 1 | 읽기 인가 census 30건·클래스 면제 12건 판정 | BOLA/IDOR 잔여 제거 | 도메인별 공개성·소유권 의미 확인 필요 |
+| 2 | 프론트 coverage 30/25/25/30 이상 | 회귀 탐지·타입 안정성 | 인증·admin mutation·업로드·로그부터 점진 래칫 |
+| 3 | 입력 DTO 길이·enum 표적 미러 게이트 | DB→API 의미 계약 강화 | `@Column(length=)` 536 vs `@Size` 393 직접 대응 census |
+| 4 | i18n과 survey/community core 귀속 결정 | 템플릿 재사용성·제품 경계 확정 | 다국어 파일럿/단일언어, core/app 제품 결정 필요 |
+| 5 | 수동 PK 64엔티티와 eGov 암호 호환 단계 축소 | BE 단순성·키관리 개선 | 데이터/참조 census와 expand-contract, 별도 설계 승인 필요 |
+| 6 | 외부 AV/CDR·운영 배포·백업복구·DR 실증 | 저장소 밖 운영 위험 검증 | 외부 인프라와 운영 상태 변경 승인 필요 |
 
 ## 재개 규칙
 
@@ -131,4 +154,4 @@
 
 - 사용자 기존 WIP `frontend/src/hooks/useAppForm.ts`, `frontend/src/hooks/__tests__/useAppForm.test.tsx`, `frontend/src/types/generated-api.d.ts`는 의미 diff가 없음을 확인했고 커밋 대상에서 제외한 채 그대로 남겨 두었다.
 - 보호된 프론트 constitution의 `middleware.ts` 경로 표기 2곳은 명시 승인 없이는 바꿀 수 없어 보존했다. 이미 적용된 Flyway `V2_36`의 같은 역사적 주석도 checksum 불변 원칙 때문에 수정하지 않았다. 실행 코드와 일반 주석은 `frontend/src/proxy.ts`로 동기화했다.
-- 이전 Wave는 PR #394로 `main` 병합 완료(`b11fae1ff`, CI run `31579482504`, 필수 검사 7/7)했으며, Wave 2도 보호 브랜치 규칙에 따라 별도 PR로 통합한다. 운영 배포·운영 DB 변경은 수행하지 않았다.
+- PR #394와 #396~#401은 필수 검사를 통과해 `main`에 병합했다. #401 최종 run `31627566756`은 최신 `main` 재배치 후 18/18 jobs·required 7/7이 성공했다. 이 원장과 색상 exact 래칫은 동일한 최종 PR에 포함하며, 상단의 완료 조건으로 통합 상태를 판정한다. 운영 배포·운영 DB 변경은 수행하지 않았다.
