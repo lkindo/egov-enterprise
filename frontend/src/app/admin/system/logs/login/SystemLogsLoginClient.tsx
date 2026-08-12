@@ -3,21 +3,13 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
-import { PageResponse } from '@/types/foundation/system';
+import type { LoginLog, PageResponse } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { KeyRound, Terminal, Calendar, Globe } from 'lucide-react';
-import type { components } from '@/types/generated-api';
 import { usePageParam } from '../use-log-url-state';
-
-/**
- * 로그인 로그 행 타입 — 생성 타입(`LoginLogDto`)이 API 계약의 SSOT 다.
- * 서비스 파일의 로컬 `LoginLog` 인터페이스는 계약에 없는 `loginNm` 을 선언하고 있어
- * 화면이 그 필드를 렌더하면 전건 공백이 된다. 여기서는 계약 필드만 사용한다.
- */
-type LoginLogRow = components['schemas']['LoginLogDto'];
 
 const PAGE_SIZE = 10;
 
@@ -35,7 +27,7 @@ const SystemLogsLoginClient = () => {
     const [page, setPage] = usePageParam();
     const [searchKeyword, setSearchKeyword] = useState('');
 
-    const { data, isLoading, error, refetch } = useQuery<PageResponse<LoginLogRow>>({
+    const { data, isLoading, error, refetch } = useQuery<PageResponse<LoginLog>>({
         queryKey: ['admin-logs-login', page, searchKeyword],
         queryFn: () => systemLogAdminService.getLoginLogs({
             page: page - 1,
@@ -44,14 +36,14 @@ const SystemLogsLoginClient = () => {
         }),
     });
 
-    const logs = (data?.list || []) as LoginLogRow[];
+    const logs = data?.list ?? [];
     const totalPageCount = data?.totalPage || 1;
     const totalCount = Number(data?.total || 0);
 
-    const columns: Column<LoginLogRow>[] = [
+    const columns: Column<LoginLog>[] = [
         {
             header: '로그ID',
-            accessor: (item: LoginLogRow) => (
+            accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
                     {item.logId}
@@ -61,7 +53,7 @@ const SystemLogsLoginClient = () => {
         },
         {
             header: '발생시점',
-            accessor: (item: LoginLogRow) => (
+            accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
                     {item.creatDt ? item.creatDt.substring(0, 19).replace('T', ' ') : '-'}
@@ -71,7 +63,7 @@ const SystemLogsLoginClient = () => {
         },
         {
             header: '사용자ID',
-            accessor: (item: LoginLogRow) => (
+            accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-card border rounded-lg w-fit shadow-sm">
                     <span className="text-xs font-bold text-foreground">{item.loginId || '-'}</span>
                 </div>
@@ -80,7 +72,7 @@ const SystemLogsLoginClient = () => {
         },
         {
             header: '접속IP',
-            accessor: (item: LoginLogRow) => (
+            accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/80 tabular-nums">
                     <Globe size={12} className="opacity-30" />
                     {item.loginIp || '-'}
@@ -90,7 +82,7 @@ const SystemLogsLoginClient = () => {
         },
         {
             header: '구분',
-            accessor: (item: LoginLogRow) => (
+            accessor: (item: LoginLog) => (
                 <div className="flex items-center justify-center">
                     <span className={`px-2 py-0.5 rounded-md text-xs font-bold border tracking-tighter ${
                         item.loginMthd === 'LOGIN' ? 'bg-hub-indigo/10 text-hub-indigo border-hub-indigo/20' : 'bg-muted text-muted-foreground border-border'
@@ -104,7 +96,7 @@ const SystemLogsLoginClient = () => {
         {
             // 계약에 존재하는 실제 값(errOccrrAt/errorCode)만 표기한다.
             header: '오류',
-            accessor: (item: LoginLogRow) => (
+            accessor: (item: LoginLog) => (
                 <div className="flex items-center justify-center">
                     {item.errOccrrAt === 'Y' ? (
                         <span className="px-2 py-0.5 rounded-md text-xs font-bold border bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20">

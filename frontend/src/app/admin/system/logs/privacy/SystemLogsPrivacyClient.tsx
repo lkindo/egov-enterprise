@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
-import { PrivacyLog, PageResponse } from '@/types/foundation/system';
+import type { PageResponse, PrivacyLog } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -26,7 +26,7 @@ const SystemLogsPrivacyClient = () => {
         }),
     });
 
-    const logs = (data?.list || []) as PrivacyLog[];
+    const logs = data?.list ?? [];
     const totalPageCount = data?.totalPage || 1;
     const totalCount = Number(data?.total || 0);
 

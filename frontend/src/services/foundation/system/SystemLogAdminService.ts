@@ -1,24 +1,23 @@
 import { AdminService } from '@/services/core/ApiService';
-import { PageResponse,  SearchParams,  UserLog,  WebLog,  PrivacyLog } from '@/types/foundation/system';
-import { AxiosRequestConfig } from 'axios';
-import type { components } from '@/types/generated-api';
+import type {
+  LoginLog,
+  PageResponse,
+  PrivacyLog,
+  SearchParams,
+  SysLog,
+  UserLog,
+  WebLog,
+} from '@/types/foundation/system';
+import type { AxiosRequestConfig } from 'axios';
 
-/**
- * 시스템 로그 DTO — 백엔드 `SysLogDto` 의 생성 타입을 SSOT 로 삼는다.
- * [FE 헌법] `generated-api.d.ts` 가 API 계약의 SSOT 이며, 로컬 인터페이스 재선언은 금지한다.
- * (과거 로컬 `SysLog { requstId, occcrrncDe, processTime, rqesterId, processSeCode ... }` 재선언이
- *  실제 계약 `{ dmndId, ocrnYmd, prcsTm, dmndUserId, prcsSeCd }` 와 전면 불일치하여
- *  시스템 로그/감사 타임라인 필드가 전량 공백으로 렌더됐다.)
- */
-export type SysLog = components['schemas']['SysLogDto'];
-
-export interface LoginLog {
-  logId: string;
-  creatDt: string;
-  loginMthd: string;
-  loginIp: string;
-  loginId: string;
-  loginNm: string;
+/** 목록 화면의 0-base `page`를 API의 1-base `pageIndex` 계약으로 정규화한다. */
+function normalizeLogSearchParams(params: SearchParams): SearchParams {
+  return {
+    ...params,
+    pageIndex: params.pageIndex ?? (params.page ?? 0) + 1,
+    pageUnit: params.pageUnit ?? params.size,
+    searchKeyword: params.searchKeyword ?? params.searchWrd ?? '',
+  };
 }
 
 /**
@@ -35,11 +34,7 @@ class SystemLogAdminService extends AdminService {
   async getSystemLogs(params: { page?: number; size?: number; searchWrd?: string } | SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<SysLog>> {
     return this.get<PageResponse<SysLog>>('/system', {
       ...config,
-      params: {
-        ...params,
-        pageIndex: (('page' in params ? params.page : 0) || 0) + 1,
-        searchKeyword: ('searchWrd' in params ? params.searchWrd : '') || '',
-      },
+      params: normalizeLogSearchParams(params),
     });
   }
 
@@ -56,11 +51,7 @@ class SystemLogAdminService extends AdminService {
   async getLoginLogs(params: { page?: number; size?: number; searchWrd?: string } | SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<LoginLog>> {
     return this.get<PageResponse<LoginLog>>('/login', {
       ...config,
-      params: {
-        ...params,
-        pageIndex: (('page' in params ? params.page : 0) || 0) + 1,
-        searchKeyword: ('searchWrd' in params ? params.searchWrd : '') || '',
-      },
+      params: normalizeLogSearchParams(params),
     });
   }
 
@@ -77,11 +68,7 @@ class SystemLogAdminService extends AdminService {
   async getPrivacyLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<PrivacyLog>> {
     return this.get<PageResponse<PrivacyLog>>('/privacy', {
       ...config,
-      params: {
-        ...params,
-        pageIndex: params.pageIndex || params.page || 1,
-        searchKeyword: params.searchKeyword || '',
-      },
+      params: normalizeLogSearchParams(params),
     });
   }
 
@@ -91,11 +78,7 @@ class SystemLogAdminService extends AdminService {
   async getUserLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<UserLog>> {
     return this.get<PageResponse<UserLog>>('/user', {
       ...config,
-      params: {
-        ...params,
-        pageIndex: params.pageIndex || params.page || 1,
-        searchKeyword: params.searchKeyword || '',
-      },
+      params: normalizeLogSearchParams(params),
     });
   }
 
@@ -105,11 +88,7 @@ class SystemLogAdminService extends AdminService {
   async getWebLogs(params: SearchParams, config?: AxiosRequestConfig): Promise<PageResponse<WebLog>> {
     return this.get<PageResponse<WebLog>>('/web', {
       ...config,
-      params: {
-        ...params,
-        pageIndex: params.pageIndex || params.page || 1,
-        searchKeyword: params.searchKeyword || '',
-      },
+      params: normalizeLogSearchParams(params),
     });
   }
 

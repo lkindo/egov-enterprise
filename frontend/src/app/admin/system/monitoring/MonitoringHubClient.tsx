@@ -66,6 +66,7 @@ const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').the
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { SampleDataBadge, NavButton, StatusIndicator, HarnessDashboardOverview, SkillDetailView, TestDetailView } from './components/MonitoringPanels';
+import { LOGIN_LOG_EXPORT_HEADERS } from './log-export-headers';
 
 export type MonitoringTab = 'SECURITY' | 'SYSTEM' | 'LOGIN' | 'OBSERVABILITY' | 'COMMENTS' | 'TOPOLOGY' | 'HARNESS';
 
@@ -113,15 +114,6 @@ const SYS_LOG_EXPORT_HEADERS = [
   { label: '요청IP', key: 'rqesterIp' },
   { label: '발생일자', key: 'ocrnYmd' },
   { label: '처리시간(ms)', key: 'prcsTm' }
-];
-
-const LOGIN_LOG_EXPORT_HEADERS = [
-  { label: '로그ID', key: 'logId' },
-  { label: '로그인ID', key: 'loginId' },
-  { label: '사용자명', key: 'loginNm' },
-  { label: '로그인방식', key: 'loginMthd' },
-  { label: '접속IP', key: 'loginIp' },
-  { label: '일시', key: 'creatDt' }
 ];
 
 const COMMENT_EXPORT_HEADERS = [

@@ -11,7 +11,13 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { Terminal, Activity, History, Clock, Zap, Lock, Globe, UserCheck, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { PageResponse } from '@/types/foundation/system';
+import type {
+  LoginLog,
+  PageResponse,
+  SysLog,
+  UserLog,
+  WebLog,
+} from '@/types/foundation/system';
 import { usePageParam, useTabParam } from './use-log-url-state';
 
 const logCategories = [
@@ -22,6 +28,13 @@ const logCategories = [
 ] as const;
 
 type LogCategoryId = (typeof logCategories)[number]['id'];
+
+type IntegratedLogRow =
+  Partial<Pick<SysLog, 'dmndId' | 'srvcNm' | 'methodNm' | 'dmndUserId' | 'rqesterIp' | 'ocrnYmd'>>
+  & Partial<Pick<LoginLog, 'logId' | 'loginId' | 'loginIp' | 'loginMthd' | 'creatDt'>>
+  & Partial<Pick<UserLog, 'ocrnYmd' | 'dmndUserId' | 'userNm' | 'srvcNm' | 'mthdNm'>>
+  & Partial<Pick<WebLog, 'dmndId' | 'url' | 'dmndUserId' | 'dmndUserIpAddr' | 'occrYmd'>>
+  & { prcsTm?: SysLog['prcsTm'] | WebLog['prcsTm'] };
 
 const CATEGORY_IDS = logCategories.map((c) => c.id);
 /** 카테고리 전환 시 페이지 번호를 URL 에서 함께 제거한다(3페이지에서 탭 전환 시 빈 화면 방지) */
@@ -36,8 +49,22 @@ const PAGE_SIZE = 10;
  * 실제 오류를 표면화하도록 한다.
  */
 export type InitialSystemLogs =
-  | { ok: true; data: PageResponse<any> }
+  | { ok: true; data: PageResponse<SysLog> }
   | { ok: false; message: string };
+
+function getOccurredAt(row: IntegratedLogRow, category: LogCategoryId): string {
+  if (category === 'LGN') return row.creatDt || '-';
+  if (category === 'WEB') return row.occrYmd || '-';
+  return row.ocrnYmd || '-';
+}
+
+function getLogIdentifier(row: IntegratedLogRow, category: LogCategoryId): string {
+  if (category === 'LGN') return row.logId || '-';
+  if (category === 'SYS' || category === 'WEB') return row.dmndId || '-';
+
+  const parts = [row.ocrnYmd, row.dmndUserId, row.srvcNm, row.mthdNm];
+  return parts.every(Boolean) ? parts.join('/') : '-';
+}
 
 export default function LogDashboardClient({
   systemLogsPromise,
@@ -51,9 +78,12 @@ export default function LogDashboardClient({
   });
   const [page, setPage] = usePageParam();
   const [searchKeyword, setSearchKeyword] = useState('');
-  const [selectedLog, setSelectedLog] = useState<any | null>(null);
+  const [selectedLog, setSelectedLog] = useState<{
+    category: LogCategoryId;
+    row: IntegratedLogRow;
+  } | null>(null);
 
-  const { data, isLoading, isFetching, error, refetch } = useQuery<PageResponse<any>>({
+  const { data, isLoading, isFetching, error, refetch } = useQuery<PageResponse<IntegratedLogRow>>({
     queryKey: ['admin-logs-integrated', activeCategory, page, searchKeyword],
     queryFn: async () => {
       // 시스템/로그인 로그 서비스는 `searchWrd`, 나머지는 `searchKeyword` 를 읽는다.
@@ -77,22 +107,21 @@ export default function LogDashboardClient({
         : undefined,
   });
 
-  const logs = (data?.list || []) as any[];
+  const logs = data?.list ?? [];
   const totalCount = Number(data?.total || 0);
   const totalPages = Number(data?.totalPage || 1);
   const activeLabel = logCategories.find((c) => c.id === activeCategory)?.label ?? '';
 
   const columns = useMemo(() => {
-    const commonCols: Column<any>[] = [
+    const commonCols: Column<IntegratedLogRow>[] = [
       {
         header: '발생 시각',
-        accessor: (item: any) => (
+        accessor: (item: IntegratedLogRow) => (
           <div className="flex items-center gap-3 py-2">
             <div className="w-8 h-8 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-muted shadow-sm">
               <Clock size={14} />
             </div>
-            {/* SysLogDto 의 발생일자는 `ocrnYmd` 다(과거 `occcrrncDe` 는 계약에 존재하지 않아 SYS 탭이 전건 '-' 였다). */}
-            <span className="text-xs font-black text-muted-foreground tracking-tight">{item.creatDt || item.ocrnYmd || '-'}</span>
+            <span className="text-xs font-black text-muted-foreground tracking-tight">{getOccurredAt(item, activeCategory)}</span>
           </div>
         ),
         className: 'w-48 py-4'
@@ -104,7 +133,7 @@ export default function LogDashboardClient({
         ...commonCols,
         {
           header: '요청자',
-          accessor: (item: any) => (
+          accessor: (item: IntegratedLogRow) => (
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-xl border border-border flex items-center justify-center bg-card shadow-sm font-black text-xs text-muted-foreground">
                 {String(item.loginId ?? '').substring(0, 1)}
@@ -116,14 +145,14 @@ export default function LogDashboardClient({
         },
         {
           header: '접속 IP',
-          accessor: (item: any) => (
+          accessor: (item: IntegratedLogRow) => (
             <div className="font-mono text-[10px] font-black text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-lg border border-border/50 w-fit">{item.loginIp || '-'}</div>
           ),
           className: 'py-4'
         },
         {
           header: '구분',
-          accessor: (item: any) => (
+          accessor: (item: IntegratedLogRow) => (
             <span className="px-2 py-0.5 rounded-md text-xs font-bold border uppercase tracking-tighter bg-muted text-muted-foreground border-border">
               {item.loginMthd || '-'}
             </span>
@@ -133,36 +162,57 @@ export default function LogDashboardClient({
       ];
     }
 
-    return [
+    const activityColumns: Column<IntegratedLogRow>[] = [
       ...commonCols,
       {
         header: '요청자',
         className: 'w-32 py-4',
-        accessor: (item: any) => (
-          <span className="text-xs font-black text-foreground tracking-tight">{item.rqesterId || item.dmndUserId || '-'}</span>
+        accessor: (item: IntegratedLogRow) => (
+          <span className="text-xs font-black text-foreground tracking-tight">
+            {activeCategory === 'USR' ? item.userNm || item.dmndUserId || '-' : item.dmndUserId || '-'}
+          </span>
         )
       },
       {
         header: '수행 내역',
-        accessor: (item: any) => (
+        accessor: (item: IntegratedLogRow) => (
           <div className="flex flex-col gap-0.5 max-w-md">
-            <span className="text-sm font-black text-foreground tracking-tighter">{item.srvcNm || item.svcNm || item.url || '-'}</span>
-            <span className="text-[10px] font-bold text-muted-foreground truncate tracking-tight">{item.methodNm || item.method || '-'}</span>
+            <span className="text-sm font-black text-foreground tracking-tighter">
+              {activeCategory === 'WEB' ? item.url || '-' : item.srvcNm || '-'}
+            </span>
+            <span className="text-[10px] font-bold text-muted-foreground truncate tracking-tight">
+              {activeCategory === 'SYS' ? item.methodNm || '-' : activeCategory === 'USR' ? item.mthdNm || '-' : '-'}
+            </span>
           </div>
         ),
         className: 'py-4'
       },
       {
         header: '접속 정보',
-        accessor: (item: any) => (
+        accessor: (item: IntegratedLogRow) => (
           <div className="flex items-center gap-2 font-mono text-[10px] font-black text-muted-foreground bg-muted/50 px-2.5 py-1 rounded-lg border border-border/50 w-fit">
             <Globe size={11} className="opacity-40" />
-            {item.rqesterIp || '-'}
+            {activeCategory === 'WEB' ? item.dmndUserIpAddr || '-' : activeCategory === 'SYS' ? item.rqesterIp || '-' : '-'}
           </div>
         ),
         className: 'py-4'
       }
     ];
+
+    if (activeCategory === 'WEB') {
+      activityColumns.splice(3, 0, {
+        header: '처리 시간',
+        accessor: (item: IntegratedLogRow) => (
+          <div className="flex items-center gap-1 text-xs font-bold text-muted-foreground tabular-nums">
+            <span>{item.prcsTm ?? '-'}</span>
+            {item.prcsTm != null ? <span>ms</span> : null}
+          </div>
+        ),
+        className: 'w-24 py-4',
+      });
+    }
+
+    return activityColumns;
   }, [activeCategory]);
 
   return (
@@ -254,7 +304,7 @@ export default function LogDashboardClient({
                 error={error}
                 onRetry={() => refetch()}
                 className="border-none bg-transparent shadow-none"
-                onRowClick={(item) => setSelectedLog(item)}
+                onRowClick={(item) => setSelectedLog({ category: activeCategory, row: item })}
                 isPremium={true}
                 pagination={{
                   currentPage: page,
@@ -297,7 +347,7 @@ export default function LogDashboardClient({
               <div className="text-left">
                 <p className="text-[10px] font-black text-muted-foreground tracking-widest leading-none mb-1.5">식별자</p>
                 <p className="text-sm font-black text-foreground tracking-tight leading-none">
-                  {selectedLog?.logId || selectedLog?.dmndId || selectedLog?.webLogId || selectedLog?.userLogId || '-'}
+                  {selectedLog ? getLogIdentifier(selectedLog.row, selectedLog.category) : '-'}
                 </p>
               </div>
             </div>
@@ -309,7 +359,7 @@ export default function LogDashboardClient({
               <div className="absolute top-6 right-6 opacity-20 group-hover:opacity-100 transition-opacity">
                 <Zap size={20} className="animate-pulse" aria-hidden="true" />
               </div>
-              <pre className="whitespace-pre-wrap leading-relaxed">{JSON.stringify(selectedLog, null, 2)}</pre>
+              <pre className="whitespace-pre-wrap leading-relaxed">{JSON.stringify(selectedLog?.row, null, 2)}</pre>
             </div>
           </div>
 

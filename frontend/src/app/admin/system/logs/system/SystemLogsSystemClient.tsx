@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { systemLogAdminService, SysLog } from '@/services/foundation/system/SystemLogAdminService';
-import { PageResponse } from '@/types/foundation/system';
+import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
+import type { PageResponse, SysLog } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -37,7 +37,7 @@ const SystemLogsSystemClient = () => {
         }),
     });
 
-    const logs = (data?.list || []) as SysLog[];
+    const logs = data?.list ?? [];
     const totalPageCount = data?.totalPage || 1;
     const totalCount = Number(data?.total || 0);
 
