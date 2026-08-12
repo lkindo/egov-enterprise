@@ -35,7 +35,6 @@ vi.mock('next/navigation', () => ({
             + 'React #418(hydration mismatch)을 만든다. 검색어는 서버(page.tsx)가 해석해 prop 으로 내려야 한다.',
         );
     },
-    useRouter: () => ({ push: vi.fn() }),
 }));
 
 // 결과 조회는 이 테스트의 관심사가 아니다 — 네트워크를 타지 않게 막는다.
@@ -61,6 +60,21 @@ describe('/search 하이드레이션 불변식', () => {
         // 서버도 클라이언트도 같은 prop 을 쓰므로, 검색어가 들어 있는 것이 **정상**이다.
         // (종전 구조에서는 이 값이 서버에만 없거나 클라이언트에만 있어서 불일치가 났다.)
         expect(html).toContain('관리자');
+    });
+
+    it('검색 폼은 hydration 전에도 동작하는 GET 계약을 사용한다', () => {
+        const html = renderToString(
+            <SearchResultsContent initialResults={emptyResults} query="관리자" />,
+        );
+
+        const container = document.createElement('div');
+        container.innerHTML = html;
+        const form = container.querySelector('form');
+        const input = form?.querySelector('input[name="q"]');
+
+        expect(form?.getAttribute('action')).toBe('/search');
+        expect(form?.getAttribute('method')).toBe('get');
+        expect(input?.getAttribute('value')).toBe('관리자');
     });
 
     it('검색어가 없으면 첫 렌더에도 없다 — 셸과 동일하다', () => {

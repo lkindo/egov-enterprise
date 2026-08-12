@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useEffect, useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 // ⚠ `useSearchParams` 를 여기서 쓰지 않는다 — 검색어는 서버가 prop 으로 준다(아래 주석 참조).
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Search, 
     FileText, 
@@ -57,8 +56,6 @@ export const SearchResultsContent = ({
     initialResults = EMPTY_RESULTS,
     query = '',
 }: SearchResultsContentProps) => {
-    const router = useRouter();
-
     const [activeTab, setTab] = useState('all');
 
     // [2026-08-12 구조 변경] 검색어는 **서버(page.tsx)가 해석해 prop 으로 준다.**
@@ -76,17 +73,8 @@ export const SearchResultsContent = ({
     //   하이드레이션 이후의 상태 변경이라 불일치와 무관하다.
     //   (회귀 방어: `__tests__/SearchClient.hydration.test.tsx` — 렌더 중 useSearchParams 를
     //    읽으면 red 가 된다.)
-    const [searchInput, setSearchInput] = useState(query);
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(initialResults);
-
-    // page.tsx의 SearchResultsSlot이 `key={q}`로 경계를 새로 만들기 때문에
-    // 검색어 변경 시 입력값과 결과 상태도 새 query를 기준으로 다시 초기화된다.
-    const handleSearch = (e?: React.FormEvent) => {
-        if (e) e.preventDefault();
-        if (!searchInput.trim()) return;
-        router.push(`/search?q=${encodeURIComponent(searchInput)}`);
-    };
 
     // 결과 조회. 검색어가 있을 때만 돈다.
     //
@@ -169,12 +157,21 @@ export const SearchResultsContent = ({
                         </div>
                     </div>
 
-                    <form onSubmit={handleSearch} className="max-w-3xl mx-auto md:mx-0">
+                    {/*
+                        검색은 표준 GET 폼으로 제출한다. 이 화면은 PPR 스트리밍 대상이라 사용자가
+                        hydration 완료 전에 입력할 수 있다. router.push 기반 동일 경로 RSC 전환은
+                        그 순간 초기 hydration과 경쟁해 #418을 만들었다.
+
+                        action/name/defaultValue 기반 폼은 JS 전에도 동작하고, 제출된 URL을 서버가
+                        단일 출처로 다시 렌더하므로 빠른 사용자 입력에서도 첫 HTML과 클라이언트가
+                        같은 query로 시작한다. 검색은 읽기 연산이므로 GET 의미론에도 맞는다.
+                    */}
+                    <form action="/search" method="get" className="max-w-3xl mx-auto md:mx-0">
                         <div className="relative group/input">
                             <Search className="absolute left-6 top-1/2 -translate-y-1/2 w-6 h-6 text-muted-foreground group-focus-within/input:text-primary transition-colors" />
                             <Input
-                                value={searchInput}
-                                onChange={(e) => setSearchInput(e.target.value)}
+                                name="q"
+                                defaultValue={query}
                                 placeholder="검색어를 입력하고 지식을 발견하세요.."
                                 className="h-11 pl-16 pr-40 rounded-lg border-0 bg-card ring-offset-0 focus:ring-4 focus:ring-primary/20 transition-all font-bold text-xl placeholder:text-slate-300 placeholder:font-bold"
                             />
