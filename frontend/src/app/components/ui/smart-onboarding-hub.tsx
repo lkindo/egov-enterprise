@@ -22,11 +22,9 @@ interface TourStep {
 export function SmartOnboardingHub() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
-  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
-    setMounted(true);
     if (typeof window !== 'undefined') {
       // E2E 테스트 환경에서는 자동으로 투어를 비활성화
       const isTestEnv = process.env.NEXT_PUBLIC_APP_ENV === 'test' || window.location.search.includes('e2e=true');
@@ -104,7 +102,7 @@ export function SmartOnboardingHub() {
     }
   ];
 
-  if (!mounted || !isOpen) return null;
+  if (!isOpen) return null;
 
   return (
     <div

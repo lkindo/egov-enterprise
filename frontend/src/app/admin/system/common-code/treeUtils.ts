@@ -1,14 +1,25 @@
-import { DomainCluster } from '@/types/foundation/code';
-;
+import type { DomainCluster, GroupCode } from '@/types/foundation/code';
 
-export interface FlattenedCodeNode {
+interface FlattenedCodeNodeBase {
   id: string;
-  parentId: string | null;
   name: string;
-  type: 'cluster' | 'group';
-  data: any;
-  depth: number;
 }
+
+export interface FlattenedClusterNode extends FlattenedCodeNodeBase {
+  parentId: null;
+  type: 'cluster';
+  data: DomainCluster;
+  depth: 0;
+}
+
+export interface FlattenedGroupNode extends FlattenedCodeNodeBase {
+  parentId: string;
+  type: 'group';
+  data: GroupCode;
+  depth: 1;
+}
+
+export type FlattenedCodeNode = FlattenedClusterNode | FlattenedGroupNode;
 
 export function flattenCodeTree(clusters: DomainCluster[]): FlattenedCodeNode[] {
   const flattened: FlattenedCodeNode[] = [];
@@ -26,9 +37,9 @@ export function flattenCodeTree(clusters: DomainCluster[]): FlattenedCodeNode[] 
     if (cluster.groups) {
       cluster.groups.forEach(group => {
         flattened.push({
-          id: (group as any).cdId || '',
+          id: group.cdId,
           parentId: cluster.id,
-          name: (group as any).cdIdNm || '',
+          name: group.cdIdNm,
           type: 'group',
           data: group,
           depth: 1
@@ -45,8 +56,8 @@ export function getCodeProjection(
   items: FlattenedCodeNode[],
   activeId: string,
   overId: string,
-  dragOffset: number,
-  indentationWidth: number
+  _dragOffset: number,
+  _indentationWidth: number
 ) {
   const overItemIndex = items.findIndex((item) => item.id === overId);
   const activeItemIndex = items.findIndex((item) => item.id === activeId);

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect,  useState } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
 // ⚠ `useSearchParams` 를 여기서 쓰지 않는다 — 검색어는 서버가 prop 으로 준다(아래 주석 참조).
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -18,10 +18,45 @@ import { cn } from '@/lib/utils';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import axios from '@/lib/api/client';
 import { StandardTabs } from '@/app/components/ui/standard-tabs';
+import { userAdminService } from '@/services/foundation/system/UserAdminService';
+import type { UserManage } from '@/types/foundation/user';
 
-export const SearchResultsContent = ({ initialResults = { articles: [], users: [], menus: [] }, query = '' }: { initialResults: { articles: any[], users: any[], menus: any[] }, query: string }) => {
+interface SearchArticle {
+    bbsId: string;
+    pstId: string;
+    pstTtl: string;
+    pstCn?: string;
+    crtDt?: string;
+    userNm?: string;
+    frstRegisterNm?: string;
+}
+
+type SearchUser = Pick<UserManage, 'userId' | 'userNm'>;
+
+interface SearchMenu {
+    name: string;
+    path: string;
+    category: string;
+}
+
+export interface SearchResults {
+    articles: SearchArticle[];
+    users: SearchUser[];
+    menus: SearchMenu[];
+}
+
+interface SearchResultsContentProps {
+    initialResults?: SearchResults;
+    query: string;
+}
+
+const EMPTY_RESULTS: SearchResults = { articles: [], users: [], menus: [] };
+
+export const SearchResultsContent = ({
+    initialResults = EMPTY_RESULTS,
+    query = '',
+}: SearchResultsContentProps) => {
     const router = useRouter();
 
     const [activeTab, setTab] = useState('all');
@@ -45,12 +80,8 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(initialResults);
 
-    // page.tsx 가 `key={q}` 로 경계를 새로 만들므로 보통은 위 useState 로 충분하다.
-    // 이 동기화는 key 가 사라지는 등의 변경에도 입력칸이 URL 과 어긋나지 않게 하는 보루다.
-    useEffect(() => {
-        setSearchInput(query);
-    }, [query]);
-
+    // page.tsx의 SearchResultsSlot이 `key={q}`로 경계를 새로 만들기 때문에
+    // 검색어 변경 시 입력값과 결과 상태도 새 query를 기준으로 다시 초기화된다.
     const handleSearch = (e?: React.FormEvent) => {
         if (e) e.preventDefault();
         if (!searchInput.trim()) return;
@@ -73,12 +104,16 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
             setLoading(true);
             try {
                 // 전역 게시글 검색 백엔드 엔드포인트는 부재(/api/v1/bbs는 /{bbsId} 기반이라 /bbs는 404) → 팬텀 호출 제거.
-                const userRes = (await axios.get(`/admin/system/users?searchKeyword=${encodeURIComponent(query)}`)) as any;
+                const userPage = await userAdminService.getUserList({
+                    pageNo: 1,
+                    searchKeyword: query,
+                    size: 10,
+                });
                 if (cancelled) return;
 
                 setResults({
                     articles: [],
-                    users: (userRes?.data?.resultList || []).slice(0, 10),
+                    users: userPage.list.slice(0, 10),
                     menus: [
                         { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },
                         { name: '자유 게시판', path: '/admin/community/boards', category: '커뮤니티' }
@@ -226,8 +261,8 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                 {/* Articles Section */}
                                 {(activeTab === 'all' || activeTab === 'articles') && results.articles.length > 0 ? (
                                     <ResultSection title="게시글" count={results.articles.length}>
-                                        {results.articles.map((item: any, idx: number) => (
-                                            <ArticleResultItem key={`search-article-${idx}`} item={item} query={query} />
+                                        {results.articles.map((item) => (
+                                            <ArticleResultItem key={`${item.bbsId}-${item.pstId}`} item={item} />
                                         ))}
                                     </ResultSection>
                                 ) : null}
@@ -236,8 +271,8 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                 {(activeTab === 'all' || activeTab === 'users') && results.users.length > 0 ? (
                                     <ResultSection title="임직원" count={results.users.length}>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {results.users.map((item: any, idx: number) => (
-                                                <UserResultItem key={`search-user-${idx}`} item={item} />
+                                            {results.users.map((item) => (
+                                                <UserResultItem key={item.userId} item={item} />
                                             ))}
                                         </div>
                                     </ResultSection>
@@ -246,8 +281,8 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                 {/* Menus Section */}
                                 {(activeTab === 'all' || activeTab === 'menus') && results.menus.length > 0 ? (
                                     <ResultSection title="바로가기" count={results.menus.length}>
-                                        {results.menus.map((item: any, idx: number) => (
-                                            <MenuResultItem key={`search-menu-${idx}`} item={item} />
+                                        {results.menus.map((item) => (
+                                            <MenuResultItem key={item.path} item={item} />
                                         ))}
                                     </ResultSection>
                                 ) : null}
@@ -274,7 +309,7 @@ function FilterToggle({ label, active = false }: { label: string, active?: boole
     );
 }
 
-function ResultSection({ title, count, children }: any) {
+function ResultSection({ title, count, children }: { title: string; count: number; children: ReactNode }) {
     return (
         <div className="space-y-6">
             <div className="flex items-center gap-4 px-2">
@@ -289,7 +324,7 @@ function ResultSection({ title, count, children }: any) {
     );
 }
 
-function ArticleResultItem({ item, query }: any) {
+function ArticleResultItem({ item }: { item: SearchArticle }) {
     return (
         <Link href={`/admin/community/boards/detail?bbsId=${item.bbsId}&pstId=${item.pstId}`} className="block group">
             <div className="p-8 bg-card border-2 border-primary/5 rounded-lg shadow-lg group-hover:shadow-xl group-hover:border-primary/20 transition-all group-hover:-translate-y-1">
@@ -318,7 +353,7 @@ function ArticleResultItem({ item, query }: any) {
     );
 }
 
-function UserResultItem({ item }: any) {
+function UserResultItem({ item }: { item: SearchUser }) {
     return (
         <div className="p-6 bg-card border-2 border-primary/5 rounded-lg flex items-center gap-5 hover:border-primary/20 transition-all shadow-sm">
             <div className="w-14 h-11 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
@@ -333,7 +368,7 @@ function UserResultItem({ item }: any) {
     );
 }
 
-function MenuResultItem({ item }: any) {
+function MenuResultItem({ item }: { item: SearchMenu }) {
     return (
         <Link href={item.path} className="flex items-center justify-between p-6 bg-muted/20 border-2 border-transparent hover:border-primary/20 hover:bg-card rounded-lg transition-all group">
             <div className="flex items-center gap-4">

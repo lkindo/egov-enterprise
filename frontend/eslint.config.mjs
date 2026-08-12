@@ -105,7 +105,7 @@ const eslintConfig = [
         }
       ],
       // eslint-config-next 16(+eslint-plugin-react-hooks 6)이 React Compiler 계열 신규 규칙을 error 로 켜지만,
-      // 기존 코드베이스에 대량 존재(set-state-in-effect 등 53건)하므로 게이트 그린 유지 + 백로그 가시화를 위해
+      // 기존 코드베이스에 대량 존재(set-state-in-effect 등 41건)하므로 게이트 그린 유지 + 백로그 가시화를 위해
       // repo 규범(warn 기반)에 맞춰 warn 으로 완화한다(점진 정리 대상).
       "react-hooks/set-state-in-effect": "warn",
       "react-hooks/purity": "warn",
