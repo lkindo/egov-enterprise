@@ -95,6 +95,8 @@
 - PR #394의 첫 CI에서 aggregate 게이트 활성화가 foundation의 기존 클래스별 50% 규칙도 노출해 `PageResponse`, `AuditEvent`, `FullBeanNameGenerator`, `ThreadLocalCopyTaskDecorator`, `CustomUserDetailsService`, `Constants` 내부 그룹의 테스트 공백으로 red가 됐다.
 - 임계값 완화나 제외 목록 추가 없이 해당 클래스의 행위 테스트를 보강했다.
 - `:foundation:test :foundation:jacocoTestCoverageVerification --rerun-tasks --no-build-cache --no-daemon --no-parallel`: 성공. 실패 대상의 측정 가능 클래스는 line 80~100%로 올라갔고 클래스별 50% 게이트를 통과했다.
+- 두 번째 CI는 Git에서 의도적으로 제외된 `application-local.yml`을 clean clone에서도 필수로 요구한 시크릿 린터와, 테스트 지원 스텁의 `/harness/` 경로를 새 게이트로 오인한 메타 린터 때문에 red가 됐다.
+- 운영/E2E 필수 설정 검사는 그대로 유지하면서 local 전용 설정은 존재할 때만 엄격 검사하도록 clean-clone 계약 테스트를 추가했고, 테스트 스텁은 프로덕션 데코레이터의 패키지 전용 메서드 주입점으로 대체해 하네스 census 오인을 제거했다.
 
 ## 남은 개선 우선순위
 

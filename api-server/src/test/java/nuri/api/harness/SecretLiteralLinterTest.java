@@ -2,6 +2,7 @@ package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,6 +20,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * 🔐 시크릿 리터럴 재유입 차단 게이트 — 배포 스크립트·운영 설정의 "조용한 dev 키 주입" 회귀 방지.
@@ -231,15 +233,11 @@ class SecretLiteralLinterTest {
             fail("게이트 무결성 파손: E2E DB 설정을 찾을 수 없습니다 — " + appE2e.toAbsolutePath()
                     + ". 외부 DB 기본값 재유입 검사가 vacuous 통과하지 않도록 실패 처리합니다.");
         }
-        if (!Files.isRegularFile(appLocal)) {
-            fail("게이트 무결성 파손: local DB 설정을 찾을 수 없습니다 — " + appLocal.toAbsolutePath());
-        }
-
         Set<String> secretsSeen = new TreeSet<>();
         auditSpringProdYml(root, appProd, violations, secretsSeen);
         auditComposeProdYml(root, composeProd, violations, secretsSeen);
         auditE2eDbConfig(root, appE2e, violations);
-        auditLocalDbConfig(root, appLocal, violations);
+        boolean localDbConfigScanned = auditLocalDbConfigIfPresent(root, appLocal, violations);
 
         // vacuity 하한(실측: JWT_SECRET·ALGORITHM_KEY·DB_PASSWORD·ADMIN_INITIAL_PASSWORD = 4종)
         if (secretsSeen.size() < 3) {
@@ -266,8 +264,17 @@ class SecretLiteralLinterTest {
             fail(sb.toString());
         }
 
-        log.info("✅ 시크릿 리터럴 재유입 없음 — 배포 스크립트 {}건 + 에이전트 JS {}건 + 운영 설정 {}건 + E2E/local DB 설정 2건 스캔, 보호 대상 {}종(운영 참조 {}종).",
-                scripts.size(), agentJavaScripts.size(), prodConfigs, SECRET_ENV_NAMES.size(), secretsSeen.size());
+        log.info("✅ 시크릿 리터럴 재유입 없음 — 배포 스크립트 {}건 + 에이전트 JS {}건 + 운영 설정 {}건 + E2E DB 설정 1건 + local DB 설정 {}건 스캔, 보호 대상 {}종(운영 참조 {}종).",
+                scripts.size(), agentJavaScripts.size(), prodConfigs, localDbConfigScanned ? 1 : 0,
+                SECRET_ENV_NAMES.size(), secretsSeen.size());
+    }
+
+    @Test
+    @DisplayName("Git 제외 local 설정이 없는 clean clone에서도 운영/E2E 게이트는 유효하다")
+    void ignoredLocalConfigMayBeAbsent(@TempDir Path cleanRoot) throws IOException {
+        Path missingLocalConfig = cleanRoot.resolve(APP_LOCAL_YML);
+
+        assertFalse(auditLocalDbConfigIfPresent(cleanRoot, missingLocalConfig, new ArrayList<>()));
     }
 
     // ---- 1) 배포 스크립트 -----------------------------------------------------------
@@ -523,6 +530,17 @@ class SecretLiteralLinterTest {
         if (dbUrlLines < 2) {
             fail("게이트 무결성 파손: " + name + " 의 url/jdbc-url 스캔이 하한(2) 미만입니다.");
         }
+    }
+
+    private boolean auditLocalDbConfigIfPresent(Path root, Path file, List<String> violations) throws IOException {
+        if (!Files.exists(file)) {
+            return false;
+        }
+        if (!Files.isRegularFile(file)) {
+            fail("게이트 무결성 파손: local DB 설정 경로가 일반 파일이 아닙니다 — " + file.toAbsolutePath());
+        }
+        auditLocalDbConfig(root, file, violations);
+        return true;
     }
 
     // ---- 공통 유틸 -------------------------------------------------------------------

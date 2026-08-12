@@ -1,9 +1,9 @@
 package nuri.foundation.core.config;
 
-import nuri.business.core.harness.QueryCountInspector;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -43,18 +43,41 @@ class ThreadLocalCopyTaskDecoratorTest {
 
     @Test
     @DisplayName("부모 쿼리 카운터를 작업에 전달하고 실행 후 제거한다")
-    void decorate_copiesAndClearsParentCounter() {
-        QueryCountInspector.QueryCounter parent = new QueryCountInspector.QueryCounter();
-        QueryCountInspector.setCounterObject(parent);
-        AtomicReference<QueryCountInspector.QueryCounter> observed = new AtomicReference<>();
+    void decorate_copiesAndClearsParentCounter() throws ReflectiveOperationException {
+        Method get = InspectorStub.class.getDeclaredMethod("getCounterObject");
+        Method set = InspectorStub.class.getDeclaredMethod("setCounterObject", Object.class);
+        Method clear = InspectorStub.class.getDeclaredMethod("clear");
+        get.setAccessible(true);
+        set.setAccessible(true);
+        clear.setAccessible(true);
+        ThreadLocalCopyTaskDecorator injected = new ThreadLocalCopyTaskDecorator(get, set, clear);
+        Object parent = new Object();
+        InspectorStub.setCounterObject(parent);
+        AtomicReference<Object> observed = new AtomicReference<>();
 
-        Runnable decorated = decorator.decorate(
-                () -> observed.set(QueryCountInspector.getCounterObject()));
-        QueryCountInspector.clear();
+        Runnable decorated = injected.decorate(
+                () -> observed.set(InspectorStub.getCounterObject()));
+        InspectorStub.clear();
 
         decorated.run();
 
         assertThat(observed.get()).isSameAs(parent);
-        assertThat(QueryCountInspector.getCounterObject()).isNull();
+        assertThat(InspectorStub.getCounterObject()).isNull();
+    }
+
+    private static final class InspectorStub {
+        private static final ThreadLocal<Object> COUNTER = new ThreadLocal<>();
+
+        public static Object getCounterObject() {
+            return COUNTER.get();
+        }
+
+        public static void setCounterObject(Object counter) {
+            COUNTER.set(counter);
+        }
+
+        public static void clear() {
+            COUNTER.remove();
+        }
     }
 }
