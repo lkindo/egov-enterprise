@@ -145,6 +145,24 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # [2026-08-13] setup-gradle 캐시와 Gradle 배포 서버가 동시에 일시 장애여도
+      #   본 빌드가 단발성 다운로드 실패로 끝나지 않게 wrapper 확보만 제한 재시도한다.
+      #   실제 빌드·테스트는 재시도하지 않아 코드 실패 신호를 흐리지 않는다.
+      - name: Provision Gradle distribution with bounded retry
+        run: |
+          for attempt in 1 2 3; do
+            if ./gradlew --version; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Gradle 배포본을 3회 시도 후에도 확보하지 못했습니다."
+              exit 1
+            fi
+            delay=$((attempt * 15))
+            echo "::warning::Gradle 배포본 확보 실패(${attempt}/3), ${delay}초 후 재시도합니다."
+            sleep "$delay"
+          done
+
       # [2026-07-26 정정] 종전 필터의 'foundation/src/main/java/**/entity/**' 는 실존하지 않는 경로였고
       # (엔티티는 business-core/business-app 소속), 실제 마이그레이션도 api-server 아래에 있다.
       # 즉 이름은 "Schema Integrity" 인데 스키마 변경을 감지하지 못하는 필터였다.
@@ -166,13 +184,13 @@ jobs:
 
       - name: Strict Schema Integrity Validation (No Cache Gateway)
         if: steps.schema-changes.outputs.schema == 'true'
-        run: ./gradlew :foundation:test --no-build-cache
+        run: ./gradlew :foundation:test --no-build-cache --warning-mode fail --console=plain
 
       - name: Build and Test with Gradle
         id: build-and-test
         run: |
           set -o pipefail
-          ./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json 2>&1 | tee /tmp/build-and-test.log
+          ./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log
 
       # [스키마 진짜 검증] 빈 PostgreSQL 17 에 Flyway 전량 적용 → Hibernate ddl-auto:validate.
       # 단위 테스트는 H2 + create-drop 이라 엔티티↔물리 스키마 불일치를 원리적으로 못 잡는다
@@ -191,7 +209,7 @@ jobs:
         id: schema-validation
         run: |
           set -o pipefail
-          ./gradlew :api-server:schemaValidationTest 2>&1 | tee /tmp/schema-validation.log
+          ./gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain 2>&1 | tee /tmp/schema-validation.log
 
       - name: Verify committed api-docs.json is fresh (contract drift gate)
         id: api-docs-gate
@@ -275,7 +293,6 @@ jobs:
   #   매 푸시 43분을 태우고 취소되던 advisory 스캔을 커밋 단위 파이프라인에서 제거했다(2026-07-26 실측).
 
   frontend-build:
-    needs: backend-build
     runs-on: ubuntu-latest
     timeout-minutes: 25
     steps:
@@ -1076,7 +1093,7 @@ jobs:
             pit-history-${{ matrix.scope }}-
 
       - name: Incremental Mutation Test (${{ matrix.scope }})
-        run: ./gradlew ${{ matrix.gradle }}
+        run: ./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain
         env:
           PIT_TARGET_CLASSES: ${{ matrix.classes }}
           PIT_TARGET_TESTS: ${{ matrix.tests }}

@@ -29,7 +29,7 @@
       "aggregate": {
         "sourceJobId": "mutation-scope",
         "sourceStepName": "Incremental Mutation Test (${{ matrix.scope }})",
-        "sourceRun": "./gradlew ${{ matrix.gradle }}",
+        "sourceRun": "./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain",
         "sourceEnv": {
           "PIT_TARGET_CLASSES": "${{ matrix.classes }}",
           "PIT_TARGET_TESTS": "${{ matrix.tests }}",

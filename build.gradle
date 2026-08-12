@@ -420,14 +420,16 @@ tasks.register('jacocoRootCoverageVerification', JacocoCoverageVerification) {
  * 빌드 시 미설정일 때만 설정하며, 이미 다른 값이면 존중한다.
  * 비활성화: NO_HOOK_INSTALL=1 (또는 `git config core.hooksPath ''` 로 빈 값 지정)
  */
+File gitRepositoryRoot = rootProject.layout.projectDirectory.asFile
+Provider<String> hookInstallDisabled = providers.environmentVariable('NO_HOOK_INSTALL')
 tasks.register('installGitHooks') {
     description = '공유 git 훅(.githooks)을 core.hooksPath 에 연결 — 미설정 클론에서 게이트가 꺼지는 것을 방지'
     group = 'Verification'
-    onlyIf { System.getenv('NO_HOOK_INSTALL') == null && file("${rootDir}/.git").exists() }
+    onlyIf { !hookInstallDisabled.isPresent() && new File(gitRepositoryRoot, '.git').exists() }
     doLast {
         // Gradle 9 에서 Project.exec 가 제거돼 ProcessBuilder 를 직접 쓴다.
         def git = { List<String> args ->
-            def p = new ProcessBuilder(['git'] + args).directory(rootDir).redirectErrorStream(true).start()
+            def p = new ProcessBuilder(['git'] + args).directory(gitRepositoryRoot).redirectErrorStream(true).start()
             def out = p.inputStream.text.trim()
             [code: p.waitFor(), out: out]
         }
@@ -459,17 +461,18 @@ tasks.register('installGitHooks') {
  *   · localGate → 여기, **전수**(147초)
  * 이 분리는 "빠른 관문은 규약 위반을, 느린 관문은 회귀를 잡는다" 는 기존 계층 원칙과 같다.
  */
+File frontendProjectDir = rootProject.layout.projectDirectory.dir('frontend').asFile
 tasks.register('frontendUnitTest') {
     description = '프런트엔드 vitest 전수 실행 (약 150초)'
     group = 'Verification'
-    onlyIf { file("${rootDir}/frontend/package.json").exists() }
+    onlyIf { new File(frontendProjectDir, 'package.json').exists() }
     doLast {
         // Gradle 9 에서 Project.exec 가 제거돼 ProcessBuilder 를 직접 쓴다(installGitHooks 와 동일 방식).
         def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
         def cmd = isWindows ? ['cmd', '/c', 'pnpm', 'test'] : ['pnpm', 'test']
         logger.lifecycle('[frontendUnitTest] pnpm test (frontend)')
         def proc = new ProcessBuilder(cmd)
-                .directory(file("${rootDir}/frontend"))
+                .directory(frontendProjectDir)
                 .redirectErrorStream(true)
                 .start()
         proc.inputStream.eachLine { logger.lifecycle(it) }
