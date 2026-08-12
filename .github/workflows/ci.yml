@@ -1043,6 +1043,28 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # [2026-08-13] Wrapper 배포본만 제한적으로 재시도한다.
+      #   run 31616893513 에서 같은 매트릭스 스코프가 실제 PIT 시작 전 네 번 연속 실패했다:
+      #     · Maven Central 429 1회
+      #     · services.gradle.org 응답 중단(Unexpected EOF) 3회
+      #   Gradle 9.6.1 Wrapper JAR에는 내장 retries 설정이 없으므로 `--version`으로 배포본을
+      #   먼저 확보한다. 실제 PIT 명령은 아래에서 단 한 번만 실행해 임계값 실패를 재시도로
+      #   흐리거나 러너 시간을 낭비하지 않는다.
+      - name: Provision Gradle distribution with bounded retry
+        run: |
+          for attempt in 1 2 3; do
+            if ./gradlew --version; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Gradle 배포본을 3회 시도 후에도 확보하지 못했습니다."
+              exit 1
+            fi
+            backoff=$((attempt * 10))
+            echo "::warning::Gradle 배포본 확보 실패(${attempt}/3) — ${backoff}초 후 재시도합니다."
+            sleep "$backoff"
+          done
+
       # 스코프마다 대상 클래스가 달라 히스토리도 분리한다 —
       #   한 키를 공유하면 스코프끼리 서로의 증분 히스토리를 덮어써 매번 전량 재분석이 된다.
       - name: Cache PIT incremental history
