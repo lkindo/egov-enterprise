@@ -1,4 +1,6 @@
 
+import type { components } from '@/types/generated-api';
+
 export interface PaginationInfo {
   currentPageNo?: number;
   recordCountPerPage?: number;
@@ -87,6 +89,10 @@ export interface ProgrmManage {
 
 // Log
 
+/** API 생성 계약을 로그 DTO의 단일 진실 공급원으로 사용한다. */
+export type SysLog = components['schemas']['SysLogDto'];
+export type LoginLog = components['schemas']['LoginLogDto'];
+
 /**
  * 사용자 활동 로그. 개별 요청이 아니라 **사용자 × 서비스 × 메서드 × 일자 단위 집계**다.
  *
@@ -95,36 +101,12 @@ export interface ProgrmManage {
  * (`tb_user_log` 는 복합키다), 정작 이 테이블의 값인 카운터 6종은 선언되지 않았다.
  * 화면은 없는 컬럼을 그리고 실제 값은 그리지 않고 있었다.
  */
-export interface UserLog {
-  /** 발생일자 (yyyyMMdd) */
-  ocrnYmd: string;
-  /** 요청자 ID (esntlId) */
-  dmndUserId: string;
-  /** 요청자명 (연관 조회. 사용자가 삭제됐으면 null) */
-  userNm: string | null;
-  srvcNm: string;
-  mthdNm: string;
-  /** 행위 카운터 — 이 테이블의 본체 */
-  crtCnt: number;
-  mdfcnCnt: number;
-  inqCnt: number;
-  delCnt: number;
-  otptCnt: number;
-  errCnt: number;
-}
+export type UserLog = components['schemas']['UserLogDto'];
 
 // Login Log
 
 // Web Log
-export interface WebLog {
-  webLogId: string;
-  url: string;
-  method: string;
-  processSeCode: string;
-  processTime: number;
-  creatDt: string;
-  rqesterIp: string;
-}
+export type WebLog = components['schemas']['WebLogDto'];
 
 /**
  * 개인정보 조회 로그. **이 로그의 내용 자체가 개인정보**라 열람은 ADMIN 전용이다
@@ -133,19 +115,7 @@ export interface WebLog {
  * ⚠ 2026-08-05 정정 — 종전 선언(`logId`·`trgetId`·`trgetClCode`·`trgetNm`·`processSeCode`·
  * `creatDt`·`rqesterId`)은 백엔드 실물과 전부 어긋나 있었다.
  */
-export interface PrivacyLog {
-  /** 요청 ID */
-  dmndId: string;
-  /** 조회 일시 (ISO) */
-  inqDt: string;
-  srvcNm: string;
-  /** 조회 대상 정보 */
-  inqInfo: string;
-  /** 조회자 ID */
-  dmndUserId: string;
-  /** 조회자 IP */
-  dmndUserIpAddr: string;
-}
+export type PrivacyLog = components['schemas']['PrivacyLogDto'];
 
 /*
  * 전송 로그(TransferLog)는 두지 않는다 (2026-08-05 제거).

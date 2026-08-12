@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
-import { WebLog, PageResponse } from '@/types/foundation/system';
+import type { PageResponse, WebLog } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -26,17 +26,17 @@ const SystemLogsWebClient = () => {
         }),
     });
 
-    const logs = (data?.list || []) as WebLog[];
+    const logs = data?.list ?? [];
     const totalPageCount = data?.totalPage || 1;
     const totalCount = Number(data?.total || 0);
 
     const columns: Column<WebLog>[] = [
         {
-            header: '로그ID',
+            header: '요청ID',
             accessor: (item: WebLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
                     <Terminal size={12} className="opacity-30" />
-                    {item.webLogId}
+                    {item.dmndId || '-'}
                 </div>
             ),
             className: 'w-40'
@@ -51,28 +51,19 @@ const SystemLogsWebClient = () => {
             )
         },
         {
-            header: '메소드',
+            header: '요청자',
             accessor: (item: WebLog) => (
-                <div className="flex justify-start">
-                    <code className={`px-2 py-1 rounded border font-mono text-xs font-bold ${
-                        item.method === 'GET' ? 'bg-info/10 text-info border-info/20' :
-                        item.method === 'POST' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20' :
-                        item.method === 'PUT' ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20' :
-                        'bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20'
-                    }`}>
-                        {item.method}
-                    </code>
-                </div>
+                <span className="text-xs font-bold text-foreground">{item.dmndUserId || '-'}</span>
             ),
-            className: 'w-24'
+            className: 'w-32'
         },
         {
             header: '응답시간',
             accessor: (item: WebLog) => (
                 <div className="flex items-center gap-1.5 font-bold text-muted-foreground">
                     <Clock size={12} className="opacity-30" />
-                    <span className="text-xs tabular-nums">{item.processTime ?? '-'}</span>
-                    {item.processTime !== undefined && item.processTime !== null ? <span className="text-xs text-muted-foreground">ms</span> : null}
+                    <span className="text-xs tabular-nums">{item.prcsTm ?? '-'}</span>
+                    {item.prcsTm != null ? <span className="text-xs text-muted-foreground">ms</span> : null}
                 </div>
             ),
             className: 'w-28'
@@ -82,7 +73,7 @@ const SystemLogsWebClient = () => {
             accessor: (item: WebLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/80 tabular-nums">
                     <Globe size={12} className="opacity-30" />
-                    {item.rqesterIp}
+                    {item.dmndUserIpAddr || '-'}
                 </div>
             ),
             className: 'w-40'
@@ -91,7 +82,7 @@ const SystemLogsWebClient = () => {
             header: '등록일시',
             accessor: (item: WebLog) => (
                 <div className="font-mono text-xs text-muted-foreground tabular-nums">
-                    {item.creatDt ? item.creatDt.substring(0, 19).replace('T', ' ') : '-'}
+                    {item.occrYmd || '-'}
                 </div>
             ),
             className: 'w-44'
@@ -118,7 +109,7 @@ const SystemLogsWebClient = () => {
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
-                keyField="webLogId"
+                keyField="dmndId"
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,

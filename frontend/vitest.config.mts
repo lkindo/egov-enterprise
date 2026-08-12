@@ -53,15 +53,15 @@ export default defineConfig({
         // i18n 메시지 로더 — 선언적 설정에 가깝다.
         'src/i18n/**',
       ],
-      // [2026-08-13 실측 래칫] StandardFileUploader 경계 테스트 반영 결과:
-      // statements 21.16 / branches 16.76 / functions 15.96 / lines 21.66.
+      // [2026-08-13 실측 래칫] 로그 계약·페이지 경계 테스트 반영 결과:
+      // statements 22.88 / branches 18.34 / functions 17.66 / lines 23.44.
       // 기존에는 수치만 출력하고 어떤 하락도 통과했으므로 현재 실측 바로 아래를 최소선으로 고정한다.
       // 개선 시에는 테스트를 늘린 뒤 이 값도 함께 상향하며, include 축소로 수치를 올리지 않는다.
       thresholds: {
-        statements: 21,
-        branches: 16,
-        functions: 15,
-        lines: 21,
+        statements: 22,
+        branches: 18,
+        functions: 17,
+        lines: 23,
       },
     },
   },

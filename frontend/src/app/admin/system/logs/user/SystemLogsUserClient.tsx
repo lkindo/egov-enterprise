@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
-import { UserLog, PageResponse } from '@/types/foundation/system';
+import type { PageResponse, UserLog } from '@/types/foundation/system';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -11,6 +11,8 @@ import { History, Terminal, FileText, Calendar } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
 
 const PAGE_SIZE = 10;
+
+type UserLogTableRow = UserLog & { rowKey: string };
 
 const SystemLogsUserClient = () => {
     const [page, setPage] = usePageParam();
@@ -26,14 +28,20 @@ const SystemLogsUserClient = () => {
         }),
     });
 
-    const logs = (data?.list || []) as UserLog[];
+    const logs: UserLogTableRow[] = (data?.list ?? []).map((item, index) => {
+        const keyParts = [item.ocrnYmd, item.dmndUserId, item.srvcNm, item.mthdNm];
+        return {
+            ...item,
+            rowKey: keyParts.every(Boolean) ? keyParts.join(':') : `user-log-${index}`,
+        };
+    });
     const totalPageCount = data?.totalPage || 1;
     const totalCount = Number(data?.total || 0);
 
-    const columns: Column<UserLog>[] = [
+    const columns: Column<UserLogTableRow>[] = [
         {
             header: '발생일자',
-            accessor: (item: UserLog) => (
+            accessor: (item: UserLogTableRow) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
                     {item.ocrnYmd || '-'}
@@ -43,7 +51,7 @@ const SystemLogsUserClient = () => {
         },
         {
             header: '서비스설명',
-            accessor: (item: UserLog) => (
+            accessor: (item: UserLogTableRow) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
                     <span className="font-bold text-foreground tracking-tight text-left">{item.srvcNm}</span>
@@ -52,7 +60,7 @@ const SystemLogsUserClient = () => {
         },
         {
             header: '메소드명',
-            accessor: (item: UserLog) => (
+            accessor: (item: UserLogTableRow) => (
                 <div className="text-left">
                     <code className="px-2 py-1 bg-muted rounded border font-mono text-xs text-muted-foreground">
                         {item.mthdNm}
@@ -62,7 +70,7 @@ const SystemLogsUserClient = () => {
         },
         {
             header: '요청자',
-            accessor: (item: UserLog) => (
+            accessor: (item: UserLogTableRow) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-card border rounded-lg w-fit shadow-sm">
                     <span className="text-xs font-bold text-foreground">{item.userNm || item.dmndUserId}</span>
                 </div>
@@ -77,7 +85,7 @@ const SystemLogsUserClient = () => {
              * 이 로그는 개별 요청 기록이 아니라 사용자×서비스×메서드×일자 집계이므로 카운터가 본체다.
              */
             header: '행위 (생성/수정/조회/삭제/출력/오류)',
-            accessor: (item: UserLog) => (
+            accessor: (item: UserLogTableRow) => (
                 <div className="flex items-center gap-1.5 font-mono text-xs tabular-nums">
                     <Terminal size={12} className="opacity-30" />
                     <span className="text-emerald-600 font-bold">{item.crtCnt ?? 0}</span>
@@ -119,7 +127,7 @@ const SystemLogsUserClient = () => {
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
-                keyField={undefined}
+                keyField="rowKey"
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,
