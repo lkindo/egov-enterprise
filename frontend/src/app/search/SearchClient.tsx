@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useEffect,  useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+// ⚠ `useSearchParams` 를 여기서 쓰지 않는다 — 검색어는 서버가 prop 으로 준다(아래 주석 참조).
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Search, 
     FileText, 
@@ -20,32 +21,32 @@ import { Badge } from '@/components/ui/badge';
 import axios from '@/lib/api/client';
 import { StandardTabs } from '@/app/components/ui/standard-tabs';
 
-export const SearchResultsContent = ({ initialResults = { articles: [], users: [], menus: [] }, query: initialQuery = '' }: { initialResults: { articles: any[], users: any[], menus: any[] }, query: string }) => {
-    const searchParams = useSearchParams();
+export const SearchResultsContent = ({ initialResults = { articles: [], users: [], menus: [] }, query = '' }: { initialResults: { articles: any[], users: any[], menus: any[] }, query: string }) => {
     const router = useRouter();
-    const query = searchParams.get('q') || initialQuery;
 
     const [activeTab, setTab] = useState('all');
 
-    // [2026-08-11 하이드레이션 수정] 초기값을 `query`(= searchParams 파생)로 두면 안 된다.
+    // [2026-08-12 구조 변경] 검색어는 **서버(page.tsx)가 해석해 prop 으로 준다.**
     //
-    //   이 라우트는 PPR 대상이다(next.config `cacheComponents: true`, 빌드 산출물에서 `◐ /search`).
-    //   정적 셸은 **검색 파라미터 없이** 프리렌더되므로 그 HTML 의 입력값은 항상 빈 문자열이다.
-    //   그런데 `/search?q=X` 로 진입하면 클라이언트의 첫 렌더는 value="X" 가 되어
-    //   셸과 어긋나고, React 가 트리를 통째로 다시 만들며 경고를 던진다:
-    //     🚨 Minified React error #418 (server rendered HTML didn't match the client)
+    //   종전에는 여기서 `useSearchParams()` 를 렌더 도중 읽어 검색어를 다시 만들었다. 그런데
+    //   이 라우트는 PPR 대상이라(`cacheComponents: true`) 정적 셸은 **검색어 없이** 프리렌더된다.
+    //   즉 서버가 그리는 것과 클라이언트 첫 렌더가 어긋나는 것이 설계였고, 그래서
+    //   `Minified React error #418`(hydration mismatch)이 간헐적으로 터졌다.
     //
-    //   실측(CI 로그 2건, 2026-08-09 · 2026-08-11): 오류는 **검색 내비게이션 직후 ~0.3초**에만
-    //   나타났고 `/search` 초기 진입에서는 한 번도 나지 않았다 — 위 설명과 정확히 일치한다.
-    //   ConsoleErrorGuard 가 이를 잡아 09 티어를 간헐 실패시켰다(때로는 재시도로 통과해 flaky).
+    //   #382 는 입력칸 초기값 하나만 서버와 맞췄다. 그러나 검색어에서 파생되는 렌더가
+    //   하나라도 늘면 같은 결함이 다시 열린다 — 증상이지 원인이 아니었다.
     //
-    //   → 첫 렌더는 서버·프리렌더와 **동일한 값**으로 두고, 마운트 후 URL 과 동기화한다.
-    //     (사용자에게는 입력칸이 즉시 채워지는 것과 구분되지 않는다.)
-    const [searchInput, setSearchInput] = useState(initialQuery);
+    //   이제 **렌더 경로에 클라이언트 전용 소스가 없다.** 서버·클라이언트가 같은 prop 을 쓰므로
+    //   첫 렌더는 구조적으로 일치한다. 결과 조회는 마운트 이후에 일어나며, 그것은
+    //   하이드레이션 이후의 상태 변경이라 불일치와 무관하다.
+    //   (회귀 방어: `__tests__/SearchClient.hydration.test.tsx` — 렌더 중 useSearchParams 를
+    //    읽으면 red 가 된다.)
+    const [searchInput, setSearchInput] = useState(query);
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(initialResults);
 
-    // 마운트 이후에만 URL 의 검색어를 입력칸에 반영한다(위 주석 참조).
+    // page.tsx 가 `key={q}` 로 경계를 새로 만들므로 보통은 위 useState 로 충분하다.
+    // 이 동기화는 key 가 사라지는 등의 변경에도 입력칸이 URL 과 어긋나지 않게 하는 보루다.
     useEffect(() => {
         setSearchInput(query);
     }, [query]);
@@ -56,14 +57,24 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
         router.push(`/search?q=${encodeURIComponent(searchInput)}`);
     };
 
+    // 결과 조회. 검색어가 있을 때만 돈다.
+    //
+    // ⚠ [2026-08-12] 종전 조건 `query === initialQuery && results === initialResults` 는
+    //   검색어가 URL 파생이고 initialQuery 가 항상 '' 이라는 전제에 기대고 있었다. 이제 서버가
+    //   같은 값을 주므로 그 전제가 무너진다(둘이 항상 같아져 **조회가 아예 돌지 않는다**).
+    //   객체 동일성(`results === initialResults`)에 기대는 것도 부모가 리터럴을 새로 만들면
+    //   깨진다. 조건을 검색어 하나로 좁히고, 늦게 도착한 응답이 최신 결과를 덮지 않도록 취소 표식을 둔다.
     useEffect(() => {
-        if (!query || (query === initialQuery && results === initialResults)) return;
+        if (!query) return;
+
+        let cancelled = false;
 
         const fetchResults = async () => {
             setLoading(true);
             try {
                 // 전역 게시글 검색 백엔드 엔드포인트는 부재(/api/v1/bbs는 /{bbsId} 기반이라 /bbs는 404) → 팬텀 호출 제거.
                 const userRes = (await axios.get(`/admin/system/users?searchKeyword=${encodeURIComponent(query)}`)) as any;
+                if (cancelled) return;
 
                 setResults({
                     articles: [],
@@ -74,14 +85,15 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                     ].filter(m => m.name.includes(String(query || '')))
                 });
             } catch (error) {
-                console.error('Search failed', error);
+                if (!cancelled) console.error('Search failed', error);
             } finally {
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
 
         fetchResults();
-    }, [query, initialQuery, initialResults]);
+        return () => { cancelled = true; };
+    }, [query]);
 
     // [2026-08-04] 게시글 탭은 **미지원**이다 — 전역 게시글 검색 백엔드 엔드포인트가 없어
     //   fetchResults 가 articles 를 항상 빈 배열로 둔다(위 주석 참조).
