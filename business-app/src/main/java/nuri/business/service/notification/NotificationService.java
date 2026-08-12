@@ -28,21 +28,24 @@ public class NotificationService {
     private final SimpMessagingTemplate messagingTemplate;
     private final NotificationMapper notificationMapper;
 
-    public Page<NotificationDto> getNotificationList(String keyword, Pageable pageable) {
-        log.debug("Fetching notification list with keyword: {}", keyword);
-        return notificationRepository.searchNotifications(keyword, pageable)
+    public Page<NotificationDto> getNotificationList(String userId, String keyword, Pageable pageable) {
+        requireUserId(userId);
+        log.debug("Fetching notification list for receiver: {} with keyword: {}", userId, keyword);
+        return notificationRepository.searchNotificationsByReceiver(userId, keyword, pageable)
                 .map(notificationMapper::toDto);
     }
 
-    public NotificationDto getNotification(String notiSn) {
-        log.debug("Fetching notification details for ID: {}", notiSn);
-        return notificationRepository.findById(Objects.requireNonNull(notiSn))
+    public NotificationDto getNotification(String notiSn, String userId) {
+        requireUserId(userId);
+        log.debug("Fetching notification details for receiver: {}, ID: {}", userId, notiSn);
+        return findOwnedNotification(notiSn, userId)
                 .map(notificationMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Transactional
     public String createNotification(String userId, NotificationDto dto) {
+        requireUserId(userId);
         log.info("Creating notification for user: {}", userId);
         String id = nuri.foundation.core.util.IdGenerationUtil.generateId("NTFC_", 13);
         Notification entity = Notification.builder()
@@ -60,10 +63,9 @@ public class NotificationService {
         NotificationDto responseDto = notificationMapper.toDto(entity);
         TransactionUtils.runAfterCommit(() -> {
             try {
-                messagingTemplate.convertAndSend("/topic/public", responseDto);
-                if (userId != null) {
-                    messagingTemplate.convertAndSendToUser(userId, "/queue/notifications", responseDto);
-                }
+                // 수신자 식별자는 인증 Principal(esntlId)과 동일하다. 공용 topic 으로 복제하면
+                // 다른 사용자의 제목·본문·링크가 전원에게 노출되므로 개인 user destination 만 사용한다.
+                messagingTemplate.convertAndSendToUser(userId, "/queue/notifications", responseDto);
             } catch (Exception e) {
                 log.error("Failed to send WebSocket notification", e);
             }
@@ -74,16 +76,20 @@ public class NotificationService {
 
     @Transactional
     public void updateNotification(String notiSn, String userId, NotificationDto dto) {
+        requireUserId(userId);
         log.info("Updating notification ID: {} for user: {}", notiSn, userId);
-        Notification entity = notificationRepository.findById(notiSn)
+        Notification entity = findOwnedNotification(notiSn, userId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getNotiTtlNm(), dto.getNotiCn(), dto.getNotiDt(), dto.getNotiIvlVal());
     }
 
     @Transactional
-    public void deleteNotification(String notiSn) {
-        log.warn("Deleting notification ID: {}", notiSn);
-        notificationRepository.deleteById(notiSn);
+    public void deleteNotification(String notiSn, String userId) {
+        requireUserId(userId);
+        log.warn("Deleting notification ID: {} for receiver: {}", notiSn, userId);
+        Notification owned = findOwnedNotification(notiSn, userId)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        notificationRepository.delete(owned);
     }
 
     public Page<NotificationDto> getActiveNotifications(Pageable pageable) {
@@ -105,8 +111,21 @@ public class NotificationService {
     }
 
     @Transactional
-    public void markAsRead(String notiSn) {
-        log.info("Marking notification ID: {} as read", notiSn);
-        notificationRepository.findById(notiSn).ifPresent(noti -> noti.markAsRead());
+    public void markAsRead(String notiSn, String userId) {
+        requireUserId(userId);
+        log.info("Marking notification ID: {} as read for receiver: {}", notiSn, userId);
+        Notification owned = findOwnedNotification(notiSn, userId)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        owned.markAsRead();
+    }
+
+    private java.util.Optional<Notification> findOwnedNotification(String notiSn, String userId) {
+        return notificationRepository.findByNotiSnAndRcvrId(Objects.requireNonNull(notiSn), userId);
+    }
+
+    private static void requireUserId(String userId) {
+        if (userId == null || userId.isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 }

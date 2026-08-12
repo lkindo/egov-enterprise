@@ -288,29 +288,26 @@ describe('useNotifications', () => {
       expect(vi.mocked(client.get).mock.calls.length).toBe(after);
     });
 
-    it('WebSocket 이 연결되면 공용·사용자 큐를 모두 구독하고 언마운트 시 해제한다', async () => {
-      const publicSub = { unsubscribe: vi.fn() };
+    it('WebSocket 이 연결되면 Principal 전용 큐만 구독하고 언마운트 시 해제한다', async () => {
       const userSub = { unsubscribe: vi.fn() };
-      const subscribe = vi.fn((dest: string) =>
-        dest.startsWith('/topic') ? publicSub : userSub);
+      const subscribe = vi.fn((_destination: string, _handler: (message: { body: string }) => void) => userSub);
       wsState = { client: { subscribe }, isConnected: true };
 
       const { unmount } = renderHook(() => useNotifications());
 
-      await waitFor(() => expect(subscribe).toHaveBeenCalledTimes(2));
+      await waitFor(() => expect(subscribe).toHaveBeenCalledTimes(1));
       expect(subscribe.mock.calls.map(c => c[0]))
-        .toEqual(['/topic/public', '/user/U1/queue/notifications']);
+        .toEqual(['/user/queue/notifications']);
 
       unmount();
       // 해제하지 않으면 화면을 떠난 뒤에도 메시지가 도착해 사라진 상태를 갱신한다.
-      expect(publicSub.unsubscribe).toHaveBeenCalled();
       expect(userSub.unsubscribe).toHaveBeenCalled();
     });
 
     it('실시간 알림이 오면 맨 앞에 붙이고 배지를 늘린다', async () => {
       let handler: ((m: { body: string }) => void) | undefined;
-      const subscribe = vi.fn((dest: string, cb: (m: { body: string }) => void) => {
-        if (dest.startsWith('/topic')) handler = cb;
+      const subscribe = vi.fn((_dest: string, cb: (m: { body: string }) => void) => {
+        handler = cb;
         return { unsubscribe: vi.fn() };
       });
       wsState = { client: { subscribe }, isConnected: true };
@@ -327,6 +324,27 @@ describe('useNotifications', () => {
       expect(result.current.notifications).toHaveLength(2);
       expect(result.current.unreadCount).toBe(4);
       expect(toast).toHaveBeenCalledWith('보안 경고', 'success');
+    });
+
+    it('형식이 깨진 WebSocket 프레임은 상태·배지를 오염시키지 않는다', async () => {
+      let handler: ((m: { body: string }) => void) | undefined;
+      const subscribe = vi.fn((_dest: string, cb: (m: { body: string }) => void) => {
+        handler = cb;
+        return { unsubscribe: vi.fn() };
+      });
+      wsState = { client: { subscribe }, isConnected: true };
+      const { result } = renderHook(() => useNotifications());
+      await waitFor(() => expect(result.current.notifications).toHaveLength(1));
+      const beforeCount = result.current.unreadCount;
+
+      await act(async () => {
+        handler!({ body: '{invalid-json' });
+        handler!({ body: JSON.stringify({ notiTtlNm: 'ID 없는 알림' }) });
+      });
+
+      expect(result.current.notifications).toEqual([expect.objectContaining({ notiSn: '1' })]);
+      expect(result.current.unreadCount).toBe(beforeCount);
+      expect(toast).not.toHaveBeenCalledWith('ID 없는 알림', 'success');
     });
 
     it('로그인 사용자가 없으면 조회하지 않는다', async () => {

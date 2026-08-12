@@ -141,7 +141,7 @@ export const SearchResultsContent = ({ initialResults = { articles: [], users: [
                                 value={searchInput}
                                 onChange={(e) => setSearchInput(e.target.value)}
                                 placeholder="검색어를 입력하고 지식을 발견하세요.."
-                                className="h-11 pl-16 pr-40 rounded-lg border-0 bg-white ring-offset-0 focus:ring-4 focus:ring-primary/20 transition-all font-bold text-xl placeholder:text-slate-300 placeholder:font-bold"
+                                className="h-11 pl-16 pr-40 rounded-lg border-0 bg-card ring-offset-0 focus:ring-4 focus:ring-primary/20 transition-all font-bold text-xl placeholder:text-slate-300 placeholder:font-bold"
                             />
                             <Button
                                 type="submit"

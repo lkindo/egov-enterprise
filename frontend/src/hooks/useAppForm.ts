@@ -1,7 +1,15 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useForm, UseFormProps, FieldValues, UseFormReturn } from 'react-hook-form';
+import {
+  useForm,
+  UseFormProps,
+  FieldValues,
+  UseFormReturn,
+  SubmitErrorHandler,
+  UseFormHandleSubmit,
+  Resolver,
+} from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
@@ -16,7 +24,10 @@ import { extractFieldErrors } from '@/app/actions/actionUtils';
  * `tsc --noEmit` 는 계속 green 이었다 — 그래서 아무도 몰랐다.
  * 헬퍼를 제공하기로 한 결정의 목적은 '후속 폼 배선의 진입점' 이므로, 진입점을 타입에 올린다.
  */
-export type AppFormReturn<TFieldValues extends FieldValues> = UseFormReturn<TFieldValues> & {
+export type AppFormReturn<
+  TFieldValues extends FieldValues,
+  TTransformedValues extends FieldValues = TFieldValues,
+> = UseFormReturn<TFieldValues, unknown, TTransformedValues> & {
   /**
    * 서버가 내려준 필드 오류를 폼에 귀속시킨다.
    * @returns 필드 오류가 있어 처리했으면 `true`. `false` 면 일반 오류이므로 호출부가 토스트 등으로 처리한다.
@@ -31,15 +42,17 @@ export type AppFormReturn<TFieldValues extends FieldValues> = UseFormReturn<TFie
  * - 서버 필드 오류 귀속(`applyServerErrors`)
  */
 export function useAppForm<
-  TSchema extends z.ZodType<any, any>,
-  TFieldValues extends FieldValues = z.infer<TSchema>
+  TSchema extends z.ZodType<unknown, FieldValues>,
+  TFieldValues extends FieldValues = z.infer<TSchema> & FieldValues,
 >(
   schema: TSchema,
-  props?: Omit<UseFormProps<TFieldValues>, 'resolver'>
+  props?: Omit<UseFormProps<TFieldValues, unknown>, 'resolver'>
 ): AppFormReturn<TFieldValues> {
-  const form = useForm<TFieldValues>({
-    ...props as any,
-    resolver: zodResolver(schema),
+  const form = useForm<TFieldValues, unknown>({
+    ...props,
+    // resolver 패키지는 구체 Zod 스키마의 입출력을 이 제네릭 경계에서 보존하지 못한다.
+    // 소비 폼의 TFieldValues 로 한 번만 좁히고, 이후 register/submit 표면은 강타입으로 유지한다.
+    resolver: zodResolver(schema) as Resolver<TFieldValues, unknown>,
   });
 
   // [2026-08-09 누수 정정] 첫 오류 필드로 포커스를 옮기는 setTimeout 이 **취소되지 않았다.**
@@ -80,24 +93,29 @@ export function useAppForm<
 
   const originalHandleSubmit = form.handleSubmit;
 
-  // @ts-ignore
-  form.handleSubmit = (onValid: any, onInvalid?: any) => {
-    const customOnInvalid = (errors: any) => {
+  const enhancedHandleSubmit: UseFormHandleSubmit<TFieldValues> = (onValid, onInvalid) => {
+    const customOnInvalid: SubmitErrorHandler<TFieldValues> = (errors, event) => {
       console.error('Validation Errors:', errors);
       
       const errorKeys = Object.keys(errors);
       if (errorKeys.length > 0) {
         const firstErrorPath = errorKeys[0];
         const firstError = errors[firstErrorPath];
+        const errorMessage = firstError
+          && typeof firstError === 'object'
+          && 'message' in firstError
+          && typeof firstError.message === 'string'
+          ? firstError.message
+          : undefined;
         
-        toast.error(firstError?.message || '입력 항목을 확인해주세요.', {
+        toast.error(errorMessage || '입력 항목을 확인해주세요.', {
           description: `항목: ${firstErrorPath}`,
         });
 
         focusFirstErrorField(firstErrorPath);
       }
 
-      if (onInvalid) onInvalid(errors);
+      return onInvalid?.(errors, event);
     };
 
     return originalHandleSubmit(onValid, customOnInvalid);
@@ -109,8 +127,7 @@ export function useAppForm<
   //
   //   사용 예: catch (e) { form.applyServerErrors(e) || toast.error(extractErrorMessage(e)) }
   //   반환값이 false 면 필드 오류가 아니므로 호출부가 일반 오류로 처리하면 된다.
-  const appForm = form as AppFormReturn<TFieldValues>;
-  appForm.applyServerErrors = (error: unknown): boolean => {
+  const applyServerErrors = (error: unknown): boolean => {
     const fieldErrors = extractFieldErrors(error);
     if (!fieldErrors) {
       return false;
@@ -130,5 +147,9 @@ export function useAppForm<
     return true;
   };
 
-  return appForm;
+  return {
+    ...form,
+    handleSubmit: enhancedHandleSubmit,
+    applyServerErrors,
+  };
 }

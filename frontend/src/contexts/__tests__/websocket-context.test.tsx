@@ -22,8 +22,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import { WebSocketProvider, useWebSocket } from '../websocket-context';
 
-const toast = vi.fn();
-const success = vi.fn();
 let authUser: { id: string } | null = { id: 'U1' };
 
 /** 마지막으로 생성된 Client 스텁 — 콜백을 직접 발화시키기 위해 붙잡는다. */
@@ -51,7 +49,6 @@ vi.mock('@stomp/stompjs', () => ({
 }));
 vi.mock('sockjs-client', () => ({ default: vi.fn(() => ({})) }));
 vi.mock('../AuthContext', () => ({ useAuth: () => ({ user: authUser }) }));
-vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast, success }) }));
 
 /** 컨텍스트 값을 밖으로 노출시키는 소비자. */
 function Probe({ onValue }: { onValue: (v: ReturnType<typeof useWebSocket>) => void }) {
@@ -135,16 +132,16 @@ describe('WebSocketProvider', () => {
   });
 
   describe('연결 상태 전이', () => {
-    it('연결되면 사용자 큐를 구독하고 isConnected 가 켜진다', () => {
+    it('연결되면 isConnected를 켜되 Provider 자체는 사용자 큐를 중복 구독하지 않는다', () => {
       const view = renderProvider();
       expect(view.value.isConnected).toBe(false);
 
       act(() => { created[0].onConnect?.(); });
 
-      expect(created[0].subscribe).toHaveBeenCalledTimes(1);
-      // 구독 대상이 어긋나면 알림이 도착해도 화면에 뜨지 않는다.
-      expect(created[0].subscribe.mock.calls[0][0]).toBe('/user/queue/notifications');
+      // 실제 알림 구독은 useNotifications가 소유한다. Provider까지 구독하면 같은 알림 토스트가 중복된다.
+      expect(created[0].subscribe).not.toHaveBeenCalled();
       expect(view.value.isConnected).toBe(true);
+      expect(view.value.client).toBe(created[0]);
     });
 
     it('STOMP 오류가 나면 연결 해제 상태로 되돌린다', () => {
@@ -156,6 +153,7 @@ describe('WebSocketProvider', () => {
 
       // 연결됨으로 남아 있으면 알림 훅이 폴백 폴링으로 넘어가지 않아 알림이 끊긴다.
       expect(view.value.isConnected).toBe(false);
+      expect(view.value.client).toBeNull();
     });
 
     it('끊기면 연결 해제 상태로 되돌린다', () => {
@@ -165,6 +163,7 @@ describe('WebSocketProvider', () => {
       act(() => { created[0].onDisconnect?.(); });
 
       expect(view.value.isConnected).toBe(false);
+      expect(view.value.client).toBeNull();
     });
 
     it('재연결 간격과 하트비트를 설정한다', () => {
@@ -174,39 +173,6 @@ describe('WebSocketProvider', () => {
       expect(created[0].config.reconnectDelay).toBe(5000);
       expect(created[0].config.heartbeatIncoming).toBe(4000);
       expect(created[0].config.heartbeatOutgoing).toBe(4000);
-    });
-  });
-
-  describe('메시지 처리', () => {
-    /** Provider 를 띄우고 onConnect 로 등록된 구독 콜백을 꺼낸다. */
-    function subscriptionHandler() {
-      renderProvider();
-      act(() => { created[0].onConnect?.(); });
-      return created[0].subscribe.mock.calls[0][1] as (m: { body: string }) => void;
-    }
-
-    it('결재 알림은 success 로, 그 외는 info 토스트로 띄운다', () => {
-      const handler = subscriptionHandler();
-
-      act(() => {
-        handler({ body: JSON.stringify({ type: 'APPROVAL', message: '결재 요청' }) });
-      });
-      expect(success).toHaveBeenCalledWith('[결재 알림] 결재 요청');
-
-      act(() => {
-        handler({ body: JSON.stringify({ type: 'INFO', message: '공지' }) });
-      });
-      // 결재를 일반 토스트로 띄우면 눈에 덜 띄어 결재가 밀린다.
-      expect(toast).toHaveBeenCalledWith('공지', 'info');
-    });
-
-    it('깨진 메시지는 삼키고 연결을 유지한다', () => {
-      const handler = subscriptionHandler();
-
-      // 여기서 예외가 새면 메시지 하나 때문에 실시간 알림이 통째로 죽는다.
-      expect(() => act(() => { handler({ body: '{깨진 JSON' }); })).not.toThrow();
-      expect(toast).not.toHaveBeenCalled();
-      expect(success).not.toHaveBeenCalled();
     });
   });
 

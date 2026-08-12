@@ -113,4 +113,18 @@ class RequestMatcherBoundaryTest {
         mockMvc.perform(get("/index.jsp"))
                 .andExpect(status().is(org.hamcrest.Matchers.not(401)));
     }
+
+    @Test
+    @DisplayName("🧭 WebSocket SockJS 핸드셰이크는 익명 접근을 허용하지 않는다")
+    void websocketHandshake_requiresAuthentication() throws Exception {
+        mockMvc.perform(get("/ws/info"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("🧭 인증된 사용자의 SockJS 핸드셰이크만 WebSocket 핸들러에 도달한다")
+    void websocketHandshake_acceptsAuthenticatedUser() throws Exception {
+        mockMvc.perform(get("/ws/info").with(user(normalUser())))
+                .andExpect(status().isOk());
+    }
 }

@@ -1,6 +1,7 @@
 package nuri.business.domain.notification;
 
 import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,8 +14,15 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface NotificationRepository extends JpaRepository<Notification, String> {
 
-    @Query("SELECT n FROM Notification n WHERE (:keyword IS NULL OR n.notiTtlNm LIKE %:keyword% OR n.notiCn LIKE %:keyword%) ORDER BY n.crtDt DESC")
-    Page<Notification> searchNotifications(String keyword, Pageable pageable);
+    @Query("SELECT n FROM Notification n WHERE n.rcvrId = :rcvrId "
+            + "AND (:keyword IS NULL OR n.notiTtlNm LIKE %:keyword% OR n.notiCn LIKE %:keyword%) "
+            + "ORDER BY n.crtDt DESC")
+    Page<Notification> searchNotificationsByReceiver(
+            @Param("rcvrId") String rcvrId,
+            @Param("keyword") String keyword,
+            Pageable pageable);
+
+    Optional<Notification> findByNotiSnAndRcvrId(String notiSn, String rcvrId);
 
     long countByRcvrIdAndReadYn(String rcvrId, String readYn);
 

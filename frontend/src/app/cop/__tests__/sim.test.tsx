@@ -25,6 +25,10 @@ vi.mock('next/navigation', () => ({
  useRouter: () => ({ push: vi.fn() }),
 }));
 
+vi.mock('next/server', () => ({
+ connection: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock('@/lib/api/client', () => ({
  default: { get: vi.fn().mockResolvedValue({ resultList: [], totalCount: 0 }), interceptors: { request: { use: vi.fn() }, response: { use: vi.fn() } } }
 }));
@@ -34,9 +38,10 @@ import ScheduleListPage from '../../smart-toolkit/schedule/page';
 describe('ScheduleListPage', () => {
  it('renders schedule list page structure', async () => {
   const queryClient = new QueryClient();
+  const page = await ScheduleListPage();
   render(
   <QueryClientProvider client={queryClient}>
-  <ScheduleListPage />
+  {page}
   </QueryClientProvider>
   );
   expect(await screen.findByText(/허브/i)).toBeInTheDocument();

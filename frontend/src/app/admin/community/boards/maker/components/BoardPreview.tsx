@@ -40,7 +40,7 @@ export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
  </div>
  </div>
 
- <div className="flex-1 overflow-auto p-8 space-y-8 bg-white not-">
+ <div className="flex-1 overflow-auto p-8 space-y-8 bg-card not-">
  {/* Board Header */}
  <div className="space-y-4 border-b-4 border-slate-900 pb-10">
  <div className="flex justify-between items-end">
@@ -103,7 +103,7 @@ function HubLayout({ posts }: { posts: any[] }) {
  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><Eye size={12} /> {post.views}</div>
  <div className="flex items-center gap-1.5 text-muted-foreground font-bold text-xs"><MessageSquare size={12} /> {post.comments}</div>
  </div>
- <div className="w-8 h-8 rounded-lg bg-white border border-border flex items-center justify-center text-slate-300">
+ <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center text-slate-300">
  <ChevronRight size={14} />
  </div>
  </div>
@@ -146,7 +146,7 @@ function GalleryLayout({ posts }: { posts: any[] }) {
  return (
  <div className="grid grid-cols-1 gap-8">
  {posts.map(post => (
- <div key={post.id} className="group overflow-hidden rounded-lg bg-white border-2 border-border shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
+ <div key={post.id} className="group overflow-hidden rounded-lg bg-card border-2 border-border shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
  <div className="h-48 overflow-hidden relative">
  <Image src={post.image} alt={post.title} fill className="object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 scale-110 group-hover:scale-100" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
  <div className="absolute top-4 right-4 px-4 py-1.5 bg-surface-inverse/40 backdrop-blur-md rounded-lg text-white text-xs font-bold tracking-widest uppercase">INSIGHT</div>
@@ -174,7 +174,7 @@ function QnaLayout({ posts }: { posts: any[] }) {
  return (
  <div className="space-y-4">
  {posts.map((post, idx) => (
- <div key={post.id} className="p-6 bg-white border-2 border-border rounded-lg flex gap-6 hover:border-amber-500 transition-all group">
+ <div key={post.id} className="p-6 bg-card border-2 border-border rounded-lg flex gap-6 hover:border-amber-500 transition-all group">
  <div className="flex flex-col items-center gap-1 min-w-[60px]">
  <div className={cn(
  "w-12 h-12 rounded-lg flex items-center justify-center font-bold text-xl shadow-inner",
@@ -269,7 +269,7 @@ function CalendarLayout({ posts }: { posts: any[] }) {
  {days.map((day, i) => (
  <div key={i} className={cn(
  "h-24 p-2 border-2 border-border rounded-lg transition-all relative group overflow-hidden",
- day === 20 ? "bg-primary/5 border-primary/20" : "bg-white",
+ day === 20 ? "bg-primary/5 border-primary/20" : "bg-card",
  day <= 0 || day > 31 ? "opacity-10" : "hover:border-slate-900"
  )}>
  <span className={cn("text-xs font-bold", day === 20 ? "text-primary" : "text-slate-300")}>

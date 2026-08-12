@@ -82,12 +82,14 @@ class InformalSanctionServiceTest {
     @DisplayName("상세 조회 테스트 - 성공")
     void getInformalSanction_Success() {
         // Given
-        InformalSanction sanction = InformalSanction.builder().ifmlAtrzId("IS1").taskSeCd("C1").build();
-        given(informalSanctionRepository.findById("IS1")).willReturn(Optional.of(sanction));
+        InformalSanction sanction = InformalSanction.builder()
+                .ifmlAtrzId("IS1").taskSeCd("C1").aplcntId("user1").aprvrId("boss1").build();
+        given(informalSanctionRepository.findByIdAndParticipant("IS1", "user1"))
+                .willReturn(Optional.of(sanction));
         given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of());
 
         // When
-        InformalSanctionDto result = informalSanctionService.getInformalSanction("IS1");
+        InformalSanctionDto result = informalSanctionService.getInformalSanction("IS1", "user1");
 
         // Then
         assertThat(result.getIfmlAtrzId()).isEqualTo("IS1");
@@ -97,11 +99,14 @@ class InformalSanctionServiceTest {
     @DisplayName("상세 조회 테스트 - 실패")
     void getInformalSanction_NotFound_ThrowsException() {
         // Given
-        given(informalSanctionRepository.findById("IS1")).willReturn(Optional.empty());
+        given(informalSanctionRepository.findByIdAndParticipant("IS1", "user1"))
+                .willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> informalSanctionService.getInformalSanction("IS1"))
+        assertThatThrownBy(() -> informalSanctionService.getInformalSanction("IS1", "user1"))
                 .isInstanceOf(BusinessException.class);
+
+        verify(informalSanctionRepository, never()).findById("IS1");
     }
 
     @Test

@@ -345,11 +345,29 @@ class UserServiceTest {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user = mock(User.class);
-            given(userRepository.findAllById(anyList())).willReturn(List.of(user));
+            given(userRepository.findByUserIdIn(List.of("user1"))).willReturn(List.of(user));
             
             userService.updateUsersStatus(List.of("user1"), "ACTIVE");
             verify(user).updateStatus("ACTIVE");
-            verify(userRepository).saveAll(anyList());
+            verify(userRepository).saveAll(List.of(user));
+            verify(userRepository, never()).findAllById(anyList());
+        }
+    }
+
+    @Test
+    @DisplayName("사용자 상태 다중 변경 - loginId 일부가 없으면 부분 성공하지 않는다")
+    void updateUsersStatusRejectsUnknownLoginIdTest() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
+            User existing = mock(User.class);
+            given(userRepository.findByUserIdIn(List.of("user1", "missing"))).willReturn(List.of(existing));
+
+            BusinessException error = assertThrows(BusinessException.class,
+                    () -> userService.updateUsersStatus(List.of("user1", "missing"), "ACTIVE"));
+
+            assertSame(nuri.business.domain.user.exception.UserErrorCode.USER_NOT_FOUND, error.getErrorCode());
+            verify(existing, never()).updateStatus(anyString());
+            verify(userRepository, never()).saveAll(anyList());
         }
     }
 
@@ -359,11 +377,11 @@ class UserServiceTest {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user = mock(User.class);
-            given(userRepository.findByUserIdIn(anyList())).willReturn(List.of(user));
+            given(userRepository.findByUserIdIn(List.of("user1"))).willReturn(List.of(user));
             
             userService.moveUsersToDept(List.of("user1"), "DEPT1");
             verify(user).updateOrgnztId("DEPT1");
-            verify(userRepository).saveAll(anyList());
+            verify(userRepository).saveAll(List.of(user));
         }
     }
 
@@ -374,7 +392,7 @@ class UserServiceTest {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user = mock(User.class);
             given(user.getEsntlId()).willReturn("ESNTL1");
-            given(userRepository.findAllById(anyList())).willReturn(List.of(user));
+            given(userRepository.findByUserIdIn(List.of("user1"))).willReturn(List.of(user));
             UserAuthority auth = mock(UserAuthority.class);
             given(auth.getScrtyDcsnTrgtId()).willReturn("ESNTL1");
             given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of(auth));
@@ -383,6 +401,7 @@ class UserServiceTest {
             verify(user).changeRole(nuri.business.domain.user.entity.Role.ADMIN);
             verify(auth).update(eq("ROLE_ADMIN"), any());
             verify(userRepository).saveAll(anyList());
+            verify(userRepository, never()).findAllById(anyList());
         }
     }
 
@@ -393,7 +412,7 @@ class UserServiceTest {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             User user = mock(User.class);
             given(user.getEsntlId()).willReturn("ESNTL1");
-            given(userRepository.findAllById(anyList())).willReturn(List.of(user));
+            given(userRepository.findByUserIdIn(List.of("user1"))).willReturn(List.of(user));
             given(userAuthorityRepository.findAllById(anyList())).willReturn(List.of());
 
             userService.updateUsersRole(List.of("user1"), nuri.business.domain.user.entity.Role.ADMIN);

@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, AlertCircle, LucideIcon } from 'lucide-react';
+import { ArrowRight, AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { HubIcon, renderHubIcon } from './hub-icon';
 
 interface HubListItem {
   id?: string | number;
@@ -17,7 +18,7 @@ interface HubListItem {
 export interface HubListCardProps {
   title: string;
   items: HubListItem[];
-  icon: React.ReactNode | LucideIcon;
+  icon: HubIcon;
   moreHref?: string;
   color?: 'blue' | 'emerald' | 'amber' | 'rose';
   className?: string;
@@ -50,15 +51,6 @@ export function HubListCard({
   color = 'blue',
   className
 }: HubListCardProps) {
-  const renderIcon = () => {
-    if (React.isValidElement(icon)) return icon;
-    if (typeof icon === 'function' || (icon && (icon as any).render)) {
-      const Icon = icon as any;
-      return <Icon size={20} />;
-    }
-    return null;
-  };
-
   return (
     <motion.div
       variants={listVariants}
@@ -70,7 +62,7 @@ export function HubListCard({
       <div className="px-10 py-10 border-b border-primary/5 flex items-center justify-between bg-card">
         <h3 className="font-bold text-2xl flex items-center gap-4 tracking-tight">
           <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", colorMap[color])}>
-            {renderIcon()}
+            {renderHubIcon(icon, 20)}
           </div>
           {title}
         </h3>

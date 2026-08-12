@@ -80,8 +80,15 @@ public class SmsService {
             // 새 트랜잭션이 미커밋 수신자(READ_COMMITTED)를 못 봐 발송 루프가 no-op → SMS 영구 미발송되던 문제 방지.
             final String senderTel = dto.getSndngTelno();
             final String content = dto.getSndngCn();
-            nuri.foundation.core.util.TransactionUtils.runAfterCommit(
-                    () -> smsAsyncProcessor.processSending(smsId, senderTel, content));
+            nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
+                try {
+                    smsAsyncProcessor.processSending(smsId, senderTel, content);
+                } catch (RuntimeException rejected) {
+                    log.error("SMS dispatch queue rejected SMS ID: {}, errorType: {}",
+                            smsId, rejected.getClass().getSimpleName());
+                    smsAsyncProcessor.markBatchRejected(smsId);
+                }
+            });
         }
 
         log.info("SMS request registered successfully for ID: {}", smsId);

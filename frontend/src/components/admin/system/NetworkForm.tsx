@@ -145,7 +145,7 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                     <button 
                       type="button" 
                       onClick={onCancel} 
-                      className="px-6 h-10 rounded-lg border border-border text-muted-foreground bg-white hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center text-sm font-medium"
+                      className="px-6 h-10 rounded-lg border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center text-sm font-medium"
                     >
                       취소
                     </button>

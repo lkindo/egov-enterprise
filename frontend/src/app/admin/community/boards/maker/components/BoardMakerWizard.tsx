@@ -230,7 +230,7 @@ export function BoardMakerWizard() {
 
  if (isSuccess) {
  return (
- <Card className="max-w-3xl mx-auto border-none shadow-2xl rounded-lg overflow-hidden bg-white mt-10">
+ <Card className="max-w-3xl mx-auto border-none shadow-2xl rounded-lg overflow-hidden bg-card mt-10">
  <CardContent className="p-20 flex flex-col items-center text-center gap-10">
  <div className="w-32 h-32 rounded-lg bg-green-500 flex items-center justify-center text-white animate-bounce-short">
  <Check size={64} strokeWidth={4} />
@@ -278,7 +278,7 @@ export function BoardMakerWizard() {
  "w-14 h-11 rounded-lg flex items-center justify-center transition-all duration-500 border-4",
  isActive ? "bg-primary border-primary text-white shadow-xl shadow-primary/30 scale-110" :
  isCompleted ? "bg-green-500 border-green-500 text-white" :
- "bg-white border-border text-muted-foreground"
+ "bg-card border-border text-muted-foreground"
  )}
  >
  {isCompleted ? <Check className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
@@ -597,7 +597,7 @@ export function BoardMakerWizard() {
  size="lg"
  onClick={prevStep}
  disabled={currentStep === 1 || isSubmitting}
- className="h-11 px-10 rounded-lg font-bold text-muted-foreground hover:bg-white hover:text-foreground transition-all disabled:opacity-0 flex items-center gap-3 tracking-tighter"
+ className="h-11 px-10 rounded-lg font-bold text-muted-foreground hover:bg-card hover:text-foreground transition-all disabled:opacity-0 flex items-center gap-3 tracking-tighter"
  >
  <ChevronLeft className="w-6 h-6" /> 이전 단계
  </Button>

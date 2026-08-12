@@ -17,8 +17,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +44,12 @@ public class FileService extends BaseAbstractService {
             "pdf", "doc", "docx", "xls", "xlsx", "ppt", "pptx", "hwp", "txt", // 문서
             "zip", "7z", "rar" // 압축
     );
+    private static final int MAX_FILES_PER_REQUEST = 20;
+    /** FileDetail.orgnlFileNm의 @Column(length = 100)과 같은 상한. */
+    private static final int MAX_ORIGINAL_FILENAME_LENGTH = 100;
+    private static final long MAX_FILE_SIZE_BYTES = 10L * 1024 * 1024;
+    private static final long MAX_REQUEST_SIZE_BYTES = 50L * 1024 * 1024;
+    private static final int SIGNATURE_READ_SIZE = 16;
 
     public FileService(FileMasterRepository fileMasterRepository,
             FileDetailRepository fileDetailRepository,
@@ -57,38 +66,14 @@ public class FileService extends BaseAbstractService {
      */
     @Transactional
     public String uploadFiles(List<MultipartFile> files) throws IOException {
-        // 선(先) 검증 패스: 하나라도 거부되면 어떤 파일도 디스크에 쓰지 않는다(부분 실패 시 고아 파일 방지).
-        for (MultipartFile file : files) {
-            if (!file.isEmpty()) {
-                validateFileExtension(file.getOriginalFilename());
-            }
-        }
+        // 선(先) 검증 패스: 하나라도 거부되면 어떤 DB 행·파일도 쓰지 않는다.
+        validateUploadBatch(files, true);
 
         String atchFileId = nuri.foundation.core.util.IdGenerationUtil.generateId("FILE_", 12);
         FileMaster master = new FileMaster(atchFileId);
         master = fileMasterRepository.save(master);
 
-        int fileSn = 1;
-        for (MultipartFile file : files) {
-            if (file.isEmpty())
-                continue;
-
-            // 확장자 검증은 위 선-검증 패스에서 완료됨.
-            String targetPath = "general/" + atchFileId;
-            String savedFilename = storageService.store(file, targetPath);
-
-            FileDetail detail = FileDetail.builder()
-                    .fileMaster(master)
-                    .atchFileSeq(fileSn++)
-                    .fileStrgPath(targetPath)
-                    .strgFileNm(savedFilename)
-                    .orgnlFileNm(file.getOriginalFilename())
-                    .fileEstn(StringUtils.getFilenameExtension(file.getOriginalFilename()))
-                    .fileSz(file.getSize())
-                    .build();
-
-            fileDetailRepository.save(detail);
-        }
+        storeFileDetails(master, files, 1, "general/" + atchFileId);
 
         return atchFileId;
     }
@@ -181,34 +166,10 @@ public class FileService extends BaseAbstractService {
                 .max()
                 .orElse(0);
 
-        // 선(先) 검증 패스: 하나라도 거부되면 어떤 파일도 디스크에 쓰지 않는다(부분 실패 시 고아 파일 방지).
-        for (MultipartFile file : files) {
-            if (!file.isEmpty()) {
-                validateFileExtension(file.getOriginalFilename());
-            }
-        }
+        // 수정은 빈 목록을 no-op으로 허용하되, 파일이 있으면 업로드와 같은 방어를 적용한다.
+        validateUploadBatch(files, false);
 
-        int fileSn = maxSn + 1;
-        for (MultipartFile file : files) {
-            if (file.isEmpty())
-                continue;
-
-            // 확장자 검증은 위 선-검증 패스에서 완료됨.
-            String targetPath = "general/" + atchFileId;
-            String savedFilename = storageService.store(file, targetPath);
-
-            FileDetail detail = FileDetail.builder()
-                    .fileMaster(master)
-                    .atchFileSeq(fileSn++)
-                    .fileStrgPath(targetPath)
-                    .strgFileNm(savedFilename)
-                    .orgnlFileNm(file.getOriginalFilename())
-                    .fileEstn(StringUtils.getFilenameExtension(file.getOriginalFilename()))
-                    .fileSz(file.getSize())
-                    .build();
-
-            fileDetailRepository.save(required(detail, "detail 는 null 일 수 없습니다"));
-        }
+        storeFileDetails(master, files, maxSn + 1, "general/" + atchFileId);
     }
 
     /**
@@ -240,16 +201,173 @@ public class FileService extends BaseAbstractService {
     }
 
     /**
+     * DB 트랜잭션과 파일시스템은 하나의 원자 트랜잭션이 아니므로, 영속화 실패 시 이번 호출에서
+     * 저장한 파일을 역순으로 보상 삭제한다. 그렇지 않으면 DB 롤백 뒤에도 접근 불가능한 고아 파일이 남는다.
+     */
+    private void storeFileDetails(
+            FileMaster master,
+            List<MultipartFile> files,
+            int firstSequence,
+            String targetPath) {
+        List<String> storedFilenames = new ArrayList<>();
+        int fileSequence = firstSequence;
+
+        try {
+            for (MultipartFile file : files) {
+                if (file.isEmpty()) {
+                    continue;
+                }
+
+                String savedFilename = storageService.store(file, targetPath);
+                storedFilenames.add(savedFilename);
+
+                FileDetail detail = FileDetail.builder()
+                        .fileMaster(master)
+                        .atchFileSeq(fileSequence++)
+                        .fileStrgPath(targetPath)
+                        .strgFileNm(savedFilename)
+                        .orgnlFileNm(file.getOriginalFilename())
+                        .fileEstn(StringUtils.getFilenameExtension(file.getOriginalFilename()))
+                        .fileSz(file.getSize())
+                        .build();
+
+                fileDetailRepository.save(detail);
+            }
+        } catch (RuntimeException failure) {
+            compensateStoredFiles(targetPath, storedFilenames, failure);
+            throw failure;
+        }
+    }
+
+    private void compensateStoredFiles(String targetPath, List<String> storedFilenames, RuntimeException failure) {
+        for (int index = storedFilenames.size() - 1; index >= 0; index--) {
+            try {
+                storageService.delete(storedFilenames.get(index), targetPath);
+            } catch (RuntimeException cleanupFailure) {
+                failure.addSuppressed(cleanupFailure);
+                log.error("Upload compensation failed for a stored file (path={})", targetPath, cleanupFailure);
+            }
+        }
+    }
+
+    /**
      * [Security] 파일 확장자 화이트리스트 검징
      */
-    private void validateFileExtension(String filename) {
-        if (filename == null || !filename.contains(".")) {
+    private void validateUploadBatch(List<MultipartFile> files, boolean requireNonEmpty) throws IOException {
+        if (files == null || files.size() > MAX_FILES_PER_REQUEST) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        if (requireNonEmpty && files.isEmpty()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+
+        boolean containsFile = false;
+        long totalSize = 0;
+        for (MultipartFile file : files) {
+            if (file == null) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            if (file.isEmpty()) {
+                continue;
+            }
+            containsFile = true;
+            long size = file.getSize();
+            if (size > MAX_FILE_SIZE_BYTES || totalSize > MAX_REQUEST_SIZE_BYTES - size) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            totalSize += size;
+
+            String extension = validateFileExtension(file.getOriginalFilename());
+            validateFileSignature(file, extension);
+        }
+
+        if (requireNonEmpty && !containsFile) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+    }
+
+    private String validateFileExtension(String filename) {
+        if (filename == null || filename.isBlank()
+                || filename.length() > MAX_ORIGINAL_FILENAME_LENGTH
+                || !filename.contains(".")) {
             throw new BusinessException(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
         }
-        String extension = StringUtils.getFilenameExtension(filename).toLowerCase();
+        String extension = StringUtils.getFilenameExtension(filename);
+        if (extension == null) {
+            throw new BusinessException(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
+        }
+        extension = extension.toLowerCase(Locale.ROOT);
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
             log.warn("Blocked file upload attempt with forbidden extension: {}", extension);
             throw new BusinessException(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
         }
+        return extension;
+    }
+
+    /**
+     * 클라이언트 Content-Type은 위조 가능하므로 확장자와 파일 헤더를 직접 대조한다.
+     * 이는 안티바이러스 대체가 아니라, 실행파일·다른 형식을 허용 확장자로 바꾸는 가장 흔한 우회를
+     * 저장 전에 차단하는 1차 방어다.
+     */
+    private void validateFileSignature(MultipartFile file, String extension) throws IOException {
+        byte[] header;
+        try (InputStream input = file.getInputStream()) {
+            header = input.readNBytes(SIGNATURE_READ_SIZE);
+        }
+
+        boolean valid = switch (extension) {
+            case "jpg", "jpeg" -> startsWith(header, 0xFF, 0xD8, 0xFF);
+            case "png" -> startsWith(header, 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A);
+            case "gif" -> startsWithAscii(header, "GIF87a") || startsWithAscii(header, "GIF89a");
+            case "bmp" -> startsWithAscii(header, "BM");
+            case "pdf" -> startsWithAscii(header, "%PDF-");
+            case "doc", "xls", "ppt", "hwp" ->
+                    startsWith(header, 0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1);
+            case "docx", "xlsx", "pptx", "zip" -> isZipSignature(header);
+            case "7z" -> startsWith(header, 0x37, 0x7A, 0xBC, 0xAF, 0x27, 0x1C);
+            case "rar" -> startsWith(header, 0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00)
+                    || startsWith(header, 0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x01, 0x00);
+            // 텍스트는 BOM/인코딩 다양성을 허용하되 NUL 포함 바이너리와 대표 실행 포맷은 거부한다.
+            case "txt" -> !containsNullByte(header)
+                    && !startsWithAscii(header, "MZ")
+                    && !startsWith(header, 0x7F, 0x45, 0x4C, 0x46);
+            default -> false;
+        };
+
+        if (!valid) {
+            log.warn("Blocked file upload with mismatched content signature: extension={}", extension);
+            throw new BusinessException(CommonErrorCode.UNSUPPORTED_MEDIA_TYPE);
+        }
+    }
+
+    private boolean isZipSignature(byte[] header) {
+        return startsWith(header, 0x50, 0x4B, 0x03, 0x04)
+                || startsWith(header, 0x50, 0x4B, 0x05, 0x06)
+                || startsWith(header, 0x50, 0x4B, 0x07, 0x08);
+    }
+
+    private boolean startsWithAscii(byte[] bytes, String signature) {
+        return startsWith(bytes, signature.chars().toArray());
+    }
+
+    private boolean startsWith(byte[] bytes, int... signature) {
+        if (bytes.length < signature.length) {
+            return false;
+        }
+        for (int i = 0; i < signature.length; i++) {
+            if ((bytes[i] & 0xFF) != signature[i]) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean containsNullByte(byte[] bytes) {
+        for (byte value : bytes) {
+            if (value == 0) {
+                return true;
+            }
+        }
+        return false;
     }
 }

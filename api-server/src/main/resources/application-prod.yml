@@ -42,14 +42,7 @@ spring:
     driver-class-name: org.postgresql.Driver
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
-    # ⚠ 아래 nested `hikari:` 블록은 위와 같은 이유로 런타임에 적용되지 않는다(HikariConfig 에 setHikari 부재).
-    #   실효를 가지려면 flat 키여야 한다. 값 재정합은 pool 크기 동시 변경을 수반하므로 별도 항목으로 분리했고,
-    #   커넥션 획득 상한은 base 의 flat `spring.datasource.connection-timeout` 이 담당한다.
-    hikari:
-      maximum-pool-size: 20
-      minimum-idle: 5
-      idle-timeout: 300000
-      connection-timeout: 20000
+    # 풀 크기·획득 상한은 base의 flat spring.datasource.* 키를 상속하며 DB_POOL_*로 조정한다.
   jpa:
     open-in-view: false
     hibernate:

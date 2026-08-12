@@ -116,7 +116,7 @@ export default function ApprovalHubClient() {
               "group p-5 rounded-lg border-2 transition-all cursor-pointer flex items-center justify-between relative overflow-hidden",
               selectedItemId === item.approvalId || (!selectedItemId && list[0].approvalId === item.approvalId)
                 ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10"
-                : "bg-white border-border hover:border-primary/20 shadow-sm"
+                : "bg-card border-border hover:border-primary/20 shadow-sm"
             )}
           >
             {/* Quick Action Overlay (Only for Pending) */}
@@ -324,7 +324,7 @@ export default function ApprovalHubClient() {
                   exit={{ opacity: 0, x: -20 }}
                   className="h-full"
                 >
-                  <Card className="h-full rounded-[2.5rem] border-none bg-white shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] flex flex-col ring-1 ring-border overflow-hidden min-h-[750px]">
+                  <Card className="h-full rounded-[2.5rem] border-none bg-card shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] flex flex-col ring-1 ring-border overflow-hidden min-h-[750px]">
                     <CardHeader className="bg-muted/30 p-10 lg:p-14 border-b border-border space-y-8">
                       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-8">
                         <div className="space-y-4">
@@ -358,7 +358,7 @@ export default function ApprovalHubClient() {
                         )}
                       </div>
 
-                      <div className="bg-white rounded-lg p-10 border-2 border-border shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
+                      <div className="bg-card rounded-lg p-10 border-2 border-border shadow-[inset_0_2px_10px_rgba(0,0,0,0.02)]">
                         <div className="flex items-center justify-between mb-8">
                           <h4 className="text-xs font-bold text-muted-foreground tracking-tight flex items-center gap-2">
                             <Zap size={14} className="text-primary" /> 결재 체인 분석
@@ -409,7 +409,7 @@ export default function ApprovalHubClient() {
                 </motion.div>
               ) : (
                 <div className="h-full flex flex-col items-center justify-center p-20 text-center bg-white/40 rounded-[2.5rem] border-4 border-dashed border-border animate-in fade-in duration-1000">
-                  <div className="w-32 h-32 bg-white rounded-lg flex items-center justify-center mb-8 shadow-2xl rotate-12 group hover:rotate-0 transition-transform duration-500">
+                  <div className="w-32 h-32 bg-card rounded-lg flex items-center justify-center mb-8 shadow-2xl rotate-12 group hover:rotate-0 transition-transform duration-500">
                     <ShieldCheck size={56} className="text-muted-foreground group-hover:text-primary transition-colors" />
                   </div>
                   <h3 className="text-3xl font-bold text-muted-foreground tracking-tighter mb-4">_ 결재 문서 선택</h3>

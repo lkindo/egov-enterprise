@@ -44,7 +44,7 @@ sequenceDiagram
 
 보안 위상 강화를 위해 프론트엔드 에지 단(Edge Node Routing)과 백엔드 애플리케이션 코어 단(Spring Filter Chain)에서 각각 **역할 기반 접근 제어(RBAC)**를 이중으로 집행한다.
 
-### 2.1 Next.js Middleware 위상 설정 (`frontend/src/middleware.ts`)
+### 2.1 Next.js Proxy 위상 설정 (`frontend/src/proxy.ts`)
 프론트엔드 웹 라우팅 진입 시점에서 사용자의 미인증 접근을 원천 차단하고 어드민 메뉴로의 부적절한 권한 진입을 즉각 라우팅시킵니다.
 
 ```typescript
@@ -91,7 +91,7 @@ async function verifyAndExtractRole(token: string): Promise<string | null> {
     }
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
     const { pathname } = request.nextUrl;
 
     // 1. 백엔드 API 프록시: accessToken 쿠키 → Authorization: Bearer 헤더 주입 (백엔드가 서명을 authoritative 재검증)
@@ -125,7 +125,7 @@ export async function middleware(request: NextRequest) {
     // 4. /admin 접근 통제 — 기본값 = ADMIN/SYSTEM 전용(deny-by-default).
     //    2026-07-20(401c43f4c)에 과거의 5-접두사(system/user/security/stats/workflow) allow-by-default
     //    화이트리스트를 뒤집었다. 일반 사용자에게는 명시 허용 경로만 열고, 그 안의 관리 콘솔은 다시 도려낸다.
-    //    (실제 목록·헬퍼는 frontend/src/middleware.ts — 발췌라 상수 정의는 생략)
+    //    (실제 목록·헬퍼는 frontend/src/proxy.ts — 발췌라 상수 정의는 생략)
     const normalizedPath = pathname.toLowerCase(); // /Admin 대소문자 우회 차단
     if (matchesPrefix(normalizedPath, '/admin')) {
         const normalizedRole = userRole.toUpperCase();

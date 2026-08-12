@@ -61,7 +61,8 @@ public class MailAsyncProcessor {
      */
     @org.springframework.retry.annotation.Recover
     public void recoverSending(Exception e, String mssageId, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
-        log.error("All retry attempts failed for mail ID: {}, error: {}", mssageId, e.getMessage());
+        log.error("All retry attempts failed for mail ID: {}, errorType: {}",
+                mssageId, e.getClass().getSimpleName());
         self.markResult(mssageId, "F"); // Final Failure
         meterRegistry.counter("mail.dispatch.total", "result", "failure").increment();
     }

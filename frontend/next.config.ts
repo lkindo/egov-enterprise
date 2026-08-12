@@ -1,5 +1,6 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
 import createNextIntlPlugin from 'next-intl/plugin';
+import { fileURLToPath } from 'node:url';
 
 const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
@@ -32,7 +33,7 @@ const nextConfig = {
     ],
   },
   turbopack: {
-    root: '..',
+    root: fileURLToPath(new URL('..', import.meta.url)),
   },
   async headers() {
     const isProd = process.env.NODE_ENV === 'production';

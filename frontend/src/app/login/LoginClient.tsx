@@ -119,7 +119,7 @@ function LoginContent() {
                                 <motion.div
                                     initial={{ scale: 0.8 }}
                                     animate={{ scale: 1 }}
-                                    className="w-20 h-11 bg-white rounded-lg shadow-2xl flex items-center justify-center mb-6"
+                                    className="w-20 h-11 bg-card rounded-lg shadow-2xl flex items-center justify-center mb-6"
                                 >
                                     {authStep === 1 ? (
                                         <Loader2 className="w-10 h-10 text-primary animate-spin" />
@@ -175,7 +175,7 @@ function LoginContent() {
                                         placeholder="아이디를 입력하세요..."
                                         value={id}
                                         onChange={(e) => setId(e.target.value)}
-                                        className="h-11 pl-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-white transition-all shadow-inner font-mono text-sm"
+                                        className="h-11 pl-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-card transition-all shadow-inner font-mono text-sm"
                                         autoComplete="username"
                                     />
                                 </div>
@@ -197,7 +197,7 @@ function LoginContent() {
                                         placeholder="비밀번호를 입력하세요"
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
-                                        className="h-11 pl-12 pr-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-white transition-all shadow-inner font-mono"
+                                        className="h-11 pl-12 pr-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-card transition-all shadow-inner font-mono"
                                         autoComplete="current-password"
                                     />
                                     <Button

@@ -50,7 +50,9 @@ public class SmsAsyncProcessor {
             try {
                 self.sendToRecipient(recptn.getSmsId(), recptn.getRcptnTelno(), senderTel, content);
             } catch (Exception e) {
-                log.error("Final failure for SMS to: {}, error: {}", nuri.foundation.core.util.PiiMaskUtil.phone(recptn.getRcptnTelno()), e.getMessage());
+                log.error("Final failure for SMS to: {}, errorType: {}",
+                        nuri.foundation.core.util.PiiMaskUtil.phone(recptn.getRcptnTelno()),
+                        e.getClass().getSimpleName());
             }
         }
 
@@ -75,7 +77,7 @@ public class SmsAsyncProcessor {
             meterRegistry.counter("sms.dispatch.total", "result", "success").increment();
         } else {
             // 외부 연동 실패 시 예외를 던져 재시도를 유도할 수 있음
-            throw new RuntimeException("SMS Gateway returned failure");
+            throw new IllegalStateException("SMS gateway did not confirm delivery");
         }
     }
 
@@ -84,8 +86,10 @@ public class SmsAsyncProcessor {
      */
     @org.springframework.retry.annotation.Recover
     public void recoverSmsSending(Exception e, String smsId, String rcptnTelno, String senderTel, String content) {
-        log.error("All retries failed for SMS to: {}, error: {}", nuri.foundation.core.util.PiiMaskUtil.phone(rcptnTelno), e.getMessage());
-        self.updateResult(smsId, rcptnTelno, "F", "Final Failure: " + e.getMessage());
+        // 외부 예외 메시지는 전화번호·본문·API 응답을 포함할 수 있으므로 로그/DB에 복제하지 않는다.
+        log.error("All retries failed for SMS to: {}, errorType: {}",
+                nuri.foundation.core.util.PiiMaskUtil.phone(rcptnTelno), e.getClass().getSimpleName());
+        self.updateResult(smsId, rcptnTelno, "F", "Gateway delivery failed");
         meterRegistry.counter("sms.dispatch.total", "result", "failure").increment();
     }
 
@@ -96,5 +100,13 @@ public class SmsAsyncProcessor {
     public void updateResult(String smsId, String rcptnTelno, String rsltCd, String rsltMsg) {
         smsRecptnRepository.findById(new SmsRecptnId(smsId, rcptnTelno))
                 .ifPresent(r -> r.updateResult(rsltCd, rsltMsg));
+    }
+
+    /** 제출 큐 포화 시 커밋된 대기 건을 명시적 실패로 전환해 영구 P/무음 유실을 막는다. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void markBatchRejected(String smsId) {
+        smsRecptnRepository.findByIdSmsId(smsId).stream()
+                .filter(recipient -> "P".equals(recipient.getRsltCd()))
+                .forEach(recipient -> recipient.updateResult("F", "Dispatch queue saturated"));
     }
 }

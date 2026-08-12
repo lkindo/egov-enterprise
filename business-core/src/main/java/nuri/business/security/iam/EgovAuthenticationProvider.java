@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.AccountStatusException;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
@@ -61,18 +62,16 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
         String userId = authentication.getName();
         String password = (String) authentication.getCredentials();
         
-        log.info(">>> [EgovAuthenticationProvider] Attempting authentication for userId: {}", userId);
+        log.debug(">>> [EgovAuthenticationProvider] Authentication attempt received");
         
         try {
-            log.info(">>> [EgovAuthenticationProvider] DB check started for userId: {}", userId);
-            
-            log.info(">>> [EgovAuthenticationProvider] DB check started for userId: {}", userId);
+            log.debug(">>> [EgovAuthenticationProvider] DB identity lookup started");
             
             User userEntity = userRepository.findByUserId(userId)
                     .or(() -> userRepository.findById(userId))
                     .or(() -> userRepository.findByEsntlId(userId))
                     .orElseThrow(() -> {
-                        log.warn(">>> [EgovAuthenticationProvider] User NOT found by any method: {}", userId);
+                        log.warn(">>> [EgovAuthenticationProvider] Authentication rejected: unknown identity");
                         return new BadCredentialsException("Invalid User ID or Password");
                     });
             
@@ -116,11 +115,9 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             
             if (!isMatched) {
                 log.info(">>> [EgovAuthenticationProvider] Trying standard PasswordEncoder.");
-                try {
-                    isMatched = passwordEncoder.matches(password, encodedPassword);
-                } catch (Exception e) {
-                    log.warn(">>> [EgovAuthenticationProvider] Standard PasswordEncoder match failed: {}", e.getMessage());
-                }
+                // 저장 해시 파손/인코더 구성 오류는 비밀번호 불일치가 아니라 서비스 장애다.
+                // 여기서 삼키면 정상 계정의 잠금 카운터를 올리고 401로 위장하므로 바깥 장애 분류로 보낸다.
+                isMatched = passwordEncoder.matches(password, encodedPassword);
             }
             
             if (!isMatched) {
@@ -173,14 +170,14 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
                     .build();
             return new UsernamePasswordAuthenticationToken(userDetails, password, userDetails.getAuthorities());
         } catch (AuthenticationException e) {
-            log.error(">>> Authentication failed for user {}: {}", userId, e.getMessage());
+            // 실패한 로그인 ID와 예외 메시지를 운영 로그에 반복 복제하지 않는다.
+            log.warn(">>> Authentication rejected: {}", e.getClass().getSimpleName());
             throw e;
         } catch (Exception e) {
-            // [주의] 이 경로도 BadCredentialsException 으로 변환되므로 noRollbackFor 에 걸려 커밋된다.
-            // 이 메서드의 쓰기는 '자기 자신의 사용자 행'의 인증 상태 필드(비밀번호 마이그레이션·잠금
-            // 카운터)로 한정되므로 부분 커밋의 영향 범위가 좁고, 잠금 카운터는 다음 시도에서 정정된다.
-            log.error(">>> Unexpected error during authentication for user {}: ", userId, e);
-            throw new BadCredentialsException("Authentication service error");
+            // DB/인코더 장애를 BadCredentials(401)로 바꾸면 모니터링은 공격으로 오진하고 클라이언트는
+            // 잘못된 비밀번호로 오인한다. 또한 noRollbackFor에 걸려 부분 변경이 커밋될 수 있다.
+            log.error(">>> Authentication service failure: {}", e.getClass().getSimpleName(), e);
+            throw new AuthenticationServiceException("Authentication service unavailable", e);
         }
     }
 

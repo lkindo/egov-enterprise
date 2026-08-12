@@ -183,7 +183,7 @@ export default function NotePage() {
           </div>
       </div>
 
-      <div className="bg-white rounded-lg border-2 border-border shadow-2xl overflow-hidden p-6">
+      <div className="bg-card rounded-lg border-2 border-border shadow-2xl overflow-hidden p-6">
         <StandardDataTable
           columns={columns}
           data={notes}
@@ -221,7 +221,7 @@ export default function NotePage() {
               </div>
               <Button
                 onClick={() => setPickerOpen(true)}
-                className="h-11 px-8 bg-white border-2 border-border text-foreground rounded-lg font-bold text-xs tracking-widest hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-xl active:scale-95"
+                className="h-11 px-8 bg-card border-2 border-border text-foreground rounded-lg font-bold text-xs tracking-widest hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-xl active:scale-95"
               >
                 <Search size={16} className="mr-2" /> 타겟 검색
               </Button>
@@ -311,7 +311,7 @@ function TabButton({ active, onClick, icon, label, count }: any) {
       className={cn(
         "flex items-center gap-3 px-10 py-5 rounded-lg font-bold text-xs transition-all duration-500 uppercase tracking-widest flex-1 justify-center",
         active
-          ? "bg-white text-foreground shadow-2xl scale-[1.03] z-10"
+          ? "bg-card text-foreground shadow-2xl scale-[1.03] z-10"
           : "text-muted-foreground hover:text-muted-foreground"
       )}
     >

@@ -23,6 +23,7 @@
 
   --color-success: hsl(var(--success));
   --color-success-foreground: hsl(var(--success-foreground));
+  --color-success-emphasis: hsl(var(--success-emphasis));
 
   --color-warning: hsl(var(--warning));
   --color-warning-foreground: hsl(var(--warning-foreground));
@@ -111,6 +112,8 @@
     /* [I-1] bg-success 위 흰 전경이 4.5:1 을 넘도록 배경 명도를 36.3%→30% 로 낮췄다(3.0 → 4.62). */
     --success: 142.1 76.2% 30%;
     --success-foreground: 0 0% 100%;
+    /* bg-success와 분리한 전경 전용 성공색. 라이트 배경 대비를 위해 배경 토큰과 같은 짙은 값을 쓴다. */
+    --success-emphasis: 142.1 76.2% 30%;
 
     /* [I-1] 종전 amber-100 전경은 amber-500 배경 위에서 1.92:1 이었다 — 라이트/다크 공통 실패.
        같은 색상(hue)의 어두운 값으로 바꿔 6.67:1 확보. */
@@ -182,6 +185,9 @@
        WCAG AA(4.5:1)의 절반에도 못 미친다. 전경 전용 토큰은 반대로 밝게 가야 한다 → 6.04:1 / 5.41:1.
        (--destructive 자체를 밝히면 bg-destructive 19곳이 밝은 빨강 배경이 되어 파손된다.) */
     --destructive-emphasis: 0 91% 65%;
+
+    /* 다크 카드 위 텍스트·아이콘은 밝은 성공색으로 4.5:1 이상 대비를 확보한다. */
+    --success-emphasis: 142 70% 55%;
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;

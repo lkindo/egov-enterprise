@@ -13,9 +13,9 @@ import java.lang.reflect.Method;
  */
 public class ThreadLocalCopyTaskDecorator implements TaskDecorator {
 
-    private static final Method GET_METHOD;
-    private static final Method SET_METHOD;
-    private static final Method CLEAR_METHOD;
+    private static final Method DEFAULT_GET_METHOD;
+    private static final Method DEFAULT_SET_METHOD;
+    private static final Method DEFAULT_CLEAR_METHOD;
 
     static {
         Method get = null, set = null, clear = null;
@@ -28,22 +28,36 @@ public class ThreadLocalCopyTaskDecorator implements TaskDecorator {
         } catch (Throwable ignored) {
             // 테스트 하네스가 클래스패스에 없으면(프로덕션) 핸들은 null → 데코레이터는 no-op.
         }
-        GET_METHOD = get;
-        SET_METHOD = set;
-        CLEAR_METHOD = clear;
+        DEFAULT_GET_METHOD = get;
+        DEFAULT_SET_METHOD = set;
+        DEFAULT_CLEAR_METHOD = clear;
+    }
+
+    private final Method getMethod;
+    private final Method setMethod;
+    private final Method clearMethod;
+
+    public ThreadLocalCopyTaskDecorator() {
+        this(DEFAULT_GET_METHOD, DEFAULT_SET_METHOD, DEFAULT_CLEAR_METHOD);
+    }
+
+    ThreadLocalCopyTaskDecorator(Method getMethod, Method setMethod, Method clearMethod) {
+        this.getMethod = getMethod;
+        this.setMethod = setMethod;
+        this.clearMethod = clearMethod;
     }
 
     @Override
     public Runnable decorate(Runnable runnable) {
         // 하네스 부재(프로덕션): 오버헤드 없이 원본 그대로 반환.
-        if (GET_METHOD == null || SET_METHOD == null || CLEAR_METHOD == null) {
+        if (getMethod == null || setMethod == null || clearMethod == null) {
             return runnable;
         }
 
         Object parentCounter = null;
         try {
             // 부모 스레드의 쿼리 카운터 객체 읽어옴
-            parentCounter = GET_METHOD.invoke(null);
+            parentCounter = getMethod.invoke(null);
         } catch (Exception ignored) {
             // 무시 — 데코레이션 없이 진행
         }
@@ -53,7 +67,7 @@ public class ThreadLocalCopyTaskDecorator implements TaskDecorator {
             try {
                 // 비동기 스레드 실행 전 부모 쿼리 카운터 복사 주입
                 if (finalParentCounter != null) {
-                    SET_METHOD.invoke(null, finalParentCounter);
+                    setMethod.invoke(null, finalParentCounter);
                 }
                 runnable.run();
             } catch (Exception e) {
@@ -64,7 +78,7 @@ public class ThreadLocalCopyTaskDecorator implements TaskDecorator {
             } finally {
                 // 스레드 풀 재사용으로 인한 찌꺼기 방지를 위해 깨끗이 정리(Remove)
                 try {
-                    CLEAR_METHOD.invoke(null);
+                    clearMethod.invoke(null);
                 } catch (Exception ignored) {
                 }
             }

@@ -182,7 +182,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
               variant="outline"
               aria-label="포상 목록 새로고침"
               onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-rewards'] })}
-              className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm active:scale-95"
+              className="h-11 w-14 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm active:scale-95"
             >
               <RefreshCcw size={20} />
             </Button>
@@ -323,7 +323,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
                     <textarea 
                       {...field} 
                       placeholder="사내 인프라 아키텍처 개선 및 현대화 프로젝트 공헌" 
-                      className="w-full min-h-[120px] p-3 rounded-lg border bg-muted border-border focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
+                      className="w-full min-h-[120px] p-3 rounded-lg border bg-muted border-border focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
                     />
                   </FormControl>
                   <FormMessage />

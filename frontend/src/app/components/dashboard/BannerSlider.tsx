@@ -99,7 +99,7 @@ export function BannerSlider() {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`${currentBanner.bnrNm} 자세히 보기 새창 열림`}
-            className="flex items-center gap-2 w-fit px-4 py-2 bg-white text-black rounded-lg font-bold hover:bg-primary hover:text-white transition-all text-sm"
+            className="flex items-center gap-2 w-fit px-4 py-2 bg-card text-foreground rounded-lg font-bold hover:bg-primary hover:text-white transition-all text-sm"
           >
             자세히 보기 <ExternalLink size={14} />
           </a>
@@ -131,7 +131,7 @@ export function BannerSlider() {
                 aria-label={`${idx + 1}번 슬라이드로 이동`}
                 className={cn(
                   "w-2 h-2 rounded-full transition-all",
-                  idx === currentIndex ? "bg-white w-6" : "bg-white/40"
+                  idx === currentIndex ? "bg-surface-inverse-foreground w-6" : "bg-white/40"
                 )}
               />
             ))}

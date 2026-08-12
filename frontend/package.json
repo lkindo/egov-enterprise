@@ -9,10 +9,11 @@
   "scripts": {
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next dev -p 3001",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next build",
+    "bundle:check": "node scripts/check-bundle-budget.mjs",
     "build:instrumented": "node scripts/build-instrumented.js",
     "start": "next start",
     "start:3001": "next start -p 3001",
-    "lint": "eslint src e2e --config eslint.config.mjs --max-warnings 530",
+    "lint": "eslint src e2e --config eslint.config.mjs --max-warnings 310",
     "type-check": "tsc --noEmit",
     "type-check:e2e": "tsc -p tsconfig.e2e.json --noEmit",
     "codegen:ts": "openapi-typescript http://localhost:8080/v3/api-docs -o src/types/generated-api.d.ts",
@@ -119,11 +120,12 @@
     "yargs-parser": "^22.0.0"
   },
   "pnpm": {
-    "comment": "overrides 는 **전이 의존**의 취약 버전만 최소로 끌어올린다. 키를 'pkg@<취약범위>' 로 한정한 이유: 무범위 '>=X' 는 트리의 모든 인스턴스를 강제해 메이저를 넘겨 버린다 — 실제로 js-yaml 을 '>=4.3.0' 으로 두자 5.2.3 이 설치돼 @redocly/openapi-core(v4 API 인 types.merge 사용)가 깨졌고 codegen 계약 게이트가 red 가 됐다. 같은 이유로 brace-expansion(2→5)·undici(7→8)·fast-uri(3→4)도 메이저를 넘고 있었다. 각 항목은 Dependabot HIGH 알림의 vulnerable_version_range → first_patched_version 이며, 상위 패키지가 스스로 취약 범위를 벗어나면 제거할 것. 직접 의존(next·axios)은 여기가 아니라 dependencies 의 범위를 올렸다 — pnpm install 은 lockfile 이 기존 범위를 이미 만족하면 올리지 않아, 캐럿만 믿으면 취약 버전에 머문다(실측: next 16.2.6, axios 1.16.1 고착). vite 는 auto-installed peer 라 overrides 가 해석에 반영되지 않아 devDependencies 에 명시 선언했다. [2026-08-07 2차 상환] 상위 패키지가 움직여 기존 범위가 낡은 항목(fast-uri·postcss·js-yaml·tmp·hono)을 새 first_patched_version 으로 갱신하고, 신규 3건(@hono/node-server·ip-address·brace-expansion 5.x 라인)을 추가했다. brace-expansion 은 락에 1.1.18/2.1.2/5.0.6 세 인스턴스가 공존하므로 '>=3.0.0 <5.0.7' 로 5.x 만 좁혀 잡았다 — 무범위였다면 1.x 까지 5 로 끌어올려 깨졌을 것이다. **의도적 미포함**: uuid(락 8.3.2 뿐인데 패치는 11.1.1 — 3메이저 도약이고 취약 API 는 buf 를 넘기는 v3/v5/v6 뿐이라 dev 도구 경로에서 도달하지 않는다), elliptic(패치 버전 자체가 없음 — **2026-08-07 Storybook 제거로 유입 경로 자체가 사라져 해소됨**). [2026-08-07 추가 상환] @hono/node-server 를 2.0.5 -> 2.0.10 으로 재상향했다. 2.0.5 로 올린 직후(같은 날 02:18) '중단된 WebSocket 핸드셰이크를 통한 무인증 메모리 누수 DoS' 권고가 새로 게시되며 취약 범위가 '<=2.0.9' 로 넓어졌다 — override 는 상위 패키지가 아니라 **권고가 움직여도** 낡는다는 사례다.",
+    "comment": "overrides 는 **전이 의존**의 취약 버전만 최소로 끌어올린다. 키를 'pkg@<취약범위>' 로 한정한 이유: 무범위 '>=X' 는 트리의 모든 인스턴스를 강제해 메이저를 넘겨 버린다 — 실제로 js-yaml 을 '>=4.3.0' 으로 두자 5.2.3 이 설치돼 @redocly/openapi-core(v4 API 인 types.merge 사용)가 깨졌고 codegen 계약 게이트가 red 가 됐다. 같은 이유로 brace-expansion(2→5)·undici(7→8)·fast-uri(3→4)도 메이저를 넘고 있었다. 각 항목은 Dependabot HIGH 알림의 vulnerable_version_range → first_patched_version 이며, 상위 패키지가 스스로 취약 범위를 벗어나면 제거할 것. 직접 의존(next·axios)은 여기가 아니라 dependencies 의 범위를 올렸다 — pnpm install 은 lockfile 이 기존 범위를 이미 만족하면 올리지 않아, 캐럿만 믿으면 취약 버전에 머문다(실측: next 16.2.6, axios 1.16.1 고착). vite 는 auto-installed peer 라 overrides 가 해석에 반영되지 않아 devDependencies 에 명시 선언했다. [2026-08-07 2차 상환] 상위 패키지가 움직여 기존 범위가 낡은 항목(fast-uri·postcss·js-yaml·tmp·hono)을 새 first_patched_version 으로 갱신하고, 신규 3건(@hono/node-server·ip-address·brace-expansion 5.x 라인)을 추가했다. brace-expansion 은 락에 1.1.18/2.1.2/5.0.6 세 인스턴스가 공존하므로 2.x/5.x 라인을 따로 좁혀 잡는다 — 무범위였다면 1.x 까지 5 로 끌어올려 깨졌을 것이다. **의도적 미포함**: uuid(락 8.3.2 뿐인데 패치는 11.1.1 — 3메이저 도약이고 취약 API 는 buf 를 넘기는 v3/v5/v6 뿐이라 dev 도구 경로에서 도달하지 않는다), elliptic(패치 버전 자체가 없음 — **2026-08-07 Storybook 제거로 유입 경로 자체가 사라져 해소됨**). [2026-08-07 추가 상환] @hono/node-server 를 2.0.5 -> 2.0.10 으로 재상향했다. 2.0.5 로 올린 직후(같은 날 02:18) '중단된 WebSocket 핸드셰이크를 통한 무인증 메모리 누수 DoS' 권고가 새로 게시되며 취약 범위가 '<=2.0.9' 로 넓어졌다 — override 는 상위 패키지가 아니라 **권고가 움직여도** 낡는다는 사례다. [2026-08-12 3차 상환] 신규 brace-expansion 우회 DoS 권고에 따라 2.x/5.x 를 각각 2.1.4/5.0.9로, body-parser 2.x를 2.3.0으로 올렸다.",
     "overrides": {
       "websocket-driver": ">=0.7.5",
-      "brace-expansion@>=2.0.0 <2.1.2": "2.1.2",
-      "brace-expansion@>=3.0.0 <5.0.7": "5.0.7",
+      "brace-expansion@>=2.0.0 <2.1.4": "2.1.4",
+      "brace-expansion@>=3.0.0 <5.0.9": "5.0.9",
+      "body-parser@>=2.0.0 <2.3.0": "2.3.0",
       "undici@>=7.0.0 <7.28.0": "7.28.0",
       "fast-uri@>=3.0.0 <3.1.5": "3.1.5",
       "js-yaml@>=4.0.0 <4.3.1": "4.3.1",

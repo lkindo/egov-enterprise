@@ -127,6 +127,22 @@ class MailServiceTest {
     }
 
     @Test
+    @DisplayName("메일 비동기 큐 포화는 커밋된 대기 건을 명시적 실패로 전환")
+    void sendMail_executorRejected_marksFailure() {
+        SentMailDto dto = SentMailDto.builder()
+                .sj("Subject").emailCn("Content")
+                .dsptchPerson("sender@test.com").recptnPerson("receiver@test.com")
+                .build();
+        doThrow(new java.util.concurrent.RejectedExecutionException("full"))
+                .when(mailAsyncProcessor)
+                .processSending(anyString(), anyString(), anyString(), anyString(), anyString());
+
+        String messageId = mailService.sendMail("user1", dto);
+
+        verify(mailAsyncProcessor).markResult(messageId, "F");
+    }
+
+    @Test
     @DisplayName("메일 결과 업데이트")
     void updateMailResult() {
         SentMail mail = SentMail.builder().msgId("M1").dsptchRsltCd("P").build();

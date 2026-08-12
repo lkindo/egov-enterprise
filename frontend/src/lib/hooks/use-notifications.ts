@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { IMessage, StompSubscription } from '@stomp/stompjs';
+import type { IMessage } from '@stomp/stompjs';
 import client from '@/lib/api/client';
 import { useWebSocket } from '@/contexts/websocket-context';
 import { useAuth } from '@/contexts/AuthContext';
@@ -14,6 +14,40 @@ export interface Notification {
   notiDt: string;
   readYn: 'Y' | 'N';
   type?: 'SECURITY' | 'SYSTEM' | 'ACTIVITY' | 'INFO';
+}
+
+type NotificationKind = NonNullable<Notification['type']>;
+const NOTIFICATION_KINDS = new Set<NotificationKind>(['SECURITY', 'SYSTEM', 'ACTIVITY', 'INFO']);
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** REST/WS 외부 입력을 화면 상태에 넣기 전에 최소 계약으로 정규화한다. */
+function normalizeNotification(value: unknown): Notification | null {
+  if (!isRecord(value)) return null;
+  const notiSn = typeof value.notiSn === 'string' ? value.notiSn : '';
+  const notiTtlNm = typeof value.notiTtlNm === 'string' ? value.notiTtlNm : '';
+  const notiCn = typeof value.notiCn === 'string' ? value.notiCn : '';
+  if (!notiSn || !notiTtlNm) return null;
+
+  const inferredType: NotificationKind = notiTtlNm.includes('보안')
+    ? 'SECURITY'
+    : notiTtlNm.includes('시스템') ? 'SYSTEM' : 'ACTIVITY';
+  const suppliedType = typeof value.type === 'string' ? value.type as NotificationKind : null;
+  const type = suppliedType && NOTIFICATION_KINDS.has(suppliedType) ? suppliedType : inferredType;
+  const dateCandidate = typeof value.notiDt === 'string'
+    ? value.notiDt
+    : typeof value.crtDt === 'string' ? value.crtDt : null;
+
+  return {
+    notiSn,
+    notiTtlNm,
+    notiCn,
+    notiDt: dateCandidate || new Date().toISOString(),
+    readYn: value.readYn === 'Y' ? 'Y' : 'N',
+    type,
+  };
 }
 
 export function useNotifications() {
@@ -63,16 +97,29 @@ export function useNotifications() {
     setError(null);
 
     // client.ts 인터셉터가 이미 data.data를 떼서 주므로 바로 사용합니다.
-    const list = listResult.value as unknown as Notification[] | { list: Notification[] };
-    const actualList = (Array.isArray(list) ? list : (list?.list || [])).map((n: any) => ({
-      notiSn: n.notiSn,
-      notiTtlNm: n.notiTtlNm,
-      notiCn: n.notiCn,
-      notiDt: n.notiDt || n.crtDt || new Date().toISOString(),
-      readYn: n.readYn || 'N',
-      type: n.type || (n.notiTtlNm?.includes('보안') ? 'SECURITY' : n.notiTtlNm?.includes('시스템') ? 'SYSTEM' : 'ACTIVITY')
-    }));
-    setNotifications(actualList);
+    const listPayload = listResult.value as unknown;
+    const candidates = Array.isArray(listPayload)
+      ? listPayload
+      : isRecord(listPayload) && Array.isArray(listPayload.list) ? listPayload.list : null;
+    const parsed: Notification[] = [];
+    let invalidPayload = candidates === null;
+    for (const candidate of candidates ?? []) {
+      const item = normalizeNotification(candidate);
+      if (!item) {
+        invalidPayload = true;
+        break;
+      }
+      parsed.push(item);
+    }
+    if (invalidPayload) {
+      setError('알림 응답 형식이 올바르지 않습니다.');
+      if (!errorNotifiedRef.current) {
+        errorNotifiedRef.current = true;
+        toast('알림 응답 형식이 올바르지 않습니다.', 'error');
+      }
+      return;
+    }
+    setNotifications(parsed);
 
     if (countResult.status === 'fulfilled') {
       const countData = countResult.value as unknown as number | { count: number };
@@ -84,17 +131,18 @@ export function useNotifications() {
   }, [toast]);
 
   const handleNewNotification = useCallback((message: IMessage) => {
-    const rawNotif: any = JSON.parse(message.body);
-    
-    // Normalize notification object to match frontend expectations
-    const newNotif: Notification = {
-      notiSn: rawNotif.notiSn,
-      notiTtlNm: rawNotif.notiTtlNm,
-      notiCn: rawNotif.notiCn,
-      notiDt: rawNotif.notiDt || rawNotif.crtDt || new Date().toISOString(),
-      readYn: rawNotif.readYn || 'N',
-      type: rawNotif.type || (rawNotif.notiTtlNm?.includes('보안') ? 'SECURITY' : rawNotif.notiTtlNm?.includes('시스템') ? 'SYSTEM' : 'ACTIVITY')
-    };
+    let decoded: unknown;
+    try {
+      decoded = JSON.parse(message.body) as unknown;
+    } catch {
+      console.warn('Ignored malformed WebSocket notification payload');
+      return;
+    }
+    const newNotif = normalizeNotification(decoded);
+    if (!newNotif) {
+      console.warn('Ignored WebSocket notification that violates the notification contract');
+      return;
+    }
 
     setNotifications(prev => [newNotif, ...prev]);
     setUnreadCount(prev => prev + 1);
@@ -110,18 +158,12 @@ export function useNotifications() {
     }
 
     if (wsClient && isConnected) {
-      // 공용 알림 구독
-      const publicSub = wsClient.subscribe('/topic/public', handleNewNotification);
-
-      // 사용자별 알림 구독
-      let userSub: StompSubscription | null = null;
-      if (user?.id) {
-        userSub = wsClient.subscribe(`/user/${user.id}/queue/notifications`, handleNewNotification);
-      }
+      // Spring user destination은 Principal에 바인딩된다. 경로에 클라이언트 제공 user.id를 넣지 않아야
+      // 타 사용자 큐를 지정하는 우회가 생기지 않고, 서버의 convertAndSendToUser와 정확히 대응한다.
+      const userSub = wsClient.subscribe('/user/queue/notifications', handleNewNotification);
 
       return () => {
-        publicSub.unsubscribe();
-        if (userSub) userSub.unsubscribe();
+        userSub.unsubscribe();
       };
     } else {
       // 폴백: WebSocket을 사용할 수 없는 경우 60초마다 폴링

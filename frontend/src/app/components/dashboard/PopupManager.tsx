@@ -56,7 +56,7 @@ export function PopupManager() {
                 return (
                     <div
                         key={`popup-${popup.popupId}-${idx}`}
-                        className="fixed z-[9999] bg-white shadow-2xl rounded-lg overflow-hidden border animate-in zoom-in duration-300"
+                        className="fixed z-[9999] bg-card shadow-2xl rounded-lg overflow-hidden border animate-in zoom-in duration-300"
                         style={{
                             top: `${popup.popupVrtcPstn}px`,
                             left: `${popup.popupWdthPstn}px`,

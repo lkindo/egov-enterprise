@@ -58,11 +58,11 @@ describe('🔒 FE 인증 하드닝 회귀 방지 게이트 (§2.F)', () => {
     expect(offenders, `토큰을 클라이언트 스토리지에 저장(XSS 탈취 표면) — HttpOnly 쿠키를 쓰세요:\n${offenders.join('\n')}`).toEqual([]);
   });
 
-  it('미들웨어: role 을 서명검증된 JWT 에서 추출한다(위조 userRole 쿠키 불신)', () => {
-    const mw = read('src/middleware.ts');
-    expect(mw, 'JWT 서명검증(crypto.subtle.verify) 회귀 — 위조 토큰 통과 위험').toMatch(/crypto\.subtle\.verify/);
+  it('Proxy: role 을 서명검증된 JWT 에서 추출한다(위조 userRole 쿠키 불신)', () => {
+    const proxy = read('src/proxy.ts');
+    expect(proxy, 'JWT 서명검증(crypto.subtle.verify) 회귀 — 위조 토큰 통과 위험').toMatch(/crypto\.subtle\.verify/);
     // role 을 request.cookies.get('userRole') 처럼 직접 신뢰하면 위조 가능 — 금지
-    expect(mw, "위조 가능한 userRole 쿠키 직접 신뢰 회귀").not.toMatch(/cookies\.get\(\s*['"]userRole['"]/);
+    expect(proxy, "위조 가능한 userRole 쿠키 직접 신뢰 회귀").not.toMatch(/cookies\.get\(\s*['"]userRole['"]/);
   });
 
   it('prod CSP: script-src 에 unsafe-eval 이 없다', () => {

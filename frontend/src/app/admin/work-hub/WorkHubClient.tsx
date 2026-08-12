@@ -38,6 +38,12 @@ import type { DeptSchedule } from '@/types/business/schedule';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 
+interface WorkHubClientProps {
+  defaultTab?: string;
+  /** 서버가 Asia/Seoul 기준으로 계산한 yyyyMMdd. SSR과 첫 클라이언트 렌더가 같은 날짜를 쓴다. */
+  initialYmd: string;
+}
+
 /** 일정 날짜 컬럼(schdlBgngYmd/schdlEndYmd)은 varchar(8) 'yyyyMMdd' 다. 시각 정보는 스키마에 없다. */
 function parseYmd(ymd?: string | null): Date | null {
   if (!ymd || ymd.length < 8) return null;
@@ -45,10 +51,13 @@ function parseYmd(ymd?: string | null): Date | null {
   const m = Number(ymd.slice(4, 6));
   const d = Number(ymd.slice(6, 8));
   if (!y || !m || !d) return null;
-  return new Date(y, m - 1, d);
+  const parsed = new Date(y, m - 1, d);
+  return parsed.getFullYear() === y && parsed.getMonth() === m - 1 && parsed.getDate() === d
+    ? parsed
+    : null;
 }
 
-export default function WorkHubClient({ jobs: initialJobs = [], reports: initialReports = [], defaultTab = 'job' }: any) {
+export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHubClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
@@ -72,7 +81,11 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
   const [jobScope, setJobScope] = useState<'mine' | 'dept'>('mine');
   const PAGE_UNIT = 10;
   // 캘린더 탭의 표시 기준 월. 월 이동 시 해당 월의 일정을 다시 조회한다.
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const initialDate = parseYmd(initialYmd);
+  if (!initialDate) {
+    throw new Error(`WorkHubClient initialYmd는 yyyyMMdd 실재 날짜여야 합니다: ${initialYmd}`);
+  }
+  const [currentDate, setCurrentDate] = useState(initialDate);
   // 캘린더에서 선택한 날짜(미선택 시 그 달 전체 일정을 목록에 보여준다).
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   // 일정 등록/수정 다이얼로그. 종전에는 '새 업무 생성' 버튼에 onClick 이 없어 등록 경로가 아예 없었고,
@@ -642,7 +655,7 @@ export default function WorkHubClient({ jobs: initialJobs = [], reports: initial
           key={editingReport?.rptId ?? 'new'}
           mode={editingReport ? 'edit' : 'create'}
           initialData={editingReport ?? undefined}
-          defaultYmd={format(new Date(), 'yyyyMMdd')}
+          defaultYmd={format(currentDate, 'yyyyMMdd')}
           onSubmit={handleSubmitReport}
           onCancel={() => { setReportModalOpen(false); setEditingReport(null); }}
         />

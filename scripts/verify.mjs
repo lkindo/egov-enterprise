@@ -2,15 +2,17 @@
 /**
  * 통합 검증 게이트 (§2.H 검증 인프라 파편화 해소).
  *
- * "실제로 안 깨진다"를 단일 명령으로 증명한다 — 백엔드 전 모듈 컴파일+테스트 + 프론트 tsc/next build/vitest.
+ * "실제로 안 깨진다"를 단일 명령으로 증명한다 — 백엔드 컴파일·테스트·커버리지 하한과
+ * 프론트 계약·lint·tsc·next build·vitest/coverage 하한을 같은 진입점에서 검증한다.
  * Cross-platform(Windows: .\gradlew.bat / *nix: ./gradlew), make 불요. e2e 는 서버 기동 필요라 별도.
  *
  *   node scripts/verify.mjs [all|be|fe]     (기본: all)
  *   npm run verify | verify:be | verify:fe
  *
- * CI(ci.yml) 빌링 복구 시 이 게이트를 상시 실행하면 로컬↔CI 검증 정합이 성립한다.
+ * CI 와 동일한 핵심 품질 축을 로컬에서도 실행해 로컬↔CI 검증 정합을 유지한다.
  */
 import { execSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { platform } from 'node:os';
 
 const isWin = platform() === 'win32';
@@ -22,20 +24,34 @@ if (!['all', 'be', 'fe', 'ops'].includes(scope)) {
   process.exit(2);
 }
 
-function run(cmd) {
+function run(cmd, extraEnv = {}) {
   console.log(`\n▶ ${cmd}`);
-  execSync(cmd, { stdio: 'inherit', env: { ...process.env, TZ: 'Asia/Seoul' } });
+  execSync(cmd, {
+    stdio: 'inherit',
+    env: { ...process.env, TZ: 'Asia/Seoul', ...extraEnv },
+  });
 }
 
 try {
   if (scope === 'all' || scope === 'be') {
-    // 백엔드: §0.6 컴파일 무결성 + 전 모듈 테스트(하네스 린터 게이트 포함)
-    run(`${gradlew} compileJava compileTestJava test -Dfile.encoding=UTF-8`);
+    // DB 진단 브리지는 자격증명·물리 스키마에 직접 닿으므로 쓰기 우회 회귀를 백엔드보다 먼저 차단한다.
+    run('node --test .agent/scripts/db-bridge.test.js');
+    // 백엔드: §0.6 컴파일 무결성 + 전 모듈 테스트 + JaCoCo 50% 하한(하네스 포함)
+    run(`${gradlew} compileJava compileTestJava test jacocoRootCoverageVerification -Dfile.encoding=UTF-8`);
   }
   if (scope === 'all' || scope === 'fe') {
-    // 프론트: 타입·RSC 빌드·vitest(색상/fe-auth 회귀 게이트 포함)
+    // 프론트: OpenAPI 계약·정적 품질·타입·RSC 빌드·번들 예산·vitest 전체소스 coverage 래칫
+    run('pnpm -C frontend run codegen:verify');
+    run('pnpm -C frontend run codegen:verify:zod');
+    run('pnpm -C frontend run lint');
     run('pnpm -C frontend exec tsc --noEmit');
-    run('pnpm -C frontend build');
+    // middleware.ts는 production에서 JWT_SECRET 부재를 fail-fast 한다. 호출자가 제공한 값은
+    // 그대로 존중하고, 로컬 검증용 값이 없을 때만 이 프로세스의 build 자식에 일회성 값을 전달한다.
+    const frontendBuildEnv = process.env.JWT_SECRET
+      ? {}
+      : { JWT_SECRET: randomBytes(44).toString('hex') };
+    run('pnpm -C frontend build', frontendBuildEnv);
+    run('pnpm -C frontend run bundle:check');
     run('pnpm -C frontend test');
   }
   if (scope === 'ops') {

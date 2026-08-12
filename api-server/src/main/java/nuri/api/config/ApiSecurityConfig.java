@@ -147,7 +147,9 @@ public class ApiSecurityConfig {
                 http
                                 .securityMatchers(matchers -> matchers.requestMatchers(
                                                 pathMatcher("/api/v1/**"),
-                                                pathMatcher("/actuator/**")))
+                                                pathMatcher("/actuator/**"),
+                                                pathMatcher("/ws"),
+                                                pathMatcher("/ws/**")))
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                                 .csrf(csrf -> csrf.disable())
                                 .httpBasic(httpBasic -> httpBasic.disable())
@@ -244,8 +246,7 @@ public class ApiSecurityConfig {
                                 .csrf(csrf -> csrf
                                                 .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                                                 .ignoringRequestMatchers(
-                                                pathMatcher("/uat/uia/actionLogin.do"),
-                                                pathMatcher("/ws/**")))
+                                                pathMatcher("/uat/uia/actionLogin.do")))
                                 .httpBasic(httpBasic -> httpBasic.disable())
                                 .formLogin(formLogin -> formLogin.disable())
                                 .logout(logout -> logout.disable())
@@ -259,7 +260,6 @@ public class ApiSecurityConfig {
                                                                 pathMatcher("/uat/uia/egovLoginUsr.do"),
                                                                 pathMatcher("/uat/uia/actionLogin.do"),
                                                                 pathMatcher("/uat/uia/actionLogout.do"),
-                                                                pathMatcher("/ws/**"),
                                                                 pathMatcher("/index.jsp"),
                                                                 pathMatcher("/"),
                                                                 pathMatcher("/uss/olp/qri/**"),

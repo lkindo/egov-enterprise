@@ -22,15 +22,12 @@ spring:
   # [2026-08-07] spring.ai 설정 제거 - spring-ai 의존성 자체를 걷어냈다.
   #   없는 오토컨피그를 exclude 하거나 없는 기능을 enabled:false 로 두면 팬텀 참조가 된다.
   datasource:
-    # OCI (Oracle Cloud Infrastructure) Production-like DB — 접속 정보는 환경변수로 외부화(기본값은 로컬 e2e 편의용)
-    url: ${DB_URL:jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0}
-    jdbc-url: ${DB_URL:jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0}
-    username: ${DB_USERNAME:egov}
-    password: ${DB_PASSWORD:egov123}
+    # E2E 대상 DB는 실행 환경이 명시적으로 주입한다. 저장소 기본값으로 외부 DB에 연결하지 않는다.
+    url: ${DB_URL}
+    jdbc-url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
-    hikari:
-      jdbc-url: ${DB_URL:jdbc:postgresql://129.154.54.178:5432/egovdb?currentSchema=public&prepareThreshold=0}
-      maximum-pool-size: 10
 
   jpa:
     open-in-view: false

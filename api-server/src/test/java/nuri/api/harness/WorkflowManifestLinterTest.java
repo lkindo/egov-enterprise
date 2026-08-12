@@ -15,6 +15,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -109,6 +110,225 @@ class WorkflowManifestLinterTest {
         }
 
         log.info("✅ 워크플로 매니페스트 {}건 전부 파싱·트리거·잡 선언 확인.", manifests.size());
+    }
+
+    @Test
+    @DisplayName("🚀 릴리스는 main의 필수 CI 증거와 실제 이미지 발행 없이는 생성되지 않는다")
+    void auditReleaseRequiresCompleteCiEvidenceAndPublishedImages() throws IOException {
+        Path releasePath = resolveRepoRoot().resolve(WORKFLOW_DIR).resolve("release.yml");
+        if (!Files.isRegularFile(releasePath)) {
+            fail("게이트 무결성 파손: release.yml 을 찾을 수 없습니다 — " + releasePath.toAbsolutePath());
+        }
+
+        Map<?, ?> root;
+        try (Reader reader = Files.newBufferedReader(releasePath, StandardCharsets.UTF_8)) {
+            Object parsed = new Yaml().load(reader);
+            if (!(parsed instanceof Map<?, ?> parsedRoot)) {
+                fail("release.yml 최상위가 매핑이 아닙니다.");
+                return;
+            }
+            root = parsedRoot;
+        }
+
+        List<String> violations = new ArrayList<>();
+        Map<?, ?> permissions = asMap(root.get("permissions"));
+        if (!"read".equals(Objects.toString(permissions.get("checks"), ""))) {
+            violations.add("permissions.checks=read 누락 — 태그 SHA의 CI check-run을 검증할 수 없음");
+        }
+
+        Map<?, ?> jobs = asMap(root.get("jobs"));
+        Map<?, ?> verify = asMap(jobs.get("verify"));
+        List<?> verifySteps = asList(verify.get("steps"));
+        Map<?, ?> ciEvidenceStep = findStep(verifySteps,
+                "Require tagged commit on main with complete CI evidence");
+        String ciEvidenceRun = Objects.toString(ciEvidenceStep.get("run"), "");
+        for (String requiredFragment : List.of(
+                "git merge-base --is-ancestor",
+                "backend-build",
+                "frontend-build",
+                "secret-scan",
+                "e2e-tests (1/3)",
+                "e2e-tests (2/3)",
+                "e2e-tests (3/3)",
+                "mutation-test",
+                "filter=latest")) {
+            if (!ciEvidenceRun.contains(requiredFragment)) {
+                violations.add("태그 SHA 검증 단계 누락: " + requiredFragment);
+            }
+        }
+
+        Map<?, ?> buildAndPush = asMap(jobs.get("build-and-push"));
+        if (!"verify".equals(Objects.toString(buildAndPush.get("needs"), ""))) {
+            violations.add("build-and-push.needs=verify 누락 — 검증 실패 후에도 발행 가능");
+        }
+
+        List<?> releaseSteps = asList(buildAndPush.get("steps"));
+        Map<?, ?> credentialStep = findStep(releaseSteps, "Require Docker Hub release credentials");
+        String credentialRun = Objects.toString(credentialStep.get("run"), "");
+        if (!credentialRun.contains("DOCKERHUB_USERNAME") || !credentialRun.contains("DOCKERHUB_TOKEN")) {
+            violations.add("Docker Hub 자격증명 fail-fast 단계가 username/token을 모두 검증하지 않음");
+        }
+
+        int backendPush = assertUnconditionalPush(releaseSteps, "Build and push Backend", violations);
+        int frontendPush = assertUnconditionalPush(releaseSteps, "Build and push Frontend", violations);
+        int githubRelease = indexOfStep(releaseSteps, "Create GitHub Release");
+        if (githubRelease < 0) {
+            violations.add("GitHub Release 생성 단계 없음");
+        } else if (githubRelease <= backendPush || githubRelease <= frontendPush) {
+            violations.add("GitHub Release가 두 이미지 push보다 먼저 실행됨");
+        }
+
+        if (!violations.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n========================================================================\n");
+            sb.append("🚀 [RELEASE EVIDENCE GATE] 검증 또는 산출물 없는 릴리스 경로가 열렸습니다!\n");
+            sb.append("========================================================================\n");
+            violations.forEach(v -> sb.append("❌ ").append(v).append('\n'));
+            sb.append("\n💡 태그 대상은 main 필수 CI 7종이 모두 success 여야 하며, Docker 이미지를 실제로\n");
+            sb.append("   push하지 못하면 GitHub Release도 발행해서는 안 됩니다.\n");
+            fail(sb.toString());
+        }
+
+        log.info("✅ release.yml 이 main 필수 CI 7종과 Backend/Frontend 이미지 push를 릴리스 전제로 강제합니다.");
+    }
+
+    @Test
+    @DisplayName("📈 백엔드·프런트 커버리지 하한이 CI와 localGate 양쪽 실행 경로에 결속된다")
+    void auditCoverageThresholdsAreBlockingAndWired() throws IOException {
+        Path root = resolveRepoRoot();
+        String ci = Files.readString(root.resolve(WORKFLOW_DIR).resolve("ci.yml"), StandardCharsets.UTF_8);
+        String gradle = Files.readString(root.resolve("build.gradle"), StandardCharsets.UTF_8);
+        String vitest = Files.readString(root.resolve("frontend/vitest.config.mts"), StandardCharsets.UTF_8);
+
+        List<String> violations = new ArrayList<>();
+        if (!ci.contains("jacocoRootCoverageVerification")) {
+            violations.add("ci.yml backend-build가 JaCoCo 하한을 강제하지 않음");
+        }
+        if (!gradle.matches("(?s).*tasks\\.register\\('localGate'\\).*?jacocoRootCoverageVerification.*")) {
+            violations.add("localGate가 JaCoCo 하한 태스크에 결속되지 않음");
+        }
+        if (!gradle.matches("(?s).*jacocoRootCoverageVerification.*?minimum\\s*=\\s*0\\.50.*")) {
+            violations.add("백엔드 전체 라인 커버리지 50% 하한이 없거나 완화됨");
+        }
+        if (!gradle.matches("(?s).*tasks\\.register\\('jacocoRootCoverageVerification'.*?"
+                + "classDirectories\\.setFrom\\(jacocoAggregateClassDirectories\\).*?"
+                + "executionData\\.setFrom\\(jacocoAggregateExecutionData\\).*?violationRules.*")) {
+            violations.add("JaCoCo verification에 클래스/실행 데이터가 없어 태스크가 SKIPPED될 수 있음");
+        }
+        if (!gradle.contains("subproject.fileTree(dir: \"${subproject.projectDir}/build/jacoco\"")
+                || !gradle.contains("include: \"*.exec\", exclude: \"schemaValidationTest.exec\"")
+                || gradle.contains("rootProject.buildDir}/jacoco/test.exec")
+                || !gradle.contains("key != 'user.dir'")) {
+            violations.add("JaCoCo 실행 데이터가 프로젝트·Test 태스크별로 격리되지 않아 덮어쓰기 가능");
+        }
+        for (String threshold : List.of("statements: 18", "branches: 14", "functions: 13", "lines: 19")) {
+            if (!vitest.contains(threshold)) {
+                violations.add("프런트 전체소스 coverage 래칫 누락/완화: " + threshold);
+            }
+        }
+        if (!vitest.contains("src/app/**") || !vitest.contains("src/services/**")
+                || !vitest.contains("src/components/**")) {
+            violations.add("프런트 coverage include가 핵심 소스 축을 재지 않음");
+        }
+
+        if (!violations.isEmpty()) {
+            fail("\n📈 [COVERAGE WIRING GATE] 보고서만 만들고 통과시키는 경로가 열렸습니다:\n❌ "
+                    + String.join("\n❌ ", violations));
+        }
+        log.info("✅ Backend JaCoCo 50%와 Frontend 전체소스 래칫이 CI/localGate에 결속됨.");
+    }
+
+    @Test
+    @DisplayName("📦 프런트는 린트·운영 의존성·임시 시크릿·번들 예산·테스트를 강제한다")
+    void auditFrontendBuildIsFailFastAndBundleBudgetIsBlocking() throws IOException {
+        Path root = resolveRepoRoot();
+        String ci = Files.readString(root.resolve(WORKFLOW_DIR).resolve("ci.yml"), StandardCharsets.UTF_8);
+        String packageJson = Files.readString(root.resolve("frontend/package.json"), StandardCharsets.UTF_8);
+        String verify = Files.readString(root.resolve("scripts/verify.mjs"), StandardCharsets.UTF_8);
+        String budget = Files.readString(
+                root.resolve("frontend/scripts/check-bundle-budget.mjs"), StandardCharsets.UTF_8);
+
+        List<String> violations = new ArrayList<>();
+        int secretIndex = ci.indexOf("Generate ephemeral JWT secret (frontend build only)");
+        int buildIndex = ci.indexOf("pnpm run build", secretIndex);
+        int bundleIndex = ci.indexOf("pnpm run bundle:check", buildIndex);
+        int testIndex = ci.indexOf("pnpm run test", bundleIndex);
+        if (!packageJson.contains("--max-warnings 310")) {
+            violations.add("프런트 ESLint warning 래칫(310)이 없거나 완화됨");
+        }
+        if (!ci.contains("pnpm audit --prod --audit-level high")) {
+            violations.add("운영 의존성 high 취약점 차단 게이트 누락");
+        }
+        if (secretIndex < 0 || !ci.substring(secretIndex, Math.max(secretIndex, buildIndex))
+                .contains("openssl rand -hex 44")) {
+            violations.add("frontend-build의 운영 모드 빌드 전에 회차별 JWT_SECRET 생성이 없음");
+        }
+        if (!(secretIndex < buildIndex && buildIndex < bundleIndex && bundleIndex < testIndex)) {
+            violations.add("frontend-build가 build → bundle:check → test를 강제 순서로 실행하지 않음");
+        }
+        if (!packageJson.contains("\"bundle:check\": \"node scripts/check-bundle-budget.mjs\"")) {
+            violations.add("frontend package.json의 bundle:check 진입점 누락");
+        }
+        if (!verify.contains("run('pnpm -C frontend run bundle:check')")) {
+            violations.add("로컬 통합 verify가 번들 예산을 실행하지 않음");
+        }
+        if (!verify.contains("randomBytes(44)") || !verify.contains("frontendBuildEnv")
+                || !verify.contains("JWT_SECRET")) {
+            violations.add("로컬 통합 verify가 운영 빌드용 일회성 JWT_SECRET을 안전하게 생성하지 않음");
+        }
+        for (String threshold : List.of(
+                "total: 2_250_000", "single: 150_000", "total: 40_000", "single: 38_000")) {
+            if (!budget.contains(threshold)) {
+                violations.add("번들 gzip 고정 래칫 누락/완화: " + threshold);
+            }
+        }
+
+        if (!violations.isEmpty()) {
+            fail("\n📦 [FRONTEND BUILD GATE] 운영 빌드 또는 성능 예산 우회 경로가 열렸습니다:\n❌ "
+                    + String.join("\n❌ ", violations));
+        }
+        log.info("✅ frontend-build와 local verify가 임시 JWT_SECRET 및 고정 gzip 번들 예산을 강제합니다.");
+    }
+
+    private int assertUnconditionalPush(List<?> steps, String name, List<String> violations) {
+        int index = indexOfStep(steps, name);
+        if (index < 0) {
+            violations.add(name + " 단계 없음");
+            return -1;
+        }
+        Map<?, ?> step = asMap(steps.get(index));
+        Map<?, ?> with = asMap(step.get("with"));
+        Object push = with.get("push");
+        if (!Boolean.TRUE.equals(push) && !"true".equalsIgnoreCase(Objects.toString(push, ""))) {
+            violations.add(name + " 의 push가 true가 아님 — 빌드만 하고 릴리스가 성공할 수 있음");
+        }
+        if (step.containsKey("if")) {
+            violations.add(name + " 에 조건부 if가 존재 — 이미지 발행을 건너뛸 수 있음");
+        }
+        return index;
+    }
+
+    private Map<?, ?> findStep(List<?> steps, String name) {
+        int index = indexOfStep(steps, name);
+        return index < 0 ? Map.of() : asMap(steps.get(index));
+    }
+
+    private int indexOfStep(List<?> steps, String name) {
+        for (int i = 0; i < steps.size(); i++) {
+            Map<?, ?> step = asMap(steps.get(i));
+            if (name.equals(Objects.toString(step.get("name"), ""))) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    private Map<?, ?> asMap(Object value) {
+        return value instanceof Map<?, ?> map ? map : Map.of();
+    }
+
+    private List<?> asList(Object value) {
+        return value instanceof List<?> list ? list : List.of();
     }
 
     /** api-server 모듈에서 실행되므로 저장소 루트는 한 단계 위다(다른 하네스 린터와 동일 관례). */

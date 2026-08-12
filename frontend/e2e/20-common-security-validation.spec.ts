@@ -6,7 +6,7 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
     test('Session Integrity: Handling Token Clearance', async ({ page, context, consoleGuard }) => {
         // 이 테스트는 토큰을 의도적으로 비워 세션 만료를 시뮬레이션한다 → 그로 인한 401(알림 폴링/토큰 재발급 실패)은
         // '정상적인 만료 처리'의 일부이므로 콘솔 가드에서 무시한다(검증 대상은 로그인 리다이렉트).
-        consoleGuard.addIgnorePattern(/notifications|auth\/reissue/i);
+        consoleGuard.addIgnorePattern(/notifications|auth\/reissue|\/ws\/info(?:\?|$)/i);
         console.log('>>> Step 1: Navigating to a protected admin page');
         await page.goto('/admin/community/boards/master');
         await expect(page).toHaveURL(/.*master/);
@@ -15,8 +15,10 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
         await context.clearCookies();
         await page.evaluate(() => localStorage.clear());
         
-        console.log('>>> Step 3: Attempting a protected action (refresh)');
-        await page.reload();
+        console.log('>>> Step 3: Attempting a protected navigation');
+        // reload 중 미들웨어가 /login 으로 보내면 기존 문서 탐색이 ERR_ABORTED 로 끝날 수 있다.
+        // 검증하려는 계약은 새 보호 요청의 리다이렉트이므로 목적 경로를 명시해 탐색한다.
+        await page.goto('/admin/community/boards/master', { waitUntil: 'domcontentloaded' });
         
         // Should be redirected to login
         await expect(page).toHaveURL(/.*login/, { timeout: 15000 });

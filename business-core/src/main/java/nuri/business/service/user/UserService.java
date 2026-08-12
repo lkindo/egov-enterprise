@@ -536,7 +536,7 @@ public class UserService extends BaseAbstractService {
         public void updateUsersStatus(@NonNull List<String> userIds, @NonNull String status) {
                 // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertAdmin();
-                List<User> users = userRepository.findAllById(required(userIds));
+                List<User> users = findAllByLoginIdOrThrow(userIds);
                 users.forEach(user -> user.updateStatus(status));
                 userRepository.saveAll(users);
         }
@@ -549,10 +549,7 @@ public class UserService extends BaseAbstractService {
         public void moveUsersToDept(@NonNull List<String> userIds, @NonNull String ognzId) {
                 // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertAdmin();
-                // [정체성 축] 화면은 loginId(user_id) 목록을 넘긴다. findAllById 는 esntlId(PK) 기준이라
-                //   그대로 쓰면 매칭이 0건이 되어 아무것도 바뀌지 않고 에러도 나지 않는다(조용한 no-op).
-                //   실제로 이 때문에 전 사용자의 ognz_id 가 null 로 남아 있었다. loginId 축으로 조회한다.
-                List<User> users = userRepository.findByUserIdIn(required(userIds));
+                List<User> users = findAllByLoginIdOrThrow(userIds);
                 users.forEach(user -> user.updateOrgnztId(ognzId));
                 userRepository.saveAll(users);
         }
@@ -565,7 +562,7 @@ public class UserService extends BaseAbstractService {
         public void updateUsersRole(@NonNull List<String> userIds, @NonNull Role role) {
                 // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertAdmin();
-                List<User> users = userRepository.findAllById(required(userIds));
+                List<User> users = findAllByLoginIdOrThrow(userIds);
                 String authorCode = "ROLE_" + role.name();
 
                 // 사용자별 findById 하던 N+1 을 findAllById 배치 조회로 제거.
@@ -592,5 +589,31 @@ public class UserService extends BaseAbstractService {
                         userAuthorityRepository.saveAll(newAuthorities);
                 }
                 userRepository.saveAll(users);
+        }
+
+        /**
+         * 화면의 벌크 선택 키인 loginId({@code user_id})로 사용자를 전부 확정한다.
+         *
+         * <p>{@link User}의 JPA PK는 esntlId이므로 {@code findAllById(userIds)}를 사용하면 정상적인
+         * loginId 요청도 0건으로 조회되어 200 응답 뒤 아무 변경도 일어나지 않는다. 또한 일부 ID만
+         * 존재할 때 부분 성공을 허용하면 관리자가 요청 결과를 신뢰할 수 없으므로 전체 일치가 아니면
+         * 트랜잭션을 실패시킨다.</p>
+         */
+        private List<User> findAllByLoginIdOrThrow(List<String> userIds) {
+                List<String> requestedIds = required(userIds, "사용자 ID 목록은 null 일 수 없습니다").stream()
+                                .map(id -> required(id, "사용자 ID 는 null 일 수 없습니다"))
+                                .distinct()
+                                .toList();
+                if (requestedIds.isEmpty()) {
+                        throw new BusinessException(UserErrorCode.USER_INVALID_INPUT_VALUE,
+                                        "사용자 ID 목록은 비어 있을 수 없습니다.");
+                }
+
+                List<User> users = userRepository.findByUserIdIn(requestedIds);
+                if (users.size() != requestedIds.size()) {
+                        throw new BusinessException(UserErrorCode.USER_NOT_FOUND,
+                                        "요청한 사용자 중 존재하지 않는 대상이 있습니다.");
+                }
+                return users;
         }
 }
