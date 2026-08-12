@@ -230,3 +230,17 @@ test('PIT source step cannot disable strict mutation or detach its target matrix
   assert.match(validateStaticContract({ manifest, ciContent: detachedClasses }).join('\n'), /env 'PIT_TARGET_CLASSES'/i);
   assert.match(validateStaticContract({ manifest, ciContent: detachedTests }).join('\n'), /env 'PIT_TARGET_TESTS'/i);
 });
+
+test('PIT source and aggregate result steps cannot be conditionally skipped', () => {
+  const skippedSource = ciContent.replace(
+    /      - name: Incremental Mutation Test \(\$\{\{ matrix\.scope \}\}\)\r?\n/,
+    '      - name: Incremental Mutation Test (${{ matrix.scope }})\n        if: false\n',
+  );
+  const skippedAggregate = ciContent.replace(
+    /      - name: 뮤테이션 스코프 결과 집계\r?\n/,
+    '      - name: 뮤테이션 스코프 결과 집계\n        if: false\n',
+  );
+
+  assert.match(validateStaticContract({ manifest, ciContent: skippedSource }).join('\n'), /source step.*step-level if/i);
+  assert.match(validateStaticContract({ manifest, ciContent: skippedAggregate }).join('\n'), /result step.*step-level if/i);
+});

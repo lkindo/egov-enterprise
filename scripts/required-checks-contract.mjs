@@ -165,6 +165,9 @@ function validateAggregate(check, jobs) {
   if (!sourceStep) {
     errors.push(`aggregate source step '${aggregate.sourceStepName}' does not exist in '${aggregate.sourceJobId}'`);
   } else {
+    if (stepScalar(sourceStep, 'if') !== null) {
+      errors.push(`aggregate source step '${aggregate.sourceStepName}' cannot use a step-level if`);
+    }
     if (stepScalar(sourceStep, 'continue-on-error') !== null) {
       errors.push(`aggregate source step '${aggregate.sourceStepName}' cannot use continue-on-error`);
     }
@@ -183,6 +186,9 @@ function validateAggregate(check, jobs) {
   if (!aggregateStep) {
     errors.push(`aggregate result step '${aggregate.aggregateStepName}' does not exist in '${check.jobId}'`);
     return errors;
+  }
+  if (stepScalar(aggregateStep, 'if') !== null) {
+    errors.push(`aggregate result step '${aggregate.aggregateStepName}' cannot use a step-level if`);
   }
   if (stepScalar(aggregateStep, 'continue-on-error') !== null) {
     errors.push(`aggregate result step '${aggregate.aggregateStepName}' cannot use continue-on-error`);
