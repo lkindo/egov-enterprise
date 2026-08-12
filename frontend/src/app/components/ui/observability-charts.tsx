@@ -17,7 +17,8 @@ import { PieChart,
   Area, 
   XAxis, 
   CartesianGrid, 
-  ResponsiveContainer } from 'recharts';
+  ResponsiveContainer,
+  type ResponsiveContainerProps } from 'recharts';
 import { useTheme } from 'next-themes';
 import { cn } from '@/lib/utils';
 
@@ -41,7 +42,7 @@ export function useChartColors() {
 /**
  * Recharts의 'width(-1)' 경고를 방지하기 위해 컨테이너 크기가 0보다 클 때만 렌더링하는 안전한 래퍼
  */
-export const SafeResponsiveContainer = ({ children, ...props }: any) => {
+export const SafeResponsiveContainer = ({ children, ...props }: ResponsiveContainerProps) => {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -85,16 +86,12 @@ interface GaugeChartProps {
 }
 
 export function GaugeChart({ value, title, unit = '%', color = '#3B82F6', className }: GaugeChartProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
   const c = useChartColors();
 
   const data = [
     { value: value },
     { value: 100 - value }
   ];
-
-  if (!mounted) return <div className={cn("h-[240px] w-full bg-muted/50 rounded-lg animate-pulse", className)} />;
 
   return (
     <div className={cn("flex flex-col items-center justify-center relative p-6 bg-card border rounded-lg shadow-sm overflow-hidden group", className)}>
@@ -146,11 +143,6 @@ interface SparklineProps {
 }
 
 export function RealtimeSparkline({ data, color = '#3B82F6', label }: SparklineProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return <div className="h-11 w-full bg-muted border border-border rounded-lg animate-pulse" />;
-
   return (
     <div className="space-y-2 p-4 bg-muted/20 border border-white/5 rounded-lg">
       <div className="flex justify-between items-center">

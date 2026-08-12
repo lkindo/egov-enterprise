@@ -330,10 +330,10 @@ export default function CommonCodeClient({
  if (activeItem.type === 'group') {
  // Re-calculate projection to find parent
  const proj = getCodeProjection(newItems, active.id as string, over.id as string, 0, INDENTATION_WIDTH);
- if (proj) {
- const idx = newItems.findIndex(n => n.id === active.id);
- newItems[idx] = { ...newItems[idx], parentId: proj.parentId };
- }
+  if (proj?.parentId) {
+  const idx = newItems.findIndex(n => n.id === active.id);
+  newItems[idx] = { ...activeItem, parentId: proj.parentId };
+  }
  }
  
  return newItems;

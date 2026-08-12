@@ -6,23 +6,28 @@ export interface FlattenedDept extends Department {
   index: number;
 }
 
+export interface DepartmentTreeNode extends Department {
+  children: DepartmentTreeNode[];
+}
+
 export const flattenDeptTree = (
-  items: (Department & { children?: Department[] })[],
+  items: readonly DepartmentTreeNode[],
   parentId: string | null = null,
   depth = 0
 ): FlattenedDept[] => {
   return items.reduce<FlattenedDept[]>((acc, item, index) => {
+    const { children, ...department } = item;
     return [
       ...acc,
-      { ...item, parentId, depth, index } as FlattenedDept,
-      ...flattenDeptTree(item.children || [], item.ognzId || null, depth + 1),
+      { ...department, parentId, depth, index },
+      ...flattenDeptTree(children, item.ognzId || null, depth + 1),
     ];
   }, []);
 };
 
-export const listToDeptTree = (flatDepts: Department[]): any[] => {
-  const map: Record<string, any> = {};
-  const roots: any[] = [];
+export const listToDeptTree = (flatDepts: Department[]): DepartmentTreeNode[] => {
+  const map: Record<string, DepartmentTreeNode> = {};
+  const roots: DepartmentTreeNode[] = [];
 
   // 1. 모든 노드를 맵에 등록 (id가 없으면 스킵)
   flatDepts.forEach((d) => {

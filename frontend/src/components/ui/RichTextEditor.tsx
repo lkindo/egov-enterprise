@@ -25,12 +25,6 @@ interface RichTextEditorProps {
 }
 
 export default function RichTextEditor({ value, onChange, className }: RichTextEditorProps) {
-  const [mounted, setMounted] = React.useState(false);
-
-  React.useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -77,7 +71,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
     }
   }, [value, editor]);
 
-  if (!mounted || !editor) return null;
+  if (!editor) return null;
 
   return (
     <div className={cn("relative group border-2 border-border/50 rounded-lg bg-card dark:bg-muted/10 overflow-hidden transition-all focus-within:border-primary/20 focus-within:shadow-2xl focus-within:shadow-primary/5", className)}>

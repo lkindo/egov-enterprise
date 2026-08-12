@@ -27,10 +27,7 @@ export function DashboardVisitorChart({ data }: ChartProps) {
     visitors: item.statsCo || 0
   }));
 
-  const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => { setMounted(true); }, []);
-
-  if (!mounted || !chartData.length) return <div className="h-[300px] flex items-center justify-center text-muted-foreground">데이터가 없습니다.</div>;
+  if (!chartData.length) return <div className="h-[300px] flex items-center justify-center text-muted-foreground">데이터가 없습니다.</div>;
 
   return (
     <div className="h-[300px] w-full">

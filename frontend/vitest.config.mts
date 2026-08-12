@@ -53,15 +53,15 @@ export default defineConfig({
         // i18n 메시지 로더 — 선언적 설정에 가깝다.
         'src/i18n/**',
       ],
-      // [2026-08-12 실측 래칫] 전체 8개 소스 축 기준 359 tests 결과:
-      // statements 18.54 / branches 14.77 / functions 13.86 / lines 19.14.
+      // [2026-08-12 실측 래칫] 전체 8개 소스 축 기준 371 tests 결과:
+      // statements 20.09 / branches 15.82 / functions 14.96 / lines 20.63.
       // 기존에는 수치만 출력하고 어떤 하락도 통과했으므로 현재 실측 바로 아래를 최소선으로 고정한다.
       // 개선 시에는 테스트를 늘린 뒤 이 값도 함께 상향하며, include 축소로 수치를 올리지 않는다.
       thresholds: {
-        statements: 18,
-        branches: 14,
-        functions: 13,
-        lines: 19,
+        statements: 20,
+        branches: 15,
+        functions: 14,
+        lines: 20,
       },
     },
   },
