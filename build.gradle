@@ -15,7 +15,7 @@ allprojects {
     repositories {
         mavenCentral()
         google()
-        maven { url 'https://maven.egovframe.go.kr/maven/' }
+        maven { url = uri('https://maven.egovframe.go.kr/maven/') }
     }
 
     apply plugin: 'jacoco'
@@ -237,7 +237,7 @@ subprojects { subproject ->
 
     dependencies {
         implementation 'org.springframework.boot:spring-boot-starter'
-        implementation libs.springdoc.openapi
+        implementation rootProject.libs.springdoc.openapi
         compileOnly 'org.projectlombok:lombok'
         annotationProcessor 'org.projectlombok:lombok'
 
