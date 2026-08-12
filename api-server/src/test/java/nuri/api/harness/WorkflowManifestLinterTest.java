@@ -16,6 +16,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -221,9 +223,19 @@ class WorkflowManifestLinterTest {
                 || !gradle.contains("key != 'user.dir'")) {
             violations.add("JaCoCo 실행 데이터가 프로젝트·Test 태스크별로 격리되지 않아 덮어쓰기 가능");
         }
-        for (String threshold : List.of("statements: 18", "branches: 14", "functions: 13", "lines: 19")) {
-            if (!vitest.contains(threshold)) {
-                violations.add("프런트 전체소스 coverage 래칫 누락/완화: " + threshold);
+        Map<String, Integer> coverageFloors = Map.of(
+                "statements", 20,
+                "branches", 15,
+                "functions", 14,
+                "lines", 20);
+        for (Map.Entry<String, Integer> floor : coverageFloors.entrySet()) {
+            Integer actual = extractInteger(vitest,
+                    "(?m)^\\s*" + Pattern.quote(floor.getKey()) + "\\s*:\\s*(\\d+)\\s*,?\\s*$");
+            if (actual == null) {
+                violations.add("프런트 전체소스 coverage 래칫 누락: " + floor.getKey());
+            } else if (actual < floor.getValue()) {
+                violations.add("프런트 전체소스 coverage 래칫 완화: " + floor.getKey()
+                        + "=" + actual + " < " + floor.getValue());
             }
         }
         if (!vitest.contains("src/app/**") || !vitest.contains("src/services/**")
@@ -253,8 +265,12 @@ class WorkflowManifestLinterTest {
         int buildIndex = ci.indexOf("pnpm run build", secretIndex);
         int bundleIndex = ci.indexOf("pnpm run bundle:check", buildIndex);
         int testIndex = ci.indexOf("pnpm run test", bundleIndex);
-        if (!packageJson.contains("--max-warnings 310")) {
-            violations.add("프런트 ESLint warning 래칫(310)이 없거나 완화됨");
+        Integer maxWarnings = extractInteger(packageJson,
+                "\\\"lint\\\"\\s*:\\s*\\\"[^\\\"]*--max-warnings\\s+(\\d+)");
+        if (maxWarnings == null) {
+            violations.add("프런트 ESLint warning 래칫 누락");
+        } else if (maxWarnings > 295) {
+            violations.add("프런트 ESLint warning 래칫 완화: " + maxWarnings + " > 295");
         }
         if (!ci.contains("pnpm audit --prod --audit-level high")) {
             violations.add("운영 의존성 high 취약점 차단 게이트 누락");
@@ -329,6 +345,15 @@ class WorkflowManifestLinterTest {
 
     private List<?> asList(Object value) {
         return value instanceof List<?> list ? list : List.of();
+    }
+
+    /**
+     * 래칫은 과거 값과의 문자열 일치가 아니라 방향성을 검증한다.
+     * 커버리지 하한을 올리거나 warning 상한을 낮춘 강화 변경은 통과해야 한다.
+     */
+    private Integer extractInteger(String content, String regex) {
+        Matcher matcher = Pattern.compile(regex).matcher(content);
+        return matcher.find() ? Integer.valueOf(matcher.group(1)) : null;
     }
 
     /** api-server 모듈에서 실행되므로 저장소 루트는 한 단계 위다(다른 하네스 린터와 동일 관례). */
