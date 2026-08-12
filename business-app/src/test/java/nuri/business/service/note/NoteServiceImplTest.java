@@ -121,6 +121,22 @@ class NoteServiceImplTest {
     }
 
     @Test
+    @DisplayName("[보안 H1] 보낸 쪽지 상세 조회 - 소유자 아니면 ACCESS_DENIED (IDOR 차단)")
+    void getNoteDetail_sent_notOwner_accessDenied() {
+        String relationId = "T1";
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder()
+                .noteSndngId(relationId)
+                .sndrId("user1")
+                .build();
+        given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
+
+        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "sent", relationId, "attacker"))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    @Test
     @DisplayName("받은 쪽지 상세 조회 성공")
     void getNoteDetail_received_success() {
         // given
