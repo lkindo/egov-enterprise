@@ -1,9 +1,11 @@
 package nuri.foundation.core.config;
 
+import nuri.business.core.harness.QueryCountInspector;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -37,5 +39,22 @@ class ThreadLocalCopyTaskDecoratorTest {
     @DisplayName("decorate 호출은 null이 아닌 실행 가능한 Runnable을 반환한다")
     void decorate_returnsNonNull() {
         assertThat(decorator.decorate(() -> {})).isNotNull();
+    }
+
+    @Test
+    @DisplayName("부모 쿼리 카운터를 작업에 전달하고 실행 후 제거한다")
+    void decorate_copiesAndClearsParentCounter() {
+        QueryCountInspector.QueryCounter parent = new QueryCountInspector.QueryCounter();
+        QueryCountInspector.setCounterObject(parent);
+        AtomicReference<QueryCountInspector.QueryCounter> observed = new AtomicReference<>();
+
+        Runnable decorated = decorator.decorate(
+                () -> observed.set(QueryCountInspector.getCounterObject()));
+        QueryCountInspector.clear();
+
+        decorated.run();
+
+        assertThat(observed.get()).isSameAs(parent);
+        assertThat(QueryCountInspector.getCounterObject()).isNull();
     }
 }

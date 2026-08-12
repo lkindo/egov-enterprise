@@ -90,6 +90,12 @@
 - DB bridge: **9/9** 테스트 성공 — 다중문, DML/DDL, write CTE, lock, SELECT INTO, 부작용 함수, 불완전 문자열/주석 차단 포함
 - 주요 red/green 증거: 알림 무권한/타 사용자 접근, 릴리스 필수 검사 누락, JaCoCo 실행 데이터 누락, multipart 11MiB 변조, 위장 실행파일·경로 이탈·DB 저장 실패 보상 시나리오가 각각 실패 후 수정으로 green 전환
 
+### PR 통합 후속 검증
+
+- PR #394의 첫 CI에서 aggregate 게이트 활성화가 foundation의 기존 클래스별 50% 규칙도 노출해 `PageResponse`, `AuditEvent`, `FullBeanNameGenerator`, `ThreadLocalCopyTaskDecorator`, `CustomUserDetailsService`, `Constants` 내부 그룹의 테스트 공백으로 red가 됐다.
+- 임계값 완화나 제외 목록 추가 없이 해당 클래스의 행위 테스트를 보강했다.
+- `:foundation:test :foundation:jacocoTestCoverageVerification --rerun-tasks --no-build-cache --no-daemon --no-parallel`: 성공. 실패 대상의 측정 가능 클래스는 line 80~100%로 올라갔고 클래스별 50% 게이트를 통과했다.
+
 ## 남은 개선 우선순위
 
 | 순위 | 잔여 과제 | 기대 효과 | 선행 조건/이유 |
