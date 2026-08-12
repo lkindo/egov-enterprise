@@ -12,8 +12,9 @@ endif
 # 2. Common Gradle options to resolve OS dependency problems
 # - file.encoding=UTF-8: Preemptively solve character encoding breakage on Windows
 # - user.timezone=Asia/Seoul: Ensure consistent timezone testing matching KST
-# - warning-mode all: Detailed warnings on deprecations
+# - warning-mode fail: Gradle 10에서 제거될 API의 재유입을 즉시 차단
 TEST_OPTS = -Dfile.encoding=UTF-8 -Duser.timezone=Asia/Seoul
+GRADLE_CLI_ARGS = --warning-mode fail --console=plain
 
 bootstrap:
 	$(BOOTSTRAP_CMD)
@@ -33,19 +34,19 @@ help:
 
 # Build without testing
 build:
-	$(GRADLEW) build -x test
+	$(GRADLEW) assemble $(GRADLE_CLI_ARGS)
 
 # Standard local testing setup
 test:
-	$(GRADLEW) test $(TEST_OPTS)
+	$(GRADLEW) test $(TEST_OPTS) $(GRADLE_CLI_ARGS)
 
 # CI/CD test setup (will not stop on first failure)
 test-ci:
-	$(GRADLEW) test --continue $(TEST_OPTS)
+	$(GRADLEW) test --continue $(TEST_OPTS) $(GRADLE_CLI_ARGS)
 
 # Generate Code Coverage specific setup
 coverage:
-	$(GRADLEW) test jacocoRootReport --continue $(TEST_OPTS)
+	$(GRADLEW) test jacocoRootReport --continue $(TEST_OPTS) $(GRADLE_CLI_ARGS)
 
 # ── UNIFIED full-stack verification gate (§2.H 검증 파편화 해소) ──────────────
 # "실제로 안 깨진다"를 단일 명령으로 증명: 백엔드 전 모듈 컴파일+테스트 + 프론트 tsc/next build/vitest.
@@ -62,7 +63,7 @@ verify-fe:
 
 # Clean workspace
 clean:
-	$(GRADLEW) clean
+	$(GRADLEW) clean $(GRADLE_CLI_ARGS)
 
 # Docker commands
 docker-build:
