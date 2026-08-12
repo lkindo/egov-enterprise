@@ -40,10 +40,14 @@ const E2E_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'e2e')
  *
  *   ⚠ 하향은 이 래칫의 **설계된 동작**이다(아래 두 번째 테스트가 강제한다). 상향이라면 은폐지만,
  *     개선분을 확정하지 않으면 되돌아갈 여지를 남겨 래칫이 이름만 남는다.
- *   남은 63개는 여전히 의미가 제각각이라 일괄 치환하지 않는다(§0.7-H4). 인프라가 복구되면
+ *   남은 호출은 여전히 의미가 제각각이라 일괄 치환하지 않는다(§0.7-H4). 인프라가 복구되면
  *   실행 검증과 함께 하나씩 줄인다.
+ *
+ * [하향 2026-08-13: 63 → 62] SearchPage 의 검색 완료를 고정 1.5초가 아니라
+ *   URL 의 q 파라미터 반영으로 기다리도록 바꿨다. 빠른 입력과 PPR hydration 의 경합을
+ *   재현하는 테스트 강도는 유지하면서 불필요한 시간 의존 1건을 제거했다.
  */
-const BASELINE = 63;
+const BASELINE = 62;
 
 function collectFiles(dir: string): string[] {
     const out: string[] = [];
