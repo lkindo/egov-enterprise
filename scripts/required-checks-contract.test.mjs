@@ -245,6 +245,32 @@ test('PIT source and aggregate result steps cannot be conditionally skipped', ()
   assert.match(validateStaticContract({ manifest, ciContent: skippedAggregate }).join('\n'), /result step.*step-level if/i);
 });
 
+test('frontend required check starts independently from the backend required check', () => {
+  const frontendJob = ciContent.match(
+    /^  frontend-build:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+
+  assert.ok(frontendJob, 'frontend-build job must exist');
+  assert.doesNotMatch(
+    frontendJob,
+    /^    needs:/m,
+    'frontend-build consumes no backend artifact and must not be serialized behind backend-build',
+  );
+});
+
+test('Gradle verification commands fail on deprecation warnings', () => {
+  const guardedCommands = [
+    './gradlew :foundation:test --no-build-cache --warning-mode fail --console=plain',
+    './gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain',
+    './gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain',
+    './gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain',
+  ];
+
+  for (const command of guardedCommands) {
+    assert.ok(ciContent.includes(command), `missing strict Gradle warning guard: ${command}`);
+  }
+});
+
 test('mutation jobs provision the Gradle distribution with a bounded retry before PIT', () => {
   assert.match(ciContent, /name: Provision Gradle distribution with bounded retry/);
   assert.match(ciContent, /for attempt in 1 2 3/);
