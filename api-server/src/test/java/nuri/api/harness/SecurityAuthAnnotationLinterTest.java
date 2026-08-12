@@ -240,7 +240,8 @@ class SecurityAuthAnnotationLinterTest {
     private static final Set<String> READ_COVERED_BY_WRITE_RATIONALE = new java.util.TreeSet<>(java.util.Set.of(
             // [동결 2026-08-04] 최초 census 실행 결과 38건, 2026-08-12 알림 API 3건을
             //   수신자 스코프 쿼리 + 클래스 인증 가드로 해소했고, 비정형 결재 상세·목록 2건도
-            //   참여자 스코프 + 클래스 인증 가드로 해소해 현재 33건.
+            //   참여자 스코프 + 클래스 인증 가드로 해소했다. 같은 날 쪽지 API 3건도
+            //   발신/수신 본인 스코프 + 클래스 인증 가드로 해소해 현재 30건.
             //   ⚠ 원장(§4 "인가 린터 커버리지")의 49건은 당시에도 실측과 달랐다.
             //   전부가 취약점인 것은 아니다 — 일부는 이미 서비스 계층에 읽기 소유권 가드가 있다
             //   (예: NoteService.getNoteDetail 은 발신/수신 본인만 통과시킨다). 이 목록이 말하는 것은
@@ -264,9 +265,6 @@ class SecurityAuthAnnotationLinterTest {
             "MemoReportApiController#getMemoReport",
             "MemoReportApiController#getMyReports",
             "MemoReportApiController#getReceivedReports",
-            "NoteApiController#getNote",
-            "NoteApiController#getReceivedNotes",
-            "NoteApiController#getSentNotes",
             "PollApiController#getPoll",
             "PollApiController#getPollItems",
             "PollApiController#getPolls",
@@ -287,7 +285,6 @@ class SecurityAuthAnnotationLinterTest {
             "nuri.api.controller.business.memoreport.MemoReportApiController",    // 소유권 가드
             "nuri.api.controller.business.comment.CommentApiController",          // 소유권 가드(익명 댓글은 비밀번호)
             "nuri.api.controller.business.report.WorkReportApiController",        // 소유권 가드(assertOwnerOrAdmin)
-            "nuri.api.controller.business.note.NoteApiController",                // 소유권 가드(by-id 스코프)
             "nuri.api.controller.business.mail.MailApiController",                // 사용자 본인 메일
             "nuri.api.controller.business.board.BbsApiController",                // 작성=자기서비스, 수정/삭제=소유권 가드
             "nuri.api.controller.business.board.BoardApiController",              // 동상

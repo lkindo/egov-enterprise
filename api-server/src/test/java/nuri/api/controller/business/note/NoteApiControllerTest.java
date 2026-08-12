@@ -2,6 +2,7 @@ package nuri.api.controller.business.note;
 
 import nuri.business.service.note.NoteService;
 import nuri.business.service.note.dto.NoteDto;
+import nuri.foundation.security.annotation.Authenticated;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -13,6 +14,7 @@ import nuri.business.security.annotation.WithMockCustomUser;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
@@ -27,6 +29,12 @@ class NoteApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
     private NoteService noteService;
+
+    @Test
+    @DisplayName("보안: 쪽지 API 전체는 인증된 사용자만 접근한다")
+    void controllerRequiresAuthentication() {
+        assertThat(NoteApiController.class.isAnnotationPresent(Authenticated.class)).isTrue();
+    }
 
     @Test
     @WithMockCustomUser(username = "testuser", esntlId = "testuser")
