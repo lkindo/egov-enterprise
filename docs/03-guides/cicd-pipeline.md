@@ -38,8 +38,10 @@ push/PR / workflow_dispatch
         │   ├─ Next.js 빌드 및 Vitest 단위 테스트
         │   └─ Next.js build cache 업로드
         │
-        ├─ mutation-test (needs: backend-build)
-        │   └─ 증분 PIT (business-core / business-app, report-only: STRICT_MUTATION=false)
+        ├─ mutation-scope (needs: backend-build, 10개 스코프 병렬)
+        │   └─ 증분 PIT (STRICT_MUTATION=true, Mutation Score 75% HARD 게이트)
+        ├─ mutation-test (needs: mutation-scope)
+        │   └─ 매트릭스 전체 결과 집계 + required check 이름 보존
         │
         └─ e2e-tests (needs: backend-build + frontend-build, 3 shard 병렬)
             ├─ Docker Compose (DB + API)
@@ -51,13 +53,15 @@ push/PR / workflow_dispatch
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
 > - **스키마 무결성 (HARD, CI FAIL)**: 엔티티/마이그레이션 변경 감지 시 `Strict Schema Integrity Validation` 이 `--no-build-cache` 로 `:foundation:test` 를 강제 실행하며, Testcontainers 기반 `Real PostgreSQL 17 Schema Validation` 이 Flyway 전량 적용 + Hibernate `ddl-auto:validate` 로 물리 스키마 정합성을 검증.
 > - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 규칙 0건 유지(`pnpm run lint`) 및 `pnpm audit --audit-level critical` 차단.
-> - **증분 뮤테이션 (report-only)**: `mutation-test` 잡은 현재 `STRICT_MUTATION=false`(mutationThreshold=0) 로 **리포트만 산출하며 CI 를 실패시키지 않는다**. 대상 클래스가 75% 를 달성하면 `STRICT_MUTATION=true` 로 전환해 75% 하드 게이트화한다. (백엔드 헌법 제16조)
+> - **증분 뮤테이션 (HARD, CI FAIL)**: `mutation-scope`는 10개 PIT 스코프 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. `mutation-test`는 매트릭스 전체 결론을 집계하고 required check 이름을 보존한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
 > - **OWASP Dependency-Check 분리**: 매 푸시 파이프라인 병목 방지를 위해 별도의 주간 스케줄 워크플로우(`.github/workflows/dependency-check.yml`)로 분리 운용 중.
+
+> **브랜치 보호 SSOT**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치 `main`, exact required context 7종(`backend-build`, `frontend-build`, `secret-scan`, E2E 3샤드, `mutation-test`), 원본 job/matrix 매핑, 신뢰할 GitHub Actions integration ID를 정의한다. ruleset `12501346`은 이를 strict 모드·provider 고정·bypass actor 0명으로 강제하며, `scripts/verify-branch-protection.mjs`가 default branch·명세·`ci.yml`·GitHub 유효 규칙의 정합성을 검증한다. `e2e-merge-reports`와 개별 `mutation-scope` 체크는 required가 아니며 각각 E2E 샤드와 `mutation-test` 집계 체크가 강제력을 소유한다.
 
 ### 실행 트리거
 
 - **Push**: `main`, `master`, `feature/**` 브랜치
-- **Pull Request**: `main`, `master` 대상
+- **Pull Request**: base 브랜치 제한 없이 모든 PR
 - **Workflow Dispatch**: GitHub UI / CLI 에서 수동 실행 지원 (`workflow_dispatch`)
 - **Concurrency**: 동일 ref 연속 푸시 시 이전 실행 자동 중단 (`concurrency: group: ci-${{ github.ref }}, cancel-in-progress: true`)
 
@@ -343,7 +347,7 @@ CI가 실행되기 전, 저장소에 포함된 공유 pre-push HARD 게이트가
 git config core.hooksPath .githooks
 ```
 
-- **pre-push (❌ 차단)**: `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` + codegen 드리프트 게이트(`codegen:verify`/`codegen:verify:zod` — api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합) — 컴파일/타입/계약 무결성 게이트. (CI 과금차단 상태라 로컬 pre-push 가 계약 드리프트의 사실상 유일 관문)
+- **pre-push (❌ 차단)**: `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` + codegen 드리프트 게이트(`codegen:verify`/`codegen:verify:zod` — api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합) — 푸시 전 컴파일/타입/계약 무결성 게이트. CI는 별도로 required checks 7종을 실행한다.
 - **pre-commit (⚠ 경고, 비차단)**: DTO/Controller/api-docs.json/생성 타입 스테이징 시 codegen 드리프트 점검.
 - **우회**: `git push --no-verify` 또는 `SKIP_HOOKS=1 git push`.
 

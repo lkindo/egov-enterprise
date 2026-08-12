@@ -25,7 +25,7 @@ Whenever you finalize a test and it passes (Green), you MUST perform this loop:
 1. **Inject Mutation**: Open the *source code* (not the test code) and inject a logical flaw.
    - *Example: Flip a boolean (`isAdmin == true` -> `isAdmin == false`), remove a required field from a DTO, or alter a CSS selector.*
 2. **Execute Test**: Run the test suite targeting that code.
-3. **Evaluate** (Target: **Mutation Score 75%+** per Backend Constitution Article 16; CI currently report-only, hard-enforced when STRICT_MUTATION=true):
+3. **Evaluate** (Target: **Mutation Score 75%+** per Backend Constitution Article 16; CI injects `STRICT_MUTATION=true` and enforces the threshold, while local default runs are report-only):
    - 🚨 **If Test PASSES**: The test is shallow. You must revert the mutation, rewrite the test to be stricter (stronger assertions, exact DOM matching), and repeat.
    - ✅ **If Test FAILS**: The test is robust. The shield holds. The test suite must catch at least 75% of injected logic bugs.
 4. **Revert**: Restore the source code to its correct, functional state.

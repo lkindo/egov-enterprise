@@ -56,8 +56,10 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Verify read-only DB bridge policy
-        run: node --test .agent/scripts/db-bridge.test.js
+      - name: Verify repository operational contracts
+        run: |
+          node --test .agent/scripts/db-bridge.test.js
+          node --test scripts/required-checks-contract.test.mjs
 
       # [2026-08-03 범위 정정] 종전에는 `gitleaks detect --source .` 로 **히스토리 전량**을 스캔했다.
       #   그 결과 이 잡은 신설된 날부터 계속 red 였다 — 실측 leak 1351건이 전부 **이미 공개된 과거**에서
@@ -1070,7 +1072,8 @@ jobs:
   #   `needs.mutation-scope.result` 는 매트릭스 **전체**의 결론이다 —
   #   fail-fast:false 이므로 하나라도 실패하면 failure 가 된다.
   #   ⚠ `if: always()` 가 없으면 매트릭스 실패 시 이 잡이 **skipped** 가 되고,
-  #     skipped 는 required check 판정에서 '미완료' 로 남아 PR 이 영원히 대기한다.
+  #     job-level skipped 는 success 로 취급되어 required check 가 **fail-open** 된다.
+  #     즉 실패한 스코프가 있어도 병합 가능해지므로 계약 테스트가 always 조건을 고정한다.
   mutation-test:
     needs: mutation-scope
     if: always()

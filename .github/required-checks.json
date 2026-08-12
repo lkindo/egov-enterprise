@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "branch": "main",
+  "workflow": ".github/workflows/ci.yml",
+  "integrationId": 15368,
+  "requiredChecks": [
+    { "context": "backend-build", "jobId": "backend-build" },
+    { "context": "frontend-build", "jobId": "frontend-build" },
+    { "context": "secret-scan", "jobId": "secret-scan" },
+    {
+      "context": "e2e-tests (1/3)",
+      "jobId": "e2e-tests",
+      "matrix": { "key": "shard", "value": "1/3" }
+    },
+    {
+      "context": "e2e-tests (2/3)",
+      "jobId": "e2e-tests",
+      "matrix": { "key": "shard", "value": "2/3" }
+    },
+    {
+      "context": "e2e-tests (3/3)",
+      "jobId": "e2e-tests",
+      "matrix": { "key": "shard", "value": "3/3" }
+    },
+    {
+      "context": "mutation-test",
+      "jobId": "mutation-test",
+      "jobIf": "always()",
+      "aggregate": {
+        "sourceJobId": "mutation-scope",
+        "sourceStepName": "Incremental Mutation Test (${{ matrix.scope }})",
+        "sourceRun": "./gradlew ${{ matrix.gradle }}",
+        "sourceEnv": {
+          "PIT_TARGET_CLASSES": "${{ matrix.classes }}",
+          "PIT_TARGET_TESTS": "${{ matrix.tests }}",
+          "STRICT_MUTATION": "true"
+        },
+        "aggregateStepName": "뮤테이션 스코프 결과 집계",
+        "resultExpression": "needs.mutation-scope.result",
+        "successResult": "success"
+      }
+    }
+  ]
+}

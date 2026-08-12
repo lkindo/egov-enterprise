@@ -27,7 +27,7 @@ GEMINI.md가 "강제 가동"하는 스킬을 Claude에서는 아래 동등 행�
 | `gstack-review` | 인라인 설계 3관점 검토(CEO·EM·Paranoid Engineer, 1줄 요약) |
 | `api-contract-guardian` | DTO 변경 시 `codegen:verify` + `codegen:verify:zod` 실행, DB→DTO→Zod 일치 확인 |
 | `owasp-security-auditor` | `/security-review` |
-| `mutation-testing-auditor` | 증분 pitest (핵심 서비스 Mutation Score ≥ 75%, BE 헌법 제16조 — 현행 report-only, STRICT_MUTATION=true 시 하드강제) |
+| `mutation-testing-auditor` | 증분 pitest (CI `mutation-scope`는 `STRICT_MUTATION=true`로 Mutation Score ≥ 75% 하드 게이트, required `mutation-test`가 집계; 로컬 기본 실행은 report-only) |
 | `docs-as-code-sync` | 로직/아키텍처 변경 시 관련 docs·Mermaid 갱신 |
 | `deep-context-mapper` | 다중 모듈 변경 전 영향 범위 선(先)매핑 |
 | (검증 일반) | `/verify`, `/code-review` |
