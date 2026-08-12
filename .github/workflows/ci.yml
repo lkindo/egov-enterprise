@@ -145,6 +145,24 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
 
+      # [2026-08-13] setup-gradle 캐시와 Gradle 배포 서버가 동시에 일시 장애여도
+      #   본 빌드가 단발성 다운로드 실패로 끝나지 않게 wrapper 확보만 제한 재시도한다.
+      #   실제 빌드·테스트는 재시도하지 않아 코드 실패 신호를 흐리지 않는다.
+      - name: Provision Gradle distribution with bounded retry
+        run: |
+          for attempt in 1 2 3; do
+            if ./gradlew --version; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Gradle 배포본을 3회 시도 후에도 확보하지 못했습니다."
+              exit 1
+            fi
+            delay=$((attempt * 15))
+            echo "::warning::Gradle 배포본 확보 실패(${attempt}/3), ${delay}초 후 재시도합니다."
+            sleep "$delay"
+          done
+
       # [2026-07-26 정정] 종전 필터의 'foundation/src/main/java/**/entity/**' 는 실존하지 않는 경로였고
       # (엔티티는 business-core/business-app 소속), 실제 마이그레이션도 api-server 아래에 있다.
       # 즉 이름은 "Schema Integrity" 인데 스키마 변경을 감지하지 못하는 필터였다.

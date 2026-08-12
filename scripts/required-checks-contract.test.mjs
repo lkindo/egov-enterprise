@@ -271,6 +271,18 @@ test('Gradle verification commands fail on deprecation warnings', () => {
   }
 });
 
+test('backend required check provisions the Gradle distribution with a bounded retry', () => {
+  const backendJob = ciContent.match(
+    /^  backend-build:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+
+  assert.ok(backendJob, 'backend-build job must exist');
+  assert.match(backendJob, /name: Provision Gradle distribution with bounded retry/);
+  assert.match(backendJob, /for attempt in 1 2 3/);
+  assert.match(backendJob, /if \.\/gradlew --version; then/);
+  assert.match(backendJob, /if \[ "\$attempt" -eq 3 \]; then/);
+});
+
 test('mutation jobs provision the Gradle distribution with a bounded retry before PIT', () => {
   assert.match(ciContent, /name: Provision Gradle distribution with bounded retry/);
   assert.match(ciContent, /for attempt in 1 2 3/);
