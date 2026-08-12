@@ -55,7 +55,7 @@ try {
     run('pnpm -C frontend test');
   }
   if (scope === 'ops') {
-    // 운영 형상: GitHub 의 **실제** 브랜치 보호 설정과 ci.yml 을 대조한다.
+    // 운영 형상: required check 저장소 명세·ci.yml·GitHub **실제** 브랜치 보호 설정을 대조한다.
     //
     // [왜 all 에 넣지 않는가] 이 검사는 GitHub API 조회가 필요하고 ruleset 읽기는 저장소 admin
     //   권한을 요구한다. 네트워크·토큰이 없는 환경에서 `verify all` 이 통째로 실패하면

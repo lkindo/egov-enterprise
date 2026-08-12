@@ -461,26 +461,19 @@ PR 은 체크가 단 하나도 등록되지 않았다.** 실측(#319): `gh pr ch
 **조치**: `branches` 필터 제거. 실행 횟수는 늘지만, 검증되지 않은 변경이 main 으로 들어오는
 경로를 남기는 것보다 낫다.
 
-### 11.2 ⛔ E2E·mutation 이 required check 가 아니다 — **미해결**
+### 11.2 ✅ E2E·mutation required check 편입 — **해소(2026-08-08)**
 
-룰셋 `main protection` 의 required 는 **`backend-build`·`frontend-build`·`secret-scan` 3종뿐**이다.
-즉 **E2E 가 빨개도 룰셋은 병합을 막지 않는다.**
+main 룰셋의 required checks는 기존 3종에 E2E 3샤드와 `mutation-test`를 더한 7종으로 확대됐다.
+exact context와 원본 job/matrix 매핑은 `.github/required-checks.json`이 정의하며, 저장소 검증기가
+해당 명세와 GitHub 실제 설정을 양방향 대조한다.
 
-§1~§10 에서 6개 PR 이 전부 8/8 로 병합됐지만, 그것을 막아준 것은 저장소 규칙이 아니라
-**병합 스크립트가 전 체크의 결론을 직접 센 것**이었다. 스크립트를 안 쓰거나 `gh pr merge` 를
-직접 치면 그 보호는 없다.
+종전에는 §1~§10의 병합 스크립트만 전체 체크의 결론을 세었고 룰셋은 3종만 강제했으나,
+이제 E2E 또는 mutation 실패도 ruleset 단계에서 병합을 차단한다.
 
-이는 `orchestration-protocol.md` §4.1 의 *"UI 변경은 CI 초록이 유일한 증거"* 와 정합하지 않는다 —
-증거로 삼겠다고 선언한 것이 **강제되지 않는다.**
+`e2e-merge-reports`는 **의도적으로 제외**한다. required가 E2E 세 샤드를 직접 강제하므로
+집계 리포트 잡을 더 요구해도 테스트 성공에 대한 보증은 늘지 않고 후처리 결합도만 높아진다.
 
-**신뢰성 근거는 확보했다**: 최근 `ci.yml` 15회에서 `e2e-tests (1/3)`·`(2/3)`·`(3/3)`·
-`mutation-test` **전부 15/15 success**. 불안정하지 않으므로 required 로 올려도 정상 PR 을 막지 않는다.
-
-> **조치 보류 — 저장소 설정 변경 권한이 필요하다.** 에이전트의 룰셋 PUT 은 차단됐다.
-> `e2e-merge-reports` 는 **의도적으로 제외**한다 — `if: always() && needs.e2e-tests.result != 'skipped'`
-> 조건이 있어 스킵될 수 있고, 스킵된 required 체크는 영원히 pending 으로 남아 병합을 잠근다.
-
-적용할 required 목록(기존 3종 **유지 + 추가만**):
+현행 required 목록:
 
 ```
 backend-build · frontend-build · secret-scan          (기존)

@@ -1,5 +1,7 @@
 package nuri.api.harness;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -117,9 +119,22 @@ class WorkflowManifestLinterTest {
     @Test
     @DisplayName("🚀 릴리스는 main의 필수 CI 증거와 실제 이미지 발행 없이는 생성되지 않는다")
     void auditReleaseRequiresCompleteCiEvidenceAndPublishedImages() throws IOException {
-        Path releasePath = resolveRepoRoot().resolve(WORKFLOW_DIR).resolve("release.yml");
+        Path repoRoot = resolveRepoRoot();
+        Path releasePath = repoRoot.resolve(WORKFLOW_DIR).resolve("release.yml");
         if (!Files.isRegularFile(releasePath)) {
             fail("게이트 무결성 파손: release.yml 을 찾을 수 없습니다 — " + releasePath.toAbsolutePath());
+        }
+
+        Path requiredChecksPath = repoRoot.resolve(".github/required-checks.json");
+        if (!Files.isRegularFile(requiredChecksPath)) {
+            fail("게이트 무결성 파손: required check SSOT 를 찾을 수 없습니다 — "
+                    + requiredChecksPath.toAbsolutePath());
+        }
+        JsonNode requiredChecks = new ObjectMapper()
+                .readTree(Files.readString(requiredChecksPath, StandardCharsets.UTF_8))
+                .path("requiredChecks");
+        if (!requiredChecks.isArray() || requiredChecks.isEmpty()) {
+            fail("required check SSOT 의 requiredChecks 배열이 비어 있거나 유효하지 않습니다.");
         }
 
         Map<?, ?> root;
@@ -133,6 +148,11 @@ class WorkflowManifestLinterTest {
         }
 
         List<String> violations = new ArrayList<>();
+        String ciWorkflow = Files.readString(repoRoot.resolve(WORKFLOW_DIR).resolve("ci.yml"),
+                StandardCharsets.UTF_8);
+        if (!ciWorkflow.contains("node --test scripts/required-checks-contract.test.mjs")) {
+            violations.add("ci.yml 에 required check SSOT 회귀 테스트 실행 경로가 없음");
+        }
         Map<?, ?> permissions = asMap(root.get("permissions"));
         if (!"read".equals(Objects.toString(permissions.get("checks"), ""))) {
             violations.add("permissions.checks=read 누락 — 태그 SHA의 CI check-run을 검증할 수 없음");
@@ -146,13 +166,12 @@ class WorkflowManifestLinterTest {
         String ciEvidenceRun = Objects.toString(ciEvidenceStep.get("run"), "");
         for (String requiredFragment : List.of(
                 "git merge-base --is-ancestor",
-                "backend-build",
-                "frontend-build",
-                "secret-scan",
-                "e2e-tests (1/3)",
-                "e2e-tests (2/3)",
-                "e2e-tests (3/3)",
-                "mutation-test",
+                ".github/required-checks.json",
+                ".branch",
+                ".requiredChecks",
+                "map(.context)",
+                ".integrationId",
+                ".app.id",
                 "filter=latest")) {
             if (!ciEvidenceRun.contains(requiredFragment)) {
                 violations.add("태그 SHA 검증 단계 누락: " + requiredFragment);
@@ -186,12 +205,13 @@ class WorkflowManifestLinterTest {
             sb.append("🚀 [RELEASE EVIDENCE GATE] 검증 또는 산출물 없는 릴리스 경로가 열렸습니다!\n");
             sb.append("========================================================================\n");
             violations.forEach(v -> sb.append("❌ ").append(v).append('\n'));
-            sb.append("\n💡 태그 대상은 main 필수 CI 7종이 모두 success 여야 하며, Docker 이미지를 실제로\n");
+            sb.append("\n💡 태그 대상은 required-checks.json 의 필수 CI 전부가 success 여야 하며, Docker 이미지를 실제로\n");
             sb.append("   push하지 못하면 GitHub Release도 발행해서는 안 됩니다.\n");
             fail(sb.toString());
         }
 
-        log.info("✅ release.yml 이 main 필수 CI 7종과 Backend/Frontend 이미지 push를 릴리스 전제로 강제합니다.");
+        log.info("✅ release.yml 이 SSOT의 main 필수 CI {}종과 Backend/Frontend 이미지 push를 릴리스 전제로 강제합니다.",
+                requiredChecks.size());
     }
 
     @Test

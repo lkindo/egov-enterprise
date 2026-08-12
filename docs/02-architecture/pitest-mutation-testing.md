@@ -3,7 +3,7 @@
 본 문서는 **eGov Enterprise 백엔드 기술 헌법 제16조 (Mutation Score 75% 이상 품질 기준)**를 수리적·실증적으로 증명하기 위해 구축된 **PITest 돌연변이 테스트 자동화 시스템**의 연동 구조와 최적화 전략에 대해 설명합니다.
 
 > **✅ 현재 집행 상태**: 뮤테이션 게이트는 **`STRICT_MUTATION=true` (75% Mutation Score 게이트)로 활성화**되어 있다.
-> `ci.yml`(STRICT_MUTATION: true) 및 `build.gradle`(mutationThreshold=75)을 통해 백엔드 헌법 제16조의 75% 하드 게이트가 CI 파이프라인에서 자동 강제 적용된다.
+> `ci.yml`이 각 스코프에 `STRICT_MUTATION=true`를 명시적으로 주입하고, `build.gradle`이 이를 75로 변환해 하드 게이트를 적용한다. `CI` 환경변수만으로는 활성화되지 않는다.
 
 ---
 
@@ -63,8 +63,8 @@
           historyOutputLocation = file("${project.buildDir}/pitest/pitHistory.txt")
 
           // 백엔드 헌법 제16조 (Mutation Score 75% 이상) 임계값 75% 하드 게이트 적용
-          // STRICT_MUTATION 환경변수가 'true'이거나 CI 환경일 때 (STRICT_MUTATION!='false') 75% 게이트 강제.
-          mutationThreshold = (System.getenv('STRICT_MUTATION') == 'true' || (System.getenv('CI') == 'true' && System.getenv('STRICT_MUTATION') != 'false')) ? 75 : 0
+          // CI는 ci.yml에서 STRICT_MUTATION=true를 명시적으로 주입한다. 로컬 기본값은 리포트 전용이다.
+          mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 75 : 0
       }
   }
   ```
