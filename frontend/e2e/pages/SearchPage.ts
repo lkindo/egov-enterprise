@@ -11,8 +11,12 @@ export class SearchPage {
     async performSearch(query: string) {
         const input = this.page.getByPlaceholder(/검색어를 입력하고 지식을 발견하세요/);
         await input.fill(query);
-        await this.page.keyboard.press('Enter');
-        await this.page.waitForTimeout(1500);
+        await Promise.all([
+            this.page.waitForURL((url) => (
+                url.pathname === '/search' && url.searchParams.get('q') === query
+            ), { waitUntil: 'domcontentloaded' }),
+            input.press('Enter'),
+        ]);
     }
 
     async verifyResultsVisible() {
