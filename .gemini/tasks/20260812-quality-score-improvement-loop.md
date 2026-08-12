@@ -97,6 +97,9 @@
 - `:foundation:test :foundation:jacocoTestCoverageVerification --rerun-tasks --no-build-cache --no-daemon --no-parallel`: 성공. 실패 대상의 측정 가능 클래스는 line 80~100%로 올라갔고 클래스별 50% 게이트를 통과했다.
 - 두 번째 CI는 Git에서 의도적으로 제외된 `application-local.yml`을 clean clone에서도 필수로 요구한 시크릿 린터와, 테스트 지원 스텁의 `/harness/` 경로를 새 게이트로 오인한 메타 린터 때문에 red가 됐다.
 - 운영/E2E 필수 설정 검사는 그대로 유지하면서 local 전용 설정은 존재할 때만 엄격 검사하도록 clean-clone 계약 테스트를 추가했고, 테스트 스텁은 프로덕션 데코레이터의 패키지 전용 메서드 주입점으로 대체해 하네스 census 오인을 제거했다.
+- 세 번째 CI(run `31576615022`)에서 `secret-scan`, backend, frontend, mutation scope 10/10 및 집계는 모두 성공했다. E2E 3개 샤드는 공통으로 `cleanup-db.ts`의 `import.meta`를 CommonJS로 읽지 못해 종료 단계가 red였고, 샤드 1/2에는 팝업 폼 reset·세션 만료 WebSocket 401·의도된 헤더 아이콘 VRT 변경이 추가로 드러났다.
+- teardown은 Playwright의 실제 CommonJS 로더 계약에 맞춰 `require.main === module`로 복구했다. 팝업 폼 effect는 매 렌더마다 새로 생기는 wrapper 대신 안정적인 `reset` 함수에만 의존하게 했고, 세션 만료 테스트는 해당 테스트에서만 `/ws/info` 401을 예상 오류로 한정했다. VRT는 CI 실제 이미지의 유일한 차이가 정상 복구된 28×28 `LayoutDashboard` 아이콘임을 픽셀/이미지로 확인한 뒤 Linux 기준선을 갱신했다.
+- 로컬 재검증: Vitest 4/4, 앱·E2E TypeScript, 변경 파일 ESLint 오류 0, 임시 Playwright 스모크 1/1 및 실제 globalTeardown 로드 성공. 스모크 파일은 검증 직후 제거했다.
 
 ## 남은 개선 우선순위
 
@@ -117,4 +120,4 @@
 
 - 사용자 기존 WIP `frontend/src/types/generated-api.d.ts`, `frontend/src/types/generated-zod.ts`는 수정 대상으로 삼지 않았고 그대로 남겨 두었다.
 - 보호된 프론트 constitution의 `middleware.ts` 경로 표기 2곳은 명시 승인 없이는 바꿀 수 없어 보존했다. 이미 적용된 Flyway `V2_36`의 같은 역사적 주석도 checksum 불변 원칙 때문에 수정하지 않았다. 실행 코드와 일반 주석은 `frontend/src/proxy.ts`로 동기화했다.
-- 커밋·배포·운영 DB 변경은 수행하지 않았다.
+- 저장소 변경은 보호 브랜치 규칙에 따라 PR #394로 커밋·검증 중이며, 운영 배포·운영 DB 변경은 수행하지 않았다.

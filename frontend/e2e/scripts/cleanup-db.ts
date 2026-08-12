@@ -1,6 +1,5 @@
 import axios from 'axios';
 import type { AxiosResponse } from 'axios';
-import { pathToFileURL } from 'node:url';
 
 interface ApiEnvelope<T> {
   data: T;
@@ -355,6 +354,10 @@ export default async function globalTeardown() {
 }
 
 // Allow running directly
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+// Playwright 는 이 TypeScript 파일을 CommonJS 로 변환해 globalTeardown 으로 읽는다.
+// package.json 이 CommonJS 인 상태에서 import.meta 를 쓰면 Node 22/24 모두 파싱 단계에서
+// 죽는다. CommonJS 의 표준 직접 실행 판정은 Playwright import(false)와 tsx 직접 실행(true)을
+// 모두 구분하면서 파일 경로/운영체제에도 의존하지 않는다.
+if (require.main === module) {
   void cleanup();
 }

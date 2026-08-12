@@ -155,11 +155,14 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  }
  });
 
+ const resetBannerForm = bannerForm.reset;
+ const resetPopupForm = popupForm.reset;
+
  React.useEffect(() => {
  if (isModalOpen) {
  if (activeTab === 'banner') {
  const item = editingItem as Banner;
- bannerForm.reset({
+ resetBannerForm({
  bnrNm: item?.bnrNm || '',
  linkUrl: item?.linkUrl || '',
  sortOrdr: item?.sortOrdr || 0,
@@ -168,7 +171,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  });
  } else {
  const item = editingItem as Popup;
- popupForm.reset({
+ resetPopupForm({
  popupTtlNm: item?.popupTtlNm || '',
  ntceBgnde: item?.ntceBgnde || '',
  ntceEndde: item?.ntceEndde || '',
@@ -181,7 +184,9 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  });
  }
  }
- }, [isModalOpen, activeTab, editingItem, bannerForm, popupForm]);
+ // useAppForm 은 최신 formState 를 노출하기 위해 wrapper 를 새로 만든다. form 객체 자체를
+ // 의존성에 두면 입력 렌더마다 effect 가 재실행되어 방금 입력한 값을 빈 값으로 reset 한다.
+ }, [isModalOpen, activeTab, editingItem, resetBannerForm, resetPopupForm]);
 
   /** 비활성 탭은 지표(전체 건수)만 필요하므로 항상 1페이지를 조회한다. */
   const bannerPage = activeTab === 'banner' ? page : 1;
