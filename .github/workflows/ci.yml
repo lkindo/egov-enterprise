@@ -52,6 +52,13 @@ jobs:
           # 증분 스캔이 base..head 범위를 보려면 두 커밋이 모두 로컬에 있어야 한다.
           fetch-depth: 0
 
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020  # v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Verify read-only DB bridge policy
+        run: node --test .agent/scripts/db-bridge.test.js
+
       # [2026-08-03 범위 정정] 종전에는 `gitleaks detect --source .` 로 **히스토리 전량**을 스캔했다.
       #   그 결과 이 잡은 신설된 날부터 계속 red 였다 — 실측 leak 1351건이 전부 **이미 공개된 과거**에서
       #   나온다(playwright 인증상태 json 2092 · LOG_FILE_IS_UNDEFINED 로그 366 · 테스트 출력·DB 덤프 등,
@@ -163,7 +170,7 @@ jobs:
         id: build-and-test
         run: |
           set -o pipefail
-          ./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json 2>&1 | tee /tmp/build-and-test.log
+          ./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json 2>&1 | tee /tmp/build-and-test.log
 
       # [스키마 진짜 검증] 빈 PostgreSQL 17 에 Flyway 전량 적용 → Hibernate ddl-auto:validate.
       # 단위 테스트는 H2 + create-drop 이라 엔티티↔물리 스키마 불일치를 원리적으로 못 잡는다
@@ -303,8 +310,8 @@ jobs:
         working-directory: frontend
 
       # [정적 품질 게이트] ESLint error 규칙(jsx-a11y 3종 + React Compiler 계열)을 CI 에서 강제한다.
-      # 2026-07-26 기준 error 0 건 달성(warning 515 건은 점진 정리 백로그라 실패시키지 않는다).
-      # error 가 1 건이라도 유입되면 실패한다 — 임계를 낮추지 말고 위반을 고칠 것.
+      # 2026-08-12 기준 error 0·warning 307. max-warnings=310 래칫으로 새 부채도 차단한다.
+      # 임계를 높이지 말고 위반을 고친 뒤 package.json 수치를 함께 낮출 것.
       - name: Lint (ESLint)
         id: fe-lint
         run: pnpm run lint
@@ -316,6 +323,13 @@ jobs:
         run: pnpm audit --audit-level critical
         working-directory: frontend
 
+      # 운영 번들에 들어가는 의존성은 high 도 차단한다. 개발 도구 전체 high 는 아래 advisory로
+      # 유지해 신규 권고가 게시된 순간 코드와 무관하게 파이프라인 전체가 마비되는 것을 피한다.
+      - name: Security Audit (production high — blocking)
+        id: fe-prod-audit
+        run: pnpm audit --prod --audit-level high
+        working-directory: frontend
+
       # ⚠ [비게이트 / advisory] high 는 신규 권고 등재만으로도 코드 변경 없이 붉어져 CI 를 시간폭탄으로
       #   만들기에 차단하지 않는다. 로그로만 노출하며, 이 스텝의 통과는 "high 취약점 없음"을 뜻하지 않는다.
       - name: Security Audit (high — advisory, non-blocking)
@@ -323,11 +337,17 @@ jobs:
         working-directory: frontend
         continue-on-error: true
 
+      # 프로덕션 미들웨어는 공개 dev 시크릿으로의 조용한 폴백을 금지한다. 이 잡은 백엔드를
+      # 기동하지 않으므로 대칭값은 불필요하지만, 빌드 자체에는 회차별 임시값이 반드시 필요하다.
+      - name: Generate ephemeral JWT secret (frontend build only)
+        run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
+
       - name: Build and Test
         id: fe-build
         run: |
           set -o pipefail
           pnpm run build 2>&1 | tee /tmp/fe-build.log
+          pnpm run bundle:check
           pnpm run test 2>&1 | tee /tmp/fe-test.log
         working-directory: frontend
 
@@ -343,7 +363,7 @@ jobs:
       - name: Surface failure detail (annotations)
         if: failure()
         run: |
-          echo "::error title=실패 스텝 판정::install=${{ steps.fe-install.outcome }} / codegen=${{ steps.fe-codegen.outcome }} / lint=${{ steps.fe-lint.outcome }} / audit=${{ steps.fe-audit.outcome }} / build=${{ steps.fe-build.outcome }}"
+          echo "::error title=실패 스텝 판정::install=${{ steps.fe-install.outcome }} / codegen=${{ steps.fe-codegen.outcome }} / lint=${{ steps.fe-lint.outcome }} / audit=${{ steps.fe-audit.outcome }} / prod-audit=${{ steps.fe-prod-audit.outcome }} / build=${{ steps.fe-build.outcome }}"
           for f in /tmp/fe-build.log /tmp/fe-test.log; do
             [ -f "$f" ] || continue
             echo "::error title=$(basename $f) 마지막 출력::$(tail -c 2000 "$f" | paste -sd' ' -)"

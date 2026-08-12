@@ -22,7 +22,7 @@ const babelrcContent = JSON.stringify({
         ".next/**",
         "e2e/**",
         "src/app/layout.tsx",
-        "src/middleware.ts",
+        "src/proxy.ts",
         "src/services/**",
         "src/lib/api/**"
       ]

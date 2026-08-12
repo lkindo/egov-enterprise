@@ -94,7 +94,7 @@ class JwtTokenProviderTest {
     }
 
     /**
-     * docker-compose.yml · application.yml · frontend/src/middleware.ts 에 있는 그 값이다.
+     * docker-compose.yml · application.yml · frontend/src/proxy.ts 에 있는 그 값이다.
      * 이미 공개된 값이라 테스트에 두는 것이 새로운 노출을 만들지 않으며,
      * 여기 두어야 "이 값이 운영에 들어오면 막힌다" 를 실제로 증명할 수 있다.
      */

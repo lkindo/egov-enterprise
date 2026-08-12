@@ -175,7 +175,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  </h4>
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  {log.changes?.map((change, cIdx) => (
- <div key={cIdx} className="space-y-3 p-5 rounded-lg bg-white border border-primary/5 shadow-sm group/change">
+ <div key={cIdx} className="space-y-3 p-5 rounded-lg bg-card border border-primary/5 shadow-sm group/change">
  <label className="text-xs font-bold text-foreground tracking-tight">{change.field}</label>
  <div className="flex items-center gap-4">
  <div className="flex-1 p-3 rounded-lg bg-rose-50/80 border border-rose-100/50 text-sm font-medium text-rose-900 line-through decoration-rose-400 opacity-100">

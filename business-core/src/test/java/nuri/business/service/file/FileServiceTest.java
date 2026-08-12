@@ -12,6 +12,9 @@ import nuri.foundation.core.storage.FileStorageService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,10 +23,14 @@ import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -59,7 +66,7 @@ class FileServiceTest {
     @DisplayName("파일 업로드 성공")
     void uploadFiles_Success() throws IOException {
         // given
-        MockMultipartFile file = new MockMultipartFile("files", "test.jpg", "image/jpeg", "test content".getBytes());
+        MockMultipartFile file = validJpeg("test.jpg");
         List<MultipartFile> files = Collections.singletonList(file);
         
         FileMaster master = new FileMaster("FILE_123");
@@ -86,6 +93,121 @@ class FileServiceTest {
         // when & then
         assertThatThrownBy(() -> fileService.uploadFiles(files))
                 .isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    @DisplayName("파일 업로드 - 실행파일 내용을 jpg로 위장해도 저장 전에 거부한다")
+    void uploadFiles_rejectsExecutableDisguisedAsImage() {
+        MockMultipartFile disguised = new MockMultipartFile(
+                "files", "profile.jpg", "image/jpeg",
+                new byte[] { 'M', 'Z', (byte) 0x90, 0x00, 0x03, 0x00 });
+
+        assertThatThrownBy(() -> fileService.uploadFiles(List.of(disguised)))
+                .isInstanceOf(BusinessException.class);
+
+        verify(fileMasterRepository, never()).save(any());
+        verify(storageService, never()).store(any(), anyString());
+    }
+
+    @Test
+    @DisplayName("파일 업로드 - 단일 파일 10MiB 상한을 넘으면 내용을 읽거나 저장하지 않는다")
+    void uploadFiles_rejectsOversizedFileBeforeStorage() throws IOException {
+        MultipartFile oversized = mock(MultipartFile.class);
+        given(oversized.isEmpty()).willReturn(false);
+        given(oversized.getSize()).willReturn(10L * 1024 * 1024 + 1);
+
+        assertThatThrownBy(() -> fileService.uploadFiles(List.of(oversized)))
+                .isInstanceOf(BusinessException.class);
+
+        verify(oversized, never()).getInputStream();
+        verify(fileMasterRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("파일 업로드 - 빈 목록과 20개 초과 요청을 거부한다")
+    void uploadFiles_rejectsEmptyOrExcessiveFileCount() {
+        assertThatThrownBy(() -> fileService.uploadFiles(List.of()))
+                .isInstanceOf(BusinessException.class);
+
+        MultipartFile placeholder = mock(MultipartFile.class);
+        assertThatThrownBy(() -> fileService.uploadFiles(Collections.nCopies(21, placeholder)))
+                .isInstanceOf(BusinessException.class);
+
+        verify(fileMasterRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("파일 업로드 - DB 컬럼보다 긴 원본 파일명은 파일 저장 전에 거부한다")
+    void uploadFiles_rejectsFilenameLongerThanDatabaseColumn() {
+        MockMultipartFile file = validJpeg("a".repeat(97) + ".jpg");
+
+        assertThatThrownBy(() -> fileService.uploadFiles(List.of(file)))
+                .isInstanceOf(BusinessException.class);
+
+        verify(fileMasterRepository, never()).save(any());
+        verify(storageService, never()).store(any(), anyString());
+    }
+
+    @Test
+    @DisplayName("파일 업로드 - 요청 총합 50MiB 상한을 넘으면 마지막 파일 내용도 읽지 않는다")
+    void uploadFiles_rejectsOversizedBatch() throws IOException {
+        List<MultipartFile> files = IntStream.range(0, 6)
+                .mapToObj(index -> {
+                    MultipartFile file = mock(MultipartFile.class);
+                    given(file.isEmpty()).willReturn(false);
+                    given(file.getSize()).willReturn(9L * 1024 * 1024);
+                    if (index < 5) {
+                        given(file.getOriginalFilename()).willReturn("part-" + index + ".pdf");
+                        try {
+                            given(file.getInputStream()).willReturn(
+                                    new ByteArrayInputStream(new byte[] { '%', 'P', 'D', 'F', '-' }));
+                        } catch (IOException exception) {
+                            throw new IllegalStateException(exception);
+                        }
+                    }
+                    return file;
+                })
+                .toList();
+
+        assertThatThrownBy(() -> fileService.uploadFiles(files))
+                .isInstanceOf(BusinessException.class);
+
+        verify(files.get(5), never()).getInputStream();
+        verify(fileMasterRepository, never()).save(any());
+    }
+
+    @ParameterizedTest(name = "{0} 서명 허용")
+    @MethodSource("validFileSignatures")
+    @DisplayName("파일 업로드 - 허용 확장자의 실제 서명이 일치하면 저장한다")
+    void uploadFiles_acceptsMatchingSignatures(String filename, String contentType, byte[] content)
+            throws IOException {
+        MockMultipartFile file = new MockMultipartFile("files", filename, contentType, content);
+        given(fileMasterRepository.save(any(FileMaster.class))).willReturn(new FileMaster("FILE_123"));
+        given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored.bin");
+
+        String atchFileId = fileService.uploadFiles(List.of(file));
+
+        assertThat(atchFileId).startsWith("FILE_");
+        verify(storageService).store(file, "general/" + atchFileId);
+    }
+
+    @Test
+    @DisplayName("파일 업로드 - DB 저장 실패 시 이번 요청에서 쓴 디스크 파일을 모두 보상 삭제한다")
+    void uploadFiles_compensatesStoredFilesWhenDatabaseSaveFails() throws IOException {
+        List<MultipartFile> files = List.of(validJpeg("first.jpg"), validPng("second.png"));
+        given(fileMasterRepository.save(any(FileMaster.class))).willReturn(new FileMaster("FILE_123"));
+        given(storageService.store(any(MultipartFile.class), anyString()))
+                .willReturn("stored-first.jpg", "stored-second.png");
+        given(fileDetailRepository.save(any(FileDetail.class)))
+                .willReturn(FileDetail.builder().build())
+                .willThrow(new IllegalStateException("database unavailable"));
+
+        assertThatThrownBy(() -> fileService.uploadFiles(files))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("database unavailable");
+
+        verify(storageService).delete(eq("stored-second.png"), argThat(path -> path.startsWith("general/FILE_")));
+        verify(storageService).delete(eq("stored-first.jpg"), argThat(path -> path.startsWith("general/FILE_")));
     }
 
     @Test
@@ -232,7 +354,7 @@ class FileServiceTest {
         String atchFileId = "FILE_123";
         FileMaster master = new FileMaster(atchFileId);
         FileDetail existingDetail = FileDetail.builder().atchFileSeq(1).build();
-        MockMultipartFile newFile = new MockMultipartFile("files", "new.jpg", "image/jpeg", "content".getBytes());
+        MockMultipartFile newFile = validJpeg("new.jpg");
 
         given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.singletonList(existingDetail));
@@ -256,7 +378,7 @@ class FileServiceTest {
         // 첫 파일은 정상, 두 번째가 실행파일. 선(先)검증 패스가 없으면 첫 파일이 이미 저장된 뒤
         // 두 번째에서 터져 디스크에 고아 파일이 남는다.
         List<MultipartFile> files = List.of(
-                new MockMultipartFile("files", "ok.jpg", "image/jpeg", "content".getBytes()),
+                validJpeg("ok.jpg"),
                 new MockMultipartFile("files", "evil.exe", "application/octet-stream", "payload".getBytes()));
 
         assertThatThrownBy(() -> fileService.updateFiles(atchFileId, files))
@@ -277,8 +399,8 @@ class FileServiceTest {
         given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored.jpg");
 
         List<MultipartFile> files = List.of(
-                new MockMultipartFile("files", "a.jpg", "image/jpeg", "a".getBytes()),
-                new MockMultipartFile("files", "b.png", "image/png", "b".getBytes()));
+                validJpeg("a.jpg"),
+                validPng("b.png"));
 
         fileService.updateFiles(atchFileId, files);
 
@@ -339,7 +461,7 @@ class FileServiceTest {
     @DisplayName("파일 업로드 - 빈 파일 포함 시 스킵")
     void uploadFiles_WithEmptyFile() throws IOException {
         MockMultipartFile emptyFile = new MockMultipartFile("files", "empty.jpg", "image/jpeg", new byte[0]);
-        MockMultipartFile validFile = new MockMultipartFile("files", "valid.jpg", "image/jpeg", "content".getBytes());
+        MockMultipartFile validFile = validJpeg("valid.jpg");
         
         FileMaster master = new FileMaster("FILE_123");
         given(fileMasterRepository.save(any())).willReturn(master);
@@ -363,7 +485,7 @@ class FileServiceTest {
     void updateFiles_NoExistingDetails() throws IOException {
         String atchFileId = "FILE_123";
         FileMaster master = new FileMaster(atchFileId);
-        MockMultipartFile file = new MockMultipartFile("files", "new.jpg", "image/jpeg", "content".getBytes());
+        MockMultipartFile file = validJpeg("new.jpg");
 
         given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(List.of());
@@ -394,5 +516,46 @@ class FileServiceTest {
         fileService.getAllFileList(pageable, null);
 
         verify(fileDetailRepository).findAll(any(org.springframework.data.domain.Pageable.class));
+    }
+
+    private static MockMultipartFile validJpeg(String filename) {
+        return new MockMultipartFile("files", filename, "image/jpeg",
+                new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0, 0x00, 0x10 });
+    }
+
+    private static MockMultipartFile validPng(String filename) {
+        return new MockMultipartFile("files", filename, "image/png",
+                new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A });
+    }
+
+    private static Stream<Arguments> validFileSignatures() {
+        byte[] ole = new byte[] {
+                (byte) 0xD0, (byte) 0xCF, 0x11, (byte) 0xE0,
+                (byte) 0xA1, (byte) 0xB1, 0x1A, (byte) 0xE1 };
+        byte[] zip = new byte[] { 0x50, 0x4B, 0x03, 0x04 };
+
+        return Stream.of(
+                Arguments.of("photo.jpg", "image/jpeg",
+                        new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE0 }),
+                Arguments.of("photo.jpeg", "image/jpeg",
+                        new byte[] { (byte) 0xFF, (byte) 0xD8, (byte) 0xFF, (byte) 0xE1 }),
+                Arguments.of("image.png", "image/png",
+                        new byte[] { (byte) 0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A }),
+                Arguments.of("animation.gif", "image/gif", "GIF89a".getBytes(StandardCharsets.US_ASCII)),
+                Arguments.of("bitmap.bmp", "image/bmp", "BM".getBytes(StandardCharsets.US_ASCII)),
+                Arguments.of("document.pdf", "application/pdf", "%PDF-".getBytes(StandardCharsets.US_ASCII)),
+                Arguments.of("legacy.doc", "application/msword", ole),
+                Arguments.of("legacy.xls", "application/vnd.ms-excel", ole),
+                Arguments.of("legacy.ppt", "application/vnd.ms-powerpoint", ole),
+                Arguments.of("legacy.hwp", "application/x-hwp", ole),
+                Arguments.of("modern.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document", zip),
+                Arguments.of("modern.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", zip),
+                Arguments.of("modern.pptx", "application/vnd.openxmlformats-officedocument.presentationml.presentation", zip),
+                Arguments.of("archive.zip", "application/zip", zip),
+                Arguments.of("archive.7z", "application/x-7z-compressed",
+                        new byte[] { 0x37, 0x7A, (byte) 0xBC, (byte) 0xAF, 0x27, 0x1C }),
+                Arguments.of("archive.rar", "application/vnd.rar",
+                        new byte[] { 0x52, 0x61, 0x72, 0x21, 0x1A, 0x07, 0x00 }),
+                Arguments.of("notes.txt", "text/plain", "plain text".getBytes(StandardCharsets.UTF_8)));
     }
 }

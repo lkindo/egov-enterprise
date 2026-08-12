@@ -66,7 +66,7 @@ public class MailService {
 
     @Transactional
     public String sendMail(String userId, SentMailDto dto) {
-        log.info("Sending mail requested by user: {}, subject: {}", userId, dto.getSj());
+        log.info("Mail dispatch requested");
         String mssageId = nuri.foundation.core.util.IdGenerationUtil.generateMailId();
 
         SentMail sentMail = Objects.requireNonNull(SentMail.builder()
@@ -87,8 +87,17 @@ public class MailService {
         final String emailCn = dto.getEmailCn();
         final String dsptchPerson = dto.getDsptchPerson();
         final String recptnPerson = dto.getRecptnPerson();
-        nuri.foundation.core.util.TransactionUtils.runAfterCommit(
-                () -> mailAsyncProcessor.processSending(mssageId, subject, emailCn, dsptchPerson, recptnPerson));
+        nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
+            try {
+                mailAsyncProcessor.processSending(mssageId, subject, emailCn, dsptchPerson, recptnPerson);
+            } catch (RuntimeException rejected) {
+                // @Async 본문 예외는 호출자에게 나오지 않는다. 여기서 보이는 예외는 제출 거부다.
+                // 커밋된 P 행을 방치하지 않고 명시적 실패로 바꿔 운영자가 재처리할 수 있게 한다.
+                log.error("Mail dispatch queue rejected message ID: {}, errorType: {}",
+                        mssageId, rejected.getClass().getSimpleName());
+                mailAsyncProcessor.markResult(mssageId, "F");
+            }
+        });
 
         log.info("Mail request registered successfully for ID: {}", mssageId);
         return mssageId;

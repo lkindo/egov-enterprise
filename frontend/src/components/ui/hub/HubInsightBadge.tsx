@@ -1,27 +1,17 @@
-import React from 'react';
-import { Sparkles, LucideIcon } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { HubIcon, renderHubIcon } from './hub-icon';
 
 export interface HubInsightBadgeProps {
   label: string;
-  icon?: LucideIcon | React.ReactNode;
+  icon?: HubIcon;
   className?: string;
 }
 
 export function HubInsightBadge({ label, icon, className }: HubInsightBadgeProps) {
-  const renderIcon = () => {
-    if (!icon) return <Sparkles size={14} className="animate-pulse" />;
-    if (React.isValidElement(icon)) return icon;
-    if (typeof icon === 'function') {
-      const Icon = icon as any;
-      return <Icon size={14} />;
-    }
-    return null;
-  };
-
   return (
     <div className={cn("hub-badge-insight mb-2", className)}>
-      {renderIcon()}
+      {icon ? renderHubIcon(icon, 14) : <Sparkles size={14} className="animate-pulse" />}
       <span>{label}</span>
     </div>
   );

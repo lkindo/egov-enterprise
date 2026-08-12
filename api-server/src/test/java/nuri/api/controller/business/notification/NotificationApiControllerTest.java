@@ -56,12 +56,14 @@ class NotificationApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("알림 목록 조회 - 성공")
     void getNotifications_success() throws Exception {
-        when(notificationService.getNotificationList(anyString(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(notificationService.getNotificationList(eq("testUser"), eq("test"), any()))
+                .thenReturn(new PageImpl<>(Collections.emptyList()));
 
         mockMvc.perform(get("/api/v1/notifications")
                 .param("searchWrd", "test"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+        verify(notificationService).getNotificationList(eq("testUser"), eq("test"), any());
     }
 
     @Test
@@ -77,11 +79,13 @@ class NotificationApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("알림 상세 조회 - 성공")
     void getNotification_success() throws Exception {
-        when(notificationService.getNotification("NT1")).thenReturn(NotificationDto.builder().notiSn("NT1").build());
+        when(notificationService.getNotification("NT1", "testUser"))
+                .thenReturn(NotificationDto.builder().notiSn("NT1").build());
 
         mockMvc.perform(get("/api/v1/notifications/NT1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.notiSn").value("NT1"));
+        verify(notificationService).getNotification("NT1", "testUser");
     }
 
     @Test
@@ -90,7 +94,7 @@ class NotificationApiControllerTest extends BaseControllerTest {
         mockMvc.perform(post("/api/v1/notifications/NT1/read"))
                 .andExpect(status().isOk());
         
-        verify(notificationService).markAsRead("NT1");
+        verify(notificationService).markAsRead("NT1", "testUser");
     }
 
     @Test
@@ -112,6 +116,6 @@ class NotificationApiControllerTest extends BaseControllerTest {
         mockMvc.perform(delete("/api/v1/notifications/NT1"))
                 .andExpect(status().isOk());
         
-        verify(notificationService).deleteNotification("NT1");
+        verify(notificationService).deleteNotification("NT1", "testUser");
     }
 }

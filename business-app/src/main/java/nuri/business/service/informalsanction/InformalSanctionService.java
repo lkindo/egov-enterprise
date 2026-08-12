@@ -29,13 +29,9 @@ public class InformalSanctionService {
     private final InformalSanctionMapper informalSanctionMapper;
 
     public Page<InformalSanctionDto> getInformalSanctionList(String aplcntId, Pageable pageable) {
-        Page<InformalSanction> result;
-        if (aplcntId != null && !aplcntId.isEmpty()) {
-            result = informalSanctionRepository.findByAplcntId(aplcntId, pageable);
-        } else {
-            result = informalSanctionRepository.findAll(pageable);
-        }
-        return result.map(this::convertToDto);
+        requireParticipantId(aplcntId);
+        return informalSanctionRepository.findByAplcntId(aplcntId, Objects.requireNonNull(pageable))
+                .map(this::convertToDto);
     }
 
     public Page<InformalSanctionDto> getReceivedInformalSanctionList(String aprvrId, Pageable pageable) {
@@ -44,8 +40,10 @@ public class InformalSanctionService {
                 .map(this::convertToDto);
     }
 
-    public InformalSanctionDto getInformalSanction(String ifmlAtrzId) {
-        InformalSanction entity = informalSanctionRepository.findById(Objects.requireNonNull(ifmlAtrzId))
+    public InformalSanctionDto getInformalSanction(String ifmlAtrzId, String participantId) {
+        requireParticipantId(participantId);
+        InformalSanction entity = informalSanctionRepository.findByIdAndParticipant(
+                        Objects.requireNonNull(ifmlAtrzId), participantId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         InformalSanctionDto dto = convertToDto(entity);
@@ -141,5 +139,11 @@ public class InformalSanctionService {
 
     private InformalSanctionDto convertToDto(InformalSanction entity) {
         return informalSanctionMapper.toDto(entity);
+    }
+
+    private static void requireParticipantId(String participantId) {
+        if (participantId == null || participantId.isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
     }
 }

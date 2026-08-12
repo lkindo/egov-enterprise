@@ -17,7 +17,7 @@
 **메커니즘(정적 확증)**:
 1. [authService.ts:25](../../frontend/src/services/foundation/auth/authService.ts#L25)는 `client.post('/api/auth/login')`을 호출한다.
 2. [client.ts:13-17](../../frontend/src/lib/api/client.ts#L13-L17) — 브라우저 axios `baseURL='/api/v1'`. axios는 상대 URL에 baseURL을 무조건 전치한다. **실측**(`axiosInstance.getUri`): `/api/auth/login` → **`/api/v1/api/auth/login`**.
-3. [middleware.ts:44](../../frontend/src/middleware.ts#L44) — `/api/v1` 프리픽스라 프록시 분기로 낚아채 [next.config.ts:88](../../frontend/next.config.ts#L88) rewrite로 백엔드 전달.
+3. [proxy.ts:44](../../frontend/src/proxy.ts#L44) — `/api/v1` 프리픽스라 프록시 분기로 낚아채 [next.config.ts:88](../../frontend/next.config.ts#L88) rewrite로 백엔드 전달.
 4. 백엔드 `AuthApiController`는 `/api/v1/auth`에 매핑 — `/api/v1/api/auth/login` 엔드포인트는 **없음** → `anyRequest().authenticated()` → **401**.
 5. 결과: **HttpOnly 쿠키를 심는 [login/route.ts:30-36](../../frontend/src/app/api/auth/login/route.ts#L30-L36)에 영원히 도달하지 못한다.** logout·reissue도 동일(`/api/v1/api/auth/logout|reissue`).
 
@@ -87,13 +87,13 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 ### 3-1. fe-auth — 인증 아키텍처 완결 (🚨 P0 선행)
 
-**현황**: HttpOnly 쿠키+동일출처 프록시 전환은 이미 커밋됨(`45855eb43`,`30fba0530`)이나 §0의 이중 프리픽스로 **UI 로그인 경로가 무력화** 의심. 잔여 하드닝 2건: ①미들웨어가 JWT 서명 미검증([middleware.ts:5-35](../../frontend/src/middleware.ts#L5-L35) base64 디코드만 — 위조 토큰의 `role=ADMIN` 통과) ②백엔드 로그인/재발급 응답 바디에 토큰 노출([AuthApiController.java](../../api-server/src/main/java/nuri/api/controller/business/auth/AuthApiController.java)).
+**현황**: HttpOnly 쿠키+동일출처 프록시 전환은 이미 커밋됨(`45855eb43`,`30fba0530`)이나 §0의 이중 프리픽스로 **UI 로그인 경로가 무력화** 의심. 잔여 하드닝 2건: ①Proxy가 JWT 서명 미검증([proxy.ts:5-35](../../frontend/src/proxy.ts#L5-L35) base64 디코드만 — 위조 토큰의 `role=ADMIN` 통과) ②백엔드 로그인/재발급 응답 바디에 토큰 노출([AuthApiController.java](../../api-server/src/main/java/nuri/api/controller/business/auth/AuthApiController.java)).
 
 **추천: Phase 0 선행 + Option 1(잔여 완결 패키지)** — 비대칭 전환(Opt2)은 세션 전량 무효화 비용 대비 이득 작음(백엔드가 이미 authoritative). 현상유지(Opt3)는 §F 로드맵 미완.
 
 **단계 계획**:
 - **Phase 0 (P0, 최우선)**: 이중 프리픽스 수정 — [authService.ts:25,30,35](../../frontend/src/services/foundation/auth/authService.ts#L25)·[client.ts:121](../../frontend/src/lib/api/client.ts#L121)의 Route Handler 호출에 `{ baseURL: '' }` 명시 또는 Route Handler 전용 클라이언트 분리. 서버 기동 후 UI 로그인 HTTP 실증 + 성공 UI 로그인 E2E 신설 + reissue `test.fixme` 해제([23-security-auth-supplement.spec.ts:120,128](../../frontend/e2e/23-security-auth-supplement.spec.ts#L120)).
-- **Phase 1 (미들웨어 서명검증)**: `+jose`, [middleware.ts](../../frontend/src/middleware.ts) `getRoleFromToken`→`jose.jwtVerify`. **⚠ 알고리즘: HS256 아님** — jjwt `signWith(SecretKey)`가 키 비트수로 자동 추론, dev 시크릿 88바이트=HS512. `algorithms:['HS256','HS384','HS512']`로 핀. 키는 `new TextEncoder().encode(JWT_SECRET)` — **base64 디코드 금지**([JwtTokenProvider.java:43](../../foundation/src/main/java/nuri/foundation/jwt/JwtTokenProvider.java#L43) `getBytes()` raw 정합). prod에서 `JWT_SECRET` 미설정 시 모듈 스코프 `throw`(fail-fast). 검증 실패 시 accessToken·session_exp 쿠키 삭제 후 `/login` 리다이렉트(무한루프 차단).
+- **Phase 1 (Proxy 서명검증)**: `+jose`, [proxy.ts](../../frontend/src/proxy.ts) `getRoleFromToken`→`jose.jwtVerify`. **⚠ 알고리즘: HS256 아님** — jjwt `signWith(SecretKey)`가 키 비트수로 자동 추론, dev 시크릿 88바이트=HS512. `algorithms:['HS256','HS384','HS512']`로 핀. 키는 `new TextEncoder().encode(JWT_SECRET)` — **base64 디코드 금지**([JwtTokenProvider.java:43](../../foundation/src/main/java/nuri/foundation/jwt/JwtTokenProvider.java#L43) `getBytes()` raw 정합). prod에서 `JWT_SECRET` 미설정 시 모듈 스코프 `throw`(fail-fast). 검증 실패 시 accessToken·session_exp 쿠키 삭제 후 `/login` 리다이렉트(무한루프 차단).
 - **Phase 2 (E2E 잔재)**: [auth.setup.ts](../../frontend/e2e/auth.setup.ts) `origins.localStorage`에서 **accessToken만** 제거(⚠ `egov_smart_tour_v1`은 투어억제 살아있는 의존 — 보존). userRole 쿠키 제거(소비처 mocks뿐). ⚠ **선행 필수**: [SurveyPage.ts:111-122,199](../../frontend/e2e/pages/SurveyPage.ts#L111)가 localStorage accessToken을 직접 소비 → storageState JSON 파싱 방식(tier-19 패턴)으로 교체 안 하면 **tier-05 즉사**.
 - **Phase 3 (Contract, 계약변경)**: [TokenResponse.java](../../business-core/src/main/java/nuri/business/service/auth/dto/TokenResponse.java) refreshToken `@JsonIgnore`. ⚠ **reissue 쿠키 발급 대칭화 동반**: [AuthApiController](../../api-server/src/main/java/nuri/api/controller/business/auth/AuthApiController.java) reissue에 `addRefreshTokenCookie` 추가(현재 비회전이라 no-op이나 향후 회전 도입 시 전달경로 소멸 함정 차단). [AuthApiControllerTest.java:71,105,111](../../api-server/src/test/java/nuri/api/controller/business/auth/AuthApiControllerTest.java) 바디 단언 수정. 백엔드 기동→루트 api-docs.json 재생성→codegen. **3a(소비자 전환)/3b(공급자 축소) 분리** — auth.setup.ts를 set-cookie 파싱으로 먼저 착지·22티어 green 확인 후 계약 축소.
 - **Phase 4 (제품결정 후)**: admin 게이트 커버리지 확장 — [열린 질문 3-1.①](#열린-질문-집약).
@@ -114,7 +114,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 - **Phase 1(0.5d)**: prod/dev CSP 분리(`NODE_ENV` 분기) — prod `script-src`에서 `unsafe-eval` 제거, `img-src` 죽은 allowance(`grainy-gradients` 참조0) 제거. `Reporting-Endpoints` + `report-to`/`report-uri` 추가. `/api/csp-report/route.ts` 신설 — **⚠ 방어 설계 필수**: Content-Type 허용목록(415), 바디상한(32KB→413), 필드 화이트리스트만 로깅(원문 통짜 금지), 레이트리밋/샘플링, 204 고정(비인증 공개 쓰기 엔드포인트라 DoS·위조리포트 공격면). **prod `connect-src`에서 bare `ws: wss:` 제거**(same-origin `/ws` rewrite + CSP3 `'self'` 승격 커버 — bare 스킴은 XSS 시 무제한 유출 채널). `X-XSS-Protection` `'0'`으로(deprecated·XS-Leaks).
 - **Phase 2(0.5d)**: `Content-Security-Policy-Report-Only`로 목표정책 병행 송출 — **isProd 한정**(dev turbopack HMR eval + RSC 인라인이 상시 위반→E2E 오염). 계측은 `next build && next start -p 3001`(prod 빌드) 기반 전티어 1사이클+수동 스모크. ⚠ [error-detector.ts](../../frontend/e2e/fixtures/error-detector.ts) ignorePattern은 `/^\[Report Only\]/` 접두 한정 — `'Content-Security-Policy'` 광역 매치 금지(enforce 위반 `Refused to...`까지 은폐해 회귀게이트 자멸).
 - **Phase 3(0.5d)**: 위반 0건 확인 후 fonts.googleapis/gstatic 제거(next/font 셀프호스팅). style-src → `style-src-elem 'self'` + `style-src-attr 'unsafe-inline'` — ⚠ **sonner·framer-motion 런타임 `<style>` 주입**을 Report-Only로 먼저 검증(존재 시 style-src-elem에 unsafe-inline 유지). 세분 미지원 브라우저 위해 기본 `style-src` 폴백 존치.
-- **Phase 4(조건부, 2-4d)**: nonce+strict-dynamic — [middleware.ts](../../frontend/src/middleware.ts) crypto nonce→`x-nonce`+CSP, [next.config.ts](../../frontend/next.config.ts) CSP 제거(이중송출 차단, **모든 middleware return 경로 공통 응답래퍼**), [layout.tsx](../../frontend/src/app/layout.tsx)+[theme-provider.tsx](../../frontend/src/app/components/theme-provider.tsx) nonce 전파. **cacheComponents 비활성(PPR 포기) 결정 후에만** 착수([열린 질문 3-2.①](#열린-질문-집약)). atlas는 경로분기 완화 CSP.
+- **Phase 4(조건부, 2-4d)**: nonce+strict-dynamic — [proxy.ts](../../frontend/src/proxy.ts) crypto nonce→`x-nonce`+CSP, [next.config.ts](../../frontend/next.config.ts) CSP 제거(이중송출 차단, **모든 Proxy return 경로 공통 응답래퍼**), [layout.tsx](../../frontend/src/app/layout.tsx)+[theme-provider.tsx](../../frontend/src/app/components/theme-provider.tsx) nonce 전파. **cacheComponents 비활성(PPR 포기) 결정 후에만** 착수([열린 질문 3-2.①](#열린-질문-집약)). atlas는 경로분기 완화 CSP.
 
 **검증 반영(필수)**: ①csp-report 방어설계 ②ignorePattern 접두한정 ③Report-Only isProd한정 ④connect-src bare ws 제거 ⑤sonner/framer-motion 특정 ⑥Phase4 응답래퍼+이중송출 차단 ⑦enforce 게이트=prod빌드 E2E(리포트는 보조) ⑧X-XSS-Protection 정리 ⑨원자 커밋(next.config CSP 제거+middleware 신설 동시).
 
@@ -236,7 +236,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 | # | 항목 | 결정 포인트 | 판단 재료 |
 |---|---|---|---|
-| ~~3-1.①~~ | fe-auth | ~~**admin 게이트 커버리지**~~ → ✅ **결판: deny-by-default 전환으로 해소**(2026-07-29 실측). 5접두사 화이트리스트를 뒤집어 `/admin` 전체를 ADMIN 기본으로 두고, 일반 사용자용 5경로만 `USER_ACCESSIBLE_ADMIN_PATHS` 로 열고 그 안의 관리 콘솔 3개를 `ADMIN_ONLY_SUBPATHS` 로 도려냈다([middleware.ts:174-213](../../frontend/src/middleware.ts#L174-L213)). "화면을 추가할 때마다 전원 공개가 기본값"이던 구조가 역전됐다 | — |
+| ~~3-1.①~~ | fe-auth | ~~**admin 게이트 커버리지**~~ → ✅ **결판: deny-by-default 전환으로 해소**(2026-07-29 실측). 5접두사 화이트리스트를 뒤집어 `/admin` 전체를 ADMIN 기본으로 두고, 일반 사용자용 5경로만 `USER_ACCESSIBLE_ADMIN_PATHS` 로 열고 그 안의 관리 콘솔 3개를 `ADMIN_ONLY_SUBPATHS` 로 도려냈다([proxy.ts:174-213](../../frontend/src/proxy.ts#L174-L213)). "화면을 추가할 때마다 전원 공개가 기본값"이던 구조가 역전됐다 | — |
 | 3-1.② | fe-auth | **바디 accessToken 최종 제거(순수 쿠키 계약)** 여부 — 비브라우저 소비자(E2E setup·cleanup·향후 외부연동) 지원 정책 | "API 직접 소비자 지원" 정책 |
 | 3-2.① | fe-csp | **strict nonce CSP 위해 PPR(cacheComponents) 포기?** 성능 vs 보안 순수 트레이드오프 | HttpOnly 전환 완료로 토큰탈취면 이미 축소 |
 | 3-2.② | fe-csp | CSP 위반 리포트 수집처: 자체 winston vs 외부(Sentry) | 현재 외부 수집기 부재 |
@@ -295,7 +295,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 **⚠ 2번의 근거 정정 (기록으로 남긴다)**: 최초 판단은 "참조 0 = 죽은 allowance"였으나 그 grep 은 `frontend/src` 범위였고 **`public/` 을 놓쳤다**. [governance_harness_atlas.html](../../frontend/public/governance_harness_atlas.html) 이 두 도메인을 실제로 사용하고 있었다 — 즉 *앱에는* 죽었고 *atlas 문서에는* 살아 있었다. 부수적으로, atlas 가 Pretendard 를 받는 `cdn.jsdelivr.net` 은 CSP 에 등재된 적이 없어 **이미 차단**되고 있었다(문서가 CSP 와 어긋난 채 본문 폰트가 조용히 fallback 되던 상태). 사용자 결정에 따라 **atlas 의 외부 폰트 의존을 끊고**(시스템 폰트 스택 + `@font-face` 별칭, fallback 이 정의돼 있어 가독성 유지) CSP 출처를 제거해 **자산과 CSP 를 정합**시켰다.
 
-> ⚠ **재발 위험(추적 필요)**: atlas 는 방치된 파일이 아니라 **정기 유지보수되는 활성 자산**이다 — 111KB, 최종 갱신 2026-07-24, `.gemini/tasks/` 에 동기화 기록 3건(`harness-html-sync`·`harness-atlas-alignment`·`update-governance-atlas`), 그리고 [middleware.ts:272](../../frontend/src/middleware.ts#L272) 가 **인증 면제 공개 경로**로 명시 등재한다. 따라서 다음 갱신 때 CDN `<link>` 가 다시 유입되면 CSP 가 차단하되 **오류 없이 조용히 fallback** 되어 아무도 모른 채 지나간다(Pretendard 가 실제로 그렇게 죽어 있었다). 현재 방어는 해당 파일 상단의 경고 주석뿐이며 **기계 게이트는 없다**. 항구적 방어가 필요하면 `public/*.html` 의 외부 출처 `<link>`/`<script>` 를 차단하는 린터를 신설해야 한다(GEMINI.md §0.7-H5: 실행 경로 없는 규칙은 규칙을 어긴 주체를 막지 못한다).
+> ⚠ **재발 위험(추적 필요)**: atlas 는 방치된 파일이 아니라 **정기 유지보수되는 활성 자산**이다 — 111KB, 최종 갱신 2026-07-24, `.gemini/tasks/` 에 동기화 기록 3건(`harness-html-sync`·`harness-atlas-alignment`·`update-governance-atlas`), 그리고 [proxy.ts:272](../../frontend/src/proxy.ts#L272) 가 **인증 면제 공개 경로**로 명시 등재한다. 따라서 다음 갱신 때 CDN `<link>` 가 다시 유입되면 CSP 가 차단하되 **오류 없이 조용히 fallback** 되어 아무도 모른 채 지나간다(Pretendard 가 실제로 그렇게 죽어 있었다). 현재 방어는 해당 파일 상단의 경고 주석뿐이며 **기계 게이트는 없다**. 항구적 방어가 필요하면 `public/*.html` 의 외부 출처 `<link>`/`<script>` 를 차단하는 린터를 신설해야 한다(GEMINI.md §0.7-H5: 실행 경로 없는 규칙은 규칙을 어긴 주체를 막지 못한다).
 
 ### 6.3 검증 증적
 

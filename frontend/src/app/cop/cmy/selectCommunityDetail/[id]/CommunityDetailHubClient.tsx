@@ -65,7 +65,7 @@ export default function CommunityDetailHubClient({
             <div className="flex gap-4 p-2 items-center">
                <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="lg" aria-label="커뮤니티 공유하기" className="h-11 w-14 rounded-[var(--radius-hub-item)] bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
+                  <Button variant="ghost" size="lg" aria-label="커뮤니티 공유하기" className="h-11 w-14 rounded-[var(--radius-hub-item)] bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
                     <Share2 size={22} />
                   </Button>
                 </TooltipTrigger>
@@ -122,7 +122,7 @@ export default function CommunityDetailHubClient({
               icon={MessageSquare}
             >
               <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-border rounded-[var(--radius-hub-section)] bg-muted/30">
-                <div className="w-20 h-11 bg-white border-2 border-border rounded-[var(--radius-hub-item)] flex items-center justify-center text-muted-foreground shadow-xl mb-8 group-hover:rotate-12 transition-transform">
+                <div className="w-20 h-11 bg-card border-2 border-border rounded-[var(--radius-hub-item)] flex items-center justify-center text-muted-foreground shadow-xl mb-8 group-hover:rotate-12 transition-transform">
                   <BookOpen size={32} />
                 </div>
                 <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">_ No_Posts_Detected</h4>
@@ -145,7 +145,7 @@ export default function CommunityDetailHubClient({
                   <h4 className="text-2xl font-bold tracking-tighter leading-tight">_ SECURITY<br />POLICY</h4>
                   <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">가입 승인 필요<br />내부 임직원 전용</p>
                 </div>
-                <Button className="w-full h-11 bg-white text-foreground rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-primary hover:text-white transition-all shadow-xl group">
+                <Button className="w-full h-11 bg-card text-foreground rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-primary hover:text-white transition-all shadow-xl group">
                   ADMIN_PANEL_LOGIN <ChevronLeft size={16} className="rotate-180 group-hover:translate-x-1 transition-transform" />
                 </Button>
               </div>
@@ -185,7 +185,7 @@ export default function CommunityDetailHubClient({
 
 function DetailBlock({ icon, label, value }: { icon: React.ReactNode, label: string, value: string }) {
   return (
-    <div className="p-8 rounded-[var(--radius-hub-widget)] bg-muted border border-border transition-all hover:bg-white hover:shadow-2xl hover:scale-[1.03] group relative overflow-hidden">
+    <div className="p-8 rounded-[var(--radius-hub-widget)] bg-muted border border-border transition-all hover:bg-card hover:shadow-2xl hover:scale-[1.03] group relative overflow-hidden">
       <div className="absolute top-0 right-0 p-6 opacity-[0.03] scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6 text-primary">
         {icon}
       </div>

@@ -9,13 +9,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -43,7 +43,6 @@ class EgovAuthenticationProviderTest {
     @Mock
     private EgovPasswordEncoder egovPasswordEncoder;
 
-    @InjectMocks
     private EgovAuthenticationProvider authenticationProvider;
 
     private User testUser;
@@ -54,6 +53,10 @@ class EgovAuthenticationProviderTest {
 
     @BeforeEach
     void setUp() {
+        // EgovPasswordEncoder도 PasswordEncoder를 구현하므로 @InjectMocks 생성자 추론은 두 mock을
+        // 모호하게 매칭할 수 있다. 의존성을 명시해 표준/레거시 인코더 경계를 실행 순서와 무관하게 고정한다.
+        authenticationProvider = new EgovAuthenticationProvider(
+                userRepository, userAuthorityRepository, passwordEncoder, egovPasswordEncoder);
         testUser = User.builder()
                 .userId("testuser")
                 .esntlId("USR_0000000000001")
@@ -130,6 +133,39 @@ class EgovAuthenticationProviderTest {
         // When & Then
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
                 .isInstanceOf(BadCredentialsException.class);
+    }
+
+    @Test
+    @DisplayName("인증 인프라 장애는 잘못된 자격증명으로 위장하지 않음")
+    void authenticate_databaseFailure_isServiceFailure() {
+        Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "password");
+        when(userRepository.findByUserId("testuser"))
+                .thenThrow(new org.springframework.dao.DataAccessResourceFailureException("db unavailable"));
+
+        assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
+                .isInstanceOf(AuthenticationServiceException.class)
+                .isNotInstanceOf(BadCredentialsException.class)
+                .hasMessage("Authentication service unavailable");
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    @DisplayName("저장 비밀번호 해시 파손은 계정 실패 횟수를 올리지 않음")
+    void authenticate_brokenStoredHash_isServiceFailureNotMismatch() {
+        Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "password");
+        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        when(egovPasswordEncoder.encode("password", "testuser")).thenReturn("not-matched");
+        when(egovPasswordEncoder.encode("password", "USR_0000000000001")).thenReturn("not-matched");
+        when(passwordEncoder.matches("password", "{egov}hashedPassword"))
+                .thenThrow(new IllegalArgumentException("unknown hash id"));
+
+        assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
+                .isInstanceOf(AuthenticationServiceException.class)
+                .isNotInstanceOf(BadCredentialsException.class);
+
+        assertThat(testUser.getLckCnt()).isNull();
+        verify(userRepository, never()).save(any(User.class));
     }
 
     @Test

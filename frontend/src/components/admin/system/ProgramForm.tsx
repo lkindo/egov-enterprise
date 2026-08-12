@@ -126,7 +126,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                     placeholder="프로그램파일명" 
                     {...field} 
                     readOnly={isEdit} 
-                    className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-white focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                    className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                   />
                 </FormControl>
                 <FormMessage />
@@ -147,7 +147,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                     <Input 
                       placeholder="프로그램명" 
                       {...field} 
-                      className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
+                      className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-card transition-all shadow-inner"
                     />
                   </FormControl>
                   <FormMessage />
@@ -166,7 +166,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                     <Input 
                       placeholder="URL" 
                       {...field} 
-                      className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-white transition-all shadow-inner"
+                      className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card transition-all shadow-inner"
                     />
                   </FormControl>
                   <FormMessage />
@@ -187,7 +187,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                   <Input 
                     placeholder="저장경로" 
                     {...field} 
-                    className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-white transition-all shadow-inner"
+                    className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card transition-all shadow-inner"
                   />
                 </FormControl>
                 <FormMessage />
@@ -207,7 +207,7 @@ export function ProgramForm({ open, onOpenChange, data, onSuccess }: ProgramForm
                   <Input 
                     placeholder="프로그램이 제공할 기능의 기술적 명세.." 
                     {...field} 
-                    className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-white transition-all shadow-inner"
+                    className="h-11 px-6 rounded-lg border-2 border-border bg-muted/50 font-bold text-sm focus:bg-card transition-all shadow-inner"
                   />
                 </FormControl>
                 <FormMessage />

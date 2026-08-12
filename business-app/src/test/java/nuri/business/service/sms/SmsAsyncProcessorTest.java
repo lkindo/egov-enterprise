@@ -68,6 +68,8 @@ class SmsAsyncProcessorTest {
         // Unit test에서는 @Recover가 자동 실행되지 않으므로 수동 호출하여 로직 검증
         smsAsyncProcessor.recoverSmsSending(new RuntimeException("Failure"), "S1", "0101", "0102", "Hello");
         assertThat(recptn.getRsltCd()).isEqualTo("F");
+        assertThat(recptn.getRsltMsg()).isEqualTo("Gateway delivery failed");
+        assertThat(recptn.getRsltMsg()).doesNotContain("Failure");
     }
 
     @Test
@@ -92,5 +94,19 @@ class SmsAsyncProcessorTest {
 
         smsAsyncProcessor.updateResult("S9", "0109", "S", "Success");
         // 예외 없이 종료되어야 한다
+    }
+
+    @Test
+    @DisplayName("큐 제출 거부는 아직 대기 중인 수신자만 실패로 전환")
+    void markBatchRejected_onlyPendingRecipients() {
+        SmsRecptn pending = SmsRecptn.builder().smsId("S1").rcptnTelno("0101").rsltCd("P").build();
+        SmsRecptn delivered = SmsRecptn.builder().smsId("S1").rcptnTelno("0102").rsltCd("S").build();
+        given(smsRecptnRepository.findByIdSmsId("S1")).willReturn(List.of(pending, delivered));
+
+        smsAsyncProcessor.markBatchRejected("S1");
+
+        assertThat(pending.getRsltCd()).isEqualTo("F");
+        assertThat(pending.getRsltMsg()).isEqualTo("Dispatch queue saturated");
+        assertThat(delivered.getRsltCd()).isEqualTo("S");
     }
 }

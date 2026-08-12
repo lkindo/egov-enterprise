@@ -11,7 +11,7 @@ public interface SmsSender {
      * @param recipientPhone the recipient's phone number
      * @param message the message content
      * @param senderPhone the sender's phone number
-     * @return true if sending was successful, false otherwise
+     * @return {@code true} only when the real gateway has accepted delivery; simulations/placeholders must return false
      */
     boolean send(String recipientPhone, String message, String senderPhone);
 }

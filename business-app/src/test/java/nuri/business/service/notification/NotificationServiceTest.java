@@ -55,29 +55,30 @@ class NotificationServiceTest {
     @DisplayName("알림 목록 조회 - 성공")
     void getNotificationList_success() {
         PageRequest pageable = PageRequest.of(0, 10);
-        when(notificationRepository.searchNotifications(anyString(), any()))
+        when(notificationRepository.searchNotificationsByReceiver("user123", "test", pageable))
                 .thenReturn(new PageImpl<>(List.of(createMockEntity("NT_1"))));
 
-        Page<NotificationDto> result = notificationService.getNotificationList("test", pageable);
+        Page<NotificationDto> result = notificationService.getNotificationList("user123", "test", pageable);
 
         assertNotNull(result);
         assertEquals(1, result.getTotalElements());
-        verify(notificationRepository).searchNotifications(eq("test"), eq(pageable));
+        verify(notificationRepository).searchNotificationsByReceiver("user123", "test", pageable);
     }
 
     @Test
     @DisplayName("알림 상세 조회 - 성공 및 실패(404)")
     void getNotification_test() {
         Notification entity = createMockEntity("NT_1");
-        when(notificationRepository.findById("NT_1")).thenReturn(Optional.of(entity));
-        when(notificationRepository.findById("NOT_FOUND")).thenReturn(Optional.empty());
+        when(notificationRepository.findByNotiSnAndRcvrId("NT_1", "user123")).thenReturn(Optional.of(entity));
+        when(notificationRepository.findByNotiSnAndRcvrId("NOT_FOUND", "user123")).thenReturn(Optional.empty());
 
         // Success
-        NotificationDto result = notificationService.getNotification("NT_1");
+        NotificationDto result = notificationService.getNotification("NT_1", "user123");
         assertEquals("Test Subject", result.getNotiTtlNm());
 
         // Not Found
-        assertThrows(BusinessException.class, () -> notificationService.getNotification("NOT_FOUND"));
+        assertThrows(BusinessException.class,
+                () -> notificationService.getNotification("NOT_FOUND", "user123"));
     }
 
     @Test
@@ -95,17 +96,17 @@ class NotificationServiceTest {
         assertNotNull(id);
         assertTrue(id.startsWith("NTFC_"));
         verify(notificationRepository).save(any(Notification.class));
-        verify(messagingTemplate).convertAndSend(eq("/topic/public"), any(NotificationDto.class));
         verify(messagingTemplate).convertAndSendToUser(eq("user123"), eq("/queue/notifications"),
                 any(NotificationDto.class));
+        verify(messagingTemplate, never()).convertAndSend(eq("/topic/public"), any(NotificationDto.class));
     }
 
     @Test
     @DisplayName("알림 생성 - WebSocket 오류 발생 시에도 서비스는 정상 작동")
     void createNotification_webSocketError_stillSuccess() {
         NotificationDto dto = NotificationDto.builder().notiTtlNm("Title").build();
-        doThrow(new RuntimeException("Socket error")).when(messagingTemplate).convertAndSend(anyString(),
-                any(Object.class));
+        doThrow(new RuntimeException("Socket error")).when(messagingTemplate)
+                .convertAndSendToUser(eq("user123"), eq("/queue/notifications"), any(Object.class));
 
         // When
         String id = notificationService.createNotification("user123", dto);
@@ -116,12 +117,13 @@ class NotificationServiceTest {
     }
 
     @Test
-    @DisplayName("알림 생성 - userId가 null인 경우 ToUser 전송 생략")
-    void createNotification_nullUser_skipSendToUser() {
+    @DisplayName("알림 생성 - 인증 사용자 ID가 없으면 저장·전송하지 않고 거부")
+    void createNotification_nullUser_rejected() {
         NotificationDto dto = NotificationDto.builder().notiTtlNm("Title").build();
 
-        notificationService.createNotification(null, dto);
+        assertThrows(BusinessException.class, () -> notificationService.createNotification(null, dto));
 
+        verify(notificationRepository, never()).save(any());
         verify(messagingTemplate, never()).convertAndSendToUser(anyString(), anyString(), any());
     }
 
@@ -129,8 +131,8 @@ class NotificationServiceTest {
     @DisplayName("알림 수정 - 성공 및 실패(404)")
     void updateNotification_test() {
         Notification entity = createMockEntity("NT_1");
-        when(notificationRepository.findById("NT_1")).thenReturn(Optional.of(entity));
-        when(notificationRepository.findById("NOT_FOUND")).thenReturn(Optional.empty());
+        when(notificationRepository.findByNotiSnAndRcvrId("NT_1", "user123")).thenReturn(Optional.of(entity));
+        when(notificationRepository.findByNotiSnAndRcvrId("NOT_FOUND", "user")).thenReturn(Optional.empty());
 
         NotificationDto dto = NotificationDto.builder()
                 .notiTtlNm("New Subject")
@@ -146,8 +148,13 @@ class NotificationServiceTest {
     @Test
     @DisplayName("알림 삭제 - 성공")
     void deleteNotification_success() {
-        notificationService.deleteNotification("NT_1");
-        verify(notificationRepository).deleteById("NT_1");
+        Notification entity = createMockEntity("NT_1");
+        when(notificationRepository.findByNotiSnAndRcvrId("NT_1", "user123"))
+                .thenReturn(Optional.of(entity));
+
+        notificationService.deleteNotification("NT_1", "user123");
+
+        verify(notificationRepository).delete(entity);
     }
 
     @Test
@@ -176,14 +183,40 @@ class NotificationServiceTest {
     @DisplayName("알림 읽음 처리 - 성공")
     void markAsRead_success() {
         Notification entity = org.mockito.Mockito.spy(createMockEntity("NT_1"));
-        when(notificationRepository.findById("NT_1")).thenReturn(Optional.of(entity));
+        when(notificationRepository.findByNotiSnAndRcvrId("NT_1", "user123")).thenReturn(Optional.of(entity));
 
-        notificationService.markAsRead("NT_1");
+        notificationService.markAsRead("NT_1", "user123");
 
         verify(entity).markAsRead();
 
-        // When not found - should not throw, just nothing happens
-        when(notificationRepository.findById("MISSING")).thenReturn(Optional.empty());
-        notificationService.markAsRead("MISSING");
+        when(notificationRepository.findByNotiSnAndRcvrId("MISSING", "user123")).thenReturn(Optional.empty());
+        assertThrows(BusinessException.class,
+                () -> notificationService.markAsRead("MISSING", "user123"));
+    }
+
+    @Test
+    @DisplayName("다른 사용자의 알림 ID는 상세·읽음·삭제 모두 404로 은닉")
+    void foreignNotification_isNeverAccessibleById() {
+        Notification foreign = Notification.builder()
+                .notiSn("FOREIGN")
+                .rcvrId("victim")
+                .notiTtlNm("victim-only")
+                .build();
+        when(notificationRepository.findByNotiSnAndRcvrId("FOREIGN", "attacker"))
+                .thenReturn(Optional.empty());
+        lenient().when(notificationRepository.findById("FOREIGN")).thenReturn(Optional.of(foreign));
+
+        BusinessException read = assertThrows(BusinessException.class,
+                () -> notificationService.getNotification("FOREIGN", "attacker"));
+        BusinessException mark = assertThrows(BusinessException.class,
+                () -> notificationService.markAsRead("FOREIGN", "attacker"));
+        BusinessException delete = assertThrows(BusinessException.class,
+                () -> notificationService.deleteNotification("FOREIGN", "attacker"));
+
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, read.getErrorCode());
+        assertEquals(read.getErrorCode(), mark.getErrorCode());
+        assertEquals(read.getErrorCode(), delete.getErrorCode());
+        verify(notificationRepository, never()).findById("FOREIGN");
+        verify(notificationRepository, never()).delete(any(Notification.class));
     }
 }

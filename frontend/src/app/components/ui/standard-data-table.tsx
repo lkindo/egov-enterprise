@@ -58,7 +58,26 @@ export interface StandardDataTableProps<T> {
   rowTestId?: string;
 }
 
-const DataRow = memo(function DataRow({
+interface DataRowProps<T extends object> {
+  item: T;
+  columns: Column<T>[];
+  isSelected: boolean;
+  index: number;
+  enableSelection: boolean;
+  onToggle: () => void;
+  onRowClick?: (item: T) => void;
+  rowTestId?: string;
+}
+
+type MobileCardProps<T extends object> = Omit<DataRowProps<T>, 'rowTestId'>;
+
+function renderCell<T extends object>(column: Column<T>, item: T, index: number): React.ReactNode {
+  return typeof column.accessor === 'function'
+    ? column.accessor(item, index)
+    : item[column.accessor] as React.ReactNode;
+}
+
+function DataRowComponent<T extends object>({
   item,
   columns,
   isSelected,
@@ -67,16 +86,7 @@ const DataRow = memo(function DataRow({
   onToggle,
   onRowClick,
   rowTestId
-}: {
-  item: any;
-  columns: Column<any>[];
-  isSelected: boolean;
-  index: number;
-  enableSelection: boolean;
-  onToggle: () => void;
-  onRowClick?: (item: any) => void;
-  rowTestId?: string;
-}) {
+}: DataRowProps<T>) {
   if (!item) return null;
 
   return (
@@ -110,17 +120,19 @@ const DataRow = memo(function DataRow({
           )}
         >
           <div className="outline-none">
-            {typeof column.accessor === 'function'
-              ? (column.accessor as any)(item, index)
-              : item?.[column.accessor as any]}
+            {renderCell(column, item, index)}
           </div>
         </td>
       ))}
     </tr>
   );
-});
+}
 
-const MobileCard = memo(function MobileCard({
+// React.memo 의 기본 선언은 제네릭 함수의 T 를 unknown 으로 지운다. 구현 시그니처를
+// 다시 노출해 columns/data/onRowClick 이 같은 행 타입으로 끝까지 결속되게 한다.
+const DataRow = memo(DataRowComponent) as typeof DataRowComponent;
+
+function MobileCardComponent<T extends object>({
   item,
   columns,
   isSelected,
@@ -128,8 +140,10 @@ const MobileCard = memo(function MobileCard({
   enableSelection,
   onToggle,
   onRowClick
-}: any) {
+}: MobileCardProps<T>) {
   if (!item) return null;
+  const primaryColumn = columns[0];
+  if (!primaryColumn) return null;
 
   return (
     <div
@@ -151,29 +165,33 @@ const MobileCard = memo(function MobileCard({
             </div>
           )}
           <div className="flex flex-col gap-1 overflow-hidden">
-            <span className="text-xs font-bold text-primary/90 uppercase tracking-[0.2em]">{columns[0].header}</span>
+            <span className="text-xs font-bold text-primary/90 uppercase tracking-[0.2em]">{primaryColumn.header}</span>
             <div className="font-[number:var(--font-weight-hub-title)] text-lg text-foreground truncate tracking-tight">
-              {typeof columns[0].accessor === 'function' ? (columns[0].accessor as any)(item, index) : item?.[columns[0].accessor]}
+              {renderCell(primaryColumn, item, index)}
             </div>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-2 gap-y-5 gap-x-4 pt-5 border-t border-border/50">
-        {columns.slice(1).map((column: any, idx: number) => (
+        {columns.slice(1).map((column, idx) => (
           <div key={`mobile-col-${idx}`} className="space-y-1 overflow-hidden">
             <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">{column.header}</p>
             <div className="text-sm font-bold text-foreground/80 truncate">
-              {typeof column.accessor === 'function' ? (column.accessor as any)(item, index) : item?.[column.accessor]}
+              {renderCell(column, item, index)}
             </div>
           </div>
         ))}
       </div>
     </div>
   );
-});
+}
 
-export function StandardDataTable<T extends { [key: string]: any }>({
+const MobileCard = memo(MobileCardComponent) as typeof MobileCardComponent;
+
+const EMPTY_SELECTED_IDS = new Set<unknown>();
+
+export function StandardDataTable<T extends object>({
   columns,
   data,
   loading,
@@ -194,7 +212,6 @@ export function StandardDataTable<T extends { [key: string]: any }>({
 
   const keyField = (keyFieldProp ?? ('id' as keyof T)) as keyof T;
 
-  const [selectedIds, setSelectedIds] = useState<Set<any>>(new Set());
   const [searchKeyword, setSearchKeyword] = useState(search?.value ?? "");
   /** 실제로 서버/상위에 제출된 검색어 (빈 결과 문구·선택 초기화 기준) */
   const [appliedKeyword, setAppliedKeyword] = useState(search?.value ?? "");
@@ -210,10 +227,25 @@ export function StandardDataTable<T extends { [key: string]: any }>({
 
   const currentPage = pagination?.currentPage;
 
-  // 페이지/검색 변경 시 선택 초기화 — 현재 페이지 밖 항목이 선택 카운트에만 남아
-  // "8개 선택됨인데 3건만 처리"되는 데이터 정합 결함 방지
-  useEffect(() => {
-    setSelectedIds(prev => (prev.size > 0 ? new Set() : prev));
+  // 선택 집합을 페이지/적용 검색어 범위에 귀속한다. 범위가 바뀐 첫 렌더부터 빈 집합으로
+  // 보이므로 effect 의 후행 setState·추가 렌더 없이 이전 페이지 선택이 섞이지 않는다.
+  const [selectionState, setSelectionState] = useState<{
+    currentPage: number | undefined;
+    appliedKeyword: string;
+    ids: Set<unknown>;
+  }>(() => ({ currentPage, appliedKeyword, ids: new Set() }));
+  const selectionMatchesScope = selectionState.currentPage === currentPage
+    && selectionState.appliedKeyword === appliedKeyword;
+  const selectedIds = selectionMatchesScope ? selectionState.ids : EMPTY_SELECTED_IDS;
+  const setSelectedIds = useCallback((action: React.SetStateAction<Set<unknown>>) => {
+    setSelectionState(previous => {
+      const previousIds = previous.currentPage === currentPage
+        && previous.appliedKeyword === appliedKeyword
+        ? previous.ids
+        : EMPTY_SELECTED_IDS;
+      const ids = typeof action === 'function' ? action(previousIds) : action;
+      return { currentPage, appliedKeyword, ids };
+    });
   }, [currentPage, appliedKeyword]);
 
   // keyField 미전달 경고 (개발 모드 전용, 1회만)
@@ -222,7 +254,7 @@ export function StandardDataTable<T extends { [key: string]: any }>({
     if (process.env.NODE_ENV === 'production' || keyFieldProp !== undefined || keyFieldWarnedRef.current) return;
     const rows = data || [];
     if (rows.length > 0) keyFieldWarnedRef.current = true;
-    if (rows.length > 0 && rows.some(item => item && item['id'] === undefined)) {
+    if (rows.length > 0 && rows.some(item => item && Reflect.get(item, 'id') === undefined)) {
       console.warn(
         '[StandardDataTable] keyField 가 지정되지 않아 기본값 "id" 를 사용하는데 데이터에 id 가 없습니다. ' +
         '행 key 와 선택 상태가 인덱스로 대체되어 정렬/페이지 이동 시 오작동할 수 있습니다. keyField 를 명시하세요.'
@@ -243,16 +275,16 @@ export function StandardDataTable<T extends { [key: string]: any }>({
     } else {
       setSelectedIds(new Set((data || []).filter(item => item && item?.[keyField] !== undefined).map(item => item?.[keyField])));
     }
-  }, [data, selectedIds.size, keyField]);
+  }, [data, selectedIds.size, keyField, setSelectedIds]);
 
-  const toggleOne = useCallback((id: any) => {
+  const toggleOne = useCallback((id: unknown) => {
     setSelectedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
       return next;
     });
-  }, []);
+  }, [setSelectedIds]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();

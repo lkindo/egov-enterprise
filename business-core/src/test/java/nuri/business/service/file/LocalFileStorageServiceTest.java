@@ -10,6 +10,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.mock.web.MockMultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -191,5 +192,102 @@ class LocalFileStorageServiceTest {
         // 잘못된 경로 (예: null 바이트 포함 등)
         assertThatThrownBy(() -> storageService.store(file, "invalid\0path"))
                 .isInstanceOf(Exception.class);
+    }
+
+    @Test
+    @DisplayName("저장 경로가 루트 밖으로 이탈하면 파일을 쓰기 전에 거부한다")
+    void store_PathTraversal_ThrowsException() {
+        Path storageRoot = tempDir.resolve("storage-root");
+        LocalFileStorageService scopedStorage = new LocalFileStorageService(storageRoot.toString());
+        MockMultipartFile file = new MockMultipartFile(
+                "file", "report.txt", "text/plain", "content".getBytes());
+
+        assertThatThrownBy(() -> scopedStorage.store(file, "../escaped"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        assertThat(tempDir.resolve("escaped")).doesNotExist();
+    }
+
+    @Test
+    @DisplayName("복사 도중 I/O 오류가 나면 생성된 부분 파일을 제거한다")
+    void store_CopyFailure_RemovesPartialFile() throws IOException {
+        Path storageRoot = tempDir.resolve("storage-root");
+        LocalFileStorageService scopedStorage = new LocalFileStorageService(storageRoot.toString());
+        MockMultipartFile failingFile = new MockMultipartFile(
+                "file", "report.txt", "text/plain", "non-empty".getBytes()) {
+            @Override
+            public InputStream getInputStream() {
+                return new InputStream() {
+                    private final byte[] bytes = "partial-content".getBytes();
+                    private int index;
+
+                    @Override
+                    public int read() throws IOException {
+                        if (index >= 4) {
+                            throw new IOException("simulated copy failure");
+                        }
+                        return bytes[index++];
+                    }
+                };
+            }
+        };
+
+        assertThatThrownBy(() -> scopedStorage.store(failingFile, "documents"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INTERNAL_SERVER_ERROR);
+
+        try (java.util.stream.Stream<Path> files = Files.walk(storageRoot)) {
+            assertThat(files.filter(Files::isRegularFile)).isEmpty();
+        }
+    }
+
+    @Test
+    @DisplayName("조회 경로가 루트 밖으로 이탈하면 외부 파일을 노출하지 않는다")
+    void loadAsResource_PathTraversal_ThrowsException() throws IOException {
+        Path storageRoot = tempDir.resolve("storage-root");
+        Files.createDirectories(storageRoot);
+        Files.writeString(tempDir.resolve("secret.txt"), "secret");
+        LocalFileStorageService scopedStorage = new LocalFileStorageService(storageRoot.toString());
+
+        assertThatThrownBy(() -> scopedStorage.loadAsResource("secret.txt", ".."))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    @DisplayName("삭제 경로가 루트 밖으로 이탈하면 외부 파일을 지우지 않는다")
+    void delete_PathTraversal_DoesNotDeleteExternalFile() throws IOException {
+        Path storageRoot = tempDir.resolve("storage-root");
+        Files.createDirectories(storageRoot);
+        Path externalFile = Files.writeString(tempDir.resolve("keep.txt"), "keep");
+        LocalFileStorageService scopedStorage = new LocalFileStorageService(storageRoot.toString());
+
+        assertThatThrownBy(() -> scopedStorage.delete("keep.txt", ".."))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        assertThat(externalFile).exists();
+    }
+
+    @Test
+    @DisplayName("디렉터리는 다운로드 가능한 파일 리소스로 반환하지 않는다")
+    void loadAsResource_Directory_ThrowsNotFound() throws IOException {
+        Files.createDirectories(tempDir.resolve("folder"));
+
+        assertThatThrownBy(() -> storageService.loadAsResource("folder"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
+
+    @Test
+    @DisplayName("load와 loadAll도 저장소 루트 경계를 벗어나지 못한다")
+    void pathReturningApis_RejectTraversal() {
+        assertThatThrownBy(() -> storageService.load("../outside.txt"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> storageService.loadAll(".."))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
     }
 }

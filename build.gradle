@@ -94,7 +94,7 @@ tasks.withType(Test) {
     systemProperty "spring.main.allow-bean-definition-overriding", "true"
 }
 
-subprojects {
+subprojects { subproject ->
     apply plugin: 'java-library'
     apply plugin: 'io.spring.dependency-management'
     apply plugin: 'io.freefair.lombok'
@@ -126,7 +126,10 @@ subprojects {
     tasks.withType(Test).configureEach {
         systemProperty 'file.encoding', 'UTF-8'
         useJUnitPlatform()
-        systemProperties System.properties
+        // 데몬의 user.dir(항상 저장소 루트)를 Test JVM에 복사하면 JaCoCo의 상대 destfile이 모든
+        // 모듈에서 root/build/jacoco/test.exec로 수렴한다. 나머지 -D 속성은 전달하되 작업 디렉터리는
+        // Gradle Test 태스크의 프로젝트별 기본값을 유지한다.
+        systemProperties System.properties.findAll { key, ignored -> key != 'user.dir' }
         // [CI 패리티] CI 러너는 UTC 다. `systemProperties System.properties` 가 데몬의 user.timezone(KST)을
         // 그대로 넘기기 때문에, 로컬에서는 KST 로 통과하고 CI(UTC)에서만 깨지는 시간대 의존 테스트가
         // 로컬에서 드러나지 않는다 — 2026-07-26 LoginPolicyManageServiceTest 가 정확히 그 형태였다.
@@ -137,10 +140,11 @@ subprojects {
         maxHeapSize = "6144m"
         ignoreFailures = false
         
-        // Jacoco 명시적 설정: 하위 프로젝트별 물리적 build 폴더 하위에 격리하여 생성 강제
+        // JaCoCo 플러그인의 기본 목적지(build/jacoco/<task>.exec)를 그대로 쓴다. 루트 스크립트에서
+        // destinationFile을 강제하면 Groovy 클로저 위임 때문에 모든 하위 프로젝트가 루트 파일을
+        // 공유할 수 있고, harnessTest가 전 모듈 결과를 덮어써 커버리지가 실행 순서에 따라 흔들린다.
         jacoco {
             enabled = true
-            destinationFile = layout.buildDirectory.file("jacoco/test.exec").map { it.asFile }.get()
         }
         
         finalizedBy 'jacocoTestReport'
@@ -323,6 +327,34 @@ subprojects {
     }
 }
 
+// 통합 리포트와 검증 태스크가 반드시 같은 분모·실행 데이터를 쓰도록 한 곳에 고정한다.
+// 둘을 각자 선언하면 리포트는 수치를 내는데 verification은 입력 0건으로 SKIPPED 되는 false-green이 난다.
+def jacocoAggregateExcludes = [
+    "**/Q*.class",
+    "**/Q*Entity.class",
+    "**/*Request.class",
+    "**/*Response.class",
+    "**/*Dto.class",
+    "**/dto/**",
+    "**/*Config.class",
+    "**/*Application.class",
+    "**/*VO.class",
+    "**/*DAO.class",
+    "**/*Mapper.class",
+    "**/*MapperImpl.class",
+    "**/*Initializer.class",
+    "**/*Advice.class"
+]
+def jacocoAggregateClassDirectories = subprojects.collect {
+    fileTree(dir: "${it.projectDir}/build/classes/java/main", exclude: jacocoAggregateExcludes)
+}
+def jacocoAggregateExecutionData = files(subprojects.collect { subproject ->
+    // FileTree는 실행 시 평가되어 api-server/build.gradle에서 뒤늦게 등록되는 harnessTest도 포함한다.
+    // schemaValidationTest는 Docker 부팅 검증이고 위 coverageTests에서도 제외하므로 오래된 exec도 배제한다.
+    subproject.fileTree(dir: "${subproject.projectDir}/build/jacoco",
+            include: "*.exec", exclude: "schemaValidationTest.exec")
+})
+
 // 통합 리포트 태스크 (현대적인 Gradle 9 멀티프로젝트 집계 설정)
 tasks.register('jacocoRootReport', JacocoReport) {
     description = 'Generates an aggregate report from all subprojects using explicit paths'
@@ -342,27 +374,10 @@ tasks.register('jacocoRootReport', JacocoReport) {
     })
  
     // 클래스 디렉토리 통합 및 필터링
-    classDirectories.setFrom(subprojects.collect { 
-        fileTree(dir: "${it.projectDir}/build/classes/java/main", exclude: [
-            "**/Q*.class",
-            "**/Q*Entity.class",
-            "**/*Request.class",
-            "**/*Response.class",
-            "**/*Dto.class",
-            "**/dto/**",
-            "**/*Config.class",
-            "**/*Application.class",
-            "**/*VO.class",
-            "**/*DAO.class",
-            "**/*Mapper.class",
-            "**/*MapperImpl.class",
-            "**/*Initializer.class",
-            "**/*Advice.class"
-        ])
-    })
+    classDirectories.setFrom(jacocoAggregateClassDirectories)
  
-    // 실행 데이터(.exec) 통합: 모든 하위 프로젝트가 루트의 단일 파일로 모이는 현상 활용
-    executionData.setFrom(file("${rootProject.buildDir}/jacoco/test.exec"))
+    // 실행 데이터(.exec) 통합: 프로젝트·Test 태스크별 격리 파일을 전부 합산한다.
+    executionData.setFrom(jacocoAggregateExecutionData)
 
     reports {
         xml.required = true
@@ -377,6 +392,11 @@ tasks.register('jacocoRootCoverageVerification', JacocoCoverageVerification) {
     group = 'Verification'
     
     dependsOn jacocoRootReport
+
+    // JacocoCoverageVerification은 report의 입력을 자동 상속하지 않는다. 이 두 줄이 없으면
+    // 태스크 이름은 CI/localGate에 있어도 실제 판정은 SKIPPED 된다(2026-08-12 실측).
+    classDirectories.setFrom(jacocoAggregateClassDirectories)
+    executionData.setFrom(jacocoAggregateExecutionData)
     
     violationRules {
         rule {
@@ -467,11 +487,11 @@ tasks.register('frontendUnitTest') {
  * 병합·릴리스 전에 이 태스크로 한 번 전수 확인한다.
  */
 tasks.register('localGate') {
-    description = '로컬 전체 게이트: 하네스 린터 + 실PG 스키마 검증(Docker) + 전 모듈 테스트 + 프런트 vitest 전수 (약 12분)'
+    description = '로컬 전체 게이트: 하네스 + 실PG + 전 모듈 테스트 + JaCoCo 50% + 프런트 vitest/coverage 래칫 (약 12분)'
     group = 'Verification'
     dependsOn ':api-server:harnessTest', ':api-server:schemaValidationTest',
             ':business-core:test', ':business-app:test', ':foundation:test',
-            'frontendUnitTest'
+            'jacocoRootCoverageVerification', 'frontendUnitTest'
 }
 
 // 모든 빌드에서 훅 설치 상태를 보정한다 — "새 클론에서 게이트가 조용히 꺼져 있는" 상태를 없앤다.

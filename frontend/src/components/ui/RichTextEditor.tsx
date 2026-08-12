@@ -80,7 +80,7 @@ export default function RichTextEditor({ value, onChange, className }: RichTextE
   if (!mounted || !editor) return null;
 
   return (
-    <div className={cn("relative group border-2 border-border/50 rounded-lg bg-white dark:bg-muted/10 overflow-hidden transition-all focus-within:border-primary/20 focus-within:shadow-2xl focus-within:shadow-primary/5", className)}>
+    <div className={cn("relative group border-2 border-border/50 rounded-lg bg-card dark:bg-muted/10 overflow-hidden transition-all focus-within:border-primary/20 focus-within:shadow-2xl focus-within:shadow-primary/5", className)}>
       
       {/* --- Top Persistent Toolbar --- */}
       <div className="flex items-center flex-wrap gap-2 p-4 bg-muted dark:bg-muted/20 border-b border-border/50 relative z-20">
@@ -210,7 +210,7 @@ function ToolbarButton({ onClick, active, icon, className }: ToolbarButtonProps)
 }
 
 function ToolbarGroup({ children }: { children: React.ReactNode }) {
-  return <div className="flex items-center gap-1.5 p-1 bg-white dark:bg-muted/40 rounded-lg border border-border/40 shadow-sm">{children}</div>;
+  return <div className="flex items-center gap-1.5 p-1 bg-card dark:bg-muted/40 rounded-lg border border-border/40 shadow-sm">{children}</div>;
 }
 
 function ToolbarDivider() {

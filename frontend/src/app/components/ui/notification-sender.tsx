@@ -80,7 +80,7 @@ export function NotificationSender() {
             <label className="text-xs font-bold text-primary tracking-[0.3em] ml-2">수신 대상자 분할</label>
             <div className="p-6 rounded-lg bg-muted/40 border-2 border-dashed border-primary/10 flex items-center justify-between hover:border-primary/30 transition-colors cursor-pointer group/target">
               <div className="flex items-center gap-4">
-                <div className="w-12 h-12 rounded-lg bg-white border flex items-center justify-center shadow-inner group-hover/target:scale-110 transition-transform">
+                <div className="w-12 h-12 rounded-lg bg-card border flex items-center justify-center shadow-inner group-hover/target:scale-110 transition-transform">
                   <Users className="text-muted-foreground" size={20} />
                 </div>
                 <div>

@@ -43,7 +43,7 @@ graph LR
 - **Server State**: **TanStack Query (v5)**를 사용하여 데이터 캐싱 및 낙관적 업데이트(Optimistic Update)를 관리합니다.
 
 ### 4. Middleware Security & RBAC
-`src/middleware.ts`를 통해 라우팅 레벨에서 보안 및 접근 제어를 수행합니다.
+`src/proxy.ts`를 통해 라우팅 레벨에서 보안 및 접근 제어를 수행합니다.
 - **Session Check & RBAC**: 미들웨어가 HttpOnly `accessToken` JWT를 Web Crypto(`crypto.subtle.verify`)로 서명·만료(exp) 검증하고(단순 존재 확인 아님, `alg` 화이트리스트로 none·비대칭 혼동 공격 차단) 검증된 `payload.role`로 `/admin` 등 민감 경로를 게이팅 — 위조된 `userRole` 쿠키는 불신.
 
 ## 🎨 Design System & UI Consistency

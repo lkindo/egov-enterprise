@@ -8,7 +8,7 @@ export default function SurveyPollsManagePage() {
         title="설문 여론조사 관리"
         breadcrumbs={[{ label: '설문조사' }, { label: '여론조사 관리' }]}
       />
-      <div className="p-20 text-center bg-white rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-6">
+      <div className="p-20 text-center bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-6">
         <div className="w-20 h-11 bg-amber-50 rounded-lg flex items-center justify-center text-amber-300">
             <Vote size={40} />
         </div>

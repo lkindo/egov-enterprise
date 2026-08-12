@@ -121,6 +121,30 @@ describe('CommentSection Component', () => {
     });
   });
 
+  it('등록 실패 시 지워졌던 댓글 원문을 입력창에 복구한다', async () => {
+    vi.mocked(commentActions.createComment).mockResolvedValue({ success: false, message: '등록 실패' });
+    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={[]} />);
+
+    const textarea = screen.getByLabelText('새 댓글 작성');
+    fireEvent.change(textarea, { target: { value: '사라지면 안 되는 댓글' } });
+    fireEvent.click(screen.getByRole('button', { name: /commit response/i }));
+
+    await waitFor(() => expect(commentActions.createComment).toHaveBeenCalled());
+    await waitFor(() => expect(textarea).toHaveValue('사라지면 안 되는 댓글'));
+  });
+
+  it('수정 실패 시 편집 폼과 사용자가 고친 원문을 다시 연다', async () => {
+    vi.mocked(commentActions.updateComment).mockResolvedValue({ success: false, message: '수정 실패' });
+    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={mockComments} />);
+
+    fireEvent.click(screen.getByTestId('comment-edit-button'));
+    fireEvent.change(screen.getByLabelText('댓글 수정 내용'), { target: { value: '보존할 수정 원문' } });
+    fireEvent.click(screen.getByTestId('edit-save-button'));
+
+    await waitFor(() => expect(commentActions.updateComment).toHaveBeenCalled());
+    await waitFor(() => expect(screen.getByLabelText('댓글 수정 내용')).toHaveValue('보존할 수정 원문'));
+  });
+
   /**
    * [2026-08-12 신설] 서버 미확정(낙관적) 행에는 수정·삭제 affordance 가 없어야 한다.
    *
@@ -140,7 +164,7 @@ describe('CommentSection Component', () => {
       ansSn: 0.123456,
       ansCn: 'Pending Comment',
       isOptimistic: true,
-    } as CommentVO;
+    } as CommentViewForTest;
 
     render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={[optimisticRow]} />);
 
@@ -158,3 +182,5 @@ describe('CommentSection Component', () => {
     expect(screen.queryByTestId('comment-delete-button')).not.toBeNull();
   });
 });
+
+type CommentViewForTest = CommentVO & { isOptimistic: boolean };

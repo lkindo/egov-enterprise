@@ -162,7 +162,7 @@
 
 - **단순성 +3**: 하드코딩 팔레트 색 **207(07-18 동결 census) → 114**(게이트 자체 로직 재현 실측, 334파일 스캔·위반 37파일). §1.4 의 861건 스윕(+6)보다 작은 이득이라 비례 배분.
 - **완성도 +2**: admin menu 감사 P0/P1/P2 UI 결함 다수 해소(벌크·물리삭제 404 배선, 권한 매트릭스 허위 표시 정직화, 부서 전량 로드).
-- **연결부 +1**: `middleware.test.ts`·`form-action-confirm-deadlock-guard`·`e2e-blind-wait-ratchet` 신설.
+- **연결부 +1**: `proxy.test.ts`·`form-action-confirm-deadlock-guard`·`e2e-blind-wait-ratchet` 신설.
 - **캡(정직)**: 잔여 하드코딩 114 · RBAC 하드코딩(제품결정) · **E2E 런타임 신호 부재**(아래 SEAM 참조). FE auth(§2.F)는 `fe-auth-hardening.test.ts`(07-18)로 이미 봉합·게이트化 확인 — localStorage 토큰 프로덕션 **0**(가드 테스트 주석만), 미들웨어 role 은 **서명검증 JWT 에서만** 추출(위조 `userRole` 쿠키 직접신뢰 회귀를 테스트가 차단).
 
 #### SEAM (67/70/63 → 69/73/70) — 이번 기간 최대 이동

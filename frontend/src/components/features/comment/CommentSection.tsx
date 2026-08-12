@@ -17,6 +17,12 @@ interface CommentSectionProps {
   initialComments: CommentVO[];
 }
 
+type CommentView = CommentVO & { isOptimistic?: boolean };
+type OptimisticCommentAction =
+  | { type: 'add'; payload: CommentView }
+  | { type: 'delete'; payload: number }
+  | { type: 'update'; payload: Pick<CommentVO, 'ansSn' | 'ansCn'> };
+
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CommentSection({ pstId, bbsId, initialComments }: CommentSectionProps) {
@@ -24,9 +30,9 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
   const { toast } = useToast();
   
   // Optimistic State Management (React 19)
-  const [optimisticComments, addOptimisticComment] = useOptimistic(
+  const [optimisticComments, addOptimisticComment] = useOptimistic<CommentView[], OptimisticCommentAction>(
     initialComments,
-    (state: CommentVO[], action: { type: 'add' | 'delete' | 'update', payload: any }) => {
+    (state, action) => {
       switch (action.type) {
         case 'add':
           return [action.payload, ...state];
@@ -61,16 +67,26 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
         type: 'add',
         payload: {
           ansSn: tempId,
+          pstId,
+          bbsId,
           ansCn: content,
+          wrterId: '',
           wrterNm: 'User', // Assume current user
           crtDt: new Date().toISOString(),
           isOptimistic: true
         }
       });
 
-      const result = await createComment(null, formData);
-      if (!result.success) {
-        toast(result.message || '댓글 등록에 실패했습니다.', 'error');
+      try {
+        const result = await createComment(null, formData);
+        if (!result.success) {
+          // 요청 중 사용자가 새로 입력했다면 덮어쓰지 않고, 비어 있을 때만 실패한 원문을 복구한다.
+          setAnsCn(current => current.trim() ? current : content);
+          toast(result.message || '댓글 등록에 실패했습니다.', 'error');
+        }
+      } catch {
+        setAnsCn(current => current.trim() ? current : content);
+        toast('댓글 등록 중 오류가 발생했습니다.', 'error');
       }
     });
   };
@@ -86,9 +102,13 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
       formData.append('bbsId', bbsId);
       formData.append('pstId', pstId);
       
-      const result = await deleteComment(null, formData);
-      if (!result.success) {
-        toast(result.message || '삭제에 실패했습니다.', 'error');
+      try {
+        const result = await deleteComment(null, formData);
+        if (!result.success) {
+          toast(result.message || '삭제에 실패했습니다.', 'error');
+        }
+      } catch {
+        toast('댓글 삭제 중 오류가 발생했습니다.', 'error');
       }
     });
   };
@@ -108,9 +128,18 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
       formData.append('bbsId', bbsId);
       formData.append('pstId', pstId);
       
-      const result = await updateComment(null, formData);
-      if (!result.success) {
-        toast(result.message || '수정에 실패했습니다.', 'error');
+      try {
+        const result = await updateComment(null, formData);
+        if (!result.success) {
+          // 낙관적 본문은 useOptimistic이 원복한다. 편집 폼도 다시 열어 사용자의 수정 원문을 보존한다.
+          setEditingId(id);
+          setEditCn(originalContent);
+          toast(result.message || '수정에 실패했습니다.', 'error');
+        }
+      } catch {
+        setEditingId(id);
+        setEditCn(originalContent);
+        toast('댓글 수정 중 오류가 발생했습니다.', 'error');
       }
     });
   };
@@ -156,7 +185,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
               >
                 <Card className={cn(
                   "border border-white shadow-2xl rounded-3xl overflow-hidden bg-white/70 backdrop-blur-md ring-1 ring-black/5 hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] transition-all group",
-                  (comment as any).isOptimistic && "opacity-60 grayscale-[0.5]"
+                  comment.isOptimistic && "opacity-60 grayscale-[0.5]"
                 )}>
                   <CardContent className="p-10">
                     <div className="flex flex-col gap-6">
@@ -180,11 +209,11 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
                           `editingId` 가 새 `ansSn` 과 어긋나 **폼이 조용히 접히며 입력이 유실된다.**
                           (카드가 이미 opacity/grayscale 로 미확정임을 알리고 있었는데, 동작만 막지 않고 있었다.)
                         */}
-                        {!(comment as any).isOptimistic && (
+                        {!comment.isOptimistic && (
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                           {editingId === comment.ansSn ? (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(comment.ansSn)} aria-label="댓글 수정 저장" className="h-10 w-10 p-0 rounded-xl text-green-600 hover:bg-green-50" data-testid="edit-save-button"><Check className="w-5 h-5" /></Button>
+                              <Button variant="ghost" size="sm" onClick={() => handleEdit(comment.ansSn)} aria-label="댓글 수정 저장" className="h-10 w-10 p-0 rounded-xl text-success-emphasis hover:bg-success/10" data-testid="edit-save-button"><Check className="w-5 h-5" /></Button>
                               <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} aria-label="댓글 수정 취소" className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted" data-testid="edit-cancel-button"><X className="w-5 h-5" /></Button>
                             </>
                           ) : (
@@ -265,6 +294,6 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
 
 
 // Utility function for conditional class names
-function cn(...classes: any[]) {
+function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ');
 }

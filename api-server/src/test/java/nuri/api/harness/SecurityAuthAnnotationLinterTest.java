@@ -238,8 +238,10 @@ class SecurityAuthAnnotationLinterTest {
      * (신규 도메인을 통째로 면제하는 값싼 길을 막기 위해 {@code 클래스#메서드} 단위로 잘게 동결한다.)
      */
     private static final Set<String> READ_COVERED_BY_WRITE_RATIONALE = new java.util.TreeSet<>(java.util.Set.of(
-            // [동결 2026-08-04] 최초 census 실행 결과 — 38건.
-            //   ⚠ 원장(§4 "인가 린터 커버리지")은 이 수를 49건으로 적었다. 실측은 38건이다.
+            // [동결 2026-08-04] 최초 census 실행 결과 38건, 2026-08-12 알림 API 3건을
+            //   수신자 스코프 쿼리 + 클래스 인증 가드로 해소했고, 비정형 결재 상세·목록 2건도
+            //   참여자 스코프 + 클래스 인증 가드로 해소해 현재 33건.
+            //   ⚠ 원장(§4 "인가 린터 커버리지")의 49건은 당시에도 실측과 달랐다.
             //   전부가 취약점인 것은 아니다 — 일부는 이미 서비스 계층에 읽기 소유권 가드가 있다
             //   (예: NoteService.getNoteDetail 은 발신/수신 본인만 통과시킨다). 이 목록이 말하는 것은
             //   "린터가 그 사실을 확인하지 않는다" 이지 "가드가 없다" 가 아니다.
@@ -257,8 +259,6 @@ class SecurityAuthAnnotationLinterTest {
             "CommentApiController#getComments",
             "CommunityUserApiController#getCommunities",
             "CommunityUserApiController#getCommunity",
-            "InformalSanctionApiController#getInformalSanction",
-            "InformalSanctionApiController#getInformalSanctionList",
             "MailApiController#getSentMail",
             "MailApiController#getSentMails",
             "MemoReportApiController#getMemoReport",
@@ -267,9 +267,6 @@ class SecurityAuthAnnotationLinterTest {
             "NoteApiController#getNote",
             "NoteApiController#getReceivedNotes",
             "NoteApiController#getSentNotes",
-            "NotificationApiController#getNotification",
-            "NotificationApiController#getNotifications",
-            "NotificationApiController#getUnreadCount",
             "PollApiController#getPoll",
             "PollApiController#getPollItems",
             "PollApiController#getPolls",
@@ -292,13 +289,11 @@ class SecurityAuthAnnotationLinterTest {
             "nuri.api.controller.business.report.WorkReportApiController",        // 소유권 가드(assertOwnerOrAdmin)
             "nuri.api.controller.business.note.NoteApiController",                // 소유권 가드(by-id 스코프)
             "nuri.api.controller.business.mail.MailApiController",                // 사용자 본인 메일
-            "nuri.api.controller.business.notification.NotificationApiController",// 사용자 본인 알림
             "nuri.api.controller.business.board.BbsApiController",                // 작성=자기서비스, 수정/삭제=소유권 가드
             "nuri.api.controller.business.board.BoardApiController",              // 동상
             "nuri.api.controller.business.poll.PollApiController",                // 투표=자기서비스, 관리 CRUD=서비스 hasRole(ADMIN)
             "nuri.api.controller.business.community.CommunityUserApiController",  // 커뮤니티 가입=자기서비스
-            "nuri.api.controller.business.approval.ApprovalApiController",        // 결재 확정=서비스 소유권(aprvrId) 검사
-            "nuri.api.controller.business.approval.InformalSanctionApiController" // 비정형 결재=서비스 소유권(confirm=aprvrId, update/delete=aplcntId)
+            "nuri.api.controller.business.approval.ApprovalApiController"         // 결재 확정=서비스 소유권(aprvrId) 검사
 
             // 등재하지 않는 것 ─────────────────────────────────────────────
             // · nuri.api.controller.business.admin.CommentApiController

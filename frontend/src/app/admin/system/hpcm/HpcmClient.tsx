@@ -206,7 +206,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
                     <textarea 
                       {...field} 
                       placeholder="게시판 영구 말소와 물리삭제 시 준수해야 하는 검증 프로토콜 설명입니다." 
-                      className="w-full min-h-[150px] p-3 rounded-lg border bg-muted border-border focus:bg-white focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
+                      className="w-full min-h-[150px] p-3 rounded-lg border bg-muted border-border focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
                     />
                   </FormControl>
                   <FormMessage />

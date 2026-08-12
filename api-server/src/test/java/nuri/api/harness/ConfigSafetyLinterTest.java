@@ -13,6 +13,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -47,6 +48,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  *       키가 없으면 위반(기동 차단 결함).</li>
  *   <li>base {@code application.yml} 에 flat {@code spring.datasource.connection-timeout} 이 없거나 상한
  *       ({@value #MAX_CONNECTION_TIMEOUT_MS}ms)을 넘으면 위반.</li>
+ *   <li>실효가 없는 {@code spring.datasource.hikari.*} 키가 재유입되거나, flat 최대/최소 풀 크기가
+ *       누락·역전·과대 설정되면 위반.</li>
  * </ol>
  *
  * <p><b>수량 하한 동결은 의도적으로 만들지 않는다</b> — 풀 크기 등 "N 이상" 동결은 항목 교체로 우회되고
@@ -70,6 +73,11 @@ class ConfigSafetyLinterTest {
     private static final String KEY_SHOW_DETAILS = "management.endpoint.health.show-details";
     private static final String KEY_JDBC_URL = "spring.datasource.jdbc-url";
     private static final String KEY_CONNECTION_TIMEOUT = "spring.datasource.connection-timeout";
+    private static final String KEY_MAX_POOL_SIZE = "spring.datasource.maximum-pool-size";
+    private static final String KEY_MIN_IDLE = "spring.datasource.minimum-idle";
+    private static final String KEY_MULTIPART_MAX_FILE_SIZE = "spring.servlet.multipart.max-file-size";
+    private static final String KEY_MULTIPART_MAX_REQUEST_SIZE = "spring.servlet.multipart.max-request-size";
+    private static final String IGNORED_HIKARI_PREFIX = "spring.datasource.hikari";
     /** [W1-12] 관리 포트 분리 여부. 이 키가 선언된 순간 헬스체크 이전·호스트 미노출 두 전제가 함께 요구된다. */
     private static final String KEY_MANAGEMENT_PORT = "management.server.port";
 
@@ -81,6 +89,9 @@ class ConfigSafetyLinterTest {
 
     /** 커넥션 획득 대기 상한(ms). 상한만 검사한다 — 하한 동결은 §0.7-H2 로 기각된 안티패턴. */
     private static final long MAX_CONNECTION_TIMEOUT_MS = 10_000L;
+    private static final long MAX_POOL_SIZE = 50L;
+    private static final long MAX_MULTIPART_FILE_BYTES = 10L * 1024 * 1024;
+    private static final long MAX_MULTIPART_REQUEST_BYTES = 50L * 1024 * 1024;
 
     // ---- 파싱 정규식 -----------------------------------------------------------------
     /** YAML 매핑 한 줄: 들여쓰기 + 키 + 값. 시퀀스({@code - item})·연속행은 매칭되지 않는다. */
@@ -178,6 +189,8 @@ class ConfigSafetyLinterTest {
 
         // ── 7) flat connection-timeout 상한
         auditConnectionTimeout(base, violations);
+        auditEffectiveHikariKeys(base, prod, violations);
+        auditMultipartLimits(base, prod, violations);
 
         // ── 8) [W1-12] 관리 포트 분리 형상의 두 전제 (헬스체크 이전 · 호스트 미노출)
         auditManagementPortSeparation(prod, composeProdSrc, composeBaseSrc, violations);
@@ -476,6 +489,114 @@ class ConfigSafetyLinterTest {
                     + MAX_CONNECTION_TIMEOUT_MS + "ms)을 초과합니다 — 커넥션 획득을 오래 붙들면 요청 스레드가 함께"
                     + " 묶여 장애가 전파됩니다. 상한을 늘려야 한다면 그 근거를 기록하고 값이 아니라 이 게이트를 함께 논의하십시오.");
         }
+    }
+
+    /** LegacyConfig 직접 바인딩에서 실제로 먹는 flat Hikari 키와 보수적 풀 예산을 검증한다. */
+    private void auditEffectiveHikariKeys(
+            Map<String, String> base,
+            Map<String, String> prod,
+            List<String> violations) {
+        for (Map.Entry<String, Map<String, String>> profile : Map.of(
+                "application.yml", base,
+                "application-prod.yml", prod).entrySet()) {
+            profile.getValue().keySet().stream()
+                    .filter(key -> key.equals(IGNORED_HIKARI_PREFIX)
+                            || key.startsWith(IGNORED_HIKARI_PREFIX + "."))
+                    .forEach(key -> violations.add(profile.getKey() + ": 실효 없는 키 '" + key
+                            + "' 가 있습니다 — LegacyConfig는 HikariDataSource에 spring.datasource를 직접 바인딩하므로"
+                            + " spring.datasource.hikari.* 를 조용히 무시합니다. flat 키로 옮기십시오."));
+        }
+
+        Long maxPool = parsePositiveConfig(base.get(KEY_MAX_POOL_SIZE), KEY_MAX_POOL_SIZE, violations);
+        Long minIdle = parsePositiveConfig(base.get(KEY_MIN_IDLE), KEY_MIN_IDLE, violations);
+        if (maxPool != null && maxPool > MAX_POOL_SIZE) {
+            violations.add("application.yml: " + KEY_MAX_POOL_SIZE + "=" + maxPool + "가 안전 상한("
+                    + MAX_POOL_SIZE + ")을 넘습니다 — DB max_connections 예산 확인 없이 풀을 확장하지 마십시오.");
+        }
+        if (maxPool != null && minIdle != null && minIdle > maxPool) {
+            violations.add("application.yml: minimum-idle(" + minIdle + ")가 maximum-pool-size("
+                    + maxPool + ")보다 큽니다.");
+        }
+    }
+
+    /** HTTP 파서 단계의 업로드 상한이 서비스 계층 제한보다 느슨해지거나 제거되는 회귀를 차단한다. */
+    private void auditMultipartLimits(
+            Map<String, String> base,
+            Map<String, String> prod,
+            List<String> violations) {
+        for (Map.Entry<String, Map<String, String>> profile : Map.of(
+                "application.yml", base,
+                "application-prod.yml (effective)", effectiveConfig(base, prod)).entrySet()) {
+            Long maxFile = parseDataSizeConfig(
+                    profile.getKey(), KEY_MULTIPART_MAX_FILE_SIZE,
+                    profile.getValue().get(KEY_MULTIPART_MAX_FILE_SIZE), violations);
+            Long maxRequest = parseDataSizeConfig(
+                    profile.getKey(), KEY_MULTIPART_MAX_REQUEST_SIZE,
+                    profile.getValue().get(KEY_MULTIPART_MAX_REQUEST_SIZE), violations);
+
+            if (maxFile != null && maxFile > MAX_MULTIPART_FILE_BYTES) {
+                violations.add(profile.getKey() + ": " + KEY_MULTIPART_MAX_FILE_SIZE
+                        + "가 10MiB 안전 상한을 초과합니다.");
+            }
+            if (maxRequest != null && maxRequest > MAX_MULTIPART_REQUEST_BYTES) {
+                violations.add(profile.getKey() + ": " + KEY_MULTIPART_MAX_REQUEST_SIZE
+                        + "가 50MiB 안전 상한을 초과합니다.");
+            }
+            if (maxFile != null && maxRequest != null && maxRequest < maxFile) {
+                violations.add(profile.getKey() + ": 요청 업로드 상한이 단일 파일 상한보다 작아"
+                        + " 정상적인 단일 파일 업로드도 파서 단계에서 거부됩니다.");
+            }
+        }
+    }
+
+    private Map<String, String> effectiveConfig(Map<String, String> base, Map<String, String> override) {
+        Map<String, String> effective = new LinkedHashMap<>(base);
+        effective.putAll(override);
+        return effective;
+    }
+
+    private Long parseDataSizeConfig(
+            String profile,
+            String key,
+            String raw,
+            List<String> violations) {
+        if (raw == null || unquote(raw).isEmpty()) {
+            violations.add(profile + ": " + key + " 키가 없습니다 — 대용량 multipart 본문이"
+                    + " 서비스 선검증 전에 메모리·임시 디스크를 소모할 수 있습니다.");
+            return null;
+        }
+        String value = resolvePlaceholderDefault(unquote(raw)).trim().toUpperCase(Locale.ROOT);
+        Matcher matcher = Pattern.compile("^(\\d+)(B|KB|MB|GB)?$").matcher(value);
+        if (!matcher.matches()) {
+            violations.add(profile + ": " + key + " 값 '" + value + "'을 데이터 크기로 해석할 수 없습니다.");
+            return null;
+        }
+        long multiplier = switch (matcher.group(2) == null ? "B" : matcher.group(2)) {
+            case "KB" -> 1024L;
+            case "MB" -> 1024L * 1024;
+            case "GB" -> 1024L * 1024 * 1024;
+            default -> 1L;
+        };
+        try {
+            return Math.multiplyExact(Long.parseLong(matcher.group(1)), multiplier);
+        } catch (ArithmeticException | NumberFormatException exception) {
+            violations.add(profile + ": " + key + " 값이 지원 범위를 초과합니다.");
+            return null;
+        }
+    }
+
+    private Long parsePositiveConfig(String raw, String key, List<String> violations) {
+        if (raw == null || unquote(raw).isEmpty()) {
+            violations.add("application.yml: flat " + key + " 키가 없습니다.");
+            return null;
+        }
+        Long value = parseMillis(unquote(raw));
+        if (value == null || value <= 0) {
+            violations.add("application.yml: " + key + " 값 '" + unquote(raw)
+                    + "' 은 양의 정수 또는 환경변수 기본값 형태여야 합니다.");
+            return null;
+        }
+        return value;
     }
 
     // ---- 파싱 유틸 -------------------------------------------------------------------

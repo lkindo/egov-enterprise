@@ -124,6 +124,22 @@ class SmsServiceTest {
     }
 
     @Test
+    @DisplayName("SMS 비동기 큐 포화는 수신자 대기 건을 명시적 실패로 전환")
+    void sendSms_executorRejected_marksBatchFailure() {
+        SmsDto dto = SmsDto.builder()
+                .sndngTelno("01011112222")
+                .sndngCn("Test Message")
+                .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01033334444").build()))
+                .build();
+        doThrow(new java.util.concurrent.RejectedExecutionException("full"))
+                .when(smsAsyncProcessor).processSending(anyString(), anyString(), anyString());
+
+        String smsId = smsService.sendSms("user01", dto);
+
+        verify(smsAsyncProcessor).markBatchRejected(smsId);
+    }
+
+    @Test
     @DisplayName("SMS 수신자 목록 조회 테스트")
     void getSmsRecipientsTest() {
         // Given

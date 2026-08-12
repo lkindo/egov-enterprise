@@ -12,7 +12,7 @@ git config core.hooksPath .githooks
 | 훅 | 시점 | 동작 | 강도 |
 |----|------|------|------|
 | `pre-commit` | 커밋 | DTO/Controller/api-docs.json/생성타입 스테이징 시 `codegen:verify(:zod)` 드리프트 점검 | ⚠ 경고(비차단) |
-| `pre-push` | 푸시 | `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` + (프론트 존재 시) codegen 드리프트 게이트(`codegen:verify` + `codegen:verify:zod` — api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합) + **하네스 린터**(`:api-server:harnessTest`) | ❌ 차단 |
+| `pre-push` | 푸시 | `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` + (프론트 존재 시) codegen 드리프트 게이트(`codegen:verify` + `codegen:verify:zod` — api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합) + **하네스 린터 29종**(`:api-server:harnessTest`) | ❌ 차단 |
 
 > **계약 게이트의 untracked 구멍(2026-08-01 봉합)**: `codegen:verify` 계열은 `git diff --exit-code <path>` 로 판정하는데, 대상 파일이 **언트랙이면 diff 가 무조건 exit 0** 이라 게이트가 조용히 vacuous 통과한다. 즉 `git rm --cached api-docs.json` 하나로 3중 계약 결속이 동시에 무력화됐다. (파일이 아예 없으면 `fatal: ambiguous argument` 로 loud fail 하므로, 위험 구간은 정확히 '디스크에는 있으나 언트랙' 하나다.) 이제 `git ls-files --error-unmatch` 선행 검사를 pre-push·`codegen:verify`·`codegen:verify:zod`·CI 4곳에 넣었다.
 
@@ -23,13 +23,13 @@ git config core.hooksPath .githooks
 | 계층 | 명령 | 범위 | 소요(실측) |
 |---|---|---|---|
 | pre-commit | 자동 | 시크릿 스캔(미설치 시 **경고 출력**)·계약 드리프트 경고 | 수 초 |
-| pre-push | 자동 | 컴파일 + tsc + codegen(+**tracked 선행검사**) + **하네스 20종** | ~2분 |
-| **병합 전 전수** | `./gradlew localGate` | 위 + **실PG 스키마 검증** + business/foundation 전체 테스트 | ~10분 |
-| CI | `.github/workflows/ci.yml` | **secret-scan(gitleaks)** + 전체 + 실PG 스키마 검증 + E2E + 뮤테이션 | (퍼블릭 전환 후 복구) |
+| pre-push | 자동 | 컴파일 + tsc + codegen(+**tracked 선행검사**) + **하네스 29종** | ~2분 |
+| **병합 전 전수** | `./gradlew localGate` | 위 + **실PG 스키마 검증** + 전 모듈 테스트 + **JaCoCo 50%** + 프론트 Vitest/전체소스 coverage 래칫 | ~12분 |
+| CI | `.github/workflows/ci.yml` | **secret-scan(gitleaks)** + 전체 + 실PG 스키마 검증 + 프론트 gzip 번들 예산 + E2E + 뮤테이션 | 상시 |
 
-> **하네스 개수 정정(2026-08-01)**: 종전 표기 "13종" 은 실측과 어긋났다. 두 수치를 구분해야 한다.
-> - **실행 집합 = 20** — `nuri.api.harness` 패키지의 클래스(= `harnessTest` 가 실제로 돌리는 것). 2026-08-01 Wave 0 에서 6종을 신설해 14 → 20.
-> - **동결 집합 = 26** — `baseline-manifest.properties` 의 `__harness.classes`(4개 모듈). 이 중 6종(`RbacAuthorizationMatrixTest`, `SchemaValidationIntegrationTest`, business/foundation 의 ArchUnit 등)은 **harnessTest 필터 밖이라 pre-push 에서 돌지 않는다** — 실행 경로는 `test`/`localGate`/CI 다. "모든 하네스 게이트가 pre-push 에서 돈다" 는 전제는 거짓이므로 여기 명시한다.
+> **하네스 개수 정정(2026-08-12 실측)**: 두 수치를 구분해야 한다.
+> - **실행 집합 = 29** — 현재 `nuri.api.harness` 패키지의 테스트 클래스(= `harnessTest` 가 실제로 돌리는 것).
+> - **동결 집합 = 35** — `baseline-manifest.properties` 의 `__harness.classes`(4개 모듈). 이 중 6종(`RbacAuthorizationMatrixTest`, `SchemaValidationIntegrationTest`, business/foundation 의 ArchUnit 등)은 **harnessTest 필터 밖이라 pre-push 에서 돌지 않는다** — 실행 경로는 `test`/`localGate`/CI 다. "모든 하네스 게이트가 pre-push 에서 돈다" 는 전제는 거짓이므로 여기 명시한다.
 
 ### 2026-08-01 Wave 0 신설 게이트 6종
 

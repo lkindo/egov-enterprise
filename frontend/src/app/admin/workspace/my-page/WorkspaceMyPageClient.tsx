@@ -105,7 +105,7 @@ export default function WorkspaceMyPage() {
         icon={LayoutGrid}
         actions={
           <div className="flex gap-4">
-            <Button variant="outline" aria-label="마이페이지 새로고침" onClick={() => window.location.reload()} className="h-11 w-14 rounded-xl bg-white border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
+            <Button variant="outline" aria-label="마이페이지 새로고침" onClick={() => window.location.reload()} className="h-11 w-14 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
               <RefreshCcw size={20} />
             </Button>
             <Button className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">

@@ -67,7 +67,7 @@ public class JwtTokenProvider {
      * 저장소에 커밋된 개발 기본 시크릿의 SHA-256. [W0-P0-4-c 보완 — 2026-08-03]
      *
      * <p>값 자체를 상수로 두면 이 파일이 또 하나의 노출 지점이 되므로 해시만 둔다.
-     * (원본은 docker-compose.yml · application.yml · frontend/src/middleware.ts 에 있는 그 값이다.)
+     * (원본은 docker-compose.yml · application.yml · frontend/src/proxy.ts 에 있는 그 값이다.)
      *
      * <p>[왜 필요한가] 종전 prod 방어는 {@code ${JWT_SECRET}} 무기본값 fail-fast 뿐이었다.
      * 그것이 검사하는 것은 <b>변수의 존재</b>이지 <b>값의 안전성</b>이 아니다 —
@@ -149,7 +149,7 @@ public class JwtTokenProvider {
     /**
      * 시크릿의 SHA-256 앞 8자. 값 자체는 절대 로그에 남기지 않는다.
      *
-     * [존재 이유] 프론트 미들웨어(frontend/src/middleware.ts)가 같은 규칙으로 지문을 찍는다.
+     * [존재 이유] 프론트 프록시(frontend/src/proxy.ts)가 같은 규칙으로 지문을 찍는다.
      * 두 지문이 다르면 좌우 시크릿 비대칭이고, 그 상태에서는 서명 검증이 전량 실패해
      * "로그인은 200 인데 페이지 진입에서 /login 으로 되돌아가는" 무음 루프가 된다(2026-07-19 발생).
      * 그때 원인을 알려주는 신호가 어디에도 없어 오래 헤맸기에, 양쪽에 대조 가능한 지문을 남긴다.

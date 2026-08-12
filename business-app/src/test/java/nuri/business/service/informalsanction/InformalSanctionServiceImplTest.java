@@ -76,14 +76,14 @@ class InformalSanctionServiceImplTest {
     }
 
     @Test
-    @DisplayName("getInformalSanctionList 테스트 - aplcntId 없음")
+    @DisplayName("getInformalSanctionList 테스트 - 신청자 ID 없이는 전체 조회하지 않고 거부")
     void getInformalSanctionList_withoutAplcntId() {
-        Page<InformalSanction> page = new PageImpl<>(List.of(InformalSanction.builder().ifmlAtrzId("ID1").build()));
-        given(informalSanctionRepository.findAll(any(PageRequest.class))).willReturn(page);
+        assertThatThrownBy(() -> informalSanctionService.getInformalSanctionList(null, PageRequest.of(0, 10)))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE);
 
-        Page<InformalSanctionDto> result = informalSanctionService.getInformalSanctionList(null, PageRequest.of(0, 10));
-
-        assertThat(result.getContent()).hasSize(1);
+        verify(informalSanctionRepository, never()).findAll(any(PageRequest.class));
     }
 
     @Test
@@ -100,14 +100,35 @@ class InformalSanctionServiceImplTest {
     @Test
     @DisplayName("getInformalSanction 테스트")
     void getInformalSanction() {
-        InformalSanction entity = InformalSanction.builder().ifmlAtrzId("ID1").taskSeCd("CD1").build();
-        given(informalSanctionRepository.findById("ID1")).willReturn(Optional.of(entity));
+        InformalSanction entity = InformalSanction.builder()
+                .ifmlAtrzId("ID1").taskSeCd("CD1").aplcntId("APP1").aprvrId("APR1").build();
+        given(informalSanctionRepository.findByIdAndParticipant("ID1", "APP1"))
+                .willReturn(Optional.of(entity));
         given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of(new CommonCodeDto("COM075", "CD1", "TaskName", "", "Y")));
 
-        InformalSanctionDto result = informalSanctionService.getInformalSanction("ID1");
+        InformalSanctionDto result = informalSanctionService.getInformalSanction("ID1", "APP1");
 
         assertThat(result.getIfmlAtrzId()).isEqualTo("ID1");
         assertThat(result.getTaskSeNm()).isEqualTo("TaskName");
+    }
+
+    @Test
+    @DisplayName("상세 BOLA 방어 - 제3자는 PK를 알아도 결재 내용을 볼 수 없음")
+    void getInformalSanction_foreignParticipantIsHidden() {
+        InformalSanction foreign = InformalSanction.builder()
+                .ifmlAtrzId("FOREIGN").taskSeCd("CD1").aplcntId("OWNER").aprvrId("APPROVER").build();
+        // 비스코프 findById로 회귀하면 이 sentinel이 노출되어 테스트가 red가 된다.
+        lenient().when(informalSanctionRepository.findById("FOREIGN")).thenReturn(Optional.of(foreign));
+        given(informalSanctionRepository.findByIdAndParticipant("FOREIGN", "ATTACKER"))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> informalSanctionService.getInformalSanction("FOREIGN", "ATTACKER"))
+                .isInstanceOf(BusinessException.class)
+                .extracting("errorCode")
+                .isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
+
+        verify(informalSanctionRepository, never()).findById("FOREIGN");
+        verifyNoInteractions(commonCodeService);
     }
 
     @Test

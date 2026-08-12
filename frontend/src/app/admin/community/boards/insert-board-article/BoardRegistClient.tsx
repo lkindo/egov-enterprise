@@ -248,7 +248,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
               render={({ field }) => (
                 <FormItem>
                   <FormControl>
-                    <div className="rounded-[2.5rem] overflow-hidden border-2 border-border bg-white shadow-2xl" data-testid="rich-text-editor">
+                    <div className="rounded-[2.5rem] overflow-hidden border-2 border-border bg-card shadow-2xl" data-testid="rich-text-editor">
                       <RichTextEditor
                         value={field.value}
                         onChange={field.onChange}
@@ -322,7 +322,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
         transition={{ delay: 0.5 }}
         className="text-center pt-8"
       >
-        <div className="inline-flex items-center gap-4 px-8 py-3 bg-white rounded-2xl border border-border shadow-xl">
+        <div className="inline-flex items-center gap-4 px-8 py-3 bg-card rounded-2xl border border-border shadow-xl">
           <Monitor size={16} className="text-slate-200" />
           <span className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em]">Enterprise Command Node - Unit Ver 3.0.0</span>
         </div>

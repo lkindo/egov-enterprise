@@ -1,6 +1,9 @@
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
-import path from 'path';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const configDirectory = fileURLToPath(new URL('.', import.meta.url));
 
 export default defineConfig({
   plugins: [react()],
@@ -11,7 +14,7 @@ export default defineConfig({
     include: ['**/*.test.{ts,tsx}'],
     testTimeout: 15000,
     alias: {
-      '@': path.resolve(__dirname, './src'),
+      '@': path.resolve(configDirectory, './src'),
     },
     coverage: {
       provider: 'v8',
@@ -50,6 +53,16 @@ export default defineConfig({
         // i18n 메시지 로더 — 선언적 설정에 가깝다.
         'src/i18n/**',
       ],
+      // [2026-08-12 실측 래칫] 전체 8개 소스 축 기준 359 tests 결과:
+      // statements 18.54 / branches 14.77 / functions 13.86 / lines 19.14.
+      // 기존에는 수치만 출력하고 어떤 하락도 통과했으므로 현재 실측 바로 아래를 최소선으로 고정한다.
+      // 개선 시에는 테스트를 늘린 뒤 이 값도 함께 상향하며, include 축소로 수치를 올리지 않는다.
+      thresholds: {
+        statements: 18,
+        branches: 14,
+        functions: 13,
+        lines: 19,
+      },
     },
   },
 });

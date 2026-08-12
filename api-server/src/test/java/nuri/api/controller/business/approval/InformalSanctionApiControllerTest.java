@@ -11,6 +11,7 @@ import nuri.business.security.annotation.WithMockCustomUser;
 
 
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -45,8 +46,13 @@ class InformalSanctionApiControllerTest extends ControllerTestSupport {
     @DisplayName("비정형 결재 상세 조회 테스트")
     @WithMockCustomUser(username = "user01", esntlId = "user01")
     void getInformalSanctionTest() throws Exception {
+        given(informalSanctionService.getInformalSanction("IS1", "user01"))
+                .willReturn(InformalSanctionDto.builder().ifmlAtrzId("IS1").build());
+
         mockMvc.perform(get("/api/v1/informal-sanctions/IS1"))
                 .andExpect(status().isOk());
+
+        verify(informalSanctionService).getInformalSanction("IS1", "user01");
     }
 
     @Test

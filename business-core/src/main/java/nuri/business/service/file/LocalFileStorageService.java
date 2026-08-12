@@ -1,7 +1,6 @@
 package nuri.business.service.file;
-import nuri.foundation.core.exception.CommonErrorCode;
-
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.storage.FileStorageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -14,9 +13,12 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -31,20 +33,25 @@ public class LocalFileStorageService implements FileStorageService {
     private final Path rootLocation;
 
     public LocalFileStorageService(@Value("${file.upload.path:./storage/uploads}") String uploadPath) {
-        this.rootLocation = Paths.get(uploadPath);
         try {
-            Files.createDirectories(rootLocation);
-        } catch (IOException e) {
-            log.error("Could not initialize storage location", e);
+            this.rootLocation = Paths.get(Objects.requireNonNull(uploadPath)).toAbsolutePath().normalize();
+        } catch (InvalidPathException | NullPointerException exception) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
+        createRootLocation();
     }
 
     @Override
     public void init() {
+        createRootLocation();
+    }
+
+    private void createRootLocation() {
         try {
             Files.createDirectories(rootLocation);
         } catch (IOException e) {
             log.error("Could not initialize storage location", e);
+            throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -55,24 +62,40 @@ public class LocalFileStorageService implements FileStorageService {
 
     @Override
     public String store(MultipartFile file, String targetPath) {
-        String originalFilename = StringUtils
-                .cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
+        Objects.requireNonNull(file);
+        String originalFilename = StringUtils.cleanPath(
+                Objects.requireNonNull(file.getOriginalFilename()));
         String extension = StringUtils.getFilenameExtension(originalFilename);
-        String savedFilename = UUID.randomUUID().toString() + (extension != null ? "." + extension : "");
+        if (extension != null && !extension.matches("[A-Za-z0-9]{1,10}")) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        String normalizedExtension = extension == null ? "" : "." + extension.toLowerCase(Locale.ROOT);
+        String savedFilename = UUID.randomUUID() + normalizedExtension;
+        Path destinationFile = null;
 
         try {
             if (file.isEmpty()) {
                 throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
             }
 
-            Path destinationDir = this.rootLocation.resolve(Objects.requireNonNull(targetPath));
+            Path destinationDir = resolveWithinRoot(targetPath);
             Files.createDirectories(destinationDir);
+            assertRealPathWithinRoot(destinationDir);
+            destinationFile = destinationDir.resolve(savedFilename);
 
             try (InputStream inputStream = file.getInputStream()) {
-                Files.copy(inputStream, destinationDir.resolve(savedFilename), StandardCopyOption.REPLACE_EXISTING);
+                Files.copy(inputStream, destinationFile, StandardCopyOption.REPLACE_EXISTING);
             }
         } catch (IOException e) {
-            throw new BusinessException("File storage failed: " + e.getMessage(), CommonErrorCode.INTERNAL_SERVER_ERROR);
+            if (destinationFile != null) {
+                try {
+                    Files.deleteIfExists(destinationFile);
+                } catch (IOException cleanupFailure) {
+                    e.addSuppressed(cleanupFailure);
+                }
+            }
+            log.error("Could not store multipart file", e);
+            throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
 
         return savedFilename;
@@ -81,14 +104,12 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public Resource loadAsResource(String filename, String targetPath) {
         try {
-            Path file = rootLocation.resolve(Objects.requireNonNull(targetPath))
-                    .resolve(Objects.requireNonNull(filename));
-            Resource resource = new UrlResource(Objects.requireNonNull(file.toUri()));
-            if (resource.exists() || resource.isReadable()) {
-                return resource;
-            } else {
+            Path file = resolveWithinRoot(targetPath, filename);
+            if (!Files.isRegularFile(file) || !Files.isReadable(file)) {
                 throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
             }
+            assertRealPathWithinRoot(file);
+            return new UrlResource(file.toUri());
         } catch (MalformedURLException e) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
@@ -97,28 +118,27 @@ public class LocalFileStorageService implements FileStorageService {
     @Override
     public void delete(String filename, String targetPath) {
         try {
-            Path file = rootLocation.resolve(Objects.requireNonNull(targetPath))
-                    .resolve(Objects.requireNonNull(filename));
+            Path file = resolveWithinRoot(targetPath, filename);
+            if (Files.exists(file, LinkOption.NOFOLLOW_LINKS)) {
+                assertRealPathWithinRoot(file);
+            }
             Files.deleteIfExists(file);
         } catch (IOException e) {
-            log.error("Failed to delete file: {}", filename, e);
+            log.error("Failed to delete stored file", e);
+            throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 
     @Override
     public void delete(String filename) {
-        try {
-            Path file = rootLocation.resolve(Objects.requireNonNull(filename));
-            Files.deleteIfExists(file);
-        } catch (IOException e) {
-            log.error("Failed to delete file: {}", filename, e);
-        }
+        delete(filename, "");
     }
 
     @Override
     public Stream<Path> loadAll(String targetPath) {
         try {
-            Path path = rootLocation.resolve(Objects.requireNonNull(targetPath));
+            Path path = resolveWithinRoot(targetPath);
+            assertRealPathWithinRoot(path);
             return Files.walk(path, 1)
                     .filter(p -> !p.equals(path))
                     .map(path::relativize);
@@ -134,7 +154,7 @@ public class LocalFileStorageService implements FileStorageService {
 
     @Override
     public Path load(String filename) {
-        return rootLocation.resolve(Objects.requireNonNull(filename));
+        return resolveWithinRoot(filename);
     }
 
     @Override
@@ -156,6 +176,47 @@ public class LocalFileStorageService implements FileStorageService {
                     });
         } catch (IOException e) {
             log.error("Failed to delete all files", e);
+        }
+    }
+
+    /**
+     * 사용자 또는 DB 값에서 조립된 상대 경로가 저장소 루트 밖으로 빠져나가지 못하게 한다.
+     * 정규화 문자열 검사뿐 아니라 가장 가까운 실제 상위 경로를 확인해 심볼릭 링크 이탈도 막는다.
+     */
+    private Path resolveWithinRoot(String... components) {
+        try {
+            Path candidate = rootLocation;
+            for (String component : components) {
+                candidate = candidate.resolve(Objects.requireNonNull(component));
+            }
+            candidate = candidate.toAbsolutePath().normalize();
+            if (!candidate.startsWith(rootLocation)) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+
+            Path existing = candidate;
+            while (existing != null && !Files.exists(existing, LinkOption.NOFOLLOW_LINKS)) {
+                existing = existing.getParent();
+            }
+            if (existing == null) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            assertRealPathWithinRoot(existing);
+            return candidate;
+        } catch (InvalidPathException | NullPointerException exception) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+    }
+
+    private void assertRealPathWithinRoot(Path candidate) {
+        try {
+            Path realRoot = rootLocation.toRealPath();
+            Path realCandidate = candidate.toRealPath();
+            if (!realCandidate.startsWith(realRoot)) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+        } catch (IOException exception) {
+            throw new BusinessException(CommonErrorCode.INTERNAL_SERVER_ERROR);
         }
     }
 }

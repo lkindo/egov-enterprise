@@ -15,6 +15,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -24,6 +25,7 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping({"/api/v1/informal-sanctions", "/api/v1/admin/system/ism"})
 @RequiredArgsConstructor
+@PreAuthorize("isAuthenticated()")
 public class InformalSanctionApiController {
 
     private final InformalSanctionService informalSanctionService;
@@ -47,8 +49,10 @@ public class InformalSanctionApiController {
     @Operation(summary = "비정형 결재 상세 조회", description = "비정형 결재 상세 정보를 조회합니다.")
     @GetMapping("/{informalSanctionId}")
     public ResponseEntity<ApiResponse<InformalSanctionDto>> getInformalSanction(
+            @LoginUser CustomUserDetails userDetails,
             @Parameter(description = "결재 ID") @PathVariable("informalSanctionId") String ifmlAtrzId) {
-        return ResponseEntity.ok(ApiResponse.success(informalSanctionService.getInformalSanction(ifmlAtrzId)));
+        return ResponseEntity.ok(ApiResponse.success(
+                informalSanctionService.getInformalSanction(ifmlAtrzId, userDetails.getEsntlId())));
     }
 
     @Operation(summary = "비정형 결재 등록", description = "새로운 비정형 결재를 요청합니다.")

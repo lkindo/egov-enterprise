@@ -4,7 +4,7 @@ import { createHmac } from 'node:crypto';
 import type { NextRequest } from 'next/server';
 
 /**
- * 미들웨어 인증 게이트 회귀 테스트.
+ * Proxy 인증 게이트 회귀 테스트.
  *
  * [존재 이유] 이 경로에는 테스트가 단 한 건도 없었다. 그 공백에서 2026-07-19 에
  * "로그인은 200 인데 페이지 진입에서 /login 으로 되돌아가는" 무음 루프가 발생했다.
@@ -38,7 +38,7 @@ function signToken(
 const futureExp = () => Math.floor(Date.now() / 1000) + 3600;
 const pastExp = () => Math.floor(Date.now() / 1000) - 3600;
 
-let middleware: (req: NextRequest) => Promise<Response>;
+let proxy: (req: NextRequest) => Promise<Response>;
 let NextRequestCtor: typeof NextRequest;
 const originalSecret = process.env.JWT_SECRET;
 
@@ -46,7 +46,7 @@ beforeAll(async () => {
   process.env.JWT_SECRET = SECRET;
   const serverMod = await import('next/server');
   NextRequestCtor = serverMod.NextRequest;
-  middleware = (await import('../middleware')).middleware as typeof middleware;
+  proxy = (await import('../proxy')).proxy as typeof proxy;
 });
 
 afterAll(() => {
@@ -66,46 +66,46 @@ function redirectedToLogin(res: Response): boolean {
   return res.status >= 300 && res.status < 400 && !!loc && new URL(loc).pathname === '/login';
 }
 
-describe('middleware 인증 게이트', () => {
+describe('proxy 인증 게이트', () => {
   it('백엔드와 같은 시크릿으로 서명된 토큰은 통과한다', async () => {
-    const res = await middleware(requestWith(signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, SECRET)));
+    const res = await proxy(requestWith(signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, SECRET)));
     expect(redirectedToLogin(res)).toBe(false);
   });
 
   it.each(['HS256', 'HS384', 'HS512'] as const)('%s 로 서명해도 통과한다(alg 화이트리스트)', async (alg) => {
     const token = signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, SECRET, alg);
-    expect(redirectedToLogin(await middleware(requestWith(token)))).toBe(false);
+    expect(redirectedToLogin(await proxy(requestWith(token)))).toBe(false);
   });
 
   it('[회귀] 다른 시크릿으로 서명된 토큰은 통과하지 못한다 — 좌우 시크릿 비대칭의 관측 형태', async () => {
     // 백엔드가 .env 값으로 서명하고 미들웨어가 dev 기본값으로 검증하던 상태가 정확히 이것이다.
     // 로그인 자체는 200 이므로(미들웨어를 우회한다) 사용자에겐 "인증 완료 후 로그인창" 으로만 보였다.
     const token = signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, OTHER_SECRET);
-    expect(redirectedToLogin(await middleware(requestWith(token)))).toBe(true);
+    expect(redirectedToLogin(await proxy(requestWith(token)))).toBe(true);
   });
 
   it('만료된 토큰은 통과하지 못한다', async () => {
     const token = signToken({ sub: 'webmaster', role: 'ADMIN', exp: pastExp() }, SECRET);
-    expect(redirectedToLogin(await middleware(requestWith(token)))).toBe(true);
+    expect(redirectedToLogin(await proxy(requestWith(token)))).toBe(true);
   });
 
   it('alg=none 위조 토큰은 거부한다', async () => {
     const b64 = (o: unknown) => Buffer.from(JSON.stringify(o)).toString('base64url');
     const forged = `${b64({ alg: 'none', typ: 'JWT' })}.${b64({ sub: 'x', role: 'ADMIN', exp: futureExp() })}.`;
-    expect(redirectedToLogin(await middleware(requestWith(forged)))).toBe(true);
+    expect(redirectedToLogin(await proxy(requestWith(forged)))).toBe(true);
   });
 
   it('서명부를 변조한 토큰은 거부한다', async () => {
     const token = signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, SECRET);
     const tampered = token.slice(0, -4) + 'AAAA';
-    expect(redirectedToLogin(await middleware(requestWith(tampered)))).toBe(true);
+    expect(redirectedToLogin(await proxy(requestWith(tampered)))).toBe(true);
   });
 
   it('토큰이 아예 없으면 로그인으로 보낸다', async () => {
-    expect(redirectedToLogin(await middleware(requestWith(null)))).toBe(true);
+    expect(redirectedToLogin(await proxy(requestWith(null)))).toBe(true);
   });
 
   it('로그인 페이지 자체는 게이트를 적용하지 않는다(리다이렉트 루프 방지)', async () => {
-    expect(redirectedToLogin(await middleware(requestWith(null, '/login')))).toBe(false);
+    expect(redirectedToLogin(await proxy(requestWith(null, '/login')))).toBe(false);
   });
 });

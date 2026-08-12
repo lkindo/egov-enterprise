@@ -180,7 +180,7 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
                     </div>
                     {isSelected && (
                         <div className="ml-auto">
-                            <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+                            <div className="w-1.5 h-1.5 rounded-full bg-surface-inverse-foreground animate-pulse" />
                         </div>
                     )}
                 </div>

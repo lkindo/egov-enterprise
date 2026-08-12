@@ -137,7 +137,7 @@ export default function CommunityHubClient({
             <div className="flex gap-4 p-2 items-center">
                <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="ghost" size="lg" aria-label="AI 추천 커뮤니티 탐색" className="h-11 w-14 rounded-[var(--radius-hub-item)] bg-white border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
+                  <Button variant="ghost" size="lg" aria-label="AI 추천 커뮤니티 탐색" className="h-11 w-14 rounded-[var(--radius-hub-item)] bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
                     <Sparkles size={22} className="group-hover:rotate-12 transition-transform" />
                   </Button>
                 </TooltipTrigger>
@@ -176,7 +176,7 @@ export default function CommunityHubClient({
               </div>
             </div>
 
-            <div className="rounded-[var(--radius-hub-widget)] bg-white border-2 border-border shadow-xl p-4 flex flex-col gap-4">
+            <div className="rounded-[var(--radius-hub-widget)] bg-card border-2 border-border shadow-xl p-4 flex flex-col gap-4">
                <NavButton
                  icon={<LayoutGrid size={22} />}
                  label="전체 목록"
@@ -305,7 +305,7 @@ function NavButton({ icon, label, active = false, onClick, disabled = false, tit
     >
       <div className={cn(
         "w-12 h-12 rounded-[var(--radius-hub-item)] flex items-center justify-center transition-all shadow-lg relative z-10",
-        active ? "bg-white/10 text-surface-inverse-foreground" : "bg-white text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
+        active ? "bg-white/10 text-surface-inverse-foreground" : "bg-card text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary"
       )}>
         {icon}
       </div>
