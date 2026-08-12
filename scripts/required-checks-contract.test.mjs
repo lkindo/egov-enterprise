@@ -206,8 +206,8 @@ test('mutation aggregate cannot fake or ignore the matrix conclusion', () => {
     '      - name: 뮤테이션 스코프 결과 집계\n        run: echo ok\n',
   );
   const noExit = ciContent.replace(
-    '            exit 1',
-    '            echo ignored',
+    /(if \[ "\$RESULT" != "success" \]; then[\s\S]*?)            exit 1/,
+    '$1            echo ignored',
   );
 
   assert.match(validateStaticContract({ manifest, ciContent: fakeResult }).join('\n'), /must consume 'needs\.mutation-scope\.result'/i);
@@ -243,4 +243,15 @@ test('PIT source and aggregate result steps cannot be conditionally skipped', ()
 
   assert.match(validateStaticContract({ manifest, ciContent: skippedSource }).join('\n'), /source step.*step-level if/i);
   assert.match(validateStaticContract({ manifest, ciContent: skippedAggregate }).join('\n'), /result step.*step-level if/i);
+});
+
+test('mutation jobs provision the Gradle distribution with a bounded retry before PIT', () => {
+  assert.match(ciContent, /name: Provision Gradle distribution with bounded retry/);
+  assert.match(ciContent, /for attempt in 1 2 3/);
+  assert.match(ciContent, /\.\/gradlew --version/);
+  assert.match(ciContent, /if \[ "\$attempt" -eq 3 \]; then/);
+
+  const provision = ciContent.indexOf('name: Provision Gradle distribution with bounded retry');
+  const pit = ciContent.indexOf('name: Incremental Mutation Test (${{ matrix.scope }})');
+  assert.ok(provision >= 0 && provision < pit, 'Gradle distribution retry must run before the PIT hard gate');
 });
