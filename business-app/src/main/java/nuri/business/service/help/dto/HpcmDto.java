@@ -15,10 +15,8 @@ import java.time.LocalDateTime;
 @Schema(description = "Description")
 public class HpcmDto {
 
-    @NotBlank
-    @Size(max = 20)
-    @Schema(description = "도움말 ID")
-    private String hlpId;
+    @Schema(description = "도움말 일련번호", example = "1")
+    private Long hlpSn;
 
     @NotBlank
     @Size(max = 3)

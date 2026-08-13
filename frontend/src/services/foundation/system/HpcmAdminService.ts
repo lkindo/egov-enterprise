@@ -3,11 +3,7 @@ import { PageResponse, SearchParams } from '@/types/foundation/system';
 import { AxiosRequestConfig } from 'axios';
 
 export interface Hpcm {
-  hpcmId: string;
-  hpcmSe: string;
-  hpcmNm: string;
-  hpcmDc: string;
-  hlpId?: string;
+  hlpSn?: number;
   hlpSeCd?: string;
   hlpDfn?: string;
   hlpExpln?: string;
@@ -26,23 +22,23 @@ class HpcmAdminService extends ApiService {
   }
 
   /** 도움말 상세 조회 */
-  async getHpcm(id: string, config?: AxiosRequestConfig): Promise<Hpcm> {
-    return this.get<Hpcm>(`/${id}`, config);
+  async getHpcm(hlpSn: number, config?: AxiosRequestConfig): Promise<Hpcm> {
+    return this.get<Hpcm>(`/${hlpSn}`, config);
   }
 
   /** 도움말 등록 */
-  async createHpcm(data: Partial<Hpcm>, config?: AxiosRequestConfig): Promise<string> {
-    return this.post<string>('', data, config);
+  async createHpcm(data: Partial<Hpcm>, config?: AxiosRequestConfig): Promise<number> {
+    return this.post<number>('', data, config);
   }
 
   /** 도움말 수정 */
-  async updateHpcm(id: string, data: Partial<Hpcm>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put(`/${id}`, data, config);
+  async updateHpcm(hlpSn: number, data: Partial<Hpcm>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put(`/${hlpSn}`, data, config);
   }
 
   /** 도움말 삭제 */
-  async deleteHpcm(id: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${id}`, config);
+  async deleteHpcm(hlpSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete(`/${hlpSn}`, config);
   }
 }
 

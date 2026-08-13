@@ -15,8 +15,8 @@ import lombok.*;
 public class Hpcm extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String hlpId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long hlpSn;
 
     @Column(length = 3, nullable = false)
     private String hlpSeCd;
@@ -27,16 +27,16 @@ public class Hpcm extends BaseEntity {
     @Column(length = 4000)
     private String hlpExpln;
 
-    private Hpcm(String hlpId, String hlpSeCd, String hlpDfn, String hlpExpln) {
-        this.hlpId = hlpId;
+    private Hpcm(Long hlpSn, String hlpSeCd, String hlpDfn, String hlpExpln) {
+        this.hlpSn = hlpSn;
         this.hlpSeCd = hlpSeCd;
         this.hlpDfn = hlpDfn;
         this.hlpExpln = hlpExpln;
     }
 
     @Builder
-    public static Hpcm create(String hlpId, String hlpSeCd, String hlpDfn, String hlpExpln) {
-        return new Hpcm(hlpId, hlpSeCd, hlpDfn, hlpExpln);
+    public static Hpcm create(Long hlpSn, String hlpSeCd, String hlpDfn, String hlpExpln) {
+        return new Hpcm(hlpSn, hlpSeCd, hlpDfn, hlpExpln);
     }
 
     public void update(String hlpSeCd, String hlpDfn, String hlpExpln) {

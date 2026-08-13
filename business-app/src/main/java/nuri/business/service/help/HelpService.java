@@ -34,35 +34,33 @@ public class HelpService {
                 .map(hpcmMapper::toDto);
     }
 
-    public HpcmDto getHpcm(String hlpId) {
-        return hpcmRepository.findById(Objects.requireNonNull(hlpId))
+    public HpcmDto getHpcm(Long hlpSn) {
+        return hpcmRepository.findById(Objects.requireNonNull(hlpSn))
                 .map(hpcmMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Transactional
-    public String createHpcm(String userId, HpcmDto dto) {
-        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("HPCM_", 13);
+    public Long createHpcm(String userId, HpcmDto dto) {
         Hpcm entity = Hpcm.builder()
-                .hlpId(id)
                 .hlpSeCd(dto.getHlpSeCd())
                 .hlpDfn(dto.getHlpDfn())
                 .hlpExpln(dto.getHlpExpln())
                 .build();
-        hpcmRepository.save(Objects.requireNonNull(entity));
-        return id;
+        Hpcm saved = hpcmRepository.save(Objects.requireNonNull(entity));
+        return saved.getHlpSn();
     }
 
     @Transactional
-    public void updateHpcm(String hlpId, String userId, HpcmDto dto) {
-        Hpcm entity = hpcmRepository.findById(Objects.requireNonNull(hlpId))
+    public void updateHpcm(Long hlpSn, String userId, HpcmDto dto) {
+        Hpcm entity = hpcmRepository.findById(Objects.requireNonNull(hlpSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getHlpSeCd(), dto.getHlpDfn(), dto.getHlpExpln());
     }
 
     @Transactional
-    public void deleteHpcm(String hlpId) {
-        hpcmRepository.deleteById(Objects.requireNonNull(hlpId));
+    public void deleteHpcm(Long hlpSn) {
+        hpcmRepository.deleteById(Objects.requireNonNull(hlpSn));
     }
 
     // Online Manual

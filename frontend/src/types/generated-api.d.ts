@@ -254,7 +254,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/help/hpcm/{hpcmId}": {
+    "/api/v1/help/hpcm/{hlpSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4662,8 +4662,12 @@ export interface components {
         };
         /** @description Description */
         HpcmDto: {
-            /** @description 도움말 ID */
-            hlpId: string;
+            /**
+             * Format: int64
+             * @description 도움말 일련번호
+             * @example 1
+             */
+            hlpSn?: number;
             /** @description 도움말 구분코드 */
             hlpSeCd: string;
             /** @description 도움말 정의 */
@@ -8994,8 +8998,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 도움말 ID */
-                hpcmId: string;
+                /** @description 도움말 일련번호 */
+                hlpSn: number;
             };
             cookie?: never;
         };
@@ -9017,7 +9021,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                hpcmId: string;
+                hlpSn: number;
             };
             cookie?: never;
         };
@@ -9043,7 +9047,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                hpcmId: string;
+                hlpSn: number;
             };
             cookie?: never;
         };
@@ -12374,7 +12378,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };

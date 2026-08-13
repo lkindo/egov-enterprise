@@ -38,32 +38,32 @@ public class HelpApiController {
     }
 
     @Operation(summary = "도움말 상세 조회", description = "도움말 상세 정보를 조회합니다.")
-    @GetMapping("/hpcm/{hpcmId}")
+    @GetMapping("/hpcm/{hlpSn}")
     public ResponseEntity<ApiResponse<HpcmDto>> getHpcm(
-            @Parameter(description = "도움말 ID") @PathVariable String hpcmId) {
-        return ResponseEntity.ok(ApiResponse.success(helpService.getHpcm(hpcmId)));
+            @Parameter(description = "도움말 일련번호") @PathVariable Long hlpSn) {
+        return ResponseEntity.ok(ApiResponse.success(helpService.getHpcm(hlpSn)));
     }
 
     @Operation(summary = "도움말 등록", description = "새로운 도움말을 등록합니다.")
     @PostMapping("/hpcm")
-    public ResponseEntity<ApiResponse<String>> insertHpcm(@Valid @RequestBody HpcmDto dto) {
-        String id = helpService.createHpcm("ADMIN", dto);
-        return ResponseEntity.ok(ApiResponse.success(id));
+    public ResponseEntity<ApiResponse<Long>> insertHpcm(@Valid @RequestBody HpcmDto dto) {
+        Long hlpSn = helpService.createHpcm("ADMIN", dto);
+        return ResponseEntity.ok(ApiResponse.success(hlpSn));
     }
 
     @Operation(summary = "도움말 수정", description = "도움말 정보를 수정합니다.")
-    @PutMapping("/hpcm/{hpcmId}")
+    @PutMapping("/hpcm/{hlpSn}")
     public ResponseEntity<ApiResponse<Void>> updateHpcm(
-            @PathVariable String hpcmId,
+            @PathVariable Long hlpSn,
             @Valid @RequestBody HpcmDto dto) {
-        helpService.updateHpcm(hpcmId, "ADMIN", dto);
+        helpService.updateHpcm(hlpSn, "ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "도움말 삭제", description = "도움말 정보를 삭제합니다.")
-    @DeleteMapping("/hpcm/{hpcmId}")
-    public ResponseEntity<ApiResponse<Void>> deleteHpcm(@PathVariable String hpcmId) {
-        helpService.deleteHpcm(hpcmId);
+    @DeleteMapping("/hpcm/{hlpSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteHpcm(@PathVariable Long hlpSn) {
+        helpService.deleteHpcm(hlpSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

@@ -46,7 +46,7 @@ class HelpServiceTest {
     @DisplayName("도움말 목록 조회 테스트")
     void getHpcmList_Success() {
         Pageable pageable = PageRequest.of(0, 10);
-        Hpcm entity = Hpcm.builder().hlpId("ID").hlpDfn("Definition").build();
+        Hpcm entity = Hpcm.builder().hlpSn(1L).hlpDfn("Definition").build();
         when(hpcmRepository.findByHlpDfnContaining(anyString(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(entity)));
 
@@ -59,10 +59,10 @@ class HelpServiceTest {
     @Test
     @DisplayName("도움말 상세 조회 테스트")
     void getHpcm_Success() {
-        Hpcm entity = Hpcm.builder().hlpId("ID").hlpDfn("Def").build();
-        when(hpcmRepository.findById("ID")).thenReturn(Optional.of(entity));
+        Hpcm entity = Hpcm.builder().hlpSn(1L).hlpDfn("Def").build();
+        when(hpcmRepository.findById(1L)).thenReturn(Optional.of(entity));
 
-        HpcmDto result = helpService.getHpcm("ID");
+        HpcmDto result = helpService.getHpcm(1L);
 
         assertThat(result.getHlpDfn()).isEqualTo("Def");
     }
@@ -71,21 +71,22 @@ class HelpServiceTest {
     @DisplayName("도움말 등록 테스트")
     void createHpcm_Success() {
         HpcmDto dto = HpcmDto.builder().hlpDfn("New Help").build();
+        when(hpcmRepository.save(any(Hpcm.class))).thenReturn(Hpcm.builder().hlpSn(1L).build());
 
-        String id = helpService.createHpcm("user", dto);
+        Long hlpSn = helpService.createHpcm("user", dto);
 
-        assertThat(id).startsWith("HPCM_");
+        assertThat(hlpSn).isEqualTo(1L);
         verify(hpcmRepository).save(any(Hpcm.class));
     }
 
     @Test
     @DisplayName("도움말 수정 테스트")
     void updateHpcm_Success() {
-        Hpcm entity = org.mockito.Mockito.spy(Hpcm.builder().hlpId("ID").build());
-        when(hpcmRepository.findById("ID")).thenReturn(Optional.of(entity));
+        Hpcm entity = org.mockito.Mockito.spy(Hpcm.builder().hlpSn(1L).build());
+        when(hpcmRepository.findById(1L)).thenReturn(Optional.of(entity));
         HpcmDto dto = HpcmDto.builder().hlpDfn("Updated").build();
 
-        helpService.updateHpcm("ID", "user", dto);
+        helpService.updateHpcm(1L, "user", dto);
 
         verify(entity).update(any(), any(), any());
     }
@@ -93,8 +94,8 @@ class HelpServiceTest {
     @Test
     @DisplayName("도움말 삭제 테스트")
     void deleteHpcm_Success() {
-        helpService.deleteHpcm("ID");
-        verify(hpcmRepository).deleteById("ID");
+        helpService.deleteHpcm(1L);
+        verify(hpcmRepository).deleteById(1L);
     }
 
     // --- Online Manual Tests ---

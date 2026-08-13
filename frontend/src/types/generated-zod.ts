@@ -221,7 +221,7 @@ export type OnlineManualDto = z.infer<typeof OnlineManualDtoSchema>;
 // HpcmDto Schema
 // ==========================================================================
 export const HpcmDtoSchema = z.object({
-  hlpId: z.string().min(0).max(20),
+  hlpSn: z.number().optional(),
   hlpSeCd: z.string().min(0).max(3),
   hlpDfn: z.string().min(0).max(1000),
   hlpExpln: z.string().min(0).max(65535),

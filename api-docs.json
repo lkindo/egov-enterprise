@@ -1195,7 +1195,7 @@
         }
       }
     },
-    "/api/v1/help/hpcm/{hpcmId}": {
+    "/api/v1/help/hpcm/{hlpSn}": {
       "get": {
         "tags": [
           "Help"
@@ -1205,12 +1205,13 @@
         "operationId": "getHpcm",
         "parameters": [
           {
-            "name": "hpcmId",
+            "name": "hlpSn",
             "in": "path",
-            "description": "도움말 ID",
+            "description": "도움말 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1236,11 +1237,12 @@
         "operationId": "updateHpcm",
         "parameters": [
           {
-            "name": "hpcmId",
+            "name": "hlpSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1276,11 +1278,12 @@
         "operationId": "deleteHpcm",
         "parameters": [
           {
-            "name": "hpcmId",
+            "name": "hlpSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -6461,7 +6464,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -16696,11 +16699,11 @@
         "type": "object",
         "description": "Description",
         "properties": {
-          "hlpId": {
-            "type": "string",
-            "description": "도움말 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "hlpSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "도움말 일련번호",
+            "example": 1
           },
           "hlpSeCd": {
             "type": "string",
@@ -16733,7 +16736,6 @@
         "required": [
           "hlpDfn",
           "hlpExpln",
-          "hlpId",
           "hlpSeCd"
         ]
       },

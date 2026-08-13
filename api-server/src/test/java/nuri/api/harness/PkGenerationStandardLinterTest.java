@@ -61,6 +61,9 @@ class PkGenerationStandardLinterTest {
             //   실측: tb_adbk_manage/tb_adbk_info 각 1행, 외부 inbound FK 0, 자식 고아 0.
             //   JPA·Repository·Service·API·FE 소비자를 Long/_sn 계약으로 함께 이관했으므로
             //   더 이상 동결 수동 PK가 아니며 목록에서 정당하게 제거한다.
+            // [2026-08-13 제거] Hpcm — V2_50에서 hlp_id 문자열 기술키를 hlp_sn BIGINT IDENTITY로
+            //   전환했다. 실측: tb_hlp_info 0행, inbound FK 0. 구형 행 주입 회귀 테스트로 데이터 보존,
+            //   PK·identity·sq_hlp_sn·신규 자동 채번을 검증하고 JPA/API/FE 계약을 Long/_sn으로 이관했다.
             "AdministCode", "Authority", "Banner", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptJob", "DeptJobBox", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
@@ -77,7 +80,7 @@ class PkGenerationStandardLinterTest {
             //   ⚠ 물리 테이블은 건드리지 않았다 — 테이블 삭제는 스키마 변경이라 별도 승인이 필요하다.
             //     현재 상태는 "엔티티 없는 빈 테이블 2개" 이며 그 처분은 미결로 남는다.
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
-            "FileMaster", "GroupManage", "Hpcm", "InformalSanction", "InstitutionCode",
+            "FileMaster", "GroupManage", "InformalSanction", "InstitutionCode",
             "InternetSvcGuidance", "LoginLog", "LoginPolicy", "MemoReport", "Menu",
             "MyPageContent", "Note", "NoteRecptn", "NoteTrnsmit", "Notification", "OnlineManual",
             "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage", "Popup",
