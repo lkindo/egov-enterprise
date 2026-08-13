@@ -243,7 +243,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  try {
  const res = activeTab === 'banner'
- ? await deleteBannerAction(null, String(id))
+ ? await deleteBannerAction(null, Number(id))
  : await deletePopupAction(null, Number(id));
 
  if (res.success) {
@@ -278,7 +278,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  const res = await saveBannerAction(null, {
  mode: editingItem ? 'edit' : 'create',
  data: data as Banner,
- id: (editingItem as Banner)?.bnrId
+ id: (editingItem as Banner)?.bnrSn
  });
 
  if (res.success) {
@@ -368,7 +368,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <div className="flex flex-col gap-1.5 py-4">
  <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight">{item.bnrNm}</span>
  <div className="flex items-center gap-2">
- <span className="text-xs font-bold text-muted-foreground/50 tracking-[0.3em] font-mono uppercase">ID: {item.bnrId}</span>
+ <span className="text-xs font-bold text-muted-foreground/50 tracking-[0.3em] font-mono uppercase">SN: {item.bnrSn}</span>
  {item.linkUrl && (
  <span className="text-xs font-bold text-primary/60 flex items-center gap-1.5 lowercase">
  <ExternalLink size={10} /> {item.linkUrl}
@@ -403,7 +403,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
  <Settings size={16} aria-hidden="true" />
  </Button>
- <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.bnrId, item.bnrNm)}>
+ <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.bnrSn, item.bnrNm)}>
  <Trash2 size={16} aria-hidden="true" />
  </Button>
  </div>
@@ -578,7 +578,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  loading={isBannersLoading}
  error={bannerError}
  onRetry={() => refetchBanners()}
- keyField="bnrId"
+ keyField="bnrSn"
  emptyMessage="등록된 배너 자산이 존재하지 않습니다."
  className="border-none bg-transparent"
  pagination={{

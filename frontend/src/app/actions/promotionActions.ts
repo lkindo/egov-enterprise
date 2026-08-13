@@ -40,13 +40,13 @@ export async function saveBannerAction(prevState: unknown, { mode, data, id }: S
     }
 }
 
-export async function deleteBannerAction(prevState: unknown, id: string): Promise<ActionResponse> {
+export async function deleteBannerAction(prevState: unknown, bnrSn: number): Promise<ActionResponse> {
     try {
         const cookieStore = await cookies();
         const accessToken = cookieStore.get('accessToken')?.value;
         const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-        await client.delete(`/admin/system/banners/${id}`, axiosConfig);
+        await client.delete(`/admin/system/banners/${bnrSn}`, axiosConfig);
 
         revalidatePath('/admin/system/banner');
         // [2026-08-09 비대칭 정정] 저장은 '/' 를 재검증하는데 삭제는 하지 않았다.

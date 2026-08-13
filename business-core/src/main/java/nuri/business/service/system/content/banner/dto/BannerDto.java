@@ -13,9 +13,8 @@ import java.time.LocalDateTime;
 @Builder
 @Schema(description = "배너 정보")
 public class BannerDto {
-    @Schema(description = "배너 ID")
-    @Size(max = 20)
-    private String bnrId;
+    @Schema(description = "배너 일련번호")
+    private Long bnrSn;
 
     @Schema(description = "배너 명칭")
     @Size(max = 100)

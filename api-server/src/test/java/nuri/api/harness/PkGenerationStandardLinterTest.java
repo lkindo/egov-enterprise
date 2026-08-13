@@ -79,7 +79,10 @@ class PkGenerationStandardLinterTest {
             // [2026-08-13 제거] DeptJobBox — V2_55에서 dept_task_box_id 문자열 기술키를
             //   dept_task_box_sn BIGINT IDENTITY로 전환하고, tb_dept_task_info 자식 FK도 숫자로
             //   백필·재결속했다. 실측: 부모·자식 각 0행, 고아 0. 구형 부모/자식 주입 회귀로 검증했다.
-            "AdministCode", "Authority", "Banner", "Blog", "Board",
+            // [2026-08-13 제거] Banner — V2_56에서 bnr_id 문자열 기술키를 bnr_sn BIGINT
+            //   IDENTITY로 전환했다. 실측: tb_bnr_info 0행, inbound FK 0. 관리자·공개 UI와
+            //   서버 액션·E2E 정리 소비자를 숫자 일련번호 계약으로 함께 이관했다.
+            "AdministCode", "Authority", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptJob", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
             // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).

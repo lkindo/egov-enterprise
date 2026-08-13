@@ -1074,7 +1074,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/banners/{bannerId}": {
+    "/api/v1/admin/system/banners/{bnrSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -5286,8 +5286,11 @@ export interface components {
         };
         /** @description 배너 정보 */
         BannerDto: {
-            /** @description 배너 ID */
-            bnrId?: string;
+            /**
+             * Format: int64
+             * @description 배너 일련번호
+             */
+            bnrSn?: number;
             /** @description 배너 명칭 */
             bnrNm: string;
             /** @description 링크 URL */
@@ -11351,8 +11354,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 배너 ID */
-                bannerId: string;
+                /** @description 배너 일련번호 */
+                bnrSn: number;
             };
             cookie?: never;
         };
@@ -11374,7 +11377,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                bannerId: string;
+                bnrSn: number;
             };
             cookie?: never;
         };
@@ -11400,7 +11403,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                bannerId: string;
+                bnrSn: number;
             };
             cookie?: never;
         };
@@ -14555,7 +14558,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };

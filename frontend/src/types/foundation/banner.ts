@@ -1,5 +1,5 @@
 export interface Banner {
-    bnrId: string;
+    bnrSn: number;
     bnrNm: string;
     linkUrl: string;
     bnrImgNm: string;

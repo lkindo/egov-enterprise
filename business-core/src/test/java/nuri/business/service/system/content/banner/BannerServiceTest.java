@@ -46,7 +46,7 @@ class BannerServiceTest {
     void getBannerList_NoKeyword() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Banner banner = Banner.builder().bnrId("BNR_01").bnrNm("Test Banner").build();
+        Banner banner = Banner.builder().bnrSn(1L).bnrNm("Test Banner").build();
         Page<Banner> page = new PageImpl<>(List.of(banner));
 
         given(bannerRepository.findAll(pageable)).willReturn(page);
@@ -57,7 +57,7 @@ class BannerServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getBnrId()).isEqualTo("BNR_01");
+        assertThat(result.getContent().get(0).getBnrSn()).isEqualTo(1L);
     }
 
     @Test
@@ -66,7 +66,7 @@ class BannerServiceTest {
         // given
         String keyword = "Test";
         Pageable pageable = PageRequest.of(0, 10);
-        Banner banner = Banner.builder().bnrId("BNR_01").bnrNm("Test Banner").build();
+        Banner banner = Banner.builder().bnrSn(1L).bnrNm("Test Banner").build();
         Page<Banner> page = new PageImpl<>(List.of(banner));
 
         given(bannerRepository.findByBnrNmContaining(keyword, pageable)).willReturn(page);
@@ -84,15 +84,15 @@ class BannerServiceTest {
     @DisplayName("배너 상세 조회 - 성공")
     void getBanner_Success() {
         // given
-        Banner banner = Banner.builder().bnrId("BNR_01").bnrNm("Test Banner").build();
-        given(bannerRepository.findById("BNR_01")).willReturn(Optional.of(banner));
+        Banner banner = Banner.builder().bnrSn(1L).bnrNm("Test Banner").build();
+        given(bannerRepository.findById(1L)).willReturn(Optional.of(banner));
 
         // when
-        BannerDto result = bannerService.getBanner("BNR_01");
+        BannerDto result = bannerService.getBanner(1L);
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getBnrId()).isEqualTo("BNR_01");
+        assertThat(result.getBnrSn()).isEqualTo(1L);
         assertThat(result.getBnrNm()).isEqualTo("Test Banner");
     }
 
@@ -100,10 +100,10 @@ class BannerServiceTest {
     @DisplayName("배너 상세 조회 - 실패 (존재하지 않음)")
     void getBanner_Fail_NotFound() {
         // given
-        given(bannerRepository.findById("BNR_99")).willReturn(Optional.empty());
+        given(bannerRepository.findById(99L)).willReturn(Optional.empty());
 
         // when & then
-        assertThrows(BusinessException.class, () -> bannerService.getBanner("BNR_99"));
+        assertThrows(BusinessException.class, () -> bannerService.getBanner(99L));
     }
 
     @Test
@@ -117,13 +117,15 @@ class BannerServiceTest {
                 .rfltYn("Y")
                 .build();
 
-        given(bannerRepository.save(any(Banner.class))).willAnswer(inv -> inv.getArgument(0));
+        Banner saved = Banner.builder().bnrSn(1L).bnrNm("New Banner").build();
+        given(bannerRepository.save(any(Banner.class))).willReturn(saved);
 
         // when
-        bannerService.insertBanner(dto);
+        Long result = bannerService.insertBanner(dto);
 
         // then
         verify(bannerRepository, times(1)).save(any(Banner.class));
+        assertThat(result).isEqualTo(1L);
     }
 
     @Test
@@ -131,14 +133,14 @@ class BannerServiceTest {
     void updateBanner() {
         // given
         Banner existingBanner = Banner.builder()
-                .bnrId("BNR_01")
+                .bnrSn(1L)
                 .bnrNm("Old Banner")
                 .sortOrdr(1L)
                 .build();
-        given(bannerRepository.findById("BNR_01")).willReturn(Optional.of(existingBanner));
+        given(bannerRepository.findById(1L)).willReturn(Optional.of(existingBanner));
 
         BannerDto updateDto = BannerDto.builder()
-                .bnrId("BNR_01")
+                .bnrSn(1L)
                 .bnrNm("Updated Banner")
                 .linkUrl("http://updated.com")
                 .sortOrdr(2L)
@@ -159,8 +161,8 @@ class BannerServiceTest {
     @DisplayName("배너 수정 - 실패 (존재하지 않음)")
     void updateBanner_Fail_NotFound() {
         // given
-        BannerDto updateDto = BannerDto.builder().bnrId("BNR_99").build();
-        given(bannerRepository.findById("BNR_99")).willReturn(Optional.empty());
+        BannerDto updateDto = BannerDto.builder().bnrSn(99L).build();
+        given(bannerRepository.findById(99L)).willReturn(Optional.empty());
 
         // when & then
         assertThrows(BusinessException.class, () -> bannerService.updateBanner(updateDto));
@@ -170,21 +172,21 @@ class BannerServiceTest {
     @DisplayName("배너 삭제 - 성공")
     void deleteBanner() {
         // given
-        String bannerId = "BNR_01";
+        Long bnrSn = 1L;
 
         // when
-        bannerService.deleteBanner(bannerId);
+        bannerService.deleteBanner(bnrSn);
 
         // then
-        verify(bannerRepository, times(1)).deleteById(bannerId);
+        verify(bannerRepository, times(1)).deleteById(bnrSn);
     }
 
     @Test
     @DisplayName("반영된(Reflected) 배너 목록 조회")
     void getReflectedBanners() {
         // given
-        Banner banner1 = Banner.builder().bnrId("BNR_01").bnrNm("Reflected 1").rfltYn("Y").sortOrdr(1L).build();
-        Banner banner2 = Banner.builder().bnrId("BNR_02").bnrNm("Reflected 2").rfltYn("Y").sortOrdr(2L).build();
+        Banner banner1 = Banner.builder().bnrSn(1L).bnrNm("Reflected 1").rfltYn("Y").sortOrdr(1L).build();
+        Banner banner2 = Banner.builder().bnrSn(2L).bnrNm("Reflected 2").rfltYn("Y").sortOrdr(2L).build();
 
         given(bannerRepository.findByRfltYnOrderBySortOrdrAsc("Y")).willReturn(List.of(banner1, banner2));
 
@@ -194,7 +196,7 @@ class BannerServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result).hasSize(2);
-        assertThat(result.get(0).getBnrId()).isEqualTo("BNR_01");
-        assertThat(result.get(1).getBnrId()).isEqualTo("BNR_02");
+        assertThat(result.get(0).getBnrSn()).isEqualTo(1L);
+        assertThat(result.get(1).getBnrSn()).isEqualTo(2L);
     }
 }

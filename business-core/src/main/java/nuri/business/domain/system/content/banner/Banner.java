@@ -3,6 +3,8 @@ package nuri.business.domain.system.content.banner;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
@@ -18,8 +20,8 @@ import lombok.*;
 public class Banner extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String bnrId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long bnrSn;
 
     @Column(length = 100, nullable = false)
     private String bnrNm;
@@ -41,9 +43,9 @@ public class Banner extends BaseEntity {
     @Column(length = 20)
     private String atchFileId;
 
-    private Banner(String bnrId, String bnrNm, String linkUrl, String bnrImgNm,
+    private Banner(Long bnrSn, String bnrNm, String linkUrl, String bnrImgNm,
                    String bnrExpln, Long sortOrdr, String rfltYn, String atchFileId) {
-        this.bnrId = bnrId;
+        this.bnrSn = bnrSn;
         this.bnrNm = bnrNm;
         this.linkUrl = linkUrl;
         this.bnrImgNm = bnrImgNm;
@@ -54,9 +56,9 @@ public class Banner extends BaseEntity {
     }
 
     @Builder
-    public static Banner create(String bnrId, String bnrNm, String linkUrl, String bnrImgNm,
+    public static Banner create(Long bnrSn, String bnrNm, String linkUrl, String bnrImgNm,
                                 String bnrExpln, Long sortOrdr, String rfltYn, String atchFileId) {
-        return new Banner(bnrId, bnrNm, linkUrl, bnrImgNm, bnrExpln, sortOrdr, rfltYn, atchFileId);
+        return new Banner(bnrSn, bnrNm, linkUrl, bnrImgNm, bnrExpln, sortOrdr, rfltYn, atchFileId);
     }
 
     public void update(String bnrNm, String linkUrl, String bnrImgNm,

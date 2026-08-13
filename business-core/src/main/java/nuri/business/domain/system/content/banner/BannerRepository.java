@@ -8,7 +8,7 @@ import java.util.List;
 /**
  * 배너 관리 Repository
  */
-public interface BannerRepository extends JpaRepository<Banner, String> {
+public interface BannerRepository extends JpaRepository<Banner, Long> {
     Page<Banner> findByBnrNmContaining(String bnrNm, Pageable pageable);
     List<Banner> findByRfltYnOrderBySortOrdrAsc(String rfltYn);
 }

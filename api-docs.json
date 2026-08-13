@@ -4703,7 +4703,7 @@
         }
       }
     },
-    "/api/v1/admin/system/banners/{bannerId}": {
+    "/api/v1/admin/system/banners/{bnrSn}": {
       "get": {
         "tags": [
           "Banner"
@@ -4713,12 +4713,13 @@
         "operationId": "getBanner",
         "parameters": [
           {
-            "name": "bannerId",
+            "name": "bnrSn",
             "in": "path",
-            "description": "배너 ID",
+            "description": "배너 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -4744,11 +4745,12 @@
         "operationId": "updateBanner",
         "parameters": [
           {
-            "name": "bannerId",
+            "name": "bnrSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -4784,11 +4786,12 @@
         "operationId": "deleteBanner",
         "parameters": [
           {
-            "name": "bannerId",
+            "name": "bnrSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -10699,7 +10702,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -18217,11 +18220,10 @@
         "type": "object",
         "description": "배너 정보",
         "properties": {
-          "bnrId": {
-            "type": "string",
-            "description": "배너 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "bnrSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "배너 일련번호"
           },
           "bnrNm": {
             "type": "string",

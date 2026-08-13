@@ -43,8 +43,8 @@ class BannerApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("배너 상세 조회 - 성공")
     void getBanner_success() throws Exception {
-        when(bannerService.getBanner("B1")).thenReturn(BannerDto.builder().build());
-        mockMvc.perform(get("/api/v1/admin/system/banners/B1")).andExpect(status().isOk());
+        when(bannerService.getBanner(1L)).thenReturn(BannerDto.builder().build());
+        mockMvc.perform(get("/api/v1/admin/system/banners/1")).andExpect(status().isOk());
     }
 
     @Test
@@ -56,11 +56,11 @@ class BannerApiControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(put("/api/v1/admin/system/banners/B1")
+        mockMvc.perform(put("/api/v1/admin/system/banners/1")
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(delete("/api/v1/admin/system/banners/B1")).andExpect(status().isOk());
+        mockMvc.perform(delete("/api/v1/admin/system/banners/1")).andExpect(status().isOk());
     }
 
     @Test

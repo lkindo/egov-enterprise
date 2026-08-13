@@ -31,17 +31,15 @@ public class BannerService {
                 .map(bannerMapper::toDto);
     }
 
-    public BannerDto getBanner(String bannerId) {
-        return bannerRepository.findById(Objects.requireNonNull(bannerId))
+    public BannerDto getBanner(Long bnrSn) {
+        return bannerRepository.findById(Objects.requireNonNull(bnrSn))
                 .map(bannerMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Transactional
-    public void insertBanner(BannerDto dto) {
-        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("BANNER_", 13);
+    public Long insertBanner(BannerDto dto) {
         Banner entity = Banner.builder()
-                .bnrId(id)
                 .bnrNm(dto.getBnrNm())
                 .linkUrl(dto.getLinkUrl())
                 .bnrImgNm(dto.getBnrImgNm())
@@ -50,20 +48,20 @@ public class BannerService {
                 .rfltYn(dto.getRfltYn())
                 .atchFileId(dto.getAtchFileId())
                 .build();
-        bannerRepository.save(Objects.requireNonNull(entity));
+        return bannerRepository.save(Objects.requireNonNull(entity)).getBnrSn();
     }
 
     @Transactional
     public void updateBanner(BannerDto dto) {
-        Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBnrId()))
+        Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBnrSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getBnrNm(), dto.getLinkUrl(), dto.getBnrImgNm(),
                 dto.getBnrExpln(), dto.getSortOrdr(), dto.getRfltYn(), dto.getAtchFileId());
     }
 
     @Transactional
-    public void deleteBanner(String bannerId) {
-        bannerRepository.deleteById(Objects.requireNonNull(bannerId));
+    public void deleteBanner(Long bnrSn) {
+        bannerRepository.deleteById(Objects.requireNonNull(bnrSn));
     }
 
     public List<BannerDto> getReflectedBanners() {

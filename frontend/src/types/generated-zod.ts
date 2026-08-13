@@ -678,7 +678,7 @@ export type BoardMasterDto = z.infer<typeof BoardMasterDtoSchema>;
 // BannerDto Schema
 // ==========================================================================
 export const BannerDtoSchema = z.object({
-  bnrId: z.string().min(0).max(20).optional(),
+  bnrSn: z.number().optional(),
   bnrNm: z.string().min(0).max(100),
   linkUrl: z.string().min(0).max(1000).optional(),
   bnrImgNm: z.string().min(0).max(100).optional(),

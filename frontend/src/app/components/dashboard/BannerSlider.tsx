@@ -126,7 +126,7 @@ export function BannerSlider() {
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
             {banners.map((banner, idx) => (
               <button
-                key={`banner-dot-${banner.bnrId || idx}`}
+                key={`banner-dot-${banner.bnrSn || idx}`}
                 onClick={() => setCurrentIndex(idx)}
                 aria-label={`${idx + 1}번 슬라이드로 이동`}
                 className={cn(
