@@ -36,32 +36,32 @@ public class InternetSvcGuidanceApiController {
     }
 
     @Operation(summary = "서비스 안내 상세 조회")
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<InternetSvcGuidanceDto>> getIsg(@PathVariable String id) {
-        return ResponseEntity.ok(ApiResponse.success(isgService.getIntnetSvcGuidance(id)));
+    @GetMapping("/{itntSrvcSn}")
+    public ResponseEntity<ApiResponse<InternetSvcGuidanceDto>> getIsg(@PathVariable Long itntSrvcSn) {
+        return ResponseEntity.ok(ApiResponse.success(isgService.getIntnetSvcGuidance(itntSrvcSn)));
     }
 
     @Operation(summary = "서비스 안내 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> registerIsg(@Valid @RequestBody InternetSvcGuidanceDto dto) {
-        isgService.registerIntnetSvcGuidance(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<Long>> registerIsg(@Valid @RequestBody InternetSvcGuidanceDto dto) {
+        Long itntSrvcSn = isgService.registerIntnetSvcGuidance(dto);
+        return ResponseEntity.ok(ApiResponse.success(itntSrvcSn));
     }
 
     @Operation(summary = "서비스 안내 수정")
-    @PutMapping("/{id}")
+    @PutMapping("/{itntSrvcSn}")
     public ResponseEntity<ApiResponse<Void>> updateIsg(
-            @PathVariable String id, 
+            @PathVariable Long itntSrvcSn,
             @Valid @RequestBody InternetSvcGuidanceDto dto) {
-        dto.setIntnetSvcId(id);
+        dto.setItntSrvcSn(itntSrvcSn);
         isgService.updateIntnetSvcGuidance(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "서비스 안내 삭제")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteIsg(@PathVariable String id) {
-        isgService.deleteIntnetSvcGuidance(id);
+    @DeleteMapping("/{itntSrvcSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteIsg(@PathVariable Long itntSrvcSn) {
+        isgService.deleteIntnetSvcGuidance(itntSrvcSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

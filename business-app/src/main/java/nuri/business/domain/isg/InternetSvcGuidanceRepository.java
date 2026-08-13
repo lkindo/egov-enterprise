@@ -4,6 +4,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface InternetSvcGuidanceRepository extends JpaRepository<InternetSvcGuidance, String> {
+public interface InternetSvcGuidanceRepository extends JpaRepository<InternetSvcGuidance, Long> {
     Page<InternetSvcGuidance> findByItntSvcNmContaining(String itntSvcNm, Pageable pageable);
 }

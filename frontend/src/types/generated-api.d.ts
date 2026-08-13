@@ -861,7 +861,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/isg/{id}": {
+    "/api/v1/admin/system/isg/{itntSrvcSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -5114,7 +5114,8 @@ export interface components {
             lastMdfrId?: string;
         };
         InternetSvcGuidanceDto: {
-            intnetSvcId?: string;
+            /** Format: int64 */
+            itntSrvcSn?: number;
             intnetSvcNm: string;
             intnetSvcDc: string;
             reflctAt?: string;
@@ -10726,7 +10727,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                itntSrvcSn: number;
             };
             cookie?: never;
         };
@@ -10748,7 +10749,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                itntSrvcSn: number;
             };
             cookie?: never;
         };
@@ -10774,7 +10775,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                itntSrvcSn: number;
             };
             cookie?: never;
         };
@@ -13992,7 +13993,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };

@@ -539,7 +539,7 @@ export type LoginPolicyDto = z.infer<typeof LoginPolicyDtoSchema>;
 // InternetSvcGuidanceDto Schema
 // ==========================================================================
 export const InternetSvcGuidanceDtoSchema = z.object({
-  intnetSvcId: z.string().optional(),
+  itntSrvcSn: z.number().optional(),
   intnetSvcNm: z.string().min(0).max(255),
   intnetSvcDc: z.string().min(0).max(1000),
   reflctAt: z.string().min(0).max(1).optional(),

@@ -15,8 +15,8 @@ import org.hibernate.annotations.DynamicUpdate;
 public class InternetSvcGuidance extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String itntSvcId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long itntSrvcSn;
 
     @Column(length = 100)
     private String itntSvcNm;
@@ -27,16 +27,16 @@ public class InternetSvcGuidance extends BaseEntity {
     @Column(length = 1)
     private String rfltYn;
 
-    private InternetSvcGuidance(String itntSvcId, String itntSvcNm, String itntSvcExpln, String rfltYn) {
-        this.itntSvcId = itntSvcId;
+    private InternetSvcGuidance(Long itntSrvcSn, String itntSvcNm, String itntSvcExpln, String rfltYn) {
+        this.itntSrvcSn = itntSrvcSn;
         this.itntSvcNm = itntSvcNm;
         this.itntSvcExpln = itntSvcExpln;
         this.rfltYn = rfltYn;
     }
 
     @Builder
-    public static InternetSvcGuidance create(String itntSvcId, String itntSvcNm, String itntSvcExpln, String rfltYn) {
-        return new InternetSvcGuidance(itntSvcId, itntSvcNm, itntSvcExpln, rfltYn);
+    public static InternetSvcGuidance create(Long itntSrvcSn, String itntSvcNm, String itntSvcExpln, String rfltYn) {
+        return new InternetSvcGuidance(itntSrvcSn, itntSvcNm, itntSvcExpln, rfltYn);
     }
 
     public void update(String itntSvcNm, String itntSvcExpln, String rfltYn) {

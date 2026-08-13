@@ -3794,7 +3794,7 @@
         }
       }
     },
-    "/api/v1/admin/system/isg/{id}": {
+    "/api/v1/admin/system/isg/{itntSrvcSn}": {
       "get": {
         "tags": [
           "Internet Service Guidance"
@@ -3803,11 +3803,12 @@
         "operationId": "getIsg",
         "parameters": [
           {
-            "name": "id",
+            "name": "itntSrvcSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3832,11 +3833,12 @@
         "operationId": "updateIsg",
         "parameters": [
           {
-            "name": "id",
+            "name": "itntSrvcSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3871,11 +3873,12 @@
         "operationId": "deleteIsg",
         "parameters": [
           {
-            "name": "id",
+            "name": "itntSrvcSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -9500,7 +9503,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -17748,8 +17751,9 @@
       "InternetSvcGuidanceDto": {
         "type": "object",
         "properties": {
-          "intnetSvcId": {
-            "type": "string"
+          "itntSrvcSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "intnetSvcNm": {
             "type": "string",
