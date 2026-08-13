@@ -720,7 +720,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/popups/{popupId}": {
+    "/api/v1/admin/system/popups/{popupSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3054,7 +3054,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/popups/{popupId}": {
+    "/api/v1/popups/{popupSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4977,8 +4977,12 @@ export interface components {
         };
         /** @description 팝업 정보 DTO */
         PopupDto: {
-            /** @description 팝업 ID */
-            popupId?: string;
+            /**
+             * Format: int64
+             * @description 팝업 일련번호
+             * @example 1
+             */
+            popupSn?: number;
             /** @description 팝업 제목 */
             popupTtlNm: string;
             /** @description 파일 URL */
@@ -10372,8 +10376,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
-                popupId: string;
+                /** @description 팝업 일련번호 */
+                popupSn: number;
             };
             cookie?: never;
         };
@@ -10395,8 +10399,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
-                popupId: string;
+                /** @description 팝업 일련번호 */
+                popupSn: number;
             };
             cookie?: never;
         };
@@ -10422,8 +10426,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
-                popupId: string;
+                /** @description 팝업 일련번호 */
+                popupSn: number;
             };
             cookie?: never;
         };
@@ -13709,7 +13713,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -15400,8 +15404,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
-                popupId: string;
+                /** @description 팝업 일련번호 */
+                popupSn: number;
             };
             cookie?: never;
         };

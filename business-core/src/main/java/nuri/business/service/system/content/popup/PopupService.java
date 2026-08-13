@@ -6,7 +6,6 @@ import nuri.business.domain.system.content.popup.Popup;
 import nuri.business.domain.system.content.popup.PopupDomainRepository;
 import nuri.business.service.system.content.popup.dto.PopupDto;
 import lombok.RequiredArgsConstructor;
-import nuri.foundation.core.util.IdGenerationUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -37,17 +36,15 @@ public class PopupService {
                 .collect(Collectors.toList());
     }
 
-    public PopupDto getPopup(String popupId) {
-        return popupRepository.findById(Objects.requireNonNull(popupId))
+    public PopupDto getPopup(Long popupSn) {
+        return popupRepository.findById(Objects.requireNonNull(popupSn))
                 .map(PopupDto::from)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Transactional
-    public String createPopup(String userId, PopupDto dto) {
-        String popupId = IdGenerationUtil.generateUniqueId("POPUP_", 14, popupRepository::existsById);
+    public Long createPopup(String userId, PopupDto dto) {
         Popup popup = Popup.builder()
-                .popupId(popupId)
                 .popupTtlNm(dto.getPopupTtlNm())
                 .fileUrl(dto.getFileUrl())
                 .popupWdthPstn(dto.getPopupWdthPstn())
@@ -60,13 +57,13 @@ public class PopupService {
                 .ntceYn(dto.getNtceYn())
                 .build();
         popup.setFrstRgtrId(userId);
-        popupRepository.save(Objects.requireNonNull(popup));
-        return popupId;
+        Popup saved = popupRepository.save(Objects.requireNonNull(popup));
+        return saved.getPopupSn();
     }
 
     @Transactional
-    public void updatePopup(String popupId, String userId, PopupDto dto) {
-        Popup popup = popupRepository.findById(Objects.requireNonNull(popupId))
+    public void updatePopup(Long popupSn, String userId, PopupDto dto) {
+        Popup popup = popupRepository.findById(Objects.requireNonNull(popupSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         popup.update(dto.getPopupTtlNm(), dto.getFileUrl(), dto.getPopupWdthPstn(),
@@ -79,11 +76,11 @@ public class PopupService {
     }
 
     @Transactional
-    public void deletePopup(String popupId) {
-        if (!popupRepository.existsById(Objects.requireNonNull(popupId))) {
+    public void deletePopup(Long popupSn) {
+        if (!popupRepository.existsById(Objects.requireNonNull(popupSn))) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
-        popupRepository.deleteById(Objects.requireNonNull(popupId));
+        popupRepository.deleteById(Objects.requireNonNull(popupSn));
     }
 
     public List<String> getPopupWhiteList() {

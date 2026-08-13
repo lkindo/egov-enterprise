@@ -13,7 +13,7 @@ interface PagePayload<T> {
 interface CleanupUser { userId: string }
 interface CleanupBoard { bbsId: string; bbsTtl?: string; bbsNm?: string }
 interface CleanupPoll { pollId: string; pollNm?: string }
-interface CleanupPopup { popupId: string; popupTtlNm?: string }
+interface CleanupPopup { popupSn: number; popupTtlNm?: string }
 interface CleanupBanner { bnrId: string; bnrNm?: string }
 interface CleanupPost { pstId?: string | number; id?: string | number; pstTtl?: string; title?: string }
 interface CleanupMenu { menuNo: number; menuNm: string }
@@ -158,8 +158,8 @@ async function cleanup() {
       const popups = extractPage(popupsRes);
       const testPopups = popups.filter((p) => p.popupTtlNm?.startsWith('E2E Popup') || p.popupTtlNm?.startsWith('Debug'));
       for (const popup of testPopups) {
-        process.stdout.write(`  - Deleting Popup: ${popup.popupTtlNm} (${popup.popupId})... `);
-        await axios.delete(`${API_BASE}/admin/system/popups/${popup.popupId}`, { headers });
+        process.stdout.write(`  - Deleting Popup: ${popup.popupTtlNm} (${popup.popupSn})... `);
+        await axios.delete(`${API_BASE}/admin/system/popups/${popup.popupSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testPopups.length} popup(s) cleaned.`);

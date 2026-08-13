@@ -45,7 +45,7 @@ class PopupServiceImplTest {
     void getPopupList_NoKeyword() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Popup popup = Popup.builder().popupId("POP_01").popupTtlNm("팝업1").build();
+        Popup popup = Popup.builder().popupSn(1L).popupTtlNm("팝업1").build();
         given(popupRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(popup)));
 
         // when
@@ -62,7 +62,7 @@ class PopupServiceImplTest {
     void getPopupList_WithKeyword() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Popup popup = Popup.builder().popupId("POP_01").popupTtlNm("팝업검색").build();
+        Popup popup = Popup.builder().popupSn(1L).popupTtlNm("팝업검색").build();
         given(popupRepository.findByPopupTtlNmContaining(eq("검색"), any(Pageable.class)))
                 .willReturn(new PageImpl<>(List.of(popup)));
 
@@ -78,7 +78,7 @@ class PopupServiceImplTest {
     @DisplayName("활성 팝업 목록 조회")
     void getActivePopups() {
         // given
-        Popup popup = Popup.builder().popupId("POP1").build();
+        Popup popup = Popup.builder().popupSn(1L).build();
         given(popupRepository.findActivePopups(any(LocalDate.class))).willReturn(List.of(popup));
 
         // when
@@ -93,18 +93,18 @@ class PopupServiceImplTest {
     void getPopup_Success() {
         // given
         Popup popup = Popup.builder()
-                .popupId("POP1")
+                .popupSn(1L)
                 .popupTtlNm("제목")
                 .ntceBgnde(LocalDate.of(2026, 1, 1))
                 .ntceEndde(LocalDate.of(2026, 1, 31))
                 .build();
-        given(popupRepository.findById("POP1")).willReturn(Optional.of(popup));
+        given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
 
         // when
-        PopupDto result = popupService.getPopup("POP1");
+        PopupDto result = popupService.getPopup(1L);
 
         // then
-        assertThat(result.getPopupId()).isEqualTo("POP1");
+        assertThat(result.getPopupSn()).isEqualTo(1L);
         assertThat(result.getPopupTtlNm()).isEqualTo("제목");
         assertThat(result.getNtceBgnde()).isEqualTo("2026-01-01");
         assertThat(result.getNtceEndde()).isEqualTo("2026-01-31");
@@ -114,10 +114,10 @@ class PopupServiceImplTest {
     @DisplayName("팝업 상세 조회 - 자원 없음 예외")
     void getPopup_NotFound_ShouldThrowBusinessException() {
         // given
-        given(popupRepository.findById("POP1")).willReturn(Optional.empty());
+        given(popupRepository.findById(1L)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> popupService.getPopup("POP1"))
+        assertThatThrownBy(() -> popupService.getPopup(1L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("Resource Not Found");
     }
@@ -138,11 +138,14 @@ class PopupServiceImplTest {
                 .ntceYn("Y")
                 .build();
 
+        given(popupRepository.save(any(Popup.class)))
+                .willReturn(Popup.builder().popupSn(1L).popupTtlNm("Test Popup").build());
+
         // when
-        String popupId = popupService.createPopup("admin", dto);
+        Long popupSn = popupService.createPopup("admin", dto);
 
         // then
-        assertThat(popupId).startsWith("POPUP_");
+        assertThat(popupSn).isEqualTo(1L);
         verify(popupRepository, times(1)).save(any(Popup.class));
     }
 
@@ -151,10 +154,10 @@ class PopupServiceImplTest {
     void updatePopup_Success() {
         // given
         Popup popup = Popup.builder()
-                .popupId("POP1")
+                .popupSn(1L)
                 .popupTtlNm("OLD")
                 .build();
-        given(popupRepository.findById("POP1")).willReturn(Optional.of(popup));
+        given(popupRepository.findById(1L)).willReturn(Optional.of(popup));
 
         PopupDto dto = PopupDto.builder()
                 .popupTtlNm("NEW")
@@ -165,7 +168,7 @@ class PopupServiceImplTest {
                 .build();
 
         // when
-        popupService.updatePopup("POP1", "updater", dto);
+        popupService.updatePopup(1L, "updater", dto);
 
         // then
         assertThat(popup.getPopupTtlNm()).isEqualTo("NEW");
@@ -178,11 +181,11 @@ class PopupServiceImplTest {
     @DisplayName("팝업 수정 - 자원 없음 예외")
     void updatePopup_NotFound_ShouldThrowBusinessException() {
         // given
-        given(popupRepository.findById("POP1")).willReturn(Optional.empty());
+        given(popupRepository.findById(1L)).willReturn(Optional.empty());
         PopupDto dto = PopupDto.builder().popupTtlNm("NEW").build();
 
         // when & then
-        assertThatThrownBy(() -> popupService.updatePopup("POP1", "updater", dto))
+        assertThatThrownBy(() -> popupService.updatePopup(1L, "updater", dto))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -190,23 +193,23 @@ class PopupServiceImplTest {
     @DisplayName("팝업 삭제 - 성공")
     void deletePopup_Success() {
         // given
-        given(popupRepository.existsById("POP1")).willReturn(true);
+        given(popupRepository.existsById(1L)).willReturn(true);
 
         // when
-        popupService.deletePopup("POP1");
+        popupService.deletePopup(1L);
 
         // then
-        verify(popupRepository, times(1)).deleteById("POP1");
+        verify(popupRepository, times(1)).deleteById(1L);
     }
 
     @Test
     @DisplayName("팝업 삭제 - 자원 없음 예외")
     void deletePopup_NotFound_ShouldThrowBusinessException() {
         // given
-        given(popupRepository.existsById("POP1")).willReturn(false);
+        given(popupRepository.existsById(1L)).willReturn(false);
 
         // when & then
-        assertThatThrownBy(() -> popupService.deletePopup("POP1"))
+        assertThatThrownBy(() -> popupService.deletePopup(1L))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -218,8 +221,8 @@ class PopupServiceImplTest {
     @DisplayName("팝업 화이트리스트 추출")
     void getPopupWhiteList_ShouldReturnUrls() {
         // given
-        Popup p1 = Popup.builder().popupId("POP1").fileUrl("/page1.html").build();
-        Popup p2 = Popup.builder().popupId("POP2").fileUrl("/page2.html").build();
+        Popup p1 = Popup.builder().popupSn(1L).fileUrl("/page1.html").build();
+        Popup p2 = Popup.builder().popupSn(2L).fileUrl("/page2.html").build();
         given(popupRepository.findAll()).willReturn(List.of(p1, p2));
 
         // when

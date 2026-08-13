@@ -30,9 +30,9 @@ public class PopupUserApiController {
     }
 
     @Operation(summary = "팝업 상세 조회", description = "특정 팝업의 상세 정보를 조회합니다.")
-    @GetMapping("/{popupId}")
+    @GetMapping("/{popupSn}")
     public ResponseEntity<ApiResponse<PopupDto>> getPopup(
-            @Parameter(description = "팝업 ID") @PathVariable String popupId) {
-        return ResponseEntity.ok(ApiResponse.success(popupService.getPopup(popupId)));
+            @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn) {
+        return ResponseEntity.ok(ApiResponse.success(popupService.getPopup(popupSn)));
     }
 }

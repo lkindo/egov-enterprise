@@ -230,7 +230,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  };
 
  /** [P1-9] 확인 본문에 대상 식별자(명칭)를 노출해 오삭제를 막는다. */
- const handleDelete = async (id: string, name: string) => {
+ const handleDelete = async (id: string | number, name: string) => {
  const kind = activeTab === 'banner' ? '배너' : '팝업';
  const ok = await confirm({
  title: `${kind} 삭제 확인`,
@@ -243,8 +243,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  try {
  const res = activeTab === 'banner'
- ? await deleteBannerAction(null, id)
- : await deletePopupAction(null, id);
+ ? await deleteBannerAction(null, String(id))
+ : await deletePopupAction(null, Number(id));
 
  if (res.success) {
  toast(res.message, 'success');
@@ -324,7 +324,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  const res = await savePopupAction(null, {
  mode: editingItem ? 'edit' : 'create',
  data: data as Popup,
- id: (editingItem as Popup)?.popupId
+ id: (editingItem as Popup)?.popupSn
  });
 
  if (res.success) {
@@ -459,7 +459,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
  <Settings size={16} aria-hidden="true" />
  </Button>
- <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.popupId, item.popupTtlNm)}>
+ <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.popupSn, item.popupTtlNm)}>
  <Trash2 size={16} aria-hidden="true" />
  </Button>
  </div>
@@ -596,7 +596,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  loading={isPopupsLoading}
  error={popupError}
  onRetry={() => refetchPopups()}
- keyField="popupId"
+ keyField="popupSn"
  emptyMessage="등록된 팝업 자산이 존재하지 않습니다."
  className="border-none bg-transparent"
  pagination={{

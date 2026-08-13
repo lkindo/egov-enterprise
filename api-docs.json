@@ -3271,7 +3271,7 @@
         }
       }
     },
-    "/api/v1/admin/system/popups/{popupId}": {
+    "/api/v1/admin/system/popups/{popupSn}": {
       "get": {
         "tags": [
           "Popup"
@@ -3281,12 +3281,13 @@
         "operationId": "getPopup",
         "parameters": [
           {
-            "name": "popupId",
+            "name": "popupSn",
             "in": "path",
-            "description": "팝업 ID",
+            "description": "팝업 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3312,12 +3313,13 @@
         "operationId": "updatePopup",
         "parameters": [
           {
-            "name": "popupId",
+            "name": "popupSn",
             "in": "path",
-            "description": "팝업 ID",
+            "description": "팝업 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3353,12 +3355,13 @@
         "operationId": "deletePopup",
         "parameters": [
           {
-            "name": "popupId",
+            "name": "popupSn",
             "in": "path",
-            "description": "팝업 ID",
+            "description": "팝업 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -8895,7 +8898,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -12279,7 +12282,7 @@
         }
       }
     },
-    "/api/v1/popups/{popupId}": {
+    "/api/v1/popups/{popupSn}": {
       "get": {
         "tags": [
           "Popup User"
@@ -12289,12 +12292,13 @@
         "operationId": "getPopup_1",
         "parameters": [
           {
-            "name": "popupId",
+            "name": "popupSn",
             "in": "path",
-            "description": "팝업 ID",
+            "description": "팝업 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -17459,11 +17463,11 @@
         "type": "object",
         "description": "팝업 정보 DTO",
         "properties": {
-          "popupId": {
-            "type": "string",
-            "description": "팝업 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "popupSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "팝업 일련번호",
+            "example": 1
           },
           "popupTtlNm": {
             "type": "string",

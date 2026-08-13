@@ -5,6 +5,8 @@ import java.time.LocalDate;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -19,8 +21,8 @@ import lombok.NoArgsConstructor;
 public class Popup extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String popupId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long popupSn;
 
     @Column(length = 100, nullable = false)
     private String popupTtlNm;
@@ -50,10 +52,10 @@ public class Popup extends BaseEntity {
     @Column(length = 1)
     private String ntceYn;
 
-    private Popup(String popupId, String popupTtlNm, String fileUrl, String popupWdthPstn,
+    private Popup(Long popupSn, String popupTtlNm, String fileUrl, String popupWdthPstn,
             String popupVrtcPstn, String popupVrtcSz, String popupWdthSz,
             LocalDate ntceBgnde, LocalDate ntceEndde, String stopvewSetupYn, String ntceYn) {
-        this.popupId = popupId;
+        this.popupSn = popupSn;
         this.popupTtlNm = popupTtlNm;
         this.fileUrl = fileUrl;
         this.popupWdthPstn = popupWdthPstn;
@@ -67,10 +69,10 @@ public class Popup extends BaseEntity {
     }
 
     @Builder
-    public static Popup create(String popupId, String popupTtlNm, String fileUrl, String popupWdthPstn,
+    public static Popup create(Long popupSn, String popupTtlNm, String fileUrl, String popupWdthPstn,
             String popupVrtcPstn, String popupVrtcSz, String popupWdthSz,
             LocalDate ntceBgnde, LocalDate ntceEndde, String stopvewSetupYn, String ntceYn) {
-        return new Popup(popupId, popupTtlNm, fileUrl, popupWdthPstn,
+        return new Popup(popupSn, popupTtlNm, fileUrl, popupWdthPstn,
                 popupVrtcPstn, popupVrtcSz, popupWdthSz,
                 ntceBgnde, ntceEndde, stopvewSetupYn, ntceYn);
     }

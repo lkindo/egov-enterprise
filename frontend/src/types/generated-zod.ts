@@ -455,7 +455,7 @@ export type ProgramDto = z.infer<typeof ProgramDtoSchema>;
 // PopupDto Schema
 // ==========================================================================
 export const PopupDtoSchema = z.object({
-  popupId: z.string().min(0).max(20).optional(),
+  popupSn: z.number().optional(),
   popupTtlNm: z.string().min(0).max(100),
   fileUrl: z.string().min(0).max(1000).optional(),
   popupWdthPstn: z.string().min(0).max(12).optional(),

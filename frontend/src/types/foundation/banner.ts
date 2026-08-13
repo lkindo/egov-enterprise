@@ -12,7 +12,7 @@ export interface Banner {
 }
 
 export interface Popup {
-    popupId: string;
+    popupSn: number;
     popupTtlNm: string;
     fileUrl: string;
     popupWdthPstn: string;

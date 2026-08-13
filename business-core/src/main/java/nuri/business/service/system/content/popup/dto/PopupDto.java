@@ -14,9 +14,8 @@ import java.time.LocalDateTime;
 @Builder
 @Schema(description = "팝업 정보 DTO")
 public class PopupDto {
-    @Schema(description = "팝업 ID")
-    @Size(max = 20)
-    private String popupId;
+    @Schema(description = "팝업 일련번호", example = "1")
+    private Long popupSn;
 
     @Schema(description = "팝업 제목")
     @Size(max = 100)
@@ -66,7 +65,7 @@ public class PopupDto {
         if (entity == null)
             return null;
         return PopupDto.builder()
-                .popupId(entity.getPopupId())
+                .popupSn(entity.getPopupSn())
                 .popupTtlNm(entity.getPopupTtlNm())
                 .fileUrl(entity.getFileUrl())
                 .popupWdthPstn(entity.getPopupWdthPstn())

@@ -70,6 +70,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-13 제거] OnlineManual — V2_52에서 onln_mnl_id 문자열 기술키를
             //   onln_mnl_sn BIGINT IDENTITY로 전환했다. 실측: tb_onln_mnl_info 1행, inbound FK 0.
             //   기존 행·별도 UNIQUE 제약·API/FE/E2E 소비자를 함께 이관하고 자동 채번 회귀 테스트로 검증했다.
+            // [2026-08-13 제거] Popup — V2_53에서 popup_id 문자열 기술키를 popup_sn BIGINT
+            //   IDENTITY로 전환했다. 실측: tb_popup_info 0행, inbound FK 0. 관리자·사용자 API와
+            //   FE 관리/대시보드/localStorage/E2E 소비자를 숫자 일련번호 계약으로 함께 이관했다.
             "AdministCode", "Authority", "Banner", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptJob", "DeptJobBox", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
@@ -89,7 +92,7 @@ class PkGenerationStandardLinterTest {
             "FileMaster", "GroupManage", "InformalSanction", "InstitutionCode",
             "LoginLog", "LoginPolicy", "MemoReport", "Menu",
             "MyPageContent", "Note", "NoteRecptn", "NoteTrnsmit", "Notification",
-            "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage", "Popup",
+            "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RewardManage", "RoleInfo", "Schedule",
             "Scrap", "SentMail", "SiteMap", "Sms", "SurveyArticle", "SurveyInfo", "SurveyQuestion",
             "SurveyRespondent", "SurveyResult", "SurveyTemplate", "SysLog", "SystemPolicy", "Template",

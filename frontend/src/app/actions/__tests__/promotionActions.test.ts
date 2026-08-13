@@ -132,8 +132,8 @@ describe('promotionActions', () => {
       vi.clearAllMocks();
       withToken('TOKEN-123');
 
-      await savePopupAction(null, { mode: 'edit', data: {} as never, id: 'P3' });
-      expect(client.put).toHaveBeenCalledWith('/admin/system/popups/P3', {}, AUTH);
+      await savePopupAction(null, { mode: 'edit', data: {} as never, id: 3 });
+      expect(client.put).toHaveBeenCalledWith('/admin/system/popups/3', {}, AUTH);
       expect(client.post).not.toHaveBeenCalled();
     });
 
@@ -144,9 +144,9 @@ describe('promotionActions', () => {
     });
 
     it('팝업 삭제도 공개 경로를 재검증한다', async () => {
-      await deletePopupAction(null, 'P3');
+      await deletePopupAction(null, 3);
 
-      expect(client.delete).toHaveBeenCalledWith('/admin/system/popups/P3', AUTH);
+      expect(client.delete).toHaveBeenCalledWith('/admin/system/popups/3', AUTH);
       expect(revalidatePath).toHaveBeenCalledWith(ADMIN_PATH);
       expect(revalidatePath).toHaveBeenCalledWith('/');
     });

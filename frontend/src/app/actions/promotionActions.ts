@@ -14,7 +14,7 @@ interface ActionResponse {
 interface SaveActionParams<T> {
     mode: 'create' | 'edit';
     data: T;
-    id?: string;
+    id?: string | number;
 }
 
 // Banner Actions
@@ -83,7 +83,7 @@ export async function savePopupAction(prevState: unknown, { mode, data, id }: Sa
     }
 }
 
-export async function deletePopupAction(prevState: unknown, id: string): Promise<ActionResponse> {
+export async function deletePopupAction(prevState: unknown, id: number): Promise<ActionResponse> {
     try {
         const cookieStore = await cookies();
         const accessToken = cookieStore.get('accessToken')?.value;

@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 
 @org.springframework.stereotype.Repository("popupPopupDomainRepository")
-public interface PopupDomainRepository extends JpaRepository<Popup, String> {
+public interface PopupDomainRepository extends JpaRepository<Popup, Long> {
 
     Page<Popup> findByPopupTtlNmContaining(String popupTtlNm, Pageable pageable);
 

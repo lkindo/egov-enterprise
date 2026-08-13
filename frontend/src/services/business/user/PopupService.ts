@@ -21,8 +21,8 @@ class PopupUserService extends UserService {
   /**
    * 특정 팝업 상세 조회
    */
-  async getPopup(popupId: string, config?: AxiosRequestConfig): Promise<Popup> {
-    return this.get<Popup>(`/${popupId}`, config);
+  async getPopup(popupSn: number, config?: AxiosRequestConfig): Promise<Popup> {
+    return this.get<Popup>(`/${popupSn}`, config);
   }
 }
 
