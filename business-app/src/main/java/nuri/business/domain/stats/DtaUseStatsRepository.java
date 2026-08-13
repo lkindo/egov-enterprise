@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String> {
+public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, Long> {
 
   @Query(value = """
       SELECT COUNT(*) AS statsCo,
