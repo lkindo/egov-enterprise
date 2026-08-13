@@ -1,5 +1,5 @@
 export interface DeptJobVO {
-  deptTaskId?: string;
+  deptTaskSn?: number;
   deptTaskNm: string;
   deptTaskCn: string;
   deptTaskBoxSn?: number;

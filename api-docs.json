@@ -1304,7 +1304,7 @@
         }
       }
     },
-    "/api/v1/dept-jobs/{deptTaskId}": {
+    "/api/v1/dept-jobs/{deptTaskSn}": {
       "get": {
         "tags": [
           "DeptJob"
@@ -1314,11 +1314,12 @@
         "operationId": "getDeptJob",
         "parameters": [
           {
-            "name": "deptTaskId",
+            "name": "deptTaskSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1344,11 +1345,12 @@
         "operationId": "updateDeptJob",
         "parameters": [
           {
-            "name": "deptTaskId",
+            "name": "deptTaskSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1384,11 +1386,12 @@
         "operationId": "deleteDeptJob",
         "parameters": [
           {
-            "name": "deptTaskId",
+            "name": "deptTaskSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -6769,7 +6772,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -16761,8 +16764,9 @@
       "DeptJobDto": {
         "type": "object",
         "properties": {
-          "deptTaskId": {
-            "type": "string"
+          "deptTaskSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "deptTaskBoxSn": {
             "type": "integer",

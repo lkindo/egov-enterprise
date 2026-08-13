@@ -11,8 +11,8 @@ import lombok.*;
 public class DeptJob extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String deptTaskId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long deptTaskSn;
 
     @Column(name = "dept_task_box_sn")
     private Long deptTaskBoxSn;
@@ -43,9 +43,9 @@ public class DeptJob extends BaseEntity {
     private nuri.business.domain.file.FileMaster fileMaster;
 
     // 팩토리 create() 전용 private 생성자 (own 필드 설정)
-    private DeptJob(String deptTaskId, Long deptTaskBoxSn, String deptTaskNm, String deptTaskCn,
+    private DeptJob(Long deptTaskSn, Long deptTaskBoxSn, String deptTaskNm, String deptTaskCn,
             String picId, String prrtyRnk, String atchFileId) {
-        this.deptTaskId = deptTaskId;
+        this.deptTaskSn = deptTaskSn;
         this.deptTaskBoxSn = deptTaskBoxSn;
         this.deptTaskNm = deptTaskNm;
         this.deptTaskCn = deptTaskCn;
@@ -55,9 +55,9 @@ public class DeptJob extends BaseEntity {
     }
 
     @Builder
-    public static DeptJob create(String deptTaskId, Long deptTaskBoxSn, String deptTaskNm, String deptTaskCn,
+    public static DeptJob create(Long deptTaskSn, Long deptTaskBoxSn, String deptTaskNm, String deptTaskCn,
             String picId, String prrtyRnk, String atchFileId) {
-        return new DeptJob(deptTaskId, deptTaskBoxSn, deptTaskNm, deptTaskCn, picId, prrtyRnk, atchFileId);
+        return new DeptJob(deptTaskSn, deptTaskBoxSn, deptTaskNm, deptTaskCn, picId, prrtyRnk, atchFileId);
     }
 
     public void update(Long deptTaskBoxSn, String deptTaskNm, String deptTaskCn, String picId, String prrtyRnk,

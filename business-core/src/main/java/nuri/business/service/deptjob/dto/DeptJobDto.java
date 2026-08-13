@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class DeptJobDto {
-    private String deptTaskId;
+    private Long deptTaskSn;
     private Long deptTaskBoxSn;
     private String deptTaskBoxNm;
     @Size(max = 20)

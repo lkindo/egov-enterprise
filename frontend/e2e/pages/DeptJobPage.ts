@@ -49,9 +49,9 @@ export class DeptJobPage {
     }
 
     /** 부서 업무 상세·수정 화면. */
-    async gotoJobDetail(deptTaskId: string) {
-        console.log(`>>> Navigating to Dept Job detail: ${deptTaskId}`);
-        await this.page.goto(`/smart-toolkit/dept-job/${deptTaskId}?e2e=true`);
+    async gotoJobDetail(deptTaskSn: number) {
+        console.log(`>>> Navigating to Dept Job detail: ${deptTaskSn}`);
+        await this.page.goto(`/smart-toolkit/dept-job/${deptTaskSn}?e2e=true`);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

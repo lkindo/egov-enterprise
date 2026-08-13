@@ -143,36 +143,36 @@ public class DeptJobApiController {
     }
 
     @Operation(summary = "부서 업무 상세 조회", description = "특정 부서 업무의 상세 정보를 조회합니다.")
-    @GetMapping("/{deptTaskId}")
-    public ResponseEntity<ApiResponse<DeptJobDto>> getDeptJob(@PathVariable String deptTaskId) {
-        return ResponseEntity.ok(ApiResponse.success(deptJobService.getDeptJob(deptTaskId)));
+    @GetMapping("/{deptTaskSn}")
+    public ResponseEntity<ApiResponse<DeptJobDto>> getDeptJob(@PathVariable Long deptTaskSn) {
+        return ResponseEntity.ok(ApiResponse.success(deptJobService.getDeptJob(deptTaskSn)));
     }
 
     @Operation(summary = "부서 업무 등록", description = "새로운 부서 업무를 등록합니다. 식별자는 서버가 채번합니다.")
     @PreAuthorize("isAuthenticated()")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createDeptJob(
+    public ResponseEntity<ApiResponse<Long>> createDeptJob(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody DeptJobDto dto) {
-        String newId = deptJobService.createDeptJob(userDetails.getEsntlId(), dto);
-        return ResponseEntity.ok(ApiResponse.success(newId));
+        Long newSn = deptJobService.createDeptJob(userDetails.getEsntlId(), dto);
+        return ResponseEntity.ok(ApiResponse.success(newSn));
     }
 
     @Operation(summary = "부서 업무 수정", description = "부서 업무를 수정합니다. 담당자 본인 또는 관리자만 가능합니다.")
     @PreAuthorize("isAuthenticated()")
-    @PutMapping("/{deptTaskId}")
+    @PutMapping("/{deptTaskSn}")
     public ResponseEntity<ApiResponse<Void>> updateDeptJob(
-            @PathVariable String deptTaskId,
+            @PathVariable Long deptTaskSn,
             @Valid @RequestBody DeptJobDto dto) {
-        deptJobService.updateDeptJob(deptTaskId, dto);
+        deptJobService.updateDeptJob(deptTaskSn, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "부서 업무 삭제", description = "부서 업무를 삭제합니다. 담당자 본인 또는 관리자만 가능합니다.")
     @PreAuthorize("isAuthenticated()")
-    @DeleteMapping("/{deptTaskId}")
-    public ResponseEntity<ApiResponse<Void>> deleteDeptJob(@PathVariable String deptTaskId) {
-        deptJobService.deleteDeptJob(deptTaskId);
+    @DeleteMapping("/{deptTaskSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteDeptJob(@PathVariable Long deptTaskSn) {
+        deptJobService.deleteDeptJob(deptTaskSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

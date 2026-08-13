@@ -333,7 +333,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     {
       header: '업무명',
       accessor: (item) => (
-        <Link href={`/smart-toolkit/dept-job/${item.deptTaskId}`} className="flex flex-col gap-1 py-1">
+        <Link href={`/smart-toolkit/dept-job/${item.deptTaskSn}`} className="flex flex-col gap-1 py-1">
           <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.deptTaskNm}</span>
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
             {item.deptTaskBoxNm || '업무함 미지정'}
@@ -363,7 +363,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             size="sm"
             className="h-9 font-bold text-[11px]"
             aria-label={`${item.deptTaskNm || '업무'} 상세 보기`}
-            onClick={() => router.push(`/smart-toolkit/dept-job/${item.deptTaskId}`)}
+            onClick={() => router.push(`/smart-toolkit/dept-job/${item.deptTaskSn}`)}
           >
             상세
           </Button>

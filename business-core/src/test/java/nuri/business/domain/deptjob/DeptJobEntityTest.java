@@ -28,13 +28,13 @@ class DeptJobEntityTest {
     @DisplayName("DeptJob 빌더 및 수정 테스트")
     void deptJobTest() {
         DeptJob job = DeptJob.builder()
-                .deptTaskId("JOB_001")
+                .deptTaskSn(1L)
                 .deptTaskNm("Initial Job")
                 .deptTaskCn("Initial Content")
                 .prrtyRnk("1")
                 .build();
 
-        assertThat(job.getDeptTaskId()).isEqualTo("JOB_001");
+        assertThat(job.getDeptTaskSn()).isEqualTo(1L);
         assertThat(job.getDeptTaskNm()).isEqualTo("Initial Job");
 
         job.update(2L, "Updated Job", "Updated Content", "user01", "2", "FILE_001");

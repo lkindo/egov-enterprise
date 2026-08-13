@@ -2,7 +2,6 @@ package nuri.business.service.deptjob;
 
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.util.IdGenerationUtil;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.deptjob.DeptJob;
 import nuri.business.domain.deptjob.DeptJobRepository;
@@ -114,20 +113,14 @@ public class DeptJobService extends BaseAbstractService {
         return deptJobRepository.findAll(builder, required(pageable, "pageable 는 null 일 수 없습니다")).map(this::toDto);
     }
 
-    public DeptJobDto getDeptJob(String id) {
-        DeptJob deptJob = deptJobRepository.findById(required(id, "id 는 null 일 수 없습니다"))
+    public DeptJobDto getDeptJob(Long deptTaskSn) {
+        DeptJob deptJob = deptJobRepository.findById(required(deptTaskSn, "deptTaskSn 은 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         return toDto(deptJob);
     }
 
     @Transactional
-    public String createDeptJob(String userId, DeptJobDto dto) {
-        // [PK 채번] dept_task_id 는 @GeneratedValue 없는 할당식 PK(varchar 20, NOT NULL)다.
-        //   종전에는 dto.getDeptTaskId() 를 그대로 썼는데, 등록 폼은 이 값을 보내지 않으므로
-        //   null PK 로 persist 되어 저장이 불가능했다(Schedule·WorkReport 에서 고친 것과 동일 패턴).
-        //   'TASK_'(5) + 15 = 20자로 컬럼 상한에 맞춘다.
-        String deptTaskId = IdGenerationUtil.generateUniqueId("TASK_", 15, deptJobRepository::existsById);
-
+    public Long createDeptJob(String userId, DeptJobDto dto) {
         // [담당자 기본값] 등록 폼에 담당자 지정 UI 가 아직 없다. 미지정 시 등록자를 담당자로 둔다
         //   (null 로 두면 목록의 담당자 칸이 비고 검색조건 '담당자ID'가 무의미해진다).
         //   축은 이 컨트롤러의 형제 메서드들과 동일하게 esntlId 다. 담당자 지정 UI 가 생기면
@@ -135,7 +128,6 @@ public class DeptJobService extends BaseAbstractService {
         String picId = (dto.getPicId() != null && !dto.getPicId().isBlank()) ? dto.getPicId() : userId;
 
         DeptJob deptJob = DeptJob.builder()
-                .deptTaskId(deptTaskId)
                 .deptTaskBoxSn(dto.getDeptTaskBoxSn())
                 .deptTaskNm(dto.getDeptTaskNm())
                 .deptTaskCn(dto.getDeptTaskCn())
@@ -143,13 +135,12 @@ public class DeptJobService extends BaseAbstractService {
                 .prrtyRnk(dto.getPrrtyRnk())
                 .atchFileId(dto.getAtchFileId())
                 .build();
-        deptJobRepository.save(deptJob);
-        return deptTaskId;
+        return deptJobRepository.save(deptJob).getDeptTaskSn();
     }
 
     @Transactional
-    public void updateDeptJob(String id, DeptJobDto dto) {
-        DeptJob deptJob = deptJobRepository.findById(required(id, "id 는 null 일 수 없습니다"))
+    public void updateDeptJob(Long deptTaskSn, DeptJobDto dto) {
+        DeptJob deptJob = deptJobRepository.findById(required(deptTaskSn, "deptTaskSn 은 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // 소유권 검증(IDOR 방어): 담당자 본인 또는 관리자만 수정 가능.
@@ -175,10 +166,10 @@ public class DeptJobService extends BaseAbstractService {
     }
 
     @Transactional
-    public void deleteDeptJob(String id) {
+    public void deleteDeptJob(Long deptTaskSn) {
         // 종전에는 deleteById 로 존재 여부도 소유권도 확인하지 않고 지웠다.
         // 없는 id 는 404 로, 남의 업무는 인가 실패로 되돌린다.
-        DeptJob deptJob = deptJobRepository.findById(required(id, "id 는 null 일 수 없습니다"))
+        DeptJob deptJob = deptJobRepository.findById(required(deptTaskSn, "deptTaskSn 은 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         assertPicOrAdmin(deptJob);

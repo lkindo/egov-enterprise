@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface DeptJobRepository extends JpaRepository<DeptJob, String>, QuerydslPredicateExecutor<DeptJob> {
+public interface DeptJobRepository extends JpaRepository<DeptJob, Long>, QuerydslPredicateExecutor<DeptJob> {
 
     /**
      * 해당 업무함에 속한 부서업무가 하나라도 있는지.

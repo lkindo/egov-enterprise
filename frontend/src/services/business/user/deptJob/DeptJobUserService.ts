@@ -101,30 +101,30 @@ class DeptJobUserService extends UserService {
   /**
    * 부서 업무 상세 조회
    */
-  async getDeptJob(id: string, config?: AxiosRequestConfig): Promise<DeptJobVO> {
-    return this.get<DeptJobVO>(`/${id}`, config);
+  async getDeptJob(deptTaskSn: number, config?: AxiosRequestConfig): Promise<DeptJobVO> {
+    return this.get<DeptJobVO>(`/${deptTaskSn}`, config);
   }
 
   /**
    * 부서 업무 등록
    */
-  async createDeptJob(data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<string> {
+  async createDeptJob(data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<number> {
     // 서버가 채번한 식별자를 돌려준다(등록 직후 상세로 이동하기 위해 필요).
-    return this.post<string>('', data, config);
+    return this.post<number>('', data, config);
   }
 
   /**
    * 부서 업무 수정
    */
-  async updateDeptJob(id: string, data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${id}`, data, config);
+  async updateDeptJob(deptTaskSn: number, data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/${deptTaskSn}`, data, config);
   }
 
   /**
    * 부서 업무 삭제
    */
-  async deleteDeptJob(id: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/${id}`, config);
+  async deleteDeptJob(deptTaskSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/${deptTaskSn}`, config);
   }
 }
 

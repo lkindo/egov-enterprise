@@ -82,9 +82,12 @@ class PkGenerationStandardLinterTest {
             // [2026-08-13 제거] Banner — V2_56에서 bnr_id 문자열 기술키를 bnr_sn BIGINT
             //   IDENTITY로 전환했다. 실측: tb_bnr_info 0행, inbound FK 0. 관리자·공개 UI와
             //   서버 액션·E2E 정리 소비자를 숫자 일련번호 계약으로 함께 이관했다.
+            // [2026-08-13 제거] DeptJob — V2_57에서 dept_task_id 문자열 기술키를
+            //   dept_task_sn BIGINT IDENTITY로 전환했다. 실측: tb_dept_task_info 0행,
+            //   inbound FK 0. outbound FK 3건과 업무 CRUD·화면·E2E 계약을 함께 검증했다.
             "AdministCode", "Authority", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
-            "Community", "DeptJob", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
+            "Community", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
             // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).
             //   FAQ 는 게시판(tb_bbs_item, bbs_id='BBSMSTR_AAAAAAAAAAAA')으로 통합돼 운영 중이고
             //   전용 도메인은 死자산이었다. 라이브 실측: tb_faq_info 0행 / 게시판 FAQ 281행,

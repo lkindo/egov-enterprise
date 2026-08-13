@@ -26,24 +26,24 @@ import { DeptJobForm, DeptJobFormValues, PRIORITY_LABEL } from '@/components/bus
  * 조회·변경은 TanStack Query 로 다루고, 폼은 등록 화면과 공용인 DeptJobForm
  * (useAppForm + generated-zod 확장, FE 헌법 제7조·제13조 2항)을 쓴다.
  */
-export default function DeptJobDetailClient({ deptTaskId }: { deptTaskId: string }) {
+export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number }) {
     const router = useRouter();
     const queryClient = useQueryClient();
     const confirm = useConfirm();
     const [isEditing, setEditing] = React.useState(false);
 
     const { data: job, isLoading, isError } = useQuery({
-        queryKey: ['dept-job', deptTaskId],
-        queryFn: () => deptJobUserService.getDeptJob(deptTaskId),
-        enabled: Boolean(deptTaskId),
+        queryKey: ['dept-job', deptTaskSn],
+        queryFn: () => deptJobUserService.getDeptJob(deptTaskSn),
+        enabled: Number.isSafeInteger(deptTaskSn) && deptTaskSn > 0,
     });
 
     const updateMutation = useMutation({
-        mutationFn: (values: DeptJobFormValues) => deptJobUserService.updateDeptJob(deptTaskId, values),
+        mutationFn: (values: DeptJobFormValues) => deptJobUserService.updateDeptJob(deptTaskSn, values),
         onSuccess: () => {
             toast.success('업무가 수정되었습니다.');
             setEditing(false);
-            queryClient.invalidateQueries({ queryKey: ['dept-job', deptTaskId] });
+            queryClient.invalidateQueries({ queryKey: ['dept-job', deptTaskSn] });
             // 업무 워크플로우 탭의 목록도 갱신 대상이다.
             queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
         },
@@ -51,7 +51,7 @@ export default function DeptJobDetailClient({ deptTaskId }: { deptTaskId: string
     });
 
     const deleteMutation = useMutation({
-        mutationFn: () => deptJobUserService.deleteDeptJob(deptTaskId),
+        mutationFn: () => deptJobUserService.deleteDeptJob(deptTaskSn),
         onSuccess: () => {
             toast.success('업무가 삭제되었습니다.');
             queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
@@ -172,7 +172,7 @@ export default function DeptJobDetailClient({ deptTaskId }: { deptTaskId: string
                                 </div>
                                 <div className="space-y-1">
                                     <p className="text-xs font-bold uppercase tracking-tight text-muted-foreground">식별자</p>
-                                    <p className="text-sm font-mono break-all">{job.deptTaskId}</p>
+                                    <p className="text-sm font-mono break-all">{job.deptTaskSn}</p>
                                 </div>
                             </section>
                         </div>

@@ -234,7 +234,7 @@ export type HpcmDto = z.infer<typeof HpcmDtoSchema>;
 // DeptJobDto Schema
 // ==========================================================================
 export const DeptJobDtoSchema = z.object({
-  deptTaskId: z.string().optional(),
+  deptTaskSn: z.number().optional(),
   deptTaskBoxSn: z.number().optional(),
   deptTaskBoxNm: z.string().optional(),
   deptId: z.string().min(0).max(20).optional(),

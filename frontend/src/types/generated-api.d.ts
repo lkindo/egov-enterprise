@@ -282,7 +282,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/dept-jobs/{deptTaskId}": {
+    "/api/v1/dept-jobs/{deptTaskSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4687,7 +4687,8 @@ export interface components {
             crtDt?: string;
         };
         DeptJobDto: {
-            deptTaskId?: string;
+            /** Format: int64 */
+            deptTaskSn?: number;
             /** Format: int64 */
             deptTaskBoxSn?: number;
             deptTaskBoxNm?: string;
@@ -9084,7 +9085,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptTaskId: string;
+                deptTaskSn: number;
             };
             cookie?: never;
         };
@@ -9106,7 +9107,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptTaskId: string;
+                deptTaskSn: number;
             };
             cookie?: never;
         };
@@ -9132,7 +9133,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptTaskId: string;
+                deptTaskSn: number;
             };
             cookie?: never;
         };
@@ -12549,7 +12550,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };

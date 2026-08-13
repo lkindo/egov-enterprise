@@ -77,7 +77,7 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
     test('부서 업무: 서버 채번 등록 → 상세 → 검색 → 수정 → 삭제', async ({ request }) => {
         const name = `${PREFIX}Job_${Date.now()}`;
 
-        // 1) 등록 — deptTaskId(PK)를 보내지 않아도 서버가 채번해야 한다.
+        // 1) 등록 — deptTaskSn(PK)를 보내지 않아도 DB identity가 채번해야 한다.
         //    업무함(deptTaskBoxSn)도 보내지 않는다. 이 조합이 f02c35295 의 3번 결함
         //    ("업무함 미지정 업무는 조회가 400 으로 깨진다")을 재현하는 조건이다.
         const createRes = await request.post(JOB_API, {
@@ -86,15 +86,13 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
         });
         expect(createRes.ok(), '부서 업무 등록은 PK 없이도 성공해야 한다 (컨트롤러 매핑 부재/PK 미채번 회귀)').toBeTruthy();
 
-        const deptTaskId = (await createRes.json()).data as string;
-        expect(deptTaskId, '서버가 채번한 업무 식별자가 반환되어야 한다').toMatch(/^TASK_/);
-        // dept_task_id 는 varchar(20). 'TASK_'(5) + 15 로 상한에 정확히 맞춘다.
-        expect(deptTaskId.length, 'dept_task_id 는 컬럼 상한 20자를 지켜야 한다').toBe(20);
+        const deptTaskSn = (await createRes.json()).data as number;
+        expect(deptTaskSn, 'DB가 채번한 업무 일련번호가 반환되어야 한다').toBeGreaterThan(0);
 
         try {
             // 2) 상세 조회 — 업무함이 null 인 상태에서도 200 이어야 한다.
             //    종전에는 required() 가드 때문에 여기서 400 이 났다.
-            const detailRes = await request.get(`${JOB_API}/${deptTaskId}`, { headers: auth });
+            const detailRes = await request.get(`${JOB_API}/${deptTaskSn}`, { headers: auth });
             expect(detailRes.ok(), '업무함 미지정(null) 업무도 상세 조회가 되어야 한다').toBeTruthy();
 
             const detail = (await detailRes.json()).data;
@@ -108,7 +106,7 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
             const hitRes = await request.get(`${JOB_API}?searchWrd=${encodeURIComponent(name)}&pageIndex=1&pageUnit=10`, { headers: auth });
             expect(hitRes.ok()).toBeTruthy();
             const hitList = (await hitRes.json()).data.list as any[];
-            expect(hitList.some((j) => j.deptTaskId === deptTaskId), '등록한 업무가 제목 검색에 잡혀야 한다').toBeTruthy();
+            expect(hitList.some((j) => j.deptTaskSn === deptTaskSn), '등록한 업무가 제목 검색에 잡혀야 한다').toBeTruthy();
 
             const missRes = await request.get(`${JOB_API}?searchWrd=${PREFIX}NO_SUCH_JOB_ZZZ&pageIndex=1&pageUnit=10`, { headers: auth });
             const missList = (await missRes.json()).data.list as any[];
@@ -117,23 +115,23 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
             // 4) 수정 — 업무함·담당자를 보내지 않으면 update 가 null 로 덮어쓴다는 점은
             //    폼이 값을 왕복시켜 방어한다. 여기서는 계약(수정이 반영되는가)만 본다.
             const editedName = `${name}_edited`;
-            const updRes = await request.put(`${JOB_API}/${deptTaskId}`, {
+            const updRes = await request.put(`${JOB_API}/${deptTaskSn}`, {
                 headers: auth,
                 data: { deptTaskNm: editedName, deptTaskCn: '수정됨', prrtyRnk: '1', picId: detail.picId },
             });
             expect(updRes.ok(), '부서 업무 수정이 성공해야 한다').toBeTruthy();
 
-            const afterRes = await request.get(`${JOB_API}/${deptTaskId}`, { headers: auth });
+            const afterRes = await request.get(`${JOB_API}/${deptTaskSn}`, { headers: auth });
             const after = (await afterRes.json()).data;
             expect(after.deptTaskNm).toBe(editedName);
             expect(after.prrtyRnk).toBe('1');
             expect(after.picId, '수정 시 담당자를 왕복시키면 유지되어야 한다').toBe(detail.picId);
         } finally {
             // 5) 삭제 — 지운 뒤에는 404 여야 한다(종전 deleteById 는 없는 id 도 조용히 통과시켰다).
-            const delRes = await request.delete(`${JOB_API}/${deptTaskId}`, { headers: auth });
+            const delRes = await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
             expect(delRes.ok(), '부서 업무 삭제가 성공해야 한다').toBeTruthy();
 
-            const goneRes = await request.get(`${JOB_API}/${deptTaskId}`, { headers: auth });
+            const goneRes = await request.get(`${JOB_API}/${deptTaskSn}`, { headers: auth });
             expect(goneRes.status(), '삭제한 업무의 상세는 404 여야 한다').toBe(404);
         }
     });
@@ -143,7 +141,7 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
         //    아래에서 만든 업무가 목록에 **영원히** 나타나지 않았다.
         const name = `${PREFIX}Visible_${Date.now()}`;
         const res = await request.post(JOB_API, { headers: auth, data: { deptTaskNm: name, prrtyRnk: '2' } });
-        const deptTaskId = (await res.json()).data as string;
+        const deptTaskSn = (await res.json()).data as number;
 
         const deptJobPage = new DeptJobPage(page);
         try {
@@ -158,7 +156,7 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
             // 업무명 링크가 부서 업무 상세로 향한다 = 행이 들고 있는 식별자가 DeptJob 의 PK 다.
             // (업무함이라면 deptTaskBoxSn이라 이 href가 만들어질 수 없다.)
             await expect(
-                row.locator(`a[href="/smart-toolkit/dept-job/${deptTaskId}"]`),
+                row.locator(`a[href="/smart-toolkit/dept-job/${deptTaskSn}"]`),
                 '행의 업무명은 해당 부서 업무 상세로 연결되어야 한다'
             ).toBeVisible();
 
@@ -169,7 +167,7 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
             await deptJobPage.search(`${PREFIX}NO_SUCH_JOB_ZZZ`);
             await expect(deptJobPage.emptyMessage, '일치하지 않는 검색어는 빈 표가 되어야 한다').toBeVisible({ timeout: 20000 });
         } finally {
-            await request.delete(`${JOB_API}/${deptTaskId}`, { headers: auth });
+            await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
         }
     });
 
@@ -178,7 +176,7 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
         // 어떤 업무를 보는지조차 알 수 없었다.
         const name = `${PREFIX}Landing_${Date.now()}`;
         const deptJobPage = new DeptJobPage(page);
-        let deptTaskId = '';
+        let deptTaskSn = 0;
 
         try {
             await deptJobPage.gotoJobCreate();
@@ -186,16 +184,16 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
             await page.getByRole('button', { name: '업무 등록' }).click();
 
             // 서버가 채번한 식별자로 상세에 착지해야 한다.
-            await expect(page, '등록 후 서버 채번 id 의 상세로 이동해야 한다').toHaveURL(/\/smart-toolkit\/dept-job\/TASK_[A-Za-z0-9]+/, { timeout: 30000 });
+            await expect(page, '등록 후 DB 채번 일련번호의 상세로 이동해야 한다').toHaveURL(/\/smart-toolkit\/dept-job\/\d+/, { timeout: 30000 });
 
-            deptTaskId = new URL(page.url()).pathname.split('/').pop() as string;
-            expect(deptTaskId).toMatch(/^TASK_/);
+            deptTaskSn = Number(new URL(page.url()).pathname.split('/').pop());
+            expect(deptTaskSn).toBeGreaterThan(0);
 
             // 상세 화면이 '전달받은 id 의' 업무를 보여준다(목록 복제본이 아니다).
             await expect(page.getByText(name).first()).toBeVisible({ timeout: 30000 });
-            await expect(page.getByText(deptTaskId).first(), '상세에 식별자가 표시되어야 한다').toBeVisible();
+            await expect(page.getByText(String(deptTaskSn)).first(), '상세에 식별자가 표시되어야 한다').toBeVisible();
         } finally {
-            if (deptTaskId) await request.delete(`${JOB_API}/${deptTaskId}`, { headers: auth });
+            if (deptTaskSn) await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
         }
     });
 
@@ -205,12 +203,12 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
             headers: auth,
             data: { deptTaskNm: name, deptTaskCn: '원본 내용', prrtyRnk: '2' },
         });
-        const deptTaskId = (await res.json()).data as string;
+        const deptTaskSn = (await res.json()).data as number;
         let deleted = false;
 
         const deptJobPage = new DeptJobPage(page);
         try {
-            await deptJobPage.gotoJobDetail(deptTaskId);
+            await deptJobPage.gotoJobDetail(deptTaskSn);
             await expect(page.getByText(name).first()).toBeVisible({ timeout: 30000 });
 
             // 수정 — 폼에 기존 값이 실려 있어야 한다(빈 등록 폼이 뜨던 회귀).
@@ -227,11 +225,11 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
             await deptJobPage.confirmDialogButton('삭제').click();
             await expect(page, '삭제 후 목록으로 돌아가야 한다').toHaveURL(/\/smart-toolkit\/dept-job$/, { timeout: 30000 });
 
-            const goneRes = await request.get(`${JOB_API}/${deptTaskId}`, { headers: auth });
+            const goneRes = await request.get(`${JOB_API}/${deptTaskSn}`, { headers: auth });
             expect(goneRes.status(), 'UI 삭제가 실제 삭제로 이어져야 한다').toBe(404);
             deleted = true;
         } finally {
-            if (!deleted) await request.delete(`${JOB_API}/${deptTaskId}`, { headers: auth });
+            if (!deleted) await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
         }
     });
 
