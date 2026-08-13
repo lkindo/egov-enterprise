@@ -104,7 +104,7 @@ class HelpServiceTest {
     @DisplayName("온라인 매뉴얼 목록 조회 테스트")
     void getOnlineManualList_Success() {
         Pageable pageable = PageRequest.of(0, 10);
-        OnlineManual entity = OnlineManual.builder().onlnMnlId("ID").onlnMnlNm("Name").build();
+        OnlineManual entity = OnlineManual.builder().onlnMnlSn(1L).onlnMnlNm("Name").build();
         when(onlineManualRepository.findByOnlnMnlNmContaining(anyString(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(entity)));
 
@@ -116,10 +116,10 @@ class HelpServiceTest {
     @Test
     @DisplayName("온라인 매뉴얼 상세 조회 테스트")
     void getOnlineManual_Success() {
-        OnlineManual entity = OnlineManual.builder().onlnMnlId("ID").onlnMnlNm("Name").build();
-        when(onlineManualRepository.findById("ID")).thenReturn(Optional.of(entity));
+        OnlineManual entity = OnlineManual.builder().onlnMnlSn(1L).onlnMnlNm("Name").build();
+        when(onlineManualRepository.findById(1L)).thenReturn(Optional.of(entity));
 
-        OnlineManualDto result = helpService.getOnlineManual("ID");
+        OnlineManualDto result = helpService.getOnlineManual(1L);
 
         assertThat(result.getOnlnMnlNm()).isEqualTo("Name");
     }
@@ -128,21 +128,23 @@ class HelpServiceTest {
     @DisplayName("온라인 매뉴얼 등록 테스트")
     void createOnlineManual_Success() {
         OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Manual").build();
+        when(onlineManualRepository.save(any(OnlineManual.class)))
+                .thenReturn(OnlineManual.builder().onlnMnlSn(1L).build());
 
-        String id = helpService.createOnlineManual("user", dto);
+        Long onlnMnlSn = helpService.createOnlineManual("user", dto);
 
-        assertThat(id).startsWith("MNL_");
+        assertThat(onlnMnlSn).isEqualTo(1L);
         verify(onlineManualRepository).save(any(OnlineManual.class));
     }
 
     @Test
     @DisplayName("온라인 매뉴얼 수정 테스트")
     void updateOnlineManual_Success() {
-        OnlineManual entity = org.mockito.Mockito.spy(OnlineManual.builder().onlnMnlId("ID").build());
-        when(onlineManualRepository.findById("ID")).thenReturn(Optional.of(entity));
+        OnlineManual entity = org.mockito.Mockito.spy(OnlineManual.builder().onlnMnlSn(1L).build());
+        when(onlineManualRepository.findById(1L)).thenReturn(Optional.of(entity));
         OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Updated").build();
 
-        helpService.updateOnlineManual("ID", "user", dto);
+        helpService.updateOnlineManual(1L, "user", dto);
 
         verify(entity).update(any(), any(), any(), any());
     }
@@ -150,7 +152,7 @@ class HelpServiceTest {
     @Test
     @DisplayName("온라인 매뉴얼 삭제 테스트")
     void deleteOnlineManual_Success() {
-        helpService.deleteOnlineManual("ID");
-        verify(onlineManualRepository).deleteById("ID");
+        helpService.deleteOnlineManual(1L);
+        verify(onlineManualRepository).deleteById(1L);
     }
 }

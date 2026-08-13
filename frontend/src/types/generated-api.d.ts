@@ -226,7 +226,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/help/manuals/{mnlId}": {
+    "/api/v1/help/manuals/{onlnMnlSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4642,8 +4642,12 @@ export interface components {
         };
         /** @description 온라인 메뉴얼 DTO */
         OnlineManualDto: {
-            /** @description 온라인 메뉴얼 ID */
-            onlnMnlId?: string;
+            /**
+             * Format: int64
+             * @description 온라인 메뉴얼 일련번호
+             * @example 1
+             */
+            onlnMnlSn?: number;
             /** @description 온라인 메뉴얼 명 */
             onlnMnlNm: string;
             /** @description 온라인 메뉴얼 구분코드 */
@@ -8928,8 +8932,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 매뉴얼 ID */
-                mnlId: string;
+                /** @description 매뉴얼 일련번호 */
+                onlnMnlSn: number;
             };
             cookie?: never;
         };
@@ -8951,7 +8955,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                mnlId: string;
+                onlnMnlSn: number;
             };
             cookie?: never;
         };
@@ -8977,7 +8981,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                mnlId: string;
+                onlnMnlSn: number;
             };
             cookie?: never;
         };
@@ -12327,7 +12331,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };

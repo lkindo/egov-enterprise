@@ -67,6 +67,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-13 제거] InternetSvcGuidance — V2_51에서 itnt_svc_id 문자열 기술키를
             //   itnt_srvc_sn BIGINT IDENTITY로 전환했다. 실측: tb_intrn_svc 0행, inbound FK 0.
             //   기존 행 보존·PK·identity·sq_itnt_srvc_sn·자동 채번 회귀 테스트와 API Long 계약을 검증했다.
+            // [2026-08-13 제거] OnlineManual — V2_52에서 onln_mnl_id 문자열 기술키를
+            //   onln_mnl_sn BIGINT IDENTITY로 전환했다. 실측: tb_onln_mnl_info 1행, inbound FK 0.
+            //   기존 행·별도 UNIQUE 제약·API/FE/E2E 소비자를 함께 이관하고 자동 채번 회귀 테스트로 검증했다.
             "AdministCode", "Authority", "Banner", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptJob", "DeptJobBox", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
@@ -85,7 +88,7 @@ class PkGenerationStandardLinterTest {
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
             "FileMaster", "GroupManage", "InformalSanction", "InstitutionCode",
             "LoginLog", "LoginPolicy", "MemoReport", "Menu",
-            "MyPageContent", "Note", "NoteRecptn", "NoteTrnsmit", "Notification", "OnlineManual",
+            "MyPageContent", "Note", "NoteRecptn", "NoteTrnsmit", "Notification",
             "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage", "Popup",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RewardManage", "RoleInfo", "Schedule",
             "Scrap", "SentMail", "SiteMap", "Sms", "SurveyArticle", "SurveyInfo", "SurveyQuestion",

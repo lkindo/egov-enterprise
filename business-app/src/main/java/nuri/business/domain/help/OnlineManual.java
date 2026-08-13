@@ -15,8 +15,8 @@ import lombok.*;
 public class OnlineManual extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String onlnMnlId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long onlnMnlSn;
 
     @Column(length = 100, nullable = false)
     private String onlnMnlNm;
@@ -31,8 +31,8 @@ public class OnlineManual extends BaseEntity {
     private String onlnMnlExpln;
 
     // 전체 own 필드 위임 생성자 (팩토리 전용, 시그니처 충돌 방지 위해 private)
-    private OnlineManual(String onlnMnlId, String onlnMnlNm, String onlnMnlSeCd, String onlnMnlDfn, String onlnMnlExpln) {
-        this.onlnMnlId = onlnMnlId;
+    private OnlineManual(Long onlnMnlSn, String onlnMnlNm, String onlnMnlSeCd, String onlnMnlDfn, String onlnMnlExpln) {
+        this.onlnMnlSn = onlnMnlSn;
         this.onlnMnlNm = onlnMnlNm;
         this.onlnMnlSeCd = onlnMnlSeCd;
         this.onlnMnlDfn = onlnMnlDfn;
@@ -40,8 +40,8 @@ public class OnlineManual extends BaseEntity {
     }
 
     @Builder
-    public static OnlineManual create(String onlnMnlId, String onlnMnlNm, String onlnMnlSeCd, String onlnMnlDfn, String onlnMnlExpln) {
-        return new OnlineManual(onlnMnlId, onlnMnlNm, onlnMnlSeCd, onlnMnlDfn, onlnMnlExpln);
+    public static OnlineManual create(Long onlnMnlSn, String onlnMnlNm, String onlnMnlSeCd, String onlnMnlDfn, String onlnMnlExpln) {
+        return new OnlineManual(onlnMnlSn, onlnMnlNm, onlnMnlSeCd, onlnMnlDfn, onlnMnlExpln);
     }
 
     public void update(String onlnMnlNm, String onlnMnlSeCd, String onlnMnlDfn, String onlnMnlExpln) {

@@ -18,7 +18,7 @@ interface CleanupBanner { bnrId: string; bnrNm?: string }
 interface CleanupPost { pstId?: string | number; id?: string | number; pstTtl?: string; title?: string }
 interface CleanupMenu { menuNo: number; menuNm: string }
 interface CleanupAddress { adbkId: string; adbkNm?: string }
-interface CleanupManual { onlineMnlId: string; onlineMnlNm?: string }
+interface CleanupManual { onlnMnlSn: number; onlnMnlNm?: string }
 interface CleanupRole { roleId: string; roleNm?: string }
 interface CleanupGroup { groupId: string; groupNm?: string }
 interface CleanupAuthority { authrtCd: string; authrtNm?: string }
@@ -269,10 +269,10 @@ async function cleanup() {
         params: { keyword: 'E2E Manual', size: 100 } 
       });
       const manuals = extractPage(manualRes);
-      const testManuals = manuals.filter((m) => m.onlineMnlNm?.startsWith('E2E Manual'));
+      const testManuals = manuals.filter((m) => m.onlnMnlNm?.startsWith('E2E Manual'));
       for (const manual of testManuals) {
-        process.stdout.write(`  - Deleting Manual: ${manual.onlineMnlNm} (${manual.onlineMnlId})... `);
-        await axios.delete(`${API_BASE}/help/manuals/${manual.onlineMnlId}`, { headers });
+        process.stdout.write(`  - Deleting Manual: ${manual.onlnMnlNm} (${manual.onlnMnlSn})... `);
+        await axios.delete(`${API_BASE}/help/manuals/${manual.onlnMnlSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testManuals.length} manual(s) cleaned.`);

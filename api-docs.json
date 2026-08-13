@@ -1092,7 +1092,7 @@
         }
       }
     },
-    "/api/v1/help/manuals/{mnlId}": {
+    "/api/v1/help/manuals/{onlnMnlSn}": {
       "get": {
         "tags": [
           "Help"
@@ -1102,12 +1102,13 @@
         "operationId": "getManual",
         "parameters": [
           {
-            "name": "mnlId",
+            "name": "onlnMnlSn",
             "in": "path",
-            "description": "매뉴얼 ID",
+            "description": "매뉴얼 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1133,11 +1134,12 @@
         "operationId": "updateManual",
         "parameters": [
           {
-            "name": "mnlId",
+            "name": "onlnMnlSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1173,11 +1175,12 @@
         "operationId": "deleteManual",
         "parameters": [
           {
-            "name": "mnlId",
+            "name": "onlnMnlSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -6371,7 +6374,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -16653,11 +16656,11 @@
         "type": "object",
         "description": "온라인 메뉴얼 DTO",
         "properties": {
-          "onlnMnlId": {
-            "type": "string",
-            "description": "온라인 메뉴얼 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "onlnMnlSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "온라인 메뉴얼 일련번호",
+            "example": 1
           },
           "onlnMnlNm": {
             "type": "string",

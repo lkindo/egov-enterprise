@@ -63,7 +63,7 @@ export const boardSchema = BoardSaveRequestSchema.extend({
 });
 
 export const manualSchema = OnlineManualDtoSchema.extend({
-  onlnMnlId: z.string().optional(),
+  onlnMnlSn: z.number().optional(),
 });
 
 export const userManageSchema = UserDtoSchema.extend({

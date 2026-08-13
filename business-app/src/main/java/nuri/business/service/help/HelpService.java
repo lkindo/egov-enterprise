@@ -70,40 +70,38 @@ public class HelpService {
                 .map(onlineManualMapper::toDto);
     }
 
-    public OnlineManualDto getOnlineManual(String onlnMnlId) {
-        return onlineManualRepository.findById(Objects.requireNonNull(onlnMnlId))
+    public OnlineManualDto getOnlineManual(Long onlnMnlSn) {
+        return onlineManualRepository.findById(Objects.requireNonNull(onlnMnlSn))
                 .map(onlineManualMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Transactional
-    public String createOnlineManual(String userId, OnlineManualDto dto) {
+    public Long createOnlineManual(String userId, OnlineManualDto dto) {
         if (dto == null) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
         
-        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("MNL_", 8);
         OnlineManual entity = OnlineManual.builder()
-                .onlnMnlId(id)
                 .onlnMnlNm(dto.getOnlnMnlNm() != null ? dto.getOnlnMnlNm() : "Untitled")
                 .onlnMnlSeCd(dto.getOnlnMnlSeCd() != null ? dto.getOnlnMnlSeCd() : "GNR")
                 .onlnMnlDfn(dto.getOnlnMnlDfn() != null ? dto.getOnlnMnlDfn() : "")
                 .onlnMnlExpln(dto.getOnlnMnlExpln() != null ? dto.getOnlnMnlExpln() : "")
                 .build();
         
-        onlineManualRepository.save(entity);
-        return id;
+        OnlineManual saved = onlineManualRepository.save(entity);
+        return saved.getOnlnMnlSn();
     }
 
     @Transactional
-    public void updateOnlineManual(String onlnMnlId, String userId, OnlineManualDto dto) {
-        OnlineManual entity = onlineManualRepository.findById(Objects.requireNonNull(onlnMnlId))
+    public void updateOnlineManual(Long onlnMnlSn, String userId, OnlineManualDto dto) {
+        OnlineManual entity = onlineManualRepository.findById(Objects.requireNonNull(onlnMnlSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getOnlnMnlNm(), dto.getOnlnMnlSeCd(), dto.getOnlnMnlDfn(), dto.getOnlnMnlExpln());
     }
 
     @Transactional
-    public void deleteOnlineManual(String onlnMnlId) {
-        onlineManualRepository.deleteById(Objects.requireNonNull(onlnMnlId));
+    public void deleteOnlineManual(Long onlnMnlSn) {
+        onlineManualRepository.deleteById(Objects.requireNonNull(onlnMnlSn));
     }
 }

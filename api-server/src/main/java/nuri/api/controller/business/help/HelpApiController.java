@@ -79,35 +79,35 @@ public class HelpApiController {
     }
 
     @Operation(summary = "온라인 매뉴얼 상세 조회", description = "특정 온라인 매뉴얼의 상세 정보를 조회합니다.")
-    @GetMapping("/manuals/{mnlId}")
+    @GetMapping("/manuals/{onlnMnlSn}")
     public ResponseEntity<ApiResponse<OnlineManualDto>> getManual(
-            @Parameter(description = "매뉴얼 ID") @PathVariable String mnlId) {
-        return ResponseEntity.ok(ApiResponse.success(helpService.getOnlineManual(mnlId)));
+            @Parameter(description = "매뉴얼 일련번호") @PathVariable Long onlnMnlSn) {
+        return ResponseEntity.ok(ApiResponse.success(helpService.getOnlineManual(onlnMnlSn)));
     }
 
     @Operation(summary = "온라인 매뉴얼 등록", description = "새로운 온라인 매뉴얼을 등록합니다.")
     @PostMapping("/manuals")
-    public ResponseEntity<ApiResponse<String>> createManual(
+    public ResponseEntity<ApiResponse<Long>> createManual(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody OnlineManualDto dto) {
         String username = (userDetails != null) ? userDetails.getUsername() : "anonymous";
-        String id = helpService.createOnlineManual(username, dto);
-        return ResponseEntity.ok(ApiResponse.success(id));
+        Long onlnMnlSn = helpService.createOnlineManual(username, dto);
+        return ResponseEntity.ok(ApiResponse.success(onlnMnlSn));
     }
 
     @Operation(summary = "온라인 매뉴얼 수정", description = "온라인 매뉴얼 정보를 수정합니다.")
-    @PutMapping("/manuals/{mnlId}")
+    @PutMapping("/manuals/{onlnMnlSn}")
     public ResponseEntity<ApiResponse<Void>> updateManual(
-            @PathVariable String mnlId,
+            @PathVariable Long onlnMnlSn,
             @Valid @RequestBody OnlineManualDto dto) {
-        helpService.updateOnlineManual(mnlId, "ADMIN", dto);
+        helpService.updateOnlineManual(onlnMnlSn, "ADMIN", dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "온라인 매뉴얼 삭제", description = "온라인 매뉴얼 정보를 삭제합니다.")
-    @DeleteMapping("/manuals/{mnlId}")
-    public ResponseEntity<ApiResponse<Void>> deleteManual(@PathVariable String mnlId) {
-        helpService.deleteOnlineManual(mnlId);
+    @DeleteMapping("/manuals/{onlnMnlSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteManual(@PathVariable Long onlnMnlSn) {
+        helpService.deleteOnlineManual(onlnMnlSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

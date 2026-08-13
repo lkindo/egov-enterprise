@@ -207,7 +207,7 @@ export type InformalSanctionDto = z.infer<typeof InformalSanctionDtoSchema>;
 // OnlineManualDto Schema
 // ==========================================================================
 export const OnlineManualDtoSchema = z.object({
-  onlnMnlId: z.string().min(0).max(20).optional(),
+  onlnMnlSn: z.number().optional(),
   onlnMnlNm: z.string().min(0).max(100),
   onlnMnlSeCd: z.string().min(0).max(12),
   onlnMnlDfn: z.string().min(0).max(1000).optional(),
