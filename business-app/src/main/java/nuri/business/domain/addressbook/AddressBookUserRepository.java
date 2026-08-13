@@ -5,9 +5,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface AddressBookUserRepository extends JpaRepository<AddressBookUser, String> {
-    @org.springframework.data.jpa.repository.Query("select u from AddressBookUser u where u.addressBook.adbkId = :adbkId")
-    List<AddressBookUser> findByAdbkId(@org.springframework.data.repository.query.Param("adbkId") String adbkId);
+public interface AddressBookUserRepository extends JpaRepository<AddressBookUser, Long> {
+    @org.springframework.data.jpa.repository.Query("select u from AddressBookUser u where u.addressBook.adbkSn = :adbkSn")
+    List<AddressBookUser> findByAdbkSn(@org.springframework.data.repository.query.Param("adbkSn") Long adbkSn);
 
     // [W1-25 P3① 삭제] deleteByAdbkIdAndUserId / deleteByAdbkId 제거 — 저장소 전역 호출부 0.
     //   AddressBookService.update() 의 삭제는 '새 목록에 없는 사용자만' 지우는 **선택적** 루프라

@@ -40,7 +40,7 @@ public class AddressBookRepositoryImpl implements AddressBookRepositoryCustom {
                         .and(condition))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(addressBook.adbkId.desc())
+                .orderBy(addressBook.adbkSn.desc())
                 .fetch();
 
         Long total = queryFactory

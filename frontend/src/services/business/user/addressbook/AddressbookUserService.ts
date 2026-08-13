@@ -5,7 +5,7 @@ import { AxiosRequestConfig } from 'axios';
 import { NameCard } from '@/types/business/addressbook';
 
 export interface AddressBook {
-  adbkId: string;
+  adbkSn: number;
   adbkNm: string;
   rlsScopeCd: string;
   wrterId: string;
@@ -45,8 +45,8 @@ class AddressbookUserService extends UserService {
   /**
    * 주소록 상세 조회
    */
-  async getAddressBook(adbkId: string, config?: AxiosRequestConfig): Promise<AddressBook> {
-    return this.get<AddressBook>(`/${adbkId}`, config);
+  async getAddressBook(adbkSn: number, config?: AxiosRequestConfig): Promise<AddressBook> {
+    return this.get<AddressBook>(`/${adbkSn}`, config);
   }
 
   /**
@@ -59,15 +59,15 @@ class AddressbookUserService extends UserService {
   /**
    * 주소록 수정
    */
-  async updateAddressBook(adbkId: string, data: Partial<AddressBook>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${adbkId}`, data, config);
+  async updateAddressBook(adbkSn: number, data: Partial<AddressBook>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/${adbkSn}`, data, config);
   }
 
   /**
    * 주소록 삭제
    */
-  async deleteAddressBook(adbkId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/${adbkId}`, config);
+  async deleteAddressBook(adbkSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/${adbkSn}`, config);
   }
 
   /**

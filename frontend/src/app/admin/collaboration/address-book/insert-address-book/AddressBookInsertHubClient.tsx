@@ -52,10 +52,8 @@ export default function AddressBookInsertHubClient() {
     }
 
  setIsSubmitting(true);
- // 구성원 식별자(adbkConstntId·adbkId·userId)는 서버가 채번하거나 무시한다.
+ // 주소록·회원 일련번호는 서버가 채번하므로 생성 요청에서 생략한다.
  const member: NameCard = {
-   adbkConstntId: '',
-   adbkId: '',
    userId: '',
    nm: form.adbkNm,
    emlAddr: form.email,

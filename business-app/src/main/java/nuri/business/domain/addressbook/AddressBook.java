@@ -20,8 +20,8 @@ public class AddressBook extends BaseEntity {
     private java.util.List<AddressBookUser> addressBookUsers = new java.util.ArrayList<>();
 
     @Id
-    @Column(length = 20)
-    private String adbkId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long adbkSn;
 
     public void addAddressBookUser(AddressBookUser user) {
         this.addressBookUsers.add(user);
@@ -52,11 +52,11 @@ public class AddressBook extends BaseEntity {
 
     // Phase 5.2 빌더 규범: @SuperBuilder 제거, 정적 팩토리 create()에 @Builder 배치.
     // 감사 필드(frstRgtrId/lastMdfrId/crtDt/mdfcnDt)는 파라미터에서 제외(Auditing 이 채움).
-    private AddressBook(java.util.List<AddressBookUser> addressBookUsers, String adbkId, String adbkNm,
+    private AddressBook(java.util.List<AddressBookUser> addressBookUsers, Long adbkSn, String adbkNm,
                         String rlsScopeCd, String trgetOgnzId, String useYn, String wrterId) {
         // @Builder.Default 널병합 재현: 컬렉션은 null 이면 새 ArrayList 로 초기화
         this.addressBookUsers = addressBookUsers != null ? addressBookUsers : new java.util.ArrayList<>();
-        this.adbkId = adbkId;
+        this.adbkSn = adbkSn;
         this.adbkNm = adbkNm;
         this.rlsScopeCd = rlsScopeCd;
         this.trgetOgnzId = trgetOgnzId;
@@ -65,8 +65,8 @@ public class AddressBook extends BaseEntity {
     }
 
     @Builder
-    public static AddressBook create(java.util.List<AddressBookUser> addressBookUsers, String adbkId, String adbkNm,
+    public static AddressBook create(java.util.List<AddressBookUser> addressBookUsers, Long adbkSn, String adbkNm,
                                      String rlsScopeCd, String trgetOgnzId, String useYn, String wrterId) {
-        return new AddressBook(addressBookUsers, adbkId, adbkNm, rlsScopeCd, trgetOgnzId, useYn, wrterId);
+        return new AddressBook(addressBookUsers, adbkSn, adbkNm, rlsScopeCd, trgetOgnzId, useYn, wrterId);
     }
 }

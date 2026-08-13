@@ -747,7 +747,7 @@ export type CommunityDto = z.infer<typeof CommunityDtoSchema>;
 // AddressBookDto Schema
 // ==========================================================================
 export const AddressBookDtoSchema = z.object({
-  adbkId: z.string().optional(),
+  adbkSn: z.number().optional(),
   adbkNm: z.string().min(0).max(100),
   rlsScopeCd: z.string(),
   trgetOgnzId: z.string().optional(),
@@ -765,8 +765,8 @@ export type AddressBookDto = z.infer<typeof AddressBookDtoSchema>;
 // AddressBookUserDto Schema
 // ==========================================================================
 export const AddressBookUserDtoSchema = z.object({
-  adbkConstntId: z.string().min(0).max(20).optional(),
-  adbkId: z.string().min(0).max(20),
+  adbkMbrSn: z.number().optional(),
+  adbkSn: z.number().optional(),
   userId: z.string().min(0).max(20),
   nm: z.string().min(0).max(100).optional(),
   emlAddr: z.string().min(0).max(50).optional(),

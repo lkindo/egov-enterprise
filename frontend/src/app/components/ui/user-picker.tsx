@@ -69,7 +69,7 @@ export function UserPicker({
  </div>
  </div>
  <div className="text-sm font-mono text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
- ID: {user.userId || user.adbkConstntId}
+ ID: {user.userId || user.adbkMbrSn}
  </div>
  </div>
  );

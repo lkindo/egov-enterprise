@@ -303,11 +303,11 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  <StandardDataTable<AddressBook>
  columns={addressColumns}
  data={addresses}
- keyField="adbkId"
+ keyField="adbkSn"
  loading={addressQuery.isLoading}
  error={tableError}
  onRetry={handleRetry}
- onRowClick={(item) => router.push(`/admin/collaboration/address-book/select-address-book-detail/${item.adbkId}`)}
+ onRowClick={(item) => router.push(`/admin/collaboration/address-book/select-address-book-detail/${item.adbkSn}`)}
  emptyMessage="등록된 주소록이 없습니다."
  isPremium={true}
  className="border-none bg-transparent shadow-none"

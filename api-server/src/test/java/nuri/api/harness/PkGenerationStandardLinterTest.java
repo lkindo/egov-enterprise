@@ -56,7 +56,12 @@ class PkGenerationStandardLinterTest {
             // [동결 2026-07-17] 린터 최초 실행 census — 현재 수동 PK 엔티티 69종(≈93%). 코드베이스 규범이
             // String PK + 서비스레이어 채번(egov IdGnr/IdGenerationUtil/nextval)이라 대부분이 여기 해당.
             // 데이터 영속으로 전략 교체는 D1(위험-DB설계결정). 신규 엔티티는 이 목록에 추가하지 말고 @GeneratedValue 사용.
-            "AddressBook", "AddressBookUser", "AdministCode", "Authority", "Banner", "Blog", "Board",
+            // [2026-08-13 제거] AddressBook · AddressBookUser — 사용자가 승인한 BIGINT 자동 내부키
+            //   설계결정에 따라 V2_49에서 문자열 기술키를 identity 일련번호로 백필·전환했다.
+            //   실측: tb_adbk_manage/tb_adbk_info 각 1행, 외부 inbound FK 0, 자식 고아 0.
+            //   JPA·Repository·Service·API·FE 소비자를 Long/_sn 계약으로 함께 이관했으므로
+            //   더 이상 동결 수동 PK가 아니며 목록에서 정당하게 제거한다.
+            "AdministCode", "Authority", "Banner", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptJob", "DeptJobBox", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
             // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).

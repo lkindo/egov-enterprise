@@ -56,7 +56,7 @@ class AddressBookServiceTest {
     @DisplayName("주소록 목록 조회 성공")
     void getAddressBookList_Success() {
         // Given
-        Page<AddressBook> page = new PageImpl<>(List.of(AddressBook.builder().adbkId("ADBK_1").build()));
+        Page<AddressBook> page = new PageImpl<>(List.of(AddressBook.builder().adbkSn(1L).build()));
         given(addressBookRepository.searchAddressBooks(any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
 
         // When
@@ -70,12 +70,12 @@ class AddressBookServiceTest {
     @DisplayName("주소록 상세 조회 성공")
     void getAddressBook_Success() {
         // Given
-        AddressBook entity = AddressBook.builder().adbkId("ADBK_1").adbkNm("Name").build();
-        given(addressBookRepository.findById("ADBK_1")).willReturn(Optional.of(entity));
-        given(addressBookUserRepository.findByAdbkId("ADBK_1")).willReturn(List.of());
+        AddressBook entity = AddressBook.builder().adbkSn(1L).adbkNm("Name").build();
+        given(addressBookRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(addressBookUserRepository.findByAdbkSn(1L)).willReturn(List.of());
 
         // When
-        AddressBookDto result = addressBookService.getAddressBook("ADBK_1");
+        AddressBookDto result = addressBookService.getAddressBook(1L);
 
         // Then
         assertThat(result.getAdbkNm()).isEqualTo("Name");
@@ -98,11 +98,11 @@ class AddressBookServiceTest {
     @DisplayName("주소록 삭제 성공")
     void deleteAddressBook_Success() {
         // Given
-        AddressBook entity = AddressBook.builder().adbkId("ADBK_1").adbkNm("Name").build();
-        given(addressBookRepository.findById("ADBK_1")).willReturn(Optional.of(entity));
+        AddressBook entity = AddressBook.builder().adbkSn(1L).adbkNm("Name").build();
+        given(addressBookRepository.findById(1L)).willReturn(Optional.of(entity));
 
         // When
-        addressBookService.deleteAddressBook("ADBK_1", "user");
+        addressBookService.deleteAddressBook(1L, "user");
 
         // Then
         assertThat(entity.getUseYn()).isEqualTo("N");
@@ -128,17 +128,17 @@ class AddressBookServiceTest {
     @DisplayName("주소록 수정 성공 - 사용자 추가 및 삭제 포함")
     void updateAddressBook_WithUserUpdates_Success() {
         // Given
-        String adbkId = "ADBK_1";
-        AddressBook entity = AddressBook.builder().adbkId(adbkId).adbkNm("Old").build();
-        given(addressBookRepository.findById(adbkId)).willReturn(Optional.of(entity));
+        Long adbkSn = 1L;
+        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("Old").build();
+        given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
 
         nuri.business.domain.addressbook.AddressBookUser existingUser = 
-            nuri.business.domain.addressbook.AddressBookUser.builder().userId("REMOVE_ME").addressBook(AddressBook.builder().adbkId(adbkId).build()).build();
-        given(addressBookUserRepository.findByAdbkId(adbkId)).willReturn(List.of(existingUser));
+            nuri.business.domain.addressbook.AddressBookUser.builder().userId("REMOVE_ME").addressBook(AddressBook.builder().adbkSn(adbkSn).build()).build();
+        given(addressBookUserRepository.findByAdbkSn(adbkSn)).willReturn(List.of(existingUser));
 
         nuri.business.service.addressbook.dto.AddressBookUserDto newUserDto =
             nuri.business.service.addressbook.dto.AddressBookUserDto.builder().userId("ADD_ME").nm("New User").build();
-        AddressBookDto dto = AddressBookDto.builder().adbkId(adbkId).adbkNm("Updated").adbkMan(List.of(newUserDto)).build();
+        AddressBookDto dto = AddressBookDto.builder().adbkSn(adbkSn).adbkNm("Updated").adbkMan(List.of(newUserDto)).build();
 
         // When
         addressBookService.updateAddressBook("user", dto);

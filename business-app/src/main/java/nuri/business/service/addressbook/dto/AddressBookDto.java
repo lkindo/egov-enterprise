@@ -14,8 +14,8 @@ import java.time.LocalDateTime;
 @Builder
 @Schema(description = "주소록 정보 DTO")
 public class AddressBookDto {
-    @Schema(description = "주소록 ID")
-    private String adbkId;
+    @Schema(description = "주소록 일련번호", example = "1")
+    private Long adbkSn;
 
     @NotBlank(message = "주소록 명칭은 필수입니다.")
     @Size(max = 100, message = "주소록 명칭은 100자 이내여야 합니다.")

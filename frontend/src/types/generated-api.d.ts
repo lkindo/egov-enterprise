@@ -1186,7 +1186,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/address-books/{adbkId}": {
+    "/api/v1/address-books/{adbkSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1372,8 +1372,8 @@ export interface paths {
         get: operations["getNotifications"];
         put?: never;
         /**
-         * 알림 등록 (관리자용)
-         * @description 시스템 공지 알림을 직접 등록합니다.
+         * 개인 알림 등록
+         * @description 로그인한 사용자 본인의 알림을 등록합니다.
          */
         post: operations["createNotification"];
         delete?: never;
@@ -5419,8 +5419,12 @@ export interface components {
         };
         /** @description 주소록 정보 DTO */
         AddressBookDto: {
-            /** @description 주소록 ID */
-            adbkId?: string;
+            /**
+             * Format: int64
+             * @description 주소록 일련번호
+             * @example 1
+             */
+            adbkSn?: number;
             /**
              * @description 주소록 명칭
              * @example 마케팅팀 주소록
@@ -5466,15 +5470,17 @@ export interface components {
         /** @description 주소록 연락처 정보 DTO */
         AddressBookUserDto: {
             /**
-             * @description 주소록 구성원 ID
-             * @example ADBKU_0000000000001
+             * Format: int64
+             * @description 주소록 회원 일련번호
+             * @example 1
              */
-            adbkConstntId?: string;
+            adbkMbrSn?: number;
             /**
-             * @description 주소록 ID
-             * @example ADBK_000000000000001
+             * Format: int64
+             * @description 주소록 일련번호
+             * @example 1
              */
-            adbkId: string;
+            adbkSn?: number;
             /**
              * @description 사용자 ID
              * @example USRCNFRM_00000000001
@@ -11617,8 +11623,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소록 ID */
-                adbkId: string;
+                /** @description 주소록 일련번호 */
+                adbkSn: number;
             };
             cookie?: never;
         };
@@ -11640,8 +11646,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소록 ID */
-                adbkId: string;
+                /** @description 주소록 일련번호 */
+                adbkSn: number;
             };
             cookie?: never;
         };
@@ -11667,8 +11673,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소록 ID */
-                adbkId: string;
+                /** @description 주소록 일련번호 */
+                adbkSn: number;
             };
             cookie?: never;
         };

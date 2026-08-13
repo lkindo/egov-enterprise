@@ -8,7 +8,6 @@ import nuri.business.domain.addressbook.AddressBookUserRepository;
 import nuri.business.service.addressbook.dto.AddressBookDto;
 import nuri.business.service.addressbook.dto.AddressBookUserDto;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.util.IdGenerationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -36,16 +35,16 @@ public class AddressBookService {
                 .map(this::convertToDto);
     }
 
-    public AddressBookDto getAddressBook(@NonNull String adbkId) {
-        AddressBook entity = addressBookRepository.findById(adbkId)
-                .orElseThrow(() -> new BusinessException("주소록을 찾을 수 없습니다: " + adbkId, CommonErrorCode.RESOURCE_NOT_FOUND));
+    public AddressBookDto getAddressBook(@NonNull Long adbkSn) {
+        AddressBook entity = addressBookRepository.findById(adbkSn)
+                .orElseThrow(() -> new BusinessException("주소록을 찾을 수 없습니다: " + adbkSn, CommonErrorCode.RESOURCE_NOT_FOUND));
         // [IDOR] 소유자/관리자만 열람(PII) — 목록(searchAddressBooks)이 wrterId 로만 스코핑되므로 상세도 동일 가드가 필요하다.
         // 공개범위(rlsScopeCd) 예외는 두지 않는다: 코드값이 표준화돼 있지 않고('P'/'G'/'PUBLIC'/'COMPANY' 혼재)
         // 목록 조회도 타인의 '공개' 주소록을 노출하지 않으므로, 상세만 여는 것은 열거 취약점이 된다.
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
 
         AddressBookDto dto = convertToDto(entity);
-        List<AddressBookUser> users = addressBookUserRepository.findByAdbkId(adbkId);
+        List<AddressBookUser> users = addressBookUserRepository.findByAdbkSn(adbkSn);
         dto.setAdbkMan(users.stream().map(this::convertToUserDto).collect(Collectors.toList()));
 
         return dto;
@@ -54,9 +53,7 @@ public class AddressBookService {
     @Transactional
     public void createAddressBook(String userId, AddressBookDto dto) {
         try {
-            String adbkId = IdGenerationUtil.generateUniqueId("ADBK_", 15, addressBookRepository::existsById);
             AddressBook entity = AddressBook.builder()
-                    .adbkId(adbkId)
                     .adbkNm(dto.getAdbkNm())
                     .rlsScopeCd(dto.getRlsScopeCd())
                     .trgetOgnzId(dto.getTrgetOgnzId())
@@ -68,9 +65,7 @@ public class AddressBookService {
 
             if (dto.getAdbkMan() != null) {
                 for (AddressBookUserDto userDto : dto.getAdbkMan()) {
-                    String adbkUserId = IdGenerationUtil.generateUniqueId("ADBKUSER_", 11, addressBookUserRepository::existsById);
                     AddressBookUser userEntity = AddressBookUser.builder()
-                            .adbkConstntId(adbkUserId)
                             .addressBook(entity)
                             .userId(userDto.getUserId())
                             .nm(userDto.getNm())
@@ -93,7 +88,7 @@ public class AddressBookService {
 
     @Transactional
     public void updateAddressBook(String userId, AddressBookDto dto) {
-        AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(dto.getAdbkId()))
+        AddressBook entity = addressBookRepository.findById(Objects.requireNonNull(dto.getAdbkSn()))
                 .orElseThrow(() -> new BusinessException("수정할 주소록이 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 수정(PII)
 
@@ -103,7 +98,7 @@ public class AddressBookService {
             return;
         }
 
-        List<AddressBookUser> existingUsers = addressBookUserRepository.findByAdbkId(dto.getAdbkId());
+        List<AddressBookUser> existingUsers = addressBookUserRepository.findByAdbkSn(dto.getAdbkSn());
 
         for (AddressBookUser existing : existingUsers) {
             boolean remains = dto.getAdbkMan().stream()
@@ -118,9 +113,7 @@ public class AddressBookService {
                     .anyMatch(u -> (u.getUserId() != null && u.getUserId().equals(userDto.getUserId())));
             if (!exists) {
                 try {
-                    String adbkUserId = IdGenerationUtil.generateUniqueId("ADBKUSER_", 11, addressBookUserRepository::existsById);
                     AddressBookUser newUser = AddressBookUser.builder()
-                            .adbkConstntId(adbkUserId)
                             .addressBook(entity)
                             .userId(userDto.getUserId())
                             .nm(userDto.getNm())
@@ -139,8 +132,8 @@ public class AddressBookService {
     }
 
     @Transactional
-    public void deleteAddressBook(String adbkId, String userId) {
-        AddressBook entity = addressBookRepository.findById(adbkId)
+    public void deleteAddressBook(Long adbkSn, String userId) {
+        AddressBook entity = addressBookRepository.findById(adbkSn)
                 .orElseThrow(() -> new BusinessException("삭제할 주소록이 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 삭제(PII)
 
@@ -159,7 +152,7 @@ public class AddressBookService {
                         .build());
     }
 
-    public AddressBookUserDto getAdbkUser(String id) {
+    public AddressBookUserDto getAdbkUser(Long id) {
         return addressBookUserRepository.findById(Objects.requireNonNull(id))
                 .map(this::convertToUserDto)
                 .orElseThrow(() -> new BusinessException("주소록 사용자를 찾을 수 없습니다: " + id, CommonErrorCode.RESOURCE_NOT_FOUND));
@@ -167,7 +160,7 @@ public class AddressBookService {
 
     private AddressBookDto convertToDto(AddressBook entity) {
         return AddressBookDto.builder()
-                .adbkId(entity.getAdbkId())
+                .adbkSn(entity.getAdbkSn())
                 .adbkNm(entity.getAdbkNm())
                 .rlsScopeCd(entity.getRlsScopeCd())
                 .trgetOgnzId(entity.getTrgetOgnzId())
@@ -182,8 +175,8 @@ public class AddressBookService {
 
     private AddressBookUserDto convertToUserDto(AddressBookUser entity) {
         return AddressBookUserDto.builder()
-                .adbkConstntId(entity.getAdbkConstntId())
-                .adbkId(entity.getAddressBook() != null ? entity.getAddressBook().getAdbkId() : null)
+                .adbkMbrSn(entity.getAdbkMbrSn())
+                .adbkSn(entity.getAddressBook() != null ? entity.getAddressBook().getAdbkSn() : null)
                 .userId(entity.getUserId())
                 .nm(entity.getNm())
                 .emlAddr(entity.getEmlAddr())

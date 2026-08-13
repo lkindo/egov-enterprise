@@ -5100,7 +5100,7 @@
         }
       }
     },
-    "/api/v1/address-books/{adbkId}": {
+    "/api/v1/address-books/{adbkSn}": {
       "get": {
         "tags": [
           "AddressBook"
@@ -5110,12 +5110,13 @@
         "operationId": "getAddressBook",
         "parameters": [
           {
-            "name": "adbkId",
+            "name": "adbkSn",
             "in": "path",
-            "description": "주소록 ID",
+            "description": "주소록 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5141,12 +5142,13 @@
         "operationId": "updateAddressBook",
         "parameters": [
           {
-            "name": "adbkId",
+            "name": "adbkSn",
             "in": "path",
-            "description": "주소록 ID",
+            "description": "주소록 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5182,12 +5184,13 @@
         "operationId": "deleteAddressBook",
         "parameters": [
           {
-            "name": "adbkId",
+            "name": "adbkSn",
             "in": "path",
-            "description": "주소록 ID",
+            "description": "주소록 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5791,8 +5794,8 @@
         "tags": [
           "Notification"
         ],
-        "summary": "알림 등록 (관리자용)",
-        "description": "시스템 공지 알림을 직접 등록합니다.",
+        "summary": "개인 알림 등록",
+        "description": "로그인한 사용자 본인의 알림을 등록합니다.",
         "operationId": "createNotification",
         "requestBody": {
           "content": {
@@ -18451,9 +18454,11 @@
         "type": "object",
         "description": "주소록 정보 DTO",
         "properties": {
-          "adbkId": {
-            "type": "string",
-            "description": "주소록 ID"
+          "adbkSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "주소록 일련번호",
+            "example": 1
           },
           "adbkNm": {
             "type": "string",
@@ -18517,19 +18522,17 @@
         "type": "object",
         "description": "주소록 연락처 정보 DTO",
         "properties": {
-          "adbkConstntId": {
-            "type": "string",
-            "description": "주소록 구성원 ID",
-            "example": "ADBKU_0000000000001",
-            "maxLength": 20,
-            "minLength": 0
+          "adbkMbrSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "주소록 회원 일련번호",
+            "example": 1
           },
-          "adbkId": {
-            "type": "string",
-            "description": "주소록 ID",
-            "example": "ADBK_000000000000001",
-            "maxLength": 20,
-            "minLength": 0
+          "adbkSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "주소록 일련번호",
+            "example": 1
           },
           "userId": {
             "type": "string",
@@ -18582,7 +18585,6 @@
           }
         },
         "required": [
-          "adbkId",
           "userId"
         ]
       },

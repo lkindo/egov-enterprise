@@ -11,14 +11,11 @@ import lombok.*;
 @Builder
 @Schema(description = "주소록 연락처 정보 DTO")
 public class AddressBookUserDto {
-    @Schema(description = "주소록 구성원 ID", example = "ADBKU_0000000000001")
-    @Size(max = 20)
-    private String adbkConstntId;
+    @Schema(description = "주소록 회원 일련번호", example = "1")
+    private Long adbkMbrSn;
 
-    @Schema(description = "주소록 ID", example = "ADBK_000000000000001")
-    @Size(max = 20)
-    @NotBlank
-    private String adbkId;
+    @Schema(description = "주소록 일련번호", example = "1")
+    private Long adbkSn;
 
     @Schema(description = "사용자 ID", example = "USRCNFRM_00000000001")
     @Size(max = 20)
