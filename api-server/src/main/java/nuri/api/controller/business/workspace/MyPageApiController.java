@@ -39,22 +39,22 @@ public class MyPageApiController {
 
     @Operation(summary = "마이페이지 콘텐츠 등록")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createContent(@Valid @RequestBody MyPageContentDto dto) {
-        String newId = myPageService.createContent(dto);
-        return ResponseEntity.ok(ApiResponse.success(newId));
+    public ResponseEntity<ApiResponse<Long>> createContent(@Valid @RequestBody MyPageContentDto dto) {
+        Long contsSn = myPageService.createContent(dto);
+        return ResponseEntity.ok(ApiResponse.success(contsSn));
     }
 
     @Operation(summary = "마이페이지 콘텐츠 수정")
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateContent(@PathVariable String id, @Valid @RequestBody MyPageContentDto dto) {
-        myPageService.updateContent(id, dto);
+    @PutMapping("/{contsSn}")
+    public ResponseEntity<ApiResponse<Void>> updateContent(@PathVariable Long contsSn, @Valid @RequestBody MyPageContentDto dto) {
+        myPageService.updateContent(contsSn, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "마이페이지 콘텐츠 삭제")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteContent(@PathVariable String id) {
-        myPageService.deleteContent(id);
+    @DeleteMapping("/{contsSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteContent(@PathVariable Long contsSn) {
+        myPageService.deleteContent(contsSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

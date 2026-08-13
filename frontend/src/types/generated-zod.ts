@@ -323,10 +323,10 @@ export type SatisfactionDto = z.infer<typeof SatisfactionDtoSchema>;
 // MyPageContentDto Schema
 // ==========================================================================
 export const MyPageContentDtoSchema = z.object({
-  cntntsId: z.string().min(0).max(20).optional(),
+  contsSn: z.number().optional(),
   cntntsNm: z.string().min(0).max(100).optional(),
   cntcUrl: z.string().optional(),
-  cntntsUseAt: z.string().optional(),
+  cntntsUseYn: z.string().optional(),
   cntntsLinkUrl: z.string().optional(),
   cntntsDc: z.string().optional(),
 });

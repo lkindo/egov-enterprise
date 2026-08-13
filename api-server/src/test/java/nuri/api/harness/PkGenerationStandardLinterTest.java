@@ -73,6 +73,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-13 제거] Popup — V2_53에서 popup_id 문자열 기술키를 popup_sn BIGINT
             //   IDENTITY로 전환했다. 실측: tb_popup_info 0행, inbound FK 0. 관리자·사용자 API와
             //   FE 관리/대시보드/localStorage/E2E 소비자를 숫자 일련번호 계약으로 함께 이관했다.
+            // [2026-08-13 제거] MyPageContent — V2_54에서 cntnts_id 문자열 기술키를 conts_sn
+            //   BIGINT IDENTITY로 전환했다. 실측: tb_indv_pg_conts 0행, inbound FK 0. 구형 행의
+            //   URL·사용여부·설명을 보존하고 API/FE 계약과 기존 cntntsUseAt 드리프트를 함께 정정했다.
             "AdministCode", "Authority", "Banner", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptJob", "DeptJobBox", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
@@ -91,7 +94,7 @@ class PkGenerationStandardLinterTest {
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
             "FileMaster", "GroupManage", "InformalSanction", "InstitutionCode",
             "LoginLog", "LoginPolicy", "MemoReport", "Menu",
-            "MyPageContent", "Note", "NoteRecptn", "NoteTrnsmit", "Notification",
+            "Note", "NoteRecptn", "NoteTrnsmit", "Notification",
             "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RewardManage", "RoleInfo", "Schedule",
             "Scrap", "SentMail", "SiteMap", "Sms", "SurveyArticle", "SurveyInfo", "SurveyQuestion",

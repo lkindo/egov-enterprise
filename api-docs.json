@@ -2011,7 +2011,7 @@
         }
       }
     },
-    "/api/v1/admin/system/workspace/mypage/contents/{id}": {
+    "/api/v1/admin/system/workspace/mypage/contents/{contsSn}": {
       "put": {
         "tags": [
           "My Page Admin"
@@ -2020,11 +2020,12 @@
         "operationId": "updateContent",
         "parameters": [
           {
-            "name": "id",
+            "name": "contsSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2059,11 +2060,12 @@
         "operationId": "deleteContent",
         "parameters": [
           {
-            "name": "id",
+            "name": "contsSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7381,7 +7383,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -17009,10 +17011,9 @@
       "MyPageContentDto": {
         "type": "object",
         "properties": {
-          "cntntsId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "contsSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "cntntsNm": {
             "type": "string",
@@ -17022,7 +17023,7 @@
           "cntcUrl": {
             "type": "string"
           },
-          "cntntsUseAt": {
+          "cntntsUseYn": {
             "type": "string"
           },
           "cntntsLinkUrl": {

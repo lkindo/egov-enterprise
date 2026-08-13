@@ -442,7 +442,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/workspace/mypage/contents/{id}": {
+    "/api/v1/admin/system/workspace/mypage/contents/{contsSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4773,10 +4773,11 @@ export interface components {
             crtDt?: string;
         };
         MyPageContentDto: {
-            cntntsId?: string;
+            /** Format: int64 */
+            contsSn?: number;
             cntntsNm?: string;
             cntcUrl?: string;
-            cntntsUseAt?: string;
+            cntntsUseYn?: string;
             cntntsLinkUrl?: string;
             cntntsDc?: string;
         };
@@ -9521,7 +9522,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                contsSn: number;
             };
             cookie?: never;
         };
@@ -9547,7 +9548,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                contsSn: number;
             };
             cookie?: never;
         };
@@ -12913,7 +12914,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };

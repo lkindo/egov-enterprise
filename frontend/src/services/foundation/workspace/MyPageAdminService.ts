@@ -2,7 +2,7 @@ import { AdminService } from '@/services/core/ApiService';
 import { AxiosRequestConfig } from 'axios';
 
 interface MyPageContent {
- cntntsId: string;
+ contsSn: number;
  cntntsNm: string;
  cntcUrl: string;
  cntntsUseYn: 'Y' | 'N';
@@ -24,18 +24,18 @@ class MyPageAdminService extends AdminService {
  }
 
  /** 留덉씠페이지 肄섑뀗痢등록 */
- async createContent(data: Partial<MyPageContent>, config?: AxiosRequestConfig): Promise<string> {
- return this.post<string>('', data, config);
+ async createContent(data: Partial<MyPageContent>, config?: AxiosRequestConfig): Promise<number> {
+ return this.post<number>('', data, config);
  }
 
  /** 留덉씠페이지 肄섑뀗痢님섏젙 */
- async updateContent(id: string, data: Partial<MyPageContent>, config?: AxiosRequestConfig): Promise<void> {
- return this.put<void>(`/${id}`, data, config);
+ async updateContent(contsSn: number, data: Partial<MyPageContent>, config?: AxiosRequestConfig): Promise<void> {
+ return this.put<void>(`/${contsSn}`, data, config);
  }
 
  /** 留덉씠페이지 肄섑뀗痢님삭제 */
- async deleteContent(id: string, config?: AxiosRequestConfig): Promise<void> {
- return this.delete<void>(`/${id}`, config);
+ async deleteContent(contsSn: number, config?: AxiosRequestConfig): Promise<void> {
+ return this.delete<void>(`/${contsSn}`, config);
  }
 }
 

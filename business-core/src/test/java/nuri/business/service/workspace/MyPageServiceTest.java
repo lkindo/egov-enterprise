@@ -34,7 +34,7 @@ class MyPageServiceTest {
     void getActiveMyPageContents_Success() {
         // given
         MyPageContent entity = MyPageContent.builder()
-                .cntntsId("MYP_001")
+                .contsSn(1L)
                 .cntntsNm("테스트 콘텐츠")
                 .cntntsUseYn("Y")
                 .build();
@@ -53,20 +53,19 @@ class MyPageServiceTest {
     void createContent_Success() {
         // given
         MyPageContentDto dto = MyPageContentDto.builder()
-                .cntntsId("MYP_001")
                 .cntntsNm("테스트 콘텐츠")
                 .build();
         MyPageContent entity = MyPageContent.builder()
-                .cntntsId("MYP_001")
+                .contsSn(1L)
                 .cntntsNm("테스트 콘텐츠")
                 .build();
         given(myPageContentRepository.save(any(MyPageContent.class))).willReturn(entity);
 
         // when
-        String result = myPageService.createContent(dto);
+        Long result = myPageService.createContent(dto);
 
         // then
-        assertThat(result).isEqualTo("MYP_001");
+        assertThat(result).isEqualTo(1L);
         verify(myPageContentRepository).save(any(MyPageContent.class));
     }
 
@@ -75,16 +74,16 @@ class MyPageServiceTest {
     void updateContent_Success() {
         // given
         MyPageContent entity = MyPageContent.builder()
-                .cntntsId("MYP_001")
+                .contsSn(1L)
                 .cntntsNm("이전 이름")
                 .build();
         MyPageContentDto updateDto = MyPageContentDto.builder()
                 .cntntsNm("수정된 이름")
                 .build();
-        given(myPageContentRepository.findById("MYP_001")).willReturn(Optional.of(entity));
+        given(myPageContentRepository.findById(1L)).willReturn(Optional.of(entity));
 
         // when
-        myPageService.updateContent("MYP_001", updateDto);
+        myPageService.updateContent(1L, updateDto);
 
         // then
         assertThat(entity.getCntntsNm()).isEqualTo("수정된 이름");
@@ -94,9 +93,9 @@ class MyPageServiceTest {
     @DisplayName("마이페이지 콘텐츠 삭제 테스트")
     void deleteContent_Success() {
         // when
-        myPageService.deleteContent("MYP_001");
+        myPageService.deleteContent(1L);
 
         // then
-        verify(myPageContentRepository).deleteById("MYP_001");
+        verify(myPageContentRepository).deleteById(1L);
     }
 }

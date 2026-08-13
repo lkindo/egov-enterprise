@@ -35,8 +35,8 @@ export default function WorkspaceMyPage() {
   const toggleStatus = async (item: any) => {
     const newStatus = item.cntntsUseYn === 'Y' ? 'N' : 'Y';
     try {
-      await myPageAdminService.updateContent(item.cntntsId, { ...item, cntntsUseYn: newStatus });
-      setContents(contents.map(c => c.cntntsId === item.cntntsId ? { ...c, cntntsUseYn: newStatus } : c));
+      await myPageAdminService.updateContent(item.contsSn, { ...item, cntntsUseYn: newStatus });
+      setContents(contents.map(c => c.contsSn === item.contsSn ? { ...c, cntntsUseYn: newStatus } : c));
       toast(`${item.cntntsNm} 상태가 변경되었습니다.`, 'success');
     } catch {
       toast('상태 변경 중 오류가 발생했습니다.', 'error');
@@ -54,7 +54,7 @@ export default function WorkspaceMyPage() {
       accessor: (item) => (
         <div className="flex flex-col gap-1 py-1">
           <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.cntntsNm}</span>
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID: {item.cntntsId}</span>
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">SN: {item.contsSn}</span>
         </div>
       )
     },

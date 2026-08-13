@@ -48,4 +48,4 @@ WHERE t.term_name = '사용자명';
 
 | Flyway | 도메인 | 물리 타입 | 적용 용어 | 근거 |
 |---|---|---|---|---|
-| `V2_49`~`V2_53` | `일련번호N19` | `BIGINT` | `ADBK_SN`, `ADBK_MBR_SN`, `HLP_SN`, `ITNT_SRVC_SN`, `ONLN_MNL_SN`, `POPUP_SN` | 사용자 승인 BIGINT 자동 내부키 전환. PostgreSQL 양수 BIGINT 일련번호의 최대 자릿수 19를 명시한다. `HLP_SN`은 이번 PK 현대화 예외 승인에 따라 공공사전 `N22/NUMERIC` 매핑에서 프로젝트 내부키 도메인으로 재매핑한다. 나머지 신규 `_SN`은 승인 표준 단어 조합의 프로젝트 확장 용어다. |
+| `V2_49`~`V2_54` | `일련번호N19` | `BIGINT` | `ADBK_SN`, `ADBK_MBR_SN`, `HLP_SN`, `ITNT_SRVC_SN`, `ONLN_MNL_SN`, `POPUP_SN`, `CONTS_SN` | 사용자 승인 BIGINT 자동 내부키 전환. PostgreSQL 양수 BIGINT 일련번호의 최대 자릿수 19를 명시한다. `HLP_SN`과 `CONTS_SN`은 이번 PK 현대화 예외 승인에 따라 공공사전 `N22/NUMERIC` 매핑에서 프로젝트 내부키 도메인으로 재매핑한다. 나머지 신규 `_SN`은 승인 표준 단어 조합의 프로젝트 확장 용어다. |
