@@ -1406,7 +1406,7 @@
         }
       }
     },
-    "/api/v1/dept-jobs/boxes/{deptJobbxId}": {
+    "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}": {
       "get": {
         "tags": [
           "DeptJob"
@@ -1416,11 +1416,12 @@
         "operationId": "getDeptJobBox",
         "parameters": [
           {
-            "name": "deptJobbxId",
+            "name": "deptTaskBoxSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1446,11 +1447,12 @@
         "operationId": "updateDeptJobBox",
         "parameters": [
           {
-            "name": "deptJobbxId",
+            "name": "deptTaskBoxSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1486,11 +1488,12 @@
         "operationId": "deleteDeptJobBox",
         "parameters": [
           {
-            "name": "deptJobbxId",
+            "name": "deptTaskBoxSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -6673,11 +6676,12 @@
             }
           },
           {
-            "name": "deptJobbxId",
+            "name": "deptTaskBoxSn",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -6854,7 +6858,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -16757,8 +16761,9 @@
           "deptTaskId": {
             "type": "string"
           },
-          "deptTaskBoxId": {
-            "type": "string"
+          "deptTaskBoxSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "deptTaskBoxNm": {
             "type": "string"
@@ -16810,8 +16815,9 @@
       "DeptJobBoxDto": {
         "type": "object",
         "properties": {
-          "deptTaskBoxId": {
-            "type": "string"
+          "deptTaskBoxSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "deptTaskBoxNm": {
             "type": "string"

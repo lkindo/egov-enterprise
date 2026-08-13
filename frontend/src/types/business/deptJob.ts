@@ -2,7 +2,7 @@ export interface DeptJobVO {
   deptTaskId?: string;
   deptTaskNm: string;
   deptTaskCn: string;
-  deptTaskBoxId?: string;
+  deptTaskBoxSn?: number;
   deptTaskBoxNm?: string;
   deptId?: string;
   deptNm?: string;
@@ -17,7 +17,7 @@ export interface DeptJobVO {
 }
 
 export interface DeptJobBxVO {
-  deptTaskBoxId: string;
+  deptTaskBoxSn: number;
   deptTaskBoxNm: string;
   deptId?: string;
   deptNm?: string;

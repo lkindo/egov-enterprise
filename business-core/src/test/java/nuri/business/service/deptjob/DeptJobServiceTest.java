@@ -63,14 +63,14 @@ class DeptJobServiceTest {
     @BeforeEach
     void setUp() {
         deptJobBox = DeptJobBox.builder()
-                .deptTaskBoxId("BOX1")
+                .deptTaskBoxSn(1L)
                 .deptTaskBoxNm("Test Box")
                 .deptId("DEPT1")
                 .build();
 
         deptJob = DeptJob.builder()
                 .deptTaskId("JOB1")
-                .deptTaskBoxId("BOX1")
+                .deptTaskBoxSn(1L)
                 .deptTaskNm("Test Job")
                 .deptTaskCn("Content")
                 .picId("USER1")
@@ -80,7 +80,7 @@ class DeptJobServiceTest {
     }
 
     private void mockToDtoDependencies() {
-        when(deptJobBoxRepository.findById("BOX1")).thenReturn(Optional.of(deptJobBox));
+        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox));
         
         OrganizationManage org = OrganizationManage.builder()
                 .ognzId("DEPT1")
@@ -104,7 +104,7 @@ class DeptJobServiceTest {
         when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
         mockToDtoDependencies();
 
-        Page<DeptJobDto> result = deptJobService.getDeptJobList(null, "BOX1", "0", "keyword", false, PageRequest.of(0, 10));
+        Page<DeptJobDto> result = deptJobService.getDeptJobList(null, 1L, "0", "keyword", false, PageRequest.of(0, 10));
 
         assertEquals(1, result.getTotalElements());
     }
@@ -126,12 +126,10 @@ class DeptJobServiceTest {
     @DisplayName("부서업무 목록 조회 - deptId 있지만 박스 없음, 조건 2")
     void getDeptJobList_withDeptIdNoBoxesAndCondition2() {
         when(deptJobBoxRepository.findByDeptId("DEPT2")).thenReturn(Collections.emptyList());
-        Page<DeptJob> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
-        when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
-
         Page<DeptJobDto> result = deptJobService.getDeptJobList("DEPT2", null, "2", "keyword", false, PageRequest.of(0, 10));
 
         assertEquals(0, result.getTotalElements());
+        verify(deptJobRepository, never()).findAll(any(Predicate.class), any(PageRequest.class));
     }
 
     @Test
@@ -179,7 +177,7 @@ class DeptJobServiceTest {
         //   테스트가 잘못된 것을 단언하고 있었다. 이제 채번 주체를 직접 검증한다.
         DeptJobDto dto = new DeptJobDto();
         dto.setDeptTaskId("CLIENT_SUPPLIED"); // 위조 시도: 무시되어야 한다
-        dto.setDeptTaskBoxId("BOX1");
+        dto.setDeptTaskBoxSn(1L);
         dto.setDeptTaskNm("Test Job");
 
         when(deptJobRepository.existsById(anyString())).thenReturn(false);
@@ -357,7 +355,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("[회귀] 업무함 미지정(null) 업무도 조회할 수 있다")
     void getDeptJob_withoutBox() {
-        // 종전에는 toDto 가 nullable 컬럼(dept_task_box_id, pic_id)에 required() 가드를 걸어,
+        // 종전에는 toDto 가 nullable 컬럼(dept_task_box_sn, pic_id)에 required() 가드를 걸어,
         // 업무함을 지정하지 않은 업무가 하나라도 있으면 조회가 통째로 400 으로 떨어졌다.
         // 등록 폼에 업무함 선택 UI 가 없으므로 새 업무는 항상 이 상태다 —
         // 즉 데이터가 생기는 순간 조회가 깨지는 구조였다.
@@ -385,10 +383,10 @@ class DeptJobServiceTest {
     // ─────────────────────────────────────────────────────────────────────────
 
     /** 서비스가 저장소에 넘긴 Predicate 를 문자열로 붙잡는다 — 조건 생성의 유일한 관측 지점이다. */
-    private String capturePredicate(String deptId, String boxId, String cond, String keyword) {
+    private String capturePredicate(String deptId, Long boxSn, String cond, String keyword) {
         Page<DeptJob> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
         when(deptJobRepository.findAll(any(Predicate.class), any(PageRequest.class))).thenReturn(page);
-        deptJobService.getDeptJobList(deptId, boxId, cond, keyword, false, PageRequest.of(0, 10));
+        deptJobService.getDeptJobList(deptId, boxSn, cond, keyword, false, PageRequest.of(0, 10));
         ArgumentCaptor<Predicate> captor = ArgumentCaptor.forClass(Predicate.class);
         verify(deptJobRepository).findAll(captor.capture(), any(PageRequest.class));
         return String.valueOf(captor.getValue());
@@ -397,7 +395,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("검색조건 0 은 부서업무명에만 건다 (내용·담당자 아님)")
     void searchCondition0BindsTaskNameOnly() {
-        String p = capturePredicate(null, "BOX1", "0", "KW");
+        String p = capturePredicate(null, 1L, "0", "KW");
         assertTrue(p.contains("deptTaskNm"), "조건 0 은 deptTaskNm 에 걸려야 한다: " + p);
         assertFalse(p.contains("deptTaskCn"), "조건 0 인데 내용에 걸렸다: " + p);
         assertFalse(p.contains("picId"), "조건 0 인데 담당자에 걸렸다: " + p);
@@ -406,7 +404,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("검색조건 1 은 부서업무내용에만 건다")
     void searchCondition1BindsTaskContentOnly() {
-        String p = capturePredicate(null, "BOX1", "1", "KW");
+        String p = capturePredicate(null, 1L, "1", "KW");
         assertTrue(p.contains("deptTaskCn"), "조건 1 은 deptTaskCn 에 걸려야 한다: " + p);
         assertFalse(p.contains("deptTaskNm"), "조건 1 인데 업무명에 걸렸다: " + p);
     }
@@ -414,7 +412,7 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("검색조건 2 는 담당자ID 에만 건다")
     void searchCondition2BindsPicIdOnly() {
-        String p = capturePredicate(null, "BOX1", "2", "KW");
+        String p = capturePredicate(null, 1L, "2", "KW");
         assertTrue(p.contains("picId"), "조건 2 는 picId 에 걸려야 한다: " + p);
         assertFalse(p.contains("deptTaskNm"), "조건 2 인데 업무명에 걸렸다: " + p);
     }
@@ -422,25 +420,27 @@ class DeptJobServiceTest {
     @Test
     @DisplayName("키워드가 비면 어떤 검색조건도 걸지 않는다")
     void blankKeywordAddsNoSearchPredicate() {
-        String p = capturePredicate(null, "BOX1", "0", "");
+        String p = capturePredicate(null, 1L, "0", "");
         assertFalse(p.contains("deptTaskNm"), "빈 키워드인데 조건이 붙었다: " + p);
     }
 
     @Test
     @DisplayName("boxId 가 있으면 deptId 조회는 하지 않는다 (else-if 우선순위)")
     void boxIdTakesPrecedenceOverDeptId() {
-        String p = capturePredicate("DEPT1", "BOX1", null, null);
-        assertTrue(p.contains("BOX1"), "boxId 조건이 걸려야 한다: " + p);
+        String p = capturePredicate("DEPT1", 1L, null, null);
+        assertTrue(p.contains("1"), "boxSn 조건이 걸려야 한다: " + p);
         // else-if 를 if 로 바꾼 뮤턴트는 여기서 죽는다 — deptId 분기가 함께 실행되면 조회가 발생한다.
         verify(deptJobBoxRepository, never()).findByDeptId(anyString());
     }
 
     @Test
-    @DisplayName("deptId 의 박스가 비면 NONE_BOX 로 잠근다 — 전체 노출을 막는 안전장치")
-    void emptyBoxListLocksToSentinel() {
+    @DisplayName("deptId 의 박스가 비면 빈 페이지로 닫는다 — 전체 노출을 막는 안전장치")
+    void emptyBoxListReturnsEmptyPage() {
         when(deptJobBoxRepository.findByDeptId("DEPT2")).thenReturn(Collections.emptyList());
-        String p = capturePredicate("DEPT2", null, null, null);
-        // 이 분기를 뒤집으면 조건이 사라져 **부서 무관 전체가 노출**된다. 조용한 권한 확대다.
-        assertTrue(p.contains("NONE_BOX"), "박스 0건이면 NONE_BOX 센티넬로 잠가야 한다: " + p);
+        Page<DeptJobDto> result = deptJobService.getDeptJobList(
+                "DEPT2", null, null, null, false, PageRequest.of(0, 10));
+
+        assertTrue(result.isEmpty(), "박스 0건이면 빈 페이지로 닫아야 한다");
+        verify(deptJobRepository, never()).findAll(any(Predicate.class), any(PageRequest.class));
     }
 }

@@ -12,7 +12,7 @@ import path from 'path';
  * ── f02c35295 (API 경로 복구)
  *   · 컨트롤러에 부서 업무 CRUD 매핑이 아예 없었다 — POST /api/v1/dept-jobs 는 존재하지 않는 경로였다.
  *   · PK(dept_task_id)를 클라이언트에서 받고 있었다. 등록 폼은 보내지 않으므로 null PK 로 저장 실패.
- *   · toDto 가 nullable 컬럼(dept_task_box_id/dept_id/pic_id)에 required() 가드를 걸어,
+ *   · toDto 가 nullable 컬럼(dept_task_box_sn/dept_id/pic_id)에 required() 가드를 걸어,
  *     업무함 미지정 업무가 생기는 순간 목록·상세가 400 으로 깨지는 구조였다.
  *
  * ── 8b2b656a1 (상세·수정 화면 + 목록 대상 정정)
@@ -78,7 +78,7 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
         const name = `${PREFIX}Job_${Date.now()}`;
 
         // 1) 등록 — deptTaskId(PK)를 보내지 않아도 서버가 채번해야 한다.
-        //    업무함(deptTaskBoxId)도 보내지 않는다. 이 조합이 f02c35295 의 3번 결함
+        //    업무함(deptTaskBoxSn)도 보내지 않는다. 이 조합이 f02c35295 의 3번 결함
         //    ("업무함 미지정 업무는 조회가 400 으로 깨진다")을 재현하는 조건이다.
         const createRes = await request.post(JOB_API, {
             headers: auth,
@@ -156,7 +156,7 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
             await expect(row, '등록한 부서 업무가 목록에 나타나야 한다 (목록이 업무함을 보던 회귀)').toBeVisible({ timeout: 30000 });
 
             // 업무명 링크가 부서 업무 상세로 향한다 = 행이 들고 있는 식별자가 DeptJob 의 PK 다.
-            // (업무함이라면 deptJobbxId 라 이 href 가 만들어질 수 없다.)
+            // (업무함이라면 deptTaskBoxSn이라 이 href가 만들어질 수 없다.)
             await expect(
                 row.locator(`a[href="/smart-toolkit/dept-job/${deptTaskId}"]`),
                 '행의 업무명은 해당 부서 업무 상세로 연결되어야 한다'

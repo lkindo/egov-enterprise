@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @Builder
 public class DeptJobBoxDto {
 
-    private String deptTaskBoxId;
+    private Long deptTaskBoxSn;
     private String deptTaskBoxNm;
     @Size(max = 20)
     private String deptId;
@@ -28,7 +28,7 @@ public class DeptJobBoxDto {
         if (entity == null)
             return null;
         return DeptJobBoxDto.builder()
-                .deptTaskBoxId(entity.getDeptTaskBoxId())
+                .deptTaskBoxSn(entity.getDeptTaskBoxSn())
                 .deptTaskBoxNm(entity.getDeptTaskBoxNm())
                 .deptId(entity.getDeptId())
                 .sortOrdr(entity.getSortOrdr())
@@ -41,7 +41,7 @@ public class DeptJobBoxDto {
 
     public DeptJobBox toEntity() {
         return DeptJobBox.builder()
-                .deptTaskBoxId(this.deptTaskBoxId)
+                .deptTaskBoxSn(this.deptTaskBoxSn)
                 .deptTaskBoxNm(this.deptTaskBoxNm)
                 .deptId(this.deptId)
                 .sortOrdr(this.sortOrdr)

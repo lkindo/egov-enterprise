@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 public class DeptJobDto {
     private String deptTaskId;
-    private String deptTaskBoxId;
+    private Long deptTaskBoxSn;
     private String deptTaskBoxNm;
     @Size(max = 20)
     private String deptId;

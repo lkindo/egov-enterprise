@@ -39,7 +39,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     void getDeptJobBoxList_Success() throws Exception {
         // Given
-        Page<DeptJobBoxDto> page = new PageImpl<>(List.of(DeptJobBoxDto.builder().deptTaskBoxId("BOX1").build()));
+        Page<DeptJobBoxDto> page = new PageImpl<>(List.of(DeptJobBoxDto.builder().deptTaskBoxSn(1L).build()));
         given(egovDeptJobBoxService.getDeptJobBoxList(anyString(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -56,10 +56,10 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     void getDeptJobBox_Success() throws Exception {
         // Given
-        given(egovDeptJobBoxService.getDeptJobBox("BOX1")).willReturn(DeptJobBoxDto.builder().deptTaskBoxId("BOX1").build());
+        given(egovDeptJobBoxService.getDeptJobBox(1L)).willReturn(DeptJobBoxDto.builder().deptTaskBoxSn(1L).build());
 
         // When & Then
-        mockMvc.perform(get("/api/v1/dept-jobs/boxes/BOX1")
+        mockMvc.perform(get("/api/v1/dept-jobs/boxes/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -70,7 +70,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @DisplayName("부서 업무함 등록 성공 (ADMIN)")
     @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
     void createDeptJobBox_Success() throws Exception {
-        given(egovDeptJobBoxService.createDeptJobBox(eq("USR_001"), any(DeptJobBoxDto.class))).willReturn("NEW_ID");
+        given(egovDeptJobBoxService.createDeptJobBox(eq("USR_001"), any(DeptJobBoxDto.class))).willReturn(2L);
 
         mockMvc.perform(post("/api/v1/dept-jobs/boxes")
                         .with(csrf())
@@ -87,9 +87,9 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @DisplayName("부서 업무함 수정 성공 (ADMIN)")
     @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
     void updateDeptJobBox_Success() throws Exception {
-        doNothing().when(egovDeptJobBoxService).updateDeptJobBox(eq("BOX1"), eq("USR_001"), any(DeptJobBoxDto.class));
+        doNothing().when(egovDeptJobBoxService).updateDeptJobBox(eq(1L), eq("USR_001"), any(DeptJobBoxDto.class));
 
-        mockMvc.perform(put("/api/v1/dept-jobs/boxes/BOX1")
+        mockMvc.perform(put("/api/v1/dept-jobs/boxes/1")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(DeptJobBoxDto.builder()
@@ -104,9 +104,9 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @DisplayName("부서 업무함 삭제 성공 (ADMIN)")
     @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
     void deleteDeptJobBox_Success() throws Exception {
-        doNothing().when(egovDeptJobBoxService).deleteDeptJobBox("BOX1");
+        doNothing().when(egovDeptJobBoxService).deleteDeptJobBox(1L);
 
-        mockMvc.perform(delete("/api/v1/dept-jobs/boxes/BOX1")
+        mockMvc.perform(delete("/api/v1/dept-jobs/boxes/1")
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

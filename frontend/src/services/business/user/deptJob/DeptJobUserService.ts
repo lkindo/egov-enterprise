@@ -33,29 +33,29 @@ class DeptJobUserService extends UserService {
   /**
    * 부서 업무함 상세 조회
    */
-  async getDeptJobBox(id: string, config?: AxiosRequestConfig): Promise<DeptJobBxVO> {
-    return this.get<DeptJobBxVO>(`/boxes/${id}`, config);
+  async getDeptJobBox(deptTaskBoxSn: number, config?: AxiosRequestConfig): Promise<DeptJobBxVO> {
+    return this.get<DeptJobBxVO>(`/boxes/${deptTaskBoxSn}`, config);
   }
 
   /**
    * 부서 업무함 등록
    */
-  async createDeptJobBox(data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<string> {
-    return this.post<string>('/boxes', data, config);
+  async createDeptJobBox(data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<number> {
+    return this.post<number>('/boxes', data, config);
   }
 
   /**
    * 부서 업무함 수정
    */
-  async updateDeptJobBox(id: string, data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/boxes/${id}`, data, config);
+  async updateDeptJobBox(deptTaskBoxSn: number, data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/boxes/${deptTaskBoxSn}`, data, config);
   }
 
   /**
    * 부서 업무함 삭제
    */
-  async deleteDeptJobBox(id: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/boxes/${id}`, config);
+  async deleteDeptJobBox(deptTaskBoxSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/boxes/${deptTaskBoxSn}`, config);
   }
 
   /**
@@ -70,7 +70,7 @@ class DeptJobUserService extends UserService {
       searchWrd?: string;
       /** '0' 업무명 · '1' 업무내용 · '2' 담당자. 미지정 시 서버가 업무명으로 처리한다. */
       searchCondition?: string;
-      deptJobbxId?: string;
+      deptTaskBoxSn?: number;
       deptId?: string;
       /**
        * 소유 스코프. 'mine'(기본) = 내가 담당자인 업무만, 'dept' = 부서 전체.
@@ -92,7 +92,7 @@ class DeptJobUserService extends UserService {
         scope: params.scope ?? 'mine',
         ...(params.searchWrd ? { searchWrd: params.searchWrd } : {}),
         ...(params.searchCondition ? { searchCondition: params.searchCondition } : {}),
-        ...(params.deptJobbxId ? { deptJobbxId: params.deptJobbxId } : {}),
+        ...(params.deptTaskBoxSn ? { deptTaskBoxSn: params.deptTaskBoxSn } : {}),
         ...(params.deptId ? { deptId: params.deptId } : {}),
       },
     });

@@ -14,11 +14,11 @@ public class DeptJob extends BaseEntity {
     @Column(length = 20)
     private String deptTaskId;
 
-    @Column(name = "dept_task_box_id", length = 20)
-    private String deptTaskBoxId;
+    @Column(name = "dept_task_box_sn")
+    private Long deptTaskBoxSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dept_task_box_id", referencedColumnName = "dept_task_box_id", insertable = false, updatable = false,
+    @JoinColumn(name = "dept_task_box_sn", referencedColumnName = "dept_task_box_sn", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private DeptJobBox deptJobBox;
 
@@ -43,10 +43,10 @@ public class DeptJob extends BaseEntity {
     private nuri.business.domain.file.FileMaster fileMaster;
 
     // 팩토리 create() 전용 private 생성자 (own 필드 설정)
-    private DeptJob(String deptTaskId, String deptTaskBoxId, String deptTaskNm, String deptTaskCn,
+    private DeptJob(String deptTaskId, Long deptTaskBoxSn, String deptTaskNm, String deptTaskCn,
             String picId, String prrtyRnk, String atchFileId) {
         this.deptTaskId = deptTaskId;
-        this.deptTaskBoxId = deptTaskBoxId;
+        this.deptTaskBoxSn = deptTaskBoxSn;
         this.deptTaskNm = deptTaskNm;
         this.deptTaskCn = deptTaskCn;
         this.picId = picId;
@@ -55,14 +55,14 @@ public class DeptJob extends BaseEntity {
     }
 
     @Builder
-    public static DeptJob create(String deptTaskId, String deptTaskBoxId, String deptTaskNm, String deptTaskCn,
+    public static DeptJob create(String deptTaskId, Long deptTaskBoxSn, String deptTaskNm, String deptTaskCn,
             String picId, String prrtyRnk, String atchFileId) {
-        return new DeptJob(deptTaskId, deptTaskBoxId, deptTaskNm, deptTaskCn, picId, prrtyRnk, atchFileId);
+        return new DeptJob(deptTaskId, deptTaskBoxSn, deptTaskNm, deptTaskCn, picId, prrtyRnk, atchFileId);
     }
 
-    public void update(String deptTaskBoxId, String deptTaskNm, String deptTaskCn, String picId, String prrtyRnk,
+    public void update(Long deptTaskBoxSn, String deptTaskNm, String deptTaskCn, String picId, String prrtyRnk,
             String atchFileId) {
-        this.deptTaskBoxId = deptTaskBoxId;
+        this.deptTaskBoxSn = deptTaskBoxSn;
         this.deptTaskNm = deptTaskNm;
         this.deptTaskCn = deptTaskCn;
         this.picId = picId;

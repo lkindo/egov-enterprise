@@ -76,9 +76,12 @@ class PkGenerationStandardLinterTest {
             // [2026-08-13 제거] MyPageContent — V2_54에서 cntnts_id 문자열 기술키를 conts_sn
             //   BIGINT IDENTITY로 전환했다. 실측: tb_indv_pg_conts 0행, inbound FK 0. 구형 행의
             //   URL·사용여부·설명을 보존하고 API/FE 계약과 기존 cntntsUseAt 드리프트를 함께 정정했다.
+            // [2026-08-13 제거] DeptJobBox — V2_55에서 dept_task_box_id 문자열 기술키를
+            //   dept_task_box_sn BIGINT IDENTITY로 전환하고, tb_dept_task_info 자식 FK도 숫자로
+            //   백필·재결속했다. 실측: 부모·자식 각 0행, 고아 0. 구형 부모/자식 주입 회귀로 검증했다.
             "AdministCode", "Authority", "Banner", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
-            "Community", "DeptJob", "DeptJobBox", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
+            "Community", "DeptJob", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
             // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).
             //   FAQ 는 게시판(tb_bbs_item, bbs_id='BBSMSTR_AAAAAAAAAAAA')으로 통합돼 운영 중이고
             //   전용 도메인은 死자산이었다. 라이브 실측: tb_faq_info 0행 / 게시판 FAQ 281행,

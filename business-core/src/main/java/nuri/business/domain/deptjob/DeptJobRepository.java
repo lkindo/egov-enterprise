@@ -18,7 +18,7 @@ public interface DeptJobRepository extends JpaRepository<DeptJob, String>, Query
      * <p>업무함 삭제가 산하 업무를 고아로 남기는 것을 막기 위한 선(先)검사다
      * ({@code DeptJobBoxService.deleteDeptJobBox}).</p>
      */
-    boolean existsByDeptTaskBoxId(String deptTaskBoxId);
+    boolean existsByDeptTaskBoxSn(Long deptTaskBoxSn);
 
     /**
      * 사용자 삭제 시 그 사용자가 담당자인 부서업무를 <b>담당자 공석</b>(pic_id=NULL)으로 되돌린다.

@@ -63,7 +63,7 @@ public class DeptJobService extends BaseAbstractService {
      * 그래서 담당자가 비어 있으면 <b>등록자(frstRgtrId, loginId)</b> 를 담당자로 간주해 되살린다.
      * (쓰기 인가의 폴백 규칙과 동일하다 — {@link #assertPicOrAdmin} 참조.)</p>
      */
-    public Page<DeptJobDto> getDeptJobList(String deptId, String deptJobbxId, String searchCondition, String keyword,
+    public Page<DeptJobDto> getDeptJobList(String deptId, Long deptTaskBoxSn, String searchCondition, String keyword,
             boolean mineOnly, Pageable pageable) {
         QDeptJob deptJob = QDeptJob.deptJob;
         BooleanBuilder builder = new BooleanBuilder();
@@ -89,16 +89,16 @@ public class DeptJobService extends BaseAbstractService {
             builder.and(mine);
         }
 
-        if (deptJobbxId != null && !deptJobbxId.isEmpty()) {
-            builder.and(deptJob.deptTaskBoxId.eq(deptJobbxId));
+        if (deptTaskBoxSn != null) {
+            builder.and(deptJob.deptTaskBoxSn.eq(deptTaskBoxSn));
         } else if (deptId != null && !deptId.isEmpty()) {
-            List<String> boxIds = deptJobBoxRepository.findByDeptId(deptId).stream()
-                    .map(box -> box.getDeptTaskBoxId())
+            List<Long> boxSns = deptJobBoxRepository.findByDeptId(deptId).stream()
+                    .map(box -> box.getDeptTaskBoxSn())
                     .collect(Collectors.toList());
-            if (!boxIds.isEmpty()) {
-                builder.and(deptJob.deptTaskBoxId.in(boxIds));
+            if (!boxSns.isEmpty()) {
+                builder.and(deptJob.deptTaskBoxSn.in(boxSns));
             } else {
-                builder.and(deptJob.deptTaskBoxId.eq("NONE_BOX"));
+                return Page.empty(required(pageable, "pageable 는 null 일 수 없습니다"));
             }
         }
 
@@ -136,7 +136,7 @@ public class DeptJobService extends BaseAbstractService {
 
         DeptJob deptJob = DeptJob.builder()
                 .deptTaskId(deptTaskId)
-                .deptTaskBoxId(dto.getDeptTaskBoxId())
+                .deptTaskBoxSn(dto.getDeptTaskBoxSn())
                 .deptTaskNm(dto.getDeptTaskNm())
                 .deptTaskCn(dto.getDeptTaskCn())
                 .picId(picId)
@@ -166,7 +166,7 @@ public class DeptJobService extends BaseAbstractService {
                 : deptJob.getPicId();
 
         deptJob.update(
-                dto.getDeptTaskBoxId(),
+                dto.getDeptTaskBoxSn(),
                 dto.getDeptTaskNm(),
                 dto.getDeptTaskCn(),
                 picId,
@@ -222,7 +222,7 @@ public class DeptJobService extends BaseAbstractService {
         DeptJobDto dto = deptJobMapper.toDto(entity);
 
         // [nullable 데이터에 required() 를 걸지 않는다]
-        // dept_task_box_id·dept_id·pic_id 는 모두 물리 스키마상 nullable 이다. 그런데 종전에는
+        // dept_task_box_sn·dept_id·pic_id 는 모두 물리 스키마상 nullable 이다. 그런데 종전에는
         // 세 곳 모두 required()(null 이면 즉시 예외)로 감싸고 있어, 업무함을 지정하지 않은 업무가
         // 하나라도 있으면 목록·상세 조회가 통째로 400 으로 떨어졌다.
         // 등록 폼에는 업무함 선택 UI 가 없어 새로 만든 업무는 항상 이 상태가 된다 —
@@ -230,8 +230,8 @@ public class DeptJobService extends BaseAbstractService {
         // 불가능했던 탓에 이 모순이 지금까지 드러나지 않았다.)
         // required() 는 프로그래밍 오류를 잡는 가드이지, 비어 있을 수 있는 도메인 값에 쓸 것이 아니다.
         // 아래 ifPresent 들이 이미 부재를 정상 흐름으로 다루므로 id 가 없으면 조회를 건너뛴다.
-        if (entity.getDeptTaskBoxId() != null) {
-            deptJobBoxRepository.findById(entity.getDeptTaskBoxId())
+        if (entity.getDeptTaskBoxSn() != null) {
+            deptJobBoxRepository.findById(entity.getDeptTaskBoxSn())
                     .ifPresent(box -> {
                         dto.setDeptTaskBoxNm(box.getDeptTaskBoxNm());
                         dto.setDeptId(box.getDeptId());

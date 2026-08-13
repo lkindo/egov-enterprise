@@ -55,42 +55,42 @@ public class DeptJobApiController {
     }
 
     @Operation(summary = "부서 업무함 상세 조회", description = "특정 부서 업무함의 상세 정보를 조회합니다.")
-    @GetMapping("/boxes/{deptJobbxId}")
-    public ResponseEntity<ApiResponse<DeptJobBoxDto>> getDeptJobBox(@PathVariable String deptJobbxId) {
-        DeptJobBoxDto dto = egovDeptJobBoxService.getDeptJobBox(deptJobbxId);
+    @GetMapping("/boxes/{deptTaskBoxSn}")
+    public ResponseEntity<ApiResponse<DeptJobBoxDto>> getDeptJobBox(@PathVariable Long deptTaskBoxSn) {
+        DeptJobBoxDto dto = egovDeptJobBoxService.getDeptJobBox(deptTaskBoxSn);
         return ResponseEntity.ok(ApiResponse.success(dto));
     }
 
     @Operation(summary = "부서 업무함 등록", description = "새로운 부서 업무함을 등록합니다.")
     @AdminOrSystem
     @PostMapping("/boxes")
-    public ResponseEntity<ApiResponse<String>> createDeptJobBox(
+    public ResponseEntity<ApiResponse<Long>> createDeptJobBox(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody DeptJobBoxDto dto) {
         String userId = userDetails.getEsntlId();
-        String newId = egovDeptJobBoxService.createDeptJobBox(userId, dto);
-        return ResponseEntity.ok(ApiResponse.success(newId));
+        Long newSn = egovDeptJobBoxService.createDeptJobBox(userId, dto);
+        return ResponseEntity.ok(ApiResponse.success(newSn));
     }
 
     @Operation(summary = "부서 업무함 수정", description = "기존 부서 업무함 정보를 수정합니다.")
     @AdminOrSystem
-    @PutMapping("/boxes/{deptJobbxId}")
+    @PutMapping("/boxes/{deptTaskBoxSn}")
     public ResponseEntity<ApiResponse<Void>> updateDeptJobBox(
             @LoginUser CustomUserDetails userDetails,
-            @PathVariable String deptJobbxId,
+            @PathVariable Long deptTaskBoxSn,
             @Valid @RequestBody DeptJobBoxDto dto) {
         String userId = userDetails.getEsntlId();
-        egovDeptJobBoxService.updateDeptJobBox(deptJobbxId, userId, dto);
+        egovDeptJobBoxService.updateDeptJobBox(deptTaskBoxSn, userId, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "부서 업무함 삭제", description = "부서 업무함을 삭제합니다.")
     @AdminOrSystem
-    @DeleteMapping("/boxes/{deptJobbxId}")
+    @DeleteMapping("/boxes/{deptTaskBoxSn}")
     public ResponseEntity<ApiResponse<Void>> deleteDeptJobBox(
             @LoginUser CustomUserDetails userDetails,
-            @PathVariable String deptJobbxId) {
-        egovDeptJobBoxService.deleteDeptJobBox(deptJobbxId);
+            @PathVariable Long deptTaskBoxSn) {
+        egovDeptJobBoxService.deleteDeptJobBox(deptTaskBoxSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -115,7 +115,7 @@ public class DeptJobApiController {
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<DeptJobDto>>> getDeptJobList(
             @RequestParam(required = false) String deptId,
-            @RequestParam(required = false) String deptJobbxId,
+            @RequestParam(required = false) Long deptTaskBoxSn,
             @RequestParam(required = false) String searchCondition,
             // 파라미터명은 형제 엔드포인트(/boxes)와 동일하게 searchWrd 로 맞춘다.
             // 프론트 ApiService 가 만들어 보내는 이름과 어긋나면 검색이 조용히 무력화된다.
@@ -138,7 +138,7 @@ public class DeptJobApiController {
 
         PageRequest pageable = PageRequest.of(pageIndex - 1, pageUnit);
         Page<DeptJobDto> pageResult = deptJobService.getDeptJobList(
-                deptId, deptJobbxId, condition, searchWrd, mineOnly, pageable);
+                deptId, deptTaskBoxSn, condition, searchWrd, mineOnly, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(pageResult)));
     }
 

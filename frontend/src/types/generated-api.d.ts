@@ -310,7 +310,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/dept-jobs/boxes/{deptJobbxId}": {
+    "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4688,7 +4688,8 @@ export interface components {
         };
         DeptJobDto: {
             deptTaskId?: string;
-            deptTaskBoxId?: string;
+            /** Format: int64 */
+            deptTaskBoxSn?: number;
             deptTaskBoxNm?: string;
             deptId?: string;
             deptNm?: string;
@@ -4706,7 +4707,8 @@ export interface components {
             mdfcnDt?: string;
         };
         DeptJobBoxDto: {
-            deptTaskBoxId?: string;
+            /** Format: int64 */
+            deptTaskBoxSn?: number;
             deptTaskBoxNm?: string;
             deptId?: string;
             deptNm?: string;
@@ -9149,7 +9151,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptJobbxId: string;
+                deptTaskBoxSn: number;
             };
             cookie?: never;
         };
@@ -9171,7 +9173,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptJobbxId: string;
+                deptTaskBoxSn: number;
             };
             cookie?: never;
         };
@@ -9197,7 +9199,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptJobbxId: string;
+                deptTaskBoxSn: number;
             };
             cookie?: never;
         };
@@ -12501,7 +12503,7 @@ export interface operations {
         parameters: {
             query?: {
                 deptId?: string;
-                deptJobbxId?: string;
+                deptTaskBoxSn?: number;
                 searchCondition?: string;
                 searchWrd?: string;
                 scope?: string;
@@ -12593,7 +12595,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
