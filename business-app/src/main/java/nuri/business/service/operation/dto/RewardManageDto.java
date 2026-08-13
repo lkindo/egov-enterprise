@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RewardManageDto {
-    private String rwardId;
+    private Long rwrdSn;
     private String rwardwnrId;
     private String rwardCode;
     private String rwardDe;

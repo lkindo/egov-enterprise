@@ -5954,7 +5954,8 @@ export interface components {
             rsltMsg?: string;
         };
         RewardManageDto: {
-            rwardId?: string;
+            /** Format: int64 */
+            rwrdSn?: number;
             rwardwnrId?: string;
             rwardCode?: string;
             rwardDe?: string;

@@ -1092,7 +1092,7 @@ export type SmsRecptnDto = z.infer<typeof SmsRecptnDtoSchema>;
 // RewardManageDto Schema
 // ==========================================================================
 export const RewardManageDtoSchema = z.object({
-  rwardId: z.string().optional(),
+  rwrdSn: z.number().optional(),
   rwardwnrId: z.string().optional(),
   rwardCode: z.string().optional(),
   rwardDe: z.string().optional(),

@@ -29,7 +29,7 @@ export interface ExternalHr {
  * - 서버: nuri.business.service.operation.dto.RewardManageDto
  */
 export interface Reward {
-  rwardId?: string;
+  rwrdSn?: number;
   rwardwnrId?: string;
   rwardCode?: string;
   rwardDe?: string;

@@ -19546,8 +19546,9 @@
       "RewardManageDto": {
         "type": "object",
         "properties": {
-          "rwardId": {
-            "type": "string"
+          "rwrdSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "rwardwnrId": {
             "type": "string"

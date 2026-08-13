@@ -33,7 +33,6 @@ public class RewardManageService {
     @Transactional
     public RewardManageDto createReward(RewardManageDto dto) {
         RewardManage reward = RewardManage.builder()
-                .rwrdId(dto.getRwardId())
                 .rwrdUserId(dto.getRwardwnrId())
                 .rwrdCd(dto.getRwardCode())
                 .rwrdYmd(dto.getRwardDe())
@@ -54,7 +53,7 @@ public class RewardManageService {
 
     private RewardManageDto convertToDto(RewardManage reward) {
         return RewardManageDto.builder()
-                .rwardId(reward.getRwrdId())
+                .rwrdSn(reward.getRwrdSn())
                 .rwardwnrId(reward.getRwrdUserId())
                 .rwardCode(reward.getRwrdCd())
                 .rwardDe(reward.getRwrdYmd())

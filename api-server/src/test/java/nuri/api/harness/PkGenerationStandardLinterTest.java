@@ -94,6 +94,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] MemoReport — V2_60에서 rpt_id 문자열 기술키를 memo_rpt_sn
             //   BIGINT IDENTITY로 전환했다. 실측: tb_memo_rpt_info 0행, inbound FK 0,
             //   첨부 outbound FK 1건. CRUD API·프론트 계약도 숫자 일련번호로 함께 이관했다.
+            // [2026-08-14 제거] RewardManage — V2_61에서 rwrd_id 문자열 기술키를 rwrd_sn
+            //   BIGINT IDENTITY로 전환했다. 실측: tb_rward_manage 0행, inbound FK 0,
+            //   첨부 outbound FK 1건. 프론트 Date.now() 수동 키 생성도 함께 제거했다.
             "AdministCode", "Authority", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptManage", "EventInfo",
@@ -114,7 +117,7 @@ class PkGenerationStandardLinterTest {
             "LoginLog", "LoginPolicy", "Menu",
             "Note", "NoteRecptn", "NoteTrnsmit", "Notification",
             "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage",
-            "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RewardManage", "RoleInfo", "Schedule",
+            "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo", "Schedule",
             "Scrap", "SentMail", "SiteMap", "Sms", "SurveyArticle", "SurveyInfo", "SurveyQuestion",
             "SurveyRespondent", "SurveyResult", "SurveyTemplate", "SysLog", "SystemPolicy", "Template",
             "User", "UserAbsence", "UserAuthority", "WebLog", "WorkReport"

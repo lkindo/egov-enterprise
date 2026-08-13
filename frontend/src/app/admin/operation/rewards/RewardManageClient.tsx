@@ -80,7 +80,6 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
       setRegisterLoading(true);
       const submitData = {
         ...values,
-        rwardId: `RW_${Date.now()}`,
         confmAt: 'N',
         sanctnerId: 'SYSTEM',
         informlSanctnId: `ISM_${Date.now()}`,

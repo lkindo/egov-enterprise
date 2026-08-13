@@ -18,8 +18,8 @@ import lombok.NoArgsConstructor;
 public class RewardManage extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String rwrdId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long rwrdSn;
 
     @Column(length = 20, nullable = false)
     private String rwrdUserId;
@@ -59,10 +59,10 @@ public class RewardManage extends BaseEntity {
     private String ifmlAtrzId;
 
     // Phase 5.2: 팩토리 파라미터 기반 private 생성자 (빌더/create() 위임 대상)
-    private RewardManage(String rwrdId, String rwrdUserId, String rwrdCd, String rwrdYmd, String rwrdNm,
+    private RewardManage(Long rwrdSn, String rwrdUserId, String rwrdCd, String rwrdYmd, String rwrdNm,
                          String cntrbCn, String atrzrId, String confmYn, java.time.LocalDateTime aprvDt,
                          String rtnRsnCn, String atchFileId, String ifmlAtrzId) {
-        this.rwrdId = rwrdId;
+        this.rwrdSn = rwrdSn;
         this.rwrdUserId = rwrdUserId;
         this.rwrdCd = rwrdCd;
         this.rwrdYmd = rwrdYmd;
@@ -82,10 +82,10 @@ public class RewardManage extends BaseEntity {
      * 감사 필드(frstRgtrId/lastMdfrId/crtDt/mdfcnDt)와 읽기전용 연관(fileMaster)은 제외.
      */
     @Builder
-    public static RewardManage create(String rwrdId, String rwrdUserId, String rwrdCd, String rwrdYmd, String rwrdNm,
+    public static RewardManage create(Long rwrdSn, String rwrdUserId, String rwrdCd, String rwrdYmd, String rwrdNm,
                                       String cntrbCn, String atrzrId, String confmYn, java.time.LocalDateTime aprvDt,
                                       String rtnRsnCn, String atchFileId, String ifmlAtrzId) {
-        return new RewardManage(rwrdId, rwrdUserId, rwrdCd, rwrdYmd, rwrdNm, cntrbCn, atrzrId, confmYn, aprvDt,
+        return new RewardManage(rwrdSn, rwrdUserId, rwrdCd, rwrdYmd, rwrdNm, cntrbCn, atrzrId, confmYn, aprvDt,
                 rtnRsnCn, atchFileId, ifmlAtrzId);
     }
 
