@@ -3,6 +3,8 @@ package nuri.business.domain.schedule;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.io.Serializable;
@@ -23,8 +25,8 @@ import lombok.NoArgsConstructor;
 public class Diary extends BaseEntity implements Serializable {
 
     @Id
-    @Column(length = 20)
-    private String diaryId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long diarySn;
 
     @Column(length = 20)
     private String schdlId;
@@ -43,9 +45,9 @@ public class Diary extends BaseEntity implements Serializable {
     @Column(length = 20)
     private String atchFileId;
 
-    private Diary(String diaryId, String schdlId, Integer diaryPrgrsRt, String diaryNm,
+    private Diary(Long diarySn, String schdlId, Integer diaryPrgrsRt, String diaryNm,
             String drctnMttr, String excptnMttr, String atchFileId) {
-        this.diaryId = diaryId;
+        this.diarySn = diarySn;
         this.schdlId = schdlId;
         this.diaryPrgrsRt = diaryPrgrsRt;
         this.diaryNm = diaryNm;
@@ -55,9 +57,9 @@ public class Diary extends BaseEntity implements Serializable {
     }
 
     @Builder
-    public static Diary create(String diaryId, String schdlId, Integer diaryPrgrsRt, String diaryNm,
+    public static Diary create(Long diarySn, String schdlId, Integer diaryPrgrsRt, String diaryNm,
             String drctnMttr, String excptnMttr, String atchFileId) {
-        return new Diary(diaryId, schdlId, diaryPrgrsRt, diaryNm, drctnMttr, excptnMttr, atchFileId);
+        return new Diary(diarySn, schdlId, diaryPrgrsRt, diaryNm, drctnMttr, excptnMttr, atchFileId);
     }
 
     public void update(Integer diaryPrgrsRt, String diaryNm, String drctnMttr,

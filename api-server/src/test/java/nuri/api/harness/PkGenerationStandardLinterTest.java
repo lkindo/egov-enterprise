@@ -85,9 +85,12 @@ class PkGenerationStandardLinterTest {
             // [2026-08-13 제거] DeptJob — V2_57에서 dept_task_id 문자열 기술키를
             //   dept_task_sn BIGINT IDENTITY로 전환했다. 실측: tb_dept_task_info 0행,
             //   inbound FK 0. outbound FK 3건과 업무 CRUD·화면·E2E 계약을 함께 검증했다.
+            // [2026-08-13 제거] Diary — V2_58에서 diary_id 문자열 기술키를 diary_sn BIGINT
+            //   IDENTITY로 전환했다. 실측: tb_diary_info 0행, inbound FK 0, 첨부 outbound FK 1건.
+            //   구형 행 보존과 AttachmentSource가 사용하는 테이블 계약을 PostgreSQL 회귀로 검증했다.
             "AdministCode", "Authority", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
-            "Community", "DeptManage", "Diary", "DtaUseStats", "EventInfo",
+            "Community", "DeptManage", "DtaUseStats", "EventInfo",
             // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).
             //   FAQ 는 게시판(tb_bbs_item, bbs_id='BBSMSTR_AAAAAAAAAAAA')으로 통합돼 운영 중이고
             //   전용 도메인은 死자산이었다. 라이브 실측: tb_faq_info 0행 / 게시판 FAQ 281행,
