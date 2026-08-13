@@ -1,7 +1,7 @@
 import client from '@/lib/api/client';
 
 export interface MemoReportInfo {
-  rptId: string;
+  memoRptSn: number;
   rptTtl: string;
   rptCn: string;
   userId: string;
@@ -32,19 +32,19 @@ export const memoReportService = {
   getReceivedReports: async (params: { page?: number; size?: number } = {}) => {
     return client.get<PageResponse<MemoReportInfo>>(`${BASE_URL}/received`, { params });
   },
-  getMemoReport: async (rptId: string) => {
-    return client.get<MemoReportInfo>(`${BASE_URL}/${rptId}`);
+  getMemoReport: async (memoRptSn: number) => {
+    return client.get<MemoReportInfo>(`${BASE_URL}/${memoRptSn}`);
   },
   createMemoReport: async (data: Partial<MemoReportInfo>) => {
-    return client.post<string>(BASE_URL, data);
+    return client.post<number>(BASE_URL, data);
   },
-  updateMemoReport: async (rptId: string, data: Partial<MemoReportInfo>) => {
-    return client.put<void>(`${BASE_URL}/${rptId}`, data);
+  updateMemoReport: async (memoRptSn: number, data: Partial<MemoReportInfo>) => {
+    return client.put<void>(`${BASE_URL}/${memoRptSn}`, data);
   },
-  updateDrctMatter: async (rptId: string, drctnMttr: string) => {
-    return client.patch<void>(`${BASE_URL}/${rptId}/instr-cn`, drctnMttr);
+  updateDrctMatter: async (memoRptSn: number, drctnMttr: string) => {
+    return client.patch<void>(`${BASE_URL}/${memoRptSn}/instr-cn`, drctnMttr);
   },
-  deleteMemoReport: async (rptId: string) => {
-    return client.delete<void>(`${BASE_URL}/${rptId}`);
+  deleteMemoReport: async (memoRptSn: number) => {
+    return client.delete<void>(`${BASE_URL}/${memoRptSn}`);
   }
 };

@@ -166,7 +166,7 @@ export type OnlinePollManageDto = z.infer<typeof OnlinePollManageDtoSchema>;
 // MemoReportDto Schema
 // ==========================================================================
 export const MemoReportDtoSchema = z.object({
-  rptId: z.string().optional(),
+  memoRptSn: z.number().optional(),
   rptTtl: z.string().optional(),
   memoRptYmd: z.string().optional(),
   userId: z.string().optional(),
@@ -911,6 +911,20 @@ export const NoteRecipientDtoSchema = z.object({
 export type NoteRecipientDto = z.infer<typeof NoteRecipientDtoSchema>;
 
 // ==========================================================================
+// ApiResponseLong Schema
+// ==========================================================================
+export const ApiResponseLongSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.number().optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseLong = z.infer<typeof ApiResponseLongSchema>;
+
+// ==========================================================================
 // SentMailDto Schema
 // ==========================================================================
 export const SentMailDtoSchema = z.object({
@@ -924,20 +938,6 @@ export const SentMailDtoSchema = z.object({
   atchFileId: z.string().min(0).max(30).optional(),
 });
 export type SentMailDto = z.infer<typeof SentMailDtoSchema>;
-
-// ==========================================================================
-// ApiResponseLong Schema
-// ==========================================================================
-export const ApiResponseLongSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.number().optional(),
-  timestamp: z.string().optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-});
-export type ApiResponseLong = z.infer<typeof ApiResponseLongSchema>;
 
 // ==========================================================================
 // ApiResponseTokenResponse Schema

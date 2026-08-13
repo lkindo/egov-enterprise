@@ -52,7 +52,7 @@ class MemoReportServiceTest {
     void getMemoReportList() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        MemoReport entity = MemoReport.builder().rptId("R1").build();
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).build();
         // 검색어 null 은 빈 문자열로 정규화되어 전달된다(널이면 LIKE 가 전건 누락된다)
         given(memoReportRepository.searchByTitle(eq(""), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
@@ -71,7 +71,7 @@ class MemoReportServiceTest {
         // given
         String writerId = "user1";
         Pageable pageable = PageRequest.of(0, 10);
-        MemoReport entity = MemoReport.builder().rptId("R1").userId(writerId).build();
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).userId(writerId).build();
         given(memoReportRepository.findByUserId(eq(writerId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
@@ -87,7 +87,7 @@ class MemoReportServiceTest {
         // given
         String reportrId = "user1";
         Pageable pageable = PageRequest.of(0, 10);
-        MemoReport entity = MemoReport.builder().rptId("R1").rptrId(reportrId).build();
+        MemoReport entity = MemoReport.builder().memoRptSn(1L).rptrId(reportrId).build();
         given(memoReportRepository.findByRptrId(eq(reportrId), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
@@ -101,32 +101,32 @@ class MemoReportServiceTest {
     @DisplayName("메모보고 상세 조회 - 작성자 본인은 열람 가능")
     void getMemoReport() {
         // given — 참여자 축은 esntlId(userId/rptrId)다. loginId(frstRgtrId)가 아니다.
-        String reprtId = "R1";
-        MemoReport entity = MemoReport.builder().rptId(reprtId).userId("esntl-me").build();
-        given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(entity));
+        Long memoRptSn = 1L;
+        MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-me").build();
+        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
 
         // when
-        MemoReportDto result = memoReportService.getMemoReport(reprtId);
+        MemoReportDto result = memoReportService.getMemoReport(memoRptSn);
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getRptId()).isEqualTo(reprtId);
+        assertThat(result.getMemoRptSn()).isEqualTo(memoRptSn);
     }
 
     @Test
     @DisplayName("[IDOR] 메모보고 상세 조회 - 작성자도 수신자도 아니면 ACCESS_DENIED")
     void getMemoReport_nonParticipant_denied() {
         // given
-        String reprtId = "R1";
-        MemoReport entity = MemoReport.builder().rptId(reprtId).userId("esntl-owner").rptrId("esntl-receiver").build();
-        given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(entity));
+        Long memoRptSn = 1L;
+        MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-owner").rptrId("esntl-receiver").build();
+        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-stranger"));
 
         // when / then
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.getMemoReport(reprtId))
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.getMemoReport(memoRptSn))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
     }
 
@@ -134,14 +134,14 @@ class MemoReportServiceTest {
     @DisplayName("메모보고 상세 조회 - 수신자도 열람 가능(loginId 축 가드를 쓰면 여기서 오탐이 난다)")
     void getMemoReport_receiver_allowed() {
         // given
-        String reprtId = "R1";
-        MemoReport entity = MemoReport.builder().rptId(reprtId).userId("esntl-owner").rptrId("esntl-me").build();
-        given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(entity));
+        Long memoRptSn = 1L;
+        MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-owner").rptrId("esntl-me").build();
+        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
 
         // when
-        MemoReportDto result = memoReportService.getMemoReport(reprtId);
+        MemoReportDto result = memoReportService.getMemoReport(memoRptSn);
 
         // then
         assertThat(result).isNotNull();
@@ -157,12 +157,14 @@ class MemoReportServiceTest {
                 .rptrId("reportr1")
                 .memoRptYmd("20240501")
                 .build();
+        given(memoReportRepository.save(any(MemoReport.class)))
+                .willReturn(MemoReport.builder().memoRptSn(2L).build());
 
         // when
-        String id = memoReportService.createMemoReport(userId, dto);
+        Long memoRptSn = memoReportService.createMemoReport(userId, dto);
 
         // then
-        assertThat(id).startsWith("MEMO_");
+        assertThat(memoRptSn).isEqualTo(2L);
         verify(memoReportRepository).save(any(MemoReport.class));
     }
 
@@ -170,21 +172,21 @@ class MemoReportServiceTest {
     @DisplayName("메모보고 수정")
     void updateMemoReport() {
         // given
-        String reprtId = "R1";
+        Long memoRptSn = 1L;
         String userId = "user1";
-        MemoReport existingEntity = MemoReport.builder().rptId(reprtId).userId(userId).build();
+        MemoReport existingEntity = MemoReport.builder().memoRptSn(memoRptSn).userId(userId).build();
         MemoReportDto updateDto = MemoReportDto.builder()
-                .rptId(reprtId)
+                .memoRptSn(memoRptSn)
                 .rptTtl("Updated Subject")
                 .rptCn("Updated Content")
                 .rptrId("reportr1")
                 .memoRptYmd("20240502")
                 .build();
 
-        given(memoReportRepository.findById(reprtId)).willReturn(Optional.of(existingEntity));
+        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(existingEntity));
 
         // when
-        memoReportService.updateMemoReport(reprtId, userId, updateDto);
+        memoReportService.updateMemoReport(memoRptSn, userId, updateDto);
 
         // then
         assertThat(existingEntity.getRptTtl()).isEqualTo("Updated Subject");
@@ -196,12 +198,12 @@ class MemoReportServiceTest {
     @DisplayName("메모보고 삭제")
     void deleteMemoReport() {
         // given — 소유권 가드용 findById(삭제 시 findById→delete 로 변경됨)
-        String reprtId = "R1";
+        Long memoRptSn = 1L;
         nuri.business.domain.memoreport.MemoReport entity = org.mockito.Mockito.mock(nuri.business.domain.memoreport.MemoReport.class);
-        org.mockito.Mockito.when(memoReportRepository.findById(reprtId)).thenReturn(java.util.Optional.of(entity));
+        org.mockito.Mockito.when(memoReportRepository.findById(memoRptSn)).thenReturn(java.util.Optional.of(entity));
 
         // when
-        memoReportService.deleteMemoReport(reprtId);
+        memoReportService.deleteMemoReport(memoRptSn);
 
         // then
         verify(memoReportRepository).delete(entity);
@@ -211,16 +213,16 @@ class MemoReportServiceTest {
     @DisplayName("메모보고 조회")
     void readMemoReport() {
         // given
-        String reprtId = "MEMO_000000000000001";
+        Long memoRptSn = 1L;
         MemoReport entity = mock(MemoReport.class);
-        when(memoReportRepository.findById(reprtId)).thenReturn(Optional.of(entity));
+        when(memoReportRepository.findById(memoRptSn)).thenReturn(Optional.of(entity));
         // 열람 표시도 참여자만 가능하다 — 작성자 본인으로 세팅
         when(entity.getUserId()).thenReturn("esntl-me");
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
 
         // when
-        memoReportService.readMemoReport(reprtId);
+        memoReportService.readMemoReport(memoRptSn);
 
         // then
         verify(entity).updateInqireDt(any(java.time.LocalDateTime.class));

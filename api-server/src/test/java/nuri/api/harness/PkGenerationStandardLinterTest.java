@@ -91,6 +91,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] DtaUseStats — V2_59에서 dta_use_stats_id 문자열 기술키를
             //   dta_use_stats_sn BIGINT IDENTITY로 전환했다. 실측: tb_dta_use_stats 0행,
             //   inbound FK 0, 첨부 outbound FK 1건. 구형 행 보존과 통계 집계 쿼리 계약을 검증했다.
+            // [2026-08-14 제거] MemoReport — V2_60에서 rpt_id 문자열 기술키를 memo_rpt_sn
+            //   BIGINT IDENTITY로 전환했다. 실측: tb_memo_rpt_info 0행, inbound FK 0,
+            //   첨부 outbound FK 1건. CRUD API·프론트 계약도 숫자 일련번호로 함께 이관했다.
             "AdministCode", "Authority", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptManage", "EventInfo",
@@ -108,7 +111,7 @@ class PkGenerationStandardLinterTest {
             //     현재 상태는 "엔티티 없는 빈 테이블 2개" 이며 그 처분은 미결로 남는다.
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
             "FileMaster", "GroupManage", "InformalSanction", "InstitutionCode",
-            "LoginLog", "LoginPolicy", "MemoReport", "Menu",
+            "LoginLog", "LoginPolicy", "Menu",
             "Note", "NoteRecptn", "NoteTrnsmit", "Notification",
             "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RewardManage", "RoleInfo", "Schedule",

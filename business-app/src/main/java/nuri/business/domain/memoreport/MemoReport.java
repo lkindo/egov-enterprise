@@ -13,8 +13,8 @@ import java.time.LocalDateTime;
 public class MemoReport extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String rptId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long memoRptSn;
 
     @Column(length = 100, nullable = false)
     private String rptTtl;
@@ -46,9 +46,9 @@ public class MemoReport extends BaseEntity {
 
     private LocalDateTime rptrInqDt;
 
-    private MemoReport(String rptId, String rptTtl, String memoRptYmd, String userId,
+    private MemoReport(Long memoRptSn, String rptTtl, String memoRptYmd, String userId,
                        String rptrId, String rptCn, String atchFileId) {
-        this.rptId = rptId;
+        this.memoRptSn = memoRptSn;
         this.rptTtl = rptTtl;
         this.memoRptYmd = memoRptYmd;
         this.userId = userId;
@@ -58,9 +58,9 @@ public class MemoReport extends BaseEntity {
     }
 
     @Builder
-    public static MemoReport create(String rptId, String rptTtl, String memoRptYmd, String userId,
+    public static MemoReport create(Long memoRptSn, String rptTtl, String memoRptYmd, String userId,
                                     String rptrId, String rptCn, String atchFileId) {
-        return new MemoReport(rptId, rptTtl, memoRptYmd, userId, rptrId, rptCn, atchFileId);
+        return new MemoReport(memoRptSn, rptTtl, memoRptYmd, userId, rptrId, rptCn, atchFileId);
     }
 
     public void update(String rptTtl, String memoRptYmd, String userId, String rptrId,

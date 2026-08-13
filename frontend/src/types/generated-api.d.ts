@@ -142,7 +142,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/memo-reports/{rptId}": {
+    "/api/v1/memo-reports/{memoRptSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2732,7 +2732,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/memo-reports/{rptId}/instr-cn": {
+    "/api/v1/memo-reports/{memoRptSn}/instr-cn": {
         parameters: {
             query?: never;
             header?: never;
@@ -4567,8 +4567,11 @@ export interface components {
         };
         /** @description 메모보고 정보 */
         MemoReportDto: {
-            /** @description 보고아이디 */
-            rptId?: string;
+            /**
+             * Format: int64
+             * @description 메모보고일련번호
+             */
+            memoRptSn?: number;
             /** @description 보고제목 */
             rptTtl?: string;
             /** @description 보고일자 */
@@ -5700,6 +5703,18 @@ export interface components {
             /** @description 수신 구분 (1: 수신, 2: 참조) */
             recptnSe: string;
         };
+        ApiResponseLong: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            /** Format: int64 */
+            data?: number;
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
         /** @description Description */
         SentMailDto: {
             /** @description Description */
@@ -5718,18 +5733,6 @@ export interface components {
             sndngDe?: string;
             /** @description Description */
             atchFileId?: string;
-        };
-        ApiResponseLong: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            /** Format: int64 */
-            data?: number;
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponseTokenResponse: {
             success?: boolean;
@@ -8726,8 +8729,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 보고 ID */
-                rptId: string;
+                /** @description 메모보고 일련번호 */
+                memoRptSn: number;
             };
             cookie?: never;
         };
@@ -8749,7 +8752,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                memoRptSn: number;
             };
             cookie?: never;
         };
@@ -8775,7 +8778,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                memoRptSn: number;
             };
             cookie?: never;
         };
@@ -12133,7 +12136,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -15025,7 +15028,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                memoRptSn: number;
             };
             cookie?: never;
         };

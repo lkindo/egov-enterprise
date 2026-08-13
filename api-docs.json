@@ -779,7 +779,7 @@
         }
       }
     },
-    "/api/v1/memo-reports/{rptId}": {
+    "/api/v1/memo-reports/{memoRptSn}": {
       "get": {
         "tags": [
           "MemoReport"
@@ -789,12 +789,13 @@
         "operationId": "getMemoReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "memoRptSn",
             "in": "path",
-            "description": "보고 ID",
+            "description": "메모보고 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -820,11 +821,12 @@
         "operationId": "updateMemoReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "memoRptSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -860,11 +862,12 @@
         "operationId": "deleteMemoReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "memoRptSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5996,7 +5999,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -11689,7 +11692,7 @@
         }
       }
     },
-    "/api/v1/memo-reports/{rptId}/instr-cn": {
+    "/api/v1/memo-reports/{memoRptSn}/instr-cn": {
       "patch": {
         "tags": [
           "MemoReport"
@@ -11699,11 +11702,12 @@
         "operationId": "updateDrctMatter",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "memoRptSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -16524,9 +16528,10 @@
         "type": "object",
         "description": "메모보고 정보",
         "properties": {
-          "rptId": {
-            "type": "string",
-            "description": "보고아이디"
+          "memoRptSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "메모보고일련번호"
           },
           "rptTtl": {
             "type": "string",
@@ -18996,6 +19001,38 @@
           "recptnSe"
         ]
       },
+      "ApiResponseLong": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
       "SentMailDto": {
         "type": "object",
         "description": "Description",
@@ -19033,38 +19070,6 @@
             "description": "Description",
             "maxLength": 30,
             "minLength": 0
-          }
-        }
-      },
-      "ApiResponseLong": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
           }
         }
       },

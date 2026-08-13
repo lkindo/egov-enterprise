@@ -8,7 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface MemoReportRepository extends JpaRepository<MemoReport, String> {
+public interface MemoReportRepository extends JpaRepository<MemoReport, Long> {
     Page<MemoReport> findByUserId(String userId, Pageable pageable);
     Page<MemoReport> findByRptrId(String rptrId, Pageable pageable);
 

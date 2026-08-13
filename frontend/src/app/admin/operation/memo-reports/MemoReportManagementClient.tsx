@@ -208,7 +208,7 @@ export default function MemoReportManagementClient() {
               error={isError ? (error as Error) : null}
               onRetry={() => refetch()}
               emptyMessage="등록된 메모 보고가 없습니다."
-              keyField="rptId"
+              keyField="memoRptSn"
               isPremium={true}
               className="bg-transparent border-none shadow-none"
               pagination={{

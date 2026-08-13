@@ -55,45 +55,45 @@ public class MemoReportApiController {
     }
 
     @Operation(summary = "메모보고 상세 조회", description = "메모보고 상세 정보를 조회합니다.")
-    @GetMapping("/{rptId}")
+    @GetMapping("/{memoRptSn}")
     public ResponseEntity<ApiResponse<MemoReportDto>> getMemoReport(
-            @Parameter(description = "보고 ID") @PathVariable String rptId) {
-        memoReportService.readMemoReport(rptId);
-        return ResponseEntity.ok(ApiResponse.success(memoReportService.getMemoReport(rptId)));
+            @Parameter(description = "메모보고 일련번호") @PathVariable Long memoRptSn) {
+        memoReportService.readMemoReport(memoRptSn);
+        return ResponseEntity.ok(ApiResponse.success(memoReportService.getMemoReport(memoRptSn)));
     }
 
     @Operation(summary = "메모보고 등록", description = "새로운 메모보고를 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createMemoReport(
+    public ResponseEntity<ApiResponse<Long>> createMemoReport(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody MemoReportDto dto) {
-        String rptId = memoReportService.createMemoReport(userDetails.getUsername(), dto);
-        return ResponseEntity.ok(ApiResponse.success(rptId));
+        Long memoRptSn = memoReportService.createMemoReport(userDetails.getUsername(), dto);
+        return ResponseEntity.ok(ApiResponse.success(memoRptSn));
     }
 
     @Operation(summary = "메모보고 수정", description = "기존 메모보고를 수정합니다.")
-    @PutMapping("/{rptId}")
+    @PutMapping("/{memoRptSn}")
     public ResponseEntity<ApiResponse<Void>> updateMemoReport(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String rptId,
+            @PathVariable Long memoRptSn,
             @Valid @RequestBody MemoReportDto dto) {
-        memoReportService.updateMemoReport(rptId, userDetails.getUsername(), dto);
+        memoReportService.updateMemoReport(memoRptSn, userDetails.getUsername(), dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "지시사항 업데이트", description = "메모보고에 대한 지시사항을 업데이트합니다.")
-    @PatchMapping("/{rptId}/instr-cn")
+    @PatchMapping("/{memoRptSn}/instr-cn")
     public ResponseEntity<ApiResponse<Void>> updateDrctMatter(
-            @PathVariable String rptId,
+            @PathVariable Long memoRptSn,
             @RequestBody String instrCn) {
-        memoReportService.updateDrctMatter(rptId, instrCn);
+        memoReportService.updateDrctMatter(memoRptSn, instrCn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "메모보고 삭제", description = "메모보고 정보를 삭제합니다.")
-    @DeleteMapping("/{rptId}")
-    public ResponseEntity<ApiResponse<Void>> deleteMemoReport(@PathVariable String rptId) {
-        memoReportService.deleteMemoReport(rptId);
+    @DeleteMapping("/{memoRptSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteMemoReport(@PathVariable Long memoRptSn) {
+        memoReportService.deleteMemoReport(memoRptSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

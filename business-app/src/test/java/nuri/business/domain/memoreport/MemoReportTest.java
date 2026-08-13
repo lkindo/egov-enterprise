@@ -14,7 +14,7 @@ class MemoReportTest {
     @DisplayName("MemoReport 생성 및 Getter/Setter 검증")
     void getSetTest() {
         MemoReport report = MemoReport.builder()
-                .rptId("R1")
+                .memoRptSn(1L)
                 .rptTtl("Title")
                 .memoRptYmd("2026-06-04")
                 .userId("user1")
@@ -22,7 +22,7 @@ class MemoReportTest {
                 .rptCn("Content")
                 .build();
 
-        assertThat(report.getRptId()).isEqualTo("R1");
+        assertThat(report.getMemoRptSn()).isEqualTo(1L);
         assertThat(report.getRptTtl()).isEqualTo("Title");
         assertThat(report.getMemoRptYmd()).isEqualTo("2026-06-04");
         assertThat(report.getUserId()).isEqualTo("user1");
