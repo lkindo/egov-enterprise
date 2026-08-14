@@ -1065,7 +1065,7 @@ export type BoardMasterBatchDeleteRequest = z.infer<typeof BoardMasterBatchDelet
 // SmsDto Schema
 // ==========================================================================
 export const SmsDtoSchema = z.object({
-  smsId: z.string().min(0).max(20).optional(),
+  smsTrsmSn: z.number().optional(),
   sndngTelno: z.string().optional(),
   sndngCn: z.string().optional(),
   recptnCnt: z.number().optional(),
@@ -1081,7 +1081,7 @@ export type SmsDto = z.infer<typeof SmsDtoSchema>;
 // SmsRecptnDto Schema
 // ==========================================================================
 export const SmsRecptnDtoSchema = z.object({
-  smsId: z.string().min(0).max(20).optional(),
+  smsTrsmSn: z.number().optional(),
   rcptnTelno: z.string().optional(),
   rsltCd: z.string().optional(),
   rsltMsg: z.string().optional(),

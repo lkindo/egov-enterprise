@@ -9,7 +9,7 @@ import org.mapstruct.ReportingPolicy;
  * SMS 엔티티→DTO MapStruct 매퍼 (컴파일타임 생성, Spring 빈).
  *
  * <p>수기 {@code SmsDto.from()} 를 대체하는 프레임워크 표준 매핑.
- * smsId·sndngTelno·sndngCn·frstRgtrId·crtDt 는 동명 필드 복사이며,
+ * smsTrsmSn·sndngTelno·sndngCn·frstRgtrId·crtDt 는 동명 필드 복사이며,
  * {@code from()} 이 엔티티와 무관하게 상수로 채우던 두 필드만 명시적으로 재현한다:
  * <ul>
  *   <li>{@code recptnCnt} → 상수 0 (from() 의 {@code .recptnCnt(0)} 과 동일)</li>

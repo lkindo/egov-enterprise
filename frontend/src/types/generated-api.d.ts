@@ -4239,7 +4239,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/operation/sms/{smsId}": {
+    "/api/v1/admin/operation/sms/{smsTrsmSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4259,7 +4259,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/operation/sms/{smsId}/recipients": {
+    "/api/v1/admin/operation/sms/{smsTrsmSn}/recipients": {
         parameters: {
             query?: never;
             header?: never;
@@ -6018,8 +6018,11 @@ export interface components {
         };
         /** @description SMS 데이터 전송 객체 */
         SmsDto: {
-            /** @description SMS ID */
-            smsId?: string;
+            /**
+             * Format: int64
+             * @description SMS 전송 일련번호
+             */
+            smsTrsmSn?: number;
             /** @description 발신 번호 */
             sndngTelno?: string;
             /** @description 발신 내용 */
@@ -6045,8 +6048,11 @@ export interface components {
         };
         /** @description SMS 수신 정보 DTO */
         SmsRecptnDto: {
-            /** @description SMS ID */
-            smsId?: string;
+            /**
+             * Format: int64
+             * @description SMS 전송 일련번호
+             */
+            smsTrsmSn?: number;
             /** @description 수신 번호 */
             rcptnTelno?: string;
             /** @description 결과 코드 (P:대기, S:성공, F:실패) */
@@ -14886,7 +14892,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -17140,8 +17146,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description SMS ID */
-                smsId: string;
+                /** @description SMS 전송 일련번호 */
+                smsTrsmSn: number;
             };
             cookie?: never;
         };
@@ -17163,8 +17169,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description SMS ID */
-                smsId: string;
+                /** @description SMS 전송 일련번호 */
+                smsTrsmSn: number;
             };
             cookie?: never;
         };

@@ -11250,7 +11250,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -15723,7 +15723,7 @@
         }
       }
     },
-    "/api/v1/admin/operation/sms/{smsId}": {
+    "/api/v1/admin/operation/sms/{smsTrsmSn}": {
       "get": {
         "tags": [
           "SMS Management"
@@ -15733,12 +15733,13 @@
         "operationId": "getSms",
         "parameters": [
           {
-            "name": "smsId",
+            "name": "smsTrsmSn",
             "in": "path",
-            "description": "SMS ID",
+            "description": "SMS 전송 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -15756,7 +15757,7 @@
         }
       }
     },
-    "/api/v1/admin/operation/sms/{smsId}/recipients": {
+    "/api/v1/admin/operation/sms/{smsTrsmSn}/recipients": {
       "get": {
         "tags": [
           "SMS Management"
@@ -15766,12 +15767,13 @@
         "operationId": "getSmsRecipients",
         "parameters": [
           {
-            "name": "smsId",
+            "name": "smsTrsmSn",
             "in": "path",
-            "description": "SMS ID",
+            "description": "SMS 전송 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -19534,11 +19536,10 @@
         "type": "object",
         "description": "SMS 데이터 전송 객체",
         "properties": {
-          "smsId": {
-            "type": "string",
-            "description": "SMS ID",
-            "maxLength": 20,
-            "minLength": 0
+          "smsTrsmSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "SMS 전송 일련번호"
           },
           "sndngTelno": {
             "type": "string",
@@ -19583,11 +19584,10 @@
         "type": "object",
         "description": "SMS 수신 정보 DTO",
         "properties": {
-          "smsId": {
-            "type": "string",
-            "description": "SMS ID",
-            "maxLength": 20,
-            "minLength": 0
+          "smsTrsmSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "SMS 전송 일련번호"
           },
           "rcptnTelno": {
             "type": "string",

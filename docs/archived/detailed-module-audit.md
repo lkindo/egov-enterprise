@@ -38,8 +38,8 @@
 - **상세 분석**:
     - **강점**: `@Async`와 `Propagation.REQUIRES_NEW`를 조합한 비동기 발송 아키텍처가 우수함. 발송 성공/실패 여부를 독립적인 트랜잭션으로 관리하여 데이터 무결성 확보.
     - **약점 (LR)**: 외부 게이트웨이 장애 시 재시도(Retry) 메커니즘이 부재함. 일시적인 네트워크 오류 시 즉시 실패 처리됨.
-    - **약점 (OE)**: `smsId` 생성 시 `System.currentTimeMillis()`를 사용하여 고부하 상황에서 ID 충돌 가능성이 있음.
-- **권고**: `Spring Retry` 또는 외부 큐(RabbitMQ/Kafka) 도입 고려. ID 생성 전략을 UUID 또는 DB Sequence로 변경.
+    - **해결 (OE, V2_83)**: 구 `smsId` 애플리케이션 채번을 제거하고 `sms_trsm_sn BIGINT IDENTITY`를 DB 단일 생성원으로 전환함.
+- **권고**: 외부 큐(RabbitMQ/Kafka) 도입을 고려해 프로세스 장애 시에도 발송 요청을 내구성 있게 보존할 것.
 
 ### 2.4 Content Management (Board/Article)
 - **대상**: `BoardService`, `BoardMasterService`

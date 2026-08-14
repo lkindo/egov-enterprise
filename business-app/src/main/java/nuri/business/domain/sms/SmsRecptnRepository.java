@@ -6,5 +6,5 @@ import java.util.List;
 
 @Repository
 public interface SmsRecptnRepository extends JpaRepository<SmsRecptn, SmsRecptnId> {
-    List<SmsRecptn> findByIdSmsId(String smsId);
+    List<SmsRecptn> findByIdSmsTrsmSn(Long smsTrsmSn);
 }

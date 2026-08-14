@@ -76,12 +76,4 @@ public final class IdGenerationUtil {
     public static String generateMberId() {
         return generateId(Constants.User.MBER_PREFIX, Constants.User.ESNTL_ID_UUID_LENGTH);
     }
-
-
-    /**
-     * SMS 발송용 고유 ID를 생성합니다.
-     */
-    public static String generateSmsId() {
-        return generateId(Constants.User.SMS_PREFIX, Constants.User.ESNTL_ID_UUID_LENGTH);
-    }
 }

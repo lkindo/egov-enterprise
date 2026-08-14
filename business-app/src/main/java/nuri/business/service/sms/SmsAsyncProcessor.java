@@ -41,14 +41,14 @@ public class SmsAsyncProcessor {
      * 수신자 목록 조회 외에는 트랜잭션을 열지 않는다(외부 IO 비점유 원칙).
      */
     @Async("taskExecutor")
-    public void processSending(String smsId, String senderTel, String content) {
-        log.info("Async processing started for SMS ID: {}", smsId);
+    public void processSending(Long smsTrsmSn, String senderTel, String content) {
+        log.info("Async processing started for SMS transmission serial number: {}", smsTrsmSn);
 
-        List<SmsRecptn> recipients = smsRecptnRepository.findByIdSmsId(smsId);
+        List<SmsRecptn> recipients = smsRecptnRepository.findByIdSmsTrsmSn(smsTrsmSn);
 
         for (SmsRecptn recptn : recipients) {
             try {
-                self.sendToRecipient(recptn.getSmsId(), recptn.getRcptnTelno(), senderTel, content);
+                self.sendToRecipient(recptn.getSmsTrsmSn(), recptn.getRcptnTelno(), senderTel, content);
             } catch (Exception e) {
                 log.error("Final failure for SMS to: {}, errorType: {}",
                         nuri.foundation.core.util.PiiMaskUtil.phone(recptn.getRcptnTelno()),
@@ -56,7 +56,7 @@ public class SmsAsyncProcessor {
             }
         }
 
-        log.info("Async processing completed for SMS ID: {}", smsId);
+        log.info("Async processing completed for SMS transmission serial number: {}", smsTrsmSn);
     }
 
     /**
@@ -68,12 +68,12 @@ public class SmsAsyncProcessor {
         maxAttempts = 3,
         backoff = @org.springframework.retry.annotation.Backoff(delay = 1000)
     )
-    public void sendToRecipient(String smsId, String rcptnTelno, String senderTel, String content) {
+    public void sendToRecipient(Long smsTrsmSn, String rcptnTelno, String senderTel, String content) {
         log.debug("Attempting to send SMS to: {}", nuri.foundation.core.util.PiiMaskUtil.phone(rcptnTelno));
         boolean success = smsSender.send(rcptnTelno, content, senderTel);
 
         if (success) {
-            self.updateResult(smsId, rcptnTelno, "S", "Success");
+            self.updateResult(smsTrsmSn, rcptnTelno, "S", "Success");
             meterRegistry.counter("sms.dispatch.total", "result", "success").increment();
         } else {
             // 외부 연동 실패 시 예외를 던져 재시도를 유도할 수 있음
@@ -85,11 +85,11 @@ public class SmsAsyncProcessor {
      * 모든 재시도 실패 시 호출되는 복구 메서드
      */
     @org.springframework.retry.annotation.Recover
-    public void recoverSmsSending(Exception e, String smsId, String rcptnTelno, String senderTel, String content) {
+    public void recoverSmsSending(Exception e, Long smsTrsmSn, String rcptnTelno, String senderTel, String content) {
         // 외부 예외 메시지는 전화번호·본문·API 응답을 포함할 수 있으므로 로그/DB에 복제하지 않는다.
         log.error("All retries failed for SMS to: {}, errorType: {}",
                 nuri.foundation.core.util.PiiMaskUtil.phone(rcptnTelno), e.getClass().getSimpleName());
-        self.updateResult(smsId, rcptnTelno, "F", "Gateway delivery failed");
+        self.updateResult(smsTrsmSn, rcptnTelno, "F", "Gateway delivery failed");
         meterRegistry.counter("sms.dispatch.total", "result", "failure").increment();
     }
 
@@ -97,15 +97,15 @@ public class SmsAsyncProcessor {
      * 발송 결과 기록 — 수신자 단위 짧은 트랜잭션으로 즉시 커밋(외부 IO 와 분리).
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void updateResult(String smsId, String rcptnTelno, String rsltCd, String rsltMsg) {
-        smsRecptnRepository.findById(new SmsRecptnId(smsId, rcptnTelno))
+    public void updateResult(Long smsTrsmSn, String rcptnTelno, String rsltCd, String rsltMsg) {
+        smsRecptnRepository.findById(new SmsRecptnId(smsTrsmSn, rcptnTelno))
                 .ifPresent(r -> r.updateResult(rsltCd, rsltMsg));
     }
 
     /** 제출 큐 포화 시 커밋된 대기 건을 명시적 실패로 전환해 영구 P/무음 유실을 막는다. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void markBatchRejected(String smsId) {
-        smsRecptnRepository.findByIdSmsId(smsId).stream()
+    public void markBatchRejected(Long smsTrsmSn) {
+        smsRecptnRepository.findByIdSmsTrsmSn(smsTrsmSn).stream()
                 .filter(recipient -> "P".equals(recipient.getRsltCd()))
                 .forEach(recipient -> recipient.updateResult("F", "Dispatch queue saturated"));
     }

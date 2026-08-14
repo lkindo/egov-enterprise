@@ -32,24 +32,24 @@ class SmsApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     @DisplayName("SMS 발송 내역 조회")
     void getSmsList() throws Exception {
-        Page<SmsDto> page = new PageImpl<>(List.of(SmsDto.builder().smsId("SMS1").build()));
+        Page<SmsDto> page = new PageImpl<>(List.of(SmsDto.builder().smsTrsmSn(1L).build()));
         given(smsService.getSmsList(any(), any(), any())).willReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/operation/sms"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].smsId").value("SMS1"));
+                .andExpect(jsonPath("$.data.list[0].smsTrsmSn").value(1));
     }
 
     @Test
     @WithMockCustomUser
     @DisplayName("SMS 상세 조회")
     void getSms() throws Exception {
-        SmsDto dto = SmsDto.builder().smsId("SMS1").sndngCn("Content").build();
-        given(smsService.getSms("SMS1")).willReturn(dto);
+        SmsDto dto = SmsDto.builder().smsTrsmSn(1L).sndngCn("Content").build();
+        given(smsService.getSms(1L)).willReturn(dto);
 
-        mockMvc.perform(get("/api/v1/admin/operation/sms/SMS1"))
+        mockMvc.perform(get("/api/v1/admin/operation/sms/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.smsId").value("SMS1"));
+                .andExpect(jsonPath("$.data.smsTrsmSn").value(1));
     }
 
     @Test
@@ -57,9 +57,9 @@ class SmsApiControllerTest extends ControllerTestSupport {
     @DisplayName("SMS 수신자 목록 조회")
     void getSmsRecipients() throws Exception {
         List<SmsRecptnDto> recipients = List.of(SmsRecptnDto.builder().rcptnTelno("01012345678").build());
-        given(smsService.getSmsRecipients("SMS1")).willReturn(recipients);
+        given(smsService.getSmsRecipients(1L)).willReturn(recipients);
 
-        mockMvc.perform(get("/api/v1/admin/operation/sms/SMS1/recipients"))
+        mockMvc.perform(get("/api/v1/admin/operation/sms/1/recipients"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].rcptnTelno").value("01012345678"));
     }

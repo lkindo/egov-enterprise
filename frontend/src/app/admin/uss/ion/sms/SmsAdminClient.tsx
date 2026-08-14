@@ -261,7 +261,7 @@ export default function SmsAdminClient({
             loading={isLoading}
             error={isError ? (error as Error) : null}
             onRetry={() => refetch()}
-            keyField="smsId"
+            keyField="smsTrsmSn"
             emptyMessage={debouncedKeyword ? `'${debouncedKeyword}' 에 해당하는 발송 내역이 없습니다.` : '발송된 문자 메시지가 없습니다.'}
             className="border-none bg-transparent"
             pagination={{

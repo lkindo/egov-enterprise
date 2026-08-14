@@ -45,31 +45,32 @@ public class SmsService {
         return smsRepository.searchSms(searchCondition, searchKeyword, pageable).map(smsMapper::toDto);
     }
 
-    public SmsDto getSms(String smsId) {
-        log.debug("Fetching SMS details for ID: {}", smsId);
-        return smsRepository.findById(Objects.requireNonNull(smsId))
+    public SmsDto getSms(Long smsTrsmSn) {
+        log.debug("Fetching SMS details for transmission serial number: {}", smsTrsmSn);
+        return smsRepository.findById(Objects.requireNonNull(smsTrsmSn))
                 .map(smsMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Transactional
-    public String sendSms(String userId, SmsDto dto) {
+    public Long sendSms(String userId, SmsDto dto) {
         log.info("Sending SMS requested by user: {}, sender: {}", userId, nuri.foundation.core.util.PiiMaskUtil.phone(dto.getSndngTelno()));
-        String smsId = nuri.foundation.core.util.IdGenerationUtil.generateSmsId();
 
         Sms sms = Sms.builder()
-                .smsId(smsId)
                 .sndngTelno(dto.getSndngTelno())
                 .sndngCn(dto.getSndngCn())
                 .build();
 
-        smsRepository.save(Objects.requireNonNull(sms));
+        Sms savedSms = smsRepository.save(Objects.requireNonNull(sms));
+        Long smsTrsmSn = Objects.requireNonNull(savedSms.getSmsTrsmSn(),
+                "DB must generate SMS transmission serial number");
 
         if (dto.getRecipients() != null) {
-            log.info("Registering {} recipients for SMS ID: {}", dto.getRecipients().size(), smsId);
+            log.info("Registering {} recipients for SMS transmission serial number: {}",
+                    dto.getRecipients().size(), smsTrsmSn);
             for (SmsRecptnDto recptnDto : dto.getRecipients()) {
                 SmsRecptn recptn = SmsRecptn.builder()
-                        .smsId(smsId)
+                        .smsTrsmSn(smsTrsmSn)
                         .rcptnTelno(recptnDto.getRcptnTelno())
                         .rsltCd("P") // Pending
                         .build();
@@ -82,21 +83,21 @@ public class SmsService {
             final String content = dto.getSndngCn();
             nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> {
                 try {
-                    smsAsyncProcessor.processSending(smsId, senderTel, content);
+                    smsAsyncProcessor.processSending(smsTrsmSn, senderTel, content);
                 } catch (RuntimeException rejected) {
-                    log.error("SMS dispatch queue rejected SMS ID: {}, errorType: {}",
-                            smsId, rejected.getClass().getSimpleName());
-                    smsAsyncProcessor.markBatchRejected(smsId);
+                    log.error("SMS dispatch queue rejected transmission serial number: {}, errorType: {}",
+                            smsTrsmSn, rejected.getClass().getSimpleName());
+                    smsAsyncProcessor.markBatchRejected(smsTrsmSn);
                 }
             });
         }
 
-        log.info("SMS request registered successfully for ID: {}", smsId);
-        return smsId;
+        log.info("SMS request registered successfully for transmission serial number: {}", smsTrsmSn);
+        return smsTrsmSn;
     }
 
-    public List<SmsRecptnDto> getSmsRecipients(String smsId) {
-        return smsRecptnRepository.findByIdSmsId(smsId).stream()
+    public List<SmsRecptnDto> getSmsRecipients(Long smsTrsmSn) {
+        return smsRecptnRepository.findByIdSmsTrsmSn(smsTrsmSn).stream()
                 .map(smsRecptnMapper::toDto)
                 .collect(Collectors.toList());
     }

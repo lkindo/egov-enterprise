@@ -44,25 +44,25 @@ public class SmsApiController {
     }
 
     @Operation(summary = "SMS 상세 조회", description = "특정 SMS의 발송 상세 정보를 조회합니다.")
-    @GetMapping("/{smsId}")
+    @GetMapping("/{smsTrsmSn}")
     public ResponseEntity<ApiResponse<SmsDto>> getSms(
-            @Parameter(description = "SMS ID") @PathVariable String smsId) {
-        return ResponseEntity.ok(ApiResponse.success(smsService.getSms(smsId)));
+            @Parameter(description = "SMS 전송 일련번호") @PathVariable Long smsTrsmSn) {
+        return ResponseEntity.ok(ApiResponse.success(smsService.getSms(smsTrsmSn)));
     }
 
     @Operation(summary = "SMS 수신자 목록 조회", description = "특정 SMS의 수신자 목록을 조회합니다.")
-    @GetMapping("/{smsId}/recipients")
+    @GetMapping("/{smsTrsmSn}/recipients")
     public ResponseEntity<ApiResponse<List<SmsRecptnDto>>> getSmsRecipients(
-            @Parameter(description = "SMS ID") @PathVariable String smsId) {
-        return ResponseEntity.ok(ApiResponse.success(smsService.getSmsRecipients(smsId)));
+            @Parameter(description = "SMS 전송 일련번호") @PathVariable Long smsTrsmSn) {
+        return ResponseEntity.ok(ApiResponse.success(smsService.getSmsRecipients(smsTrsmSn)));
     }
 
     @Operation(summary = "SMS 발송", description = "새로운 SMS를 발송합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> sendSms(
+    public ResponseEntity<ApiResponse<Long>> sendSms(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody SmsDto smsDto) {
-        String smsId = smsService.sendSms(userDetails.getEsntlId(), smsDto);
-        return ResponseEntity.ok(ApiResponse.success(smsId));
+        Long smsTrsmSn = smsService.sendSms(userDetails.getEsntlId(), smsDto);
+        return ResponseEntity.ok(ApiResponse.success(smsTrsmSn));
     }
 }
