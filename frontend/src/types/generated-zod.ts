@@ -186,7 +186,7 @@ export type MemoReportDto = z.infer<typeof MemoReportDtoSchema>;
 // InformalSanctionDto Schema
 // ==========================================================================
 export const InformalSanctionDtoSchema = z.object({
-  ifmlAtrzId: z.string().min(0).max(20).optional(),
+  ifmlAtrzSn: z.number().optional(),
   taskSeCd: z.string().min(0).max(12),
   taskSeNm: z.string().optional(),
   aplcntId: z.string().min(0).max(20),
@@ -1103,7 +1103,7 @@ export const RewardManageDtoSchema = z.object({
   sanctnDt: z.string().optional(),
   returnResn: z.string().optional(),
   atchFileSn: z.number().optional(),
-  informlSanctnId: z.string().optional(),
+  ifmlAtrzSn: z.number().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
   lastMdfrId: z.string().optional(),

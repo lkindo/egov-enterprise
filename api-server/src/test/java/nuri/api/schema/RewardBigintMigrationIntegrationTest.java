@@ -75,7 +75,9 @@ class RewardBigintMigrationIntegrationTest {
             assertThat(serialSequence(statement, "tb_rward_manage", "rwrd_sn"))
                     .isEqualTo("public.sq_rwrd_sn");
             assertThat(primaryKeyColumn(statement, "tb_rward_manage")).isEqualTo("rwrd_sn");
-            assertThat(outboundForeignKeyCount(statement, "tb_rward_manage")).isEqualTo(1L);
+            // V2_78에서 기존 논리 참조였던 비공식결재를 검증된 FK로 승격했다.
+            // 따라서 첨부파일 FK + 비공식결재 FK의 최신 폐포는 2개다.
+            assertThat(outboundForeignKeyCount(statement, "tb_rward_manage")).isEqualTo(2L);
 
             statement.executeUpdate("""
                     INSERT INTO tb_rward_manage (rwrd_user_id, rwrd_cd, rwrd_nm, confm_yn)

@@ -54,13 +54,18 @@ public class RewardManage extends BaseEntity {
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.file.FileMaster fileMaster;
 
-    @Column(length = 20)
-    private String ifmlAtrzId;
+    @Column(name = "ifml_atrz_sn")
+    private Long ifmlAtrzSn;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "ifml_atrz_sn", referencedColumnName = "ifml_atrz_sn", insertable = false, updatable = false,
+        foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
+    private nuri.business.domain.informalsanction.InformalSanction informalSanction;
 
     // Phase 5.2: 팩토리 파라미터 기반 private 생성자 (빌더/create() 위임 대상)
     private RewardManage(Long rwrdSn, String rwrdUserId, String rwrdCd, String rwrdYmd, String rwrdNm,
                          String cntrbCn, String atrzrId, String confmYn, java.time.LocalDateTime aprvDt,
-                         String rtnRsnCn, Long atchFileSn, String ifmlAtrzId) {
+                         String rtnRsnCn, Long atchFileSn, Long ifmlAtrzSn) {
         this.rwrdSn = rwrdSn;
         this.rwrdUserId = rwrdUserId;
         this.rwrdCd = rwrdCd;
@@ -72,7 +77,7 @@ public class RewardManage extends BaseEntity {
         this.aprvDt = aprvDt;
         this.rtnRsnCn = rtnRsnCn;
         this.atchFileSn = atchFileSn;
-        this.ifmlAtrzId = ifmlAtrzId;
+        this.ifmlAtrzSn = ifmlAtrzSn;
     }
 
     /**
@@ -83,9 +88,9 @@ public class RewardManage extends BaseEntity {
     @Builder
     public static RewardManage create(Long rwrdSn, String rwrdUserId, String rwrdCd, String rwrdYmd, String rwrdNm,
                                       String cntrbCn, String atrzrId, String confmYn, java.time.LocalDateTime aprvDt,
-                                      String rtnRsnCn, Long atchFileSn, String ifmlAtrzId) {
+                                      String rtnRsnCn, Long atchFileSn, Long ifmlAtrzSn) {
         return new RewardManage(rwrdSn, rwrdUserId, rwrdCd, rwrdYmd, rwrdNm, cntrbCn, atrzrId, confmYn, aprvDt,
-                rtnRsnCn, atchFileSn, ifmlAtrzId);
+                rtnRsnCn, atchFileSn, ifmlAtrzSn);
     }
 
     public void update(String rwardDe, String rwardNm, String pblenCn) {

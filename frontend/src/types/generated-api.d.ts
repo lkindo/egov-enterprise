@@ -4626,8 +4626,12 @@ export interface components {
         };
         /** @description 비정형 결재 DTO (표준화) */
         InformalSanctionDto: {
-            /** @description 비정형 결재 ID */
-            ifmlAtrzId?: string;
+            /**
+             * Format: int64
+             * @description 비정형 결재 일련번호
+             * @example 1
+             */
+            ifmlAtrzSn?: number;
             /** @description 업무 구분 코드 */
             taskSeCd: string;
             /** @description 업무 구분 명 */
@@ -6061,7 +6065,8 @@ export interface components {
             returnResn?: string;
             /** Format: int64 */
             atchFileSn?: number;
-            informlSanctnId?: string;
+            /** Format: int64 */
+            ifmlAtrzSn?: number;
             frstRgtrId?: string;
             /** Format: date-time */
             crtDt?: string;
@@ -8919,8 +8924,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -8942,8 +8947,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -8969,8 +8974,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -8992,8 +8997,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -9015,8 +9020,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -9042,8 +9047,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -9622,7 +9627,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                id: number;
             };
             cookie?: never;
         };
@@ -12360,7 +12365,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12412,7 +12417,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -15176,8 +15181,8 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -15202,8 +15207,8 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };

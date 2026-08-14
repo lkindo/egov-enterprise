@@ -46,21 +46,21 @@ class InformalSanctionApiControllerTest extends ControllerTestSupport {
     @DisplayName("비정형 결재 상세 조회 테스트")
     @WithMockCustomUser(username = "user01", esntlId = "user01")
     void getInformalSanctionTest() throws Exception {
-        given(informalSanctionService.getInformalSanction("IS1", "user01"))
-                .willReturn(InformalSanctionDto.builder().ifmlAtrzId("IS1").build());
+        given(informalSanctionService.getInformalSanction(1L, "user01"))
+                .willReturn(InformalSanctionDto.builder().ifmlAtrzSn(1L).build());
 
-        mockMvc.perform(get("/api/v1/informal-sanctions/IS1"))
+        mockMvc.perform(get("/api/v1/informal-sanctions/1"))
                 .andExpect(status().isOk());
 
-        verify(informalSanctionService).getInformalSanction("IS1", "user01");
+        verify(informalSanctionService).getInformalSanction(1L, "user01");
     }
 
     @Test
     @DisplayName("비정형 결재 등록 테스트")
     @WithMockCustomUser(username = "user01", esntlId = "user01")
     void registerInformalSanctionTest() throws Exception {
-        // 결재 PK 는 서비스가 INFRML_ 로 생성·반환한다(egov IdGnr 제거). 컨트롤러는 그 반환값을 응답한다.
-        given(informalSanctionService.registerInformalSanction(org.mockito.ArgumentMatchers.any())).willReturn("INFRML_0000000000001");
+        // 결재 PK는 DB identity가 생성하고 서비스가 숫자 일련번호를 반환한다.
+        given(informalSanctionService.registerInformalSanction(org.mockito.ArgumentMatchers.any())).willReturn(1L);
 
         InformalSanctionDto dto = InformalSanctionDto.builder()
                 .taskSeCd("001")
@@ -85,7 +85,7 @@ class InformalSanctionApiControllerTest extends ControllerTestSupport {
                 .aprvrId("boss01")
                 .build();
 
-        mockMvc.perform(put("/api/v1/informal-sanctions/IS1")
+        mockMvc.perform(put("/api/v1/informal-sanctions/1")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -96,7 +96,7 @@ class InformalSanctionApiControllerTest extends ControllerTestSupport {
     @DisplayName("비정형 결재 승인/반려 테스트")
     @WithMockCustomUser(username = "user01", esntlId = "user01")
     void confirmInformalSanctionTest() throws Exception {
-        mockMvc.perform(patch("/api/v1/informal-sanctions/IS1/confirm")
+        mockMvc.perform(patch("/api/v1/informal-sanctions/1/confirm")
                         .with(csrf())
                         .param("confmAt", "C")
                         .param("returnResn", ""))
@@ -107,7 +107,7 @@ class InformalSanctionApiControllerTest extends ControllerTestSupport {
     @DisplayName("비정형 결재 삭제 테스트")
     @WithMockCustomUser(username = "user01", esntlId = "user01")
     void deleteInformalSanctionTest() throws Exception {
-        mockMvc.perform(delete("/api/v1/informal-sanctions/IS1")
+        mockMvc.perform(delete("/api/v1/informal-sanctions/1")
                         .with(csrf()))
                 .andExpect(status().isOk());
     }

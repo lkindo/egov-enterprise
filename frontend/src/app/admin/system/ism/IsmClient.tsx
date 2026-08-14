@@ -94,10 +94,10 @@ export default function IsmClient({
  };
 
  const onFormSubmit = async (values: IsmFormValues, aprvYn: 'C' | 'R') => {
- if (!selectedSanctn?.ifmlAtrzId) return;
+ if (!selectedSanctn?.ifmlAtrzSn) return;
  try {
  setLoading(true);
- await ismAdminService.confirmInfrmlSanctn(selectedSanctn.ifmlAtrzId, aprvYn, values.rjctRsnCn);
+ await ismAdminService.confirmInfrmlSanctn(selectedSanctn.ifmlAtrzSn, aprvYn, values.rjctRsnCn);
  toast(`결재 시퀀스가 ${aprvYn === SANCTION_STATUS.APPROVED ? '성공적으로 승인' : '반려'} 처리되었습니다.`, 'success');
  setIsOpen(false);
  router.refresh();
@@ -140,7 +140,7 @@ export default function IsmClient({
  </div>
  <div className="flex flex-col text-left">
  <span className="text-sm font-bold text-foreground tracking-tight">{item?.aplcntNm || item?.aplcntId || 'UNKNOWN'}</span>
- <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.3em] font-mono ">ID: {item?.ifmlAtrzId?.slice(0, 8) || 'N/A'}</span>
+ <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.3em] font-mono ">SN: {item?.ifmlAtrzSn ?? 'N/A'}</span>
  </div>
  </div>
  ),
@@ -271,7 +271,7 @@ export default function IsmClient({
  columns={columns}
  data={ismList}
  loading={loading}
- keyField="ifmlAtrzId"
+ keyField="ifmlAtrzSn"
  error={listError}
  onRetry={() => router.refresh()}
  emptyMessage="결재 대기 중인 약식 결재 요청이 없습니다."
@@ -324,7 +324,7 @@ export default function IsmClient({
  <span className="text-xs font-bold text-surface-inverse-muted uppercase tracking-widest">{selectedSanctn?.aplcntNm || selectedSanctn?.aplcntId}</span>
  </div>
  <div className="flex items-center gap-3">
- <span className="text-xs font-bold text-white/20 tracking-[0.3em] font-mono uppercase ">UUID: {selectedSanctn?.ifmlAtrzId}</span>
+ <span className="text-xs font-bold text-white/20 tracking-[0.3em] font-mono uppercase ">SN: {selectedSanctn?.ifmlAtrzSn}</span>
  </div>
  </div>
  </div>

@@ -45,7 +45,7 @@ public class ApprovalApiController {
     @Operation(summary = "Confirm Approval (Approve/Reject)")
     @PutMapping("/{id}/confirm")
     public ResponseEntity<ApiResponse<Void>> confirm(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody Map<String, String> request) {
         approvalService.confirmInformalSanction(id, request.get("status"), request.get("reason"));
         return ResponseEntity.ok(ApiResponse.success(null));

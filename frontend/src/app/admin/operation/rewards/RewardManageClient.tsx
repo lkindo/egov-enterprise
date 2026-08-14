@@ -82,7 +82,6 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
         ...values,
         confmAt: 'N',
         sanctnerId: 'SYSTEM',
-        informlSanctnId: `ISM_${Date.now()}`,
         frstRgtrId: 'SYSTEM',
         lastMdfrId: 'SYSTEM',
       };

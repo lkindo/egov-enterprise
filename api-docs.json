@@ -909,10 +909,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -940,10 +941,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -981,10 +983,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1014,10 +1017,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1045,10 +1049,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1086,10 +1091,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2009,7 +2015,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -6250,7 +6257,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6346,7 +6353,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -11812,10 +11819,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -11861,10 +11869,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -16676,11 +16685,11 @@
         "type": "object",
         "description": "비정형 결재 DTO (표준화)",
         "properties": {
-          "ifmlAtrzId": {
-            "type": "string",
-            "description": "비정형 결재 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "ifmlAtrzSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "비정형 결재 일련번호",
+            "example": 1
           },
           "taskSeCd": {
             "type": "string",
@@ -19629,8 +19638,9 @@
             "type": "integer",
             "format": "int64"
           },
-          "informlSanctnId": {
-            "type": "string"
+          "ifmlAtrzSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "frstRgtrId": {
             "type": "string"

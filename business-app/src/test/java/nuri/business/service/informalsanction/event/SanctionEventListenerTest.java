@@ -42,7 +42,7 @@ class SanctionEventListenerTest {
     void handleStatusChangedTest() {
         // Given
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
-                "SANCTION_001", "USER_001", "SANCTIONER_001", nuri.business.domain.informalsanction.SanctionStatus.APPROVED, "승인되었습니다.");
+                1L, "USER_001", "SANCTIONER_001", nuri.business.domain.informalsanction.SanctionStatus.APPROVED, "승인되었습니다.");
 
         UserDto userDto = UserDto.builder()
                 .userId("USER_001")
@@ -70,7 +70,7 @@ class SanctionEventListenerTest {
     void fallsBackToSystemWhenActorAbsent() {
         // Given — 배치·시스템 트리거처럼 사람 actor 가 없는 경로.
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
-                "SANCTION_002", "USER_001", null,
+                2L, "USER_001", null,
                 nuri.business.domain.informalsanction.SanctionStatus.APPROVED, "승인되었습니다.");
 
         UserDto userDto = UserDto.builder()
@@ -95,7 +95,7 @@ class SanctionEventListenerTest {
     void handleStatusChangedNoUserTest() {
         // Given
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
-                "SANCTION_001", "USER_001", "SANCTIONER_001", nuri.business.domain.informalsanction.SanctionStatus.APPROVED, "승인되었습니다.");
+                1L, "USER_001", "SANCTIONER_001", nuri.business.domain.informalsanction.SanctionStatus.APPROVED, "승인되었습니다.");
 
         given(userService.getUserById("USER_001")).willReturn(null);
 
@@ -112,7 +112,7 @@ class SanctionEventListenerTest {
     void handleStatusChangedNoContactTest() {
         // Given
         SanctionStatusChangedEvent event = new SanctionStatusChangedEvent(
-                "SANCTION_001", "USER_001", "SANCTIONER_001", nuri.business.domain.informalsanction.SanctionStatus.APPROVED, "승인되었습니다.");
+                1L, "USER_001", "SANCTIONER_001", nuri.business.domain.informalsanction.SanctionStatus.APPROVED, "승인되었습니다.");
 
         UserDto userDto = UserDto.builder()
                 .userId("USER_001")

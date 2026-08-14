@@ -40,10 +40,10 @@ public class InformalSanctionService {
                 .map(this::convertToDto);
     }
 
-    public InformalSanctionDto getInformalSanction(String ifmlAtrzId, String participantId) {
+    public InformalSanctionDto getInformalSanction(Long ifmlAtrzSn, String participantId) {
         requireParticipantId(participantId);
         InformalSanction entity = informalSanctionRepository.findByIdAndParticipant(
-                        Objects.requireNonNull(ifmlAtrzId), participantId)
+                        Objects.requireNonNull(ifmlAtrzSn), participantId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         InformalSanctionDto dto = convertToDto(entity);
@@ -58,30 +58,22 @@ public class InformalSanctionService {
     }
 
     @Transactional
-    public String registerInformalSanction(InformalSanctionDto dto) {
-        // [정체성] 결재 PK 는 서비스가 INFRML_ 접두로 생성한다(단일 소유). 과거 컨트롤러가 egov IdGnr 를
-        // by-type 주입하다 @Primary egovFileIdGnrService 에 오해소되어 "FILE_" 접두를 발급하던 잠복 결함 제거.
-        String ifmlAtrzId = dto.getIfmlAtrzId();
-        if (ifmlAtrzId == null || ifmlAtrzId.isEmpty()) {
-            ifmlAtrzId = nuri.foundation.core.util.IdGenerationUtil.generateId("INFRML_", 13);
-        }
-
+    public Long registerInformalSanction(InformalSanctionDto dto) {
         InformalSanction entity = InformalSanction.builder()
-                .ifmlAtrzId(ifmlAtrzId)
                 .taskSeCd(dto.getTaskSeCd())
                 .aplcntId(dto.getAplcntId())
                 .reqYmd(dto.getReqYmd())
                 .aprvrId(dto.getAprvrId())
                 .aprvYn(SanctionStatus.REQUESTED.getCode()) // 초기상태: 신청
                 .build();
-        informalSanctionRepository.save(Objects.requireNonNull(entity));
-        return ifmlAtrzId;
+        InformalSanction saved = informalSanctionRepository.save(Objects.requireNonNull(entity));
+        return Objects.requireNonNull(saved).getIfmlAtrzSn();
     }
 
     @Transactional
     public void updateInformalSanction(InformalSanctionDto dto) {
         InformalSanction entity = informalSanctionRepository
-                .findById(Objects.requireNonNull(dto.getIfmlAtrzId()))
+                .findById(Objects.requireNonNull(dto.getIfmlAtrzSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (신청자 본인) — 신청서 정정·철회는 대리 불가이므로 관리자도 우회하지 않는다.
@@ -96,9 +88,9 @@ public class InformalSanctionService {
     }
 
     @Transactional
-    public void deleteInformalSanction(String ifmlAtrzId) {
+    public void deleteInformalSanction(Long ifmlAtrzSn) {
         InformalSanction entity = informalSanctionRepository
-                .findById(Objects.requireNonNull(ifmlAtrzId))
+                .findById(Objects.requireNonNull(ifmlAtrzSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (신청자 본인) — 신청서 정정·철회는 대리 불가이므로 관리자도 우회하지 않는다.
@@ -113,8 +105,8 @@ public class InformalSanctionService {
     }
 
     @Transactional
-    public void confirmInformalSanction(String ifmlAtrzId, String aprvYn, String rjctRsnCn) {
-        InformalSanction entity = informalSanctionRepository.findById(Objects.requireNonNull(ifmlAtrzId))
+    public void confirmInformalSanction(Long ifmlAtrzSn, String aprvYn, String rjctRsnCn) {
+        InformalSanction entity = informalSanctionRepository.findById(Objects.requireNonNull(ifmlAtrzSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // [보안] 권한 확인 (결재자 본인) — 결재는 대리 불가이므로 관리자도 우회하지 않는다.
@@ -132,7 +124,7 @@ public class InformalSanctionService {
         // 이벤트 발행 — 커밋 후 발행하여 알림 리스너(@Async)가 롤백 시 허위 알림을 보내지 않도록 한다.
         final nuri.business.service.informalsanction.event.SanctionStatusChangedEvent statusChangedEvent =
                 new nuri.business.service.informalsanction.event.SanctionStatusChangedEvent(
-                        ifmlAtrzId, entity.getAplcntId(), entity.getAprvrId(),
+                        ifmlAtrzSn, entity.getAplcntId(), entity.getAprvrId(),
                         SanctionStatus.fromCode(aprvYn), rjctRsnCn);
         nuri.foundation.core.util.TransactionUtils.runAfterCommit(() -> eventPublisher.publishEvent(statusChangedEvent));
     }

@@ -50,29 +50,28 @@ public class InformalSanctionApiController {
     @GetMapping("/{informalSanctionId}")
     public ResponseEntity<ApiResponse<InformalSanctionDto>> getInformalSanction(
             @LoginUser CustomUserDetails userDetails,
-            @Parameter(description = "결재 ID") @PathVariable("informalSanctionId") String ifmlAtrzId) {
+            @Parameter(description = "결재 일련번호") @PathVariable("informalSanctionId") Long ifmlAtrzSn) {
         return ResponseEntity.ok(ApiResponse.success(
-                informalSanctionService.getInformalSanction(ifmlAtrzId, userDetails.getEsntlId())));
+                informalSanctionService.getInformalSanction(ifmlAtrzSn, userDetails.getEsntlId())));
     }
 
     @Operation(summary = "비정형 결재 등록", description = "새로운 비정형 결재를 요청합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> registerInformalSanction(
+    public ResponseEntity<ApiResponse<Long>> registerInformalSanction(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody InformalSanctionDto dto) throws Exception {
 
-        // 결재 PK 생성은 서비스가 단일 소유(INFRML_ 접두). 과거 egov IdGnr by-type 오해소로 "FILE_" 발급하던 결함 제거.
         dto.setAplcntId(userDetails.getEsntlId());
-        String id = informalSanctionService.registerInformalSanction(dto);
-        return ResponseEntity.ok(ApiResponse.success(id));
+        Long ifmlAtrzSn = informalSanctionService.registerInformalSanction(dto);
+        return ResponseEntity.ok(ApiResponse.success(ifmlAtrzSn));
     }
 
     @Operation(summary = "비정형 결재 수정", description = "비정형 결재 정보를 수정합니다.")
     @PutMapping("/{informalSanctionId}")
     public ResponseEntity<ApiResponse<Void>> updateInformalSanction(
-            @Parameter(description = "결재 ID") @PathVariable("informalSanctionId") String ifmlAtrzId,
+            @Parameter(description = "결재 일련번호") @PathVariable("informalSanctionId") Long ifmlAtrzSn,
             @Valid @RequestBody InformalSanctionDto dto) {
-        dto.setIfmlAtrzId(ifmlAtrzId);
+        dto.setIfmlAtrzSn(ifmlAtrzSn);
         informalSanctionService.updateInformalSanction(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
@@ -80,18 +79,18 @@ public class InformalSanctionApiController {
     @Operation(summary = "비정형 결재 승인/반려", description = "결재자가 결재를 승인 또는 반려 처리합니다.")
     @PatchMapping("/{informalSanctionId}/confirm")
     public ResponseEntity<ApiResponse<Void>> confirmInformalSanction(
-            @Parameter(description = "결재 ID") @PathVariable("informalSanctionId") String ifmlAtrzId,
+            @Parameter(description = "결재 일련번호") @PathVariable("informalSanctionId") Long ifmlAtrzSn,
             @RequestParam String confmAt,
             @RequestParam(required = false) String returnResn) {
-        informalSanctionService.confirmInformalSanction(ifmlAtrzId, confmAt, returnResn);
+        informalSanctionService.confirmInformalSanction(ifmlAtrzSn, confmAt, returnResn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "비정형 결재 삭제", description = "비정형 결재 정보를 삭제합니다.")
     @DeleteMapping("/{informalSanctionId}")
     public ResponseEntity<ApiResponse<Void>> deleteInformalSanction(
-            @Parameter(description = "결재 ID") @PathVariable("informalSanctionId") String ifmlAtrzId) {
-        informalSanctionService.deleteInformalSanction(ifmlAtrzId);
+            @Parameter(description = "결재 일련번호") @PathVariable("informalSanctionId") Long ifmlAtrzSn) {
+        informalSanctionService.deleteInformalSanction(ifmlAtrzSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

@@ -40,7 +40,7 @@ export interface Reward {
   sanctnDt?: string;
   returnResn?: string;
   atchFileSn?: number;
-  informlSanctnId?: string;
+  ifmlAtrzSn?: number;
   frstRgtrId?: string;
   crtDt?: string;
   lastMdfrId?: string;

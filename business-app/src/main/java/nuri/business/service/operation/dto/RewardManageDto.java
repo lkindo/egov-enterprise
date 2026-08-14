@@ -25,7 +25,7 @@ public class RewardManageDto {
     private LocalDateTime sanctnDt;
     private String returnResn;
     private Long atchFileSn;
-    private String informlSanctnId;
+    private Long ifmlAtrzSn;
     private String frstRgtrId;
     private LocalDateTime crtDt;
     private String lastMdfrId;

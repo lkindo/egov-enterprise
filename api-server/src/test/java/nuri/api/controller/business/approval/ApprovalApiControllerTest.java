@@ -58,7 +58,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
     void confirmApprovalTest() throws Exception {
         Map<String, String> request = Map.of("status", "C", "reason", "Approved");
 
-        mockMvc.perform(put("/api/v1/approvals/IS1/confirm")
+        mockMvc.perform(put("/api/v1/approvals/1/confirm")
                         .with(csrf())
                         .with(user(mockUser()))
                         .contentType(MediaType.APPLICATION_JSON)

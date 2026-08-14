@@ -68,7 +68,7 @@ class InformalSanctionServiceTest {
     void getInformalSanctionListTest() {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
-        InformalSanction sanction = InformalSanction.builder().ifmlAtrzId("IS1").build();
+        InformalSanction sanction = InformalSanction.builder().ifmlAtrzSn(1L).build();
         given(informalSanctionRepository.findByAplcntId("user1", pageable)).willReturn(new PageImpl<>(List.of(sanction)));
 
         // When
@@ -83,30 +83,30 @@ class InformalSanctionServiceTest {
     void getInformalSanction_Success() {
         // Given
         InformalSanction sanction = InformalSanction.builder()
-                .ifmlAtrzId("IS1").taskSeCd("C1").aplcntId("user1").aprvrId("boss1").build();
-        given(informalSanctionRepository.findByIdAndParticipant("IS1", "user1"))
+                .ifmlAtrzSn(1L).taskSeCd("C1").aplcntId("user1").aprvrId("boss1").build();
+        given(informalSanctionRepository.findByIdAndParticipant(1L, "user1"))
                 .willReturn(Optional.of(sanction));
         given(commonCodeService.getCodesByGroup("COM075")).willReturn(List.of());
 
         // When
-        InformalSanctionDto result = informalSanctionService.getInformalSanction("IS1", "user1");
+        InformalSanctionDto result = informalSanctionService.getInformalSanction(1L, "user1");
 
         // Then
-        assertThat(result.getIfmlAtrzId()).isEqualTo("IS1");
+        assertThat(result.getIfmlAtrzSn()).isEqualTo(1L);
     }
 
     @Test
     @DisplayName("상세 조회 테스트 - 실패")
     void getInformalSanction_NotFound_ThrowsException() {
         // Given
-        given(informalSanctionRepository.findByIdAndParticipant("IS1", "user1"))
+        given(informalSanctionRepository.findByIdAndParticipant(1L, "user1"))
                 .willReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> informalSanctionService.getInformalSanction("IS1", "user1"))
+        assertThatThrownBy(() -> informalSanctionService.getInformalSanction(1L, "user1"))
                 .isInstanceOf(BusinessException.class);
 
-        verify(informalSanctionRepository, never()).findById("IS1");
+        verify(informalSanctionRepository, never()).findById(1L);
     }
 
     @Test
@@ -114,9 +114,10 @@ class InformalSanctionServiceTest {
     void registerInformalSanctionTest() {
         // Given
         InformalSanctionDto dto = InformalSanctionDto.builder()
-                .ifmlAtrzId("IS1")
                 .taskSeCd("C1")
                 .build();
+        given(informalSanctionRepository.save(any(InformalSanction.class)))
+                .willReturn(InformalSanction.builder().ifmlAtrzSn(1L).build());
 
         // When
         informalSanctionService.registerInformalSanction(dto);
@@ -131,16 +132,16 @@ class InformalSanctionServiceTest {
         // Given
         String sanctionerId = "admin";
         InformalSanction sanction = InformalSanction.builder()
-                .ifmlAtrzId("IS1")
+                .ifmlAtrzSn(1L)
                 .aplcntId("user1")
                 .aprvrId(sanctionerId)
                 .aprvYn(SanctionStatus.REQUESTED.getCode())
                 .build();
-        given(informalSanctionRepository.findById("IS1")).willReturn(Optional.of(sanction));
+        given(informalSanctionRepository.findById(1L)).willReturn(Optional.of(sanction));
         securityUtilMock.when(SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(sanctionerId));
 
         // When
-        informalSanctionService.confirmInformalSanction("IS1", SanctionStatus.APPROVED.getCode(), "Reason");
+        informalSanctionService.confirmInformalSanction(1L, SanctionStatus.APPROVED.getCode(), "Reason");
 
         // Then
         assertThat(sanction.getAprvYn()).isEqualTo(SanctionStatus.APPROVED.getCode());

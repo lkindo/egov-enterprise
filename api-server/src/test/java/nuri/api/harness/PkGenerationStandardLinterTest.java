@@ -150,6 +150,10 @@ class PkGenerationStandardLinterTest {
             //   제거하고, 자식 0건인 8억 ROOT 기술 시드 및 권한 매핑을 정리했다.
             // [2026-08-14 제거] ReprtStats — E2E 0행·inbound/outbound FK 0인 단독 기술키를
             //   V2_77에서 rptp_sn BIGINT IDENTITY로 전환하고 REPRT_ 수동 채번을 제거했다.
+            // [2026-08-14 제거] InformalSanction — V2_78에서 ifml_atrz_id 문자열 기술키를
+            //   ifml_atrz_sn BIGINT IDENTITY로 전환하고, tb_rward_manage의 논리 참조도 숫자로
+            //   백필한 뒤 검증된 FK로 승격했다. E2E 부모·자식 0행, 기존 고아 0건이며
+            //   결재·포상 JPA/API/프론트 계약과 수동 INFRML_ 생성 경로를 함께 이관했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "DeptManage", "EventInfo",
@@ -166,7 +170,7 @@ class PkGenerationStandardLinterTest {
             //   ⚠ 물리 테이블은 건드리지 않았다 — 테이블 삭제는 스키마 변경이라 별도 승인이 필요하다.
             //     현재 상태는 "엔티티 없는 빈 테이블 2개" 이며 그 처분은 미결로 남는다.
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
-            "GroupManage", "InformalSanction", "InstitutionCode",
+            "GroupManage", "InstitutionCode",
             "LoginPolicy", "Notification", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "RoleInfo",
             "SiteMap", "Sms", "SystemPolicy", "Template",
