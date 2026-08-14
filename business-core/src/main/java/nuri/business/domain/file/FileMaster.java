@@ -17,8 +17,9 @@ import java.util.List;
 public class FileMaster extends BaseEntity {
 
     @Id
-    @Column(name = "atch_file_id", length = 20)
-    private String atchFileId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "atch_file_sn", updatable = false, nullable = false)
+    private Long atchFileSn;
 
     @Column(nullable = false, length = 1)
     private String useYn;
@@ -26,24 +27,29 @@ public class FileMaster extends BaseEntity {
     @OneToMany(mappedBy = "fileMaster", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<FileDetail> fileDetails = new ArrayList<>();
 
-    public FileMaster(String atchFileId) {
-        this.atchFileId = atchFileId;
+    public FileMaster(Long atchFileSn) {
+        this.atchFileSn = atchFileSn;
         this.useYn = "Y";
+    }
+
+    /** 신규 첨부 마스터 생성. 식별자는 DB IDENTITY가 부여한다. */
+    public static FileMaster create() {
+        return new FileMaster(null);
     }
 
     /**
      * 팩토리(create) 위임용 전체 필드 생성자.
      * @Builder.Default 이던 fileDetails 는 널병합으로 기본값(빈 리스트)을 보장한다.
      */
-    private FileMaster(String atchFileId, String useYn, List<FileDetail> fileDetails) {
-        this.atchFileId = atchFileId;
+    private FileMaster(Long atchFileSn, String useYn, List<FileDetail> fileDetails) {
+        this.atchFileSn = atchFileSn;
         this.useYn = useYn;
         this.fileDetails = fileDetails != null ? fileDetails : new ArrayList<>();
     }
 
     @Builder
-    public static FileMaster create(String atchFileId, String useYn, List<FileDetail> fileDetails) {
-        return new FileMaster(atchFileId, useYn, fileDetails);
+    public static FileMaster create(Long atchFileSn, String useYn, List<FileDetail> fileDetails) {
+        return new FileMaster(atchFileSn, useYn, fileDetails);
     }
 
     public void addFileDetail(FileDetail detail) {

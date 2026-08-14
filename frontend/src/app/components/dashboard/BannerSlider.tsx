@@ -78,7 +78,7 @@ export function BannerSlider() {
       ) : (
         <div className="absolute inset-0" style={{ opacity: 0.8 }}>
           <AttachmentImage
-            atchFileId={currentBanner.atchFileId}
+            atchFileSn={currentBanner.atchFileSn}
             alt={currentBanner.bnrNm}
             className="h-full w-full object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
           />

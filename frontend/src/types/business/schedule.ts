@@ -12,7 +12,7 @@ interface Schedule {
   schdlPlcNm?: string;
   schdlImprtCd?: string;
   schdlPicId?: string;
-  atchFileId?: string;
+  atchFileSn?: number;
   reptSeCd?: string;
   frstRgtrId?: string;
   crtDt?: string;

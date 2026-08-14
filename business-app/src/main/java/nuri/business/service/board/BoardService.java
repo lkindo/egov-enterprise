@@ -182,7 +182,7 @@ public class BoardService extends BaseAbstractService {
                                         .pstCn(request.pstCn())
                                         .pstBgngYmd(normalizeYmd(request.pstBgngYmd()))
                                         .pstEndYmd(normalizeYmd(request.pstEndYmd()))
-                                        .atchFileId(request.atchFileId())
+                                        .atchFileSn(request.atchFileSn())
                                         .qnaCatCd(request.qnaCatCd())
                                         .scrtYn(request.scrtYn())
                                         .pswd(request.pswd())
@@ -205,14 +205,14 @@ public class BoardService extends BaseAbstractService {
         public Long createPostWithFiles(@NonNull String userId, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
-                String atchFileId = request.atchFileId();
+                Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
-                        atchFileId = fileService.uploadFiles(files);
+                        atchFileSn = fileService.uploadFiles(files);
                 }
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.pstBgngYmd(), request.pstEndYmd(), atchFileId,
+                                request.pstBgngYmd(), request.pstEndYmd(), atchFileSn,
                                 request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
                                 request.scrtYn(), request.useYn(), request.pswd());
 
@@ -265,7 +265,7 @@ public class BoardService extends BaseAbstractService {
                                 .pstCn(request.pstCn())
                                 .pstBgngYmd(normalizeYmd(request.pstBgngYmd()))
                                 .pstEndYmd(normalizeYmd(request.pstEndYmd()))
-                                .atchFileId(request.atchFileId())
+                                .atchFileSn(request.atchFileSn())
                                 .qnaCatCd(request.qnaCatCd())
                                 .scrtYn(request.scrtYn())
                                 .pswd(request.pswd())
@@ -285,14 +285,14 @@ public class BoardService extends BaseAbstractService {
         public Long replyPostWithFiles(@NonNull String userId, @NonNull Long parentSn,
                         @NonNull BoardSaveRequest request,
                         List<MultipartFile> files) throws IOException {
-                String atchFileId = request.atchFileId();
+                Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
-                        atchFileId = fileService.uploadFiles(files);
+                        atchFileSn = fileService.uploadFiles(files);
                 }
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.pstBgngYmd(), request.pstEndYmd(), atchFileId,
+                                request.pstBgngYmd(), request.pstEndYmd(), atchFileSn,
                                 request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
                                 request.scrtYn(), request.useYn(), request.pswd());
 
@@ -333,7 +333,7 @@ public class BoardService extends BaseAbstractService {
                                 board.getUserNm(),
                                 request.pswd() != null ? request.pswd() : board.getPswd(),
                                 normalizeYmd(request.pstBgngYmd()), normalizeYmd(request.pstEndYmd()),
-                                request.atchFileId(), eventDate,
+                                request.atchFileSn(), eventDate,
                                 request.qnaSttsCd() != null ? request.qnaSttsCd() : board.getQnaSttsCd(),
                                 request.qnaCatCd(), request.scrtYn());
         }
@@ -342,19 +342,19 @@ public class BoardService extends BaseAbstractService {
         public void updatePostWithFiles(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
-                String atchFileId = request.atchFileId();
+                Long atchFileSn = request.atchFileSn();
 
                 if (files != null && !files.isEmpty()) {
-                        if (atchFileId == null || atchFileId.isEmpty()) {
-                                atchFileId = fileService.uploadFiles(files);
+                        if (atchFileSn == null) {
+                                atchFileSn = fileService.uploadFiles(files);
                         } else {
-                                fileService.updateFiles(atchFileId, files);
+                                fileService.updateFiles(atchFileSn, files);
                         }
                 }
 
                 BoardSaveRequest newRequest = new BoardSaveRequest(
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
-                                request.pstBgngYmd(), request.pstEndYmd(), atchFileId,
+                                request.pstBgngYmd(), request.pstEndYmd(), atchFileSn,
                                 request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
                                 request.scrtYn(), request.useYn(), request.pswd());
 

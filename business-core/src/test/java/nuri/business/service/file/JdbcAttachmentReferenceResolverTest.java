@@ -33,7 +33,7 @@ import static org.mockito.Mockito.when;
 @DisplayName("JdbcAttachmentReferenceResolver — 참조원 조회 SQL 조립")
 class JdbcAttachmentReferenceResolverTest {
 
-    private static final String ATCH_FILE_ID = "FILE_ABC123";
+    private static final Long ATCH_FILE_SN = 101L;
     private static final String LOGIN_ID = "webmaster";
     private static final String ESNTL_ID = "USR_0000000000000001";
 
@@ -84,7 +84,7 @@ class JdbcAttachmentReferenceResolverTest {
     void derivedSourceIsNeverQueried() {
         CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
 
-        jdbc.resolver().resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+        jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(jdbc.sqls)
                 .as("DERIVED 참조원을 조회하면 '다운로드 이력이 곧 열람 권한' 이라는 잘못된 축이 생긴다")
@@ -94,20 +94,20 @@ class JdbcAttachmentReferenceResolverTest {
     }
 
     @Test
-    @DisplayName("파라미터는 SELECT 절(소유 술어) → WHERE 절(atchFileId) 순으로 바인딩된다")
+    @DisplayName("파라미터는 SELECT 절(소유 술어) → WHERE 절(atchFileSn) 순으로 바인딩된다")
     void ownerParametersAreBoundBeforeTheAttachmentId() {
         CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
 
-        jdbc.resolver().resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+        jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
-        // BOARD: frst_rgtr_id = ?(loginId) OR user_id = ?(esntlId), 그리고 마지막이 atchFileId.
+        // BOARD: frst_rgtr_id = ?(loginId) OR user_id = ?(esntlId), 그리고 마지막이 atchFileSn.
         assertThat(jdbc.paramsFor(AttachmentSource.BOARD))
                 .as("순서가 어긋나면 남의 식별자로 소유권을 판정하게 된다")
-                .containsExactly(LOGIN_ID, ESNTL_ID, ATCH_FILE_ID);
+                .containsExactly(LOGIN_ID, ESNTL_ID, ATCH_FILE_SN);
 
-        // NOTE: loginId 1개 + esntlId 2개(발신·수신 EXISTS) + atchFileId.
+        // NOTE: loginId 1개 + esntlId 2개(발신·수신 EXISTS) + atchFileSn.
         assertThat(jdbc.paramsFor(AttachmentSource.NOTE))
-                .containsExactly(LOGIN_ID, ESNTL_ID, ESNTL_ID, ATCH_FILE_ID);
+                .containsExactly(LOGIN_ID, ESNTL_ID, ESNTL_ID, ATCH_FILE_SN);
 
         // 두 축이 모두 있으면 OR 로 이어야 한다. 구분자가 빠지면 SQL 이 깨지고,
         // AND 로 바뀌면 '작성자이면서 동시에 esntlId 소유자' 라는 성립 불가 조건이 된다.
@@ -120,7 +120,7 @@ class JdbcAttachmentReferenceResolverTest {
     void personalSourcesCompileSharedPredicateToFalse() {
         CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
 
-        jdbc.resolver().resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+        jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(jdbc.sqlFor(AttachmentSource.NOTE))
                 .as("개인 귀속인데 공유 술어가 참이 되면 첨부가 전체 공개된다")
@@ -134,9 +134,9 @@ class JdbcAttachmentReferenceResolverTest {
     void missingIdentityAxesProduceNoOwnerPredicate() {
         CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
 
-        jdbc.resolver().resolve(ATCH_FILE_ID, null, null);
+        jdbc.resolver().resolve(ATCH_FILE_SN, null, null);
 
-        assertThat(jdbc.paramsFor(AttachmentSource.BOARD)).containsExactly(ATCH_FILE_ID);
+        assertThat(jdbc.paramsFor(AttachmentSource.BOARD)).containsExactly(ATCH_FILE_SN);
         assertThat(jdbc.sqlFor(AttachmentSource.NOTE)).doesNotContain("tb_note_sndng");
         // 소유 술어가 비면 항상-거짓으로 채워야 한다. 비운 채로 두면 SQL 문법이 깨지고,
         // 참으로 채우면 미인증자에게 소유 근거가 서 버린다.
@@ -148,7 +148,7 @@ class JdbcAttachmentReferenceResolverTest {
     @DisplayName("소유 근거가 하나라도 있으면 ownerGrant 로 집계된다")
     void ownerHitIsAggregated() {
         AttachmentReferenceResolver.Grants grants =
-                new CapturingJdbc(1, 0, 1).resolver().resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+                new CapturingJdbc(1, 0, 1).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(grants.ownerGrant()).isTrue();
         assertThat(grants.sharedGrant()).isFalse();
@@ -158,7 +158,7 @@ class JdbcAttachmentReferenceResolverTest {
     @DisplayName("공유 근거가 하나라도 있으면 sharedGrant 로 집계된다")
     void sharedHitIsAggregated() {
         AttachmentReferenceResolver.Grants grants =
-                new CapturingJdbc(1, 1, 0).resolver().resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+                new CapturingJdbc(1, 1, 0).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(grants.sharedGrant()).isTrue();
         assertThat(grants.ownerGrant()).isFalse();
@@ -168,7 +168,7 @@ class JdbcAttachmentReferenceResolverTest {
     @DisplayName("개인 귀속 참조원에 행이 있으면 personalReference 가 선다 — 관리자 우회 차단 근거")
     void personalReferenceIsFlaggedWhenRowsExist() {
         AttachmentReferenceResolver.Grants grants =
-                new CapturingJdbc(1, 0, 0).resolver().resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+                new CapturingJdbc(1, 0, 0).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(grants.personalReference()).isTrue();
     }
@@ -177,7 +177,7 @@ class JdbcAttachmentReferenceResolverTest {
     @DisplayName("참조 행이 하나도 없으면 어떤 근거도 서지 않는다 — 고아 첨부")
     void noRowsMeansNoGrants() {
         AttachmentReferenceResolver.Grants grants =
-                new CapturingJdbc(0, 0, 0).resolver().resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+                new CapturingJdbc(0, 0, 0).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(grants.sharedGrant()).isFalse();
         assertThat(grants.ownerGrant()).isFalse();
@@ -194,7 +194,7 @@ class JdbcAttachmentReferenceResolverTest {
                 .thenThrow(new QueryTimeoutException("db down"));
 
         AttachmentReferenceResolver.Grants grants =
-                new JdbcAttachmentReferenceResolver(template).resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+                new JdbcAttachmentReferenceResolver(template).resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(grants.sharedGrant()).isFalse();
         assertThat(grants.ownerGrant()).isFalse();
@@ -211,22 +211,22 @@ class JdbcAttachmentReferenceResolverTest {
                 .thenThrow(new QueryTimeoutException("db down"));
 
         AttachmentReferenceResolver.Grants grants =
-                new JdbcAttachmentReferenceResolver(template).resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+                new JdbcAttachmentReferenceResolver(template).resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(grants).isNotNull();
     }
 
     @Test
-    @DisplayName("조회 SQL 은 참조원 테이블을 atch_file_id 로 좁힌다 — 전수 스캔·오조회 방지")
+    @DisplayName("조회 SQL 은 참조원 테이블을 atch_file_sn 로 좁힌다 — 전수 스캔·오조회 방지")
     void queryNarrowsByAttachmentId() {
         CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
 
-        jdbc.resolver().resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+        jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         for (String sql : jdbc.sqls) {
             assertThat(sql).contains("COUNT(*) AS ref_cnt");
         }
-        assertThat(jdbc.sqlFor(AttachmentSource.BOARD)).contains("WHERE atch_file_id = ?");
+        assertThat(jdbc.sqlFor(AttachmentSource.BOARD)).contains("WHERE atch_file_sn = ?");
         // 팝업만 연결 방식이 다르다 — URL 문자열 정확 일치.
         assertThat(jdbc.sqlFor(AttachmentSource.POPUP))
                 .contains("WHERE (file_url = '/api/v1/files/' || ?");
@@ -237,13 +237,13 @@ class JdbcAttachmentReferenceResolverTest {
     void popupBindsAttachmentIdForEachLinkagePlaceholder() {
         CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
 
-        jdbc.resolver().resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+        jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         // 연결 술어는 `'/api/v1/files/download?fileId=' || ?` 를 포함한다. 그 URL 안의 '?' 까지 세면
         // 파라미터가 하나 더 붙어 JDBC 가 자리표시자 불일치로 실패한다(2026-08-04 실측).
-        // 소유(loginId) 1개 + 연결(atchFileId) 2개 = 3개여야 한다.
+        // 소유(loginId) 1개 + 연결(atchFileSn) 2개 = 3개여야 한다.
         assertThat(jdbc.paramsFor(AttachmentSource.POPUP))
-                .containsExactly(LOGIN_ID, ATCH_FILE_ID, ATCH_FILE_ID);
+                .containsExactly(LOGIN_ID, ATCH_FILE_SN, ATCH_FILE_SN);
     }
 
     @Test
@@ -254,7 +254,7 @@ class JdbcAttachmentReferenceResolverTest {
                 .thenThrow(new BadTable("relation does not exist"));
 
         AttachmentReferenceResolver.Grants grants =
-                new JdbcAttachmentReferenceResolver(template).resolve(ATCH_FILE_ID, LOGIN_ID, ESNTL_ID);
+                new JdbcAttachmentReferenceResolver(template).resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(grants.personalReference()).isTrue();
     }

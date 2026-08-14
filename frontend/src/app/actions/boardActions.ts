@@ -21,7 +21,7 @@ interface BoardArticle {
   pstCn: string;
   pstBgngYmd?: string;
   pstEndYmd?: string;
-  atchFileId?: string;
+  atchFileSn?: number;
   evntDt?: string;
   qnaSttsCd?: string;
   qnaCatCd?: string;

@@ -29,7 +29,7 @@ public class BoardDetailResult {
     private Integer inqCnt;
     private Integer likeCnt;
     private String useYn;
-    private String atchFileId;
+    private Long atchFileSn;
     private Long upPstSn;
     private String replyYn;
     private Integer ansLv;

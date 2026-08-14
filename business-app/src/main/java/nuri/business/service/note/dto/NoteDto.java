@@ -21,9 +21,8 @@ public class NoteDto {
     @Schema(description = "내용")
     @Size(max = 4000)
     private String noteCn;
-    @Schema(description = "첨부 파일 ID")
-    @Size(max = 30)
-    private String atchFileId;
+    @Schema(description = "첨부파일 일련번호")
+    private Long atchFileSn;
 
     @Schema(description = "쪽지 발송 일련번호")
     private Long noteSndngSn;

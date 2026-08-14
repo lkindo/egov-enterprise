@@ -15,8 +15,7 @@ public class WorkReportDto {
     private String rptSeCd;
     @Size(max = 1)
     private String userId;
-    @Size(max = 30)
-    private String atchFileId;
+    private Long atchFileSn;
     @Size(max = 12)
     private String rptSttsCd;
     @Size(max = 8)

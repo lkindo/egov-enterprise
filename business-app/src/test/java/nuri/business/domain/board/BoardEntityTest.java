@@ -15,12 +15,12 @@ class BoardEntityTest {
                 .pstCn("Old Content")
                 .build();
         
-        board.update("New Title", "New Content", "user01", "홍길동", "pwd", "20240101", "20241231", "FILE_001", null, null, null, "N");
+        board.update("New Title", "New Content", "user01", "홍길동", "pwd", "20240101", "20241231", 101L, null, null, null, "N");
         
         assertThat(board.getPstTtl()).isEqualTo("New Title");
         assertThat(board.getPstCn()).isEqualTo("New Content");
         assertThat(board.getUserId()).isEqualTo("user01");
-        assertThat(board.getAtchFileId()).isEqualTo("FILE_001");
+        assertThat(board.getAtchFileSn()).isEqualTo("FILE_001");
     }
 
     @Test

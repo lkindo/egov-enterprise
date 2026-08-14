@@ -50,14 +50,14 @@ class DtaUseStatsBigintMigrationIntegrationTest {
              Statement statement = connection.createStatement()) {
             long migratedSn;
             try (ResultSet rows = statement.executeQuery("""
-                    SELECT dta_use_stats_sn, bbs_id, pst_sn, atch_file_id, file_sn, frst_rgtr_id
+                    SELECT dta_use_stats_sn, bbs_id, pst_sn, atch_file_sn, file_sn, frst_rgtr_id
                     FROM tb_dta_use_stats WHERE bbs_id = 'BBS_LEGACY_00000001'
                     """)) {
                 assertThat(rows.next()).isTrue();
                 migratedSn = rows.getLong("dta_use_stats_sn");
                 assertThat(migratedSn).isPositive();
                 assertThat(rows.getObject("pst_sn")).isNull();
-                assertThat(rows.getString("atch_file_id")).isNull();
+                assertThat(rows.getObject("atch_file_sn")).isNull();
                 assertThat(rows.getInt("file_sn")).isEqualTo(7);
                 assertThat(rows.getString("frst_rgtr_id")).isEqualTo("legacy-user");
                 assertThat(rows.next()).isFalse();

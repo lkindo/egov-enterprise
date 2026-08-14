@@ -13,8 +13,7 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class FileDto {
-    @Size(max = 30)
-    private String atchFileId;
+    private Long atchFileSn;
     private Integer fileSn;
     private String fileStreCours;
     private String streFileNm;

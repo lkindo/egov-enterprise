@@ -265,13 +265,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  } as any;
  if (formFiles.length > 0) {
  const uploadRes = await fileAdminService.uploadFiles(formFiles);
- const uploadedFileId = (uploadRes as any)?.data?.data || (uploadRes as any)?.data || uploadRes;
- if (uploadedFileId) {
- data.atchFileId = uploadedFileId;
+ const uploadedFileSn = (uploadRes as any)?.data?.data || (uploadRes as any)?.data || uploadRes;
+ if (uploadedFileSn) {
+ data.atchFileSn = uploadedFileSn;
  data.bnrImgNm = formFiles[0].name;
  }
  } else if (editingItem) {
- data.atchFileId = (editingItem as Banner).atchFileId;
+ data.atchFileSn = (editingItem as Banner).atchFileSn;
  data.bnrImgNm = (editingItem as Banner).bnrImgNm;
  }
 
@@ -309,13 +309,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  if (formFiles.length > 0) {
  const uploadRes = await fileAdminService.uploadFiles(formFiles);
- const uploadedFileId = typeof uploadRes === 'string' ? uploadRes : (uploadRes as any)?.data?.data || (uploadRes as any)?.data;
+ const uploadedFileSn = typeof uploadRes === 'number' ? uploadRes : (uploadRes as any)?.data?.data || (uploadRes as any)?.data;
  
- if (uploadedFileId) {
+ if (uploadedFileSn) {
  // 종전에는 `/api/v1/files/download?fileId=…` 를 저장했는데 백엔드에 그 경로가 없다(매핑 0건).
  // 실존 경로를 저장한다. 렌더는 blob 으로 하되(헤더 인증), 값 자체는 실재하는 URL 이어야
  // 나중에 다른 소비자가 열어 보더라도 404 가 아니게 된다.
- data.fileUrl = `/api/v1/files/${uploadedFileId}`;
+ data.fileUrl = `/api/v1/files/${uploadedFileSn}`;
  }
  } else if (editingItem) {
  data.fileUrl = (editingItem as Popup).fileUrl;
@@ -345,11 +345,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  accessor: (item: Banner) => (
  <div className="w-56 h-24 bg-surface-inverse rounded-lg overflow-hidden border-2 border-border shadow-xl relative group/img cursor-zoom-in transition-all duration-500 hover:scale-[1.05] hover:z-50">
  <ImageIcon size={24} className="absolute inset-0 m-auto text-white/10" />
- {item.atchFileId && (
+ {item.atchFileSn && (
  // blob 렌더 — `<img src="/api/v1/files/…">` 는 Authorization 헤더를 실을 수 없어 401 이다.
  <div className="absolute inset-0 z-10">
  <AttachmentImage
- atchFileId={item.atchFileId}
+ atchFileSn={item.atchFileSn}
  alt={`${item.bnrNm} 배너 이미지`}
  className="h-full w-full object-cover group-hover/img:scale-110 transition-transform duration-1000"
  />
@@ -732,7 +732,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
  </FormItem>
- {(editingItem as Banner)?.atchFileId && (
+ {(editingItem as Banner)?.atchFileSn && (
  <div className="p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground space-y-3 shadow-2xl relative overflow-hidden group">
  <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
  <div className="flex items-center gap-4">

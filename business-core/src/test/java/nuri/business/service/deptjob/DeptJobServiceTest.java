@@ -75,7 +75,7 @@ class DeptJobServiceTest {
                 .deptTaskCn("Content")
                 .picId("USER1")
                 .prrtyRnk("1")
-                .atchFileId("FILE1")
+                .atchFileSn(101L)
                 .build();
     }
 

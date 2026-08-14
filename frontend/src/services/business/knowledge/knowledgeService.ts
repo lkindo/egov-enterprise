@@ -8,7 +8,7 @@ export interface KnowledgeDto {
   pstSn: number;
   pstTtl: string;
   pstCn: string;
-  atchFileId?: string;
+  atchFileSn?: number;
   frstRgtrId?: string;
   crtDt?: string;
   inqCnt?: number;

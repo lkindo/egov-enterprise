@@ -30,12 +30,11 @@ public class MemoReport extends BaseEntity {
 
     @Column(length = 4000)
     private String rptCn;
-
-    @Column(name = "atch_file_id", length = 20)
-    private String atchFileId;
+    @Column(name = "atch_file_sn")
+    private Long atchFileSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "atch_file_id", referencedColumnName = "atch_file_id", insertable = false, updatable = false,
+    @JoinColumn(name = "atch_file_sn", referencedColumnName = "atch_file_sn", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.file.FileMaster fileMaster;
 
@@ -47,31 +46,31 @@ public class MemoReport extends BaseEntity {
     private LocalDateTime rptrInqDt;
 
     private MemoReport(Long memoRptSn, String rptTtl, String memoRptYmd, String userId,
-                       String rptrId, String rptCn, String atchFileId) {
+                       String rptrId, String rptCn, Long atchFileSn) {
         this.memoRptSn = memoRptSn;
         this.rptTtl = rptTtl;
         this.memoRptYmd = memoRptYmd;
         this.userId = userId;
         this.rptrId = rptrId;
         this.rptCn = rptCn;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
     }
 
     @Builder
     public static MemoReport create(Long memoRptSn, String rptTtl, String memoRptYmd, String userId,
-                                    String rptrId, String rptCn, String atchFileId) {
-        return new MemoReport(memoRptSn, rptTtl, memoRptYmd, userId, rptrId, rptCn, atchFileId);
+                                    String rptrId, String rptCn, Long atchFileSn) {
+        return new MemoReport(memoRptSn, rptTtl, memoRptYmd, userId, rptrId, rptCn, atchFileSn);
     }
 
     public void update(String rptTtl, String memoRptYmd, String userId, String rptrId,
-                      String rptCn, String atchFileId) {
+                      String rptCn, Long atchFileSn) {
         validateDateFormat(memoRptYmd);
         this.rptTtl = rptTtl;
         this.memoRptYmd = memoRptYmd;
         this.userId = userId;
         this.rptrId = rptrId;
         this.rptCn = rptCn;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
     }
 
     public void updateInqireDt(LocalDateTime rptrInqDt) {

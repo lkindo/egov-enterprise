@@ -6552,7 +6552,7 @@
           "File"
         ],
         "summary": "파일 업로드",
-        "description": "여러 파일을 업로드하고 통합 파일 ID를 반환합니다.",
+        "description": "여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.",
         "operationId": "uploadFiles",
         "requestBody": {
           "content": {
@@ -6581,7 +6581,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6595,7 +6595,7 @@
           "File"
         ],
         "summary": "파일 업로드",
-        "description": "여러 파일을 업로드하고 통합 파일 ID를 반환합니다.",
+        "description": "여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.",
         "operationId": "uploadFiles_1",
         "requestBody": {
           "content": {
@@ -6624,7 +6624,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6638,7 +6638,7 @@
           "File"
         ],
         "summary": "파일 업로드",
-        "description": "여러 파일을 업로드하고 통합 파일 ID를 반환합니다.",
+        "description": "여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.",
         "operationId": "uploadFiles_2",
         "requestBody": {
           "content": {
@@ -6667,7 +6667,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6681,7 +6681,7 @@
           "File"
         ],
         "summary": "파일 업로드",
-        "description": "여러 파일을 업로드하고 통합 파일 ID를 반환합니다.",
+        "description": "여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.",
         "operationId": "uploadFiles_3",
         "requestBody": {
           "content": {
@@ -6710,7 +6710,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -12979,7 +12979,7 @@
         }
       }
     },
-    "/api/v1/files/{atchFileId}/{fileSn}": {
+    "/api/v1/files/{atchFileSn}/{fileSn}": {
       "get": {
         "tags": [
           "File"
@@ -12989,11 +12989,12 @@
         "operationId": "downloadFile",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -13021,7 +13022,7 @@
         }
       }
     },
-    "/api/v1/admin/system/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/system/files/{atchFileSn}/{fileSn}": {
       "get": {
         "tags": [
           "File"
@@ -13031,11 +13032,12 @@
         "operationId": "downloadFile_1",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -13063,7 +13065,7 @@
         }
       }
     },
-    "/api/v1/admin/content/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/content/files/{atchFileSn}/{fileSn}": {
       "get": {
         "tags": [
           "File"
@@ -13073,11 +13075,12 @@
         "operationId": "downloadFile_2",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -13105,7 +13108,7 @@
         }
       }
     },
-    "/api/v1/admin/operation/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}": {
       "get": {
         "tags": [
           "File"
@@ -13115,11 +13118,12 @@
         "operationId": "downloadFile_3",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -13147,21 +13151,22 @@
         }
       }
     },
-    "/api/v1/files/{atchFileId}": {
+    "/api/v1/files/{atchFileSn}": {
       "get": {
         "tags": [
           "File"
         ],
         "summary": "파일 목록 조회",
-        "description": "통합 파일 ID에 속한 파일 목록을 조회합니다.",
+        "description": "첨부파일 일련번호에 속한 파일 목록을 조회합니다.",
         "operationId": "getFileList",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13179,21 +13184,22 @@
         }
       }
     },
-    "/api/v1/admin/system/files/{atchFileId}": {
+    "/api/v1/admin/system/files/{atchFileSn}": {
       "get": {
         "tags": [
           "File"
         ],
         "summary": "파일 목록 조회",
-        "description": "통합 파일 ID에 속한 파일 목록을 조회합니다.",
+        "description": "첨부파일 일련번호에 속한 파일 목록을 조회합니다.",
         "operationId": "getFileList_1",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13211,21 +13217,22 @@
         }
       }
     },
-    "/api/v1/admin/content/files/{atchFileId}": {
+    "/api/v1/admin/content/files/{atchFileSn}": {
       "get": {
         "tags": [
           "File"
         ],
         "summary": "파일 목록 조회",
-        "description": "통합 파일 ID에 속한 파일 목록을 조회합니다.",
+        "description": "첨부파일 일련번호에 속한 파일 목록을 조회합니다.",
         "operationId": "getFileList_2",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13243,21 +13250,22 @@
         }
       }
     },
-    "/api/v1/admin/operation/files/{atchFileId}": {
+    "/api/v1/admin/operation/files/{atchFileSn}": {
       "get": {
         "tags": [
           "File"
         ],
         "summary": "파일 목록 조회",
-        "description": "통합 파일 ID에 속한 파일 목록을 조회합니다.",
+        "description": "첨부파일 일련번호에 속한 파일 목록을 조회합니다.",
         "operationId": "getFileList_3",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -16115,10 +16123,9 @@
             "maxLength": 1,
             "minLength": 0
           },
-          "atchFileId": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "rptSttsCd": {
             "type": "string",
@@ -16454,10 +16461,9 @@
             "maxLength": 20,
             "minLength": 0
           },
-          "atchFileId": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "frstRgtrId": {
             "type": "string"
@@ -16638,11 +16644,10 @@
             "type": "string",
             "description": "보고내용"
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "첨부파일아이디",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "첨부파일아이디"
           },
           "drctnMttr": {
             "type": "string",
@@ -16878,10 +16883,9 @@
           "prrtyRnk": {
             "type": "string"
           },
-          "atchFileId": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "frstRgtrId": {
             "type": "string"
@@ -17005,11 +17009,10 @@
             "maxLength": 10,
             "minLength": 0
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "첨부파일 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "첨부파일 일련번호"
           },
           "evntDt": {
             "type": "string",
@@ -18316,11 +18319,10 @@
             "maxLength": 1,
             "minLength": 0
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "배너 이미지 파일 ID",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "배너 이미지 첨부파일 일련번호"
           },
           "frstRgtrId": {
             "type": "string",
@@ -18982,11 +18984,10 @@
             "maxLength": 4000,
             "minLength": 0
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "첨부 파일 ID",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "첨부파일 일련번호"
           },
           "noteSndngSn": {
             "type": "integer",
@@ -19110,11 +19111,10 @@
             "type": "string",
             "description": "Description"
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "Description",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Description"
           }
         }
       },
@@ -19623,10 +19623,9 @@
           "returnResn": {
             "type": "string"
           },
-          "atchFileId": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "informlSanctnId": {
             "type": "string"
@@ -21368,10 +21367,9 @@
       "FileDto": {
         "type": "object",
         "properties": {
-          "atchFileId": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "fileSn": {
             "type": "integer",
@@ -21818,11 +21816,10 @@
             "minLength": 0,
             "writeOnly": true
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "첨부파일 ID",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "첨부파일 일련번호"
           },
           "scrtYn": {
             "type": "string",

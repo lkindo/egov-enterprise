@@ -34,7 +34,7 @@ public class WorkReportService extends BaseAbstractService {
                 // [작성자 고정] 종전에는 dto.getUserId() 를 그대로 복사해 ① 미전송 시 null 이 되고
                 //   ② 타인 명의로 위조할 수 있었다. 인증 주체로 고정한다(Schedule·Board 와 동일 패턴).
                 .userId(userId)
-                .atchFileId(dto.getAtchFileId())
+                .atchFileSn(dto.getAtchFileSn())
                 .build();
         workReportRepository.save(entity);
     }
@@ -47,7 +47,7 @@ public class WorkReportService extends BaseAbstractService {
         // 소유권 검증(IDOR 방어): 작성자(frstRgtrId=loginId) 본인 또는 관리자만 수정 가능.
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
 
-        entity.update(dto.getRptTtl(), dto.getRptCn(), dto.getAtchFileId(), dto.getRptSeCd());
+        entity.update(dto.getRptTtl(), dto.getRptCn(), dto.getAtchFileSn(), dto.getRptSeCd());
         // lastMdfrId 는 @LastModifiedBy 감사자가 loginId 로 기록한다.
         // 클라이언트 DTO 값(dto.getUserId())으로 세팅하면 감사자 위조가 되므로 수동 설정하지 않는다.
     }
@@ -114,7 +114,7 @@ public class WorkReportService extends BaseAbstractService {
                 .rptCn(entity.getRptCn())
                 .rptSeCd(entity.getRptSeCd())
                 .userId(entity.getUserId())
-                .atchFileId(entity.getAtchFileId())
+                .atchFileSn(entity.getAtchFileSn())
                 .build();
     }
 }

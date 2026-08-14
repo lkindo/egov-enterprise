@@ -42,7 +42,7 @@ public class RewardManageService {
                 .confmYn(dto.getConfmAt())
                 .aprvDt(dto.getSanctnDt())
                 .rtnRsnCn(dto.getReturnResn())
-                .atchFileId(dto.getAtchFileId())
+                .atchFileSn(dto.getAtchFileSn())
                 .ifmlAtrzId(dto.getInformlSanctnId())
                 .build();
         // 감사 필드는 빌더 대신 세터로 이월(insert 시 auditing 이 덮으며, merge 시 값 보존)
@@ -63,7 +63,7 @@ public class RewardManageService {
                 .confmAt(reward.getConfmYn())
                 .sanctnDt(reward.getAprvDt())
                 .returnResn(reward.getRtnRsnCn())
-                .atchFileId(reward.getAtchFileId())
+                .atchFileSn(reward.getAtchFileSn())
                 .informlSanctnId(reward.getIfmlAtrzId())
                 .frstRgtrId(reward.getFrstRgtrId())
                 .crtDt(reward.getCrtDt())

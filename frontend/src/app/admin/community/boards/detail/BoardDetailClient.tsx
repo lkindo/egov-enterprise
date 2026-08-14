@@ -67,15 +67,15 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 
   // 감사 P1-5/P1-6: 첨부 영역은 과거 "Technical_Spec_Unit_XXXX.pdf · 3.4 MB" 라는 존재하지 않는 파일을
   // 하드코딩해 보여주고, 다운로드 아이콘에는 핸들러조차 없었다. 이미 있는 fileService 로 실제 목록을 배선한다.
-  const atchFileId = article?.atchFileId;
+  const atchFileSn = article?.atchFileSn;
   const {
     data: attachments = [],
     isError: isAttachmentError,
     refetch: refetchAttachments,
   } = useQuery({
-    queryKey: ['article-files', atchFileId],
-    queryFn: () => fileService.getFileList(atchFileId!),
-    enabled: !!atchFileId,
+    queryKey: ['article-files', atchFileSn],
+    queryFn: () => fileService.getFileList(atchFileSn!),
+    enabled: !!atchFileSn,
   });
 
   const tmpltId = masterInfo?.tmpltId || 'TMPLT_LIST';
@@ -339,7 +339,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       </div>
 
       {/* --- 첨부파일 --- */}
-      {atchFileId && (
+      {atchFileSn && (
         <motion.div
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -372,10 +372,10 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             ) : (
               <ul className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {attachments.map((file) => (
-                  <li key={`${file.atchFileId}-${file.fileSn}`}>
+                  <li key={`${file.atchFileSn}-${file.fileSn}`}>
                     <button
                       type="button"
-                      onClick={() => fileService.downloadFile(file.atchFileId, file.fileSn)}
+                      onClick={() => fileService.downloadFile(file.atchFileSn, file.fileSn)}
                       aria-label={`${file.orignlFileNm} 다운로드`}
                       className="w-full flex items-center justify-between text-left p-8 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all group/file shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >

@@ -65,26 +65,25 @@ public class FileService extends BaseAbstractService {
      * 파일 업로드 (멀티파트)
      */
     @Transactional
-    public String uploadFiles(List<MultipartFile> files) throws IOException {
+    public Long uploadFiles(List<MultipartFile> files) throws IOException {
         // 선(先) 검증 패스: 하나라도 거부되면 어떤 DB 행·파일도 쓰지 않는다.
         validateUploadBatch(files, true);
 
-        String atchFileId = nuri.foundation.core.util.IdGenerationUtil.generateId("FILE_", 12);
-        FileMaster master = new FileMaster(atchFileId);
-        master = fileMasterRepository.save(master);
+        FileMaster master = fileMasterRepository.save(FileMaster.create());
+        Long atchFileSn = required(master.getAtchFileSn(), "자동 생성된 atchFileSn 은 null 일 수 없습니다");
 
-        storeFileDetails(master, files, 1, "general/" + atchFileId);
+        storeFileDetails(master, files, 1, "general/" + atchFileSn);
 
-        return atchFileId;
+        return atchFileSn;
     }
 
     /**
      * 첨부파일 목록 조회
      */
-    public List<FileDto> getFileList(String atchFileId) {
-        if (atchFileId == null)
+    public List<FileDto> getFileList(Long atchFileSn) {
+        if (atchFileSn == null)
             return List.of();
-        FileMaster master = fileMasterRepository.findById(required(atchFileId, "atchFileId 는 null 일 수 없습니다"))
+        FileMaster master = fileMasterRepository.findById(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // [IDOR] 인증만으로는 부족하다 — 이 첨부에 도달할 근거가 있는 주체인지 검증한다.
         accessPolicy.assertReadable(master);
@@ -96,9 +95,9 @@ public class FileService extends BaseAbstractService {
     /**
      * 파일 다운로드를 위한 리소스 조회
      */
-    public Resource getFileResource(String atchFileId, Integer fileSn) throws IOException {
+    public Resource getFileResource(Long atchFileSn, Integer fileSn) throws IOException {
         FileDetail detail = fileDetailRepository
-                .findByFileMasterAtchFileIdAndAtchFileSeq(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
+                .findByFileMasterAtchFileSnAndAtchFileSeq(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"),
                         required(fileSn, "fileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // [IDOR] 다운로드는 목록보다 노출이 크다 — 같은 도달성 기준을 적용한다.
@@ -112,8 +111,8 @@ public class FileService extends BaseAbstractService {
      * 파일 삭제 (전체)
      */
     @Transactional
-    public void deleteFiles(String atchFileId) throws IOException {
-        FileMaster master = fileMasterRepository.findById(required(atchFileId, "atchFileId 는 null 일 수 없습니다"))
+    public void deleteFiles(Long atchFileSn) throws IOException {
+        FileMaster master = fileMasterRepository.findById(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         List<FileDetail> details = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다"));
@@ -129,9 +128,9 @@ public class FileService extends BaseAbstractService {
      * 파일 삭제 (단건)
      */
     @Transactional
-    public void deleteFile(String atchFileId, Integer fileSn) throws IOException {
+    public void deleteFile(Long atchFileSn, Integer fileSn) throws IOException {
         FileDetail detail = fileDetailRepository
-                .findByFileMasterAtchFileIdAndAtchFileSeq(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
+                .findByFileMasterAtchFileSnAndAtchFileSeq(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"),
                         required(fileSn, "fileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
@@ -143,9 +142,9 @@ public class FileService extends BaseAbstractService {
     /**
      * 파일 상세 조회 (단건)
      */
-    public FileDto getFileDetail(String atchFileId, Integer fileSn) {
+    public FileDto getFileDetail(Long atchFileSn, Integer fileSn) {
         FileDetail detail = fileDetailRepository
-                .findByFileMasterAtchFileIdAndAtchFileSeq(required(atchFileId, "atchFileId 는 null 일 수 없습니다"),
+                .findByFileMasterAtchFileSnAndAtchFileSeq(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"),
                         required(fileSn, "fileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // [IDOR] 단건 상세도 같은 기준. (현재 HTTP 미노출이나, 노출 시 무가드가 되지 않도록 함께 닫는다.)
@@ -157,8 +156,8 @@ public class FileService extends BaseAbstractService {
      * 파일 수정 (추가 업로드)
      */
     @Transactional
-    public void updateFiles(String atchFileId, List<MultipartFile> files) throws IOException {
-        FileMaster master = fileMasterRepository.findById(required(atchFileId, "atchFileId 는 null 일 수 없습니다"))
+    public void updateFiles(Long atchFileSn, List<MultipartFile> files) throws IOException {
+        FileMaster master = fileMasterRepository.findById(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         Integer maxSn = fileDetailRepository.findByFileMaster(required(master, "master 는 null 일 수 없습니다")).stream()
@@ -169,7 +168,7 @@ public class FileService extends BaseAbstractService {
         // 수정은 빈 목록을 no-op으로 허용하되, 파일이 있으면 업로드와 같은 방어를 적용한다.
         validateUploadBatch(files, false);
 
-        storeFileDetails(master, files, maxSn + 1, "general/" + atchFileId);
+        storeFileDetails(master, files, maxSn + 1, "general/" + atchFileSn);
     }
 
     /**
@@ -188,7 +187,7 @@ public class FileService extends BaseAbstractService {
 
     private FileDto convertToDto(FileDetail d) {
         return FileDto.builder()
-                .atchFileId(d.getFileMaster().getAtchFileId())
+                .atchFileSn(d.getFileMaster().getAtchFileSn())
                 .fileSn(d.getAtchFileSeq())
                 .fileStreCours(d.getFileStrgPath())
                 .streFileNm(d.getStrgFileNm())

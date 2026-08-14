@@ -70,9 +70,8 @@ public record BoardDto(
     @Size(max = 200)
     String pswd,
 
-    @Schema(description = "첨부파일 ID")
-    @Size(max = 30)
-    String atchFileId,
+    @Schema(description = "첨부파일 일련번호")
+    Long atchFileSn,
 
     @Schema(description = "비밀글 여부")
     @Size(max = 1)

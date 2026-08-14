@@ -110,7 +110,7 @@ public class ScheduleService {
                 .schdlPicId(userId)
                 .schdlIpAddr(dto.getSchdlIpAddr())
                 .reptSeCd(dto.getReptSeCd())
-                .atchFileId(dto.getAtchFileId())
+                .atchFileSn(dto.getAtchFileSn())
                 .build();
         // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
         return scheduleRepository.save(entity).getSchdlSn();

@@ -4,7 +4,7 @@ import { X } from 'lucide-react';
 import { popupService } from '@/services/business/user/PopupService';
 import { Popup } from '@/types/foundation/banner';
 import Image from 'next/image';
-import { AttachmentImage, extractAtchFileId } from '@/app/components/ui/attachment-image';
+import { AttachmentImage, extractAtchFileSn } from '@/app/components/ui/attachment-image';
 
 export function PopupManager() {
     const [activePopups, setActivePopups] = useState<Popup[]>([]);
@@ -82,9 +82,9 @@ export function PopupManager() {
                             <div className="relative w-full min-h-[300px] h-full">
                                 {/* fileUrl 에는 첨부 URL(레거시 `?fileId=` 형태 포함) 또는 외부 URL 이 들어온다.
                                     첨부라면 blob 으로 받아 그린다 — `<img src>` 로는 인증되지 않기 때문이다. */}
-                                {extractAtchFileId(popup.fileUrl) ? (
+                                {extractAtchFileSn(popup.fileUrl) ? (
                                     <AttachmentImage
-                                        atchFileId={extractAtchFileId(popup.fileUrl)}
+                                        atchFileSn={extractAtchFileSn(popup.fileUrl)}
                                         alt={popup.popupTtlNm}
                                         className="h-full w-full object-contain"
                                     />

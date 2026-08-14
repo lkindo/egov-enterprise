@@ -90,7 +90,7 @@ public class MemoReportService {
                 .userId(userId)
                 .rptrId(dto.getRptrId())
                 .rptCn(dto.getRptCn())
-                .atchFileId(dto.getAtchFileId())
+                .atchFileSn(dto.getAtchFileSn())
                 .build();
         return memoReportRepository.save(entity).getMemoRptSn();
     }
@@ -101,7 +101,7 @@ public class MemoReportService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 작성자/관리자만 수정
         entity.update(dto.getRptTtl(), dto.getMemoRptYmd(), entity.getUserId(), dto.getRptrId(),
-                dto.getRptCn(), dto.getAtchFileId());
+                dto.getRptCn(), dto.getAtchFileSn());
         entity.setLastMdfrId(userId);
     }
 

@@ -133,6 +133,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] Community — V2_71에서 cmnty_id 문자열 기술 PK와 멤버십 복합키/FK,
             //   게시판 논리 참조를 cmnty_sn BIGINT로 백필했다. 실측: 관련 3개 테이블 모두
             //   커뮤니티 참조 0행·고아 0. 구형 전체 그래프 주입과 JPA·API·프론트 숫자 계약을 검증했다.
+            // [2026-08-14 제거] FileMaster — V2_72에서 atch_file_id 문자열 기술 PK와 상세·업무 참조
+            //   폐포를 atch_file_sn BIGINT로 백필했다. 실측: 마스터/상세 4/4행, 업무 참조·고아 0.
+            //   JPA·API·프론트 숫자 계약과 DB identity 자동 생성을 검증하고 수동 파일 ID 채번을 제거했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "DeptManage", "EventInfo",
@@ -149,7 +152,7 @@ class PkGenerationStandardLinterTest {
             //   ⚠ 물리 테이블은 건드리지 않았다 — 테이블 삭제는 스키마 변경이라 별도 승인이 필요하다.
             //     현재 상태는 "엔티티 없는 빈 테이블 2개" 이며 그 처분은 미결로 남는다.
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
-            "FileMaster", "GroupManage", "InformalSanction", "InstitutionCode",
+            "GroupManage", "InformalSanction", "InstitutionCode",
             "LoginLog", "LoginPolicy", "Menu", "Notification", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
             "SiteMap", "Sms", "SysLog", "SystemPolicy", "Template",

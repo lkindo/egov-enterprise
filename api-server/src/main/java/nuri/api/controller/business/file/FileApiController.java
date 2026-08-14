@@ -27,27 +27,27 @@ public class FileApiController {
 
     private final FileService fileService;
 
-    @Operation(summary = "파일 업로드", description = "여러 파일을 업로드하고 통합 파일 ID를 반환합니다.")
+    @Operation(summary = "파일 업로드", description = "여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.")
     @org.springframework.security.access.prepost.PreAuthorize("isAuthenticated()")
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
-    public ResponseEntity<ApiResponse<String>> uploadFiles(
+    public ResponseEntity<ApiResponse<Long>> uploadFiles(
             @RequestPart("files") List<MultipartFile> files) throws IOException {
-        String resultId = fileService.uploadFiles(files);
-        return ResponseEntity.ok(ApiResponse.success(resultId));
+        Long atchFileSn = fileService.uploadFiles(files);
+        return ResponseEntity.ok(ApiResponse.success(atchFileSn));
     }
 
-    @Operation(summary = "파일 목록 조회", description = "통합 파일 ID에 속한 파일 목록을 조회합니다.")
-    @GetMapping("/{atchFileId}")
-    public ResponseEntity<ApiResponse<List<FileDto>>> getFileList(@PathVariable String atchFileId) {
-        return ResponseEntity.ok(ApiResponse.success(fileService.getFileList(atchFileId)));
+    @Operation(summary = "파일 목록 조회", description = "첨부파일 일련번호에 속한 파일 목록을 조회합니다.")
+    @GetMapping("/{atchFileSn}")
+    public ResponseEntity<ApiResponse<List<FileDto>>> getFileList(@PathVariable Long atchFileSn) {
+        return ResponseEntity.ok(ApiResponse.success(fileService.getFileList(atchFileSn)));
     }
 
     @Operation(summary = "파일 다운로드", description = "특정 파일을 다운로드합니다.")
-    @GetMapping("/{atchFileId}/{fileSn}")
+    @GetMapping("/{atchFileSn}/{fileSn}")
     public ResponseEntity<Resource> downloadFile(
-            @PathVariable String atchFileId,
+            @PathVariable Long atchFileSn,
             @PathVariable Integer fileSn) throws IOException {
-        Resource resource = fileService.getFileResource(atchFileId, fileSn);
+        Resource resource = fileService.getFileResource(atchFileSn, fileSn);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")

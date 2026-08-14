@@ -22,9 +22,7 @@ public class WorkReport extends BaseEntity implements Serializable {
 
     @Column(length = 4000)
     private String rptCn;
-
-    @Column(length = 20)
-    private String atchFileId;
+    private Long atchFileSn;
 
     @Column(length = 12)
     private String rptSeCd;
@@ -38,12 +36,12 @@ public class WorkReport extends BaseEntity implements Serializable {
     @Column(length = 8)
     private String rptYmd;
 
-    private WorkReport(Long rptpSn, String rptTtl, String rptCn, String atchFileId,
+    private WorkReport(Long rptpSn, String rptTtl, String rptCn, Long atchFileSn,
                        String rptSeCd, String userId, String rptSttsCd, String rptYmd) {
         this.rptpSn = rptpSn;
         this.rptTtl = rptTtl;
         this.rptCn = rptCn;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
         this.rptSeCd = rptSeCd;
         this.userId = userId;
         this.rptSttsCd = rptSttsCd;
@@ -51,15 +49,15 @@ public class WorkReport extends BaseEntity implements Serializable {
     }
 
     @Builder
-    public static WorkReport create(Long rptpSn, String rptTtl, String rptCn, String atchFileId,
+    public static WorkReport create(Long rptpSn, String rptTtl, String rptCn, Long atchFileSn,
                                     String rptSeCd, String userId, String rptSttsCd, String rptYmd) {
-        return new WorkReport(rptpSn, rptTtl, rptCn, atchFileId, rptSeCd, userId, rptSttsCd, rptYmd);
+        return new WorkReport(rptpSn, rptTtl, rptCn, atchFileSn, rptSeCd, userId, rptSttsCd, rptYmd);
     }
 
-    public void update(String rptTtl, String rptCn, String atchFileId, String rptSeCd) {
+    public void update(String rptTtl, String rptCn, Long atchFileSn, String rptSeCd) {
         this.rptTtl = rptTtl;
         this.rptCn = rptCn;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
         this.rptSeCd = rptSeCd;
     }
 

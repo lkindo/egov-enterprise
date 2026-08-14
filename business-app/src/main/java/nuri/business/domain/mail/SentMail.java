@@ -37,32 +37,31 @@ public class SentMail extends BaseEntity {
     private String dsptchRsltCd;
 
     private java.time.LocalDateTime dsptchDt;
-
-    @Column(name = "atch_file_id", length = 20)
-    private String atchFileId;
+    @Column(name = "atch_file_sn")
+    private Long atchFileSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "atch_file_id", referencedColumnName = "atch_file_id", insertable = false, updatable = false,
+    @JoinColumn(name = "atch_file_sn", referencedColumnName = "atch_file_sn", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.file.FileMaster fileMaster;
 
 
 
     private SentMail(Long emlDsptchSn, String emlTtl, String emlCn, String sndptyNm,
-            String rcvrNm, String dsptchRsltCd, String atchFileId) {
+            String rcvrNm, String dsptchRsltCd, Long atchFileSn) {
         this.emlDsptchSn = emlDsptchSn;
         this.emlTtl = emlTtl;
         this.emlCn = emlCn;
         this.sndptyNm = sndptyNm;
         this.rcvrNm = rcvrNm;
         this.dsptchRsltCd = dsptchRsltCd;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
     }
 
     @Builder
     public static SentMail create(Long emlDsptchSn, String emlTtl, String emlCn, String sndptyNm,
-            String rcvrNm, String dsptchRsltCd, String atchFileId) {
-        return new SentMail(emlDsptchSn, emlTtl, emlCn, sndptyNm, rcvrNm, dsptchRsltCd, atchFileId);
+            String rcvrNm, String dsptchRsltCd, Long atchFileSn) {
+        return new SentMail(emlDsptchSn, emlTtl, emlCn, sndptyNm, rcvrNm, dsptchRsltCd, atchFileSn);
     }
 
     @jakarta.persistence.PrePersist

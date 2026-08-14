@@ -39,12 +39,10 @@ public class Banner extends BaseEntity {
 
     @Column(length = 1)
     private String rfltYn;
-
-    @Column(length = 20)
-    private String atchFileId;
+    private Long atchFileSn;
 
     private Banner(Long bnrSn, String bnrNm, String linkUrl, String bnrImgNm,
-                   String bnrExpln, Long sortOrdr, String rfltYn, String atchFileId) {
+                   String bnrExpln, Long sortOrdr, String rfltYn, Long atchFileSn) {
         this.bnrSn = bnrSn;
         this.bnrNm = bnrNm;
         this.linkUrl = linkUrl;
@@ -52,23 +50,23 @@ public class Banner extends BaseEntity {
         this.bnrExpln = bnrExpln;
         this.sortOrdr = sortOrdr;
         this.rfltYn = rfltYn;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
     }
 
     @Builder
     public static Banner create(Long bnrSn, String bnrNm, String linkUrl, String bnrImgNm,
-                                String bnrExpln, Long sortOrdr, String rfltYn, String atchFileId) {
-        return new Banner(bnrSn, bnrNm, linkUrl, bnrImgNm, bnrExpln, sortOrdr, rfltYn, atchFileId);
+                                String bnrExpln, Long sortOrdr, String rfltYn, Long atchFileSn) {
+        return new Banner(bnrSn, bnrNm, linkUrl, bnrImgNm, bnrExpln, sortOrdr, rfltYn, atchFileSn);
     }
 
     public void update(String bnrNm, String linkUrl, String bnrImgNm,
-                      String bnrExpln, Long sortOrdr, String rfltYn, String atchFileId) {
+                      String bnrExpln, Long sortOrdr, String rfltYn, Long atchFileSn) {
         this.bnrNm = bnrNm;
         this.linkUrl = linkUrl;
         if (bnrImgNm != null) this.bnrImgNm = bnrImgNm;
         this.bnrExpln = bnrExpln;
         this.sortOrdr = sortOrdr;
         this.rfltYn = rfltYn;
-        if (atchFileId != null) this.atchFileId = atchFileId;
+        if (atchFileSn != null) this.atchFileSn = atchFileSn;
     }
 }

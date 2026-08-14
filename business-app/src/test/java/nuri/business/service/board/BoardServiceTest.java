@@ -282,7 +282,7 @@ class BoardServiceTest {
         assertThat(pstSn).isPositive();
     }
 
-    /** BoardSaveRequest(bbsId, pstTtl, pstCn, pstBgngYmd, pstEndYmd, atchFileId, evntDt, qnaSttsCd, qnaCatCd, scrtYn, useYn, pswd) */
+    /** BoardSaveRequest(bbsId, pstTtl, pstCn, pstBgngYmd, pstEndYmd, atchFileSn, evntDt, qnaSttsCd, qnaCatCd, scrtYn, useYn, pswd) */
     private BoardSaveRequest saveRequest(String evntDt, String qnaSttsCd, String useYn) {
         return new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null,
                 evntDt, qnaSttsCd, null, null, useYn, null);
@@ -601,7 +601,7 @@ class BoardServiceTest {
 
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
-        given(fileService.uploadFiles(files)).willReturn("ATCH_001");
+        given(fileService.uploadFiles(files)).willReturn(101L);
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
@@ -609,7 +609,7 @@ class BoardServiceTest {
 
         // then
         verify(fileService).uploadFiles(files);
-        verify(boardRepository).save(argThat(b -> "ATCH_001".equals(b.getAtchFileId())));
+        verify(boardRepository).save(argThat(b -> Long.valueOf(101L).equals(b.getAtchFileSn())));
     }
 
     @Test
@@ -651,7 +651,7 @@ class BoardServiceTest {
         Board parent = Board.builder().pstSn(parentId).sortOrdr(100L).ansLv(0).build();
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
-        given(fileService.uploadFiles(files)).willReturn("ATCH_001");
+        given(fileService.uploadFiles(files)).willReturn(101L);
         given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
@@ -717,14 +717,14 @@ class BoardServiceTest {
         Board board = Board.builder().pstSn(pstSn).userId("user1").build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
-        given(fileService.uploadFiles(files)).willReturn("NEW_ATCH_001");
+        given(fileService.uploadFiles(files)).willReturn(102L);
 
         // when
         boardService.updatePostWithFiles(bbsId, pstSn, request, files);
 
         // then
         verify(fileService).uploadFiles(files);
-        assertThat(board.getAtchFileId()).isEqualTo("NEW_ATCH_001");
+        assertThat(board.getAtchFileSn()).isEqualTo(102L);
     }
 
     @Test
@@ -733,8 +733,8 @@ class BoardServiceTest {
         // given
         String bbsId = "BBS_01";
         Long pstSn = 1L;
-        String atchFileId = "OLD_ATCH_001";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, atchFileId, null, null, null, null, null, null);
+        Long atchFileSn = 101L;
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, atchFileSn, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
@@ -748,7 +748,7 @@ class BoardServiceTest {
         boardService.updatePostWithFiles(bbsId, pstSn, request, files);
 
         // then
-        verify(fileService).updateFiles(eq(atchFileId), eq(files));
+        verify(fileService).updateFiles(eq(atchFileSn), eq(files));
     }
 
     @Test
@@ -810,7 +810,7 @@ class BoardServiceTest {
     @DisplayName("파일 업로드 메서드에서 files가 null 이거나 비어있을 때")
     void fileUploadMethods_EmptyFiles() throws IOException {
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, "OLD_ATCH", null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, 101L, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         
         // create

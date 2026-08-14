@@ -57,7 +57,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
       pswd: initialData?.pswd || '1',
       parnts: parnts || initialData?.parnts,
       replyYn: (parnts || initialData?.replyYn === 'Y') ? 'Y' : 'N',
-      atchFileId: initialData?.atchFileId || '',
+      atchFileSn: initialData?.atchFileSn,
       scrtYn: initialData?.scrtYn || 'N',
       useYn: initialData?.useYn || 'Y',
     } as BoardFormValues

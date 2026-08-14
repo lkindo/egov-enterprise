@@ -46,7 +46,7 @@ public class BannerService {
                 .bnrExpln(dto.getBnrExpln())
                 .sortOrdr(dto.getSortOrdr())
                 .rfltYn(dto.getRfltYn())
-                .atchFileId(dto.getAtchFileId())
+                .atchFileSn(dto.getAtchFileSn())
                 .build();
         return bannerRepository.save(Objects.requireNonNull(entity)).getBnrSn();
     }
@@ -56,7 +56,7 @@ public class BannerService {
         Banner entity = bannerRepository.findById(Objects.requireNonNull(dto.getBnrSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getBnrNm(), dto.getLinkUrl(), dto.getBnrImgNm(),
-                dto.getBnrExpln(), dto.getSortOrdr(), dto.getRfltYn(), dto.getAtchFileId());
+                dto.getBnrExpln(), dto.getSortOrdr(), dto.getRfltYn(), dto.getAtchFileSn());
     }
 
     @Transactional

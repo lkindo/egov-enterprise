@@ -22,8 +22,7 @@ public class DeptJobDto {
     private String picId;
     private String picNm;
     private String prrtyRnk;
-    @Size(max = 30)
-    private String atchFileId;
+    private Long atchFileSn;
     private String frstRgtrId;
     private LocalDateTime crtDt;
     private String lastMdfrId;

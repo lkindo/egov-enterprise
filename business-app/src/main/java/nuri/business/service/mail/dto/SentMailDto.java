@@ -38,8 +38,7 @@ public class SentMailDto {
     private String sndngDe;
 
     @Schema(description = "Description")
-    @Size(max = 30)
-    private String atchFileId;
+    private Long atchFileSn;
 
     public static SentMailDto from(SentMail entity) {
         if (entity == null) return null;
@@ -51,7 +50,7 @@ public class SentMailDto {
                 .recptnPerson(entity.getRcvrNm())
                 .sndngResultCode(entity.getDsptchRsltCd())
                 .sndngDe(entity.getDsptchDt() != null ? entity.getDsptchDt().format(java.time.format.DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) : null)
-                .atchFileId(entity.getAtchFileId())
+                .atchFileSn(entity.getAtchFileSn())
                 .build();
     }
 }

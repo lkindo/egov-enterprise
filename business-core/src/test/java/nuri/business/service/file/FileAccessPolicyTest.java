@@ -32,7 +32,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("FileAccessPolicy — 첨부 도달성 인가")
 class FileAccessPolicyTest {
 
-    private static final String ATCH_FILE_ID = "FILE_ABC123";
+    private static final Long ATCH_FILE_SN = 101L;
     private static final String UPLOADER_LOGIN_ID = "uploader";
     private static final String OTHER_LOGIN_ID = "someone-else";
     private static final String OTHER_ESNTL_ID = "USR_0000000000000002";
@@ -214,14 +214,14 @@ class FileAccessPolicyTest {
         @Test
         @DisplayName("🚨 팝업은 URL 문자열로 첨부를 참조한다 — 전용 컬럼만 census 하면 통째로 놓친다")
         void popupLinksByUrlNotByAttachmentIdColumn() {
-            // 2026-08-04: 최초 census 를 atch_file_id 컬럼 기준으로 돌려 이 도메인이 보이지 않았고,
+            // 2026-08-04: 최초 census 를 atch_file_sn 컬럼 기준으로 돌려 이 도메인이 보이지 않았고,
             // 그 결과 팝업 이미지가 업로더 외에는 403 이 됐다(E2E 05-public-experience 가 잡음).
-            assertThat(AttachmentSource.POPUP.linksByAttachmentIdColumn()).isFalse();
+            assertThat(AttachmentSource.POPUP.linksByAttachmentSnColumn()).isFalse();
             assertThat(AttachmentSource.POPUP.linkagePredicate()).contains("file_url");
 
             for (AttachmentSource source : AttachmentSource.values()) {
                 if (source != AttachmentSource.POPUP) {
-                    assertThat(source.linksByAttachmentIdColumn())
+                    assertThat(source.linksByAttachmentSnColumn())
                             .as("%s 의 연결 방식이 바뀌었다면 레지스트리 린터의 판정 축도 함께 봐야 한다", source)
                             .isTrue();
                 }
@@ -268,7 +268,7 @@ class FileAccessPolicyTest {
     // ------------------------------------------------------------------ 유틸
 
     private FileAccessPolicy policy(AttachmentReferenceResolver.Grants grants) {
-        return new FileAccessPolicy((atchFileId, loginId, esntlId) -> grants);
+        return new FileAccessPolicy((atchFileSn, loginId, esntlId) -> grants);
     }
 
     private AttachmentReferenceResolver.Grants grantsNone() {
@@ -276,7 +276,7 @@ class FileAccessPolicyTest {
     }
 
     private FileMaster masterOwnedBy(String loginId) {
-        FileMaster master = new FileMaster(ATCH_FILE_ID);
+        FileMaster master = new FileMaster(ATCH_FILE_SN);
         master.setFrstRgtrId(loginId);
         return master;
     }

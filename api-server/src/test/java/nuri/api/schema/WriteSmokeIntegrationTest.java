@@ -77,32 +77,32 @@ class WriteSmokeIntegrationTest {
                 .as("H2 로 폴백되면 create-drop 시절과 같은 거짓 안전이 된다")
                 .isGreaterThanOrEqualTo(170000);
 
-        String atchFileId = "FILE_SMOKE0001";
-        jdbcTemplate.update("DELETE FROM tb_file_master WHERE atch_file_id = ?", atchFileId);
+        FileMaster writtenMaster = fileMasterRepository.saveAndFlush(FileMaster.create());
+        Long atchFileSn = writtenMaster.getAtchFileSn();
 
-        assertThatCode(() -> fileMasterRepository.save(new FileMaster(atchFileId)))
+        assertThatCode(() -> fileMasterRepository.findById(atchFileSn))
                 .as("애플리케이션이 자기 기본값(useYn='Y')으로 쓴 행이 거부되면 CHECK 허용값과 코드가 어긋난 것이다")
                 .doesNotThrowAnyException();
 
         Integer written = jdbcTemplate.queryForObject(
-                "SELECT count(*) FROM tb_file_master WHERE atch_file_id = ?", Integer.class, atchFileId);
+                "SELECT count(*) FROM tb_file_master WHERE atch_file_sn = ?", Integer.class, atchFileSn);
         assertThat(written).isEqualTo(1);
 
-        jdbcTemplate.update("DELETE FROM tb_file_master WHERE atch_file_id = ?", atchFileId);
+        jdbcTemplate.update("DELETE FROM tb_file_master WHERE atch_file_sn = ?", atchFileSn);
     }
 
     @Test
-    @DisplayName("② 허용되지 않는 _yn 값과 길이 초과는 실 DB 가 거부한다 — 제약이 실재함을 증명")
+    @DisplayName("② 허용되지 않는 _yn 값과 비숫자 PK는 실 DB가 거부한다 — 제약이 실재함을 증명")
     void realDatabaseRejectsInvalidValues() {
         assertThatThrownBy(() -> jdbcTemplate.update(
-                "INSERT INTO tb_file_master (atch_file_id, use_yn) VALUES (?, 'X')", "FILE_SMOKE0002"))
+                "INSERT INTO tb_file_master (use_yn) VALUES ('X')"))
                 .as("use_yn='X' 가 통과하면 CHECK 이 없다는 뜻이고, 'DB 가 막아준다'는 전제가 거짓이 된다")
                 .isInstanceOf(DataAccessException.class);
 
         assertThatThrownBy(() -> jdbcTemplate.update(
-                "INSERT INTO tb_file_master (atch_file_id, use_yn) VALUES (?, 'Y')",
-                "FILE_THIS_ID_IS_WAY_TOO_LONG_FOR_VARCHAR_20"))
-                .as("varchar(20) 초과가 통과하면 물리 길이 제약이 없다는 뜻이다 — H2 create-drop 이 못 잡는 축")
+                "INSERT INTO tb_file_master (atch_file_sn, use_yn) VALUES (?, 'Y')",
+                "not-a-number"))
+                .as("비숫자 첨부 키가 통과하면 BIGINT 물리 타입과 코드 계약이 어긋난 것이다")
                 .isInstanceOf(DataAccessException.class);
     }
 

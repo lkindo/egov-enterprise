@@ -53,7 +53,7 @@ class RewardBigintMigrationIntegrationTest {
             long migratedSn;
             try (ResultSet rows = statement.executeQuery("""
                     SELECT rwrd_sn, rwrd_user_id, rwrd_cd, rwrd_ymd, cntrb_cn,
-                           confm_yn, atch_file_id, frst_rgtr_id
+                           confm_yn, atch_file_sn, frst_rgtr_id
                     FROM tb_rward_manage WHERE rwrd_nm = '기존 포상'
                     """)) {
                 assertThat(rows.next()).isTrue();
@@ -64,7 +64,7 @@ class RewardBigintMigrationIntegrationTest {
                 assertThat(rows.getString("rwrd_ymd")).isEqualTo("20260814");
                 assertThat(rows.getString("cntrb_cn")).isEqualTo("보존할 공적 내용");
                 assertThat(rows.getString("confm_yn")).isEqualTo("N");
-                assertThat(rows.getString("atch_file_id")).isNull();
+                assertThat(rows.getObject("atch_file_sn")).isNull();
                 assertThat(rows.getString("frst_rgtr_id")).isEqualTo("legacy-user");
                 assertThat(rows.next()).isFalse();
             }

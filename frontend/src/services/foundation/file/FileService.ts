@@ -5,7 +5,7 @@ import { AxiosRequestConfig } from 'axios';
  * 파일 정보 인터페이스
  */
 interface FileVO {
-  atchFileId: string;
+  atchFileSn: number;
   fileSn: number;
   fileExtsn: string;
   fileMg: number;
@@ -27,12 +27,12 @@ class FileService extends ApiService {
    * 파일 업로드
    * @param files 업로드할 파일 리스트
    */
-  async uploadFiles(files: File[] | FileList, config?: AxiosRequestConfig): Promise<string> {
+  async uploadFiles(files: File[] | FileList, config?: AxiosRequestConfig): Promise<number> {
     const formData = new FormData();
     const fileList = files instanceof FileList ? Array.from(files) : files;
     fileList.forEach(file => formData.append('files', file));
 
-    return this.post<string>('', formData, {
+    return this.post<number>('', formData, {
       ...config,
       headers: { 
         ...config?.headers,
@@ -43,16 +43,16 @@ class FileService extends ApiService {
 
   /**
    * 파일 목록 조회
-   * @param atchFileId 통합 파일 ID
+   * @param atchFileSn 첨부파일 일련번호
    */
-  async getFileList(atchFileId: string, config?: AxiosRequestConfig): Promise<FileVO[]> {
-    if (!atchFileId) return [];
-    return this.get<FileVO[]>(`/${atchFileId}`, config);
+  async getFileList(atchFileSn: number, config?: AxiosRequestConfig): Promise<FileVO[]> {
+    if (!atchFileSn) return [];
+    return this.get<FileVO[]>(`/${atchFileSn}`, config);
   }
 
   /**
    * 파일 다운로드
-   * @param atchFileId 통합 파일 ID
+   * @param atchFileSn 첨부파일 일련번호
    * @param fileSn 파일 순번
    *
    * ⚠ 이 경로는 `window.open` 이라 **Authorization 헤더가 실리지 않는다**.
@@ -62,9 +62,9 @@ class FileService extends ApiService {
    * 이 메서드의 근본 해결은 FE 인증 방식 결정이 선행돼야 하며,
    * `docs/04-operations/wave2-carryover.md` §2 A-3(b) 에 선택지와 함께 기록돼 있다.
    */
-  downloadFile(atchFileId: string, fileSn: number) {
-    if (!atchFileId) return;
-    const url = `${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/files/${atchFileId}/${fileSn}`;
+  downloadFile(atchFileSn: number, fileSn: number) {
+    if (!atchFileSn) return;
+    const url = `${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/files/${atchFileSn}/${fileSn}`;
     window.open(url, '_blank');
   }
 
@@ -75,14 +75,14 @@ class FileService extends ApiService {
    * 봉투가 아니라 원시 바이트라서, 봉투를 벗기는 `extractData` 는 `success` 키가 없는 값을
    * 그대로 통과시킨다(설계상 안전).
    */
-  async fetchBlob(atchFileId: string, fileSn: number, config?: AxiosRequestConfig): Promise<Blob> {
-    return this.get<Blob>(`/${atchFileId}/${fileSn}`, { ...config, responseType: 'blob' });
+  async fetchBlob(atchFileSn: number, fileSn: number, config?: AxiosRequestConfig): Promise<Blob> {
+    return this.get<Blob>(`/${atchFileSn}/${fileSn}`, { ...config, responseType: 'blob' });
   }
 
   /*
    * 첨부 삭제 메서드는 두지 않는다 (2026-08-05 제거).
    *
-   * 종전 `deleteFile` 은 `DELETE /api/v1/files/{atchFileId}/{fileSn}` 을 쳤는데 백엔드
+   * 종전 `deleteFile` 은 `DELETE /api/v1/files/{atchFileSn}/{fileSn}` 을 쳤는데 백엔드
    * `FileApiController` 에는 DELETE 매핑이 없어(POST 1 + GET 2 가 전부) 항상 405 였다.
    * 앱 호출부도 0개소였다 — 즉 동작한 적이 없다.
    *

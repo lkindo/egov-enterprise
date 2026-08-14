@@ -6,7 +6,7 @@ export interface Banner {
     bnrExpln?: string;
     sortOrdr: number;
     rfltYn: 'Y' | 'N';
-    atchFileId?: string;
+    atchFileSn?: number;
     frstRgtrId?: string;
     crtDt?: string;
 }

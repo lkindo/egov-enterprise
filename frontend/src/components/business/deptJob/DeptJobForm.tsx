@@ -40,7 +40,7 @@ export const deptJobFormSchema = DeptJobDtoSchema.extend({
     // dept_task_cn 은 varchar(4000). 필수는 아니지만 상한은 스키마로 막는다.
     deptTaskCn: z.string().max(4000, '업무 내용은 4000자를 넘을 수 없습니다.').optional(),
     deptTaskBoxSn: z.number().nullable().optional().transform(v => v === null ? undefined : v),
-    atchFileId: z.string().nullable().optional().transform(v => v === null ? undefined : v),
+    atchFileSn: z.number().nullable().optional().transform(v => v === null ? undefined : v),
     picId: z.string().nullable().optional().transform(v => v === null ? undefined : v),
 });
 
@@ -125,7 +125,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
             // 빈 문자열이 아니라 undefined 로 둔다(서버는 blank 도 미지정으로 보지만 수정 경로에서는
             // 빈 문자열이 그대로 저장되므로 축을 맞춘다).
             picId: initialData?.picId,
-            atchFileId: initialData?.atchFileId,
+            atchFileSn: initialData?.atchFileSn,
         },
     });
 

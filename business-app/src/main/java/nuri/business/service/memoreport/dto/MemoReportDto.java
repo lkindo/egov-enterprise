@@ -42,8 +42,7 @@ public class MemoReportDto {
     private String rptCn;
 
     @Schema(description = "첨부파일아이디")
-    @Size(max = 30)
-    private String atchFileId;
+    private Long atchFileSn;
 
     @Schema(description = "지시사항내용")
     private String drctnMttr;

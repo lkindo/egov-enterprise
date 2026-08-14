@@ -74,7 +74,7 @@ public class MailService {
                 .sndptyNm(dto.getDsptchPerson())
                 .rcvrNm(dto.getRecptnPerson())
                 .dsptchRsltCd("P") // Pending
-                .atchFileId(dto.getAtchFileId())
+                .atchFileSn(dto.getAtchFileSn())
                 .build());
 
         SentMail savedMail = sentMailRepository.save(Objects.requireNonNull(sentMail));

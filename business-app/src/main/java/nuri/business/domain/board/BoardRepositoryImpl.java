@@ -41,7 +41,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.inqCnt,
                                                  QBoard.board.likeCnt,
                                                  QBoard.board.useYn,
-                                                 QBoard.board.atchFileId,
+                                                 QBoard.board.atchFileSn,
                                                  QBoard.board.upPstSn,
                                                  QBoard.board.sortOrdr,
                                                  QBoard.board.ttlBoldYn,

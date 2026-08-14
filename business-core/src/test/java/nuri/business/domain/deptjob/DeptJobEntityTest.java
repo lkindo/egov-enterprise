@@ -37,13 +37,13 @@ class DeptJobEntityTest {
         assertThat(job.getDeptTaskSn()).isEqualTo(1L);
         assertThat(job.getDeptTaskNm()).isEqualTo("Initial Job");
 
-        job.update(2L, "Updated Job", "Updated Content", "user01", "2", "FILE_001");
+        job.update(2L, "Updated Job", "Updated Content", "user01", "2", 101L);
         
         assertThat(job.getDeptTaskBoxSn()).isEqualTo(2L);
         assertThat(job.getDeptTaskNm()).isEqualTo("Updated Job");
         assertThat(job.getDeptTaskCn()).isEqualTo("Updated Content");
         assertThat(job.getPicId()).isEqualTo("user01");
         assertThat(job.getPrrtyRnk()).isEqualTo("2");
-        assertThat(job.getAtchFileId()).isEqualTo("FILE_001");
+        assertThat(job.getAtchFileSn()).isEqualTo("FILE_001");
     }
 }

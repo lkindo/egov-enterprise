@@ -1,7 +1,7 @@
 package nuri.business.service.file;
 
 /**
- * 첨부({@code atchFileId})를 참조하는 업무 행을 조회해 <b>열람 근거</b>로 환원하는 포트.
+ * 첨부({@code atchFileSn})를 참조하는 업무 행을 조회해 <b>열람 근거</b>로 환원하는 포트.
  *
  * <p>판정(정책)과 조회(SQL)를 분리한 이유는 하나다 — 정책의 결정 표를 DB 없이 검증할 수 있어야
  * 하기 때문이다. DB 를 띄워야만 검증되는 인가 로직은 사실상 검증되지 않는다.
@@ -12,11 +12,11 @@ package nuri.business.service.file;
 public interface AttachmentReferenceResolver {
 
     /**
-     * @param atchFileId 통합 파일 ID
+     * @param atchFileSn 첨부파일 일련번호
      * @param loginId    현재 사용자 loginId ({@code frst_rgtr_id} 축)
      * @param esntlId    현재 사용자 esntlId ({@code user_id}·{@code sndr_id}·{@code rcvr_id} 축)
      */
-    Grants resolve(String atchFileId, String loginId, String esntlId);
+    Grants resolve(Long atchFileSn, String loginId, String esntlId);
 
     /**
      * 참조원 조회 결과를 열람 근거 3종으로 압축한 값.

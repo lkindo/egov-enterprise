@@ -14,7 +14,7 @@ export interface BoardPost {
   userId: string;
   userNm?: string;
   pswd?: string;
-  atchFileId?: string;
+  atchFileSn?: number;
   scrtYn?: string;
   blogSn?: number;
   evntDt?: string;

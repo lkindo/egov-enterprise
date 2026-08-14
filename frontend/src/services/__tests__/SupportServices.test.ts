@@ -36,8 +36,8 @@ describe('Common Support Services', () => {
   });
 
   it('fileService calls correct endpoints', async () => {
-  await fileService.getFileList('TEST_ATCH_ID');
-  expect(client.get).toHaveBeenCalledWith('files/TEST_ATCH_ID', undefined);
+  await fileService.getFileList(101);
+  expect(client.get).toHaveBeenCalledWith('files/101', undefined);
   });
 
   it('securityService calls correct endpoints', async () => {

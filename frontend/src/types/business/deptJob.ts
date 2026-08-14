@@ -9,7 +9,7 @@ export interface DeptJobVO {
   picId?: string;
   picNm?: string;
   prrtyRnk: string;
-  atchFileId?: string;
+  atchFileSn?: number;
   frstRgtrId?: string;
   crtDt?: string;
   lastMdfrId?: string;

@@ -23,7 +23,7 @@ public class BoardSearchResult {
     private String replyYn;
     private Integer ansLv;
     private String useYn;
-    private String atchFileId;
+    private Long atchFileSn;
     private String pstBgngYmd;
     private String pstEndYmd;
     private String ttlBoldYn;

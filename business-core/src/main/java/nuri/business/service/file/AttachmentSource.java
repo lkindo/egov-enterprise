@@ -6,14 +6,14 @@ import java.util.List;
 /**
  * 🔒 첨부 도달성(reachability) 판정용 <b>참조원 레지스트리</b>.
  *
- * <p>[왜 필요한가] {@code tb_file_master} 는 소유 도메인을 모른다 — 첨부는 {@code atch_file_id} 라는
- * 문자열 하나로만 업무 행(row)과 이어져 있고 FK 도 없다. 그래서 "이 첨부를 이 사용자가 봐도 되는가" 는
+ * <p>[왜 필요한가] {@code tb_file_master} 는 소유 도메인을 모른다 — 첨부는 {@code atch_file_sn} 숫자 FK로
+ * 업무 행(row)과 이어지지만 어느 참조가 열람 권한을 주는지는 FK가 설명하지 않는다. 그래서 "이 첨부를 이 사용자가 봐도 되는가" 는
  * 파일 자신이 답할 수 없고, <b>그 첨부를 참조하는 업무 행을 그 사용자가 읽을 수 있는가</b> 로만 답할 수 있다.
  * 이 enum 이 그 역참조 지도다.
  *
- * <p>[실측 근거 · 2026-08-04] {@code information_schema} 전수 조회로 {@code atch_file_id} 컬럼을 가진
+ * <p>[실측 근거 · 2026-08-04] {@code information_schema} 전수 조회로 {@code atch_file_sn} 컬럼을 가진
  * 테이블은 {@code tb_file_master}/{@code tb_file_detail} 을 제외하면 정확히 13종이며, 코드의
- * {@code atchFileId} 보유 엔티티 13종과 1:1 로 대응한다. <b>여기에 {@link #POPUP} 하나가 더 붙어 14종이었다</b> —
+ * {@code atchFileSn} 보유 엔티티 13종과 1:1 로 대응한다. <b>여기에 {@link #POPUP} 하나가 더 붙어 14종이었다</b> —
  * 팝업만 전용 컬럼이 아니라 {@code file_url} 문자열로 첨부를 참조하기 때문에 컬럼 기준 census 에
  * 잡히지 않았다. 이 대응은 {@code AttachmentSourceRegistryLinterTest} 가 기계로 고정한다 —
  * 신규 도메인이 첨부를 갖는데 여기 등록되지 않으면 pre-push 가 red 다.
@@ -43,10 +43,10 @@ import java.util.List;
 public enum AttachmentSource {
 
     /**
-     * 레이어 팝업. <b>유일하게 {@code atch_file_id} 가 아니라 URL 문자열로 첨부를 참조한다</b> —
+     * 레이어 팝업. <b>유일하게 {@code atch_file_sn} 가 아니라 URL 문자열로 첨부를 참조한다</b> —
      * {@code tb_popup_info.file_url} 에 {@code /api/v1/files/{id}} 형태를 저장한다.
      *
-     * <p>[놓쳤던 이유 · 2026-08-04] 최초 census 를 {@code atch_file_id} <b>컬럼 기준</b>으로 돌려
+     * <p>[놓쳤던 이유 · 2026-08-04] 최초 census 를 {@code atch_file_sn} <b>컬럼 기준</b>으로 돌려
      * 이 도메인이 통째로 보이지 않았다. 그 결과 팝업 이미지가 업로더(관리자) 외에는 403 이 되어
      * 대시보드 팝업이 사용자에게 깨져 보였다 — E2E `05-public-experience` 가 잡았다.
      * 참조 형태를 컬럼 이름으로 가정한 것이 오류였고, 그래서 연결 술어를 참조원별로 선언하게 바꿨다.
@@ -115,10 +115,10 @@ public enum AttachmentSource {
     }
 
     /**
-     * 대부분의 참조원이 쓰는 연결 술어 — 전용 {@code atch_file_id} 컬럼.
+     * 대부분의 참조원이 쓰는 연결 술어 — 전용 {@code atch_file_sn} 컬럼.
      * 예외는 {@link #POPUP} 하나이며, 그것이 이 술어를 참조원별로 선언하게 만든 이유다.
      */
-    private static final String DEFAULT_LINKAGE = "atch_file_id = ?";
+    private static final String DEFAULT_LINKAGE = "atch_file_sn = ?";
 
     private final String table;
     private final Sensitivity sensitivity;
@@ -143,13 +143,13 @@ public enum AttachmentSource {
         this.linkagePredicate = linkagePredicate;
     }
 
-    /** 이 참조원이 첨부와 이어지는 방식(WHERE 절). {@code ?} 자리마다 atchFileId 가 바인딩된다. */
+    /** 이 참조원이 첨부와 이어지는 방식(WHERE 절). {@code ?} 자리마다 atchFileSn 가 바인딩된다. */
     public String linkagePredicate() {
         return linkagePredicate;
     }
 
     /** 전용 컬럼이 아니라 URL 문자열로 첨부를 참조하는가 — 레지스트리 린터의 판정 축이 갈린다. */
-    public boolean linksByAttachmentIdColumn() {
+    public boolean linksByAttachmentSnColumn() {
         return DEFAULT_LINKAGE.equals(linkagePredicate);
     }
 

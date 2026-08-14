@@ -37,9 +37,7 @@ public class ScheduleDto {
 
     @Size(max = 20)
     private String schdlPicId;
-
-    @Size(max = 30)
-    private String atchFileId;
+    private Long atchFileSn;
     private String frstRgtrId;
     private LocalDateTime crtDt;
     private String lastMdfrId;

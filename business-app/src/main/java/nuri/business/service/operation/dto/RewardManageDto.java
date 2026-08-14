@@ -24,8 +24,7 @@ public class RewardManageDto {
     private String confmAt;
     private LocalDateTime sanctnDt;
     private String returnResn;
-    @Size(max = 30)
-    private String atchFileId;
+    private Long atchFileSn;
     private String informlSanctnId;
     private String frstRgtrId;
     private LocalDateTime crtDt;

@@ -54,7 +54,7 @@ class MemoReportBigintMigrationIntegrationTest {
             long migratedSn;
             try (ResultSet rows = statement.executeQuery("""
                     SELECT memo_rpt_sn, memo_rpt_ymd, user_id, rptr_id, rpt_cn,
-                           drctn_mttr, atch_file_id, frst_rgtr_id
+                           drctn_mttr, atch_file_sn, frst_rgtr_id
                     FROM tb_memo_rpt_info WHERE rpt_ttl = '기존 메모보고'
                     """)) {
                 assertThat(rows.next()).isTrue();
@@ -65,7 +65,7 @@ class MemoReportBigintMigrationIntegrationTest {
                 assertThat(rows.getString("rptr_id")).isEqualTo("reader-legacy");
                 assertThat(rows.getString("rpt_cn")).isEqualTo("보존할 보고 내용");
                 assertThat(rows.getString("drctn_mttr")).isEqualTo("보존할 지시사항");
-                assertThat(rows.getString("atch_file_id")).isNull();
+                assertThat(rows.getObject("atch_file_sn")).isNull();
                 assertThat(rows.getString("frst_rgtr_id")).isEqualTo("legacy-user");
                 assertThat(rows.next()).isFalse();
             }

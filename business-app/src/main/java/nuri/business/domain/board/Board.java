@@ -85,12 +85,11 @@ public class Board extends BaseEntity implements Serializable {
 
     @Column(length = 256)
     private String pswd;
-
-    @Column(name = "atch_file_id", length = 20)
-    private String atchFileId;
+    @Column(name = "atch_file_sn")
+    private Long atchFileSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "atch_file_id", referencedColumnName = "atch_file_id", insertable = false, updatable = false,
+    @JoinColumn(name = "atch_file_sn", referencedColumnName = "atch_file_sn", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.file.FileMaster fileMaster;
 
@@ -129,7 +128,7 @@ public class Board extends BaseEntity implements Serializable {
     private Board(Long pstSn, String bbsId, Long ansSn, String pstTtl, String pstCn, Long upPstSn,
             Long sortOrdr, String ttlBoldYn, Integer ansLv, Integer inqCnt, String useYn,
             String pstBgngYmd, String pstEndYmd, String userId, String userNm, String pswd,
-            String atchFileId, String scrtYn, Long blogSn, java.time.LocalDateTime evntDt,
+            Long atchFileSn, String scrtYn, Long blogSn, java.time.LocalDateTime evntDt,
             String qnaSttsCd, String qnaCatCd, Integer likeCnt, String ansYn, String ntcYn,
             Integer cmntCnt, Integer fileCnt) {
         this.pstSn = pstSn;
@@ -149,7 +148,7 @@ public class Board extends BaseEntity implements Serializable {
         this.userId = userId;
         this.userNm = userNm;
         this.pswd = pswd;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
         this.scrtYn = scrtYn;
         this.blogSn = blogSn;
         this.evntDt = evntDt;
@@ -169,16 +168,16 @@ public class Board extends BaseEntity implements Serializable {
     public static Board create(Long pstSn, String bbsId, Long ansSn, String pstTtl, String pstCn, Long upPstSn,
             Long sortOrdr, String ttlBoldYn, Integer ansLv, Integer inqCnt, String useYn,
             String pstBgngYmd, String pstEndYmd, String userId, String userNm, String pswd,
-            String atchFileId, String scrtYn, Long blogSn, java.time.LocalDateTime evntDt,
+            Long atchFileSn, String scrtYn, Long blogSn, java.time.LocalDateTime evntDt,
             String qnaSttsCd, String qnaCatCd, Integer likeCnt, String ansYn, String ntcYn,
             Integer cmntCnt, Integer fileCnt) {
         return new Board(pstSn, bbsId, ansSn, pstTtl, pstCn, upPstSn, sortOrdr, ttlBoldYn, ansLv, inqCnt, useYn,
-                pstBgngYmd, pstEndYmd, userId, userNm, pswd, atchFileId, scrtYn, blogSn, evntDt,
+                pstBgngYmd, pstEndYmd, userId, userNm, pswd, atchFileSn, scrtYn, blogSn, evntDt,
                 qnaSttsCd, qnaCatCd, likeCnt, ansYn, ntcYn, cmntCnt, fileCnt);
     }
 
     public void update(String pstTtl, String pstCn, String userId, String userNm, String pswd, String pstBgngYmd,
-            String pstEndYmd, String atchFileId, java.time.LocalDateTime evntDt, String qnaSttsCd, String qnaCatCd, String scrtYn) {
+            String pstEndYmd, Long atchFileSn, java.time.LocalDateTime evntDt, String qnaSttsCd, String qnaCatCd, String scrtYn) {
         this.pstTtl = pstTtl;
         this.pstCn = pstCn;
         this.userId = userId;
@@ -186,7 +185,7 @@ public class Board extends BaseEntity implements Serializable {
         this.pswd = pswd;
         this.pstBgngYmd = pstBgngYmd;
         this.pstEndYmd = pstEndYmd;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
         this.evntDt = evntDt;
         this.qnaSttsCd = qnaSttsCd;
         this.qnaCatCd = qnaCatCd;

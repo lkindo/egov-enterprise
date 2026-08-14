@@ -133,7 +133,7 @@ public class DeptJobService extends BaseAbstractService {
                 .deptTaskCn(dto.getDeptTaskCn())
                 .picId(picId)
                 .prrtyRnk(dto.getPrrtyRnk())
-                .atchFileId(dto.getAtchFileId())
+                .atchFileSn(dto.getAtchFileSn())
                 .build();
         return deptJobRepository.save(deptJob).getDeptTaskSn();
     }
@@ -162,7 +162,7 @@ public class DeptJobService extends BaseAbstractService {
                 dto.getDeptTaskCn(),
                 picId,
                 dto.getPrrtyRnk(),
-                dto.getAtchFileId());
+                dto.getAtchFileSn());
     }
 
     @Transactional

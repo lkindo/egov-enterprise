@@ -40,9 +40,8 @@ public class BannerDto {
     @Size(max = 1)
     private String rfltYn;
 
-    @Schema(description = "배너 이미지 파일 ID")
-    @Size(max = 30)
-    private String atchFileId;
+    @Schema(description = "배너 이미지 첨부파일 일련번호")
+    private Long atchFileSn;
 
     @Schema(description = "생성자 ID")
     private String frstRgtrId;

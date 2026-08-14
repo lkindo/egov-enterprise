@@ -31,7 +31,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
     }
 
     @Override
-    public Grants resolve(String atchFileId, String loginId, String esntlId) {
+    public Grants resolve(Long atchFileSn, String loginId, String esntlId) {
         boolean shared = false;
         boolean owner = false;
         boolean personal = false;
@@ -42,20 +42,20 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 continue;
             }
             try {
-                SourceHit hit = query(source, atchFileId, loginId, esntlId);
+                SourceHit hit = query(source, atchFileSn, loginId, esntlId);
                 shared |= hit.shared();
                 owner |= hit.owner();
                 personal |= hit.referenced() && source.sensitivity() == AttachmentSource.Sensitivity.PERSONAL;
             } catch (DataAccessException ex) {
-                log.error("[FileAccess] 참조원 조회 실패 — fail-closed 로 처리한다. source={} table={} atchFileId={}",
-                        source, source.table(), atchFileId, ex);
+                log.error("[FileAccess] 참조원 조회 실패 — fail-closed 로 처리한다. source={} table={} atchFileSn={}",
+                        source, source.table(), atchFileSn, ex);
                 personal = true;
             }
         }
         return new Grants(shared, owner, personal);
     }
 
-    private SourceHit query(AttachmentSource source, String atchFileId, String loginId, String esntlId) {
+    private SourceHit query(AttachmentSource source, Long atchFileSn, String loginId, String esntlId) {
         List<Object> params = new ArrayList<>();
 
         String sharedExpr = source.sharedPredicate() != null ? source.sharedPredicate() : "1 = 0";
@@ -81,10 +81,10 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
             ownerExpr.append("1 = 0");
         }
 
-        // SELECT 절의 ? 가 WHERE 절보다 앞서므로 atchFileId 는 마지막에 바인딩한다.
+        // SELECT 절의 ? 가 WHERE 절보다 앞서므로 atchFileSn 는 마지막에 바인딩한다.
         // 연결 술어는 참조원마다 다르고(POPUP 은 URL 비교라 자리표시자가 2개다) 개수만큼 반복 바인딩한다.
         for (int i = 0; i < countPlaceholders(source.linkagePredicate()); i++) {
-            params.add(atchFileId);
+            params.add(atchFileSn);
         }
 
         String sql = "SELECT COUNT(*) AS ref_cnt,"

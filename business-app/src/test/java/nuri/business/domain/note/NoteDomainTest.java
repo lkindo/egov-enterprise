@@ -18,23 +18,23 @@ class NoteDomainTest {
         assertNotNull(note1);
 
         // 2. 전체 인자 생성자 및 기본 Getter 검증
-        Note note2 = new Note(1L, "Title", "Content", "F1");
+        Note note2 = new Note(1L, "Title", "Content", 101L);
         assertEquals(1L, note2.getNoteSn());
         assertEquals("Title", note2.getNoteTtl());
         assertEquals("Content", note2.getNoteCn());
-        assertEquals("F1", note2.getAtchFileId());
+        assertEquals("F1", note2.getAtchFileSn());
 
         // 3. SuperBuilder 검증
         Note note3 = Note.builder()
                 .noteSn(3L)
                 .noteTtl("Subject")
                 .noteCn("Content3")
-                .atchFileId("F3")
+                .atchFileSn(103L)
                 .build();
         assertEquals(3L, note3.getNoteSn());
         assertEquals("Subject", note3.getNoteTtl());
         assertEquals("Content3", note3.getNoteCn());
-        assertEquals("F3", note3.getAtchFileId());
+        assertEquals("F3", note3.getAtchFileSn());
 
         assertNotNull(Note.builder().toString());
     }

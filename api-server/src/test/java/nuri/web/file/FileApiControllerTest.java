@@ -36,7 +36,7 @@ class FileApiControllerTest {
     @DisplayName("파일 업로드 - 성공")
     void uploadFiles_success() throws Exception {
         // Given
-        when(fileService.uploadFiles(anyList())).thenReturn("FILE_ID_001");
+        when(fileService.uploadFiles(anyList())).thenReturn(101L);
 
         MockMultipartFile file1 = new MockMultipartFile(
                 "files",
@@ -49,6 +49,6 @@ class FileApiControllerTest {
                 .file(file1))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value("FILE_ID_001"));
+                .andExpect(jsonPath("$.data").value(101));
     }
 }

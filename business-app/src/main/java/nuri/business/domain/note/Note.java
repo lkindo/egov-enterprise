@@ -30,12 +30,11 @@ public class Note extends BaseEntity {
 
     @Column(length = 4000)
     private String noteCn;
-
-    @Column(name = "atch_file_id", length = 20)
-    private String atchFileId;
+    @Column(name = "atch_file_sn")
+    private Long atchFileSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "atch_file_id", referencedColumnName = "atch_file_id", insertable = false, updatable = false,
+    @JoinColumn(name = "atch_file_sn", referencedColumnName = "atch_file_sn", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.file.FileMaster fileMaster;
 
@@ -45,15 +44,15 @@ public class Note extends BaseEntity {
     @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<NoteTrnsmit> noteTrnsmits = new java.util.ArrayList<>();
 
-    public Note(Long noteSn, String noteTtl, String noteCn, String atchFileId) {
+    public Note(Long noteSn, String noteTtl, String noteCn, Long atchFileSn) {
         this.noteSn = noteSn;
         this.noteTtl = noteTtl;
         this.noteCn = noteCn;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
     }
 
     @Builder
-    public static Note create(Long noteSn, String noteTtl, String noteCn, String atchFileId) {
-        return new Note(noteSn, noteTtl, noteCn, atchFileId);
+    public static Note create(Long noteSn, String noteTtl, String noteCn, Long atchFileSn) {
+        return new Note(noteSn, noteTtl, noteCn, atchFileSn);
     }
 }

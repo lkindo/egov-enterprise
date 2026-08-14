@@ -1577,7 +1577,7 @@ export interface paths {
         put?: never;
         /**
          * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         * @description 여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.
          */
         post: operations["uploadFiles"];
         delete?: never;
@@ -1597,7 +1597,7 @@ export interface paths {
         put?: never;
         /**
          * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         * @description 여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.
          */
         post: operations["uploadFiles_1"];
         delete?: never;
@@ -1617,7 +1617,7 @@ export interface paths {
         put?: never;
         /**
          * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         * @description 여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.
          */
         post: operations["uploadFiles_2"];
         delete?: never;
@@ -1637,7 +1637,7 @@ export interface paths {
         put?: never;
         /**
          * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         * @description 여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.
          */
         post: operations["uploadFiles_3"];
         delete?: never;
@@ -3336,7 +3336,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/files/{atchFileId}/{fileSn}": {
+    "/api/v1/files/{atchFileSn}/{fileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3356,7 +3356,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/system/files/{atchFileSn}/{fileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3376,7 +3376,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/content/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/content/files/{atchFileSn}/{fileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3396,7 +3396,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/operation/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3416,7 +3416,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/files/{atchFileId}": {
+    "/api/v1/files/{atchFileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3425,7 +3425,7 @@ export interface paths {
         };
         /**
          * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         * @description 첨부파일 일련번호에 속한 파일 목록을 조회합니다.
          */
         get: operations["getFileList"];
         put?: never;
@@ -3436,7 +3436,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/files/{atchFileId}": {
+    "/api/v1/admin/system/files/{atchFileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3445,7 +3445,7 @@ export interface paths {
         };
         /**
          * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         * @description 첨부파일 일련번호에 속한 파일 목록을 조회합니다.
          */
         get: operations["getFileList_1"];
         put?: never;
@@ -3456,7 +3456,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/content/files/{atchFileId}": {
+    "/api/v1/admin/content/files/{atchFileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3465,7 +3465,7 @@ export interface paths {
         };
         /**
          * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         * @description 첨부파일 일련번호에 속한 파일 목록을 조회합니다.
          */
         get: operations["getFileList_2"];
         put?: never;
@@ -3476,7 +3476,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/operation/files/{atchFileId}": {
+    "/api/v1/admin/operation/files/{atchFileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3485,7 +3485,7 @@ export interface paths {
         };
         /**
          * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         * @description 첨부파일 일련번호에 속한 파일 목록을 조회합니다.
          */
         get: operations["getFileList_3"];
         put?: never;
@@ -4424,7 +4424,8 @@ export interface components {
             rptCn?: string;
             rptSeCd?: string;
             userId?: string;
-            atchFileId?: string;
+            /** Format: int64 */
+            atchFileSn?: number;
             rptSttsCd?: string;
             rptYmd?: string;
             rptTypeCd?: string;
@@ -4510,7 +4511,8 @@ export interface components {
             schdlEndYmd?: string;
             schdlIpAddr?: string;
             schdlPicId?: string;
-            atchFileId?: string;
+            /** Format: int64 */
+            atchFileSn?: number;
             frstRgtrId?: string;
             /** Format: date-time */
             crtDt?: string;
@@ -4599,8 +4601,11 @@ export interface components {
             rptrNm?: string;
             /** @description 보고내용 */
             rptCn?: string;
-            /** @description 첨부파일아이디 */
-            atchFileId?: string;
+            /**
+             * Format: int64
+             * @description 첨부파일아이디
+             */
+            atchFileSn?: number;
             /** @description 지시사항내용 */
             drctnMttr?: string;
             /**
@@ -4715,7 +4720,8 @@ export interface components {
             picId?: string;
             picNm?: string;
             prrtyRnk?: string;
-            atchFileId?: string;
+            /** Format: int64 */
+            atchFileSn?: number;
             frstRgtrId?: string;
             /** Format: date-time */
             crtDt?: string;
@@ -4762,8 +4768,11 @@ export interface components {
             pstBgngYmd?: string;
             /** @description 게시 종료일자 */
             pstEndYmd?: string;
-            /** @description 첨부파일 ID */
-            atchFileId?: string;
+            /**
+             * Format: int64
+             * @description 첨부파일 일련번호
+             */
+            atchFileSn?: number;
             /** @description 행사 일자 */
             evntDt?: string;
             /** @description Q&A 상태 코드 (OPEN/SOLVED) */
@@ -5363,8 +5372,11 @@ export interface components {
             sortOrdr?: number;
             /** @description 반영 여부 */
             rfltYn?: string;
-            /** @description 배너 이미지 파일 ID */
-            atchFileId?: string;
+            /**
+             * Format: int64
+             * @description 배너 이미지 첨부파일 일련번호
+             */
+            atchFileSn?: number;
             /** @description 생성자 ID */
             frstRgtrId?: string;
             /**
@@ -5736,8 +5748,11 @@ export interface components {
             noteSj?: string;
             /** @description 내용 */
             noteCn?: string;
-            /** @description 첨부 파일 ID */
-            atchFileId?: string;
+            /**
+             * Format: int64
+             * @description 첨부파일 일련번호
+             */
+            atchFileSn?: number;
             /**
              * Format: int64
              * @description 쪽지 발송 일련번호
@@ -5806,8 +5821,11 @@ export interface components {
             sndngResultCode?: string;
             /** @description Description */
             sndngDe?: string;
-            /** @description Description */
-            atchFileId?: string;
+            /**
+             * Format: int64
+             * @description Description
+             */
+            atchFileSn?: number;
         };
         ApiResponseTokenResponse: {
             success?: boolean;
@@ -6041,7 +6059,8 @@ export interface components {
             /** Format: date-time */
             sanctnDt?: string;
             returnResn?: string;
-            atchFileId?: string;
+            /** Format: int64 */
+            atchFileSn?: number;
             informlSanctnId?: string;
             frstRgtrId?: string;
             /** Format: date-time */
@@ -6662,7 +6681,8 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         FileDto: {
-            atchFileId?: string;
+            /** Format: int64 */
+            atchFileSn?: number;
             /** Format: int32 */
             fileSn?: number;
             fileStreCours?: string;
@@ -6842,8 +6862,11 @@ export interface components {
             userNm?: string;
             /** @description 비밀번호 */
             pswd?: string;
-            /** @description 첨부파일 ID */
-            atchFileId?: string;
+            /**
+             * Format: int64
+             * @description 첨부파일 일련번호
+             */
+            atchFileSn?: number;
             /** @description 비밀글 여부 */
             scrtYn?: string;
             /**
@@ -12515,7 +12538,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12541,7 +12564,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12567,7 +12590,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12593,7 +12616,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -15880,7 +15903,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
                 fileSn: number;
             };
             cookie?: never;
@@ -15903,7 +15926,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
                 fileSn: number;
             };
             cookie?: never;
@@ -15926,7 +15949,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
                 fileSn: number;
             };
             cookie?: never;
@@ -15949,7 +15972,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
                 fileSn: number;
             };
             cookie?: never;
@@ -15972,7 +15995,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
             };
             cookie?: never;
         };
@@ -15994,7 +16017,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
             };
             cookie?: never;
         };
@@ -16016,7 +16039,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
             };
             cookie?: never;
         };
@@ -16038,7 +16061,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
             };
             cookie?: never;
         };

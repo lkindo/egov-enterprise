@@ -24,22 +24,22 @@ type LoadState = 'loading' | 'ready' | 'error' | 'empty';
  * 깨진-이미지가 나왔고, 그것이 "이미지가 없는 것" 인지 "불러오지 못한 것" 인지 구분되지 않았다.
  */
 export function AttachmentImage({
-  atchFileId,
+  atchFileSn,
   alt,
   className,
   fallbackClassName,
 }: {
-  /** 통합 파일 ID. 없으면 플레이스홀더를 그린다. */
-  atchFileId?: string | null;
+  /** 첨부파일 일련번호. 없으면 플레이스홀더를 그린다. */
+  atchFileSn?: number | null;
   alt: string;
   className?: string;
   fallbackClassName?: string;
 }) {
   const [src, setSrc] = useState<string | null>(null);
-  const [state, setState] = useState<LoadState>(atchFileId ? 'loading' : 'empty');
+  const [state, setState] = useState<LoadState>(atchFileSn ? 'loading' : 'empty');
 
   useEffect(() => {
-    if (!atchFileId) {
+    if (!atchFileSn) {
       setSrc(null);
       setState('empty');
       return;
@@ -51,13 +51,13 @@ export function AttachmentImage({
 
     (async () => {
       try {
-        const files = await fileService.getFileList(atchFileId);
+        const files = await fileService.getFileList(atchFileSn);
         const first = files?.[0];
         if (!first) {
           if (!cancelled) setState('empty');
           return;
         }
-        const blob = await fileService.fetchBlob(atchFileId, first.fileSn);
+        const blob = await fileService.fetchBlob(atchFileSn, first.fileSn);
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
         setSrc(objectUrl);
@@ -75,7 +75,7 @@ export function AttachmentImage({
         URL.revokeObjectURL(objectUrl);
       }
     };
-  }, [atchFileId]);
+  }, [atchFileSn]);
 
   if (state === 'ready' && src) {
     return (
@@ -105,20 +105,24 @@ export function AttachmentImage({
 /**
  * 저장된 `fileUrl` 문자열에서 첨부 ID 를 뽑는다.
  *
- * <p>팝업(`tb_popup_manage.file_url`)은 URL 문자열을 저장한다. 종전 코드가 저장해 온 값은
- * `/api/v1/files/download?fileId=FILE_xxx` 인데 **백엔드에 그 경로가 없다**(download 매핑 0건).
- * 기존 행을 마이그레이션하지 않고도 살리기 위해, 레거시 질의문자열 형태와 정규 경로 형태를
- * 모두 파싱한다. 외부 URL(http/https)은 첨부가 아니므로 null 을 반환한다 — 호출부가 그대로 렌더한다.
+ * <p>팝업(`tb_popup_info.file_url`)은 URL 문자열을 저장한다. V2_72가 기존 문자열 식별자 URL을
+ * 숫자 정규 경로로 변환하지만, 롤링 전환 중 들어올 수 있는 질의문자열 형태도 숫자일 때만 허용한다.
+ * 외부 URL이나 비숫자 식별자는 첨부가 아니므로 null을 반환한다.
  */
-export function extractAtchFileId(fileUrl?: string | null): string | null {
+export function extractAtchFileSn(fileUrl?: string | null): number | null {
   if (!fileUrl) return null;
   if (/^https?:\/\//i.test(fileUrl)) return null;
 
   const legacy = fileUrl.match(/[?&]fileId=([^&]+)/);
-  if (legacy) return decodeURIComponent(legacy[1]);
+  if (legacy) return parseAttachmentSn(legacy[1]);
 
   const canonical = fileUrl.match(/\/api\/v1\/files\/([^/?#]+)/);
-  if (canonical) return decodeURIComponent(canonical[1]);
+  if (canonical) return parseAttachmentSn(canonical[1]);
 
   return null;
+}
+
+function parseAttachmentSn(rawValue: string): number | null {
+  const value = Number(decodeURIComponent(rawValue));
+  return Number.isSafeInteger(value) && value > 0 ? value : null;
 }

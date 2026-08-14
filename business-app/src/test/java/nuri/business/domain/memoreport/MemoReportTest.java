@@ -36,17 +36,17 @@ class MemoReportTest {
         MemoReport report = MemoReport.builder().build();
 
         // 1. null 또는 empty 날짜 검증 스킵
-        report.update("T", null, "U", "R", "C", "A");
+        report.update("T", null, "U", "R", "C", 101L);
         assertThat(report.getMemoRptYmd()).isNull();
 
-        report.update("T", "", "U", "R", "C", "A");
+        report.update("T", "", "U", "R", "C", 101L);
         assertThat(report.getMemoRptYmd()).isEmpty();
 
         // 2. 정상 날짜 포맷 (YYYYMMDD 및 YYYY-MM-DD)
-        report.update("T", "20260604", "U", "R", "C", "A");
+        report.update("T", "20260604", "U", "R", "C", 101L);
         assertThat(report.getMemoRptYmd()).isEqualTo("20260604");
 
-        report.update("T", "2026-06-04", "U", "R", "C", "A");
+        report.update("T", "2026-06-04", "U", "R", "C", 101L);
         assertThat(report.getMemoRptYmd()).isEqualTo("2026-06-04");
     }
 
@@ -56,12 +56,12 @@ class MemoReportTest {
         MemoReport report = MemoReport.builder().build();
 
         // 8자리가 아닐 때
-        assertThatThrownBy(() -> report.update("T", "2026", "U", "R", "C", "A"))
+        assertThatThrownBy(() -> report.update("T", "2026", "U", "R", "C", 101L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("날짜 형식은 8자리 YYYYMMDD 또는 YYYY-MM-DD 여야 합니다.");
 
         // 유효하지 않은 날짜 값일 때 (예: 13월)
-        assertThatThrownBy(() -> report.update("T", "20261304", "U", "R", "C", "A"))
+        assertThatThrownBy(() -> report.update("T", "20261304", "U", "R", "C", 101L))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("유효하지 않은 날짜 형식입니다");
     }

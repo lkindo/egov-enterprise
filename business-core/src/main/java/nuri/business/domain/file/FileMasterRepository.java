@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository;
  * 파일 마스터 JPA Repository
  */
 @Repository
-public interface FileMasterRepository extends JpaRepository<FileMaster, String> {
+public interface FileMasterRepository extends JpaRepository<FileMaster, Long> {
 }
