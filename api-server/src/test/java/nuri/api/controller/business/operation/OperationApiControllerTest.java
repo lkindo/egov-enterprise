@@ -23,6 +23,7 @@ import java.util.Collections;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 class OperationApiControllerTest {
@@ -86,25 +87,26 @@ class OperationApiControllerTest {
     @Test
     @DisplayName("행사 상세 조회 - 성공")
     void getEvent_success() throws Exception {
-        when(eventService.getEvent("E1")).thenReturn(EventInfoDto.builder().build());
-        eventMockMvc.perform(get("/api/v1/admin/operation/events/E1")).andExpect(status().isOk());
+        when(eventService.getEvent(1L)).thenReturn(EventInfoDto.builder().evntSn(1L).build());
+        eventMockMvc.perform(get("/api/v1/admin/operation/events/1")).andExpect(status().isOk());
     }
 
     @Test
     @DisplayName("행사 등록/수정/삭제 - 성공")
     void event_crud_success() throws Exception {
         EventInfoDto dto = EventInfoDto.builder().build();
-        when(eventService.createEvent(anyString(), any())).thenReturn("E_NEW");
+        when(eventService.createEvent(anyString(), any())).thenReturn(1L);
 
         eventMockMvc.perform(post("/api/v1/admin/operation/events")
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(1));
 
-        eventMockMvc.perform(put("/api/v1/admin/operation/events/E1")
+        eventMockMvc.perform(put("/api/v1/admin/operation/events/1")
                 .contentType(MediaType.APPLICATION_JSON).content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        eventMockMvc.perform(delete("/api/v1/admin/operation/events/E1")).andExpect(status().isOk());
+        eventMockMvc.perform(delete("/api/v1/admin/operation/events/1")).andExpect(status().isOk());
     }
 
     // --- ExternalHrApiController Tests ---
@@ -126,7 +128,9 @@ class OperationApiControllerTest {
     @DisplayName("외부인력 등록 - 성공")
     void hr_create_success() throws Exception {
         hrMockMvc.perform(post("/api/v1/admin/operation/external-hr")
-                .contentType(MediaType.APPLICATION_JSON).content("{}")).andExpect(status().isOk());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"evntSn\":1,\"otsdHrId\":\"HR1\"}"))
+                .andExpect(status().isOk());
     }
 
     // --- RewardManageApiController Tests ---

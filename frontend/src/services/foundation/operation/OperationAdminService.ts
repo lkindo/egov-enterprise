@@ -7,7 +7,7 @@ import { AxiosRequestConfig } from 'axios';
  * - 서버: nuri.business.service.operation.dto.ExternalHrDto
  */
 export interface ExternalHr {
-  evntId?: string;
+  evntSn?: number;
   otsdHrId?: string;
   otsdHrNm?: string;
   gndrCd?: string;

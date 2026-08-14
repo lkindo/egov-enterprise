@@ -706,7 +706,7 @@ export type AuthorManageDto = z.infer<typeof AuthorManageDtoSchema>;
 // EventInfoDto Schema
 // ==========================================================================
 export const EventInfoDtoSchema = z.object({
-  evntId: z.string().min(0).max(20).optional(),
+  evntSn: z.number().optional(),
   evntNm: z.string().min(0).max(200).optional(),
   bizYr: z.string().min(0).max(4).optional(),
   evntCn: z.string().min(0).max(4000).optional(),
@@ -1129,8 +1129,8 @@ export type ApiResponseRewardManageDto = z.infer<typeof ApiResponseRewardManageD
 // ExternalHrDto Schema
 // ==========================================================================
 export const ExternalHrDtoSchema = z.object({
-  evntId: z.string().min(0).max(20).optional(),
-  otsdHrId: z.string().min(0).max(20).optional(),
+  evntSn: z.number(),
+  otsdHrId: z.string().min(0).max(20),
   gndrCd: z.string().min(0).max(30).optional(),
   otsdHrNm: z.string().min(0).max(100).optional(),
   crTypeCd: z.string().min(0).max(12).optional(),

@@ -9,7 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface EventInfoRepository extends JpaRepository<EventInfo, String> {
+public interface EventInfoRepository extends JpaRepository<EventInfo, Long> {
     
     @Query("SELECT e FROM EventInfo e WHERE " +
            "(:searchWrd IS NULL OR e.evntCn LIKE %:searchWrd% OR e.evntNm LIKE %:searchWrd%)")

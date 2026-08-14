@@ -157,9 +157,12 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] PrivacyLog — V2_79에서 요청 상관관계 dmnd_id는 UNIQUE 업무키로
             //   보존하고 prvc_log_sn BIGINT IDENTITY를 내부 PK로 분리했다. E2E 0행,
             //   inbound/outbound FK 0이며 조회 DTO·프론트 행 식별자도 숫자 내부키로 이관했다.
+            // [2026-08-14 제거] EventInfo — V2_80에서 evnt_sn BIGINT IDENTITY로 전환하고
+            //   외부인사 복합 PK/FK도 숫자 관계로 백필·검증했다. E2E 부모·자식 0행,
+            //   고아 0건이며 행사·외부인사 JPA/API/프론트 계약과 EVT_ 수동 채번을 함께 이관했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
-            "DeptManage", "EventInfo",
+            "DeptManage",
             // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).
             //   FAQ 는 게시판(tb_bbs_item, bbs_id='BBSMSTR_AAAAAAAAAAAA')으로 통합돼 운영 중이고
             //   전용 도메인은 死자산이었다. 라이브 실측: tb_faq_info 0행 / 게시판 FAQ 281행,

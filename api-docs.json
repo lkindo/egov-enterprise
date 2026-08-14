@@ -4969,7 +4969,7 @@
         }
       }
     },
-    "/api/v1/admin/operation/events/{eventId}": {
+    "/api/v1/admin/operation/events/{evntSn}": {
       "get": {
         "tags": [
           "Event"
@@ -4979,14 +4979,15 @@
         "operationId": "getEvent",
         "parameters": [
           {
-            "name": "eventId",
+            "name": "evntSn",
             "in": "path",
-            "description": "행사 ID",
+            "description": "행사 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             },
-            "example": "EVT_12345678"
+            "example": 1
           }
         ],
         "responses": {
@@ -5011,11 +5012,12 @@
         "operationId": "updateEvent",
         "parameters": [
           {
-            "name": "eventId",
+            "name": "evntSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5051,11 +5053,12 @@
         "operationId": "deleteEvent",
         "parameters": [
           {
-            "name": "eventId",
+            "name": "evntSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -11540,7 +11543,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -18389,12 +18392,11 @@
         "type": "object",
         "description": "행사 정보 상세 DTO",
         "properties": {
-          "evntId": {
-            "type": "string",
-            "description": "행사 ID",
-            "example": "EVT_1716611000000",
-            "maxLength": 20,
-            "minLength": 0
+          "evntSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "행사 내부 일련번호",
+            "example": 1
           },
           "evntNm": {
             "type": "string",
@@ -19692,10 +19694,9 @@
       "ExternalHrDto": {
         "type": "object",
         "properties": {
-          "evntId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "evntSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "otsdHrId": {
             "type": "string",
@@ -19761,7 +19762,11 @@
           "lastMdfrId": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "evntSn",
+          "otsdHrId"
+        ]
       },
       "ApiResponseExternalHrDto": {
         "type": "object",

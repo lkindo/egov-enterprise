@@ -33,7 +33,7 @@ public class ExternalHrService {
     @Transactional
     public ExternalHrDto createExternalHr(ExternalHrDto dto) {
         ExternalHr hr = ExternalHr.builder()
-                .evntId(dto.getEvntId())
+                .evntSn(dto.getEvntSn())
                 .otsdHrId(dto.getOtsdHrId())
                 .otsdHrNm(dto.getOtsdHrNm())
                 .gndrCd(dto.getGndrCd())
@@ -52,7 +52,7 @@ public class ExternalHrService {
 
     private ExternalHrDto convertToDto(ExternalHr hr) {
         return ExternalHrDto.builder()
-                .evntId(hr.getEvntId())
+                .evntSn(hr.getEvntSn())
                 .otsdHrId(hr.getOtsdHrId())
                 .otsdHrNm(hr.getOtsdHrNm())
                 .gndrCd(hr.getGndrCd())

@@ -1130,7 +1130,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/operation/events/{eventId}": {
+    "/api/v1/admin/operation/events/{evntSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -5415,10 +5415,11 @@ export interface components {
         /** @description 행사 정보 상세 DTO */
         EventInfoDto: {
             /**
-             * @description 행사 ID
-             * @example EVT_1716611000000
+             * Format: int64
+             * @description 행사 내부 일련번호
+             * @example 1
              */
-            evntId?: string;
+            evntSn?: number;
             /**
              * @description 행사 명칭
              * @example 사내 인공지능 해커톤 캠페인
@@ -6086,8 +6087,9 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         ExternalHrDto: {
-            evntId?: string;
-            otsdHrId?: string;
+            /** Format: int64 */
+            evntSn: number;
+            otsdHrId: string;
             gndrCd?: string;
             otsdHrNm?: string;
             crTypeCd?: string;
@@ -11626,10 +11628,10 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description 행사 ID
-                 * @example EVT_12345678
+                 * @description 행사 일련번호
+                 * @example 1
                  */
-                eventId: string;
+                evntSn: number;
             };
             cookie?: never;
         };
@@ -11651,7 +11653,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                eventId: string;
+                evntSn: number;
             };
             cookie?: never;
         };
@@ -11677,7 +11679,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                eventId: string;
+                evntSn: number;
             };
             cookie?: never;
         };
@@ -15037,7 +15039,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };

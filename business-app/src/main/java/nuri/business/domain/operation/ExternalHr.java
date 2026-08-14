@@ -16,13 +16,9 @@ import java.time.LocalDateTime;
 public class ExternalHr {
 
     @Id
-    // [JPA 복합키 식별자-외래키 컬럼 공유 규칙]
-    // evntId는 복합키 식별자 필드이자, 하단의 @ManyToOne event 연관관계 필드의 @JoinColumn("EVNT_ID")과 
-    // 동일한 실제 물리 DB 컬럼(evnt_id)을 공유(Shared Column Mapping)하고 있습니다.
-    // 명시적인 name = "evnt_id" 지정을 누락하면, Hibernate는 두 프로퍼티 간의 물리 컬럼 병합을 
-    // 인식하지 못해 DuplicateMappingException을 유발하므로 이 name 속성은 반드시 명시적으로 보존해야 합니다.
-    @Column(name = "evnt_id", length = 20)
-    private String evntId;
+    // 행사 숫자 FK는 복합키 식별자이자 하단 연관관계와 동일 물리 컬럼을 공유한다.
+    @Column(name = "evnt_sn")
+    private Long evntSn;
 
     @Id
     @Column(length = 20)
@@ -66,15 +62,15 @@ public class ExternalHr {
     private String lastMdfrId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "EVNT_ID", insertable = false, updatable = false)
+    @JoinColumn(name = "evnt_sn", insertable = false, updatable = false)
     private EventInfo event;
 
     @Builder
-    public ExternalHr(String evntId, String otsdHrId, String gndrCd, String otsdHrNm,
+    public ExternalHr(Long evntSn, String otsdHrId, String gndrCd, String otsdHrNm,
                       String crTypeCd, String ogdpInstNm, String brdtYmd, String areaNo,
                       String mdTelno, String endTelno, String emlAddr,
                       String frstRgtrId, String lastMdfrId) {
-        this.evntId = evntId;
+        this.evntSn = evntSn;
         this.otsdHrId = otsdHrId;
         this.gndrCd = gndrCd;
         this.otsdHrNm = otsdHrNm;
