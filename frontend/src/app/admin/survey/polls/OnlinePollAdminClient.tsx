@@ -166,7 +166,7 @@ export default function OnlinePollAdminClient() {
  </div>
  <div>
  <span className="font-bold tracking-tighter text-foreground block text-lg leading-none">{item.pollNm}</span>
- <span className="text-xs font-bold text-muted-foreground tracking-widest mt-2 opacity-40">설문 ID: {item.pollId}</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-widest mt-2 opacity-40">설문 SN: {item.pollSn}</span>
  </div>
  </div>
  )
@@ -316,7 +316,7 @@ export default function OnlinePollAdminClient() {
  // 조회 실패를 '등록된 온라인 설문이 없습니다'로 위장하지 않는다(P1-1).
  error={isError ? error : null}
  onRetry={() => void refetch()}
- keyField="pollId"
+ keyField="pollSn"
  emptyMessage="등록된 온라인 설문이 없습니다."
  className="border-none bg-transparent"
  pagination={{

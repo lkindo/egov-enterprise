@@ -36,10 +36,10 @@ public class PollApiController {
     }
 
     @Operation(summary = "설문 상세 조회", description = "설문 상세 정보 및 항목 목록을 조회합니다.")
-    @GetMapping("/{pollId}")
+    @GetMapping("/{pollSn}")
     public ResponseEntity<ApiResponse<OnlinePollManageDto>> getPoll(
-            @Parameter(description = "설문 ID") @PathVariable String pollId) {
-        return ResponseEntity.ok(ApiResponse.success(pollService.getPoll(pollId)));
+            @Parameter(description = "설문 일련번호") @PathVariable Long pollSn) {
+        return ResponseEntity.ok(ApiResponse.success(pollService.getPoll(pollSn)));
     }
 
     @Operation(summary = "설문 등록", description = "새로운 설문을 등록합니다.")
@@ -50,39 +50,39 @@ public class PollApiController {
     }
 
     @Operation(summary = "설문 수정", description = "기존 설문 정보를 수정합니다.")
-    @PutMapping("/{pollId}")
+    @PutMapping("/{pollSn}")
     public ResponseEntity<ApiResponse<Void>> updatePoll(
-            @PathVariable String pollId,
+            @PathVariable Long pollSn,
             @Valid @RequestBody OnlinePollManageDto dto) {
-        dto.setPollId(pollId);
+        dto.setPollSn(pollSn);
         pollService.updatePoll(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 삭제", description = "설문을 삭제합니다.")
-    @DeleteMapping("/{pollId}")
-    public ResponseEntity<ApiResponse<Void>> deletePoll(@PathVariable String pollId) {
-        pollService.deletePoll(pollId);
+    @DeleteMapping("/{pollSn}")
+    public ResponseEntity<ApiResponse<Void>> deletePoll(@PathVariable Long pollSn) {
+        pollService.deletePoll(pollSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 참여(투표)", description = "특정 설문 항목에 투표합니다.")
-    @PostMapping("/{pollId}/vote/{pollIemId}")
+    @PostMapping("/{pollSn}/vote/{pollArtclSn}")
     public ResponseEntity<ApiResponse<Void>> vote(
-            @PathVariable String pollId,
-            @PathVariable("pollIemId") String pollArtclId) {
+            @PathVariable Long pollSn,
+            @PathVariable Long pollArtclSn) {
         // 투표자 식별은 loginId 로 한다. 감사 컬럼 frst_rgtr_id(=loginId)·이중투표 유니크 제약과
         // 동일한 식별자여야 하므로 getUsername()(=esntlId) 이 아니라 getCurrentLoginId() 를 쓴다.
         String loginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId()
                 .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException(
                         "로그인이 필요합니다.", nuri.foundation.core.exception.CommonErrorCode.UNAUTHORIZED));
-        pollService.vote(pollId, pollArtclId, loginId);
+        pollService.vote(pollSn, pollArtclSn, loginId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 항목 목록 조회", description = "특정 설문의 항목 목록을 조회합니다.")
-    @GetMapping("/{pollId}/items")
-    public ResponseEntity<ApiResponse<List<OnlinePollArticleDto>>> getPollItems(@PathVariable String pollId) {
-        return ResponseEntity.ok(ApiResponse.success(pollService.getPollItemList(pollId)));
+    @GetMapping("/{pollSn}/items")
+    public ResponseEntity<ApiResponse<List<OnlinePollArticleDto>>> getPollItems(@PathVariable Long pollSn) {
+        return ResponseEntity.ok(ApiResponse.success(pollService.getPollItemList(pollSn)));
     }
 }

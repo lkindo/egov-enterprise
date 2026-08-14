@@ -1,5 +1,5 @@
 export interface OnlinePollManageVO {
-  pollId?: string;
+  pollSn?: number;
   pollNm: string;
   // ⚠ 물리 컬럼은 varchar(8), DTO 는 @Size(max = 8) — 저장/전송 포맷은 'yyyyMMdd' 다.
   //   'yyyy-MM-dd'(10자)를 보내면 컨트롤러 @Valid 에서 400 이 난다.
@@ -14,8 +14,8 @@ export interface OnlinePollManageVO {
 }
 
 export interface OnlinePollItemVO {
-  pollId: string;
-  pollArtclId?: string;
+  pollSn: number;
+  pollArtclSn?: number;
   pollArtclNm: string;
   pollIemCo?: number; // 투표 수
   frstRgtrId?: string;
@@ -23,8 +23,8 @@ export interface OnlinePollItemVO {
 }
 
 export interface OnlinePollPartcptnVO {
-  pollId: string;
-  pollArtclId: string; // 선택한 항목 ID
+  pollSn: number;
+  pollArtclSn: number; // 선택한 항목 일련번호
   frstRgtrId?: string; // 사용자ID
 }
 

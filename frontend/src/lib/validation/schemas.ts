@@ -24,7 +24,7 @@ export const commonRules = {
 };
 
 export const pollSchema = OnlinePollManageDtoSchema.extend({
-  pollId: z.string().optional(),
+  pollSn: z.number().optional(),
   pollNm: z.string().min(1),
   pollDsuseYn: z.string().optional().default('N'),
   pollBgngYmd: z.string().min(0).max(10).optional(),

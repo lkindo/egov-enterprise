@@ -5,6 +5,7 @@ import nuri.business.domain.system.service.survey.*;
 import nuri.business.service.system.service.survey.dto.OnlinePollArticleDto;
 import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -49,11 +50,16 @@ class OnlinePollServiceTest {
     @Mock
     private OnlinePollResultRepository pollResultRepository;
 
+    @BeforeEach
+    void setUpPollArticleOwnership() {
+        given(pollItemRepository.existsByPollArtclSnAndPollManagePollSn(any(), any())).willReturn(true);
+    }
+
     @Test
     @DisplayName("설문 목록 조회 - 키워드 없음")
     void getPollList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
+        OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Poll 1").build();
         given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList(null, pageable);
@@ -65,7 +71,7 @@ class OnlinePollServiceTest {
     @DisplayName("설문 목록 조회 - 키워드 있음")
     void getPollList_WithKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
+        OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Poll 1").build();
         given(pollManageRepository.findByPollNmContaining(eq("Keyword"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList("Keyword", pageable);
@@ -78,7 +84,7 @@ class OnlinePollServiceTest {
     @DisplayName("설문 목록 조회 - 빈 키워드")
     void getPollList_EmptyKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").build();
+        OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).build();
         given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList("", pageable);
@@ -90,7 +96,7 @@ class OnlinePollServiceTest {
     @DisplayName("설문 목록 조회 - 설문 항목 없는 경우")
     void getPollList_NoPollArticles() {
         Pageable pageable = PageRequest.of(0, 10);
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").build(); // No pollArticles
+        OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).build(); // No pollArticles
         given(pollManageRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         Page<OnlinePollManageDto> result = onlinePollService.getPollList("", pageable);
@@ -101,23 +107,23 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 상세 조회 - 성공")
     void getPoll_Success() {
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Poll 1").build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
+        OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Poll 1").build();
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
         
-        OnlinePollArticle item = OnlinePollArticle.builder().pollArtclId("I1").pollManage(entity).pollArtclNm("Item 1").build();
-        given(pollItemRepository.findByPollManagePollId("P1")).willReturn(List.of(item));
+        OnlinePollArticle item = OnlinePollArticle.builder().pollArtclSn(11L).pollManage(entity).pollArtclNm("Item 1").build();
+        given(pollItemRepository.findByPollManagePollSn(1L)).willReturn(List.of(item));
 
-        OnlinePollManageDto result = onlinePollService.getPoll("P1");
+        OnlinePollManageDto result = onlinePollService.getPoll(1L);
 
-        assertThat(result.getPollId()).isEqualTo("P1");
+        assertThat(result.getPollSn()).isEqualTo(1L);
         assertThat(result.getPollArticles()).hasSize(1);
     }
 
     @Test
     @DisplayName("설문 상세 조회 - 실패")
     void getPoll_Fail() {
-        given(pollManageRepository.findById("P99")).willReturn(Optional.empty());
-        assertThrows(BusinessException.class, () -> onlinePollService.getPoll("P99"));
+        given(pollManageRepository.findById(99L)).willReturn(Optional.empty());
+        assertThrows(BusinessException.class, () -> onlinePollService.getPoll(99L));
     }
 
     @Test
@@ -181,14 +187,14 @@ class OnlinePollServiceTest {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
 
             OnlinePollManage entity = OnlinePollManage.builder()
-                    .pollId("P1")
+                    .pollSn(1L)
                     .pollNm("Old")
                     .pollArticles(new ArrayList<>())
                     .build();
-            given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
+            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
-                    .pollId("P1")
+                    .pollSn(1L)
                     .pollNm("P".repeat(150))
                     .pollKndCd("K".repeat(20))
                     .pollBgngYmd("2024/01/01")
@@ -209,11 +215,11 @@ class OnlinePollServiceTest {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
 
-            OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollNm("Old").build();
-            given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
+            OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollNm("Old").build();
+            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
-                    .pollId("P1")
+                    .pollSn(1L)
                     .pollNm("New")
                     .pollArticles(null)
                     .build();
@@ -229,8 +235,8 @@ class OnlinePollServiceTest {
     void updatePoll_Fail() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            given(pollManageRepository.findById("P99")).willReturn(Optional.empty());
-            OnlinePollManageDto dto = OnlinePollManageDto.builder().pollId("P99").build();
+            given(pollManageRepository.findById(99L)).willReturn(Optional.empty());
+            OnlinePollManageDto dto = OnlinePollManageDto.builder().pollSn(99L).build();
             assertThrows(BusinessException.class, () -> onlinePollService.updatePoll(dto));
         }
     }
@@ -251,8 +257,8 @@ class OnlinePollServiceTest {
     void deletePoll() {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
-            onlinePollService.deletePoll("P1");
-            verify(pollManageRepository, times(1)).deleteById("P1");
+            onlinePollService.deletePoll(1L);
+            verify(pollManageRepository, times(1)).deleteById(1L);
         }
     }
     
@@ -262,7 +268,7 @@ class OnlinePollServiceTest {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(false);
             
-            assertThrows(BusinessException.class, () -> onlinePollService.deletePoll("P1"));
+            assertThrows(BusinessException.class, () -> onlinePollService.deletePoll(1L));
         }
     }
 
@@ -271,21 +277,40 @@ class OnlinePollServiceTest {
     void vote_Success() {
         String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
-                .pollId("P1")
+                .pollSn(1L)
                 .pollDsuseYn("N")
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
-        given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
 
-        onlinePollService.vote("P1", "I1", "user1");
+        onlinePollService.vote(1L, 11L, "user1");
 
-        // 저장 엔티티의 poll_id/poll_artcl_id 가 입력과 정확히 일치(필드 스왑 뮤턴트 킬).
+        // 저장 엔티티의 poll_sn/poll_artcl_sn 이 입력과 정확히 일치(필드 스왑 뮤턴트 킬).
         ArgumentCaptor<OnlinePollResult> captor = ArgumentCaptor.forClass(OnlinePollResult.class);
         verify(pollResultRepository, times(1)).saveAndFlush(captor.capture());
-        assertThat(captor.getValue().getPollId()).isEqualTo("P1");
-        assertThat(captor.getValue().getPollArtclId()).isEqualTo("I1");
+        assertThat(captor.getValue().getPollSn()).isEqualTo(1L);
+        assertThat(captor.getValue().getPollArtclSn()).isEqualTo(11L);
+    }
+
+    @Test
+    @DisplayName("설문 투표 - 실패 (선택 항목이 다른 설문 소속)")
+    void vote_Fail_ArticleBelongsToDifferentPoll() {
+        String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
+        OnlinePollManage entity = OnlinePollManage.builder()
+                .pollSn(1L)
+                .pollDsuseYn("N")
+                .pollBgngYmd(today)
+                .pollEndYmd(today)
+                .build();
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollItemRepository.existsByPollArtclSnAndPollManagePollSn(22L, 1L)).willReturn(false);
+
+        assertThatThrownBy(() -> onlinePollService.vote(1L, 22L, "user1"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("설문 항목을 찾을 수 없습니다");
+        verify(pollResultRepository, times(0)).saveAndFlush(any(OnlinePollResult.class));
     }
 
     @Test
@@ -293,15 +318,15 @@ class OnlinePollServiceTest {
     void vote_Success_LongUserId() {
         String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
-                .pollId("P1")
+                .pollSn(1L)
                 .pollDsuseYn("N")
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
-        given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "VeryLongUserIdExceeding20Chars")).willReturn(0L);
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "VeryLongUserIdExceeding20Chars")).willReturn(0L);
 
-        onlinePollService.vote("P1", "I1", "VeryLongUserIdExceeding20Chars");
+        onlinePollService.vote(1L, 11L, "VeryLongUserIdExceeding20Chars");
 
         // frst_rgtr_id 컬럼 길이(20) 초과분은 절단되어야 한다(절단 로직·경계 20 뮤턴트 킬).
         ArgumentCaptor<OnlinePollResult> captor = ArgumentCaptor.forClass(OnlinePollResult.class);
@@ -313,9 +338,9 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 실패 (중지됨)")
     void vote_Fail_Disabled() {
-        OnlinePollManage entity = OnlinePollManage.builder().pollId("P1").pollDsuseYn("Y").build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
-        assertThrows(BusinessException.class, () -> onlinePollService.vote("P1", "I1", "user1"));
+        OnlinePollManage entity = OnlinePollManage.builder().pollSn(1L).pollDsuseYn("Y").build();
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        assertThrows(BusinessException.class, () -> onlinePollService.vote(1L, 11L, "user1"));
     }
 
     @Test
@@ -323,13 +348,13 @@ class OnlinePollServiceTest {
     void vote_Fail_BeforeStart() {
         String tomorrow = java.time.LocalDate.now().plusDays(1).format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
-                .pollId("P1")
+                .pollSn(1L)
                 .pollDsuseYn("N")
                 .pollBgngYmd(tomorrow)
                 .pollEndYmd(tomorrow)
                 .build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
-        assertThrows(BusinessException.class, () -> onlinePollService.vote("P1", "I1", "user1"));
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        assertThrows(BusinessException.class, () -> onlinePollService.vote(1L, 11L, "user1"));
     }
 
     @Test
@@ -337,13 +362,13 @@ class OnlinePollServiceTest {
     void vote_Fail_AfterEnd() {
         String yesterday = java.time.LocalDate.now().minusDays(1).format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
-                .pollId("P1")
+                .pollSn(1L)
                 .pollDsuseYn("N")
                 .pollBgngYmd(yesterday)
                 .pollEndYmd(yesterday)
                 .build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
-        assertThrows(BusinessException.class, () -> onlinePollService.vote("P1", "I1", "user1"));
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        assertThrows(BusinessException.class, () -> onlinePollService.vote(1L, 11L, "user1"));
     }
 
     @Test
@@ -351,15 +376,15 @@ class OnlinePollServiceTest {
     void vote_Fail_Duplicate() {
         String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
-                .pollId("P1")
+                .pollSn(1L)
                 .pollDsuseYn("N")
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
-        given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(1L);
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(1L);
 
-        assertThatThrownBy(() -> onlinePollService.vote("P1", "I1", "user1"))
+        assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("이미 참여");
     }
@@ -367,21 +392,21 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 투표 - 실패 (경합: pre-check 통과 후 유니크 제약 위반 → 이미 참여)")
     void vote_Fail_ConcurrentDuplicate_ConstraintViolation() {
-        // 동시 요청 경합(TOCTOU): pre-check 는 0(통과)이지만 saveAndFlush 에서 (poll_id, frst_rgtr_id)
+        // 동시 요청 경합(TOCTOU): pre-check 는 0(통과)이지만 saveAndFlush 에서 (poll_sn, frst_rgtr_id)
         // 유니크 제약(V2_4)이 두 번째 INSERT 를 거부한다. 서비스는 이를 멱등하게 "이미 참여"로 변환해야 한다.
         String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
-                .pollId("P1")
+                .pollSn(1L)
                 .pollDsuseYn("N")
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
-        given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
         given(pollResultRepository.saveAndFlush(any(OnlinePollResult.class)))
                 .willThrow(new DataIntegrityViolationException("duplicate key value violates unique constraint \"uk_tb_onln_poll_rslt_poll_voter\""));
 
-        assertThatThrownBy(() -> onlinePollService.vote("P1", "I1", "user1"))
+        assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("이미 참여");
     }
@@ -393,17 +418,17 @@ class OnlinePollServiceTest {
         // "이미 참여" 로 은폐되면 안 된다 → 원 예외가 그대로 전파되어야 한다(catch 한정 뮤턴트 킬).
         String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
-                .pollId("P1")
+                .pollSn(1L)
                 .pollDsuseYn("N")
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
-        given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
         given(pollResultRepository.saveAndFlush(any(OnlinePollResult.class)))
                 .willThrow(new DataIntegrityViolationException("ERROR: value too long for type character varying(20)"));
 
-        assertThatThrownBy(() -> onlinePollService.vote("P1", "I1", "user1"))
+        assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
                 .isInstanceOf(DataIntegrityViolationException.class);
     }
 
@@ -442,25 +467,25 @@ class OnlinePollServiceTest {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")).thenReturn(true);
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
 
-            OnlinePollArticle oldItem1 = OnlinePollArticle.builder().pollArtclId("I1").pollArtclNm("Old1").build();
-            OnlinePollArticle oldItem2 = OnlinePollArticle.builder().pollArtclId("I2").pollArtclNm("Old2").build();
+            OnlinePollArticle oldItem1 = OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("Old1").build();
+            OnlinePollArticle oldItem2 = OnlinePollArticle.builder().pollArtclSn(12L).pollArtclNm("Old2").build();
             List<OnlinePollArticle> existingArticles = new ArrayList<>(List.of(oldItem1, oldItem2));
             
             OnlinePollManage entity = OnlinePollManage.builder()
-                    .pollId("P1")
+                    .pollSn(1L)
                     .pollNm("Old")
                     .pollArticles(existingArticles)
                     .build();
                     
-            given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
+            given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
 
             // I1은 유지, I2는 삭제(전달안됨), I3은 신규
-            OnlinePollArticleDto keepItem = OnlinePollArticleDto.builder().pollArtclId("I1").pollArtclNm("Updated1").build();
-            OnlinePollArticleDto newItem = OnlinePollArticleDto.builder().pollArtclId("").pollArtclNm("New3").build();
+            OnlinePollArticleDto keepItem = OnlinePollArticleDto.builder().pollArtclSn(11L).pollArtclNm("Updated1").build();
+            OnlinePollArticleDto newItem = OnlinePollArticleDto.builder().pollArtclNm("New3").build();
             OnlinePollArticleDto emptyItem = OnlinePollArticleDto.builder().pollArtclNm("").build();
 
             OnlinePollManageDto dto = OnlinePollManageDto.builder()
-                    .pollId("P1")
+                    .pollSn(1L)
                     .pollNm("New")
                     .pollDsuseYn("")
                     .pollAtmcDsuseYn(" ")
@@ -483,19 +508,19 @@ class OnlinePollServiceTest {
     void vote_Anonymous() {
         String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
-                .pollId("P1")
+                .pollSn(1L)
                 .pollDsuseYn("N")
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
         
         // user 파라미터가 null일 때 NullPointerException 이 발생하는 분기 (saveAndFlush 이전에 터짐)
-        assertThatThrownBy(() -> onlinePollService.vote("P1", "I1", null))
+        assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, null))
                 .isInstanceOf(NullPointerException.class);
 
         // userId가 빈 문자열이면 예외 없이 저장이 시도된다 — 거동을 pin(무어서션 swallow 제거).
-        onlinePollService.vote("P1", "I1", "");
+        onlinePollService.vote(1L, 11L, "");
         verify(pollResultRepository, times(1)).saveAndFlush(any(OnlinePollResult.class));
     }
     
@@ -505,8 +530,8 @@ class OnlinePollServiceTest {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
             
-            given(pollManageRepository.findById("P99")).willReturn(Optional.empty());
-            OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollId("P99").pollArtclNm("A").build();
+            given(pollManageRepository.findById(99L)).willReturn(Optional.empty());
+            OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollSn(99L).pollArtclNm("A").build();
             
             assertThrows(BusinessException.class, () -> onlinePollService.insertPollItem(dto));
         }
@@ -518,11 +543,11 @@ class OnlinePollServiceTest {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("user"));
 
-            OnlinePollArticle entity = OnlinePollArticle.builder().pollArtclId("I1").pollArtclNm("Old").build();
-            given(pollItemRepository.findById("I1")).willReturn(Optional.of(entity));
+            OnlinePollArticle entity = OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("Old").build();
+            given(pollItemRepository.findById(11L)).willReturn(Optional.of(entity));
 
             // update할 이름이 null 이거나 비어있을 때
-            OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclId("I1").pollArtclNm("  ").build();
+            OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclSn(11L).pollArtclNm("  ").build();
             onlinePollService.updatePollItem(dto);
 
             // update()는 빈값 가드가 없어 blank 이름을 그대로 반영한다(기존 'Old' → '  ', 무시 아님).
@@ -536,10 +561,10 @@ class OnlinePollServiceTest {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class, org.mockito.Mockito.CALLS_REAL_METHODS)) {
             mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.getCurrentLoginId()).thenReturn(Optional.of("VeryLongUserIdExceeding20Chars"));
 
-            OnlinePollArticle entity = OnlinePollArticle.builder().pollArtclId("I1").pollArtclNm("Old").build();
-            given(pollItemRepository.findById("I1")).willReturn(Optional.of(entity));
+            OnlinePollArticle entity = OnlinePollArticle.builder().pollArtclSn(11L).pollArtclNm("Old").build();
+            given(pollItemRepository.findById(11L)).willReturn(Optional.of(entity));
 
-            OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclId("I1").pollArtclNm("N".repeat(150)).build();
+            OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclSn(11L).pollArtclNm("N".repeat(150)).build();
             onlinePollService.updatePollItem(dto);
 
             assertThat(entity.getPollArtclNm()).isEqualTo("N".repeat(100));
@@ -549,8 +574,8 @@ class OnlinePollServiceTest {
     @Test
     @DisplayName("설문 항목 수정 - 실패 (데이터 없음)")
     void updatePollItem_Fail() {
-        given(pollItemRepository.findById("I99")).willReturn(Optional.empty());
-        OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclId("I99").build();
+        given(pollItemRepository.findById(99L)).willReturn(Optional.empty());
+        OnlinePollArticleDto dto = OnlinePollArticleDto.builder().pollArtclSn(99L).build();
         assertThrows(BusinessException.class, () -> onlinePollService.updatePollItem(dto));
     }
 
@@ -599,15 +624,15 @@ class OnlinePollServiceTest {
     void vote_Success_ExactToday() {
         String today = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
         OnlinePollManage entity = OnlinePollManage.builder()
-                .pollId("P1")
+                .pollSn(1L)
                 .pollDsuseYn("N")
                 .pollBgngYmd(today)
                 .pollEndYmd(today)
                 .build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
-        given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
 
-        onlinePollService.vote("P1", "I1", "user1");
+        onlinePollService.vote(1L, 11L, "user1");
         verify(pollResultRepository, times(1)).saveAndFlush(any(OnlinePollResult.class));
     }
 
@@ -615,22 +640,22 @@ class OnlinePollServiceTest {
     @DisplayName("설문 투표 - 날짜가 null인 경우")
     void vote_Success_NullDates() {
         OnlinePollManage entity = OnlinePollManage.builder()
-                .pollId("P1")
+                .pollSn(1L)
                 .pollDsuseYn("N")
                 .pollBgngYmd(null)
                 .pollEndYmd(null)
                 .build();
-        given(pollManageRepository.findById("P1")).willReturn(Optional.of(entity));
-        given(pollResultRepository.countByPollIdAndFrstRegisterId("P1", "user1")).willReturn(0L);
+        given(pollManageRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
 
-        onlinePollService.vote("P1", "I1", "user1");
+        onlinePollService.vote(1L, 11L, "user1");
         verify(pollResultRepository, times(1)).saveAndFlush(any(OnlinePollResult.class));
     }
 
     @Test
     @DisplayName("설문 항목 삭제")
     void deletePollItem() {
-        onlinePollService.deletePollItem("I1");
-        verify(pollItemRepository, times(1)).deleteById("I1");
+        onlinePollService.deletePollItem(11L);
+        verify(pollItemRepository, times(1)).deleteById(11L);
     }
 }

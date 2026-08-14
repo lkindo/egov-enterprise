@@ -685,7 +685,7 @@
         }
       }
     },
-    "/api/v1/polls/{pollId}": {
+    "/api/v1/polls/{pollSn}": {
       "get": {
         "tags": [
           "Poll"
@@ -695,12 +695,13 @@
         "operationId": "getPoll",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
-            "description": "설문 ID",
+            "description": "설문 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -726,11 +727,12 @@
         "operationId": "updatePoll",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -766,11 +768,12 @@
         "operationId": "deletePoll",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5719,7 +5722,7 @@
         }
       }
     },
-    "/api/v1/polls/{pollId}/vote/{pollIemId}": {
+    "/api/v1/polls/{pollSn}/vote/{pollArtclSn}": {
       "post": {
         "tags": [
           "Poll"
@@ -5729,19 +5732,21 @@
         "operationId": "vote",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
-            "name": "pollIemId",
+            "name": "pollArtclSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -9024,7 +9029,7 @@
         }
       }
     },
-    "/api/v1/admin/system/polls/{pollId}/vote": {
+    "/api/v1/admin/system/polls/{pollSn}/vote": {
       "post": {
         "tags": [
           "OnlinePoll"
@@ -9033,19 +9038,21 @@
         "operationId": "vote_1",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
-            "name": "pollIemId",
+            "name": "pollArtclSn",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -12363,7 +12370,7 @@
         }
       }
     },
-    "/api/v1/polls/{pollId}/items": {
+    "/api/v1/polls/{pollSn}/items": {
       "get": {
         "tags": [
           "Poll"
@@ -12373,11 +12380,12 @@
         "operationId": "getPollItems",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -14105,7 +14113,7 @@
         }
       }
     },
-    "/api/v1/admin/system/polls/{pollId}": {
+    "/api/v1/admin/system/polls/{pollSn}": {
       "get": {
         "tags": [
           "OnlinePoll"
@@ -14114,11 +14122,12 @@
         "operationId": "getPoll_1",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -16437,17 +16446,15 @@
         "type": "object",
         "description": "온라인 설문 항목 DTO (표준화)",
         "properties": {
-          "pollArtclId": {
-            "type": "string",
-            "description": "설문 항목 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "pollArtclSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 항목 일련번호"
           },
-          "pollId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "pollSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
           "pollArtclNm": {
             "type": "string",
@@ -16478,11 +16485,10 @@
         "type": "object",
         "description": "온라인 설문 관리 DTO (표준화)",
         "properties": {
-          "pollId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "pollSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
           "pollNm": {
             "type": "string",

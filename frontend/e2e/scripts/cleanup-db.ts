@@ -12,7 +12,7 @@ interface PagePayload<T> {
 
 interface CleanupUser { userId: string }
 interface CleanupBoard { bbsId: string; bbsTtl?: string; bbsNm?: string }
-interface CleanupPoll { pollId: string; pollNm?: string }
+interface CleanupPoll { pollSn: number; pollNm?: string }
 interface CleanupPopup { popupSn: number; popupTtlNm?: string }
 interface CleanupBanner { bnrSn: number; bnrNm?: string }
 interface CleanupPost { pstId?: string | number; id?: string | number; pstTtl?: string; title?: string }
@@ -139,8 +139,8 @@ async function cleanup() {
         p.pollNm?.startsWith('Debug')
       );
       for (const poll of testPolls) {
-        process.stdout.write(`  - Deleting Poll: ${poll.pollNm} (${poll.pollId})... `);
-        await axios.delete(`${API_BASE}/polls/${poll.pollId}`, { headers });
+        process.stdout.write(`  - Deleting Poll: ${poll.pollNm} (${poll.pollSn})... `);
+        await axios.delete(`${API_BASE}/polls/${poll.pollSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testPolls.length} poll(s) cleaned.`);

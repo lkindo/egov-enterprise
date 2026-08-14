@@ -136,8 +136,8 @@ export type ScheduleDto = z.infer<typeof ScheduleDtoSchema>;
 // OnlinePollArticleDto Schema
 // ==========================================================================
 export const OnlinePollArticleDtoSchema = z.object({
-  pollArtclId: z.string().min(0).max(20).optional(),
-  pollId: z.string().min(0).max(20).optional(),
+  pollArtclSn: z.number().optional(),
+  pollSn: z.number().optional(),
   pollArtclNm: z.string().min(0).max(100),
   pollIemCo: z.number().optional(),
   frstRgtrId: z.string().optional(),
@@ -149,7 +149,7 @@ export type OnlinePollArticleDto = z.infer<typeof OnlinePollArticleDtoSchema>;
 // OnlinePollManageDto Schema
 // ==========================================================================
 export const OnlinePollManageDtoSchema = z.object({
-  pollId: z.string().min(0).max(20).optional(),
+  pollSn: z.number().optional(),
   pollNm: z.string().min(0).max(100),
   pollBgngYmd: z.string().min(0).max(8).optional(),
   pollEndYmd: z.string().min(0).max(8).optional(),

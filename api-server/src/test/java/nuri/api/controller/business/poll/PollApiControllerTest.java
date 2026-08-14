@@ -40,7 +40,7 @@ class PollApiControllerTest extends ControllerTestSupport {
     void getPolls_Success() throws Exception {
         // Given
         OnlinePollManageDto poll = OnlinePollManageDto.builder()
-                .pollId("POLL_001")
+                .pollSn(1L)
                 .pollNm("테스트 설문")
                 .build();
         Page<OnlinePollManageDto> page = new PageImpl<>(List.of(poll));
@@ -52,7 +52,7 @@ class PollApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].pollId").value("POLL_001"))
+                .andExpect(jsonPath("$.data.list[0].pollSn").value(1))
                 .andExpect(jsonPath("$.data.list[0].pollNm").value("테스트 설문"));
     }
  
@@ -61,17 +61,17 @@ class PollApiControllerTest extends ControllerTestSupport {
     void getPoll_Success() throws Exception {
         // Given
         OnlinePollManageDto poll = OnlinePollManageDto.builder()
-                .pollId("POLL_001")
+                .pollSn(1L)
                 .pollNm("테스트 설문")
                 .build();
-        given(pollService.getPoll("POLL_001")).willReturn(poll);
+        given(pollService.getPoll(1L)).willReturn(poll);
  
         // When & Then
-        mockMvc.perform(get("/api/v1/polls/POLL_001")
+        mockMvc.perform(get("/api/v1/polls/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.pollId").value("POLL_001"))
+                .andExpect(jsonPath("$.data.pollSn").value(1))
                 .andExpect(jsonPath("$.data.pollNm").value("테스트 설문"));
     }
  
@@ -84,7 +84,7 @@ class PollApiControllerTest extends ControllerTestSupport {
         // When & Then
         mockMvc.perform(post("/api/v1/polls")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"pollId\":\"POLL_NEW\", \"pollNm\":\"신규 설문\",\"pollBgngYmd\":\"20260520\",\"pollEndYmd\":\"20260525\"}")
+                .content("{\"pollNm\":\"신규 설문\",\"pollBgngYmd\":\"20260520\",\"pollEndYmd\":\"20260525\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -97,9 +97,9 @@ class PollApiControllerTest extends ControllerTestSupport {
         willDoNothing().given(pollService).updatePoll(any(OnlinePollManageDto.class));
  
         // When & Then
-        mockMvc.perform(put("/api/v1/polls/POLL_001")
+        mockMvc.perform(put("/api/v1/polls/1")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"pollId\":\"POLL_001\", \"pollNm\":\"수정 설문\",\"pollBgngYmd\":\"20260520\",\"pollEndYmd\":\"20260525\"}")
+                .content("{\"pollSn\":999, \"pollNm\":\"수정 설문\",\"pollBgngYmd\":\"20260520\",\"pollEndYmd\":\"20260525\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -109,10 +109,10 @@ class PollApiControllerTest extends ControllerTestSupport {
     @DisplayName("설문 삭제 성공")
     void deletePoll_Success() throws Exception {
         // Given
-        willDoNothing().given(pollService).deletePoll("POLL_001");
+        willDoNothing().given(pollService).deletePoll(1L);
  
         // When & Then
-        mockMvc.perform(delete("/api/v1/polls/POLL_001")
+        mockMvc.perform(delete("/api/v1/polls/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -123,10 +123,10 @@ class PollApiControllerTest extends ControllerTestSupport {
     @DisplayName("설문 참여(투표) 성공")
     void vote_Success() throws Exception {
         // Given
-        willDoNothing().given(pollService).vote(eq("POLL_001"), eq("ITEM_001"), eq("testUser"));
+        willDoNothing().given(pollService).vote(eq(1L), eq(11L), eq("testUser"));
  
         // When & Then
-        mockMvc.perform(post("/api/v1/polls/POLL_001/vote/ITEM_001")
+        mockMvc.perform(post("/api/v1/polls/1/vote/11")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -137,19 +137,19 @@ class PollApiControllerTest extends ControllerTestSupport {
     void getPollItems_Success() throws Exception {
         // Given
         OnlinePollArticleDto item = OnlinePollArticleDto.builder()
-                .pollArtclId("ITEM_001")
-                .pollId("POLL_001")
+                .pollArtclSn(11L)
+                .pollSn(1L)
                 .pollArtclNm("항목 1")
                 .pollIemCo(10L)
                 .build();
-        given(pollService.getPollItemList("POLL_001")).willReturn(List.of(item));
+        given(pollService.getPollItemList(1L)).willReturn(List.of(item));
  
         // When & Then
-        mockMvc.perform(get("/api/v1/polls/POLL_001/items")
+        mockMvc.perform(get("/api/v1/polls/1/items")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].pollArtclId").value("ITEM_001"))
+                .andExpect(jsonPath("$.data[0].pollArtclSn").value(11))
                 .andExpect(jsonPath("$.data[0].pollArtclNm").value("항목 1"));
     }
 }

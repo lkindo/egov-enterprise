@@ -24,7 +24,7 @@ export default function OnlinePollParticipateClient() {
  const [polls, setPolls] = useState<OnlinePollManageVO[]>([]);
  const [selectedPoll, setSelectedPoll] = useState<OnlinePollManageVO | null>(null);
  const [pollItems, setPollItems] = useState<OnlinePollItemVO[]>([]);
- const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
+ const [selectedItemSn, setSelectedItemSn] = useState<number | null>(null);
  const [loading, setLoading] = useState(true);
  const [isVoting, setIsVoting] = useState(false);
  const [viewMode, setViewMode] = useState<'list' | 'vote' | 'result'>('list');
@@ -52,10 +52,10 @@ export default function OnlinePollParticipateClient() {
  const handleSelectPoll = async (poll: OnlinePollManageVO) => {
  setLoading(true);
  try {
- const items = await pollUserService.getPollItemList(poll.pollId!);
+ const items = await pollUserService.getPollItemList(poll.pollSn!);
  setPollItems(items || []);
  setSelectedPoll(poll);
- setSelectedItemId(null);
+ setSelectedItemSn(null);
 
  // 기간 밖이거나 판정 불가(손상 값)면 투표를 열지 않고 결과만 보여준다.
  if (isPollActive(poll.pollBgngYmd, poll.pollEndYmd, todayStr, poll.pollDsuseYn)) {
@@ -71,17 +71,17 @@ export default function OnlinePollParticipateClient() {
  };
 
  const handleVote = async () => {
- if (!selectedPoll || !selectedItemId) return;
+ if (!selectedPoll || !selectedItemSn) return;
 
  setIsVoting(true);
  try {
  await pollUserService.participatePoll({
- pollId: selectedPoll.pollId!,
- pollArtclId: selectedItemId
+ pollSn: selectedPoll.pollSn!,
+ pollArtclSn: selectedItemSn
  });
  toast.success('투표가 성공적으로 반영되었습니다.');
  // Refresh items to show new counts
- const updatedItems = await pollUserService.getPollItemList(selectedPoll.pollId!);
+ const updatedItems = await pollUserService.getPollItemList(selectedPoll.pollSn!);
  setPollItems(updatedItems);
  setViewMode('result');
  } catch (error: any) {
@@ -126,7 +126,7 @@ export default function OnlinePollParticipateClient() {
  </div>
  ) : (
  (polls || []).map((poll) => (
- <PollCard key={poll.pollId} poll={poll} todayStr={todayStr} onSelect={() => handleSelectPoll(poll)} />
+ <PollCard key={poll.pollSn} poll={poll} todayStr={todayStr} onSelect={() => handleSelectPoll(poll)} />
  ))
  )}
  </div>
@@ -164,11 +164,11 @@ export default function OnlinePollParticipateClient() {
  <div className="space-y-4">
  {pollItems.map((item, idx) => (
  <PollItem 
- key={item.pollArtclId || `poll-item-${idx}`} 
+ key={item.pollArtclSn || `poll-item-${idx}`}
  item={item} 
  totalVotes={pollItems.reduce((sum, i) => sum + (i.pollIemCo || 0), 0)}
- isSelected={selectedItemId === item.pollArtclId}
- onSelect={() => viewMode === 'vote' && setSelectedItemId(item.pollArtclId!)}
+ isSelected={selectedItemSn === item.pollArtclSn}
+ onSelect={() => viewMode === 'vote' && setSelectedItemSn(item.pollArtclSn!)}
  mode={viewMode}
  index={idx}
  testId={`poll-item-${idx}`}
@@ -187,7 +187,7 @@ export default function OnlinePollParticipateClient() {
  </Button>
  {viewMode === 'vote' && (
  <Button 
- disabled={!selectedItemId || isVoting}
+ disabled={!selectedItemSn || isVoting}
  onClick={handleVote}
  className="h-11 flex-1 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-[0.3em] uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 gap-3"
  >

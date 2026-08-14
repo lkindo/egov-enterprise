@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface OnlinePollManageRepository extends JpaRepository<OnlinePollManage, String> {
+public interface OnlinePollManageRepository extends JpaRepository<OnlinePollManage, Long> {
     List<OnlinePollManage> findByPollDsuseYnAndPollAtmcDsuseYn(String dsuseYn, String atmcDsuseYn);
 
     @Query("SELECT p FROM OnlinePollManage p WHERE LOWER(p.pollNm) LIKE LOWER(CONCAT('%', :keyword, '%'))")

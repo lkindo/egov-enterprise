@@ -113,6 +113,10 @@ class PkGenerationStandardLinterTest {
             //   문자열 기술 PK와 내부 FK 체인을 3개 BIGINT IDENTITY 일련번호로 함께 전환했다.
             //   실측: 세 테이블 모두 0행, 관계 고아 0, 본문의 첨부 outbound FK 1건·고아 0.
             //   구형 관계 주입 회귀와 JPA·API·프론트 숫자 계약으로 폐포 전체를 검증했다.
+            // [2026-08-14 제거] OnlinePollManage · OnlinePollArticle · OnlinePollResult — V2_67에서
+            //   여론조사·항목·결과의 문자열 기술 PK와 내부 FK 체인을 3개 BIGINT IDENTITY
+            //   일련번호로 함께 전환했다. 실측: 세 테이블 모두 0행, 관계 고아·NULL·부모 불일치 0.
+            //   사용자별 투표 UNIQUE와 구형 관계 주입 회귀, JPA·API·프론트 숫자 계약을 검증했다.
             "AdministCode", "Authority", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptManage", "EventInfo",
@@ -130,8 +134,7 @@ class PkGenerationStandardLinterTest {
             //     현재 상태는 "엔티티 없는 빈 테이블 2개" 이며 그 처분은 미결로 남는다.
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
             "FileMaster", "GroupManage", "InformalSanction", "InstitutionCode",
-            "LoginLog", "LoginPolicy", "Menu", "Notification",
-            "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage",
+            "LoginLog", "LoginPolicy", "Menu", "Notification", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
             "SiteMap", "Sms", "SurveyArticle", "SurveyInfo", "SurveyQuestion",
             "SurveyRespondent", "SurveyResult", "SurveyTemplate", "SysLog", "SystemPolicy", "Template",

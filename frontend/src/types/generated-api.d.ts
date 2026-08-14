@@ -114,7 +114,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/polls/{pollId}": {
+    "/api/v1/polls/{pollSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1338,7 +1338,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/polls/{pollId}/vote/{pollIemId}": {
+    "/api/v1/polls/{pollSn}/vote/{pollArtclSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2189,7 +2189,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/polls/{pollId}/vote": {
+    "/api/v1/admin/system/polls/{pollSn}/vote": {
         parameters: {
             query?: never;
             header?: never;
@@ -3094,7 +3094,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/polls/{pollId}/items": {
+    "/api/v1/polls/{pollSn}/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -3866,7 +3866,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/polls/{pollId}": {
+    "/api/v1/admin/system/polls/{pollSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4523,10 +4523,16 @@ export interface components {
         };
         /** @description 온라인 설문 항목 DTO (표준화) */
         OnlinePollArticleDto: {
-            /** @description 설문 항목 ID */
-            pollArtclId?: string;
-            /** @description 설문 ID */
-            pollId?: string;
+            /**
+             * Format: int64
+             * @description 설문 항목 일련번호
+             */
+            pollArtclSn?: number;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            pollSn?: number;
             /** @description 설문 항목 명 */
             pollArtclNm: string;
             /**
@@ -4544,8 +4550,11 @@ export interface components {
         };
         /** @description 온라인 설문 관리 DTO (표준화) */
         OnlinePollManageDto: {
-            /** @description 설문 ID */
-            pollId?: string;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            pollSn?: number;
             /** @description 설문 제목 */
             pollNm: string;
             /** @description 설문 시작일 */
@@ -8677,8 +8686,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 설문 ID */
-                pollId: string;
+                /** @description 설문 일련번호 */
+                pollSn: number;
             };
             cookie?: never;
         };
@@ -8700,7 +8709,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                pollId: string;
+                pollSn: number;
             };
             cookie?: never;
         };
@@ -8726,7 +8735,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                pollId: string;
+                pollSn: number;
             };
             cookie?: never;
         };
@@ -11991,8 +12000,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                pollId: string;
-                pollIemId: string;
+                pollSn: number;
+                pollArtclSn: number;
             };
             cookie?: never;
         };
@@ -13802,11 +13811,11 @@ export interface operations {
     vote_1: {
         parameters: {
             query: {
-                pollIemId: string;
+                pollArtclSn: number;
             };
             header?: never;
             path: {
-                pollId: string;
+                pollSn: number;
             };
             cookie?: never;
         };
@@ -15476,7 +15485,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                pollId: string;
+                pollSn: number;
             };
             cookie?: never;
         };
@@ -16492,7 +16501,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                pollId: string;
+                pollSn: number;
             };
             cookie?: never;
         };

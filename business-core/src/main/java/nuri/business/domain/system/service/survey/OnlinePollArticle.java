@@ -3,6 +3,8 @@ package nuri.business.domain.system.service.survey;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.ManyToOne;
@@ -22,25 +24,25 @@ import lombok.*;
 public class OnlinePollArticle extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String pollArtclId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long pollArtclSn;
 
     @ManyToOne(fetch = jakarta.persistence.FetchType.LAZY)
-    @jakarta.persistence.JoinColumn(name = "poll_id")
+    @jakarta.persistence.JoinColumn(name = "poll_sn")
     private OnlinePollManage pollManage;
 
     @Column(length = 100, nullable = false)
     private String pollArtclNm;
 
-    private OnlinePollArticle(String pollArtclId, OnlinePollManage pollManage, String pollArtclNm) {
-        this.pollArtclId = pollArtclId;
+    private OnlinePollArticle(Long pollArtclSn, OnlinePollManage pollManage, String pollArtclNm) {
+        this.pollArtclSn = pollArtclSn;
         this.pollManage = pollManage;
         this.pollArtclNm = pollArtclNm;
     }
 
     @Builder
-    public static OnlinePollArticle create(String pollArtclId, OnlinePollManage pollManage, String pollArtclNm) {
-        return new OnlinePollArticle(pollArtclId, pollManage, pollArtclNm);
+    public static OnlinePollArticle create(Long pollArtclSn, OnlinePollManage pollManage, String pollArtclNm) {
+        return new OnlinePollArticle(pollArtclSn, pollManage, pollArtclNm);
     }
 
     public void update(String pollArtclNm) {

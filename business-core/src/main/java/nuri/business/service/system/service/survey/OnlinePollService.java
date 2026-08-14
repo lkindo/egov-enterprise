@@ -67,30 +67,30 @@ public class OnlinePollService {
         return dtoPage;
     }
 
-    /** 항목별 투표수(pollIemCo)를 단일 배치 집계로 채운다 — countByPollArtclId N+1 제거. */
+    /** 항목별 투표수(pollIemCo)를 단일 배치 집계로 채운다. */
     private void applyItemVoteCounts(List<OnlinePollArticleDto> items) {
         if (items == null || items.isEmpty()) {
             return;
         }
-        List<String> artclIds = items.stream()
-                .map(item -> item.getPollArtclId())
+        List<Long> artclSns = items.stream()
+                .map(item -> item.getPollArtclSn())
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
-        if (artclIds.isEmpty()) {
+        if (artclSns.isEmpty()) {
             return;
         }
-        Map<String, Long> countByArtcl = new HashMap<>();
-        for (Object[] row : pollResultRepository.countByPollArtclIdIn(artclIds)) {
-            countByArtcl.put((String) row[0], (Long) row[1]);
+        Map<Long, Long> countByArtcl = new HashMap<>();
+        for (Object[] row : pollResultRepository.countByPollArtclSnIn(artclSns)) {
+            countByArtcl.put((Long) row[0], (Long) row[1]);
         }
-        items.forEach(item -> item.setPollIemCo(countByArtcl.getOrDefault(item.getPollArtclId(), 0L)));
+        items.forEach(item -> item.setPollIemCo(countByArtcl.getOrDefault(item.getPollArtclSn(), 0L)));
     }
 
-    public OnlinePollManageDto getPoll(String pollId) {
-        OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(pollId))
+    public OnlinePollManageDto getPoll(Long pollSn) {
+        OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(pollSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         OnlinePollManageDto dto = OnlinePollManageDto.from(entity);
-        dto.setPollArticles(getPollItemList(pollId));
+        dto.setPollArticles(getPollItemList(pollSn));
         return dto;
     }
 
@@ -102,11 +102,7 @@ public class OnlinePollService {
         String endDe = normalizeDate(dto.getPollEndYmd());
         validatePollDates(beginDe, endDe);
         
-        // Use UUID to guarantee uniqueness in parallel worker environment
-        String pollId = nuri.foundation.core.util.IdGenerationUtil.generateId("", 20);
-        
         OnlinePollManage pollManage = OnlinePollManage.builder()
-                .pollId(pollId)
                 .pollNm(dto.getPollNm().length() > 100 ? dto.getPollNm().substring(0, 100) : dto.getPollNm())
                 .pollBgngYmd(beginDe)
                 .pollEndYmd(endDe)
@@ -122,10 +118,7 @@ public class OnlinePollService {
 
         if (dto.getPollArticles() != null) {
             for (OnlinePollArticleDto itemDto : dto.getPollArticles()) {
-                String iemId = nuri.foundation.core.util.IdGenerationUtil.generateId("", 20);
-                
                 OnlinePollArticle item = OnlinePollArticle.builder()
-                        .pollArtclId(iemId)
                         .pollManage(pollManage)
                         .pollArtclNm(itemDto.getPollArtclNm().length() > 100 ? itemDto.getPollArtclNm().substring(0, 100) : itemDto.getPollArtclNm())
                         .build();
@@ -145,7 +138,7 @@ public class OnlinePollService {
         String endDe = normalizeDate(dto.getPollEndYmd());
         validatePollDates(beginDe, endDe);
 
-        OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(dto.getPollId()))
+        OnlinePollManage entity = pollManageRepository.findById(Objects.requireNonNull(dto.getPollSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         
         entity.update(dto.getPollNm().length() > 100 ? dto.getPollNm().substring(0, 100) : dto.getPollNm(), 
@@ -160,10 +153,7 @@ public class OnlinePollService {
         if (dto.getPollArticles() != null) {
             entity.getPollArticles().clear();
             for (OnlinePollArticleDto itemDto : dto.getPollArticles()) {
-                String iemId = nuri.foundation.core.util.IdGenerationUtil.generateId("", 20);
-
                 OnlinePollArticle item = OnlinePollArticle.builder()
-                        .pollArtclId(iemId)
                         .pollManage(entity)
                         .pollArtclNm(itemDto.getPollArtclNm().length() > 100 ? itemDto.getPollArtclNm().substring(0, 100) : itemDto.getPollArtclNm())
                         .build();
@@ -174,17 +164,17 @@ public class OnlinePollService {
     }
 
     @Transactional
-    public void deletePoll(String pollId) {
+    public void deletePoll(Long pollSn) {
         nuri.business.security.util.SecurityUtil.assertAdmin();
 
         // [V2_13 결속] 투표 결과 선정리 — fk_tb_onln_poll_rslt_*(NO ACTION) 하에서 결과 보유 투표 삭제가
         // 409 로 파손되던 기왕 부채 해소 (항목은 pollArticles cascade 가 정리)
-        pollResultRepository.deleteByPollId(pollId);
-        pollManageRepository.deleteById(Objects.requireNonNull(pollId));
+        pollResultRepository.deleteByPollSn(pollSn);
+        pollManageRepository.deleteById(Objects.requireNonNull(pollSn));
     }
 
-    public List<OnlinePollArticleDto> getPollItemList(String pollId) {
-        List<OnlinePollArticleDto> items = pollItemRepository.findByPollManagePollId(Objects.requireNonNull(pollId)).stream()
+    public List<OnlinePollArticleDto> getPollItemList(Long pollSn) {
+        List<OnlinePollArticleDto> items = pollItemRepository.findByPollManagePollSn(Objects.requireNonNull(pollSn)).stream()
                 .map(onlinePollArticleMapper::toDto)
                 .collect(Collectors.toList());
         applyItemVoteCounts(items);
@@ -193,13 +183,10 @@ public class OnlinePollService {
 
     @Transactional
     public void insertPollItem(OnlinePollArticleDto dto) {
-        OnlinePollManage pollManage = pollManageRepository.findById(dto.getPollId())
+        OnlinePollManage pollManage = pollManageRepository.findById(dto.getPollSn())
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        
-        String iemId = nuri.foundation.core.util.IdGenerationUtil.generateId("", 20);
 
         OnlinePollArticle item = OnlinePollArticle.builder()
-                .pollArtclId(iemId)
                 .pollManage(pollManage)
                 .pollArtclNm(dto.getPollArtclNm().length() > 100 ? dto.getPollArtclNm().substring(0, 100) : dto.getPollArtclNm())
                 .build();
@@ -213,7 +200,7 @@ public class OnlinePollService {
 
     @Transactional
     public void updatePollItem(OnlinePollArticleDto dto) {
-        OnlinePollArticle entity = pollItemRepository.findById(Objects.requireNonNull(dto.getPollArtclId()))
+        OnlinePollArticle entity = pollItemRepository.findById(Objects.requireNonNull(dto.getPollArtclSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getPollArtclNm().length() > 100 ? dto.getPollArtclNm().substring(0, 100) : dto.getPollArtclNm());
         
@@ -223,16 +210,16 @@ public class OnlinePollService {
     }
 
     @Transactional
-    public void deletePollItem(String pollArtclId) {
-        Objects.requireNonNull(pollArtclId);
+    public void deletePollItem(Long pollArtclSn) {
+        Objects.requireNonNull(pollArtclSn);
         // [V2_13 결속] 해당 항목 투표 결과 선정리 (fk_tb_onln_poll_rslt_tb_onln_poll_artcl NO ACTION)
-        pollResultRepository.deleteByPollArtclId(pollArtclId);
-        pollItemRepository.deleteById(pollArtclId);
+        pollResultRepository.deleteByPollArtclSn(pollArtclSn);
+        pollItemRepository.deleteById(pollArtclSn);
     }
 
     @Transactional
-    public void vote(String pollId, String pollArtclId, String userId) {
-        OnlinePollManage poll = pollManageRepository.findById(pollId)
+    public void vote(Long pollSn, Long pollArtclSn, String userId) {
+        OnlinePollManage poll = pollManageRepository.findById(pollSn)
                 .orElseThrow(() -> new BusinessException("설문을 찾을 수 없습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
 
         if ("Y".equals(poll.getPollDsuseYn())) {
@@ -252,16 +239,17 @@ public class OnlinePollService {
         // 식별자 정합: userId 는 컨트롤러가 loginId(SecurityUtil.getCurrentLoginId())를 전달한다.
         // LoginUserAuditorAware 가 감사 컬럼(frstRgtrId)에 기록하는 값도 loginId 이므로,
         // 이 중복 검사와 DB 유니크 제약(V2_4)이 동일한 식별자를 기준으로 동작한다.
-        if (pollResultRepository.countByPollIdAndFrstRegisterId(pollId, userId) > 0) {
+        if (!pollItemRepository.existsByPollArtclSnAndPollManagePollSn(pollArtclSn, pollSn)) {
+            throw new BusinessException("설문 항목을 찾을 수 없습니다.", CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+
+        if (pollResultRepository.countByPollSnAndFrstRegisterId(pollSn, userId) > 0) {
             throw new BusinessException("이미 참여하신 설문입니다.", CommonErrorCode.INVALID_INPUT_VALUE);
         }
 
-        String resId = nuri.foundation.core.util.IdGenerationUtil.generateId("PR", 18);
-
         OnlinePollResult result = OnlinePollResult.builder()
-                .pollRsltId(resId)
-                .pollId(pollId)
-                .pollArtclId(pollArtclId)
+                .pollSn(pollSn)
+                .pollArtclSn(pollArtclSn)
                 .build();
 
         String currentUserId = userId;

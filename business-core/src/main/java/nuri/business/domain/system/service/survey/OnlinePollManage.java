@@ -3,6 +3,8 @@ package nuri.business.domain.system.service.survey;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.OneToMany;
@@ -25,8 +27,8 @@ import java.util.List;
 public class OnlinePollManage extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String pollId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long pollSn;
 
     @Column(length = 100, nullable = false)
     private String pollNm;
@@ -49,9 +51,9 @@ public class OnlinePollManage extends BaseEntity {
     @OneToMany(mappedBy = "pollManage", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<OnlinePollArticle> pollArticles = new ArrayList<>();
 
-    private OnlinePollManage(String pollId, String pollNm, String pollBgngYmd, String pollEndYmd, String pollKndCd,
+    private OnlinePollManage(Long pollSn, String pollNm, String pollBgngYmd, String pollEndYmd, String pollKndCd,
             String pollDsuseYn, String pollAtmcDsuseYn, List<OnlinePollArticle> pollArticles) {
-        this.pollId = pollId;
+        this.pollSn = pollSn;
         this.pollNm = pollNm;
         this.pollBgngYmd = pollBgngYmd;
         this.pollEndYmd = pollEndYmd;
@@ -62,9 +64,9 @@ public class OnlinePollManage extends BaseEntity {
     }
 
     @Builder
-    public static OnlinePollManage create(String pollId, String pollNm, String pollBgngYmd, String pollEndYmd,
+    public static OnlinePollManage create(Long pollSn, String pollNm, String pollBgngYmd, String pollEndYmd,
             String pollKndCd, String pollDsuseYn, String pollAtmcDsuseYn, List<OnlinePollArticle> pollArticles) {
-        return new OnlinePollManage(pollId, pollNm, pollBgngYmd, pollEndYmd, pollKndCd,
+        return new OnlinePollManage(pollSn, pollNm, pollBgngYmd, pollEndYmd, pollKndCd,
                 pollDsuseYn, pollAtmcDsuseYn, pollArticles);
     }
 
