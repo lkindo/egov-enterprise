@@ -77,6 +77,11 @@ describe('Standardized Validation Schemas', () => {
   });
 
   describe('menuSchema (Menu Management)', () => {
+    it('should allow a missing menu number when the DB generates it', () => {
+      const result = menuSchema.safeParse({ menuNm: 'Generated Menu', menuOrdr: 1 });
+      expect(result.success).toBe(true);
+    });
+
     it('should validate correct menu numbers and order', () => {
       const validData = {
         menuNo: '1001',

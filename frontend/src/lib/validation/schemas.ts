@@ -46,7 +46,7 @@ export const smsSchema = SmsDtoSchema.extend({
 });
 
 export const menuSchema = MenuDtoSchema.extend({
-  menuNo: z.coerce.number().min(1),
+  menuNo: z.coerce.number().min(1).optional(),
   upperMenuId: z.coerce.number().optional().default(0),
   menuOrdr: z.coerce.number(),
 });

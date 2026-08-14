@@ -124,7 +124,7 @@ public class MenuService {
                     boolean isAuthorized = authorityMap.getOrDefault(m.getMenuSn(), new ArrayList<>()).stream()
                             .anyMatch(ma -> roles.contains(ma.getId().getAuthrtCd()));
                     boolean isAdmin = roles.contains(nuri.business.security.AuthorityConstants.AUTHORITY_ADMIN);
-                    return (isAuthorized || isAdmin) && m.getMenuSn() <= 9999999 && "Y".equals(m.getUseYn());
+                    return (isAuthorized || isAdmin) && "Y".equals(m.getUseYn());
                 })
                 .collect(Collectors.toList());
 
@@ -327,7 +327,6 @@ public class MenuService {
         }
 
         Menu menu = Menu.builder()
-                .menuSn(vo.getMenuNo())
                 .menuNm(vo.getMenuNm())
                 .prgrmFileNm(prgrmFileNm)
                 .upMenuSn(normalizeUpMenuSn(vo.getUpMenuSn()))

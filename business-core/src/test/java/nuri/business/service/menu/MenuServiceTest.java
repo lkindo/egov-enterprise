@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -348,13 +349,17 @@ class MenuServiceTest {
     @Test
     @DisplayName("insertMenuManage - Program이 없어서 새로 생성하는 분기")
     void insertMenuManage_ProgramNotExists() {
-        MenuDto dto = MenuDto.builder().menuNo(1L).prgrmFileNm("NewProgram").build();
+        MenuDto dto = MenuDto.builder().menuNo(9_999_999L).prgrmFileNm("NewProgram").build();
         when(programRepository.existsById("NewProgram")).thenReturn(false);
         
         menuService.insertMenuManage(dto);
         
         verify(programRepository).save(any(Program.class));
-        verify(menuRepository).save(any(Menu.class));
+        ArgumentCaptor<Menu> menuCaptor = ArgumentCaptor.forClass(Menu.class);
+        verify(menuRepository).save(menuCaptor.capture());
+        assertThat(menuCaptor.getValue().getMenuSn())
+                .as("create payload의 수동 menuNo는 무시하고 DB IDENTITY가 번호를 부여해야 한다")
+                .isNull();
     }
 
     @Test
@@ -401,7 +406,7 @@ class MenuServiceTest {
         when(authentication.getPrincipal()).thenReturn("admin");
         doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
 
-        Menu menuMax = Menu.builder().menuSn(10000000L).menuNm("Max Menu").build(); // id > 9999999
+        Menu menuMax = Menu.builder().menuSn(10000000L).menuNm("Max Menu").useYn("Y").build();
         Menu menuNullUpper = Menu.builder().menuSn(1L).menuNm("Null Upper").upMenuSn(null).useYn("Y").build();
         Menu menuZeroUpper = Menu.builder().menuSn(2L).menuNm("Zero Upper").upMenuSn(0L).useYn("Y").build();
         Menu menuNormal = Menu.builder().menuSn(3L).menuNm("Normal").upMenuSn(1L).useYn("Y").build();
@@ -418,9 +423,8 @@ class MenuServiceTest {
         when(programRepository.findAll()).thenReturn(Collections.emptyList());
 
         List<MenuDto> hierarchy = menuService.getMenuHierarchy();
-        // menuMax는 필터링됨 (id > 9999999)
-        // Null Upper와 Zero Upper는 루트
-        assertThat(hierarchy).hasSize(2);
+        // 자동 BIGINT는 7자리 상한과 무관하다. High-ID, Null Upper, Zero Upper가 모두 루트다.
+        assertThat(hierarchy).hasSize(3);
     }
 
     @Test

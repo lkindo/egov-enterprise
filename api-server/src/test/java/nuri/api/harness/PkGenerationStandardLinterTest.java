@@ -145,6 +145,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] WebLog — V2_75에서 AuditEvent와 무관한 WLOG_ 잘린 UUID 수동
             //   기술키를 제거하고 web_log_sn BIGINT IDENTITY로 전환했다. 실측 4,003행 전체가
             //   WLOG_ 생성값이고 inbound/outbound FK 0. 비동기 적재·조회·프론트 계약을 함께 이관했다.
+            // [2026-08-14 제거] Menu — 기존 menu_sn BIGINT PK/FK를 보존하면서 V2_76에서
+            //   IDENTITY/sq_menu_sn을 부여했다. 수동 Date.now()/난수 생성 경로와 7자리 상한 필터를
+            //   제거하고, 자식 0건인 8억 ROOT 기술 시드 및 권한 매핑을 정리했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "DeptManage", "EventInfo",
@@ -162,7 +165,7 @@ class PkGenerationStandardLinterTest {
             //     현재 상태는 "엔티티 없는 빈 테이블 2개" 이며 그 처분은 미결로 남는다.
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
             "GroupManage", "InformalSanction", "InstitutionCode",
-            "LoginPolicy", "Menu", "Notification", "OrganizationManage",
+            "LoginPolicy", "Notification", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
             "SiteMap", "Sms", "SystemPolicy", "Template",
             "User", "UserAbsence", "UserAuthority"
