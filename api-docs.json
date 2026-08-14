@@ -23995,6 +23995,10 @@
       "PrivacyLogDto": {
         "type": "object",
         "properties": {
+          "prvcLogSn": {
+            "type": "integer",
+            "format": "int64"
+          },
           "dmndId": {
             "type": "string"
           },

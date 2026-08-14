@@ -7708,6 +7708,8 @@ export interface components {
             totalPage?: number;
         };
         PrivacyLogDto: {
+            /** Format: int64 */
+            prvcLogSn?: number;
             dmndId?: string;
             /** Format: date-time */
             inqDt?: string;

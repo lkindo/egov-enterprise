@@ -29,7 +29,9 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
                                                 inquiryDatetimeBetween(searchBgnDe, searchEndDe))
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
-                                .orderBy(QPrivacyLog.privacyLog.inqDt.desc())
+                                .orderBy(
+                                                QPrivacyLog.privacyLog.inqDt.desc(),
+                                                QPrivacyLog.privacyLog.prvcLogSn.desc())
                                 .fetch();
 
                 long total = queryFactory

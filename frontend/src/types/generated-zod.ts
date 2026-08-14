@@ -2984,6 +2984,7 @@ export type PageResponsePrivacyLogDto = z.infer<typeof PageResponsePrivacyLogDto
 // PrivacyLogDto Schema
 // ==========================================================================
 export const PrivacyLogDtoSchema = z.object({
+  prvcLogSn: z.number().optional(),
   dmndId: z.string().optional(),
   inqDt: z.string().optional(),
   srvcNm: z.string().optional(),

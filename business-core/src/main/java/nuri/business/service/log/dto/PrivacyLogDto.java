@@ -20,7 +20,9 @@ import java.time.LocalDateTime;
  */
 @Builder
 public record PrivacyLogDto(
-        /** 요청 ID (PK) */
+        /** 개인정보 로그 내부 일련번호 (PK) */
+        Long prvcLogSn,
+        /** 요청 ID (업무 상관관계 키) */
         String dmndId,
         /** 조회 일시 */
         LocalDateTime inqDt,
@@ -37,6 +39,7 @@ public record PrivacyLogDto(
     /** 엔티티 → DTO. 조회 전용이라 역방향은 두지 않는다. */
     public static PrivacyLogDto from(PrivacyLog entity) {
         return PrivacyLogDto.builder()
+                .prvcLogSn(entity.getPrvcLogSn())
                 .dmndId(entity.getDmndId())
                 .inqDt(entity.getInqDt())
                 .srvcNm(entity.getSrvcNm())

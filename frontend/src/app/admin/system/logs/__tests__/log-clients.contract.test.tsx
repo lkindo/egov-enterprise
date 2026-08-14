@@ -144,6 +144,7 @@ const WEB_ROW = {
 } satisfies WebLogDto;
 
 const PRIVACY_ROW = {
+  prvcLogSn: 101,
   dmndId: 'PRV-001',
   inqDt: '2026-08-13T10:11:12',
   srvcNm: 'ResidentService',
@@ -208,7 +209,7 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     expect(currentTableProps().keyField).toBe('webLogSn');
   });
 
-  it('renders the PRV generated DTO fields and uses dmndId as the row key', () => {
+  it('renders the PRV generated DTO fields and uses prvcLogSn as the row key', () => {
     clientHarness.queryData = pageOf(PRIVACY_ROW);
     render(<SystemLogsPrivacyClient />);
 
@@ -216,6 +217,6 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     for (const value of ['2026-08-13 10:11:12', 'resident-name', 'ResidentService', 'privacy-admin', '10.0.0.4']) {
       expect(table.getByText(value)).toBeInTheDocument();
     }
-    expect(currentTableProps().keyField).toBe('dmndId');
+    expect(currentTableProps().keyField).toBe('prvcLogSn');
   });
 });

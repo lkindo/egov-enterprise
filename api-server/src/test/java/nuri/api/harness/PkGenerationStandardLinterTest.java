@@ -154,6 +154,9 @@ class PkGenerationStandardLinterTest {
             //   ifml_atrz_sn BIGINT IDENTITY로 전환하고, tb_rward_manage의 논리 참조도 숫자로
             //   백필한 뒤 검증된 FK로 승격했다. E2E 부모·자식 0행, 기존 고아 0건이며
             //   결재·포상 JPA/API/프론트 계약과 수동 INFRML_ 생성 경로를 함께 이관했다.
+            // [2026-08-14 제거] PrivacyLog — V2_79에서 요청 상관관계 dmnd_id는 UNIQUE 업무키로
+            //   보존하고 prvc_log_sn BIGINT IDENTITY를 내부 PK로 분리했다. E2E 0행,
+            //   inbound/outbound FK 0이며 조회 DTO·프론트 행 식별자도 숫자 내부키로 이관했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "DeptManage", "EventInfo",
@@ -172,7 +175,7 @@ class PkGenerationStandardLinterTest {
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
             "GroupManage", "InstitutionCode",
             "LoginPolicy", "Notification", "OrganizationManage",
-            "PrivacyLog", "Program", "RefreshToken", "RoleInfo",
+            "Program", "RefreshToken", "RoleInfo",
             "SiteMap", "Sms", "SystemPolicy", "Template",
             "User", "UserAbsence", "UserAuthority"
     ));
