@@ -12,7 +12,7 @@ import java.util.List;
  * 보고서 통계 Repository
  */
 @Repository
-public interface ReprtStatsRepository extends JpaRepository<ReprtStats, String> {
+public interface ReprtStatsRepository extends JpaRepository<ReprtStats, Long> {
 
     /**
      * 보고서 통계 목록 조회 (날짜 범위 조건)

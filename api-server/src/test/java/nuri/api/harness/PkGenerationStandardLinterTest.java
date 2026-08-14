@@ -148,6 +148,8 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] Menu — 기존 menu_sn BIGINT PK/FK를 보존하면서 V2_76에서
             //   IDENTITY/sq_menu_sn을 부여했다. 수동 Date.now()/난수 생성 경로와 7자리 상한 필터를
             //   제거하고, 자식 0건인 8억 ROOT 기술 시드 및 권한 매핑을 정리했다.
+            // [2026-08-14 제거] ReprtStats — E2E 0행·inbound/outbound FK 0인 단독 기술키를
+            //   V2_77에서 rptp_sn BIGINT IDENTITY로 전환하고 REPRT_ 수동 채번을 제거했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "DeptManage", "EventInfo",
@@ -166,7 +168,7 @@ class PkGenerationStandardLinterTest {
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
             "GroupManage", "InformalSanction", "InstitutionCode",
             "LoginPolicy", "Notification", "OrganizationManage",
-            "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
+            "PrivacyLog", "Program", "RefreshToken", "RoleInfo",
             "SiteMap", "Sms", "SystemPolicy", "Template",
             "User", "UserAbsence", "UserAuthority"
     ));

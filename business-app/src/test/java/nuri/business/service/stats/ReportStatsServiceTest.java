@@ -89,7 +89,8 @@ class ReportStatsServiceTest {
 
         ArgumentCaptor<ReprtStats> captor = ArgumentCaptor.forClass(ReprtStats.class);
         verify(reprtStatsRepository).save(captor.capture());
-        assertThat(captor.getValue().getReprtId()).startsWith("REPRT_");
+        assertThat(captor.getValue().getRptpSn()).isNull();
+        assertThat(captor.getValue().getReprtNm()).isEqualTo("Test");
     }
     
     @Test
