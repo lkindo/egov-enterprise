@@ -317,11 +317,11 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  <StandardDataTable<ScrapItem>
  columns={scrapColumns}
  data={scraps}
- keyField="scrapId"
+ keyField="scrapSn"
  loading={scrapsQuery.isLoading}
  error={tableError}
  onRetry={handleRetry}
- onRowClick={(item) => router.push(`/admin/collaboration/scraps/selectScrapDetail/${item.scrapId}`)}
+ onRowClick={(item) => router.push(`/admin/collaboration/scraps/selectScrapDetail/${item.scrapSn}`)}
  emptyMessage="저장된 스크랩이 없습니다."
  isPremium={true}
  className="border-none bg-transparent shadow-none"

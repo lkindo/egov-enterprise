@@ -43,7 +43,7 @@ const InsertScrapClient = () => {
     try {
       // useYn 은 서버 DTO 필수값(@NotBlank)이다 — 누락 시 등록이 100% 400 으로 실패한다.
       // 소유자(userId)는 서버가 인증 주체에서 파생하므로 전송하지 않는다.
-      await axios.post<void>('/scraps', { ...formData, useYn: 'Y' });
+      await axios.post<number>('/scraps', { ...formData, useYn: 'Y' });
       toast('스크랩이 등록되었습니다.', 'success');
       router.push('/admin/collaboration/scraps/selectScrapList');
     } catch (error) {

@@ -18,7 +18,7 @@ import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 /** 스크랩 계약의 SSOT 는 생성 타입이다(로컬 인터페이스 재선언 금지). */
 type Scrap = components['schemas']['ScrapDto'];
 
-/** 폼이 다루는 필드(서버 응답의 파생 필드 scrapId/userId/crtDt 는 폼 상태로 끌어오지 않는다). */
+/** 폼이 다루는 필드(서버 응답의 파생 필드 scrapSn/userId/crtDt 는 폼 상태로 끌어오지 않는다). */
 interface ScrapForm {
   scrapNm: string;
   scrapUrl: string;
@@ -32,6 +32,7 @@ const SelectScrapDetailClient = () => {
   const router = useRouter();
   const params = useParams();
   const id = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : '';
+  const scrapSn = Number(id);
   const { toast } = useToast();
   const confirm = useConfirm();
 
@@ -44,9 +45,9 @@ const SelectScrapDetailClient = () => {
   const [loading, setLoading] = useState(false);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['scrap-detail', id],
-    queryFn: () => axios.get<Scrap>(`/scraps/${id}`),
-    enabled: Boolean(id),
+    queryKey: ['scrap-detail', scrapSn],
+    queryFn: () => axios.get<Scrap>(`/scraps/${scrapSn}`),
+    enabled: Number.isSafeInteger(scrapSn) && scrapSn > 0,
   });
 
   // [방어] 응답 전면 교체(setFormData(response))는 응답에 없는 키를 undefined 로 만들어
@@ -76,7 +77,7 @@ const SelectScrapDetailClient = () => {
     setLoading(true);
     try {
       // useYn 은 서버 DTO 필수값(@NotBlank) — 상태에 항상 보유하고 그대로 전송한다.
-      await axios.put<void>(`/scraps/${id}`, { ...formData, useYn: formData.useYn || 'Y' });
+      await axios.put<void>(`/scraps/${scrapSn}`, { ...formData, useYn: formData.useYn || 'Y' });
       toast('스크랩이 수정되었습니다.', 'success');
       router.push(LIST_PATH);
     } catch (err) {
@@ -98,7 +99,7 @@ const SelectScrapDetailClient = () => {
 
     setLoading(true);
     try {
-      await axios.delete<void>(`/scraps/${id}`);
+      await axios.delete<void>(`/scraps/${scrapSn}`);
       toast('스크랩이 삭제되었습니다.', 'success');
       router.push(LIST_PATH);
     } catch (err) {

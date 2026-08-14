@@ -15,8 +15,8 @@ import lombok.*;
 public class Scrap extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String scrapId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long scrapSn;
 
     @Column(length = 20)
     private String bbsId;
@@ -41,9 +41,9 @@ public class Scrap extends BaseEntity {
     @Column(length = 1)
     private String useYn = "Y";
 
-    private Scrap(String scrapId, String bbsId, String pstId, String scrapNm,
+    private Scrap(Long scrapSn, String bbsId, String pstId, String scrapNm,
                   String scrapUrl, String scrapExpln, String useYn) {
-        this.scrapId = scrapId;
+        this.scrapSn = scrapSn;
         this.bbsId = bbsId;
         this.pstId = pstId;
         this.scrapNm = scrapNm;
@@ -53,9 +53,9 @@ public class Scrap extends BaseEntity {
     }
 
     @Builder
-    public static Scrap create(String scrapId, String bbsId, String pstId, String scrapNm,
+    public static Scrap create(Long scrapSn, String bbsId, String pstId, String scrapNm,
                                String scrapUrl, String scrapExpln, String useYn) {
-        return new Scrap(scrapId, bbsId, pstId, scrapNm, scrapUrl, scrapExpln, useYn);
+        return new Scrap(scrapSn, bbsId, pstId, scrapNm, scrapUrl, scrapExpln, useYn);
     }
 
     public void update(String scrapNm, String scrapUrl, String scrapExpln, String useYn) {

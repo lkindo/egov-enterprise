@@ -94,7 +94,7 @@ export type PasswordChangeRequest = z.infer<typeof PasswordChangeRequestSchema>;
 // ScrapDto Schema
 // ==========================================================================
 export const ScrapDtoSchema = z.object({
-  scrapId: z.string().min(0).max(20).optional(),
+  scrapSn: z.number().optional(),
   bbsId: z.string().min(0).max(20).optional(),
   pstId: z.string().min(0).max(20).optional(),
   scrapNm: z.string().min(0).max(100).optional(),

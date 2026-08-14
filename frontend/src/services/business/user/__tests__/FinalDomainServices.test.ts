@@ -31,6 +31,8 @@ describe('Final Domain Services', () => {
  it('scrapService calls correct endpoints', async () => {
  await scrapService.getMyScraps({ page: 0 });
  expect(client.get).toHaveBeenCalledWith('scraps', expect.any(Object));
+ await scrapService.deleteScrap(7);
+ expect(client.delete).toHaveBeenCalledWith('scraps/7', undefined);
  });
 
  it('menuService calls correct endpoints', async () => {

@@ -475,7 +475,7 @@
         }
       }
     },
-    "/api/v1/scraps/{scrapId}": {
+    "/api/v1/scraps/{scrapSn}": {
       "get": {
         "tags": [
           "Scrap"
@@ -484,11 +484,12 @@
         "operationId": "getScrap",
         "parameters": [
           {
-            "name": "scrapId",
+            "name": "scrapSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -513,11 +514,12 @@
         "operationId": "updateScrap",
         "parameters": [
           {
-            "name": "scrapId",
+            "name": "scrapSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -552,11 +554,12 @@
         "operationId": "deleteScrap",
         "parameters": [
           {
-            "name": "scrapId",
+            "name": "scrapSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5527,7 +5530,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -16282,10 +16285,9 @@
       "ScrapDto": {
         "type": "object",
         "properties": {
-          "scrapId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "scrapSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "bbsId": {
             "type": "string",

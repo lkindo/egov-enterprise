@@ -32,7 +32,7 @@ class ScrapApiControllerTest extends ControllerTestSupport {
     @DisplayName("스크랩 목록 조회 성공")
     void getMyScrapList_Success() throws Exception {
         // Given
-        Page<ScrapDto> page = new PageImpl<>(List.of(ScrapDto.builder().scrapId("SCR1").scrapNm("Scrap").build()));
+        Page<ScrapDto> page = new PageImpl<>(List.of(ScrapDto.builder().scrapSn(1L).scrapNm("Scrap").build()));
         given(egovScrapService.getMyScrapList(anyString(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -42,20 +42,34 @@ class ScrapApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].scrapId").value("SCR1"));
+                .andExpect(jsonPath("$.data.list[0].scrapSn").value(1));
     }
 
     @Test
     @DisplayName("스크랩 상세 조회 성공")
     void getScrap_Success() throws Exception {
         // Given
-        given(egovScrapService.getScrap(anyString())).willReturn(ScrapDto.builder().scrapId("SCR1").scrapNm("Scrap").build());
+        given(egovScrapService.getScrap(1L)).willReturn(ScrapDto.builder().scrapSn(1L).scrapNm("Scrap").build());
 
         // When & Then
-        mockMvc.perform(get("/api/v1/scraps/SCR1")
+        mockMvc.perform(get("/api/v1/scraps/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.scrapId").value("SCR1"));
+                .andExpect(jsonPath("$.data.scrapSn").value(1));
+    }
+
+    @Test
+    @DisplayName("스크랩 등록은 DB가 채번한 일련번호를 반환한다")
+    void createScrap_ReturnsGeneratedSn() throws Exception {
+        given(egovScrapService.createScrap(anyString(), any(ScrapDto.class))).willReturn(2L);
+
+        mockMvc.perform(post("/api/v1/scraps")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"scrapNm":"Scrap","scrapUrl":"https://example.com","useYn":"Y"}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(2));
     }
 }

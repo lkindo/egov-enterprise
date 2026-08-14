@@ -67,7 +67,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/scraps/{scrapId}": {
+    "/api/v1/scraps/{scrapSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4484,7 +4484,8 @@ export interface components {
             newPassword: string;
         };
         ScrapDto: {
-            scrapId?: string;
+            /** Format: int64 */
+            scrapSn?: number;
             bbsId?: string;
             pstId?: string;
             scrapNm?: string;
@@ -8520,7 +8521,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scrapId: string;
+                scrapSn: number;
             };
             cookie?: never;
         };
@@ -8542,7 +8543,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scrapId: string;
+                scrapSn: number;
             };
             cookie?: never;
         };
@@ -8568,7 +8569,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scrapId: string;
+                scrapSn: number;
             };
             cookie?: never;
         };
@@ -11864,7 +11865,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
