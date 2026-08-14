@@ -5706,8 +5706,11 @@ export interface components {
         };
         /** @description 사용자 알림 DTO */
         NotificationDto: {
-            /** @description 알림 일련번호 */
-            notiSn?: string;
+            /**
+             * Format: int64
+             * @description 알림 일련번호
+             */
+            notiSn?: number;
             /** @description 알림 제목 */
             notiTtlNm?: string;
             /** @description 알림 내용 */
@@ -5730,17 +5733,6 @@ export interface components {
              * @description 등록 일시
              */
             crtDt?: string;
-        };
-        ApiResponseString: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            data?: string;
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 쪽지 정보 */
         NoteDto: {
@@ -5855,6 +5847,17 @@ export interface components {
              * @example ROLE_USER
              */
             role?: string;
+        };
+        ApiResponseString: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: string;
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 로그인 요청 DTO */
         LoginRequest: {
@@ -12166,7 +12169,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12176,7 +12179,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                notiSn: string;
+                notiSn: number;
             };
             cookie?: never;
         };
@@ -15607,7 +15610,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                notiSn: string;
+                notiSn: number;
             };
             cookie?: never;
         };
@@ -15629,7 +15632,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                notiSn: string;
+                notiSn: number;
             };
             cookie?: never;
         };

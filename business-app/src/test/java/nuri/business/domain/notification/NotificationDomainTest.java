@@ -15,7 +15,7 @@ class NotificationDomainTest {
         
         // When - use builder to trigger custom constructor logic
         Notification ntfc = Notification.builder()
-                .notiSn("NT1")
+                .notiSn(1L)
                 .notiTtlNm("Title")
                 .notiCn("Content")
                 .rcvrId("user1")
@@ -25,7 +25,7 @@ class NotificationDomainTest {
         ntfc.setMdfcnDt(LocalDateTime.now());
         
         // Then
-        assertEquals("NT1", ntfc.getNotiSn());
+        assertEquals(1L, ntfc.getNotiSn());
         assertEquals("Title", ntfc.getNotiTtlNm());
         assertEquals("Content", ntfc.getNotiCn());
         assertEquals("user1", ntfc.getRcvrId());
@@ -41,7 +41,7 @@ class NotificationDomainTest {
     void notification_update_test() {
         // Given
         Notification ntfc = Notification.builder()
-                .notiSn("NT1")
+                .notiSn(1L)
                 .build();
         
         // When - mark as read

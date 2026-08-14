@@ -37,7 +37,7 @@ vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: authUser }) }
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast }) }));
 
 const NOTIF = {
-  notiSn: '1', notiTtlNm: '보안 경고', notiCn: '내용', notiDt: '2026-08-09T00:00:00Z', readYn: 'N',
+  notiSn: 1, notiTtlNm: '보안 경고', notiCn: '내용', notiDt: '2026-08-09T00:00:00Z', readYn: 'N',
 };
 
 /** 목록·카운트 응답을 지정한다. Error 를 주면 그 호출만 실패한다. */
@@ -133,7 +133,7 @@ describe('useNotifications', () => {
 
   describe('응답 정규화', () => {
     it('배열과 { list } 두 형태를 모두 받는다', async () => {
-      mockFetch({ list: [NOTIF, { ...NOTIF, notiSn: '2' }] }, 0);
+      mockFetch({ list: [NOTIF, { ...NOTIF, notiSn: 2 }] }, 0);
 
       const { result } = renderHook(() => useNotifications());
 
@@ -142,9 +142,9 @@ describe('useNotifications', () => {
 
     it('제목으로 종류를 추론한다 — 보안/시스템/그 외', async () => {
       mockFetch([
-        { ...NOTIF, notiSn: '1', notiTtlNm: '보안 경고' },
-        { ...NOTIF, notiSn: '2', notiTtlNm: '시스템 점검' },
-        { ...NOTIF, notiSn: '3', notiTtlNm: '댓글이 달렸습니다' },
+        { ...NOTIF, notiSn: 1, notiTtlNm: '보안 경고' },
+        { ...NOTIF, notiSn: 2, notiTtlNm: '시스템 점검' },
+        { ...NOTIF, notiSn: 3, notiTtlNm: '댓글이 달렸습니다' },
       ], 0);
 
       const { result } = renderHook(() => useNotifications());
@@ -164,7 +164,7 @@ describe('useNotifications', () => {
     });
 
     it('readYn 이 없으면 미읽음으로 본다', async () => {
-      mockFetch([{ notiSn: '1', notiTtlNm: 'T', notiCn: 'C' }], 0);
+      mockFetch([{ notiSn: 1, notiTtlNm: 'T', notiCn: 'C' }], 0);
 
       const { result } = renderHook(() => useNotifications());
 
@@ -187,7 +187,7 @@ describe('useNotifications', () => {
       await waitFor(() => expect(result.current.unreadCount).toBe(3));
       vi.mocked(client.post).mockResolvedValue(undefined as never);
 
-      await act(async () => { await result.current.markAsRead('1'); });
+      await act(async () => { await result.current.markAsRead(1); });
 
       expect(client.post).toHaveBeenCalledWith('/notifications/1/read');
       expect(result.current.notifications[0]?.readYn).toBe('Y');
@@ -200,7 +200,7 @@ describe('useNotifications', () => {
       await waitFor(() => expect(result.current.notifications).toHaveLength(1));
       vi.mocked(client.post).mockResolvedValue(undefined as never);
 
-      await act(async () => { await result.current.markAsRead('1'); });
+      await act(async () => { await result.current.markAsRead(1); });
 
       // 음수 배지는 화면에 '-1' 로 뜬다.
       expect(result.current.unreadCount).toBe(0);
@@ -211,7 +211,7 @@ describe('useNotifications', () => {
       await waitFor(() => expect(result.current.unreadCount).toBe(3));
       vi.mocked(client.post).mockRejectedValue(new Error('500'));
 
-      await act(async () => { await result.current.markAsRead('1'); });
+      await act(async () => { await result.current.markAsRead(1); });
 
       // 실패했는데 읽음으로 바꾸면 서버와 화면이 어긋난 채 남는다.
       expect(result.current.notifications[0]?.readYn).toBe('N');
@@ -316,11 +316,11 @@ describe('useNotifications', () => {
       await waitFor(() => expect(result.current.notifications).toHaveLength(1));
 
       await act(async () => {
-        handler!({ body: JSON.stringify({ notiSn: '99', notiTtlNm: '보안 경고', notiCn: 'C' }) });
+        handler!({ body: JSON.stringify({ notiSn: 99, notiTtlNm: '보안 경고', notiCn: 'C' }) });
       });
 
       // 뒤에 붙이면 새 알림이 스크롤 아래로 밀려 보이지 않는다.
-      expect(result.current.notifications[0]?.notiSn).toBe('99');
+      expect(result.current.notifications[0]?.notiSn).toBe(99);
       expect(result.current.notifications).toHaveLength(2);
       expect(result.current.unreadCount).toBe(4);
       expect(toast).toHaveBeenCalledWith('보안 경고', 'success');
@@ -342,7 +342,7 @@ describe('useNotifications', () => {
         handler!({ body: JSON.stringify({ notiTtlNm: 'ID 없는 알림' }) });
       });
 
-      expect(result.current.notifications).toEqual([expect.objectContaining({ notiSn: '1' })]);
+      expect(result.current.notifications).toEqual([expect.objectContaining({ notiSn: 1 })]);
       expect(result.current.unreadCount).toBe(beforeCount);
       expect(toast).not.toHaveBeenCalledWith('ID 없는 알림', 'success');
     });

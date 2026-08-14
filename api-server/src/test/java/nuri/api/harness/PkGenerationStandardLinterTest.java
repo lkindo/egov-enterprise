@@ -160,6 +160,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] EventInfo — V2_80에서 evnt_sn BIGINT IDENTITY로 전환하고
             //   외부인사 복합 PK/FK도 숫자 관계로 백필·검증했다. E2E 부모·자식 0행,
             //   고아 0건이며 행사·외부인사 JPA/API/프론트 계약과 EVT_ 수동 채번을 함께 이관했다.
+            // [2026-08-14 제거] Notification — V2_81에서 noti_sn BIGINT IDENTITY로 전환했다.
+            //   E2E 6행은 전부 NTFC_ 자동키였고 수신자 고아 0건이다. 사용자 FK·수신자 인덱스·
+            //   읽음 CHECK를 보존하며 JPA/API/프론트/웹소켓 계약과 NTFC_ 수동 채번을 함께 이관했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "DeptManage",
@@ -177,7 +180,7 @@ class PkGenerationStandardLinterTest {
             //     현재 상태는 "엔티티 없는 빈 테이블 2개" 이며 그 처분은 미결로 남는다.
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
             "GroupManage", "InstitutionCode",
-            "LoginPolicy", "Notification", "OrganizationManage",
+            "LoginPolicy", "OrganizationManage",
             "Program", "RefreshToken", "RoleInfo",
             "SiteMap", "Sms", "SystemPolicy", "Template",
             "User", "UserAbsence", "UserAuthority"

@@ -865,7 +865,7 @@ export type ApiResponseLong = z.infer<typeof ApiResponseLongSchema>;
 // NotificationDto Schema
 // ==========================================================================
 export const NotificationDtoSchema = z.object({
-  notiSn: z.string().min(0).max(20).optional(),
+  notiSn: z.number().optional(),
   notiTtlNm: z.string().min(0).max(100).optional(),
   notiCn: z.string().min(0).max(4000).optional(),
   notiDt: z.string().optional(),
@@ -876,20 +876,6 @@ export const NotificationDtoSchema = z.object({
   crtDt: z.string().optional(),
 });
 export type NotificationDto = z.infer<typeof NotificationDtoSchema>;
-
-// ==========================================================================
-// ApiResponseString Schema
-// ==========================================================================
-export const ApiResponseStringSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.string().optional(),
-  timestamp: z.string().optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-});
-export type ApiResponseString = z.infer<typeof ApiResponseStringSchema>;
 
 // ==========================================================================
 // NoteDto Schema
@@ -961,6 +947,20 @@ export const TokenResponseSchema = z.object({
   role: z.string().optional(),
 });
 export type TokenResponse = z.infer<typeof TokenResponseSchema>;
+
+// ==========================================================================
+// ApiResponseString Schema
+// ==========================================================================
+export const ApiResponseStringSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.string().optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseString = z.infer<typeof ApiResponseStringSchema>;
 
 // ==========================================================================
 // LoginRequest Schema

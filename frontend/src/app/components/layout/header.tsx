@@ -240,8 +240,8 @@ export function Header({
         //   고친 것이 아니다 — 12축 감사 클러스터 D).
         error={notificationsError}
         onRetry={refreshNotifications}
-        notifications={(notifications || []).filter(Boolean).map((n, i) => ({
-          id: n.notiSn || `notif-${i}`,
+        notifications={(notifications || []).filter(Boolean).map((n) => ({
+          id: n.notiSn,
           title: n.notiTtlNm,
           message: n.notiCn,
           time: n.notiDt,

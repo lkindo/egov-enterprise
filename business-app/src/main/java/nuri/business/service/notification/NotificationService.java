@@ -35,7 +35,7 @@ public class NotificationService {
                 .map(notificationMapper::toDto);
     }
 
-    public NotificationDto getNotification(String notiSn, String userId) {
+    public NotificationDto getNotification(Long notiSn, String userId) {
         requireUserId(userId);
         log.debug("Fetching notification details for receiver: {}, ID: {}", userId, notiSn);
         return findOwnedNotification(notiSn, userId)
@@ -44,23 +44,21 @@ public class NotificationService {
     }
 
     @Transactional
-    public String createNotification(String userId, NotificationDto dto) {
+    public Long createNotification(String userId, NotificationDto dto) {
         requireUserId(userId);
         log.info("Creating notification for user: {}", userId);
-        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("NTFC_", 13);
         Notification entity = Notification.builder()
-                .notiSn(id)
                 .notiTtlNm(dto.getNotiTtlNm())
                 .notiCn(dto.getNotiCn())
                 .rcvrId(userId)
                 .linkUrl(dto.getLinkUrl())
                 .build();
 
-        notificationRepository.save(entity);
+        Notification saved = notificationRepository.save(entity);
 
         // [커밋-후 발송] WebSocket 알림은 저장 트랜잭션 커밋 후에 보낸다 — 롤백(제약위반/상위 tx 롤백) 시
         // DB 에 없는 유령 알림이 클라이언트로 전송되는 결함 방지(Sms/Mail/Board/Sanction 과 동일한 runAfterCommit 표준).
-        NotificationDto responseDto = notificationMapper.toDto(entity);
+        NotificationDto responseDto = notificationMapper.toDto(saved);
         TransactionUtils.runAfterCommit(() -> {
             try {
                 // 수신자 식별자는 인증 Principal(esntlId)과 동일하다. 공용 topic 으로 복제하면
@@ -71,11 +69,11 @@ public class NotificationService {
             }
         });
 
-        return id;
+        return saved.getNotiSn();
     }
 
     @Transactional
-    public void updateNotification(String notiSn, String userId, NotificationDto dto) {
+    public void updateNotification(Long notiSn, String userId, NotificationDto dto) {
         requireUserId(userId);
         log.info("Updating notification ID: {} for user: {}", notiSn, userId);
         Notification entity = findOwnedNotification(notiSn, userId)
@@ -84,7 +82,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void deleteNotification(String notiSn, String userId) {
+    public void deleteNotification(Long notiSn, String userId) {
         requireUserId(userId);
         log.warn("Deleting notification ID: {} for receiver: {}", notiSn, userId);
         Notification owned = findOwnedNotification(notiSn, userId)
@@ -111,7 +109,7 @@ public class NotificationService {
     }
 
     @Transactional
-    public void markAsRead(String notiSn, String userId) {
+    public void markAsRead(Long notiSn, String userId) {
         requireUserId(userId);
         log.info("Marking notification ID: {} as read for receiver: {}", notiSn, userId);
         Notification owned = findOwnedNotification(notiSn, userId)
@@ -119,7 +117,7 @@ public class NotificationService {
         owned.markAsRead();
     }
 
-    private java.util.Optional<Notification> findOwnedNotification(String notiSn, String userId) {
+    private java.util.Optional<Notification> findOwnedNotification(Long notiSn, String userId) {
         return notificationRepository.findByNotiSnAndRcvrId(Objects.requireNonNull(notiSn), userId);
     }
 
