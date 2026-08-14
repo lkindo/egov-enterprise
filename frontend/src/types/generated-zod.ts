@@ -346,8 +346,8 @@ export type UserAbsenceDto = z.infer<typeof UserAbsenceDtoSchema>;
 // ==========================================================================
 export const SurveyRespondentDtoSchema = z.object({
   srvyRspdntId: z.string().min(0).max(20).optional(),
-  srvyId: z.string().min(0).max(20),
-  srvyTmpltId: z.string().min(0).max(20).optional(),
+  srvySn: z.number().optional(),
+  srvyTmpltSn: z.number().optional(),
   gndrCd: z.string().min(0).max(12).optional(),
   crTypeCd: z.string().min(0).max(12).optional(),
   rspdntNm: z.string().min(0).max(100).optional(),
@@ -366,13 +366,13 @@ export type SurveyRespondentDto = z.infer<typeof SurveyRespondentDtoSchema>;
 // SurveyArticleDto Schema
 // ==========================================================================
 export const SurveyArticleDtoSchema = z.object({
-  srvyArtclId: z.string().min(0).max(20),
-  srvyQstnId: z.string().min(0).max(20),
-  srvyId: z.string().min(0).max(20),
+  srvyArtclSn: z.number().optional(),
+  srvyQstnSn: z.number().optional(),
+  srvySn: z.number().optional(),
   artclSn: z.number().optional(),
   artclCn: z.string().min(0).max(4000).optional(),
   etcAnsYn: z.string().min(0).max(1).optional(),
-  srvyTmpltId: z.string().min(0).max(20).optional(),
+  srvyTmpltSn: z.number().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
 });
@@ -382,13 +382,13 @@ export type SurveyArticleDto = z.infer<typeof SurveyArticleDtoSchema>;
 // SurveyQuestionDto Schema
 // ==========================================================================
 export const SurveyQuestionDtoSchema = z.object({
-  srvyQstnId: z.string().min(0).max(20),
-  srvyId: z.string().min(0).max(20),
+  srvyQstnSn: z.number().optional(),
+  srvySn: z.number().optional(),
   qstnSn: z.number().optional(),
   qstnTypeCd: z.string().min(0).max(12).optional(),
   qstnCn: z.string().min(0).max(4000).optional(),
   maxChcCnt: z.number().optional(),
-  srvyTmpltId: z.string().min(0).max(20).optional(),
+  srvyTmpltSn: z.number().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
   items: z.array(z.lazy(() => SurveyArticleDtoSchema)).optional(),
@@ -399,14 +399,14 @@ export type SurveyQuestionDto = z.infer<typeof SurveyQuestionDtoSchema>;
 // SurveyInfoDto Schema
 // ==========================================================================
 export const SurveyInfoDtoSchema = z.object({
-  srvyId: z.string().min(0).max(20),
+  srvySn: z.number().optional(),
   srvyTtl: z.string().min(0).max(100),
   srvyPrps: z.string().min(0).max(1000).optional(),
   srvyWrtGdCn: z.string().min(0).max(4000).optional(),
   srvyBgngYmd: z.string().min(0).max(8).optional(),
   srvyEndYmd: z.string().min(0).max(8).optional(),
   srvyTrgt: z.string().min(0).max(1000).optional(),
-  srvyTmpltId: z.string().min(0).max(20).optional(),
+  srvyTmpltSn: z.number(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
 });
@@ -416,7 +416,7 @@ export type SurveyInfoDto = z.infer<typeof SurveyInfoDtoSchema>;
 // SurveyTemplateDto Schema
 // ==========================================================================
 export const SurveyTemplateDtoSchema = z.object({
-  srvyTmpltId: z.string().min(0).max(20).optional(),
+  srvyTmpltSn: z.number().optional(),
   srvyTmpltTypeCd: z.string().min(0).max(12).optional(),
   srvyTmpltPathNm: z.string().min(0).max(100).optional(),
   srvyTmpltExpln: z.string().min(0).max(4000).optional(),
@@ -817,8 +817,8 @@ export type UserResponse = z.infer<typeof UserResponseSchema>;
 // Answer Schema
 // ==========================================================================
 export const AnswerSchema = z.object({
-  srvyQstnId: z.string().min(0).max(20),
-  srvyArtclId: z.string().min(0).max(20),
+  srvyQstnSn: z.number(),
+  srvyArtclSn: z.number(),
   rspdntAnsCn: z.string().min(0).max(4000).optional(),
   etcAnsCn: z.string().min(0).max(4000).optional(),
 });
@@ -1320,10 +1320,10 @@ export type ApiResponseListSurveyStatsDto = z.infer<typeof ApiResponseListSurvey
 // SurveyStatsDto Schema
 // ==========================================================================
 export const SurveyStatsDtoSchema = z.object({
-  srvyQstnId: z.string().optional(),
+  srvyQstnSn: z.number().optional(),
   qstnCn: z.string().optional(),
   qstnTypeCd: z.string().optional(),
-  srvyArtclId: z.string().optional(),
+  srvyArtclSn: z.number().optional(),
   artclCn: z.string().optional(),
   count: z.number().optional(),
   percentage: z.number().optional(),
@@ -2473,11 +2473,11 @@ export type PageResponseSurveyResultDto = z.infer<typeof PageResponseSurveyResul
 // SurveyResultDto Schema
 // ==========================================================================
 export const SurveyResultDtoSchema = z.object({
-  srvyRspnsId: z.string().optional(),
-  srvyId: z.string().optional(),
-  srvyTmpltId: z.string().optional(),
-  srvyQstnId: z.string().optional(),
-  srvyArtclId: z.string().optional(),
+  srvyRspnsSn: z.number().optional(),
+  srvySn: z.number().optional(),
+  srvyTmpltSn: z.number().optional(),
+  srvyQstnSn: z.number().optional(),
+  srvyArtclSn: z.number().optional(),
   rspdntAnsCn: z.string().optional(),
   rspnsNm: z.string().optional(),
   etcAnsCn: z.string().optional(),

@@ -14,14 +14,14 @@ import lombok.Builder;
  */
 @Builder
 public record SurveyStatsDto(
-        /** 문항 ID */
-        String srvyQstnId,
+        /** 문항 일련번호 */
+        Long srvyQstnSn,
         /** 문항 내용 */
         String qstnCn,
         /** 문항 유형 코드 ('1'=객관식) */
         String qstnTypeCd,
-        /** 항목 ID */
-        String srvyArtclId,
+        /** 항목 일련번호 */
+        Long srvyArtclSn,
         /** 항목 내용. 주관식이면 null */
         String artclCn,
         /** 해당 항목 응답 수 */

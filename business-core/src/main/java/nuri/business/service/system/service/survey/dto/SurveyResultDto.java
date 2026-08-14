@@ -15,16 +15,16 @@ import java.time.LocalDateTime;
  */
 @Builder
 public record SurveyResultDto(
-        /** 응답 ID (PK) */
-        String srvyRspnsId,
-        /** 설문 ID */
-        String srvyId,
-        /** 설문 템플릿 ID */
-        String srvyTmpltId,
-        /** 문항 ID */
-        String srvyQstnId,
-        /** 항목 ID */
-        String srvyArtclId,
+        /** 응답 일련번호 (PK) */
+        Long srvyRspnsSn,
+        /** 설문 일련번호 */
+        Long srvySn,
+        /** 설문 템플릿 일련번호 */
+        Long srvyTmpltSn,
+        /** 문항 일련번호 */
+        Long srvyQstnSn,
+        /** 항목 일련번호 */
+        Long srvyArtclSn,
         /** 응답 내용 (주관식 답변 또는 선택 항목 내용) */
         String rspdntAnsCn,
         /** 응답자명 */
@@ -40,11 +40,11 @@ public record SurveyResultDto(
     /** 엔티티 → DTO. 조회 전용이라 역방향은 두지 않는다. */
     public static SurveyResultDto from(SurveyResult entity) {
         return SurveyResultDto.builder()
-                .srvyRspnsId(entity.getSrvyRspnsId())
-                .srvyId(entity.getSrvyId())
-                .srvyTmpltId(entity.getSrvyTmpltId())
-                .srvyQstnId(entity.getSrvyQstnId())
-                .srvyArtclId(entity.getSrvyArtclId())
+                .srvyRspnsSn(entity.getSrvyRspnsSn())
+                .srvySn(entity.getSrvySn())
+                .srvyTmpltSn(entity.getSrvyTmpltSn())
+                .srvyQstnSn(entity.getSrvyQstnSn())
+                .srvyArtclSn(entity.getSrvyArtclSn())
                 .rspdntAnsCn(entity.getRspdntAnsCn())
                 .rspnsNm(entity.getRspnsNm())
                 .etcAnsCn(entity.getEtcAnsCn())

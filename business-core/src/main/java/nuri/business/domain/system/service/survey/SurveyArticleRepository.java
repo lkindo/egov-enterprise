@@ -5,14 +5,14 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface SurveyArticleRepository extends JpaRepository<SurveyArticle, String> {
-    List<SurveyArticle> findBySrvyQstnIdOrderByArtclSnAsc(String srvyQstnId);
+public interface SurveyArticleRepository extends JpaRepository<SurveyArticle, Long> {
+    List<SurveyArticle> findBySrvyQstnSnOrderByArtclSnAsc(Long srvyQstnSn);
 
     /** 여러 문항의 항목을 한 번에 조회 — 문항별 getItemList N+1 제거용. */
-    List<SurveyArticle> findBySrvyQstnIdInOrderBySrvyQstnIdAscArtclSnAsc(java.util.Collection<String> srvyQstnIds);
+    List<SurveyArticle> findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(java.util.Collection<Long> srvyQstnSns);
 
     // [V2_13 결속] 설문/문항 삭제 시 항목 선정리용 파생 삭제
-    void deleteBySrvyId(String srvyId);
+    void deleteBySrvySn(Long srvySn);
 
-    void deleteBySrvyQstnId(String srvyQstnId);
+    void deleteBySrvyQstnSn(Long srvyQstnSn);
 }

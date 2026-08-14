@@ -9,16 +9,22 @@ import org.springframework.data.repository.query.Param;
 /**
  * 설문 응답자 정보 Repository
  */
-public interface SurveyRespondentRepository extends JpaRepository<SurveyRespondent, String> {
+public interface SurveyRespondentRepository extends JpaRepository<SurveyRespondent, SurveyRespondentId> {
 
-    Page<SurveyRespondent> findBySrvyId(String srvyId, Pageable pageable);
+    Page<SurveyRespondent> findBySrvySn(Long srvySn, Pageable pageable);
 
     Page<SurveyRespondent> findByRspdntNmContaining(String rspdntNm, Pageable pageable);
 
-    @Query("SELECT s FROM SurveyRespondent s WHERE s.srvyId = :srvyId AND (s.rspdntNm LIKE %:keyword% OR s.gndrCd = :keyword)")
-    Page<SurveyRespondent> searchBySrvyIdAndKeyword(@Param("srvyId") String srvyId,
+    @Query("SELECT s FROM SurveyRespondent s WHERE s.srvySn = :srvySn AND (s.rspdntNm LIKE %:keyword% OR s.gndrCd = :keyword)")
+    Page<SurveyRespondent> searchBySrvySnAndKeyword(@Param("srvySn") Long srvySn,
             @Param("keyword") String keyword, Pageable pageable);
 
+    java.util.Optional<SurveyRespondent> findBySrvySnAndSrvyRspdntId(Long srvySn, String srvyRspdntId);
+
+    boolean existsBySrvySn(Long srvySn);
+
+    void deleteBySrvySnAndSrvyRspdntId(Long srvySn, String srvyRspdntId);
+
     // [V2_13 결속] 설문 삭제 시 응답자 선정리 (fk_tb_srvy_rspdnt_tb_srvy_info NO ACTION)
-    void deleteBySrvyId(String srvyId);
+    void deleteBySrvySn(Long srvySn);
 }

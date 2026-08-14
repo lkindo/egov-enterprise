@@ -16,8 +16,8 @@ import lombok.*;
 public class SurveyInfo extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String srvyId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long srvySn;
 
     @Column(length = 100, nullable = false)
     private String srvyTtl;
@@ -37,35 +37,35 @@ public class SurveyInfo extends BaseEntity {
     @Column(length = 1000)
     private String srvyTrgt;
 
-    @Column(length = 20, nullable = false)
-    private String srvyTmpltId;
+    @Column(nullable = false)
+    private Long srvyTmpltSn;
 
-    private SurveyInfo(String srvyId, String srvyTtl, String srvyPrps, String srvyWrtGdCn,
-            String srvyBgngYmd, String srvyEndYmd, String srvyTrgt, String srvyTmpltId) {
-        this.srvyId = srvyId;
+    private SurveyInfo(Long srvySn, String srvyTtl, String srvyPrps, String srvyWrtGdCn,
+            String srvyBgngYmd, String srvyEndYmd, String srvyTrgt, Long srvyTmpltSn) {
+        this.srvySn = srvySn;
         this.srvyTtl = srvyTtl;
         this.srvyPrps = srvyPrps;
         this.srvyWrtGdCn = srvyWrtGdCn;
         this.srvyBgngYmd = srvyBgngYmd;
         this.srvyEndYmd = srvyEndYmd;
         this.srvyTrgt = srvyTrgt;
-        this.srvyTmpltId = srvyTmpltId;
+        this.srvyTmpltSn = srvyTmpltSn;
     }
 
     @Builder
-    public static SurveyInfo create(String srvyId, String srvyTtl, String srvyPrps, String srvyWrtGdCn,
-            String srvyBgngYmd, String srvyEndYmd, String srvyTrgt, String srvyTmpltId) {
-        return new SurveyInfo(srvyId, srvyTtl, srvyPrps, srvyWrtGdCn, srvyBgngYmd, srvyEndYmd, srvyTrgt, srvyTmpltId);
+    public static SurveyInfo create(Long srvySn, String srvyTtl, String srvyPrps, String srvyWrtGdCn,
+            String srvyBgngYmd, String srvyEndYmd, String srvyTrgt, Long srvyTmpltSn) {
+        return new SurveyInfo(srvySn, srvyTtl, srvyPrps, srvyWrtGdCn, srvyBgngYmd, srvyEndYmd, srvyTrgt, srvyTmpltSn);
     }
 
     public void update(String srvyTtl, String srvyPrps, String srvyWrtGdCn,
-            String srvyBgngYmd, String srvyEndYmd, String srvyTrgt, String srvyTmpltId) {
+            String srvyBgngYmd, String srvyEndYmd, String srvyTrgt, Long srvyTmpltSn) {
         this.srvyTtl = srvyTtl;
         this.srvyPrps = srvyPrps;
         this.srvyWrtGdCn = srvyWrtGdCn;
         this.srvyBgngYmd = srvyBgngYmd;
         this.srvyEndYmd = srvyEndYmd;
         this.srvyTrgt = srvyTrgt;
-        this.srvyTmpltId = srvyTmpltId;
+        this.srvyTmpltSn = srvyTmpltSn;
     }
 }

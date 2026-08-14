@@ -16,20 +16,14 @@ import java.time.LocalDateTime;
 @Schema(description = "설문항목 DTO (표준화)")
 public class SurveyArticleDto {
 
-    @Schema(description = "설문 항목 ID")
-    @Size(max = 20)
-    @NotBlank
-    private String srvyArtclId;
+    @Schema(description = "설문 항목 일련번호")
+    private Long srvyArtclSn;
 
-    @Schema(description = "설문 문항 ID")
-    @Size(max = 20)
-    @NotBlank
-    private String srvyQstnId;
+    @Schema(description = "설문 문항 일련번호")
+    private Long srvyQstnSn;
 
-    @Schema(description = "설문 ID")
-    @Size(max = 20)
-    @NotBlank
-    private String srvyId;
+    @Schema(description = "설문 일련번호")
+    private Long srvySn;
 
     @Schema(description = "항목 순번")
     private Long artclSn;
@@ -42,9 +36,8 @@ public class SurveyArticleDto {
     @Size(max = 1)
     private String etcAnsYn;
 
-    @Schema(description = "설문 템플릿 ID")
-    @Size(max = 20)
-    private String srvyTmpltId;
+    @Schema(description = "설문 템플릿 일련번호")
+    private Long srvyTmpltSn;
 
     @Schema(description = "등록자 ID")
     private String frstRgtrId;

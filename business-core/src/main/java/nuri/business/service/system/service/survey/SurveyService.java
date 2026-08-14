@@ -45,17 +45,15 @@ public class SurveyService {
                 .map(surveyTemplateMapper::toDto);
     }
 
-    public SurveyTemplateDto getTmplat(String tmplatId) {
-        return tmplatRepository.findById(Objects.requireNonNull(tmplatId))
+    public SurveyTemplateDto getTmplat(Long srvyTmpltSn) {
+        return tmplatRepository.findById(Objects.requireNonNull(srvyTmpltSn))
                 .map(surveyTemplateMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Transactional
     public void insertTmplat(SurveyTemplateDto dto) {
-        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("QUSTMP_", 13);
         tmplatRepository.save(Objects.requireNonNull(SurveyTemplate.builder()
-                .srvyTmpltId(id)
                 .srvyTmpltTypeCd(dto.getSrvyTmpltTypeCd())
                 .srvyTmpltPathNm(dto.getSrvyTmpltPathNm())
                 .srvyTmpltExpln(dto.getSrvyTmpltExpln())
@@ -64,14 +62,14 @@ public class SurveyService {
 
     @Transactional
     public void updateTmplat(SurveyTemplateDto dto) {
-        SurveyTemplate entity = tmplatRepository.findById(Objects.requireNonNull(dto.getSrvyTmpltId()))
+        SurveyTemplate entity = tmplatRepository.findById(Objects.requireNonNull(dto.getSrvyTmpltSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getSrvyTmpltTypeCd(), dto.getSrvyTmpltPathNm(), dto.getSrvyTmpltExpln());
     }
 
     @Transactional
-    public void deleteTmplat(String tmplatId) {
-        tmplatRepository.deleteById(Objects.requireNonNull(tmplatId));
+    public void deleteTmplat(Long srvyTmpltSn) {
+        tmplatRepository.deleteById(Objects.requireNonNull(srvyTmpltSn));
     }
 
     // 설문 정보
@@ -83,8 +81,8 @@ public class SurveyService {
                 .map(surveyInfoMapper::toDto);
     }
 
-    public SurveyInfoDto getSurvey(String qustnrId) {
-        return infoRepository.findById(Objects.requireNonNull(qustnrId))
+    public SurveyInfoDto getSurvey(Long srvySn) {
+        return infoRepository.findById(Objects.requireNonNull(srvySn))
                 .map(surveyInfoMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -92,129 +90,139 @@ public class SurveyService {
     @Transactional
     public void insertSurvey(SurveyInfoDto dto) {
         validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
-        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("QESTNR_", 13);
+        if (!tmplatRepository.existsById(Objects.requireNonNull(dto.getSrvyTmpltSn()))) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
         infoRepository.save(Objects.requireNonNull(SurveyInfo.builder()
-                .srvyId(id)
                 .srvyTtl(dto.getSrvyTtl())
                 .srvyPrps(dto.getSrvyPrps())
                 .srvyWrtGdCn(dto.getSrvyWrtGdCn())
                 .srvyBgngYmd(dto.getSrvyBgngYmd())
                 .srvyEndYmd(dto.getSrvyEndYmd())
                 .srvyTrgt(dto.getSrvyTrgt())
-                .srvyTmpltId(dto.getSrvyTmpltId())
+                .srvyTmpltSn(dto.getSrvyTmpltSn())
                 .build()));
     }
 
     @Transactional
     public void updateSurvey(SurveyInfoDto dto) {
         validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
-        SurveyInfo entity = infoRepository.findById(Objects.requireNonNull(dto.getSrvyId()))
+        if (!tmplatRepository.existsById(Objects.requireNonNull(dto.getSrvyTmpltSn()))) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+        SurveyInfo entity = infoRepository.findById(Objects.requireNonNull(dto.getSrvySn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        if (!Objects.equals(entity.getSrvyTmpltSn(), dto.getSrvyTmpltSn())
+                && (qesitmRepository.existsBySrvySn(entity.getSrvySn())
+                        || rspdntRepository.existsBySrvySn(entity.getSrvySn()))) {
+            throw new BusinessException("문항 또는 응답자가 있는 설문의 템플릿은 변경할 수 없습니다.",
+                    CommonErrorCode.INVALID_INPUT_VALUE);
+        }
         entity.update(dto.getSrvyTtl(), dto.getSrvyPrps(), dto.getSrvyWrtGdCn(),
-                dto.getSrvyBgngYmd(), dto.getSrvyEndYmd(), dto.getSrvyTrgt(), dto.getSrvyTmpltId());
+                dto.getSrvyBgngYmd(), dto.getSrvyEndYmd(), dto.getSrvyTrgt(), dto.getSrvyTmpltSn());
     }
 
     @Transactional
-    public void deleteSurvey(String qustnrId) {
-        Objects.requireNonNull(qustnrId);
+    public void deleteSurvey(Long srvySn) {
+        Objects.requireNonNull(srvySn);
         // [V2_13 결속] 설문 참조 FK(NO ACTION) 하에서 자식→부모 순 연쇄 정리.
         // 기존 V2_6 FK(qstn→info)로 문항 보유 설문 삭제가 409로 파손되던 기왕 부채도 함께 해소.
-        rsltRepository.deleteBySrvyId(qustnrId);
-        iemRepository.deleteBySrvyId(qustnrId);
-        qesitmRepository.deleteBySrvyId(qustnrId);
-        rspdntRepository.deleteBySrvyId(qustnrId);
-        infoRepository.deleteById(qustnrId);
+        rsltRepository.deleteBySrvySn(srvySn);
+        iemRepository.deleteBySrvySn(srvySn);
+        qesitmRepository.deleteBySrvySn(srvySn);
+        rspdntRepository.deleteBySrvySn(srvySn);
+        infoRepository.deleteById(srvySn);
     }
 
     // 설문 문항
-    public List<SurveyQuestionDto> getQuestionList(String qustnrId) {
-        List<SurveyQuestion> questions = qesitmRepository.findBySrvyIdOrderByQstnSnAsc(Objects.requireNonNull(qustnrId));
-        List<String> qstnIds = questions.stream().map(q -> q.getSrvyQstnId()).collect(Collectors.toList());
+    public List<SurveyQuestionDto> getQuestionList(Long srvySn) {
+        List<SurveyQuestion> questions = qesitmRepository.findBySrvySnOrderByQstnSnAsc(Objects.requireNonNull(srvySn));
+        List<Long> qstnSns = questions.stream().map(SurveyQuestion::getSrvyQstnSn).collect(Collectors.toList());
         // 문항마다 getItemList 하던 N+1 을, 전 문항 항목을 단일 IN 조회 후 문항ID 로 그룹핑하는 방식으로 제거.
-        java.util.Map<String, List<SurveyArticleDto>> itemsByQstn = qstnIds.isEmpty()
+        java.util.Map<Long, List<SurveyArticleDto>> itemsByQstn = qstnSns.isEmpty()
                 ? java.util.Collections.emptyMap()
-                : iemRepository.findBySrvyQstnIdInOrderBySrvyQstnIdAscArtclSnAsc(qstnIds).stream()
-                        .collect(Collectors.groupingBy(a -> a.getSrvyQstnId(),
+                : iemRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(qstnSns).stream()
+                        .collect(Collectors.groupingBy(SurveyArticle::getSrvyQstnSn,
                                 Collectors.mapping(surveyArticleMapper::toDto, Collectors.toList())));
         return questions.stream()
                 .map(q -> {
                     SurveyQuestionDto dto = surveyQuestionMapper.toDto(q);
-                    dto.setItems(itemsByQstn.getOrDefault(q.getSrvyQstnId(), java.util.Collections.emptyList()));
+                    dto.setItems(itemsByQstn.getOrDefault(q.getSrvyQstnSn(), java.util.Collections.emptyList()));
                     return dto;
                 })
                 .collect(Collectors.toList());
     }
 
-    public SurveyQuestionDto getQuestion(String qesitmId) {
-        return qesitmRepository.findById(Objects.requireNonNull(qesitmId))
+    public SurveyQuestionDto getQuestion(Long srvyQstnSn) {
+        return qesitmRepository.findById(Objects.requireNonNull(srvyQstnSn))
                 .map(surveyQuestionMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
 
     @Transactional
     public void insertQuestion(SurveyQuestionDto dto) {
-        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("QESITM_", 13);
+        SurveyInfo survey = infoRepository.findById(Objects.requireNonNull(dto.getSrvySn()))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         qesitmRepository.save(Objects.requireNonNull(SurveyQuestion.builder()
-                .srvyQstnId(id)
-                .srvyId(dto.getSrvyId())
+                .srvySn(survey.getSrvySn())
                 .qstnSn(dto.getQstnSn())
                 .qstnTypeCd(dto.getQstnTypeCd())
                 .qstnCn(dto.getQstnCn())
                 .maxChcCnt(dto.getMaxChcCnt())
-                .srvyTmpltId(dto.getSrvyTmpltId())
+                .srvyTmpltSn(survey.getSrvyTmpltSn())
                 .build()));
     }
 
     @Transactional
     public void updateQuestion(SurveyQuestionDto dto) {
-        SurveyQuestion entity = qesitmRepository.findById(Objects.requireNonNull(dto.getSrvyQstnId()))
+        SurveyQuestion entity = qesitmRepository.findById(Objects.requireNonNull(dto.getSrvyQstnSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getQstnSn(), dto.getQstnTypeCd(), dto.getQstnCn(), dto.getMaxChcCnt());
     }
 
     @Transactional
-    public void deleteQuestion(String qesitmId) {
-        Objects.requireNonNull(qesitmId);
+    public void deleteQuestion(Long srvyQstnSn) {
+        Objects.requireNonNull(srvyQstnSn);
         // [V2_13 결속] 문항 삭제 시 응답·항목 선정리 (기존 fk_tb_srvy_artcl_tb_srvy_qstn 기왕 부채 해소)
-        rsltRepository.deleteBySrvyQstnId(qesitmId);
-        iemRepository.deleteBySrvyQstnId(qesitmId);
-        qesitmRepository.deleteById(qesitmId);
+        rsltRepository.deleteBySrvyQstnSn(srvyQstnSn);
+        iemRepository.deleteBySrvyQstnSn(srvyQstnSn);
+        qesitmRepository.deleteById(srvyQstnSn);
     }
 
     // 설문 항목
-    public List<SurveyArticleDto> getItemList(String qesitmId) {
-        return iemRepository.findBySrvyQstnIdOrderByArtclSnAsc(Objects.requireNonNull(qesitmId)).stream()
+    public List<SurveyArticleDto> getItemList(Long srvyQstnSn) {
+        return iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(Objects.requireNonNull(srvyQstnSn)).stream()
                 .map(surveyArticleMapper::toDto)
                 .collect(Collectors.toList());
     }
 
     @Transactional
     public void insertItem(SurveyArticleDto dto) {
-        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("IEM_", 13);
+        SurveyQuestion question = qesitmRepository.findById(Objects.requireNonNull(dto.getSrvyQstnSn()))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         iemRepository.save(Objects.requireNonNull(SurveyArticle.builder()
-                .srvyArtclId(id)
-                .srvyQstnId(dto.getSrvyQstnId())
-                .srvyId(dto.getSrvyId())
+                .srvyQstnSn(question.getSrvyQstnSn())
+                .srvySn(question.getSrvySn())
                 .artclSn(dto.getArtclSn())
                 .artclCn(dto.getArtclCn())
                 .etcAnsYn(dto.getEtcAnsYn())
-                .srvyTmpltId(dto.getSrvyTmpltId())
+                .srvyTmpltSn(question.getSrvyTmpltSn())
                 .build()));
     }
 
     @Transactional
     public void updateItem(SurveyArticleDto dto) {
-        SurveyArticle entity = iemRepository.findById(Objects.requireNonNull(dto.getSrvyArtclId()))
+        SurveyArticle entity = iemRepository.findById(Objects.requireNonNull(dto.getSrvyArtclSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getArtclSn(), dto.getArtclCn(), dto.getEtcAnsYn());
     }
 
     @Transactional
-    public void deleteItem(String iemId) {
-        Objects.requireNonNull(iemId);
+    public void deleteItem(Long srvyArtclSn) {
+        Objects.requireNonNull(srvyArtclSn);
         // [V2_13 결속] 항목 삭제 시 해당 항목 응답 선정리 (기존 fk_tb_srvy_rslt_tb_srvy_artcl 기왕 부채 해소)
-        rsltRepository.deleteBySrvyArtclId(iemId);
-        iemRepository.deleteById(iemId);
+        rsltRepository.deleteBySrvyArtclSn(srvyArtclSn);
+        iemRepository.deleteById(srvyArtclSn);
     }
 
     private void validateSurveyDates(String beginDe, String endDe) {

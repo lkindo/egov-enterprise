@@ -13,19 +13,22 @@ import lombok.*;
  */
 @Entity
 @Table(name = "tb_srvy_rspdnt")
+@IdClass(SurveyRespondentId.class)
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class SurveyRespondent extends BaseEntity {
 
     @Id
-    @Column(length = 20)
+    @Column(nullable = false)
+    private Long srvyTmpltSn;
+
+    @Id
+    @Column(nullable = false)
+    private Long srvySn;
+
+    @Id
+    @Column(length = 20, nullable = false)
     private String srvyRspdntId;
-
-    @Column(length = 20, nullable = false)
-    private String srvyId;
-
-    @Column(length = 20, nullable = false)
-    private String srvyTmpltId;
 
     @Column(length = 12)
     private String gndrCd;
@@ -48,11 +51,11 @@ public class SurveyRespondent extends BaseEntity {
     @Column(length = 4)
     private String endTelno;
 
-    private SurveyRespondent(String srvyRspdntId, String srvyId, String srvyTmpltId, String gndrCd,
+    private SurveyRespondent(String srvyRspdntId, Long srvySn, Long srvyTmpltSn, String gndrCd,
             String crTypeCd, String rspdntNm, String brdt, String rgnTelno, String midTelno, String endTelno) {
         this.srvyRspdntId = srvyRspdntId;
-        this.srvyId = srvyId;
-        this.srvyTmpltId = srvyTmpltId;
+        this.srvySn = srvySn;
+        this.srvyTmpltSn = srvyTmpltSn;
         this.gndrCd = gndrCd;
         this.crTypeCd = crTypeCd;
         this.rspdntNm = rspdntNm;
@@ -63,9 +66,9 @@ public class SurveyRespondent extends BaseEntity {
     }
 
     @Builder
-    public static SurveyRespondent create(String srvyRspdntId, String srvyId, String srvyTmpltId, String gndrCd,
+    public static SurveyRespondent create(String srvyRspdntId, Long srvySn, Long srvyTmpltSn, String gndrCd,
             String crTypeCd, String rspdntNm, String brdt, String rgnTelno, String midTelno, String endTelno) {
-        return new SurveyRespondent(srvyRspdntId, srvyId, srvyTmpltId, gndrCd, crTypeCd, rspdntNm,
+        return new SurveyRespondent(srvyRspdntId, srvySn, srvyTmpltSn, gndrCd, crTypeCd, rspdntNm,
                 brdt, rgnTelno, midTelno, endTelno);
     }
 

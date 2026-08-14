@@ -2278,7 +2278,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/{srvyId}/respondents/{respondentId}": {
+    "/api/v1/admin/system/surveys/{srvySn}/respondents/{respondentId}": {
       "get": {
         "tags": [
           "SurveyRespondent"
@@ -2287,11 +2287,12 @@
         "operationId": "getRespondent",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -2324,11 +2325,12 @@
         "operationId": "updateRespondent",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -2371,11 +2373,12 @@
         "operationId": "deleteRespondent",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -2401,7 +2404,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/{srvyId}/questions/{srvyQitemId}": {
+    "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}": {
       "put": {
         "tags": [
           "Survey"
@@ -2410,19 +2413,21 @@
         "operationId": "updateQuestion",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2457,11 +2462,12 @@
         "operationId": "deleteQuestion",
         "parameters": [
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2479,7 +2485,7 @@
         }
       }
     },
-    "/api/v1/surveys/{srvyId}/questions/{srvyQitemId}": {
+    "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}": {
       "put": {
         "tags": [
           "Survey"
@@ -2488,19 +2494,21 @@
         "operationId": "updateQuestion_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2535,11 +2543,12 @@
         "operationId": "deleteQuestion_1",
         "parameters": [
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2557,7 +2566,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/{srvyId}": {
+    "/api/v1/admin/system/surveys/{srvySn}": {
       "get": {
         "tags": [
           "Survey"
@@ -2566,11 +2575,12 @@
         "operationId": "getSurvey",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2595,11 +2605,12 @@
         "operationId": "updateSurvey",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2634,11 +2645,12 @@
         "operationId": "deleteSurvey",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2656,7 +2668,7 @@
         }
       }
     },
-    "/api/v1/surveys/{srvyId}": {
+    "/api/v1/surveys/{srvySn}": {
       "get": {
         "tags": [
           "Survey"
@@ -2665,11 +2677,12 @@
         "operationId": "getSurvey_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2694,11 +2707,12 @@
         "operationId": "updateSurvey_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2733,11 +2747,12 @@
         "operationId": "deleteSurvey_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2755,7 +2770,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/templates/{tmpltId}": {
+    "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}": {
       "get": {
         "tags": [
           "Survey"
@@ -2764,11 +2779,12 @@
         "operationId": "getTemplate",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2793,11 +2809,12 @@
         "operationId": "updateTemplate",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2832,11 +2849,12 @@
         "operationId": "deleteTemplate",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2854,7 +2872,7 @@
         }
       }
     },
-    "/api/v1/surveys/templates/{tmpltId}": {
+    "/api/v1/surveys/templates/{srvyTmpltSn}": {
       "get": {
         "tags": [
           "Survey"
@@ -2863,11 +2881,12 @@
         "operationId": "getTemplate_1",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2892,11 +2911,12 @@
         "operationId": "updateTemplate_1",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2931,11 +2951,12 @@
         "operationId": "deleteTemplate_1",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2953,7 +2974,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}": {
       "put": {
         "tags": [
           "Survey"
@@ -2962,11 +2983,12 @@
         "operationId": "updateItem",
         "parameters": [
           {
-            "name": "srvyItemId",
+            "name": "srvyArtclSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3001,11 +3023,12 @@
         "operationId": "deleteItem",
         "parameters": [
           {
-            "name": "srvyItemId",
+            "name": "srvyArtclSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3023,7 +3046,7 @@
         }
       }
     },
-    "/api/v1/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/surveys/questions/items/{srvyArtclSn}": {
       "put": {
         "tags": [
           "Survey"
@@ -3032,11 +3055,12 @@
         "operationId": "updateItem_1",
         "parameters": [
           {
-            "name": "srvyItemId",
+            "name": "srvyArtclSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3071,11 +3095,12 @@
         "operationId": "deleteItem_1",
         "parameters": [
           {
-            "name": "srvyItemId",
+            "name": "srvyArtclSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5430,7 +5455,7 @@
         }
       }
     },
-    "/api/v1/surveys/{srvyId}/responses": {
+    "/api/v1/surveys/{srvySn}/responses": {
       "post": {
         "tags": [
           "SurveySubmission"
@@ -5440,11 +5465,12 @@
         "operationId": "submit",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7789,7 +7815,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/{srvyId}/respondents": {
+    "/api/v1/admin/system/surveys/{srvySn}/respondents": {
       "get": {
         "tags": [
           "SurveyRespondent"
@@ -7799,11 +7825,12 @@
         "operationId": "getRespondents",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -7870,11 +7897,12 @@
         "operationId": "createRespondent",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7902,7 +7930,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/{srvyId}/questions": {
+    "/api/v1/admin/system/surveys/{srvySn}/questions": {
       "get": {
         "tags": [
           "Survey"
@@ -7911,11 +7939,12 @@
         "operationId": "getQuestions",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7940,11 +7969,12 @@
         "operationId": "insertQuestion",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7972,7 +8002,7 @@
         }
       }
     },
-    "/api/v1/surveys/{srvyId}/questions": {
+    "/api/v1/surveys/{srvySn}/questions": {
       "get": {
         "tags": [
           "Survey"
@@ -7981,11 +8011,12 @@
         "operationId": "getQuestions_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -8010,11 +8041,12 @@
         "operationId": "insertQuestion_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -8230,7 +8262,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/questions/{srvyQitemId}/items": {
+    "/api/v1/admin/system/surveys/questions/{srvyQstnSn}/items": {
       "post": {
         "tags": [
           "Survey"
@@ -8239,11 +8271,12 @@
         "operationId": "insertItem",
         "parameters": [
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -8271,7 +8304,7 @@
         }
       }
     },
-    "/api/v1/surveys/questions/{srvyQitemId}/items": {
+    "/api/v1/surveys/questions/{srvyQstnSn}/items": {
       "post": {
         "tags": [
           "Survey"
@@ -8280,11 +8313,12 @@
         "operationId": "insertItem_1",
         "parameters": [
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -12096,7 +12130,7 @@
         }
       }
     },
-    "/api/v1/surveys/{srvyId}/stats": {
+    "/api/v1/surveys/{srvySn}/stats": {
       "get": {
         "tags": [
           "SurveySubmission"
@@ -12106,11 +12140,12 @@
         "operationId": "getStats",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13828,7 +13863,7 @@
         }
       }
     },
-    "/api/v1/admin/system/survey-responses/{srvyRspnsId}": {
+    "/api/v1/admin/system/survey-responses/{srvyRspnsSn}": {
       "get": {
         "tags": [
           "SurveyResponseAdmin"
@@ -13837,11 +13872,12 @@
         "operationId": "getResponse",
         "parameters": [
           {
-            "name": "srvyRspnsId",
+            "name": "srvyRspnsSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13867,11 +13903,12 @@
         "operationId": "deleteResponse",
         "parameters": [
           {
-            "name": "srvyRspnsId",
+            "name": "srvyRspnsSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -17097,17 +17134,15 @@
             "maxLength": 20,
             "minLength": 0
           },
-          "srvyId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
-          "srvyTmpltId": {
-            "type": "string",
-            "description": "설문 템플릿 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 템플릿 일련번호"
           },
           "gndrCd": {
             "type": "string",
@@ -17169,32 +17204,26 @@
             "format": "date-time",
             "description": "최종 수정 일시"
           }
-        },
-        "required": [
-          "srvyId"
-        ]
+        }
       },
       "SurveyArticleDto": {
         "type": "object",
         "description": "설문항목 DTO (표준화)",
         "properties": {
-          "srvyArtclId": {
-            "type": "string",
-            "description": "설문 항목 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyArtclSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 항목 일련번호"
           },
-          "srvyQstnId": {
-            "type": "string",
-            "description": "설문 문항 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyQstnSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 문항 일련번호"
           },
-          "srvyId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
           "artclSn": {
             "type": "integer",
@@ -17213,11 +17242,10 @@
             "maxLength": 1,
             "minLength": 0
           },
-          "srvyTmpltId": {
-            "type": "string",
-            "description": "설문 템플릿 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 템플릿 일련번호"
           },
           "frstRgtrId": {
             "type": "string",
@@ -17228,28 +17256,21 @@
             "format": "date-time",
             "description": "등록 일시"
           }
-        },
-        "required": [
-          "srvyArtclId",
-          "srvyId",
-          "srvyQstnId"
-        ]
+        }
       },
       "SurveyQuestionDto": {
         "type": "object",
         "description": "설문문항 DTO (표준화)",
         "properties": {
-          "srvyQstnId": {
-            "type": "string",
-            "description": "설문 문항 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyQstnSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 문항 일련번호"
           },
-          "srvyId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
           "qstnSn": {
             "type": "integer",
@@ -17273,11 +17294,10 @@
             "format": "int32",
             "description": "최대 선택 수"
           },
-          "srvyTmpltId": {
-            "type": "string",
-            "description": "설문 템플릿 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 템플릿 일련번호"
           },
           "frstRgtrId": {
             "type": "string",
@@ -17295,21 +17315,16 @@
               "$ref": "#/components/schemas/SurveyArticleDto"
             }
           }
-        },
-        "required": [
-          "srvyId",
-          "srvyQstnId"
-        ]
+        }
       },
       "SurveyInfoDto": {
         "type": "object",
         "description": "설문정보 DTO (표준화)",
         "properties": {
-          "srvyId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
           "srvyTtl": {
             "type": "string",
@@ -17347,11 +17362,10 @@
             "maxLength": 1000,
             "minLength": 0
           },
-          "srvyTmpltId": {
-            "type": "string",
-            "description": "설문 템플릿 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 템플릿 일련번호"
           },
           "frstRgtrId": {
             "type": "string",
@@ -17364,7 +17378,7 @@
           }
         },
         "required": [
-          "srvyId",
+          "srvyTmpltSn",
           "srvyTtl"
         ]
       },
@@ -17372,11 +17386,10 @@
         "type": "object",
         "description": "설문템플릿 DTO (표준화)",
         "properties": {
-          "srvyTmpltId": {
-            "type": "string",
-            "description": "설문 템플릿 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 템플릿 일련번호"
           },
           "srvyTmpltTypeCd": {
             "type": "string",
@@ -18732,17 +18745,15 @@
         "type": "object",
         "description": "문항별 답변",
         "properties": {
-          "srvyQstnId": {
-            "type": "string",
-            "description": "문항 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyQstnSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "문항 일련번호"
           },
-          "srvyArtclId": {
-            "type": "string",
-            "description": "항목 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyArtclSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "항목 일련번호"
           },
           "rspdntAnsCn": {
             "type": "string",
@@ -18758,8 +18769,8 @@
           }
         },
         "required": [
-          "srvyArtclId",
-          "srvyQstnId"
+          "srvyArtclSn",
+          "srvyQstnSn"
         ]
       },
       "SurveyResponseSubmitDto": {
@@ -20098,8 +20109,9 @@
       "SurveyStatsDto": {
         "type": "object",
         "properties": {
-          "srvyQstnId": {
-            "type": "string"
+          "srvyQstnSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "qstnCn": {
             "type": "string"
@@ -20107,8 +20119,9 @@
           "qstnTypeCd": {
             "type": "string"
           },
-          "srvyArtclId": {
-            "type": "string"
+          "srvyArtclSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "artclCn": {
             "type": "string"
@@ -22800,20 +22813,25 @@
       "SurveyResultDto": {
         "type": "object",
         "properties": {
-          "srvyRspnsId": {
-            "type": "string"
+          "srvyRspnsSn": {
+            "type": "integer",
+            "format": "int64"
           },
-          "srvyId": {
-            "type": "string"
+          "srvySn": {
+            "type": "integer",
+            "format": "int64"
           },
-          "srvyTmpltId": {
-            "type": "string"
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64"
           },
-          "srvyQstnId": {
-            "type": "string"
+          "srvyQstnSn": {
+            "type": "integer",
+            "format": "int64"
           },
-          "srvyArtclId": {
-            "type": "string"
+          "srvyArtclSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "rspdntAnsCn": {
             "type": "string"

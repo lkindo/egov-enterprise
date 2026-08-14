@@ -16,15 +16,16 @@ import { Loader2, BarChart3 } from 'lucide-react';
  *
  * <p>표준 필드명은 {@code count}/{@code percentage} 다({@link SurveyResultStats}).
  */
-export function SurveyStatsPanel({ srvyId }: { srvyId: string }) {
+export function SurveyStatsPanel({ srvySn }: { srvySn: number | null }) {
+  const hasValidSurvey = srvySn !== null && Number.isSafeInteger(srvySn) && srvySn > 0;
   const { data, isLoading, isError, error } = useQuery({
-    queryKey: ['survey-stats', srvyId],
-    queryFn: () => getSurveyStats({ srvyId }),
-    enabled: !!srvyId,
+    queryKey: ['survey-stats', srvySn],
+    queryFn: () => getSurveyStats({ srvySn: srvySn! }),
+    enabled: hasValidSurvey,
     retry: false,
   });
 
-  if (!srvyId) {
+  if (!hasValidSurvey) {
     return (
       <div className="text-center py-20 border-2 border-dashed rounded-lg">
         <BarChart3 className="mx-auto h-12 w-12 text-muted-foreground/30 mb-4" />

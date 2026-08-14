@@ -16,14 +16,14 @@ import lombok.*;
 public class SurveyArticle extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String srvyArtclId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long srvyArtclSn;
 
-    @Column(length = 20)
-    private String srvyQstnId;
+    @Column(nullable = false)
+    private Long srvyQstnSn;
 
-    @Column(length = 20)
-    private String srvyId;
+    @Column(nullable = false)
+    private Long srvySn;
 
     private Long artclSn;
 
@@ -33,24 +33,24 @@ public class SurveyArticle extends BaseEntity {
     @Column(length = 1)
     private String etcAnsYn;
 
-    @Column(length = 20)
-    private String srvyTmpltId;
+    @Column(nullable = false)
+    private Long srvyTmpltSn;
 
-    private SurveyArticle(String srvyArtclId, String srvyQstnId, String srvyId, Long artclSn,
-            String artclCn, String etcAnsYn, String srvyTmpltId) {
-        this.srvyArtclId = srvyArtclId;
-        this.srvyQstnId = srvyQstnId;
-        this.srvyId = srvyId;
+    private SurveyArticle(Long srvyArtclSn, Long srvyQstnSn, Long srvySn, Long artclSn,
+            String artclCn, String etcAnsYn, Long srvyTmpltSn) {
+        this.srvyArtclSn = srvyArtclSn;
+        this.srvyQstnSn = srvyQstnSn;
+        this.srvySn = srvySn;
         this.artclSn = artclSn;
         this.artclCn = artclCn;
         this.etcAnsYn = etcAnsYn;
-        this.srvyTmpltId = srvyTmpltId;
+        this.srvyTmpltSn = srvyTmpltSn;
     }
 
     @Builder
-    public static SurveyArticle create(String srvyArtclId, String srvyQstnId, String srvyId, Long artclSn,
-            String artclCn, String etcAnsYn, String srvyTmpltId) {
-        return new SurveyArticle(srvyArtclId, srvyQstnId, srvyId, artclSn, artclCn, etcAnsYn, srvyTmpltId);
+    public static SurveyArticle create(Long srvyArtclSn, Long srvyQstnSn, Long srvySn, Long artclSn,
+            String artclCn, String etcAnsYn, Long srvyTmpltSn) {
+        return new SurveyArticle(srvyArtclSn, srvyQstnSn, srvySn, artclSn, artclCn, etcAnsYn, srvyTmpltSn);
     }
 
     public void update(Long artclSn, String artclCn, String etcAnsYn) {

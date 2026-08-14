@@ -16,11 +16,11 @@ import lombok.*;
 public class SurveyQuestion extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String srvyQstnId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long srvyQstnSn;
 
-    @Column(length = 20)
-    private String srvyId;
+    @Column(nullable = false)
+    private Long srvySn;
 
     private Long qstnSn;
 
@@ -32,24 +32,24 @@ public class SurveyQuestion extends BaseEntity {
 
     private Integer maxChcCnt;
 
-    @Column(length = 20)
-    private String srvyTmpltId;
+    @Column(nullable = false)
+    private Long srvyTmpltSn;
 
-    private SurveyQuestion(String srvyQstnId, String srvyId, Long qstnSn, String qstnTypeCd,
-            String qstnCn, Integer maxChcCnt, String srvyTmpltId) {
-        this.srvyQstnId = srvyQstnId;
-        this.srvyId = srvyId;
+    private SurveyQuestion(Long srvyQstnSn, Long srvySn, Long qstnSn, String qstnTypeCd,
+            String qstnCn, Integer maxChcCnt, Long srvyTmpltSn) {
+        this.srvyQstnSn = srvyQstnSn;
+        this.srvySn = srvySn;
         this.qstnSn = qstnSn;
         this.qstnTypeCd = qstnTypeCd;
         this.qstnCn = qstnCn;
         this.maxChcCnt = maxChcCnt;
-        this.srvyTmpltId = srvyTmpltId;
+        this.srvyTmpltSn = srvyTmpltSn;
     }
 
     @Builder
-    public static SurveyQuestion create(String srvyQstnId, String srvyId, Long qstnSn, String qstnTypeCd,
-            String qstnCn, Integer maxChcCnt, String srvyTmpltId) {
-        return new SurveyQuestion(srvyQstnId, srvyId, qstnSn, qstnTypeCd, qstnCn, maxChcCnt, srvyTmpltId);
+    public static SurveyQuestion create(Long srvyQstnSn, Long srvySn, Long qstnSn, String qstnTypeCd,
+            String qstnCn, Integer maxChcCnt, Long srvyTmpltSn) {
+        return new SurveyQuestion(srvyQstnSn, srvySn, qstnSn, qstnTypeCd, qstnCn, maxChcCnt, srvyTmpltSn);
     }
 
     public void update(Long qstnSn, String qstnTypeCd, String qstnCn, Integer maxChcCnt) {

@@ -58,7 +58,7 @@ export default function SurveyClient() {
         <button
           onClick={(e) => {
             e.stopPropagation();
-            router.push(`/survey/${item.srvyId}`);
+            router.push(`/survey/${item.srvySn}`);
           }}
           aria-label={`${item.srvyTtl || '설문'} 상세 이동`}
           className="p-2 hover:bg-primary/10 text-primary rounded-lg transition-all"
@@ -88,7 +88,7 @@ export default function SurveyClient() {
           columns={columns}
           data={data}
           loading={loading}
-          onRowClick={(item) => router.push(`/survey/${item.srvyId}`)}
+          onRowClick={(item) => router.push(`/survey/${item.srvySn}`)}
           emptyMessage="등록된 설문 조사가 없습니다."
         />
       </div>

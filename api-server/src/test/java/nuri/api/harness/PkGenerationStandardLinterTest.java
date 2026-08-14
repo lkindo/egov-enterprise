@@ -117,6 +117,13 @@ class PkGenerationStandardLinterTest {
             //   여론조사·항목·결과의 문자열 기술 PK와 내부 FK 체인을 3개 BIGINT IDENTITY
             //   일련번호로 함께 전환했다. 실측: 세 테이블 모두 0행, 관계 고아·NULL·부모 불일치 0.
             //   사용자별 투표 UNIQUE와 구형 관계 주입 회귀, JPA·API·프론트 숫자 계약을 검증했다.
+            // [2026-08-14 제거] SurveyTemplate · SurveyInfo · SurveyQuestion · SurveyArticle · SurveyResult
+            //   — V2_68에서 설문 템플릿·설문·문항·항목·응답의 문자열 기술 PK와 12개 관계를
+            //   5개 BIGINT IDENTITY 일련번호로 전환했다. 여섯 테이블 모두 실측 0행이며,
+            //   구형 전체 그래프 주입 회귀와 JPA·API·프론트 숫자 계약을 검증했다.
+            // [2026-08-14 제거] SurveyRespondent — 자동 PK 전환 대상이 아니라 물리 DB의
+            //   (srvy_tmplt_sn, srvy_sn, srvy_rspdnt_id) 복합 PK를 @IdClass로 정확히 매핑했다.
+            //   문자열 응답자 ID는 유지하며, 복합키는 이 단일 수동 PK 베이스라인의 대상이 아니다.
             "AdministCode", "Authority", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptManage", "EventInfo",
@@ -136,8 +143,7 @@ class PkGenerationStandardLinterTest {
             "FileMaster", "GroupManage", "InformalSanction", "InstitutionCode",
             "LoginLog", "LoginPolicy", "Menu", "Notification", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
-            "SiteMap", "Sms", "SurveyArticle", "SurveyInfo", "SurveyQuestion",
-            "SurveyRespondent", "SurveyResult", "SurveyTemplate", "SysLog", "SystemPolicy", "Template",
+            "SiteMap", "Sms", "SysLog", "SystemPolicy", "Template",
             "User", "UserAbsence", "UserAuthority", "WebLog"
     ));
 

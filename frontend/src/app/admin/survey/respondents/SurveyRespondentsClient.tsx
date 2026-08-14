@@ -26,24 +26,24 @@ const formatBrdt = (brdt?: string) =>
  * 설문 응답자 관리 화면.
  *
  * <p>응답자는 <b>설문 하위</b>로만 조회한다 — 백엔드 경로가
- * {@code /surveys/{srvyId}/respondents} 이고, 서비스도 설문 범위로 한정해 조회한다.
+ * {@code /surveys/{srvySn}/respondents} 이고, 서비스도 설문 범위로 한정해 조회한다.
  * 종전에는 범위 한정이 빠져 다른 설문의 참여자가 섞여 나왔다(D-4 1단계에서 수정).
  */
 export default function SurveyRespondentsClient() {
-  const [srvyId, setSrvyId] = useState<string>('');
+  const [srvySn, setSrvySn] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState('');
 
-  // 설문 선택기 — 응답자 조회에 srvyId 가 필수라 목록을 먼저 띄운다.
+  // 설문 선택기 — 응답자 조회에 srvySn 이 필수라 목록을 먼저 띄운다.
   const { data: surveys } = useQuery<PageResponse<Survey>>({
     queryKey: ['admin-surveys-for-respondents'],
     queryFn: () => surveyAdminService.getSurveyList({ pageIndex: 1, size: 100 }),
   });
 
   const { data, isLoading, error, refetch } = useQuery<PageResponse<SurveyRespondent>>({
-    queryKey: ['admin-survey-respondents', srvyId, page, searchKeyword],
-    queryFn: () => surveyAdminService.getRespondents(srvyId, { pageIndex: page, size: PAGE_SIZE, searchKeyword }),
-    enabled: !!srvyId,
+    queryKey: ['admin-survey-respondents', srvySn, page, searchKeyword],
+    queryFn: () => surveyAdminService.getRespondents(srvySn!, { pageIndex: page, size: PAGE_SIZE, searchKeyword }),
+    enabled: srvySn !== null,
   });
 
   const respondents = data?.list ?? [];
@@ -110,23 +110,23 @@ export default function SurveyRespondentsClient() {
         </label>
         <select
           id="srvy-select"
-          value={srvyId}
+          value={srvySn ?? ''}
           onChange={(e) => {
-            setSrvyId(e.target.value);
+            setSrvySn(e.target.value ? Number(e.target.value) : null);
             setPage(1);
           }}
           className="border rounded-lg px-3 py-2 text-sm bg-card max-w-md w-full"
         >
           <option value="">— 설문을 선택하세요 —</option>
           {(surveys?.list ?? []).map((s) => (
-            <option key={s.srvyId} value={s.srvyId}>
+            <option key={s.srvySn} value={s.srvySn}>
               {s.srvyTtl}
             </option>
           ))}
         </select>
       </div>
 
-      {!srvyId ? (
+      {srvySn === null ? (
         <div className="p-20 text-center bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-4">
           <ShieldAlert size={40} className="text-muted-foreground/30" />
           <p className="text-muted-foreground font-medium">

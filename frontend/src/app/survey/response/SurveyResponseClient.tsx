@@ -55,7 +55,7 @@ export default function SurveyResponseClient() {
   const totalPage = data?.totalPage ?? 1;
 
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => deleteQustnrRespondInfo(id),
+    mutationFn: (srvyRspnsSn: number) => deleteQustnrRespondInfo(srvyRspnsSn),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['survey-responses'] });
       toast.success('삭제되었습니다.');
@@ -70,9 +70,9 @@ export default function SurveyResponseClient() {
     setPageNo(1);
   };
 
-  const handleDelete = (id: string, name: string) => {
+  const handleDelete = (srvyRspnsSn: number, name: string) => {
     if (confirm(`${name}님의 응답을 삭제하시겠습니까?`)) {
-      deleteMutation.mutate(id);
+      deleteMutation.mutate(srvyRspnsSn);
     }
   };
 
@@ -158,7 +158,7 @@ export default function SurveyResponseClient() {
                   </TableRow>
                 ) : (
                   responses.map((item) => (
-                    <TableRow key={item.srvyRspnsId} className="transition-colors hover:bg-muted/30">
+                    <TableRow key={item.srvyRspnsSn} className="transition-colors hover:bg-muted/30">
                       <TableCell className="font-medium">{item.rspnsNm}</TableCell>
                       <TableCell className="text-muted-foreground">
                         <span className="line-clamp-1">{item.rspdntAnsCn}</span>
@@ -168,7 +168,7 @@ export default function SurveyResponseClient() {
                       </TableCell>
                       <TableCell>
                         <div className="flex justify-center space-x-1">
-                          <Link href={`/survey/response/${item.srvyRspnsId}`}>
+                          <Link href={`/survey/response/${item.srvyRspnsSn}`}>
                             <Button variant="ghost" size="icon" aria-label={`${item.rspnsNm || '설문'} 응답 상세보기`} className="h-8 w-8">
                               <Eye className="h-4 w-4" />
                             </Button>
@@ -178,7 +178,7 @@ export default function SurveyResponseClient() {
                             size="icon"
                             aria-label={`${item.rspnsNm || '설문'} 응답 삭제`}
                             className="h-8 w-8 text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10"
-                            onClick={() => handleDelete(item.srvyRspnsId, item.rspnsNm)}
+                            onClick={() => handleDelete(item.srvyRspnsSn, item.rspnsNm)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>

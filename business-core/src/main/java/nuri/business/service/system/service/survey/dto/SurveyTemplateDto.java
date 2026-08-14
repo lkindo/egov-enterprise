@@ -16,9 +16,8 @@ import java.time.LocalDateTime;
 @Schema(description = "설문템플릿 DTO (표준화)")
 public class SurveyTemplateDto {
 
-    @Schema(description = "설문 템플릿 ID")
-    @Size(max = 20)
-    private String srvyTmpltId;
+    @Schema(description = "설문 템플릿 일련번호")
+    private Long srvyTmpltSn;
 
     @Schema(description = "설문 템플릿 유형 코드")
     @Size(max = 12)

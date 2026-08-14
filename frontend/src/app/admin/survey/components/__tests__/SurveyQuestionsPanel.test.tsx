@@ -28,7 +28,7 @@ function renderPanel() {
 }
 
 const SURVEYS = {
-  list: [{ srvyId: 'S1', srvyTtl: '만족도 조사' }],
+  list: [{ srvySn: 201, srvyTtl: '만족도 조사' }],
   total: 1,
   page: 1,
   size: 100,
@@ -38,7 +38,7 @@ const SURVEYS = {
 /** 목록 조회가 끝나 옵션이 렌더된 뒤에 선택한다 — select 자체는 즉시 있지만 옵션은 비동기다. */
 async function selectSurvey(user: ReturnType<typeof userEvent.setup>) {
   await screen.findByRole('option', { name: '만족도 조사' });
-  await user.selectOptions(screen.getByLabelText('설문 선택'), 'S1');
+  await user.selectOptions(screen.getByLabelText('설문 선택'), '201');
 }
 
 describe('SurveyQuestionsPanel', () => {
@@ -62,7 +62,7 @@ describe('SurveyQuestionsPanel', () => {
 
     await selectSurvey(user);
 
-    await waitFor(() => expect(mocked.getQuestions).toHaveBeenCalledWith('S1'));
+    await waitFor(() => expect(mocked.getQuestions).toHaveBeenCalledWith(201));
   });
 
   /**
@@ -74,24 +74,24 @@ describe('SurveyQuestionsPanel', () => {
     const user = userEvent.setup();
     mocked.getQuestions.mockResolvedValue([
       {
-        srvyQstnId: 'Q1',
-        srvyId: 'S1',
+        srvyQstnSn: 301,
+        srvySn: 201,
         qstnSn: 1,
         qstnTypeCd: '1',
         qstnCn: '만족하십니까',
         maxChcCnt: 1,
-        srvyTmpltId: 'T1',
+        srvyTmpltSn: 101,
         frstRgtrId: 'admin',
         crtDt: '2026-08-06T00:00:00',
         items: [
           {
-            srvyArtclId: 'A1',
-            srvyQstnId: 'Q1',
-            srvyId: 'S1',
+            srvyArtclSn: 401,
+            srvyQstnSn: 301,
+            srvySn: 201,
             artclSn: 1,
             artclCn: '예',
             etcAnsYn: 'N',
-            srvyTmpltId: 'T1',
+            srvyTmpltSn: 101,
             frstRgtrId: 'admin',
             crtDt: '2026-08-06T00:00:00',
           },
@@ -130,8 +130,8 @@ describe('SurveyQuestionsPanel', () => {
     await user.click(screen.getByRole('button', { name: /문항 추가/ }));
 
     await waitFor(() =>
-      expect(mocked.createQuestion).toHaveBeenCalledWith('S1', expect.objectContaining({
-        srvyId: 'S1',
+      expect(mocked.createQuestion).toHaveBeenCalledWith(201, expect.objectContaining({
+        srvySn: 201,
         qstnCn: '재이용 의향',
       }))
     );

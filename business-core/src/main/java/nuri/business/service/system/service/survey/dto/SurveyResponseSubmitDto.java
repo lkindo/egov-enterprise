@@ -2,8 +2,8 @@ package nuri.business.service.system.service.survey.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 import java.util.List;
@@ -35,19 +35,17 @@ public record SurveyResponseSubmitDto(
     @Schema(description = "문항별 답변")
     public record Answer(
 
-            @Schema(description = "문항 ID")
-            @NotBlank
-            @Size(max = 20)
-            String srvyQstnId,
+            @Schema(description = "문항 일련번호")
+            @NotNull
+            Long srvyQstnSn,
 
             /**
              * 항목 ID. 주관식 문항이라도 물리 컬럼이 {@code NOT NULL} 이므로 반드시 있어야 한다
              * — 주관식은 '기타' 성격의 단일 항목을 두고 그 ID 를 보낸다.
              */
-            @Schema(description = "항목 ID")
-            @NotBlank
-            @Size(max = 20)
-            String srvyArtclId,
+            @Schema(description = "항목 일련번호")
+            @NotNull
+            Long srvyArtclSn,
 
             @Schema(description = "응답 내용")
             @Size(max = 4000)

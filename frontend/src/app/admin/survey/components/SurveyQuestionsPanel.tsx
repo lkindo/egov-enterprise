@@ -24,9 +24,9 @@ const MULTIPLE_CHOICE = '1';
  */
 export default function SurveyQuestionsPanel() {
   const queryClient = useQueryClient();
-  const [srvyId, setSrvyId] = useState('');
+  const [srvySn, setSrvySn] = useState<number | null>(null);
   const [newQuestion, setNewQuestion] = useState('');
-  const [newItemFor, setNewItemFor] = useState<string | null>(null);
+  const [newItemFor, setNewItemFor] = useState<number | null>(null);
   const [newItemText, setNewItemText] = useState('');
   const [error, setError] = useState<string | null>(null);
 
@@ -35,11 +35,11 @@ export default function SurveyQuestionsPanel() {
     queryFn: () => surveyAdminService.getSurveyList({ pageIndex: 1, size: 100 }),
   });
 
-  const questionsKey = ['admin-survey-questions', srvyId];
+  const questionsKey = ['admin-survey-questions', srvySn];
   const { data: questions = [], isLoading } = useQuery<SurveyQuestion[]>({
     queryKey: questionsKey,
-    queryFn: () => surveyAdminService.getQuestions(srvyId),
-    enabled: !!srvyId,
+    queryFn: () => surveyAdminService.getQuestions(srvySn!),
+    enabled: srvySn !== null,
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: questionsKey });
@@ -47,8 +47,8 @@ export default function SurveyQuestionsPanel() {
 
   const addQuestion = useMutation({
     mutationFn: () =>
-      surveyAdminService.createQuestion(srvyId, {
-        srvyId,
+      surveyAdminService.createQuestion(srvySn!, {
+        srvySn: srvySn!,
         qstnCn: newQuestion,
         qstnTypeCd: MULTIPLE_CHOICE,
         qstnSn: questions.length + 1,
@@ -62,7 +62,7 @@ export default function SurveyQuestionsPanel() {
   });
 
   const removeQuestion = useMutation({
-    mutationFn: (qstnId: string) => surveyAdminService.deleteQuestion(srvyId, qstnId),
+    mutationFn: (srvyQstnSn: number) => surveyAdminService.deleteQuestion(srvySn!, srvyQstnSn),
     onSuccess: () => {
       setError(null);
       invalidate();
@@ -71,8 +71,8 @@ export default function SurveyQuestionsPanel() {
   });
 
   const addItem = useMutation({
-    mutationFn: ({ qstnId, cn }: { qstnId: string; cn: string }) =>
-      surveyAdminService.createItem(qstnId, { srvyQstnId: qstnId, srvyId, artclCn: cn }),
+    mutationFn: ({ qstnSn, cn }: { qstnSn: number; cn: string }) =>
+      surveyAdminService.createItem(qstnSn, { srvyQstnSn: qstnSn, srvySn: srvySn!, artclCn: cn }),
     onSuccess: () => {
       setNewItemFor(null);
       setNewItemText('');
@@ -83,7 +83,7 @@ export default function SurveyQuestionsPanel() {
   });
 
   const removeItem = useMutation({
-    mutationFn: (artclId: string) => surveyAdminService.deleteItem(artclId),
+    mutationFn: (srvyArtclSn: number) => surveyAdminService.deleteItem(srvyArtclSn),
     onSuccess: () => {
       setError(null);
       invalidate();
@@ -99,16 +99,16 @@ export default function SurveyQuestionsPanel() {
         </label>
         <select
           id="questions-srvy"
-          value={srvyId}
+          value={srvySn ?? ''}
           onChange={(e) => {
-            setSrvyId(e.target.value);
+            setSrvySn(e.target.value ? Number(e.target.value) : null);
             setError(null);
           }}
           className="border rounded-lg px-3 py-2 text-sm bg-card max-w-md w-full"
         >
           <option value="">— 설문을 선택하세요 —</option>
           {(surveys?.list ?? []).map((s) => (
-            <option key={s.srvyId} value={s.srvyId}>
+            <option key={s.srvySn} value={s.srvySn}>
               {s.srvyTtl}
             </option>
           ))}
@@ -117,7 +117,7 @@ export default function SurveyQuestionsPanel() {
 
       {error && <p className="text-sm text-destructive-emphasis">{error}</p>}
 
-      {!srvyId ? (
+      {srvySn === null ? (
         <div className="p-16 text-center bg-card rounded-lg border-2 border-dashed">
           <ListChecks size={36} className="mx-auto text-muted-foreground/30 mb-3" />
           <p className="text-muted-foreground">설문을 선택하면 문항과 선택 항목을 관리할 수 있습니다.</p>
@@ -155,7 +155,7 @@ export default function SurveyQuestionsPanel() {
           ) : (
             <ul className="space-y-4">
               {questions.map((q, idx) => (
-                <li key={q.srvyQstnId} className="border rounded-lg bg-card overflow-hidden">
+                <li key={q.srvyQstnSn} className="border rounded-lg bg-card overflow-hidden">
                   <div className="flex items-center gap-3 p-4 border-b bg-muted/30">
                     <span className="bg-primary text-primary-foreground w-6 h-6 rounded-md flex items-center justify-center text-xs font-bold shrink-0">
                       {idx + 1}
@@ -169,7 +169,7 @@ export default function SurveyQuestionsPanel() {
                       size="icon"
                       aria-label={`${q.qstnCn} 문항 삭제`}
                       className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 shrink-0"
-                      onClick={() => removeQuestion.mutate(q.srvyQstnId)}
+                      onClick={() => removeQuestion.mutate(q.srvyQstnSn)}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -183,7 +183,7 @@ export default function SurveyQuestionsPanel() {
                     ) : (
                       <ul className="space-y-1">
                         {(q.items ?? []).map((item) => (
-                          <li key={item.srvyArtclId} className="flex items-center gap-2 text-sm">
+                          <li key={item.srvyArtclSn} className="flex items-center gap-2 text-sm">
                             <span className="text-muted-foreground/50">·</span>
                             <span className="flex-1 min-w-0 break-words">{item.artclCn}</span>
                             <Button
@@ -191,7 +191,7 @@ export default function SurveyQuestionsPanel() {
                               size="icon"
                               aria-label={`${item.artclCn} 항목 삭제`}
                               className="h-7 w-7 text-destructive-emphasis hover:bg-destructive/10"
-                              onClick={() => removeItem.mutate(item.srvyArtclId)}
+                              onClick={() => removeItem.mutate(item.srvyArtclSn)}
                             >
                               <Trash2 className="h-3.5 w-3.5" />
                             </Button>
@@ -200,12 +200,12 @@ export default function SurveyQuestionsPanel() {
                       </ul>
                     )}
 
-                    {newItemFor === q.srvyQstnId ? (
+                    {newItemFor === q.srvyQstnSn ? (
                       <form
                         onSubmit={(e) => {
                           e.preventDefault();
                           if (!newItemText.trim()) return;
-                          addItem.mutate({ qstnId: q.srvyQstnId, cn: newItemText });
+                          addItem.mutate({ qstnSn: q.srvyQstnSn, cn: newItemText });
                         }}
                         className="flex gap-2 pt-2"
                       >
@@ -230,7 +230,7 @@ export default function SurveyQuestionsPanel() {
                         size="sm"
                         className="text-xs h-7"
                         onClick={() => {
-                          setNewItemFor(q.srvyQstnId);
+                          setNewItemFor(q.srvyQstnSn);
                           setNewItemText('');
                         }}
                       >

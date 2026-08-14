@@ -16,8 +16,8 @@ import lombok.*;
 public class SurveyTemplate extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String srvyTmpltId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long srvyTmpltSn;
 
     @Column(length = 12)
     private String srvyTmpltTypeCd;
@@ -30,9 +30,9 @@ public class SurveyTemplate extends BaseEntity {
 
     private byte[] srvyTmpltImgInfo;
 
-    private SurveyTemplate(String srvyTmpltId, String srvyTmpltTypeCd, String srvyTmpltExpln,
+    private SurveyTemplate(Long srvyTmpltSn, String srvyTmpltTypeCd, String srvyTmpltExpln,
             String srvyTmpltPathNm, byte[] srvyTmpltImgInfo) {
-        this.srvyTmpltId = srvyTmpltId;
+        this.srvyTmpltSn = srvyTmpltSn;
         this.srvyTmpltTypeCd = srvyTmpltTypeCd;
         this.srvyTmpltExpln = srvyTmpltExpln;
         this.srvyTmpltPathNm = srvyTmpltPathNm;
@@ -40,9 +40,9 @@ public class SurveyTemplate extends BaseEntity {
     }
 
     @Builder
-    public static SurveyTemplate create(String srvyTmpltId, String srvyTmpltTypeCd, String srvyTmpltExpln,
+    public static SurveyTemplate create(Long srvyTmpltSn, String srvyTmpltTypeCd, String srvyTmpltExpln,
             String srvyTmpltPathNm, byte[] srvyTmpltImgInfo) {
-        return new SurveyTemplate(srvyTmpltId, srvyTmpltTypeCd, srvyTmpltExpln, srvyTmpltPathNm, srvyTmpltImgInfo);
+        return new SurveyTemplate(srvyTmpltSn, srvyTmpltTypeCd, srvyTmpltExpln, srvyTmpltPathNm, srvyTmpltImgInfo);
     }
 
     public void update(String srvyTmpltTypeCd, String srvyTmpltPathNm, String srvyTmpltExpln) {

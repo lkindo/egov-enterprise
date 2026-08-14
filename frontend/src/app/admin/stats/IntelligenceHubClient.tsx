@@ -193,7 +193,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   const exportRows: Record<string, unknown>[] =
     activeTab === 'SURVEYS'
       ? (surveys?.list ?? []).map((s) => ({
-        srvyId: s.srvyId,
+        srvySn: s.srvySn,
         srvyTtl: s.srvyTtl,
         srvyBgngYmd: toDisplayYmd(s.srvyBgngYmd),
         srvyEndYmd: toDisplayYmd(s.srvyEndYmd),
@@ -206,7 +206,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   const exportHeaders =
     activeTab === 'SURVEYS'
       ? [
-        { label: '설문 ID', key: 'srvyId' },
+        { label: '설문 일련번호', key: 'srvySn' },
         { label: '설문 제목', key: 'srvyTtl' },
         { label: '시작일', key: 'srvyBgngYmd' },
         { label: '종료일', key: 'srvyEndYmd' },
@@ -353,7 +353,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                       <div className="space-y-4">
                         {/*
                           과거 이 목록은 `qestnrId/qestnrSj/qestnrEndDe` 를 읽었으나 백엔드 계약은
-                          `SurveyInfoDto{srvyId, srvyTtl, srvyBgngYmd, srvyEndYmd}` 다 → 전 행 제목 공백 +
+                          `SurveyInfoDto{srvySn, srvyTtl, srvyBgngYmd, srvyEndYmd}` 다 → 전 행 제목 공백 +
                           상태 배지 전건 오판정이었다. 상태 판정은 공용 SSOT(`lib/poll-status`)로 통일한다.
                         */}
                         {surveys.list.map((s) => {
@@ -362,7 +362,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                             : null;
                           return (
                             <div
-                              key={s.srvyId}
+                              key={s.srvySn}
                               className="group p-6 md:p-8 rounded-xl bg-card border-2 border-border hover:border-primary/20 hover:shadow-2xl hover:shadow-primary/5 transition-all flex items-center gap-6 relative overflow-hidden"
                             >
                               <div className="w-16 h-12 shrink-0 bg-muted group-hover:bg-primary/10 rounded-xl flex items-center justify-center shadow-inner transition-colors">

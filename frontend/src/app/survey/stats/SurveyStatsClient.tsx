@@ -8,16 +8,17 @@ import { Input } from '@/components/ui/input';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { SurveyStatsPanel } from '../components/SurveyStatsPanel';
 
-/** 설문지 ID 를 직접 입력해 통계를 조회하는 화면. 렌더는 {@link SurveyStatsPanel} 에 위임한다. */
+/** 설문 일련번호를 직접 입력해 통계를 조회하는 화면. 렌더는 {@link SurveyStatsPanel} 에 위임한다. */
 function StatsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const initialSrvyId = searchParams.get('srvyId') || searchParams.get('qestnrId') || '';
-  const [srvyId, setSrvyId] = useState(initialSrvyId);
+  const initialValue = searchParams.get('srvySn') || '';
+  const initialSrvySn = Number(initialValue);
+  const [srvySnInput, setSrvySnInput] = useState(initialValue);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    router.push(`/survey/stats?srvyId=${srvyId}`);
+    router.push(`/survey/stats?srvySn=${srvySnInput}`);
   };
 
   return (
@@ -35,14 +36,18 @@ function StatsContent() {
       <Card className="shadow-sm border-primary/20">
         <CardHeader className="bg-primary/5">
           <CardTitle className="text-lg">설문지 선택</CardTitle>
-          <CardDescription>통계를 확인하려는 설문지 ID를 입력하세요.</CardDescription>
+          <CardDescription>통계를 확인하려는 설문 일련번호를 입력하세요.</CardDescription>
         </CardHeader>
         <CardContent className="pt-6">
           <form onSubmit={handleSearch} className="flex gap-2">
             <Input
-              placeholder="설문지 ID 입력 (예: SRVY_0000000000001)"
-              value={srvyId}
-              onChange={(e) => setSrvyId(e.target.value)}
+              type="number"
+              min={1}
+              step={1}
+              required
+              placeholder="설문 일련번호 입력 (예: 1)"
+              value={srvySnInput}
+              onChange={(e) => setSrvySnInput(e.target.value)}
               className="max-w-md"
             />
             <Button type="submit">조회</Button>
@@ -50,7 +55,9 @@ function StatsContent() {
         </CardContent>
       </Card>
 
-      <SurveyStatsPanel srvyId={initialSrvyId} />
+      <SurveyStatsPanel
+        srvySn={Number.isSafeInteger(initialSrvySn) && initialSrvySn > 0 ? initialSrvySn : null}
+      />
     </div>
   );
 }

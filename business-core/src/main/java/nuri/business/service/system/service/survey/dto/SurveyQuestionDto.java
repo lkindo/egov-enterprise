@@ -17,15 +17,11 @@ import java.util.List;
 @Schema(description = "설문문항 DTO (표준화)")
 public class SurveyQuestionDto {
 
-    @Schema(description = "설문 문항 ID")
-    @Size(max = 20)
-    @NotBlank
-    private String srvyQstnId;
+    @Schema(description = "설문 문항 일련번호")
+    private Long srvyQstnSn;
 
-    @Schema(description = "설문 ID")
-    @Size(max = 20)
-    @NotBlank
-    private String srvyId;
+    @Schema(description = "설문 일련번호")
+    private Long srvySn;
 
     @Schema(description = "질문 순번")
     private Long qstnSn;
@@ -41,9 +37,8 @@ public class SurveyQuestionDto {
     @Schema(description = "최대 선택 수")
     private Integer maxChcCnt;
 
-    @Schema(description = "설문 템플릿 ID")
-    @Size(max = 20)
-    private String srvyTmpltId;
+    @Schema(description = "설문 템플릿 일련번호")
+    private Long srvyTmpltSn;
 
     @Schema(description = "등록자 ID")
     private String frstRgtrId;

@@ -25,6 +25,7 @@ import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
@@ -91,42 +92,42 @@ class SurveyRespondentApiControllerTest {
     }
 
     @Test
-    @DisplayName("응답자 목록 조회 — 경로의 srvyId 가 서비스까지 전달된다")
-    void listPassesSrvyIdToService() throws Exception {
+    @DisplayName("응답자 목록 조회 — 경로의 srvySn 이 서비스까지 전달된다")
+    void listPassesSrvySnToService() throws Exception {
         SurveyRespondentDto dto = SurveyRespondentDto.builder()
                 .srvyRspdntId("SRES_0000000000001")
-                .srvyId("SRVY_001")
+                .srvySn(201L)
                 .rspdntNm("홍길동")
                 .gndrCd("M")
                 .build();
-        when(surveyRespondentService.getSurveyRespondentList(anyString(), any(), any(Pageable.class)))
+        when(surveyRespondentService.getSurveyRespondentList(anyLong(), any(), any(Pageable.class)))
                 .thenReturn(new PageImpl<>(List.of(dto), PageRequest.of(0, 10), 1));
 
-        mockMvc.perform(get("/api/v1/admin/system/surveys/SRVY_001/respondents").param("keyword", "홍"))
+        mockMvc.perform(get("/api/v1/admin/system/surveys/201/respondents").param("keyword", "홍"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.list[0].rspdntNm").value("홍길동"));
 
-        // srvyId 가 유실되면 전체 설문의 응답자가 섞인다 — 1단계에서 고친 결함의 회귀 가드다.
-        verify(surveyRespondentService).getSurveyRespondentList(eq("SRVY_001"), eq("홍"), any(Pageable.class));
+        // srvySn 이 유실되면 전체 설문의 응답자가 섞인다 — 1단계에서 고친 결함의 회귀 가드다.
+        verify(surveyRespondentService).getSurveyRespondentList(eq(201L), eq("홍"), any(Pageable.class));
     }
 
     /** 본문이 다른 설문을 가리켜도 경로가 이긴다 — 경로 범위를 우회한 교차 등록을 막는다. */
     @Test
-    @DisplayName("등록 시 경로의 srvyId 가 본문 값을 덮어쓴다 — 교차 설문 등록 차단")
-    void createOverridesBodySrvyIdWithPathVariable() throws Exception {
+    @DisplayName("등록 시 경로의 srvySn 이 본문 값을 덮어쓴다 — 교차 설문 등록 차단")
+    void createOverridesBodySrvySnWithPathVariable() throws Exception {
         when(surveyRespondentService.createSurveyRespondent(anyString(), any()))
                 .thenReturn("SRES_0000000000009");
 
-        mockMvc.perform(post("/api/v1/admin/system/surveys/SRVY_001/respondents")
+        mockMvc.perform(post("/api/v1/admin/system/surveys/201/respondents")
                         .contentType("application/json")
-                        .content("{\"srvyId\":\"SRVY_OTHER\",\"rspdntNm\":\"홍길동\"}"))
+                        .content("{\"srvySn\":999,\"rspdntNm\":\"홍길동\"}"))
                 .andExpect(status().isOk());
 
         ArgumentCaptor<SurveyRespondentDto> captor = ArgumentCaptor.forClass(SurveyRespondentDto.class);
         verify(surveyRespondentService).createSurveyRespondent(anyString(), captor.capture());
-        assertThat(captor.getValue().getSrvyId())
-                .as("본문의 SRVY_OTHER 가 아니라 경로의 SRVY_001 이 쓰여야 한다")
-                .isEqualTo("SRVY_001");
+        assertThat(captor.getValue().getSrvySn())
+                .as("본문의 999가 아니라 경로의 201이 쓰여야 한다")
+                .isEqualTo(201L);
     }
 }

@@ -23,14 +23,11 @@ public class SurveyRespondentDto {
     @Size(max = 20)
     private String srvyRspdntId;
 
-    @Schema(description = "설문 ID")
-    @Size(max = 20)
-    @NotBlank
-    private String srvyId;
+    @Schema(description = "설문 일련번호")
+    private Long srvySn;
 
-    @Schema(description = "설문 템플릿 ID")
-    @Size(max = 20)
-    private String srvyTmpltId;
+    @Schema(description = "설문 템플릿 일련번호")
+    private Long srvyTmpltSn;
 
     // 물리 컬럼은 varchar(12) 다(information_schema 실측 2026-08-05, 엔티티 @Column(length=12) 과도 일치).
     // 종전 @Size(max = 30) 은 13~30자를 검증에서 통과시켜 INSERT 단계에서 터지게 만들었다.

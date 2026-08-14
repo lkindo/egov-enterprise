@@ -506,7 +506,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}/respondents/{respondentId}": {
+    "/api/v1/admin/system/surveys/{srvySn}/respondents/{respondentId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -525,7 +525,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}/questions/{srvyQitemId}": {
+    "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -543,7 +543,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}/questions/{srvyQitemId}": {
+    "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -561,7 +561,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}": {
+    "/api/v1/admin/system/surveys/{srvySn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -580,7 +580,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}": {
+    "/api/v1/surveys/{srvySn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -599,7 +599,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/templates/{tmpltId}": {
+    "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -618,7 +618,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/templates/{tmpltId}": {
+    "/api/v1/surveys/templates/{srvyTmpltSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -637,7 +637,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -655,7 +655,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/surveys/questions/items/{srvyArtclSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1252,7 +1252,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}/responses": {
+    "/api/v1/surveys/{srvySn}/responses": {
         parameters: {
             query?: never;
             header?: never;
@@ -1938,7 +1938,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}/respondents": {
+    "/api/v1/admin/system/surveys/{srvySn}/respondents": {
         parameters: {
             query?: never;
             header?: never;
@@ -1959,7 +1959,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}/questions": {
+    "/api/v1/admin/system/surveys/{srvySn}/questions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1977,7 +1977,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}/questions": {
+    "/api/v1/surveys/{srvySn}/questions": {
         parameters: {
             query?: never;
             header?: never;
@@ -2031,7 +2031,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/questions/{srvyQitemId}/items": {
+    "/api/v1/admin/system/surveys/questions/{srvyQstnSn}/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -2048,7 +2048,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/questions/{srvyQitemId}/items": {
+    "/api/v1/surveys/questions/{srvyQstnSn}/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -2934,7 +2934,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}/stats": {
+    "/api/v1/surveys/{srvySn}/stats": {
         parameters: {
             query?: never;
             header?: never;
@@ -3743,7 +3743,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/survey-responses/{srvyRspnsId}": {
+    "/api/v1/admin/system/survey-responses/{srvyRspnsSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4807,10 +4807,16 @@ export interface components {
         SurveyRespondentDto: {
             /** @description 설문 응답자 ID */
             srvyRspdntId?: string;
-            /** @description 설문 ID */
-            srvyId: string;
-            /** @description 설문 템플릿 ID */
-            srvyTmpltId?: string;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            srvySn?: number;
+            /**
+             * Format: int64
+             * @description 설문 템플릿 일련번호
+             */
+            srvyTmpltSn?: number;
             /** @description 성별 코드 */
             gndrCd?: string;
             /** @description 직업 유형 코드 */
@@ -4842,12 +4848,21 @@ export interface components {
         };
         /** @description 설문항목 DTO (표준화) */
         SurveyArticleDto: {
-            /** @description 설문 항목 ID */
-            srvyArtclId: string;
-            /** @description 설문 문항 ID */
-            srvyQstnId: string;
-            /** @description 설문 ID */
-            srvyId: string;
+            /**
+             * Format: int64
+             * @description 설문 항목 일련번호
+             */
+            srvyArtclSn?: number;
+            /**
+             * Format: int64
+             * @description 설문 문항 일련번호
+             */
+            srvyQstnSn?: number;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            srvySn?: number;
             /**
              * Format: int64
              * @description 항목 순번
@@ -4857,8 +4872,11 @@ export interface components {
             artclCn?: string;
             /** @description 기타 답변 여부 */
             etcAnsYn?: string;
-            /** @description 설문 템플릿 ID */
-            srvyTmpltId?: string;
+            /**
+             * Format: int64
+             * @description 설문 템플릿 일련번호
+             */
+            srvyTmpltSn?: number;
             /** @description 등록자 ID */
             frstRgtrId?: string;
             /**
@@ -4869,10 +4887,16 @@ export interface components {
         };
         /** @description 설문문항 DTO (표준화) */
         SurveyQuestionDto: {
-            /** @description 설문 문항 ID */
-            srvyQstnId: string;
-            /** @description 설문 ID */
-            srvyId: string;
+            /**
+             * Format: int64
+             * @description 설문 문항 일련번호
+             */
+            srvyQstnSn?: number;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            srvySn?: number;
             /**
              * Format: int64
              * @description 질문 순번
@@ -4887,8 +4911,11 @@ export interface components {
              * @description 최대 선택 수
              */
             maxChcCnt?: number;
-            /** @description 설문 템플릿 ID */
-            srvyTmpltId?: string;
+            /**
+             * Format: int64
+             * @description 설문 템플릿 일련번호
+             */
+            srvyTmpltSn?: number;
             /** @description 등록자 ID */
             frstRgtrId?: string;
             /**
@@ -4901,8 +4928,11 @@ export interface components {
         };
         /** @description 설문정보 DTO (표준화) */
         SurveyInfoDto: {
-            /** @description 설문 ID */
-            srvyId: string;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            srvySn?: number;
             /** @description 설문 제목 */
             srvyTtl: string;
             /** @description 설문 목적 */
@@ -4915,8 +4945,11 @@ export interface components {
             srvyEndYmd?: string;
             /** @description 설문 대상 */
             srvyTrgt?: string;
-            /** @description 설문 템플릿 ID */
-            srvyTmpltId?: string;
+            /**
+             * Format: int64
+             * @description 설문 템플릿 일련번호
+             */
+            srvyTmpltSn: number;
             /** @description 등록자 ID */
             frstRgtrId?: string;
             /**
@@ -4927,8 +4960,11 @@ export interface components {
         };
         /** @description 설문템플릿 DTO (표준화) */
         SurveyTemplateDto: {
-            /** @description 설문 템플릿 ID */
-            srvyTmpltId?: string;
+            /**
+             * Format: int64
+             * @description 설문 템플릿 일련번호
+             */
+            srvyTmpltSn?: number;
             /** @description 설문 템플릿 유형 코드 */
             srvyTmpltTypeCd?: string;
             /** @description 설문 템플릿 이미지 경로 명 */
@@ -5596,10 +5632,16 @@ export interface components {
         };
         /** @description 문항별 답변 */
         Answer: {
-            /** @description 문항 ID */
-            srvyQstnId: string;
-            /** @description 항목 ID */
-            srvyArtclId: string;
+            /**
+             * Format: int64
+             * @description 문항 일련번호
+             */
+            srvyQstnSn: number;
+            /**
+             * Format: int64
+             * @description 항목 일련번호
+             */
+            srvyArtclSn: number;
             /** @description 응답 내용 */
             rspdntAnsCn?: string;
             /** @description 기타 답변 */
@@ -6155,10 +6197,12 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         SurveyStatsDto: {
-            srvyQstnId?: string;
+            /** Format: int64 */
+            srvyQstnSn?: number;
             qstnCn?: string;
             qstnTypeCd?: string;
-            srvyArtclId?: string;
+            /** Format: int64 */
+            srvyArtclSn?: number;
             artclCn?: string;
             /** Format: int64 */
             count?: number;
@@ -7177,11 +7221,16 @@ export interface components {
             totalPage?: number;
         };
         SurveyResultDto: {
-            srvyRspnsId?: string;
-            srvyId?: string;
-            srvyTmpltId?: string;
-            srvyQstnId?: string;
-            srvyArtclId?: string;
+            /** Format: int64 */
+            srvyRspnsSn?: number;
+            /** Format: int64 */
+            srvySn?: number;
+            /** Format: int64 */
+            srvyTmpltSn?: number;
+            /** Format: int64 */
+            srvyQstnSn?: number;
+            /** Format: int64 */
+            srvyArtclSn?: number;
             rspdntAnsCn?: string;
             rspnsNm?: string;
             etcAnsCn?: string;
@@ -9727,7 +9776,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
                 respondentId: string;
             };
             cookie?: never;
@@ -9750,7 +9799,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
                 respondentId: string;
             };
             cookie?: never;
@@ -9777,7 +9826,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
                 respondentId: string;
             };
             cookie?: never;
@@ -9800,8 +9849,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
-                srvyQitemId: string;
+                srvySn: number;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -9827,7 +9876,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyQitemId: string;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -9849,8 +9898,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
-                srvyQitemId: string;
+                srvySn: number;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -9876,7 +9925,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyQitemId: string;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -9898,7 +9947,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -9920,7 +9969,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -9946,7 +9995,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -9968,7 +10017,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -9990,7 +10039,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -10016,7 +10065,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -10038,7 +10087,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10060,7 +10109,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10086,7 +10135,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10108,7 +10157,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10130,7 +10179,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10156,7 +10205,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10178,7 +10227,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyItemId: string;
+                srvyArtclSn: number;
             };
             cookie?: never;
         };
@@ -10204,7 +10253,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyItemId: string;
+                srvyArtclSn: number;
             };
             cookie?: never;
         };
@@ -10226,7 +10275,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyItemId: string;
+                srvyArtclSn: number;
             };
             cookie?: never;
         };
@@ -10252,7 +10301,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyItemId: string;
+                srvyArtclSn: number;
             };
             cookie?: never;
         };
@@ -11827,7 +11876,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13169,7 +13218,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13191,7 +13240,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13217,7 +13266,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13239,7 +13288,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13265,7 +13314,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13287,7 +13336,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13417,7 +13466,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyQitemId: string;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -13443,7 +13492,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyQitemId: string;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -15308,7 +15357,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -16321,7 +16370,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyRspnsId: string;
+                srvyRspnsSn: number;
             };
             cookie?: never;
         };
@@ -16343,7 +16392,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyRspnsId: string;
+                srvyRspnsSn: number;
             };
             cookie?: never;
         };
