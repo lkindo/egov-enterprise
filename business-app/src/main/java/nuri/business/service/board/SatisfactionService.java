@@ -59,7 +59,7 @@ public class SatisfactionService {
         }
         Satisfaction entity = Satisfaction.builder()
                 .bbsId(dto.getBbsId())
-                .pstId(dto.getPstId())
+                .pstSn(dto.getPstSn())
                 .dgstfnScr(dto.getDgstfnScr())
                 .dgstfnCn(dto.getDgstfnCn())
                 // 평문 저장 금지. 저장소 표준 인코더(bcrypt, DelegatingPasswordEncoder)를 쓴다.
@@ -102,14 +102,14 @@ public class SatisfactionService {
         entity.setLastMdfrId(moderatorId);
     }
 
-    public List<SatisfactionDto> getSatisfactionList(String bbsId, String pstId) {
-        return satisfactionRepository.findByPstIdAndBbsIdAndUseYn(pstId, bbsId, "Y").stream()
+    public List<SatisfactionDto> getSatisfactionList(String bbsId, Long pstSn) {
+        return satisfactionRepository.findByPstSnAndBbsIdAndUseYn(pstSn, bbsId, "Y").stream()
                 .map(satisfactionMapper::toDto)
                 .toList();
     }
 
-    public Double getAverageSatisfaction(String bbsId, String pstId) {
-        return satisfactionRepository.getAverageSatisfaction(pstId, bbsId);
+    public Double getAverageSatisfaction(String bbsId, Long pstSn) {
+        return satisfactionRepository.getAverageSatisfaction(pstSn, bbsId);
     }
 
     public SatisfactionDto getSatisfaction(Long satisfactionId) {

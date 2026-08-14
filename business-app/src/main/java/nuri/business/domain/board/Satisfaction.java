@@ -32,8 +32,8 @@ public class Satisfaction extends BaseEntity implements Serializable {
     @Column(nullable = false, length = 20)
     private String bbsId;
 
-    @Column(nullable = false, length = 20)
-    private String pstId;
+    @Column(nullable = false)
+    private Long pstSn;
 
     @Column(nullable = false)
     private Integer dgstfnScr;
@@ -53,11 +53,11 @@ public class Satisfaction extends BaseEntity implements Serializable {
     @Column(length = 100)
     private String userNm;
 
-    private Satisfaction(Long dgstfnSn, String bbsId, String pstId, Integer dgstfnScr, String dgstfnCn,
+    private Satisfaction(Long dgstfnSn, String bbsId, Long pstSn, Integer dgstfnScr, String dgstfnCn,
             String pswd, String useYn, String userId, String userNm) {
         this.dgstfnSn = dgstfnSn;
         this.bbsId = bbsId;
-        this.pstId = pstId;
+        this.pstSn = pstSn;
         this.dgstfnScr = dgstfnScr;
         this.dgstfnCn = dgstfnCn;
         this.pswd = pswd;
@@ -70,9 +70,9 @@ public class Satisfaction extends BaseEntity implements Serializable {
      * 만족도 생성 정적 팩토리(빌더 진입점). {@code Satisfaction.builder()...build()} 호출부는 그대로 동작한다.
      */
     @Builder
-    public static Satisfaction create(Long dgstfnSn, String bbsId, String pstId, Integer dgstfnScr,
+    public static Satisfaction create(Long dgstfnSn, String bbsId, Long pstSn, Integer dgstfnScr,
             String dgstfnCn, String pswd, String useYn, String userId, String userNm) {
-        return new Satisfaction(dgstfnSn, bbsId, pstId, dgstfnScr, dgstfnCn, pswd, useYn, userId, userNm);
+        return new Satisfaction(dgstfnSn, bbsId, pstSn, dgstfnScr, dgstfnCn, pswd, useYn, userId, userNm);
     }
 
     public void update(Integer dgstfnScr, String dgstfnCn, String password) {

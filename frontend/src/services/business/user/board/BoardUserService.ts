@@ -26,25 +26,25 @@ class BoardUserService extends UserService {
     return this.get<PageResponse<BoardPost>>(`/${bbsId}`, { params });
   }
 
-  async getPost(bbsId: string, pstId: number): Promise<BoardPost> {
-    return this.get<BoardPost>(`/${bbsId}/posts/${pstId}`);
+  async getPost(bbsId: string, pstSn: number): Promise<BoardPost> {
+    return this.get<BoardPost>(`/${bbsId}/posts/${pstSn}`);
   }
 
   async createPost(data: Partial<BoardPost>): Promise<BoardPost> {
     return this.post<BoardPost>('/posts', data);
   }
 
-  async updatePost(bbsId: string, pstId: number, data: Partial<BoardPost>): Promise<void> {
-    return this.put<void>(`/${bbsId}/posts/${pstId}`, data);
+  async updatePost(bbsId: string, pstSn: number, data: Partial<BoardPost>): Promise<void> {
+    return this.put<void>(`/${bbsId}/posts/${pstSn}`, data);
   }
 
-  async deletePost(bbsId: string, pstId: number): Promise<void> {
-    return this.delete<void>(`/${bbsId}/posts/${pstId}`);
+  async deletePost(bbsId: string, pstSn: number): Promise<void> {
+    return this.delete<void>(`/${bbsId}/posts/${pstSn}`);
   }
 
-  async likePost(bbsId: string, pstId: number): Promise<number> {
+  async likePost(bbsId: string, pstSn: number): Promise<number> {
     // ApiService.patch가 이미 ApiResponse.data(=새 추천수)를 추출해 반환하므로 추가 .data 접근 금지(과거 undefined 반환 버그).
-    return this.patch<number>(`/${bbsId}/posts/${pstId}/like`);
+    return this.patch<number>(`/${bbsId}/posts/${pstSn}/like`);
   }
 }
 

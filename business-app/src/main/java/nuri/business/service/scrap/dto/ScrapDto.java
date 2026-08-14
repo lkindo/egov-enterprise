@@ -21,8 +21,7 @@ public class ScrapDto {
     private Long scrapSn;
     @Size(max = 20)
     private String bbsId;
-    @Size(max = 20)
-    private String pstId;
+    private Long pstSn;
     @Size(max = 100)
     private String scrapNm;
     @Size(max = 1000)

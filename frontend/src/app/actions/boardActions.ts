@@ -42,19 +42,19 @@ function extractTargetId(response: unknown, fallbackId: string): string {
   }
   if (response && typeof response === 'object') {
     const obj = response as Record<string, unknown>;
-    if (obj.pstId != null) return String(obj.pstId);
+    if (obj.pstSn != null) return String(obj.pstSn);
     if (obj.id != null) return String(obj.id);
   }
   return fallbackId;
 }
 
 export async function saveBoardArticle(prevState: unknown, formData: FormData): Promise<ActionResponse> {
-  const pstId = formData.get('pstId') as string;
+  const pstSn = formData.get('pstSn') as string;
   const parnts = formData.get('parnts') as string;
   const pstTtl = formData.get('pstTtl') as string;
   const pstCn = formData.get('pstCn') as string;
   const bbsId = formData.get('bbsId') as string;
-  const isEdit = !!pstId && pstId !== '';
+  const isEdit = !!pstSn && pstSn !== '';
   const isReply = !!parnts && parnts !== '' && !isEdit;
 
   if (!pstTtl || pstTtl.trim() === '') return { success: false, message: '제목을 입력해주세요.', field: 'pstTtl' };
@@ -108,7 +108,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       files.forEach(file => { if (file && file.size > 0) apiFormData.append('file', file); });
       
       if (isEdit) {
-        response = await client.put(`/boards/${bbsId}/posts/${pstId}`, apiFormData, {
+        response = await client.put(`/boards/${bbsId}/posts/${pstSn}`, apiFormData, {
             ...axiosConfig,
             headers: { ...axiosConfig?.headers, 'Content-Type': 'multipart/form-data' }
           });
@@ -121,7 +121,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
     } else {
       // No files? Send plain JSON. This matches @RequestBody in BoardApiController.
       if (isEdit) {
-        response = await client.put(`/boards/${bbsId}/posts/${pstId}`, articleData, axiosConfig);
+        response = await client.put(`/boards/${bbsId}/posts/${pstSn}`, articleData, axiosConfig);
       } else {
         response = await client.post(`/boards/posts`, articleData, axiosConfig);
       }
@@ -132,12 +132,12 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
     }
 
     revalidatePath(`/admin/community/boards/select-board-list`);
-    const targetId = isEdit ? pstId : extractTargetId(response, pstId);
+    const targetId = isEdit ? pstSn : extractTargetId(response, pstSn);
     
     return {
       success: true,
       message: isEdit ? '게시글이 성공적으로 수정되었습니다.' : '게시글이 성공적으로 등록되었습니다.',
-      redirect: `/admin/community/boards/detail?bbsId=${bbsId}&pstId=${targetId}`
+      redirect: `/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${targetId}`
     };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '알 수 없는 오류가 발생했습니다.');
@@ -147,7 +147,7 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
 }
 
 export async function deleteBoardArticle(prevState: unknown, formData: FormData): Promise<ActionResponse> {
-  const pstId = formData.get('pstId') as string;
+  const pstSn = formData.get('pstSn') as string;
   const bbsId = formData.get('bbsId') as string;
 
   try {
@@ -155,7 +155,7 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    await client.delete(`/boards/${bbsId}/posts/${pstId}`, axiosConfig);
+    await client.delete(`/boards/${bbsId}/posts/${pstSn}`, axiosConfig);
     
     revalidatePath(`/admin/community/boards/select-board-list`);
     return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
@@ -166,13 +166,13 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
   }
 }
 
-export async function likeBoardArticle(bbsId: string, pstId: string): Promise<{ success: boolean; count?: number }> {
+export async function likeBoardArticle(bbsId: string, pstSn: number): Promise<{ success: boolean; count?: number }> {
   try {
     const cookieStore = await cookies();
     const accessToken = cookieStore.get('accessToken')?.value;
     const axiosConfig = accessToken ? { headers: { Authorization: `Bearer ${accessToken}` } } : {};
 
-    const response = await client.patch<number>(`/boards/${bbsId}/posts/${pstId}/like`, null, axiosConfig);
+    const response = await client.patch<number>(`/boards/${bbsId}/posts/${pstSn}/like`, null, axiosConfig);
 
     if (response !== undefined) {
       return { success: true, count: response };

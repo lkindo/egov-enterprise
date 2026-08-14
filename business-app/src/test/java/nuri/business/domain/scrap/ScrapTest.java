@@ -15,7 +15,7 @@ class ScrapTest {
         Scrap scrap = Scrap.builder()
                 .scrapSn(1L)
                 .bbsId("BBS_001")
-                .pstId("POST_001")
+                .pstSn(1L)
                 .scrapNm("테스트 스크랩")
                 .scrapUrl("https://example.com/posts/1")
                 .scrapExpln("스크랩 테스트 설명글")
@@ -27,7 +27,7 @@ class ScrapTest {
         // Then
         assertThat(scrap.getScrapSn()).isEqualTo(1L);
         assertThat(scrap.getBbsId()).isEqualTo("BBS_001");
-        assertThat(scrap.getPstId()).isEqualTo("POST_001");
+        assertThat(scrap.getPstSn()).isEqualTo(1L);
         assertThat(scrap.getScrapNm()).isEqualTo("테스트 스크랩");
         assertThat(scrap.getScrapUrl()).isEqualTo("https://example.com/posts/1");
         assertThat(scrap.getScrapExpln()).isEqualTo("스크랩 테스트 설명글");

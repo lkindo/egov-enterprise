@@ -64,7 +64,7 @@ class SatisfactionServiceTest {
     @DisplayName("등록 - 비밀번호는 평문으로 저장되지 않는다")
     void createHashesPassword() {
         SatisfactionDto dto = SatisfactionDto.builder()
-                .bbsId("BBS_01").pstId("1").dgstfnScr(5).dgstfnCn("Good").pswd("secret").build();
+                .bbsId("BBS_01").pstSn(1L).dgstfnScr(5).dgstfnCn("Good").pswd("secret").build();
         given(satisfactionRepository.save(any(Satisfaction.class)))
                 .willAnswer(inv -> inv.getArgument(0));
 
@@ -83,7 +83,7 @@ class SatisfactionServiceTest {
     @DisplayName("등록 - 익명 작성인데 비밀번호가 없으면 거부한다")
     void createRejectsAnonymousWithoutPassword() {
         SatisfactionDto dto = SatisfactionDto.builder()
-                .bbsId("BBS_01").pstId("1").dgstfnScr(5).build();
+                .bbsId("BBS_01").pstSn(1L).dgstfnScr(5).build();
 
         assertThatThrownBy(() -> satisfactionService.createSatisfaction(null, dto))
                 .isInstanceOf(BusinessException.class)
@@ -170,18 +170,18 @@ class SatisfactionServiceTest {
     @Test
     @DisplayName("만족도 목록 조회")
     void getSatisfactionList() {
-        given(satisfactionRepository.findByPstIdAndBbsIdAndUseYn(anyString(), anyString(), anyString()))
+        given(satisfactionRepository.findByPstSnAndBbsIdAndUseYn(any(Long.class), anyString(), anyString()))
                 .willReturn(List.of(Satisfaction.builder().dgstfnSn(1L).build()));
 
-        assertThat(satisfactionService.getSatisfactionList("BBS_01", "1")).hasSize(1);
+        assertThat(satisfactionService.getSatisfactionList("BBS_01", 1L)).hasSize(1);
     }
 
     @Test
     @DisplayName("만족도 평균 조회")
     void getAverageSatisfaction() {
-        given(satisfactionRepository.getAverageSatisfaction(anyString(), anyString())).willReturn(4.5);
+        given(satisfactionRepository.getAverageSatisfaction(any(Long.class), anyString())).willReturn(4.5);
 
-        assertThat(satisfactionService.getAverageSatisfaction("BBS_01", "1")).isEqualTo(4.5);
+        assertThat(satisfactionService.getAverageSatisfaction("BBS_01", 1L)).isEqualTo(4.5);
     }
 
     @Test

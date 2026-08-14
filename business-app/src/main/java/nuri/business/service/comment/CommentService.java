@@ -18,15 +18,15 @@ public class CommentService {
     private final CommentRepository commentRepository;
 
     @Transactional(readOnly = true)
-    public Page<CommentDto> getComments(String pstId, String bbsId, Pageable pageable) {
-        return commentRepository.findByBbsIdAndPstId(bbsId, pstId, pageable)
+    public Page<CommentDto> getComments(Long pstSn, String bbsId, Pageable pageable) {
+        return commentRepository.findByBbsIdAndPstSn(bbsId, pstSn, pageable)
                 .map(this::toDto);
     }
 
     @Transactional
     public Long createComment(CommentDto commentDto) {
         Comment comment = Comment.builder()
-                .pstId(commentDto.getPstId())
+                .pstSn(commentDto.getPstSn())
                 .bbsId(commentDto.getBbsId())
                 .wrterId(commentDto.getWrterId())
                 .wrterNm(commentDto.getWrterNm())
@@ -57,7 +57,7 @@ public class CommentService {
     private CommentDto toDto(Comment entity) {
         return CommentDto.builder()
                 .ansSn(entity.getAnsSn())
-                .pstId(entity.getPstId())
+                .pstSn(entity.getPstSn())
                 .bbsId(entity.getBbsId())
                 .wrterId(entity.getWrterId())
                 .wrterNm(entity.getWrterNm())

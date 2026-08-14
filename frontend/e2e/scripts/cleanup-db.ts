@@ -15,7 +15,7 @@ interface CleanupBoard { bbsId: string; bbsTtl?: string; bbsNm?: string }
 interface CleanupPoll { pollSn: number; pollNm?: string }
 interface CleanupPopup { popupSn: number; popupTtlNm?: string }
 interface CleanupBanner { bnrSn: number; bnrNm?: string }
-interface CleanupPost { pstId?: string | number; id?: string | number; pstTtl?: string; title?: string }
+interface CleanupPost { pstSn?: number; id?: string | number; pstTtl?: string; title?: string }
 interface CleanupMenu { menuNo: number; menuNm: string }
 interface CleanupAddress { adbkId: string; adbkNm?: string }
 interface CleanupManual { onlnMnlSn: number; onlnMnlNm?: string }
@@ -205,7 +205,7 @@ async function cleanup() {
           p.pstTtl?.startsWith('E2E') || p.title?.startsWith('E2E')
         );
         for (const post of testPosts) {
-          const postId = post.pstId || post.id;
+          const postId = post.pstSn || post.id;
           if (postId === undefined) {
             console.warn(`  => Post cleanup skipped missing ID: ${post.pstTtl || post.title || '(untitled)'}`);
             continue;

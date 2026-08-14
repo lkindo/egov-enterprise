@@ -52,7 +52,7 @@ class ScrapBigintMigrationIntegrationTest {
              Statement statement = connection.createStatement()) {
             long migratedSn;
             try (ResultSet rows = statement.executeQuery("""
-                    SELECT scrap_sn, bbs_id, pst_id, scrap_url, scrap_expln,
+                    SELECT scrap_sn, bbs_id, pst_sn, scrap_url, scrap_expln,
                            use_yn, frst_rgtr_id
                     FROM tb_bbs_scrap WHERE scrap_nm = '기존 스크랩'
                     """)) {
@@ -60,7 +60,7 @@ class ScrapBigintMigrationIntegrationTest {
                 migratedSn = rows.getLong("scrap_sn");
                 assertThat(migratedSn).isPositive();
                 assertThat(rows.getString("bbs_id")).isEqualTo("BBS_LEGACY_00000001");
-                assertThat(rows.getString("pst_id")).isNull();
+                assertThat(rows.getString("pst_sn")).isNull();
                 assertThat(rows.getString("scrap_url")).isEqualTo("https://legacy.example.com");
                 assertThat(rows.getString("scrap_expln")).isEqualTo("보존할 스크랩 설명");
                 assertThat(rows.getString("use_yn")).isEqualTo("Y");

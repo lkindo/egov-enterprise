@@ -20,6 +20,6 @@ public interface ScrapMapper {
     @Mapping(target = "userId", source = "frstRgtrId")
     ScrapDto toDto(Scrap entity);
 
-    // DTO→엔티티(toEntity)는 두지 않는다: PK 는 DB identity 채번이고 bbsId/pstId 는 FK 대상이라
+    // DTO→엔티티(toEntity)는 두지 않는다: PK 는 DB identity 채번이고 bbsId/pstSn 는 FK 대상이라
     // 요청 본문을 그대로 엔티티에 흘리면 mass assignment 가 된다. 생성은 ScrapService 가 명시 조립한다.
 }

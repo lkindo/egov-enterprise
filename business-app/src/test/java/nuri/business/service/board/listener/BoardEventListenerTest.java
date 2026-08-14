@@ -33,18 +33,18 @@ class BoardEventListenerTest {
     void handlePostCreated_syncsViaBulkUpdate() {
         // given
         String bbsId = "BBS_01";
-        String pstId = "PST_01";
-        PostCreatedEvent event = new PostCreatedEvent(this, bbsId, pstId, "USER_01");
+        Long pstSn = 1L;
+        PostCreatedEvent event = new PostCreatedEvent(this, bbsId, pstSn, "USER_01");
 
-        given(commentRepository.countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y")).willReturn(5L);
-        given(boardRepository.syncCmntCntAtomic(pstId, 5)).willReturn(1);
+        given(commentRepository.countByBbsIdAndPstSnAndUseYn(bbsId, pstSn, "Y")).willReturn(5L);
+        given(boardRepository.syncCmntCntAtomic(pstSn, 5)).willReturn(1);
 
         // when
         boardEventListener.handlePostCreated(event);
 
         // then
-        verify(commentRepository, times(1)).countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y");
-        verify(boardRepository, times(1)).syncCmntCntAtomic(pstId, 5);
+        verify(commentRepository, times(1)).countByBbsIdAndPstSnAndUseYn(bbsId, pstSn, "Y");
+        verify(boardRepository, times(1)).syncCmntCntAtomic(pstSn, 5);
 
         // [W1-D5] 이 두 단언이 이 테스트의 본체다. 종전 경로(findById → changeCmntCnt → save)는
         //   @Async 스레드라 SecurityContext 가 없어 last_mdfr_id 를 'SYSTEM' 으로 덮었고,
@@ -59,18 +59,18 @@ class BoardEventListenerTest {
     void handlePostCreated_boardNotFound() {
         // given
         String bbsId = "BBS_01";
-        String pstId = "PST_01";
-        PostCreatedEvent event = new PostCreatedEvent(this, bbsId, pstId, "USER_01");
+        Long pstSn = 1L;
+        PostCreatedEvent event = new PostCreatedEvent(this, bbsId, pstSn, "USER_01");
 
-        given(commentRepository.countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y")).willReturn(3L);
-        given(boardRepository.syncCmntCntAtomic(pstId, 3)).willReturn(0);
+        given(commentRepository.countByBbsIdAndPstSnAndUseYn(bbsId, pstSn, "Y")).willReturn(3L);
+        given(boardRepository.syncCmntCntAtomic(pstSn, 3)).willReturn(0);
 
         // when — 이미 삭제된 글에 달린 댓글 등. 예외를 던지면 비동기 경로가 요란해질 뿐 복구되지 않는다.
         boardEventListener.handlePostCreated(event);
 
         // then
-        verify(commentRepository, times(1)).countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y");
-        verify(boardRepository, times(1)).syncCmntCntAtomic(pstId, 3);
+        verify(commentRepository, times(1)).countByBbsIdAndPstSnAndUseYn(bbsId, pstSn, "Y");
+        verify(boardRepository, times(1)).syncCmntCntAtomic(pstSn, 3);
         verify(boardRepository, never()).save(any(Board.class));
     }
 }

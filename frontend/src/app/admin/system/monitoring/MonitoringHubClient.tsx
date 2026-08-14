@@ -123,7 +123,7 @@ const COMMENT_EXPORT_HEADERS = [
   { label: '작성자명', key: 'wrterNm' },
   { label: '작성일시', key: 'crtDt' },
   { label: '게시판ID', key: 'bbsId' },
-  { label: '게시글ID', key: 'pstId' }
+  { label: '게시글ID', key: 'pstSn' }
 ];
 
 /**

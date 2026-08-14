@@ -45,7 +45,9 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   const confirm = useConfirm();
   const searchParams = useSearchParams();
   const bbsId = searchParams.get('bbsId');
-  const pstId = searchParams.get('pstId');
+  const rawPstSn = searchParams.get('pstSn');
+  const pstSn = Number(rawPstSn);
+  const hasValidPstSn = Number.isSafeInteger(pstSn) && pstSn > 0;
   const queryClient = useQueryClient();
 
   // React Query for revalidation/stale handling, seeded with initialData
@@ -57,10 +59,10 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   });
 
   const { data: article } = useQuery({
-    queryKey: ['article-detail', bbsId, pstId],
-    queryFn: () => knowledgeService.getArticle(bbsId!, pstId!),
+    queryKey: ['article-detail', bbsId, pstSn],
+    queryFn: () => knowledgeService.getArticle(bbsId!, pstSn),
     initialData: initialData.article,
-    enabled: !!initialData.article,
+    enabled: !!initialData.article && hasValidPstSn,
   });
 
   // 감사 P1-5/P1-6: 첨부 영역은 과거 "Technical_Spec_Unit_XXXX.pdf · 3.4 MB" 라는 존재하지 않는 파일을
@@ -89,11 +91,11 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   // 폼 제출(useFormStatus)을 쓰지 않게 되면서 중복 클릭 방지를 명시적으로 관리한다.
   const [deleting, setDeleting] = useState(false);
   const handleLike = async () => {
-    if (liking || !bbsId || !pstId) return;
+    if (liking || !bbsId || !hasValidPstSn) return;
     setLiking(true);
     setLikeDelta((d) => d + 1);
     try {
-      await boardUserService.likePost(bbsId, Number(pstId));
+      await boardUserService.likePost(bbsId, pstSn);
     } catch {
       setLikeDelta((d) => d - 1);
       toast('추천 처리 중 오류가 발생했습니다.', 'error');
@@ -177,7 +179,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
                 {masterInfo?.bbsTtl || '게시판'}
               </Badge>
               <div className="h-[2px] w-10 bg-gradient-to-r from-primary/30 to-transparent" />
-              <span className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase">게시글 번호: {pstId}</span>
+              <span className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase">게시글 번호: {pstSn}</span>
             </motion.div>
             <motion.h1 
               initial={{ y: 20, opacity: 0 }}
@@ -198,7 +200,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         >
           <Button
             variant="outline"
-            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&pstId=${pstId}`)}
+            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&pstSn=${pstSn}`)}
             className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 수정"
           >
@@ -206,7 +208,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           </Button>
           <Button
             variant="outline"
-            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&parnts=${pstId}&replyYn=Y`)}
+            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&parnts=${pstSn}&replyYn=Y`)}
             className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
             aria-label="게시글 답글 작성"
           >
@@ -250,7 +252,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 
               const formData = new FormData();
               formData.append('bbsId', bbsId ?? '');
-              formData.append('pstId', pstId ?? '');
+              formData.append('pstSn', String(pstSn));
 
               setDeleting(true);
               try {
@@ -408,12 +410,12 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       >
         <CommentSection
           bbsId={bbsId!}
-          pstId={pstId!}
+          pstSn={pstSn}
           initialComments={initialData.initialComments}
         />
 
         {/* D-8 만족도 — 백엔드는 #302 에서 배선됐고 이 위젯이 그 짝을 맞춘다 */}
-        <SatisfactionSection bbsId={bbsId!} pstId={pstId!} />
+        <SatisfactionSection bbsId={bbsId!} pstSn={pstSn} />
       </motion.div>
     </motion.div>
   );

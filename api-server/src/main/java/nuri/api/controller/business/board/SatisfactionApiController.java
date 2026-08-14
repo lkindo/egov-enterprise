@@ -27,7 +27,7 @@ import java.util.Map;
  * 검사하지 않았고 비밀번호가 평문으로 저장됐다. 결함을 그대로 둔 채 노출했다면 ID만 알면
  * 누구나 남의 만족도를 지울 수 있는 엔드포인트가 됐다.
  *
- * <p><b>경로를 게시글 하위로 중첩</b>했다({@code /boards/{bbsId}/posts/{pstId}/satisfactions}).
+ * <p><b>경로를 게시글 하위로 중첩</b>했다({@code /boards/{bbsId}/posts/{pstSn}/satisfactions}).
  * 만족도는 게시글에 종속된 자원이고, 경로가 조회 범위를 강제하면 서비스가 범위를 놓쳐도
  * 다른 게시글의 값이 섞이지 않는다(D-4 응답자 목록이 설문 범위를 잃었던 사례의 예방).
  *
@@ -43,7 +43,7 @@ import java.util.Map;
  */
 @Tag(name = "Satisfaction", description = "게시글 만족도 API")
 @RestController
-@RequestMapping("/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions")
+@RequestMapping("/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions")
 @RequiredArgsConstructor
 public class SatisfactionApiController {
 
@@ -53,16 +53,16 @@ public class SatisfactionApiController {
     @Authenticated
     @GetMapping
     public ResponseEntity<ApiResponse<List<SatisfactionDto>>> getList(
-            @PathVariable String bbsId, @PathVariable String pstId) {
-        return ResponseEntity.ok(ApiResponse.success(satisfactionService.getSatisfactionList(bbsId, pstId)));
+            @PathVariable String bbsId, @PathVariable Long pstSn) {
+        return ResponseEntity.ok(ApiResponse.success(satisfactionService.getSatisfactionList(bbsId, pstSn)));
     }
 
     @Operation(summary = "만족도 평균", description = "응답이 없으면 null 이다 — 0 과 구분해야 한다.")
     @Authenticated
     @GetMapping("/average")
     public ResponseEntity<ApiResponse<Map<String, Double>>> getAverage(
-            @PathVariable String bbsId, @PathVariable String pstId) {
-        Double avg = satisfactionService.getAverageSatisfaction(bbsId, pstId);
+            @PathVariable String bbsId, @PathVariable Long pstSn) {
+        Double avg = satisfactionService.getAverageSatisfaction(bbsId, pstSn);
         return ResponseEntity.ok(ApiResponse.success(Map.of("average", avg == null ? 0.0 : avg)));
     }
 
@@ -70,11 +70,11 @@ public class SatisfactionApiController {
     @Authenticated
     @PostMapping
     public ResponseEntity<ApiResponse<Long>> create(
-            @PathVariable String bbsId, @PathVariable String pstId,
+            @PathVariable String bbsId, @PathVariable Long pstSn,
             @Valid @RequestBody SatisfactionDto dto) {
         // 경로를 정본으로 삼는다 — 본문이 다른 게시글을 가리켜도 경로가 이긴다.
         dto.setBbsId(bbsId);
-        dto.setPstId(pstId);
+        dto.setPstSn(pstSn);
         return ResponseEntity.ok(ApiResponse.success(satisfactionService.createSatisfaction(currentUserId(), dto)));
     }
 
@@ -83,7 +83,7 @@ public class SatisfactionApiController {
     @Authenticated
     @PutMapping("/{dgstfnSn}")
     public ResponseEntity<ApiResponse<Void>> update(
-            @PathVariable String bbsId, @PathVariable String pstId,
+            @PathVariable String bbsId, @PathVariable Long pstSn,
             @PathVariable Long dgstfnSn, @Valid @RequestBody SatisfactionDto dto) {
         dto.setDgstfnSn(dgstfnSn);
         satisfactionService.updateSatisfaction(currentUserId(), dto);
@@ -94,7 +94,7 @@ public class SatisfactionApiController {
     @Authenticated
     @DeleteMapping("/{dgstfnSn}")
     public ResponseEntity<ApiResponse<Void>> delete(
-            @PathVariable String bbsId, @PathVariable String pstId,
+            @PathVariable String bbsId, @PathVariable Long pstSn,
             @PathVariable Long dgstfnSn,
             @RequestParam(required = false) String pswd) {
         satisfactionService.deleteSatisfaction(dgstfnSn, currentUserId(), pswd);
@@ -106,7 +106,7 @@ public class SatisfactionApiController {
     @AdminOnly
     @DeleteMapping("/{dgstfnSn}/moderate")
     public ResponseEntity<ApiResponse<Void>> moderate(
-            @PathVariable String bbsId, @PathVariable String pstId, @PathVariable Long dgstfnSn) {
+            @PathVariable String bbsId, @PathVariable Long pstSn, @PathVariable Long dgstfnSn) {
         satisfactionService.deleteByModerator(dgstfnSn, currentUserId());
         return ResponseEntity.ok(ApiResponse.success(null));
     }

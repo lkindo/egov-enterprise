@@ -12,8 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 public record BoardDto(
     @Schema(description = "게시글 ID")
-    @Size(max = 20)
-    String pstId,
+    Long pstSn,
 
     @Schema(description = "게시판 ID")
     @Size(max = 20)
@@ -31,8 +30,7 @@ public record BoardDto(
     String pstCn,
 
     @Schema(description = "상위 게시글 ID")
-    @Size(max = 20)
-    String upPstId,
+    Long upPstSn,
 
     @Schema(description = "정렬 순서")
     Long sortOrdr,

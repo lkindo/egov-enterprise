@@ -23,11 +23,11 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         }
 
         @Override
-        public Optional<BoardDetailResult> findArticleDetail(@NonNull String pstId) {
+        public Optional<BoardDetailResult> findArticleDetail(@NonNull Long pstSn) {
                 BoardDetailResult result = queryFactory
                                 .select(Projections.fields(BoardDetailResult.class,
                                                  QBoardMaster.boardMaster.bbsId,
-                                                 QBoard.board.pstId,
+                                                 QBoard.board.pstSn,
                                                  QBoard.board.pstTtl,
                                                  QBoard.board.userId,
                                                  QBoard.board.ansSn,
@@ -42,7 +42,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.likeCnt,
                                                  QBoard.board.useYn,
                                                  QBoard.board.atchFileId,
-                                                 QBoard.board.upPstId,
+                                                 QBoard.board.upPstSn,
                                                  QBoard.board.sortOrdr,
                                                  QBoard.board.ttlBoldYn,
                                                  QBoard.board.scrtYn,
@@ -58,7 +58,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 .leftJoin(QUser.user).on(QBoard.board.frstRgtrId.eq(QUser.user.esntlId))
                                 .leftJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
-                                .where(QBoard.board.pstId.eq(pstId))
+                                .where(QBoard.board.pstSn.eq(pstSn))
                                 .fetchOne();
 
                 return Optional.ofNullable(result);
@@ -84,14 +84,14 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
  
                 List<BoardSearchResult> results = queryFactory
                                 .select(Projections.fields(BoardSearchResult.class,
-                                                 QBoard.board.pstId,
+                                                 QBoard.board.pstSn,
                                                  QBoard.board.bbsId,
                                                  QBoard.board.pstTtl,
                                                  QBoard.board.userNm,
                                                  QBoard.board.crtDt.as("crtDt"),
                                                  QBoard.board.inqCnt,
                                                  QBoard.board.likeCnt,
-                                                 QBoard.board.upPstId,
+                                                 QBoard.board.upPstSn,
                                                  QBoard.board.sortOrdr,
                                                  QBoard.board.ansSn,
                                                  QBoard.board.scrtYn,
@@ -144,10 +144,10 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         }
 
         @Override
-        public Optional<Board> findByIdCustom(@NonNull String pstId) {
+        public Optional<Board> findByIdCustom(@NonNull Long pstSn) {
                 Board result = queryFactory
                                 .selectFrom(QBoard.board)
-                                .where(QBoard.board.pstId.eq(pstId))
+                                .where(QBoard.board.pstSn.eq(pstSn))
                                 .fetchOne();
 
                 return Optional.ofNullable(result);

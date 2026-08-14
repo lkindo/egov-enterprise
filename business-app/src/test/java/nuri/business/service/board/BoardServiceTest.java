@@ -87,7 +87,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Pageable pageable = PageRequest.of(0, 10);
         BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
-        BoardSearchResult resultItem = BoardSearchResult.builder().pstId("1").build();
+        BoardSearchResult resultItem = BoardSearchResult.builder().pstSn(1L).build();
         Page<BoardSearchResult> page = new PageImpl<>(Collections.singletonList(resultItem));
 
         given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
@@ -98,7 +98,7 @@ class BoardServiceTest {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).pstId()).isEqualTo("1");
+        assertThat(result.getContent().get(0).pstSn()).isEqualTo(1L);
     }
 
     @Test
@@ -159,7 +159,7 @@ class BoardServiceTest {
                 org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
         given(boardRepository.searchArticles(captor.capture(), eq(pageable)))
                 .willReturn(new PageImpl<>(Collections.singletonList(
-                        BoardSearchResult.builder().pstId("1").build())));
+                        BoardSearchResult.builder().pstSn(1L).build())));
 
         Page<BoardDto> result = boardService.getBoardPosts(bbsId, "0", "공지", pageable);
 
@@ -176,13 +176,13 @@ class BoardServiceTest {
 
         Board board = mock(Board.class);
         given(board.getUserId()).willReturn("user1");
-        given(boardRepository.findById("1")).willReturn(Optional.of(board));
+        given(boardRepository.findById(1L)).willReturn(Optional.of(board));
         
         BoardSaveRequest updateDto = new BoardSaveRequest(
             "BBS1", "update", "content", null, null, null, null, null, null, null, null, null
         );
 
-        boardService.updatePost("BBS1", "1", updateDto);
+        boardService.updatePost("BBS1", 1L, updateDto);
         // board.update(...) gets called with fallbacks
         verify(board).update(any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any(), any());
     }
@@ -195,10 +195,10 @@ class BoardServiceTest {
 
         Board board = mock(Board.class);
         given(board.getUserId()).willReturn("user1");
-        given(boardRepository.findById("1")).willReturn(Optional.of(board));
+        given(boardRepository.findById(1L)).willReturn(Optional.of(board));
 
         BoardSaveRequest req = new BoardSaveRequest("BBS1", "title", "content", null, null, null, null, null, null, null, null, null);
-        assertThrows(BusinessException.class, () -> boardService.updatePost("BBS1", "1", req));
+        assertThrows(BusinessException.class, () -> boardService.updatePost("BBS1", 1L, req));
     }
 
     @Test
@@ -209,9 +209,9 @@ class BoardServiceTest {
 
         Board board = mock(Board.class);
         given(board.getUserId()).willReturn("user1");
-        given(boardRepository.findById("1")).willReturn(Optional.of(board));
+        given(boardRepository.findById(1L)).willReturn(Optional.of(board));
 
-        assertThrows(BusinessException.class, () -> boardService.deletePost("BBS1", "1", "user2"));
+        assertThrows(BusinessException.class, () -> boardService.deletePost("BBS1", 1L, "user2"));
     }
 
 
@@ -248,14 +248,13 @@ class BoardServiceTest {
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willReturn(user);
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
-        given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
-        String pstId = boardService.createPost(userId, request);
+        Long pstSn = boardService.createPost(userId, request);
 
         // then
-        assertThat(pstId).isEqualTo("1");
+        assertThat(pstSn).isEqualTo(1L);
         verify(eventPublisher, times(1)).publishEvent(any(PostCreatedEvent.class));
     }
 
@@ -264,23 +263,23 @@ class BoardServiceTest {
     void replyPost() {
         // given
         String userId = "user1";
-        String parentId = "1";
+        Long parentId = 1L;
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().pstSn(parentId).sortOrdr(100L).ansLv(0).build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
 
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById(userId)).willReturn(user);
         given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
-        String pstId = boardService.replyPost(userId, parentId, request);
+        Long pstSn = boardService.replyPost(userId, parentId, request);
 
         // then
-        assertThat(pstId).isNotBlank();
+        assertThat(pstSn).isPositive();
     }
 
     /** BoardSaveRequest(bbsId, pstTtl, pstCn, pstBgngYmd, pstEndYmd, atchFileId, evntDt, qnaSttsCd, qnaCatCd, scrtYn, useYn, pswd) */
@@ -295,13 +294,19 @@ class BoardServiceTest {
         return captor.getValue();
     }
 
+    private Board persistWithGeneratedPstSn(Board board) {
+        if (board.getPstSn() == null) {
+            board.changePstSn(1L);
+        }
+        return board;
+    }
+
     private void givenCreatePostContext(long maxSortOrdr) {
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
                 .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
         given(userService.getUserById("user1")).willReturn(UserDto.builder().userId("user1").userNm("Tester").build());
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(maxSortOrdr);
-        given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
     }
 
     @Test
@@ -370,22 +375,21 @@ class BoardServiceTest {
     @Test
     @DisplayName("답글 생성 - 답변순번은 형제 최대값 다음이고, 부모/기본 플래그가 정확히 설정된다")
     void replyPost_appliesDefaultsAndNextAnswerSeq() {
-        String parentId = "1";
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
+        Long parentId = 1L;
+        Board parent = Board.builder().pstSn(parentId).sortOrdr(100L).ansLv(0).build();
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
                 .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById("user1")).willReturn(UserDto.builder().userId("user1").userNm("Tester").build());
         given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(3L);
-        given(boardRepository.getNextPstId()).willReturn(9L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         boardService.replyPost("user1", parentId, saveRequest(null, null, null));
 
         Board saved = captureSavedBoard();
         // +1 이 빠지면 형제 답글과 순번이 겹쳐 스레드 정렬이 깨진다.
         assertThat(saved.getAnsSn()).isEqualTo(4L);
-        assertThat(saved.getUpPstId()).isEqualTo(parentId);
+        assertThat(saved.getUpPstSn()).isEqualTo(parentId);
         assertThat(saved.getUseYn()).isEqualTo("Y");
         assertThat(saved.getQnaSttsCd()).isEqualTo("OPEN");
         // 답글도 원글과 동일하게 알림 이벤트를 발행해야 한다(커밋 후 발행).
@@ -397,20 +401,20 @@ class BoardServiceTest {
     void getPostDetail() {
         // given
         String bbsId = "BBS_01";
-        String pstId = "1";
+        Long pstSn = 1L;
         BoardDetailResult detail = BoardDetailResult.builder()
-                .pstId(pstId)
+                .pstSn(pstSn)
                 .bbsId(bbsId)
                 .build();
 
-        given(boardRepository.findArticleDetail(pstId)).willReturn(Optional.of(detail));
+        given(boardRepository.findArticleDetail(pstSn)).willReturn(Optional.of(detail));
 
         // when
-        BoardDto result = boardService.getPostDetail(bbsId, pstId);
+        BoardDto result = boardService.getPostDetail(bbsId, pstSn);
 
         // then
-        assertThat(result.pstId()).isEqualTo(pstId);
-        verify(viewCountService).increaseViewCount(pstId);
+        assertThat(result.pstSn()).isEqualTo(pstSn);
+        verify(viewCountService).increaseViewCount(pstSn);
     }
 
     @Test
@@ -418,16 +422,16 @@ class BoardServiceTest {
     void updatePost() {
         // given
         String bbsId = "BBS_01";
-        String pstId = "1";
+        Long pstSn = 1L;
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Content", null, null, null, null, null, null, null, null, null);
-        Board board = Board.builder().pstId(pstId).pstTtl("Old").userId(userId).build();
+        Board board = Board.builder().pstSn(pstSn).pstTtl("Old").userId(userId).build();
 
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
         // when
-        boardService.updatePost(bbsId, pstId, request);
+        boardService.updatePost(bbsId, pstSn, request);
 
         // then
         assertThat(board.getPstTtl()).isEqualTo("Updated");
@@ -438,15 +442,15 @@ class BoardServiceTest {
     void deletePost() {
         // given
         String bbsId = "BBS_01";
-        String pstId = "1";
+        Long pstSn = 1L;
         String userId = "user1";
-        Board board = Board.builder().pstId(pstId).useYn("Y").userId(userId).build();
+        Board board = Board.builder().pstSn(pstSn).useYn("Y").userId(userId).build();
 
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
         // when
-        boardService.deletePost(bbsId, pstId, "user1");
+        boardService.deletePost(bbsId, pstSn, "user1");
 
         // then
         assertThat(board.getUseYn()).isEqualTo("N");
@@ -457,32 +461,32 @@ class BoardServiceTest {
     void incrementLike() {
         // given
         String bbsId = "BBS_01";
-        String pstId = "1";
-        Board updated = Board.builder().pstId(pstId).likeCnt(1).build();
+        Long pstSn = 1L;
+        Board updated = Board.builder().pstSn(pstSn).likeCnt(1).build();
 
         // 종전에는 비관적 락으로 엔티티를 잡고 필드를 증가시켰다. 유실은 없었지만 저장이 @Version 을
         // 올려, 인기글 편집자가 아무도 고치지 않았는데 409 를 받았다(조회수와 같은 뿌리).
-        given(boardRepository.incrementLikeCntAtomic(pstId)).willReturn(1);
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(updated));
+        given(boardRepository.incrementLikeCntAtomic(pstSn)).willReturn(1);
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(updated));
 
         // when
-        Integer result = boardService.incrementLike(bbsId, pstId);
+        Integer result = boardService.incrementLike(bbsId, pstSn);
 
         // then
         assertThat(result).isEqualTo(1);
-        verify(boardRepository, times(1)).incrementLikeCntAtomic(pstId);
+        verify(boardRepository, times(1)).incrementLikeCntAtomic(pstSn);
         // 행 락을 잡지 않는다 — 같은 글의 좋아요가 더 이상 직렬화되지 않는다.
-        verify(boardRepository, never()).findByPstIdWithPessimisticLock(anyString());
+        verify(boardRepository, never()).findByPstSnWithPessimisticLock(any(Long.class));
     }
 
     @Test
     @DisplayName("[W1-17] 존재하지 않는 게시글의 추천은 404 로 거부한다")
     void incrementLike_notFound() {
-        given(boardRepository.incrementLikeCntAtomic("nope")).willReturn(0);
+        given(boardRepository.incrementLikeCntAtomic(999L)).willReturn(0);
 
-        assertThatThrownBy(() -> boardService.incrementLike("BBS_01", "nope"))
+        assertThatThrownBy(() -> boardService.incrementLike("BBS_01", 999L))
                 .isInstanceOf(BusinessException.class);
-        verify(boardRepository, never()).findById(anyString());
+        verify(boardRepository, never()).findById(any(Long.class));
     }
 
     @Test
@@ -532,14 +536,13 @@ class BoardServiceTest {
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willThrow(new BusinessException(UserErrorCode.USER_NOT_FOUND));
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
-        given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
-        String pstId = boardService.createPost(userId, request);
+        Long pstSn = boardService.createPost(userId, request);
 
         // then
-        assertThat(pstId).isEqualTo("1");
+        assertThat(pstSn).isEqualTo(1L);
         verify(boardRepository).save(argThat(b -> "unknown".equals(b.getUserId()) && "익명".equals(b.getUserNm())));
     }
 
@@ -554,14 +557,13 @@ class BoardServiceTest {
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willThrow(new RuntimeException("DB Error"));
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
-        given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
-        String pstId = boardService.createPost(userId, request);
+        Long pstSn = boardService.createPost(userId, request);
 
         // then
-        assertThat(pstId).isEqualTo("1");
+        assertThat(pstSn).isEqualTo(1L);
         verify(boardRepository).save(argThat(b -> "errorUser".equals(b.getUserId()) && "익명".equals(b.getUserNm())));
     }
 
@@ -577,8 +579,7 @@ class BoardServiceTest {
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(userService.getUserById(userId)).willReturn(author);
         given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
-        given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
         boardService.createPost(userId, request);
@@ -601,8 +602,7 @@ class BoardServiceTest {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
-        given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
         boardService.createPostWithFiles(userId, request, files);
@@ -617,16 +617,16 @@ class BoardServiceTest {
     void replyPost_UserNotFound() {
         // given
         String userId = "unknown";
-        String parentId = "1";
+        Long parentId = 1L;
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().pstSn(parentId).sortOrdr(100L).ansLv(0).build();
 
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(userService.getUserById(userId)).willThrow(new BusinessException(UserErrorCode.USER_NOT_FOUND));
         given(boardRepository.findMaxAnsSn(any(), any())).willReturn(0L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
         boardService.replyPost(userId, parentId, request);
@@ -640,7 +640,7 @@ class BoardServiceTest {
     void replyPostWithFiles() throws IOException {
         // given
         String userId = "user1";
-        String parentId = "1";
+        Long parentId = 1L;
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
@@ -648,11 +648,11 @@ class BoardServiceTest {
                 .singletonList(file);
 
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
-        Board parent = Board.builder().pstId(parentId).sortOrdr(100L).ansLv(0).build();
+        Board parent = Board.builder().pstSn(parentId).sortOrdr(100L).ansLv(0).build();
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
         given(boardRepository.findById(parentId)).willReturn(Optional.of(parent));
         given(fileService.uploadFiles(files)).willReturn("ATCH_001");
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
 
         // when
         boardService.replyPostWithFiles(userId, parentId, request, files);
@@ -666,16 +666,16 @@ class BoardServiceTest {
     void updatePost_WithEventDate() {
         // given
         String bbsId = "BBS_01";
-        String pstId = "1";
+        Long pstSn = 1L;
         String eventDateStr = "2023-12-25T10:00:00";
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, eventDateStr, null, null, null, null, null);
-        Board board = org.mockito.Mockito.spy(Board.builder().pstId(pstId).userId(userId).build());
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        Board board = org.mockito.Mockito.spy(Board.builder().pstSn(pstSn).userId(userId).build());
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
         // when
-        boardService.updatePost(bbsId, pstId, request);
+        boardService.updatePost(bbsId, pstSn, request);
 
         // then
         verify(board).update(any(), any(), any(), any(), any(), any(), any(), any(),
@@ -687,15 +687,15 @@ class BoardServiceTest {
     void updatePost_InvalidEventDate() {
         // given
         String bbsId = "BBS_01";
-        String pstId = "1";
+        Long pstSn = 1L;
         String userId = "user1";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "invalid-date", null, null, null, null, null);
-        Board board = org.mockito.Mockito.spy(Board.builder().pstId(pstId).userId(userId).build());
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        Board board = org.mockito.Mockito.spy(Board.builder().pstSn(pstSn).userId(userId).build());
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
         // when
-        boardService.updatePost(bbsId, pstId, request);
+        boardService.updatePost(bbsId, pstSn, request);
 
         // then
         verify(board).update(any(), any(), any(), any(), any(), any(), any(), any(), isNull(), any(), any(), any());
@@ -706,7 +706,7 @@ class BoardServiceTest {
     void updatePostWithFiles_NewFiles() throws IOException {
         // given
         String bbsId = "BBS_01";
-        String pstId = "1";
+        Long pstSn = 1L;
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, null, null, null,
                 null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
@@ -714,13 +714,13 @@ class BoardServiceTest {
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        Board board = Board.builder().pstId(pstId).userId("user1").build();
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        Board board = Board.builder().pstSn(pstSn).userId("user1").build();
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
         given(fileService.uploadFiles(files)).willReturn("NEW_ATCH_001");
 
         // when
-        boardService.updatePostWithFiles(bbsId, pstId, request, files);
+        boardService.updatePostWithFiles(bbsId, pstSn, request, files);
 
         // then
         verify(fileService).uploadFiles(files);
@@ -732,7 +732,7 @@ class BoardServiceTest {
     void updatePostWithFiles_ExistingFiles() throws IOException {
         // given
         String bbsId = "BBS_01";
-        String pstId = "1";
+        Long pstSn = 1L;
         String atchFileId = "OLD_ATCH_001";
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, atchFileId, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
@@ -740,12 +740,12 @@ class BoardServiceTest {
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
 
-        Board board = Board.builder().pstId(pstId).userId("user1").build();
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        Board board = Board.builder().pstSn(pstSn).userId("user1").build();
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
 
         // when
-        boardService.updatePostWithFiles(bbsId, pstId, request, files);
+        boardService.updatePostWithFiles(bbsId, pstSn, request, files);
 
         // then
         verify(fileService).updateFiles(eq(atchFileId), eq(files));
@@ -771,24 +771,24 @@ class BoardServiceTest {
     @DisplayName("존재하지 않는 게시글 조회 시 예외 발생")
     void getPostDetail_NotFound() {
         // given
-        given(boardRepository.findArticleDetail(anyString())).willReturn(Optional.empty());
+        given(boardRepository.findArticleDetail(any(Long.class))).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", "999"))
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 999L))
                 .isInstanceOf(BusinessException.class);
     }
 
     @Test
     @DisplayName("게시글 수정 - 작성자 본인이 아니고 관리자도 아니면 접근 거부")
     void updatePost_AccessDenied() {
-        String pstId = "1";
-        Board board = Board.builder().pstId(pstId).userId("owner").build();
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        Long pstSn = 1L;
+        Board board = Board.builder().pstSn(pstSn).userId("owner").build();
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("other_user"));
 
         BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, null, null, null, null, null);
 
-        assertThatThrownBy(() -> boardService.updatePost("BBS_01", pstId, request))
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", pstSn, request))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
     }
@@ -796,12 +796,12 @@ class BoardServiceTest {
     @Test
     @DisplayName("게시글 삭제 - 작성자 본인이 아니고 관리자도 아니면 접근 거부")
     void deletePost_AccessDenied() {
-        String pstId = "1";
-        Board board = Board.builder().pstId(pstId).userId("owner").build();
-        given(boardRepository.findById(pstId)).willReturn(Optional.of(board));
+        Long pstSn = 1L;
+        Board board = Board.builder().pstSn(pstSn).userId("owner").build();
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("other_user"));
 
-        assertThatThrownBy(() -> boardService.deletePost("BBS_01", pstId, "other_user"))
+        assertThatThrownBy(() -> boardService.deletePost("BBS_01", pstSn, "other_user"))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
     }
@@ -815,26 +815,25 @@ class BoardServiceTest {
         
         // create
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.getNextPstId()).willReturn(1L);
-        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> invocation.getArgument(0));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
         
         boardService.createPostWithFiles(userId, request, null);
         boardService.createPostWithFiles(userId, request, Collections.emptyList());
         
         // update
-        Board board = Board.builder().pstId("1").userId(userId).build();
-        given(boardRepository.findById("1")).willReturn(Optional.of(board));
+        Board board = Board.builder().pstSn(1L).userId(userId).build();
+        given(boardRepository.findById(1L)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
         
-        boardService.updatePostWithFiles("BBS_01", "1", request, null);
-        boardService.updatePostWithFiles("BBS_01", "1", request, Collections.emptyList());
+        boardService.updatePostWithFiles("BBS_01", 1L, request, null);
+        boardService.updatePostWithFiles("BBS_01", 1L, request, Collections.emptyList());
 
         // reply
-        Board parent = Board.builder().pstId("1").sortOrdr(100L).ansLv(0).build();
-        given(boardRepository.findById("1")).willReturn(Optional.of(parent));
+        Board parent = Board.builder().pstSn(1L).sortOrdr(100L).ansLv(0).build();
+        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
         
-        boardService.replyPostWithFiles(userId, "1", request, null);
-        boardService.replyPostWithFiles(userId, "1", request, Collections.emptyList());
+        boardService.replyPostWithFiles(userId, 1L, request, null);
+        boardService.replyPostWithFiles(userId, 1L, request, Collections.emptyList());
 
         verify(fileService, never()).uploadFiles(any());
         verify(fileService, never()).updateFiles(any(), any());

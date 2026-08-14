@@ -66,7 +66,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 
                 const workerId = process.env.TEST_WORKER_INDEX || '0';
                 const articleTitle = `E2E Article W${workerId} ${Date.now()}`;
-                let createdpstId: string | null = null;
+                let createdPstSn: number | null = null;
 
                 const responseHandler = async (response: import('@playwright/test').Response) => {
                     const url = response.url();
@@ -75,12 +75,12 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                     if (method === 'POST' && (url.includes('/api/v1/boards/posts') || url.includes('/api/v1/bbs'))) {
                         try {
                             const body = await response.json();
-                            const pstId = body?.data;
-                            if (pstId) {
-                                createdpstId = String(pstId);
-                                console.log(`>>> [API Intercept] Captured pstId: ${createdpstId}`);
+                            const pstSn = body?.data;
+                            if (Number.isSafeInteger(Number(pstSn)) && Number(pstSn) > 0) {
+                                createdPstSn = Number(pstSn);
+                                console.log(`>>> [API Intercept] Captured pstSn: ${createdPstSn}`);
                             }
-                        } catch (e: any) { }
+                        } catch { }
                     }
                 };
                 page.on('response', responseHandler);
@@ -116,7 +116,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 //   토스트는 `await saveBoardArticle()` 이 resolve 된 뒤에만 뜨므로, 토스트를 진짜로
                 //   기다리면 액션 완료가 보장된다. sonner 컨테이너로 범위를 좁혀 버튼과 분리한다.
                 //
-                //   ※ race 를 걷어내고 URL 전환만 기다리는 안(더 빠르고 pstId 도 얻는다)을 실측해 봤으나
+                //   ※ race 를 걷어내고 URL 전환만 기다리는 안(더 빠르고 pstSn 도 얻는다)을 실측해 봤으나
                 //     채택하지 않았다 — 그러면 이후 단계의 진입 페이지가 목록→상세로 바뀌면서 Step 4
                 //     삭제가 깨졌다. 삭제 단계에도 **완료를 기다리지 않고 goto 하는 같은 계열의 결함**이
                 //     잠재해 있다는 뜻이다(별도 과제). 여기서는 원인(버튼 매칭)만 제거하고 흐름은 보존한다.
@@ -130,25 +130,28 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 
                 page.off('response', responseHandler);
 
-                if (!createdpstId) {
-                    const urlMatch = page.url().match(/[?&]pstId=([^&]+)/);
-                    if (urlMatch) createdpstId = urlMatch[1];
+                if (!createdPstSn) {
+                    const urlMatch = page.url().match(/[?&]pstSn=([^&]+)/);
+                    if (urlMatch) {
+                        const parsedPstSn = Number(urlMatch[1]);
+                        if (Number.isSafeInteger(parsedPstSn) && parsedPstSn > 0) createdPstSn = parsedPstSn;
+                    }
                 }
-                console.log(`>>> Post-create URL: ${page.url()} | pstId: ${createdpstId ?? 'NOT FOUND'}`);
+                console.log(`>>> Post-create URL: ${page.url()} | pstSn: ${createdPstSn ?? 'NOT FOUND'}`);
 
                 await test.step('User: Navigate to Created Article', async () => {
                     // Force go to list if still on same page or ID not found
-                    if (!createdpstId || page.url().includes('insert-board-article')) {
+                    if (!createdPstSn || page.url().includes('insert-board-article')) {
                         await page.goto(`/admin/community/boards/select-board-list?bbsId=${template.id}`);
                     }
                     
                     // 2. Anti-flaky: 스마트 재시도 로직 (데이터가 나타날 때까지 주기적으로 새로고침 및 확인)
                     await expect(async () => {
-                        if (createdpstId) {
-                            await page.goto(`/admin/community/boards/detail?bbsId=${template.id}&pstId=${createdpstId}`);
+                        if (createdPstSn) {
+                            await page.goto(`/admin/community/boards/detail?bbsId=${template.id}&pstSn=${createdPstSn}`);
                         } else {
                             await page.goto(`/admin/community/boards/select-board-list?bbsId=${template.id}`);
-                            const targetLink = page.locator('a[href*="pstId="]', { hasText: articleTitle }).first();
+                            const targetLink = page.locator('a[href*="pstSn="]', { hasText: articleTitle }).first();
                             await targetLink.waitFor({ state: 'visible', timeout: 5000 });
                             await targetLink.click();
                         }
@@ -201,14 +204,14 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                     // 2. Anti-flaky: 스마트 재시도 로직 (revalidatePath 반영 지연 방어)
                     await expect(async () => {
                         await page.goto(`/admin/community/boards/select-board-list?bbsId=${template.id}`);
-                        const updatedArticle = page.locator('a[href*="pstId="]', { hasText: `${articleTitle} [Updated]` }).first();
+                        const updatedArticle = page.locator('a[href*="pstSn="]', { hasText: `${articleTitle} [Updated]` }).first();
                         await expect(updatedArticle).toBeVisible({ timeout: 5000 });
                     }).toPass({ timeout: 30000, intervals: [1000, 2000, 5000] });
                 });
 
                 console.log('>>> Step 4: Deleting Article');
                 // Navigate to detail for deletion
-                await page.locator('a[href*="pstId="]', { hasText: `${articleTitle} [Updated]` }).first().click();
+                await page.locator('a[href*="pstSn="]', { hasText: `${articleTitle} [Updated]` }).first().click();
                 
                 const deleteBtn = page.locator('[aria-label="게시글 삭제"], button:has-text("Delete")').first();
                 await deleteBtn.waitFor({ state: 'visible', timeout: 15000 });
@@ -229,7 +232,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 // 2. Anti-flaky: 스마트 재시도 로직 (목록에서 완전히 사라졌는지 확인)
                 await expect(async () => {
                     await page.goto(`/admin/community/boards/select-board-list?bbsId=${template.id}`);
-                    const updatedArticle = page.locator('a[href*="pstId="]', { hasText: `${articleTitle} [Updated]` }).first();
+                    const updatedArticle = page.locator('a[href*="pstSn="]', { hasText: `${articleTitle} [Updated]` }).first();
                     await expect(updatedArticle).toBeHidden({ timeout: 5000 });
                 }).toPass({ timeout: 30000, intervals: [1000, 2000, 5000] });
                 
@@ -271,19 +274,19 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
             data: { bbsId, pstTtl: `E2E03_CMT_${stamp}`, pstCn: '댓글 생명주기 검증용 임시 게시글' },
         });
         expect(createRes.ok(), '검증용 게시글 시딩이 성공해야 한다').toBeTruthy();
-        const pstId = String((await createRes.json())?.data ?? '').trim();
-        expect(pstId, '서버가 채번한 게시글 ID 를 받아야 한다').not.toBe('');
+        const pstSn = Number((await createRes.json())?.data);
+        expect(Number.isSafeInteger(pstSn) && pstSn > 0, '서버가 채번한 게시글 ID 를 받아야 한다').toBeTruthy();
 
         /** 서버가 실제로 들고 있는 댓글 본문 목록. 화면 단언과 분리해서 본다. */
         const serverComments = async (): Promise<string[]> => {
-            const res = await request.get(`/api/v1/comments?pstId=${pstId}&bbsId=${bbsId}&size=100`, { headers: auth });
+            const res = await request.get(`/api/v1/comments?pstSn=${pstSn}&bbsId=${bbsId}&size=100`, { headers: auth });
             const data = (await res.json())?.data;
             const list = data?.list ?? data?.content ?? [];
             return (list as { ansCn: string }[]).map((c) => c.ansCn);
         };
 
         try {
-            await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${pstId}`);
+            await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`);
 
             // ── 작성
             const input = page.locator('textarea[name="ansCn"]');
@@ -322,7 +325,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
             await expect.poll(serverComments, { timeout: 15000, message: 'UI 삭제가 실제 삭제로 이어져야 한다' })
                 .not.toContain(edited);
         } finally {
-            await request.delete(`/api/v1/boards/${bbsId}/posts/${pstId}`, { headers: auth });
+            await request.delete(`/api/v1/boards/${bbsId}/posts/${pstSn}`, { headers: auth });
         }
     });
 

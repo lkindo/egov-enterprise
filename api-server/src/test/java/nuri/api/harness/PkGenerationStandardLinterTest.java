@@ -124,7 +124,10 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] SurveyRespondent — 자동 PK 전환 대상이 아니라 물리 DB의
             //   (srvy_tmplt_sn, srvy_sn, srvy_rspdnt_id) 복합 PK를 @IdClass로 정확히 매핑했다.
             //   문자열 응답자 ID는 유지하며, 복합키는 이 단일 수동 PK 베이스라인의 대상이 아니다.
-            "AdministCode", "Authority", "Blog", "Board",
+            // [2026-08-14 제거] Board — V2_69에서 게시물 pst_id 문자열 기술 PK와 댓글·스크랩·
+            //   만족도·통계·답글 참조 폐포를 pst_sn BIGINT IDENTITY로 전환했다. 게시판 업무키
+            //   BoardMaster.bbsId는 수동 식별자로 보존하고, 루트 글의 up_pst_id='0'은 NULL로 정규화했다.
+            "AdministCode", "Authority", "Blog",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptManage", "EventInfo",
             // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).

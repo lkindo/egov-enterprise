@@ -29,11 +29,11 @@ public class CommentApiController {
     public ResponseEntity<ApiResponse<PageResponse<CommentDto>>> getComments(
             @RequestParam(required = false) String searchKeyword,
             @RequestParam(required = false) String bbsId,
-            @RequestParam(required = false) String pstId,
+            @RequestParam(required = false) Long pstSn,
             @PageableDefault(size = 10) Pageable pageable) {
-        // 현재 CommentService 는 (pstId, bbsId) 기반 조회만 지원한다.
+        // 현재 CommentService 는 (pstSn, bbsId) 기반 조회만 지원한다.
         // searchKeyword 는 아직 서비스에 배선되지 않은 예약 파라미터다(키워드 검색 미지원).
-        Page<CommentDto> page = commentService.getComments(pstId, bbsId, pageable);
+        Page<CommentDto> page = commentService.getComments(pstSn, bbsId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 

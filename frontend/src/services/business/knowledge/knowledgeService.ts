@@ -5,7 +5,7 @@ import { PageResponse } from '@/types/foundation/system';
  * 지식 기반 서비스 DTO (Enterprise v5 Standard)
  */
 export interface KnowledgeDto {
-  pstId: string;
+  pstSn: number;
   pstTtl: string;
   pstCn: string;
   atchFileId?: string;
@@ -87,7 +87,7 @@ class KnowledgeService extends ApiService {
     return {
       list: (res.list || []).map((item: any) => ({
         ...item,
-        pstId: item.pstId || item.nttId,
+        pstSn: item.pstSn || item.nttId,
         pstTtl: item.pstTtl || item.nttSj,
       })),
     };
@@ -96,8 +96,8 @@ class KnowledgeService extends ApiService {
   /**
    * 게시물 상세 조회
    */
-  public async getArticle(bbsId: string, pstId: string): Promise<KnowledgeDto> {
-    return this.get<KnowledgeDto>(`/${bbsId}/posts/${pstId}`);
+  public async getArticle(bbsId: string, pstSn: number): Promise<KnowledgeDto> {
+    return this.get<KnowledgeDto>(`/${bbsId}/posts/${pstSn}`);
   }
 
   /**
@@ -116,7 +116,7 @@ class KnowledgeService extends ApiService {
     const res = await this.get<any>(`/${targetBbsId}`, { params: { size: 10 } });
     
     return (res.list || []).map((item: any) => ({
-      id: item.pstId || item.nttId,
+      id: item.pstSn || item.nttId,
       type: 'SHARE',
       title: item.pstTtl || item.nttSj,
       user: item.userNm || item.frstRgtrId,

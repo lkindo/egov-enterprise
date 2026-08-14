@@ -4,7 +4,7 @@ import { AxiosRequestConfig } from 'axios';
 
 interface CommentDetail {
   ansSn: number;
-  pstId: string;
+  pstSn: number;
   bbsId: string;
   wrterId: string;
   wrterNm: string;
@@ -27,10 +27,10 @@ class CommentAdminService extends ApiService {
 
   /**
    * 전체 댓글 목록 조회.
-   * ⚠ 백엔드 CommentApiController#getComments 는 pstId/bbsId/Pageable 만 서비스에 배선하고
+   * ⚠ 백엔드 CommentApiController#getComments 는 pstSn/bbsId/Pageable 만 서비스에 배선하고
    *   키워드 검색(searchKeyword)은 아직 미지원이다. 여기서 넘기는 searchWrd 는 서버에서 무시된다.
    */
-  async getComments(params: { pstId?: string; bbsId?: string; page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
+  async getComments(params: { pstSn?: number; bbsId?: string; page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
     return this.get<PageResponse<CommentDetail>>('', { ...config, params });
   }
 

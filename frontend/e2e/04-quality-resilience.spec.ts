@@ -41,7 +41,7 @@ test.describe('Tier 4: Quality & Resilience', () => {
         test('Optimistic UI: Post Like/Reaction', async ({ page, request }) => {
             const bbsId = 'BBSMSTR_AAAAAAAAAAAA';
 
-            // [2026-07-27 정정] 종전에는 pstId=1108 을 하드코딩했다("Existing post"). 신규 DB(CI 기본)에는
+            // [2026-07-27 정정] 종전에는 pstSn=1108 을 하드코딩했다("Existing post"). 신규 DB(CI 기본)에는
             // 그 글이 없어 상세 페이지가 렌더되지 않았고, 추천 버튼을 영원히 찾지 못했다.
             // 시드로 채우면 누적 쓰레기가 재발하므로 이 테스트가 쓸 글을 **직접 만든다**.
             const token = getAdminBearerToken();
@@ -54,10 +54,10 @@ test.describe('Tier 4: Quality & Resilience', () => {
                 },
             });
             expect(created.ok(), '추천 검증용 게시글 생성이 성공해야 한다').toBeTruthy();
-            const pstId = String((await created.json())?.data ?? '').trim();
-            expect(pstId, '생성된 게시글 ID 를 받아야 한다').not.toBe('');
+            const pstSn = String((await created.json())?.data ?? '').trim();
+            expect(pstSn, '생성된 게시글 ID 를 받아야 한다').not.toBe('');
 
-            await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${pstId}`);
+            await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`);
             
             // [E2E 감사 B] isVisible 가드 제거 — 추천 버튼이 없으면 실패시킨다(과거: 가드로 무단언 통과).
             const likeBtn = page.locator('button').filter({ hasText: /추천|좋아요|Like/i }).first();

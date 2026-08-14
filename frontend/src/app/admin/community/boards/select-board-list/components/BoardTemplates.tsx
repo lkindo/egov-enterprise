@@ -27,7 +27,7 @@ interface TemplateProps {
   list: BoardPost[];
   bbsId: string;
   querySearchWrd: string;
-  handleLike: (e: React.MouseEvent, pstId: string) => void;
+  handleLike: (e: React.MouseEvent, pstSn: number) => void;
   isLikePending: boolean;
   page?: number;
   totalCount?: number;
@@ -72,7 +72,7 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
             
             <div className="relative z-10 space-y-8">
               <Badge className="bg-white/10 backdrop-blur-md text-white border-white/20 font-black tracking-[0.4em] uppercase py-2 px-6 text-xs rounded-full">대표 게시글</Badge>
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${list[0].pstId}`}>
+              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${list[0].pstSn}`}>
                 <h3 className="text-5xl font-black tracking-tighter leading-none group-hover:text-primary transition-all cursor-pointer decoration-primary/30 group-hover:underline underline-offset-8 decoration-4">{list[0].pstTtl}</h3>
               </Link>
               <div className="flex flex-wrap items-center gap-10 mt-10">
@@ -101,16 +101,16 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {(page === 1 ? list.slice(1) : list).map((item: BoardPost) => (
-          <motion.div key={item.pstId} variants={itemVariants}>
+          <motion.div key={item.pstSn} variants={itemVariants}>
             <Card className="group p-8 bg-white/40 backdrop-blur-md rounded-3xl border border-white/60 space-y-6 hover:shadow-2xl hover:-translate-y-2 transition-all cursor-pointer relative overflow-hidden ring-1 ring-black/5">
               <div className="absolute top-0 right-0 p-6 opacity-[0.03] group-hover:opacity-10 group-hover:scale-125 transition-all text-primary">
                 <BookOpen size={80} />
               </div>
               <div className="flex items-center justify-between mb-2">
                 <Badge variant="secondary" className="bg-muted/80 text-muted-foreground font-bold px-3 py-1 rounded-lg">게시글</Badge>
-                <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">No.{String(item.pstId).slice(-6)}</span>
+                <span className="text-[10px] font-black text-muted-foreground/50 uppercase tracking-widest">No.{String(item.pstSn).slice(-6)}</span>
               </div>
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
+              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${item.pstSn}`}>
                 <h4 className="font-black text-foreground text-xl leading-tight line-clamp-2 group-hover:text-primary transition-colors tracking-tighter">{item.pstTtl}</h4>
               </Link>
               <div className="flex justify-between items-center pt-6 border-t border-border/50">
@@ -143,7 +143,7 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
       className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-12 p-10"
     >
       {list.map((item: BoardPost) => (
-        <motion.div key={item.pstId} variants={itemVariants}>
+        <motion.div key={item.pstSn} variants={itemVariants}>
           <Card className="group overflow-hidden rounded-3xl bg-white/60 backdrop-blur-md border border-white shadow-xl transition-all hover:shadow-[0_40px_80px_-20px_rgba(0,0,0,0.1)] hover:-translate-y-3 ring-1 ring-black/5">
             <div className="h-72 overflow-hidden relative bg-muted">
               <div className="w-full h-full flex items-center justify-center bg-muted overflow-hidden relative">
@@ -154,7 +154,7 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
               <div className="absolute top-8 right-8 px-5 py-2 bg-surface-inverse/80 backdrop-blur-xl rounded-2xl text-surface-inverse-foreground text-[10px] font-black tracking-[0.3em] uppercase border border-white/10 shadow-2xl">갤러리</div>
             </div>
             <CardContent className="p-10 space-y-8">
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
+              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${item.pstSn}`}>
                 <h3 className="text-3xl font-black text-foreground tracking-tighter leading-[1.1] group-hover:text-primary transition-all cursor-pointer line-clamp-2">
                   <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                 </h3>
@@ -174,7 +174,7 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                   <motion.button
                     type="button"
                     whileTap={{ scale: 0.9 }}
-                    onClick={(e) => handleLike(e, String(item.pstId))}
+                    onClick={(e) => handleLike(e, item.pstSn)}
                     className="flex items-center gap-2 px-4 py-2 bg-card rounded-xl border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
                     aria-label={`${item.pstTtl} 추천`}
                   >
@@ -201,7 +201,7 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
       className="space-y-8 p-10"
     >
       {list.map((item: BoardPost) => (
-        <motion.div key={item.pstId} variants={itemVariants}>
+        <motion.div key={item.pstSn} variants={itemVariants}>
           <Card className="group p-8 bg-white/60 backdrop-blur-md border border-white rounded-[2rem] flex flex-col md:flex-row gap-10 hover:shadow-2xl hover:border-amber-400/50 transition-all cursor-pointer relative overflow-hidden ring-1 ring-black/5">
             <div className="flex flex-col items-center gap-3 min-w-[100px] justify-center">
               <motion.div 
@@ -226,7 +226,7 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                 <div className="w-1.5 h-1.5 rounded-full bg-muted" />
                 <span className="text-[10px] font-black text-muted-foreground flex items-center gap-2 tracking-widest uppercase"><Clock size={14} className="text-amber-400" /> {item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
               </div>
-              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
+              <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${item.pstSn}`}>
                 <h4 className="text-3xl font-black text-foreground leading-tight group-hover:text-amber-600 transition-colors tracking-tighter uppercase decoration-amber-500/20 group-hover:underline underline-offset-8 decoration-4">
                   <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                 </h4>
@@ -246,7 +246,7 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                 <div className="h-4 w-px bg-muted" />
                 <motion.button 
                   whileTap={{ scale: 0.9 }}
-                  onClick={(e) => handleLike(e, String(item.pstId))}
+                  onClick={(e) => handleLike(e, item.pstSn)}
                   className="flex items-center gap-2.5 text-muted-foreground hover:text-amber-500 font-black text-[10px] tracking-widest uppercase transition-all"
                   aria-label={`${item.pstTtl} 추천`}
                 >
@@ -368,8 +368,8 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
               <div className="space-y-1 md:space-y-2.5 max-h-[40px] md:max-h-[80px] lg:max-h-[110px] overflow-y-auto custom-scrollbar pr-1">
                 {dayPosts.map((post) => (
                   <Link 
-                    key={post.pstId}
-                    href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${post.pstId}`}
+                    key={post.pstSn}
+                    href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${post.pstSn}`}
                     className={cn(
                       // 감사 死코드: `(post as any).noticeYn` 은 BoardDto 에 없는 필드라 항상 false 였다(공지 강조가 실제로 동작한 적 없음).
                       "block p-2.5 text-[10px] font-black leading-none rounded-lg shadow-sm transition-all hover:scale-105 cursor-pointer truncate tracking-tight",
@@ -482,7 +482,7 @@ export const FaqTemplate = ({ list }: TemplateProps) => {
       className="p-10 space-y-6"
     >
       {list.map((item: BoardPost) => (
-        <FAQItem key={item.pstId} item={item} />
+        <FAQItem key={item.pstSn} item={item} />
       ))}
     </motion.div>
   );
@@ -498,7 +498,7 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
       className="p-10 space-y-10"
     >
       {list.map((item: BoardPost) => (
-        <motion.div key={item.pstId} variants={itemVariants}>
+        <motion.div key={item.pstSn} variants={itemVariants}>
           <Card className="group overflow-hidden bg-white/40 backdrop-blur-md border border-white hover:border-slate-900 transition-all rounded-[2.5rem] shadow-xl hover:shadow-2xl ring-1 ring-black/5">
             <div className="flex flex-col md:flex-row">
               <div className="w-full md:w-24 bg-surface-inverse flex md:flex-col items-center justify-center p-6 gap-3 shrink-0 relative overflow-hidden">
@@ -510,7 +510,7 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
                   <Badge variant="outline" className="text-[10px] font-black uppercase tracking-[0.4em] text-muted-foreground rounded-lg border-border px-4 py-1.5">문서</Badge>
                   <span className="text-[10px] font-black text-muted-foreground/50 tracking-widest uppercase">{item.crtDt ? String(item.crtDt).substring(0, 10) : '-'}</span>
                 </div>
-                <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`}>
+                <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${item.pstSn}`}>
                   <h4 className="text-2xl font-black text-foreground leading-tight group-hover:text-primary transition-all tracking-tighter uppercase truncate">
                     <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                   </h4>
@@ -553,12 +553,12 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
         </TableHeader>
         <TableBody>
           {list.map((item: BoardPost, idx: number) => (
-            <TableRow key={item.pstId} className="hover:bg-primary/[0.03] transition-all group border-b border-border last:border-0 relative">
+            <TableRow key={item.pstSn} className="hover:bg-primary/[0.03] transition-all group border-b border-border last:border-0 relative">
               <TableCell className="text-center font-bold text-xs text-muted-foreground py-5">
                 {(totalCount - ((page - 1) * 10) - idx).toString().padStart(3, '0')}
               </TableCell>
               <TableCell className="px-8 py-5">
-                <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${item.pstId}`} className="group/link flex flex-col gap-1 max-w-full overflow-hidden">
+                <Link href={`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${item.pstSn}`} className="group/link flex flex-col gap-1 max-w-full overflow-hidden">
                   <div className="text-sm font-black text-foreground group-hover/link:text-primary transition-all tracking-tight leading-snug truncate">
                     <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                   </div>
@@ -586,7 +586,7 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                   </div>
                   <motion.button
                     whileTap={{ scale: 0.95 }}
-                    onClick={(e) => handleLike(e, String(item.pstId))}
+                    onClick={(e) => handleLike(e, item.pstSn)}
                     className="font-bold text-[10px] text-muted-foreground bg-card px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-border shadow-sm hover:bg-primary hover:text-white hover:border-primary transition-all"
                     aria-label={`${item.pstTtl} 추천`}
                   >

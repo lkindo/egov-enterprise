@@ -29,7 +29,7 @@ class RealTimeDashboardServiceTest {
     @Test
     @DisplayName("게시글 작성 이벤트 처리 확인")
     void handlePostCreated_IncrementsCount() {
-        PostCreatedEvent event = new PostCreatedEvent(this, "BBS_001", "1", "user01");
+        PostCreatedEvent event = new PostCreatedEvent(this, "BBS_001", 1L, "user01");
         realTimeDashboardService.handlePostCreated(event);
         realTimeDashboardService.broadcastRealTimeStats();
         

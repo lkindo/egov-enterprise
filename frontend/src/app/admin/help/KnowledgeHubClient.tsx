@@ -295,10 +295,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <motion.button
  layout
  type="button"
- key={item.pstId}
+ key={item.pstSn}
  initial={{ opacity: 0, y: 10 }}
  animate={{ opacity: 1, y: 0 }}
- onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.pstId}`)}
+ onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.pstSn}`)}
  aria-label={`${item.pstTtl} 상세 보기`}
  className="w-full flex flex-col sm:flex-row sm:items-center justify-between p-5 md:p-8 bg-card border border-border/40 rounded-lg hover:ring-[15px] md:hover:ring-[20px] hover:ring-primary/5 hover:border-primary/20 transition-all cursor-pointer group shadow-sm hover:shadow-2xl text-left"
  >
@@ -346,8 +346,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  ) : hotItems.map((item, idx) => (
  <button
  type="button"
- key={item.pstId}
- onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.pstId}`)}
+ key={item.pstSn}
+ onClick={() => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || currentBbsId}&nttId=${item.pstSn}`)}
  aria-label={`${item.pstTtl} 상세 보기`}
  className="w-full flex items-center gap-5 p-4 rounded-lg hover:bg-muted transition-all cursor-pointer group text-left"
  >

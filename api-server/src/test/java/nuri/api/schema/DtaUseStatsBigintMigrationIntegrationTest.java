@@ -37,10 +37,9 @@ class DtaUseStatsBigintMigrationIntegrationTest {
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
                     INSERT INTO tb_dta_use_stats (
-                        dta_use_stats_id, bbs_id, pst_id, file_sn, frst_rgtr_id
+                        dta_use_stats_id, bbs_id, file_sn, frst_rgtr_id
                     ) VALUES (
-                        'DTA_USE_LEGACY_0001', 'BBS_LEGACY_00000001',
-                        'PST_LEGACY_00000001', 7, 'legacy-user'
+                        'DTA_USE_LEGACY_0001', 'BBS_LEGACY_00000001', 7, 'legacy-user'
                     )
                     """);
         }
@@ -51,13 +50,13 @@ class DtaUseStatsBigintMigrationIntegrationTest {
              Statement statement = connection.createStatement()) {
             long migratedSn;
             try (ResultSet rows = statement.executeQuery("""
-                    SELECT dta_use_stats_sn, bbs_id, pst_id, atch_file_id, file_sn, frst_rgtr_id
+                    SELECT dta_use_stats_sn, bbs_id, pst_sn, atch_file_id, file_sn, frst_rgtr_id
                     FROM tb_dta_use_stats WHERE bbs_id = 'BBS_LEGACY_00000001'
                     """)) {
                 assertThat(rows.next()).isTrue();
                 migratedSn = rows.getLong("dta_use_stats_sn");
                 assertThat(migratedSn).isPositive();
-                assertThat(rows.getString("pst_id")).isEqualTo("PST_LEGACY_00000001");
+                assertThat(rows.getObject("pst_sn")).isNull();
                 assertThat(rows.getString("atch_file_id")).isNull();
                 assertThat(rows.getInt("file_sn")).isEqualTo(7);
                 assertThat(rows.getString("frst_rgtr_id")).isEqualTo("legacy-user");
@@ -70,11 +69,11 @@ class DtaUseStatsBigintMigrationIntegrationTest {
             assertThat(serialSequence(statement, "tb_dta_use_stats", "dta_use_stats_sn"))
                     .isEqualTo("public.sq_dta_use_stats_sn");
             assertThat(primaryKeyColumn(statement, "tb_dta_use_stats")).isEqualTo("dta_use_stats_sn");
-            assertThat(outboundForeignKeyCount(statement, "tb_dta_use_stats")).isEqualTo(1L);
+            assertThat(outboundForeignKeyCount(statement, "tb_dta_use_stats")).isEqualTo(2L);
 
             statement.executeUpdate("""
-                    INSERT INTO tb_dta_use_stats (bbs_id, pst_id, file_sn)
-                    VALUES ('BBS_NEW_00000000001', 'PST_NEW_00000000001', 9)
+                    INSERT INTO tb_dta_use_stats (bbs_id, file_sn)
+                    VALUES ('BBS_NEW_00000000001', 9)
                     """);
             try (ResultSet generated = statement.executeQuery("""
                     SELECT dta_use_stats_sn FROM tb_dta_use_stats

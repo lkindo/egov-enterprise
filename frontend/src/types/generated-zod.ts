@@ -96,7 +96,7 @@ export type PasswordChangeRequest = z.infer<typeof PasswordChangeRequestSchema>;
 export const ScrapDtoSchema = z.object({
   scrapSn: z.number().optional(),
   bbsId: z.string().min(0).max(20).optional(),
-  pstId: z.string().min(0).max(20).optional(),
+  pstSn: z.number().optional(),
   scrapNm: z.string().min(0).max(100).optional(),
   scrapUrl: z.string().min(0).max(1000).optional(),
   scrapExpln: z.string().optional(),
@@ -273,7 +273,7 @@ export type DeptJobBoxDto = z.infer<typeof DeptJobBoxDtoSchema>;
 // ==========================================================================
 export const CommentDtoSchema = z.object({
   ansSn: z.number().optional(),
-  pstId: z.string().min(0).max(20).optional(),
+  pstSn: z.number().optional(),
   bbsId: z.string().min(0).max(20).optional(),
   wrterId: z.string().optional(),
   wrterNm: z.string().optional(),
@@ -308,7 +308,7 @@ export type BoardSaveRequest = z.infer<typeof BoardSaveRequestSchema>;
 export const SatisfactionDtoSchema = z.object({
   dgstfnSn: z.number().optional(),
   bbsId: z.string().min(0).max(20).optional(),
-  pstId: z.string().min(0).max(20).optional(),
+  pstSn: z.number().optional(),
   dgstfnCn: z.string().optional(),
   dgstfnScr: z.number().optional(),
   userId: z.string().optional(),
@@ -2023,12 +2023,12 @@ export type ApiResponsePageResponseBoardDto = z.infer<typeof ApiResponsePageResp
 // BoardDto Schema
 // ==========================================================================
 export const BoardDtoSchema = z.object({
-  pstId: z.string().min(0).max(20).optional(),
+  pstSn: z.number().optional(),
   bbsId: z.string().min(0).max(20).optional(),
   ansSn: z.number().optional(),
   pstTtl: z.string().min(0).max(100).optional(),
   pstCn: z.string().min(0).max(4000).optional(),
-  upPstId: z.string().min(0).max(20).optional(),
+  upPstSn: z.number().optional(),
   sortOrdr: z.number().optional(),
   ttlBoldYn: z.string().min(0).max(1).optional(),
   inqCnt: z.number().optional(),

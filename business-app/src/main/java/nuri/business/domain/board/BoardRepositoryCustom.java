@@ -10,7 +10,7 @@ public interface BoardRepositoryCustom {
 
     Page<BoardSearchResult> searchArticles(BoardSearchCondition condition, @NonNull Pageable pageable);
 
-    Optional<BoardDetailResult> findArticleDetail(@NonNull String pstId);
+    Optional<BoardDetailResult> findArticleDetail(@NonNull Long pstSn);
 
-    Optional<Board> findByIdCustom(@NonNull String pstId);
+    Optional<Board> findByIdCustom(@NonNull Long pstSn);
 }

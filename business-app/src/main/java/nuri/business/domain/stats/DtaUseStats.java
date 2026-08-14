@@ -28,9 +28,9 @@ public class DtaUseStats extends BaseEntity {
     @Column(length = 20)
     private String bbsId;
 
-    // [V2_16] bigint→varchar(20) 타입 정렬: 게시판 4테이블 pst_id(varchar 20)와 도메인 일치 (0행 무손실)
-    @Column(length = 20)
-    private String pstId;
+    // [V2_69] 게시글 자동 PK와 참조 계약을 BIGINT로 통일한다.
+    @Column
+    private Long pstSn;
 
     @Column(length = 20)
     private String atchFileId;
@@ -38,9 +38,9 @@ public class DtaUseStats extends BaseEntity {
     private Integer fileSn;
 
     // 빌더 전용 생성자: 클래스 레벨 @SuperBuilder 제거에 따른 정적 팩토리 위임 대상
-    private DtaUseStats(String bbsId, String pstId, String atchFileId, Integer fileSn) {
+    private DtaUseStats(String bbsId, Long pstSn, String atchFileId, Integer fileSn) {
         this.bbsId = bbsId;
-        this.pstId = pstId;
+        this.pstSn = pstSn;
         this.atchFileId = atchFileId;
         this.fileSn = fileSn;
     }
@@ -50,8 +50,8 @@ public class DtaUseStats extends BaseEntity {
      * 감사 필드(frstRgtrId/lastMdfrId/crtDt/mdfcnDt)는 JPA Auditing 이 채우므로 제외한다.
      */
     @Builder
-    public static DtaUseStats create(String bbsId, String pstId, String atchFileId, Integer fileSn) {
-        return new DtaUseStats(bbsId, pstId, atchFileId, fileSn);
+    public static DtaUseStats create(String bbsId, Long pstSn, String atchFileId, Integer fileSn) {
+        return new DtaUseStats(bbsId, pstSn, atchFileId, fileSn);
     }
 
 }

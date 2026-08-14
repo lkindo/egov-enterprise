@@ -139,7 +139,7 @@ public class BoardService extends BaseAbstractService {
         }
 
         @Transactional
-        public String createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {
+        public Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {
                 Timer.Sample sample = Timer.start(meterRegistry);
 
                 try {
@@ -167,13 +167,9 @@ public class BoardService extends BaseAbstractService {
                         String userIdToSet = userId;
                         String userNmToSet = author != null ? author.userNm() : "익명";
 
-                        // DB 시퀀스를 사용하여 유니크한 ID 생성
-                        String pstIdToSet = String.valueOf(boardRepository.getNextPstId());
-
                         Board board = Board.builder()
                                         .bbsId(master.getBbsId())
                                         .ansSn(1L)
-                                        .upPstId("0")
                                         .useYn(request.useYn() != null ? request.useYn() : "Y")
                                         .qnaSttsCd(request.qnaSttsCd() != null ? request.qnaSttsCd() : "OPEN")
                                         .evntDt(parseDateTime(request.evntDt()))
@@ -191,24 +187,22 @@ public class BoardService extends BaseAbstractService {
                                         .scrtYn(request.scrtYn())
                                         .pswd(request.pswd())
                                         .build();
-                        board.changePstId(pstIdToSet);
-
-                        String pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
+                        Long pstSn = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                         "boardRepository.save() 결과는 null 일 수 없습니다")
-                                        .getPstId();
+                                        .getPstSn();
 
                         // 이벤트 발행 (통계 동기화 등)
                         nuri.foundation.core.util.TransactionUtils.runAfterCommit(
-                                () -> eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstId, userId)));
+                                () -> eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstSn, userId)));
 
-                        return pstId;
+                        return pstSn;
                 } finally {
                         sample.stop(meterRegistry.timer("egov.board.create.post", "bbsId", request.bbsId()));
                 }
         }
 
         @Transactional
-        public String createPostWithFiles(@NonNull String userId, @NonNull BoardSaveRequest request,
+        public Long createPostWithFiles(@NonNull String userId, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
                 String atchFileId = request.atchFileId();
@@ -226,13 +220,13 @@ public class BoardService extends BaseAbstractService {
         }
 
         @Transactional
-        public String replyPost(@NonNull String userId, @NonNull String parentId, @NonNull BoardSaveRequest request) {
+        public Long replyPost(@NonNull String userId, @NonNull Long parentSn, @NonNull BoardSaveRequest request) {
                 BoardMaster master = boardMasterRepository
                                 .findByIdWithPessimisticLock(request.bbsId())
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
 
                 Board parent = boardRepository
-                                .findById(parentId)
+                                .findById(parentSn)
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
                 // 사용자 정보 조회 (실패 시 익명 처리)
@@ -257,7 +251,7 @@ public class BoardService extends BaseAbstractService {
                 Board board = Board.builder()
                                 .bbsId(master.getBbsId())
                                 .ansSn(ansSn)
-                                .upPstId(parentId)
+                                .upPstSn(parentSn)
                                 .useYn(request.useYn() != null ? request.useYn() : "Y")
                                 .qnaSttsCd(request.qnaSttsCd() != null ? request.qnaSttsCd() : "OPEN")
                                 .evntDt(parseDateTime(request.evntDt()))
@@ -277,21 +271,18 @@ public class BoardService extends BaseAbstractService {
                                 .pswd(request.pswd())
                                 .build();
                 
-                // ID 생성 — createPost 와 동일하게 DB 시퀀스 사용(System.currentTimeMillis()는 동시 답글 시 ms 충돌로 PK 중복 위험).
-                board.changePstId(String.valueOf(boardRepository.getNextPstId()));
-
-                String pstId = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
+                Long pstSn = required(boardRepository.save(required(board, "board 는 null 일 수 없습니다")),
                                 "boardRepository.save() 결과는 null 일 수 없습니다")
-                                .getPstId();
+                                .getPstSn();
 
                 nuri.foundation.core.util.TransactionUtils.runAfterCommit(
-                                () -> eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstId, userId)));
+                                () -> eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstSn, userId)));
 
-                return pstId;
+                return pstSn;
         }
 
         @Transactional
-        public String replyPostWithFiles(@NonNull String userId, @NonNull String parentId,
+        public Long replyPostWithFiles(@NonNull String userId, @NonNull Long parentSn,
                         @NonNull BoardSaveRequest request,
                         List<MultipartFile> files) throws IOException {
                 String atchFileId = request.atchFileId();
@@ -305,24 +296,24 @@ public class BoardService extends BaseAbstractService {
                                 request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
                                 request.scrtYn(), request.useYn(), request.pswd());
 
-                return replyPost(userId, parentId, newRequest);
+                return replyPost(userId, parentSn, newRequest);
         }
 
         @Transactional(readOnly = true)
-        public BoardDto getPostDetail(@NonNull String bbsId, @NonNull String pstId) {
-                BoardDetailResult detail = boardRepository.findArticleDetail(pstId)
+        public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long pstSn) {
+                BoardDetailResult detail = boardRepository.findArticleDetail(pstSn)
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
                 // Redis 기반 쓰기 지연 처리
-                viewCountService.increaseViewCount(pstId);
+                viewCountService.increaseViewCount(pstSn);
 
                 return boardMapper.toDto(detail);
         }
 
         @Transactional
-        public void updatePost(@NonNull String bbsId, @NonNull String pstId, @NonNull BoardSaveRequest request) {
+        public void updatePost(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request) {
                 Board board = boardRepository
-                                .findById(required(pstId, "pstId 는 null 일 수 없습니다"))
+                                .findById(required(pstSn, "pstSn 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
                 // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
@@ -348,7 +339,7 @@ public class BoardService extends BaseAbstractService {
         }
 
         @Transactional
-        public void updatePostWithFiles(@NonNull String bbsId, @NonNull String pstId, @NonNull BoardSaveRequest request,
+        public void updatePostWithFiles(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
                 String atchFileId = request.atchFileId();
@@ -367,14 +358,14 @@ public class BoardService extends BaseAbstractService {
                                 request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(), 
                                 request.scrtYn(), request.useYn(), request.pswd());
 
-                updatePost(required(bbsId, "bbsId 는 null 일 수 없습니다"), required(pstId, "pstId 는 null 일 수 없습니다"),
+                updatePost(required(bbsId, "bbsId 는 null 일 수 없습니다"), required(pstSn, "pstSn 는 null 일 수 없습니다"),
                                 newRequest);
         }
 
         @Transactional
-        public void deletePost(@NonNull String bbsId, @NonNull String pstId, String authorId) {
+        public void deletePost(@NonNull String bbsId, @NonNull Long pstSn, String authorId) {
                 Board board = boardRepository
-                                .findById(required(pstId, "pstId 는 null 일 수 없습니다"))
+                                .findById(required(pstSn, "pstSn 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
                 // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
@@ -401,8 +392,8 @@ public class BoardService extends BaseAbstractService {
          * 그 사이 다른 사용자의 증가분이 포함될 수 있는데, 그것은 오차가 아니라 더 최신 값이다.
          */
         @Transactional
-        public Integer incrementLike(@NonNull String bbsId, @NonNull String pstId) {
-                String id = required(pstId, "pstId 는 null 일 수 없습니다");
+        public Integer incrementLike(@NonNull String bbsId, @NonNull Long pstSn) {
+                Long id = required(pstSn, "pstSn 는 null 일 수 없습니다");
                 int affected = boardRepository.incrementLikeCntAtomic(id);
                 if (affected == 0) {
                         throw new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND);

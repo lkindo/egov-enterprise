@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
 import { BoardDetailClient } from './BoardDetailClient';
 import { getInitialBoardDetailData } from './BoardDetailServer';
 
@@ -18,10 +19,11 @@ export default async function BoardDetailPage({
 }) {
   const params = await searchParams;
   const bbsId = params.bbsId as string;
-  const pstId = (params.pstId || params.nttId) as string;
+  const pstSn = Number(params.pstSn || params.nttId);
+  if (!Number.isSafeInteger(pstSn) || pstSn <= 0) notFound();
 
   // [P1: Waterfall Elimination] Initiate data promise on server
-  const dataPromise = getInitialBoardDetailData(bbsId, pstId);
+  const dataPromise = getInitialBoardDetailData(bbsId, pstSn);
 
   return (
     <Suspense fallback={<BoardDetailSkeleton />}>

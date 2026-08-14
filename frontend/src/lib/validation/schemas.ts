@@ -56,7 +56,7 @@ export const boardMasterSchema = BoardMasterDtoSchema.extend({
 });
 
 export const boardSchema = BoardSaveRequestSchema.extend({
-  pstId: z.number().optional(),
+  pstSn: z.number().optional(),
   password: z.string().optional().or(z.string().max(200)),
   noticeAt: z.enum(['Y', 'N']).optional(),
   secretAt: z.enum(['Y', 'N']).optional(),

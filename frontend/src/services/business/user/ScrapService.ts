@@ -4,7 +4,7 @@ import { PageResponse } from '@/types/foundation/system';
 interface Scrap {
   scrapSn: number;
   bbsId: string;
-  pstId: number;
+  pstSn: number;
   scrapNm: string;
   crtDt: string;
 }

@@ -354,7 +354,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -382,7 +382,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -406,7 +406,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/bbs/{bbsId}/posts/{pstId}": {
+    "/api/v1/bbs/{bbsId}/posts/{pstSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1730,7 +1730,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions": {
         parameters: {
             query?: never;
             header?: never;
@@ -2792,7 +2792,7 @@ export interface paths {
         patch: operations["confirmInformalSanction_1"];
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}/like": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/like": {
         parameters: {
             query?: never;
             header?: never;
@@ -3596,7 +3596,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/average": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/average": {
         parameters: {
             query?: never;
             header?: never;
@@ -4356,7 +4356,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}/moderate": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}/moderate": {
         parameters: {
             query?: never;
             header?: never;
@@ -4488,7 +4488,8 @@ export interface components {
             /** Format: int64 */
             scrapSn?: number;
             bbsId?: string;
-            pstId?: string;
+            /** Format: int64 */
+            pstSn?: number;
             scrapNm?: string;
             scrapUrl?: string;
             scrapExpln?: string;
@@ -4740,7 +4741,8 @@ export interface components {
         CommentDto: {
             /** Format: int64 */
             ansSn?: number;
-            pstId?: string;
+            /** Format: int64 */
+            pstSn?: number;
             bbsId?: string;
             wrterId?: string;
             wrterNm?: string;
@@ -4779,7 +4781,8 @@ export interface components {
             /** Format: int64 */
             dgstfnSn?: number;
             bbsId?: string;
-            pstId?: string;
+            /** Format: int64 */
+            pstSn?: number;
             dgstfnCn?: string;
             /** Format: int32 */
             dgstfnScr?: number;
@@ -6791,8 +6794,11 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         BoardDto: {
-            /** @description 게시글 ID */
-            pstId?: string;
+            /**
+             * Format: int64
+             * @description 게시글 ID
+             */
+            pstSn?: number;
             /** @description 게시판 ID */
             bbsId?: string;
             /**
@@ -6804,8 +6810,11 @@ export interface components {
             pstTtl?: string;
             /** @description 내용 */
             pstCn?: string;
-            /** @description 상위 게시글 ID */
-            upPstId?: string;
+            /**
+             * Format: int64
+             * @description 상위 게시글 ID
+             */
+            upPstSn?: number;
             /**
              * Format: int64
              * @description 정렬 순서
@@ -9362,7 +9371,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -9393,7 +9402,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -9428,7 +9437,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -9451,7 +9460,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
                 dgstfnSn: number;
             };
             cookie?: never;
@@ -9481,7 +9490,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
                 dgstfnSn: number;
             };
             cookie?: never;
@@ -9505,7 +9514,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -9528,7 +9537,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -9558,7 +9567,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -12709,7 +12718,7 @@ export interface operations {
     getComments: {
         parameters: {
             query: {
-                pstId: string;
+                pstSn: number;
                 bbsId: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
@@ -12765,7 +12774,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -12788,7 +12797,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -12828,7 +12837,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12888,7 +12897,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -15192,7 +15201,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -16184,7 +16193,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -17152,7 +17161,7 @@ export interface operations {
             query?: {
                 searchKeyword?: string;
                 bbsId?: string;
-                pstId?: string;
+                pstSn?: number;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -17237,7 +17246,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
                 dgstfnSn: number;
             };
             cookie?: never;

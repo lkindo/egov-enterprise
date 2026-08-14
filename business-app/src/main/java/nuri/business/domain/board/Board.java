@@ -9,7 +9,7 @@ import java.io.Serializable;
 
 /**
  * 게시물 엔티티 (v5 standardized)
- * - DB Schema Sync: TB_BBS_ITEM (pst_id as VARCHAR)
+ * - DB Schema Sync: TB_BBS_ITEM (pst_sn as BIGINT IDENTITY)
  *
  * <p>[Phase 5.2 규범 적용] 클래스 레벨 {@code @SuperBuilder}/{@code @AllArgsConstructor} 를 제거하고,
  * 빌더는 정적 팩토리 {@link #create}에 {@code @Builder} 로 배치한다. 컬럼 기본값(useYn="Y", qnaSttsCd="OPEN" 등)은
@@ -36,8 +36,9 @@ public class Board extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(name = "pst_id", length = 20)
-    private String pstId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "pst_sn")
+    private Long pstSn;
 
     @Column(name = "bbs_id", nullable = false, length = 20)
     private String bbsId;
@@ -55,8 +56,8 @@ public class Board extends BaseEntity implements Serializable {
     @Column(length = 4000)
     private String pstCn;
 
-    @Column(length = 20)
-    private String upPstId;
+    @Column(name = "up_pst_sn")
+    private Long upPstSn;
 
     private Long sortOrdr;
 
@@ -125,18 +126,18 @@ public class Board extends BaseEntity implements Serializable {
     @Version
     private Integer version;
 
-    private Board(String pstId, String bbsId, Long ansSn, String pstTtl, String pstCn, String upPstId,
+    private Board(Long pstSn, String bbsId, Long ansSn, String pstTtl, String pstCn, Long upPstSn,
             Long sortOrdr, String ttlBoldYn, Integer ansLv, Integer inqCnt, String useYn,
             String pstBgngYmd, String pstEndYmd, String userId, String userNm, String pswd,
             String atchFileId, String scrtYn, String blogId, java.time.LocalDateTime evntDt,
             String qnaSttsCd, String qnaCatCd, Integer likeCnt, String ansYn, String ntcYn,
             Integer cmntCnt, Integer fileCnt) {
-        this.pstId = pstId;
+        this.pstSn = pstSn;
         this.bbsId = bbsId;
         this.ansSn = ansSn;
         this.pstTtl = pstTtl;
         this.pstCn = pstCn;
-        this.upPstId = upPstId;
+        this.upPstSn = upPstSn;
         this.sortOrdr = sortOrdr;
         this.ttlBoldYn = ttlBoldYn;
         // 기존 @Builder.Default 재현 (미지정 시 기본값)
@@ -165,13 +166,13 @@ public class Board extends BaseEntity implements Serializable {
      * 게시물 생성 정적 팩토리(빌더 진입점). {@code Board.builder()...build()} 호출부는 그대로 동작한다.
      */
     @Builder
-    public static Board create(String pstId, String bbsId, Long ansSn, String pstTtl, String pstCn, String upPstId,
+    public static Board create(Long pstSn, String bbsId, Long ansSn, String pstTtl, String pstCn, Long upPstSn,
             Long sortOrdr, String ttlBoldYn, Integer ansLv, Integer inqCnt, String useYn,
             String pstBgngYmd, String pstEndYmd, String userId, String userNm, String pswd,
             String atchFileId, String scrtYn, String blogId, java.time.LocalDateTime evntDt,
             String qnaSttsCd, String qnaCatCd, Integer likeCnt, String ansYn, String ntcYn,
             Integer cmntCnt, Integer fileCnt) {
-        return new Board(pstId, bbsId, ansSn, pstTtl, pstCn, upPstId, sortOrdr, ttlBoldYn, ansLv, inqCnt, useYn,
+        return new Board(pstSn, bbsId, ansSn, pstTtl, pstCn, upPstSn, sortOrdr, ttlBoldYn, ansLv, inqCnt, useYn,
                 pstBgngYmd, pstEndYmd, userId, userNm, pswd, atchFileId, scrtYn, blogId, evntDt,
                 qnaSttsCd, qnaCatCd, likeCnt, ansYn, ntcYn, cmntCnt, fileCnt);
     }
@@ -214,8 +215,8 @@ public class Board extends BaseEntity implements Serializable {
         this.likeCnt++;
     }
 
-    public void changePstId(String pstId) {
-        this.pstId = pstId;
+    public void changePstSn(Long pstSn) {
+        this.pstSn = pstSn;
     }
 
     public void changeInqCnt(Integer inqCnt) {

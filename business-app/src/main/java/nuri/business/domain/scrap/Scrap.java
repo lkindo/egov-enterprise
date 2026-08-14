@@ -21,11 +21,11 @@ public class Scrap extends BaseEntity {
     @Column(length = 20)
     private String bbsId;
 
-    @Column(name = "pst_id", length = 20)
-    private String pstId;
+    @Column(name = "pst_sn")
+    private Long pstSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pst_id", referencedColumnName = "pst_id", insertable = false, updatable = false,
+    @JoinColumn(name = "pst_sn", referencedColumnName = "pst_sn", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.board.Board board;
 
@@ -41,11 +41,11 @@ public class Scrap extends BaseEntity {
     @Column(length = 1)
     private String useYn = "Y";
 
-    private Scrap(Long scrapSn, String bbsId, String pstId, String scrapNm,
+    private Scrap(Long scrapSn, String bbsId, Long pstSn, String scrapNm,
                   String scrapUrl, String scrapExpln, String useYn) {
         this.scrapSn = scrapSn;
         this.bbsId = bbsId;
-        this.pstId = pstId;
+        this.pstSn = pstSn;
         this.scrapNm = scrapNm;
         this.scrapUrl = scrapUrl;
         this.scrapExpln = scrapExpln;
@@ -53,9 +53,9 @@ public class Scrap extends BaseEntity {
     }
 
     @Builder
-    public static Scrap create(Long scrapSn, String bbsId, String pstId, String scrapNm,
+    public static Scrap create(Long scrapSn, String bbsId, Long pstSn, String scrapNm,
                                String scrapUrl, String scrapExpln, String useYn) {
-        return new Scrap(scrapSn, bbsId, pstId, scrapNm, scrapUrl, scrapExpln, useYn);
+        return new Scrap(scrapSn, bbsId, pstSn, scrapNm, scrapUrl, scrapExpln, useYn);
     }
 
     public void update(String scrapNm, String scrapUrl, String scrapExpln, String useYn) {

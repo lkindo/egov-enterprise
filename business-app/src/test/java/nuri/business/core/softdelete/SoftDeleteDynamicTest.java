@@ -28,7 +28,7 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
 
         // 테스트용 데이터 저장 (use_yn = 'Y' 1개, use_yn = 'N' 1개)
         Board activeBoard = Board.builder()
-                .pstId("SOFT_DEL_Y")
+                .pstSn(101L)
                 .bbsId("BBS_TEST")
                 .pstTtl("Active Post")
                 .pstCn("Content")
@@ -36,7 +36,7 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
                 .build();
 
         Board deletedBoard = Board.builder()
-                .pstId("SOFT_DEL_N")
+                .pstSn(102L)
                 .bbsId("BBS_TEST")
                 .pstTtl("Deleted Post")
                 .pstCn("Content")
@@ -54,8 +54,8 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
         
         // use_yn = 'Y'인 데이터 1개만 조회되어야 함
         assertThat(results)
-                .extracting(board -> board.getPstId())
-                .containsExactly("SOFT_DEL_Y");
+                .extracting(board -> board.getPstSn())
+                .containsExactly(101L);
     }
 
     @Test
@@ -65,7 +65,7 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
         
         // use_yn = 'Y', 'N' 둘 다 조회되어야 함
         assertThat(results)
-                .extracting(board -> board.getPstId())
-                .containsExactlyInAnyOrder("SOFT_DEL_Y", "SOFT_DEL_N");
+                .extracting(board -> board.getPstSn())
+                .containsExactlyInAnyOrder(101L, 102L);
     }
 }

@@ -73,7 +73,7 @@
 |---|---|
 | **관례** | ① 신규 엔티티와 의미 없는 내부 기술키는 `BIGINT` 일련번호 + `@GeneratedValue`(DB 시퀀스/IDENTITY) 우선. ② 외부 코드·보안 주체 등 문자열 자연키의 수동채번은 **`IdGenerationUtil.generateUniqueId(prefix, length, existsPredicate)`** — `repo::existsById` 술어로 충돌 재시도(현재 프로덕션 호출 13곳). ③ `currentTimeMillis()` 등 충돌 취약 채번 금지. |
 | **근거** | §2.A egov IdGnr 갈래 소멸 확인, PK 표준 census. |
-| **집행 게이트(부분)** | `PkGenerationStandardLinterTest` — 신규 @Entity 단일 @Id에 `@GeneratedValue` 부재 시 위반. GRANDFATHERED 34종 동결. 주소록 2종은 `V2_49`, 도움말은 `V2_50`, 인터넷 서비스 안내는 `V2_51`, 온라인 매뉴얼은 `V2_52`, 팝업은 `V2_53`, 마이페이지 콘텐츠는 `V2_54`, 부서업무함은 `V2_55`, 배너는 `V2_56`, 부서업무는 `V2_57`, 업무일지는 `V2_58`, 자료사용통계는 `V2_59`, 메모보고는 `V2_60`, 포상관리는 `V2_61`, 일정은 `V2_62`, 스크랩은 `V2_63`, 이메일 발신 이력은 `V2_64`, 업무보고는 `V2_65`, 쪽지 3종은 `V2_66`, 온라인 여론조사 3종은 `V2_67`, 설문 기술키 5종은 `V2_68`에서 BIGINT IDENTITY로 전환했다. `SurveyRespondent`는 문자열 응답자 ID를 유지하되 물리 복합 PK를 `@IdClass`로 바로잡아 단일 수동 PK 목록에서 제거했고, `Template`은 레이아웃 자연키로 유지한다. |
+| **집행 게이트(부분)** | `PkGenerationStandardLinterTest` — 신규 @Entity 단일 @Id에 `@GeneratedValue` 부재 시 위반. GRANDFATHERED 33종 동결. 주소록 2종은 `V2_49`, 도움말은 `V2_50`, 인터넷 서비스 안내는 `V2_51`, 온라인 매뉴얼은 `V2_52`, 팝업은 `V2_53`, 마이페이지 콘텐츠는 `V2_54`, 부서업무함은 `V2_55`, 배너는 `V2_56`, 부서업무는 `V2_57`, 업무일지는 `V2_58`, 자료사용통계는 `V2_59`, 메모보고는 `V2_60`, 포상관리는 `V2_61`, 일정은 `V2_62`, 스크랩은 `V2_63`, 이메일 발신 이력은 `V2_64`, 업무보고는 `V2_65`, 쪽지 3종은 `V2_66`, 온라인 여론조사 3종은 `V2_67`, 설문 기술키 5종은 `V2_68`, 게시글은 `V2_69`에서 BIGINT IDENTITY로 전환했다. `SurveyRespondent`는 문자열 응답자 ID를 유지하되 물리 복합 PK를 `@IdClass`로 바로잡아 단일 수동 PK 목록에서 제거했고, `Template`은 레이아웃 자연키로 유지한다. |
 | **미집행 갭** | 게이트는 "신규 엔티티 선언"만 커버. 수동채번 write가 반드시 `generateUniqueId`를 쓰도록 강제하는 게이트 없음(5전략 공존, "어느 save가 수동PK인가"는 시맨틱) → 신규 수동채번은 `generateUniqueId` 사용을 본 문서로 유도. |
 
 ---

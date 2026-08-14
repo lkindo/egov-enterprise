@@ -23,10 +23,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * <p><b>[왜 필요한가 — 2026-08-12]</b> `CommentService.deleteComment` 는 물리 삭제가 아니라
  * {@code useYn = "N"} 을 세우는 <b>논리 삭제</b>다. 그런데 상세 화면이 쓰는 목록 쿼리
- * {@code findByBbsIdAndPstId} 에는 {@code useYn} 조건이 <b>없었다</b>. 그래서 사용자가 댓글을
+ * {@code findByBbsIdAndPstSn} 에는 {@code useYn} 조건이 <b>없었다</b>. 그래서 사용자가 댓글을
  * 삭제해도 <b>목록에서 사라지지 않았다</b> — 버튼은 눌리고 서버는 200 을 주는데 화면은 그대로다.
  *
- * <p>같은 저장소가 이미 {@code countByBbsIdAndPstIdAndUseYn(..., "Y")} 로 <b>개수는 살아 있는 것만</b>
+ * <p>같은 저장소가 이미 {@code countByBbsIdAndPstSnAndUseYn(..., "Y")} 로 <b>개수는 살아 있는 것만</b>
  * 세고 있었다(`BoardEventListener`). 즉 "목록은 삭제된 것을 포함하고 개수는 제외하는" 비대칭이
  * 존재했다 — {@code useYn='Y'} 가 '살아 있는 댓글'이라는 규약임은 저장소 자신이 증명한다.
  *
@@ -52,12 +52,12 @@ class CommentRepositoryTest {
     private CommentRepository commentRepository;
 
     private static final String BBS_ID = "BBSMSTR_TEST00000001";
-    private static final String PST_ID = "1";
+    private static final Long PST_SN = 1L;
 
     private Comment save(String content) {
         return commentRepository.save(Comment.builder()
                 .bbsId(BBS_ID)
-                .pstId(PST_ID)
+                .pstSn(PST_SN)
                 .wrterId("tester")
                 .wrterNm("Tester")
                 .ansCn(content)
@@ -73,7 +73,7 @@ class CommentRepositoryTest {
         removed.delete();
         commentRepository.saveAndFlush(removed);
 
-        Page<Comment> page = commentRepository.findByBbsIdAndPstId(BBS_ID, PST_ID, PageRequest.of(0, 10));
+        Page<Comment> page = commentRepository.findByBbsIdAndPstSn(BBS_ID, PST_SN, PageRequest.of(0, 10));
 
         assertThat(page.getContent())
                 .extracting(Comment::getAnsCn)
@@ -87,7 +87,7 @@ class CommentRepositoryTest {
         save("첫 번째");
         save("두 번째");
 
-        Page<Comment> page = commentRepository.findByBbsIdAndPstId(BBS_ID, PST_ID, PageRequest.of(0, 10));
+        Page<Comment> page = commentRepository.findByBbsIdAndPstSn(BBS_ID, PST_SN, PageRequest.of(0, 10));
 
         assertThat(page.getContent())
                 .extracting(Comment::getAnsCn)

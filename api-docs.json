@@ -1599,7 +1599,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}": {
       "get": {
         "tags": [
           "Board"
@@ -1619,12 +1619,13 @@
             "example": "BBS_000000000001"
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "description": "게시글 ID",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             },
             "example": 1
           }
@@ -1661,12 +1662,13 @@
             "example": "BBS_000000000001"
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "description": "게시글 ID",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             },
             "example": 1
           }
@@ -1713,12 +1715,13 @@
             "example": "BBS_000000000001"
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "description": "게시글 ID",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             },
             "example": 1
           }
@@ -1737,7 +1740,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}": {
       "put": {
         "tags": [
           "Satisfaction"
@@ -1755,11 +1758,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -1812,11 +1816,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -1851,7 +1856,7 @@
         }
       }
     },
-    "/api/v1/bbs/{bbsId}/posts/{pstId}": {
+    "/api/v1/bbs/{bbsId}/posts/{pstSn}": {
       "get": {
         "tags": [
           "Board Legacy"
@@ -1868,11 +1873,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1905,11 +1911,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1966,11 +1973,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -6955,11 +6963,12 @@
         "operationId": "getComments",
         "parameters": [
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -7047,7 +7056,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions": {
       "get": {
         "tags": [
           "Satisfaction"
@@ -7065,11 +7074,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7102,11 +7112,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7158,7 +7169,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -7295,7 +7306,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -11883,7 +11894,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}/like": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/like": {
       "patch": {
         "tags": [
           "Board"
@@ -11903,12 +11914,13 @@
             "example": "BBS_000000000001"
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "description": "게시글 ID",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             },
             "example": 1
           }
@@ -13548,7 +13560,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/average": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/average": {
       "get": {
         "tags": [
           "Satisfaction"
@@ -13566,11 +13578,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -15793,11 +15806,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -15958,7 +15972,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}/moderate": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}/moderate": {
       "delete": {
         "tags": [
           "Satisfaction"
@@ -15976,11 +15990,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -16349,10 +16364,9 @@
             "maxLength": 20,
             "minLength": 0
           },
-          "pstId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "pstSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "scrapNm": {
             "type": "string",
@@ -16925,10 +16939,9 @@
             "type": "integer",
             "format": "int64"
           },
-          "pstId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "pstSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "bbsId": {
             "type": "string",
@@ -17046,10 +17059,9 @@
             "maxLength": 20,
             "minLength": 0
           },
-          "pstId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "pstSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "dgstfnCn": {
             "type": "string"
@@ -21718,11 +21730,10 @@
       "BoardDto": {
         "type": "object",
         "properties": {
-          "pstId": {
-            "type": "string",
-            "description": "게시글 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "pstSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "게시글 ID"
           },
           "bbsId": {
             "type": "string",
@@ -21747,11 +21758,10 @@
             "maxLength": 4000,
             "minLength": 0
           },
-          "upPstId": {
-            "type": "string",
-            "description": "상위 게시글 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "upPstSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "상위 게시글 ID"
           },
           "sortOrdr": {
             "type": "integer",

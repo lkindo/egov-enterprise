@@ -47,7 +47,7 @@ public class ScrapService {
     public Long createScrap(String userId, ScrapDto dto) {
         // [P0] scrapUrl/scrapExpln/useYn 를 반드시 담는다 — 과거 builder 가 이 3개를 통째로 버려
         // 링크 보관 기능이 구조적으로 무동작이었다(저장된 URL 이 항상 null).
-        // bbsId/pstId 는 의도적으로 요청에서 받지 않는다: pst_id 는 tb_bbs_item 을 참조하는 검증된 FK 라
+        // bbsId/pstSn 는 의도적으로 요청에서 받지 않는다: pst_sn 는 tb_bbs_item 을 참조하는 검증된 FK 라
         // 클라이언트 임의 값 주입(mass assignment)은 무결성 오류를 유발한다. 게시글 스크랩 연동이
         // 도입되면 서버가 경로/컨텍스트에서 결정해 넘겨야 한다.
         Scrap entity = Scrap.builder()

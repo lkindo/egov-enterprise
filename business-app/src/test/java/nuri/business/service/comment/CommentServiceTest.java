@@ -43,12 +43,12 @@ class CommentServiceTest {
     @DisplayName("Get comments list")
     void getComments() {
         // given
-        String pstId = "1";
+        Long pstSn = 1L;
         String bbsId = "BBS_01";
         Pageable pageable = PageRequest.of(0, 10);
         Comment comment = Comment.builder()
                 .ansSn(1L)
-                .pstId(pstId)
+                .pstSn(pstSn)
                 .bbsId(bbsId)
                 .ansCn("Test Comment")
                 .useYn("Y")
@@ -56,10 +56,10 @@ class CommentServiceTest {
         comment.setCrtDt(LocalDateTime.now());
         Page<Comment> page = new PageImpl<>(Collections.singletonList(comment));
 
-        given(commentRepository.findByBbsIdAndPstId(bbsId, pstId, pageable)).willReturn(page);
+        given(commentRepository.findByBbsIdAndPstSn(bbsId, pstSn, pageable)).willReturn(page);
 
         // when
-        Page<CommentDto> result = commentService.getComments(pstId, bbsId, pageable);
+        Page<CommentDto> result = commentService.getComments(pstSn, bbsId, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
@@ -71,7 +71,7 @@ class CommentServiceTest {
     void createComment() {
         // given
         CommentDto request = CommentDto.builder()
-                .pstId("1")
+                .pstSn(1L)
                 .bbsId("BBS_01")
                 .wrterId("user1")
                 .wrterNm("Tester")
@@ -80,7 +80,7 @@ class CommentServiceTest {
                 .build();
         Comment savedComment = Comment.builder()
                 .ansSn(1L)
-                .pstId(request.getPstId())
+                .pstSn(request.getPstSn())
                 .bbsId(request.getBbsId())
                 .wrterId(request.getWrterId())
                 .wrterNm(request.getWrterNm())

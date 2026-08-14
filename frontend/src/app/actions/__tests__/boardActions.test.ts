@@ -80,12 +80,12 @@ describe('boardActions', () => {
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/select-board-list');
       expect(result.success).toBe(true);
       expect(result.message).toBe('게시글이 성공적으로 등록되었습니다.');
-      expect(result.redirect).toBe('/admin/community/boards/detail?bbsId=BBS_001&pstId=100');
+      expect(result.redirect).toBe('/admin/community/boards/detail?bbsId=BBS_001&pstSn=100');
     });
 
     it('should call API and return success on edit', async () => {
       const formData = new FormData();
-      formData.append('pstId', '100');
+      formData.append('pstSn', '100');
       formData.append('pstTtl', 'title edited');
       formData.append('pstCn', 'content edited');
       formData.append('bbsId', 'BBS_001');
@@ -107,7 +107,7 @@ describe('boardActions', () => {
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/select-board-list');
       expect(result.success).toBe(true);
       expect(result.message).toBe('게시글이 성공적으로 수정되었습니다.');
-      expect(result.redirect).toBe('/admin/community/boards/detail?bbsId=BBS_001&pstId=100');
+      expect(result.redirect).toBe('/admin/community/boards/detail?bbsId=BBS_001&pstSn=100');
     });
 
     it('should handle API failure', async () => {
@@ -145,7 +145,7 @@ describe('boardActions', () => {
   describe('deleteBoardArticle', () => {
     it('should call delete API and revalidate', async () => {
       const formData = new FormData();
-      formData.append('pstId', '100');
+      formData.append('pstSn', '100');
       formData.append('bbsId', 'BBS_001');
 
       (vi.mocked(cookies)).mockResolvedValue({ get: vi.fn().mockReturnValue({ value: 'token' }) } as unknown as Awaited<ReturnType<typeof cookies>>);
@@ -160,7 +160,7 @@ describe('boardActions', () => {
 
     it('should handle delete failure', async () => {
       const formData = new FormData();
-      formData.append('pstId', '100');
+      formData.append('pstSn', '100');
       formData.append('bbsId', 'BBS_001');
 
       (vi.mocked(cookies)).mockResolvedValue({ get: vi.fn() } as unknown as Awaited<ReturnType<typeof cookies>>);

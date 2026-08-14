@@ -10,13 +10,13 @@ import org.springframework.context.ApplicationEvent;
 public class PostCreatedEvent extends ApplicationEvent {
 
     private final String bbsId;
-    private final String pstId;
+    private final Long pstSn;
     private final String userId;
 
-    public PostCreatedEvent(Object source, String bbsId, String pstId, String userId) {
+    public PostCreatedEvent(Object source, String bbsId, Long pstSn, String userId) {
         super(source);
         this.bbsId = bbsId;
-        this.pstId = pstId;
+        this.pstSn = pstSn;
         this.userId = userId;
     }
 }

@@ -9,7 +9,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import static org.mockito.ArgumentMatchers.anyInt;
-import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
@@ -45,17 +45,17 @@ class BoardViewCountServiceTest {
     @Test
     @DisplayName("버퍼에 누적된 조회수를 하나의 원자 UPDATE 로 반영한다 (delta 누적 검증)")
     void syncViewCounts_appliesAccumulatedDeltaAtomically() {
-        String pstId = "PST_001";
-        given(boardRepository.increaseInqCntAtomic(pstId, 2)).willReturn(1);
+        Long pstSn = 1L;
+        given(boardRepository.increaseInqCntAtomic(pstSn, 2)).willReturn(1);
 
-        boardViewCountService.increaseViewCount(pstId);
-        boardViewCountService.increaseViewCount(pstId);
+        boardViewCountService.increaseViewCount(pstSn);
+        boardViewCountService.increaseViewCount(pstSn);
         boardViewCountService.syncViewCountsToDb();
 
         // 2회 UPDATE 가 아니라 delta=2 인 1회 UPDATE 여야 한다.
-        verify(boardRepository, times(1)).increaseInqCntAtomic(pstId, 2);
+        verify(boardRepository, times(1)).increaseInqCntAtomic(pstSn, 2);
         // 엔티티 로드·저장 경로는 더 이상 쓰지 않는다 — 그 경로가 version 을 올려 409 를 만들었다.
-        verify(boardRepository, never()).findById(anyString());
+        verify(boardRepository, never()).findById(anyLong());
     }
 
     @Test
@@ -69,48 +69,48 @@ class BoardViewCountServiceTest {
     @Test
     @DisplayName("동기화 후 버퍼가 비워져 같은 증분이 두 번 반영되지 않는다")
     void syncViewCounts_doesNotDoubleApply() {
-        String pstId = "PST_002";
-        given(boardRepository.increaseInqCntAtomic(pstId, 1)).willReturn(1);
+        Long pstSn = 2L;
+        given(boardRepository.increaseInqCntAtomic(pstSn, 1)).willReturn(1);
 
-        boardViewCountService.increaseViewCount(pstId);
+        boardViewCountService.increaseViewCount(pstSn);
         boardViewCountService.syncViewCountsToDb();
         boardViewCountService.syncViewCountsToDb(); // 두 번째는 반영할 것이 없다
 
-        verify(boardRepository, times(1)).increaseInqCntAtomic(pstId, 1);
+        verify(boardRepository, times(1)).increaseInqCntAtomic(pstSn, 1);
     }
 
     @Test
     @DisplayName("대상 게시글이 없으면(영향 0행) 증분을 버린다 — 재적립하면 영원히 재시도한다")
     void syncViewCounts_dropsWhenTargetMissing() {
-        String pstId = "PST_003";
-        given(boardRepository.increaseInqCntAtomic(pstId, 1)).willReturn(0);
+        Long pstSn = 3L;
+        given(boardRepository.increaseInqCntAtomic(pstSn, 1)).willReturn(0);
 
-        boardViewCountService.increaseViewCount(pstId);
+        boardViewCountService.increaseViewCount(pstSn);
         boardViewCountService.syncViewCountsToDb();
         boardViewCountService.syncViewCountsToDb();
 
         // 재시도하지 않는다(삭제된 글의 조회수는 갈 곳이 없다).
-        verify(boardRepository, times(1)).increaseInqCntAtomic(eq(pstId), anyInt());
+        verify(boardRepository, times(1)).increaseInqCntAtomic(eq(pstSn), anyInt());
     }
 
     @Test
     @DisplayName("동기화 실패 시 해당 증분만 버퍼로 되돌아가 다음 주기에 재시도된다")
     void syncViewCounts_restoresFailedDeltaToBuffer() {
-        String pstId = "PST_004";
-        given(boardRepository.increaseInqCntAtomic(pstId, 1))
+        Long pstSn = 4L;
+        given(boardRepository.increaseInqCntAtomic(pstSn, 1))
                 .willThrow(new RuntimeException("DB Connection Error"));
 
-        boardViewCountService.increaseViewCount(pstId);
+        boardViewCountService.increaseViewCount(pstSn);
         boardViewCountService.syncViewCountsToDb(); // 실패 → 버퍼 재적립
 
-        verify(boardRepository, times(1)).increaseInqCntAtomic(pstId, 1);
+        verify(boardRepository, times(1)).increaseInqCntAtomic(pstSn, 1);
 
         // 두 번째 주기에서 같은 delta 로 재시도되어야 한다(증분이 유실되지 않았다는 증거).
         reset(boardRepository);
-        given(boardRepository.increaseInqCntAtomic(pstId, 1)).willReturn(1);
+        given(boardRepository.increaseInqCntAtomic(pstSn, 1)).willReturn(1);
 
         boardViewCountService.syncViewCountsToDb();
 
-        verify(boardRepository, times(1)).increaseInqCntAtomic(pstId, 1);
+        verify(boardRepository, times(1)).increaseInqCntAtomic(pstSn, 1);
     }
 }
