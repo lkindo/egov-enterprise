@@ -240,8 +240,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
    */
   const handleSubmitSchedule = async (values: ScheduleFormValues) => {
     try {
-      if (editingSchedule?.schdlId) {
-        await updateDeptSchedule(editingSchedule.schdlId, values as Parameters<typeof updateDeptSchedule>[1]);
+      if (editingSchedule?.schdlSn) {
+        await updateDeptSchedule(editingSchedule.schdlSn, values as Parameters<typeof updateDeptSchedule>[1]);
         toast('일정이 수정되었습니다.', 'success');
       } else {
         await createDeptSchedule(values as Parameters<typeof createDeptSchedule>[0]);
@@ -258,7 +258,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
 
   /** 일정 삭제. 서버는 소유자/관리자만 허용하므로 권한 오류 메시지를 그대로 노출한다. */
   const handleDeleteSchedule = async (item: DeptSchedule) => {
-    if (!item.schdlId) return;
+    if (!item.schdlSn) return;
     const ok = await confirm({
       title: '일정 삭제',
       message: `'${item.schdlNm || '제목 없음'}' 일정을 삭제하시겠습니까?`,
@@ -267,7 +267,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     });
     if (!ok) return;
     try {
-      await deleteDeptSchedule(item.schdlId);
+      await deleteDeptSchedule(item.schdlSn);
       toast('일정이 삭제되었습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
     } catch (error) {
@@ -579,7 +579,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
                     columns={scheduleColumns}
                     data={visibleSchedules}
                     loading={isScheduleLoading}
-                    keyField="schdlId"
+                    keyField="schdlSn"
                     emptyMessage="등록된 일정이 없습니다."
                     isPremium={true}
                     className="border-none bg-transparent shadow-none"
@@ -634,7 +634,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       >
         <ScheduleCreateForm
           // key 로 모드 전환 시 폼을 새로 마운트해 기본값이 확실히 반영되게 한다.
-          key={editingSchedule?.schdlId ?? 'new'}
+          key={editingSchedule?.schdlSn ?? 'new'}
           mode={editingSchedule ? 'edit' : 'create'}
           initialData={editingSchedule ?? undefined}
           defaultYmd={format(selectedDate ?? currentDate, 'yyyyMMdd')}

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface ScheduleRepository extends JpaRepository<Schedule, String> {
+public interface ScheduleRepository extends JpaRepository<Schedule, Long> {
     // [개인 축] 내가 담당자인 일정. 검색어(schdlNm 부분일치)는 비어 있으면 무시한다.
     @Query("SELECT s FROM Schedule s WHERE (:schdlSeCd IS NULL OR s.schdlSeCd = :schdlSeCd) AND (:userId IS NULL OR s.schdlPicId = :userId) "
             + "AND (:searchWrd IS NULL OR :searchWrd = '' OR LOWER(s.schdlNm) LIKE LOWER(CONCAT('%', :searchWrd, '%')))")

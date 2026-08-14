@@ -13,8 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ScheduleDto {
-    @Size(max = 20)
-    private String schdlId;
+    private Long schdlSn;
 
     @Size(max = 12)
     private String schdlSeCd;

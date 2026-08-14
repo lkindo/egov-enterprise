@@ -18,8 +18,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
 @Testcontainers(disabledWithoutDocker = false)
-@DisplayName("업무일지 문자열 PK → BIGINT IDENTITY 데이터 마이그레이션")
-class DiaryBigintMigrationIntegrationTest {
+@DisplayName("일정 문자열 PK → BIGINT IDENTITY 데이터 마이그레이션")
+class ScheduleBigintMigrationIntegrationTest {
 
     @Container
     private static final PostgreSQLContainer<?> POSTGRES =
@@ -29,24 +29,24 @@ class DiaryBigintMigrationIntegrationTest {
                     .withPassword("egov123");
 
     @Test
-    @DisplayName("기존 업무일지·일정 참조·첨부 FK를 보존하고 자동 숫자 PK로 전환한다")
-    void migratesExistingRowsAndEnforcesIdentityGeneration() throws SQLException {
-        flyway(MigrationVersion.fromVersion("2.57")).migrate();
+    @DisplayName("기존 일정과 업무일지 논리 참조를 보존하고 자동 숫자 PK로 전환한다")
+    void migratesExistingRowsAndLogicalDiaryReference() throws SQLException {
+        flyway(MigrationVersion.fromVersion("2.61")).migrate();
 
         try (Connection connection = POSTGRES.createConnection("");
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
-                    INSERT INTO tb_schdl_info (schdl_id, schdl_nm, frst_rgtr_id)
-                    VALUES ('SCHDL_LEGACY_000001', '기존 일정', 'legacy-user')
+                    INSERT INTO tb_schdl_info (
+                        schdl_id, schdl_se_cd, schdl_nm, schdl_cn,
+                        schdl_bgng_ymd, schdl_end_ymd, schdl_pic_id, frst_rgtr_id
+                    ) VALUES (
+                        'SCHDL_LEGACY_000001', '2', '기존 일정', '보존할 일정 내용',
+                        '20260814', '20260815', 'legacy-owner', 'legacy-user'
+                    )
                     """);
             statement.executeUpdate("""
-                    INSERT INTO tb_diary_info (
-                        diary_id, schdl_id, diary_prgrs_rt, diary_nm, drctn_mttr, excptn_mttr,
-                        frst_rgtr_id
-                    ) VALUES (
-                        'DIARY_LEGACY_000001', 'SCHDL_LEGACY_000001', 75, '기존 업무일지',
-                        '보존할 지시사항', '보존할 특이사항', 'legacy-user'
-                    )
+                    INSERT INTO tb_diary_info (schdl_id, diary_prgrs_rt, diary_nm, frst_rgtr_id)
+                    VALUES ('SCHDL_LEGACY_000001', 80, '일정 참조 업무일지', 'legacy-user')
                     """);
         }
 
@@ -55,44 +55,48 @@ class DiaryBigintMigrationIntegrationTest {
         try (Connection connection = POSTGRES.createConnection("");
              Statement statement = connection.createStatement()) {
             long migratedSn;
-            long scheduleSn;
-            try (ResultSet schedule = statement.executeQuery("""
-                    SELECT schdl_sn FROM tb_schdl_info WHERE schdl_nm = '기존 일정'
-                    """)) {
-                assertThat(schedule.next()).isTrue();
-                scheduleSn = schedule.getLong("schdl_sn");
-                assertThat(scheduleSn).isPositive();
-            }
             try (ResultSet rows = statement.executeQuery("""
-                    SELECT diary_sn, schdl_sn, diary_prgrs_rt, diary_nm, drctn_mttr, excptn_mttr,
-                           frst_rgtr_id
-                    FROM tb_diary_info WHERE diary_nm = '기존 업무일지'
+                    SELECT schdl_sn, schdl_se_cd, schdl_cn, schdl_bgng_ymd,
+                           schdl_end_ymd, schdl_pic_id, frst_rgtr_id
+                    FROM tb_schdl_info WHERE schdl_nm = '기존 일정'
                     """)) {
                 assertThat(rows.next()).isTrue();
-                migratedSn = rows.getLong("diary_sn");
+                migratedSn = rows.getLong("schdl_sn");
                 assertThat(migratedSn).isPositive();
-                assertThat(rows.getLong("schdl_sn")).isEqualTo(scheduleSn);
-                assertThat(rows.getInt("diary_prgrs_rt")).isEqualTo(75);
-                assertThat(rows.getString("drctn_mttr")).isEqualTo("보존할 지시사항");
-                assertThat(rows.getString("excptn_mttr")).isEqualTo("보존할 특이사항");
+                assertThat(rows.getString("schdl_se_cd")).isEqualTo("2");
+                assertThat(rows.getString("schdl_cn")).isEqualTo("보존할 일정 내용");
+                assertThat(rows.getString("schdl_bgng_ymd")).isEqualTo("20260814");
+                assertThat(rows.getString("schdl_end_ymd")).isEqualTo("20260815");
+                assertThat(rows.getString("schdl_pic_id")).isEqualTo("legacy-owner");
                 assertThat(rows.getString("frst_rgtr_id")).isEqualTo("legacy-user");
                 assertThat(rows.next()).isFalse();
             }
 
-            assertThat(columnExists(statement, "tb_diary_info", "diary_id")).isFalse();
+            try (ResultSet diary = statement.executeQuery("""
+                    SELECT schdl_sn, diary_prgrs_rt FROM tb_diary_info
+                    WHERE diary_nm = '일정 참조 업무일지'
+                    """)) {
+                assertThat(diary.next()).isTrue();
+                assertThat(diary.getLong("schdl_sn")).isEqualTo(migratedSn);
+                assertThat(diary.getInt("diary_prgrs_rt")).isEqualTo(80);
+                assertThat(diary.next()).isFalse();
+            }
+
+            assertThat(columnExists(statement, "tb_schdl_info", "schdl_id")).isFalse();
             assertThat(columnExists(statement, "tb_diary_info", "schdl_id")).isFalse();
-            assertThat(identityGeneration(statement, "tb_diary_info", "diary_sn")).isEqualTo("BY DEFAULT");
-            assertThat(serialSequence(statement, "tb_diary_info", "diary_sn"))
-                    .isEqualTo("public.sq_diary_sn");
-            assertThat(primaryKeyColumn(statement, "tb_diary_info")).isEqualTo("diary_sn");
-            assertThat(outboundForeignKeyCount(statement, "tb_diary_info")).isEqualTo(1L);
+            assertThat(identityGeneration(statement, "tb_schdl_info", "schdl_sn"))
+                    .isEqualTo("BY DEFAULT");
+            assertThat(serialSequence(statement, "tb_schdl_info", "schdl_sn"))
+                    .isEqualTo("public.sq_schdl_sn");
+            assertThat(primaryKeyColumn(statement, "tb_schdl_info")).isEqualTo("schdl_sn");
+            assertThat(outboundForeignKeyCount(statement, "tb_schdl_info")).isEqualTo(1L);
 
             statement.executeUpdate("""
-                    INSERT INTO tb_diary_info (diary_nm, diary_prgrs_rt)
-                    VALUES ('신규 업무일지', 10)
+                    INSERT INTO tb_schdl_info (schdl_nm, schdl_pic_id)
+                    VALUES ('신규 일정', 'new-owner')
                     """);
             try (ResultSet generated = statement.executeQuery("""
-                    SELECT diary_sn FROM tb_diary_info WHERE diary_nm = '신규 업무일지'
+                    SELECT schdl_sn FROM tb_schdl_info WHERE schdl_nm = '신규 일정'
                     """)) {
                 assertThat(generated.next()).isTrue();
                 assertThat(generated.getLong(1)).isGreaterThan(migratedSn);

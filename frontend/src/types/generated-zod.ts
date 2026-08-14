@@ -111,7 +111,7 @@ export type ScrapDto = z.infer<typeof ScrapDtoSchema>;
 // ScheduleDto Schema
 // ==========================================================================
 export const ScheduleDtoSchema = z.object({
-  schdlId: z.string().min(0).max(20).optional(),
+  schdlSn: z.number().optional(),
   schdlSeCd: z.string().min(0).max(12).optional(),
   schdlNm: z.string().min(0).max(100),
   schdlCn: z.string().min(0).max(4000).optional(),
@@ -848,18 +848,18 @@ export const ApiResponseIntegerSchema = z.object({
 export type ApiResponseInteger = z.infer<typeof ApiResponseIntegerSchema>;
 
 // ==========================================================================
-// ApiResponseString Schema
+// ApiResponseLong Schema
 // ==========================================================================
-export const ApiResponseStringSchema = z.object({
+export const ApiResponseLongSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.string().optional(),
+  data: z.number().optional(),
   timestamp: z.string().optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
-export type ApiResponseString = z.infer<typeof ApiResponseStringSchema>;
+export type ApiResponseLong = z.infer<typeof ApiResponseLongSchema>;
 
 // ==========================================================================
 // NotificationDto Schema
@@ -876,6 +876,20 @@ export const NotificationDtoSchema = z.object({
   crtDt: z.string().optional(),
 });
 export type NotificationDto = z.infer<typeof NotificationDtoSchema>;
+
+// ==========================================================================
+// ApiResponseString Schema
+// ==========================================================================
+export const ApiResponseStringSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.string().optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseString = z.infer<typeof ApiResponseStringSchema>;
 
 // ==========================================================================
 // NoteDto Schema
@@ -909,20 +923,6 @@ export const NoteRecipientDtoSchema = z.object({
   recptnSe: z.string().min(0).max(12),
 });
 export type NoteRecipientDto = z.infer<typeof NoteRecipientDtoSchema>;
-
-// ==========================================================================
-// ApiResponseLong Schema
-// ==========================================================================
-export const ApiResponseLongSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.number().optional(),
-  timestamp: z.string().optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-});
-export type ApiResponseLong = z.infer<typeof ApiResponseLongSchema>;
 
 // ==========================================================================
 // SentMailDto Schema

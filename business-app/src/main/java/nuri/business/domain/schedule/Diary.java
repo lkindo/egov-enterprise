@@ -28,8 +28,7 @@ public class Diary extends BaseEntity implements Serializable {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long diarySn;
 
-    @Column(length = 20)
-    private String schdlId;
+    private Long schdlSn;
 
     private Integer diaryPrgrsRt;
 
@@ -45,10 +44,10 @@ public class Diary extends BaseEntity implements Serializable {
     @Column(length = 20)
     private String atchFileId;
 
-    private Diary(Long diarySn, String schdlId, Integer diaryPrgrsRt, String diaryNm,
+    private Diary(Long diarySn, Long schdlSn, Integer diaryPrgrsRt, String diaryNm,
             String drctnMttr, String excptnMttr, String atchFileId) {
         this.diarySn = diarySn;
-        this.schdlId = schdlId;
+        this.schdlSn = schdlSn;
         this.diaryPrgrsRt = diaryPrgrsRt;
         this.diaryNm = diaryNm;
         this.drctnMttr = drctnMttr;
@@ -57,9 +56,9 @@ public class Diary extends BaseEntity implements Serializable {
     }
 
     @Builder
-    public static Diary create(Long diarySn, String schdlId, Integer diaryPrgrsRt, String diaryNm,
+    public static Diary create(Long diarySn, Long schdlSn, Integer diaryPrgrsRt, String diaryNm,
             String drctnMttr, String excptnMttr, String atchFileId) {
-        return new Diary(diarySn, schdlId, diaryPrgrsRt, diaryNm, drctnMttr, excptnMttr, atchFileId);
+        return new Diary(diarySn, schdlSn, diaryPrgrsRt, diaryNm, drctnMttr, excptnMttr, atchFileId);
     }
 
     public void update(Integer diaryPrgrsRt, String diaryNm, String drctnMttr,

@@ -574,7 +574,7 @@
         }
       }
     },
-    "/api/v1/schedules/{id}": {
+    "/api/v1/schedules/{schdlSn}": {
       "get": {
         "tags": [
           "Schedule"
@@ -584,11 +584,12 @@
         "operationId": "getSchedule",
         "parameters": [
           {
-            "name": "id",
+            "name": "schdlSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -614,11 +615,12 @@
         "operationId": "updateSchedule",
         "parameters": [
           {
-            "name": "id",
+            "name": "schdlSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -654,11 +656,12 @@
         "operationId": "deleteSchedule",
         "parameters": [
           {
-            "name": "id",
+            "name": "schdlSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5606,7 +5609,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -16333,10 +16336,9 @@
       "ScheduleDto": {
         "type": "object",
         "properties": {
-          "schdlId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "schdlSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "schdlSeCd": {
             "type": "string",
@@ -18798,7 +18800,7 @@
           }
         }
       },
-      "ApiResponseString": {
+      "ApiResponseLong": {
         "type": "object",
         "properties": {
           "success": {
@@ -18815,7 +18817,8 @@
             "type": "string"
           },
           "data": {
-            "type": "string"
+            "type": "integer",
+            "format": "int64"
           },
           "timestamp": {
             "type": "string",
@@ -18884,6 +18887,37 @@
             "type": "string",
             "format": "date-time",
             "description": "등록 일시"
+          }
+        }
+      },
+      "ApiResponseString": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
           }
         }
       },
@@ -19000,38 +19034,6 @@
           "rcverId",
           "recptnSe"
         ]
-      },
-      "ApiResponseLong": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
-          }
-        }
       },
       "SentMailDto": {
         "type": "object",

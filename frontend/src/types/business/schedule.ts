@@ -1,5 +1,5 @@
 interface Schedule {
-  schdlId: string;
+  schdlSn: number;
   schdlSeCd: string; // 1 (부서) 2 (개인)
   schdlDeptId?: string;
   schdlKndCd?: string;

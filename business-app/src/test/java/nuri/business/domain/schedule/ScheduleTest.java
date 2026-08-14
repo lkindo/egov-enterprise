@@ -18,10 +18,10 @@ class ScheduleTest {
 
         // 2. 전체 인자 생성자 및 기본 Getter/Setter 검증
         Schedule schdl2 = new Schedule(
-                "S1", "Cd1", "Name", "Content", "Rep1", "20260501", "20260505",
+                1L, "Cd1", "Name", "Content", "Rep1", "20260501", "20260505",
                 "127.0.0.1", "Pic1", "Atch1", "Dept1", "Knd1", "Place", "Imprt1"
         );
-        assertEquals("S1", schdl2.getSchdlId());
+        assertEquals(1L, schdl2.getSchdlSn());
         assertEquals("Cd1", schdl2.getSchdlSeCd());
         assertEquals("Name", schdl2.getSchdlNm());
         assertEquals("Content", schdl2.getSchdlCn());
@@ -42,14 +42,14 @@ class ScheduleTest {
 
         // 3. SuperBuilder 검증 및 Legacy Alias 검증
         Schedule schdl3 = Schedule.builder()
-                .schdlId("S3")
+                .schdlSn(3L)
                 .schdlNm("Name3")
                 .schdlCn("Content3")
                 .schdlBgngYmd("20260510")
                 .schdlEndYmd("20260515")
                 .build();
         // 표준 필드 검증
-        assertEquals("S3", schdl3.getSchdlId());
+        assertEquals(3L, schdl3.getSchdlSn());
         assertEquals("Name3", schdl3.getSchdlNm());
         assertEquals("Content3", schdl3.getSchdlCn());
         assertEquals("20260510", schdl3.getSchdlBgngYmd());

@@ -86,7 +86,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/schedules/{id}": {
+    "/api/v1/schedules/{schdlSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4497,7 +4497,8 @@ export interface components {
             crtDt?: string;
         };
         ScheduleDto: {
-            schdlId?: string;
+            /** Format: int64 */
+            schdlSn?: number;
             schdlSeCd?: string;
             schdlNm: string;
             schdlCn?: string;
@@ -5615,13 +5616,14 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponseString: {
+        ApiResponseLong: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: string;
+            /** Format: int64 */
+            data?: number;
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
@@ -5652,6 +5654,17 @@ export interface components {
              * @description 등록 일시
              */
             crtDt?: string;
+        };
+        ApiResponseString: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: string;
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 쪽지 정보 */
         NoteDto: {
@@ -5702,18 +5715,6 @@ export interface components {
             rcverNm?: string;
             /** @description 수신 구분 (1: 수신, 2: 참조) */
             recptnSe: string;
-        };
-        ApiResponseLong: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            /** Format: int64 */
-            data?: number;
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description Description */
         SentMailDto: {
@@ -8589,7 +8590,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                schdlSn: number;
             };
             cookie?: never;
         };
@@ -8611,7 +8612,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                schdlSn: number;
             };
             cookie?: never;
         };
@@ -8637,7 +8638,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                schdlSn: number;
             };
             cookie?: never;
         };
@@ -11911,7 +11912,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };

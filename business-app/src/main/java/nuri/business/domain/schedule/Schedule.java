@@ -21,8 +21,8 @@ public class Schedule extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(length = 20)
-    private String schdlId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long schdlSn;
 
     @Column(length = 12)
     private String schdlSeCd;
@@ -66,10 +66,10 @@ public class Schedule extends BaseEntity implements Serializable {
      * 일정 생성 정적 팩토리(빌더 진입점). {@code Schedule.builder()...build()} 호출부는 그대로 동작한다.
      */
     @Builder
-    public static Schedule create(String schdlId, String schdlSeCd, String schdlNm, String schdlCn, String reptSeCd,
+    public static Schedule create(Long schdlSn, String schdlSeCd, String schdlNm, String schdlCn, String reptSeCd,
             String schdlBgngYmd, String schdlEndYmd, String schdlIpAddr, String schdlPicId, String atchFileId,
             String schdlDeptId, String schdlKndCd, String schdlPlcNm, String schdlImprtCd) {
-        return new Schedule(schdlId, schdlSeCd, schdlNm, schdlCn, reptSeCd, schdlBgngYmd, schdlEndYmd, schdlIpAddr,
+        return new Schedule(schdlSn, schdlSeCd, schdlNm, schdlCn, reptSeCd, schdlBgngYmd, schdlEndYmd, schdlIpAddr,
                 schdlPicId, atchFileId, schdlDeptId, schdlKndCd, schdlPlcNm, schdlImprtCd);
     }
 

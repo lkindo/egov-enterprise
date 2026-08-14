@@ -97,6 +97,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] RewardManage — V2_61에서 rwrd_id 문자열 기술키를 rwrd_sn
             //   BIGINT IDENTITY로 전환했다. 실측: tb_rward_manage 0행, inbound FK 0,
             //   첨부 outbound FK 1건. 프론트 Date.now() 수동 키 생성도 함께 제거했다.
+            // [2026-08-14 제거] Schedule — V2_62에서 schdl_id 문자열 기술키를 schdl_sn
+            //   BIGINT IDENTITY로 전환하고 tb_diary_info의 논리 참조도 숫자로 백필했다.
+            //   실측: 부모·자식 0행, 미해결 참조 0, 일정의 첨부 outbound FK 1건.
             "AdministCode", "Authority", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptManage", "EventInfo",
@@ -117,7 +120,7 @@ class PkGenerationStandardLinterTest {
             "LoginLog", "LoginPolicy", "Menu",
             "Note", "NoteRecptn", "NoteTrnsmit", "Notification",
             "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage",
-            "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo", "Schedule",
+            "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
             "Scrap", "SentMail", "SiteMap", "Sms", "SurveyArticle", "SurveyInfo", "SurveyQuestion",
             "SurveyRespondent", "SurveyResult", "SurveyTemplate", "SysLog", "SystemPolicy", "Template",
             "User", "UserAbsence", "UserAuthority", "WebLog", "WorkReport"
