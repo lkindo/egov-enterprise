@@ -99,6 +99,7 @@ function currentTableProps(): MockTableProps {
 }
 
 const SYSTEM_ROW = {
+  sysLogSn: 101,
   dmndId: 'SYS-001',
   srvcNm: 'AccountService',
   methodNm: 'findAccounts',
@@ -158,7 +159,7 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     clientHarness.setPage.mockReset();
   });
 
-  it('renders the SYS generated DTO fields and uses dmndId as the row key', () => {
+  it('renders the SYS generated DTO fields and uses sysLogSn as the row key', () => {
     clientHarness.queryData = pageOf(SYSTEM_ROW);
     render(<SystemLogsSystemClient />);
 
@@ -166,7 +167,7 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     for (const value of ['SYS-001', '20260813', 'AccountService', 'findAccounts', '12', 'SUCCESS']) {
       expect(table.getByText(value)).toBeInTheDocument();
     }
-    expect(currentTableProps().keyField).toBe('dmndId');
+    expect(currentTableProps().keyField).toBe('sysLogSn');
   });
 
   it('renders the LGN generated DTO fields and uses lgnSn as the row key', () => {

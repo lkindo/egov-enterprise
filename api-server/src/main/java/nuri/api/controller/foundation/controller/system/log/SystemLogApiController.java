@@ -37,10 +37,10 @@ public class SystemLogApiController {
     }
 
     @Operation(summary = "시스템 로그 상세 조회")
-    @GetMapping("/{requestId}")
+    @GetMapping("/{sysLogSn}")
     public ResponseEntity<ApiResponse<SysLogDto>> getSysLog(
-            @PathVariable("requestId") String requestId) throws Exception {
-        SysLogDto result = logManageService.selectSysLogDetail(SysLogDto.builder().dmndId(requestId.trim()).build());
+            @PathVariable("sysLogSn") Long sysLogSn) throws Exception {
+        SysLogDto result = logManageService.selectSysLogDetail(sysLogSn);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 }

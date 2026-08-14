@@ -17,6 +17,8 @@ import lombok.Setter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class SysLogDto {
+    /** 시스템 로그 내부 일련번호 */
+    private Long sysLogSn;
     /** 요청 ID */
     @Size(max = 20)
     private String dmndId;

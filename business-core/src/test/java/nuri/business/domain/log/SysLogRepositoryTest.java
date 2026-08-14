@@ -47,12 +47,14 @@ class SysLogRepositoryTest extends PersistenceTestSupport {
                 .mthdNm("testMethod")
                 .build();
         sysLogRepository.save(log);
+        Long sysLogSn = log.getSysLogSn();
 
         // when
         Page<SysLog> result = sysLogRepository.searchSysLogs("생성", "20240101", "20240131", PageRequest.of(0, 10));
 
         // then
         assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getSysLogSn()).isEqualTo(sysLogSn);
         assertThat(result.getContent().get(0).getDmndId()).isEqualTo("REQ_001");
     }
 
@@ -65,6 +67,7 @@ class SysLogRepositoryTest extends PersistenceTestSupport {
                 .ocrnYmd("20200101")
                 .build();
         sysLogRepository.save(oldLog);
+        Long sysLogSn = oldLog.getSysLogSn();
         entityManager.flush();
         entityManager.clear();
 
@@ -74,6 +77,6 @@ class SysLogRepositoryTest extends PersistenceTestSupport {
         entityManager.clear();
 
         // then
-        assertThat(sysLogRepository.findById("REQ_OLD")).isEmpty();
+        assertThat(sysLogRepository.findById(sysLogSn)).isEmpty();
     }
 }

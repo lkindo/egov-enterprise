@@ -6,7 +6,8 @@
 
 -- [E2E/데모] 시스템 감사 로그 대표 시드 (/admin/system/audit 로그 스트림 표시용)
 -- Flyway-off 부트에서는 tb_sys_log가 비어 감사 화면이 공백이므로, 풀시드(Flyway-enabled) 부트 시 대표 로그를 적재한다.
--- 멱등: PK(dmnd_id) 충돌 시 무시. crt_dt는 부트 시점 기준 최근 시각으로 채워 날짜가 항상 노출되게 한다.
+-- 멱등: UNIQUE 업무키(dmnd_id) 충돌 시 무시. 내부 PK(sys_log_sn)는 DB IDENTITY가 부여한다.
+-- crt_dt는 부트 시점 기준 최근 시각으로 채워 날짜가 항상 노출되게 한다.
 INSERT INTO tb_sys_log
   (dmnd_id, dmnd_user_id, dmnd_user_ip_addr, mthd_nm, srvc_nm, prcs_se_cd, rspns_cd, err_se_cd, err_cd, prcs_tm, crt_dt, ocrn_ymd, frst_rgtr_id)
 VALUES

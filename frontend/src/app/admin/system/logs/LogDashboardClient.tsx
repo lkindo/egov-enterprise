@@ -30,7 +30,7 @@ const logCategories = [
 type LogCategoryId = (typeof logCategories)[number]['id'];
 
 type IntegratedLogRow =
-  Partial<Pick<SysLog, 'dmndId' | 'srvcNm' | 'methodNm' | 'dmndUserId' | 'rqesterIp' | 'ocrnYmd'>>
+  Partial<Pick<SysLog, 'sysLogSn' | 'dmndId' | 'srvcNm' | 'methodNm' | 'dmndUserId' | 'rqesterIp' | 'ocrnYmd'>>
   & Partial<Pick<LoginLog, 'lgnSn' | 'loginId' | 'loginIp' | 'loginMthd' | 'creatDt'>>
   & Partial<Pick<UserLog, 'ocrnYmd' | 'dmndUserId' | 'userNm' | 'srvcNm' | 'mthdNm'>>
   & Partial<Pick<WebLog, 'dmndId' | 'url' | 'dmndUserId' | 'dmndUserIpAddr' | 'occrYmd'>>

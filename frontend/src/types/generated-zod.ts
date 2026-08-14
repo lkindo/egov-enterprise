@@ -2928,6 +2928,7 @@ export type PageResponseSysLogDto = z.infer<typeof PageResponseSysLogDtoSchema>;
 // SysLogDto Schema
 // ==========================================================================
 export const SysLogDtoSchema = z.object({
+  sysLogSn: z.number().optional(),
   dmndId: z.string().min(0).max(20).optional(),
   srvcNm: z.string().min(0).max(100).optional(),
   methodNm: z.string().optional(),

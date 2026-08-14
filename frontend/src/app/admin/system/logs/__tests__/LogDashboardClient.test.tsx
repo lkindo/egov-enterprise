@@ -132,6 +132,7 @@ function pageOf<T>(row: T): PageResponse<T> {
 }
 
 const SYSTEM_ROW = {
+  sysLogSn: 101,
   dmndId: 'SYS-001',
   srvcNm: 'AccountService',
   methodNm: 'findAccounts',

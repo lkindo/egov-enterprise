@@ -14747,7 +14747,7 @@
         }
       }
     },
-    "/api/v1/admin/system/logs/system/{requestId}": {
+    "/api/v1/admin/system/logs/system/{sysLogSn}": {
       "get": {
         "tags": [
           "SystemLog"
@@ -14756,11 +14756,12 @@
         "operationId": "getSysLog",
         "parameters": [
           {
-            "name": "requestId",
+            "name": "sysLogSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -23849,6 +23850,10 @@
       "SysLogDto": {
         "type": "object",
         "properties": {
+          "sysLogSn": {
+            "type": "integer",
+            "format": "int64"
+          },
           "dmndId": {
             "type": "string",
             "maxLength": 20,

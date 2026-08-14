@@ -139,6 +139,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] LoginLog — V2_73에서 log_id 문자열 기술 PK를 lgn_sn BIGINT
             //   IDENTITY로 전환했다. 실측: tb_login_log 0행, inbound/outbound FK 0.
             //   비동기 기록·관리 API·프론트 계약을 숫자 일련번호로 이관하고 수동 ID 생성을 제거했다.
+            // [2026-08-14 제거] SysLog — V2_74에서 요청 상관관계 dmnd_id는 UNIQUE 업무키로
+            //   보존하고 sys_log_sn BIGINT IDENTITY를 내부 PK로 도입했다. 실측 12행은 모두 데모
+            //   시드이며 inbound/outbound FK 0. 관리·감사 API와 프론트 행 식별자를 함께 이관했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "DeptManage", "EventInfo",
@@ -158,7 +161,7 @@ class PkGenerationStandardLinterTest {
             "GroupManage", "InformalSanction", "InstitutionCode",
             "LoginPolicy", "Menu", "Notification", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
-            "SiteMap", "Sms", "SysLog", "SystemPolicy", "Template",
+            "SiteMap", "Sms", "SystemPolicy", "Template",
             "User", "UserAbsence", "UserAuthority", "WebLog"
     ));
 

@@ -15,6 +15,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -55,11 +56,13 @@ class SystemLogApiControllerTest {
     @DisplayName("시스템 로그 상세 조회 성공")
     void testGetSysLog() throws Exception {
         SysLogDto dto = new SysLogDto();
+        dto.setSysLogSn(101L);
         dto.setDmndId("REQ_001");
-        when(logManageService.selectSysLogDetail(any(SysLogDto.class))).thenReturn(dto);
+        when(logManageService.selectSysLogDetail(anyLong())).thenReturn(dto);
 
-        mockMvc.perform(get("/api/v1/admin/system/logs/system/REQ_001"))
+        mockMvc.perform(get("/api/v1/admin/system/logs/system/101"))
                 .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.sysLogSn").value(101))
                 .andExpect(jsonPath("$.data.dmndId").value("REQ_001"));
     }
 }

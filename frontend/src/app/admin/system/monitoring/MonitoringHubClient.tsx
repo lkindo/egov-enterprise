@@ -106,6 +106,7 @@ const HARNESS_SAMPLE_TESTS = [
 
 /** CSV 반출 컬럼 매핑 — 백엔드 DTO(SysLogDto / LoginLog / CommentDetail)의 실제 필드명을 따른다. */
 const SYS_LOG_EXPORT_HEADERS = [
+  { label: '시스템 로그 일련번호', key: 'sysLogSn' },
   { label: '요청ID', key: 'dmndId' },
   { label: '서비스명', key: 'srvcNm' },
   { label: '메서드', key: 'methodNm' },
@@ -310,8 +311,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       return HARNESS_SAMPLE_TESTS.find(t => t.id === idStr) || null;
     }
     if (activeTab === 'COMMENTS') return comments.find(c => c.ansSn === selectedItemId);
-    if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.dmndId) === idStr);
-    if (activeTab === 'SYSTEM') return systemLogs.find(l => String(l.dmndId) === idStr);
+    if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.sysLogSn) === idStr);
+    if (activeTab === 'SYSTEM') return systemLogs.find(l => String(l.sysLogSn) === idStr);
     if (activeTab === 'LOGIN') return loginLogs.find(l => String(l.lgnSn) === idStr);
     return null;
   }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs, comments]);
@@ -323,16 +324,16 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
             "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === log.dmndId ? "bg-white/10 text-white" : "bg-primary/5 text-primary"
+            selectedItemId === log.sysLogSn ? "bg-white/10 text-white" : "bg-primary/5 text-primary"
           )}>
             <ShieldAlert size={20} />
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.dmndId ? "text-white" : "text-primary")}>{log.srvcNm}</span>
+                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.sysLogSn ? "text-white" : "text-primary")}>{log.srvcNm}</span>
                 <span className="text-xs font-bold opacity-20">{log.ocrnYmd?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}</span>
             </div>
-            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.dmndId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
+            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.sysLogSn ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
           </div>
         </div>
       )
@@ -346,16 +347,16 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
             "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === log.dmndId ? "bg-white/10 text-white" : "bg-emerald-50 text-emerald-600"
+            selectedItemId === log.sysLogSn ? "bg-white/10 text-white" : "bg-emerald-50 text-emerald-600"
           )}>
             <Terminal size={20} />
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.dmndId ? "text-white" : "text-emerald-700")}>{log.srvcNm}</span>
+                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.sysLogSn ? "text-white" : "text-emerald-700")}>{log.srvcNm}</span>
                 <span className="text-xs font-bold opacity-20">{log.ocrnYmd?.replace(/(\d{4})(\d{2})(\d{2})/, '$1-$2-$3')}</span>
             </div>
-            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.dmndId ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
+            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.sysLogSn ? "text-white" : "text-foreground")}>{log.methodNm}</h4>
           </div>
         </div>
       )
@@ -635,8 +636,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               loading: isSystemLoading,
               error: systemLogError,
               refetch: () => { void refetchSystemLogs(); },
-              keyField: 'dmndId',
-              rowId: (item: any) => item.dmndId,
+              keyField: 'sysLogSn',
+              rowId: (item: any) => item.sysLogSn,
               totalPage: systemLogData?.totalPage || 1,
               totalCount: systemLogData?.total,
               searchable: true,
@@ -688,8 +689,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               loading: isAuditLoading,
               error: auditError,
               refetch: () => { void refetchAudit(); },
-              keyField: 'dmndId',
-              rowId: (item: any) => item.dmndId,
+              keyField: 'sysLogSn',
+              rowId: (item: any) => item.sysLogSn,
               totalPage: auditData?.totalPage || 1,
               totalCount: auditData?.total,
               searchable: true,

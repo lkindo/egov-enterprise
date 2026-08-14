@@ -14,6 +14,7 @@ import { usePageParam } from '../use-log-url-state';
 const PAGE_SIZE = 10;
 
 const EXPORT_HEADERS = [
+    { label: '시스템 로그 일련번호', key: 'sysLogSn' },
     { label: '요청ID', key: 'dmndId' },
     { label: '발생일자', key: 'ocrnYmd' },
     { label: '서비스설명', key: 'srvcNm' },
@@ -138,7 +139,7 @@ const SystemLogsSystemClient = () => {
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
-                keyField="dmndId"
+                keyField="sysLogSn"
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,

@@ -4000,7 +4000,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/logs/system/{requestId}": {
+    "/api/v1/admin/system/logs/system/{sysLogSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -7657,6 +7657,8 @@ export interface components {
             totalPage?: number;
         };
         SysLogDto: {
+            /** Format: int64 */
+            sysLogSn?: number;
             dmndId?: string;
             srvcNm?: string;
             methodNm?: string;
@@ -16779,7 +16781,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                requestId: string;
+                sysLogSn: number;
             };
             cookie?: never;
         };
