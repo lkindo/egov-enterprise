@@ -5332,7 +5332,8 @@ export interface components {
             mdfcnDt?: string;
             useYn: string;
             cmntyId?: string;
-            blogId?: string;
+            /** Format: int64 */
+            blogSn?: number;
             blogYn?: string;
             ansYn?: string;
             stsfdgYn?: string;
@@ -6843,8 +6844,11 @@ export interface components {
             atchFileId?: string;
             /** @description 비밀글 여부 */
             scrtYn?: string;
-            /** @description 블로그 ID */
-            blogId?: string;
+            /**
+             * Format: int64
+             * @description 블로그 일련번호
+             */
+            blogSn?: number;
             /**
              * Format: date-time
              * @description 행사일

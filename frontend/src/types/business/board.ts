@@ -16,7 +16,7 @@ export interface BoardPost {
   pswd?: string;
   atchFileId?: string;
   scrtYn?: string;
-  blogId?: string;
+  blogSn?: number;
   evntDt?: string;
   qnaSttsCd?: string;
   qnaCatCd?: string;

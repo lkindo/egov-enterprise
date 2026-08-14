@@ -127,7 +127,10 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] Board — V2_69에서 게시물 pst_id 문자열 기술 PK와 댓글·스크랩·
             //   만족도·통계·답글 참조 폐포를 pst_sn BIGINT IDENTITY로 전환했다. 게시판 업무키
             //   BoardMaster.bbsId는 수동 식별자로 보존하고, 루트 글의 up_pst_id='0'은 NULL로 정규화했다.
-            "AdministCode", "Authority", "Blog",
+            // [2026-08-14 제거] Blog — V2_70에서 blog_id 문자열 기술 PK와 멤버십 복합키/FK,
+            //   게시물·게시판 논리 참조를 blog_sn BIGINT로 백필했다. 실측: 관련 4개 테이블 모두
+            //   블로그 참조 0행·고아 0. 구형 전체 그래프 주입과 JPA·API·프론트 숫자 계약을 검증했다.
+            "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptManage", "EventInfo",
             // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).

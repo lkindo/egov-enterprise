@@ -97,8 +97,8 @@ public class Board extends BaseEntity implements Serializable {
     @Column(length = 1)
     private String scrtYn;
 
-    @Column(length = 20)
-    private String blogId;
+    @Column(name = "blog_sn")
+    private Long blogSn;
 
     private java.time.LocalDateTime evntDt;
 
@@ -129,7 +129,7 @@ public class Board extends BaseEntity implements Serializable {
     private Board(Long pstSn, String bbsId, Long ansSn, String pstTtl, String pstCn, Long upPstSn,
             Long sortOrdr, String ttlBoldYn, Integer ansLv, Integer inqCnt, String useYn,
             String pstBgngYmd, String pstEndYmd, String userId, String userNm, String pswd,
-            String atchFileId, String scrtYn, String blogId, java.time.LocalDateTime evntDt,
+            String atchFileId, String scrtYn, Long blogSn, java.time.LocalDateTime evntDt,
             String qnaSttsCd, String qnaCatCd, Integer likeCnt, String ansYn, String ntcYn,
             Integer cmntCnt, Integer fileCnt) {
         this.pstSn = pstSn;
@@ -151,7 +151,7 @@ public class Board extends BaseEntity implements Serializable {
         this.pswd = pswd;
         this.atchFileId = atchFileId;
         this.scrtYn = scrtYn;
-        this.blogId = blogId;
+        this.blogSn = blogSn;
         this.evntDt = evntDt;
         this.qnaSttsCd = qnaSttsCd != null ? qnaSttsCd : "OPEN";
         this.qnaCatCd = qnaCatCd;
@@ -169,11 +169,11 @@ public class Board extends BaseEntity implements Serializable {
     public static Board create(Long pstSn, String bbsId, Long ansSn, String pstTtl, String pstCn, Long upPstSn,
             Long sortOrdr, String ttlBoldYn, Integer ansLv, Integer inqCnt, String useYn,
             String pstBgngYmd, String pstEndYmd, String userId, String userNm, String pswd,
-            String atchFileId, String scrtYn, String blogId, java.time.LocalDateTime evntDt,
+            String atchFileId, String scrtYn, Long blogSn, java.time.LocalDateTime evntDt,
             String qnaSttsCd, String qnaCatCd, Integer likeCnt, String ansYn, String ntcYn,
             Integer cmntCnt, Integer fileCnt) {
         return new Board(pstSn, bbsId, ansSn, pstTtl, pstCn, upPstSn, sortOrdr, ttlBoldYn, ansLv, inqCnt, useYn,
-                pstBgngYmd, pstEndYmd, userId, userNm, pswd, atchFileId, scrtYn, blogId, evntDt,
+                pstBgngYmd, pstEndYmd, userId, userNm, pswd, atchFileId, scrtYn, blogSn, evntDt,
                 qnaSttsCd, qnaCatCd, likeCnt, ansYn, ntcYn, cmntCnt, fileCnt);
     }
 

@@ -15,8 +15,8 @@ import org.mapstruct.ReportingPolicy;
  * <ul>
  *   <li>{@link Board} → commentCnt 는 엔티티 cmntCnt 에서 매핑, frstRegisterNm 은 미설정(ignore).</li>
  *   <li>{@link BoardSearchResult} → userId 는 frstRgtrId 에서 매핑, 그 외 조회결과에 없는 필드
- *       (pstCn/sortOrdr/pswd/blogId/fileCnt/frstRegisterNm)는 미설정(ignore).</li>
- *   <li>{@link BoardDetailResult} → 조회결과에 없는 필드(blogId/fileCnt/frstRegisterNm)는 미설정(ignore).</li>
+ *       (pstCn/sortOrdr/pswd/blogSn/fileCnt/frstRegisterNm)는 미설정(ignore).</li>
+ *   <li>{@link BoardDetailResult} → 조회결과에 없는 필드(blogSn/fileCnt/frstRegisterNm)는 미설정(ignore).</li>
  * </ul>
  */
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
@@ -30,12 +30,12 @@ public interface BoardMapper {
     @Mapping(target = "pstCn", ignore = true)
     @Mapping(target = "sortOrdr", ignore = true)
     @Mapping(target = "pswd", ignore = true)
-    @Mapping(target = "blogId", ignore = true)
+    @Mapping(target = "blogSn", ignore = true)
     @Mapping(target = "fileCnt", ignore = true)
     @Mapping(target = "frstRegisterNm", ignore = true)
     BoardDto toDto(BoardSearchResult result);
 
-    @Mapping(target = "blogId", ignore = true)
+    @Mapping(target = "blogSn", ignore = true)
     @Mapping(target = "fileCnt", ignore = true)
     @Mapping(target = "frstRegisterNm", ignore = true)
     BoardDto toDto(BoardDetailResult detail);

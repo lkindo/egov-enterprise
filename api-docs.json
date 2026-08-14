@@ -18238,10 +18238,9 @@
             "maxLength": 20,
             "minLength": 0
           },
-          "blogId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "blogSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "blogYn": {
             "type": "string",
@@ -21828,11 +21827,10 @@
             "maxLength": 1,
             "minLength": 0
           },
-          "blogId": {
-            "type": "string",
-            "description": "블로그 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "blogSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "블로그 일련번호"
           },
           "evntDt": {
             "type": "string",

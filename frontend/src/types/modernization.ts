@@ -31,7 +31,7 @@ export interface BoardMasterDto {
   mdfcnDt?: string;
   useYn?: string;
   cmntyId?: string;
-  blogId?: string;
+  blogSn?: number;
   blogYn?: string;
   ansYn?: string;
   stsfdgYn?: string;

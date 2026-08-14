@@ -45,8 +45,7 @@ public class BoardMasterDto {
     private String useYn;
     @Size(max = 20)
     private String cmntyId;
-    @Size(max = 20)
-    private String blogId;
+    private Long blogSn;
     @Size(max = 1)
     private String blogYn;
     private String ansYn;

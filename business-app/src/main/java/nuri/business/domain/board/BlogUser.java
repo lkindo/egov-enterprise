@@ -26,8 +26,8 @@ import java.io.Serializable;
 public class BlogUser extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String blogId;
+    @Column(name = "blog_sn")
+    private Long blogSn;
 
     @Id
     @Column(length = 20)
@@ -48,9 +48,9 @@ public class BlogUser extends BaseEntity {
     @Column(length = 1)
     private String useYn;
 
-    private BlogUser(String blogId, String userId, String mngrYn, String joinYmd,
+    private BlogUser(Long blogSn, String userId, String mngrYn, String joinYmd,
             String whdwlYmd, String mbrSttsCd, String useYn) {
-        this.blogId = blogId;
+        this.blogSn = blogSn;
         this.userId = userId;
         this.mngrYn = mngrYn;
         this.joinYmd = joinYmd;
@@ -60,9 +60,9 @@ public class BlogUser extends BaseEntity {
     }
 
     @Builder
-    public static BlogUser create(String blogId, String userId, String mngrYn, String joinYmd,
+    public static BlogUser create(Long blogSn, String userId, String mngrYn, String joinYmd,
             String whdwlYmd, String mbrSttsCd, String useYn) {
-        return new BlogUser(blogId, userId, mngrYn, joinYmd, whdwlYmd, mbrSttsCd, useYn);
+        return new BlogUser(blogSn, userId, mngrYn, joinYmd, whdwlYmd, mbrSttsCd, useYn);
     }
 }
 
@@ -72,6 +72,6 @@ public class BlogUser extends BaseEntity {
 @Getter
 @SuperBuilder
 class BlogUserId implements Serializable {
-    private String blogId;
+    private Long blogSn;
     private String userId;
 }

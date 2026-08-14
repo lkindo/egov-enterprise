@@ -78,9 +78,8 @@ public record BoardDto(
     @Size(max = 1)
     String scrtYn,
 
-    @Schema(description = "블로그 ID")
-    @Size(max = 20)
-    String blogId,
+    @Schema(description = "블로그 일련번호")
+    Long blogSn,
 
     @Schema(description = "행사일")
     LocalDateTime evntDt,

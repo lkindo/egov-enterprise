@@ -82,7 +82,7 @@ public class BoardMasterService extends BaseAbstractService {
                 .atchPsbltyFileSz(dto.getAtchPsbltyFileSz())
                 .tmpltId(dto.getTmpltId())
                 .useYn(dto.getUseYn())
-                .blogId(dto.getBlogId())
+                .blogSn(dto.getBlogSn())
                 .blogYn(dto.getBlogYn())
                 .cmntyId(dto.getCmntyId())
                 .ansYn(dto.getAnsYn())
@@ -212,8 +212,8 @@ public class BoardMasterService extends BaseAbstractService {
         return blogRepository.findAll(pageable).map(blogMapper::toDto);
     }
 
-    public BlogDto getBlog(@NonNull String blogId) {
-        return blogRepository.findById(blogId)
+    public BlogDto getBlog(@NonNull Long blogSn) {
+        return blogRepository.findById(blogSn)
                 .map(blogMapper::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
     }
@@ -222,7 +222,6 @@ public class BoardMasterService extends BaseAbstractService {
     public void createBlog(String userId, BlogDto dto) {
         // frstRgtrId 는 표준 Auditing(@CreatedBy)이 persist 시 로그인 사용자로 설정하므로 빌더에서 제외
         Blog entity = Blog.builder()
-                .blogId(dto.getBlogId())
                 .blogTtl(dto.getBlogTtl())
                 .blogIntroCn(dto.getBlogIntroCn())
                 .useYn("Y")
@@ -231,10 +230,10 @@ public class BoardMasterService extends BaseAbstractService {
     }
 
     @Transactional
-    public void joinBlog(String blogId, String userId, String mngrYn) {
+    public void joinBlog(Long blogSn, String userId, String mngrYn) {
         // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
         BlogUser entity = BlogUser.builder()
-                .blogId(blogId)
+                .blogSn(blogSn)
                 .userId(userId)
                 .mngrYn(mngrYn)
                 .useYn("Y")
