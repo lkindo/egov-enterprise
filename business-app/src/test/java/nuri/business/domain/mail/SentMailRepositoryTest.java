@@ -43,13 +43,11 @@ class SentMailRepositoryTest {
     @BeforeEach
     void setUp() {
         SentMail mail1 = SentMail.builder()
-                .msgId("MAIL_001")
                 .emlTtl("Test Subject 1")
                 .emlCn("Test Content 1")
                 .sndptyNm("Sender 1")
                 .build();
         SentMail mail2 = SentMail.builder()
-                .msgId("MAIL_002")
                 .emlTtl("Another Mail")
                 .emlCn("Special Message")
                 .sndptyNm("Manager")

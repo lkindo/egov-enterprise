@@ -41,8 +41,8 @@ public class MailAsyncProcessor {
         maxAttempts = 3,
         backoff = @org.springframework.retry.annotation.Backoff(delay = 2000)
     )
-    public void processSending(String mssageId, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
-        log.info("Async mail processing started for Message ID: {}", mssageId);
+    public void processSending(Long emlDsptchSn, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
+        log.info("Async mail processing started for dispatch serial number: {}", emlDsptchSn);
 
         try {
             emailSender.send(sj, emailCn, dsptchPerson, recptnPerson);
@@ -51,19 +51,19 @@ public class MailAsyncProcessor {
             throw new RuntimeException("Mail delivery failed, triggering retry", e);
         }
 
-        self.markResult(mssageId, "S"); // Success
+        self.markResult(emlDsptchSn, "S"); // Success
         meterRegistry.counter("mail.dispatch.total", "result", "success").increment();
-        log.info("Mail sent successfully for ID: {}", mssageId);
+        log.info("Mail sent successfully for dispatch serial number: {}", emlDsptchSn);
     }
 
     /**
      * 모든 재시도 실패 시 호출되는 복구 메서드
      */
     @org.springframework.retry.annotation.Recover
-    public void recoverSending(Exception e, String mssageId, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
-        log.error("All retry attempts failed for mail ID: {}, errorType: {}",
-                mssageId, e.getClass().getSimpleName());
-        self.markResult(mssageId, "F"); // Final Failure
+    public void recoverSending(Exception e, Long emlDsptchSn, String sj, String emailCn, String dsptchPerson, String recptnPerson) {
+        log.error("All retry attempts failed for mail dispatch serial number: {}, errorType: {}",
+                emlDsptchSn, e.getClass().getSimpleName());
+        self.markResult(emlDsptchSn, "F"); // Final Failure
         meterRegistry.counter("mail.dispatch.total", "result", "failure").increment();
     }
 
@@ -71,7 +71,7 @@ public class MailAsyncProcessor {
      * 발송 결과 기록 — 짧은 트랜잭션으로 즉시 커밋(외부 IO 와 분리).
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void markResult(String mssageId, String resultCode) {
-        sentMailRepository.findById(mssageId).ifPresent(m -> m.updateResult(resultCode));
+    public void markResult(Long emlDsptchSn, String resultCode) {
+        sentMailRepository.findById(emlDsptchSn).ifPresent(m -> m.updateResult(resultCode));
     }
 }

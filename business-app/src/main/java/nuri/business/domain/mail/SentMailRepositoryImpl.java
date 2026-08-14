@@ -22,7 +22,7 @@ public class SentMailRepositoryImpl implements SentMailRepositoryCustom {
         List<SentMail> content = queryFactory
                 .selectFrom(sentMail)
                 .where(senderEq(senderLoginId), searchExpression(searchCondition, searchKeyword))
-                .orderBy(sentMail.msgId.desc())
+                .orderBy(sentMail.emlDsptchSn.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();

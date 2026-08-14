@@ -18,8 +18,8 @@ import lombok.NoArgsConstructor;
 public class SentMail extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String msgId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long emlDsptchSn;
 
     @Column(length = 100, nullable = false)
     private String emlTtl;
@@ -48,9 +48,9 @@ public class SentMail extends BaseEntity {
 
 
 
-    private SentMail(String msgId, String emlTtl, String emlCn, String sndptyNm,
+    private SentMail(Long emlDsptchSn, String emlTtl, String emlCn, String sndptyNm,
             String rcvrNm, String dsptchRsltCd, String atchFileId) {
-        this.msgId = msgId;
+        this.emlDsptchSn = emlDsptchSn;
         this.emlTtl = emlTtl;
         this.emlCn = emlCn;
         this.sndptyNm = sndptyNm;
@@ -60,9 +60,9 @@ public class SentMail extends BaseEntity {
     }
 
     @Builder
-    public static SentMail create(String msgId, String emlTtl, String emlCn, String sndptyNm,
+    public static SentMail create(Long emlDsptchSn, String emlTtl, String emlCn, String sndptyNm,
             String rcvrNm, String dsptchRsltCd, String atchFileId) {
-        return new SentMail(msgId, emlTtl, emlCn, sndptyNm, rcvrNm, dsptchRsltCd, atchFileId);
+        return new SentMail(emlDsptchSn, emlTtl, emlCn, sndptyNm, rcvrNm, dsptchRsltCd, atchFileId);
     }
 
     @jakarta.persistence.PrePersist

@@ -15,8 +15,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -38,14 +36,14 @@ class SchemaMigrationCompatibilityTest {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    private String testMssageId;
+    private Long testEmlDsptchSn;
     private boolean columnAdded = false;
 
     @AfterEach
     void tearDown() {
         // 1. 임시 테스트 데이터 소거
-        if (testMssageId != null) {
-            sentMailRepository.deleteById(testMssageId);
+        if (testEmlDsptchSn != null) {
+            sentMailRepository.deleteById(testEmlDsptchSn);
         }
 
         // 2. Expand Phase 시뮬레이션용 임시 컬럼 원복 (Contract)
@@ -70,9 +68,7 @@ class SchemaMigrationCompatibilityTest {
 
         // Given: 2. 구버전 서버 엔티티(V1) 상태의 모의 데이터 준비
         // 이 엔티티는 신규 추가된 'temp_migration_col' 컬럼을 전혀 매핑하지 않고 모르는 상태임 (구버전 인스턴스)
-        testMssageId = "MSG_M_" + UUID.randomUUID().toString().substring(0, 8);
         SentMail legacyMail = SentMail.builder()
-                .msgId(testMssageId)
                 .dsptchRsltCd("S")
                 .emlTtl("무중단 배포 호환성 테스트")
                 .emlCn("구버전 서버에서 신버전 DB 스키마로 데이터 입출력을 테스트합니다.")
@@ -83,11 +79,12 @@ class SchemaMigrationCompatibilityTest {
         // When & Then: 3. 구버전 엔티티를 통한 쓰기(Insert/Save)가 예외 없이 완벽하게 수행되는지 검증
         assertDoesNotThrow(() -> {
             sentMailRepository.saveAndFlush(legacyMail);
+            testEmlDsptchSn = legacyMail.getEmlDsptchSn();
         }, "신규 컬럼이 존재하는 DB 스키마 환경에서 구버전 엔티티의 JPA 저장은 절대로 뻗지 않아야 합니다.");
 
         // When & Then: 4. 구버전 엔티티를 통한 조회(Select/Find)가 널 포인터나 타입 매치 예외 없이 복원되는지 검증
         assertDoesNotThrow(() -> {
-            SentMail retrievedMail = sentMailRepository.findById(testMssageId)
+            SentMail retrievedMail = sentMailRepository.findById(testEmlDsptchSn)
                     .orElseThrow(() -> new AssertionError("저장된 메일 데이터를 찾을 수 없습니다."));
             
             // 기존 매핑된 속성들의 완벽한 복원 여부 단언
@@ -97,9 +94,9 @@ class SchemaMigrationCompatibilityTest {
 
         // Then: 5. 신규 컬럼에도 정상적으로 DEFAULT 설정 혹은 NULL 허용 기본값이 인가되었는지 원시 JDBC로 대조 확인
         String dbValue = jdbcTemplate.queryForObject(
-                "SELECT temp_migration_col FROM tb_email_dsptch_manage WHERE msg_id = ?",
+                "SELECT temp_migration_col FROM tb_email_dsptch_manage WHERE eml_dsptch_sn = ?",
                 String.class,
-                testMssageId
+                testEmlDsptchSn
         );
         assertThat(dbValue).isEqualTo("default_val");
     }

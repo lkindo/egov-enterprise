@@ -928,7 +928,7 @@ export type NoteRecipientDto = z.infer<typeof NoteRecipientDtoSchema>;
 // SentMailDto Schema
 // ==========================================================================
 export const SentMailDtoSchema = z.object({
-  mssageId: z.string().optional(),
+  emlDsptchSn: z.number().optional(),
   sj: z.string().optional(),
   emailCn: z.string().optional(),
   dsptchPerson: z.string().optional(),

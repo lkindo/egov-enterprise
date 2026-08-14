@@ -103,6 +103,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] Scrap — V2_63에서 scrap_id 문자열 기술키를 scrap_sn
             //   BIGINT IDENTITY로 전환했다. 실측: tb_bbs_scrap 0행, inbound FK 0,
             //   게시물 outbound FK 1건. CRUD·소유권·프론트 라우팅 계약을 함께 이관했다.
+            // [2026-08-14 제거] SentMail — V2_64에서 msg_id 문자열 기술키를 eml_dsptch_sn
+            //   BIGINT IDENTITY로 전환했다. 실측: tb_email_dsptch_manage 2행, inbound FK 0,
+            //   첨부파일 outbound FK 1건·고아 0. 비동기 상태 갱신과 API/FE 계약도 함께 이관했다.
             "AdministCode", "Authority", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptManage", "EventInfo",
@@ -124,7 +127,7 @@ class PkGenerationStandardLinterTest {
             "Note", "NoteRecptn", "NoteTrnsmit", "Notification",
             "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
-            "SentMail", "SiteMap", "Sms", "SurveyArticle", "SurveyInfo", "SurveyQuestion",
+            "SiteMap", "Sms", "SurveyArticle", "SurveyInfo", "SurveyQuestion",
             "SurveyRespondent", "SurveyResult", "SurveyTemplate", "SysLog", "SystemPolicy", "Template",
             "User", "UserAbsence", "UserAuthority", "WebLog", "WorkReport"
     ));

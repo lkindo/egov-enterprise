@@ -33,24 +33,24 @@ class MailApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     @DisplayName("발신 메일 목록 조회")
     void getSentMails() throws Exception {
-        Page<SentMailDto> page = new PageImpl<>(List.of(SentMailDto.builder().mssageId("M1").build()));
+        Page<SentMailDto> page = new PageImpl<>(List.of(SentMailDto.builder().emlDsptchSn(1L).build()));
         given(mailService.getSentMailList(any(), any(), any())).willReturn(page);
 
         mockMvc.perform(get("/api/v1/mails"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].mssageId").value("M1"));
+                .andExpect(jsonPath("$.data.list[0].emlDsptchSn").value(1));
     }
 
     @Test
     @WithMockCustomUser
     @DisplayName("발신 메일 상세 조회")
     void getSentMail() throws Exception {
-        SentMailDto dto = SentMailDto.builder().mssageId("M1").sj("Subject").build();
-        given(mailService.getSentMail("M1")).willReturn(dto);
+        SentMailDto dto = SentMailDto.builder().emlDsptchSn(1L).sj("Subject").build();
+        given(mailService.getSentMail(1L)).willReturn(dto);
 
-        mockMvc.perform(get("/api/v1/mails/M1"))
+        mockMvc.perform(get("/api/v1/mails/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.mssageId").value("M1"));
+                .andExpect(jsonPath("$.data.emlDsptchSn").value(1));
     }
 
     @Test
@@ -58,21 +58,21 @@ class MailApiControllerTest extends ControllerTestSupport {
     @DisplayName("메일 발송")
     void sendMail() throws Exception {
         SentMailDto dto = SentMailDto.builder().sj("Subject").emailCn("Content").build();
-        given(mailService.sendMail(anyString(), any())).willReturn("MAIL_123");
+        given(mailService.sendMail(anyString(), any())).willReturn(123L);
 
         mockMvc.perform(post("/api/v1/mails")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value("MAIL_123"));
+                .andExpect(jsonPath("$.data").value(123));
     }
 
     @Test
     @WithMockCustomUser
     @DisplayName("메일 삭제")
     void deleteMail() throws Exception {
-        mockMvc.perform(delete("/api/v1/mails/M1").with(csrf()))
+        mockMvc.perform(delete("/api/v1/mails/1").with(csrf()))
                 .andExpect(status().isOk());
     }
 }

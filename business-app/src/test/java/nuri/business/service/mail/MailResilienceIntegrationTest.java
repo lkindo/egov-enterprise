@@ -14,7 +14,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,12 +56,12 @@ class MailResilienceIntegrationTest {
     @MockitoBean
     private EmailSender emailSender;
 
-    private String testMssageId;
+    private Long testEmlDsptchSn;
 
     @AfterEach
     void tearDown() {
-        if (testMssageId != null) {
-            sentMailRepository.deleteById(testMssageId);
+        if (testEmlDsptchSn != null) {
+            sentMailRepository.deleteById(testEmlDsptchSn);
         }
     }
 
@@ -74,9 +73,7 @@ class MailResilienceIntegrationTest {
                 .when(emailSender).send(anyString(), anyString(), anyString(), anyString());
 
         // Given: 2. 테스트용 메일 영속 데이터 준비 (초기 상태는 대기 'W')
-        testMssageId = "MSG_" + UUID.randomUUID().toString().substring(0, 10);
         SentMail sentMail = SentMail.builder()
-                .msgId(testMssageId)
                 .dsptchRsltCd("W") // Waiting / Ready
                 .emlTtl("보안 경고 메일")
                 .emlCn("서버 온도가 80도를 초과했습니다.")
@@ -84,10 +81,11 @@ class MailResilienceIntegrationTest {
                 .rcvrNm("ops@egov.com")
                 .build();
         sentMailRepository.saveAndFlush(sentMail);
+        testEmlDsptchSn = sentMail.getEmlDsptchSn();
 
         // When: 비동기 발송 프로세스 호출 (AOP 프록시를 통해 비동기로 처리됨)
         mailAsyncProcessor.processSending(
-                testMssageId, 
+                testEmlDsptchSn,
                 sentMail.getEmlTtl(), 
                 sentMail.getEmlCn(), 
                 sentMail.getSndptyNm(), 
@@ -100,7 +98,7 @@ class MailResilienceIntegrationTest {
             .atMost(10, TimeUnit.SECONDS)
             .pollInterval(500, TimeUnit.MILLISECONDS)
             .untilAsserted(() -> {
-                SentMail processedMail = sentMailRepository.findById(testMssageId)
+                SentMail processedMail = sentMailRepository.findById(testEmlDsptchSn)
                         .orElseThrow(() -> new AssertionError("메일 이력이 삭제되었습니다."));
                 
                 // 최종적으로 3회 재시도가 완전히 끝나고 복구 메서드가 실행되었음을 의미하는 실패('F') 상태 검증

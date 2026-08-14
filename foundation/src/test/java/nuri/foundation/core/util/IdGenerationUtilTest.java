@@ -63,8 +63,6 @@ class IdGenerationUtilTest {
 
         assertThat(IdGenerationUtil.generateSmsId())
                 .startsWith(Constants.User.SMS_PREFIX);
-        assertThat(IdGenerationUtil.generateMailId())
-                .startsWith(Constants.User.MAIL_PREFIX);
     }
 
     @Test

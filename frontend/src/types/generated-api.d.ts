@@ -3292,7 +3292,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/mails/{mssageId}": {
+    "/api/v1/mails/{emlDsptchSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -5719,8 +5719,11 @@ export interface components {
         };
         /** @description Description */
         SentMailDto: {
-            /** @description Description */
-            mssageId?: string;
+            /**
+             * Format: int64
+             * @description Description
+             */
+            emlDsptchSn?: number;
             /** @description Description */
             sj?: string;
             /** @description Description */
@@ -12192,7 +12195,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -15726,8 +15729,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 메시지 ID */
-                mssageId: string;
+                /** @description 이메일 발신 일련번호 */
+                emlDsptchSn: number;
             };
             cookie?: never;
         };
@@ -15749,7 +15752,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                mssageId: string;
+                emlDsptchSn: number;
             };
             cookie?: never;
         };

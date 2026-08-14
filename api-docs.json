@@ -6109,7 +6109,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -12828,7 +12828,7 @@
         }
       }
     },
-    "/api/v1/mails/{mssageId}": {
+    "/api/v1/mails/{emlDsptchSn}": {
       "get": {
         "tags": [
           "Mail"
@@ -12838,12 +12838,13 @@
         "operationId": "getSentMail",
         "parameters": [
           {
-            "name": "mssageId",
+            "name": "emlDsptchSn",
             "in": "path",
-            "description": "메시지 ID",
+            "description": "이메일 발신 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -12869,11 +12870,12 @@
         "operationId": "deleteMail",
         "parameters": [
           {
-            "name": "mssageId",
+            "name": "emlDsptchSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -19041,8 +19043,9 @@
         "type": "object",
         "description": "Description",
         "properties": {
-          "mssageId": {
-            "type": "string",
+          "emlDsptchSn": {
+            "type": "integer",
+            "format": "int64",
             "description": "Description"
           },
           "sj": {

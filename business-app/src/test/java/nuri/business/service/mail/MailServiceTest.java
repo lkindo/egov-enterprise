@@ -88,25 +88,25 @@ class MailServiceTest {
     @DisplayName("보낸 메일 목록 조회 - 키워드 없음(관리자는 전건 스코프)")
     void getSentMailList_NoKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        SentMail mail = SentMail.builder().msgId("M1").emlTtl("Subject").build();
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).emlTtl("Subject").build();
         given(sentMailRepository.searchSentMails(isNull(), eq("1"), isNull(), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(mail)));
 
         Page<SentMailDto> result = mailService.getSentMailList(null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getMssageId()).isEqualTo("M1");
+        assertThat(result.getContent().get(0).getEmlDsptchSn()).isEqualTo(1L);
     }
 
     @Test
     @DisplayName("보낸 메일 상세 조회 - 성공")
     void getSentMail_Success() {
-        SentMail mail = SentMail.builder().msgId("M1").emlTtl("Subject").build();
-        given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).emlTtl("Subject").build();
+        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
 
-        SentMailDto result = mailService.getSentMail("M1");
+        SentMailDto result = mailService.getSentMail(1L);
 
-        assertThat(result.getMssageId()).isEqualTo("M1");
+        assertThat(result.getEmlDsptchSn()).isEqualTo(1L);
     }
 
     @Test
@@ -119,11 +119,14 @@ class MailServiceTest {
                 .recptnPerson("receiver@test.com")
                 .build();
 
-        String mssageId = mailService.sendMail("user1", dto);
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(1L).build());
 
-        assertThat(mssageId).startsWith("MAIL_");
+        Long emlDsptchSn = mailService.sendMail("user1", dto);
+
+        assertThat(emlDsptchSn).isEqualTo(1L);
         verify(sentMailRepository).save(any(SentMail.class));
-        verify(mailAsyncProcessor).processSending(anyString(), anyString(), anyString(), anyString(), anyString());
+        verify(mailAsyncProcessor).processSending(anyLong(), anyString(), anyString(), anyString(), anyString());
     }
 
     @Test
@@ -135,20 +138,22 @@ class MailServiceTest {
                 .build();
         doThrow(new java.util.concurrent.RejectedExecutionException("full"))
                 .when(mailAsyncProcessor)
-                .processSending(anyString(), anyString(), anyString(), anyString(), anyString());
+                .processSending(anyLong(), anyString(), anyString(), anyString(), anyString());
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(2L).build());
 
-        String messageId = mailService.sendMail("user1", dto);
+        Long emlDsptchSn = mailService.sendMail("user1", dto);
 
-        verify(mailAsyncProcessor).markResult(messageId, "F");
+        verify(mailAsyncProcessor).markResult(emlDsptchSn, "F");
     }
 
     @Test
     @DisplayName("메일 결과 업데이트")
     void updateMailResult() {
-        SentMail mail = SentMail.builder().msgId("M1").dsptchRsltCd("P").build();
-        given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).dsptchRsltCd("P").build();
+        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
 
-        mailService.updateMailResult("M1", "S");
+        mailService.updateMailResult(1L, "S");
 
         assertThat(mail.getDsptchRsltCd()).isEqualTo("S");
     }
@@ -156,10 +161,10 @@ class MailServiceTest {
     @Test
     @DisplayName("메일 삭제")
     void deleteMail() {
-        SentMail mail = SentMail.builder().msgId("M1").build();
-        given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
+        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
 
-        mailService.deleteMail("M1");
+        mailService.deleteMail(1L);
 
         verify(sentMailRepository).delete(mail);
     }
@@ -211,11 +216,11 @@ class MailServiceTest {
     @DisplayName("[보안] 타인의 메일 상세 조회는 ACCESS_DENIED")
     void getSentMail_otherUsersMail_denied() {
         asUser("user1");
-        SentMail mail = SentMail.builder().msgId("M1").emlTtl("Subject").build();
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).emlTtl("Subject").build();
         mail.setFrstRgtrId("user2");
-        given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
+        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
 
-        assertThatThrownBy(() -> mailService.getSentMail("M1"))
+        assertThatThrownBy(() -> mailService.getSentMail(1L))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
     }
 
@@ -223,11 +228,11 @@ class MailServiceTest {
     @DisplayName("[보안] 타인의 메일 삭제는 ACCESS_DENIED")
     void deleteMail_otherUsersMail_denied() {
         asUser("user1");
-        SentMail mail = SentMail.builder().msgId("M1").build();
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
         mail.setFrstRgtrId("user2");
-        given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
+        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
 
-        assertThatThrownBy(() -> mailService.deleteMail("M1"))
+        assertThatThrownBy(() -> mailService.deleteMail(1L))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
         verify(sentMailRepository, never()).delete(any(SentMail.class));
     }
@@ -235,8 +240,8 @@ class MailServiceTest {
     @Test
     @DisplayName("보낸 메일 상세 조회 - 데이터 없음")
     void getSentMail_NotFound() {
-        given(sentMailRepository.findById(anyString())).willReturn(Optional.empty());
-        assertThatThrownBy(() -> mailService.getSentMail("MISSING"))
+        given(sentMailRepository.findById(anyLong())).willReturn(Optional.empty());
+        assertThatThrownBy(() -> mailService.getSentMail(999L))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
     }
 
@@ -244,7 +249,7 @@ class MailServiceTest {
     @DisplayName("보낸 메일 목록 조회 - 빈 키워드")
     void getSentMailList_EmptyKeyword() {
         Pageable pageable = PageRequest.of(0, 10);
-        SentMail mail = SentMail.builder().msgId("M1").emlTtl("Subject").build();
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).emlTtl("Subject").build();
         given(sentMailRepository.searchSentMails(isNull(), eq("1"), eq(""), eq(pageable)))
                 .willReturn(new PageImpl<>(List.of(mail)));
 
@@ -263,16 +268,16 @@ class MailServiceTest {
     @Test
     @DisplayName("메일 결과 업데이트 - 데이터 없음")
     void updateMailResult_NotFound() {
-        given(sentMailRepository.findById(anyString())).willReturn(Optional.empty());
-        assertThatThrownBy(() -> mailService.updateMailResult("MISSING", "F"))
+        given(sentMailRepository.findById(anyLong())).willReturn(Optional.empty());
+        assertThatThrownBy(() -> mailService.updateMailResult(999L, "F"))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
     }
 
     @Test
     @DisplayName("메일 삭제 - 데이터 없음")
     void deleteMail_NotFound() {
-        given(sentMailRepository.findById(anyString())).willReturn(Optional.empty());
-        assertThatThrownBy(() -> mailService.deleteMail("MISSING"))
+        given(sentMailRepository.findById(anyLong())).willReturn(Optional.empty());
+        assertThatThrownBy(() -> mailService.deleteMail(999L))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class);
     }
 }

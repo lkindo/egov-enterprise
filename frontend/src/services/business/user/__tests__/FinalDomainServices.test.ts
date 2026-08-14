@@ -10,6 +10,7 @@ import client from '@/lib/api/client';
 import { noteService } from '../NoteService';
 import { scrapService } from '../ScrapService';
 import { menuService } from '../MenuService';
+import { mailService } from '../../mail/MailService';
 
 vi.mock('@/lib/api/client', () => ({
  default: {
@@ -33,6 +34,13 @@ describe('Final Domain Services', () => {
  expect(client.get).toHaveBeenCalledWith('scraps', expect.any(Object));
  await scrapService.deleteScrap(7);
  expect(client.delete).toHaveBeenCalledWith('scraps/7', undefined);
+ });
+
+ it('mailService uses the numeric dispatch serial number in resource paths', async () => {
+ await mailService.getSentMail(17);
+ expect(client.get).toHaveBeenCalledWith('mails/17', undefined);
+ await mailService.deleteMail(17);
+ expect(client.delete).toHaveBeenCalledWith('mails/17', undefined);
  });
 
  it('menuService calls correct endpoints', async () => {

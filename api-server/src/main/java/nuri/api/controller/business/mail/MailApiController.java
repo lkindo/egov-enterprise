@@ -36,25 +36,25 @@ public class MailApiController {
     }
 
     @Operation(summary = "발신 메일 상세 조회", description = "특정 메일의 발송 상세 정보를 조회합니다.")
-    @GetMapping("/{mssageId}")
+    @GetMapping("/{emlDsptchSn}")
     public ResponseEntity<ApiResponse<SentMailDto>> getSentMail(
-            @Parameter(description = "메시지 ID") @PathVariable String mssageId) {
-        return ResponseEntity.ok(ApiResponse.success(mailService.getSentMail(mssageId)));
+            @Parameter(description = "이메일 발신 일련번호") @PathVariable Long emlDsptchSn) {
+        return ResponseEntity.ok(ApiResponse.success(mailService.getSentMail(emlDsptchSn)));
     }
 
     @Operation(summary = "메일 발송", description = "새로운 메일을 작성하여 발송합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> sendMail(
+    public ResponseEntity<ApiResponse<Long>> sendMail(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody SentMailDto sentMailDto) {
-        String mssageId = mailService.sendMail(userDetails.getUsername(), sentMailDto);
-        return ResponseEntity.ok(ApiResponse.success(mssageId));
+        Long emlDsptchSn = mailService.sendMail(userDetails.getUsername(), sentMailDto);
+        return ResponseEntity.ok(ApiResponse.success(emlDsptchSn));
     }
 
     @Operation(summary = "메일 삭제", description = "발송 메일 내역을 삭제합니다.")
-    @DeleteMapping("/{mssageId}")
-    public ResponseEntity<ApiResponse<Void>> deleteMail(@PathVariable String mssageId) {
-        mailService.deleteMail(mssageId);
+    @DeleteMapping("/{emlDsptchSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteMail(@PathVariable Long emlDsptchSn) {
+        mailService.deleteMail(emlDsptchSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

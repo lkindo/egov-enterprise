@@ -12,7 +12,7 @@ type SentMailDto = components['schemas']['SentMailDto'];
 
 /** 화면이 항상 기대하는 식별/표시 필드를 필수로 좁힌 발신 메일 타입. */
 export type SentMail = SentMailDto &
-  Required<Pick<SentMailDto, 'mssageId' | 'sj' | 'recptnPerson' | 'sndngResultCode' | 'sndngDe'>>;
+  Required<Pick<SentMailDto, 'emlDsptchSn' | 'sj' | 'recptnPerson' | 'sndngResultCode' | 'sndngDe'>>;
 
 /**
  * 메일 발송 결과 코드 — 백엔드 `MailService`/`MailAsyncProcessor` 가 기록하는 값과 1:1 대응한다.
@@ -48,8 +48,8 @@ class MailService extends ApiService {
   /**
    * 발신 메일 상세 조회
    */
-  async getSentMail(mssageId: string) {
-    const response = await this.get<SentMail>(`/${mssageId}`);
+  async getSentMail(emlDsptchSn: number) {
+    const response = await this.get<SentMail>(`/${emlDsptchSn}`);
     return response;
   }
 
@@ -57,15 +57,15 @@ class MailService extends ApiService {
    * 메일 발송
    */
   async sendMail(mailData: Partial<SentMail>) {
-    const response = await this.post<string>('', mailData);
+    const response = await this.post<number>('', mailData);
     return response;
   }
 
   /**
    * 메일 삭제
    */
-  async deleteMail(mssageId: string) {
-    const response = await this.delete<void>(`/${mssageId}`);
+  async deleteMail(emlDsptchSn: number) {
+    const response = await this.delete<void>(`/${emlDsptchSn}`);
     return response;
   }
 }

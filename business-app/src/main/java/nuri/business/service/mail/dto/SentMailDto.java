@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
 public class SentMailDto {
 
     @Schema(description = "Description")
-    private String mssageId;
+    private Long emlDsptchSn;
 
     @Schema(description = "Description")
     private String sj;
@@ -44,7 +44,7 @@ public class SentMailDto {
     public static SentMailDto from(SentMail entity) {
         if (entity == null) return null;
         return SentMailDto.builder()
-                .mssageId(entity.getMsgId())
+                .emlDsptchSn(entity.getEmlDsptchSn())
                 .sj(entity.getEmlTtl())
                 .emailCn(entity.getEmlCn())
                 .dsptchPerson(entity.getSndptyNm())
