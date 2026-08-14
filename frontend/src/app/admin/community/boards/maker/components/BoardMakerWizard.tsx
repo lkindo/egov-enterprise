@@ -149,7 +149,6 @@ export function BoardMakerWizard() {
  bbsAtrbCd: 'BBSA01',
  tmpltId: 'TMPLT_HUB',
  useYn: 'Y',
- cmntyId: '',
  menuNm: '',
  upperMenuNo: '2000000',
  menuOrdr: 1,

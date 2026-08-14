@@ -22,15 +22,14 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
     void saveAndFindCommunity() {
         // given
         Community community = Community.builder()
-                .cmntyId("CMNTY_001")
                 .cmntyNm("Test Community")
                 .cmntyIntroCn("Test Intro")
                 .useYn("Y")
                 .build();
-        communityRepository.save(community);
+        Community persisted = communityRepository.saveAndFlush(community);
 
         // when
-        Community saved = communityRepository.findById("CMNTY_001").orElseThrow();
+        Community saved = communityRepository.findById(persisted.getCmntySn()).orElseThrow();
 
         // then
         assertThat(saved.getCmntyNm()).isEqualTo("Test Community");
@@ -41,14 +40,13 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
     void communityUserMapping() {
         // given
         Community community = Community.builder()
-                .cmntyId("CMNTY_002")
                 .cmntyNm("Mapping Community")
                 .useYn("Y")
                 .build();
-        communityRepository.save(community);
+        Community persisted = communityRepository.saveAndFlush(community);
 
         CommunityUser communityUser = CommunityUser.builder()
-                .id(new CommunityUserId("CMNTY_002", "user1"))
+                .id(new CommunityUserId(persisted.getCmntySn(), "user1"))
                 .mngrYn("N")
                 .joinYmd("20240101")
                 .useYn("Y")
@@ -57,7 +55,7 @@ class CommunityRepositoryTest extends PersistenceTestSupport {
         communityUserRepository.save(communityUser);
 
         // when
-        List<CommunityUser> users = communityUserRepository.findByIdCmntyId("CMNTY_002");
+        List<CommunityUser> users = communityUserRepository.findByIdCmntySn(persisted.getCmntySn());
 
         // then
         assertThat(users).hasSize(1);

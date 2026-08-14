@@ -23,11 +23,11 @@ class CommunityService extends ApiService {
 
   /**
    * 커뮤니티 상세 조회
-   * @param cmntyId 커뮤니티 ID
+   * @param cmntySn 커뮤니티 일련번호
    * @returns 커뮤니티 상세 정보
    */
-  public async getCommunity(cmntyId: string): Promise<CommunityVO> {
-    return this.get<CommunityVO>(`/${cmntyId}`);
+  public async getCommunity(cmntySn: number): Promise<CommunityVO> {
+    return this.get<CommunityVO>(`/${cmntySn}`);
   }
 
   /**
@@ -41,19 +41,19 @@ class CommunityService extends ApiService {
 
   /**
    * 커뮤니티 수정
-   * @param cmntyId 커뮤니티 ID
+   * @param cmntySn 커뮤니티 일련번호
    * @param community 수정할 커뮤니티 정보
    */
-  public async updateCommunity(cmntyId: string, community: Partial<CommunityVO>): Promise<void> {
-    return this.put<void>(`/${cmntyId}`, community);
+  public async updateCommunity(cmntySn: number, community: Partial<CommunityVO>): Promise<void> {
+    return this.put<void>(`/${cmntySn}`, community);
   }
 
   /**
    * 커뮤니티 삭제
-   * @param cmntyId 커뮤니티 ID
+   * @param cmntySn 커뮤니티 일련번호
    */
-  public async deleteCommunity(cmntyId: string): Promise<void> {
-    return this.delete<void>(`/${cmntyId}`);
+  public async deleteCommunity(cmntySn: number): Promise<void> {
+    return this.delete<void>(`/${cmntySn}`);
   }
 }
 

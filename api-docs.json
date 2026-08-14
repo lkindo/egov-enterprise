@@ -5066,7 +5066,7 @@
         }
       }
     },
-    "/api/v1/admin/content/community/{cmntyId}": {
+    "/api/v1/admin/content/community/{cmntySn}": {
       "get": {
         "tags": [
           "Community"
@@ -5076,12 +5076,13 @@
         "operationId": "getCommunity",
         "parameters": [
           {
-            "name": "cmntyId",
+            "name": "cmntySn",
             "in": "path",
-            "description": "커뮤니티 ID",
+            "description": "커뮤니티 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5107,12 +5108,13 @@
         "operationId": "updateCommunity",
         "parameters": [
           {
-            "name": "cmntyId",
+            "name": "cmntySn",
             "in": "path",
-            "description": "커뮤니티 ID",
+            "description": "커뮤니티 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5148,12 +5150,13 @@
         "operationId": "deleteCommunity",
         "parameters": [
           {
-            "name": "cmntyId",
+            "name": "cmntySn",
             "in": "path",
-            "description": "커뮤니티 ID",
+            "description": "커뮤니티 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -6923,7 +6926,7 @@
         }
       }
     },
-    "/api/v1/communities/{cmntyId}/join": {
+    "/api/v1/communities/{cmntySn}/join": {
       "post": {
         "tags": [
           "Community User"
@@ -6933,11 +6936,12 @@
         "operationId": "joinCommunity",
         "parameters": [
           {
-            "name": "cmntyId",
+            "name": "cmntySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13367,7 +13371,7 @@
         }
       }
     },
-    "/api/v1/communities/{cmntyId}": {
+    "/api/v1/communities/{cmntySn}": {
       "get": {
         "tags": [
           "Community User"
@@ -13377,12 +13381,13 @@
         "operationId": "getCommunity_1",
         "parameters": [
           {
-            "name": "cmntyId",
+            "name": "cmntySn",
             "in": "path",
-            "description": "커뮤니티 ID",
+            "description": "커뮤니티 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -18233,10 +18238,9 @@
             "maxLength": 1,
             "minLength": 0
           },
-          "cmntyId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "cmntySn": {
+            "type": "integer",
+            "format": "int64"
           },
           "blogSn": {
             "type": "integer",
@@ -18480,10 +18484,9 @@
       "CommunityDto": {
         "type": "object",
         "properties": {
-          "cmntyId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "cmntySn": {
+            "type": "integer",
+            "format": "int64"
           },
           "cmntyNm": {
             "type": "string"

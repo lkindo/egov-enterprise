@@ -14,8 +14,7 @@ import java.time.format.DateTimeFormatter;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CommunityDto {
-    @Size(max = 20)
-    private String cmntyId;
+    private Long cmntySn;
     private String cmntyNm;
     @Size(max = 4000)
     private String cmntyIntroCn;
@@ -34,7 +33,7 @@ public class CommunityDto {
         if (community == null)
             return null;
         return CommunityDto.builder()
-                .cmntyId(community.getCmntyId())
+                .cmntySn(community.getCmntySn())
                 .cmntyNm(community.getCmntyNm())
                 .cmntyIntroCn(community.getCmntyIntroCn())
                 .regSeCd(community.getRegSeCd())

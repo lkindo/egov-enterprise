@@ -1158,7 +1158,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/content/community/{cmntyId}": {
+    "/api/v1/admin/content/community/{cmntySn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1694,7 +1694,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/communities/{cmntyId}/join": {
+    "/api/v1/communities/{cmntySn}/join": {
         parameters: {
             query?: never;
             header?: never;
@@ -3536,7 +3536,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/communities/{cmntyId}": {
+    "/api/v1/communities/{cmntySn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -5331,7 +5331,8 @@ export interface components {
             /** Format: date-time */
             mdfcnDt?: string;
             useYn: string;
-            cmntyId?: string;
+            /** Format: int64 */
+            cmntySn?: number;
             /** Format: int64 */
             blogSn?: number;
             blogYn?: string;
@@ -5480,7 +5481,8 @@ export interface components {
             mdfcnDt?: string;
         };
         CommunityDto: {
-            cmntyId?: string;
+            /** Format: int64 */
+            cmntySn?: number;
             cmntyNm?: string;
             cmntyIntroCn?: string;
             regSeCd?: string;
@@ -11663,8 +11665,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 커뮤니티 ID */
-                cmntyId: string;
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
             };
             cookie?: never;
         };
@@ -11686,8 +11688,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 커뮤니티 ID */
-                cmntyId: string;
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
             };
             cookie?: never;
         };
@@ -11713,8 +11715,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 커뮤니티 ID */
-                cmntyId: string;
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
             };
             cookie?: never;
         };
@@ -12702,7 +12704,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                cmntyId: string;
+                cmntySn: number;
             };
             cookie?: never;
         };
@@ -16107,8 +16109,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 커뮤니티 ID */
-                cmntyId: string;
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
             };
             cookie?: never;
         };

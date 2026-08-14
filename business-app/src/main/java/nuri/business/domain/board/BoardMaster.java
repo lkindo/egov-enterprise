@@ -63,8 +63,8 @@ public class BoardMaster extends BaseEntity {
     @Column(length = 1)
     private String blogYn = "N";
 
-    @Column(length = 20)
-    private String cmntyId;
+    @Column(name = "cmnty_sn")
+    private Long cmntySn;
 
     // --- [OneToOne 지연 로딩 관계 전환] ---
     @OneToOne(mappedBy = "boardMaster", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
@@ -79,7 +79,7 @@ public class BoardMaster extends BaseEntity {
 
     private BoardMaster(String bbsId, String bbsTtl, String bbsExpln, String bbsTypeCd, String bbsAtrbCd,
             String ansPsbltyYn, String fileAtchPsbltyYn, Integer atchPsbltyFileQty, Long atchPsbltyFileSz,
-            String useYn, String tmpltId, Long blogSn, String blogYn, String cmntyId,
+            String useYn, String tmpltId, Long blogSn, String blogYn, Long cmntySn,
             String ansYn, String stsfdgYn) {
         this.bbsId = bbsId;
         this.bbsTtl = bbsTtl;
@@ -95,7 +95,7 @@ public class BoardMaster extends BaseEntity {
         this.tmpltId = tmpltId;
         this.blogSn = blogSn;
         this.blogYn = blogYn != null ? blogYn : "N";
-        this.cmntyId = cmntyId;
+        this.cmntySn = cmntySn;
         this.ansYn = ansYn != null ? ansYn : "N";
         this.stsfdgYn = stsfdgYn != null ? stsfdgYn : "N";
     }
@@ -106,10 +106,10 @@ public class BoardMaster extends BaseEntity {
     @Builder
     public static BoardMaster create(String bbsId, String bbsTtl, String bbsExpln, String bbsTypeCd, String bbsAtrbCd,
             String ansPsbltyYn, String fileAtchPsbltyYn, Integer atchPsbltyFileQty, Long atchPsbltyFileSz,
-            String useYn, String tmpltId, Long blogSn, String blogYn, String cmntyId,
+            String useYn, String tmpltId, Long blogSn, String blogYn, Long cmntySn,
             String ansYn, String stsfdgYn) {
         return new BoardMaster(bbsId, bbsTtl, bbsExpln, bbsTypeCd, bbsAtrbCd, ansPsbltyYn, fileAtchPsbltyYn,
-                atchPsbltyFileQty, atchPsbltyFileSz, useYn, tmpltId, blogSn, blogYn, cmntyId, ansYn, stsfdgYn);
+                atchPsbltyFileQty, atchPsbltyFileSz, useYn, tmpltId, blogSn, blogYn, cmntySn, ansYn, stsfdgYn);
     }
 
     public void registerOption(String ansYn, String stsfdgYn) {

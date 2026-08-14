@@ -84,7 +84,7 @@ public class BoardMasterService extends BaseAbstractService {
                 .useYn(dto.getUseYn())
                 .blogSn(dto.getBlogSn())
                 .blogYn(dto.getBlogYn())
-                .cmntyId(dto.getCmntyId())
+                .cmntySn(dto.getCmntySn())
                 .ansYn(dto.getAnsYn())
                 .stsfdgYn(dto.getStsfdgYn())
                 .build();

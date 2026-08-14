@@ -130,9 +130,12 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] Blog — V2_70에서 blog_id 문자열 기술 PK와 멤버십 복합키/FK,
             //   게시물·게시판 논리 참조를 blog_sn BIGINT로 백필했다. 실측: 관련 4개 테이블 모두
             //   블로그 참조 0행·고아 0. 구형 전체 그래프 주입과 JPA·API·프론트 숫자 계약을 검증했다.
+            // [2026-08-14 제거] Community — V2_71에서 cmnty_id 문자열 기술 PK와 멤버십 복합키/FK,
+            //   게시판 논리 참조를 cmnty_sn BIGINT로 백필했다. 실측: 관련 3개 테이블 모두
+            //   커뮤니티 참조 0행·고아 0. 구형 전체 그래프 주입과 JPA·API·프론트 숫자 계약을 검증했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
-            "Community", "DeptManage", "EventInfo",
+            "DeptManage", "EventInfo",
             // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).
             //   FAQ 는 게시판(tb_bbs_item, bbs_id='BBSMSTR_AAAAAAAAAAAA')으로 통합돼 운영 중이고
             //   전용 도메인은 死자산이었다. 라이브 실측: tb_faq_info 0행 / 게시판 FAQ 281행,

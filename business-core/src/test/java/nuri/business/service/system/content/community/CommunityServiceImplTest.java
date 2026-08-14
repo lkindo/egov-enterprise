@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -55,14 +56,18 @@ class CommunityServiceImplTest {
                 .tmpltId("TMP_01")
                 .build();
 
-        given(communityRepository.save(any(Community.class))).willAnswer(inv -> inv.getArgument(0));
+        given(communityRepository.save(any(Community.class))).willAnswer(inv -> {
+            Community saved = inv.getArgument(0);
+            ReflectionTestUtils.setField(saved, "cmntySn", 101L);
+            return saved;
+        });
 
         // when
         CommunityDto created = communityService.createCommunity(userId, dto);
 
         // then
         assertThat(created).isNotNull();
-        assertThat(created.getCmntyId()).startsWith("CMMNTY_");
+        assertThat(created.getCmntySn()).isEqualTo(101L);
         assertThat(created.getCmntyNm()).isEqualTo("Test Community");
         verify(communityRepository, times(1)).save(any(Community.class));
     }
@@ -72,13 +77,13 @@ class CommunityServiceImplTest {
     void getCommunity() {
         // given
         Community community = Community.builder()
-                .cmntyId("CMMNTY_01")
+                .cmntySn(101L)
                 .cmntyNm("Test Community")
                 .build();
-        given(communityRepository.findById("CMMNTY_01")).willReturn(Optional.of(community));
+        given(communityRepository.findById(101L)).willReturn(Optional.of(community));
 
         // when
-        CommunityDto found = communityService.getCommunity("CMMNTY_01");
+        CommunityDto found = communityService.getCommunity(101L);
         
         // then
         assertThat(found).isNotNull();
@@ -89,7 +94,7 @@ class CommunityServiceImplTest {
     @DisplayName("커뮤니티 목록 조회 - 성공")
     void getCommunityList() {
         // given
-        Community community = Community.builder().cmntyId("CMMNTY_01").cmntyNm("Comm A").build();
+        Community community = Community.builder().cmntySn(101L).cmntyNm("Comm A").build();
         Pageable pageable = PageRequest.of(0, 10);
 
         given(queryFactory.<Community>selectFrom(any())).willReturn(jpaQuery);
@@ -105,7 +110,7 @@ class CommunityServiceImplTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getCmntyId()).isEqualTo("CMMNTY_01");
+        assertThat(result.getContent().get(0).getCmntySn()).isEqualTo(101L);
         assertThat(result.getTotalElements()).isEqualTo(1);
     }
     
@@ -114,13 +119,13 @@ class CommunityServiceImplTest {
     void updateCommunity() {
         // given
         Community community = Community.builder()
-                .cmntyId("CMMNTY_01")
+                .cmntySn(101L)
                 .cmntyNm("Comm A")
                 .build();
-        given(communityRepository.findById("CMMNTY_01")).willReturn(Optional.of(community));
+        given(communityRepository.findById(101L)).willReturn(Optional.of(community));
         
         CommunityDto updateDto = CommunityDto.builder()
-                .cmntyId("CMMNTY_01")
+                .cmntySn(101L)
                 .cmntyNm("Updated Comm")
                 .build();
 
@@ -136,13 +141,13 @@ class CommunityServiceImplTest {
     void deleteCommunity() {
         // given
         Community community = Community.builder()
-                .cmntyId("CMMNTY_01")
+                .cmntySn(101L)
                 .useYn("Y")
                 .build();
-        given(communityRepository.findById("CMMNTY_01")).willReturn(Optional.of(community));
+        given(communityRepository.findById(101L)).willReturn(Optional.of(community));
         
         // when
-        communityService.deleteCommunity("CMMNTY_01", "user1");
+        communityService.deleteCommunity(101L, "user1");
         
         // then
         assertThat(community.getUseYn()).isEqualTo("N");
@@ -152,7 +157,7 @@ class CommunityServiceImplTest {
     @DisplayName("포틀릿용 커뮤니티 목록 조회 - 성공")
     void getCommunityListPortlet() {
         // given
-        Community community = Community.builder().cmntyId("CMMNTY_01").build();
+        Community community = Community.builder().cmntySn(101L).build();
         given(queryFactory.<Community>selectFrom(any())).willReturn(jpaQuery);
         given(jpaQuery.where(any(BooleanExpression.class))).willReturn(jpaQuery);
         given(jpaQuery.orderBy(any(OrderSpecifier.class))).willReturn(jpaQuery);
@@ -163,7 +168,7 @@ class CommunityServiceImplTest {
         
         // then
         assertThat(list).hasSize(1);
-        assertThat(list.get(0).getCmntyId()).isEqualTo("CMMNTY_01");
+        assertThat(list.get(0).getCmntySn()).isEqualTo(101L);
     }
 
     @Mock
@@ -173,17 +178,17 @@ class CommunityServiceImplTest {
     @DisplayName("커뮤니티 가입 신청 - 성공")
     void joinCommunity() {
         // given
-        String cmmntyId = "CMMNTY_01";
+        Long cmntySn = 101L;
         String userId = "user1";
         Community community = Community.builder()
-                .cmntyId(cmmntyId)
+                .cmntySn(cmntySn)
                 .useYn("Y")
                 .build();
-        given(communityRepository.findById(cmmntyId)).willReturn(Optional.of(community));
+        given(communityRepository.findById(cmntySn)).willReturn(Optional.of(community));
         given(communityUserRepository.existsById(any())).willReturn(false);
 
         // when
-        communityService.joinCommunity(cmmntyId, userId);
+        communityService.joinCommunity(cmntySn, userId);
 
         // then
         verify(communityUserRepository, times(1)).save(any());

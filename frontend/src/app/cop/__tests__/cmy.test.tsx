@@ -61,9 +61,9 @@ describe('CommunityHubClient', () => {
   const mockInitialData = {
     list: [
       {
-        cmmntyId: 'CMM_0001',
-        cmmntyNm: '개발자 커뮤니티',
-        cmmntyIntrcn: '개발 관련 논의',
+        cmntySn: 101,
+        cmntyNm: '개발자 커뮤니티',
+        cmntyIntroCn: '개발 관련 논의',
         frstRegisterNm: '테스트님',
         crtDt: '2024-05-01'
       }

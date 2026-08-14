@@ -43,8 +43,7 @@ public class BoardMasterDto {
     @Size(max = 1)
     @NotBlank
     private String useYn;
-    @Size(max = 20)
-    private String cmntyId;
+    private Long cmntySn;
     private Long blogSn;
     @Size(max = 1)
     private String blogYn;

@@ -1,7 +1,7 @@
 // Community Types
 
 export interface CommunityVO {
-  cmntyId?: string;
+  cmntySn?: number;
   cmntyNm: string;
   cmntyIntroCn: string;
   useYn: string;

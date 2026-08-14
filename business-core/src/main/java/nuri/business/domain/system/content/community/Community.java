@@ -7,6 +7,8 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.io.Serializable;
@@ -18,8 +20,9 @@ import java.io.Serializable;
 public class Community extends BaseEntity implements Serializable {
 
     @Id
-    @Column(length = 20, nullable = false)
-    private String cmntyId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "cmnty_sn")
+    private Long cmntySn;
 
     @Column(length = 100)
     private String cmntyNm;
@@ -36,8 +39,8 @@ public class Community extends BaseEntity implements Serializable {
     @Column(length = 1)
     private String useYn;
 
-    private Community(String cmntyId, String cmntyNm, String cmntyIntroCn, String regSeCd, String tmpltId, String useYn) {
-        this.cmntyId = cmntyId;
+    private Community(Long cmntySn, String cmntyNm, String cmntyIntroCn, String regSeCd, String tmpltId, String useYn) {
+        this.cmntySn = cmntySn;
         this.cmntyNm = cmntyNm;
         this.cmntyIntroCn = cmntyIntroCn;
         this.regSeCd = regSeCd;
@@ -46,8 +49,8 @@ public class Community extends BaseEntity implements Serializable {
     }
 
     @Builder
-    public static Community create(String cmntyId, String cmntyNm, String cmntyIntroCn, String regSeCd, String tmpltId, String useYn) {
-        return new Community(cmntyId, cmntyNm, cmntyIntroCn, regSeCd, tmpltId, useYn);
+    public static Community create(Long cmntySn, String cmntyNm, String cmntyIntroCn, String regSeCd, String tmpltId, String useYn) {
+        return new Community(cmntySn, cmntyNm, cmntyIntroCn, regSeCd, tmpltId, useYn);
     }
 
     public void update(String cmntyNm, String cmntyIntroCn, String tmpltId, String useYn) {

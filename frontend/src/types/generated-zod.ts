@@ -664,7 +664,7 @@ export const BoardMasterDtoSchema = z.object({
   lastMdfrId: z.string().optional(),
   mdfcnDt: z.string().optional(),
   useYn: z.string().min(0).max(1),
-  cmntyId: z.string().min(0).max(20).optional(),
+  cmntySn: z.number().optional(),
   blogSn: z.number().optional(),
   blogYn: z.string().min(0).max(1).optional(),
   ansYn: z.string().optional(),
@@ -729,7 +729,7 @@ export type EventInfoDto = z.infer<typeof EventInfoDtoSchema>;
 // CommunityDto Schema
 // ==========================================================================
 export const CommunityDtoSchema = z.object({
-  cmntyId: z.string().min(0).max(20).optional(),
+  cmntySn: z.number().optional(),
   cmntyNm: z.string().optional(),
   cmntyIntroCn: z.string().min(0).max(4000).optional(),
   regSeCd: z.string().optional(),

@@ -12,7 +12,6 @@ import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
-import nuri.foundation.core.util.IdGenerationUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -62,17 +61,15 @@ public class CommunityService {
                 Objects.requireNonNull(pageable), totalCount);
     }
 
-    public CommunityDto getCommunity(String cmntyId) {
-        return communityRepository.findById(Objects.requireNonNull(cmntyId))
+    public CommunityDto getCommunity(Long cmntySn) {
+        return communityRepository.findById(Objects.requireNonNull(cmntySn))
                 .map(CommunityDto::from)
                 .orElse(null);
     }
 
     @Transactional
     public CommunityDto createCommunity(String userId, CommunityDto dto) {
-        String cmntyId = IdGenerationUtil.generateUniqueId("CMMNTY_", 13, communityRepository::existsById);
         Community community = Community.builder()
-                .cmntyId(cmntyId)
                 .cmntyNm(dto.getCmntyNm())
                 .cmntyIntroCn(dto.getCmntyIntroCn())
                 .regSeCd("REGC01")
@@ -85,8 +82,8 @@ public class CommunityService {
 
     @Transactional
     public void updateCommunity(String userId, CommunityDto dto) {
-        Community community = communityRepository.findById(Objects.requireNonNull(dto.getCmntyId()))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + dto.getCmntyId()));
+        Community community = communityRepository.findById(Objects.requireNonNull(dto.getCmntySn()))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + dto.getCmntySn()));
 
         community.update(
                 dto.getCmntyNm(),
@@ -96,9 +93,9 @@ public class CommunityService {
     }
 
     @Transactional
-    public void deleteCommunity(String cmntyId, String userId) {
-        Community community = communityRepository.findById(Objects.requireNonNull(cmntyId))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntyId));
+    public void deleteCommunity(Long cmntySn, String userId) {
+        Community community = communityRepository.findById(Objects.requireNonNull(cmntySn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
         community.delete();
     }
 
@@ -115,9 +112,9 @@ public class CommunityService {
     }
 
     @Transactional
-    public void joinCommunity(String cmntyId, String userId) {
-        Community community = communityRepository.findById(Objects.requireNonNull(cmntyId))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntyId));
+    public void joinCommunity(Long cmntySn, String userId) {
+        Community community = communityRepository.findById(Objects.requireNonNull(cmntySn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
 
         // [W1-F3] 아래 둘은 '미존재'가 아니라 '상태 위반'이라 404 가 아닌 409 다.
         //   400 은 "입력이 틀렸다"는 뜻이라 클라이언트가 입력을 고치려 들게 만드는데, 여기엔 고칠 입력이 없다.
@@ -128,7 +125,7 @@ public class CommunityService {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE, "비활성 상태인 커뮤니티에는 가입할 수 없습니다.");
         }
 
-        CommunityUserId id = new CommunityUserId(cmntyId, userId);
+        CommunityUserId id = new CommunityUserId(cmntySn, userId);
         if (communityUserRepository.existsById(id)) {
             throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 가입했거나 가입 요청이 처리 중입니다.");
         }

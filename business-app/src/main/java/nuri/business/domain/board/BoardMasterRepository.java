@@ -30,5 +30,5 @@ public interface BoardMasterRepository extends JpaRepository<BoardMaster, String
     @org.springframework.data.jpa.repository.Query("SELECT m FROM BoardMaster m WHERE m.bbsId = :bbsId")
     Optional<BoardMaster> findByIdWithPessimisticLock(@org.springframework.data.repository.query.Param("bbsId") String bbsId);
 
-    List<BoardMaster> findByCmntyIdAndUseYn(String cmntyId, String useYn);
+    List<BoardMaster> findByCmntySnAndUseYn(Long cmntySn, String useYn);
 }
