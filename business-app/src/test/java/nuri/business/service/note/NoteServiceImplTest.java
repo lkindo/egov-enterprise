@@ -56,7 +56,7 @@ class NoteServiceImplTest {
         String userId = "user1";
         String searchWrd = "test";
         Pageable pageable = PageRequest.of(0, 10);
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId("T1").build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngSn(1L).build();
         Page<NoteTrnsmit> page = new PageImpl<>(List.of(trnsmit));
 
         given(noteTrnsmitRepository.searchNoteTrnsmits(any(), eq(searchWrd), eq(userId), eq(pageable))).willReturn(page);
@@ -75,7 +75,7 @@ class NoteServiceImplTest {
         String userId = "user1";
         String searchWrd = "test";
         Pageable pageable = PageRequest.of(0, 10);
-        NoteRecptn recptn = NoteRecptn.builder().noteRcptnId("R1").build();
+        NoteRecptn recptn = NoteRecptn.builder().noteRcptnSn(1L).build();
         Page<NoteRecptn> page = new PageImpl<>(List.of(recptn));
 
         given(noteRecptnRepository.searchNoteRecptns(any(), eq(searchWrd), eq(userId), eq(pageable))).willReturn(page);
@@ -91,17 +91,17 @@ class NoteServiceImplTest {
     @DisplayName("보낸 쪽지 상세 조회 성공")
     void getNoteDetail_sent_success() {
         // given
-        String relationId = "T1";
-        Note note = Note.builder().noteId("N1").noteTtl("Title").noteCn("Content").build();
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId(relationId).note(note).sndrId("user1").build();
+        Long relationSn = 2L;
+        Note note = Note.builder().noteSn(1L).noteTtl("Title").noteCn("Content").build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngSn(relationSn).note(note).sndrId("user1").build();
 
-        given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
+        given(noteTrnsmitRepository.findById(relationSn)).willReturn(Optional.of(trnsmit));
 
         // when
-        NoteDto result = noteService.getNoteDetail("N1", "sent", relationId, "user1");
+        NoteDto result = noteService.getNoteDetail(1L, "sent", relationSn, "user1");
 
         // then
-        assertThat(result.getNoteDsptchId()).isEqualTo(relationId);
+        assertThat(result.getNoteSndngSn()).isEqualTo(relationSn);
         assertThat(result.getNoteSj()).isEqualTo("Title");
         assertThat(result.getNoteCn()).isEqualTo("Content");
     }
@@ -110,11 +110,11 @@ class NoteServiceImplTest {
     @DisplayName("보낸 쪽지 상세 조회 실패 - 존재하지 않음")
     void getNoteDetail_sent_notFound() {
         // given
-        String relationId = "T1";
-        given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.empty());
+        Long relationSn = 2L;
+        given(noteTrnsmitRepository.findById(relationSn)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "sent", relationId, "user1"))
+        assertThatThrownBy(() -> noteService.getNoteDetail(1L, "sent", relationSn, "user1"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
@@ -123,14 +123,16 @@ class NoteServiceImplTest {
     @Test
     @DisplayName("[보안 H1] 보낸 쪽지 상세 조회 - 소유자 아니면 ACCESS_DENIED (IDOR 차단)")
     void getNoteDetail_sent_notOwner_accessDenied() {
-        String relationId = "T1";
+        Long relationSn = 2L;
+        Note note = Note.builder().noteSn(1L).build();
         NoteTrnsmit trnsmit = NoteTrnsmit.builder()
-                .noteSndngId(relationId)
+                .noteSndngSn(relationSn)
+                .note(note)
                 .sndrId("user1")
                 .build();
-        given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
+        given(noteTrnsmitRepository.findById(relationSn)).willReturn(Optional.of(trnsmit));
 
-        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "sent", relationId, "attacker"))
+        assertThatThrownBy(() -> noteService.getNoteDetail(1L, "sent", relationSn, "attacker"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(CommonErrorCode.ACCESS_DENIED);
@@ -140,11 +142,11 @@ class NoteServiceImplTest {
     @DisplayName("받은 쪽지 상세 조회 성공")
     void getNoteDetail_received_success() {
         // given
-        String relationId = "R1";
-        Note note = Note.builder().noteId("N1").noteTtl("Title").noteCn("Content").build();
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId("T1").sndrId("user1").build();
+        Long relationSn = 3L;
+        Note note = Note.builder().noteSn(1L).noteTtl("Title").noteCn("Content").build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngSn(2L).sndrId("user1").build();
         NoteRecptn recptn = NoteRecptn.builder()
-                .noteRcptnId(relationId)
+                .noteRcptnSn(relationSn)
                 .note(note)
                 .noteDsptch(trnsmit)
                 .rcvrId("user2")
@@ -152,13 +154,13 @@ class NoteServiceImplTest {
                 .rcptnSeCd("0")
                 .build();
 
-        given(noteRecptnRepository.findById(relationId)).willReturn(Optional.of(recptn));
+        given(noteRecptnRepository.findById(relationSn)).willReturn(Optional.of(recptn));
 
         // when
-        NoteDto result = noteService.getNoteDetail("N1", "received", relationId, "user2");
+        NoteDto result = noteService.getNoteDetail(1L, "received", relationSn, "user2");
 
         // then
-        assertThat(result.getNoteRecptnId()).isEqualTo(relationId);
+        assertThat(result.getNoteRcptnSn()).isEqualTo(relationSn);
         assertThat(result.getNoteSj()).isEqualTo("Title");
         assertThat(result.getNoteCn()).isEqualTo("Content");
     }
@@ -167,11 +169,11 @@ class NoteServiceImplTest {
     @DisplayName("받은 쪽지 상세 조회 실패 - 존재하지 않음")
     void getNoteDetail_received_notFound() {
         // given
-        String relationId = "R1";
-        given(noteRecptnRepository.findById(relationId)).willReturn(Optional.empty());
+        Long relationSn = 3L;
+        given(noteRecptnRepository.findById(relationSn)).willReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "received", relationId, "user1"))
+        assertThatThrownBy(() -> noteService.getNoteDetail(1L, "received", relationSn, "user1"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);
@@ -181,13 +183,13 @@ class NoteServiceImplTest {
     @DisplayName("[보안 H1] 받은 쪽지 상세 조회 - 소유자 아니면 ACCESS_DENIED (IDOR 차단)")
     void getNoteDetail_received_notOwner_accessDenied() {
         // given: 수신자는 user2인데 요청자는 attacker
-        String relationId = "R1";
-        Note note = Note.builder().noteId("N1").noteTtl("T").noteCn("C").build();
-        NoteRecptn recptn = NoteRecptn.builder().noteRcptnId(relationId).note(note).rcvrId("user2").build();
-        given(noteRecptnRepository.findById(relationId)).willReturn(Optional.of(recptn));
+        Long relationSn = 3L;
+        Note note = Note.builder().noteSn(1L).noteTtl("T").noteCn("C").build();
+        NoteRecptn recptn = NoteRecptn.builder().noteRcptnSn(relationSn).note(note).rcvrId("user2").build();
+        given(noteRecptnRepository.findById(relationSn)).willReturn(Optional.of(recptn));
 
         // when & then
-        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "received", relationId, "attacker"))
+        assertThatThrownBy(() -> noteService.getNoteDetail(1L, "received", relationSn, "attacker"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(CommonErrorCode.ACCESS_DENIED);
@@ -238,15 +240,15 @@ class NoteServiceImplTest {
     @DisplayName("보낸 쪽지 삭제 - 발신자 소프트삭제(수신자 미삭제 시 물리 수거 없음)")
     void deleteNote_sent_softDelete_noPurge() {
         // given
-        String relationId = "T1";
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId(relationId).sndrId("user1").delYn("N").build();
-        given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
-        given(noteTrnsmitRepository.findByIdForUpdate(relationId)).willReturn(Optional.of(trnsmit));
+        Long relationSn = 2L;
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngSn(relationSn).sndrId("user1").delYn("N").build();
+        given(noteTrnsmitRepository.findById(relationSn)).willReturn(Optional.of(trnsmit));
+        given(noteTrnsmitRepository.findByIdForUpdate(relationSn)).willReturn(Optional.of(trnsmit));
         // 미삭제 수신 사본이 남아 있으면 수거 보류
-        given(noteRecptnRepository.countByNoteDsptchNoteSndngIdAndDelYn(relationId, "N")).willReturn(1L);
+        given(noteRecptnRepository.countByNoteDsptchNoteSndngSnAndDelYn(relationSn, "N")).willReturn(1L);
 
         // when
-        noteService.deleteNote(relationId, "sent", "user1");
+        noteService.deleteNote(relationSn, "sent", "user1");
 
         // then — 소프트삭제만, 물리 수거 없음
         assertThat(trnsmit.getDelYn()).isEqualTo("Y");
@@ -258,12 +260,12 @@ class NoteServiceImplTest {
     @DisplayName("받은 쪽지 삭제 - 수신자 소프트삭제")
     void deleteNote_received_softDelete() {
         // given (noteDsptch null → 수거 판정 생략)
-        String relationId = "R1";
-        NoteRecptn recptn = NoteRecptn.builder().noteRcptnId(relationId).rcvrId("user2").build();
-        given(noteRecptnRepository.findById(relationId)).willReturn(Optional.of(recptn));
+        Long relationSn = 3L;
+        NoteRecptn recptn = NoteRecptn.builder().noteRcptnSn(relationSn).rcvrId("user2").build();
+        given(noteRecptnRepository.findById(relationSn)).willReturn(Optional.of(recptn));
 
         // when
-        noteService.deleteNote(relationId, "received", "user2");
+        noteService.deleteNote(relationSn, "received", "user2");
 
         // then
         assertThat(recptn.getDelYn()).isEqualTo("Y");
@@ -274,37 +276,37 @@ class NoteServiceImplTest {
     @DisplayName("양측 삭제 완료 시 물리 수거 — rcptn→sndng→info 순")
     void deleteNote_bothPartiesDeleted_purge() {
         // given: 발신은 이미 삭제(delYn='Y'), 마지막 수신 삭제로 양측 완료
-        String sndngId = "T1", noteId = "N1", rcptnId = "R1";
-        Note note = Note.builder().noteId(noteId).build();
-        NoteTrnsmit sndng = NoteTrnsmit.builder().noteSndngId(sndngId).note(note).sndrId("user1").delYn("Y").build();
-        NoteRecptn recptn = NoteRecptn.builder().noteRcptnId(rcptnId).note(note).noteDsptch(sndng).rcvrId("user2").build();
-        given(noteRecptnRepository.findById(rcptnId)).willReturn(Optional.of(recptn));
-        given(noteTrnsmitRepository.findByIdForUpdate(sndngId)).willReturn(Optional.of(sndng));
-        given(noteRecptnRepository.countByNoteDsptchNoteSndngIdAndDelYn(sndngId, "N")).willReturn(0L);
-        given(noteRecptnRepository.findByNoteDsptchNoteSndngId(sndngId)).willReturn(List.of(recptn));
-        given(noteTrnsmitRepository.countByNoteNoteId(noteId)).willReturn(0L);
-        given(noteRecptnRepository.countByNoteNoteId(noteId)).willReturn(0L);
+        Long sndngSn = 2L, noteSn = 1L, rcptnSn = 3L;
+        Note note = Note.builder().noteSn(noteSn).build();
+        NoteTrnsmit sndng = NoteTrnsmit.builder().noteSndngSn(sndngSn).note(note).sndrId("user1").delYn("Y").build();
+        NoteRecptn recptn = NoteRecptn.builder().noteRcptnSn(rcptnSn).note(note).noteDsptch(sndng).rcvrId("user2").build();
+        given(noteRecptnRepository.findById(rcptnSn)).willReturn(Optional.of(recptn));
+        given(noteTrnsmitRepository.findByIdForUpdate(sndngSn)).willReturn(Optional.of(sndng));
+        given(noteRecptnRepository.countByNoteDsptchNoteSndngSnAndDelYn(sndngSn, "N")).willReturn(0L);
+        given(noteRecptnRepository.findByNoteDsptchNoteSndngSn(sndngSn)).willReturn(List.of(recptn));
+        given(noteTrnsmitRepository.countByNoteNoteSn(noteSn)).willReturn(0L);
+        given(noteRecptnRepository.countByNoteNoteSn(noteSn)).willReturn(0L);
 
         // when
-        noteService.deleteNote(rcptnId, "received", "user2");
+        noteService.deleteNote(rcptnSn, "received", "user2");
 
         // then — 자식(rcptn) → 부모(sndng) → 본문(info) 순 물리 수거
         var order = inOrder(noteRecptnRepository, noteTrnsmitRepository, noteRepository);
         order.verify(noteRecptnRepository).deleteAll(List.of(recptn));
         order.verify(noteTrnsmitRepository).delete(sndng);
-        order.verify(noteRepository).deleteById(noteId);
+        order.verify(noteRepository).deleteById(noteSn);
     }
 
     @Test
     @DisplayName("[보안 H1] 쪽지 삭제 - 소유자 아니면 ACCESS_DENIED (IDOR 차단)")
     void deleteNote_notOwner_accessDenied() {
         // given: 발신자는 user1인데 요청자는 attacker
-        String relationId = "T1";
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId(relationId).sndrId("user1").build();
-        given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
+        Long relationSn = 2L;
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngSn(relationSn).sndrId("user1").build();
+        given(noteTrnsmitRepository.findById(relationSn)).willReturn(Optional.of(trnsmit));
 
         // when & then
-        assertThatThrownBy(() -> noteService.deleteNote(relationId, "sent", "attacker"))
+        assertThatThrownBy(() -> noteService.deleteNote(relationSn, "sent", "attacker"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(CommonErrorCode.ACCESS_DENIED);
@@ -328,11 +330,12 @@ class NoteServiceImplTest {
     @Test
     @DisplayName("보낸 쪽지 상세 - 소프트삭제된 건은 RESOURCE_NOT_FOUND")
     void getNoteDetail_sent_softDeleted_notFound() {
-        String relationId = "T1";
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId(relationId).sndrId("user1").delYn("Y").build();
-        given(noteTrnsmitRepository.findById(relationId)).willReturn(Optional.of(trnsmit));
+        Long relationSn = 2L;
+        Note note = Note.builder().noteSn(1L).build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngSn(relationSn).note(note).sndrId("user1").delYn("Y").build();
+        given(noteTrnsmitRepository.findById(relationSn)).willReturn(Optional.of(trnsmit));
 
-        assertThatThrownBy(() -> noteService.getNoteDetail("N1", "sent", relationId, "user1"))
+        assertThatThrownBy(() -> noteService.getNoteDetail(1L, "sent", relationSn, "user1"))
                 .isInstanceOf(BusinessException.class)
                 .extracting("errorCode")
                 .isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND);

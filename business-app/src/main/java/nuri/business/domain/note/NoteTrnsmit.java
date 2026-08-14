@@ -23,11 +23,11 @@ import org.hibernate.annotations.DynamicUpdate;
 public class NoteTrnsmit extends BaseEntity {
 
     @Id
-    @Column(name = "note_sndng_id", length = 20)
-    private String noteSndngId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long noteSndngSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "NOTE_ID")
+    @JoinColumn(name = "note_sn")
     private Note note;
 
     @Column(length = 20)
@@ -37,8 +37,8 @@ public class NoteTrnsmit extends BaseEntity {
     private String delYn;
 
     @Builder
-    public static NoteTrnsmit create(String noteSndngId, Note note, String sndrId, String delYn) {
-        return new NoteTrnsmit(noteSndngId, note, sndrId, delYn);
+    public static NoteTrnsmit create(Long noteSndngSn, Note note, String sndrId, String delYn) {
+        return new NoteTrnsmit(noteSndngSn, note, sndrId, delYn);
     }
 
     /** 발신자 논리삭제(발신함에서 숨김). 수신 사본과 독립. */

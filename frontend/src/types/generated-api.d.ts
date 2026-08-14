@@ -3158,7 +3158,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/notes/{noteId}": {
+    "/api/v1/notes/{noteSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4336,7 +4336,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/notes/{relationId}": {
+    "/api/v1/notes/{relationSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -5670,22 +5670,31 @@ export interface components {
         };
         /** @description 쪽지 정보 */
         NoteDto: {
-            /** @description 쪽지 ID */
-            noteId?: string;
+            /**
+             * Format: int64
+             * @description 쪽지 일련번호
+             */
+            noteSn?: number;
             /** @description 제목 */
             noteSj?: string;
             /** @description 내용 */
             noteCn?: string;
             /** @description 첨부 파일 ID */
             atchFileId?: string;
-            /** @description 쪽지 발신 ID */
-            noteDsptchId?: string;
+            /**
+             * Format: int64
+             * @description 쪽지 발송 일련번호
+             */
+            noteSndngSn?: number;
             /** @description 발신자 ID */
             dsptchUserId?: string;
             /** @description 발신자 명 */
             trnsmiterNm?: string;
-            /** @description 쪽지 수신 ID */
-            noteRecptnId?: string;
+            /**
+             * Format: int64
+             * @description 쪽지 수신 일련번호
+             */
+            noteRcptnSn?: number;
             /** @description 수신자 ID */
             rcverId?: string;
             /** @description 수신자 명 */
@@ -5709,8 +5718,11 @@ export interface components {
         };
         /** @description 쪽지 수신자 정보 DTO */
         NoteRecipientDto: {
-            /** @description 쪽지 수신 ID */
-            noteRecptnId: string;
+            /**
+             * Format: int64
+             * @description 쪽지 수신 일련번호
+             */
+            noteRcptnSn: number;
             /** @description 수신자 ID */
             rcverId: string;
             /** @description 수신자 명 */
@@ -15550,13 +15562,13 @@ export interface operations {
             query: {
                 /** @description 쪽지 구분 (recv: 수신, sent: 발신) */
                 type: string;
-                /** @description 관계 ID (수신ID 또는 발신ID) */
-                relationId: string;
+                /** @description 관계 일련번호 (수신 또는 발송) */
+                relationSn: number;
             };
             header?: never;
             path: {
-                /** @description 쪽지 ID */
-                noteId: string;
+                /** @description 쪽지 일련번호 */
+                noteSn: number;
             };
             cookie?: never;
         };
@@ -17143,8 +17155,8 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description 관계 ID */
-                relationId: string;
+                /** @description 관계 일련번호 */
+                relationSn: number;
             };
             cookie?: never;
         };

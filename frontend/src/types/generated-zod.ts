@@ -895,14 +895,14 @@ export type ApiResponseString = z.infer<typeof ApiResponseStringSchema>;
 // NoteDto Schema
 // ==========================================================================
 export const NoteDtoSchema = z.object({
-  noteId: z.string().min(0).max(20).optional(),
+  noteSn: z.number().optional(),
   noteSj: z.string().optional(),
   noteCn: z.string().min(0).max(4000).optional(),
   atchFileId: z.string().min(0).max(30).optional(),
-  noteDsptchId: z.string().optional(),
+  noteSndngSn: z.number().optional(),
   dsptchUserId: z.string().optional(),
   trnsmiterNm: z.string().optional(),
-  noteRecptnId: z.string().optional(),
+  noteRcptnSn: z.number().optional(),
   rcverId: z.string().optional(),
   rcverNm: z.string().optional(),
   openYn: z.string().min(0).max(1).optional(),
@@ -917,7 +917,7 @@ export type NoteDto = z.infer<typeof NoteDtoSchema>;
 // NoteRecipientDto Schema
 // ==========================================================================
 export const NoteRecipientDtoSchema = z.object({
-  noteRecptnId: z.string().min(0).max(20),
+  noteRcptnSn: z.number(),
   rcverId: z.string().min(0).max(20),
   rcverNm: z.string().min(0).max(50).optional(),
   recptnSe: z.string().min(0).max(12),

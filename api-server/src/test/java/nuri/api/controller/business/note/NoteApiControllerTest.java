@@ -40,39 +40,39 @@ class NoteApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser(username = "testuser", esntlId = "testuser")
     @DisplayName("수신 쪽지 목록 조회 테스트")
     void getReceivedNotesTest() throws Exception {
-        Page<NoteDto> page = new PageImpl<>(List.of(NoteDto.builder().noteId("N1").build()));
+        Page<NoteDto> page = new PageImpl<>(List.of(NoteDto.builder().noteSn(1L).build()));
         given(noteService.getReceivedNotes(eq("testuser"), any(), any())).willReturn(page);
 
         mockMvc.perform(get("/api/v1/notes/received")
                         .param("searchWrd", "word"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].noteId").value("N1"));
+                .andExpect(jsonPath("$.data.list[0].noteSn").value(1));
     }
 
     @Test
     @WithMockCustomUser(username = "testuser", esntlId = "testuser")
     @DisplayName("발신 쪽지 목록 조회 테스트")
     void getSentNotesTest() throws Exception {
-        Page<NoteDto> page = new PageImpl<>(List.of(NoteDto.builder().noteId("N1").build()));
+        Page<NoteDto> page = new PageImpl<>(List.of(NoteDto.builder().noteSn(1L).build()));
         given(noteService.getSentNotes(eq("testuser"), any(), any())).willReturn(page);
 
         mockMvc.perform(get("/api/v1/notes/sent"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].noteId").value("N1"));
+                .andExpect(jsonPath("$.data.list[0].noteSn").value(1));
     }
 
     @Test
     @WithMockCustomUser
     @DisplayName("쪽지 상세 조회 테스트")
     void getNoteTest() throws Exception {
-        NoteDto dto = NoteDto.builder().noteId("N1").build();
-        given(noteService.getNoteDetail(eq("N1"), eq("recv"), eq("R1"), anyString())).willReturn(dto);
+        NoteDto dto = NoteDto.builder().noteSn(1L).build();
+        given(noteService.getNoteDetail(eq(1L), eq("recv"), eq(2L), anyString())).willReturn(dto);
 
-        mockMvc.perform(get("/api/v1/notes/N1")
+        mockMvc.perform(get("/api/v1/notes/1")
                         .param("type", "recv")
-                        .param("relationId", "R1"))
+                        .param("relationSn", "2"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.noteId").value("N1"));
+                .andExpect(jsonPath("$.data.noteSn").value(1));
     }
 
     @Test
@@ -90,7 +90,7 @@ class NoteApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     @DisplayName("쪽지 삭제 테스트")
     void deleteNoteTest() throws Exception {
-        mockMvc.perform(delete("/api/v1/notes/R1")
+        mockMvc.perform(delete("/api/v1/notes/2")
                         .with(csrf())
                         .param("type", "recv"))
                 .andExpect(status().isOk());

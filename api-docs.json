@@ -12479,7 +12479,7 @@
         }
       }
     },
-    "/api/v1/notes/{noteId}": {
+    "/api/v1/notes/{noteSn}": {
       "get": {
         "tags": [
           "Note"
@@ -12489,12 +12489,13 @@
         "operationId": "getNote",
         "parameters": [
           {
-            "name": "noteId",
+            "name": "noteSn",
             "in": "path",
-            "description": "쪽지 ID",
+            "description": "쪽지 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -12507,12 +12508,13 @@
             }
           },
           {
-            "name": "relationId",
+            "name": "relationSn",
             "in": "query",
-            "description": "관계 ID (수신ID 또는 발신ID)",
+            "description": "관계 일련번호 (수신 또는 발송)",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -15867,7 +15869,7 @@
         }
       }
     },
-    "/api/v1/notes/{relationId}": {
+    "/api/v1/notes/{relationSn}": {
       "delete": {
         "tags": [
           "Note"
@@ -15877,12 +15879,13 @@
         "operationId": "deleteNote",
         "parameters": [
           {
-            "name": "relationId",
+            "name": "relationSn",
             "in": "path",
-            "description": "관계 ID",
+            "description": "관계 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -18933,11 +18936,10 @@
         "type": "object",
         "description": "쪽지 정보",
         "properties": {
-          "noteId": {
-            "type": "string",
-            "description": "쪽지 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "noteSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "쪽지 일련번호"
           },
           "noteSj": {
             "type": "string",
@@ -18955,9 +18957,10 @@
             "maxLength": 30,
             "minLength": 0
           },
-          "noteDsptchId": {
-            "type": "string",
-            "description": "쪽지 발신 ID"
+          "noteSndngSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "쪽지 발송 일련번호"
           },
           "dsptchUserId": {
             "type": "string",
@@ -18967,9 +18970,10 @@
             "type": "string",
             "description": "발신자 명"
           },
-          "noteRecptnId": {
-            "type": "string",
-            "description": "쪽지 수신 ID"
+          "noteRcptnSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "쪽지 수신 일련번호"
           },
           "rcverId": {
             "type": "string",
@@ -19012,11 +19016,10 @@
         "type": "object",
         "description": "쪽지 수신자 정보 DTO",
         "properties": {
-          "noteRecptnId": {
-            "type": "string",
-            "description": "쪽지 수신 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "noteRcptnSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "쪽지 수신 일련번호"
           },
           "rcverId": {
             "type": "string",
@@ -19038,7 +19041,7 @@
           }
         },
         "required": [
-          "noteRecptnId",
+          "noteRcptnSn",
           "rcverId",
           "recptnSe"
         ]

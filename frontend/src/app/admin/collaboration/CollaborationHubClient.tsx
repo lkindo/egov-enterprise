@@ -129,7 +129,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  {item.openYn === 'N' && <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />}
  <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.noteSj}</span>
  </div>
- <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">ID: {item.noteId}</span>
+ <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">SN: {item.noteSn}</span>
  </div>
  )
  },
@@ -289,7 +289,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  <StandardDataTable<Note>
  columns={messageColumns}
  data={notes}
- keyField="noteId"
+ keyField="noteSn"
  loading={notesQuery.isLoading}
  error={tableError}
  onRetry={handleRetry}

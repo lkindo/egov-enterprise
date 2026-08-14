@@ -109,6 +109,10 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] WorkReport — V2_65에서 rpt_id 문자열 기술키를 rptp_sn
             //   BIGINT IDENTITY로 전환했다. 실측: tb_rpt_info 0행, inbound FK 0,
             //   첨부파일 outbound FK 1건·고아 0. CRUD API·프론트·E2E 계약도 함께 이관했다.
+            // [2026-08-14 제거] Note · NoteTrnsmit · NoteRecptn — V2_66에서 쪽지 본문·발송·수신의
+            //   문자열 기술 PK와 내부 FK 체인을 3개 BIGINT IDENTITY 일련번호로 함께 전환했다.
+            //   실측: 세 테이블 모두 0행, 관계 고아 0, 본문의 첨부 outbound FK 1건·고아 0.
+            //   구형 관계 주입 회귀와 JPA·API·프론트 숫자 계약으로 폐포 전체를 검증했다.
             "AdministCode", "Authority", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptManage", "EventInfo",
@@ -126,8 +130,7 @@ class PkGenerationStandardLinterTest {
             //     현재 상태는 "엔티티 없는 빈 테이블 2개" 이며 그 처분은 미결로 남는다.
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
             "FileMaster", "GroupManage", "InformalSanction", "InstitutionCode",
-            "LoginLog", "LoginPolicy", "Menu",
-            "Note", "NoteRecptn", "NoteTrnsmit", "Notification",
+            "LoginLog", "LoginPolicy", "Menu", "Notification",
             "OnlinePollArticle", "OnlinePollManage", "OnlinePollResult", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
             "SiteMap", "Sms", "SurveyArticle", "SurveyInfo", "SurveyQuestion",

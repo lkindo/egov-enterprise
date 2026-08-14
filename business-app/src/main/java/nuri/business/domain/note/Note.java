@@ -22,8 +22,8 @@ import org.hibernate.annotations.DynamicUpdate;
 public class Note extends BaseEntity {
 
     @Id
-    @Column(name = "note_id", length = 20)
-    private String noteId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long noteSn;
 
     @Column(length = 100)
     private String noteTtl;
@@ -45,15 +45,15 @@ public class Note extends BaseEntity {
     @OneToMany(mappedBy = "note", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<NoteTrnsmit> noteTrnsmits = new java.util.ArrayList<>();
 
-    public Note(String noteId, String noteTtl, String noteCn, String atchFileId) {
-        this.noteId = noteId;
+    public Note(Long noteSn, String noteTtl, String noteCn, String atchFileId) {
+        this.noteSn = noteSn;
         this.noteTtl = noteTtl;
         this.noteCn = noteCn;
         this.atchFileId = atchFileId;
     }
 
     @Builder
-    public static Note create(String noteId, String noteTtl, String noteCn, String atchFileId) {
-        return new Note(noteId, noteTtl, noteCn, atchFileId);
+    public static Note create(Long noteSn, String noteTtl, String noteCn, String atchFileId) {
+        return new Note(noteSn, noteTtl, noteCn, atchFileId);
     }
 }

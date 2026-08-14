@@ -12,10 +12,9 @@ import lombok.*;
 @Schema(description = "쪽지 수신자 정보 DTO")
 public class NoteRecipientDto {
 
-    @NotBlank
-    @Size(max = 20)
-    @Schema(description = "쪽지 수신 ID")
-    private String noteRecptnId;
+    @NotNull
+    @Schema(description = "쪽지 수신 일련번호")
+    private Long noteRcptnSn;
 
     @NotBlank
     @Size(max = 20)

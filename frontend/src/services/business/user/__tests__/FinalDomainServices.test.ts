@@ -28,6 +28,10 @@ describe('Final Domain Services', () => {
  it('noteService calls correct endpoints', async () => {
  await noteService.getReceivedNotes({ page: 0 });
  expect(client.get).toHaveBeenCalledWith('notes/received', expect.any(Object));
+ await noteService.getNote(31, { type: 'received', relationSn: 41 });
+ expect(client.get).toHaveBeenCalledWith('notes/31', { params: { type: 'received', relationSn: 41 } });
+ await noteService.deleteNote(41, { type: 'received' });
+ expect(client.delete).toHaveBeenCalledWith('notes/41', { params: { type: 'received' } });
  });
 
  it('scrapService calls correct endpoints', async () => {

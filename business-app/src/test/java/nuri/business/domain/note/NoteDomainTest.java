@@ -18,20 +18,20 @@ class NoteDomainTest {
         assertNotNull(note1);
 
         // 2. 전체 인자 생성자 및 기본 Getter 검증
-        Note note2 = new Note("N1", "Title", "Content", "F1");
-        assertEquals("N1", note2.getNoteId());
+        Note note2 = new Note(1L, "Title", "Content", "F1");
+        assertEquals(1L, note2.getNoteSn());
         assertEquals("Title", note2.getNoteTtl());
         assertEquals("Content", note2.getNoteCn());
         assertEquals("F1", note2.getAtchFileId());
 
         // 3. SuperBuilder 검증
         Note note3 = Note.builder()
-                .noteId("N3")
+                .noteSn(3L)
                 .noteTtl("Subject")
                 .noteCn("Content3")
                 .atchFileId("F3")
                 .build();
-        assertEquals("N3", note3.getNoteId());
+        assertEquals(3L, note3.getNoteSn());
         assertEquals("Subject", note3.getNoteTtl());
         assertEquals("Content3", note3.getNoteCn());
         assertEquals("F3", note3.getAtchFileId());
@@ -49,10 +49,10 @@ class NoteDomainTest {
         assertNotNull(recptn1);
 
         // 2. 전체 인자 생성자 검증
-        Note note = Note.builder().noteId("N1").build();
-        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngId("T1").build();
-        NoteRecptn recptn2 = new NoteRecptn("R2", note, trnsmit, "RcvId", "Y", "Cd1", "N");
-        assertEquals("R2", recptn2.getNoteRcptnId());
+        Note note = Note.builder().noteSn(1L).build();
+        NoteTrnsmit trnsmit = NoteTrnsmit.builder().noteSndngSn(1L).build();
+        NoteRecptn recptn2 = new NoteRecptn(2L, note, trnsmit, "RcvId", "Y", "Cd1", "N");
+        assertEquals(2L, recptn2.getNoteRcptnSn());
         assertEquals(note, recptn2.getNote());
         assertEquals(trnsmit, recptn2.getNoteDsptch());
         assertEquals("RcvId", recptn2.getRcvrId());
@@ -61,13 +61,13 @@ class NoteDomainTest {
 
         // 3. SuperBuilder 검증
         NoteRecptn recptn3 = NoteRecptn.builder()
-                .noteRcptnId("R3")
+                .noteRcptnSn(3L)
                 .note(note)
                 .noteDsptch(trnsmit)
                 .rcvrId("RcvId3")
                 .rcptnSeCd("Cd3")
                 .build();
-        assertEquals("R3", recptn3.getNoteRcptnId());
+        assertEquals(3L, recptn3.getNoteRcptnSn());
         assertEquals("RcvId3", recptn3.getRcvrId());
         assertEquals("Cd3", recptn3.getRcptnSeCd());
 
@@ -96,21 +96,21 @@ class NoteDomainTest {
         assertNotNull(trnsmit1);
 
         // 2. 전체 인자 생성자 검증
-        Note note = Note.builder().noteId("N1").build();
-        NoteTrnsmit trnsmit2 = new NoteTrnsmit("T2", note, "SndId", "Y");
-        assertEquals("T2", trnsmit2.getNoteSndngId());
+        Note note = Note.builder().noteSn(1L).build();
+        NoteTrnsmit trnsmit2 = new NoteTrnsmit(2L, note, "SndId", "Y");
+        assertEquals(2L, trnsmit2.getNoteSndngSn());
         assertEquals(note, trnsmit2.getNote());
         assertEquals("SndId", trnsmit2.getSndrId());
         assertEquals("Y", trnsmit2.getDelYn());
 
         // 3. SuperBuilder 검증
         NoteTrnsmit trnsmit3 = NoteTrnsmit.builder()
-                .noteSndngId("T3")
+                .noteSndngSn(3L)
                 .note(note)
                 .sndrId("SndId3")
                 .delYn("N")
                 .build();
-        assertEquals("T3", trnsmit3.getNoteSndngId());
+        assertEquals(3L, trnsmit3.getNoteSndngSn());
         assertEquals("SndId3", trnsmit3.getSndrId());
 
         // 5. PrePersist onCreate Lifecycle 검증
