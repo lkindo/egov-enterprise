@@ -163,6 +163,8 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] Notification — V2_81에서 noti_sn BIGINT IDENTITY로 전환했다.
             //   E2E 6행은 전부 NTFC_ 자동키였고 수신자 고아 0건이다. 사용자 FK·수신자 인덱스·
             //   읽음 CHECK를 보존하며 JPA/API/프론트/웹소켓 계약과 NTFC_ 수동 채번을 함께 이관했다.
+            // [2026-08-14 제거] SiteMap — V2_82에서 실제 의미가 도장정보인 오명을 Stamp로 바로잡고
+            //   mpng_crt_id를 stmp_sn BIGINT IDENTITY로 전환했다. E2E 0행·FK 0건이며 기존 업무 필드는 보존했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "DeptManage",
@@ -182,7 +184,7 @@ class PkGenerationStandardLinterTest {
             "GroupManage", "InstitutionCode",
             "LoginPolicy", "OrganizationManage",
             "Program", "RefreshToken", "RoleInfo",
-            "SiteMap", "Sms", "SystemPolicy", "Template",
+            "Sms", "SystemPolicy", "Template",
             "User", "UserAbsence", "UserAuthority"
     ));
 
