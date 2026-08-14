@@ -167,7 +167,7 @@ const USER_ROW = {
 } satisfies UserLogDto;
 
 const WEB_ROW = {
-  dmndId: 'WEB-001',
+  webLogSn: 101,
   url: '/api/v1/orders/42',
   dmndUserId: 'web-admin',
   dmndUserIpAddr: '10.0.0.3',
@@ -237,6 +237,16 @@ describe('integrated log dashboard contracts', () => {
     for (const value of ['20260813101112', 'web-admin', '/api/v1/orders/42', '10.0.0.3', '37']) {
       expect(row.getByText(value)).toBeInTheDocument();
     }
+  });
+
+  it('uses webLogSn as the WEB detail identifier', async () => {
+    dashboardHarness.activeCategory = 'WEB';
+    dashboardHarness.queryData = pageOf(WEB_ROW);
+
+    await renderDashboard();
+    fireEvent.click(screen.getByRole('button', { name: 'open row 0' }));
+
+    expect(screen.getByRole('dialog', { name: '로그 상세 정보' })).toHaveTextContent('101');
   });
 
   it('uses the USR composite identifier in the detail inspector', async () => {

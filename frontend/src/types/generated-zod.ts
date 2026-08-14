@@ -2845,7 +2845,7 @@ export type PageResponseWebLogDto = z.infer<typeof PageResponseWebLogDtoSchema>;
 // WebLogDto Schema
 // ==========================================================================
 export const WebLogDtoSchema = z.object({
-  dmndId: z.string().optional(),
+  webLogSn: z.number().optional(),
   url: z.string().optional(),
   dmndUserId: z.string().optional(),
   dmndUserIpAddr: z.string().optional(),

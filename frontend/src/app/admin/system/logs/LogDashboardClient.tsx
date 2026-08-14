@@ -33,7 +33,7 @@ type IntegratedLogRow =
   Partial<Pick<SysLog, 'sysLogSn' | 'dmndId' | 'srvcNm' | 'methodNm' | 'dmndUserId' | 'rqesterIp' | 'ocrnYmd'>>
   & Partial<Pick<LoginLog, 'lgnSn' | 'loginId' | 'loginIp' | 'loginMthd' | 'creatDt'>>
   & Partial<Pick<UserLog, 'ocrnYmd' | 'dmndUserId' | 'userNm' | 'srvcNm' | 'mthdNm'>>
-  & Partial<Pick<WebLog, 'dmndId' | 'url' | 'dmndUserId' | 'dmndUserIpAddr' | 'occrYmd'>>
+  & Partial<Pick<WebLog, 'webLogSn' | 'url' | 'dmndUserId' | 'dmndUserIpAddr' | 'occrYmd'>>
   & { prcsTm?: SysLog['prcsTm'] | WebLog['prcsTm'] };
 
 const CATEGORY_IDS = logCategories.map((c) => c.id);
@@ -60,7 +60,8 @@ function getOccurredAt(row: IntegratedLogRow, category: LogCategoryId): string {
 
 function getLogIdentifier(row: IntegratedLogRow, category: LogCategoryId): string {
   if (category === 'LGN') return row.lgnSn != null ? String(row.lgnSn) : '-';
-  if (category === 'SYS' || category === 'WEB') return row.dmndId || '-';
+  if (category === 'WEB') return row.webLogSn != null ? String(row.webLogSn) : '-';
+  if (category === 'SYS') return row.dmndId || '-';
 
   const parts = [row.ocrnYmd, row.dmndUserId, row.srvcNm, row.mthdNm];
   return parts.every(Boolean) ? parts.join('/') : '-';

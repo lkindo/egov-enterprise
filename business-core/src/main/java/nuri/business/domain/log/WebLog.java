@@ -3,6 +3,8 @@ import nuri.foundation.domain.common.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -22,8 +24,9 @@ import lombok.NoArgsConstructor;
 public class WebLog extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String dmndId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "web_log_sn", updatable = false, nullable = false)
+    private Long webLogSn;
 
     @Column(length = 1000)
     private String url;
@@ -39,8 +42,8 @@ public class WebLog extends BaseEntity {
 
     private Long prcsTm;
 
-    private WebLog(String dmndId, String url, String dmndUserId, String dmndUserIpAddr, String occrYmd, Long prcsTm) {
-        this.dmndId = dmndId;
+    private WebLog(Long webLogSn, String url, String dmndUserId, String dmndUserIpAddr, String occrYmd, Long prcsTm) {
+        this.webLogSn = webLogSn;
         this.url = url;
         this.dmndUserId = dmndUserId;
         this.dmndUserIpAddr = dmndUserIpAddr;
@@ -49,7 +52,8 @@ public class WebLog extends BaseEntity {
     }
 
     @Builder
-    public static WebLog create(String dmndId, String url, String dmndUserId, String dmndUserIpAddr, String occrYmd, Long prcsTm) {
-        return new WebLog(dmndId, url, dmndUserId, dmndUserIpAddr, occrYmd, prcsTm);
+    public static WebLog create(Long webLogSn, String url, String dmndUserId, String dmndUserIpAddr, String occrYmd,
+            Long prcsTm) {
+        return new WebLog(webLogSn, url, dmndUserId, dmndUserIpAddr, occrYmd, prcsTm);
     }
 }

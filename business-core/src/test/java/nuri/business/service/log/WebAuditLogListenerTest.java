@@ -7,6 +7,7 @@ import nuri.business.domain.log.WebLogRepository;
 import nuri.foundation.core.event.AuditEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.dao.DataIntegrityViolationException;
 
@@ -50,7 +51,10 @@ class WebAuditLogListenerTest {
 
         listener.onAuditEvent(EVENT);
 
-        verify(repository).save(any(WebLog.class));
+        ArgumentCaptor<WebLog> logCaptor = ArgumentCaptor.forClass(WebLog.class);
+        verify(repository).save(logCaptor.capture());
+        assertThat(logCaptor.getValue().getWebLogSn()).isNull();
+        assertThat(logCaptor.getValue().getUrl()).isEqualTo(EVENT.url());
         assertThat(listener.getPersistFailureCount()).isZero();
         assertThat(registry.find(WebAuditLogListener.DROP_METRIC).counter()).isNull();
     }

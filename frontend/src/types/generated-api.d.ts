@@ -7585,7 +7585,8 @@ export interface components {
             totalPage?: number;
         };
         WebLogDto: {
-            dmndId?: string;
+            /** Format: int64 */
+            webLogSn?: number;
             url?: string;
             dmndUserId?: string;
             dmndUserIpAddr?: string;

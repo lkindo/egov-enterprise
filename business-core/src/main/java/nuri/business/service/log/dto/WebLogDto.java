@@ -16,8 +16,8 @@ import nuri.business.domain.log.WebLog;
  */
 @Builder
 public record WebLogDto(
-        /** 요청 ID (PK) */
-        String dmndId,
+        /** 웹 로그 내부 일련번호 */
+        Long webLogSn,
         /** 요청 URL */
         String url,
         /** 요청자 ID */
@@ -33,7 +33,7 @@ public record WebLogDto(
     /** 엔티티 → DTO. 조회 전용이라 역방향(DTO → 엔티티)은 두지 않는다. */
     public static WebLogDto from(WebLog entity) {
         return WebLogDto.builder()
-                .dmndId(entity.getDmndId())
+                .webLogSn(entity.getWebLogSn())
                 .url(entity.getUrl())
                 .dmndUserId(entity.getDmndUserId())
                 .dmndUserIpAddr(entity.getDmndUserIpAddr())

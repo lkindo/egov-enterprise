@@ -32,11 +32,11 @@ const SystemLogsWebClient = () => {
 
     const columns: Column<WebLog>[] = [
         {
-            header: '요청ID',
+            header: '웹 로그 일련번호',
             accessor: (item: WebLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums text-left">
                     <Terminal size={12} className="opacity-30" />
-                    {item.dmndId || '-'}
+                    {item.webLogSn ?? '-'}
                 </div>
             ),
             className: 'w-40'
@@ -109,7 +109,7 @@ const SystemLogsWebClient = () => {
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
-                keyField="dmndId"
+                keyField="webLogSn"
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,

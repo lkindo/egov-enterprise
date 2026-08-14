@@ -135,7 +135,7 @@ const USER_ROW = {
 } satisfies UserLogDto;
 
 const WEB_ROW = {
-  dmndId: 'WEB-001',
+  webLogSn: 101,
   url: '/api/v1/orders/42',
   dmndUserId: 'web-admin',
   dmndUserIpAddr: '10.0.0.3',
@@ -197,15 +197,15 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     });
   });
 
-  it('renders every WEB generated DTO field instead of legacy aliases', () => {
+  it('renders every WEB generated DTO field and uses webLogSn as the row key', () => {
     clientHarness.queryData = pageOf(WEB_ROW);
     render(<SystemLogsWebClient />);
 
     const table = within(screen.getByTestId('data-table'));
-    for (const value of ['WEB-001', '/api/v1/orders/42', 'web-admin', '37', '10.0.0.3', '20260813101112']) {
+    for (const value of ['101', '/api/v1/orders/42', 'web-admin', '37', '10.0.0.3', '20260813101112']) {
       expect(table.getByText(value)).toBeInTheDocument();
     }
-    expect(currentTableProps().keyField).toBe('dmndId');
+    expect(currentTableProps().keyField).toBe('webLogSn');
   });
 
   it('renders the PRV generated DTO fields and uses dmndId as the row key', () => {

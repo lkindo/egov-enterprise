@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import nuri.business.domain.log.WebLog;
 import nuri.business.domain.log.WebLogRepository;
 import nuri.foundation.core.event.AuditEvent;
-import nuri.foundation.core.util.IdGenerationUtil;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
@@ -79,13 +78,13 @@ public class WebAuditLogListener {
     @EventListener
     public void onAuditEvent(AuditEvent event) {
         try {
-            WebLog webLog = WebLog.create(
-                    IdGenerationUtil.generateId("WLOG_", 13),
-                    event.url(),
-                    event.userId(),
-                    event.clientIp(),
-                    event.occurredAt().format(YMD),
-                    event.durationMs());
+            WebLog webLog = WebLog.builder()
+                    .url(event.url())
+                    .dmndUserId(event.userId())
+                    .dmndUserIpAddr(event.clientIp())
+                    .occrYmd(event.occurredAt().format(YMD))
+                    .prcsTm(event.durationMs())
+                    .build();
             webLogRepository.save(webLog);
         } catch (Exception e) {
             // 요청 처리에는 영향을 주지 않되(비파괴 원칙), 유실을 셀 수 있게 남긴다.

@@ -142,6 +142,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] SysLog — V2_74에서 요청 상관관계 dmnd_id는 UNIQUE 업무키로
             //   보존하고 sys_log_sn BIGINT IDENTITY를 내부 PK로 도입했다. 실측 12행은 모두 데모
             //   시드이며 inbound/outbound FK 0. 관리·감사 API와 프론트 행 식별자를 함께 이관했다.
+            // [2026-08-14 제거] WebLog — V2_75에서 AuditEvent와 무관한 WLOG_ 잘린 UUID 수동
+            //   기술키를 제거하고 web_log_sn BIGINT IDENTITY로 전환했다. 실측 4,003행 전체가
+            //   WLOG_ 생성값이고 inbound/outbound FK 0. 비동기 적재·조회·프론트 계약을 함께 이관했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "DeptManage", "EventInfo",
@@ -162,7 +165,7 @@ class PkGenerationStandardLinterTest {
             "LoginPolicy", "Menu", "Notification", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
             "SiteMap", "Sms", "SystemPolicy", "Template",
-            "User", "UserAbsence", "UserAuthority", "WebLog"
+            "User", "UserAbsence", "UserAuthority"
     ));
 
     @Test
