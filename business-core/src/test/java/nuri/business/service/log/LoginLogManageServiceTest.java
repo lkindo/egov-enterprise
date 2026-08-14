@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
@@ -33,6 +34,25 @@ class LoginLogManageServiceTest {
     @InjectMocks
     private LoginLogManageService loginLogManageService;
 
+    @Test
+    @DisplayName("로그인 로그 등록은 클라이언트 식별자를 무시하고 DB 자동 채번을 사용한다")
+    void insertUsesDatabaseGeneratedIdentifier() {
+        LoginLogDto dto = LoginLogDto.builder()
+                .lgnSn(999L)
+                .loginId("user01")
+                .loginIp("127.0.0.1")
+                .loginMthd("LOGIN")
+                .errOccrrAt("N")
+                .build();
+
+        loginLogManageService.logInsertLoginLog(dto);
+
+        ArgumentCaptor<LoginLog> captor = ArgumentCaptor.forClass(LoginLog.class);
+        verify(loginLogRepository).save(captor.capture());
+        assertNull(captor.getValue().getLgnSn());
+        assertEquals("user01", captor.getValue().getUserId());
+    }
+
     @Nested
     @DisplayName("로그인 로그 조회 테스트")
     class SelectLoginLogTests {
@@ -46,7 +66,7 @@ class LoginLogManageServiceTest {
             searchVO.setPageUnit(10);
 
             LoginLog log1 = LoginLog.builder()
-                    .logId("LGN_001")
+                    .lgnSn(1L)
                     .userId("user01")
                     .build();
             log1.setCrtDt(LocalDateTime.now());
@@ -60,7 +80,7 @@ class LoginLogManageServiceTest {
             // Then
             assertNotNull(result);
             assertEquals(1, result.size());
-            assertEquals("LGN_001", result.get(0).getLogId());
+            assertEquals(1L, result.get(0).getLgnSn());
             assertEquals("user01", result.get(0).getLoginId());
         }
 
@@ -82,21 +102,21 @@ class LoginLogManageServiceTest {
         @DisplayName("로그인 로그 상세 조회 성공")
         void testSelectLoginLog_Success() {
             // Given
-            String logId = "LGN_001";
+            Long lgnSn = 1L;
             LoginLog log = LoginLog.builder()
-                    .logId(logId)
+                    .lgnSn(lgnSn)
                     .userId("user01")
                     .build();
             log.setCrtDt(LocalDateTime.now());
 
-            when(loginLogRepository.findById(logId)).thenReturn(Optional.of(log));
+            when(loginLogRepository.findById(lgnSn)).thenReturn(Optional.of(log));
 
             // When
-            LoginLogDto result = loginLogManageService.selectLoginLogDetail(LoginLogDto.builder().logId(logId).build());
+            LoginLogDto result = loginLogManageService.selectLoginLogDetail(lgnSn);
 
             // Then
             assertNotNull(result);
-            assertEquals(logId, result.getLogId());
+            assertEquals(lgnSn, result.getLgnSn());
             assertEquals("user01", result.getLoginId());
         }
 
@@ -104,11 +124,11 @@ class LoginLogManageServiceTest {
         @DisplayName("존재하지 않는 로그인 로그 조회 시 null 반환")
         void testSelectLoginLog_NotFound() {
             // Given
-            String logId = "NON_EXIST";
-            when(loginLogRepository.findById(logId)).thenReturn(Optional.empty());
+            Long lgnSn = 999L;
+            when(loginLogRepository.findById(lgnSn)).thenReturn(Optional.empty());
 
             // When
-            LoginLogDto result = loginLogManageService.selectLoginLogDetail(LoginLogDto.builder().logId(logId).build());
+            LoginLogDto result = loginLogManageService.selectLoginLogDetail(lgnSn);
 
             // Then
             assertNull(result);

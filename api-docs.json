@@ -15025,7 +15025,7 @@
         }
       }
     },
-    "/api/v1/admin/system/logs/login/{logId}": {
+    "/api/v1/admin/system/logs/login/{lgnSn}": {
       "get": {
         "tags": [
           "LoginLog"
@@ -15034,11 +15034,12 @@
         "operationId": "getLoginLog",
         "parameters": [
           {
-            "name": "logId",
+            "name": "lgnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -24033,10 +24034,9 @@
       "LoginLogDto": {
         "type": "object",
         "properties": {
-          "logId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "lgnSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "loginId": {
             "type": "string"

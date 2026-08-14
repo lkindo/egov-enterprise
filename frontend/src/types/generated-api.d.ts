@@ -4054,7 +4054,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/logs/login/{logId}": {
+    "/api/v1/admin/system/logs/login/{lgnSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -7720,7 +7720,8 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         LoginLogDto: {
-            logId?: string;
+            /** Format: int64 */
+            lgnSn?: number;
             loginId?: string;
             loginIp?: string;
             loginMthd?: string;
@@ -16864,7 +16865,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                logId: string;
+                lgnSn: number;
             };
             cookie?: never;
         };

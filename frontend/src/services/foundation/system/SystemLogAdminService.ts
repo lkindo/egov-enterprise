@@ -58,8 +58,8 @@ class SystemLogAdminService extends AdminService {
   /**
    * 로그인 로그 상세 조회
    */
-  async getLoginLog(logId: string, config?: AxiosRequestConfig): Promise<LoginLog> {
-    return this.get<LoginLog>(`/login/${logId}`, config);
+  async getLoginLog(lgnSn: number, config?: AxiosRequestConfig): Promise<LoginLog> {
+    return this.get<LoginLog>(`/login/${lgnSn}`, config);
   }
 
   /**

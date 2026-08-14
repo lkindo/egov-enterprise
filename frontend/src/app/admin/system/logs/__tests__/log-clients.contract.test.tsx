@@ -110,7 +110,7 @@ const SYSTEM_ROW = {
 } satisfies SysLogDto;
 
 const LOGIN_ROW = {
-  logId: 'LGN-001',
+  lgnSn: 101,
   loginId: 'alice',
   loginIp: '10.0.0.2',
   loginMthd: 'LOGIN',
@@ -169,15 +169,15 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     expect(currentTableProps().keyField).toBe('dmndId');
   });
 
-  it('renders the LGN generated DTO fields and uses logId as the row key', () => {
+  it('renders the LGN generated DTO fields and uses lgnSn as the row key', () => {
     clientHarness.queryData = pageOf(LOGIN_ROW);
     render(<SystemLogsLoginClient />);
 
     const table = within(screen.getByTestId('data-table'));
-    for (const value of ['LGN-001', '2026-08-13 10:11:12', 'alice', '10.0.0.2', 'LOGIN', 'E_AUTH']) {
+    for (const value of ['101', '2026-08-13 10:11:12', 'alice', '10.0.0.2', 'LOGIN', 'E_AUTH']) {
       expect(table.getByText(value)).toBeInTheDocument();
     }
-    expect(currentTableProps().keyField).toBe('logId');
+    expect(currentTableProps().keyField).toBe('lgnSn');
   });
 
   it('builds a stable USR composite row identifier and renders all aggregate counters', () => {

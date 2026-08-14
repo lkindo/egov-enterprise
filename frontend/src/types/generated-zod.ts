@@ -3010,7 +3010,7 @@ export type ApiResponsePageResponseLoginLogDto = z.infer<typeof ApiResponsePageR
 // LoginLogDto Schema
 // ==========================================================================
 export const LoginLogDtoSchema = z.object({
-  logId: z.string().min(0).max(20).optional(),
+  lgnSn: z.number().optional(),
   loginId: z.string().optional(),
   loginIp: z.string().optional(),
   loginMthd: z.string().optional(),

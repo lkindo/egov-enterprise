@@ -26,7 +26,6 @@ public class LoginLogManageService extends BaseAbstractService {
     @Transactional
     public void logInsertLoginLog(@NonNull LoginLogDto dto) {
         LoginLog entity = LoginLog.builder()
-                .logId(dto.getLogId())
                 .userId(dto.getLoginId())
                 .lgnIpAddr(dto.getLoginIp())
                 .cntnMthdCd(dto.getLoginMthd())
@@ -51,15 +50,15 @@ public class LoginLogManageService extends BaseAbstractService {
                 .getTotalElements();
     }
 
-    public LoginLogDto selectLoginLogDetail(@NonNull LoginLogDto dto) {
-        return loginLogRepository.findById(required(dto.getLogId(), "dto.getLogId() 는 null 일 수 없습니다"))
+    public LoginLogDto selectLoginLogDetail(@NonNull Long lgnSn) {
+        return loginLogRepository.findById(lgnSn)
                 .map(this::toDto)
                 .orElse(null);
     }
 
     private LoginLogDto toDto(LoginLog entity) {
         return LoginLogDto.builder()
-                .logId(entity.getLogId())
+                .lgnSn(entity.getLgnSn())
                 .loginId(entity.getUserId())
                 .loginIp(entity.getLgnIpAddr())
                 .loginMthd(entity.getCntnMthdCd())

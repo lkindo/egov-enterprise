@@ -51,8 +51,7 @@ class LogServiceTest {
             verify(loginLogRepository, times(1)).save(captor.capture());
             
             LoginLog savedLog = captor.getValue();
-            assertNotNull(savedLog.getLogId());
-            assertTrue(savedLog.getLogId().startsWith("LGN_"));
+            assertNull(savedLog.getLgnSn(), "신규 로그인 로그 PK는 DB IDENTITY가 생성해야 한다");
             assertEquals(userId, savedLog.getUserId());
             assertEquals(ip, savedLog.getLgnIpAddr());
             assertEquals(mthd, savedLog.getCntnMthdCd());
@@ -70,7 +69,7 @@ class LogServiceTest {
         void testGetRecentLoginLogs_Success() {
             // Given
             LoginLog log1 = LoginLog.builder()
-                    .logId("LGN_001")
+                    .lgnSn(1L)
                     .userId("user01")
                     .lgnIpAddr("127.0.0.1")
                     .cntnMthdCd("LOGIN")
@@ -78,7 +77,7 @@ class LogServiceTest {
             log1.setCrtDt(LocalDateTime.now());
 
             LoginLog log2 = LoginLog.builder()
-                    .logId("LGN_002")
+                    .lgnSn(2L)
                     .userId("user02")
                     .lgnIpAddr("127.0.0.1")
                     .cntnMthdCd("LOGIN")
@@ -93,9 +92,9 @@ class LogServiceTest {
             // Then
             assertNotNull(result);
             assertEquals(2, result.size());
-            assertEquals("LGN_001", result.get(0).getLogId());
+            assertEquals(1L, result.get(0).getLgnSn());
             assertEquals("user01", result.get(0).getConectId());
-            assertEquals("LGN_002", result.get(1).getLogId());
+            assertEquals(2L, result.get(1).getLgnSn());
             assertEquals("user02", result.get(1).getConectId());
             verify(loginLogRepository, times(1)).findTop100ByOrderByCrtDtDesc();
         }

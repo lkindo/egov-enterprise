@@ -136,6 +136,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] FileMaster — V2_72에서 atch_file_id 문자열 기술 PK와 상세·업무 참조
             //   폐포를 atch_file_sn BIGINT로 백필했다. 실측: 마스터/상세 4/4행, 업무 참조·고아 0.
             //   JPA·API·프론트 숫자 계약과 DB identity 자동 생성을 검증하고 수동 파일 ID 채번을 제거했다.
+            // [2026-08-14 제거] LoginLog — V2_73에서 log_id 문자열 기술 PK를 lgn_sn BIGINT
+            //   IDENTITY로 전환했다. 실측: tb_login_log 0행, inbound/outbound FK 0.
+            //   비동기 기록·관리 API·프론트 계약을 숫자 일련번호로 이관하고 수동 ID 생성을 제거했다.
             "AdministCode", "Authority",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "DeptManage", "EventInfo",
@@ -153,7 +156,7 @@ class PkGenerationStandardLinterTest {
             //     현재 상태는 "엔티티 없는 빈 테이블 2개" 이며 그 처분은 미결로 남는다.
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
             "GroupManage", "InformalSanction", "InstitutionCode",
-            "LoginLog", "LoginPolicy", "Menu", "Notification", "OrganizationManage",
+            "LoginPolicy", "Menu", "Notification", "OrganizationManage",
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
             "SiteMap", "Sms", "SysLog", "SystemPolicy", "Template",
             "User", "UserAbsence", "UserAuthority", "WebLog"

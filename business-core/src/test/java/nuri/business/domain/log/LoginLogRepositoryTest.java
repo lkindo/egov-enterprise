@@ -28,16 +28,16 @@ class LoginLogRepositoryTest extends PersistenceTestSupport {
     void searchLoginLogs() {
         // given
         LoginLog log = LoginLog.builder()
-                .logId("LOG_001")
                 .cntnMthdCd("LOGIN")
                 .lgnIpAddr("127.0.0.1")
                 .build();
         loginLogRepository.save(log);
         entityManager.flush();
 
-        entityManager.createNativeQuery("UPDATE TB_LOGIN_LOG SET CRT_DT = :createdDate WHERE LOG_ID = :logId")
+        Long lgnSn = log.getLgnSn();
+        entityManager.createNativeQuery("UPDATE TB_LOGIN_LOG SET CRT_DT = :createdDate WHERE LGN_SN = :lgnSn")
                 .setParameter("createdDate", LocalDateTime.of(2024, 1, 1, 10, 0))
-                .setParameter("logId", "LOG_001")
+                .setParameter("lgnSn", lgnSn)
                 .executeUpdate();
 
         entityManager.flush();
@@ -48,7 +48,7 @@ class LoginLogRepositoryTest extends PersistenceTestSupport {
 
         // then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getLogId()).isEqualTo("LOG_001");
+        assertThat(result.getContent().get(0).getLgnSn()).isEqualTo(lgnSn);
     }
 
     @Test
@@ -56,14 +56,14 @@ class LoginLogRepositoryTest extends PersistenceTestSupport {
     void deleteOldLogs() {
         // given
         LoginLog oldLog = LoginLog.builder()
-                .logId("LOG_OLD")
                 .build();
         loginLogRepository.save(oldLog);
         entityManager.flush();
 
-        entityManager.createNativeQuery("UPDATE TB_LOGIN_LOG SET CRT_DT = :createdDate WHERE LOG_ID = :logId")
+        Long lgnSn = oldLog.getLgnSn();
+        entityManager.createNativeQuery("UPDATE TB_LOGIN_LOG SET CRT_DT = :createdDate WHERE LGN_SN = :lgnSn")
                 .setParameter("createdDate", LocalDateTime.of(2020, 1, 1, 10, 0))
-                .setParameter("logId", "LOG_OLD")
+                .setParameter("lgnSn", lgnSn)
                 .executeUpdate();
 
         entityManager.flush();
@@ -75,6 +75,6 @@ class LoginLogRepositoryTest extends PersistenceTestSupport {
         entityManager.clear();
 
         // then
-        assertThat(loginLogRepository.findById("LOG_OLD")).isEmpty();
+        assertThat(loginLogRepository.findById(lgnSn)).isEmpty();
     }
 }

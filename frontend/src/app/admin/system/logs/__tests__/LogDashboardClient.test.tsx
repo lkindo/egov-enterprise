@@ -143,7 +143,7 @@ const SYSTEM_ROW = {
 } satisfies SysLogDto;
 
 const LOGIN_ROW = {
-  logId: 'LGN-001',
+  lgnSn: 101,
   loginId: 'alice',
   loginIp: '10.0.0.2',
   loginMthd: 'LOGIN',

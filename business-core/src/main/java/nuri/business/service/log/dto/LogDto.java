@@ -1,7 +1,5 @@
 package nuri.business.service.log.dto;
 
-import jakarta.validation.constraints.*;
-
 import lombok.Builder;
 import lombok.Getter;
 import java.time.LocalDateTime;
@@ -12,8 +10,7 @@ import java.time.LocalDateTime;
 @Getter
 @Builder
 public class LogDto {
-    @Size(max = 20)
-    private String logId;
+    private Long lgnSn;
     private String conectMthd;
     private String conectId;
     private String conectIp;

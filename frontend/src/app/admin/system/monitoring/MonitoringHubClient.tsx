@@ -312,7 +312,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     if (activeTab === 'COMMENTS') return comments.find(c => c.ansSn === selectedItemId);
     if (activeTab === 'SECURITY') return auditLogs.find(l => String(l.dmndId) === idStr);
     if (activeTab === 'SYSTEM') return systemLogs.find(l => String(l.dmndId) === idStr);
-    if (activeTab === 'LOGIN') return loginLogs.find(l => String(l.logId) === idStr);
+    if (activeTab === 'LOGIN') return loginLogs.find(l => String(l.lgnSn) === idStr);
     return null;
   }, [selectedItemId, activeTab, auditLogs, systemLogs, loginLogs, comments]);
 
@@ -369,16 +369,16 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
         <div className="flex items-center gap-5 py-2">
           <div className={cn(
             "w-12 h-12 rounded-lg flex items-center justify-center shrink-0 shadow-lg transition-transform group-hover:rotate-6",
-            selectedItemId === log.logId ? "bg-white/10 text-white" : "bg-amber-50 text-amber-600"
+            selectedItemId === log.lgnSn ? "bg-white/10 text-white" : "bg-amber-50 text-amber-600"
           )}>
             <LogIn size={20} />
           </div>
           <div className="space-y-0.5">
             <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.logId ? "text-white" : "text-amber-700")}>{log.loginId}</span>
+                <span className={cn("text-xs font-bold tracking-tight opacity-40", selectedItemId === log.lgnSn ? "text-white" : "text-amber-700")}>{log.loginId}</span>
                 <span className="text-xs font-bold opacity-20">{log.creatDt}</span>
             </div>
-            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.logId ? "text-white" : "text-foreground")}>{log.loginMthd}</h4>
+            <h4 className={cn("text-sm font-bold tracking-tighter truncate max-w-[280px]", selectedItemId === log.lgnSn ? "text-white" : "text-foreground")}>{log.loginMthd}</h4>
           </div>
         </div>
       )
@@ -652,8 +652,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
               loading: isLoginLoading,
               error: loginLogError,
               refetch: () => { void refetchLoginLogs(); },
-              keyField: 'logId',
-              rowId: (item: any) => item.logId,
+              keyField: 'lgnSn',
+              rowId: (item: any) => item.lgnSn,
               totalPage: loginLogData?.totalPage || 1,
               totalCount: loginLogData?.total,
               searchable: true,

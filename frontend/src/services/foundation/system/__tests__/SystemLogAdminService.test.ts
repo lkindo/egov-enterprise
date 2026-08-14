@@ -102,9 +102,9 @@ describe('SystemLogAdminService pagination contract', () => {
 
   it('uses the detail endpoints without list normalization', async () => {
     await systemLogAdminService.getSystemLog('SYS-001');
-    await systemLogAdminService.getLoginLog('LGN-001');
+    await systemLogAdminService.getLoginLog(101);
 
     expect(clientGet).toHaveBeenNthCalledWith(1, 'admin/system/logs/system/SYS-001', undefined);
-    expect(clientGet).toHaveBeenNthCalledWith(2, 'admin/system/logs/login/LGN-001', undefined);
+    expect(clientGet).toHaveBeenNthCalledWith(2, 'admin/system/logs/login/101', undefined);
   });
 });
