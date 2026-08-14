@@ -292,7 +292,7 @@
     }
   ],
   "paths": {
-    "/api/v1/work-reports/{rptId}": {
+    "/api/v1/work-reports/{rptpSn}": {
       "get": {
         "tags": [
           "WorkReport"
@@ -301,11 +301,12 @@
         "operationId": "getWorkReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "rptpSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -330,11 +331,12 @@
         "operationId": "updateWorkReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "rptpSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -369,11 +371,12 @@
         "operationId": "deleteWorkReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "rptpSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -16025,8 +16028,9 @@
       "WorkReportDto": {
         "type": "object",
         "properties": {
-          "rptId": {
-            "type": "string"
+          "rptpSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "rptTtl": {
             "type": "string"

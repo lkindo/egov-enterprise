@@ -5,7 +5,6 @@ import nuri.business.domain.report.WorkReport;
 import nuri.business.domain.report.WorkReportRepository;
 import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.util.IdGenerationUtil;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.security.AuthorityConstants;
 import nuri.business.security.util.SecurityUtil;
@@ -27,13 +26,7 @@ public class WorkReportService extends BaseAbstractService {
 
     @Transactional
     public void createWorkReport(String userId, WorkReportDto dto) {
-        // [PK 채번] WorkReport 는 @GeneratedValue 없는 할당식 PK(varchar 20)다. 종전에는 dto.getRptId()
-        //   를 그대로 써서, 등록 폼이 이 값을 보내지 않으면 null PK 로 persist 되어 500 이 났다.
-        //   저장소의 다른 create 경로와 동일하게 서버가 채번한다. 'RPT_'(4) + 16 = 20자(컬럼 상한).
-        String rptId = IdGenerationUtil.generateUniqueId("RPT_", 16, workReportRepository::existsById);
-
         WorkReport entity = WorkReport.builder()
-                .rptId(rptId)
                 .rptTtl(dto.getRptTtl())
                 .rptCn(dto.getRptCn())
                 .rptSeCd(dto.getRptSeCd())
@@ -48,7 +41,7 @@ public class WorkReportService extends BaseAbstractService {
 
     @Transactional
     public void updateWorkReport(WorkReportDto dto) {
-        WorkReport entity = workReportRepository.findById(Objects.requireNonNull(dto.getRptId()))
+        WorkReport entity = workReportRepository.findById(Objects.requireNonNull(dto.getRptpSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // 소유권 검증(IDOR 방어): 작성자(frstRgtrId=loginId) 본인 또는 관리자만 수정 가능.
@@ -60,8 +53,8 @@ public class WorkReportService extends BaseAbstractService {
     }
 
     @Transactional
-    public void deleteWorkReport(@NonNull String rptId) {
-        WorkReport entity = workReportRepository.findById(rptId)
+    public void deleteWorkReport(@NonNull Long rptpSn) {
+        WorkReport entity = workReportRepository.findById(rptpSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // 소유권 검증(IDOR 방어): 작성자 본인 또는 관리자만 삭제 가능.
@@ -102,11 +95,11 @@ public class WorkReportService extends BaseAbstractService {
      * 업무보고 상세.
      *
      * <p>[2026-07-29 IDOR 수정] 종전에는 {@code findById} 결과를 무가드로 반환해, 인증만 되면 누구나
-     * 임의 {@code rptId} 로 타인의 보고 본문을 읽을 수 있었다. 같은 엔티티의 update(53행)·delete(66행)가
+     * 임의 {@code rptpSn} 으로 타인의 보고 본문을 읽을 수 있었다. 같은 엔티티의 update·delete가
      * 이미 쓰는 가드를 읽기에도 동일하게 적용한다(관리자 대리 열람은 허용 — 쓰기와 같은 판정).
      */
-    public WorkReportDto getWorkReport(@NonNull String rptId) {
-        return workReportRepository.findById(rptId)
+    public WorkReportDto getWorkReport(@NonNull Long rptpSn) {
+        return workReportRepository.findById(rptpSn)
                 .map(entity -> {
                     SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
                     return toDto(entity);
@@ -116,7 +109,7 @@ public class WorkReportService extends BaseAbstractService {
 
     private WorkReportDto toDto(WorkReport entity) {
         return WorkReportDto.builder()
-                .rptId(entity.getRptId())
+                .rptpSn(entity.getRptpSn())
                 .rptTtl(entity.getRptTtl())
                 .rptCn(entity.getRptCn())
                 .rptSeCd(entity.getRptSeCd())

@@ -2,5 +2,5 @@ package nuri.business.domain.report;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-public interface WorkReportRepository extends JpaRepository<WorkReport, String>, WorkReportRepositoryCustom {
+public interface WorkReportRepository extends JpaRepository<WorkReport, Long>, WorkReportRepositoryCustom {
 }

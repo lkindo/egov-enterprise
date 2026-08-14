@@ -9,7 +9,7 @@ import { z } from 'zod';
 // WorkReportDto Schema
 // ==========================================================================
 export const WorkReportDtoSchema = z.object({
-  rptId: z.string().optional(),
+  rptpSn: z.number().optional(),
   rptTtl: z.string().optional(),
   rptCn: z.string().optional(),
   rptSeCd: z.string().optional(),

@@ -106,6 +106,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] SentMail — V2_64에서 msg_id 문자열 기술키를 eml_dsptch_sn
             //   BIGINT IDENTITY로 전환했다. 실측: tb_email_dsptch_manage 2행, inbound FK 0,
             //   첨부파일 outbound FK 1건·고아 0. 비동기 상태 갱신과 API/FE 계약도 함께 이관했다.
+            // [2026-08-14 제거] WorkReport — V2_65에서 rpt_id 문자열 기술키를 rptp_sn
+            //   BIGINT IDENTITY로 전환했다. 실측: tb_rpt_info 0행, inbound FK 0,
+            //   첨부파일 outbound FK 1건·고아 0. CRUD API·프론트·E2E 계약도 함께 이관했다.
             "AdministCode", "Authority", "Blog", "Board",
             "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
             "Community", "DeptManage", "EventInfo",
@@ -129,7 +132,7 @@ class PkGenerationStandardLinterTest {
             "PrivacyLog", "Program", "RefreshToken", "ReprtStats", "RoleInfo",
             "SiteMap", "Sms", "SurveyArticle", "SurveyInfo", "SurveyQuestion",
             "SurveyRespondent", "SurveyResult", "SurveyTemplate", "SysLog", "SystemPolicy", "Template",
-            "User", "UserAbsence", "UserAuthority", "WebLog", "WorkReport"
+            "User", "UserAbsence", "UserAuthority", "WebLog"
     ));
 
     @Test

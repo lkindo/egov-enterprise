@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v1/work-reports/{rptId}": {
+    "/api/v1/work-reports/{rptpSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4418,7 +4418,8 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         WorkReportDto: {
-            rptId?: string;
+            /** Format: int64 */
+            rptpSn?: number;
             rptTtl?: string;
             rptCn?: string;
             rptSeCd?: string;
@@ -8386,7 +8387,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                rptpSn: number;
             };
             cookie?: never;
         };
@@ -8408,7 +8409,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                rptpSn: number;
             };
             cookie?: never;
         };
@@ -8434,7 +8435,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                rptpSn: number;
             };
             cookie?: never;
         };

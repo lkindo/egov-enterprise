@@ -40,9 +40,9 @@ public class WorkReportApiController {
     }
 
     @Operation(summary = "작업보고 상세 조회")
-    @GetMapping("/{rptId}")
-    public ResponseEntity<ApiResponse<WorkReportDto>> getWorkReport(@PathVariable String rptId) {
-        WorkReportDto result = workReportService.getWorkReport(rptId);
+    @GetMapping("/{rptpSn}")
+    public ResponseEntity<ApiResponse<WorkReportDto>> getWorkReport(@PathVariable Long rptpSn) {
+        WorkReportDto result = workReportService.getWorkReport(rptpSn);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 
@@ -56,17 +56,17 @@ public class WorkReportApiController {
     }
 
     @Operation(summary = "작업보고 수정")
-    @PutMapping("/{rptId}")
-    public ResponseEntity<ApiResponse<Void>> updateWorkReport(@PathVariable String rptId, @Valid @RequestBody WorkReportDto dto) {
-        dto.setRptId(rptId);
+    @PutMapping("/{rptpSn}")
+    public ResponseEntity<ApiResponse<Void>> updateWorkReport(@PathVariable Long rptpSn, @Valid @RequestBody WorkReportDto dto) {
+        dto.setRptpSn(rptpSn);
         workReportService.updateWorkReport(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "작업보고 삭제")
-    @DeleteMapping("/{rptId}")
-    public ResponseEntity<ApiResponse<Void>> deleteWorkReport(@PathVariable String rptId) {
-        workReportService.deleteWorkReport(rptId);
+    @DeleteMapping("/{rptpSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteWorkReport(@PathVariable Long rptpSn) {
+        workReportService.deleteWorkReport(rptpSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

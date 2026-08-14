@@ -267,7 +267,7 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
         /** 태그로 잡히는 보고를 전부 지운다. */
         async function purgeByTag(request: any, tag: string) {
             for (const r of await findByTag(request, tag)) {
-                if (r.rptId) await request.delete(`${REPORT_API}/${r.rptId}`, { headers: auth });
+                if (r.rptpSn) await request.delete(`${REPORT_API}/${r.rptpSn}`, { headers: auth });
             }
         }
 
@@ -313,9 +313,9 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
                 // 2페이지는 1페이지와 겹치지 않아야 한다(페이지 이동이 실제로 작동하는가).
                 const p2Res = await request.get(`${REPORT_API}?searchKeyword=${tag}&pageIndex=2&pageUnit=2`, { headers: auth });
                 const p2 = (await p2Res.json()).data.list as any[];
-                const p1Ids = (body.list as any[]).map((r) => r.rptId);
+                const p1Ids = (body.list as any[]).map((r) => r.rptpSn);
                 expect(p2.length, '2페이지에는 나머지 1건이 있어야 한다').toBe(1);
-                expect(p2.some((r) => p1Ids.includes(r.rptId)), '2페이지는 1페이지와 겹치지 않아야 한다').toBeFalsy();
+                expect(p2.some((r) => p1Ids.includes(r.rptpSn)), '2페이지는 1페이지와 겹치지 않아야 한다').toBeFalsy();
             } finally {
                 await purgeByTag(request, tag);
             }
@@ -362,8 +362,8 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
             expect(createRes.ok()).toBeTruthy();
 
             const listRes = await request.get(`${REPORT_API}?searchKeyword=${encodeURIComponent(title)}&pageIndex=1&pageUnit=10`, { headers: auth });
-            const rptId = ((await listRes.json()).data.list as any[])[0]?.rptId as string;
-            expect(rptId, '등록한 보고를 검색으로 되찾을 수 있어야 한다').toBeTruthy();
+            const rptpSn = ((await listRes.json()).data.list as any[])[0]?.rptpSn as number;
+            expect(rptpSn, '등록한 보고를 검색으로 되찾을 수 있어야 한다').toBeTruthy();
 
             let deleted = false;
             const deptJobPage = new DeptJobPage(page);
@@ -383,7 +383,7 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
                 // 저장은 비동기(모달 닫힘 → invalidate)라 서버 상태를 폴링으로 확인한다.
                 await expect
                     .poll(async () => {
-                        const r = await request.get(`${REPORT_API}/${rptId}`, { headers: auth });
+                        const r = await request.get(`${REPORT_API}/${rptpSn}`, { headers: auth });
                         return (await r.json()).data?.rptTtl;
                     }, { timeout: 20000, message: 'UI 수정이 서버에 반영되어야 한다' })
                     .toBe(editedTitle);
@@ -400,13 +400,13 @@ test.describe('Tier 25: 부서 업무 ↔ 업무 보고 사슬', () => {
                 //   (`?? null` 은 Jackson 이 null 필드를 생략하도록 설정된 경우 undefined 로 오는 것까지 흡수한다.)
                 await expect
                     .poll(async () => {
-                        const r = await request.get(`${REPORT_API}/${rptId}`, { headers: auth });
+                        const r = await request.get(`${REPORT_API}/${rptpSn}`, { headers: auth });
                         return (await r.json()).data ?? null;
                     }, { timeout: 20000, message: 'UI 삭제가 실제 삭제로 이어져야 한다' })
                     .toBeNull();
                 deleted = true;
             } finally {
-                if (!deleted) await request.delete(`${REPORT_API}/${rptId}`, { headers: auth });
+                if (!deleted) await request.delete(`${REPORT_API}/${rptpSn}`, { headers: auth });
             }
         });
     });
