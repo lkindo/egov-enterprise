@@ -9,13 +9,15 @@
 > - **모듈 분할**: `business-suite` 모놀리스 → **`business-core`**(재사용 admin 코어) + **`business-app`**(프로젝트 도메인) 분할, **`migration-tool`**(레거시 이관 ETL CLI, foundation 미의존) 신설. 현 모듈 = `foundation`·`business-core`·`business-app`·`api-server`·`migration-tool`.
 > - **foundation 승격**: `GlobalExceptionHandler`·`BaseEntity`/`BaseTimeEntity`·`PageResponse`·`ApiResponse`·보안 백본(JWT/IAM/filter)·`ErrorCode`(인터페이스+도메인별 enum)·`DashboardItemProvider` 포트·auto-configuration 이관.
 > - **DB 베이스라인**: 레거시 V1.x 제거 → `V2_0__baseline`(101 테이블)+`V2_1`(메타표준 시드)+`V2_2`(admin 시드)+`R__seed_framework`/`R__seed_demo` → **빈 Postgres 부팅 가능**(Docker 실증, baseline-version 2.1).
-> - **생산성·거버넌스**: MapStruct 매핑 표준화(`@Mapper` componentModel="spring"), 제네릭 CRUD(`BaseCrudController`/`BaseCrudService`), `DomainIsolationTest`(ArchUnit 도메인 격리), next-intl i18n, 동일출처 프록시·브랜딩 토큰화, 시크릿 외부화·prod fail-fast.
+> - **생산성·거버넌스**: MapStruct 매핑 표준화(`@Mapper` componentModel="spring"), 제네릭 CRUD(`BaseCrudController`/`BaseCrudService`), `DomainIsolationTest`(ArchUnit 도메인 격리), API 오류 MessageSource, 동일출처 프록시·브랜딩 토큰화, 시크릿 외부화·prod fail-fast.
 > 레거시 이관 도구 상세 설계는 [legacy-migration-tool-design.md](./legacy-migration-tool-design.md) 참조.
 
 > **✅ 실태 재검증 (2026-07-18, `framework-reusability-audit-2026-07-18`)**: 4-에이전트 감사로 본문 진단을 현재 코드와 대조. **구조적 진단은 대부분 FIXED로 확증, 재사용 준비도 ≈50 → ≈70**.
 > - **STALE(해소 확증)**: ①§2 foundation 껍데기 → foundation 38파일이 계약3종·JWT백본·`UserAuthPort`/`DashboardItemProvider` 포트·`BaseEntity` 실체 커널, business 도메인 import 0. ②§7/§8 빈 DB 부팅불가 → **거짓**: `V2_0__baseline`(101테이블 DDL)+`R__seed_framework`(webmaster/`USRCNFRM_00000000001`/ROLE_ADMIN, BCrypt 멱등) → 빈 Postgres 마이그레이션→validate(엔티티 84 @Table 누락0)→admin 로그인→메뉴 렌더 성립, **하드 블로커 0**. ③§1 business-suite 모놀리스 → business-core(필수16)/business-app(샘플20) 물리분할·단방향 비순환·business-core→app import 0. ④§10 ErrorCode 도메인 혼입 → 도메인별 enum 분해.
 > - **결합 2건 역전(2026-07-18 커밋)**: §3 지적 "코어/대시보드 하드결합"의 잔재 — `DashboardApiController`→`BoardService` 를 `BoardDashboardProvider`(DashboardItemProvider 포트)로, `UserService`(필수)→`CommunityUserRepository`(샘플) 를 `UserDeletionEvent` 리스너로 역전 + `ServiceLayerIsolationTest`(서비스레이어 격리 ArchUnit 게이트) 신설.
 > - **⚠ 위 2026-07-12 노트의 false-completion 정정**: "제네릭 CRUD(BaseCrudController/BaseCrudService)" → 실측 **0파일**(미이행, 2026-07-20 재확인도 0). "브랜딩 토큰화" → **2026-07-18 부분 이행**(중립 861건 토큰화·surface-inverse 토큰 신설, ~214 의도적 잔여·액센트 별도 — [design-tokens.md](../03-guides/design-tokens.md)). ~~"graphify-out 제거"(Phase1) → 345파일 git 재추적(회귀)~~ → **✅ 해소(아래 참조)**. RBAC DB일원화 → 여전히 코드 판정(미이행). 
+>
+> **✅ 2026-08-15 제품 경계 종결**: 선택 도메인 banner·popup·community·survey 55파일과 테스트 8개를 `business-app`으로 이관해 `business-core`를 필수 코어로 만들었다. 프런트는 한국어 UI로 선언하고 반쪽 next-intl을 제거했으며, API 오류의 ko/en MessageSource만 유지한다. 현행 근거는 [ADR-0001/0002](decisions/README.md)다. 아래 4.10의 next-intl 서술은 2026-07 진단 이력이다.
 >
 > **🔄 잔여 병목 재실측 (2026-07-20)**: 위 "현 3대 병목" 중 **(3)이 전부 해소**되어 상태를 갱신한다.
 > - ✅ **위생 회귀(graphify-out 재추적) 해소** — 커밋 [`4721e9054`](../../) "chore(hygiene): graphify-out 345파일 git 언트랙"(2026-07-18). **2026-07-20 재실측: `git ls-files '*graphify-out*'` = 0건, 디스크에도 부재.** `.gitignore`(`**/graphify-out/`) 와 정합.

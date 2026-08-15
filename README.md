@@ -46,8 +46,8 @@
 ```bash
 egov-enterprise/
 ├── foundation/        # 최하위 코어: 공통 응답(ApiResponse·PageResponse)·ErrorCode·BaseEntity·보안 백본(JWT/IAM)·auto-config
-├── business-core/     # 재사용 admin 코어 도메인: user·auth·menu·code·organization·system·survey + 공용 테스트 하네스
-├── business-app/      # 프로젝트 고유 도메인: board·informalsanction·schedule·notification·operation 등 (business-core 확장)
+├── business-core/     # 재사용 필수 코어: user·auth·menu·code·organization·policy + 공용 테스트 하네스
+├── business-app/      # 선택/참조 도메인: board·survey·community·banner·popup·operation 등 (business-core 확장)
 ├── api-server/        # 진입점(Presentation Layer): Controller·API DTO. business-app/core 서비스 호출 (bootJar 실행 모듈)
 ├── migration-tool/    # 레거시→표준 스키마 데이터 이관 ETL CLI (독립 실행, foundation 미의존, 이관 시에만 선택 포함)
 └── frontend/          # Next.js 16 (App Router) 프런트엔드
@@ -71,7 +71,7 @@ egov-enterprise/
 | **Phase 6: 아키텍처 혁신** | 2-Tier (Foundation-Business) 모듈 통합 리팩토링 *(→ Phase 9에서 재사용성 위해 core/app 재분할)* | ✅ 완료 (100%) |
 | **Phase 7: 최적화** | 빌드 자동화, 패키지 최적화, DB 메뉴 마이그레이션 | ✅ 완료 (100%) |
 | **Phase 8: 고도화** | E2E 테스트 고도화, CI/CD 자동화, 성능 부하 테스트 | ✅ 완료 (100%) |
-| **Phase 9: 재사용 프레임워크화** | 모듈 재분할(`business-core`/`business-app`)·foundation 승격·Flyway `V2_0` 베이스라인·MapStruct 표준·레거시 이관도구(`migration-tool`)·i18n·설계 결정 | ✅ 완료 (2026-07) |
+| **Phase 9: 재사용 프레임워크화** | 모듈 재분할(`business-core`/`business-app`)·foundation 승격·Flyway `V2_0` 베이스라인·MapStruct 표준·레거시 이관도구(`migration-tool`)·제품 경계 ADR | ✅ 완료 (2026-08) |
 
 ### 핵심 모듈 상술 (Key Migrated Modules)
 - **Administrative Tools**: 공통코드, 메뉴 관리, 프로그램 관리, 로그(시스템/웹/개인정보 등) 관리.
@@ -317,4 +317,4 @@ make bootstrap
 
 ---
 
-*Last Updated: 2026-07-12 (재사용 프레임워크화 리팩토링 — business-core/business-app 모듈 재분할·foundation 승격·Flyway V2_0 베이스라인·MapStruct 매핑 표준·migration-tool 이관도구·i18n. 상세: [getting-started](./docs/03-guides/getting-started.md))*
+*Last Updated: 2026-08-15 (선택 도메인 business-app 이관·한국어 UI 정책 확정. 상세: [ADR](./docs/02-architecture/decisions/README.md) · [getting-started](./docs/03-guides/getting-started.md))*

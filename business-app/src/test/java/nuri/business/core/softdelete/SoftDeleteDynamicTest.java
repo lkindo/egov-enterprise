@@ -16,6 +16,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(properties = "spring.main.allow-bean-definition-overriding=true")
 public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
 
+    private Long activeBoardId;
+    private Long deletedBoardId;
+
     @Autowired
     private SoftDeleteTestService testService;
 
@@ -28,7 +31,6 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
 
         // 테스트용 데이터 저장 (use_yn = 'Y' 1개, use_yn = 'N' 1개)
         Board activeBoard = Board.builder()
-                .pstSn(101L)
                 .bbsId("BBS_TEST")
                 .pstTtl("Active Post")
                 .pstCn("Content")
@@ -36,15 +38,14 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
                 .build();
 
         Board deletedBoard = Board.builder()
-                .pstSn(102L)
                 .bbsId("BBS_TEST")
                 .pstTtl("Deleted Post")
                 .pstCn("Content")
                 .useYn("N")
                 .build();
 
-        boardRepository.save(activeBoard);
-        boardRepository.save(deletedBoard);
+        activeBoardId = boardRepository.save(activeBoard).getPstSn();
+        deletedBoardId = boardRepository.save(deletedBoard).getPstSn();
     }
 
     @Test
@@ -55,7 +56,7 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
         // use_yn = 'Y'인 데이터 1개만 조회되어야 함
         assertThat(results)
                 .extracting(board -> board.getPstSn())
-                .containsExactly(101L);
+                .containsExactly(activeBoardId);
     }
 
     @Test
@@ -66,6 +67,6 @@ public class SoftDeleteDynamicTest extends BusinessIntegrationTestSupport {
         // use_yn = 'Y', 'N' 둘 다 조회되어야 함
         assertThat(results)
                 .extracting(board -> board.getPstSn())
-                .containsExactlyInAnyOrder(101L, 102L);
+                .containsExactlyInAnyOrder(activeBoardId, deletedBoardId);
     }
 }

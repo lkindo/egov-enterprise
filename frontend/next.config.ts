@@ -1,8 +1,5 @@
 import withBundleAnalyzer from '@next/bundle-analyzer';
-import createNextIntlPlugin from 'next-intl/plugin';
 import { fileURLToPath } from 'node:url';
-
-const withNextIntl = createNextIntlPlugin('./src/i18n/request.ts');
 
 const nextConfig = {
   cacheComponents: true,
@@ -189,4 +186,4 @@ const bundleAnalyzerConfig = withBundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
 })(nextConfig);
 
-export default withNextIntl(bundleAnalyzerConfig);
+export default bundleAnalyzerConfig;

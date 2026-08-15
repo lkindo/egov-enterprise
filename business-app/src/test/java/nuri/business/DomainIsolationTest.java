@@ -50,8 +50,9 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyP
  *   <li><b>[버킷 2 — 게시판 클러스터 상호 결합(업무↔업무 기술부채, 향후 분리 대상)]</b>
  *       {@code comment → board}({@code Comment.board @ManyToOne}), {@code board → comment}
  *       ({@code Board.comments @OneToMany}, 양방향), {@code scrap → board}({@code Scrap.board
- *       @ManyToOne}). 게시판을 삭제하려면 comment/scrap의 FK성 참조를 먼저 끊어야 한다. 향후 board
- *       어그리게이트를 재설계해 분리해야 할 <b>진짜 기술부채</b>다.</li>
+ *       @ManyToOne}), {@code operation → informalsanction}({@code RewardManage.informalSanction}).
+ *       앞의 셋은 게시판 클러스터이고 마지막은 보상 승인 클러스터다. 각각 템플릿에서 함께 삭제되며,
+ *       단독 삭제가 필요해지면 연관을 포트/식별자 참조로 분리해야 하는 <b>명시적 기술부채</b>다.</li>
  * </ul>
  *
  * <p><b>참고(범위 밖 결합):</b> {@code RealTimeDashboardService}(서비스 계층, {@code service.stats})가
@@ -104,8 +105,12 @@ public class DomainIsolationTest {
                     .ignoreDependency(
                             resideInAPackage("nuri.business.domain.scrap.."),
                             resideInAPackage("nuri.business.domain.board.."))
+                    // operation → informalsanction (RewardManage.informalSanction, 보상 승인 클러스터)
+                    .ignoreDependency(
+                            resideInAPackage("nuri.business.domain.operation.."),
+                            resideInAPackage("nuri.business.domain.informalsanction.."))
                     .because("업무 도메인은 서로 독립적이어야 통째로 삭제/재사용할 수 있다(프레임워크 재사용성). "
-                            + "코어 도메인 참조는 허용하되, 게시판 클러스터의 업무↔업무 결합은 현행 기술부채로 동결한다. "
+                            + "코어 도메인 참조는 허용하되, 게시판·보상승인 클러스터의 업무↔업무 결합은 현행 기술부채로 동결한다. "
                             + "신규 업무 도메인이 형제 업무 도메인을 새로 참조하면 빌드가 깨진다.")
                     .allowEmptyShould(true);
 }

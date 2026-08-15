@@ -22,7 +22,7 @@ class NoteDomainTest {
         assertEquals(1L, note2.getNoteSn());
         assertEquals("Title", note2.getNoteTtl());
         assertEquals("Content", note2.getNoteCn());
-        assertEquals("F1", note2.getAtchFileSn());
+        assertEquals(101L, note2.getAtchFileSn());
 
         // 3. SuperBuilder 검증
         Note note3 = Note.builder()
@@ -34,7 +34,7 @@ class NoteDomainTest {
         assertEquals(3L, note3.getNoteSn());
         assertEquals("Subject", note3.getNoteTtl());
         assertEquals("Content3", note3.getNoteCn());
-        assertEquals("F3", note3.getAtchFileSn());
+        assertEquals(103L, note3.getAtchFileSn());
 
         assertNotNull(Note.builder().toString());
     }

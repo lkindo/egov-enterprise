@@ -44,6 +44,6 @@ class DeptJobEntityTest {
         assertThat(job.getDeptTaskCn()).isEqualTo("Updated Content");
         assertThat(job.getPicId()).isEqualTo("user01");
         assertThat(job.getPrrtyRnk()).isEqualTo("2");
-        assertThat(job.getAtchFileSn()).isEqualTo("FILE_001");
+        assertThat(job.getAtchFileSn()).isEqualTo(101L);
     }
 }

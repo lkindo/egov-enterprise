@@ -42,7 +42,7 @@ class BoardTest {
         assertThat(board.getPswd()).isEqualTo("pass");
         assertThat(board.getPstBgngYmd()).isEqualTo("20240101");
         assertThat(board.getPstEndYmd()).isEqualTo("20241231");
-        assertThat(board.getAtchFileSn()).isEqualTo("FILE_001");
+        assertThat(board.getAtchFileSn()).isEqualTo(101L);
     }
 
     @Test

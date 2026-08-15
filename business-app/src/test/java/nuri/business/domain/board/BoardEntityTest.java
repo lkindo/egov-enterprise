@@ -20,7 +20,7 @@ class BoardEntityTest {
         assertThat(board.getPstTtl()).isEqualTo("New Title");
         assertThat(board.getPstCn()).isEqualTo("New Content");
         assertThat(board.getUserId()).isEqualTo("user01");
-        assertThat(board.getAtchFileSn()).isEqualTo("FILE_001");
+        assertThat(board.getAtchFileSn()).isEqualTo(101L);
     }
 
     @Test

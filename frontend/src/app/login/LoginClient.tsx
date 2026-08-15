@@ -8,12 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { User, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck, Zap } from "lucide-react";
-import { useMessage } from '@/hooks/useMessage';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { extractErrorMessage } from '@/app/actions/actionUtils';
+const LOGIN_ERROR_EMPTY = '아이디와 비밀번호를 입력해주세요.';
+const LOGIN_ERROR_FAILED = '로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.';
+
 function LoginContent() {
-    const { t } = useMessage();
     const [id, setId] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
@@ -52,7 +53,7 @@ function LoginContent() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!id || !password) {
-            setError(t('login.errorEmpty'));
+            setError(LOGIN_ERROR_EMPTY);
             return;
         }
 
@@ -80,7 +81,7 @@ function LoginContent() {
         } catch (err) {
             justLoggedIn.current = false;
             console.error(err);
-            setError(extractErrorMessage(err, t('login.errorFailed')));
+            setError(extractErrorMessage(err, LOGIN_ERROR_FAILED));
             setIsSubmitting(false);
             setAuthStep(0);
             // [W1-24] 포커스 복귀는 setIsSubmitting(false) **이후**여야 한다.

@@ -11,7 +11,7 @@
 |---|---|---|---|
 | Backend Core | `foundation` | 응답봉투·예외·감사엔티티·보안백본(JWT/IAM)·crypto·i18n·config | **필수(불변 코어)** |
 | Backend Admin | `business-core` | user·auth·code·menu·program·organization·log·system 등 관리 도메인 | **필수** |
-| Backend App | `business-app` | 프로젝트 고유/앱 도메인(informalsanction·operation·memoreport 등) | **선택(삭제·교체 대상)** |
+| Backend App | `business-app` | 프로젝트 고유/참조 도메인(survey·community·banner·popup·operation 등) | **선택(삭제·교체 대상)** |
 | Web Runtime | `api-server` | Controller·Security·Flyway·WebSocket·Batch | 필수 |
 | Frontend | `frontend` | Next.js 16 App Router | 필수(화면은 선택 삭제) |
 
@@ -252,7 +252,7 @@ public class ProductService extends BaseAbstractService {
 - **생산성 전면화**: MapStruct `@Mapper` 표준을 기존 도메인까지 마이그레이션 진행 중(수기 `from()` 제거).
 - ✅ **제네릭 CRUD는 채택하지 않고 명시적 CRUD로 종결했다.** `generate-domain.ps1`도 같은 관례의 컴파일 가능한 Service·Controller 초안을 생성한다(§5.2). 도메인별 소유권과 DDL 표준 용어는 생성 후 검토한다.
 - **레거시 데이터 이관 도구**: 범용 소스↔표준 스키마 매핑·ETL·검증 골격 **선제 구축** 착수.
-- 도입 완료: i18n `next-intl`(seam + 로케일 카탈로그 `messages/{ko,en}.json`), 감사 로그 영속(`WebAuditLogListener` @Async), 도메인 이벤트 seam, 시크릿 외부화.
+- 도입 완료: API 오류 MessageSource ko/en 협상(프런트 UI는 한국어 단일언어), 감사 로그 영속(`WebAuditLogListener` @Async), 도메인 이벤트 seam, 시크릿 외부화. 제품 경계는 [ADR](../02-architecture/decisions/README.md)을 따른다.
 
 ---
 

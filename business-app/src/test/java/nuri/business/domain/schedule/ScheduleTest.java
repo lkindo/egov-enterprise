@@ -30,7 +30,7 @@ class ScheduleTest {
         assertEquals("20260505", schdl2.getSchdlEndYmd());
         assertEquals("127.0.0.1", schdl2.getSchdlIpAddr());
         assertEquals("Pic1", schdl2.getSchdlPicId());
-        assertEquals("Atch1", schdl2.getAtchFileSn());
+        assertEquals(101L, schdl2.getAtchFileSn());
         assertEquals("Dept1", schdl2.getSchdlDeptId());
         assertEquals("Knd1", schdl2.getSchdlKndCd());
         assertEquals("Place", schdl2.getSchdlPlcNm());
@@ -64,7 +64,7 @@ class ScheduleTest {
         assertEquals("20260605", schdl3.getSchdlEndYmd());
         assertEquals("NewRept", schdl3.getReptSeCd());
         assertEquals("NewPic", schdl3.getSchdlPicId());
-        assertEquals("NewAtch", schdl3.getAtchFileSn());
+        assertEquals(102L, schdl3.getAtchFileSn());
 
         // 5. 비즈니스 updateAll() 메소드 검증
         schdl3.updateAll("AllName", "AllCn", "AllSe", "AllKnd", "20260701", "20260705", "AllPlc", "AllImp", "AllPic", "AllRep");

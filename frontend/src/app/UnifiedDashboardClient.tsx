@@ -19,7 +19,6 @@ import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton'
 import { StatsDto } from '@/services/foundation/system/StatsAdminService';
 import { statsUserService } from '@/services/business/user/StatsService';
 import { motion } from 'framer-motion';
-import { useMessage } from '@/hooks/useMessage';
 
 // Hub Common Components & Animations
 import { HubSummaryCard } from '@/components/ui/hub/HubSummaryCard';
@@ -66,7 +65,6 @@ export default function UnifiedDashboardClient({
   const notiList = data.initialNotiList || [];
   const taskList = data.initialTaskList || [];
   const pendingCount = data.pendingApprovalCount || 0;
-  const { t } = useMessage();
   const { user, loading } = useAuth();
   const router = useRouter();
 
@@ -106,7 +104,7 @@ export default function UnifiedDashboardClient({
       {/* Header Section */}
       <motion.div variants={hubItemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
         <div className="space-y-2">
-          <HubInsightBadge label={t('dashboard.badge')} />
+          <HubInsightBadge label="인텔리전트 엔진" />
           <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground leading-tight">
             안녕하세요, <span className="text-primary ">{user.name}</span>님
           </h1>
@@ -120,7 +118,7 @@ export default function UnifiedDashboardClient({
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => router.push('/admin/community/boards')}
-            aria-label={t('dashboard.createNewPost') || '새 게시글 작성'}
+            aria-label="새 게시글 작성"
             className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border border-border/60 bg-background text-foreground dark:bg-card dark:text-foreground dark:border-white/10 rounded-lg font-bold hover:bg-muted transition-all shadow-sm"
           >
             <Plus size={20} /> 새 게시글 작성

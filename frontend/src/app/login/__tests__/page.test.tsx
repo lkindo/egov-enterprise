@@ -22,24 +22,6 @@ vi.mock('next/navigation', () => ({
   }),
 }));
 
-vi.mock('@/hooks/useMessage', () => ({
-  useMessage: () => ({
-    t: (key: string) => {
-        const messages: Record<string, string> = {
-            'login.title': '엔터프라이즈',
-            'login.idLabel': '아이디',
-            'login.pwLabel': '비밀번호',
-            'login.idPlaceholder': '아이디를 입력하세요...',
-            'login.pwPlaceholder': '비밀번호를 입력하세요',
-            'login.submit': '로그인',
-            'login.errorEmpty': '아이디와 패스워드를 입력해주세요',
-            'login.errorFailed': '로그인에 실패했습니다',
-        };
-        return messages[key] || key;
-    }
-  }),
-}));
-
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
