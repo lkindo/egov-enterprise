@@ -477,7 +477,7 @@
         <div class="timeline-step">
           <div class="step-number">02</div>
           <h3 class="step-title">Git Pre-push 게이트</h3>
-          <p class="step-desc">로컬 push 실행 시 Fast-pass 검사 후 Java/TS 컴파일, ESLint, codegen 드리프트 및 27종 하네스 실행</p>
+          <p class="step-desc">로컬 push 실행 시 Fast-pass 검사 후 Java/TS 컴파일, ESLint, codegen 드리프트 및 30종 하네스 실행</p>
           <div class="step-tags">
             <span class="tag">pre-push</span>
             <span class="tag">compileJava</span>
@@ -527,7 +527,7 @@
 
             subgraph STEP3["3단계: GitHub Actions CI (원격 파이프라인)"]
                 C1["<b>🔀 PR 생성 / 원격 푸시</b>"] --> C2["<b>🔑 secret-scan</b><br/>Gitleaks 시크릿 유출 탐지"]
-                C2 --> C3["<b>🐘 backend-build</b><br/>Real PostgreSQL (Testcontainers)<br/>+ 27종 하네스 재검증"]
+                C2 --> C3["<b>🐘 backend-build</b><br/>Real PostgreSQL (Testcontainers)<br/>+ 30종 하네스 재검증"]
                 C3 --> C4["<b>⚡ frontend-build & mutation-test</b><br/>Next.js 빌드 + 의도적 버그 주입 검증"]
                 C4 --> C5["<b>🎭 Playwright E2E Tests</b><br/>3단계 병렬 실환경 E2E 검증"]
             end
@@ -545,7 +545,7 @@
     <!-- Part 2: 27 Linters Catalog -->
     <section>
       <h2 class="section-title">
-        <i class="fa-solid fa-boxes-stacked"></i> 2부. 27종 백엔드 하네스 린터 카탈로그 (:api-server:harnessTest)
+        <i class="fa-solid fa-boxes-stacked"></i> 2부. 28종 핵심 백엔드 하네스 린터 카탈로그 (:api-server:harnessTest)
       </h2>
 
       <div class="filter-bar">
@@ -674,7 +674,7 @@
         risk: "URL 경로 오타로 인가 필터를 우회하는 보안 구멍 차단"
       },
 
-      // 4. API Contract (4)
+      // 4. API Contract (5)
       {
         name: "ApiDocsPathCoverageLinterTest",
         cat: "api",
@@ -688,6 +688,13 @@
         catLabel: "API Contract",
         desc: "API DTO 스키마 필드가 Swagger/Springdoc 설명 어노테이션 및 타입 정의를 갖추었는지 검증",
         risk: "불분명한 DTO 필드 스키마로 인한 타입 추론 실패 차단"
+      },
+      {
+        name: "InputContractMirrorLinterTest",
+        cat: "api",
+        catLabel: "API Contract",
+        desc: "고위험 입력 DTO의 길이·enum 제약을 Entity 저장 상한 및 OpenAPI 명세와 대조",
+        risk: "검증을 통과한 요청이 DB 저장에서 실패하거나 생성 TypeScript/Zod가 허용값을 넓히는 의미 드리프트 차단"
       },
       {
         name: "SpringdocDeclarationSyncLinterTest",

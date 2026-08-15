@@ -124,7 +124,7 @@ public record UserDto(
     @Size(max = 300, message = "직함은 최대 300 자입니다")
     String ofcpsNm,
 
-    @Size(max = 255, message = "DN 정보는 최대 255 자입니다")
+    @Size(max = 100, message = "DN 정보는 최대 100 자입니다")
     String certDnVl,
 
     @Size(max = 10, message = "사용자 구분은 최대 10 자입니다")

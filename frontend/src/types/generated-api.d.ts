@@ -5070,10 +5070,16 @@ export interface components {
             ntceBgnde?: string;
             /** @description 게시 종료일 */
             ntceEndde?: string;
-            /** @description 그만보기 여부 */
-            stopvewSetupYn?: string;
-            /** @description 게시 여부 */
-            ntceYn?: string;
+            /**
+             * @description 그만보기 여부
+             * @enum {string}
+             */
+            stopvewSetupYn?: "Y" | "N";
+            /**
+             * @description 게시 여부
+             * @enum {string}
+             */
+            ntceYn?: "Y" | "N";
             /** @description 생성자 ID */
             frstRgtrId?: string;
             /**
@@ -5374,8 +5380,11 @@ export interface components {
              * @description 정렬 순서
              */
             sortOrdr?: number;
-            /** @description 반영 여부 */
-            rfltYn?: string;
+            /**
+             * @description 반영 여부
+             * @enum {string}
+             */
+            rfltYn?: "Y" | "N";
             /**
              * Format: int64
              * @description 배너 이미지 첨부파일 일련번호
@@ -5506,7 +5515,11 @@ export interface components {
             regSeCdNm?: string;
             tmpltId?: string;
             tmpltNm?: string;
-            useYn: string;
+            /**
+             * @description 사용 여부
+             * @enum {string}
+             */
+            useYn: "Y" | "N";
             frstRgtrId?: string;
             frstRegisterNm?: string;
             crtDt?: string;

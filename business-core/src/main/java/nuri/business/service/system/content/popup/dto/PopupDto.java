@@ -48,12 +48,14 @@ public class PopupDto {
     @Schema(description = "게시 종료일")
     private String ntceEndde;
 
-    @Schema(description = "그만보기 여부")
+    @Schema(description = "그만보기 여부", allowableValues = {"Y", "N"})
     @Size(max = 1)
+    @Pattern(regexp = "^(?:Y|N)$")
     private String stopvewSetupYn;
 
-    @Schema(description = "게시 여부")
+    @Schema(description = "게시 여부", allowableValues = {"Y", "N"})
     @Size(max = 1)
+    @Pattern(regexp = "^(?:Y|N)$")
     private String ntceYn;
 
     @Schema(description = "생성자 ID")

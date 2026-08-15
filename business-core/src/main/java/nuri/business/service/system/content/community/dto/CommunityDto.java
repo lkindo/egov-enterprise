@@ -2,6 +2,7 @@ package nuri.business.service.system.content.community.dto;
 
 import jakarta.validation.constraints.*;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import nuri.business.domain.system.content.community.Community;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -15,15 +16,20 @@ import java.time.format.DateTimeFormatter;
 @AllArgsConstructor
 public class CommunityDto {
     private Long cmntySn;
+    @Size(max = 100)
     private String cmntyNm;
     @Size(max = 4000)
     private String cmntyIntroCn;
+    @Size(max = 12)
     private String regSeCd;
     private String regSeCdNm;
+    @Size(max = 20)
     private String tmpltId;
     private String tmpltNm;
+    @Schema(description = "사용 여부", allowableValues = {"Y", "N"})
     @Size(max = 1)
     @NotBlank
+    @Pattern(regexp = "^(?:Y|N)$")
     private String useYn;
     private String frstRgtrId;
     private String frstRegisterNm;

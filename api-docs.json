@@ -16336,7 +16336,7 @@
           },
           "certDnVl": {
             "type": "string",
-            "maxLength": 255,
+            "maxLength": 100,
             "minLength": 0
           },
           "userSe": {
@@ -17606,14 +17606,24 @@
           "stopvewSetupYn": {
             "type": "string",
             "description": "그만보기 여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "ntceYn": {
             "type": "string",
             "description": "게시 여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "frstRgtrId": {
             "type": "string",
@@ -18312,7 +18322,7 @@
           "linkUrl": {
             "type": "string",
             "description": "링크 URL",
-            "maxLength": 1000,
+            "maxLength": 512,
             "minLength": 0
           },
           "bnrImgNm": {
@@ -18335,8 +18345,13 @@
           "rfltYn": {
             "type": "string",
             "description": "반영 여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "atchFileSn": {
             "type": "integer",
@@ -18509,7 +18524,9 @@
             "format": "int64"
           },
           "cmntyNm": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
           },
           "cmntyIntroCn": {
             "type": "string",
@@ -18517,21 +18534,31 @@
             "minLength": 0
           },
           "regSeCd": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
           },
           "regSeCdNm": {
             "type": "string"
           },
           "tmpltId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
           },
           "tmpltNm": {
             "type": "string"
           },
           "useYn": {
             "type": "string",
+            "description": "사용 여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "frstRgtrId": {
             "type": "string"

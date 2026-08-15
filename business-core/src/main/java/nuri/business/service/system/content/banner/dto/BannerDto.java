@@ -22,7 +22,7 @@ public class BannerDto {
     private String bnrNm;
 
     @Schema(description = "링크 URL")
-    @Size(max = 1000)
+    @Size(max = 512)
     private String linkUrl;
 
     @Schema(description = "배너 이미지 경로")
@@ -36,8 +36,9 @@ public class BannerDto {
     @Schema(description = "정렬 순서")
     private Long sortOrdr;
 
-    @Schema(description = "반영 여부")
+    @Schema(description = "반영 여부", allowableValues = {"Y", "N"})
     @Size(max = 1)
+    @Pattern(regexp = "^(?:Y|N)$")
     private String rfltYn;
 
     @Schema(description = "배너 이미지 첨부파일 일련번호")
