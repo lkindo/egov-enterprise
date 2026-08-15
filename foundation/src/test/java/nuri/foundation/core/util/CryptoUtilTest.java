@@ -39,6 +39,7 @@ class CryptoUtilTest {
         CryptoUtil util = new CryptoUtil();
         util.setApplicationContext(Objects.requireNonNull(applicationContext));
         util.setAlgorithmKey("ARIA");
+        util.setPreviousAlgorithmKey("");
     }
 
     @Nested
@@ -135,6 +136,25 @@ class CryptoUtilTest {
             assertThrows(RuntimeException.class, () -> {
                 CryptoUtil.decrypt(invalidBase64);
             });
+        }
+
+        @Test
+        @DisplayName("활성 키 복호화 실패 시 설정된 이전 키로 한 번 폴백")
+        void testDecrypt_FallsBackToPreviousKey() {
+            EgovCryptoService previousCryptoService = mock(EgovCryptoService.class);
+            org.springframework.test.util.ReflectionTestUtils.setField(
+                    CryptoUtil.class, "previousAlgorithmKey", "OLD-ARIA");
+            org.springframework.test.util.ReflectionTestUtils.setField(
+                    CryptoUtil.class, "previousCryptoService", previousCryptoService);
+            String encrypted = Base64.getEncoder().encodeToString("cipher".getBytes(StandardCharsets.UTF_8));
+            when(cryptoService.decrypt(any(byte[].class), eq("ARIA")))
+                    .thenThrow(new IllegalArgumentException("active key mismatch"));
+            when(previousCryptoService.decrypt(any(byte[].class), eq("OLD-ARIA")))
+                    .thenReturn("900101-1234567".getBytes(StandardCharsets.UTF_8));
+
+            assertThat(CryptoUtil.decrypt(encrypted)).isEqualTo("900101-1234567");
+            verify(cryptoService).decrypt(any(byte[].class), eq("ARIA"));
+            verify(previousCryptoService).decrypt(any(byte[].class), eq("OLD-ARIA"));
         }
     }
 

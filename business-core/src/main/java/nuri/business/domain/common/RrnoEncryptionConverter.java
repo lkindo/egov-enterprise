@@ -12,6 +12,9 @@ import lombok.extern.slf4j.Slf4j;
 @Converter
 public class RrnoEncryptionConverter implements AttributeConverter<String, String> {
 
+    private static final java.util.regex.Pattern LEGACY_PLAINTEXT_RRNO =
+            java.util.regex.Pattern.compile("^\\d{6}-?\\d{7}$");
+
     @Override
     public String convertToDatabaseColumn(String attribute) {
         if (attribute == null || attribute.trim().isEmpty()) {
@@ -35,8 +38,14 @@ public class RrnoEncryptionConverter implements AttributeConverter<String, Strin
         try {
             return CryptoUtil.decrypt(dbData);
         } catch (Exception e) {
-            log.warn("Rrno decryption failed, using plaintext as fallback: {}", e.getMessage());
-            return dbData;
+            // 과거 평문 행만 좁게 호환한다. 임의 문자열/구키 암호문을 주민번호 값처럼 반환하면
+            // 애플리케이션이 손상된 암호문을 정상 PII로 오인하므로 그 밖은 fail-closed 한다.
+            if (LEGACY_PLAINTEXT_RRNO.matcher(dbData).matches()) {
+                log.warn("Legacy plaintext rrno detected; it will be encrypted on the next write.");
+                return dbData;
+            }
+            log.error("Rrno decryption failed — refusing to expose undecipherable data", e);
+            throw new IllegalStateException("Rrno decryption failed; key rotation or ciphertext integrity check required", e);
         }
     }
 }

@@ -2,6 +2,8 @@ package nuri.foundation.core.util;
 
 import lombok.extern.slf4j.Slf4j;
 import org.egovframe.rte.fdl.crypto.EgovCryptoService;
+import org.egovframe.rte.fdl.crypto.EgovPasswordEncoder;
+import org.egovframe.rte.fdl.crypto.impl.EgovARIACryptoServiceImpl;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.lang.NonNull;
@@ -15,6 +17,8 @@ public class CryptoUtil implements ApplicationContextAware {
 
     private static EgovCryptoService cryptoService;
     private static String algorithmKey;
+    private static EgovCryptoService previousCryptoService;
+    private static String previousAlgorithmKey;
 
     /** eGovFrame 공개 샘플키 등 약한 기본값 — 운영에서 사용 시 경고 대상(재암호화 동반 로테이션 필요). */
     private static final java.util.Set<String> WEAK_DEFAULT_KEYS = java.util.Set.of("egovframe", "egoventerprise0123");
@@ -29,6 +33,23 @@ public class CryptoUtil implements ApplicationContextAware {
                     + "고엔트로피 키를 주입하고, 키 로테이션 시 기존 암호문 재암호화 마이그레이션을 수행하십시오.");
         }
         CryptoUtil.algorithmKey = key;
+    }
+
+    /**
+     * 키 회전 중 기존 암호문을 읽기 위한 단일 이전 키.
+     * 빈 값이면 폴백을 완전히 끄며, 키 원문은 어떤 로그에도 남기지 않는다.
+     */
+    @org.springframework.beans.factory.annotation.Value("${Globals.File.previousAlgorithmKey:}")
+    public void setPreviousAlgorithmKey(String key) {
+        boolean loaded = key != null && !key.isBlank();
+        log.info("### CryptoUtil: previousAlgorithmKey injected (loaded={})", loaded);
+        if (!loaded) {
+            previousAlgorithmKey = null;
+            previousCryptoService = null;
+            return;
+        }
+        previousAlgorithmKey = key;
+        previousCryptoService = createAriaService(key);
     }
 
     @Override
@@ -86,11 +107,36 @@ public class CryptoUtil implements ApplicationContextAware {
                 throw new RuntimeException("CryptoUtil not initialized properly");
             }
             byte[] decoded = Base64.getDecoder().decode(encryptedData);
-            byte[] decrypted = cryptoService.decrypt(decoded, algorithmKey);
-            return new String(decrypted, StandardCharsets.UTF_8);
+            try {
+                byte[] decrypted = cryptoService.decrypt(decoded, algorithmKey);
+                return new String(decrypted, StandardCharsets.UTF_8);
+            } catch (Exception activeKeyFailure) {
+                if (previousCryptoService == null || previousAlgorithmKey == null) {
+                    throw activeKeyFailure;
+                }
+                try {
+                    byte[] decrypted = previousCryptoService.decrypt(decoded, previousAlgorithmKey);
+                    return new String(decrypted, StandardCharsets.UTF_8);
+                } catch (Exception previousKeyFailure) {
+                    activeKeyFailure.addSuppressed(previousKeyFailure);
+                    throw activeKeyFailure;
+                }
+            }
         } catch (Exception e) {
             log.error("Decryption failed", e);
             throw new RuntimeException("Decryption failed", e);
         }
+    }
+
+    /** 활성 빈과 분리된 이전 키 전용 ARIA 인스턴스를 만든다. */
+    private static EgovCryptoService createAriaService(String key) {
+        EgovPasswordEncoder encoder = new EgovPasswordEncoder();
+        encoder.setAlgorithm("SHA-256");
+        encoder.setHashedPassword(encoder.encryptPassword(key));
+
+        EgovARIACryptoServiceImpl service = new EgovARIACryptoServiceImpl();
+        service.setBlockSize(1024);
+        service.setPasswordEncoder(encoder);
+        return service;
     }
 }

@@ -61,6 +61,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 | `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | PostgreSQL 접속 | 운영은 기본값 없음(강제 주입) |
 | `JWT_SECRET` | JWT 서명키 | 고엔트로피 값 필수 |
 | `ALGORITHM_KEY` | PII(주민번호 등) 암복호화 마스터키 | **운영 필수**, 로테이션 시 재암호화 선행 |
+| `OLD_ALGORITHM_KEY` | PII 키 회전 중 구키 복호화 폴백 | 평상시 미설정, 회전 창에서만 임시 주입 후 폐기 |
 | `CORS_ORIGIN_1` / `CORS_ORIGIN_2` | 운영 CORS 오리진 | `application-prod.yml` |
  
 > 로컬/개발은 `application.yml`의 개발용 기본값으로 동작하거나, `bootstrap`이 구성하는 `.env` 및 `application-local.yml`로 구동되지만, **운영(`prod`) 프로필은 위 값이 없으면 기동을 거부**한다. 시크릿은 절대 커밋하지 말 것(`.gitignore`가 `*.key`/`*.pem` 차단, `pre-commit`에 gitleaks 훅 — 설치 시 스테이징 시크릿 차단).

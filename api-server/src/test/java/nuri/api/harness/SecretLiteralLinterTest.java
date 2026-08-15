@@ -76,6 +76,7 @@ class SecretLiteralLinterTest {
     private static final Set<String> SECRET_ENV_NAMES = new TreeSet<>(List.of(
             "ADMIN_INITIAL_PASSWORD",
             "ALGORITHM_KEY",
+            "OLD_ALGORITHM_KEY",
             "DB_PASSWORD",
             "DOCKERHUB_TOKEN",
             "DOCKER_PASSWORD",
@@ -239,10 +240,10 @@ class SecretLiteralLinterTest {
         auditE2eDbConfig(root, appE2e, violations);
         boolean localDbConfigScanned = auditLocalDbConfigIfPresent(root, appLocal, violations);
 
-        // vacuity 하한(실측: JWT_SECRET·ALGORITHM_KEY·DB_PASSWORD·ADMIN_INITIAL_PASSWORD = 4종)
+        // vacuity 하한(실측: JWT_SECRET·ALGORITHM_KEY·OLD_ALGORITHM_KEY·DB_PASSWORD·ADMIN_INITIAL_PASSWORD = 5종)
         if (secretsSeen.size() < 3) {
             fail("게이트 무결성 파손: 운영 설정에서 참조되는 시크릿 이름이 " + secretsSeen.size()
-                    + "종 — 하한(3) 미만입니다 (실측 4종). 파일 내용/파싱 파손 또는 시크릿 주입 경로 소멸 의심: " + secretsSeen);
+                    + "종 — 하한(3) 미만입니다 (실측 5종). 파일 내용/파싱 파손 또는 시크릿 주입 경로 소멸 의심: " + secretsSeen);
         }
 
         if (!violations.isEmpty()) {
