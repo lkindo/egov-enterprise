@@ -83,6 +83,143 @@ public class OpenApiConfig {
     /** 표준 응답 봉투 스키마 참조 접두사 ({@code ApiResponseVoid}, {@code ApiResponseBoardDto} …). */
     private static final String ENVELOPE_REF_PREFIX = "#/components/schemas/ApiResponse";
 
+    /** 에러 응답 본문 스키마. {@code data} 는 항상 null 이므로 Void 봉투가 정확한 표현이다. */
+    private static final String ERROR_ENVELOPE_SCHEMA = "ApiResponseVoid";
+    private static final String ERROR_ENVELOPE_REF = "#/components/schemas/" + ERROR_ENVELOPE_SCHEMA;
+
+    /**
+     * 미인증 접근이 허용되는 경로. {@code ApiSecurityConfig} 와 <b>같은 프로퍼티</b>를 읽는다 —
+     * SSOT 는 {@code application.yml} 의 {@code security.whitelist} 하나이며, 여기서 복제하지 않는다.
+     *
+     * <p>⚠ 이 스펙은 <b>테스트 컨텍스트</b>에서 산출된다({@code OpenApiDocumentationTest}).
+     * {@code src/test/resources/application.yml} 이 main 을 shadow 하므로 그쪽에도 같은 키가 선언돼
+     * 있어야 하며, 실제로 선언돼 있다(그 파일 주석 참조). 한쪽만 지우면 컨텍스트 로딩이 깨진다.
+     */
+    @org.springframework.beans.factory.annotation.Value("${security.whitelist}")
+    private java.util.List<String> whitelist;
+
+    /**
+     * [2026-08-15] 공통 에러 응답을 스펙에 주입한다.
+     *
+     * <p>[문제] 실측 결과 <b>357개 오퍼레이션 전부가 {@code 200} 만 선언</b>하고 있었다.
+     * 반면 {@code CommonErrorCode} 에는 24종의 코드가 HttpStatus 매핑까지 갖춰 정의돼 있고
+     * {@code GlobalExceptionHandler} 가 그것을 실제로 반환한다 — <b>계약이 코드에는 있고 스펙에는
+     * 없는</b> 상태였다. 그 결과 {@code openapi-typescript} 가 생성하는 타입에 에러 형태가 없어,
+     * 클라이언트는 실패 응답을 추측으로 처리해야 했다. 계약 드리프트 게이트 3종은 성공 경로만
+     * 지키고 있었던 셈이다.
+     *
+     * <p>[왜 컨트롤러 66개에 애노테이션을 달지 않는가] 그 방식은 66개 파일을 건드리고, 새 컨트롤러가
+     * 추가될 때마다 사람이 기억해야 하므로 <b>반드시 빠진다</b>. 여기서 한 번 주입하면 대상이 늘거나
+     * 줄어도 자동으로 맞는다.
+     *
+     * <p>[왜 일괄 주입이 아닌가 — §0.7-H4] 모든 오퍼레이션에 같은 코드를 쓸어 담으면 스펙이 거짓말을
+     * 한다. 그래서 <b>스펙 자체를 근거로 개별 판정</b>한다(위 {@code jsonEnvelopeProducesCustomizer}
+     * 와 같은 원칙):
+     * <ul>
+     *   <li>{@code 400}·{@code 500} — 모든 오퍼레이션. 검증 실패와 서버 오류는 어느 경로에서나 난다.</li>
+     *   <li>{@code 401}·{@code 403} — <b>whitelist 에 매칭되지 않는</b> 경로만. permitAll 경로는
+     *       미인증으로 401 을 내지 않으므로 붙이면 오히려 틀린 문서가 된다.</li>
+     *   <li>{@code 404} — <b>경로 변수를 가진</b> 오퍼레이션만. 식별자로 조회하지 않는 목록 API 에
+     *       404 를 광고할 이유가 없다.</li>
+     *   <li>{@code 409} — <b>붙이지 않는다.</b> 중복·낙관적 락 충돌은 도메인마다 성립 조건이 달라
+     *       기계가 판정할 수 없다. 필요한 컨트롤러가 {@code @ApiResponse} 로 개별 선언할 몫이다.</li>
+     * </ul>
+     *
+     * <p>이미 선언된 상태 코드는 <b>덮어쓰지 않는다</b> — 컨트롤러가 명시한 구체적 설명이 이 일반
+     * 설명보다 항상 정확하기 때문이다.
+     *
+     * <p>{@code OperationCustomizer} 가 아니라 {@code OpenApiCustomizer} 인 이유: 401/404 판정에
+     * <b>경로 문자열</b>이 필요한데, {@code Operation} 객체는 자신이 어느 경로에 속하는지 모른다.
+     */
+    @Bean
+    public org.springdoc.core.customizers.OpenApiCustomizer commonErrorResponsesCustomizer() {
+        return openApi -> {
+            if (openApi.getPaths() == null) {
+                return;
+            }
+            boolean envelopeAvailable = openApi.getComponents() != null
+                    && openApi.getComponents().getSchemas() != null
+                    && openApi.getComponents().getSchemas().containsKey(ERROR_ENVELOPE_SCHEMA);
+
+            java.util.List<org.springframework.web.util.pattern.PathPattern> publicPatterns =
+                    parsePatterns(this.whitelist);
+
+            openApi.getPaths().forEach((path, pathItem) -> {
+                boolean isPublic = matchesAny(publicPatterns, path);
+                boolean hasPathVariable = path.indexOf('{') >= 0;
+
+                pathItem.readOperations().forEach(operation -> {
+                    io.swagger.v3.oas.models.responses.ApiResponses responses = operation.getResponses();
+                    if (responses == null) {
+                        return;
+                    }
+                    putIfAbsent(responses, "400",
+                            "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+                            envelopeAvailable);
+                    if (!isPublic) {
+                        putIfAbsent(responses, "401",
+                                "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+                                envelopeAvailable);
+                        putIfAbsent(responses, "403",
+                                "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+                                envelopeAvailable);
+                    }
+                    if (hasPathVariable) {
+                        putIfAbsent(responses, "404",
+                                "대상을 찾을 수 없음 (code: C003/C007)",
+                                envelopeAvailable);
+                    }
+                    putIfAbsent(responses, "500",
+                            "서버 내부 오류 (code: C004/S001)",
+                            envelopeAvailable);
+                });
+            });
+        };
+    }
+
+    /**
+     * 에러 응답을 <b>없을 때만</b> 넣는다. 컨트롤러가 이미 선언한 코드는 그쪽이 더 정확하므로 존중한다.
+     */
+    private static void putIfAbsent(io.swagger.v3.oas.models.responses.ApiResponses responses,
+            String statusCode, String description, boolean envelopeAvailable) {
+        if (responses.containsKey(statusCode)) {
+            return;
+        }
+        io.swagger.v3.oas.models.responses.ApiResponse response =
+                new io.swagger.v3.oas.models.responses.ApiResponse().description(description);
+        if (envelopeAvailable) {
+            response.content(new io.swagger.v3.oas.models.media.Content()
+                    .addMediaType(APPLICATION_JSON, new io.swagger.v3.oas.models.media.MediaType()
+                            .schema(new io.swagger.v3.oas.models.media.Schema<>().$ref(ERROR_ENVELOPE_REF))));
+        }
+        responses.addApiResponse(statusCode, response);
+    }
+
+    /**
+     * whitelist 패턴을 파싱한다. 파싱 실패한 패턴은 <b>조용히 버리지 않고</b> 예외로 드러낸다 —
+     * 매칭에서 빠지면 그 경로에 401 이 잘못 붙는데, 그것은 문서가 틀리는 방향의 실패라 침묵시키면 안 된다.
+     */
+    private static java.util.List<org.springframework.web.util.pattern.PathPattern> parsePatterns(
+            java.util.List<String> patterns) {
+        if (patterns == null) {
+            return java.util.List.of();
+        }
+        org.springframework.web.util.pattern.PathPatternParser parser =
+                new org.springframework.web.util.pattern.PathPatternParser();
+        return patterns.stream()
+                .map(pattern -> pattern.trim())
+                .filter(pattern -> !pattern.isEmpty())
+                .map(pattern -> parser.parse(pattern))
+                .toList();
+    }
+
+    private static boolean matchesAny(
+            java.util.List<org.springframework.web.util.pattern.PathPattern> patterns, String path) {
+        org.springframework.http.server.PathContainer container =
+                org.springframework.http.server.PathContainer.parsePath(path);
+        return patterns.stream().anyMatch(pattern -> pattern.matches(container));
+    }
+
     /**
      * 전체 API 그룹 (v1)
      */
