@@ -398,13 +398,31 @@ tasks.register('jacocoRootCoverageVerification', JacocoCoverageVerification) {
     classDirectories.setFrom(jacocoAggregateClassDirectories)
     executionData.setFrom(jacocoAggregateExecutionData)
     
+    // [2026-08-15 래칫 상향] 종전 LINE 0.50 은 **실측(90.19%)보다 40%p 아래**였다.
+    //   그 여유는 목표가 아니라 통로다 — 커버리지가 절반으로 무너져도 이 게이트는 초록이었고,
+    //   즉 "커버리지 게이트가 있다"는 인식만 남고 실제 방어선은 아무 데도 없었다.
+    //   실측 바로 아래로 내려 이미 확보한 수준을 잠근다(프런트 vitest 래칫과 동일한 운영 원칙).
+    //
+    //   실측 근거(build/reports/jacoco/jacocoRootReport/jacocoRootReport.xml):
+    //     LINE 90.19% (8337/9244) · BRANCH 77.09% (2069/2684)
+    //   여유 폭: LINE +5.19%p · BRANCH +7.09%p — 정상적인 리팩터가 곧바로 깨지지 않을 만큼은 남긴다.
+    //
+    //   ⚠ 올릴 때는 반드시 **위반을 주입해 red 가 되는지**까지 확인할 것(§0.7-H5).
+    //     그린만 보면 vacuous 통과·SKIPPED 와 구분되지 않는다. 위 classDirectories/executionData
+    //     두 줄이 지워지면 이 룰은 입력 0건으로 조용히 통과한다(2026-08-12 실측 사례).
     violationRules {
         rule {
-            // 전체 프로젝트 최소 커버리지 목표
             limit {
                 counter = 'LINE'
                 value = 'COVEREDRATIO'
-                minimum = 0.50 // 50% 이상 목표
+                minimum = 0.85
+            }
+            // 분기 커버리지도 함께 잠근다. LINE 만 보면 조건 분기를 통째로 건너뛴 테스트가
+            // 라인 수치만 채우고 통과한다 — 뮤테이션 게이트(75%)와 상보 관계다.
+            limit {
+                counter = 'BRANCH'
+                value = 'COVEREDRATIO'
+                minimum = 0.70
             }
         }
     }

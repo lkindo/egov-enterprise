@@ -229,8 +229,27 @@ class WorkflowManifestLinterTest {
         if (!gradle.matches("(?s).*tasks\\.register\\('localGate'\\).*?jacocoRootCoverageVerification.*")) {
             violations.add("localGate가 JaCoCo 하한 태스크에 결속되지 않음");
         }
-        if (!gradle.matches("(?s).*jacocoRootCoverageVerification.*?minimum\\s*=\\s*0\\.50.*")) {
-            violations.add("백엔드 전체 라인 커버리지 50% 하한이 없거나 완화됨");
+        // [2026-08-15 정정] 종전에는 `minimum = 0.50` 을 **문자열로 일치**시켰다.
+        //   그 결과 하한을 0.85 로 **올리는 강화 변경까지 red** 가 됐다 — 이 클래스가 스스로 선언한
+        //   원칙("래칫은 문자열 일치가 아니라 방향성을 검증한다", extractInteger javadoc)과 정면으로
+        //   어긋나고, 바로 아래 프런트 vitest 래칫은 이미 방향성으로 구현돼 있어 두 축이 갈라져 있었다.
+        //   문자열 고정은 커버리지 하한을 **영원히 50% 에 묶는다** — 게이트를 강화할 수 없는 게이트다.
+        //   값을 추출해 하한 이상인지로 판정한다(완화는 여전히 red).
+        Double lineFloor = extractDouble(gradle,
+                "(?s)jacocoRootCoverageVerification.*?counter\\s*=\\s*'LINE'.*?minimum\\s*=\\s*([0-9.]+)");
+        if (lineFloor == null) {
+            violations.add("백엔드 전체 라인 커버리지 하한(LINE) 선언이 없음");
+        } else if (lineFloor < 0.50) {
+            violations.add("백엔드 전체 라인 커버리지 하한 완화: " + lineFloor + " < 0.50");
+        }
+        // BRANCH 하한(2026-08-15 신설)도 함께 고정한다. LINE 만 보면 조건 분기를 통째로 건너뛴
+        // 테스트가 라인 수치만 채우고 통과하므로, 그 룰이 조용히 삭제되는 것을 막는다(§0.7-H5).
+        Double branchFloor = extractDouble(gradle,
+                "(?s)jacocoRootCoverageVerification.*?counter\\s*=\\s*'BRANCH'.*?minimum\\s*=\\s*([0-9.]+)");
+        if (branchFloor == null) {
+            violations.add("백엔드 분기 커버리지 하한(BRANCH) 선언이 없음");
+        } else if (branchFloor < 0.70) {
+            violations.add("백엔드 분기 커버리지 하한 완화: " + branchFloor + " < 0.70");
         }
         if (!gradle.matches("(?s).*tasks\\.register\\('jacocoRootCoverageVerification'.*?"
                 + "classDirectories\\.setFrom\\(jacocoAggregateClassDirectories\\).*?"
@@ -267,7 +286,8 @@ class WorkflowManifestLinterTest {
             fail("\n📈 [COVERAGE WIRING GATE] 보고서만 만들고 통과시키는 경로가 열렸습니다:\n❌ "
                     + String.join("\n❌ ", violations));
         }
-        log.info("✅ Backend JaCoCo 50%와 Frontend 전체소스 래칫이 CI/localGate에 결속됨.");
+        log.info("✅ Backend JaCoCo(LINE {} / BRANCH {})와 Frontend 전체소스 래칫이 CI/localGate에 결속됨.",
+                lineFloor, branchFloor);
     }
 
     @Test
@@ -374,6 +394,12 @@ class WorkflowManifestLinterTest {
     private Integer extractInteger(String content, String regex) {
         Matcher matcher = Pattern.compile(regex).matcher(content);
         return matcher.find() ? Integer.valueOf(matcher.group(1)) : null;
+    }
+
+    /** {@link #extractInteger} 의 소수 판. JaCoCo 하한은 {@code 0.85} 형태의 비율이다. */
+    private Double extractDouble(String content, String regex) {
+        Matcher matcher = Pattern.compile(regex).matcher(content);
+        return matcher.find() ? Double.valueOf(matcher.group(1)) : null;
     }
 
     /** api-server 모듈에서 실행되므로 저장소 루트는 한 단계 위다(다른 하네스 린터와 동일 관례). */
