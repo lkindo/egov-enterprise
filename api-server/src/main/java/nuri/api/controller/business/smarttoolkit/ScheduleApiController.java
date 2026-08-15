@@ -18,6 +18,7 @@ import java.util.List;
 
 @Tag(name = "Schedule", description = "일정 관리 API")
 @Slf4j
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/schedules")
 @RequiredArgsConstructor
@@ -71,34 +72,34 @@ public class ScheduleApiController {
     }
 
     @Operation(summary = "일정 상세 조회", description = "특정 일정의 상세 정보를 조회합니다.")
-    @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<ScheduleDto>> getSchedule(@PathVariable String id) {
-        ScheduleDto dto = egovScheduleService.getSchedule(id);
+    @GetMapping("/{schdlSn}")
+    public ResponseEntity<ApiResponse<ScheduleDto>> getSchedule(@PathVariable Long schdlSn) {
+        ScheduleDto dto = egovScheduleService.getSchedule(schdlSn);
         return ResponseEntity.ok(ApiResponse.success(dto));
     }
 
     @Operation(summary = "일정 등록", description = "새로운 일정을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createSchedule(@Valid @RequestBody ScheduleDto dto) {
+    public ResponseEntity<ApiResponse<Long>> createSchedule(@Valid @RequestBody ScheduleDto dto) {
         // [H2] 엔벨로프를 우회하던 수동 빈-401 제거 — 인증은 Spring Security가 이미 강제한다.
         String userId = currentLoginId();
-        String newId = egovScheduleService.createSchedule(userId, dto);
-        return ResponseEntity.ok(ApiResponse.success(newId));
+        Long schdlSn = egovScheduleService.createSchedule(userId, dto);
+        return ResponseEntity.ok(ApiResponse.success(schdlSn));
     }
 
     @Operation(summary = "일정 수정", description = "기존 일정을 수정합니다.")
-    @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> updateSchedule(@PathVariable String id, @Valid @RequestBody ScheduleDto dto) {
+    @PutMapping("/{schdlSn}")
+    public ResponseEntity<ApiResponse<Void>> updateSchedule(@PathVariable Long schdlSn, @Valid @RequestBody ScheduleDto dto) {
         String userId = currentLoginId();
-        egovScheduleService.updateSchedule(id, userId, dto);
+        egovScheduleService.updateSchedule(schdlSn, userId, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "일정 삭제", description = "일정을 삭제합니다.")
-    @DeleteMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteSchedule(@PathVariable String id) {
+    @DeleteMapping("/{schdlSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteSchedule(@PathVariable Long schdlSn) {
         String userId = currentLoginId();
-        egovScheduleService.deleteSchedule(id, userId);
+        egovScheduleService.deleteSchedule(schdlSn, userId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

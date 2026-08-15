@@ -16,8 +16,9 @@ import lombok.*;
 public class DeptJobBox extends BaseEntity {
 
     @Id
-    @Column(name = "dept_task_box_id", length = 20)
-    private String deptTaskBoxId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "dept_task_box_sn")
+    private Long deptTaskBoxSn;
 
     @Column(length = 100)
     private String deptTaskBoxNm;
@@ -28,8 +29,8 @@ public class DeptJobBox extends BaseEntity {
     private Long sortOrdr;
 
     // 정적 팩토리 전용 생성자 (빌더 위임 대상)
-    private DeptJobBox(String deptTaskBoxId, String deptTaskBoxNm, String deptId, Long sortOrdr) {
-        this.deptTaskBoxId = deptTaskBoxId;
+    private DeptJobBox(Long deptTaskBoxSn, String deptTaskBoxNm, String deptId, Long sortOrdr) {
+        this.deptTaskBoxSn = deptTaskBoxSn;
         this.deptTaskBoxNm = deptTaskBoxNm;
         this.deptId = deptId;
         this.sortOrdr = sortOrdr;
@@ -40,8 +41,8 @@ public class DeptJobBox extends BaseEntity {
      * 기존 {@code DeptJobBox.builder()...build()} 호출부와 호환.
      */
     @Builder
-    public static DeptJobBox create(String deptTaskBoxId, String deptTaskBoxNm, String deptId, Long sortOrdr) {
-        return new DeptJobBox(deptTaskBoxId, deptTaskBoxNm, deptId, sortOrdr);
+    public static DeptJobBox create(Long deptTaskBoxSn, String deptTaskBoxNm, String deptId, Long sortOrdr) {
+        return new DeptJobBox(deptTaskBoxSn, deptTaskBoxNm, deptId, sortOrdr);
     }
 
     public void update(String deptTaskBoxNm, String deptId, Long sortOrdr) {

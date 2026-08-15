@@ -25,11 +25,11 @@ export default function DeptJobCreateClient() {
 
   const handleSubmit = async (values: DeptJobFormValues) => {
     try {
-      const newId = await deptJobUserService.createDeptJob(values);
+      const newSn = await deptJobUserService.createDeptJob(values);
       toast.success('업무가 등록되었습니다.');
       await queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
       // 응답에 식별자가 없으면(구버전 서버 등) 목록으로 되돌린다.
-      router.push(newId ? `/smart-toolkit/dept-job/${newId}` : '/smart-toolkit/dept-job');
+      router.push(newSn ? `/smart-toolkit/dept-job/${newSn}` : '/smart-toolkit/dept-job');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '업무 등록에 실패했습니다.');
     }

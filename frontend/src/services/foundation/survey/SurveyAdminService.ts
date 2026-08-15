@@ -21,29 +21,29 @@ class SurveyAdminService extends ApiService {
   /**
    * 설문 상세 정보 조회
    */
-  async getSurvey(id: string, config?: AxiosRequestConfig): Promise<Survey> {
-    return this.get<Survey>(`/${id}`, config);
+  async getSurvey(srvySn: number, config?: AxiosRequestConfig): Promise<Survey> {
+    return this.get<Survey>(`/${srvySn}`, config);
   }
 
   /**
    * 설문 문항 목록 조회
    */
-  async getQuestions(surveyId: string, config?: AxiosRequestConfig): Promise<SurveyQuestion[]> {
-    return this.get<SurveyQuestion[]>(`/${surveyId}/questions`, config);
+  async getQuestions(srvySn: number, config?: AxiosRequestConfig): Promise<SurveyQuestion[]> {
+    return this.get<SurveyQuestion[]>(`/${srvySn}/questions`, config);
   }
 
   /**
    * 설문 답변 제출
    */
-  async submitAnswers(surveyId: string, answers: Record<string, unknown>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post<void>(`/${surveyId}/respond`, answers, config);
+  async submitAnswers(srvySn: number, answers: Record<string, unknown>, config?: AxiosRequestConfig): Promise<void> {
+    return this.post<void>(`/${srvySn}/respond`, answers, config);
   }
 
   /**
    * 설문 결과 통계 조회
    */
-  async getStats(surveyId: string, config?: AxiosRequestConfig): Promise<SurveyResultStats> {
-    return this.get<SurveyResultStats>(`/${surveyId}/stats`, config);
+  async getStats(srvySn: number, config?: AxiosRequestConfig): Promise<SurveyResultStats> {
+    return this.get<SurveyResultStats>(`/${srvySn}/stats`, config);
   }
 }
 

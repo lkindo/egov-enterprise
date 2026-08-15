@@ -4,8 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * SMS 수신 정보 JPA Entity
- * 매핑 테이블: NSMSRECPTN (레거시: COMTNSMSRECPTN)
+ * SMS 수신 정보 엔티티.
+ * 매핑 테이블: {@code tb_sms_rcptn}
  */
 @Entity
 @Table(name = "tb_sms_rcptn")
@@ -23,14 +23,14 @@ public class SmsRecptn {
     private String rsltMsg;
 
     @Builder
-    public SmsRecptn(String smsId, String rcptnTelno, String rsltCd, String rsltMsg) {
-        this.id = new SmsRecptnId(smsId, rcptnTelno);
+    public SmsRecptn(Long smsTrsmSn, String rcptnTelno, String rsltCd, String rsltMsg) {
+        this.id = new SmsRecptnId(smsTrsmSn, rcptnTelno);
         this.rsltCd = rsltCd;
         this.rsltMsg = rsltMsg;
     }
 
-    public String getSmsId() {
-        return id != null ? id.getSmsId() : null;
+    public Long getSmsTrsmSn() {
+        return id != null ? id.getSmsTrsmSn() : null;
     }
 
     public String getRcptnTelno() {
@@ -41,7 +41,5 @@ public class SmsRecptn {
         this.rsltCd = rsltCd;
         this.rsltMsg = rsltMsg;
     }
-
-    // 레거시 별칭 완전 철폐 (표준화 동기화)
 
 }

@@ -52,16 +52,16 @@ class CommentApiControllerTest {
         Page<CommentDto> page = new PageImpl<>(List.of(
                 CommentDto.builder()
                         .ansSn(1L)
-                        .pstId("1")
+                        .pstSn(1L)
                         .bbsId("BBS_001")
                         .ansCn("Comment")
                         .build()
         ));
-        given(commentService.getComments(anyString(), anyString(), any(Pageable.class))).willReturn(page);
+        given(commentService.getComments(any(Long.class), anyString(), any(Pageable.class))).willReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/v1/comments")
-                .param("pstId", "1")
+                .param("pstSn", "1")
                 .param("bbsId", "BBS_001")
                 .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
@@ -79,7 +79,7 @@ class CommentApiControllerTest {
         // When & Then
         mockMvc.perform(post("/api/v1/comments")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"pstId\":\"1\", \"bbsId\":\"BBS_001\", \"ansCn\":\"Content\"}")
+                .content("{\"pstSn\":\"1\", \"bbsId\":\"BBS_001\", \"ansCn\":\"Content\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andDo(print())
                 .andExpect(status().isOk())

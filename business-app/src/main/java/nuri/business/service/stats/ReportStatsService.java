@@ -10,7 +10,6 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * 보고서 통계 정보 및 데이터 사용현황 관리를 위한 서비스
@@ -120,14 +119,12 @@ public class ReportStatsService {
      */
     @Transactional
     public void insertReprtStats(ReprtStats reprtStats) throws Exception {
-        String reprtId = nuri.foundation.core.util.IdGenerationUtil.generateUniqueId("REPRT_", 10, reprtStatsRepository::existsById);
         ReprtStats newStats = ReprtStats.builder()
-                .reprtId(reprtId)
                 .reprtNm(reprtStats.getReprtNm())
                 .reprtType(reprtStats.getReprtType())
                 .reprtSttus(reprtStats.getReprtSttus())
                 .build();
-        reprtStatsRepository.save(Objects.requireNonNull(newStats));
+        reprtStatsRepository.save(newStats);
     }
 
     // ========== 데이터 사용현황 ==========

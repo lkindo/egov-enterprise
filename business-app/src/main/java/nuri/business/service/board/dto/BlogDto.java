@@ -13,9 +13,8 @@ import java.time.LocalDateTime;
 @Builder
 @Schema(description = "블로그 정보 DTO")
 public class BlogDto {
-    @Schema(description = "블로그 ID")
-    @Size(max = 20)
-    private String blogId;
+    @Schema(description = "블로그 일련번호")
+    private Long blogSn;
 
     @Schema(description = "게시판 ID")
     @Size(max = 20)

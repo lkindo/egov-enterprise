@@ -12,13 +12,13 @@ class DeptJobEntityTest {
     @DisplayName("DeptJobBox 빌더 및 초기화 테스트")
     void deptJobBoxTest() {
         DeptJobBox box = DeptJobBox.builder()
-                .deptTaskBoxId("BOX_001")
+                .deptTaskBoxSn(1L)
                 .deptTaskBoxNm("Job Box 1")
                 .deptId("DEPT_001")
                 .sortOrdr(1L)
                 .build();
 
-        assertThat(box.getDeptTaskBoxId()).isEqualTo("BOX_001");
+        assertThat(box.getDeptTaskBoxSn()).isEqualTo(1L);
         assertThat(box.getDeptTaskBoxNm()).isEqualTo("Job Box 1");
         assertThat(box.getDeptId()).isEqualTo("DEPT_001");
         assertThat(box.getSortOrdr()).isEqualTo(1L);
@@ -28,22 +28,22 @@ class DeptJobEntityTest {
     @DisplayName("DeptJob 빌더 및 수정 테스트")
     void deptJobTest() {
         DeptJob job = DeptJob.builder()
-                .deptTaskId("JOB_001")
+                .deptTaskSn(1L)
                 .deptTaskNm("Initial Job")
                 .deptTaskCn("Initial Content")
                 .prrtyRnk("1")
                 .build();
 
-        assertThat(job.getDeptTaskId()).isEqualTo("JOB_001");
+        assertThat(job.getDeptTaskSn()).isEqualTo(1L);
         assertThat(job.getDeptTaskNm()).isEqualTo("Initial Job");
 
-        job.update("BOX_002", "Updated Job", "Updated Content", "user01", "2", "FILE_001");
+        job.update(2L, "Updated Job", "Updated Content", "user01", "2", 101L);
         
-        assertThat(job.getDeptTaskBoxId()).isEqualTo("BOX_002");
+        assertThat(job.getDeptTaskBoxSn()).isEqualTo(2L);
         assertThat(job.getDeptTaskNm()).isEqualTo("Updated Job");
         assertThat(job.getDeptTaskCn()).isEqualTo("Updated Content");
         assertThat(job.getPicId()).isEqualTo("user01");
         assertThat(job.getPrrtyRnk()).isEqualTo("2");
-        assertThat(job.getAtchFileId()).isEqualTo("FILE_001");
+        assertThat(job.getAtchFileSn()).isEqualTo(101L);
     }
 }

@@ -87,7 +87,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  if (!ok) return;
 
  try {
- await addressbookUserService.deleteAddressBook(item.adbkId);
+ await addressbookUserService.deleteAddressBook(item.adbkSn);
  toast('주소록이 삭제되었습니다.', 'success');
  void fetchList(pageNo, searchWrd);
  } catch {
@@ -108,7 +108,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  {
  header: '주소록 명칭',
  accessor: (item) => (
- <Link href={`/admin/collaboration/address-book/select-address-book-detail/${item.adbkId}`} className="group/item">
+ <Link href={`/admin/collaboration/address-book/select-address-book-detail/${item.adbkSn}`} className="group/item">
  <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
  {item.adbkNm}
  </span>
@@ -223,7 +223,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  <DataExportExcel
    data={list}
    headers={[
-     { label: '주소록 ID', key: 'adbkId' },
+     { label: '주소록 일련번호', key: 'adbkSn' },
      { label: '주소록 명칭', key: 'adbkNm' },
      { label: '공개 범위', key: 'rlsScopeCd' },
      { label: '등록일자', key: 'crtDt' },
@@ -237,7 +237,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  <StandardDataTable<AddressBook>
  columns={columns}
  data={list}
- keyField="adbkId"
+ keyField="adbkSn"
  loading={loading}
  error={fetchError}
  onRetry={() => { void fetchList(pageNo, searchWrd); }}

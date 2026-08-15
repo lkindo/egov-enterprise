@@ -40,29 +40,29 @@ class OnlinePollApiControllerTest {
     @Test
     @DisplayName("온라인 설문 목록 페이징 조회")
     void getPolls() throws Exception {
-        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollId("P1").pollNm("Poll 1").build();
+        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollSn(1L).pollNm("Poll 1").build();
         given(onlinePollService.getPollList(any(), any())).willReturn(new PageImpl<>(List.of(dto), PageRequest.of(0, 10), 1));
 
         mockMvc.perform(get("/api/v1/admin/system/polls"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].pollId").value("P1"));
+                .andExpect(jsonPath("$.data.list[0].pollSn").value(1));
     }
 
     @Test
     @DisplayName("온라인 설문 상세 조회")
     void getPoll() throws Exception {
-        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollId("P1").pollNm("Poll 1").build();
-        given(onlinePollService.getPoll("P1")).willReturn(dto);
+        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollSn(1L).pollNm("Poll 1").build();
+        given(onlinePollService.getPoll(1L)).willReturn(dto);
 
-        mockMvc.perform(get("/api/v1/admin/system/polls/P1"))
+        mockMvc.perform(get("/api/v1/admin/system/polls/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.pollId").value("P1"));
+                .andExpect(jsonPath("$.data.pollSn").value(1));
     }
 
     @Test
     @DisplayName("온라인 설문 등록")
     void insertPoll() throws Exception {
-        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollId("P2").pollNm("New Poll").build();
+        OnlinePollManageDto dto = OnlinePollManageDto.builder().pollNm("New Poll").build();
 
         mockMvc.perform(post("/api/v1/admin/system/polls")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -75,8 +75,8 @@ class OnlinePollApiControllerTest {
     @DisplayName("온라인 설문 투표 처리")
     void vote() throws Exception {
         // 투표는 loginId(getCurrentLoginId)로 식별하므로 CustomUserDetails 주체가 필요하다.
-        mockMvc.perform(post("/api/v1/admin/system/polls/P1/vote")
-                .param("pollIemId", "I1"))
+        mockMvc.perform(post("/api/v1/admin/system/polls/1/vote")
+                .param("pollArtclSn", "11"))
                 .andExpect(status().isOk());
     }
 }

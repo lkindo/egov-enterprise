@@ -43,39 +43,38 @@ class DeptScheduleService extends ApiService {
 
   /**
    * 일정 상세 조회
-   * @param id 일정 ID
+   * @param schdlSn 일정 일련번호
    * @returns 일정 상세 정보
    */
-  public async getDeptSchedule(id: string): Promise<DeptSchedule> {
-    return this.get<DeptSchedule>(`/${id}`);
+  public async getDeptSchedule(schdlSn: number): Promise<DeptSchedule> {
+    return this.get<DeptSchedule>(`/${schdlSn}`);
   }
 
   /**
    * 일정 등록
    * @param schedule 일정 정보. 날짜(schdlBgngYmd/schdlEndYmd)는 'yyyyMMdd' 8자여야 한다(@Size(max=8)).
-   *   schdlId(PK)와 schdlPicId(담당자)는 보내지 않아도 된다 — 서버가 채번하고 인증 주체로 고정한다.
-   * @returns 생성된 일정의 **ID 문자열** (백엔드는 ApiResponse<String> 을 반환한다. 종전 선언인
-   *   Promise<DeptSchedule> 은 런타임 값과 어긋난 거짓 타입이었고 패스스루라 컴파일러가 잡지 못했다.)
+   *   schdlSn(PK)과 schdlPicId(담당자)는 보내지 않아도 된다 — DB가 채번하고 서버가 인증 주체로 고정한다.
+   * @returns 생성된 일정의 숫자 일련번호
    */
-  public async createDeptSchedule(schedule: Partial<DeptSchedule>): Promise<string> {
-    return this.post<string>('', schedule);
+  public async createDeptSchedule(schedule: Partial<DeptSchedule>): Promise<number> {
+    return this.post<number>('', schedule);
   }
 
   /**
    * 일정 수정
-   * @param id 일정 ID
+   * @param schdlSn 일정 일련번호
    * @param schedule 수정할 일정 정보
    */
-  public async updateDeptSchedule(id: string, schedule: Partial<DeptSchedule>): Promise<void> {
-    return this.put<void>(`/${id}`, schedule);
+  public async updateDeptSchedule(schdlSn: number, schedule: Partial<DeptSchedule>): Promise<void> {
+    return this.put<void>(`/${schdlSn}`, schedule);
   }
 
   /**
    * 일정 삭제
-   * @param id 일정 ID
+   * @param schdlSn 일정 일련번호
    */
-  public async deleteDeptSchedule(id: string): Promise<void> {
-    return this.delete<void>(`/${id}`);
+  public async deleteDeptSchedule(schdlSn: number): Promise<void> {
+    return this.delete<void>(`/${schdlSn}`);
   }
 }
 

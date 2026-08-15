@@ -33,7 +33,7 @@ class BoardTest {
                 .pstCn("Old Content")
                 .build();
 
-        board.update("New Title", "New Content", "user01", "User 01", "pass", "20240101", "20241231", "FILE_001", null, null, null, "N");
+        board.update("New Title", "New Content", "user01", "User 01", "pass", "20240101", "20241231", 101L, null, null, null, "N");
 
         assertThat(board.getPstTtl()).isEqualTo("New Title");
         assertThat(board.getPstCn()).isEqualTo("New Content");
@@ -42,7 +42,7 @@ class BoardTest {
         assertThat(board.getPswd()).isEqualTo("pass");
         assertThat(board.getPstBgngYmd()).isEqualTo("20240101");
         assertThat(board.getPstEndYmd()).isEqualTo("20241231");
-        assertThat(board.getAtchFileId()).isEqualTo("FILE_001");
+        assertThat(board.getAtchFileSn()).isEqualTo(101L);
     }
 
     @Test

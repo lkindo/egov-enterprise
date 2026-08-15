@@ -23,6 +23,7 @@ import java.util.List;
 
 @Slf4j
 @Tag(name = "Board Legacy", description = "Legacy Board API Support")
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/bbs")
 @RequiredArgsConstructor
@@ -42,57 +43,57 @@ public class BbsApiController {
     }
 
     @Operation(summary = "게시글 상세 조회")
-    @GetMapping("/{bbsId}/posts/{pstId}")
+    @GetMapping("/{bbsId}/posts/{pstSn}")
     public ResponseEntity<ApiResponse<BoardDto>> getBbsDetail(
             @PathVariable("bbsId") String bbsId,
-            @PathVariable("pstId") String pstId) {
-        BoardDto boardDto = boardService.getPostDetail(bbsId, pstId);
+            @PathVariable("pstSn") Long pstSn) {
+        BoardDto boardDto = boardService.getPostDetail(bbsId, pstSn);
         return ResponseEntity.ok(ApiResponse.success(boardDto));
     }
 
     @Operation(summary = "게시글 등록")
     @PostMapping("/{bbsId}")
-    public ResponseEntity<ApiResponse<String>> createBbsPost(
+    public ResponseEntity<ApiResponse<Long>> createBbsPost(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable("bbsId") String bbsId,
             @RequestPart("board") BoardSaveRequest request,
             @RequestPart(value = "file", required = false) List<MultipartFile> files) throws IOException {
         
         String userId = userDetails.getUsername();
-        String pstId;
+        Long pstSn;
         if (files != null && !files.isEmpty()) {
-            pstId = boardService.createPostWithFiles(userId, request, files);
+            pstSn = boardService.createPostWithFiles(userId, request, files);
         } else {
-            pstId = boardService.createPost(userId, request);
+            pstSn = boardService.createPost(userId, request);
         }
-        return ResponseEntity.ok(ApiResponse.success(pstId));
+        return ResponseEntity.ok(ApiResponse.success(pstSn));
     }
 
     @Operation(summary = "게시글 수정")
-    @PutMapping("/{bbsId}/posts/{pstId}")
+    @PutMapping("/{bbsId}/posts/{pstSn}")
     public ResponseEntity<ApiResponse<Void>> updateBbsPost(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable("bbsId") String bbsId,
-            @PathVariable("pstId") String pstId,
+            @PathVariable("pstSn") Long pstSn,
             @RequestPart("board") BoardSaveRequest request,
             @RequestPart(value = "file", required = false) List<MultipartFile> files) throws IOException {
         
         if (files != null && !files.isEmpty()) {
-            boardService.updatePostWithFiles(bbsId, pstId, request, files);
+            boardService.updatePostWithFiles(bbsId, pstSn, request, files);
         } else {
-            boardService.updatePost(bbsId, pstId, request);
+            boardService.updatePost(bbsId, pstSn, request);
         }
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "게시글 삭제")
-    @DeleteMapping("/{bbsId}/posts/{pstId}")
+    @DeleteMapping("/{bbsId}/posts/{pstSn}")
     public ResponseEntity<ApiResponse<Void>> deleteBbsPost(
             @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable("bbsId") String bbsId,
-            @PathVariable("pstId") String pstId) {
+            @PathVariable("pstSn") Long pstSn) {
         String userId = userDetails.getUsername();
-        boardService.deletePost(bbsId, pstId, userId);
+        boardService.deletePost(bbsId, pstSn, userId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

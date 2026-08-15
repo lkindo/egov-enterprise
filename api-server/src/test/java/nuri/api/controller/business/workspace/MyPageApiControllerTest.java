@@ -35,7 +35,7 @@ class MyPageApiControllerTest extends ControllerTestSupport {
     void getContents_Success() throws Exception {
         // given
         MyPageContentDto dto = MyPageContentDto.builder()
-                .cntntsId("MYP001")
+                .contsSn(1L)
                 .cntntsNm("테스트 콘텐츠")
                 .build();
         given(myPageService.getActiveMyPageContents()).willReturn(Collections.singletonList(dto));
@@ -55,7 +55,7 @@ class MyPageApiControllerTest extends ControllerTestSupport {
         MyPageContentDto dto = MyPageContentDto.builder()
                 .cntntsNm("신규 콘텐츠")
                 .build();
-        given(myPageService.createContent(any())).willReturn("MYP002");
+        given(myPageService.createContent(any())).willReturn(2L);
 
         // when & then
         mockMvc.perform(post("/api/v1/admin/system/workspace/mypage/contents")
@@ -64,7 +64,7 @@ class MyPageApiControllerTest extends ControllerTestSupport {
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value("MYP002"));
+                .andExpect(jsonPath("$.data").value(2));
     }
 
     @Test
@@ -72,7 +72,7 @@ class MyPageApiControllerTest extends ControllerTestSupport {
     @DisplayName("마이페이지 콘텐츠 삭제 API 테스트")
     void deleteContent_Success() throws Exception {
         // when & then
-        mockMvc.perform(delete("/api/v1/admin/system/workspace/mypage/contents/MYP001")
+        mockMvc.perform(delete("/api/v1/admin/system/workspace/mypage/contents/1")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())

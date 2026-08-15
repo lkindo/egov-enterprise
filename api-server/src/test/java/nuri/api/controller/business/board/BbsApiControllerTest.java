@@ -53,7 +53,7 @@ class BbsApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시판 목록 조회 성공")
     void getBoardList_Success() throws Exception {
         // Given
-        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().pstId("1").pstTtl("Subject").build()));
+        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().pstSn(1L).pstTtl("Subject").build()));
         given(boardService.getBoardPosts(anyString(), anyString(), anyString(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -63,13 +63,13 @@ class BbsApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].pstId").value("1"));
+                .andExpect(jsonPath("$.data.list[0].pstSn").value(1));
     }
 
     @Test
     @DisplayName("게시판 목록 조회 성공 (검색어 포함)")
     void getBoardList_WithSearch_Success() throws Exception {
-        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().pstId("1").build()));
+        Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder().pstSn(1L).build()));
         given(boardService.getBoardPosts(anyString(), anyString(), anyString(), any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/api/v1/bbs/BBSMSTR_1")
@@ -83,21 +83,21 @@ class BbsApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시글 상세 조회 성공")
     void getBoardDetail_Success() throws Exception {
         // Given
-        given(boardService.getPostDetail(anyString(), anyString())).willReturn(BoardDto.builder().pstId("1").pstTtl("Subject").build());
+        given(boardService.getPostDetail(anyString(), any(Long.class))).willReturn(BoardDto.builder().pstSn(1L).pstTtl("Subject").build());
 
         // When & Then
         mockMvc.perform(get("/api/v1/bbs/BBSMSTR_1/posts/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.pstId").value("1"));
+                .andExpect(jsonPath("$.data.pstSn").value(1));
     }
 
     @Test
     @DisplayName("게시글 등록 성공 (파일 미포함)")
     void createBoard_Success() throws Exception {
         // Given
-        given(boardService.createPost(anyString(), any(BoardSaveRequest.class))).willReturn("1");
+        given(boardService.createPost(anyString(), any(BoardSaveRequest.class))).willReturn(1L);
 
         MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"pstTtl\":\"Subject\", \"pstCn\":\"Content\"}".getBytes());
 
@@ -113,7 +113,7 @@ class BbsApiControllerTest extends ControllerTestSupport {
     @Test
     @DisplayName("게시글 등록 성공 (파일 포함)")
     void createBoard_WithFiles_Success() throws Exception {
-        given(boardService.createPostWithFiles(anyString(), any(BoardSaveRequest.class), anyList())).willReturn("1");
+        given(boardService.createPostWithFiles(anyString(), any(BoardSaveRequest.class), anyList())).willReturn(1L);
 
         MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"pstTtl\":\"S\", \"pstCn\":\"C\"}".getBytes());
         MockMultipartFile filePart = new MockMultipartFile("file", "test.txt", "text/plain", "content".getBytes());
@@ -146,13 +146,13 @@ class BbsApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
         
-        verify(boardService).deletePost(eq("BBSMSTR_1"), eq("1"), anyString());
+        verify(boardService).deletePost(eq("BBSMSTR_1"), eq(1L), anyString());
     }
 
     @Test
     @DisplayName("인증된 사용자의 게시글 등록")
     void createBoard_WithAuth_Success() throws Exception {
-        given(boardService.createPost(eq("user01"), any(BoardSaveRequest.class))).willReturn("1");
+        given(boardService.createPost(eq("user01"), any(BoardSaveRequest.class))).willReturn(1L);
 
         MockMultipartFile boardPart = new MockMultipartFile("board", "", "application/json", "{\"bbsId\":\"BBSMSTR_1\", \"pstTtl\":\"S\", \"pstCn\":\"C\"}".getBytes());
 

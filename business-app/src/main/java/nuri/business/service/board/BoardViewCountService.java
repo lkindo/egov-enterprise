@@ -22,13 +22,13 @@ public class BoardViewCountService {
     private final BoardRepository boardRepository;
     
     // In-memory buffer for view counts (Production should use Redis)
-    private final Map<String, Integer> viewCountBuffer = new ConcurrentHashMap<>();
+    private final Map<Long, Integer> viewCountBuffer = new ConcurrentHashMap<>();
 
     /**
      * 조회수 증가 요청 (버퍼에 저장)
      */
-    public void increaseViewCount(String pstId) {
-        viewCountBuffer.merge(pstId, 1, (a, b) -> Integer.sum(a, b));
+    public void increaseViewCount(Long pstSn) {
+        viewCountBuffer.merge(pstSn, 1, (a, b) -> Integer.sum(a, b));
     }
 
     /**
@@ -59,24 +59,24 @@ public class BoardViewCountService {
 
         // 키를 하나씩 꺼낸다. 복사 후 clear() 하면 그 사이에 들어온 증분이 사라진다(손실창).
         // remove 는 원자적이라 꺼낸 값만 정확히 가져가고 이후 증분은 다음 주기로 넘어간다.
-        for (String pstId : Set.copyOf(viewCountBuffer.keySet())) {
-            Integer count = viewCountBuffer.remove(pstId);
+        for (Long pstSn : Set.copyOf(viewCountBuffer.keySet())) {
+            Integer count = viewCountBuffer.remove(pstSn);
             if (count == null || count == 0) {
                 continue;
             }
             try {
                 // 리포지토리 메서드가 자기 트랜잭션을 갖는다 — 한 건의 실패가 나머지를 되돌리지 않는다.
-                int affected = boardRepository.increaseInqCntAtomic(pstId, count);
+                int affected = boardRepository.increaseInqCntAtomic(pstSn, count);
                 if (affected == 0) {
                     // **물리 삭제된** 행의 조회수. 네이티브 UPDATE 는 softDeleteFilter 를 통과하지 않으므로
                     // 숨김(use_yn='N') 글은 affected=1 로 계속 증가한다 — 여기 걸리는 것은 행 자체가 없을 때뿐이다.
                     // 재적립하면 영원히 재시도하므로 버린다.
-                    log.debug("View count target not found, dropping {} views for pstId {}", count, pstId);
+                    log.debug("View count target not found, dropping {} views for pstSn {}", count, pstSn);
                 }
             } catch (Exception e) {
-                log.error("Failed to sync view count for pstId {}: {}", pstId, e.getMessage());
+                log.error("Failed to sync view count for pstSn {}: {}", pstSn, e.getMessage());
                 // 실패분만 되돌린다. 건별 트랜잭션이 된 지금에야 이 재적립이 실효를 갖는다.
-                viewCountBuffer.merge(pstId, count, Integer::sum);
+                viewCountBuffer.merge(pstSn, count, Integer::sum);
             }
         }
     }

@@ -46,7 +46,7 @@ class DeptJobBoxServiceTest {
     @BeforeEach
     void setUp() {
         deptJobBox = DeptJobBox.builder()
-                .deptTaskBoxId("BOX1")
+                .deptTaskBoxSn(1L)
                 .deptTaskBoxNm("Test Box")
                 .deptId("DEPT1")
                 .sortOrdr(1L)
@@ -75,7 +75,7 @@ class DeptJobBoxServiceTest {
         Page<DeptJobBoxDto> result = deptJobBoxService.getDeptJobBoxList("keyword", PageRequest.of(0, 10));
 
         assertEquals(1, result.getTotalElements());
-        assertEquals("BOX1", result.getContent().get(0).getDeptTaskBoxId());
+        assertEquals(1L, result.getContent().get(0).getDeptTaskBoxSn());
     }
 
     @Test
@@ -87,26 +87,26 @@ class DeptJobBoxServiceTest {
         Page<DeptJobBoxDto> result = deptJobBoxService.getDeptJobBoxListByDept("DEPT1", PageRequest.of(0, 10));
 
         assertEquals(1, result.getTotalElements());
-        assertEquals("BOX1", result.getContent().get(0).getDeptTaskBoxId());
+        assertEquals(1L, result.getContent().get(0).getDeptTaskBoxSn());
     }
 
     @Test
     @DisplayName("부서함 상세 조회")
     void getDeptJobBox() {
-        when(deptJobBoxRepository.findById("BOX1")).thenReturn(Optional.of(deptJobBox));
+        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox));
 
-        DeptJobBoxDto result = deptJobBoxService.getDeptJobBox("BOX1");
+        DeptJobBoxDto result = deptJobBoxService.getDeptJobBox(1L);
 
         assertNotNull(result);
-        assertEquals("BOX1", result.getDeptTaskBoxId());
+        assertEquals(1L, result.getDeptTaskBoxSn());
     }
 
     @Test
     @DisplayName("부서함 상세 조회 - 없음")
     void getDeptJobBox_NotFound() {
-        when(deptJobBoxRepository.findById("BOX99")).thenReturn(Optional.empty());
+        when(deptJobBoxRepository.findById(99L)).thenReturn(Optional.empty());
 
-        DeptJobBoxDto result = deptJobBoxService.getDeptJobBox("BOX99");
+        DeptJobBoxDto result = deptJobBoxService.getDeptJobBox(99L);
 
         assertNull(result);
     }
@@ -121,23 +121,22 @@ class DeptJobBoxServiceTest {
 
         when(deptJobBoxRepository.save(any(DeptJobBox.class))).thenReturn(deptJobBox);
 
-        String id = deptJobBoxService.createDeptJobBox("user1", dto);
+        Long sn = deptJobBoxService.createDeptJobBox("user1", dto);
 
-        assertNotNull(id);
-        assertTrue(id.startsWith("DEPTJOB_"));
+        assertEquals(1L, sn);
     }
 
     @Test
     @DisplayName("부서함 수정")
     void updateDeptJobBox() {
-        when(deptJobBoxRepository.findById("BOX1")).thenReturn(Optional.of(deptJobBox));
+        when(deptJobBoxRepository.findById(1L)).thenReturn(Optional.of(deptJobBox));
 
         DeptJobBoxDto dto = new DeptJobBoxDto();
         dto.setDeptTaskBoxNm("Updated Box");
         dto.setDeptId("DEPT1");
         dto.setSortOrdr(2L);
 
-        deptJobBoxService.updateDeptJobBox("BOX1", "user1", dto);
+        deptJobBoxService.updateDeptJobBox(1L, "user1", dto);
 
         assertEquals("Updated Box", deptJobBox.getDeptTaskBoxNm());
     }
@@ -145,13 +144,13 @@ class DeptJobBoxServiceTest {
     @Test
     @DisplayName("부서함 수정 - 존재하지 않음")
     void updateDeptJobBox_NotFound() {
-        when(deptJobBoxRepository.findById("BOX99")).thenReturn(Optional.empty());
+        when(deptJobBoxRepository.findById(99L)).thenReturn(Optional.empty());
 
         DeptJobBoxDto dto = new DeptJobBoxDto();
 
         // [W1-F3] 미존재는 400 이 아니라 404 다.
         BusinessException notFound = assertThrows(BusinessException.class,
-                () -> deptJobBoxService.updateDeptJobBox("BOX99", "user1", dto));
+                () -> deptJobBoxService.updateDeptJobBox(99L, "user1", dto));
         org.junit.jupiter.api.Assertions.assertEquals(
                 nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, notFound.getErrorCode());
     }
@@ -159,12 +158,12 @@ class DeptJobBoxServiceTest {
     @Test
     @DisplayName("부서함 삭제 - 산하 업무 없음")
     void deleteDeptJobBox() {
-        when(deptJobRepository.existsByDeptTaskBoxId("BOX1")).thenReturn(false);
-        doNothing().when(deptJobBoxRepository).deleteById("BOX1");
+        when(deptJobRepository.existsByDeptTaskBoxSn(1L)).thenReturn(false);
+        doNothing().when(deptJobBoxRepository).deleteById(1L);
 
-        deptJobBoxService.deleteDeptJobBox("BOX1");
+        deptJobBoxService.deleteDeptJobBox(1L);
 
-        verify(deptJobBoxRepository, times(1)).deleteById("BOX1");
+        verify(deptJobBoxRepository, times(1)).deleteById(1L);
     }
 
     /**
@@ -175,13 +174,13 @@ class DeptJobBoxServiceTest {
     @Test
     @DisplayName("부서함 삭제 - 산하 업무가 있으면 409(RESOURCE_IN_USE) 로 차단하고 삭제하지 않는다")
     void deleteDeptJobBox_conflictWhenTasksExist() {
-        when(deptJobRepository.existsByDeptTaskBoxId("BOX1")).thenReturn(true);
+        when(deptJobRepository.existsByDeptTaskBoxSn(1L)).thenReturn(true);
 
         BusinessException ex = assertThrows(BusinessException.class,
-                () -> deptJobBoxService.deleteDeptJobBox("BOX1"));
+                () -> deptJobBoxService.deleteDeptJobBox(1L));
 
         assertEquals(CommonErrorCode.RESOURCE_IN_USE, ex.getErrorCode());
-        verify(deptJobBoxRepository, never()).deleteById(anyString());
+        verify(deptJobBoxRepository, never()).deleteById(anyLong());
     }
 
     // ── 서비스 2차 가드(assertAdmin): 비관리자(USER)의 쓰기는 ACCESS_DENIED 로 차단, 저장소는 미접촉 ──
@@ -202,8 +201,8 @@ class DeptJobBoxServiceTest {
         setAuthorities("ROLE_USER");
         DeptJobBoxDto dto = new DeptJobBoxDto();
 
-        assertThrows(BusinessException.class, () -> deptJobBoxService.updateDeptJobBox("BOX1", "user1", dto));
-        verify(deptJobBoxRepository, never()).findById(anyString());
+        assertThrows(BusinessException.class, () -> deptJobBoxService.updateDeptJobBox(1L, "user1", dto));
+        verify(deptJobBoxRepository, never()).findById(anyLong());
     }
 
     @Test
@@ -211,7 +210,7 @@ class DeptJobBoxServiceTest {
     void deleteDeptJobBox_deniedForNonAdmin() {
         setAuthorities("ROLE_USER");
 
-        assertThrows(BusinessException.class, () -> deptJobBoxService.deleteDeptJobBox("BOX1"));
-        verify(deptJobBoxRepository, never()).deleteById(anyString());
+        assertThrows(BusinessException.class, () -> deptJobBoxService.deleteDeptJobBox(1L));
+        verify(deptJobBoxRepository, never()).deleteById(anyLong());
     }
 }

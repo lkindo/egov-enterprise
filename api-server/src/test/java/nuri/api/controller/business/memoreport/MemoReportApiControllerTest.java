@@ -79,47 +79,47 @@ class MemoReportApiControllerTest {
     @Test
     @DisplayName("메모보고 상세 조회 - 성공")
     void getMemoReport_success() throws Exception {
-        when(memoReportService.getMemoReport("R1")).thenReturn(MemoReportDto.builder().rptId("R1").build());
-        mockMvc.perform(get("/api/v1/memo-reports/R1")).andExpect(status().isOk());
+        when(memoReportService.getMemoReport(1L)).thenReturn(MemoReportDto.builder().memoRptSn(1L).build());
+        mockMvc.perform(get("/api/v1/memo-reports/1")).andExpect(status().isOk());
     }
 
     @Test
     @DisplayName("메모보고 등록 - 성공")
     void createMemoReport_success() throws Exception {
         MemoReportDto dto = MemoReportDto.builder().rptTtl("Subject").build();
-        when(memoReportService.createMemoReport(eq("testUser"), any())).thenReturn("R_NEW");
+        when(memoReportService.createMemoReport(eq("testUser"), any())).thenReturn(2L);
         mockMvc.perform(post("/api/v1/memo-reports")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value("R_NEW"));
+                .andExpect(jsonPath("$.data").value(2));
     }
 
     @Test
     @DisplayName("메모보고 수정 - 성공")
     void updateMemoReport_success() throws Exception {
         MemoReportDto dto = MemoReportDto.builder().rptTtl("Update").build();
-        mockMvc.perform(put("/api/v1/memo-reports/R1")
+        mockMvc.perform(put("/api/v1/memo-reports/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
-        verify(memoReportService).updateMemoReport(eq("R1"), eq("testUser"), any());
+        verify(memoReportService).updateMemoReport(eq(1L), eq("testUser"), any());
     }
 
     @Test
     @DisplayName("지시사항 업데이트 - 성공")
     void updateDrctMatter_success() throws Exception {
-        mockMvc.perform(patch("/api/v1/memo-reports/R1/instr-cn")
+        mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn")
                 .contentType(MediaType.TEXT_PLAIN)
                 .content("Do it now"))
                 .andExpect(status().isOk());
-        verify(memoReportService).updateDrctMatter("R1", "Do it now");
+        verify(memoReportService).updateDrctMatter(1L, "Do it now");
     }
 
     @Test
     @DisplayName("메모보고 삭제 - 성공")
     void deleteMemoReport_success() throws Exception {
-        mockMvc.perform(delete("/api/v1/memo-reports/R1")).andExpect(status().isOk());
-        verify(memoReportService).deleteMemoReport("R1");
+        mockMvc.perform(delete("/api/v1/memo-reports/1")).andExpect(status().isOk());
+        verify(memoReportService).deleteMemoReport(1L);
     }
 }

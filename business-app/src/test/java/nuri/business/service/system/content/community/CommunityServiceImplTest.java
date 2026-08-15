@@ -1,0 +1,196 @@
+package nuri.business.service.system.content.community;
+
+import nuri.business.domain.system.content.community.Community;
+import nuri.business.domain.system.content.community.CommunityRepository;
+import nuri.business.service.system.content.community.dto.CommunityDto;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.times;
+
+@ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
+@DisplayName("CommunityService 단위 테스트")
+class CommunityServiceImplTest {
+
+    @InjectMocks
+    private CommunityService communityService;
+
+    @Mock
+    private CommunityRepository communityRepository;
+
+    @Mock
+    private JPAQueryFactory queryFactory;
+    
+    @Mock
+    private JPAQuery<Community> jpaQuery;
+
+    @Test
+    @DisplayName("커뮤니티 생성 - 성공")
+    void createCommunity() throws Exception {
+        // given
+        String userId = "user1";
+        CommunityDto dto = CommunityDto.builder()
+                .cmntyNm("Test Community")
+                .cmntyIntroCn("Description")
+                .tmpltId("TMP_01")
+                .build();
+
+        given(communityRepository.save(any(Community.class))).willAnswer(inv -> {
+            Community saved = inv.getArgument(0);
+            ReflectionTestUtils.setField(saved, "cmntySn", 101L);
+            return saved;
+        });
+
+        // when
+        CommunityDto created = communityService.createCommunity(userId, dto);
+
+        // then
+        assertThat(created).isNotNull();
+        assertThat(created.getCmntySn()).isEqualTo(101L);
+        assertThat(created.getCmntyNm()).isEqualTo("Test Community");
+        verify(communityRepository, times(1)).save(any(Community.class));
+    }
+
+    @Test
+    @DisplayName("커뮤니티 단건 조회 - 성공")
+    void getCommunity() {
+        // given
+        Community community = Community.builder()
+                .cmntySn(101L)
+                .cmntyNm("Test Community")
+                .build();
+        given(communityRepository.findById(101L)).willReturn(Optional.of(community));
+
+        // when
+        CommunityDto found = communityService.getCommunity(101L);
+        
+        // then
+        assertThat(found).isNotNull();
+        assertThat(found.getCmntyNm()).isEqualTo("Test Community");
+    }
+
+    @Test
+    @DisplayName("커뮤니티 목록 조회 - 성공")
+    void getCommunityList() {
+        // given
+        Community community = Community.builder().cmntySn(101L).cmntyNm("Comm A").build();
+        Pageable pageable = PageRequest.of(0, 10);
+
+        given(queryFactory.<Community>selectFrom(any())).willReturn(jpaQuery);
+        given(jpaQuery.where(any(BooleanBuilder.class))).willReturn(jpaQuery);
+        given(jpaQuery.offset(any(Long.class))).willReturn(jpaQuery);
+        given(jpaQuery.limit(any(Long.class))).willReturn(jpaQuery);
+        given(jpaQuery.orderBy(any(OrderSpecifier.class))).willReturn(jpaQuery);
+        given(jpaQuery.fetch()).willReturn(List.of(community));
+
+        // when
+        Page<CommunityDto> result = communityService.getCommunityList("0", "Comm", pageable);
+
+        // then
+        assertThat(result).isNotNull();
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getCmntySn()).isEqualTo(101L);
+        assertThat(result.getTotalElements()).isEqualTo(1);
+    }
+    
+    @Test
+    @DisplayName("커뮤니티 수정 - 성공")
+    void updateCommunity() {
+        // given
+        Community community = Community.builder()
+                .cmntySn(101L)
+                .cmntyNm("Comm A")
+                .build();
+        given(communityRepository.findById(101L)).willReturn(Optional.of(community));
+        
+        CommunityDto updateDto = CommunityDto.builder()
+                .cmntySn(101L)
+                .cmntyNm("Updated Comm")
+                .build();
+
+        // when
+        communityService.updateCommunity("user1", updateDto);
+        
+        // then
+        assertThat(community.getCmntyNm()).isEqualTo("Updated Comm");
+    }
+    
+    @Test
+    @DisplayName("커뮤니티 삭제 (논리 삭제) - 성공")
+    void deleteCommunity() {
+        // given
+        Community community = Community.builder()
+                .cmntySn(101L)
+                .useYn("Y")
+                .build();
+        given(communityRepository.findById(101L)).willReturn(Optional.of(community));
+        
+        // when
+        communityService.deleteCommunity(101L, "user1");
+        
+        // then
+        assertThat(community.getUseYn()).isEqualTo("N");
+    }
+    
+    @Test
+    @DisplayName("포틀릿용 커뮤니티 목록 조회 - 성공")
+    void getCommunityListPortlet() {
+        // given
+        Community community = Community.builder().cmntySn(101L).build();
+        given(queryFactory.<Community>selectFrom(any())).willReturn(jpaQuery);
+        given(jpaQuery.where(any(BooleanExpression.class))).willReturn(jpaQuery);
+        given(jpaQuery.orderBy(any(OrderSpecifier.class))).willReturn(jpaQuery);
+        given(jpaQuery.fetch()).willReturn(List.of(community));
+        
+        // when
+        List<CommunityDto> list = communityService.getCommunityListPortlet();
+        
+        // then
+        assertThat(list).hasSize(1);
+        assertThat(list.get(0).getCmntySn()).isEqualTo(101L);
+    }
+
+    @Mock
+    private nuri.business.domain.system.content.community.CommunityUserRepository communityUserRepository;
+
+    @Test
+    @DisplayName("커뮤니티 가입 신청 - 성공")
+    void joinCommunity() {
+        // given
+        Long cmntySn = 101L;
+        String userId = "user1";
+        Community community = Community.builder()
+                .cmntySn(cmntySn)
+                .useYn("Y")
+                .build();
+        given(communityRepository.findById(cmntySn)).willReturn(Optional.of(community));
+        given(communityUserRepository.existsById(any())).willReturn(false);
+
+        // when
+        communityService.joinCommunity(cmntySn, userId);
+
+        // then
+        verify(communityUserRepository, times(1)).save(any());
+    }
+}

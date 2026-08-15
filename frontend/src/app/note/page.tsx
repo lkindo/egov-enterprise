@@ -75,9 +75,9 @@ export default function NotePage() {
   };
 
   const handleDelete = async (note: Note) => {
-    // relationId 소스는 탭별로 다르다 — 수신함=noteRecptnId, 발신함=noteDsptchId
-    const relationId = tab === 'received' ? note.noteRecptnId : note.noteDsptchId;
-    if (!relationId) {
+    // 관계 일련번호 소스는 탭별로 다르다 — 수신함=noteRcptnSn, 발신함=noteSndngSn
+    const relationSn = tab === 'received' ? note.noteRcptnSn : note.noteSndngSn;
+    if (!relationSn) {
       toast('삭제 대상 식별자를 찾을 수 없습니다.', 'error');
       return;
     }
@@ -91,7 +91,7 @@ export default function NotePage() {
     });
     if (!ok) return;
     try {
-      await noteService.deleteNote(relationId, { type: tab });
+      await noteService.deleteNote(relationSn, { type: tab });
       toast('삭제되었습니다.', 'success');
       loadNotes();
     } catch {
@@ -288,7 +288,7 @@ export default function NotePage() {
                 <Button
                   onClick={() => {
                     setDetailOpen(false);
-                    setFormData({ ...formData, rcverId: selectedNote.dsptchUserId, noteSj: `Re: ${selectedNote.noteSj}` });
+                    setFormData({ ...formData, rcverId: selectedNote.dsptchUserId ?? '', noteSj: `Re: ${selectedNote.noteSj}` });
                     setWriteOpen(true);
                   }}
                   className="h-11 px-10 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all gap-2"

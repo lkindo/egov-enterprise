@@ -18,6 +18,7 @@ import lombok.Builder;
 public class Menu extends BaseEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "menu_sn")
     private Long menuSn;
 

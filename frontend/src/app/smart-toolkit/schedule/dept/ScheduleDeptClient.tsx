@@ -110,10 +110,10 @@ export default function ScheduleDeptClient() {
         setIsDialogOpen(true);
     };
 
-    const handleDelete = async (schdlId: string) => {
+    const handleDelete = async (schdlSn: number) => {
         if (!confirm('정말 삭제하시겠습니까?')) return;
         try {
-            await deleteDeptSchedule(schdlId);
+            await deleteDeptSchedule(schdlSn);
             fetchList();
         } catch {
             toast.error('삭제 중 오류가 발생했습니다.');
@@ -122,8 +122,8 @@ export default function ScheduleDeptClient() {
 
     const handleSubmit = async () => {
         try {
-            if (editingSchedule && editingSchedule.schdlId) {
-                await updateDeptSchedule(editingSchedule.schdlId, formData as DeptSchedule);
+            if (editingSchedule && editingSchedule.schdlSn) {
+                await updateDeptSchedule(editingSchedule.schdlSn, formData as DeptSchedule);
             } else {
                 await createDeptSchedule(formData as DeptSchedule);
             }
@@ -176,7 +176,7 @@ export default function ScheduleDeptClient() {
                                 </TableRow>
                         ) : (
                             schedules.map((schedule, index) => (
-                                <TableRow key={schedule.schdlId} className="hover:bg-muted/50 transition-colors">
+                                <TableRow key={schedule.schdlSn} className="hover:bg-muted/50 transition-colors">
                                     <TableCell className="text-center font-mono text-muted-foreground">{index + 1}</TableCell>
                                     <TableCell className="font-bold text-foreground">{schedule.schdlNm}</TableCell>
                                     <TableCell className="text-sm font-medium">
@@ -188,7 +188,7 @@ export default function ScheduleDeptClient() {
                                             <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)} aria-label={`${schedule.schdlNm || '일정'} 수정`} className="rounded-lg hover:bg-primary/10">
                                                 <Pencil className="h-4 w-4 text-primary" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(schedule.schdlId!)} aria-label={`${schedule.schdlNm || '일정'} 삭제`} className="rounded-lg hover:bg-destructive/10">
+                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(schedule.schdlSn!)} aria-label={`${schedule.schdlNm || '일정'} 삭제`} className="rounded-lg hover:bg-destructive/10">
                                                 <Trash2 className="h-4 w-4 text-destructive-emphasis" />
                                             </Button>
                                         </div>

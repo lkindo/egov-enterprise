@@ -58,32 +58,32 @@ function Stars({
  * 삭제 버튼을 항상 노출한 뒤 <b>서버 판정 결과를 그대로 보여준다</b>. 화면에서 권한을 흉내내면
  * 서버 규칙과 갈라지고, 그 불일치는 조용히 누적된다.
  */
-export default function SatisfactionSection({ bbsId, pstId }: { bbsId: string; pstId: string }) {
+export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; pstSn: number }) {
   const queryClient = useQueryClient();
   const [score, setScore] = useState(0);
   const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const listKey = ['satisfactions', bbsId, pstId];
+  const listKey = ['satisfactions', bbsId, pstSn];
 
   const { data: list = [], isLoading } = useQuery({
     queryKey: listKey,
-    queryFn: () => satisfactionService.list(bbsId, pstId),
+    queryFn: () => satisfactionService.list(bbsId, pstSn),
   });
 
   const { data: avg } = useQuery({
-    queryKey: ['satisfaction-average', bbsId, pstId],
-    queryFn: () => satisfactionService.average(bbsId, pstId),
+    queryKey: ['satisfaction-average', bbsId, pstSn],
+    queryFn: () => satisfactionService.average(bbsId, pstSn),
   });
 
   const invalidate = () => {
     queryClient.invalidateQueries({ queryKey: listKey });
-    queryClient.invalidateQueries({ queryKey: ['satisfaction-average', bbsId, pstId] });
+    queryClient.invalidateQueries({ queryKey: ['satisfaction-average', bbsId, pstSn] });
   };
 
   const createMutation = useMutation({
     mutationFn: () =>
-      satisfactionService.create(bbsId, pstId, {
+      satisfactionService.create(bbsId, pstSn, {
         dgstfnScr: score,
         dgstfnCn: content,
         useYn: 'Y',
@@ -98,7 +98,7 @@ export default function SatisfactionSection({ bbsId, pstId }: { bbsId: string; p
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (dgstfnSn: number) => satisfactionService.remove(bbsId, pstId, dgstfnSn),
+    mutationFn: (dgstfnSn: number) => satisfactionService.remove(bbsId, pstSn, dgstfnSn),
     onSuccess: () => {
       setError(null);
       invalidate();

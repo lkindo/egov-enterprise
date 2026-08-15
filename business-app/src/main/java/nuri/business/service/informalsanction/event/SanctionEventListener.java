@@ -31,7 +31,7 @@ public class SanctionEventListener {
     @EventListener
     public void handleStatusChanged(SanctionStatusChangedEvent event) {
         log.info(">>> [Event] Sanction Status Changed: ID={}, Applicant={}, NewStatus={}, Reason={}",
-                event.getInformalSanctionId(), event.getApplicantId(), event.getNewStatus(), event.getReason());
+                event.getInformalSanctionSn(), event.getApplicantId(), event.getNewStatus(), event.getReason());
         
         // [W1-D5] 이 리스너는 @Async 라 SecurityContext 가 없는 스레드에서 돈다(TaskDecorator 는
         //   프로덕션에서 의도적 no-op — 전파하면 비동기 경로 전체의 인가 판정 거동이 바뀐다).
@@ -51,7 +51,7 @@ public class SanctionEventListener {
             }
 
             String message = String.format("[eGov Enterprise] 귀하의 결재(ID:%s)가 %s 되었습니다. 사유: %s",
-                    event.getInformalSanctionId(), event.getNewStatus(), 
+                    event.getInformalSanctionSn(), event.getNewStatus(),
                     event.getReason() != null ? event.getReason() : "없음");
 
             // SMS 발송
@@ -82,7 +82,7 @@ public class SanctionEventListener {
             }
 
         } catch (Exception e) {
-            log.error("Failed to send notification for sanction {}", event.getInformalSanctionId(), e);
+            log.error("Failed to send notification for sanction {}", event.getInformalSanctionSn(), e);
         }
     }
 }

@@ -46,7 +46,7 @@ describe('useBoardList Hook', () => {
     const initialData = {
       list: [
         {
-          pstId: 'POST_001',
+          pstSn: 1,
           bbsId: 'BBSMSTR_000000000001',
           pstTtl: '임시 공지',
           pstCn: '본문',

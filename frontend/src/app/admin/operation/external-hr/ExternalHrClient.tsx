@@ -34,6 +34,8 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 import { ExternalHrDtoSchema } from '@/types/generated-zod';
 
 const externalHrSchema = ExternalHrDtoSchema.extend({
+  evntSn: z.number().int().positive('행사 일련번호를 입력하세요.'),
+  otsdHrId: z.string().min(1, '외부인사 ID를 입력하세요.').max(20),
   otsdHrNm: z.string().min(1),
   ogdpInstNm: z.string().min(1),
   areaNo: z.string().min(1).max(4),
@@ -72,6 +74,8 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
 
   const form = useAppForm(externalHrSchema, {
     defaultValues: {
+      evntSn: 0,
+      otsdHrId: '',
       otsdHrNm: '',
       ogdpInstNm: '',
       areaNo: '',
@@ -115,8 +119,6 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       setRegisterLoading(true);
       const submitData: Partial<ExternalHr> = {
         ...values,
-        evntId: 'E1',
-        otsdHrId: `HR_${Date.now()}`,
         gndrCd: 'M',
         crTypeCd: 'STANDARD',
       };
@@ -293,6 +295,45 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       >
         <Form {...form}>
           <form className="space-y-6 pt-4 text-left">
+            <ShadcnFormField
+              control={form.control}
+              name="evntSn"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">행사 일련번호</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      min={1}
+                      {...field}
+                      value={field.value || ''}
+                      onChange={(event) => field.onChange(event.target.valueAsNumber)}
+                      placeholder="1"
+                      className="h-11 rounded-lg bg-muted border-border"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <ShadcnFormField
+              control={form.control}
+              name="otsdHrId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">외부인사 ID</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      maxLength={20}
+                      placeholder="HR-2026-001"
+                      className="h-11 rounded-lg bg-muted border-border"
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <ShadcnFormField
               control={form.control}
               name="otsdHrNm"

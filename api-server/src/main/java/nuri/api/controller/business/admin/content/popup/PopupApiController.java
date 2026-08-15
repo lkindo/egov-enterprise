@@ -35,35 +35,35 @@ public class PopupApiController {
     }
 
     @Operation(summary = "팝업 상세 조회", description = "특정 팝업의 상세 정보를 조회합니다.")
-    @GetMapping("/{popupId}")
+    @GetMapping("/{popupSn}")
     public ResponseEntity<ApiResponse<PopupDto>> getPopup(
-            @Parameter(description = "팝업 ID") @PathVariable String popupId) {
-        return ResponseEntity.ok(ApiResponse.success(popupService.getPopup(popupId)));
+            @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn) {
+        return ResponseEntity.ok(ApiResponse.success(popupService.getPopup(popupSn)));
     }
 
     @Operation(summary = "팝업 등록", description = "새로운 팝업을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createPopup(
+    public ResponseEntity<ApiResponse<Long>> createPopup(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody PopupDto popupDto) {
         return ResponseEntity.ok(ApiResponse.success(popupService.createPopup(userDetails.getUsername(), popupDto)));
     }
 
     @Operation(summary = "팝업 정보 수정", description = "기존 팝업의 정보를 수정합니다.")
-    @PutMapping("/{popupId}")
+    @PutMapping("/{popupSn}")
     public ResponseEntity<ApiResponse<Void>> updatePopup(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "팝업 ID") @PathVariable String popupId,
+            @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn,
             @Valid @RequestBody PopupDto popupDto) {
-        popupService.updatePopup(popupId, userDetails.getUsername(), popupDto);
+        popupService.updatePopup(popupSn, userDetails.getUsername(), popupDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "팝업 삭제", description = "등록된 팝업을 삭제합니다.")
-    @DeleteMapping("/{popupId}")
+    @DeleteMapping("/{popupSn}")
     public ResponseEntity<ApiResponse<Void>> deletePopup(
-            @Parameter(description = "팝업 ID") @PathVariable String popupId) {
-        popupService.deletePopup(popupId);
+            @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn) {
+        popupService.deletePopup(popupSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

@@ -31,7 +31,7 @@ import java.util.List;
  */
 @Tag(name = "SurveySubmission", description = "설문 응답 제출 및 결과 통계 API")
 @RestController("surveySubmissionApiController")
-@RequestMapping("/api/v1/surveys/{srvyId}")
+@RequestMapping("/api/v1/surveys/{srvySn}")
 @RequiredArgsConstructor
 public class SurveySubmissionApiController {
 
@@ -41,8 +41,8 @@ public class SurveySubmissionApiController {
             description = "문항 × 항목 단위의 평면 분포를 반환한다. 응답이 0건인 항목도 0% 행으로 포함한다.")
     @Authenticated
     @GetMapping("/stats")
-    public ResponseEntity<ApiResponse<List<SurveyStatsDto>>> getStats(@PathVariable String srvyId) {
-        return ResponseEntity.ok(ApiResponse.success(surveyResultService.getStats(srvyId)));
+    public ResponseEntity<ApiResponse<List<SurveyStatsDto>>> getStats(@PathVariable Long srvySn) {
+        return ResponseEntity.ok(ApiResponse.success(surveyResultService.getStats(srvySn)));
     }
 
     @Operation(summary = "설문 응답 제출",
@@ -50,8 +50,8 @@ public class SurveySubmissionApiController {
     @Authenticated
     @PostMapping("/responses")
     public ResponseEntity<ApiResponse<Integer>> submit(
-            @PathVariable String srvyId,
+            @PathVariable Long srvySn,
             @Valid @RequestBody SurveyResponseSubmitDto dto) {
-        return ResponseEntity.ok(ApiResponse.success(surveyResultService.submitResponse(srvyId, dto)));
+        return ResponseEntity.ok(ApiResponse.success(surveyResultService.submitResponse(srvySn, dto)));
     }
 }

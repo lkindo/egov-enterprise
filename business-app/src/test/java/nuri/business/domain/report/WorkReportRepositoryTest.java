@@ -20,7 +20,6 @@ class WorkReportRepositoryTest extends PersistenceTestSupport {
         // given
         // 1. 신규 표준 필드 빌더 활용
         WorkReport report1 = WorkReport.builder()
-                .rptId("R1")
                 .rptTtl("Weekly Report 1")
                 .rptSeCd("1")
                 .userId("user1")
@@ -29,7 +28,6 @@ class WorkReportRepositoryTest extends PersistenceTestSupport {
 
         // 2. 신규 표준 빌더 활용
         WorkReport report2 = WorkReport.builder()
-                .rptId("R2")
                 .rptTtl("Monthly Report")
                 .rptSeCd("2")
                 .userId("user1")

@@ -11,10 +11,12 @@ class WebLogTest {
     @DisplayName("WebLog 빌더 확인")
     void testBuilder() {
         WebLog log = WebLog.builder()
+                .webLogSn(101L)
                 .url("/api/v1/test")
                 .dmndUserId("user01")
                 .build();
 
         assertEquals("/api/v1/test", log.getUrl());
+        assertEquals(101L, log.getWebLogSn());
     }
 }

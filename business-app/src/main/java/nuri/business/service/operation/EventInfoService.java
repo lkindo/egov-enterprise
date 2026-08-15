@@ -31,20 +31,18 @@ public class EventInfoService {
         return eventInfoRepository.findBySearchWrd(searchWrd, pageable).map(eventInfoMapper::toDto);
     }
  
-    public EventInfoDto getEvent(String eventId) {
-        log.debug("Fetching event details for ID: {}", eventId);
-        EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(eventId))
+    public EventInfoDto getEvent(Long evntSn) {
+        log.debug("Fetching event details for serial number: {}", evntSn);
+        EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         return eventInfoMapper.toDto(eventInfo);
     }
  
     @Transactional
-    public String createEvent(String userId, EventInfoDto dto) {
+    public Long createEvent(String userId, EventInfoDto dto) {
         log.info("Creating new event by user: {}", userId);
-        String eventId = nuri.foundation.core.util.IdGenerationUtil.generateId("EVT_", 13);
  
         EventInfo eventInfo = EventInfo.builder()
-                .evntId(eventId)
                 .bizYr(dto.getBizYr())
                 .evntNm(dto.getEvntNm())
                 .evntCn(dto.getEvntCn())
@@ -59,18 +57,18 @@ public class EventInfoService {
                 .build();
 
         EventInfo saved = eventInfoRepository.save(Objects.requireNonNull(eventInfo));
-        log.info("Event created successfully: {}", saved.getEvntId());
-        return eventId;
+        log.info("Event created successfully: {}", saved.getEvntSn());
+        return saved.getEvntSn();
     }
  
     @Transactional
-    public void updateEvent(String eventId, String userId, EventInfoDto dto) {
-        log.info("Updating event ID: {} by user: {}", eventId, userId);
-        EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(eventId))
+    public void updateEvent(Long evntSn, String userId, EventInfoDto dto) {
+        log.info("Updating event serial number: {} by user: {}", evntSn, userId);
+        EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
  
         EventInfo updated = EventInfo.builder()
-                .evntId(eventId)
+                .evntSn(evntSn)
                 .bizYr(dto.getBizYr())
                 .evntNm(dto.getEvntNm())
                 .evntCn(dto.getEvntCn())
@@ -86,7 +84,7 @@ public class EventInfoService {
         // 재빌드-merge 패턴: 작성자(frstRgtrId)는 @CreatedBy 가 update 시 재적용되지 않으므로 기존 값 보존
         updated.setFrstRgtrId(eventInfo.getFrstRgtrId());
         eventInfoRepository.save(updated);
-        log.info("Event updated successfully: {}", eventId);
+        log.info("Event updated successfully: {}", evntSn);
     }
  
     /**
@@ -98,11 +96,11 @@ public class EventInfoService {
     }
 
     @Transactional
-    public void deleteEvent(String eventId) {
-        log.warn("Deleting event ID: {}", eventId);
-        EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(eventId))
+    public void deleteEvent(Long evntSn) {
+        log.warn("Deleting event serial number: {}", evntSn);
+        EventInfo eventInfo = eventInfoRepository.findById(Objects.requireNonNull(evntSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         eventInfoRepository.delete(Objects.requireNonNull(eventInfo));
-        log.info("Event deleted successfully: {}", eventId);
+        log.info("Event deleted successfully: {}", evntSn);
     }
 }

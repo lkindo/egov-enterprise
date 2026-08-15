@@ -69,14 +69,15 @@ public class LogManageService extends BaseAbstractService {
                 .getTotalElements();
     }
 
-    public SysLogDto selectSysLogDetail(@NonNull SysLogDto dto) {
-        return sysLogRepository.findById(required(dto.getDmndId(), "dto.getDmndId() 는 null 일 수 없습니다"))
+    public SysLogDto selectSysLogDetail(@NonNull Long sysLogSn) {
+        return sysLogRepository.findById(sysLogSn)
                 .map(this::toDto)
                 .orElse(null);
     }
 
     private SysLogDto toDto(SysLog entity) {
         return SysLogDto.builder()
+                .sysLogSn(entity.getSysLogSn())
                 .dmndId(entity.getDmndId())
                 .srvcNm(entity.getSrvcNm())
                 .methodNm(entity.getMthdNm())

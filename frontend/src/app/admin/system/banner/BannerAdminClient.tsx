@@ -230,7 +230,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  };
 
  /** [P1-9] 확인 본문에 대상 식별자(명칭)를 노출해 오삭제를 막는다. */
- const handleDelete = async (id: string, name: string) => {
+ const handleDelete = async (id: string | number, name: string) => {
  const kind = activeTab === 'banner' ? '배너' : '팝업';
  const ok = await confirm({
  title: `${kind} 삭제 확인`,
@@ -243,8 +243,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  try {
  const res = activeTab === 'banner'
- ? await deleteBannerAction(null, id)
- : await deletePopupAction(null, id);
+ ? await deleteBannerAction(null, Number(id))
+ : await deletePopupAction(null, Number(id));
 
  if (res.success) {
  toast(res.message, 'success');
@@ -265,20 +265,20 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  } as any;
  if (formFiles.length > 0) {
  const uploadRes = await fileAdminService.uploadFiles(formFiles);
- const uploadedFileId = (uploadRes as any)?.data?.data || (uploadRes as any)?.data || uploadRes;
- if (uploadedFileId) {
- data.atchFileId = uploadedFileId;
+ const uploadedFileSn = (uploadRes as any)?.data?.data || (uploadRes as any)?.data || uploadRes;
+ if (uploadedFileSn) {
+ data.atchFileSn = uploadedFileSn;
  data.bnrImgNm = formFiles[0].name;
  }
  } else if (editingItem) {
- data.atchFileId = (editingItem as Banner).atchFileId;
+ data.atchFileSn = (editingItem as Banner).atchFileSn;
  data.bnrImgNm = (editingItem as Banner).bnrImgNm;
  }
 
  const res = await saveBannerAction(null, {
  mode: editingItem ? 'edit' : 'create',
  data: data as Banner,
- id: (editingItem as Banner)?.bnrId
+ id: (editingItem as Banner)?.bnrSn
  });
 
  if (res.success) {
@@ -309,13 +309,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  if (formFiles.length > 0) {
  const uploadRes = await fileAdminService.uploadFiles(formFiles);
- const uploadedFileId = typeof uploadRes === 'string' ? uploadRes : (uploadRes as any)?.data?.data || (uploadRes as any)?.data;
+ const uploadedFileSn = typeof uploadRes === 'number' ? uploadRes : (uploadRes as any)?.data?.data || (uploadRes as any)?.data;
  
- if (uploadedFileId) {
+ if (uploadedFileSn) {
  // 종전에는 `/api/v1/files/download?fileId=…` 를 저장했는데 백엔드에 그 경로가 없다(매핑 0건).
  // 실존 경로를 저장한다. 렌더는 blob 으로 하되(헤더 인증), 값 자체는 실재하는 URL 이어야
  // 나중에 다른 소비자가 열어 보더라도 404 가 아니게 된다.
- data.fileUrl = `/api/v1/files/${uploadedFileId}`;
+ data.fileUrl = `/api/v1/files/${uploadedFileSn}`;
  }
  } else if (editingItem) {
  data.fileUrl = (editingItem as Popup).fileUrl;
@@ -324,7 +324,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  const res = await savePopupAction(null, {
  mode: editingItem ? 'edit' : 'create',
  data: data as Popup,
- id: (editingItem as Popup)?.popupId
+ id: (editingItem as Popup)?.popupSn
  });
 
  if (res.success) {
@@ -345,11 +345,11 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  accessor: (item: Banner) => (
  <div className="w-56 h-24 bg-surface-inverse rounded-lg overflow-hidden border-2 border-border shadow-xl relative group/img cursor-zoom-in transition-all duration-500 hover:scale-[1.05] hover:z-50">
  <ImageIcon size={24} className="absolute inset-0 m-auto text-white/10" />
- {item.atchFileId && (
+ {item.atchFileSn && (
  // blob 렌더 — `<img src="/api/v1/files/…">` 는 Authorization 헤더를 실을 수 없어 401 이다.
  <div className="absolute inset-0 z-10">
  <AttachmentImage
- atchFileId={item.atchFileId}
+ atchFileSn={item.atchFileSn}
  alt={`${item.bnrNm} 배너 이미지`}
  className="h-full w-full object-cover group-hover/img:scale-110 transition-transform duration-1000"
  />
@@ -368,7 +368,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <div className="flex flex-col gap-1.5 py-4">
  <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight">{item.bnrNm}</span>
  <div className="flex items-center gap-2">
- <span className="text-xs font-bold text-muted-foreground/50 tracking-[0.3em] font-mono uppercase">ID: {item.bnrId}</span>
+ <span className="text-xs font-bold text-muted-foreground/50 tracking-[0.3em] font-mono uppercase">SN: {item.bnrSn}</span>
  {item.linkUrl && (
  <span className="text-xs font-bold text-primary/60 flex items-center gap-1.5 lowercase">
  <ExternalLink size={10} /> {item.linkUrl}
@@ -403,7 +403,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
  <Settings size={16} aria-hidden="true" />
  </Button>
- <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.bnrId, item.bnrNm)}>
+ <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.bnrSn, item.bnrNm)}>
  <Trash2 size={16} aria-hidden="true" />
  </Button>
  </div>
@@ -459,7 +459,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
  <Settings size={16} aria-hidden="true" />
  </Button>
- <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.popupId, item.popupTtlNm)}>
+ <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.popupSn, item.popupTtlNm)}>
  <Trash2 size={16} aria-hidden="true" />
  </Button>
  </div>
@@ -578,7 +578,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  loading={isBannersLoading}
  error={bannerError}
  onRetry={() => refetchBanners()}
- keyField="bnrId"
+ keyField="bnrSn"
  emptyMessage="등록된 배너 자산이 존재하지 않습니다."
  className="border-none bg-transparent"
  pagination={{
@@ -596,7 +596,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  loading={isPopupsLoading}
  error={popupError}
  onRetry={() => refetchPopups()}
- keyField="popupId"
+ keyField="popupSn"
  emptyMessage="등록된 팝업 자산이 존재하지 않습니다."
  className="border-none bg-transparent"
  pagination={{
@@ -732,7 +732,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">시스템 표준 규격 이미지를 준수하십시오</p>
  </FormItem>
- {(editingItem as Banner)?.atchFileId && (
+ {(editingItem as Banner)?.atchFileSn && (
  <div className="p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground space-y-3 shadow-2xl relative overflow-hidden group">
  <span className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase">기존 파일 식별자</span>
  <div className="flex items-center gap-4">

@@ -244,10 +244,11 @@ OWASP Top 10의 '암호화 실패(Cryptographic Failures)'를 방어하기 위�
 
 ### 5.1 작동 메커니즘
 - **타겟 도메인 패키지**: `nuri.api.controller` 하위 패키지에 정의된 REST 컨트롤러.
-- **오딧 검증(실제 집행 범위 — 2026-08-03 현행화)**: 이 절은 두 번 틀렸습니다. 처음엔 "모든 HTTP 매핑 메서드를 전수 조사"라는 **과장**이었고, 그 정정본은 패키지 skip 이 삭제되면서 **낡아서** 틀렸습니다. 게이트의 자기 서술은 집행이 바뀔 때마다 함께 바뀌어야 합니다.
-  - **Test#1** (`auditSecurityAnnotationsOnRestControllers`): **패키지 skip 없이** `nuri.api.controller` 하위 **전 컨트롤러의 읽기·쓰기**를 순회합니다. 단 다음 중 하나면 통과시킵니다 — ① `PUBLIC_PATH_WHITELIST` 매칭 ② `@PreAuthorize`/`@Secured` **존재**(내용 불문) ③ `rbac.db-auth.secure-paths` 매칭 ④ `WRITE_AUTHZ_GUARDED_ELSEWHERE` 등재 클래스.
+- **오딧 검증(실제 집행 범위 — 2026-08-15 현행화)**: 게이트의 자기 서술은 집행이 바뀔 때마다 함께 바뀌어야 합니다.
+  - **Test#1** (`auditSecurityAnnotationsOnRestControllers`): **패키지 skip 없이** `nuri.api.controller` 하위 **전 컨트롤러의 읽기·쓰기**를 순회합니다. 단 다음 중 하나면 통과시킵니다 — ① `PUBLIC_PATH_WHITELIST` 매칭 ② `@PreAuthorize`/`@Secured`/메타 애노테이션 **존재** ③ `rbac.db-auth.secure-paths` 또는 DB 프로그램 URL 매칭.
   - **Test#2** (`auditWriteEndpointAuthorizationOnNonAdminPaths`): 전 컨트롤러를 보지만 **쓰기(POST/PUT/DELETE/PATCH)만** 보며, `/api/v1/admin/` 접두는 URL 시큐리티에 위임해 skip 합니다.
-  - **남은 사각지대**: ③은 문자열 목록 매칭이라 **목록에서 빠진 신규 도메인은 런타임 인가와 린터가 동시에 뚫립니다**(단일 실패점 — 로드맵 P1-22 미해결). ④는 등재 사유가 *쓰기* 소유권 가드인데 같은 클래스의 **읽기**까지 함께 면제됩니다. ②는 `@PreAuthorize("isAuthenticated()")` 처럼 **IDOR 방어력이 0**인 애노테이션도 통과시킵니다(예: 첨부 다운로드).
+  - **2026-08-15 해소**: 쓰기 사유로 읽기까지 통과시키던 `READ_COVERED_BY_WRITE_RATIONALE` 30건과 `WRITE_AUTHZ_GUARDED_ELSEWHERE` 클래스 면제 12건을 도메인별로 판정하고 삭제했습니다. 12개 컨트롤러는 `@Authenticated`를 명시하고 개인 데이터는 기존 사용자 스코프·소유자/참여자 서비스 가드와 결속했습니다.
+  - **남은 사각지대**: ③은 문자열/DB URL 매칭이므로 선언 동기화 게이트가 필요합니다. ②는 `@PreAuthorize("isAuthenticated()")`처럼 객체 소유권을 증명하지 않는 애노테이션도 통과시키므로, 개인 데이터는 서비스 가드와 음성 테스트가 별도로 필요합니다.
   - 요컨대 **"모든 컨트롤러를 순회한다"는 참이지만 "모든 인가를 검증한다"는 거짓**입니다. 이 게이트의 그린은 "인가 애노테이션이 빠지지 않았다"이지 "인가가 옳다"가 아닙니다. 최신 범위는 항상 `SecurityAuthAnnotationLinterTest` 의 클래스 javadoc 을 SSOT 로 삼으십시오.
 - **예외 처리 (White-list)**: 비인가 접근이 허용되어야 하는 공개 API(예: 회원가입, 아이디 중복 확인 등)는 `SecurityAuthAnnotationLinterTest`의 `PUBLIC_PATH_WHITELIST` 상수에 등록하여 통과시키거나, `@PreAuthorize("permitAll()")`를 명시적으로 선언하도록 강제합니다.
 - **빌드 하드 스톱(Hard-Stop)**: 만약 권한 제어 어노테이션이 유실된 커스텀 API가 발견되면, JUnit 테스트 단계에서 즉시 빌드를 실패(`Hard-Stop`) 처리하고 위반 엔드포인트 명세를 상세 보고합니다.
@@ -258,5 +259,5 @@ OWASP Top 10의 '암호화 실패(Cryptographic Failures)'를 방어하기 위�
 ```
 
 ---
-*Last Updated: 2026-05-19 (Double-Shield Guardrails, Refresh Token, Data Protection Runbook & Auth Role Guardrail Linter Integrated)*
+*Last Updated: 2026-08-15 (Read authorization census and blanket controller exemption retired)*
 *Governed by: OWASP Hardening & Zero-Trust Security Playbook / Security Auth Linter Harness*

@@ -11,8 +11,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class DeptJobDto {
-    private String deptTaskId;
-    private String deptTaskBoxId;
+    private Long deptTaskSn;
+    private Long deptTaskBoxSn;
     private String deptTaskBoxNm;
     @Size(max = 20)
     private String deptId;
@@ -22,8 +22,7 @@ public class DeptJobDto {
     private String picId;
     private String picNm;
     private String prrtyRnk;
-    @Size(max = 30)
-    private String atchFileId;
+    private Long atchFileSn;
     private String frstRgtrId;
     private LocalDateTime crtDt;
     private String lastMdfrId;

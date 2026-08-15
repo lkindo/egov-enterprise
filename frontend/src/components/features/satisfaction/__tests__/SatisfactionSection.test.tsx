@@ -22,7 +22,7 @@ function renderWidget() {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <SatisfactionSection bbsId="BBS_01" pstId="P1" />
+      <SatisfactionSection bbsId="BBS_01" pstSn={1} />
     </QueryClientProvider>
   );
 }
@@ -34,12 +34,12 @@ describe('SatisfactionSection', () => {
     mocked.average.mockResolvedValue({ average: 0 });
   });
 
-  it('게시글 경로(bbsId/pstId)를 서비스에 그대로 전달한다', async () => {
+  it('게시글 경로(bbsId/pstSn)를 서비스에 그대로 전달한다', async () => {
     renderWidget();
 
     await waitFor(() => {
-      expect(mocked.list).toHaveBeenCalledWith('BBS_01', 'P1');
-      expect(mocked.average).toHaveBeenCalledWith('BBS_01', 'P1');
+      expect(mocked.list).toHaveBeenCalledWith('BBS_01', 1);
+      expect(mocked.average).toHaveBeenCalledWith('BBS_01', 1);
     });
   });
 
@@ -85,7 +85,7 @@ describe('SatisfactionSection', () => {
     await user.click(screen.getByRole('button', { name: '만족도 등록' }));
 
     await waitFor(() => {
-      expect(mocked.create).toHaveBeenCalledWith('BBS_01', 'P1',
+      expect(mocked.create).toHaveBeenCalledWith('BBS_01', 1,
         expect.objectContaining({ dgstfnScr: 4, useYn: 'Y' }));
     });
   });
@@ -107,7 +107,7 @@ describe('SatisfactionSection', () => {
     await user.click(await screen.findByRole('button', { name: '남의글의 만족도 삭제' }));
 
     expect(await screen.findByText('본인 확인에 실패했습니다.')).toBeInTheDocument();
-    expect(mocked.remove).toHaveBeenCalledWith('BBS_01', 'P1', 7);
+    expect(mocked.remove).toHaveBeenCalledWith('BBS_01', 1, 7);
   });
 
   it('만족도가 없으면 안내 문구를 보여준다', async () => {

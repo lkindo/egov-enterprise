@@ -39,8 +39,8 @@ export const deptJobFormSchema = DeptJobDtoSchema.extend({
     deptTaskNm: z.string().min(1, '업무명을 입력하세요.').max(100, '업무명은 100자를 넘을 수 없습니다.'),
     // dept_task_cn 은 varchar(4000). 필수는 아니지만 상한은 스키마로 막는다.
     deptTaskCn: z.string().max(4000, '업무 내용은 4000자를 넘을 수 없습니다.').optional(),
-    deptTaskBoxId: z.string().nullable().optional().transform(v => v === null ? undefined : v),
-    atchFileId: z.string().nullable().optional().transform(v => v === null ? undefined : v),
+    deptTaskBoxSn: z.number().nullable().optional().transform(v => v === null ? undefined : v),
+    atchFileSn: z.number().nullable().optional().transform(v => v === null ? undefined : v),
     picId: z.string().nullable().optional().transform(v => v === null ? undefined : v),
 });
 
@@ -118,14 +118,14 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
             prrtyRnk: initialData?.prrtyRnk ?? '2',
             // 업무함은 서버에서 nullable 이다. 수정 시 기존 값을 잃지 않도록 폼에 실어 왕복시킨다
             // (보내지 않으면 update 가 null 로 덮어써 소속이 소리 없이 사라진다).
-            deptTaskBoxId: initialData?.deptTaskBoxId,
+            deptTaskBoxSn: initialData?.deptTaskBoxSn,
             // 담당자. 업무함과 마찬가지로 nullable 이므로 수정 시 기존 값을 폼에 실어 왕복시킨다
             // (보내지 않으면 update 가 null 로 덮어써 담당자가 소리 없이 사라진다).
             // 등록 시 미지정으로 두면 서버가 등록자를 담당자로 채운다 — 그 동작을 유지하기 위해
             // 빈 문자열이 아니라 undefined 로 둔다(서버는 blank 도 미지정으로 보지만 수정 경로에서는
             // 빈 문자열이 그대로 저장되므로 축을 맞춘다).
             picId: initialData?.picId,
-            atchFileId: initialData?.atchFileId,
+            atchFileSn: initialData?.atchFileSn,
         },
     });
 
@@ -182,13 +182,13 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
 
                 <FormField
                     control={form.control}
-                    name="deptTaskBoxId"
+                    name="deptTaskBoxSn"
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-xs font-bold text-foreground uppercase tracking-tight ml-1">업무함</FormLabel>
                             <Select
-                                value={field.value || NO_BOX}
-                                onValueChange={(v) => field.onChange(v === NO_BOX ? undefined : v)}
+                                value={field.value ? String(field.value) : NO_BOX}
+                                onValueChange={(v) => field.onChange(v === NO_BOX ? undefined : Number(v))}
                             >
                                 <FormControl>
                                     <SelectTrigger className="h-11 rounded-lg font-bold">
@@ -197,9 +197,9 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
                                 </FormControl>
                                 <SelectContent className="rounded-lg">
                                     <SelectItem value={NO_BOX} className="font-bold py-3">지정 안 함</SelectItem>
-                                    {boxes.map((box: { deptTaskBoxId?: string; deptTaskBoxNm?: string }) => (
-                                        <SelectItem key={box.deptTaskBoxId} value={box.deptTaskBoxId ?? ''} className="font-bold py-3">
-                                            {box.deptTaskBoxNm ?? box.deptTaskBoxId}
+                                    {boxes.map((box) => (
+                                        <SelectItem key={box.deptTaskBoxSn} value={String(box.deptTaskBoxSn)} className="font-bold py-3">
+                                            {box.deptTaskBoxNm ?? box.deptTaskBoxSn}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>

@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @Tag(name = "Approval", description = "Unified Electronic Approval APIs")
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/approvals")
 @RequiredArgsConstructor
@@ -45,7 +46,7 @@ public class ApprovalApiController {
     @Operation(summary = "Confirm Approval (Approve/Reject)")
     @PutMapping("/{id}/confirm")
     public ResponseEntity<ApiResponse<Void>> confirm(
-            @PathVariable String id,
+            @PathVariable Long id,
             @RequestBody Map<String, String> request) {
         approvalService.confirmInformalSanction(id, request.get("status"), request.get("reason"));
         return ResponseEntity.ok(ApiResponse.success(null));

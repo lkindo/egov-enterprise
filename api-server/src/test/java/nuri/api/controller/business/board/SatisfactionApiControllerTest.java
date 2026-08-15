@@ -87,39 +87,39 @@ class SatisfactionApiControllerTest {
 
     /** 경로가 조회 범위를 강제하는지 — 본문이 다른 게시글을 가리켜도 경로가 이겨야 한다. */
     @Test
-    @DisplayName("등록 - 경로의 bbsId/pstId 가 본문 값을 덮어쓴다 (교차 게시글 등록 차단)")
+    @DisplayName("등록 - 경로의 bbsId/pstSn 가 본문 값을 덮어쓴다 (교차 게시글 등록 차단)")
     void createOverridesBodyIdsWithPathVariables() throws Exception {
         when(satisfactionService.createSatisfaction(any(), any())).thenReturn(1L);
 
-        mockMvc.perform(post("/api/v1/boards/BBS_01/posts/P1/satisfactions")
+        mockMvc.perform(post("/api/v1/boards/BBS_01/posts/1/satisfactions")
                         .contentType("application/json")
-                        .content("{\"bbsId\":\"BBS_OTHER\",\"pstId\":\"P999\",\"dgstfnScr\":5,\"useYn\":\"Y\",\"pswd\":\"x\"}"))
+                        .content("{\"bbsId\":\"BBS_OTHER\",\"pstSn\":999,\"dgstfnScr\":5,\"useYn\":\"Y\",\"pswd\":\"x\"}"))
                 .andExpect(status().isOk());
 
         ArgumentCaptor<SatisfactionDto> captor = ArgumentCaptor.forClass(SatisfactionDto.class);
         verify(satisfactionService).createSatisfaction(any(), captor.capture());
         assertThat(captor.getValue().getBbsId()).isEqualTo("BBS_01");
-        assertThat(captor.getValue().getPstId()).isEqualTo("P1");
+        assertThat(captor.getValue().getPstSn()).isEqualTo(1L);
     }
 
     @Test
-    @DisplayName("목록 - 경로의 bbsId/pstId 가 서비스까지 전달된다")
+    @DisplayName("목록 - 경로의 bbsId/pstSn 가 서비스까지 전달된다")
     void listPassesPathVariables() throws Exception {
-        when(satisfactionService.getSatisfactionList(anyString(), anyString()))
+        when(satisfactionService.getSatisfactionList(anyString(), any(Long.class)))
                 .thenReturn(List.of(SatisfactionDto.builder().dgstfnSn(1L).dgstfnScr(5).build()));
 
-        mockMvc.perform(get("/api/v1/boards/BBS_01/posts/P1/satisfactions"))
+        mockMvc.perform(get("/api/v1/boards/BBS_01/posts/1/satisfactions"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data[0].dgstfnScr").value(5));
 
-        verify(satisfactionService).getSatisfactionList("BBS_01", "P1");
+        verify(satisfactionService).getSatisfactionList("BBS_01", 1L);
     }
 
     /** 삭제 자격(pswd)이 쿼리에서 서비스까지 도달해야 한다 — 유실되면 인가가 통째로 무력화된다. */
     @Test
     @DisplayName("🔒 삭제 - pswd 자격이 서비스까지 전달된다")
     void deletePassesPasswordToService() throws Exception {
-        mockMvc.perform(delete("/api/v1/boards/BBS_01/posts/P1/satisfactions/10").param("pswd", "secret"))
+        mockMvc.perform(delete("/api/v1/boards/BBS_01/posts/1/satisfactions/10").param("pswd", "secret"))
                 .andExpect(status().isOk());
 
         verify(satisfactionService).deleteSatisfaction(eq(10L), isNull(), eq("secret"));
@@ -128,9 +128,9 @@ class SatisfactionApiControllerTest {
     @Test
     @DisplayName("평균 - 응답이 없으면 0.0 으로 내려간다 (null 직렬화 회피)")
     void averageHandlesNull() throws Exception {
-        when(satisfactionService.getAverageSatisfaction(anyString(), anyString())).thenReturn(null);
+        when(satisfactionService.getAverageSatisfaction(anyString(), any(Long.class))).thenReturn(null);
 
-        mockMvc.perform(get("/api/v1/boards/BBS_01/posts/P1/satisfactions/average"))
+        mockMvc.perform(get("/api/v1/boards/BBS_01/posts/1/satisfactions/average"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.average").value(0.0));
     }
@@ -138,10 +138,10 @@ class SatisfactionApiControllerTest {
     @Test
     @DisplayName("대리 삭제 - 관리자 경로가 서비스의 moderator 메서드를 호출한다")
     void moderateCallsModeratorPath() throws Exception {
-        mockMvc.perform(delete("/api/v1/boards/BBS_01/posts/P1/satisfactions/10/moderate"))
+        mockMvc.perform(delete("/api/v1/boards/BBS_01/posts/1/satisfactions/10/moderate"))
                 .andExpect(status().isOk());
 
         // 일반 삭제 경로로 새면 비밀번호 검증을 우회하게 된다.
-        verify(satisfactionService).deleteByModerator(anyLong(), any());
+        verify(satisfactionService).deleteByModerator(any(Long.class), any());
     }
 }

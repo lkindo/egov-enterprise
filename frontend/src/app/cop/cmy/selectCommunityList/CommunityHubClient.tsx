@@ -46,7 +46,9 @@ export default function CommunityHubClient({
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['communities', searchKeyword, page],
-    queryFn: () => communityService.getCommunityList({ page, searchKeyword }),
+    // StandardDataTable 의 currentPage 는 1-based 이다. 공통 ApiService 의 `page`는
+    // 0-based 입력으로 간주해 +1 하므로, 여기서는 백엔드 계약인 pageIndex 를 명시한다.
+    queryFn: () => communityService.getCommunityList({ pageIndex: page, searchKeyword }),
     initialData: (page === 1 && !searchKeyword) ? initialData : undefined
   });
 
@@ -78,7 +80,7 @@ export default function CommunityHubClient({
               {item.cmntyNm}
             </h4>
             <p className="text-xs font-bold tracking-tight opacity-40">
-              ID_{item.cmntyId?.substring(0, 8)}
+              SN_{item.cmntySn}
             </p>
           </div>
         </div>
@@ -111,7 +113,7 @@ export default function CommunityHubClient({
     {
       header: '이동',
       accessor: (item) => (
-        <Link href={`/cop/cmy/selectCommunityDetail/${item.cmntyId}`}>
+        <Link href={`/cop/cmy/selectCommunityDetail/${item.cmntySn}`}>
           <Button size="sm" aria-label={`${item.cmntyNm || '커뮤니티'} 상세 보기`} className="h-10 w-10 rounded-[var(--radius-hub-item)] bg-muted border border-border/60 text-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all group">
             <ChevronRight size={18} className="group-hover:translate-x-1 transition-transform" />
           </Button>
@@ -253,7 +255,7 @@ export default function CommunityHubClient({
                         loading={isLoading}
                         error={error as Error | null}
                         onRetry={() => refetch()}
-                        keyField="cmntyId"
+                        keyField="cmntySn"
                         emptyMessage={filter === 'managed'
                           ? "이 페이지에는 내가 개설한 커뮤니티가 없습니다."
                           : "검색된 커뮤니티 공간이 존재하지 않습니다."}

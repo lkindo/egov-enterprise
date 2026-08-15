@@ -26,16 +26,16 @@ import Link from 'next/link';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
 export default function CommunityDetailHubClient({ 
-  id,
+  cmntySn,
   initialData 
 }: { 
-  id: string;
+  cmntySn: number;
   initialData: CommunityVO 
 }) {
 
   const { data: community } = useQuery({
-    queryKey: ['community', id],
-    queryFn: () => communityService.getCommunity(id),
+    queryKey: ['community', cmntySn],
+    queryFn: () => communityService.getCommunity(cmntySn),
     initialData: initialData
   });
 
@@ -59,7 +59,7 @@ export default function CommunityDetailHubClient({
         <HubHeader
           title="Space"
           highlight="Detail"
-          subtitle={`IDENTITY NODE: ${id}`}
+          subtitle={`IDENTITY NODE: ${cmntySn}`}
           icon={Globe}
           actions={
             <div className="flex gap-4 p-2 items-center">

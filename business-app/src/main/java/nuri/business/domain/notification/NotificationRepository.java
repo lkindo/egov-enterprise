@@ -12,7 +12,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface NotificationRepository extends JpaRepository<Notification, String> {
+public interface NotificationRepository extends JpaRepository<Notification, Long> {
 
     @Query("SELECT n FROM Notification n WHERE n.rcvrId = :rcvrId "
             + "AND (:keyword IS NULL OR n.notiTtlNm LIKE %:keyword% OR n.notiCn LIKE %:keyword%) "
@@ -22,7 +22,7 @@ public interface NotificationRepository extends JpaRepository<Notification, Stri
             @Param("keyword") String keyword,
             Pageable pageable);
 
-    Optional<Notification> findByNotiSnAndRcvrId(String notiSn, String rcvrId);
+    Optional<Notification> findByNotiSnAndRcvrId(Long notiSn, String rcvrId);
 
     long countByRcvrIdAndReadYn(String rcvrId, String readYn);
 

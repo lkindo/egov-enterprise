@@ -2,7 +2,6 @@ package nuri.business.service.deptjob;
 
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.util.IdGenerationUtil;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.deptjob.DeptJob;
 import nuri.business.domain.deptjob.DeptJobRepository;
@@ -63,7 +62,7 @@ public class DeptJobService extends BaseAbstractService {
      * 그래서 담당자가 비어 있으면 <b>등록자(frstRgtrId, loginId)</b> 를 담당자로 간주해 되살린다.
      * (쓰기 인가의 폴백 규칙과 동일하다 — {@link #assertPicOrAdmin} 참조.)</p>
      */
-    public Page<DeptJobDto> getDeptJobList(String deptId, String deptJobbxId, String searchCondition, String keyword,
+    public Page<DeptJobDto> getDeptJobList(String deptId, Long deptTaskBoxSn, String searchCondition, String keyword,
             boolean mineOnly, Pageable pageable) {
         QDeptJob deptJob = QDeptJob.deptJob;
         BooleanBuilder builder = new BooleanBuilder();
@@ -89,16 +88,16 @@ public class DeptJobService extends BaseAbstractService {
             builder.and(mine);
         }
 
-        if (deptJobbxId != null && !deptJobbxId.isEmpty()) {
-            builder.and(deptJob.deptTaskBoxId.eq(deptJobbxId));
+        if (deptTaskBoxSn != null) {
+            builder.and(deptJob.deptTaskBoxSn.eq(deptTaskBoxSn));
         } else if (deptId != null && !deptId.isEmpty()) {
-            List<String> boxIds = deptJobBoxRepository.findByDeptId(deptId).stream()
-                    .map(box -> box.getDeptTaskBoxId())
+            List<Long> boxSns = deptJobBoxRepository.findByDeptId(deptId).stream()
+                    .map(box -> box.getDeptTaskBoxSn())
                     .collect(Collectors.toList());
-            if (!boxIds.isEmpty()) {
-                builder.and(deptJob.deptTaskBoxId.in(boxIds));
+            if (!boxSns.isEmpty()) {
+                builder.and(deptJob.deptTaskBoxSn.in(boxSns));
             } else {
-                builder.and(deptJob.deptTaskBoxId.eq("NONE_BOX"));
+                return Page.empty(required(pageable, "pageable 는 null 일 수 없습니다"));
             }
         }
 
@@ -114,20 +113,14 @@ public class DeptJobService extends BaseAbstractService {
         return deptJobRepository.findAll(builder, required(pageable, "pageable 는 null 일 수 없습니다")).map(this::toDto);
     }
 
-    public DeptJobDto getDeptJob(String id) {
-        DeptJob deptJob = deptJobRepository.findById(required(id, "id 는 null 일 수 없습니다"))
+    public DeptJobDto getDeptJob(Long deptTaskSn) {
+        DeptJob deptJob = deptJobRepository.findById(required(deptTaskSn, "deptTaskSn 은 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         return toDto(deptJob);
     }
 
     @Transactional
-    public String createDeptJob(String userId, DeptJobDto dto) {
-        // [PK 채번] dept_task_id 는 @GeneratedValue 없는 할당식 PK(varchar 20, NOT NULL)다.
-        //   종전에는 dto.getDeptTaskId() 를 그대로 썼는데, 등록 폼은 이 값을 보내지 않으므로
-        //   null PK 로 persist 되어 저장이 불가능했다(Schedule·WorkReport 에서 고친 것과 동일 패턴).
-        //   'TASK_'(5) + 15 = 20자로 컬럼 상한에 맞춘다.
-        String deptTaskId = IdGenerationUtil.generateUniqueId("TASK_", 15, deptJobRepository::existsById);
-
+    public Long createDeptJob(String userId, DeptJobDto dto) {
         // [담당자 기본값] 등록 폼에 담당자 지정 UI 가 아직 없다. 미지정 시 등록자를 담당자로 둔다
         //   (null 로 두면 목록의 담당자 칸이 비고 검색조건 '담당자ID'가 무의미해진다).
         //   축은 이 컨트롤러의 형제 메서드들과 동일하게 esntlId 다. 담당자 지정 UI 가 생기면
@@ -135,21 +128,19 @@ public class DeptJobService extends BaseAbstractService {
         String picId = (dto.getPicId() != null && !dto.getPicId().isBlank()) ? dto.getPicId() : userId;
 
         DeptJob deptJob = DeptJob.builder()
-                .deptTaskId(deptTaskId)
-                .deptTaskBoxId(dto.getDeptTaskBoxId())
+                .deptTaskBoxSn(dto.getDeptTaskBoxSn())
                 .deptTaskNm(dto.getDeptTaskNm())
                 .deptTaskCn(dto.getDeptTaskCn())
                 .picId(picId)
                 .prrtyRnk(dto.getPrrtyRnk())
-                .atchFileId(dto.getAtchFileId())
+                .atchFileSn(dto.getAtchFileSn())
                 .build();
-        deptJobRepository.save(deptJob);
-        return deptTaskId;
+        return deptJobRepository.save(deptJob).getDeptTaskSn();
     }
 
     @Transactional
-    public void updateDeptJob(String id, DeptJobDto dto) {
-        DeptJob deptJob = deptJobRepository.findById(required(id, "id 는 null 일 수 없습니다"))
+    public void updateDeptJob(Long deptTaskSn, DeptJobDto dto) {
+        DeptJob deptJob = deptJobRepository.findById(required(deptTaskSn, "deptTaskSn 은 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // 소유권 검증(IDOR 방어): 담당자 본인 또는 관리자만 수정 가능.
@@ -166,19 +157,19 @@ public class DeptJobService extends BaseAbstractService {
                 : deptJob.getPicId();
 
         deptJob.update(
-                dto.getDeptTaskBoxId(),
+                dto.getDeptTaskBoxSn(),
                 dto.getDeptTaskNm(),
                 dto.getDeptTaskCn(),
                 picId,
                 dto.getPrrtyRnk(),
-                dto.getAtchFileId());
+                dto.getAtchFileSn());
     }
 
     @Transactional
-    public void deleteDeptJob(String id) {
+    public void deleteDeptJob(Long deptTaskSn) {
         // 종전에는 deleteById 로 존재 여부도 소유권도 확인하지 않고 지웠다.
         // 없는 id 는 404 로, 남의 업무는 인가 실패로 되돌린다.
-        DeptJob deptJob = deptJobRepository.findById(required(id, "id 는 null 일 수 없습니다"))
+        DeptJob deptJob = deptJobRepository.findById(required(deptTaskSn, "deptTaskSn 은 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         assertPicOrAdmin(deptJob);
@@ -222,7 +213,7 @@ public class DeptJobService extends BaseAbstractService {
         DeptJobDto dto = deptJobMapper.toDto(entity);
 
         // [nullable 데이터에 required() 를 걸지 않는다]
-        // dept_task_box_id·dept_id·pic_id 는 모두 물리 스키마상 nullable 이다. 그런데 종전에는
+        // dept_task_box_sn·dept_id·pic_id 는 모두 물리 스키마상 nullable 이다. 그런데 종전에는
         // 세 곳 모두 required()(null 이면 즉시 예외)로 감싸고 있어, 업무함을 지정하지 않은 업무가
         // 하나라도 있으면 목록·상세 조회가 통째로 400 으로 떨어졌다.
         // 등록 폼에는 업무함 선택 UI 가 없어 새로 만든 업무는 항상 이 상태가 된다 —
@@ -230,8 +221,8 @@ public class DeptJobService extends BaseAbstractService {
         // 불가능했던 탓에 이 모순이 지금까지 드러나지 않았다.)
         // required() 는 프로그래밍 오류를 잡는 가드이지, 비어 있을 수 있는 도메인 값에 쓸 것이 아니다.
         // 아래 ifPresent 들이 이미 부재를 정상 흐름으로 다루므로 id 가 없으면 조회를 건너뛴다.
-        if (entity.getDeptTaskBoxId() != null) {
-            deptJobBoxRepository.findById(entity.getDeptTaskBoxId())
+        if (entity.getDeptTaskBoxSn() != null) {
+            deptJobBoxRepository.findById(entity.getDeptTaskBoxSn())
                     .ifPresent(box -> {
                         dto.setDeptTaskBoxNm(box.getDeptTaskBoxNm());
                         dto.setDeptId(box.getDeptId());

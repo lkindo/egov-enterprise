@@ -2,7 +2,6 @@ import React from 'react';
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from './components/theme-provider';
-import { NextIntlClientProvider } from 'next-intl';
 import Providers from './providers';
 import { Header } from './components/layout/header';
 import { Sidebar } from './components/layout/sidebar';
@@ -117,37 +116,27 @@ export default function RootLayout({
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className={`${pretendard.variable} ${inter.variable} ${outfit.variable} antialiased font-sans`}>
-        {/*
-          i18n(next-intl) 프로바이더는 Suspense 경계 안에 둔다.
-          cacheComponents(PPR) 하에서 propless <NextIntlClientProvider> 는 서버측에서
-          request.ts(NEXT_LOCALE 쿠키 기반 로케일 결정)를 await 하므로, 상위 Suspense 없이는
-          'Uncached data outside <Suspense>' 로 next build 가 실패한다. (perf-02 패턴과 동일)
-        */}
-        <Suspense fallback={null}>
-          <NextIntlClientProvider>
-            <ThemeProvider
-              attribute="class"
-              defaultTheme="light"
-              enableSystem
-              disableTransitionOnChange
-              enableColorScheme
-            >
-              {/* [a11y] 이 폴백은 최외곽이라 표시되는 동안 헤더/사이드바/main 이 전혀 렌더되지 않는다.
-                  종전 순수 div 였던 탓에 이 상태에서는 landmark-one-main·region·page-has-heading-one 이
-                  모두 위반이었다(2026-07-27 axe 감사에서 실제로 이 노드가 지목됨).
-                  로딩 상태도 랜드마크 안에 있어야 하고, 진행 상황은 스크린리더에 알려야 한다. */}
-              <Suspense fallback={
-                <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
-                  <p role="status" aria-live="polite">보안 세션을 확인하는 중...</p>
-                </main>
-              }>
-                <ProvidersWithAuth>
-                  {children}
-                </ProvidersWithAuth>
-              </Suspense>
-            </ThemeProvider>
-          </NextIntlClientProvider>
-        </Suspense>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+          enableColorScheme
+        >
+          {/* [a11y] 이 폴백은 최외곽이라 표시되는 동안 헤더/사이드바/main 이 전혀 렌더되지 않는다.
+              종전 순수 div 였던 탓에 이 상태에서는 landmark-one-main·region·page-has-heading-one 이
+              모두 위반이었다(2026-07-27 axe 감사에서 실제로 이 노드가 지목됨).
+              로딩 상태도 랜드마크 안에 있어야 하고, 진행 상황은 스크린리더에 알려야 한다. */}
+          <Suspense fallback={
+            <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
+              <p role="status" aria-live="polite">보안 세션을 확인하는 중...</p>
+            </main>
+          }>
+            <ProvidersWithAuth>
+              {children}
+            </ProvidersWithAuth>
+          </Suspense>
+        </ThemeProvider>
       </body>
     </html>
   );

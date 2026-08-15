@@ -28,23 +28,23 @@ class BannerAdminService extends AdminService {
  }
 
  /** 배너 상세 조회 */
- async getBanner(id: string, config?: AxiosRequestConfig): Promise<Banner> {
- return this.get<Banner>(`/${id}`, config);
+ async getBanner(bnrSn: number, config?: AxiosRequestConfig): Promise<Banner> {
+ return this.get<Banner>(`/${bnrSn}`, config);
  }
 
  /** 배너 등록 */
- async createBanner(data: Partial<Banner>, config?: AxiosRequestConfig): Promise<void> {
- return this.post('', data, config);
+ async createBanner(data: Partial<Banner>, config?: AxiosRequestConfig): Promise<number> {
+ return this.post<number>('', data, config);
  }
 
  /** 배너 수정 */
- async updateBanner(id: string, data: Partial<Banner>, config?: AxiosRequestConfig): Promise<void> {
- return this.put(`/${id}`, data, config);
+ async updateBanner(bnrSn: number, data: Partial<Banner>, config?: AxiosRequestConfig): Promise<void> {
+ return this.put(`/${bnrSn}`, data, config);
  }
 
  /** 배너 님젣 */
- async deleteBanner(id: string, config?: AxiosRequestConfig): Promise<void> {
- return this.delete(`/${id}`, config);
+ async deleteBanner(bnrSn: number, config?: AxiosRequestConfig): Promise<void> {
+ return this.delete(`/${bnrSn}`, config);
  }
 }
 

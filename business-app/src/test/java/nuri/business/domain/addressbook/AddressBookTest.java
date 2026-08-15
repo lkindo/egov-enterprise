@@ -13,7 +13,7 @@ class AddressBookTest {
     void builderTest() {
         // Given & When
         AddressBook addressBook = AddressBook.builder()
-                .adbkId("ADBK_001")
+                .adbkSn(1L)
                 .adbkNm("사내 주소록")
                 .rlsScopeCd("COMPANY")
                 .trgetOgnzId("ORG_001")
@@ -24,7 +24,7 @@ class AddressBookTest {
         addressBook.setLastMdfrId("admin");
 
         // Then
-        assertThat(addressBook.getAdbkId()).isEqualTo("ADBK_001");
+        assertThat(addressBook.getAdbkSn()).isEqualTo(1L);
         assertThat(addressBook.getAdbkNm()).isEqualTo("사내 주소록");
         assertThat(addressBook.getRlsScopeCd()).isEqualTo("COMPANY");
         assertThat(addressBook.getTrgetOgnzId()).isEqualTo("ORG_001");
@@ -39,7 +39,7 @@ class AddressBookTest {
     void updateTest() {
         // Given
         AddressBook addressBook = AddressBook.builder()
-                .adbkId("ADBK_001")
+                .adbkSn(1L)
                 .adbkNm("사내 주소록")
                 .rlsScopeCd("COMPANY")
                 .useYn("Y")

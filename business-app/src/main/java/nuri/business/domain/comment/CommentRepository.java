@@ -15,11 +15,11 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     //   `CommentService.deleteComment` 는 물리 삭제가 아니라 `useYn='N'` 을 세우는 **논리 삭제**인데
     //   이 목록 쿼리가 그것을 거르지 않아, 사용자가 댓글을 삭제해도 **목록에서 사라지지 않았다**
     //   (버튼은 눌리고 서버는 200 을 주는데 화면은 그대로다).
-    //   같은 저장소의 `countByBbsIdAndPstIdAndUseYn(..., "Y")` 는 이미 살아 있는 것만 세고 있었다 —
+    //   같은 저장소의 `countByBbsIdAndPstSnAndUseYn(..., "Y")` 는 이미 살아 있는 것만 세고 있었다 —
     //   '살아 있는 댓글 = useYn Y' 라는 규약은 저장소 자신이 증명한다. 목록만 그 규약에서 벗어나 있었다.
     //   회귀 방어: CommentRepositoryTest (조건을 되돌리면 red).
-    @Query("SELECT c FROM Comment c WHERE c.bbsId = :bbsId AND c.pstId = :pstId AND c.useYn = 'Y'")
-    Page<Comment> findByBbsIdAndPstId(@Param("bbsId") String bbsId, @Param("pstId") String pstId, Pageable pageable);
+    @Query("SELECT c FROM Comment c WHERE c.bbsId = :bbsId AND c.pstSn = :pstSn AND c.useYn = 'Y'")
+    Page<Comment> findByBbsIdAndPstSn(@Param("bbsId") String bbsId, @Param("pstSn") Long pstSn, Pageable pageable);
 
     Page<Comment> findByAnsCnContaining(String ansCn, Pageable pageable);
 
@@ -27,7 +27,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     //   WHERE 절이 전혀 없는 **전역** MAX(ans_sn) 채번이라, 살아 있었다면 게시글 경계를 넘어
     //   댓글 순번이 뒤엉키는 구조였다. 실제 댓글 PK 는 JpaRepository<Comment, Long> 표준 경로를 쓴다.
 
-    long countByBbsIdAndPstIdAndUseYn(String bbsId, String pstId, String useYn);
+    long countByBbsIdAndPstSnAndUseYn(String bbsId, Long pstSn, String useYn);
 
     // [V2_12 결속] 사용자 삭제 시 댓글 작성자를 시스템 계정으로 재귀속 — 콘텐츠 보존 정책
     // (fk_tb_bbs_comment_tb_user_info NO ACTION 하에서 작성자 행 삭제 전 필수)

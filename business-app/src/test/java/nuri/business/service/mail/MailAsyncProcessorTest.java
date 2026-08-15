@@ -42,10 +42,10 @@ class MailAsyncProcessorTest {
     @Test
     @DisplayName("비동기 메일 발송 - 성공")
     void processSending_Success() throws Exception {
-        SentMail mail = SentMail.builder().msgId("M1").build();
-        given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
+        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
 
-        mailAsyncProcessor.processSending("M1", "Sub", "Cn", "from", "to");
+        mailAsyncProcessor.processSending(1L, "Sub", "Cn", "from", "to");
 
         verify(emailSender).send(anyString(), anyString(), anyString(), anyString());
         assertThat(mail.getDsptchRsltCd()).isEqualTo("S");
@@ -54,26 +54,26 @@ class MailAsyncProcessorTest {
     @Test
     @DisplayName("비동기 메일 발송 - 실패 (예외 발생)")
     void processSending_Failure() throws Exception {
-        SentMail mail = SentMail.builder().msgId("M1").build();
-        given(sentMailRepository.findById("M1")).willReturn(Optional.of(mail));
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).build();
+        given(sentMailRepository.findById(1L)).willReturn(Optional.of(mail));
         doThrow(new RuntimeException("Send error")).when(emailSender).send(anyString(), anyString(), anyString(), anyString());
 
         // Exception is expected to bubble up in unit test
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> 
-            mailAsyncProcessor.processSending("M1", "Sub", "Cn", "from", "to")
+            mailAsyncProcessor.processSending(1L, "Sub", "Cn", "from", "to")
         ).isInstanceOf(RuntimeException.class);
 
         // Manually trigger recovery for verification
-        mailAsyncProcessor.recoverSending(new RuntimeException("Send error"), "M1", "Sub", "Cn", "from", "to");
+        mailAsyncProcessor.recoverSending(new RuntimeException("Send error"), 1L, "Sub", "Cn", "from", "to");
         assertThat(mail.getDsptchRsltCd()).isEqualTo("F");
     }
 
     @Test
     @DisplayName("비동기 메일 발송 - 엔티티 없음")
     void processSending_NoEntity() throws Exception {
-        given(sentMailRepository.findById("M1")).willReturn(Optional.empty());
+        given(sentMailRepository.findById(1L)).willReturn(Optional.empty());
 
-        mailAsyncProcessor.processSending("M1", "Sub", "Cn", "from", "to");
+        mailAsyncProcessor.processSending(1L, "Sub", "Cn", "from", "to");
 
         verify(emailSender).send(anyString(), anyString(), anyString(), anyString());
         // No exception should occur

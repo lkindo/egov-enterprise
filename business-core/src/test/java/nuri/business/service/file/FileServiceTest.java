@@ -69,15 +69,15 @@ class FileServiceTest {
         MockMultipartFile file = validJpeg("test.jpg");
         List<MultipartFile> files = Collections.singletonList(file);
         
-        FileMaster master = new FileMaster("FILE_123");
+        FileMaster master = new FileMaster(123L);
         given(fileMasterRepository.save(any(FileMaster.class))).willReturn(master);
         given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored_name.jpg");
 
         // when
-        String atchFileId = fileService.uploadFiles(files);
+        Long atchFileSn = fileService.uploadFiles(files);
 
         // then
-        assertThat(atchFileId).startsWith("FILE_");
+        assertThat(atchFileSn).isEqualTo(123L);
         verify(fileMasterRepository, times(1)).save(any(FileMaster.class));
         verify(fileDetailRepository, times(1)).save(any(FileDetail.class));
         verify(storageService, times(1)).store(any(MultipartFile.class), anyString());
@@ -182,20 +182,20 @@ class FileServiceTest {
     void uploadFiles_acceptsMatchingSignatures(String filename, String contentType, byte[] content)
             throws IOException {
         MockMultipartFile file = new MockMultipartFile("files", filename, contentType, content);
-        given(fileMasterRepository.save(any(FileMaster.class))).willReturn(new FileMaster("FILE_123"));
+        given(fileMasterRepository.save(any(FileMaster.class))).willReturn(new FileMaster(123L));
         given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored.bin");
 
-        String atchFileId = fileService.uploadFiles(List.of(file));
+        Long atchFileSn = fileService.uploadFiles(List.of(file));
 
-        assertThat(atchFileId).startsWith("FILE_");
-        verify(storageService).store(file, "general/" + atchFileId);
+        assertThat(atchFileSn).isEqualTo(123L);
+        verify(storageService).store(file, "general/" + atchFileSn);
     }
 
     @Test
     @DisplayName("파일 업로드 - DB 저장 실패 시 이번 요청에서 쓴 디스크 파일을 모두 보상 삭제한다")
     void uploadFiles_compensatesStoredFilesWhenDatabaseSaveFails() throws IOException {
         List<MultipartFile> files = List.of(validJpeg("first.jpg"), validPng("second.png"));
-        given(fileMasterRepository.save(any(FileMaster.class))).willReturn(new FileMaster("FILE_123"));
+        given(fileMasterRepository.save(any(FileMaster.class))).willReturn(new FileMaster(123L));
         given(storageService.store(any(MultipartFile.class), anyString()))
                 .willReturn("stored-first.jpg", "stored-second.png");
         given(fileDetailRepository.save(any(FileDetail.class)))
@@ -206,27 +206,27 @@ class FileServiceTest {
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("database unavailable");
 
-        verify(storageService).delete(eq("stored-second.png"), argThat(path -> path.startsWith("general/FILE_")));
-        verify(storageService).delete(eq("stored-first.jpg"), argThat(path -> path.startsWith("general/FILE_")));
+        verify(storageService).delete("stored-second.png", "general/123");
+        verify(storageService).delete("stored-first.jpg", "general/123");
     }
 
     @Test
     @DisplayName("파일 목록 조회")
     void getFileList() {
         // given
-        String atchFileId = "FILE_123";
-        FileMaster master = new FileMaster(atchFileId);
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
         FileDetail detail = FileDetail.builder()
                 .fileMaster(master)
                 .atchFileSeq(1)
                 .orgnlFileNm("test.jpg")
                 .build();
 
-        given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.singletonList(detail));
 
         // when
-        List<FileDto> result = fileService.getFileList(atchFileId);
+        List<FileDto> result = fileService.getFileList(atchFileSn);
 
         // then
         assertThat(result).hasSize(1);
@@ -241,9 +241,9 @@ class FileServiceTest {
     @DisplayName("파일 리소스 조회")
     void getFileResource() throws IOException {
         // given
-        String atchFileId = "FILE_123";
+        Long atchFileSn = 123L;
         Integer fileSn = 1;
-        FileMaster master = new FileMaster(atchFileId);
+        FileMaster master = new FileMaster(atchFileSn);
         FileDetail detail = FileDetail.builder()
                 .fileMaster(master)
                 .strgFileNm("stored.jpg")
@@ -251,11 +251,11 @@ class FileServiceTest {
                 .build();
         Resource resource = new ByteArrayResource("test".getBytes());
 
-        given(fileDetailRepository.findByFileMasterAtchFileIdAndAtchFileSeq(anyString(), anyInt())).willReturn(Optional.of(detail));
+        given(fileDetailRepository.findByFileMasterAtchFileSnAndAtchFileSeq(anyLong(), anyInt())).willReturn(Optional.of(detail));
         given(storageService.loadAsResource("stored.jpg", "path")).willReturn(resource);
 
         // when
-        Resource result = fileService.getFileResource(atchFileId, fileSn);
+        Resource result = fileService.getFileResource(atchFileSn, fileSn);
 
         // then
         assertThat(result).isNotNull();
@@ -266,17 +266,17 @@ class FileServiceTest {
     @Test
     @DisplayName("[IDOR] 단건 상세도 인가 가드를 통과한다")
     void getFileDetail_passesThroughAccessPolicy() {
-        String atchFileId = "FILE_123";
-        FileMaster master = new FileMaster(atchFileId);
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
         FileDetail detail = FileDetail.builder()
                 .fileMaster(master)
                 .atchFileSeq(1)
                 .orgnlFileNm("test.jpg")
                 .build();
-        given(fileDetailRepository.findByFileMasterAtchFileIdAndAtchFileSeq(atchFileId, 1))
+        given(fileDetailRepository.findByFileMasterAtchFileSnAndAtchFileSeq(atchFileSn, 1))
                 .willReturn(Optional.of(detail));
 
-        FileDto result = fileService.getFileDetail(atchFileId, 1);
+        FileDto result = fileService.getFileDetail(atchFileSn, 1);
 
         assertThat(result.getOrignlFileNm()).isEqualTo("test.jpg");
         verify(accessPolicy).assertReadable(master);
@@ -285,19 +285,19 @@ class FileServiceTest {
     @Test
     @DisplayName("[IDOR] 가드가 거부하면 저장소 접근으로 넘어가지 않는다 — 거부가 실효적임을 증명")
     void getFileResource_deniedByPolicy_doesNotTouchStorage() {
-        String atchFileId = "FILE_123";
-        FileMaster master = new FileMaster(atchFileId);
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
         FileDetail detail = FileDetail.builder()
                 .fileMaster(master)
                 .strgFileNm("stored.jpg")
                 .fileStrgPath("path")
                 .build();
-        given(fileDetailRepository.findByFileMasterAtchFileIdAndAtchFileSeq(anyString(), anyInt()))
+        given(fileDetailRepository.findByFileMasterAtchFileSnAndAtchFileSeq(anyLong(), anyInt()))
                 .willReturn(Optional.of(detail));
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(accessPolicy).assertReadable(master);
 
-        assertThatThrownBy(() -> fileService.getFileResource(atchFileId, 1))
+        assertThatThrownBy(() -> fileService.getFileResource(atchFileSn, 1))
                 .isInstanceOf(BusinessException.class);
 
         // 가드가 던졌는데도 파일을 읽어 왔다면 거부는 형식뿐이다.
@@ -308,18 +308,18 @@ class FileServiceTest {
     @DisplayName("파일 전체 삭제")
     void deleteFiles() throws IOException {
         // given
-        String atchFileId = "FILE_123";
-        FileMaster master = new FileMaster(atchFileId);
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
         FileDetail detail = FileDetail.builder()
                 .strgFileNm("stored.jpg")
                 .fileStrgPath("path")
                 .build();
 
-        given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.singletonList(detail));
 
         // when
-        fileService.deleteFiles(atchFileId);
+        fileService.deleteFiles(atchFileSn);
 
         // then
         verify(storageService, times(1)).delete("stored.jpg", "path");
@@ -330,17 +330,17 @@ class FileServiceTest {
     @DisplayName("파일 단건 삭제")
     void deleteFile() throws IOException {
         // given
-        String atchFileId = "FILE_123";
+        Long atchFileSn = 123L;
         Integer fileSn = 1;
         FileDetail detail = FileDetail.builder()
                 .strgFileNm("stored.jpg")
                 .fileStrgPath("path")
                 .build();
 
-        given(fileDetailRepository.findByFileMasterAtchFileIdAndAtchFileSeq(anyString(), anyInt())).willReturn(Optional.of(detail));
+        given(fileDetailRepository.findByFileMasterAtchFileSnAndAtchFileSeq(anyLong(), anyInt())).willReturn(Optional.of(detail));
 
         // when
-        fileService.deleteFile(atchFileId, fileSn);
+        fileService.deleteFile(atchFileSn, fileSn);
 
         // then
         verify(storageService, times(1)).delete("stored.jpg", "path");
@@ -351,17 +351,17 @@ class FileServiceTest {
     @DisplayName("파일 수정 (추가 업로드)")
     void updateFiles() throws IOException {
         // given
-        String atchFileId = "FILE_123";
-        FileMaster master = new FileMaster(atchFileId);
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
         FileDetail existingDetail = FileDetail.builder().atchFileSeq(1).build();
         MockMultipartFile newFile = validJpeg("new.jpg");
 
-        given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.singletonList(existingDetail));
         given(storageService.store(any(MultipartFile.class), anyString())).willReturn("new_stored.jpg");
 
         // when
-        fileService.updateFiles(atchFileId, Collections.singletonList(newFile));
+        fileService.updateFiles(atchFileSn, Collections.singletonList(newFile));
 
         // then
         verify(fileDetailRepository, times(1)).save(any(FileDetail.class));
@@ -370,9 +370,9 @@ class FileServiceTest {
     @Test
     @DisplayName("파일 수정 - 하나라도 금지 확장자면 어떤 파일도 디스크에 쓰지 않는다 (고아 파일 방지)")
     void updateFiles_rejectsAllWhenAnyExtensionForbidden() {
-        String atchFileId = "FILE_123";
-        FileMaster master = new FileMaster(atchFileId);
-        given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
+        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(Collections.emptyList());
 
         // 첫 파일은 정상, 두 번째가 실행파일. 선(先)검증 패스가 없으면 첫 파일이 이미 저장된 뒤
@@ -381,7 +381,7 @@ class FileServiceTest {
                 validJpeg("ok.jpg"),
                 new MockMultipartFile("files", "evil.exe", "application/octet-stream", "payload".getBytes()));
 
-        assertThatThrownBy(() -> fileService.updateFiles(atchFileId, files))
+        assertThatThrownBy(() -> fileService.updateFiles(atchFileSn, files))
                 .isInstanceOf(BusinessException.class);
 
         verify(storageService, never()).store(any(MultipartFile.class), anyString());
@@ -391,9 +391,9 @@ class FileServiceTest {
     @Test
     @DisplayName("파일 수정 - 첨부 순번은 기존 최대값 다음부터 연속 부여된다")
     void updateFiles_continuesSequenceFromExistingMax() throws IOException {
-        String atchFileId = "FILE_123";
-        FileMaster master = new FileMaster(atchFileId);
-        given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
+        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master))
                 .willReturn(List.of(FileDetail.builder().atchFileSeq(3).build()));
         given(storageService.store(any(MultipartFile.class), anyString())).willReturn("stored.jpg");
@@ -402,7 +402,7 @@ class FileServiceTest {
                 validJpeg("a.jpg"),
                 validPng("b.png"));
 
-        fileService.updateFiles(atchFileId, files);
+        fileService.updateFiles(atchFileSn, files);
 
         // 순번이 겹치면 동일 첨부그룹 안에서 파일이 서로를 가린다.
         org.mockito.ArgumentCaptor<FileDetail> captor = org.mockito.ArgumentCaptor.forClass(FileDetail.class);
@@ -415,7 +415,7 @@ class FileServiceTest {
     void getAllFileList_switchesByKeyword() {
         org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
         FileDetail detail = FileDetail.builder()
-                .fileMaster(new FileMaster("FILE_123"))
+                .fileMaster(new FileMaster(123L))
                 .atchFileSeq(1)
                 .orgnlFileNm("보고서.pdf")
                 .build();
@@ -444,16 +444,16 @@ class FileServiceTest {
     @Test
     @DisplayName("파일 목록 조회 - 마스터 정보가 없는 경우 예외 발생")
     void getFileList_NotFound() {
-        given(fileMasterRepository.findById(anyString())).willReturn(Optional.empty());
-        assertThatThrownBy(() -> fileService.getFileList("FILE_MISSING"))
+        given(fileMasterRepository.findById(anyLong())).willReturn(Optional.empty());
+        assertThatThrownBy(() -> fileService.getFileList(999L))
                 .isInstanceOf(BusinessException.class);
     }
 
     @Test
     @DisplayName("파일 리소스 조회 - 상세 정보가 없는 경우 예외 발생")
     void getFileResource_NotFound() {
-        given(fileDetailRepository.findByFileMasterAtchFileIdAndAtchFileSeq(anyString(), anyInt())).willReturn(Optional.empty());
-        assertThatThrownBy(() -> fileService.getFileResource("FILE_123", 1))
+        given(fileDetailRepository.findByFileMasterAtchFileSnAndAtchFileSeq(anyLong(), anyInt())).willReturn(Optional.empty());
+        assertThatThrownBy(() -> fileService.getFileResource(123L, 1))
                 .isInstanceOf(BusinessException.class);
     }
 
@@ -463,7 +463,7 @@ class FileServiceTest {
         MockMultipartFile emptyFile = new MockMultipartFile("files", "empty.jpg", "image/jpeg", new byte[0]);
         MockMultipartFile validFile = validJpeg("valid.jpg");
         
-        FileMaster master = new FileMaster("FILE_123");
+        FileMaster master = new FileMaster(123L);
         given(fileMasterRepository.save(any())).willReturn(master);
         given(storageService.store(any(), anyString())).willReturn("stored.jpg");
 
@@ -483,15 +483,15 @@ class FileServiceTest {
     @Test
     @DisplayName("파일 수정 - 기존 파일이 없는 경우 Sn이 1부터 시작")
     void updateFiles_NoExistingDetails() throws IOException {
-        String atchFileId = "FILE_123";
-        FileMaster master = new FileMaster(atchFileId);
+        Long atchFileSn = 123L;
+        FileMaster master = new FileMaster(atchFileSn);
         MockMultipartFile file = validJpeg("new.jpg");
 
-        given(fileMasterRepository.findById(atchFileId)).willReturn(Optional.of(master));
+        given(fileMasterRepository.findById(atchFileSn)).willReturn(Optional.of(master));
         given(fileDetailRepository.findByFileMaster(master)).willReturn(List.of());
         given(storageService.store(any(), anyString())).willReturn("stored.jpg");
 
-        fileService.updateFiles(atchFileId, List.of(file));
+        fileService.updateFiles(atchFileSn, List.of(file));
 
         verify(fileDetailRepository).save(argThat(d -> d.getAtchFileSeq() == 1));
     }

@@ -12,7 +12,7 @@ import { createComment, deleteComment, updateComment } from '@/app/actions/comme
 import { useToast } from '@/app/components/ui/toast';
 
 interface CommentSectionProps {
-  pstId: string;
+  pstSn: number;
   bbsId: string;
   initialComments: CommentVO[];
 }
@@ -25,7 +25,7 @@ type OptimisticCommentAction =
 
 import { motion, AnimatePresence } from 'framer-motion';
 
-export default function CommentSection({ pstId, bbsId, initialComments }: CommentSectionProps) {
+export default function CommentSection({ pstSn, bbsId, initialComments }: CommentSectionProps) {
   const [isPending, startTransition] = useTransition();
   const { toast } = useToast();
   
@@ -67,7 +67,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
         type: 'add',
         payload: {
           ansSn: tempId,
-          pstId,
+          pstSn,
           bbsId,
           ansCn: content,
           wrterId: '',
@@ -100,7 +100,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
       const formData = new FormData();
       formData.append('id', id.toString());
       formData.append('bbsId', bbsId);
-      formData.append('pstId', pstId);
+      formData.append('pstSn', String(pstSn));
       
       try {
         const result = await deleteComment(null, formData);
@@ -126,7 +126,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
       formData.append('id', id.toString());
       formData.append('ansCn', originalContent);
       formData.append('bbsId', bbsId);
-      formData.append('pstId', pstId);
+      formData.append('pstSn', String(pstSn));
       
       try {
         const result = await updateComment(null, formData);
@@ -256,7 +256,7 @@ export default function CommentSection({ pstId, bbsId, initialComments }: Commen
         transition={{ delay: 0.2 }}
       >
         <input type="hidden" name="bbsId" value={bbsId} />
-        <input type="hidden" name="pstId" value={pstId} />
+        <input type="hidden" name="pstSn" value={pstSn} />
         <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-slate-200/20 to-hub-indigo/20 rounded-[2.5rem] blur-xl opacity-25 group-hover:opacity-100 transition duration-1000"></div>
         <Card className="relative border border-white shadow-2xl rounded-[2.5rem] bg-white/80 backdrop-blur-3xl ring-1 ring-black/5 overflow-hidden">
           <CardContent className="p-12 space-y-8">

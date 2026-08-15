@@ -11,7 +11,7 @@
 |---|---|---|---|
 | Backend Core | `foundation` | 응답봉투·예외·감사엔티티·보안백본(JWT/IAM)·crypto·i18n·config | **필수(불변 코어)** |
 | Backend Admin | `business-core` | user·auth·code·menu·program·organization·log·system 등 관리 도메인 | **필수** |
-| Backend App | `business-app` | 프로젝트 고유/앱 도메인(informalsanction·operation·memoreport 등) | **선택(삭제·교체 대상)** |
+| Backend App | `business-app` | 프로젝트 고유/참조 도메인(survey·community·banner·popup·operation 등) | **선택(삭제·교체 대상)** |
 | Web Runtime | `api-server` | Controller·Security·Flyway·WebSocket·Batch | 필수 |
 | Frontend | `frontend` | Next.js 16 App Router | 필수(화면은 선택 삭제) |
 
@@ -61,6 +61,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 | `DB_URL` / `DB_USERNAME` / `DB_PASSWORD` | PostgreSQL 접속 | 운영은 기본값 없음(강제 주입) |
 | `JWT_SECRET` | JWT 서명키 | 고엔트로피 값 필수 |
 | `ALGORITHM_KEY` | PII(주민번호 등) 암복호화 마스터키 | **운영 필수**, 로테이션 시 재암호화 선행 |
+| `OLD_ALGORITHM_KEY` | PII 키 회전 중 구키 복호화 폴백 | 평상시 미설정, 회전 창에서만 임시 주입 후 폐기 |
 | `CORS_ORIGIN_1` / `CORS_ORIGIN_2` | 운영 CORS 오리진 | `application-prod.yml` |
  
 > 로컬/개발은 `application.yml`의 개발용 기본값으로 동작하거나, `bootstrap`이 구성하는 `.env` 및 `application-local.yml`로 구동되지만, **운영(`prod`) 프로필은 위 값이 없으면 기동을 거부**한다. 시크릿은 절대 커밋하지 말 것(`.gitignore`가 `*.key`/`*.pem` 차단, `pre-commit`에 gitleaks 훅 — 설치 시 스테이징 시크릿 차단).
@@ -165,15 +166,15 @@ public class ProductApiController {
 | 응답은 **항상** `ResponseEntity<ApiResponse<T>>` | `nuri.foundation.core.response.ApiResponse` — `ApiResponse.success(data)` | BE 헌법 제6조 |
 | 페이징 응답은 `PageResponse.of(page)` 로 감싼다 | `nuri.foundation.core.response.PageResponse` | BE 헌법 제6조 |
 | Entity 를 반환하지 않는다 (DTO 전용) | `ArchitectureTest.controller_should_not_depend_on_entity`(ArchUnit) | BE 헌법 제3조 |
-| 쓰기(POST/PUT/DELETE/PATCH)에 `@PreAuthorize` 필수 | `@AdminOnly`·`@AdminOrSystem`(`nuri.foundation.security.annotation`) 메타 애노테이션 사용 가능 | BE 헌법 제8조 1항 |
+| 비공개 읽기·쓰기에 명시적 인가 경계 필수 | `@Authenticated`·`@AdminOnly`·`@AdminOrSystem`(`nuri.foundation.security.annotation`) 메타 애노테이션 사용 가능 | BE 헌법 제8조 1항 |
 | 로그인 주체는 `@LoginUser CustomUserDetails` 로 받는다 | `nuri.business.security.annotation.LoginUser` | — |
 | 요청 본문 검증은 `@Valid @RequestBody` | jakarta validation | — |
 
-> 🔒 **인가 누락은 빌드를 깨뜨린다 — 단, 전부는 아니다.** `SecurityAuthAnnotationLinterTest`(`api-server/src/test/java/nuri/api/harness/`)가 화이트리스트·DB 구동 인가(`/admin/**` URL 시큐리티) 대상이 아닌 **쓰기(POST/PUT/DELETE/PATCH) 엔드포인트에 인가 애노테이션이 없으면 실패**시킨다. 현 스캐폴드는 읽기에 `@Authenticated`, 쓰기에 `@AdminOrSystem`을 생성하므로 도메인 정책에 맞게 조정하되 제거하지 말 것.
+> 🔒 **인가 누락은 빌드를 깨뜨린다 — 단, 객체 소유권 의미까지 자동 판정하지는 않는다.** `SecurityAuthAnnotationLinterTest`(`api-server/src/test/java/nuri/api/harness/`)가 화이트리스트·DB 구동 인가 대상이 아닌 읽기·쓰기 엔드포인트에 명시적 인가 애노테이션이 없으면 실패시킨다. 현 스캐폴드는 읽기에 `@Authenticated`, 쓰기에 `@AdminOrSystem`을 생성하므로 도메인 정책에 맞게 조정하되 제거하지 말 것.
 >
 > ⚠ **집행 범위를 정확히 알아 둘 것**(2026-08-03 현행화). 이 문단은 두 번 틀렸다 — 처음엔 "모든 엔드포인트를 전수 조사"라는 **과장**이었고, 그 정정본은 패키지 skip 이 삭제되면서 **낡아서** 틀렸다.
 >
-> 현재: Test#1 은 **패키지 skip 없이 전 컨트롤러의 읽기·쓰기를 순회**한다. 다만 ① 공개 화이트리스트 ② 인가 애노테이션 **존재**(내용 불문) ③ `rbac.db-auth.secure-paths` 매칭 ④ `WRITE_AUTHZ_GUARDED_ELSEWHERE` 등재 클래스 중 하나면 통과시킨다. Test#2 는 **쓰기만** 보고 `/api/v1/admin/` 은 URL 시큐리티에 위임한다.
+> 현재: Test#1 은 **패키지 skip 없이 전 컨트롤러의 읽기·쓰기를 순회**한다. ① 공개 화이트리스트 ② 인가 애노테이션/메타 애노테이션 존재 ③ `rbac.db-auth.secure-paths`·DB 프로그램 URL 매칭 중 하나만 통과한다. Test#2 는 **쓰기만** 보고 `/api/v1/admin/`은 URL 시큐리티에 위임한다. 2026-08-15 쓰기 사유로 읽기까지 면제하던 30건 census와 12개 클래스 allow-list는 제거했다.
 >
 > 그래서 **"모든 컨트롤러를 순회한다"는 참이지만 "인가 의미까지 모두 검증한다"는 거짓**이다. 신규 경로가 `secure-paths`에서 빠지고 인가 애노테이션도 없으면 린터가 위반으로 잡으므로 조용히 통과하지 않는다. 다만 ②는 `@PreAuthorize("isAuthenticated()")`처럼 IDOR 방어력이 없는 애노테이션도 존재 조건을 만족하므로, 읽기·사용자 소유 데이터는 서비스 계층 소유권 가드를 별도로 붙여야 한다. 최신 범위는 항상 린터 javadoc(`SecurityAuthAnnotationLinterTest` 클래스 주석)을 SSOT 로 삼을 것.
 
@@ -251,7 +252,7 @@ public class ProductService extends BaseAbstractService {
 - **생산성 전면화**: MapStruct `@Mapper` 표준을 기존 도메인까지 마이그레이션 진행 중(수기 `from()` 제거).
 - ✅ **제네릭 CRUD는 채택하지 않고 명시적 CRUD로 종결했다.** `generate-domain.ps1`도 같은 관례의 컴파일 가능한 Service·Controller 초안을 생성한다(§5.2). 도메인별 소유권과 DDL 표준 용어는 생성 후 검토한다.
 - **레거시 데이터 이관 도구**: 범용 소스↔표준 스키마 매핑·ETL·검증 골격 **선제 구축** 착수.
-- 도입 완료: i18n `next-intl`(seam + 로케일 카탈로그 `messages/{ko,en}.json`), 감사 로그 영속(`WebAuditLogListener` @Async), 도메인 이벤트 seam, 시크릿 외부화.
+- 도입 완료: API 오류 MessageSource ko/en 협상(프런트 UI는 한국어 단일언어), 감사 로그 영속(`WebAuditLogListener` @Async), 도메인 이벤트 seam, 시크릿 외부화. 제품 경계는 [ADR](../02-architecture/decisions/README.md)을 따른다.
 
 ---
 
@@ -265,9 +266,9 @@ public class ProductService extends BaseAbstractService {
 | Backend 전체 로컬 게이트 | `./gradlew localGate` | 하네스·실 DB·전 모듈 테스트·JaCoCo·프런트 unit coverage |
 | Full-stack 통합 게이트 | `npm run verify` / `make verify` | Backend·Frontend 핵심 게이트 단일 진입점(실 DB/E2E는 별도) |
 | Frontend 타입 | `cd frontend && npx tsc --noEmit` | §0.6 HARD |
-| 커버리지 | `make coverage` / `npm run test:coverage` | JaCoCo |
+| 커버리지 | `make coverage` / `pnpm -C frontend test:coverage` | Backend JaCoCo + Frontend Vitest(30/25/25/30 하한) |
 | 시크릿 스캔 | `gitleaks protect --staged --verbose`(설치 시) | pre-commit은 로컬 보조, CI `secret-scan`이 required check |
 | 브랜치 보호 정합 | `npm run verify:ops` | 저장소 명세·CI·실제 GitHub ruleset 대조(네트워크·관리 읽기 권한 필요) |
 
 ---
-*Last Updated: 2026-08-13 (Codex — Node 22·관리자 최초 프로비저닝·explicit CRUD 스캐폴드·DB RBAC 집행·80엔티티/83테이블/888컬럼 실 DB 검증·현행 품질 게이트로 동기화. 삭제된 FAQ 참조를 AddressBook 예제로 교체. 이전: 2026-07-20 제네릭 CRUD 미구현 상태 정직화, 2026-07-11 온보딩 런북 신설.)*
+*Last Updated: 2026-08-15 (Codex — Frontend Vitest 88파일/444테스트와 coverage 30/25/25/30 하한 동기화. 이전: 2026-08-13 Node 22·관리자 최초 프로비저닝·explicit CRUD 스캐폴드·DB RBAC 집행·80엔티티/83테이블/888컬럼 실 DB 검증.)*

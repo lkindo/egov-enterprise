@@ -23,15 +23,15 @@ import org.hibernate.annotations.DynamicUpdate;
 public class NoteRecptn extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String noteRcptnId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long noteRcptnSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "NOTE_ID")
+    @JoinColumn(name = "note_sn")
     private Note note;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "NOTE_SNDNG_ID")
+    @JoinColumn(name = "note_sndng_sn")
     private NoteTrnsmit noteDsptch;
 
     @Column(length = 20)
@@ -48,9 +48,9 @@ public class NoteRecptn extends BaseEntity {
     private String delYn;
 
     @Builder
-    public static NoteRecptn create(String noteRcptnId, Note note, NoteTrnsmit noteDsptch,
+    public static NoteRecptn create(Long noteRcptnSn, Note note, NoteTrnsmit noteDsptch,
             String rcvrId, String openYn, String rcptnSeCd) {
-        return new NoteRecptn(noteRcptnId, note, noteDsptch, rcvrId, openYn, rcptnSeCd, "N");
+        return new NoteRecptn(noteRcptnSn, note, noteDsptch, rcvrId, openYn, rcptnSeCd, "N");
     }
 
     /** 수신자 논리삭제(수신함에서 숨김). 발신 사본과 독립. */

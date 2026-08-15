@@ -29,15 +29,17 @@ const LIST_PATH = '/admin/collaboration/address-book/select-address-book-list';
 const SelectAddressBookDetailClient = () => {
     const router = useRouter();
     const params = useParams();
-    const adbkId = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : '';
+    const rawAdbkSn = typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : '';
+    const adbkSn = Number(rawAdbkSn);
+    const hasValidAdbkSn = Number.isSafeInteger(adbkSn) && adbkSn > 0;
     const { toast } = useToast();
     const confirm = useConfirm();
     const queryClient = useQueryClient();
 
     const { data, isLoading, isError, error, refetch } = useQuery({
-        queryKey: ['address-book-detail', adbkId],
-        queryFn: () => addressbookUserService.getAddressBook(adbkId),
-        enabled: Boolean(adbkId),
+        queryKey: ['address-book-detail', adbkSn],
+        queryFn: () => addressbookUserService.getAddressBook(adbkSn),
+        enabled: hasValidAdbkSn,
     });
 
     const [adbkNm, setAdbkNm] = useState('');
@@ -49,20 +51,20 @@ const SelectAddressBookDetailClient = () => {
         mutationFn: () =>
             // adbkMan 은 전송하지 않는다 — 서버는 adbkMan 이 null 이면 구성원을 건드리지 않고,
             // 빈 배열을 보내면 구성원 전원이 삭제된다.
-            addressbookUserService.updateAddressBook(adbkId, {
+            addressbookUserService.updateAddressBook(adbkSn, {
                 adbkNm,
                 rlsScopeCd: data?.rlsScopeCd ?? '',
             }),
         onSuccess: () => {
             toast('주소록이 수정되었습니다.', 'success');
-            queryClient.invalidateQueries({ queryKey: ['address-book-detail', adbkId] });
+            queryClient.invalidateQueries({ queryKey: ['address-book-detail', adbkSn] });
             router.push(LIST_PATH);
         },
         onError: () => toast('수정에 실패했습니다.', 'error'),
     });
 
     const deleteMutation = useMutation({
-        mutationFn: () => addressbookUserService.deleteAddressBook(adbkId),
+        mutationFn: () => addressbookUserService.deleteAddressBook(adbkSn),
         onSuccess: () => {
             toast('주소록이 삭제되었습니다.', 'success');
             router.push(LIST_PATH);
@@ -188,7 +190,7 @@ const SelectAddressBookDetailClient = () => {
                                             </thead>
                                             <tbody className="divide-y divide-border">
                                                 {members.map((member, idx) => (
-                                                    <tr key={member.adbkConstntId || member.userId || `member-${idx}`}>
+                                                    <tr key={member.adbkMbrSn || member.userId || `member-${idx}`}>
                                                         <td className="px-6 py-3 font-bold text-foreground">{member.nm || '-'}</td>
                                                         <td className="px-6 py-3 text-muted-foreground">{member.emlAddr || '-'}</td>
                                                         <td className="px-6 py-3 text-muted-foreground tabular-nums">{member.mblTelno || '-'}</td>

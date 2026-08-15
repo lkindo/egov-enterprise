@@ -15,8 +15,7 @@ public class SatisfactionDto {
     private Long dgstfnSn;
     @Size(max = 20)
     private String bbsId;
-    @Size(max = 20)
-    private String pstId;
+    private Long pstSn;
     private String dgstfnCn;
     private Integer dgstfnScr;
     private String userId;

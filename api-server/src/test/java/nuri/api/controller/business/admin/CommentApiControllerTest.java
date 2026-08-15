@@ -50,10 +50,10 @@ class CommentApiControllerTest {
     @DisplayName("댓글 목록 조회")
     void getComments() throws Exception {
         Page<CommentDto> page = new PageImpl<>(Collections.emptyList(), PageRequest.of(0, 10), 0);
-        when(commentService.getComments(eq("1"), eq("BBS_001"), any())).thenReturn(page);
+        when(commentService.getComments(eq(1L), eq("BBS_001"), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/comments")
-                        .param("pstId", "1")
+                        .param("pstSn", "1")
                         .param("bbsId", "BBS_001"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

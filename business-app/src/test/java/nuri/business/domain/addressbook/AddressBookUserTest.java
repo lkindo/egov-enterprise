@@ -13,8 +13,8 @@ class AddressBookUserTest {
     void builderTest() {
         // Given & When
         AddressBookUser user = AddressBookUser.builder()
-                .adbkConstntId("CONST_001")
-                .addressBook(AddressBook.builder().adbkId("ADBK_001").build())
+                .adbkMbrSn(10L)
+                .addressBook(AddressBook.builder().adbkSn(1L).build())
                 .userId("USER_001")
                 .nm("홍길동")
                 .emlAddr("gildong@example.com")
@@ -26,8 +26,8 @@ class AddressBookUserTest {
         user.setFrstRgtrId("admin");
 
         // Then
-        assertThat(user.getAdbkConstntId()).isEqualTo("CONST_001");
-        assertThat(user.getAddressBook().getAdbkId()).isEqualTo("ADBK_001");
+        assertThat(user.getAdbkMbrSn()).isEqualTo(10L);
+        assertThat(user.getAddressBook().getAdbkSn()).isEqualTo(1L);
         assertThat(user.getUserId()).isEqualTo("USER_001");
         assertThat(user.getNm()).isEqualTo("홍길동");
         assertThat(user.getEmlAddr()).isEqualTo("gildong@example.com");
@@ -43,7 +43,7 @@ class AddressBookUserTest {
     void inheritanceTest() {
         // Given & When
         AddressBookUser user = AddressBookUser.builder()
-                .adbkConstntId("CONST_002")
+                .adbkMbrSn(11L)
                 .build();
         user.setFrstRgtrId("system");
 

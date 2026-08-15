@@ -34,7 +34,7 @@ class PopupApiControllerTest extends ControllerTestSupport {
     void getPopups_Success() throws Exception {
         // given
         given(popupService.getPopupList(anyString(), any(Pageable.class)))
-                .willReturn(new PageImpl<>(List.of(PopupDto.builder().popupId("POP_01").build())));
+                .willReturn(new PageImpl<>(List.of(PopupDto.builder().popupSn(1L).build())));
 
         // when & then
         mockMvc.perform(get("/api/v1/admin/system/popups")
@@ -47,10 +47,10 @@ class PopupApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     void getPopup_Success() throws Exception {
         // given
-        given(popupService.getPopup("POP_01")).willReturn(PopupDto.builder().popupId("POP_01").build());
+        given(popupService.getPopup(1L)).willReturn(PopupDto.builder().popupSn(1L).build());
 
         // when & then
-        mockMvc.perform(get("/api/v1/admin/system/popups/POP_01"))
+        mockMvc.perform(get("/api/v1/admin/system/popups/1"))
                 .andExpect(status().isOk());
     }
 
@@ -60,7 +60,7 @@ class PopupApiControllerTest extends ControllerTestSupport {
     void createPopup_Success() throws Exception {
         // given
         PopupDto dto = PopupDto.builder().popupTtlNm("Popup").build();
-        given(popupService.createPopup(anyString(), any(PopupDto.class))).willReturn("POP_01");
+        given(popupService.createPopup(anyString(), any(PopupDto.class))).willReturn(1L);
 
         // when & then
         mockMvc.perform(post("/api/v1/admin/system/popups")
@@ -74,7 +74,7 @@ class PopupApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     void deletePopup_Success() throws Exception {
         // when & then
-        mockMvc.perform(delete("/api/v1/admin/system/popups/POP_01"))
+        mockMvc.perform(delete("/api/v1/admin/system/popups/1"))
                 .andExpect(status().isOk());
     }
 }

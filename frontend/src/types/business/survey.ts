@@ -1,24 +1,24 @@
 export interface Survey {
-  srvyId: string;
+  srvySn: number;
   srvyTtl: string;
   srvyPrps: string;
   srvyWrtGdCn: string;
   srvyTrgt: string;
   srvyBgngYmd: string;
   srvyEndYmd: string;
-  srvyTmpltId?: string;
+  srvyTmpltSn: number;
   frstRgtrId?: string;
   crtDt: string;
 }
 
 export interface SurveyQuestion {
-  srvyQstnId: string;
-  srvyId: string;
+  srvyQstnSn: number;
+  srvySn: number;
   qstnSn: number;
   qstnTypeCd: string;
   qstnCn: string;
   maxChcCnt: number;
-  srvyTmpltId: string;
+  srvyTmpltSn: number;
   frstRgtrId: string;
   crtDt: string;
   items: SurveyAnswer[];
@@ -26,13 +26,13 @@ export interface SurveyQuestion {
 
 /** 문항의 선택 항목(`tb_srvy_artcl`). 문항 하위 자원이라 단독으로는 의미가 없다. */
 export interface SurveyAnswer {
-  srvyArtclId: string;
-  srvyQstnId: string;
-  srvyId: string;
+  srvyArtclSn: number;
+  srvyQstnSn: number;
+  srvySn: number;
   artclSn: number;
   artclCn: string;
   etcAnsYn: string;
-  srvyTmpltId: string;
+  srvyTmpltSn: number;
   frstRgtrId: string;
   crtDt: string;
 }
@@ -45,10 +45,14 @@ export interface SurveyAnswer {
  * 3단계에서 신설할 백엔드 통계 DTO 가 이 형태를 SSOT 로 삼는다.
  */
 export interface SurveyResultStats {
+  /** 문항 일련번호 */
+  srvyQstnSn: number;
   /** 문항 내용 */
   qstnCn: string;
   /** 문항 유형 코드 ('1'=객관식, 그 외 주관식) */
   qstnTypeCd: string;
+  /** 항목 일련번호 */
+  srvyArtclSn: number;
   /** 항목 내용. 주관식이면 비어 있다 */
   artclCn?: string;
   /** 해당 항목 응답 수 */
@@ -66,8 +70,8 @@ export interface SurveyResultStats {
  */
 export interface SurveyRespondent {
   srvyRspdntId: string;
-  srvyId: string;
-  srvyTmpltId?: string;
+  srvySn: number;
+  srvyTmpltSn: number;
   /** 성별 코드 */
   gndrCd?: string;
   /** 직업 유형 코드 */
@@ -84,11 +88,11 @@ export interface SurveyRespondent {
 }
 
 export interface QustnrRespondInfo {
-  srvyRspnsId: string;
-  srvyId: string;
-  srvyQstnId: string;
-  srvyTmpltId: string;
-  srvyArtclId: string;
+  srvyRspnsSn: number;
+  srvySn: number;
+  srvyQstnSn: number;
+  srvyTmpltSn: number;
+  srvyArtclSn: number;
   rspdntAnsCn: string;
   rspnsNm: string;
   etcAnsCn: string;

@@ -3,6 +3,8 @@ import nuri.foundation.domain.common.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
@@ -20,7 +22,11 @@ import java.time.LocalDateTime;
 public class PrivacyLog extends BaseEntity {
 
     @Id
-    @Column(length = 20)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "prvc_log_sn")
+    private Long prvcLogSn;
+
+    @Column(length = 20, nullable = false, unique = true)
     private String dmndId;
 
     private LocalDateTime inqDt;
@@ -37,8 +43,9 @@ public class PrivacyLog extends BaseEntity {
     @Column(length = 30)
     private String dmndUserIpAddr;
 
-    private PrivacyLog(String dmndId, LocalDateTime inqDt, String srvcNm, String inqInfo,
+    private PrivacyLog(Long prvcLogSn, String dmndId, LocalDateTime inqDt, String srvcNm, String inqInfo,
             String dmndUserId, String dmndUserIpAddr) {
+        this.prvcLogSn = prvcLogSn;
         this.dmndId = dmndId;
         this.inqDt = inqDt;
         this.srvcNm = srvcNm;
@@ -48,8 +55,8 @@ public class PrivacyLog extends BaseEntity {
     }
 
     @Builder
-    public static PrivacyLog create(String dmndId, LocalDateTime inqDt, String srvcNm, String inqInfo,
+    public static PrivacyLog create(Long prvcLogSn, String dmndId, LocalDateTime inqDt, String srvcNm, String inqInfo,
             String dmndUserId, String dmndUserIpAddr) {
-        return new PrivacyLog(dmndId, inqDt, srvcNm, inqInfo, dmndUserId, dmndUserIpAddr);
+        return new PrivacyLog(prvcLogSn, dmndId, inqDt, srvcNm, inqInfo, dmndUserId, dmndUserIpAddr);
     }
 }

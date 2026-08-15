@@ -51,7 +51,7 @@ class ScrapServiceTest {
     void getMyScrapList_Success() {
         // Given
         PageRequest pageable = PageRequest.of(0, 10);
-        Scrap entity = Scrap.builder().scrapId("S1").scrapNm("Title").build();
+        Scrap entity = Scrap.builder().scrapSn(1L).scrapNm("Title").build();
         given(scrapRepository.findByFrstRgtrIdAndUseYn(eq("user1"), eq("Y"), eq(pageable))).willReturn(new PageImpl<>(List.of(entity)));
 
         // When
@@ -65,14 +65,14 @@ class ScrapServiceTest {
     @DisplayName("스크랩 상세 조회 — 응답에 URL·설명이 포함된다")
     void getScrap_Success() {
         // Given
-        Scrap entity = Scrap.builder().scrapId("S1").scrapUrl("https://example.com").scrapExpln("설명").build();
-        given(scrapRepository.findById("S1")).willReturn(Optional.of(entity));
+        Scrap entity = Scrap.builder().scrapSn(1L).scrapUrl("https://example.com").scrapExpln("설명").build();
+        given(scrapRepository.findById(1L)).willReturn(Optional.of(entity));
 
         // When
-        ScrapDto result = scrapService.getScrap("S1");
+        ScrapDto result = scrapService.getScrap(1L);
 
         // Then
-        assertThat(result.getScrapId()).isEqualTo("S1");
+        assertThat(result.getScrapSn()).isEqualTo(1L);
         assertThat(result.getScrapUrl()).isEqualTo("https://example.com"); // [회귀가드] 과거 convertToDto 누락
         assertThat(result.getScrapExpln()).isEqualTo("설명");
     }
@@ -89,31 +89,35 @@ class ScrapServiceTest {
                 .build();
 
         // when
-        scrapService.createScrap("user1", dto);
+        given(scrapRepository.save(org.mockito.ArgumentMatchers.any(Scrap.class)))
+                .willReturn(Scrap.builder().scrapSn(2L).build());
+
+        Long result = scrapService.createScrap("user1", dto);
 
         // then
         org.mockito.ArgumentCaptor<Scrap> captor = org.mockito.ArgumentCaptor.forClass(Scrap.class);
         verify(scrapRepository).save(captor.capture());
         Scrap saved = captor.getValue();
-        assertThat(saved.getScrapId()).startsWith("SCRAP_");
+        assertThat(saved.getScrapSn()).isNull();
         assertThat(saved.getScrapNm()).isEqualTo("New");
         assertThat(saved.getScrapUrl()).isEqualTo("https://example.com"); // [회귀가드] 과거 builder 누락으로 항상 null
         assertThat(saved.getScrapExpln()).isEqualTo("설명");
         assertThat(saved.getUseYn()).isEqualTo("Y");
+        assertThat(result).isEqualTo(2L);
     }
 
     @Test
     @DisplayName("스크랩 수정 — DTO 값이 실제로 반영된다")
     void updateScrap_Success() {
         // Given
-        Scrap entity = Scrap.builder().scrapId("S1").scrapNm("Old").scrapUrl("https://old.example.com")
+        Scrap entity = Scrap.builder().scrapSn(1L).scrapNm("Old").scrapUrl("https://old.example.com")
                 .scrapExpln("옛 설명").useYn("Y").build();
-        given(scrapRepository.findById("S1")).willReturn(Optional.of(entity));
-        ScrapDto dto = ScrapDto.builder().scrapId("S1").scrapNm("Updated")
+        given(scrapRepository.findById(1L)).willReturn(Optional.of(entity));
+        ScrapDto dto = ScrapDto.builder().scrapSn(999L).scrapNm("Updated")
                 .scrapUrl("https://new.example.com").scrapExpln("새 설명").useYn("Y").build();
 
         // when
-        scrapService.updateScrap("user1", dto);
+        scrapService.updateScrap(1L, "user1", dto);
 
         // Then
         assertThat(entity.getScrapNm()).isEqualTo("Updated");
@@ -126,12 +130,12 @@ class ScrapServiceTest {
     @DisplayName("스크랩 수정 — useYn 미전달 시 기존 값 보존(목록에서 증발 방지)")
     void updateScrap_KeepsUseYnWhenAbsent() {
         // Given
-        Scrap entity = Scrap.builder().scrapId("S1").scrapNm("Old").useYn("Y").build();
-        given(scrapRepository.findById("S1")).willReturn(Optional.of(entity));
-        ScrapDto dto = ScrapDto.builder().scrapId("S1").scrapNm("Updated").build();
+        Scrap entity = Scrap.builder().scrapSn(1L).scrapNm("Old").useYn("Y").build();
+        given(scrapRepository.findById(1L)).willReturn(Optional.of(entity));
+        ScrapDto dto = ScrapDto.builder().scrapSn(999L).scrapNm("Updated").build();
 
         // when
-        scrapService.updateScrap("user1", dto);
+        scrapService.updateScrap(1L, "user1", dto);
 
         // Then
         assertThat(entity.getUseYn()).isEqualTo("Y");
@@ -141,11 +145,11 @@ class ScrapServiceTest {
     @DisplayName("스크랩 삭제")
     void deleteScrap_Success() {
         // Given — 소유권 가드용 findById(삭제 시 findById→delete 로 변경됨)
-        nuri.business.domain.scrap.Scrap scrap = nuri.business.domain.scrap.Scrap.builder().scrapId("S1").build();
-        org.mockito.Mockito.when(scrapRepository.findById("S1")).thenReturn(java.util.Optional.of(scrap));
+        nuri.business.domain.scrap.Scrap scrap = nuri.business.domain.scrap.Scrap.builder().scrapSn(1L).build();
+        org.mockito.Mockito.when(scrapRepository.findById(1L)).thenReturn(java.util.Optional.of(scrap));
 
         // When
-        scrapService.deleteScrap("S1");
+        scrapService.deleteScrap(1L);
 
         // Then
         verify(scrapRepository).delete(scrap);

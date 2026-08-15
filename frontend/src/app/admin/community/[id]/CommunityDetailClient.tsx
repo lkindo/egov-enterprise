@@ -44,7 +44,7 @@ function CommunityDetailContent() {
             // 감사 死코드: 과거 `(item as any).noticeYn` 분기는 BoardDto(generated-api.d.ts)에 없는 필드를
             // 캐스팅으로 읽어 항상 false 였다(공지 표시가 한 번도 렌더되지 않음). 계약에 있는 값만 표시한다.
             header: '번호',
-            accessor: (item: BoardPost) => item.pstId,
+            accessor: (item: BoardPost) => item.pstSn,
             className: 'w-20'
         },
         {
@@ -124,7 +124,7 @@ function CommunityDetailContent() {
                 loading={isLoading}
                 error={isError ? error : null}
                 onRetry={() => void refetch()}
-                onRowClick={(item) => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId}&pstId=${item.pstId}`)}
+                onRowClick={(item) => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId}&pstSn=${item.pstSn}`)}
                 emptyMessage="게시글이 존재하지 않습니다."
             />
 

@@ -76,7 +76,6 @@ class MenuServiceIntegrationTest {
         programRepository.save(program);
 
         Menu root = Menu.builder()
-                .menuSn(1L)
                 .menuNm("ROOT")
                 .menuOrdr(1)
                 .menuExpln("DESC")
@@ -85,10 +84,9 @@ class MenuServiceIntegrationTest {
         menuRepository.save(root);
 
         Menu child = Menu.builder()
-                .menuSn(2L)
                 .menuNm("CHILD")
                 .prgrmFileNm("PROG_01")
-                .upMenuSn(1L)
+                .upMenuSn(root.getMenuSn())
                 .menuOrdr(1)
                 .menuExpln("DESC")
                 .modernRoute("/child")
@@ -96,12 +94,12 @@ class MenuServiceIntegrationTest {
         menuRepository.save(child);
 
         MenuAuthority auth = MenuAuthority.builder()
-                .id(MenuAuthorityId.builder().authrtCd("ROLE_ADMIN").menuSn(1L).build())
+                .id(MenuAuthorityId.builder().authrtCd("ROLE_ADMIN").menuSn(root.getMenuSn()).build())
                 .build();
         menuAuthorityRepository.save(auth);
 
         MenuAuthority auth2 = MenuAuthority.builder()
-                .id(MenuAuthorityId.builder().authrtCd("ROLE_ADMIN").menuSn(2L).build())
+                .id(MenuAuthorityId.builder().authrtCd("ROLE_ADMIN").menuSn(child.getMenuSn()).build())
                 .build();
         menuAuthorityRepository.save(auth2);
 

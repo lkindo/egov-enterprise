@@ -19,11 +19,11 @@ import lombok.NoArgsConstructor;
 public class AddressBookUser extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String adbkConstntId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long adbkMbrSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "adbk_id", nullable = false)
+    @JoinColumn(name = "adbk_sn", nullable = false)
     private AddressBook addressBook;
 
     @Column(length = 20)
@@ -55,10 +55,10 @@ public class AddressBookUser extends BaseEntity {
      * 전체 필드 초기화 생성자 (정적 팩토리 create() 전용).
      * 감사 필드(frstRgtrId/lastMdfrId 등)는 JPA Auditing 이 채우므로 제외.
      */
-    private AddressBookUser(String adbkConstntId, AddressBook addressBook, String userId,
+    private AddressBookUser(Long adbkMbrSn, AddressBook addressBook, String userId,
                             String nm, String emlAddr, String homeTelno, String mblTelno,
                             String ofcTelno, String faxNo) {
-        this.adbkConstntId = adbkConstntId;
+        this.adbkMbrSn = adbkMbrSn;
         this.addressBook = addressBook;
         this.userId = userId;
         this.nm = nm;
@@ -74,10 +74,10 @@ public class AddressBookUser extends BaseEntity {
      * 기존 AddressBookUser.builder()...build() 호출부 호환을 유지한다.
      */
     @Builder
-    public static AddressBookUser create(String adbkConstntId, AddressBook addressBook, String userId,
+    public static AddressBookUser create(Long adbkMbrSn, AddressBook addressBook, String userId,
                                          String nm, String emlAddr, String homeTelno, String mblTelno,
                                          String ofcTelno, String faxNo) {
-        return new AddressBookUser(adbkConstntId, addressBook, userId, nm, emlAddr,
+        return new AddressBookUser(adbkMbrSn, addressBook, userId, nm, emlAddr,
                 homeTelno, mblTelno, ofcTelno, faxNo);
     }
 

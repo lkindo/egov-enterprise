@@ -55,10 +55,10 @@ class ScheduleServiceTest {
     void getScheduleList() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        Schedule entity = Schedule.builder().schdlId("S1").schdlNm("Test Schedule").build();
+        Schedule entity = Schedule.builder().schdlSn(1L).schdlNm("Test Schedule").build();
         given(scheduleRepository.searchSchedules(any(), any(), any(), any())).willReturn(new PageImpl<>(List.of(entity)));
         given(scheduleMapper.toDto(any())).willReturn(
-                ScheduleDto.builder().schdlId("S1").schdlNm("Test Schedule").build());
+                ScheduleDto.builder().schdlSn(1L).schdlNm("Test Schedule").build());
 
         // when
         Page<ScheduleDto> result = scheduleService.getScheduleList(null, pageable);
@@ -72,18 +72,18 @@ class ScheduleServiceTest {
     @DisplayName("일정 상세 조회")
     void getSchedule() {
         // given
-        String schdulId = "S1";
-        Schedule entity = Schedule.builder().schdlId(schdulId).schdlNm("Test Schedule").build();
-        given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(entity));
+        Long schdlSn = 1L;
+        Schedule entity = Schedule.builder().schdlSn(schdlSn).schdlNm("Test Schedule").build();
+        given(scheduleRepository.findById(schdlSn)).willReturn(Optional.of(entity));
         given(scheduleMapper.toDto(any())).willReturn(
-                ScheduleDto.builder().schdlId(schdulId).schdlNm("Test Schedule").build());
+                ScheduleDto.builder().schdlSn(schdlSn).schdlNm("Test Schedule").build());
 
         // when
-        ScheduleDto result = scheduleService.getSchedule(schdulId);
+        ScheduleDto result = scheduleService.getSchedule(schdlSn);
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getSchdlId()).isEqualTo(schdulId);
+        assertThat(result.getSchdlSn()).isEqualTo(schdlSn);
     }
 
     @Test
@@ -92,25 +92,27 @@ class ScheduleServiceTest {
         // given: 클라이언트가 PK 와 담당자, 부서를 위조해 보낸 상황
         String loginId = "user1";
         ScheduleDto dto = ScheduleDto.builder()
-                .schdlId("FORGED_PK")
+                .schdlSn(999L)
                 .schdlPicId("attacker")
                 .schdlDeptId("OTHER_DEPT")
                 .schdlNm("New Schedule")
                 .schdlSeCd("1")
                 .build();
         given(userRepository.findByUserId(loginId)).willReturn(Optional.empty()); // 조직 미배정 → 기본조직 폴백
+        given(scheduleRepository.save(any(Schedule.class)))
+                .willReturn(Schedule.builder().schdlSn(2L).build());
 
         // when
-        String newId = scheduleService.createSchedule(loginId, dto);
+        Long newSn = scheduleService.createSchedule(loginId, dto);
 
         // then
         org.mockito.ArgumentCaptor<Schedule> captor = org.mockito.ArgumentCaptor.forClass(Schedule.class);
         verify(scheduleRepository).save(captor.capture());
         Schedule saved = captor.getValue();
 
-        // PK 는 서버 채번 (클라이언트가 보낸 FORGED_PK 를 쓰지 않는다)
-        assertThat(saved.getSchdlId()).isNotEqualTo("FORGED_PK").startsWith("SCHDL_");
-        assertThat(newId).isEqualTo(saved.getSchdlId());
+        // PK 는 DB 채번 대상으로 null 이며 클라이언트가 보낸 999를 쓰지 않는다.
+        assertThat(saved.getSchdlSn()).isNull();
+        assertThat(newSn).isEqualTo(2L);
         // 담당자는 인증 주체로 고정 (매스어사인먼트 차단)
         assertThat(saved.getSchdlPicId()).isEqualTo(loginId);
         // 부서도 서버가 결정 (미배정이므로 기본조직)
@@ -121,18 +123,18 @@ class ScheduleServiceTest {
     @DisplayName("일정 수정")
     void updateSchedule() {
         // given
-        String schdulId = "S1";
+        Long schdlSn = 1L;
         String userId = "user1";
-        Schedule existingEntity = Schedule.builder().schdlId(schdulId).schdlNm("Old Title").build();
+        Schedule existingEntity = Schedule.builder().schdlSn(schdlSn).schdlNm("Old Title").build();
         ScheduleDto updateDto = ScheduleDto.builder()
-                .schdlId(schdulId)
+                .schdlSn(schdlSn)
                 .schdlNm("New Title")
                 .build();
 
-        given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(existingEntity));
+        given(scheduleRepository.findById(schdlSn)).willReturn(Optional.of(existingEntity));
 
         // when
-        scheduleService.updateSchedule(schdulId, userId, updateDto);
+        scheduleService.updateSchedule(schdlSn, userId, updateDto);
 
         // then
         assertThat(existingEntity.getSchdlNm()).isEqualTo("New Title");
@@ -142,14 +144,14 @@ class ScheduleServiceTest {
     @DisplayName("일정 삭제")
     void deleteSchedule() {
         // given
-        String schdulId = "S1";
+        Long schdlSn = 1L;
         String userId = "user1";
-        Schedule entity = Schedule.builder().schdlId(schdulId).build();
+        Schedule entity = Schedule.builder().schdlSn(schdlSn).build();
         entity.setFrstRgtrId(userId); // 감사 필드는 빌더 대신 세터로 세팅(테스트 시나리오 구성용)
-        given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(entity));
+        given(scheduleRepository.findById(schdlSn)).willReturn(Optional.of(entity));
 
         // when
-        scheduleService.deleteSchedule(schdulId, userId);
+        scheduleService.deleteSchedule(schdlSn, userId);
 
         // then
         verify(scheduleRepository).delete(entity);
@@ -160,13 +162,13 @@ class ScheduleServiceTest {
     void deleteSchedule_delegatesOwnershipGuard() {
         // given — 소유자 loginId=frstRgtrId. 실제 소유권 거부/허용 판정은 SecurityUtilTest 가 검증하고,
         // 여기서는 서비스가 엔티티의 frstRgtrId 로 가드를 '호출'하는지(배선)를 확인한다.
-        String schdulId = "S1";
-        Schedule entity = Schedule.builder().schdlId(schdulId).build();
+        Long schdlSn = 1L;
+        Schedule entity = Schedule.builder().schdlSn(schdlSn).build();
         entity.setFrstRgtrId("creator");
-        given(scheduleRepository.findById(schdulId)).willReturn(Optional.of(entity));
+        given(scheduleRepository.findById(schdlSn)).willReturn(Optional.of(entity));
 
         // when
-        scheduleService.deleteSchedule(schdulId, "otherUser");
+        scheduleService.deleteSchedule(schdlSn, "otherUser");
 
         // then — 가드가 소유자 loginId 로 호출됨
         __secUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin("creator"));

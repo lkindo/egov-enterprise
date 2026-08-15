@@ -23,6 +23,7 @@ import { MessageSquare,
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { smsAdminService, SmsDto } from '@/services/foundation/operation/SmsAdminService';
+import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
 import { Dialog,  
   DialogContent,  
@@ -32,10 +33,16 @@ import { Dialog,
   DialogTrigger } from '@/components/ui/dialog';
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
 
+type SmsFormState = {
+  sndngTelno: string;
+  rcptnTelno: string;
+  sndngCn: string;
+};
+
 export default function SmsHubClient({ 
   initialData 
 }: { 
-  initialData: any 
+  initialData: PageResponse<SmsDto>
 }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -43,7 +50,7 @@ export default function SmsHubClient({
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   
-  const [newSms, setNewSms] = useState<SmsDto>({
+  const [newSms, setNewSms] = useState<SmsFormState>({
     sndngTelno: '010-1234-5678',
     rcptnTelno: '',
     sndngCn: '',
@@ -56,23 +63,22 @@ export default function SmsHubClient({
   });
 
   const sendMutation = useMutation({
-    mutationFn: (sms: SmsDto) => {
-      // 백엔드 DTO에 정의되지 않은 rcptnTelno 필드를 제거하고 recipients로 변환
-      const { rcptnTelno, ...rest } = sms;
-      const payload = {
-        ...rest,
-        recipients: rcptnTelno ? [{ rcptnTelno }] : (sms.recipients || [])
+    mutationFn: (sms: SmsFormState) => {
+      const payload: SmsDto = {
+        sndngTelno: sms.sndngTelno,
+        sndngCn: sms.sndngCn,
+        recipients: sms.rcptnTelno ? [{ rcptnTelno: sms.rcptnTelno }] : [],
       };
-      return smsAdminService.sendSms(payload as any);
+      return smsAdminService.sendSms(payload);
     },
     onSuccess: () => {
       toast('SMS가 성공적으로 전송되었습니다.', 'success');
       setIsDialogOpen(false);
-      setNewSms({ ...newSms, rcptnTelno: '', sndngCn: '' });
+      setNewSms((current) => ({ ...current, rcptnTelno: '', sndngCn: '' }));
       queryClient.invalidateQueries({ queryKey: ['sms-list'] });
     },
-    onError: (err: any) => {
-      toast(err.message || 'SMS 전송에 실패했습니다.', 'error');
+    onError: (err: unknown) => {
+      toast(err instanceof Error ? err.message : 'SMS 전송에 실패했습니다.', 'error');
     }
   });
 
@@ -85,7 +91,7 @@ export default function SmsHubClient({
       header: 'ID',
       accessor: (item) => (
         <span className="text-xs font-bold text-muted-foreground tracking-tighter">
-          #{item.smsId?.substring(0, 8).toUpperCase()}
+          #{item.smsTrsmSn ?? '-'}
         </span>
       )
     },
@@ -97,7 +103,7 @@ export default function SmsHubClient({
             <Phone size={16} />
           </div>
           <span className="text-sm font-bold text-foreground tracking-tighter">
-            {item.rcptnTelno}
+            {item.recipients?.[0]?.rcptnTelno ?? '-'}
           </span>
         </div>
       )
@@ -114,7 +120,7 @@ export default function SmsHubClient({
       header: 'TIMESTAMP',
       accessor: (item) => (
         <div className="flex items-center gap-3 text-muted-foreground/40 font-bold text-xs tracking-tight">
-          <Clock size={14} /> {item.crtDt || item.trnsmitPnttm || '-'}
+          <Clock size={14} /> {item.crtDt ?? '-'}
         </div>
       )
     },
@@ -311,7 +317,7 @@ export default function SmsHubClient({
                         loading={isLoading}
                         error={error as Error | null}
                         onRetry={() => refetch()}
-                        keyField="smsId"
+                        keyField="smsTrsmSn"
                         emptyMessage="검색된 메시지 발송 내역이 존재하지 않습니다."
                         isPremium={true}
                         className="border-none shadow-none bg-transparent"

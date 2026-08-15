@@ -27,19 +27,24 @@ class WebLogRepositoryTest extends PersistenceTestSupport {
     void searchWebLogs() {
         // given
         WebLog log = WebLog.builder()
-                .dmndId("REQ_001")
                 .occrYmd("20240103")
-                .url("/test/url")
+                .url("/test/first")
                 .dmndUserIpAddr("127.0.0.1")
                 .build();
         webLogRepository.save(log);
+        WebLog newerLog = WebLog.builder()
+                .occrYmd("20240103")
+                .url("/test/second")
+                .dmndUserIpAddr("127.0.0.2")
+                .build();
+        webLogRepository.save(newerLog);
 
         // when
         Page<WebLog> result = webLogRepository.searchWebLogs("test", "2024-01-01", "2024-01-31", PageRequest.of(0, 10));
 
         // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getDmndId()).isEqualTo("REQ_001");
+        assertThat(result.getContent()).extracting(WebLog::getWebLogSn)
+                .containsExactly(newerLog.getWebLogSn(), log.getWebLogSn());
     }
 
     @Test
@@ -47,11 +52,12 @@ class WebLogRepositoryTest extends PersistenceTestSupport {
     void deleteOldLogs() {
         // given
         WebLog oldLog = WebLog.builder()
-                .dmndId("REQ_OLD")
                 .occrYmd("20200101")
                 .build();
         webLogRepository.save(oldLog);
         entityManager.flush();
+        Long oldLogSn = oldLog.getWebLogSn();
+        assertThat(oldLogSn).isPositive();
         entityManager.clear();
 
         // when
@@ -60,6 +66,6 @@ class WebLogRepositoryTest extends PersistenceTestSupport {
         entityManager.clear();
 
         // then
-        assertThat(webLogRepository.findById("REQ_OLD")).isEmpty();
+        assertThat(webLogRepository.findById(oldLogSn)).isEmpty();
     }
 }

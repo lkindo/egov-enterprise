@@ -37,9 +37,10 @@ public class CmmnCodeDto {
     @Size(max = 100)
     private String clsfCdNm;
 
-    @Schema(description = "사용여부")
+    @Schema(description = "사용여부", allowableValues = {"Y", "N"})
     @Size(max = 1)
     @NotBlank
+    @Pattern(regexp = "^(?:Y|N)$")
     private String useYn;
 
     @Schema(description = "최초등록자 ID")

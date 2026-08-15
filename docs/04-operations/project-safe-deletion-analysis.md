@@ -152,7 +152,7 @@
 
 | 파일 | 실제 배선 |
 |---|---|
-| `frontend/src/i18n/request.ts` | `next.config.ts:5` `createNextIntlPlugin('./src/i18n/request.ts')` — next-intl **규약 배선**. import 그래프에 안 나타난다 |
+| ~~`frontend/src/i18n/request.ts`~~ | 당시에는 next-intl 규약 배선이라 위양성이었다. **2026-08-15 ADR-0002로 한국어 UI를 확정한 뒤 플러그인과 함께 의도적으로 제거** |
 | `frontend/src/config/project-modules.ts` | 재사용 base **매니페스트 SSOT**. `reusable-base-guide.md:108`·`getting-started.md:111` 이 계약으로 규정 |
 
 ### 7.4 삭제 보류 (0-참조이나 의도적 보존)

@@ -61,10 +61,10 @@ describe('promotionActions', () => {
     it("mode='edit' 는 PUT 으로 해당 id 만 덮어쓴다", async () => {
       const data = { bnnrNm: '수정배너' } as never;
 
-      const result = await saveBannerAction(null, { mode: 'edit', data, id: 'B7' });
+      const result = await saveBannerAction(null, { mode: 'edit', data, id: 7 });
 
       // 분기가 뒤집히면 수정이 신규 등록이 되어 **배너가 중복 노출**된다.
-      expect(client.put).toHaveBeenCalledWith('/admin/system/banners/B7', data, AUTH);
+      expect(client.put).toHaveBeenCalledWith('/admin/system/banners/7', data, AUTH);
       expect(client.post).not.toHaveBeenCalled();
       expect(result.message).toBe('배너가 수정되었습니다.');
     });
@@ -99,15 +99,15 @@ describe('promotionActions', () => {
 
   describe('배너 삭제', () => {
     it('id 로 삭제하고 관리자 화면을 재검증한다', async () => {
-      const result = await deleteBannerAction(null, 'B7');
+      const result = await deleteBannerAction(null, 7);
 
-      expect(client.delete).toHaveBeenCalledWith('/admin/system/banners/B7', AUTH);
+      expect(client.delete).toHaveBeenCalledWith('/admin/system/banners/7', AUTH);
       expect(revalidatePath).toHaveBeenCalledWith(ADMIN_PATH);
       expect(result.success).toBe(true);
     });
 
     it("삭제도 공개 경로('/')를 재검증한다 — 지운 배너가 첫 화면에 남으면 안 된다", async () => {
-      await deleteBannerAction(null, 'B7');
+      await deleteBannerAction(null, 7);
 
       // [2026-08-09 정정] 종전에는 저장만 '/' 를 재검증하고 삭제는 하지 않는 비대칭이 있었다.
       //   그래서 배너를 지워도 공개 첫 화면에는 캐시가 만료될 때까지 계속 보였다.
@@ -118,7 +118,7 @@ describe('promotionActions', () => {
     it('삭제 실패는 메시지로 돌려준다', async () => {
       vi.mocked(client.delete).mockRejectedValueOnce({});
 
-      const result = await deleteBannerAction(null, 'B7');
+      const result = await deleteBannerAction(null, 7);
 
       expect(result).toEqual({ success: false, message: '삭제 중 오류 발생' });
     });
@@ -132,8 +132,8 @@ describe('promotionActions', () => {
       vi.clearAllMocks();
       withToken('TOKEN-123');
 
-      await savePopupAction(null, { mode: 'edit', data: {} as never, id: 'P3' });
-      expect(client.put).toHaveBeenCalledWith('/admin/system/popups/P3', {}, AUTH);
+      await savePopupAction(null, { mode: 'edit', data: {} as never, id: 3 });
+      expect(client.put).toHaveBeenCalledWith('/admin/system/popups/3', {}, AUTH);
       expect(client.post).not.toHaveBeenCalled();
     });
 
@@ -144,9 +144,9 @@ describe('promotionActions', () => {
     });
 
     it('팝업 삭제도 공개 경로를 재검증한다', async () => {
-      await deletePopupAction(null, 'P3');
+      await deletePopupAction(null, 3);
 
-      expect(client.delete).toHaveBeenCalledWith('/admin/system/popups/P3', AUTH);
+      expect(client.delete).toHaveBeenCalledWith('/admin/system/popups/3', AUTH);
       expect(revalidatePath).toHaveBeenCalledWith(ADMIN_PATH);
       expect(revalidatePath).toHaveBeenCalledWith('/');
     });

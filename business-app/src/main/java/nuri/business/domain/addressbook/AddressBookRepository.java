@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public interface AddressBookRepository extends JpaRepository<AddressBook, String>, AddressBookRepositoryCustom {
+public interface AddressBookRepository extends JpaRepository<AddressBook, Long>, AddressBookRepositoryCustom {
     List<AddressBook> findByUseYn(String useYn);
 
     // legacy

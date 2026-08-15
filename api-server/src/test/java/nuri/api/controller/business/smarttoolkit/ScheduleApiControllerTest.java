@@ -32,7 +32,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
     @DisplayName("일정 목록 조회 성공")
     void getScheduleList_Success() throws Exception {
         // Given
-        Page<ScheduleDto> page = new PageImpl<>(List.of(ScheduleDto.builder().schdlId("SCH1").schdlNm("Meeting").build()));
+        Page<ScheduleDto> page = new PageImpl<>(List.of(ScheduleDto.builder().schdlSn(1L).schdlNm("Meeting").build()));
         given(egovScheduleService.getScheduleList(anyString(), nullable(String.class), any(PageRequest.class))).willReturn(page);
 
         // When & Then
@@ -42,14 +42,14 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].schdlId").value("SCH1"));
+                .andExpect(jsonPath("$.data.list[0].schdlSn").value(1));
     }
 
     @Test
     @DisplayName("월간 일정 조회 성공")
     void getMonthlySchedule_Success() throws Exception {
         // Given
-        given(egovScheduleService.getMonthlySchedule(anyString(), anyString())).willReturn(List.of(ScheduleDto.builder().schdlId("SCH1").build()));
+        given(egovScheduleService.getMonthlySchedule(anyString(), anyString())).willReturn(List.of(ScheduleDto.builder().schdlSn(1L).build()));
 
         // When & Then
         mockMvc.perform(get("/api/v1/schedules/monthly")
@@ -57,7 +57,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].schdlId").value("SCH1"));
+                .andExpect(jsonPath("$.data[0].schdlSn").value(1));
     }
 
     @Test
@@ -65,7 +65,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
     void getDeptScheduleList_Success() throws Exception {
         // Given
         setMockUser("USER_01");
-        Page<ScheduleDto> page = new PageImpl<>(List.of(ScheduleDto.builder().schdlId("SCH2").schdlNm("Dept Meeting").build()));
+        Page<ScheduleDto> page = new PageImpl<>(List.of(ScheduleDto.builder().schdlSn(2L).schdlNm("Dept Meeting").build()));
         given(egovScheduleService.getDeptScheduleList(eq("1"), eq("USER_01"), nullable(String.class), any(PageRequest.class))).willReturn(page);
 
         // When & Then
@@ -75,7 +75,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].schdlId").value("SCH2"));
+                .andExpect(jsonPath("$.data.list[0].schdlSn").value(2));
         
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
@@ -86,7 +86,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
         // Given
         setMockUser("USER_01");
         given(egovScheduleService.getScheduleListByDateRange(eq("USER_01"), eq("2023-10-01"), eq("2023-10-31")))
-                .willReturn(List.of(ScheduleDto.builder().schdlId("SCH3").build()));
+                .willReturn(List.of(ScheduleDto.builder().schdlSn(3L).build()));
 
         // When & Then
         mockMvc.perform(get("/api/v1/schedules/range")
@@ -95,7 +95,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].schdlId").value("SCH3"));
+                .andExpect(jsonPath("$.data[0].schdlSn").value(3));
 
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
@@ -104,14 +104,14 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
     @DisplayName("일정 상세 조회 성공")
     void getSchedule_Success() throws Exception {
         // Given
-        given(egovScheduleService.getSchedule("SCH_ID")).willReturn(ScheduleDto.builder().schdlId("SCH_ID").schdlNm("Detail").build());
+        given(egovScheduleService.getSchedule(1L)).willReturn(ScheduleDto.builder().schdlSn(1L).schdlNm("Detail").build());
 
         // When & Then
-        mockMvc.perform(get("/api/v1/schedules/SCH_ID")
+        mockMvc.perform(get("/api/v1/schedules/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.schdlId").value("SCH_ID"));
+                .andExpect(jsonPath("$.data.schdlSn").value(1));
     }
 
     @Test
@@ -120,7 +120,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
         // Given
         setMockUser("USER_01");
         ScheduleDto dto = ScheduleDto.builder().schdlNm("New Schedule").build();
-        given(egovScheduleService.createSchedule(eq("USER_01"), any(ScheduleDto.class))).willReturn("NEW_SCH_ID");
+        given(egovScheduleService.createSchedule(eq("USER_01"), any(ScheduleDto.class))).willReturn(4L);
 
         // When & Then
         mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/schedules")
@@ -129,7 +129,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value("NEW_SCH_ID"));
+                .andExpect(jsonPath("$.data").value(4));
 
         org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
@@ -146,7 +146,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
         ScheduleDto dto = ScheduleDto.builder().schdlNm("Update Title").build();
 
         // When & Then
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/schedules/SCH_ID")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/schedules/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto))
                 .accept(MediaType.APPLICATION_JSON))
@@ -163,7 +163,7 @@ class ScheduleApiControllerTest extends ControllerTestSupport {
         setMockUser("USER_01");
 
         // When & Then
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/schedules/SCH_ID")
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete("/api/v1/schedules/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

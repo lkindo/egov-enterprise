@@ -4,7 +4,7 @@
  */
 
 export interface paths {
-    "/api/v1/work-reports/{rptId}": {
+    "/api/v1/work-reports/{rptpSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -67,7 +67,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/scraps/{scrapId}": {
+    "/api/v1/scraps/{scrapSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -86,7 +86,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/schedules/{id}": {
+    "/api/v1/schedules/{schdlSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -114,7 +114,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/polls/{pollId}": {
+    "/api/v1/polls/{pollSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -142,7 +142,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/memo-reports/{rptId}": {
+    "/api/v1/memo-reports/{memoRptSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -226,7 +226,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/help/manuals/{mnlId}": {
+    "/api/v1/help/manuals/{onlnMnlSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -254,7 +254,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/help/hpcm/{hpcmId}": {
+    "/api/v1/help/hpcm/{hlpSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -282,7 +282,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/dept-jobs/{deptTaskId}": {
+    "/api/v1/dept-jobs/{deptTaskSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -310,7 +310,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/dept-jobs/boxes/{deptJobbxId}": {
+    "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -354,7 +354,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -382,7 +382,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -406,7 +406,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/bbs/{bbsId}/posts/{pstId}": {
+    "/api/v1/bbs/{bbsId}/posts/{pstSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -442,7 +442,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/workspace/mypage/contents/{id}": {
+    "/api/v1/admin/system/workspace/mypage/contents/{contsSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -506,7 +506,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}/respondents/{respondentId}": {
+    "/api/v1/admin/system/surveys/{srvySn}/respondents/{respondentId}": {
         parameters: {
             query?: never;
             header?: never;
@@ -525,7 +525,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}/questions/{srvyQitemId}": {
+    "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -543,7 +543,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}/questions/{srvyQitemId}": {
+    "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -561,7 +561,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}": {
+    "/api/v1/admin/system/surveys/{srvySn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -580,7 +580,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}": {
+    "/api/v1/surveys/{srvySn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -599,7 +599,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/templates/{tmpltId}": {
+    "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -618,7 +618,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/templates/{tmpltId}": {
+    "/api/v1/surveys/templates/{srvyTmpltSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -637,7 +637,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -655,7 +655,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/surveys/questions/items/{srvyArtclSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -720,7 +720,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/popups/{popupId}": {
+    "/api/v1/admin/system/popups/{popupSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -861,7 +861,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/isg/{id}": {
+    "/api/v1/admin/system/isg/{itntSrvcSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1074,7 +1074,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/banners/{bannerId}": {
+    "/api/v1/admin/system/banners/{bnrSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1130,7 +1130,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/operation/events/{eventId}": {
+    "/api/v1/admin/operation/events/{evntSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1158,7 +1158,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/content/community/{cmntyId}": {
+    "/api/v1/admin/content/community/{cmntySn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1186,7 +1186,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/address-books/{adbkId}": {
+    "/api/v1/address-books/{adbkSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1252,7 +1252,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}/responses": {
+    "/api/v1/surveys/{srvySn}/responses": {
         parameters: {
             query?: never;
             header?: never;
@@ -1338,7 +1338,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/polls/{pollId}/vote/{pollIemId}": {
+    "/api/v1/polls/{pollSn}/vote/{pollArtclSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -1372,8 +1372,8 @@ export interface paths {
         get: operations["getNotifications"];
         put?: never;
         /**
-         * 알림 등록 (관리자용)
-         * @description 시스템 공지 알림을 직접 등록합니다.
+         * 개인 알림 등록
+         * @description 로그인한 사용자 본인의 알림을 등록합니다.
          */
         post: operations["createNotification"];
         delete?: never;
@@ -1577,7 +1577,7 @@ export interface paths {
         put?: never;
         /**
          * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         * @description 여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.
          */
         post: operations["uploadFiles"];
         delete?: never;
@@ -1597,7 +1597,7 @@ export interface paths {
         put?: never;
         /**
          * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         * @description 여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.
          */
         post: operations["uploadFiles_1"];
         delete?: never;
@@ -1617,7 +1617,7 @@ export interface paths {
         put?: never;
         /**
          * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         * @description 여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.
          */
         post: operations["uploadFiles_2"];
         delete?: never;
@@ -1637,7 +1637,7 @@ export interface paths {
         put?: never;
         /**
          * 파일 업로드
-         * @description 여러 파일을 업로드하고 통합 파일 ID를 반환합니다.
+         * @description 여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.
          */
         post: operations["uploadFiles_3"];
         delete?: never;
@@ -1694,7 +1694,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/communities/{cmntyId}/join": {
+    "/api/v1/communities/{cmntySn}/join": {
         parameters: {
             query?: never;
             header?: never;
@@ -1730,7 +1730,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1938,7 +1938,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}/respondents": {
+    "/api/v1/admin/system/surveys/{srvySn}/respondents": {
         parameters: {
             query?: never;
             header?: never;
@@ -1959,7 +1959,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/{srvyId}/questions": {
+    "/api/v1/admin/system/surveys/{srvySn}/questions": {
         parameters: {
             query?: never;
             header?: never;
@@ -1977,7 +1977,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}/questions": {
+    "/api/v1/surveys/{srvySn}/questions": {
         parameters: {
             query?: never;
             header?: never;
@@ -2031,7 +2031,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/surveys/questions/{srvyQitemId}/items": {
+    "/api/v1/admin/system/surveys/questions/{srvyQstnSn}/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -2048,7 +2048,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/questions/{srvyQitemId}/items": {
+    "/api/v1/surveys/questions/{srvyQstnSn}/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -2189,7 +2189,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/polls/{pollId}/vote": {
+    "/api/v1/admin/system/polls/{pollSn}/vote": {
         parameters: {
             query?: never;
             header?: never;
@@ -2732,7 +2732,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/memo-reports/{rptId}/instr-cn": {
+    "/api/v1/memo-reports/{memoRptSn}/instr-cn": {
         parameters: {
             query?: never;
             header?: never;
@@ -2792,7 +2792,7 @@ export interface paths {
         patch: operations["confirmInformalSanction_1"];
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}/like": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/like": {
         parameters: {
             query?: never;
             header?: never;
@@ -2934,7 +2934,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/surveys/{srvyId}/stats": {
+    "/api/v1/surveys/{srvySn}/stats": {
         parameters: {
             query?: never;
             header?: never;
@@ -3054,7 +3054,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/popups/{popupId}": {
+    "/api/v1/popups/{popupSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3094,7 +3094,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/polls/{pollId}/items": {
+    "/api/v1/polls/{pollSn}/items": {
         parameters: {
             query?: never;
             header?: never;
@@ -3158,7 +3158,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/notes/{noteId}": {
+    "/api/v1/notes/{noteSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3292,7 +3292,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/mails/{mssageId}": {
+    "/api/v1/mails/{emlDsptchSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3336,7 +3336,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/files/{atchFileId}/{fileSn}": {
+    "/api/v1/files/{atchFileSn}/{fileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3356,7 +3356,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/system/files/{atchFileSn}/{fileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3376,7 +3376,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/content/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/content/files/{atchFileSn}/{fileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3396,7 +3396,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/operation/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3416,7 +3416,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/files/{atchFileId}": {
+    "/api/v1/files/{atchFileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3425,7 +3425,7 @@ export interface paths {
         };
         /**
          * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         * @description 첨부파일 일련번호에 속한 파일 목록을 조회합니다.
          */
         get: operations["getFileList"];
         put?: never;
@@ -3436,7 +3436,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/files/{atchFileId}": {
+    "/api/v1/admin/system/files/{atchFileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3445,7 +3445,7 @@ export interface paths {
         };
         /**
          * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         * @description 첨부파일 일련번호에 속한 파일 목록을 조회합니다.
          */
         get: operations["getFileList_1"];
         put?: never;
@@ -3456,7 +3456,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/content/files/{atchFileId}": {
+    "/api/v1/admin/content/files/{atchFileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3465,7 +3465,7 @@ export interface paths {
         };
         /**
          * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         * @description 첨부파일 일련번호에 속한 파일 목록을 조회합니다.
          */
         get: operations["getFileList_2"];
         put?: never;
@@ -3476,7 +3476,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/operation/files/{atchFileId}": {
+    "/api/v1/admin/operation/files/{atchFileSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3485,7 +3485,7 @@ export interface paths {
         };
         /**
          * 파일 목록 조회
-         * @description 통합 파일 ID에 속한 파일 목록을 조회합니다.
+         * @description 첨부파일 일련번호에 속한 파일 목록을 조회합니다.
          */
         get: operations["getFileList_3"];
         put?: never;
@@ -3536,7 +3536,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/communities/{cmntyId}": {
+    "/api/v1/communities/{cmntySn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3596,7 +3596,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/average": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/average": {
         parameters: {
             query?: never;
             header?: never;
@@ -3743,7 +3743,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/survey-responses/{srvyRspnsId}": {
+    "/api/v1/admin/system/survey-responses/{srvyRspnsSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -3866,7 +3866,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/polls/{pollId}": {
+    "/api/v1/admin/system/polls/{pollSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4000,7 +4000,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/logs/system/{requestId}": {
+    "/api/v1/admin/system/logs/system/{sysLogSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4054,7 +4054,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/system/logs/login/{logId}": {
+    "/api/v1/admin/system/logs/login/{lgnSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4239,7 +4239,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/operation/sms/{smsId}": {
+    "/api/v1/admin/operation/sms/{smsTrsmSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4259,7 +4259,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/operation/sms/{smsId}/recipients": {
+    "/api/v1/admin/operation/sms/{smsTrsmSn}/recipients": {
         parameters: {
             query?: never;
             header?: never;
@@ -4336,7 +4336,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/notes/{relationId}": {
+    "/api/v1/notes/{relationSn}": {
         parameters: {
             query?: never;
             header?: never;
@@ -4356,7 +4356,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}/moderate": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}/moderate": {
         parameters: {
             query?: never;
             header?: never;
@@ -4418,12 +4418,14 @@ export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         WorkReportDto: {
-            rptId?: string;
+            /** Format: int64 */
+            rptpSn?: number;
             rptTtl?: string;
             rptCn?: string;
             rptSeCd?: string;
             userId?: string;
-            atchFileId?: string;
+            /** Format: int64 */
+            atchFileSn?: number;
             rptSttsCd?: string;
             rptYmd?: string;
             rptTypeCd?: string;
@@ -4484,9 +4486,11 @@ export interface components {
             newPassword: string;
         };
         ScrapDto: {
-            scrapId?: string;
+            /** Format: int64 */
+            scrapSn?: number;
             bbsId?: string;
-            pstId?: string;
+            /** Format: int64 */
+            pstSn?: number;
             scrapNm?: string;
             scrapUrl?: string;
             scrapExpln?: string;
@@ -4497,7 +4501,8 @@ export interface components {
             crtDt?: string;
         };
         ScheduleDto: {
-            schdlId?: string;
+            /** Format: int64 */
+            schdlSn?: number;
             schdlSeCd?: string;
             schdlNm: string;
             schdlCn?: string;
@@ -4506,7 +4511,8 @@ export interface components {
             schdlEndYmd?: string;
             schdlIpAddr?: string;
             schdlPicId?: string;
-            atchFileId?: string;
+            /** Format: int64 */
+            atchFileSn?: number;
             frstRgtrId?: string;
             /** Format: date-time */
             crtDt?: string;
@@ -4520,10 +4526,16 @@ export interface components {
         };
         /** @description 온라인 설문 항목 DTO (표준화) */
         OnlinePollArticleDto: {
-            /** @description 설문 항목 ID */
-            pollArtclId?: string;
-            /** @description 설문 ID */
-            pollId?: string;
+            /**
+             * Format: int64
+             * @description 설문 항목 일련번호
+             */
+            pollArtclSn?: number;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            pollSn?: number;
             /** @description 설문 항목 명 */
             pollArtclNm: string;
             /**
@@ -4541,8 +4553,11 @@ export interface components {
         };
         /** @description 온라인 설문 관리 DTO (표준화) */
         OnlinePollManageDto: {
-            /** @description 설문 ID */
-            pollId?: string;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            pollSn?: number;
             /** @description 설문 제목 */
             pollNm: string;
             /** @description 설문 시작일 */
@@ -4567,8 +4582,11 @@ export interface components {
         };
         /** @description 메모보고 정보 */
         MemoReportDto: {
-            /** @description 보고아이디 */
-            rptId?: string;
+            /**
+             * Format: int64
+             * @description 메모보고일련번호
+             */
+            memoRptSn?: number;
             /** @description 보고제목 */
             rptTtl?: string;
             /** @description 보고일자 */
@@ -4583,8 +4601,11 @@ export interface components {
             rptrNm?: string;
             /** @description 보고내용 */
             rptCn?: string;
-            /** @description 첨부파일아이디 */
-            atchFileId?: string;
+            /**
+             * Format: int64
+             * @description 첨부파일아이디
+             */
+            atchFileSn?: number;
             /** @description 지시사항내용 */
             drctnMttr?: string;
             /**
@@ -4605,8 +4626,12 @@ export interface components {
         };
         /** @description 비정형 결재 DTO (표준화) */
         InformalSanctionDto: {
-            /** @description 비정형 결재 ID */
-            ifmlAtrzId?: string;
+            /**
+             * Format: int64
+             * @description 비정형 결재 일련번호
+             * @example 1
+             */
+            ifmlAtrzSn?: number;
             /** @description 업무 구분 코드 */
             taskSeCd: string;
             /** @description 업무 구분 명 */
@@ -4642,8 +4667,12 @@ export interface components {
         };
         /** @description 온라인 메뉴얼 DTO */
         OnlineManualDto: {
-            /** @description 온라인 메뉴얼 ID */
-            onlnMnlId?: string;
+            /**
+             * Format: int64
+             * @description 온라인 메뉴얼 일련번호
+             * @example 1
+             */
+            onlnMnlSn?: number;
             /** @description 온라인 메뉴얼 명 */
             onlnMnlNm: string;
             /** @description 온라인 메뉴얼 구분코드 */
@@ -4662,8 +4691,12 @@ export interface components {
         };
         /** @description Description */
         HpcmDto: {
-            /** @description 도움말 ID */
-            hlpId: string;
+            /**
+             * Format: int64
+             * @description 도움말 일련번호
+             * @example 1
+             */
+            hlpSn?: number;
             /** @description 도움말 구분코드 */
             hlpSeCd: string;
             /** @description 도움말 정의 */
@@ -4679,8 +4712,10 @@ export interface components {
             crtDt?: string;
         };
         DeptJobDto: {
-            deptTaskId?: string;
-            deptTaskBoxId?: string;
+            /** Format: int64 */
+            deptTaskSn?: number;
+            /** Format: int64 */
+            deptTaskBoxSn?: number;
             deptTaskBoxNm?: string;
             deptId?: string;
             deptNm?: string;
@@ -4689,7 +4724,8 @@ export interface components {
             picId?: string;
             picNm?: string;
             prrtyRnk?: string;
-            atchFileId?: string;
+            /** Format: int64 */
+            atchFileSn?: number;
             frstRgtrId?: string;
             /** Format: date-time */
             crtDt?: string;
@@ -4698,7 +4734,8 @@ export interface components {
             mdfcnDt?: string;
         };
         DeptJobBoxDto: {
-            deptTaskBoxId?: string;
+            /** Format: int64 */
+            deptTaskBoxSn?: number;
             deptTaskBoxNm?: string;
             deptId?: string;
             deptNm?: string;
@@ -4714,7 +4751,8 @@ export interface components {
         CommentDto: {
             /** Format: int64 */
             ansSn?: number;
-            pstId?: string;
+            /** Format: int64 */
+            pstSn?: number;
             bbsId?: string;
             wrterId?: string;
             wrterNm?: string;
@@ -4734,8 +4772,11 @@ export interface components {
             pstBgngYmd?: string;
             /** @description 게시 종료일자 */
             pstEndYmd?: string;
-            /** @description 첨부파일 ID */
-            atchFileId?: string;
+            /**
+             * Format: int64
+             * @description 첨부파일 일련번호
+             */
+            atchFileSn?: number;
             /** @description 행사 일자 */
             evntDt?: string;
             /** @description Q&A 상태 코드 (OPEN/SOLVED) */
@@ -4753,7 +4794,8 @@ export interface components {
             /** Format: int64 */
             dgstfnSn?: number;
             bbsId?: string;
-            pstId?: string;
+            /** Format: int64 */
+            pstSn?: number;
             dgstfnCn?: string;
             /** Format: int32 */
             dgstfnScr?: number;
@@ -4765,10 +4807,11 @@ export interface components {
             crtDt?: string;
         };
         MyPageContentDto: {
-            cntntsId?: string;
+            /** Format: int64 */
+            contsSn?: number;
             cntntsNm?: string;
             cntcUrl?: string;
-            cntntsUseAt?: string;
+            cntntsUseYn?: string;
             cntntsLinkUrl?: string;
             cntntsDc?: string;
         };
@@ -4780,10 +4823,16 @@ export interface components {
         SurveyRespondentDto: {
             /** @description 설문 응답자 ID */
             srvyRspdntId?: string;
-            /** @description 설문 ID */
-            srvyId: string;
-            /** @description 설문 템플릿 ID */
-            srvyTmpltId?: string;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            srvySn?: number;
+            /**
+             * Format: int64
+             * @description 설문 템플릿 일련번호
+             */
+            srvyTmpltSn?: number;
             /** @description 성별 코드 */
             gndrCd?: string;
             /** @description 직업 유형 코드 */
@@ -4815,12 +4864,21 @@ export interface components {
         };
         /** @description 설문항목 DTO (표준화) */
         SurveyArticleDto: {
-            /** @description 설문 항목 ID */
-            srvyArtclId: string;
-            /** @description 설문 문항 ID */
-            srvyQstnId: string;
-            /** @description 설문 ID */
-            srvyId: string;
+            /**
+             * Format: int64
+             * @description 설문 항목 일련번호
+             */
+            srvyArtclSn?: number;
+            /**
+             * Format: int64
+             * @description 설문 문항 일련번호
+             */
+            srvyQstnSn?: number;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            srvySn?: number;
             /**
              * Format: int64
              * @description 항목 순번
@@ -4830,8 +4888,11 @@ export interface components {
             artclCn?: string;
             /** @description 기타 답변 여부 */
             etcAnsYn?: string;
-            /** @description 설문 템플릿 ID */
-            srvyTmpltId?: string;
+            /**
+             * Format: int64
+             * @description 설문 템플릿 일련번호
+             */
+            srvyTmpltSn?: number;
             /** @description 등록자 ID */
             frstRgtrId?: string;
             /**
@@ -4842,10 +4903,16 @@ export interface components {
         };
         /** @description 설문문항 DTO (표준화) */
         SurveyQuestionDto: {
-            /** @description 설문 문항 ID */
-            srvyQstnId: string;
-            /** @description 설문 ID */
-            srvyId: string;
+            /**
+             * Format: int64
+             * @description 설문 문항 일련번호
+             */
+            srvyQstnSn?: number;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            srvySn?: number;
             /**
              * Format: int64
              * @description 질문 순번
@@ -4860,8 +4927,11 @@ export interface components {
              * @description 최대 선택 수
              */
             maxChcCnt?: number;
-            /** @description 설문 템플릿 ID */
-            srvyTmpltId?: string;
+            /**
+             * Format: int64
+             * @description 설문 템플릿 일련번호
+             */
+            srvyTmpltSn?: number;
             /** @description 등록자 ID */
             frstRgtrId?: string;
             /**
@@ -4874,8 +4944,11 @@ export interface components {
         };
         /** @description 설문정보 DTO (표준화) */
         SurveyInfoDto: {
-            /** @description 설문 ID */
-            srvyId: string;
+            /**
+             * Format: int64
+             * @description 설문 일련번호
+             */
+            srvySn?: number;
             /** @description 설문 제목 */
             srvyTtl: string;
             /** @description 설문 목적 */
@@ -4888,8 +4961,11 @@ export interface components {
             srvyEndYmd?: string;
             /** @description 설문 대상 */
             srvyTrgt?: string;
-            /** @description 설문 템플릿 ID */
-            srvyTmpltId?: string;
+            /**
+             * Format: int64
+             * @description 설문 템플릿 일련번호
+             */
+            srvyTmpltSn: number;
             /** @description 등록자 ID */
             frstRgtrId?: string;
             /**
@@ -4900,8 +4976,11 @@ export interface components {
         };
         /** @description 설문템플릿 DTO (표준화) */
         SurveyTemplateDto: {
-            /** @description 설문 템플릿 ID */
-            srvyTmpltId?: string;
+            /**
+             * Format: int64
+             * @description 설문 템플릿 일련번호
+             */
+            srvyTmpltSn?: number;
             /** @description 설문 템플릿 유형 코드 */
             srvyTmpltTypeCd?: string;
             /** @description 설문 템플릿 이미지 경로 명 */
@@ -4969,8 +5048,12 @@ export interface components {
         };
         /** @description 팝업 정보 DTO */
         PopupDto: {
-            /** @description 팝업 ID */
-            popupId?: string;
+            /**
+             * Format: int64
+             * @description 팝업 일련번호
+             * @example 1
+             */
+            popupSn?: number;
             /** @description 팝업 제목 */
             popupTtlNm: string;
             /** @description 파일 URL */
@@ -4987,10 +5070,16 @@ export interface components {
             ntceBgnde?: string;
             /** @description 게시 종료일 */
             ntceEndde?: string;
-            /** @description 그만보기 여부 */
-            stopvewSetupYn?: string;
-            /** @description 게시 여부 */
-            ntceYn?: string;
+            /**
+             * @description 그만보기 여부
+             * @enum {string}
+             */
+            stopvewSetupYn?: "Y" | "N";
+            /**
+             * @description 게시 여부
+             * @enum {string}
+             */
+            ntceYn?: "Y" | "N";
             /** @description 생성자 ID */
             frstRgtrId?: string;
             /**
@@ -5110,7 +5199,8 @@ export interface components {
             lastMdfrId?: string;
         };
         InternetSvcGuidanceDto: {
-            intnetSvcId?: string;
+            /** Format: int64 */
+            itntSrvcSn?: number;
             intnetSvcNm: string;
             intnetSvcDc: string;
             reflctAt?: string;
@@ -5159,8 +5249,11 @@ export interface components {
             dtlCdNm?: string;
             /** @description 상세코드설명 */
             dtlCdExpln?: string;
-            /** @description 사용여부 */
-            useYn: string;
+            /**
+             * @description 사용여부
+             * @enum {string}
+             */
+            useYn: "Y" | "N";
             /** @description 최초등록자 ID */
             frstRgtrId?: string;
             /** @description 최종수정자 ID */
@@ -5178,8 +5271,11 @@ export interface components {
             clsfCd?: string;
             /** @description 분류코드명 */
             clsfCdNm?: string;
-            /** @description 사용여부 */
-            useYn: string;
+            /**
+             * @description 사용여부
+             * @enum {string}
+             */
+            useYn: "Y" | "N";
             /** @description 최초등록자 ID */
             frstRgtrId?: string;
             /** @description 최종수정자 ID */
@@ -5200,8 +5296,11 @@ export interface components {
             clsfCdNm?: string;
             /** @description 분류코드설명 */
             clsfCdExpln?: string;
-            /** @description 사용여부 */
-            useYn: string;
+            /**
+             * @description 사용여부
+             * @enum {string}
+             */
+            useYn: "Y" | "N";
             /** @description 최초등록자 ID */
             frstRgtrId?: string;
             /** @description 최종수정자 ID */
@@ -5246,8 +5345,10 @@ export interface components {
             bbsTypeCdNm?: string;
             bbsAtrbCd: string;
             bbsAtrbCdNm?: string;
-            ansPsbltyYn?: string;
-            fileAtchPsbltyYn?: string;
+            /** @enum {string} */
+            ansPsbltyYn?: "Y" | "N";
+            /** @enum {string} */
+            fileAtchPsbltyYn?: "Y" | "N";
             /** Format: int32 */
             atchPsbltyFileQty?: number;
             /** Format: int64 */
@@ -5259,19 +5360,28 @@ export interface components {
             lastMdfrId?: string;
             /** Format: date-time */
             mdfcnDt?: string;
-            useYn: string;
-            cmntyId?: string;
-            blogId?: string;
-            blogYn?: string;
-            ansYn?: string;
-            stsfdgYn?: string;
+            /** @enum {string} */
+            useYn: "Y" | "N";
+            /** Format: int64 */
+            cmntySn?: number;
+            /** Format: int64 */
+            blogSn?: number;
+            /** @enum {string} */
+            blogYn?: "Y" | "N";
+            /** @enum {string} */
+            ansYn?: "Y" | "N";
+            /** @enum {string} */
+            stsfdgYn?: "Y" | "N";
             authFlag?: string;
             tmplatCours?: string;
         };
         /** @description 배너 정보 */
         BannerDto: {
-            /** @description 배너 ID */
-            bnrId?: string;
+            /**
+             * Format: int64
+             * @description 배너 일련번호
+             */
+            bnrSn?: number;
             /** @description 배너 명칭 */
             bnrNm: string;
             /** @description 링크 URL */
@@ -5285,10 +5395,16 @@ export interface components {
              * @description 정렬 순서
              */
             sortOrdr?: number;
-            /** @description 반영 여부 */
-            rfltYn?: string;
-            /** @description 배너 이미지 파일 ID */
-            atchFileId?: string;
+            /**
+             * @description 반영 여부
+             * @enum {string}
+             */
+            rfltYn?: "Y" | "N";
+            /**
+             * Format: int64
+             * @description 배너 이미지 첨부파일 일련번호
+             */
+            atchFileSn?: number;
             /** @description 생성자 ID */
             frstRgtrId?: string;
             /**
@@ -5323,10 +5439,11 @@ export interface components {
         /** @description 행사 정보 상세 DTO */
         EventInfoDto: {
             /**
-             * @description 행사 ID
-             * @example EVT_1716611000000
+             * Format: int64
+             * @description 행사 내부 일련번호
+             * @example 1
              */
-            evntId?: string;
+            evntSn?: number;
             /**
              * @description 행사 명칭
              * @example 사내 인공지능 해커톤 캠페인
@@ -5405,22 +5522,31 @@ export interface components {
             mdfcnDt?: string;
         };
         CommunityDto: {
-            cmntyId?: string;
+            /** Format: int64 */
+            cmntySn?: number;
             cmntyNm?: string;
             cmntyIntroCn?: string;
             regSeCd?: string;
             regSeCdNm?: string;
             tmpltId?: string;
             tmpltNm?: string;
-            useYn: string;
+            /**
+             * @description 사용 여부
+             * @enum {string}
+             */
+            useYn: "Y" | "N";
             frstRgtrId?: string;
             frstRegisterNm?: string;
             crtDt?: string;
         };
         /** @description 주소록 정보 DTO */
         AddressBookDto: {
-            /** @description 주소록 ID */
-            adbkId?: string;
+            /**
+             * Format: int64
+             * @description 주소록 일련번호
+             * @example 1
+             */
+            adbkSn?: number;
             /**
              * @description 주소록 명칭
              * @example 마케팅팀 주소록
@@ -5466,15 +5592,17 @@ export interface components {
         /** @description 주소록 연락처 정보 DTO */
         AddressBookUserDto: {
             /**
-             * @description 주소록 구성원 ID
-             * @example ADBKU_0000000000001
+             * Format: int64
+             * @description 주소록 회원 일련번호
+             * @example 1
              */
-            adbkConstntId?: string;
+            adbkMbrSn?: number;
             /**
-             * @description 주소록 ID
-             * @example ADBK_000000000000001
+             * Format: int64
+             * @description 주소록 일련번호
+             * @example 1
              */
-            adbkId: string;
+            adbkSn?: number;
             /**
              * @description 사용자 ID
              * @example USRCNFRM_00000000001
@@ -5555,10 +5683,16 @@ export interface components {
         };
         /** @description 문항별 답변 */
         Answer: {
-            /** @description 문항 ID */
-            srvyQstnId: string;
-            /** @description 항목 ID */
-            srvyArtclId: string;
+            /**
+             * Format: int64
+             * @description 문항 일련번호
+             */
+            srvyQstnSn: number;
+            /**
+             * Format: int64
+             * @description 항목 일련번호
+             */
+            srvyArtclSn: number;
             /** @description 응답 내용 */
             rspdntAnsCn?: string;
             /** @description 기타 답변 */
@@ -5586,21 +5720,25 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        ApiResponseString: {
+        ApiResponseLong: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: string;
+            /** Format: int64 */
+            data?: number;
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 사용자 알림 DTO */
         NotificationDto: {
-            /** @description 알림 일련번호 */
-            notiSn?: string;
+            /**
+             * Format: int64
+             * @description 알림 일련번호
+             */
+            notiSn?: number;
             /** @description 알림 제목 */
             notiTtlNm?: string;
             /** @description 알림 내용 */
@@ -5626,22 +5764,34 @@ export interface components {
         };
         /** @description 쪽지 정보 */
         NoteDto: {
-            /** @description 쪽지 ID */
-            noteId?: string;
+            /**
+             * Format: int64
+             * @description 쪽지 일련번호
+             */
+            noteSn?: number;
             /** @description 제목 */
             noteSj?: string;
             /** @description 내용 */
             noteCn?: string;
-            /** @description 첨부 파일 ID */
-            atchFileId?: string;
-            /** @description 쪽지 발신 ID */
-            noteDsptchId?: string;
+            /**
+             * Format: int64
+             * @description 첨부파일 일련번호
+             */
+            atchFileSn?: number;
+            /**
+             * Format: int64
+             * @description 쪽지 발송 일련번호
+             */
+            noteSndngSn?: number;
             /** @description 발신자 ID */
             dsptchUserId?: string;
             /** @description 발신자 명 */
             trnsmiterNm?: string;
-            /** @description 쪽지 수신 ID */
-            noteRecptnId?: string;
+            /**
+             * Format: int64
+             * @description 쪽지 수신 일련번호
+             */
+            noteRcptnSn?: number;
             /** @description 수신자 ID */
             rcverId?: string;
             /** @description 수신자 명 */
@@ -5665,8 +5815,11 @@ export interface components {
         };
         /** @description 쪽지 수신자 정보 DTO */
         NoteRecipientDto: {
-            /** @description 쪽지 수신 ID */
-            noteRecptnId: string;
+            /**
+             * Format: int64
+             * @description 쪽지 수신 일련번호
+             */
+            noteRcptnSn: number;
             /** @description 수신자 ID */
             rcverId: string;
             /** @description 수신자 명 */
@@ -5676,8 +5829,11 @@ export interface components {
         };
         /** @description Description */
         SentMailDto: {
-            /** @description Description */
-            mssageId?: string;
+            /**
+             * Format: int64
+             * @description Description
+             */
+            emlDsptchSn?: number;
             /** @description Description */
             sj?: string;
             /** @description Description */
@@ -5690,20 +5846,11 @@ export interface components {
             sndngResultCode?: string;
             /** @description Description */
             sndngDe?: string;
-            /** @description Description */
-            atchFileId?: string;
-        };
-        ApiResponseLong: {
-            success?: boolean;
-            /** Format: int32 */
-            status?: number;
-            code?: string;
-            message?: string;
-            /** Format: int64 */
-            data?: number;
-            /** Format: date-time */
-            timestamp?: string;
-            errors?: components["schemas"]["FieldErrorItem"][];
+            /**
+             * Format: int64
+             * @description Description
+             */
+            atchFileSn?: number;
         };
         ApiResponseTokenResponse: {
             success?: boolean;
@@ -5728,6 +5875,17 @@ export interface components {
              * @example ROLE_USER
              */
             role?: string;
+        };
+        ApiResponseString: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: string;
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         /** @description 로그인 요청 DTO */
         LoginRequest: {
@@ -5888,8 +6046,11 @@ export interface components {
         };
         /** @description SMS 데이터 전송 객체 */
         SmsDto: {
-            /** @description SMS ID */
-            smsId?: string;
+            /**
+             * Format: int64
+             * @description SMS 전송 일련번호
+             */
+            smsTrsmSn?: number;
             /** @description 발신 번호 */
             sndngTelno?: string;
             /** @description 발신 내용 */
@@ -5915,8 +6076,11 @@ export interface components {
         };
         /** @description SMS 수신 정보 DTO */
         SmsRecptnDto: {
-            /** @description SMS ID */
-            smsId?: string;
+            /**
+             * Format: int64
+             * @description SMS 전송 일련번호
+             */
+            smsTrsmSn?: number;
             /** @description 수신 번호 */
             rcptnTelno?: string;
             /** @description 결과 코드 (P:대기, S:성공, F:실패) */
@@ -5925,7 +6089,8 @@ export interface components {
             rsltMsg?: string;
         };
         RewardManageDto: {
-            rwardId?: string;
+            /** Format: int64 */
+            rwrdSn?: number;
             rwardwnrId?: string;
             rwardCode?: string;
             rwardDe?: string;
@@ -5936,8 +6101,10 @@ export interface components {
             /** Format: date-time */
             sanctnDt?: string;
             returnResn?: string;
-            atchFileId?: string;
-            informlSanctnId?: string;
+            /** Format: int64 */
+            atchFileSn?: number;
+            /** Format: int64 */
+            ifmlAtrzSn?: number;
             frstRgtrId?: string;
             /** Format: date-time */
             crtDt?: string;
@@ -5957,8 +6124,9 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         ExternalHrDto: {
-            evntId?: string;
-            otsdHrId?: string;
+            /** Format: int64 */
+            evntSn: number;
+            otsdHrId: string;
             gndrCd?: string;
             otsdHrNm?: string;
             crTypeCd?: string;
@@ -6098,10 +6266,12 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         SurveyStatsDto: {
-            srvyQstnId?: string;
+            /** Format: int64 */
+            srvyQstnSn?: number;
             qstnCn?: string;
             qstnTypeCd?: string;
-            srvyArtclId?: string;
+            /** Format: int64 */
+            srvyArtclSn?: number;
             artclCn?: string;
             /** Format: int64 */
             count?: number;
@@ -6555,7 +6725,8 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         FileDto: {
-            atchFileId?: string;
+            /** Format: int64 */
+            atchFileSn?: number;
             /** Format: int32 */
             fileSn?: number;
             fileStreCours?: string;
@@ -6690,8 +6861,11 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         BoardDto: {
-            /** @description 게시글 ID */
-            pstId?: string;
+            /**
+             * Format: int64
+             * @description 게시글 ID
+             */
+            pstSn?: number;
             /** @description 게시판 ID */
             bbsId?: string;
             /**
@@ -6703,8 +6877,11 @@ export interface components {
             pstTtl?: string;
             /** @description 내용 */
             pstCn?: string;
-            /** @description 상위 게시글 ID */
-            upPstId?: string;
+            /**
+             * Format: int64
+             * @description 상위 게시글 ID
+             */
+            upPstSn?: number;
             /**
              * Format: int64
              * @description 정렬 순서
@@ -6729,12 +6906,18 @@ export interface components {
             userNm?: string;
             /** @description 비밀번호 */
             pswd?: string;
-            /** @description 첨부파일 ID */
-            atchFileId?: string;
+            /**
+             * Format: int64
+             * @description 첨부파일 일련번호
+             */
+            atchFileSn?: number;
             /** @description 비밀글 여부 */
             scrtYn?: string;
-            /** @description 블로그 ID */
-            blogId?: string;
+            /**
+             * Format: int64
+             * @description 블로그 일련번호
+             */
+            blogSn?: number;
             /**
              * Format: date-time
              * @description 행사일
@@ -7120,11 +7303,16 @@ export interface components {
             totalPage?: number;
         };
         SurveyResultDto: {
-            srvyRspnsId?: string;
-            srvyId?: string;
-            srvyTmpltId?: string;
-            srvyQstnId?: string;
-            srvyArtclId?: string;
+            /** Format: int64 */
+            srvyRspnsSn?: number;
+            /** Format: int64 */
+            srvySn?: number;
+            /** Format: int64 */
+            srvyTmpltSn?: number;
+            /** Format: int64 */
+            srvyQstnSn?: number;
+            /** Format: int64 */
+            srvyArtclSn?: number;
             rspdntAnsCn?: string;
             rspnsNm?: string;
             etcAnsCn?: string;
@@ -7441,7 +7629,8 @@ export interface components {
             totalPage?: number;
         };
         WebLogDto: {
-            dmndId?: string;
+            /** Format: int64 */
+            webLogSn?: number;
             url?: string;
             dmndUserId?: string;
             dmndUserIpAddr?: string;
@@ -7513,6 +7702,8 @@ export interface components {
             totalPage?: number;
         };
         SysLogDto: {
+            /** Format: int64 */
+            sysLogSn?: number;
             dmndId?: string;
             srvcNm?: string;
             methodNm?: string;
@@ -7556,6 +7747,8 @@ export interface components {
             totalPage?: number;
         };
         PrivacyLogDto: {
+            /** Format: int64 */
+            prvcLogSn?: number;
             dmndId?: string;
             /** Format: date-time */
             inqDt?: string;
@@ -7576,7 +7769,8 @@ export interface components {
             errors?: components["schemas"]["FieldErrorItem"][];
         };
         LoginLogDto: {
-            logId?: string;
+            /** Format: int64 */
+            lgnSn?: number;
             loginId?: string;
             loginIp?: string;
             loginMthd?: string;
@@ -8351,7 +8545,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                rptpSn: number;
             };
             cookie?: never;
         };
@@ -8373,7 +8567,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                rptpSn: number;
             };
             cookie?: never;
         };
@@ -8399,7 +8593,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                rptpSn: number;
             };
             cookie?: never;
         };
@@ -8489,7 +8683,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scrapId: string;
+                scrapSn: number;
             };
             cookie?: never;
         };
@@ -8511,7 +8705,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scrapId: string;
+                scrapSn: number;
             };
             cookie?: never;
         };
@@ -8537,7 +8731,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                scrapId: string;
+                scrapSn: number;
             };
             cookie?: never;
         };
@@ -8559,7 +8753,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                schdlSn: number;
             };
             cookie?: never;
         };
@@ -8581,7 +8775,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                schdlSn: number;
             };
             cookie?: never;
         };
@@ -8607,7 +8801,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                schdlSn: number;
             };
             cookie?: never;
         };
@@ -8629,8 +8823,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 설문 ID */
-                pollId: string;
+                /** @description 설문 일련번호 */
+                pollSn: number;
             };
             cookie?: never;
         };
@@ -8652,7 +8846,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                pollId: string;
+                pollSn: number;
             };
             cookie?: never;
         };
@@ -8678,7 +8872,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                pollId: string;
+                pollSn: number;
             };
             cookie?: never;
         };
@@ -8700,8 +8894,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 보고 ID */
-                rptId: string;
+                /** @description 메모보고 일련번호 */
+                memoRptSn: number;
             };
             cookie?: never;
         };
@@ -8723,7 +8917,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                memoRptSn: number;
             };
             cookie?: never;
         };
@@ -8749,7 +8943,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                memoRptSn: number;
             };
             cookie?: never;
         };
@@ -8771,8 +8965,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -8794,8 +8988,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -8821,8 +9015,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -8844,8 +9038,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -8867,8 +9061,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -8894,8 +9088,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -8917,8 +9111,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 매뉴얼 ID */
-                mnlId: string;
+                /** @description 매뉴얼 일련번호 */
+                onlnMnlSn: number;
             };
             cookie?: never;
         };
@@ -8940,7 +9134,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                mnlId: string;
+                onlnMnlSn: number;
             };
             cookie?: never;
         };
@@ -8966,7 +9160,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                mnlId: string;
+                onlnMnlSn: number;
             };
             cookie?: never;
         };
@@ -8988,8 +9182,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 도움말 ID */
-                hpcmId: string;
+                /** @description 도움말 일련번호 */
+                hlpSn: number;
             };
             cookie?: never;
         };
@@ -9011,7 +9205,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                hpcmId: string;
+                hlpSn: number;
             };
             cookie?: never;
         };
@@ -9037,7 +9231,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                hpcmId: string;
+                hlpSn: number;
             };
             cookie?: never;
         };
@@ -9059,7 +9253,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptTaskId: string;
+                deptTaskSn: number;
             };
             cookie?: never;
         };
@@ -9081,7 +9275,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptTaskId: string;
+                deptTaskSn: number;
             };
             cookie?: never;
         };
@@ -9107,7 +9301,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptTaskId: string;
+                deptTaskSn: number;
             };
             cookie?: never;
         };
@@ -9129,7 +9323,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptJobbxId: string;
+                deptTaskBoxSn: number;
             };
             cookie?: never;
         };
@@ -9151,7 +9345,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptJobbxId: string;
+                deptTaskBoxSn: number;
             };
             cookie?: never;
         };
@@ -9177,7 +9371,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                deptJobbxId: string;
+                deptTaskBoxSn: number;
             };
             cookie?: never;
         };
@@ -9256,7 +9450,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -9287,7 +9481,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -9322,7 +9516,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -9345,7 +9539,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
                 dgstfnSn: number;
             };
             cookie?: never;
@@ -9375,7 +9569,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
                 dgstfnSn: number;
             };
             cookie?: never;
@@ -9399,7 +9593,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -9422,7 +9616,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -9452,7 +9646,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -9474,7 +9668,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                id: number;
             };
             cookie?: never;
         };
@@ -9502,7 +9696,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                contsSn: number;
             };
             cookie?: never;
         };
@@ -9528,7 +9722,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                contsSn: number;
             };
             cookie?: never;
         };
@@ -9670,7 +9864,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
                 respondentId: string;
             };
             cookie?: never;
@@ -9693,7 +9887,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
                 respondentId: string;
             };
             cookie?: never;
@@ -9720,7 +9914,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
                 respondentId: string;
             };
             cookie?: never;
@@ -9743,8 +9937,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
-                srvyQitemId: string;
+                srvySn: number;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -9770,7 +9964,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyQitemId: string;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -9792,8 +9986,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
-                srvyQitemId: string;
+                srvySn: number;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -9819,7 +10013,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyQitemId: string;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -9841,7 +10035,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -9863,7 +10057,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -9889,7 +10083,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -9911,7 +10105,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -9933,7 +10127,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -9959,7 +10153,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -9981,7 +10175,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10003,7 +10197,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10029,7 +10223,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10051,7 +10245,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10073,7 +10267,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10099,7 +10293,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                tmpltId: string;
+                srvyTmpltSn: number;
             };
             cookie?: never;
         };
@@ -10121,7 +10315,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyItemId: string;
+                srvyArtclSn: number;
             };
             cookie?: never;
         };
@@ -10147,7 +10341,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyItemId: string;
+                srvyArtclSn: number;
             };
             cookie?: never;
         };
@@ -10169,7 +10363,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyItemId: string;
+                srvyArtclSn: number;
             };
             cookie?: never;
         };
@@ -10195,7 +10389,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyItemId: string;
+                srvyArtclSn: number;
             };
             cookie?: never;
         };
@@ -10357,8 +10551,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
-                popupId: string;
+                /** @description 팝업 일련번호 */
+                popupSn: number;
             };
             cookie?: never;
         };
@@ -10380,8 +10574,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
-                popupId: string;
+                /** @description 팝업 일련번호 */
+                popupSn: number;
             };
             cookie?: never;
         };
@@ -10407,8 +10601,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
-                popupId: string;
+                /** @description 팝업 일련번호 */
+                popupSn: number;
             };
             cookie?: never;
         };
@@ -10716,7 +10910,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                itntSrvcSn: number;
             };
             cookie?: never;
         };
@@ -10738,7 +10932,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                itntSrvcSn: number;
             };
             cookie?: never;
         };
@@ -10764,7 +10958,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                itntSrvcSn: number;
             };
             cookie?: never;
         };
@@ -11329,8 +11523,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 배너 ID */
-                bannerId: string;
+                /** @description 배너 일련번호 */
+                bnrSn: number;
             };
             cookie?: never;
         };
@@ -11352,7 +11546,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                bannerId: string;
+                bnrSn: number;
             };
             cookie?: never;
         };
@@ -11378,7 +11572,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                bannerId: string;
+                bnrSn: number;
             };
             cookie?: never;
         };
@@ -11471,10 +11665,10 @@ export interface operations {
             header?: never;
             path: {
                 /**
-                 * @description 행사 ID
-                 * @example EVT_12345678
+                 * @description 행사 일련번호
+                 * @example 1
                  */
-                eventId: string;
+                evntSn: number;
             };
             cookie?: never;
         };
@@ -11496,7 +11690,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                eventId: string;
+                evntSn: number;
             };
             cookie?: never;
         };
@@ -11522,7 +11716,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                eventId: string;
+                evntSn: number;
             };
             cookie?: never;
         };
@@ -11544,8 +11738,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 커뮤니티 ID */
-                cmntyId: string;
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
             };
             cookie?: never;
         };
@@ -11567,8 +11761,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 커뮤니티 ID */
-                cmntyId: string;
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
             };
             cookie?: never;
         };
@@ -11594,8 +11788,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 커뮤니티 ID */
-                cmntyId: string;
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
             };
             cookie?: never;
         };
@@ -11617,8 +11811,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소록 ID */
-                adbkId: string;
+                /** @description 주소록 일련번호 */
+                adbkSn: number;
             };
             cookie?: never;
         };
@@ -11640,8 +11834,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소록 ID */
-                adbkId: string;
+                /** @description 주소록 일련번호 */
+                adbkSn: number;
             };
             cookie?: never;
         };
@@ -11667,8 +11861,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 주소록 ID */
-                adbkId: string;
+                /** @description 주소록 일련번호 */
+                adbkSn: number;
             };
             cookie?: never;
         };
@@ -11770,7 +11964,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -11833,7 +12027,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -11881,7 +12075,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -11943,8 +12137,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                pollId: string;
-                pollIemId: string;
+                pollSn: number;
+                pollArtclSn: number;
             };
             cookie?: never;
         };
@@ -12009,7 +12203,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12019,7 +12213,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                notiSn: string;
+                notiSn: number;
             };
             cookie?: never;
         };
@@ -12107,7 +12301,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12160,7 +12354,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12212,7 +12406,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12264,7 +12458,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12316,7 +12510,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12368,7 +12562,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12394,7 +12588,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12420,7 +12614,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12446,7 +12640,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12472,7 +12666,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12481,7 +12675,7 @@ export interface operations {
         parameters: {
             query?: {
                 deptId?: string;
-                deptJobbxId?: string;
+                deptTaskBoxSn?: number;
                 searchCondition?: string;
                 searchWrd?: string;
                 scope?: string;
@@ -12524,7 +12718,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12573,7 +12767,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12583,7 +12777,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                cmntyId: string;
+                cmntySn: number;
             };
             cookie?: never;
         };
@@ -12603,7 +12797,7 @@ export interface operations {
     getComments: {
         parameters: {
             query: {
-                pstId: string;
+                pstSn: number;
                 bbsId: string;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
@@ -12659,7 +12853,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -12682,7 +12876,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -12722,7 +12916,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12782,7 +12976,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -12894,7 +13088,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -13112,7 +13306,7 @@ export interface operations {
             };
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13134,7 +13328,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13160,7 +13354,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13182,7 +13376,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13208,7 +13402,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13230,7 +13424,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -13360,7 +13554,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyQitemId: string;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -13386,7 +13580,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyQitemId: string;
+                srvyQstnSn: number;
             };
             cookie?: never;
         };
@@ -13694,7 +13888,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -13754,11 +13948,11 @@ export interface operations {
     vote_1: {
         parameters: {
             query: {
-                pollIemId: string;
+                pollArtclSn: number;
             };
             header?: never;
             path: {
-                pollId: string;
+                pollSn: number;
             };
             cookie?: never;
         };
@@ -13982,7 +14176,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -14533,7 +14727,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseVoid"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -14726,7 +14920,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -14882,7 +15076,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseString"];
+                    "application/json": components["schemas"]["ApiResponseLong"];
                 };
             };
         };
@@ -14999,7 +15193,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                rptId: string;
+                memoRptSn: number;
             };
             cookie?: never;
         };
@@ -15028,8 +15222,8 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -15054,8 +15248,8 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description 결재 ID */
-                informalSanctionId: string;
+                /** @description 결재 일련번호 */
+                informalSanctionId: number;
             };
             cookie?: never;
         };
@@ -15086,7 +15280,7 @@ export interface operations {
                  * @description 게시글 ID
                  * @example 1
                  */
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -15251,7 +15445,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyId: string;
+                srvySn: number;
             };
             cookie?: never;
         };
@@ -15385,8 +15579,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 팝업 ID */
-                popupId: string;
+                /** @description 팝업 일련번호 */
+                popupSn: number;
             };
             cookie?: never;
         };
@@ -15428,7 +15622,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                pollId: string;
+                pollSn: number;
             };
             cookie?: never;
         };
@@ -15450,7 +15644,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                notiSn: string;
+                notiSn: number;
             };
             cookie?: never;
         };
@@ -15472,7 +15666,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                notiSn: string;
+                notiSn: number;
             };
             cookie?: never;
         };
@@ -15514,13 +15708,13 @@ export interface operations {
             query: {
                 /** @description 쪽지 구분 (recv: 수신, sent: 발신) */
                 type: string;
-                /** @description 관계 ID (수신ID 또는 발신ID) */
-                relationId: string;
+                /** @description 관계 일련번호 (수신 또는 발송) */
+                relationSn: number;
             };
             header?: never;
             path: {
-                /** @description 쪽지 ID */
-                noteId: string;
+                /** @description 쪽지 일련번호 */
+                noteSn: number;
             };
             cookie?: never;
         };
@@ -15694,8 +15888,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 메시지 ID */
-                mssageId: string;
+                /** @description 이메일 발신 일련번호 */
+                emlDsptchSn: number;
             };
             cookie?: never;
         };
@@ -15717,7 +15911,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                mssageId: string;
+                emlDsptchSn: number;
             };
             cookie?: never;
         };
@@ -15759,7 +15953,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
                 fileSn: number;
             };
             cookie?: never;
@@ -15782,7 +15976,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
                 fileSn: number;
             };
             cookie?: never;
@@ -15805,7 +15999,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
                 fileSn: number;
             };
             cookie?: never;
@@ -15828,7 +16022,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
                 fileSn: number;
             };
             cookie?: never;
@@ -15851,7 +16045,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
             };
             cookie?: never;
         };
@@ -15873,7 +16067,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
             };
             cookie?: never;
         };
@@ -15895,7 +16089,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
             };
             cookie?: never;
         };
@@ -15917,7 +16111,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                atchFileId: string;
+                atchFileSn: number;
             };
             cookie?: never;
         };
@@ -15988,8 +16182,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description 커뮤니티 ID */
-                cmntyId: string;
+                /** @description 커뮤니티 일련번호 */
+                cmntySn: number;
             };
             cookie?: never;
         };
@@ -16078,7 +16272,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
             };
             cookie?: never;
         };
@@ -16264,7 +16458,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyRspnsId: string;
+                srvyRspnsSn: number;
             };
             cookie?: never;
         };
@@ -16286,7 +16480,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                srvyRspnsId: string;
+                srvyRspnsSn: number;
             };
             cookie?: never;
         };
@@ -16444,7 +16638,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                pollId: string;
+                pollSn: number;
             };
             cookie?: never;
         };
@@ -16634,7 +16828,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                requestId: string;
+                sysLogSn: number;
             };
             cookie?: never;
         };
@@ -16720,7 +16914,7 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                logId: string;
+                lgnSn: number;
             };
             cookie?: never;
         };
@@ -16980,8 +17174,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description SMS ID */
-                smsId: string;
+                /** @description SMS 전송 일련번호 */
+                smsTrsmSn: number;
             };
             cookie?: never;
         };
@@ -17003,8 +17197,8 @@ export interface operations {
             query?: never;
             header?: never;
             path: {
-                /** @description SMS ID */
-                smsId: string;
+                /** @description SMS 전송 일련번호 */
+                smsTrsmSn: number;
             };
             cookie?: never;
         };
@@ -17046,7 +17240,7 @@ export interface operations {
             query?: {
                 searchKeyword?: string;
                 bbsId?: string;
-                pstId?: string;
+                pstSn?: number;
                 /** @description Zero-based page index (0..N) */
                 page?: number;
                 /** @description The size of the page to be returned */
@@ -17107,8 +17301,8 @@ export interface operations {
             };
             header?: never;
             path: {
-                /** @description 관계 ID */
-                relationId: string;
+                /** @description 관계 일련번호 */
+                relationSn: number;
             };
             cookie?: never;
         };
@@ -17131,7 +17325,7 @@ export interface operations {
             header?: never;
             path: {
                 bbsId: string;
-                pstId: string;
+                pstSn: number;
                 dgstfnSn: number;
             };
             cookie?: never;

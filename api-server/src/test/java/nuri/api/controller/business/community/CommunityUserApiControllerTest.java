@@ -37,33 +37,33 @@ class CommunityUserApiControllerTest extends ControllerTestSupport {
     @Test
     @DisplayName("커뮤니티 목록 조회 성공")
     void getCommunities_Success() throws Exception {
-        Page<CommunityDto> page = new PageImpl<>(List.of(CommunityDto.builder().cmntyId("CMM_001").cmntyNm("Test Comm").build()));
+        Page<CommunityDto> page = new PageImpl<>(List.of(CommunityDto.builder().cmntySn(101L).cmntyNm("Test Comm").build()));
         given(communityService.getCommunityList(any(), any(), any(Pageable.class))).willReturn(page);
 
         mockMvc.perform(get("/api/v1/communities")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].cmntyId").value("CMM_001"));
+                .andExpect(jsonPath("$.data.list[0].cmntySn").value(101));
     }
 
     @Test
     @DisplayName("커뮤니티 상세 조회 성공")
     void getCommunity_Success() throws Exception {
-        given(communityService.getCommunity(anyString())).willReturn(CommunityDto.builder().cmntyId("CMM_001").build());
+        given(communityService.getCommunity(anyLong())).willReturn(CommunityDto.builder().cmntySn(101L).build());
 
-        mockMvc.perform(get("/api/v1/communities/CMM_001")
+        mockMvc.perform(get("/api/v1/communities/101")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.cmntyId").value("CMM_001"));
+                .andExpect(jsonPath("$.data.cmntySn").value(101));
     }
 
     @Test
     @WithMockCustomUser(username = "user01", esntlId = "user01")
     @DisplayName("커뮤니티 가입 신청 성공")
     void joinCommunity_Success() throws Exception {
-        mockMvc.perform(post("/api/v1/communities/CMM_001/join")
+        mockMvc.perform(post("/api/v1/communities/101/join")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

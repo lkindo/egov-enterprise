@@ -23,7 +23,7 @@ import type { UserManage } from '@/types/foundation/user';
 
 interface SearchArticle {
     bbsId: string;
-    pstId: string;
+    pstSn: number;
     pstTtl: string;
     pstCn?: string;
     crtDt?: string;
@@ -259,7 +259,7 @@ export const SearchResultsContent = ({
                                 {(activeTab === 'all' || activeTab === 'articles') && results.articles.length > 0 ? (
                                     <ResultSection title="게시글" count={results.articles.length}>
                                         {results.articles.map((item) => (
-                                            <ArticleResultItem key={`${item.bbsId}-${item.pstId}`} item={item} />
+                                            <ArticleResultItem key={`${item.bbsId}-${item.pstSn}`} item={item} />
                                         ))}
                                     </ResultSection>
                                 ) : null}
@@ -323,7 +323,7 @@ function ResultSection({ title, count, children }: { title: string; count: numbe
 
 function ArticleResultItem({ item }: { item: SearchArticle }) {
     return (
-        <Link href={`/admin/community/boards/detail?bbsId=${item.bbsId}&pstId=${item.pstId}`} className="block group">
+        <Link href={`/admin/community/boards/detail?bbsId=${item.bbsId}&pstSn=${item.pstSn}`} className="block group">
             <div className="p-8 bg-card border-2 border-primary/5 rounded-lg shadow-lg group-hover:shadow-xl group-hover:border-primary/20 transition-all group-hover:-translate-y-1">
                 <div className="flex justify-between items-start gap-4 mb-4">
                     <h4 className="text-xl font-bold group-hover:text-primary transition-colors line-clamp-1">

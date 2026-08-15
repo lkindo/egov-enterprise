@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 @Schema(description = "메모보고 정보")
 public class MemoReportDto {
 
-    @Schema(description = "보고아이디")
-    private String rptId;
+    @Schema(description = "메모보고일련번호")
+    private Long memoRptSn;
 
     @Schema(description = "보고제목")
     private String rptTtl;
@@ -42,8 +42,7 @@ public class MemoReportDto {
     private String rptCn;
 
     @Schema(description = "첨부파일아이디")
-    @Size(max = 30)
-    private String atchFileId;
+    private Long atchFileSn;
 
     @Schema(description = "지시사항내용")
     private String drctnMttr;

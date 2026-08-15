@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MyPageContentRepository extends JpaRepository<MyPageContent, String> {
+public interface MyPageContentRepository extends JpaRepository<MyPageContent, Long> {
     List<MyPageContent> findByCntntsUseYn(String cntntsUseYn);
 
 }

@@ -12,8 +12,8 @@ import org.springframework.stereotype.Component;
  * 🔒 첨부파일 <b>도달성 기반 인가</b> 정책.
  *
  * <p>[고친 결함] 종전 {@code FileApiController} 는 클래스레벨 {@code @PreAuthorize("isAuthenticated()")}
- * 뿐이었다. 즉 <b>로그인만 하면 임의의 {@code atchFileId} 로 남의 첨부를 목록 조회·다운로드</b>할 수 있었다
- * (수평 IDOR). {@code atch_file_id} 는 게시글 목록 응답 등으로 자연히 노출되므로 열거가 필요하지도 않았다.
+ * 뿐이었다. 즉 <b>로그인만 하면 임의의 {@code atchFileSn} 로 남의 첨부를 목록 조회·다운로드</b>할 수 있었다
+ * (수평 IDOR). {@code atch_file_sn} 는 게시글 목록 응답 등으로 자연히 노출되므로 열거가 필요하지도 않았다.
  *
  * <p>[판정 표] 위에서부터 먼저 성립하는 것이 결론이다.
  * <ol>
@@ -49,7 +49,7 @@ public class FileAccessPolicy {
      * @throws BusinessException ACCESS_DENIED(403) — 도달 근거가 없을 때
      */
     public void assertReadable(FileMaster master) {
-        String atchFileId = master.getAtchFileId();
+        Long atchFileSn = master.getAtchFileSn();
         String loginId = SecurityUtil.getCurrentLoginId().orElse(null);
         String esntlId = SecurityUtil.getCurrentEsntlId().orElse(null);
 
@@ -63,7 +63,7 @@ public class FileAccessPolicy {
             return;
         }
 
-        AttachmentReferenceResolver.Grants grants = referenceResolver.resolve(atchFileId, loginId, esntlId);
+        AttachmentReferenceResolver.Grants grants = referenceResolver.resolve(atchFileSn, loginId, esntlId);
 
         // 2·3. 소유 근거 또는 공유 근거.
         if (grants.ownerGrant() || grants.sharedGrant()) {
@@ -77,8 +77,8 @@ public class FileAccessPolicy {
             return;
         }
 
-        log.warn("[FileAccess] 첨부 열람 거부 — atchFileId={} loginId={} admin={} personalRef={}",
-                atchFileId, loginId, admin, grants.personalReference());
+        log.warn("[FileAccess] 첨부 열람 거부 — atchFileSn={} loginId={} admin={} personalRef={}",
+                atchFileSn, loginId, admin, grants.personalReference());
         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
     }
 }

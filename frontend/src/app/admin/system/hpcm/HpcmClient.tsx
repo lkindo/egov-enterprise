@@ -29,10 +29,9 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 import { HpcmDtoSchema } from '@/types/generated-zod';
 
 const hpcmSchema = HpcmDtoSchema.extend({
-  hlpId: z.string().optional(),
-  hlpSeCd: z.string().min(1),
-  hlpDfn: z.string().min(1),
-  hlpExpln: z.string().min(1),
+  hlpSeCd: HpcmDtoSchema.shape.hlpSeCd.min(1),
+  hlpDfn: HpcmDtoSchema.shape.hlpDfn.min(1),
+  hlpExpln: HpcmDtoSchema.shape.hlpExpln.min(1),
 });
 
 type HpcmFormValues = z.infer<typeof hpcmSchema>;
@@ -56,13 +55,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
   const onRegisterSubmit = async (values: HpcmFormValues) => {
     try {
       setRegisterLoading(true);
-      const submitData = {
-        ...values,
-        hlpId: `HPCM_${Date.now()}`,
-        frstRgtrId: 'SYSTEM',
-        lastMdfrId: 'SYSTEM',
-      };
-      await hpcmAdminService.createHpcm(submitData as any);
+      await hpcmAdminService.createHpcm(values);
       toast('도움말 콘텐츠가 등록되었습니다.', 'success');
       setIsModalOpen(false);
       form.reset();
@@ -84,9 +77,9 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
           </div>
           <div className="flex flex-col gap-1 text-left">
             <span className="px-3 py-1 bg-muted text-foreground rounded-lg text-xs font-bold tracking-tight border border-border w-fit">
-              {item.hlpSeCd || item.hpcmSe || 'SYSTEM'}
+              {item.hlpSeCd || 'SYSTEM'}
             </span>
-            <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item.hlpDfn || item.hpcmNm}</span>
+            <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item.hlpDfn}</span>
           </div>
         </div>
       )
@@ -95,7 +88,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
       header: 'ID / 레퍼런스',
       accessor: (item) => (
         <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.3em] font-mono ">
-          ID: {item.hlpId || item.hpcmId}
+          SN: {item.hlpSn}
         </span>
       ),
       className: 'w-48'
@@ -104,7 +97,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
       header: '요약 설명',
       accessor: (item) => (
         <p className="text-sm text-muted-foreground font-medium line-clamp-1 max-w-md">
-          {item.hlpExpln || item.hpcmDc || '설명이 존재하지 않는 아카이브입니다.'}
+          {item.hlpExpln || '설명이 존재하지 않는 아카이브입니다.'}
         </p>
       )
     }

@@ -11,14 +11,14 @@ import lombok.*;
 public class DeptJob extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String deptTaskId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long deptTaskSn;
 
-    @Column(name = "dept_task_box_id", length = 20)
-    private String deptTaskBoxId;
+    @Column(name = "dept_task_box_sn")
+    private Long deptTaskBoxSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "dept_task_box_id", referencedColumnName = "dept_task_box_id", insertable = false, updatable = false,
+    @JoinColumn(name = "dept_task_box_sn", referencedColumnName = "dept_task_box_sn", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private DeptJobBox deptJobBox;
 
@@ -33,41 +33,40 @@ public class DeptJob extends BaseEntity {
 
     @Column(length = 12)
     private String prrtyRnk; // 1: 높음, 2: 보통, 3: 낮음
-
-    @Column(name = "atch_file_id", length = 20)
-    private String atchFileId;
+    @Column(name = "atch_file_sn")
+    private Long atchFileSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "atch_file_id", referencedColumnName = "atch_file_id", insertable = false, updatable = false,
+    @JoinColumn(name = "atch_file_sn", referencedColumnName = "atch_file_sn", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.file.FileMaster fileMaster;
 
     // 팩토리 create() 전용 private 생성자 (own 필드 설정)
-    private DeptJob(String deptTaskId, String deptTaskBoxId, String deptTaskNm, String deptTaskCn,
-            String picId, String prrtyRnk, String atchFileId) {
-        this.deptTaskId = deptTaskId;
-        this.deptTaskBoxId = deptTaskBoxId;
+    private DeptJob(Long deptTaskSn, Long deptTaskBoxSn, String deptTaskNm, String deptTaskCn,
+            String picId, String prrtyRnk, Long atchFileSn) {
+        this.deptTaskSn = deptTaskSn;
+        this.deptTaskBoxSn = deptTaskBoxSn;
         this.deptTaskNm = deptTaskNm;
         this.deptTaskCn = deptTaskCn;
         this.picId = picId;
         this.prrtyRnk = prrtyRnk;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
     }
 
     @Builder
-    public static DeptJob create(String deptTaskId, String deptTaskBoxId, String deptTaskNm, String deptTaskCn,
-            String picId, String prrtyRnk, String atchFileId) {
-        return new DeptJob(deptTaskId, deptTaskBoxId, deptTaskNm, deptTaskCn, picId, prrtyRnk, atchFileId);
+    public static DeptJob create(Long deptTaskSn, Long deptTaskBoxSn, String deptTaskNm, String deptTaskCn,
+            String picId, String prrtyRnk, Long atchFileSn) {
+        return new DeptJob(deptTaskSn, deptTaskBoxSn, deptTaskNm, deptTaskCn, picId, prrtyRnk, atchFileSn);
     }
 
-    public void update(String deptTaskBoxId, String deptTaskNm, String deptTaskCn, String picId, String prrtyRnk,
-            String atchFileId) {
-        this.deptTaskBoxId = deptTaskBoxId;
+    public void update(Long deptTaskBoxSn, String deptTaskNm, String deptTaskCn, String picId, String prrtyRnk,
+            Long atchFileSn) {
+        this.deptTaskBoxSn = deptTaskBoxSn;
         this.deptTaskNm = deptTaskNm;
         this.deptTaskCn = deptTaskCn;
         this.picId = picId;
         this.prrtyRnk = prrtyRnk;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
     }
 
     // ----- [Legacy Getter/Setter & Builder Aliases] -----

@@ -49,7 +49,7 @@ public class NotificationApiController {
     @GetMapping("/{notiSn}")
     public ResponseEntity<ApiResponse<NotificationDto>> getNotification(
             @LoginUser CustomUserDetails userDetails,
-            @PathVariable String notiSn) {
+            @PathVariable Long notiSn) {
         return ResponseEntity.ok(ApiResponse.success(
                 notificationService.getNotification(notiSn, userDetails.getUsername())));
     }
@@ -58,14 +58,14 @@ public class NotificationApiController {
     @PostMapping("/{notiSn}/read")
     public ResponseEntity<ApiResponse<Void>> markAsRead(
             @LoginUser CustomUserDetails userDetails,
-            @PathVariable String notiSn) {
+            @PathVariable Long notiSn) {
         notificationService.markAsRead(notiSn, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "개인 알림 등록", description = "로그인한 사용자 본인의 알림을 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createNotification(
+    public ResponseEntity<ApiResponse<Long>> createNotification(
             @LoginUser CustomUserDetails userDetails,
             @Valid @RequestBody NotificationDto request) {
         return ResponseEntity.ok(ApiResponse.success(notificationService.createNotification(userDetails.getUsername(), request)));
@@ -75,7 +75,7 @@ public class NotificationApiController {
     @DeleteMapping("/{notiSn}")
     public ResponseEntity<ApiResponse<Void>> deleteNotification(
             @LoginUser CustomUserDetails userDetails,
-            @PathVariable String notiSn) {
+            @PathVariable Long notiSn) {
         notificationService.deleteNotification(notiSn, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }

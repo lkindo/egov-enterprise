@@ -21,8 +21,8 @@ public class Schedule extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @Id
-    @Column(length = 20)
-    private String schdlId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long schdlSn;
 
     @Column(length = 12)
     private String schdlSeCd;
@@ -48,9 +48,8 @@ public class Schedule extends BaseEntity implements Serializable {
     @Column(length = 20)
     private String schdlPicId;
 
-    // [V2_13] varchar(30)→20 정렬: 파일 마스터 PK(atch_file_id varchar(20))와 도메인 일치 (기존 값 0건 실측)
-    @Column(length = 20)
-    private String atchFileId;
+    // [V2_13] varchar(30)→20 정렬: 파일 마스터 PK(atch_file_sn varchar(20))와 도메인 일치 (기존 값 0건 실측)
+    private Long atchFileSn;
 
     // Additional fields used in service
     @Column(length = 20)
@@ -66,15 +65,15 @@ public class Schedule extends BaseEntity implements Serializable {
      * 일정 생성 정적 팩토리(빌더 진입점). {@code Schedule.builder()...build()} 호출부는 그대로 동작한다.
      */
     @Builder
-    public static Schedule create(String schdlId, String schdlSeCd, String schdlNm, String schdlCn, String reptSeCd,
-            String schdlBgngYmd, String schdlEndYmd, String schdlIpAddr, String schdlPicId, String atchFileId,
+    public static Schedule create(Long schdlSn, String schdlSeCd, String schdlNm, String schdlCn, String reptSeCd,
+            String schdlBgngYmd, String schdlEndYmd, String schdlIpAddr, String schdlPicId, Long atchFileSn,
             String schdlDeptId, String schdlKndCd, String schdlPlcNm, String schdlImprtCd) {
-        return new Schedule(schdlId, schdlSeCd, schdlNm, schdlCn, reptSeCd, schdlBgngYmd, schdlEndYmd, schdlIpAddr,
-                schdlPicId, atchFileId, schdlDeptId, schdlKndCd, schdlPlcNm, schdlImprtCd);
+        return new Schedule(schdlSn, schdlSeCd, schdlNm, schdlCn, reptSeCd, schdlBgngYmd, schdlEndYmd, schdlIpAddr,
+                schdlPicId, atchFileSn, schdlDeptId, schdlKndCd, schdlPlcNm, schdlImprtCd);
     }
 
     public void update(String schdlNm, String schdlCn, String schdlSeCd, String schdlBgngYmd, String schdlEndYmd,
-                       String reptSeCd, String schdlPicId, String atchFileId) {
+                       String reptSeCd, String schdlPicId, Long atchFileSn) {
         this.schdlNm = schdlNm;
         this.schdlCn = schdlCn;
         this.schdlSeCd = schdlSeCd;
@@ -82,7 +81,7 @@ public class Schedule extends BaseEntity implements Serializable {
         this.schdlEndYmd = schdlEndYmd;
         this.reptSeCd = reptSeCd;
         this.schdlPicId = schdlPicId;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
     }
 
     public void updateAll(String schdlNm, String schdlCn, String schdlSeCd, String schdlKndCd, String schdlBgngYmd, String schdlEndYmd,

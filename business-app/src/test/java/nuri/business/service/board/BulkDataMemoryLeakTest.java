@@ -39,7 +39,7 @@ class BulkDataMemoryLeakTest {
     private BoardMasterRepository boardMasterRepository;
 
     private String testBbsId;
-    private List<String> createdPstIds = new ArrayList<>();
+    private List<Long> createdPstSns = new ArrayList<>();
 
     @BeforeEach
     void setUp() {
@@ -58,8 +58,8 @@ class BulkDataMemoryLeakTest {
     @AfterEach
     void tearDown() {
         // 대용량 DB 테스트 찌꺼기 완벽 소거
-        if (!createdPstIds.isEmpty()) {
-            boardRepository.deleteAllById(createdPstIds);
+        if (!createdPstSns.isEmpty()) {
+            boardRepository.deleteAllById(createdPstSns);
         }
         boardMasterRepository.deleteById(testBbsId);
     }
@@ -80,9 +80,7 @@ class BulkDataMemoryLeakTest {
         int bulkSize = 30000;
         List<Board> bulkList = new ArrayList<>(bulkSize);
         for (int i = 0; i < bulkSize; i++) {
-            String pstId = "PST_M_" + String.format("%06d", i) + "_" + UUID.randomUUID().toString().substring(0, 4);
             Board board = Board.builder()
-                    .pstId(pstId)
                     .bbsId(testBbsId)
                     .pstTtl("벌크 테스트 제목 " + i)
                     .pstCn("벌크 테스트 내용 상세 기술 " + i)
@@ -93,12 +91,12 @@ class BulkDataMemoryLeakTest {
                     .inqCnt(0)
                     .build();
             bulkList.add(board);
-            createdPstIds.add(pstId);
         }
 
         // 3. JPA 벌크 삽입 프로세싱 모사 (메모리 로딩 & 청크 영속성 상태)
-        boardRepository.saveAll(bulkList);
+        List<Board> savedBoards = boardRepository.saveAll(bulkList);
         boardRepository.flush();
+        savedBoards.stream().map(Board::getPstSn).forEach(createdPstSns::add);
 
         // 4. 대용량 컬렉션 참조 해제 (힙에서 수거될 수 있도록 명시적 클리어)
         bulkList.clear();

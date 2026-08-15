@@ -9,14 +9,14 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 @Repository
-public interface BoardRepository extends JpaRepository<Board, String>, BoardRepositoryCustom {
+public interface BoardRepository extends JpaRepository<Board, Long>, BoardRepositoryCustom {
         @Override
         @NonNull
-        Optional<Board> findById(@NonNull String id);
+        Optional<Board> findById(@NonNull Long id);
 
         @Override
         @Transactional
-        void deleteById(@NonNull String id);
+        void deleteById(@NonNull Long id);
 
         /**
          * 게시판 내 최대 정렬순번. <b>네이티브 쿼리인 이유가 핵심이다.</b>
@@ -39,11 +39,8 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
                         nativeQuery = true)
         Long findMaxAnsSn(@Param("bbsId") String bbsId, @Param("sortOrdr") Long sortOrdr);
 
-        @Query("SELECT b FROM Board b WHERE b.pstId = :pstId")
-        Optional<Board> findByPstId(@Param("pstId") String pstId);
-
-        @Query(value = "SELECT nextval('sq_pst_id')", nativeQuery = true)
-        Long getNextPstId();
+        @Query("SELECT b FROM Board b WHERE b.pstSn = :pstSn")
+        Optional<Board> findByPstSn(@Param("pstSn") Long pstSn);
 
         long countByBbsIdAndUseYn(String bbsId, String useYn);
 
@@ -57,8 +54,8 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
         String findTopContributorByBbsIdAndUseYn(@Param("bbsId") String bbsId, @Param("useYn") String useYn);
 
         @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
-        @Query("SELECT b FROM Board b WHERE b.pstId = :pstId")
-        Optional<Board> findByPstIdWithPessimisticLock(@Param("pstId") String pstId);
+        @Query("SELECT b FROM Board b WHERE b.pstSn = :pstSn")
+        Optional<Board> findByPstSnWithPessimisticLock(@Param("pstSn") Long pstSn);
 
         /**
          * 좋아요 수 원자 증가. [W1-17 배선 완료]
@@ -81,9 +78,9 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
         @org.springframework.transaction.annotation.Transactional
         @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
         @Query(value = "UPDATE tb_bbs_item SET like_cnt = COALESCE(like_cnt, 0) + 1 "
-                        + "WHERE pst_id = :pstId AND use_yn = 'Y'",
+                        + "WHERE pst_sn = :pstSn AND use_yn = 'Y'",
                         nativeQuery = true)
-        int incrementLikeCntAtomic(@Param("pstId") String pstId);
+        int incrementLikeCntAtomic(@Param("pstSn") Long pstSn);
 
         /**
          * 조회수 원자 증가. [W1-17]
@@ -103,9 +100,9 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
          */
         @org.springframework.transaction.annotation.Transactional
         @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
-        @Query(value = "UPDATE tb_bbs_item SET inq_cnt = COALESCE(inq_cnt, 0) + :delta WHERE pst_id = :pstId",
+        @Query(value = "UPDATE tb_bbs_item SET inq_cnt = COALESCE(inq_cnt, 0) + :delta WHERE pst_sn = :pstSn",
                         nativeQuery = true)
-        int increaseInqCntAtomic(@Param("pstId") String pstId, @Param("delta") int delta);
+        int increaseInqCntAtomic(@Param("pstSn") Long pstSn, @Param("delta") int delta);
 
         /**
          * 댓글 수 동기화. [W1-D5]
@@ -127,8 +124,8 @@ public interface BoardRepository extends JpaRepository<Board, String>, BoardRepo
          */
         @org.springframework.transaction.annotation.Transactional
         @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
-        @Query(value = "UPDATE tb_bbs_item SET cmnt_cnt = :cnt WHERE pst_id = :pstId", nativeQuery = true)
-        int syncCmntCntAtomic(@Param("pstId") String pstId, @Param("cnt") int cnt);
+        @Query(value = "UPDATE tb_bbs_item SET cmnt_cnt = :cnt WHERE pst_sn = :pstSn", nativeQuery = true)
+        int syncCmntCntAtomic(@Param("pstSn") Long pstSn, @Param("cnt") int cnt);
 
         // [V2_12 결속] 사용자 삭제 시 게시글 저자를 시스템 계정으로 재귀속 — 콘텐츠 보존 정책
         // (fk_tb_bbs_item_tb_user_info NO ACTION 하에서 저자 행 삭제 전 필수)

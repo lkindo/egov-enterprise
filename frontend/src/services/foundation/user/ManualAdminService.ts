@@ -7,7 +7,7 @@ import { AxiosRequestConfig } from 'axios';
  * 온라인 매뉴얼 DTO
  */
 export interface ManualDto {
-  onlnMnlId?: string; // 온라인매뉴얼ID
+  onlnMnlSn?: number; // 온라인매뉴얼일련번호
   onlnMnlNm: string; // 온라인매뉴얼명
   onlnMnlExpln: string; // 온라인매뉴얼설명
   onlnMnlDfn: string; // 온라인매뉴얼경로(정의)
@@ -36,11 +36,11 @@ class ManualAdminService extends ApiService {
 
   /**
    * 온라인 매뉴얼 상세 조회
-   * @param mnlId 매뉴얼 ID
+   * @param onlnMnlSn 매뉴얼 일련번호
    * @returns 온라인 매뉴얼 상세 정보
    */
-  public async getManual(mnlId: string): Promise<ManualDto> {
-    return this.get<ManualDto>(`/manuals/${mnlId}`);
+  public async getManual(onlnMnlSn: number): Promise<ManualDto> {
+    return this.get<ManualDto>(`/manuals/${onlnMnlSn}`);
   }
 
   /**
@@ -48,25 +48,25 @@ class ManualAdminService extends ApiService {
    * @param manual 매뉴얼 정보
    * @returns 생성된 매뉴얼 ID
    */
-  public async createManual(manual: ManualDto): Promise<string> {
-    return this.post<string>('/manuals', manual);
+  public async createManual(manual: ManualDto): Promise<number> {
+    return this.post<number>('/manuals', manual);
   }
 
   /**
    * 온라인 매뉴얼 수정
-   * @param mnlId 매뉴얼 ID
+   * @param onlnMnlSn 매뉴얼 일련번호
    * @param manual 수정할 매뉴얼 정보
    */
-  public async updateManual(mnlId: string, manual: ManualDto): Promise<void> {
-    return this.put<void>(`/manuals/${mnlId}`, manual);
+  public async updateManual(onlnMnlSn: number, manual: ManualDto): Promise<void> {
+    return this.put<void>(`/manuals/${onlnMnlSn}`, manual);
   }
 
   /**
    * 온라인 매뉴얼 삭제
-   * @param mnlId 매뉴얼 ID
+   * @param onlnMnlSn 매뉴얼 일련번호
    */
-  public async deleteManual(mnlId: string): Promise<void> {
-    return this.delete<void>(`/manuals/${mnlId}`);
+  public async deleteManual(onlnMnlSn: number): Promise<void> {
+    return this.delete<void>(`/manuals/${onlnMnlSn}`);
   }
 }
 

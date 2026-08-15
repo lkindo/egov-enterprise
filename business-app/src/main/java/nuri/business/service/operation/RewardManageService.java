@@ -33,7 +33,6 @@ public class RewardManageService {
     @Transactional
     public RewardManageDto createReward(RewardManageDto dto) {
         RewardManage reward = RewardManage.builder()
-                .rwrdId(dto.getRwardId())
                 .rwrdUserId(dto.getRwardwnrId())
                 .rwrdCd(dto.getRwardCode())
                 .rwrdYmd(dto.getRwardDe())
@@ -43,8 +42,8 @@ public class RewardManageService {
                 .confmYn(dto.getConfmAt())
                 .aprvDt(dto.getSanctnDt())
                 .rtnRsnCn(dto.getReturnResn())
-                .atchFileId(dto.getAtchFileId())
-                .ifmlAtrzId(dto.getInformlSanctnId())
+                .atchFileSn(dto.getAtchFileSn())
+                .ifmlAtrzSn(dto.getIfmlAtrzSn())
                 .build();
         // 감사 필드는 빌더 대신 세터로 이월(insert 시 auditing 이 덮으며, merge 시 값 보존)
         reward.setFrstRgtrId(dto.getFrstRgtrId());
@@ -54,7 +53,7 @@ public class RewardManageService {
 
     private RewardManageDto convertToDto(RewardManage reward) {
         return RewardManageDto.builder()
-                .rwardId(reward.getRwrdId())
+                .rwrdSn(reward.getRwrdSn())
                 .rwardwnrId(reward.getRwrdUserId())
                 .rwardCode(reward.getRwrdCd())
                 .rwardDe(reward.getRwrdYmd())
@@ -64,8 +63,8 @@ public class RewardManageService {
                 .confmAt(reward.getConfmYn())
                 .sanctnDt(reward.getAprvDt())
                 .returnResn(reward.getRtnRsnCn())
-                .atchFileId(reward.getAtchFileId())
-                .informlSanctnId(reward.getIfmlAtrzId())
+                .atchFileSn(reward.getAtchFileSn())
+                .ifmlAtrzSn(reward.getIfmlAtrzSn())
                 .frstRgtrId(reward.getFrstRgtrId())
                 .crtDt(reward.getCrtDt())
                 .lastMdfrId(reward.getLastMdfrId())

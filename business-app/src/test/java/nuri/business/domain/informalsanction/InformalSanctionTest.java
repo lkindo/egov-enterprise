@@ -14,14 +14,14 @@ class InformalSanctionTest {
     @DisplayName("InformalSanction 빌더 및 초기화 테스트")
     void builderTest() {
         InformalSanction sanction = InformalSanction.builder()
-                .ifmlAtrzId("IS_001")
+                .ifmlAtrzSn(1L)
                 .taskSeCd("001")
                 .aplcntId("user01")
                 .reqYmd("20240101")
                 .aprvrId("admin")
                 .build();
 
-        assertThat(sanction.getIfmlAtrzId()).isEqualTo("IS_001");
+        assertThat(sanction.getIfmlAtrzSn()).isEqualTo(1L);
         assertThat(sanction.getTaskSeCd()).isEqualTo("001");
         assertThat(sanction.getAplcntId()).isEqualTo("user01");
         assertThat(sanction.getAprvYn()).isNull();

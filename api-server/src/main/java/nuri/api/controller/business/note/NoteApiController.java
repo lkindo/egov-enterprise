@@ -51,15 +51,15 @@ public class NoteApiController {
     }
 
     @Operation(summary = "쪽지 상세 조회", description = "쪽지 상세 정보를 조회합니다.")
-    @GetMapping("/{noteId}")
+    @GetMapping("/{noteSn}")
     public ResponseEntity<ApiResponse<NoteDto>> getNote(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "쪽지 ID") @PathVariable String noteId,
+            @Parameter(description = "쪽지 일련번호") @PathVariable Long noteSn,
             @Parameter(description = "쪽지 구분 (recv: 수신, sent: 발신)") @RequestParam String type,
-            @Parameter(description = "관계 ID (수신ID 또는 발신ID)") @RequestParam String relationId) {
+            @Parameter(description = "관계 일련번호 (수신 또는 발송)") @RequestParam Long relationSn) {
         // [보안 H1] 요청자를 전달해 서비스에서 소유자(발신/수신) 검증 → 타인 쪽지 열람(IDOR) 차단
         return ResponseEntity.ok(ApiResponse.success(
-                noteService.getNoteDetail(noteId, type, relationId, userDetails.getUsername())));
+                noteService.getNoteDetail(noteSn, type, relationSn, userDetails.getUsername())));
     }
 
     @Operation(summary = "쪽지 발송", description = "새로운 쪽지를 작성하여 발송합니다.")
@@ -72,13 +72,13 @@ public class NoteApiController {
     }
 
     @Operation(summary = "쪽지 삭제", description = "수신 또는 발신 목록에서 쪽지를 삭제합니다.")
-    @DeleteMapping("/{relationId}")
+    @DeleteMapping("/{relationSn}")
     public ResponseEntity<ApiResponse<Void>> deleteNote(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "관계 ID") @PathVariable String relationId,
+            @Parameter(description = "관계 일련번호") @PathVariable Long relationSn,
             @Parameter(description = "쪽지 구분 (recv: 수신, sent: 발신)") @RequestParam String type) {
         // [보안 H1] 요청자를 전달해 서비스에서 소유자 검증 → 타인 쪽지 삭제(IDOR) 차단
-        noteService.deleteNote(relationId, type, userDetails.getUsername());
+        noteService.deleteNote(relationSn, type, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

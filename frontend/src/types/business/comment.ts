@@ -1,6 +1,6 @@
 export interface CommentVO {
   ansSn: number;
-  pstId: string;
+  pstSn: number;
   bbsId: string;
   wrterId: string;
   wrterNm: string;
@@ -9,14 +9,14 @@ export interface CommentVO {
 }
 
 export interface CommentSaveRequest {
-  pstId: string;
+  pstSn: number;
   bbsId: string;
   ansCn: string;
   pswd?: string;
 }
 
 export interface CommentSearchParams {
-  pstId: string;
+  pstSn: number;
   bbsId: string;
   page?: number;
   size?: number;

@@ -14,7 +14,7 @@ import { usePageParam } from '../use-log-url-state';
 const PAGE_SIZE = 10;
 
 const EXPORT_HEADERS = [
-    { label: '로그ID', key: 'logId' },
+    { label: '로그인 일련번호', key: 'lgnSn' },
     { label: '발생시점', key: 'creatDt' },
     { label: '사용자ID', key: 'loginId' },
     { label: '접속IP', key: 'loginIp' },
@@ -42,11 +42,11 @@ const SystemLogsLoginClient = () => {
 
     const columns: Column<LoginLog>[] = [
         {
-            header: '로그ID',
+            header: '로그인 일련번호',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground/50 tabular-nums">
                     <Terminal size={12} className="opacity-30" />
-                    {item.logId}
+                    {item.lgnSn}
                 </div>
             ),
             className: 'w-40'
@@ -139,7 +139,7 @@ const SystemLogsLoginClient = () => {
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
-                keyField="logId"
+                keyField="lgnSn"
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,

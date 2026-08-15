@@ -7,7 +7,7 @@ import { AxiosRequestConfig } from 'axios';
  * - 서버: nuri.business.service.operation.dto.ExternalHrDto
  */
 export interface ExternalHr {
-  evntId?: string;
+  evntSn?: number;
   otsdHrId?: string;
   otsdHrNm?: string;
   gndrCd?: string;
@@ -29,7 +29,7 @@ export interface ExternalHr {
  * - 서버: nuri.business.service.operation.dto.RewardManageDto
  */
 export interface Reward {
-  rwardId?: string;
+  rwrdSn?: number;
   rwardwnrId?: string;
   rwardCode?: string;
   rwardDe?: string;
@@ -39,8 +39,8 @@ export interface Reward {
   confmAt?: string;
   sanctnDt?: string;
   returnResn?: string;
-  atchFileId?: string;
-  informlSanctnId?: string;
+  atchFileSn?: number;
+  ifmlAtrzSn?: number;
   frstRgtrId?: string;
   crtDt?: string;
   lastMdfrId?: string;

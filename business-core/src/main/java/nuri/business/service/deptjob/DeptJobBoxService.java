@@ -36,33 +36,30 @@ public class DeptJobBoxService {
                 .map(DeptJobBoxDto::fromEntity);
     }
 
-    public DeptJobBoxDto getDeptJobBox(String deptTaskBoxId) {
-        return deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxId))
+    public DeptJobBoxDto getDeptJobBox(Long deptTaskBoxSn) {
+        return deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxSn))
                 .map(DeptJobBoxDto::fromEntity)
                 .orElse(null);
     }
 
     @Transactional
-    public String createDeptJobBox(String userId, DeptJobBoxDto dto) {
+    public Long createDeptJobBox(String userId, DeptJobBoxDto dto) {
         // [헌법 제8조 이중검증] 컨트롤러 @PreAuthorize(1차) + 서비스 2차 가드. 부서 업무함은
         // 소유 모델이 없는 공유 관리 자원 → ADMIN/SYSTEM 전용(소유 스코프 승격 시 이 가드를 교체).
         SecurityUtil.assertAdmin();
-        String id = nuri.foundation.core.util.IdGenerationUtil.generateId("DEPTJOB_", 13);
         DeptJobBox entity = DeptJobBox.builder()
-                .deptTaskBoxId(id)
                 .deptTaskBoxNm(dto.getDeptTaskBoxNm())
                 .deptId(dto.getDeptId())
                 .sortOrdr(dto.getSortOrdr())
                 .build();
-        deptJobBoxRepository.save(Objects.requireNonNull(entity));
-        return id;
+        return deptJobBoxRepository.save(Objects.requireNonNull(entity)).getDeptTaskBoxSn();
     }
 
     @Transactional
-    public void updateDeptJobBox(String deptTaskBoxId, String userId, DeptJobBoxDto dto) {
+    public void updateDeptJobBox(Long deptTaskBoxSn, String userId, DeptJobBoxDto dto) {
         SecurityUtil.assertAdmin();
-        DeptJobBox entity = deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxId))
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "부서업무함을 찾을 수 없습니다: " + deptTaskBoxId));
+        DeptJobBox entity = deptJobBoxRepository.findById(Objects.requireNonNull(deptTaskBoxSn))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "부서업무함을 찾을 수 없습니다: " + deptTaskBoxSn));
 
         entity.update(
                 dto.getDeptTaskBoxNm(),
@@ -83,14 +80,14 @@ public class DeptJobBoxService {
      * <b>의미 있는 409</b>로 표면화하기 위한 것이다 — 함을 지우려면 산하 업무를 먼저 옮기거나 지워야 한다.</p>
      */
     @Transactional
-    public void deleteDeptJobBox(String deptTaskBoxId) {
+    public void deleteDeptJobBox(Long deptTaskBoxSn) {
         SecurityUtil.assertAdmin();
-        String boxId = Objects.requireNonNull(deptTaskBoxId);
+        Long boxSn = Objects.requireNonNull(deptTaskBoxSn);
 
-        if (deptJobRepository.existsByDeptTaskBoxId(boxId)) {
+        if (deptJobRepository.existsByDeptTaskBoxSn(boxSn)) {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE);
         }
 
-        deptJobBoxRepository.deleteById(boxId);
+        deptJobBoxRepository.deleteById(boxSn);
     }
 }

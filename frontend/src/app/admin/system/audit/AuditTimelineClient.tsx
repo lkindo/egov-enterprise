@@ -31,6 +31,7 @@ import { TimelineItem } from './TimelineItem';
 const PAGE_SIZE = 20;
 
 const EXPORT_HEADERS = [
+  { label: '시스템 로그 일련번호', key: 'sysLogSn' },
   { label: '요청ID', key: 'dmndId' },
   { label: '발생일자', key: 'ocrnYmd' },
   { label: '서비스명', key: 'srvcNm' },
@@ -162,13 +163,13 @@ export function AuditTimelineClient() {
                 ) : logs.length > 0 ? (
                    logs.map((log, idx) => (
                       <TimelineItem
-                         key={log.dmndId ?? `audit-log-${idx}`}
+                         key={log.sysLogSn ?? `audit-log-${idx}`}
                          log={log}
                          index={idx}
                          onInspect={handleInspect}
-                         // dmndId 가 없으면(undefined) 비교가 undefined === undefined 로 참이 되어
+                         // sysLogSn 이 없으면(undefined) 비교가 undefined === undefined 로 참이 되어
                          // 미선택 상태에서 전 카드가 강조된다. 반드시 null 가드를 선행한다.
-                         isSelected={!!selectedLog?.dmndId && !!log.dmndId && selectedLog.dmndId === log.dmndId}
+                         isSelected={selectedLog?.sysLogSn != null && log.sysLogSn != null && selectedLog.sysLogSn === log.sysLogSn}
                       />
                    ))
                 ) : (
@@ -205,7 +206,7 @@ export function AuditTimelineClient() {
            <AnimatePresence mode="wait">
               {selectedLog ? (
                  <motion.div
-                    key={selectedLog.dmndId ?? 'audit-detail'}
+                    key={selectedLog.sysLogSn ?? 'audit-detail'}
                     initial={{ opacity: 0, scale: 0.95, y: 20 }}
                     animate={{ opacity: 1, scale: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95, y: -20 }}

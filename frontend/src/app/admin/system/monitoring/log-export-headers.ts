@@ -7,7 +7,7 @@ type ExportHeader<T> = {
 
 /** 생성된 LoginLogDto 계약에 존재하는 필드만 CSV로 반출한다. */
 export const LOGIN_LOG_EXPORT_HEADERS: ExportHeader<LoginLog>[] = [
-  { label: '로그ID', key: 'logId' },
+  { label: '로그인 일련번호', key: 'lgnSn' },
   { label: '로그인ID', key: 'loginId' },
   { label: '로그인방식', key: 'loginMthd' },
   { label: '접속IP', key: 'loginIp' },

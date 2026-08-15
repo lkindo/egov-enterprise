@@ -45,7 +45,7 @@ class BoardConcurrencyTest {
     private BoardMasterRepository boardMasterRepository;
 
     private String testBbsId;
-    private String testPstId;
+    private Long testPstSn;
     private ExecutorService executorService;
 
     @BeforeEach
@@ -64,9 +64,7 @@ class BoardConcurrencyTest {
         boardMasterRepository.saveAndFlush(master);
 
         // 2. 테스트용 게시글 생성 (초기 추천수 likeCnt = 0)
-        testPstId = "PST_" + UUID.randomUUID().toString().substring(0, 10);
         Board board = Board.builder()
-                .pstId(testPstId)
                 .bbsId(testBbsId)
                 .pstTtl("동시성 테스트 제목")
                 .pstCn("동시성 테스트 내용")
@@ -76,13 +74,13 @@ class BoardConcurrencyTest {
                 .likeCnt(0)
                 .inqCnt(0)
                 .build();
-        boardRepository.saveAndFlush(board);
+        testPstSn = boardRepository.saveAndFlush(board).getPstSn();
     }
 
     @AfterEach
     void tearDown() {
         // 테스트 데이터 청소
-        boardRepository.deleteById(testPstId);
+        boardRepository.deleteById(testPstSn);
         boardMasterRepository.deleteById(testBbsId);
         
         if (executorService != null) {
@@ -107,7 +105,7 @@ class BoardConcurrencyTest {
             executorService.submit(() -> {
                 try {
                     startLatch.await(); // 모든 스레드가 신호 대기
-                    boardService.incrementLike(testBbsId, testPstId);
+                    boardService.incrementLike(testBbsId, testPstSn);
                 } catch (Exception e) {
                     System.err.println("동시성 요청 실패: " + e.getMessage());
                 } finally {
@@ -122,7 +120,7 @@ class BoardConcurrencyTest {
         assertThat(completed).isTrue();
 
         // Then: 최종 DB 반영 결과 검증
-        Board finalBoard = boardRepository.findById(testPstId)
+        Board finalBoard = boardRepository.findById(testPstSn)
                 .orElseThrow(() -> new AssertionError("게시글이 존재하지 않습니다."));
         
         // 갱신 분실(Lost Update)이 발생했다면 100보다 현저히 적은 숫자가 됨

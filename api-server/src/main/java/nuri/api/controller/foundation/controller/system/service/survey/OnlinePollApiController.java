@@ -32,9 +32,9 @@ public class OnlinePollApiController {
     }
 
     @Operation(summary = "온라인 설문 상세 조회")
-    @GetMapping("/{pollId}")
-    public ResponseEntity<ApiResponse<OnlinePollManageDto>> getPoll(@PathVariable String pollId) {
-        return ResponseEntity.ok(ApiResponse.success(onlinePollService.getPoll(pollId)));
+    @GetMapping("/{pollSn}")
+    public ResponseEntity<ApiResponse<OnlinePollManageDto>> getPoll(@PathVariable Long pollSn) {
+        return ResponseEntity.ok(ApiResponse.success(onlinePollService.getPoll(pollSn)));
     }
 
     @Operation(summary = "온라인 설문 등록")
@@ -45,14 +45,14 @@ public class OnlinePollApiController {
     }
 
     @Operation(summary = "온라인 설문 투표 처리")
-    @PostMapping("/{pollId}/vote")
+    @PostMapping("/{pollSn}/vote")
     public ResponseEntity<ApiResponse<Void>> vote(
-            @PathVariable String pollId,
-            @RequestParam(name = "pollIemId") String pollArtclId) {
+            @PathVariable Long pollSn,
+            @RequestParam Long pollArtclSn) {
         // 투표자 식별은 loginId(감사 컬럼 frst_rgtr_id·이중투표 유니크 제약과 동일 식별자)로 한다.
         String loginId = nuri.business.security.util.SecurityUtil.getCurrentLoginId()
                 .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException("로그인이 필요합니다.", nuri.foundation.core.exception.CommonErrorCode.UNAUTHORIZED));
-        onlinePollService.vote(pollId, pollArtclId, loginId);
+        onlinePollService.vote(pollSn, pollArtclSn, loginId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

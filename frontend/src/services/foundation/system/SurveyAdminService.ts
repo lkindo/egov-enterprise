@@ -13,7 +13,7 @@ import type { components } from '@/types/generated-api';
  * 설문 템플릿 — 백엔드 `SurveyTemplateDto` 의 생성 타입을 SSOT 로 삼는다.
  *
  * ⚠ 종전에는 `Survey as SurveyTemplate` 별칭이었다. 그러나 템플릿의 실제 필드는
- * `srvyTmpltId`·`srvyTmpltTypeCd`·`srvyTmpltPathNm`·`srvyTmpltExpln` 로 설문(`Survey`)과
+ * `srvyTmpltSn`·`srvyTmpltTypeCd`·`srvyTmpltPathNm`·`srvyTmpltExpln` 로 설문(`Survey`)과
  * **전혀 겹치지 않는다**. 로그 도메인에서 수제 타입이 어긋나 화면이 빈 값을 그리던 것과 같은
  * 결함이며, 템플릿 화면이 없어서 드러나지 않고 있었을 뿐이다.
  */
@@ -39,8 +39,8 @@ class SurveyAdminService extends AdminService {
   }
 
   /** 설문 상세 조회 */
-  async getSurvey(qestnrId: string, config?: AxiosRequestConfig): Promise<SurveyInfo> {
-    return this.get<SurveyInfo>(`/${qestnrId}`, config);
+  async getSurvey(srvySn: number, config?: AxiosRequestConfig): Promise<SurveyInfo> {
+    return this.get<SurveyInfo>(`/${srvySn}`, config);
   }
 
   /** 설문 등록 */
@@ -49,13 +49,13 @@ class SurveyAdminService extends AdminService {
   }
 
   /** 설문 수정 */
-  async updateSurvey(qestnrId: string, data: Partial<SurveyInfo>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put(`/${qestnrId}`, data, config);
+  async updateSurvey(srvySn: number, data: Partial<SurveyInfo>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put(`/${srvySn}`, data, config);
   }
 
   /** 설문 삭제 */
-  async deleteSurvey(qestnrId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${qestnrId}`, config);
+  async deleteSurvey(srvySn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete(`/${srvySn}`, config);
   }
 
   /** 설문 템플릿목록 조회 */
@@ -76,11 +76,11 @@ class SurveyAdminService extends AdminService {
    * 백엔드가 `@AdminOnly` 이므로 ADMIN 이 아니면 403 이다.
    */
   async getRespondents(
-    srvyId: string,
+    srvySn: number,
     params?: SearchParams,
     config?: AxiosRequestConfig
   ): Promise<PageResponse<SurveyRespondent>> {
-    return this.get<PageResponse<SurveyRespondent>>(`/${srvyId}/respondents`, {
+    return this.get<PageResponse<SurveyRespondent>>(`/${srvySn}/respondents`, {
       ...config,
       params: {
         ...params,
@@ -90,8 +90,8 @@ class SurveyAdminService extends AdminService {
   }
 
   /** 설문 응답자 삭제 */
-  async deleteRespondent(srvyId: string, respondentId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${srvyId}/respondents/${respondentId}`, config);
+  async deleteRespondent(srvySn: number, respondentId: string, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete(`/${srvySn}/respondents/${respondentId}`, config);
   }
 
   // --- 템플릿 CRUD ---
@@ -100,12 +100,12 @@ class SurveyAdminService extends AdminService {
     return this.post('/templates', data, config);
   }
 
-  async updateTemplate(tmpltId: string, data: Partial<SurveyTemplate>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put(`/templates/${tmpltId}`, data, config);
+  async updateTemplate(srvyTmpltSn: number, data: Partial<SurveyTemplate>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put(`/templates/${srvyTmpltSn}`, data, config);
   }
 
-  async deleteTemplate(tmpltId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/templates/${tmpltId}`, config);
+  async deleteTemplate(srvyTmpltSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete(`/templates/${srvyTmpltSn}`, config);
   }
 
   // --- 문항·항목 CRUD ---
@@ -114,38 +114,38 @@ class SurveyAdminService extends AdminService {
    * 설문의 문항 목록. **항목까지 중첩해서 온다** — 백엔드가 단일 IN 조회로 묶어 주므로
    * 문항별 항목 조회를 따로 호출하면 안 된다(N+1 을 프론트에서 되살리는 셈이다).
    */
-  async getQuestions(srvyId: string, config?: AxiosRequestConfig): Promise<SurveyQuestion[]> {
-    return this.get<SurveyQuestion[]>(`/${srvyId}/questions`, config);
+  async getQuestions(srvySn: number, config?: AxiosRequestConfig): Promise<SurveyQuestion[]> {
+    return this.get<SurveyQuestion[]>(`/${srvySn}/questions`, config);
   }
 
-  async createQuestion(srvyId: string, data: Partial<SurveyQuestion>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post(`/${srvyId}/questions`, data, config);
+  async createQuestion(srvySn: number, data: Partial<SurveyQuestion>, config?: AxiosRequestConfig): Promise<void> {
+    return this.post(`/${srvySn}/questions`, data, config);
   }
 
   async updateQuestion(
-    srvyId: string,
-    srvyQstnId: string,
+    srvySn: number,
+    srvyQstnSn: number,
     data: Partial<SurveyQuestion>,
     config?: AxiosRequestConfig
   ): Promise<void> {
-    return this.put(`/${srvyId}/questions/${srvyQstnId}`, data, config);
+    return this.put(`/${srvySn}/questions/${srvyQstnSn}`, data, config);
   }
 
-  async deleteQuestion(srvyId: string, srvyQstnId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${srvyId}/questions/${srvyQstnId}`, config);
+  async deleteQuestion(srvySn: number, srvyQstnSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete(`/${srvySn}/questions/${srvyQstnSn}`, config);
   }
 
   /** 항목은 문항 하위 자원이다 — 경로가 소속 문항을 강제한다. */
-  async createItem(srvyQstnId: string, data: Partial<SurveyAnswer>, config?: AxiosRequestConfig): Promise<void> {
-    return this.post(`/questions/${srvyQstnId}/items`, data, config);
+  async createItem(srvyQstnSn: number, data: Partial<SurveyAnswer>, config?: AxiosRequestConfig): Promise<void> {
+    return this.post(`/questions/${srvyQstnSn}/items`, data, config);
   }
 
-  async updateItem(srvyArtclId: string, data: Partial<SurveyAnswer>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put(`/questions/items/${srvyArtclId}`, data, config);
+  async updateItem(srvyArtclSn: number, data: Partial<SurveyAnswer>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put(`/questions/items/${srvyArtclSn}`, data, config);
   }
 
-  async deleteItem(srvyArtclId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/questions/items/${srvyArtclId}`, config);
+  async deleteItem(srvyArtclSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete(`/questions/items/${srvyArtclSn}`, config);
   }
 }
 

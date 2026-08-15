@@ -16,9 +16,8 @@ import java.time.LocalDateTime;
 @Schema(description = "비정형 결재 DTO (표준화)")
 public class InformalSanctionDto {
 
-    @Schema(description = "비정형 결재 ID")
-    @Size(max = 20)
-    private String ifmlAtrzId;
+    @Schema(description = "비정형 결재 일련번호", example = "1")
+    private Long ifmlAtrzSn;
 
     @Schema(description = "업무 구분 코드")
     @Size(max = 12)

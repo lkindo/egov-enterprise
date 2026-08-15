@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class InternetSvcGuidanceDto {
-    private String intnetSvcId;
+    private Long itntSrvcSn;
 
     @NotBlank(message = "인터넷 서비스 명칭은 필수입니다.")
     @Size(max = 255, message = "인터넷 서비스 명칭은 255자 이내여야 합니다.")

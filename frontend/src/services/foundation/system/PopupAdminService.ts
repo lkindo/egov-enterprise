@@ -17,23 +17,23 @@ class PopupAdminService extends AdminService {
   }
 
   /** 팝업李님곸꽭 조회 */
-  async getPopup(popupId: string, config?: AxiosRequestConfig): Promise<Popup> {
-    return this.get<Popup>(`/${popupId}`, config);
+  async getPopup(popupSn: number, config?: AxiosRequestConfig): Promise<Popup> {
+    return this.get<Popup>(`/${popupSn}`, config);
   }
 
   /** 팝업李등록 */
-  async createPopup(data: Partial<Popup>, config?: AxiosRequestConfig): Promise<Popup> {
-    return this.post<Popup>('', data, config);
+  async createPopup(data: Partial<Popup>, config?: AxiosRequestConfig): Promise<number> {
+    return this.post<number>('', data, config);
   }
 
   /** 팝업李님섏젙 */
-  async updatePopup(popupId: string, data: Partial<Popup>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put(`/${popupId}`, data, config);
+  async updatePopup(popupSn: number, data: Partial<Popup>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put(`/${popupSn}`, data, config);
   }
 
   /** 팝업李님삭제 */
-  async deletePopup(popupId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${popupId}`, config);
+  async deletePopup(popupSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete(`/${popupSn}`, config);
   }
 }
 

@@ -93,9 +93,9 @@ export default function ManualAdminClient({
 
   const manuals = data?.list ?? [];
 
-  const form = useAppForm(manualSchema, {
+  const form = useAppForm<typeof manualSchema>(manualSchema, {
     defaultValues: {
-      onlnMnlId: '',
+      onlnMnlSn: undefined,
       onlnMnlNm: '',
       onlnMnlExpln: '',
       onlnMnlDfn: '',
@@ -105,14 +105,14 @@ export default function ManualAdminClient({
 
   const handleOpenAdd = () => {
     setMode('create');
-    form.reset({ onlnMnlId: '', onlnMnlNm: '', onlnMnlExpln: '', onlnMnlDfn: '', onlnMnlSeCd: 'GNR' });
+    form.reset({ onlnMnlSn: undefined, onlnMnlNm: '', onlnMnlExpln: '', onlnMnlDfn: '', onlnMnlSeCd: 'GNR' });
     setIsFormOpen(true);
   };
 
   const handleOpenEdit = (manual: ManualDto) => {
     setMode('edit');
     form.reset({
-      onlnMnlId: manual.onlnMnlId || '',
+      onlnMnlSn: manual.onlnMnlSn,
       onlnMnlNm: manual.onlnMnlNm || '',
       onlnMnlExpln: manual.onlnMnlExpln || '',
       onlnMnlDfn: manual.onlnMnlDfn || '',
@@ -136,7 +136,7 @@ export default function ManualAdminClient({
         await manualAdminService.createManual(payload);
         toast('새 매뉴얼을 등록했습니다.', 'success');
       } else {
-        await manualAdminService.updateManual(values.onlnMnlId!, { ...payload, onlnMnlId: values.onlnMnlId });
+        await manualAdminService.updateManual(values.onlnMnlSn!, { ...payload, onlnMnlSn: values.onlnMnlSn });
         toast('매뉴얼 정보를 수정했습니다.', 'success');
       }
       setIsFormOpen(false);
@@ -149,7 +149,7 @@ export default function ManualAdminClient({
   };
 
   const handleDelete = async (manual: ManualDto) => {
-    if (!manual.onlnMnlId) return;
+    if (!manual.onlnMnlSn) return;
     // native confirm 은 대상이 무엇인지 알려주지 않는다 → useConfirm + 대상명 노출(감사 P1-9).
     const ok = await confirm({
       title: '매뉴얼 삭제',
@@ -160,7 +160,7 @@ export default function ManualAdminClient({
     if (!ok) return;
 
     try {
-      await manualAdminService.deleteManual(manual.onlnMnlId);
+      await manualAdminService.deleteManual(manual.onlnMnlSn);
       toast(`'${manual.onlnMnlNm}' 매뉴얼을 삭제했습니다.`, 'success');
       refetch();
     } catch (err) {
@@ -181,7 +181,7 @@ export default function ManualAdminClient({
               {item.onlnMnlNm}
             </span>
             <span className="text-xs font-bold text-muted-foreground mt-1 tracking-widest opacity-40">
-              ID: {item.onlnMnlId}
+              SN: {item.onlnMnlSn}
             </span>
           </div>
         </div>
@@ -304,7 +304,7 @@ export default function ManualAdminClient({
             loading={isLoading}
             error={isError ? (error as Error) : null}
             onRetry={() => refetch()}
-            keyField="onlnMnlId"
+            keyField="onlnMnlSn"
             emptyMessage={debouncedKeyword ? `'${debouncedKeyword}' 에 해당하는 매뉴얼이 없습니다.` : '등록된 매뉴얼이 없습니다.'}
             className="border-none bg-muted/50 rounded-lg p-8"
             pagination={{

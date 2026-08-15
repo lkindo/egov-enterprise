@@ -11,7 +11,7 @@
 - **State Management**: Zustand, React Context
 - **Real-time**: STOMP over SockJS (동일 출처 `/ws` 프록시)
 - **Validation**: Zod + React Hook Form
-- **i18n**: next-intl (`messages/{ko,en}.json`)
+- **Language**: 한국어 UI (`html lang="ko"`), API 오류 ko/en 협상은 백엔드가 담당
 
 ## 🚀 시작하기
 
@@ -40,4 +40,4 @@ pnpm build
 - `src/hooks`: 커스텀 훅 (인증, 공통 기능 등)
 
 ---
-*Last Updated: 2026-07-12 (Next.js 16 · 동일 출처 프록시 · next-intl i18n · 시맨틱 토큰 반영)*
+*Last Updated: 2026-08-15 (Next.js 16 · 동일 출처 프록시 · 한국어 UI 제품정책 · 시맨틱 토큰 반영)*

@@ -83,10 +83,10 @@ class CommunityApiControllerTest {
     @DisplayName("커뮤니티 상세 조회")
     void getCommunity() throws Exception {
         CommunityDto dto = new CommunityDto();
-        dto.setCmntyId("C1");
-        when(communityService.getCommunity("C1")).thenReturn(dto);
+        dto.setCmntySn(101L);
+        when(communityService.getCommunity(101L)).thenReturn(dto);
 
-        mockMvc.perform(get("/api/v1/admin/content/community/C1"))
+        mockMvc.perform(get("/api/v1/admin/content/community/101"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -99,7 +99,7 @@ class CommunityApiControllerTest {
         requestDto.setUseYn("Y");
         
         CommunityDto responseDto = new CommunityDto();
-        responseDto.setCmntyId("C1");
+        responseDto.setCmntySn(101L);
         
         when(communityService.createCommunity(eq("user"), any(CommunityDto.class))).thenReturn(responseDto);
 
@@ -109,7 +109,7 @@ class CommunityApiControllerTest {
                         .content(objectMapper.writeValueAsString(requestDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.cmntyId").value("C1"));
+                .andExpect(jsonPath("$.data.cmntySn").value(101));
     }
 
     @Test
@@ -121,7 +121,7 @@ class CommunityApiControllerTest {
 
         doNothing().when(communityService).updateCommunity(eq("user"), any(CommunityDto.class));
 
-        mockMvc.perform(put("/api/v1/admin/content/community/C1")
+        mockMvc.perform(put("/api/v1/admin/content/community/101")
                         .with(SecurityMockMvcRequestPostProcessors.user("user"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
@@ -132,9 +132,9 @@ class CommunityApiControllerTest {
     @Test
     @DisplayName("커뮤니티 삭제")
     void deleteCommunity() throws Exception {
-        doNothing().when(communityService).deleteCommunity("C1", "user");
+        doNothing().when(communityService).deleteCommunity(101L, "user");
 
-        mockMvc.perform(delete("/api/v1/admin/content/community/C1")
+        mockMvc.perform(delete("/api/v1/admin/content/community/101")
                         .with(SecurityMockMvcRequestPostProcessors.user("user")))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));

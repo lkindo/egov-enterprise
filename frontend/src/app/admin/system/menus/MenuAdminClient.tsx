@@ -372,9 +372,9 @@ export default function MenuAdminClient({
   const [isModalOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
 
-  const form = useAppForm(menuSchema, {
+  const form = useAppForm<typeof menuSchema, MenuFormValues>(menuSchema, {
     defaultValues: {
-      menuNo: 0, menuNm: '', menuOrdr: 0, upperMenuId: 0, prgrmFileNm: '', modernRoute: '', menuExpln: '', useYn: 'Y' as 'Y' | 'N'
+      menuNm: '', menuOrdr: 0, upperMenuId: 0, prgrmFileNm: '', modernRoute: '', menuExpln: '', useYn: 'Y' as 'Y' | 'N'
     }
   });
 
@@ -435,7 +435,7 @@ export default function MenuAdminClient({
 
   const handleOpenCreate = (parentId: number = 0) => {
     setMode('create');
-    form.reset({ menuNo: Date.now(), menuNm: '', menuOrdr: 999, upperMenuId: parentId, prgrmFileNm: '', modernRoute: '', menuExpln: '', useYn: 'Y' as 'Y' | 'N' });
+    form.reset({ menuNm: '', menuOrdr: 999, upperMenuId: parentId, prgrmFileNm: '', modernRoute: '', menuExpln: '', useYn: 'Y' as 'Y' | 'N' });
     setIsOpen(true);
   };
 

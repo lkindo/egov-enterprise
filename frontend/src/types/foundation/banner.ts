@@ -1,18 +1,18 @@
 export interface Banner {
-    bnrId: string;
+    bnrSn: number;
     bnrNm: string;
     linkUrl: string;
     bnrImgNm: string;
     bnrExpln?: string;
     sortOrdr: number;
     rfltYn: 'Y' | 'N';
-    atchFileId?: string;
+    atchFileSn?: number;
     frstRgtrId?: string;
     crtDt?: string;
 }
 
 export interface Popup {
-    popupId: string;
+    popupSn: number;
     popupTtlNm: string;
     fileUrl: string;
     popupWdthPstn: string;

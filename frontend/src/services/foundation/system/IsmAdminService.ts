@@ -49,17 +49,17 @@ class IsmAdminService extends ApiService {
   }
 
   /** 신청 상세 조회 */
-  async getInfrmlSanctn(id: string, config?: AxiosRequestConfig): Promise<InformalSanctionDto> {
+  async getInfrmlSanctn(id: number, config?: AxiosRequestConfig): Promise<InformalSanctionDto> {
     return this.get<InformalSanctionDto>(`/${id}`, config);
   }
 
   /** 신청 등록 */
-  async createInfrmlSanctn(data: Partial<InformalSanctionDto>, config?: AxiosRequestConfig): Promise<InformalSanctionDto> {
-    return this.post<InformalSanctionDto>('', data, config);
+  async createInfrmlSanctn(data: Partial<InformalSanctionDto>, config?: AxiosRequestConfig): Promise<number> {
+    return this.post<number>('', data, config);
   }
 
   /** 신청 수정 */
-  async updateInfrmlSanctn(id: string, data: Partial<InformalSanctionDto>, config?: AxiosRequestConfig): Promise<void> {
+  async updateInfrmlSanctn(id: number, data: Partial<InformalSanctionDto>, config?: AxiosRequestConfig): Promise<void> {
     return this.put(`/${id}`, data, config);
   }
 
@@ -69,7 +69,7 @@ class IsmAdminService extends ApiService {
    * 값은 `SanctionStatus` 실제 코드('C' 승인 / 'R' 반려)를 그대로 전달한다.
    */
   async confirmInfrmlSanctn(
-    id: string,
+    id: number,
     aprvYn: Extract<SanctionStatusCode, 'C' | 'R'>,
     rjctRsnCn?: string,
     config?: AxiosRequestConfig,
@@ -89,7 +89,7 @@ class IsmAdminService extends ApiService {
    * (`InformalSanctionService.deleteInformalSanction`). 결재 대기함(`type=received`)은
    * 결재자 시점이므로 이 경로에서 호출하면 항상 403 이다. 신청함 화면에서만 사용할 것.
    */
-  async deleteInfrmlSanctn(id: string, config?: AxiosRequestConfig): Promise<void> {
+  async deleteInfrmlSanctn(id: number, config?: AxiosRequestConfig): Promise<void> {
     return this.delete(`/${id}`, config);
   }
 }

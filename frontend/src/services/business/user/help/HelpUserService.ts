@@ -44,7 +44,7 @@ class HelpUserService extends UserService {
     // Map unified board fields to FAQ interface
     if (response && response.list) {
       response.list = response.list.map((item: any) => ({
-        faqId: item.pstId,
+        faqId: item.pstSn,
         qstnTtl: item.pstTtl,
         qstnCn: item.pstCn,
         ansCn: item.pstCn,
@@ -69,7 +69,7 @@ class HelpUserService extends UserService {
     // Map unified board fields to QNA interface
     if (response && response.list) {
       response.list = response.list.map((item: any) => ({
-        qaId: item.pstId,
+        qaId: item.pstSn,
         qstnTtl: item.pstTtl,
         qstnCn: item.pstCn,
         ansCn: item.pstCn || '',

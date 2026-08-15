@@ -7,7 +7,7 @@ import { HubIcon, renderHubIcon } from './hub-icon';
 
 interface HubListItem {
   id?: string | number;
-  pstId?: string | number;
+  pstSn?: number;
   title?: string;
   pstTtl?: string;
   date?: string;
@@ -83,7 +83,7 @@ export function HubListCard({
         {items && items.length > 0 ? (
           items.slice(0, 6).map((item, idx) => (
             <motion.div
-              key={`list-item-${title}-${item.id || item.pstId || idx}`}
+              key={`list-item-${title}-${item.id || item.pstSn || idx}`}
               whileHover={{ x: 5 }}
               className={cn(
                 "flex flex-col gap-2 p-6 rounded-lg border border-transparent transition-all cursor-pointer group/item",

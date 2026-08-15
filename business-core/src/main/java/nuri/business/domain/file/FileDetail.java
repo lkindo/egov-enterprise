@@ -22,7 +22,7 @@ import lombok.Setter;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Entity
 @Table(name = "tb_file_detail", uniqueConstraints = {
-    @UniqueConstraint(name = "uk_tb_file_detail_sn", columnNames = {"ATCH_FILE_ID", "atch_file_seq"})
+    @UniqueConstraint(name = "uk_tb_file_detail_sn", columnNames = {"ATCH_FILE_SN", "atch_file_seq"})
 })
 public class FileDetail extends BaseEntity {
 
@@ -32,7 +32,7 @@ public class FileDetail extends BaseEntity {
     private java.util.UUID id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ATCH_FILE_ID", nullable = false)
+    @JoinColumn(name = "ATCH_FILE_SN", nullable = false)
     @Setter
     private FileMaster fileMaster;
 

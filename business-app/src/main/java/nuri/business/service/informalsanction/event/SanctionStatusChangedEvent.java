@@ -10,7 +10,7 @@ import nuri.business.domain.informalsanction.SanctionStatus;
 @Getter
 @RequiredArgsConstructor
 public class SanctionStatusChangedEvent {
-    private final String informalSanctionId;
+    private final Long informalSanctionSn;
     private final String applicantId;
     private final String sanctionerId;
     private final SanctionStatus newStatus;

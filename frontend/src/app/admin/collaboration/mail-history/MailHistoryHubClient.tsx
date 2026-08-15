@@ -78,10 +78,10 @@ export default function MailHistoryHubClient() {
 
   // --- Mutations ---
   const deleteMutation = useMutation({
-    mutationFn: (id: string) => mailService.deleteMail(id),
-    onSuccess: (_data, id) => {
+    mutationFn: (emlDsptchSn: number) => mailService.deleteMail(emlDsptchSn),
+    onSuccess: (_data, emlDsptchSn) => {
       toast('메일 이력이 삭제되었습니다.', 'success');
-      setSelectedMail(prev => (prev?.mssageId === id ? null : prev));
+      setSelectedMail(prev => (prev?.emlDsptchSn === emlDsptchSn ? null : prev));
       queryClient.invalidateQueries({ queryKey: ['mail-history'] });
     },
     onError: () => {
@@ -97,7 +97,7 @@ export default function MailHistoryHubClient() {
       confirmText: '삭제',
       variant: 'destructive',
     });
-    if (ok) deleteMutation.mutate(mail.mssageId);
+    if (ok) deleteMutation.mutate(mail.emlDsptchSn);
   }, [confirm, deleteMutation]);
 
   const handleSearchChange = (value: string) => {
@@ -123,7 +123,7 @@ export default function MailHistoryHubClient() {
  {mail.sj}
  </span>
  <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
- ID: {mail.mssageId}
+ ID: {mail.emlDsptchSn}
  </span>
  </div>
  )
@@ -241,7 +241,7 @@ export default function MailHistoryHubClient() {
       <StandardDataTable<SentMail>
       columns={columns}
       data={mails}
-      keyField="mssageId"
+      keyField="emlDsptchSn"
       loading={isLoading}
       error={isError ? (error as Error) : null}
       onRetry={() => { void refetch(); }}

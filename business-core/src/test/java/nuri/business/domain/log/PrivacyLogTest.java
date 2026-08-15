@@ -11,10 +11,12 @@ class PrivacyLogTest {
     @DisplayName("PrivacyLog 빌더 확인")
     void testBuilder() {
         PrivacyLog log = PrivacyLog.builder()
+                .prvcLogSn(1L)
                 .dmndUserId("user01")
                 .dmndId("REQ_001")
                 .build();
 
         assertEquals("user01", log.getDmndUserId());
+        assertEquals(1L, log.getPrvcLogSn());
     }
 }

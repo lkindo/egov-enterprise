@@ -173,7 +173,7 @@ export default function SurveyStatsClient() {
           // 조회 실패를 '통계 데이터가 존재하지 않습니다'로 위장하지 않는다(P1-1).
           error={isError ? error : null}
           onRetry={() => void refetch()}
-          keyField="pollId"
+          keyField="pollSn"
           emptyMessage="집계할 설문이 없습니다."
           className="border-none bg-transparent shadow-none"
           pagination={{

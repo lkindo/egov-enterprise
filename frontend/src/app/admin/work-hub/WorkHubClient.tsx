@@ -23,7 +23,7 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 ;
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
-import { reportService } from '@/services/business/user/ReportService';
+import { reportService, type WorkReport } from '@/services/business/user/ReportService';
 import { Calendar } from '@/components/ui/calendar';
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { ScheduleCreateForm, type ScheduleFormValues } from '@/components/business/schedule/ScheduleCreateForm';
@@ -94,7 +94,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   const [editingSchedule, setEditingSchedule] = useState<DeptSchedule | null>(null);
   // 업무 보고 등록 다이얼로그. 종전에는 이 탭의 '새 업무 생성' 버튼에 onClick 이 없었다.
   const [isReportModalOpen, setReportModalOpen] = useState(false);
-  const [editingReport, setEditingReport] = useState<any | null>(null);
+  const [editingReport, setEditingReport] = useState<WorkReport | null>(null);
   const confirm = useConfirm();
   const { toast } = useToast();
 
@@ -201,8 +201,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   /** 업무 보고 등록. 작성자(userId)는 서버가 인증 주체로 채우므로 보내지 않는다. */
   const handleSubmitReport = async (values: ReportFormValues) => {
     try {
-      if (editingReport?.rptId) {
-        await reportService.updateReport(editingReport.rptId, values);
+      if (editingReport?.rptpSn) {
+        await reportService.updateReport(editingReport.rptpSn, values);
         toast('업무 보고가 수정되었습니다.', 'success');
       } else {
         await reportService.createReport(values as Parameters<typeof reportService.createReport>[0]);
@@ -217,7 +217,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   };
 
   /** 보고 삭제. 서버가 작성자 본인 또는 관리자만 허용하므로 실패는 그대로 알린다. */
-  const handleDeleteReport = async (item: any) => {
+  const handleDeleteReport = async (item: WorkReport) => {
     const ok = await confirm({
       title: '업무 보고 삭제',
       message: `'${item.rptTtl || '제목 없음'}' 보고를 삭제하시겠습니까?`,
@@ -226,7 +226,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     });
     if (!ok) return;
     try {
-      await reportService.deleteReport(item.rptId);
+      await reportService.deleteReport(item.rptpSn);
       toast('업무 보고가 삭제되었습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
     } catch {
@@ -240,8 +240,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
    */
   const handleSubmitSchedule = async (values: ScheduleFormValues) => {
     try {
-      if (editingSchedule?.schdlId) {
-        await updateDeptSchedule(editingSchedule.schdlId, values as Parameters<typeof updateDeptSchedule>[1]);
+      if (editingSchedule?.schdlSn) {
+        await updateDeptSchedule(editingSchedule.schdlSn, values as Parameters<typeof updateDeptSchedule>[1]);
         toast('일정이 수정되었습니다.', 'success');
       } else {
         await createDeptSchedule(values as Parameters<typeof createDeptSchedule>[0]);
@@ -258,7 +258,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
 
   /** 일정 삭제. 서버는 소유자/관리자만 허용하므로 권한 오류 메시지를 그대로 노출한다. */
   const handleDeleteSchedule = async (item: DeptSchedule) => {
-    if (!item.schdlId) return;
+    if (!item.schdlSn) return;
     const ok = await confirm({
       title: '일정 삭제',
       message: `'${item.schdlNm || '제목 없음'}' 일정을 삭제하시겠습니까?`,
@@ -267,7 +267,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     });
     if (!ok) return;
     try {
-      await deleteDeptSchedule(item.schdlId);
+      await deleteDeptSchedule(item.schdlSn);
       toast('일정이 삭제되었습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
     } catch (error) {
@@ -333,7 +333,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     {
       header: '업무명',
       accessor: (item) => (
-        <Link href={`/smart-toolkit/dept-job/${item.deptTaskId}`} className="flex flex-col gap-1 py-1">
+        <Link href={`/smart-toolkit/dept-job/${item.deptTaskSn}`} className="flex flex-col gap-1 py-1">
           <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.deptTaskNm}</span>
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
             {item.deptTaskBoxNm || '업무함 미지정'}
@@ -363,7 +363,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             size="sm"
             className="h-9 font-bold text-[11px]"
             aria-label={`${item.deptTaskNm || '업무'} 상세 보기`}
-            onClick={() => router.push(`/smart-toolkit/dept-job/${item.deptTaskId}`)}
+            onClick={() => router.push(`/smart-toolkit/dept-job/${item.deptTaskSn}`)}
           >
             상세
           </Button>
@@ -373,7 +373,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     }
   ];
 
-  const reportColumns: Column<any>[] = [
+  const reportColumns: Column<WorkReport>[] = [
     {
       header: '번호',
       accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,
@@ -579,7 +579,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
                     columns={scheduleColumns}
                     data={visibleSchedules}
                     loading={isScheduleLoading}
-                    keyField="schdlId"
+                    keyField="schdlSn"
                     emptyMessage="등록된 일정이 없습니다."
                     isPremium={true}
                     className="border-none bg-transparent shadow-none"
@@ -589,34 +589,48 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
                   />
                 </div>
               </div>
-            ) : (
+            ) : activeTab === 'job' ? (
               <StandardDataTable
-                columns={activeTab === 'job' ? jobColumns : reportColumns}
-                data={activeTab === 'job' ? jobs : reports}
-                loading={activeTab === 'job' ? isJobLoading : isReportLoading}
+                columns={jobColumns}
+                data={jobs}
+                loading={isJobLoading}
                 // 목록이 '내 업무'로 좁혀진 상태의 빈 화면은 데이터 유실처럼 보이기 쉽다.
                 // 왜 비었는지와 다음 행동('부서 전체' 토글)을 문구로 알려 준다.
                 emptyMessage={
-                  activeTab === 'job' && jobScope === 'mine'
+                  jobScope === 'mine'
                     ? '내가 담당자인 업무가 없습니다. 부서 전체를 보려면 상단의 \'부서 전체\'를 선택하십시오.'
                     : '식별된 데이터 유닛이 없습니다.'
                 }
                 isPremium={true}
                 className="border-none bg-transparent shadow-none"
                 // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
-                error={
-                  activeTab === 'job'
-                    ? (isJobError ? (jobError instanceof Error ? jobError : new Error('업무 목록을 불러오지 못했습니다.')) : null)
-                    : (isReportError ? (reportError instanceof Error ? reportError : new Error('업무 보고를 불러오지 못했습니다.')) : null)
-                }
-                onRetry={() => void (activeTab === 'job' ? refetchJobs() : refetchReports())}
+                error={isJobError ? (jobError instanceof Error ? jobError : new Error('업무 목록을 불러오지 못했습니다.')) : null}
+                onRetry={() => void refetchJobs()}
                 // StandardDataTable 은 처음부터 pagination 을 지원했는데 전달하지 않고 있었다.
                 // 그래서 첫 페이지 밖의 데이터에 도달할 방법이 아예 없었다.
                 pagination={{
-                  currentPage: activeTab === 'job' ? jobPage : reportPage,
-                  totalPages: Math.max(1, activeTab === 'job' ? jobTotalPages : reportTotalPages),
-                  onPageChange: (p: number) => (activeTab === 'job' ? setJobPage(p) : setReportPage(p)),
-                  totalCount: activeTab === 'job' ? jobData?.total : reportData?.total,
+                  currentPage: jobPage,
+                  totalPages: Math.max(1, jobTotalPages),
+                  onPageChange: setJobPage,
+                  totalCount: jobData?.total,
+                  pageSize: PAGE_UNIT,
+                }}
+              />
+            ) : (
+              <StandardDataTable
+                columns={reportColumns}
+                data={reports}
+                loading={isReportLoading}
+                emptyMessage="식별된 데이터 유닛이 없습니다."
+                isPremium={true}
+                className="border-none bg-transparent shadow-none"
+                error={isReportError ? (reportError instanceof Error ? reportError : new Error('업무 보고를 불러오지 못했습니다.')) : null}
+                onRetry={() => void refetchReports()}
+                pagination={{
+                  currentPage: reportPage,
+                  totalPages: Math.max(1, reportTotalPages),
+                  onPageChange: setReportPage,
+                  totalCount: reportData?.total,
                   pageSize: PAGE_UNIT,
                 }}
               />
@@ -634,7 +648,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       >
         <ScheduleCreateForm
           // key 로 모드 전환 시 폼을 새로 마운트해 기본값이 확실히 반영되게 한다.
-          key={editingSchedule?.schdlId ?? 'new'}
+          key={editingSchedule?.schdlSn ?? 'new'}
           mode={editingSchedule ? 'edit' : 'create'}
           initialData={editingSchedule ?? undefined}
           defaultYmd={format(selectedDate ?? currentDate, 'yyyyMMdd')}
@@ -652,7 +666,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       >
         <ReportCreateForm
           // key 로 모드 전환 시 폼을 새로 마운트해 기본값이 확실히 반영되게 한다(일정 폼과 동일).
-          key={editingReport?.rptId ?? 'new'}
+          key={editingReport?.rptpSn ?? 'new'}
           mode={editingReport ? 'edit' : 'create'}
           initialData={editingReport ?? undefined}
           defaultYmd={format(currentDate, 'yyyyMMdd')}

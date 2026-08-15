@@ -19,6 +19,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "AddressBook", description = "주소록 관리 API")
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/address-books")
 @RequiredArgsConstructor
@@ -39,10 +40,10 @@ public class AddressBookApiController {
     }
 
     @Operation(summary = "주소록 상세 조회", description = "주소록의 상세 정보와 포함된 사용자 목록을 조회합니다.")
-    @GetMapping("/{adbkId}")
+    @GetMapping("/{adbkSn}")
     public ResponseEntity<ApiResponse<AddressBookDto>> getAddressBook(
-            @Parameter(description = "주소록 ID") @PathVariable String adbkId) {
-        return ResponseEntity.ok(ApiResponse.success(addressBookService.getAddressBook(adbkId)));
+            @Parameter(description = "주소록 일련번호") @PathVariable Long adbkSn) {
+        return ResponseEntity.ok(ApiResponse.success(addressBookService.getAddressBook(adbkSn)));
     }
 
     @Operation(summary = "주소록 등록", description = "새로운 주소록을 생성합니다.")
@@ -55,22 +56,22 @@ public class AddressBookApiController {
     }
 
     @Operation(summary = "주소록 정보 수정", description = "주소록 명칭, 공개 범위 등 정보를 수정합니다.")
-    @PutMapping("/{adbkId}")
+    @PutMapping("/{adbkSn}")
     public ResponseEntity<ApiResponse<Void>> updateAddressBook(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "주소록 ID") @PathVariable String adbkId,
+            @Parameter(description = "주소록 일련번호") @PathVariable Long adbkSn,
             @Valid @RequestBody AddressBookDto addressBookDto) {
-        addressBookDto.setAdbkId(adbkId);
+        addressBookDto.setAdbkSn(adbkSn);
         addressBookService.updateAddressBook(userDetails.getUsername(), addressBookDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "주소록 삭제 (사용중지)", description = "주소록을 삭제(사용중지) 상태로 변경 처리합니다.")
-    @DeleteMapping("/{adbkId}")
+    @DeleteMapping("/{adbkSn}")
     public ResponseEntity<ApiResponse<Void>> deleteAddressBook(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "주소록 ID") @PathVariable String adbkId) {
-        addressBookService.deleteAddressBook(adbkId, userDetails.getUsername());
+            @Parameter(description = "주소록 일련번호") @PathVariable Long adbkSn) {
+        addressBookService.deleteAddressBook(adbkSn, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

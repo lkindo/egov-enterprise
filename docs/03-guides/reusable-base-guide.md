@@ -1,4 +1,10 @@
-# 재사용 Base 가이드 (`template/reusable-base`)
+# 재사용 Base 역사 가이드 (`template/reusable-base`, 2026-07 스냅샷)
+
+> **현행 주의(2026-08-15)**: 이 브랜치는 현재 개발선보다 465커밋 뒤인 역사 스냅샷이며 최신
+> 보안·DB·품질 게이트를 포함하지 않는다. 신규 프로젝트의 공식 시작점으로 사용하지 않는다.
+> 현행 결정은 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)이다.
+> 현재 릴리스에서 시작해 선택 기능이 모인 `business-app` 도메인을 요구사항에 맞게 제거한다.
+> 아래 내용은 2026-07 분리 실험과 당시 검증 증거를 보존하는 기록이다.
 
 > **이 브랜치는 무엇인가**: eGov Enterprise 를 **신규 SI/재개발 프로젝트의 시작점(base)**으로 쓰기 위해,
 > 데모용 샘플 도메인 20+개를 **코드·라우트·DB 테이블까지 물리적으로 제거**한 "깨끗한 골격" 브랜치다.
@@ -86,10 +92,10 @@ operation · report`
 
 ---
 
-## 5. 신규 프로젝트 시작하기 (사용법)
+## 5. 당시 사용법 (현재 사용 금지)
 
 ```bash
-# 1) base 브랜치로 새 저장소 시작
+# 1) 역사적 명령 — 현재는 실행하지 말 것
 git clone -b template/reusable-base <this-repo-url> my-new-project
 cd my-new-project
 

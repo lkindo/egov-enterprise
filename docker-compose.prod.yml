@@ -27,6 +27,8 @@ services:
       DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD 가 필요합니다}
       JWT_SECRET: ${JWT_SECRET:?JWT_SECRET 이 필요합니다}
       ALGORITHM_KEY: ${ALGORITHM_KEY:?ALGORITHM_KEY 가 필요합니다 (PII 암호화 마스터 키)}
+      # 키 회전 창에서만 구키를 함께 주입한다. 재암호화·검증 후 반드시 제거한다.
+      OLD_ALGORITHM_KEY: ${OLD_ALGORITHM_KEY}
       # 최초 기동 시 관리자 비밀번호 프로비저닝. 미설정이면 webmaster 계정은 로그인 불가 상태로 남는다.
       ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:?ADMIN_INITIAL_PASSWORD 가 필요합니다 (최초 관리자 비밀번호)}
       # [W1-13] SMTP 미설정이면 메일이 로그로만 나간다(LoggingEmailSender). 운영에서는 그 상태를 금지한다.

@@ -2,9 +2,9 @@ import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 
 interface Scrap {
-  scrapId: string;
+  scrapSn: number;
   bbsId: string;
-  pstId: number;
+  pstSn: number;
   scrapNm: string;
   crtDt: string;
 }
@@ -24,8 +24,8 @@ class ScrapService extends ApiService {
   /**
    * 스크랩 삭제
    */
-  async deleteScrap(id: string): Promise<void> {
-    return this.delete<void>(`/${id}`);
+  async deleteScrap(scrapSn: number): Promise<void> {
+    return this.delete<void>(`/${scrapSn}`);
   }
 }
 

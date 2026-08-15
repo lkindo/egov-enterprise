@@ -57,7 +57,7 @@ test.describe('Tier 22: Deep Security Guard', () => {
             const bbsId = 'BBSMSTR_AAAAAAAAAAAA';
             const auth = { Authorization: `Bearer ${getAdminBearerToken()}` };
 
-            // [하드코딩 ID 제거] 과거에는 pstId '1108'(기존 게시글)에 의존했다. 그 행이 사라지면
+            // [하드코딩 ID 제거] 과거에는 pstSn '1108'(기존 게시글)에 의존했다. 그 행이 사라지면
             // 상세 페이지가 비어 댓글 입력창을 못 찾고 테스트가 무의미해지거나 실패했다.
             // tier-24 의 'API 로 시딩 → 사용 → finally 에서 삭제' 패턴을 그대로 따른다.
             const createRes = await request.post(`${BOARD_API}/posts`, {
@@ -69,8 +69,8 @@ test.describe('Tier 22: Deep Security Guard', () => {
                 },
             });
             expect(createRes.ok(), 'XSS 검증용 게시글 시딩이 성공해야 한다').toBeTruthy();
-            const pstId = (await createRes.json()).data as string;
-            expect(pstId, '서버가 채번한 게시글 ID 가 반환되어야 한다').toBeTruthy();
+            const pstSn = (await createRes.json()).data as string;
+            expect(pstSn, '서버가 채번한 게시글 ID 가 반환되어야 한다').toBeTruthy();
 
             // [E2E 감사 A2] XSS payload가 실행되면 alert() → dialog 이벤트가 발생한다.
             // dialog가 한 번이라도 뜨면 즉시 실패 처리한다(과거에는 무단언 console.log만 있어 취약해도 그린이었음).
@@ -82,7 +82,7 @@ test.describe('Tier 22: Deep Security Guard', () => {
             });
 
             try {
-                await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstId=${pstId}`);
+                await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`);
 
                 // 실제 댓글 입력 필드는 <Textarea name="ansCn"> (과거 셀렉터 'commentCn'는 매칭 실패 →
                 // if(isVisible) 가드가 항상 false가 되어 테스트가 조용히 통과하던 근본 원인이었음)
@@ -132,7 +132,7 @@ test.describe('Tier 22: Deep Security Guard', () => {
             } finally {
                 // 정리. deletePost 는 논리 삭제(use_yn='N')이며 댓글은 함께 지워지지 않는다 —
                 // 남는 댓글은 이 임시 게시글에만 매달리므로 실 데이터를 오염시키지 않는다.
-                await request.delete(`${BOARD_API}/${bbsId}/posts/${pstId}`, { headers: auth });
+                await request.delete(`${BOARD_API}/${bbsId}/posts/${pstSn}`, { headers: auth });
             }
         });
     });
@@ -143,10 +143,10 @@ test.describe('Tier 22: Deep Security Guard', () => {
         test('Handling Malformed UUID/IDs in URLs', async ({ page, consoleGuard }) => {
             // [E2E 감사] 오염된 ID로 인한 '예상된' 백엔드 4xx만 해당 요청 URL 한정으로 좁게 화이트리스트.
             // 광역 /not found|404|invalid|error/i 무시는 제거 — React 런타임 크래시는 반드시 실패해야 하므로.
-            consoleGuard.addIgnorePattern(/INVALID_ID|pstId=999999|etc\/passwd|menuId=--/i);
+            consoleGuard.addIgnorePattern(/INVALID_ID|pstSn=999999|etc\/passwd|menuId=--/i);
 
             const malformedPaths = [
-                '/admin/community/boards/detail?bbsId=INVALID_ID&pstId=999999',
+                '/admin/community/boards/detail?bbsId=INVALID_ID&pstSn=999999',
                 '/admin/user/manage?userId=../../../etc/passwd',
                 '/admin/system/menus?menuId=--'
             ];

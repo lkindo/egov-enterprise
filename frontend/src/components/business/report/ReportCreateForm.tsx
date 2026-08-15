@@ -18,7 +18,7 @@ import { cn } from '@/lib/utils';
 export const reportFormSchema = WorkReportDtoSchema.extend({
     rptTtl: z.string().min(1, '보고 제목을 입력하세요.').max(200),
     rptYmd: z.string().length(8, '보고 일자를 선택하세요.'),
-    atchFileId: z.string().nullable().optional().transform(v => v === null ? undefined : v),
+    atchFileSn: z.number().nullable().optional().transform(v => v === null ? undefined : v),
 });
 
 export type ReportFormValues = z.infer<typeof reportFormSchema>;
@@ -45,7 +45,7 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
             rptYmd: initialData?.rptYmd ?? defaultYmd,
             // 수정 시 폼에 없는 필드를 빠뜨리면 서버 update 가 null 로 덮어쓴다.
             rptSeCd: initialData?.rptSeCd,
-            atchFileId: initialData?.atchFileId,
+            atchFileSn: initialData?.atchFileSn,
         },
     });
 

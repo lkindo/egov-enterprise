@@ -50,8 +50,8 @@ public class MemoReportService {
                 .map(memoReportMapper::toDto);
     }
 
-    public MemoReportDto getMemoReport(@NonNull String rptId) {
-        MemoReport entity = memoReportRepository.findById(rptId)
+    public MemoReportDto getMemoReport(@NonNull Long memoRptSn) {
+        MemoReport entity = memoReportRepository.findById(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertParticipantOrAdmin(entity); // [IDOR] 작성자·수신자·관리자만 열람
         return memoReportMapper.toDto(entity);
@@ -83,50 +83,47 @@ public class MemoReportService {
     }
 
     @Transactional
-    public String createMemoReport(String userId, MemoReportDto dto) {
-        String id = nuri.foundation.core.util.IdGenerationUtil.generateUniqueId("MEMO_", 15, memoReportRepository::existsById);
+    public Long createMemoReport(String userId, MemoReportDto dto) {
         MemoReport entity = MemoReport.builder()
-                .rptId(id)
                 .rptTtl(dto.getRptTtl())
                 .memoRptYmd(dto.getMemoRptYmd())
                 .userId(userId)
                 .rptrId(dto.getRptrId())
                 .rptCn(dto.getRptCn())
-                .atchFileId(dto.getAtchFileId())
+                .atchFileSn(dto.getAtchFileSn())
                 .build();
-        memoReportRepository.save(entity);
-        return id;
+        return memoReportRepository.save(entity).getMemoRptSn();
     }
 
     @Transactional
-    public void updateMemoReport(String rptId, String userId, MemoReportDto dto) {
-        MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(rptId))
+    public void updateMemoReport(Long memoRptSn, String userId, MemoReportDto dto) {
+        MemoReport entity = memoReportRepository.findById(Objects.requireNonNull(memoRptSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 작성자/관리자만 수정
         entity.update(dto.getRptTtl(), dto.getMemoRptYmd(), entity.getUserId(), dto.getRptrId(),
-                dto.getRptCn(), dto.getAtchFileId());
+                dto.getRptCn(), dto.getAtchFileSn());
         entity.setLastMdfrId(userId);
     }
 
     @Transactional
-    public void deleteMemoReport(@NonNull String rptId) {
-        MemoReport entity = memoReportRepository.findById(rptId)
+    public void deleteMemoReport(@NonNull Long memoRptSn) {
+        MemoReport entity = memoReportRepository.findById(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 작성자/관리자만 삭제
         memoReportRepository.delete(entity);
     }
 
     @Transactional
-    public void readMemoReport(@NonNull String rptId) {
-        memoReportRepository.findById(rptId).ifPresent(entity -> {
+    public void readMemoReport(@NonNull Long memoRptSn) {
+        memoReportRepository.findById(memoRptSn).ifPresent(entity -> {
             assertParticipantOrAdmin(entity); // 열람 표시도 권한자만 — 미인가 요청이 조회일시를 갱신하지 못하게 한다
             entity.updateInqireDt(java.time.LocalDateTime.now());
         });
     }
 
     @Transactional
-    public void updateDrctMatter(String rptId, String instrCn) {
-        MemoReport entity = memoReportRepository.findById(rptId)
+    public void updateDrctMatter(Long memoRptSn, String instrCn) {
+        MemoReport entity = memoReportRepository.findById(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertParticipantOrAdmin(entity); // [IDOR] 타인의 보고에 지시사항을 남길 수 없다
         entity.updateDrctMatter(instrCn, java.time.LocalDateTime.now());

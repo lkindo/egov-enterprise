@@ -38,9 +38,9 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 템플릿 상세 조회")
-    @GetMapping("/templates/{tmpltId}")
-    public ResponseEntity<ApiResponse<SurveyTemplateDto>> getTemplate(@PathVariable String tmpltId) {
-        return ResponseEntity.ok(ApiResponse.success(surveyService.getTmplat(tmpltId)));
+    @GetMapping("/templates/{srvyTmpltSn}")
+    public ResponseEntity<ApiResponse<SurveyTemplateDto>> getTemplate(@PathVariable Long srvyTmpltSn) {
+        return ResponseEntity.ok(ApiResponse.success(surveyService.getTmplat(srvyTmpltSn)));
     }
 
     @Operation(summary = "설문 템플릿 등록")
@@ -62,9 +62,9 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 정보 상세 조회")
-    @GetMapping("/{srvyId}")
-    public ResponseEntity<ApiResponse<SurveyInfoDto>> getSurvey(@PathVariable String srvyId) {
-        return ResponseEntity.ok(ApiResponse.success(surveyService.getSurvey(srvyId)));
+    @GetMapping("/{srvySn}")
+    public ResponseEntity<ApiResponse<SurveyInfoDto>> getSurvey(@PathVariable Long srvySn) {
+        return ResponseEntity.ok(ApiResponse.success(surveyService.getSurvey(srvySn)));
     }
 
     @Operation(summary = "설문 정보 등록")
@@ -75,87 +75,87 @@ public class SurveyApiController {
     }
 
     @Operation(summary = "설문 정보 수정")
-    @PutMapping("/{srvyId}")
-    public ResponseEntity<ApiResponse<Void>> updateSurvey(@PathVariable String srvyId, @Valid @RequestBody SurveyInfoDto dto) {
-        dto.setSrvyId(srvyId);
+    @PutMapping("/{srvySn}")
+    public ResponseEntity<ApiResponse<Void>> updateSurvey(@PathVariable Long srvySn, @Valid @RequestBody SurveyInfoDto dto) {
+        dto.setSrvySn(srvySn);
         surveyService.updateSurvey(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 정보 삭제")
-    @DeleteMapping("/{srvyId}")
-    public ResponseEntity<ApiResponse<Void>> deleteSurvey(@PathVariable String srvyId) {
-        surveyService.deleteSurvey(srvyId);
+    @DeleteMapping("/{srvySn}")
+    public ResponseEntity<ApiResponse<Void>> deleteSurvey(@PathVariable Long srvySn) {
+        surveyService.deleteSurvey(srvySn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 템플릿 수정")
-    @PutMapping("/templates/{tmpltId}")
-    public ResponseEntity<ApiResponse<Void>> updateTemplate(@PathVariable String tmpltId, @Valid @RequestBody SurveyTemplateDto dto) {
-        dto.setSrvyTmpltId(tmpltId);
+    @PutMapping("/templates/{srvyTmpltSn}")
+    public ResponseEntity<ApiResponse<Void>> updateTemplate(@PathVariable Long srvyTmpltSn, @Valid @RequestBody SurveyTemplateDto dto) {
+        dto.setSrvyTmpltSn(srvyTmpltSn);
         surveyService.updateTmplat(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 템플릿 삭제")
-    @DeleteMapping("/templates/{tmpltId}")
-    public ResponseEntity<ApiResponse<Void>> deleteTemplate(@PathVariable String tmpltId) {
-        surveyService.deleteTmplat(tmpltId);
+    @DeleteMapping("/templates/{srvyTmpltSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteTemplate(@PathVariable Long srvyTmpltSn) {
+        surveyService.deleteTmplat(srvyTmpltSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     // --- Questions & Items ---
 
     @Operation(summary = "설문 문항 목록 조회")
-    @GetMapping("/{srvyId}/questions")
-    public ResponseEntity<ApiResponse<List<SurveyQuestionDto>>> getQuestions(@PathVariable String srvyId) {
-        return ResponseEntity.ok(ApiResponse.success(surveyService.getQuestionList(srvyId)));
+    @GetMapping("/{srvySn}/questions")
+    public ResponseEntity<ApiResponse<List<SurveyQuestionDto>>> getQuestions(@PathVariable Long srvySn) {
+        return ResponseEntity.ok(ApiResponse.success(surveyService.getQuestionList(srvySn)));
     }
 
     @Operation(summary = "설문 문항 수정")
-    @PutMapping("/{srvyId}/questions/{srvyQitemId}")
-    public ResponseEntity<ApiResponse<Void>> updateQuestion(@PathVariable String srvyId, @PathVariable String srvyQitemId, @Valid @RequestBody SurveyQuestionDto dto) {
-        dto.setSrvyId(srvyId);
-        dto.setSrvyQstnId(srvyQitemId);
+    @PutMapping("/{srvySn}/questions/{srvyQstnSn}")
+    public ResponseEntity<ApiResponse<Void>> updateQuestion(@PathVariable Long srvySn, @PathVariable Long srvyQstnSn, @Valid @RequestBody SurveyQuestionDto dto) {
+        dto.setSrvySn(srvySn);
+        dto.setSrvyQstnSn(srvyQstnSn);
         surveyService.updateQuestion(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 문항 삭제")
-    @DeleteMapping("/{srvyId}/questions/{srvyQitemId}")
-    public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable String srvyQitemId) {
-        surveyService.deleteQuestion(srvyQitemId);
+    @DeleteMapping("/{srvySn}/questions/{srvyQstnSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteQuestion(@PathVariable Long srvyQstnSn) {
+        surveyService.deleteQuestion(srvyQstnSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 문항 등록")
-    @PostMapping("/{srvyId}/questions")
-    public ResponseEntity<ApiResponse<Void>> insertQuestion(@PathVariable String srvyId,
+    @PostMapping("/{srvySn}/questions")
+    public ResponseEntity<ApiResponse<Void>> insertQuestion(@PathVariable Long srvySn,
             @Valid @RequestBody SurveyQuestionDto dto) {
-        dto.setSrvyId(srvyId);
+        dto.setSrvySn(srvySn);
         surveyService.insertQuestion(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 항목 수정")
-    @PutMapping("/questions/items/{srvyItemId}")
-    public ResponseEntity<ApiResponse<Void>> updateItem(@PathVariable String srvyItemId, @Valid @RequestBody SurveyArticleDto dto) {
-        dto.setSrvyArtclId(srvyItemId);
+    @PutMapping("/questions/items/{srvyArtclSn}")
+    public ResponseEntity<ApiResponse<Void>> updateItem(@PathVariable Long srvyArtclSn, @Valid @RequestBody SurveyArticleDto dto) {
+        dto.setSrvyArtclSn(srvyArtclSn);
         surveyService.updateItem(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 항목 삭제")
-    @DeleteMapping("/questions/items/{srvyItemId}")
-    public ResponseEntity<ApiResponse<Void>> deleteItem(@PathVariable String srvyItemId) {
-        surveyService.deleteItem(srvyItemId);
+    @DeleteMapping("/questions/items/{srvyArtclSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteItem(@PathVariable Long srvyArtclSn) {
+        surveyService.deleteItem(srvyArtclSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "설문 항목 등록")
-    @PostMapping("/questions/{srvyQitemId}/items")
-    public ResponseEntity<ApiResponse<Void>> insertItem(@PathVariable String srvyQitemId, @Valid @RequestBody SurveyArticleDto dto) {
-        dto.setSrvyQstnId(srvyQitemId);
+    @PostMapping("/questions/{srvyQstnSn}/items")
+    public ResponseEntity<ApiResponse<Void>> insertItem(@PathVariable Long srvyQstnSn, @Valid @RequestBody SurveyArticleDto dto) {
+        dto.setSrvyQstnSn(srvyQstnSn);
         surveyService.insertItem(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

@@ -36,7 +36,7 @@ class ExternalHrServiceTest {
     @DisplayName("외부 인력 전체 조회 - 페이징")
     void getExternalHrList_Success() {
         // Given
-        ExternalHr entity = ExternalHr.builder().otsdHrId("HR1").otsdHrNm("Name").build();
+        ExternalHr entity = ExternalHr.builder().evntSn(1L).otsdHrId("HR1").otsdHrNm("Name").build();
         given(externalHrRepository.findAll(PAGEABLE)).willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
 
         // When
@@ -45,6 +45,7 @@ class ExternalHrServiceTest {
         // Then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getTotalElements()).isEqualTo(1);
+        assertThat(result.getContent().get(0).getEvntSn()).isEqualTo(1L);
         assertThat(result.getContent().get(0).getOtsdHrNm()).isEqualTo("Name");
     }
 
@@ -52,7 +53,7 @@ class ExternalHrServiceTest {
     @DisplayName("이름으로 외부 인력 검색 - 페이징")
     void getExternalHrList_SearchByName() {
         // Given
-        ExternalHr entity = ExternalHr.builder().otsdHrId("HR1").otsdHrNm("Tester").build();
+        ExternalHr entity = ExternalHr.builder().evntSn(1L).otsdHrId("HR1").otsdHrNm("Tester").build();
         given(externalHrRepository.findByOtsdHrNmContaining("Test", PAGEABLE))
                 .willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
 
@@ -67,8 +68,8 @@ class ExternalHrServiceTest {
     @DisplayName("외부 인력 등록")
     void createExternalHr_Success() {
         // Given
-        ExternalHrDto dto = ExternalHrDto.builder().otsdHrNm("New").build();
-        ExternalHr savedEntity = ExternalHr.builder().otsdHrId("HR2").otsdHrNm("New").build();
+        ExternalHrDto dto = ExternalHrDto.builder().evntSn(2L).otsdHrId("HR2").otsdHrNm("New").build();
+        ExternalHr savedEntity = ExternalHr.builder().evntSn(2L).otsdHrId("HR2").otsdHrNm("New").build();
         given(externalHrRepository.save(any(ExternalHr.class))).willReturn(savedEntity);
 
         // When
@@ -76,5 +77,6 @@ class ExternalHrServiceTest {
 
         // Then
         assertThat(result.getOtsdHrId()).isEqualTo("HR2");
+        assertThat(result.getEvntSn()).isEqualTo(2L);
     }
 }

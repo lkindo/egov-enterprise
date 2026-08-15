@@ -3,6 +3,8 @@ import nuri.foundation.domain.common.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -20,27 +22,24 @@ import lombok.NoArgsConstructor;
 public class DtaUseStats extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String dtaUseStatsId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long dtaUseStatsSn;
 
     @Column(length = 20)
     private String bbsId;
 
-    // [V2_16] bigint→varchar(20) 타입 정렬: 게시판 4테이블 pst_id(varchar 20)와 도메인 일치 (0행 무손실)
-    @Column(length = 20)
-    private String pstId;
-
-    @Column(length = 20)
-    private String atchFileId;
+    // [V2_69] 게시글 자동 PK와 참조 계약을 BIGINT로 통일한다.
+    @Column
+    private Long pstSn;
+    private Long atchFileSn;
 
     private Integer fileSn;
 
     // 빌더 전용 생성자: 클래스 레벨 @SuperBuilder 제거에 따른 정적 팩토리 위임 대상
-    private DtaUseStats(String dtaUseStatsId, String bbsId, String pstId, String atchFileId, Integer fileSn) {
-        this.dtaUseStatsId = dtaUseStatsId;
+    private DtaUseStats(String bbsId, Long pstSn, Long atchFileSn, Integer fileSn) {
         this.bbsId = bbsId;
-        this.pstId = pstId;
-        this.atchFileId = atchFileId;
+        this.pstSn = pstSn;
+        this.atchFileSn = atchFileSn;
         this.fileSn = fileSn;
     }
 
@@ -49,8 +48,8 @@ public class DtaUseStats extends BaseEntity {
      * 감사 필드(frstRgtrId/lastMdfrId/crtDt/mdfcnDt)는 JPA Auditing 이 채우므로 제외한다.
      */
     @Builder
-    public static DtaUseStats create(String dtaUseStatsId, String bbsId, String pstId, String atchFileId, Integer fileSn) {
-        return new DtaUseStats(dtaUseStatsId, bbsId, pstId, atchFileId, fileSn);
+    public static DtaUseStats create(String bbsId, Long pstSn, Long atchFileSn, Integer fileSn) {
+        return new DtaUseStats(bbsId, pstSn, atchFileSn, fileSn);
     }
 
 }

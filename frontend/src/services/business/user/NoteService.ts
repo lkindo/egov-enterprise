@@ -1,20 +1,11 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
+import type { components } from '@/types/generated-api';
 
-export interface Note {
- noteId: string;
- // 삭제/상세의 relationId 소스 — 수신함=noteRecptnId, 발신함=noteDsptchId (백엔드 NoteDto 기존재)
- noteRecptnId?: string;
- noteDsptchId?: string;
- noteSj: string;
- noteCn: string;
- dsptchUserId: string;
- trnsmiterNm?: string;
- rcverId: string;
- rcverNm?: string;
- crtDt: string;
- openYn: 'Y' | 'N';
-}
+type NoteDto = components['schemas']['NoteDto'];
+
+/** 조회 결과는 DB가 생성한 쪽지 일련번호를 항상 포함한다. */
+export type Note = NoteDto & Required<Pick<NoteDto, 'noteSn'>>;
 
 class NoteService extends ApiService {
  constructor() {
@@ -37,22 +28,22 @@ class NoteService extends ApiService {
 
  /**
  * 쪽지 蹂대궡湲 */
- async sendNote(data: { rcverId: string; noteSj: string; noteCn: string }): Promise<Note> {
- return this.post<Note>('', data);
+ async sendNote(data: { rcverId: string; noteSj: string; noteCn: string }): Promise<void> {
+ return this.post<void>('', data);
  }
 
  /**
  * 쪽지 상세 조회 諛님쎌쓬 泥섎━
  */
- async getNote(id: string, params: { type: string; relationId: string }): Promise<Note> {
- return this.get<Note>(`/${id}`, { params });
+ async getNote(noteSn: number, params: { type: string; relationSn: number }): Promise<Note> {
+ return this.get<Note>(`/${noteSn}`, { params });
  }
 
  /**
  * 쪽지 님젣
  */
- async deleteNote(relationId: string, params: { type: string }): Promise<void> {
-  return this.delete<void>(`/${relationId}`, { params });
+ async deleteNote(relationSn: number, params: { type: string }): Promise<void> {
+  return this.delete<void>(`/${relationSn}`, { params });
  }
 }
 

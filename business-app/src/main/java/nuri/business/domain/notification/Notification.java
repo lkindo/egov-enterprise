@@ -16,8 +16,8 @@ import java.time.LocalDateTime;
 public class Notification extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String notiSn;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long notiSn;
 
     @Column(length = 100)
     private String notiTtlNm;
@@ -48,7 +48,7 @@ public class Notification extends BaseEntity {
      * [Phase 5.2] 빌더 전용 생성자.
      * @Builder.Default 이던 readYn 의 기본값("N")을 널병합으로 재현한다.
      */
-    private Notification(String notiSn, String notiTtlNm, String notiCn, String rcvrId,
+    private Notification(Long notiSn, String notiTtlNm, String notiCn, String rcvrId,
                          String readYn, String linkUrl) {
         this.notiSn = notiSn;
         this.notiTtlNm = notiTtlNm;
@@ -64,7 +64,7 @@ public class Notification extends BaseEntity {
      * 빌더 미설정 필드(notiDt/notiIvlVal)는 파라미터에서 제외한다.
      */
     @Builder
-    public static Notification create(String notiSn, String notiTtlNm, String notiCn, String rcvrId,
+    public static Notification create(Long notiSn, String notiTtlNm, String notiCn, String rcvrId,
                                       String readYn, String linkUrl) {
         return new Notification(notiSn, notiTtlNm, notiCn, rcvrId, readYn, linkUrl);
     }

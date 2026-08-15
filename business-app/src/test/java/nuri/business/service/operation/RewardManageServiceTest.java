@@ -36,7 +36,7 @@ class RewardManageServiceTest {
     @DisplayName("포상 전체 조회 - 페이징")
     void getRewardList_Success() {
         // Given
-        RewardManage entity = RewardManage.builder().rwrdId("R1").rwrdNm("Excellence").build();
+        RewardManage entity = RewardManage.builder().rwrdSn(1L).rwrdNm("Excellence").build();
         given(rewardManageRepository.findAll(PAGEABLE)).willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
 
         // When
@@ -52,7 +52,7 @@ class RewardManageServiceTest {
     @DisplayName("이름으로 포상 검색 - 페이징")
     void getRewardList_SearchByName() {
         // Given
-        RewardManage entity = RewardManage.builder().rwrdId("R1").rwrdNm("Gold Prize").build();
+        RewardManage entity = RewardManage.builder().rwrdSn(1L).rwrdNm("Gold Prize").build();
         given(rewardManageRepository.findByRwrdNmContaining("Gold", PAGEABLE))
                 .willReturn(new PageImpl<>(List.of(entity), PAGEABLE, 1));
 
@@ -68,13 +68,13 @@ class RewardManageServiceTest {
     void createReward_Success() {
         // Given
         RewardManageDto dto = RewardManageDto.builder().rwardNm("New Reward").build();
-        RewardManage savedEntity = RewardManage.builder().rwrdId("R2").rwrdNm("New Reward").build();
+        RewardManage savedEntity = RewardManage.builder().rwrdSn(2L).rwrdNm("New Reward").build();
         given(rewardManageRepository.save(any(RewardManage.class))).willReturn(savedEntity);
 
         // When
         RewardManageDto result = rewardManageService.createReward(dto);
 
         // Then
-        assertThat(result.getRwardId()).isEqualTo("R2");
+        assertThat(result.getRwrdSn()).isEqualTo(2L);
     }
 }

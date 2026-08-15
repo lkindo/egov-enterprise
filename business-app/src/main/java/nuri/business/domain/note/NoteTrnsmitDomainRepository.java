@@ -14,16 +14,16 @@ import java.util.Optional;
  * 발신쪽지 Repository
  */
 @Repository("noteTrnsmitDomainRepository")
-public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, String> {
+public interface NoteTrnsmitDomainRepository extends JpaRepository<NoteTrnsmit, Long> {
 
     // ── [V2_21 물리 수거 GC 지원] ──
     /** 물리 수거 판정 직렬화용 비관적 쓰기잠금 조회. 양측 삭제 판정~수거를 한 트랜잭션에서 원자화한다(레이스 차단). */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("SELECT t FROM NoteTrnsmit t WHERE t.noteSndngId = :noteSndngId")
-    Optional<NoteTrnsmit> findByIdForUpdate(@Param("noteSndngId") String noteSndngId);
+    @Query("SELECT t FROM NoteTrnsmit t WHERE t.noteSndngSn = :noteSndngSn")
+    Optional<NoteTrnsmit> findByIdForUpdate(@Param("noteSndngSn") Long noteSndngSn);
 
     /** 특정 쪽지(note)를 참조하는 발신 건 수(info 물리삭제 안전성 판정용). */
-    long countByNoteNoteId(String noteId);
+    long countByNoteNoteSn(Long noteSn);
 
     @Query(value = "SELECT t FROM NoteTrnsmit t JOIN FETCH t.note n WHERE t.sndrId = :dsptchUserId AND (:searchWrd IS NULL OR n.noteTtl LIKE %:searchWrd% OR n.noteCn LIKE %:searchWrd%) AND t.delYn = 'N'",
            countQuery = "SELECT count(t) FROM NoteTrnsmit t WHERE t.sndrId = :dsptchUserId AND (:searchWrd IS NULL OR t.note.noteTtl LIKE %:searchWrd% OR t.note.noteCn LIKE %:searchWrd%) AND t.delYn = 'N'")

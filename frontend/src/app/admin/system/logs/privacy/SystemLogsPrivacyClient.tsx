@@ -107,7 +107,7 @@ const SystemLogsPrivacyClient = () => {
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
-                keyField="dmndId"
+                keyField="prvcLogSn"
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,

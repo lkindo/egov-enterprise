@@ -59,12 +59,6 @@ class IdGenerationUtilTest {
         assertThat(IdGenerationUtil.generateMberId())
                 .startsWith(Constants.User.MBER_PREFIX)
                 .hasSize(Constants.User.MBER_PREFIX.length() + Constants.User.ESNTL_ID_UUID_LENGTH);
-
-
-        assertThat(IdGenerationUtil.generateSmsId())
-                .startsWith(Constants.User.SMS_PREFIX);
-        assertThat(IdGenerationUtil.generateMailId())
-                .startsWith(Constants.User.MAIL_PREFIX);
     }
 
     @Test

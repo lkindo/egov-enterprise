@@ -1,18 +1,12 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
+import type { components } from '@/types/generated-api';
 import { AxiosRequestConfig } from 'axios';
 
-interface WorkReport {
-  rptId?: string;
-  rptTtl?: string;
-  rptCn?: string;
-  rptSeCd?: string; // 1: 주간, 2: 월간
-  rptYmd?: string;
-  userId?: string;
-  wrterNm?: string;
-  atchFileId?: string;
-  rptSttsCd?: string; // R: 대기, Y: 승인, N: 반려
-}
+type WorkReportDto = components['schemas']['WorkReportDto'];
+
+/** 화면에서 리소스 경로에 쓰는 자동 생성 일련번호가 존재하는 조회 결과 타입. */
+export type WorkReport = WorkReportDto & Required<Pick<WorkReportDto, 'rptpSn'>>;
 
 /**
  * 보고 관리 서비스 (User)
@@ -47,8 +41,8 @@ class ReportService extends ApiService {
   /**
    * 보고 상세 조회
    */
-  async getReport(rptId: string, config?: AxiosRequestConfig): Promise<WorkReport> {
-    return this.get<WorkReport>(`/${rptId}`, config);
+  async getReport(rptpSn: number, config?: AxiosRequestConfig): Promise<WorkReport> {
+    return this.get<WorkReport>(`/${rptpSn}`, config);
   }
 
   /**
@@ -61,19 +55,19 @@ class ReportService extends ApiService {
   /**
    * 보고 수정 — 작성자 본인 또는 관리자만 가능하다(서버에서 검증).
    */
-  async updateReport(rptId: string, data: Partial<WorkReport>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${rptId}`, data, config);
+  async updateReport(rptpSn: number, data: Partial<WorkReport>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/${rptpSn}`, data, config);
   }
 
   /**
    * 보고 삭제 — 작성자 본인 또는 관리자만 가능하다(서버에서 검증).
    */
-  async deleteReport(rptId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/${rptId}`, config);
+  async deleteReport(rptpSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/${rptpSn}`, config);
   }
 
   // [제거됨] confirmReport(승인/반려)
-  //   `PUT /work-reports/{rptId}/confirm` 을 호출했으나 그런 엔드포인트는 백엔드에 존재하지 않고,
+  //   `PUT /work-reports/{rptpSn}/confirm` 을 호출했으나 그런 엔드포인트는 백엔드에 존재하지 않고,
   //   프론트에도 호출자가 0이었다. 있지도 않은 기능을 있는 것처럼 보이게 하는 死코드라 삭제한다.
   //   승인 흐름이 필요해지면 백엔드 엔드포인트부터 만들고 다시 추가할 것.
 }

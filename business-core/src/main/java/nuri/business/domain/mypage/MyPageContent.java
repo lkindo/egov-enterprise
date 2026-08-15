@@ -3,6 +3,8 @@ package nuri.business.domain.mypage;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -21,8 +23,8 @@ import lombok.NoArgsConstructor;
 public class MyPageContent extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String cntntsId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long contsSn;
 
     @Column(length = 100)
     private String cntntsNm;
@@ -39,9 +41,9 @@ public class MyPageContent extends BaseEntity {
     @Column(length = 255)
     private String cntntsDc;
 
-    private MyPageContent(String cntntsId, String cntntsNm, String cntcUrl, String cntntsUseYn,
+    private MyPageContent(Long contsSn, String cntntsNm, String cntcUrl, String cntntsUseYn,
                           String cntntsLinkUrl, String cntntsDc) {
-        this.cntntsId = cntntsId;
+        this.contsSn = contsSn;
         this.cntntsNm = cntntsNm;
         this.cntcUrl = cntcUrl;
         this.cntntsUseYn = cntntsUseYn;
@@ -50,9 +52,9 @@ public class MyPageContent extends BaseEntity {
     }
 
     @Builder
-    public static MyPageContent create(String cntntsId, String cntntsNm, String cntcUrl, String cntntsUseYn,
+    public static MyPageContent create(Long contsSn, String cntntsNm, String cntcUrl, String cntntsUseYn,
                                        String cntntsLinkUrl, String cntntsDc) {
-        return new MyPageContent(cntntsId, cntntsNm, cntcUrl, cntntsUseYn, cntntsLinkUrl, cntntsDc);
+        return new MyPageContent(contsSn, cntntsNm, cntcUrl, cntntsUseYn, cntntsLinkUrl, cntntsDc);
     }
 
     public void update(String cntntsNm, String cntcUrl, String cntntsUseYn, String cntntsLinkUrl, String cntntsDc) {

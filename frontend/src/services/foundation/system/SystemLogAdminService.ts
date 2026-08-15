@@ -41,8 +41,8 @@ class SystemLogAdminService extends AdminService {
   /**
    * 시스템 로그 상세 조회
    */
-  async getSystemLog(dmndId: string, config?: AxiosRequestConfig): Promise<SysLog> {
-    return this.get<SysLog>(`/system/${dmndId}`, config);
+  async getSystemLog(sysLogSn: number, config?: AxiosRequestConfig): Promise<SysLog> {
+    return this.get<SysLog>(`/system/${sysLogSn}`, config);
   }
 
   /**
@@ -58,8 +58,8 @@ class SystemLogAdminService extends AdminService {
   /**
    * 로그인 로그 상세 조회
    */
-  async getLoginLog(logId: string, config?: AxiosRequestConfig): Promise<LoginLog> {
-    return this.get<LoginLog>(`/login/${logId}`, config);
+  async getLoginLog(lgnSn: number, config?: AxiosRequestConfig): Promise<LoginLog> {
+    return this.get<LoginLog>(`/login/${lgnSn}`, config);
   }
 
   /**

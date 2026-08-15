@@ -1,5 +1,6 @@
 package nuri.business.service.board.dto;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.*;
 
 import lombok.AllArgsConstructor;
@@ -29,7 +30,13 @@ public class BoardMasterDto {
     @NotBlank
     private String bbsAtrbCd;
     private String bbsAtrbCdNm; // 조인 컬럼명 표준화
+    @Schema(allowableValues = { "Y", "N" })
+    @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
+    @Size(max = 1)
     private String ansPsbltyYn;
+    @Schema(allowableValues = { "Y", "N" })
+    @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
+    @Size(max = 1)
     private String fileAtchPsbltyYn;
     private Integer atchPsbltyFileQty;
     @NotNull
@@ -40,16 +47,24 @@ public class BoardMasterDto {
     private LocalDateTime crtDt;
     private String lastMdfrId;
     private LocalDateTime mdfcnDt;
+    @Schema(allowableValues = { "Y", "N" })
+    @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
     @Size(max = 1)
     @NotBlank
     private String useYn;
-    @Size(max = 20)
-    private String cmntyId;
-    @Size(max = 20)
-    private String blogId;
+    private Long cmntySn;
+    private Long blogSn;
+    @Schema(allowableValues = { "Y", "N" })
+    @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
     @Size(max = 1)
     private String blogYn;
+    @Schema(allowableValues = { "Y", "N" })
+    @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
+    @Size(max = 1)
     private String ansYn;
+    @Schema(allowableValues = { "Y", "N" })
+    @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
+    @Size(max = 1)
     private String stsfdgYn;
 
     // Additional fields for completeness

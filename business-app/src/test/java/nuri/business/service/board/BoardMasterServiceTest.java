@@ -176,22 +176,22 @@ class BoardMasterServiceTest {
     @DisplayName("블로그 목록 조회")
     void getBlogList() {
         Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
-        Blog blog = Blog.builder().blogId("BLOG_01").blogTtl("My Blog").build();
+        Blog blog = Blog.builder().blogSn(1L).blogTtl("My Blog").build();
         given(blogRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(blog)));
 
         Page<BlogDto> result = boardMasterService.getBlogList(null, null, pageable);
 
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getBlogId()).isEqualTo("BLOG_01");
+        assertThat(result.getContent().get(0).getBlogSn()).isEqualTo(1L);
     }
 
     @Test
     @DisplayName("블로그 단건 조회")
     void getBlog() {
-        Blog blog = Blog.builder().blogId("BLOG_01").blogTtl("My Blog").build();
-        given(blogRepository.findById("BLOG_01")).willReturn(Optional.of(blog));
+        Blog blog = Blog.builder().blogSn(1L).blogTtl("My Blog").build();
+        given(blogRepository.findById(1L)).willReturn(Optional.of(blog));
 
-        BlogDto result = boardMasterService.getBlog("BLOG_01");
+        BlogDto result = boardMasterService.getBlog(1L);
 
         assertThat(result).isNotNull();
         assertThat(result.getBlogTtl()).isEqualTo("My Blog");
@@ -200,7 +200,7 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("블로그 생성")
     void createBlog() {
-        BlogDto dto = BlogDto.builder().blogId("BLOG_01").blogTtl("New Blog").build();
+        BlogDto dto = BlogDto.builder().blogTtl("New Blog").build();
         boardMasterService.createBlog("user1", dto);
         verify(blogRepository).save(any(Blog.class));
     }
@@ -208,7 +208,7 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("블로그 유저 가입")
     void joinBlog() {
-        boardMasterService.joinBlog("BLOG_01", "user1", "N");
+        boardMasterService.joinBlog(1L, "user1", "N");
         verify(blogUserRepository).save(any(BlogUser.class));
     }
 
@@ -244,9 +244,9 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("블로그를 찾을 수 없는 경우 예외 발생")
     void getBlog_NotFound() {
-        given(blogRepository.findById("INVALID")).willReturn(Optional.empty());
+        given(blogRepository.findById(999L)).willReturn(Optional.empty());
 
-        assertThrows(BusinessException.class, () -> boardMasterService.getBlog("INVALID"));
+        assertThrows(BusinessException.class, () -> boardMasterService.getBlog(999L));
     }
 
     @Test
@@ -260,13 +260,13 @@ class BoardMasterServiceTest {
     @Test
     @DisplayName("포틀릿 블로그 목록 조회")
     void getBlogListPortlet() {
-        Blog blog = Blog.builder().blogId("BLOG01").blogTtl("블로그1").build();
+        Blog blog = Blog.builder().blogSn(1L).blogTtl("블로그1").build();
         when(blogRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(blog)));
 
         List<BlogDto> result = boardMasterService.getBlogListPortlet();
 
         assertThat(result).hasSize(1);
-        assertThat(result.get(0).getBlogId()).isEqualTo("BLOG01");
+        assertThat(result.get(0).getBlogSn()).isEqualTo(1L);
     }
 
     @Test

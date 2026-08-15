@@ -39,7 +39,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     void getDeptJobBoxList_Success() throws Exception {
         // Given
-        Page<DeptJobBoxDto> page = new PageImpl<>(List.of(DeptJobBoxDto.builder().deptTaskBoxId("BOX1").build()));
+        Page<DeptJobBoxDto> page = new PageImpl<>(List.of(DeptJobBoxDto.builder().deptTaskBoxSn(1L).build()));
         given(egovDeptJobBoxService.getDeptJobBoxList(anyString(), any(Pageable.class))).willReturn(page);
 
         // When & Then
@@ -56,10 +56,10 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @WithMockCustomUser
     void getDeptJobBox_Success() throws Exception {
         // Given
-        given(egovDeptJobBoxService.getDeptJobBox("BOX1")).willReturn(DeptJobBoxDto.builder().deptTaskBoxId("BOX1").build());
+        given(egovDeptJobBoxService.getDeptJobBox(1L)).willReturn(DeptJobBoxDto.builder().deptTaskBoxSn(1L).build());
 
         // When & Then
-        mockMvc.perform(get("/api/v1/dept-jobs/boxes/BOX1")
+        mockMvc.perform(get("/api/v1/dept-jobs/boxes/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -70,7 +70,7 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @DisplayName("부서 업무함 등록 성공 (ADMIN)")
     @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
     void createDeptJobBox_Success() throws Exception {
-        given(egovDeptJobBoxService.createDeptJobBox(eq("USR_001"), any(DeptJobBoxDto.class))).willReturn("NEW_ID");
+        given(egovDeptJobBoxService.createDeptJobBox(eq("USR_001"), any(DeptJobBoxDto.class))).willReturn(2L);
 
         mockMvc.perform(post("/api/v1/dept-jobs/boxes")
                         .with(csrf())
@@ -87,9 +87,9 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @DisplayName("부서 업무함 수정 성공 (ADMIN)")
     @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
     void updateDeptJobBox_Success() throws Exception {
-        doNothing().when(egovDeptJobBoxService).updateDeptJobBox(eq("BOX1"), eq("USR_001"), any(DeptJobBoxDto.class));
+        doNothing().when(egovDeptJobBoxService).updateDeptJobBox(eq(1L), eq("USR_001"), any(DeptJobBoxDto.class));
 
-        mockMvc.perform(put("/api/v1/dept-jobs/boxes/BOX1")
+        mockMvc.perform(put("/api/v1/dept-jobs/boxes/1")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(DeptJobBoxDto.builder()
@@ -104,9 +104,9 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     @DisplayName("부서 업무함 삭제 성공 (ADMIN)")
     @WithMockCustomUser(esntlId = "USR_001", role = "ADMIN")
     void deleteDeptJobBox_Success() throws Exception {
-        doNothing().when(egovDeptJobBoxService).deleteDeptJobBox("BOX1");
+        doNothing().when(egovDeptJobBoxService).deleteDeptJobBox(1L);
 
-        mockMvc.perform(delete("/api/v1/dept-jobs/boxes/BOX1")
+        mockMvc.perform(delete("/api/v1/dept-jobs/boxes/1")
                         .with(csrf()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
@@ -127,21 +127,21 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
         // @WithMockCustomUser 의 기본 esntlId 는 "user01" 이다. 이 값으로 스텁해야
         // "컨트롤러가 인증 주체를 서비스로 넘긴다" 는 명제가 실제로 검증된다
         // (형제 테스트들은 반환값을 단언하지 않아 축이 틀려도 드러나지 않았다).
-        given(deptJobService.createDeptJob(eq("user01"), any(DeptJobDto.class))).willReturn("TASK_NEW");
+        given(deptJobService.createDeptJob(eq("user01"), any(DeptJobDto.class))).willReturn(2L);
 
         mockMvc.perform(post("/api/v1/dept-jobs")
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"deptTaskNm\":\"신규 업무\",\"deptTaskCn\":\"내용\",\"prrtyRnk\":\"2\"}"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value("TASK_NEW"));
+                .andExpect(jsonPath("$.data").value(2));
     }
 
     @Test
     @DisplayName("부서 업무 목록 조회 성공")
     @WithMockCustomUser
     void getDeptJobList_Success() throws Exception {
-        Page<DeptJobDto> page = new PageImpl<>(List.of(DeptJobDto.builder().deptTaskId("TASK_1").build()));
+        Page<DeptJobDto> page = new PageImpl<>(List.of(DeptJobDto.builder().deptTaskSn(1L).build()));
         given(deptJobService.getDeptJobList(any(), any(), any(), any(), anyBoolean(), any(Pageable.class)))
                 .willReturn(page);
 
@@ -155,35 +155,35 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
     void getDeptJobList_defaultsToMineOnly() throws Exception {
         // 기본값이 전체로 새면 토글을 달아도 실제 노출은 부서 전체가 된다.
         // eq(true) 로만 스텁했으므로, 컨트롤러가 false 를 넘기면 스텁이 매칭되지 않아 실패한다.
-        Page<DeptJobDto> page = new PageImpl<>(List.of(DeptJobDto.builder().deptTaskId("TASK_1").build()));
+        Page<DeptJobDto> page = new PageImpl<>(List.of(DeptJobDto.builder().deptTaskSn(1L).build()));
         given(deptJobService.getDeptJobList(any(), any(), any(), any(), eq(true), any(Pageable.class)))
                 .willReturn(page);
 
         mockMvc.perform(get("/api/v1/dept-jobs"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].deptTaskId").value("TASK_1"));
+                .andExpect(jsonPath("$.data.list[0].deptTaskSn").value(1));
     }
 
     @Test
     @DisplayName("[소유 스코프] scope=dept 일 때만 부서 전체(mineOnly=false)로 조회한다")
     @WithMockCustomUser
     void getDeptJobList_deptScopeWidens() throws Exception {
-        Page<DeptJobDto> page = new PageImpl<>(List.of(DeptJobDto.builder().deptTaskId("TASK_1").build()));
+        Page<DeptJobDto> page = new PageImpl<>(List.of(DeptJobDto.builder().deptTaskSn(1L).build()));
         given(deptJobService.getDeptJobList(any(), any(), any(), any(), eq(false), any(Pageable.class)))
                 .willReturn(page);
 
         mockMvc.perform(get("/api/v1/dept-jobs").param("scope", "dept"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.list[0].deptTaskId").value("TASK_1"));
+                .andExpect(jsonPath("$.data.list[0].deptTaskSn").value(1));
     }
 
     @Test
     @DisplayName("부서 업무 삭제 성공")
     @WithMockCustomUser
     void deleteDeptJob_Success() throws Exception {
-        doNothing().when(deptJobService).deleteDeptJob("TASK_1");
+        doNothing().when(deptJobService).deleteDeptJob(1L);
 
-        mockMvc.perform(delete("/api/v1/dept-jobs/TASK_1").with(csrf()))
+        mockMvc.perform(delete("/api/v1/dept-jobs/1").with(csrf()))
                 .andExpect(status().isOk());
     }
 }

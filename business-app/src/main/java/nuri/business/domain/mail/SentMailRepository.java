@@ -7,7 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 /**
  * 발송메일 Repository
  */
-public interface SentMailRepository extends JpaRepository<SentMail, String>, SentMailRepositoryCustom {
+public interface SentMailRepository extends JpaRepository<SentMail, Long>, SentMailRepositoryCustom {
 
     Page<SentMail> findByEmlTtlContaining(String emlTtl, Pageable pageable);
 

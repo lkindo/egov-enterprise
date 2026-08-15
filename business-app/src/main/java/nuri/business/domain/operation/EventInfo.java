@@ -19,8 +19,9 @@ import lombok.NoArgsConstructor;
 public class EventInfo extends BaseEntity {
 
     @Id
-    @Column(name = "evnt_id", length = 20)
-    private String evntId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "evnt_sn")
+    private Long evntSn;
 
     @Column(length = 4)
     private String bizYr;
@@ -59,10 +60,10 @@ public class EventInfo extends BaseEntity {
      * [Phase 5.2] 빌더를 정적 팩토리에 배치. 기존 EventInfo.builder()...build() 호출부는 그대로 동작한다.
      * 감사 필드(frstRgtrId/lastMdfrId 등)는 JPA Auditing 이 채우므로 빌더 파라미터에서 제외한다.
      */
-    private EventInfo(String evntId, String bizYr, String evntNm, String evntCn,
+    private EventInfo(Long evntSn, String bizYr, String evntNm, String evntCn,
                       String evntBgngYmd, String evntEndYmd, Long evntUseCnt, String picNm,
                       String prepMttr, String evntTypeCd, String evntAprvYn, String evntAprvYmd) {
-        this.evntId = evntId;
+        this.evntSn = evntSn;
         this.bizYr = bizYr;
         this.evntNm = evntNm;
         this.evntCn = evntCn;
@@ -77,10 +78,10 @@ public class EventInfo extends BaseEntity {
     }
 
     @Builder
-    public static EventInfo create(String evntId, String bizYr, String evntNm, String evntCn,
+    public static EventInfo create(Long evntSn, String bizYr, String evntNm, String evntCn,
                                    String evntBgngYmd, String evntEndYmd, Long evntUseCnt, String picNm,
                                    String prepMttr, String evntTypeCd, String evntAprvYn, String evntAprvYmd) {
-        return new EventInfo(evntId, bizYr, evntNm, evntCn, evntBgngYmd, evntEndYmd, evntUseCnt,
+        return new EventInfo(evntSn, bizYr, evntNm, evntCn, evntBgngYmd, evntEndYmd, evntUseCnt,
                 picNm, prepMttr, evntTypeCd, evntAprvYn, evntAprvYmd);
     }
 }

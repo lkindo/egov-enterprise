@@ -8,7 +8,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/app/components/ui/toast';
 
 export interface Notification {
-  notiSn: string;
+  notiSn: number;
   notiTtlNm: string;
   notiCn: string;
   notiDt: string;
@@ -26,7 +26,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /** REST/WS 외부 입력을 화면 상태에 넣기 전에 최소 계약으로 정규화한다. */
 function normalizeNotification(value: unknown): Notification | null {
   if (!isRecord(value)) return null;
-  const notiSn = typeof value.notiSn === 'string' ? value.notiSn : '';
+  const notiSn = typeof value.notiSn === 'number'
+    && Number.isSafeInteger(value.notiSn)
+    && value.notiSn > 0 ? value.notiSn : 0;
   const notiTtlNm = typeof value.notiTtlNm === 'string' ? value.notiTtlNm : '';
   const notiCn = typeof value.notiCn === 'string' ? value.notiCn : '';
   if (!notiSn || !notiTtlNm) return null;
@@ -174,7 +176,7 @@ export function useNotifications() {
     }
   }, [fetchNotifications, wsClient, isConnected, user, handleNewNotification]);
 
-  const markAsRead = async (id: string) => {
+  const markAsRead = async (id: number) => {
     try {
       await client.post(`/notifications/${id}/read`);
       // Update local state immediately for better UX

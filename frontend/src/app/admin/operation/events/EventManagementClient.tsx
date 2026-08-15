@@ -98,7 +98,7 @@ export default function EventManagementClient() {
   });
 
   const deleteMutation = useMutation({
-    mutationFn: (eventId: string) => eventService.deleteEvent(eventId),
+    mutationFn: (evntSn: number) => eventService.deleteEvent(evntSn),
     onSuccess: () => {
       toast('행사가 성공적으로 삭제되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['events-list'] });
@@ -129,7 +129,7 @@ export default function EventManagementClient() {
       confirmText: '삭제',
       variant: 'destructive',
     });
-    if (ok) deleteMutation.mutate(event.evntId);
+    if (ok) deleteMutation.mutate(event.evntSn);
   };
 
   // --- DataTable Configuration ---
@@ -234,7 +234,7 @@ export default function EventManagementClient() {
                 error={isError ? (error as Error) : null}
                 onRetry={() => refetch()}
                 emptyMessage="등록된 행사가 없습니다."
-                keyField="evntId"
+                keyField="evntSn"
                 isPremium={true}
                 className="bg-transparent border-none shadow-none"
                 pagination={{

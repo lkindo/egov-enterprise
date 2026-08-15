@@ -13,23 +13,21 @@ class SmsTest {
     void builderTest() {
         // 1. 신규 표준 필드 빌더 및 Getter 검증
         Sms sms = Sms.builder()
-                .smsId("SMS_001")
                 .sndngTelno("01012345678")
                 .sndngCn("Test SMS Message")
                 .build();
 
-        assertThat(sms.getSmsId()).isEqualTo("SMS_001");
+        assertThat(sms.getSmsTrsmSn()).isNull();
         assertThat(sms.getSndngTelno()).isEqualTo("01012345678");
         assertThat(sms.getSndngCn()).isEqualTo("Test SMS Message");
 
         // 2. 레거시 별칭 빌더 및 Getter 호환성 검증
         Sms legacySms = Sms.builder()
-                .smsId("SMS_002")
                 .sndngTelno("01087654321")
                 .sndngCn("Legacy SMS Message")
                 .build();
 
-        assertThat(legacySms.getSmsId()).isEqualTo("SMS_002");
+        assertThat(legacySms.getSmsTrsmSn()).isNull();
         assertThat(legacySms.getSndngTelno()).isEqualTo("01087654321");
         assertThat(legacySms.getSndngCn()).isEqualTo("Legacy SMS Message");
 

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository;
  * 부서업무함 저장소
  */
 @Repository
-public interface DeptJobBoxRepository extends JpaRepository<DeptJobBox, String> {
+public interface DeptJobBoxRepository extends JpaRepository<DeptJobBox, Long> {
 
     @Query("SELECT d FROM DeptJobBox d WHERE d.deptId = :deptId ORDER BY d.sortOrdr")
     Page<DeptJobBox> findByDeptId(@Param("deptId") String deptId, Pageable pageable);

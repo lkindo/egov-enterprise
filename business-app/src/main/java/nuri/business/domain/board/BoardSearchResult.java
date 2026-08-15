@@ -12,18 +12,18 @@ import java.time.LocalDateTime;
 @Builder
 public class BoardSearchResult {
     private String bbsId;
-    private String pstId;
+    private Long pstSn;
     private String pstTtl;
     private String frstRgtrId;
     private String userNm;
     private LocalDateTime crtDt;
     private Integer inqCnt;
     private Integer likeCnt;
-    private String upPstId;
+    private Long upPstSn;
     private String replyYn;
     private Integer ansLv;
     private String useYn;
-    private String atchFileId;
+    private Long atchFileSn;
     private String pstBgngYmd;
     private String pstEndYmd;
     private String ttlBoldYn;

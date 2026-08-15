@@ -18,10 +18,10 @@ class ScheduleTest {
 
         // 2. 전체 인자 생성자 및 기본 Getter/Setter 검증
         Schedule schdl2 = new Schedule(
-                "S1", "Cd1", "Name", "Content", "Rep1", "20260501", "20260505",
-                "127.0.0.1", "Pic1", "Atch1", "Dept1", "Knd1", "Place", "Imprt1"
+                1L, "Cd1", "Name", "Content", "Rep1", "20260501", "20260505",
+                "127.0.0.1", "Pic1", 101L, "Dept1", "Knd1", "Place", "Imprt1"
         );
-        assertEquals("S1", schdl2.getSchdlId());
+        assertEquals(1L, schdl2.getSchdlSn());
         assertEquals("Cd1", schdl2.getSchdlSeCd());
         assertEquals("Name", schdl2.getSchdlNm());
         assertEquals("Content", schdl2.getSchdlCn());
@@ -30,7 +30,7 @@ class ScheduleTest {
         assertEquals("20260505", schdl2.getSchdlEndYmd());
         assertEquals("127.0.0.1", schdl2.getSchdlIpAddr());
         assertEquals("Pic1", schdl2.getSchdlPicId());
-        assertEquals("Atch1", schdl2.getAtchFileId());
+        assertEquals(101L, schdl2.getAtchFileSn());
         assertEquals("Dept1", schdl2.getSchdlDeptId());
         assertEquals("Knd1", schdl2.getSchdlKndCd());
         assertEquals("Place", schdl2.getSchdlPlcNm());
@@ -42,21 +42,21 @@ class ScheduleTest {
 
         // 3. SuperBuilder 검증 및 Legacy Alias 검증
         Schedule schdl3 = Schedule.builder()
-                .schdlId("S3")
+                .schdlSn(3L)
                 .schdlNm("Name3")
                 .schdlCn("Content3")
                 .schdlBgngYmd("20260510")
                 .schdlEndYmd("20260515")
                 .build();
         // 표준 필드 검증
-        assertEquals("S3", schdl3.getSchdlId());
+        assertEquals(3L, schdl3.getSchdlSn());
         assertEquals("Name3", schdl3.getSchdlNm());
         assertEquals("Content3", schdl3.getSchdlCn());
         assertEquals("20260510", schdl3.getSchdlBgngYmd());
         assertEquals("20260515", schdl3.getSchdlEndYmd());
 
         // 4. 비즈니스 update() 메소드 검증
-        schdl3.update("NewName", "NewCn", "NewSeCd", "20260601", "20260605", "NewRept", "NewPic", "NewAtch");
+        schdl3.update("NewName", "NewCn", "NewSeCd", "20260601", "20260605", "NewRept", "NewPic", 102L);
         assertEquals("NewName", schdl3.getSchdlNm());
         assertEquals("NewCn", schdl3.getSchdlCn());
         assertEquals("NewSeCd", schdl3.getSchdlSeCd());
@@ -64,7 +64,7 @@ class ScheduleTest {
         assertEquals("20260605", schdl3.getSchdlEndYmd());
         assertEquals("NewRept", schdl3.getReptSeCd());
         assertEquals("NewPic", schdl3.getSchdlPicId());
-        assertEquals("NewAtch", schdl3.getAtchFileId());
+        assertEquals(102L, schdl3.getAtchFileSn());
 
         // 5. 비즈니스 updateAll() 메소드 검증
         schdl3.updateAll("AllName", "AllCn", "AllSe", "AllKnd", "20260701", "20260705", "AllPlc", "AllImp", "AllPic", "AllRep");

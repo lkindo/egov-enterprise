@@ -63,6 +63,9 @@ class UniqueConstraintMirrorLinterTest {
     // CREATE UNIQUE INDEX <name> ON <table> (<cols>)  — 부분 UNIQUE(WHERE) 는 별도 처리(면제)
     private static final Pattern CREATE_UNIQUE_INDEX = Pattern.compile(
             "(?is)CREATE\\s+UNIQUE\\s+INDEX\\s+(?:CONCURRENTLY\\s+)?(?:IF\\s+NOT\\s+EXISTS\\s+)?[\"\\w]+\\s+ON\\s+(?:public\\.)?([\"\\w]+)[^(]*\\(([^)]+)\\)");
+    // ALTER TABLE <table> DROP COLUMN [IF EXISTS] <column> — 사라진 컬럼의 과거 UNIQUE를 최종 상태에서 제거
+    private static final Pattern DROP_COLUMN = Pattern.compile(
+            "(?is)ALTER\\s+TABLE\\s+(?:ONLY\\s+)?(?:public\\.)?([\"\\w]+).*?DROP\\s+COLUMN\\s+(?:IF\\s+EXISTS\\s+)?([\"\\w]+)");
 
     @Test
     @DisplayName("🔗 DB UNIQUE ↔ 엔티티 @Table/@Column/@Id 미러 정합 오딧 (SSOT 계약체인)")
@@ -145,10 +148,23 @@ class UniqueConstraintMirrorLinterTest {
                 for (String stmt : sql.split(";")) {
                     addMatches(ADD_UNIQUE, stmt, result);
                     addMatches(CREATE_UNIQUE_INDEX, stmt, result);
+                    removeDroppedColumnUniques(stmt, result);
                 }
             }
         }
         return result;
+    }
+
+    private void removeDroppedColumnUniques(String sql, Map<String, List<Set<String>>> result) {
+        Matcher matcher = DROP_COLUMN.matcher(sql);
+        while (matcher.find()) {
+            String table = unquote(matcher.group(1));
+            String column = unquote(matcher.group(2));
+            result.computeIfPresent(table, (ignored, uniqueSets) -> {
+                uniqueSets.removeIf(columns -> columns.contains(column));
+                return uniqueSets;
+            });
+        }
     }
 
     private void addMatches(Pattern pattern, String sql, Map<String, List<Set<String>>> result) {

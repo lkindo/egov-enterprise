@@ -1,5 +1,5 @@
 interface Schedule {
-  schdlId: string;
+  schdlSn: number;
   schdlSeCd: string; // 1 (부서) 2 (개인)
   schdlDeptId?: string;
   schdlKndCd?: string;
@@ -12,7 +12,7 @@ interface Schedule {
   schdlPlcNm?: string;
   schdlImprtCd?: string;
   schdlPicId?: string;
-  atchFileId?: string;
+  atchFileSn?: number;
   reptSeCd?: string;
   frstRgtrId?: string;
   crtDt?: string;

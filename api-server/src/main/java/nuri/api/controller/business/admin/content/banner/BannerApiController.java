@@ -37,33 +37,32 @@ public class BannerApiController {
     }
 
     @Operation(summary = "배너 상세 조회", description = "특정 배너의 상세 정보를 조회합니다.")
-    @GetMapping("/{bannerId}")
+    @GetMapping("/{bnrSn}")
     public ResponseEntity<ApiResponse<BannerDto>> getBanner(
-            @Parameter(description = "배너 ID") @PathVariable String bannerId) {
-        return ResponseEntity.ok(ApiResponse.success(bannerService.getBanner(bannerId)));
+            @Parameter(description = "배너 일련번호") @PathVariable Long bnrSn) {
+        return ResponseEntity.ok(ApiResponse.success(bannerService.getBanner(bnrSn)));
     }
 
     @Operation(summary = "배너 등록", description = "새로운 배너 정보를 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<Void>> insertBanner(@Valid @RequestBody BannerDto dto) {
-        bannerService.insertBanner(dto);
-        return ResponseEntity.ok(ApiResponse.success(null));
+    public ResponseEntity<ApiResponse<Long>> insertBanner(@Valid @RequestBody BannerDto dto) {
+        return ResponseEntity.ok(ApiResponse.success(bannerService.insertBanner(dto)));
     }
 
     @Operation(summary = "배너 정보 수정", description = "기존 배너 정보를 수정합니다.")
-    @PutMapping("/{bannerId}")
+    @PutMapping("/{bnrSn}")
     public ResponseEntity<ApiResponse<Void>> updateBanner(
-            @PathVariable String bannerId,
+            @PathVariable Long bnrSn,
             @Valid @RequestBody BannerDto dto) {
-        dto.setBnrId(bannerId);
+        dto.setBnrSn(bnrSn);
         bannerService.updateBanner(dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "배너 삭제", description = "등록된 배너 정보를 삭제합니다.")
-    @DeleteMapping("/{bannerId}")
-    public ResponseEntity<ApiResponse<Void>> deleteBanner(@PathVariable String bannerId) {
-        bannerService.deleteBanner(bannerId);
+    @DeleteMapping("/{bnrSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteBanner(@PathVariable Long bnrSn) {
+        bannerService.deleteBanner(bnrSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

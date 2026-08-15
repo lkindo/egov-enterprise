@@ -1,6 +1,6 @@
 'use client';
 
-import { useParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { getQustnrRespondInfoDetail } from '@/lib/api/survey';
 ;
@@ -8,15 +8,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, ArrowLeft, User, Calendar, ClipboardCheck, MessageSquare } from 'lucide-react';
 
-export default function SurveyResponseDetailClient() {
-    const params = useParams();
+export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsSn: number }) {
     const router = useRouter();
-    const id = params.id as string;
 
     const { data: response, isLoading, isError, error } = useQuery({
-        queryKey: ['survey-response-detail', id],
-        queryFn: () => getQustnrRespondInfoDetail(id),
-        enabled: !!id,
+        queryKey: ['survey-response-detail', srvyRspnsSn],
+        queryFn: () => getQustnrRespondInfoDetail(srvyRspnsSn),
         retry: 1
     });
 

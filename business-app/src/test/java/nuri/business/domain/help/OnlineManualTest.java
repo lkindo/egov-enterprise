@@ -12,13 +12,13 @@ class OnlineManualTest {
     @DisplayName("OnlineManual 빌더 및 초기화 테스트")
     void builderTest() {
         OnlineManual mnl = OnlineManual.builder()
-                .onlnMnlId("MNL_001")
+                .onlnMnlSn(1L)
                 .onlnMnlNm("Manual 1")
                 .onlnMnlSeCd("001")
                 .build();
         mnl.setFrstRgtrId("admin");
 
-        assertThat(mnl.getOnlnMnlId()).isEqualTo("MNL_001");
+        assertThat(mnl.getOnlnMnlSn()).isEqualTo(1L);
         assertThat(mnl.getOnlnMnlNm()).isEqualTo("Manual 1");
         assertThat(mnl.getFrstRgtrId()).isEqualTo("admin");
     }
@@ -27,7 +27,7 @@ class OnlineManualTest {
     @DisplayName("OnlineManual 수정 테스트")
     void updateTest() {
         OnlineManual mnl = OnlineManual.builder()
-                .onlnMnlId("MNL_001")
+                .onlnMnlSn(1L)
                 .build();
 
         mnl.update("New Name", "002", "Df", "Dc");

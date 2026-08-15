@@ -72,8 +72,8 @@ describe('DashboardPage Server Component', () => {
     } as any);
 
     vi.mocked(client.get).mockResolvedValue({
-      notiList: [{ pstId: 1, pstTtl: '공지사항 테스트' }],
-      taskList: [{ pstId: 2, pstTtl: '할일 테스트' }],
+      notiList: [{ pstSn: 1, pstTtl: '공지사항 테스트' }],
+      taskList: [{ pstSn: 2, pstTtl: '할일 테스트' }],
       pendingApprovalCount: 10
     });
 

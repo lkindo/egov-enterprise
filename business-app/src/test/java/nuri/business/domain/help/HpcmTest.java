@@ -12,14 +12,14 @@ class HpcmTest {
     @DisplayName("Hpcm 빌더 및 초기화 테스트")
     void builderTest() {
         Hpcm hpcm = Hpcm.builder()
-                .hlpId("HPCM_001")
+                .hlpSn(1L)
                 .hlpSeCd("001")
                 .hlpDfn("Help Definition")
                 .hlpExpln("Help Content")
                 .build();
         hpcm.setFrstRgtrId("admin");
 
-        assertThat(hpcm.getHlpId()).isEqualTo("HPCM_001");
+        assertThat(hpcm.getHlpSn()).isEqualTo(1L);
         assertThat(hpcm.getHlpSeCd()).isEqualTo("001");
         assertThat(hpcm.getHlpDfn()).isEqualTo("Help Definition");
         assertThat(hpcm.getFrstRgtrId()).isEqualTo("admin");
@@ -29,7 +29,7 @@ class HpcmTest {
     @DisplayName("Hpcm 수정 테스트")
     void updateTest() {
         Hpcm hpcm = Hpcm.builder()
-                .hlpId("HPCM_001")
+                .hlpSn(1L)
                 .hlpSeCd("001")
                 .build();
 

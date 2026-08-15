@@ -32,36 +32,35 @@ public class MyPageService {
     }
 
     @Transactional
-    public String createContent(MyPageContentDto dto) {
+    public Long createContent(MyPageContentDto dto) {
         MyPageContent entity = MyPageContent.builder()
-                .cntntsId(dto.getCntntsId())
                 .cntntsNm(dto.getCntntsNm())
                 .cntcUrl(dto.getCntcUrl())
-                .cntntsUseYn(dto.getCntntsUseAt())
+                .cntntsUseYn(dto.getCntntsUseYn())
                 .cntntsLinkUrl(dto.getCntntsLinkUrl())
                 .cntntsDc(dto.getCntntsDc())
                 .build();
-        return myPageContentRepository.save(entity).getCntntsId();
+        return myPageContentRepository.save(entity).getContsSn();
     }
 
     @Transactional
-    public void updateContent(String id, MyPageContentDto dto) {
-        MyPageContent entity = myPageContentRepository.findById(id)
-                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "마이페이지 콘텐츠를 찾을 수 없습니다: " + id));
-        entity.update(dto.getCntntsNm(), dto.getCntcUrl(), dto.getCntntsUseAt(), dto.getCntntsLinkUrl(), dto.getCntntsDc());
+    public void updateContent(Long contsSn, MyPageContentDto dto) {
+        MyPageContent entity = myPageContentRepository.findById(contsSn)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "마이페이지 콘텐츠를 찾을 수 없습니다: " + contsSn));
+        entity.update(dto.getCntntsNm(), dto.getCntcUrl(), dto.getCntntsUseYn(), dto.getCntntsLinkUrl(), dto.getCntntsDc());
     }
 
     @Transactional
-    public void deleteContent(String id) {
-        myPageContentRepository.deleteById(id);
+    public void deleteContent(Long contsSn) {
+        myPageContentRepository.deleteById(contsSn);
     }
 
     private MyPageContentDto convertToDto(MyPageContent entity) {
         return MyPageContentDto.builder()
-                .cntntsId(entity.getCntntsId())
+                .contsSn(entity.getContsSn())
                 .cntntsNm(entity.getCntntsNm())
                 .cntcUrl(entity.getCntcUrl())
-                .cntntsUseAt(entity.getCntntsUseYn())
+                .cntntsUseYn(entity.getCntntsUseYn())
                 .cntntsLinkUrl(entity.getCntntsLinkUrl())
                 .cntntsDc(entity.getCntntsDc())
                 .build();

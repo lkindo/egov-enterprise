@@ -63,7 +63,7 @@ describe('남은 서버 액션', () => {
 
   describe('댓글', () => {
     it('빈 내용은 요청하지 않고 즉시 거절한다', async () => {
-      const result = await createComment(null, form({ pstId: 'P1', bbsId: 'B1', ansCn: '   ' }));
+      const result = await createComment(null, form({ pstSn: '1', bbsId: 'B1', ansCn: '   ' }));
 
       // 공백만 있는 댓글을 서버로 보내면 빈 댓글이 목록에 쌓인다.
       expect(result).toEqual({ success: false, message: '댓글 내용을 입력해주세요.' });
@@ -73,10 +73,10 @@ describe('남은 서버 액션', () => {
     it('등록은 세 필드를 실어 보내고 목록을 재검증한다', async () => {
       vi.mocked(client.post).mockResolvedValueOnce({ id: 1 } as never);
 
-      const result = await createComment(null, form({ pstId: 'P1', bbsId: 'B1', ansCn: '내용' }));
+      const result = await createComment(null, form({ pstSn: '1', bbsId: 'B1', ansCn: '내용' }));
 
       expect(client.post).toHaveBeenCalledWith(
-        '/comments', { pstId: 'P1', bbsId: 'B1', ansCn: '내용' }, AUTH);
+        '/comments', { pstSn: 1, bbsId: 'B1', ansCn: '내용' }, AUTH);
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/detail');
       expect(result.success).toBe(true);
     });
@@ -88,7 +88,7 @@ describe('남은 서버 액션', () => {
       //   await 다음 줄에 도달했다면 이미 성공이다.
       vi.mocked(client.post).mockResolvedValueOnce(null as never);
 
-      const result = await createComment(null, form({ pstId: 'P1', bbsId: 'B1', ansCn: '내용' }));
+      const result = await createComment(null, form({ pstSn: '1', bbsId: 'B1', ansCn: '내용' }));
 
       expect(result).toEqual({ success: true, message: '댓글이 등록되었습니다.' });
       expect(revalidatePath).toHaveBeenCalledWith('/admin/community/boards/detail');
@@ -98,7 +98,7 @@ describe('남은 서버 액션', () => {
       vi.mocked(client.put).mockResolvedValueOnce(null as never);
 
       const result = await updateComment(null, form({
-        id: 'C1', bbsId: 'B1', pstId: 'P1', ansCn: '고친 내용',
+        id: 'C1', bbsId: 'B1', pstSn: '1', ansCn: '고친 내용',
       }));
 
       expect(result.success).toBe(true);
@@ -107,29 +107,29 @@ describe('남은 서버 액션', () => {
     it('삭제는 본문이 없어도(undefined 가 아니면) 성공으로 본다', async () => {
       vi.mocked(client.delete).mockResolvedValueOnce(null as never);
 
-      const result = await deleteComment(null, form({ id: 'C1', bbsId: 'B1', pstId: 'P1' }));
+      const result = await deleteComment(null, form({ id: 'C1', bbsId: 'B1', pstSn: '1' }));
 
       expect(client.delete).toHaveBeenCalledWith('/comments/C1', AUTH);
       expect(result.success).toBe(true);
       expect(revalidatePath).toHaveBeenCalledWith(
-        '/admin/community/boards/detail?bbsId=B1&pstId=P1');
+        '/admin/community/boards/detail?bbsId=B1&pstSn=1');
     });
 
     it('수정은 대상 id 를 URL 에, 나머지를 본문에 싣는다', async () => {
       vi.mocked(client.put).mockResolvedValueOnce({ ok: true } as never);
 
       const result = await updateComment(null, form({
-        id: 'C1', bbsId: 'B1', pstId: 'P1', ansCn: '고친 내용',
+        id: 'C1', bbsId: 'B1', pstSn: '1', ansCn: '고친 내용',
       }));
 
       // id 가 본문으로 새면 엉뚱한 댓글을 덮어쓴다.
       expect(client.put).toHaveBeenCalledWith(
-        '/comments/C1', { pstId: 'P1', bbsId: 'B1', ansCn: '고친 내용' }, AUTH);
+        '/comments/C1', { pstSn: 1, bbsId: 'B1', ansCn: '고친 내용' }, AUTH);
       expect(result.success).toBe(true);
     });
 
     it('수정도 빈 내용을 막는다', async () => {
-      const result = await updateComment(null, form({ id: 'C1', bbsId: 'B1', pstId: 'P1', ansCn: '' }));
+      const result = await updateComment(null, form({ id: 'C1', bbsId: 'B1', pstSn: '1', ansCn: '' }));
 
       expect(result.success).toBe(false);
       expect(client.put).not.toHaveBeenCalled();
@@ -140,7 +140,7 @@ describe('남은 서버 액션', () => {
         response: { data: { message: '삭제된 게시글입니다.' } },
       });
 
-      const result = await createComment(null, form({ pstId: 'P1', bbsId: 'B1', ansCn: '내용' }));
+      const result = await createComment(null, form({ pstSn: '1', bbsId: 'B1', ansCn: '내용' }));
 
       // 서버 액션이 throw 하면 Next 가 500 을 내고 사용자는 이유를 못 본다.
       expect(result).toEqual({ success: false, message: '삭제된 게시글입니다.' });
@@ -150,7 +150,7 @@ describe('남은 서버 액션', () => {
       withToken(undefined);
       vi.mocked(client.post).mockResolvedValueOnce({ id: 1 } as never);
 
-      await createComment(null, form({ pstId: 'P1', bbsId: 'B1', ansCn: '내용' }));
+      await createComment(null, form({ pstSn: '1', bbsId: 'B1', ansCn: '내용' }));
 
       expect(client.post).toHaveBeenCalledWith('/comments', expect.anything(), {});
     });

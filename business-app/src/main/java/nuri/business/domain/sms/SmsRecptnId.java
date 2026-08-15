@@ -13,8 +13,8 @@ import java.io.Serializable;
 @Embeddable
 public class SmsRecptnId implements Serializable {
 
-    @Column(length = 20)
-    private String smsId;
+    @Column(name = "sms_trsm_sn")
+    private Long smsTrsmSn;
 
     @Column(length = 20)
     private String rcptnTelno;

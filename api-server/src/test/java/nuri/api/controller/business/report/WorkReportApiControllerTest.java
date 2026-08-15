@@ -21,7 +21,6 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.util.Collections;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -68,10 +67,10 @@ class WorkReportApiControllerTest {
     @DisplayName("업무보고 상세 조회")
     void getWorkReport() throws Exception {
         WorkReportDto dto = new WorkReportDto();
-        dto.setRptId("R1");
-        when(workReportService.getWorkReport("R1")).thenReturn(dto);
+        dto.setRptpSn(1L);
+        when(workReportService.getWorkReport(1L)).thenReturn(dto);
 
-        mockMvc.perform(get("/api/v1/work-reports/R1"))
+        mockMvc.perform(get("/api/v1/work-reports/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -97,7 +96,7 @@ class WorkReportApiControllerTest {
         dto.setRptTtl("New Subject");
         doNothing().when(workReportService).updateWorkReport(any(WorkReportDto.class));
 
-        mockMvc.perform(put("/api/v1/work-reports/R1")
+        mockMvc.perform(put("/api/v1/work-reports/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -107,9 +106,9 @@ class WorkReportApiControllerTest {
     @Test
     @DisplayName("업무보고 삭제")
     void deleteWorkReport() throws Exception {
-        doNothing().when(workReportService).deleteWorkReport("R1");
+        doNothing().when(workReportService).deleteWorkReport(1L);
 
-        mockMvc.perform(delete("/api/v1/work-reports/R1"))
+        mockMvc.perform(delete("/api/v1/work-reports/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

@@ -1,7 +1,7 @@
 import client from '@/lib/api/client';
 
 export interface EventInfo {
-  evntId: string;
+  evntSn: number;
   evntNm: string;    // 행사명 (V2_22: biz_cd 오용 정화)
   evntCn: string;
   evntBgngYmd: string; // Mapping eventBeginDe to evntBgngYmd
@@ -30,16 +30,16 @@ export const eventService = {
   getEvents: async (params: { searchWrd?: string; page?: number; size?: number } = {}) => {
     return client.get<PageResponse<EventInfo>>(BASE_URL, { params });
   },
-  getEvent: async (eventId: string) => {
-    return client.get<EventInfo>(`${BASE_URL}/${eventId}`);
+  getEvent: async (evntSn: number) => {
+    return client.get<EventInfo>(`${BASE_URL}/${evntSn}`);
   },
   createEvent: async (data: Partial<EventInfo>) => {
-    return client.post<string>(BASE_URL, data);
+    return client.post<number>(BASE_URL, data);
   },
-  updateEvent: async (eventId: string, data: Partial<EventInfo>) => {
-    return client.put<void>(`${BASE_URL}/${eventId}`, data);
+  updateEvent: async (evntSn: number, data: Partial<EventInfo>) => {
+    return client.put<void>(`${BASE_URL}/${evntSn}`, data);
   },
-  deleteEvent: async (eventId: string) => {
-    return client.delete<void>(`${BASE_URL}/${eventId}`);
+  deleteEvent: async (evntSn: number) => {
+    return client.delete<void>(`${BASE_URL}/${evntSn}`);
   }
 };

@@ -79,43 +79,43 @@ class NotificationApiControllerTest extends BaseControllerTest {
     @Test
     @DisplayName("알림 상세 조회 - 성공")
     void getNotification_success() throws Exception {
-        when(notificationService.getNotification("NT1", "testUser"))
-                .thenReturn(NotificationDto.builder().notiSn("NT1").build());
+        when(notificationService.getNotification(1L, "testUser"))
+                .thenReturn(NotificationDto.builder().notiSn(1L).build());
 
-        mockMvc.perform(get("/api/v1/notifications/NT1"))
+        mockMvc.perform(get("/api/v1/notifications/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.notiSn").value("NT1"));
-        verify(notificationService).getNotification("NT1", "testUser");
+                .andExpect(jsonPath("$.data.notiSn").value(1));
+        verify(notificationService).getNotification(1L, "testUser");
     }
 
     @Test
     @DisplayName("알림 읽음 처리 - 성공")
     void markAsRead_success() throws Exception {
-        mockMvc.perform(post("/api/v1/notifications/NT1/read"))
+        mockMvc.perform(post("/api/v1/notifications/1/read"))
                 .andExpect(status().isOk());
         
-        verify(notificationService).markAsRead("NT1", "testUser");
+        verify(notificationService).markAsRead(1L, "testUser");
     }
 
     @Test
     @DisplayName("알림 등록 - 성공")
     void createNotification_success() throws Exception {
-        NotificationDto dto = NotificationDto.builder().notiSn("NT_NEW").notiTtlNm("Title").build();
-        when(notificationService.createNotification(eq("testUser"), any())).thenReturn("NT_NEW");
+        NotificationDto dto = NotificationDto.builder().notiTtlNm("Title").build();
+        when(notificationService.createNotification(eq("testUser"), any())).thenReturn(2L);
 
         mockMvc.perform(post("/api/v1/notifications")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data").value("NT_NEW"));
+                .andExpect(jsonPath("$.data").value(2));
     }
 
     @Test
     @DisplayName("알림 삭제 - 성공")
     void deleteNotification_success() throws Exception {
-        mockMvc.perform(delete("/api/v1/notifications/NT1"))
+        mockMvc.perform(delete("/api/v1/notifications/1"))
                 .andExpect(status().isOk());
         
-        verify(notificationService).deleteNotification("NT1", "testUser");
+        verify(notificationService).deleteNotification(1L, "testUser");
     }
 }

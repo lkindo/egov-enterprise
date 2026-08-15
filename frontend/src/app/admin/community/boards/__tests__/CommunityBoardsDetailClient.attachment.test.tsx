@@ -16,7 +16,7 @@ import { fileAdminService } from '@/services/foundation/system/FileAdminService'
  *   · 등록 후에는 '성공적으로 등록되었습니다.' 토스트가 뜬다.
  * 즉 **첨부가 조용히 증발**한다. 오류도 경고도 없다.
  *
- * 백엔드는 지원하고 있었다 — `BoardSaveRequest.atchFileId` 가 있고 `Board.atch_file_id` 컬럼도 있다.
+ * 백엔드는 지원하고 있었다 — `BoardSaveRequest.atchFileSn` 가 있고 `Board.atch_file_sn` 컬럼도 있다.
  * 같은 업로더를 쓰는 배너 화면은 저장 시점에 실제로 업로드한다. **게시글만 배선이 빠져 있었다.**
  *
  * [왜 단위 테스트인가]
@@ -85,7 +85,7 @@ describe('게시글 첨부파일 배선', () => {
     beforeEach(() => {
         vi.clearAllMocks();
         mockedBoard.createPost.mockResolvedValue({} as never);
-        mockedFile.uploadFiles.mockResolvedValue('ATCH_TEST_0001');
+        mockedFile.uploadFiles.mockResolvedValue(101);
     });
 
     it('첨부한 파일을 업로드하고 그 식별자를 게시글에 실어 보낸다', async () => {
@@ -102,7 +102,7 @@ describe('게시글 첨부파일 배선', () => {
 
         // ② 받은 식별자가 게시글 본문에 실려야 한다 — 업로드만 하고 안 실으면 첨부는 여전히 사라진다.
         await waitFor(() => expect(mockedBoard.createPost).toHaveBeenCalledTimes(1));
-        expect(mockedBoard.createPost.mock.calls[0][0]).toMatchObject({ atchFileId: 'ATCH_TEST_0001' });
+        expect(mockedBoard.createPost.mock.calls[0][0]).toMatchObject({ atchFileSn: 101 });
     });
 
     it('첨부가 없으면 업로드를 호출하지 않는다 (빈 업로드 회귀 방어)', async () => {
@@ -114,6 +114,6 @@ describe('게시글 첨부파일 배선', () => {
 
         await waitFor(() => expect(mockedBoard.createPost).toHaveBeenCalledTimes(1));
         expect(mockedFile.uploadFiles, '첨부가 없는데 업로드를 호출했다').not.toHaveBeenCalled();
-        expect(mockedBoard.createPost.mock.calls[0][0].atchFileId).toBeUndefined();
+        expect(mockedBoard.createPost.mock.calls[0][0].atchFileSn).toBeUndefined();
     });
 });

@@ -20,9 +20,8 @@ import java.time.LocalDateTime;
 @Schema(description = "행사 정보 상세 DTO")
 public class EventInfoDto {
 
-    @Schema(description = "행사 ID", example = "EVT_1716611000000")
-    @Size(max = 20)
-    private String evntId;
+    @Schema(description = "행사 내부 일련번호", example = "1")
+    private Long evntSn;
 
     @Schema(description = "행사 명칭", example = "사내 인공지능 해커톤 캠페인", maxLength = 200)
     @Size(max = 200)

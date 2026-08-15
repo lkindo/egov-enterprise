@@ -15,7 +15,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog as DialogPrimitive } from 'radix-ui';
 
 interface Notification {
-  id: string;
+  id: number;
   title: string;
   message: string;
   time: string;
@@ -27,7 +27,7 @@ interface AppNotificationDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   notifications: Notification[];
-  onMarkRead: (id: string) => void;
+  onMarkRead: (id: number) => void;
   onMarkAllRead: () => void;
   /**
    * [2026-08-04] 조회 실패 사유. null 이면 정상.

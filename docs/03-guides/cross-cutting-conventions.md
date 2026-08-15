@@ -13,11 +13,11 @@
 
 | # | 횡단관심사 | 집행 게이트(기계강제) | 관례 문서 | 잔여 갭 |
 |:-:|---|---|:-:|---|
-| 1 | 인가(Authorization) | `SecurityAuthAnnotationLinterTest`(쓰기축) | 본 §1 + BE헌법 제8조 | 읽기(GET)축·SpEL 역할문자열 |
+| 1 | 인가(Authorization) | `SecurityAuthAnnotationLinterTest`(읽기·쓰기 명시 경계) | 본 §1 + BE헌법 제8조 | 애노테이션 의미·SpEL 역할문자열 |
 | 2 | 정체성(esntlId/loginId) | ✅ `IdentityAxisLinterTest`(getCurrentUserId=0 + SecurityContext 직접접근 동결) | `identity-model-guide.md`(충실) | 시맨틱(컬럼축)은 문서 방어 |
 | 3 | 트랜잭션 경계 | ✅ **`AsyncTransactionalListenerArchTest`** + **`ServiceReadOnlyTransactionalLinterTest`**(2026-07-18 신설) | 본 §3 | 동결 11서비스 readOnly 검토 |
 | 4 | 동시성(check-then-act) | `GlobalExceptionHandler`(409 backstop) + `UniqueConstraintMirrorLinterTest` | 본 §4 | 패턴 자체는 시맨틱 → 문서 |
-| 5 | PK 채번 | `PkGenerationStandardLinterTest`(신규 엔티티) | 본 §5 | 수동채번 통일은 시맨틱 → 문서 |
+| 5 | PK 채번 | `PkGenerationStandardLinterTest`(신규·동결 엔티티) | 본 §5 | 잔여 19종은 자연키·복합키·외부키 유지 판정 |
 | 6 | 캐싱(Caching) | ✅ **`CachingInvalidationMatrixLinterTest`**(채움↔무효화 양방향, 2026-07-28 신설) | 본 §6(캐시명 SSOT 지향) | 캐시명 상수화(리터럴 산발) |
 
 ---
@@ -26,10 +26,10 @@
 
 | 항목 | 내용 |
 |---|---|
-| **관례** | ① 쓰기(POST/PUT/DELETE/PATCH) 엔드포인트는 `@PreAuthorize`/`@Secured`/DB인가(`tb_prgrm_lst`) 중 하나로 함수레벨 보호. ② `/api/v1/admin/**`는 URL 시큐리티(`ApiSecurityConfig`)로 일괄 보호. ③ 소유권 검증은 `SecurityUtil.assertOwnerOrAdmin`(loginId축)/`assertAdmin`, 역할은 `SecurityUtil.hasRole(AuthorityConstants.*)`. ④ 소유권 예외/자기서비스 컨트롤러는 `WRITE_AUTHZ_GUARDED_ELSEWHERE` allow-list에 근거 주석과 함께 등재. |
+| **관례** | ① 비공개 읽기·쓰기 엔드포인트는 `@Authenticated`/`@PreAuthorize`/`@Secured` 또는 DB인가(`tb_prgrm_lst`)로 컨트롤러 경계를 명시한다. ② `/api/v1/admin/**`는 URL 시큐리티(`ApiSecurityConfig`)로 일괄 보호한다. ③ 개인 데이터는 컨트롤러 인증과 별개로 `SecurityUtil.assertOwnerOrAdmin`(loginId축), 참여자 스코프 쿼리, `assertAdmin` 등 서비스 2차 가드를 둔다. ④ 공개 API는 `@PublicApi`/공개 화이트리스트로 의도를 드러낸다. 클래스 단위 담요 면제는 사용하지 않는다. |
 | **근거** | 백엔드 헌법 제8조(서비스레이어 이중검증), orchestration §3.6 안티패턴. |
-| **집행 게이트(있음)** | `SecurityAuthAnnotationLinterTest` 2본: (1) `auditSecurityAnnotationsOnRestControllers` — `nuri.api.controller` 전수(단 `.business`·`.foundation` 하위 제외). (2) `auditWriteEndpointAuthorizationOnNonAdminPaths` — 모든 쓰기 엔드포인트 오딧, `/admin/**`만 제외, allow-list 통과. |
-| **미집행 갭** | ① business/foundation의 **읽기(GET) 함수레벨 인가**는 미커버. ② `@PreAuthorize` **역할 SpEL 문자열**은 상수화 미도달(SpEL 파싱 특성상 린트 미도달). ③ allow-list는 수기 신뢰목록. |
+| **집행 게이트(있음)** | `SecurityAuthAnnotationLinterTest` 2본: (1) `auditSecurityAnnotationsOnRestControllers` — 패키지 예외 없이 `nuri.api.controller` 읽기·쓰기 전수, 공개·명시 애노테이션·DB URL 인가 중 하나를 요구. (2) `auditWriteEndpointAuthorizationOnNonAdminPaths` — 모든 비-admin 쓰기 엔드포인트의 명시 경계를 재검증. 2026-08-15 `READ_COVERED_BY_WRITE_RATIONALE` 30건과 `WRITE_AUTHZ_GUARDED_ELSEWHERE` 12개 클래스 담요 면제를 제거했다. |
+| **미집행 갭** | ① `@Authenticated`의 존재만으로 객체 소유권까지 증명하지는 못하므로 개인 데이터는 서비스 음성 테스트가 계속 필요하다. ② `@PreAuthorize` **역할 SpEL 문자열**은 상수화 미도달(SpEL 파싱 특성상 린트 미도달). ③ `secure-paths` 문자열과 DB URL 인가는 별도 동기화 게이트에 의존한다. |
 
 ---
 
@@ -71,9 +71,9 @@
 
 | 항목 | 내용 |
 |---|---|
-| **관례** | ① 신규 엔티티는 `@GeneratedValue`(DB 시퀀스/IDENTITY) 우선. ② 문자열 도메인 PK 수동채번은 **`IdGenerationUtil.generateUniqueId(prefix, length, existsPredicate)`** — `repo::existsById` 술어로 충돌 재시도(현재 write 12경로 적용). ③ `currentTimeMillis()` 등 충돌 취약 채번 금지. |
+| **관례** | ① 신규 엔티티와 의미 없는 내부 기술키는 `BIGINT` 일련번호 + `@GeneratedValue`(DB 시퀀스/IDENTITY) 우선. ② 외부 코드·보안 주체 등 문자열 자연키의 수동채번은 **`IdGenerationUtil.generateUniqueId(prefix, length, existsPredicate)`** — `repo::existsById` 술어로 충돌 재시도(현재 프로덕션 호출 13곳). ③ `currentTimeMillis()` 등 충돌 취약 채번 금지. |
 | **근거** | §2.A egov IdGnr 갈래 소멸 확인, PK 표준 census. |
-| **집행 게이트(부분)** | `PkGenerationStandardLinterTest` — 신규 @Entity 단일 @Id에 `@GeneratedValue` 부재 시 위반. GRANDFATHERED 69종 동결(≈93%). |
+| **집행 게이트(부분)** | `PkGenerationStandardLinterTest` — 신규 @Entity 단일 @Id에 `@GeneratedValue` 부재 시 위반. GRANDFATHERED 31종 동결. 주소록 2종은 `V2_49`, 도움말은 `V2_50`, 인터넷 서비스 안내는 `V2_51`, 온라인 매뉴얼은 `V2_52`, 팝업은 `V2_53`, 마이페이지 콘텐츠는 `V2_54`, 부서업무함은 `V2_55`, 배너는 `V2_56`, 부서업무는 `V2_57`, 업무일지는 `V2_58`, 자료사용통계는 `V2_59`, 메모보고는 `V2_60`, 포상관리는 `V2_61`, 일정은 `V2_62`, 스크랩은 `V2_63`, 이메일 발신 이력은 `V2_64`, 업무보고는 `V2_65`, 쪽지 3종은 `V2_66`, 온라인 여론조사 3종은 `V2_67`, 설문 기술키 5종은 `V2_68`, 게시글은 `V2_69`, 블로그는 `V2_70`, 커뮤니티는 `V2_71`에서 BIGINT IDENTITY로 전환했다. `SurveyRespondent`는 문자열 응답자 ID를 유지하되 물리 복합 PK를 `@IdClass`로 바로잡아 단일 수동 PK 목록에서 제거했고, `BoardMaster`·`Template`은 업무 자연키로 유지한다. |
 | **미집행 갭** | 게이트는 "신규 엔티티 선언"만 커버. 수동채번 write가 반드시 `generateUniqueId`를 쓰도록 강제하는 게이트 없음(5전략 공존, "어느 save가 수동PK인가"는 시맨틱) → 신규 수동채번은 `generateUniqueId` 사용을 본 문서로 유도. |
 
 ---

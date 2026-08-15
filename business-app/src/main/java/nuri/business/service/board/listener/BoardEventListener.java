@@ -27,11 +27,11 @@ public class BoardEventListener {
     @EventListener
     @Transactional
     public void handlePostCreated(PostCreatedEvent event) {
-        log.info(">>> handlePostCreated: bbsId={}, pstId={}, userId={}", 
-            event.getBbsId(), event.getPstId(), event.getUserId());
+        log.info(">>> handlePostCreated: bbsId={}, pstSn={}, userId={}",
+            event.getBbsId(), event.getPstSn(), event.getUserId());
         
         // 추가 작업 (예: 통계 업데이트, 검색 엔진 색인 등)
-        updateCommentCount(event.getPstId(), event.getBbsId());
+        updateCommentCount(event.getPstSn(), event.getBbsId());
     }
 
     /**
@@ -43,15 +43,15 @@ public class BoardEventListener {
      * 동시에 {@code version} 이 올라 글을 편집 중이던 사용자가 409 를 맞았다.
      * 감사 컬럼·version 을 건드리지 않는 벌크 UPDATE 로 전환한다.
      */
-    private void updateCommentCount(String pstId, String bbsId) {
-        long count = commentRepository.countByBbsIdAndPstIdAndUseYn(bbsId, pstId, "Y");
+    private void updateCommentCount(Long pstSn, String bbsId) {
+        long count = commentRepository.countByBbsIdAndPstSnAndUseYn(bbsId, pstSn, "Y");
 
-        int affected = boardRepository.syncCmntCntAtomic(pstId, (int) count);
+        int affected = boardRepository.syncCmntCntAtomic(pstSn, (int) count);
         if (affected == 0) {
             // 이미 삭제된 글에 달린 댓글 등 — 정상 경로이므로 실패로 다루지 않는다.
-            log.debug(">>> comment count sync skipped (post not found): pstId={}", pstId);
+            log.debug(">>> comment count sync skipped (post not found): pstSn={}", pstSn);
             return;
         }
-        log.info(">>> Updated comment count for pstId {}: {}", pstId, count);
+        log.info(">>> Updated comment count for pstSn {}: {}", pstSn, count);
     }
 }

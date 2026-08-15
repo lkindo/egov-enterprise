@@ -43,7 +43,9 @@ export default function SurveyManageDetailClient() {
     const { success, error: toastError } = useToast();
 
     const rawId = routeParams?.id;
-    const pollId = Array.isArray(rawId) ? rawId[0] : (rawId ?? '');
+    const pollSnParam = Array.isArray(rawId) ? rawId[0] : (rawId ?? '');
+    const pollSn = Number(pollSnParam);
+    const hasValidPollSn = Number.isSafeInteger(pollSn) && pollSn > 0;
 
     const {
         data: poll,
@@ -51,9 +53,9 @@ export default function SurveyManageDetailClient() {
         isError,
         refetch,
     } = useQuery({
-        queryKey: ['poll-detail', pollId],
-        queryFn: () => pollUserService.getPollDetail(pollId),
-        enabled: Boolean(pollId),
+        queryKey: ['poll-detail', pollSn],
+        queryFn: () => pollUserService.getPollDetail(pollSn),
+        enabled: hasValidPollSn,
     });
 
     const [formData, setFormData] = useState<OnlinePollManageVO>({
@@ -73,7 +75,7 @@ export default function SurveyManageDetailClient() {
     useEffect(() => {
         if (!poll) return;
         setFormData({
-            pollId: poll.pollId,
+            pollSn: poll.pollSn,
             pollNm: poll.pollNm ?? '',
             pollBgngYmd: poll.pollBgngYmd ?? '',
             pollEndYmd: poll.pollEndYmd ?? '',
@@ -85,8 +87,8 @@ export default function SurveyManageDetailClient() {
     }, [poll]);
 
     const handleSave = async () => {
-        if (!pollId) {
-            toastError('설문 ID를 확인할 수 없습니다.');
+        if (!hasValidPollSn) {
+            toastError('설문 일련번호를 확인할 수 없습니다.');
             return;
         }
         if (!formData.pollNm || !beginDate || !endDate) {
@@ -103,14 +105,14 @@ export default function SurveyManageDetailClient() {
             // 저장 포맷 'yyyyMMdd' 8자 (varchar(8) / @Size(max = 8)) — 10자 전송은 400.
             await pollUserService.updatePoll({
                 ...formData,
-                pollId,
+                pollSn,
                 pollBgngYmd: toStorageYmd(beginDate),
                 pollEndYmd: toStorageYmd(endDate),
             });
             success('설문 정보를 저장했습니다.');
             // 무인자 invalidateQueries 는 메뉴·알림까지 전역 재요청시킨다 — 키를 한정한다(P2).
             await queryClient.invalidateQueries({ queryKey: ['admin-polls'] });
-            await queryClient.invalidateQueries({ queryKey: ['poll-detail', pollId] });
+            await queryClient.invalidateQueries({ queryKey: ['poll-detail', pollSn] });
             router.push('/admin/survey/manage');
         } catch (e) {
             toastError(e instanceof Error ? e.message : '설문 저장에 실패했습니다.');

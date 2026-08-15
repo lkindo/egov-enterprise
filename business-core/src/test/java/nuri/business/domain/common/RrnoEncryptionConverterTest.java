@@ -87,11 +87,22 @@ class RrnoEncryptionConverterTest {
     }
 
     @Test
-    @DisplayName("엔티티 속성으로 변환 - 복호화 예외 발생 시 원본 반환")
+    @DisplayName("엔티티 속성으로 변환 - 알 수 없는 암호문은 원본 노출 없이 fail-closed")
     void convertToEntityAttribute_Exception() throws Exception {
         when(mockCryptoService.decrypt(any(byte[].class), any(String.class))).thenThrow(new RuntimeException("Decryption Error"));
 
-        String result = converter.convertToEntityAttribute("invalidBase64OrDecrypError");
-        assertThat(result).isEqualTo("invalidBase64OrDecrypError");
+        org.assertj.core.api.Assertions.assertThatThrownBy(
+                        () -> converter.convertToEntityAttribute("invalidBase64OrDecrypError"))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("decryption failed");
+    }
+
+    @Test
+    @DisplayName("엔티티 속성으로 변환 - 명확한 레거시 평문 주민번호만 호환")
+    void convertToEntityAttribute_LegacyPlaintext() throws Exception {
+        when(mockCryptoService.decrypt(any(byte[].class), any(String.class))).thenThrow(new RuntimeException("Decryption Error"));
+
+        assertThat(converter.convertToEntityAttribute("900101-1234567"))
+                .isEqualTo("900101-1234567");
     }
 }

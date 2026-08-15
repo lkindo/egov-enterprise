@@ -21,15 +21,15 @@ class CommunityUserService extends UserService {
     /**
      * 커뮤니티 상세 조회
      */
-    async getCommunity(cmntyId: string): Promise<CommunityVO> {
-        return this.get<CommunityVO>(`/${cmntyId}`);
+    async getCommunity(cmntySn: number): Promise<CommunityVO> {
+        return this.get<CommunityVO>(`/${cmntySn}`);
     }
 
     /**
      * 커뮤니티 가입 신청
      */
-    async joinCommunity(cmntyId: string): Promise<void> {
-        return this.post<void>(`/${cmntyId}/join`);
+    async joinCommunity(cmntySn: number): Promise<void> {
+        return this.post<void>(`/${cmntySn}/join`);
     }
 
     /**

@@ -37,10 +37,10 @@ public class CommunityApiController {
     }
 
     @Operation(summary = "커뮤니티 상세 조회", description = "특정 커뮤니티의 상세 기본 정보를 조회합니다.")
-    @GetMapping("/{cmntyId}")
+    @GetMapping("/{cmntySn}")
     public ResponseEntity<ApiResponse<CommunityDto>> getCommunity(
-            @Parameter(description = "커뮤니티 ID") @PathVariable String cmntyId) {
-        return ResponseEntity.ok(ApiResponse.success(communityService.getCommunity(cmntyId)));
+            @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
+        return ResponseEntity.ok(ApiResponse.success(communityService.getCommunity(cmntySn)));
     }
 
     @Operation(summary = "커뮤니티 개설 신청/등록", description = "새로운 커뮤니티 개설을 신청하거나 등록합니다.")
@@ -53,22 +53,22 @@ public class CommunityApiController {
     }
 
     @Operation(summary = "커뮤니티 정보 수정", description = "커뮤니티 명칭, 소개 등 기본 정보를 수정합니다.")
-    @PutMapping("/{cmntyId}")
+    @PutMapping("/{cmntySn}")
     public ResponseEntity<ApiResponse<Void>> updateCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "커뮤니티 ID") @PathVariable String cmntyId,
+            @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn,
             @Valid @RequestBody CommunityDto communityDto) {
-        communityDto.setCmntyId(cmntyId);
+        communityDto.setCmntySn(cmntySn);
         communityService.updateCommunity(userDetails.getUsername(), communityDto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "커뮤니티 폐쇄/삭제", description = "커뮤니티를 폐쇄 처리하거나 삭제합니다.")
-    @DeleteMapping("/{cmntyId}")
+    @DeleteMapping("/{cmntySn}")
     public ResponseEntity<ApiResponse<Void>> deleteCommunity(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Parameter(description = "커뮤니티 ID") @PathVariable String cmntyId) {
-        communityService.deleteCommunity(cmntyId, userDetails.getUsername());
+            @Parameter(description = "커뮤니티 일련번호") @PathVariable Long cmntySn) {
+        communityService.deleteCommunity(cmntySn, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

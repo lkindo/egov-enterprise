@@ -30,12 +30,12 @@ import org.springframework.web.bind.annotation.*;
  * 달리, 참여자 신상은 운영 모니터링 목적의 SYSTEM 롤이 열람할 이유가 없다.
  * 개인정보 조회 로그를 {@code @AdminOnly} 로 좁힌 2026-08-05 결정과 같은 기준이다.
  *
- * <p>경로를 {@code /{srvyId}/respondents} 로 중첩한 것도 같은 이유다. 서비스는 설문 범위로
+ * <p>경로를 {@code /{srvySn}/respondents} 로 중첩한 것도 같은 이유다. 서비스는 설문 범위로
  * 한정해 조회하며(1단계에서 전체 설문을 훑던 결함을 고쳤다), 경로가 그 범위를 강제한다.
  */
 @Tag(name = "SurveyRespondent", description = "설문 응답자 관리 API (Admin)")
 @RestController("systemSurveyRespondentApiController")
-@RequestMapping("/api/v1/admin/system/surveys/{srvyId}/respondents")
+@RequestMapping("/api/v1/admin/system/surveys/{srvySn}/respondents")
 @RequiredArgsConstructor
 public class SurveyRespondentApiController {
 
@@ -45,10 +45,10 @@ public class SurveyRespondentApiController {
     @AdminOnly
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<SurveyRespondentDto>>> getRespondents(
-            @PathVariable String srvyId,
+            @PathVariable Long srvySn,
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<SurveyRespondentDto> page = surveyRespondentService.getSurveyRespondentList(srvyId, keyword, pageable);
+        Page<SurveyRespondentDto> page = surveyRespondentService.getSurveyRespondentList(srvySn, keyword, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 
@@ -56,19 +56,19 @@ public class SurveyRespondentApiController {
     @AdminOnly
     @GetMapping("/{respondentId}")
     public ResponseEntity<ApiResponse<SurveyRespondentDto>> getRespondent(
-            @PathVariable String srvyId,
+            @PathVariable Long srvySn,
             @PathVariable String respondentId) {
-        return ResponseEntity.ok(ApiResponse.success(surveyRespondentService.getSurveyRespondent(respondentId)));
+        return ResponseEntity.ok(ApiResponse.success(surveyRespondentService.getSurveyRespondent(srvySn, respondentId)));
     }
 
     @Operation(summary = "설문 응답자 등록")
     @AdminOnly
     @PostMapping
     public ResponseEntity<ApiResponse<String>> createRespondent(
-            @PathVariable String srvyId,
+            @PathVariable Long srvySn,
             @Valid @RequestBody SurveyRespondentDto dto) {
         // 경로의 설문 ID 를 정본으로 삼는다 — 본문이 다른 설문을 가리켜도 경로가 이긴다.
-        dto.setSrvyId(srvyId);
+        dto.setSrvySn(srvySn);
         String id = surveyRespondentService.createSurveyRespondent(currentUserId(), dto);
         return ResponseEntity.ok(ApiResponse.success(id));
     }
@@ -77,11 +77,11 @@ public class SurveyRespondentApiController {
     @AdminOnly
     @PutMapping("/{respondentId}")
     public ResponseEntity<ApiResponse<Void>> updateRespondent(
-            @PathVariable String srvyId,
+            @PathVariable Long srvySn,
             @PathVariable String respondentId,
             @Valid @RequestBody SurveyRespondentDto dto) {
-        dto.setSrvyId(srvyId);
-        surveyRespondentService.updateSurveyRespondent(respondentId, currentUserId(), dto);
+        dto.setSrvySn(srvySn);
+        surveyRespondentService.updateSurveyRespondent(srvySn, respondentId, currentUserId(), dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -89,9 +89,9 @@ public class SurveyRespondentApiController {
     @AdminOnly
     @DeleteMapping("/{respondentId}")
     public ResponseEntity<ApiResponse<Void>> deleteRespondent(
-            @PathVariable String srvyId,
+            @PathVariable Long srvySn,
             @PathVariable String respondentId) {
-        surveyRespondentService.deleteSurveyRespondent(respondentId);
+        surveyRespondentService.deleteSurveyRespondent(srvySn, respondentId);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

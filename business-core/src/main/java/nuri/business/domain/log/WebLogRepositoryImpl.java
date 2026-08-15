@@ -30,7 +30,7 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
                         occrrncDeBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(QWebLog.webLog.occrYmd.desc())
+                .orderBy(QWebLog.webLog.occrYmd.desc(), QWebLog.webLog.webLogSn.desc())
                 .fetch();
 
         JPAQuery<Long> countQuery = queryFactory

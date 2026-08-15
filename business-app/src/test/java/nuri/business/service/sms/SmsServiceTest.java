@@ -22,6 +22,7 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.test.util.ReflectionTestUtils;
 
 import java.util.List;
 import java.util.Optional;
@@ -55,6 +56,11 @@ class SmsServiceTest {
     void setUp() {
         smsService = new SmsService(smsRepository, smsRecptnRepository, smsAsyncProcessor,
                 smsMapper, smsRecptnMapper);
+        lenient().when(smsRepository.save(any(Sms.class))).thenAnswer(invocation -> {
+            Sms saved = invocation.getArgument(0);
+            ReflectionTestUtils.setField(saved, "smsTrsmSn", 101L);
+            return saved;
+        });
     }
 
     @Test
@@ -62,7 +68,7 @@ class SmsServiceTest {
     void getSmsListTest() {
         // Given
         Pageable pageable = PageRequest.of(0, 10);
-        Sms sms = Sms.builder().smsId("SMS_001").sndngTelno("01011112222").sndngCn("Hello").build();
+        Sms sms = sms(101L, "01011112222", "Hello");
         Page<Sms> page = new PageImpl<>(List.of(sms), pageable, 1);
         when(smsRepository.searchSms(anyString(), anyString(), any(Pageable.class))).thenReturn(page);
 
@@ -71,31 +77,31 @@ class SmsServiceTest {
 
         // Then
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getSmsId()).isEqualTo("SMS_001");
+        assertThat(result.getContent().get(0).getSmsTrsmSn()).isEqualTo(101L);
     }
 
     @Test
     @DisplayName("SMS 단건 조회 테스트")
     void getSmsTest() {
         // Given
-        Sms sms = Sms.builder().smsId("SMS_001").sndngTelno("01011112222").sndngCn("Hello").build();
-        when(smsRepository.findById("SMS_001")).thenReturn(Optional.of(sms));
+        Sms sms = sms(101L, "01011112222", "Hello");
+        when(smsRepository.findById(101L)).thenReturn(Optional.of(sms));
 
         // When
-        SmsDto result = smsService.getSms("SMS_001");
+        SmsDto result = smsService.getSms(101L);
 
         // Then
-        assertThat(result.getSmsId()).isEqualTo("SMS_001");
+        assertThat(result.getSmsTrsmSn()).isEqualTo(101L);
     }
 
     @Test
     @DisplayName("SMS 단건 조회 실패 테스트")
     void getSmsFailTest() {
         // Given
-        when(smsRepository.findById("INVALID")).thenReturn(Optional.empty());
+        when(smsRepository.findById(999L)).thenReturn(Optional.empty());
 
         // When & Then
-        assertThatThrownBy(() -> smsService.getSms("INVALID"))
+        assertThatThrownBy(() -> smsService.getSms(999L))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
     }
@@ -110,17 +116,16 @@ class SmsServiceTest {
                 .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01033334444").build()))
                 .build();
         
-        when(smsRepository.save(any(Sms.class))).thenAnswer(i -> i.getArgument(0));
         when(smsRecptnRepository.save(any(SmsRecptn.class))).thenAnswer(i -> i.getArgument(0));
 
         // When
-        String smsId = smsService.sendSms("user01", dto);
+        Long smsTrsmSn = smsService.sendSms("user01", dto);
 
         // Then
-        assertThat(smsId).startsWith("SMS_");
+        assertThat(smsTrsmSn).isEqualTo(101L);
         verify(smsRepository).save(any(Sms.class));
         verify(smsRecptnRepository).save(any(SmsRecptn.class));
-        verify(smsAsyncProcessor).processSending(eq(smsId), eq("01011112222"), eq("Test Message"));
+        verify(smsAsyncProcessor).processSending(eq(smsTrsmSn), eq("01011112222"), eq("Test Message"));
     }
 
     @Test
@@ -132,22 +137,22 @@ class SmsServiceTest {
                 .recipients(List.of(SmsRecptnDto.builder().rcptnTelno("01033334444").build()))
                 .build();
         doThrow(new java.util.concurrent.RejectedExecutionException("full"))
-                .when(smsAsyncProcessor).processSending(anyString(), anyString(), anyString());
+                .when(smsAsyncProcessor).processSending(anyLong(), anyString(), anyString());
 
-        String smsId = smsService.sendSms("user01", dto);
+        Long smsTrsmSn = smsService.sendSms("user01", dto);
 
-        verify(smsAsyncProcessor).markBatchRejected(smsId);
+        verify(smsAsyncProcessor).markBatchRejected(smsTrsmSn);
     }
 
     @Test
     @DisplayName("SMS 수신자 목록 조회 테스트")
     void getSmsRecipientsTest() {
         // Given
-        SmsRecptn recptn = SmsRecptn.builder().smsId("SMS_001").rcptnTelno("01033334444").rsltCd("S").build();
-        when(smsRecptnRepository.findByIdSmsId("SMS_001")).thenReturn(List.of(recptn));
+        SmsRecptn recptn = SmsRecptn.builder().smsTrsmSn(101L).rcptnTelno("01033334444").rsltCd("S").build();
+        when(smsRecptnRepository.findByIdSmsTrsmSn(101L)).thenReturn(List.of(recptn));
 
         // When
-        List<SmsRecptnDto> result = smsService.getSmsRecipients("SMS_001");
+        List<SmsRecptnDto> result = smsService.getSmsRecipients(101L);
 
         // Then
         assertThat(result).hasSize(1);
@@ -163,12 +168,12 @@ class SmsServiceTest {
                 .recipients(null)
                 .build();
 
-        String smsId = smsService.sendSms("user01", dto);
+        Long smsTrsmSn = smsService.sendSms("user01", dto);
 
-        assertThat(smsId).startsWith("SMS_");
+        assertThat(smsTrsmSn).isEqualTo(101L);
         verify(smsRepository).save(any(Sms.class));
         verify(smsRecptnRepository, never()).save(any());
-        verify(smsAsyncProcessor, never()).processSending(anyString(), anyString(), anyString());
+        verify(smsAsyncProcessor, never()).processSending(anyLong(), anyString(), anyString());
     }
 
     @Test
@@ -192,5 +197,11 @@ class SmsServiceTest {
     @DisplayName("SmsRecptnDto - null 엔티티 변환")
     void smsRecptnDto_FromNull() {
         assertThat(smsRecptnMapper.toDto(null)).isNull();
+    }
+
+    private Sms sms(Long smsTrsmSn, String sndngTelno, String sndngCn) {
+        Sms sms = Sms.builder().sndngTelno(sndngTelno).sndngCn(sndngCn).build();
+        ReflectionTestUtils.setField(sms, "smsTrsmSn", smsTrsmSn);
+        return sms;
     }
 }

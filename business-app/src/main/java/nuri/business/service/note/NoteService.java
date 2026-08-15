@@ -9,7 +9,6 @@ import nuri.business.domain.note.NoteTrnsmit;
 import nuri.business.domain.note.NoteTrnsmitDomainRepository;
 import nuri.business.service.note.dto.NoteDto;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.util.IdGenerationUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -40,10 +39,11 @@ public class NoteService {
                 .map(this::convertToDto);
     }
 
-    public NoteDto getNoteDetail(String noteId, String type, String relationId, String currentUserId) {
+    public NoteDto getNoteDetail(Long noteSn, String type, Long relationSn, String currentUserId) {
         if ("sent".equals(type)) {
-            NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(relationId)
+            NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(relationSn)
                     .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+            assertNoteRelation(noteSn, trnsmit.getNote());
             // [보안 H1] 발신자 본인만 조회 가능(IDOR 차단)
             if (currentUserId == null || !currentUserId.equals(trnsmit.getSndrId())) {
                 throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
@@ -54,8 +54,9 @@ public class NoteService {
             }
             return convertToDto(trnsmit);
         } else {
-            NoteRecptn recptn = noteRecptnRepository.findById(relationId)
+            NoteRecptn recptn = noteRecptnRepository.findById(relationSn)
                     .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+            assertNoteRelation(noteSn, recptn.getNote());
             // [보안 H1] 수신자 본인만 조회 가능(IDOR 차단)
             if (currentUserId == null || !currentUserId.equals(recptn.getRcvrId())) {
                 throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
@@ -71,17 +72,13 @@ public class NoteService {
     @Transactional
     public void sendNote(String dsptchUserId, NoteDto dto) {
         try {
-            String noteId = IdGenerationUtil.generateUniqueId("NOTE_", 10, noteRepository::existsById);
             Note note = Note.builder()
-                    .noteId(noteId)
                     .noteTtl(dto.getNoteSj())
                     .noteCn(dto.getNoteCn())
                     .build();
             noteRepository.save(note);
 
-            String trnsmitId = IdGenerationUtil.generateUniqueId("NOTE_", 10, noteTrnsmitRepository::existsById);
             NoteTrnsmit trnsmit = NoteTrnsmit.builder()
-                    .noteSndngId(trnsmitId)
                     .note(note)
                     .sndrId(dsptchUserId)
                     .build();
@@ -98,7 +95,6 @@ public class NoteService {
                     }
                     anyRecipient = true;
                     NoteRecptn recptn = NoteRecptn.builder()
-                            .noteRcptnId(IdGenerationUtil.generateUniqueId("NOTE_", 10, noteRecptnRepository::existsById))
                             .note(note)
                             .noteDsptch(trnsmit)
                             .rcvrId(raw.trim())
@@ -124,18 +120,18 @@ public class NoteService {
      * 양측(발신 + 소속 전 수신)이 모두 삭제되면 물리 수거한다.
      */
     @Transactional
-    public void deleteNote(String relationId, String type, String currentUserId) {
+    public void deleteNote(Long relationSn, String type, String currentUserId) {
         if ("sent".equals(type)) {
-            NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(relationId)
+            NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(relationSn)
                     .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
             // [보안 H1] 발신자 본인만 삭제 가능(IDOR 차단)
             if (currentUserId == null || !currentUserId.equals(trnsmit.getSndrId())) {
                 throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
             }
             trnsmit.markDeleted();
-            purgeIfBothPartiesDeleted(trnsmit.getNoteSndngId());
+            purgeIfBothPartiesDeleted(trnsmit.getNoteSndngSn());
         } else {
-            NoteRecptn recptn = noteRecptnRepository.findById(relationId)
+            NoteRecptn recptn = noteRecptnRepository.findById(relationSn)
                     .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
             // [보안 H1] 수신자 본인만 삭제 가능(IDOR 차단)
             if (currentUserId == null || !currentUserId.equals(recptn.getRcvrId())) {
@@ -143,7 +139,7 @@ public class NoteService {
             }
             recptn.markDeleted();
             if (recptn.getNoteDsptch() != null) {
-                purgeIfBothPartiesDeleted(recptn.getNoteDsptch().getNoteSndngId());
+                purgeIfBothPartiesDeleted(recptn.getNoteDsptch().getNoteSndngSn());
             }
         }
     }
@@ -157,32 +153,33 @@ public class NoteService {
      *       rcptn → flush → sndng → (잔여 참조 0 확인) info 순으로 명시 삭제해 FK 순서를 보장한다.</li>
      * </ul>
      */
-    private void purgeIfBothPartiesDeleted(String noteSndngId) {
-        NoteTrnsmit sndng = noteTrnsmitRepository.findByIdForUpdate(noteSndngId).orElse(null);
+    private void purgeIfBothPartiesDeleted(Long noteSndngSn) {
+        NoteTrnsmit sndng = noteTrnsmitRepository.findByIdForUpdate(noteSndngSn).orElse(null);
         if (sndng == null || !"Y".equals(sndng.getDelYn())) {
             return; // 발신자가 아직 삭제하지 않음 → 보류
         }
         // 수신 사본 중 미삭제(del_yn='N')가 하나라도 있으면 보류
-        if (noteRecptnRepository.countByNoteDsptchNoteSndngIdAndDelYn(noteSndngId, "N") > 0) {
+        if (noteRecptnRepository.countByNoteDsptchNoteSndngSnAndDelYn(noteSndngSn, "N") > 0) {
             return;
         }
         // 양측 모두 삭제 → 물리 수거 (자식 → 부모 순)
-        String noteId = sndng.getNote() != null ? sndng.getNote().getNoteId() : null;
-        noteRecptnRepository.deleteAll(noteRecptnRepository.findByNoteDsptchNoteSndngId(noteSndngId));
+        Long noteSn = sndng.getNote() != null ? sndng.getNote().getNoteSn() : null;
+        noteRecptnRepository.deleteAll(noteRecptnRepository.findByNoteDsptchNoteSndngSn(noteSndngSn));
         noteRecptnRepository.flush();
         noteTrnsmitRepository.delete(sndng);
         noteTrnsmitRepository.flush();
         // 쪽지 본문(info)은 이를 참조하는 다른 발신/수신이 전혀 없을 때만 삭제(다중 발신 대비 안전)
-        if (noteId != null
-                && noteTrnsmitRepository.countByNoteNoteId(noteId) == 0
-                && noteRecptnRepository.countByNoteNoteId(noteId) == 0) {
-            noteRepository.deleteById(noteId);
+        if (noteSn != null
+                && noteTrnsmitRepository.countByNoteNoteSn(noteSn) == 0
+                && noteRecptnRepository.countByNoteNoteSn(noteSn) == 0) {
+            noteRepository.deleteById(noteSn);
         }
     }
 
     private NoteDto convertToDto(NoteTrnsmit entity) {
         return NoteDto.builder()
-                .noteDsptchId(entity.getNoteSndngId())
+                .noteSndngSn(entity.getNoteSndngSn())
+                .noteSn(entity.getNote() != null ? entity.getNote().getNoteSn() : null)
                 .noteSj(entity.getNote() != null ? entity.getNote().getNoteTtl() : null)
                 .noteCn(entity.getNote() != null ? entity.getNote().getNoteCn() : null)
                 .dsptchUserId(entity.getSndrId())
@@ -192,9 +189,9 @@ public class NoteService {
 
     private NoteDto convertToDto(NoteRecptn entity) {
         return NoteDto.builder()
-                .noteDsptchId(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getNoteSndngId() : null)
-                .noteRecptnId(entity.getNoteRcptnId())
-                .noteId(entity.getNote() != null ? entity.getNote().getNoteId() : null)
+                .noteSndngSn(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getNoteSndngSn() : null)
+                .noteRcptnSn(entity.getNoteRcptnSn())
+                .noteSn(entity.getNote() != null ? entity.getNote().getNoteSn() : null)
                 .noteSj(entity.getNote() != null ? entity.getNote().getNoteTtl() : null)
                 .noteCn(entity.getNote() != null ? entity.getNote().getNoteCn() : null)
                 .dsptchUserId(entity.getNoteDsptch() != null ? entity.getNoteDsptch().getSndrId() : null)
@@ -203,5 +200,11 @@ public class NoteService {
                 .recptnSe(entity.getRcptnSeCd())
                 .crtDt(entity.getCrtDt())
                 .build();
+    }
+
+    private void assertNoteRelation(Long noteSn, Note note) {
+        if (note == null || !Objects.equals(noteSn, note.getNoteSn())) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
     }
 }

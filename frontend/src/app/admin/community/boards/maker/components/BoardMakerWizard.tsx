@@ -149,7 +149,6 @@ export function BoardMakerWizard() {
  bbsAtrbCd: 'BBSA01',
  tmpltId: 'TMPLT_HUB',
  useYn: 'Y',
- cmntyId: '',
  menuNm: '',
  upperMenuNo: '2000000',
  menuOrdr: 1,
@@ -196,18 +195,15 @@ export function BoardMakerWizard() {
 
  if (!bbsId) throw new Error("Failed to get bbsId");
 
- const generatedMenuNo = 8000000 + Math.floor(Math.random() * 900000);
-
  await menuAdminService.createMenu({
- menuNo: generatedMenuNo,
  menuNm: data.menuNm || data.bbsTtl,
- upperMenuNo: Number(data.upperMenuNo),
+ upMenuSn: Number(data.upperMenuNo),
  menuOrdr: data.menuOrdr,
- progrmFileNm: 'EgovBBSMaster',
+ prgrmFileNm: 'EgovBBSMaster',
  modernRoute: `/admin/community/boards/select-board-list?bbsId=${bbsId}`,
- menuDc: `Auto-generated menu for board ${data.bbsTtl}`,
+ menuExpln: `Auto-generated menu for board ${data.bbsTtl}`,
  useYn: 'N'
- } as any);
+ });
 
  setStatus('배포 완료. 목록을 갱신하는 중...');
 

@@ -34,7 +34,6 @@ public class LogService extends BaseAbstractService {
     public void logLogin(String userId, String ip, String mthd, String errAt, String errCode) {
 
         LoginLog log = LoginLog.builder()
-                .logId(nuri.foundation.core.util.IdGenerationUtil.generateId("LGN_", 16))
                 .userId(userId)
                 .lgnIpAddr(ip)
                 .cntnMthdCd(mthd)
@@ -55,7 +54,7 @@ public class LogService extends BaseAbstractService {
 
     private LogDto convertToDto(LoginLog log) {
         return LogDto.builder()
-                .logId(log.getLogId())
+                .lgnSn(log.getLgnSn())
                 .conectMthd(log.getCntnMthdCd())
                 .conectId(log.getUserId())
                 .conectIp(log.getLgnIpAddr())

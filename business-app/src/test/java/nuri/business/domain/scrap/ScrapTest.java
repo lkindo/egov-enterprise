@@ -13,9 +13,9 @@ class ScrapTest {
     void standardBuilderTest() {
         // Given & When
         Scrap scrap = Scrap.builder()
-                .scrapId("SCRAP_001")
+                .scrapSn(1L)
                 .bbsId("BBS_001")
-                .pstId("POST_001")
+                .pstSn(1L)
                 .scrapNm("테스트 스크랩")
                 .scrapUrl("https://example.com/posts/1")
                 .scrapExpln("스크랩 테스트 설명글")
@@ -25,9 +25,9 @@ class ScrapTest {
         scrap.setLastMdfrId("user1");
 
         // Then
-        assertThat(scrap.getScrapId()).isEqualTo("SCRAP_001");
+        assertThat(scrap.getScrapSn()).isEqualTo(1L);
         assertThat(scrap.getBbsId()).isEqualTo("BBS_001");
-        assertThat(scrap.getPstId()).isEqualTo("POST_001");
+        assertThat(scrap.getPstSn()).isEqualTo(1L);
         assertThat(scrap.getScrapNm()).isEqualTo("테스트 스크랩");
         assertThat(scrap.getScrapUrl()).isEqualTo("https://example.com/posts/1");
         assertThat(scrap.getScrapExpln()).isEqualTo("스크랩 테스트 설명글");
@@ -41,7 +41,7 @@ class ScrapTest {
     void defaultValuesTest() {
         // Given & When
         Scrap scrap = Scrap.builder()
-                .scrapId("SCRAP_DEFAULT")
+                .scrapSn(2L)
                 .build();
 
         // Then
@@ -53,7 +53,7 @@ class ScrapTest {
     void updateTest() {
         // Given
         Scrap scrap = Scrap.builder()
-                .scrapId("SCRAP_001")
+                .scrapSn(1L)
                 .scrapNm("이전 이름")
                 .scrapUrl("이전 URL")
                 .scrapExpln("이전 설명")

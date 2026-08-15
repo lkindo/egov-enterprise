@@ -9,6 +9,7 @@ export interface Menu {
   upMenuSn: number;
   menuOrdr: number;
   menuDc: string;
+  menuExpln?: string;
   relImgPath: string;
   relImgNm: string;
   modernRoute?: string;

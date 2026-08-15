@@ -1,4 +1,5 @@
 import SurveyDetailClient from './SurveyDetailClient';
+import { notFound } from 'next/navigation';
 
 /**
  * 종전에는 {@code params} 를 받지도, 넘기지도 않았다 — `[id]` 세그먼트가 장식이었다.
@@ -6,5 +7,7 @@ import SurveyDetailClient from './SurveyDetailClient';
  */
 export default async function SurveyDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  return <SurveyDetailClient srvyId={id} />;
+  const srvySn = Number(id);
+  if (!Number.isSafeInteger(srvySn) || srvySn <= 0) notFound();
+  return <SurveyDetailClient srvySn={srvySn} />;
 }

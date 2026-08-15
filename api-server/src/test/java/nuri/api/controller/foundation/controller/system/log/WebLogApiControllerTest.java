@@ -48,7 +48,7 @@ class WebLogApiControllerTest {
     @DisplayName("웹 로그 목록 조회 성공 — 페이지 봉투와 항목이 그대로 실린다")
     void testGetWebLogList() throws Exception {
         WebLogDto dto = WebLogDto.builder()
-                .dmndId("REQ_001")
+                .webLogSn(101L)
                 .url("/api/v1/boards")
                 .dmndUserId("admin")
                 .dmndUserIpAddr("10.0.0.1")
@@ -61,7 +61,7 @@ class WebLogApiControllerTest {
         mockMvc.perform(get("/api/v1/admin/system/logs/web").param("pageIndex", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].dmndId").value("REQ_001"))
+                .andExpect(jsonPath("$.data.list[0].webLogSn").value(101))
                 .andExpect(jsonPath("$.data.list[0].url").value("/api/v1/boards"));
     }
 

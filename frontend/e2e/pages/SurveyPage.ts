@@ -41,7 +41,7 @@ export class SurveyPage {
     //   내용도 캘린더 좌표('15번째 셀', '다음 달 3번 클릭')에 의존해 되살릴 가치가 없다 —
     //   기간 입력이 다시 필요해지면 날짜를 직접 채우는 방식으로 새로 쓴다.
 
-    async createBasicSurvey(title: string): Promise<string> {
+    async createBasicSurvey(title: string): Promise<number> {
         console.log(`>>> Navigating to Survey Create Page`);
         
         // Add console log capture
@@ -98,23 +98,23 @@ export class SurveyPage {
             throw new Error(`Survey creation via API failed: ${result.status} - ${result.body}`);
         }
 
-        // Extract the pollId by querying the polls list with the title
-        const pollId = await this.page.evaluate(async ({ title: t }: { title: string }) => {
+        // 제목으로 목록을 조회해 DB가 생성한 pollSn을 찾는다.
+        const pollSn = await this.page.evaluate(async ({ title: t }: { title: string }) => {
             const res = await fetch(`/api/v1/polls?keyword=${encodeURIComponent(t)}&size=10&page=0`);
             const json = await res.json();
             const list = json.data?.list || json.data?.content || [];
             const found = list.find((p: any) => p.pollNm === t);
-            return found?.pollId || null;
+            return found?.pollSn || null;
         }, { title });
 
-        if (!pollId) {
+        if (!pollSn) {
             throw new Error(`Could not find newly created poll by title: ${title}`);
         }
 
-        console.log(`>>> Survey Creation Step Finished (API). pollId=${pollId}`);
+        console.log(`>>> Survey Creation Step Finished (API). pollSn=${pollSn}`);
         await this.page.waitForTimeout(500);
         await this.gotoManage();
-        return pollId;
+        return pollSn;
     }
 
     // [2026-08-10 제거] `ensurePopoverClosed()` — 위 selectDate 와 함께 남은 死코드(호출부 0).
@@ -145,32 +145,32 @@ export class SurveyPage {
     }
 
     /**
-     * pollId로 설문에 직접 투표 (API-first, UI 우회)
+     * pollSn으로 설문에 직접 투표 (API-first, UI 우회)
      */
-    async voteByPollId(pollId: string): Promise<void> {
+    async voteByPollSn(pollSn: number): Promise<void> {
         // 동일출처 /api/v1 fetch 는 미들웨어가 HttpOnly 쿠키에서 Bearer 를 주입한다(수동 토큰 불요).
         // Get poll items
-        const items = await this.page.evaluate(async ({ pid }: { pid: string }) => {
+        const items = await this.page.evaluate(async ({ pid }: { pid: number }) => {
             const res = await fetch(`/api/v1/polls/${pid}/items`);
             const json = await res.json();
             return json.data || [];
-        }, { pid: pollId });
+        }, { pid: pollSn });
 
         if (!items || items.length === 0) {
-            throw new Error(`voteByPollId: no items found for poll ${pollId}`);
+            throw new Error(`voteByPollSn: no items found for poll ${pollSn}`);
         }
 
-        const firstItemId = items[0].pollArtclId;
-        console.log(`>>> Voting on poll ${pollId}, item ${firstItemId} (${items[0].pollArtclNm})`);
+        const firstItemSn = items[0].pollArtclSn;
+        console.log(`>>> Voting on poll ${pollSn}, item ${firstItemSn} (${items[0].pollArtclNm})`);
 
         // Cast vote via API
-        const voteResult = await this.page.evaluate(async ({ pid, iid }: { pid: string, iid: string }) => {
+        const voteResult = await this.page.evaluate(async ({ pid, iid }: { pid: number, iid: number }) => {
             const res = await fetch(`/api/v1/polls/${pid}/vote/${iid}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' }
             });
             return { ok: res.ok, status: res.status, body: await res.text() };
-        }, { pid: pollId, iid: firstItemId });
+        }, { pid: pollSn, iid: firstItemSn });
 
         if (!voteResult.ok) {
             console.log(`>>> Vote API response: ${voteResult.status} - ${voteResult.body}`);
@@ -181,7 +181,7 @@ export class SurveyPage {
             }
             throw new Error(`Vote failed: ${voteResult.status} - ${voteResult.body}`);
         }
-        console.log(`>>> Vote cast successfully for poll ${pollId}`);
+        console.log(`>>> Vote cast successfully for poll ${pollSn}`);
     }
 
     async checkResults(searchKeyword: string, fullTitle: string) {

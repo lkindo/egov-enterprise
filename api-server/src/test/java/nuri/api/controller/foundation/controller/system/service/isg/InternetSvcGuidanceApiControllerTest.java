@@ -69,16 +69,16 @@ class InternetSvcGuidanceApiControllerTest {
     void testGetIsg() throws Exception {
         // Given
         InternetSvcGuidanceDto dto = InternetSvcGuidanceDto.builder()
-                .intnetSvcId("ISG_0001")
+                .itntSrvcSn(1L)
                 .intnetSvcNm("테스트 서비스")
                 .intnetSvcDc("테스트 설명")
                 .build();
-        when(isgService.getIntnetSvcGuidance("ISG_0001")).thenReturn(dto);
+        when(isgService.getIntnetSvcGuidance(1L)).thenReturn(dto);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/admin/system/isg/ISG_0001"))
+        mockMvc.perform(get("/api/v1/admin/system/isg/1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.intnetSvcId").value("ISG_0001"))
+                .andExpect(jsonPath("$.data.itntSrvcSn").value(1))
                 .andExpect(jsonPath("$.data.intnetSvcNm").value("테스트 서비스"));
     }
 
@@ -90,12 +90,14 @@ class InternetSvcGuidanceApiControllerTest {
                 .intnetSvcNm("새 서비스")
                 .intnetSvcDc("새 설명")
                 .build();
+        when(isgService.registerIntnetSvcGuidance(any(InternetSvcGuidanceDto.class))).thenReturn(1L);
 
         // When & Then
         mockMvc.perform(post("/api/v1/admin/system/isg")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").value(1));
 
         verify(isgService, times(1)).registerIntnetSvcGuidance(any(InternetSvcGuidanceDto.class));
     }
@@ -110,7 +112,7 @@ class InternetSvcGuidanceApiControllerTest {
                 .build();
 
         // When & Then
-        mockMvc.perform(put("/api/v1/admin/system/isg/ISG_0001")
+        mockMvc.perform(put("/api/v1/admin/system/isg/1")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
@@ -122,9 +124,9 @@ class InternetSvcGuidanceApiControllerTest {
     @DisplayName("서비스 안내 삭제 성공")
     void testDeleteIsg() throws Exception {
         // When & Then
-        mockMvc.perform(delete("/api/v1/admin/system/isg/ISG_0001"))
+        mockMvc.perform(delete("/api/v1/admin/system/isg/1"))
                 .andExpect(status().isOk());
 
-        verify(isgService, times(1)).deleteIntnetSvcGuidance("ISG_0001");
+        verify(isgService, times(1)).deleteIntnetSvcGuidance(1L);
     }
 }

@@ -24,7 +24,7 @@ export const commonRules = {
 };
 
 export const pollSchema = OnlinePollManageDtoSchema.extend({
-  pollId: z.string().optional(),
+  pollSn: z.number().optional(),
   pollNm: z.string().min(1),
   pollDsuseYn: z.string().optional().default('N'),
   pollBgngYmd: z.string().min(0).max(10).optional(),
@@ -46,7 +46,7 @@ export const smsSchema = SmsDtoSchema.extend({
 });
 
 export const menuSchema = MenuDtoSchema.extend({
-  menuNo: z.coerce.number().min(1),
+  menuNo: z.coerce.number().min(1).optional(),
   upperMenuId: z.coerce.number().optional().default(0),
   menuOrdr: z.coerce.number(),
 });
@@ -56,14 +56,14 @@ export const boardMasterSchema = BoardMasterDtoSchema.extend({
 });
 
 export const boardSchema = BoardSaveRequestSchema.extend({
-  pstId: z.number().optional(),
+  pstSn: z.number().optional(),
   password: z.string().optional().or(z.string().max(200)),
   noticeAt: z.enum(['Y', 'N']).optional(),
   secretAt: z.enum(['Y', 'N']).optional(),
 });
 
 export const manualSchema = OnlineManualDtoSchema.extend({
-  onlnMnlId: z.string().optional(),
+  onlnMnlSn: z.number().optional(),
 });
 
 export const userManageSchema = UserDtoSchema.extend({

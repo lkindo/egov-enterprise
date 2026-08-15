@@ -15,8 +15,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ExternalHrDto {
 
-    @Size(max = 20)
-    private String evntId;
+    @NotNull
+    @Positive
+    private Long evntSn;
+    @NotBlank
     @Size(max = 20)
     private String otsdHrId;
     @Size(max = 30)

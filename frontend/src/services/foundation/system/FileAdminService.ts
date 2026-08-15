@@ -14,7 +14,7 @@ class FileAdminService extends AdminService {
   * 목록 조회(getFiles)·삭제(deleteFile) 메서드는 두지 않는다 (2026-08-05 제거).
   *
   * 둘 다 백엔드에 대응 매핑이 없었다 — `FileApiController` 는 POST 1 + GET 2
-  * (`/{atchFileId}`, `/{atchFileId}/{fileSn}`) 가 전부라 `GET /admin/system/files` 는 404,
+  * (`/{atchFileSn}`, `/{atchFileSn}/{fileSn}`) 가 전부라 `GET /admin/system/files` 는 404,
   * `DELETE /admin/system/files/{id}/{sn}` 은 405 였다. 앱 호출부도 각각 0개소였다.
   *
   * `getFiles` 는 특히 위험했다 — 목 기반 단위 테스트가 "calls correct endpoints" 라며
@@ -27,13 +27,13 @@ class FileAdminService extends AdminService {
  /**
  * 파일 업로드
  * @param files 업로드할 파일 리스트
- * @returns atchFileId
+ * @returns 첨부파일 일련번호
  */
- async uploadFiles(files: File[], config?: AxiosRequestConfig): Promise<string> {
+ async uploadFiles(files: File[], config?: AxiosRequestConfig): Promise<number> {
  const formData = new FormData();
  files.forEach(file => formData.append('files', file));
 
- return this.post<string>('', formData, {
+ return this.post<number>('', formData, {
  ...config,
  headers: { 
  ...config?.headers,

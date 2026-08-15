@@ -7,7 +7,7 @@
 > **갱신: 2026-07-18(3) — 점수상승 세션: FE 액센트 토큰화(FE 78/74/63)·프론트 색상/FE-auth/정체성축 회귀 게이트 신설(SEAM 추적성 60→62)·§2.F FE인증·§2.E 정체성모델·§2.G false-completion 대부분 해소/현행화. §2.H 통합 검증 게이트(verify.mjs) 신설(SEAM 추적성 63). 최종: DB 89/88/82·BE 84/77/70·FE 79/76/63·SEAM 67/70/63. (§2.D UNIQUE·§2.E 정체성·§2.F FE인증은 실측결과 이미 봉합→감사확인+회귀게이트化. §2.G 는 기록 문제→정직 정정. §2.H 는 통합 verify 게이트로 파편화 봉합)**
 > **갱신: 2026-07-18(2) — FE·SEAM 재측정 추가(§1.4, 07-15 이후 최초). §2.C 게이트화·§2.B 결합역전/브랜딩 토큰화 반영. FE 75/72/55→**77/74/61**·SEAM 65/66/54→**67/70/58**·BE 83/74/68→**84/77/70**(연결부 egov소거+결합역전)·DB **89/88/82 유지**. 상단 표를 07-18 현재값으로 통합. ⚠위임 워크플로우 세션한도 실패로 메인 직접 실측 채점.**
 > **갱신: 2026-07-28 — 4축 전면 재측정(§1.5). 07-18 이후 119커밋(fix 44·ci 19·test 7) 반영. DB 89/88/82→**91/90/83**(V2_24 CHECK 0→60 실적용)·BE 84/77/70→**87/78/71**(admin P0·Origin 교정·뮤테이션 75% 하드강제)·FE 79/76/63→**81/77/66**(하드코딩 색 207→114)·SEAM 67/70/63→**69/73/70**(하네스 게이트 실행경로 0→pre-push 기계강제, 린터 9→12). 🚨 E2E 3샤드 전량 red 가 추적성 상한을 지배.**
-> **갱신: 2026-08-13** — 4축 전면 재측정(§1.6). 07-28 이후 실물·게이트·원격 CI를 재검증해 DB **91/91/85**·BE **90/82/74**·FE **85/83/70**·SEAM **77/84/85**로 현행화했다. 12축 단순평균은 78.0→**83.1(+5.1)**. 07-28의 지배적 캡이던 E2E 3샤드는 required check로 전량 green(131건), 하네스는 29클래스/36테스트, 프런트는 80파일/408테스트다. 별도 위험가중 완성도 점수와 이 구조 성숙도 평균은 혼용하지 않는다.
+> **갱신: 2026-08-15** — 4축 전면 재측정(§1.6)의 DB **91/91/85**·BE **90/82/74**·FE **85/83/70**·SEAM **77/84/85**, 12축 단순평균 **83.1**은 유지한다. 이후 E2E 3샤드 required check 131건, 하네스 30클래스/37테스트, 프런트 89파일/456테스트와 30/26/25/31 coverage 하한을 재검증했고 입력 계약 3차 표적을 총 12 DTO·길이 61필드·enum 13필드로 확장했다. 별도 위험가중 완성도 점수와 이 구조 성숙도 평균은 혼용하지 않는다.
 > 방법론: DB/BE/FE/연결부 4차원 독립 assessor가 커밋 메시지가 아닌 **코드 실물을 Read/Grep 로 검증**해 채점 → 메인 재검증. 이 저장소의 감사수치 과장 이력을 감안해 **과장 배제** 원칙 적용.
 > 관련: [framework-reusability-assessment.md](framework-reusability-assessment.md) · [log-retention-policy.md](../04-operations/log-retention-policy.md)
 
@@ -24,7 +24,7 @@
 
 > 07-28까지의 열은 당시 스냅샷을 보존한다. **현재값의 근거·상한·미반영 항목은 §1.6이 정본**이다. 특히 §1.5의 E2E red, 하네스 12종, CI 신호 부재는 현재 상태 설명으로 사용하면 안 된다.
 
-**핵심 관찰(현재)**: 최대 누적 이동은 SEAM 추적성 **+37**, 적합성 **+26**, 계약체인 **+13**이다. CI·E2E·하네스가 실제 병합 신호로 바뀐 결과이며, 07-28에 이미 점수화한 OpenAPI/DB 체인은 중복 가산하지 않았다. 반대로 가장 낮은 축은 FE 단순성 70·BE 단순성 74다. 이제 상한은 “검증이 안 돈다”가 아니라 **낮은 FE unit coverage, 읽기 인가 미판정, 수동 PK·암호 호환, i18n/core 경계 제품결정**이다.
+**핵심 관찰(현재)**: 최대 누적 이동은 SEAM 추적성 **+37**, 적합성 **+26**, 계약체인 **+13**이다. CI·E2E·하네스가 실제 병합 신호로 바뀐 결과이며, 07-28에 이미 점수화한 OpenAPI/DB 체인은 중복 가산하지 않았다. 반대로 가장 낮은 축은 FE 단순성 70·BE 단순성 74다. 읽기 인가 census·FE coverage 30/26/25/31·입력 DTO 의미 계약 3차 표적·i18n/core 제품결정은 08-15에 폐포됐고, 이제 상한은 **표적 밖 요청 계약, 암호 데이터 운영 census, CSP·성능·DR 운영 실증**이다.
 
 ### 1.1. DB 축 재측정 (2026-07-17, 라이브 OCI DB 실측)
 
@@ -194,20 +194,19 @@
 - **병합 강제 신호**: active ruleset `12501346`이 `backend-build`·`frontend-build`·`secret-scan`·E2E 3샤드·`mutation-test`의 정확한 7개 context를 required check로 강제한다. 우회 actor는 0이다. PR #398·#399는 이 구조에서 backend/frontend, strict mutation 10범위, E2E 3샤드까지 전부 green으로 병합됐다.
 - **E2E 상한 해소**: PR #399 run `31622347297`에서 shard별 47/71/13, 합계 **131건**이 통과했다. §1.5의 “3샤드 전량 red·신호 0”은 역사 기록일 뿐 현재 캡이 아니다.
 - **백엔드 검증**: 완료 원장 기준 전수 **2,008 tests/실패 0**, 최신 집계 JaCoCo instruction **89.13%**, branch **77.09%**, line **90.19%**다. mutation은 전체가 아니라 고위험 **10개 범위**를 `STRICT_MUTATION=true`·75%로 강제한다.
-- **프런트 검증**: Vitest **80파일/408테스트** 전부 통과. 전체 소스 coverage는 statements **22.94%**, branches **18.36%**, functions **17.80%**, lines **23.51%**이고 하한은 22/18/17/23이다. 숫자가 상승했어도 20%대라 FE 90점대 근거로는 쓰지 않았다.
-- **계약 체인**: 하네스는 **29클래스/36테스트·실패 0**이다. 엔티티↔스키마는 80엔티티/83테이블/888컬럼, DTO↔OpenAPI는 276 schema 중 매칭 DTO 91종을 검사하며 drift 0이다. backend가 `api-docs.json`을 오프라인 재생성·diff하고 frontend가 generated TypeScript/Zod drift를 검증한다. 로그 화면도 수제 타입 대신 생성 DTO와 0/1-base·`pageUnit` 계약에 맞췄다.
-- **DB**: versioned migration 49개와 repeatable 2개가 존재하며 최신은 V2_48이다. CI는 빈 PostgreSQL 17에 Flyway 전량 적용→Hibernate validate→쓰기 smoke를 무조건 실행한다. 다만 이번 재측정에서는 라이브 OCI 연결정보를 사용하지 않았으므로 실제 적용 rank·FK/CHECK 개수를 새로 측정하지 않았고, 그 불확실성을 DB 완성도 0점 상승에 반영했다.
+- **프런트 검증(2026-08-15 최종 재측정)**: Vitest **89파일/456테스트** 전부 통과. 최종 `localGate`의 전체 소스 coverage는 statements **30.69%**, branches **26.25%**, functions **25.28%**, lines **31.25%**이고 하한도 30/26/25/31로 고정했다. 90/458에서 줄어든 1파일·2테스트는 제품에서 제거한 미사용 한국어 메시지 상수만 검사하던 테스트다. include 축소 없이 JWT 만료 힌트와 사용자·조직 관리자 액션의 인증·오류 경계를 보강한 결과다.
+- **계약 체인**: 하네스는 **30클래스/37테스트·실패 0**이다. 읽기 부채를 세기만 하던 census를 제거해 조회·쓰기 하네스가 면제 없이 직접 차단하고, `InputContractMirrorLinterTest` 2건이 관리자 입력 12 DTO의 길이 61필드·Y/N enum 13필드를 Entity와 OpenAPI에 결속한다.
+- **DB**: versioned migration **84개**와 repeatable 2개가 존재하며 최신은 V2_83이다. CI는 빈 PostgreSQL 17에 Flyway 전량 적용→Hibernate validate→쓰기 smoke를 무조건 실행한다. 다만 이번 인가 재측정에서는 라이브 OCI 연결정보를 사용하지 않았으므로 실제 적용 rank·FK/CHECK 개수를 새로 측정하지 않았다.
 - **빌드/DX**: Gradle 10 폐기 경고를 0으로 만들고 로컬·CI 명령을 `--warning-mode fail`로 고정했다. `frontendUnitTest`·`harnessTest`·대표 strict PIT에서 configuration cache 문제 0과 저장/재사용을 확인했지만, 전역 활성화와 원격 재사용은 하지 않았다. backend/frontend 병렬 시작은 의존 계약으로 고정했고, 성공 run의 최초 build 시작→후속 E2E fan-out 시작은 직렬 #400 attempt 2(`31624861625`) **608초**에서 병렬 #401 최종(`31627566756`) **428초**로 180초(29.6%) 줄었다. 이는 두 실행의 관측치이며 장기 중앙값은 아니다.
 
 #### 점수를 누르는 현재 캡과 우선순위
 
 | 순위 | 잔여 | 현재 증거 | 다음 종료 조건 |
 |---:|---|---|---|
-| **1** | 읽기 인가 census | 쓰기 사유로 통과하는 읽기 엔드포인트 **30건**, 클래스 면제 **12건** | 도메인별 소유권 가드 또는 공개 사유로 0까지 판정 |
-| **2** | FE 단위 회귀 탐지력 | line 23.51%, functions 17.80% | 인증·admin mutation·업로드·로그부터 30/25/25/30 이상 래칫 |
-| **3** | 입력 계약 자동 전파 | `@Column(length=)` 536 vs DTO `@Size` 393, 직접 대응 미측정 | 고위험 DTO 길이·enum 불변식 표적 미러 게이트 |
-| **4** | 구조 레거시 | 80엔티티 중 수동 단일 PK 동결 64, `@GeneratedValue` 3; eGov 결합은 비밀번호 호환·ARIA 암호에 좁게 잔존 | 데이터 census 후 도메인별 expand-contract; 일괄 전환 금지 |
-| **5** | 제품화 결정 | i18n API 소비 파일 약 0.7%, business-core 안 survey/community 45 Java | 다국어 파일럿/단일언어 선언 및 core/app 경계 결정 |
+| **1** | 입력 계약 자동 전파 범위 | 게시판 마스터를 포함한 12 DTO의 길이 61필드·enum 13필드는 자동 대조, 그 밖의 입력 DTO는 미측정 | 위험 기반 다음 `@RequestBody` 묶음도 서비스 저장 경로 확인 후 표적 추가 |
+| **2** | 구조 레거시 | 자동 PK 후보 43종은 V2_83까지 전환 완료했고 잔여 19종은 자연·복합·외부키 유지 판정. 레거시 비밀번호의 BCrypt 투명 재해시와 ARIA 활성키→구키 dual-read·read fail-closed는 구현·회귀 테스트 완료 | 실제 DB에서 레거시 해시·구키 암호문 census 후 재해시/재암호화 0건을 증명하고 호환 경로 제거 |
+| **3** | 제품화 결정 **✅ 종결** | banner·popup·community·survey 55 Java와 테스트 8개를 app으로 이관하고 core 재유입 게이트 추가. 프런트는 한국어 UI로 확정해 반쪽 next-intl 제거 | ADR-0001/0002 유지, 변경 시 후속 ADR과 전체 게이트 요구 |
+| **4** | FE 후속 회귀 탐지력 | statements 30.69%, branches 26.25%, functions 25.28%, lines 31.25% | 30/26/25/31 하한 유지 + 신규 고위험 기능 파일 단위 80% 지향 |
 
 **이번에 닫힌 false-green**: 색상 가드의 실제 잔여는 **104건**인데 기준선이 207이라 103건 증가를 허용했다. 기준선을 104로 내리고 실제 census와 정확히 같아야 통과하도록 바꿨다. 반대로 103으로 변조했을 때 RED가 나는 것을 확인했다.
 
@@ -219,26 +218,26 @@
 
 > **현행 판독 규칙(2026-08-13)**: 아래 A~H는 원인 발견 당시의 증거와 후속 정정을 함께 보존한다. 현재 사실은 §1.6이 우선한다. 특히 컴포넌트 스캔 벽·빈 DB 부팅 불가·E2E/CI 신호 부재·UNIQUE/OpenAPI 무강제·RBAC 미전환은 이미 해소되었으므로 잔여 부채로 다시 세지 않는다.
 
-현재 90점대를 막는 핵심은 **수동 PK·좁게 남은 암호 호환(A), 코어/샘플 및 i18n 제품결정(B), 읽기 인가 census(C), 입력 DTO까지 완전 자동 전파되지 않은 계약(D), 낮은 FE 단위 커버리지(H)**다. 개별 버그 수정보다 도메인별 설계 결정과 단계적 래칫이 필요한 영역이다.
+현재 추가 상승을 막는 핵심은 **암호 데이터의 운영 census(A), 입력 DTO까지 완전 자동 전파되지 않은 계약(D), 외부 운영 실증(H)**이다. 수동 PK 현대화·읽기 인가 census·FE 30/26/25/31 coverage·암호 호환 코드 경로·코어/샘플 및 언어 제품결정은 완료됐으며, 이후에는 실제 데이터 전환 증명과 단계적 계약 래칫이 필요하다.
 
 ### A. 미완결 레거시 현대화 — 두 패러다임의 공존 (가장 깊은 원인)
 eGovFrame 5.0 레거시를 Spring Boot 3.4/Java 21 로 "현대화"했으나 **새 레이어를 위에 얹었을 뿐 재설계하지 않았다.** 구·신 패러다임이 한 코드베이스에 공존한다.
 - **증거(표면부채 — 2026-07-17 대부분 해소)**: ~~감사컬럼 `frst_rgtr_id` 오버로드~~(poll 이중투표 fix) · ~~오명명 패키지 `usermanagement`~~(→`service/department` 정명) · ~~`Egov*` 접두 네이밍~~(인터페이스 39·빈ID 12·`EgovAbstractServiceImpl` 상속·死 config 4 제거) · ~~split-package 지뢰~~(core↔app 동일FQN main 중복 0, 잔여 1) · ~~`System.currentTimeMillis()` PK 채번 12곳~~(프로덕션 0).
-- **✅ 2026-08-13 정정 — 위 심층결합 목록도 대부분 역사화**: 컴포넌트 스캔은 `nuri`만 대상으로 하고 `EgovIdGnrService`·`EgovPropertyConfig`·`EgovFrameConfig` 프로덕션 사용은 0이다. eGov import는 3파일 4줄로 축소됐고 실제 잔존은 **레거시 SHA-256 비밀번호 호환과 ARIA 주민번호 암호 계약**(`EgovPasswordEncoder`·`EgovAuthenticationProvider`·`EgovFileScrty`·`EgovEnvCrypto`)이다. 이름 정리가 아니라 기존 데이터 호환·키회전 설계 뒤에 제거해야 한다.
-- **현재 구조 캡**: 하네스가 스캔하는 80엔티티 중 `@GeneratedValue`는 3개, 수동 단일 PK 동결은 64개다. 참조관계 census 없이 일괄 자동채번으로 바꾸는 것은 금지하며, 이 수동 편중과 좁게 남은 암호 호환이 BE 단순성 74의 주된 상한이다.
+- **✅ 2026-08-15 정정 — 암호 호환 실행 경로까지 폐포**: 컴포넌트 스캔은 `nuri`만 대상으로 하고 `EgovIdGnrService`·`EgovPropertyConfig`·`EgovFrameConfig` 프로덕션 사용은 0이다. 레거시 SHA-256 비밀번호는 로그인 성공 시 현재 BCrypt 정책으로 투명 재해시하며, 잘못된 `{egov}` 해시가 표준 인코더로 우회하지 못한다. ARIA 주민번호는 활성키 우선·구키 1회 폴백과 손상 암호문 read fail-closed를 제공한다. 남은 eGov 암호 결합은 **실제 DB의 레거시 해시·구키 암호문이 0건임을 증명하기 전 제거할 수 없는 데이터 호환 어댑터**다.
+- **현재 구조 캡**: 자동 PK 후보 43종은 V2_83까지 `BIGINT IDENTITY`로 전환했고, 잔여 19종은 자연·복합·외부키로 유지 판정했다. 따라서 과거의 “수동 단일 PK 64개”는 현재 부채가 아니다. BE 단순성의 남은 측정 가능 상한은 암호 데이터 census와 제품 모듈 경계다.
 
 ### B. "프레임워크"가 목표인데 실체는 샘플 앱 (목적↔현실 괴리)
 저장소의 **진짜 목적은 신규 SI 재개발용 베이스 프레임워크**인데, 실체는 factoring 이 안 된 모놀리식 샘플이다.
 - **증거(2026-07-11 스냅샷)**: `foundation` 이 껍데기(코어 로직 빈약) · **빈 DB 로 부팅 불가**(bootstrap/admin seed 부재) · 필수 모듈(foundation+admin)과 고유 모듈 미분리 · 재사용성 자체 진단 ≈50/100([framework-reusability-assessment.md](framework-reusability-assessment.md)).
 - **✅ 대부분 해소 확인(2026-08-13 재확인)**: foundation은 41 Java이고 business 도메인 import 0, business-core→business-app import도 0이며 isolation gate가 이 방향을 강제한다. 빈 PostgreSQL 부팅·Flyway·validate는 CI 필수 게이트다. RBAC도 `rbac.db-auth.enabled:true`와 `DbUrlAuthorizationManager`로 DB 집행 중이며 `graphify-out` 추적 파일은 0이다.
-- **현재 제품결정 캡**: business-core 안 survey/community **45 Java**를 필수 코어로 볼지 app으로 옮길지, i18n을 실제 제품 기능으로 확장할지 단일언어로 선언하고 scaffold를 제거할지가 남았다. 프런트 i18n API 소비는 약 0.7%이고 색상 잔여는 104건이다. “떼어낼 수 없음”보다 **떼어낸 뒤 무엇을 제품 표준으로 둘지**가 현재 문제다.
+- **✅ 제품결정 종결(2026-08-15)**: banner·popup·community·survey **55 Java**와 해당 테스트 **8개**를 패키지/API/DB 계약 변경 없이 `business-app`으로 이관했다. `ServiceLayerIsolationTest`가 core 재유입을 막는다. 프런트는 한국어 단일언어로 확정하고 4문구만 소비하던 `next-intl`·ko/en 중복 카탈로그·로케일 쿠키를 제거했다. API 오류의 ko/en MessageSource 계약은 유지한다. 근거와 재도입 조건은 ADR-0001/0002다.
 
 ### C. 횡단관심사의 비체계적 적용 — 그래서 버그가 "패턴"으로 재발
 인가·정체성·트랜잭션 경계·캐싱 같은 cross-cutting 관심사가 **관례/애스펙트가 아니라 엔드포인트마다 임기응변으로** 적용됐다.
 - **증거(전부 "N곳" 패턴)**: currentTimeMillis PK ×12 · 커밋-전-async ×3(Sanction/Board/SMS/Mail) · 함수레벨 인가 누락 ×6 · check-then-act ×5 · split-package ×여러. 이번 세션이 개별 인스턴스를 잡았으나 **체계(관례)는 여전히 없어** 다음 컨트롤러/서비스에서 재발할 구조.
 - **✅ 부분 해소(2026-07-18, 체계화 감사 → 게이트+관례 SSOT)**: 관심사별 게이트/관례 현황을 실측(`crosscutting-systematization-audit-2026-07-18`)해 **관례 SSOT 문서 신설**([cross-cutting-conventions.md](../03-guides/cross-cutting-conventions.md) — 6개 관심사 `[관례/근거/집행게이트/미집행갭]`). 최대 갭 2건을 **정적 게이트로 기계강제 전환**: ① `AsyncTransactionalListenerArchTest`(@Async+@TransactionalEventListener 금지) — 종전 `RestrictedTransactionalEventListenerFactory` **팬텀 가드**(주석만 존재·클래스 부재=거짓 안전감)를 실제 게이트로 대체하고 리스너 주석 3정정. ② `ServiceReadOnlyTransactionalLinterTest`(@Service 클래스레벨 readOnly 강제, 미준수 11종 동결·신규 드리프트 차단). 기존 게이트(Security/PkGen/UniqueMirror/SchemaNaming)와 합산해 인가(쓰기축)·PK채번·tx경계는 게이트화. **잔여(문서 방어)**: 인가 읽기축·SpEL, check-then-act 시맨틱, 정체성 컬럼축.
 - **✅ 추가 해소(2026-07-28, 캐싱 = 마지막 무게이트 영역)**: 6개 관심사 중 **유일하게 집행 게이트가 0** 이던 캐싱을 `CachingInvalidationMatrixLinterTest`(양방향 매트릭스 — `NO_EVICT` 영구 stale / `DEAD_EVICT` 오타·잔재)로 봉합. 신설 첫 실행에서 **실존 결함 1건 검출**: `InstitutionCodeService` 의 `@CacheEvict("institutionCodes")` 를 채우는 `@Cacheable` 이 저장소에 없어 **아무것도 무효화하지 않으면서 거짓 안전감만 주던** 死 애노테이션(위치도 오배치 — 수신 로그 메서드에 붙어 있었다). 제거 완료. ⚠ `CacheConfig` 가 `@Profile("!test")` 라 **테스트에서는 캐싱이 꺼져 있어 어떤 테스트도 이 계열을 잡을 수 없다** — 정적 게이트만이 유효한 영역이었다. 캐시명 상수화는 44개 애노테이션 일괄 치환이라 §0.7-H4 상 별도 판단으로 남긴다(오타·rename 무음미스는 매트릭스가 이미 차단).
-- **현재 잔여**: 29종 하네스와 DB/FE 인증 게이트로 “체계 없음” 상태는 끝났다. 다만 `WRITE_AUTHZ_GUARDED_ELSEWHERE`의 쓰기 사유로 통과하는 읽기 엔드포인트 30건과 클래스 면제 12건은 소유권·공개성 판단을 증명하지 못한다. 이 census를 도메인별로 판정하는 일이 SEAM 적합성의 최우선 잔여다.
+- **✅ 2026-08-15 해소**: `WRITE_AUTHZ_GUARDED_ELSEWHERE`의 쓰기 사유로 통과하던 읽기 30건을 개인·참여자·부서 스코프 18건과 인증 사용자 공유 조회 12건으로 개별 판정했다. 12개 컨트롤러에 `@Authenticated`를 명시하고 읽기 census와 클래스 면제 자체를 제거했으며, 애노테이션 제거 뮤테이션이 조회·쓰기 하네스 모두에서 red가 됨을 확인했다. 현재 잔여는 애노테이션 존재만으로 객체 소유권 의미까지 자동 증명할 수 없다는 시맨틱 한계와 SpEL 역할 문자열이다.
 
 ### D. SSOT(단일 진실원) 전파 미정합 — 불변식이 한 레이어에만 존재
 DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 논다.**
@@ -246,8 +245,11 @@ DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 �
 - **✅ 부분 해소(2026-07-17)**: meta_standard **terms→domains 매핑 부재**(당시 5컬럼뿐)가 V2_17 로 100% 복원(13,173/13,173 + FK) → **헌법 제5조 3단계 기계검증 원천 확보**. 명명 검증은 **SchemaNamingLinterTest 신설(P4)** 로 빌드게이트화.
 - **✅ 위 '증거' 2건은 2026-07-28 기준 전부 해소됨 — 서술이 stale 이었다**: ① **UNIQUE↔JPA 미러링**은 `UniqueConstraintMirrorLinterTest`(2026-07-17 신설, 3가지 인정방식+vacuous 가드)가 이미 기계강제 중이며 green. ② **backend-shape↔api-docs 괴리**는 `ApiDocsPathCoverageLinterTest`(07-18, **경로**)에 이어 **`ApiDocsSchemaFieldLinterTest`(07-28, **필드**)** 로 닫혔다 — DTO 필드 추가·삭제·개명 후 api-docs 재생성을 잊으면 red 가 된다(스키마 271건 중 매칭 DTO 87건 검사, 동결 0건).
 - **✅ 추가 해소(2026-07-28) — 제약의 '종류'가 API 응답 의미로 전파되지 않던 갭**: V2_24 로 `_yn` 컬럼 **60개에 CHECK** 가 생겼으나 DTO 측 Y/N 검증은 **4곳**뿐이었고, `GlobalExceptionHandler` 는 **모든 무결성 위반을 409 "이미 존재하거나 사용 중인 값"** 으로 뭉갰다. 즉 클라이언트가 `dltYn:"X"` 같은 **허용되지 않는 값**을 보내도 "중복입니다" 라는 **의미가 틀린 409** 를 받았다 — 불변식이 DB 에만 살아 있고 API 로 전파되지 않은 전형이다. DTO 56곳에 `@Pattern` 을 뿌리는 대신(§0.7-H4 일괄치환 회피) **SQLState 로 분기**해 CHECK(23514)·NOT NULL(23502) → **400**, UNIQUE(23505)·FK(23503) → 409 유지로 정정했다. 한 곳 수정으로 CHECK 60개 전부가 정합된다. 회귀 가드 4건 포함(분기 무력화 시 2건 red 확인).
-- **✅ 2026-08-13 현행**: api-docs는 212 paths/276 schemas이고 생성 TypeScript 17,196줄·Zod 3,904줄이다. backend 오프라인 생성·tracked diff, DTO 필드 하네스, frontend codegen drift가 pre-push와 CI에 결속돼 “backend→api-docs 무보호”는 해소됐다.
-- **잔여**: Entity↔DTO는 투영 관계라 전수 동일성으로 볼 수 없다. 길이 제약은 `@Column(length=)` **536** vs DTO `@Size` **393**이고 필드 단위 직접 대응을 측정하지 않았다. 따라서 현재 계약체인 상한은 경로/필드 존재가 아니라 **입력 길이·enum·도메인 의미의 표적 자동전파**다.
+- **✅ 2026-08-15 현행**: api-docs는 212 paths/276 schemas이고 생성 TypeScript 17,374줄·Zod 3,629줄이다. backend 오프라인 생성·tracked diff, DTO 필드 하네스, frontend codegen drift가 pre-push와 CI에 결속돼 “backend→api-docs 무보호”는 해소됐다.
+- **✅ 2026-08-15 1차 표적 폐포**: Entity↔DTO는 투영 관계라 전수 동일성으로 보지 않고, 실제 요청 본문으로 저장되는 사용자·배너·팝업·커뮤니티 4 DTO의 직접 저장 필드만 선정했다. `InputContractMirrorLinterTest`가 길이 **20필드**와 Y/N enum **4필드**를 Entity→DTO→OpenAPI까지 대조하고 TypeScript/Zod는 기존 codegen 게이트가 이어받는다. 최초 RED 13건에서 배너 URL 1000→512·인증서 DN 255→100·커뮤니티 길이 누락 3건·Y/N 런타임/OpenAPI 누락 4건을 고쳤다. 길이 +1과 OpenAPI enum 삭제 뮤테이션이 각각 RED가 됨을 확인했다.
+- **✅ 2026-08-15 2차 표적 폐포**: 실제 관리자 저장 경로를 다시 추적해 공통코드 3종과 그룹·롤·권한·조직 4종을 추가했다. 신규 길이 **29필드**는 모두 Entity 상한 안이었고, 공통코드 `useYn` 3필드에서 런타임 `@Pattern`·OpenAPI enum 누락 **각 6건 RED**를 확인해 보정했다. 누적 표적은 **11 DTO·길이 49필드·enum 7필드**다. 신규 분류코드 길이 12→13과 상세코드 OpenAPI enum `[Y,N]`→`[Y]` 뮤테이션이 각각 정확히 1건 RED가 되는 것도 확인했다.
+- **✅ 2026-08-15 3차 표적 폐포**: 게시판 마스터 생성·수정 경로에서 Entity에 직접 기록되는 문자열 **12필드**를 추가했다. 최초 RED는 저장 길이 누락 4건과 Y/N 런타임·OpenAPI 의미 누락 12건, 합계 **16건**이었고 이를 DTO→OpenAPI→TypeScript/Zod까지 보정했다. 누적 표적은 **12 DTO·길이 61필드·enum 13필드**다. `ansPsbltyYn` 길이를 1→2로 변조했을 때 Entity 상한 초과 **정확히 1건 RED**가 되는 것도 확인했다.
+- **잔여**: 3차 표적 밖의 요청 DTO는 아직 필드 단위 의미 대응을 측정하지 않았다. 따라서 “전수 자동전파 완료”가 아니라 **위험 기반 고위험 입력 3차 묶음까지 자동화 완료**이며, 다음 묶음도 서비스 저장 경로를 확인한 뒤 표적을 늘려야 한다.
 
 ### E. 정체성 모델의 근원적 혼란 (esntlId vs loginId)
 `getUsername()`=esntlId 인데 감사/소유권=loginId. **두 ID 개념을 상속했지만 사용 계약을 통일하지 않았다.**
@@ -258,7 +260,7 @@ DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 �
 ### F. FE 인증 아키텍처의 구조적 취약
 - **증거(2026-07 이전 스냅샷)**: 토큰 `localStorage` 저장 · 인증 쿠키 **non-HttpOnly**(document.cookie 기록) · 미들웨어 admin 게이트가 **위조 가능한 `userRole` 쿠키**만 신뢰(devtools 로 `userRole=ADMIN` 우회) · CSP `unsafe-inline`/`unsafe-eval`.
 - **✅ 대부분 해소 확인(2026-07-18 실측 감사)**: 위 증거는 **대부분 STALE**. 코드 실물 대조: ① 토큰 localStorage 저장 → **0**(localStorage 는 autosave·tour·popup·theme 등 비-토큰뿐, `client.ts`·`AuthContext` 는 HttpOnly 쿠키 기반). ② accessToken → `api/auth/login/route.ts` 가 **HttpOnly·Secure(prod)·SameSite=Strict** 쿠키로 설정(응답 바디엔 role 만) + 동일출처 프록시(Next route handler + 미들웨어 Authorization 주입). ③ userRole 위조 → 미들웨어가 **Web Crypto `crypto.subtle.verify` 로 서명 JWT 검증**해 role 추출(위조 userRole 쿠키 불신). ④ CSP unsafe-eval → **prod 제거**(`next.config.ts` cspProd=`script-src 'self' 'unsafe-inline'`, object-src/frame-ancestors 'none'). **회귀 방지 게이트 신설**: `fe-auth-hardening.test.ts`(vitest) — 위 4대 불변식(HttpOnly·no-localStorage-token·서명검증·no-prod-unsafe-eval) 정적 못박음. **잔여(제품결정 보류)**: CSP `unsafe-inline` 제거(Next RSC nonce/PPR 인프라 필요). *(admin 민감경로 커버리지는 2026-07-20 `401c43f4c` 미들웨어 deny-by-default 반전으로 해소.)*
-- **누르는 점수(정정)**: FE auth는 **HttpOnly+프록시+서명검증으로 현대화 완료**했고 DB RBAC도 집행 중이다. FE 상한은 이제 20%대 unit coverage·i18n 미결정·잔여 색상 104건이며, 보안 쪽 제품결정은 nonce 기반 CSP다.
+- **누르는 점수(정정)**: FE auth는 **HttpOnly+프록시+서명검증으로 현대화 완료**했고 DB RBAC도 집행 중이다. unit coverage는 30/26/25/31 하한까지 상향됐으며, 언어 정책도 한국어 UI로 종결됐다. FE 상한은 잔여 색상 104건·nonce 기반 CSP·런타임 성능 관측 제품결정이다.
 
 ### G. false-completion 문화 — "scaffold 는 있으나 채택은 0"
 로드맵에 [x] 로 표시됐지만 디스크는 다른 항목 다수.
@@ -270,16 +272,16 @@ DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 �
   | RBAC DB일원화 | [x] | `rbac.db-auth.enabled:true` | **✅ DB 집행 중**(`DbUrlAuthorizationManager`). 메서드/소유권 이중검증은 정당하며 비활성 fallback 정리만 잔여 |
   | Generic CRUD | [x] | `extends BaseCrud*` **0** | **✅ explicit CRUD로 결정 종결**. `generate-domain.ps1`도 명시 CRUD를 생성하며 死 BaseCrud 채택 계획 없음 |
   | route-group 격리 | [x] | 괄호 디렉터리 **0** | **미이행**(진짜 false-completion). 조직화 이득 낮아 우선순위 하 |
-  | i18n | [x] | i18n API **4/550 파일(~0.7%)** | **반쪽 스캐폴드**. 관리자 1화면 파일럿 후 확장 또는 단일언어 선언+scaffold 제거 결정 필요 |
+  | i18n | [x] | 프런트 로케일 런타임 **0** | **✅ 한국어 UI로 결정 종결**. 반쪽 next-intl 제거, API 오류 ko/en만 별도 유지(ADR-0002) |
   | 브랜딩 토큰화 | [x] | 잔여 **104** | **✅ exact 래칫**(`hardcoded-color-guard`, 기준선 여유 103건 제거) |
 
-- **✅ 반-false-completion 관행 현행**: 완료 주장은 active required check나 exact census로 뒷받침한다. RBAC과 CRUD 방향은 이미 결판났고, 미결로 남는 큰 항목은 i18n 제품결정이다. route-group 0은 사실이나 구조 게이트가 이미 모듈 방향을 지키므로 낮은 우선순위다.
+- **✅ 반-false-completion 관행 현행**: 완료 주장은 active required check나 exact census로 뒷받침한다. RBAC·CRUD·i18n 방향은 결판났고, route-group 0은 사실이나 구조 게이트가 이미 모듈 방향을 지키므로 낮은 우선순위다.
 
 ### H. 검증 인프라의 파편화 (신뢰 상한)
 - **증거**: **CI 빌링 차단**(검증 못 함) · e2e 이 환경에서 구동 불가 · 테스트 컨텍스트 파편화(2026-07-15 세션에서 async 회귀가 business-app full 미실행으로 누락됐다가 뒤늦게 검출·정정) · 재발방지 린터 allow-list 17개는 수기 신뢰 목록.
 - **✅ 부분 해소(2026-07-18, 통합 게이트 신설)**: "실제로 안 깨진다"를 **단일 명령으로 증명**하는 통합 검증 게이트 신설 — `node scripts/verify.mjs [all|be|fe]`(= `make verify` / `npm run verify`, 단일 소스). 백엔드 **전 모듈** 컴파일+테스트(하네스 린터 9종+ArchUnit 포함) + 프론트 `tsc --noEmit`+`next build`+`vitest`(색상/fe-auth/identity 회귀 게이트 포함)를 한 번에. **테스트 컨텍스트 파편화(2026-07-15 async 회귀 누락)의 근본 = "전 모듈을 한 번에 안 돌림"을 이 게이트가 봉합**(OS 감지 `.\gradlew.bat`/`./gradlew`, make 불요). *(pre-push 훅은 컴파일+계약 게이트만 = 빠른 관문, verify 는 full-suite 관문.)*
-- **✅ 2026-08-13 현행**: CI는 정상 작동하며 7개 정확한 required context가 병합을 강제한다. E2E는 3샤드 131건 green, 하네스는 29클래스/36테스트다. `localGate`와 pre-push도 컴파일·codegen·하네스를 계층적으로 강제한다. 따라서 “CI 빌링 차단·E2E 상시화 미해결”은 현재 사실이 아니다.
-- **현재 신뢰 상한**: FE unit coverage 20%대, strict mutation이 고위험 10범위에 한정된 점, configuration cache를 전역 활성화하지 않은 점, 운영 배포·백업복구·DR을 저장소 CI가 증명하지 못하는 점이다.
+- **✅ 2026-08-15 현행**: CI는 정상 작동하며 7개 정확한 required context가 병합을 강제한다. E2E는 3샤드 131건 green, 하네스는 30클래스/37테스트다. `localGate`와 pre-push도 컴파일·codegen·하네스를 계층적으로 강제한다. 따라서 “CI 빌링 차단·E2E 상시화 미해결”은 현재 사실이 아니다.
+- **현재 신뢰 상한**: FE coverage가 30% 수준에 머문 점, strict mutation이 고위험 10범위에 한정된 점, configuration cache를 전역 활성화하지 않은 점, 운영 배포·백업복구·DR을 저장소 CI가 증명하지 못하는 점이다.
 
 ---
 
@@ -287,10 +289,10 @@ DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 �
 
 | 근본원인 | 주로 누르는 점수 | 성격 | 해소 수단 |
 |---|---|---|---|
-| A. 미완결 레거시 현대화 | BE 단순성 | 수동 PK·암호 데이터 호환 | 도메인별 PK expand-contract, BCrypt/ARIA 호환 census 후 단계 제거 |
-| B. 프레임워크 제품경계 | FE/BE 단순성·재사용성 | 제품결정 | survey/community core 귀속, i18n 단일언어/다국어 결정 |
+| A. 미완결 레거시 현대화 | BE 단순성 | 암호 데이터 운영 호환 | 실제 DB BCrypt/ARIA census·전환 0건 증명 후 호환 어댑터 단계 제거 |
+| B. 프레임워크 제품경계 | ~~FE/BE 단순성·재사용성~~ **✅ 종결** | app 이관 + 한국어 UI ADR | core 금지패키지 게이트와 ADR-0001/0002 유지 |
 | C. 읽기 인가 census | BE 연결부 · SEAM 적합성 | 소유권 시맨틱 | 30 endpoint·12 class 면제를 도메인별 판정 |
-| D. 입력 계약 자동전파 | 계약체인 | 부분 자동화 | DTO 길이·enum 표적 미러 게이트 |
+| D. 입력 계약 자동전파 | 계약체인 | 3차 표적 자동화(12 DTO·길이 61·enum 13) | 위험 기반 다음 고위험 요청 DTO 묶음 확장 |
 | E. 정체성 모델 혼란 | ~~적합성·추적성~~ **✅ 대부분 해소** | SecurityUtil+문서+IdentityAxisLinter 게이트 | 잔여: esntlId축 소유권=제품모델 |
 | F. FE 인증 아키텍처 | ~~FE 완성도·연결부~~ **✅ 대부분 해소** | HttpOnly+프록시+서명검증 완료 | 잔여: nonce-CSP·admin커버리지(제품결정) |
 | G. false-completion | 추적성 | **✅ 대부분 해소** | exact census·active ruleset 유지, i18n 상태 정직 표기 |
@@ -300,8 +302,8 @@ DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 �
 
 ## 4. 결론
 
-- **검증 기반은 7월과 다른 단계다** — E2E 131건·하네스 29종·strict mutation 10범위가 병합을 실제로 막는다. 07-28에 이미 점수화한 API/DB 계약 게이트는 다시 세지 않아도 SEAM은 69/73/70에서 **77/84/85**로 올랐다.
-- **남은 낮은 점수는 더 이상 CI 부재 때문이 아니다** — FE unit line 23.51%, 읽기 인가 30건, 수동 PK 64엔티티, i18n 0.7%, DTO 길이 자동전파 미완이 측정 가능한 상한이다.
-- **다음 상승은 두 갈래다** — 저장소 내부에서는 읽기 인가·FE coverage·입력 계약 래칫을 계속하고, 구조/제품 영역에서는 i18n·core/app 경계·PK/암호 호환을 명시 결정 후 단계적으로 바꾼다.
+- **검증 기반은 7월과 다른 단계다** — E2E 131건·하네스 30종·strict mutation 10범위가 병합을 실제로 막는다. 07-28에 이미 점수화한 API/DB 계약 게이트는 다시 세지 않아도 SEAM은 69/73/70에서 **77/84/85**로 올랐다.
+- **남은 낮은 점수는 더 이상 CI 부재나 제품 경계 미결정 때문이 아니다** — FE coverage·읽기 인가·자동 PK 후보·입력 계약 3차 표적·암호 호환 코드 경로·i18n/core 결정은 폐포됐다. 측정 가능한 상한은 표적 밖 요청 계약, 실제 암호 데이터 census, CSP·성능·DR 운영 실증이다.
+- **다음 상승은 두 갈래다** — 저장소 내부에서는 위험 기반 입력 계약 표적과 FE coverage 래칫을 계속한다. 암호 어댑터 제거는 운영 DB의 레거시 해시·구키 암호문 0건 증명 뒤에만 수행하며, CSP·성능·DR은 운영 환경 증거로만 점수화한다.
 
-> 한 줄: **“검증 뼈대는 완성됐고, 이제 낮은 커버리지와 제품·데이터 계약 결정을 갚는 단계”**다.
+> 한 줄: **“검증 뼈대와 30/26/25/31 커버리지 하한은 완성됐고, 이제 제품·데이터 계약 결정과 운영 실증을 갚는 단계”**다.

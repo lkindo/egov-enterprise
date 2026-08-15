@@ -18,7 +18,7 @@ public record BoardSaveRequest(
 
                 @Schema(description = "게시 종료일자") @Size(max = 10) String pstEndYmd,
 
-                @Schema(description = "첨부파일 ID") @Size(max = 20) String atchFileId,
+                @Schema(description = "첨부파일 일련번호") Long atchFileSn,
 
                 @Schema(description = "행사 일자") @Size(max = 20) String evntDt,
 

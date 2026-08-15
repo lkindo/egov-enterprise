@@ -137,8 +137,8 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
 
  // 낙관적 업데이트를 적용한 좋아요 뮤테이션
  const likeMutation = useMutation({
-  mutationFn: (pstId: string) => likeBoardArticle(bbsId, pstId),
-  onMutate: async (pstId: string) => {
+  mutationFn: (pstSn: number) => likeBoardArticle(bbsId, pstSn),
+  onMutate: async (pstSn: number) => {
   
   // 진행 중인 쿼리 취소
   await queryClient.cancelQueries({ queryKey });
@@ -152,14 +152,14 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   return {
   ...old,
   list: old.list.map((item: any) => 
-  String(item.pstId) === pstId ? { ...item, likeCnt: (item.likeCnt || 0) + 1 } : item
+  item.pstSn === pstSn ? { ...item, likeCnt: (item.likeCnt || 0) + 1 } : item
   )
   };
   });
   
   return { previousData };
   },
-  onError: (err, pstId, context) => {
+  onError: (err, pstSn, context) => {
   // 실패 시 롤백
   queryClient.setQueryData(queryKey, context?.previousData);
   },
@@ -169,10 +169,10 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   }
  });
 
- const handleLike = (e: React.MouseEvent, pstId: string) => {
+ const handleLike = (e: React.MouseEvent, pstSn: number) => {
   e.preventDefault();
   e.stopPropagation();
-  likeMutation.mutate(pstId);
+  likeMutation.mutate(pstSn);
  };
 
  const list: BoardPost[] = data?.list || [];

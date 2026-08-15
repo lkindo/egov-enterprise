@@ -22,7 +22,7 @@ import { Input } from '@/components/ui/input';
 import { useNotifications } from '@/lib/hooks/use-notifications';
 
 interface Notification {
-  id: string;
+  id: number;
   title: string;
   content: string;
   time: string;

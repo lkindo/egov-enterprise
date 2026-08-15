@@ -27,8 +27,8 @@ const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
 import { BoardSaveRequestSchema } from '@/types/generated-zod';
 
 const boardSchema = BoardSaveRequestSchema.extend({
-  pstId: z.string().optional(),
-  parnts: z.string().optional(),
+  pstSn: z.coerce.number().int().positive().optional(),
+  parnts: z.coerce.number().int().positive().optional(),
   replyYn: z.string().optional(),
 });
 
@@ -37,11 +37,11 @@ type BoardFormValues = z.infer<typeof boardSchema>;
 interface BoardRegistClientProps {
   initialData?: any;
   bbsId: string;
-  pstId?: string;
-  parnts?: string;
+  pstSn?: number;
+  parnts?: number;
 }
 
-export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRegistClientProps) {
+export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRegistClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -50,14 +50,16 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
   const form = useAppForm(boardSchema, {
     defaultValues: {
       bbsId: bbsId,
-      pstId: pstId || initialData?.pstId,
+      pstSn: pstSn || initialData?.pstSn,
       pstTtl: initialData?.pstTtl || '',
       pstCn: initialData?.pstCn || '',
       userNm: initialData?.userNm || '관리자',
       pswd: initialData?.pswd || '1',
       parnts: parnts || initialData?.parnts,
       replyYn: (parnts || initialData?.replyYn === 'Y') ? 'Y' : 'N',
-      atchFileId: initialData?.atchFileId || '',
+      // 기존 글에 첨부가 없으면 API는 null을 반환한다. 생성 스키마의 optional()은
+      // undefined만 허용하므로 수정 폼 경계에서 null을 제거한다.
+      atchFileSn: initialData?.atchFileSn ?? undefined,
       scrtYn: initialData?.scrtYn || 'N',
       useYn: initialData?.useYn || 'Y',
     } as BoardFormValues
@@ -78,13 +80,13 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
 
   // 페이지 진입 시 임시저장 데이터 확인 및 복구 제안
   useEffect(() => {
-    if (hasDraft && !form.getValues('pstTtl') && !form.getValues('pstCn') && !pstId) {
+    if (hasDraft && !form.getValues('pstTtl') && !form.getValues('pstCn') && !pstSn) {
       if (confirm('이전에 작성 중이던 임시저장 데이터가 있습니다. 복구하시겠습니까?')) {
         restoreDraft();
         toast('임시저장 데이터를 복구했습니다.', 'success');
       }
     }
-  }, [hasDraft, restoreDraft, toast, pstId, form]);
+  }, [hasDraft, restoreDraft, toast, pstSn, form]);
 
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -108,10 +110,10 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
         }
       });
 
-      // Props 또는 initialData의 pstId가 존재하는 경우 확실하게 폼 데이터에 추가하여 수정(PUT) 분기 작동 보장
-      const activePstId = pstId || initialData?.pstId;
-      if (activePstId) {
-        formData.append('pstId', activePstId.toString());
+      // Props 또는 initialData의 pstSn가 존재하는 경우 확실하게 폼 데이터에 추가하여 수정(PUT) 분기 작동 보장
+      const activePstSn = pstSn || initialData?.pstSn;
+      if (activePstSn) {
+        formData.append('pstSn', activePstSn.toString());
       }
 
       const result = await saveBoardArticle(null, formData);
@@ -176,7 +178,7 @@ export function BoardRegistClient({ initialData, bbsId, pstId, parnts }: BoardRe
             transition={{ delay: 0.1 }}
             className="text-5xl font-black text-foreground tracking-tighter leading-none"
           >
-            {pstId ? '게시글 수정' : '새 게시글 작성'}
+            {pstSn ? '게시글 수정' : '새 게시글 작성'}
           </motion.h1>
         </div>
       </div>

@@ -19,9 +19,10 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
     public Page<Sms> searchSmsUnits(String searchCondition, String searchKeyword, Pageable pageable) {
         List<Sms> content = queryFactory
                 .selectFrom(QSms.sms)
-                .leftJoin(QSmsRecptn.smsRecptn).on(QSms.sms.smsId.eq(QSmsRecptn.smsRecptn.id.smsId))
+                .leftJoin(QSmsRecptn.smsRecptn)
+                .on(QSms.sms.smsTrsmSn.eq(QSmsRecptn.smsRecptn.id.smsTrsmSn))
                 .where(searchExpression(searchCondition, searchKeyword))
-                .orderBy(QSms.sms.smsId.desc())
+                .orderBy(QSms.sms.smsTrsmSn.desc())
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
                 .fetch();
@@ -29,7 +30,8 @@ public class SmsRepositoryImpl implements SmsRepositoryCustom {
         long total = queryFactory
                 .select(QSms.sms.countDistinct())
                 .from(QSms.sms)
-                .leftJoin(QSmsRecptn.smsRecptn).on(QSms.sms.smsId.eq(QSmsRecptn.smsRecptn.id.smsId))
+                .leftJoin(QSmsRecptn.smsRecptn)
+                .on(QSms.sms.smsTrsmSn.eq(QSmsRecptn.smsRecptn.id.smsTrsmSn))
                 .where(searchExpression(searchCondition, searchKeyword))
                 .fetchOne();
 

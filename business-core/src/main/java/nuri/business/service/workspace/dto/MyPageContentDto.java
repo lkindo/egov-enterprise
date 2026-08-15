@@ -12,12 +12,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class MyPageContentDto {
-    @Size(max = 20)
-    private String cntntsId;
+    private Long contsSn;
     @Size(max = 100)
     private String cntntsNm;
     private String cntcUrl;
-    private String cntntsUseAt;
+    private String cntntsUseYn;
     private String cntntsLinkUrl;
     private String cntntsDc;
 }

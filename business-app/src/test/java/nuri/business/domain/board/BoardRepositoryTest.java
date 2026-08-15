@@ -65,7 +65,6 @@ class BoardRepositoryTest {
     void findArticleDetailTest() {
         // Given
         Board article = Board.builder()
-                .pstId("NTT_000000000000001")
                 .bbsId(testMaster.getBbsId())
                 .pstTtl("Detail Test Subject")
                 .pstCn("Detail Test Content")
@@ -78,7 +77,7 @@ class BoardRepositoryTest {
         em.clear();
 
         // When
-        Optional<BoardDetailResult> result = boardRepository.findArticleDetail(saved.getPstId());
+        Optional<BoardDetailResult> result = boardRepository.findArticleDetail(saved.getPstSn());
 
         // Then
         assertThat(result).isPresent();
@@ -91,7 +90,6 @@ class BoardRepositoryTest {
     void searchArticlesTest() {
         // Given
         Board article1 = Board.builder()
-                .pstId("NTT_000000000000002")
                 .bbsId(testMaster.getBbsId())
                 .pstTtl("Search Target 1")
                 .pstCn("Content 1")
@@ -99,7 +97,6 @@ class BoardRepositoryTest {
                 .useYn("Y")
                 .build();
         Board article2 = Board.builder()
-                .pstId("NTT_000000000000003")
                 .bbsId(testMaster.getBbsId())
                 .pstTtl("Other Topic")
                 .pstCn("Special Content")
@@ -141,7 +138,6 @@ class BoardRepositoryTest {
     void searchWithOrderTest() throws InterruptedException {
         // Given
         Board articleLow = Board.builder()
-                .pstId("NTT_000000000000004")
                 .bbsId(testMaster.getBbsId())
                 .pstTtl("Low")
                 .inqCnt(10)
@@ -153,7 +149,6 @@ class BoardRepositoryTest {
         Thread.sleep(10);
         
         Board articleHigh = Board.builder()
-                .pstId("NTT_000000000000005")
                 .bbsId(testMaster.getBbsId())
                 .pstTtl("High")
                 .inqCnt(100)
@@ -183,7 +178,6 @@ class BoardRepositoryTest {
     void searchWithDateRangeTest() {
         // Given
         Board oldPost = Board.builder()
-                .pstId("NTT_000000000000006")
                 .bbsId(testMaster.getBbsId())
                 .pstTtl("Old")
                 .useYn("Y")
@@ -209,7 +203,6 @@ class BoardRepositoryTest {
     void otherCustomMethodsTest() {
         // Given
         Board article = Board.builder()
-                .pstId("NTT_000000000000007")
                 .bbsId(testMaster.getBbsId())
                 .pstTtl("Topic")
                 .useYn("Y")
@@ -219,7 +212,7 @@ class BoardRepositoryTest {
         em.clear();
 
         // 1. findByIdCustom
-        Optional<Board> found = boardRepository.findByIdCustom(saved.getPstId());
+        Optional<Board> found = boardRepository.findByIdCustom(saved.getPstSn());
         assertThat(found).isPresent();
         assertThat(found.get().getPstTtl()).isEqualTo("Topic");
 

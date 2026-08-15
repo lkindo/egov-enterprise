@@ -23,19 +23,19 @@ class MenuPersistenceTest extends PersistenceTestSupport {
     void menuCrud() {
         // given
         Menu menu = Menu.builder()
-                .menuSn(9999L)
                 .menuNm("테스트 메뉴")
                 .menuOrdr(1)
-                .upMenuSn(0L)
                 .build();
 
         // when: Save
         menuRepository.save(menu);
         menuRepository.flush();
+        Long menuSn = menu.getMenuSn();
+        assertThat(menuSn).isPositive();
         entityManager.clear();
 
         // then: Find
-        Menu saved = menuRepository.findById(9999L).orElseThrow();
+        Menu saved = menuRepository.findById(menuSn).orElseThrow();
         assertThat(saved.getMenuNm()).isEqualTo("테스트 메뉴");
 
         // when: Update
@@ -45,7 +45,7 @@ class MenuPersistenceTest extends PersistenceTestSupport {
         entityManager.clear();
 
         // then: Verify Update
-        Menu updated = menuRepository.findById(9999L).orElseThrow();
+        Menu updated = menuRepository.findById(menuSn).orElseThrow();
         assertThat(updated.getMenuNm()).isEqualTo("수정된 메뉴");
         assertThat(updated.getMenuOrdr()).isEqualTo(2);
     }
@@ -54,17 +54,14 @@ class MenuPersistenceTest extends PersistenceTestSupport {
     @DisplayName("메뉴 검색 기능 테스트")
     void searchMenus() {
         // given
-        menuRepository.save(Menu.builder()
-                .menuSn(1000L)
+        Menu parent = menuRepository.save(Menu.builder()
                 .menuNm("시스템 관리")
                 .menuOrdr(1)
-                .upMenuSn(0L)
                 .build());
         menuRepository.save(Menu.builder()
-                .menuSn(1001L)
                 .menuNm("사용자 관리")
                 .menuOrdr(2)
-                .upMenuSn(1000L)
+                .upMenuSn(parent.getMenuSn())
                 .build());
         menuRepository.flush();
         entityManager.clear();

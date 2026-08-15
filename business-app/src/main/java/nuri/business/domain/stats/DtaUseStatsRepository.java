@@ -10,7 +10,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String> {
+public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, Long> {
 
   @Query(value = """
       SELECT COUNT(*) AS statsCo,
@@ -28,14 +28,14 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
       @Param("toDate") LocalDateTime toDate);
 
   @Query(value = """
-      SELECT A.BBS_ID, B.BBS_NM, A.PST_ID, C.NTT_SJ, A.ATCH_FILE_ID, A.FILE_SN, D.ORIGNL_FILE_NM, COUNT(*) AS statsCo
+      SELECT A.BBS_ID, B.BBS_NM, A.PST_SN, C.NTT_SJ, A.ATCH_FILE_SN, A.FILE_SN, D.ORIGNL_FILE_NM, COUNT(*) AS statsCo
         FROM tb_dta_use_stats A
         JOIN tb_bbs_master B ON A.BBS_ID = B.BBS_ID
-        JOIN tb_bbs_item C ON A.BBS_ID = C.BBS_ID AND A.PST_ID = C.PST_ID
-        JOIN tb_file_detail D ON A.ATCH_FILE_ID = D.ATCH_FILE_ID AND A.FILE_SN = D.FILE_SN
+        JOIN tb_bbs_item C ON A.BBS_ID = C.BBS_ID AND A.PST_SN = C.PST_SN
+        JOIN tb_file_detail D ON A.ATCH_FILE_SN = D.ATCH_FILE_SN AND A.FILE_SN = D.FILE_SN
        WHERE A.crt_dt BETWEEN :fromDate AND :toDate
          AND (:searchKeyword IS NULL OR :searchKeyword = '' OR B.BBS_NM LIKE '%' || :searchKeyword || '%')
-       GROUP BY A.BBS_ID, B.BBS_NM, A.PST_ID, C.NTT_SJ, A.ATCH_FILE_ID, A.FILE_SN, D.ORIGNL_FILE_NM
+       GROUP BY A.BBS_ID, B.BBS_NM, A.PST_SN, C.NTT_SJ, A.ATCH_FILE_SN, A.FILE_SN, D.ORIGNL_FILE_NM
         ORDER BY statsCo DESC
       """, nativeQuery = true)
   List<Object[]> selectDtaUseStatsList(@Param("fromDate") LocalDateTime fromDate,
@@ -44,12 +44,12 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, String
 
   @Query("""
       SELECT d FROM DtaUseStats d
-      WHERE d.bbsId = :bbsId AND d.pstId = :pstId AND d.atchFileId = :atchFileId AND d.fileSn = :fileSn
+      WHERE d.bbsId = :bbsId AND d.pstSn = :pstSn AND d.atchFileSn = :atchFileSn AND d.fileSn = :fileSn
       ORDER BY d.crtDt DESC
       """)
   Page<DtaUseStats> selectDtaUseStatsDetail(@Param("bbsId") String bbsId,
-      @Param("pstId") String pstId,
-      @Param("atchFileId") String atchFileId,
+      @Param("pstSn") Long pstSn,
+      @Param("atchFileSn") Long atchFileSn,
       @Param("fileSn") Integer fileSn,
       Pageable pageable);
 

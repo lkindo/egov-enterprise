@@ -7,7 +7,6 @@ import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.schedule.dto.ScheduleDto;
 import nuri.business.service.schedule.dto.ScheduleMapper;
 import nuri.foundation.core.exception.BusinessException;
-import nuri.foundation.core.util.IdGenerationUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -81,20 +80,15 @@ public class ScheduleService {
                 .collect(Collectors.toList());
     }
 
-    public ScheduleDto getSchedule(@NonNull String schdlId) {
-        Schedule entity = scheduleRepository.findById(schdlId)
+    public ScheduleDto getSchedule(@NonNull Long schdlSn) {
+        Schedule entity = scheduleRepository.findById(schdlSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 조회
         return convertToDto(entity);
     }
 
     @Transactional
-    public String createSchedule(String userId, ScheduleDto dto) {
-        // [PK 채번] Schedule 은 @GeneratedValue 없는 할당식 PK(varchar 20)다. 클라이언트가 보낸 schdlId 를
-        //   그대로 쓰면 미전송 시 null PK 로 persist 되어 저장 자체가 실패한다(등록 UI 는 이 필드를 보내지 않는다).
-        //   저장소의 다른 create 경로와 동일하게 서버가 채번한다(ScrapService 선례). 'SCHDL_'(6) + 14 = 20자.
-        String schdlId = IdGenerationUtil.generateUniqueId("SCHDL_", 14, scheduleRepository::existsById);
-
+    public Long createSchedule(String userId, ScheduleDto dto) {
         // [소유자 고정] 조회 4종(searchSchedules/findMonthlySchedules/findSchedulesByDateRange)이 모두
         //   s.schdlPicId = :loginId 로 필터한다. 담당자를 클라이언트 DTO 값으로 두면
         //   ① 미전송 시 null 이 되어 등록해도 어떤 목록에도 나타나지 않고(저장축↔조회축 단절),
@@ -102,7 +96,6 @@ public class ScheduleService {
         //   그래서 인증 주체(loginId)로 고정한다 — BE 헌법 제8조 2항(소유 컬럼이 실제 저장하는 축과 일치),
         //   BoardService.createPost 의 저자 위조 차단과 동일한 패턴.
         Schedule entity = Schedule.builder()
-                .schdlId(schdlId)
                 .schdlSeCd(dto.getSchdlSeCd())
                 // [부서 귀속] 소속 조직은 서버가 정한다. 클라이언트 값을 신뢰하면 남의 부서 일정으로
                 //   끼워 넣을 수 있고, 미전송 시 null 이 되어 부서 목록에서 사라진다.
@@ -117,16 +110,15 @@ public class ScheduleService {
                 .schdlPicId(userId)
                 .schdlIpAddr(dto.getSchdlIpAddr())
                 .reptSeCd(dto.getReptSeCd())
-                .atchFileId(dto.getAtchFileId())
+                .atchFileSn(dto.getAtchFileSn())
                 .build();
         // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
-        scheduleRepository.save(entity);
-        return entity.getSchdlId();
+        return scheduleRepository.save(entity).getSchdlSn();
     }
 
     @Transactional
-    public void updateSchedule(String id, String userId, ScheduleDto dto) {
-        Schedule entity = scheduleRepository.findById(Objects.requireNonNull(id))
+    public void updateSchedule(Long schdlSn, String userId, ScheduleDto dto) {
+        Schedule entity = scheduleRepository.findById(Objects.requireNonNull(schdlSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId()); // [IDOR] 소유자/관리자만 수정
 
@@ -149,8 +141,8 @@ public class ScheduleService {
     }
 
     @Transactional
-    public void deleteSchedule(@NonNull String schdlId, String userId) {
-        Schedule entity = scheduleRepository.findById(schdlId)
+    public void deleteSchedule(@NonNull Long schdlSn, String userId) {
+        Schedule entity = scheduleRepository.findById(schdlSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
         // [IDOR/정체성 수정] 기존 가드는 userId(컨트롤러 esntlId)와 frstRgtrId(loginId)를 비교해 항상 deny-all 이었다.

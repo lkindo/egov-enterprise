@@ -38,9 +38,9 @@ class InternetSvcGuidanceServiceTest {
     @DisplayName("인터넷 서비스 안내 단건 조회 - 존재할 때")
     void getIntnetSvcGuidance_Exists() {
         // given
-        String id = "ISG_01";
+        Long id = 1L;
         InternetSvcGuidance entity = InternetSvcGuidance.builder()
-                .itntSvcId(id)
+                .itntSrvcSn(id)
                 .itntSvcNm("Test ISG")
                 .build();
         given(internetSvcGuidanceRepository.findById(id)).willReturn(Optional.of(entity));
@@ -50,7 +50,7 @@ class InternetSvcGuidanceServiceTest {
 
         // then
         assertThat(result).isNotNull();
-        assertThat(result.getIntnetSvcId()).isEqualTo(id);
+        assertThat(result.getItntSrvcSn()).isEqualTo(id);
         assertThat(result.getIntnetSvcNm()).isEqualTo("Test ISG");
     }
 
@@ -58,10 +58,10 @@ class InternetSvcGuidanceServiceTest {
     @DisplayName("인터넷 서비스 안내 단건 조회 - 존재하지 않을 때")
     void getIntnetSvcGuidance_NotExists() {
         // given
-        given(internetSvcGuidanceRepository.findById("ISG_99")).willReturn(Optional.empty());
+        given(internetSvcGuidanceRepository.findById(99L)).willReturn(Optional.empty());
 
         // when
-        InternetSvcGuidanceDto result = internetSvcGuidanceService.getIntnetSvcGuidance("ISG_99");
+        InternetSvcGuidanceDto result = internetSvcGuidanceService.getIntnetSvcGuidance(99L);
 
         // then
         assertThat(result).isNull();
@@ -72,33 +72,35 @@ class InternetSvcGuidanceServiceTest {
     void registerIntnetSvcGuidance() {
         // given
         InternetSvcGuidanceDto dto = InternetSvcGuidanceDto.builder()
-                .intnetSvcId("ISG_01")
                 .intnetSvcNm("New ISG")
                 .intnetSvcDc("Description")
                 .reflctAt("Y")
                 .build();
+        given(internetSvcGuidanceRepository.save(any(InternetSvcGuidance.class)))
+                .willReturn(InternetSvcGuidance.builder().itntSrvcSn(1L).build());
 
         // when
-        internetSvcGuidanceService.registerIntnetSvcGuidance(dto);
+        Long itntSrvcSn = internetSvcGuidanceService.registerIntnetSvcGuidance(dto);
 
         // then
         verify(internetSvcGuidanceRepository, times(1)).save(any(InternetSvcGuidance.class));
+        assertThat(itntSrvcSn).isEqualTo(1L);
     }
 
     @Test
     @DisplayName("인터넷 서비스 안내 수정 - 성공")
     void updateIntnetSvcGuidance() {
         // given
-        String id = "ISG_01";
+        Long id = 1L;
         InternetSvcGuidance existingEntity = InternetSvcGuidance.builder()
-                .itntSvcId(id)
+                .itntSrvcSn(id)
                 .itntSvcNm("Old ISG")
                 .itntSvcExpln("Old Desc")
                 .build();
         given(internetSvcGuidanceRepository.findById(id)).willReturn(Optional.of(existingEntity));
 
         InternetSvcGuidanceDto updateDto = InternetSvcGuidanceDto.builder()
-                .intnetSvcId(id)
+                .itntSrvcSn(id)
                 .intnetSvcNm("Updated ISG")
                 .intnetSvcDc("Updated Desc")
                 .reflctAt("N")
@@ -117,7 +119,7 @@ class InternetSvcGuidanceServiceTest {
     @DisplayName("인터넷 서비스 안내 삭제 - 성공")
     void deleteIntnetSvcGuidance() {
         // given
-        String id = "ISG_01";
+        Long id = 1L;
 
         // when
         internetSvcGuidanceService.deleteIntnetSvcGuidance(id);
@@ -131,7 +133,7 @@ class InternetSvcGuidanceServiceTest {
     void getIntnetSvcGuidanceList_NoKeyword() {
         // given
         Pageable pageable = PageRequest.of(0, 10);
-        InternetSvcGuidance entity = InternetSvcGuidance.builder().itntSvcId("ISG_01").itntSvcNm("Test").build();
+        InternetSvcGuidance entity = InternetSvcGuidance.builder().itntSrvcSn(1L).itntSvcNm("Test").build();
         given(internetSvcGuidanceRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         // when
@@ -140,7 +142,7 @@ class InternetSvcGuidanceServiceTest {
         // then
         assertThat(result).isNotNull();
         assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getIntnetSvcId()).isEqualTo("ISG_01");
+        assertThat(result.getContent().get(0).getItntSrvcSn()).isEqualTo(1L);
     }
 
     @Test
@@ -149,7 +151,7 @@ class InternetSvcGuidanceServiceTest {
         // given
         String keyword = "Test";
         Pageable pageable = PageRequest.of(0, 10);
-        InternetSvcGuidance entity = InternetSvcGuidance.builder().itntSvcId("ISG_01").itntSvcNm("Test ISG").build();
+        InternetSvcGuidance entity = InternetSvcGuidance.builder().itntSrvcSn(1L).itntSvcNm("Test ISG").build();
         given(internetSvcGuidanceRepository.findByItntSvcNmContaining(keyword, pageable)).willReturn(new PageImpl<>(List.of(entity)));
 
         // when

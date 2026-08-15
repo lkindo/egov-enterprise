@@ -35,36 +35,36 @@ public class EventApiController {
     }
 
     @Operation(summary = "행사 상세 조회", description = "행사 상세 정보를 조회합니다.")
-    @GetMapping("/{eventId}")
+    @GetMapping("/{evntSn}")
     public ResponseEntity<ApiResponse<EventInfoDto>> getEvent(
-            @Parameter(description = "행사 ID", example = "EVT_12345678") @PathVariable String eventId) {
-        return ResponseEntity.ok(ApiResponse.success(eventInfoService.getEvent(eventId)));
+            @Parameter(description = "행사 일련번호", example = "1") @PathVariable Long evntSn) {
+        return ResponseEntity.ok(ApiResponse.success(eventInfoService.getEvent(evntSn)));
     }
 
     @Operation(summary = "행사 정보 등록", description = "새로운 행사 정보를 등록합니다.")
     @PostMapping
-    public ResponseEntity<ApiResponse<String>> createEvent(
+    public ResponseEntity<ApiResponse<Long>> createEvent(
             @AuthenticationPrincipal UserDetails userDetails,
             @Valid @RequestBody EventInfoDto request) {
         return ResponseEntity.ok(ApiResponse.success(eventInfoService.createEvent(userDetails.getUsername(), request)));
     }
 
     @Operation(summary = "행사 정보 수정", description = "행사 정보를 수정합니다.")
-    @PutMapping("/{eventId}")
+    @PutMapping("/{evntSn}")
     public ResponseEntity<ApiResponse<Void>> updateEvent(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String eventId,
+            @PathVariable Long evntSn,
             @Valid @RequestBody EventInfoDto request) {
-        eventInfoService.updateEvent(eventId, userDetails.getUsername(), request);
+        eventInfoService.updateEvent(evntSn, userDetails.getUsername(), request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
     @Operation(summary = "행사 정보 삭제", description = "행사 정보를 삭제합니다.")
-    @DeleteMapping("/{eventId}")
+    @DeleteMapping("/{evntSn}")
     public ResponseEntity<ApiResponse<Void>> deleteEvent(
             @AuthenticationPrincipal UserDetails userDetails,
-            @PathVariable String eventId) {
-        eventInfoService.deleteEvent(eventId);
+            @PathVariable Long evntSn) {
+        eventInfoService.deleteEvent(evntSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

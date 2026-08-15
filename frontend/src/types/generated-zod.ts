@@ -9,12 +9,12 @@ import { z } from 'zod';
 // WorkReportDto Schema
 // ==========================================================================
 export const WorkReportDtoSchema = z.object({
-  rptId: z.string().optional(),
+  rptpSn: z.number().optional(),
   rptTtl: z.string().optional(),
   rptCn: z.string().optional(),
   rptSeCd: z.string().optional(),
   userId: z.string().min(0).max(1).optional(),
-  atchFileId: z.string().min(0).max(30).optional(),
+  atchFileSn: z.number().optional(),
   rptSttsCd: z.string().min(0).max(12).optional(),
   rptYmd: z.string().min(0).max(8).optional(),
   rptTypeCd: z.string().optional(),
@@ -73,7 +73,7 @@ export const UserDtoSchema = z.object({
   mblTelno: z.string().min(0).max(11).optional(),
   emlAddr: z.string().min(0).max(50).regex(new RegExp("^$|^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")).optional(),
   ofcpsNm: z.string().min(0).max(300).optional(),
-  certDnVl: z.string().min(0).max(255).optional(),
+  certDnVl: z.string().min(0).max(100).optional(),
   userSe: z.string().min(0).max(10).optional(),
   userSttsCd: z.string().min(0).max(12).optional(),
   lckYn: z.string().optional(),
@@ -94,9 +94,9 @@ export type PasswordChangeRequest = z.infer<typeof PasswordChangeRequestSchema>;
 // ScrapDto Schema
 // ==========================================================================
 export const ScrapDtoSchema = z.object({
-  scrapId: z.string().min(0).max(20).optional(),
+  scrapSn: z.number().optional(),
   bbsId: z.string().min(0).max(20).optional(),
-  pstId: z.string().min(0).max(20).optional(),
+  pstSn: z.number().optional(),
   scrapNm: z.string().min(0).max(100).optional(),
   scrapUrl: z.string().min(0).max(1000).optional(),
   scrapExpln: z.string().optional(),
@@ -111,7 +111,7 @@ export type ScrapDto = z.infer<typeof ScrapDtoSchema>;
 // ScheduleDto Schema
 // ==========================================================================
 export const ScheduleDtoSchema = z.object({
-  schdlId: z.string().min(0).max(20).optional(),
+  schdlSn: z.number().optional(),
   schdlSeCd: z.string().min(0).max(12).optional(),
   schdlNm: z.string().min(0).max(100),
   schdlCn: z.string().min(0).max(4000).optional(),
@@ -120,7 +120,7 @@ export const ScheduleDtoSchema = z.object({
   schdlEndYmd: z.string().min(0).max(8).optional(),
   schdlIpAddr: z.string().optional(),
   schdlPicId: z.string().min(0).max(20).optional(),
-  atchFileId: z.string().min(0).max(30).optional(),
+  atchFileSn: z.number().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
   lastMdfrId: z.string().optional(),
@@ -136,8 +136,8 @@ export type ScheduleDto = z.infer<typeof ScheduleDtoSchema>;
 // OnlinePollArticleDto Schema
 // ==========================================================================
 export const OnlinePollArticleDtoSchema = z.object({
-  pollArtclId: z.string().min(0).max(20).optional(),
-  pollId: z.string().min(0).max(20).optional(),
+  pollArtclSn: z.number().optional(),
+  pollSn: z.number().optional(),
   pollArtclNm: z.string().min(0).max(100),
   pollIemCo: z.number().optional(),
   frstRgtrId: z.string().optional(),
@@ -149,7 +149,7 @@ export type OnlinePollArticleDto = z.infer<typeof OnlinePollArticleDtoSchema>;
 // OnlinePollManageDto Schema
 // ==========================================================================
 export const OnlinePollManageDtoSchema = z.object({
-  pollId: z.string().min(0).max(20).optional(),
+  pollSn: z.number().optional(),
   pollNm: z.string().min(0).max(100),
   pollBgngYmd: z.string().min(0).max(8).optional(),
   pollEndYmd: z.string().min(0).max(8).optional(),
@@ -166,7 +166,7 @@ export type OnlinePollManageDto = z.infer<typeof OnlinePollManageDtoSchema>;
 // MemoReportDto Schema
 // ==========================================================================
 export const MemoReportDtoSchema = z.object({
-  rptId: z.string().optional(),
+  memoRptSn: z.number().optional(),
   rptTtl: z.string().optional(),
   memoRptYmd: z.string().optional(),
   userId: z.string().optional(),
@@ -174,7 +174,7 @@ export const MemoReportDtoSchema = z.object({
   rptrId: z.string().optional(),
   rptrNm: z.string().optional(),
   rptCn: z.string().optional(),
-  atchFileId: z.string().min(0).max(30).optional(),
+  atchFileSn: z.number().optional(),
   drctnMttr: z.string().optional(),
   drctnMttrRegDt: z.string().optional(),
   rptrInqDt: z.string().optional(),
@@ -186,7 +186,7 @@ export type MemoReportDto = z.infer<typeof MemoReportDtoSchema>;
 // InformalSanctionDto Schema
 // ==========================================================================
 export const InformalSanctionDtoSchema = z.object({
-  ifmlAtrzId: z.string().min(0).max(20).optional(),
+  ifmlAtrzSn: z.number().optional(),
   taskSeCd: z.string().min(0).max(12),
   taskSeNm: z.string().optional(),
   aplcntId: z.string().min(0).max(20),
@@ -207,7 +207,7 @@ export type InformalSanctionDto = z.infer<typeof InformalSanctionDtoSchema>;
 // OnlineManualDto Schema
 // ==========================================================================
 export const OnlineManualDtoSchema = z.object({
-  onlnMnlId: z.string().min(0).max(20).optional(),
+  onlnMnlSn: z.number().optional(),
   onlnMnlNm: z.string().min(0).max(100),
   onlnMnlSeCd: z.string().min(0).max(12),
   onlnMnlDfn: z.string().min(0).max(1000).optional(),
@@ -221,7 +221,7 @@ export type OnlineManualDto = z.infer<typeof OnlineManualDtoSchema>;
 // HpcmDto Schema
 // ==========================================================================
 export const HpcmDtoSchema = z.object({
-  hlpId: z.string().min(0).max(20),
+  hlpSn: z.number().optional(),
   hlpSeCd: z.string().min(0).max(3),
   hlpDfn: z.string().min(0).max(1000),
   hlpExpln: z.string().min(0).max(65535),
@@ -234,8 +234,8 @@ export type HpcmDto = z.infer<typeof HpcmDtoSchema>;
 // DeptJobDto Schema
 // ==========================================================================
 export const DeptJobDtoSchema = z.object({
-  deptTaskId: z.string().optional(),
-  deptTaskBoxId: z.string().optional(),
+  deptTaskSn: z.number().optional(),
+  deptTaskBoxSn: z.number().optional(),
   deptTaskBoxNm: z.string().optional(),
   deptId: z.string().min(0).max(20).optional(),
   deptNm: z.string().optional(),
@@ -244,7 +244,7 @@ export const DeptJobDtoSchema = z.object({
   picId: z.string().optional(),
   picNm: z.string().optional(),
   prrtyRnk: z.string().optional(),
-  atchFileId: z.string().min(0).max(30).optional(),
+  atchFileSn: z.number().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
   lastMdfrId: z.string().optional(),
@@ -256,7 +256,7 @@ export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
 // DeptJobBoxDto Schema
 // ==========================================================================
 export const DeptJobBoxDtoSchema = z.object({
-  deptTaskBoxId: z.string().optional(),
+  deptTaskBoxSn: z.number().optional(),
   deptTaskBoxNm: z.string().optional(),
   deptId: z.string().min(0).max(20).optional(),
   deptNm: z.string().optional(),
@@ -273,7 +273,7 @@ export type DeptJobBoxDto = z.infer<typeof DeptJobBoxDtoSchema>;
 // ==========================================================================
 export const CommentDtoSchema = z.object({
   ansSn: z.number().optional(),
-  pstId: z.string().min(0).max(20).optional(),
+  pstSn: z.number().optional(),
   bbsId: z.string().min(0).max(20).optional(),
   wrterId: z.string().optional(),
   wrterNm: z.string().optional(),
@@ -292,7 +292,7 @@ export const BoardSaveRequestSchema = z.object({
   pstCn: z.string().min(0).max(4000),
   pstBgngYmd: z.string().min(0).max(10).optional(),
   pstEndYmd: z.string().min(0).max(10).optional(),
-  atchFileId: z.string().min(0).max(20).optional(),
+  atchFileSn: z.number().optional(),
   evntDt: z.string().min(0).max(20).optional(),
   qnaSttsCd: z.string().min(0).max(12).optional(),
   qnaCatCd: z.string().min(0).max(12).optional(),
@@ -308,7 +308,7 @@ export type BoardSaveRequest = z.infer<typeof BoardSaveRequestSchema>;
 export const SatisfactionDtoSchema = z.object({
   dgstfnSn: z.number().optional(),
   bbsId: z.string().min(0).max(20).optional(),
-  pstId: z.string().min(0).max(20).optional(),
+  pstSn: z.number().optional(),
   dgstfnCn: z.string().optional(),
   dgstfnScr: z.number().optional(),
   userId: z.string().optional(),
@@ -323,10 +323,10 @@ export type SatisfactionDto = z.infer<typeof SatisfactionDtoSchema>;
 // MyPageContentDto Schema
 // ==========================================================================
 export const MyPageContentDtoSchema = z.object({
-  cntntsId: z.string().min(0).max(20).optional(),
+  contsSn: z.number().optional(),
   cntntsNm: z.string().min(0).max(100).optional(),
   cntcUrl: z.string().optional(),
-  cntntsUseAt: z.string().optional(),
+  cntntsUseYn: z.string().optional(),
   cntntsLinkUrl: z.string().optional(),
   cntntsDc: z.string().optional(),
 });
@@ -346,8 +346,8 @@ export type UserAbsenceDto = z.infer<typeof UserAbsenceDtoSchema>;
 // ==========================================================================
 export const SurveyRespondentDtoSchema = z.object({
   srvyRspdntId: z.string().min(0).max(20).optional(),
-  srvyId: z.string().min(0).max(20),
-  srvyTmpltId: z.string().min(0).max(20).optional(),
+  srvySn: z.number().optional(),
+  srvyTmpltSn: z.number().optional(),
   gndrCd: z.string().min(0).max(12).optional(),
   crTypeCd: z.string().min(0).max(12).optional(),
   rspdntNm: z.string().min(0).max(100).optional(),
@@ -366,13 +366,13 @@ export type SurveyRespondentDto = z.infer<typeof SurveyRespondentDtoSchema>;
 // SurveyArticleDto Schema
 // ==========================================================================
 export const SurveyArticleDtoSchema = z.object({
-  srvyArtclId: z.string().min(0).max(20),
-  srvyQstnId: z.string().min(0).max(20),
-  srvyId: z.string().min(0).max(20),
+  srvyArtclSn: z.number().optional(),
+  srvyQstnSn: z.number().optional(),
+  srvySn: z.number().optional(),
   artclSn: z.number().optional(),
   artclCn: z.string().min(0).max(4000).optional(),
   etcAnsYn: z.string().min(0).max(1).optional(),
-  srvyTmpltId: z.string().min(0).max(20).optional(),
+  srvyTmpltSn: z.number().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
 });
@@ -382,13 +382,13 @@ export type SurveyArticleDto = z.infer<typeof SurveyArticleDtoSchema>;
 // SurveyQuestionDto Schema
 // ==========================================================================
 export const SurveyQuestionDtoSchema = z.object({
-  srvyQstnId: z.string().min(0).max(20),
-  srvyId: z.string().min(0).max(20),
+  srvyQstnSn: z.number().optional(),
+  srvySn: z.number().optional(),
   qstnSn: z.number().optional(),
   qstnTypeCd: z.string().min(0).max(12).optional(),
   qstnCn: z.string().min(0).max(4000).optional(),
   maxChcCnt: z.number().optional(),
-  srvyTmpltId: z.string().min(0).max(20).optional(),
+  srvyTmpltSn: z.number().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
   items: z.array(z.lazy(() => SurveyArticleDtoSchema)).optional(),
@@ -399,14 +399,14 @@ export type SurveyQuestionDto = z.infer<typeof SurveyQuestionDtoSchema>;
 // SurveyInfoDto Schema
 // ==========================================================================
 export const SurveyInfoDtoSchema = z.object({
-  srvyId: z.string().min(0).max(20),
+  srvySn: z.number().optional(),
   srvyTtl: z.string().min(0).max(100),
   srvyPrps: z.string().min(0).max(1000).optional(),
   srvyWrtGdCn: z.string().min(0).max(4000).optional(),
   srvyBgngYmd: z.string().min(0).max(8).optional(),
   srvyEndYmd: z.string().min(0).max(8).optional(),
   srvyTrgt: z.string().min(0).max(1000).optional(),
-  srvyTmpltId: z.string().min(0).max(20).optional(),
+  srvyTmpltSn: z.number(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
 });
@@ -416,7 +416,7 @@ export type SurveyInfoDto = z.infer<typeof SurveyInfoDtoSchema>;
 // SurveyTemplateDto Schema
 // ==========================================================================
 export const SurveyTemplateDtoSchema = z.object({
-  srvyTmpltId: z.string().min(0).max(20).optional(),
+  srvyTmpltSn: z.number().optional(),
   srvyTmpltTypeCd: z.string().min(0).max(12).optional(),
   srvyTmpltPathNm: z.string().min(0).max(100).optional(),
   srvyTmpltExpln: z.string().min(0).max(4000).optional(),
@@ -455,7 +455,7 @@ export type ProgramDto = z.infer<typeof ProgramDtoSchema>;
 // PopupDto Schema
 // ==========================================================================
 export const PopupDtoSchema = z.object({
-  popupId: z.string().min(0).max(20).optional(),
+  popupSn: z.number().optional(),
   popupTtlNm: z.string().min(0).max(100),
   fileUrl: z.string().min(0).max(1000).optional(),
   popupWdthPstn: z.string().min(0).max(12).optional(),
@@ -464,8 +464,8 @@ export const PopupDtoSchema = z.object({
   popupWdthSz: z.string().min(0).max(12).optional(),
   ntceBgnde: z.string().optional(),
   ntceEndde: z.string().optional(),
-  stopvewSetupYn: z.string().min(0).max(1).optional(),
-  ntceYn: z.string().min(0).max(1).optional(),
+  stopvewSetupYn: z.enum(["Y","N"]).optional(),
+  ntceYn: z.enum(["Y","N"]).optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
 });
@@ -539,7 +539,7 @@ export type LoginPolicyDto = z.infer<typeof LoginPolicyDtoSchema>;
 // InternetSvcGuidanceDto Schema
 // ==========================================================================
 export const InternetSvcGuidanceDtoSchema = z.object({
-  intnetSvcId: z.string().optional(),
+  itntSrvcSn: z.number().optional(),
   intnetSvcNm: z.string().min(0).max(255),
   intnetSvcDc: z.string().min(0).max(1000),
   reflctAt: z.string().min(0).max(1).optional(),
@@ -582,7 +582,7 @@ export const CmmnDetailCodeDtoSchema = z.object({
   dtlCd: z.string().min(0).max(12).optional(),
   dtlCdNm: z.string().min(0).max(100).optional(),
   dtlCdExpln: z.string().min(0).max(4000).optional(),
-  useYn: z.string().min(0).max(1),
+  useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
 });
@@ -597,7 +597,7 @@ export const CmmnCodeDtoSchema = z.object({
   cdIdExpln: z.string().min(0).max(4000).optional(),
   clsfCd: z.string().min(0).max(12).optional(),
   clsfCdNm: z.string().min(0).max(100).optional(),
-  useYn: z.string().min(0).max(1),
+  useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
 });
@@ -619,7 +619,7 @@ export const CmmnClCodeDtoSchema = z.object({
   clsfCd: z.string().min(0).max(12).optional(),
   clsfCdNm: z.string().min(0).max(100).optional(),
   clsfCdExpln: z.string().min(0).max(4000).optional(),
-  useYn: z.string().min(0).max(1),
+  useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
 });
@@ -654,8 +654,8 @@ export const BoardMasterDtoSchema = z.object({
   bbsTypeCdNm: z.string().optional(),
   bbsAtrbCd: z.string().min(0).max(12),
   bbsAtrbCdNm: z.string().optional(),
-  ansPsbltyYn: z.string().optional(),
-  fileAtchPsbltyYn: z.string().optional(),
+  ansPsbltyYn: z.enum(["Y","N"]).optional(),
+  fileAtchPsbltyYn: z.enum(["Y","N"]).optional(),
   atchPsbltyFileQty: z.number().optional(),
   atchPsbltyFileSz: z.number(),
   tmpltId: z.string().min(0).max(20).optional(),
@@ -663,12 +663,12 @@ export const BoardMasterDtoSchema = z.object({
   crtDt: z.string().optional(),
   lastMdfrId: z.string().optional(),
   mdfcnDt: z.string().optional(),
-  useYn: z.string().min(0).max(1),
-  cmntyId: z.string().min(0).max(20).optional(),
-  blogId: z.string().min(0).max(20).optional(),
-  blogYn: z.string().min(0).max(1).optional(),
-  ansYn: z.string().optional(),
-  stsfdgYn: z.string().optional(),
+  useYn: z.enum(["Y","N"]),
+  cmntySn: z.number().optional(),
+  blogSn: z.number().optional(),
+  blogYn: z.enum(["Y","N"]).optional(),
+  ansYn: z.enum(["Y","N"]).optional(),
+  stsfdgYn: z.enum(["Y","N"]).optional(),
   authFlag: z.string().optional(),
   tmplatCours: z.string().optional(),
 });
@@ -678,14 +678,14 @@ export type BoardMasterDto = z.infer<typeof BoardMasterDtoSchema>;
 // BannerDto Schema
 // ==========================================================================
 export const BannerDtoSchema = z.object({
-  bnrId: z.string().min(0).max(20).optional(),
+  bnrSn: z.number().optional(),
   bnrNm: z.string().min(0).max(100),
-  linkUrl: z.string().min(0).max(1000).optional(),
+  linkUrl: z.string().min(0).max(512).optional(),
   bnrImgNm: z.string().min(0).max(100).optional(),
   bnrExpln: z.string().min(0).max(4000).optional(),
   sortOrdr: z.number().optional(),
-  rfltYn: z.string().min(0).max(1).optional(),
-  atchFileId: z.string().min(0).max(30).optional(),
+  rfltYn: z.enum(["Y","N"]).optional(),
+  atchFileSn: z.number().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
 });
@@ -706,7 +706,7 @@ export type AuthorManageDto = z.infer<typeof AuthorManageDtoSchema>;
 // EventInfoDto Schema
 // ==========================================================================
 export const EventInfoDtoSchema = z.object({
-  evntId: z.string().min(0).max(20).optional(),
+  evntSn: z.number().optional(),
   evntNm: z.string().min(0).max(200).optional(),
   bizYr: z.string().min(0).max(4).optional(),
   evntCn: z.string().min(0).max(4000).optional(),
@@ -729,14 +729,14 @@ export type EventInfoDto = z.infer<typeof EventInfoDtoSchema>;
 // CommunityDto Schema
 // ==========================================================================
 export const CommunityDtoSchema = z.object({
-  cmntyId: z.string().min(0).max(20).optional(),
-  cmntyNm: z.string().optional(),
+  cmntySn: z.number().optional(),
+  cmntyNm: z.string().min(0).max(100).optional(),
   cmntyIntroCn: z.string().min(0).max(4000).optional(),
-  regSeCd: z.string().optional(),
+  regSeCd: z.string().min(0).max(12).optional(),
   regSeCdNm: z.string().optional(),
-  tmpltId: z.string().optional(),
+  tmpltId: z.string().min(0).max(20).optional(),
   tmpltNm: z.string().optional(),
-  useYn: z.string().min(0).max(1),
+  useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   frstRegisterNm: z.string().optional(),
   crtDt: z.string().optional(),
@@ -747,7 +747,7 @@ export type CommunityDto = z.infer<typeof CommunityDtoSchema>;
 // AddressBookDto Schema
 // ==========================================================================
 export const AddressBookDtoSchema = z.object({
-  adbkId: z.string().optional(),
+  adbkSn: z.number().optional(),
   adbkNm: z.string().min(0).max(100),
   rlsScopeCd: z.string(),
   trgetOgnzId: z.string().optional(),
@@ -765,8 +765,8 @@ export type AddressBookDto = z.infer<typeof AddressBookDtoSchema>;
 // AddressBookUserDto Schema
 // ==========================================================================
 export const AddressBookUserDtoSchema = z.object({
-  adbkConstntId: z.string().min(0).max(20).optional(),
-  adbkId: z.string().min(0).max(20),
+  adbkMbrSn: z.number().optional(),
+  adbkSn: z.number().optional(),
   userId: z.string().min(0).max(20),
   nm: z.string().min(0).max(100).optional(),
   emlAddr: z.string().min(0).max(50).optional(),
@@ -817,8 +817,8 @@ export type UserResponse = z.infer<typeof UserResponseSchema>;
 // Answer Schema
 // ==========================================================================
 export const AnswerSchema = z.object({
-  srvyQstnId: z.string().min(0).max(20),
-  srvyArtclId: z.string().min(0).max(20),
+  srvyQstnSn: z.number(),
+  srvyArtclSn: z.number(),
   rspdntAnsCn: z.string().min(0).max(4000).optional(),
   etcAnsCn: z.string().min(0).max(4000).optional(),
 });
@@ -848,24 +848,24 @@ export const ApiResponseIntegerSchema = z.object({
 export type ApiResponseInteger = z.infer<typeof ApiResponseIntegerSchema>;
 
 // ==========================================================================
-// ApiResponseString Schema
+// ApiResponseLong Schema
 // ==========================================================================
-export const ApiResponseStringSchema = z.object({
+export const ApiResponseLongSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.string().optional(),
+  data: z.number().optional(),
   timestamp: z.string().optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
-export type ApiResponseString = z.infer<typeof ApiResponseStringSchema>;
+export type ApiResponseLong = z.infer<typeof ApiResponseLongSchema>;
 
 // ==========================================================================
 // NotificationDto Schema
 // ==========================================================================
 export const NotificationDtoSchema = z.object({
-  notiSn: z.string().min(0).max(20).optional(),
+  notiSn: z.number().optional(),
   notiTtlNm: z.string().min(0).max(100).optional(),
   notiCn: z.string().min(0).max(4000).optional(),
   notiDt: z.string().optional(),
@@ -881,14 +881,14 @@ export type NotificationDto = z.infer<typeof NotificationDtoSchema>;
 // NoteDto Schema
 // ==========================================================================
 export const NoteDtoSchema = z.object({
-  noteId: z.string().min(0).max(20).optional(),
+  noteSn: z.number().optional(),
   noteSj: z.string().optional(),
   noteCn: z.string().min(0).max(4000).optional(),
-  atchFileId: z.string().min(0).max(30).optional(),
-  noteDsptchId: z.string().optional(),
+  atchFileSn: z.number().optional(),
+  noteSndngSn: z.number().optional(),
   dsptchUserId: z.string().optional(),
   trnsmiterNm: z.string().optional(),
-  noteRecptnId: z.string().optional(),
+  noteRcptnSn: z.number().optional(),
   rcverId: z.string().optional(),
   rcverNm: z.string().optional(),
   openYn: z.string().min(0).max(1).optional(),
@@ -903,7 +903,7 @@ export type NoteDto = z.infer<typeof NoteDtoSchema>;
 // NoteRecipientDto Schema
 // ==========================================================================
 export const NoteRecipientDtoSchema = z.object({
-  noteRecptnId: z.string().min(0).max(20),
+  noteRcptnSn: z.number(),
   rcverId: z.string().min(0).max(20),
   rcverNm: z.string().min(0).max(50).optional(),
   recptnSe: z.string().min(0).max(12),
@@ -914,30 +914,16 @@ export type NoteRecipientDto = z.infer<typeof NoteRecipientDtoSchema>;
 // SentMailDto Schema
 // ==========================================================================
 export const SentMailDtoSchema = z.object({
-  mssageId: z.string().optional(),
+  emlDsptchSn: z.number().optional(),
   sj: z.string().optional(),
   emailCn: z.string().optional(),
   dsptchPerson: z.string().optional(),
   recptnPerson: z.string().optional(),
   sndngResultCode: z.string().optional(),
   sndngDe: z.string().optional(),
-  atchFileId: z.string().min(0).max(30).optional(),
+  atchFileSn: z.number().optional(),
 });
 export type SentMailDto = z.infer<typeof SentMailDtoSchema>;
-
-// ==========================================================================
-// ApiResponseLong Schema
-// ==========================================================================
-export const ApiResponseLongSchema = z.object({
-  success: z.boolean().optional(),
-  status: z.number().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.number().optional(),
-  timestamp: z.string().optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-});
-export type ApiResponseLong = z.infer<typeof ApiResponseLongSchema>;
 
 // ==========================================================================
 // ApiResponseTokenResponse Schema
@@ -961,6 +947,20 @@ export const TokenResponseSchema = z.object({
   role: z.string().optional(),
 });
 export type TokenResponse = z.infer<typeof TokenResponseSchema>;
+
+// ==========================================================================
+// ApiResponseString Schema
+// ==========================================================================
+export const ApiResponseStringSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.string().optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseString = z.infer<typeof ApiResponseStringSchema>;
 
 // ==========================================================================
 // LoginRequest Schema
@@ -1065,7 +1065,7 @@ export type BoardMasterBatchDeleteRequest = z.infer<typeof BoardMasterBatchDelet
 // SmsDto Schema
 // ==========================================================================
 export const SmsDtoSchema = z.object({
-  smsId: z.string().min(0).max(20).optional(),
+  smsTrsmSn: z.number().optional(),
   sndngTelno: z.string().optional(),
   sndngCn: z.string().optional(),
   recptnCnt: z.number().optional(),
@@ -1081,7 +1081,7 @@ export type SmsDto = z.infer<typeof SmsDtoSchema>;
 // SmsRecptnDto Schema
 // ==========================================================================
 export const SmsRecptnDtoSchema = z.object({
-  smsId: z.string().min(0).max(20).optional(),
+  smsTrsmSn: z.number().optional(),
   rcptnTelno: z.string().optional(),
   rsltCd: z.string().optional(),
   rsltMsg: z.string().optional(),
@@ -1092,7 +1092,7 @@ export type SmsRecptnDto = z.infer<typeof SmsRecptnDtoSchema>;
 // RewardManageDto Schema
 // ==========================================================================
 export const RewardManageDtoSchema = z.object({
-  rwardId: z.string().optional(),
+  rwrdSn: z.number().optional(),
   rwardwnrId: z.string().optional(),
   rwardCode: z.string().optional(),
   rwardDe: z.string().optional(),
@@ -1102,8 +1102,8 @@ export const RewardManageDtoSchema = z.object({
   confmAt: z.string().optional(),
   sanctnDt: z.string().optional(),
   returnResn: z.string().optional(),
-  atchFileId: z.string().min(0).max(30).optional(),
-  informlSanctnId: z.string().optional(),
+  atchFileSn: z.number().optional(),
+  ifmlAtrzSn: z.number().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
   lastMdfrId: z.string().optional(),
@@ -1129,8 +1129,8 @@ export type ApiResponseRewardManageDto = z.infer<typeof ApiResponseRewardManageD
 // ExternalHrDto Schema
 // ==========================================================================
 export const ExternalHrDtoSchema = z.object({
-  evntId: z.string().min(0).max(20).optional(),
-  otsdHrId: z.string().min(0).max(20).optional(),
+  evntSn: z.number(),
+  otsdHrId: z.string().min(0).max(20),
   gndrCd: z.string().min(0).max(30).optional(),
   otsdHrNm: z.string().min(0).max(100).optional(),
   crTypeCd: z.string().min(0).max(12).optional(),
@@ -1320,10 +1320,10 @@ export type ApiResponseListSurveyStatsDto = z.infer<typeof ApiResponseListSurvey
 // SurveyStatsDto Schema
 // ==========================================================================
 export const SurveyStatsDtoSchema = z.object({
-  srvyQstnId: z.string().optional(),
+  srvyQstnSn: z.number().optional(),
   qstnCn: z.string().optional(),
   qstnTypeCd: z.string().optional(),
-  srvyArtclId: z.string().optional(),
+  srvyArtclSn: z.number().optional(),
   artclCn: z.string().optional(),
   count: z.number().optional(),
   percentage: z.number().optional(),
@@ -1861,7 +1861,7 @@ export type ApiResponseListFileDto = z.infer<typeof ApiResponseListFileDtoSchema
 // FileDto Schema
 // ==========================================================================
 export const FileDtoSchema = z.object({
-  atchFileId: z.string().min(0).max(30).optional(),
+  atchFileSn: z.number().optional(),
   fileSn: z.number().optional(),
   fileStreCours: z.string().optional(),
   streFileNm: z.string().optional(),
@@ -2023,12 +2023,12 @@ export type ApiResponsePageResponseBoardDto = z.infer<typeof ApiResponsePageResp
 // BoardDto Schema
 // ==========================================================================
 export const BoardDtoSchema = z.object({
-  pstId: z.string().min(0).max(20).optional(),
+  pstSn: z.number().optional(),
   bbsId: z.string().min(0).max(20).optional(),
   ansSn: z.number().optional(),
   pstTtl: z.string().min(0).max(100).optional(),
   pstCn: z.string().min(0).max(4000).optional(),
-  upPstId: z.string().min(0).max(20).optional(),
+  upPstSn: z.number().optional(),
   sortOrdr: z.number().optional(),
   ttlBoldYn: z.string().min(0).max(1).optional(),
   inqCnt: z.number().optional(),
@@ -2038,9 +2038,9 @@ export const BoardDtoSchema = z.object({
   userId: z.string().min(0).max(20),
   userNm: z.string().min(0).max(100).optional(),
   pswd: z.string().min(0).max(200).optional(),
-  atchFileId: z.string().min(0).max(30).optional(),
+  atchFileSn: z.number().optional(),
   scrtYn: z.string().min(0).max(1).optional(),
-  blogId: z.string().min(0).max(20).optional(),
+  blogSn: z.number().optional(),
   evntDt: z.string().optional(),
   qnaSttsCd: z.string().optional(),
   qnaCatCd: z.string().min(0).max(12).optional(),
@@ -2473,11 +2473,11 @@ export type PageResponseSurveyResultDto = z.infer<typeof PageResponseSurveyResul
 // SurveyResultDto Schema
 // ==========================================================================
 export const SurveyResultDtoSchema = z.object({
-  srvyRspnsId: z.string().optional(),
-  srvyId: z.string().optional(),
-  srvyTmpltId: z.string().optional(),
-  srvyQstnId: z.string().optional(),
-  srvyArtclId: z.string().optional(),
+  srvyRspnsSn: z.number().optional(),
+  srvySn: z.number().optional(),
+  srvyTmpltSn: z.number().optional(),
+  srvyQstnSn: z.number().optional(),
+  srvyArtclSn: z.number().optional(),
   rspdntAnsCn: z.string().optional(),
   rspnsNm: z.string().optional(),
   etcAnsCn: z.string().optional(),
@@ -2845,7 +2845,7 @@ export type PageResponseWebLogDto = z.infer<typeof PageResponseWebLogDtoSchema>;
 // WebLogDto Schema
 // ==========================================================================
 export const WebLogDtoSchema = z.object({
-  dmndId: z.string().optional(),
+  webLogSn: z.number().optional(),
   url: z.string().optional(),
   dmndUserId: z.string().optional(),
   dmndUserIpAddr: z.string().optional(),
@@ -2928,6 +2928,7 @@ export type PageResponseSysLogDto = z.infer<typeof PageResponseSysLogDtoSchema>;
 // SysLogDto Schema
 // ==========================================================================
 export const SysLogDtoSchema = z.object({
+  sysLogSn: z.number().optional(),
   dmndId: z.string().min(0).max(20).optional(),
   srvcNm: z.string().min(0).max(100).optional(),
   methodNm: z.string().optional(),
@@ -2983,6 +2984,7 @@ export type PageResponsePrivacyLogDto = z.infer<typeof PageResponsePrivacyLogDto
 // PrivacyLogDto Schema
 // ==========================================================================
 export const PrivacyLogDtoSchema = z.object({
+  prvcLogSn: z.number().optional(),
   dmndId: z.string().optional(),
   inqDt: z.string().optional(),
   srvcNm: z.string().optional(),
@@ -3010,7 +3012,7 @@ export type ApiResponsePageResponseLoginLogDto = z.infer<typeof ApiResponsePageR
 // LoginLogDto Schema
 // ==========================================================================
 export const LoginLogDtoSchema = z.object({
-  logId: z.string().min(0).max(20).optional(),
+  lgnSn: z.number().optional(),
   loginId: z.string().optional(),
   loginIp: z.string().optional(),
   loginMthd: z.string().optional(),

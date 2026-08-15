@@ -32,12 +32,12 @@ vi.mock('@/app/components/ui/toast', () => ({
 }));
 
 describe('CommentSection Component', () => {
-  const mockPstId = '1';
+  const mockPstSn = 1;
   const mockBbsId = 'BBS_001';
   const mockComments: CommentVO[] = [
     {
       ansSn: 101,
-      pstId: mockPstId,
+      pstSn: mockPstSn,
       bbsId: mockBbsId,
       wrterId: 'user01',
       wrterNm: 'User One',
@@ -52,7 +52,7 @@ describe('CommentSection Component', () => {
   });
 
   it('renders comments correctly', async () => {
-    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={mockComments} />);
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
 
     expect(screen.getByText('First Comment')).toBeDefined();
     expect(screen.getByText('User One')).toBeDefined();
@@ -60,7 +60,7 @@ describe('CommentSection Component', () => {
   });
 
   it('handles empty comment list', async () => {
-    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={[]} />);
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
 
     expect(screen.getByText(/No entries found/i)).toBeDefined();
   });
@@ -68,7 +68,7 @@ describe('CommentSection Component', () => {
   it('submits a new comment', async () => {
     vi.mocked(commentActions.createComment).mockResolvedValue({ success: true, message: '성공' });
 
-    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={[]} />);
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
 
     const textarea = screen.getByPlaceholderText(/Inject your thoughts/i);
     const submitButton = screen.getByText(/Commit Response/i);
@@ -85,7 +85,7 @@ describe('CommentSection Component', () => {
   it('handles comment update', async () => {
     vi.mocked(commentActions.updateComment).mockResolvedValue({ success: true, message: '성공' });
 
-    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={mockComments} />);
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
 
     expect(screen.getByText('First Comment')).toBeDefined();
 
@@ -108,7 +108,7 @@ describe('CommentSection Component', () => {
     
     const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
-    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={mockComments} />);
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
 
     expect(screen.getByText('First Comment')).toBeDefined();
 
@@ -123,7 +123,7 @@ describe('CommentSection Component', () => {
 
   it('등록 실패 시 지워졌던 댓글 원문을 입력창에 복구한다', async () => {
     vi.mocked(commentActions.createComment).mockResolvedValue({ success: false, message: '등록 실패' });
-    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={[]} />);
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
 
     const textarea = screen.getByLabelText('새 댓글 작성');
     fireEvent.change(textarea, { target: { value: '사라지면 안 되는 댓글' } });
@@ -135,7 +135,7 @@ describe('CommentSection Component', () => {
 
   it('수정 실패 시 편집 폼과 사용자가 고친 원문을 다시 연다', async () => {
     vi.mocked(commentActions.updateComment).mockResolvedValue({ success: false, message: '수정 실패' });
-    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={mockComments} />);
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
 
     fireEvent.click(screen.getByTestId('comment-edit-button'));
     fireEvent.change(screen.getByLabelText('댓글 수정 내용'), { target: { value: '보존할 수정 원문' } });
@@ -166,7 +166,7 @@ describe('CommentSection Component', () => {
       isOptimistic: true,
     } as CommentViewForTest;
 
-    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={[optimisticRow]} />);
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[optimisticRow]} />);
 
     // 본문은 보이되(사용자는 자기 글이 올라간 것을 즉시 본다),
     expect(screen.getByText('Pending Comment')).toBeDefined();
@@ -176,7 +176,7 @@ describe('CommentSection Component', () => {
   });
 
   it('확정된 댓글에는 수정·삭제 버튼이 그대로 있다 (가드 과잉 회귀 방어)', () => {
-    render(<CommentSection pstId={mockPstId} bbsId={mockBbsId} initialComments={mockComments} />);
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
 
     expect(screen.queryByTestId('comment-edit-button')).not.toBeNull();
     expect(screen.queryByTestId('comment-delete-button')).not.toBeNull();

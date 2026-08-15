@@ -19,8 +19,8 @@ import org.springframework.web.bind.annotation.*;
  * 설문 응답 관리 API (Admin) — 목록·단건·삭제.
  *
  * <p>경로를 {@code /survey-responses} 로 둔 이유: {@code SurveyApiController} 가
- * {@code /api/v1/admin/system/surveys} 에 {@code @GetMapping("/{srvyId}")} 를 갖고 있어,
- * {@code /surveys/responses} 로 두면 {@code srvyId="responses"} 패턴과 겹친다. Spring 은 리터럴을
+ * {@code /api/v1/admin/system/surveys} 에 {@code @GetMapping("/{srvySn}")} 를 갖고 있어,
+ * {@code /surveys/responses} 로 두면 숫자 경로와 의미상 충돌하기 쉽다. Spring 은 리터럴을
  * 우선하므로 동작은 하지만, 읽는 사람에게 함정이라 경로 자체를 분리했다.
  *
  * <p><b>목록·조회는 {@code @AdminOrSystem}, 삭제만 {@code @AdminOnly}</b>.
@@ -48,16 +48,16 @@ public class SurveyResponseAdminApiController {
 
     @Operation(summary = "설문 응답 단건 조회")
     @AdminOrSystem
-    @GetMapping("/{srvyRspnsId}")
-    public ResponseEntity<ApiResponse<SurveyResultDto>> getResponse(@PathVariable String srvyRspnsId) {
-        return ResponseEntity.ok(ApiResponse.success(surveyResultService.getResponse(srvyRspnsId)));
+    @GetMapping("/{srvyRspnsSn}")
+    public ResponseEntity<ApiResponse<SurveyResultDto>> getResponse(@PathVariable Long srvyRspnsSn) {
+        return ResponseEntity.ok(ApiResponse.success(surveyResultService.getResponse(srvyRspnsSn)));
     }
 
     @Operation(summary = "설문 응답 삭제", description = "되돌릴 수 없다. ADMIN 만 수행할 수 있다.")
     @AdminOnly
-    @DeleteMapping("/{srvyRspnsId}")
-    public ResponseEntity<ApiResponse<Void>> deleteResponse(@PathVariable String srvyRspnsId) {
-        surveyResultService.deleteResponse(srvyRspnsId);
+    @DeleteMapping("/{srvyRspnsSn}")
+    public ResponseEntity<ApiResponse<Void>> deleteResponse(@PathVariable Long srvyRspnsSn) {
+        surveyResultService.deleteResponse(srvyRspnsSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 }

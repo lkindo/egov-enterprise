@@ -50,10 +50,10 @@ class AddressBookApiControllerTest extends ControllerTestSupport {
     @DisplayName("주소록 상세 조회 성공")
     void getAddressBook_Success() throws Exception {
         // Given
-        given(addressBookService.getAddressBook(anyString())).willReturn(new AddressBookDto());
+        given(addressBookService.getAddressBook(anyLong())).willReturn(new AddressBookDto());
 
         // When & Then
-        mockMvc.perform(get("/api/v1/address-books/ADBK_1")
+        mockMvc.perform(get("/api/v1/address-books/1")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk());
     }

@@ -22,8 +22,9 @@ import lombok.NoArgsConstructor;
 public class Blog extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String blogId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "blog_sn")
+    private Long blogSn;
 
     @Column(nullable = false, length = 300)
     private String blogTtl;
@@ -46,9 +47,9 @@ public class Blog extends BaseEntity {
     @Column(length = 1)
     private String blogYn;
 
-    private Blog(String blogId, String blogTtl, String blogIntroCn, String regSeCd,
+    private Blog(Long blogSn, String blogTtl, String blogIntroCn, String regSeCd,
             String tmpltId, String useYn, String bbsId, String blogYn) {
-        this.blogId = blogId;
+        this.blogSn = blogSn;
         this.blogTtl = blogTtl;
         this.blogIntroCn = blogIntroCn;
         this.regSeCd = regSeCd;
@@ -62,9 +63,9 @@ public class Blog extends BaseEntity {
      * 블로그 생성 정적 팩토리(빌더 진입점). {@code Blog.builder()...build()} 호출부는 그대로 동작한다.
      */
     @Builder
-    public static Blog create(String blogId, String blogTtl, String blogIntroCn, String regSeCd,
+    public static Blog create(Long blogSn, String blogTtl, String blogIntroCn, String regSeCd,
             String tmpltId, String useYn, String bbsId, String blogYn) {
-        return new Blog(blogId, blogTtl, blogIntroCn, regSeCd, tmpltId, useYn, bbsId, blogYn);
+        return new Blog(blogSn, blogTtl, blogIntroCn, regSeCd, tmpltId, useYn, bbsId, blogYn);
     }
 
     public void update(String blogTtl, String blogIntroCn, String useYn) {

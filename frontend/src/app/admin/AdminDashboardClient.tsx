@@ -85,7 +85,7 @@ export default function AdminDashboardClient() {
    * 감사 이력 매핑.
    * ⚠ 종전에는 `histCn`/`histId`/`occrrncDe`/`sysNm` 등 계약에 없는 필드를 읽어(전량 undefined)
    *   전 카드가 'System Activity' + 고정 일시로 렌더됐다. 계약 SSOT 는 generated-api 의 `SysLogDto`
-   *   (dmndId/srvcNm/methodNm/prcsSeCd/prcsTm/dmndUserId/rqesterIp/ocrnYmd)다.
+   *   (sysLogSn/dmndId/srvcNm/methodNm/prcsSeCd/prcsTm/dmndUserId/rqesterIp/ocrnYmd)다.
    */
   const recentLogs: UIAuditLog[] = React.useMemo(() => {
     const list: AuditLog[] = auditData?.list ?? [];
@@ -103,7 +103,7 @@ export default function AdminDashboardClient() {
         /security|auth|권한|보안/.test(haystack) ? 'medium' : 'low';
 
       return {
-        id: log.dmndId || `log-${i}`,
+        id: String(log.sysLogSn ?? log.dmndId ?? `log-${i}`),
         action,
         entityName,
         performedBy: log.dmndUserId || 'System',

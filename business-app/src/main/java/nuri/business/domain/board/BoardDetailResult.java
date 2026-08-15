@@ -15,7 +15,7 @@ import java.time.LocalDateTime;
 public class BoardDetailResult {
     // Board fields
     private String bbsId;
-    private String pstId;
+    private Long pstSn;
     private String pstTtl;
     private String userId;
     private String userNm;
@@ -29,8 +29,8 @@ public class BoardDetailResult {
     private Integer inqCnt;
     private Integer likeCnt;
     private String useYn;
-    private String atchFileId;
-    private String upPstId;
+    private Long atchFileSn;
+    private Long upPstSn;
     private String replyYn;
     private Integer ansLv;
     private Long sortOrdr;

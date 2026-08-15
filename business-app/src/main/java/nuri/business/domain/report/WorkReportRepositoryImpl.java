@@ -43,7 +43,7 @@ public class WorkReportRepositoryImpl implements WorkReportRepositoryCustom {
                 .where(builder)
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
-                .orderBy(workReport.rptId.desc())
+                .orderBy(workReport.rptpSn.desc())
                 .fetch();
 
         long total = queryFactory

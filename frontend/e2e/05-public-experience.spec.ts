@@ -10,12 +10,12 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
         const searchKeyword = surveyTitle;
         const adminSurvey = new SurveyPage(adminPage);
         const userSurvey = new SurveyPage(userPage);
-        let pollId: string;
+        let pollSn: number;
 
         await test.step('Admin: Create and Publish Survey', async () => {
             console.log(`>>> Creating survey: ${surveyTitle}`);
-            pollId = await adminSurvey.createBasicSurvey(surveyTitle);
-            console.log(`>>> Created pollId: ${pollId}`);
+            pollSn = await adminSurvey.createBasicSurvey(surveyTitle);
+            console.log(`>>> Created pollSn: ${pollSn}`);
             
             // Verify in inventory
             await adminSurvey.gotoManage();
@@ -26,15 +26,15 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
         });
 
         await test.step('User: Vote via API (API-first, no UI flakiness)', async () => {
-            console.log(`>>> Voting on survey pollId: ${pollId}`);
+            console.log(`>>> Voting on survey pollSn: ${pollSn}`);
             // Navigate to ensure userPage has a valid session context with localStorage
             await userPage.goto('/admin/survey/polls/participate');
             await userPage.waitForLoadState('domcontentloaded');
             await userPage.waitForTimeout(1000);
             
             // Cast vote directly via API using userPage's auth context
-            await userSurvey.voteByPollId(pollId);
-            console.log(`>>> Vote completed for poll: ${pollId}`);
+            await userSurvey.voteByPollSn(pollSn);
+            console.log(`>>> Vote completed for poll: ${pollSn}`);
         });
 
         await test.step('Admin: Verify Statistics', async () => {
@@ -165,14 +165,14 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
         const surveyTitle = `E2E Duplicate Test ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const adminSurvey = new SurveyPage(adminPage);
         const userSurvey = new SurveyPage(userPage);
-        let pollId: string;
+        let pollSn: number;
 
         await test.step('Admin: Create Survey', async () => {
-            pollId = await adminSurvey.createBasicSurvey(surveyTitle);
+            pollSn = await adminSurvey.createBasicSurvey(surveyTitle);
         });
 
         await test.step('User: Vote Twice (Should Fail Second Time)', async () => {
-            console.log(`>>> Voting first time for: ${surveyTitle} (pollId: ${pollId})`);
+            console.log(`>>> Voting first time for: ${surveyTitle} (pollSn: ${pollSn})`);
             
             // Navigate to participate page to establish context
             await userPage.goto('/admin/survey/polls/participate');
@@ -180,7 +180,7 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             await userPage.waitForTimeout(1000);
             
             // First vote - use API for reliability
-            await userSurvey.voteByPollId(pollId);
+            await userSurvey.voteByPollSn(pollSn);
             console.log(`>>> First vote completed via API`);
 
             // Try to vote again via UI

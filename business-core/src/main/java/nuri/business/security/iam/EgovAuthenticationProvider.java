@@ -77,47 +77,37 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             
             validateAccountStatus(userEntity);
             
-            boolean isMatched = false;
             String encodedPassword = userEntity.getPswd();
             
             // [보안 A09] 비밀번호 해시(저장/유도)는 어떤 레벨로도 로깅하지 않는다. 추적은 userId 만.
             log.debug(">>> [EgovAuthenticationProvider] User found: {}", userEntity.getUserId());
             
-            if (encodedPassword != null && (encodedPassword.startsWith("{egov}") || !encodedPassword.startsWith("{"))) {
+            boolean legacyPassword = isLegacyPassword(encodedPassword);
+            boolean isMatched;
+            if (legacyPassword) {
                 String cleanHash = encodedPassword.startsWith("{egov}") ? encodedPassword.substring(6) : encodedPassword;
-                
-                // Try 1: Using userId as salt
-                String generatedHash = egovPasswordEncoder.encode(password, userId);
+
+                // Try 1: userId salt. EgovPasswordEncoder.matches 는 상수시간 비교를 사용한다.
                 log.debug(">>> [EgovAuthenticationProvider] Verifying credential (userId salt)");
-                isMatched = cleanHash.equals(generatedHash);
-                
+                isMatched = egovPasswordEncoder.matches(password, cleanHash, userEntity.getUserId());
+
                 // Try 2: Using esntlId as salt if Try 1 failed (Legacy Egov behavior)
                 if (!isMatched && userEntity.getEsntlId() != null) {
-                    generatedHash = egovPasswordEncoder.encode(password, userEntity.getEsntlId());
                     log.debug(">>> [EgovAuthenticationProvider] Verifying credential (esntlId salt)");
-                    isMatched = cleanHash.equals(generatedHash);
+                    isMatched = egovPasswordEncoder.matches(password, cleanHash, userEntity.getEsntlId());
                 }
-                
+
                 if (isMatched) {
-                    log.info(">>> Authentication successful (Egov pattern) for user: {}. Migrating to BCrypt.", userId);
-                    // [Security Modernization] 성공적인 로그인 시 BCrypt로 자동 마이그레이션
-                    try {
-                        String newEncodedPassword = passwordEncoder.encode(password);
-                        userEntity.updatePassword(newEncodedPassword);
-                        // Save will be handled by @Transactional at the end of method or explicit save
-                        userRepository.save(userEntity);
-                        log.info(">>> User {} password migrated to BCrypt successfully.", userId);
-                    } catch (Exception e) {
-                        log.error(">>> Failed to migrate password to BCrypt for user: {}", userId, e);
-                    }
+                    rehashPassword(userEntity, password, "legacy eGov");
                 }
-            }
-            
-            if (!isMatched) {
+            } else {
                 log.info(">>> [EgovAuthenticationProvider] Trying standard PasswordEncoder.");
                 // 저장 해시 파손/인코더 구성 오류는 비밀번호 불일치가 아니라 서비스 장애다.
                 // 여기서 삼키면 정상 계정의 잠금 카운터를 올리고 401로 위장하므로 바깥 장애 분류로 보낸다.
                 isMatched = passwordEncoder.matches(password, encodedPassword);
+                if (isMatched) {
+                    upgradeStandardPasswordIfNeeded(userEntity, password, encodedPassword);
+                }
             }
             
             if (!isMatched) {
@@ -178,6 +168,36 @@ public class EgovAuthenticationProvider implements AuthenticationProvider {
             // 잘못된 비밀번호로 오인한다. 또한 noRollbackFor에 걸려 부분 변경이 커밋될 수 있다.
             log.error(">>> Authentication service failure: {}", e.getClass().getSimpleName(), e);
             throw new AuthenticationServiceException("Authentication service unavailable", e);
+        }
+    }
+
+    /** {@code {egov}} 표식 또는 표식 없는 기존 SHA-256 해시는 레거시 검증 경로로만 처리한다. */
+    private boolean isLegacyPassword(String encodedPassword) {
+        return encodedPassword != null
+                && (encodedPassword.startsWith("{egov}") || !encodedPassword.startsWith("{"));
+    }
+
+    /** 현재 표준 인코더의 cost/format 정책이 올라간 경우 성공 로그인 시 투명 재해시한다. */
+    private void upgradeStandardPasswordIfNeeded(User user, String rawPassword, String encodedPassword) {
+        try {
+            if (passwordEncoder.upgradeEncoding(encodedPassword)) {
+                rehashPassword(user, rawPassword, "standard policy upgrade");
+            }
+        } catch (Exception e) {
+            // 재해시는 방어 심화 작업이다. 기존 해시 검증까지 성공했다면 일시적 재해시 실패로 로그인을 막지 않는다.
+            log.error(">>> Password policy upgrade failed for user: {}", user.getUserId(), e);
+        }
+    }
+
+    /** 원문·기존/신규 해시는 로그에 남기지 않고 다음 성공 경로의 save/dirty checking으로 영속화한다. */
+    private void rehashPassword(User user, String rawPassword, String reason) {
+        try {
+            String upgraded = passwordEncoder.encode(rawPassword);
+            user.updatePassword(upgraded);
+            log.info(">>> Password rehashed ({}) for user: {}", reason, user.getUserId());
+        } catch (Exception e) {
+            // 호환 로그인은 유지한다. 다음 로그인에서 재시도할 수 있도록 기존 해시는 그대로 둔다.
+            log.error(">>> Password rehash failed ({}) for user: {}", reason, user.getUserId(), e);
         }
     }
 

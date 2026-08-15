@@ -38,7 +38,7 @@ export default async function InformalSanctionPage() {
   // 키 목록은 생성 DTO(InformalSanctionDto)의 실제 필드명과 일치해야 한다.
   // (과거 로컬 인터페이스 기준의 존재하지 않는 키만 나열해 전 행이 {} 로 비던 결함 수정)
   const optimizedContent = selectFieldsList(list, [
-    'ifmlAtrzId', 'taskSeCd', 'taskSeNm', 'aplcntId', 'aplcntNm', 'aprvrId', 'aprvYn', 'reqYmd', 'rjctRsnCn'
+    'ifmlAtrzSn', 'taskSeCd', 'taskSeNm', 'aplcntId', 'aplcntNm', 'aprvrId', 'aprvYn', 'reqYmd', 'rjctRsnCn'
   ] as (keyof InformalSanctionDto)[]);
 
   return (

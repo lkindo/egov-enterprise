@@ -47,7 +47,7 @@ function CommunityBoardContent() {
  const totalCount = boardData?.total || 0;
 
  const handleRowClick = (item: BoardPost) => {
- router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || bbsId}&pstId=${item.pstId}`);
+ router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || bbsId}&pstSn=${item.pstSn}`);
  };
 
  return (
@@ -167,7 +167,7 @@ function CommunityBoardContent() {
  <div className="space-y-4">
  {posts.map((item, idx) => (
  <motion.div
- key={item.pstId}
+ key={item.pstSn}
  initial={{ opacity: 0, x: -20 }}
  animate={{ opacity: 1, x: 0 }}
  transition={{ delay: idx * 0.05 }}

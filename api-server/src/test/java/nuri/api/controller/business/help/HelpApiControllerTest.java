@@ -82,10 +82,10 @@ class HelpApiControllerTest {
     @Test
     @DisplayName("도움말 상세 조회")
     void getHpcmTest() throws Exception {
-        HpcmDto dto = HpcmDto.builder().hlpId("H1").build();
-        when(helpService.getHpcm("H1")).thenReturn(dto);
+        HpcmDto dto = HpcmDto.builder().hlpSn(1L).build();
+        when(helpService.getHpcm(1L)).thenReturn(dto);
 
-        mockMvc.perform(get("/api/v1/help/hpcm/H1"))
+        mockMvc.perform(get("/api/v1/help/hpcm/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -93,24 +93,24 @@ class HelpApiControllerTest {
     @Test
     @DisplayName("도움말 등록")
     void insertHpcmTest() throws Exception {
-        HpcmDto dto = HpcmDto.builder().hlpId("H1").hlpSeCd("H01").hlpDfn("Def").hlpExpln("Expln").build();
-        when(helpService.createHpcm(anyString(), any(HpcmDto.class))).thenReturn("H1");
+        HpcmDto dto = HpcmDto.builder().hlpSeCd("H01").hlpDfn("Def").hlpExpln("Expln").build();
+        when(helpService.createHpcm(anyString(), any(HpcmDto.class))).thenReturn(1L);
 
         mockMvc.perform(post("/api/v1/help/hpcm")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value("H1"));
+                .andExpect(jsonPath("$.data").value(1));
     }
 
     @Test
     @DisplayName("도움말 수정")
     void updateHpcmTest() throws Exception {
-        HpcmDto dto = HpcmDto.builder().hlpId("H1").hlpSeCd("H01").hlpDfn("Def").hlpExpln("Expln").build();
-        doNothing().when(helpService).updateHpcm(eq("H1"), anyString(), any(HpcmDto.class));
+        HpcmDto dto = HpcmDto.builder().hlpSn(1L).hlpSeCd("H01").hlpDfn("Def").hlpExpln("Expln").build();
+        doNothing().when(helpService).updateHpcm(eq(1L), anyString(), any(HpcmDto.class));
 
-        mockMvc.perform(put("/api/v1/help/hpcm/H1")
+        mockMvc.perform(put("/api/v1/help/hpcm/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -120,9 +120,9 @@ class HelpApiControllerTest {
     @Test
     @DisplayName("도움말 삭제")
     void deleteHpcmTest() throws Exception {
-        doNothing().when(helpService).deleteHpcm("H1");
+        doNothing().when(helpService).deleteHpcm(1L);
 
-        mockMvc.perform(delete("/api/v1/help/hpcm/H1"))
+        mockMvc.perform(delete("/api/v1/help/hpcm/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -143,10 +143,10 @@ class HelpApiControllerTest {
     @Test
     @DisplayName("온라인 매뉴얼 상세 조회")
     void getManualTest() throws Exception {
-        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlId("M1").build();
-        when(helpService.getOnlineManual("M1")).thenReturn(dto);
+        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlSn(1L).build();
+        when(helpService.getOnlineManual(1L)).thenReturn(dto);
 
-        mockMvc.perform(get("/api/v1/help/manuals/M1"))
+        mockMvc.perform(get("/api/v1/help/manuals/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }
@@ -154,24 +154,24 @@ class HelpApiControllerTest {
     @Test
     @DisplayName("온라인 매뉴얼 등록")
     void createManualTest() throws Exception {
-        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlId("M1").onlnMnlNm("Manual").onlnMnlSeCd("S01").build();
-        when(helpService.createOnlineManual(anyString(), any(OnlineManualDto.class))).thenReturn("M1");
+        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Manual").onlnMnlSeCd("S01").build();
+        when(helpService.createOnlineManual(anyString(), any(OnlineManualDto.class))).thenReturn(1L);
 
         mockMvc.perform(post("/api/v1/help/manuals")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value("M1"));
+                .andExpect(jsonPath("$.data").value(1));
     }
 
     @Test
     @DisplayName("온라인 매뉴얼 수정")
     void updateManualTest() throws Exception {
-        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlId("M1").onlnMnlNm("Manual").onlnMnlSeCd("S01").build();
-        doNothing().when(helpService).updateOnlineManual(eq("M1"), anyString(), any(OnlineManualDto.class));
+        OnlineManualDto dto = OnlineManualDto.builder().onlnMnlSn(1L).onlnMnlNm("Manual").onlnMnlSeCd("S01").build();
+        doNothing().when(helpService).updateOnlineManual(eq(1L), anyString(), any(OnlineManualDto.class));
 
-        mockMvc.perform(put("/api/v1/help/manuals/M1")
+        mockMvc.perform(put("/api/v1/help/manuals/1")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -181,9 +181,9 @@ class HelpApiControllerTest {
     @Test
     @DisplayName("온라인 매뉴얼 삭제")
     void deleteManualTest() throws Exception {
-        doNothing().when(helpService).deleteOnlineManual("M1");
+        doNothing().when(helpService).deleteOnlineManual(1L);
 
-        mockMvc.perform(delete("/api/v1/help/manuals/M1"))
+        mockMvc.perform(delete("/api/v1/help/manuals/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

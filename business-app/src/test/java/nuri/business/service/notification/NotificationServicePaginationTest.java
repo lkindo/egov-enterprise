@@ -34,7 +34,6 @@ class NotificationServicePaginationTest extends BusinessIntegrationTestSupport {
     void setUp() {
         for (int i = 1; i <= 25; i++) {
             Notification notification = Notification.builder()
-                    .notiSn("NTFC_" + i)
                     .notiTtlNm("Test Notification " + i)
                     .notiCn("Content " + i)
                     .rcvrId("testUser")

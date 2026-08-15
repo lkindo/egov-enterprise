@@ -12,7 +12,7 @@ class BlogTest {
     @DisplayName("Blog 빌더 및 기본값 테스트")
     void builderTest() {
         Blog blog = Blog.builder()
-                .blogId("BLOG_001")
+                .blogSn(1L)
                 .blogTtl("My Blog")
                 .blogIntroCn("Welcome")
                 .regSeCd("REG01")
@@ -22,7 +22,7 @@ class BlogTest {
                 .blogYn("Y")
                 .build();
 
-        assertThat(blog.getBlogId()).isEqualTo("BLOG_001");
+        assertThat(blog.getBlogSn()).isEqualTo(1L);
         assertThat(blog.getBlogTtl()).isEqualTo("My Blog");
         assertThat(blog.getBlogIntroCn()).isEqualTo("Welcome");
         assertThat(blog.getRegSeCd()).isEqualTo("REG01");

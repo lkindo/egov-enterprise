@@ -71,7 +71,7 @@ export default function SurveyManageClient() {
             {poll.pollNm}
           </span>
           <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest opacity-60">
-            ID: {poll.pollId}
+            SN: {poll.pollSn}
           </span>
         </div>
       )
@@ -199,7 +199,7 @@ export default function SurveyManageClient() {
               // 조회 실패를 '데이터가 없습니다'로 위장하지 않는다(P1-1).
               error={isError ? error : null}
               onRetry={() => void refetch()}
-              onRowClick={(poll) => router.push(`/admin/survey/manage/${poll.pollId}`)}
+              onRowClick={(poll) => router.push(`/admin/survey/manage/${poll.pollSn}`)}
               emptyMessage="등록된 설문 정보가 없습니다."
               isPremium={true}
               className="border-none bg-transparent shadow-none"

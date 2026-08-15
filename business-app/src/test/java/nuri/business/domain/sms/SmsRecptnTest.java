@@ -13,20 +13,20 @@ class SmsRecptnTest {
     void builderTest() {
         // 1. 신규 표준 필드 빌더 및 Getter 검증
         SmsRecptn recptn = SmsRecptn.builder()
-                .smsId("SMS_001")
+                .smsTrsmSn(1L)
                 .rcptnTelno("01011112222")
                 .rsltCd("1000")
                 .rsltMsg("SUCCESS")
                 .build();
 
-        assertThat(recptn.getSmsId()).isEqualTo("SMS_001");
+        assertThat(recptn.getSmsTrsmSn()).isEqualTo(1L);
         assertThat(recptn.getRcptnTelno()).isEqualTo("01011112222");
         assertThat(recptn.getRsltCd()).isEqualTo("1000");
         assertThat(recptn.getRsltMsg()).isEqualTo("SUCCESS");
 
         // 2. 레거시 호환용 빌더 및 Getter 검증
         SmsRecptn legacyRecptn = SmsRecptn.builder()
-                .smsId("SMS_002")
+                .smsTrsmSn(2L)
                 .rcptnTelno("01011112222")
                 .rsltCd("1000")
                 .rsltMsg("SUCCESS")
@@ -42,7 +42,7 @@ class SmsRecptnTest {
     @DisplayName("SmsRecptn 결과 업데이트 테스트")
     void updateResultTest() {
         SmsRecptn recptn = SmsRecptn.builder()
-                .smsId("SMS_001")
+                .smsTrsmSn(1L)
                 .rcptnTelno("01011112222")
                 .build();
 
@@ -55,21 +55,21 @@ class SmsRecptnTest {
     @Test
     @DisplayName("SmsRecptnId 테스트")
     void smsRecptnIdTest() {
-        SmsRecptnId id1 = new SmsRecptnId("SMS_001", "0101");
-        SmsRecptnId id2 = new SmsRecptnId("SMS_001", "0101");
-        SmsRecptnId id3 = new SmsRecptnId("SMS_001", "0102");
+        SmsRecptnId id1 = new SmsRecptnId(1L, "0101");
+        SmsRecptnId id2 = new SmsRecptnId(1L, "0101");
+        SmsRecptnId id3 = new SmsRecptnId(1L, "0102");
 
         assertThat(id1).isEqualTo(id2);
         assertThat(id1).isNotEqualTo(id3);
         assertThat(id1.hashCode()).isEqualTo(id2.hashCode());
-        assertThat(id1.toString()).contains("SMS_001");
+        assertThat(id1.toString()).contains("smsTrsmSn=1");
     }
 
     @Test
-    @DisplayName("SmsRecptn id가 null인 경우 getSmsId 및 getRcptnTelno 리턴 null 검증")
-    void getSmsIdAndRcptnTelno_whenIdIsNull() {
+    @DisplayName("SmsRecptn id가 null인 경우 getSmsTrsmSn 및 getRcptnTelno 리턴 null 검증")
+    void getSmsTrsmSnAndRcptnTelno_whenIdIsNull() {
         SmsRecptn recptn = new SmsRecptn();
-        assertThat(recptn.getSmsId()).isNull();
+        assertThat(recptn.getSmsTrsmSn()).isNull();
         assertThat(recptn.getRcptnTelno()).isNull();
     }
 }

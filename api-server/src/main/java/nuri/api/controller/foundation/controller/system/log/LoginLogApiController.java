@@ -37,10 +37,10 @@ public class LoginLogApiController {
     }
 
     @Operation(summary = "로그인 로그 상세 조회")
-    @GetMapping("/{logId}")
+    @GetMapping("/{lgnSn}")
     public ResponseEntity<ApiResponse<LoginLogDto>> getLoginLog(
-            @PathVariable("logId") String logId) throws Exception {
-        LoginLogDto result = loginLogManageService.selectLoginLogDetail(LoginLogDto.builder().logId(logId.trim()).build());
+            @PathVariable("lgnSn") Long lgnSn) throws Exception {
+        LoginLogDto result = loginLogManageService.selectLoginLogDetail(lgnSn);
         return ResponseEntity.ok(ApiResponse.success(result));
     }
 }

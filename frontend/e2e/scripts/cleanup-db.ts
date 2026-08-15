@@ -12,13 +12,13 @@ interface PagePayload<T> {
 
 interface CleanupUser { userId: string }
 interface CleanupBoard { bbsId: string; bbsTtl?: string; bbsNm?: string }
-interface CleanupPoll { pollId: string; pollNm?: string }
-interface CleanupPopup { popupId: string; popupTtlNm?: string }
-interface CleanupBanner { bnrId: string; bnrNm?: string }
-interface CleanupPost { pstId?: string | number; id?: string | number; pstTtl?: string; title?: string }
+interface CleanupPoll { pollSn: number; pollNm?: string }
+interface CleanupPopup { popupSn: number; popupTtlNm?: string }
+interface CleanupBanner { bnrSn: number; bnrNm?: string }
+interface CleanupPost { pstSn?: number; id?: string | number; pstTtl?: string; title?: string }
 interface CleanupMenu { menuNo: number; menuNm: string }
-interface CleanupAddress { adbkId: string; adbkNm?: string }
-interface CleanupManual { onlineMnlId: string; onlineMnlNm?: string }
+interface CleanupAddress { adbkSn: number; adbkNm?: string }
+interface CleanupManual { onlnMnlSn: number; onlnMnlNm?: string }
 interface CleanupRole { roleId: string; roleNm?: string }
 interface CleanupGroup { groupId: string; groupNm?: string }
 interface CleanupAuthority { authrtCd: string; authrtNm?: string }
@@ -139,8 +139,8 @@ async function cleanup() {
         p.pollNm?.startsWith('Debug')
       );
       for (const poll of testPolls) {
-        process.stdout.write(`  - Deleting Poll: ${poll.pollNm} (${poll.pollId})... `);
-        await axios.delete(`${API_BASE}/polls/${poll.pollId}`, { headers });
+        process.stdout.write(`  - Deleting Poll: ${poll.pollNm} (${poll.pollSn})... `);
+        await axios.delete(`${API_BASE}/polls/${poll.pollSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testPolls.length} poll(s) cleaned.`);
@@ -158,8 +158,8 @@ async function cleanup() {
       const popups = extractPage(popupsRes);
       const testPopups = popups.filter((p) => p.popupTtlNm?.startsWith('E2E Popup') || p.popupTtlNm?.startsWith('Debug'));
       for (const popup of testPopups) {
-        process.stdout.write(`  - Deleting Popup: ${popup.popupTtlNm} (${popup.popupId})... `);
-        await axios.delete(`${API_BASE}/admin/system/popups/${popup.popupId}`, { headers });
+        process.stdout.write(`  - Deleting Popup: ${popup.popupTtlNm} (${popup.popupSn})... `);
+        await axios.delete(`${API_BASE}/admin/system/popups/${popup.popupSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testPopups.length} popup(s) cleaned.`);
@@ -176,14 +176,14 @@ async function cleanup() {
       });
       const banners = extractPage(bannersRes);
       // [2026-07-27 정정] 필드명이 틀려 **한 건도 지워지지 않고 있었다**. BannerDto 의 실제 필드는
-      //   `bnrNm`·`bnrId` 인데 `bannerNm`·`bannerId` 로 필터해 testBanners 가 항상 빈 배열이었고,
+      //   `bnrNm`·`bnrSn` 인데 `bannerNm`·`bannerId` 로 필터해 testBanners 가 항상 빈 배열이었고,
       //   그래서 로그는 늘 "0 banner(s) cleaned" 를 찍으며 **청소된 것처럼 보였다**(false-green).
       //   그 결과 E2E 배너가 무한 누적됐고, 메인 배너는 한 번에 1개만 보여주는 캐러셀이라
       //   새로 만든 배너가 뒤로 밀려 05 Portal Promotion Flow 가 결정적으로 실패하게 됐다.
       const testBanners = banners.filter((b) => b.bnrNm?.startsWith('E2E Banner') || b.bnrNm?.startsWith('Debug'));
       for (const banner of testBanners) {
-        process.stdout.write(`  - Deleting Banner: ${banner.bnrNm} (${banner.bnrId})... `);
-        await axios.delete(`${API_BASE}/admin/system/banners/${banner.bnrId}`, { headers });
+        process.stdout.write(`  - Deleting Banner: ${banner.bnrNm} (${banner.bnrSn})... `);
+        await axios.delete(`${API_BASE}/admin/system/banners/${banner.bnrSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testBanners.length} banner(s) cleaned.`);
@@ -205,7 +205,7 @@ async function cleanup() {
           p.pstTtl?.startsWith('E2E') || p.title?.startsWith('E2E')
         );
         for (const post of testPosts) {
-          const postId = post.pstId || post.id;
+          const postId = post.pstSn || post.id;
           if (postId === undefined) {
             console.warn(`  => Post cleanup skipped missing ID: ${post.pstTtl || post.title || '(untitled)'}`);
             continue;
@@ -252,8 +252,8 @@ async function cleanup() {
       const addresses = extractPage(addressRes);
       const testAddresses = addresses.filter((a) => a.adbkNm?.startsWith('Identity_'));
       for (const address of testAddresses) {
-        process.stdout.write(`  - Deleting Address Book Entry: ${address.adbkNm} (${address.adbkId})... `);
-        await axios.delete(`${API_BASE}/address-books/${address.adbkId}`, { headers });
+        process.stdout.write(`  - Deleting Address Book Entry: ${address.adbkNm} (${address.adbkSn})... `);
+        await axios.delete(`${API_BASE}/address-books/${address.adbkSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testAddresses.length} address book entry(ies) cleaned.`);
@@ -269,10 +269,10 @@ async function cleanup() {
         params: { keyword: 'E2E Manual', size: 100 } 
       });
       const manuals = extractPage(manualRes);
-      const testManuals = manuals.filter((m) => m.onlineMnlNm?.startsWith('E2E Manual'));
+      const testManuals = manuals.filter((m) => m.onlnMnlNm?.startsWith('E2E Manual'));
       for (const manual of testManuals) {
-        process.stdout.write(`  - Deleting Manual: ${manual.onlineMnlNm} (${manual.onlineMnlId})... `);
-        await axios.delete(`${API_BASE}/help/manuals/${manual.onlineMnlId}`, { headers });
+        process.stdout.write(`  - Deleting Manual: ${manual.onlnMnlNm} (${manual.onlnMnlSn})... `);
+        await axios.delete(`${API_BASE}/help/manuals/${manual.onlnMnlSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testManuals.length} manual(s) cleaned.`);

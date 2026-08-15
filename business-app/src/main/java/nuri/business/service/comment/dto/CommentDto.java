@@ -14,8 +14,7 @@ import lombok.NoArgsConstructor;
 @Builder
 public class CommentDto {
     private Long ansSn;
-    @Size(max = 20)
-    private String pstId;
+    private Long pstSn;
     @Size(max = 20)
     private String bbsId;
     private String wrterId;

@@ -81,6 +81,7 @@ class PrivacyLogApiControllerTest {
     @DisplayName("개인정보 로그 목록 조회 성공 — 페이지 봉투와 항목이 그대로 실린다")
     void testGetPrivacyLogList() throws Exception {
         PrivacyLogDto dto = PrivacyLogDto.builder()
+                .prvcLogSn(1L)
                 .dmndId("REQ_001")
                 .inqDt(LocalDateTime.of(2026, 8, 5, 10, 0))
                 .srvcNm("UserService.getUser")
@@ -94,6 +95,7 @@ class PrivacyLogApiControllerTest {
         mockMvc.perform(get("/api/v1/admin/system/logs/privacy").param("pageIndex", "1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.list[0].prvcLogSn").value(1))
                 .andExpect(jsonPath("$.data.list[0].dmndId").value("REQ_001"))
                 .andExpect(jsonPath("$.data.list[0].inqInfo").value("주민등록번호"));
     }

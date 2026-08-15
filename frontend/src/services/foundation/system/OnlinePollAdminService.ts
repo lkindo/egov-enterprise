@@ -6,7 +6,7 @@ import { PageResponse } from '@/types/foundation/system';
  * 온라인설문(OnlinePoll) 정보 DTO 인터페이스
  */
 export interface OnlinePollDto {
-  pollId?: string;
+  pollSn?: number;
   pollNm: string;
   /** 저장 포맷 'yyyyMMdd' (varchar(8) / @Size(max = 8)) — 10자 전송은 400 */
   pollBgngYmd: string;
@@ -24,7 +24,7 @@ export interface OnlinePollDto {
  * 온라인설문 항목(OnlinePollItem) DTO 인터페이스
  */
 interface OnlinePollItemDto {
-  pollArtclId?: string;
+  pollArtclSn?: number;
   pollArtclNm: string;
   pollIemCo?: number;
 }
@@ -40,8 +40,8 @@ class OnlinePollAdminService extends AdminService {
   }
 
   /** ⑤씪님Poll 상세 조회 */
-  async getPoll(pollId: string, config?: AxiosRequestConfig) {
-    return this.get<OnlinePollDto>(`/${pollId}`, config);
+  async getPoll(pollSn: number, config?: AxiosRequestConfig) {
+    return this.get<OnlinePollDto>(`/${pollSn}`, config);
   }
 
   /** ⑤씪님Poll 등록 */
@@ -50,8 +50,8 @@ class OnlinePollAdminService extends AdminService {
   }
 
   /** ы몴 泥섎━ */
-  async vote(pollId: string, pollIemId: string, config?: AxiosRequestConfig) {
-    return this.post<void>(`/${pollId}/vote`, null, { ...config, params: { pollIemId } });
+  async vote(pollSn: number, pollArtclSn: number, config?: AxiosRequestConfig) {
+    return this.post<void>(`/${pollSn}/vote`, null, { ...config, params: { pollArtclSn } });
   }
 }
 

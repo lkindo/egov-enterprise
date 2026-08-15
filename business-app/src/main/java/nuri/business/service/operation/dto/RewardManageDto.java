@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class RewardManageDto {
-    private String rwardId;
+    private Long rwrdSn;
     private String rwardwnrId;
     private String rwardCode;
     private String rwardDe;
@@ -24,9 +24,8 @@ public class RewardManageDto {
     private String confmAt;
     private LocalDateTime sanctnDt;
     private String returnResn;
-    @Size(max = 30)
-    private String atchFileId;
-    private String informlSanctnId;
+    private Long atchFileSn;
+    private Long ifmlAtrzSn;
     private String frstRgtrId;
     private LocalDateTime crtDt;
     private String lastMdfrId;

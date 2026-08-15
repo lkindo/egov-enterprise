@@ -36,7 +36,7 @@ const ScrapListClient = () => {
     const totalPages = data?.totalPage ?? 0;
 
     const deleteMutation = useMutation({
-        mutationFn: (scrapId: string) => axios.delete<void>(`/scraps/${scrapId}`),
+        mutationFn: (scrapSn: number) => axios.delete<void>(`/scraps/${scrapSn}`),
         onSuccess: () => {
             toast('스크랩이 삭제되었습니다.', 'success');
             queryClient.invalidateQueries({ queryKey: ['scraps'] });
@@ -46,14 +46,14 @@ const ScrapListClient = () => {
 
     /** [P1-9] native confirm → useConfirm. 본문에 대상 스크랩명을 노출한다. */
     const handleDelete = async (item: Scrap) => {
-        if (!item.scrapId) return;
+        if (!item.scrapSn) return;
         const ok = await confirm({
             title: '스크랩 삭제',
             message: `'${item.scrapNm ?? '제목 없음'}' 스크랩을 삭제합니다. 삭제한 항목은 복구할 수 없습니다.`,
             confirmText: '삭제',
             variant: 'destructive',
         });
-        if (ok) deleteMutation.mutate(item.scrapId);
+        if (ok) deleteMutation.mutate(item.scrapSn);
     };
 
     const columns: Column<Scrap>[] = [
@@ -70,7 +70,7 @@ const ScrapListClient = () => {
             header: '스크랩명',
             accessor: (item) => (
                 <Link
-                    href={`/admin/collaboration/scraps/selectScrapDetail/${item.scrapId}`}
+                    href={`/admin/collaboration/scraps/selectScrapDetail/${item.scrapSn}`}
                     className="font-bold text-foreground hover:text-primary transition-colors flex items-center gap-2"
                 >
                     <FileText className="w-4 h-4 opacity-40" /> {item.scrapNm}
@@ -161,7 +161,7 @@ const ScrapListClient = () => {
                     <StandardDataTable<Scrap>
                         columns={columns}
                         data={list}
-                        keyField="scrapId"
+                        keyField="scrapSn"
                         loading={isLoading}
                         error={isError ? (error as Error) : null}
                         onRetry={() => { void refetch(); }}

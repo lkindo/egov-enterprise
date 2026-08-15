@@ -292,7 +292,7 @@
     }
   ],
   "paths": {
-    "/api/v1/work-reports/{rptId}": {
+    "/api/v1/work-reports/{rptpSn}": {
       "get": {
         "tags": [
           "WorkReport"
@@ -301,11 +301,12 @@
         "operationId": "getWorkReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "rptpSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -330,11 +331,12 @@
         "operationId": "updateWorkReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "rptpSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -369,11 +371,12 @@
         "operationId": "deleteWorkReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "rptpSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -475,7 +478,7 @@
         }
       }
     },
-    "/api/v1/scraps/{scrapId}": {
+    "/api/v1/scraps/{scrapSn}": {
       "get": {
         "tags": [
           "Scrap"
@@ -484,11 +487,12 @@
         "operationId": "getScrap",
         "parameters": [
           {
-            "name": "scrapId",
+            "name": "scrapSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -513,11 +517,12 @@
         "operationId": "updateScrap",
         "parameters": [
           {
-            "name": "scrapId",
+            "name": "scrapSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -552,11 +557,12 @@
         "operationId": "deleteScrap",
         "parameters": [
           {
-            "name": "scrapId",
+            "name": "scrapSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -574,7 +580,7 @@
         }
       }
     },
-    "/api/v1/schedules/{id}": {
+    "/api/v1/schedules/{schdlSn}": {
       "get": {
         "tags": [
           "Schedule"
@@ -584,11 +590,12 @@
         "operationId": "getSchedule",
         "parameters": [
           {
-            "name": "id",
+            "name": "schdlSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -614,11 +621,12 @@
         "operationId": "updateSchedule",
         "parameters": [
           {
-            "name": "id",
+            "name": "schdlSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -654,11 +662,12 @@
         "operationId": "deleteSchedule",
         "parameters": [
           {
-            "name": "id",
+            "name": "schdlSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -676,7 +685,7 @@
         }
       }
     },
-    "/api/v1/polls/{pollId}": {
+    "/api/v1/polls/{pollSn}": {
       "get": {
         "tags": [
           "Poll"
@@ -686,12 +695,13 @@
         "operationId": "getPoll",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
-            "description": "설문 ID",
+            "description": "설문 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -717,11 +727,12 @@
         "operationId": "updatePoll",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -757,11 +768,12 @@
         "operationId": "deletePoll",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -779,7 +791,7 @@
         }
       }
     },
-    "/api/v1/memo-reports/{rptId}": {
+    "/api/v1/memo-reports/{memoRptSn}": {
       "get": {
         "tags": [
           "MemoReport"
@@ -789,12 +801,13 @@
         "operationId": "getMemoReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "memoRptSn",
             "in": "path",
-            "description": "보고 ID",
+            "description": "메모보고 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -820,11 +833,12 @@
         "operationId": "updateMemoReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "memoRptSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -860,11 +874,12 @@
         "operationId": "deleteMemoReport",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "memoRptSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -894,10 +909,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -925,10 +941,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -966,10 +983,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -999,10 +1017,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1030,10 +1049,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1071,10 +1091,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1092,7 +1113,7 @@
         }
       }
     },
-    "/api/v1/help/manuals/{mnlId}": {
+    "/api/v1/help/manuals/{onlnMnlSn}": {
       "get": {
         "tags": [
           "Help"
@@ -1102,12 +1123,13 @@
         "operationId": "getManual",
         "parameters": [
           {
-            "name": "mnlId",
+            "name": "onlnMnlSn",
             "in": "path",
-            "description": "매뉴얼 ID",
+            "description": "매뉴얼 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1133,11 +1155,12 @@
         "operationId": "updateManual",
         "parameters": [
           {
-            "name": "mnlId",
+            "name": "onlnMnlSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1173,11 +1196,12 @@
         "operationId": "deleteManual",
         "parameters": [
           {
-            "name": "mnlId",
+            "name": "onlnMnlSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1195,7 +1219,7 @@
         }
       }
     },
-    "/api/v1/help/hpcm/{hpcmId}": {
+    "/api/v1/help/hpcm/{hlpSn}": {
       "get": {
         "tags": [
           "Help"
@@ -1205,12 +1229,13 @@
         "operationId": "getHpcm",
         "parameters": [
           {
-            "name": "hpcmId",
+            "name": "hlpSn",
             "in": "path",
-            "description": "도움말 ID",
+            "description": "도움말 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1236,11 +1261,12 @@
         "operationId": "updateHpcm",
         "parameters": [
           {
-            "name": "hpcmId",
+            "name": "hlpSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1276,11 +1302,12 @@
         "operationId": "deleteHpcm",
         "parameters": [
           {
-            "name": "hpcmId",
+            "name": "hlpSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1298,7 +1325,7 @@
         }
       }
     },
-    "/api/v1/dept-jobs/{deptTaskId}": {
+    "/api/v1/dept-jobs/{deptTaskSn}": {
       "get": {
         "tags": [
           "DeptJob"
@@ -1308,11 +1335,12 @@
         "operationId": "getDeptJob",
         "parameters": [
           {
-            "name": "deptTaskId",
+            "name": "deptTaskSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1338,11 +1366,12 @@
         "operationId": "updateDeptJob",
         "parameters": [
           {
-            "name": "deptTaskId",
+            "name": "deptTaskSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1378,11 +1407,12 @@
         "operationId": "deleteDeptJob",
         "parameters": [
           {
-            "name": "deptTaskId",
+            "name": "deptTaskSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1400,7 +1430,7 @@
         }
       }
     },
-    "/api/v1/dept-jobs/boxes/{deptJobbxId}": {
+    "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}": {
       "get": {
         "tags": [
           "DeptJob"
@@ -1410,11 +1440,12 @@
         "operationId": "getDeptJobBox",
         "parameters": [
           {
-            "name": "deptJobbxId",
+            "name": "deptTaskBoxSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1440,11 +1471,12 @@
         "operationId": "updateDeptJobBox",
         "parameters": [
           {
-            "name": "deptJobbxId",
+            "name": "deptTaskBoxSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1480,11 +1512,12 @@
         "operationId": "deleteDeptJobBox",
         "parameters": [
           {
-            "name": "deptJobbxId",
+            "name": "deptTaskBoxSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1572,7 +1605,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}": {
       "get": {
         "tags": [
           "Board"
@@ -1592,12 +1625,13 @@
             "example": "BBS_000000000001"
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "description": "게시글 ID",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             },
             "example": 1
           }
@@ -1634,12 +1668,13 @@
             "example": "BBS_000000000001"
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "description": "게시글 ID",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             },
             "example": 1
           }
@@ -1686,12 +1721,13 @@
             "example": "BBS_000000000001"
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "description": "게시글 ID",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             },
             "example": 1
           }
@@ -1710,7 +1746,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}": {
       "put": {
         "tags": [
           "Satisfaction"
@@ -1728,11 +1764,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -1785,11 +1822,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -1824,7 +1862,7 @@
         }
       }
     },
-    "/api/v1/bbs/{bbsId}/posts/{pstId}": {
+    "/api/v1/bbs/{bbsId}/posts/{pstSn}": {
       "get": {
         "tags": [
           "Board Legacy"
@@ -1841,11 +1879,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1878,11 +1917,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1939,11 +1979,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -1974,7 +2015,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2005,7 +2047,7 @@
         }
       }
     },
-    "/api/v1/admin/system/workspace/mypage/contents/{id}": {
+    "/api/v1/admin/system/workspace/mypage/contents/{contsSn}": {
       "put": {
         "tags": [
           "My Page Admin"
@@ -2014,11 +2056,12 @@
         "operationId": "updateContent",
         "parameters": [
           {
-            "name": "id",
+            "name": "contsSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2053,11 +2096,12 @@
         "operationId": "deleteContent",
         "parameters": [
           {
-            "name": "id",
+            "name": "contsSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2249,7 +2293,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/{srvyId}/respondents/{respondentId}": {
+    "/api/v1/admin/system/surveys/{srvySn}/respondents/{respondentId}": {
       "get": {
         "tags": [
           "SurveyRespondent"
@@ -2258,11 +2302,12 @@
         "operationId": "getRespondent",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -2295,11 +2340,12 @@
         "operationId": "updateRespondent",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -2342,11 +2388,12 @@
         "operationId": "deleteRespondent",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -2372,7 +2419,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/{srvyId}/questions/{srvyQitemId}": {
+    "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}": {
       "put": {
         "tags": [
           "Survey"
@@ -2381,19 +2428,21 @@
         "operationId": "updateQuestion",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2428,11 +2477,12 @@
         "operationId": "deleteQuestion",
         "parameters": [
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2450,7 +2500,7 @@
         }
       }
     },
-    "/api/v1/surveys/{srvyId}/questions/{srvyQitemId}": {
+    "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}": {
       "put": {
         "tags": [
           "Survey"
@@ -2459,19 +2509,21 @@
         "operationId": "updateQuestion_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2506,11 +2558,12 @@
         "operationId": "deleteQuestion_1",
         "parameters": [
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2528,7 +2581,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/{srvyId}": {
+    "/api/v1/admin/system/surveys/{srvySn}": {
       "get": {
         "tags": [
           "Survey"
@@ -2537,11 +2590,12 @@
         "operationId": "getSurvey",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2566,11 +2620,12 @@
         "operationId": "updateSurvey",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2605,11 +2660,12 @@
         "operationId": "deleteSurvey",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2627,7 +2683,7 @@
         }
       }
     },
-    "/api/v1/surveys/{srvyId}": {
+    "/api/v1/surveys/{srvySn}": {
       "get": {
         "tags": [
           "Survey"
@@ -2636,11 +2692,12 @@
         "operationId": "getSurvey_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2665,11 +2722,12 @@
         "operationId": "updateSurvey_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2704,11 +2762,12 @@
         "operationId": "deleteSurvey_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2726,7 +2785,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/templates/{tmpltId}": {
+    "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}": {
       "get": {
         "tags": [
           "Survey"
@@ -2735,11 +2794,12 @@
         "operationId": "getTemplate",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2764,11 +2824,12 @@
         "operationId": "updateTemplate",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2803,11 +2864,12 @@
         "operationId": "deleteTemplate",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2825,7 +2887,7 @@
         }
       }
     },
-    "/api/v1/surveys/templates/{tmpltId}": {
+    "/api/v1/surveys/templates/{srvyTmpltSn}": {
       "get": {
         "tags": [
           "Survey"
@@ -2834,11 +2896,12 @@
         "operationId": "getTemplate_1",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2863,11 +2926,12 @@
         "operationId": "updateTemplate_1",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2902,11 +2966,12 @@
         "operationId": "deleteTemplate_1",
         "parameters": [
           {
-            "name": "tmpltId",
+            "name": "srvyTmpltSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2924,7 +2989,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}": {
       "put": {
         "tags": [
           "Survey"
@@ -2933,11 +2998,12 @@
         "operationId": "updateItem",
         "parameters": [
           {
-            "name": "srvyItemId",
+            "name": "srvyArtclSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2972,11 +3038,12 @@
         "operationId": "deleteItem",
         "parameters": [
           {
-            "name": "srvyItemId",
+            "name": "srvyArtclSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -2994,7 +3061,7 @@
         }
       }
     },
-    "/api/v1/surveys/questions/items/{srvyItemId}": {
+    "/api/v1/surveys/questions/items/{srvyArtclSn}": {
       "put": {
         "tags": [
           "Survey"
@@ -3003,11 +3070,12 @@
         "operationId": "updateItem_1",
         "parameters": [
           {
-            "name": "srvyItemId",
+            "name": "srvyArtclSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3042,11 +3110,12 @@
         "operationId": "deleteItem_1",
         "parameters": [
           {
-            "name": "srvyItemId",
+            "name": "srvyArtclSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3265,7 +3334,7 @@
         }
       }
     },
-    "/api/v1/admin/system/popups/{popupId}": {
+    "/api/v1/admin/system/popups/{popupSn}": {
       "get": {
         "tags": [
           "Popup"
@@ -3275,12 +3344,13 @@
         "operationId": "getPopup",
         "parameters": [
           {
-            "name": "popupId",
+            "name": "popupSn",
             "in": "path",
-            "description": "팝업 ID",
+            "description": "팝업 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3306,12 +3376,13 @@
         "operationId": "updatePopup",
         "parameters": [
           {
-            "name": "popupId",
+            "name": "popupSn",
             "in": "path",
-            "description": "팝업 ID",
+            "description": "팝업 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3347,12 +3418,13 @@
         "operationId": "deletePopup",
         "parameters": [
           {
-            "name": "popupId",
+            "name": "popupSn",
             "in": "path",
-            "description": "팝업 ID",
+            "description": "팝업 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3791,7 +3863,7 @@
         }
       }
     },
-    "/api/v1/admin/system/isg/{id}": {
+    "/api/v1/admin/system/isg/{itntSrvcSn}": {
       "get": {
         "tags": [
           "Internet Service Guidance"
@@ -3800,11 +3872,12 @@
         "operationId": "getIsg",
         "parameters": [
           {
-            "name": "id",
+            "name": "itntSrvcSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3829,11 +3902,12 @@
         "operationId": "updateIsg",
         "parameters": [
           {
-            "name": "id",
+            "name": "itntSrvcSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -3868,11 +3942,12 @@
         "operationId": "deleteIsg",
         "parameters": [
           {
-            "name": "id",
+            "name": "itntSrvcSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -4686,7 +4761,7 @@
         }
       }
     },
-    "/api/v1/admin/system/banners/{bannerId}": {
+    "/api/v1/admin/system/banners/{bnrSn}": {
       "get": {
         "tags": [
           "Banner"
@@ -4696,12 +4771,13 @@
         "operationId": "getBanner",
         "parameters": [
           {
-            "name": "bannerId",
+            "name": "bnrSn",
             "in": "path",
-            "description": "배너 ID",
+            "description": "배너 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -4727,11 +4803,12 @@
         "operationId": "updateBanner",
         "parameters": [
           {
-            "name": "bannerId",
+            "name": "bnrSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -4767,11 +4844,12 @@
         "operationId": "deleteBanner",
         "parameters": [
           {
-            "name": "bannerId",
+            "name": "bnrSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -4891,7 +4969,7 @@
         }
       }
     },
-    "/api/v1/admin/operation/events/{eventId}": {
+    "/api/v1/admin/operation/events/{evntSn}": {
       "get": {
         "tags": [
           "Event"
@@ -4901,14 +4979,15 @@
         "operationId": "getEvent",
         "parameters": [
           {
-            "name": "eventId",
+            "name": "evntSn",
             "in": "path",
-            "description": "행사 ID",
+            "description": "행사 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             },
-            "example": "EVT_12345678"
+            "example": 1
           }
         ],
         "responses": {
@@ -4933,11 +5012,12 @@
         "operationId": "updateEvent",
         "parameters": [
           {
-            "name": "eventId",
+            "name": "evntSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -4973,11 +5053,12 @@
         "operationId": "deleteEvent",
         "parameters": [
           {
-            "name": "eventId",
+            "name": "evntSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -4995,7 +5076,7 @@
         }
       }
     },
-    "/api/v1/admin/content/community/{cmntyId}": {
+    "/api/v1/admin/content/community/{cmntySn}": {
       "get": {
         "tags": [
           "Community"
@@ -5005,12 +5086,13 @@
         "operationId": "getCommunity",
         "parameters": [
           {
-            "name": "cmntyId",
+            "name": "cmntySn",
             "in": "path",
-            "description": "커뮤니티 ID",
+            "description": "커뮤니티 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5036,12 +5118,13 @@
         "operationId": "updateCommunity",
         "parameters": [
           {
-            "name": "cmntyId",
+            "name": "cmntySn",
             "in": "path",
-            "description": "커뮤니티 ID",
+            "description": "커뮤니티 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5077,12 +5160,13 @@
         "operationId": "deleteCommunity",
         "parameters": [
           {
-            "name": "cmntyId",
+            "name": "cmntySn",
             "in": "path",
-            "description": "커뮤니티 ID",
+            "description": "커뮤니티 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5100,7 +5184,7 @@
         }
       }
     },
-    "/api/v1/address-books/{adbkId}": {
+    "/api/v1/address-books/{adbkSn}": {
       "get": {
         "tags": [
           "AddressBook"
@@ -5110,12 +5194,13 @@
         "operationId": "getAddressBook",
         "parameters": [
           {
-            "name": "adbkId",
+            "name": "adbkSn",
             "in": "path",
-            "description": "주소록 ID",
+            "description": "주소록 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5141,12 +5226,13 @@
         "operationId": "updateAddressBook",
         "parameters": [
           {
-            "name": "adbkId",
+            "name": "adbkSn",
             "in": "path",
-            "description": "주소록 ID",
+            "description": "주소록 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5182,12 +5268,13 @@
         "operationId": "deleteAddressBook",
         "parameters": [
           {
-            "name": "adbkId",
+            "name": "adbkSn",
             "in": "path",
-            "description": "주소록 ID",
+            "description": "주소록 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5389,7 +5476,7 @@
         }
       }
     },
-    "/api/v1/surveys/{srvyId}/responses": {
+    "/api/v1/surveys/{srvySn}/responses": {
       "post": {
         "tags": [
           "SurveySubmission"
@@ -5399,11 +5486,12 @@
         "operationId": "submit",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5495,7 +5583,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -5577,7 +5665,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -5681,7 +5769,7 @@
         }
       }
     },
-    "/api/v1/polls/{pollId}/vote/{pollIemId}": {
+    "/api/v1/polls/{pollSn}/vote/{pollArtclSn}": {
       "post": {
         "tags": [
           "Poll"
@@ -5691,19 +5779,21 @@
         "operationId": "vote",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
-            "name": "pollIemId",
+            "name": "pollArtclSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5791,8 +5881,8 @@
         "tags": [
           "Notification"
         ],
-        "summary": "알림 등록 (관리자용)",
-        "description": "시스템 공지 알림을 직접 등록합니다.",
+        "summary": "개인 알림 등록",
+        "description": "로그인한 사용자 본인의 알림을 등록합니다.",
         "operationId": "createNotification",
         "requestBody": {
           "content": {
@@ -5810,7 +5900,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -5832,7 +5922,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -5970,7 +6061,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6074,7 +6165,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6170,7 +6261,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6266,7 +6357,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6362,7 +6453,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6458,7 +6549,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6472,7 +6563,7 @@
           "File"
         ],
         "summary": "파일 업로드",
-        "description": "여러 파일을 업로드하고 통합 파일 ID를 반환합니다.",
+        "description": "여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.",
         "operationId": "uploadFiles",
         "requestBody": {
           "content": {
@@ -6501,7 +6592,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6515,7 +6606,7 @@
           "File"
         ],
         "summary": "파일 업로드",
-        "description": "여러 파일을 업로드하고 통합 파일 ID를 반환합니다.",
+        "description": "여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.",
         "operationId": "uploadFiles_1",
         "requestBody": {
           "content": {
@@ -6544,7 +6635,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6558,7 +6649,7 @@
           "File"
         ],
         "summary": "파일 업로드",
-        "description": "여러 파일을 업로드하고 통합 파일 ID를 반환합니다.",
+        "description": "여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.",
         "operationId": "uploadFiles_2",
         "requestBody": {
           "content": {
@@ -6587,7 +6678,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6601,7 +6692,7 @@
           "File"
         ],
         "summary": "파일 업로드",
-        "description": "여러 파일을 업로드하고 통합 파일 ID를 반환합니다.",
+        "description": "여러 파일을 업로드하고 첨부파일 일련번호를 반환합니다.",
         "operationId": "uploadFiles_3",
         "requestBody": {
           "content": {
@@ -6630,7 +6721,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6656,11 +6747,12 @@
             }
           },
           {
-            "name": "deptJobbxId",
+            "name": "deptTaskBoxSn",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -6745,7 +6837,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6837,7 +6929,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -6845,7 +6937,7 @@
         }
       }
     },
-    "/api/v1/communities/{cmntyId}/join": {
+    "/api/v1/communities/{cmntySn}/join": {
       "post": {
         "tags": [
           "Community User"
@@ -6855,11 +6947,12 @@
         "operationId": "joinCommunity",
         "parameters": [
           {
-            "name": "cmntyId",
+            "name": "cmntySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -6885,11 +6978,12 @@
         "operationId": "getComments",
         "parameters": [
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -6977,7 +7071,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions": {
       "get": {
         "tags": [
           "Satisfaction"
@@ -6995,11 +7089,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7032,11 +7127,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7088,7 +7184,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -7225,7 +7321,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -7366,7 +7462,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -7745,7 +7841,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/{srvyId}/respondents": {
+    "/api/v1/admin/system/surveys/{srvySn}/respondents": {
       "get": {
         "tags": [
           "SurveyRespondent"
@@ -7755,11 +7851,12 @@
         "operationId": "getRespondents",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -7826,11 +7923,12 @@
         "operationId": "createRespondent",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7858,7 +7956,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/{srvyId}/questions": {
+    "/api/v1/admin/system/surveys/{srvySn}/questions": {
       "get": {
         "tags": [
           "Survey"
@@ -7867,11 +7965,12 @@
         "operationId": "getQuestions",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7896,11 +7995,12 @@
         "operationId": "insertQuestion",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7928,7 +8028,7 @@
         }
       }
     },
-    "/api/v1/surveys/{srvyId}/questions": {
+    "/api/v1/surveys/{srvySn}/questions": {
       "get": {
         "tags": [
           "Survey"
@@ -7937,11 +8037,12 @@
         "operationId": "getQuestions_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -7966,11 +8067,12 @@
         "operationId": "insertQuestion_1",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -8186,7 +8288,7 @@
         }
       }
     },
-    "/api/v1/admin/system/surveys/questions/{srvyQitemId}/items": {
+    "/api/v1/admin/system/surveys/questions/{srvyQstnSn}/items": {
       "post": {
         "tags": [
           "Survey"
@@ -8195,11 +8297,12 @@
         "operationId": "insertItem",
         "parameters": [
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -8227,7 +8330,7 @@
         }
       }
     },
-    "/api/v1/surveys/questions/{srvyQitemId}/items": {
+    "/api/v1/surveys/questions/{srvyQstnSn}/items": {
       "post": {
         "tags": [
           "Survey"
@@ -8236,11 +8339,12 @@
         "operationId": "insertItem_1",
         "parameters": [
           {
-            "name": "srvyQitemId",
+            "name": "srvyQstnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -8883,7 +8987,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -8985,7 +9089,7 @@
         }
       }
     },
-    "/api/v1/admin/system/polls/{pollId}/vote": {
+    "/api/v1/admin/system/polls/{pollSn}/vote": {
       "post": {
         "tags": [
           "OnlinePoll"
@@ -8994,19 +9098,21 @@
         "operationId": "vote_1",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
-            "name": "pollIemId",
+            "name": "pollArtclSn",
             "in": "query",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -9494,7 +9600,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -10678,7 +10784,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -11144,7 +11250,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -11438,7 +11544,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseString"
+                  "$ref": "#/components/schemas/ApiResponseLong"
                 }
               }
             }
@@ -11662,7 +11768,7 @@
         }
       }
     },
-    "/api/v1/memo-reports/{rptId}/instr-cn": {
+    "/api/v1/memo-reports/{memoRptSn}/instr-cn": {
       "patch": {
         "tags": [
           "MemoReport"
@@ -11672,11 +11778,12 @@
         "operationId": "updateDrctMatter",
         "parameters": [
           {
-            "name": "rptId",
+            "name": "memoRptSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -11716,10 +11823,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -11765,10 +11873,11 @@
           {
             "name": "informalSanctionId",
             "in": "path",
-            "description": "결재 ID",
+            "description": "결재 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -11802,7 +11911,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}/like": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/like": {
       "patch": {
         "tags": [
           "Board"
@@ -11822,12 +11931,13 @@
             "example": "BBS_000000000001"
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "description": "게시글 ID",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             },
             "example": 1
           }
@@ -12049,7 +12159,7 @@
         }
       }
     },
-    "/api/v1/surveys/{srvyId}/stats": {
+    "/api/v1/surveys/{srvySn}/stats": {
       "get": {
         "tags": [
           "SurveySubmission"
@@ -12059,11 +12169,12 @@
         "operationId": "getStats",
         "parameters": [
           {
-            "name": "srvyId",
+            "name": "srvySn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -12267,7 +12378,7 @@
         }
       }
     },
-    "/api/v1/popups/{popupId}": {
+    "/api/v1/popups/{popupSn}": {
       "get": {
         "tags": [
           "Popup User"
@@ -12277,12 +12388,13 @@
         "operationId": "getPopup_1",
         "parameters": [
           {
-            "name": "popupId",
+            "name": "popupSn",
             "in": "path",
-            "description": "팝업 ID",
+            "description": "팝업 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -12322,7 +12434,7 @@
         }
       }
     },
-    "/api/v1/polls/{pollId}/items": {
+    "/api/v1/polls/{pollSn}/items": {
       "get": {
         "tags": [
           "Poll"
@@ -12332,11 +12444,12 @@
         "operationId": "getPollItems",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -12368,7 +12481,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -12398,7 +12512,8 @@
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -12438,7 +12553,7 @@
         }
       }
     },
-    "/api/v1/notes/{noteId}": {
+    "/api/v1/notes/{noteSn}": {
       "get": {
         "tags": [
           "Note"
@@ -12448,12 +12563,13 @@
         "operationId": "getNote",
         "parameters": [
           {
-            "name": "noteId",
+            "name": "noteSn",
             "in": "path",
-            "description": "쪽지 ID",
+            "description": "쪽지 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -12466,12 +12582,13 @@
             }
           },
           {
-            "name": "relationId",
+            "name": "relationSn",
             "in": "query",
-            "description": "관계 ID (수신ID 또는 발신ID)",
+            "description": "관계 일련번호 (수신 또는 발송)",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -12790,7 +12907,7 @@
         }
       }
     },
-    "/api/v1/mails/{mssageId}": {
+    "/api/v1/mails/{emlDsptchSn}": {
       "get": {
         "tags": [
           "Mail"
@@ -12800,12 +12917,13 @@
         "operationId": "getSentMail",
         "parameters": [
           {
-            "name": "mssageId",
+            "name": "emlDsptchSn",
             "in": "path",
-            "description": "메시지 ID",
+            "description": "이메일 발신 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -12831,11 +12949,12 @@
         "operationId": "deleteMail",
         "parameters": [
           {
-            "name": "mssageId",
+            "name": "emlDsptchSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -12875,7 +12994,7 @@
         }
       }
     },
-    "/api/v1/files/{atchFileId}/{fileSn}": {
+    "/api/v1/files/{atchFileSn}/{fileSn}": {
       "get": {
         "tags": [
           "File"
@@ -12885,11 +13004,12 @@
         "operationId": "downloadFile",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -12917,7 +13037,7 @@
         }
       }
     },
-    "/api/v1/admin/system/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/system/files/{atchFileSn}/{fileSn}": {
       "get": {
         "tags": [
           "File"
@@ -12927,11 +13047,12 @@
         "operationId": "downloadFile_1",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -12959,7 +13080,7 @@
         }
       }
     },
-    "/api/v1/admin/content/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/content/files/{atchFileSn}/{fileSn}": {
       "get": {
         "tags": [
           "File"
@@ -12969,11 +13090,12 @@
         "operationId": "downloadFile_2",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -13001,7 +13123,7 @@
         }
       }
     },
-    "/api/v1/admin/operation/files/{atchFileId}/{fileSn}": {
+    "/api/v1/admin/operation/files/{atchFileSn}/{fileSn}": {
       "get": {
         "tags": [
           "File"
@@ -13011,11 +13133,12 @@
         "operationId": "downloadFile_3",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -13043,21 +13166,22 @@
         }
       }
     },
-    "/api/v1/files/{atchFileId}": {
+    "/api/v1/files/{atchFileSn}": {
       "get": {
         "tags": [
           "File"
         ],
         "summary": "파일 목록 조회",
-        "description": "통합 파일 ID에 속한 파일 목록을 조회합니다.",
+        "description": "첨부파일 일련번호에 속한 파일 목록을 조회합니다.",
         "operationId": "getFileList",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13075,21 +13199,22 @@
         }
       }
     },
-    "/api/v1/admin/system/files/{atchFileId}": {
+    "/api/v1/admin/system/files/{atchFileSn}": {
       "get": {
         "tags": [
           "File"
         ],
         "summary": "파일 목록 조회",
-        "description": "통합 파일 ID에 속한 파일 목록을 조회합니다.",
+        "description": "첨부파일 일련번호에 속한 파일 목록을 조회합니다.",
         "operationId": "getFileList_1",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13107,21 +13232,22 @@
         }
       }
     },
-    "/api/v1/admin/content/files/{atchFileId}": {
+    "/api/v1/admin/content/files/{atchFileSn}": {
       "get": {
         "tags": [
           "File"
         ],
         "summary": "파일 목록 조회",
-        "description": "통합 파일 ID에 속한 파일 목록을 조회합니다.",
+        "description": "첨부파일 일련번호에 속한 파일 목록을 조회합니다.",
         "operationId": "getFileList_2",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13139,21 +13265,22 @@
         }
       }
     },
-    "/api/v1/admin/operation/files/{atchFileId}": {
+    "/api/v1/admin/operation/files/{atchFileSn}": {
       "get": {
         "tags": [
           "File"
         ],
         "summary": "파일 목록 조회",
-        "description": "통합 파일 ID에 속한 파일 목록을 조회합니다.",
+        "description": "첨부파일 일련번호에 속한 파일 목록을 조회합니다.",
         "operationId": "getFileList_3",
         "parameters": [
           {
-            "name": "atchFileId",
+            "name": "atchFileSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13267,7 +13394,7 @@
         }
       }
     },
-    "/api/v1/communities/{cmntyId}": {
+    "/api/v1/communities/{cmntySn}": {
       "get": {
         "tags": [
           "Community User"
@@ -13277,12 +13404,13 @@
         "operationId": "getCommunity_1",
         "parameters": [
           {
-            "name": "cmntyId",
+            "name": "cmntySn",
             "in": "path",
-            "description": "커뮤니티 ID",
+            "description": "커뮤니티 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13460,7 +13588,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/average": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/average": {
       "get": {
         "tags": [
           "Satisfaction"
@@ -13478,11 +13606,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13775,7 +13904,7 @@
         }
       }
     },
-    "/api/v1/admin/system/survey-responses/{srvyRspnsId}": {
+    "/api/v1/admin/system/survey-responses/{srvyRspnsSn}": {
       "get": {
         "tags": [
           "SurveyResponseAdmin"
@@ -13784,11 +13913,12 @@
         "operationId": "getResponse",
         "parameters": [
           {
-            "name": "srvyRspnsId",
+            "name": "srvyRspnsSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -13814,11 +13944,12 @@
         "operationId": "deleteResponse",
         "parameters": [
           {
-            "name": "srvyRspnsId",
+            "name": "srvyRspnsSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -14060,7 +14191,7 @@
         }
       }
     },
-    "/api/v1/admin/system/polls/{pollId}": {
+    "/api/v1/admin/system/polls/{pollSn}": {
       "get": {
         "tags": [
           "OnlinePoll"
@@ -14069,11 +14200,12 @@
         "operationId": "getPoll_1",
         "parameters": [
           {
-            "name": "pollId",
+            "name": "pollSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -14630,7 +14762,7 @@
         }
       }
     },
-    "/api/v1/admin/system/logs/system/{requestId}": {
+    "/api/v1/admin/system/logs/system/{sysLogSn}": {
       "get": {
         "tags": [
           "SystemLog"
@@ -14639,11 +14771,12 @@
         "operationId": "getSysLog",
         "parameters": [
           {
-            "name": "requestId",
+            "name": "sysLogSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -14908,7 +15041,7 @@
         }
       }
     },
-    "/api/v1/admin/system/logs/login/{logId}": {
+    "/api/v1/admin/system/logs/login/{lgnSn}": {
       "get": {
         "tags": [
           "LoginLog"
@@ -14917,11 +15050,12 @@
         "operationId": "getLoginLog",
         "parameters": [
           {
-            "name": "logId",
+            "name": "lgnSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -15589,7 +15723,7 @@
         }
       }
     },
-    "/api/v1/admin/operation/sms/{smsId}": {
+    "/api/v1/admin/operation/sms/{smsTrsmSn}": {
       "get": {
         "tags": [
           "SMS Management"
@@ -15599,12 +15733,13 @@
         "operationId": "getSms",
         "parameters": [
           {
-            "name": "smsId",
+            "name": "smsTrsmSn",
             "in": "path",
-            "description": "SMS ID",
+            "description": "SMS 전송 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -15622,7 +15757,7 @@
         }
       }
     },
-    "/api/v1/admin/operation/sms/{smsId}/recipients": {
+    "/api/v1/admin/operation/sms/{smsTrsmSn}/recipients": {
       "get": {
         "tags": [
           "SMS Management"
@@ -15632,12 +15767,13 @@
         "operationId": "getSmsRecipients",
         "parameters": [
           {
-            "name": "smsId",
+            "name": "smsTrsmSn",
             "in": "path",
-            "description": "SMS ID",
+            "description": "SMS 전송 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           }
         ],
@@ -15702,11 +15838,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "query",
             "required": false,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -15824,7 +15961,7 @@
         }
       }
     },
-    "/api/v1/notes/{relationId}": {
+    "/api/v1/notes/{relationSn}": {
       "delete": {
         "tags": [
           "Note"
@@ -15834,12 +15971,13 @@
         "operationId": "deleteNote",
         "parameters": [
           {
-            "name": "relationId",
+            "name": "relationSn",
             "in": "path",
-            "description": "관계 ID",
+            "description": "관계 일련번호",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -15866,7 +16004,7 @@
         }
       }
     },
-    "/api/v1/boards/{bbsId}/posts/{pstId}/satisfactions/{dgstfnSn}/moderate": {
+    "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}/moderate": {
       "delete": {
         "tags": [
           "Satisfaction"
@@ -15884,11 +16022,12 @@
             }
           },
           {
-            "name": "pstId",
+            "name": "pstSn",
             "in": "path",
             "required": true,
             "schema": {
-              "type": "string"
+              "type": "integer",
+              "format": "int64"
             }
           },
           {
@@ -15985,8 +16124,9 @@
       "WorkReportDto": {
         "type": "object",
         "properties": {
-          "rptId": {
-            "type": "string"
+          "rptpSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "rptTtl": {
             "type": "string"
@@ -16002,10 +16142,9 @@
             "maxLength": 1,
             "minLength": 0
           },
-          "atchFileId": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "rptSttsCd": {
             "type": "string",
@@ -16197,7 +16336,7 @@
           },
           "certDnVl": {
             "type": "string",
-            "maxLength": 255,
+            "maxLength": 100,
             "minLength": 0
           },
           "userSe": {
@@ -16247,20 +16386,18 @@
       "ScrapDto": {
         "type": "object",
         "properties": {
-          "scrapId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "scrapSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "bbsId": {
             "type": "string",
             "maxLength": 20,
             "minLength": 0
           },
-          "pstId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "pstSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "scrapNm": {
             "type": "string",
@@ -16301,10 +16438,9 @@
       "ScheduleDto": {
         "type": "object",
         "properties": {
-          "schdlId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "schdlSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "schdlSeCd": {
             "type": "string",
@@ -16344,10 +16480,9 @@
             "maxLength": 20,
             "minLength": 0
           },
-          "atchFileId": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "frstRgtrId": {
             "type": "string"
@@ -16392,17 +16527,15 @@
         "type": "object",
         "description": "온라인 설문 항목 DTO (표준화)",
         "properties": {
-          "pollArtclId": {
-            "type": "string",
-            "description": "설문 항목 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "pollArtclSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 항목 일련번호"
           },
-          "pollId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "pollSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
           "pollArtclNm": {
             "type": "string",
@@ -16433,11 +16566,10 @@
         "type": "object",
         "description": "온라인 설문 관리 DTO (표준화)",
         "properties": {
-          "pollId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "pollSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
           "pollNm": {
             "type": "string",
@@ -16496,9 +16628,10 @@
         "type": "object",
         "description": "메모보고 정보",
         "properties": {
-          "rptId": {
-            "type": "string",
-            "description": "보고아이디"
+          "memoRptSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "메모보고일련번호"
           },
           "rptTtl": {
             "type": "string",
@@ -16530,11 +16663,10 @@
             "type": "string",
             "description": "보고내용"
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "첨부파일아이디",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "첨부파일아이디"
           },
           "drctnMttr": {
             "type": "string",
@@ -16561,11 +16693,11 @@
         "type": "object",
         "description": "비정형 결재 DTO (표준화)",
         "properties": {
-          "ifmlAtrzId": {
-            "type": "string",
-            "description": "비정형 결재 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "ifmlAtrzSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "비정형 결재 일련번호",
+            "example": 1
           },
           "taskSeCd": {
             "type": "string",
@@ -16644,11 +16776,11 @@
         "type": "object",
         "description": "온라인 메뉴얼 DTO",
         "properties": {
-          "onlnMnlId": {
-            "type": "string",
-            "description": "온라인 메뉴얼 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "onlnMnlSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "온라인 메뉴얼 일련번호",
+            "example": 1
           },
           "onlnMnlNm": {
             "type": "string",
@@ -16693,11 +16825,11 @@
         "type": "object",
         "description": "Description",
         "properties": {
-          "hlpId": {
-            "type": "string",
-            "description": "도움말 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "hlpSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "도움말 일련번호",
+            "example": 1
           },
           "hlpSeCd": {
             "type": "string",
@@ -16730,18 +16862,19 @@
         "required": [
           "hlpDfn",
           "hlpExpln",
-          "hlpId",
           "hlpSeCd"
         ]
       },
       "DeptJobDto": {
         "type": "object",
         "properties": {
-          "deptTaskId": {
-            "type": "string"
+          "deptTaskSn": {
+            "type": "integer",
+            "format": "int64"
           },
-          "deptTaskBoxId": {
-            "type": "string"
+          "deptTaskBoxSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "deptTaskBoxNm": {
             "type": "string"
@@ -16769,10 +16902,9 @@
           "prrtyRnk": {
             "type": "string"
           },
-          "atchFileId": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "frstRgtrId": {
             "type": "string"
@@ -16793,8 +16925,9 @@
       "DeptJobBoxDto": {
         "type": "object",
         "properties": {
-          "deptTaskBoxId": {
-            "type": "string"
+          "deptTaskBoxSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "deptTaskBoxNm": {
             "type": "string"
@@ -16834,10 +16967,9 @@
             "type": "integer",
             "format": "int64"
           },
-          "pstId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "pstSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "bbsId": {
             "type": "string",
@@ -16896,11 +17028,10 @@
             "maxLength": 10,
             "minLength": 0
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "첨부파일 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "첨부파일 일련번호"
           },
           "evntDt": {
             "type": "string",
@@ -16955,10 +17086,9 @@
             "maxLength": 20,
             "minLength": 0
           },
-          "pstId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "pstSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "dgstfnCn": {
             "type": "string"
@@ -16994,10 +17124,9 @@
       "MyPageContentDto": {
         "type": "object",
         "properties": {
-          "cntntsId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "contsSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "cntntsNm": {
             "type": "string",
@@ -17007,7 +17136,7 @@
           "cntcUrl": {
             "type": "string"
           },
-          "cntntsUseAt": {
+          "cntntsUseYn": {
             "type": "string"
           },
           "cntntsLinkUrl": {
@@ -17044,17 +17173,15 @@
             "maxLength": 20,
             "minLength": 0
           },
-          "srvyId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
-          "srvyTmpltId": {
-            "type": "string",
-            "description": "설문 템플릿 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 템플릿 일련번호"
           },
           "gndrCd": {
             "type": "string",
@@ -17116,32 +17243,26 @@
             "format": "date-time",
             "description": "최종 수정 일시"
           }
-        },
-        "required": [
-          "srvyId"
-        ]
+        }
       },
       "SurveyArticleDto": {
         "type": "object",
         "description": "설문항목 DTO (표준화)",
         "properties": {
-          "srvyArtclId": {
-            "type": "string",
-            "description": "설문 항목 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyArtclSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 항목 일련번호"
           },
-          "srvyQstnId": {
-            "type": "string",
-            "description": "설문 문항 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyQstnSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 문항 일련번호"
           },
-          "srvyId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
           "artclSn": {
             "type": "integer",
@@ -17160,11 +17281,10 @@
             "maxLength": 1,
             "minLength": 0
           },
-          "srvyTmpltId": {
-            "type": "string",
-            "description": "설문 템플릿 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 템플릿 일련번호"
           },
           "frstRgtrId": {
             "type": "string",
@@ -17175,28 +17295,21 @@
             "format": "date-time",
             "description": "등록 일시"
           }
-        },
-        "required": [
-          "srvyArtclId",
-          "srvyId",
-          "srvyQstnId"
-        ]
+        }
       },
       "SurveyQuestionDto": {
         "type": "object",
         "description": "설문문항 DTO (표준화)",
         "properties": {
-          "srvyQstnId": {
-            "type": "string",
-            "description": "설문 문항 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyQstnSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 문항 일련번호"
           },
-          "srvyId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
           "qstnSn": {
             "type": "integer",
@@ -17220,11 +17333,10 @@
             "format": "int32",
             "description": "최대 선택 수"
           },
-          "srvyTmpltId": {
-            "type": "string",
-            "description": "설문 템플릿 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 템플릿 일련번호"
           },
           "frstRgtrId": {
             "type": "string",
@@ -17242,21 +17354,16 @@
               "$ref": "#/components/schemas/SurveyArticleDto"
             }
           }
-        },
-        "required": [
-          "srvyId",
-          "srvyQstnId"
-        ]
+        }
       },
       "SurveyInfoDto": {
         "type": "object",
         "description": "설문정보 DTO (표준화)",
         "properties": {
-          "srvyId": {
-            "type": "string",
-            "description": "설문 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvySn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 일련번호"
           },
           "srvyTtl": {
             "type": "string",
@@ -17294,11 +17401,10 @@
             "maxLength": 1000,
             "minLength": 0
           },
-          "srvyTmpltId": {
-            "type": "string",
-            "description": "설문 템플릿 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 템플릿 일련번호"
           },
           "frstRgtrId": {
             "type": "string",
@@ -17311,7 +17417,7 @@
           }
         },
         "required": [
-          "srvyId",
+          "srvyTmpltSn",
           "srvyTtl"
         ]
       },
@@ -17319,11 +17425,10 @@
         "type": "object",
         "description": "설문템플릿 DTO (표준화)",
         "properties": {
-          "srvyTmpltId": {
-            "type": "string",
-            "description": "설문 템플릿 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "설문 템플릿 일련번호"
           },
           "srvyTmpltTypeCd": {
             "type": "string",
@@ -17448,11 +17553,11 @@
         "type": "object",
         "description": "팝업 정보 DTO",
         "properties": {
-          "popupId": {
-            "type": "string",
-            "description": "팝업 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "popupSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "팝업 일련번호",
+            "example": 1
           },
           "popupTtlNm": {
             "type": "string",
@@ -17501,14 +17606,24 @@
           "stopvewSetupYn": {
             "type": "string",
             "description": "그만보기 여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "ntceYn": {
             "type": "string",
             "description": "게시 여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "frstRgtrId": {
             "type": "string",
@@ -17743,8 +17858,9 @@
       "InternetSvcGuidanceDto": {
         "type": "object",
         "properties": {
-          "intnetSvcId": {
-            "type": "string"
+          "itntSrvcSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "intnetSvcNm": {
             "type": "string",
@@ -17881,8 +17997,13 @@
           "useYn": {
             "type": "string",
             "description": "사용여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "frstRgtrId": {
             "type": "string",
@@ -17934,8 +18055,13 @@
           "useYn": {
             "type": "string",
             "description": "사용여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "frstRgtrId": {
             "type": "string",
@@ -17997,8 +18123,13 @@
           "useYn": {
             "type": "string",
             "description": "사용여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "frstRgtrId": {
             "type": "string",
@@ -18117,10 +18248,24 @@
             "type": "string"
           },
           "ansPsbltyYn": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "fileAtchPsbltyYn": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "atchPsbltyFileQty": {
             "type": "integer",
@@ -18151,29 +18296,51 @@
           },
           "useYn": {
             "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
-          "cmntyId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "cmntySn": {
+            "type": "integer",
+            "format": "int64"
           },
-          "blogId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "blogSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "blogYn": {
             "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "ansYn": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "stsfdgYn": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "authFlag": {
             "type": "string"
@@ -18194,11 +18361,10 @@
         "type": "object",
         "description": "배너 정보",
         "properties": {
-          "bnrId": {
-            "type": "string",
-            "description": "배너 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "bnrSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "배너 일련번호"
           },
           "bnrNm": {
             "type": "string",
@@ -18209,7 +18375,7 @@
           "linkUrl": {
             "type": "string",
             "description": "링크 URL",
-            "maxLength": 1000,
+            "maxLength": 512,
             "minLength": 0
           },
           "bnrImgNm": {
@@ -18232,14 +18398,18 @@
           "rfltYn": {
             "type": "string",
             "description": "반영 여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "배너 이미지 파일 ID",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "배너 이미지 첨부파일 일련번호"
           },
           "frstRgtrId": {
             "type": "string",
@@ -18295,12 +18465,11 @@
         "type": "object",
         "description": "행사 정보 상세 DTO",
         "properties": {
-          "evntId": {
-            "type": "string",
-            "description": "행사 ID",
-            "example": "EVT_1716611000000",
-            "maxLength": 20,
-            "minLength": 0
+          "evntSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "행사 내부 일련번호",
+            "example": 1
           },
           "evntNm": {
             "type": "string",
@@ -18403,13 +18572,14 @@
       "CommunityDto": {
         "type": "object",
         "properties": {
-          "cmntyId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "cmntySn": {
+            "type": "integer",
+            "format": "int64"
           },
           "cmntyNm": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
           },
           "cmntyIntroCn": {
             "type": "string",
@@ -18417,21 +18587,31 @@
             "minLength": 0
           },
           "regSeCd": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
           },
           "regSeCdNm": {
             "type": "string"
           },
           "tmpltId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
           },
           "tmpltNm": {
             "type": "string"
           },
           "useYn": {
             "type": "string",
+            "description": "사용 여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "frstRgtrId": {
             "type": "string"
@@ -18451,9 +18631,11 @@
         "type": "object",
         "description": "주소록 정보 DTO",
         "properties": {
-          "adbkId": {
-            "type": "string",
-            "description": "주소록 ID"
+          "adbkSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "주소록 일련번호",
+            "example": 1
           },
           "adbkNm": {
             "type": "string",
@@ -18517,19 +18699,17 @@
         "type": "object",
         "description": "주소록 연락처 정보 DTO",
         "properties": {
-          "adbkConstntId": {
-            "type": "string",
-            "description": "주소록 구성원 ID",
-            "example": "ADBKU_0000000000001",
-            "maxLength": 20,
-            "minLength": 0
+          "adbkMbrSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "주소록 회원 일련번호",
+            "example": 1
           },
-          "adbkId": {
-            "type": "string",
-            "description": "주소록 ID",
-            "example": "ADBK_000000000000001",
-            "maxLength": 20,
-            "minLength": 0
+          "adbkSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "주소록 일련번호",
+            "example": 1
           },
           "userId": {
             "type": "string",
@@ -18582,7 +18762,6 @@
           }
         },
         "required": [
-          "adbkId",
           "userId"
         ]
       },
@@ -18680,17 +18859,15 @@
         "type": "object",
         "description": "문항별 답변",
         "properties": {
-          "srvyQstnId": {
-            "type": "string",
-            "description": "문항 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyQstnSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "문항 일련번호"
           },
-          "srvyArtclId": {
-            "type": "string",
-            "description": "항목 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "srvyArtclSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "항목 일련번호"
           },
           "rspdntAnsCn": {
             "type": "string",
@@ -18706,8 +18883,8 @@
           }
         },
         "required": [
-          "srvyArtclId",
-          "srvyQstnId"
+          "srvyArtclSn",
+          "srvyQstnSn"
         ]
       },
       "SurveyResponseSubmitDto": {
@@ -18765,7 +18942,7 @@
           }
         }
       },
-      "ApiResponseString": {
+      "ApiResponseLong": {
         "type": "object",
         "properties": {
           "success": {
@@ -18782,7 +18959,8 @@
             "type": "string"
           },
           "data": {
-            "type": "string"
+            "type": "integer",
+            "format": "int64"
           },
           "timestamp": {
             "type": "string",
@@ -18801,10 +18979,9 @@
         "description": "사용자 알림 DTO",
         "properties": {
           "notiSn": {
-            "type": "string",
-            "description": "알림 일련번호",
-            "maxLength": 20,
-            "minLength": 0
+            "type": "integer",
+            "format": "int64",
+            "description": "알림 일련번호"
           },
           "notiTtlNm": {
             "type": "string",
@@ -18858,11 +19035,10 @@
         "type": "object",
         "description": "쪽지 정보",
         "properties": {
-          "noteId": {
-            "type": "string",
-            "description": "쪽지 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "noteSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "쪽지 일련번호"
           },
           "noteSj": {
             "type": "string",
@@ -18874,15 +19050,15 @@
             "maxLength": 4000,
             "minLength": 0
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "첨부 파일 ID",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "첨부파일 일련번호"
           },
-          "noteDsptchId": {
-            "type": "string",
-            "description": "쪽지 발신 ID"
+          "noteSndngSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "쪽지 발송 일련번호"
           },
           "dsptchUserId": {
             "type": "string",
@@ -18892,9 +19068,10 @@
             "type": "string",
             "description": "발신자 명"
           },
-          "noteRecptnId": {
-            "type": "string",
-            "description": "쪽지 수신 ID"
+          "noteRcptnSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "쪽지 수신 일련번호"
           },
           "rcverId": {
             "type": "string",
@@ -18937,11 +19114,10 @@
         "type": "object",
         "description": "쪽지 수신자 정보 DTO",
         "properties": {
-          "noteRecptnId": {
-            "type": "string",
-            "description": "쪽지 수신 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "noteRcptnSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "쪽지 수신 일련번호"
           },
           "rcverId": {
             "type": "string",
@@ -18963,7 +19139,7 @@
           }
         },
         "required": [
-          "noteRecptnId",
+          "noteRcptnSn",
           "rcverId",
           "recptnSe"
         ]
@@ -18972,8 +19148,9 @@
         "type": "object",
         "description": "Description",
         "properties": {
-          "mssageId": {
-            "type": "string",
+          "emlDsptchSn": {
+            "type": "integer",
+            "format": "int64",
             "description": "Description"
           },
           "sj": {
@@ -19000,43 +19177,10 @@
             "type": "string",
             "description": "Description"
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "Description",
-            "maxLength": 30,
-            "minLength": 0
-          }
-        }
-      },
-      "ApiResponseLong": {
-        "type": "object",
-        "properties": {
-          "success": {
-            "type": "boolean"
-          },
-          "status": {
+          "atchFileSn": {
             "type": "integer",
-            "format": "int32"
-          },
-          "code": {
-            "type": "string"
-          },
-          "message": {
-            "type": "string"
-          },
-          "data": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "timestamp": {
-            "type": "string",
-            "format": "date-time"
-          },
-          "errors": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/FieldErrorItem"
-            }
+            "format": "int64",
+            "description": "Description"
           }
         }
       },
@@ -19084,6 +19228,37 @@
             "type": "string",
             "description": "User Role",
             "example": "ROLE_USER"
+          }
+        }
+      },
+      "ApiResponseString": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
           }
         }
       },
@@ -19441,11 +19616,10 @@
         "type": "object",
         "description": "SMS 데이터 전송 객체",
         "properties": {
-          "smsId": {
-            "type": "string",
-            "description": "SMS ID",
-            "maxLength": 20,
-            "minLength": 0
+          "smsTrsmSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "SMS 전송 일련번호"
           },
           "sndngTelno": {
             "type": "string",
@@ -19490,11 +19664,10 @@
         "type": "object",
         "description": "SMS 수신 정보 DTO",
         "properties": {
-          "smsId": {
-            "type": "string",
-            "description": "SMS ID",
-            "maxLength": 20,
-            "minLength": 0
+          "smsTrsmSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "SMS 전송 일련번호"
           },
           "rcptnTelno": {
             "type": "string",
@@ -19513,8 +19686,9 @@
       "RewardManageDto": {
         "type": "object",
         "properties": {
-          "rwardId": {
-            "type": "string"
+          "rwrdSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "rwardwnrId": {
             "type": "string"
@@ -19544,13 +19718,13 @@
           "returnResn": {
             "type": "string"
           },
-          "atchFileId": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
           },
-          "informlSanctnId": {
-            "type": "string"
+          "ifmlAtrzSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "frstRgtrId": {
             "type": "string"
@@ -19602,10 +19776,9 @@
       "ExternalHrDto": {
         "type": "object",
         "properties": {
-          "evntId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "evntSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "otsdHrId": {
             "type": "string",
@@ -19671,7 +19844,11 @@
           "lastMdfrId": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "evntSn",
+          "otsdHrId"
+        ]
       },
       "ApiResponseExternalHrDto": {
         "type": "object",
@@ -20044,8 +20221,9 @@
       "SurveyStatsDto": {
         "type": "object",
         "properties": {
-          "srvyQstnId": {
-            "type": "string"
+          "srvyQstnSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "qstnCn": {
             "type": "string"
@@ -20053,8 +20231,9 @@
           "qstnTypeCd": {
             "type": "string"
           },
-          "srvyArtclId": {
-            "type": "string"
+          "srvyArtclSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "artclCn": {
             "type": "string"
@@ -21287,10 +21466,9 @@
       "FileDto": {
         "type": "object",
         "properties": {
-          "atchFileId": {
-            "type": "string",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "fileSn": {
             "type": "integer",
@@ -21651,11 +21829,10 @@
       "BoardDto": {
         "type": "object",
         "properties": {
-          "pstId": {
-            "type": "string",
-            "description": "게시글 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "pstSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "게시글 ID"
           },
           "bbsId": {
             "type": "string",
@@ -21680,11 +21857,10 @@
             "maxLength": 4000,
             "minLength": 0
           },
-          "upPstId": {
-            "type": "string",
-            "description": "상위 게시글 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "upPstSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "상위 게시글 ID"
           },
           "sortOrdr": {
             "type": "integer",
@@ -21739,11 +21915,10 @@
             "minLength": 0,
             "writeOnly": true
           },
-          "atchFileId": {
-            "type": "string",
-            "description": "첨부파일 ID",
-            "maxLength": 30,
-            "minLength": 0
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "첨부파일 일련번호"
           },
           "scrtYn": {
             "type": "string",
@@ -21751,11 +21926,10 @@
             "maxLength": 1,
             "minLength": 0
           },
-          "blogId": {
-            "type": "string",
-            "description": "블로그 ID",
-            "maxLength": 20,
-            "minLength": 0
+          "blogSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "블로그 일련번호"
           },
           "evntDt": {
             "type": "string",
@@ -22746,20 +22920,25 @@
       "SurveyResultDto": {
         "type": "object",
         "properties": {
-          "srvyRspnsId": {
-            "type": "string"
+          "srvyRspnsSn": {
+            "type": "integer",
+            "format": "int64"
           },
-          "srvyId": {
-            "type": "string"
+          "srvySn": {
+            "type": "integer",
+            "format": "int64"
           },
-          "srvyTmpltId": {
-            "type": "string"
+          "srvyTmpltSn": {
+            "type": "integer",
+            "format": "int64"
           },
-          "srvyQstnId": {
-            "type": "string"
+          "srvyQstnSn": {
+            "type": "integer",
+            "format": "int64"
           },
-          "srvyArtclId": {
-            "type": "string"
+          "srvyArtclSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "rspdntAnsCn": {
             "type": "string"
@@ -23584,8 +23763,9 @@
       "WebLogDto": {
         "type": "object",
         "properties": {
-          "dmndId": {
-            "type": "string"
+          "webLogSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "url": {
             "type": "string"
@@ -23768,6 +23948,10 @@
       "SysLogDto": {
         "type": "object",
         "properties": {
+          "sysLogSn": {
+            "type": "integer",
+            "format": "int64"
+          },
           "dmndId": {
             "type": "string",
             "maxLength": 20,
@@ -23898,6 +24082,10 @@
       "PrivacyLogDto": {
         "type": "object",
         "properties": {
+          "prvcLogSn": {
+            "type": "integer",
+            "format": "int64"
+          },
           "dmndId": {
             "type": "string"
           },
@@ -23953,10 +24141,9 @@
       "LoginLogDto": {
         "type": "object",
         "properties": {
-          "logId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+          "lgnSn": {
+            "type": "integer",
+            "format": "int64"
           },
           "loginId": {
             "type": "string"

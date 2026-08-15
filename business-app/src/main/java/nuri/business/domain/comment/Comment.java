@@ -9,7 +9,7 @@ import org.hibernate.annotations.Filter;
 
 /**
  * 게시물 댓글 엔티티 (v5 standardized)
- * - DB Schema Sync: TB_BBS_COMMENT (ans_sn, pst_id, bbs_id, wrter_id, wrter_nm, pswd, ans_cn, use_yn)
+ * - DB Schema Sync: TB_BBS_COMMENT (ans_sn, pst_sn, bbs_id, wrter_id, wrter_nm, pswd, ans_cn, use_yn)
  */
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -23,11 +23,11 @@ public class Comment extends BaseEntity implements Serializable {
     @SequenceGenerator(name = "answerNoSeq", sequenceName = "sq_answer_no", allocationSize = 1)
         private Long ansSn;
 
-    @Column(name = "pst_id", length = 20)
-    private String pstId;
+    @Column(name = "pst_sn")
+    private Long pstSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "pst_id", referencedColumnName = "pst_id", insertable = false, updatable = false,
+    @JoinColumn(name = "pst_sn", referencedColumnName = "pst_sn", insertable = false, updatable = false,
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private Board board;
 
@@ -56,10 +56,10 @@ public class Comment extends BaseEntity implements Serializable {
      * 읽기전용 연관(board: insertable=false, updatable=false)은 제외한다.
      * @Builder.Default 재현: useYn 널병합 처리(널이면 기본값 "Y").
      */
-    private Comment(Long ansSn, String pstId, String bbsId, String wrterId, String wrterNm,
+    private Comment(Long ansSn, Long pstSn, String bbsId, String wrterId, String wrterNm,
                     String pswd, String ansCn, String useYn) {
         this.ansSn = ansSn;
-        this.pstId = pstId;
+        this.pstSn = pstSn;
         this.bbsId = bbsId;
         this.wrterId = wrterId;
         this.wrterNm = wrterNm;
@@ -73,9 +73,9 @@ public class Comment extends BaseEntity implements Serializable {
      * 기존 Comment.builder()...build() 호출부와 완전 호환된다.
      */
     @Builder
-    public static Comment create(Long ansSn, String pstId, String bbsId, String wrterId, String wrterNm,
+    public static Comment create(Long ansSn, Long pstSn, String bbsId, String wrterId, String wrterNm,
                                  String pswd, String ansCn, String useYn) {
-        return new Comment(ansSn, pstId, bbsId, wrterId, wrterNm, pswd, ansCn, useYn);
+        return new Comment(ansSn, pstSn, bbsId, wrterId, wrterNm, pswd, ansCn, useYn);
     }
 
     public void update(String ansCn) {

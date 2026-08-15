@@ -1,15 +1,15 @@
 export interface DeptJobVO {
-  deptTaskId?: string;
+  deptTaskSn?: number;
   deptTaskNm: string;
   deptTaskCn: string;
-  deptTaskBoxId?: string;
+  deptTaskBoxSn?: number;
   deptTaskBoxNm?: string;
   deptId?: string;
   deptNm?: string;
   picId?: string;
   picNm?: string;
   prrtyRnk: string;
-  atchFileId?: string;
+  atchFileSn?: number;
   frstRgtrId?: string;
   crtDt?: string;
   lastMdfrId?: string;
@@ -17,7 +17,7 @@ export interface DeptJobVO {
 }
 
 export interface DeptJobBxVO {
-  deptTaskBoxId: string;
+  deptTaskBoxSn: number;
   deptTaskBoxNm: string;
   deptId?: string;
   deptNm?: string;

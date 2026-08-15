@@ -3,6 +3,8 @@ package nuri.business.domain.informalsanction;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.Version;
@@ -25,8 +27,9 @@ public class InformalSanction extends BaseEntity {
     private Integer version;
 
     @Id
-    @Column(length = 20)
-    private String ifmlAtrzId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "ifml_atrz_sn")
+    private Long ifmlAtrzSn;
 
     @Column(length = 12, nullable = false)
     private String taskSeCd;
@@ -49,10 +52,10 @@ public class InformalSanction extends BaseEntity {
     private String rjctRsnCn;
 
     // 팩토리 create() 전용 생성자 (선언 순서에 맞춘 비즈니스 필드; 감사 필드/@Version 제외)
-    private InformalSanction(String ifmlAtrzId, String taskSeCd, String aplcntId,
+    private InformalSanction(Long ifmlAtrzSn, String taskSeCd, String aplcntId,
                              String reqYmd, String aprvrId, String aprvYn,
                              LocalDateTime atrzDt, String rjctRsnCn) {
-        this.ifmlAtrzId = ifmlAtrzId;
+        this.ifmlAtrzSn = ifmlAtrzSn;
         this.taskSeCd = taskSeCd;
         this.aplcntId = aplcntId;
         this.reqYmd = reqYmd;
@@ -66,10 +69,10 @@ public class InformalSanction extends BaseEntity {
      * 빌더 정적 팩토리 - 기존 InformalSanction.builder()...build() 호출부 호환 유지
      */
     @Builder
-    public static InformalSanction create(String ifmlAtrzId, String taskSeCd, String aplcntId,
+    public static InformalSanction create(Long ifmlAtrzSn, String taskSeCd, String aplcntId,
                                           String reqYmd, String aprvrId, String aprvYn,
                                           LocalDateTime atrzDt, String rjctRsnCn) {
-        return new InformalSanction(ifmlAtrzId, taskSeCd, aplcntId, reqYmd, aprvrId, aprvYn, atrzDt, rjctRsnCn);
+        return new InformalSanction(ifmlAtrzSn, taskSeCd, aplcntId, reqYmd, aprvrId, aprvYn, atrzDt, rjctRsnCn);
     }
 
     public void update(String taskSeCd, String reqYmd, String aprvrId) {

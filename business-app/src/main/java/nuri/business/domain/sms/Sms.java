@@ -5,8 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 
 /**
- * SMS JPA Entity
- * 매핑 테이블: NSMS
+ * SMS 발송 정보 엔티티.
+ * 매핑 테이블: {@code tb_sms_info}
  */
 @Entity
 @Table(name = "tb_sms_info")
@@ -15,8 +15,9 @@ import lombok.*;
 public class Sms extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String smsId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "sms_trsm_sn")
+    private Long smsTrsmSn;
 
     @Column(length = 13, nullable = false)
     private String sndngTelno;
@@ -24,20 +25,14 @@ public class Sms extends BaseEntity {
     @Column(length = 4000)
     private String sndngCn;
 
-    // 레거시 별칭 완전 철폐 (표준화 동기화)
-
-    // 팩토리 위임용 생성자 (own 필드 전체)
-    private Sms(String smsId, String sndngTelno, String sndngCn) {
-        this.smsId = smsId;
+    private Sms(String sndngTelno, String sndngCn) {
         this.sndngTelno = sndngTelno;
         this.sndngCn = sndngCn;
     }
 
-    /**
-     * 정적 팩토리 빌더. 기존 Sms.builder()...build() 호출부와 100% 호환.
-     */
+    /** DB 생성 일련번호를 입력받지 않는 신규 SMS 팩토리. */
     @Builder
-    public static Sms create(String smsId, String sndngTelno, String sndngCn) {
-        return new Sms(smsId, sndngTelno, sndngCn);
+    public static Sms create(String sndngTelno, String sndngCn) {
+        return new Sms(sndngTelno, sndngCn);
     }
 }

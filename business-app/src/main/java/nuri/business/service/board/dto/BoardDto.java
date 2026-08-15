@@ -12,8 +12,7 @@ import java.time.LocalDateTime;
 @Builder
 public record BoardDto(
     @Schema(description = "게시글 ID")
-    @Size(max = 20)
-    String pstId,
+    Long pstSn,
 
     @Schema(description = "게시판 ID")
     @Size(max = 20)
@@ -31,8 +30,7 @@ public record BoardDto(
     String pstCn,
 
     @Schema(description = "상위 게시글 ID")
-    @Size(max = 20)
-    String upPstId,
+    Long upPstSn,
 
     @Schema(description = "정렬 순서")
     Long sortOrdr,
@@ -72,17 +70,15 @@ public record BoardDto(
     @Size(max = 200)
     String pswd,
 
-    @Schema(description = "첨부파일 ID")
-    @Size(max = 30)
-    String atchFileId,
+    @Schema(description = "첨부파일 일련번호")
+    Long atchFileSn,
 
     @Schema(description = "비밀글 여부")
     @Size(max = 1)
     String scrtYn,
 
-    @Schema(description = "블로그 ID")
-    @Size(max = 20)
-    String blogId,
+    @Schema(description = "블로그 일련번호")
+    Long blogSn,
 
     @Schema(description = "행사일")
     LocalDateTime evntDt,

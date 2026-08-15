@@ -43,7 +43,7 @@ export default function SurveyTemplatesPanel() {
   });
 
   const remove = useMutation({
-    mutationFn: (id: string) => surveyAdminService.deleteTemplate(id),
+    mutationFn: (srvyTmpltSn: number) => surveyAdminService.deleteTemplate(srvyTmpltSn),
     onSuccess: () => {
       setError(null);
       invalidate();
@@ -97,7 +97,7 @@ export default function SurveyTemplatesPanel() {
         <ul className="space-y-2">
           {templates.map((t) => (
             <li
-              key={t.srvyTmpltId}
+              key={t.srvyTmpltSn}
               className="flex items-center gap-3 p-3 border rounded-lg bg-card"
             >
               <code className="px-2 py-0.5 bg-muted rounded text-xs font-mono shrink-0">
@@ -110,9 +110,9 @@ export default function SurveyTemplatesPanel() {
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label={`${t.srvyTmpltExpln || t.srvyTmpltId} 템플릿 삭제`}
+                aria-label={`${t.srvyTmpltExpln || t.srvyTmpltSn} 템플릿 삭제`}
                 className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 shrink-0"
-                onClick={() => t.srvyTmpltId && remove.mutate(t.srvyTmpltId)}
+                onClick={() => t.srvyTmpltSn && remove.mutate(t.srvyTmpltSn)}
               >
                 <Trash2 className="h-4 w-4" />
               </Button>

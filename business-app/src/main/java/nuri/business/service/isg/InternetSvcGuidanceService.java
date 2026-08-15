@@ -18,32 +18,32 @@ public class InternetSvcGuidanceService {
 
     private final InternetSvcGuidanceRepository internetSvcGuidanceRepository;
 
-    public InternetSvcGuidanceDto getIntnetSvcGuidance(String intnetSvcId) {
-        return internetSvcGuidanceRepository.findById(Objects.requireNonNull(intnetSvcId))
+    public InternetSvcGuidanceDto getIntnetSvcGuidance(Long itntSrvcSn) {
+        return internetSvcGuidanceRepository.findById(Objects.requireNonNull(itntSrvcSn))
                 .map(this::convertToDto)
                 .orElse(null);
     }
 
     @Transactional
-    public void registerIntnetSvcGuidance(InternetSvcGuidanceDto dto) {
+    public Long registerIntnetSvcGuidance(InternetSvcGuidanceDto dto) {
         InternetSvcGuidance isg = InternetSvcGuidance.builder()
-                .itntSvcId(dto.getIntnetSvcId())
                 .itntSvcNm(dto.getIntnetSvcNm())
                 .itntSvcExpln(dto.getIntnetSvcDc())
                 .rfltYn(dto.getReflctAt())
                 .build();
-        internetSvcGuidanceRepository.save(Objects.requireNonNull(isg));
+        InternetSvcGuidance saved = internetSvcGuidanceRepository.save(Objects.requireNonNull(isg));
+        return saved.getItntSrvcSn();
     }
 
     @Transactional
     public void updateIntnetSvcGuidance(InternetSvcGuidanceDto dto) {
-        internetSvcGuidanceRepository.findById(Objects.requireNonNull(dto.getIntnetSvcId()))
+        internetSvcGuidanceRepository.findById(Objects.requireNonNull(dto.getItntSrvcSn()))
                 .ifPresent(isg -> isg.update(dto.getIntnetSvcNm(), dto.getIntnetSvcDc(), dto.getReflctAt()));
     }
 
     @Transactional
-    public void deleteIntnetSvcGuidance(String intnetSvcId) {
-        internetSvcGuidanceRepository.deleteById(Objects.requireNonNull(intnetSvcId));
+    public void deleteIntnetSvcGuidance(Long itntSrvcSn) {
+        internetSvcGuidanceRepository.deleteById(Objects.requireNonNull(itntSrvcSn));
     }
 
     public Page<InternetSvcGuidanceDto> getIntnetSvcGuidanceList(String searchKeyword, Pageable pageable) {
@@ -61,7 +61,7 @@ public class InternetSvcGuidanceService {
 
     private InternetSvcGuidanceDto convertToDto(InternetSvcGuidance isg) {
         return InternetSvcGuidanceDto.builder()
-                .intnetSvcId(isg.getItntSvcId())
+                .itntSrvcSn(isg.getItntSrvcSn())
                 .intnetSvcNm(isg.getItntSvcNm())
                 .intnetSvcDc(isg.getItntSvcExpln())
                 .reflctAt(isg.getRfltYn())

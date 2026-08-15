@@ -12,6 +12,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/comments")
 @RequiredArgsConstructor
@@ -21,10 +22,10 @@ public class CommentApiController {
 
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<CommentDto>>> getComments(
-            @RequestParam String pstId,
+            @RequestParam Long pstSn,
             @RequestParam String bbsId,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<CommentDto> result = commentService.getComments(pstId, bbsId, pageable);
+        Page<CommentDto> result = commentService.getComments(pstSn, bbsId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 

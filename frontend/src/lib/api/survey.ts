@@ -19,16 +19,16 @@ export const getQustnrRespondInfoList = async (
   });
 };
 
-export const getQustnrRespondInfoDetail = async (id: string): Promise<QustnrRespondInfo> => {
-  return client.get<QustnrRespondInfo>(`/admin/system/survey-responses/${id}`);
+export const getQustnrRespondInfoDetail = async (srvyRspnsSn: number): Promise<QustnrRespondInfo> => {
+  return client.get<QustnrRespondInfo>(`/admin/system/survey-responses/${srvyRspnsSn}`);
 };
 
 /** 응답 삭제는 백엔드가 `@AdminOnly` 다 — ADMIN 이 아니면 403. */
-export const deleteQustnrRespondInfo = async (id: string): Promise<void> => {
-  return client.delete(`/admin/system/survey-responses/${id}`);
+export const deleteQustnrRespondInfo = async (srvyRspnsSn: number): Promise<void> => {
+  return client.delete(`/admin/system/survey-responses/${srvyRspnsSn}`);
 };
 
 /** 문항별 항목 응답 분포. 화면 2곳(`/survey/stats`·`/survey/[id]`)이 같은 형태를 렌더한다. */
-export const getSurveyStats = async (data: { srvyId: string }): Promise<SurveyResultStats[]> => {
-  return client.get<SurveyResultStats[]>(`/surveys/${data.srvyId}/stats`);
+export const getSurveyStats = async (data: { srvySn: number }): Promise<SurveyResultStats[]> => {
+  return client.get<SurveyResultStats[]>(`/surveys/${data.srvySn}/stats`);
 };

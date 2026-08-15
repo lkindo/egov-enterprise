@@ -214,7 +214,7 @@ export default function MailSendHubClient() {
                         ) : searchResults.length > 0 ? (
                           searchResults.map((user) => (
                             <button
-                              key={user.adbkConstntId || user.userId}
+                              key={user.adbkMbrSn || user.userId}
                               type="button"
                               data-testid="recipient-item"
                               onClick={() => {

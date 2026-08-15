@@ -12,7 +12,7 @@ import java.util.Optional;
  * 수신쪽지 Repository
  */
 @Repository("noteRecptnDomainRepository")
-public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, String> {
+public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, Long> {
 
     // [N+1 방지] convertToDto 가 noteDsptch.getSndrId()(비-@Id) 에 접근하므로 to-one 지연연관을 함께 fetch.
     // note·noteDsptch 모두 @ManyToOne(to-one)이라 다중 join fetch + 페이지네이션 안전(HHH000104 무관). 레거시 null 대비 LEFT.
@@ -24,13 +24,13 @@ public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, St
 
     // ── [V2_21 물리 수거 GC 지원] ──
     /** 특정 발신 건에 딸린 수신 사본 중 지정 삭제상태(del_yn) 개수. 양측 삭제 판정용. */
-    long countByNoteDsptchNoteSndngIdAndDelYn(String noteSndngId, String delYn);
+    long countByNoteDsptchNoteSndngSnAndDelYn(Long noteSndngSn, String delYn);
 
     /** 특정 발신 건에 딸린 전체 수신 사본(수거 시 일괄 삭제 대상). */
-    java.util.List<NoteRecptn> findByNoteDsptchNoteSndngId(String noteSndngId);
+    java.util.List<NoteRecptn> findByNoteDsptchNoteSndngSn(Long noteSndngSn);
 
     /** 특정 쪽지(note)를 참조하는 수신 사본 수(info 물리삭제 안전성 판정용). */
-    long countByNoteNoteId(String noteId);
+    long countByNoteNoteSn(Long noteSn);
 
     // legacy
     default Page<NoteRecptn> searchReceivedNotes(String rcverId, String searchWrd, Pageable pageable) {
@@ -46,10 +46,10 @@ public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, St
         return findByRcvrId(rcverId, pageable);
     }
 
-    Optional<NoteRecptn> findByNoteNoteIdAndRcvrId(String noteId, String rcvrId);
+    Optional<NoteRecptn> findByNoteNoteSnAndRcvrId(Long noteSn, String rcvrId);
 
     @Deprecated
-    default Optional<NoteRecptn> findByNoteNoteIdAndRcverId(String noteId, String rcverId) {
-        return findByNoteNoteIdAndRcvrId(noteId, rcverId);
+    default Optional<NoteRecptn> findByNoteNoteSnAndRcverId(Long noteSn, String rcverId) {
+        return findByNoteNoteSnAndRcvrId(noteSn, rcverId);
     }
 }

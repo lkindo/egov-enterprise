@@ -8,14 +8,14 @@ import java.util.List;
 
 @Repository
 public interface SatisfactionRepository extends JpaRepository<Satisfaction, Long> {
-    @Query("SELECT s FROM Satisfaction s WHERE s.pstId = :pstId AND s.bbsId = :bbsId AND s.useYn = :useYn")
-    List<Satisfaction> findByPstIdAndBbsIdAndUseYn(@Param("pstId") String pstId, @Param("bbsId") String bbsId, @Param("useYn") String useYn);
+    @Query("SELECT s FROM Satisfaction s WHERE s.pstSn = :pstSn AND s.bbsId = :bbsId AND s.useYn = :useYn")
+    List<Satisfaction> findByPstSnAndBbsIdAndUseYn(@Param("pstSn") Long pstSn, @Param("bbsId") String bbsId, @Param("useYn") String useYn);
 
-    @Query("SELECT AVG(s.dgstfnScr) FROM Satisfaction s WHERE s.pstId = :pstId AND s.bbsId = :bbsId AND s.useYn = 'Y'")
-    Double getAverageSatisfaction(@Param("pstId") String pstId, @Param("bbsId") String bbsId);
+    @Query("SELECT AVG(s.dgstfnScr) FROM Satisfaction s WHERE s.pstSn = :pstSn AND s.bbsId = :bbsId AND s.useYn = 'Y'")
+    Double getAverageSatisfaction(@Param("pstSn") Long pstSn, @Param("bbsId") String bbsId);
 
     // legacy
-    default List<Satisfaction> findByArticleIdAndBoardIdAndUseAt(String articleId, String boardId, String useAt) {
-        return findByPstIdAndBbsIdAndUseYn(articleId, boardId, useAt);
+    default List<Satisfaction> findByArticleIdAndBoardIdAndUseAt(Long articleId, String boardId, String useAt) {
+        return findByPstSnAndBbsIdAndUseYn(articleId, boardId, useAt);
     }
 }

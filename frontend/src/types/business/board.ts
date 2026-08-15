@@ -1,10 +1,10 @@
 export interface BoardPost {
-  pstId: string;
+  pstSn: number;
   bbsId: string;
   ansSn?: number;
   pstTtl: string;
   pstCn: string;
-  upPstId?: string;
+  upPstSn?: number;
   sortOrdr?: number;
   ttlBoldYn?: string;
   inqCnt?: number;
@@ -14,9 +14,9 @@ export interface BoardPost {
   userId: string;
   userNm?: string;
   pswd?: string;
-  atchFileId?: string;
+  atchFileSn?: number;
   scrtYn?: string;
-  blogId?: string;
+  blogSn?: number;
   evntDt?: string;
   qnaSttsCd?: string;
   qnaCatCd?: string;

@@ -40,7 +40,7 @@ class FileApiControllerTest extends ControllerTestSupport {
         // Given
         MockMultipartFile file1 = new MockMultipartFile("files", "test1.txt", MediaType.TEXT_PLAIN_VALUE, "test content 1".getBytes());
         MockMultipartFile file2 = new MockMultipartFile("files", "test2.txt", MediaType.TEXT_PLAIN_VALUE, "test content 2".getBytes());
-        given(fileService.uploadFiles(anyList())).willReturn("FILE_001");
+        given(fileService.uploadFiles(anyList())).willReturn(101L);
 
         // When & Then
         mockMvc.perform(multipart("/api/v1/files")
@@ -49,7 +49,7 @@ class FileApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data").value("FILE_001"));
+                .andExpect(jsonPath("$.data").value(101));
     }
 
     @Test
@@ -57,20 +57,20 @@ class FileApiControllerTest extends ControllerTestSupport {
     void getFileList_Success() throws Exception {
         // Given
         FileDto fileDto = FileDto.builder()
-                .atchFileId("FILE_001")
+                .atchFileSn(101L)
                 .fileSn(1)
                 .orignlFileNm("test.txt")
                 .fileExtsn("txt")
                 .fileMg(100L)
                 .build();
-        given(fileService.getFileList("FILE_001")).willReturn(List.of(fileDto));
+        given(fileService.getFileList(101L)).willReturn(List.of(fileDto));
 
         // When & Then
-        mockMvc.perform(get("/api/v1/files/FILE_001")
+        mockMvc.perform(get("/api/v1/files/101")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data[0].atchFileId").value("FILE_001"))
+                .andExpect(jsonPath("$.data[0].atchFileSn").value(101))
                 .andExpect(jsonPath("$.data[0].orignlFileNm").value("test.txt"))
                 .andExpect(jsonPath("$.data[0].fileSn").value(1));
     }
@@ -86,10 +86,10 @@ class FileApiControllerTest extends ControllerTestSupport {
                 return "test.txt";
             }
         };
-        given(fileService.getFileResource("FILE_001", 1)).willReturn(resource);
+        given(fileService.getFileResource(101L, 1)).willReturn(resource);
 
         // When & Then
-        mockMvc.perform(get("/api/v1/files/FILE_001/1"))
+        mockMvc.perform(get("/api/v1/files/101/1"))
                 .andExpect(status().isOk())
                 .andExpect(header().string(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"test.txt\""))
                 .andExpect(content().contentType(MediaType.APPLICATION_OCTET_STREAM))

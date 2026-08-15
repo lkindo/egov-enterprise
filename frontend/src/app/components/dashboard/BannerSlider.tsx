@@ -78,7 +78,7 @@ export function BannerSlider() {
       ) : (
         <div className="absolute inset-0" style={{ opacity: 0.8 }}>
           <AttachmentImage
-            atchFileId={currentBanner.atchFileId}
+            atchFileSn={currentBanner.atchFileSn}
             alt={currentBanner.bnrNm}
             className="h-full w-full object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
           />
@@ -126,7 +126,7 @@ export function BannerSlider() {
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
             {banners.map((banner, idx) => (
               <button
-                key={`banner-dot-${banner.bnrId || idx}`}
+                key={`banner-dot-${banner.bnrSn || idx}`}
                 onClick={() => setCurrentIndex(idx)}
                 aria-label={`${idx + 1}번 슬라이드로 이동`}
                 className={cn(

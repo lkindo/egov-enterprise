@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
  * 로그인로그 JPA Repository
  */
 @Repository
-public interface LoginLogRepository extends JpaRepository<LoginLog, String>, LoginLogRepositoryCustom {
+public interface LoginLogRepository extends JpaRepository<LoginLog, Long>, LoginLogRepositoryCustom {
         java.util.List<LoginLog> findTop100ByOrderByCrtDtDesc();
 
         /**
@@ -72,7 +72,7 @@ public interface LoginLogRepository extends JpaRepository<LoginLog, String>, Log
          */
         @org.springframework.data.jpa.repository.Query(value = """
                         SELECT SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 5, 2) || '-' || SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 7, 2) AS statsDate,
-                               COUNT(LOG_ID) AS statsCo
+                               COUNT(LGN_SN) AS statsCo
                           FROM TB_LOGIN_LOG
                          WHERE to_char(CRT_DT, 'YYYYMMDD') BETWEEN :fromDate AND :toDate
                          GROUP BY SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 1, 4) || '-' || SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 5, 2) || '-' || SUBSTR(to_char(CRT_DT, 'YYYYMMDD'), 7, 2)

@@ -50,10 +50,10 @@ class PopupUserApiControllerTest {
     @DisplayName("팝업 상세 조회")
     void getPopup() throws Exception {
         PopupDto dto = new PopupDto();
-        dto.setPopupId("P1");
-        when(popupService.getPopup("P1")).thenReturn(dto);
+        dto.setPopupSn(1L);
+        when(popupService.getPopup(1L)).thenReturn(dto);
 
-        mockMvc.perform(get("/api/v1/popups/P1"))
+        mockMvc.perform(get("/api/v1/popups/1"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
     }

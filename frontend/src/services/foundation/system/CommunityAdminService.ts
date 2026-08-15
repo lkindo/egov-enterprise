@@ -3,7 +3,7 @@ import { AdminService } from '@/services/core/ApiService';
 import { PageResponse, SearchParams } from '@/types/foundation/system';
 
 interface Community {
-  cmntyId: string;
+  cmntySn: number;
   cmntyNm: string;
   cmntyIntrcn: string;
   useYn: 'Y' | 'N';
@@ -33,8 +33,8 @@ class CommunityAdminService extends AdminService {
   }
 
   /** 커뮤니티 상세 조회 */
-  async getCommunity(cmntyId: string, config?: AxiosRequestConfig): Promise<Community> {
-    return this.get<Community>(`/${cmntyId}`, config);
+  async getCommunity(cmntySn: number, config?: AxiosRequestConfig): Promise<Community> {
+    return this.get<Community>(`/${cmntySn}`, config);
   }
 
   /** 커뮤니티 개설/등록 */
@@ -43,13 +43,13 @@ class CommunityAdminService extends AdminService {
   }
 
   /** 커뮤니티 정보 수정 */
-  async updateCommunity(cmntyId: string, data: Partial<Community>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put(`/${cmntyId}`, data, config);
+  async updateCommunity(cmntySn: number, data: Partial<Community>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put(`/${cmntySn}`, data, config);
   }
 
   /** 커뮤니티 삭제/폐쇄 */
-  async deleteCommunity(cmntyId: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete(`/${cmntyId}`, config);
+  async deleteCommunity(cmntySn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete(`/${cmntySn}`, config);
   }
 
   /** ы由우슜 목록 조회 */

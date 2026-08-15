@@ -82,7 +82,8 @@ class EgovAuthenticationProviderTest {
         // Given
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "password");
         lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
-        lenient().when(egovPasswordEncoder.encode("password", "testuser")).thenReturn("hashedPassword");
+        when(egovPasswordEncoder.matches("password", "hashedPassword", "testuser")).thenReturn(true);
+        when(passwordEncoder.encode("password")).thenReturn("{bcrypt}migrated");
         
         UserAuthority userAuthority = UserAuthority.builder()
                 .scrtyDcsnTrgtId("USR_0000000000001")
@@ -97,11 +98,111 @@ class EgovAuthenticationProviderTest {
         assertThat(result).isNotNull();
         assertThat(result.getName()).isEqualTo("USR_0000000000001");
         assertThat(result.getAuthorities()).extracting("authority").contains("ROLE_USER");
-        verify(userRepository).save(any(User.class)); // Unlock and save
+        verify(userRepository).save(any(User.class)); // 재해시 + unlock 상태를 한 번에 저장
+        assertThat(testUser.getPswd()).isEqualTo("{bcrypt}migrated");
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
         // [잠금 해제 검증] 성공 시 unlock() → lckYn='N', lckCnt=0.
         // (뮤턴트: unlock() 라인 삭제 시 lckCnt 는 초기 null 로 남아 이 어서션이 킬)
         assertThat(testUser.getLckYn()).isEqualTo("N");
         assertThat(testUser.getLckCnt()).isEqualTo(0);
+    }
+
+    @Test
+    @DisplayName("표식 없는 레거시 해시도 호환 인증 후 BCrypt로 재해시")
+    void authenticate_success_bareLegacyHash_rehashes() {
+        User bareLegacyUser = User.builder()
+                .userId("legacy")
+                .esntlId("USR_0000000000009")
+                .pswd("legacyHash")
+                .userNm("Legacy User")
+                .lckYn("N")
+                .build();
+        when(userRepository.findById("legacy")).thenReturn(Optional.of(bareLegacyUser));
+        when(egovPasswordEncoder.matches("password", "legacyHash", "legacy")).thenReturn(true);
+        when(passwordEncoder.encode("password")).thenReturn("{bcrypt}migrated");
+
+        Authentication result = authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("legacy", "password"));
+
+        assertThat(result.isAuthenticated()).isTrue();
+        assertThat(bareLegacyUser.getPswd()).isEqualTo("{bcrypt}migrated");
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("레거시 userId salt 불일치 시 esntlId salt를 호환 검증")
+    void authenticate_success_legacyEsntlIdSalt_rehashes() {
+        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        when(egovPasswordEncoder.matches("password", "hashedPassword", "testuser")).thenReturn(false);
+        when(egovPasswordEncoder.matches("password", "hashedPassword", "USR_0000000000001"))
+                .thenReturn(true);
+        when(passwordEncoder.encode("password")).thenReturn("{bcrypt}migrated");
+
+        Authentication result = authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("testuser", "password"));
+
+        assertThat(result.isAuthenticated()).isTrue();
+        assertThat(testUser.getPswd()).isEqualTo("{bcrypt}migrated");
+    }
+
+    @Test
+    @DisplayName("현재 BCrypt 정책이면 재해시하지 않음")
+    void authenticate_success_currentStandardHash_doesNotRehash() {
+        User standardUser = User.builder()
+                .userId("standard")
+                .esntlId("USR_0000000000010")
+                .pswd("{bcrypt}current")
+                .userNm("Standard User")
+                .lckYn("N")
+                .build();
+        when(userRepository.findById("standard")).thenReturn(Optional.of(standardUser));
+        when(passwordEncoder.matches("password", "{bcrypt}current")).thenReturn(true);
+        when(passwordEncoder.upgradeEncoding("{bcrypt}current")).thenReturn(false);
+
+        Authentication result = authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("standard", "password"));
+
+        assertThat(result.isAuthenticated()).isTrue();
+        assertThat(standardUser.getPswd()).isEqualTo("{bcrypt}current");
+        verify(passwordEncoder, never()).encode(anyString());
+        verifyNoInteractions(egovPasswordEncoder);
+    }
+
+    @Test
+    @DisplayName("낮은 BCrypt 정책은 성공 로그인 시 현재 정책으로 재해시")
+    void authenticate_success_outdatedStandardHash_rehashes() {
+        User standardUser = User.builder()
+                .userId("standard")
+                .esntlId("USR_0000000000010")
+                .pswd("{bcrypt}old-cost")
+                .userNm("Standard User")
+                .lckYn("N")
+                .build();
+        when(userRepository.findById("standard")).thenReturn(Optional.of(standardUser));
+        when(passwordEncoder.matches("password", "{bcrypt}old-cost")).thenReturn(true);
+        when(passwordEncoder.upgradeEncoding("{bcrypt}old-cost")).thenReturn(true);
+        when(passwordEncoder.encode("password")).thenReturn("{bcrypt}current-cost");
+
+        authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("standard", "password"));
+
+        assertThat(standardUser.getPswd()).isEqualTo("{bcrypt}current-cost");
+        verify(userRepository).save(standardUser);
+    }
+
+    @Test
+    @DisplayName("재해시 실패는 기존 검증 성공을 막지 않고 다음 로그인 재시도를 남김")
+    void authenticate_success_rehashFailure_keepsCompatibleLogin() {
+        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        when(egovPasswordEncoder.matches("password", "hashedPassword", "testuser")).thenReturn(true);
+        when(passwordEncoder.encode("password")).thenThrow(new IllegalStateException("encoder unavailable"));
+
+        Authentication result = authenticationProvider.authenticate(
+                new UsernamePasswordAuthenticationToken("testuser", "password"));
+
+        assertThat(result.isAuthenticated()).isTrue();
+        assertThat(testUser.getPswd()).isEqualTo("{egov}hashedPassword");
+        verify(userRepository).save(testUser);
     }
 
     @Test
@@ -110,8 +211,7 @@ class EgovAuthenticationProviderTest {
         // Given
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "wrongpassword");
         lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
-        lenient().when(egovPasswordEncoder.encode("wrongpassword", "testuser")).thenReturn("wrongHash");
-        lenient().when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+        lenient().when(egovPasswordEncoder.matches(anyString(), anyString(), anyString())).thenReturn(false);
 
         // When & Then
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
@@ -119,6 +219,22 @@ class EgovAuthenticationProviderTest {
         verify(userRepository).save(any(User.class)); // Lock count incremented
         // [잠금 카운터 검증] 실패 시 incrementLockCount() → null→1.
         // (뮤턴트: incrementLockCount() 라인 삭제 시 lckCnt 는 null 로 남아 이 어서션이 킬)
+        assertThat(testUser.getLckCnt()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("레거시 비밀번호 불일치는 표준 인코더 오류로 위장하지 않고 인증 실패로 처리")
+    void authenticate_legacyMismatch_doesNotFallThroughToStandardEncoder() {
+        Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "wrongpassword");
+        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
+        when(egovPasswordEncoder.matches("wrongpassword", "hashedPassword", "testuser")).thenReturn(false);
+        when(egovPasswordEncoder.matches("wrongpassword", "hashedPassword", "USR_0000000000001"))
+                .thenReturn(false);
+        assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
+                .isInstanceOf(BadCredentialsException.class)
+                .isNotInstanceOf(AuthenticationServiceException.class);
+
+        verify(passwordEncoder, never()).matches(anyString(), anyString());
         assertThat(testUser.getLckCnt()).isEqualTo(1);
     }
 
@@ -153,18 +269,23 @@ class EgovAuthenticationProviderTest {
     @Test
     @DisplayName("저장 비밀번호 해시 파손은 계정 실패 횟수를 올리지 않음")
     void authenticate_brokenStoredHash_isServiceFailureNotMismatch() {
+        User brokenUser = User.builder()
+                .userId("testuser")
+                .esntlId("USR_0000000000001")
+                .pswd("{unknown}broken")
+                .userNm("Test User")
+                .lckYn("N")
+                .build();
         Authentication auth = new UsernamePasswordAuthenticationToken("testuser", "password");
-        when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
-        when(egovPasswordEncoder.encode("password", "testuser")).thenReturn("not-matched");
-        when(egovPasswordEncoder.encode("password", "USR_0000000000001")).thenReturn("not-matched");
-        when(passwordEncoder.matches("password", "{egov}hashedPassword"))
+        when(userRepository.findById("testuser")).thenReturn(Optional.of(brokenUser));
+        when(passwordEncoder.matches("password", "{unknown}broken"))
                 .thenThrow(new IllegalArgumentException("unknown hash id"));
 
         assertThatThrownBy(() -> authenticationProvider.authenticate(auth))
                 .isInstanceOf(AuthenticationServiceException.class)
                 .isNotInstanceOf(BadCredentialsException.class);
 
-        assertThat(testUser.getLckCnt()).isNull();
+        assertThat(brokenUser.getLckCnt()).isNull();
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -196,7 +317,8 @@ class EgovAuthenticationProviderTest {
                 .build();
         Authentication auth = new UsernamePasswordAuthenticationToken("webmaster", "password");
         lenient().when(userRepository.findById("webmaster")).thenReturn(Optional.of(webmasterUser));
-        lenient().when(egovPasswordEncoder.encode("password", "webmaster")).thenReturn("hashedPassword");
+        lenient().when(egovPasswordEncoder.matches("password", "hashedPassword", "webmaster")).thenReturn(true);
+        lenient().when(passwordEncoder.encode("password")).thenReturn("{bcrypt}migrated");
         UserAuthority adminAuthority = UserAuthority.builder()
                 .scrtyDcsnTrgtId("USR_0000000000001")
                 .authrtId("ROLE_ADMIN")
@@ -219,8 +341,7 @@ class EgovAuthenticationProviderTest {
     void lockout_belowThreshold_notLocked() {
         // Given
         lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
-        lenient().when(egovPasswordEncoder.encode(anyString(), anyString())).thenReturn("wrongHash");
-        lenient().when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+        lenient().when(egovPasswordEncoder.matches(anyString(), anyString(), anyString())).thenReturn(false);
 
         // When — 임계값 직전(4회)까지 실패
         for (int i = 0; i < MAX_FAILURES - 1; i++) {
@@ -238,8 +359,7 @@ class EgovAuthenticationProviderTest {
     void lockout_atThreshold_locks() {
         // Given
         lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
-        lenient().when(egovPasswordEncoder.encode(anyString(), anyString())).thenReturn("wrongHash");
-        lenient().when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+        lenient().when(egovPasswordEncoder.matches(anyString(), anyString(), anyString())).thenReturn(false);
 
         // When — 5회 실패 (5회째까지는 잠금 검사를 통과하므로 전부 BadCredentials)
         for (int i = 0; i < MAX_FAILURES; i++) {
@@ -276,7 +396,6 @@ class EgovAuthenticationProviderTest {
                 .build();
         lenient().when(userRepository.findById("lockeduser")).thenReturn(Optional.of(lockedUser));
         // 비밀번호는 '정답'이지만 잠금 검사가 먼저다
-        lenient().when(egovPasswordEncoder.encode("password", "lockeduser")).thenReturn("hashedPassword");
 
         Authentication auth = new UsernamePasswordAuthenticationToken("lockeduser", "password");
 
@@ -303,7 +422,7 @@ class EgovAuthenticationProviderTest {
                 .lckLastPnttm(LocalDateTime.now().minusMinutes(LOCK_MINUTES + 1))
                 .build();
         lenient().when(userRepository.findById("expireduser")).thenReturn(Optional.of(expiredLockUser));
-        lenient().when(egovPasswordEncoder.encode("password", "expireduser")).thenReturn("hashedPassword");
+        lenient().when(egovPasswordEncoder.matches("password", "hashedPassword", "expireduser")).thenReturn(true);
         lenient().when(passwordEncoder.encode(anyString())).thenReturn("{bcrypt}migrated");
 
         Authentication auth = new UsernamePasswordAuthenticationToken("expireduser", "password");
@@ -326,8 +445,7 @@ class EgovAuthenticationProviderTest {
         // Given — 운영 긴급 회피 스위치
         ReflectionTestUtils.setField(authenticationProvider, "maxLoginFailures", 0);
         lenient().when(userRepository.findById("testuser")).thenReturn(Optional.of(testUser));
-        lenient().when(egovPasswordEncoder.encode(anyString(), anyString())).thenReturn("wrongHash");
-        lenient().when(passwordEncoder.matches(anyString(), anyString())).thenReturn(false);
+        lenient().when(egovPasswordEncoder.matches(anyString(), anyString(), anyString())).thenReturn(false);
 
         // When — 임계값을 훌쩍 넘겨 실패
         for (int i = 0; i < MAX_FAILURES + 3; i++) {

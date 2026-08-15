@@ -3,6 +3,8 @@ import nuri.foundation.domain.common.BaseEntity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.AccessLevel;
@@ -18,8 +20,9 @@ import lombok.NoArgsConstructor;
 public class LoginLog extends BaseEntity {
 
     @Id
-    @Column(length = 20)
-    private String logId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "lgn_sn", updatable = false, nullable = false)
+    private Long lgnSn;
 
     @Column(length = 20)
     private String userId;
@@ -36,9 +39,9 @@ public class LoginLog extends BaseEntity {
     @Column(length = 12)
     private String errCd;
 
-    private LoginLog(String logId, String userId, String lgnIpAddr, String cntnMthdCd, String errOcrnYn,
+    private LoginLog(Long lgnSn, String userId, String lgnIpAddr, String cntnMthdCd, String errOcrnYn,
             String errCd) {
-        this.logId = logId;
+        this.lgnSn = lgnSn;
         this.userId = userId;
         this.lgnIpAddr = lgnIpAddr;
         this.cntnMthdCd = cntnMthdCd;
@@ -47,9 +50,9 @@ public class LoginLog extends BaseEntity {
     }
 
     @Builder
-    public static LoginLog create(String logId, String userId, String lgnIpAddr, String cntnMthdCd, String errOcrnYn,
+    public static LoginLog create(Long lgnSn, String userId, String lgnIpAddr, String cntnMthdCd, String errOcrnYn,
             String errCd) {
-        return new LoginLog(logId, userId, lgnIpAddr, cntnMthdCd, errOcrnYn, errCd);
+        return new LoginLog(lgnSn, userId, lgnIpAddr, cntnMthdCd, errOcrnYn, errCd);
     }
 
 }

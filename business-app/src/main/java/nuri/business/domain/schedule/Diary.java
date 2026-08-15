@@ -3,6 +3,8 @@ package nuri.business.domain.schedule;
 import nuri.foundation.domain.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.io.Serializable;
@@ -23,11 +25,10 @@ import lombok.NoArgsConstructor;
 public class Diary extends BaseEntity implements Serializable {
 
     @Id
-    @Column(length = 20)
-    private String diaryId;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long diarySn;
 
-    @Column(length = 20)
-    private String schdlId;
+    private Long schdlSn;
 
     private Integer diaryPrgrsRt;
 
@@ -39,33 +40,31 @@ public class Diary extends BaseEntity implements Serializable {
 
     @Column(length = 4000)
     private String excptnMttr;
+    private Long atchFileSn;
 
-    @Column(length = 20)
-    private String atchFileId;
-
-    private Diary(String diaryId, String schdlId, Integer diaryPrgrsRt, String diaryNm,
-            String drctnMttr, String excptnMttr, String atchFileId) {
-        this.diaryId = diaryId;
-        this.schdlId = schdlId;
+    private Diary(Long diarySn, Long schdlSn, Integer diaryPrgrsRt, String diaryNm,
+            String drctnMttr, String excptnMttr, Long atchFileSn) {
+        this.diarySn = diarySn;
+        this.schdlSn = schdlSn;
         this.diaryPrgrsRt = diaryPrgrsRt;
         this.diaryNm = diaryNm;
         this.drctnMttr = drctnMttr;
         this.excptnMttr = excptnMttr;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
     }
 
     @Builder
-    public static Diary create(String diaryId, String schdlId, Integer diaryPrgrsRt, String diaryNm,
-            String drctnMttr, String excptnMttr, String atchFileId) {
-        return new Diary(diaryId, schdlId, diaryPrgrsRt, diaryNm, drctnMttr, excptnMttr, atchFileId);
+    public static Diary create(Long diarySn, Long schdlSn, Integer diaryPrgrsRt, String diaryNm,
+            String drctnMttr, String excptnMttr, Long atchFileSn) {
+        return new Diary(diarySn, schdlSn, diaryPrgrsRt, diaryNm, drctnMttr, excptnMttr, atchFileSn);
     }
 
     public void update(Integer diaryPrgrsRt, String diaryNm, String drctnMttr,
-            String excptnMttr, String atchFileId) {
+            String excptnMttr, Long atchFileSn) {
         this.diaryPrgrsRt = diaryPrgrsRt;
         this.diaryNm = diaryNm;
         this.drctnMttr = drctnMttr;
         this.excptnMttr = excptnMttr;
-        this.atchFileId = atchFileId;
+        this.atchFileSn = atchFileSn;
     }
 }

@@ -14,27 +14,25 @@ import java.util.List;
 @Builder
 @Schema(description = "쪽지 정보")
 public class NoteDto {
-    @Schema(description = "쪽지 ID")
-    @Size(max = 20)
-    private String noteId;
+    @Schema(description = "쪽지 일련번호")
+    private Long noteSn;
     @Schema(description = "제목")
     private String noteSj;
     @Schema(description = "내용")
     @Size(max = 4000)
     private String noteCn;
-    @Schema(description = "첨부 파일 ID")
-    @Size(max = 30)
-    private String atchFileId;
+    @Schema(description = "첨부파일 일련번호")
+    private Long atchFileSn;
 
-    @Schema(description = "쪽지 발신 ID")
-    private String noteDsptchId;
+    @Schema(description = "쪽지 발송 일련번호")
+    private Long noteSndngSn;
     @Schema(description = "발신자 ID")
     private String dsptchUserId;
     @Schema(description = "발신자 명")
     private String trnsmiterNm;
 
-    @Schema(description = "쪽지 수신 ID")
-    private String noteRecptnId;
+    @Schema(description = "쪽지 수신 일련번호")
+    private Long noteRcptnSn;
     @Schema(description = "수신자 ID")
     private String rcverId;
     @Schema(description = "수신자 명")

@@ -33,29 +33,29 @@ class DeptJobUserService extends UserService {
   /**
    * 부서 업무함 상세 조회
    */
-  async getDeptJobBox(id: string, config?: AxiosRequestConfig): Promise<DeptJobBxVO> {
-    return this.get<DeptJobBxVO>(`/boxes/${id}`, config);
+  async getDeptJobBox(deptTaskBoxSn: number, config?: AxiosRequestConfig): Promise<DeptJobBxVO> {
+    return this.get<DeptJobBxVO>(`/boxes/${deptTaskBoxSn}`, config);
   }
 
   /**
    * 부서 업무함 등록
    */
-  async createDeptJobBox(data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<string> {
-    return this.post<string>('/boxes', data, config);
+  async createDeptJobBox(data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<number> {
+    return this.post<number>('/boxes', data, config);
   }
 
   /**
    * 부서 업무함 수정
    */
-  async updateDeptJobBox(id: string, data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/boxes/${id}`, data, config);
+  async updateDeptJobBox(deptTaskBoxSn: number, data: Partial<DeptJobBxVO>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/boxes/${deptTaskBoxSn}`, data, config);
   }
 
   /**
    * 부서 업무함 삭제
    */
-  async deleteDeptJobBox(id: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/boxes/${id}`, config);
+  async deleteDeptJobBox(deptTaskBoxSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/boxes/${deptTaskBoxSn}`, config);
   }
 
   /**
@@ -70,7 +70,7 @@ class DeptJobUserService extends UserService {
       searchWrd?: string;
       /** '0' 업무명 · '1' 업무내용 · '2' 담당자. 미지정 시 서버가 업무명으로 처리한다. */
       searchCondition?: string;
-      deptJobbxId?: string;
+      deptTaskBoxSn?: number;
       deptId?: string;
       /**
        * 소유 스코프. 'mine'(기본) = 내가 담당자인 업무만, 'dept' = 부서 전체.
@@ -92,7 +92,7 @@ class DeptJobUserService extends UserService {
         scope: params.scope ?? 'mine',
         ...(params.searchWrd ? { searchWrd: params.searchWrd } : {}),
         ...(params.searchCondition ? { searchCondition: params.searchCondition } : {}),
-        ...(params.deptJobbxId ? { deptJobbxId: params.deptJobbxId } : {}),
+        ...(params.deptTaskBoxSn ? { deptTaskBoxSn: params.deptTaskBoxSn } : {}),
         ...(params.deptId ? { deptId: params.deptId } : {}),
       },
     });
@@ -101,30 +101,30 @@ class DeptJobUserService extends UserService {
   /**
    * 부서 업무 상세 조회
    */
-  async getDeptJob(id: string, config?: AxiosRequestConfig): Promise<DeptJobVO> {
-    return this.get<DeptJobVO>(`/${id}`, config);
+  async getDeptJob(deptTaskSn: number, config?: AxiosRequestConfig): Promise<DeptJobVO> {
+    return this.get<DeptJobVO>(`/${deptTaskSn}`, config);
   }
 
   /**
    * 부서 업무 등록
    */
-  async createDeptJob(data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<string> {
+  async createDeptJob(data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<number> {
     // 서버가 채번한 식별자를 돌려준다(등록 직후 상세로 이동하기 위해 필요).
-    return this.post<string>('', data, config);
+    return this.post<number>('', data, config);
   }
 
   /**
    * 부서 업무 수정
    */
-  async updateDeptJob(id: string, data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<void> {
-    return this.put<void>(`/${id}`, data, config);
+  async updateDeptJob(deptTaskSn: number, data: Partial<DeptJobVO>, config?: AxiosRequestConfig): Promise<void> {
+    return this.put<void>(`/${deptTaskSn}`, data, config);
   }
 
   /**
    * 부서 업무 삭제
    */
-  async deleteDeptJob(id: string, config?: AxiosRequestConfig): Promise<void> {
-    return this.delete<void>(`/${id}`, config);
+  async deleteDeptJob(deptTaskSn: number, config?: AxiosRequestConfig): Promise<void> {
+    return this.delete<void>(`/${deptTaskSn}`, config);
   }
 }
 

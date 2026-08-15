@@ -99,6 +99,7 @@ function currentTableProps(): MockTableProps {
 }
 
 const SYSTEM_ROW = {
+  sysLogSn: 101,
   dmndId: 'SYS-001',
   srvcNm: 'AccountService',
   methodNm: 'findAccounts',
@@ -110,7 +111,7 @@ const SYSTEM_ROW = {
 } satisfies SysLogDto;
 
 const LOGIN_ROW = {
-  logId: 'LGN-001',
+  lgnSn: 101,
   loginId: 'alice',
   loginIp: '10.0.0.2',
   loginMthd: 'LOGIN',
@@ -134,7 +135,7 @@ const USER_ROW = {
 } satisfies UserLogDto;
 
 const WEB_ROW = {
-  dmndId: 'WEB-001',
+  webLogSn: 101,
   url: '/api/v1/orders/42',
   dmndUserId: 'web-admin',
   dmndUserIpAddr: '10.0.0.3',
@@ -143,6 +144,7 @@ const WEB_ROW = {
 } satisfies WebLogDto;
 
 const PRIVACY_ROW = {
+  prvcLogSn: 101,
   dmndId: 'PRV-001',
   inqDt: '2026-08-13T10:11:12',
   srvcNm: 'ResidentService',
@@ -158,7 +160,7 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     clientHarness.setPage.mockReset();
   });
 
-  it('renders the SYS generated DTO fields and uses dmndId as the row key', () => {
+  it('renders the SYS generated DTO fields and uses sysLogSn as the row key', () => {
     clientHarness.queryData = pageOf(SYSTEM_ROW);
     render(<SystemLogsSystemClient />);
 
@@ -166,18 +168,18 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     for (const value of ['SYS-001', '20260813', 'AccountService', 'findAccounts', '12', 'SUCCESS']) {
       expect(table.getByText(value)).toBeInTheDocument();
     }
-    expect(currentTableProps().keyField).toBe('dmndId');
+    expect(currentTableProps().keyField).toBe('sysLogSn');
   });
 
-  it('renders the LGN generated DTO fields and uses logId as the row key', () => {
+  it('renders the LGN generated DTO fields and uses lgnSn as the row key', () => {
     clientHarness.queryData = pageOf(LOGIN_ROW);
     render(<SystemLogsLoginClient />);
 
     const table = within(screen.getByTestId('data-table'));
-    for (const value of ['LGN-001', '2026-08-13 10:11:12', 'alice', '10.0.0.2', 'LOGIN', 'E_AUTH']) {
+    for (const value of ['101', '2026-08-13 10:11:12', 'alice', '10.0.0.2', 'LOGIN', 'E_AUTH']) {
       expect(table.getByText(value)).toBeInTheDocument();
     }
-    expect(currentTableProps().keyField).toBe('logId');
+    expect(currentTableProps().keyField).toBe('lgnSn');
   });
 
   it('builds a stable USR composite row identifier and renders all aggregate counters', () => {
@@ -196,18 +198,18 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     });
   });
 
-  it('renders every WEB generated DTO field instead of legacy aliases', () => {
+  it('renders every WEB generated DTO field and uses webLogSn as the row key', () => {
     clientHarness.queryData = pageOf(WEB_ROW);
     render(<SystemLogsWebClient />);
 
     const table = within(screen.getByTestId('data-table'));
-    for (const value of ['WEB-001', '/api/v1/orders/42', 'web-admin', '37', '10.0.0.3', '20260813101112']) {
+    for (const value of ['101', '/api/v1/orders/42', 'web-admin', '37', '10.0.0.3', '20260813101112']) {
       expect(table.getByText(value)).toBeInTheDocument();
     }
-    expect(currentTableProps().keyField).toBe('dmndId');
+    expect(currentTableProps().keyField).toBe('webLogSn');
   });
 
-  it('renders the PRV generated DTO fields and uses dmndId as the row key', () => {
+  it('renders the PRV generated DTO fields and uses prvcLogSn as the row key', () => {
     clientHarness.queryData = pageOf(PRIVACY_ROW);
     render(<SystemLogsPrivacyClient />);
 
@@ -215,6 +217,6 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     for (const value of ['2026-08-13 10:11:12', 'resident-name', 'ResidentService', 'privacy-admin', '10.0.0.4']) {
       expect(table.getByText(value)).toBeInTheDocument();
     }
-    expect(currentTableProps().keyField).toBe('dmndId');
+    expect(currentTableProps().keyField).toBe('prvcLogSn');
   });
 });

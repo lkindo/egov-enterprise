@@ -51,17 +51,17 @@ vi.mock('@/services/business/user/deptJob/DeptJobUserService', () => ({
   },
 }));
 
-function renderDetail(id = 'TASK_0001') {
+function renderDetail(sn = 1) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <DeptJobDetailClient deptTaskId={id} />
+      <DeptJobDetailClient deptTaskSn={sn} />
     </QueryClientProvider>
   );
 }
 
 const JOB = {
-  deptTaskId: 'TASK_0001',
+  deptTaskSn: 1,
   deptTaskNm: '주간 보고 작성',
   deptTaskCn: '팀 주간 실적을 정리한다.',
   prrtyRnk: '1',
@@ -77,11 +77,11 @@ describe('DeptJobDetailClient', () => {
   });
 
   it('[회귀] 전달받은 id 로 해당 업무를 조회해 상세를 보여준다', async () => {
-    renderDetail('TASK_0001');
+    renderDetail(1);
 
     expect(await screen.findByText('주간 보고 작성')).toBeInTheDocument();
     // 종전 구현은 id 를 아예 쓰지 않았다. 조회 인자를 직접 확인한다.
-    expect(getDeptJobMock).toHaveBeenCalledWith('TASK_0001');
+    expect(getDeptJobMock).toHaveBeenCalledWith(1);
     expect(screen.getByText('팀 주간 실적을 정리한다.')).toBeInTheDocument();
     expect(screen.getByText('홍길동')).toBeInTheDocument();
     expect(screen.getByText('높음')).toBeInTheDocument();
@@ -89,8 +89,8 @@ describe('DeptJobDetailClient', () => {
 
   it('업무함·담당자가 없어도 상세가 렌더된다', async () => {
     // 등록 폼에 업무함/담당자 선택 UI 가 없어 새 업무는 항상 이 상태다.
-    getDeptJobMock.mockResolvedValue({ deptTaskId: 'TASK_0002', deptTaskNm: '업무함 없는 업무' });
-    renderDetail('TASK_0002');
+    getDeptJobMock.mockResolvedValue({ deptTaskSn: 2, deptTaskNm: '업무함 없는 업무' });
+    renderDetail(2);
 
     expect(await screen.findByText('업무함 없는 업무')).toBeInTheDocument();
     expect(screen.getByText('업무함 미지정')).toBeInTheDocument();
@@ -109,18 +109,18 @@ describe('DeptJobDetailClient', () => {
 
   it('삭제는 확인을 거쳐 해당 id 로 요청한다', async () => {
     deleteDeptJobMock.mockResolvedValue(undefined);
-    renderDetail('TASK_0001');
+    renderDetail(1);
     await screen.findByText('주간 보고 작성');
 
     await userEvent.click(screen.getByRole('button', { name: /삭제/ }));
 
     await waitFor(() => expect(confirmMock).toHaveBeenCalled());
-    await waitFor(() => expect(deleteDeptJobMock).toHaveBeenCalledWith('TASK_0001'));
+    await waitFor(() => expect(deleteDeptJobMock).toHaveBeenCalledWith(1));
   });
 
   it('조회 실패 시 목록으로 돌아갈 수단을 제공한다', async () => {
     getDeptJobMock.mockRejectedValue(new Error('404'));
-    renderDetail('TASK_MISSING');
+    renderDetail(999);
 
     expect(await screen.findByText(/업무를 찾을 수 없습니다/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: '목록으로' }));
