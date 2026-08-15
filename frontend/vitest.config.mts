@@ -64,11 +64,16 @@ export default defineConfig({
       // ⚠ 이 값의 완화나 include 축소로 수치를 맞추지 않는다. 분모가 늘면(새 소스 추가) 테스트도
       //   함께 보강한다. 확보한 수준은 그때그때 잠근다(build.gradle 의 JaCoCo 래칫과 동일 원칙).
       //   branches 는 27 을 유지한다 — 실측 27.71 이라 28 로 올리면 미달이다.
+      // [2026-08-15 실측 래칫 · 4차] system 관리자 서비스 8종(통계·부서·커뮤니티·온라인투표·
+      // 사용자권한·로그인정책·배너·감사)에 계약 테스트 199개를 추가한 결과:
+      // statements 33.70 / branches 27.83 / functions 29.69 / lines 34.39 (111 files / 966 tests).
+      // functions 가 다시 크게 올랐다(28.53 -> 29.69) — 서비스 메서드가 함수 분모의 큰 몫이다.
+      // statements·branches 는 실측이 각각 33.70/27.83 이라 34/28 로는 올리지 못한다(미달).
       thresholds: {
         statements: 33,
         branches: 27,
-        functions: 28,
-        lines: 33,
+        functions: 29,
+        lines: 34,
       },
     },
   },
