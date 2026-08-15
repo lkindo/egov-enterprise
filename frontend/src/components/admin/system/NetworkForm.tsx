@@ -12,13 +12,13 @@ import {
 } from "@/components/ui/form";
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { NetworkInfo } from '@/services/foundation/system/networkService';
+import type { Network } from '@/services/foundation/system/NetworkAdminService';
 import { networkSchema } from '@/lib/validation/schemas';
 
 type NetworkFormValues = z.infer<typeof networkSchema>;
 
 interface NetworkFormProps {
-    initialData?: Partial<NetworkInfo>;
+    initialData?: Partial<Network>;
     onSubmit: (data: NetworkFormValues) => Promise<void>;
     onCancel: () => void;
 }

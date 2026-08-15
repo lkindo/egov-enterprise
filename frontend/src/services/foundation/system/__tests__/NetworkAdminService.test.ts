@@ -11,10 +11,10 @@
  *    제거되고 `admin/{category}/` 접두가 붙어 최종 `admin/system/ntwrksvc-monitoring` 이 된다
  *    (category 기본값 'system'). 백엔드 `NetworkMonitoringApiController` 의
  *    `@RequestMapping("/api/v1/admin/system/ntwrksvc-monitoring")` 와 정확히 맞물리는 지점이다.
- *    ⚠ 같은 디렉터리의 형제 파일 `networkService.ts` 는 CRUD 를 `/admin/system/networks` 로 보내는데,
- *    **그 경로를 매핑하는 컨트롤러는 저장소에 존재하지 않는다**(백엔드 전량 grep 결과 네트워크 관련
- *    컨트롤러는 위 한 개뿐). 경로 이름이 "monitoring 인데 CRUD 라니 이상하다"는 직관으로 이쪽을
- *    `networks` 로 "정정"하면 4개 메서드가 동시에 404 가 된다. 선행 슬래시가 되살아나는 경우도
+ *    **`/admin/system/networks` 경로를 매핑하는 컨트롤러는 저장소에 존재하지 않는다**(백엔드 전량
+ *    grep 결과 네트워크 관련 컨트롤러는 위 한 개뿐). 경로 이름이 "monitoring 인데 CRUD 라니
+ *    이상하다"는 직관으로 이쪽을 `networks` 로 "정정"하면 4개 메서드가 동시에 404 가 된다. 선행
+ *    슬래시가 되살아나는 경우도
  *    마찬가지로 치명적이다 — axios `baseURL`('/api/v1')의 경로 세그먼트가 통째로 날아가 절대 경로로
  *    해석된다.
  *
@@ -68,8 +68,8 @@ import { networkAdminService, type Network } from '../NetworkAdminService';
  */
 const BASE = 'admin/system/ntwrksvc-monitoring';
 
-/** 형제 서비스 `networkService.ts` 가 쓰는 경로 — 이쪽으로 새면 백엔드 매핑이 없어 404 다. */
-const SIBLING_BASE = 'admin/system/networks';
+/** 백엔드 매핑이 없는 금지 경로 — 이쪽으로 새면 404 다. */
+const FORBIDDEN_BASE = 'admin/system/networks';
 
 describe('NetworkAdminService — 네트워크 노드 관리자 API 계약', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -83,13 +83,13 @@ describe('NetworkAdminService — 네트워크 노드 관리자 API 계약', () 
       expect(client.get).not.toHaveBeenCalledWith(`${BASE}/`, { params: undefined });
     });
 
-    it('형제 서비스 경로(admin/system/networks)로 새지 않는다 — 그 경로엔 컨트롤러가 없다', async () => {
-      // networkService.ts 가 같은 도메인을 /admin/system/networks 로 부르지만 백엔드 매핑은
-      // ntwrksvc-monitoring 하나뿐이다. 이름이 자연스러워 보인다는 이유로 옮기면 전 메서드가 404 다.
+    it('미매핑 경로(admin/system/networks)로 새지 않는다 — 그 경로엔 컨트롤러가 없다', async () => {
+      // 백엔드 매핑은 ntwrksvc-monitoring 하나뿐이다. 이름이 자연스러워 보인다는 이유로
+      // networks로 옮기면 전 메서드가 404 다.
       await networkAdminService.getNetworks();
 
       expect(client.get).toHaveBeenCalledWith(BASE, { params: undefined });
-      expect(client.get).not.toHaveBeenCalledWith(SIBLING_BASE, { params: undefined });
+      expect(client.get).not.toHaveBeenCalledWith(FORBIDDEN_BASE, { params: undefined });
     });
 
     it('params 없이 config 만 넘겨도 timeout 이 유실되지 않는다', async () => {
@@ -395,7 +395,7 @@ describe('NetworkAdminService — 네트워크 노드 관리자 API 계약', () 
       paths.forEach((path) => {
         expect(path.startsWith(BASE)).toBe(true);
         expect(path.startsWith('/')).toBe(false);
-        expect(path.startsWith(SIBLING_BASE)).toBe(false);
+        expect(path.startsWith(FORBIDDEN_BASE)).toBe(false);
       });
     });
   });
