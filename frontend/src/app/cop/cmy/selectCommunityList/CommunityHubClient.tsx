@@ -46,7 +46,9 @@ export default function CommunityHubClient({
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['communities', searchKeyword, page],
-    queryFn: () => communityService.getCommunityList({ page, searchKeyword }),
+    // StandardDataTable 의 currentPage 는 1-based 이다. 공통 ApiService 의 `page`는
+    // 0-based 입력으로 간주해 +1 하므로, 여기서는 백엔드 계약인 pageIndex 를 명시한다.
+    queryFn: () => communityService.getCommunityList({ pageIndex: page, searchKeyword }),
     initialData: (page === 1 && !searchKeyword) ? initialData : undefined
   });
 

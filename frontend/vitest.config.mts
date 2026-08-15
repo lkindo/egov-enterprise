@@ -53,15 +53,15 @@ export default defineConfig({
         // i18n 메시지 로더 — 선언적 설정에 가깝다.
         'src/i18n/**',
       ],
-      // [2026-08-13 실측 래칫] 로그 계약·페이지 경계 테스트 반영 결과:
-      // statements 22.88 / branches 18.34 / functions 17.66 / lines 23.44.
-      // 기존에는 수치만 출력하고 어떤 하락도 통과했으므로 현재 실측 바로 아래를 최소선으로 고정한다.
-      // 개선 시에는 테스트를 늘린 뒤 이 값도 함께 상향하며, include 축소로 수치를 올리지 않는다.
+      // [2026-08-15 실측 래칫] 인증/권한·admin mutation·모니터링·오류 경계 테스트 반영 결과:
+      // statements 30.11 / branches 26.05 / functions 25.04 / lines 30.64 (88 files / 444 tests).
+      // include 범위를 줄이지 않고 목표 30/25/25/30을 달성했다. 이후 분모가 늘면 테스트도 함께
+      // 보강해야 하며, 이 값의 완화나 include 축소로 수치를 맞추지 않는다.
       thresholds: {
-        statements: 22,
-        branches: 18,
-        functions: 17,
-        lines: 23,
+        statements: 30,
+        branches: 25,
+        functions: 25,
+        lines: 30,
       },
     },
   },

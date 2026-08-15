@@ -265,9 +265,9 @@ public class ProductService extends BaseAbstractService {
 | Backend 전체 로컬 게이트 | `./gradlew localGate` | 하네스·실 DB·전 모듈 테스트·JaCoCo·프런트 unit coverage |
 | Full-stack 통합 게이트 | `npm run verify` / `make verify` | Backend·Frontend 핵심 게이트 단일 진입점(실 DB/E2E는 별도) |
 | Frontend 타입 | `cd frontend && npx tsc --noEmit` | §0.6 HARD |
-| 커버리지 | `make coverage` / `npm run test:coverage` | JaCoCo |
+| 커버리지 | `make coverage` / `pnpm -C frontend test:coverage` | Backend JaCoCo + Frontend Vitest(30/25/25/30 하한) |
 | 시크릿 스캔 | `gitleaks protect --staged --verbose`(설치 시) | pre-commit은 로컬 보조, CI `secret-scan`이 required check |
 | 브랜치 보호 정합 | `npm run verify:ops` | 저장소 명세·CI·실제 GitHub ruleset 대조(네트워크·관리 읽기 권한 필요) |
 
 ---
-*Last Updated: 2026-08-13 (Codex — Node 22·관리자 최초 프로비저닝·explicit CRUD 스캐폴드·DB RBAC 집행·80엔티티/83테이블/888컬럼 실 DB 검증·현행 품질 게이트로 동기화. 삭제된 FAQ 참조를 AddressBook 예제로 교체. 이전: 2026-07-20 제네릭 CRUD 미구현 상태 정직화, 2026-07-11 온보딩 런북 신설.)*
+*Last Updated: 2026-08-15 (Codex — Frontend Vitest 88파일/444테스트와 coverage 30/25/25/30 하한 동기화. 이전: 2026-08-13 Node 22·관리자 최초 프로비저닝·explicit CRUD 스캐폴드·DB RBAC 집행·80엔티티/83테이블/888컬럼 실 DB 검증.)*
