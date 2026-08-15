@@ -8,6 +8,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import nuri.business.domain.auth.Authority;
 import nuri.business.domain.auth.RoleInfo;
+import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.code.CommonCode;
 import nuri.business.domain.code.CommonCodeCategory;
 import nuri.business.domain.code.CommonCodeGroup;
@@ -19,6 +20,7 @@ import nuri.business.domain.user.entity.DeptManage;
 import nuri.business.domain.user.entity.User;
 import nuri.business.service.auth.dto.AuthorManageDto;
 import nuri.business.service.auth.dto.RoleManageDto;
+import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.business.service.code.dto.CmmnClCodeDto;
 import nuri.business.service.code.dto.CmmnCodeDto;
 import nuri.business.service.code.dto.CmmnDetailCodeDto;
@@ -92,7 +94,11 @@ class InputContractMirrorLinterTest {
             new LengthBinding(Authority.class, AuthorManageDto.class,
                     List.of("authrtCd", "authrtNm", "authrtExpln")),
             new LengthBinding(DeptManage.class, DeptManageDto.class,
-                    List.of("ognzId", "ognzNm", "ognzExpln", "upOgnzId")));
+                    List.of("ognzId", "ognzNm", "ognzExpln", "upOgnzId")),
+            new LengthBinding(BoardMaster.class, BoardMasterDto.class,
+                    List.of("bbsId", "bbsTtl", "bbsExpln", "bbsTypeCd", "bbsAtrbCd",
+                            "ansPsbltyYn", "fileAtchPsbltyYn", "tmpltId", "useYn", "blogYn",
+                            "ansYn", "stsfdgYn")));
 
     private static final List<EnumBinding> ENUM_BINDINGS = List.of(
             new EnumBinding(BannerDto.class, "rfltYn", List.of("Y", "N")),
@@ -101,10 +107,16 @@ class InputContractMirrorLinterTest {
             new EnumBinding(CommunityDto.class, "useYn", List.of("Y", "N")),
             new EnumBinding(CmmnClCodeDto.class, "useYn", List.of("Y", "N")),
             new EnumBinding(CmmnCodeDto.class, "useYn", List.of("Y", "N")),
-            new EnumBinding(CmmnDetailCodeDto.class, "useYn", List.of("Y", "N")));
+            new EnumBinding(CmmnDetailCodeDto.class, "useYn", List.of("Y", "N")),
+            new EnumBinding(BoardMasterDto.class, "ansPsbltyYn", List.of("Y", "N")),
+            new EnumBinding(BoardMasterDto.class, "fileAtchPsbltyYn", List.of("Y", "N")),
+            new EnumBinding(BoardMasterDto.class, "useYn", List.of("Y", "N")),
+            new EnumBinding(BoardMasterDto.class, "blogYn", List.of("Y", "N")),
+            new EnumBinding(BoardMasterDto.class, "ansYn", List.of("Y", "N")),
+            new EnumBinding(BoardMasterDto.class, "stsfdgYn", List.of("Y", "N")));
 
-    private static final int MIN_LENGTH_FIELDS = 49;
-    private static final int MIN_ENUM_FIELDS = 7;
+    private static final int MIN_LENGTH_FIELDS = 61;
+    private static final int MIN_ENUM_FIELDS = 13;
 
     @Test
     @DisplayName("입력 DTO 길이와 enum 제약이 Entity 저장 계약을 넘지 않는다")

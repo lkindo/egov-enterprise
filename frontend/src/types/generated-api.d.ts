@@ -5345,8 +5345,10 @@ export interface components {
             bbsTypeCdNm?: string;
             bbsAtrbCd: string;
             bbsAtrbCdNm?: string;
-            ansPsbltyYn?: string;
-            fileAtchPsbltyYn?: string;
+            /** @enum {string} */
+            ansPsbltyYn?: "Y" | "N";
+            /** @enum {string} */
+            fileAtchPsbltyYn?: "Y" | "N";
             /** Format: int32 */
             atchPsbltyFileQty?: number;
             /** Format: int64 */
@@ -5358,14 +5360,18 @@ export interface components {
             lastMdfrId?: string;
             /** Format: date-time */
             mdfcnDt?: string;
-            useYn: string;
+            /** @enum {string} */
+            useYn: "Y" | "N";
             /** Format: int64 */
             cmntySn?: number;
             /** Format: int64 */
             blogSn?: number;
-            blogYn?: string;
-            ansYn?: string;
-            stsfdgYn?: string;
+            /** @enum {string} */
+            blogYn?: "Y" | "N";
+            /** @enum {string} */
+            ansYn?: "Y" | "N";
+            /** @enum {string} */
+            stsfdgYn?: "Y" | "N";
             authFlag?: string;
             tmplatCours?: string;
         };

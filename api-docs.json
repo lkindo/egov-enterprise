@@ -18248,10 +18248,24 @@
             "type": "string"
           },
           "ansPsbltyYn": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "fileAtchPsbltyYn": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "atchPsbltyFileQty": {
             "type": "integer",
@@ -18282,8 +18296,13 @@
           },
           "useYn": {
             "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "cmntySn": {
             "type": "integer",
@@ -18295,14 +18314,33 @@
           },
           "blogYn": {
             "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "ansYn": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "stsfdgYn": {
-            "type": "string"
+            "type": "string",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "authFlag": {
             "type": "string"
