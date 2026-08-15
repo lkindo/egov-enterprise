@@ -5249,8 +5249,11 @@ export interface components {
             dtlCdNm?: string;
             /** @description 상세코드설명 */
             dtlCdExpln?: string;
-            /** @description 사용여부 */
-            useYn: string;
+            /**
+             * @description 사용여부
+             * @enum {string}
+             */
+            useYn: "Y" | "N";
             /** @description 최초등록자 ID */
             frstRgtrId?: string;
             /** @description 최종수정자 ID */
@@ -5268,8 +5271,11 @@ export interface components {
             clsfCd?: string;
             /** @description 분류코드명 */
             clsfCdNm?: string;
-            /** @description 사용여부 */
-            useYn: string;
+            /**
+             * @description 사용여부
+             * @enum {string}
+             */
+            useYn: "Y" | "N";
             /** @description 최초등록자 ID */
             frstRgtrId?: string;
             /** @description 최종수정자 ID */
@@ -5290,8 +5296,11 @@ export interface components {
             clsfCdNm?: string;
             /** @description 분류코드설명 */
             clsfCdExpln?: string;
-            /** @description 사용여부 */
-            useYn: string;
+            /**
+             * @description 사용여부
+             * @enum {string}
+             */
+            useYn: "Y" | "N";
             /** @description 최초등록자 ID */
             frstRgtrId?: string;
             /** @description 최종수정자 ID */

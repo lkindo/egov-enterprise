@@ -33,7 +33,7 @@ git config core.hooksPath .githooks
 
 ### 2026-08-15 입력 의미 계약 게이트
 
-`InputContractMirrorLinterTest` 2건이 사용자·배너·팝업·커뮤니티 입력 DTO의 길이 20필드와 Y/N enum 4필드를 Entity 저장 상한 및 `api-docs.json`과 대조한다. 하류 `codegen:verify`/`codegen:verify:zod`와 결합해 Entity → DTO → OpenAPI → TypeScript/Zod 드리프트를 pre-push에서 차단한다.
+`InputContractMirrorLinterTest` 2건이 사용자·콘텐츠·공통코드·권한·조직 관리자 입력 11 DTO의 길이 49필드와 Y/N enum 7필드를 Entity 저장 상한 및 `api-docs.json`과 대조한다. 하류 `codegen:verify`/`codegen:verify:zod`와 결합해 Entity → DTO → OpenAPI → TypeScript/Zod 드리프트를 pre-push에서 차단한다.
 
 ### 2026-08-01 Wave 0 신설 게이트 6종
 

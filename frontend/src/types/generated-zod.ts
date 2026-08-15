@@ -582,7 +582,7 @@ export const CmmnDetailCodeDtoSchema = z.object({
   dtlCd: z.string().min(0).max(12).optional(),
   dtlCdNm: z.string().min(0).max(100).optional(),
   dtlCdExpln: z.string().min(0).max(4000).optional(),
-  useYn: z.string().min(0).max(1),
+  useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
 });
@@ -597,7 +597,7 @@ export const CmmnCodeDtoSchema = z.object({
   cdIdExpln: z.string().min(0).max(4000).optional(),
   clsfCd: z.string().min(0).max(12).optional(),
   clsfCdNm: z.string().min(0).max(100).optional(),
-  useYn: z.string().min(0).max(1),
+  useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
 });
@@ -619,7 +619,7 @@ export const CmmnClCodeDtoSchema = z.object({
   clsfCd: z.string().min(0).max(12).optional(),
   clsfCdNm: z.string().min(0).max(100).optional(),
   clsfCdExpln: z.string().min(0).max(4000).optional(),
-  useYn: z.string().min(0).max(1),
+  useYn: z.enum(["Y","N"]),
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
 });

@@ -17997,8 +17997,13 @@
           "useYn": {
             "type": "string",
             "description": "사용여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "frstRgtrId": {
             "type": "string",
@@ -18050,8 +18055,13 @@
           "useYn": {
             "type": "string",
             "description": "사용여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "frstRgtrId": {
             "type": "string",
@@ -18113,8 +18123,13 @@
           "useYn": {
             "type": "string",
             "description": "사용여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
             "maxLength": 1,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
           },
           "frstRgtrId": {
             "type": "string",

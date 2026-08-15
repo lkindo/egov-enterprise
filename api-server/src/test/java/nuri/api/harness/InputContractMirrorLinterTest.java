@@ -6,10 +6,24 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
+import nuri.business.domain.auth.Authority;
+import nuri.business.domain.auth.RoleInfo;
+import nuri.business.domain.code.CommonCode;
+import nuri.business.domain.code.CommonCodeCategory;
+import nuri.business.domain.code.CommonCodeGroup;
+import nuri.business.domain.group.GroupManage;
 import nuri.business.domain.system.content.banner.Banner;
 import nuri.business.domain.system.content.community.Community;
 import nuri.business.domain.system.content.popup.Popup;
+import nuri.business.domain.user.entity.DeptManage;
 import nuri.business.domain.user.entity.User;
+import nuri.business.service.auth.dto.AuthorManageDto;
+import nuri.business.service.auth.dto.RoleManageDto;
+import nuri.business.service.code.dto.CmmnClCodeDto;
+import nuri.business.service.code.dto.CmmnCodeDto;
+import nuri.business.service.code.dto.CmmnDetailCodeDto;
+import nuri.business.service.department.dto.DeptManageDto;
+import nuri.business.service.group.dto.GroupManageDto;
 import nuri.business.service.system.content.banner.dto.BannerDto;
 import nuri.business.service.system.content.community.dto.CommunityDto;
 import nuri.business.service.system.content.popup.dto.PopupDto;
@@ -38,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>DTO는 Entity의 전수 복제본이 아니라 투영이므로 이름이 같은 모든 필드를 기계적으로 비교하면
  * 응답 전용·파생 필드까지 입력 제약으로 오인한다. 대신 실제 {@code @RequestBody}로 저장되는 고위험
- * 관리자 입력 4종의 직접 저장 필드만 명시적으로 묶는다. 이 표적은 다음 세 구간을 한 번에 보호한다.
+ * 관리자 입력의 직접 저장 필드만 명시적으로 묶는다. 이 표적은 다음 세 구간을 한 번에 보호한다.
  *
  * <ol>
  *   <li>Entity {@code @Column(length)}보다 DTO {@code @Size(max)}가 크거나 빠지지 않았는가</li>
@@ -64,16 +78,33 @@ class InputContractMirrorLinterTest {
                             "popupVrtcSz", "popupWdthSz", "stopvewSetupYn", "ntceYn")),
             new LengthBinding(Community.class, CommunityDto.class,
                     List.of("cmntyNm", "cmntyIntroCn", "regSeCd", "tmpltId", "useYn")),
-            new LengthBinding(User.class, UserDto.class, List.of("userId", "certDnVl")));
+            new LengthBinding(User.class, UserDto.class, List.of("userId", "certDnVl")),
+            new LengthBinding(CommonCodeCategory.class, CmmnClCodeDto.class,
+                    List.of("clsfCd", "clsfCdNm", "clsfCdExpln", "useYn")),
+            new LengthBinding(CommonCodeGroup.class, CmmnCodeDto.class,
+                    List.of("cdId", "cdIdNm", "cdIdExpln", "clsfCd", "useYn")),
+            new LengthBinding(CommonCode.class, CmmnDetailCodeDto.class,
+                    List.of("cdId", "dtlCd", "dtlCdNm", "dtlCdExpln", "useYn")),
+            new LengthBinding(GroupManage.class, GroupManageDto.class,
+                    List.of("groupId", "groupNm", "groupDc")),
+            new LengthBinding(RoleInfo.class, RoleManageDto.class,
+                    List.of("roleId", "roleNm", "rolePatrn", "roleExpln", "roleTypeCd")),
+            new LengthBinding(Authority.class, AuthorManageDto.class,
+                    List.of("authrtCd", "authrtNm", "authrtExpln")),
+            new LengthBinding(DeptManage.class, DeptManageDto.class,
+                    List.of("ognzId", "ognzNm", "ognzExpln", "upOgnzId")));
 
     private static final List<EnumBinding> ENUM_BINDINGS = List.of(
             new EnumBinding(BannerDto.class, "rfltYn", List.of("Y", "N")),
             new EnumBinding(PopupDto.class, "stopvewSetupYn", List.of("Y", "N")),
             new EnumBinding(PopupDto.class, "ntceYn", List.of("Y", "N")),
-            new EnumBinding(CommunityDto.class, "useYn", List.of("Y", "N")));
+            new EnumBinding(CommunityDto.class, "useYn", List.of("Y", "N")),
+            new EnumBinding(CmmnClCodeDto.class, "useYn", List.of("Y", "N")),
+            new EnumBinding(CmmnCodeDto.class, "useYn", List.of("Y", "N")),
+            new EnumBinding(CmmnDetailCodeDto.class, "useYn", List.of("Y", "N")));
 
-    private static final int MIN_LENGTH_FIELDS = 20;
-    private static final int MIN_ENUM_FIELDS = 4;
+    private static final int MIN_LENGTH_FIELDS = 49;
+    private static final int MIN_ENUM_FIELDS = 7;
 
     @Test
     @DisplayName("입력 DTO 길이와 enum 제약이 Entity 저장 계약을 넘지 않는다")
