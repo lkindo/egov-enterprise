@@ -69,11 +69,20 @@ export default defineConfig({
       // statements 33.70 / branches 27.83 / functions 29.69 / lines 34.39 (111 files / 966 tests).
       // functions 가 다시 크게 올랐다(28.53 -> 29.69) — 서비스 메서드가 함수 분모의 큰 몫이다.
       // statements·branches 는 실측이 각각 33.70/27.83 이라 34/28 로는 올리지 못한다(미달).
+      // [2026-08-15 실측 래칫 · 5차/최종] foundation/system 잔여 10종에 계약 테스트 293개를 추가해
+      // 이 디렉터리 24개 서비스를 **전부** 덮었다(디렉터리 커버리지 91.36%).
+      // statements 34.29 / branches 27.85 / functions 31.05 / lines 35.02 (121 files / 1259 tests).
+      //
+      // 이번 세션 누적: 458 -> 1259 tests, lines 31.22 -> 35.02. functions 가 가장 크게 올랐다
+      // (25.27 -> 31.05) — 서비스 메서드가 함수 분모의 큰 몫이라는 가설이 5회 연속 확인됐다.
+      // branches 만 27 에 머문다(27.85) — 서비스 계층은 분기가 얕고, 분기는 화면·훅에 몰려 있다.
+      //
+      // ⚠ 이 값의 완화나 include 축소로 수치를 맞추지 않는다. 확보한 수준은 그때그때 잠근다.
       thresholds: {
-        statements: 33,
+        statements: 34,
         branches: 27,
-        functions: 29,
-        lines: 34,
+        functions: 31,
+        lines: 35,
       },
     },
   },
