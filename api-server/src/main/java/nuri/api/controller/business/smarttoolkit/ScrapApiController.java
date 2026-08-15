@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Scrap", description = "스크랩 관리 API")
 @Slf4j
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/scraps")
 @RequiredArgsConstructor

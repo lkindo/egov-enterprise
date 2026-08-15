@@ -12,6 +12,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/comments")
 @RequiredArgsConstructor

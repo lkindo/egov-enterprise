@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.Map;
 
 @Tag(name = "Approval", description = "Unified Electronic Approval APIs")
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/approvals")
 @RequiredArgsConstructor

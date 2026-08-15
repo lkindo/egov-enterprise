@@ -165,15 +165,15 @@ public class ProductApiController {
 | 응답은 **항상** `ResponseEntity<ApiResponse<T>>` | `nuri.foundation.core.response.ApiResponse` — `ApiResponse.success(data)` | BE 헌법 제6조 |
 | 페이징 응답은 `PageResponse.of(page)` 로 감싼다 | `nuri.foundation.core.response.PageResponse` | BE 헌법 제6조 |
 | Entity 를 반환하지 않는다 (DTO 전용) | `ArchitectureTest.controller_should_not_depend_on_entity`(ArchUnit) | BE 헌법 제3조 |
-| 쓰기(POST/PUT/DELETE/PATCH)에 `@PreAuthorize` 필수 | `@AdminOnly`·`@AdminOrSystem`(`nuri.foundation.security.annotation`) 메타 애노테이션 사용 가능 | BE 헌법 제8조 1항 |
+| 비공개 읽기·쓰기에 명시적 인가 경계 필수 | `@Authenticated`·`@AdminOnly`·`@AdminOrSystem`(`nuri.foundation.security.annotation`) 메타 애노테이션 사용 가능 | BE 헌법 제8조 1항 |
 | 로그인 주체는 `@LoginUser CustomUserDetails` 로 받는다 | `nuri.business.security.annotation.LoginUser` | — |
 | 요청 본문 검증은 `@Valid @RequestBody` | jakarta validation | — |
 
-> 🔒 **인가 누락은 빌드를 깨뜨린다 — 단, 전부는 아니다.** `SecurityAuthAnnotationLinterTest`(`api-server/src/test/java/nuri/api/harness/`)가 화이트리스트·DB 구동 인가(`/admin/**` URL 시큐리티) 대상이 아닌 **쓰기(POST/PUT/DELETE/PATCH) 엔드포인트에 인가 애노테이션이 없으면 실패**시킨다. 현 스캐폴드는 읽기에 `@Authenticated`, 쓰기에 `@AdminOrSystem`을 생성하므로 도메인 정책에 맞게 조정하되 제거하지 말 것.
+> 🔒 **인가 누락은 빌드를 깨뜨린다 — 단, 객체 소유권 의미까지 자동 판정하지는 않는다.** `SecurityAuthAnnotationLinterTest`(`api-server/src/test/java/nuri/api/harness/`)가 화이트리스트·DB 구동 인가 대상이 아닌 읽기·쓰기 엔드포인트에 명시적 인가 애노테이션이 없으면 실패시킨다. 현 스캐폴드는 읽기에 `@Authenticated`, 쓰기에 `@AdminOrSystem`을 생성하므로 도메인 정책에 맞게 조정하되 제거하지 말 것.
 >
 > ⚠ **집행 범위를 정확히 알아 둘 것**(2026-08-03 현행화). 이 문단은 두 번 틀렸다 — 처음엔 "모든 엔드포인트를 전수 조사"라는 **과장**이었고, 그 정정본은 패키지 skip 이 삭제되면서 **낡아서** 틀렸다.
 >
-> 현재: Test#1 은 **패키지 skip 없이 전 컨트롤러의 읽기·쓰기를 순회**한다. 다만 ① 공개 화이트리스트 ② 인가 애노테이션 **존재**(내용 불문) ③ `rbac.db-auth.secure-paths` 매칭 ④ `WRITE_AUTHZ_GUARDED_ELSEWHERE` 등재 클래스 중 하나면 통과시킨다. Test#2 는 **쓰기만** 보고 `/api/v1/admin/` 은 URL 시큐리티에 위임한다.
+> 현재: Test#1 은 **패키지 skip 없이 전 컨트롤러의 읽기·쓰기를 순회**한다. ① 공개 화이트리스트 ② 인가 애노테이션/메타 애노테이션 존재 ③ `rbac.db-auth.secure-paths`·DB 프로그램 URL 매칭 중 하나만 통과한다. Test#2 는 **쓰기만** 보고 `/api/v1/admin/`은 URL 시큐리티에 위임한다. 2026-08-15 쓰기 사유로 읽기까지 면제하던 30건 census와 12개 클래스 allow-list는 제거했다.
 >
 > 그래서 **"모든 컨트롤러를 순회한다"는 참이지만 "인가 의미까지 모두 검증한다"는 거짓**이다. 신규 경로가 `secure-paths`에서 빠지고 인가 애노테이션도 없으면 린터가 위반으로 잡으므로 조용히 통과하지 않는다. 다만 ②는 `@PreAuthorize("isAuthenticated()")`처럼 IDOR 방어력이 없는 애노테이션도 존재 조건을 만족하므로, 읽기·사용자 소유 데이터는 서비스 계층 소유권 가드를 별도로 붙여야 한다. 최신 범위는 항상 린터 javadoc(`SecurityAuthAnnotationLinterTest` 클래스 주석)을 SSOT 로 삼을 것.
 

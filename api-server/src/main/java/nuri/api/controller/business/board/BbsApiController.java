@@ -23,6 +23,7 @@ import java.util.List;
 
 @Slf4j
 @Tag(name = "Board Legacy", description = "Legacy Board API Support")
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/bbs")
 @RequiredArgsConstructor

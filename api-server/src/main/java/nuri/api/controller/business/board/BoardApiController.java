@@ -20,6 +20,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Board", description = "게시판 관리 API")
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/boards")
 @RequiredArgsConstructor

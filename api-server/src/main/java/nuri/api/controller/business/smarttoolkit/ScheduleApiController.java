@@ -18,6 +18,7 @@ import java.util.List;
 
 @Tag(name = "Schedule", description = "일정 관리 API")
 @Slf4j
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/schedules")
 @RequiredArgsConstructor

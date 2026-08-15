@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @Tag(name = "Poll", description = "온라인 설문 API")
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/polls")
 @RequiredArgsConstructor

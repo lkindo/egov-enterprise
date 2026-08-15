@@ -243,7 +243,7 @@ import org.springframework.web.bind.annotation.*;
  * <p><b>인가</b>: 읽기는 {@code @Authenticated}, 쓰기는 {@code @AdminOrSystem} 을 기본으로 붙였다.
  * 도메인 성격에 맞게 <b>좁히거나 넓히되, 지우지는 말 것</b> — 애노테이션이 없으면
  * SecurityAuthAnnotationLinterTest 가 위반으로 잡는다. 소유권 기반(본인 데이터만) 도메인이면
- * 서비스 레이어에 소유권 가드를 넣고 그 근거를 린터의 WRITE_AUTHZ_GUARDED_ELSEWHERE 에 등재한다.
+ * 컨트롤러 인증 경계는 유지하고 서비스 레이어에 소유권 가드와 음성 테스트를 함께 둔다.
  */
 @Tag(name = "$domainCap", description = "$domainCap API")
 @RestController
@@ -347,5 +347,5 @@ Write-Host "  2. ./gradlew compileJava compileTestJava 로 컴파일 확인" -Fo
 Write-Host "  3. 인가 애노테이션은 이미 붙어 있습니다 — 읽기 @Authenticated / 쓰기 @AdminOrSystem." -ForegroundColor Gray
 Write-Host "     도메인에 맞게 조정하되 **지우지 마십시오**. 컨트롤러가 nuri.api.controller 하위라" -ForegroundColor Gray
 Write-Host "     SecurityAuthAnnotationLinterTest 의 오딧 대상이며, 애노테이션이 없으면 게이트가 red 입니다." -ForegroundColor Gray
-Write-Host "  4. 본인 데이터만 다루는 도메인이면 서비스에 소유권 가드를 넣고, 그 근거를 린터의" -ForegroundColor Gray
-Write-Host "     WRITE_AUTHZ_GUARDED_ELSEWHERE 에 등재하십시오(사유 없는 등재 금지)." -ForegroundColor Gray
+Write-Host "  4. 본인 데이터만 다루는 도메인이면 컨트롤러 인증 경계를 유지한 채 서비스에" -ForegroundColor Gray
+Write-Host "     소유권 가드와 타 사용자 접근 거부 테스트를 함께 추가하십시오." -ForegroundColor Gray

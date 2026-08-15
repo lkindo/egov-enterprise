@@ -36,9 +36,9 @@ import java.util.Map;
  *
  * <p><b>왜 애노테이션을 명시했는가</b>: 처음에는 전역 {@code anyRequest().authenticated()} 에
  * 기대고 애노테이션을 생략했는데, {@code SecurityAuthAnnotationLinterTest} 가 이를 잡아냈다 —
- * "비-admin 경로 쓰기는 전역 규칙만 걸려 일반 사용자도 도달한다" 는 것이다. 린터가 제시한 두
- * 해법(① 애노테이션 부착 ② {@code WRITE_AUTHZ_GUARDED_ELSEWHERE} 면제 등록) 중 <b>①</b>을 택했다.
- * 면제 목록을 늘리는 쪽은 신호를 지우는 방향이고(§0.7-H2), {@code @Authenticated} 는
+ * "비-admin 경로 쓰기는 전역 규칙만 걸려 일반 사용자도 도달한다" 는 것이다. 컨트롤러에
+ * 인증 경계를 명시하고 서비스에서 소유권을 재검증했다. 종전 클래스 단위 면제 방식은 2026-08-15
+ * 폐지했으며, {@code @Authenticated} 는
  * {@code @PreAuthorize("isAuthenticated()")} 메타 애노테이션이라 <b>실제 가드가 하나 늘어난다.</b>
  */
 @Tag(name = "Satisfaction", description = "게시글 만족도 API")

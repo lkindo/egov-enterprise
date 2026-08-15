@@ -17,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Community User", description = "커뮤니티 사용자 API")
+@nuri.foundation.security.annotation.Authenticated
 @RestController
 @RequestMapping("/api/v1/communities")
 @RequiredArgsConstructor

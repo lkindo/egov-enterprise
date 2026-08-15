@@ -195,19 +195,18 @@
 - **E2E 상한 해소**: PR #399 run `31622347297`에서 shard별 47/71/13, 합계 **131건**이 통과했다. §1.5의 “3샤드 전량 red·신호 0”은 역사 기록일 뿐 현재 캡이 아니다.
 - **백엔드 검증**: 완료 원장 기준 전수 **2,008 tests/실패 0**, 최신 집계 JaCoCo instruction **89.13%**, branch **77.09%**, line **90.19%**다. mutation은 전체가 아니라 고위험 **10개 범위**를 `STRICT_MUTATION=true`·75%로 강제한다.
 - **프런트 검증**: Vitest **80파일/408테스트** 전부 통과. 전체 소스 coverage는 statements **22.94%**, branches **18.36%**, functions **17.80%**, lines **23.51%**이고 하한은 22/18/17/23이다. 숫자가 상승했어도 20%대라 FE 90점대 근거로는 쓰지 않았다.
-- **계약 체인**: 하네스는 **29클래스/36테스트·실패 0**이다. 엔티티↔스키마는 80엔티티/83테이블/888컬럼, DTO↔OpenAPI는 276 schema 중 매칭 DTO 91종을 검사하며 drift 0이다. backend가 `api-docs.json`을 오프라인 재생성·diff하고 frontend가 generated TypeScript/Zod drift를 검증한다. 로그 화면도 수제 타입 대신 생성 DTO와 0/1-base·`pageUnit` 계약에 맞췄다.
-- **DB**: versioned migration 49개와 repeatable 2개가 존재하며 최신은 V2_48이다. CI는 빈 PostgreSQL 17에 Flyway 전량 적용→Hibernate validate→쓰기 smoke를 무조건 실행한다. 다만 이번 재측정에서는 라이브 OCI 연결정보를 사용하지 않았으므로 실제 적용 rank·FK/CHECK 개수를 새로 측정하지 않았고, 그 불확실성을 DB 완성도 0점 상승에 반영했다.
+- **계약 체인**: 하네스는 **29클래스/35테스트·실패 0**이다. 읽기 부채를 세기만 하던 census 테스트 1개를 제거하고 기존 조회·쓰기 하네스가 면제 없이 직접 차단하도록 강화했다. 엔티티↔스키마와 DTO↔OpenAPI drift 검사는 계속 유지된다.
+- **DB**: versioned migration **84개**와 repeatable 2개가 존재하며 최신은 V2_83이다. CI는 빈 PostgreSQL 17에 Flyway 전량 적용→Hibernate validate→쓰기 smoke를 무조건 실행한다. 다만 이번 인가 재측정에서는 라이브 OCI 연결정보를 사용하지 않았으므로 실제 적용 rank·FK/CHECK 개수를 새로 측정하지 않았다.
 - **빌드/DX**: Gradle 10 폐기 경고를 0으로 만들고 로컬·CI 명령을 `--warning-mode fail`로 고정했다. `frontendUnitTest`·`harnessTest`·대표 strict PIT에서 configuration cache 문제 0과 저장/재사용을 확인했지만, 전역 활성화와 원격 재사용은 하지 않았다. backend/frontend 병렬 시작은 의존 계약으로 고정했고, 성공 run의 최초 build 시작→후속 E2E fan-out 시작은 직렬 #400 attempt 2(`31624861625`) **608초**에서 병렬 #401 최종(`31627566756`) **428초**로 180초(29.6%) 줄었다. 이는 두 실행의 관측치이며 장기 중앙값은 아니다.
 
 #### 점수를 누르는 현재 캡과 우선순위
 
 | 순위 | 잔여 | 현재 증거 | 다음 종료 조건 |
 |---:|---|---|---|
-| **1** | 읽기 인가 census | 쓰기 사유로 통과하는 읽기 엔드포인트 **30건**, 클래스 면제 **12건** | 도메인별 소유권 가드 또는 공개 사유로 0까지 판정 |
-| **2** | FE 단위 회귀 탐지력 | line 23.51%, functions 17.80% | 인증·admin mutation·업로드·로그부터 30/25/25/30 이상 래칫 |
-| **3** | 입력 계약 자동 전파 | `@Column(length=)` 536 vs DTO `@Size` 393, 직접 대응 미측정 | 고위험 DTO 길이·enum 불변식 표적 미러 게이트 |
-| **4** | 구조 레거시 | 80엔티티 중 수동 단일 PK 동결 64, `@GeneratedValue` 3; eGov 결합은 비밀번호 호환·ARIA 암호에 좁게 잔존 | 데이터 census 후 도메인별 expand-contract; 일괄 전환 금지 |
-| **5** | 제품화 결정 | i18n API 소비 파일 약 0.7%, business-core 안 survey/community 45 Java | 다국어 파일럿/단일언어 선언 및 core/app 경계 결정 |
+| **1** | FE 단위 회귀 탐지력 | line 23.51%, functions 17.80% | 인증·admin mutation·업로드·로그부터 30/25/25/30 이상 래칫 |
+| **2** | 입력 계약 자동 전파 | `@Column(length=)` 536 vs DTO `@Size` 393, 직접 대응 미측정 | 고위험 DTO 길이·enum 불변식 표적 미러 게이트 |
+| **3** | 구조 레거시 | 자동 PK 후보 43종은 V2_83까지 전환 완료했고 잔여 19종은 자연·복합·외부키 유지 판정. eGov 결합은 비밀번호 호환·ARIA 암호에 좁게 잔존 | 기존 암호 데이터 호환과 키 회전 설계 후 레거시 암호 경로 축소 |
+| **4** | 제품화 결정 | i18n API 소비 파일 약 0.7%, business-core 안 survey/community 45 Java | 다국어 파일럿/단일언어 선언 및 core/app 경계 결정 |
 
 **이번에 닫힌 false-green**: 색상 가드의 실제 잔여는 **104건**인데 기준선이 207이라 103건 증가를 허용했다. 기준선을 104로 내리고 실제 census와 정확히 같아야 통과하도록 바꿨다. 반대로 103으로 변조했을 때 RED가 나는 것을 확인했다.
 
@@ -238,7 +237,7 @@ eGovFrame 5.0 레거시를 Spring Boot 3.4/Java 21 로 "현대화"했으나 **�
 - **증거(전부 "N곳" 패턴)**: currentTimeMillis PK ×12 · 커밋-전-async ×3(Sanction/Board/SMS/Mail) · 함수레벨 인가 누락 ×6 · check-then-act ×5 · split-package ×여러. 이번 세션이 개별 인스턴스를 잡았으나 **체계(관례)는 여전히 없어** 다음 컨트롤러/서비스에서 재발할 구조.
 - **✅ 부분 해소(2026-07-18, 체계화 감사 → 게이트+관례 SSOT)**: 관심사별 게이트/관례 현황을 실측(`crosscutting-systematization-audit-2026-07-18`)해 **관례 SSOT 문서 신설**([cross-cutting-conventions.md](../03-guides/cross-cutting-conventions.md) — 6개 관심사 `[관례/근거/집행게이트/미집행갭]`). 최대 갭 2건을 **정적 게이트로 기계강제 전환**: ① `AsyncTransactionalListenerArchTest`(@Async+@TransactionalEventListener 금지) — 종전 `RestrictedTransactionalEventListenerFactory` **팬텀 가드**(주석만 존재·클래스 부재=거짓 안전감)를 실제 게이트로 대체하고 리스너 주석 3정정. ② `ServiceReadOnlyTransactionalLinterTest`(@Service 클래스레벨 readOnly 강제, 미준수 11종 동결·신규 드리프트 차단). 기존 게이트(Security/PkGen/UniqueMirror/SchemaNaming)와 합산해 인가(쓰기축)·PK채번·tx경계는 게이트화. **잔여(문서 방어)**: 인가 읽기축·SpEL, check-then-act 시맨틱, 정체성 컬럼축.
 - **✅ 추가 해소(2026-07-28, 캐싱 = 마지막 무게이트 영역)**: 6개 관심사 중 **유일하게 집행 게이트가 0** 이던 캐싱을 `CachingInvalidationMatrixLinterTest`(양방향 매트릭스 — `NO_EVICT` 영구 stale / `DEAD_EVICT` 오타·잔재)로 봉합. 신설 첫 실행에서 **실존 결함 1건 검출**: `InstitutionCodeService` 의 `@CacheEvict("institutionCodes")` 를 채우는 `@Cacheable` 이 저장소에 없어 **아무것도 무효화하지 않으면서 거짓 안전감만 주던** 死 애노테이션(위치도 오배치 — 수신 로그 메서드에 붙어 있었다). 제거 완료. ⚠ `CacheConfig` 가 `@Profile("!test")` 라 **테스트에서는 캐싱이 꺼져 있어 어떤 테스트도 이 계열을 잡을 수 없다** — 정적 게이트만이 유효한 영역이었다. 캐시명 상수화는 44개 애노테이션 일괄 치환이라 §0.7-H4 상 별도 판단으로 남긴다(오타·rename 무음미스는 매트릭스가 이미 차단).
-- **현재 잔여**: 29종 하네스와 DB/FE 인증 게이트로 “체계 없음” 상태는 끝났다. 다만 `WRITE_AUTHZ_GUARDED_ELSEWHERE`의 쓰기 사유로 통과하는 읽기 엔드포인트 30건과 클래스 면제 12건은 소유권·공개성 판단을 증명하지 못한다. 이 census를 도메인별로 판정하는 일이 SEAM 적합성의 최우선 잔여다.
+- **✅ 2026-08-15 해소**: `WRITE_AUTHZ_GUARDED_ELSEWHERE`의 쓰기 사유로 통과하던 읽기 30건을 개인·참여자·부서 스코프 18건과 인증 사용자 공유 조회 12건으로 개별 판정했다. 12개 컨트롤러에 `@Authenticated`를 명시하고 읽기 census와 클래스 면제 자체를 제거했으며, 애노테이션 제거 뮤테이션이 조회·쓰기 하네스 모두에서 red가 됨을 확인했다. 현재 잔여는 애노테이션 존재만으로 객체 소유권 의미까지 자동 증명할 수 없다는 시맨틱 한계와 SpEL 역할 문자열이다.
 
 ### D. SSOT(단일 진실원) 전파 미정합 — 불변식이 한 레이어에만 존재
 DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 논다.**
