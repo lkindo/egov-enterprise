@@ -53,15 +53,15 @@ export default defineConfig({
         // i18n 메시지 로더 — 선언적 설정에 가깝다.
         'src/i18n/**',
       ],
-      // [2026-08-15 실측 래칫] 인증/권한·admin mutation·모니터링·오류 경계 테스트 반영 결과:
-      // statements 30.11 / branches 26.05 / functions 25.04 / lines 30.64 (88 files / 444 tests).
-      // include 범위를 줄이지 않고 목표 30/25/25/30을 달성했다. 이후 분모가 늘면 테스트도 함께
+      // [2026-08-15 실측 래칫] JWT 만료 힌트와 사용자·조직 관리자 액션 테스트 반영 결과:
+      // statements 30.67 / branches 26.25 / functions 25.27 / lines 31.22 (90 files / 458 tests).
+      // include 범위를 줄이지 않고 목표 30/26/25/31을 달성했다. 이후 분모가 늘면 테스트도 함께
       // 보강해야 하며, 이 값의 완화나 include 축소로 수치를 맞추지 않는다.
       thresholds: {
         statements: 30,
-        branches: 25,
+        branches: 26,
         functions: 25,
-        lines: 30,
+        lines: 31,
       },
     },
   },

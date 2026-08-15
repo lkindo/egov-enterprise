@@ -26,8 +26,13 @@ export function getJwtExpiryMs(token: string): number | null {
         .join('')
     );
 
-    const payload = JSON.parse(json) as { exp?: number };
-    return payload.exp ? payload.exp * 1000 : null;
+    const payload = JSON.parse(json) as { exp?: unknown };
+    if (typeof payload.exp !== 'number' || !Number.isFinite(payload.exp) || payload.exp <= 0) {
+      return null;
+    }
+
+    const expiryMs = payload.exp * 1000;
+    return Number.isFinite(expiryMs) ? expiryMs : null;
   } catch {
     return null;
   }
