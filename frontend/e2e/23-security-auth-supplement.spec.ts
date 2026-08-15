@@ -467,7 +467,7 @@ test.describe('Tier 23-E6: IDOR (authenticated non-owner)', () => {
         const asAdmin = { Authorization: `Bearer ${adminToken}` };
         const asVictim = { Authorization: `Bearer ${victimToken}` };
 
-        let adbkId = '';
+        let adbkSn: number | undefined;
         let attackerCreated = false;
 
         try {
@@ -500,32 +500,34 @@ test.describe('Tier 23-E6: IDOR (authenticated non-owner)', () => {
                 headers: asVictim,
             });
             expect(listRes.ok()).toBeTruthy();
-            const list = (await listRes.json())?.data?.list ?? (await listRes.json())?.data?.content ?? [];
-            adbkId = (list as { adbkId: string; adbkNm: string }[]).find((a) => a.adbkNm === adbkNm)?.adbkId ?? '';
-            expect(adbkId, '생성한 주소록을 목록에서 되찾지 못했다').toBeTruthy();
+            const listBody = await listRes.json();
+            const list = listBody?.data?.list ?? listBody?.data?.content ?? [];
+            adbkSn = (list as { adbkSn: number; adbkNm: string }[])
+                .find((a) => a.adbkNm === adbkNm)?.adbkSn;
+            expect(adbkSn, '생성한 주소록을 목록에서 되찾지 못했다').toBeDefined();
 
             // ── 4) 공격자(B)가 세 경로 모두에서 막혀야 한다
             //    ⚠ 세 개를 함께 보는 이유: 읽기만 막고 쓰기는 뚫린 부분 결함을 놓치지 않기 위해서다.
-            const read = await request.get(`${ADBK_API}/${adbkId}`, { headers: asAttacker });
+            const read = await request.get(`${ADBK_API}/${adbkSn}`, { headers: asAttacker });
             expect(read.status(), '남의 주소록 상세가 열렸다 (PII 유출)').toBe(403);
 
-            const write = await request.put(`${ADBK_API}/${adbkId}`, {
+            const write = await request.put(`${ADBK_API}/${adbkSn}`, {
                 headers: asAttacker,
                 data: { adbkNm: `${adbkNm}_HACKED`, rlsScopeCd: 'G', useYn: 'Y' },
             });
             expect(write.status(), '남의 주소록이 수정됐다').toBe(403);
 
-            const del = await request.delete(`${ADBK_API}/${adbkId}`, { headers: asAttacker });
+            const del = await request.delete(`${ADBK_API}/${adbkSn}`, { headers: asAttacker });
             expect(del.status(), '남의 주소록이 삭제됐다').toBe(403);
 
             // ── 5) 차단만으로는 부족하다 — 원본이 그대로인지 소유자로 확인한다.
             //    403 을 돌려주면서 side effect 는 남기는 구현이 실재하므로(가드가 저장 뒤에 있으면)
             //    "막혔다" 와 "바뀌지 않았다" 를 따로 단언한다.
-            const after = await request.get(`${ADBK_API}/${adbkId}`, { headers: asVictim });
+            const after = await request.get(`${ADBK_API}/${adbkSn}`, { headers: asVictim });
             expect(after.ok(), '소유자가 자기 주소록을 열지 못한다 — 과잉차단 회귀').toBeTruthy();
             expect((await after.json())?.data?.adbkNm, '공격자의 수정이 반영됐다').toBe(adbkNm);
         } finally {
-            if (adbkId) await request.delete(`${ADBK_API}/${adbkId}`, { headers: asVictim });
+            if (adbkSn !== undefined) await request.delete(`${ADBK_API}/${adbkSn}`, { headers: asVictim });
             if (attackerCreated) {
                 await request.delete(`${API}/admin/system/users/${attackerId}`, { headers: asAdmin });
             }

@@ -94,8 +94,8 @@ public enum AttachmentSource {
      */
     NOTE("tb_note_info", Sensitivity.PERSONAL, null,
             "frst_rgtr_id = ?",
-            "EXISTS (SELECT 1 FROM tb_note_sndng s WHERE s.note_id = tb_note_info.note_id AND s.sndr_id = ?)"
-                    + " OR EXISTS (SELECT 1 FROM tb_note_rcptn r WHERE r.note_id = tb_note_info.note_id AND r.rcvr_id = ?)"),
+            "EXISTS (SELECT 1 FROM tb_note_sndng s WHERE s.note_sn = tb_note_info.note_sn AND s.sndr_id = ?)"
+                    + " OR EXISTS (SELECT 1 FROM tb_note_rcptn r WHERE r.note_sn = tb_note_info.note_sn AND r.rcvr_id = ?)"),
 
     /**
      * 자료활용 통계. <b>접근권을 부여하지 않는다(DERIVED)</b> — 이 테이블은 "누가 무엇을 받아갔는가" 를

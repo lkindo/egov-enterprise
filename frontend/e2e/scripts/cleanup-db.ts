@@ -17,7 +17,7 @@ interface CleanupPopup { popupSn: number; popupTtlNm?: string }
 interface CleanupBanner { bnrSn: number; bnrNm?: string }
 interface CleanupPost { pstSn?: number; id?: string | number; pstTtl?: string; title?: string }
 interface CleanupMenu { menuNo: number; menuNm: string }
-interface CleanupAddress { adbkId: string; adbkNm?: string }
+interface CleanupAddress { adbkSn: number; adbkNm?: string }
 interface CleanupManual { onlnMnlSn: number; onlnMnlNm?: string }
 interface CleanupRole { roleId: string; roleNm?: string }
 interface CleanupGroup { groupId: string; groupNm?: string }
@@ -252,8 +252,8 @@ async function cleanup() {
       const addresses = extractPage(addressRes);
       const testAddresses = addresses.filter((a) => a.adbkNm?.startsWith('Identity_'));
       for (const address of testAddresses) {
-        process.stdout.write(`  - Deleting Address Book Entry: ${address.adbkNm} (${address.adbkId})... `);
-        await axios.delete(`${API_BASE}/address-books/${address.adbkId}`, { headers });
+        process.stdout.write(`  - Deleting Address Book Entry: ${address.adbkNm} (${address.adbkSn})... `);
+        await axios.delete(`${API_BASE}/address-books/${address.adbkSn}`, { headers });
         console.log('DONE');
       }
       console.log(`  => ${testAddresses.length} address book entry(ies) cleaned.`);

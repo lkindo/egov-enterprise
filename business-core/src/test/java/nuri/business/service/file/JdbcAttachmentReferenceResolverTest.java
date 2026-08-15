@@ -116,6 +116,19 @@ class JdbcAttachmentReferenceResolverTest {
     }
 
     @Test
+    @DisplayName("쪽지 참조 술어는 BIGINT 현대화 후 note_sn 연결을 사용한다")
+    void noteOwnershipPredicateUsesModernizedForeignKey() {
+        CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
+
+        jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+
+        assertThat(jdbc.sqlFor(AttachmentSource.NOTE))
+                .contains("s.note_sn = tb_note_info.note_sn")
+                .contains("r.note_sn = tb_note_info.note_sn")
+                .doesNotContain("note_id");
+    }
+
+    @Test
     @DisplayName("공유 술어가 없는 개인 귀속 참조원은 SELECT 절에서 항상 거짓으로 조립된다")
     void personalSourcesCompileSharedPredicateToFalse() {
         CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);

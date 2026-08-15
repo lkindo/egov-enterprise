@@ -57,7 +57,9 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
       pswd: initialData?.pswd || '1',
       parnts: parnts || initialData?.parnts,
       replyYn: (parnts || initialData?.replyYn === 'Y') ? 'Y' : 'N',
-      atchFileSn: initialData?.atchFileSn,
+      // 기존 글에 첨부가 없으면 API는 null을 반환한다. 생성 스키마의 optional()은
+      // undefined만 허용하므로 수정 폼 경계에서 null을 제거한다.
+      atchFileSn: initialData?.atchFileSn ?? undefined,
       scrtYn: initialData?.scrtYn || 'N',
       useYn: initialData?.useYn || 'Y',
     } as BoardFormValues
