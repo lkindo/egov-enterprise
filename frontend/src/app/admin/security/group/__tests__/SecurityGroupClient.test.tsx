@@ -103,11 +103,11 @@ describe('SecurityGroupClient', () => {
     expect(screen.getByText('N/A')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '그룹 다음 페이지' }));
-    await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ pageNo: 2, searchKeyword: '' }));
+    await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ page: 1, searchKeyword: '' }));
     fireEvent.change(screen.getByRole('textbox', { name: '그룹ID 또는 그룹명 검색' }), {
       target: { value: '관리자' },
     });
-    await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ pageNo: 1, searchKeyword: '관리자' }));
+    await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ page: 0, searchKeyword: '관리자' }));
     fireEvent.submit(screen.getByRole('button', { name: '그룹 검색' }).closest('form')!);
     fireEvent.click(screen.getByRole('button', { name: '보안 그룹 목록 새로고침' }));
     fireEvent.click(screen.getByRole('button', { name: '그룹 목록 재시도' }));
