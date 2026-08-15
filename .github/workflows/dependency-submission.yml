@@ -45,4 +45,4 @@ jobs:
       # 전 모듈(foundation / business-core / business-app / api-server / migration-tool)의
       # 런타임·컴파일 의존성을 해석해 GitHub 의존성 그래프에 제출한다.
       - name: Generate and submit dependency graph
-        uses: gradle/actions/dependency-submission@d9c87d481d55275bb5441eef3fe0e46805f9ef70  # v3
+        uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
