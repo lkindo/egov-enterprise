@@ -51,7 +51,9 @@ export default function SecurityRoleClient() {
   */
  const [searchInput, setSearchInput] = useState('');
  const searchKeyword = useDebouncedValue(searchInput, 300);
- const params: SearchParams = { pageNo: page, searchKeyword };
+ // PagePagination은 1-based, ApiService의 표준 page 입력은 0-based다.
+ // pageNo는 변환 대상이 아니어서 서버의 BaseSearchDto에서 무시된다.
+ const params: SearchParams = { page: page - 1, searchKeyword };
  const [isDialogOpen, setIsDialogOpen] = useState(false);
  const [formData, setFormData] = useState<RoleManage>({
     roleId: '',
@@ -226,7 +228,7 @@ export default function SecurityRoleClient() {
  */}
  <HubMetricGrid>
  <HubMetricCard title="전체 보안 롤" value={pagination?.totalRecordCount ?? 0} icon={Database} color="indigo" status="서버 집계" />
- <HubMetricCard title="현재 페이지 표시" value={roles.length} icon={Layers} color="primary" status={`${params.pageNo ?? 1} 페이지`} />
+ <HubMetricCard title="현재 페이지 표시" value={roles.length} icon={Layers} color="primary" status={`${page} 페이지`} />
  </HubMetricGrid>
 
  <HubSectionCard

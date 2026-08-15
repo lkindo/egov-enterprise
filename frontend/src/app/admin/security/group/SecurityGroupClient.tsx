@@ -50,7 +50,9 @@ export default function SecurityGroupClient() {
   */
  const [searchInput, setSearchInput] = useState('');
  const searchKeyword = useDebouncedValue(searchInput, 300);
- const params: SearchParams = { pageNo: page, searchKeyword };
+ // PagePagination은 1-based, ApiService의 표준 page 입력은 0-based다.
+ // pageNo는 변환 대상이 아니어서 서버의 pageIndex 요청 파라미터로 전달되지 않는다.
+ const params: SearchParams = { page: page - 1, searchKeyword };
  const [isDialogOpen, setIsDialogOpen] = useState(false);
  const [editingGroup, setEditingGroup] = useState<GroupManage | null>(null);
  const [formData, setFormData] = useState<GroupManage>({
