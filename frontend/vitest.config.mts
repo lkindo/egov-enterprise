@@ -53,15 +53,19 @@ export default defineConfig({
         // i18n 메시지 로더 — 선언적 설정에 가깝다.
         'src/i18n/**',
       ],
-      // [2026-08-15 실측 래칫] JWT 만료 힌트와 사용자·조직 관리자 액션 테스트 반영 결과:
-      // statements 30.67 / branches 26.25 / functions 25.27 / lines 31.22 (90 files / 458 tests).
-      // include 범위를 줄이지 않고 목표 30/26/25/31을 달성했다. 이후 분모가 늘면 테스트도 함께
-      // 보강해야 하며, 이 값의 완화나 include 축소로 수치를 맞추지 않는다.
+      // [2026-08-15 실측 래칫 · 2차] 커버리지 0% 였던 서비스 계층 5종(보안 권한·온라인매뉴얼·
+      // 만족도·커뮤니티·지식허브)에 계약 테스트 107개를 신설한 결과:
+      // statements 32.26 / branches 27.35 / functions 26.73 / lines 32.84 (97 files / 591 tests).
+      // include 범위를 줄이지 않고 올렸다 — 분모는 그대로이고 분자만 늘었다.
+      //
+      // ⚠ 이 값의 완화나 include 축소로 수치를 맞추지 않는다. 분모가 늘면(새 소스 추가)
+      //   테스트도 함께 보강한다. 종전 30/26/25/31 은 실측(31.5~32.1)보다 1~2%p 아래여서
+      //   그만큼의 회귀를 통과시켰다 — 확보한 수준은 그때그때 잠근다(build.gradle 의 JaCoCo 래칫과 동일 원칙).
       thresholds: {
-        statements: 30,
-        branches: 26,
-        functions: 25,
-        lines: 31,
+        statements: 32,
+        branches: 27,
+        functions: 26,
+        lines: 32,
       },
     },
   },
