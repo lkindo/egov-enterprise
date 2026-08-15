@@ -13,7 +13,7 @@
     "build:instrumented": "node scripts/build-instrumented.js",
     "start": "next start",
     "start:3001": "next start -p 3001",
-    "lint": "eslint src e2e --config eslint.config.mjs --max-warnings 260",
+    "lint": "eslint src e2e --config eslint.config.mjs --max-warnings 253",
     "type-check": "tsc --noEmit",
     "type-check:e2e": "tsc -p tsconfig.e2e.json --noEmit",
     "codegen:ts": "openapi-typescript http://localhost:8080/v3/api-docs -o src/types/generated-api.d.ts",

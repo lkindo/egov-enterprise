@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { getJwtExpiryMs } from '@/lib/auth/jwt';
+import { getJwtExpiryMs, cookieMaxAgeSecondsFrom } from '@/lib/auth/jwt';
 
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://127.0.0.1:8080/api/v1').replace(/\/$/, '');
 
@@ -27,6 +27,12 @@ export async function POST(request: NextRequest) {
         data: {},
       });
 
+      // [2026-08-15] login 과 동일 규약 — 쿠키 수명을 재발급된 토큰의 exp 에서 유도한다.
+      //   재발급 경로에서 이것이 특히 중요하다: 24시간 고정이면 갱신할수록 쿠키만 계속 연장돼
+      //   실제 토큰 수명과의 간극이 누적된다.
+      const expMs = getJwtExpiryMs(accessToken);
+      const maxAge = cookieMaxAgeSecondsFrom(expMs);
+
       // 신규 accessToken 을 HttpOnly 쿠키로 재설정
       const isProd = process.env.NODE_ENV === 'production';
       nextResponse.cookies.set('accessToken', accessToken, {
@@ -34,18 +40,17 @@ export async function POST(request: NextRequest) {
         secure: isProd,
         sameSite: 'strict',
         path: '/',
-        maxAge: 86400, // 24 hours
+        maxAge,
       });
 
       // 비민감 만료힌트 갱신 (login 과 동일 규약)
-      const expMs = getJwtExpiryMs(accessToken);
       if (expMs) {
         nextResponse.cookies.set('session_exp', String(expMs), {
           httpOnly: false,
           secure: isProd,
           sameSite: 'strict',
           path: '/',
-          maxAge: 86400,
+          maxAge,
         });
       }
 

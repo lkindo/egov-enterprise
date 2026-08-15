@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
-import { getJwtExpiryMs } from '@/lib/auth/jwt';
+import { getJwtExpiryMs, cookieMaxAgeSecondsFrom } from '@/lib/auth/jwt';
 
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://127.0.0.1:8080/api/v1').replace(/\/$/, '');
 
@@ -25,6 +25,11 @@ export async function POST(request: NextRequest) {
         data: { role },
       });
 
+      // [2026-08-15] 쿠키 수명을 **토큰 수명에서 유도**한다. 종전 하드코딩 86400(24시간)은
+      //   백엔드 기본 토큰 수명(1시간)과 어긋나, 토큰이 죽은 뒤에도 쿠키가 최대 23시간 남았다.
+      const expMs = getJwtExpiryMs(accessToken);
+      const maxAge = cookieMaxAgeSecondsFrom(expMs);
+
       // accessToken 을 HttpOnly, Secure, SameSite=Strict 쿠키로 설정
       const isProd = process.env.NODE_ENV === 'production';
       nextResponse.cookies.set('accessToken', accessToken, {
@@ -32,19 +37,18 @@ export async function POST(request: NextRequest) {
         secure: isProd,
         sameSite: 'strict',
         path: '/',
-        maxAge: 86400, // 24 hours
+        maxAge,
       });
 
       // 비민감 만료힌트(session_exp): 토큰이 아닌 만료시각(ms)만 — 클라이언트 세션만료 경고용.
       // HttpOnly 아님(JS 가 읽어야 하므로)이나 타임스탬프뿐이라 탈취 표면이 아니다.
-      const expMs = getJwtExpiryMs(accessToken);
       if (expMs) {
         nextResponse.cookies.set('session_exp', String(expMs), {
           httpOnly: false,
           secure: isProd,
           sameSite: 'strict',
           path: '/',
-          maxAge: 86400,
+          maxAge,
         });
       }
 
