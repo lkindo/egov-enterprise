@@ -194,7 +194,7 @@
 - **병합 강제 신호**: active ruleset `12501346`이 `backend-build`·`frontend-build`·`secret-scan`·E2E 3샤드·`mutation-test`의 정확한 7개 context를 required check로 강제한다. 우회 actor는 0이다. PR #398·#399는 이 구조에서 backend/frontend, strict mutation 10범위, E2E 3샤드까지 전부 green으로 병합됐다.
 - **E2E 상한 해소**: PR #399 run `31622347297`에서 shard별 47/71/13, 합계 **131건**이 통과했다. §1.5의 “3샤드 전량 red·신호 0”은 역사 기록일 뿐 현재 캡이 아니다.
 - **백엔드 검증**: 완료 원장 기준 전수 **2,008 tests/실패 0**, 최신 집계 JaCoCo instruction **89.13%**, branch **77.09%**, line **90.19%**다. mutation은 전체가 아니라 고위험 **10개 범위**를 `STRICT_MUTATION=true`·75%로 강제한다.
-- **프런트 검증(2026-08-15 최종 재측정)**: Vitest **89파일/456테스트** 전부 통과. 전체 소스 coverage는 statements **30.71%**, branches **26.25%**, functions **25.34%**, lines **31.25%**이고 하한도 30/26/25/31로 고정했다. 90/458에서 줄어든 1파일·2테스트는 제품에서 제거한 미사용 한국어 메시지 상수만 검사하던 테스트다. include 축소 없이 JWT 만료 힌트와 사용자·조직 관리자 액션의 인증·오류 경계를 보강한 결과다.
+- **프런트 검증(2026-08-15 최종 재측정)**: Vitest **89파일/456테스트** 전부 통과. 최종 `localGate`의 전체 소스 coverage는 statements **30.69%**, branches **26.25%**, functions **25.28%**, lines **31.25%**이고 하한도 30/26/25/31로 고정했다. 90/458에서 줄어든 1파일·2테스트는 제품에서 제거한 미사용 한국어 메시지 상수만 검사하던 테스트다. include 축소 없이 JWT 만료 힌트와 사용자·조직 관리자 액션의 인증·오류 경계를 보강한 결과다.
 - **계약 체인**: 하네스는 **30클래스/37테스트·실패 0**이다. 읽기 부채를 세기만 하던 census를 제거해 조회·쓰기 하네스가 면제 없이 직접 차단하고, `InputContractMirrorLinterTest` 2건이 관리자 입력 12 DTO의 길이 61필드·Y/N enum 13필드를 Entity와 OpenAPI에 결속한다.
 - **DB**: versioned migration **84개**와 repeatable 2개가 존재하며 최신은 V2_83이다. CI는 빈 PostgreSQL 17에 Flyway 전량 적용→Hibernate validate→쓰기 smoke를 무조건 실행한다. 다만 이번 인가 재측정에서는 라이브 OCI 연결정보를 사용하지 않았으므로 실제 적용 rank·FK/CHECK 개수를 새로 측정하지 않았다.
 - **빌드/DX**: Gradle 10 폐기 경고를 0으로 만들고 로컬·CI 명령을 `--warning-mode fail`로 고정했다. `frontendUnitTest`·`harnessTest`·대표 strict PIT에서 configuration cache 문제 0과 저장/재사용을 확인했지만, 전역 활성화와 원격 재사용은 하지 않았다. backend/frontend 병렬 시작은 의존 계약으로 고정했고, 성공 run의 최초 build 시작→후속 E2E fan-out 시작은 직렬 #400 attempt 2(`31624861625`) **608초**에서 병렬 #401 최종(`31627566756`) **428초**로 180초(29.6%) 줄었다. 이는 두 실행의 관측치이며 장기 중앙값은 아니다.
@@ -206,7 +206,7 @@
 | **1** | 입력 계약 자동 전파 범위 | 게시판 마스터를 포함한 12 DTO의 길이 61필드·enum 13필드는 자동 대조, 그 밖의 입력 DTO는 미측정 | 위험 기반 다음 `@RequestBody` 묶음도 서비스 저장 경로 확인 후 표적 추가 |
 | **2** | 구조 레거시 | 자동 PK 후보 43종은 V2_83까지 전환 완료했고 잔여 19종은 자연·복합·외부키 유지 판정. 레거시 비밀번호의 BCrypt 투명 재해시와 ARIA 활성키→구키 dual-read·read fail-closed는 구현·회귀 테스트 완료 | 실제 DB에서 레거시 해시·구키 암호문 census 후 재해시/재암호화 0건을 증명하고 호환 경로 제거 |
 | **3** | 제품화 결정 **✅ 종결** | banner·popup·community·survey 55 Java와 테스트 8개를 app으로 이관하고 core 재유입 게이트 추가. 프런트는 한국어 UI로 확정해 반쪽 next-intl 제거 | ADR-0001/0002 유지, 변경 시 후속 ADR과 전체 게이트 요구 |
-| **4** | FE 후속 회귀 탐지력 | statements 30.71%, branches 26.25%, functions 25.34%, lines 31.25% | 30/26/25/31 하한 유지 + 신규 고위험 기능 파일 단위 80% 지향 |
+| **4** | FE 후속 회귀 탐지력 | statements 30.69%, branches 26.25%, functions 25.28%, lines 31.25% | 30/26/25/31 하한 유지 + 신규 고위험 기능 파일 단위 80% 지향 |
 
 **이번에 닫힌 false-green**: 색상 가드의 실제 잔여는 **104건**인데 기준선이 207이라 103건 증가를 허용했다. 기준선을 104로 내리고 실제 census와 정확히 같아야 통과하도록 바꿨다. 반대로 103으로 변조했을 때 RED가 나는 것을 확인했다.
 
