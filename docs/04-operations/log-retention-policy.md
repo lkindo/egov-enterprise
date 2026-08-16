@@ -8,7 +8,7 @@
 - **접속기록(access log)** 은 개인정보 보호법상 **삭제 자유보다 보존 의무가 우선**한다 —
   「개인정보의 안전성 확보조치 기준」 제8조(접속기록의 보관·점검): **최소 1년**, 고유식별정보를 처리하거나
   정보주체 5만 명 이상을 처리하는 경우 **2년**. 위·변조 방지 의무도 있으므로 **런타임 삭제 API 를 두지 않고**
-  보존기간 만료 시에만 배치([`LogRetentionScheduler`](../../business-app/src/main/java/nuri/business/service/log/LogRetentionScheduler.java))로 파기한다.
+  보존기간 만료 시에만 배치([`LogRetentionScheduler`](../../business-core/src/main/java/nuri/business/service/log/LogRetentionScheduler.java))로 파기한다.
 - **개인 단위 통계(tb_user_log)** 는 접속기록이 아니라 사용통계이며 개인 식별자(esntl_id, FK)에 묶이므로,
   PIPA 제21조 파기 원칙에 따라 **사용자 삭제 시 함께 파기**한다.
 

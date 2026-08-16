@@ -65,6 +65,7 @@ jobs:
           node --test .agent/scripts/db-bridge.test.js
           node --test scripts/required-checks-contract.test.mjs
           node --test scripts/reusable-base-census.test.mjs
+          node --test scripts/docs-link-integrity.test.mjs
 
       # [2026-08-03 범위 정정] 종전에는 `gitleaks detect --source .` 로 **히스토리 전량**을 스캔했다.
       #   그 결과 이 잡은 신설된 날부터 계속 red 였다 — 실측 leak 1351건이 전부 **이미 공개된 과거**에서

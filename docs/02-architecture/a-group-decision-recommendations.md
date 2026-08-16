@@ -87,15 +87,15 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 ### 3-1. fe-auth — 인증 아키텍처 완결 (🚨 P0 선행)
 
-**현황**: HttpOnly 쿠키+동일출처 프록시 전환은 이미 커밋됨(`45855eb43`,`30fba0530`)이나 §0의 이중 프리픽스로 **UI 로그인 경로가 무력화** 의심. 잔여 하드닝 2건: ①Proxy가 JWT 서명 미검증([proxy.ts:5-35](../../frontend/src/proxy.ts#L5-L35) base64 디코드만 — 위조 토큰의 `role=ADMIN` 통과) ②백엔드 로그인/재발급 응답 바디에 토큰 노출([AuthApiController.java](../../api-server/src/main/java/nuri/api/controller/business/auth/AuthApiController.java)).
+**현황**: HttpOnly 쿠키+동일출처 프록시 전환은 이미 커밋됨(`45855eb43`,`30fba0530`)이나 §0의 이중 프리픽스로 **UI 로그인 경로가 무력화** 의심. 잔여 하드닝 2건: ①Proxy가 JWT 서명 미검증([proxy.ts:5-35](../../frontend/src/proxy.ts#L5-L35) base64 디코드만 — 위조 토큰의 `role=ADMIN` 통과) ②백엔드 로그인/재발급 응답 바디에 토큰 노출([AuthApiController.java](../../api-server/src/main/java/nuri/api/controller/foundation/auth/AuthApiController.java)).
 
 **추천: Phase 0 선행 + Option 1(잔여 완결 패키지)** — 비대칭 전환(Opt2)은 세션 전량 무효화 비용 대비 이득 작음(백엔드가 이미 authoritative). 현상유지(Opt3)는 §F 로드맵 미완.
 
 **단계 계획**:
 - **Phase 0 (P0, 최우선)**: 이중 프리픽스 수정 — [authService.ts:25,30,35](../../frontend/src/services/foundation/auth/authService.ts#L25)·[client.ts:121](../../frontend/src/lib/api/client.ts#L121)의 Route Handler 호출에 `{ baseURL: '' }` 명시 또는 Route Handler 전용 클라이언트 분리. 서버 기동 후 UI 로그인 HTTP 실증 + 성공 UI 로그인 E2E 신설 + reissue `test.fixme` 해제([23-security-auth-supplement.spec.ts:120,128](../../frontend/e2e/23-security-auth-supplement.spec.ts#L120)).
-- **Phase 1 (Proxy 서명검증)**: `+jose`, [proxy.ts](../../frontend/src/proxy.ts) `getRoleFromToken`→`jose.jwtVerify`. **⚠ 알고리즘: HS256 아님** — jjwt `signWith(SecretKey)`가 키 비트수로 자동 추론, dev 시크릿 88바이트=HS512. `algorithms:['HS256','HS384','HS512']`로 핀. 키는 `new TextEncoder().encode(JWT_SECRET)` — **base64 디코드 금지**([JwtTokenProvider.java:43](../../foundation/src/main/java/nuri/foundation/jwt/JwtTokenProvider.java#L43) `getBytes()` raw 정합). prod에서 `JWT_SECRET` 미설정 시 모듈 스코프 `throw`(fail-fast). 검증 실패 시 accessToken·session_exp 쿠키 삭제 후 `/login` 리다이렉트(무한루프 차단).
+- **Phase 1 (Proxy 서명검증)**: `+jose`, [proxy.ts](../../frontend/src/proxy.ts) `getRoleFromToken`→`jose.jwtVerify`. **⚠ 알고리즘: HS256 아님** — jjwt `signWith(SecretKey)`가 키 비트수로 자동 추론, dev 시크릿 88바이트=HS512. `algorithms:['HS256','HS384','HS512']`로 핀. 키는 `new TextEncoder().encode(JWT_SECRET)` — **base64 디코드 금지**([JwtTokenProvider.java:43](../../foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java#L43) `getBytes()` raw 정합). prod에서 `JWT_SECRET` 미설정 시 모듈 스코프 `throw`(fail-fast). 검증 실패 시 accessToken·session_exp 쿠키 삭제 후 `/login` 리다이렉트(무한루프 차단).
 - **Phase 2 (E2E 잔재)**: [auth.setup.ts](../../frontend/e2e/auth.setup.ts) `origins.localStorage`에서 **accessToken만** 제거(⚠ `egov_smart_tour_v1`은 투어억제 살아있는 의존 — 보존). userRole 쿠키 제거(소비처 mocks뿐). ⚠ **선행 필수**: [SurveyPage.ts:111-122,199](../../frontend/e2e/pages/SurveyPage.ts#L111)가 localStorage accessToken을 직접 소비 → storageState JSON 파싱 방식(tier-19 패턴)으로 교체 안 하면 **tier-05 즉사**.
-- **Phase 3 (Contract, 계약변경)**: [TokenResponse.java](../../business-core/src/main/java/nuri/business/service/auth/dto/TokenResponse.java) refreshToken `@JsonIgnore`. ⚠ **reissue 쿠키 발급 대칭화 동반**: [AuthApiController](../../api-server/src/main/java/nuri/api/controller/business/auth/AuthApiController.java) reissue에 `addRefreshTokenCookie` 추가(현재 비회전이라 no-op이나 향후 회전 도입 시 전달경로 소멸 함정 차단). [AuthApiControllerTest.java:71,105,111](../../api-server/src/test/java/nuri/api/controller/business/auth/AuthApiControllerTest.java) 바디 단언 수정. 백엔드 기동→루트 api-docs.json 재생성→codegen. **3a(소비자 전환)/3b(공급자 축소) 분리** — auth.setup.ts를 set-cookie 파싱으로 먼저 착지·22티어 green 확인 후 계약 축소.
+- **Phase 3 (Contract, 계약변경)**: [TokenResponse.java](../../business-core/src/main/java/nuri/business/service/auth/dto/TokenResponse.java) refreshToken `@JsonIgnore`. ⚠ **reissue 쿠키 발급 대칭화 동반**: [AuthApiController](../../api-server/src/main/java/nuri/api/controller/foundation/auth/AuthApiController.java) reissue에 `addRefreshTokenCookie` 추가(현재 비회전이라 no-op이나 향후 회전 도입 시 전달경로 소멸 함정 차단). [AuthApiControllerTest.java:71,105,111](../../api-server/src/test/java/nuri/api/controller/foundation/auth/AuthApiControllerTest.java) 바디 단언 수정. 백엔드 기동→루트 api-docs.json 재생성→codegen. **3a(소비자 전환)/3b(공급자 축소) 분리** — auth.setup.ts를 set-cookie 파싱으로 먼저 착지·22티어 green 확인 후 계약 축소.
 - **Phase 4 (제품결정 후)**: admin 게이트 커버리지 확장 — [열린 질문 3-1.①](#열린-질문-집약).
 
 **검증 반영(필수)**: ①HS256→HS512 정정(위 반영) ②reissue 쿠키 대칭화 ③Phase 3 3a/3b 분리 ④SurveyPage localStorage 선전환 ⑤egov_smart_tour_v1 보존 ⑥prod fail-fast를 Phase1 설계에 ⑦검증실패 루프차단 ⑧E2E 페어링 규약([e2e-test-guide.md](../03-guides/e2e-test-guide.md)에 "JWT_SECRET은 백엔드·Next 동시 설정 or 양쪽 미설정" 명문화 — playwright.config에 webServer 없음).
@@ -124,7 +124,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 ### 3-3. note-rcptn — 쪽지 삭제 정책
 
-**현황**: [NoteServiceImpl.deleteNote](../../business-app/src/main/java/nuri/business/service/note/NoteServiceImpl.java) sent 분기가 **물리삭제** — `fk_tb_note_rcptn_tb_note_sndng`(NO ACTION) 때문에 수신사본 보유 쪽지(실측 14/34건)에서 **23503 잠복 결함**([page.tsx:109](../../frontend/src/app/note/page.tsx#L109) Mock 버튼 덕에 미발현). 코드베이스가 이미 (a)를 의도(`tb_note_sndng.del_yn`+필터 기존재, SSOT `DEL_YN`/`RCVR_DEL_YN` 등재). 운영 데이터 0건(전량 E2E 가비지).
+**현황**: [NoteServiceImpl.deleteNote](../../business-app/src/main/java/nuri/business/service/note/NoteService.java) sent 분기가 **물리삭제** — `fk_tb_note_rcptn_tb_note_sndng`(NO ACTION) 때문에 수신사본 보유 쪽지(실측 14/34건)에서 **23503 잠복 결함**([page.tsx:109](../../frontend/src/app/note/page.tsx#L109) Mock 버튼 덕에 미발현). 코드베이스가 이미 (a)를 의도(`tb_note_sndng.del_yn`+필터 기존재, SSOT `DEL_YN`/`RCVR_DEL_YN` 등재). 운영 데이터 0건(전량 E2E 가비지).
 
 **추천: Option (a) 파티별 논리삭제** — 반쪽 구현의 완성. DB헌법 제8조 3항(양당사자 통신기록=한쪽 삭제가 상대 이력 소멸 금지) 정합.
 
@@ -134,7 +134,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 - ⚠ **NULL 수신자 = 수거 영구불능**: `sendNote`가 `rcverId` blank 검증 없어 rcvr_id NULL rcptn 생성(실측 14행 중 13행 NULL). NULL-rcvr는 IDOR 가드를 누구도 통과 못 해 `del_yn='Y'` 전환 불가 → "전원삭제 시 수거" 영원히 거짓. **입력검증(blank 거부) 필수**.
 - ⚠ **레이스**: READ COMMITTED에서 양측 동시 자기플래그만 UPDATE→상대 count하면 "아무도 수거 안 함"이 더 개연적 → 수거 판정 전 부모 sndng `PESSIMISTIC_WRITE` 잠금.
 - ⚠ **cascade 혼용 금지**: [Note.java:42-46](../../business-app/src/main/java/nuri/business/domain/note/Note.java#L42) `cascade=ALL`+`orphanRemoval` 2개와 리포지토리 직접 delete 혼용 시 형제 컬렉션 삭제순서 미보장→23503 재발. rcptn→flush→sndng→(참조0 확인)info 명시순서.
-- getNoteDetail 가드 **양 분기**(sent도). V2_21 선적용이 business-app 테스트 전제(Flyway drift). [convertToDto(NoteTrnsmit)](../../business-app/src/main/java/nuri/business/service/note/NoteServiceImpl.java) noteId·rcverId 미세팅(sent탭 표면화). cleanup-db.ts는 **E2E esntl_id 스코프** 삭제(전량 DELETE 금지 — 운영 쪽지 보호).
+- getNoteDetail 가드 **양 분기**(sent도). V2_21 선적용이 business-app 테스트 전제(Flyway drift). [convertToDto(NoteTrnsmit)](../../business-app/src/main/java/nuri/business/service/note/NoteService.java) noteId·rcverId 미세팅(sent탭 표면화). cleanup-db.ts는 **E2E esntl_id 스코프** 삭제(전량 DELETE 금지 — 운영 쪽지 보호).
 
 **테스트**: 회귀 red 선행(수신사본 보유 sent 삭제=DataIntegrityViolation 재현→green), 동시삭제 레이스, NULL수신자 거부.
 
@@ -156,7 +156,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 ### 3-5. log-privacy — 로그 개인정보 정책
 
-**현황**: [tb_user_log](../../business-core/src/main/java/nuri/business/domain/log/UserLog.java)(2행, `fk...→esntl_id`)·tb_web_log(20,841)·tb_sys_log(12)·tb_login_log(0). `deleteOldLogs` 4종 **死코드**(호출자 0). [UserDeletionCleanupListener](../../business-app/src/main/java/nuri/business/service/user/UserDeletionCleanupListener.java)가 user_log 미참조(**잠복 FK 결함**).
+**현황**: [tb_user_log](../../business-core/src/main/java/nuri/business/domain/log/UserLog.java)(2행, `fk...→esntl_id`)·tb_web_log(20,841)·tb_sys_log(12)·tb_login_log(0). `deleteOldLogs` 4종 **死코드**(호출자 0). `UserDeletionCleanupListener`가 user_log 미참조(**잠복 FK 결함**). *(2026-08-16 주: 이 단일 클래스는 이후 도메인별 리스너로 분할됐다 — `business-app/.../{board,addressbook,notification,blog,system/content/community}/listener/*UserDeletionCleanupListener.java`. 당시 경로는 더 이상 존재하지 않아 링크를 해제한다.)*
 
 **추천: Option (a) 하이브리드** — 보존기간 배치삭제 + user_log 삭제정리. 한국 규제상 접속기록은 삭제자유보다 **보존의무**(안전성 확보조치 기준 제8조, 1~2년) 우선 → 즉시 익명화(b)는 법적이득 없이 고비용. 무기한 보존(c)은 PIPA 파기원칙 소명 불가.
 
@@ -170,7 +170,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 **테스트**: user_log 삭제 시 FK 위반 없음(현 테스트 갭 보강), months=0/음수/미설정 no-op, 고정 Clock 경계일.
 
 > **갱신 (2026-07-29) — 집행 완료분과 남은 갭**
-> Phase 1-4 는 완료됐다: `UserService` 가 사용자 삭제 前 user_log 를 정리하고, [LogRetentionScheduler](../../business-app/src/main/java/nuri/business/service/log/LogRetentionScheduler.java) 가 web/sys/login/user 4종을 정리하며, **months 하한 가드**(법정 최저 12개월 미만이면 skip+WARN)가 "전량파기 사고"를 코드로 막는다. 보존기간은 **24개월 확정**(3-5.① 결판), 정책 문서는 [log-retention-policy.md](../04-operations/log-retention-policy.md).
+> Phase 1-4 는 완료됐다: `UserService` 가 사용자 삭제 前 user_log 를 정리하고, [LogRetentionScheduler](../../business-core/src/main/java/nuri/business/service/log/LogRetentionScheduler.java) 가 web/sys/login/user 4종을 정리하며, **months 하한 가드**(법정 최저 12개월 미만이면 skip+WARN)가 "전량파기 사고"를 코드로 막는다. 보존기간은 **24개월 확정**(3-5.① 결판), 정책 문서는 [log-retention-policy.md](../04-operations/log-retention-policy.md).
 >
 > ⚠ **남은 갭 — `tb_privacy_log` 는 보존체계에 편입되지 않았다**(검증 반영 ② 미이행). `PrivacyLogRepository` 에 `deleteOldLogs` 가 없고 스케줄러도 이 테이블을 다루지 않는다. **의도적 보류**다: 2026-07-29 실측 `tb_privacy_log` 0행이고 **기록 경로가 아직 死** 라, 지금 편입해도 검증할 수 없는 코드만 늘어난다. **재개 조건**: 개인정보 조회로그 기록 경로가 활성화되는 시점 — 그때 편입하지 않으면 개인정보 조회 이력(dmnd_user_id·IP)이 무기한 보존된다. 이 갭을 완료로 오독하지 않도록 여기에 명시해 둔다(SOP §4.1 정직 보류).
 
@@ -218,11 +218,13 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 ### 3-7. leader-stts — 死도메인 처분
 
-**현황**: 모든 계층 사망 실측 — DB 0행·인바운드 FK 0, 부모 생성경로 코드·시드 전무([LeaderScheduleService.java:117](../../business-app/src/main/java/nuri/business/service/schedule/LeaderScheduleService.java#L117) orElseThrow), FE 필드명 계약파손+죽은 등록버튼+쓰기 호출부 0, E2E는 렌더 가시성만. V2_16 `tb_club_*`·`tb_leader_schdl_dtl` 0행 DROP 선례와 동형.
+**현황**: 모든 계층 사망 실측 — DB 0행·인바운드 FK 0, 부모 생성경로 코드·시드 전무(`LeaderScheduleService.java:117` orElseThrow), FE 필드명 계약파손+죽은 등록버튼+쓰기 호출부 0, E2E는 렌더 가시성만. V2_16 `tb_club_*`·`tb_leader_schdl_dtl` 0행 DROP 선례와 동형.
 
 **추천: Option (b) 도메인 일괄 제거** — 저장소 목적(신규 SI 베이스, [framework-reusability-assessment.md](framework-reusability-assessment.md) "파생 프로젝트에서 C 삭제")상 파손 쇼케이스는 재사용 자산이 아니라 반복 삭제비용. (a)소생은 수요증거 없는 투기, (c)부모교체는 생성UI 없어 형식적.
 
-**단계**: Phase1 백엔드 코드 제거(컨트롤러/엔티티/서비스/DTO/테스트 ~13파일 + [BusinessIdGnrConfig.java:61-64](../../business-core/src/main/java/nuri/business/core/config/BusinessIdGnrConfig.java#L61) 빈 제거) → Phase2 백엔드기동→api-docs 재생성→codegen(leader 오퍼레이션 6본 소멸) → Phase3 FE 제거([lsm 페이지](../../frontend/src/app/admin/system/lsm/)·서비스·E2E tier18 케이스) → Phase4 **V2_24 DROP**(개별 승인 후) → Phase5 문서 정합.
+**단계**: Phase1 백엔드 코드 제거(컨트롤러/엔티티/서비스/DTO/테스트 ~13파일 + `BusinessIdGnrConfig.java:61-64` 빈 제거) → Phase2 백엔드기동→api-docs 재생성→codegen(leader 오퍼레이션 6본 소멸) → Phase3 FE 제거(`frontend/src/app/admin/system/lsm/` 페이지·서비스·E2E tier18 케이스)
+
+> *2026-08-16 주: 이 단계는 **시행 완료**됐고(아래 3-7.① 결판 참조), 위에 인용된 `LeaderScheduleService.java`·`BusinessIdGnrConfig.java`·`admin/system/lsm/` 은 모두 삭제되어 현재 존재하지 않는다. 이력 서술이므로 경로는 남기되 링크는 해제한다 — 없는 파일을 가리키는 링크는 독자를 오도한다.* → Phase4 **V2_24 DROP**(개별 승인 후) → Phase5 문서 정합.
 
 **⚠ 파괴적 — 개별 명시 승인 필수**. **검증 반영(필수)**: ①assessment B등급 분류와 표면 상충 → 승인 전 착수 금지, 반려 시 (c)로 전환(0행이라 되돌림 무비용) ②**FE 라우트 삭제 = 2026-07-11 "문자열 URL 참조 오삭제" 사고 재현 위험** → tb_menu URL행·e2e 스펙 전수 확인 절차 포함 ③api-docs 재생성 백엔드 기동 의존 ④menu_sn 9030300 하위 자식메뉴 커밋 전 재확인 ⑤`git commit --only`로 leader 경로 한정.
 
@@ -244,7 +246,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 | 3-3.② | note-rcptn | '회수(recall)' 기능(미개봉 한정) 제품 채택 여부 | 삭제정책과 독립 |
 | 3-4.① | biz_cd | '사업코드' 개념 향후 지원? (별도 BIZ 마스터 연계 로드맵) | 현 코드·데이터·SSOT 어디에도 흔적 0 |
 | 3-4.② | biz_cd | biz_yr(실질 '행사연도')도 evnt_yr 개명 동승? | EVNT_YR 표준 존재 |
-| ~~3-5.①~~ | log-privacy | ~~**보존기간 수치**: 1년 vs 2년~~ → ✅ **결판: 2년(24개월)**. [application.yml:93-101](../../api-server/src/main/resources/application.yml#L93-L101) `enabled: true`·`web-months: 24`, 법정 최저 12개월 미만이면 삭제를 건너뛰는 하한 가드가 코드로 강제([LogRetentionScheduler.java:67-76](../../business-app/src/main/java/nuri/business/service/log/LogRetentionScheduler.java#L67-L76)) | — |
+| ~~3-5.①~~ | log-privacy | ~~**보존기간 수치**: 1년 vs 2년~~ → ✅ **결판: 2년(24개월)**. [application.yml:93-101](../../api-server/src/main/resources/application.yml#L93-L101) `enabled: true`·`web-months: 24`, 법정 최저 12개월 미만이면 삭제를 건너뛰는 하한 가드가 코드로 강제([LogRetentionScheduler.java:67-76](../../business-core/src/main/java/nuri/business/service/log/LogRetentionScheduler.java#L67-L76)) | — |
 | 3-5.② | log-privacy | 법적 트랙: 보존의무 원형보존 vs 사용자삭제 시 가명화 추가 | 얹으면 전 감사컬럼 일관성 범위도 결정 |
 | 3-5.③ | log-privacy | tb_login_log 기록경로 복원 vs 死코드 제거 | 0행+호출자0(어느쪽도 데이터 무파손) |
 | ~~3-6.①~~ | deptjob | ~~부서업무(task) 대면기능 **소생 vs 폐기**~~ → ✅ **결판: 소생(2026-07-19~20 구현)** — 상세는 §3-6 갱신 참조 | — |

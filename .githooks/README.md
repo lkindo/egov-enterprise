@@ -23,7 +23,7 @@ git config core.hooksPath .githooks
 | 계층 | 명령 | 범위 | 소요(실측) |
 |---|---|---|---|
 | pre-commit | 자동 | 시크릿 스캔(미설치 시 **경고 출력**)·계약 드리프트 경고 | 수 초 |
-| pre-push | 자동 | 컴파일 + tsc + codegen(+**tracked 선행검사**) + **하네스 31종** | ~2분 |
+| pre-push | 자동 | 컴파일 + tsc + codegen(+**tracked 선행검사**) + **문서 링크 무결성** + **하네스 31종** | ~2분 |
 | **병합 전 전수** | `./gradlew localGate` | 위 + **실PG 스키마 검증** + 전 모듈 테스트 + **JaCoCo LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫 | ~12분 |
 | CI | `.github/workflows/ci.yml` | **secret-scan(gitleaks)** + 전체 + 실PG 스키마 검증 + 프론트 gzip 번들 예산 + E2E + 뮤테이션 | 상시 |
 

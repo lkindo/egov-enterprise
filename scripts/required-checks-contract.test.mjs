@@ -336,3 +336,19 @@ test('frontend required check type-checks the e2e sources excluded from the root
     'root tsconfig no longer excludes e2e — re-evaluate whether the separate e2e type-check step is still needed',
   );
 });
+
+test('secret-scan runs the documentation link-integrity gate that pre-push also enforces', () => {
+  const secretScanJob = ciContent.match(
+    /^  secret-scan:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+
+  assert.ok(secretScanJob, 'secret-scan job must exist');
+  assert.match(
+    secretScanJob,
+    /node --test scripts\/docs-link-integrity\.test\.mjs/,
+    'doc link gate must run in CI, not only in .githooks/pre-push (hooks are bypassable)',
+  );
+
+  const prePush = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
+  assert.match(prePush, /node --test scripts\/docs-link-integrity\.test\.mjs/);
+});
