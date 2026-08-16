@@ -3,7 +3,7 @@ import { ProductivitySuitePage } from './pages/ProductivitySuitePage';
 
 /**
  * Tier 7: Productivity Suite
- * 협업과 행정 처리를 위한 내부 업무용 모듈 검증 (전자결재, 조직도, 일정)
+ * 협업과 행정 처리를 위한 내부 업무용 모듈 검증 (전자결재, 주소록, 일정)
  */
 test.describe('Tier 7: Productivity Suite (Business Tools)', () => {
     test.use({ viewport: { width: 1920, height: 1080 } });
@@ -23,15 +23,15 @@ test.describe('Tier 7: Productivity Suite (Business Tools)', () => {
         // 목 없이 실 PUT .../confirm으로 검증한다.
     });
 
-    test('Organization Chart & Address Book (Permission & Navigation)', async ({ adminPage }) => {
+    test('Address Book (Permission & Navigation)', async ({ adminPage }) => {
         const prodPage = new ProductivitySuitePage(adminPage);
 
         await test.step('Admin: Navigate to Address Book', async () => {
             await prodPage.gotoAddressBook();
         });
 
-        await test.step('Admin: Verify Org Chart & User Tree', async () => {
-            await prodPage.verifyOrgChartNavigation();
+        await test.step('Admin: Verify Address Book Controls', async () => {
+            await prodPage.verifyAddressBookNavigation();
         });
         // [E2E 감사 A1] 삭제됨: 'Simulate Organization Sync' — page.route로 inheritedRoles를 스스로 주입한 뒤
         // 그 stub을 단언하는 자기충족 목. 실제 부서 이동·권한 상속은 백엔드 통합 테스트에서 검증한다.

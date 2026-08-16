@@ -22,22 +22,18 @@ export class ProductivitySuitePage {
         await expect(this.page.getByRole('heading', { name: /결재|결재 양식|Sanction/i }).first()).toBeVisible({ timeout: 15000 });
     }
 
-    // 조직도 및 주소록(Address Book & Org Chart)
+    // 주소록(Address Book)
     async gotoAddressBook() {
-        console.log(`>>> Navigating to Address Book / Org Chart`);
-        await this.page.goto('/admin/collaboration/address-book');
-        await this.page.waitForTimeout(1000); // Wait for DOM
+        console.log(`>>> Navigating to Address Book`);
+        await this.page.goto('/admin/collaboration/address-book/select-address-book-list');
+        await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/select-address-book-list/);
     }
 
-    async verifyOrgChartNavigation() {
-        console.log(`>>> Verifying Org Chart Tree Navigation`);
-        await expect(this.page.getByRole('heading', { name: /Connect Matrix|Directory Nodes|Select Data Node/i }).first()).toBeVisible({ timeout: 15000 });
-        
-        // Let's assume there is a folder icon or tree representation
-        const treeNodes = this.page.locator('.lucide-folder, .lucide-users, .lucide-user');
-        if (await treeNodes.count() > 0) {
-            await treeNodes.first().hover();
-        }
+    async verifyAddressBookNavigation() {
+        console.log(`>>> Verifying Address Book Navigation`);
+        await expect(this.page.getByRole('heading', { name: '통합 주소록 관리' })).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('textbox', { name: '주소록 검색' })).toBeVisible();
+        await expect(this.page.getByRole('button', { name: '주소록 등록', exact: true })).toBeVisible();
     }
 
     // 일정 관리(Calendar)

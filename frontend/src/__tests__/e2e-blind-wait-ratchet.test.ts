@@ -55,8 +55,11 @@ const E2E_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'e2e')
  *
  * [하향 2026-08-16: 60 → 59] 협업 탭 전환을 고정 1초가 아니라
  *   URL 탭 파라미터와 aria-selected 상태로 기다리도록 바꿨다.
+ *
+ * [하향 2026-08-16: 59 → 58] 주소록 진입을 고정 1초가 아니라
+ *   전용 목록 URL과 핵심 화면 컨트롤 상태로 기다리도록 바꿨다.
  */
-const BASELINE = 59;
+const BASELINE = 58;
 
 function collectFiles(dir: string): string[] {
     const out: string[] = [];
