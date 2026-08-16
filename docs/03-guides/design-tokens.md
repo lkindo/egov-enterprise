@@ -95,6 +95,34 @@
 - **구조 비대칭(FLAG)**: 일부 변이맵이 `hub-blue`(변환) + `emerald/amber`(status라 원본) 혼재 — 파손 아님, 일관성 후속.
 
 ### 4.2 후속 여지
-(a) `--surface-inverse-raised`(중첩 다크 패널), (b) 라이트 파스텔 틴트용 hub-*-소프트 토큰 or opacity 스케일 규약, (c) 신규 하드코딩 차단 린트 게이트, (d) `national-distribution-map` 히트맵 opacity 스케일화.
+(a) `--surface-inverse-raised`(중첩 다크 패널), (b) 라이트 파스텔 틴트용 hub-*-소프트 토큰 or opacity 스케일 규약, ~~(c) 신규 하드코딩 차단 린트 게이트~~ → **2026-08-16 해소**(§4.3), (d) `national-distribution-map` 히트맵 opacity 스케일화.
+
+### 4.3 하드코딩 차단 게이트 — 전 팔레트 커버 (2026-08-16)
+
+색 부채는 **exact-match 양방향 베이스라인 2종**이 담당한다. 둘의 합집합이 Tailwind 전 팔레트다.
+
+| 게이트 | 커버 계열 | BASELINE | 실행 경로 |
+|---|---|---:|---|
+| `src/__tests__/hardcoded-color-guard.test.ts` | 중립(slate·gray·zinc·neutral·stone) + 브랜드(blue·indigo·sky·violet·purple·cyan·teal·fuchsia) | 103 | pre-push(`vitest run src/__tests__`) · CI(`pnpm test`) |
+| `src/__tests__/status-color-guard.test.ts` **(신설)** | status(red·green·emerald·rose·amber·orange·yellow·lime·pink) | 786 | 동일 |
+
+- **왜 신설했나**: 기존 가드가 status 계열을 "별도 토큰 대상"이라며 제외했는데, 그 토큰(`success`·`warning`·`info`·`destructive`·`*-emphasis`)은 **이미 존재**했다. 치환 대상이 있는데 계측조차 되지 않아 **어떤 게이트에도 걸리지 않고 증식 가능한 상태**였다(신설 시점 실측 786건 / 105개 파일).
+- **양방향인 이유**: 감소했는데 BASELINE 을 안 내리면 실패한다. 단방향이면 개선분이 슬랙으로 녹아 사라진다.
+- **치환 지침**: green·emerald → `success`, amber·yellow·orange → `warning`, red·rose → `destructive`(강조는 `-emphasis`), 정보성 blue → `info`(기존 가드 소관).
+#### ESLint 규칙은 왜 함께 넓히지 않았나 (시도 → 철회, 2026-08-16)
+
+`eslint.config.mjs` 의 `local-theme/enforce-design-tokens` 는 탐지 축이 위 두 가드보다 **좁다**(계열 9종·유틸 4종·음영 `[1-9]00`·variant 접두사 없음). 그래서 실제 하드코딩 889건 중 **11건만 경고**한다 — 나머지는 규칙 사각지대다.
+
+이를 두 가드와 같은 축(전 팔레트 22종·유틸 17종·variant 포함)으로 넓혀 봤고, **철회했다.** 실측 결과와 이유:
+
+| 항목 | 확장 전 | 확장 후 |
+|---|---:|---:|
+| 전체 warning | 251 | 609 |
+| 그중 디자인토큰 규칙 | 11 | 369 |
+| **비색상 warning** | **240** | **240** |
+
+- 비색상 경고가 240 으로 **동일**하므로 증가분 358 은 부채 증가가 아니라 순수 탐지 확장분이다. 그럼에도 철회한 이유는 `--max-warnings` 를 253 → 609 로 올려야 했고, 그것이 **하네스 게이트 위반**이기 때문이다: `WorkflowManifestLinterTest` 가 `max-warnings > 295` 를 "프런트 ESLint warning 래칫 완화"로 하드 차단한다(실제로 red 를 맞고 알았다).
+- 이 상한은 옳다. lint 예산을 색 부채로 채우면 `no-explicit-any`(154) 같은 **다른 규칙의 래칫이 슬랙에 묻힌다**. 그래서 이 저장소의 설계는 **색 부채 = exact-match 베이스라인(위 표), lint 예산 = 비색상 규칙**으로 역할을 나눈 것이고, 그 분리를 게이트가 지키고 있다.
+- **결론**: 색 커버리지를 넓히는 올바른 수단은 ESLint 예산이 아니라 **베이스라인 신설**이다(이번에 status 786 이 그것). ESLint 규칙 확장은 베이스라인을 충분히 내린 뒤에 하되, 그때도 `max-warnings` 는 295 이하를 유지해야 한다.
 
 > **원칙**: 정적 검증(`tsc`/`next build`)은 통과해도 **색·다크모드 시각 회귀는 잡지 못한다**. 대규모 색 변경 후에는 반드시 라이트/다크 **육안 검증**을 병행한다(프론트 헌법 제6조). *(surface-inverse 는 2026-07-18 브라우저 육안검증 완료; hub-* 액센트는 빌드 CSS 생성 확인 + 동일 @theme 패턴으로 렌더 결정적, admin 실화면 문맥 검증은 백엔드 기동 필요.)*

@@ -38,7 +38,7 @@ try {
     run('node --test scripts/reusable-base-census.test.mjs');
     // DB 진단 브리지는 자격증명·물리 스키마에 직접 닿으므로 쓰기 우회 회귀를 백엔드보다 먼저 차단한다.
     run('node --test .agent/scripts/db-bridge.test.js');
-    // 백엔드: §0.6 컴파일 무결성 + 전 모듈 테스트 + JaCoCo 50% 하한(하네스 포함)
+    // 백엔드: §0.6 컴파일 무결성 + 전 모듈 테스트 + JaCoCo LINE 85%/BRANCH 70% 하한(하네스 포함)
     run(`${gradlew} compileJava compileTestJava test jacocoRootCoverageVerification -Dfile.encoding=UTF-8`);
   }
   if (scope === 'all' || scope === 'fe') {

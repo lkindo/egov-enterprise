@@ -134,7 +134,9 @@ pnpm dev
 
 ---
 
-## 📝 최근 업데이트 (2026-02-21)
+## 📝 변경 이력 — 프로젝트 위생 정비 (2026-02-21)
+
+> 아래는 **2026-02-21 시점의 이력**이다. 현행 게이트·검증 체계는 위 [기여 가이드](#-기여-가이드)와 [.githooks/README.md](./.githooks/README.md)의 게이트 계층표가 SSOT 다.
 
 ### 프로젝트 위생 개선 (Project Hygiene)
 
@@ -182,12 +184,12 @@ refactor: apply optimized JPA/Hibernate configurations (Batch Size, OSIV False)
 
 #### 1. 필수 요구사항
 - **Java**: 21 (LTS)
-- **Node.js**: 20+
+- **Node.js**: 22+ (`.nvmrc` = 22, `frontend/package.json` `engines.node` = `>=22.0.0`)
 - **Package Manager**: pnpm (`npm install -g pnpm`)
 - **Database**: Docker 또는 PostgreSQL 14+
 
 #### 2. 환경 설정 및 데이터베이스 자동 부트스트랩 (Flyway 표준 베이스라인)
-최신 뼈대 아키텍처는 빈 PostgreSQL 데이터베이스만 준비되면 **Flyway 마이그레이션이 스키마(101개 테이블) 및 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)를 자동으로 구성**합니다.
+최신 뼈대 아키텍처는 빈 PostgreSQL 데이터베이스만 준비되면 **Flyway 마이그레이션이 스키마 및 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)를 자동으로 구성**합니다. `V2_0__baseline.sql` 이 초기 101개 테이블을 만들고 후속 생성·정리 마이그레이션이 적용되어, **최종 스키마는 83개 테이블**입니다(CI 가 실 PostgreSQL 17 에서 Flyway 전량 적용 후 `ddl-auto:validate` 로 80 엔티티·83 테이블·888 컬럼을 매번 대조하며 drift 0). 상세는 [getting-started.md](./docs/03-guides/getting-started.md) §6.1 참조.
 
 > ⚠ **관리자 계정 자격증명 정책 (2026-08-01 변경)**
 >
@@ -216,6 +218,9 @@ make bootstrap
 ---
 
 ## 📚 문서 (Documentation)
+
+> 📑 **전체 문서 인덱스: [docs/README.md](./docs/README.md)** — 51개 문서 전량이 등재된 단일 진입점이다.
+> 아래 표는 **자주 쓰는 문서만 추린 발췌**이며 전량이 아니다. 찾는 문서가 없으면 위 인덱스를 볼 것.
 
 에이전트 운영 규칙은 [AGENTS.md](./AGENTS.md) · [GEMINI.md](./GEMINI.md)를 참조한다. 아래는 목적별 기술 문서 지도다. (문서는 `docs/` 이하 번호형 폴더로 분류되며 파일명은 kebab-case를 준수한다.)
 
@@ -258,7 +263,9 @@ make bootstrap
 
 ---
 
-## 🚀 최근 주요 변경사항 (2026-03)
+## 🚀 변경 이력 — 성능·CI·테스트 보강 (2026-03)
+
+> 아래는 **2026-03 시점의 이력**이다. 수치는 당시 실측이며 현행값과 다를 수 있다 — 현행 게이트 임계값의 SSOT 는 `build.gradle`(JaCoCo)·`frontend/vitest.config.mts`(프런트 coverage)·`frontend/package.json`(lint 래칫)이다.
 
 ### 성능 최적화
 - ✅ **N+1 쿼리 해결** - MenuService, UserService, UserLogRepository (95% 성능 향상)
@@ -272,7 +279,7 @@ make bootstrap
 
 ### 테스트 보강
 - ✅ **Testcontainers 통합 테스트** - PostgreSQL 기반 테스트
-- ✅ **JaCoCo 커버리지 목표** - 60% 이상 (클래스별 50%)
+- ✅ **JaCoCo 커버리지 게이트** - *(당시 목표 60%. 2026-08-15 실측 래칫으로 **LINE 85% / BRANCH 70%** 로 상향됨 — `build.gradle` `jacocoRootCoverageVerification` 참조)*
 
 자세한 변경 이력은 git 커밋 히스토리 및 위 **구현 현황(Phase)** 표를 참조하세요.
 

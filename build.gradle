@@ -508,7 +508,7 @@ tasks.register('frontendUnitTest') {
  * 병합·릴리스 전에 이 태스크로 한 번 전수 확인한다.
  */
 tasks.register('localGate') {
-    description = '로컬 전체 게이트: 하네스 + 실PG + 전 모듈 테스트 + JaCoCo 50% + 프런트 vitest/coverage 래칫 (약 12분)'
+    description = '로컬 전체 게이트: 하네스 + 실PG + 전 모듈 테스트 + JaCoCo LINE 85%/BRANCH 70% + 프런트 vitest/coverage 래칫 (약 12분)'
     group = 'Verification'
     dependsOn ':api-server:harnessTest', ':api-server:schemaValidationTest',
             ':business-core:test', ':business-app:test', ':foundation:test',

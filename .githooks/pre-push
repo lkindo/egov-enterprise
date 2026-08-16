@@ -77,6 +77,12 @@ echo "  → reusable base profile: node --test scripts/reusable-base-census.test
 node --test scripts/reusable-base-census.test.mjs \
   || { echo "❌ reusable base 프로필 계약 실패 — 도메인/테이블 소유권 또는 pack 의존 방향 위반"; exit 1; }
 
+# 문서 링크 무결성(수 초). 코드가 이동·삭제돼도 문서 링크는 조용히 남아 다음 사람을 오도한다 —
+# 2026-08-16 실측에서 자체 문서에 팬텀 링크 17건(소멸 모듈 business-suite·이동된 JwtTokenProvider 등)이 있었다.
+echo "  → docs: node --test scripts/docs-link-integrity.test.mjs"
+node --test scripts/docs-link-integrity.test.mjs \
+  || { echo "❌ 문서 링크 무결성 실패 — 존재하지 않는 대상을 가리키는 링크가 있습니다"; exit 1; }
+
 echo "  → backend: ./gradlew compileJava compileTestJava"
 ./gradlew compileJava compileTestJava -q \
   || { echo "❌ Java 컴파일 실패 — 빌드 에러 0건 이후에만 push 허용 (GEMINI.md §0.6)"; exit 1; }

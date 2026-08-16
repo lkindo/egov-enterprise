@@ -291,7 +291,7 @@ class QueryCountGuardrailIntegrationTest extends BusinessIntegrationTestSupport 
 본 N+1 성능 세이프가드 가드레일 계측 현황 및 3대 기술 헌법 무결성 진단 지표는 **Next.js 관리자 관제 센터**에 실시간 연동되어 통합 시각화됩니다.
 
 * **관제 경로**: `시스템관리 ➔ 모니터링 허브 ➔ 에이전트 하네스 아틀라스 (HARNESS Tab)`
-* **인터페이스 구현체**: [`MonitoringHubClient.tsx`](file:///d:/project/egov-enterprise/frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx)
+* **인터페이스 구현체**: [`MonitoringHubClient.tsx`](../../frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx)
 
 ### 4.1 핵심 관제 화면 레이아웃 (Telemetry Modules)
 1. **3대 기술 헌법 무결성 검증 (Three Constitutions SSOT)**: DB 표준화(10조), 백엔드 API(18조), 프론트엔드 UX(17조)의 전사 정밀 준수율을 100% 실시간 합격 보증.

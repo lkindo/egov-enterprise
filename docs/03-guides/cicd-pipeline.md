@@ -182,7 +182,8 @@ strategy:
 
 ### 리포트 병합
 
-- **25-Tier 아키텍처**: 01-core-base부터 25-deptjob-workreport-journey까지 총 25개 계층(tier 프로젝트 26개)으로 테스트가 정의되어 있으며(계층 정의의 SSOT는 [testing-guide.md](./testing-guide.md) §E2E), 각 티어는 독립적으로 또는 병합되어 실행됩니다.
+- **스펙 구성**: `01-core-base` ~ `25-deptjob-workreport-journey` 26개 스펙 파일로 테스트가 정의되어 있다(계층 정의의 SSOT는 [testing-guide.md](./testing-guide.md) §E2E).
+- **Playwright projects 는 2개다**: `setup`(`*.setup.ts`)과 `full-suite`(`*.spec.ts`, `dependencies: [setup]`) — `playwright.config.ts:71-82`. ⚠ **종전 서술 "tier 프로젝트 26개"는 2026-08-10 이후 사실이 아니다.** 스펙 파일마다 project 를 두던 구조에서 미지정 실행 시 226건(full-suite 112 + tier 112 + setup 2)이 **2배로 실행**되던 문제가 있어 tier project 26개를 제거했다. 스펙 파일 수(26)와 project 수(2)를 혼동하지 말 것.
 - **Sharding (병렬 실행)**: CI 환경에서 전체 테스트 스위트를 3개의 Shard로 분할하여 병렬로 실행함으로써 전체 테스트 시간을 단축합니다.
 
 #### 병합 리포트 생성 (`ci.yml`)
@@ -276,11 +277,11 @@ dependencyCheck {
 - **키**: Gradle 래퍼 해시 + `build.gradle` 해시
 - **효과**: 2 번째 빌드부터 91% 단축 (2m13s → 12s)
 
-### Next.js 캐싱
+### Next.js 캐싱 — **의도적으로 사용하지 않는다**
 
-- **위치**: `frontend/.next/cache`
-- **내용**: Webpack, ESLint, SWC, TypeScript 빌드 정보
-- **업로드**: 아티팩트로 업로드하여 E2E 테스트에서 재사용
+⚠ **종전 서술("아티팩트로 업로드하여 E2E 테스트에서 재사용")은 현행이 아니다.** `ci.yml`(E2E 잡)에서 Next 빌드 캐시 복원은 **제거됐다** — 빌드 시점의 dev JWT 시크릿이 Edge 미들웨어 번들에 인라인된 채 캐시에 남아, 회차별로 새로 발급하는 시크릿과 어긋나며 인증이 깨졌기 때문이다. E2E 는 매 회차 클린 빌드한다.
+
+- **Gradle·Playwright 브라우저 캐시는 유지**한다(아래 참조). 캐시 복원을 다시 도입하려면 시크릿이 번들에 인라인되지 않음을 먼저 증명할 것.
 
 ### Playwright 브라우저
 

@@ -74,11 +74,11 @@
 가장 먼저 해결해야 할 병목. **✅ 표시는 메인 오퍼레이터가 파일로 직접 재검증**한 항목이다.
 
 ### B1. 재사용 코어(foundation)가 '동작하지 않는 껍데기' — 계약·백본이 전부 앱 모듈에 있다
-- **증거**: `foundation/…/core/{repository,service}` 및 `domain/common`은 **빈 디렉터리**. 정작 `GlobalExceptionHandler`·`BaseEntity`/`BaseTimeEntity`·`PageResponse`는 [business-suite/…/core, domain/common](../../business-suite/src/main/java/nuri/business/core), 보안 전체(JWT/IAM/filter/resolver/audit)는 [business-suite/…/security](../../business-suite/src/main/java/nuri/business/security)에 있다.
+- **증거**: `foundation/…/core/{repository,service}` 및 `domain/common`은 **빈 디렉터리**. 정작 `GlobalExceptionHandler`·`BaseEntity`/`BaseTimeEntity`·`PageResponse`는 `business-suite/…/core, domain/common`, 보안 전체(JWT/IAM/filter/resolver/audit)는 `business-suite/…/security`에 있다. *(2026-08-16 주: `business-suite` 모듈은 §0 현행화 노트대로 `business-core`+`business-app` 으로 분할되어 **더 이상 존재하지 않는다.** 진단 시점 서술이므로 경로는 남기되 링크는 해제한다.)*
 - **왜 막나**: `foundation`만 복제하면 예외가 봉투로 변환되지 않고, 감사 컬럼·표준 페이징·인증이 전무하다. **동작하는 베이스라인을 얻으려면 50개 도메인을 품은 business-suite를 통째로 끌고 와야 하므로 "코어만 재사용"이 원천 불가능하다.**
 
 ### B2. 필수 admin과 프로젝트 고유가 물리적으로 미분리 — 삭제 단위가 없다
-- **증거**: [business-suite/…/domain](../../business-suite/src/main/java/nuri/business/domain) — 36개 도메인·494 java가 flat 공간에 혼재. Spring Modulith / 서브모듈 / `@Core`·`@App` 매니페스트 전무.
+- **증거**: `business-suite/…/domain`(분할 전 모듈 — 현재 부재) — 36개 도메인·494 java가 flat 공간에 혼재. Spring Modulith / 서브모듈 / `@Core`·`@App` 매니페스트 전무.
 - **왜 막나**: `user·auth·code·menu`(코어)와 `informalsanction·isg·memoreport`(고유)를 구분하는 물리 경계가 없어, 파생 프로젝트마다 도메인·서비스·리포·컨트롤러를 손으로 골라 삭제하고 누락 시 컴파일 파손을 매번 떠안는다.
 
 ### B3. ✅ 불가침 코어·필수 대시보드가 프로젝트 고유 도메인에 하드결합
