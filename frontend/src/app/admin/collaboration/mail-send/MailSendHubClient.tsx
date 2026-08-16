@@ -181,7 +181,12 @@ export default function MailSendHubClient() {
                       }
                     }}
                   />
-                  <Button type="button" onClick={handleAddRecipient} className="h-11 px-6 rounded-lg shrink-0">
+                  <Button
+                    type="button"
+                    data-testid="mail-recipient-add-btn"
+                    onClick={handleAddRecipient}
+                    className="h-11 px-6 rounded-lg shrink-0"
+                  >
                     <Plus size={16} className="mr-2" /> 추가
                   </Button>
                 </div>

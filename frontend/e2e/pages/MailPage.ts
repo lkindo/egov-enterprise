@@ -22,14 +22,15 @@ export class MailPage {
             await recipientInput.click();
             await recipientInput.clear();
             await recipientInput.fill(recipient);
-            
-            // Wait for results to appear with a bit more buffer
-            const firstResult = this.page.getByTestId('recipient-item').first();
-            await firstResult.waitFor({ state: 'visible', timeout: 15000 });
-            await firstResult.click({ force: true });
-            
-            // Wait for the recipient selection to be processed and UI to update
-            await this.page.waitForTimeout(1000);
+
+            const addRecipientButton = this.page.getByTestId('mail-recipient-add-btn');
+            await expect(addRecipientButton).toBeEnabled();
+            await addRecipientButton.click();
+
+            const selectedRecipient = this.page
+                .getByTestId('selected-recipient-badge')
+                .filter({ hasText: recipient });
+            await expect(selectedRecipient).toBeVisible();
             console.log(`>>> Selected recipient for: ${recipient}`);
         }
 

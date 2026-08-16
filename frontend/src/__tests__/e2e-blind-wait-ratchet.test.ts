@@ -46,8 +46,11 @@ const E2E_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'e2e')
  * [하향 2026-08-13: 63 → 62] SearchPage 의 검색 완료를 고정 1.5초가 아니라
  *   URL 의 q 파라미터 반영으로 기다리도록 바꿨다. 빠른 입력과 PPR hydration 의 경합을
  *   재현하는 테스트 강도는 유지하면서 불필요한 시간 의존 1건을 제거했다.
+ *
+ * [하향 2026-08-16: 62 → 61] MailPage 수신자 추가 완료를 고정 1초가 아니라
+ *   선택된 수신자 배지가 표시되는 상태로 기다리도록 바꿨다.
  */
-const BASELINE = 62;
+const BASELINE = 61;
 
 function collectFiles(dir: string): string[] {
     const out: string[] = [];
