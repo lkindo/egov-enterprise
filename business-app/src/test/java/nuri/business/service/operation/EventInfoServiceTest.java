@@ -2,7 +2,7 @@ package nuri.business.service.operation;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.operation.EventInfo;
-import nuri.business.repository.operation.EventInfoRepository;
+import nuri.business.domain.operation.EventInfoRepository;
 import nuri.business.service.operation.dto.EventInfoDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

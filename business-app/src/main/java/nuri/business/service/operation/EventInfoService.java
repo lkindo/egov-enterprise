@@ -3,7 +3,7 @@ import nuri.foundation.core.exception.CommonErrorCode;
  
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.operation.EventInfo;
-import nuri.business.repository.operation.EventInfoRepository;
+import nuri.business.domain.operation.EventInfoRepository;
 import nuri.business.service.operation.dto.EventInfoDto;
 import nuri.business.service.operation.dto.EventInfoMapper;
 import lombok.RequiredArgsConstructor;

@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "sourcePolicy": {
+    "canonicalBranch": "main",
+    "distributionMode": "release-tag-generated",
+    "allowDirtyWorkingTree": false,
+    "allowLongLivedTemplateBranch": false
+  },
+  "profiles": {
+    "core": {
+      "packs": ["core"],
+      "description": "인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심의 최소 프레임워크"
+    },
+    "collaboration": {
+      "packs": ["core", "collaboration"],
+      "description": "core + 게시판 클러스터 + 메일·쪽지·알림·SMS"
+    },
+    "demo": {
+      "packs": ["core", "collaboration", "demo"],
+      "description": "현재 제품의 전체 참조 기능"
+    }
+  },
+  "packs": {
+    "core": {
+      "rank": 0,
+      "backend": {
+        "modules": ["foundation", "business-core", "api-server"],
+        "appDomains": []
+      },
+      "database": {
+        "sequences": [
+          "revinfo_seq"
+        ],
+        "tables": [
+          "meta_standard_domains",
+          "meta_standard_terms",
+          "meta_standard_words",
+          "revinfo",
+          "tb_admdst_cd",
+          "tb_auth_rfsh_tk",
+          "tb_authrt_group_info",
+          "tb_authrt_info",
+          "tb_authrt_role_map",
+          "tb_bkmk_menu_mng_rslt",
+          "tb_com_cd",
+          "tb_com_clsf_cd",
+          "tb_com_dtl_cd",
+          "tb_dept_job_bx",
+          "tb_dept_task_info",
+          "tb_file_detail",
+          "tb_file_master",
+          "tb_indv_pg_conts",
+          "tb_inst_cd",
+          "tb_inst_cd_rcptn_log",
+          "tb_login_log",
+          "tb_login_policy",
+          "tb_menu_crt_dtl",
+          "tb_menu_info",
+          "tb_ognz_info",
+          "tb_plcy_manage",
+          "tb_prgrm_lst",
+          "tb_privacy_log",
+          "tb_role_hierarchy",
+          "tb_role_info",
+          "tb_role_prgrm_map",
+          "tb_stmp_info",
+          "tb_sys_log",
+          "tb_user_absn",
+          "tb_user_authrt_map",
+          "tb_user_info",
+          "tb_user_log",
+          "tb_web_log"
+        ]
+      }
+    },
+    "collaboration": {
+      "rank": 1,
+      "backend": {
+        "appDomains": [
+          "board",
+          "comment",
+          "dashboard",
+          "mail",
+          "note",
+          "notification",
+          "scrap",
+          "sms"
+        ]
+      },
+      "database": {
+        "sequences": [
+          "sq_answer_no",
+          "sq_dgstfn_sn"
+        ],
+        "tables": [
+          "tb_bbs_comment",
+          "tb_bbs_item",
+          "tb_bbs_master",
+          "tb_bbs_master_optn",
+          "tb_bbs_scrap",
+          "tb_bbs_use_info",
+          "tb_dgstfn_info",
+          "tb_email_dsptch_manage",
+          "tb_note_info",
+          "tb_note_rcptn",
+          "tb_note_sndng",
+          "tb_sms_info",
+          "tb_sms_rcptn",
+          "tb_tmplt_info",
+          "tb_user_noti"
+        ]
+      }
+    },
+    "demo": {
+      "rank": 2,
+      "backend": {
+        "appDomains": [
+          "addressbook",
+          "blog",
+          "help",
+          "informalsanction",
+          "isg",
+          "memoreport",
+          "operation",
+          "report",
+          "schedule",
+          "stats",
+          "system",
+          "template"
+        ]
+      },
+      "frontend": {
+        "removePaths": [
+          "src/app/actions/promotionActions.ts",
+          "src/app/admin/collaboration/address-book",
+          "src/app/admin/community/[id]",
+          "src/app/admin/community/board",
+          "src/app/admin/community/page.tsx",
+          "src/app/admin/community/templates",
+          "src/app/admin/help",
+          "src/app/admin/operation",
+          "src/app/admin/sanctn",
+          "src/app/admin/stats",
+          "src/app/admin/survey",
+          "src/app/admin/system/banner",
+          "src/app/admin/system/hpcm",
+          "src/app/admin/system/ism",
+          "src/app/admin/uss/olh",
+          "src/app/admin/work-hub",
+          "src/app/admin/workflow",
+          "src/app/approvals",
+          "src/app/cop/cmy",
+          "src/app/help",
+          "src/app/smart-toolkit/schedule",
+          "src/app/smart-toolkit/work-report",
+          "src/app/survey",
+          "src/components/business/report",
+          "src/components/business/schedule",
+          "src/lib/api/survey.ts",
+          "src/services/business/community",
+          "src/services/business/memoreport",
+          "src/services/business/roughmap",
+          "src/services/business/schedule",
+          "src/services/business/user/ReportService.ts",
+          "src/services/business/user/addressbook",
+          "src/services/business/user/approval",
+          "src/services/business/user/help",
+          "src/services/business/user/poll",
+          "src/services/foundation/operation/OperationAdminService.ts",
+          "src/services/foundation/operation/eventService.ts",
+          "src/services/foundation/operation/__tests__/eventService.test.ts",
+          "src/services/foundation/survey",
+          "src/services/foundation/system/BannerAdminService.ts",
+          "src/services/foundation/system/CommunityAdminService.ts",
+          "src/services/foundation/system/HpcmAdminService.ts",
+          "src/services/foundation/system/IsmAdminService.ts",
+          "src/services/foundation/system/OnlinePollAdminService.ts",
+          "src/services/foundation/system/PopupAdminService.ts",
+          "src/services/foundation/system/StatsAdminService.ts",
+          "src/services/foundation/system/SurveyAdminService.ts",
+          "src/services/foundation/system/TemplateAdminService.ts",
+          "src/services/foundation/user",
+          "src/types/business/addressbook.ts",
+          "src/types/business/community.ts",
+          "src/types/business/poll.ts",
+          "src/types/business/schedule.ts",
+          "src/types/business/survey.ts",
+          "src/types/foundation/banner.ts",
+          "src/types/foundation/stats.ts"
+        ]
+      },
+      "database": {
+        "sequences": [],
+        "tables": [
+          "tb_adbk_info",
+          "tb_adbk_manage",
+          "tb_blog_info",
+          "tb_blog_user_map",
+          "tb_bnr_info",
+          "tb_cmnty_info",
+          "tb_cmnty_user_map",
+          "tb_diary_info",
+          "tb_dta_use_stats",
+          "tb_event_info",
+          "tb_extrl_hr_info",
+          "tb_hlp_info",
+          "tb_ifml_atrz_info",
+          "tb_intrn_svc",
+          "tb_memo_rpt_info",
+          "tb_onln_mnl_info",
+          "tb_onln_poll_artcl",
+          "tb_onln_poll_manage",
+          "tb_onln_poll_rslt",
+          "tb_popup_info",
+          "tb_rpt_info",
+          "tb_rptp_stats",
+          "tb_rward_manage",
+          "tb_schdl_info",
+          "tb_srvy_artcl",
+          "tb_srvy_info",
+          "tb_srvy_qstn",
+          "tb_srvy_rslt",
+          "tb_srvy_rspdnt",
+          "tb_srvy_tmplt"
+        ]
+      }
+    }
+  },
+  "clusters": [
+    {
+      "id": "board",
+      "pack": "collaboration",
+      "domains": ["board", "comment", "scrap"],
+      "reason": "Board 양방향 댓글 연관, 스크랩 FK 및 댓글 수 동기화 때문에 함께 선택한다."
+    },
+    {
+      "id": "approval",
+      "pack": "demo",
+      "domains": ["informalsanction", "operation"],
+      "reason": "RewardManage가 InformalSanction을 직접 참조하므로 함께 선택한다."
+    },
+    {
+      "id": "realtime-stats",
+      "pack": "collaboration",
+      "domains": ["dashboard"],
+      "requiresDomains": ["board", "notification"],
+      "reason": "DB 통계 도메인과 무관한 인메모리 RealTimeDashboardService가 게시판 및 알림 이벤트를 집계한다."
+    }
+  ],
+  "sharedTableContracts": [
+    {
+      "table": "tb_tmplt_info",
+      "ownerPack": "collaboration",
+      "consumers": ["board", "template"],
+      "reason": "BoardTemplate과 독립 template 도메인이 같은 물리 테이블을 매핑한다."
+    }
+  ],
+  "databaseSnapshot": {
+    "source": "api-server current versioned migrations/public",
+    "checkedAt": "2026-08-16T04:05:03.1316898Z",
+    "physicalTableCountExcludingFlyway": 83,
+    "physicalSequenceCount": 49,
+    "physicalStandaloneSequenceCount": 3,
+    "metaRows": {
+      "meta_standard_words": 3386,
+      "meta_standard_terms": 13207,
+      "meta_standard_domains": 127
+    }
+  }
+}

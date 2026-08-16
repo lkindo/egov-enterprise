@@ -6,16 +6,20 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
- * {@link AttachmentReferenceResolver} 의 JDBC 구현. {@link AttachmentSource} 레지스트리를 순회하며
- * 참조 행의 존재와 열람 근거를 집계한다.
+ * {@link AttachmentReferenceResolver} 의 JDBC 구현. 기능별 {@link AttachmentSourceContributor}가
+ * 제공한 참조 규칙만 순회하며 참조 행의 존재와 열람 근거를 집계한다.
  *
- * <p>[네이티브 SQL 인 이유] 참조원은 4개 모듈(business-core/business-app)에 흩어진 13개 엔티티다.
+ * <p>[네이티브 SQL 인 이유] 참조원은 business-core/business-app의 여러 기능에 흩어져 있다.
  * JPA 로 묶으려면 core 가 app 엔티티를 알아야 해 모듈 방향성이 역전된다. 인가 판정 한 곳을 위해
- * 의존 방향을 뒤집는 대신, 물리 테이블을 직접 조회하고 그 매핑을
- * {@code AttachmentSourceRegistryLinterTest} 로 고정한다.
+ * 의존 방향을 뒤집는 대신 물리 테이블을 직접 조회한다. 규칙 소유권은 각 기능 contributor에 두고,
+ * 그 매핑은 {@code AttachmentSourceRegistryLinterTest} 로 검증한다. 따라서 base projection에서 기능이
+ * 빠지면 해당 참조원도 함께 빠져 존재하지 않는 테이블을 조회하지 않는다.
  *
  * <p><b>[fail-closed]</b> 조회 실패(테이블 부재·권한 등)는 <b>열람 근거 없음 + 개인 참조 존재</b>로
  * 취급한다. 즉 실패는 관리자 우회까지 막는 쪽으로 기운다 — 인가 판정에서 모르는 것은 허용이 아니다.
@@ -25,9 +29,25 @@ import java.util.List;
 public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResolver {
 
     private final JdbcTemplate jdbcTemplate;
+    private final List<AttachmentSource> sources;
 
-    public JdbcAttachmentReferenceResolver(JdbcTemplate jdbcTemplate) {
+    public JdbcAttachmentReferenceResolver(
+            JdbcTemplate jdbcTemplate,
+            List<AttachmentSourceContributor> contributors) {
         this.jdbcTemplate = jdbcTemplate;
+        this.sources = contributors.stream()
+                .flatMap(contributor -> contributor.sources().stream())
+                .sorted(Comparator.comparing(AttachmentSource::table))
+                .toList();
+        if (sources.isEmpty()) {
+            throw new IllegalStateException("첨부 참조원 contributor가 하나도 등록되지 않았다.");
+        }
+        Set<String> distinctTables = sources.stream()
+                .map(AttachmentSource::table)
+                .collect(Collectors.toSet());
+        if (distinctTables.size() != sources.size()) {
+            throw new IllegalStateException("첨부 참조원 table이 중복 등록됐다.");
+        }
     }
 
     @Override
@@ -36,7 +56,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         boolean owner = false;
         boolean personal = false;
 
-        for (AttachmentSource source : AttachmentSource.values()) {
+        for (AttachmentSource source : sources) {
             if (source.sensitivity() == AttachmentSource.Sensitivity.DERIVED) {
                 // 파생 로그는 어떤 근거도 만들지 않는다 — 조회 자체를 생략한다.
                 continue;

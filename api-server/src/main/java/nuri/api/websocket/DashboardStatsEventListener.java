@@ -1,6 +1,6 @@
 package nuri.api.websocket;
 
-import nuri.business.service.stats.DashboardStatsUpdatedEvent;
+import nuri.business.service.dashboard.DashboardStatsUpdatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;

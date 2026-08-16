@@ -11,9 +11,11 @@ import org.springframework.jdbc.core.RowMapper;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -61,7 +63,7 @@ class JdbcAttachmentReferenceResolverTest {
         }
 
         JdbcAttachmentReferenceResolver resolver() {
-            return new JdbcAttachmentReferenceResolver(template);
+            return JdbcAttachmentReferenceResolverTest.resolver(template);
         }
 
         String sqlFor(AttachmentSource source) {
@@ -207,7 +209,7 @@ class JdbcAttachmentReferenceResolverTest {
                 .thenThrow(new QueryTimeoutException("db down"));
 
         AttachmentReferenceResolver.Grants grants =
-                new JdbcAttachmentReferenceResolver(template).resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+                resolver(template).resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(grants.sharedGrant()).isFalse();
         assertThat(grants.ownerGrant()).isFalse();
@@ -224,7 +226,7 @@ class JdbcAttachmentReferenceResolverTest {
                 .thenThrow(new QueryTimeoutException("db down"));
 
         AttachmentReferenceResolver.Grants grants =
-                new JdbcAttachmentReferenceResolver(template).resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+                resolver(template).resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(grants).isNotNull();
     }
@@ -267,9 +269,29 @@ class JdbcAttachmentReferenceResolverTest {
                 .thenThrow(new BadTable("relation does not exist"));
 
         AttachmentReferenceResolver.Grants grants =
-                new JdbcAttachmentReferenceResolver(template).resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+                resolver(template).resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(grants.personalReference()).isTrue();
+    }
+
+    @Test
+    @DisplayName("참조원 contributor가 없으면 fail-fast 한다 — 빈 projection 오구성을 숨기지 않는다")
+    void rejectsEmptyContributors() {
+        assertThatThrownBy(() -> new JdbcAttachmentReferenceResolver(mock(JdbcTemplate.class), List.of()))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("하나도 등록되지 않았다");
+    }
+
+    @Test
+    @DisplayName("같은 물리 테이블을 둘이 등록하면 fail-fast 한다 — 인가 집계의 중복 실행을 막는다")
+    void rejectsDuplicateTables() {
+        AttachmentSourceContributor first = () -> List.of(AttachmentSource.BOARD);
+        AttachmentSourceContributor second = () -> List.of(AttachmentSource.BOARD);
+
+        assertThatThrownBy(() -> new JdbcAttachmentReferenceResolver(
+                mock(JdbcTemplate.class), List.of(first, second)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("중복 등록");
     }
 
     /** 테이블 부재처럼 스키마 계열 실패를 흉내내는 최소 예외. */
@@ -277,5 +299,10 @@ class JdbcAttachmentReferenceResolverTest {
         BadTable(String msg) {
             super(msg);
         }
+    }
+
+    private static JdbcAttachmentReferenceResolver resolver(JdbcTemplate template) {
+        AttachmentSourceContributor allSources = () -> Arrays.asList(AttachmentSource.values());
+        return new JdbcAttachmentReferenceResolver(template, List.of(allSources));
     }
 }

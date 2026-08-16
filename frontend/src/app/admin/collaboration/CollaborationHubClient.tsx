@@ -11,7 +11,6 @@ import {
  Bookmark,
  Search,
  Plus,
- Users,
  Zap,
  Share2
 } from 'lucide-react';
@@ -21,7 +20,6 @@ import {
 import { cn } from '@/lib/utils';
 import { noteService, Note } from '@/services/business/user/NoteService';
 import { scrapService } from '@/services/business/user/ScrapService';
-import { addressbookUserService, AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -29,7 +27,7 @@ import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { PageHeader } from '@/app/components/layout/page-header';
 
-const COLLABORATION_TABS = ['MESSAGES', 'ADDRESS_BOOK', 'SCRAPS'] as const;
+const COLLABORATION_TABS = ['MESSAGES', 'SCRAPS'] as const;
 type CollaborationTab = (typeof COLLABORATION_TABS)[number];
 
 /** 스크랩 목록 원소 타입 — 서비스 반환 타입에서 파생한다(로컬 재선언 금지). */
@@ -37,14 +35,12 @@ type ScrapItem = Awaited<ReturnType<typeof scrapService.getMyScraps>>['list'][nu
 
 const TAB_LABEL: Record<CollaborationTab, string> = {
   MESSAGES: '쪽지',
-  ADDRESS_BOOK: '주소록',
   SCRAPS: '스크랩',
 };
 
 /** 서버 검색(searchWrd)을 지원하는 탭만 검색창을 노출한다(스크랩 API 는 검색 파라미터가 없다). */
 const SERVER_SEARCHABLE: Record<CollaborationTab, boolean> = {
   MESSAGES: true,
-  ADDRESS_BOOK: true,
   SCRAPS: false,
 };
 
@@ -75,19 +71,12 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  }, [pathname, router, searchParams]);
 
  // --- Data Fetching ---
- // 지표 카드가 실제 총 건수를 표기해야 하므로 3개 쿼리를 모두 조회한다.
- // (탭별 lazy 로딩 시 비활성 탭 지표가 항상 0 으로 표시되어 거짓 지표가 된다.)
+ // 지표 카드가 실제 총 건수를 표기해야 하므로 두 쿼리를 모두 조회한다.
  const notesQuery = useQuery({
    queryKey: ['collab-notes', debouncedKeyword],
    queryFn: () => noteService.getReceivedNotes({ page: 0, size: 50, searchWrd: debouncedKeyword }),
  });
  const notes: Note[] = notesQuery.data?.list ?? [];
-
- const addressQuery = useQuery({
-   queryKey: ['collab-addressbook', debouncedKeyword],
-   queryFn: () => addressbookUserService.getAddressBooks({ page: 0, size: 50, searchWrd: debouncedKeyword }),
- });
- const addresses: AddressBook[] = addressQuery.data?.list ?? [];
 
  const scrapsQuery = useQuery({
    queryKey: ['collab-scraps'],
@@ -99,18 +88,14 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  const tableError: Error | null =
    activeTab === 'MESSAGES'
      ? (notesQuery.error as Error | null)
-     : activeTab === 'ADDRESS_BOOK'
-       ? (addressQuery.error as Error | null)
-       : (scrapsQuery.error as Error | null);
+     : (scrapsQuery.error as Error | null);
 
  const notesRefetch = notesQuery.refetch;
- const addressRefetch = addressQuery.refetch;
  const scrapsRefetch = scrapsQuery.refetch;
  const handleRetry = useCallback(() => {
    if (activeTab === 'MESSAGES') void notesRefetch();
-   else if (activeTab === 'ADDRESS_BOOK') void addressRefetch();
    else void scrapsRefetch();
- }, [activeTab, notesRefetch, addressRefetch, scrapsRefetch]);
+ }, [activeTab, notesRefetch, scrapsRefetch]);
 
  const metricValue = (isError: boolean, total?: number): string | number =>
    isError ? '조회 실패' : (total ?? 0);
@@ -145,25 +130,6 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  }
  ], []);
 
- const addressColumns: Column<AddressBook>[] = useMemo(() => [
- {
- header: '번호',
- accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{((index ?? 0) + 1).toString().padStart(2, '0')}</span>,
- className: 'w-20 text-center'
- },
- {
- header: '주소록 명칭',
- accessor: (item) => <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">{item.adbkNm}</span>
- },
- {
- // 목록 응답(AddressBookDto)에는 구성원(adbkMan)이 포함되지 않는다 → 이메일 열은 항상 공백이라 제거하고
- // 실제로 내려오는 등록일자를 노출한다.
- header: '등록일자',
- accessor: (item) => <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">{(item.crtDt || '').substring(0, 10)}</span>,
- className: 'w-48'
- }
- ], []);
-
  const scrapColumns: Column<ScrapItem>[] = useMemo(() => [
  {
  header: '번호',
@@ -182,13 +148,6 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  ], []);
 
  const headerAction = useMemo(() => {
-    if (activeTab === 'ADDRESS_BOOK') {
-      return (
-        <Button onClick={() => router.push('/admin/collaboration/address-book/insert-address-book')} className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl gap-2">
-          <Plus size={18} /> 주소록 등록
-        </Button>
-      );
-    }
     if (activeTab === 'SCRAPS') {
       return (
         <Button onClick={() => router.push('/admin/collaboration/scraps/insertScrap')} className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl gap-2">
@@ -218,6 +177,14 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  icon={Share2}
  actions={
  <div className="flex gap-4 items-center">
+ <Button
+ variant="outline"
+ size="sm"
+ className="h-10 rounded-lg px-4 text-[11px] font-black"
+ onClick={() => router.push('/admin/collaboration/address-book')}
+ >
+ 주소록 관리
+ </Button>
  <div role="tablist" aria-label="협업 데이터 구분" className="flex bg-muted p-1 rounded-xl border border-border/50">
  {COLLABORATION_TABS.map((tab) => (
  <Button
@@ -240,14 +207,13 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  }
  />
 
- <HubMetricGrid className="lg:grid-cols-3">
+ <HubMetricGrid className="lg:grid-cols-2">
  <HubMetricCard title="받은 쪽지" value={metricValue(notesQuery.isError, notesQuery.data?.total)} icon={Inbox} color="primary" status="총 건수" />
- <HubMetricCard title="내 주소록" value={metricValue(addressQuery.isError, addressQuery.data?.total)} icon={Users} color="emerald" status="총 건수" />
  <HubMetricCard title="내 스크랩" value={metricValue(scrapsQuery.isError, scrapsQuery.data?.total)} icon={Bookmark} color="amber" status="총 건수" />
  </HubMetricGrid>
 
  <HubSectionCard
- title={activeTab === 'MESSAGES' ? "쪽지 수신함" : activeTab === 'ADDRESS_BOOK' ? "주소록 목록" : "스크랩 목록"}
+ title={activeTab === 'MESSAGES' ? "쪽지 수신함" : "스크랩 목록"}
  description="조직 내에서 발생하는 협업 데이터 및 개인 자산 명세입니다."
  icon={Zap}
  className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
@@ -295,20 +261,6 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  onRetry={handleRetry}
  onRowClick={() => router.push('/note')}
  emptyMessage="받은 쪽지가 없습니다."
- isPremium={true}
- className="border-none bg-transparent shadow-none"
- />
- )}
- {activeTab === 'ADDRESS_BOOK' && (
- <StandardDataTable<AddressBook>
- columns={addressColumns}
- data={addresses}
- keyField="adbkSn"
- loading={addressQuery.isLoading}
- error={tableError}
- onRetry={handleRetry}
- onRowClick={(item) => router.push(`/admin/collaboration/address-book/select-address-book-detail/${item.adbkSn}`)}
- emptyMessage="등록된 주소록이 없습니다."
  isPremium={true}
  className="border-none bg-transparent shadow-none"
  />

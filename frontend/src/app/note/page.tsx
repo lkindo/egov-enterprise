@@ -14,6 +14,7 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, Sparkles, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import type { UserSearchResult } from '@/services/business/user/UserSearchService';
 
 export default function NotePage() {
   const { toast } = useToast();
@@ -65,8 +66,8 @@ export default function NotePage() {
     }
   };
 
-  const handleUserSelect = (user: any) => {
-    setFormData({ ...formData, rcverId: user.emplyrId || user.adbkUserId, rcverNm: user.nm });
+  const handleUserSelect = (user: UserSearchResult) => {
+    setFormData({ ...formData, rcverId: user.esntlId ?? '', rcverNm: user.userNm ?? '' });
   };
 
   const handleDetail = (note: Note) => {

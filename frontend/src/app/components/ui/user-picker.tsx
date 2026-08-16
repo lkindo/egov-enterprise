@@ -4,15 +4,14 @@ import React, { useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('./standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { VirtualScrollList } from './virtual-scroll-list';
-import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
-import { NameCard } from '@/types/business/addressbook';
+import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { Search,  User } from 'lucide-react';
 ;
 
 interface UserPickerProps {
  isOpen: boolean;
  onClose: () => void;
- onSelect: (user: NameCard) => void;
+ onSelect: (user: UserSearchResult) => void;
  title?: string;
 }
 
@@ -23,17 +22,17 @@ export function UserPicker({
  title = "사용자 검색 및 선택"
 }: UserPickerProps) {
  const [keyword, setKeyword] = useState('');
- const [results, setResults] = useState<NameCard[]>([]);
+ const [results, setResults] = useState<UserSearchResult[]>([]);
  const [loading, setLoading] = useState(false);
 
  const handleSearch = useCallback(async (e?: React.FormEvent) => {
  if (e) e.preventDefault();
- if (!keyword.trim()) return;
+ if (keyword.trim().length < 2) return;
 
  try {
  setLoading(true);
- const res = await addressbookUserService.searchUsers(keyword);
- setResults(res.list || []);
+ const res = await userSearchService.searchAssignableUsers(keyword.trim());
+ setResults(res);
  } catch (error) {
  console.error('Search failed', error);
  } finally {
@@ -41,11 +40,11 @@ export function UserPicker({
  }
  }, [keyword]);
 
- const renderUserItem = (user: NameCard) => (
+ const renderUserItem = (user: UserSearchResult) => (
  <div
  role="button"
  tabIndex={0}
- aria-label={`사용자 선택: ${user.nm}`}
+ aria-label={`사용자 선택: ${user.userNm}`}
  className="flex items-center justify-between px-6 py-3 border-b hover:bg-primary/5 transition-colors cursor-pointer group"
  onClick={() => {
  onSelect(user);
@@ -64,12 +63,12 @@ export function UserPicker({
  <User size={16} />
  </div>
  <div>
- <p className="text-sm font-bold text-foreground">{user.nm}</p>
- <p className="text-xs text-muted-foreground">{user.emlAddr}</p>
+ <p className="text-sm font-bold text-foreground">{user.userNm}</p>
+ <p className="text-xs text-muted-foreground">{user.deptNm || '소속 부서 없음'}</p>
  </div>
  </div>
  <div className="text-sm font-mono text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity">
- ID: {user.userId || user.adbkMbrSn}
+ ID: {user.esntlId}
  </div>
  </div>
  );
