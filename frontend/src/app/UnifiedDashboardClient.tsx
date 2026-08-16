@@ -24,6 +24,13 @@ import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { DashboardTask } from '@/types/foundation/dashboard';
 
 // Optimization: Priority 2 - Dynamic Imports for heavy components
+/* reusable-base:demo:start */
+const BannerSlider = dynamic(() => import('@/app/components/dashboard/BannerSlider').then(mod => mod.BannerSlider), {
+  loading: () => <Skeleton className="h-[400px] w-full rounded-lg" />,
+  ssr: false
+});
+const PopupManager = dynamic(() => import('@/app/components/dashboard/PopupManager').then(mod => mod.PopupManager), { ssr: false });
+/* reusable-base:demo:end */
 const ActivityFeed = dynamic(() => import('@/app/components/dashboard/ActivityFeed').then(mod => mod.ActivityFeed), { 
   loading: () => <div className="space-y-4 pt-10"><Skeleton className="h-11 w-full" /><Skeleton className="h-11 w-full" /></div>,
   ssr: false 
@@ -75,6 +82,10 @@ export default function UnifiedDashboardClient({
       variants={hubContainerVariants}
       className="space-y-10 pb-20 px-2 lg:px-0"
     >
+      {/* reusable-base:demo:start */}
+      <PopupManager />
+      {/* reusable-base:demo:end */}
+
       {/* Header Section */}
       <motion.div variants={hubItemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
         <div className="space-y-2">
@@ -99,6 +110,12 @@ export default function UnifiedDashboardClient({
           </motion.button>
         </div>
       </motion.div>
+
+      {/* reusable-base:demo:start */}
+      <motion.div variants={hubItemVariants} className="relative rounded-lg overflow-hidden shadow-2xl">
+        <BannerSlider />
+      </motion.div>
+      {/* reusable-base:demo:end */}
 
       {/* Real-time Insights */}
       <motion.div variants={hubItemVariants} className="p-4 md:p-8 border border-border/80 rounded-lg bg-card/40 dark:bg-card/20 shadow-sm">

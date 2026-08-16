@@ -132,6 +132,8 @@
       "frontend": {
         "removePaths": [
           "src/app/actions/promotionActions.ts",
+          "src/app/components/dashboard/BannerSlider.tsx",
+          "src/app/components/dashboard/PopupManager.tsx",
           "src/app/admin/collaboration/address-book",
           "src/app/admin/community/[id]",
           "src/app/admin/community/board",
@@ -162,6 +164,8 @@
           "src/services/business/roughmap",
           "src/services/business/schedule",
           "src/services/business/user/ReportService.ts",
+          "src/services/business/user/BannerService.ts",
+          "src/services/business/user/PopupService.ts",
           "src/services/business/user/addressbook",
           "src/services/business/user/approval",
           "src/services/business/user/help",

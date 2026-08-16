@@ -219,6 +219,66 @@ function importedFrontendFiles(frontendRoot, path, knownFiles) {
   return specifiers.map((specifier) => resolveFrontendImport(frontendRoot, path, specifier, knownFiles)).filter(Boolean);
 }
 
+function stripExcludedFrontendPackBlocks(output, manifest, profile) {
+  const frontendRoot = join(output, 'frontend');
+  const knownPacks = new Set(Object.keys(manifest.packs));
+  const allowedPacks = new Set(profile.packs);
+  const excludedPacks = new Set([...knownPacks].filter((packName) => !allowedPacks.has(packName)));
+  let changedFiles = 0;
+  let strippedBlocks = 0;
+
+  for (const path of walk(frontendRoot, (candidate) => SOURCE_EXTENSIONS.includes(extname(candidate)))) {
+    const source = readFileSync(path, 'utf8');
+    const lines = source.match(/[^\n]*\n|[^\n]+$/g) ?? [];
+    const projected = [];
+    let openMarker;
+
+    for (let index = 0; index < lines.length; index += 1) {
+      const line = lines[index];
+      const markers = [...line.matchAll(/reusable-base:([a-z0-9_-]+):(start|end)/g)];
+      if (markers.length > 1) {
+        fail(`frontend pack marker는 한 줄에 하나만 허용한다: ${normalize(relative(frontendRoot, path))}:${index + 1}`);
+      }
+      const marker = markers[0];
+      if (!marker) {
+        if (!openMarker?.strip) projected.push(line);
+        continue;
+      }
+
+      const [, packName, boundary] = marker;
+      if (!knownPacks.has(packName)) {
+        fail(`알 수 없는 frontend pack marker: ${packName} (${normalize(relative(frontendRoot, path))}:${index + 1})`);
+      }
+      if (boundary === 'start') {
+        if (openMarker) {
+          fail(`frontend pack marker 중첩은 허용하지 않는다: ${normalize(relative(frontendRoot, path))}:${index + 1}`);
+        }
+        openMarker = { packName, line: index + 1, strip: excludedPacks.has(packName) };
+        if (!openMarker.strip) projected.push(line);
+        continue;
+      }
+
+      if (!openMarker || openMarker.packName !== packName) {
+        fail(`짝이 맞지 않는 frontend pack marker: ${packName} (${normalize(relative(frontendRoot, path))}:${index + 1})`);
+      }
+      if (!openMarker.strip) projected.push(line);
+      else strippedBlocks += 1;
+      openMarker = undefined;
+    }
+
+    if (openMarker) {
+      fail(`닫히지 않은 frontend pack marker: ${openMarker.packName} (${normalize(relative(frontendRoot, path))}:${openMarker.line})`);
+    }
+    const nextSource = projected.join('');
+    if (nextSource !== source) {
+      writeFileSync(path, nextSource, 'utf8');
+      changedFiles += 1;
+    }
+  }
+
+  return { excludedPacks: [...excludedPacks].sort(), strippedBlocks, changedFiles };
+}
+
 function pruneFrontend(output, manifest, profile) {
   const frontendRoot = join(output, 'frontend');
   const allowedPacks = new Set(profile.packs);
@@ -495,7 +555,8 @@ function main() {
   console.log(`[base-source] ${args.profile}: tracked source tree를 투영한다.`);
   copySourceTree(output);
   const java = pruneJava(output, manifest, profile);
-  const frontend = pruneFrontend(output, manifest, profile);
+  const packBlocks = stripExcludedFrontendPackBlocks(output, manifest, profile);
+  const frontend = { ...pruneFrontend(output, manifest, profile), packBlocks };
   installDatabaseBundle(output, dbBundle);
   writeProjectedManifest(output, manifest, args.profile, profile, dbLock);
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);

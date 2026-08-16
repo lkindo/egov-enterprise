@@ -181,7 +181,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  variant="outline"
  size="sm"
  className="h-10 rounded-lg px-4 text-[11px] font-black"
- onClick={() => router.push('/admin/collaboration/address-book')}
+ onClick={() => router.push('/admin/collaboration/address-book/select-address-book-list')}
  >
  주소록 관리
  </Button>

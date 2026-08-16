@@ -49,8 +49,14 @@ const E2E_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'e2e')
  *
  * [하향 2026-08-16: 62 → 61] MailPage 수신자 추가 완료를 고정 1초가 아니라
  *   선택된 수신자 배지가 표시되는 상태로 기다리도록 바꿨다.
+ *
+ * [하향 2026-08-16: 61 → 60] 주소록 검색 결과를 고정 2초가 아니라
+ *   기대 연락처가 표시되는 상태로 기다리도록 바꿨다.
+ *
+ * [하향 2026-08-16: 60 → 59] 협업 탭 전환을 고정 1초가 아니라
+ *   URL 탭 파라미터와 aria-selected 상태로 기다리도록 바꿨다.
  */
-const BASELINE = 61;
+const BASELINE = 59;
 
 function collectFiles(dir: string): string[] {
     const out: string[] = [];
