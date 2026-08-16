@@ -1,7 +1,7 @@
 package nuri.business.service.operation;
 
 import nuri.business.domain.operation.RewardManage;
-import nuri.business.repository.operation.RewardManageRepository;
+import nuri.business.domain.operation.RewardManageRepository;
 import nuri.business.service.operation.dto.RewardManageDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

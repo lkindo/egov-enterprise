@@ -40,8 +40,8 @@
 ### 1-A. 필수/샘플 분리의 "배포 형태"
 - **결정 대상**: 이 저장소를 "복제→불필요 삭제→신규 구축" 베이스로 쓸 때 무엇을 base 로 확정할 것인가.
 - **옵션**: (a) **모놀리식 유지 + fork-and-delete** — 초기 비용↓, 파생마다 수작업 삭제 / (b) **admin 을 별도 gradle 모듈로 추출** — 경계 강제·배포 명확, 리팩터 비용↑ / (c) **템플릿 브랜치에서 샘플 ~13 business-app 도메인 실삭제** — 가장 깨끗한 base, 되돌림 불가·데모 상실.
-- **현황**: 옵션 (c) 의 핵심은 이미 반영됨 — `template/reusable-base` 브랜치가 로컬·origin 양쪽에 존재하며, business-app 서비스 도메인 main 22 → template 9(샘플 ~13 도메인 제거)로 정리됨.
-- **✅ 결판(2026-08-15)**: 옵션 (a)를 정제해 **현재 개발선 단일 정본 + 선택 도메인 `business-app` 격리**로 확정했다. 원격 template은 실측상 465커밋 뒤인 역사 스냅샷이라 공식 최신 base로 쓰지 않는다. 상세·재생성 조건은 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md).
+- **역사 현황**: 옵션 (c) 실험으로 `template/reusable-base` 브랜치가 존재하지만, 2026-08-16 실측상 현재 개발선보다 486커밋 뒤이고 고유 커밋 5개를 가진다.
+- **✅ 결판·구현(2026-08-16)**: **현재 릴리스 단일 정본 + 선택 도메인 `business-app` 격리 + 릴리스 태그 생성 산출물**로 확정했다. `core`·`collaboration`·`demo` 프로필과 도메인/DB 소유권은 `config/reusable-base-profiles.json`이 관리하며, 생성된 DB V1 baseline은 두 번째 빈 PostgreSQL에서 재적용 검증한다. 장기 template 브랜치는 공식 최신 base로 쓰지 않는다. 상세는 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)과 [생성 가이드](../03-guides/reusable-base-guide.md).
 
 ### 1-B. business-core 내 "샘플-in-core" 처리
 - **결정 대상**: `service.system.content.{banner,popup,community}` + `service.system.service.{survey(34파일),consult}` ≈50파일이 코어 모듈에 상주. admin 필수인가 데모인가?

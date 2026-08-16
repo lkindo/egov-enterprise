@@ -3,6 +3,7 @@ package nuri.api.harness;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
 import nuri.business.service.file.AttachmentSource;
+import nuri.business.service.file.AttachmentSourceContributor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -10,9 +11,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
+import org.springframework.core.type.filter.AssignableTypeFilter;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,10 +25,11 @@ import java.util.TreeSet;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * 🔒 첨부 참조원 레지스트리 정합 린터 — {@link AttachmentSource} 가 실제 도메인을 따라가는지 고정한다.
+ * 🔒 첨부 참조원 레지스트리 정합 린터 — 기능별 {@link AttachmentSourceContributor}가
+ * 실제 도메인을 따라가는지 고정한다.
  *
  * <p>[왜 필요한가] 첨부 인가는 <b>도달성</b>으로 판정한다 — "이 첨부를 참조하는 업무 행을 읽을 수 있는가".
- * 그 판정의 전제는 {@link AttachmentSource} 가 <b>첨부를 참조하는 모든 도메인을 알고 있다</b>는 것이다.
+ * 그 판정의 전제는 contributor 집합이 <b>첨부를 참조하는 모든 도메인을 알고 있다</b>는 것이다.
  * 신규 도메인이 {@code atchFileSn} 를 갖는데 레지스트리에 없으면 그 도메인의 첨부는 아무 근거도 만들지
  * 못한다 — 즉 <b>정상 사용자가 자기 첨부에서 403</b> 을 맞는다(fail-closed 라 뚫리지는 않지만 조용히 망가진다).
  * 반대로 레지스트리에만 있고 엔티티가 사라진 항목은 死 SQL 이 되어 판정 비용만 남긴다.
@@ -35,8 +39,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  *   <li><b>누락</b> — {@code atchFileSn} 필드를 가진 {@code @Entity} 의 테이블이 레지스트리에 없으면 위반.</li>
  *   <li><b>유령</b> — 레지스트리에 있는데 대응 엔티티가 없으면 위반.</li>
  * </ol>
- * 두 축 모두 동결 목록·예외 목록을 두지 않는다. 예외가 필요해지는 순간이 곧 판정이 흐려지는 순간이며,
- * 이 레지스트리는 현행 12종 규모라 예외 없이 유지할 수 있다(§0.7-H2).
+ * 두 축 모두 동결 목록·예외 목록을 두지 않는다. 예외가 필요해지는 순간이 곧 판정이 흐려지는
+ * 순간이므로, 현재 클래스패스의 contributor와 엔티티를 직접 대조한다(§0.7-H2).
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(클래스패스 스캔 + 리플렉션).
  */
@@ -60,12 +64,16 @@ class AttachmentSourceRegistryLinterTest {
         Map<String, String> tableToEntity = scanEntitiesHoldingAttachmentSn();
 
         // 게이트 무결성(false-green 방지): 스캔이 조용히 0 에 수렴하면 vacuous 통과가 된다.
-        if (tableToEntity.size() < 10) {
+        if (tableToEntity.isEmpty()) {
             fail("게이트 무결성 파손: atchFileSn 보유 엔티티 스캔 건수(" + tableToEntity.size()
-                    + ")가 예상 하한(10) 미만 — 스캔/클래스패스 파손 의심. 실측 기준값은 13종(2026-08-04)이다.");
+                    + ")가 0이다 — 스캔/클래스패스 파손 의심.");
         }
 
-        Set<String> registered = new TreeSet<>(AttachmentSource.registeredTables());
+        Collection<AttachmentSource> activeSources = scanContributedSources();
+        Set<String> registered = new TreeSet<>(activeSources.stream().map(AttachmentSource::table).toList());
+        if (registered.size() != activeSources.size()) {
+            fail("첨부 참조원 contributor가 같은 table을 중복 등록했다: " + activeSources);
+        }
         List<String> missing = new ArrayList<>();
         tableToEntity.forEach((table, entity) -> {
             if (!registered.contains(table)) {
@@ -78,7 +86,7 @@ class AttachmentSourceRegistryLinterTest {
         // 실존으로 판정한다. 이 구분이 없으면 URL 연결 참조원을 등록하는 순간 게이트가 거짓 red 가 된다.
         Set<String> allEntityTables = scanAllEntityTables();
         List<String> phantom = new ArrayList<>();
-        for (AttachmentSource source : AttachmentSource.values()) {
+        for (AttachmentSource source : activeSources) {
             String table = source.table();
             boolean present = source.linksByAttachmentSnColumn()
                     ? tableToEntity.containsKey(table)
@@ -110,6 +118,33 @@ class AttachmentSourceRegistryLinterTest {
 
         log.info("✅ 첨부 참조원 레지스트리 정합 — 엔티티 {}종 ↔ 등록 {}종 일치.",
                 tableToEntity.size(), registered.size());
+    }
+
+    private Collection<AttachmentSource> scanContributedSources() {
+        ClassPathScanningCandidateComponentProvider scanner =
+                new ClassPathScanningCandidateComponentProvider(false);
+        scanner.addIncludeFilter(new AssignableTypeFilter(AttachmentSourceContributor.class));
+        List<AttachmentSource> sources = new ArrayList<>();
+        scanner.findCandidateComponents(ENTITY_SCAN_BASE).stream()
+                .map(candidate -> candidate.getBeanClassName())
+                .sorted()
+                .forEach(className -> {
+                    try {
+                        Class<?> type = Class.forName(className);
+                        if (type.isInterface()) {
+                            return;
+                        }
+                        AttachmentSourceContributor contributor =
+                                (AttachmentSourceContributor) type.getDeclaredConstructor().newInstance();
+                        sources.addAll(contributor.sources());
+                    } catch (ReflectiveOperationException ex) {
+                        fail("첨부 참조원 contributor를 로드할 수 없다: " + className + " — " + ex.getMessage());
+                    }
+                });
+        if (sources.isEmpty()) {
+            fail("첨부 참조원 contributor 스캔 결과가 0이다 — component/classpath 파손 의심.");
+        }
+        return sources;
     }
 
     /** 모든 {@code @Entity} 의 물리 테이블명. URL 연결 참조원의 실존 확인에 쓴다. */

@@ -393,7 +393,7 @@ public class UserService extends BaseAbstractService {
          * <ul>
          *   <li>보안 인가 매핑(tb_user_authrt_map)·리프레시 토큰: 여기서 직접 삭제</li>
          *   <li>콘텐츠(게시글/댓글/주소록)·알림·커뮤니티 멤버십: {@link UserDeletionEvent} 동기 발행 →
-         *       business-app 의 UserDeletionCleanupListener 가 동일 트랜잭션에서
+         *       business-app 의 기능별 UserDeletionEvent 리스너가 동일 트랜잭션에서
          *       콘텐츠는 webmaster 재귀속, 알림/커뮤니티 멤버십은 삭제 처리(§2.B: 필수 코어→샘플 직접 결합 제거)</li>
          *   <li>시스템 관리자 계정(webmaster)은 재귀속 종착지이므로 삭제 금지</li>
          * </ul>
@@ -418,7 +418,7 @@ public class UserService extends BaseAbstractService {
                                 users.stream().map(u -> u.getUserId()).collect(Collectors.toList()));
                 userAbsenceRepository.deleteAllByIdInBatch(esntlIds);
                 // [§2.B] 커뮤니티 멤버십(샘플 도메인) 정리는 UserDeletionEvent 리스너(business-app
-                //  UserDeletionCleanupListener)로 역전 — 콘텐츠/알림 정리와 동일 경로. 필수 코어→샘플 직접 결합 제거.
+                //  기능별 정리 리스너)로 역전 — 콘텐츠/알림 정리와 동일 경로. 필수 코어→샘플 직접 결합 제거.
                 // [log-privacy] 사용통계 로그 정리 — fk_tb_user_log_tb_user_info(dmnd_user_id→esntl_id) 잠복 결함 해소.
                 // 개인 단위 통계이므로 파기 대상(보존기간 정책은 접속기록 web/sys/login 에만 적용). 사용자 삭제 前 선행.
                 userLogRepository.deleteByDmndUserIdIn(esntlIds);

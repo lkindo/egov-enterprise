@@ -1,7 +1,7 @@
 package nuri.business.service.operation;
 
 import nuri.business.domain.operation.ExternalHr;
-import nuri.business.repository.operation.ExternalHrRepository;
+import nuri.business.domain.operation.ExternalHrRepository;
 import nuri.business.service.operation.dto.ExternalHrDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

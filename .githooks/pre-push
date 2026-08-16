@@ -73,6 +73,10 @@ fi
 
 echo "[pre-push] §0.6 Compilation Integrity Gate"
 
+echo "  → reusable base profile: node --test scripts/reusable-base-census.test.mjs"
+node --test scripts/reusable-base-census.test.mjs \
+  || { echo "❌ reusable base 프로필 계약 실패 — 도메인/테이블 소유권 또는 pack 의존 방향 위반"; exit 1; }
+
 echo "  → backend: ./gradlew compileJava compileTestJava"
 ./gradlew compileJava compileTestJava -q \
   || { echo "❌ Java 컴파일 실패 — 빌드 에러 0건 이후에만 push 허용 (GEMINI.md §0.6)"; exit 1; }

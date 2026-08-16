@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
 import { popupService } from '@/services/business/user/PopupService';
@@ -121,4 +120,3 @@ export function PopupManager() {
         </>
     );
 }
-

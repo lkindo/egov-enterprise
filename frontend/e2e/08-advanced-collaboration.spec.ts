@@ -24,9 +24,8 @@ test.describe('Tier 8: Advanced Collaboration & Intelligence', () => {
         await collabPage.goto();
         await collabPage.createContact(testName, testEmail);
         
-        console.log('>>> Identity registered. Verifying visibility in Network Index.');
-        // [2026-07-27 정정] 종전 기대는 허브(/admin/collaboration?tab=ADDRESS_BOOK) 였다. 그러나 앱은
-        // 등록 성공 시 주소록 목록 라우트로 이동하도록 명시 구현돼 있다(AddressBookInsertHubClient 의 router.push).
+        console.log('>>> Identity registered. Verifying visibility in Address Book.');
+        // 주소록은 collaboration 허브의 탭이 아니라 demo pack 전용 목록 라우트에서 관리한다.
         await expect(page).toHaveURL(/\/admin\/collaboration\/address-book\/select-address-book-list/);
         await collabPage.verifyIdentityInList(testName);
     });

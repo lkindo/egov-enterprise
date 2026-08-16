@@ -52,20 +52,17 @@ test.describe('Tier 13: Enterprise Mail System E2E', () => {
         console.log('>>> Multi-recipient mail dispatch verified in history');
     });
 
-    test('Mail: Invalid Email Address Validation', async ({ page }) => {
+    test('Mail: Empty Recipient Validation', async ({ page }) => {
         await mailPage.navigateToSend();
-        
-        // Input invalid search query that should result in no matches
-        const recipientInput = page.getByTestId('mail-recipient-input');
-        await recipientInput.fill('NON_EXISTENT_USER_XYZ_123');
-        
-        // [2026-07-27 정정] 'No Matches Found' 는 저장소에 존재하지 않는 팬텀 문구다.
-        // 실측 문구는 '검색 결과가 없습니다.' 이며, MailSendHubClient 는 [P1-1] 에 따라
-        // **검색 실패(사용자 검색에 실패했습니다.)와 결과 없음을 구분**한다. 후자만 통과로 인정한다.
-        const noMatches = page.getByText('검색 결과가 없습니다.');
-        await expect(noMatches).toBeVisible({ timeout: 10000 });
-        await expect(page.getByText('사용자 검색에 실패했습니다.')).toHaveCount(0);
-        
-        console.log('>>> Invalid recipient search caught correctly (No Matches Found)');
+
+        await page.getByTestId('mail-subject-input').fill('Recipient validation');
+        await page.getByTestId('mail-content-textarea').fill('Recipient is intentionally empty.');
+        await page.getByTestId('mail-send-btn').click();
+
+        await expect(page.getByText('수신자를 선택해 주세요.')).toBeVisible();
+        await expect(page).toHaveURL(/\/admin\/collaboration\/mail-send/);
+        await expect(page.getByTestId('selected-recipient-badge')).toHaveCount(0);
+
+        console.log('>>> Empty recipient submission blocked correctly');
     });
 });

@@ -2,7 +2,7 @@ package nuri.api.websocket;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import nuri.business.service.stats.RealTimeDashboardService;
+import nuri.business.service.dashboard.RealTimeDashboardService;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionConnectedEvent;

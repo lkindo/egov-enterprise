@@ -7,7 +7,7 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
         // 이 테스트는 토큰을 의도적으로 비워 세션 만료를 시뮬레이션한다 → 그로 인한 401(알림 폴링/토큰 재발급 실패)은
         // '정상적인 만료 처리'의 일부이므로 콘솔 가드에서 무시한다(검증 대상은 로그인 리다이렉트).
         consoleGuard.addIgnorePattern(
-            /notifications|auth\/reissue|\/ws\/(?:info\b|\d+\/[^/]+\/websocket\b)/i,
+            /notifications|auth\/reissue|\/ws(?:\/|$)/i,
         );
         console.log('>>> Step 1: Navigating to a protected admin page');
         await page.goto('/admin/community/boards/master');
@@ -18,12 +18,22 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
         await page.evaluate(() => localStorage.clear());
         
         console.log('>>> Step 3: Attempting a protected navigation');
-        // reload 중 미들웨어가 /login 으로 보내면 기존 문서 탐색이 ERR_ABORTED 로 끝날 수 있다.
-        // 검증하려는 계약은 새 보호 요청의 리다이렉트이므로 목적 경로를 명시해 탐색한다.
-        await page.goto('/admin/community/boards/master', { waitUntil: 'domcontentloaded' });
-        
-        // Should be redirected to login
-        await expect(page).toHaveURL(/.*login/, { timeout: 15000 });
+        // AuthContext와 middleware가 모두 만료를 감지할 수 있어 보호 경로 탐색은 로그인 탐색에 의해
+        // 중단될 수 있다. 리다이렉트를 먼저 관찰하고, 그 두 가지 기대 중단만 허용한다.
+        const loginRedirect = page.waitForURL(/\/login(?:\?|$)/, {
+            waitUntil: 'domcontentloaded',
+            timeout: 15000,
+        });
+        await Promise.all([
+            loginRedirect,
+            page.goto('/admin/community/boards/master', { waitUntil: 'domcontentloaded' }).catch((error: unknown) => {
+                const message = error instanceof Error ? error.message : String(error);
+                if (!/net::ERR_ABORTED|interrupted by another navigation/i.test(message)) throw error;
+            }),
+        ]);
+
+        await expect(page).toHaveURL(/\/login(?:\?|$)/);
+        await expect(page.getByRole('heading', { name: '전자정부 Enterprise 로그인' })).toBeVisible();
         console.log('>>> Correctly redirected to login after session loss');
     });
 

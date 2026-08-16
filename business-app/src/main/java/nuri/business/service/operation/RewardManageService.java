@@ -1,7 +1,7 @@
 package nuri.business.service.operation;
 
 import nuri.business.domain.operation.RewardManage;
-import nuri.business.repository.operation.RewardManageRepository;
+import nuri.business.domain.operation.RewardManageRepository;
 import nuri.business.service.operation.dto.RewardManageDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

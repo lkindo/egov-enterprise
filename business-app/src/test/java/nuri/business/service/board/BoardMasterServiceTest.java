@@ -2,9 +2,6 @@ package nuri.business.service.board;
 
 import nuri.foundation.core.exception.BusinessException;
 import nuri.business.domain.board.*;
-import nuri.business.service.board.dto.BlogDto;
-import nuri.business.service.board.dto.BlogMapper;
-import nuri.business.service.board.dto.BlogMapperImpl;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.business.service.board.dto.BoardMasterMapper;
 import nuri.business.service.board.dto.BoardMasterMapperImpl;
@@ -43,12 +40,6 @@ class BoardMasterServiceTest {
     private BoardMasterRepository boardMasterRepository;
 
     @Mock
-    private BlogRepository blogRepository;
-
-    @Mock
-    private BlogUserRepository blogUserRepository;
-
-    @Mock
     private BoardUseRepository boardUseRepository;
 
     @Mock
@@ -61,9 +52,6 @@ class BoardMasterServiceTest {
     // 실제 MapStruct 생성 구현을 @InjectMocks 생성자에 주입 (매핑 동작 실검증)
     @Spy
     private BoardMasterMapper boardMasterMapper = new BoardMasterMapperImpl();
-
-    @Spy
-    private BlogMapper blogMapper = new BlogMapperImpl();
 
     @BeforeEach
     void injectEntityManager() {
@@ -173,46 +161,6 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("블로그 목록 조회")
-    void getBlogList() {
-        Pageable pageable = org.springframework.data.domain.PageRequest.of(0, 10);
-        Blog blog = Blog.builder().blogSn(1L).blogTtl("My Blog").build();
-        given(blogRepository.findAll(pageable)).willReturn(new PageImpl<>(List.of(blog)));
-
-        Page<BlogDto> result = boardMasterService.getBlogList(null, null, pageable);
-
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getBlogSn()).isEqualTo(1L);
-    }
-
-    @Test
-    @DisplayName("블로그 단건 조회")
-    void getBlog() {
-        Blog blog = Blog.builder().blogSn(1L).blogTtl("My Blog").build();
-        given(blogRepository.findById(1L)).willReturn(Optional.of(blog));
-
-        BlogDto result = boardMasterService.getBlog(1L);
-
-        assertThat(result).isNotNull();
-        assertThat(result.getBlogTtl()).isEqualTo("My Blog");
-    }
-    
-    @Test
-    @DisplayName("블로그 생성")
-    void createBlog() {
-        BlogDto dto = BlogDto.builder().blogTtl("New Blog").build();
-        boardMasterService.createBlog("user1", dto);
-        verify(blogRepository).save(any(Blog.class));
-    }
-    
-    @Test
-    @DisplayName("블로그 유저 가입")
-    void joinBlog() {
-        boardMasterService.joinBlog(1L, "user1", "N");
-        verify(blogUserRepository).save(any(BlogUser.class));
-    }
-
-    @Test
     @DisplayName("옵션 필드(블로그, 댓글, 만족도)가 포함된 게시판 마스터 생성")
     void createBoardMaster_WithOptionalFields() throws Exception {
         try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
@@ -239,34 +187,6 @@ class BoardMasterServiceTest {
 
         assertThat(boardMasterService.canUseSatisfaction("INVALID")).isFalse();
         assertThat(boardMasterService.canUseComment("INVALID")).isFalse();
-    }
-
-    @Test
-    @DisplayName("블로그를 찾을 수 없는 경우 예외 발생")
-    void getBlog_NotFound() {
-        given(blogRepository.findById(999L)).willReturn(Optional.empty());
-
-        assertThrows(BusinessException.class, () -> boardMasterService.getBlog(999L));
-    }
-
-    @Test
-    @DisplayName("블로그 사용자 여부 확인")
-    void checkBlogUser() {
-        given(blogRepository.existsByFrstRgtrId("user1")).willReturn(true);
-
-        assertThat(boardMasterService.checkBlogUser("user1")).isTrue();
-    }
-
-    @Test
-    @DisplayName("포틀릿 블로그 목록 조회")
-    void getBlogListPortlet() {
-        Blog blog = Blog.builder().blogSn(1L).blogTtl("블로그1").build();
-        when(blogRepository.findAll(any(Pageable.class))).thenReturn(new PageImpl<>(List.of(blog)));
-
-        List<BlogDto> result = boardMasterService.getBlogListPortlet();
-
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getBlogSn()).isEqualTo(1L);
     }
 
     @Test

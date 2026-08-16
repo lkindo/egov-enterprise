@@ -10,30 +10,27 @@ import {
   CheckCircle2, 
   Zap, 
   Bell, 
-  ShieldCheck, 
-  BarChart3
+  ShieldCheck
 } from 'lucide-react';
 import { Skeleton } from '@/app/components/ui/skeleton';
-import { useQuery } from '@tanstack/react-query';
 import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
-import { StatsDto } from '@/services/foundation/system/StatsAdminService';
-import { statsUserService } from '@/services/business/user/StatsService';
 import { motion } from 'framer-motion';
 
 // Hub Common Components & Animations
 import { HubSummaryCard } from '@/components/ui/hub/HubSummaryCard';
 import { HubInsightBadge } from '@/components/ui/hub/HubInsightBadge';
 import { HubListCard } from '@/components/ui/hub/HubListCard';
-import { HubChartCard } from '@/components/ui/hub/HubChartCard';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { DashboardTask } from '@/types/foundation/dashboard';
 
 // Optimization: Priority 2 - Dynamic Imports for heavy components
-const BannerSlider = dynamic(() => import('@/app/components/dashboard/BannerSlider').then(mod => mod.BannerSlider), { 
+/* reusable-base:demo:start */
+const BannerSlider = dynamic(() => import('@/app/components/dashboard/BannerSlider').then(mod => mod.BannerSlider), {
   loading: () => <Skeleton className="h-[400px] w-full rounded-lg" />,
-  ssr: false 
+  ssr: false
 });
 const PopupManager = dynamic(() => import('@/app/components/dashboard/PopupManager').then(mod => mod.PopupManager), { ssr: false });
+/* reusable-base:demo:end */
 const ActivityFeed = dynamic(() => import('@/app/components/dashboard/ActivityFeed').then(mod => mod.ActivityFeed), { 
   loading: () => <div className="space-y-4 pt-10"><Skeleton className="h-11 w-full" /><Skeleton className="h-11 w-full" /></div>,
   ssr: false 
@@ -42,13 +39,6 @@ const RealTimeDashboard = dynamic(() => import('@/components/features/dashboard/
   loading: () => <Skeleton className="h-[150px] w-full rounded-lg" />,
   ssr: false
 });
-const DashboardVisitorChart = dynamic(
-  () => import('@/app/components/dashboard/DashboardCharts').then((mod) => mod.DashboardVisitorChart),
-  {
-    loading: () => <Skeleton className="h-[300px] w-full rounded-lg" />,
-    ssr: false,
-  }
-);
 
 interface UnifiedDashboardClientProps {
   dataPromise: Promise<{
@@ -69,13 +59,6 @@ export default function UnifiedDashboardClient({
   const router = useRouter();
 
   const [isMounted, setIsMounted] = useState(false);
-
-  // 접속 통계 데이터 조회 (최근 7일)
-  const { data: connectStats = [] } = useQuery<StatsDto[]>({
-    queryKey: ['dashboard', 'stats', 'connect'],
-    queryFn: () => statsUserService.getConnectStats(),
-    enabled: !!user && isMounted
-  });
 
   useEffect(() => {
     setIsMounted(true);
@@ -99,7 +82,9 @@ export default function UnifiedDashboardClient({
       variants={hubContainerVariants}
       className="space-y-10 pb-20 px-2 lg:px-0"
     >
+      {/* reusable-base:demo:start */}
       <PopupManager />
+      {/* reusable-base:demo:end */}
 
       {/* Header Section */}
       <motion.div variants={hubItemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
@@ -126,10 +111,11 @@ export default function UnifiedDashboardClient({
         </div>
       </motion.div>
 
-      {/* Banner */}
+      {/* reusable-base:demo:start */}
       <motion.div variants={hubItemVariants} className="relative rounded-lg overflow-hidden shadow-2xl">
         <BannerSlider />
       </motion.div>
+      {/* reusable-base:demo:end */}
 
       {/* Real-time Insights */}
       <motion.div variants={hubItemVariants} className="p-4 md:p-8 border border-border/80 rounded-lg bg-card/40 dark:bg-card/20 shadow-sm">
@@ -137,7 +123,7 @@ export default function UnifiedDashboardClient({
       </motion.div>
 
       {/* Summary Cards */}
-      <motion.div variants={hubContainerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+      <motion.div variants={hubContainerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <HubSummaryCard
           key="summary-tasks"
           title="업무 현황"
@@ -165,30 +151,11 @@ export default function UnifiedDashboardClient({
           trend={0}
           color="emerald"
         />
-        <HubSummaryCard
-          key="summary-visitors"
-          title="오늘의 방문자"
-          value={String(connectStats[connectStats.length - 1]?.statsCo ?? 0)}
-          description="실시간 접속 데이터 기반"
-          icon={<BarChart3 size={24} />}
-          trend={5}
-          color="blue"
-        />
       </motion.div>
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
         <div className="xl:col-span-2 space-y-12">
-          <HubChartCard
-            key="main-visitor-chart"
-            title="트래픽 데이터 분석"
-            subtitle="시스템 실시간 방문자 분포 지표"
-            icon={<BarChart3 size={24} />}
-            color="blue"
-          >
-            <DashboardVisitorChart data={connectStats} />
-          </HubChartCard>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
             <HubListCard
               key="list-notices"

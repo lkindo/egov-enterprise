@@ -89,7 +89,7 @@ export function BannerSlider() {
         <h2 className="text-2xl md:text-3xl font-bold mb-2 animate-in slide-in-from-left duration-500">
           {currentBanner.bnrNm}
         </h2>
-        <p className="text-sm md:text-base text-slate-200 mb-6 max-w-md animate-in slide-in-from-left delay-100 duration-500">
+        <p className="text-sm md:text-base text-white/80 mb-6 max-w-md animate-in slide-in-from-left delay-100 duration-500">
           {currentBanner.bnrExpln}
         </p>
         {/* linkUrl 은 관리자 자유입력값 — javascript:/data: 스킴 저장형 XSS 방지를 위해 http(s)만 앵커 렌더 */}

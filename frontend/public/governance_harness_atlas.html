@@ -1332,7 +1332,7 @@ npm run dev                   # Windows: .\start-dev.ps1
           <h3 class="glow-header">② 브랜치 지도 — 나는 어디서 작업하나</h3>
           <div class="table-container">
             <table class="premium-table">
-              <thead><tr><th style="width: 230px;">브랜치</th><th>정체</th><th>용도</th></tr></thead>
+              <thead><tr><th style="width: 230px;">기준/산출물</th><th>정체</th><th>용도</th></tr></thead>
               <tbody>
                 <tr>
                   <td><code>main</code> <span class="badge badge-primary">기본</span></td>
@@ -1340,9 +1340,14 @@ npm run dev                   # Windows: .\start-dev.ps1
                   <td>일상 개발 라인. 기능/버그 작업 브랜치는 여기서 분기한다.</td>
                 </tr>
                 <tr>
-                  <td><code>template/reusable-base</code> <span class="badge badge-success">클린 base</span></td>
-                  <td>샘플 20+ 도메인을 코드·라우트·테이블까지 제거한 골격 — <strong>커널 + 게시판 + 통신 4종</strong>만</td>
-                  <td>신규 SI/재개발의 시작점. 클론 → 신규(빈) DB → 부팅. 상세: <code>docs/03-guides/reusable-base-guide.md</code></td>
+                  <td><code>v* release artifact</code> <span class="badge badge-success">재사용 base</span></td>
+                  <td><code>core</code> · <code>collaboration</code> · <code>demo</code> 프로필로 릴리스 태그에서 생성·검증한 골격</td>
+                  <td>신규 SI/재개발의 시작점. 프로필 생성 → 빈 DB 재적용 → 컴파일·harness 검증. 상세: <code>docs/03-guides/reusable-base-guide.md</code></td>
+                </tr>
+                <tr>
+                  <td><code>template/reusable-base</code> <span class="badge badge-warning">역사 기록</span></td>
+                  <td>2026-07 수동 분리 실험. 현재 개발선보다 뒤처져 최신 보안·DB 게이트를 보장하지 않음</td>
+                  <td>참고 전용. 신규 프로젝트 시작점으로 사용하지 않는다.</td>
                 </tr>
               </tbody>
             </table>
@@ -1411,7 +1416,7 @@ npm run dev                   # Windows: .\start-dev.ps1
               <tbody>
                 <tr><td><code>GEMINI.md</code> / <code>CLAUDE.md</code></td><td>프로젝트 운영 규칙 SSOT(등급판정 · 헌법 준수 · verify 게이트). 합류 직후 필독.</td></tr>
                 <tr><td><code>.agent/knowledge/*/artifacts/constitution.md</code></td><td>코드 변경 전 해당 3대 헌법 조회(불가침 규범).</td></tr>
-                <tr><td><code>docs/03-guides/reusable-base-guide.md</code></td><td>재사용 base(<code>template/reusable-base</code> 브랜치)로 신규 프로젝트 시작 시.</td></tr>
+                <tr><td><code>docs/03-guides/reusable-base-guide.md</code></td><td>릴리스 태그에서 프로필별 재사용 base를 생성·검증할 때.</td></tr>
                 <tr><td><code>docs/03-guides/testing-guide.md</code></td><td>단위/통합/E2E(23-Tier) 테스트 전략.</td></tr>
                 <tr><td><code>docs/03-guides/identity-model-guide.md</code></td><td>정체성 축(esntlId/loginId) 3계층 규약 상세.</td></tr>
                 <tr><td><code>docs/04-operations/pending-decisions.md</code></td><td>제품·운영 결정 대기 항목 트래커.</td></tr>

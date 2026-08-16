@@ -1,6 +1,6 @@
 package nuri.api.websocket;
 
-import nuri.business.service.stats.RealTimeDashboardService;
+import nuri.business.service.dashboard.RealTimeDashboardService;
 import org.junit.jupiter.api.Test;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.web.socket.CloseStatus;
