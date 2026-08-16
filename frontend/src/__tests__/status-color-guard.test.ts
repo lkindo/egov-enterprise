@@ -1,0 +1,87 @@
+import { describe, it } from 'vitest';
+import { readdirSync, readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+/**
+ * 🚦 status 색 하드코딩 차단 게이트 — `hardcoded-color-guard.test.ts` 의 사각지대 봉합.
+ *
+ * 기존 가드는 중립(slate/gray/zinc/neutral/stone) + 브랜드 액센트(blue/indigo/sky/violet/purple/cyan/teal/fuchsia)
+ * 만 세고, status 계열(red/green/emerald/rose/amber/orange/yellow/lime/pink)은 "성공/경고/오류 시맨틱이라
+ * 별도 토큰 대상"이라며 **제외**했다. 그런데 그 별도 토큰은 이미 존재한다 —
+ * `globals.css` 의 `--color-success` / `--color-success-emphasis` / `--color-warning` / `--color-info` /
+ * `--color-destructive` / `--color-destructive-emphasis`. 즉 치환 대상이 있는데도 계측조차 되지 않아,
+ * status 색 하드코딩은 **어떤 게이트에도 걸리지 않고 자유롭게 증식**할 수 있었다(2026-08-16 실측 786건 / 105개 파일).
+ *
+ * 이 게이트는 그 786건을 동결하고 증가를 차단한다. 기존 가드와 동일하게 **양방향**이다 —
+ * 감소했는데 BASELINE 을 안 내리면 실패시켜 개선분 확정을 강제한다(단방향이면 개선이 슬랙으로 녹아 사라진다).
+ *
+ * 치환 지침(docs/03-guides/design-tokens.md):
+ *   green/emerald 계열 → `text-success` / `bg-success` / `border-success`
+ *   amber/yellow/orange 계열 → `text-warning` / `bg-warning`
+ *   red/rose 계열 → `text-destructive` / `bg-destructive` / `*-destructive-emphasis`
+ *   정보성 blue 계열은 기존 가드 소관(`text-info`)
+ *
+ * 데이터 시각화의 명암 스케일(히트맵·차트 등)처럼 의미상 팔레트가 필요한 자리는 예외가 될 수 있다.
+ * 그 경우 사유를 코드 리뷰에 명시하고 BASELINE 을 올린다 — 단, 목록을 늘려 신호를 지우는 것과
+ * 정당한 예외를 구분하는 것은 리뷰어의 책임이다(GEMINI.md §0.7-H2).
+ */
+const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
+
+// 기존 가드(hardcoded-color-guard.test.ts)가 명시적으로 제외한 계열 — 두 게이트의 합집합이 전 팔레트다.
+const STATUS_COLORS = 'red|green|emerald|rose|amber|orange|yellow|lime|pink';
+const UTIL = 'text|bg|border|ring|divide|from|to|via|placeholder|fill|stroke|shadow|ring-offset|caret|outline|decoration|accent';
+const VARIANT = '(?:dark:|hover:|focus:|group-hover:|focus-within:|active:|group-focus-within:)?';
+const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3}(?:\\/[0-9]{1,3})?`, 'g');
+
+// [동결 2026-08-16] 게이트 신설 시점 실측 census. 래칫의 정상 방향은 감소다.
+const BASELINE = 786;
+
+// 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
+const MIN_SCANNED_FILES = 50;
+
+function collectFiles(dir: string): string[] {
+  const out: string[] = [];
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    if (e.name === 'node_modules' || e.name === '.next' || e.name === '__tests__') continue;
+    const p = join(dir, e.name);
+    if (e.isDirectory()) out.push(...collectFiles(p));
+    else if (/\.(tsx|jsx)$/.test(e.name) && !/\.test\./.test(e.name)) out.push(p);
+  }
+  return out;
+}
+
+describe('status 색 하드코딩 차단 게이트 (기존 색상 가드의 제외 계열 봉합)', () => {
+  it(`status 계열 하드코딩 occurrence 는 BASELINE(${BASELINE}) 과 정확히 같아야 한다`, () => {
+    const files = collectFiles(SRC);
+
+    // false-green 방지: 스캔이 조용히 비면 통과처럼 보인다 → 명시적으로 파손 처리
+    if (files.length < MIN_SCANNED_FILES) {
+      throw new Error(
+        `게이트 무결성 파손: .tsx/.jsx 스캔 건수(${files.length})가 예상 하한(${MIN_SCANNED_FILES}) 미만 — 스캔/경로 파손 의심.`,
+      );
+    }
+
+    let total = 0;
+    const offenders: Array<{ file: string; count: number }> = [];
+    for (const f of files) {
+      const m = readFileSync(f, 'utf8').match(PATTERN);
+      if (m && m.length > 0) {
+        total += m.length;
+        offenders.push({ file: f.replace(SRC, 'src'), count: m.length });
+      }
+    }
+
+    if (total !== BASELINE) {
+      offenders.sort((a, b) => b.count - a.count);
+      const direction = total > BASELINE
+        ? `신규 ${total - BASELINE}건 증가 — success/warning/destructive 토큰으로 작성하세요`
+        : `${BASELINE - total}건 감소 — 개선분을 확정하려면 BASELINE 을 ${total}로 내릴 것`;
+      throw new Error(
+        `🚦 [STATUS COLOR GUARD] status 팔레트 하드코딩 ${total}건 != 베이스라인 ${BASELINE} — ${direction}.\n` +
+        `globals.css 시맨틱 토큰(success/warning/info/destructive)으로 대체하세요(docs/03-guides/design-tokens.md).\n` +
+        `상위 파일:\n` + offenders.slice(0, 10).map(o => `  ${o.count}  ${o.file}`).join('\n'),
+      );
+    }
+  });
+});

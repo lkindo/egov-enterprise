@@ -56,10 +56,15 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      # [2026-08-16 격차 봉합] reusable-base-census 는 종전 `.githooks/pre-push` 에만 있었다.
+      #   훅은 `--no-verify` / `SKIP_HOOKS=1` 한 줄로 우회되므로, 훅 전용 검증은 required check 가
+      #   아니다 — 우회한 푸시에서 도메인/테이블 소유권·pack 의존 방향 위반이 무검증으로 통과했다.
+      #   "게이트는 실행 경로가 있어야 게이트다"(GEMINI.md §0.7-H5) 를 CI 쪽에도 적용한다.
       - name: Verify repository operational contracts
         run: |
           node --test .agent/scripts/db-bridge.test.js
           node --test scripts/required-checks-contract.test.mjs
+          node --test scripts/reusable-base-census.test.mjs
 
       # [2026-08-03 범위 정정] 종전에는 `gitleaks detect --source .` 로 **히스토리 전량**을 스캔했다.
       #   그 결과 이 잡은 신설된 날부터 계속 red 였다 — 실측 leak 1351건이 전부 **이미 공개된 과거**에서
@@ -328,9 +333,23 @@ jobs:
           pnpm run codegen:verify:zod
         working-directory: frontend
 
+      # [2026-08-16 격차 봉합] E2E 타입 검사를 CI 에 편입한다.
+      #   `next build` 는 frontend/tsconfig.json 을 쓰는데 그 exclude 에 `"e2e"` 가 들어 있어,
+      #   E2E 스펙 26개·POM 등 e2e/ 전체(58 ts 파일)의 타입 오류를 **원리적으로 검출하지 못한다**.
+      #   종전 이 검사는 `.githooks/pre-push` 에만 있었고, 훅은 `--no-verify` 로 우회된다 —
+      #   즉 우회한 푸시에서 E2E 타입 오류를 잡는 required check 가 하나도 없었다.
+      #   E2E 잡(e2e-tests)은 backend-build/frontend-build 를 needs 로 걸어 뒤에 돌므로,
+      #   타입 오류를 여기서 먼저 깨뜨리는 편이 30분짜리 E2E 3샤드를 태우는 것보다 싸다.
+      - name: Type check (E2E specs — 루트 tsconfig 가 exclude 하는 범위)
+        id: fe-typecheck-e2e
+        run: npx tsc -p tsconfig.e2e.json --noEmit
+        working-directory: frontend
+
       # [정적 품질 게이트] ESLint error 규칙(jsx-a11y 3종 + React Compiler 계열)을 CI 에서 강제한다.
-      # 2026-08-12 기준 error 0·warning 307. max-warnings=310 래칫으로 새 부채도 차단한다.
+      # 2026-08-15 실측 기준 래칫 값은 frontend/package.json 의 --max-warnings 253 이다(커밋 0b881de5a).
       # 임계를 높이지 말고 위반을 고친 뒤 package.json 수치를 함께 낮출 것.
+      # ⚠ 이 주석에 수치를 재기재하지 말 것 — 종전 "warning 307 / max-warnings=310" 서술이
+      #   package.json(253)과 어긋난 채 남아 드리프트 판단 오류를 만들었다. 수치의 SSOT 는 package.json 이다.
       - name: Lint (ESLint)
         id: fe-lint
         run: pnpm run lint

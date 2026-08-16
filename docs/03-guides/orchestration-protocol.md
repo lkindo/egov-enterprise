@@ -125,11 +125,11 @@
 | 작업 도메인 | 증거 유형 |
 |:---|:---|
 | **UI/Frontend** | `npx tsc --noEmit`(정적 타입) — GEMINI.md §0.6 HARD 게이트(pre-push 기계강제) + 계약 드리프트 게이트 `codegen:verify`/`codegen:verify:zod`(api-docs.json ↔ generated-api.d.ts/generated-zod.ts, pre-push HARD 차단). `next build`/`pnpm run build`(RSC 서버/클라이언트 경계)는 로컬에서도 실행 가능하다. **런타임 거동(Playwright E2E)은 CI 에서만 돌며 pre-push 에 없다** — UI 변경은 **CI 초록이 유일한 증거**다(2026-08-06 정정: 종전 "CI 과금차단" 서술은 사실이 아니었다). |
-| **Backend/API** | `./gradlew compileJava compileTestJava`(컴파일 무결성) — §0.6 HARD 게이트. **+ `./gradlew :api-server:harnessTest`**(헌법/표준 린터 29종, pre-push 기계강제·실측 ~2분). 추가로 JUnit/ArchUnit 결과 로그, API 응답 데이터 덤프(JSON). |
+| **Backend/API** | `./gradlew compileJava compileTestJava`(컴파일 무결성) — §0.6 HARD 게이트. **+ `./gradlew :api-server:harnessTest`**(헌법/표준 린터 31종/39테스트 — 2026-08-16 실측, pre-push 기계강제·실측 ~2분). 추가로 JUnit/ArchUnit 결과 로그, API 응답 데이터 덤프(JSON). |
 | **Database** | `db-bridge` 쿼리 실행 결과·행(Row) 수, `flyway_schema_history` 확인, `EXPLAIN ANALYZE` 결과, 스키마 변경 확인 로그. **엔티티·DDL 변경 시 `./gradlew :api-server:schemaValidationTest`**(빈 PostgreSQL 17 + Flyway 전량 적용 + Hibernate `ddl-auto:validate`, Docker 필요). ⚠ 단위 테스트 프로파일은 **H2 + `create-drop`** 이라 물리 스키마 불일치를 **원리적으로 검출하지 못한다** — 그 그린을 스키마 증거로 제시하지 말 것. |
 | **아키텍처/규칙** | 신설·수정한 ArchUnit/린트 게이트가 그린임을 대상 테스트 직접 실행(`--tests`)으로 증명. **게이트를 신설·수정했다면 그린 확인만으로 부족하다 — 의도적으로 위반을 주입해 red 가 되는 것까지 증명한다**(그린만 확인하면 vacuous 통과·UP-TO-DATE 스킵과 구분되지 않는다. GEMINI.md §0.7-H5). |
 
-> **게이트 계층(2026-08-12 실측 갱신)**: pre-commit(수 초, 경고) → **pre-push**(컴파일+tsc+codegen+하네스 29종, ~2분, 차단) → **`./gradlew localGate`**(위 + 실PG 스키마 검증 + 전 모듈 테스트 + JaCoCo 50% + 프론트 Vitest/전체소스 coverage 래칫, ~12분, 병합 전 1회) → **CI**(secret-scan · backend-build · frontend-build/고정 gzip 번들 예산 · mutation-test · **e2e-tests 3샤드**). business 모듈 테스트만 7분 48초라 pre-push 에 넣을 수 없어 `localGate` 로 분리했다 — 제외 사실을 숨기지 않기 위해 명시한다. 상세는 [.githooks/README.md](../../.githooks/README.md).
+> **게이트 계층(2026-08-12 실측 갱신)**: pre-commit(수 초, 경고) → **pre-push**(컴파일+tsc+codegen+하네스 31종, ~2분, 차단) → **`./gradlew localGate`**(위 + 실PG 스키마 검증 + 전 모듈 테스트 + JaCoCo **LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫, ~12분, 병합 전 1회) → **CI**(secret-scan · backend-build · frontend-build/고정 gzip 번들 예산 · mutation-test · **e2e-tests 3샤드**). business 모듈 테스트만 7분 48초라 pre-push 에 넣을 수 없어 `localGate` 로 분리했다 — 제외 사실을 숨기지 않기 위해 명시한다. 상세는 [.githooks/README.md](../../.githooks/README.md).
 >
 > ⛔ **"CI 과금차단" 서술을 삭제한다 — 사실이 아니었다.** 저장소는 **PUBLIC** 이고 워크플로우는
 > 정상 작동 중이다(2026-08-06 실측: 최근 60회 중 success 29 · failure 22 · cancelled 9).

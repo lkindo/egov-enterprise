@@ -293,3 +293,46 @@ test('mutation jobs provision the Gradle distribution with a bounded retry befor
   const pit = ciContent.indexOf('name: Incremental Mutation Test (${{ matrix.scope }})');
   assert.ok(provision >= 0 && provision < pit, 'Gradle distribution retry must run before the PIT hard gate');
 });
+
+// [2026-08-16 신설] 훅 전용이던 검증 2건을 CI 로 미러링하면서, 그 스텝이 조용히 사라지지
+//   못하도록 고정한다. `.githooks/*` 는 `--no-verify` / `SKIP_HOOKS=1` 로 우회되므로 훅에만
+//   있는 검증은 required check 가 아니다 — 우회한 푸시에서 무검증으로 통과했다.
+//   아래 두 테스트는 "게이트는 실행 경로가 있어야 게이트다"(GEMINI.md §0.7-H5)를 계약으로 굳힌다.
+
+test('secret-scan runs the reusable-base census contract that pre-push also enforces', () => {
+  const secretScanJob = ciContent.match(
+    /^  secret-scan:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+
+  assert.ok(secretScanJob, 'secret-scan job must exist');
+  assert.match(
+    secretScanJob,
+    /node --test scripts\/reusable-base-census\.test\.mjs/,
+    'reusable-base census must run in CI, not only in .githooks/pre-push (hooks are bypassable)',
+  );
+
+  // 훅 쪽에도 남아 있어야 로컬에서 빠르게 잡힌다 — 한쪽으로 이사시키는 것은 봉합이 아니다.
+  const prePush = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
+  assert.match(prePush, /node --test scripts\/reusable-base-census\.test\.mjs/);
+});
+
+test('frontend required check type-checks the e2e sources excluded from the root tsconfig', () => {
+  const frontendJob = ciContent.match(
+    /^  frontend-build:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+
+  assert.ok(frontendJob, 'frontend-build job must exist');
+  assert.match(
+    frontendJob,
+    /npx tsc -p tsconfig\.e2e\.json --noEmit/,
+    'e2e type check must run in CI: next build uses frontend/tsconfig.json, whose exclude drops "e2e"',
+  );
+
+  // 전제 확인 — 루트 tsconfig 가 e2e 를 exclude 하지 않게 되면 이 스텝의 근거가 바뀐다.
+  const rootTsconfig = fs.readFileSync(path.join(repoRoot, 'frontend', 'tsconfig.json'), 'utf8');
+  assert.match(
+    rootTsconfig,
+    /"e2e"/,
+    'root tsconfig no longer excludes e2e — re-evaluate whether the separate e2e type-check step is still needed',
+  );
+});

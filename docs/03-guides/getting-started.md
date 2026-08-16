@@ -225,7 +225,7 @@ public class ProductService extends BaseAbstractService {
 
 > ⚠ `required(...)` 는 **프로그래밍 오류를 잡는 가드**다. 물리 스키마상 nullable 인 도메인 값에 걸면 데이터가 생기는 순간 조회가 400 으로 깨진다(`DeptJobService.toDto` 주석의 실제 사고 사례 참조).
 
-**DB 테이블** — 스캐폴드는 `@Table(name = "tb_<domain>")` 를 찍지만 **테이블을 만들어 주지는 않는다.** `api-server/src/main/resources/db/migration/` 에 **현재 최신 파일을 확인한 뒤 다음 번호**(2026-08-13 기준 최신 `V2_48`, 다음은 `V2_49`)로 `V2_NN__create_tb_product.sql` 을 추가한다. 컬럼·객체 명명은 DB 헌법 제1~3조와 `meta_standard_words` 실조회를 따른다. Hibernate `ddl-auto: validate` 이므로 테이블이 없으면 **기동이 거부**된다.
+**DB 테이블** — 스캐폴드는 `@Table(name = "tb_<domain>")` 를 찍지만 **테이블을 만들어 주지는 않는다.** `api-server/src/main/resources/db/migration/` 에 **현재 최신 파일을 확인한 뒤 다음 번호**(2026-08-16 실측 최신 `V2_83__sms_bigint_identity.sql`, 다음은 `V2_84`)로 `V2_NN__create_tb_product.sql` 을 추가한다. ⚠ 이 번호는 빠르게 진행하므로 **문서 값을 믿지 말고 `ls` 로 직접 확인**할 것. 컬럼·객체 명명은 DB 헌법 제1~3조와 `meta_standard_words` 실조회를 따른다. Hibernate `ddl-auto: validate` 이므로 테이블이 없으면 **기동이 거부**된다.
 
 ---
 
@@ -271,4 +271,4 @@ public class ProductService extends BaseAbstractService {
 | 브랜치 보호 정합 | `npm run verify:ops` | 저장소 명세·CI·실제 GitHub ruleset 대조(네트워크·관리 읽기 권한 필요) |
 
 ---
-*Last Updated: 2026-08-15 (Codex — Frontend Vitest 88파일/444테스트와 coverage 30/25/25/30 하한 동기화. 이전: 2026-08-13 Node 22·관리자 최초 프로비저닝·explicit CRUD 스캐폴드·DB RBAC 집행·80엔티티/83테이블/888컬럼 실 DB 검증.)*
+*Last Updated: 2026-08-16 (드리프트 정정 — Frontend Vitest **122파일/1,206케이스** 실측, coverage 하한 **34/27/31/35**(`vitest.config.mts:81-86`), 마이그레이션 최신 번호 `V2_48`→`V2_83` 정정. 종전 "88파일/444테스트·30/25/25/30" 서술은 실측과 어긋나 있었다. 이전: 2026-08-15 Codex — Frontend Vitest coverage 하한 동기화. 2026-08-13 Node 22·관리자 최초 프로비저닝·explicit CRUD 스캐폴드·DB RBAC 집행·80엔티티/83테이블/888컬럼 실 DB 검증.)*
