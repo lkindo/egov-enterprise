@@ -12,7 +12,7 @@
  *   node scripts/code-census.mjs --baseline   # 현재 값을 기준선으로 저장
  *   node scripts/code-census.mjs --diff       # 저장된 기준선 대비 델타
  *
- * 계획 문서: .gemini/tasks/20260805-code-simplification-plan.md
+ * 기준선: .gemini/tasks/code-census-baseline.json
  */
 import { readFileSync, writeFileSync, existsSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';

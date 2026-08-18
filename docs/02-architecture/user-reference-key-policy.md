@@ -35,4 +35,4 @@
 - ③: login_policy 완료(키 혼용 결함 정정 포함) / rfsh_tk 는 경로 전체 esntl_id 실측 확인, 레거시 행 1건 정리는 V2_18 포함
 
 ---
-*근거 실측·경위: docs/02-architecture/db-standardization-assessment.md · .gemini/tasks/20260717-fk-batch-expansion-p1.md*
+*근거 실측·경위: [DB 표준화 평가](db-standardization-assessment.md) 및 V2_12·V2_14·V2_16 마이그레이션*
