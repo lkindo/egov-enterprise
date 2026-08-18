@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>eGov Enterprise - Governance & Harness Atlas</title>
+  <title>eGov Enterprise - Governance &amp; Harness Atlas</title>
+  <meta name="robots" content="noindex,nofollow">
   
   <!-- Web Fonts: 외부 CDN 의존을 제거하고 시스템 폰트 스택으로 렌더한다.
        이 문서는 앱의 CSP(next.config.ts headers)를 그대로 적용받는데, 종전에는 CDN 3곳
@@ -17,7 +18,7 @@
 
        🚨 이 문서를 갱신할 때 외부 CDN <link>(fonts.googleapis / cdn.jsdelivr 등)를 다시 넣지 말 것.
           CSP 가 차단하지만 **오류를 띄우지 않고 조용히 fallback** 되므로, 넣어도 "적용된 줄 알고" 넘어가게 된다
-          (Pretendard 가 실제로 그렇게 죽어 있었다). 이 문서는 middleware.ts 의 인증 면제 공개 경로이면서
+          (Pretendard 가 실제로 그렇게 죽어 있었다). 이 문서는 proxy.ts 의 인증 면제 공개 경로이면서
           앱 CSP 를 그대로 적용받는다 — 새 폰트가 필요하면 CDN 링크가 아니라 next.config.ts 의 CSP 와
           함께 검토해야 한다. -->
   <style>
@@ -51,11 +52,11 @@
       --text-muted: #94a3b8;
       --text-inverse: #0f172a;
       
-      --accent-primary: #6366f1; /* Indigo */
-      --accent-secondary: #06b6d4; /* Cyan */
-      --accent-success: #10b981; /* Emerald */
-      --accent-warning: #f59e0b; /* Amber */
-      --accent-danger: #ef4444; /* Rose */
+      --accent-primary: #a5b4fc; /* Indigo — dark surface contrast */
+      --accent-secondary: #67e8f9; /* Cyan — dark surface contrast */
+      --accent-success: #6ee7b7; /* Emerald — dark surface contrast */
+      --accent-warning: #fcd34d; /* Amber — dark surface contrast */
+      --accent-danger: #fda4af; /* Rose — dark surface contrast */
       --accent-glow: hsla(244, 49%, 49%, 0.15);
       
       --shadow-main: 0 4px 20px rgba(0, 0, 0, 0.35);
@@ -79,10 +80,10 @@
       --text-inverse: #f8fafc;
       
       --accent-primary: #4f46e5; /* Deep Indigo */
-      --accent-secondary: #0891b2; /* Deep Cyan */
-      --accent-success: #059669; /* Deep Emerald */
-      --accent-warning: #d97706; /* Deep Amber */
-      --accent-danger: #e11d48; /* Deep Rose */
+      --accent-secondary: #0e7490; /* Deep Cyan */
+      --accent-success: #047857; /* Deep Emerald */
+      --accent-warning: #b45309; /* Deep Amber */
+      --accent-danger: #be123c; /* Deep Rose */
       --accent-glow: hsla(244, 49%, 49%, 0.05);
       
       --shadow-main: 0 4px 20px rgba(15, 23, 42, 0.05);
@@ -111,6 +112,40 @@
         linear-gradient(var(--grid-color) 1px, transparent 1px),
         linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
       background-size: 50px 50px;
+    }
+
+    a {
+      color: var(--accent-secondary);
+      text-underline-offset: 0.2em;
+    }
+
+    button,
+    select,
+    input {
+      font: inherit;
+    }
+
+    :focus-visible {
+      outline: 3px solid var(--accent-warning);
+      outline-offset: 3px;
+    }
+
+    .skip-link {
+      position: fixed;
+      top: 0.75rem;
+      left: 0.75rem;
+      z-index: 1000;
+      transform: translateY(-160%);
+      padding: 0.65rem 0.9rem;
+      border-radius: 8px;
+      background: var(--text-main);
+      color: var(--bg-app);
+      font-weight: 800;
+      transition: transform 0.15s ease;
+    }
+
+    .skip-link:focus {
+      transform: translateY(0);
     }
 
     /* Ambient Nebula Glow Elements */
@@ -262,7 +297,27 @@
     }
 
     .tab-radio {
-      display: none;
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .tab-radio:focus-visible + .nav-label {
+      outline: 3px solid var(--accent-warning);
+      outline-offset: 2px;
+      color: var(--text-main);
+    }
+
+    .tab-radio:checked + .nav-label {
+      color: var(--text-main);
+      background: color-mix(in srgb, var(--accent-primary) 12%, transparent);
+      border-color: color-mix(in srgb, var(--accent-primary) 32%, transparent);
     }
 
     .nav-label {
@@ -331,11 +386,21 @@
     .main-content {
       margin-left: 290px;
       flex-grow: 1;
+      min-width: 0;
       min-height: 100vh;
       padding: 3.5rem 4.5rem;
       position: relative;
       z-index: 1;
     }
+
+    .main-content > .freshness-banner,
+    .main-content > .tab-content {
+      width: 100%;
+      max-width: 90rem;
+      margin-inline: auto;
+    }
+
+    .print-title { display: none; }
 
     /* Theme Selector Toggle Floating */
     .theme-switch-wrapper {
@@ -374,7 +439,85 @@
 
     .tab-content {
       display: none;
+      scroll-margin-top: 1rem;
       animation: tabFadeIn 0.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+    }
+
+    /* Progressive fallback: welcome remains readable even if initialization fails. */
+    #content-welcome { display: block; }
+
+    .freshness-banner {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      align-items: center;
+      gap: 0.9rem;
+      margin: 0 0 2rem;
+      padding: 0.9rem 1rem;
+      border: 1px solid color-mix(in srgb, var(--accent-secondary) 35%, var(--border-color));
+      border-radius: 12px;
+      background: color-mix(in srgb, var(--accent-secondary) 7%, var(--bg-card));
+      color: var(--text-muted);
+      font-size: 0.82rem;
+    }
+
+    .freshness-banner strong {
+      color: var(--text-main);
+    }
+
+    .status-dot {
+      width: 0.7rem;
+      height: 0.7rem;
+      border-radius: 50%;
+      background: var(--accent-warning);
+      box-shadow: 0 0 12px color-mix(in srgb, var(--accent-warning) 55%, transparent);
+    }
+
+    .status-panel {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 1rem;
+      margin: 1.5rem 0 2rem;
+    }
+
+    .status-card {
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 1rem;
+      background: color-mix(in srgb, var(--bg-card) 90%, transparent);
+    }
+
+    .status-card strong {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: var(--text-main);
+      font-size: 1.25rem;
+    }
+
+    .status-card span {
+      color: var(--text-muted);
+      font-size: 0.78rem;
+      line-height: 1.45;
+    }
+
+    .callout {
+      margin: 1rem 0;
+      padding: 1rem 1.1rem;
+      border-left: 4px solid var(--accent-warning);
+      border-radius: 0 10px 10px 0;
+      background: color-mix(in srgb, var(--accent-warning) 8%, var(--bg-card));
+      color: var(--text-muted);
+      font-size: 0.88rem;
+    }
+
+    .callout strong {
+      color: var(--text-main);
+    }
+
+    .sim-step {
+      width: 100%;
+      color: var(--text-main);
+      text-align: left;
+      font: inherit;
     }
 
     @keyframes tabFadeIn {
@@ -715,7 +858,7 @@
       font-family: 'Fira Code', monospace;
       font-size: 0.78rem;
       line-height: 1.6;
-      color: #38bdf8;
+      color: #7dd3fc;
       background: rgba(0, 0, 0, 0.4);
       border-radius: 8px;
       padding: 1.1rem;
@@ -747,7 +890,7 @@
       padding-bottom: 0.4rem;
     }
 
-    .monitor-param-key { color: var(--text-muted); }
+    .monitor-param-key { color: #cbd5e1; }
     .monitor-param-val { color: #fff; font-weight: 600; }
 
     .sim-bar {
@@ -769,9 +912,13 @@
       border-radius: 8px;
       font-size: 0.85rem;
       font-weight: 600;
-      outline: none;
       flex-grow: 1;
       cursor: pointer;
+    }
+
+    .sim-select:focus-visible {
+      outline: 3px solid var(--accent-warning);
+      outline-offset: 3px;
     }
 
     .sim-btn {
@@ -1012,10 +1159,113 @@
       .stat-bar { grid-template-columns: repeat(2, 1fr); }
       .sim-container { grid-template-columns: 1fr; }
       .sim-monitor { position: static; }
+      .status-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .grid-3, .grid-5 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 900px) {
+      .app-container { display: block; }
+      .sidebar {
+        position: sticky;
+        top: 0;
+        width: 100%;
+        height: auto;
+        padding: 0.75rem 1rem;
+        border-right: 0;
+        border-bottom: 1px solid var(--border-color);
+      }
+      .brand-section { margin-bottom: 0.55rem; }
+      .brand-icon { width: 34px; height: 34px; font-size: 1rem; }
+      .brand-text h1 { font-size: 1rem; }
+      .brand-text span { font-size: 0.6rem; }
+      .nav-menu {
+        flex-direction: row;
+        flex-grow: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 0 0 0.35rem;
+        scrollbar-width: thin;
+      }
+      .nav-category, .active-glow-bar, .sidebar-footer { display: none; }
+      .nav-label { flex: 0 0 auto; white-space: nowrap; }
+      .main-content { margin-left: 0; padding: 4.75rem 1.5rem 2.5rem; }
+      .tab-content { scroll-margin-top: 9rem; }
+      .theme-switch-wrapper { position: absolute; top: 1.1rem; right: 1.5rem; }
+      .freshness-banner { grid-template-columns: auto 1fr; }
+      .freshness-banner a { grid-column: 2; }
+    }
+
+    @media (max-width: 640px) {
+      .main-content { padding: 4.5rem 1rem 2rem; }
+      .theme-switch-wrapper { top: 0.9rem; right: 1rem; }
+      .theme-btn { padding: 0.5rem 0.7rem; }
+      h2.section-title { font-size: 1.75rem; line-height: 1.2; }
+      p.section-subtitle { font-size: 0.9rem; margin-bottom: 1.5rem; }
+      .glass-card { padding: 1.15rem; border-radius: 13px; }
+      .grid-2, .grid-3, .grid-5, .status-panel, .stat-bar { grid-template-columns: 1fr; }
+      .sim-bar { align-items: stretch; }
+      .sim-select, .sim-btn { width: 100%; }
+      .table-container { overscroll-behavior-inline: contain; }
+      table.premium-table { min-width: 680px; }
+      pre.code-block { padding: 1rem; font-size: 0.76rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .freshness-banner { margin-bottom: 1.5rem; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0ms !important;
+        animation-iteration-count: 1 !important;
+        scroll-behavior: auto !important;
+        transition-duration: 0ms !important;
+      }
+      .glass-card:hover, .sim-step:hover { transform: none; }
+      .bg-nebula-1, .bg-nebula-2, .bg-nebula-3 { display: none; }
+    }
+
+    @media print {
+      :root,
+      :root[data-theme="dark"],
+      :root[data-theme="light"] {
+        color-scheme: light;
+        --bg-app: #fff;
+        --bg-body: #fff;
+        --bg-sidebar: #fff;
+        --bg-base: #fff;
+        --bg-card: #fff;
+        --bg-card-hover: #fff;
+        --text-main: #111827;
+        --text-muted: #334155;
+        --accent-primary: #3730a3;
+        --accent-secondary: #155e75;
+        --accent-success: #047857;
+        --accent-warning: #92400e;
+        --accent-danger: #be123c;
+        --border-color: #94a3b8;
+      }
+      *, *::before, *::after { animation-duration: 0ms !important; transition-duration: 0ms !important; }
+      body { background: #fff !important; background-image: none !important; color: #111827; }
+      .sidebar, .theme-switch-wrapper, .skip-link, .bg-nebula-1, .bg-nebula-2, .bg-nebula-3 { display: none !important; }
+      .main-content { margin: 0; padding: 0; }
+      .print-title { display: block; color: #111827; font: 700 20pt/1.2 sans-serif; }
+      .freshness-banner { border: 1px solid #94a3b8; }
+      .tab-content { display: block !important; animation: none !important; page-break-before: always; }
+      .tab-content:first-of-type { page-break-before: auto; }
+      .glass-card, .status-card, table { background: #fff !important; background-image: none !important; break-inside: avoid; box-shadow: none; backdrop-filter: none; }
+      .sim-monitor, .monitor-header, .monitor-screen, .monitor-panel-body { background: #fff !important; color: #111827 !important; border-color: #64748b !important; }
+      .monitor-label, .monitor-param-key, .monitor-param-val, #mon-grade, #mon-skill, #mon-stage { color: #111827 !important; }
+      .badge-success { color: #064e3b !important; background: #d1fae5 !important; }
+      .card-neon-glow, .flow-step-dot { display: none !important; }
+      a { color: #111827; text-decoration: underline; }
     }
   </style>
+  <noscript><style>.tab-content { display: block !important; }</style></noscript>
 </head>
 <body>
+
+  <a class="skip-link" href="#main-content">본문으로 건너뛰기</a>
+  <noscript>
+    <div class="callout"><strong>JavaScript가 비활성화되어 있습니다.</strong> 정적 섹션을 연속 표시합니다. 동적 표·카드의 원문은 연결된 저장소 근거에서 확인하세요.</div>
+  </noscript>
 
   <!-- Background Orbit Glows -->
   <div class="bg-nebula-1"></div>
@@ -1029,8 +1279,8 @@
       <div class="brand-section">
         <div class="brand-icon">AG</div>
         <div class="brand-text">
-          <h1>Antigravity</h1>
-          <span>Governance Suite</span>
+          <h1>eGov Enterprise</h1>
+          <span>Governance Atlas</span>
         </div>
       </div>
 
@@ -1038,16 +1288,16 @@
       <nav class="nav-menu">
         <div class="nav-category">🚀 Getting Started</div>
 
-        <input type="radio" name="tabs" id="tab-onboarding" class="tab-radio" checked>
+        <input type="radio" name="tabs" id="tab-onboarding" class="tab-radio" aria-label="신규 팀원 온보딩">
         <label for="tab-onboarding" class="nav-label">
           <span class="nav-number">GO</span> 신규 팀원 온보딩
         </label>
 
         <div class="nav-category">System Overview</div>
 
-        <input type="radio" name="tabs" id="tab-welcome" class="tab-radio">
+        <input type="radio" name="tabs" id="tab-welcome" class="tab-radio" aria-label="현행 상태 대시보드" checked>
         <label for="tab-welcome" class="nav-label">
-          <span class="nav-number">00</span> Welcome & Dashboard
+          <span class="nav-number">00</span> 현행 상태 대시보드
         </label>
 
         <div class="nav-category">Governance Principles</div>
@@ -1083,7 +1333,7 @@
 
         <input type="radio" name="tabs" id="tab-skills" class="tab-radio">
         <label for="tab-skills" class="nav-label">
-          <span class="nav-number">06</span> 안티그래비티 독점 스킬
+          <span class="nav-number">06</span> 에이전트 실행 자산
         </label>
 
         <input type="radio" name="tabs" id="tab-db" class="tab-radio">
@@ -1091,31 +1341,42 @@
           <span class="nav-number">07</span> DB Local Bridge 사용법
         </label>
 
+        <input type="radio" name="tabs" id="tab-migration" class="tab-radio" aria-label="레거시 데이터 이관 도구">
+        <label for="tab-migration" class="nav-label">
+          <span class="nav-number">08</span> Legacy Migration
+        </label>
+
         <input type="radio" name="tabs" id="tab-ralph" class="tab-radio">
         <label for="tab-ralph" class="nav-label">
-          <span class="nav-number">08</span> Ralph Loop 2.0 자가성찰
+          <span class="nav-number">09</span> Ralph Loop 2.0 자가성찰
         </label>
 
         <input type="radio" name="tabs" id="tab-harnesses" class="tab-radio">
         <label for="tab-harnesses" class="nav-label">
-          <span class="nav-number">09</span> 7대 가디언 하네스 스펙
+          <span class="nav-number">10</span> 검증 하네스 지도
+        </label>
+
+        <input type="radio" name="tabs" id="tab-gaps" class="tab-radio" aria-label="확인된 공백과 개선 로드맵">
+        <label for="tab-gaps" class="nav-label">
+          <span class="nav-number">11</span> 공백 &amp; 개선 로드맵
         </label>
       </nav>
 
       <div class="sidebar-footer">
-        <div>v5.0.0-MODERNIZED</div>
-        <div>OCI PostgreSQL 17 READY</div>
-        <div>2026-07-19</div>
+        <div>STATIC EVIDENCE ATLAS</div>
+        <div>SSOT가 항상 우선</div>
+        <div>검증 기준 2026-08-18</div>
       </div>
     </aside>
 
     <!-- Main Workspace -->
-    <main class="main-content">
+    <main class="main-content" id="main-content" tabindex="-1">
+      <h1 class="print-title">eGov Enterprise Governance &amp; Harness Atlas</h1>
       
       <!-- Premium Theme Toggler Floating Switch -->
       <div class="theme-switch-wrapper">
-        <button class="theme-btn" id="theme-toggle-btn" onclick="toggleAppTheme()">
-          <svg class="theme-icon" id="theme-svg" viewBox="0 0 24 24">
+        <button class="theme-btn" id="theme-toggle-btn" type="button" aria-label="밝은 테마로 전환" aria-pressed="true" onclick="toggleAppTheme()">
+          <svg class="theme-icon" id="theme-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <!-- Sun SVG paths by default -->
             <path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zM5.99 16.95l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41s-1.02-.39-1.41 0z"/>
           </svg>
@@ -1123,49 +1384,99 @@
         </button>
       </div>
 
+      <div class="freshness-banner" role="note" aria-label="문서 현행성 정보">
+        <span class="status-dot" aria-hidden="true"></span>
+        <div>
+          <strong>2026-08-18 검증 스냅샷</strong> · 이 페이지는 설명용 아틀라스이며 규칙 원본이 아닙니다.
+          충돌 시 <code>GEMINI.md</code> → orchestration protocol → 3대 헌법 → 실행 manifest 순으로 확인하세요.
+        </div>
+        <a href="https://github.com/lkindo/egov-enterprise" target="_blank" rel="noopener noreferrer">저장소에서 최신 상태 확인</a>
+      </div>
+
       <!-- [00] Welcome Dashboard -->
       <section id="content-welcome" class="tab-content">
         <div class="welcome-hero">
           <h2 class="welcome-title">eGov Enterprise Governance</h2>
           <p class="welcome-subtitle">
-            안티그래비티 2.0이 통제하고 실시간으로 보호하는 7대 무결성 가디언 하네스 종합 대시보드
+            저장소·워크플로·원격 ruleset을 교차 확인한 현행 거버넌스 증거 지도
           </p>
 
-          <!-- Core Metrical Stat Cards Grid -->
+          <!-- Repository-backed snapshot metrics; not performance claims. -->
           <div class="stat-bar">
             <div class="stat-card">
-              <div class="stat-val">90% 저감</div>
-              <div class="stat-label">성능 릭 (JPA N+1)</div>
-              <div class="stat-desc">쿼리 누수 100% 탐색 및 차단</div>
+              <div class="stat-val">31</div>
+              <div class="stat-label">하네스 클래스</div>
+              <div class="stat-desc"><code>nuri.api.harness</code> 실측</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val">92% 단축</div>
-              <div class="stat-label">돌연변이 빌드 오버헤드</div>
-              <div class="stat-desc">AST 증분 캐시 기반 최적화</div>
+              <div class="stat-val">37</div>
+              <div class="stat-label">PostgreSQL 스키마 검증 클래스</div>
+              <div class="stat-desc"><code>@Tag("schema-validation")</code> 실측</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val">85% 감축</div>
-              <div class="stat-label">E2E 테스트 유지보수</div>
-              <div class="stat-desc">자가치유 셀렉터 에이전트 구동</div>
+              <div class="stat-val">7</div>
+              <div class="stat-label">원격 필수 상태 검사</div>
+              <div class="stat-desc">backend · frontend · secret · E2E×3 · mutation</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val">100% 밀봉</div>
-              <div class="stat-label">보안 인가 유실 차단</div>
-              <div class="stat-desc">JUnit Hard-Stop 인펙터 가동</div>
+              <div class="stat-val">85 / 70</div>
+              <div class="stat-label">JaCoCo 하한</div>
+              <div class="stat-desc">LINE / BRANCH 백분율</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val">DDL 파괴 0%</div>
-              <div class="stat-label">무중단 스키마 마이그레이션</div>
-              <div class="stat-desc">테이블 락 / 구버전 앱 쿼리 보호</div>
+              <div class="stat-val" style="color: var(--accent-danger);">0</div>
+              <div class="stat-label">필수 승인 리뷰</div>
+              <div class="stat-desc">2026-08-18 원격 ruleset 확인값 · 개선 필요</div>
             </div>
           </div>
         </div>
 
+        <div class="status-panel" role="region" aria-label="집행 상태 요약">
+          <article class="status-card">
+            <span class="badge badge-success">ENFORCED</span>
+            <h3>병합 상태 검사</h3>
+            <p>7개 required check, strict 최신 브랜치 요구, force-push·삭제 차단은 원격 ruleset과 manifest가 일치합니다.</p>
+          </article>
+          <article class="status-card">
+            <span class="badge badge-error">CONFIRMED GAP</span>
+            <h3>사람 승인 통제</h3>
+            <p>필수 승인 수 0, CODEOWNERS·마지막 push 승인·thread resolution이 비활성입니다. CODEOWNERS가 전제한 review 설정과 운영 통제가 원격에서 집행되지 않습니다.</p>
+          </article>
+          <article class="status-card">
+            <span class="badge badge-warning">PARTIAL</span>
+            <h3>베이스라인 완전성</h3>
+            <p>manifest는 37개 클래스를 동결하지만 schema-validation 37개 중 1개만 포함합니다. 이름 기반 탐색도 일부 헌법 게이트를 놓칩니다.</p>
+          </article>
+          <article class="status-card">
+            <span class="badge badge-warning">ADVISORY</span>
+            <h3>디자인 토큰</h3>
+            <p>ESLint는 CI·pre-push에서 실행되지만 토큰 규칙 자체는 warning입니다. 타입·빌드 성공이 시각 품질을 보증하지는 않습니다.</p>
+          </article>
+        </div>
+
+        <div class="callout">
+          <strong>읽는 법:</strong> <span class="badge badge-success">ENFORCED</span>는 실행 경로와 실패 조건을 확인한 통제,
+          <span class="badge badge-warning">PARTIAL</span>은 일부만 기계 집행되는 통제,
+          <span class="badge badge-error">CONFIRMED GAP</span>은 실제 미집행 상태입니다. “100%”, “완벽 차단” 같은 근거 없는 효과 수치는 사용하지 않습니다.
+        </div>
+
+        <div class="glass-card">
+          <h3 class="glow-header">검증된 기술·병합 계약</h3>
+          <p style="color: var(--text-muted); line-height: 1.7;">
+            <strong>Runtime/build:</strong> Java 21 · Spring Boot 3.5.16 · Gradle 9.6.1 · Node.js ≥22 · pnpm 9.15.0 · Next.js 16.2.12 · PostgreSQL 17
+          </p>
+          <p style="color: var(--text-muted); line-height: 1.7; margin-top: 0.6rem;">
+            <strong>Required contexts:</strong>
+            <code>backend-build</code> · <code>frontend-build</code> · <code>secret-scan</code> ·
+            <code>e2e-tests (1/3)</code> · <code>e2e-tests (2/3)</code> · <code>e2e-tests (3/3)</code> · <code>mutation-test</code>
+          </p>
+        </div>
+
         <div class="glass-card">
           <div class="card-neon-glow"></div>
-          <h3 class="glow-header">차세대 엔터프라이즈 아키텍처 흐름</h3>
+          <h3 class="glow-header">현재 요청·데이터 흐름의 대표 경로</h3>
           <p style="color: var(--text-muted); font-size: 0.92rem; margin-bottom: 1.5rem;">
-            본 프로젝트는 Java 21 기반 Spring Boot 백엔드와 Next.js 16.2 프론트엔드가 OCI PostgreSQL 17 스토리지 상에서 완벽한 무결성을 유지하며 융합하도록 설계된 고성능 아키텍처를 가집니다. 사용자 요청부터 프론트엔드 미들웨어, 서버 컴포넌트, 백엔드 서비스 제어를 거쳐 안전하게 데이터가 처리되고 다시 클라이언트로 수화(Hydration)되는 라이프사이클 흐름도입니다.
+            Java 21 · Spring Boot 3.5.16 · Next.js 16.2.12 · PostgreSQL 17 기준입니다. 아래는 루트 통합 대시보드의 실제 호출 경로입니다. 이 경로가 React <code>cache</code>/<code>Suspense</code>를 사용해 프론트 헌법의 TanStack Query 기본 경로와 충돌한다는 점도 함께 표시합니다.
           </p>
 
           <div class="flow-timeline">
@@ -1183,15 +1494,15 @@
               <div class="flow-step-number">01</div>
             </div>
 
-            <!-- 2. Next.js Middleware -->
+            <!-- 2. Next.js Proxy -->
             <div class="flow-step-node">
               <span class="flow-step-dot"></span>
               <div class="flow-step-info">
                 <div class="flow-step-title">
-                  Next.js Middleware (Auth Gateway)
+                  Next.js Proxy (Auth Gateway)
                   <span class="flow-step-badge frontend">Frontend Routing</span>
                 </div>
-                <div class="flow-step-desc">라우트 세그먼트에 진입하기 전, JWT 쿠키 및 세션 상태를 스캔하여 비인가 사용자를 Hard-Redirect 차단합니다.</div>
+                <div class="flow-step-desc">보호 라우트 진입 전 쿠키 기반 인증 상태와 JWT를 확인합니다. 이 정적 아틀라스 경로는 공개 예외로 등록되어 있습니다.</div>
                 <div class="flow-step-file">frontend/src/proxy.ts</div>
               </div>
               <div class="flow-step-number">02</div>
@@ -1205,8 +1516,8 @@
                   React Server Component (RSC)
                   <span class="flow-step-badge frontend">Next.js SSR</span>
                 </div>
-                <div class="flow-step-desc">서버 사이드에서 HTML을 사전 렌더링(Pre-rendering)하고 데이터 바인딩을 위한 API 호출을 준비합니다.</div>
-                <div class="flow-step-file">frontend/src/app/admin/dashboard/page.tsx</div>
+                <div class="flow-step-desc">HttpOnly 쿠키를 읽고 React <code>cache</code>로 dashboard 요청을 중복 제거한 뒤 <code>Suspense</code> 경계로 Promise를 전달합니다.</div>
+                <div class="flow-step-file">frontend/src/app/page.tsx</div>
               </div>
               <div class="flow-step-number">03</div>
             </div>
@@ -1216,11 +1527,11 @@
               <span class="flow-step-dot"></span>
               <div class="flow-step-info">
                 <div class="flow-step-title">
-                  ApiService (Frontend Fetcher)
+                  Shared Axios Client
                   <span class="flow-step-badge frontend">API Client</span>
                 </div>
-                <div class="flow-step-desc">타입 캐스팅이 보장된 Axios/Fetch 래퍼 엔진을 통해 스프링 백엔드 API 게이트웨이와 보안 통신합니다.</div>
-                <div class="flow-step-file">frontend/src/services/api.service.ts</div>
+                <div class="flow-step-desc">Server Component가 공통 Axios client로 <code>/dashboard</code>를 직접 호출하고 cookie token을 Authorization header로 전달합니다.</div>
+                <div class="flow-step-file">frontend/src/lib/api/client.ts</div>
               </div>
               <div class="flow-step-number">04</div>
             </div>
@@ -1233,8 +1544,8 @@
                   api-server Controller
                   <span class="flow-step-badge backend">Spring BE Controller</span>
                 </div>
-                <div class="flow-step-desc">HTTP 엔드포인트를 노출하고 API Contract Guardian의 OpenAPI 명세를 충족하는 DTO 요청을 접수합니다.</div>
-                <div class="flow-step-file">api-server/.../nuri/api/controller/DashboardController.java</div>
+                <div class="flow-step-desc"><code>/api/v1/dashboard</code>를 노출하고 인증 사용자에 대해 등록된 provider의 결과를 집계합니다.</div>
+                <div class="flow-step-file">api-server/src/main/java/nuri/api/controller/business/main/DashboardApiController.java</div>
               </div>
               <div class="flow-step-number">05</div>
             </div>
@@ -1244,25 +1555,25 @@
               <span class="flow-step-dot"></span>
               <div class="flow-step-info">
                 <div class="flow-step-title">
-                  business-core / business-app Service (Domain)
+                  Dashboard Provider Port &amp; Implementations
                   <span class="flow-step-badge backend">Spring BE Service</span>
                 </div>
-                <div class="flow-step-desc">트랜잭션(Transaction) 경계를 설정하고 핵심 도메인 비즈니스 로직 및 JPA 영속성(Persistence) 처리를 완수합니다. (재사용 코어=business-core, 프로젝트 고유 업무 도메인=business-app — 2026-07 business-suite 모놀리스를 분할.)</div>
-                <div class="flow-step-file">business-core/.../nuri/business/service/... · business-app/.../nuri/business/service/...</div>
+                <div class="flow-step-desc"><code>foundation</code>의 DashboardItemProvider port를 통해 현재 <code>business-app</code>의 두 provider가 알림·할 일·결재대기 데이터를 채웁니다. <code>business-core</code> 확장은 가능하지만 현재 구현으로 표기하지 않습니다.</div>
+                <div class="flow-step-file">foundation/.../DashboardItemProvider.java → business-app/.../*DashboardProvider.java</div>
               </div>
               <div class="flow-step-number">06</div>
             </div>
 
-            <!-- 7. OCI PostgreSQL Database -->
+            <!-- 7. PostgreSQL Database -->
             <div class="flow-step-node">
               <span class="flow-step-dot"></span>
               <div class="flow-step-info">
                 <div class="flow-step-title">
-                  OCI PostgreSQL 17 Storage
+                  PostgreSQL 17 Storage
                   <span class="flow-step-badge database">Database Layer</span>
                 </div>
-                <div class="flow-step-desc">메타 표준(meta_standard_words)과 무중단 스키마 마이그레이션 지침(Expand-and-Contract)에 의거하여 정형 데이터를 영속 저장합니다.</div>
-                <div class="flow-step-file">PostgreSQL Instance (Port 5432) / resources/db/migration/*.sql</div>
+                <div class="flow-step-desc">Flyway migration과 PostgreSQL 기반 통합 검증을 통해 스키마를 재현합니다. 메타 표준 및 무중단 규칙은 하네스 적용 범위와 예외를 별도로 확인해야 합니다.</div>
+                <div class="flow-step-file">local/CI/E2E PostgreSQL / api-server/src/main/resources/db/migration/*.sql</div>
               </div>
               <div class="flow-step-number">07</div>
             </div>
@@ -1272,11 +1583,11 @@
               <span class="flow-step-dot"></span>
               <div class="flow-step-info">
                 <div class="flow-step-title">
-                  DTO Response (Data Transfer Object)
+                  API Response Contract
                   <span class="flow-step-badge backend">Spring BE DTO</span>
                 </div>
-                <div class="flow-step-desc">엔티티 유출을 차단하기 위해 순수 응답용 DTO 객체로 변환하여 프론트엔드가 요구하는 JSON 명세대로 응답을 정밀 직렬화합니다.</div>
-                <div class="flow-step-file">api-server/.../nuri/api/dto/DashboardResponseDto.java</div>
+                <div class="flow-step-desc">대시보드 경로는 현재 <code>ApiResponse&lt;Map&lt;String, Object&gt;&gt;</code>로 응답해 백엔드 헌법 제3조의 전용 DTO 의무와 충돌합니다. 승인된 예외로 간주하지 않습니다.</div>
+                <div class="flow-step-file">foundation/src/main/java/nuri/foundation/core/response/ApiResponse.java</div>
               </div>
               <div class="flow-step-number">08</div>
             </div>
@@ -1287,10 +1598,10 @@
               <div class="flow-step-info">
                 <div class="flow-step-title">
                   Client Component (Interactive UX)
-                  <span class="flow-step-badge client">Hydration</span>
+                  <span class="flow-step-badge client">Suspense / use()</span>
                 </div>
-                <div class="flow-step-desc">브라우저 사이드에서 API 수신 데이터를 바탕으로 컴포넌트를 활성화하고, 마이크로 인터랙션 및 상태 제어를 처리합니다.</div>
-                <div class="flow-step-file">frontend/src/components/admin/DashboardWidget.tsx</div>
+                <div class="flow-step-desc">React <code>use()</code>로 서버 Promise를 해제하고 인증 상태·동적 위젯·상호작용을 처리합니다.</div>
+                <div class="flow-step-file">frontend/src/app/UnifiedDashboardClient.tsx</div>
               </div>
               <div class="flow-step-number">09</div>
             </div>
@@ -1298,10 +1609,11 @@
         </div>
 
         <div class="glass-card">
-          <h3 class="glow-header">실시간 거버넌스 릭(Leak) 방어 아키텍처</h3>
+          <h3 class="glow-header">통제 계층과 증거의 한계</h3>
           <p style="color: var(--text-muted); font-size: 0.92rem; line-height: 1.7;">
-            안티그래비티 하네스는 **빌드 타임(Static Linter/Hard-Stop)**, **테스트 타임(JPA Inspector/PITest/Security Linter/DDL Safety Auditor)**, **런타임(Playwright Self-Healing/Diagnostics Hub)** 3중 통제 장벽을 구성하여 개발자가 실수로 유입한 버그나 무결성 위반 코드가 프로덕션으로 배포되는 길목을 원천적으로 차단합니다.
+            통제는 로컬 훅, Gradle/JUnit, PostgreSQL 통합 검증, 프론트 정적 검사, Playwright E2E, GitHub required check로 나뉩니다. 어느 한 계층도 전체 품질을 단독 보증하지 않으며, 실행 경로에 연결되지 않은 테스트·warning 규칙·불완전한 원격 승인 설정은 별도 공백으로 추적합니다.
           </p>
+          <div class="callout"><strong>설계 결정 필요:</strong> 루트 대시보드를 헌법의 TanStack Query/dehydrate 패턴으로 통일하거나, RSC native <code>cache</code>/<code>Suspense</code>를 승인된 예외로 헌법에 명시해야 합니다. 현재처럼 코드와 조문이 서로 다른 상태를 정상으로 표시하지 않습니다.</div>
         </div>
       </section>
 
@@ -1314,9 +1626,13 @@
           <div class="card-neon-glow"></div>
           <h3 class="glow-header">① 5분 로컬 시작 (Quick Start)</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">
-            <strong>필수 요구사항</strong>: Java 21 (LTS) · Node.js 20+ · <code>pnpm</code>(<code>npm i -g pnpm</code>) · Docker 또는 PostgreSQL 14+. 패키지 매니저 표준은 <strong style="color: var(--accent-secondary);">pnpm</strong> 입니다(npm 아님).
+            <strong>필수 요구사항</strong>: Java 21 (LTS) · Node.js 22+ · Corepack으로 고정한 <code>pnpm 9.15.0</code> · Docker/PostgreSQL 17. 로컬 pnpm 버전이 manifest와 다른지 먼저 확인하세요.
           </p>
-          <pre class="code-block"># 1) 최초 1회: 환경 복사 → 로컬 DB 기동 → 의존성(pnpm) 설치
+          <pre class="code-block"># 0) 저장소 선언 버전 사용
+corepack enable
+corepack prepare pnpm@9.15.0 --activate
+
+# 1) 최초 1회: 환경 복사 → 로컬 DB 기동 → 의존성 설치
 make bootstrap                # Windows: powershell -File .\scripts\bootstrap.ps1
 
 # 2) 백엔드 + 프론트엔드 동시 기동
@@ -1324,8 +1640,11 @@ npm run dev                   # Windows: .\start-dev.ps1
 #   API :  http://localhost:8080/api/v1
 #   Web :  http://localhost:3001
 
-# 3) 최초 로그인 (빈 DB 부팅 시 R__seed_framework 가 자동 시드)
-#   ID: webmaster   PW: 1     [!] 운영 전환 시 반드시 비밀번호 로테이션/최초 강제변경</pre>
+# 3) 최초 관리자 계정
+# R__seed_framework.sql은 로그인 불가 sentinel을 넣습니다.
+# ADMIN_INITIAL_PASSWORD를 최초 기동에만 안전하게 주입하고,
+# 로그인 후 즉시 변경한 뒤 환경변수를 제거합니다.</pre>
+          <div class="callout"><strong>보안 주의:</strong> 이 공개 정적 페이지에는 기본 비밀번호를 기록하지 않습니다. 개발 전용 seed와 운영 초기 관리자 절차를 혼용하지 마세요.</div>
         </div>
 
         <div class="glass-card">
@@ -1340,9 +1659,9 @@ npm run dev                   # Windows: .\start-dev.ps1
                   <td>일상 개발 라인. 기능/버그 작업 브랜치는 여기서 분기한다.</td>
                 </tr>
                 <tr>
-                  <td><code>v* release artifact</code> <span class="badge badge-success">재사용 base</span></td>
-                  <td><code>core</code> · <code>collaboration</code> · <code>demo</code> 프로필로 릴리스 태그에서 생성·검증한 골격</td>
-                  <td>신규 SI/재개발의 시작점. 프로필 생성 → 빈 DB 재적용 → 컴파일·harness 검증. 상세: <code>docs/03-guides/reusable-base-guide.md</code></td>
+                  <td><code>v* release artifact</code> <span class="badge badge-warning">생성 절차</span></td>
+                  <td><code>core</code> · <code>collaboration</code> · <code>demo</code> 프로필을 릴리스 태그에서 생성·검증하도록 설계된 절차. 현재 git tag는 없습니다.</td>
+                  <td>향후 릴리스 산출물 생성 시 사용. artifact가 존재한다고 가정하지 말고 tag·checksum·검증 로그를 먼저 확인합니다.</td>
                 </tr>
                 <tr>
                   <td><code>template/reusable-base</code> <span class="badge badge-warning">역사 기록</span></td>
@@ -1353,25 +1672,28 @@ npm run dev                   # Windows: .\start-dev.ps1
             </table>
           </div>
           <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.75rem;">
-            [!] <strong>공유 워킹트리</strong>(Antigravity/Gemini 와 동시 작업): 커밋은 <code>git commit --only -- &lt;경로&gt;</code> 로 <strong>내 변경분만</strong> 담아 타 오퍼레이터의 WIP 혼입을 차단한다.
+            [!] <strong>공유 워킹트리</strong>(Antigravity/Gemini, Claude Code 등 여러 오퍼레이터): 커밋은 <code>git commit --only -- &lt;경로&gt;</code> 로 <strong>내 변경분만</strong> 담아 타 오퍼레이터의 WIP 혼입을 차단한다.
           </p>
         </div>
 
         <div class="glass-card">
           <h3 class="glow-header">③ 내 작업 검증 (Definition of Done)</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 0.5rem;">
-            PR 전, <strong>로컬↔CI 정합의 단일 진입점</strong>인 통합 게이트를 실행하세요.
+            변경 범위에 맞는 게이트를 실행하세요. 현재는 로컬·훅·CI를 모두 포괄하는 단일 명령이 없으므로 각 경로의 범위를 구분해야 합니다.
           </p>
-          <pre class="code-block">make verify          # == node scripts/verify.mjs all == npm run verify
-#   BE : gradlew compileJava compileTestJava test
-#   FE : pnpm -C frontend exec tsc --noEmit  +  next build  +  vitest</pre>
+          <pre class="code-block">npm run verify                 # 일반 로컬 BE + FE 검증
+.\gradlew.bat localGate         # Docker 필요: schema/coverage 포함 Gradle 경로
+npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 ruleset 대조
+
+# 주의: npm run verify와 localGate 모두 pre-push/CI의 완전한 superset은 아닙니다.</pre>
           <div class="table-container">
             <table class="premium-table">
               <thead><tr><th style="width: 190px;">게이트</th><th style="width: 120px;">강도</th><th>내용</th></tr></thead>
               <tbody>
-                <tr><td>pre-push 훅</td><td><span class="badge badge-error">HARD 차단</span></td><td><code>compileJava/compileTestJava</code> + <code>tsc --noEmit</code> + codegen 계약 드리프트(api-docs ↔ 생성타입/zod)</td></tr>
-                <tr><td>3대 헌법 준수</td><td><span class="badge badge-warning">필수</span></td><td>코드 변경 전 해당 헌법 조회 — 신설 정적 린터군이 조문을 기계 강제(위반 시 빌드 실패)</td></tr>
-                <tr><td>CI (GitHub Actions)</td><td><span class="badge badge-primary">PR</span></td><td>backend-build · frontend-build · e2e(3-shard) · mutation-test(리포트 전용). 스키마 무결성·계약 드리프트는 CI FAIL</td></tr>
+                <tr><td>pre-push 훅</td><td><span class="badge badge-warning">LOCAL BLOCK</span></td><td>재사용 base census · 문서 링크 · Java compile · 앱/E2E tsc · ESLint · 불변식 · codegen · 하네스 테스트. 실행 시 실패하면 push를 막지만 <code>--no-verify</code>/<code>SKIP_HOOKS</code>/<code>SKIP_HARNESS</code>로 우회 가능하고, docs-only fast path에는 링크 검사 공백도 남아 있습니다.</td></tr>
+                <tr><td><code>localGate</code></td><td><span class="badge badge-error">HARD</span></td><td>하네스·실 PostgreSQL schema validation·JaCoCo를 포함하지만 pre-push의 모든 정적 검사를 포함하지는 않습니다.</td></tr>
+                <tr><td>CI required</td><td><span class="badge badge-primary">7 CHECKS</span></td><td><code>backend-build</code> · <code>frontend-build</code> · <code>secret-scan</code> · <code>e2e (1/3…3/3)</code> · <code>mutation-test</code>. mutation은 <code>STRICT_MUTATION=true</code>, 75% 하드 게이트입니다.</td></tr>
+                <tr><td>원격 PR 승인</td><td><span class="badge badge-error">GAP</span></td><td>필수 승인 0, CODEOWNERS review 비활성. 현행 <code>verify:ops</code>도 PR rule 존재만 확인해 이 공백을 놓칩니다.</td></tr>
               </tbody>
             </table>
           </div>
@@ -1399,7 +1721,7 @@ npm run dev                   # Windows: .\start-dev.ps1
             <table class="premium-table">
               <thead><tr><th style="width: 200px;">증상</th><th>원인 · 해결</th></tr></thead>
               <tbody>
-                <tr><td>401 Unauthorized</td><td><code>AuthContext</code>의 accessToken 과 브라우저 쿠키 동기화 먼저 확인. accessToken 은 HttpOnly 쿠키 전용이며 미들웨어가 <code>Authorization: Bearer</code> 헤더로 주입한다.</td></tr>
+                <tr><td>401 Unauthorized</td><td><code>AuthContext</code>는 accessToken 상태를 보유하지 않고 user/loading 및 login/logout/checkAuth를 노출합니다. HttpOnly 쿠키 존재, <code>proxy.ts</code>의 인증 전달 헤더, 현재 사용자 세션 API 응답을 순서대로 확인하세요.</td></tr>
                 <tr><td>타입 에러 (FE)</td><td>백엔드 DTO 변경 후 <code>pnpm -C frontend codegen:file</code>(오프라인·api-docs.json 기반) + <code>codegen:zod</code> 재생성. [!] api-docs.json 이 stale 이면 재생성 전 원인(백엔드 재빌드 여부)부터 확인.</td></tr>
                 <tr><td>컴포넌트 렌더 안 됨</td><td>Next App Router 기본은 Server Component. 이벤트/훅 사용 시에만 최하단 잎(Leaf) 노드에 <code>'use client'</code>. (FE 헌법 제3·11조)</td></tr>
                 <tr><td>gradlew 인식 불가</td><td>Windows 는 <code>.\gradlew.bat</code>. 크로스플랫폼 통합 게이트는 <code>node scripts/verify.mjs</code>(OS 감지)를 진입점으로 사용한다.</td></tr>
@@ -1414,12 +1736,13 @@ npm run dev                   # Windows: .\start-dev.ps1
             <table class="premium-table">
               <thead><tr><th style="width: 300px;">문서</th><th>언제 읽나</th></tr></thead>
               <tbody>
-                <tr><td><code>GEMINI.md</code> / <code>CLAUDE.md</code></td><td>프로젝트 운영 규칙 SSOT(등급판정 · 헌법 준수 · verify 게이트). 합류 직후 필독.</td></tr>
-                <tr><td><code>.agent/knowledge/*/artifacts/constitution.md</code></td><td>코드 변경 전 해당 3대 헌법 조회(불가침 규범).</td></tr>
-                <tr><td><code>docs/03-guides/reusable-base-guide.md</code></td><td>릴리스 태그에서 프로필별 재사용 base를 생성·검증할 때.</td></tr>
-                <tr><td><code>docs/03-guides/testing-guide.md</code></td><td>단위/통합/E2E(23-Tier) 테스트 전략.</td></tr>
-                <tr><td><code>docs/03-guides/identity-model-guide.md</code></td><td>정체성 축(esntlId/loginId) 3계층 규약 상세.</td></tr>
-                <tr><td><code>docs/04-operations/pending-decisions.md</code></td><td>제품·운영 결정 대기 항목 트래커.</td></tr>
+                <tr><td><a href="https://github.com/lkindo/egov-enterprise/blob/main/GEMINI.md" target="_blank" rel="noopener noreferrer"><code>GEMINI.md</code></a> / <a href="https://github.com/lkindo/egov-enterprise/blob/main/CLAUDE.md" target="_blank" rel="noopener noreferrer"><code>CLAUDE.md</code></a></td><td><code>GEMINI.md</code>는 운영 규칙 원본 SSOT, <code>CLAUDE.md</code>는 이를 상속한 Claude 실행 매핑·진입점입니다.</td></tr>
+                <tr><td><a href="https://github.com/lkindo/egov-enterprise/tree/main/.agent/knowledge" target="_blank" rel="noopener noreferrer"><code>.agent/knowledge/*/artifacts/constitution.md</code></a></td><td>코드 변경 전 해당 3대 헌법 조회. 사용자 명시 승인 없이 수정 금지.</td></tr>
+                <tr><td><a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/03-guides/reusable-base-guide.md" target="_blank" rel="noopener noreferrer"><code>reusable-base-guide.md</code></a></td><td>릴리스 태그에서 프로필별 재사용 base를 생성·검증할 때.</td></tr>
+                <tr><td><a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md" target="_blank" rel="noopener noreferrer"><code>legacy-migration-tool-design.md</code></a></td><td>레거시 데이터 이관 범위·현재 구현·잔여 로드맵을 확인할 때. 초기 설계보다 §7과 실제 코드를 우선합니다.</td></tr>
+                <tr><td><a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/03-guides/testing-guide.md" target="_blank" rel="noopener noreferrer"><code>testing-guide.md</code></a></td><td>단위/통합/E2E 25-Tier 테스트 전략.</td></tr>
+                <tr><td><a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/03-guides/identity-model-guide.md" target="_blank" rel="noopener noreferrer"><code>identity-model-guide.md</code></a></td><td>정체성 축(esntlId/loginId) 3계층 규약 상세.</td></tr>
+                <tr><td><a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/04-operations/pending-decisions.md" target="_blank" rel="noopener noreferrer"><code>pending-decisions.md</code></a></td><td>제품·운영 결정 대기 항목 트래커.</td></tr>
               </tbody>
             </table>
           </div>
@@ -1429,11 +1752,12 @@ npm run dev                   # Windows: .\start-dev.ps1
       <!-- [01] 3대 기술 헌법 -->
       <section id="content-constitution" class="tab-content">
         <h2 class="section-title">3대 기술 헌법 (Three Core Constitutions)</h2>
-        <p class="section-subtitle">프로젝트 무결성 유지를 위해 무조건적으로 정렬되어야 하는 절대적 강제 법령</p>
+        <p class="section-subtitle">사용자 승인 없이 수정할 수 없는 규범 SSOT. 카드에는 조문 목표와 현재 기계 집행의 차이를 함께 표시합니다.</p>
         
         <div class="grid-3" id="constitutions-grid">
           <!-- Dynamic rendering -->
         </div>
+        <noscript><div class="callout"><strong>동적 카드 대체:</strong> DB·Backend·Frontend 헌법은 <a href="https://github.com/lkindo/egov-enterprise/tree/main/.agent/knowledge" target="_blank" rel="noopener noreferrer">3대 헌법 원문(새 창)</a>에서 확인하세요. 현재 핵심 공백은 baseline 누락, semantic ownership 사각지대, frontend proxy/lint/RSC cache 조문 drift입니다.</div></noscript>
       </section>
 
       <!-- [02] GEMINI.md 규칙 -->
@@ -1455,12 +1779,12 @@ npm run dev                   # Windows: .\start-dev.ps1
               <tbody>
                 <tr>
                   <td><span class="badge badge-success">L0 (Trivial)</span></td>
-                  <td>코드 변경이 수반되지 않는 단순 조회, 질문 답변</td>
+                  <td>단순 조회·질문과 오타·주석·CSS 등 저위험 미세 수정</td>
                   <td>1줄 Proposal 요약 허용, GStack Review 생략 가능</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">L1 (Standard)</span></td>
-                  <td>단일 모듈 내 코드 변경, 기능 추가, 핫픽스</td>
+                  <td>단일 파일/모듈 로직·문서 변경, 기능 추가, 버그 수정</td>
                   <td>GStack Review 필수, DTO 변경 시 api-contract-guardian 자동 가동</td>
                 </tr>
                 <tr>
@@ -1474,7 +1798,7 @@ npm run dev                   # Windows: .\start-dev.ps1
         </div>
 
         <div class="glass-card">
-          <h3 class="glow-header">에이전트 행동 수칙 (Agent Hygiene & Discipline)</h3>
+          <h3 class="glow-header">에이전트 행동 수칙 (Agent Hygiene &amp; Discipline)</h3>
           <ul style="color: var(--text-muted); font-size: 0.9rem; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.75rem;">
             <li><strong>인접 코드 보존 원칙</strong>: 지시받지 않은 영역의 코드, 주석, 포맷을 절대 변조하지 않음.</li>
             <li><strong>Dead Code 경고</strong>: 사용되지 않는 코드 발견 시 임의 삭제하지 않고 보고 후 처리.</li>
@@ -1487,76 +1811,77 @@ npm run dev                   # Windows: .\start-dev.ps1
       <!-- [03] 하네스 게이트웨이 SOP -->
       <section id="content-sop" class="tab-content">
         <h2 class="section-title">하네스 게이트웨이 SOP</h2>
-        <p class="section-subtitle">코딩 완료 후 시스템 변경 사항이 거쳐가는 단계별 무결성 게이트웨이</p>
+        <p class="section-subtitle">실행 시점·실패 강도·현재 공백을 분리한 실제 검증 경로</p>
 
         <div class="glass-card">
-          <h3 class="glow-header">표준 운영 절차 (Standard Operating Procedure)</h3>
+          <h3 class="glow-header">현재 집행 계층</h3>
           <div class="table-container">
             <table class="premium-table">
               <thead>
                 <tr>
-                  <th>단계</th>
-                  <th>게이트웨이</th>
-                  <th>개입하는 하네스</th>
-                  <th>행동 프로토콜 (Hard-Stop 조건)</th>
+                  <th>시점</th>
+                  <th>대표 실행</th>
+                  <th>실제 범위</th>
+                  <th>판정</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td><strong>Step 1</strong></td>
-                  <td>IDE / 빌드 대기</td>
-                  <td>Tailwind HSL Token Linter</td>
-                  <td>임의의 원색 디자인 명세 사용 시 컴파일 즉시 차단</td>
+                  <td><strong>pre-commit</strong></td>
+                  <td>설치된 Git hook</td>
+                  <td>빠른 경고·기초 검증. 우회 가능한 로컬 보조선입니다.</td>
+                  <td><span class="badge badge-warning">ADVISORY</span></td>
                 </tr>
                 <tr>
-                  <td><strong>Step 2</strong></td>
-                  <td>DTO / 명세 생성</td>
-                  <td>API Contract Guardian</td>
-                  <td>OpenAPI 스펙 어긋남 감지 시 프론트엔드 타입 빌드 차단</td>
+                  <td><strong>pre-push</strong></td>
+                  <td><code>.githooks/pre-push</code></td>
+                  <td>문서·Java·앱/E2E 타입·ESLint·불변식·codegen·하네스. 실행 시 실패하면 push를 막지만 명시적 우회가 가능하므로 authoritative merge gate는 CI입니다.</td>
+                  <td><span class="badge badge-warning">LOCAL BLOCK</span></td>
                 </tr>
                 <tr>
-                  <td><strong>Step 3</strong></td>
-                  <td>Unit Test 실행</td>
-                  <td>JPA N+1 Inspector / Auth Role Linter</td>
-                  <td>JPA 쿼리 릭(10회 이상) 또는 API PreAuthorize 누락 시 즉시 빌드 실패</td>
+                  <td><strong>Gradle</strong></td>
+                  <td><code>harnessTest</code> / <code>localGate</code></td>
+                  <td>정적 하네스, 실제 PostgreSQL schema validation, JaCoCo 85/70. 두 task의 포함 관계는 동일하지 않습니다.</td>
+                  <td><span class="badge badge-error">BUILD HARD</span></td>
                 </tr>
                 <tr>
-                  <td><strong>Step 4</strong></td>
-                  <td>DDL Linting</td>
-                  <td>Zero-Downtime Migration Linter</td>
-                  <td>Flyway DDL 정적 검증 시 파괴적 Schema (DROP, ALTER TYPE) 유출 시 차단</td>
+                  <td><strong>CI</strong></td>
+                  <td>GitHub Actions</td>
+                  <td>필수 7 check. 실 PostgreSQL 17 검증과 <code>STRICT_MUTATION=true</code> 75%가 backend/mutation job에 연결됩니다.</td>
+                  <td><span class="badge badge-success">REMOTE HARD</span></td>
                 </tr>
                 <tr>
-                  <td><strong>Step 5</strong></td>
-                  <td>Mutation Test</td>
-                  <td>Incremental PITest Pipeline</td>
-                  <td>핵심 서비스 Mutation Score 75% 기준 계측 — 현행 리포트 전용(STRICT_MUTATION=true 전환 시 PR 차단)</td>
+                  <td><strong>PR review</strong></td>
+                  <td>GitHub ruleset</td>
+                  <td>required checks는 집행되지만 승인 리뷰 수·CODEOWNERS review는 현재 0/false입니다.</td>
+                  <td><span class="badge badge-error">GAP</span></td>
                 </tr>
                 <tr>
-                  <td><strong>Step 6</strong></td>
-                  <td>E2E Test 실행</td>
-                  <td>Playwright Self-Healing Agent</td>
-                  <td>UI 셀렉터 파괴 감지 시 동적 자가치유 실행, 실패 시 최종 Hard-Stop</td>
+                  <td><strong>운영 점검</strong></td>
+                  <td><code>npm run verify:ops</code></td>
+                  <td>manifest↔workflow↔ruleset을 대조하지만 PR rule의 세부 승인 파라미터는 아직 검증하지 않습니다.</td>
+                  <td><span class="badge badge-warning">PARTIAL</span></td>
                 </tr>
               </tbody>
             </table>
           </div>
+          <div class="callout"><strong>게이트 판정 원칙:</strong> 테스트 파일의 존재가 아니라 “필수 실행 경로에 연결되고, 실패가 병합을 막으며, 우회가 구조화되어 추적되는가”로 강제력을 평가합니다.</div>
         </div>
       </section>
 
       <!-- [04] 기본 개발 워크플로우 -->
       <section id="content-workflow" class="tab-content">
-        <h2 class="section-title">기본 개발 워크플로우 (Ralph Loop 2.0)</h2>
-        <p class="section-subtitle">자가 성찰과 정밀 증거 수집 기반의 무결성 개발 흐름도</p>
+        <h2 class="section-title">기본 개발 워크플로우</h2>
+        <p class="section-subtitle">규칙 확인부터 변경·검증·증거 보고까지의 재현 가능한 흐름</p>
 
         <div class="glass-card">
-          <h3 class="glow-header">에이전트 망각 방지를 위한 5대 자율 반복 루틴</h3>
+          <h3 class="glow-header">5단계 증거 루프</h3>
           <ol style="color: var(--text-muted); font-size: 0.9rem; padding-left: 1.25rem; display: flex; flex-direction: column; gap: 0.85rem;">
-            <li><strong>상태 외부화 (State Externalization)</strong>: 매 태스크 시작 시 <code>.gemini/tasks/</code> 하위에 YYYYMMDD_task.md 기록 작성.</li>
-            <li><strong>체크리스트 루프 (Checklist Loop)</strong>: <code>Think ➔ Plan ➔ Implement ➔ Test ➔ Summarize</code> 5단계 자율 반복.</li>
-            <li><strong>자율 반복 에스컬레이션</strong>: 동일 문제로 빌드 실패 3회 이상 직면 시 임의 수정을 멈추고 사용자에게 원인 분석 리포트 즉각 에스컬레이션.</li>
-            <li><strong>증거 기반 완료선언</strong>: 빌드 성공 콘솔 로그, Jacoco 커버리지 결과물 등 명확한 '물리적 증거'를 첨부하기 전까지 자율 완료 선언 금지.</li>
-            <li><strong>연속성 보장 (Context Continuity)</strong>: 컨텍스트 제한 도달(Compaction) 시, 마일스톤 요약을 외부 메모리에 보존하여 작업 맥락 손실 없이 개발을 중단 없이 승계.</li>
+            <li><strong>분류:</strong> orchestration protocol로 L0/L1/L2를 판정하고, 변경 대상에 적용되는 헌법·운영 규칙을 읽습니다.</li>
+            <li><strong>영향 분석:</strong> 코드·스키마·API 계약·문서·실행 manifest의 소비자를 검색하고 현재 디스크 상태를 확인합니다.</li>
+            <li><strong>최소 변경:</strong> 사용자 변경과 인접 WIP를 보존하며 승인 범위 안에서 구현합니다. 헌법 수정은 별도 명시 승인이 필요합니다.</li>
+            <li><strong>비례 검증:</strong> 관련 단위/정적/통합/E2E 검증과 문서 링크·렌더링을 실행합니다. 통과하지 않은 검증을 추정으로 보고하지 않습니다.</li>
+            <li><strong>증거 보고:</strong> 실행 명령·결과·미검증 범위·잔여 위험을 함께 남깁니다. 완전성은 수사적 표현이 아니라 재현 가능한 증거로 판단합니다.</li>
           </ol>
         </div>
       </section>
@@ -1564,80 +1889,80 @@ npm run dev                   # Windows: .\start-dev.ps1
       <!-- [05] 프로세스 시뮬레이터 -->
       <section id="content-simulator" class="tab-content">
         <h2 class="section-title">하네스 게이트웨이 시뮬레이터</h2>
-        <p class="section-subtitle">요청 접수부터 자가성찰 오류복구(Hard-Stop) 및 패치 완료까지의 에이전트 행동 물리 라이브 시뮬레이터</p>
+        <p class="section-subtitle">대표 작업 흐름을 설명하는 교육용 예시입니다. 실제 실행·승인·게이트 통과 증거를 대신하지 않습니다.</p>
 
         <!-- Dynamic Control Bar -->
         <div class="sim-bar">
-          <span style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); white-space: nowrap;">시뮬레이션 프리셋 선택:</span>
+          <label for="sim-prompt-select" style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); white-space: nowrap;">시뮬레이션 프리셋 선택:</label>
           <select id="sim-prompt-select" class="sim-select" onchange="loadPresetPrompt()">
-            <option value="preset-db">L2 PostgreSQL 컬럼 제거 & 4단계 무중단 Expand-Contract 시나리오</option>
-            <option value="preset-auth">L1 401 Unauthorized 인증 실패 디버깅 & JWT-쿠키 브릿지 복구</option>
-            <option value="preset-ui">L1 댓글 위젯 글래스모피즘 에스테틱 UI 빌드 & Tailwind Token 검증</option>
-            <option value="preset-guardrail-auth">L2 Controller PreAuthorize 권한 어노테이션 누락 검출 & Hard-Stop</option>
+            <option value="preset-db">L2 PostgreSQL 컬럼 제거 &amp; 무중단 Expand-Contract 검토</option>
+            <option value="preset-auth">L1 401 인증 실패 디버깅 &amp; JWT-쿠키 경로 확인</option>
+            <option value="preset-ui">L1 UI 변경 &amp; 디자인 토큰·시각 검증</option>
+            <option value="preset-guardrail-auth">L2 인가 하네스 사각지대 &amp; Semantic Red-Test</option>
           </select>
-          <button class="sim-btn" onclick="startWorkflowSimulation()">
-            ▶ Run Live Simulator
+          <button class="sim-btn" type="button" onclick="startWorkflowSimulation()">
+            ▶ 흐름 예시 실행
           </button>
         </div>
 
         <div class="sim-container">
           <!-- Flow steps left -->
           <div class="sim-flow-wrapper">
-            <div class="sim-step" id="step-node-1" onclick="selectStep(1)">
+            <button class="sim-step" id="step-node-1" type="button" onclick="selectStep(1)" aria-current="step">
               <div class="sim-step-icon">01</div>
               <div class="sim-step-content">
                 <div class="sim-step-title">1단계: 요청 수집 및 등급 판정</div>
                 <div class="sim-step-desc">프롬프트 요구 분석을 토대로 L0/L1/L2 등급을 판정하고 사전 통제선을 수립합니다.</div>
               </div>
-            </div>
+            </button>
 
-            <div class="sim-step" id="step-node-2" onclick="selectStep(2)">
+            <button class="sim-step" id="step-node-2" type="button" onclick="selectStep(2)">
               <div class="sim-step-icon">02</div>
               <div class="sim-step-content">
                 <div class="sim-step-title">2단계: 3대 기술 헌법 무결성 검증</div>
                 <div class="sim-step-desc">수정할 모듈과 연계되는 DB/백엔드/프론트엔드 헌법 강제 규정을 메모리에 선행 적재합니다.</div>
               </div>
-            </div>
+            </button>
 
-            <div class="sim-step" id="step-node-3" onclick="selectStep(3)">
+            <button class="sim-step" id="step-node-3" type="button" onclick="selectStep(3)">
               <div class="sim-step-icon">03</div>
               <div class="sim-step-content">
                 <div class="sim-step-title">3단계: Deep Context Topology 매핑</div>
                 <div class="sim-step-desc">물리 DB 스키마, Gradle 멀티모듈 구조, 타입 스펙 간의 단방향 위상 지도를 스캔합니다.</div>
               </div>
-            </div>
+            </button>
 
-            <div class="sim-step" id="step-node-4" onclick="selectStep(4)">
+            <button class="sim-step" id="step-node-4" type="button" onclick="selectStep(4)">
               <div class="sim-step-icon">04</div>
               <div class="sim-step-content">
                 <div class="sim-step-title">4단계: Sandbox 실행 및 자가 치유</div>
-                <div class="sim-step-desc">코드 수정을 진행하며 컴파일/런타임 실패 감지 시 포트 강제 정리 및 롤백 복구를 자동 기동합니다.</div>
+              <div class="sim-step-desc">최소 범위로 변경하고 실패 원인을 수집합니다. 프로세스 종료·롤백처럼 파괴적인 조치는 별도 안전 확인이 필요합니다.</div>
               </div>
-            </div>
+            </button>
 
-            <div class="sim-step" id="step-node-5" onclick="selectStep(5)">
+            <button class="sim-step" id="step-node-5" type="button" onclick="selectStep(5)">
               <div class="sim-step-icon">05</div>
               <div class="sim-step-content">
                 <div class="sim-step-title">5단계: 가디언 하네스 게이트웨이 통과</div>
-                <div class="sim-step-desc">JPA 쿼리 릭 검사, DDL Safety 린터, PITest Mutation 검증, Tailwind HSL 린터, Playwright E2E를 연속 검증합니다.</div>
+                <div class="sim-step-desc">변경 범위에 해당하는 정적·통합·E2E gate를 선택 실행합니다. 현재 모든 경로를 포괄하는 단일 superset 명령은 없습니다.</div>
               </div>
-            </div>
+            </button>
 
-            <div class="sim-step" id="step-node-6" onclick="selectStep(6)">
+            <button class="sim-step" id="step-node-6" type="button" onclick="selectStep(6)">
               <div class="sim-step-icon">06</div>
               <div class="sim-step-content">
-                <div class="sim-step-title">6단계: Docs-as-Code 자동 동기화</div>
-                <div class="sim-step-desc">변경된 로직과 DB 물리구조에 대응되는 아키텍처 문서 및 Mermaid 다이어그램을 역추적 갱신합니다.</div>
+                <div class="sim-step-title">6단계: Docs-as-Code 영향 동기화</div>
+                <div class="sim-step-desc">변경 영향이 있는 문서·다이어그램·명령 예시를 확인하고 필요한 항목을 함께 갱신합니다.</div>
               </div>
-            </div>
+            </button>
 
-            <div class="sim-step" id="step-node-7" onclick="selectStep(7)">
+            <button class="sim-step" id="step-node-7" type="button" onclick="selectStep(7)">
               <div class="sim-step-icon">07</div>
               <div class="sim-step-content">
-                <div class="sim-step-title">7단계: 증거 기반 최종 배포 완료</div>
-                <div class="sim-step-desc">100% 무결성을 증명하는 테스트 커버리지 및 빌드 성공 로그 아티팩트를 첨부하여 완료 보고를 완수합니다.</div>
+                <div class="sim-step-title">7단계: 증거 기반 결과 보고</div>
+                <div class="sim-step-desc">실행한 검증, 결과, 미검증 범위와 잔여 위험을 함께 보고합니다.</div>
               </div>
-            </div>
+            </button>
           </div>
 
           <!-- Modern CLI Terminal Right -->
@@ -1651,7 +1976,7 @@ npm run dev                   # Windows: .\start-dev.ps1
               <div class="monitor-label">ACTIVE CLI TERMINAL</div>
             </div>
 
-            <div class="monitor-screen" id="mon-screen">
+            <div class="monitor-screen" id="mon-screen" role="status" aria-live="polite" aria-atomic="true">
               <!-- CLI log output here -->
             </div>
 
@@ -1662,7 +1987,7 @@ npm run dev                   # Windows: .\start-dev.ps1
               </div>
               <div class="monitor-param">
                 <span class="monitor-param-key">기동 중인 가디언 (SKILL):</span>
-                <span class="monitor-param-val" id="mon-skill" style="color: var(--accent-primary);">Zero-Downtime Planner</span>
+                <span class="monitor-param-val" id="mon-skill" style="color: var(--accent-primary);">DB Constitution + Migration Harness</span>
               </div>
               <div class="monitor-param">
                 <span class="monitor-param-key">현재 통제 단계 (STAGE):</span>
@@ -1673,25 +1998,28 @@ npm run dev                   # Windows: .\start-dev.ps1
         </div>
       </section>
 
-      <!-- [06] 안티그래비티 독점 스킬 -->
+      <!-- [06] Agent execution assets -->
       <section id="content-skills" class="tab-content">
-        <h2 class="section-title">안티그래비티 독점 고성능 스킬 리스트</h2>
-        <p class="section-subtitle">안티그래비티 2.0이 무결성 보장을 위해 자율 구동하는 8대 하이퍼 지능 엔진 스펙</p>
+        <h2 class="section-title">에이전트 실행 자산</h2>
+        <p class="section-subtitle">스킬은 실행 지침이지 자동 집행 증거가 아닙니다. 헌법·현행 경로와 충돌하면 사용을 중단하고 상위 SSOT를 따릅니다.</p>
+
+        <div class="callout"><strong>중요:</strong> 의무 호출되는 ZDM 스킬에는 대문자 <code>TN_</code>·read-only bridge DDL/트랜잭션 검증, 인접 <code>db-governance</code> 지침에는 <code>CHAR(1)</code>·도메인 무시가 있어 각각 DB 헌법과 충돌합니다. 아래 카드는 “사용 가능”과 “검증 완료”를 구분합니다.</div>
 
         <div class="grid-2" id="engines-grid">
           <!-- Dynamic rendering -->
         </div>
+        <noscript><div class="callout"><strong>동적 카드 대체:</strong> VERIFIED는 Docs-as-Code/Visual Validator, PARTIAL은 API Contract/Context Mapper, CONFLICT는 DB·Resilience/Coverage 지침입니다. 충돌 지침은 실행하지 말고 상위 헌법을 우선하세요.</div></noscript>
       </section>
 
       <!-- [07] DB Local Bridge 사용법 -->
       <section id="content-db" class="tab-content">
         <h2 class="section-title">DB Local Bridge 및 물리-논리 매핑</h2>
-        <p class="section-subtitle">PostgreSQL 17 연동 브릿지 제어 사양 및 DB 헌법 제1조에 정의된 오브젝트 명명 기준</p>
+        <p class="section-subtitle">read-only bridge의 실제 권한 경계와 DB→JPA→OpenAPI→Zod 계약 검증 범위</p>
 
         <div class="glass-card">
           <h3 class="glow-header">DB Local Bridge 통제권한 테이블</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
-            안티그래비티는 로컬 노드 브릿지(db-bridge.js)를 사용하여 데이터베이스에 물리 연결을 직접 수행하며, 질의문 성격에 따라 사용자의 안전 승인 통제를 철저히 받습니다.
+            <code>db-bridge.js</code>는 <code>SELECT</code>·<code>WITH</code>·<code>SHOW</code>·read-only <code>EXPLAIN</code>·<code>VALUES</code>만 허용합니다. DML/DDL·트랜잭션 블록은 거부하므로, 이를 통한 DDL syntax 검증을 지시하는 스킬은 실행할 수 없습니다.
           </p>
           <div class="table-container">
             <table class="premium-table" id="db-permissions-table">
@@ -1711,9 +2039,9 @@ npm run dev                   # Windows: .\start-dev.ps1
         </div>
 
         <div class="glass-card">
-          <h3 class="glow-header">단방향 연쇄 거울 동기화 (Mirror Mapping Matrix)</h3>
+          <h3 class="glow-header">계약 연쇄와 실제 검증 범위</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.25rem;">
-            데이터베이스 메타사전 규격부터 프론트엔드 검증 단까지 단 하나의 단어/타입의 오차도 허용치 않는 4단계 연쇄 매핑 구조
+            헌법상 목표와 현재 하네스의 탐지 범위는 동일하지 않습니다. 아래의 <span class="badge badge-warning">PARTIAL</span> 항목은 리뷰·추가 gate가 필요합니다.
           </p>
           <div class="table-container">
             <table class="premium-table" id="db-mapping-table">
@@ -1731,18 +2059,178 @@ npm run dev                   # Windows: .\start-dev.ps1
             </table>
           </div>
         </div>
+        <noscript><div class="callout"><strong>동적 표 대체:</strong> db-bridge는 SELECT·WITH·SHOW·read-only EXPLAIN·VALUES만 허용하고 DML·DDL·BEGIN/COMMIT을 거부합니다. 실제 계약 예시는 <code>tb_bbs_item.inq_cnt → Board.inqCnt → Zod inqCnt</code>이며 자동 검증 범위는 레이어마다 다릅니다.</div></noscript>
       </section>
 
-      <!-- [08] Ralph Loop 2.0 자가성찰 -->
+      <!-- [08] Legacy migration-tool -->
+      <section id="content-migration" class="tab-content">
+        <h2 class="section-title">Legacy Migration Tool</h2>
+        <p class="section-subtitle">온라인 API 경로와 분리된 선택형 오프라인 ETL — 레거시 소스 데이터를 표준 스키마로 옮기는 독립 CLI의 실제 구현과 안전 경계</p>
+
+        <div class="callout">
+          <span class="badge badge-warning">OPTIONAL / PARTIAL</span>
+          <strong>제품 기능이지만 병합 게이트나 이관 완료 증명은 아닙니다.</strong>
+          <code>migration-tool</code>은 백엔드 헌법 제1조가 규정한 <code>foundation</code> 미의존 독립 bootJar입니다. Flyway는 타깃 스키마를 진화시키고, Zero-Downtime 린터는 DDL 위험을 검사하며, 이 도구는 별도의 레거시 <em>데이터</em> 이관을 수행합니다.
+        </div>
+
+        <div class="status-panel" role="region" aria-label="레거시 이관 도구 상태 요약">
+          <article class="status-card">
+            <span class="badge badge-success">IMPLEMENTED</span>
+            <h3>선언형 ETL 엔진</h3>
+            <p><code>mapping.yml</code>, 타입·코드 변환, 신규 키 재매핑, 자식 FK 번역, 부모 우선 정렬, 500행 스트리밍·배치 INSERT가 구현돼 있습니다.</p>
+          </article>
+          <article class="status-card">
+            <span class="badge badge-warning">PARTIAL EVIDENCE</span>
+            <h3>테스트·CI</h3>
+            <p>테스트 소스 7개·<code>@Test</code> 66건을 루트 <code>backend-build</code>가 실행합니다. mutation은 transform과 validate/verify 두 범위만 보호하며 CLI 자체는 required check가 아닙니다.</p>
+          </article>
+          <article class="status-card">
+            <span class="badge badge-error">FALSE-GREEN RISK</span>
+            <h3>종료 상태</h3>
+            <p>매핑 검증 실패와 최종 <code>FAIL</code>이 로그 후 정상 반환될 수 있어 process exit code 0을 성공 증거로 사용할 수 없습니다.</p>
+          </article>
+          <article class="status-card">
+            <span class="badge badge-error">PRODUCTION GAP</span>
+            <h3>운영 준비도</h3>
+            <p>live meta fail-closed, source read-only 강제, checkpoint/upsert, 감사 산출물, 실 PostgreSQL·Oracle·Tibero E2E와 cutover/rollback이 남아 있습니다.</p>
+          </article>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="glow-header">실제 CLI 실행 경로</h3>
+          <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1rem;">
+            아래는 설계 문서의 목표가 아니라 현재 코드가 연결하는 경로입니다. 설계상 <code>SourceIntrospector</code> 카탈로그 단계는 존재하지만 CLI가 <code>introspect(...)</code>를 호출하지 않으므로 자동 사전 진단으로 표시하지 않습니다.
+          </p>
+          <div class="flow-timeline">
+            <div class="flow-step-node">
+              <span class="flow-step-dot" aria-hidden="true"></span>
+              <div class="flow-step-info">
+                <div class="flow-step-title">CLI + mapping load <span class="flow-step-badge backend">ENTRY</span></div>
+                <div class="flow-step-desc"><code>--mapping=&lt;file&gt;</code>과 <code>--mode=dry-run|commit</code>을 읽습니다. 알 수 없는 mode는 오류가 아니라 dry-run으로 내려가며, YAML의 <code>${SOURCE_DB_*}</code> 문자열을 환경변수로 치환하는 로직은 없습니다.</div>
+                <div class="flow-step-file">MigrationToolApplication.java → MigrationRunner.java → MappingLoader.java</div>
+              </div>
+              <div class="flow-step-number">01</div>
+            </div>
+
+            <div class="flow-step-node">
+              <span class="flow-step-dot" aria-hidden="true"></span>
+              <div class="flow-step-info">
+                <div class="flow-step-title">Mapping validation <span class="flow-step-badge database">PARTIAL</span></div>
+                <div class="flow-step-desc">타깃 컬럼·코드맵·FK 참조를 검사하지만 live <code>meta_standard_*</code>나 Flyway를 조회하지 않습니다. <code>db_columns.json</code> 부재·파싱 실패는 경고 후 표준 컬럼 검증을 건너뜁니다.</div>
+                <div class="flow-step-file">migration-tool/src/main/java/nuri/migration/validate/MappingValidator.java</div>
+              </div>
+              <div class="flow-step-number">02</div>
+            </div>
+
+            <div class="flow-step-node">
+              <span class="flow-step-dot" aria-hidden="true"></span>
+              <div class="flow-step-info">
+                <div class="flow-step-title">Transform + dry-run / commit <span class="flow-step-badge backend">ETL</span></div>
+                <div class="flow-step-desc">dry-run은 조회·변환·오류 집계만 수행하고 commit은 타깃에 배치 INSERT합니다. 소스 연결에 <code>setReadOnly(true)</code>를 적용하지 않고 mapping의 <code>where</code>를 SQL에 연결하므로 DB 권한 자체를 read-only로 제한해야 합니다.</div>
+                <div class="flow-step-file">EtlExecutor.java · TypeConverter.java · TransformerRegistry.java</div>
+              </div>
+              <div class="flow-step-number">03</div>
+            </div>
+
+            <div class="flow-step-node">
+              <span class="flow-step-dot" aria-hidden="true"></span>
+              <div class="flow-step-info">
+                <div class="flow-step-title">Key/FK rewrite + target write <span class="flow-step-badge database">TARGET</span></div>
+                <div class="flow-step-desc">부모 키를 새 표준 ID로 매핑하고 자식 FK를 번역합니다. 키맵 테이블은 Flyway가 아니라 런타임에 생성되며 flush 실패를 삼키므로 재실행 멱등성과 감사 증거를 별도로 확인해야 합니다.</div>
+                <div class="flow-step-file">KeyMapRegistry.java · StandardIdGenerator.java · TableOrderer.java</div>
+              </div>
+              <div class="flow-step-number">04</div>
+            </div>
+
+            <div class="flow-step-node">
+              <span class="flow-step-dot" aria-hidden="true"></span>
+              <div class="flow-step-info">
+                <div class="flow-step-title">Verification summary <span class="flow-step-badge client">PASS / WARN / FAIL</span></div>
+                <div class="flow-step-desc">read/transformed/written/error와 타깃 행수를 요약합니다. dry-run PASS는 타깃 미대조 상태이고, 타깃 count 실패가 <code>-1</code>로 바뀌어도 PASS가 가능하며, JSON/Markdown 감사 artifact는 아직 생성하지 않습니다.</div>
+                <div class="flow-step-file">MigrationVerifier.java → MigrationReport.toSummary()</div>
+              </div>
+              <div class="flow-step-number">05</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="glow-header">운영 사용 전 필수 조건</h3>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead>
+                <tr><th>단계</th><th>현재 도구가 제공하는 것</th><th>운영자가 추가로 증명할 것</th><th>판정</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>1. 소스 준비</td>
+                  <td>JDBC 연결과 테이블 조회</td>
+                  <td>읽기 전용 DB 계정·최소 권한, 네트워크 격리, 비밀 외부 주입. 현재 설계 문서의 <code>${...}</code> 예제를 그대로 신뢰하지 않습니다.</td>
+                  <td><span class="badge badge-error">REQUIRED</span></td>
+                </tr>
+                <tr>
+                  <td>2. 타깃 준비</td>
+                  <td>선언된 타깃에 INSERT</td>
+                  <td>Flyway 적용 완료, 백업/스냅샷, 빈 타깃 또는 기존 행 처리정책, rollback 책임자와 승인 기록</td>
+                  <td><span class="badge badge-error">REQUIRED</span></td>
+                </tr>
+                <tr>
+                  <td>3. dry-run</td>
+                  <td>변환·코드맵·키/FK 오류 집계</td>
+                  <td>PASS를 완료로 보지 않고 표본 diff·행수·고아 FK·NOT NULL·UNIQUE·도메인·문자셋을 독립 검증</td>
+                  <td><span class="badge badge-warning">EXPLORATORY</span></td>
+                </tr>
+                <tr>
+                  <td>4. commit 승인</td>
+                  <td>500행 단위 배치 INSERT와 실패 행 격리</td>
+                  <td>별도 사용자/운영 승인, 실행 창, 중단 기준, 복원 절차. P0 false-green 수정 전에는 자동 파이프라인 성공 조건으로 사용 금지</td>
+                  <td><span class="badge badge-error">MANUAL GATE</span></td>
+                </tr>
+                <tr>
+                  <td>5. 사후 검증</td>
+                  <td>console PASS/WARN/FAIL 요약</td>
+                  <td>원본·타깃 checksum/표본 diff, 제약 위반, 감사 run ID, 결과 artifact 보존과 독립 승인</td>
+                  <td><span class="badge badge-warning">PARTIAL</span></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <article class="glass-card">
+            <h3 class="glow-header">현행 CI 증거</h3>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">
+              루트 <code>./gradlew build</code>가 migration-tool 테스트를 실행하고 JaCoCo에 포함합니다. required <code>mutation-test</code>에는 <code>migration-transform</code>과 <code>migration-validate-verify</code> 범위가 있으나 runner·JDBC·실 DB cutover 전체를 보증하지 않습니다.
+            </p>
+          </article>
+          <article class="glass-card">
+            <h3 class="glow-header">권장 강화 순서</h3>
+            <p style="color: var(--text-muted); font-size: 0.88rem;">
+              <strong>P0</strong> non-zero exit·strict mode/target·live meta fail-closed·source read-only → <strong>P1</strong> Flyway 관리 keymap·원자적 flush·감사 artifact → <strong>P2</strong> PostgreSQL Testcontainers·Oracle/Tibero dialect·CP949/LOB·checkpoint/upsert·delta/cutover/rollback 순입니다.
+            </p>
+          </article>
+        </div>
+
+        <div class="callout">
+          <strong>근거:</strong>
+          <a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md" target="_blank" rel="noopener noreferrer">설계·로드맵</a> ·
+          <a href="https://github.com/lkindo/egov-enterprise/tree/main/migration-tool" target="_blank" rel="noopener noreferrer">구현 모듈</a> ·
+          <a href="https://github.com/lkindo/egov-enterprise/blob/main/migration-tool/src/main/java/nuri/migration/MigrationRunner.java" target="_blank" rel="noopener noreferrer">CLI 오케스트레이션</a> ·
+          <a href="https://github.com/lkindo/egov-enterprise/blob/main/.github/workflows/ci.yml" target="_blank" rel="noopener noreferrer">CI/mutation 연결</a>
+        </div>
+      </section>
+
+      <!-- [09] Ralph Loop 2.0 자가성찰 -->
       <section id="content-ralph" class="tab-content">
-        <h2 class="section-title">Ralph Loop 2.0 및 자가성찰 디버그 프로토콜</h2>
-        <p class="section-subtitle">무작위 수정 시도를 중단하고 컴파일/테스트 장애 원인을 수리적으로 입증하는 치유 프로토콜</p>
+        <h2 class="section-title">실패 분석 및 재검증 프로토콜</h2>
+        <p class="section-subtitle">무작위 수정 대신 가설·근거·최소 패치·재검증을 반복하는 디버깅 규율</p>
 
         <div class="glass-card">
           <div class="card-neon-glow" style="background: linear-gradient(90deg, var(--accent-danger), var(--accent-warning));"></div>
-          <h3 class="glow-header">4단계 자가성찰 디버그 프로세스</h3>
+          <h3 class="glow-header">4단계 원인 분석 프로세스</h3>
           <p style="color: var(--text-muted); font-size: 0.9rem; margin-bottom: 1.5rem;">
-            빌드/테스트 실패 감지 시 즉각 코드 수정을 멈추고 `[SELF-REFLECTION REPORT]`를 응답 창에 자동 의무 출력하며 복구를 가동합니다.
+            빌드/테스트 실패 시 오류 출력을 보존하고, 동일 실패를 반복하는 대신 원인 가설과 반증 조건을 세운 뒤 최소 패치를 검증합니다.
           </p>
 
           <div style="display: flex; flex-direction: column; gap: 1.25rem;">
@@ -1756,7 +2244,7 @@ npm run dev                   # Windows: .\start-dev.ps1
             <div style="border-left: 2px solid var(--accent-warning); padding-left: 1.25rem;">
               <h4 style="font-family: 'Outfit', sans-serif; font-size: 1rem; color: var(--text-main); font-weight: 700;">2단계: 표적 조사 및 물리적 증거 수집 (Target Investigation)</h4>
               <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
-                Resilience Debugger를 기동하여 에러 유발 컴포넌트의 타입 정의, OCI 데이터 적재 상태, JVM/Playwright 비디오 흔적을 교차 수집합니다.
+                에러 유발 컴포넌트의 타입·로그·테스트 출력을 먼저 수집하고, DB가 관련된 경우에만 read-only bridge로 현재 상태를 확인합니다. 프로세스 종료나 데이터 변경은 자동 복구로 가정하지 않습니다.
               </p>
             </div>
 
@@ -1768,35 +2256,208 @@ npm run dev                   # Windows: .\start-dev.ps1
             </div>
 
             <div style="border-left: 2px solid var(--accent-success); padding-left: 1.25rem;">
-              <h4 style="font-family: 'Outfit', sans-serif; font-size: 1rem; color: var(--text-main); font-weight: 700;">4단계: 초정밀 수정 및 물리 재검증 (Precision Fix & Re-Verify)</h4>
+              <h4 style="font-family: 'Outfit', sans-serif; font-size: 1rem; color: var(--text-main); font-weight: 700;">4단계: 초정밀 수정 및 물리 재검증 (Precision Fix &amp; Re-Verify)</h4>
               <p style="color: var(--text-muted); font-size: 0.85rem; margin-top: 0.25rem;">
-                가장 안전한 대안에 맞춰 최소한의 라인만 컴파일 패치 후, 빌드 및 E2E 테스트를 즉시 재실행하여 수리적 치유를 증명합니다.
+                가장 안전한 대안에 맞춰 최소 범위를 수정한 후, 관련 빌드와 테스트를 다시 실행해 가설이 맞았는지 검증합니다.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      <!-- [09] 7대 가디언 하네스 스펙 -->
+      <!-- [10] Harness categories -->
       <section id="content-harnesses" class="tab-content">
-        <h2 class="section-title">7대 무결성 가디언 하네스 아키텍처 스펙</h2>
-        <p class="section-subtitle">eGov Enterprise 빌드/테스트/배포 라이프사이클의 무결성을 수호하는 가디언들의 종합 상세 사양</p>
+        <h2 class="section-title">검증 하네스 지도</h2>
+        <p class="section-subtitle">파일 개수보다 실행 연결·실패 강도·사각지대를 기준으로 묶은 9개 검증 영역</p>
 
         <!-- Stat total overlay -->
         <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
-          <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 0.5rem;">하네스 종합 평가 총평</h3>
+          <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 0.5rem;">평가 기준</h3>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65;">
-            본 프로젝트에 구축된 7대 무결성 가디언 하네스는 다중 모듈 및 이종 기술 스택(Spring Boot + Next.js)의 융합 구조에서 누출되기 쉬운 대표적인 **5대 위험 영역(JPA N+1 쿼리 누수, JWT 동기화 유실, API 보안 권한 노출, Flyway 파괴적 DDL, 프론트엔드 비주얼/타입 불일치)**을 완벽한 컴파일 차단(Hard-Stop) 및 dynamic 자가 치유(Self-Healing) 기술로 극복하였습니다.
-            그 결과 전체 백엔드 **JPA Query Leak을 90% 저감**시켰으며, PITest 점진적 AST 증분 캐시 최적화로 **빌드 타임 오버헤드를 대폭 단축**하고 DDL Lock에 의한 **운영 서비스 다운타임 차단율 100%**를 확보하는 등 엔터프라이즈 사스 수준의 무결성과 최고의 생산성을 수리적으로 증명하고 있습니다.
+            2026-08-18 기준 <strong>하네스 패키지 31개 클래스</strong>와 <strong>schema-validation 37개 클래스</strong>를 확인했습니다. 클래스 존재는 강제력을 뜻하지 않으므로 manifest 포함 여부, 로컬·CI task 연결, 실패 조건, waiver 구조까지 함께 평가합니다.
           </p>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65; margin-top: 0.9rem; border-top: 1px solid var(--border-color); padding-top: 0.9rem;">
-            <strong style="color: var(--accent-primary);">[2026-07 확충]</strong> 위 7대 외에, 품질 하드닝으로 순수 정적 JUnit 하네스 린터군 — <code>ApiDocsPathCoverage</code>·<code>IdentityAxis</code>·<code>ServiceReadOnlyTransactional</code>·<code>AsyncTransactionalListener</code>·<code>PkGenerationStandard</code>·<code>UniqueConstraintMirror</code>·<code>SchemaNaming</code>·<code>ZeroDowntimeMigration</code>·<code>SecurityAuthAnnotation</code> — 과 ArchUnit 게이트(<code>DomainIsolation</code>·<code>ServiceLayerIsolation</code>)를 신설·확충하고, 이를 <strong>3대 헌법 조문에 직접 결속(조문↔게이트 쌍방 참조)</strong>하여 규범을 "실증 가능"하게 만들었습니다.
-            <br><strong style="color: var(--accent-warning);">[정직 고지]</strong> 다만 <strong>뮤테이션 게이트는 현행 리포트 전용</strong>(<code>STRICT_MUTATION=false</code> → <code>mutationThreshold=0</code>, 미달이 빌드를 파손하지 않음 — 실측 ≥75% 확인 후 <code>true</code> 전환 시 강제)이고, <strong>디자인 토큰 ESLint 는 자문(<code>warn</code>)</strong>이라 CI 하드 차단이 아닙니다. 이 둘은 "강제"로 표기하지 않습니다.
+            <strong style="color: var(--accent-success);">확인된 강점:</strong> mutation required check는 <code>STRICT_MUTATION=true</code>와 75% 하한을 사용하고, 실 PostgreSQL 17 schema validation이 backend CI에 연결됩니다.
+            <br><strong style="color: var(--accent-warning);">핵심 공백:</strong> baseline 탐색 누락, 자유형 DDL waiver 188건, 소유권 semantic 검증 사각지대, 원격 승인 0, frontend expected-error 과잉 허용은 별도 로드맵에서 추적합니다.
           </p>
         </div>
 
         <div class="grid-2" id="harnesses-grid">
           <!-- Dynamic rendering -->
+        </div>
+        <noscript><div class="callout"><strong>동적 카드 대체:</strong> 검증 영역은 baseline, backend architecture/security, PostgreSQL schema, API contract, coverage/mutation, frontend static, E2E, legacy ETL, branch protection의 9개입니다. 상세 근거는 위 평가 기준과 다음 “공백 &amp; 개선 로드맵”을 함께 확인하세요.</div></noscript>
+      </section>
+
+      <!-- [11] Verified gaps and recommended roadmap -->
+      <section id="content-gaps" class="tab-content">
+        <h2 class="section-title">확인된 공백 &amp; 개선 로드맵</h2>
+        <p class="section-subtitle">2026-08-18 저장소·실행 manifest·원격 ruleset을 교차 확인한 결과입니다. 제안은 아직 구현된 통제가 아닙니다.</p>
+
+        <div class="glass-card">
+          <h3 class="glow-header">우선순위별 권장안</h3>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead>
+                <tr><th>우선순위</th><th>확인된 현상</th><th>권장 조치</th><th>헌법 개정</th></tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge badge-error">P0</span></td>
+                  <td>원격 required approval 0, CODEOWNERS review false인데 <code>verify:ops</code>는 green</td>
+                  <td>작성자/마지막 push 주체 외 reviewer 1인 이상(총 2인 운영)을 먼저 확보한 뒤 <code>branch-protection-policy.json</code>에 approval 1+·codeOwner·lastPush·threadResolution·dismissStale 값을 명시하고 ruleset/verifier가 exact-match하도록 수정</td>
+                  <td><strong>대상 아님</strong> — 코드 헌법이 아닌 운영 policy manifest 신설</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-error">P0</span></td>
+                  <td>baseline이 이름 regex에 의존하고 schema suite 37개 중 1개만 동결</td>
+                  <td>annotation/task 기반 자동 census와 deny-by-default manifest를 도입하고 CI에서 누락·중복을 실패 처리</td>
+                  <td><strong>불필요</strong> — 하네스 구현 보강</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-error">P0</span></td>
+                  <td>의무 ZDM 스킬과 인접 db-governance 지침이 각각 명명·bridge 권한, CHAR·도메인 규칙에서 DB 헌법과 충돌</td>
+                  <td>충돌 스킬을 즉시 quarantine하고 헌법 테스트 fixture에서 예시·명령까지 contract test</td>
+                  <td><strong>불필요</strong> — 하위 지침 교정</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-error">P0</span></td>
+                  <td><code>linter:ignore</code> 188건/43파일이 자유형 주석이며 만료·소유자·근거 검증 없음</td>
+                  <td>waiver ID·reason·owner·approvedAt·expiresAt·evidence를 schema로 관리하고 만료/미등록 예외를 hard-stop</td>
+                  <td><strong>권장</strong> — “구조화 waiver와 만료” 원칙만 조문에 추가, 세부 schema는 manifest로 분리</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-error">P0</span></td>
+                  <td><code>migration-tool</code>은 validation/report FAIL도 exit code 0이 가능하고, 정적 타깃 컬럼 검증과 source read-only가 fail-closed가 아님</td>
+                  <td>잘못된 mode·target 부재·validation/verification FAIL을 non-zero 종료하고 live meta/Flyway 대조, DB read-only 계정·connection, raw <code>where</code> 통제를 hard gate로 결속</td>
+                  <td><strong>불필요</strong> — 기존 백엔드 제1조·DB 제2조에 구현을 정렬</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">P1</span></td>
+                  <td>인가 annotation census가 소유권 의미·hand-written check 완화를 충분히 탐지하지 못함</td>
+                  <td><code>STRICT_OWNER</code>·<code>OWNER_OR_ADMIN</code>·<code>ADMIN_ONLY</code> 정책 registry와 endpoint×service semantic matrix test 도입</td>
+                  <td><strong>권장</strong> — 백엔드 헌법 제8조의 정책 의미·표준 helper를 최신화</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">P1</span></td>
+                  <td>레거시 이관 설계의 YAML·transform·checkpoint·리포트·테스트 수가 현행 코드와 어긋나고 실 DB cutover 증거가 없음</td>
+                  <td>실제 DSL schema에서 예제/runbook을 생성하고 PostgreSQL Testcontainers, 감사 JSON/Markdown, Flyway keymap, checkpoint/upsert, Oracle·Tibero dialect와 rollback 시나리오를 단계적으로 검증</td>
+                  <td><strong>불필요</strong> — 문서·도구·하네스 현행화</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">P1</span></td>
+                  <td>Dashboard API가 <code>ApiResponse&lt;Map&lt;String,Object&gt;&gt;</code>를 외부 반환해 전용 DTO 조문과 충돌</td>
+                  <td>typed <code>DashboardResponse</code>로 이행하고 controller 응답 generic의 Map/Object를 탐지하는 source gate 도입</td>
+                  <td><strong>기본 불필요</strong> — 확장형 Map이 필수라면 제한 예외 조문화에 별도 승인 필요</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">P1</span></td>
+                  <td>백엔드 헌법은 모든 성공 응답의 <code>ApiResponse</code> wrapper를 요구하지만 file download는 정상적으로 <code>Resource</code>를 반환</td>
+                  <td>binary download/stream/SSE 성공은 정확한 Content-Type/Disposition 조건으로 wrapper 예외, 오류는 표준 ApiResponse 유지</td>
+                  <td><strong>권장</strong> — 백엔드 헌법 제6조에 제한 예외 명문화</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">P1</span></td>
+                  <td>백엔드 헌법은 dependency CVSS 7 build fail을 서술하지만 실제 검사는 주간·continue-on-error 경로</td>
+                  <td>신규 production dependency의 high 이상은 PR에서 차단하고 주간 full scan은 SLA/issue gate로 운영하는 이중층 도입</td>
+                  <td><strong>권장</strong> — 도구명보다 outcome·SLA 중심으로 보안 조문 개정</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">P1</span></td>
+                  <td>Expand와 Contract를 같은 migration/release에서 수행해도 Article 7이 단계 간 release 경계를 강제하지 않음</td>
+                  <td>contract migration에 선행 release ID·호환성 기간·backfill 완료 증거를 요구하고 동일 release 축소를 hard-stop</td>
+                  <td><strong>권장</strong> — DB 헌법 제7조에 phase/release 분리 명문화</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">P1</span></td>
+                  <td><code>verify</code>·<code>localGate</code>·pre-push·CI의 DAG와 threshold SSOT가 분산</td>
+                  <td><code>quality-gates.json</code>을 SSOT로 두고 fastGate⊂localGate⊂CI 계약, 85/70/75 exact ratchet을 자동 검증</td>
+                  <td><strong>불필요</strong> — 운영 manifest/하네스 개선</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">P1</span></td>
+                  <td><code>GEMINI.md</code>의 Boot/Gradle/Next 버전·Middleware·AuthContext 설명이 실제 코드와 불일치</td>
+                  <td>규칙과 기술 inventory를 분리하고 버전·경로는 build/package manifest에서 생성. GEMINI 문구 수정은 사용자 승인 후 진행</td>
+                  <td><strong>승인 필요</strong> — GEMINI.md는 불가침 운영 원본</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">P1</span></td>
+                  <td>프론트 헌법이 삭제된 <code>middleware.ts</code>와 “CI/pre-push lint 미실행”을 서술하고, root dashboard의 RSC cache/Suspense 경로를 포괄하지 못함</td>
+                  <td><code>proxy.ts</code>·lint 실행 현황을 정정하고, root dashboard를 TanStack hydration으로 통일할지 RSC native cache/Suspense 예외를 인정할지 결정</td>
+                  <td><strong>승인 필요</strong> — 프론트 헌법 제4조·제6조 현행화</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">P1</span></td>
+                  <td>E2E가 광범위한 401/403·image·ERR_ABORTED를 expected error로 무시</td>
+                  <td>spec·URL·status·횟수·만료가 명시된 expected-error ledger로 교체하고 미등록 오류를 실패 처리</td>
+                  <td><strong>불필요</strong> — 테스트 정책 강화</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-primary">P2</span></td>
+                  <td>이 HTML의 숫자·버전·링크가 손으로 복제되어 다시 drift할 수 있음</td>
+                  <td>gate registry와 manifest에서 Atlas data를 생성하고 claim마다 source·verifiedAt·evidenceCommand·commit을 표시</td>
+                  <td><strong>불필요</strong> — docs-as-code 생성 파이프라인</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="glass-card">
+          <h3 class="glow-header">Branch protection 설정 선택지와 trade-off</h3>
+          <div class="table-container">
+            <table class="premium-table">
+              <thead><tr><th>모델</th><th>설정</th><th>장점</th><th>비용·전제</th></tr></thead>
+              <tbody>
+                <tr>
+                  <td><span class="badge badge-error">CURRENT</span></td>
+                  <td>approval 0 · codeOwner false · lastPush false · thread false · dismissStale false</td>
+                  <td>1인 운영에서도 PR 교착이 없고 자동 check만 통과하면 병합 가능</td>
+                  <td>사람 검토·CODEOWNERS 책임·최신 push 검증을 보증하지 못함</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-warning">INTERIM</span></td>
+                  <td>현 required checks 유지 + 외부 reviewer/team 또는 감사 가능한 scoped break-glass를 먼저 마련</td>
+                  <td>가용성을 유지하면서 blocking review 전환 준비</td>
+                  <td>현재 CODEOWNERS가 사실상 1인이므로 reviewer 확보 전 approval 토글은 자기 PR을 교착시킬 수 있음</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-success">RECOMMENDED</span></td>
+                  <td>approval 1 · codeOwner true · lastPush true · thread true · dismissStale false</td>
+                  <td>독립 검토자·책임자·최신 push·미해결 대화를 모두 병합 조건으로 만들면서 모든 과거 승인을 매 push마다 지우지는 않음</td>
+                  <td>작성자 외 reviewer 1인 이상(총 2인 운영)과 review SLA 필요. 마지막 push 주체가 아닌 사람의 승인이 필요</td>
+                </tr>
+                <tr>
+                  <td><span class="badge badge-primary">STRICT</span></td>
+                  <td>권장안 + dismissStale true</td>
+                  <td>코드 변경 후 모든 오래된 승인을 무효화해 가장 강한 재검토 보장</td>
+                  <td>작은 push마다 전면 재승인 비용이 생기며 1인/소규모 팀에서 병목·교착 위험이 가장 큼</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <p style="color: var(--text-muted); font-size: 0.82rem; margin-top: 0.8rem;">설정 의미: <a href="https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches" target="_blank" rel="noopener noreferrer">GitHub protected branches 문서 (새 창)</a>. 이 저장소에는 reviewer 수·bypass 주체·review SLA를 먼저 결정한 뒤 <span class="badge badge-success">RECOMMENDED</span> 모델을 적용하는 방안이 가장 균형적입니다.</p>
+        </div>
+
+        <div class="status-panel">
+          <article class="status-card">
+            <span class="badge badge-error">NOW</span>
+            <h3>수동 복제 문서</h3>
+            <p>코드·헌법·workflow·원격 설정을 사람이 다시 요약하므로 문장 단위 drift가 발생합니다.</p>
+          </article>
+          <article class="status-card">
+            <span class="badge badge-warning">NEXT</span>
+            <h3>Claim registry</h3>
+            <p>각 주장에 status, source, verifiedAt, evidenceCommand, owner를 강제하고 validator가 누락을 실패 처리합니다.</p>
+          </article>
+          <article class="status-card">
+            <span class="badge badge-success">TARGET</span>
+            <h3>생성형 Evidence Atlas</h3>
+            <p>manifest·빌드 설정·test census에서 데이터를 생성하고 HTML은 렌더링만 담당합니다.</p>
+          </article>
+        </div>
+
+        <div class="callout">
+          <strong>헌법 변경 원칙:</strong> 선언을 현실에 맞춰 약화하기보다 집행 하네스를 먼저 보강합니다. 헌법 본문 변경은 위 표에서 “권장”으로 표시한 의미 규칙에 한해 별도 사용자 명시 승인과 영향 분석 후 진행합니다.
         </div>
       </section>
 
@@ -1815,11 +2476,11 @@ npm run dev                   # Windows: .\start-dev.ps1
         type: "error",
         color: "linear-gradient(90deg, var(--accent-danger), var(--accent-warning))",
         details: [
-          "메타 테이블 SSOT 기반 3단계 설계 프로세스 강제",
-          "확장 후 축소(Expand-Contract) DDL 무중단 이행 준수",
-          "Audit 컬럼: 게이트는 최소 2종(frst_rgtr_id·crt_dt)+수정 짝 대칭만 강제, 4종 완비는 설계 리뷰(INSERT-ONLY 예외)",
-          "비즈니스 요건에 맞춰 논리/물리 삭제(Soft/Hard Delete) 전략 세분화",
-          "제약 명명 pk_/fk_/uk_/ix_/ck_(CHECK)·신규 PK @GeneratedValue·UNIQUE 엔티티 미러를 정적 하네스(ZeroDowntime·SchemaNaming·PkGeneration·UniqueConstraintMirror 린터)로 조문 기계 강제"
+          "목표: live information_schema 선조회와 meta_standard_* 사전 정렬",
+          "모든 환경·전체 Flyway SQL에 ZeroDowntimeMigrationLinter hard-stop 적용",
+          "현행 공백: EntitySchema 검증은 repo migration을 기준으로 하며 live DB divergence는 직접 확인하지 않음",
+          "현행 공백: 자유형 linter:ignore 188건/43파일은 사유·만료·증거를 구조적으로 검증하지 않음",
+          "스킬 충돌: CHAR(1)·대문자 TN_ 예시·read-only bridge DDL 검증 지시는 헌법보다 우선할 수 없음"
         ]
       },
       {
@@ -1828,11 +2489,11 @@ npm run dev                   # Windows: .\start-dev.ps1
         type: "primary",
         color: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))",
         details: [
-          "JPA N+1 하이브리드 방어(XToOne Fetch Join, XToMany Batch fetch 적용)",
-          "@Retryable 재시도 + AsyncConfig 동시성 상한(벌크헤드 근사) — 서킷 브레이커/차등 타임아웃은 미도입 권고",
-          "DB→BE→FE 계약 동기화(api-docs 신선도 + codegen diff) 게이트 강제",
-          "동시성 락 제어 및 핵심 서비스 Mutation Score 75% 기준(현행 리포트 전용, STRICT_MUTATION=true 전환 시 강제)",
-          "권한 이중검증·readOnly 트랜잭션·3계층 정체성 축·커밋후 부수효과·도메인 삭제가능성을 정적 하네스(SecurityAuthAnnotation·ServiceReadOnly·IdentityAxis·AsyncTransactionalListener·DomainIsolation 린터)로 조문 기계 강제"
+          "모듈 경계·DTO·트랜잭션·인가·정체성·JPA 성능 규칙을 ArchUnit/JUnit 하네스로 부분 집행",
+          "JaCoCo LINE 85% / BRANCH 70%, CI mutation 75% hard gate",
+          "OpenAPI snapshot→TypeScript/Zod codegen diff를 pre-push와 CI에서 검증",
+          "현행 공백: Entity 클래스 수준 Lombok 금지 조항을 검사할 Checkstyle/source gate 부재",
+          "현행 공백: hand-written 소유권 검사와 일부 strict-owner 의미는 기존 census 밖"
         ]
       },
       {
@@ -1841,104 +2502,121 @@ npm run dev                   # Windows: .\start-dev.ps1
         type: "success",
         color: "linear-gradient(90deg, var(--accent-success), var(--accent-secondary))",
         details: [
-          "URL 보안 격리(단순 공유 외 민감/대용량 상태의 Zustand/SessionStorage 격리)",
-          "인증 세션 보안: accessToken HttpOnly 쿠키 전용(localStorage 금지) + same-origin 프록시 + 미들웨어 JWT 서명·만료 검증(alg 화이트리스트)",
-          "도메인 단위 거시적 Error Boundary 통합 및 원버튼 글로벌 재시도, Empty State UI",
-          "낙관적 UI + 캐시 무효화 롤백 정책 적용",
-          "DB/BE 헌법과 Zod 스키마 거울 동기화(codegen:verify:zod HARD 게이트)",
-          "디자인 토큰(enforce-design-tokens)은 자문(warn·CI lint 미실행)이라 하드차단 아님 → 대규모 색 변경 시 라이트/다크 육안검증 의무; WCAG는 axe-core E2E 스캔으로 검증"
+          "Next.js 16 proxy 기반 인증 경계, Server Component 우선, 상태·오류·접근성 규칙",
+          "앱 tsc·E2E tsc·Next build·Vitest·Playwright shard가 훅/CI에 분산 연결",
+          "Zod 생성물 drift는 codegen:verify:zod hard gate",
+          "디자인 토큰 ESLint는 CI·pre-push에서 실행되지만 규칙 severity는 warning",
+          "현행 공백: E2E expected-error의 광범위 401/403·image·ERR_ABORTED 허용은 실제 회귀를 숨길 수 있음"
         ]
       }
     ];
 
     const dbPermissions = [
-      { type: "면책 특권 (Exemption)", query: "<code>SELECT ... FROM meta_standard_*</code> 및 스키마 구조 조회", grade: "자율 실행 (무승인)", detail: "거버넌스 정렬을 위해 메타 사전을 조회하는 행위는 탐색의 기동성 및 무결성 조회를 위해 사용자의 사전 개입을 배제하고 무제한 보장함.", badge: "success" },
-      { type: "진단 특권 (Diagnosis)", query: "오류 복구(Ralph Loop 2.0) 중 DB 상태 확인을 위한 단순 <code>SELECT</code>", grade: "자율 실행 (무승인)", detail: "자가 치유(Self-Healing) 단계에서 장애 상황을 진단하기 위해 테이블을 읽는 행위는 에이전트 자율성 보장 범위에 포함됨.", badge: "success" },
-      { type: "DML 통제 대상", query: "실제 업무 데이터에 대한 <code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>", grade: "사전 승인 필수", detail: "운영 및 코어 데이터의 상태 변조 작업은 사전 승인이 강제 통제됨.<br><strong style='color: var(--accent-danger);'>[예외 조항]</strong> DB 헌법 제8조 2항에 의거, 테스트 환경의 가비지 데이터 클린업용 DELETE 쿼리는 자율 실행이 허용됨. 실 운영 데이터는 물리/논리 삭제 전략을 세분화하여 적용함.", badge: "error" },
-      { type: "DDL 통제 대상", query: "스키마 객체 구조를 변경하는 <code>ALTER</code>, <code>DROP</code>, <code>CREATE</code>", grade: "사전 승인 필수", detail: "무중단 스키마 이행 지침(Zero-Downtime Migration Planner) 통과 의무가 있으며 최종 이행 전 무조건 사용자 하드락 승인이 요구됨.", badge: "error" }
+      { type: "메타데이터 조회", query: "<code>SELECT ... FROM information_schema.columns</code> / <code>table_constraints</code>", grade: "BRIDGE 허용", detail: "SQL 문자열 또는 --file로 information_schema와 표준 메타 구조를 읽는 read-only 탐색 경로입니다. 결과는 조회 시점 스냅샷으로 취급합니다.", badge: "success" },
+      { type: "read-only 진단", query: "<code>SELECT</code> · <code>WITH</code> · <code>SHOW</code> · read-only <code>EXPLAIN</code> · <code>VALUES</code>", grade: "BRIDGE 허용", detail: "허용 구문에도 WITH/EXPLAIN 세부 제한이 적용됩니다. 쿼리 범위·민감 정보 노출은 별도 최소화가 필요합니다.", badge: "success" },
+      { type: "DML", query: "<code>INSERT</code>, <code>UPDATE</code>, <code>DELETE</code>", grade: "BRIDGE 거부", detail: "db-bridge 자체가 상태 변경 쿼리를 실행하지 않습니다. 다른 실행 경로의 권한·승인 정책과 혼동하지 마세요.", badge: "error" },
+      { type: "DDL/트랜잭션", query: "<code>ALTER</code>, <code>DROP</code>, <code>CREATE</code>, <code>BEGIN</code>, <code>COMMIT</code>", grade: "BRIDGE 거부", detail: "따라서 bridge로 DDL syntax나 트랜잭션을 검증하라는 스킬 지시는 실행 불가능하며 수정 대상입니다.", badge: "error" }
     ];
 
     const dbModelMapping = [
-      { layer: "DB 메타 단어", example: "<code>BBS</code>(게시판), <code>RDCNT</code>(조회수)", spec: "표준 단어 사전 <code>meta_standard_words</code>에 공식 등록된 약어", audit: "비표준 단어나 임의로 축약한 단어는 마이그레이션 빌드 차단", badge: "cyan" },
-      { layer: "DB 메타 도메인", example: "<code>RDCNT_DOM</code> ➔ <code>NUMERIC(10)</code>", spec: "도메인 사전 <code>meta_standard_domains</code>에 바인딩된 속성", audit: "모든 조회수 컬럼은 반드시 해당 도메인 사양과 100% 데이터 타입 일치", badge: "primary" },
-      { layer: "Backend JPA Entity", example: "<code>@Column(name = \"bbs_rdcnt\", precision = 10)</code>", spec: "Spring Boot JPA 컬럼 어노테이션에 정밀도 및 명칭 매핑", audit: "OpenAPI 스펙 생성 시 <code>type: number, minimum: 0</code> 자동 바인딩", badge: "success" },
-      { layer: "Frontend Zod Schema", example: "<code>bbsRdcnt: z.number().int().nonnegative()</code>", spec: "Next.js 폼 검증을 위한 Zod Schema 1:1 거울 동기화", audit: "API 요청 송신 전 클라이언트 폼 단에서 사전 유효성 차단 및 무결성 보호", badge: "warning" }
+      { layer: "DB 표준 단어", example: "<code>INQ_CNT</code> (조회수)", spec: "<code>meta_standard_words</code>와 migration의 실제 예시", audit: "<span class='badge badge-warning'>PARTIAL</span> SchemaNaming은 접두·snake_case·제약·audit 중심이며 모든 표준 단어 의미를 전수 검증하지 않습니다.", badge: "cyan" },
+      { layer: "DB 물리 컬럼", example: "<code>tb_bbs_item.inq_cnt</code>", spec: "Flyway가 재현하는 PostgreSQL 17 스키마", audit: "<span class='badge badge-success'>HARD</span> schema-validation이 migration 적용·Hibernate validate·write smoke를 수행하지만 baseline 보호는 불완전합니다.", badge: "primary" },
+      { layer: "Backend JPA", example: "<code>Board.inqCnt : Integer</code>", spec: "Entity ↔ 물리 컬럼 타입/nullable 계약", audit: "<span class='badge badge-success'>HARD</span> Hibernate validate 대상. live 운영 DB가 아니라 테스트 컨테이너의 repo migration 기준입니다.", badge: "success" },
+      { layer: "Frontend Zod", example: "<code>inqCnt: z.number().optional()</code>", spec: "OpenAPI snapshot에서 생성한 Zod 계약", audit: "<span class='badge badge-success'>HARD</span> codegen diff는 생성물 drift를 잡지만 도메인 의미·최솟값까지 자동 추론하는 것은 아닙니다.", badge: "warning" }
     ];
 
     const engines = [
-      { id: "Skill 01", name: "Deep Context Mapper", desc: "1M+ 대용량 토큰 샌드박스를 활용하여 복잡한 다중 Gradle 모듈 및 PostgreSQL 물리 스키마의 상관 위상(Topology) 지도를 구성하여 완벽한 컴파일 안정성을 달성합니다.", cond: "L2 아키텍처/멀티모듈/DB 스키마 변경 시", mech: "1M 토큰 버퍼에 전체 위상 정보 사전 적재 오버레이", badge: "primary" },
-      { id: "Skill 02", name: "Visual Auditor", desc: "<code>browser_subagent</code> 네이티브를 연동하여 프론트엔드 픽셀 및 반응형 레이아웃 깨짐을 실시간으로 비교 검증하고 WebP 시각 아티팩트를 자동 수립합니다.", cond: "프론트엔드 UI 컴포넌트 마크업/CSS 변경 감지 시", mech: "subagent 픽셀 단위 렌더링 오디팅 및 비주얼 녹화", badge: "success" },
-      { id: "Skill 03", name: "Resilience Debugger", desc: "포트 충돌 등 런타임 예외 감지 시 DB Bridge 연동 및 로컬 프로세스 기동성을 자동 복구 및 포트 정리하여 자가 치유(Self-Healing)를 가동합니다.", cond: "8080/3001 포트 충돌 및 로컬 런타임 예외 발생 시", mech: "좀비 프로세스 자동 탐색 및 즉시 KILL 처리", badge: "error" },
-      { id: "Skill 04", name: "API Contract Guardian", desc: "Spring Boot DTO/Controller와 Next.js 타입 간의 Breaking Change를 OpenAPI 명세 대조를 통해 사전에 100% 추론 및 파괴를 완전 방어합니다.", cond: "DTO 변동 및 컨트롤러 Request/Response 엔드포인트 수정 시", mech: "OpenAPI Spec 파싱 및 codegen:ts 기반 단방향 거울 동기화", badge: "warning" },
-      { id: "Skill 05", name: "OWASP Security Auditor", desc: "JWT 설정 및 Spring Security 체인 변경 시 Red Team 공격자 관점에서 취약점 정밀 정적 분석 및 침투 검증 시나리오를 자율 실행합니다.", cond: "Spring Security Config, FilterChain, 미들웨어 변경 시", mech: "Red Team 침투 시나리오 정적/동적 취약점 자율 오디팅", badge: "warning" },
-      { id: "Skill 06", name: "Docs-as-Code Sync", desc: "로직이 수정될 때마다 아키텍처 문서 및 Mermaid 다이어그램을 코드를 기반으로 자율 역추적하여 최신화하여 문서 노후화를 방지합니다.", cond: "L2 마이그레이션 및 주요 비즈니스 모듈의 완료 시점", mech: "AST 정밀 분석 및 마크다운/Mermaid 다이어그램 자동 패치", badge: "primary" },
-      { id: "Skill 07", name: "Mutation Testing Auditor", desc: "테스트의 강건성을 검증하기 위해 실제 비즈니스 코드에 의도적으로 미세한 논리 돌연변이(버그)를 삽입해 테스트 코드가 실패하는지 수학적으로 검증합니다.", cond: "비즈니스 로직 단위 테스트 신규 작성/수정 시", mech: "소스코드 강제 Sabotage 구동 후 핵심 크리티컬 서비스 Mutation Score 75%+ 계측(현행 리포트 전용·일반/CRUD 면제)", badge: "success" },
-      { id: "Skill 08", name: "Zero-Downtime Planner", desc: "PostgreSQL 스키마 변경 시 DDL Lock으로 인한 다운타임을 원천 차단하기 위해 phased 'Expand and Contract' SQL 설계 패턴을 강제 이행시킵니다.", cond: "PostgreSQL 테이블 DDL/DML 생성 및 수정 감지 시", mech: "Expand-and-Contract 4단계 롤백 시나리오 무조건부 명세서 발행", badge: "error" }
+      { id: "VERIFIED", name: "Docs-as-Code Sync", desc: "코드·스키마·API 변경이 설명서와 다이어그램에 미치는 영향을 추적하는 지침입니다. 자동 실행을 가정하지 않고 변경 시 명시적으로 적용합니다.", cond: "문서 소비자나 운영 절차가 달라지는 변경", mech: "영향 문서 검색 → 링크/예시 갱신 → 문서 검증 결과 보고", badge: "success" },
+      { id: "VERIFIED", name: "Visual Validator", desc: "실제 브라우저 렌더를 viewport·테마·키보드·접근성 관점에서 검사하고 스크린샷 증거를 남깁니다.", cond: "UI/CSS/정적 HTML 변경", mech: "Playwright 렌더 + 탭별 axe + 반응형/print/reduced-motion 확인", badge: "success" },
+      { id: "PARTIAL", name: "API Contract Guardian", desc: "OpenAPI snapshot과 TypeScript/Zod 생성물의 diff는 강제됩니다. 스킬 문서의 live npm codegen·무조건 raw-response 변환 지시는 현행 예외와 다릅니다.", cond: "Controller/DTO/OpenAPI 변경", mech: "현행 pnpm codegen:file/zod 경로를 우선하고 download·stream 예외 보존", badge: "warning" },
+      { id: "PARTIAL", name: "Deep Context Mapper", desc: "영향도 탐색에는 유용하지만 삭제된 business-suite·고정 모델 context 가정 등 오래된 예시가 남아 있습니다.", cond: "멀티모듈·DB·계약 변경", mech: "settings.gradle과 실제 파일을 먼저 읽고 스킬의 정적 토폴로지를 신뢰하지 않음", badge: "warning" },
+      { id: "CONFLICT", name: "DB Governance / Zero-Downtime", desc: "의무 ZDM의 대문자 TN_·read-only bridge DDL/BEGIN/COMMIT 검증과 인접 db-governance의 CHAR(1)·도메인 무시 지시가 각각 DB 헌법과 충돌합니다.", cond: "DB 설계·migration 변경", mech: "해당 지시 중단 → DB 헌법·live metadata·현행 linter를 우선 → 스킬 개정 필요", badge: "error" },
+      { id: "CONFLICT", name: "Resilience / Coverage Workflow", desc: "모든 Java 프로세스 kill, 재귀 build 삭제, settings.gradle 재작성, 삭제 모듈 참조는 안전한 기본 동작이 아닙니다.", cond: "포트 충돌·coverage 작업", mech: "정확한 대상 PID/경로를 읽기 전용으로 확인하고 비파괴적 진단부터 수행", badge: "error" },
+      { id: "ENFORCED", name: "Mutation Pipeline", desc: "스킬 설명과 별개로 실제 CI required check가 STRICT_MUTATION=true와 75% threshold를 집행합니다.", cond: "mutation-test CI job", mech: "build.gradle + ci.yml + required-checks.json의 3중 연결", badge: "primary" },
+      { id: "ADVISORY", name: "Security Review", desc: "보안 리뷰 지침은 위협 탐색을 돕지만 정적 인가 annotation linter만으로 semantic ownership와 런타임 공격을 완전 보증하지 않습니다.", cond: "인증·인가·민감 데이터 경로 변경", mech: "정적 gate + semantic policy test + 위협 모델/동적 검증 조합", badge: "primary" }
     ];
 
     const harnesses = [
       {
         num: 1,
-        title: "JPA SQL N+1 성능 초소형 방어벽 (JPA N+1 SQL Inspector)",
-        desc: "통합 테스트 실행 도중 각 스레드별로 발행되는 SQL 쿼리 개수를 Hibernate Interceptor로 자동 계측하여, N+1 쿼리 누수가 발생하거나 임계치(최대 10개)를 위반하면 테스트를 즉시 실패 처리하는 성능 가드레일입니다. 리플렉션 기반 ThreadLocalCopyTaskDecorator를 활용해 비동기 스레드 풀(logExecutor, taskExecutor) 전파 누수까지 100% 원천 계측 및 감지합니다.",
-        badge1: "Backend", badge2: "Performance", type1: "primary", type2: "success",
-        impl: "QueryCountInspector.java, HibernateQueryCounterInspector.java, QueryCountGuardExtension.java (business-core/business-app testFixtures: nuri.business.core.harness), ThreadLocalCopyTaskDecorator.java (foundation)",
-        doc: "jpa-performance-guardrail.md", docLink: "../../docs/02-architecture/jpa-performance-guardrail.md",
+        title: "거버넌스 메타·베이스라인 무결성",
+        desc: "HarnessBaselineIntegrityTest와 WorkflowManifestLinterTest가 핵심 gate·workflow 계약의 삭제와 약화를 감시합니다. 그러나 이름 정규식 기반 탐색 때문에 ArchitectureTest·DomainIsolationTest·ServiceLayerIsolationTest와 schema-validation 36개가 baseline 밖에 있어 PARTIAL입니다.",
+        badge1: "Governance", badge2: "Partial", badge3: "Gap", type1: "primary", type2: "warning", type3: "error",
+        impl: "api-server/src/test/java/nuri/api/harness/HarnessBaselineIntegrityTest.java · baseline-manifest.properties",
+        doc: "Harness baseline source", docLink: "https://github.com/lkindo/egov-enterprise/tree/main/api-server/src/test/java/nuri/api/harness",
         color: "linear-gradient(90deg, var(--accent-warning), var(--accent-danger))"
       },
       {
         num: 2,
-        title: "Next.js Live Diagnostics 관제 대시보드 (Diagnostics Live Hub)",
-        desc: "어드민 시스템의 관제 포털 내에 실시간 대시보드를 구축하여 스프링 3대 기술 헌법 무결성, 최근 JPA 성능 쿼리 로깅, AI 자가성찰 Ralph Loop 2.0 타임라인 흔적, 그리고 8대 네이티브 엔진의 스키마 및 위상 맵 가동 배지를 한눈에 관제합니다. 전체 가버넌스 작동 현황의 실시간 가시성을 200% 이상 비주얼로 확보합니다.",
-        badge1: "Frontend", badge2: "Observability", type1: "cyan", type2: "primary",
-        impl: "MonitoringHubClient.tsx (frontend), NetworkMonitoringApiController.java (api-server)",
-        doc: "실시간 대시보드 통합 연동 완료", docLink: null,
+        title: "백엔드 아키텍처·인가·소유권 규칙",
+        desc: "ArchUnit/JUnit이 모듈 경계, controller 인가 annotation, readOnly 트랜잭션, 정체성 축 등을 검사합니다. annotation 존재 확인만으로 정책 의미를 보증하지 않으며 hand-written 소유권 검사와 Entity Lombok 클래스 규칙에는 사각지대가 있습니다.",
+        badge1: "Backend", badge2: "Hard + Partial", type1: "primary", type2: "warning",
+        impl: "ArchitectureTest.java · SecurityAuthAnnotationLinterTest.java · OwnershipGuardBaselineLinterTest.java",
+        doc: "Backend constitution", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/.agent/knowledge/backend-api-constitution/artifacts/constitution.md",
         color: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary))"
       },
       {
         num: 3,
-        title: "PITest 점진적 돌연변이 테스트 파이프라인 (Incremental Mutation Testing)",
-        desc: "백엔드 기술 헌법 제16조(핵심 크리티컬 서비스 Mutation Score 75% 기준)를 계측하기 위해, 빌드 시 소스코드에 지능형 돌연변이 버그를 바이트코드 수준에서 강제 주입하고 테스트 생존을 계측합니다. 현행 CI 는 리포트 전용(STRICT_MUTATION=false → mutationThreshold=0, 미달이 빌드를 파손하지 않음)이며, 실측 스코어가 75%를 상회함을 확인한 뒤 STRICT_MUTATION=true 로 전환하면 75% 하드 게이트가 강제됩니다. 캐시 기반 Incremental 최적화로 빌드 오버헤드를 경감하고, 단순 CRUD 및 일반 서비스는 의무 면제됩니다.",
-        badge1: "Backend", badge2: "Quality", type1: "primary", type2: "warning",
-        impl: "build.gradle (root), gradle-pitest-plugin (api-server / business-core / business-app)",
-        doc: "pitest-mutation-testing.md", docLink: "../../docs/02-architecture/pitest-mutation-testing.md",
-        color: "linear-gradient(90deg, var(--accent-primary), var(--accent-warning))"
+        title: "실 PostgreSQL 스키마·쓰기 검증",
+        desc: "37개 schema-validation 클래스가 빈 PostgreSQL 17에 Flyway 전량 적용, Hibernate validate, PK/constraint/type 및 쓰기 smoke를 수행합니다. CI 연결은 hard지만 baseline manifest에는 대표 1개만 포함돼 suite 삭제 회귀를 충분히 감지하지 못합니다.",
+        badge1: "Database", badge2: "CI Hard", badge3: "Baseline Gap", type1: "error", type2: "success", type3: "warning",
+        impl: "api-server/src/test/java/**/**IntegrationTest.java · :api-server:schemaValidationTest",
+        doc: "Schema validation guide", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/03-guides/getting-started.md",
+        color: "linear-gradient(90deg, var(--accent-danger), var(--accent-success))"
       },
       {
         num: 4,
-        title: "Tailwind 4.0 HSL 스타일 가드 린터 (Tailwind HSL Token Linter)",
-        desc: "UX 헌법 제6조·제15조(디자인 일관성 및 시맨틱 토큰 수호)에 따라, JSX className 내 임의 원색(plain red/blue/green 등) 남용을 감지하고 시맨틱 토큰(bg-primary·bg-muted 등) 사용을 유도하는 ESLint 규칙입니다. 단, 현재 레벨은 자문(warn)이며 CI·pre-push 가 lint 를 실행하지 않아 하드 차단 게이트가 아닙니다 — 정적 검증(tsc/next build)은 색·다크모드 시각 회귀를 잡지 못하므로 대규모 색 변경 시 라이트/다크 육안 검증을 병행합니다.",
-        badge1: "Frontend", badge2: "Styling", type1: "cyan", type2: "success",
-        impl: "eslint.config.mjs (frontend), local-theme/enforce-design-tokens AST Engine",
-        doc: "tailwind-lint-rules.md", docLink: "../../docs/03-guides/tailwind-lint-rules.md",
+        title: "API 계약·생성물 드리프트",
+        desc: "api-docs snapshot, TypeScript 타입, Zod 생성물을 결정적으로 재생성해 git diff로 검증합니다. 생성물 일치가 runtime 의미 호환성을 모두 보증하지 않으므로 breaking-change 리뷰와 실제 consumer test를 병행합니다.",
+        badge1: "Contract", badge2: "Hard", type1: "cyan", type2: "success",
+        impl: "frontend/package.json codegen:verify · codegen:verify:zod · .githooks/pre-push · ci.yml",
+        doc: "API documentation guide", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/03-guides/api-documentation-guide.md",
         color: "linear-gradient(90deg, var(--accent-success), var(--accent-secondary))"
       },
       {
         num: 5,
-        title: "Spring Security API 권한 제어 유실 방지 하네스 (Auth Role Guardrail)",
-        desc: "커스텀 API 컨트롤러 패키지 하위의 모든 HTTP 엔드포인트 메서드에 @PreAuthorize 또는 @Secured 등 명시적인 권한 어노테이션 지정을 강제합니다. 누락 감지 시 JUnit 빌드 타임에 테스트를 즉시 실패 처리(Hard-Stop)하여 제로데이 API 인가 노출 가능성을 0.00%로 완벽 밀봉하며, 커스텀 @PermitAllRoute 어노테이션 선언으로 정합적 퍼블릭 라우팅 인가를 완수합니다.",
-        badge1: "Backend", badge2: "Security", badge3: "Hard-Stop", type1: "primary", type2: "error", type3: "success",
-        impl: "SecurityAuthAnnotationLinterTest.java (api-server), PermitAllRoute.java (foundation)",
-        doc: "security-hardening-playbook.md", docLink: "../../docs/03-guides/security-hardening-playbook.md",
+        title: "커버리지·Mutation 품질 하한",
+        desc: "JaCoCo는 LINE 85% / BRANCH 70%, CI mutation은 STRICT_MUTATION=true / 75%로 required check에 연결됩니다. 다만 workflow self-check는 LINE을 50%까지만, BRANCH는 70%로 검사하고 mutation 75 값은 검사하지 않아 threshold 약화 래칫이 불완전합니다.",
+        badge1: "Quality", badge2: "CI Hard", badge3: "Ratchet Gap", type1: "primary", type2: "success", type3: "warning",
+        impl: "build.gradle · .github/workflows/ci.yml · .github/required-checks.json",
+        doc: "Mutation testing", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/pitest-mutation-testing.md",
         color: "linear-gradient(90deg, var(--accent-danger), var(--accent-primary))"
       },
       {
         num: 6,
-        title: "Playwright 자가 치유 셀렉터 및 디자인 숨통 에이전트 (Playwright Self-Healing & Layout Guard)",
-        desc: "E2E 테스트 시 마이크로 UI 변경이나 CSS 리팩토링으로 주 셀렉터(Primary Selector)가 유실되어 테스트 빌드가 깨지는 취약성을 원천 해소합니다. 또한, LayoutBreathingGuard 픽스처를 탑재하여 Next.js 렌더링 지연(Timing Issue)을 극복하고, UI 컴포넌트 면적당 텍스트 비율 및 40% 숨통 여백 비율 미달 여부를 실시간 계측하여 텔레메트리 보고서를 출력합니다.",
-        badge1: "E2E", badge2: "Resilience", badge3: "Self-Healing", type1: "cyan", type2: "secondary", type3: "success",
-        impl: "self-healing-agent.ts, layout-breathing-guard.ts, base-test.ts (frontend/e2e/fixtures)",
-        doc: "e2e-self-healing-guide.md", docLink: "../../docs/03-guides/e2e-self-healing-guide.md",
+        title: "프론트엔드 정적·컴포넌트 검증",
+        desc: "앱/E2E TypeScript, Next build, Vitest, ESLint가 훅과 CI에 연결됩니다. 디자인 토큰 규칙은 lint 실행 안의 warning이므로 하드 차단으로 과장하지 않으며 시각·접근성 검증을 별도로 수행해야 합니다.",
+        badge1: "Frontend", badge2: "Mixed", type1: "cyan", type2: "warning",
+        impl: "frontend/package.json · eslint.config.mjs · frontend/src/__tests__ · ci.yml",
+        doc: "Frontend constitution", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md",
         color: "linear-gradient(90deg, var(--accent-primary), var(--accent-secondary), var(--accent-success))"
       },
       {
         num: 7,
-        title: "무중단 배포 데이터베이스 DDL 오딧 하네스 (Zero-Downtime Migration Linter)",
-        desc: "빌드 및 통합 테스트 시 모든 Flyway SQL 마이그레이션 스크립트를 정적 분석하여 파괴적 DDL 안티패턴을 사전에 감지합니다. DB 헌법 제7조 3항 개정에 따라 로컬/개발 환경(Local/Dev) 빌드 시에는 단순 경고(Warning)만 출력하고 프로덕션 배포 파이프라인(Staging/Prod CI)에서만 빌드를 하드 차단(Hard-Stop)하며, 락(Lock)을 유발하지 않는 비파괴적 DDL 및 기존 반영 완료된 과거 파일은 검사에서 자동 제외됩니다. 긴급 상황 시 -- linter:ignore 주석으로 우회 가능합니다.",
-        badge1: "Database", badge2: "Stability", badge3: "Hard-Stop", type1: "error", type2: "primary", type3: "success",
-        impl: "ZeroDowntimeMigrationLinterTest.java (api-server)",
-        doc: "zero-downtime-migration.md", docLink: "../../docs/02-architecture/zero-downtime-migration.md",
-        color: "linear-gradient(90deg, var(--accent-danger), var(--accent-warning), var(--accent-success))",
+        title: "Playwright E2E·런타임 접근성",
+        desc: "3개 shard가 required check로 병합을 막습니다. self-healing fixture는 선언돼도 실제 spec 사용이 확인되지 않았고, broad 401/403·image·ERR_ABORTED 허용 목록은 회귀를 숨길 수 있어 exact expected-error ledger가 필요합니다.",
+        badge1: "E2E", badge2: "CI Hard", badge3: "Policy Gap", type1: "cyan", type2: "success", type3: "error",
+        impl: "frontend/e2e · frontend/playwright.config.ts · ci.yml e2e matrix",
+        doc: "E2E guide", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/03-guides/e2e-self-healing-guide.md",
+        color: "linear-gradient(90deg, var(--accent-primary), var(--accent-warning))"
+      },
+      {
+        num: 8,
+        title: "Legacy ETL 정확성·이관 안전성",
+        desc: "migration-tool 테스트는 루트 backend-build와 JaCoCo에 포함되고, CI mutation이 transform 및 validate/verify를 75% 하한으로 보호합니다. 그러나 H2 중심 단위·통합 증거이며 CLI 실패 종료, live meta, source read-only, 실 PostgreSQL·Oracle/Tibero cutover는 보장하지 않아 PARTIAL입니다.",
+        badge1: "Data Migration", badge2: "Partial", badge3: "False-green Gap", type1: "cyan", type2: "warning", type3: "error",
+        impl: "migration-tool/src/test · ci.yml migration-transform/migration-validate-verify · :migration-tool:test",
+        doc: "Legacy migration design", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md",
+        color: "linear-gradient(90deg, var(--accent-secondary), var(--accent-warning))"
+      },
+      {
+        num: 9,
+        title: "운영 manifest·원격 branch protection",
+        desc: "required check 7개, strict mode, force-push·삭제 차단은 manifest와 원격 ruleset이 일치합니다. 반면 필수 승인 0·CODEOWNERS review false이며 현 verifier가 세부 파라미터를 검사하지 않아 가장 우선적인 운영 공백입니다.",
+        badge1: "Operations", badge2: "Critical Gap", type1: "primary", type2: "error",
+        impl: ".github/required-checks.json · scripts/verify-branch-protection.mjs · GitHub ruleset 12501346",
+        doc: "Required checks manifest", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/.github/required-checks.json",
+        color: "linear-gradient(90deg, var(--accent-danger), var(--accent-warning))",
         isFullWidth: true
       }
     ];
@@ -1993,7 +2671,7 @@ npm run dev                   # Windows: .\start-dev.ps1
           </p>
           <div style="font-size: 0.78rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem; line-height: 1.5;">
             <div><strong style="color: var(--accent-secondary);">트리거 조건:</strong> ${e.cond}</div>
-            <div><strong style="color: var(--accent-primary);">강제 메커니즘:</strong> ${e.mech}</div>
+            <div><strong style="color: var(--accent-primary);">적용 경계:</strong> ${e.mech}</div>
           </div>
         </div>
       `).join('');
@@ -2012,49 +2690,63 @@ npm run dev                   # Windows: .\start-dev.ps1
           </p>
           <div style="font-size: 0.78rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem; display: flex; flex-direction: column; gap: 0.35rem;">
             <div><strong style="color: var(--accent-secondary);">물리 구현체:</strong> <code>${h.impl}</code></div>
-            <div><strong style="color: var(--accent-primary);">아키텍처 문서:</strong> ${h.docLink ? `<a href="${h.docLink}" style="color: var(--accent-secondary); text-decoration: none; border-bottom: 1px dashed var(--accent-secondary);">${h.doc}</a>` : h.doc}</div>
+            <div><strong style="color: var(--accent-primary);">근거 링크:</strong> ${h.docLink ? `<a href="${h.docLink}" target="_blank" rel="noopener noreferrer" style="color: var(--accent-secondary); text-decoration: none; border-bottom: 1px dashed var(--accent-secondary);">${h.doc} (새 창)</a>` : h.doc}</div>
           </div>
         </div>
       `).join('');
+
+      document.querySelectorAll('.table-container').forEach((container, index) => {
+        const title = container.closest('.glass-card')?.querySelector('h3')?.textContent?.trim();
+        container.tabIndex = 0;
+        container.setAttribute('role', 'region');
+        container.setAttribute('aria-label', title ? `${title} 표` : `가로 스크롤 표 ${index + 1}`);
+      });
     }
 
     /* ==========================================================================
        3. Theme Management (Floating Switch Switcher)
        ========================================================================== */
-    function toggleAppTheme() {
-      const htmlEl = document.documentElement;
+    const themeIconPaths = {
+      dark: "M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zM5.99 16.95l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41s-1.02-.39-1.41 0z",
+      light: "M12.3 22c5.96 0 10.8-4.84 10.8-10.8 0-4.05-2.25-7.6-5.59-9.47-.48-.27-1.07.13-.98.68.83 4.97-.56 9.87-3.9 13.2-3.33 3.33-8.23 4.73-13.2 3.9-.55-.09-.95.5-.68.98C4.4 19.75 7.95 22 12.3 22z"
+    };
+
+    function syncThemeControl(theme) {
+      const button = document.getElementById('theme-toggle-btn');
       const btnText = document.getElementById('theme-btn-text');
-      const themeSvg = document.getElementById('theme-svg');
-      
-      const currentTheme = htmlEl.getAttribute('data-theme');
-      const newTheme = (currentTheme === 'dark') ? 'light' : 'dark';
-      
-      htmlEl.setAttribute('data-theme', newTheme);
-      localStorage.setItem('ag-theme', newTheme);
-      
-      // Update UI elements
-      if (newTheme === 'dark') {
-        btnText.innerText = "Light Mode";
-        themeSvg.innerHTML = `<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-12.37c-.39-.39-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.38.39-1.02 0-1.41zM5.99 16.95l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06c.39-.39.39-1.03 0-1.41s-1.02-.39-1.41 0z"/>`;
-      } else {
-        btnText.innerText = "Dark Mode";
-        themeSvg.innerHTML = `<path d="M12.3 22c5.96 0 10.8-4.84 10.8-10.8 0-4.05-2.25-7.6-5.59-9.47-.48-.27-1.07.13-.98.68.83 4.97-.56 9.87-3.9 13.2-3.33 3.33-8.23 4.73-13.2 3.9-.55-.09-.95.5-.68.98C4.4 19.75 7.95 22 12.3 22z"/>`;
-      }
+      const iconPath = document.querySelector('#theme-svg path');
+      const isDark = theme === 'dark';
+      btnText.textContent = isDark ? 'Light Mode' : 'Dark Mode';
+      button.setAttribute('aria-label', isDark ? '밝은 테마로 전환' : '어두운 테마로 전환');
+      button.setAttribute('aria-pressed', String(isDark));
+      if (iconPath) iconPath.setAttribute('d', themeIconPaths[theme]);
     }
 
-    // Load cached theme preference
+    function toggleAppTheme() {
+      const htmlEl = document.documentElement;
+      const newTheme = htmlEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      htmlEl.setAttribute('data-theme', newTheme);
+      syncThemeControl(newTheme);
+      try { localStorage.setItem('ag-theme', newTheme); } catch (_) { /* file:// and locked storage */ }
+    }
+
     function loadSavedTheme() {
-      const cached = localStorage.getItem('ag-theme');
-      if (cached && cached !== document.documentElement.getAttribute('data-theme')) {
-        toggleAppTheme();
-      }
+      let cached = null;
+      try { cached = localStorage.getItem('ag-theme'); } catch (_) { /* storage is optional */ }
+      const theme = cached === 'light' || cached === 'dark'
+        ? cached
+        : document.documentElement.getAttribute('data-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', theme);
+      syncThemeControl(theme);
     }
 
     /* ==========================================================================
        4. Interactive Showcase (Spotlight & Mouse Parallax)
        ========================================================================== */
     function initSpotlightOnly() {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
       const mainElement = document.querySelector('.main-content');
+      if (!mainElement) return;
       mainElement.addEventListener('mousemove', e => {
         const cards = document.querySelectorAll('.glass-card');
         cards.forEach(card => {
@@ -2084,56 +2776,94 @@ npm run dev                   # Windows: .\start-dev.ps1
     function initSlidingTabs() {
       const navMenu = document.querySelector('.nav-menu');
       if (!navMenu) return;
-      
+
+      navMenu.setAttribute('aria-label', '아틀라스 섹션');
       const activeBar = document.createElement('div');
       activeBar.className = 'active-glow-bar';
+      activeBar.setAttribute('aria-hidden', 'true');
       navMenu.appendChild(activeBar);
-      
-      const labels = document.querySelectorAll('.nav-label');
-      const radios = document.querySelectorAll('.tab-radio');
-      
-      function updateIndicator() {
-        radios.forEach((radio, idx) => {
-          if (radio.checked) {
-            const label = labels[idx];
-            const menuRect = navMenu.getBoundingClientRect();
-            const labelRect = label.getBoundingClientRect();
-            
-            activeBar.style.top = `${labelRect.top - menuRect.top}px`;
-            activeBar.style.height = `${labelRect.height}px`;
 
-            // Active Tab Page Display Router
-            const targetId = label.getAttribute('for').replace('tab-', 'content-');
-            document.querySelectorAll('.tab-content').forEach(section => {
-              section.style.display = (section.id === targetId) ? 'block' : 'none';
-            });
-          }
-        });
-      }
-      
+      const radios = [...document.querySelectorAll('.tab-radio')];
+      const panels = [...document.querySelectorAll('.tab-content')];
+
       radios.forEach(radio => {
-        radio.addEventListener('change', updateIndicator);
+        const label = document.querySelector(`label[for="${radio.id}"]`);
+        const targetId = radio.id.replace('tab-', 'content-');
+        const panel = document.getElementById(targetId);
+        if (!label || !panel) return;
+        label.id = `${radio.id}-label`;
+        radio.setAttribute('aria-controls', targetId);
+        if (!radio.hasAttribute('aria-label')) radio.setAttribute('aria-label', label.textContent.trim());
+        panel.setAttribute('role', 'region');
+        panel.setAttribute('aria-labelledby', label.id);
+        panel.tabIndex = -1;
+        const heading = panel.querySelector('h1, h2');
+        if (heading) heading.tabIndex = -1;
       });
-      
+
+      function selectFromHash() {
+        const key = window.location.hash.replace(/^#(?:content-)?/, '');
+        const candidate = document.getElementById(`tab-${key}`);
+        if (candidate?.classList.contains('tab-radio')) candidate.checked = true;
+      }
+
+      function updateIndicator({ focusPanel = false, updateHistory = false } = {}) {
+        const radio = radios.find(item => item.checked) || radios[0];
+        if (!radio) return;
+        const label = document.querySelector(`label[for="${radio.id}"]`);
+        const targetId = radio.id.replace('tab-', 'content-');
+        const panel = document.getElementById(targetId);
+        if (!label || !panel) return;
+
+        activeBar.style.top = `${label.offsetTop}px`;
+        activeBar.style.height = `${label.offsetHeight}px`;
+        document.querySelectorAll('.nav-label').forEach(item => item.removeAttribute('aria-current'));
+        label.setAttribute('aria-current', 'page');
+        panels.forEach(section => {
+          const active = section === panel;
+          section.hidden = !active;
+          section.style.display = active ? 'block' : 'none';
+        });
+
+        label.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+        if (updateHistory) {
+          try { history.pushState(null, '', `#${radio.id.replace('tab-', '')}`); } catch (_) { /* file:// */ }
+        }
+        if (focusPanel) {
+          requestAnimationFrame(() => {
+            panel.scrollIntoView({ block: 'start' });
+            (panel.querySelector('h1, h2') || panel).focus({ preventScroll: true });
+          });
+        }
+      }
+
+      selectFromHash();
+      radios.forEach(radio => {
+        radio.addEventListener('change', () => updateIndicator({ focusPanel: true, updateHistory: true }));
+      });
+      window.addEventListener('hashchange', () => {
+        selectFromHash();
+        updateIndicator({ focusPanel: true });
+      });
+      window.addEventListener('resize', () => updateIndicator());
       updateIndicator();
-      window.addEventListener('resize', updateIndicator);
     }
 
     /* ==========================================================================
-       5. Interactive Simulator Presets & Logic (100% Preserved)
+       5. Interactive Simulator Presets &amp; Logic
        ========================================================================== */
     const simulatorPresets = {
       'preset-db': {
         grade: 'L2 (Critical)',
-        skill: 'Zero-Downtime Planner',
+        skill: 'DB Constitution + Migration Harness',
         steps: [
-          "사용자 요청: tb_bbs_scrap 사용여부 명세 수정 요청 분석 수신.",
-          "[Grading] DB 스키마 객체 수정을 동반하므로 작업 등급을 L2 (Critical)로 판정.",
-          "[3대 기술 헌법 검증] DB 헌법 제7조(무중단) 및 제8조(논리삭제) 강제 조항 뇌에 적재.",
-          "[Deep Context Map] 101개 테이블 물리 위상 지도 및 Flyway 이력 로그 수캔.",
-          "[Sandbox Exec] DDL Lock 방지를 위해 4단계 Expand-and-Contract DDL 시나리오 SQL 자동 도출.",
-          "JPA Entity bbs_use_yn ➔ Next.js Zod schema 'bbsUseYn' 단방향 연쇄 거울 동기화 체크 완료.",
-          "빌드 검증 완료 ➔ 4단계 무중단 DDL 마이그레이션 명세 및 API 명세 문서 자동 갱신 완료."
+          "요청 범위: tb_bbs_scrap.use_yn 계약 변경 여부와 소비자를 식별.",
+          "[Grading] DB 스키마 객체 변경 가능성이 있어 L2 (Critical)로 판정하고 DDL 실행은 별도 승인 경계로 유지.",
+          "[Rules] DB 헌법 제7조와 현행 linter를 확인하고, 헌법과 충돌하는 mandatory skill 지시는 사용하지 않음.",
+          "[Evidence] information_schema·meta_standard_*·Flyway 이력을 조회해 실제 컬럼과 제약을 증거로 확보.",
+          "[Design] Expand와 Contract를 서로 다른 release로 나누고 rollback·backfill·호환 기간을 명세.",
+          "[Contract] tb_bbs_scrap.use_yn ↔ Scrap.useYn ↔ DTO/OpenAPI/Zod useYn의 실제 소비자를 대조.",
+          "[Verify] schemaValidationTest·관련 harness·codegen diff·문서 영향을 실행하고 미검증 범위를 별도 기록."
         ]
       },
       'preset-auth': {
@@ -2141,12 +2871,12 @@ npm run dev                   # Windows: .\start-dev.ps1
         skill: 'OWASP Security Auditor',
         steps: [
           "사용자 요청: 401 Unauthorized 인증 실패 트러블슈팅 분석 시작.",
-          "[Grading] 단일 시큐리티 설정 및 AuthContext 조회를 감안해 L1 (Standard) 등급 판정.",
-          "[3대 기술 헌법 검증] 백엔드 헌법 제8조(권한 이중검증)·제11조(인증정보 보호) 및 프론트엔드 UX 헌법 제4조(인증 세션 보안 모델: HttpOnly 쿠키·미들웨어 JWT 서명검증) 사전 분석.",
-          "[Deep Context Map] JVM SecurityFilterChain 컴포넌트 구조도와 Frontend 쿠키 관리 위상 매핑.",
-          "[Sandbox Exec] AuthContext의 accessToken 만료 정책 및 브라우저 쿠키 TTL 정보 불일치 원인 정밀 감지.",
-          "[OWASP Audit] 무효화된 JWT 주입 및 CSRF 취약점 검토 ➔ 정상 방어벽 작동 확인.",
-          "Spring Security 쿠키/헤더 브릿지 재배열 완료 및 E2E Playwright 로그인 테스트 100% 검증 통과."
+          "[Grading] 읽기 전용 진단은 L1. SecurityFilterChain·proxy·보안 core 수정이 필요해지면 L2로 재분류.",
+          "[Rules] 백엔드 헌법 제8·11조와 프론트 헌법 제4조의 HttpOnly cookie·proxy 인증 경계를 확인.",
+          "[Context] JVM SecurityFilterChain, frontend/src/proxy.ts, 세션 API 소비자를 실제 파일 기준으로 매핑.",
+          "[Diagnosis] HttpOnly 쿠키, proxy 인증 전달, 현재 사용자 세션 API의 경계를 순서대로 확인.",
+          "[Security Test] 만료·서명 오류 JWT와 CSRF 가설을 관련 테스트로 반증하며, 실행 전에는 정상 방어를 단정하지 않음.",
+          "최소 수정 후 관련 인증 테스트와 Playwright 로그인 경로를 재실행하고 잔여 범위를 기록."
         ]
       },
       'preset-ui': {
@@ -2155,24 +2885,24 @@ npm run dev                   # Windows: .\start-dev.ps1
         steps: [
           "사용자 요청: 게시판 댓글 UI에 글래스모피즘 에스테틱 및 마이크로 애니메이션 추가 적용.",
           "[Grading] 비즈니스 로직 수정이 없고 프론트 마크업 변경이므로 L1 (Standard) 판정.",
-          "[3대 기술 헌법 검증] UX 헌법 제15조(디자인 일관성) 및 Tailwind 4.0 HSL 토큰 적용.",
-          "[Sandbox Exec] 30px Blur, 210% Saturation, 1px 보석 테두리 스타일 토큰으로 카드 마크업 리팩토링.",
-          "[Visual Audit] browser_subagent를 호출해 다바이스별 해상도 렌더링 무결성 확인 (WebP 캡처 증거물 확보 완료).",
-          "ESLint local-theme/enforce-design-tokens 원색 사용 차단 통과.",
-          "Next.js 정적 번들 빌드 컴파일 완료 ➔ 아틀라스 디자인 가이드 갱신 및 배포 완료."
+          "[Rules] 프론트 헌법 제1·2·5·6·9·15조의 정보 구조, 반응형, motion, 접근성, light/dark 대비를 확인.",
+          "[Implement] 하드코딩 효과값을 복제하지 않고 globals.css의 의미 토큰과 기존 component primitive를 재사용.",
+          "[Visual Evidence] 320/390/768/1440 viewport, light/dark, keyboard, reduced-motion을 실제 Playwright+axe로 검사.",
+          "[Lint] enforce-design-tokens 결과를 확인하되 severity가 warning이라는 사실을 별도 기록.",
+          "[Verify] 관련 Vitest·tsc·Next build와 스크린샷 결과가 있을 때만 통과 범위를 보고; 배포 완료로 과장하지 않음."
         ]
       },
       'preset-guardrail-auth': {
         grade: 'L2 (Critical)',
-        skill: 'Auth Role Guardrail Hard-Stop',
+        skill: 'Authorization Harness Red-Team',
         steps: [
-          "사용자 요청: DeptApiController에 인가 어노테이션 누락 시 Hard-Stop 검증 테스트.",
-          "[Grading] 전사 인가/보안 규칙 검증이므로 L2 (Critical) 등급 판정.",
-          "[3대 기술 헌법 검증] 백엔드 API 헌법 제8조(권한의 이중 검증 의무화 — 컨트롤러 @PreAuthorize + 서비스 소유권 재검증) 장착.",
-          "[Deep Context Map] api-server 내 모든 REST 컨트롤러의 엔드포인트 메서드 AST 트리 추출.",
-          "[Sandbox Exec] SecurityAuthAnnotationLinterTest가 구동되어 DeptApiController#getDeptInfo 메서드에 인가 락 유실 감지.",
-          "[Hard-Stop] JUnit 테스트 빌드 타임에서 즉시 빌드 실패(Hard-Stop) 선언 및 컴파일 진행 완전 차단.",
-          "에이전트 자가성찰(Ralph Loop) 작동 ➔ `@PreAuthorize` 명시적으로 보강 완료 ➔ 테스트 재실행 성공 빌드 복구 완료."
+          "요청 범위: 관리자 secure-path 위임이 annotation 누락을 숨기는지 하네스 사각지대 검증.",
+          "[Grading] 인가 정책과 gate 자체를 변경하므로 L2 (Critical)로 판정.",
+          "[Rules] 백엔드 헌법 제8조의 controller 역할 검증과 service 소유권 재검증 의미를 확인.",
+          "[Inspect] 현 linter가 AST가 아니라 Spring HandlerMapping/리플렉션과 path 목록을 사용하며 annotation 내용은 검사하지 않음을 확인.",
+          "[Red Test] 격리 fixture에 의미상 잘못된 secure endpoint를 주입해 기존 gate가 green인지 재현하고 blind spot을 증거화.",
+          "[Design] endpoint×service 정책 matrix와 STRICT_OWNER/OWNER_OR_ADMIN/ADMIN_ONLY 의미 registry를 제안.",
+          "[Verify] 신규 semantic test의 red→green을 확인하고 임시 위반 fixture를 제거한 뒤 전체 harness를 재실행."
         ]
       }
     };
@@ -2189,40 +2919,52 @@ npm run dev                   # Windows: .\start-dev.ps1
       const monScreen = document.getElementById('mon-screen');
       const monStage = document.getElementById('mon-stage');
       
-      monGrade.innerText = simulatorPresets[activePreset].grade;
-      monSkill.innerText = simulatorPresets[activePreset].skill;
-      monScreen.innerHTML = `[INFO] Ready to simulate. Preset '${activePreset}' loaded.\nClick 'Run Live Simulator' to start the execution flow.`;
-      monStage.innerText = "STAGE 1 / 7";
+      monGrade.textContent = simulatorPresets[activePreset].grade;
+      monSkill.textContent = simulatorPresets[activePreset].skill;
+      monScreen.textContent = `[INFO] 교육용 프리셋 '${activePreset}' 로드 완료.\n'흐름 예시 실행'을 누르거나 단계를 직접 선택하세요.`;
+      monStage.textContent = "STAGE 1 / 7";
 
-      document.querySelectorAll('.sim-step').forEach(step => step.classList.remove('active'));
+      document.querySelectorAll('.sim-step').forEach(step => {
+        step.classList.remove('active');
+        step.removeAttribute('aria-current');
+      });
+      const firstStep = document.getElementById('step-node-1');
+      firstStep?.classList.add('active');
+      firstStep?.setAttribute('aria-current', 'step');
     }
 
     // 스텝 표시 전용(인터벌을 건드리지 않음). 자동 실행/수동 클릭 공용 렌더러.
     function renderStep(stepNum) {
-      document.querySelectorAll('.sim-step').forEach(step => step.classList.remove('active'));
+      document.querySelectorAll('.sim-step').forEach(step => {
+        step.classList.remove('active');
+        step.removeAttribute('aria-current');
+      });
       const activeStep = document.getElementById(`step-node-${stepNum}`);
-      if (activeStep) activeStep.classList.add('active');
+      if (activeStep) {
+        activeStep.classList.add('active');
+        activeStep.setAttribute('aria-current', 'step');
+      }
 
       const monStage = document.getElementById('mon-stage');
-      monStage.innerText = `STAGE ${stepNum} / 7`;
+      monStage.textContent = `STAGE ${stepNum} / 7`;
 
       const screen = document.getElementById('mon-screen');
       const data = simulatorPresets[activePreset];
 
       let consoleLog = `>>> EXECUTING STAGE ${stepNum}...\n`;
       for (let i = 0; i < stepNum; i++) {
-        consoleLog += `[SUCCESS] ${data.steps[i] || "Processed."}\n`;
+        consoleLog += `[EVIDENCE] ${data.steps[i] || "Processed."}\n`;
       }
 
       if (stepNum === 7) {
         consoleLog += `\n################================================##\n`;
-        consoleLog += `🎉 TASK COMPLETE WITH 100% INTEGRITY AND ZERO DRIFT!\n`;
+        consoleLog += `TASK EXAMPLE COMPLETE — verify actual gate evidence before reporting.\n`;
         consoleLog += `################================================##`;
       } else {
-        consoleLog += `\n[RUNNING] Active cursor listening... <span class="console-cursor"></span>`;
+        consoleLog += `\n[RUNNING] 다음 단계 선택을 기다리는 중...`;
       }
 
-      screen.innerHTML = consoleLog;
+      screen.textContent = consoleLog;
     }
 
     // 수동 클릭: 자동 시뮬레이션이 돌고 있으면 중단하고 해당 스텝을 표시한다.
@@ -2243,6 +2985,11 @@ npm run dev                   # Windows: .\start-dev.ps1
       let currentStep = 1;
       renderStep(currentStep); // 자동 실행은 renderStep 사용 — selectStep 을 쓰면 인터벌을 스스로 죽여 2단계에서 멈춘다(회귀 방지).
 
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        renderStep(7);
+        return;
+      }
+
       simulationInterval = setInterval(() => {
         currentStep++;
         if (currentStep > 7) {
@@ -2257,13 +3004,12 @@ npm run dev                   # Windows: .\start-dev.ps1
     /* ==========================================================================
        6. Initialize Page Engine
        ========================================================================== */
-    window.onload = function() {
-      renderStaticCollections();
-      loadSavedTheme();
-      initSpotlightOnly();
-      initSlidingTabs();
-      loadPresetPrompt();
-    };
+    window.addEventListener('DOMContentLoaded', () => {
+      [renderStaticCollections, loadSavedTheme, initSpotlightOnly, initSlidingTabs, loadPresetPrompt]
+        .forEach(initialize => {
+          try { initialize(); } catch (error) { console.error(`Atlas initialization failed: ${initialize.name}`, error); }
+        });
+    });
   </script>
 
 </body>
