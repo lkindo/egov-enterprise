@@ -12,8 +12,8 @@
 
 현재 조정(coordination)은 전적으로 **문서·관습 기반**이다. 런타임 조정 채널이 전혀 없다.
 
-- **공유되는 것**: git 워킹트리 + `git commit --only -- <path>` 규율, `.gemini/tasks/*.md` append-only 저널(~150개, 사람이 읽는 체크박스), stateless `db-bridge.js`(Node+pg, one-shot).
-- **없는 것**: MCP 설정(`.claude/` 비어 있음, `.mcp.json` 없음), lock/`.lock` 관습, file watcher, socket/named-pipe IPC, presence/status 레지스트리.
+- **공유되는 것**: git 워킹트리 + `git commit --only -- <path>` 규율, `.agent/memory/`의 파생 프로젝트 메모리, stateless `db-bridge.js`(Node+pg, one-shot). 과거 `.gemini/tasks/*.md` 작업 저널은 2026-08-19 정리됐으며 실시간 조정 채널로 사용하지 않는다.
+- **없는 것**: 실시간 조정용 MCP, lock/`.lock` 관습, file watcher, socket/named-pipe IPC, presence/status 레지스트리.
 
 ## 1. 불가침의 천장 (The Hard Ceiling)
 
@@ -99,7 +99,7 @@ graph TD
 - `.coord/events.ndjson`, 한 줄 = 한 액션 + monotonic `seq`.
 - `PostToolUse` → `coord.js post` (`{seq, ts, op, tool, paths, summary}` append).
 - `SessionStart`(시간 창 replay) + `UserPromptSubmit`(턴별 신선도) + `PreToolUse` → `coord.js drain --op X` (`seq>cursor && op!=self` 필터, cursor 전진, Claude 측은 `{hookSpecificOutput:{additionalContext:'[PEER] …'}}`로 컨텍스트 주입).
-- Layer A와 **동일 파일·CLI·hook 배관 재사용**. `.gemini/tasks/` 저널 diff 고통 대체.
+- Layer A와 **동일 파일·CLI·hook 배관 재사용**. 문서 기반 작업 저널의 diff 경합을 대체한다.
 
 ### Layer C — 사람용 라이브 뷰 (공짜 부산물) · effort S
 
