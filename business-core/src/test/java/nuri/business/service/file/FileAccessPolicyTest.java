@@ -101,7 +101,7 @@ class FileAccessPolicyTest {
     }
 
     @Test
-    @DisplayName("🚨 관리자도 개인 귀속(쪽지·상벌 등) 첨부는 열람하지 못한다 — 프라이버시 가드(§0.7-H3)")
+    @DisplayName("🚨 관리자도 개인 귀속(쪽지·상벌 등) 첨부는 열람하지 못한다 — 프라이버시 가드(AGENTS.md H3)")
     void adminCannotReadPersonalAttachment() {
         authenticate("admin", "USR_ADMIN", "ROLE_ADMIN");
 

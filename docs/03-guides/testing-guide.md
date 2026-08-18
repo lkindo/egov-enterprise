@@ -482,12 +482,12 @@ npx playwright install --with-deps chromium
 
 #### 3. Git Pre-Push Hook을 통한 로컬 Fail-Fast (생산성 밸런스 강제)
 개발 과정에서 커밋(Commit)할 때마다 무거운 검증을 돌리는 것은 개발자의 기동성과 생산성을 크게 훼손합니다. 따라서 로컬에서는 커밋 단계가 아닌 원격 저장소로 **PUSH**를 시도하는 최종 관문에서 무결성 게이트를 강제하는 **Pre-Push Hook** 방식을 채택합니다.
-- **정본 훅 경로 (`.githooks/pre-push`)**: 본 저장소의 활성 pre-push 훅은 `.git/hooks/`가 아니라 버전 관리되는 **`.githooks/pre-push`**에 위치합니다. 이는 GEMINI.md §0.6 컴파일 무결성 게이트를 prose 규칙에서 기계적 강제로 승격한 것으로, Gemini·Claude 등 어떤 operator가 푸시하든 동일하게 적용됩니다.
+- **정본 훅 경로 (`.githooks/pre-push`)**: 본 저장소의 활성 pre-push 훅은 `.git/hooks/`가 아니라 버전 관리되는 **`.githooks/pre-push`**에 위치합니다. 이는 [AGENTS.md 범위별 검증](../../AGENTS.md#verification-by-change-scope)을 구현하며, Gemini·Claude·Codex 등 어떤 operator가 푸시하든 동일하게 적용됩니다. 문서-only 변경은 경량 계약 후 fast-pass하고 최종 병합 권위는 required CI입니다.
 - **설치 (클론마다 1회)**: 저장소 훅을 활성화하려면 클론 직후 아래 명령을 한 번 실행합니다. `core.hooksPath`는 클론별 로컬 설정이라 커밋되지 않습니다.
   ```sh
   git config core.hooksPath .githooks
   ```
-- **동작 (HARD 차단 게이트)**: pre-push는 §0.6 컴파일 무결성 게이트를 실행하며, 컴파일/타입 에러가 1건이라도 있으면 push를 차단합니다.
+- **동작 (범위별 차단 게이트)**: pre-push는 [AGENTS.md의 범위별 검증](../../AGENTS.md#verification-by-change-scope)을 실행하며, 소스 변경의 컴파일/타입 에러가 1건이라도 있으면 push를 차단합니다. 문서-only 변경은 경량 계약 검사 후 fast-pass합니다.
   ```sh
   # .githooks/pre-push (요지)
   ./gradlew compileJava compileTestJava    # 백엔드 Java 컴파일 무결성

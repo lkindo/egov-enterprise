@@ -15,7 +15,7 @@ version: 1.0.0
 
 ## 1. Core Objective: Zero Documentation Debt
 
-Code changes constantly, but documentation often rots. The **Docs-as-Code Sync** skill ensures that the eGov-Enterprise Single Source of Truth (SSOT)—which includes `.agent/knowledge/` constitutions, `GEMINI.md`, and `docs/`—always perfectly reflects the current codebase.
+Code changes constantly, but documentation often rots. The **Docs-as-Code Sync** skill keeps the eGov-Enterprise source set—`AGENTS.md`, `.agent/knowledge/` constitutions, accepted ADRs, current code/configuration, and `docs/`—consistent without treating the Gemini/Claude adapters as policy originals.
 
 ---
 
@@ -25,7 +25,7 @@ When a significant code change is made, execute the following steps before repor
 
 1. **Impact Radius Analysis**: Identify which documents are affected by the code change (e.g., API documentation, testing guides, DB standard terms).
 2. **Mermaid Diagram Sync**: If architectural flow or DB relationships changed, locate the relevant ````mermaid` blocks in the docs and rewrite the topology graph.
-3. **Constitution Update**: If a new standard was established (e.g., a new DB abbreviation), update the specific Constitution file (e.g., `db-standard-constitution/artifacts/standard_terms.md`).
+3. **Constitution Proposal**: If a new standard was established (e.g., a new DB abbreviation), identify the affected Constitution and request the explicit user approval required by `AGENTS.md` before changing it.
 4. **Validation**: Ensure no dangling links or conflicting legacy statements remain.
 
 ## 3. Output Requirements

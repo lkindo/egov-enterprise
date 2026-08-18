@@ -2,7 +2,7 @@
 // E2E 전용 타입 게이트 (2026-08-10 신설)
 //
 // 왜 필요한가: 루트 `tsconfig.json` 의 exclude 에 `"e2e"` 가 들어 있다. 그래서
-//   §0.6 HARD 게이트(`npx tsc --noEmit`)도, pre-push 도, CI 도 **E2E 스펙을 한 번도
+//   AGENTS.md "Verification by change scope"의 프론트엔드 타입 게이트도, pre-push도, CI도 **E2E 스펙을 한 번도
 //   타입 검사한 적이 없다.** Playwright 러너는 타입을 검사하지 않고 벗겨내기만 하므로
 //   (transpile-only), E2E 의 타입 오류는 지금까지 어떤 게이트에도 걸리지 않았다.
 //   그 결과 오타난 셀렉터 상수·사라진 Page Object 메서드·미사용 import 같은 것들이

@@ -1,141 +1,23 @@
-# GEMINI.md - eGov Enterprise Project Rule Set
+# GEMINI.md — eGov Enterprise Gemini 어댑터
 
-## [Inheritance & Overrides]
-- **Extends**: `c:\Users\sanle\.gemini\GEMINI.md` (Antigravity Global Rules)
-- **Overrides / Merges**:
-  - `global.§7.Ralph Loop` ➔ `project.§8 (프로젝트 자가 성찰 디버그 확장 지침과 병합)`
-  - `global.§3.버그수정` ➔ `project.§0.5 (자가 성찰 오류 복구 준수)`
+> 이 파일은 Gemini/Antigravity의 자동 탐색을 위한 **얇은 어댑터**다.
+> 프로젝트 공통 규칙 원본은 [AGENTS.md](AGENTS.md)이며, 여기에는 같은 규칙을 복제하지 않는다.
 
----
+@./AGENTS.md
+@./.agent/memory/project-context.md
+@./.agent/memory/decisions.md
+@./.agent/memory/known-gaps.md
 
-본 파일은 **eGov Enterprise** 프로젝트의 전역 개발 규칙을 정의한다.
-에이전트는 모든 작업 수행 시 이 규칙을 최우선으로 참고하며, 글로벌 룰셋(`user_global`)의 기본 원칙을 이 프로젝트의 구체적인 맥락에 맞게 적용한다.
+## 상속
 
----
+- Gemini 런타임이 사용자 글로벌 `~/.gemini/GEMINI.md`를 먼저 로드한다. 사용자 홈 절대경로나 글로벌 문서의 절 번호를 저장소에 고정하지 않는다.
+- 이 어댑터는 글로벌 기본 규칙 위에 `AGENTS.md`의 프로젝트 규칙과 공용 메모리를 연결한다.
+- 글로벌·플랫폼 규칙과 프로젝트 규칙이 충돌하면 상위 규칙을 따르고, 조용히 임의 해석하지 말고 충돌과 영향을 보고한다.
 
-## 0. 에이전트 행동 규율 (Agent Behavioral Discipline) - [CRITICAL]
+## Gemini 실행 어댑터
 
-에이전트는 모든 사용자 요청 수신 시 다음의 **등급판정-계획-실행** 루틴을 반드시 준수한다.
-
-1.  **Task Grading (Inline)**: 모든 작업 시작 전, 아래 등급 기준에 따라 **태스크 등급(L0/L1/L2)을 판정**하고 `TASK PROPOSAL` 블록을 출력한다.
-    *(⚠ 인라인 정의와 상충 시 `docs/03-guides/orchestration-protocol.md`가 절대적 최우위 SSOT로 군림한다.)*
-    - **L0 (Trivial)**: 단순 조회·탐색·질문 응답 및 오타·주석·CSS 등 저위험 미세 수정(오케스트레이션 프로토콜 §2와 정합). TASK PROPOSAL 1줄 축약 허용, GStack Review 생략 가능. `caveman` 프로토콜로 `[대상] [상태] [증거]` 형식만 보고.
-    - **L1 (Standard)**: 단일 모듈 내 코드 변경, 버그 수정, 문서 갱신. TASK PROPOSAL 정식 출력, GStack Review 3줄 이내. Root Cause와 Diff는 생략하지 않는다.
-    - **L2 (Critical)**: 다중 모듈 변경, DB 마이그레이션, 아키텍처 변경. 전문 서술형 감사 보고 의무, 보고 밀도 제한 없음.
-2.  **Constitutional Compliance (Guardian Mode)**: 에이전트는 본 프로젝트의 **3대 헌법(DB, Backend, Frontend)** 및 **에이전트 감사 프로토콜**의 수호자이다. 코드 변경을 수반하는 작업 전 반드시 `.agent/knowledge/` 내의 헌법 자산을 조회하여 표준 준수 여부를 검증한다. 특히 백엔드 DTO/Controller 수정 시에는 **`api-contract-guardian`** 스킬을, Spring Security/AuthContext 등 보안 영역 수정 시에는 **`owasp-security-auditor`** 스킬을 강제 가동하여 헌법 위반과 Breaking Change를 사전에 차단한다.
-3.  **Context-Aware Analysis & Review**: 지시를 받자마자 코드를 수정하지 않고, 요구사항을 분석한 뒤 L1 이상의 작업에서는 **`gstack-review` 스킬을 가동**하여 CEO, EM, Paranoid Engineer의 관점에서 설계를 **콤팩트하게(1줄 요약)** 검증한다. 특히 DB 마이그레이션 시에는 **`zero-downtime-migration-planner`**를 가동해 확장/축소 패턴을 따르고, 다중 모듈 구조 변경 시에는 **`deep-context-mapper`**를 선행 적재하며, 작업 완료 후에는 **`docs-as-code-sync`**를 가동해 문서 부채를 차단한다.
-4.  **Skill Discovery (문맥 기반 자율 차용)**: 의무적인 스킬 전수 탐색 스캔은 금지한다. 단, 지시 맥락과 명백히 일치하는 내장 스킬이 감지되면 자율적으로 차용한다. 특히 UI/UX 수정 시에는 **`visual-auditor`**를 기동해 실시간 비주얼 오디팅을 수행하고, 테스트 코드(Unit/E2E)를 작성하거나 수정할 때에는 반드시 **`mutation-testing-auditor`** 스킬을 기동하여 의도적 버그 주입을 통해 테스트의 강건성을 수리적으로 증명한다.
-5.  **Self-Reflective Recovery (자가 성찰 오류 복구)**: 빌드, 컴파일, 테스트 실행 중 오류 발생 시, 즉각 코드를 임의 수정하지 않는다. 반드시 글로벌 룰셋 §7.3의 **자가 성찰 기반 디버그 프로토콜(Ralph Loop 2.0)** 및 본 프로젝트의 §8 확장 지침을 가동하여 근본 원인을 증명한 뒤 수정을 개시한다.
-6.  **Compilation Integrity Gate (컴파일 무결성 보증 게이트) - [HARD CONSTRAINT]**: 에이전트는 소스 코드 변경(L1 이상)을 수반하는 작업을 완료(작업 아카이브 작성 및 walkthrough.md 제출)하기 전, 스캐너 결과에만 의존해 완료를 속단하는 행위를 절대 금지한다. 반드시 아래 2가지 컴파일 검증 명령을 로컬 터미널에서 직접 실행하여 성공했음을 물리적 빌드 로그 증적으로 제시해야 한다.
-    - **Backend**: `./gradlew compileJava compileTestJava` (Java 컴파일 무결성 검증)
-    - **Frontend**: `npx tsc --noEmit` (TypeScript 정적 타입 컴파일 무결성 검증)
-    빌드/타입 에러가 단 1건이라도 존재하는 상태에서 작업 완료를 선언하는 것은 절대 용납되지 않는다.
-7.  **Empirical Evidence & Anti-Mitigation Gate (증적 기반 검증 및 은폐 방지) - [HARD CONSTRAINT]**:
-    본 조는 2026-07-26 Phase 2 사고(엔티티 69종 PK 전략 일괄 변경 · 예외 목록 신설로 신호 은폐 · 인가 가드 완화)의 재발 방지 조항이다. **각 항은 반드시 기계 게이트에 결속한다** — 사고 당시 §0.6과 오케스트레이션 §3.1(실증적 표준 조회)은 이미 존재했고 그럼에도 위반됐다. prose 로만 존재하는 규칙은 규칙을 어긴 주체를 막지 못한다.
-    - **[H1] 물리 스키마 실측 후 편집 (그린 ≠ 안전)**: `@Entity`·DDL·`@GeneratedValue`·PK 채번 전략 변경은 `db-bridge`(`node .agent/scripts/db-bridge.js`)로 `information_schema`의 실제 컬럼 타입·길이·FK 제약을 **먼저 조회하고 그 결과 행(row)을 증적으로 제시한 뒤에만** 착수한다. 테스트 프로파일은 H2 + `ddl-auto: create-drop`이라 물리 `varchar` 길이 초과를 **원리적으로 검출하지 못한다**. 컴파일·테스트 그린은 안전의 증거가 아니다. *(게이트: `EntitySchemaConformanceLinterTest` — Flyway 델타를 재생해 엔티티 매핑과 물리 컬럼 타입·길이를 대조 / `PkGenerationStandardLinterTest` — 동결 엔티티의 PK 전략 변경을 **양방향**으로 차단)*
-    - **[H2] 신호 은폐 엄금 (목록 편집은 수정이 아니다)**: 동결 베이스라인(`GRANDFATHERED` 등)을 비우거나, 예외·제외 목록(`EXCLUDED_*`·`*_WHITELIST`)을 신설·확장하거나, 게이트 클래스·상수를 삭제·개명해 red 를 없애는 행위를 금한다. 목록에 손대기 전 **"위반을 고치는 것인가, 신호를 지우는 것인가"**를 자문한다. 정당한 변경은 사유를 커밋 메시지 또는 `.gemini/tasks/` 기록에 남기고 매니페스트를 함께 갱신한다. *(게이트: `HarnessBaselineIntegrityTest` — 변경·신설·소멸 3종 탐지)*
-    - **[H3] 인가 가드는 도메인 맥락으로 판정**: 소유권 가드 적용·치환 시 **관리자 대리 수행이 허용되는 행위인지**를 도메인별로 먼저 판정한다. 엄격 가드(`assertOwnerByEsntlId`)를 우회 허용형(`assertOwnerOrAdmin*`)으로 바꾸는 것은 표준화가 아니라 **권한 완화**이며, 반대로 프라이버시 가드(쪽지 등)를 표준 헬퍼로 치환하면 관리자가 사인(私信)을 열람하는 **회귀**가 된다. 양방향 모두 오범이다. *(게이트: `OwnershipGuardBaselineLinterTest` — 가드 census 동결)*
-    - **[H4] 일괄 치환(sweep) 금지 — 의미 차이는 개별 판정**: 동일 패턴의 기계적 일괄 변경은 개별 호출부의 의미 차이를 지운다(`mockStatic` 일괄 전환이 8건을 고치고 2건을 깬 사례). N개소를 같은 방식으로 바꾸려면 **각 호출부가 왜 동일한지**를 먼저 증명하고 예외를 선(先)식별한다. "표준화"·"통일"이라는 이름은 그 증명을 대체하지 못한다.
-    - **[H5] 게이트는 실행 경로가 있어야 게이트다**: 린터·테스트를 신설·수정하면 **어디서 실행되는지(pre-push / CI)를 명시하고 실제 실행 로그를 증적으로 제시**한다. 실행되지 않는 게이트는 없는 게이트이며, "게이트가 있다"는 서술 자체가 거짓 안전감을 만든다. 게이트 신설 시에는 **의도적으로 위반을 주입해 red 가 되는지**까지 확인한다(그린만 확인하는 것은 vacuous 통과와 구분되지 않는다).
-
----
-
-## 1. 프로젝트 개요 (Project Overview)
-
-- **이름**: eGov Enterprise (차세대 기업용 표준 프레임워크 기반 서비스)
-- **주요 목표**: 전자정부 표준 프레임워크(eGovFrame)를 최신 기술 스택(Java 21, Spring Boot 3.4.1, Next.js 16.2.4)으로 현대화하여 기업용 엔터프라이즈 환경에 최적화된 아키텍처 제공.
-- **아키텍처 흐름**: `User → Next.js Middleware(Auth) → Server Component → ApiService → api-server Controller → business-core/business-app Service → PostgreSQL → DTO Response → Client Component`
-
-## 2. 기술 스택 (Technology Stack)
-
-### Backend
-- **Core**: Java 21 / Spring Boot 3.4.1 / eGovFrame 5.0.0
-- **Build**: Gradle 9.4.1 (Multi-module: `foundation`, `business-core`, `business-app`, `api-server`, `migration-tool`)
-- **Database**: OCI PostgreSQL 17 (Port 5432)
-
-### Frontend
-- **Framework**: Next.js 16.2.4 (App Router / React 19)
-- **Styling**: Tailwind CSS 4.0, Framer Motion
-
-### Data Governance
-- **SSOT**: 모든 DB 객체 명명 및 데이터 타입은 메타 테이블(`meta_standard_words` 등)을 진실의 원천으로 삼는다.
-
-> 각 레이어의 코딩 규범 및 헌법 원문 링크는 **§3. 코드 아키텍처 컨벤션**을 단일 참조점으로 한다.
-
-## 3. 코드 아키텍처 컨벤션 (Code Architecture Conventions)
-
-본 프로젝트의 모든 코딩 컨벤션은 아래 3대 헌법을 최우위 규범으로 따른다. 상세 조항은 각 헌법 원문을 참조한다.
-
-- **Backend**: [API 및 백엔드 아키텍처 헌법](.agent/knowledge/backend-api-constitution/artifacts/constitution.md) (18조)
-- **Frontend**: [프론트엔드 디자인 및 UX 헌법](.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) (17조)
-- **Database**: [DB 표준화 헌법](.agent/knowledge/db-standard-constitution/artifacts/constitution.md) (10조)
-
-> **⚠ 헌법 불가침 원칙**: 위 3대 헌법(`constitution.md`) 파일 및 본 `GEMINI.md` 자체는 **사용자의 명시적 승인 없이 에이전트가 단독으로 수정할 수 없다.** 트러블슈팅 패턴, 작업 기록 등 운영성 지식(`.gemini/tasks/`, `docs/`)의 생성·갱신은 자율적으로 허용한다.
-
-## 4. 에이전트 트러블슈팅 매트릭스 (Troubleshooting Gotchas)
-
-- **인증(401) 이슈**: `AuthContext`의 `accessToken`과 브라우저 쿠키 값이 동기화되어 있는지 먼저 확인하라. 
-- **타입 에러**: 백엔드 DTO 변경 후에는 `pnpm -C frontend codegen:file`(오프라인, `api-docs.json` 기반) + `pnpm -C frontend codegen:zod`로 `generated-api.d.ts`·`generated-zod.ts`를 함께 최신화하라. (`codegen:ts`는 로컬 서버 `:8080` 기동 필요. `api-docs.json`이 stale이면 재생성 전 원인부터 확인.)
-- **컴포넌트 렌더링**: Next.js App Router에서 `'use client'` 지시어가 필요한 위치인지(이벤트 훅 사용 여부) 항상 확인하라. 기본은 Server Component다.
-
-## 5. 주요 명령어 (Key Commands)
-
-| 명령 | 경로 | 설명 |
-|------|------|------|
-| `npm run dev` | Root | 전체 개발 서버 실행 |
-| `pnpm -C frontend codegen:ts` | `frontend/` | OpenAPI 명세 기반 TS 타입 생성 (로컬 서버 :8080 필요; 오프라인 기본은 `codegen:file`) |
-| `pnpm -C frontend analyze` | `frontend/` | Next.js 번들 사이즈 분석 |
-| `make coverage` | Root | 백엔드 테스트 커버리지 리포트 생성 |
-| `pnpm -C frontend test:e2e` | `frontend/` | E2E 테스트 전체 실행 (상세: `docs/03-guides/e2e-test-guide.md`) |
-
-
-## 6. 확장 가이드 참조 (Extended Guides)
-
-아래 문서는 헌법의 원칙을 실무에 적용하는 구체적인 가이드로, 해당 작업 수행 시 반드시 병행 참조한다.
-
-| 가이드 | 경로 | 적용 시점 |
-|--------|------|-----------|
-| 테스트 종합 가이드 (SSOT) | `docs/03-guides/testing-guide.md` | 단위/통합/E2E 테스트 전략 및 Tier 구조 참조 |
-| E2E 운영 Runbook | `docs/03-guides/e2e-test-guide.md` | E2E 환경 설정, CI 최적화, 좀비 프로세스 정리 |
-| 도메인 보안 & 회복탄력성 | `docs/02-architecture/domain-resilience.md` | 고가용성 로직 설계 시 |
-| API 설계 및 문서화 가이드 | `docs/03-guides/api-documentation-guide.md` | 신규 API 생성 및 연동 시 |
-| DB 표준화 이행 지침 | `.agent/knowledge/db-standard-constitution/artifacts/standard_terms.md` | DB 오브젝트 설계 시 |
-
-> **문서 관리 규칙**: 새 문서 생성 시 경로는 `01-product/`(기획), `02-architecture/`(설계), `03-guides/`(개발 지침), `04-operations/`(운영), `archived/`(구버전 보관)로 분류하며, 파일명은 반드시 **`kebab-case.md`** 형식을 준수한다. *(단, 글로벌 룰셋의 YYYYMMDD_task_name.md 태스크 기록 양식과의 정합성 및 에이전트 린터 오작동 방지를 위해, 태스크 진행 기록 파일은 **`YYYYMMDD-task-name.md`** 형식의 kebab-case 명명을 전면 허용 및 권장한다.)*
-
-### 6.1. 안티그래비티 독점 고성능 스킬 (Antigravity Native Skills)
-
-| 스킬 | 경로 | 동작 목적 |
-|------|------|-----------|
-| **Deep Context Mapper** | `.agent/skills/deep-context-mapper/` | 1M+ 토큰 대용량 메모리 기반 다중 모듈 및 PostgreSQL 물리 스키마 위상(Topology) 맵 로딩 |
-| **Visual Auditor** | `.agent/skills/visual-auditor/` | `browser_subagent` 네이티브 픽셀 비교 검증 및 실시간 UI/UX 비주얼 regression 오디팅 |
-| **Resilience Debugger** | `.agent/skills/resilience-debugger/` | DB Bridge 연동, 좀비 포트 정리 및 Ralph Loop 2.0 자가 성찰/자가 치유(Self-Healing) 실행 |
-| **API Contract Guardian** | `.agent/skills/api-contract-guardian/` | DB 제약조건(SSOT) ➔ BE DTO ➔ FE Zod 스키마로 이어지는 **단방향 연쇄 거울 동기화** 및 OpenAPI 타입 명세 일치율 검증으로 Breaking Change 완벽 방어 |
-| **OWASP Security Auditor** | `.agent/skills/owasp-security-auditor/` | 인증(JWT), Spring Security 필터, Next.js Middleware 변경 시 Red Team 관점의 가상 침투 및 취약점 검증 |
-| **Docs-as-Code Sync** | `.agent/skills/docs-as-code-sync/` | 시스템 아키텍처 및 로직 변경 시 관련 마크다운 문서와 Mermaid 다이어그램 자율 갱신 |
-| **Mutation Testing Auditor** | `.agent/skills/mutation-testing-auditor/` | 테스트 작성 시 소스 코드에 의도적 버그를 주입하여 테스트 방어력(Robustness) 검증 — 핵심 크리티컬 서비스 기준 **Mutation Score 75% 이상**(BE 헌법 제16조. **[2026-08-08 정정] 종전 서술 "현행 CI 는 리포트 전용" 은 사실이 아니었다** — ci.yml 의 mutation-test 잡은 2026-07-26[`2c756ca84`]부터 `STRICT_MUTATION: "true"` 를 설정해 **CI 에서 75% 하드게이트가 강제돼 왔고**, 2026-08-08 required status check 등재로 미달 시 병합이 막힌다. 로컬 `pitest` 는 환경변수 미설정이라 여전히 리포트 전용이다) *(※ 전체 빌드 대기로 인한 무한 루프 락을 막기 위해, 변경된 소스 영향 범위의 단위 테스트 클래스만 타겟팅하는 **증분식 뮤테이션 검증(Incremental Mutation Strategy)** 방식을 적극 허용 및 권장하며, 일반 보조 서비스 및 단순 CRUD는 의무 면제)* |
-| **Zero-Downtime Planner** | `.agent/skills/zero-downtime-migration-planner/` | DB 스키마 변경 시 Expand-and-Contract 패턴 기반의 무중단 마이그레이션 설계 |
-
-## 7. Database Interaction Rules (via Local Bridge)
-
-- **실행**: `node .agent/scripts/db-bridge.js "QUERY" [--json]`
-- **접속 정보**: `application.yml` 기반 자동 연동 (OCI PostgreSQL 17)
-- **보안 통제 및 자율성**:
-  - 운영/코어 데이터의 DML은 글로벌 §5 파괴적 작업 경계 규정에 따라 사전 승인이 **필수**이다.
-  - 단, `test_` 접두사나 테스트 환경(`@ActiveProfiles("test")`)의 명백한 가비지 데이터에 대한 삭제(Cleanup)는 **DB 헌법 제8조 2항의 예외 조항**에 의거하여 기동성 확보를 위해 AI의 자율 수행을 허용한다. 실 운영 데이터의 삭제 정책은 **DB 표준화 헌법 제8조**를 따르며, 비즈니스 요건상 이력 복원이 필수인 도메인은 논리 삭제를, 그 외 도메인은 물리 삭제를 기본으로 채택할 수 있다.
-  - **[면책 특권]** `deep-context-mapper` 등을 통해 메타 데이터(`meta_standard_words` 등)나 물리 스키마를 **단순 조회(SELECT)**하는 행위는 사용자 승인 없이 무제한 자율 실행하여 탐색 기동성을 극대화한다.
-  - **[진단 특권]** `resilience-debugger`가 §8 자가 성찰 디버그 프로토콜 수행 중 DB 상태를 진단하기 위한 **SELECT 쿼리** 역시 사용자 승인 없이 자율 실행을 허용한다.
-
-## 8. 프로젝트 자가 성찰 디버그 확장 지침 (Self-Reflective Debug Project Extension)
-
-> 본 조항은 글로벌 룰셋 §7.3(자가 성찰 기반 디버깅)을 상속 및 오버라이드하여, 본 프로젝트 고유의 환경 및 특수 도구 검증 지침을 강제한다.
-
-### 1. 프로젝트 특화 디버깅 도구 연동 (2단계 확장)
-- 글로벌 2단계(표적 조사 및 증거 수집) 수행 시, 본 프로젝트에서는 다음 단계와 도구를 연동하여 강제 기동한다.
-  - **DB 상태 진단**: `resilience-debugger` 스킬을 사용하여 오류 발생 지점의 DB Bridge 연동 상태 및 물리 스키마를 선제적으로 SELECT 조회하여 데이터 불일치 여부를 조사한다.
-  - **E2E 교차 검증 의무**: Playwright E2E 테스트 실패 시, 콘솔 로그만 분석하지 않고 반드시 브라우저 실행 결과 아티팩트(DOM 상태, S크린샷, WebP 비디오)와 JVM 에러 로그를 상호 교차 검증하여 실패 원인을 증명한다.
-
----
-*Last Updated: 2026-07-23 (현행화 — §5 프론트 명령 pnpm 정합·푸터 날짜 정정. 2026-07-18 뮤테이션 임계값 75% report-only 통일[a5c40b69a]. 2026-07-06 하네스 정합성 감사: 헌법 링크(relative)·프론트 조문수(17)·codegen 안내·L0 정의 정합·Claude 브리지 CLAUDE.md/AGENTS.md 신설)*
-
+- 작업에 정확히 맞는 `.agent/skills/` 또는 사용 가능한 네이티브 스킬만 선택한다. 스킬 전수 탐색이나 이름만 맞춘 강제 호출은 하지 않는다.
+- 스킬이 헌법·`AGENTS.md`·현재 구현과 충돌하면 스킬을 적용하지 말고 상위 원본과 실제 증거를 따른다.
+- `.gemini/tasks/`는 과거 작업 근거로만 사용한다. 지속 가능한 현재 사실·결정·gap은 공용 메모리 규칙에 따라 선별 승격한다.
+- 프로젝트 정책은 `AGENTS.md`에서만 바꾼다. 이 파일은 import 경로나 Gemini 전용 실행 매핑이 달라질 때만 함께 갱신한다.
 

@@ -39,7 +39,7 @@ env:
 jobs:
   # [W0-08] 시크릿 스캔에 실행 경로를 부여한다.
   #   종전에는 .githooks/pre-commit 의 `command -v gitleaks` 조건부 블록이 유일한 배선이었고,
-  #   미설치 머신에서는 조건 자체를 건너뛰어 **아무데서도 돌지 않았다**(GEMINI.md §0.7-H5).
+  #   미설치 머신에서는 조건 자체를 건너뛰어 **아무데서도 돌지 않았다**(AGENTS.md Evidence guardrails H5).
   #   continue-on-error 를 붙이지 않는다 — 붙이는 순간 게이트가 아니라 장식이 된다.
   #   액션 대신 바이너리를 직접 받는 이유: gitleaks-action 은 조직 저장소에서 라이선스를 요구하고,
   #   가변 major 태그라 그 자체가 새로운 공급망 노출이 된다.
@@ -59,12 +59,13 @@ jobs:
       # [2026-08-16 격차 봉합] reusable-base-census 는 종전 `.githooks/pre-push` 에만 있었다.
       #   훅은 `--no-verify` / `SKIP_HOOKS=1` 한 줄로 우회되므로, 훅 전용 검증은 required check 가
       #   아니다 — 우회한 푸시에서 도메인/테이블 소유권·pack 의존 방향 위반이 무검증으로 통과했다.
-      #   "게이트는 실행 경로가 있어야 게이트다"(GEMINI.md §0.7-H5) 를 CI 쪽에도 적용한다.
+      #   "게이트는 실행 경로가 있어야 게이트다"(AGENTS.md Evidence guardrails H5) 를 CI 쪽에도 적용한다.
       - name: Verify repository operational contracts
         run: |
           node --test .agent/scripts/db-bridge.test.js
           node --test scripts/required-checks-contract.test.mjs
           node --test scripts/reusable-base-census.test.mjs
+          node --test scripts/shared-memory-contract.test.mjs
           node --test scripts/docs-link-integrity.test.mjs
 
       # [2026-08-03 범위 정정] 종전에는 `gitleaks detect --source .` 로 **히스토리 전량**을 스캔했다.
@@ -75,7 +76,7 @@ jobs:
       #
       #   [왜 베이스라인(예외 목록)을 쓰지 않았나] `--baseline-path` 로 1351건을 통째로 면제하면
       #   그 순간 저장소에서 가장 큰 예외 목록이 생기고, 거기 무엇이 들어 있는지 아무도 다시 읽지 않는다.
-      #   §0.7-H2 가 경계하는 형태다. 이미 공개된 유출의 해법은 목록화가 아니라 **로테이션**이며,
+      #   AGENTS H2 가 경계하는 형태다. 이미 공개된 유출의 해법은 목록화가 아니라 **로테이션**이며,
       #   그 추적은 docs/04-operations/crypto-key-rotation.md · pending-decisions.md 가 담당한다.
       #
       #   그래서 게이트의 책임을 "새로 들어오는 것"으로 좁힌다. 두 스캔 모두 hard-fail 이다:

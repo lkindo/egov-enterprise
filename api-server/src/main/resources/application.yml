@@ -72,7 +72,7 @@ spring:
         default_batch_fetch_size: 100
         # [2026-08-03 이설] 위 hibernate 블록에서 옮겨온 실효 키들.
         #   order_inserts/order_updates 는 batch_size 와 짝이어야 의미가 있다 — 배치가 꺼져 있으면
-        #   정렬해 봐야 묶을 대상이 없다. 셋을 함께 옮기는 이유가 그것이다(§0.7-H4 의 '개별 판정'
+        #   정렬해 봐야 묶을 대상이 없다. 셋을 함께 옮기는 이유가 그것이다(AGENTS.md Evidence guardrails H4의 '개별 판정'
         #   대상이 아니라 하나의 기능 단위).
         order_inserts: true
         order_updates: true
@@ -191,7 +191,7 @@ management:
         # [W0-04] env,beans 제거. /actuator/** 는 ROLE_ADMIN 으로 보호되지만, 배포 형상이
         #   base 프로파일로 굳는 경로(compose 에 SPRING_PROFILES_ACTIVE 부재)가 있는 한
         #   DB 자격증명·ALGORITHM_KEY 가 한 겹의 인가 실수만으로 노출된다. 기본값에서 뺀다.
-        #   필요한 디버깅은 프로파일별로 명시 추가할 것(목록 축소이므로 §0.7-H2 의 예외목록 확대와 반대 방향).
+        #   필요한 디버깅은 프로파일별로 명시 추가할 것(목록 축소이므로 AGENTS.md Evidence guardrails H2의 예외목록 확대와 반대 방향).
         include: "health,info,metrics,prometheus"
   endpoint:
     health:

@@ -76,7 +76,7 @@ public class ApiSecurityConfig {
          * 조건이 거짓이라 종전대로 ROLE_ADMIN 이 요구된다 — 개발 형상의 인가는 완화되지 않는다.
          *
          * <p>이 안전 논거는 전적으로 "관리 포트가 호스트에 노출되지 않는다" 에 의존한다.
-         * 그 전제는 {@code ConfigSafetyLinterTest} 가 compose 파일을 스캔해 기계로 고정한다(§0.7-H5).
+         * 그 전제는 {@code ConfigSafetyLinterTest} 가 compose 파일을 스캔해 기계로 고정한다(AGENTS.md Evidence guardrails H5).
          */
         private boolean managementPortSeparated() {
                 return managementServerPort != null

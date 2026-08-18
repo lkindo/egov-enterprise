@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>이 봉합은 <b>3개 파일에 걸쳐 있고 어느 하나만 되돌려도 조용히 무너진다</b> — 해시를 다시
  * 마이그레이션에 넣거나, seed-dev 파일을 migration 으로 되돌리거나, 운영 flyway locations 에
- * seed-dev 를 추가하기만 하면 된다. 그래서 기계 게이트로 못박는다(GEMINI.md §0.7-H5).
+ * seed-dev 를 추가하기만 하면 된다. 그래서 기계 게이트로 못박는다(AGENTS.md Evidence guardrails H5).
  *
  * <p>[규칙] 아래 셋 중 하나라도 어기면 위반이다.
  * <ol>
@@ -49,7 +49,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *       {@code locations} 를 <b>명시 선언</b>해야 한다(암묵 기본값 의존은 이 검사를 vacuous 하게 만든다).</li>
  * </ol>
  *
- * <p><b>예외 목록을 두지 않는다</b>(§0.7-H2). 2026-08-01 실측으로 db/migration 의 {@code .sql}
+ * <p><b>예외 목록을 두지 않는다</b>(AGENTS.md Evidence guardrails H2). 2026-08-01 실측으로 db/migration 의 {@code .sql}
  * 36개 전수에 해시 리터럴이 0건임을 확인했으므로 동결해야 할 기존 위반이 존재하지 않는다
  * (V2_0__baseline.sql 은 pg_dump 스냅샷이라 {@code pswd} <i>컬럼 정의/주석</i>만 있고 값은 없다).
  *

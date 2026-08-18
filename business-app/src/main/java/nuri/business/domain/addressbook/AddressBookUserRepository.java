@@ -16,5 +16,5 @@ public interface AddressBookUserRepository extends JpaRepository<AddressBookUser
     //   ※ 감사 보고서의 'clearAutomatically 누락 1건' 은 실측과 다르다 — 해당 애노테이션이 없는 곳은
     //     4개소이고 그중 3개는 호출부 0, 나머지 1개(UserLogRepository.deleteByDmndUserIdIn)는
     //     같은 트랜잭션에서 UserLog 를 재조회하지 않으므로 무해하다. 4곳에 일괄 부착하는 것은
-    //     §0.7-H4 위반이자 실익 0 이라 하지 않았다.
+    //     AGENTS.md Evidence guardrails H4 위반이자 실익 0 이라 하지 않았다.
 }

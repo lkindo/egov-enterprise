@@ -108,7 +108,7 @@ export function HarnessDashboardOverview() {
           측정 파이프라인이 생기기 전까지 숫자를 만들어 보여주지 않는다.
         */}
 
-        {/* 3대 기술 헌법 수호 패널 — 조문 수는 CLAUDE.md/GEMINI.md §3 기준 */}
+        {/* 3대 기술 헌법 수호 패널 — 조문 수는 각 constitution.md 원문 기준 */}
         <div className="space-y-4">
           <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">3대 기술 헌법 개요</h4>
           <div className="space-y-3">

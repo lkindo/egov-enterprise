@@ -30,7 +30,7 @@ package nuri.business.service.user.dto;
  * <b>조용히 적용되지 않는다</b>(기본 그룹에 없으므로). 반드시
  * {@code @Validated({Default.class, UserValidationGroups.OnCreate.class})} 를 쓸 것.
  * 이 규약은 {@code UserPasswordValidationGroupLinterTest} 가 기계적으로 강제한다 —
- * 그 린터가 없으면 이 주석은 지켜지지 않는 약속일 뿐이다(GEMINI.md §0.7-H5).
+ * 그 린터가 없으면 이 주석은 지켜지지 않는 약속일 뿐이다(AGENTS.md Evidence guardrails H5).
  */
 public final class UserValidationGroups {
 

@@ -3,7 +3,7 @@
 ## 1. 개요 (Overview)
 본 프로토콜은 **메인 에이전트(오퍼레이터)와 서브에이전트·워크플로우 간 협업**을 위한 **정형화된 공정(Standard Pipeline)**이다. 작업의 복잡도와 위험도에 따라 등급을 분류하고, 등급별로 최적화된 경로를 통해 무결성과 속도를 동시에 확보한다.
 
-> **이중(dual) 오퍼레이터 전제**: 본 저장소는 **Antigravity/Gemini 와 Claude Code 가 동일 워킹트리를 공유**한다. 두 오퍼레이터 모두 본 프로토콜을 상속·준수하며, 오퍼레이터별로 달라지는 것은 **실행 수단(§3 Stage 2.1 Direct/위임)의 매핑**뿐이다. 규칙 본문의 SSOT 는 `GEMINI.md`, Claude Code 로의 매핑은 `CLAUDE.md` 가 담당한다.
+> **다중 오퍼레이터 전제**: 본 저장소는 **Antigravity/Gemini, Claude Code, Codex 등**이 동일 워킹트리를 공유한다. 모든 오퍼레이터는 [AGENTS.md](../../AGENTS.md)의 공통 계약과 본 프로토콜을 준수하며, 도구별 파일은 실행 수단만 연결한다.
 
 ---
 
@@ -26,7 +26,7 @@
 ### [Stage 1] Dispatch: 등급 판정 및 Spec 발행
 - **Action**: 에이전트가 등급(L0~L2)을 제안하고 **Task Specification**을 작성하여 사용자 승인을 받는다.
 - **Fast-Track (L0)**: 승인 절차 없이 즉시 구현 단계로 진입 가능.
-- **포괄 승인(Standing Approval)**: 사용자가 배치/연속 작업에 대해 포괄적 진행 지시(예: "진행해", "나머지 진행해", ultracode 모드)를 준 경우, 메인 에이전트는 각 항목마다 재승인을 받지 않고 **등급·SCOPE 를 1줄로 밝힌 뒤 진행**할 수 있다. 단, **되돌리기 어렵거나 외부에 영향을 주는 작업**(운영/코어 데이터 DML·DB 스키마 변경, 외부 발행·전송, `--force` push, 대량 삭제 등 글로벌 §5 파괴적 경계)은 포괄 승인 범위에서 제외하며, 착수 전 **개별 명시 승인**을 받는다.
+- **포괄 승인(Standing Approval)**: 사용자가 배치/연속 작업에 대해 포괄적 진행 지시(예: "진행해", "나머지 진행해", ultracode 모드)를 준 경우, 메인 에이전트는 각 항목마다 재승인을 받지 않고 **등급·SCOPE 를 1줄로 밝힌 뒤 진행**할 수 있다. 단, [AGENTS.md의 안전 경계](../../AGENTS.md#공통-작업-원칙)에 해당하는 되돌리기 어렵거나 외부 상태를 바꾸는 작업은 포괄 승인 범위에서 제외하며, 착수 전 **개별 명시 승인**을 받는다.
 
 ### [Stage 2] Execution: 자율 구현
 
@@ -124,10 +124,10 @@
 #### 4.1 필수 증거 (현행 게이트 명시)
 | 작업 도메인 | 증거 유형 |
 |:---|:---|
-| **UI/Frontend** | `npx tsc --noEmit`(정적 타입) — GEMINI.md §0.6 HARD 게이트(pre-push 기계강제) + 계약 드리프트 게이트 `codegen:verify`/`codegen:verify:zod`(api-docs.json ↔ generated-api.d.ts/generated-zod.ts, pre-push HARD 차단). `next build`/`pnpm run build`(RSC 서버/클라이언트 경계)는 로컬에서도 실행 가능하다. **런타임 거동(Playwright E2E)은 CI 에서만 돌며 pre-push 에 없다** — UI 변경은 **CI 초록이 유일한 증거**다(2026-08-06 정정: 종전 "CI 과금차단" 서술은 사실이 아니었다). |
-| **Backend/API** | `./gradlew compileJava compileTestJava`(컴파일 무결성) — §0.6 HARD 게이트. **+ `./gradlew :api-server:harnessTest`**(헌법/표준 린터 31종/39테스트 — 2026-08-16 실측, pre-push 기계강제·실측 ~2분). 추가로 JUnit/ArchUnit 결과 로그, API 응답 데이터 덤프(JSON). |
+| **UI/Frontend** | `pnpm -C frontend exec tsc --noEmit`(정적 타입) — [AGENTS.md의 범위별 검증](../../AGENTS.md#verification-by-change-scope) + 계약 드리프트 게이트 `codegen:verify`/`codegen:verify:zod`(api-docs.json ↔ generated-api.d.ts/generated-zod.ts, pre-push HARD 차단). `next build`/`pnpm run build`(RSC 서버/클라이언트 경계)는 로컬에서도 실행 가능하다. **런타임 거동(Playwright E2E)은 CI 에서만 돌며 pre-push 에 없다** — UI 변경은 **CI 초록이 유일한 증거**다(2026-08-06 정정: 종전 "CI 과금차단" 서술은 사실이 아니었다). |
+| **Backend/API** | `./gradlew compileJava compileTestJava`(컴파일 무결성) — [AGENTS 범위별 검증](../../AGENTS.md#verification-by-change-scope). **+ `./gradlew :api-server:harnessTest`**(헌법/표준 린터 31종/39테스트 — 2026-08-16 실측, pre-push 기계강제·실측 ~2분). 추가로 JUnit/ArchUnit 결과 로그, API 응답 데이터 덤프(JSON). |
 | **Database** | `db-bridge` 쿼리 실행 결과·행(Row) 수, `flyway_schema_history` 확인, `EXPLAIN ANALYZE` 결과, 스키마 변경 확인 로그. **엔티티·DDL 변경 시 `./gradlew :api-server:schemaValidationTest`**(빈 PostgreSQL 17 + Flyway 전량 적용 + Hibernate `ddl-auto:validate`, Docker 필요). ⚠ 단위 테스트 프로파일은 **H2 + `create-drop`** 이라 물리 스키마 불일치를 **원리적으로 검출하지 못한다** — 그 그린을 스키마 증거로 제시하지 말 것. |
-| **아키텍처/규칙** | 신설·수정한 ArchUnit/린트 게이트가 그린임을 대상 테스트 직접 실행(`--tests`)으로 증명. **게이트를 신설·수정했다면 그린 확인만으로 부족하다 — 의도적으로 위반을 주입해 red 가 되는 것까지 증명한다**(그린만 확인하면 vacuous 통과·UP-TO-DATE 스킵과 구분되지 않는다. GEMINI.md §0.7-H5). |
+| **아키텍처/규칙** | 신설·수정한 ArchUnit/린트 게이트가 그린임을 대상 테스트 직접 실행(`--tests`)으로 증명. **게이트를 신설·수정했다면 그린 확인만으로 부족하다 — 의도적으로 위반을 주입해 red 가 되는 것까지 증명한다**(그린만 확인하면 vacuous 통과·UP-TO-DATE 스킵과 구분되지 않는다. [AGENTS.md Evidence guardrails H5](../../AGENTS.md#evidence-guardrails)). |
 
 > **게이트 계층(2026-08-12 실측 갱신)**: pre-commit(수 초, 경고) → **pre-push**(컴파일+tsc+codegen+하네스 31종, ~2분, 차단) → **`./gradlew localGate`**(위 + 실PG 스키마 검증 + 전 모듈 테스트 + JaCoCo **LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫, ~12분, 병합 전 1회) → **CI**(secret-scan · backend-build · frontend-build/고정 gzip 번들 예산 · mutation-test · **e2e-tests 3샤드**). business 모듈 테스트만 7분 48초라 pre-push 에 넣을 수 없어 `localGate` 로 분리했다 — 제외 사실을 숨기지 않기 위해 명시한다. 상세는 [.githooks/README.md](../../.githooks/README.md).
 >
@@ -172,9 +172,9 @@
 - **무결성 우선**: 속도보다 중요한 것은 헌법 준수와 작동 증거이다.
 - **유연한 적용**: L0 작업 및 포괄 승인 하의 배치 작업은 절차를 간소화(등급·SCOPE 1줄 고지)하여 사용자의 흐름을 방해하지 않는다.
 - **중단 및 보고**: 파이프라인 중 예상치 못한 에러 발생 시 즉시 중단하고 사용자에게 복구 방안을 묻는다.
-- **공유 워킹트리 규율** — *신설*: 이중 오퍼레이터 환경에서 커밋은 `git commit --only -- <경로>` 로 **자기 변경분만** 담아 타 오퍼레이터의 WIP 혼입을 차단한다. 파일 변경 전 항상 디스크의 현재 상태를 직접 조회한다(과거 세션 가정 금지).
+- **공유 워킹트리 규율** — *신설*: 다중 오퍼레이터 환경에서 커밋은 `git commit --only -- <경로>` 로 **자기 변경분만** 담아 타 오퍼레이터의 WIP 혼입을 차단한다. 파일 변경 전 항상 디스크의 현재 상태를 직접 조회한다(과거 세션 가정 금지).
 - **정직한 보고** — *신설*: 실패·스킵·보류는 있는 그대로 보고한다. 인프라 상태·검증 결과를 추정으로 단정하거나, 미검증을 완료로 선언하지 않는다(§3.1-2, §4.1 보류 규정과 정합).
 
 ---
-*Last Updated: 2026-08-06 (**"CI 과금차단" 서술 삭제 — 사실이 아니었다.** 저장소는 PUBLIC 이고 워크플로우는 정상 작동 중이다(실측: 최근 60회 중 success 29). 이 문구 탓에 에이전트가 문서를 근거로 인프라 상태를 단정해 §3.1-2 를 위반했고, 로컬 pre-push 통과를 CI 통과로 보고해 E2E 파손이 8커밋 동안 누적됐다(#305~#312). 함께 명시: pre-push 에 E2E 가 없다 · UI 변경은 CI 초록이 유일한 증거 · PR 병합 시 mergeStateStatus=UNSTABLE 은 체크 실패를 뜻한다 · 하네스 린터 13종 → 30종. 이전: 2026-07-26 (사용자 승인 — §4.1 게이트 계층 현행화: `harnessTest`(pre-push 기계강제)·`schemaValidationTest`(실PG+Flyway+validate)·`localGate` 편입, H2 create-drop 그린을 스키마 증거로 쓰지 말 것 명시, 게이트 신설 시 위반 주입 red 확인 의무. 2026-07-23 §4.1 게이트 정정 — `next build`를 §0.6 HARD 가 아닌 CI 게이트로 재귀속, pre-push codegen 드리프트 게이트 명시. 2026-07-08 정합성 감사 pass[Stage 2.1 Mode→Direct/위임]. 2026-07-07 현행 실태 반영: 이중 오퍼레이터 전제 명문화, 실행 방식을 **Direct vs 위임(서브에이전트·워크플로우)** 으로 단순화["Mode A/B/C" 제거, 위임 불변 규칙=컨텍스트 패킷+메인 재검증], 포괄 승인(Standing Approval), 인프라 상태 실측 의무(§3.1-2), 런타임 불가 시 정직 보류, 공유 트리 커밋 규율. 이전: 2026-05-18 Antigravity.))*
+*Last Updated: 2026-08-18 (공통 규칙 SSOT를 AGENTS.md로 단일화하고 Gemini·Claude·Codex 다중 오퍼레이터 및 범위별 검증 연결을 현행화. 이전: 2026-08-06 "CI 과금차단" 오기 삭제·CI/E2E 증거 경계 명시; 2026-07-26 하네스·schemaValidation·localGate 계층 현행화; 2026-07-23 당시 컴파일/codegen 게이트 정정; 2026-07-08 Direct/위임 단순화; 2026-05-18 Antigravity.)*
 *Governed by: Enterprise Governance Constitution*

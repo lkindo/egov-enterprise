@@ -14,7 +14,7 @@
 --      survey/polls/participate)에 매칭되는 것은 제외. 단 ADMIN_ONLY_SUBPATHS 는 허용목록보다
 --      우선하므로 /admin/community/boards/master 는 '차단됨' 으로 계상했다.
 --
--- [개별 판정으로 3건을 제외했다 — §0.7-H4]
+-- [개별 판정으로 3건을 제외했다 — AGENTS.md Evidence guardrails H4]
 --   일괄 회수하면 **섹션 헤더**까지 함께 지워져 그 아래 사용자 접근 가능한 메뉴가 사라진다.
 --   같은 조건에 걸렸다고 같은 처분을 내리지 않는다. 자식을 실측해 개별 판정했다.
 --

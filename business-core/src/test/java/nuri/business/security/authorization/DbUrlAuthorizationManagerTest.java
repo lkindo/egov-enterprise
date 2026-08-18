@@ -43,7 +43,7 @@ import static org.mockito.Mockito.when;
  * 도달 경로가 좁지만, 매처를 넓히거나 securePaths 를 줄이는 순간 그대로 fail-open 이 된다.
  * 그 계약을 테스트로 고정해 두어야 나중에 조용히 바뀌지 않는다.
  *
- * <p>[실행 경로 — §0.7-H5] business-core 단위 테스트이므로 <b>pre-push 에서는 실행되지 않는다</b>
+ * <p>[실행 경로 — AGENTS.md Evidence guardrails H5] business-core 단위 테스트이므로 <b>pre-push 에서는 실행되지 않는다</b>
  * (pre-push 는 {@code :api-server:harnessTest} 만 돌린다). 실행 경로는 {@code ./gradlew localGate}
  * 와 CI 다. 'pre-push 가 막아 준다' 고 서술하면 그 자체가 거짓 안전감이다.
  */

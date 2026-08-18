@@ -49,7 +49,7 @@ public class OpenApiConfig {
      * <p>그래서 일괄 치환 대신 <b>스키마를 근거로 개별 판정</b>한다 — 응답 스키마가
      * 우리 표준 봉투({@code ApiResponse*})를 가리킬 때만 JSON 으로 확정하고, 그 외(바이너리 등)는
      * 손대지 않는다. 판정 근거가 스펙 자체에 있으므로 대상이 늘거나 줄어도 자동으로 맞는다.
-     * (GEMINI.md §0.7-H4 — 의미가 다른 호출부를 같은 방식으로 쓸어담지 않는다.)
+     * (AGENTS.md Evidence guardrails H4 — 의미가 다른 호출부를 같은 방식으로 쓸어담지 않는다.)
      */
     @Bean
     public org.springdoc.core.customizers.OperationCustomizer jsonEnvelopeProducesCustomizer() {
@@ -112,7 +112,7 @@ public class OpenApiConfig {
      * 추가될 때마다 사람이 기억해야 하므로 <b>반드시 빠진다</b>. 여기서 한 번 주입하면 대상이 늘거나
      * 줄어도 자동으로 맞는다.
      *
-     * <p>[왜 일괄 주입이 아닌가 — §0.7-H4] 모든 오퍼레이션에 같은 코드를 쓸어 담으면 스펙이 거짓말을
+     * <p>[왜 일괄 주입이 아닌가 — AGENTS.md Evidence guardrails H4] 모든 오퍼레이션에 같은 코드를 쓸어 담으면 스펙이 거짓말을
      * 한다. 그래서 <b>스펙 자체를 근거로 개별 판정</b>한다(위 {@code jsonEnvelopeProducesCustomizer}
      * 와 같은 원칙):
      * <ul>

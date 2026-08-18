@@ -16,7 +16,7 @@
  *   node scripts/menu-census.mjs --json    # 기계 판독용
  *
  * DB 접속은 기존 db-bridge 를 그대로 쓴다(별도 접속 설정 없음).
- * 조회 전용(SELECT)이라 GEMINI.md §7 면책 특권 범위이며 승인 없이 실행 가능하다.
+ * 조회 전용(SELECT)이라 AGENTS.md의 db-bridge 진단 허용 범위이며 승인 없이 실행 가능하다.
  */
 import { execFileSync } from 'node:child_process';
 import { readdirSync, statSync, existsSync } from 'node:fs';

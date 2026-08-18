@@ -108,7 +108,7 @@ public enum AttachmentSource {
     public enum Sensitivity {
         /** 인증 사용자에게 공유되는 콘텐츠. 관리자 우회 허용. */
         SHARED,
-        /** 개인 귀속. <b>관리자도 우회하지 못한다</b>(§0.7-H3 프라이버시 가드). */
+        /** 개인 귀속. <b>관리자도 우회하지 못한다</b>(AGENTS.md Evidence guardrails H3 프라이버시 가드). */
         PERSONAL,
         /** 파생 로그. 어떤 접근권도 부여하지 않는다. */
         DERIVED

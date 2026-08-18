@@ -37,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>더 중요한 이유가 있다. 이관 판단의 근거였던 <b>"이 저장소에는 취약 패턴이 없다"</b>는 명제는
  * 그 시점의 <b>관측</b>일 뿐이었고, 재발 방지책은 문서에 적은
  * <i>"QueryDSL 로 정렬을 추가할 때 재확인할 것"</i> 한 줄뿐이었다.
- * GEMINI.md §0.7 이 못박은 대로 <b>prose 로만 존재하는 규칙은 그 규칙을 어길 주체를 막지 못한다</b>.
+ * AGENTS.md Evidence guardrails H5가 못박은 대로 <b>prose 로만 존재하는 규칙은 그 규칙을 어길 주체를 막지 못한다</b>.
  * 이 게이트는 그 관측을 강제로 바꾼다.
  *
  * <p>[규칙] 생산 코드({@code src/main/java})에서 다음을 금지한다.
@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 컴파일타임 Q-클래스 경로에 매핑</b>하라. 현행
  * {@code BoardRepositoryImpl#searchArticles} 가 그 형태이며, 이 게이트를 통과하는 유일한 방식이다.
  *
- * <p>[예외 목록 없음] 도입 시점 위반 0건이다. 예외 목록으로 출발하면 그 목록이 곧 서랍이 된다(§0.7-H2).
+ * <p>[예외 목록 없음] 도입 시점 위반 0건이다. 예외 목록으로 출발하면 그 목록이 곧 서랍이 된다(AGENTS.md Evidence guardrails H2).
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔.
  */

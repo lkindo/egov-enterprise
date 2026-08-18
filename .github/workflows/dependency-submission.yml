@@ -15,7 +15,7 @@ name: Gradle Dependency Submission
 #   쓰기 권한과 함께 실행되는 경로를 만들지 않기 위해서다. main 푸시와 수동 실행으로 한정한다.
 #
 # [게이트 아님] 제출 실패가 빌드를 막지는 않지만 continue-on-error 를 붙이지도 않는다 —
-#   조용히 실패하면 "백엔드도 스캔되고 있다"는 거짓 안전감이 다시 생긴다(GEMINI.md §0.7-H5).
+#   조용히 실패하면 "백엔드도 스캔되고 있다"는 거짓 안전감이 다시 생긴다(AGENTS.md Evidence guardrails H5).
 
 on:
   push:

@@ -1,8 +1,8 @@
-# 이중 Operator 실시간 조정 계층 설계 (Dual-Operator Real-Time Coordination)
+# Gemini·Claude 실시간 조정 계층 설계 (legacy dual-operator design)
 
 > **상태**: 설계(Design) — 구현 보류. 본 문서는 구현 착수 전 리뷰·승인용 SSOT다.
-> **적용 범위**: Antigravity(Gemini) ↔ Claude Code가 **동일 워킹트리를 공유**하는 이중 operator 환경([CLAUDE.md](../../CLAUDE.md) §4, [AGENTS.md](../../AGENTS.md)).
-> **거버넌스**: 본 설계의 구현은 `.claude/settings.json`·`.agents/hooks.json`·`coord.js` 신설과 [CLAUDE.md](../../CLAUDE.md)/[GEMINI.md](../../GEMINI.md) 프로토콜 조항 추가를 수반하므로, 착수 전 [CLAUDE.md](../../CLAUDE.md) §5에 따른 **사용자 명시 승인**이 필요하다.
+> **적용 범위**: 2026-07-07 당시 Antigravity(Gemini) ↔ Claude Code 두 도구를 대상으로 한 설계다. 현재 [AGENTS.md](../../AGENTS.md)는 Codex 등을 포함한 다중 operator 공통 계약이며, 공용 메모리는 이 문서의 실시간 claim/lock 구현을 대체하지 않는다.
+> **거버넌스**: 본 설계의 구현은 `.claude/settings.json`·`.agents/hooks.json`·`coord.js` 신설과 공통 운영 정책 변경을 수반하므로, [AGENTS.md](../../AGENTS.md#규칙-계층과-단일-원본)에 따라 착수 전 **사용자 명시 승인**이 필요하다. 도구별 어댑터에는 연결만 추가한다.
 
 ---
 
@@ -185,8 +185,8 @@ Claude 측은 **오늘 전부 구축 가능**(`.claude/` 비어 있음, hook 이
 
 ## 부록: 관련 문서
 
-- [CLAUDE.md](../../CLAUDE.md) §4(공유 워킹트리 규율), §5(불가침)
-- [AGENTS.md](../../AGENTS.md) — 이중 operator 진입 브리프
+- [AGENTS.md](../../AGENTS.md) — 다중 operator 공통 계약·공유 워킹트리 규율
+- [CLAUDE.md](../../CLAUDE.md) / [GEMINI.md](../../GEMINI.md) — 도구별 얇은 자동 로드 어댑터
 - [orchestration-protocol.md](../03-guides/orchestration-protocol.md) — 태스크 등급·위임 파이프라인
 - 📦 `.agent/scripts/db-bridge.js` — stateless one-shot CLI 그레인의 원형
 

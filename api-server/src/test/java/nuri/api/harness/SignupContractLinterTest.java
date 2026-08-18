@@ -27,7 +27,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>[근거] 2026-08-01 Wave 0 에서 {@code UserSignupRequest.role} 을 삭제했다. 이 DTO 는
  * {@code @PublicApi} 가 붙은 <b>미인증 공개 엔드포인트</b>의 요청 본문이었고, 요청 본문에 권한을 받는 순간
  * 누구든 <b>요청 1건으로 ROLE_ADMIN 을 자가 발급</b>할 수 있었다. 필드를 지우는 것만으로는 재발을 막지
- * 못한다 — 필드는 "편의상" 다시 추가되고, 삭제된 이유는 diff 에 남지 않기 때문이다(GEMINI.md §0.7-H5:
+ * 못한다 — 필드는 "편의상" 다시 추가되고, 삭제된 이유는 diff 에 남지 않기 때문이다(AGENTS.md Evidence guardrails H5:
  * 실행 경로 없는 규칙은 규칙을 어긴 주체를 막지 못한다). 그래서 계약을 기계로 동결한다.
  *
  * <p>[규칙] 두 축을 모두 본다.
@@ -244,7 +244,7 @@ class SignupContractLinterTest {
             sb.append("   → 공개 엔드포인트의 권한은 서버 상수여야 합니다: `.role(").append(REQUIRED_SIGNUP_ROLE)
                     .append(")`.\n");
         }
-        sb.append("\n💡 근거: GEMINI.md §0.7-H5(게이트 신설·유지) · 백엔드 헌법 제8조(서비스 레이어 권한 재검증).\n");
+        sb.append("\n💡 근거: AGENTS.md Evidence guardrails H5(게이트 신설·유지) · 백엔드 헌법 제8조(서비스 레이어 권한 재검증).\n");
         sb.append("   대상: ").append(DTO_PATH).append("\n");
         sb.append("         ").append(SERVICE_PATH).append(" #").append(SIGNUP_METHOD).append("\n");
         fail(sb.toString());

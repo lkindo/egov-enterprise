@@ -39,13 +39,13 @@ import static org.junit.jupiter.api.Assertions.fail;
  * pnpm/npm/yarn/corepack 을 호출하는 것)에 대해:
  * <ul>
  *   <li>❌ {@code npm install|ci|i|add|update|run|exec|rebuild} — 비결정적 설치·비표준 러너</li>
- *   <li>❌ {@code yarn install|add|...} — 이 저장소의 패키지 매니저는 pnpm 하나다(GEMINI.md §3)</li>
+ *   <li>❌ {@code yarn install|add|...} — {@code frontend/package.json#packageManager}가 pnpm을 지정한다.</li>
  *   <li>❌ {@code pnpm install} 인데 {@code --frozen-lockfile} 이 없음(또는 {@code --no-frozen-lockfile}
  *       / {@code frozen-lockfile=false} 로 무력화) — lock 드리프트가 조용히 통과한다</li>
  *   <li>❌ 저장소 전체에서 {@code pnpm install --frozen-lockfile} 이 0건 — 고정 설치 자체의 소멸</li>
  * </ul>
  * JS 와 무관한 Dockerfile({@code api-server/Dockerfile} = gradle/temurin 베이스)은 <b>예외 목록이 아니라
- * 판정 자체로</b> 대상에서 빠진다(§0.7-H2: 제외 목록을 만들지 않는다).
+ * 판정 자체로</b> 대상에서 빠진다(AGENTS.md Evidence guardrails H2: 제외 목록을 만들지 않는다).
  *
  * <p>[주의] Dockerfile 주석(줄 첫 글자 {@code #})은 반드시 제거한 뒤 검사한다 — Wave 0 의 설명 주석이
  * "종전의 {@code npm install} 은…" 이라는 문장을 담고 있어, 주석을 그대로 스캔하면 이 게이트는 자기 자신이

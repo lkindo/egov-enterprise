@@ -20,7 +20,7 @@
 --                         MyPageContent 엔티티 → MyPageContentRepository → MyPageService →
 --                         MyPageApiController 로 **완전히 배선돼 살아 있다.** 건드리지 않는다.
 --   · tb_memo_rpt_info  — 메모보고(MemoReportService)는 별개 라이브 도메인이다. 건드리지 않는다.
---   이름 유사성만으로 묶어 지웠다면 라이브 도메인을 깨뜨렸을 것이다(§0.7-H4 — 일괄 처리 금지).
+--   이름 유사성만으로 묶어 지웠다면 라이브 도메인을 깨뜨렸을 것이다(AGENTS.md Evidence guardrails H4 — 일괄 처리 금지).
 --
 -- [linter:ignore 근거]
 -- ZeroDowntimeMigrationLinterTest 는 DROP TABLE 을 기본 차단한다(확장-축소 패턴 강제).

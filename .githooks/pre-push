@@ -1,5 +1,5 @@
 #!/bin/sh
-# eGov Enterprise — pre-push = GEMINI.md §0.6 컴파일 무결성 게이트 (HARD, 차단)
+# eGov Enterprise — AGENTS.md 범위별 검증을 구현하는 로컬 pre-push 게이트
 # 우회: git push --no-verify   |   비활성화: git config --unset core.hooksPath
 [ -n "$SKIP_HOOKS" ] && exit 0
 set -e
@@ -50,7 +50,25 @@ else
   echo "[pre-push] ℹ 푸시 범위를 특정하지 못했습니다 — fast-pass 없이 전체 게이트를 실행합니다(안전측)."
 fi
 
+# 공용 규칙·메모리와 문서 링크는 컴파일보다 훨씬 싼 계약이다. 문서-only fast-pass도
+# 이 두 검사는 통과한 뒤에만 종료한다. 로컬 훅은 우회 가능하므로 CI secret-scan에서도 재실행한다.
+echo "  → governance: node --test scripts/shared-memory-contract.test.mjs"
+node --test scripts/shared-memory-contract.test.mjs \
+  || { echo "❌ 공용 규칙·메모리 계약 실패 — 진입점, 근거 또는 스키마가 불일치합니다"; exit 1; }
+
+echo "  → docs: node --test scripts/docs-link-integrity.test.mjs"
+node --test scripts/docs-link-integrity.test.mjs \
+  || { echo "❌ 문서 링크 무결성 실패 — 존재하지 않는 대상을 가리키는 링크가 있습니다"; exit 1; }
+
 if [ -n "$CHANGED_FILES" ]; then
+  # Governance Atlas는 실행 스크립트를 포함한 정적 HTML이지만 제품 런타임 소스는 아니다.
+  # 전 스택 컴파일 대신 전용 docs-as-code 계약을 먼저 통과한 경우에만 문서 fast-pass를 허용한다.
+  if echo "$CHANGED_FILES" | grep -qx 'frontend/public/governance_harness_atlas.html'; then
+    echo "  → atlas: pnpm -C frontend exec vitest run src/__tests__/governance-atlas-contract.test.ts"
+    pnpm -C frontend exec vitest run src/__tests__/governance-atlas-contract.test.ts \
+      || { echo "❌ Governance Atlas 계약 실패 — 현행 코드·모듈·접근성 계약과 불일치합니다"; exit 1; }
+  fi
+
   # [W0-15] allowlist → denylist 반전.
   #   종전 정규식은 '코드로 인정할 확장자'를 열거했다. 그 결과 확장자가 없거나 목록에 없는 파일이
   #   전부 fast-pass 되었고, 하필 그 집합이 **게이트를 무력화할 수 있는 파일들**이었다:
@@ -59,10 +77,12 @@ if [ -n "$CHANGED_FILES" ]; then
   #     gradle/libs.versions.toml(버전 카탈로그) · gradle/wrapper/gradle-wrapper.properties(툴체인 URL) ·
   #     gradlew / gradlew.bat · api-server/Dockerfile · frontend/Dockerfile ·
   #     scripts/*.mjs · scripts/*.ps1 · scripts/*.sh · *.properties · *.css
-  #   즉 '게이트를 끄는 편집'이 게이트를 통과했다 (GEMINI.md §0.7-H5).
+  #   즉 '게이트를 끄는 편집'이 게이트를 통과했다 (AGENTS.md Evidence guardrails H5).
   #   (참고: `^Dockerfile` 은 행 시작 앵커라 하위 경로 Dockerfile 을 하나도 매칭하지 못하는 死조건이었다.)
   #   이제는 '확실히 비코드'인 확장자만 fast-pass 하고 나머지는 전부 코드로 간주한다(안전측 기본값).
-  CODE_CHANGES=$(echo "$CHANGED_FILES" | grep -vE '\.(md|mdx|txt|csv|png|jpe?g|gif|svg|webp|ico|pdf|woff2?|ttf|eot|mp4|webm)$' || true)
+  CODE_CHANGES=$(echo "$CHANGED_FILES" \
+    | grep -vE '\.(md|mdx|txt|csv|png|jpe?g|gif|svg|webp|ico|pdf|woff2?|ttf|eot|mp4|webm)$' \
+    | grep -vE '^frontend/public/governance_harness_atlas\.html$' || true)
   if [ -z "$CODE_CHANGES" ]; then
     echo "[pre-push] 📝 문서/비코드 변경만 감지됨 — 컴파일 및 하네스 검증 생략 (Fast-pass)"
     echo "  → 변경 파일:"
@@ -71,26 +91,20 @@ if [ -n "$CHANGED_FILES" ]; then
   fi
 fi
 
-echo "[pre-push] §0.6 Compilation Integrity Gate"
+echo "[pre-push] AGENTS.md change-scoped source verification"
 
 echo "  → reusable base profile: node --test scripts/reusable-base-census.test.mjs"
 node --test scripts/reusable-base-census.test.mjs \
   || { echo "❌ reusable base 프로필 계약 실패 — 도메인/테이블 소유권 또는 pack 의존 방향 위반"; exit 1; }
 
-# 문서 링크 무결성(수 초). 코드가 이동·삭제돼도 문서 링크는 조용히 남아 다음 사람을 오도한다 —
-# 2026-08-16 실측에서 자체 문서에 팬텀 링크 17건(소멸 모듈 business-suite·이동된 JwtTokenProvider 등)이 있었다.
-echo "  → docs: node --test scripts/docs-link-integrity.test.mjs"
-node --test scripts/docs-link-integrity.test.mjs \
-  || { echo "❌ 문서 링크 무결성 실패 — 존재하지 않는 대상을 가리키는 링크가 있습니다"; exit 1; }
-
 echo "  → backend: ./gradlew compileJava compileTestJava"
 ./gradlew compileJava compileTestJava -q \
-  || { echo "❌ Java 컴파일 실패 — 빌드 에러 0건 이후에만 push 허용 (GEMINI.md §0.6)"; exit 1; }
+  || { echo "❌ Java 컴파일 실패 — 빌드 에러 0건 이후에만 push 허용 (AGENTS.md Verification)"; exit 1; }
 
 if [ -f frontend/package.json ]; then
   echo "  → frontend: npx tsc --noEmit"
   ( cd frontend && npx tsc --noEmit ) \
-    || { echo "❌ TypeScript 타입 컴파일 실패 (GEMINI.md §0.6)"; exit 1; }
+    || { echo "❌ TypeScript 타입 컴파일 실패 (AGENTS.md Verification)"; exit 1; }
 
   # [2026-08-10 신설] E2E 전용 타입 게이트.
   #
@@ -166,7 +180,7 @@ fi
 if [ -z "$SKIP_HARNESS" ]; then
   echo "  → harness: ./gradlew :api-server:harnessTest (약 2분 — 실측 1m58s)"
   ./gradlew :api-server:harnessTest -q \
-    || { echo "❌ 하네스 게이트 실패 — 헌법/표준 린터 위반. 리포트: api-server/build/reports/tests/test/index.html"; echo "   ⚠ 목록(동결·예외)을 고쳐 신호를 지우는 것은 수정이 아니라 은폐다 (GEMINI.md §0.7-H2)"; exit 1; }
+    || { echo "❌ 하네스 게이트 실패 — 헌법/표준 린터 위반. 리포트: api-server/build/reports/tests/test/index.html"; echo "   ⚠ 목록(동결·예외)을 고쳐 신호를 지우는 것은 수정이 아니라 은폐다 (AGENTS.md Evidence guardrails H2)"; exit 1; }
 else
   echo "  ⚠ harness 게이트 건너뜀(SKIP_HARNESS) — CI 또는 로컬에서 별도 실행 필요"
 fi

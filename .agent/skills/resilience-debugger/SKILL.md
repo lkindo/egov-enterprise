@@ -26,7 +26,7 @@ Do not just trace code statically. When an exception occurs, the **Resilience De
 
 ## 2. The 4-Phase Self-Healing Loop
 
-Always match this sequence to the **Ralph Loop 2.0 Self-Reflective Debug Protocol** in `GEMINI.md` §8.
+Always match this sequence to the root-cause → evidence → minimal fix → re-verification flow in the `AGENTS.md` **공통 작업 원칙** section.
 
 ```mermaid
 graph TD

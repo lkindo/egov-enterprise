@@ -62,7 +62,7 @@ class ApiDocsSchemaFieldLinterTest {
     /**
      * [동결 2026-07-28] 이 게이트 신설 시점의 기존 드리프트. **방향은 감소만 허용**한다.
      * 항목을 지우려면 실제로 api-docs.json 을 재생성해 드리프트를 해소한 뒤 여기서도 지운다.
-     * 새 항목을 추가하는 것은 "계약을 깨고 게이트를 넓히는" 행위이므로 사유를 커밋 메시지에 남긴다(§0.7-H2).
+     * 새 항목을 추가하는 것은 "계약을 깨고 게이트를 넓히는" 행위이므로 사유를 커밋 메시지에 남긴다(AGENTS.md Evidence guardrails H2).
      */
     private static final Set<String> GRANDFATHERED = Set.of(
             // (신설 직후 실측으로 채운다 — 아래 assert 가 실제 잔여를 출력한다)

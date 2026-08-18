@@ -174,7 +174,7 @@ class OwnershipGuardBaselineLinterTest {
             sb.append("\n💡 특히 확인할 것: 엄격 가드(assertOwnerByEsntlId) 가 관리자 우회형\n");
             sb.append("   (assertOwnerOrAdmin*) 으로 바뀌지 않았습니까? 그것은 '표준화' 가 아니라 권한 완화입니다.\n");
             sb.append("   반대로 프라이버시 가드(쪽지 등)를 표준 헬퍼로 치환하면 관리자가 사인(私信)을 열람하게 됩니다.\n");
-            sb.append("   (GEMINI.md §0.7-H3 — 도메인 맥락별 대리 수행 허용 여부를 먼저 판정할 것)\n");
+            sb.append("   (AGENTS.md Evidence guardrails H3 — 도메인 맥락별 대리 수행 허용 여부를 먼저 판정할 것)\n");
             sb.append("\n💡 변경이 정당하면 사유를 기록하고 FROZEN_CENSUS 를 갱신하십시오. 산출된 실제 census:\n");
             sb.append("   ").append(Paths.get(ACTUAL_OUT).toAbsolutePath()).append("\n");
             fail(sb.toString());

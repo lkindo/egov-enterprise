@@ -118,7 +118,7 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
          * 409 위양성</b>을 만들었다 — 글을 편집 중일 때 누가 댓글을 달면 편집이 충돌로 실패했다.
          *
          * <p>네이티브 벌크 UPDATE 는 감사 컬럼도 {@code version} 도 건드리지 않으므로 두 문제가 함께 사라진다.
-         * (전파 대신 손해가 확정된 지점만 봉합하는 방침 — §0.7-H4 의 일괄 변경 경계와 정합한다.)
+         * (전파 대신 손해가 확정된 지점만 봉합하는 방침 — AGENTS.md Evidence guardrails H4의 일괄 변경 경계와 정합한다.)
          *
          * @return 영향 행 수. 0 이면 해당 게시글이 없다(이미 삭제된 글에 달린 댓글 등).
          */

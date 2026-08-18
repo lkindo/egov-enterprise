@@ -175,7 +175,7 @@ pnpm -C frontend type-check:e2e
 ```
 
 > **`type-check:e2e` 가 왜 따로 있는가**: 루트 `frontend/tsconfig.json` 의 `exclude` 에 `"e2e"` 가
-> 들어 있어, §0.6 HARD 게이트(`npx tsc --noEmit`)가 **E2E 스펙을 한 번도 검사하지 않았다.**
+> 들어 있어, 종전 루트 타입 게이트(`npx tsc --noEmit`)가 **E2E 스펙을 한 번도 검사하지 않았다.**
 > Playwright 러너도 타입을 검사하지 않고 벗겨내기만 하므로(transpile-only), E2E의 타입 오류는
 > **4분짜리 CI e2e 잡이 실패해야만** 드러났다. `tsconfig.e2e.json` 이 그 공백을 메운다
 > (첫 실행에서 호출부 0인 死메서드 2개와 미사용 지역변수 1건을 즉시 검출했다).

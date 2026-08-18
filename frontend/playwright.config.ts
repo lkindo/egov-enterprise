@@ -45,7 +45,7 @@ export default defineConfig({
         baseURL: process.env.NEXT_PUBLIC_WEB_URL || 'http://localhost:3001',
         trace: 'retain-on-failure',
         // [E2E 감사 C1] retries:0 환경에서 'on-first-retry'는 영상이 영구 미수집됨.
-        // GEMINI.md §8의 WebP 비디오 교차검증 의무를 복원하기 위해 실패 시 항상 보존으로 변경.
+        // AGENTS.md "공통 작업 원칙"의 E2E 증거 교차검증을 위해 실패 시 WebP 비디오를 항상 보존한다.
         video: 'retain-on-failure',
         screenshot: 'only-on-failure',
     },
