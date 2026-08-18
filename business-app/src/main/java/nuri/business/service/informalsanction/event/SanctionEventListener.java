@@ -38,7 +38,7 @@ public class SanctionEventListener {
         //   그래서 종전에는 발송 요청자를 리터럴 "SYSTEM" 으로 넘겨, 결재를 실제로 승인/반려한
         //   사람이 발송 이력에서 사라졌다. 이벤트가 이미 sanctionerId 를 싣고 오므로 그것을 쓴다.
         //   (sendSms/sendMail 의 첫 인자는 '요청자' 로그·이력 용도이며 인가 판정에 쓰이지 않는다 —
-        //    권한 완화가 아니다. §0.7-H3)
+        //    권한 완화가 아니다. AGENTS.md Evidence guardrails H3)
         final String actorId = org.springframework.util.StringUtils.hasText(event.getSanctionerId())
                 ? event.getSanctionerId()
                 : "SYSTEM";

@@ -29,6 +29,7 @@
 /GEMINI.md             @lkindo
 /CLAUDE.md             @lkindo
 /AGENTS.md             @lkindo
+/.agent/memory/        @lkindo
 /docs/03-guides/orchestration-protocol.md   @lkindo
 /.agent/knowledge/**/artifacts/constitution.md @lkindo
 

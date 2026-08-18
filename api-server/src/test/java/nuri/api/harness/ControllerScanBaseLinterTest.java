@@ -33,7 +33,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>실측 시점에 위반은 <b>0건</b>이다(컨트롤러 전량이 {@code nuri.api.controller} 하위).
  * 이 게이트는 그 상태를 <b>동결</b>하는 것이지 기존 위반을 고치는 것이 아니다.
  * "지금 위반이 없다"와 "앞으로도 위반이 생기지 않는다"는 다른 명제이고,
- * 후자를 보장하는 것은 규칙 서술이 아니라 실행되는 게이트뿐이다(GEMINI.md §0.7-H5).
+ * 후자를 보장하는 것은 규칙 서술이 아니라 실행되는 게이트뿐이다(AGENTS.md Evidence guardrails H5).
  *
  * <p>[규칙 1] 요청 처리 컨트롤러({@code @RestController} / {@code @Controller})는
  * {@code nuri.api.controller} 하위에만 선언한다.
@@ -47,7 +47,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>[왜 예외 목록이 없나] 정당한 비컨트롤러 설정 클래스는 규칙 1 에 애초에 걸리지 않는다
  * (컨트롤러 애노테이션이 없으므로). 그래서 allow-list 를 두지 않는다 — 없어도 되는 예외 목록은
- * 만들지 않는다(§0.7-H2: 목록 편집은 수정이 아니다).
+ * 만들지 않는다(AGENTS.md Evidence guardrails H2: 목록 편집은 수정이 아니다).
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔.
  * 경로 해석은 {@code HandlerReachesServiceLinterTest} 관행을 따른다.

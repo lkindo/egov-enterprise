@@ -32,7 +32,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 운영({@code application.yml}) · 테스트 프로파일({@code application-test.yml}) ·
  * {@code RbacAuthorizationMatrixTest} 의 {@code @SpringBootTest(properties=…)}.
  * 셋이 갈라지면 <b>테스트는 실제 운영 경계가 아닌 것을 검증하게 된다</b>. 그때 그린은 아무 의미가 없다.
- * 현재 셋은 일치하지만, 그 일치를 강제하는 것은 아무것도 없었다(§0.7-H5 의 '실행 경로 없는 규칙').
+ * 현재 셋은 일치하지만, 그 일치를 강제하는 것은 아무것도 없었다(AGENTS.md Evidence guardrails H5의 '실행 경로 없는 규칙').
  *
  * <p><b>이 게이트가 보장하지 <u>않는</u> 것</b>: 목록의 <b>내용이 옳은지</b>는 보지 않는다.
  * URL 단위 인가는 원리적으로 소유권(IDOR)을 표현하지 못하므로, 여기 등재됐다는 사실이

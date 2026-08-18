@@ -270,7 +270,7 @@ class HarnessBaselineIntegrityTest {
             }
             sb.append("\n💡 먼저 자문하십시오: 지금 목록을 손대는 이유가 '위반을 고치는 것' 입니까,\n");
             sb.append("   아니면 '빨간 신호를 없애는 것' 입니까? 후자라면 그것은 수정이 아니라 은폐입니다.\n");
-            sb.append("   (GEMINI.md §0.7-H2 / 오케스트레이션 프로토콜 §4.1 '미검증을 완료로 선언 금지')\n");
+            sb.append("   (AGENTS.md Evidence guardrails H2 / 오케스트레이션 프로토콜 §4.1 '미검증을 완료로 선언 금지')\n");
             sb.append("\n💡 변경이 정당하다면:\n");
             sb.append("   1) 사유를 커밋 메시지 또는 .gemini/tasks/ 기록에 남기고\n");
             sb.append("   2) 아래 산출 파일을 매니페스트로 복사하십시오.\n");

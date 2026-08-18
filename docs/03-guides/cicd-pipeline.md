@@ -341,7 +341,7 @@ npx playwright show-report
 
 ### 로컬 사전 게이트 (git hooks)
 
-CI가 실행되기 전, 저장소에 포함된 공유 pre-push HARD 게이트가 잘못된 푸시를 먼저 차단합니다. (`GEMINI.md` §0.6)
+CI가 실행되기 전, 저장소에 포함된 공유 pre-push 게이트가 잘못된 푸시를 먼저 차단합니다. 범위별 최소 검증은 [AGENTS.md](../../AGENTS.md#verification-by-change-scope)를 따르며, 최종 병합 권위는 required CI입니다.
 
 ```bash
 # 클론마다 1회 설치

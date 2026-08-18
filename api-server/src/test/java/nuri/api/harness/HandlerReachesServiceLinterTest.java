@@ -48,7 +48,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>[예외 목록 없음] 정당한 서비스-0 컨트롤러(헬스체크 {@code HealthCheckApiController},
  * prod 미등록 디버그 {@code DebugController})는 <b>쓰기 핸들러가 아예 없어</b> 이 규칙에 애초에 걸리지
- * 않는다(실측 확인). 그래서 allow-list 를 두지 않는다 — 없어도 되는 예외 목록은 만들지 않는다(§0.7-H2).
+ * 않는다(실측 확인). 그래서 allow-list 를 두지 않는다 — 없어도 되는 예외 목록은 만들지 않는다(AGENTS.md Evidence guardrails H2).
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔. 경로 해석은 IdentityAxisLinterTest 관행을 따른다.
  */

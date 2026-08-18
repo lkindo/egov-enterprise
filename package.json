@@ -19,6 +19,7 @@
     "test:coverage": "npx cross-env TZ=Asia/Seoul gradlew.bat test jacocoRootCoverageVerification --continue -Dfile.encoding=UTF-8",
     "test:db-bridge": "node --test .agent/scripts/db-bridge.test.js",
     "test:required-checks": "node --test scripts/required-checks-contract.test.mjs",
+    "test:shared-memory": "node --test scripts/shared-memory-contract.test.mjs",
     "test:base-profile": "node --test scripts/reusable-base-census.test.mjs",
     "base:census": "node scripts/reusable-base-census.mjs --check",
     "base:generate-db": "node scripts/generate-reusable-base-db.mjs",
@@ -27,7 +28,7 @@
     "verify:be": "node scripts/verify.mjs be",
     "verify:fe": "node scripts/verify.mjs fe",
     "verify:ops": "node scripts/verify.mjs ops",
-    "//verify:ops": ".github/required-checks.json ↔ ci.yml 잡·매트릭스 ↔ GitHub 실제 브랜치 보호 설정 대조. required status check 가 빠지면 하네스가 강제력 없는 권고로 강등되므로 병합·릴리스 전에 명시 실행한다. ruleset 조회에 admin 읽기 권한이 필요해 `verify all` 에는 넣지 않았다(§0.7-H5: 조용한 skip 금지 → 별도 스코프)."
+    "//verify:ops": ".github/required-checks.json ↔ ci.yml 잡·매트릭스 ↔ GitHub 실제 브랜치 보호 설정 대조. required status check 가 빠지면 하네스가 강제력 없는 권고로 강등되므로 병합·릴리스 전에 명시 실행한다. ruleset 조회에 admin 읽기 권한이 필요해 `verify all` 에는 넣지 않았다(AGENTS H5: 조용한 skip 금지 → 별도 스코프)."
   },
   "dependencies": {
     "cross-env": "^7.0.3",

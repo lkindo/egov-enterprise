@@ -17,7 +17,7 @@ description: "eGov-Enterprise 전용 GStack 스타일 다각도 리뷰 시스템
 
 ### 👤 Engineering Manager (Architecture & Scope)
 **"시스템적으로 올바르고 유지보수 가능한가?"**
-- [ ] 현재 프로젝트의 아키텍처 규칙(`GEMINI.md`)을 준수하는가?
+- [ ] 현재 프로젝트의 공통 아키텍처 규칙(`AGENTS.md`)과 관련 코드 헌법을 준수하는가?
 - [ ] 데이터 모델링 및 인터페이스 정의가 명확하고 일관적인가?
 - [ ] 작업 범위(Scope)가 적절하게 쪼개져 있는가? (과도한 변경 방지)
 
@@ -41,4 +41,3 @@ description: "eGov-Enterprise 전용 GStack 스타일 다각도 리뷰 시스템
 - **Safety(Paranoid)**: [리스크/엣지케이스 핵심 1줄]
 - **Action**: [계획에 반영된 최종 한 줄]
 ```
-

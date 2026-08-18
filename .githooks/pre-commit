@@ -14,7 +14,7 @@ if command -v gitleaks >/dev/null 2>&1; then
   fi
 else
   # [W0-08] 종전에는 미설치 시 **아무 출력 없이** 통과했다. 그 침묵이 '스캔이 돌았다'는
-  #   거짓 안전감을 만든다(GEMINI.md §0.7-H5: 실행되지 않는 게이트는 없는 게이트).
+  #   거짓 안전감을 만든다(AGENTS.md Evidence guardrails H5: 실행되지 않는 게이트는 없는 게이트).
   #   훅에서 hard-fail 로 바꾸지는 않는다 — 로컬 미설치가 커밋을 전면 차단하면 --no-verify 상시화를
   #   유발하기 때문이다. 차단 책임은 CI 의 secret-scan 잡에 둔다(스캔 범위도 그쪽이 넓다: 히스토리 전체).
   echo "⚠  [pre-commit] gitleaks 미설치 — 로컬 시크릿 스캔을 건너뜁니다 (설치: winget install gitleaks)."
@@ -26,7 +26,7 @@ if echo "$STAGED" | grep -qE '(api-docs\.json|Dto\.java|Controller\.java|src/typ
   if command -v pnpm >/dev/null 2>&1; then
     echo "[pre-commit] API 계약 드리프트 점검 (codegen:verify)…"
     pnpm -C frontend run codegen:verify >/dev/null 2>&1 \
-      || echo "⚠  generated-api.d.ts 드리프트 가능 — 'pnpm -C frontend codegen:file' 후 스테이징 (GEMINI.md §4). 원인이 stale api-docs.json인지 먼저 확인."
+      || echo "⚠  generated-api.d.ts 드리프트 가능 — 'pnpm -C frontend codegen:file' 후 스테이징 (공용 project-context의 codegen 규칙). 원인이 stale api-docs.json인지 먼저 확인."
     pnpm -C frontend run codegen:verify:zod >/dev/null 2>&1 \
       || echo "⚠  generated-zod.ts 드리프트 가능 — 'pnpm -C frontend codegen:zod' 후 스테이징."
   fi

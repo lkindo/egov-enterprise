@@ -55,7 +55,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Hibernate 가 엔티티 정의대로 스키마를 새로 만든다. 즉 <b>테스트는 운영 스키마를 본 적이 없다.</b>
  *
  * <p>이 린터는 <b>Flyway 델타를 정적으로 재생(replay)</b>해 유효 스키마를 구성하고, 엔티티 매핑과 대조한다.
- * DB 연결·Docker 없이 결정론적으로 동작하므로 pre-push 에서 돌릴 수 있다(§0.7-H5).
+ * DB 연결·Docker 없이 결정론적으로 동작하므로 pre-push 에서 돌릴 수 있다(AGENTS.md Evidence guardrails H5).
  * 라이브 DB 와 마이그레이션의 괴리는 별개 문제이며 Flyway validate 의 영역이다 — 여기서는
  * <b>저장소가 선언한 스키마</b>를 기준으로 삼는다.
  *
@@ -120,7 +120,7 @@ class EntitySchemaConformanceLinterTest {
     private static final int JPA_DEFAULT_LENGTH = 255;
 
     @Test
-    @DisplayName("🧬 엔티티 매핑 ↔ Flyway 물리 스키마 정합 — PK 전략 적합성·길이 초과·부재 차단 (§0.7-H1)")
+    @DisplayName("🧬 엔티티 매핑 ↔ Flyway 물리 스키마 정합 — PK 전략 적합성·길이 초과·부재 차단 (AGENTS.md H1)")
     void auditEntityMappingMatchesPhysicalSchema() throws IOException {
         Map<String, Map<String, String>> schema = replayMigrations();
 
@@ -205,7 +205,7 @@ class EntitySchemaConformanceLinterTest {
             sb.append("\n💡 테스트 그린은 안전의 증거가 아닙니다 — 테스트 프로파일(H2 + create-drop)은 엔티티 정의대로\n");
             sb.append("   스키마를 새로 만들기 때문에 운영 PostgreSQL 과의 불일치를 원리적으로 검출하지 못합니다.\n");
             sb.append("   해소: ① 매핑을 물리 스키마에 맞추거나 ② Flyway 델타를 추가해 물리 스키마를 바꾸십시오.\n");
-            sb.append("   (GEMINI.md §0.7-H1 — db-bridge 실측 결과를 증적으로 제시할 것)\n");
+            sb.append("   (AGENTS.md Evidence guardrails H1 — db-bridge 실측 결과를 증적으로 제시할 것)\n");
             fail(sb.toString());
         }
 

@@ -149,7 +149,7 @@ pnpm -C frontend codegen:zod   # generated-zod.ts 동기화
 pnpm -C frontend codegen:ts
 ```
 
-드리프트 점검(git diff --exit-code 기반): `pnpm -C frontend codegen:verify` / `codegen:verify:zod`. (자세한 규칙은 GEMINI.md §4 참조)
+드리프트 점검(git diff --exit-code 기반): `pnpm -C frontend codegen:verify` / `codegen:verify:zod`. (자세한 실행 맥락은 [공용 project-context](../../.agent/memory/project-context.md#개발검증배포-흐름) 참조)
 
 ### 2. 생성된 파일 확인
 `frontend/src/types/generated-api.d.ts`(타입 정의)와 `frontend/src/types/generated-zod.ts`(런타임 검증 스키마)가 함께 갱신되었는지 확인합니다. 전자는 모든 서비스 레이어(`ApiService`)에서 타입 정의로 활용됩니다.

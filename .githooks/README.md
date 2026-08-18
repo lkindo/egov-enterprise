@@ -1,6 +1,6 @@
-# .githooks — 공유 git 훅 (GEMINI.md §0.6 기계적 강제)
+# .githooks — AGENTS.md 범위별 검증을 구현하는 공유 git 훅
 
-`GEMINI.md` §0.6의 컴파일 무결성 게이트와 §4의 계약 드리프트 점검을 prose 규칙에서 **기계적 강제**로 승격한다. Gemini·Claude 등 어떤 operator가 커밋/푸시하든 동일하게 적용된다.
+[AGENTS.md](../AGENTS.md#verification-by-change-scope)의 범위별 검증과 계약 드리프트 점검을 prose 규칙에서 **기계적 강제**로 승격한다. Gemini·Claude·Codex 등 어떤 operator가 커밋/푸시하든 동일하게 적용된다.
 
 ## 설치 (클론마다 1회)
 ```sh
@@ -12,18 +12,19 @@ git config core.hooksPath .githooks
 | 훅 | 시점 | 동작 | 강도 |
 |----|------|------|------|
 | `pre-commit` | 커밋 | DTO/Controller/api-docs.json/생성타입 스테이징 시 `codegen:verify(:zod)` 드리프트 점검 | ⚠ 경고(비차단) |
-| `pre-push` | 푸시 | `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` + (프론트 존재 시) codegen 드리프트 게이트(`codegen:verify` + `codegen:verify:zod` — api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합) + **하네스 린터 31종**(`:api-server:harnessTest`) | ❌ 차단 |
+| `pre-push` | 푸시 | 공용 메모리·문서 링크 계약은 항상 실행. 문서-only는 fast-pass, Atlas HTML은 전용 계약만 추가 실행, 소스 변경은 컴파일·타입·codegen·하네스까지 실행 | ❌ 실행된 범위에서 차단 |
 
 > **계약 게이트의 untracked 구멍(2026-08-01 봉합)**: `codegen:verify` 계열은 `git diff --exit-code <path>` 로 판정하는데, 대상 파일이 **언트랙이면 diff 가 무조건 exit 0** 이라 게이트가 조용히 vacuous 통과한다. 즉 `git rm --cached api-docs.json` 하나로 3중 계약 결속이 동시에 무력화됐다. (파일이 아예 없으면 `fatal: ambiguous argument` 로 loud fail 하므로, 위험 구간은 정확히 '디스크에는 있으나 언트랙' 하나다.) 이제 `git ls-files --error-unmatch` 선행 검사를 pre-push·`codegen:verify`·`codegen:verify:zod`·CI 4곳에 넣었다.
 
-> **하네스 린터를 pre-push 로 올린 이유(2026-07-26)**: 하네스에는 헌법/표준 게이트가 11종 있었지만 실행 경로가 CI(`build check`)뿐이었고 **CI 는 과금차단** 상태였다. 즉 "게이트는 있는데 어디서도 돌지 않는" 상태였고, 그래서 동결 베이스라인을 비우거나 예외 목록을 신설해 신호를 지운 변경이 두 번 모두 그린으로 통과했다. 새 린터를 다는 것보다 **있는 린터를 돌게 만드는 것**이 우선이다. 실측 소요 **1m58s**(대부분은 Spring 컨텍스트를 띄우는 `SecurityAuthAnnotationLinterTest`).
+> **하네스 린터를 pre-push 로 올린 이유(2026-07-26)**: 하네스 실행이 원격 CI에만 의존하면 로컬에서 baseline·예외 목록 변조를 늦게 발견한다. 새 린터를 다는 것보다 **있는 린터를 실제 경로에서 돌게 만드는 것**이 우선이었다. 실측 소요 **1m58s**(대부분은 Spring 컨텍스트를 띄우는 `SecurityAuthAnnotationLinterTest`). 다만 훅은 우회 가능하므로 최종 권위는 required CI다.
 
 ## 게이트 계층 (무엇이 어디서 도는가)
 
 | 계층 | 명령 | 범위 | 소요(실측) |
 |---|---|---|---|
 | pre-commit | 자동 | 시크릿 스캔(미설치 시 **경고 출력**)·계약 드리프트 경고 | 수 초 |
-| pre-push | 자동 | 컴파일 + tsc + codegen(+**tracked 선행검사**) + **문서 링크 무결성** + **하네스 31종** | ~2분 |
+| pre-push 문서-only | 자동 | 공용 메모리 계약 + 문서 링크 무결성. Atlas HTML이면 전용 docs-as-code 계약 추가 | 수 초~수십 초 |
+| pre-push 소스 변경 | 자동 | 위 + 컴파일 + tsc + codegen(+**tracked 선행검사**) + **하네스 31종** | ~2분 |
 | **병합 전 전수** | `./gradlew localGate` | 위 + **실PG 스키마 검증** + 전 모듈 테스트 + **JaCoCo LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫 | ~12분 |
 | CI | `.github/workflows/ci.yml` | **secret-scan(gitleaks)** + 전체 + 실PG 스키마 검증 + 프론트 gzip 번들 예산 + E2E + 뮤테이션 | 상시 |
 
@@ -48,8 +49,8 @@ git config core.hooksPath .githooks
 
 ### pre-push fast-pass 정책 변경(2026-08-01)
 
-확장자 **allowlist → denylist 로 반전**했다. 종전에는 '코드로 인정할 확장자'를 열거했기 때문에, 확장자가 없거나 목록에 없는 파일이 전부 검증 없이 통과했다 — 그리고 하필 그 집합이 **게이트를 무력화할 수 있는 파일들**이었다: `.githooks/` 자신, `baseline-manifest.properties`(동결 기준), `gradle/libs.versions.toml`, `gradle-wrapper.properties`, `gradlew`, Dockerfile 2종, `scripts/*.mjs|ps1|sh`. 즉 게이트를 끄는 편집이 게이트를 통과했다(§0.7-H5).
-이제는 문서·이미지·폰트 등 **확실히 비코드인 확장자만** fast-pass 하고 나머지는 전부 코드로 간주한다. 다중 ref 푸시에서 마지막 ref 만 평가하던 버그도 함께 고쳤다.
+확장자 **allowlist → denylist 로 반전**했다. 종전에는 '코드로 인정할 확장자'를 열거했기 때문에, 확장자가 없거나 목록에 없는 파일이 전부 검증 없이 통과했다 — 그리고 하필 그 집합이 **게이트를 무력화할 수 있는 파일들**이었다: `.githooks/` 자신, `baseline-manifest.properties`(동결 기준), `gradle/libs.versions.toml`, `gradle-wrapper.properties`, `gradlew`, Dockerfile 2종, `scripts/*.mjs|ps1|sh`. 즉 게이트를 끄는 편집이 게이트를 통과했다(AGENTS H5).
+이제는 문서·이미지·폰트 등 **확실히 비코드인 확장자만** fast-pass 하고 나머지는 전부 코드로 간주한다. 예외적으로 `frontend/public/governance_harness_atlas.html`은 전용 계약 테스트가 먼저 통과한 경우에만 fast-pass한다. 다중 ref 푸시에서 마지막 ref 만 평가하던 버그도 함께 고쳤다.
 
 ### 실 PostgreSQL 스키마 검증 (`./gradlew :api-server:schemaValidationTest`)
 

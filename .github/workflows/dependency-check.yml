@@ -16,7 +16,7 @@ name: OWASP Dependency-Check (advisory)
 #   즉 "CVE 스캔이 돌고 있다" 고 믿는 동안 **애플리케이션 의존성은 한 번도 검사되지 않았다.**
 #   원인은 build.gradle 의 suppressionFile 경로가 서브프로젝트 기준으로 해석된 것이었고(같은 PR 에서 정정),
 #   그 사실이 드러나지 않은 이유가 이 플래그다. '스캔 실패' 는 관대하게 두되
-#   '리포트가 없다' 는 신호는 남긴다(GEMINI.md §0.7-H5 — 게이트인 척하는 스텝 금지).
+#   '리포트가 없다' 는 신호는 남긴다(AGENTS.md Evidence guardrails H5 — 게이트인 척하는 스텝 금지).
 
 on:
   schedule:
@@ -75,7 +75,7 @@ jobs:
       #   종전에는 스캔이 exit 1 로 죽고 리포트가 0건이어도 이중 continue-on-error 때문에
       #   워크플로가 초록으로 끝나, "CVE 스캔이 돌고 있다"는 거짓 안전감을 만들었다.
       #   이 스텝은 continue-on-error 를 붙이지 않는다 — 스캔 자체는 아직 게이트가 아니지만,
-      #   '리포트가 없다'는 사실만큼은 신호로 남아야 한다(GEMINI.md §0.7-H5).
+      #   '리포트가 없다'는 사실만큼은 신호로 남아야 한다(AGENTS.md Evidence guardrails H5).
       - name: Verify report was actually produced
         if: always()
         run: |

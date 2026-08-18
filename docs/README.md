@@ -4,7 +4,7 @@
 
 > **왜 만들었나**: 종전에는 `docs/` 에 인덱스가 없었고, 문서 지도는 루트 [README.md](../README.md) 의 표 하나뿐이었다. 그 표는 당시 51개 문서 중 약 20개를 누락하고 있었다 — 즉 **문서의 40%가 어떤 인덱스에서도 발견되지 않았다.** 작성된 문서가 발견되지 않으면 없는 것과 같고, 그 상태에서 같은 주제의 문서가 다시 쓰인다.
 
-> **분류 규칙**([GEMINI.md](../GEMINI.md) §6): `01-product/`(기획) · `02-architecture/`(설계) · `03-guides/`(개발 지침) · `04-operations/`(운영) · `archived/`(구버전 보관). 파일명은 **`kebab-case.md`**. 새 문서를 추가하면 **이 인덱스에도 한 줄 추가**한다.
+> **분류 규칙**([AGENTS.md](../AGENTS.md#documentation-and-memory)): `01-product/`(기획) · `02-architecture/`(설계) · `03-guides/`(개발 지침) · `04-operations/`(운영) · `archived/`(구버전 보관). 파일명은 **`kebab-case.md`**. 새 문서를 추가하면 **이 인덱스에도 한 줄 추가**한다.
 
 ---
 
@@ -18,7 +18,7 @@
 | **게이트가 red 인데 원인을 모른다** | [verification-blindspots.md](04-operations/verification-blindspots.md) · [.githooks/README.md](../.githooks/README.md) |
 | **DB 객체를 설계**한다 | [db-standardization-manual.md](03-guides/db-standardization-manual.md) → [DB 헌법](../.agent/knowledge/db-standard-constitution/artifacts/constitution.md) |
 
-> **규범의 SSOT 는 `docs/` 가 아니다.** 3대 헌법([백엔드](../.agent/knowledge/backend-api-constitution/artifacts/constitution.md) 18조 · [프론트엔드](../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) 17조 · [DB](../.agent/knowledge/db-standard-constitution/artifacts/constitution.md) 10조)과 [GEMINI.md](../GEMINI.md) 가 최우위이며, `docs/` 는 그 원칙을 실무에 적용하는 가이드다.
+> **규범의 SSOT 는 `docs/` 가 아니다.** 프로젝트 공통 규칙은 [AGENTS.md](../AGENTS.md), 코드 규범은 3대 헌법([백엔드](../.agent/knowledge/backend-api-constitution/artifacts/constitution.md) 18조 · [프론트엔드](../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md) 17조 · [DB](../.agent/knowledge/db-standard-constitution/artifacts/constitution.md) 10조)이 우선하며, `docs/` 는 이를 실무에 적용하는 가이드다.
 
 ---
 
@@ -111,11 +111,15 @@
 | 문서 | 위치 |
 |---|---|
 | 프로젝트 개요·설치·실행 | [README.md](../README.md) |
-| 운영 규칙 SSOT | [GEMINI.md](../GEMINI.md) |
-| Claude Code 어댑터 | [CLAUDE.md](../CLAUDE.md) |
+| 공통 프로젝트 규칙 SSOT | [AGENTS.md](../AGENTS.md) |
+| Gemini 자동 로드 어댑터 | [GEMINI.md](../GEMINI.md) |
+| Claude Code 자동 로드 어댑터 | [CLAUDE.md](../CLAUDE.md) |
+| 공용 프로젝트 컨텍스트 | [.agent/memory/project-context.md](../.agent/memory/project-context.md) |
+| 공용 결정 인덱스 | [.agent/memory/decisions.md](../.agent/memory/decisions.md) |
+| 공용 활성 gap 인덱스 | [.agent/memory/known-gaps.md](../.agent/memory/known-gaps.md) |
 | 게이트 계층·훅 규약 | [.githooks/README.md](../.githooks/README.md) |
 | 3대 헌법 | [.agent/knowledge/](../.agent/knowledge/) |
 | 작업 기록 | [.gemini/tasks/](../.gemini/tasks/) |
 
 ---
-*Last Updated: 2026-08-16 (신설 — docs/ 인덱스 부재로 문서 51개 중 약 20개가 어떤 인덱스에서도 도달 불가하던 상태를 해소. 루트 README 의 부분 지도를 대체하는 전량 인덱스.)*
+*Last Updated: 2026-08-18 (공통 규칙 SSOT를 AGENTS.md로 단일화하고 Gemini/Claude 어댑터 및 공용 메모리 3종을 연결.)*

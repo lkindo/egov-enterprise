@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  * 애노테이션을 지우거나 넓혀도 기능 테스트는 초록이다. 그래서 애노테이션의 존재 자체를
  * 리플렉션으로 못 박는다.
  *
- * <p><b>등급이 셋으로 갈리는 이유</b>(§0.7-H3 — 도메인 맥락 판정이지 패턴 적용이 아니다):
+ * <p><b>등급이 셋으로 갈리는 이유</b>(AGENTS.md Evidence guardrails H3 — 도메인 맥락 판정이지 패턴 적용이 아니다):
  * <ul>
  *   <li>{@code @Authenticated} — 참여·통계 열람. 관리 기능이 아니라 일반 사용자의 행위다.</li>
  *   <li>{@code @AdminOrSystem} — 응답 목록·단건. 응답 내용에는 신상이 없다(신상은 응답자 테이블).</li>

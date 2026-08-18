@@ -77,7 +77,7 @@ ROLE_USER 에게 노출되지만 프론트 미들웨어가 되돌리는 메뉴�
 개별 판정 후 **10건**의 ROLE_USER 매핑을 `V2_36__revoke_user_authority_on_admin_only_menus.sql` 로 회수했다.
 (매핑 테이블의 실제 이름은 `tb_menu_crt_dtl` 이다 — `tb_menu_authrt_map` 은 존재하지 않는다.)
 
-**제외한 3건**은 전부 **섹션 헤더**이며, 회수하면 그 아래 사용자 접근 가능한 메뉴가 함께 사라진다(§0.7-H4 개별 판정):
+**제외한 3건**은 전부 **섹션 헤더**이며, 회수하면 그 아래 사용자 접근 가능한 메뉴가 함께 사라진다(AGENTS H4 개별 판정):
 
 | menu_sn | 이름 | 제외 사유 |
 |---|---|---|
@@ -186,12 +186,12 @@ Wave 1 은 인접 3건(`AuthenticationBypassTest` 재작성, `SqlInjectionAndXss
 **함께 고친 결함**: 축 ③ 을 라이브에 대조하니 `_yn` 61컬럼 중 CHECK 없는 것이 2개였고,
 그중 `meta_standard_words.rprs_yn` 은 진짜 불리언이었다(라이브 DISTINCT = {'Y','N'}).
 V2_24 가 `tb_` 접두만 훑어 `meta_` 테이블이 통째로 빠져 있었다 → **V2_39** 로 채웠다.
-스모크의 예외 목록에 적는 값싼 길을 택하지 않았다(§0.7-H2). 남는 예외는 오명명 1건
+스모크의 예외 목록에 적는 값싼 길을 택하지 않았다(AGENTS H2). 남는 예외는 오명명 1건
 (`tb_menu_info.route_mdfcn_yn`, 값이 '2')뿐이다.
 
 **실행 증적**: `./gradlew :api-server:schemaValidationTest` — 실 PostgreSQL 17(Testcontainers)
 + Flyway 전량 적용 후 `SchemaValidationIntegrationTest` 1건 · `WriteSmokeIntegrationTest` 3건 그린.
-**V2_39 를 제거해 축 ③ 이 red 가 되는 것까지 확인했다**(§0.7-H5 — 그린만 보면 vacuous 통과와 구분되지 않는다).
+**V2_39 를 제거해 축 ③ 이 red 가 되는 것까지 확인했다**(AGENTS H5 — 그린만 보면 vacuous 통과와 구분되지 않는다).
 
 > ⚠ 원장이 추천한 "결재 1건 MockMvc HTTP 계층" 은 **이번 범위에 넣지 않았다.** 축 ①~③ 이
 > 원장이 지목한 결함(CHECK 값 정합)을 직접 겨냥하는 반면, 결재 HTTP 스모크는 별도의 픽스처
@@ -228,7 +228,7 @@ JPA auditing 이 **업로더 loginId** 를 채운다(라이브 125행 전부 채
 **구현** — `FileAccessPolicy`(business-core)가 도달성으로 판정한다. 판정 표는 위에서부터:
 ① 업로더 본인(loginId) → 허용(업로드 직후 미첨부 창) ② 참조 행의 소유자·당사자 → 허용
 ③ 공유 콘텐츠(비밀글 아닌 게시글·FAQ·배너·일정 등) → 인증 사용자 허용
-④ 관리자 → 허용하되 **개인 귀속(쪽지·상벌·업무보고 등) 참조원이 하나라도 있으면 불허**(§0.7-H3 프라이버시)
+④ 관리자 → 허용하되 **개인 귀속(쪽지·상벌·업무보고 등) 참조원이 하나라도 있으면 불허**(AGENTS H3 프라이버시)
 ⑤ 그 외 → 403. 적용 지점은 `FileService.getFileList` / `getFileResource` / `getFileDetail` 이다
 (호출부 실측 결과 이 셋의 진입점은 `FileApiController` 2개 HTTP 경로뿐이라 폭발 반경이 좁다).
 
@@ -237,7 +237,7 @@ JPA auditing 이 **업로더 loginId** 를 채운다(라이브 125행 전부 채
 
 **게이트**
 - `FileAccessPolicyTest`(business-core, 12건) — 판정 표 전량. 참조원 조회를 포트로 분리해 **DB 없이** 검증한다.
-  가드를 무력화해 주입하면 **12건 중 5건 red**(거부 단언 전부)임을 확인했다(§0.7-H5).
+  가드를 무력화해 주입하면 **12건 중 5건 red**(거부 단언 전부)임을 확인했다(AGENTS H5).
 - `AttachmentSourceRegistryLinterTest`(harness, pre-push) — 레지스트리 ↔ 엔티티 정합을 누락·유령 2축으로 고정.
   예외 목록을 두지 않는다. 레지스트리에서 `tb_bbs_item` 을 빼는 위반을 주입해 red 확인.
 - `PrivilegeEscalationVulnerabilityTest` — **수평 축 신설**(아래 A-1 잔여와 같은 항목). 프로덕션 체인 위에서
@@ -301,7 +301,7 @@ JPA auditing 이 **업로더 loginId** 를 채운다(라이브 125행 전부 채
 같은 값이 두 곳(운영 `application.yml` · `OpenApiDocumentationTest`)에 있는 이유는 테스트 리소스가
 main 을 **shadow** 하기 때문이다. 둘이 갈라지면 **산출된 문서가 운영 API 를 서술하지 못하고**, 그
 드리프트는 조용하다 — 계약 게이트(`codegen:verify`)는 *생성된 스펙끼리만* 비교한다.
-종전 강제 수단은 양쪽 **주석** 뿐이었다(§0.7-H5 의 '실행 경로 없는 규칙').
+종전 강제 수단은 양쪽 **주석** 뿐이었다(AGENTS H5 의 '실행 경로 없는 규칙').
 → `SpringdocDeclarationSyncLinterTest` 신설(pre-push). 테스트 선언을 `false` 로 바꿔 red 확인.
 
 <details><summary>당시 기록 (해소 전)</summary>
@@ -311,7 +311,7 @@ main 을 **shadow** 하기 때문이다. 둘이 갈라지면 **산출된 문서�
 산출 스펙의 수치 결과는 같지만, 국소 부착을 권한 이유인 **적용 범위 통제**가 사라졌다 — 앞으로 추가되는
 모든 객체 query 파라미터가 리뷰 없이 자동 평탄화되고, 그것을 다시 세는 게이트도 없다.
 부수적으로 이 설정은 `application.yml` 과 `OpenApiDocumentationTest` **두 곳에 중복 선언**돼 있으며
-동기화를 강제하는 것은 양쪽 주석뿐이다(기계 게이트 없음 → §0.7-H5 의 '실행 경로 없는 규칙').
+동기화를 강제하는 것은 양쪽 주석뿐이다(기계 게이트 없음 → AGENTS H5 의 '실행 경로 없는 규칙').
 
 되돌릴지 유지할지는 비용 판단이다. 유지한다면 최소한 두 선언의 동기화를 게이트로 묶을 것.
 
@@ -370,7 +370,7 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 **실증**: `scaffoldprobe` 도메인을 실제로 생성 → `./gradlew compileJava` **BUILD SUCCESSFUL**
 → `SecurityAuthAnnotationLinterTest` 통과 → **애노테이션 2종을 떼자 같은 린터 2건이 red**
 (생성물이 게이트 스캔 범위 안이라는 증거) → `delete-domain.ps1` 로 전량 삭제 확인.
-그린만 확인하면 vacuous 통과와 구분되지 않으므로 red 쪽까지 실행했다(§0.7-H5).
+그린만 확인하면 vacuous 통과와 구분되지 않으므로 red 쪽까지 실행했다(AGENTS H5).
 
 ~~**잔여**: 엔티티가 `BaseTimeEntity` 를 상속한다…~~ →
 **해소 (2026-08-04 실측)**: `scripts/generate-domain.ps1` 은 이미 `BaseEntity` 를 상속하도록 바뀌어 있다
@@ -400,7 +400,7 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 > 목록이 말하는 것은 "린터가 그 사실을 확인하지 않는다" 이지 "가드가 없다" 가 아니다.
 >
 > **남은 것(미이행)**: 30건을 도메인별로 판정해 실제 읽기 가드를 붙이거나 공개 사유를 명시하는 일.
-> 일괄 처리해서는 안 된다(§0.7-H4) — 개인 귀속(메모보고·상벌)과 공용 콘텐츠(게시판·일정)는
+> 일괄 처리해서는 안 된다(AGENTS H4) — 개인 귀속(메모보고·상벌)과 공용 콘텐츠(게시판·일정)는
 > 판정이 정반대다. 첨부(A-3(b))가 그 개별 판정의 첫 사례다.
 
 **2026-08-15 최종 해소**: 잔여 30건을 호출 체인까지 개별 판정했다.
@@ -431,10 +431,10 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 | `pnpm-lock.yaml` 미재생성 | `--frozen-lockfile` 실패 → CI·Docker 빌드 전면 파손 |
 | Node 22 선언 지점 7곳 누락 | 선언부와 실행부가 서로 다른 Node 를 가리킴 (다이제스트 핀은 태그만 바꾸면 무효) |
 | 댓글 수 갱신이 감사 컬럼·`@Version` 발화 | 비동기 스레드라 수정자가 `SYSTEM` 으로 덮이고, E-1 이 없앤 409 위양성이 재생산 |
-| 하네스 매니페스트 헤더 소실 | §0.7-H2 가드레일의 자기 문서가 사라져 '자동 산출물이니 덮어쓰면 된다'로 오인될 상태 |
+| 하네스 매니페스트 헤더 소실 | AGENTS H2 가드레일의 자기 문서가 사라져 '자동 산출물이니 덮어쓰면 된다'로 오인될 상태 |
 | `useAppForm.applyServerErrors` 타입 미노출 | 런타임에는 있는데 호출하면 TS2339 — 헬퍼가 사실상 호출 불가 |
 | 숨김 글에 좋아요 증가 허용 | 네이티브 UPDATE 가 softDeleteFilter 를 통과하지 않아 404 계약이 깨짐 |
-| **컨트롤러 테스트 26건이 컨텍스트 로딩 단계에서 red** | J-1 이 `OperationalAuditInterceptor` 에 `ClientIpResolver` 의존을 추가했는데 그 빈은 `foundation` 의 `@Component` 라 `@WebMvcTest` 슬라이스가 스캔하지 않는다. **pre-push 는 `:api-server:test` 를 돌지 않아** 조용히 깨져 있었다(§0.7-H5 의 전형) |
+| **컨트롤러 테스트 26건이 컨텍스트 로딩 단계에서 red** | J-1 이 `OperationalAuditInterceptor` 에 `ClientIpResolver` 의존을 추가했는데 그 빈은 `foundation` 의 `@Component` 라 `@WebMvcTest` 슬라이스가 스캔하지 않는다. **pre-push 는 `:api-server:test` 를 돌지 않아** 조용히 깨져 있었다(AGENTS H5 의 전형) |
 | A-1 재발 방지 린터 부재 | 원장이 요구한 린터가 미신설 — `TestSecurityChainOverrideLinterTest` 신설(현행 6항목 동결, 위반 주입 red 확인) |
 
 ---
@@ -492,7 +492,7 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 
 | 무엇 | 실측 | 조치 |
 |---|---|---|
-| **`main` CI 가 red** | frontend-build 가 lint 에러 **1건**으로 죽어 `e2e-tests`·`e2e-merge-reports` 가 **skip**. 22티어 E2E 가 통째로 돌지 않고 있었다. 원인은 `useAppForm.test.tsx` 의 `z.object(...)` — 인라인 z.object 금지 규칙이 **테스트 파일에도** 걸렸다. pre-push 는 eslint 를 돌지 않아 그대로 통과했다(§0.7-H5 의 전형) | 테스트 override 블록에 한정해 규칙 해제. 앱 코드에 위반을 주입해 **여전히 red** 임을 확인 |
+| **`main` CI 가 red** | frontend-build 가 lint 에러 **1건**으로 죽어 `e2e-tests`·`e2e-merge-reports` 가 **skip**. 22티어 E2E 가 통째로 돌지 않고 있었다. 원인은 `useAppForm.test.tsx` 의 `z.object(...)` — 인라인 z.object 금지 규칙이 **테스트 파일에도** 걸렸다. pre-push 는 eslint 를 돌지 않아 그대로 통과했다(AGENTS H5 의 전형) | 테스트 override 블록에 한정해 규칙 해제. 앱 코드에 위반을 주입해 **여전히 red** 임을 확인 |
 | **Hibernate 튜닝 키가 무효 위치** | `spring.jpa.hibernate.*` 는 Boot 가 `ddl-auto`/`naming` 만 바인딩한다. `order_inserts`·`order_updates`·`jdbc.batch_size` 5개가 그 아래 있어 **조용히 무시**되고 있었다. ⚠ 다만 "배치가 꺼져 있었다"는 부정확하다 — 실측하면 `getJdbcBatchSize()` 는 **15**(Hibernate 기본값)다. 실제로 무효였던 것은 크기 25 라는 **의도**와 정렬 2종(기본 false)이다 | `spring.jpa.properties.hibernate.*` 로 이설. `HibernatePropertyBindingLinterTest` 신설 — ① 양쪽 prefix 를 동시 주입해 어느 쪽이 도달하는지 **실행으로** 증명 ② 운영 yml 정적 검사 |
 | ~~**required status checks 0개**~~ | ~~하네스 21종·pre-push·CI 6잡 전부 강제력 없는 권고~~ | **해소 (2026-08-05 실측)** — 아래 §7 참조 |
 
@@ -503,7 +503,7 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 
 ### 6.4 커밋하지 않은 것
 
-`GEMINI.md` 변경은 **되돌렸다**. 불가침 파일(GEMINI.md §3 · CLAUDE.md §5)이라 사용자 명시 승인이 필요한데
+당시 `GEMINI.md` 변경은 **되돌렸다**. 당시 규칙상 불가침 파일이라 사용자 명시 승인이 필요했는데
 승인 기록이 없고, 내용도 틀렸다 — `project.§8`(자가 성찰 디버그 확장 지침)을 `§7` 로 바꿨으나 본문은 여전히
 `## 8` 이라 그 참조가 `## 7. Database Interaction Rules` 를 가리키게 됐다.
 (글로벌 룰셋 절 번호 재매핑이 의도였던 것으로 보이나, 글로벌 파일은 저장소 밖이라 검증할 수 없다.
@@ -540,7 +540,7 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 
 **남은 것(제품/설계 결정)**: ①②는 게이트로 닫히지 않는다. URL 목록을 잘게 쪼개는 것은 관리 비용만 늘리고
 소유권 문제를 해결하지 못한다. 방향은 **소유권이 필요한 도메인을 식별해 서비스 계층 가드로 내리는 것**이며,
-그 판정은 도메인별로 개별 수행해야 한다(§0.7-H4). 첨부(A-3(b))가 그 첫 사례다.
+그 판정은 도메인별로 개별 수행해야 한다(AGENTS H4). 첨부(A-3(b))가 그 첫 사례다.
 
 ---
 

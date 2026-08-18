@@ -370,7 +370,7 @@ graph TD
 | 검증 단계 | 검증 대상 | 실행 트리거 | 강제 레벨 | 도구 및 명령어 |
 |:---|:---|:---|:---|:---|
 | **Local Commit** | 소스 코드 품질 & 문법 | `git commit` | **Optional** | ESLint, Prettier, Checkstyle |
-| **Local Push** | 컴파일 무결성 (Java compileJava/compileTestJava + TS 타입체크) | `git push` | **Mandatory** | Pre-Push Hook (.githooks/pre-push, core.hooksPath): `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` (GEMINI.md §0.6) |
+| **Local Push** | 변경 범위별 컴파일 무결성 (Java compileJava/compileTestJava + TS 타입체크) | `git push` | **Mandatory for source changes** | Pre-Push Hook (.githooks/pre-push, core.hooksPath): [AGENTS.md 범위별 검증](../../AGENTS.md#verification-by-change-scope). 문서-only는 경량 계약 후 fast-pass. |
 | **Pull Request** | 시큐리티 룰, 동시성, 비동기 통합 | PR 생성 및 업데이트 | **Mandatory** | `CI Server (./gradlew build jacocoRootReport check)` |
 | **Build & Deploy** | 정적 보안 스캔, 라이브러리 취약점 | Merge to main | **Mandatory** | `SonarQube`, `snyk test`, `DependencyCheck` |
 | **Staging Deploy** | API 부하 및 실제 백그라운드 성능 | 배포 직후 자동화 | **Recommended** | `k6 run --scenario users-100 test/load-tests/scenarios/load-levels.js` (SSOT: [load-test-guide.md](../04-operations/load-test-guide.md)) |

@@ -89,7 +89,7 @@ npm run backend          # gradlew :api-server:bootRun
 pnpm -C frontend dev
 ```
 
-컴파일·타입 게이트(§0.6 HARD):
+컴파일·타입 게이트([AGENTS 범위별 검증](../../AGENTS.md#verification-by-change-scope)):
 
 ```bash
 ./gradlew compileJava compileTestJava     # 백엔드 컴파일 무결성
@@ -260,12 +260,12 @@ public class ProductService extends BaseAbstractService {
 
 | 도메인 | 명령 | 근거 |
 |---|---|---|
-| Backend 컴파일 | `./gradlew compileJava compileTestJava --warning-mode fail` | §0.6 HARD |
+| Backend 컴파일 | `./gradlew compileJava compileTestJava --warning-mode fail` | AGENTS 범위별 검증 |
 | Backend 구조·보안 하네스 | `./gradlew :api-server:harnessTest` | 29개 하네스 클래스의 구조·계약·인가 린터 |
 | 실 DB 부트스트랩·스키마 | `./gradlew :api-server:schemaValidationTest` | Docker PostgreSQL 17 + Flyway + Hibernate validate + 쓰기 smoke |
 | Backend 전체 로컬 게이트 | `./gradlew localGate` | 하네스·실 DB·전 모듈 테스트·JaCoCo·프런트 unit coverage |
 | Full-stack 통합 게이트 | `npm run verify` / `make verify` | Backend·Frontend 핵심 게이트 단일 진입점(실 DB/E2E는 별도) |
-| Frontend 타입 | `cd frontend && npx tsc --noEmit` | §0.6 HARD |
+| Frontend 타입 | `pnpm -C frontend exec tsc --noEmit` | AGENTS 범위별 검증 |
 | 커버리지 | `make coverage` / `pnpm -C frontend test:coverage` | Backend JaCoCo + Frontend Vitest(30/25/25/30 하한) |
 | 시크릿 스캔 | `gitleaks protect --staged --verbose`(설치 시) | pre-commit은 로컬 보조, CI `secret-scan`이 required check |
 | 브랜치 보호 정합 | `npm run verify:ops` | 저장소 명세·CI·실제 GitHub ruleset 대조(네트워크·관리 읽기 권한 필요) |

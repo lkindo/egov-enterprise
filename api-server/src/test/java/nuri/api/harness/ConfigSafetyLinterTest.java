@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * </ol>
  *
  * <p><b>수량 하한 동결은 의도적으로 만들지 않는다</b> — 풀 크기 등 "N 이상" 동결은 항목 교체로 우회되고
- * 정당한 부채 상환까지 막는 안티패턴으로 기각됐다(§0.7-H2). 여기서 다루는 수치는 <b>상한</b>(timeout)뿐이다.
+ * 정당한 부채 상환까지 막는 안티패턴으로 기각됐다(AGENTS.md Evidence guardrails H2). 여기서 다루는 수치는 <b>상한</b>(timeout)뿐이다.
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 텍스트 스캔. 경로 해석은 IdentityAxisLinterTest 의
  * {@code resolveRepoRoot()}(settings.gradle 탐색) 관행을 재사용한다.
@@ -87,7 +87,7 @@ class ConfigSafetyLinterTest {
     /** actuator 기본 노출에서 영구 배제할 엔드포인트 — env=환경변수 전량(DB 자격증명·ALGORITHM_KEY), beans=빈 그래프. */
     private static final Set<String> FORBIDDEN_ACTUATOR_ENDPOINTS = Set.of("env", "beans", "configprops", "*");
 
-    /** 커넥션 획득 대기 상한(ms). 상한만 검사한다 — 하한 동결은 §0.7-H2 로 기각된 안티패턴. */
+    /** 커넥션 획득 대기 상한(ms). 상한만 검사한다 — 하한 동결은 AGENTS.md Evidence guardrails H2로 기각된 안티패턴. */
     private static final long MAX_CONNECTION_TIMEOUT_MS = 10_000L;
     private static final long MAX_POOL_SIZE = 50L;
     private static final long MAX_MULTIPART_FILE_BYTES = 10L * 1024 * 1024;

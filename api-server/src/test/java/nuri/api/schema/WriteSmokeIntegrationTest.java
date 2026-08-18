@@ -42,7 +42,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * <p><b>계층</b>: Docker 의존이라 {@code @Tag("schema-validation")} 으로 기존
  * {@code ./gradlew :api-server:schemaValidationTest}(= {@code localGate}·CI)에 편입한다 —
- * 새 태스크를 만들지 않는다(실행 경로가 이미 확보돼 있는 곳에 붙이는 것이 §0.7-H5 에 맞다).
+ * 새 태스크를 만들지 않는다(실행 경로가 이미 확보돼 있는 곳에 붙이는 것이 AGENTS.md Evidence guardrails H5에 맞다).
  */
 @Tag("schema-validation")
 @SpringBootTest

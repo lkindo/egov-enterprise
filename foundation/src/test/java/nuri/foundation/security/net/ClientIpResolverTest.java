@@ -14,7 +14,7 @@ import org.junit.jupiter.api.Nested;
  * 셋 다 <b>틀리면 조용히 우회되는</b> 종류라, 판정 규칙을 테스트로 고정해야 한다.
  * 종전 구현은 X-Forwarded-For 를 무조건 신뢰해 헤더 한 줄로 전부 우회할 수 있었다.
  *
- * <p>[실행 경로 — §0.7-H5] foundation 단위 테스트라 pre-push 에서는 실행되지 않는다
+ * <p>[실행 경로 — AGENTS.md Evidence guardrails H5] foundation 단위 테스트라 pre-push 에서는 실행되지 않는다
  * (pre-push 는 :api-server:harnessTest 만 돌린다). 실행은 {@code ./gradlew localGate} 와 CI 다.
  */
 @DisplayName("ClientIpResolver 신뢰 경계 판정")

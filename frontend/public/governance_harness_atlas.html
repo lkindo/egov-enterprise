@@ -1309,7 +1309,7 @@
 
         <input type="radio" name="tabs" id="tab-gemini" class="tab-radio">
         <label for="tab-gemini" class="nav-label">
-          <span class="nav-number">02</span> GEMINI.md 규칙
+          <span class="nav-number">02</span> 공통 에이전트 규칙
         </label>
 
         <input type="radio" name="tabs" id="tab-sop" class="tab-radio">
@@ -1388,7 +1388,7 @@
         <span class="status-dot" aria-hidden="true"></span>
         <div>
           <strong>2026-08-18 검증 스냅샷</strong> · 이 페이지는 설명용 아틀라스이며 규칙 원본이 아닙니다.
-          충돌 시 <code>GEMINI.md</code> → orchestration protocol → 3대 헌법 → 실행 manifest 순으로 확인하세요.
+          충돌 시 <code>AGENTS.md</code> → orchestration protocol → 3대 헌법 → 실행 manifest 순으로 확인하세요.
         </div>
         <a href="https://github.com/lkindo/egov-enterprise" target="_blank" rel="noopener noreferrer">저장소에서 최신 상태 확인</a>
       </div>
@@ -1736,7 +1736,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
             <table class="premium-table">
               <thead><tr><th style="width: 300px;">문서</th><th>언제 읽나</th></tr></thead>
               <tbody>
-                <tr><td><a href="https://github.com/lkindo/egov-enterprise/blob/main/GEMINI.md" target="_blank" rel="noopener noreferrer"><code>GEMINI.md</code></a> / <a href="https://github.com/lkindo/egov-enterprise/blob/main/CLAUDE.md" target="_blank" rel="noopener noreferrer"><code>CLAUDE.md</code></a></td><td><code>GEMINI.md</code>는 운영 규칙 원본 SSOT, <code>CLAUDE.md</code>는 이를 상속한 Claude 실행 매핑·진입점입니다.</td></tr>
+                <tr><td><a href="https://github.com/lkindo/egov-enterprise/blob/main/AGENTS.md" target="_blank" rel="noopener noreferrer"><code>AGENTS.md</code></a> / <a href="https://github.com/lkindo/egov-enterprise/blob/main/GEMINI.md" target="_blank" rel="noopener noreferrer"><code>GEMINI.md</code></a> / <a href="https://github.com/lkindo/egov-enterprise/blob/main/CLAUDE.md" target="_blank" rel="noopener noreferrer"><code>CLAUDE.md</code></a></td><td><code>AGENTS.md</code>가 프로젝트 공통 규칙 SSOT이며, <code>GEMINI.md</code>와 <code>CLAUDE.md</code>는 이를 공용 메모리와 함께 자동 로드하는 얇은 도구별 어댑터입니다.</td></tr>
                 <tr><td><a href="https://github.com/lkindo/egov-enterprise/tree/main/.agent/knowledge" target="_blank" rel="noopener noreferrer"><code>.agent/knowledge/*/artifacts/constitution.md</code></a></td><td>코드 변경 전 해당 3대 헌법 조회. 사용자 명시 승인 없이 수정 금지.</td></tr>
                 <tr><td><a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/03-guides/reusable-base-guide.md" target="_blank" rel="noopener noreferrer"><code>reusable-base-guide.md</code></a></td><td>릴리스 태그에서 프로필별 재사용 base를 생성·검증할 때.</td></tr>
                 <tr><td><a href="https://github.com/lkindo/egov-enterprise/blob/main/docs/02-architecture/legacy-migration-tool-design.md" target="_blank" rel="noopener noreferrer"><code>legacy-migration-tool-design.md</code></a></td><td>레거시 데이터 이관 범위·현재 구현·잔여 로드맵을 확인할 때. 초기 설계보다 §7과 실제 코드를 우선합니다.</td></tr>
@@ -1760,10 +1760,10 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         <noscript><div class="callout"><strong>동적 카드 대체:</strong> DB·Backend·Frontend 헌법은 <a href="https://github.com/lkindo/egov-enterprise/tree/main/.agent/knowledge" target="_blank" rel="noopener noreferrer">3대 헌법 원문(새 창)</a>에서 확인하세요. 현재 핵심 공백은 baseline 누락, semantic ownership 사각지대, frontend proxy/lint/RSC cache 조문 drift입니다.</div></noscript>
       </section>
 
-      <!-- [02] GEMINI.md 규칙 -->
+      <!-- [02] 공통 에이전트 규칙 -->
       <section id="content-gemini" class="tab-content">
-        <h2 class="section-title">GEMINI.md 프로젝트 규칙 세트</h2>
-        <p class="section-subtitle">에이전트가 코딩 시 준수해야 하는 행동 수칙과 통제 등급</p>
+        <h2 class="section-title">AGENTS.md 공통 프로젝트 규칙</h2>
+        <p class="section-subtitle">모든 에이전트가 공유하는 행동·안전 규칙과 orchestration protocol의 작업 등급</p>
 
         <div class="glass-card">
           <h3 class="glow-header">태스크 등급판정 프로세스 (Task Grading Routine)</h3>
@@ -2375,9 +2375,9 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
-                  <td><code>GEMINI.md</code>의 Boot/Gradle/Next 버전·Middleware·AuthContext 설명이 실제 코드와 불일치</td>
-                  <td>규칙과 기술 inventory를 분리하고 버전·경로는 build/package manifest에서 생성. GEMINI 문구 수정은 사용자 승인 후 진행</td>
-                  <td><strong>승인 필요</strong> — GEMINI.md는 불가침 운영 원본</td>
+                  <td>공통 규칙과 기술 inventory를 한 도구의 <code>GEMINI.md</code>에 함께 두어 버전·경로 drift와 에이전트별 규칙 분기가 발생</td>
+                  <td><code>AGENTS.md</code>를 vendor-neutral 공통 SSOT로 두고 Gemini/Claude 파일은 얇은 자동 로드 어댑터로 축소. 버전·경로는 build/package manifest와 공용 메모리에서 검증</td>
+                  <td><strong>완료</strong> — 헌법 개정 불필요, 어댑터 계약으로 회귀 방지</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>

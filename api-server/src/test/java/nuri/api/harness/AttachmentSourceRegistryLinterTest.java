@@ -40,7 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *   <li><b>유령</b> — 레지스트리에 있는데 대응 엔티티가 없으면 위반.</li>
  * </ol>
  * 두 축 모두 동결 목록·예외 목록을 두지 않는다. 예외가 필요해지는 순간이 곧 판정이 흐려지는
- * 순간이므로, 현재 클래스패스의 contributor와 엔티티를 직접 대조한다(§0.7-H2).
+ * 순간이므로, 현재 클래스패스의 contributor와 엔티티를 직접 대조한다(AGENTS.md Evidence guardrails H2).
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(클래스패스 스캔 + 리플렉션).
  */

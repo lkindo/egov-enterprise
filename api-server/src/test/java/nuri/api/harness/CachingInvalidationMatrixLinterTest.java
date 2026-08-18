@@ -43,7 +43,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * </ul>
  *
  * <p>이 매트릭스는 캐시명 상수화 없이도 오타를 잡는다 — 오타난 이름은 한쪽 집합에만 나타나기 때문이다.
- * (상수화는 44개 애노테이션의 일괄 치환이라 §0.7-H4 상 별도 판단 사항으로 남긴다.)
+ * (상수화는 44개 애노테이션의 일괄 치환이라 AGENTS.md Evidence guardrails H4상 별도 판단 사항으로 남긴다.)
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(클래스패스 리플렉션).
  * pre-push 의 {@code :api-server:harnessTest} 로 기계강제된다.
@@ -56,7 +56,7 @@ class CachingInvalidationMatrixLinterTest {
 
     /**
      * [동결 2026-07-28] TTL 만으로 충분해 명시적 무효화를 두지 않는 캐시. **현재 없음.**
-     * 추가하려면 "왜 stale 을 허용해도 되는가"를 사유로 남긴다 — 이 목록은 곧 "옛 값을 봐도 된다"는 선언이다(§0.7-H2).
+     * 추가하려면 "왜 stale 을 허용해도 되는가"를 사유로 남긴다 — 이 목록은 곧 "옛 값을 봐도 된다"는 선언이다(AGENTS.md Evidence guardrails H2).
      */
     private static final Set<String> TTL_ONLY_CACHES = Set.of();
 

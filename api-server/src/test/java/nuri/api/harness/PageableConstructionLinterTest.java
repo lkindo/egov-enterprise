@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>[왜 추출만으로 끝내지 않는가] 추출은 <b>그 시점의 상태</b>일 뿐이다.
  * 새 목록 서비스를 쓰는 사람은 옆 파일을 복사하지 헬퍼를 찾지 않는다.
- * GEMINI.md §0.7-H5 가 못박은 대로 <b>실행 경로가 있어야 게이트다</b> —
+ * AGENTS.md Evidence guardrails H5가 못박은 대로 <b>실행 경로가 있어야 게이트다</b> —
  * "헬퍼를 쓰자"는 규약은 그 규약을 모르는 사람을 막지 못한다.
  *
  * <p>[규칙] 생산 코드({@code src/main/java})에서 다음을 금지한다.
@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 이 게이트가 겨냥하는 것은 <b>BaseSearchDto 로부터의 변환 로직 재구현</b> 하나다.
  *
  * <p>[예외 목록 없음] 도입 시점 위반 0건이다(13개소 전량 치환 완료).
- * 예외 목록으로 출발하면 그 목록이 곧 서랍이 된다(§0.7-H2).
+ * 예외 목록으로 출발하면 그 목록이 곧 서랍이 된다(AGENTS.md Evidence guardrails H2).
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔.
  */

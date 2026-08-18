@@ -23,7 +23,7 @@ import org.springframework.stereotype.Component;
  *   <li><b>소유 근거</b> — 참조 행의 소유자·당사자(작성자, 쪽지 발신/수신자 등) → 허용.</li>
  *   <li><b>공유 근거</b> — 비밀글이 아닌 게시글·배너·일정 등 인증 사용자에게 열린 콘텐츠 → 허용.</li>
  *   <li><b>관리자</b>(ADMIN/SYSTEM) → 허용. <b>단 개인 귀속(PERSONAL) 참조원이 하나라도 있으면 불허</b> —
- *       쪽지·상벌·업무보고 첨부를 관리자가 열람하는 것은 표준화가 아니라 프라이버시 회귀다(§0.7-H3).</li>
+ *       쪽지·상벌·업무보고 첨부를 관리자가 열람하는 것은 표준화가 아니라 프라이버시 회귀다(AGENTS.md Evidence guardrails H3).</li>
  *   <li>그 외 → <b>403</b>. 참조원을 모르는 첨부는 열지 않는다(fail-closed).</li>
  * </ol>
  *

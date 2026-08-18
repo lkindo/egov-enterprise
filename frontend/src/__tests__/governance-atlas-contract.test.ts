@@ -144,11 +144,15 @@ describe('Governance Atlas docs-as-code contract', () => {
       'DashboardResponseDto.java',
       'RDCNT_DOM',
       'PW: 1',
+      'GEMINI.md</code>는 운영 규칙 원본 SSOT',
+      'GEMINI.md 프로젝트 규칙 세트',
     ];
 
     for (const phrase of forbidden) expect(ATLAS_HTML, phrase).not.toContain(phrase);
     expect(ATLAS_HTML).not.toMatch(/href=["']\.\.\/\.\.\/docs\//);
     expect(ATLAS_HTML).not.toMatch(/webmaster.{0,40}(?:PW|password|비밀번호).{0,10}\b1\b/is);
+    expect(ATLAS_DOCUMENT.querySelector('a[href$="/AGENTS.md"]')).not.toBeNull();
+    expect(ATLAS_TEXT).toContain('AGENTS.md가 프로젝트 공통 규칙 SSOT');
   });
 
   it('preserves keyboard, motion, theme and simulator accessibility contracts', () => {

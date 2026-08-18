@@ -2,7 +2,7 @@
 
 > 작성: 2026-07-17 · 방법론: 7항목 병렬 코드/DB 실측 조사(각 high-effort) → 항목당 2렌즈 적대적 검증(Paranoid Engineer / Migration-Ops) → 누락·의존 점검(Completeness Critic) → **메인 에이전트 직접 재검증**(SOP §2.3). 총 22개 서브에이전트, 오류 0.
 > 관련: [quality-score-root-cause-analysis.md](quality-score-root-cause-analysis.md)(A~H 근본원인), [framework-reusability-assessment.md](framework-reusability-assessment.md), [user-reference-key-policy.md](user-reference-key-policy.md)
-> ⚠ 이 문서는 **결정 자료**다. 파괴적 항목(leader 도메인 제거, biz_cd DROP, 가비지 DML)은 착수 전 **개별 명시 승인** 필요(글로벌 §5).
+> ⚠ 이 문서는 **결정 자료**다. 파괴적 항목(leader 도메인 제거, biz_cd DROP, 가비지 DML)은 착수 전 [AGENTS.md의 안전 경계](../../AGENTS.md#공통-작업-원칙)에 따른 **개별 명시 승인**이 필요하다.
 >
 > **Last Updated: 2026-07-29** — 잔여 항목 전수 실측 후 갱신. **문서가 "대기"로 들고 있던 3건은 이미 결판**나 있었다(§4 3-1.① admin 게이트 = deny-by-default 전환으로 해소, §4 3-5.① 보존기간 = 24개월 확정, 마이그레이션 최신 = V2_30). §3-6 deptjob 잔여(409 가드·FK 위생)와 §3-2 fe-csp 폰트 출처 정리를 집행했다. 상세는 [§6 집행 로그](#6-집행-로그-2026-07-29).
 > 이전: 2026-07-20 (§3-6 deptjob '소생' 결판 + 인가 모델 확정, §4 3-6.① 종결, §5 1·2·4 완료 확정).
@@ -210,7 +210,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 > |---|---|
 > | 삭제 가드 | [DeptJobBoxService.deleteDeptJobBox](../../business-core/src/main/java/nuri/business/service/deptjob/DeptJobBoxService.java) — 산하 업무 존재 시 **409 `RESOURCE_IN_USE`** 선검사(제약 위반을 500 이 아니라 의미 있는 409 로 표면화) |
 > | FK 2건 | **V2_32** — `fk_tb_dept_task_info_tb_dept_job_bx`(dept_task_box_id→업무함) · `fk_tb_dept_task_info_tb_user_info`(pic_id→esntl_id). 자식 인덱스 2건 동반. 0행이라 `NOT VALID`→즉시 `VALIDATE` |
-> | 사용자 삭제 결속 | [UserService.cleanupDependentsAndDelete](../../business-core/src/main/java/nuri/business/service/user/UserService.java) — 담당자 참조 해제(`pic_id`→NULL). **업무는 삭제하지 않는다**(부서 자산). 담당자 공석은 이미 정상 상태이며 그 경우 인가는 등록자 기준으로 판정되므로([assertPicOrAdmin](../../business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java)) 공석화는 권한 완화가 아니다(§0.7-H3 도메인 맥락 판정) |
+> | 사용자 삭제 결속 | [UserService.cleanupDependentsAndDelete](../../business-core/src/main/java/nuri/business/service/user/UserService.java) — 담당자 참조 해제(`pic_id`→NULL). **업무는 삭제하지 않는다**(부서 자산). 담당자 공석은 이미 정상 상태이며 그 경우 인가는 등록자 기준으로 판정되므로([assertPicOrAdmin](../../business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java)) 공석화는 권한 완화가 아니다(AGENTS H3 도메인 맥락 판정) |
 >
 > ⚠ **FK 는 부모 삭제 경로와 반드시 결속한다**(V2_14 선례). `pic_id` FK 만 걸고 사용자 삭제 정리를 빠뜨리면 **사용자 삭제 자체가 FK 위반으로 실패**한다 — 이 결속이 이번 변경의 핵심이며, FK 만 따로 떼어 적용해서는 안 된다.
 
@@ -269,7 +269,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 > **📌 마이그레이션 실측 (2026-07-29, `flyway_schema_history`)**: 적용 최신 = **V2_30**(`hide unimplemented survey menus`, `installed_rank` 35). **V2_31**(레거시 채번 테이블 DROP)은 커밋됐으나 **DB 미적용 대기**(bootRun 시 수렴). 본 갱신에서 **V2_32**(deptjob FK)를 신설했다.
 > **§1.2 번호 배정표는 전면 소진·무효** — 표가 예약한 V2_20~V2_24 는 다른 내용으로 이미 적용됐다(V2_20=log-retention 인덱스, V2_21=note del_yn, V2_22=biz_cd 재모델링, V2_23=leader DROP, V2_24=yn check+meta fk index). 신규 마이그레이션은 **착수 시점 최신 rank 재실측 후 V2_33 이상**으로 배정할 것.
 
-> 각 항목은 SOP 파이프라인(Dispatch→Execution→Audit→Verification) + §0.6 HARD 게이트(tsc/next build/gradle) + 해당 시 bootRun Flyway 수렴으로 집행한다.
+> 각 항목은 SOP 파이프라인(Dispatch→Execution→Audit→Verification) + AGENTS 범위별 검증(tsc/next build/gradle) + 해당 시 bootRun Flyway 수렴으로 집행한다.
 
 ---
 
@@ -297,7 +297,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 
 **⚠ 2번의 근거 정정 (기록으로 남긴다)**: 최초 판단은 "참조 0 = 죽은 allowance"였으나 그 grep 은 `frontend/src` 범위였고 **`public/` 을 놓쳤다**. [governance_harness_atlas.html](../../frontend/public/governance_harness_atlas.html) 이 두 도메인을 실제로 사용하고 있었다 — 즉 *앱에는* 죽었고 *atlas 문서에는* 살아 있었다. 부수적으로, atlas 가 Pretendard 를 받는 `cdn.jsdelivr.net` 은 CSP 에 등재된 적이 없어 **이미 차단**되고 있었다(문서가 CSP 와 어긋난 채 본문 폰트가 조용히 fallback 되던 상태). 사용자 결정에 따라 **atlas 의 외부 폰트 의존을 끊고**(시스템 폰트 스택 + `@font-face` 별칭, fallback 이 정의돼 있어 가독성 유지) CSP 출처를 제거해 **자산과 CSP 를 정합**시켰다.
 
-> ⚠ **재발 위험(추적 필요)**: atlas 는 방치된 파일이 아니라 **정기 유지보수되는 활성 자산**이다 — 111KB, 최종 갱신 2026-07-24, `.gemini/tasks/` 에 동기화 기록 3건(`harness-html-sync`·`harness-atlas-alignment`·`update-governance-atlas`), 그리고 [proxy.ts:272](../../frontend/src/proxy.ts#L272) 가 **인증 면제 공개 경로**로 명시 등재한다. 따라서 다음 갱신 때 CDN `<link>` 가 다시 유입되면 CSP 가 차단하되 **오류 없이 조용히 fallback** 되어 아무도 모른 채 지나간다(Pretendard 가 실제로 그렇게 죽어 있었다). 현재 방어는 해당 파일 상단의 경고 주석뿐이며 **기계 게이트는 없다**. 항구적 방어가 필요하면 `public/*.html` 의 외부 출처 `<link>`/`<script>` 를 차단하는 린터를 신설해야 한다(GEMINI.md §0.7-H5: 실행 경로 없는 규칙은 규칙을 어긴 주체를 막지 못한다).
+> ⚠ **재발 위험(추적 필요)**: atlas 는 방치된 파일이 아니라 **정기 유지보수되는 활성 자산**이다 — 111KB, 최종 갱신 2026-07-24, `.gemini/tasks/` 에 동기화 기록 3건(`harness-html-sync`·`harness-atlas-alignment`·`update-governance-atlas`), 그리고 [proxy.ts:272](../../frontend/src/proxy.ts#L272) 가 **인증 면제 공개 경로**로 명시 등재한다. 따라서 다음 갱신 때 CDN `<link>` 가 다시 유입되면 CSP 가 차단하되 **오류 없이 조용히 fallback** 되어 아무도 모른 채 지나간다(Pretendard 가 실제로 그렇게 죽어 있었다). 현재 방어는 해당 파일 상단의 경고 주석뿐이며 **기계 게이트는 없다**. 항구적 방어가 필요하면 `public/*.html` 의 외부 출처 `<link>`/`<script>` 를 차단하는 린터를 신설해야 한다([AGENTS.md Evidence guardrails H5](../../AGENTS.md#evidence-guardrails): 실행 경로 없는 규칙은 규칙을 어긴 주체를 막지 못한다).
 
 ### 6.3 검증 증적
 
@@ -307,7 +307,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 | `npx tsc --noEmit`(frontend) | ✅ exit 0 |
 | `./gradlew :api-server:harnessTest` | ✅ BUILD SUCCESSFUL (1m 22s, 실제 실행 — UP-TO-DATE 스킵 아님) |
 | `:business-core:test`(대상 2클래스) | ✅ 21 tests, 0 failed |
-| **뮤테이션 자가검증**(§0.4·§0.7-H5) | ✅ 409 가드 무력화·담당자 해제 누락 **2건 주입 → 정확히 해당 2 테스트만 FAILED** → 원복 후 green. 신설 테스트가 vacuous 하지 않음을 증명 |
+| **뮤테이션 자가검증**(AGENTS H5) | ✅ 409 가드 무력화·담당자 해제 누락 **2건 주입 → 정확히 해당 2 테스트만 FAILED** → 원복 후 green. 신설 테스트가 vacuous 하지 않음을 증명 |
 
 **⏸ 정직 보류(SOP §4.1)** — 정적 증거로 확증한 범위 밖:
 - **V2_32 는 작성·린터 통과했으나 라이브 DB 미적용**이다(V2_31 도 적용 대기). 재개 조건: `bootRun` 또는 Flyway 수렴 시 적용되며, 그때 `flyway_schema_history` 에서 `success=true` 확인 필요. FK 의 실제 거동(고아 차단·사용자 삭제 통과)은 적용 후에만 런타임 검증된다.
@@ -322,7 +322,7 @@ biz_cd · leader-stts · deptjob : 상호 독립 (단 마이그레이션 번호�
 | log-privacy **`tb_privacy_log` 편입** | 0행 + 기록경로 死 — 지금 편입하면 검증 불가 코드만 는다. 재개 조건은 §3-5 갱신 블록에 명시 |
 | **열린 질문 9건**(3-1.② · 3-2.①② · 3-3.①② · 3-4.①② · 3-5.②③) | 전부 인수처 프로파일이 있어야 답이 나오는 순수 제품 결정. 코드로 더 좁힐 수 없다 |
 
-> **📌 이 문서는 아직 아카이브 대상이 아니다** (2026-07-29 판정). §4 열린 질문 **9건 미결** + fe-csp **Phase 2·3 미착수** + V2_32 **DB 미적용** 상태다. `archived/` 는 구버전 보관 용도인데(GEMINI.md §6) 이 문서는 구버전이 아니라 **현행 미결 항목의 유일한 집약처**다. 아카이브 조건: 아래 3가지가 모두 해소될 때.
+> **📌 이 문서는 아직 아카이브 대상이 아니다** (2026-07-29 판정). §4 열린 질문 **9건 미결** + fe-csp **Phase 2·3 미착수** + V2_32 **DB 미적용** 상태다. `archived/` 는 [AGENTS.md 문서 분류](../../AGENTS.md#documentation-and-memory)상 구버전 보관 용도이며, 이 문서는 구버전이 아니라 **현행 미결 항목의 유일한 집약처**다. 아카이브 조건: 아래 3가지가 모두 해소될 때.
 > 1. §4 열린 질문 9건이 결판(또는 "지원하지 않음"으로 명시 종결)
 > 2. fe-csp Phase 2·3 착수·완료 또는 정식 폐기 결정
 > 3. V2_32 라이브 적용 확인 + CSP 헤더 런타임 실측

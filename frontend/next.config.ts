@@ -145,7 +145,7 @@ const nextConfig = {
         //   메인 컨텍스트의 SecurityFilterChain 이 걸리지 않는다. 그쪽으로 프록시하면
         //   rbac secure-paths 가 /actuator/** 에 요구하던 ROLE_ADMIN 이 사라져,
         //   브라우저 누구나 same-origin 경로로 메트릭(엔드포인트·에러율·JVM 내부)을 읽게 된다.
-        //   그것은 '네트워크로 푼다'는 W1-12 의 결정을 정면으로 되돌리는 권한 완화다(§0.7-H3).
+        //   그것은 '네트워크로 푼다'는 W1-12 의 결정을 정면으로 되돌리는 권한 완화다(AGENTS.md Evidence guardrails H3).
         //   결과적으로 운영에서 이 프록시는 404 이며, 그것이 의도된 형상이다 —
         //   관측 화면은 '미가용/UNKNOWN' 으로 정직하게 축퇴한다(observability/page.tsx).
         source: '/actuator/:path*',

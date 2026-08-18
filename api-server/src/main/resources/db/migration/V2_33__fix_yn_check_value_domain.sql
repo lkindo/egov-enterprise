@@ -14,7 +14,7 @@
 --       (business-core/.../domain/code/InstitutionCode.java:110, :148)
 --   · tb_inst_cd_rcptn_log.abl_yn : 동일 도메인(수신 로그가 tb_inst_cd 값을 그대로 운반)
 --
--- [신호 은폐가 아님 — GEMINI.md §0.7-H2] 제약을 **지우는** 것이 아니라 **실제 도메인으로 정정**한다.
+-- [신호 은폐가 아님 — AGENTS.md Evidence guardrails H2] 제약을 **지우는** 것이 아니라 **실제 도메인으로 정정**한다.
 --   불변식은 유지되며, 오히려 코드와 일치해 처음으로 실효를 갖는다.
 --   반대로 컬럼의 '_yn' 명명 자체는 오명명이다(DB 헌법 제6조5항은 _yn=Y/N 을 전제).
 --   물리 컬럼 개명(aprv_sttus_cd / abl_se_cd)은 엔티티·DTO·generated-api·FE 동시 변경이라 별도 웨이브로 이월한다.
@@ -23,7 +23,7 @@
 --   ZeroDowntimeMigrationLinterTest 의 FORBIDDEN_DROP 은 CONSTRAINT 를 네거티브 룩어헤드로 제외한다.
 --   세 테이블 모두 0행이라 검증 lock 은 무시 가능하고, 기존 데이터 위반도 존재하지 않는다.
 --
--- [게이트 공백 — GEMINI.md §0.7-H5] 이 결함을 잡을 수 있는 게이트는 저장소에 존재하지 않았다.
+-- [게이트 공백 — AGENTS.md Evidence guardrails H5] 이 결함을 잡을 수 있는 게이트는 저장소에 존재하지 않았다.
 --   단위/통합 테스트는 H2 + ddl-auto:create-drop 이라 CHECK 가 애초에 생성되지 않고,
 --   schemaValidationTest 는 매핑만 검증할 뿐 값을 쓰지 않으며, E2E 의 결재 시나리오는
 --   /approvals/draft 가 API 를 호출하지 않는 목이라 통과해도 증거가 되지 않는다.

@@ -34,7 +34,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>[왜 게이트인가] 이 실패 양식이 고약한 이유는 <b>실패가 조용하다</b>는 데 있다. 워크플로 파일은
  * 컴파일되지 않고, 어떤 로컬 게이트도 읽지 않으며, 저장소 안에서는 정상으로 보인다. 결과적으로
- * "게이트가 있다" 는 서술만 남고 집행은 0 이 된다 — GEMINI.md §0.7-H5 가 지목한 바로 그 상태다.
+ * "게이트가 있다" 는 서술만 남고 집행은 0 이 된다 — AGENTS.md Evidence guardrails H5가 지목한 바로 그 상태다.
  *
  * <p>[판정 축] {@code .github/workflows/*.yml|yaml} 전부에 대해
  * ① YAML 로 파싱될 것 ② 최상위가 매핑일 것 ③ {@code on}(트리거)과 {@code jobs} 가 있고
@@ -108,7 +108,7 @@ class WorkflowManifestLinterTest {
             sb.append("========================================================================\n");
             violations.forEach(v -> sb.append("❌ ").append(v).append('\n'));
             sb.append("\n💡 invalid 워크플로는 GitHub 에서 startup_failure 로 죽는다 — 잡이 만들어지지도 않으므로\n");
-            sb.append("   '게이트가 돌고 있다'는 전제가 통째로 거짓이 된다(§0.7-H5).\n");
+            sb.append("   '게이트가 돌고 있다'는 전제가 통째로 거짓이 된다(AGENTS.md Evidence guardrails H5).\n");
             sb.append("   흔한 원인: run: | 블록 안의 heredoc 본문을 컬럼 0 으로 내려 블록 스칼라를 종료시킨 경우.\n");
             fail(sb.toString());
         }
@@ -243,7 +243,7 @@ class WorkflowManifestLinterTest {
             violations.add("백엔드 전체 라인 커버리지 하한 완화: " + lineFloor + " < 0.50");
         }
         // BRANCH 하한(2026-08-15 신설)도 함께 고정한다. LINE 만 보면 조건 분기를 통째로 건너뛴
-        // 테스트가 라인 수치만 채우고 통과하므로, 그 룰이 조용히 삭제되는 것을 막는다(§0.7-H5).
+        // 테스트가 라인 수치만 채우고 통과하므로, 그 룰이 조용히 삭제되는 것을 막는다(AGENTS.md Evidence guardrails H5).
         Double branchFloor = extractDouble(gradle,
                 "(?s)jacocoRootCoverageVerification.*?counter\\s*=\\s*'BRANCH'.*?minimum\\s*=\\s*([0-9.]+)");
         if (branchFloor == null) {

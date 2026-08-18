@@ -32,7 +32,7 @@
 **/vendor/
 **/*.class
 **/*.jar
-# Gradle wrapper jar은 반드시 VCS에 포함되어야 ./gradlew 부트스트랩이 가능하다 (GEMINI.md §0.6 컴파일 게이트)
+# Gradle wrapper jar은 반드시 VCS에 포함되어야 ./gradlew 부트스트랩이 가능하다 (AGENTS.md 범위별 검증)
 !gradle/wrapper/gradle-wrapper.jar
 **/*.war
 **/*.ear
@@ -158,9 +158,11 @@
 !**/.agent/workflows/
 !**/.agent/scripts/
 !**/.agent/mcp-servers/
+!**/.agent/memory/
 **/.gemini/*
 !**/.gemini/tasks/
 !**/.claude/settings.json
+**/.claude/settings.local.json
 
 # ----- Upload/Storage -----
 **/upload/

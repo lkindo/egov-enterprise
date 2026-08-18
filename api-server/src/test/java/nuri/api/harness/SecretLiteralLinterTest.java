@@ -71,7 +71,7 @@ class SecretLiteralLinterTest {
 
     /**
      * 배포 시크릿으로 취급하는 환경변수 이름. <b>포함(inclusion) 목록이며 예외·제외 목록이 아니다</b> —
-     * 여기서 이름을 <b>빼는</b> 것이 곧 보호 해제이므로 축소 시 사유를 커밋 기록에 남긴다(§0.7-H2).
+     * 여기서 이름을 <b>빼는</b> 것이 곧 보호 해제이므로 축소 시 사유를 커밋 기록에 남긴다(AGENTS.md Evidence guardrails H2).
      */
     private static final Set<String> SECRET_ENV_NAMES = new TreeSet<>(List.of(
             "ADMIN_INITIAL_PASSWORD",
@@ -155,7 +155,7 @@ class SecretLiteralLinterTest {
 
     /**
      * 변수 참조·명령 치환 제거 패턴. 이 목록을 넓히면 리터럴이 "참조"로 오인돼 위반이 사라지므로,
-     * 확장 시 반드시 사유를 남긴다(§0.7-H2). 순서 의존: {@code ${…}}·{@code $(…)} 를 먼저 지운다.
+     * 확장 시 반드시 사유를 남긴다(AGENTS.md Evidence guardrails H2). 순서 의존: {@code ${…}}·{@code $(…)} 를 먼저 지운다.
      */
     private static final List<String> VARIABLE_REF_PATTERNS = List.of(
             "\\$env:[A-Za-z_][A-Za-z0-9_]*",

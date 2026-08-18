@@ -35,7 +35,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 다수 테스트가 동시에 깨진다. 지금 필요한 것은 <b>더 늘지 않게 막는 것</b>이다.
  * 그래서 census 를 동결한다 — 새 우회 지점이 생기면 붉어지고, 기존 항목을 해소하면 그것도 붉어져
  * (동결 목록과 실제가 어긋나므로) 해소 사실을 목록에 반영하도록 강제한다.
- * <b>목록을 늘려 red 를 없애는 것은 §0.7-H2 가 금지하는 신호 은폐다</b> — 늘릴 때는 사유를 남긴다.
+ * <b>목록을 늘려 red 를 없애는 것은 AGENTS.md Evidence guardrails H2가 금지하는 신호 은폐다</b> — 늘릴 때는 사유를 남긴다.
  *
  * <p><b>동결 대상</b>
  * <ul>
@@ -113,7 +113,7 @@ class TestSecurityChainOverrideLinterTest {
     //   와 `@Import(SecurityTestConfig.class)` 가 빠졌다 — 이제 그 계열 보안 테스트는
     //   **프로덕션 ApiSecurityConfig 위에서** 돈다. 이 게이트가 신설 목적으로 삼았던 바로 그 상태다.
     //
-    //   ⚠ 이 줄을 지우는 것은 §0.7-H2 가 금지하는 '신호 지우기' 와 형태가 같으므로 근거를 남긴다:
+    //   ⚠ 이 줄을 지우는 것은 AGENTS.md Evidence guardrails H2가 금지하는 '신호 지우기'와 형태가 같으므로 근거를 남긴다:
     //     · 제거 근거는 **실측**이다 — BaseSecurityTest 에 mock-security 문자열이 0건이고,
     //       PrivilegeEscalationVulnerabilityTest 3건이 실존 엔드포인트에서 401 이 아니라 403 을 단언하며 그린이다.
     //       (401 이었다면 '미인증 차단' 을 증명할 뿐 '일반 사용자의 권한 상승 차단' 은 증명하지 못한다.)
@@ -192,7 +192,7 @@ class TestSecurityChainOverrideLinterTest {
             sb.append("   프로덕션 ApiSecurityConfig 가 한 번도 실행되지 않는 구조(Wave 1 A-1)의 재발.\n");
             sb.append("   새 보안 테스트는 ApiSecurityConfigTest 방식을 따르십시오 —\n");
             sb.append("   @ContextConfiguration(classes = ApiSecurityConfig.class) 로 운영 설정을 직접 로드합니다.\n");
-            sb.append("\n💡 늘리기 전에 자문할 것: 지금 고치는 것이 '위반' 입니까, '빨간 신호' 입니까? (§0.7-H2)\n");
+            sb.append("\n💡 늘리기 전에 자문할 것: 지금 고치는 것이 '위반' 입니까, '빨간 신호' 입니까? (AGENTS.md Evidence guardrails H2)\n");
             sb.append("   산출된 실제 census: ").append(Paths.get(ACTUAL_OUT).toAbsolutePath()).append("\n");
             fail(sb.toString());
         }

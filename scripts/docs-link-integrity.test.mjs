@@ -25,13 +25,13 @@ import { fileURLToPath } from 'node:url';
  *   - **`file://` 스킴은 명시적으로 금지**한다. 존재 검사로는 잡히지 않지만(작성자 기계에서는 열린다)
  *     타인에게는 항상 죽은 링크다.
  *
- * [범위] 우리가 소유한 문서만 — `docs/**`, 저장소 루트 `*.md`, `.githooks/**`.
+ * [범위] 우리가 소유한 문서만 — `docs/**`, 저장소 루트 `*.md`, `.githooks/**`, `.agent/memory/**`.
  *   `.agent/skills/**` 는 벤더링된 서드파티 스킬 문서이고, 그 안의 `FORMS.md`·`file:///path/to/file`
  *   같은 링크는 **문서 작성법을 설명하는 예시**라 실재하지 않는 것이 정상이다(실측 46건).
  *   남의 예시를 우리 게이트로 판정하면 오탐만 낳는다 — 예외 목록을 만드는 대신 범위를 정확히 긋는다.
  *
  * [실행 경로] `.githooks/pre-push`(문서 변경 푸시 시) · CI `secret-scan` 잡의 계약 테스트 묶음.
- *   실행되지 않는 게이트는 없는 게이트다(GEMINI.md §0.7-H5).
+ *   실행되지 않는 게이트는 없는 게이트다(AGENTS.md Evidence guardrails H5).
  */
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -41,12 +41,20 @@ function isOwnedDoc(file) {
   if (file.startsWith('build/')) return false;
   if (file.startsWith('docs/')) return true;
   if (file.startsWith('.githooks/')) return true;
+  if (file.startsWith('.agent/memory/')) return true;
   return !file.includes('/'); // 저장소 루트의 *.md (README·GEMINI·CLAUDE·AGENTS …)
 }
 
 function trackedMarkdown() {
   const out = execFileSync('git', ['ls-files', '*.md'], { cwd: repoRoot, encoding: 'utf8' });
-  return out.trim().split('\n').filter(Boolean).filter(isOwnedDoc);
+  const tracked = out.trim().split('\n').filter(Boolean).filter(isOwnedDoc);
+  const memoryRoot = path.join(repoRoot, '.agent', 'memory');
+  const memory = fs.existsSync(memoryRoot)
+    ? fs.readdirSync(memoryRoot)
+      .filter(file => file.endsWith('.md'))
+      .map(file => path.posix.join('.agent', 'memory', file))
+    : [];
+  return [...new Set([...tracked, ...memory])];
 }
 
 /** `](target)` 에서 target 을 뽑는다. 공백 없는 형태만 — 마크다운 타이틀 문법은 이 저장소에 없다. */

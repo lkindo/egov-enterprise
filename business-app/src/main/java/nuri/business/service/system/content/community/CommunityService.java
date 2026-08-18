@@ -120,7 +120,7 @@ public class CommunityService {
         //   400 은 "입력이 틀렸다"는 뜻이라 클라이언트가 입력을 고치려 들게 만드는데, 여기엔 고칠 입력이 없다.
         //   요청 자체는 올바르고 현재 리소스 상태와 충돌하는 것이므로 409 가 정확하다.
         //   ※ 같은 메서드 안에 '미존재→404'와 '상태위반→409' 두 축이 공존한다 —
-        //     일괄 치환하지 않고 축별로 개별 판정해야 하는 이유의 직접 사례다(§0.7-H4).
+        //     일괄 치환하지 않고 축별로 개별 판정해야 하는 이유의 직접 사례다(AGENTS.md Evidence guardrails H4).
         if (!"Y".equals(community.getUseYn())) {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE, "비활성 상태인 커뮤니티에는 가입할 수 없습니다.");
         }

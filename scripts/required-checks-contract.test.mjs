@@ -294,10 +294,10 @@ test('mutation jobs provision the Gradle distribution with a bounded retry befor
   assert.ok(provision >= 0 && provision < pit, 'Gradle distribution retry must run before the PIT hard gate');
 });
 
-// [2026-08-16 신설] 훅 전용이던 검증 2건을 CI 로 미러링하면서, 그 스텝이 조용히 사라지지
+// [2026-08-16 신설] 훅 전용이던 검증을 CI 로 미러링하면서, 그 스텝이 조용히 사라지지
 //   못하도록 고정한다. `.githooks/*` 는 `--no-verify` / `SKIP_HOOKS=1` 로 우회되므로 훅에만
 //   있는 검증은 required check 가 아니다 — 우회한 푸시에서 무검증으로 통과했다.
-//   아래 두 테스트는 "게이트는 실행 경로가 있어야 게이트다"(GEMINI.md §0.7-H5)를 계약으로 굳힌다.
+//   아래 테스트는 "게이트는 실행 경로가 있어야 게이트다"(AGENTS.md Evidence guardrails H5)를 계약으로 굳힌다.
 
 test('secret-scan runs the reusable-base census contract that pre-push also enforces', () => {
   const secretScanJob = ciContent.match(
@@ -351,4 +351,22 @@ test('secret-scan runs the documentation link-integrity gate that pre-push also 
 
   const prePush = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
   assert.match(prePush, /node --test scripts\/docs-link-integrity\.test\.mjs/);
+});
+
+test('shared-memory contract runs in CI and before the document-only fast-pass', () => {
+  const secretScanJob = ciContent.match(
+    /^  secret-scan:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
+  )?.[0];
+  assert.ok(secretScanJob, 'secret-scan job must exist');
+  assert.match(secretScanJob, /node --test scripts\/shared-memory-contract\.test\.mjs/);
+
+  const prePush = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
+  const memoryGate = prePush.indexOf('node --test scripts/shared-memory-contract.test.mjs');
+  const docsGate = prePush.indexOf('node --test scripts/docs-link-integrity.test.mjs');
+  const atlasGate = prePush.indexOf('vitest run src/__tests__/governance-atlas-contract.test.ts');
+  const fastPassExit = prePush.indexOf('문서/비코드 변경만 감지됨');
+  assert.ok(memoryGate >= 0 && memoryGate < fastPassExit, 'memory contract must run before docs-only fast-pass');
+  assert.ok(docsGate >= 0 && docsGate < fastPassExit, 'docs link contract must run before docs-only fast-pass');
+  assert.ok(atlasGate >= 0 && atlasGate < fastPassExit, 'Atlas contract must run before its HTML fast-pass');
+  assert.match(prePush, /\^frontend\/public\/governance_harness_atlas\\\.html\$/);
 });

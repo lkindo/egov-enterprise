@@ -24,7 +24,7 @@ import { fileURLToPath } from 'node:url';
  *
  * 데이터 시각화의 명암 스케일(히트맵·차트 등)처럼 의미상 팔레트가 필요한 자리는 예외가 될 수 있다.
  * 그 경우 사유를 코드 리뷰에 명시하고 BASELINE 을 올린다 — 단, 목록을 늘려 신호를 지우는 것과
- * 정당한 예외를 구분하는 것은 리뷰어의 책임이다(GEMINI.md §0.7-H2).
+ * 정당한 예외를 구분하는 것은 리뷰어의 책임이다(AGENTS.md Evidence guardrails H2).
  */
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
 

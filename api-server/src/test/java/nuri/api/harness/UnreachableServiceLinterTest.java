@@ -60,7 +60,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>[예외 목록 없음] 2026-08-06 기준 위반 4건({@code CodeService}·{@code IndividualPageService}·
  * {@code MemoTodoService}·{@code TemplateService})을 <b>전부 삭제한 뒤</b> 이 게이트를 도입했다.
- * 예외 목록으로 출발하면 그 목록이 곧 서랍이 된다 — 없어도 되는 예외 목록은 만들지 않는다(§0.7-H2).
+ * 예외 목록으로 출발하면 그 목록이 곧 서랍이 된다 — 없어도 되는 예외 목록은 만들지 않는다(AGENTS.md Evidence guardrails H2).
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔.
  */
@@ -82,7 +82,7 @@ class UnreachableServiceLinterTest {
      * <p>⚠ {@code @Component} 는 <b>의도적으로 넣지 않는다</b>. 실측 결과 미참조 19건이 나오는데
      * 전부 정당하다 — 이벤트 리스너({@code @EventListener})·서블릿 필터·AOP Aspect·
      * {@code @Scheduled} 스케줄러·{@code AuditorAware} 처럼 <b>스프링이 이름 없이 부르는</b> 부류다.
-     * 넣으면 오탐 19건으로 시작하게 되고, 그 순간 예외 목록이 필요해진다(§0.7-H2 의 서랍).
+     * 넣으면 오탐 19건으로 시작하게 되고, 그 순간 예외 목록이 필요해진다(AGENTS.md Evidence guardrails H2의 서랍).
      * 이 게이트의 '오탐 0 우선' 설계와 맞지 않는다.
      */
     private static final Pattern SERVICE_ANNOTATION =
