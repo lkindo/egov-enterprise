@@ -3,12 +3,11 @@ package nuri.api.controller.foundation.controller.system.service.survey;
 import nuri.business.security.annotation.WithMockCustomUser;
 import nuri.business.service.system.service.survey.OnlinePollService;
 import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
-import nuri.business.support.IntegrationTest;
+import nuri.api.support.ApiHttpIntegrationTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.MediaType;
@@ -23,8 +22,12 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@IntegrationTest
-@AutoConfigureMockMvc
+// [2026-08-20] @IntegrationTest → @ApiHttpIntegrationTest (사유는 stereotype javadoc 참조).
+//   종전에는 mock-security 체인 위라 /api/v1/admin/system/polls 를 무자격으로 호출해도 200 이었다.
+//   클래스 수준 ADMIN 주체는 관리 API 인가를 통과시키기 위한 것이며, vote() 의 메서드 수준
+//   @WithMockCustomUser 는 getCurrentLoginId() 용 주체 주입이라 그대로 둔다.
+@ApiHttpIntegrationTest
+@WithMockCustomUser(role = "ADMIN")
 @DisplayName("OnlinePollApiController 통합 테스트(MockMvc)")
 class OnlinePollApiControllerTest {
 

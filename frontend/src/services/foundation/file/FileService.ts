@@ -60,10 +60,31 @@ class FileService extends ApiService {
    * 헤더를 직접 실을 수 없어 401이 될 수 있다. 이미지 렌더링은 axios를 쓰는 {@link fetchBlob} 경로다.
    * 상대·절대 설정의 비대칭은 `.agent/memory/known-gaps.md`의 `GAP-FILE-001`에서 관리한다.
    */
-  downloadFile(atchFileSn: number, fileSn: number) {
+  /**
+   * 첨부를 인증 상태로 내려받는다.
+   *
+   * <p>[고친 결함] 종전 구현은 `NEXT_PUBLIC_API_URL` 로 URL 을 직접 만들어 `window.open` 했다.
+   * 그 경로는 axios 인터셉터를 타지 않아 `Authorization` 이 붙지 않고, 값이 절대 URL 인 배포에서는
+   * same-origin `proxy.ts` 의 쿠키→Bearer 주입까지 우회한다 — 즉 인증 다운로드가 401 로 죽는다.
+   * 상대 경로 설정에서 우연히 동작하던 것이라 설정에 따라 조용히 깨지는 형태였다.
+   *
+   * <p>이제 {@link fetchBlob} 의 인증 axios 로 바이트를 받아 object URL 로 저장한다. 인증 경로가
+   * 하나로 모이므로 상대·절대 어느 설정에서도 같게 동작한다.
+   */
+  async downloadFile(atchFileSn: number, fileSn: number, fileName?: string): Promise<void> {
     if (!atchFileSn) return;
-    const url = `${process.env.NEXT_PUBLIC_API_URL || '/api/v1'}/files/${atchFileSn}/${fileSn}`;
-    window.open(url, '_blank');
+
+    const blob = await this.fetchBlob(atchFileSn, fileSn);
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = objectUrl;
+    anchor.download = fileName?.trim() || `attachment-${atchFileSn}-${fileSn}`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    // 클릭 직후 revoke 하면 브라우저가 저장을 시작하기 전에 URL 이 사라질 수 있다.
+    // 다음 매크로태스크로 미뤄 다운로드 시작을 보장한 뒤 회수한다.
+    setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
   }
 
   /**

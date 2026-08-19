@@ -96,6 +96,30 @@ class TestSecurityChainOverrideLinterTest {
      * <p>⚠ 이 목록을 늘려 red 를 없애기 전에 자문할 것: <b>지금 고치는 것이 위반인가, 빨간 신호인가?</b>
      * 늘려야 한다면 왜 그 테스트가 프로덕션 체인 위에서 돌 수 없는지를 커밋 메시지에 남긴다.
      */
+    /** mock 보안 체인을 끌어오는 stereotype 사용처. 선언처가 아니라 **사용처**를 센다. */
+    private static final Pattern USES_MOCK_CHAIN_STEREOTYPE = Pattern.compile("@IntegrationTest\\b");
+
+    /** HTTP 계층을 실제로 때리는 표식. */
+    private static final Pattern MOCK_MVC_USAGE = Pattern.compile("\\bMockMvc\\b|\\bmockMvc\\s*\\.");
+
+    /**
+     * 인가가 걸린 API 경로를 때리는 표식.
+     *
+     * <p>MockMvc 사용만으로 위반을 판정하면 {@code /swagger-ui}·{@code /v3/api-docs} 처럼
+     * {@code ApiSecurityConfig} 의 {@code securityMatchers}({@code /api/v1/**} 등) <b>밖</b> 경로만
+     * 때리는 테스트까지 잡힌다. 그 경로는 mock 체인이든 운영 체인이든 판정이 같으므로 위반이 아니다.
+     * 이름 예외 목록을 두는 대신 판정 자체를 좁힌다 — 목록은 늘어나지만 의미는 늘어나지 않는다.
+     */
+    private static final Pattern SECURED_API_PATH = Pattern.compile("\"/api/v1/");
+
+    /**
+     * mock 체인 stereotype 사용처 수 동결(2026-08-20 실측).
+     *
+     * <p>HTTP 계열 4건을 {@code @ApiHttpIntegrationTest} 로 옮긴 뒤 남은 비-HTTP 서비스 통합
+     * 사용처다. 늘리지 말고, 줄이면 이 값을 함께 낮춘다.
+     */
+    private static final int MOCK_CHAIN_STEREOTYPE_USERS = 3;
+
     private static final Set<String> FROZEN_OVERRIDES = new TreeSet<>(Arrays.asList(
             // api-server — @Primary 로 프로덕션 체인을 대체하고, admin 인가를 하드코딩한다.
             //   ⚠ 이 설정 자체는 남아 있으나 **이제 아무도 @Import 하지 않는다**(아래 해소 기록 참조).
@@ -164,6 +188,44 @@ class TestSecurityChainOverrideLinterTest {
         counts.forEach((key, count) -> actual.add(key + "=" + count));
         writeActual(actual);
 
+        // [2026-08-20 신설] 종전 census 는 **선언처만** 셌다. `@IntegrationTest` 는 애노테이션 파일
+        //   하나라 census 에 1로만 잡히고, 그것을 쓰는 테스트가 6개든 60개든 값이 변하지 않는다 —
+        //   즉 우회의 폭발 반경이 무제한으로 커져도 이 게이트는 계속 초록이었다.
+        //   그래서 (1) 사용처 수를 동결하고, (2) mock 체인 위에서 HTTP 를 때리는 조합을 금지한다.
+        List<String> mockChainHttpUsers = new ArrayList<>();
+        int integrationTestUsers = 0;
+        for (String root : SCAN_ROOTS) {
+            for (Path file : HarnessSourceIndex.filesUnder(resolveFromRepoRoot(root))) {
+                if (!file.toString().endsWith(".java")) continue;
+                String name = file.getFileName().toString();
+                if (name.equals("IntegrationTest.java") || name.equals("TestSecurityChainOverrideLinterTest.java")) {
+                    continue;
+                }
+                // 주석을 먼저 지운다 — 그러지 않으면 '이 stereotype 을 쓰지 말라' 고 설명하는
+                // 주석까지 사용처로 잡혀 census 가 부풀고, 게이트가 자기 문서를 위반으로 신고한다.
+                String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+                        HarnessSourceIndex.read(file));
+                if (!USES_MOCK_CHAIN_STEREOTYPE.matcher(code).find()) continue;
+                integrationTestUsers++;
+                if (MOCK_MVC_USAGE.matcher(code).find() && SECURED_API_PATH.matcher(code).find()) {
+                    mockChainHttpUsers.add(file.getFileName().toString());
+                }
+            }
+        }
+
+        List<String> stereotypeViolations = new ArrayList<>();
+        if (!mockChainHttpUsers.isEmpty()) {
+            stereotypeViolations.add("mock 보안 체인 stereotype 위에서 MockMvc 를 사용하는 테스트: "
+                    + String.join(", ", mockChainHttpUsers)
+                    + " — 이 컨텍스트는 운영 ApiSecurityConfig 를 로드하지 않으므로 인증·인가를"
+                    + " 전혀 증명하지 못합니다. HTTP 검증은 @ApiHttpIntegrationTest 로 옮기십시오.");
+        }
+        if (integrationTestUsers != MOCK_CHAIN_STEREOTYPE_USERS) {
+            stereotypeViolations.add("mock 체인 stereotype 사용처가 " + MOCK_CHAIN_STEREOTYPE_USERS
+                    + " → " + integrationTestUsers + " 로 변했습니다."
+                    + " 늘었다면 우회 범위가 넓어진 것이고, 줄었다면 상수를 낮춰 되돌릴 수 없게 하십시오.");
+        }
+
         List<String> added = new ArrayList<>();
         List<String> changed = new ArrayList<>();
         for (String entry : actual) {
@@ -175,6 +237,18 @@ class TestSecurityChainOverrideLinterTest {
             if (!actual.contains(entry)) {
                 changed.add(entry);
             }
+        }
+
+        if (!stereotypeViolations.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n========================================================================\n");
+            sb.append("🧪 [MOCK CHAIN STEREOTYPE] 운영 보안 체인 우회의 적용 범위가 변했습니다!\n");
+            sb.append("========================================================================\n");
+            stereotypeViolations.forEach(v -> sb.append("❌ ").append(v).append('\n'));
+            sb.append("\n💡 @IntegrationTest 는 프로파일·@Primary permitAll 체인·TestApplication 스캔배제의\n");
+            sb.append("   3중 우회로 운영 체인을 로드하지 않는다. 그 위의 MockMvc 단언은 인증·인가에 대해\n");
+            sb.append("   아무것도 증명하지 못한다(실측: 무자격 /api/v1/admin/** 200 단언 10건).\n");
+            fail(sb.toString());
         }
 
         if (!added.isEmpty() || !changed.isEmpty()) {

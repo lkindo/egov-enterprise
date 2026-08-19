@@ -375,7 +375,13 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
                   <li key={`${file.atchFileSn}-${file.fileSn}`}>
                     <button
                       type="button"
-                      onClick={() => fileService.downloadFile(file.atchFileSn, file.fileSn)}
+                      onClick={() => {
+                        // 인증 axios 로 바이트를 받으므로 실패할 수 있다. 조용히 삼키면
+                        // 사용자는 아무 일도 일어나지 않은 것으로 오해한다.
+                        fileService
+                          .downloadFile(file.atchFileSn, file.fileSn, file.orignlFileNm)
+                          .catch(() => toast('첨부파일을 내려받지 못했습니다.', 'error'));
+                      }}
                       aria-label={`${file.orignlFileNm} 다운로드`}
                       className="w-full flex items-center justify-between text-left p-8 bg-white/5 rounded-2xl border border-white/10 hover:bg-white/10 transition-all group/file shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
                     >
