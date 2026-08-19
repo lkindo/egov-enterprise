@@ -20,18 +20,31 @@ describe('CSP nonce 계약', () => {
   const proxySource = readFileSync(join(FRONTEND_DIR, 'src', 'proxy.ts'), 'utf8');
   const nextConfig = readFileSync(join(FRONTEND_DIR, 'next.config.ts'), 'utf8');
 
-  /** buildAppCsp 함수 본문만 추출한다 — 파일 전체 검색은 주석 문구에 속는다(Phase 2 계약이 실제로 그렇게 뚫렸다). */
+  /**
+   * buildAppCsp 함수 본문을 **주석 제거 후** 추출한다.
+   * 파일 전체 검색은 주석 문구에 속고(Phase 2 계약이 실제로 그렇게 뚫렸다), 본문 추출도
+   * 주석을 안 지우면 '왜 strict-dynamic 을 안 쓰는가' 를 설명하는 주석이 부재 단언을 깨뜨린다
+   * (이 파일을 만들며 실제로 발생 — 게이트가 자기 문서를 위반으로 신고).
+   */
   function extractFunctionBody(name: string): string {
     const start = proxySource.indexOf(`function ${name}(`);
     expect(start, `proxy.ts 에서 ${name} 을 찾지 못했습니다 — 추출이 깨지면 이 계약은 vacuous 합니다`).toBeGreaterThan(-1);
     const end = proxySource.indexOf('\n}', start);
-    return proxySource.slice(start, end);
+    return proxySource
+      .slice(start, end)
+      .replace(/\/\/[^\n]*/g, '')
+      .replace(/\/\*[\s\S]*?\*\//g, '');
   }
 
-  it("앱 정책은 nonce + strict-dynamic 이고 script-src 에 'unsafe-inline' 이 없다", () => {
+  it("앱 정책은 'self'+nonce 이고 script-src 에 'unsafe-inline'·'strict-dynamic' 이 없다", () => {
     const body = extractFunctionBody('buildAppCsp');
     expect(body).toContain("'nonce-${nonce}'");
-    expect(body).toContain("'strict-dynamic'");
+    // strict-dynamic 은 재도입 금지 — host 허용('self')을 꺼서 Next 가 스트리밍 중 삽입하는
+    // nonce 없는 lazy chunk <script src> 를 차단, 앱이 전면 파손된다(CI run 32310837353 실측).
+    expect(
+      body,
+      "strict-dynamic 이 재도입됐습니다 — Next lazy chunk 로드가 전면 차단됩니다(CI 32310837353).",
+    ).not.toContain("'strict-dynamic'");
     expect(body, "script-src-attr 'none' (Phase 2) 는 nonce 전환 후에도 유지돼야 합니다").toContain("script-src-attr 'none'");
     // script-src 선언부에 unsafe-inline 이 없어야 한다. style-src 의 unsafe-inline 은
     // React style prop 때문에 의도적으로 남는다(Phase 3 별건) — 그래서 함수 전체가 아니라

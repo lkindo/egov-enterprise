@@ -291,9 +291,18 @@ function generateNonce(): string {
 
 function buildAppCsp(nonce: string): string {
   const isProd = process.env.NODE_ENV === 'production';
+  // ⚠ 'strict-dynamic' 을 쓰지 않는다 — CI run 32310837353 실측: strict-dynamic 은 host 허용
+  //   ('self')을 꺼버리는데, Next 가 스트리밍 중 문서에 삽입(parser-inserted)하는 lazy chunk
+  //   <script src="/_next/static/chunks/…"> 태그 일부에 nonce 가 붙지 않아 앱이 전면 차단됐다
+  //   (e2e 3샤드 전체 red — "Loading the script … violates … Note that 'strict-dynamic' is
+  //   present, so host-based allowlisting is disabled"). 로컬 /login 검증은 초기 청크만 건드려
+  //   이 경로를 지나치지 않았다.
+  //   'self'+nonce 조합의 실효 방어는 이 앱에서 동등하다: 주입 inline <script> 는 nonce 가 없어
+  //   차단되고, 외부 호스트 스크립트는 'self' 가 차단하며, 같은 출처 업로드 파일을 script 로
+  //   로드하는 우회는 전역 X-Content-Type-Options: nosniff(비-JS MIME 실행 거부)가 차단한다.
   const scriptSrc = isProd
-    ? `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'`
-    : `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`;
+    ? `script-src 'self' 'nonce-${nonce}'`
+    : `script-src 'self' 'nonce-${nonce}' 'unsafe-eval'`;
   const connectSrc = isProd ? `connect-src 'self'` : `connect-src 'self' ws: wss:`;
   return (
     `default-src 'self'; ${scriptSrc}; script-src-attr 'none'; ` +
