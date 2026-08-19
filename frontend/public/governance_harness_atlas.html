@@ -1414,9 +1414,9 @@
               <div class="stat-desc"><code>@Tag("schema-validation")</code> 실측</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val">7</div>
+              <div class="stat-val">5</div>
               <div class="stat-label">원격 필수 상태 검사</div>
-              <div class="stat-desc">현재 원격 7 · 저장소 목표 5</div>
+              <div class="stat-desc">2026-08-20 원격 적용 완료 · 저장소 목표와 일치</div>
             </div>
             <div class="stat-card">
               <div class="stat-val">85 / 70</div>
@@ -1424,23 +1424,23 @@
               <div class="stat-desc">LINE / BRANCH 백분율</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val" style="color: var(--accent-danger);">0</div>
+              <div class="stat-val">0</div>
               <div class="stat-label">필수 승인 리뷰</div>
-              <div class="stat-desc">2026-08-19 원격 ruleset 확인값 · 정책 target과 불일치</div>
+              <div class="stat-desc">단독 운영 결정값(DEC-OPS-009) · 명세·원격 일치</div>
             </div>
           </div>
         </div>
 
         <div class="status-panel" role="region" aria-label="집행 상태 요약">
           <article class="status-card">
-            <span class="badge badge-error">TARGET / LIVE DRIFT</span>
+            <span class="badge badge-success">ENFORCED</span>
             <h3>병합 상태 검사</h3>
-            <p>저장소 목표는 안정 context 5개이지만 원격은 과거 E2E shard 3개를 포함한 7개라 불일치합니다. strict 최신 브랜치·force-push·삭제 차단만 현재 일치합니다.</p>
+            <p>2026-08-20 원격 ruleset을 안정 context 5개(backend-build·frontend-build·secret-scan·e2e-test·mutation-test)로 교체해 저장소 목표와 일치합니다. strict 최신 브랜치·force-push·삭제 차단도 일치합니다.</p>
           </article>
           <article class="status-card">
-            <span class="badge badge-error">CONFIRMED GAP</span>
+            <span class="badge badge-warning">DECIDED</span>
             <h3>사람 승인 통제</h3>
-            <p>필수 승인 수 0, CODEOWNERS·마지막 push 승인·thread resolution이 비활성입니다. CODEOWNERS가 전제한 review 설정과 운영 통제가 원격에서 집행되지 않습니다.</p>
+            <p>단독 운영 결정(DEC-OPS-009)으로 필수 승인 0·CODEOWNERS review·last-push·thread-resolution 비활성이 <strong>결정된 정책</strong>입니다. 명세·계약이 이 값에 양방향 동결돼 있으며, reviewer 확보 시 후속 DEC로 상향합니다. CODEOWNERS 파일은 소유 표시용으로 유지됩니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-success">ENFORCED</span>
