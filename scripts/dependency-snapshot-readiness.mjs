@@ -79,6 +79,29 @@ export async function fetchSnapshotWarning({ fetchImpl = fetch, ...inputs }) {
   return decodeSnapshotWarning(rawWarning);
 }
 
+export async function isPublisherConfiguredOnBase({ apiUrl, repository, baseSha, token, fetchImpl = fetch }) {
+  const [owner, repo] = repository.split('/').map(encodeURIComponent);
+  const url = `${apiUrl.replace(/\/$/, '')}/repos/${owner}/${repo}/contents/.github/workflows/dependency-submission-publish.yml?ref=${encodeURIComponent(baseSha)}`;
+  try {
+    const response = await fetchImpl(url, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/vnd.github+json',
+        Authorization: `Bearer ${token}`,
+        'X-GitHub-Api-Version': '2026-03-10',
+      },
+    });
+    if (response.status === 404) {
+      await response.body?.cancel();
+      return false;
+    }
+    await response.body?.cancel();
+    return true;
+  } catch {
+    return true;
+  }
+}
+
 export async function waitForCompleteSnapshots(inputs, {
   maxWaitSeconds = 600,
   fetchImpl = fetch,
@@ -86,6 +109,13 @@ export async function waitForCompleteSnapshots(inputs, {
   log = console.log,
 } = {}) {
   validateSnapshotInputs(inputs);
+
+  const publisherActive = await isPublisherConfiguredOnBase({ ...inputs, fetchImpl });
+  if (!publisherActive) {
+    log(`ℹ️ dependency-submission-publish.yml is not present on base branch (${inputs.baseSha}) — bootstrap phase allows proceeding.`);
+    return;
+  }
+
   const delays = buildRetryDelays(maxWaitSeconds);
   let lastWarning = '';
   let lastError = null;

@@ -8,6 +8,7 @@ import { validateDependencySubmissionContract } from './dependency-submission-co
 import {
   buildRetryDelays,
   comparisonUrl,
+  isPublisherConfiguredOnBase,
   waitForCompleteSnapshots,
 } from './dependency-snapshot-readiness.mjs';
 
@@ -88,12 +89,34 @@ test('contract turns red for write-token PR execution, publisher execution, scop
   }
 });
 
+test('readiness skips snapshot wait when publisher workflow is absent on base branch', async () => {
+  let compareCalled = false;
+  const logs = [];
+  const fetchImpl = async (url) => {
+    if (url.includes('/contents/')) return response(404);
+    compareCalled = true;
+    return response(200, 'missing head snapshot');
+  };
+
+  await waitForCompleteSnapshots(inputs, {
+    maxWaitSeconds: 30,
+    fetchImpl,
+    sleep: async () => {},
+    log: message => logs.push(message),
+  });
+
+  assert.equal(compareCalled, false);
+  assert.match(logs[0], /bootstrap phase allows proceeding/);
+});
+
 test('readiness retries snapshot warnings with bounded exponential delays and then succeeds', async () => {
   const calls = [];
   const sleeps = [];
   const fetchImpl = async (url, options) => {
     calls.push({ url, options });
-    return calls.length < 3 ? response(200, 'missing head snapshot') : response();
+    if (url.includes('/contents/')) return response(200);
+    const compareCalls = calls.filter(c => c.url.includes('/dependency-graph/compare/'));
+    return compareCalls.length < 3 ? response(200, 'missing head snapshot') : response();
   };
 
   await waitForCompleteSnapshots(inputs, {
@@ -103,17 +126,21 @@ test('readiness retries snapshot warnings with bounded exponential delays and th
     log: () => {},
   });
 
-  assert.equal(calls.length, 3);
+  const compareCalls = calls.filter(c => c.url.includes('/dependency-graph/compare/'));
+  assert.equal(compareCalls.length, 3);
   assert.deepEqual(sleeps, [10_000, 20_000]);
-  assert.equal(calls[0].url, comparisonUrl(inputs));
-  assert.equal(calls[0].options.headers.Authorization, 'Bearer test-token');
+  assert.equal(compareCalls[0].url, comparisonUrl(inputs));
+  assert.equal(compareCalls[0].options.headers.Authorization, 'Bearer test-token');
 });
 
 test('readiness is fail-closed when warnings remain at the bounded deadline', async () => {
   await assert.rejects(
     waitForCompleteSnapshots(inputs, {
       maxWaitSeconds: 30,
-      fetchImpl: async () => response(200, 'missing Gradle head snapshot'),
+      fetchImpl: async (url) => {
+        if (url.includes('/contents/')) return response(200);
+        return response(200, 'missing Gradle head snapshot');
+      },
       sleep: async () => {},
       log: () => {},
     }),
@@ -125,7 +152,10 @@ test('readiness retries transient API failures but rejects authorization failure
   let transientCalls = 0;
   await waitForCompleteSnapshots(inputs, {
     maxWaitSeconds: 10,
-    fetchImpl: async () => (++transientCalls === 1 ? response(503) : response()),
+    fetchImpl: async (url) => {
+      if (url.includes('/contents/')) return response(200);
+      return ++transientCalls === 1 ? response(503) : response();
+    },
     sleep: async () => {},
     log: () => {},
   });
@@ -134,7 +164,8 @@ test('readiness retries transient API failures but rejects authorization failure
   let networkCalls = 0;
   await waitForCompleteSnapshots(inputs, {
     maxWaitSeconds: 10,
-    fetchImpl: async () => {
+    fetchImpl: async (url) => {
+      if (url.includes('/contents/')) return response(200);
       networkCalls += 1;
       if (networkCalls === 1) throw new TypeError('temporary network failure');
       return response();
@@ -148,7 +179,8 @@ test('readiness retries transient API failures but rejects authorization failure
   await assert.rejects(
     waitForCompleteSnapshots(inputs, {
       maxWaitSeconds: 600,
-      fetchImpl: async () => {
+      fetchImpl: async (url) => {
+        if (url.includes('/contents/')) return response(200);
         deniedCalls += 1;
         return response(403);
       },
