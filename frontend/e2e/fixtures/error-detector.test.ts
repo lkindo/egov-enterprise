@@ -167,6 +167,57 @@ describe('ExpectedErrorLedger', () => {
     consoleError.mockRestore();
   });
 
+  // 종전 구현은 ERR_ABORTED 를 전부 무시했다. 여기서는 App Router 의 `_rsc=` prefetch 취소만
+  // 통과시키므로, 그 경계가 유지되는지를 양방향으로 고정한다.
+  it('RSC prefetch 취소만 통과시키고 다른 요청의 취소는 그대로 잡는다', async () => {
+    const makeGuard = async () => {
+      const listeners = new Map<string, (value: unknown) => void>();
+      const frame = {};
+      const page = {
+        on: (event: string, listener: (value: unknown) => void) => {
+          listeners.set(event, listener);
+          return page;
+        },
+        url: () => 'http://localhost:3001/admin/community/boards',
+        mainFrame: () => frame,
+      } as unknown as Page;
+      const guard = new (await import('./error-detector')).ConsoleErrorGuard(page, scope);
+      await guard.install();
+      return { guard, listeners };
+    };
+    const abort = (
+      listeners: Map<string, (value: unknown) => void>,
+      url: string,
+      errorText = 'net::ERR_ABORTED',
+    ) => listeners.get('requestfailed')?.({
+      url: () => url,
+      method: () => 'GET',
+      failure: () => ({ errorText }),
+      isNavigationRequest: () => false,
+      frame: () => ({}),
+    });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const prefetch = await makeGuard();
+    abort(prefetch.listeners,
+      'http://localhost:3001/admin/community/boards/detail?bbsId=BBSMSTR_A&pstSn=1&_rsc=vi2dw7x3');
+    await expect(prefetch.guard.verify()).resolves.toBeUndefined();
+
+    // 같은 화면이라도 `_rsc=` 가 없는 API 취소는 결함으로 남는다.
+    const apiAbort = await makeGuard();
+    abort(apiAbort.listeners, 'http://localhost:3001/api/v1/boards/posts?bbsId=BBSMSTR_A');
+    await expect(apiAbort.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
+
+    // prefetch URL이어도 취소가 아닌 실제 실패는 잡는다.
+    const realFailure = await makeGuard();
+    abort(realFailure.listeners,
+      'http://localhost:3001/admin/community/boards/detail?_rsc=vi2dw7x3',
+      'net::ERR_CONNECTION_REFUSED');
+    await expect(realFailure.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
+
+    consoleError.mockRestore();
+  });
+
   it('spec ledger ID는 저장소에서 유일하고 legacy ignore API를 사용하지 않는다', () => {
     const e2eDirectory = path.resolve(process.cwd(), 'e2e');
     const specSources = fs.readdirSync(e2eDirectory)

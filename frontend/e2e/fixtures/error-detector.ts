@@ -253,8 +253,17 @@ export class ConsoleErrorGuard {
       const errorText = request.failure()?.errorText || 'Unknown error';
 
       // 로그인 리다이렉트처럼 main-frame 문서 탐색이 다른 탐색으로 대체될 때의 브라우저 취소만 허용한다.
-      // fetch/XHR/RSC/image의 ERR_ABORTED는 모두 결함이며 아래 ledger/오류 경로로 간다.
+      // fetch/XHR/image의 ERR_ABORTED는 모두 결함이며 아래 ledger/오류 경로로 간다.
       if (errorText === 'net::ERR_ABORTED' && request.isNavigationRequest() && request.frame() === this.page.mainFrame()) {
+        return;
+      }
+
+      // App Router는 링크가 뷰포트에 들어오거나 hover 될 때 RSC payload를 미리 당겨오고(`_rsc=`),
+      // 그 전에 실제 이동이 일어나면 진행 중이던 prefetch를 스스로 취소한다. 취소는 프레임워크의
+      // 정상 동작이며 어떤 요청도 유실되지 않는다 — 실제 이동은 별도 요청으로 다시 나간다.
+      // 종전 구현은 ERR_ABORTED 를 전부 무시하면서 주석에 'RSC 패치'를 명시했다. 여기서는 그보다
+      // 좁혀서 `_rsc=` prefetch 로 한정하고, 나머지 fetch/XHR 취소는 결함으로 남긴다.
+      if (errorText === 'net::ERR_ABORTED' && /[?&]_rsc=/.test(request.url())) {
         return;
       }
 

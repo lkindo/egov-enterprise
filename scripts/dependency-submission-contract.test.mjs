@@ -12,10 +12,19 @@ import {
 } from './dependency-snapshot-readiness.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// 아래 변이 테스트의 앵커는 여러 줄에 걸치므로 `\n`을 그대로 담는다. Windows 체크아웃은
+// core.autocrlf 때문에 같은 blob을 CRLF로 재구현하고, 그러면 앵커가 하나도 맞지 않아
+// 변이가 전부 no-op이 된다 — 게이트가 red를 증명하지 못한 채 통과한다(vacuous).
+// 검증기 자체는 이미 정규화하므로 여기서도 읽는 시점에 맞춰 플랫폼 의존성을 없앤다.
+function readWorkflow(...segments) {
+  return fs.readFileSync(path.join(repoRoot, ...segments), 'utf8').replace(/\r\n/g, '\n');
+}
+
 const current = {
-  producerContent: fs.readFileSync(path.join(repoRoot, '.github', 'workflows', 'dependency-submission.yml'), 'utf8'),
-  publisherContent: fs.readFileSync(path.join(repoRoot, '.github', 'workflows', 'dependency-submission-publish.yml'), 'utf8'),
-  ciContent: fs.readFileSync(path.join(repoRoot, '.github', 'workflows', 'ci.yml'), 'utf8'),
+  producerContent: readWorkflow('.github', 'workflows', 'dependency-submission.yml'),
+  publisherContent: readWorkflow('.github', 'workflows', 'dependency-submission-publish.yml'),
+  ciContent: readWorkflow('.github', 'workflows', 'ci.yml'),
 };
 
 const inputs = {
