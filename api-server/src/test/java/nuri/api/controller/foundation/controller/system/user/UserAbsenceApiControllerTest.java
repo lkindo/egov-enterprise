@@ -2,12 +2,12 @@ package nuri.api.controller.foundation.controller.system.user;
 
 import nuri.business.domain.user.dto.UserAbsenceDto;
 import nuri.business.service.system.user.UserAbsenceService;
-import nuri.business.support.IntegrationTest;
+import nuri.api.support.ApiHttpIntegrationTest;
+import nuri.business.security.annotation.WithMockCustomUser;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -19,8 +19,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@IntegrationTest
-@AutoConfigureMockMvc
+// [2026-08-20] @IntegrationTest → @ApiHttpIntegrationTest.
+//   종전 stereotype 은 mock-security 프로파일 + permitAll @Primary 체인 + ApiSecurityConfig
+//   스캔 배제의 3중 우회로 운영 보안 체인을 로드하지 않았다. 그래서 이 테스트들은 **자격증명 없이**
+//   /api/v1/admin/** 를 호출해 200 을 단언하고 있었다 — 운영에서는 401 이다.
+//   이제 운영 체인 위에서 돌고, 관리자 주체를 실어 인가를 통과시킨다.
+@ApiHttpIntegrationTest
+@WithMockCustomUser(role = "ADMIN")
 @DisplayName("UserAbsenceApiController 통합 테스트(MockMvc)")
 class UserAbsenceApiControllerTest {
 

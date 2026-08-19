@@ -1,11 +1,11 @@
 package nuri.api.controller;
 
 import nuri.business.service.user.UserService;
-import nuri.business.support.IntegrationTest;
+import nuri.api.support.ApiHttpIntegrationTest;
+import nuri.business.security.annotation.WithMockCustomUser;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -35,8 +35,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  * <p>⚠ 이 테스트가 확인하는 것은 "요청이 컨트롤러에 도달하는가" 다. 도메인 동작은
  * {@code UserServiceTest} 계열이, 화면 왕복은 E2E(02 티어)가 각각 소유한다.
  */
-@IntegrationTest
-@AutoConfigureMockMvc
+// [2026-08-20] @IntegrationTest → @ApiHttpIntegrationTest.
+//   이 파일은 스스로를 '실 컨텍스트' 검증이라 선언했지만 종전 stereotype 은 운영 보안 체인을
+//   3중으로 우회했다 — 즉 인증 계층이 통째로 빠진 컨텍스트였고, 자기 존재 이유와 실제 커버리지가
+//   어긋나 있었다. 이제 운영 체인 위에서 돌므로 그 선언이 참이 된다.
+@ApiHttpIntegrationTest
+@WithMockCustomUser(role = "ADMIN")
 @DisplayName("사용자 수정 요청 계약 (실 컨텍스트)")
 class UserUpdateContractIntegrationTest {
 
