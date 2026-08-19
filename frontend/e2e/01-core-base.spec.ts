@@ -94,21 +94,11 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         //   포워딩하는데(logout/route.ts), 그 만료가 누락돼도 종전 단언은 전부 그린이었다:
         //   리다이렉트는 클라이언트가 수행하므로 쿠키가 남아 있어도 /login 으로 간다.
         //   → 쿠키 소멸과 '보호 경로 재진입 차단'까지 확인해 제목이 약속한 것을 실제로 검증한다.
-        test('Logout Redirection and Session Cleanup', async ({ page, context, consoleGuard }) => {
-            // 로그아웃 후 도착한 /login 이 세션 유무를 확인하며 401 을 받는다. 세션이 정말
-            // 지워졌다는 증거이므로 이 테스트가 증명하려는 바와 같은 방향이다.
-            consoleGuard.expectErrors([{
-                id: 'E2E-CORE-LOGOUT-ME-401',
-                specScope: '01-core-base.spec.ts :: Logout Redirection and Session Cleanup',
-                channel: 'response',
-                urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
-                messagePattern: null,
-                method: 'GET',
-                status: 401,
-                maxOccurrences: 3,
-                reason: '로그아웃 후 도착한 로그인 화면의 세션 확인 요청이다.',
-                expiresAt: '2026-12-31',
-            }]);
+        // [2026-08-19] 여기에 /auth/me 401 ledger 항목을 달았다가 되돌렸다. CI 실측
+        //   (run 32246769332)에서 `[EXPECTED ERROR 미발생]`으로 red 가 났다 — 로그아웃 라우트가
+        //   쿠키를 지우고 클라이언트가 /login 으로 이동하는 이 경로에서는 그 요청이 나가지 않는다.
+        //   ledger 는 미발생도 위반으로 보므로, 발생하지 않는 오류를 '예상'으로 등록하면 안 된다.
+        test('Logout Redirection and Session Cleanup', async ({ page, context }) => {
             console.log('>>> Step 1: Triggering User Menu');
             const profileTrigger = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
             await expect(profileTrigger).toBeVisible({ timeout: 15000 });

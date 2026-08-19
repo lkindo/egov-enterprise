@@ -252,18 +252,18 @@ export class ConsoleErrorGuard {
     this.page.on('requestfailed', (request) => {
       const errorText = request.failure()?.errorText || 'Unknown error';
 
-      // 로그인 리다이렉트처럼 main-frame 문서 탐색이 다른 탐색으로 대체될 때의 브라우저 취소만 허용한다.
-      // fetch/XHR/image의 ERR_ABORTED는 모두 결함이며 아래 ledger/오류 경로로 간다.
-      if (errorText === 'net::ERR_ABORTED' && request.isNavigationRequest() && request.frame() === this.page.mainFrame()) {
-        return;
-      }
-
-      // App Router는 링크가 뷰포트에 들어오거나 hover 될 때 RSC payload를 미리 당겨오고(`_rsc=`),
-      // 그 전에 실제 이동이 일어나면 진행 중이던 prefetch를 스스로 취소한다. 취소는 프레임워크의
-      // 정상 동작이며 어떤 요청도 유실되지 않는다 — 실제 이동은 별도 요청으로 다시 나간다.
-      // 종전 구현은 ERR_ABORTED 를 전부 무시하면서 주석에 'RSC 패치'를 명시했다. 여기서는 그보다
-      // 좁혀서 `_rsc=` prefetch 로 한정하고, 나머지 fetch/XHR 취소는 결함으로 남긴다.
-      if (errorText === 'net::ERR_ABORTED' && /[?&]_rsc=/.test(request.url())) {
+      // 브라우저가 스스로 취소한 **문서 요청**은 앱 결함이 아니다. 두 경우뿐이고 둘 다 정상이다:
+      //   ① 탐색이 다른 탐색으로 대체됨(로그인 리다이렉트 등)
+      //   ② App Router 가 링크를 미리 당겨오다 실제 이동이 먼저 일어나 prefetch 를 접음
+      // 어느 쪽도 요청이 유실되지 않는다 — 실제 이동은 별도 요청으로 다시 나간다.
+      // 종전 구현은 ERR_ABORTED 를 **전부**(fetch·XHR·image 포함) 무시했다. 여기서는 취소가
+      // 무해함이 성립하는 문서·RSC prefetch 로만 한정하고, fetch/XHR 취소는 결함으로 남긴다.
+      //
+      // `isNavigationRequest()` 로만 판정하면 안 된다 — 라우터가 문서를 prefetch 한 것은
+      // 탐색 요청이 아니어서 그 검사를 통과하지 못하고, 실제로 03-board-community 가
+      // 그 경로로 red 였다(CI run 32246769332).
+      if (errorText === 'net::ERR_ABORTED'
+        && (request.resourceType() === 'document' || /[?&]_rsc=/.test(request.url()))) {
         return;
       }
 
@@ -276,7 +276,9 @@ export class ConsoleErrorGuard {
       };
       if (this.ledger.consume(event)) return;
 
-      const message = `[NETWORK FAILED]: ${request.url()} - ${errorText}`;
+      // resourceType 을 함께 남긴다. 취소·실패의 성격은 URL 만으로 판정할 수 없고,
+      // 이것이 없으면 CI 로그만으로 원인을 좁히지 못한다(실제로 한 회차를 그렇게 소모했다).
+      const message = `[NETWORK FAILED]: ${request.url()} (${request.resourceType()}) - ${errorText}`;
       this.errors.push(message);
       console.error(`❌ ${message}`);
     });

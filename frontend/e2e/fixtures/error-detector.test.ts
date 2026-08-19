@@ -188,11 +188,14 @@ describe('ExpectedErrorLedger', () => {
     const abort = (
       listeners: Map<string, (value: unknown) => void>,
       url: string,
-      errorText = 'net::ERR_ABORTED',
+      { errorText = 'net::ERR_ABORTED', resourceType = 'fetch' } = {},
     ) => listeners.get('requestfailed')?.({
       url: () => url,
       method: () => 'GET',
+      resourceType: () => resourceType,
       failure: () => ({ errorText }),
+      // 라우터의 문서 prefetch 는 '탐색 요청'이 아니다. 이 값이 false 인 상태에서도
+      // 문서 취소가 통과해야 실제 CI 실패(03-board-community)를 재현·방지한다.
       isNavigationRequest: () => false,
       frame: () => ({}),
     });
@@ -203,7 +206,14 @@ describe('ExpectedErrorLedger', () => {
       'http://localhost:3001/admin/community/boards/detail?bbsId=BBSMSTR_A&pstSn=1&_rsc=vi2dw7x3');
     await expect(prefetch.guard.verify()).resolves.toBeUndefined();
 
-    // 같은 화면이라도 `_rsc=` 가 없는 API 취소는 결함으로 남는다.
+    // `_rsc=` 가 없어도 문서 요청의 취소는 통과한다(라우터의 문서 prefetch·대체된 탐색).
+    const documentAbort = await makeGuard();
+    abort(documentAbort.listeners,
+      'http://localhost:3001/admin/community/boards/detail?bbsId=BBSMSTR_A&pstSn=4',
+      { resourceType: 'document' });
+    await expect(documentAbort.guard.verify()).resolves.toBeUndefined();
+
+    // 같은 화면이라도 `_rsc=` 가 없는 fetch/XHR 취소는 결함으로 남는다.
     const apiAbort = await makeGuard();
     abort(apiAbort.listeners, 'http://localhost:3001/api/v1/boards/posts?bbsId=BBSMSTR_A');
     await expect(apiAbort.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
@@ -212,8 +222,14 @@ describe('ExpectedErrorLedger', () => {
     const realFailure = await makeGuard();
     abort(realFailure.listeners,
       'http://localhost:3001/admin/community/boards/detail?_rsc=vi2dw7x3',
-      'net::ERR_CONNECTION_REFUSED');
+      { errorText: 'net::ERR_CONNECTION_REFUSED' });
     await expect(realFailure.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
+
+    // 문서 요청이어도 취소가 아닌 실패는 잡는다.
+    const documentFailure = await makeGuard();
+    abort(documentFailure.listeners, 'http://localhost:3001/admin/community/boards/detail',
+      { errorText: 'net::ERR_CONNECTION_REFUSED', resourceType: 'document' });
+    await expect(documentFailure.guard.verify()).rejects.toThrow(/NETWORK FAILED/);
 
     consoleError.mockRestore();
   });
