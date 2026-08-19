@@ -36,8 +36,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 /**
  * 🔗 UNIQUE ↔ JPA @Table(uniqueConstraints) 미러 정합 린터 — SSOT 전파(계약체인) 기계 강제.
  *
- * <p>[근거] 2026-07-17 BE 재측정(quality-score §1.2·§2.D)이 "DB UNIQUE ↔ 엔티티 미러가 수동·무강제"라
- * 연결부(seam) 상한 원인으로 지목. 마이그레이션의 UNIQUE 제약이 <b>대응 @Entity 에 JPA 레벨로 미러링</b>
+ * <p>마이그레이션의 UNIQUE 제약이 <b>대응 @Entity 에 JPA 레벨로 미러링</b>
  * 되어 있는지 정적 검증하여, 새 UNIQUE 추가 시 엔티티 미러 누락이 침묵 드리프트 되는 것을 배포 전에 차단한다.
  *
  * <p>검사 원칙: <b>엔티티가 매핑된 테이블</b>(@Table(name) 일치)에 걸린 DB UNIQUE 만 검사한다.
@@ -123,7 +122,7 @@ class UniqueConstraintMirrorLinterTest {
             for (String v : violations) {
                 sb.append("❌ ").append(v).append("\n");
             }
-            sb.append("\n💡 근거: quality-score-root-cause-analysis.md §2.D(SSOT 전파). DB 에만 존재하는 불변식은\n");
+            sb.append("\n💡 DB 에만 존재하는 불변식은\n");
             sb.append("   엔티티/애플리케이션에서 인지되지 않아 계약체인 드리프트를 만듭니다. UNIQUE 는 엔티티에도 미러하십시오.\n");
             fail(sb.toString());
         } else {

@@ -1,16 +1,18 @@
-# 🤖 자가 치유형 E2E 테스트 하네스 (Self-Healing E2E Agent) 가이드
+# 자가 치유형 E2E 보조 fixture 평가
 
-본 문서는 프론트엔드 UI/UX 변경에 매우 민감한 E2E 테스트의 취약성(Flakiness)을 극복하고, 동적으로 셀렉터 일탈을 복구하는 **자가 치유형 Playwright E2E 테스트 하네스**의 구조 및 연동법에 대해 설명합니다.
+`SelfHealingAgent`는 주 selector가 실패하면 role·text 기반 후보를 찾아 동작을 계속하는 선택형 Playwright fixture다. `base-test.ts`에 노출되어 있지만 현재 스펙에는 `healingAgent`·`safeClick`·`safeFill` 호출부가 없다. 따라서 필수 하네스나 CI 품질 게이트로 간주하지 않는다.
 
 > **관련 문서 (See also)**: 본 하네스는 [테스트 종합 가이드 (testing-guide.md)](./testing-guide.md)를 상위 SSOT로 따르며, E2E 실행 명령·Tier 구조·워커 수는 [E2E 운영 런북 (e2e-test-guide.md)](./e2e-test-guide.md)을 참조하십시오.
+
+> **사용 경계**: 기본 테스트는 `getByRole`, `getByLabel`, stable test id 같은 의미 기반 locator로 명확하게 실패해야 한다. fuzzy fallback이 다른 버튼을 선택하면 실제 접근성 이름·화면 계약 파손을 통과시킬 수 있다. 이 fixture는 로컬 진단 실험에만 사용하고, CI에 커밋하는 테스트의 성공 조건으로 사용하지 않는다.
 
 ---
 
 ## 1. 개요 및 설계 동기 (Self-Healing Motivation)
 
 * **E2E의 취약점**: 마이너한 UI 디자인 수정(예: 버튼 Tailwind 클래스 변경, 마크업 구조 고도화)이 발생할 때, 기존의 CSS/XPath 셀렉터가 깨져 테스트 빌드가 실패하는 고질적 문제가 존재합니다.
-* **해결책**: 주 셀렉터(Primary Selector) 감지에 실패하더라도 즉각 예외를 던지지 않고, 사전 정의된 **텍스트 힌트** 및 **시맨틱 ARIA 역할(Role)**을 결합한 휴리스틱 다각도 스캔을 가동해 요소를 복구(Heal)합니다.
-* **효과**: 빌드 실패율을 낮추고, 치유된 내역을 콘솔에 기록하여 개발자에게 셀렉터 수정 힌트를 실시간으로 피드백합니다.
+* **보조 방식**: 주 selector가 실패하면 사전 정의된 텍스트 힌트와 ARIA 역할을 결합해 후보를 찾는다.
+* **한계**: 치유 성공은 원래 selector 계약의 성공이 아니다. 로그를 근거로 원 locator를 수정한 뒤 일반 Playwright 실행으로 다시 검증해야 한다.
 
 ---
 
@@ -35,9 +37,9 @@ graph TD
 
 ---
 
-## 3. 실전 사용 가이드 (CLI & API Usage)
+## 3. 로컬 진단 예시
 
-E2E 테스트 시 주 셀렉터가 깨질 수 있는 위험 요소가 있는 입력란이나 클릭 영역에 `healingAgent`를 사용합니다.
+아래 예시는 fixture 동작을 조사할 때만 사용한다. 제품 E2E에는 우선 의미 기반 locator를 직접 작성한다.
 
 ### 3.1 클릭 동작 자가 치유 예시
 * **기존 방식 (셀렉터 변경 시 즉시 깨짐)**:
@@ -75,7 +77,7 @@ E2E 테스트 시 주 셀렉터가 깨질 수 있는 위험 요소가 있는 입
 
 ## 4. 모니터링 및 로깅 피드백
 
-자가 치유 에이전트가 성공적으로 요소를 복구하면, Playwright 테스트 콘솔에 다음과 같은 시각적 알림이 생성되어 개발자가 지속적으로 셀렉터를 개선할 수 있도록 돕습니다:
+자가 치유 에이전트가 요소를 복구하면 Playwright 테스트 콘솔에 다음 알림을 남긴다. 이 알림이 발생한 실행은 원 selector가 실패했다는 뜻이므로 완료 증거로 사용하지 않는다.
 
 ```bash
 ⚠️ [E2E FRAGILITY DETECTED]: 주 셀렉터 'button.bg-blue-600.text-white'를 찾을 수 없습니다. 자가 치유(Self-Healing) 매커니즘을 시작합니다...
@@ -84,3 +86,5 @@ E2E 테스트 시 주 셀렉터가 깨질 수 있는 위험 요소가 있는 입
 
 ---
 *Governed by: Enterprise Technology Constitution (Test & Automation Annex)*
+
+*Last reviewed against current sources: 2026-08-19.*

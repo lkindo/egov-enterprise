@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p><b>이 린터는 "고칠 수 없게" 만드는 장치가 아니다.</b> 저장소를 편집할 수 있는 주체는 매니페스트도
  * 편집할 수 있다. 목적은 <b>은폐를 불가능하게가 아니라 조용할 수 없게</b> 만드는 것이다 — 목록을 손대면
  * 서로 다른 디렉터리의 두 파일(린터 소스 + 매니페스트)이 함께 바뀌고, diff 에 의도가 드러난다.
- * 매니페스트 갱신 시에는 사유를 커밋 메시지 또는 {@code .gemini/tasks/} 기록에 반드시 남긴다.
+ * 매니페스트 갱신 시에는 사유를 커밋 메시지 또는 PR 설명에 반드시 남긴다.
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(소스 텍스트 파싱).
  */
@@ -91,20 +91,12 @@ class HarnessBaselineIntegrityTest {
     private static final String CLASSES_KEY = "__harness.classes";
 
     /**
-     * 훅 파일 자체의 무결성 축. [W0-P1-7 보완 — 2026-08-03]
+     * 훅 파일 자체의 무결성 축.
      *
-     * <p>Wave 0 의 P1-7 은 두 가지를 요구했다 — ① pre-push fast-pass 를 allowlist→denylist 로 반전
-     * ② <b>훅 자체의 sha256 을 매니페스트에 등재</b>. ①만 이행됐다.
-     *
-     * <p>②가 빠진 것이 치명적인 이유는 {@code .githooks/pre-push} 가 스스로 적어 둔 전제 때문이다 —
-     * "CI 에도 있으나 과금차단 상태라 로컬 pre-push 가 사실상 유일 관문". git 은 <b>워킹트리의 훅 파일을
-     * 그대로 실행</b>하므로, 훅을 무력화하는 편집(조기 return 무조건화, fast-pass 정규식 되살리기,
-     * SKIP_HARNESS 분기 반전)은 <b>그 편집된 훅이 자기 자신의 푸시를 승인</b>한다.
-     * 게이트를 끄는 편집이 게이트를 통과하는 구조다.
-     *
-     * <p>훅 내용을 매니페스트에 동결하면 그 편집이 <b>하네스 테스트에서</b> 잡힌다 —
-     * 훅이 아니라 JVM 테스트가 판정하므로 훅을 고쳐도 우회되지 않는다.
-     * 정당한 훅 변경은 매니페스트를 함께 갱신해야 하고, 그러면 두 파일이 같이 바뀌어 diff 에 의도가 드러난다.
+     * <p>git 은 워킹트리의 훅 파일을 그대로 실행하므로, 훅을 약화하는 편집은 그 편집된 훅의 로컬 판정을
+     * 우회할 수 있다. 병합 권위는 required CI지만, 훅 해시를 매니페스트에 동결하면 로컬 피드백 경로의
+     * 조용한 약화도 JVM 하네스에서 드러난다. 정당한 훅 변경은 매니페스트를 함께 갱신해야 하므로 diff에
+     * 의도가 남는다.
      */
     private static final List<String> GATE_HOOKS = List.of(".githooks/pre-push", ".githooks/pre-commit");
 
@@ -272,7 +264,7 @@ class HarnessBaselineIntegrityTest {
             sb.append("   아니면 '빨간 신호를 없애는 것' 입니까? 후자라면 그것은 수정이 아니라 은폐입니다.\n");
             sb.append("   (AGENTS.md Evidence guardrails H2 / 오케스트레이션 프로토콜 §4.1 '미검증을 완료로 선언 금지')\n");
             sb.append("\n💡 변경이 정당하다면:\n");
-            sb.append("   1) 사유를 커밋 메시지 또는 .gemini/tasks/ 기록에 남기고\n");
+            sb.append("   1) 사유를 커밋 메시지 또는 PR 설명에 남기고\n");
             sb.append("   2) 아래 산출 파일을 매니페스트로 복사하십시오.\n");
             sb.append("      cp ").append(Paths.get(ACTUAL_OUT).toAbsolutePath()).append(" \\\n");
             sb.append("         ").append(resolve(MANIFEST_PATH).toAbsolutePath()).append("\n");

@@ -1,7 +1,7 @@
 # 재사용 Base 생성 가이드
 
-> **현행 정책(2026-08-16)**: 재사용 base는 `main`의 정확한 `v*` 릴리스 태그에서 생성하는
-> 검증된 산출물이다. `template/reusable-base`는 2026-07 실험을 보존한 역사 브랜치이며 신규
+> **현행 정책**: 재사용 base는 `main`의 정확한 `v*` 릴리스 태그에서 생성하는
+> 검증된 산출물이다. `template/reusable-base`는 역사 브랜치이며 신규
 > 프로젝트의 시작점으로 사용하지 않는다. 결정 배경은
 > [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)을 따른다.
 
@@ -25,13 +25,13 @@ clean v* release tag
 
 ## 2. 프로필
 
-2026-08-16 현재 마이그레이션 최종 상태는 물리 테이블 83개·시퀀스 49개다.
+프로필의 실제 테이블·시퀀스 집합과 개수는 `config/reusable-base-profiles.json` 및 `npm run base:census` 출력이 정본이다.
 
-| 프로필 | 포함 pack | 용도 | 테이블 | 시퀀스 |
-|---|---|---|---:|---:|
-| `core` | core | 인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심 최소 골격 | 38 | 13 |
-| `collaboration` | core + collaboration | core + 게시판 클러스터 + 메일·쪽지·알림·SMS·실시간 대시보드 | 53 | 23 |
-| `demo` | core + collaboration + demo | 현재 제품의 전체 참조 기능 | 83 | 49 |
+| 프로필 | 포함 pack | 용도 |
+|---|---|---|
+| `core` | core | 인증·사용자·조직·권한·메뉴·코드·파일·로그·정책 중심 최소 골격 |
+| `collaboration` | core + collaboration | core + 게시판 클러스터 + 메일·쪽지·알림·SMS·실시간 대시보드 |
+| `demo` | core + collaboration + demo | 현재 제품의 전체 참조 기능 |
 
 프로필은 누적된다. 낮은 pack이 높은 pack을 의존할 수 없고, 물리 테이블·독립 시퀀스는 한 pack만
 소유한다. `board`·`comment`·`scrap`처럼 함께 선택해야 하는 클러스터와 `tb_tmplt_info`처럼 공유되는
@@ -54,7 +54,7 @@ npm run base:census
 npm run base:generate-db -- --profile collaboration
 ```
 
-생성기는 현재 versioned migration 84개를 빈 DB에 적용하고 프로필 밖의 객체를 그 일회용 DB에서만
+생성기는 현재 versioned migration 전체를 빈 DB에 적용하고 프로필 밖의 객체를 그 일회용 DB에서만
 제거한다. 이후 다음 파일을 만든다.
 
 - `db/migration/V1_0__baseline.sql`
@@ -62,8 +62,7 @@ npm run base:generate-db -- --profile collaboration
 - `db/migration/R__seed_framework.sql`
 - `profile-lock.json`, `README.md`
 
-완성된 V1 체인은 두 번째 빈 DB에 다시 적용된다. 테이블·시퀀스 집합과 표준 메타 행 수
-(`words` 3,386 · `terms` 13,207 · `domains` 127)가 일치해야만 PASS한다.
+완성된 V1 체인은 두 번째 빈 DB에 다시 적용된다. 테이블·시퀀스 집합과 현재 표준 메타 행 수가 원본 DB와 일치해야만 PASS한다.
 
 ### 3.3 소스 projection
 
@@ -124,9 +123,8 @@ npm run base:generate-source -- \
 기존 운영 DB를 작은 프로필로 변환하는 용도로 이 파이프라인을 사용하지 않는다. 운영 데이터 축소는
 별도의 데이터 이관·백업·롤백 계획과 명시 승인을 요구한다.
 
-## 7. 역사 브랜치
+## 7. 비정본 브랜치 주의
 
-`template/reusable-base`는 기준 커밋 `4009edd47`의 2026-07 분리 실험이다. 당시에는 샘플 테이블을
-후속 teardown migration으로 제거하고 main 변경을 선별 이식하는 방식이었다. 2026-08-16 실측으로
-현재 개발선보다 486커밋 뒤이고 고유 커밋 5개를 가진다. 최신 보안·DB·품질 게이트를 보장하지 않으므로
-참고 기록 외에는 사용하지 않는다.
+`template/reusable-base` 등 장기 template 브랜치는 현재 릴리스와 보안·DB·품질 게이트의 동기화를 보장하지 않는다. 신규 base 생성 입력으로 사용하지 않고, 필요한 역사 비교가 있을 때만 읽기 전용 참고 자료로 취급한다.
+
+*Last reviewed against current sources: 2026-08-19.*

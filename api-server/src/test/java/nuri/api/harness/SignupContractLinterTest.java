@@ -66,7 +66,7 @@ class SignupContractLinterTest {
     /**
      * [동결 베이스라인] 공개 회원가입 요청이 받을 수 있는 필드 전부.
      * <b>확장 금지가 원칙이다</b> — 추가하려면 "미인증 요청자가 이 값을 정해도 되는가"를 먼저 답하고,
-     * 사유를 커밋 메시지 또는 {@code .gemini/tasks/} 기록에 남긴 뒤 매니페스트와 함께 갱신한다.
+     * 사유를 커밋 메시지 또는 PR 설명에 남긴 뒤 매니페스트와 함께 갱신한다.
      */
     private static final Set<String> ALLOWED_SIGNUP_FIELDS = new TreeSet<>(Arrays.asList(
             "userId",      // 로그인 ID

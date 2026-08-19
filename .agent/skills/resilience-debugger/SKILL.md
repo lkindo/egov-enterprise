@@ -1,79 +1,36 @@
 ---
 name: resilience-debugger
-description: >-
-  Combines systematic debugging with active environment self-healing. Connects directly to the
-  OCI PostgreSQL DB Bridge and local runtime diagnostics to automatically resolve port collisions,
-  JPA type regressions, and Playwright execution locks in a self-reflective loop.
-version: 1.0.0
+description: 빌드·런타임·DB·E2E 실패를 원인→증거→최소 수정→재검증 순서로 진단하며 환경 상태를 안전하게 다룬다.
+version: 2.0.0
 ---
 
-# Resilience Debugger Skill (Antigravity Native & Ralph Loop 2.0 Enabled)
+# Resilience Debugger
 
-**Use this skill when:** Encountering any build failure, runtime exception (Spring Boot JVM / Next.js Node), port collisions, PostgreSQL persistence exceptions, or Playwright E2E test failures.
+## 진단 루프
 
----
+1. 실패 명령, 첫 원인, 관련 로그와 재현 조건을 고정한다.
+2. 코드·프로세스·포트·DB·브라우저 상태 중 어느 경계에서 실패했는지 구분한다.
+3. 현재 디스크와 실행 환경에서 가설을 검증한다.
+4. 원인에 닿는 최소 변경만 적용한다.
+5. 가장 좁은 재현 테스트부터 상위 게이트까지 다시 실행한다.
 
-## 1. Zero-Downtime Resilience Philosophy
+같은 원인으로 세 번 연속 실패하면 반복 실행을 멈추고 증거·시도·필요한 외부 조건을 보고한다.
 
-Do not just trace code statically. When an exception occurs, the **Resilience Debugger** actively inspects and repairs the runtime environment (Self-Healing) while proving the root cause. 
+## 환경 안전
 
-```
-[Traditional Debugging] -> Read stacktrace -> Guess fix -> Re-run (Repeat blindly).
-[Resilience Debugging]  -> Auto-detect runtime lock/port -> DB Schema Audit -> Self-Reflection Report -> Precision Fix & Re-Verify.
-```
+- 포트 소유 프로세스를 먼저 식별하고 명령행·작업 소유권을 확인한다.
+- 다른 에이전트나 사용자의 프로세스를 임의 종료하지 않는다. 종료가 필요하면 대상 PID와 영향을 제시하고 허가 범위 안에서만 수행한다.
+- 캐시·build·test data를 광범위하게 삭제하는 방식으로 오류를 숨기지 않는다.
+- DB 문제는 `db-bridge.js`의 read-only allowlist로 현재 상태를 조회한다. write·DDL은 별도 승인과 격리 환경이 필요하다.
+- 제품 데이터의 삭제 방식을 `use_yn='N'`으로 일반화하지 않는다. DB 헌법과 해당 도메인 계약을 따른다.
 
----
+## E2E
 
-## 2. The 4-Phase Self-Healing Loop
+- 최초 실패의 trace, console, network, screenshot을 먼저 읽는다.
+- selector만 고쳐 증상을 덮지 말고 사용자 흐름·인증·fixture·서버 상태를 분리한다.
+- 실패 상태를 재현할 수 있을 때만 브라우저 기반 진단을 추가한다.
+- sandbox 정리는 해당 실행이 만든 데이터로 한정하고 운영 데이터에는 적용하지 않는다.
 
-Always match this sequence to the root-cause → evidence → minimal fix → re-verification flow in the `AGENTS.md` **공통 작업 원칙** section.
+## 보고
 
-```mermaid
-graph TD
-    A[Runtime Exception / Build Failure] --> B[Phase 1: Environment Diagnostic & Repair]
-    B --> C[Phase 2: DB Standard & Data State Audit]
-    C --> D[Phase 3: Generate Self-Reflection Report]
-    D --> E[Phase 4: Precision Fix & Re-Verify]
-```
-
-### Phase 1: Environment Diagnostic & Repair (Self-Healing)
-* **Port Lock Auditing**: Check for zombie background processes holding backend (`8080`) or frontend (`3001`) ports.
-* **Command Action**: Proactively query and kill lock processes using PowerShell.
-  ```powershell
-  # Locate and terminate zombie node/java processes on dev ports
-  Get-Process -Id (Get-NetTCPConnection -LocalPort 3001 -ErrorAction SilentlyContinue).OwningProcess | Stop-Process -Force
-  ```
-
-### Phase 2: DB Standard & Data State Audit
-If a runtime error relates to JPA persistence, Liquibase execution, or table relationships:
-* Query OCI PostgreSQL via Local Bridge (`node .agent/scripts/db-bridge.js`) to capture the actual physical schema.
-* Audit character sets, data types (e.g. `CHAR(1)` vs `VARCHAR(20)`), and column constraints. Never assume standard definitions in codebase match database physical reality without checking.
-
-### Phase 3: Self-Reflection Report Generation
-Before writing a single line of correction, output the mandatory `[SELF-REFLECTION REPORT]` block in the response window:
-
-```markdown
-### 🔍 [SELF-REFLECTION REPORT] ###
-- **False Assumption**: What assumption did I make previously that has been disproven?
-- **Root Cause**: The physical/logical root of the runtime/build error, backed by system evidence.
-- **Hypothesis & Repair Path**: The minimal, most resilient code patch to resolve the issue permanently.
-- **Side-Effect Check**: How will this change affect API schemas, E2E tests, and Database standards?
-#################################
-```
-
-### Phase 4: Precision Fix & Re-Verify
-* Apply the minimal patch.
-* Trigger targeted test execution (e.g. running specific Playwright E2E workers, Gradle test coverage, or TS compilation check).
-* Confirm that the build has returned to a completely clean baseline.
-
----
-
-## 3. Playwright E2E Diagnostics (Specialized Rule)
-
-If Playwright E2E tests fail under worker execution:
-* Do not keep re-running the test suite. 
-* Dispatch the `browser_subagent` to navigate to the exact failure state or read browser console logs and Playwright debug reports to locate UI elements.
-* Ensure all database states are rolled back using local sandbox cleanup policies. Physical `DELETE` is permitted only under the **DB Constitution Article 8 test-environment exception**; production data must always use logical deletion (`use_yn = 'N'`).
-
----
-*Verified: 2026-05-18 (Ralph Loop 2.0 & DB Bridge Fully Integrated)*
+잘못된 가정, 확인된 원인, 근거, 변경, 재검증 결과, 남은 한계를 간결하게 제시한다. 일부 테스트만 통과했으면 전체 baseline 복구라고 표현하지 않는다.

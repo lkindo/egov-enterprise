@@ -1,4 +1,6 @@
-# 품질 스코어 근본원인 분석 (Quality Score Root-Cause Analysis)
+# 품질 스코어 근본원인 분석 (역사 스냅샷)
+
+> **상태: Superseded / 삭제 후보** — 날짜별 주관 점수와 완료 로그가 누적된 감사 기록이다. 재현 가능한 현재 위험은 [.agent/memory/known-gaps.md](../../.agent/memory/known-gaps.md), 검증 계약은 [testing-guide.md](../03-guides/testing-guide.md)와 현재 required checks를 사용한다. 아래 점수·CI 상태·카운트를 현재 사실로 인용하지 않는다.
 
 > 작성: 2026-07-15 · 기준: 코드 실물 검증 기반 재평가(2026-07-13 baseline → 2026-07-15, 백엔드 하드닝 17커밋 반영)
 > **갱신: 2026-07-17 — DB 축 재측정 추가(§1.1). V2_12~V2_23 DB 표준화 스윕 반영, 라이브 OCI DB 실측. 완성도/연결부/단순성 83·79·72 → 89·88·82.**
@@ -64,7 +66,7 @@
 - **완성도(+2)**: #4(상태코드 시맨틱 정합 404/400)·#5(tx readOnly 경계 일관)가 직접 기여하는 correctness 개선. 기반 견고(GlobalExceptionHandler 13핸들러·@Valid 44파일/95회·서비스 hasRole 이중검증+SecurityAuthAnnotationLinterTest 오딧[⚠ 2026-08-03 현행화: 패키지 skip 삭제로 **전 컨트롤러 순회**가 됐으나, secure-paths 문자열 매칭·소유권 위임·`isAuthenticated()` 만으로도 통과하므로 '모든 인가를 검증'하지는 않는다 — 상세는 린터 javadoc]·컨트롤러 Entity반환 위반 0). #1~#3 은 단순성 성격이라 완성도 기여 한계적.
 - **연결부(+1, 최소 이동)**: seam 접점은 #2(DRY·정체성 축 가시성↑)·#3(split-package 아웃라이어 1건)뿐. 모듈/레이어 경계는 ArchUnit 스위트(controller!→entity·layered·domain 단방향·no-cycle·foundation!→business·DomainIsolation ALLOW-LIST 동결)로 이미 강하게 게이트(위반 0)돼 baseline 에 반영됨. **[정정 반영]** 재측정이 짚은 #2 의 잔여(AdministCode/BoardMaster 가 loginId-축 감사컬럼 lastMdfrId 에 getCurrentEsntlId() 주입+"감사=esntlId" 주석)는 **후속 커밋에서 4컨트롤러 loginId 통일로 정정**(create 경로 userId 미사용·update/delete 는 lastMdfrId 로 흘러 loginId 가 정합 축; 감사 flush 가 어차피 loginId 로 덮어써 동작 무변화·테스트 green) → 정체성 축 코드-데이터 일치. seam 상한은 여전히 §2.D(SSOT 자동정합·backend-shape 오프라인 게이트 부재)가 지배.
 
-**여전히 60~80대에 묶는 캡(정직)**: ① **§2.A Two-paradigm 앵커** — BaseAbstractService extends EgovAbstractServiceImpl + EgovIdGnrService 결합(접두 rename 은 표층, egov 패러다임은 상속·ID채번으로 잔존) ② **PK 채번 6전략 파편화**(currentTimeMillis 는 사라졌으나 이질 5~6전략 패치워크가 대체) ③ **egov 빈ID 12개**(명명 불일치 냄새) ④ **§2.G false-completion** — BaseCrud 채택 0·i18n getMessage 1곳(死 스캐폴드+하드코딩 한글 에러메시지) ⑤ **@PreAuthorize 역할 SpEL 하드코딩**(InstitutionCode/CommonCode/DeptJob/ApiSecurityConfig — SecurityUtil.hasRole 은 AuthorityConstants 상수화됐으나 SpEL 특성상 미도달) ⑥ **베이스 상속 부분적**(~20/65 서비스만 BaseAbstractService) ⑦ **§2.D 잔여** — UNIQUE↔@Table 미러 수동 3/~12·무강제+backend-shape→api-docs 하드게이트 CI 편중(과금 차단, 오프라인 결정적 보증 부재). **캡의 핵심은 BE 코드 자체가 아니라 §2.A(레거시 공존)·§2.C(횡단관심사)·§2.D(SSOT 파이프라인)·§2.G(false-completion)** 이며 #1~#5 는 이들에 손대지 않았다.
+**당시 평가의 캡**: Two-paradigm 상속·PK 전략·인가 문자열·계약 생성 경로 등을 낮은 점수의 원인으로 분류했다. 이 항목들은 후속 절에서 여러 차례 정정됐으므로 현재 잔여 목록으로 재사용하지 않는다.
 
 > ⚠ 채점 노트: #1~#5 는 5건 전부 코드 실물과 커밋 주장이 일치(과장 없음)했다. 단순성 +6 은 '안티패턴 인터페이스 0 달성+플러밍/config 정돈'의 확정 이득에서 나오며, 상한은 egov/JPA 이중 패러다임과 채번 패치워크가 누른다. 완성도·연결부의 소폭 Δ 는 #4/#5(correctness)·#2(DRY)에 한정된 접점을 반영한 보수적 산정이다.
 
@@ -168,7 +170,7 @@
 
 #### SEAM (67/70/63 → 69/73/70) — 이번 기간 최대 이동
 
-- **추적성 +7(최대)**: **하네스 린터가 "실행 경로 0"이던 구조가 해소**됐다. 07-26 이전 11종 린터는 CI 과금차단 + pre-push 미포함으로 **어디서도 돌지 않았다**(= 없는 게이트). 현재 `.githooks/pre-push`가 **컴파일 → tsc → codegen 드리프트 ×2 → `:api-server:harnessTest`(12종)** 를 기계강제하며, 금일 실제 푸시에서 `[pre-push] ✅ 컴파일 + 계약 + 하네스 게이트 통과` 로 **실증**됐다. 추가로 `localGate` 태스크(실PG 스키마검증 + 전 모듈 테스트) 신설, **CI 과금차단 해제**로 backend-build·frontend-build·mutation-test 가 실제로 green.
+- **추적성 +7(당시 평가)**: 하네스 실행 경로와 `localGate`가 신설된 점을 반영했다. CI 가용성은 문서의 과거 설명으로 추정하지 않고 현재 required checks를 직접 확인한다.
 - **적합성 +3**: 하네스 린터 **9 → 12** — `EntitySchemaConformanceLinterTest`(H1) · **`HarnessBaselineIntegrityTest`(H2, 동결 베이스라인 변조·신설·소멸 3종 탐지)** · `OwnershipGuardBaselineLinterTest`(H3). H2 는 "예외목록을 늘려 red 를 지우는" 신호 은폐 자체를 게이트화한 것으로, Phase 2 사고의 직접 대응이다.
 - **계약체인 +2**: api-docs 계약 드리프트 게이트가 pre-push 에 결속(`codegen:verify`/`codegen:verify:zod`).
 - 🚨 **상승을 제한한 것 — E2E 전량 red**: CI 가 되살아났으나 **E2E 3샤드 전량 실패**(shard1 실측 28 failed / 12 passed). 당시 분석에서 미들웨어가 유효 토큰을 거부하는 단일 원인으로 추적됐고, **22-tier 스위트가 당시 회귀 신호를 주지 못했다.** 07-18 시점도 CI 차단으로 E2E 신호가 0 이었으므로 *악화는 아니나*, 추적성이 70 을 넘지 못하는 지배적 이유였다. 상세 작업 저널은 2026-08-19 정리됐으며 현재 상태는 현행 CI와 Git 이력으로 재검증한다.
@@ -278,9 +280,9 @@ DB→Entity→DTO→Zod→FE 로 이어지는 진실이 **계층마다 따로 �
 - **✅ 반-false-completion 관행 현행**: 완료 주장은 active required check나 exact census로 뒷받침한다. RBAC·CRUD·i18n 방향은 결판났고, route-group 0은 사실이나 구조 게이트가 이미 모듈 방향을 지키므로 낮은 우선순위다.
 
 ### H. 검증 인프라의 파편화 (신뢰 상한)
-- **증거**: **CI 빌링 차단**(검증 못 함) · e2e 이 환경에서 구동 불가 · 테스트 컨텍스트 파편화(2026-07-15 세션에서 async 회귀가 business-app full 미실행으로 누락됐다가 뒤늦게 검출·정정) · 재발방지 린터 allow-list 17개는 수기 신뢰 목록.
+- **당시 근거**: CI·E2E 결과를 직접 확보하지 못한 상태와 테스트 컨텍스트 파편화, 수기 allow-list를 위험으로 기록했다. 현재 CI 상태에 대한 주장이 아니다.
 - **✅ 부분 해소(2026-07-18, 통합 게이트 신설)**: "실제로 안 깨진다"를 **단일 명령으로 증명**하는 통합 검증 게이트 신설 — `node scripts/verify.mjs [all|be|fe]`(= `make verify` / `npm run verify`, 단일 소스). 백엔드 **전 모듈** 컴파일+테스트(하네스 린터 9종+ArchUnit 포함) + 프론트 `tsc --noEmit`+`next build`+`vitest`(색상/fe-auth/identity 회귀 게이트 포함)를 한 번에. **테스트 컨텍스트 파편화(2026-07-15 async 회귀 누락)의 근본 = "전 모듈을 한 번에 안 돌림"을 이 게이트가 봉합**(OS 감지 `.\gradlew.bat`/`./gradlew`, make 불요). *(pre-push 훅은 컴파일+계약 게이트만 = 빠른 관문, verify 는 full-suite 관문.)*
-- **✅ 2026-08-15 현행**: CI는 정상 작동하며 7개 정확한 required context가 병합을 강제한다. E2E는 3샤드 131건 green, 하네스는 30클래스/37테스트다. `localGate`와 pre-push도 컴파일·codegen·하네스를 계층적으로 강제한다. 따라서 “CI 빌링 차단·E2E 상시화 미해결”은 현재 사실이 아니다.
+- **후속 정정**: 이후 실측에서는 required CI와 E2E가 정상 작동했다. 어느 시점의 실행 결과든 현재 상태 증거로 재사용하지 않고 해당 변경의 required checks를 직접 확인한다.
 - **현재 신뢰 상한**: FE coverage가 30% 수준에 머문 점, strict mutation이 고위험 10범위에 한정된 점, configuration cache를 전역 활성화하지 않은 점, 운영 배포·백업복구·DR을 저장소 CI가 증명하지 못하는 점이다.
 
 ---

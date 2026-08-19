@@ -1,42 +1,26 @@
-﻿---
+---
 name: frontend-design
-description: Create distinctive, production-grade frontend interfaces with high design quality. Use this skill when the user asks to build web components, pages, artifacts, posters, or applications (examples include websites, landing pages, dashboards, React components, HTML/CSS layouts, or when styling/beautifying any web UI). Generates creative, polished code and UI design that avoids generic AI aesthetics.
-license: Complete terms in LICENSE.txt
+description: 기존 eGov 디자인 시스템과 접근성 계약을 보존하며 목적에 맞는 프런트엔드 화면과 컴포넌트를 설계한다.
 ---
 
-This skill guides creation of distinctive, production-grade frontend interfaces that avoid generic "AI slop" aesthetics. Implement real working code with exceptional attention to aesthetic details and creative choices.
+# Frontend Design
 
-The user provides frontend requirements: a component, page, application, or interface to build. They may include context about the purpose, audience, or technical constraints.
+## 사용 원칙
 
-## Design Thinking
+1. 사용 목적, 주요 작업, 정보 우선순위, 지원 viewport와 접근성 요구를 먼저 확인한다.
+2. `frontend/src/app/globals.css`, 공용 UI 컴포넌트, 프런트 헌법과 디자인 토큰 가이드를 재사용한다.
+3. 기존 제품 안에서는 새로운 미학을 일방적으로 덧씌우지 않고 주변 화면의 typography·spacing·interaction과 일관성을 유지한다.
+4. 새 시각 방향이 요구된 경우에도 장식보다 가독성, 작업 효율, 상태 전달을 우선한다.
+5. semantic HTML, keyboard, focus, screen reader name, contrast, reduced motion, responsive overflow를 함께 설계한다.
 
-Before coding, understand the context and commit to a BOLD aesthetic direction:
-- **Purpose**: What problem does this interface solve? Who uses it?
-- **Tone**: Pick an extreme: brutally minimal, maximalist chaos, retro-futuristic, organic/natural, luxury/refined, playful/toy-like, editorial/magazine, brutalist/raw, art deco/geometric, soft/pastel, industrial/utilitarian, etc. There are so many flavors to choose from. Use these for inspiration but design one that is true to the aesthetic direction.
-- **Constraints**: Technical requirements (framework, performance, accessibility).
-- **Differentiation**: What makes this UNFORGETTABLE? What's the one thing someone will remember?
+## 구현 경계
 
-**CRITICAL**: Choose a clear conceptual direction and execute it with precision. Bold maximalism and refined minimalism both work - the key is intentionality, not intensity.
+- 팔레트 리터럴 대신 의미 토큰을 사용한다.
+- animation·gradient·glass·shadow는 정보 구조를 돕는 경우에만 사용하며 기본값으로 강제하지 않는다.
+- 임의 font·외부 asset·새 UI dependency를 도입하기 전에 기존 자산과 CSP·성능 영향을 확인한다.
+- desktop 한 화면만 맞추지 않고 최소 320/390px과 일반 desktop에서 검증한다.
+- skeleton, empty, error, loading, disabled, permission-denied 상태를 빠뜨리지 않는다.
 
-Then implement working code (HTML/CSS/JS, React, Vue, etc.) that is:
-- Production-grade and functional
-- Visually striking and memorable
-- Cohesive with a clear aesthetic point-of-view
-- Meticulously refined in every detail
+## 검증
 
-## Frontend Aesthetics Guidelines
-
-Focus on:
-- **Typography**: Choose fonts that are beautiful, unique, and interesting. Avoid generic fonts like Arial and Inter; opt instead for distinctive choices that elevate the frontend's aesthetics; unexpected, characterful font choices. Pair a distinctive display font with a refined body font.
-- **Color & Theme**: Commit to a cohesive aesthetic. Use CSS variables for consistency. Dominant colors with sharp accents outperform timid, evenly-distributed palettes.
-- **Motion**: Use animations for effects and micro-interactions. Prioritize CSS-only solutions for HTML. Use Motion library for React when available. Focus on high-impact moments: one well-orchestrated page load with staggered reveals (animation-delay) creates more delight than scattered micro-interactions. Use scroll-triggering and hover states that surprise.
-- **Spatial Composition**: Unexpected layouts. Asymmetry. Overlap. Diagonal flow. Grid-breaking elements. Generous negative space OR controlled density.
-- **Backgrounds & Visual Details**: Create atmosphere and depth rather than defaulting to solid colors. Add contextual effects and textures that match the overall aesthetic. Apply creative forms like gradient meshes, noise textures, geometric patterns, layered transparencies, dramatic shadows, decorative borders, custom cursors, and grain overlays.
-
-NEVER use generic AI-generated aesthetics like overused font families (Inter, Roboto, Arial, system fonts), cliched color schemes (particularly purple gradients on white backgrounds), predictable layouts and component patterns, and cookie-cutter design that lacks context-specific character.
-
-Interpret creatively and make unexpected choices that feel genuinely designed for the context. No design should be the same. Vary between light and dark themes, different fonts, different aesthetics. NEVER converge on common choices (Space Grotesk, for example) across generations.
-
-**IMPORTANT**: Match implementation complexity to the aesthetic vision. Maximalist designs need elaborate code with extensive animations and effects. Minimalist or refined designs need restraint, precision, and careful attention to spacing, typography, and subtle details. Elegance comes from executing the vision well.
-
-Remember: Claude is capable of extraordinary creative work. Don't hold back, show what can truly be created when thinking outside the box and committing fully to a distinctive vision.
+정적 type/lint와 관련 테스트를 실행한 뒤, 실제 브라우저에서 light/dark, keyboard, reduced-motion, overflow와 console 오류를 확인한다. 정적 build 성공만으로 시각·접근성 완료를 선언하지 않는다.

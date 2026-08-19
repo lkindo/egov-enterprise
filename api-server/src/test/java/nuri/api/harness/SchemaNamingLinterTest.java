@@ -26,7 +26,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * (기존 check-db-standard.js 는 존재하지 않는 모듈을 스캔하던 죽은 스크립트로 본 하네스가 대체·삭제)
  *
  * <p>검사 범위: V2_2 이후 델타 + R__ 파일. V2_0(baseline 스냅샷)·V2_1(메타 시드)은 레거시 일괄 반입이라
- * 제외한다 — 물리 스키마 전수 기준 감사는 docs/02-architecture/db-standardization-assessment.md 로 완결.
+ * 제외한다. 이 정적 범위 밖의 물리 정합은 live metadata 조회, schema-validation과
+ * docs/02-architecture/db-naming-exceptions.md의 현재 예외 대장을 함께 확인한다.
  *
  * <p>예외 체계: 예외 대장(docs/02-architecture/db-naming-exceptions.md)과 동기화된 화이트리스트 +
  * 위반 라인 끝 '-- naming-linter:ignore' 지시어(사유 병기 필수).

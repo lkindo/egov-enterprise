@@ -1,51 +1,38 @@
-# 표준 데이터 관리 체계 (Standard Data Governance)
+# 표준 데이터 조회·적용 가이드
 
-본 프로젝트는 **[단어 -> 용어 -> 도메인]**으로 이어지는 계층적 표준화 체계를 따릅니다. 모든 데이터 설계는 DB 내 메타 테이블을 통해 이 관계를 준수해야 합니다.
+이 문서는 [DB 표준 헌법](./constitution.md)의 실무 진입점이다. 단어·용어·도메인의 정본은 실행 대상 DB의 `meta_standard_words`, `meta_standard_terms`, `meta_standard_domains`이며, 이 문서의 정적 목록은 정본이 아니다.
 
-## 1. 계층적 표준화 구조
-```mermaid
-graph TD
-    A[표준 단어 meta_standard_words] -- 조합 --> B[표준 용어 meta_standard_terms]
-    B -- 매핑 --> C[표준 도메인 meta_standard_domains]
-    C -- 결정 --> D[물리 컬럼 Name / Type / Length]
-```
+## 조회 순서
 
-## 2. 설계 프로세스 (강제 사항)
-
-### Step 1. 표준 단어 조회 및 용어 구성
-- `word_name`을 조회하여 `eng_abbr`을 확인합니다.
-- 복합어의 경우 표준 단어들을 순서대로 결합합니다.
-
-### Step 2. 표준 용어 및 도메인 확인
-- 구성된 용어를 `meta_standard_terms`에서 조회합니다.
-- 해당 용어의 설명(Description)이나 관련 메타데이터를 통해 **어떤 도메인 그룹에 속하는지** 판단합니다.
-
-### Step 3. 도메인 기반 물리 타입 적용
-- `meta_standard_domains`에서 해당 도메인(`domain_name`)을 조회합니다.
-- 정의된 `data_type`과 `data_length`를 **100% 동일하게** 컬럼에 적용합니다.
-
-## 3. 통합 조회 쿼리 예시
-에이전트는 설계를 위해 다음과 같은 통합 조회를 수행할 수 있습니다.
+1. 실제 대상 환경의 메타 테이블을 읽기 전용으로 조회한다.
+2. `meta_standard_words`에서 단어와 영문 약어를 확인한다.
+3. `meta_standard_terms`에서 용어의 `eng_abbr`와 `domain_name`을 확인한다.
+4. `meta_standard_domains`에서 물리 타입과 길이를 확인한다.
+5. 저장소 Flyway와 엔티티·DTO·생성 타입의 영향을 함께 검토한다.
 
 ```sql
--- 예: '사용자명'에 대한 표준과 도메인 조회
-SELECT 
-    t.term_name, 
+SELECT
+    t.term_name,
     t.eng_abbr AS column_name,
-    d.domain_name,
+    t.domain_name,
     d.data_type,
     d.data_length
-FROM meta_standard_terms t
-JOIN meta_standard_domains d ON t.term_name LIKE '%' || d.domain_name || '%'
+FROM meta_standard_terms AS t
+JOIN meta_standard_domains AS d
+  ON d.domain_name = t.domain_name
 WHERE t.term_name = '사용자명';
 ```
 
-## 4. 도메인 준수 원칙
-- **예외 불허**: 도메인에 정의된 길이보다 길거나 짧은 타입을 임의로 사용할 수 없습니다.
-- **도메인 확장**: 새로운 성격의 데이터가 필요한 경우, 임의로 타입을 지정하지 말고 사용자에게 **새로운 도메인 등록**을 요청해야 합니다.
+메타데이터 조회에는 `.agent/scripts/db-bridge.js`의 읽기 전용 SQL allowlist를 사용할 수 있다. 이 도구는 `SELECT`, `WITH`, `SHOW`, 읽기 전용 `EXPLAIN`, `VALUES`만 허용하며 DDL 검증기는 아니다.
 
-## 5. 프로젝트 확장 도메인
+## 적용 원칙
 
-| Flyway | 도메인 | 물리 타입 | 적용 용어 | 근거 |
-|---|---|---|---|---|
-| `V2_49`~`V2_71` | `일련번호N19` | `BIGINT` | `ADBK_SN`, `ADBK_MBR_SN`, `HLP_SN`, `ITNT_SRVC_SN`, `ONLN_MNL_SN`, `POPUP_SN`, `CONTS_SN`, `DEPT_TASK_BOX_SN`, `BNR_SN`, `DEPT_TASK_SN`, `DIARY_SN`, `DTA_USE_STATS_SN`, `MEMO_RPT_SN`, `RWRD_SN`, `SCHDL_SN`, `SCRAP_SN`, `EML_DSPTCH_SN`, `RPTP_SN`, `NOTE_SN`, `NOTE_SNDNG_SN`, `NOTE_RCPTN_SN`, `POLL_SN`, `POLL_ARTCL_SN`, `POLL_RSLT_SN`, `SRVY_TMPLT_SN`, `SRVY_SN`, `SRVY_QSTN_SN`, `SRVY_ARTCL_SN`, `SRVY_RSPNS_SN`, `BLOG_SN`, `CMNTY_SN` | 사용자 승인 BIGINT 자동 내부키 전환. PostgreSQL 양수 BIGINT 일련번호의 최대 자릿수 19를 명시한다. `HLP_SN`, `CONTS_SN`, `BNR_SN`, `RPTP_SN`은 이번 PK 현대화 예외 승인에 따라 공공사전 `N22/NUMERIC` 매핑에서 프로젝트 내부키 도메인으로 재매핑한다. 나머지 신규 `_SN`은 승인 표준 단어 조합의 프로젝트 확장 용어다. |
+- 승인된 용어가 있으면 그 약어·도메인·물리 타입과 길이를 그대로 사용한다.
+- 같은 의미를 가진 새 약어·타입을 Flyway에 임의로 만들지 않는다.
+- 필요한 용어 또는 도메인이 없으면 메타 자산 추가와 실제 스키마 변경을 같은 변경 세트로 설계한다.
+- 프로젝트 확장 용어와 BIGINT 내부키의 이력은 관련 Flyway가 정본이다. 문서에 버전 범위나 컬럼 전수 목록을 복제하지 않는다.
+- live 메타에 접근할 수 없으면 저장소 Flyway만으로 준수 완료를 선언하지 않고, 검증 한계를 명시한다.
+
+## 검증 경계
+
+`schemaValidation`과 명명·도메인 하네스는 저장소 스키마의 회귀를 줄이지만 대상 환경의 live 메타 정합성을 대신하지 않는다. 운영 적용 전에는 대상 DB 메타 조회, Flyway 적용 결과, JPA 매핑을 각각 확인한다.

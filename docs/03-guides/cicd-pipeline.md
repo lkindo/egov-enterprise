@@ -2,6 +2,8 @@
 
 본 프로젝트는 GitHub Actions 를 사용하여 자동화된 CI/CD 파이프라인을 운영합니다.
 
+> 이 문서는 주로 품질 CI 흐름을 설명하는 파생 가이드다. 워크플로우 단계와 트리거의 정본은 [`.github/workflows/ci.yml`](../../.github/workflows/ci.yml), 릴리스 발행은 [`.github/workflows/release.yml`](../../.github/workflows/release.yml), required context는 [`.github/required-checks.json`](../../.github/required-checks.json), 로컬 훅은 [`.githooks/README.md`](../../.githooks/README.md)가 소유한다. 과거 실행 통계로 현재 상태를 추정하지 않고 대상 커밋의 required checks를 직접 확인한다.
+
 ---
 
 ## 📋 목차
@@ -25,7 +27,7 @@ push/PR / workflow_dispatch
     │
     └─ backend-build (Ubuntu, timeout 75분, concurrency 중복취소)
         ├─ Strict Schema Integrity Validation (엔티티/마이그레이션 변경 시, --no-build-cache)
-        ├─ Gradle 빌드 및 테스트 (build jacocoRootReport check -Dopenapi.export.path=api-docs.json)
+        ├─ Gradle 빌드·테스트·커버리지 래칫 (build jacocoRootCoverageVerification check)
         ├─ Pre-pull postgres:17 & Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)
         ├─ api-docs.json 신선도 게이트 (git diff --exit-code → 계약 드리프트 시 FAIL)
         └─ JaCoCo 커버리지 업로드
@@ -49,14 +51,14 @@ push/PR / workflow_dispatch
             └─ e2e-merge-reports (needs: e2e-tests) — Shard 리포트 병합
 ```
 
-> **CI 전용 게이트 (로컬 pre-commit 과 구분)**: CI 는 로컬 훅에 없는 **드리프트/무결성 게이트**를 추가로 강제한다.
+> **CI와 로컬 피드백의 경계**: pre-commit/pre-push는 빠른 범위별 피드백이며 일부 계약 검사를 선행할 수 있지만 우회 가능하다. 아래 required CI가 병합 권위를 소유하며 현재 커밋의 실제 check 상태로 판정한다.
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
 > - **스키마 무결성 (HARD, CI FAIL)**: 엔티티/마이그레이션 변경 감지 시 `Strict Schema Integrity Validation` 이 `--no-build-cache` 로 `:foundation:test` 를 강제 실행하며, Testcontainers 기반 `Real PostgreSQL 17 Schema Validation` 이 Flyway 전량 적용 + Hibernate `ddl-auto:validate` 로 물리 스키마 정합성을 검증.
 > - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 규칙 0건 유지(`pnpm run lint`) 및 `pnpm audit --audit-level critical` 차단.
 > - **증분 뮤테이션 (HARD, CI FAIL)**: `mutation-scope`는 10개 PIT 스코프 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. `mutation-test`는 매트릭스 전체 결론을 집계하고 required check 이름을 보존한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
 > - **OWASP Dependency-Check 분리**: 매 푸시 파이프라인 병목 방지를 위해 별도의 주간 스케줄 워크플로우(`.github/workflows/dependency-check.yml`)로 분리 운용 중.
 
-> **브랜치 보호 SSOT**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치 `main`, exact required context 7종(`backend-build`, `frontend-build`, `secret-scan`, E2E 3샤드, `mutation-test`), 원본 job/matrix 매핑, 신뢰할 GitHub Actions integration ID를 정의한다. ruleset `12501346`은 이를 strict 모드·provider 고정·bypass actor 0명으로 강제하며, `scripts/verify-branch-protection.mjs`가 default branch·명세·`ci.yml`·GitHub 유효 규칙의 정합성을 검증한다. `e2e-merge-reports`와 개별 `mutation-scope` 체크는 required가 아니며 각각 E2E 샤드와 `mutation-test` 집계 체크가 강제력을 소유한다.
+> **브랜치 보호 SSOT와 한계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치와 exact required context, 원본 job/matrix 매핑, 신뢰할 GitHub Actions integration ID를 정의한다. `scripts/verify-branch-protection.mjs`는 이 명세와 live ruleset의 required check·strict/provider/bypass 정합을 확인한다. 현재 verifier와 manifest는 approval 수, code-owner, last-push, stale review, thread resolution 정책을 exact-match하지 않으므로 그 항목까지 보호됐다는 증거로 사용하지 않는다. 외부 상태와 개선안은 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
 
 ### 실행 트리거
 
@@ -87,7 +89,8 @@ push/PR / workflow_dispatch
 ./gradlew :foundation:test --no-build-cache
 
 # 2. 메인 빌드 및 테스트 (OpenAPI Spec 정적 추출 포함)
-./gradlew build jacocoRootReport check -Dopenapi.export.path=api-docs.json
+./gradlew build jacocoRootCoverageVerification check \
+  -Dopenapi.export.path=api-docs.json --warning-mode fail
 
 # 3. 물리 PostgreSQL 17 스키마 실측 검증 (Testcontainers + Flyway + Hibernate validate)
 ./gradlew :api-server:schemaValidationTest
@@ -98,11 +101,13 @@ git diff --exit-code api-docs.json
 
 ### 생성 아티팩트
 
-| 이름 | 경로 | 보존 기간 |
-|------|------|-----------|
-| `openapi-spec` | `api-docs.json` | 90 일 |
-| `jacoco-report` | `build/reports/jacoco/aggregated` | 30 일 |
-| `openapi-spec-changed` | `api-docs.json` (변경 감지 시) | 30 일 |
+| 이름 | 경로 |
+|------|------|
+| `openapi-spec` | `api-docs.json` |
+| `jacoco-report` | `build/reports/jacoco/aggregated` |
+| `openapi-spec-changed` | `api-docs.json` (변경 감지 시) |
+
+업로드 조건과 보존 기간은 현재 workflow가 정본이다.
 
 ---
 
@@ -169,21 +174,21 @@ strategy:
 2. **백엔드 헬스 체크**
    ```bash
    # CI 호스트 레벨에서 백엔드 포트(8080)가 열릴 때까지 우아하게 차단 대기
-   npx wait-on tcp:8080
+   pnpm exec wait-on tcp:8080
    ```
 
 3. **Playwright 테스트 실행**
    ```bash
    cd frontend
    pnpm run dev -- -p 3001 &
-   npx wait-on http://127.0.0.1:3001/login
-   npx playwright test --shard=1/3
+   pnpm exec wait-on http://127.0.0.1:3001/login
+   pnpm exec playwright test --shard=1/3
    ```
 
 ### 리포트 병합
 
 - **스펙 구성**: `01-core-base` ~ `25-deptjob-workreport-journey` 26개 스펙 파일로 테스트가 정의되어 있다(계층 정의의 SSOT는 [testing-guide.md](./testing-guide.md) §E2E).
-- **Playwright projects 는 2개다**: `setup`(`*.setup.ts`)과 `full-suite`(`*.spec.ts`, `dependencies: [setup]`) — `playwright.config.ts:71-82`. ⚠ **종전 서술 "tier 프로젝트 26개"는 2026-08-10 이후 사실이 아니다.** 스펙 파일마다 project 를 두던 구조에서 미지정 실행 시 226건(full-suite 112 + tier 112 + setup 2)이 **2배로 실행**되던 문제가 있어 tier project 26개를 제거했다. 스펙 파일 수(26)와 project 수(2)를 혼동하지 말 것.
+- **Playwright projects 는 2개다**: `setup`(`*.setup.ts`)과 `full-suite`(`*.spec.ts`, `dependencies: [setup]`). 스펙 파일 수와 Playwright project 수를 혼동하지 않고, 현재 값은 `frontend/playwright.config.ts`에서 확인한다.
 - **Sharding (병렬 실행)**: CI 환경에서 전체 테스트 스위트를 3개의 Shard로 분할하여 병렬로 실행함으로써 전체 테스트 시간을 단축합니다.
 
 #### 병합 리포트 생성 (`ci.yml`)
@@ -211,7 +216,7 @@ strategy:
 
 - name: Merge reports
   run: |
-    npx playwright merge-reports --reporter html ./playwright-reports
+    pnpm exec playwright merge-reports --reporter html ./playwright-reports
   working-directory: frontend
 ```
 
@@ -275,11 +280,11 @@ dependencyCheck {
 
 - **위치**: GitHub Actions 캐시 + 로컬 `.gradle`
 - **키**: Gradle 래퍼 해시 + `build.gradle` 해시
-- **효과**: 2 번째 빌드부터 91% 단축 (2m13s → 12s)
+- **효과 확인**: 캐시 hit 여부와 실행 시간은 대상 workflow run에서 확인한다. 과거 측정치를 현재 성능 보장으로 사용하지 않는다.
 
-### Next.js 캐싱 — **의도적으로 사용하지 않는다**
+### Next.js 캐싱 — E2E에서는 사용하지 않는다
 
-⚠ **종전 서술("아티팩트로 업로드하여 E2E 테스트에서 재사용")은 현행이 아니다.** `ci.yml`(E2E 잡)에서 Next 빌드 캐시 복원은 **제거됐다** — 빌드 시점의 dev JWT 시크릿이 Edge 미들웨어 번들에 인라인된 채 캐시에 남아, 회차별로 새로 발급하는 시크릿과 어긋나며 인증이 깨졌기 때문이다. E2E 는 매 회차 클린 빌드한다.
+E2E job은 회차별 JWT 환경과 일치하는 프론트엔드를 클린 빌드한다. 빌드 시점 환경값이 번들에 포함될 수 있으므로 다른 실행에서 만든 Next build cache를 E2E에 복원하지 않는다.
 
 - **Gradle·Playwright 브라우저 캐시는 유지**한다(아래 참조). 캐시 복원을 다시 도입하려면 시크릿이 번들에 인라인되지 않음을 먼저 증명할 것.
 
@@ -296,47 +301,39 @@ dependencyCheck {
 ### 전체 파이프라인 시뮬레이션
 
 ```bash
-# 1. 백엔드 빌드 및 테스트
-./gradlew clean build
+# Docker를 포함한 병합 전 로컬 게이트
+./gradlew localGate
 
-# 2. OWASP 보안 스캔
-./gradlew dependencyCheckAnalyze
-
-# 3. 프론트엔드 빌드
-cd frontend
-pnpm install --frozen-lockfile
-pnpm run build
-pnpm run test
-
-# 4. E2E 테스트 (Docker 필요)
-docker-compose up -d db api
-pnpm run test:e2e:full
+# 브라우저 E2E가 필요한 변경은 격리 환경에서 별도 실행
+docker compose up -d db api
+pnpm -C frontend test:e2e:full
 ```
 
+주간 Dependency-Check나 release workflow를 위 명령이 대신하지 않는다. 필요한 검증은 변경 범위와 대상 workflow를 기준으로 추가한다.
+
 > [!TIP]
-> **외부 클라우드 DB (OCI PostgreSQL 등) 직접 연동 시 (로컬 개발 환경)**
-> 로컬에서 도커(Docker)를 구동하지 않고 외부 클라우드 DB에 직접 연결하여 백엔드를 띄우고 테스트하는 경우, `docker-compose` 관련 기동 명령어(`docker-compose up -d`)는 실행하지 않고 완전히 생략합니다.
+> **외부 격리 DB 직접 연동 시**
+> Docker 대신 외부 개발 DB를 사용한다면 운영·공유 데이터가 아닌 E2E 전용 환경인지, 테스트 계정과 cleanup 접두사가 격리됐는지 먼저 확인한다. 운영 자격증명으로 E2E를 실행하지 않는다.
 > 
 > ```bash
-> # 1. 백엔드(8080)와 프론트엔드(3001) 서버가 로컬 OCI DB 환경에서 수동 구동 중인지 확인
-> # 2. E2E 테스트만 직접 단독 실행
-> cd frontend
-> pnpm run test:e2e:full
+> # 백엔드·프론트가 명시한 격리 환경을 가리키는지 확인한 뒤
+> pnpm -C frontend test:e2e:full
 > ```
 
 ### JaCoCo 커버리지 확인
 
 ```bash
 ./gradlew jacocoRootReport
-open build/reports/jacoco/aggregated/html/index.html
+open build/reports/jacoco/aggregated/index.html
 ```
+
+임계값 검증은 `./gradlew jacocoRootCoverageVerification`, 해석과 문제 해결은 [커버리지 워크플로](../../.agent/workflows/coverage.md)를 따른다.
 
 ### Playwright 리포트
 
 ```bash
-cd frontend
-npx playwright test --reporter=html
-npx playwright show-report
+pnpm -C frontend exec playwright test --reporter=html
+pnpm -C frontend exec playwright show-report
 ```
 
 ### 로컬 사전 게이트 (git hooks)
@@ -348,7 +345,7 @@ CI가 실행되기 전, 저장소에 포함된 공유 pre-push 게이트가 잘�
 git config core.hooksPath .githooks
 ```
 
-- **pre-push (❌ 차단)**: `./gradlew compileJava compileTestJava` + `npx tsc --noEmit` + codegen 드리프트 게이트(`codegen:verify`/`codegen:verify:zod` — api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합) — 푸시 전 컴파일/타입/계약 무결성 게이트. CI는 별도로 required checks 7종을 실행한다.
+- **pre-push (차단)**: 변경 범위를 판정해 문서 계약 또는 소스 컴파일·타입·codegen·하네스 검증을 실행한다. 실제 명령 집합은 훅과 `.githooks/README.md`를 따른다.
 - **pre-commit (⚠ 경고, 비차단)**: DTO/Controller/api-docs.json/생성 타입 스테이징 시 codegen 드리프트 점검.
 - **우회**: `git push --no-verify` 또는 `SKIP_HOOKS=1 git push`.
 
@@ -362,12 +359,7 @@ git config core.hooksPath .githooks
 
 **증상**: 매번 전체 빌드 실행
 
-**해결**:
-```bash
-# 로컬 캐시 초기화
-./gradlew clean --no-build-cache
-rm -rf .gradle
-```
+**해결**: 먼저 `--info` 로그에서 입력 해시·Gradle/JDK 버전·cache key를 확인한다. 재현 확인이 필요하면 `./gradlew clean <task> --no-build-cache`로 한 번 비교한다. 저장소·사용자 캐시 디렉터리 삭제는 기본 해결 절차가 아니며, 정확한 대상과 복구 비용을 확인한 뒤 수행한다.
 
 ### Playwright 브라우저 설치 실패
 
@@ -375,8 +367,7 @@ rm -rf .gradle
 
 **해결**:
 ```bash
-cd frontend
-npx playwright install --with-deps chromium
+pnpm -C frontend exec playwright install --with-deps chromium
 ```
 
 ### OWASP 스캔 타임아웃
@@ -397,3 +388,5 @@ export NVD_API_KEY=your-key
 - [테스트 종합 가이드](./testing-guide.md)
 - [E2E 테스트 운영 런북](./e2e-test-guide.md)
 - [API 문서화 가이드](./api-documentation-guide.md)
+
+*Last reviewed against current sources: 2026-08-19.*

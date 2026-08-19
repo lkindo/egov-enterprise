@@ -1,5 +1,7 @@
 # Wave 2 이월 과제 — Wave 1 결정 원장의 미이행·오이행 잔여분
 
+> **상태: Superseded / 이관 후 삭제 후보** — 이 문서는 과거 정정 연대기다. 활성 결정은 [pending-decisions.md](pending-decisions.md), 재현 가능한 위험은 [.agent/memory/known-gaps.md](../../.agent/memory/known-gaps.md)를 우선한다. 코드·설정 주석이 아직 아래 절을 참조하므로 소비자를 현행 정본으로 옮기기 전에는 삭제하지 않는다.
+
 > 작성 2026-08-03. 근거: Wave 1 결정 원장(24개 결정 + 결정 불요 6건) 이행분에 대한 **코드 실측 재검증**.
 > 이 문서의 목적은 **추적 가능한 소유자를 만드는 것**이다. 소스 주석 안의 '미판정' 고지는 커밋과 함께 묻히고,
 > 다음 웨이브 착수 시 자동으로 누락된다 — 그래서 웨이브 경계를 넘는 항목은 여기에 적는다.
@@ -504,10 +506,10 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 ### 6.4 커밋하지 않은 것
 
 당시 `GEMINI.md` 변경은 **되돌렸다**. 당시 규칙상 불가침 파일이라 사용자 명시 승인이 필요했는데
-승인 기록이 없고, 내용도 틀렸다 — `project.§8`(자가 성찰 디버그 확장 지침)을 `§7` 로 바꿨으나 본문은 여전히
-`## 8` 이라 그 참조가 `## 7. Database Interaction Rules` 를 가리키게 됐다.
-(글로벌 룰셋 절 번호 재매핑이 의도였던 것으로 보이나, 글로벌 파일은 저장소 밖이라 검증할 수 없다.
- 정정이 필요하다면 사용자 승인 후 본문 절 번호와 함께 일관되게 고칠 것.)
+승인 기록이 없고, 내용도 틀렸다 — 자가 성찰 디버그 지침의 숫자 참조만 인접 절로 바꿔 실제 대상이 아닌
+Database Interaction Rules를 가리키게 됐다. 당시 글로벌 룰셋은 저장소 밖이라 함께 검증할 수도 없었다.
+
+> **현행 주석(2026-08-19)**: 프로젝트 규칙은 [AGENTS.md](../../AGENTS.md)가 SSOT이고 저장소 `GEMINI.md`는 얇은 어댑터라 글로벌 문서의 절번호를 고정 참조하지 않는다. 저장소 밖 사용자 글로벌 규칙도 각 도구가 자기 네이티브 경로에서 독립적으로 읽으며, 내용이 같다는 사실만으로 도구 간 자동 상속을 의미하지 않는다.
 
 ### 6.6 P1-22 `secure-paths` — **실측 정정 + 부분 조치 (2026-08-04)**
 
@@ -544,34 +546,12 @@ PK 표준화(IDENTITY/Long/bigint)와 Flyway 콘솔 출력은 종전에 완료�
 
 ---
 
-## 7. 브랜치 보호 · required status checks — **해소 (2026-08-05 실측)**
+## 7. 브랜치 보호 · required status checks — 비정본
 
-> ⚠ **이 절은 종전에 존재하지 않았다.** §6.5 가 "아래 §7" 로 참조했으나 문서는 §6.6 에서 끝나 있었고,
-> 그래서 **사용자 결정이 필요하다고 표시된 항목 하나가 원장에서 통째로 유실**돼 있었다.
-> 참조는 남고 대상이 사라지는 것은 조용한 실패다 — 다음 오퍼레이터가 §6.5 를 읽고 §7 을 찾다가 포기한다.
+이 절의 과거 ruleset·CI 실행 기록은 현재 상태를 증명하지 않는다. 저장소가 기대하는 status context는
+[`.github/required-checks.json`](../../.github/required-checks.json), 현재 workflow 배선은 `.github/workflows/`,
+live GitHub ruleset은 권한 있는 조회 결과로 각각 확인한다. 알려진 verifier 사각지대와 최근 외부 snapshot은
+[known-gaps.md](../../.agent/memory/known-gaps.md)의 `GAP-GOV-002`를 따른다.
 
-**종전 기록(2026-08-03)**: 저장소 자신의 `verify-branch-protection.mjs` 가 required status checks **0개**로
-판정했다. 하네스 21종·pre-push·CI 6잡이 전부 **강제력 없는 권고**였고, 활성화는 사용자 결정 사항이었다
-(활성화하면 `main` 직접 push 가 막힌다).
-
-**실측 (2026-08-05)** — **그 사이 활성화됐다.** `main` 에 대한 직접 push 를 시도하니 원격이 거부한다:
-
-```
-remote: error: GH013: Repository rule violations found for refs/heads/main.
-remote: - Changes must be made through a pull request.
-remote: - 3 of 3 required status checks are expected.
-```
-
-필수 검사 3종 (`gh api repos/lkindo/egov-enterprise/rules/branches/main` 실측):
-`backend-build` · `frontend-build` · `secret-scan`.
-
-**부수 정정 — CI 과금 차단도 해소됐다.** [pending-decisions.md §4-A](pending-decisions.md) 는 CI 를
-"과금 차단 상태 — 사용자 영역" 으로 적고 있으나, 2026-08-05 PR #287 에서 `secret-scan` 이 19초 만에
-pass 하고 `backend-build` 가 실제로 기동했다. **CI 는 돌고 있다.** 이 서술에 의존해
-"E2E 는 어차피 안 돈다" 고 전제하면 틀린다 — 특히 2026-08-19 정리된 당시 코드 간결화 계획
-작업 저널의 Phase 4 는 "CI 빌링 복구" 를 선결 조건으로 걸고 있는데, 그 조건이 이미 충족돼 있을 수 있다.
-(⚠ 다만 E2E 잡까지 그린인지는 이 시점에 미확인이다 — 착수 전 실측할 것.)
-
-**남은 것**: 없음. 다만 `main` 직접 push 가 막혔으므로 **모든 변경은 PR 경유**다.
-이중 오퍼레이터 환경에서 `git commit --only` 규율에 더해 **브랜치 + PR 흐름**이 강제된다는 점을
-[orchestration-protocol.md §5](../03-guides/orchestration-protocol.md) 의 공유 워킹트리 규율과 함께 읽을 것.
+로컬 pre-push 통과를 CI 통과로 간주하거나, 과거 문구만으로 CI가 중단·정상이라고 단정하지 않는다.
+원래 사건 기록이 필요하면 이 파일의 Git history를 조회한다.

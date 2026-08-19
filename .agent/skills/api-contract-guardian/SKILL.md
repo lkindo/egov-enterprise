@@ -1,89 +1,52 @@
 ---
 name: api-contract-guardian
-description: >-
-  Acts as an absolute enforcer of the OpenAPI contract between the Spring Boot Backend and 
-  Next.js Frontend. Triggers automatically on any DTO or Controller modification to prevent 
-  frontend type breaking changes and guarantees cross-module type safety.
-version: 1.0.0
+description: Backend DTO 또는 Controller의 외부 계약 변경이 OpenAPI, 생성 TypeScript/Zod, 프런트 소비 코드와 함께 안전하게 바뀌는지 검증한다.
+version: 2.0.0
 ---
 
-# API Contract Guardian Skill (Antigravity Native)
+# API Contract Guardian
 
-**Use this skill when:** Modifying any backend Spring Boot REST Controller, editing Java Data Transfer Objects (DTOs), or making structural changes to the database that ripple up to the API response layer.
+## 사용 시점
 
----
+REST Controller, 외부 요청·응답 DTO, 공통 응답, 예외 매핑 또는 OpenAPI 스키마를 바꿀 때 사용한다.
 
-## 1. The Core Objective: "Shift-Left" Contract Testing
+## 정본과 경계
 
-In the eGov-Enterprise architecture, the backend (`api-server`) and frontend (`frontend`) are decoupled but bound by the OpenAPI specification. The worst class of bugs occurs when backend changes silently break frontend TypeScript types or parsing logic.
+- 공통 규칙: `AGENTS.md`와 백엔드 헌법
+- 응답 구현: `foundation/src/main/java/nuri/foundation/core/response/ApiResponse.java`
+- 오프라인 명세: `api-docs.json`
+- 생성물: `frontend/src/types/generated-api.d.ts`, `generated-zod.ts`
+- 절차: `docs/03-guides/api-documentation-guide.md`
 
-The **API Contract Guardian** prevents these silent breakages by running a "Zero-Day" contract audit before code is considered complete.
+일반 JSON API는 `ApiResponse<T>` 계약을 지킨다. 바이너리 download·stream·SSE처럼 wrapper가 부적합한 응답은 자동 변환하지 않는다. 현재 헌법에 예외 근거가 없으면 구현을 임의 정규화하지 말고 gap과 승인 필요성을 보고한다.
 
----
+## 검증 절차
 
-## 2. Guardian Workflow
+1. 변경 전후 DTO 필드·타입·nullable·validation·HTTP status를 비교한다.
+2. DB 컬럼을 반영한 DTO라면 대상 환경의 live 메타와 물리 제약을 확인한다. 접근할 수 없으면 저장소 Flyway만 확인했다는 한계를 남긴다.
+3. 기본 경로인 오프라인 codegen을 실행한다.
 
-When any backend API surface area is touched, execute the following protocol:
-
-```mermaid
-graph TD
-    A[Backend DTO / Controller Modified] --> B[Phase 1: Code-Level DTO Audit]
-    B --> C[Phase 2: OpenAPI JSON Spec Generation]
-    C --> D[Phase 3: Frontend TypeScript Codegen Simulation]
-    D --> E{Breaking Change Detected?}
-    E -- Yes --> F[Enforce Type Compatibility or Request Approval]
-    E -- No --> G[✅ Contract Guardian Passed]
+```bash
+pnpm -C frontend codegen:file
+pnpm -C frontend codegen:zod
+pnpm -C frontend codegen:verify
+pnpm -C frontend codegen:verify:zod
+pnpm -C frontend type-check
 ```
 
-### Phase 1: Code-Level DTO Audit & Validation Mirroring
-* Analyze the Java DTO fields modified.
-* Compare against the `meta_standard_words` and `meta_standard_domains` physical schemas.
-* **[Backend Constitution Article 16]**: Verify that all DTO validation annotations (`@Size`, `@NotNull`, etc.) mirror the DB physical constraints exactly (100% Mirroring).
-* Identify if fields were renamed, types were changed, or if non-nullable fields became nullable.
+서버가 실제로 기동된 작업에서만 `pnpm -C frontend codegen:ts`를 선택한다. stale `api-docs.json`을 임의 생성하거나 npm lockfile을 만들지 않는다.
 
-### Phase 2: Codegen Validation (`npm run codegen:ts`)
-If structural API changes are made:
-* Run the OpenAPI generation step. (e.g., compile backend to update the swagger JSON).
-* Execute the frontend script:
-  ```powershell
-  # Navigate to frontend and execute code generation
-  cd frontend
-  npm run codegen:ts
-  ```
-* Capture any compilation errors or TypeScript definition mismatches (`generated-api.d.ts`).
+4. 제거·rename·타입 축소·optional→required 변경은 breaking change로 분류하고 실제 프런트 소비자를 검색한다.
+5. 호환 계층, 프런트 동시 수정, 버전 전환 중 하나를 선택하고 그 근거를 보고한다.
+6. 변경 범위에 맞는 백엔드 계약 테스트와 프런트 검증을 실행한다.
 
-### Phase 3: Breaking Change Analysis (The Guardian Check)
-Evaluate the frontend impact:
-* 🚨 **Breaking Changes**: A field was removed, renamed, or changed to an incompatible type. If this happens, you MUST either:
-  1. Fix the frontend components importing that type immediately.
-  2. Revert the backend change to maintain backward compatibility (e.g., `@Deprecated` the old field, add the new field).
-* ✅ **Non-Breaking Changes**: A new optional field was added.
+## 금지 사항
 
----
+- 테스트를 통과시키기 위해 응답 필드나 validation을 약화하지 않는다.
+- Entity, `Map<String,Object>`, raw response를 증거 없이 자동 DTO 변환하지 않는다.
+- 다운로드·stream 응답을 일반 JSON wrapper로 기계 치환하지 않는다.
+- codegen 성공만으로 런타임 호환 또는 DB 정합성을 보장했다고 표현하지 않는다.
 
-## 3. Synergy with eGov Constitutions
+## 보고 형식
 
-This skill strictly enforces **Article 6 of the Backend API Constitution** (Unified Response Structure) and **Article 16** (Validation Mirroring):
-* All API responses must wrap data in the standard `{ status, message, data }` envelop.
-* DTO validations MUST mirror DB constraints and propagate forward to the Frontend Zod schema.
-* If a Controller is detected returning a raw String/Entity, or a DTO lacks mirrored validation, the Guardian must reject the code and automatically refactor it.
-
----
-
-## 4. Output: Contract Audit Report
-
-When a breaking change is detected or a major API refactor is completed, output this block:
-
-```markdown
-### 🛡️ [API CONTRACT GUARDIAN REPORT] ###
-- **Target Endpoint**: `GET /api/v1/resource`
-- **Backend Change**: `statusYn` (String) -> `statusFlag` (Boolean)
-- **Frontend Impact Assessment**: 🚨 BREAKING CHANGE
-  - `generated-api.d.ts` will invalidate `useResource.ts` line 45.
-- **Guardian Action Taken**:
-  - Re-mapped the Java DTO to preserve `statusYn` as @Deprecated while introducing `statusFlag` to guarantee zero-downtime frontend deployment.
-##########################################
-```
-
----
-*Verified: 2026-05-18 (Designed for Antigravity Zero-Breakage Pipeline)*
+대상 endpoint, 변경된 계약, breaking 여부, 실제 소비자, 실행한 검증, 남은 한계를 간결하게 기록한다. 검증하지 않은 항목을 “완전 동기화”라고 쓰지 않는다.

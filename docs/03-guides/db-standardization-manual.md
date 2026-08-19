@@ -1,6 +1,6 @@
 # Database Standardization & Governance Manual
 
-본 매뉴얼은 **eGov Enterprise v5** 프로젝트의 물리적 데이터베이스 설계 규칙과 메타 표준을 이행하기 위한 공식 실무 가이드라인이다. 본 문서는 **DB 표준화 헌법 (10조)**의 기본 정신을 현업 테이블 설계 및 마이그레이션에 투영하는 **실무 가이드**다. (표준의 유일 진실원천(SSOT)은 DB 메타 테이블 `meta_standard_words`/`meta_standard_terms`/`meta_standard_domains`이며(DB 헌법 제2조), 규범 원본은 [DB 표준화 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)이다. 101개 OCI PostgreSQL 테이블에 이 표준을 일관 적용한다.)
+본 매뉴얼은 프로젝트의 물리적 데이터베이스 설계 규칙과 메타 표준을 적용하는 실무 가이드다. 규범 원본은 [DB 표준화 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)이며, 명칭과 타입의 유일한 진실 원천(SSOT)은 현재 대상 DB의 `meta_standard_words`·`meta_standard_terms`·`meta_standard_domains`다. 테이블 수나 마이그레이션 번호처럼 계속 변하는 현황은 이 문서에 고정하지 않고, 마이그레이션과 실제 `information_schema`에서 확인한다.
 
 ---
 
@@ -10,7 +10,7 @@
 
 ```mermaid
 graph LR
-    meta["🏛️ OCI PostgreSQL<br>meta_standard_words / terms / domains<br>(SSOT 메타 사전 · 실시간)"]
+    meta["🏛️ 대상 PostgreSQL<br>meta_standard_words / terms / domains<br>(SSOT 메타 사전 · 실시간)"]
     sql["📝 DDL / Migration SQL<br>(접두사 & 타입 표준 집행)"]
     be["📦 Spring Boot Entity<br>(@Column 표준 일치)"]
 
@@ -21,37 +21,42 @@ graph LR
 ### 1.1 표준화 워크플로우
 1. **단어 사전 조회**: 신규 컬럼이나 테이블이 필요할 때, 먼저 DB 내의 `meta_standard_words` 테이블(DB 헌법 제2조의 유일 SSOT)을 `node .agent/scripts/db-bridge.js`로 실시간 조회하여 공식 한글 단어에 1:1 매핑된 물리 영문 약어를 확인한다.
 2. **조합 규칙**: 두 개 이상의 단어가 조합될 때는 언더스코어(`_`)를 구분자로 삼는 스네이크 케이스(Snake Case)를 적용한다 (예: `게시판_마스터_ID` ➔ `BBS_MSTR_ID`).
-3. **가드레일**: 사전에 정의되지 않은 영문 약어나 임의의 생략어(예: `board_id` 등)는 **DB 헌법 제2조에 의해 영구히 금지**된다.
+3. **가드레일**: 메타 사전에서 승인되지 않은 영문 약어나 임의 생략어는 사용하지 않는다. 기존 외부 계약 때문에 예외가 필요한 경우에는 [DB 명명 예외 대장](../02-architecture/db-naming-exceptions.md)에 근거와 종료 조건을 기록한다.
 
 ---
 
-## 2. OCI PostgreSQL 17 표준 데이터 타입 맵
+## 2. PostgreSQL 물리 타입 결정
 
-PostgreSQL 17의 고성능 및 저장 효율을 극대화하고 백엔드 JPA의 데이터 가두기 정밀도를 높이기 위해, 아래의 표준 타입 매핑 규칙을 철저히 집행한다.
+프로젝트 전체에 적용되는 고정 타입표를 복사해서 사용하지 않는다. 같은 이름의 ID라도 업무 자연키는 `varchar`, 내부 기술키는 `bigint`·시퀀스·identity가 될 수 있다. 다음 순서로 대상 컬럼의 물리 타입과 길이를 결정한다.
 
-| 표준 도메인 | PostgreSQL 물리 타입 | 권장 바인딩 용도 | JPA 매핑 자바 타입 |
-|:---|:---|:---|:---|
-| **고유 식별자 (ID)** | `VARCHAR(20)` | 각 테이블의 기본키(PK) 및 외래키(FK) | `String` |
-| **단순 코드 (CODE)** | `VARCHAR(6)` | 공통 코드, 분류 코드 등 고정 범위값 | `String` |
-| **한 글자 여부 (FLAG)** | `VARCHAR(1)` | 사용 여부(`USE_YN`), 삭제 여부(`DEL_YN`) | `String` 또는 `@Convert` 활용 |
-| **짧은 텍스트** | `VARCHAR(100)` | 사용자명, 타이틀, 메뉴 이름 등 | `String` |
-| **긴 텍스트** | `VARCHAR(4000)` | 게시판 본문, 상세 설명, 에러 로그 등 | `String` (또는 `@Lob` 지양) |
-| **날짜 (DATE)** | `VARCHAR(8)` | 등록일자, 수정일자 (`YYYYMMDD` 형식) | `String` |
-| **일시 (DATETIME)** | `TIMESTAMP` | 타임스탬프가 초 단위까지 필요한 추적성 일시 | `LocalDateTime` |
-| **수량 / 숫자** | `NUMERIC(10)` | 금액, 누적 조회수, 정렬 순서 등 | `Long` 또는 `BigDecimal` |
+1. `meta_standard_words`에서 단어를 확인한다.
+2. `meta_standard_terms`에서 조합 용어와 물리명을 확인한다.
+3. 연결된 `meta_standard_domains`의 타입·길이·스케일을 그대로 적용한다.
+4. 대상 환경의 `information_schema.columns`와 현재 Flyway 마이그레이션을 대조한다.
+5. Entity·DTO·OpenAPI/Zod 상한이 물리 제약을 넘지 않는지 확인한다.
+
+대표 예시는 다음과 같지만, 실제 설계값은 반드시 위 조회 결과가 우선한다.
+
+| 용도 | 흔한 물리 표현 | JPA 후보 |
+|:---|:---|:---|
+| 여부 | `varchar(1)` + `CHECK (... IN ('Y','N'))` | `String` 또는 명시적 converter |
+| 일자 문자열 | `varchar(8)` (`YYYYMMDD`) | `String` |
+| 시각 | `timestamp` | `LocalDateTime` |
+| 내부 생성키 | `bigint` + sequence/identity 등 | `Long` + `@GeneratedValue` |
+| 업무 자연키·코드 | 메타 도메인이 정한 `varchar(n)` | `String` |
 
 > [!IMPORTANT]
 > **여부(FLAG) 필드 데이터 무결성 규칙**
-> 모든 `VARCHAR(1)` 여부 필드는 반드시 `Y` 또는 `N`만을 가질 수 있도록 물리 테이블 생성 시 **`CHECK (필드명 IN ('Y', 'N'))`** 제약조건을 의무적으로 추가해야 한다. (문자형은 DB 헌법 제5조 4항에 따라 `char` 전면 금지 → `varchar`로 통일하며, 여부 도메인은 `VARCHAR(1)`이다.)
+> 메타 도메인에서 의미상 boolean 여부로 정의된 `VARCHAR(1)` 필드는 `Y` 또는 `N`만 허용하는 **`CHECK (필드명 IN ('Y', 'N'))`** 제약조건을 둔다. 이름이 `_yn`으로 끝나더라도 레거시 외부 계약상 비-boolean 값인 컬럼은 자동 변환하지 말고 [예외 대장](../02-architecture/db-naming-exceptions.md)과 schema-validation write-smoke에 등록한다. 문자형은 DB 헌법에 따라 `char`가 아니라 메타가 선언한 `varchar`를 사용한다.
 
 ### 2.1 삭제 정책 및 논리 삭제(선택) 아키텍처 연계
-DB 헌법 제8조 2·3항에 의거, 물리 삭제(`Hard Delete`)는 각 비즈니스 도메인의 데이터 수명주기 정책에 따라 **기본 설계로 채택**할 수 있으며, 논리 삭제(`del_yn`) 컬럼의 의무 탑재는 헌법의 필수 요건에서 제외된다. 논리 삭제는 데이터의 복원이나 이력이 비즈니스 요구사항으로 필수인 도메인에 한하여 **선택적으로** 적용하며, 이 경우 백엔드 헌법 제14조의 JPA 영속성 필터링과 연계하여 삭제 데이터 조회를 제어한다. 즉, 논리 삭제를 채택한 도메인에 한해 삭제된 부모 데이터의 이력을 안전하게 보존하기 위해 고정형 글로벌 필터 대신 **Hibernate `@Filter` 및 `@FilterDef` 기반의 동적 필터링**을 집행한다.
-- **E2E 테스트 상태 격리 (Test Isolation)**: Playwright E2E 테스트 수행 시 테스트 간 데이터 간섭을 방지하기 위해, 각 테스트 시나리오 실행 전에 테스트 프로파일(`test`) 하에서만 예외적으로 물리 `TRUNCATE` 또는 테스트 데이터 삭제(Cleanup) 스크립트를 동작시켜 DB 상태 멱등성을 보장해야 한다. (상세는 `docs/03-guides/e2e-test-guide.md` 참조)
+DB 헌법은 논리 삭제(`del_yn`) 컬럼을 모든 테이블에 의무화하지 않는다. 삭제 방식은 도메인의 보존·복원·법적 파기 요구에 따라 선택하고, 논리 삭제를 채택하면 repository query, 명시적 filter 또는 동등한 접근 정책과 회귀 테스트로 삭제 행의 기본 노출을 차단한다. 특정 Hibernate annotation이 저장소 전체에 적용된다고 가정하지 말고 실제 Entity와 조회 경로를 확인한다.
+- **E2E 테스트 상태 격리 (Test Isolation)**: E2E는 운영 DB가 아닌 일회용 테스트 DB를 사용하고, 테스트 접두사로 생성한 데이터만 관리자 API 기반 cleanup으로 정리한다. `TRUNCATE`나 임의 DML을 일반 실행 지침으로 삼지 않는다. 상세는 [E2E 운영 런북](./e2e-test-guide.md)을 따른다.
 
 ### 2.2 Audit 컬럼 표준 명칭
-DB 헌법 제8조 1항은 Audit 4종 컬럼을 생성자(`frst_rgtr_id`), 생성일시(`crt_dt`), 수정자(`last_mdfr_id`), 수정일시(`mdfcn_dt`)로 **직접** 선언한다. 즉 헌법이 선언한 명칭이 곧 OCI 물리 컬럼명이며 별도의 괴리가 없다. 코드를 가장 깔끔하게 유지하기 위해, 자바 필드명이 DB 컬럼 스네이크명과 일치할 경우 **`@Column(name = "...")` 지정을 적극 생략(Omit)**하며, 명명 변경 리스크는 빌드 타임 Fail-Fast 테스트망으로 보호한다. (필드명과 컬럼명이 불일치하는 경우에만 제한적으로 `name` 속성을 기재한다).
+DB 헌법 제8조 1항은 Audit 4종 컬럼을 생성자(`frst_rgtr_id`), 생성일시(`crt_dt`), 수정자(`last_mdfr_id`), 수정일시(`mdfcn_dt`)로 직접 선언한다. 대상 PostgreSQL 물리 스키마와 JPA naming strategy를 확인한 뒤, 자바 필드명에서 같은 snake_case가 결정적으로 만들어지는 경우에만 `@Column(name = "...")` 생략을 검토한다. 명명 변경 리스크는 schema validation과 관련 하네스로 확인하고, 불일치하거나 외부 계약인 경우 명시적 매핑을 유지한다.
 
-| OCI 물리 컬럼명 (= 헌법 제8조 1항 선언명) | 데이터 타입 | 용도 |
+| 물리 컬럼명 (= 헌법 제8조 1항 선언명) | 대표 타입 | 용도 |
 |:---|:---|:---|
 | `frst_rgtr_id` | `VARCHAR(20)` | 최초 등록자(생성자) ID |
 | `crt_dt` | `TIMESTAMP` | 최초 등록(생성) 일시 |
@@ -64,7 +69,7 @@ DB 헌법 제8조 1항은 Audit 4종 컬럼을 생성자(`frst_rgtr_id`), 생성
 
 인프라 튜닝 및 장애 상황 발생 시 정밀한 로그 추적과 유지보수 효율을 높이기 위해, 모든 DB 제약조건과 인덱스는 아래의 고유 접두사를 결합한 표준화된 식별명을 부여해야 한다.
 
-| 제약조건 분류 | 표준 접두사 (Prefix) | 명명 규칙 (Naming Pattern) | 실제 OCI DB 예시 |
+| 제약조건 분류 | 표준 접두사 (Prefix) | 명명 규칙 (Naming Pattern) | 예시 |
 |:---|:---|:---|:---|
 | **기본키 (PK)** | `pk_` | `pk_[테이블명]` | `pk_tb_bbs_master` |
 | **외래키 (FK)** | `fk_` | `fk_[기준테이블]_[참조테이블]` | `fk_tb_bbs_master_optn_tb_bbs_master` |
@@ -76,57 +81,29 @@ DB 헌법 제8조 1항은 Audit 4종 컬럼을 생성자(`frst_rgtr_id`), 생성
 
 ## 4. 멱등적 데이터 시딩 (Seed Data) 작성 가이드
 
-개발 환경 및 운영 환경에 초기 셋팅 데이터(seed 데이터)를 입력할 때에는, 시스템의 중복 에러를 방지하고 배포를 무중단화하기 위해 반드시 `ON CONFLICT DO UPDATE` 구문을 사용하는 **멱등성(Idempotency) SQL 쿼리**로 작성해야 한다.
+Repeatable seed는 재실행해도 같은 결과가 나야 하지만 모든 충돌을 `DO UPDATE`로 덮어쓰지 않는다. 애플리케이션이 계속 소유하는 기준값만 명시적으로 갱신하고, 운영자가 변경할 수 있는 값이나 최초 프로비저닝 값은 `DO NOTHING` 또는 별도 승인 절차로 보존한다. 충돌 키는 실제 PK/UNIQUE 제약을 확인해 선택한다.
 
 ### 4.1 멱등성 SQL 모범 예시
 
 ```sql
--- 테이블: TB_BBS_MASTER (게시판 마스터 - OCI DB 실재 표준화 테이블)
--- 목적: 중복 삽입 시 기본키(BBS_ID) 충돌을 방지하고 필드 값을 안전하게 최신화(Sync)합니다.
+-- 운영 변경을 보존해야 하는 최초 행
+INSERT INTO tb_role_info (role_id, role_nm, role_expln, role_crt_ymd)
+VALUES ('ROLE_USER', '일반 사용자', '기본 사용자 역할', CURRENT_DATE)
+ON CONFLICT (role_id) DO NOTHING;
 
-INSERT INTO public.tb_bbs_master (
-    bbs_id, 
-    bbs_ttl, 
-    bbs_expln,
-    bbs_type_cd, 
-    bbs_atrb_cd,
-    use_yn, 
-    file_atch_psblty_yn,
-    atch_psblty_file_qty,
-    atch_psblty_file_sz,
-    frst_rgtr_id, 
-    crt_dt
-) VALUES (
-    'BBS_MSTR_WIKI_FREE', 
-    '엔터프라이즈 위키', 
-    '지식 허브 위키 게시판',
-    'BBST07', 
-    'BBSA01',
-    'Y', 
-    'Y',
-    5,
-    10485760,
-    'SYSTEM', 
-    CURRENT_TIMESTAMP
-) 
--- 1. 기본키(bbs_id) 충돌 발생 시 예외를 터뜨리지 않고 업데이트 모드로 전환
-ON CONFLICT (bbs_id) 
-DO UPDATE SET
-    bbs_ttl = EXCLUDED.bbs_ttl,
-    bbs_expln = EXCLUDED.bbs_expln,
-    bbs_type_cd = EXCLUDED.bbs_type_cd,
-    use_yn = EXCLUDED.use_yn,
-    last_mdfr_id = 'SYSTEM',
-    mdfcn_dt = CURRENT_TIMESTAMP;
+-- 기준 데이터가 코드 릴리스에 의해 계속 소유되는 경우에만
+-- ON CONFLICT (...) DO UPDATE SET <권위 있는 필드만> = EXCLUDED.<필드>;
 ```
+
+현재 운영 시드의 경계와 관리자 비밀번호 보존 방식은 [`R__seed_framework.sql`](../../api-server/src/main/resources/db/migration/R__seed_framework.sql)을 정본으로 확인한다. seed 변경은 빈 DB 재실행뿐 아니라 기존 행이 있는 DB에서 운영자 값을 덮어쓰지 않는지도 검증한다.
 
 ---
 
 ## 5. 무중단 스키마 진화 (Expand-and-Contract)
 
 컬럼 타입 변경이나 마이그레이션과 같이 서비스에 영향을 미칠 수 있는 고위험 DDL 작업 시, 시스템 중단을 방지하기 위해 DB 헌법 제7조에 명시된 **"확장 후 축소 (Expand-and-Contract)"** 패턴을 반드시 적용한다.
-- 이 복잡한 4단계(Expand → Sync → Redirect → Contract) 트랜지션은 에이전트 전용 무중단 설계 스킬인 **`zero-downtime-migration-planner`**를 기동하여 안전하게 위임받아 수행할 수 있다.
+- 적용 전 현재 스키마·배포 토폴로지·구버전 호환 기간을 확인하고, Contract 단계의 파괴적 DDL은 사용자 승인과 롤백 계획을 갖춘 별도 변경으로 수행한다. 실행 경로와 예외 마커는 DB 헌법 제7조 및 `ZeroDowntimeMigrationLinterTest`를 따른다.
 
 ---
-*Last Updated: 2026-05-19 (PostgreSQL 17 Constraint Prefix & Idempotency Seeding Standardized)*
+*Last reviewed against current sources: 2026-08-19.*
 *Governed by: Database Standardization Governance Constitution (10 Articles)*

@@ -31,7 +31,7 @@
 ### [Stage 2] Execution: 자율 구현
 
 #### 2.1 실행 방식: 직접 vs 위임 (Direct vs Delegation)
-실행 방식은 **직접 하느냐, 위임하느냐** 두 갈래뿐이다. (과거의 "Mode A/B/C" 번호 체계는 실제 운용을 규율하지 못하는 형식이라 제거한다.)
+실행 방식은 **직접 하느냐, 위임하느냐** 두 갈래뿐이다.
 
 - **Direct**: 메인 에이전트가 직접 구현 — 대부분 작업의 기본값.
 - **위임(Delegation)**: 작업의 규모·성격에 따라 아래 수단에 위임한다. *수단은 오퍼레이터별 매핑 사항일 뿐, 그 자체가 규범은 아니다.*
@@ -83,7 +83,7 @@
 #### 3.1 사전 검증 (Pre-Audit)
 모든 개발 및 수정 작업 착수 전:
 1. **실증적(Evidence-Based) 표준 조회**: 새로운 테이블/필드를 설계하거나 쿼리를 작성할 때, 에이전트의 지레짐작(Assumption)을 엄격히 금지한다. 반드시 로컬 DB 브리지(`node .agent/scripts/db-bridge.js`)로 표준 메타 테이블(`meta_standard_words`/`meta_standard_terms`/`meta_standard_domains` — DB 헌법 제2조의 유일 SSOT)과 `information_schema`를 실시간 조회하여 **"실제 존재하는"** 물리 스키마와 표준 명칭을 눈으로 확인한 뒤 실행한다.
-2. **인프라 상태도 가정 금지** — *신설*: DB·백엔드 서버·네트워크·포트 등 **인프라의 가용성은 착수·재개 시점에 실측**한다. 과거 세션이나 직전 단계의 상태를 그대로 가정하지 않는다. 예: DB 접속이 필요한 작업은 `db-bridge` 로 실제 응답(예: `SELECT now()`)을 먼저 확인한 뒤 진행하고, "이전에 안 됐으니 지금도 안 될 것"/"이전에 됐으니 지금도 될 것" 같은 추정으로 단정하지 않는다.
+2. **인프라 상태도 가정 금지**: DB·백엔드 서버·네트워크·포트 등 **인프라의 가용성은 착수·재개 시점에 실측**한다. 과거 세션이나 직전 단계의 상태를 그대로 가정하지 않는다. 예: DB 접속이 필요한 작업은 `db-bridge` 로 실제 응답(예: `SELECT now()`)을 먼저 확인한 뒤 진행하고, "이전에 안 됐으니 지금도 안 될 것"/"이전에 됐으니 지금도 될 것" 같은 추정으로 단정하지 않는다.
 3. **헌법 위반 예측**: 요청된 작업이 헌법 조항과 충돌할 가능성이 있는지 분석한다.
 4. **대응**: 표준에 없는 용어가 필요하거나 헌법 위반이 예상될 경우, 즉시 작업을 중단하고 사용자에게 보고한다.
 
@@ -124,30 +124,23 @@
 #### 4.1 필수 증거 (현행 게이트 명시)
 | 작업 도메인 | 증거 유형 |
 |:---|:---|
-| **UI/Frontend** | `pnpm -C frontend exec tsc --noEmit`(정적 타입) — [AGENTS.md의 범위별 검증](../../AGENTS.md#verification-by-change-scope) + 계약 드리프트 게이트 `codegen:verify`/`codegen:verify:zod`(api-docs.json ↔ generated-api.d.ts/generated-zod.ts, pre-push HARD 차단). `next build`/`pnpm run build`(RSC 서버/클라이언트 경계)는 로컬에서도 실행 가능하다. **런타임 거동(Playwright E2E)은 CI 에서만 돌며 pre-push 에 없다** — UI 변경은 **CI 초록이 유일한 증거**다(2026-08-06 정정: 종전 "CI 과금차단" 서술은 사실이 아니었다). |
-| **Backend/API** | `./gradlew compileJava compileTestJava`(컴파일 무결성) — [AGENTS 범위별 검증](../../AGENTS.md#verification-by-change-scope). **+ `./gradlew :api-server:harnessTest`**(헌법/표준 린터 31종/39테스트 — 2026-08-16 실측, pre-push 기계강제·실측 ~2분). 추가로 JUnit/ArchUnit 결과 로그, API 응답 데이터 덤프(JSON). |
+| **UI/Frontend** | `pnpm -C frontend exec tsc --noEmit`(정적 타입) — [AGENTS.md의 범위별 검증](../../AGENTS.md#verification-by-change-scope) + 계약 드리프트 게이트 `codegen:verify`/`codegen:verify:zod`(api-docs.json ↔ generated-api.d.ts/generated-zod.ts). RSC 경계는 `pnpm -C frontend build`, 런타임 거동은 관련 Playwright spec으로 검증한다. pre-push는 E2E를 실행하지 않으므로 최종 병합 판단에는 현재 required CI 결과를 직접 확인한다. |
+| **Backend/API** | `./gradlew compileJava compileTestJava`(컴파일 무결성) — [AGENTS 범위별 검증](../../AGENTS.md#verification-by-change-scope). 헌법·표준 린터는 `./gradlew :api-server:harnessTest`, 기능은 관련 JUnit/ArchUnit과 API 응답으로 검증한다. |
 | **Database** | `db-bridge` 쿼리 실행 결과·행(Row) 수, `flyway_schema_history` 확인, `EXPLAIN ANALYZE` 결과, 스키마 변경 확인 로그. **엔티티·DDL 변경 시 `./gradlew :api-server:schemaValidationTest`**(빈 PostgreSQL 17 + Flyway 전량 적용 + Hibernate `ddl-auto:validate`, Docker 필요). ⚠ 단위 테스트 프로파일은 **H2 + `create-drop`** 이라 물리 스키마 불일치를 **원리적으로 검출하지 못한다** — 그 그린을 스키마 증거로 제시하지 말 것. |
 | **아키텍처/규칙** | 신설·수정한 ArchUnit/린트 게이트가 그린임을 대상 테스트 직접 실행(`--tests`)으로 증명. **게이트를 신설·수정했다면 그린 확인만으로 부족하다 — 의도적으로 위반을 주입해 red 가 되는 것까지 증명한다**(그린만 확인하면 vacuous 통과·UP-TO-DATE 스킵과 구분되지 않는다. [AGENTS.md Evidence guardrails H5](../../AGENTS.md#evidence-guardrails)). |
 
-> **게이트 계층(2026-08-12 실측 갱신)**: pre-commit(수 초, 경고) → **pre-push**(컴파일+tsc+codegen+하네스 31종, ~2분, 차단) → **`./gradlew localGate`**(위 + 실PG 스키마 검증 + 전 모듈 테스트 + JaCoCo **LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫, ~12분, 병합 전 1회) → **CI**(secret-scan · backend-build · frontend-build/고정 gzip 번들 예산 · mutation-test · **e2e-tests 3샤드**). business 모듈 테스트만 7분 48초라 pre-push 에 넣을 수 없어 `localGate` 로 분리했다 — 제외 사실을 숨기지 않기 위해 명시한다. 상세는 [.githooks/README.md](../../.githooks/README.md).
->
-> ⛔ **"CI 과금차단" 서술을 삭제한다 — 사실이 아니었다.** 저장소는 **PUBLIC** 이고 워크플로우는
-> 정상 작동 중이다(2026-08-06 실측: 최근 60회 중 success 29 · failure 22 · cancelled 9).
-> 이 문구가 남아 있던 탓에 에이전트가 **문서를 근거로 인프라 상태를 단정**했고(§3.1-2 위반),
-> 로컬 pre-push 통과를 CI 통과로 보고했다. 그 결과 **E2E 파손이 8커밋 동안 누적**됐다(#305~#312).
+> **게이트 계층**: pre-commit은 빠른 경고, pre-push는 변경 범위별 로컬 차단, `localGate`는 Docker를 포함한 넓은 로컬 검증, required CI는 병합 권위다. 정확한 포함 task와 우회 경계는 [.githooks/README.md](../../.githooks/README.md), required check 이름은 [.github/required-checks.json](../../.github/required-checks.json)을 따른다.
 >
 > ⚠ **pre-push 에는 E2E 가 없다.** 로컬 게이트 전부 그린이어도 E2E 는 검증되지 않은 상태다.
-> UI 를 건드리는 변경은 **CI 초록을 확인한 뒤에** 완료로 선언할 것.
-> (실사례: 게시글 상세에 위젯을 추가하며 버튼 라벨을 기존 버튼과 같게 달았더니 Playwright
-> strict mode violation 으로 **XSS 새니타이제이션 검증**이 죽었다. 로컬 게이트로는 보이지 않는다.)
+> UI 를 건드리는 변경은 과거 문서나 로컬 결과로 CI 상태를 추정하지 말고, **현재 required CI와 E2E 결과를 직접 확인한 뒤에** 완료로 선언한다.
 >
 > ⚠ **PR 병합 시 `mergeStateStatus` 를 확인할 것.** `UNSTABLE` 은 "병합은 가능하나 **체크 실패**"
 > 를 뜻한다. 자동 병합 도구가 `UNSTABLE` 을 병합 가능으로 취급하면 red CI 가 그대로 들어간다.
 
-- **런타임 검증 불가 시 (정직한 보류)** — *신설*: 인프라 제약(DB 다운·엔드포인트 인증 게이트·도구 부재 등)으로 런타임 증거를 확보할 수 없는 경우, **정적 증거(코드·설정·컴파일·정적분석)로 확증 가능한 범위를 명시**하고 나머지는 **근거와 함께 보류(deferred)** 로 정직하게 보고한다. 미검증 항목을 "성공/완료"로 선언해 은폐하는 것을 엄격히 금지한다. 보류 항목은 재개 조건(예: DB 복구 후 해당 플로우 구동)을 함께 기록한다.
+- **런타임 검증 불가 시 (정직한 보류)**: 인프라 제약(DB 다운·엔드포인트 인증 게이트·도구 부재 등)으로 런타임 증거를 확보할 수 없는 경우, **정적 증거로 확증 가능한 범위를 명시**하고 나머지는 근거와 함께 `deferred`로 보고한다. 보류 항목에는 재개 조건을 함께 기록한다.
 
 #### 4.2 검증 문서화
-- 복잡도가 높은 작업(리팩토링, 신규 기능 등)의 경우, 반드시 `.gemini/tasks/` 내의 해당 태스크 파일(`YYYYMMDD-task-name.md`)에 검증 로그·분류 근거를 포함해야 한다.
+- 작업별 분류·검증 근거는 대화, PR 설명, CI/테스트 로그처럼 해당 실행과 함께 추적되는 채널에 남긴다. `.gemini/tasks/`에 새 세션 저널을 만들지 않는다. 지속 가능한 사실·승인 결정·재현 가능한 gap만 정본 링크와 검증일을 갖춰 [.agent/memory](../../.agent/memory/)의 해당 파생 인덱스로 선별 승격한다.
 - 모든 빌드나 테스트가 통과된 터미널 출력값이 최소 1회 이상 대화 세션에 노출되어야 한다.
 
 ---
@@ -172,9 +165,5 @@
 - **무결성 우선**: 속도보다 중요한 것은 헌법 준수와 작동 증거이다.
 - **유연한 적용**: L0 작업 및 포괄 승인 하의 배치 작업은 절차를 간소화(등급·SCOPE 1줄 고지)하여 사용자의 흐름을 방해하지 않는다.
 - **중단 및 보고**: 파이프라인 중 예상치 못한 에러 발생 시 즉시 중단하고 사용자에게 복구 방안을 묻는다.
-- **공유 워킹트리 규율** — *신설*: 다중 오퍼레이터 환경에서 커밋은 `git commit --only -- <경로>` 로 **자기 변경분만** 담아 타 오퍼레이터의 WIP 혼입을 차단한다. 파일 변경 전 항상 디스크의 현재 상태를 직접 조회한다(과거 세션 가정 금지).
-- **정직한 보고** — *신설*: 실패·스킵·보류는 있는 그대로 보고한다. 인프라 상태·검증 결과를 추정으로 단정하거나, 미검증을 완료로 선언하지 않는다(§3.1-2, §4.1 보류 규정과 정합).
-
----
-*Last Updated: 2026-08-18 (공통 규칙 SSOT를 AGENTS.md로 단일화하고 Gemini·Claude·Codex 다중 오퍼레이터 및 범위별 검증 연결을 현행화. 이전: 2026-08-06 "CI 과금차단" 오기 삭제·CI/E2E 증거 경계 명시; 2026-07-26 하네스·schemaValidation·localGate 계층 현행화; 2026-07-23 당시 컴파일/codegen 게이트 정정; 2026-07-08 Direct/위임 단순화; 2026-05-18 Antigravity.)*
-*Governed by: Enterprise Governance Constitution*
+- **공유 워킹트리 규율**: 다중 오퍼레이터 환경에서 커밋은 `git commit --only -- <경로>` 로 **자기 변경분만** 담아 타 오퍼레이터의 WIP 혼입을 차단한다. 파일 변경 전 항상 디스크의 현재 상태를 직접 조회한다.
+- **정직한 보고**: 실패·스킵·보류는 있는 그대로 보고한다. 인프라 상태·검증 결과를 추정으로 단정하거나, 미검증을 완료로 선언하지 않는다.

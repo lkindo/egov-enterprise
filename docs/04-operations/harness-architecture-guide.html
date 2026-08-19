@@ -262,7 +262,7 @@
       font-size: 17px !important;
     }
 
-    /* Part 2: 27 Linters Catalog Filter & Grid */
+    /* Part 2: backend harness catalog filter & grid */
     .filter-bar {
       display: flex;
       flex-wrap: wrap;
@@ -408,6 +408,21 @@
       color: #fda4af;
     }
 
+    .scope-note {
+      max-width: 980px;
+      margin: 24px auto 0;
+      padding: 16px 20px;
+      border: 1px solid var(--border-accent);
+      border-radius: 12px;
+      background: rgba(99, 102, 241, 0.08);
+      color: var(--text-muted);
+      text-align: left;
+    }
+
+    .scope-note a {
+      color: #a5b4fc;
+    }
+
     footer {
       text-align: center;
       margin-top: 80px;
@@ -431,9 +446,19 @@
       <div class="badge-pill">
         <i class="fa-solid fa-shield-halved"></i> eGov Enterprise Verification Architecture
       </div>
-      <h1>Harness Pipeline & Constitutional Linters</h1>
+      <h1>Harness Pipeline & Verification Tests</h1>
       <p class="subtitle">
-        개발자 코드 작성부터 PR 머지까지 4단계 파이프라인 생애주기와 27종 무결성 린터 시각화 가이드
+        개발자 코드 작성부터 병합 적격 판정까지의 실행 경로와 백엔드 하네스 테스트 클래스 카탈로그
+      </p>
+
+      <p class="scope-note">
+        <strong>상태: 중복 삭제 후보.</strong> 새 거버넌스 설명은 Governance Harness Atlas를 사용한다.
+        이 페이지는 백엔드 하네스 카탈로그를 이해하기 위한 파생 뷰이며 실행 결과나 전수 보장을 선언하지 않는다.
+        현재 규칙은 <a href="../../AGENTS.md">AGENTS.md</a>, 실행 태스크는
+        <a href="../../api-server/build.gradle">api-server/build.gradle</a>, 병합 필수 잡은
+        <a href="../../.github/required-checks.json">required-checks.json</a>이 정본이다.
+        전체 거버넌스 구조와 migration-tool 범위는
+        <a href="../../frontend/public/governance_harness_atlas.html">Governance Harness Atlas</a>에서 본다.
       </p>
 
       <div class="stats-grid">
@@ -442,16 +467,16 @@
           <div class="stat-label">Lifecycle Pipeline</div>
         </div>
         <div class="stat-card">
-          <div class="stat-number purple">27 Linters</div>
-          <div class="stat-label">Constitutional Harness Tests</div>
+          <div class="stat-number purple">31 Classes</div>
+          <div class="stat-label">Current Harness Catalog</div>
         </div>
         <div class="stat-card">
           <div class="stat-number cyan">3 Constitutions</div>
           <div class="stat-label">DB · Backend · Frontend</div>
         </div>
         <div class="stat-card">
-          <div class="stat-number emerald">100% Auto</div>
-          <div class="stat-label">Pre-push & CI Gate</div>
+          <div class="stat-number emerald">2 Layers</div>
+          <div class="stat-label">Bypassable Local · Required CI</div>
         </div>
       </div>
     </header>
@@ -465,19 +490,19 @@
       <div class="timeline">
         <div class="timeline-step">
           <div class="step-number">01</div>
-          <h3 class="step-title">로컬 개발 & 스킬 가디언</h3>
-          <p class="step-desc">IDE에서 소스 변경 및 DTO 수정 시 실시간 타입 동기화와 Agent 가디언 스킬 동작</p>
+          <h3 class="step-title">변경 범위 판정</h3>
+          <p class="step-desc">AGENTS.md와 관련 헌법을 읽고 변경 범위에 맞는 검증과 계약 생성물 갱신을 선택</p>
           <div class="step-tags">
             <span class="tag">codegen:file</span>
-            <span class="tag">api-contract-guardian</span>
-            <span class="tag">owasp-auditor</span>
+            <span class="tag">AGENTS.md</span>
+            <span class="tag">scope verification</span>
           </div>
         </div>
 
         <div class="timeline-step">
           <div class="step-number">02</div>
           <h3 class="step-title">Git Pre-push 게이트</h3>
-          <p class="step-desc">로컬 push 실행 시 Fast-pass 검사 후 Java/TS 컴파일, ESLint, codegen 드리프트 및 30종 하네스 실행</p>
+          <p class="step-desc">공용 메모리·문서 링크를 항상 검사하고, source 변경이면 컴파일·lint·codegen·하네스 실행</p>
           <div class="step-tags">
             <span class="tag">pre-push</span>
             <span class="tag">compileJava</span>
@@ -488,7 +513,7 @@
         <div class="timeline-step">
           <div class="step-number">03</div>
           <h3 class="step-title">GitHub Actions CI</h3>
-          <p class="step-desc">원격 PR 생성 시 Real PostgreSQL(Testcontainers) 스키마 실측, Gitleaks, 뮤테이션 테스트 수행</p>
+          <p class="step-desc">required jobs가 빌드·테스트, 커밋된 계약, secret scan, 실제 PostgreSQL 스키마 검증을 독립 집행</p>
           <div class="step-tags">
             <span class="tag">secret-scan</span>
             <span class="tag">Testcontainers</span>
@@ -498,8 +523,8 @@
 
         <div class="timeline-step">
           <div class="step-number">04</div>
-          <h3 class="step-title">E2E & 머지 승인</h3>
-          <p class="step-desc">Playwright 기반 3단계 E2E 실환경 통합 테스트 검증 후 main 브랜치 머지 집행</p>
+          <h3 class="step-title">Required E2E & 병합 적격</h3>
+          <p class="step-desc">Playwright 3개 샤드와 뮤테이션 집계 등 required checks가 모두 성공해야 병합 가능</p>
           <div class="step-tags">
             <span class="tag">Playwright</span>
             <span class="tag">e2e-tests</span>
@@ -512,27 +537,34 @@
       <div class="mermaid-box">
         <pre class="mermaid">
         flowchart TB
-            subgraph STEP1["1단계: IDE & Agent Guardian (로컬 작성)"]
-                A1["<b>💻 Code Edit</b><br/>DTO / 엔티티 / 컨트롤러 수정"] --> A2["<b>🔄 codegen:file & zod</b><br/>OpenAPI 명세 ↔ TS/Zod 타입 실시간 최신화"]
-                A2 --> A3["<b>🛡️ Agent Guardians</b><br/>OWASP / API Contract 실시간 검증"]
+            subgraph STEP1["1단계: 변경 범위 판정과 로컬 작성"]
+                A1["<b>💻 Code Edit</b><br/>DTO / 엔티티 / 컨트롤러 수정"] --> A2["<b>📐 Scope Verification</b><br/>AGENTS.md + 관련 헌법"]
+                A2 --> A3["<b>🔄 Contract Update</b><br/>필요한 경우 OpenAPI / TS / Zod 재생성"]
             end
 
             subgraph STEP2["2단계: Local Pre-push Gate (.githooks/pre-push)"]
                 B1["<b>🚀 git push 실행</b>"] --> B2{"<b>📝 Fast-Pass?</b><br/>순수 문서만 포함?"}
-                B2 -- YES --> B3["<b>⚡ 0초 Fast Pass</b><br/>검증 스킵 및 푸시"]
+                B2 -- YES --> B3["<b>📎 Docs Fast Pass</b><br/>메모리 계약 + 링크 검사"]
                 B2 -- NO --> B4["<b>☕ Java & TS 컴파일</b><br/>compileJava & tsc --noEmit"]
                 B4 --> B5["<b>📘 codegen:verify</b><br/>OpenAPI ↔ TS 계약 드리프트 차단"]
-                B5 --> B6["<b>🏛️ :api-server:harnessTest</b><br/>27종 헌법 린터 스위트 실행"]
+                B5 --> B6["<b>🏛️ :api-server:harnessTest</b><br/>nuri.api.harness.* 실행"]
             end
 
             subgraph STEP3["3단계: GitHub Actions CI (원격 파이프라인)"]
-                C1["<b>🔀 PR 생성 / 원격 푸시</b>"] --> C2["<b>🔑 secret-scan</b><br/>Gitleaks 시크릿 유출 탐지"]
-                C2 --> C3["<b>🐘 backend-build</b><br/>Real PostgreSQL (Testcontainers)<br/>+ 30종 하네스 재검증"]
-                C3 --> C4["<b>⚡ frontend-build & mutation-test</b><br/>Next.js 빌드 + 의도적 버그 주입 검증"]
-                C4 --> C5["<b>🎭 Playwright E2E Tests</b><br/>3단계 병렬 실환경 E2E 검증"]
+                C1["<b>🔀 PR 생성 / 원격 푸시</b>"] --> C2["<b>🔑 secret-scan</b><br/>Gitleaks 증분 유출 탐지"]
+                C1 --> C3["<b>🐘 backend-build</b><br/>Gradle test + 계약 export<br/>+ Testcontainers schema validation"]
+                C1 --> C4["<b>⚡ frontend-build</b><br/>codegen + type/lint + build/test"]
+                C3 --> C5["<b>🧬 mutation-test</b><br/>증분 스코프 결과 집계"]
+                C3 --> C6["<b>🎭 Playwright E2E</b><br/>backend/frontend 성공 뒤 3개 샤드"]
+                C4 --> C6
             end
 
-            STEP1 ==> STEP2 ==> STEP3 ==> MERGE(("<b>✅ main Branch Merge</b>"))
+            STEP1 ==> STEP2 ==> STEP3
+            C2 --> MERGE(("<b>✅ Merge Eligible</b>"))
+            C3 --> MERGE
+            C4 --> MERGE
+            C5 --> MERGE
+            C6 --> MERGE
 
             style STEP1 fill:#1e1b4b,stroke:#818cf8,stroke-width:3px,color:#fff
             style STEP2 fill:#2e1065,stroke:#c084fc,stroke-width:3px,color:#fff
@@ -542,20 +574,20 @@
       </div>
     </section>
 
-    <!-- Part 2: 27 Linters Catalog -->
+    <!-- Part 2: backend harness catalog -->
     <section>
       <h2 class="section-title">
-        <i class="fa-solid fa-boxes-stacked"></i> 2부. 28종 핵심 백엔드 하네스 린터 카탈로그 (:api-server:harnessTest)
+        <i class="fa-solid fa-boxes-stacked"></i> 2부. 백엔드 하네스 테스트 클래스 카탈로그 (:api-server:harnessTest)
       </h2>
 
       <div class="filter-bar">
         <div class="tab-group" id="filterTabs">
-          <button class="tab-btn active" data-cat="all">전체 (27)</button>
-          <button class="tab-btn" data-cat="meta">메타 & 무결성 (2)</button>
+          <button class="tab-btn active" data-cat="all">전체 (31)</button>
+          <button class="tab-btn" data-cat="meta">메타 & 무결성 (3)</button>
           <button class="tab-btn" data-cat="db">DB & 스키마 (5)</button>
-          <button class="tab-btn" data-cat="security">보안 & 인가 (6)</button>
-          <button class="tab-btn" data-cat="api">API 계약 (4)</button>
-          <button class="tab-btn" data-cat="arch">아키텍처 & 격리 (10)</button>
+          <button class="tab-btn" data-cat="security">보안 & 인가 (7)</button>
+          <button class="tab-btn" data-cat="api">API 계약 (5)</button>
+          <button class="tab-btn" data-cat="arch">아키텍처 & 격리 (11)</button>
         </div>
 
         <div class="search-box">
@@ -570,14 +602,14 @@
     </section>
 
     <footer>
-      <p>eGov Enterprise Architecture & Governance Specification · Generated by Antigravity Agent</p>
+      <p>파생 설명 문서 · 정확한 실행 범위와 병합 강제력은 저장소 정본에서 재확인</p>
     </footer>
   </div>
 
   <script>
-    // 27 Linters Data Definition
+    // Current backend harness test-class catalog. Source directory remains authoritative.
     const lintersData = [
-      // 1. Meta & Integrity (2)
+      // 1. Meta & Integrity (3)
       {
         name: "HarnessBaselineIntegrityTest",
         cat: "meta",
@@ -592,14 +624,21 @@
         desc: "GitHub Actions CI/CD 워크플로우 명세 파일의 구조적 무결성 및 구멍 차단 검증",
         risk: "CI 설정 오류로 빌드/테스트 잡이 조용히 건너뛰어지는 결함 차단"
       },
+      {
+        name: "ControllerScanBaseLinterTest",
+        cat: "meta",
+        catLabel: "Meta/Integrity",
+        desc: "요청 컨트롤러가 다른 컨트롤러 린터의 스캔 베이스 밖으로 이동하는 사각지대를 정적 검사",
+        risk: "패키지 이동으로 인가·계약·서비스 배선 린터가 컨트롤러를 조용히 놓치는 false-green 차단"
+      },
 
       // 2. DB & Schema (5)
       {
         name: "EntitySchemaConformanceLinterTest",
         cat: "db",
         catLabel: "DB & Schema",
-        desc: "Real PostgreSQL information_schema와 Java @Entity 간의 컬럼 타입, varchar 길이, NULL 여부 실측 대조",
-        risk: "H2 테스트 환경에서는 감지되지 않는 물리 varchar 길이 초과 및 DDL 런타임 에러 방지"
+        desc: "커밋된 Flyway SQL을 정적으로 재생한 저장소 선언 스키마와 Java @Entity의 PK 전략·컬럼 부재·문자열 길이를 대조",
+        risk: "H2 create-drop 환경이 숨기는 매핑 드리프트 차단. live DB 정합은 별도 schemaValidationTest와 운영 실측 범위"
       },
       {
         name: "PkGenerationStandardLinterTest",
@@ -612,7 +651,7 @@
         name: "UniqueConstraintMirrorLinterTest",
         cat: "db",
         catLabel: "DB & Schema",
-        desc: "DB 유니크 제약조건이 Java 엔티티 @Table(uniqueConstraints)에 100% 동기화되어 있는지 검증",
+        desc: "마이그레이션에서 파싱한 엔티티 매핑 테이블의 대상 UNIQUE가 @Table·@Column·PK에 미러됐는지 정적 검증",
         risk: "DB 유니크 인덱스와 JPA 엔티티 매핑 불일치로 인한 예기치 못한 데이터 중복 에러"
       },
       {
@@ -630,7 +669,7 @@
         risk: "비표준 DB 오브젝트 명명으로 인한 메타 거버넌스 붕괴 차단"
       },
 
-      // 3. Security & OWASP (6)
+      // 3. Security & OWASP (7)
       {
         name: "SecurityAuthAnnotationLinterTest",
         cat: "security",
@@ -673,13 +712,20 @@
         desc: "보안 적용 URL 경로 선언이 실제 웹 컨트롤러 경로와 일치하는지 검증",
         risk: "URL 경로 오타로 인가 필터를 우회하는 보안 구멍 차단"
       },
+      {
+        name: "QuerydslDynamicPathLinterTest",
+        cat: "security",
+        catLabel: "Security & OWASP",
+        desc: "생산 코드의 PathBuilder와 비상수 QueryDSL 경로 팩토리 사용을 정적 검사",
+        risk: "사용자 입력을 HQL 식별자 경로로 승격하는 동적 정렬 인젝션 패턴 재유입 차단"
+      },
 
       // 4. API Contract (5)
       {
         name: "ApiDocsPathCoverageLinterTest",
         cat: "api",
         catLabel: "API Contract",
-        desc: "생성된 OpenAPI 명세(api-docs.json)가 모든 Controller 경로를 100% 커버하는지 검증",
+        desc: "스캔 가능한 @RestController의 리터럴 매핑 경로가 커밋된 api-docs.json paths의 부분집합인지 검증",
         risk: "명세 문서 누락으로 프론트엔드-백엔드 간 API 연동 실패 차단"
       },
       {
@@ -711,7 +757,7 @@
         risk: "인증/회원가입 핵심 파이프라인의 타입 변경으로 인한 클라이언트 결함 차단"
       },
 
-      // 5. Architecture & Isolation (10)
+      // 5. Architecture & Isolation (11)
       {
         name: "ServiceReadOnlyTransactionalLinterTest",
         cat: "arch",
@@ -781,6 +827,13 @@
         catLabel: "Architecture",
         desc: "DB 초기 시드(Seed) 위치 및 무결성 검증",
         risk: "초기 데이터 위치 혼선으로 인한 테스트 및 운영 서버 데이터 불일치 차단"
+      },
+      {
+        name: "PageableConstructionLinterTest",
+        cat: "arch",
+        catLabel: "Architecture",
+        desc: "BaseSearchDto의 페이지 번호·크기 변환 로직을 서비스에서 손수 재구현하는 패턴을 정적 검사",
+        risk: "페이징 의미와 기본값이 호출부마다 복제·분기되는 계약 드리프트 차단"
       }
     ];
 

@@ -1,302 +1,139 @@
-# 데이터베이스 최적화 가이드
+# PostgreSQL 성능 진단·최적화 가이드
 
-본 가이드는 eGov Enterprise 의 PostgreSQL 데이터베이스 성능을 분석하고 최적화하는 방법을 제공합니다.
+DB 성능 변경은 추정이나 일반 권장값이 아니라 **현재 workload, live schema, 실행계획**을 근거로 한다.
+이 문서의 기본 경로는 read-only 진단이다. extension·index·schema·parameter 변경과 VACUUM 같은 쓰기 작업은
+[AGENTS.md](../../AGENTS.md)의 승인 경계와
+[DB 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)을 먼저 따른다.
 
----
+## 현재 프로젝트 설정
 
-## 📊 성능 분석 도구
+- 기본 데이터소스는 PostgreSQL이며 접속정보는 [`application.yml`](../../api-server/src/main/resources/application.yml)에 있다.
+- `LegacyConfig`가 `spring.datasource`를 Hikari에 직접 바인딩하므로 pool 설정은 nested
+  `spring.datasource.hikari.*`가 아니라 `spring.datasource.*` flat key가 정본이다.
+- 현재 기본 pool은 maximum 10, minimum idle 2, connection timeout 3초다. 환경변수 override가 우선한다.
+- Hibernate batch는 `spring.jpa.properties.hibernate.jdbc.batch_size=25`, insert/update 정렬 활성 상태다.
+- 상세 SQL·binding·Hibernate 통계는
+  [`application-dev-performance.yml`](../../api-server/src/main/resources/application-dev-performance.yml)을 명시한
+  개발 진단에서만 켠다. 운영에 verbose SQL·binding logging을 상시 적용하지 않는다.
 
-### 1. pg_stat_statements 활성화
+설정값은 바뀔 수 있으므로 문서 숫자보다 현재 YAML과 런타임 actuator·JMX를 우선한다.
 
-`pg_stat_statements` 는 실행된 모든 쿼리의 통계를 수집하는 PostgreSQL 확장 기능입니다.
+## 1. 증상과 기준선 고정
 
-```sql
--- 확장 기능 활성화 (superuser 권한 필요)
-CREATE EXTENSION IF NOT EXISTS pg_stat_statements;
+진단 기록에는 다음을 함께 남긴다.
 
--- 활성화 확인
-SELECT * FROM pg_extension WHERE extname = 'pg_stat_statements';
-```
+- 대상 endpoint·job·query와 재현 입력
+- application·DB SHA/schema version, profile, 데이터량
+- p50/p95/p99, 처리량, 오류율, pool active/pending
+- query 호출 수·평균/총 시간·반환 행 수
+- `EXPLAIN (ANALYZE, BUFFERS)` 실행 조건과 plan
+- 같은 시간대 CPU, I/O, lock, JVM pause
 
-### 2. Hibernate 통계 활성화
+임의의 “응답 1초”, “cache hit 95%”, “bloat 20%”를 보편 합격선으로 쓰지 않는다. 서비스 SLO와 이전
+기준선을 먼저 정한다.
 
-개발 환경에서 Hibernate 통계를 활성화합니다:
+## 2. read-only 진단
 
-```yaml
-# application-dev.yml
-egov:
-  performance:
-    logging:
-      enabled: true
-```
+저장소 스크립트:
 
----
-
-## 🔍 성능 분석 스크립트 사용법
-
-### 분석 스크립트 실행
-
-```bash
-# PostgreSQL 연결 (기본 활성 데이터소스: 로컬 PostgreSQL 17 — application.yml 기본값, 빈 DB 부팅 가능)
-# (원격/E2E) OCI PostgreSQL 17: psql -h 129.154.54.178 -p 5432 -U egov -d egovdb  (application-e2e.yml)
-# (레거시/선택) 원격 Supabase pooler: psql -h <supabase-pooler-host> -p 6543 -U postgres -d postgres
-psql -h localhost -p 5432 -U egov -d egovdb
-
-# 분석 스크립트 실행
+```psql
 \i config/db/performance-analysis.sql
 ```
 
-### 주요 분석 항목
+이 스크립트의 실행 SELECT는 통계·lock·connection·크기 조회다. 뒤쪽 CREATE INDEX와 VACUUM은 주석 예시이며
+승인 없는 실행 절차가 아니다. `pg_stat_statements`가 설치·preload되지 않은 환경에서는 관련 query가 실패할 수 있다.
 
-#### 1. 느린 쿼리 찾기
+주요 조회:
 
 ```sql
--- 평균 실행 시간이 긴 쿼리 상위 10 개
-SELECT query, mean_exec_time, calls
+SELECT queryid, calls, total_exec_time, mean_exec_time, rows
 FROM pg_stat_statements
-ORDER BY mean_exec_time DESC
-LIMIT 10;
-```
+ORDER BY total_exec_time DESC
+LIMIT 20;
 
-#### 2. 인덱스 사용 현황
-
-```sql
--- 인덱스를 사용하지 않는 테이블
-SELECT relname, seq_scan, idx_scan
-FROM pg_stat_user_tables
-WHERE seq_scan > idx_scan;
-```
-
-#### 3. 캐시 히트 비율
-
-```sql
--- 캐시 히트 비율 확인 (95% 이상 권장)
-SELECT 
-    blks_hit, 
-    blks_read,
-    100.0 * blks_hit / (blks_hit + blks_read) AS cache_hit_ratio
-FROM pg_stat_database
-WHERE datname = 'egovdb';
-```
-
----
-
-## 🚀 최적화 기법
-
-### 1. 인덱스 최적화
-
-#### 인덱스 생성 예시
-
-```sql
--- 단일 컬럼 인덱스
-CREATE INDEX CONCURRENTLY idx_users_email ON users(email);
-
--- 복합 인덱스
-CREATE INDEX CONCURRENTLY idx_common_codes_group 
-ON common_codes(group_id, use_at);
-
--- 부분 인덱스 (조건부 인덱스)
-CREATE INDEX CONCURRENTLY idx_active_users 
-ON users(created_at) 
-WHERE is_active = true;
-```
-
-#### 인덱스 삭제 (사용되지 않는 인덱스)
-
-```sql
--- 사용되지 않는 인덱스 찾기
-SELECT indexrelname, idx_scan
-FROM pg_stat_user_indexes
-WHERE idx_scan = 0;
-
--- 인덱스 삭제
-DROP INDEX CONCURRENTLY unused_index_name;
-```
-
-### 2. N+1 쿼리 해결
-
-#### Hibernate 통계로 N+1 감지
-
-```
-Hibernate 성능 분석 로그에서 다음을 확인:
-- Entity Fetch Count 가 Entity Load Count 보다 훨씬 크면 N+1 의심
-```
-
-#### 해결 방법 1: @BatchSize 사용
-
-```java
-@Entity
-public class User {
-    
-    @OneToMany(mappedBy = "user")
-    @BatchSize(size = 20)  // 20 개씩 일괄 조회
-    private List<Post> posts;
-}
-```
-
-#### 해결 방법 2: JOIN FETCH 사용
-
-```java
-@Query("SELECT u FROM User u JOIN FETCH u.posts WHERE u.id = :id")
-User findByIdWithPosts(@Param("id") Long id);
-```
-
-#### 해결 방법 3: Entity Graph 사용
-
-```java
-@EntityGraph(attributePaths = {"posts", "comments"})
-User findById(Long id);
-```
-
-### 3. 배치 처리 최적화
-
-#### JDBC 배치 사이즈 설정
-
-```yaml
-spring:
-  jpa:
-    properties:
-      hibernate:
-        jdbc:
-          batch_size: 25
-        order_inserts: true
-        order_updates: true
-```
-
-#### 대량 데이터 처리
-
-```java
-// 50 개씩 배치 처리
-for (int i = 0; i < users.size(); i++) {
-    entityManager.persist(users.get(i));
-    
-    if (i % 50 == 0) {
-        entityManager.flush();
-        entityManager.clear();
-    }
-}
-```
-
-### 4. VACUUM 및 ANALYZE
-
-#### 자동 VACUUM 설정 확인
-
-```sql
--- 자동 VACUUM 상태 확인
-SELECT 
-    relname, 
-    last_vacuum, 
-    last_autovacuum,
-    last_analyze,
-    last_autoanalyze
-FROM pg_stat_user_tables
-WHERE relname = 'common_codes';
-```
-
-#### 수동 VACUUM 실행 (저피크 타임)
-
-```sql
--- 일반 VACUUM (블록 해제만)
-VACUUM common_codes;
-
--- VACUUM ANALYZE (통계 업데이트)
-VACUUM ANALYZE common_codes;
-
--- 전체 데이터베이스
-VACUUM ANALYZE;
-```
-
-### 5. 연결 풀 최적화
-
-#### HikariCP 설정
-
-```yaml
-spring:
-  datasource:
-    hikari:
-      maximum-pool-size: 20      # 최대 연결 수
-      minimum-idle: 5            # 최소 유휴 연결
-      idle-timeout: 300000       # 유휴 연결 종료 시간 (5 분)
-      max-lifetime: 600000       # 연결 최대 수명 (10 분)
-      connection-timeout: 20000  # 연결 타임아웃 (20 초)
-      leak-detection-threshold: 60000  # 리크 감지 (60 초)
-```
-
----
-
-## 📈 모니터링
-
-### 1. 실시간 쿼리 모니터링
-
-```sql
--- 현재 실행 중인 쿼리
-SELECT 
-    pid,
-    usename,
-    query,
-    state,
-    age(clock_timestamp(), query_start) AS duration
+SELECT pid, usename, state, wait_event_type, wait_event,
+       age(clock_timestamp(), xact_start) AS transaction_age,
+       query
 FROM pg_stat_activity
-WHERE state != 'idle'
-ORDER BY duration DESC;
+WHERE pid <> pg_backend_pid()
+ORDER BY xact_start NULLS LAST;
+
+SELECT schemaname, relname, seq_scan, idx_scan, n_live_tup, n_dead_tup
+FROM pg_stat_user_tables
+ORDER BY seq_scan DESC;
 ```
 
-### 2. 잠금 모니터링
+통계 reset 시각과 workload 기간을 확인하지 않은 `idx_scan=0`은 삭제 근거가 아니다. 작은 테이블의 seq scan도
+정상일 수 있다.
+
+## 3. 실행계획
+
+먼저 쓰기를 실행하지 않는 `EXPLAIN`으로 plan을 확인한다.
 
 ```sql
--- 잠금 대기 중인 쿼리
-SELECT 
-    l.pid,
-    l.mode,
-    l.granted,
-    a.query
-FROM pg_locks l
-JOIN pg_stat_activity a ON l.pid = a.pid
-WHERE NOT l.granted;
+EXPLAIN (VERBOSE, COSTS, SETTINGS)
+SELECT ...;
 ```
 
-### 3. Prometheus 메트릭
+`EXPLAIN ANALYZE`는 query를 **실제로 실행**한다. SELECT라도 부하가 클 수 있고 DML이면 데이터가 바뀐다.
+승인된 복제·성능 환경에서 제한된 SELECT에만 사용한다.
 
-```yaml
-# application.yml
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info,metrics,prometheus
+```sql
+EXPLAIN (ANALYZE, BUFFERS, WAL, SETTINGS)
+SELECT ...;
 ```
 
-Prometheus 엔드포인트: `http://localhost:8080/actuator/prometheus`
+확인할 항목:
 
----
+- estimated row와 actual row 차이
+- sequential/index/bitmap scan 선택과 filter 제거 행
+- sort/hash spill, temp I/O
+- nested loop 반복 수와 N+1 호출
+- lock wait와 long transaction
+- parameter 값에 따른 plan 차이
 
-## 🛠️ 문제 해결 체크리스트
+## 4. 최적화 선택
 
-- [ ] 느린 쿼리가 있는가? (mean_exec_time > 1000ms)
-- [ ] 캐시 히트 비율이 95% 이상인가?
-- [ ] 사용되지 않는 인덱스가 있는가?
-- [ ] N+1 쿼리가 발생하는가?
-- [ ] 테이블 bloat 이 20% 이상인가?
-- [ ] 연결 풀이 고갈되는가?
-- [ ] 장기간 실행되는 트랜잭션이 있는가?
+### query·fetch 구조
 
----
+- ORM 호출 수를 먼저 센다. fetch join, projection, batch fetch는 반환 cardinality와 pagination 의미를 확인한 뒤 적용한다.
+- 필요한 열·행만 조회하고 정렬·필터 술어를 index 후보와 함께 본다.
+- 캐시는 stale 허용 범위와 invalidation 소비자를 먼저 정의한다. hit rate만 높이는 것이 목표가 아니다.
 
-## 관련 문서
+### index
 
-- [성능 최적화 가이드](./performance-optimization-guide.md)
-- [부하 테스트 가이드](./load-test-guide.md)
-- [DB 표준화 매뉴얼](../03-guides/db-standardization-manual.md)
-- [DB 표준화 헌법](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)
+index 변경 전 다음을 증명한다.
 
----
+1. 실제 query predicate·join·order와 column 순서가 맞는다.
+2. representative data에서 plan과 latency가 개선된다.
+3. write amplification·storage·vacuum 비용이 허용된다.
+4. 동등·prefix 중복 index가 없다.
+5. Flyway migration, rollback, production lock 방식이 정의됐다.
 
-## 📚 추가 리소스
+`CREATE/DROP INDEX CONCURRENTLY`도 schema 변경이다. 문서 예시를 콘솔에 복사해 실행하지 않고 사용자 승인 뒤
+migration으로 관리한다.
 
-- [PostgreSQL 공식 문서 - 성능 최적화](https://www.postgresql.org/docs/current/performance-tips.html)
-- [Pg_stat_statements 문서](https://www.postgresql.org/docs/current/pgstatstatements.html)
-- [Hibernate 사용자 가이드](https://docs.jboss.org/hibernate/orm/current/userguide/html_single/)
+### pool·batch
 
----
+- pool 크기는 `CPU * 2 + 1` 같은 공식으로 단정하지 않는다. DB `max_connections`, app instance 수, query latency,
+  pending·timeout을 함께 측정한다.
+- pool을 키우기 전에 slow query와 long transaction을 해결한다. 인스턴스 수 × pool max가 DB 예산을 넘지 않아야 한다.
+- batch size 변경은 SQL round trip 개선과 메모리·lock duration·generated key 동작을 함께 검증한다.
 
-*Last Updated: 2026-07-12 (Updated via Claude Code — 활성 데이터소스 현행화: 로컬 PostgreSQL 기본값·빈 DB 부팅 가능, OCI 호스트는 E2E 참조로 격하)*
+### VACUUM·통계
+
+autovacuum 지연, dead tuple, transaction age를 확인한 뒤 원인을 판정한다. 수동 `VACUUM ANALYZE`나 DB parameter
+변경은 운영 창구와 승인 아래 수행한다. 장기 transaction이 vacuum을 막는다면 vacuum 반복보다 transaction 원인을
+먼저 해결한다.
+
+## 5. 변경 검증
+
+1. 같은 데이터 snapshot과 workload로 변경 전·후를 여러 회차 비교한다.
+2. latency뿐 아니라 error, CPU/I/O, lock, pool pending, write throughput을 함께 본다.
+3. schema 변경은 live `information_schema`와 Flyway history, application mapping을 대조한다.
+4. backend 영향 테스트와 `./gradlew compileJava compileTestJava`를 실행한다.
+5. 실제 부하가 필요하면 [k6 가이드](load-test-guide.md)를 따르고, 미실행이면 그렇게 보고한다.
+6. 개선이 noise보다 작거나 다른 SLO를 악화시키면 원복한다.
+
+관련: [성능 최적화 가이드](performance-optimization-guide.md),
+[DB 표준화 매뉴얼](../03-guides/db-standardization-manual.md).

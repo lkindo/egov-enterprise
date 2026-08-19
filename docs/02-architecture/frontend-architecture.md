@@ -4,13 +4,13 @@
 > **시각 규범**: 디자인 토큰 및 컬러 시스템은 [frontend-design-system.md](./frontend-design-system.md)를 참조한다.
 
 ## 🚀 Overview
-본 프로젝트의 프론트엔드는 **Next.js 16.2.4 (App Router)** 기반으로 구축되었으며, **React 19**의 최신 기능(Server Components, Actions, Suspense)을 적극 활용합니다. 시각적 예술성과 기술적 성능의 조화를 목표로 합니다.
+본 프로젝트의 프론트엔드는 **Next.js 16.2.12 계열(App Router)**과 **React 19.2 계열**을 사용한다. 정확한 설치 버전은 `frontend/package.json`과 lockfile을 기준으로 판단한다.
 
 ## 🗺️ Data Flow Architecture
 
 ```mermaid
 graph LR
-    A["Browser (User)"] --> B["Next.js Middleware<br/>(Auth / RBAC)"]
+    A["Browser (User)"] --> B["Next.js Proxy<br/>(Auth / RBAC)"]
     B --> C["Server Component<br/>(RSC)"]
     C --> D["ApiService<br/>(page 0→1 변환)"]
     D --> E["Spring Boot<br/>Controller (8080)"]
@@ -49,7 +49,7 @@ graph LR
 ## 🎨 Design System & UI Consistency
 - **Styling**: **Tailwind CSS 4**와 **디자인 토큰**을 기반으로 한 유틸리티 퍼스트 디자인.
 - **Rich Aesthetics**: `Framer Motion`을 활용한 마이크로 인터렉션과 `backdrop-blur` 등 프리미엄 시각 효과를 아키텍처적으로 지원합니다.
-- **Atomic Design**: 컴포넌트를 원자 단위로 분리하여 재사용성을 극대화하고, **컴포넌트 단위 테스트**(Vitest + Testing Library)와 **Playwright E2E** 로 품질을 검증합니다. *(2026-08-07: 종전 서술의 Storybook 은 제거됐다 — 21개 컴포넌트 중 2개만 커버하고 CI 실행 경로가 없어 검증 수단으로 기능하지 않았다. 프론트엔드 헌법 제14조 개정 참조.)*
+- **Component verification**: 재사용 컴포넌트는 Vitest + Testing Library로 계약을 검증하고, 화면의 실제 사용자 흐름은 required Playwright E2E에서 검증한다. 실행되지 않는 카탈로그를 품질 증거로 간주하지 않는다.
 
 ## 📁 Directory Structure
 ```text
@@ -63,4 +63,4 @@ src/
 ```
 
 ---
-*Last Updated: 2026-07-18 (Middleware Security & RBAC — Web Crypto JWT 서명·만료 검증 및 payload.role 게이팅 현행화)*
+*Verified against `frontend/package.json` and current proxy structure: 2026-08-19*

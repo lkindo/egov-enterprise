@@ -1,50 +1,42 @@
 ---
 name: zero-downtime-migration-planner
-description: >-
-  Database migration strategist skill. Triggers when adding, altering, or dropping DB schema objects.
-  Enforces the Expand-and-Contract pattern to guarantee zero-downtime PostgreSQL deployments.
-version: 1.0.0
+description: PostgreSQL 스키마 변경을 단계별 Expand–Migrate–Contract 배포와 검증 가능한 rollback 조건으로 설계한다.
+version: 2.0.0
 ---
 
-# Zero-Downtime Migration Planner Skill (Antigravity Native)
+# Zero-Downtime Migration Planner
 
-**Use this skill when:** Proposing or executing any changes to the PostgreSQL database schema (e.g., adding columns, renaming fields, dropping tables).
+## 사용 시점
 
----
+컬럼·테이블·constraint·index의 추가, rename, 타입 변경 또는 삭제를 설계할 때 사용한다. DB 표준 헌법과 `db-governance` 절차를 함께 적용한다.
 
-## 1. Core Objective: Unbreakable Persistence
+## 단계
 
-In an enterprise environment, `ALTER TABLE` can lock out users and cause systemic outages. The **Zero-Downtime Migration Planner** ensures that all schema changes follow the safe, phased "Expand and Contract" pattern.
+### 1. Expand
 
----
+- 기존 코드와 함께 동작하는 새 구조를 추가한다.
+- 신규 column의 nullable/default가 기존 write를 막지 않는지 확인한다.
+- 큰 테이블의 lock·rewrite·index build 비용을 추정한다.
 
-## 2. The Expand-and-Contract Ruleset (Per DB Constitution Article 7)
+### 2. Migrate
 
-Never execute destructive DDL (`DROP`, `RENAME`) directly. Follow this phases:
+- dual-read/write가 정말 필요한지 결정하고, 필요하면 종료 조건을 명시한다.
+- backfill은 chunk·재시도·관측·중단 후 재개가 가능해야 한다.
+- 구·신 데이터의 count뿐 아니라 constraint와 대표 값의 parity를 확인한다.
 
-### Phase 1: Expand (Add)
-- Add the new column/table alongside the old one.
-- *Rule*: New columns must be nullable or have a default value to not break legacy inserts.
+### 3. Contract
 
-### Phase 2: Migrate (Dual Write/Read)
-- Update the backend to write to BOTH the old and new columns.
-- Backfill historical data via an idempotent background script.
+- 새 애플리케이션이 배포되고 구 구조 사용이 0임을 증명한 뒤 후속 release에서 제거한다.
+- Expand와 Contract를 같은 Flyway 파일에 넣지 않는다.
+- rollback 또는 roll-forward 조건과 관측 기간을 기록한다.
 
-### Phase 3: Contract (Drop) - *Only in subsequent deployments*
-- Once the application strictly uses the new column, `DROP` the old column.
+## 검증 경계
 
-## 3. Execution via DB Bridge
-Before applying to the physical DB, you must validate the syntax using the local `db-bridge.js`. Wrap migrations in explicit `BEGIN; ... COMMIT;` blocks.
+- `node .agent/scripts/db-bridge.js`는 live metadata와 read-only SQL 조회용이다. DDL을 실행하거나 `BEGIN/COMMIT`으로 syntax를 검증하지 않는다.
+- DDL syntax·Flyway 순서는 격리된 PostgreSQL 테스트 환경과 `schemaValidation` 계열 테스트에서 검증한다.
+- 기존 `linter:ignore`는 안전성 증거가 아니다. 새 예외는 구조화된 사유·범위·만료/제거 조건 없이 추가하지 않는다.
+- “zero downtime”은 정적 lint 통과만으로 증명되지 않는다. 데이터량, lock, 배포 순서, 구버전 호환, 관측·rollback을 함께 확인한다.
 
-## 4. Output Requirements
+## 보고 형식
 
-```markdown
-### 💾 [ZERO-DOWNTIME MIGRATION REPORT] ###
-- **Target Table**: `TN_USER_MASTER`
-- **Operation**: Rename `USER_NM` to `MBR_NM`
-- **Expand-and-Contract Strategy**:
-  1. Add `MBR_NM` (Nullable).
-  2. Create DB Trigger to sync `USER_NM` -> `MBR_NM`.
-- **Status**: Safe DDL generated. Awaiting DBA/User approval to execute.
-##########################################
-```
+대상, 현재 구조, 각 release의 Expand/Migrate/Contract, lock·데이터 위험, rollback/roll-forward, 실행한 검증, 아직 확인하지 못한 운영 전제를 구분한다. 실제 실행은 사용자 승인과 운영 runbook 범위에서만 수행한다.

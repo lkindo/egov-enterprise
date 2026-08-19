@@ -1,7 +1,6 @@
 # 정체성 모델 사용 규약 가이드 (Identity Model Convention Guide)
 
-> **작성일**: 2026-07-15 · **등급**: L1 (단일 모듈 문서 보강)
-> **목적**: 시스템 전반에서 사용되는 두 가지 사용자 식별자(esntlId / loginId)의 **용도·경계·사용 규칙**을 성문화하여 정체성 footgun 재발을 방지한다.
+> **목적**: 시스템 전반에서 사용되는 두 가지 사용자 식별자(esntlId / loginId)의 **용도·경계·사용 규칙**을 성문화하여 정체성 축 혼동을 방지한다. 규범 원본은 [백엔드 헌법 제8조](../../.agent/knowledge/backend-api-constitution/artifacts/constitution.md)이며, 이 문서는 적용 예를 제공한다.
 
 ---
 
@@ -59,7 +58,7 @@ CustomUserDetails.getLoginId()  →  loginId  (getUserId의 가독성 별칭)
 |--------|--------|------|------|
 | `getCurrentEsntlId()` | `Optional<String>` — esntlId | Spring Security 내부, User PK 조회, **esntlId-축 도메인 소유권 비교**(§2.4) | **감사 컬럼·표준(frstRgtrId) 소유권에 사용 금지** |
 | `getCurrentLoginId()` | `Optional<String>` — loginId | 감사 컬럼 비교, 소유권 검증, 투표 식별 | **비즈니스 로직 기본값** |
-| ~~`getCurrentUserId()`~~ | ~~esntlId~~ | ~~사용 금지~~ | `@Deprecated` — `getCurrentEsntlId()`로 위임. **프로덕션 호출부 0건**(2026-07-15 전량 제거, esntlId 필요처는 `getCurrentEsntlId()`·audit 세팅은 `getCurrentLoginId()`로 이관). 하위호환 위해 시그니처만 잔존 |
+| ~~`getCurrentUserId()`~~ | ~~esntlId~~ | ~~사용 금지~~ | `@Deprecated` — 하위 호환 시그니처일 뿐이며 신규 호출은 `IdentityAxisLinterTest`가 차단한다. 의도를 드러내는 두 메서드 중 하나를 선택한다. |
 | `assertOwnerOrAdmin(ownerLoginId)` | void (예외 발생) | IDOR 방어 가드 | `getCurrentLoginId()` 기반 비교 |
 
 ---
@@ -139,10 +138,10 @@ entity.setSomeOwnerId(name); // esntlId가 저장됨
 
 새로운 비즈니스 도메인을 추가할 때 아래 항목을 확인한다:
 
-- [ ] 소유권 비교는 `SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId())`을 사용하는가?
-- [ ] DTO에서 작성자 ID를 표시할 때 `frstRgtrId`(=loginId)를 사용하는가?
-- [ ] 사용자 식별이 필요한 비즈니스 로직에서 `getCurrentLoginId()`를 사용하는가?
-- [ ] `getCurrentEsntlId()`를 감사/소유권 목적으로 사용하고 있지는 않은가?
+- [ ] 소유자 컬럼의 채움 지점을 확인해 해당 값이 loginId인지 esntlId인지 판정했는가?
+- [ ] 감사컬럼(`frstRgtrId`/`lastMdfrId`) 기반 소유권은 `SecurityUtil.assertOwnerOrAdmin(...)` 또는 `getCurrentLoginId()`로 비교하는가?
+- [ ] esntlId를 저장하는 도메인 고유 소유자 컬럼은 `getCurrentEsntlId()`로 같은 축을 비교하는가?
+- [ ] DTO에 노출하는 사용자 식별자가 제품 요구와 개인정보 경계에 맞는가?
 - [ ] `getCurrentUserId()`(Deprecated)를 호출하고 있지는 않은가?
 
 ---
@@ -158,4 +157,6 @@ entity.setSomeOwnerId(name); // esntlId가 저장됨
 
 ---
 
-**1줄 요약**: 감사 컬럼·소유권·비즈니스 식별에는 **loginId**(`getCurrentLoginId()`), Spring Security 내부·User PK 조회에는 **esntlId**(`getCurrentEsntlId()`)를 사용한다.
+**1줄 요약**: 감사 컬럼은 **loginId**를 사용하고, 도메인 소유권은 저장된 컬럼과 같은 축을 비교하며, Spring Security 내부·User PK 조회에는 **esntlId**를 사용한다.
+
+*Last reviewed against current sources: 2026-08-19.*

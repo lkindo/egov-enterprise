@@ -3,9 +3,9 @@
   "summary": "egov-enterprise 프로젝트의 프리미엄 UI/UX 및 프론트엔드 아키텍처 원칙입니다. Next.js 16, Tailwind 4 기반의 디자인 시스템과 성능 최적화 가이드를 포함합니다.",
   "category": "Design",
   "tags": ["Frontend", "UX", "Nextjs", "TailwindCSS", "RichAesthetics"],
-  "updatedAt": "2026-07-18T00:00:00Z",
+  "updatedAt": "2026-08-19T00:00:00Z",
   "references": [
-    "GEMINI.md",
+    "AGENTS.md",
     "docs/02-architecture/frontend-design-system.md",
     "docs/02-architecture/frontend-architecture.md",
     "docs/03-guides/design-tokens.md"
