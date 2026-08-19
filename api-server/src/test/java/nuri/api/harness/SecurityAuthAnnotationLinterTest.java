@@ -68,6 +68,9 @@ class SecurityAuthAnnotationLinterTest {
     private static final String POLICY_FILE = "config/governance/authorization-policies.json";
     private static final String RBAC_SEED_FILE =
             "api-server/src/main/resources/db/migration/V2_11__seed_authorization_chain.sql";
+    /** V2_84 — 설문 별칭 게이트 제거 계보(제품 결정 2026-08-20: 설문 제출 일반 개방). */
+    private static final String SURVEY_ALIAS_REMOVAL_SEED_FILE =
+            "api-server/src/main/resources/db/migration/V2_84__open_survey_alias_to_authenticated.sql";
     private static final String ROLE_HIERARCHY_SEED_FILE =
             "api-server/src/main/resources/db/migration/V2_3__seed_role_hierarchy.sql";
     private static final String MAIN_APPLICATION_FILE = "api-server/src/main/resources/application.yml";
@@ -90,7 +93,11 @@ class SecurityAuthAnnotationLinterTest {
      * 사라지는 방향이면 그것은 인가 <b>완화</b>이므로 별도 승인 없이 갱신하지 않는다.
      */
     private static final String READ_SURFACE_SHA256 =
-            "e561aba5dcafdfbe5ffbe007bd686df6015efd3eb1ec29c2a2ba4b2c0759afed";
+            // [2026-08-20 V2_84 갱신] 설문 별칭 GET 6행의 gate 가 RBAC_ALIAS_ADMIN_OR_SYSTEM →
+            // DEFAULT_AUTHENTICATED 로 바뀌고 메서드 SpEL 이 부여됐다(목록·상세·문항·stats 는
+            // isAuthenticated — 제품 결정에 따른 의도된 개방 / 템플릿 2행은 hasAnyRole 로 관리 유지).
+            // 관리자 경로 공개 노출 하드 불변식은 계속 그린이다. endpoint 수 166 불변.
+            "4507921093ed47ec745e2efeafee73401cfb94450e7a611c8611e2dda8b79fb1";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;
@@ -538,6 +545,19 @@ class SecurityAuthAnnotationLinterTest {
         String hierarchy = normalizedSource(resolveFromRepoRoot(ROLE_HIERARCHY_SEED_FILE));
         if (!hierarchy.contains(normalize("('ROLE_SYSTEM', 'ROLE_ADMIN', 'SYSTEM')"))) {
             violations.add("ROLE_SYSTEM > ROLE_ADMIN hierarchy seed 소실 — ADMIN_ROLE_WITH_HIERARCHY 의미 drift");
+        }
+
+        // [2026-08-20 V2_84] 위 V2_11 토큰은 파일 계보(불변 마이그레이션)의 사실이고, DB 의 현재
+        // 상태는 V2_84 가 전진시켰다 — 설문 별칭 게이트 제거(제품 결정: 설문 제출 일반 개방).
+        // V2_84 가 사라지면 registry 의 DEFAULT_AUTHENTICATED 선언과 DB 상태가 어긋나므로
+        // 제거 계보 자체를 여기에 결속한다.
+        String surveyOpen = normalizedSource(resolveFromRepoRoot(SURVEY_ALIAS_REMOVAL_SEED_FILE));
+        for (String token : List.of(
+                "DELETE FROM public.tb_role_prgrm_map WHERE prgrm_file_nm = 'ADMIN_SURVEY_ALIAS'",
+                "DELETE FROM public.tb_prgrm_lst WHERE prgrm_file_nm = 'ADMIN_SURVEY_ALIAS'")) {
+            if (!surveyOpen.contains(normalize(token))) {
+                violations.add("V2_84 설문 별칭 게이트 제거 token 소실: " + token);
+            }
         }
     }
 

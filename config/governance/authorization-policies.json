@@ -716,7 +716,7 @@
       "path": "/api/v1/admin/system/surveys",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertSurvey",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -724,7 +724,7 @@
       "path": "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteItem",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -732,7 +732,7 @@
       "path": "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateItem",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -740,7 +740,7 @@
       "path": "/api/v1/admin/system/surveys/questions/{srvyQstnSn}/items",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertItem",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -748,7 +748,7 @@
       "path": "/api/v1/admin/system/surveys/templates",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertTemplate",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -756,7 +756,7 @@
       "path": "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteTemplate",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -764,7 +764,7 @@
       "path": "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateTemplate",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -772,7 +772,7 @@
       "path": "/api/v1/admin/system/surveys/{srvySn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteSurvey",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -780,7 +780,7 @@
       "path": "/api/v1/admin/system/surveys/{srvySn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateSurvey",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -788,7 +788,7 @@
       "path": "/api/v1/admin/system/surveys/{srvySn}/questions",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertQuestion",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -796,7 +796,7 @@
       "path": "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteQuestion",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -804,7 +804,7 @@
       "path": "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateQuestion",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -1440,104 +1440,104 @@
       "path": "/api/v1/surveys",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertSurvey",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "DELETE",
       "path": "/api/v1/surveys/questions/items/{srvyArtclSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteItem",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "PUT",
       "path": "/api/v1/surveys/questions/items/{srvyArtclSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateItem",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "POST",
       "path": "/api/v1/surveys/questions/{srvyQstnSn}/items",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertItem",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "POST",
       "path": "/api/v1/surveys/templates",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertTemplate",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "DELETE",
       "path": "/api/v1/surveys/templates/{srvyTmpltSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteTemplate",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "PUT",
       "path": "/api/v1/surveys/templates/{srvyTmpltSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateTemplate",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "DELETE",
       "path": "/api/v1/surveys/{srvySn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteSurvey",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "PUT",
       "path": "/api/v1/surveys/{srvySn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateSurvey",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "POST",
       "path": "/api/v1/surveys/{srvySn}/questions",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertQuestion",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "DELETE",
       "path": "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteQuestion",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "PUT",
       "path": "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateQuestion",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "POST",
       "path": "/api/v1/surveys/{srvySn}/responses",
       "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveySubmissionApiController#submit",
-      "policy": "ADMIN_OR_SYSTEM",
+      "policy": "AUTHENTICATED",
       "methodSecurity": "isAuthenticated()",
-      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+      "routeGate": "DEFAULT_AUTHENTICATED"
     },
     {
       "method": "PUT",

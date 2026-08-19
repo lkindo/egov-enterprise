@@ -91,6 +91,10 @@
       "description": "로그인 로그 관리 API (Admin)"
     },
     {
+      "name": "Survey",
+      "description": "설문 관리 API (관리는 ADMIN/SYSTEM, 열람은 인증 사용자)"
+    },
+    {
       "name": "MenuAdmin",
       "description": "시스템 메뉴 관리 API (Admin)"
     },
@@ -101,10 +105,6 @@
     {
       "name": "BoardMaster",
       "description": "게시판 마스터 관리 API (Admin)"
-    },
-    {
-      "name": "Survey",
-      "description": "설문 관리 API (Admin)"
     },
     {
       "name": "User Group Management",
