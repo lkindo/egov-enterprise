@@ -19,6 +19,45 @@ function withoutComments(source: string): string {
     .replace(/(^|\n)\s*\/\/[^\n]*/g, '$1');
 }
 
+/**
+ * `click({ force: true })` 는 Playwright 의 actionability 검사(가시성·안정성·enabled·
+ * 포인터 이벤트 수신)를 통째로 건너뛴다. 즉 **오버레이에 가려 실제 사용자는 누를 수 없는 버튼도
+ * 테스트는 통과시킨다** — 이 저장소가 반복해서 제거해 온 false-green 계열이다.
+ *
+ * 이미 있는 사용처를 한 번에 걷어내는 것은 별개의 작업이므로, blind-wait 과 같은 방식으로
+ * **하향 전용 래칫**을 건다: 늘리면 red, 줄이면 상수를 낮춰 되돌릴 수 없게 만든다.
+ * 정말 force 가 필요한 자리가 생기면 상수를 올리지 말고, 왜 정상 클릭이 불가능한지를 먼저 밝힐 것.
+ */
+const FORCE_CLICK_BASELINE = 16;
+
+describe('E2E force-click 하향 래칫', () => {
+  it('force 클릭 사용처가 baseline 을 넘지 않는다', () => {
+    const offenders = filesEndingWith(join(FRONTEND_DIR, 'e2e'), '.ts').flatMap(path => {
+      const source = withoutComments(readFileSync(path, 'utf8'));
+      return [...source.matchAll(/force\s*:\s*true/g)].map(match => ({
+        file: path.replace(FRONTEND_DIR, '').replace(/\\/g, '/'),
+        line: source.slice(0, match.index).split('\n').length,
+      }));
+    });
+
+    expect(
+      offenders.length,
+      [
+        `force 클릭이 baseline(${FORCE_CLICK_BASELINE})을 넘었습니다: ${offenders.length}건.`,
+        'force 는 actionability 검사를 건너뛰므로, 실제로는 누를 수 없는 요소도 통과시킵니다.',
+        '정상 클릭이 불가능한 원인(오버레이·애니메이션·hover 노출)을 먼저 해결할 것:',
+        ...offenders.map(({ file, line }) => `  ${file}:${line}`),
+      ].join('\n'),
+    ).toBeLessThanOrEqual(FORCE_CLICK_BASELINE);
+
+    // 개선분을 정본에 반영하지 않으면 래칫이 조용히 되감긴다.
+    expect(
+      offenders.length,
+      `force 클릭이 ${offenders.length}건으로 줄었습니다 — FORCE_CLICK_BASELINE 을 그 값으로 낮추십시오.`,
+    ).toBe(FORCE_CLICK_BASELINE);
+  });
+});
+
 describe('E2E harness dead-asset contract', () => {
   it('소비자가 없는 POM/fixture를 다시 싣지 않는다', () => {
     const removedAssets = [

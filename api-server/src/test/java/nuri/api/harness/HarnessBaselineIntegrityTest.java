@@ -105,6 +105,27 @@ class HarnessBaselineIntegrityTest {
     private static final String HOOKS_KEY_PREFIX = "__hooks.";
 
     /**
+     * 게이트 판정의 근거 데이터를 담은 registry.
+     *
+     * <p>[왜 필요한가] 이 메타 린터는 원래 <b>Java 상수</b>만 해시했다. 그런데 동결 census 가
+     * 상수에서 JSON registry 로 이관되면서(인가 가드 census 42건 → {@code authorization-policies.json},
+     * ZDM 예외 → {@code zdm-waivers.json}, 게이트 목록·품질 하한 → {@code gates.json}) 그 목록의 편집이
+     * 매니페스트 diff 에 <b>전혀 남지 않게</b> 됐다. 즉 "목록을 손대면 서로 다른 두 파일이 함께 바뀌어
+     * diff 에 의도가 드러난다" 는 이 린터의 설계 목적이 이관된 만큼 무력화돼 있었다.
+     *
+     * <p>훅과 같은 방식으로 내용 해시를 동결한다. 목적은 편집을 <b>막는 것이 아니라 조용할 수 없게</b>
+     * 만드는 것이다 — registry 를 고치면 매니페스트도 함께 고쳐야 하고, 그 두 줄이 diff 에 남는다.
+     * 파일이 사라진 것도 위반이다: registry 부재는 그것을 읽는 게이트를 통째로 무력화한다.
+     */
+    private static final List<String> GATE_REGISTRIES = List.of(
+            "config/governance/authorization-policies.json",
+            "config/governance/gates.json",
+            "config/governance/zdm-waivers.json");
+
+    /** registry 해시 키 접두 — {@code __registry.<저장소 상대경로>} */
+    private static final String REGISTRY_KEY_PREFIX = "__registry.";
+
+    /**
      * 스캔 대상: 게이트 판정에 관여하는 {@code static final} 상수 선언.
      * <p>목록(Set/List/Collection/Map)뿐 아니라 <b>경로·스캔 베이스 문자열과 정규식(Pattern)</b>도 포함한다 —
      * 스캔 루트를 빈 경로로 바꾸거나 탐지 정규식을 무력하게 고치는 것도 동일한 은폐이기 때문이다.
@@ -172,6 +193,18 @@ class HarnessBaselineIntegrityTest {
             actual.put(hookKey, sha256Short(content));
         }
 
+        // 게이트 판정 근거 registry 도 같은 방식으로 동결한다. GATE_REGISTRIES javadoc 참조.
+        for (String registry : GATE_REGISTRIES) {
+            Path registryPath = resolve(registry);
+            String registryKey = REGISTRY_KEY_PREFIX + registry;
+            if (!Files.isRegularFile(registryPath)) {
+                actual.put(registryKey, "MISSING");
+                continue;
+            }
+            String content = HarnessSourceIndex.read(registryPath).replace("\r\n", "\n");
+            actual.put(registryKey, sha256Short(content));
+        }
+
         Properties expected = new Properties();
         if (Files.exists(manifestPath)) {
             try (var reader = Files.newBufferedReader(manifestPath, StandardCharsets.UTF_8)) {
@@ -193,13 +226,23 @@ class HarnessBaselineIntegrityTest {
             }
             String exp = expected.getProperty(e.getKey());
             boolean isHook = e.getKey().startsWith(HOOKS_KEY_PREFIX);
+            boolean isRegistry = e.getKey().startsWith(REGISTRY_KEY_PREFIX);
             if (exp == null) {
                 violations.add(isHook
                         ? "신설 감지 — 매니페스트에 없는 훅: " + e.getKey() + " (" + e.getValue() + ")"
+                        : isRegistry
+                        ? "신설 감지 — 매니페스트에 없는 게이트 registry: " + e.getKey() + " (" + e.getValue() + ")"
                         : "신설 감지 — 매니페스트에 없는 동결/예외 목록: " + e.getKey()
                                 + " (" + e.getValue() + "). 예외 목록의 '신설' 은 신호 은폐의 대표 수법입니다.");
             } else if (!exp.trim().equals(e.getValue())) {
-                if (isHook) {
+                if (isRegistry) {
+                    violations.add("registry 변경 감지 — " + e.getKey() + ": 매니페스트=" + exp.trim()
+                            + " ↔ 실제=" + e.getValue()
+                            + ("MISSING".equals(e.getValue())
+                                    ? " (registry 가 사라졌습니다 — 이를 읽는 게이트가 통째로 무력화됩니다)"
+                                    : " (게이트 판정의 근거 데이터입니다. 동결 census·예외 목록을 이 파일에서 고치면"
+                                            + " 매니페스트도 함께 갱신해야 하며, 그 두 줄이 diff 에 의도를 남깁니다.)"));
+                } else if (isHook) {
                     violations.add("훅 변경 감지 — " + e.getKey() + ": 매니페스트=" + exp.trim()
                             + " ↔ 실제=" + e.getValue()
                             + ("MISSING".equals(e.getValue())
