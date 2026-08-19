@@ -5,56 +5,146 @@
   "executionProfiles": [
     {
       "id": "EXEC-BACKEND-COVERAGE",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "./gradlew jacocoRootCoverageVerification",
       "bindings": [
-        { "source": "scripts/verify.mjs", "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);", "tiers": ["local-full"] },
-        { "source": ".github/workflows/ci.yml", "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log", "tiers": ["ci"] }
+        {
+          "source": "scripts/verify.mjs",
+          "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
+          "tiers": [
+            "local-full"
+          ]
+        },
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
+          "tiers": [
+            "ci"
+          ]
+        }
       ]
     },
     {
       "id": "EXEC-BACKEND-MUTATION",
-      "tier": ["ci"],
+      "tier": [
+        "ci"
+      ],
       "command": "STRICT_MUTATION=true ./gradlew :module:pitest",
       "bindings": [
-        { "source": ".github/workflows/ci.yml", "fragment": "run: ./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain", "tiers": ["ci"] }
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "run: ./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain",
+          "tiers": [
+            "ci"
+          ]
+        }
       ]
     },
     {
       "id": "EXEC-FOUNDATION-COVERAGE",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "./gradlew :foundation:check",
       "bindings": [
-        { "source": "build.gradle", "fragment": "':business-core:test', ':business-app:test', ':foundation:check',", "tiers": ["local-full"] },
-        { "source": ".github/workflows/ci.yml", "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log", "tiers": ["ci"] }
+        {
+          "source": "build.gradle",
+          "fragment": "':business-core:test', ':business-app:test', ':foundation:check',",
+          "tiers": [
+            "local-full"
+          ]
+        },
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
+          "tiers": [
+            "ci"
+          ]
+        }
       ]
     },
     {
       "id": "EXEC-FRONTEND-COVERAGE",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run test:coverage",
       "bindings": [
-        { "source": "scripts/verify.mjs", "fragment": "run('pnpm -C frontend run test:coverage');", "tiers": ["local-full"] },
-        { "source": ".github/workflows/ci.yml", "fragment": "pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log", "tiers": ["ci"] }
+        {
+          "source": "scripts/verify.mjs",
+          "fragment": "run('pnpm -C frontend run test:coverage');",
+          "tiers": [
+            "local-full"
+          ]
+        },
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log",
+          "tiers": [
+            "ci"
+          ]
+        }
       ]
     },
     {
       "id": "EXEC-FRONTEND-LINT",
-      "tier": ["pre-push", "local-full", "ci"],
+      "tier": [
+        "pre-push",
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run lint",
       "bindings": [
-        { "source": ".githooks/pre-push", "fragment": "( cd frontend && pnpm run lint ) \\", "tiers": ["pre-push"] },
-        { "source": "scripts/verify.mjs", "fragment": "run('pnpm -C frontend run lint');", "tiers": ["local-full"] },
-        { "source": ".github/workflows/ci.yml", "fragment": "run: pnpm run lint", "tiers": ["ci"] }
+        {
+          "source": ".githooks/pre-push",
+          "fragment": "( cd frontend && pnpm run lint ) \\",
+          "tiers": [
+            "pre-push"
+          ]
+        },
+        {
+          "source": "scripts/verify.mjs",
+          "fragment": "run('pnpm -C frontend run lint');",
+          "tiers": [
+            "local-full"
+          ]
+        },
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "run: pnpm run lint",
+          "tiers": [
+            "ci"
+          ]
+        }
       ]
     },
     {
       "id": "EXEC-FRONTEND-BUNDLE",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run bundle:check",
       "bindings": [
-        { "source": "scripts/verify.mjs", "fragment": "run('pnpm -C frontend run bundle:check');", "tiers": ["local-full"] },
-        { "source": ".github/workflows/ci.yml", "fragment": "pnpm run bundle:check", "tiers": ["ci"] }
+        {
+          "source": "scripts/verify.mjs",
+          "fragment": "run('pnpm -C frontend run bundle:check');",
+          "tiers": [
+            "local-full"
+          ]
+        },
+        {
+          "source": ".github/workflows/ci.yml",
+          "fragment": "pnpm run bundle:check",
+          "tiers": [
+            "ci"
+          ]
+        }
       ]
     }
   ],
@@ -62,7 +152,10 @@
     {
       "id": "POPULATION-BACKEND-JACOCO",
       "source": "build.gradle",
-      "selector": { "type": "gradle-list-assignment", "name": "jacocoAggregateExcludes" },
+      "selector": {
+        "type": "gradle-list-assignment",
+        "name": "jacocoAggregateExcludes"
+      },
       "exclude": [
         "**/Q*.class",
         "**/Q*Entity.class",
@@ -101,7 +194,9 @@
     {
       "id": "POPULATION-FRONTEND-VITEST",
       "source": "frontend/vitest.config.mts",
-      "selector": { "type": "vitest-coverage-population" },
+      "selector": {
+        "type": "vitest-coverage-population"
+      },
       "include": [
         "src/app/**",
         "src/components/**",
@@ -144,7 +239,9 @@
     {
       "id": "POPULATION-BACKEND-PIT",
       "source": "build.gradle",
-      "selector": { "type": "gradle-pitest-population" },
+      "selector": {
+        "type": "gradle-pitest-population"
+      },
       "excludedClasses": [
         "nuri.foundation.core.config.*",
         "nuri.foundation.core.exception.*",
@@ -186,17 +283,63 @@
         "type": "java-class-annotation",
         "annotation": "Tag",
         "value": "governance-harness",
-        "roots": ["api-server/src/test/java/nuri/api/harness"],
+        "roots": [
+          "api-server/src/test/java/nuri/api/harness"
+        ],
         "executionBindings": [
-          { "source": "api-server/build.gradle", "fragment": "tasks.register('harnessTest', Test) {", "tiers": ["local-full", "ci"] },
-          { "source": "api-server/build.gradle", "fragment": "useJUnitPlatform { includeTags 'governance-harness' }", "tiers": ["local-full", "ci"] },
-          { "source": "api-server/build.gradle", "fragment": "useJUnitPlatform { excludeTags 'governance-harness', 'schema-validation' }", "tiers": ["local-full", "ci"] },
-          { "source": "api-server/build.gradle", "fragment": "dependsOn tasks.named('harnessTest')", "tiers": ["local-full", "ci"] },
-          { "source": ".githooks/pre-push", "fragment": "./gradlew :api-server:harnessTest -q \\", "tiers": ["pre-push"] },
-          { "source": "scripts/verify.mjs", "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);", "tiers": ["local-full"] }
+          {
+            "source": "api-server/build.gradle",
+            "fragment": "tasks.register('harnessTest', Test) {",
+            "tiers": [
+              "local-full",
+              "ci"
+            ]
+          },
+          {
+            "source": "api-server/build.gradle",
+            "fragment": "useJUnitPlatform { includeTags 'governance-harness' }",
+            "tiers": [
+              "local-full",
+              "ci"
+            ]
+          },
+          {
+            "source": "api-server/build.gradle",
+            "fragment": "useJUnitPlatform { excludeTags 'governance-harness', 'schema-validation' }",
+            "tiers": [
+              "local-full",
+              "ci"
+            ]
+          },
+          {
+            "source": "api-server/build.gradle",
+            "fragment": "dependsOn tasks.named('harnessTest')",
+            "tiers": [
+              "local-full",
+              "ci"
+            ]
+          },
+          {
+            "source": ".githooks/pre-push",
+            "fragment": "./gradlew :api-server:harnessTest -q \\",
+            "tiers": [
+              "pre-push"
+            ]
+          },
+          {
+            "source": "scripts/verify.mjs",
+            "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
+            "tiers": [
+              "local-full"
+            ]
+          }
         ]
       },
-      "tier": ["pre-push", "local-full", "ci"],
+      "tier": [
+        "pre-push",
+        "local-full",
+        "ci"
+      ],
       "task": ":api-server:harnessTest",
       "category": "governance",
       "owner": "backend-platform",
@@ -207,42 +350,151 @@
         "config/governance/authorization-policies.json",
         "config/governance/zdm-waivers.json"
       ],
-      "evidence": ["api-server/build/test-results/harnessTest"],
+      "evidence": [
+        "api-server/build/test-results/harnessTest"
+      ],
       "redProof": "Remove a listed class tag or registry rule, add an unregistered free-form ZDM ignore, or expire a ZDM reviewBy; the governance contracts must fail closed.",
       "rules": [
-        { "id": "GH-API-DOCS-PATH-COVERAGE", "source": "api-server/src/test/java/nuri/api/harness/ApiDocsPathCoverageLinterTest.java" },
-        { "id": "GH-API-DOCS-SCHEMA-FIELD", "source": "api-server/src/test/java/nuri/api/harness/ApiDocsSchemaFieldLinterTest.java" },
-        { "id": "GH-ASYNC-TRANSACTIONAL-LISTENER", "source": "api-server/src/test/java/nuri/api/harness/AsyncTransactionalListenerArchTest.java" },
-        { "id": "GH-ATTACHMENT-SOURCE-REGISTRY", "source": "api-server/src/test/java/nuri/api/harness/AttachmentSourceRegistryLinterTest.java" },
-        { "id": "GH-CACHING-INVALIDATION-MATRIX", "source": "api-server/src/test/java/nuri/api/harness/CachingInvalidationMatrixLinterTest.java" },
-        { "id": "GH-CONFIG-SAFETY", "source": "api-server/src/test/java/nuri/api/harness/ConfigSafetyLinterTest.java" },
-        { "id": "GH-CONTROLLER-SCAN-BASE", "source": "api-server/src/test/java/nuri/api/harness/ControllerScanBaseLinterTest.java" },
-        { "id": "GH-DOCKERFILE-PACKAGE-MANAGER", "source": "api-server/src/test/java/nuri/api/harness/DockerfilePackageManagerLinterTest.java" },
-        { "id": "GH-ENTITY-LOMBOK-SOURCE", "source": "api-server/src/test/java/nuri/api/harness/EntityLombokSourceLinterTest.java" },
-        { "id": "GH-ENTITY-SCHEMA-CONFORMANCE", "source": "api-server/src/test/java/nuri/api/harness/EntitySchemaConformanceLinterTest.java" },
-        { "id": "GH-HANDLER-REACHES-SERVICE", "source": "api-server/src/test/java/nuri/api/harness/HandlerReachesServiceLinterTest.java" },
-        { "id": "GH-HARNESS-BASELINE-INTEGRITY", "source": "api-server/src/test/java/nuri/api/harness/HarnessBaselineIntegrityTest.java" },
-        { "id": "GH-HARNESS-SOURCE-ACCESS-CONTRACT", "source": "api-server/src/test/java/nuri/api/harness/HarnessSourceAccessContractTest.java" },
-        { "id": "GH-SHARED-POSTGRES-MIGRATION-HARNESS", "source": "api-server/src/test/java/nuri/api/harness/SharedPostgresMigrationHarnessContractTest.java" },
-        { "id": "GH-HIBERNATE-PROPERTY-BINDING", "source": "api-server/src/test/java/nuri/api/harness/HibernatePropertyBindingLinterTest.java" },
-        { "id": "GH-IDENTITY-AXIS", "source": "api-server/src/test/java/nuri/api/harness/IdentityAxisLinterTest.java" },
-        { "id": "GH-INPUT-CONTRACT-MIRROR", "source": "api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java" },
-        { "id": "GH-PAGEABLE-CONSTRUCTION", "source": "api-server/src/test/java/nuri/api/harness/PageableConstructionLinterTest.java" },
-        { "id": "GH-PK-GENERATION-STANDARD", "source": "api-server/src/test/java/nuri/api/harness/PkGenerationStandardLinterTest.java" },
-        { "id": "GH-QUERYDSL-DYNAMIC-PATH", "source": "api-server/src/test/java/nuri/api/harness/QuerydslDynamicPathLinterTest.java" },
-        { "id": "GH-SCHEMA-NAMING", "source": "api-server/src/test/java/nuri/api/harness/SchemaNamingLinterTest.java" },
-        { "id": "GH-SECRET-LITERAL", "source": "api-server/src/test/java/nuri/api/harness/SecretLiteralLinterTest.java" },
-        { "id": "GH-SECURE-PATHS-DECLARATION-SYNC", "source": "api-server/src/test/java/nuri/api/harness/SecurePathsDeclarationSyncLinterTest.java" },
-        { "id": "GH-SECURITY-AUTHORIZATION-POLICY-MATRIX", "source": "api-server/src/test/java/nuri/api/harness/SecurityAuthAnnotationLinterTest.java" },
-        { "id": "GH-SEED-LOCATION", "source": "api-server/src/test/java/nuri/api/harness/SeedLocationLinterTest.java" },
-        { "id": "GH-SERVICE-READ-ONLY-TRANSACTIONAL", "source": "api-server/src/test/java/nuri/api/harness/ServiceReadOnlyTransactionalLinterTest.java" },
-        { "id": "GH-SIGNUP-CONTRACT", "source": "api-server/src/test/java/nuri/api/harness/SignupContractLinterTest.java" },
-        { "id": "GH-SPRINGDOC-DECLARATION-SYNC", "source": "api-server/src/test/java/nuri/api/harness/SpringdocDeclarationSyncLinterTest.java" },
-        { "id": "GH-TEST-SECURITY-CHAIN-OVERRIDE", "source": "api-server/src/test/java/nuri/api/harness/TestSecurityChainOverrideLinterTest.java" },
-        { "id": "GH-UNIQUE-CONSTRAINT-MIRROR", "source": "api-server/src/test/java/nuri/api/harness/UniqueConstraintMirrorLinterTest.java" },
-        { "id": "GH-UNREACHABLE-SERVICE", "source": "api-server/src/test/java/nuri/api/harness/UnreachableServiceLinterTest.java" },
-        { "id": "GH-WORKFLOW-MANIFEST", "source": "api-server/src/test/java/nuri/api/harness/WorkflowManifestLinterTest.java" },
-        { "id": "GH-ZERO-DOWNTIME-MIGRATION", "source": "api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java" }
+        {
+          "id": "GH-API-DOCS-PATH-COVERAGE",
+          "source": "api-server/src/test/java/nuri/api/harness/ApiDocsPathCoverageLinterTest.java"
+        },
+        {
+          "id": "GH-API-DOCS-SCHEMA-FIELD",
+          "source": "api-server/src/test/java/nuri/api/harness/ApiDocsSchemaFieldLinterTest.java"
+        },
+        {
+          "id": "GH-ASYNC-TRANSACTIONAL-LISTENER",
+          "source": "api-server/src/test/java/nuri/api/harness/AsyncTransactionalListenerArchTest.java"
+        },
+        {
+          "id": "GH-ATTACHMENT-SOURCE-REGISTRY",
+          "source": "api-server/src/test/java/nuri/api/harness/AttachmentSourceRegistryLinterTest.java"
+        },
+        {
+          "id": "GH-CACHING-INVALIDATION-MATRIX",
+          "source": "api-server/src/test/java/nuri/api/harness/CachingInvalidationMatrixLinterTest.java"
+        },
+        {
+          "id": "GH-CONFIG-SAFETY",
+          "source": "api-server/src/test/java/nuri/api/harness/ConfigSafetyLinterTest.java"
+        },
+        {
+          "id": "GH-CONTROLLER-SCAN-BASE",
+          "source": "api-server/src/test/java/nuri/api/harness/ControllerScanBaseLinterTest.java"
+        },
+        {
+          "id": "GH-CROSS-DOMAIN-COUPLING",
+          "source": "api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java"
+        },
+        {
+          "id": "GH-DOCKERFILE-PACKAGE-MANAGER",
+          "source": "api-server/src/test/java/nuri/api/harness/DockerfilePackageManagerLinterTest.java"
+        },
+        {
+          "id": "GH-ENTITY-LOMBOK-SOURCE",
+          "source": "api-server/src/test/java/nuri/api/harness/EntityLombokSourceLinterTest.java"
+        },
+        {
+          "id": "GH-ENTITY-SCHEMA-CONFORMANCE",
+          "source": "api-server/src/test/java/nuri/api/harness/EntitySchemaConformanceLinterTest.java"
+        },
+        {
+          "id": "GH-HANDLER-REACHES-SERVICE",
+          "source": "api-server/src/test/java/nuri/api/harness/HandlerReachesServiceLinterTest.java"
+        },
+        {
+          "id": "GH-HARNESS-BASELINE-INTEGRITY",
+          "source": "api-server/src/test/java/nuri/api/harness/HarnessBaselineIntegrityTest.java"
+        },
+        {
+          "id": "GH-HARNESS-SOURCE-ACCESS-CONTRACT",
+          "source": "api-server/src/test/java/nuri/api/harness/HarnessSourceAccessContractTest.java"
+        },
+        {
+          "id": "GH-HIBERNATE-PROPERTY-BINDING",
+          "source": "api-server/src/test/java/nuri/api/harness/HibernatePropertyBindingLinterTest.java"
+        },
+        {
+          "id": "GH-IDENTITY-AXIS",
+          "source": "api-server/src/test/java/nuri/api/harness/IdentityAxisLinterTest.java"
+        },
+        {
+          "id": "GH-INPUT-CONTRACT-MIRROR",
+          "source": "api-server/src/test/java/nuri/api/harness/InputContractMirrorLinterTest.java"
+        },
+        {
+          "id": "GH-PAGEABLE-CONSTRUCTION",
+          "source": "api-server/src/test/java/nuri/api/harness/PageableConstructionLinterTest.java"
+        },
+        {
+          "id": "GH-PK-GENERATION-STANDARD",
+          "source": "api-server/src/test/java/nuri/api/harness/PkGenerationStandardLinterTest.java"
+        },
+        {
+          "id": "GH-QUERYDSL-DYNAMIC-PATH",
+          "source": "api-server/src/test/java/nuri/api/harness/QuerydslDynamicPathLinterTest.java"
+        },
+        {
+          "id": "GH-RESPONSE-CONTRACT",
+          "source": "api-server/src/test/java/nuri/api/harness/ResponseContractLinterTest.java"
+        },
+        {
+          "id": "GH-SCHEMA-NAMING",
+          "source": "api-server/src/test/java/nuri/api/harness/SchemaNamingLinterTest.java"
+        },
+        {
+          "id": "GH-SECRET-LITERAL",
+          "source": "api-server/src/test/java/nuri/api/harness/SecretLiteralLinterTest.java"
+        },
+        {
+          "id": "GH-SECURE-PATHS-DECLARATION-SYNC",
+          "source": "api-server/src/test/java/nuri/api/harness/SecurePathsDeclarationSyncLinterTest.java"
+        },
+        {
+          "id": "GH-SECURITY-AUTHORIZATION-POLICY-MATRIX",
+          "source": "api-server/src/test/java/nuri/api/harness/SecurityAuthAnnotationLinterTest.java"
+        },
+        {
+          "id": "GH-SEED-LOCATION",
+          "source": "api-server/src/test/java/nuri/api/harness/SeedLocationLinterTest.java"
+        },
+        {
+          "id": "GH-SERVICE-READ-ONLY-TRANSACTIONAL",
+          "source": "api-server/src/test/java/nuri/api/harness/ServiceReadOnlyTransactionalLinterTest.java"
+        },
+        {
+          "id": "GH-SHARED-POSTGRES-MIGRATION-HARNESS",
+          "source": "api-server/src/test/java/nuri/api/harness/SharedPostgresMigrationHarnessContractTest.java"
+        },
+        {
+          "id": "GH-SIGNUP-CONTRACT",
+          "source": "api-server/src/test/java/nuri/api/harness/SignupContractLinterTest.java"
+        },
+        {
+          "id": "GH-SPRINGDOC-DECLARATION-SYNC",
+          "source": "api-server/src/test/java/nuri/api/harness/SpringdocDeclarationSyncLinterTest.java"
+        },
+        {
+          "id": "GH-TEST-SECURITY-CHAIN-OVERRIDE",
+          "source": "api-server/src/test/java/nuri/api/harness/TestSecurityChainOverrideLinterTest.java"
+        },
+        {
+          "id": "GH-UNIQUE-CONSTRAINT-MIRROR",
+          "source": "api-server/src/test/java/nuri/api/harness/UniqueConstraintMirrorLinterTest.java"
+        },
+        {
+          "id": "GH-UNREACHABLE-SERVICE",
+          "source": "api-server/src/test/java/nuri/api/harness/UnreachableServiceLinterTest.java"
+        },
+        {
+          "id": "GH-WORKFLOW-MANIFEST",
+          "source": "api-server/src/test/java/nuri/api/harness/WorkflowManifestLinterTest.java"
+        },
+        {
+          "id": "GH-ZERO-DOWNTIME-MIGRATION",
+          "source": "api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java"
+        }
       ]
     },
     {
@@ -258,13 +510,40 @@
           "foundation/src/test/java"
         ],
         "executionBindings": [
-          { "source": "build.gradle", "fragment": "useJUnitPlatform()", "tiers": ["local-full", "ci"] },
-          { "source": "scripts/verify.mjs", "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);", "tiers": ["local-full"] },
-          { "source": ".github/workflows/ci.yml", "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log", "tiers": ["ci"] }
+          {
+            "source": "build.gradle",
+            "fragment": "useJUnitPlatform()",
+            "tiers": [
+              "local-full",
+              "ci"
+            ]
+          },
+          {
+            "source": "scripts/verify.mjs",
+            "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
+            "tiers": [
+              "local-full"
+            ]
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "./gradlew build jacocoRootCoverageVerification check -Dopenapi.export.path=api-docs.json --warning-mode fail --console=plain 2>&1 | tee /tmp/build-and-test.log",
+            "tiers": [
+              "ci"
+            ]
+          }
         ]
       },
-      "tier": ["local-full", "ci"],
-      "task": [":api-server:test", ":business-app:test", ":business-core:test", ":foundation:test"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
+      "task": [
+        ":api-server:test",
+        ":business-app:test",
+        ":business-core:test",
+        ":foundation:test"
+      ],
       "category": "architecture",
       "owner": "architecture",
       "requiredCiContext": "backend-build",
@@ -282,16 +561,46 @@
       ],
       "redProof": "Remove an @ArchTag or registry rule; the exact architecture census must fail.",
       "rules": [
-        { "id": "ARCH-API-SERVER-BOUNDARIES", "source": "api-server/src/test/java/nuri/ArchitectureTest.java" },
-        { "id": "ARCH-BUSINESS-APP-BOUNDARIES", "source": "business-app/src/test/java/nuri/business/ArchitectureTest.java" },
-        { "id": "ARCH-BUSINESS-APP-DOMAIN-ISOLATION", "source": "business-app/src/test/java/nuri/business/DomainIsolationTest.java" },
-        { "id": "ARCH-BUSINESS-APP-ENTITY-CONVENTION", "source": "business-app/src/test/java/nuri/business/architecture/EntityConventionArchTest.java" },
-        { "id": "ARCH-BUSINESS-APP-JPA", "source": "business-app/src/test/java/nuri/business/architecture/JpaArchitectureTest.java" },
-        { "id": "ARCH-BUSINESS-CORE-BOUNDARIES", "source": "business-core/src/test/java/nuri/business/ArchitectureTest.java" },
-        { "id": "ARCH-BUSINESS-CORE-SERVICE-LAYER-ISOLATION", "source": "business-core/src/test/java/nuri/business/ServiceLayerIsolationTest.java" },
-        { "id": "ARCH-BUSINESS-CORE-ENTITY-CONVENTION", "source": "business-core/src/test/java/nuri/business/architecture/EntityConventionArchTest.java" },
-        { "id": "ARCH-BUSINESS-CORE-JPA", "source": "business-core/src/test/java/nuri/business/architecture/JpaArchitectureTest.java" },
-        { "id": "ARCH-FOUNDATION-BOUNDARIES", "source": "foundation/src/test/java/nuri/foundation/ArchunitTest.java" }
+        {
+          "id": "ARCH-API-SERVER-BOUNDARIES",
+          "source": "api-server/src/test/java/nuri/ArchitectureTest.java"
+        },
+        {
+          "id": "ARCH-BUSINESS-APP-BOUNDARIES",
+          "source": "business-app/src/test/java/nuri/business/ArchitectureTest.java"
+        },
+        {
+          "id": "ARCH-BUSINESS-APP-DOMAIN-ISOLATION",
+          "source": "business-app/src/test/java/nuri/business/DomainIsolationTest.java"
+        },
+        {
+          "id": "ARCH-BUSINESS-APP-ENTITY-CONVENTION",
+          "source": "business-app/src/test/java/nuri/business/architecture/EntityConventionArchTest.java"
+        },
+        {
+          "id": "ARCH-BUSINESS-APP-JPA",
+          "source": "business-app/src/test/java/nuri/business/architecture/JpaArchitectureTest.java"
+        },
+        {
+          "id": "ARCH-BUSINESS-CORE-BOUNDARIES",
+          "source": "business-core/src/test/java/nuri/business/ArchitectureTest.java"
+        },
+        {
+          "id": "ARCH-BUSINESS-CORE-SERVICE-LAYER-ISOLATION",
+          "source": "business-core/src/test/java/nuri/business/ServiceLayerIsolationTest.java"
+        },
+        {
+          "id": "ARCH-BUSINESS-CORE-ENTITY-CONVENTION",
+          "source": "business-core/src/test/java/nuri/business/architecture/EntityConventionArchTest.java"
+        },
+        {
+          "id": "ARCH-BUSINESS-CORE-JPA",
+          "source": "business-core/src/test/java/nuri/business/architecture/JpaArchitectureTest.java"
+        },
+        {
+          "id": "ARCH-FOUNDATION-BOUNDARIES",
+          "source": "foundation/src/test/java/nuri/foundation/ArchunitTest.java"
+        }
       ]
     },
     {
@@ -300,60 +609,206 @@
         "type": "java-class-annotation",
         "annotation": "Tag",
         "value": "schema-validation",
-        "roots": ["api-server/src/test/java/nuri/api/schema"],
+        "roots": [
+          "api-server/src/test/java/nuri/api/schema"
+        ],
         "executionBindings": [
-          { "source": "api-server/build.gradle", "fragment": "tasks.register('schemaValidationTest', Test) {", "tiers": ["local-full", "ci"] },
-          { "source": "api-server/build.gradle", "fragment": "useJUnitPlatform { includeTags 'schema-validation' }", "tiers": ["local-full", "ci"] },
-          { "source": "scripts/verify.mjs", "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);", "tiers": ["local-full"] },
-          { "source": ".github/workflows/ci.yml", "fragment": "./gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain 2>&1 | tee /tmp/schema-validation.log", "tiers": ["ci"] }
+          {
+            "source": "api-server/build.gradle",
+            "fragment": "tasks.register('schemaValidationTest', Test) {",
+            "tiers": [
+              "local-full",
+              "ci"
+            ]
+          },
+          {
+            "source": "api-server/build.gradle",
+            "fragment": "useJUnitPlatform { includeTags 'schema-validation' }",
+            "tiers": [
+              "local-full",
+              "ci"
+            ]
+          },
+          {
+            "source": "scripts/verify.mjs",
+            "fragment": "run(`${gradlew} compileJava compileTestJava test :api-server:harnessTest jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8`);",
+            "tiers": [
+              "local-full"
+            ]
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "./gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain 2>&1 | tee /tmp/schema-validation.log",
+            "tiers": [
+              "ci"
+            ]
+          }
         ]
       },
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "task": ":api-server:schemaValidationTest",
       "category": "database",
       "owner": "database",
       "requiredCiContext": "backend-build",
-      "inputs": ["api-server/src/test/java/nuri/api/schema"],
-      "evidence": ["api-server/build/test-results/schemaValidationTest"],
+      "inputs": [
+        "api-server/src/test/java/nuri/api/schema"
+      ],
+      "evidence": [
+        "api-server/build/test-results/schemaValidationTest"
+      ],
       "redProof": "Remove a schema-validation tag or registry rule; the exact schema gate census must fail.",
       "rules": [
-        { "id": "DB-MIG-ADDRESS-BOOK-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/AddressBookBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-BANNER-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/BannerBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-BLOG-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/BlogBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-BOARD-POST-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/BoardPostBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-COMMUNITY-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/CommunityBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-DEPT-JOB-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/DeptJobBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-DEPT-JOB-BOX-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/DeptJobBoxBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-DIARY-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/DiaryBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-DTA-USE-STATS-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/DtaUseStatsBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-EVENT-INFO-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/EventInfoBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-FILE-MASTER-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/FileMasterBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-HPCM-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/HpcmBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-INFORMAL-SANCTION-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/InformalSanctionBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-INTERNET-SERVICE-GUIDANCE-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/InternetServiceGuidanceBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-LOGIN-LOG-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/LoginLogBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-MEMO-REPORT-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/MemoReportBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-MENU-IDENTITY", "source": "api-server/src/test/java/nuri/api/schema/MenuIdentityMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-MY-PAGE-CONTENT-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/MyPageContentBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-NOTE-FAMILY-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/NoteFamilyBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-NOTIFICATION-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/NotificationBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-ONLINE-MANUAL-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/OnlineManualBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-ONLINE-POLL-FAMILY-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/OnlinePollFamilyBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-POPUP-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/PopupBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-PRIVACY-LOG-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/PrivacyLogBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-REPRT-STATS-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/ReprtStatsBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-REWARD-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/RewardBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-SCHEDULE-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/ScheduleBigintMigrationIntegrationTest.java" },
-        { "id": "DB-SCHEMA-VALIDATION", "source": "api-server/src/test/java/nuri/api/schema/SchemaValidationIntegrationTest.java" },
-        { "id": "DB-MIG-SCRAP-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/ScrapBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-SENT-MAIL-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/SentMailBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-SMS-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/SmsBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-STAMP-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/StampBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-SURVEY-FAMILY-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/SurveyFamilyBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-SYS-LOG-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/SysLogBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-WEB-LOG-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/WebLogBigintMigrationIntegrationTest.java" },
-        { "id": "DB-MIG-WORK-REPORT-BIGINT", "source": "api-server/src/test/java/nuri/api/schema/WorkReportBigintMigrationIntegrationTest.java" },
-        { "id": "DB-WRITE-SMOKE", "source": "api-server/src/test/java/nuri/api/schema/WriteSmokeIntegrationTest.java" }
+        {
+          "id": "DB-MIG-ADDRESS-BOOK-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/AddressBookBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-BANNER-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/BannerBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-BLOG-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/BlogBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-BOARD-POST-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/BoardPostBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-COMMUNITY-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/CommunityBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-DEPT-JOB-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/DeptJobBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-DEPT-JOB-BOX-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/DeptJobBoxBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-DIARY-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/DiaryBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-DTA-USE-STATS-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/DtaUseStatsBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-EVENT-INFO-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/EventInfoBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-FILE-MASTER-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/FileMasterBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-HPCM-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/HpcmBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-INFORMAL-SANCTION-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/InformalSanctionBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-INTERNET-SERVICE-GUIDANCE-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/InternetServiceGuidanceBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-LOGIN-LOG-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/LoginLogBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-MEMO-REPORT-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/MemoReportBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-MENU-IDENTITY",
+          "source": "api-server/src/test/java/nuri/api/schema/MenuIdentityMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-MY-PAGE-CONTENT-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/MyPageContentBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-NOTE-FAMILY-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/NoteFamilyBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-NOTIFICATION-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/NotificationBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-ONLINE-MANUAL-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/OnlineManualBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-ONLINE-POLL-FAMILY-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/OnlinePollFamilyBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-POPUP-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/PopupBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-PRIVACY-LOG-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/PrivacyLogBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-REPRT-STATS-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/ReprtStatsBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-REWARD-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/RewardBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-SCHEDULE-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/ScheduleBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-SCHEMA-VALIDATION",
+          "source": "api-server/src/test/java/nuri/api/schema/SchemaValidationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-SCRAP-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/ScrapBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-SENT-MAIL-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/SentMailBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-SMS-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/SmsBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-STAMP-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/StampBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-SURVEY-FAMILY-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/SurveyFamilyBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-SYS-LOG-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/SysLogBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-WEB-LOG-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/WebLogBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-MIG-WORK-REPORT-BIGINT",
+          "source": "api-server/src/test/java/nuri/api/schema/WorkReportBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-WRITE-SMOKE",
+          "source": "api-server/src/test/java/nuri/api/schema/WriteSmokeIntegrationTest.java"
+        }
       ]
     },
     {
@@ -363,11 +818,29 @@
         "runner": "node-test",
         "forbidSkips": true,
         "catalogs": [
-          { "root": "scripts", "suffixes": [".test.mjs"], "recursive": false },
-          { "root": ".agent/scripts", "suffixes": [".test.js"], "recursive": false }
+          {
+            "root": "scripts",
+            "suffixes": [
+              ".test.mjs"
+            ],
+            "recursive": false
+          },
+          {
+            "root": ".agent/scripts",
+            "suffixes": [
+              ".test.js"
+            ],
+            "recursive": false
+          }
         ],
         "supportRoots": [
-          { "root": ".agent/scripts", "suffixes": [".js"], "recursive": true }
+          {
+            "root": ".agent/scripts",
+            "suffixes": [
+              ".js"
+            ],
+            "recursive": true
+          }
         ],
         "packageScript": {
           "source": "package.json",
@@ -375,18 +848,48 @@
           "command": "node --test \"scripts/*.test.mjs\" \".agent/scripts/*.test.js\""
         },
         "commandBindings": [
-          { "source": ".githooks/pre-push", "fragment": "npm run test:operational-contracts \\", "tiers": ["pre-push"] },
-          { "source": "scripts/verify.mjs", "fragment": "run('npm run test:operational-contracts');", "tiers": ["local-full", "local-e2e"] },
-          { "source": ".github/workflows/ci.yml", "fragment": "run: npm run test:operational-contracts", "tiers": ["ci"] }
+          {
+            "source": ".githooks/pre-push",
+            "fragment": "npm run test:operational-contracts \\",
+            "tiers": [
+              "pre-push"
+            ]
+          },
+          {
+            "source": "scripts/verify.mjs",
+            "fragment": "run('npm run test:operational-contracts');",
+            "tiers": [
+              "local-full",
+              "local-e2e"
+            ]
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "run: npm run test:operational-contracts",
+            "tiers": [
+              "ci"
+            ]
+          }
         ]
       },
-      "tier": ["pre-push", "local-full", "local-e2e", "ci"],
+      "tier": [
+        "pre-push",
+        "local-full",
+        "local-e2e",
+        "ci"
+      ],
       "task": "npm run test:operational-contracts",
       "category": "governance",
       "owner": "platform-governance",
       "requiredCiContext": "secret-scan",
-      "inputs": ["scripts/*.test.mjs", ".agent/scripts/*.test.js", "package.json"],
-      "evidence": ["Node test TAP output and process exit status"],
+      "inputs": [
+        "scripts/*.test.mjs",
+        ".agent/scripts/*.test.js",
+        "package.json"
+      ],
+      "evidence": [
+        "Node test TAP output and process exit status"
+      ],
       "redProof": "Remove or narrow the package glob runner, or detach the aggregate runner from pre-push, local-full, or CI; the registry contract must fail."
     },
     {
@@ -396,15 +899,44 @@
         "runner": "vitest",
         "forbidSkips": true,
         "catalogs": [
-          { "root": "frontend/src/__tests__", "suffixes": [".test.ts", ".test.tsx"], "recursive": true }
+          {
+            "root": "frontend/src/__tests__",
+            "suffixes": [
+              ".test.ts",
+              ".test.tsx"
+            ],
+            "recursive": true
+          }
         ],
         "commandBindings": [
-          { "source": ".githooks/pre-push", "fragment": "( cd frontend && npx vitest run src/__tests__ ) \\", "tiers": ["pre-push"] },
-          { "source": "scripts/verify.mjs", "fragment": "run('pnpm -C frontend exec vitest run src/__tests__');", "tiers": ["local-full"] },
-          { "source": ".github/workflows/ci.yml", "fragment": "pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log", "tiers": ["ci"] }
+          {
+            "source": ".githooks/pre-push",
+            "fragment": "( cd frontend && npx vitest run src/__tests__ ) \\",
+            "tiers": [
+              "pre-push"
+            ]
+          },
+          {
+            "source": "scripts/verify.mjs",
+            "fragment": "run('pnpm -C frontend exec vitest run src/__tests__');",
+            "tiers": [
+              "local-full"
+            ]
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log",
+            "tiers": [
+              "ci"
+            ]
+          }
         ]
       },
-      "tier": ["pre-push", "local-full", "ci"],
+      "tier": [
+        "pre-push",
+        "local-full",
+        "ci"
+      ],
       "task": [
         "pnpm -C frontend exec vitest run src/__tests__",
         "pnpm -C frontend run test:coverage"
@@ -412,8 +944,13 @@
       "category": "frontend-governance",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/src/__tests__", "frontend/vitest.config.mts"],
-      "evidence": ["Vitest process exit status"],
+      "inputs": [
+        "frontend/src/__tests__",
+        "frontend/vitest.config.mts"
+      ],
+      "evidence": [
+        "Vitest process exit status"
+      ],
       "redProof": "Break an invariant fixture or remove a runner binding; the targeted Vitest gate or registry contract must fail."
     },
     {
@@ -422,11 +959,32 @@
         "type": "runner-catalog",
         "runner": "vitest",
         "catalogs": [
-          { "root": "frontend/src", "suffixes": [".test.ts", ".test.tsx"], "recursive": true },
-          { "root": "frontend/e2e", "suffixes": [".test.ts", ".test.tsx"], "recursive": true }
+          {
+            "root": "frontend/src",
+            "suffixes": [
+              ".test.ts",
+              ".test.tsx"
+            ],
+            "recursive": true
+          },
+          {
+            "root": "frontend/e2e",
+            "suffixes": [
+              ".test.ts",
+              ".test.tsx"
+            ],
+            "recursive": true
+          }
         ],
         "supportRoots": [
-          { "root": "frontend/src/test-utils", "suffixes": [".ts", ".tsx"], "recursive": true }
+          {
+            "root": "frontend/src/test-utils",
+            "suffixes": [
+              ".ts",
+              ".tsx"
+            ],
+            "recursive": true
+          }
         ],
         "packageScript": {
           "source": "frontend/package.json",
@@ -434,18 +992,48 @@
           "command": "vitest run --coverage"
         },
         "commandBindings": [
-          { "source": "frontend/vitest.config.mts", "fragment": "include: ['**/*.test.{ts,tsx}'],", "tiers": ["local-full", "ci"] },
-          { "source": "scripts/verify.mjs", "fragment": "run('pnpm -C frontend run test:coverage');", "tiers": ["local-full"] },
-          { "source": ".github/workflows/ci.yml", "fragment": "pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log", "tiers": ["ci"] }
+          {
+            "source": "frontend/vitest.config.mts",
+            "fragment": "include: ['**/*.test.{ts,tsx}'],",
+            "tiers": [
+              "local-full",
+              "ci"
+            ]
+          },
+          {
+            "source": "scripts/verify.mjs",
+            "fragment": "run('pnpm -C frontend run test:coverage');",
+            "tiers": [
+              "local-full"
+            ]
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log",
+            "tiers": [
+              "ci"
+            ]
+          }
         ]
       },
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "task": "pnpm -C frontend run test:coverage",
       "category": "frontend-test",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/src", "frontend/e2e", "frontend/vitest.config.mts", "frontend/package.json"],
-      "evidence": ["frontend/coverage", "Vitest process exit status"],
+      "inputs": [
+        "frontend/src",
+        "frontend/e2e",
+        "frontend/vitest.config.mts",
+        "frontend/package.json"
+      ],
+      "evidence": [
+        "frontend/coverage",
+        "Vitest process exit status"
+      ],
       "redProof": "Break a unit test or detach the coverage runner from local-full or CI; the gate must fail."
     },
     {
@@ -454,10 +1042,23 @@
         "type": "runner-catalog",
         "runner": "playwright",
         "catalogs": [
-          { "root": "frontend/e2e", "suffixes": [".spec.ts"], "recursive": true }
+          {
+            "root": "frontend/e2e",
+            "suffixes": [
+              ".spec.ts"
+            ],
+            "recursive": true
+          }
         ],
         "supportRoots": [
-          { "root": "frontend/e2e", "suffixes": [".ts", ".tsx"], "recursive": true }
+          {
+            "root": "frontend/e2e",
+            "suffixes": [
+              ".ts",
+              ".tsx"
+            ],
+            "recursive": true
+          }
         ],
         "packageScript": {
           "source": "frontend/package.json",
@@ -468,8 +1069,17 @@
           "source": "frontend/playwright.config.ts",
           "forbidOnly": "!!process.env.CI",
           "projects": [
-            { "name": "setup", "testMatch": "/.*\\.setup\\.ts/" },
-            { "name": "full-suite", "testMatch": "/.*\\.spec\\.ts/", "dependencies": ["setup"] }
+            {
+              "name": "setup",
+              "testMatch": "/.*\\.setup\\.ts/"
+            },
+            {
+              "name": "full-suite",
+              "testMatch": "/.*\\.spec\\.ts/",
+              "dependencies": [
+                "setup"
+              ]
+            }
           ]
         },
         "skipWaivers": [
@@ -484,13 +1094,40 @@
           }
         ],
         "commandBindings": [
-          { "source": "scripts/verify.mjs", "fragment": "run('pnpm -C frontend run test:e2e');", "tiers": ["local-e2e"] },
-          { "source": ".github/workflows/ci.yml", "fragment": "mapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\")", "tiers": ["ci"] },
-          { "source": ".github/workflows/ci.yml", "fragment": "npx playwright test --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log", "tiers": ["ci"] },
-          { "source": ".github/workflows/ci.yml", "fragment": "node ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" \"${E2E_SPECS[@]}\"", "tiers": ["ci"] }
+          {
+            "source": "scripts/verify.mjs",
+            "fragment": "run('pnpm -C frontend run test:e2e');",
+            "tiers": [
+              "local-e2e"
+            ]
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "mapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\")",
+            "tiers": [
+              "ci"
+            ]
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "npx playwright test --project=full-suite \"${E2E_SPECS[@]}\" --reporter=blob,line,json 2>&1 | tee /tmp/e2e-run.log",
+            "tiers": [
+              "ci"
+            ]
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "node ../scripts/playwright-result-contract.mjs --report \"$PLAYWRIGHT_JSON_OUTPUT_FILE\" \"${E2E_SPECS[@]}\"",
+            "tiers": [
+              "ci"
+            ]
+          }
         ]
       },
-      "tier": ["local-e2e", "ci"],
+      "tier": [
+        "local-e2e",
+        "ci"
+      ],
       "task": [
         "pnpm -C frontend run test:e2e",
         "node ../scripts/e2e-shard-plan.mjs --shard \"${{ matrix.shard }}\"",
@@ -508,7 +1145,11 @@
         "scripts/playwright-result-contract.mjs",
         "scripts/playwright-result-contract.test.mjs"
       ],
-      "evidence": ["frontend/blob-report", "frontend/test-results", "/tmp/e2e-results.json"],
+      "evidence": [
+        "frontend/blob-report",
+        "frontend/test-results",
+        "/tmp/e2e-results.json"
+      ],
       "redProof": "Break a journey assertion, add an unwaived or expired skip, omit a planned spec from the JSON report, report zero expected or any skipped tests, detach the duration-balanced/result runners, or make the stable e2e-test aggregate ignore a shard failure; a required E2E check or registry contract must fail."
     },
     {
@@ -517,7 +1158,9 @@
         "type": "required-check-aggregate",
         "context": "mutation-test",
         "sourceJobId": "mutation-scope",
-        "strictEnvironment": { "STRICT_MUTATION": "true" },
+        "strictEnvironment": {
+          "STRICT_MUTATION": "true"
+        },
         "matrixScopes": [
           {
             "scope": "business-app",
@@ -581,13 +1224,22 @@
           }
         ]
       },
-      "tier": ["ci"],
+      "tier": [
+        "ci"
+      ],
       "task": "./gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain",
       "category": "mutation-testing",
       "owner": "backend-platform",
       "requiredCiContext": "mutation-test",
-      "inputs": ["build.gradle", ".github/required-checks.json", ".github/workflows/ci.yml"],
-      "evidence": ["*/build/reports/pitest", "mutation-test required check conclusion"],
+      "inputs": [
+        "build.gradle",
+        ".github/required-checks.json",
+        ".github/workflows/ci.yml"
+      ],
+      "evidence": [
+        "*/build/reports/pitest",
+        "mutation-test required check conclusion"
+      ],
       "redProof": "Disable STRICT_MUTATION, detach the PIT source job, or ignore its matrix result; the required-check and registry contracts must fail."
     }
   ],
@@ -595,35 +1247,61 @@
     {
       "id": "QUALITY-BACKEND-LINE-COVERAGE",
       "source": "build.gradle",
-      "selector": { "type": "gradle-jacoco-limit", "task": "jacocoRootCoverageVerification", "counter": "LINE", "value": "COVEREDRATIO" },
+      "selector": {
+        "type": "gradle-jacoco-limit",
+        "task": "jacocoRootCoverageVerification",
+        "counter": "LINE",
+        "value": "COVEREDRATIO"
+      },
       "executionProfile": "EXEC-BACKEND-COVERAGE",
       "current": 0.85,
       "baseline": 0.85,
       "direction": "minimum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "./gradlew jacocoRootCoverageVerification",
       "category": "backend-quality",
       "owner": "backend-platform",
       "requiredCiContext": "backend-build",
-      "inputs": ["build.gradle", "*/build/jacoco/*.exec"],
-      "evidence": ["build/reports/jacoco/jacocoRootReport"],
+      "inputs": [
+        "build.gradle",
+        "*/build/jacoco/*.exec"
+      ],
+      "evidence": [
+        "build/reports/jacoco/jacocoRootReport"
+      ],
       "redProof": "Set current below baseline or change the Gradle LINE minimum without updating the registry; the contract must fail."
     },
     {
       "id": "QUALITY-BACKEND-BRANCH-COVERAGE",
       "source": "build.gradle",
-      "selector": { "type": "gradle-jacoco-limit", "task": "jacocoRootCoverageVerification", "counter": "BRANCH", "value": "COVEREDRATIO" },
+      "selector": {
+        "type": "gradle-jacoco-limit",
+        "task": "jacocoRootCoverageVerification",
+        "counter": "BRANCH",
+        "value": "COVEREDRATIO"
+      },
       "executionProfile": "EXEC-BACKEND-COVERAGE",
       "current": 0.7,
       "baseline": 0.7,
       "direction": "minimum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "./gradlew jacocoRootCoverageVerification",
       "category": "backend-quality",
       "owner": "backend-platform",
       "requiredCiContext": "backend-build",
-      "inputs": ["build.gradle", "*/build/jacoco/*.exec"],
-      "evidence": ["build/reports/jacoco/jacocoRootReport"],
+      "inputs": [
+        "build.gradle",
+        "*/build/jacoco/*.exec"
+      ],
+      "evidence": [
+        "build/reports/jacoco/jacocoRootReport"
+      ],
       "redProof": "Set current below baseline or change the Gradle BRANCH minimum without updating the registry; the contract must fail."
     },
     {
@@ -639,217 +1317,375 @@
       "current": 75,
       "baseline": 75,
       "direction": "minimum",
-      "tier": ["ci"],
+      "tier": [
+        "ci"
+      ],
       "command": "STRICT_MUTATION=true ./gradlew :module:pitest",
       "category": "backend-quality",
       "owner": "backend-platform",
       "requiredCiContext": "mutation-test",
-      "inputs": ["build.gradle", ".github/workflows/ci.yml"],
-      "evidence": ["*/build/reports/pitest"],
+      "inputs": [
+        "build.gradle",
+        ".github/workflows/ci.yml"
+      ],
+      "evidence": [
+        "*/build/reports/pitest"
+      ],
       "redProof": "Lower mutationThreshold below 75 or lower registry current below baseline; the contract must fail."
     },
     {
       "id": "QUALITY-FOUNDATION-INSTRUCTION-COVERAGE",
       "source": "foundation/build.gradle",
-      "selector": { "type": "gradle-jacoco-direct-limit", "task": "jacocoTestCoverageVerification", "element": "BUNDLE", "counter": "INSTRUCTION", "value": "COVEREDRATIO" },
+      "selector": {
+        "type": "gradle-jacoco-direct-limit",
+        "task": "jacocoTestCoverageVerification",
+        "element": "BUNDLE",
+        "counter": "INSTRUCTION",
+        "value": "COVEREDRATIO"
+      },
       "executionProfile": "EXEC-FOUNDATION-COVERAGE",
       "current": 0.6,
       "baseline": 0.6,
       "direction": "minimum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "./gradlew :foundation:check",
       "category": "backend-quality",
       "owner": "backend-platform",
       "requiredCiContext": "backend-build",
-      "inputs": ["foundation/build.gradle", "foundation/src"],
-      "evidence": ["foundation/build/reports/jacoco"],
+      "inputs": [
+        "foundation/build.gradle",
+        "foundation/src"
+      ],
+      "evidence": [
+        "foundation/build/reports/jacoco"
+      ],
       "redProof": "Lower or remove the foundation bundle instruction minimum; the registry contract must fail."
     },
     {
       "id": "QUALITY-FOUNDATION-CLASS-LINE-COVERAGE",
       "source": "foundation/build.gradle",
-      "selector": { "type": "gradle-jacoco-direct-limit", "task": "jacocoTestCoverageVerification", "element": "CLASS", "counter": "LINE", "value": "COVEREDRATIO" },
+      "selector": {
+        "type": "gradle-jacoco-direct-limit",
+        "task": "jacocoTestCoverageVerification",
+        "element": "CLASS",
+        "counter": "LINE",
+        "value": "COVEREDRATIO"
+      },
       "executionProfile": "EXEC-FOUNDATION-COVERAGE",
       "current": 0.5,
       "baseline": 0.5,
       "direction": "minimum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "./gradlew :foundation:check",
       "category": "backend-quality",
       "owner": "backend-platform",
       "requiredCiContext": "backend-build",
-      "inputs": ["foundation/build.gradle", "foundation/src"],
-      "evidence": ["foundation/build/reports/jacoco"],
+      "inputs": [
+        "foundation/build.gradle",
+        "foundation/src"
+      ],
+      "evidence": [
+        "foundation/build/reports/jacoco"
+      ],
       "redProof": "Lower or remove the foundation per-class LINE minimum; the registry contract must fail."
     },
     {
       "id": "QUALITY-FRONTEND-STATEMENTS-COVERAGE",
       "source": "frontend/vitest.config.mts",
-      "selector": { "type": "vitest-coverage-threshold", "key": "statements" },
+      "selector": {
+        "type": "vitest-coverage-threshold",
+        "key": "statements"
+      },
       "executionProfile": "EXEC-FRONTEND-COVERAGE",
       "current": 34,
       "baseline": 34,
       "direction": "minimum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run test:coverage",
       "category": "frontend-quality",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/vitest.config.mts", "frontend/src"],
-      "evidence": ["frontend/coverage"],
+      "inputs": [
+        "frontend/vitest.config.mts",
+        "frontend/src"
+      ],
+      "evidence": [
+        "frontend/coverage"
+      ],
       "redProof": "Lower the statements threshold or registry current below baseline; the contract must fail."
     },
     {
       "id": "QUALITY-FRONTEND-BRANCHES-COVERAGE",
       "source": "frontend/vitest.config.mts",
-      "selector": { "type": "vitest-coverage-threshold", "key": "branches" },
+      "selector": {
+        "type": "vitest-coverage-threshold",
+        "key": "branches"
+      },
       "executionProfile": "EXEC-FRONTEND-COVERAGE",
       "current": 27,
       "baseline": 27,
       "direction": "minimum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run test:coverage",
       "category": "frontend-quality",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/vitest.config.mts", "frontend/src"],
-      "evidence": ["frontend/coverage"],
+      "inputs": [
+        "frontend/vitest.config.mts",
+        "frontend/src"
+      ],
+      "evidence": [
+        "frontend/coverage"
+      ],
       "redProof": "Lower the branches threshold or registry current below baseline; the contract must fail."
     },
     {
       "id": "QUALITY-FRONTEND-FUNCTIONS-COVERAGE",
       "source": "frontend/vitest.config.mts",
-      "selector": { "type": "vitest-coverage-threshold", "key": "functions" },
+      "selector": {
+        "type": "vitest-coverage-threshold",
+        "key": "functions"
+      },
       "executionProfile": "EXEC-FRONTEND-COVERAGE",
       "current": 31,
       "baseline": 31,
       "direction": "minimum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run test:coverage",
       "category": "frontend-quality",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/vitest.config.mts", "frontend/src"],
-      "evidence": ["frontend/coverage"],
+      "inputs": [
+        "frontend/vitest.config.mts",
+        "frontend/src"
+      ],
+      "evidence": [
+        "frontend/coverage"
+      ],
       "redProof": "Lower the functions threshold or registry current below baseline; the contract must fail."
     },
     {
       "id": "QUALITY-FRONTEND-LINES-COVERAGE",
       "source": "frontend/vitest.config.mts",
-      "selector": { "type": "vitest-coverage-threshold", "key": "lines" },
+      "selector": {
+        "type": "vitest-coverage-threshold",
+        "key": "lines"
+      },
       "executionProfile": "EXEC-FRONTEND-COVERAGE",
       "current": 35,
       "baseline": 35,
       "direction": "minimum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run test:coverage",
       "category": "frontend-quality",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/vitest.config.mts", "frontend/src"],
-      "evidence": ["frontend/coverage"],
+      "inputs": [
+        "frontend/vitest.config.mts",
+        "frontend/src"
+      ],
+      "evidence": [
+        "frontend/coverage"
+      ],
       "redProof": "Lower the lines threshold or registry current below baseline; the contract must fail."
     },
     {
       "id": "QUALITY-FRONTEND-LINT-WARNINGS",
       "source": "frontend/package.json",
-      "selector": { "type": "package-script-flag", "script": "lint", "flag": "--max-warnings" },
+      "selector": {
+        "type": "package-script-flag",
+        "script": "lint",
+        "flag": "--max-warnings"
+      },
       "executionProfile": "EXEC-FRONTEND-LINT",
       "current": 253,
       "baseline": 253,
       "direction": "maximum",
-      "tier": ["pre-push", "local-full", "ci"],
+      "tier": [
+        "pre-push",
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run lint",
       "category": "frontend-quality",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/package.json", "frontend/eslint.config.mjs", "frontend/src", "frontend/e2e"],
-      "evidence": ["ESLint process exit status"],
+      "inputs": [
+        "frontend/package.json",
+        "frontend/eslint.config.mjs",
+        "frontend/src",
+        "frontend/e2e"
+      ],
+      "evidence": [
+        "ESLint process exit status"
+      ],
       "redProof": "Raise --max-warnings or registry current above baseline; the contract must fail."
     },
     {
       "id": "QUALITY-FRONTEND-DESIGN-TOKEN-SEVERITY",
       "source": "frontend/eslint.config.mjs",
-      "selector": { "type": "eslint-rule-severity", "rule": "local-theme/enforce-design-tokens" },
+      "selector": {
+        "type": "eslint-rule-severity",
+        "rule": "local-theme/enforce-design-tokens"
+      },
       "executionProfile": "EXEC-FRONTEND-LINT",
       "current": "warn",
       "baseline": "warn",
       "direction": "minimum-severity",
-      "tier": ["pre-push", "local-full", "ci"],
+      "tier": [
+        "pre-push",
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run lint",
       "category": "frontend-quality",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/eslint.config.mjs", "frontend/src"],
-      "evidence": ["ESLint process exit status"],
+      "inputs": [
+        "frontend/eslint.config.mjs",
+        "frontend/src"
+      ],
+      "evidence": [
+        "ESLint process exit status"
+      ],
       "redProof": "Change the design-token rule to off or lower registry severity below warn; the contract must fail."
     },
     {
       "id": "QUALITY-FRONTEND-JS-TOTAL-BUNDLE",
       "source": "frontend/scripts/check-bundle-budget.mjs",
-      "selector": { "type": "javascript-object-number", "object": "BUDGETS", "property": "js", "key": "total" },
+      "selector": {
+        "type": "javascript-object-number",
+        "object": "BUDGETS",
+        "property": "js",
+        "key": "total"
+      },
       "executionProfile": "EXEC-FRONTEND-BUNDLE",
       "current": 2250000,
       "baseline": 2250000,
       "direction": "maximum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run bundle:check",
       "category": "frontend-performance",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/scripts/check-bundle-budget.mjs", "frontend/.next/static/chunks"],
-      "evidence": ["bundle budget process exit status"],
+      "inputs": [
+        "frontend/scripts/check-bundle-budget.mjs",
+        "frontend/.next/static/chunks"
+      ],
+      "evidence": [
+        "bundle budget process exit status"
+      ],
       "redProof": "Raise the total JavaScript budget or registry current above baseline; the contract must fail."
     },
     {
       "id": "QUALITY-FRONTEND-JS-SINGLE-BUNDLE",
       "source": "frontend/scripts/check-bundle-budget.mjs",
-      "selector": { "type": "javascript-object-number", "object": "BUDGETS", "property": "js", "key": "single" },
+      "selector": {
+        "type": "javascript-object-number",
+        "object": "BUDGETS",
+        "property": "js",
+        "key": "single"
+      },
       "executionProfile": "EXEC-FRONTEND-BUNDLE",
       "current": 150000,
       "baseline": 150000,
       "direction": "maximum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run bundle:check",
       "category": "frontend-performance",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/scripts/check-bundle-budget.mjs", "frontend/.next/static/chunks"],
-      "evidence": ["bundle budget process exit status"],
+      "inputs": [
+        "frontend/scripts/check-bundle-budget.mjs",
+        "frontend/.next/static/chunks"
+      ],
+      "evidence": [
+        "bundle budget process exit status"
+      ],
       "redProof": "Raise the single JavaScript chunk budget or registry current above baseline; the contract must fail."
     },
     {
       "id": "QUALITY-FRONTEND-CSS-TOTAL-BUNDLE",
       "source": "frontend/scripts/check-bundle-budget.mjs",
-      "selector": { "type": "javascript-object-number", "object": "BUDGETS", "property": "css", "key": "total" },
+      "selector": {
+        "type": "javascript-object-number",
+        "object": "BUDGETS",
+        "property": "css",
+        "key": "total"
+      },
       "executionProfile": "EXEC-FRONTEND-BUNDLE",
       "current": 40000,
       "baseline": 40000,
       "direction": "maximum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run bundle:check",
       "category": "frontend-performance",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/scripts/check-bundle-budget.mjs", "frontend/.next/static/css"],
-      "evidence": ["bundle budget process exit status"],
+      "inputs": [
+        "frontend/scripts/check-bundle-budget.mjs",
+        "frontend/.next/static/css"
+      ],
+      "evidence": [
+        "bundle budget process exit status"
+      ],
       "redProof": "Raise the total CSS budget or registry current above baseline; the contract must fail."
     },
     {
       "id": "QUALITY-FRONTEND-CSS-SINGLE-BUNDLE",
       "source": "frontend/scripts/check-bundle-budget.mjs",
-      "selector": { "type": "javascript-object-number", "object": "BUDGETS", "property": "css", "key": "single" },
+      "selector": {
+        "type": "javascript-object-number",
+        "object": "BUDGETS",
+        "property": "css",
+        "key": "single"
+      },
       "executionProfile": "EXEC-FRONTEND-BUNDLE",
       "current": 38000,
       "baseline": 38000,
       "direction": "maximum",
-      "tier": ["local-full", "ci"],
+      "tier": [
+        "local-full",
+        "ci"
+      ],
       "command": "pnpm -C frontend run bundle:check",
       "category": "frontend-performance",
       "owner": "frontend-platform",
       "requiredCiContext": "frontend-build",
-      "inputs": ["frontend/scripts/check-bundle-budget.mjs", "frontend/.next/static/css"],
-      "evidence": ["bundle budget process exit status"],
+      "inputs": [
+        "frontend/scripts/check-bundle-budget.mjs",
+        "frontend/.next/static/css"
+      ],
+      "evidence": [
+        "bundle budget process exit status"
+      ],
       "redProof": "Raise the single CSS chunk budget or registry current above baseline; the contract must fail."
     }
   ]
