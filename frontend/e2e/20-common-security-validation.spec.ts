@@ -38,6 +38,13 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
             sessionLossProbe('E2E-SESSION-CLEARED-ME-401',
                 /\/api\/v1\/auth\/me(?:\?|$)/, 'GET', 2,
                 '재발급 실패로 도착한 로그인 화면의 세션 확인 요청이다.'),
+            // SockJS 는 WebSocket 이 막히면 xhr_streaming/xhr_send 로 폴백해 계속 재시도한다.
+            // 쿠키가 지워졌으므로 그 전송도 401 이며, 이는 콘솔 채널 항목과 같은 사슬의
+            // **응답 채널** 표현이다. 재시도 횟수가 타이밍에 좌우돼 간헐적으로만 관측된다
+            // (CI run 32283793284 shard 2 에서 이 항목 부재로 red).
+            sessionLossProbe('E2E-SESSION-CLEARED-SOCKJS-401',
+                /\/ws\//, 'POST', 5,
+                '세션 소실 후 SockJS 폴백 전송이 인증 거부되는 지점이다.'),
             {
                 id: 'E2E-SESSION-CLEARED-WS-ERROR',
                 specScope: '20-common-security-validation.spec.ts :: Session Integrity: Handling Token Clearance',
