@@ -90,6 +90,22 @@ describe('ExpectedErrorLedger', () => {
       .toThrow(/scope/);
   });
 
+  it('minOccurrences가 0인 항목은 발생하지 않아도 위반으로 처리되지 않는다', () => {
+    const ledger = new ExpectedErrorLedger(scope, now);
+    ledger.register(responseEntry({ minOccurrences: 0 }));
+
+    expect(ledger.violations()).toEqual([]);
+  });
+
+  it('minOccurrences 기본값(1)인 항목은 미발생 시 위반으로 처리된다', () => {
+    const ledger = new ExpectedErrorLedger(scope, now);
+    ledger.register(responseEntry());
+
+    expect(ledger.violations()).toEqual([
+      expect.stringContaining('[EXPECTED ERROR 미발생]'),
+    ]);
+  });
+
   it('미등록 HTTP 오류를 ConsoleErrorGuard 검증 실패로 올린다', async () => {
     const listeners = new Map<string, (value: unknown) => void>();
     const frame = {};

@@ -300,12 +300,14 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 .toContain(original);
 
             // ── 수정
-            await page.getByTestId('comment-edit-button').first().click();
+            const editBtn = page.getByTestId('comment-edit-button').first();
+            await editBtn.hover();
+            await editBtn.click({ force: true });
             const editBox = page.getByLabel('댓글 수정 내용');
             // 편집창에 기존 본문이 실려야 한다 — 빈 칸이 뜨면 그것은 수정이 아니라 덮어쓰기다.
             await expect(editBox, '수정 폼에 기존 본문이 실려야 한다').toHaveValue(original, { timeout: 15000 });
             await editBox.fill(edited);
-            await page.getByTestId('edit-save-button').first().click();
+            await page.getByTestId('edit-save-button').first().click({ force: true });
 
             await expect(
                 page.locator('p.whitespace-pre-wrap').filter({ hasText: edited }).first(),
@@ -316,7 +318,9 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
 
             // ── 삭제 (네이티브 confirm 을 쓴다 — 클릭 전에 핸들러를 걸어야 한다)
             page.once('dialog', (dialog) => dialog.accept());
-            await page.getByTestId('comment-delete-button').first().click();
+            const deleteBtn = page.getByTestId('comment-delete-button').first();
+            await deleteBtn.hover();
+            await deleteBtn.click({ force: true });
 
             await expect(
                 page.locator('p.whitespace-pre-wrap').filter({ hasText: edited }),

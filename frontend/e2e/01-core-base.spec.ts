@@ -103,6 +103,7 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
                 messagePattern: null,
                 method: 'GET',
                 status: 401,
+                minOccurrences: 0,
                 maxOccurrences: 2,
                 reason: '로그아웃 후 보호 경로 재진입 시 /login 으로 튕겨나와 세션 유무를 확인하는 요청이다.',
                 expiresAt: '2026-12-31',

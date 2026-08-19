@@ -12,6 +12,7 @@ export interface ExpectedErrorEntry {
   messagePattern: ExpectedErrorPattern | null;
   method: string | null;
   status: number | null;
+  minOccurrences?: number;
   maxOccurrences: number;
   reason: string;
   expiresAt: string;
@@ -74,6 +75,9 @@ export class ExpectedErrorLedger {
     if (!Number.isInteger(entry.maxOccurrences) || entry.maxOccurrences < 1) {
       throw new Error(`expected-error ${entry.id} maxOccurrences는 1 이상의 정수여야 함`);
     }
+    if (entry.minOccurrences !== undefined && (!Number.isInteger(entry.minOccurrences) || entry.minOccurrences < 0)) {
+      throw new Error(`expected-error ${entry.id} minOccurrences는 0 이상의 정수여야 함`);
+    }
     if (entry.reason.trim().length < 10) {
       throw new Error(`expected-error ${entry.id} reason이 너무 짧음`);
     }
@@ -122,7 +126,8 @@ export class ExpectedErrorLedger {
       if (expiresAt.getTime() < this.now().getTime()) {
         problems.push(`[EXPECTED ERROR EXPIRED] ${entry.id}: ${entry.expiresAt} (${entry.reason})`);
       }
-      if (occurrences === 0) {
+      const minRequired = entry.minOccurrences ?? 1;
+      if (occurrences < minRequired) {
         problems.push(`[EXPECTED ERROR 미발생] ${entry.id}: ${details} (${entry.reason})`);
       } else if (occurrences > entry.maxOccurrences) {
         problems.push(`[EXPECTED ERROR 초과] ${entry.id}: 최대 ${entry.maxOccurrences}회, 실제 ${occurrences}회 (${details})`);
