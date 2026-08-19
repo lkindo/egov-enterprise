@@ -543,13 +543,22 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-playwright-
 
+      # 캐시 미적중 경로도 --with-deps 라 같은 apt-get 위험을 갖는다. 브라우저 다운로드가
+      # 포함되므로 상한만 더 넉넉히 둔다.
       - name: Install Playwright Browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
+        timeout-minutes: 10
         run: npx playwright install --with-deps chromium
         working-directory: frontend
 
+      # [2026-08-20] step 타임아웃 신설. 이 단계는 내부적으로 apt-get 을 도는데 상한이 없어서,
+      #   미러/락 대기로 멈추면 잡 타임아웃 30분을 통째로 태우고 shard 가 cancelled 로 죽는다.
+      #   실측 2회: run 32242157066 shard 1(30m11s), run 32275810178 shard 1·2(30m27s/30m28s).
+      #   둘 다 테스트 실패가 아니라 이 단계에서 멈춘 것이며, 재실행하면 그대로 통과했다.
+      #   5분이면 정상 설치(캐시 적중 시 수십 초)에 충분하고, 멈춘 경우 25분을 아껴 재실행이 싸진다.
       - name: Install Playwright Dependencies (system deps)
         if: steps.cache-playwright.outputs.cache-hit == 'true'
+        timeout-minutes: 5
         run: npx playwright install-deps chromium
         working-directory: frontend
 

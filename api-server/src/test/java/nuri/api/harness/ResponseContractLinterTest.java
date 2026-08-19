@@ -1,0 +1,173 @@
+package nuri.api.harness;
+
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.junit.jupiter.api.Assertions.fail;
+
+/**
+ * 📦 응답 계약 린터 — 백엔드 헌법 제6조·제3조 2항을 <b>실행되는 게이트</b>로 결속한다.
+ *
+ * <p>[왜 필요한가] 헌법 제6조는 "모든 API 응답은 공통 래퍼 {@code ApiResponse} 를 사용해야 한다",
+ * 제3조 2항은 "외부와의 데이터 교환은 반드시 전용 DTO 를 통해서만" 이라고 규정한다. 그런데
+ * <b>그 두 조문에 결속된 게이트가 하나도 없었다</b>. 제3조 1항(엔티티 노출 금지)만
+ * {@code ArchitectureTest} 로 결속돼 있었고, 나머지는 prose-only 규칙이었다 —
+ * AGENTS.md Evidence guardrails H5 가 지목한 "게이트가 있다는 서술만 남고 집행은 0" 상태다.
+ *
+ * <p>[왜 census 인가] 현행 위반을 즉시 전부 고치는 것은 이 게이트의 목적이 아니다.
+ * {@code Map} 반환 5건 중 {@code DashboardApiController} 는 foundation 의
+ * {@code DashboardItemProvider} SPI 시그니처에 페이로드가 규정돼 있어 typed 이행이 SPI 계약 변경을
+ * 동반하고, {@code FileApiController} 의 wrapper 밖 반환은 <b>정당한 binary/stream 예외</b>이지만
+ * 헌법에 예외 조항이 없어 명문화(사용자 승인)가 선행돼야 한다.
+ *
+ * <p>그래서 <b>지금 있는 이탈을 동결</b>한다. 늘어나면 red 이고, <b>줄어도 red</b> 다 — 정당한 상환
+ * 시에만 상수가 함께 바뀌어 diff 에 의도가 남는다. 화이트리스트({@code EXCLUDED_*})를 두지 않는
+ * 이유도 같다: 목록은 늘어나기만 하고, 실제로 이 저장소에서 신호 은폐에 쓰인 전례가 있다(H2).
+ *
+ * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 스캔이다.
+ */
+@Tag("governance-harness")
+class ResponseContractLinterTest {
+
+    private static final Logger log = LoggerFactory.getLogger(ResponseContractLinterTest.class);
+
+    private static final String CONTROLLER_BASE = "api-server/src/main/java/nuri/api/controller";
+
+    /** 핸들러 선언(메서드 레벨 매핑). 클래스 레벨 {@code @RequestMapping} 은 세지 않는다. */
+    private static final Pattern HANDLER_MAPPING = Pattern.compile(
+            "@(?:Get|Post|Put|Patch|Delete|Request)Mapping\\b[^\\n]*\\n(?:\\s*@[^\\n]*\\n)*\\s*"
+                    + "public\\s+([^\\n{]+?)\\s+(\\w+)\\s*\\(");
+
+    /** 비정형 payload — 전용 DTO 가 아니라 Map/Object 로 내보내는 반환형. */
+    private static final Pattern UNTYPED_PAYLOAD = Pattern.compile(
+            "ApiResponse\\s*<\\s*(?:Map\\s*<|Object\\b|\\?)");
+
+    /** 성공 응답이 공통 래퍼를 거치는가. */
+    private static final Pattern WRAPPED = Pattern.compile("ApiResponse\\s*<");
+
+    /**
+     * 비정형 payload 동결(2026-08-20 실측 5건).
+     *
+     * <p>{@code SatisfactionApiController#getAverage}, {@code DashboardApiController#getDashboardData},
+     * {@code MenuUserApiController#getHeadMenu}, {@code MenuUserApiController#getLeftMenu},
+     * {@code HealthCheckApiController#checkHealth}.
+     *
+     * <p>피해는 실측된다 — {@code frontend/src/types/generated-api.d.ts} 의
+     * {@code ApiResponseMapStringObject.data} 는 {@code Record<string, never>} 로 생성돼
+     * <b>어떤 값도 담을 수 없는 타입</b>이다. Map 반환은 DB→DTO→Zod 계약 체인을 무력화한다.
+     */
+    private static final int UNTYPED_PAYLOAD_COUNT = 5;
+
+    /**
+     * 공통 래퍼 밖 반환 동결(2026-08-20 실측 1건).
+     *
+     * <p>{@code FileApiController#downloadFile} 의 {@code ResponseEntity<Resource>}.
+     * JSON 래퍼로 감싸면 base64 로 전송량이 33% 늘고 전량 메모리 적재에 브라우저 네이티브
+     * 다운로드도 불가하므로 <b>기술적으로 정당</b>하다. 다만 헌법 제6조에 예외 조항이 없어
+     * 현재는 문언상 이탈이며, 예외 명문화는 사용자 승인이 필요한 별건이다(GAP-API-001).
+     */
+    private static final int UNWRAPPED_COUNT = 1;
+
+    /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 325건 대비 여유). */
+    private static final int HANDLER_FLOOR = 250;
+
+    @Test
+    @DisplayName("📦 응답 계약 census — 비정형 payload·래퍼 밖 반환 동결 (헌법 제6조·제3조 2항)")
+    void auditResponseContractCensus() throws IOException {
+        Path base = HarnessSourceIndex.repoRoot().resolve(CONTROLLER_BASE);
+        List<Path> sources = HarnessSourceIndex.javaSources(base);
+
+        List<String> untyped = new ArrayList<>();
+        List<String> unwrapped = new ArrayList<>();
+        int handlers = 0;
+
+        for (Path source : sources) {
+            String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+                    HarnessSourceIndex.read(source));
+            String relative = HarnessSourceIndex.repoRoot().relativize(source).toString().replace('\\', '/');
+
+            Matcher handler = HANDLER_MAPPING.matcher(code);
+            while (handler.find()) {
+                handlers++;
+                String returnType = handler.group(1).trim();
+                String method = handler.group(2);
+                if (UNTYPED_PAYLOAD.matcher(returnType).find()) {
+                    untyped.add(relative + "#" + method + " => " + returnType);
+                } else if (!WRAPPED.matcher(returnType).find()) {
+                    unwrapped.add(relative + "#" + method + " => " + returnType);
+                }
+            }
+        }
+
+        List<String> violations = new ArrayList<>();
+
+        // 스캔이 조용히 붕괴하면 census 가 비어 통과한다 — 그것이 가장 값싼 우회다.
+        if (handlers < HANDLER_FLOOR) {
+            violations.add("핸들러 스캔 하한 미달: " + handlers + " < " + HANDLER_FLOOR
+                    + " — 경로/정규식 파손 의심. 빈 census 로 통과시키지 않습니다.");
+        }
+
+        writeActual("build/harness/response-contract-untyped.actual.txt", untyped);
+        writeActual("build/harness/response-contract-unwrapped.actual.txt", unwrapped);
+
+        if (untyped.size() != UNTYPED_PAYLOAD_COUNT) {
+            violations.add("비정형 payload(Map/Object) 반환이 " + UNTYPED_PAYLOAD_COUNT
+                    + " → " + untyped.size() + " 로 변했습니다:\n   " + String.join("\n   ", untyped)
+                    + "\n   늘었다면 전용 DTO 로 바꾸십시오(제3조 2항). 줄였다면 상수를 낮춰 되돌릴 수 없게 하십시오.");
+        }
+        if (unwrapped.size() != UNWRAPPED_COUNT) {
+            violations.add("공통 래퍼(ApiResponse) 밖 반환이 " + UNWRAPPED_COUNT
+                    + " → " + unwrapped.size() + " 로 변했습니다:\n   " + String.join("\n   ", unwrapped)
+                    + "\n   binary/stream 이 아니라면 제6조 위반입니다. 정당한 예외는 헌법 명문화가 선행돼야 합니다.");
+        }
+
+        if (!violations.isEmpty()) {
+            StringBuilder sb = new StringBuilder();
+            sb.append("\n========================================================================\n");
+            sb.append("📦 [RESPONSE CONTRACT LINTER] 응답 계약 이탈이 변동했습니다!\n");
+            sb.append("========================================================================\n");
+            violations.forEach(v -> sb.append("❌ ").append(v).append('\n'));
+            sb.append("\n💡 이 게이트는 현행 이탈을 '동결' 한다. 늘어도 red, 줄어도 red 다 —\n");
+            sb.append("   정당한 상환일 때만 상수가 함께 바뀌어 diff 에 의도가 남게 하기 위해서다.\n");
+            sb.append("   예외 목록(EXCLUDED_*)을 만드는 방향으로 해소하지 말 것(AGENTS.md H2).\n");
+            fail(sb.toString());
+        }
+
+        log.info("✅ 응답 계약 census 일치 — 핸들러 {}건, 비정형 {}건, 래퍼 밖 {}건.",
+                handlers, untyped.size(), unwrapped.size());
+    }
+
+    private static void writeActual(String relative, List<String> values) throws IOException {
+        Path out = HarnessSourceIndex.repoRoot().resolve(relative);
+        java.nio.file.Files.createDirectories(out.getParent());
+        java.nio.file.Files.write(out, new TreeSet<>(values), StandardCharsets.UTF_8);
+    }
+
+    @SuppressWarnings("unused")
+    private static String sha256Short(String value) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256").digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < 6; i++) {
+                sb.append(String.format("%02x", digest[i]));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+    }
+}

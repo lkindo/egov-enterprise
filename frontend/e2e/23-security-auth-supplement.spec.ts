@@ -726,6 +726,11 @@ test.describe('Tier 23-E1: Forged-token rejection (middleware signature verifica
             messagePattern: null,
             method: 'GET',
             status: 401,
+            // 미들웨어가 /login 으로 돌려보낸 뒤 AuthContext 가 세션 확인을 쏘기 전에 URL 단언이
+            // 끝나는 회차가 있다. 발생 여부가 타이밍에 좌우되므로 하한을 두지 않는다 —
+            // 하한 1을 유지하면 '예상 오류가 안 나서' 실패한다(CI run 32286417769 shard 3 실측).
+            // 이 테스트의 계약은 /login 리다이렉트이고, 401 은 그 뒤에 따라올 수도 있는 부산물이다.
+            minOccurrences: 0,
             maxOccurrences: 2,
             reason: '거부 후 도착한 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
             expiresAt: '2026-12-31',
@@ -748,6 +753,11 @@ test.describe('Tier 23-E1: Forged-token rejection (middleware signature verifica
             messagePattern: null,
             method: 'GET',
             status: 401,
+            // 바로 위 forged-token 테스트와 구조가 같다 — URL 단언 직후 종료하므로 세션 확인
+            // 요청과 경합한다. 같은 이유로 하한을 두지 않는다.
+            // (a11y 계열은 axe 스캔이 뒤따라 결정적으로 발생하므로 하한 1을 유지한다.
+            //  minOccurrences:0 을 남발하면 stale 항목을 탐지하는 능력을 잃는다.)
+            minOccurrences: 0,
             maxOccurrences: 2,
             reason: '거부 후 도착한 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
             expiresAt: '2026-12-31',
