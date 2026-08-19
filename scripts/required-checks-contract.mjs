@@ -7,6 +7,23 @@ const PULL_REQUEST_POLICY_FIELDS = [
   'requiredReviewThreadResolution',
 ];
 
+/**
+ * 결정된 review policy (DEC-OPS-009, 2026-08-20 — DEC-OPS-007 대체).
+ *
+ * 단독 운영이라 작성자 외 reviewer 가 없다. approval ≥ 1 을 원격에 적용하면 자기 PR 을
+ * 자기가 승인할 수 없어 **모든 병합이 막히고**, 명세만 강하게 두면 verify:ops 가 영구
+ * red 로 남아 신호로서 죽는다. 그래서 명세를 현실에 맞추되 이 상수에 **양방향으로 동결**
+ * 한다 — 완화든 (reviewer 확보 전의) 강화든 이 상수와 decisions.md 를 함께 고쳐야 한다.
+ * reviewer 가 생기면 이 값을 DEC-OPS-007 수준으로 올리는 후속 DEC 를 만든다.
+ */
+const DECIDED_PULL_REQUEST_POLICY = {
+  requiredApprovingReviewCount: 0,
+  requireCodeOwnerReview: false,
+  requireLastPushApproval: false,
+  dismissStaleReviewsOnPush: false,
+  requiredReviewThreadResolution: false,
+};
+
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -474,8 +491,8 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
       errors.push(`manifest pullRequestPolicy must define exactly: ${expectedFields.join(', ')}`);
     }
     if (!Number.isSafeInteger(pullRequestPolicy.requiredApprovingReviewCount)
-      || pullRequestPolicy.requiredApprovingReviewCount < 1) {
-      errors.push('manifest pullRequestPolicy requires at least one approving review');
+      || pullRequestPolicy.requiredApprovingReviewCount < 0) {
+      errors.push('manifest pullRequestPolicy requiredApprovingReviewCount must be a non-negative integer');
     }
     for (const field of PULL_REQUEST_POLICY_FIELDS.filter(
       field => field !== 'requiredApprovingReviewCount',
@@ -484,13 +501,16 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
         errors.push(`manifest pullRequestPolicy '${field}' must be boolean`);
       }
     }
-    for (const field of [
-      'requireCodeOwnerReview',
-      'requireLastPushApproval',
-      'requiredReviewThreadResolution',
-    ]) {
-      if (pullRequestPolicy[field] !== true) {
-        errors.push(`manifest pullRequestPolicy cannot weaken '${field}'`);
+    // [DEC-OPS-009 · 2026-08-20] 종전 규칙은 'approval ≥ 1 + 3개 플래그 true 미만은 전부 오류'
+    // 였다(= DEC-OPS-007 의 집행부). 단독 운영 결정으로 그 목표가 대체됐다 — reviewer 가
+    // 없는 상태에서 그 정책을 원격에 적용하면 자기 PR 을 자기가 승인할 수 없어 모든 병합이
+    // 막히고, 명세만 강하게 두면 verify:ops 가 영구 red 로 남아 신호 가치가 죽는다.
+    // '약화 금지' 를 '결정된 정책과 정확 일치' 로 바꾼다: 어느 방향의 drift 든 red 다.
+    // 완화도, (reviewer 확보 전의) 임의 강화도 이 상수와 결정 기록을 함께 고쳐야만 지나간다.
+    for (const [field, decided] of Object.entries(DECIDED_PULL_REQUEST_POLICY)) {
+      if (pullRequestPolicy[field] !== decided) {
+        errors.push(`manifest pullRequestPolicy '${field}' must equal the decided policy `
+          + `(${JSON.stringify(decided)}, DEC-OPS-009) — found ${JSON.stringify(pullRequestPolicy[field])}`);
       }
     }
   }
