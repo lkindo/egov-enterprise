@@ -25,6 +25,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +34,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -71,6 +73,27 @@ class SecurityAuthAnnotationLinterTest {
     private static final String MAIN_APPLICATION_FILE = "api-server/src/main/resources/application.yml";
     private static final String HELPER_ACTUAL_OUT = "build/harness/authorization-helper-census.actual.txt";
     private static final String MANUAL_ACTUAL_OUT = "build/harness/authorization-manual-deny-census.actual.txt";
+    private static final String READ_SURFACE_ACTUAL_OUT = "build/harness/authorization-read-surface.actual.txt";
+
+    /**
+     * 읽기 인가 표면 동결 해시(2026-08-19 실측: endpoint 166건).
+     *
+     * <p>분포: RBAC_ADMIN_OR_SYSTEM 96 · DEFAULT_AUTHENTICATED 54 · RBAC_ALIAS_ADMIN_OR_SYSTEM 10 ·
+     * PUBLIC_FILTER 6({@code auth/me}, {@code health}, {@code menus/head}, {@code menus/left},
+     * {@code users/check-id}, {@code public/debug/error}). 마지막 항목은 {@code @Profile("!prod")}
+     * 라 운영에는 등재되지 않는다.
+     *
+     * <p>이 테스트는 {@code @ActiveProfiles("test")} 컨텍스트를 읽으므로 census 는 prod 등록 집합과
+     * 정확히 같지 않다. 그래도 회차 간에는 결정적이라 <b>표면의 변화</b>를 잡는 목적에는 충분하다.
+     *
+     * <p>갱신 시 사유를 커밋 메시지에 남긴다. 특히 PUBLIC_FILTER 가 늘거나 {@code @PreAuthorize} 가
+     * 사라지는 방향이면 그것은 인가 <b>완화</b>이므로 별도 승인 없이 갱신하지 않는다.
+     */
+    private static final String READ_SURFACE_SHA256 =
+            "e561aba5dcafdfbe5ffbe007bd686df6015efd3eb1ec29c2a2ba4b2c0759afed";
+
+    /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
+    private static final int READ_ENDPOINT_FLOOR = 120;
 
     private static final List<String> SOURCE_ROOTS = List.of(
             "business-core/src/main/java",
@@ -165,6 +188,88 @@ class SecurityAuthAnnotationLinterTest {
         validateEndpointSemantics(registry, violations);
         validateRbacSourceSemantics(violations);
         failIfAny("WRITE AUTHORIZATION POLICY MATRIX", violations);
+    }
+
+    /**
+     * 읽기(GET) endpoint 인가 표면 동결 census.
+     *
+     * <p>[왜 필요한가] 이 린터가 재작성되면서 판정 대상이 {@link #WRITE_METHODS} 로 좁혀졌다. 종전 구현은
+     * HTTP method 구분 없이 {@code nuri.api.controller} 의 <b>모든 handler</b> 를 순회하며 인가 선언을
+     * 강제했으므로, 좁히는 과정에서 <b>읽기 축이 통째로 사라졌고 이를 넘겨받은 게이트가 없었다.</b>
+     * 그 상태에서는 인가 선언 없는 GET 을 새로 추가해도 어떤 게이트도 반응하지 않는다.
+     *
+     * <p>[왜 census 인가] 읽기 endpoint 전량에 즉시 {@code @PreAuthorize} 를 요구하면 정당하게
+     * '인증만 요구' 인 조회까지 막게 되고, 그 대량 변경은 이 게이트의 목적(회귀 차단)과 무관하다.
+     * 대신 <b>인가 표면 자체를 동결</b>한다 — endpoint 가 늘거나 줄거나, 어떤 GET 의 route gate 가
+     * 바뀌거나, {@code @PreAuthorize} 가 붙거나 떨어지면 census 해시가 달라져 red 가 된다.
+     * 즉 막는 것이 아니라 <b>조용히 바뀔 수 없게</b> 만든다.
+     *
+     * <p>[함께 거는 하드 불변식] 관리자 경로({@code /api/v1/admin/**})의 GET 이 공개 필터로 빠지는 것은
+     * 어떤 경우에도 사고다. 이것만은 census 와 무관하게 즉시 실패시킨다.
+     */
+    @Test
+    @DisplayName("읽기 endpoint 인가 표면 동결 census + 관리자 경로 공개 노출 차단")
+    void auditReadEndpointAuthorizationSurface() throws Exception {
+        Map<String, String> census = new TreeMap<>();
+        List<String> violations = new ArrayList<>();
+
+        // ⚠ 이 클래스가 주입받는 publicPaths 는 **test 프로파일** 값이다 —
+        //   api-server/src/test/resources/application.yml 이 main 을 shadow 하기 때문이다.
+        //   census 의 drift 판정에는 그것으로 충분하지만, '운영에서 관리자 경로가 공개로 열렸는가' 는
+        //   운영 설정으로 판정해야 한다. 실제로 main 의 whitelist 에 /api/v1/admin/system/** 을 넣어
+        //   보면 test 값만 보는 판정은 green 이었다(2026-08-19 실측). 그래서 운영 파일을 직접 읽는다.
+        List<String> productionPublicPaths = loadProductionWhitelist();
+        if (productionPublicPaths.isEmpty()) {
+            violations.add("운영 whitelist 를 읽지 못했습니다 — " + MAIN_APPLICATION_FILE
+                    + " 의 security.whitelist 파싱 실패(빈 목록을 통과로 처리하면 이 축이 vacuous 해집니다)");
+        }
+
+        RequestMappingHandlerMapping mappings = context.getBean(
+                "requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
+        for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : mappings.getHandlerMethods().entrySet()) {
+            HandlerMethod handler = entry.getValue();
+            if (!handler.getBeanType().getPackageName().startsWith("nuri.api.controller")) {
+                continue;
+            }
+            Set<RequestMethod> declared = entry.getKey().getMethodsCondition().getMethods();
+            // method 미선언 매핑은 GET 을 포함한 전 method 를 받는다. 읽기 축에서 빠뜨리면 안 된다.
+            if (!declared.isEmpty() && !declared.contains(RequestMethod.GET)) {
+                continue;
+            }
+            for (String path : entry.getKey().getPatternValues()) {
+                String gate = routeGate(path);
+                String preAuthorize = mergedPreAuthorizeValue(handler);
+                if (path.startsWith("/api/v1/admin/") && matchesAny(productionPublicPaths, path)) {
+                    violations.add("관리자 경로 GET 이 운영 whitelist 로 공개 노출됨: " + path
+                            + " (" + handler.getBeanType().getSimpleName()
+                            + "#" + handler.getMethod().getName() + ")");
+                }
+                census.put("GET " + path, gate + "|" + (preAuthorize.isEmpty() ? "-" : preAuthorize));
+            }
+        }
+
+        List<String> lines = census.entrySet().stream()
+                .map(e -> e.getKey() + " => " + e.getValue())
+                .toList();
+        writeActual(READ_SURFACE_ACTUAL_OUT, new TreeSet<>(lines));
+
+        // vacuous 통과 차단 — 스캔이 조용히 0 에 수렴하면 이 게이트는 없는 것과 같다.
+        if (census.size() < READ_ENDPOINT_FLOOR) {
+            violations.add("읽기 endpoint 스캔 하한 미달: " + census.size() + " < " + READ_ENDPOINT_FLOOR
+                    + " — 스캔 경로 파손 의심");
+        }
+
+        String actualHash = sha256Hex(String.join("\n", lines));
+        if (!READ_SURFACE_SHA256.equals(actualHash)) {
+            violations.add("읽기 인가 표면이 바뀌었습니다: endpoints=" + census.size()
+                    + ", sha256=" + actualHash
+                    + " (매니페스트=" + READ_SURFACE_SHA256 + ")."
+                    + " 산출물 " + READ_SURFACE_ACTUAL_OUT + " 을 diff 해 무엇이 바뀌었는지 확인하고,"
+                    + " 정당한 변경이면 사유와 함께 상수를 갱신하십시오."
+                    + " 인가를 약화하는 변경(공개 전환·@PreAuthorize 제거)인지 먼저 자문할 것.");
+        }
+
+        failIfAny("READ ENDPOINT AUTHORIZATION SURFACE", violations);
     }
 
     @Test
@@ -638,6 +743,38 @@ class SecurityAuthAnnotationLinterTest {
             if (!expected.contains(entry)) {
                 violations.add(label + " 미등록 신규/변경: " + entry);
             }
+        }
+    }
+
+    /** 운영 프로파일의 {@code security.whitelist}. test 리소스가 main 을 shadow 하므로 파일에서 직접 읽는다. */
+    private List<String> loadProductionWhitelist() {
+        YamlPropertiesFactoryBean yaml = new YamlPropertiesFactoryBean();
+        yaml.setResources(new FileSystemResource(resolveFromRepoRoot(MAIN_APPLICATION_FILE)));
+        Properties application = yaml.getObject();
+        if (application == null) {
+            return List.of();
+        }
+        String csv = application.getProperty("security.whitelist");
+        if (csv == null || csv.isBlank()) {
+            return List.of();
+        }
+        return Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(value -> !value.isEmpty())
+                .toList();
+    }
+
+    private static String sha256Hex(String value) {
+        try {
+            byte[] digest = java.security.MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(digest.length * 2);
+            for (byte b : digest) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (java.security.NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256을 사용할 수 없습니다", e);
         }
     }
 

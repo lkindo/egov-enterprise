@@ -6,7 +6,7 @@ authority: derived-active-index
 scope: repository
 sensitivity: public-repo-safe
 verified_at: 2026-08-19
-verified_against: 189c24024980bf795438ed3bc293059dd0331ceb
+verified_against: 36e034171dfe9946e144f20aa98d459463cec570
 canonical_sources:
   - ../../frontend/public/governance_harness_atlas.html
   - ../../docs/04-operations/verification-blindspots.md
@@ -46,8 +46,6 @@ refresh_triggers:
 | GAP-FE-001 | P1 | open | frontend security | production CSP에 `unsafe-inline`이 남아 inline script/style 의존을 허용한다. | [next.config.ts](../../frontend/next.config.ts), [pending decisions](../../docs/04-operations/pending-decisions.md) | nonce/hash 기반 CSP와 inline 제거를 별도 보안 변경으로 검증한다. | 보안 소유자 | 2026-08-18 |
 | GAP-OPS-001 | P2 | blocked-external | verification | NVD 기반 dependency scan, 실제 k6 부하, 인증된 admin ZAP은 외부 자격·환경이 없으면 완전 검증되지 않는다. | [verification blindspots](../../docs/04-operations/verification-blindspots.md) | 필요한 secret·대상 환경·운영 창구가 준비되면 스킵 없는 증거를 재수집한다. | 저장소/운영 관리자 | 2026-08-18 |
 | GAP-AGENT-001 | P2 | deferred | coordination | 공용 메모리는 지속 지식만 공유하며 실시간 claim·lock·presence 조정은 아직 설계 상태다. | [coordination design](../../docs/02-architecture/dual-operator-coordination.md), [AGENTS memory rule](../../AGENTS.md#documentation-and-memory) | 실제 동시 편집 충돌 비용이 정당화될 때 별도 coordination protocol을 구현한다. | 사용자 | 2026-08-18 |
-| GAP-AUTH-002 | P1 | open | authorization | 재작성된 `SecurityAuthAnnotationLinterTest`는 쓰기 메서드(POST/PUT/PATCH/DELETE)만 순회한다. 종전 린터가 HTTP 메서드 구분 없이 강제하던 "모든 핸들러는 인가 애노테이션·PUBLIC whitelist·secure-paths 중 하나에 결속" 축이 읽기 엔드포인트에서 사라졌고, 이 능력을 넘겨받은 다른 게이트가 없다. | [SecurityAuthAnnotationLinterTest](../../api-server/src/test/java/nuri/api/harness/SecurityAuthAnnotationLinterTest.java), [authorization policies](../../config/governance/authorization-policies.json) | endpoint policy registry를 읽기 엔드포인트까지 확장하거나, 최소한 "비-whitelist GET은 선언된 인가 기제를 가진다"는 축소 단언을 별도 테스트로 복원한다. 즉시 복원이 불가하면 registry의 알려진 한계와 gates.json에 범위 밖임을 명시해 커버리지 축소가 문서상 은폐되지 않게 한다. | 보안/API 소유자 | 2026-08-19 |
-| GAP-GOV-003 | P1 | open | harness integrity | 동결 census가 Java 상수에서 `config/governance/*.json` registry로 이관됐는데, `HarnessBaselineIntegrityTest`는 Java 상수와 훅 파일만 해시한다. 그 결과 인가 census·gate registry·ZDM waiver의 변경이 baseline manifest diff에 남지 않아, 목록 편집이 "두 파일이 함께 바뀐다"는 은폐 방지 결속을 벗어난다. | [HarnessBaselineIntegrityTest](../../api-server/src/test/java/nuri/api/harness/HarnessBaselineIntegrityTest.java), [authorization policies](../../config/governance/authorization-policies.json), [gate registry](../../config/governance/gates.json), [zdm waivers](../../config/governance/zdm-waivers.json) | `GATE_HOOKS`가 훅을 해시하는 방식과 동일하게 registry JSON을 `__registry.<path>` 축으로 매니페스트에 동결하고, 의도적 변경 주입으로 red를 증명한다. | 아키텍처/보안 소유자 | 2026-08-19 |
 | GAP-SEC-001 | P1 | blocked-external | secret lifecycle | 과거 노출 가능 자격의 외부 회전·폐기 완료 여부는 저장소만으로 증명할 수 없다. | [verification blindspots](../../docs/04-operations/verification-blindspots.md) | provider별 회전·dangling credential 폐기 증거를 secure channel에서 확인한다. 값이나 로컬 파일은 저장소에 기록하지 않는다. | 사용자/운영 관리자 | 2026-08-19 |
 
 ## 재검증 대기
