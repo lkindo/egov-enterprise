@@ -403,33 +403,49 @@ test('aggregate result vocabulary is canonical rather than unused manifest decor
   }
 });
 
-test('pull request review policy is exact and cannot be weakened to presence-only protection', () => {
+// [DEC-OPS-009 · 2026-08-20] 종전 이름은 'cannot be weakened to presence-only protection' 였고
+// weak={0,false,…} 를 위반 표본으로 썼다. 단독 운영 결정으로 그 값이 **결정된 정책 자체**가
+// 되면서 판정 방향이 바뀌었다: manifest ↔ live 는 여전히 정확 일치를 요구하되(어느 방향의
+// drift 든 red), manifest 자체는 결정 상수와의 정확 일치로 동결된다.
+test('pull request review policy is exact — drift in either direction is reported', () => {
   assert.deepEqual(comparePullRequestPolicy(
     manifest.pullRequestPolicy,
     structuredClone(manifest.pullRequestPolicy),
   ), []);
 
-  const weak = {
-    requiredApprovingReviewCount: 0,
-    requireCodeOwnerReview: false,
-    requireLastPushApproval: false,
+  // 원격이 명세보다 '강한' 경우도 불일치다 — reviewer 없는 단독 운영에서 원격만 approval 1 이
+  // 되면 모든 병합이 잠기는데, 그것이 조용히 지나가면 안 된다.
+  const stricterLive = {
+    requiredApprovingReviewCount: 1,
+    requireCodeOwnerReview: true,
+    requireLastPushApproval: true,
     dismissStaleReviewsOnPush: false,
-    requiredReviewThreadResolution: false,
+    requiredReviewThreadResolution: true,
   };
-  const errors = comparePullRequestPolicy(manifest.pullRequestPolicy, weak).join('\n');
-  assert.match(errors, /requiredApprovingReviewCount.*expected 1.*found 0/i);
-  assert.match(errors, /requireCodeOwnerReview.*expected true.*found false/i);
-  assert.match(errors, /requireLastPushApproval.*expected true.*found false/i);
-  assert.match(errors, /requiredReviewThreadResolution.*expected true.*found false/i);
+  const errors = comparePullRequestPolicy(manifest.pullRequestPolicy, stricterLive).join('\n');
+  assert.match(errors, /requiredApprovingReviewCount.*expected 0.*found 1/i);
+  assert.match(errors, /requireCodeOwnerReview.*expected false.*found true/i);
+  assert.match(errors, /requireLastPushApproval.*expected false.*found true/i);
+  assert.match(errors, /requiredReviewThreadResolution.*expected false.*found true/i);
 });
 
-test('static manifest rejects a weakened or incomplete pull request review policy', () => {
-  const weakened = structuredClone(manifest);
-  weakened.pullRequestPolicy.requiredApprovingReviewCount = 0;
-  weakened.pullRequestPolicy.requireCodeOwnerReview = false;
-  const errors = validateStaticContract({ manifest: weakened, ciContent }).join('\n');
-  assert.match(errors, /at least one approving review/i);
-  assert.match(errors, /cannot weaken 'requireCodeOwnerReview'/i);
+test('static manifest freezes the decided review policy in both directions', () => {
+  // 결정(0/false)에서 벗어나는 '강화' 도 상수·결정 기록 갱신 없이는 red 다 —
+  // 그래야 reviewer 확보 후의 정책 상향이 침묵 편집이 아니라 후속 DEC 로 기록된다.
+  const strengthened = structuredClone(manifest);
+  strengthened.pullRequestPolicy.requiredApprovingReviewCount = 1;
+  strengthened.pullRequestPolicy.requireCodeOwnerReview = true;
+  const errors = validateStaticContract({ manifest: strengthened, ciContent }).join('\n');
+  assert.match(errors, /requiredApprovingReviewCount.*decided policy.*0.*DEC-OPS-009/i);
+  assert.match(errors, /requireCodeOwnerReview.*decided policy.*false.*DEC-OPS-009/i);
+
+  // 음수·타입 파손은 결정과 무관하게 항상 거부한다.
+  const negative = structuredClone(manifest);
+  negative.pullRequestPolicy.requiredApprovingReviewCount = -1;
+  assert.match(
+    validateStaticContract({ manifest: negative, ciContent }).join('\n'),
+    /non-negative integer/i,
+  );
 
   const incomplete = structuredClone(manifest);
   delete incomplete.pullRequestPolicy.requireLastPushApproval;
