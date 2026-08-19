@@ -174,6 +174,18 @@ export class ConsoleErrorGuard {
         (type === 'warning' && text.includes('Lit is in dev mode'));
       if (isFrameworkNoise) return;
 
+      // SockJS 핸드셰이크가 끝나기 전에 페이지가 이동하면 Chromium이 이 경고를 남긴다.
+      // 알림 소켓을 붙이는 화면이면 어느 테스트에서나 발생하는 전송 계층 정리(teardown)
+      // 부산물이며 제품 신호가 아니다. 종전 구현도 같은 문구를 명시적으로 무시했고
+      // ledger 로 옮기는 과정에서 대체 없이 사라져 무관한 테스트 다수가 red 가 됐다.
+      // 테스트별 ledger 항목으로 두지 않는 이유: 이 경고는 특정 테스트의 의도가 아니라
+      // 화면 구성에 따라붙으므로, 미발생 시 오히려 ledger 가 실패한다(occurrences === 0).
+      const isTransportTeardown =
+        type === 'warning'
+        && /^WebSocket connection to 'wss?:\/\/[^']*' failed: (?:WebSocket is closed before the connection is established\.|Error in connection establishment)/
+          .test(text);
+      if (isTransportTeardown) return;
+
       const isSystemLog =
         text.includes('[Fast Refresh]') ||
         text.includes('ready in') ||

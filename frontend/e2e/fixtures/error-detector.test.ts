@@ -115,6 +115,58 @@ describe('ExpectedErrorLedger', () => {
     consoleError.mockRestore();
   });
 
+  // 이 예외는 종전 구현에 있던 것을 복원한 것이다. 넓히면 실제 소켓 결함을 은폐하므로
+  // '무엇을 통과시키는가'와 '무엇을 여전히 잡는가'를 함께 고정한다.
+  it('SockJS teardown 경고만 통과시키고 다른 WebSocket 결함은 그대로 잡는다', async () => {
+    const makeGuard = async () => {
+      const listeners = new Map<string, (value: unknown) => void>();
+      const frame = {};
+      const page = {
+        on: (event: string, listener: (value: unknown) => void) => {
+          listeners.set(event, listener);
+          return page;
+        },
+        url: () => 'http://localhost:3001/admin/user/manage',
+        mainFrame: () => frame,
+      } as unknown as Page;
+      const guard = new (await import('./error-detector')).ConsoleErrorGuard(page, scope);
+      await guard.install();
+      return { guard, listeners };
+    };
+    const emit = (
+      listeners: Map<string, (value: unknown) => void>,
+      type: string,
+      text: string,
+    ) => listeners.get('console')?.({
+      type: () => type,
+      text: () => text,
+      location: () => ({ url: 'http://localhost:3001/admin/user/manage' }),
+    });
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+
+    const teardown = await makeGuard();
+    emit(teardown.listeners, 'warning',
+      "WebSocket connection to 'ws://localhost:3001/ws/017/kyvvlyvz/websocket' failed: "
+      + 'WebSocket is closed before the connection is established.');
+    await expect(teardown.guard.verify()).resolves.toBeUndefined();
+
+    // 같은 문구라도 error 채널이면 통과시키지 않는다.
+    const asError = await makeGuard();
+    emit(asError.listeners, 'error',
+      "WebSocket connection to 'ws://localhost:3001/ws/017/kyvvlyvz/websocket' failed: "
+      + 'WebSocket is closed before the connection is established.');
+    await expect(asError.guard.verify()).rejects.toThrow(/WebSocket/);
+
+    // 다른 원인의 소켓 실패는 여전히 결함이다.
+    const otherFailure = await makeGuard();
+    emit(otherFailure.listeners, 'warning',
+      "WebSocket connection to 'ws://localhost:3001/ws/017/kyvvlyvz/websocket' failed: "
+      + 'Unexpected response code: 500');
+    await expect(otherFailure.guard.verify()).rejects.toThrow(/WebSocket/);
+
+    consoleError.mockRestore();
+  });
+
   it('spec ledger ID는 저장소에서 유일하고 legacy ignore API를 사용하지 않는다', () => {
     const e2eDirectory = path.resolve(process.cwd(), 'e2e');
     const specSources = fs.readdirSync(e2eDirectory)

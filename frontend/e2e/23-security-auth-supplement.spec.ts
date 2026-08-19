@@ -715,7 +715,21 @@ test.describe('Tier 23-E1: Forged-token rejection (middleware signature verifica
     // header=HS512, payload={role:ROLE_ADMIN, exp:먼 미래}, 서명='invalidsig'(위조). 과거 미들웨어는 통과시켰다.
     const FORGED_ADMIN_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJVU1JDTkZSTV8wMDAwMDAwMDAwMSIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ.invalidsig';
 
-    test('forged (bad-signature) admin token is rejected by middleware → /login', async ({ page, context }) => {
+    test('forged (bad-signature) admin token is rejected by middleware → /login', async ({ page, context, consoleGuard }) => {
+        // 미들웨어가 /login 으로 돌려보낸 뒤 AuthContext 가 세션 유무를 확인한다. 위조 토큰이므로 401 이
+        // 나오는 것이 이 테스트가 증명하려는 거부 동작 자체다.
+        consoleGuard.expectErrors([{
+            id: 'E2E-AUTH-FORGED-TOKEN-ME-401',
+            specScope: '23-security-auth-supplement.spec.ts :: forged (bad-signature) admin token is rejected by middleware → /login',
+            channel: 'response',
+            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+            messagePattern: null,
+            method: 'GET',
+            status: 401,
+            maxOccurrences: 2,
+            reason: '거부 후 도착한 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+            expiresAt: '2026-12-31',
+        }]);
         // 유효 세션 쿠키를 위조 토큰으로 덮어쓴다. 미들웨어가 서명 검증 실패로 로그인으로 돌려보내야 한다.
         await context.addCookies([
             { name: 'accessToken', value: FORGED_ADMIN_TOKEN, url: 'http://localhost:3001', httpOnly: true, sameSite: 'Strict' },
@@ -725,7 +739,19 @@ test.describe('Tier 23-E1: Forged-token rejection (middleware signature verifica
         await expect(page).toHaveURL(/\/login/, { timeout: 20000 });
     });
 
-    test('unknown-algorithm (alg=none style) token is rejected → /login', async ({ page, context }) => {
+    test('unknown-algorithm (alg=none style) token is rejected → /login', async ({ page, context, consoleGuard }) => {
+        consoleGuard.expectErrors([{
+            id: 'E2E-AUTH-NONE-ALG-TOKEN-ME-401',
+            specScope: '23-security-auth-supplement.spec.ts :: unknown-algorithm (alg=none style) token is rejected → /login',
+            channel: 'response',
+            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+            messagePattern: null,
+            method: 'GET',
+            status: 401,
+            maxOccurrences: 2,
+            reason: '거부 후 도착한 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+            expiresAt: '2026-12-31',
+        }]);
         // alg 화이트리스트(HS256/384/512) 밖은 거부. header.alg='none'.
         const NONE_ALG_TOKEN = 'eyJhbGciOiJub25lIn0.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ.';
         await context.addCookies([
@@ -738,7 +764,19 @@ test.describe('Tier 23-E1: Forged-token rejection (middleware signature verifica
 
 // ──────────────── E11: 접근성(a11y) — /login (color-contrast 포함, 미비활성) ────────────────
 test.describe('Tier 23-E11: Accessibility (login page, strict)', () => {
-    test('login page has no axe violations (color-contrast included)', async ({ page }) => {
+    test('login page has no axe violations (color-contrast included)', async ({ page, consoleGuard }) => {
+        consoleGuard.expectErrors([{
+            id: 'E2E-AUTH-LOGIN-A11Y-ME-401',
+            specScope: '23-security-auth-supplement.spec.ts :: login page has no axe violations (color-contrast included)',
+            channel: 'response',
+            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+            messagePattern: null,
+            method: 'GET',
+            status: 401,
+            maxOccurrences: 2,
+            reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+            expiresAt: '2026-12-31',
+        }]);
         await page.goto('/login');
         // 04-quality의 a11y는 color-contrast/heading-order를 비활성했으나, 공개 진입점 /login은 엄격히 검사한다.
         // 단, 감사 범위를 로그인 본문(<main id="main-content">)으로 스코프한다. 루트 레이아웃(AppShell)이 모든
