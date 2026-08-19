@@ -1,12 +1,12 @@
 import { Page, Locator } from '@playwright/test';
 
 /**
- * 🤖 자가 치유형 E2E 테스트 하네스 에이전트 (Self-Healing E2E Agent)
- * 
- * UI 마이너 업데이트나 Tailwind CSS 클래스 리팩토링 등으로 인해
- * 주 셀렉터(Primary Selector)가 부서졌을 때, 텍스트 힌트와 시맨틱 ARIA 역할(Role),
- * 그리고 태그 속성 기반의 휴리스틱 매칭 알고리즘을 기동하여 테스트의 중단 없이
- * 동적으로 엘리먼트를 복구(Heal)하고 테스트를 성공으로 인도합니다.
+ * 선택형 로컬 진단용 locator 보조물.
+ *
+ * 주 selector 실패 뒤 role·부분 텍스트·태그 스캔으로 찾은 후보는 원래 화면 계약과
+ * 같은 요소라는 보장이 없다. 따라서 커밋된 spec의 성공 조건으로 사용하지 않고,
+ * fallback 결과는 의미 기반 locator를 고친 뒤 일반 Playwright 실행으로 재검증한다.
+ * 현재 제품 `*.spec.ts`는 이 fixture를 직접 소비하지 않는다.
  */
 export class SelfHealingAgent {
   private page: Page;
@@ -15,9 +15,7 @@ export class SelfHealingAgent {
     this.page = page;
   }
 
-  /**
-   * 엘리먼트를 안전하게 감지하고 주 셀렉터 실패 시 복구를 시도합니다.
-   */
+  /** 주 selector 실패 시 모호할 수 있는 진단 후보를 반환한다. */
   async safeLocate(
     primarySelector: string, 
     options: { textHint?: string; role?: 'button' | 'link' | 'textbox' } = {}
@@ -81,17 +79,13 @@ export class SelfHealingAgent {
     }
   }
 
-  /**
-   * 자가 치유형 클릭 액션
-   */
+  /** 로컬 진단용 fallback 클릭. CI 성공 조건으로 사용하지 않는다. */
   async safeClick(primarySelector: string, options: { textHint?: string; role?: 'button' | 'link' } = {}) {
     const locator = await this.safeLocate(primarySelector, options);
     await locator.click();
   }
 
-  /**
-   * 자가 치유형 텍스트 입력 액션
-   */
+  /** 로컬 진단용 fallback 입력. CI 성공 조건으로 사용하지 않는다. */
   async safeFill(primarySelector: string, value: string, options: { textHint?: string; role?: 'textbox' } = {}) {
     const locator = await this.safeLocate(primarySelector, options);
     await locator.fill(value);

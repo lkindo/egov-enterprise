@@ -1,7 +1,7 @@
 # eGov Enterprise Modernization (전자정부 프레임워크 모더니제이션)
 
 > **전자정부 표준프레임워크 5.0 기반 엔터프라이즈 모더니제이션 프로젝트**  
-> 레거시 JSP/Spring 기반의 공통 컴포넌트를 **Next.js 16 (App Router)**와 **Spring Boot 3.4 + JPA** 기반의 현대적인 Full-stack 아키텍처로 완전히 전환하고 고도화한 프로젝트입니다.
+> 레거시 JSP/Spring 기반의 공통 컴포넌트를 **Next.js 16 (App Router)**와 **Spring Boot 3.5 + JPA** 기반의 현대적인 Full-stack 아키텍처로 전환한 프로젝트입니다.
 
 ---
 
@@ -10,9 +10,9 @@
 본 프로젝트는 전자정부 표준프레임워크의 방대한 공통 컴포넌트를 최신 기술 스택으로 재구축하여, 엔터프라이즈 환경에서의 확장성, 유연성, 그리고 사용자 경험(UX)을 극대화하는 것을 목표로 합니다.
 
 - **Frontend**: 차세대 React 프레임워크인 Next.js 16을 활용한 고성능 UI/UX 구현.
-- **Backend**: Spring Boot 3.4 및 JPA를 통한 비즈니스 로직의 현대화 및 도메인 중심 설계.
-- **Visual Analytics**: 데이터 시각화 라이브러리를 통한 실시간 통계 대시보드 제공.
-- **재사용 베이스 프레임워크**: 이 저장소는 완성된 제품이자, **신규 SI 구축·레거시 재개발의 베이스 프레임워크**로 재사용(복제 → 프로젝트 고유 기능 삭제 → 신규 구축·레거시 이관)하도록 설계됐다. 시작은 [온보딩 런북](./docs/03-guides/getting-started.md)을 참조한다.
+- **Backend**: Spring Boot 3.5 및 JPA를 통한 비즈니스 로직의 현대화 및 도메인 중심 설계.
+- **Visual Analytics**: 데이터 시각화 라이브러리를 활용한 통계 대시보드 제공.
+- **재사용 베이스 프레임워크**: 이 저장소는 **신규 SI 구축·레거시 재개발을 위한 참조 구현과 재사용 베이스**다. 프로필 기반 추출과 레거시 이관 경계는 구현되어 있으나, 운영 투입 전에는 [활성 gap](./.agent/memory/known-gaps.md)과 환경별 검증을 확인한다. 시작은 [온보딩 런북](./docs/03-guides/getting-started.md)을 참조한다.
 
 ---
 
@@ -24,24 +24,24 @@
 - **Styling**: Tailwind CSS 4.x, Shadcn/UI (Modern Component System)
 - **State/Data**: Axios, TanStack Query 5.x, Client/Server Components
 - **Visualization**: Recharts (Chart components)
-- **Communication**: WebSocket (STOMP), Socket.io (선택 가용)
+- **Communication**: WebSocket (STOMP/SockJS)
 - **Icons**: Lucide React
 
 ### Backend
-- **Core**: Spring Boot 3.4.x, Java 21 (LTS)
+- **Core**: Spring Boot 3.5.16, Java 21 (LTS)
 - **Database**: PostgreSQL (JPA/Hibernate)
 - **Architecture**: 멀티 모듈 (`foundation` / `business-core` / `business-app` / `api-server`) + 레거시 이관 도구 `migration-tool`. 단방향 의존·도메인 격리(ArchUnit)
 - **Mapping**: MapStruct (엔티티↔DTO 컴파일타임 매핑 표준)
 - **DB Migration**: Flyway (`V2_0` Postgres 표준 베이스라인 — 빈 DB 부팅 가능)
 - **Security**: Spring Security 6.x, JWT (Json Web Token)
 - **API**: RESTful API with OpenAPI 3.0
-- **Build**: Gradle 9.4.1 (Version Catalog)
+- **Build**: Gradle 9.6.1 (Version Catalog)
 
 ---
 
 ## 📂 프로젝트 구조 (Project Structure — 멀티 모듈)
 
-본 프로젝트는 **재사용 가능한 코어(foundation·admin)와 프로젝트 고유 도메인을 물리적으로 분리**한 멀티 모듈 구조를 채택한다. *(2026-07 재사용 프레임워크화 리팩토링으로 기존 `business-suite` 모놀리스를 `business-core`/`business-app`으로 분할.)*
+본 프로젝트는 **재사용 가능한 코어(`foundation`·`business-core`)와 프로젝트 고유 도메인을 물리적으로 분리**한 멀티 모듈 구조를 채택한다. 현재 제품 경계의 정본은 [ADR-0001](./docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md)이다.
 
 ```bash
 egov-enterprise/
@@ -53,27 +53,15 @@ egov-enterprise/
 └── frontend/          # Next.js 16 (App Router) 프런트엔드
 ```
 - **의존 방향**: `api-server → business-app → business-core → foundation` (단방향·비순환). 형제 도메인 간 결합은 `DomainIsolationTest`(ArchUnit)로 차단 → 프로젝트 고유 도메인의 안전한 삭제 지원.
-- **엔티티↔DTO 매핑**: MapStruct `@Mapper` 표준(수기 `from()` 대체). 신규 도메인은 스캐폴드 제너레이터(`scripts/generate-domain.ps1`)로 골격을 뽑되, Service·Controller 는 [getting-started §5.2.1](docs/03-guides/getting-started.md) 의 실존 관례(`ApiResponse` 래퍼·`@PreAuthorize`·`@Transactional(readOnly=true)`·MapStruct)대로 작성한다. *(제네릭 CRUD 베이스 클래스는 미구현 — 스캐폴드가 상속하는 `BaseCrudController/Service` 는 저장소에 존재하지 않는다.)*
+- **엔티티↔DTO 매핑**: MapStruct `@Mapper` 표준(수기 `from()` 대체). 신규 도메인은 스캐폴드 제너레이터(`scripts/generate-domain.ps1`)로 골격을 뽑되, Service·Controller 는 [getting-started §5.2.1](docs/03-guides/getting-started.md) 의 실존 관례(`ApiResponse` 래퍼·`@PreAuthorize`·`@Transactional(readOnly=true)`·MapStruct)대로 작성한다. 제네릭 `BaseCrudController`/`BaseCrudService`는 존재하지 않으므로 상속 대상으로 가정하지 않는다.
 
 ---
 
-## 📊 구현 현황 (Implementation Status)
+## 📊 현재 제공 범위 (Current Capability Boundary)
 
-현재 모든 핵심 단계(Phase 1~4)가 완료되어 실무 적용이 가능한 수준의 현대화된 기능을 제공합니다.
+완료율이나 과거 Phase 번호 대신 현재 모듈과 실행 가능한 기능을 기준으로 범위를 설명한다. 미해결 위험과 운영 결정은 [.agent/memory/known-gaps.md](./.agent/memory/known-gaps.md) 및 [pending-decisions.md](./docs/04-operations/pending-decisions.md)에서 확인한다.
 
-| 단계 | 주요 내용 | 진행 상태 |
-| :--- | :--- | :---: |
-| **Phase 1: 기반 구축** | 시스템 관리, 보안 설정, 사용자 인증, 로그 관리 | ✅ 완료 (100%) |
-| **Phase 2: 협업/컨텐츠** | 게시판, 커뮤니티(동호회), 주소록, 전역 파일/댓글 관리 | ✅ 완료 (100%) |
-| **Phase 3: 운영 지원** | 일정 관리, 부서 업무, 온라인 설문, 약관 관리, 보고서 | ✅ 완료 (100%) |
-| **Phase 4: 통합/통계** | 실시간 사용자/화면 통계, 디지털 자산 관리, 모니터링 | ✅ 완료 (100%) |
-| **Phase 5: 구조 리팩토링** | 관리자 기능 통합(System Admin), 메뉴 계층 구조 전면 재편 | ✅ 완료 (100%) |
-| **Phase 6: 아키텍처 혁신** | 2-Tier (Foundation-Business) 모듈 통합 리팩토링 *(→ Phase 9에서 재사용성 위해 core/app 재분할)* | ✅ 완료 (100%) |
-| **Phase 7: 최적화** | 빌드 자동화, 패키지 최적화, DB 메뉴 마이그레이션 | ✅ 완료 (100%) |
-| **Phase 8: 고도화** | E2E 테스트 고도화, CI/CD 자동화, 성능 부하 테스트 | ✅ 완료 (100%) |
-| **Phase 9: 재사용 프레임워크화** | 모듈 재분할(`business-core`/`business-app`)·foundation 승격·Flyway `V2_0` 베이스라인·MapStruct 표준·레거시 이관도구(`migration-tool`)·제품 경계 ADR | ✅ 완료 (2026-08) |
-
-### 핵심 모듈 상술 (Key Migrated Modules)
+### 핵심 기능군
 - **Administrative Tools**: 공통코드, 메뉴 관리, 프로그램 관리, 로그(시스템/웹/개인정보 등) 관리.
 - **Security & IAM**: 권한 관리, 롤 관리, 그룹 관리 등 정교한 RBAC 시스템.
 - **Collaboration Suite**: 공지사항, 갤러리 게시판, 동호회 관리, 주소록.
@@ -126,45 +114,14 @@ pnpm dev
 
 ---
 
-## ✅ 검증 결과 (Verification)
+## ✅ 검증 진입점 (Verification Entry Points)
 
-- **Type Check**: TypeScript Strict 모드 기준 에러 없음 (Confirmed via `tsc --noEmit`).
-- **Build**: Production 빌드 성공 (`next build` 완료).
-- **Security**: JWT 기반 인증 및 Spring Security RBAC 적용 완료.
+- `npm run verify`: 일반 로컬 백엔드·프론트 검증. pre-push와 CI의 완전한 상위집합은 아니다.
+- `.\gradlew.bat localGate`: Docker 기반 PostgreSQL 스키마 검증, 전 모듈 테스트, JaCoCo, 프론트 단위 검증을 포함하는 병합 전 로컬 게이트.
+- `npm run verify:ops`: 원격 ruleset 등 네트워크·관리 권한이 필요한 운영 점검.
+- 최종 병합 권위는 [.github/required-checks.json](./.github/required-checks.json)에 결속된 required CI다.
 
----
-
-## 📝 변경 이력 — 프로젝트 위생 정비 (2026-02-21)
-
-> 아래는 **2026-02-21 시점의 이력**이다. 현행 게이트·검증 체계는 위 [기여 가이드](#-기여-가이드)와 [.githooks/README.md](./.githooks/README.md)의 게이트 계층표가 SSOT 다.
-
-### 프로젝트 위생 개선 (Project Hygiene)
-
-#### 1. Git 저장소 최적화
-- ✅ `.gitignore` 정비: 빌드 산출물 (`bin/`, `build/`, `generated-sources/`) 추적 제외
-- ✅ `.factorypath` 등 IDE 설정 파일 Git 추적 제외
-- ✅ 패키지 잠금 파일 통일: `pnpm-lock.yaml` 우선, `package-lock.json` 및 `yarn.lock` 제외
-
-#### 2. Line Ending 통일
-- ✅ `.gitattributes` 설정: 모든 텍스트 파일 LF 강제
-- ✅ Windows 배치 파일 (`.bat`, `.cmd`) 는 CRLF 유지
-- ✅ Git 설정: `core.autocrlf = input`, `core.eol = lf`
-- ✅ 770+ 개 Java 소스 파일 Line Ending LF 로 통일
-
-#### 3. 보안 강화
-- ✅ 민감 설정 파일 Git 추적 제외: `**/egovProps/conf/`, `*.local.properties`
-- ✅ 암호화 키, 비밀번호 등 중요 정보 커밋 방지
-
-### 변경된 커밋 히스토리
-```
-refactor: add build artifacts to .gitignore and cleanup tracked files
-refactor: enforce LF line endings in .gitattributes
-refactor: apply Version Catalog (libs.versions.toml) for dependency management
-refactor: enforce Modular Monolith principles (bootJar separation)
-feat: implement Event-Driven communication (PostCreatedEvent)
-refactor: enhance data access boundary via Service Interface
-refactor: apply optimized JPA/Hibernate configurations (Batch Size, OSIV False)
-```
+변경 범위별 최소 검증과 문서-only fast path는 [AGENTS.md](./AGENTS.md#verification-by-change-scope)와 [.githooks/README.md](./.githooks/README.md)를 따른다.
 
 ---
 
@@ -172,8 +129,8 @@ refactor: apply optimized JPA/Hibernate configurations (Batch Size, OSIV False)
 
 본 프로젝트는 단순한 계층형 구조를 넘어, 모듈 간 결합도를 낮추기 위해 다음 원칙을 준수합니다.
 
-1. **상호 서비스 주입 금지**: 모듈 간 의존성은 인터페이스(Service Interface)를 통해서만 이루어지며, 직접적인 Repository 접근을 금지합니다.
-2. **이벤트 기반 동기화**: 게시글 등록(`PostCreatedEvent`) 등의 비즈니스 사례 발생 시, 이벤트를 발행하여 타 모듈(통계, 알림 등)과의 결합성을 최소화합니다.
+1. **의존 방향 유지**: 상위 모듈이 하위 모듈을 호출하고, 재사용 경계는 port/interface 또는 event를 우선한다. 현재 일부 구체 서비스·타 도메인 repository 결합은 예외로 남아 있으므로 “전부 인터페이스”라고 간주하지 않으며, [활성 gap](./.agent/memory/known-gaps.md)과 격리 테스트로 축소한다.
+2. **이벤트 기반 동기화**: 게시글 등록(`PostCreatedEvent`)처럼 비동기 후속 효과가 적합한 경로는 event를 사용해 결합을 줄인다. 모든 도메인 호출이 event 기반이라는 의미는 아니다.
 3. **독립적 빌드 구성**: 라이브러리 성격의 모듈(`foundation`·`business-core`·`business-app`)은 `bootJar`를 생성하지 않으며, 실행 파일은 진입점 모듈(`api-server`)과 이관 CLI(`migration-tool`)만 생성합니다.
 
 ---
@@ -185,22 +142,22 @@ refactor: apply optimized JPA/Hibernate configurations (Batch Size, OSIV False)
 #### 1. 필수 요구사항
 - **Java**: 21 (LTS)
 - **Node.js**: 22+ (`.nvmrc` = 22, `frontend/package.json` `engines.node` = `>=22.0.0`)
-- **Package Manager**: pnpm (`npm install -g pnpm`)
-- **Database**: Docker 또는 PostgreSQL 14+
+- **Package Manager**: 루트 npm(`package-lock.json`), 프런트엔드 pnpm 9(`frontend/pnpm-lock.yaml`)
+- **Database**: Docker 또는 PostgreSQL 17
 
 #### 2. 환경 설정 및 데이터베이스 자동 부트스트랩 (Flyway 표준 베이스라인)
-최신 뼈대 아키텍처는 빈 PostgreSQL 데이터베이스만 준비되면 **Flyway 마이그레이션이 스키마 및 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)를 자동으로 구성**합니다. `V2_0__baseline.sql` 이 초기 101개 테이블을 만들고 후속 생성·정리 마이그레이션이 적용되어, **최종 스키마는 83개 테이블**입니다(CI 가 실 PostgreSQL 17 에서 Flyway 전량 적용 후 `ddl-auto:validate` 로 80 엔티티·83 테이블·888 컬럼을 매번 대조하며 drift 0). 상세는 [getting-started.md](./docs/03-guides/getting-started.md) §6.1 참조.
+빈 PostgreSQL 데이터베이스를 준비하면 **Flyway가 스키마와 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)를 구성**합니다. 현재 테이블·엔티티·컬럼 수는 migration에 따라 바뀌므로 README에 고정하지 않으며, CI의 PostgreSQL schema validation과 [getting-started.md](./docs/03-guides/getting-started.md) §6.1을 기준으로 확인합니다.
 
-> ⚠ **관리자 계정 자격증명 정책 (2026-08-01 변경)**
+> ⚠ **관리자 계정 자격증명 정책**
 >
-> 빈 DB 부팅 시 repeatable 마이그레이션 `R__seed_framework` 가 `webmaster`/`ROLE_ADMIN` 활성 계정(esntl_id `USRCNFRM_00000000001`, user_stts_cd `P`)을 생성하지만, **비밀번호는 시드하지 않습니다** — 어떤 입력과도 매칭되지 않는 로그인 불가 sentinel 이 들어갑니다. 종전에는 dev 기본 비밀번호 `1`(bcrypt)이 운영 마이그레이션 경로에 동봉되어, 이 저장소로 배포된 모든 시스템이 공개된 관리자 비밀번호를 갖고 출발했습니다.
+> 빈 DB 부팅 시 repeatable 마이그레이션 `R__seed_framework`가 관리자 역할 계정을 만들지만 **로그인 가능한 비밀번호는 시드하지 않습니다**. 입력과 매칭되지 않는 sentinel 상태로 시작합니다.
 >
-> - **dev / local / e2e**: `spring.flyway.locations` 가 `classpath:db/seed-dev` 를 함께 적재하여 종전과 동일한 개발용 비밀번호(`1`)와 `TEST1` 계정을 넣습니다. 개발 흐름은 바뀌지 않습니다.
+> - **dev / local / e2e**: `spring.flyway.locations`가 `classpath:db/seed-dev`를 함께 적재하여 개발 전용 계정을 넣습니다. 공개 배포나 운영에 이 seed를 포함하지 않습니다.
 > - **운영**: `ADMIN_INITIAL_PASSWORD` 환경변수를 주고 기동하면 `AdminPasswordProvisioner` 가 최초 1회 비밀번호를 설정합니다. 이미 설정된 비밀번호는 절대 덮어쓰지 않으며(재기동마다 되돌아가면 그 자체가 백도어), 로그인 후 즉시 변경하고 환경변수를 제거하십시오. 미설정 시 이 계정은 로그인 불가 상태로 남고 기동 로그에 경고가 남습니다.
 >
 > V2_2 는 `ROLE_ADMIN` 등 권한/메뉴 구조를 시드합니다.
 
-아래 원클릭 부트스트랩 명령을 실행하면 이 모든 설정 파일 복사 및 환경 구축이 자동 수행됩니다.
+아래 원클릭 부트스트랩 명령을 실행하면 필요한 환경 파일 준비와 로컬 개발 환경 구성이 자동 수행됩니다.
 ```bash
 # 원클릭 부트스트랩 (환경 복사 -> Docker DB 기동 -> 의존성 패키지 pnpm 설치)
 make bootstrap
@@ -209,20 +166,19 @@ make bootstrap
 수동 구성을 원하는 경우 다음 단계를 거칩니다:
 1. 백엔드/프론트엔드 환경 설정 파일 복사
    - `api-server/src/main/resources/application-dev.yml` -> `application-local.yml`
-   - `api-server/src/main/resources/egovframework/egovProps/conf/egov-crypto-config.properties.sample` -> `egov-crypto-config.properties`
    - `frontend/.env.example` -> `frontend/.env.local`
 2. 로컬 Docker PostgreSQL 17 구동 (`docker compose up -d db`)
-3. 의존성 패키지 설치 (`npm install` 및 `cd frontend && pnpm install`)
+3. 의존성 패키지 설치 (`npm install` 및 `pnpm -C frontend install`)
 4. `:api-server:bootRun` 실행 시 자동으로 Flyway 마이그레이션 및 JPA 검증이 수행됩니다.
 
 ---
 
 ## 📚 문서 (Documentation)
 
-> 📑 **전체 문서 인덱스: [docs/README.md](./docs/README.md)** — 51개 문서 전량이 등재된 단일 진입점이다.
+> 📑 **전체 문서 인덱스: [docs/README.md](./docs/README.md)** — 추적 문서의 단일 진입점이다.
 > 아래 표는 **자주 쓰는 문서만 추린 발췌**이며 전량이 아니다. 찾는 문서가 없으면 위 인덱스를 볼 것.
 
-에이전트 운영 규칙은 [AGENTS.md](./AGENTS.md) · [GEMINI.md](./GEMINI.md)를 참조한다. 아래는 목적별 기술 문서 지도다. (문서는 `docs/` 이하 번호형 폴더로 분류되며 파일명은 kebab-case를 준수한다.)
+에이전트의 프로젝트 공통 운영 규칙 SSOT는 [AGENTS.md](./AGENTS.md)다. [GEMINI.md](./GEMINI.md)와 [CLAUDE.md](./CLAUDE.md)는 각 도구의 자동 탐색을 위한 얇은 어댑터이며 별도 정책 원본이 아니다. 사용자 홈 글로벌 규칙도 도구별 네이티브 경로를 통해 로드되므로 다른 도구가 자동 상속한다고 가정하지 않는다. 아래는 목적별 기술 문서 지도다. (문서는 `docs/` 이하 번호형 폴더로 분류되며 파일명은 kebab-case를 준수한다.)
 
 ### 🏛 아키텍처 (`docs/02-architecture/`)
 | 문서 | 설명 |
@@ -235,7 +191,7 @@ make bootstrap
 | [Zero-Downtime 마이그레이션](./docs/02-architecture/zero-downtime-migration.md) | Expand-and-Contract 패턴 |
 | [Pitest 뮤테이션 테스트](./docs/02-architecture/pitest-mutation-testing.md) | 테스트 방어력 검증 |
 | [레거시 이관 도구 설계](./docs/02-architecture/legacy-migration-tool-design.md) | 레거시→표준 스키마 ETL(mapping.yml DSL·4단계 파이프라인) |
-| [프레임워크 재사용성 진단](./docs/02-architecture/framework-reusability-assessment.md) | 베이스 프레임워크 재사용 준비도·로드맵 |
+| [재사용 Base 생성 가이드](./docs/03-guides/reusable-base-guide.md) | 검증된 프로필 기반 프레임워크 추출 절차 |
 
 ### 📗 개발 지침 (`docs/03-guides/`)
 | 문서 | 설명 |
@@ -255,33 +211,10 @@ make bootstrap
 | [성능 최적화 가이드](./docs/04-operations/performance-optimization-guide.md) | N+1·캐싱·FE 최적화 |
 | [데이터베이스 최적화 가이드](./docs/04-operations/database-optimization-guide.md) | 인덱스·쿼리 튜닝 |
 | [부하 테스트 가이드](./docs/04-operations/load-test-guide.md) | k6 부하 테스트 |
-| [k6 부하 테스트 퀵스타트](./docs/04-operations/k6-load-test-quickstart.md) | k6 설치·시나리오 실행 빠른 시작 |
 | [암호화 키 로테이션 런북](./docs/04-operations/crypto-key-rotation.md) | 운영 암호화 키 교체 절차 |
 | [로그 보존/파기 정책](./docs/04-operations/log-retention-policy.md) | 로그 보존 기간·개인정보 파기 정책 |
 | [결정 대기 백로그](./docs/04-operations/pending-decisions.md) | 제품·운영 결정 대기 항목 트래커 |
-| [안전 삭제 분석](./docs/04-operations/project-safe-deletion-analysis.md) | 코드/자산 안전 삭제 영향 분석 |
-
----
-
-## 🚀 변경 이력 — 성능·CI·테스트 보강 (2026-03)
-
-> 아래는 **2026-03 시점의 이력**이다. 수치는 당시 실측이며 현행값과 다를 수 있다 — 현행 게이트 임계값의 SSOT 는 `build.gradle`(JaCoCo)·`frontend/vitest.config.mts`(프런트 coverage)·`frontend/package.json`(lint 래칫)이다.
-
-### 성능 최적화
-- ✅ **N+1 쿼리 해결** - MenuService, UserService, UserLogRepository (95% 성능 향상)
-- ✅ **캐싱 최적화** - menuHierarchy, users 캐시 적용 (응답 시간 10-50ms)
-- ✅ **프론트엔드 빌드 최적화** - 11 개 패키지 최적화 (200-800ms 단축)
-
-### CI/CD 개선
-- ✅ **Gradle 캐싱 활성화** - 빌드 시간 91% 단축 (2m13s → 12s)
-- ✅ **Playwright Sharding** - 3 shard 병렬 실행 (66% 시간 단축)
-- ✅ **OWASP Dependency-Check** - 보안 취약점 자동 스캔
-
-### 테스트 보강
-- ✅ **Testcontainers 통합 테스트** - PostgreSQL 기반 테스트
-- ✅ **JaCoCo 커버리지 게이트** - *(당시 목표 60%. 2026-08-15 실측 래칫으로 **LINE 85% / BRANCH 70%** 로 상향됨 — `build.gradle` `jacocoRootCoverageVerification` 참조)*
-
-자세한 변경 이력은 git 커밋 히스토리 및 위 **구현 현황(Phase)** 표를 참조하세요.
+| [프로젝트 안전 삭제 가이드](./docs/04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비까지 포함한 안전 삭제 절차 |
 
 ---
 
@@ -291,15 +224,11 @@ make bootstrap
 
 1. **빌드 검증**
    ```bash
-   # 정규 통합 게이트 (권장) — 로컬↔CI 정합 단일 진입점
-   #   BE compile+test / FE tsc·next build·vitest 를 한 번에 실행
+   # 일반 로컬 검증(완전한 CI parity 명령은 아님)
    make verify        # == node scripts/verify.mjs all == npm run verify
 
-   # (참고) 개별 명령
-   # 백엔드
-   ./gradlew clean build
-   # 프론트엔드
-   cd frontend && pnpm type-check && pnpm build
+   # Docker 사용 가능 시 병합 전 전수 로컬 게이트
+   .\gradlew.bat localGate
    ```
 
 2. **코드 포맷**
@@ -323,5 +252,3 @@ make bootstrap
 - **기술 문의**: 프로젝트 Discussions
 
 ---
-
-*Last Updated: 2026-08-15 (선택 도메인 business-app 이관·한국어 UI 정책 확정. 상세: [ADR](./docs/02-architecture/decisions/README.md) · [getting-started](./docs/03-guides/getting-started.md))*

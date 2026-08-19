@@ -1,12 +1,12 @@
 # Backend Architecture Blueprint
 
-본 설계서는 **eGov Enterprise v5** 백엔드 플랫폼의 아키텍처적 무결성을 준수하기 위한 공식 엔지니어링 설계서이다. 본 아키텍처는 **백엔드 API 및 아키텍처 헌법 (18조)**의 규범에 의해 전적으로 통제되며, 에이전트와 인간 개발자 모두에게 단일 참조점(SSOT) 역할을 수행한다.
+이 문서는 **eGov Enterprise v5** 백엔드의 현재 모듈 경계와 구현 관례를 설명하는 아키텍처 지도다. 규범은 [백엔드 API 및 아키텍처 헌법](../../.agent/knowledge/backend-api-constitution/artifacts/constitution.md), 실제 상태는 현재 코드와 빌드 설정이 우선하며 이 문서 자체는 별도의 SSOT가 아니다.
 
 ---
 
 ## 1. 멀티 모듈 아키텍처 & 단방향 의존성 흐름
 
-eGov Enterprise 백엔드는 **Gradle 9.4.1** 기반의 계층형 멀티 모듈 구조(`foundation` ← `business-core` ← `business-app` ← `api-server`)로 격리되어 있으며, 상위 모듈이 하위 모듈을 참조하는 **엄격한 단방향 의존성(Strict Directed Acyclic Graph)**을 준수한다. 레거시 이관 CLI인 `migration-tool`은 이 계층에 의존하지 않는 독립 모듈로 분리되어 있다.
+eGov Enterprise 백엔드는 현재 wrapper 기준 **Gradle 9.6.1**의 계층형 멀티 모듈 구조(`foundation` ← `business-core` ← `business-app` ← `api-server`)로 격리되어 있으며, 상위 모듈이 하위 모듈을 참조하는 **엄격한 단방향 의존성(Strict Directed Acyclic Graph)**을 준수한다. 레거시 이관 CLI인 `migration-tool`은 이 계층에 의존하지 않는 독립 모듈로 분리되어 있다.
 
 ```mermaid
 graph TD
@@ -38,8 +38,8 @@ graph TD
 | **migration-tool** | `nuri.migration` | 레거시→표준 스키마 이관 ETL CLI(mapping.yml DSL·SourceIntrospector·EtlExecutor·MigrationVerifier) | 없음 (foundation 미의존 독립) |
 
 > [!WARNING]
-> **순환 의존성 및 역참조 철저 차단**
-> `api-server`는 도메인 로직에 접근할 때 반드시 `business-app`/`business-core`가 제공하는 도메인 서비스 인터페이스를 거치며, 공통 계약(`ApiResponse`·`ErrorCode`·`PageResponse`)은 `foundation`에서 직접 취한다. 형제 도메인 간 직접 결합은 `DomainIsolationTest`(ArchUnit)가, 순환 의존은 빌드 시점에 각각 차단한다.
+> **순환 의존성과 역참조 차단**
+> `api-server`는 `business-app`/`business-core`의 공개 service·port를 통해 도메인 로직에 접근하고, 공통 계약(`ApiResponse`·`ErrorCode`·`PageResponse`)은 `foundation`에서 취한다. port/interface와 event를 우선하지만 현재 `business-app` 안에는 구체 서비스 주입과 타 도메인 repository 참조가 일부 남아 있다. `DomainIsolationTest`·`ServiceLayerIsolationTest`가 검사하는 정확한 금지 방향과 예외 범위를 넘어 “모든 결합이 인터페이스화됐다”고 주장하지 않는다.
 
 ---
 
@@ -54,7 +54,7 @@ sequenceDiagram
     participant Ctrl as api-server Controller
     participant Svc as business-app Service
     participant Repo as JPA Repository
-    participant DB as OCI PostgreSQL
+    participant DB as PostgreSQL 17
 
     Client->>Ctrl: GET /admin/community/boards
     Ctrl->>Svc: getBoardList(pageable)
@@ -72,7 +72,7 @@ sequenceDiagram
 
 1. **JPA Entity 은닉**: 
    - `nuri.business.domain.*` 패키지에 위치한 모든 JPA Entity 클래스는 Controller의 메서드 파라미터나 반환 타입으로 절대 사용할 수 없다.
-   - 프론트엔드로 나가는 모든 데이터와 컨트롤러로 들어오는 모든 요청은 전용 DTO(`BoardRequestDto`, `BoardResponseDto`) 클래스로 100% 매핑하여 처리한다.
+   - 외부 JSON 계약은 전용 DTO(`BoardRequestDto`, `BoardResponseDto`)를 목표로 한다. 다만 현재 일부 dashboard·menu·health·satisfaction 응답에는 `Map` generic이 남아 있고 file download는 `Resource`를 반환한다. Entity 직접 노출 금지와 “모든 응답이 이미 전용 DTO”라는 주장을 구분하며, 예외는 [활성 gap](../../.agent/memory/known-gaps.md)에서 추적한다.
    - DTO는 불변성과 가독성을 위해 Java **Record** 클래스 사용을 권장한다. [백엔드 헌법 제12조]
 2. **DTO 매퍼(Mapper) 적용**:
    - Entity ➔ DTO 변환은 서비스 레이어의 종결 시점(Service Method return 직전)에 수행한다.
@@ -84,13 +84,13 @@ sequenceDiagram
 
 ---
 
-## 3. OCI PostgreSQL 트랜잭션 전파 및 격리 전략
+## 3. PostgreSQL 트랜잭션 전파 및 격리 전략
 
-성공적으로 표준화된 **OCI PostgreSQL 17** 데이터베이스와의 트랜잭션 정합성 및 동시성 제어를 위해 아래의 엄격한 트랜잭션 제어 가이드라인을 준수한다.
+현재 런타임과 실 PostgreSQL 계약 테스트의 기준은 **PostgreSQL 17**이다. 배포 사업자나 특정 클라우드는 이 아키텍처의 고정 전제가 아니며, 접속 대상은 외부화된 datasource 설정으로 결정한다.
 
 ### 3.1 읽기 전용 트랜잭션 디폴트 전술
-- 모든 조회용 서비스 메서드에는 `@Transactional(readOnly = true)` 어노테이션을 의무 적용한다.
-- 이는 JPA의 영속성 컨텍스트 플러시(Flush) 모드를 `MANUAL`로 작동시켜 불필요한 더티 체킹(Dirty Checking) 부하를 방지하고 OCI DB 복제(Replica) 노드로 조회를 분산시킬 수 있는 기반이 된다.
+- 조회 서비스 경계는 `@Transactional(readOnly = true)`를 기본으로 삼아 쓰기 의도가 없음을 명시하고, JPA 공급자의 flush·dirty-checking 최적화가 적용될 수 있게 한다.
+- 이 표시는 **읽기 복제본 라우팅을 보장하지 않는다.** 현재 저장소에는 read/write datasource routing 설정이 없으므로 모든 트랜잭션은 구성된 datasource를 사용한다. 복제본 분산이 필요하면 별도 라우팅 구성과 통합 테스트를 먼저 추가해야 한다.
 
 ```java
 package nuri.business.service;
@@ -117,27 +117,27 @@ public class BoardService {
 
 ### 3.2 격리 수준 및 쓰기 전용 격리
 - 트랜잭션 격리 수준은 PostgreSQL의 디폴트인 `READ_COMMITTED`를 표준으로 한다.
-- 낙관적 락(Optimistic Lock)이 필요한 경우, `BaseEntity`에 포함된 `@Version` 컬럼을 활용해 데이터의 정합성을 수리적으로 보장한다.
+- 낙관적 락(Optimistic Lock)이 필요한 경우, 해당 엔티티에 `@Version` 컬럼을 명시하고 동시 갱신 테스트로 충돌 처리를 검증한다. `BaseEntity`는 감사 필드만 제공하며 `@Version`을 자동 제공하지 않는다.
 
 ## 4. 테스트 가능한 아키텍처 (Testable Architecture) & 예외 처리
 
-백엔드 헌법 제16조에 따라, eGov Enterprise 백엔드 코드는 본질적으로 테스트 가능한 형태(Testable)로 작성되어야 하며, 무결성을 수학적으로 증명해야 한다.
+백엔드 헌법 제16조에 따라, eGov Enterprise 백엔드 코드는 테스트 가능한 경계로 작성하고 커버리지·뮤테이션 테스트를 결함 탐지 신호로 사용한다. 이 지표는 테스트 강도를 보조하지만 시스템 무결성 전체를 증명하지는 않는다.
 
 ### 4.1 Mutation Score 강제 및 커버리지
 - 단위 테스트 및 통합 테스트 작성 시, 코드의 논리적 허점을 파고드는 **Mutation Testing (의도적 버그 주입)**을 통과해야 한다.
 - CI의 `mutation-scope` 매트릭스는 각 스코프에 `STRICT_MUTATION=true`를 주입하여 최소 **Mutation Score 75%**를 하드 게이트한다. 전체 결론은 required check인 `mutation-test`가 집계하므로 어느 한 스코프라도 미달하면 병합이 차단된다. 로컬 PIT는 환경변수 미설정 시 `mutationThreshold=0`의 리포트 전용이다.
-- 상세: docs/02-architecture/pitest-mutation-testing.md · 테스트 전략 SSOT: docs/03-guides/testing-guide.md
+- 상세: [PITest 연동](pitest-mutation-testing.md) · 테스트 전략: [testing-guide.md](../03-guides/testing-guide.md)
 
 ### 4.2 글로벌 예외 처리 (Global Exception Handling)
 - 컨트롤러 내에서 `try-catch` 블록 사용을 지양하고, 대신 `@RestControllerAdvice` 기반의 `GlobalExceptionHandler`에 에러 처리를 위임한다. [백엔드 헌법 제7조]
-- 모든 비즈니스 예외는 프론트엔드와 사전 합의된 표준 에러 포맷(`ErrorResponse` DTO - `code`, `message`, `timestamp` 포함)으로 직렬화되어 반환되어야 한다.
+- 비즈니스·검증 예외는 `GlobalExceptionHandler`가 `ApiResponse.error(...)`로 변환한다. 오류 envelope는 `success`, 실제 HTTP 상태와 맞춘 `status`, `code`, `message`, `data`, `timestamp`를 가지며 검증 실패에는 선택적으로 `errors`가 추가된다.
 
 ### 4.3 API 응답 래퍼 표준 (ApiResponse)
 - 모든 정상 응답은 전사 공통 래퍼 클래스인 `ApiResponse<T>`를 통해 반환한다. 컨트롤러에서 Entity나 DTO를 직접 반환하지 않고 반드시 `ApiResponse.success(data)` 형태로 감싸야 한다. [백엔드 헌법 제6조]
 
 ### 4.4 Validation 연쇄 동기화 (DB ➔ BE ➔ FE)
 - DTO의 유효성 검증 규칙(`@Size`, `@NotNull` 등)은 DB 물리 제약조건과 100% 동일하게 연쇄 동기화되어야 한다. [백엔드 헌법 제16조]
-- **동기화 파이프라인**: `OCI DB (SSOT)` ➔ `Spring Boot DTO Validation` ➔ `Next.js Zod Schema`
+- **동기화 파이프라인**: `PostgreSQL 물리 스키마` ➔ `Spring Boot DTO Validation` ➔ `Next.js Zod Schema`
 
 ---
 
@@ -196,8 +196,8 @@ public class DocumentService {
 - 외부 클라이언트(`RestTemplate`/`WebClient`/`FeignClient`)의 읽기 타임아웃(Read Timeout)은 연동 유형별로 차등 적용한다 — 실시간 OLTP 동기 연동: 최대 3초(Fail-Fast) / 외부 결제·인증 트랜잭션(PG 등): 최대 10초 / 비동기·배치·대용량 파일 연동: 전용 스레드 풀로 격리 후 비즈니스 요건에 맞춰 타임아웃 상향.
 
 ### 6.2 재시도 및 서킷 브레이커
-- 일시적 네트워크 장애로 인한 실패는 `@Retryable`을 활용해 방어하며, 장애가 지속될 경우 `Resilience4j` 등의 서킷 브레이커를 통해 외부 호출을 즉시 차단(Fail-Fast)하여 시스템을 보호한다.
+- 일시적 네트워크 장애는 멱등성이 확인된 경로에 한해 제한적으로 재시도한다. 현재 Spring Retry 적용은 메일·SMS 비동기 처리 등 개별 경로이며, 서킷 브레이커는 전역 구현이 아니므로 필요한 연동에서 별도 설계·검증한다. 상세 판단 순서는 [domain-resilience.md](domain-resilience.md)를 따른다.
 
 ---
-*Last Updated: 2026-07-18 (뮤테이션 임계값 현행화: Mutation Score 85% → 75% 통일[헌법 제16조]. 2026-07-12 모듈 재편: business-suite → business-core/business-app 분할, migration-tool 신설, MapStruct 매핑 표준화, foundation 공통계약·BaseEntity 승격. 이전: 2026-05-19)*
+*Verified against current module/build structure: 2026-08-19*
 *Governed by: Backend API Governance Constitution (18 Articles)*

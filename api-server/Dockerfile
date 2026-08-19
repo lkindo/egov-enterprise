@@ -10,7 +10,7 @@ COPY gradle.properties /app/
 # [2026-07-26 정정] business-suite 는 business-core / business-app 으로 분할돼 **존재하지 않는다.**
 #   없는 경로를 COPY 하면 이미지 빌드가 즉시 실패하고, 그 결과 `docker compose up -d db api` 가
 #   컨테이너를 하나도 만들지 못한 채 exit 1 로 죽는다 — E2E 잡이 이 지점에서 실패했다(실측).
-#   CI 과금차단 기간 동안 이미지 빌드가 실행되지 않아 모듈 분할 이후의 정체가 드러나지 않았다.
+#   당시 이 드리프트는 CI 이미지 빌드 단계에서 뒤늦게 드러났다.
 #   settings.gradle 의 include 목록과 1:1 로 유지할 것.
 COPY foundation/build.gradle /app/foundation/
 COPY business-core/build.gradle /app/business-core/

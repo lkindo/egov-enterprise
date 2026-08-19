@@ -1,6 +1,6 @@
 # 디자인 토큰 & 브랜딩 규약 (Design Tokens & Branding Convention)
 
-> **목적**: quality-score §2.B 재사용성 — "리브랜딩 = 토큰 한 벌 수정"을 성립시키기 위한 색상 토큰 SSOT.
+> **목적**: "리브랜딩 = 토큰 한 벌 수정"을 성립시키기 위한 색상 토큰 SSOT.
 > 프론트엔드 헌법 제6조(디자인 토큰) 실무 지침. 색은 팔레트 리터럴(`slate-500`)이 아니라 **시맨틱 토큰**으로 참조한다.
 > **정의 위치**: [frontend/src/app/globals.css](../../frontend/src/app/globals.css) (`@theme` + `:root`/`.dark` HSL 변수).
 
@@ -35,13 +35,13 @@
 | **카테고리 액센트** | `bg-hub-blue`·`bg-hub-indigo`·`bg-hub-purple`·`bg-hub-emerald`·`bg-hub-rose`·`bg-hub-amber`·`bg-hub-orange` | 고정색(다중 색조 변이) |
 | **의도적 다크 서피스** | **`bg-surface-inverse` / `text-surface-inverse-foreground` / `text-surface-inverse-muted` / `border-surface-inverse-border`** | **항상 어두움(고정)** |
 
-### 2.2 hub-* — 카테고리 액센트 팔레트 (다중 색조)
+### 2.1 hub-* — 카테고리 액센트 팔레트 (다중 색조)
 
 컴포넌트가 **색 변이 옵션**(대시보드 위젯·배지·아이콘칩)으로 제공하는 다중 색조는 `hub-*` 고정색 토큰을 쓴다.
 `--hub-blue`(≈브랜드 primary)·`--hub-indigo`·`--hub-purple`·`--hub-emerald`·`--hub-rose`·`--hub-amber`·`--hub-orange`.
 액센트 리브랜딩은 이 토큰 색조만 바꾼다. ⚠ **상태색(success/warning/destructive)** 은 별도 — 카테고리 액센트로 쓰지 말 것.
 
-### 2.1 `surface-inverse` — 의도적 다크 서피스 패턴 (중요)
+### 2.2 `surface-inverse` — 의도적 다크 서피스 패턴 (중요)
 
 밝은 페이지 위에 **의도적으로 어두운** 카드/히어로/CTA(예: 프리미엄 다크 패널, 다이얼로그 헤더)는
 테마와 무관하게 **항상 어두워야** 한다. 이를 `bg-card`(테마 추종 = 라이트에서 흰색) 로 바꾸면 **다크 카드가 흰색으로 파손**된다.
@@ -66,7 +66,7 @@
 | `border-slate-200 dark:border-slate-700\|800` | `border-border` |
 
 ### R2. 의도적 다크 서피스 → surface-inverse
-`bg-slate-900\|950\|800` 이 라이트 대응 없이 단독(또는 다크 그라디언트)이면 §2.1 패턴 →
+`bg-slate-900\|950\|800` 이 라이트 대응 없이 단독(또는 다크 그라디언트)이면 §2.2 패턴 →
 `bg-surface-inverse`, 그 위 `text-white\|slate-100`→`text-surface-inverse-foreground`,
 `text-slate-200\|300`→`text-surface-inverse-muted`, `border-slate-700\|800`→`border-surface-inverse-border`.
 
@@ -77,52 +77,52 @@
 
 ---
 
-## 4. 2026-07-18 전면 스윕 결과 & 잔여 (정직 기록)
+## 4. 리터럴 예외와 래칫 운영
 
-§2.B 브랜딩 토큰화 스윕(`branding-neutral-tokenize-2026-07-18`, 커밋은 본 문서 갱신 커밋 참조):
-- **861건 토큰화**(136파일), 액센트 팔레트 불변(순증감 0), `tsc --noEmit`·`next build` green.
-- **잔여 중립 ~214건(의도적 미치환)** — 아래는 토큰화하면 **오히려 파손**되어 남긴 것들:
-  1. **매핑 밖 옅은 장식 텍스트** `text-slate-100\|200\|300`: `text-muted-foreground`(=slate-500급)보다 밝은 위계라 치환 시 더 진해짐 → 유지.
-  2. **`bg-clip-text` 텍스트 그라디언트** `from-slate-900 to-slate-600`: 서피스가 아니라 글자 착색 → 단일 토큰 치환 시 텍스트 소실 → 유지.
-  3. **항상-흰 pill/mark 위 고정 다크 텍스트**(`bg-yellow-200`/`bg-white` opaque 위 `text-slate-900`): 토큰화 시 다크테마에서 밝게 반전→대비 파손 → 유지.
-  4. **흰색 투명 오버레이** `bg-white/10`·`border-white/5`·`text-white/NN`: 중립 팔레트(-NNN)가 아니고 다크 서피스 위 정상 → 대상 밖.
-  5. **테마 스왑 버튼** `bg-slate-900 dark:bg-primary`: 라이트=중립·다크=액센트 스왑이라 단일 토큰 불가 → 유지.
-  6. **비대칭 페어/중첩 다크 패널**(surface-inverse 위 `bg-slate-800`, `bg-slate-300 dark:bg-white/20` divider): "더 밝은 다크 서피스" 토큰 부재 → 유지.
-### 4.1 액센트 스윕 (2026-07-18, `branding-accent-tokenize-2026-07-18`)
-- **195건 토큰화**(48파일): `blue`→`hub-blue`·`indigo`→`hub-indigo`(신설)·`purple/violet`→`hub-purple`·`sky/cyan`→`info`. 색조 구분 보존.
-- **상태색(emerald/rose/amber/red/green)·중립 불가침**(순증감 0 실측). `tsc --noEmit` + 클린 `next build` green, 빌드 CSS 에 `--hub-indigo`·`.bg-hub-indigo` 생성 확인.
-- **잔여(의도적 미치환)**: ① **라이트 파스텔 틴트** `indigo-50\|100`(hub-indigo 고정 중간톤이라 치환 시 과채도) ② **명암 스케일**(`national-distribution-map` bg-blue-600→200 히트맵 강도 — 단일 토큰이면 범례 붕괴, opacity 스케일 설계결정 필요) ③ **`color="indigo"` 컴포넌트 prop**(클래스 아님) ④ **인라인 hex/rgba**(`#3b82f6`·`rgba(59,130,246)`) ⑤ **status 의미 blue**(status-badge 대기배지 — 형제 status와 tint 일관).
-- **구조 비대칭(FLAG)**: 일부 변이맵이 `hub-blue`(변환) + `emerald/amber`(status라 원본) 혼재 — 파손 아님, 일관성 후속.
+팔레트 리터럴은 기본적으로 시맨틱 토큰으로 바꾼다. 다만 다음처럼 단일 토큰 치환이 의미나 대비를 파손하는 경우에는 코드 리뷰에 이유와 라이트·다크 시각 증거를 남겨 예외로 유지할 수 있다.
 
-### 4.2 후속 여지
-(a) `--surface-inverse-raised`(중첩 다크 패널), (b) 라이트 파스텔 틴트용 hub-*-소프트 토큰 or opacity 스케일 규약, ~~(c) 신규 하드코딩 차단 린트 게이트~~ → **2026-08-16 해소**(§4.3), (d) `national-distribution-map` 히트맵 opacity 스케일화.
+- `bg-clip-text` 텍스트 그라디언트와 데이터 시각화 명암 스케일
+- 항상 흰색인 mark/pill 위의 고정 다크 텍스트
+- 다크 서피스 위 투명 오버레이와 중첩 표면
+- 토큰이 아직 표현하지 못하는 파스텔 tint나 구조적 색 단계
 
-### 4.3 하드코딩 차단 게이트 — 전 팔레트 커버 (2026-08-16)
+예외는 아래 exact baseline 게이트에 동결된다. 기본 방향은 리터럴 감소이며, 감소한 변경은 같은 변경에서 baseline을 낮춘다. 신규 예외 때문에 baseline을 올릴 때는 토큰으로 표현할 수 없는 이유와 시각 검증을 함께 제시한다.
+
+### 4.1 하드코딩 차단 게이트
 
 색 부채는 **exact-match 양방향 베이스라인 2종**이 담당한다. 둘의 합집합이 Tailwind 전 팔레트다.
 
-| 게이트 | 커버 계열 | BASELINE | 실행 경로 |
-|---|---|---:|---|
-| `src/__tests__/hardcoded-color-guard.test.ts` | 중립(slate·gray·zinc·neutral·stone) + 브랜드(blue·indigo·sky·violet·purple·cyan·teal·fuchsia) | 103 | pre-push(`vitest run src/__tests__`) · CI(`pnpm test`) |
-| `src/__tests__/status-color-guard.test.ts` **(신설)** | status(red·green·emerald·rose·amber·orange·yellow·lime·pink) | 786 | 동일 |
+| 게이트 | 커버 계열 | 실행 경로 |
+|---|---|---|
+| [`hardcoded-color-guard.test.ts`](../../frontend/src/__tests__/hardcoded-color-guard.test.ts) | 중립(slate·gray·zinc·neutral·stone) + 브랜드(blue·indigo·sky·violet·purple·cyan·teal·fuchsia) | pre-push(`vitest run src/__tests__`) · CI(`pnpm test`) |
+| [`status-color-guard.test.ts`](../../frontend/src/__tests__/status-color-guard.test.ts) | status(red·green·emerald·rose·amber·orange·yellow·lime·pink) | 동일 |
 
-- **왜 신설했나**: 기존 가드가 status 계열을 "별도 토큰 대상"이라며 제외했는데, 그 토큰(`success`·`warning`·`info`·`destructive`·`*-emphasis`)은 **이미 존재**했다. 치환 대상이 있는데 계측조차 되지 않아 **어떤 게이트에도 걸리지 않고 증식 가능한 상태**였다(신설 시점 실측 786건 / 105개 파일).
-- **양방향인 이유**: 감소했는데 BASELINE 을 안 내리면 실패한다. 단방향이면 개선분이 슬랙으로 녹아 사라진다.
+현재 baseline 값은 각 테스트 소스에서 확인한다. 문서에 복제한 수치를 완화 근거로 사용하지 않는다.
+
+- **양방향 래칫**: 증가뿐 아니라 감소 후 baseline 미갱신도 실패한다. 개선분을 다음 변경의 여유분으로 남기지 않는다.
 - **치환 지침**: green·emerald → `success`, amber·yellow·orange → `warning`, red·rose → `destructive`(강조는 `-emphasis`), 정보성 blue → `info`(기존 가드 소관).
-#### ESLint 규칙은 왜 함께 넓히지 않았나 (시도 → 철회, 2026-08-16)
 
-`eslint.config.mjs` 의 `local-theme/enforce-design-tokens` 는 탐지 축이 위 두 가드보다 **좁다**(계열 9종·유틸 4종·음영 `[1-9]00`·variant 접두사 없음). 그래서 실제 하드코딩 889건 중 **11건만 경고**한다 — 나머지는 규칙 사각지대다.
+#### ESLint 자문 규칙과의 경계
 
-이를 두 가드와 같은 축(전 팔레트 22종·유틸 17종·variant 포함)으로 넓혀 봤고, **철회했다.** 실측 결과와 이유:
+`eslint.config.mjs`의 `local-theme/enforce-design-tokens`는 빠른 작성 피드백을 위한 `warn` 규칙이다. 현재 구현은 JSX의 정적 `className` 문자열과 template literal의 정적 조각에서 다음 항목만 찾는다.
 
-| 항목 | 확장 전 | 확장 후 |
-|---|---:|---:|
-| 전체 warning | 251 | 609 |
-| 그중 디자인토큰 규칙 | 11 | 369 |
-| **비색상 warning** | **240** | **240** |
+- `bg|text|border|ring` + `red|blue|green|yellow|orange|purple|pink|indigo|teal` + `100`~`900`
+- 투명도 접미사가 없는 불투명 `bg-white` (`bg-white/80` 등은 제외)
 
-- 비색상 경고가 240 으로 **동일**하므로 증가분 358 은 부채 증가가 아니라 순수 탐지 확장분이다. 그럼에도 철회한 이유는 `--max-warnings` 를 253 → 609 로 올려야 했고, 그것이 **하네스 게이트 위반**이기 때문이다: `WorkflowManifestLinterTest` 가 `max-warnings > 295` 를 "프런트 ESLint warning 래칫 완화"로 하드 차단한다(실제로 red 를 맞고 알았다).
-- 이 상한은 옳다. lint 예산을 색 부채로 채우면 `no-explicit-any`(154) 같은 **다른 규칙의 래칫이 슬랙에 묻힌다**. 그래서 이 저장소의 설계는 **색 부채 = exact-match 베이스라인(위 표), lint 예산 = 비색상 규칙**으로 역할을 나눈 것이고, 그 분리를 게이트가 지키고 있다.
-- **결론**: 색 커버리지를 넓히는 올바른 수단은 ESLint 예산이 아니라 **베이스라인 신설**이다(이번에 status 786 이 그것). ESLint 규칙 확장은 베이스라인을 충분히 내린 뒤에 하되, 그때도 `max-warnings` 는 295 이하를 유지해야 한다.
+동적 클래스 조합, 위 목록 밖의 utility·variant·팔레트는 이 규칙만으로 증명할 수 없다. 또한 warning 수를 허용하거나 `lint`가 종료 코드 0을 반환했다고 해서 색상 계약이 통과한 것은 아니다. 전 팔레트 회귀의 하드 차단은 위 두 exact-match Vitest 래칫이 소유한다.
 
-> **원칙**: 정적 검증(`tsc`/`next build`)은 통과해도 **색·다크모드 시각 회귀는 잡지 못한다**. 대규모 색 변경 후에는 반드시 라이트/다크 **육안 검증**을 병행한다(프론트 헌법 제6조). *(surface-inverse 는 2026-07-18 브라우저 육안검증 완료; hub-* 액센트는 빌드 CSS 생성 확인 + 동일 @theme 패턴으로 렌더 결정적, admin 실화면 문맥 검증은 백엔드 기동 필요.)*
+```bash
+# 빠른 자문 피드백
+pnpm -C frontend run lint
+
+# 팔레트 리터럴 하드 차단 계약
+pnpm -C frontend exec vitest run \
+  src/__tests__/hardcoded-color-guard.test.ts \
+  src/__tests__/status-color-guard.test.ts
+```
+
+래칫 실패는 기본적으로 리터럴을 시맨틱 토큰으로 치환해 해결한다. 감소했다면 같은 변경에서 baseline을 현재 실측값으로 낮추고, 신규 예외로 baseline을 올려야 한다면 토큰으로 표현할 수 없는 이유와 라이트·다크 시각 증거를 리뷰에 남긴다.
+
+> **원칙**: 정적 검증(`tsc`/`next build`)은 통과해도 **색·다크모드 시각 회귀는 잡지 못한다**. 대규모 색 변경 후에는 반드시 라이트/다크 **육안 검증**을 병행한다(프론트 헌법 제6조).
+
+*Last reviewed against current sources: 2026-08-19.*

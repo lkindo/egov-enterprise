@@ -1,7 +1,7 @@
 # Getting Started — 프레임워크로 새 프로젝트 시작하기 (Onboarding Runbook)
 
 > 이 저장소는 **신규 SI 구축 / 기존 프로젝트 재개발의 베이스 프레임워크**다. 본 런북은 `복제 → 리브랜딩 → 부트스트랩 → 기동 → 커스터마이징`의 실무 절차와 **알려진 제약**을 정리한다.
-> 상위 설계 배경은 [framework-reusability-assessment.md](../02-architecture/framework-reusability-assessment.md) 참조.
+> 제품 경계 결정은 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md), 현재 생성 절차는 [재사용 Base 가이드](./reusable-base-guide.md)를 따른다.
 
 ---
 
@@ -13,6 +13,7 @@
 | Backend Admin | `business-core` | user·auth·code·menu·program·organization·log·system 등 관리 도메인 | **필수** |
 | Backend App | `business-app` | 프로젝트 고유/참조 도메인(survey·community·banner·popup·operation 등) | **선택(삭제·교체 대상)** |
 | Web Runtime | `api-server` | Controller·Security·Flyway·WebSocket·Batch | 필수 |
+| Migration CLI | `migration-tool` | 레거시 소스→표준 스키마 매핑·검증·ETL | **선택(이관 기간에만)** |
 | Frontend | `frontend` | Next.js 16 App Router | 필수(화면은 선택 삭제) |
 
 > 의존 방향: `foundation ← business-core ← business-app ← api-server` (비순환 단방향, ArchUnit 강제).
@@ -72,7 +73,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 docker compose up -d db     # postgres:17 (docker-compose.yml)
 ```
  
-> **Flyway 자동 구성**: 빈 PostgreSQL 데이터베이스만 기동해두면, 백엔드 서버 기동 시 `V2_0` baseline(당시 101개 테이블)을 시작으로 후속 생성·정리 마이그레이션과 표준 참조 데이터(메타표준·공통코드·역할/권한·메뉴)가 자동으로 적용됩니다. 2026-08-13 최종 스키마는 **83개 테이블**이며, 별도의 수동 복원이나 SQL 실행이 필요하지 않습니다.
+> **Flyway 자동 구성**: 빈 PostgreSQL 데이터베이스만 기동해두면 백엔드 서버 기동 시 현재 versioned migration과 repeatable seed가 순서대로 적용됩니다. 테이블 수·최신 migration 번호는 계속 변하므로 문서의 과거 수치를 기준으로 삼지 말고 `api-server/src/main/resources/db/migration/`, `flyway_schema_history`, `information_schema`에서 확인합니다. 엔티티·DDL 변경은 `:api-server:schemaValidationTest`로 빈 PostgreSQL 적용과 Hibernate `validate`를 검증합니다.
 >
 > ⚠ **관리자 행은 시드되지만 기본 비밀번호는 시드되지 않습니다.** `R__seed_framework.sql` 은 `webmaster`(`USRCNFRM_00000000001`)와 `ROLE_ADMIN` 매핑을 만들되, 비밀번호에는 로그인 불가 sentinel(`{disabled}...`)을 넣습니다. 최초 기동 전에 `ADMIN_INITIAL_PASSWORD` 환경변수를 주면 `AdminPasswordProvisioner`가 sentinel 상태일 때만 BCrypt 비밀번호를 1회 설정합니다. 설정 후에는 즉시 비밀번호를 변경하고 환경변수를 제거하십시오. 환경변수를 주지 않으면 계정은 로그인 불가 상태로 유지되며, 수동 INSERT는 필요하지 않습니다.
 
@@ -93,7 +94,7 @@ pnpm -C frontend dev
 
 ```bash
 ./gradlew compileJava compileTestJava     # 백엔드 컴파일 무결성
-npx --prefix frontend tsc --noEmit        # (또는) cd frontend && npx tsc --noEmit
+pnpm -C frontend exec tsc --noEmit        # 프론트엔드 타입 무결성
 ```
 
 ---
@@ -108,8 +109,8 @@ npx --prefix frontend tsc --noEmit        # (또는) cd frontend && npx tsc --no
 ./scripts/delete-domain.ps1 -DomainName "informalsanction"
 ```
 
-> 삭제 대상 후보(business-app)와 필수 유지(business-core)의 분류는 [assessment §7 부록](../02-architecture/framework-reusability-assessment.md) 표를 기준으로 한다. 삭제 후 반드시 `clean compileJava compileTestJava`로 회귀 확인.
-> FE 라우트는 문자열 URL로만 참조되어 tsc/build가 누락을 못 잡으므로(과거 오삭제 이력), `frontend/src/config/project-modules.ts` 매니페스트도 함께 정리한다.
+> 삭제 대상 후보(`business-app`)와 필수 유지(`business-core`)의 분류는 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)과 [재사용 프로필 manifest](../../config/reusable-base-profiles.json)를 기준으로 한다. 생성형 프로필을 사용할 때는 [재사용 Base 가이드](./reusable-base-guide.md)를 따르고, 수동 삭제 후에는 반드시 `clean compileJava compileTestJava`로 회귀 확인한다.
+> FE 라우트는 문자열 URL 참조를 타입 검사만으로 모두 잡을 수 없으므로 `frontend/src/config/project-modules.ts` 매니페스트도 함께 정리한다.
 
 ### 5.2 신규 도메인 추가(스캐폴드)
 
@@ -119,7 +120,7 @@ npx --prefix frontend tsc --noEmit        # (또는) cd frontend && npx tsc --no
 
 > `business-app`에 Entity(`BaseEntity` 상속)·Dto·SearchDto·Repository·Service·Controller 골격을 생성한다. 생성 후 QueryDSL Q타입 재생성을 위해 `./gradlew clean :business-app:compileJava` 권장.
 
-> ✅ **스캐폴드는 2026-08-03부터 명시적 CRUD를 생성한다.** 존재하지 않는 `BaseCrudService` / `BaseCrudController` 상속을 제거하고, Service는 클래스레벨 `@Transactional(readOnly = true)` + 쓰기 메서드 트랜잭션, Controller는 `api-server` 배치 + 읽기 `@Authenticated` / 쓰기 `@AdminOrSystem` 관례를 직접 생성한다. Flyway DDL은 버전·표준용어 충돌을 피하려고 파일로 쓰지 않고 검토용 초안만 출력한다.
+> 스캐폴드는 명시적 CRUD를 생성한다. Service는 클래스레벨 `@Transactional(readOnly = true)`와 쓰기 메서드 트랜잭션을, Controller는 `api-server` 배치와 읽기 `@Authenticated`/쓰기 `@AdminOrSystem` 관례를 직접 생성한다. Flyway DDL은 버전·표준용어 충돌을 피하려고 파일로 쓰지 않고 검토용 초안만 출력한다.
 > 생성 직후에도 도메인별 소유권·인가와 표준 용어는 사람이 확정해야 하며, `./gradlew clean compileJava compileTestJava`로 검증한다.
 
 #### 5.2.1 컨트롤러·서비스 작성 관례 (실존 코드 기준)
@@ -172,9 +173,7 @@ public class ProductApiController {
 
 > 🔒 **인가 누락은 빌드를 깨뜨린다 — 단, 객체 소유권 의미까지 자동 판정하지는 않는다.** `SecurityAuthAnnotationLinterTest`(`api-server/src/test/java/nuri/api/harness/`)가 화이트리스트·DB 구동 인가 대상이 아닌 읽기·쓰기 엔드포인트에 명시적 인가 애노테이션이 없으면 실패시킨다. 현 스캐폴드는 읽기에 `@Authenticated`, 쓰기에 `@AdminOrSystem`을 생성하므로 도메인 정책에 맞게 조정하되 제거하지 말 것.
 >
-> ⚠ **집행 범위를 정확히 알아 둘 것**(2026-08-03 현행화). 이 문단은 두 번 틀렸다 — 처음엔 "모든 엔드포인트를 전수 조사"라는 **과장**이었고, 그 정정본은 패키지 skip 이 삭제되면서 **낡아서** 틀렸다.
->
-> 현재: Test#1 은 **패키지 skip 없이 전 컨트롤러의 읽기·쓰기를 순회**한다. ① 공개 화이트리스트 ② 인가 애노테이션/메타 애노테이션 존재 ③ `rbac.db-auth.secure-paths`·DB 프로그램 URL 매칭 중 하나만 통과한다. Test#2 는 **쓰기만** 보고 `/api/v1/admin/`은 URL 시큐리티에 위임한다. 2026-08-15 쓰기 사유로 읽기까지 면제하던 30건 census와 12개 클래스 allow-list는 제거했다.
+> ⚠ **집행 범위를 정확히 알아 둘 것.** Test#1은 패키지 skip 없이 전 컨트롤러의 읽기·쓰기를 순회하고 ① 공개 화이트리스트 ② 인가 애노테이션/메타 애노테이션 존재 ③ `rbac.db-auth.secure-paths`·DB 프로그램 URL 매칭 중 하나를 요구한다. Test#2는 쓰기만 보고 `/api/v1/admin/`을 URL 시큐리티에 위임한다.
 >
 > 그래서 **"모든 컨트롤러를 순회한다"는 참이지만 "인가 의미까지 모두 검증한다"는 거짓**이다. 신규 경로가 `secure-paths`에서 빠지고 인가 애노테이션도 없으면 린터가 위반으로 잡으므로 조용히 통과하지 않는다. 다만 ②는 `@PreAuthorize("isAuthenticated()")`처럼 IDOR 방어력이 없는 애노테이션도 존재 조건을 만족하므로, 읽기·사용자 소유 데이터는 서비스 계층 소유권 가드를 별도로 붙여야 한다. 최신 범위는 항상 린터 javadoc(`SecurityAuthAnnotationLinterTest` 클래스 주석)을 SSOT 로 삼을 것.
 
@@ -223,36 +222,43 @@ public class ProductService extends BaseAbstractService {
 | 상태 전이 로직은 엔티티 메서드(`entity.update(...)`)에 캡슐화 | — | BE 헌법 제5조 |
 | 공통 가드(`required`/`notBlank`/`toPage`)는 `BaseAbstractService` 상속으로 사용 | `business-core/.../core/service/BaseAbstractService.java` | — |
 
-> ⚠ `required(...)` 는 **프로그래밍 오류를 잡는 가드**다. 물리 스키마상 nullable 인 도메인 값에 걸면 데이터가 생기는 순간 조회가 400 으로 깨진다(`DeptJobService.toDto` 주석의 실제 사고 사례 참조).
+> ⚠ `required(...)`는 프로그래밍 오류를 잡는 가드다. 물리 스키마상 nullable인 도메인 값에 걸면 정상 데이터 조회도 400으로 바뀔 수 있으므로, null 불가 계약을 실제 스키마·도메인 규칙에서 확인한 경우에만 사용한다.
 
-**DB 테이블** — 스캐폴드는 `@Table(name = "tb_<domain>")` 를 찍지만 **테이블을 만들어 주지는 않는다.** `api-server/src/main/resources/db/migration/` 에 **현재 최신 파일을 확인한 뒤 다음 번호**(2026-08-16 실측 최신 `V2_83__sms_bigint_identity.sql`, 다음은 `V2_84`)로 `V2_NN__create_tb_product.sql` 을 추가한다. ⚠ 이 번호는 빠르게 진행하므로 **문서 값을 믿지 말고 `ls` 로 직접 확인**할 것. 컬럼·객체 명명은 DB 헌법 제1~3조와 `meta_standard_words` 실조회를 따른다. Hibernate `ddl-auto: validate` 이므로 테이블이 없으면 **기동이 거부**된다.
+**DB 테이블** — 스캐폴드는 `@Table(name = "tb_<domain>")`를 찍지만 테이블을 만들지 않는다. `api-server/src/main/resources/db/migration/`의 현재 파일과 `flyway_schema_history`를 확인한 뒤 다음 버전의 migration을 추가한다. 컬럼·객체 명명은 DB 헌법 제1~3조와 `meta_standard_*` 실조회를 따른다. Hibernate `ddl-auto: validate`이므로 테이블이 없으면 기동이 거부된다.
 
 ---
 
-## 6. ⚠ 알려진 제약 (반드시 숙지 — 프레임워크화 진행 중)
+## 6. 파생 프로젝트 경계와 선택 기능
 
-프레임워크化가 **대부분 진척**됐다. 아래는 파생 프로젝트 착수 전 인지해야 할 현황과 **설계 결정(2026-07-11)**이다.
+### 6.1 빈 DB와 스키마 검증
 
-### 6.1 빈 DB 부트스트랩 — 해소 (2026-07-11)
-- 레거시 `V1.x` 델타를 제거하고 **`V2_0__baseline.sql`(초기 101 테이블) + `V2_1`(메타표준) + `V2_2`(프레임워크 권한·메뉴 데이터) + `R__seed_framework`** 로 재구성했다. 후속 도메인 정리까지 적용한 현재 최종 상태는 83개 테이블이다.
-- **Docker 빈 Postgres 17에 `V2_0→V2_1→V2_2→R__` 전체를 `ON_ERROR_STOP=1`로 클린 적용 실증**(문법·FK 정합). 빈 DB 부트스트랩 가능.
-- **CI가 매번 실 PostgreSQL 17에서 Flyway 전량 적용 → Hibernate `ddl-auto:validate` → 쓰기 smoke를 실행한다.** 현재 계약 검사는 80개 엔티티·83개 테이블·888개 컬럼을 대조하며 drift 0이다.
+새 환경은 빈 PostgreSQL에 현재 Flyway 체인을 적용해 만든다. 과거 DB dump를 수동 복원하거나 문서에 적힌 테이블 수를 목표로 삼지 않는다. 엔티티·DDL 변경 전후에는 `:api-server:schemaValidationTest`로 Flyway 전량 적용과 Hibernate `validate`를 확인한다. H2 단위 테스트의 green은 물리 PostgreSQL 정합 증거가 아니다.
 
-### 6.2 RBAC 인가 — DB 경로 인가 집행 + 메서드 인가 병행
-- `rbac.db-auth.enabled: true`이며 `secure-paths`는 `DbUrlAuthorizationManager`가 DB 권한으로 런타임 집행한다. 이전의 “DB 주도 인가 보류” 상태가 아니다.
-- 그 밖의 세부 업무 규칙은 `@PreAuthorize`·보안 메타 애노테이션·서비스 소유권 가드가 담당하고, 메뉴 가시성은 DB(`tb_menu_crt_dtl`)에서 결정한다. 경로 인가와 도메인 소유권은 서로 대체 관계가 아니다.
+### 6.2 RBAC와 소유권
 
-### 6.3 멀티테넌시 — 단일 테넌트 (설계 결정)
-- **결정: 이 프레임워크는 단일 테넌트(single-tenant)를 전제한다.** 행-레벨 다기관 격리(`@TenantId` 등)는 **범위 밖**이며 결함(gap)이 아니다. 다기관 SI가 필요하면 파생 프로젝트에서 별도 도입한다.
+DB URL 인가는 `DbUrlAuthorizationManager`, 세부 업무 규칙은 보안 애노테이션과 서비스 소유권 가드, 메뉴 가시성은 DB 매핑이 담당한다. 어느 한 계층의 green이 다른 계층의 올바른 인가 의미를 대신하지 않는다. 개인 데이터는 저장된 소유자 축까지 확인한다.
 
-### 6.4 브랜딩 부분 토큰화
-- 브랜딩 토큰화가 대부분 반영(커밋 `7f2958179`)됐으나 일부 admin 화면에 `slate-*`/`gray-*` 잔존. 브랜드 색 완전 교체는 잔여 컴포넌트 치환 필요.
+### 6.3 단일 테넌트 전제
 
-### 6.5 진행 중 (프레임워크化 확장, 2026-07-11 결정)
-- **생산성 전면화**: MapStruct `@Mapper` 표준을 기존 도메인까지 마이그레이션 진행 중(수기 `from()` 제거).
-- ✅ **제네릭 CRUD는 채택하지 않고 명시적 CRUD로 종결했다.** `generate-domain.ps1`도 같은 관례의 컴파일 가능한 Service·Controller 초안을 생성한다(§5.2). 도메인별 소유권과 DDL 표준 용어는 생성 후 검토한다.
-- **레거시 데이터 이관 도구**: 범용 소스↔표준 스키마 매핑·ETL·검증 골격 **선제 구축** 착수.
-- 도입 완료: API 오류 MessageSource ko/en 협상(프런트 UI는 한국어 단일언어), 감사 로그 영속(`WebAuditLogListener` @Async), 도메인 이벤트 seam, 시크릿 외부화. 제품 경계는 [ADR](../02-architecture/decisions/README.md)을 따른다.
+기본 프레임워크는 단일 테넌트다. 행 수준 다기관 격리가 필요한 파생 프로젝트는 tenant 식별·쿼리 필터·관리 경계·마이그레이션을 별도 설계해야 한다.
+
+### 6.4 디자인 토큰
+
+신규 화면은 [디자인 토큰 가이드](./design-tokens.md)의 시맨틱 토큰을 사용한다. 기존 팔레트 리터럴은 exact baseline으로 동결되어 있으므로 baseline을 임의로 올리지 않는다. 대규모 치환은 라이트·다크 실화면을 함께 검증한다.
+
+### 6.5 레거시 데이터 이관 CLI
+
+`migration-tool`은 소스 DB와 표준 타깃 DB 사이의 선언적 mapping을 load → validate → execute → verify하는 독립 CLI다. 프로젝트의 일반 런타임에는 필요하지 않으며, 레거시 이관이 있는 파생 프로젝트에서만 포함한다.
+
+```bash
+./gradlew :migration-tool:bootJar
+
+# 항상 dry-run과 검증 리포트를 먼저 확인
+java -jar migration-tool/build/libs/<jar-name>.jar \
+  --mapping=<mapping.yml> --mode=dry-run
+```
+
+`--mode=commit`은 타깃 DB를 변경하므로 mapping·대상 환경·백업/롤백·dry-run 결과를 검토하고 사용자 승인을 받은 뒤 실행한다. 현재 구현 범위와 지원하지 않는 소스 DBMS·LOB·cutover 항목은 [레거시 이관 도구 설계](../02-architecture/legacy-migration-tool-design.md)의 코드 대조 결과를 확인한다. 실제 계약은 `migration-tool/src/main/java/nuri/migration/`과 테스트가 정본이다.
 
 ---
 
@@ -261,14 +267,14 @@ public class ProductService extends BaseAbstractService {
 | 도메인 | 명령 | 근거 |
 |---|---|---|
 | Backend 컴파일 | `./gradlew compileJava compileTestJava --warning-mode fail` | AGENTS 범위별 검증 |
-| Backend 구조·보안 하네스 | `./gradlew :api-server:harnessTest` | 29개 하네스 클래스의 구조·계약·인가 린터 |
+| Backend 구조·보안 하네스 | `./gradlew :api-server:harnessTest` | 구조·계약·인가 린터 집합 |
 | 실 DB 부트스트랩·스키마 | `./gradlew :api-server:schemaValidationTest` | Docker PostgreSQL 17 + Flyway + Hibernate validate + 쓰기 smoke |
 | Backend 전체 로컬 게이트 | `./gradlew localGate` | 하네스·실 DB·전 모듈 테스트·JaCoCo·프런트 unit coverage |
 | Full-stack 통합 게이트 | `npm run verify` / `make verify` | Backend·Frontend 핵심 게이트 단일 진입점(실 DB/E2E는 별도) |
 | Frontend 타입 | `pnpm -C frontend exec tsc --noEmit` | AGENTS 범위별 검증 |
-| 커버리지 | `make coverage` / `pnpm -C frontend test:coverage` | Backend JaCoCo + Frontend Vitest(30/25/25/30 하한) |
+| 커버리지 | `make coverage` / `pnpm -C frontend test:coverage` | Backend JaCoCo + Frontend Vitest의 현재 설정 래칫 |
 | 시크릿 스캔 | `gitleaks protect --staged --verbose`(설치 시) | pre-commit은 로컬 보조, CI `secret-scan`이 required check |
 | 브랜치 보호 정합 | `npm run verify:ops` | 저장소 명세·CI·실제 GitHub ruleset 대조(네트워크·관리 읽기 권한 필요) |
 
 ---
-*Last Updated: 2026-08-16 (드리프트 정정 — Frontend Vitest **122파일/1,206케이스** 실측, coverage 하한 **34/27/31/35**(`vitest.config.mts:81-86`), 마이그레이션 최신 번호 `V2_48`→`V2_83` 정정. 종전 "88파일/444테스트·30/25/25/30" 서술은 실측과 어긋나 있었다. 이전: 2026-08-15 Codex — Frontend Vitest coverage 하한 동기화. 2026-08-13 Node 22·관리자 최초 프로비저닝·explicit CRUD 스캐폴드·DB RBAC 집행·80엔티티/83테이블/888컬럼 실 DB 검증.)*
+*Last reviewed against current sources: 2026-08-19.*

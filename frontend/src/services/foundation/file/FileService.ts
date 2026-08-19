@@ -55,12 +55,10 @@ class FileService extends ApiService {
    * @param atchFileSn 첨부파일 일련번호
    * @param fileSn 파일 순번
    *
-   * ⚠ 이 경로는 `window.open` 이라 **Authorization 헤더가 실리지 않는다**.
-   * 백엔드 `JwtTokenProvider.resolveToken` 은 헤더만 읽고 쿠키 폴백이 없으므로 401 이 된다.
-   * (Next 의 `/api/v1/:path*` rewrite 는 헤더를 주입하지 않는 투명 프록시다.)
-   * 이미지처럼 화면에 그리는 용도는 {@link fetchBlob} 을 쓴다 — 그쪽은 axios 라 헤더가 실린다.
-   * 이 메서드의 근본 해결은 FE 인증 방식 결정이 선행돼야 하며,
-   * `docs/04-operations/wave2-carryover.md` §2 A-3(b) 에 선택지와 함께 기록돼 있다.
+   * same-origin `/api/v1` 경로에서는 `proxy.ts`가 HttpOnly 쿠키를 Bearer 헤더로 바꿔 주므로 인증된다.
+   * 반면 `NEXT_PUBLIC_API_URL`이 절대 URL이면 Next 프록시를 우회하고 `window.open`은 Authorization
+   * 헤더를 직접 실을 수 없어 401이 될 수 있다. 이미지 렌더링은 axios를 쓰는 {@link fetchBlob} 경로다.
+   * 상대·절대 설정의 비대칭은 `.agent/memory/known-gaps.md`의 `GAP-FILE-001`에서 관리한다.
    */
   downloadFile(atchFileSn: number, fileSn: number) {
     if (!atchFileSn) return;

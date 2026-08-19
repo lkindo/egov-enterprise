@@ -1,63 +1,55 @@
-# 도메인 보안 및 회복탄력성 가이드 (Domain Security & Resilience)
+# 도메인 보안 및 회복탄력성
 
-> **상위 헌법**: 본 아키텍처는 [백엔드 API 및 아키텍처 헌법](../../.agent/knowledge/backend-api-constitution/artifacts/constitution.md) (18조)의 논리적 지배를 받는다.
+> **규범**: [백엔드 API 및 아키텍처 헌법](../../.agent/knowledge/backend-api-constitution/artifacts/constitution.md)이 우선한다. 이 문서는 현재 구현 지점과 새 외부 연동을 설계할 때의 판단 순서를 설명한다.
 
-본 프로젝트는 엔터프라이즈급 안정성을 위해 다음의 도메인 가드레일을 준수한다.
-
-## 🗺️ 회복탄력성 제어 흐름 (Resilience Control Flow)
+## 현재 제어 흐름
 
 ```mermaid
-graph TD
-    A["Client Request"] --> B["Controller<br/>(@PreAuthorize)"]
-    B --> C["Service Layer<br/>(SecurityUtil 재검증)"]
-    C --> D{외부 시스템 호출?}
-    
-    D -->|No| E["Domain Entity<br/>(상태 전이 검증)"]
-    D -->|Yes| F["@Retryable<br/>(최대 3회 재시도)"]
-    F -->|계속 실패| G["Circuit Breaker<br/>(Resilience4j)"]
-    G --> H["Fallback 응답"]
-    F -->|성공| E
-    
-    E --> I["JPA @Version<br/>(낙관적 잠금)"]
-    I --> J["BaseEntity<br/>(생성/수정 자동 이력)"]
-    J --> K["PostgreSQL"]
-
-    style G fill:#e11d48,color:#fff
-    style F fill:#f59e0b,color:#000
-    style I fill:#6366f1,color:#fff
+flowchart LR
+    request[인증된 요청] --> controller[Controller 인가]
+    controller --> service[Service 의미 인가·트랜잭션]
+    service --> entity[도메인 상태 전이]
+    entity --> database[(PostgreSQL)]
+    service --> integration[외부 연동 어댑터]
+    integration --> timeout[명시적 timeout]
+    timeout --> retry[안전한 경우에만 제한 재시도]
 ```
 
-## 1. 서비스 레이어 권한 재검증 (Double-Check Security)
-- 컨트롤러의 권한 체크(`@PreAuthorize`)와 별개로, 서비스 레이어에서 `SecurityUtil`을 사용하여 리소스 소유자 또는 관리자 권한을 명시적으로 재검증한다.
-- 특히 개인정보 수정, 비밀번호 변경, 결재 승인 등 민감한 작업에 필수 적용한다.
-- 📦 `nuri.business.security.util.SecurityUtil`
+컨트롤러 애노테이션은 첫 경계일 뿐이다. 서비스는 owner-only, owner-or-admin, admin-only 등 해당 도메인의 의미를 다시 판정해야 하며, 헬퍼 통일을 이유로 권한 범위를 넓히지 않는다. 감사·소유권 식별자 축은 [사용자 참조 키 규약](user-reference-key-policy.md)을 따른다.
 
-## 2. 상태 전이 유효성 검사 (Deterministic State Transition)
-- 도메인 엔티티 내에 상태 전이 로직을 캡슐화하거나, 서비스 레이어에서 현재 상태를 체크하여 유효하지 않은 비즈니스 흐름(예: 이미 처리된 결재의 재수정)을 차단한다.
+## 현재 구현된 공통 기반
 
-## 3. 비동기 작업의 회복탄력성 (Async Resilience)
-- 외부 시스템(SMTP, SMS Gateway) 연동 시 반드시 `@Retryable`을 사용하여 일시적 장애에 대응한다.
-- `@Retryable` 사용 시 self-invocation 문제를 방지하기 위해 반드시 self-injection(Lazy Autowired) 패턴을 사용한다.
+| 관심사 | 현재 구현 | 적용 경계 |
+|---|---|---|
+| 인증·서비스 인가 | `SecurityUtil`과 서비스별 의미 가드 | 모든 보호된 변경 작업 |
+| 생성·수정 감사 | `BaseTimeEntity`의 `crtDt`/`mdfcnDt`, `BaseEntity`의 `frstRgtrId`/`lastMdfrId` | 해당 기반 클래스를 상속하는 엔티티 |
+| 낙관적 잠금 | `@Version`을 명시한 엔티티 | 현재 `Board`, `InformalSanction` 등 선택 적용; 기반 클래스가 자동 제공하지 않음 |
+| 제한 재시도 | Spring Retry를 사용하는 `MailAsyncProcessor`, `SmsAsyncProcessor` | 멱등성·중복 효과를 검토한 비동기 발송 경로 |
+| 비동기 격리 | 전용 executor와 task decorator | 비동기 작업; 보안·MDC·테스트 컨텍스트 전파를 별도 검증 |
 
-## 4. 안전한 ID 생성 전략
-- 고부하 상황에서의 충돌을 방지하기 위해 `System.currentTimeMillis()` 대신 `IdGenerationUtil`의 UUID 기반 ID 생성기를 사용한다.
-- 📦 `nuri.foundation.core.util.IdGenerationUtil`
+`Resilience4j` 서킷 브레이커, 분산 락, 범용 요청 멱등키는 전역 기반으로 구현되어 있지 않다. 향후 목표를 현재 강제 규칙처럼 서술하거나, 라이브러리 이름만으로 보호가 적용됐다고 판단하지 않는다.
 
-## 5. 동시성 제어 및 데이터 무결성 (Concurrency Control)
-- 다중 사용자가 동시에 동일 리소스를 수정할 가능성이 있는 엔티티에는 JPA의 `@Version` 어노테이션을 사용하여 **낙관적 잠금(Optimistic Lock)**을 적용한다.
-- 재고 차감, 결제 처리 등 정합성이 극도로 중요한 작업에는 필요에 따라 비관적 잠금(Pessimistic Lock) 또는 분산 락(Redis Lock) 사용을 검토한다.
+## 외부 연동 설계 순서
 
-## 6. 장애 전파 방지 (Circuit Breaker)
-- 외부 API 호출 시 단순 `@Retryable`을 넘어, **Resilience4j** 등을 활용한 서킷 브레이커를 적용하여 외부 시스템의 장애가 내부 시스템으로 전파되는 것을 차단한다.
-- 모든 외부 연동 작업에는 반드시 명시적인 **Connect/Read Timeout**을 설정한다.
+1. 호출의 최대 허용 지연과 실패 의미를 정하고 connect/read/overall timeout을 명시한다.
+2. 작업이 재시도 안전한지 판단한다. 생성·결제·발송처럼 중복 효과가 있는 작업은 멱등키나 공급자 idempotency 계약 없이 자동 재시도하지 않는다.
+3. 재시도 횟수·backoff·대상 예외를 제한한다. 인증·검증 실패 같은 영구 오류는 재시도하지 않는다.
+4. 장애가 스레드·커넥션 풀을 고갈시킬 수 있으면 bulkhead나 circuit breaker를 별도 설계한다.
+5. 성공률, 지연, 재시도, 최종 실패를 관측 가능하게 만들고 정상·지연·타임아웃·부분 실패 테스트를 둔다.
 
-## 7. 요청의 멱등성 보장 (Idempotency)
-- 네트워크 재시도나 사용자의 중복 클릭으로 인해 동일 요청이 반복될 경우를 대비하여, 생성/처리 로직에 **Request ID** 또는 유니크 키를 활용한 멱등성 체크 로직을 포함한다.
+## 동시성과 데이터 무결성
 
-## 8. 도메인 오디팅 (Audit & Traceability)
-- 모든 도메인 엔티티의 생성/수정 이력은 `BaseTimeEntity` 및 `BaseEntity`를 상속받아 자동으로 기록되어야 하며, 중요한 상태 변경은 별도의 이력 테이블(Audit Table)에 보존한다.
-- 📦 `nuri.foundation.domain.common.BaseTimeEntity`
-- 📦 `nuri.foundation.domain.common.BaseEntity`
+- 상태 전이는 엔티티 또는 서비스의 한 경계에서 검증하고 트랜잭션 안에서 갱신한다.
+- 충돌 가능성이 있고 재시도 가능한 편집에는 낙관적 잠금을 우선 검토한다. 재고·금전처럼 직렬화가 필요한 경우에는 실제 경합과 DB 쿼리를 근거로 비관적 잠금 또는 별도 조정 방식을 선택한다.
+- 생성 ID는 표준 PK 전략과 `IdGenerationUtil`을 따른다. 시간값이나 `MAX + 1`을 고유성 근거로 사용하지 않는다.
+- 감사 기반 클래스는 변경 시각과 행위자를 기록할 뿐, 중요한 비즈니스 상태 변경의 별도 이력 요구를 자동 충족하지 않는다.
+
+## 검증
+
+- 서비스 인가 테스트는 허용 사례뿐 아니라 다른 소유자·일반 사용자·위조된 역할의 거부 사례를 포함한다.
+- 재시도 테스트는 성공 횟수만 세지 말고 중복 부작용과 최종 실패를 확인한다.
+- 잠금 전략은 동시 요청 테스트로 lost update 또는 중복 처리가 실제로 차단되는지 확인한다.
+- 외부 시스템이 없는 검증은 정적 범위로 보고하고 런타임 회복탄력성까지 확인한 것으로 표현하지 않는다.
 
 ---
-*Last Updated: 2026-07-12 (BaseEntity/BaseTimeEntity foundation 승격 반영 — 패키지 경로 현행화. 이전: 2026-05-19)*
+*Verified against current retry, audit, and optimistic-lock implementations: 2026-08-19*

@@ -71,7 +71,7 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 - 새 일반 문서는 `docs/01-product`, `02-architecture`, `03-guides`, `04-operations`, `archived` 중 하나에 kebab-case로 두고 [문서 인덱스](docs/README.md)를 갱신한다.
 - `.agent/memory/`는 공용 운영 메모리만을 위한 예외 경로이며 규범 SSOT가 아니다.
 - 지속 가능한 프로젝트 사실은 `project-context.md`, 사용자 승인 결정은 ADR 후 `decisions.md`, 재현 가능한 미해결 위험은 `known-gaps.md`에 링크와 검증일을 남긴다.
-- 진행률·세션 TODO·추측·원시 로그는 공용 메모리에 넣지 않는다. `.gemini/tasks/`는 역사 작업 저널이지 현재 상태 원장이 아니다.
+- 진행률·세션 TODO·추측·원시 로그는 공용 메모리에 넣지 않는다. `.gemini/tasks/`에는 새 세션 저널을 만들지 않으며 기존 census·archive 지원 자산도 현재 상태 원장이 아니다.
 - 공용 메모리는 실시간 락·presence·작업 claim 버스가 아니다. 동시 작업 조정은 현재 디스크와 별도 조정 메커니즘으로 한다.
 
 ## 도구별 진입점

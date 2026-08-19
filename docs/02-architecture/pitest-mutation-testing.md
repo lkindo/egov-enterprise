@@ -1,6 +1,6 @@
-# 🧬 PITest (점진적 Mutation Testing) Gradle 완전 연동 설계 보고서
+# PITest 점진적 Mutation Testing 연동
 
-본 문서는 **eGov Enterprise 백엔드 기술 헌법 제16조 (Mutation Score 75% 이상 품질 기준)**를 수리적·실증적으로 증명하기 위해 구축된 **PITest 돌연변이 테스트 자동화 시스템**의 연동 구조와 최적화 전략에 대해 설명합니다.
+본 문서는 **eGov Enterprise 백엔드 헌법 제16조(핵심 서비스 Mutation Score 75% 이상)**를 집행하는 PITest 연동 구조와 실행 방법을 설명합니다. mutation score는 테스트가 주입된 코드 변화를 얼마나 탐지했는지 보여 주는 지표이며, 시스템 정확성 전체의 수학적 증명은 아닙니다.
 
 > **✅ 현재 집행 상태**: 뮤테이션 게이트는 **`STRICT_MUTATION=true` (75% Mutation Score 게이트)로 활성화**되어 있다.
 > `ci.yml`이 각 스코프에 `STRICT_MUTATION=true`를 명시적으로 주입하고, `build.gradle`이 이를 75로 변환해 하드 게이트를 적용한다. `CI` 환경변수만으로는 활성화되지 않는다.
@@ -9,15 +9,15 @@
 
 ## 1. 개요 및 헌법 수호 맥락 (Context & Motivation)
 
-* **배경**: 단순 코드 커버리지(Line Coverage)는 코드가 실행되었는지만 측정할 뿐, 검증(Assertion)의 견고함을 증증하지 못합니다.
-* **해결책**: PITest는 소스 코드에 의도적으로 **돌연변이(Mutants)**를 주입하고(예: `>`를 `<`로 변경, 산술 기호 변경 등), 기존 테스트 코드가 이를 잡아내어 실패하는지(**Kill**) 여부를 계측합니다. 이를 통해 테스트의 실질적인 방어력을 수학적으로 계측합니다.
-* **목표**: 8대 독점 스킬인 **`Mutation Testing Auditor`**를 가동하여 백엔드 핵심 비즈니스 로직에 대한 테스트 무결성을 철저하게 수호합니다.
+* **배경**: 단순 코드 커버리지(Line Coverage)는 코드가 실행되었는지만 측정할 뿐, 검증(Assertion)의 견고함을 증명하지 못합니다.
+* **해결책**: PITest는 소스 코드에 의도적으로 **돌연변이(Mutants)**를 주입하고(예: 조건 경계나 산술 연산 변경), 기존 테스트가 이를 잡아내어 실패하는지(**Kill**) 계측합니다. 이를 통해 단순 실행률과 다른 테스트 민감도 신호를 얻습니다.
+* **목표**: 백엔드 핵심 비즈니스 로직의 테스트가 의미 있는 결함을 실제로 탐지하는지 계측하고, CI에서 합의된 하한을 강제합니다.
 
 ---
 
 ## 2. PITest Gradle 통합 아키텍처
 
-루트 `build.gradle`에 현대적인 Gradle 9.4.1 및 Java 21 규격을 충족하는 PITest 플러그인(`1.19.0`)을 탑재하고 하위 멀티 모듈에 자동 배포되도록 구성했습니다.
+루트 `build.gradle`에 Java 21 환경의 PITest 플러그인(`1.19.0`)을 적용하고 하위 멀티 모듈에 공통 설정을 배포한다. Gradle 버전은 문서에 고정하지 않고 wrapper를 기준으로 확인한다.
 
 ### 2.1 적용된 Gradle 빌드 명세
 * **루트 플러그인 정의**:
@@ -76,7 +76,7 @@
 PITest의 실행 시간 폭증 문제를 해결하기 위해 **두 가지 핵심 최적화**를 기본 탑재했습니다.
 
 1. **점진적 분석 (Incremental Analysis)**:
-   * `historyInputLocation` 및 `historyOutputLocation` 설정을 동일 캐시 파일로 통일하여, 이전 실행 시 분석된 돌연변이 결과를 재사용합니다. 이를 통해 코드 수정이 없는 영역은 재분석하지 않아 빌드 속도를 **최대 10배 이상 향상**시킵니다.
+   * `historyInputLocation` 및 `historyOutputLocation`을 동일 캐시 파일로 두어 이전 분석 결과를 재사용하고, 변경되지 않은 영역의 반복 분석 비용을 줄입니다. 실제 단축 폭은 변경 범위와 캐시 적중률에 따라 달라집니다.
 2. **보일러플레이트 배제 (Class Filtering)**:
    * 비즈니스 검증 로직이 존재하지 않는 DTO, VO, Config, QueryDSL Q-Class 등을 `excludedClasses` 패턴으로 완전 격리 배제하여 분석의 노이즈와 리소스 낭비를 원천 차단했습니다.
 
@@ -112,3 +112,4 @@ $env:STRICT_MUTATION="true"
 
 ---
 *Governed by: Enterprise Technology Constitution (Backend Article 16 - Mutation Testing Safeguard)*
+*Verified against `build.gradle` and `.github/workflows/ci.yml`: 2026-08-19*

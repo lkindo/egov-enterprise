@@ -1,13 +1,26 @@
-# 암호화 마스터 키 로테이션 & PII 재암호화 런북
+# ARIA PII 마스터 키 로테이션 런북
 
-> ARIA 마스터 암호화 키(`Globals.File.algorithmKey`)를 안전하게 교체하는 절차. 이 키는 `CryptoUtil` →
-> `RrnoEncryptionConverter`를 통해 **주민등록번호(rrno, `tb_user_info.rrno`)** 등 PII 암복호화에 사용된다.
-> (E2E/foundation 감사 C1 후속)
+이 런북은 애플리케이션의 `ALGORITHM_KEY`로 암호화하는 `tb_user_info.rrno`에만 적용한다.
+SSH 키, JWT secret, TLS 인증서, provider credential의 회전 절차가 아니다. 외부 credential 폐기는
+각 provider 런북과 [.agent/memory/known-gaps.md](../../.agent/memory/known-gaps.md)에서 관리한다.
 
-## 0. 배경 & 현재 상태
-- **문제(C1)**: 기본 키가 eGovFrame 공개 샘플값 `egovframe`(저엔트로피)이며 소스에 커밋돼 있었다. 저장소/백업 유출 시 PII 전량 복호화 위험.
-- **적용된 보호**: 키를 `${ALGORITHM_KEY:egovframe}`로 **env 외부화**, 약한 기본키 경고, 키 원문 로깅 제거, 쓰기 암호화 실패 **fail-closed**. 2026-08-15부터 `OLD_ALGORITHM_KEY`가 있으면 활성 키 실패 후 구키로 한 번만 복호화하며, 임의의 손상 문자열은 PII로 반환하지 않고 읽기도 fail-closed한다. 명확한 주민번호 형식의 과거 평문만 제한적으로 읽고 다음 쓰기에서 암호화한다.
-- **PII 규모의 마지막 실측(2026-07-10)**: `tb_user_info` 20행 중 `rrno` 비어있지 않은 행 **0건**. 이 값은 운영 실행 직전에 반드시 아래 쿼리로 다시 측정해야 하며 현재값으로 간주하지 않는다.
+## 현재 구현 계약
+
+- production은 [`application-prod.yml`](../../api-server/src/main/resources/application-prod.yml)에서
+  `ALGORITHM_KEY`를 무기본값으로 요구한다.
+- [`CryptoUtil`](../../foundation/src/main/java/nuri/foundation/core/util/CryptoUtil.java)은 활성 키로 먼저 복호화하고,
+  `OLD_ALGORITHM_KEY`가 있을 때만 이전 키로 한 번 폴백한다. 키 원문은 로그에 남기지 않는다.
+- [`RrnoEncryptionConverter`](../../business-core/src/main/java/nuri/business/domain/common/RrnoEncryptionConverter.java)는
+  암호화·복호화 실패를 fail-closed 처리한다. 명확한 주민등록번호 형식의 과거 평문만 제한적으로 읽는다.
+- 운영 compose는 [`docker-compose.prod.yml`](../../docker-compose.prod.yml)에서 활성 키를 필수로 받고,
+  이전 키는 회전 창에서만 전달한다.
+- 상시 재암호화 runner는 구현돼 있지 않다. 대상 행이 있으면 아래 acceptance contract를 만족하는 일회성
+  도구를 먼저 구현·검토·리허설해야 한다.
+
+## 1. 사전 승인과 범위 확인
+
+키 변경은 기존 PII의 복호화 가능성에 영향을 주는 운영 변경이다. 운영자 승인, 유지보수 창, 백업·복구 소유자를
+먼저 확정한다. 실행 직전 read-only census로 대상 수를 확인한다.
 
 ```sql
 SELECT count(*) AS rrno_rows
@@ -15,78 +28,77 @@ FROM tb_user_info
 WHERE rrno IS NOT NULL AND btrim(rrno) <> '';
 ```
 
-## 1. 강한 키 생성
+행 수와 확인 시각만 운영 기록에 남기고 rrno 값이나 암호문을 일반 로그·문서에 복사하지 않는다.
+
+## 2. 새 키 생성·보관
+
 ```bash
-openssl rand -base64 32      # 32바이트(=256bit) 랜덤 키, base64 44자
-# 예) z5GR4UqYSaY9quEnO0o1kGkTkLlh7J8wi3jmRbhFl04=   ← 예시일 뿐, 반드시 새로 생성
+openssl rand -base64 32
 ```
 
-## 2. 키 주입 (소스 커밋 금지)
-운영은 아래 중 하나로 주입한다. **application.yml에 실제 키를 커밋하지 않는다.**
-```bash
-# 환경변수
-export ALGORITHM_KEY='<위에서 생성한 키>'
-# 회전 창에서만: export OLD_ALGORITHM_KEY='<현재 사용 중인 구키>'
-# 또는 systemd/컨테이너 시크릿, HashiCorp Vault, OCI Vault/KMS 등
-```
-`application.yml`의 활성 키와 `globals.properties`의 이전 키 설정이 각각 `ALGORITHM_KEY`,
-`OLD_ALGORITHM_KEY`를 읽는다. 운영 compose도 두 변수를 컨테이너로 전달한다.
+- 새 값은 승인된 secret manager에 넣고 source, `.env`, shell history, CI log에 남기지 않는다.
+- 현재 활성 키는 회전이 끝날 때까지 복구 가능한 secure location에 유지한다.
+- backup의 암호화·접근통제와 복구 시험을 확인한다. 백업만 만들고 복원 가능성을 확인하지 않으면 rollback 증거가 아니다.
 
-## 3. PII가 없을 때(현재) — 단순 로테이션
-`rrno` 데이터가 0건이면 재암호화가 불필요하므로:
-1. DB 백업(관례상).
-2. `ALGORITHM_KEY`에 새 키 설정 후 애플리케이션 재기동(`OLD_ALGORITHM_KEY`는 비움).
-3. `CryptoUtil` 경고 로그가 사라졌는지 확인(약한 기본키 미사용).
-> 이후 입력되는 rrno는 새 키로 암호화된다. 기존 암호문이 없으므로 복호화 실패 위험 없음.
+## 3. 대상 행이 0일 때
 
-## 4. PII가 존재할 때 — 무손실 재암호화 절차 (Dual-Key)
-키를 그냥 바꾸면 **기존 암호문이 새 키로 복호화되지 않아 PII가 유실**된다. 다음 순서를 따른다.
+1. 직전 census가 0인지 다시 확인한다.
+2. `ALGORITHM_KEY=<new>`, `OLD_ALGORITHM_KEY` 미설정 상태로 배포한다.
+3. production 기동, health, PII가 없는 대표 사용자 읽기·쓰기 경로를 확인한다.
+4. 약한 키 경고와 복호화 실패가 없는지 확인한다.
 
-### 4.1 백업 (필수, 되돌리기 지점)
-```bash
-pg_dump "postgresql://egov:***@<host>:5432/egovdb" -t tb_user_info > backup_tb_user_info_$(date +%F).sql
-```
+0행이라는 과거 측정값을 재사용하지 않는다. 실행 직전 값만 유효하다.
 
-### 4.2 재암호화 실행 (OLD→NEW, dry-run 우선)
-먼저 애플리케이션에 `ALGORITHM_KEY=<신규>`, `OLD_ALGORITHM_KEY=<기존>`을 함께 주입해 재기동한다.
-신규 쓰기는 활성 키를 사용하고, 기존 암호문 읽기는 활성 키 실패 후 구키로 폴백한다. 이 이중 읽기
-상태에서 각 `rrno`를 `CryptoUtil.decrypt`→`CryptoUtil.encrypt`로 치환한다.
+## 4. 대상 행이 있을 때: dual-key 재암호화
 
-- **dry-run**: 대상 행 수·복호화 성공률만 보고(쓰기 없음).
-- **commit**: 트랜잭션·배치로 UPDATE. 실패 행은 스킵·리포트(중단하지 않되 집계).
-- **검증**: 마이그레이션 후 신규 키로 전 행 복호화가 성공하는지 재확인.
+새 키만 주입하면 기존 암호문을 읽을 수 없다. 다음 순서를 지키며, 일회성 도구가 준비되지 않았으면 여기서
+중단하고 구현·리허설을 별도 변경으로 수행한다.
 
-권장 러너 설계(테스트 프로필/속성으로 게이트, 기본 비활성):
-```
-@Component
-@ConditionalOnProperty(name = "crypto.reencrypt.enabled", havingValue = "true")
-class RrnoReencryptRunner implements ApplicationRunner {
-  // 프로퍼티: crypto.reencrypt.dryRun(default true), batchSize
-  // 1) ALGORITHM_KEY=신규, OLD_ALGORITHM_KEY=기존으로 기동(CryptoUtil이 dual-read 제공)
-  // 2) SELECT esntl_id, rrno FROM tb_user_info WHERE rrno IS NOT NULL AND rrno <> ''
-  // 3) plain = decryptWithOld(rrno);  newCipher = CryptoUtil.encrypt(plain)   // 현재 활성 키=신규
-  // 4) dryRun이면 카운트만, 아니면 UPDATE tb_user_info SET rrno=? WHERE esntl_id=? (배치)
-  // 5) 실패(복호화 안 됨) 행은 스킵·집계 후 리포트
-}
-```
-> 러너는 마지막 실측에서 대상 0건이라 본 저장소에 상시 탑재하지 않는다. 실행 직전 census가 0이면
-> 이 절 전체가 no-op이고, 1건 이상이면 백업·dry-run·행 수 대조를 포함한 1회성 러너를 별도 검증한 뒤 사용한다.
+### 4.1 백업과 dry-run
 
-### 4.3 키 전환 & 정리
-1. 신규 키만으로 전 행 복호화 성공을 검증한다.
-2. `ALGORITHM_KEY`를 신규 키로 유지한 채 `OLD_ALGORITHM_KEY`를 제거하고 재기동한다.
-3. 시크릿 저장소의 구키를 폐기한다.
-4. 로그·모니터링에서 복호화 실패(`Rrno decryption failed`)가 없는지 확인한다.
+1. `tb_user_info`와 관련 감사·참조 데이터를 일관된 시점으로 백업한다.
+2. 격리된 복제 환경에서 `ALGORITHM_KEY=<new>`, `OLD_ALGORITHM_KEY=<old>`로 기동한다.
+3. raw ciphertext를 읽어 모든 대상이 active 또는 old key로 복호화되는지 확인한다.
+4. 성공 수, 실패 수, 대상 PK의 비식별 digest만 report에 남긴다. 실패가 하나라도 있으면 쓰기를 시작하지 않는다.
 
-### 4.4 롤백
-문제 시 4.1 백업으로 `tb_user_info` 복원 후 이전 키로 재기동.
+### 4.2 일회성 도구 acceptance contract
 
-## 5. 체크리스트
-- [ ] 실행 직전 `rrno` 대상 행 수 재측정
-- [ ] 새 키 생성(32B) 및 시크릿 저장소 주입(커밋 금지)
-- [ ] (PII 존재 시) 백업 → dry-run → 재암호화 → 검증
-- [ ] 앱 재기동 후 `CryptoUtil` 약한키 경고 없음 확인
-- [ ] 복호화 실패 로그 0건 확인
+- JPA entity를 읽고 같은 평문을 다시 `save`하는 방식에 기대지 않는다. dirty checking이 변경 없음으로 판단해
+  UPDATE를 생략할 수 있으므로 raw ciphertext를 명시적으로 교체한다.
+- 읽은 암호문을 dual-key로 복호화하고 **활성 키로 다시 암호화**한다.
+- `WHERE <pk>=? AND rrno=?` 같은 compare-and-set으로 동시 변경을 감지한다.
+- batch별 transaction, 중단·재개 기준, 처리·실패 집계, idempotency, rollback 절차를 제공한다.
+- 실패 행을 조용히 skip하고 완료로 표시하지 않는다. 전체 성공 전에는 old key를 제거하지 않는다.
+- 테스트용 fixture에서 old-only ciphertext, active ciphertext, 손상값, 과거 평문, 동시 변경을 검증한다.
 
----
-*Last Updated: 2026-08-15 (구키 dual-read, 손상 암호문 read fail-closed, 운영 compose 주입 경로 반영)*
+### 4.3 운영 실행
+
+1. 새 키를 active, 기존 키를 old로 주입해 기동한다. 이 시점부터 신규 쓰기는 새 키를 쓴다.
+2. dry-run 결과와 대상 수를 재대조한다.
+3. 승인된 일회성 도구로 batch 재암호화하고 매 batch 결과를 집계한다.
+4. raw DB 값이 평문 형식을 노출하지 않는지 확인한다.
+5. old key를 비운 별도 검증 인스턴스에서 전 대상 복호화가 성공하는지 확인한다.
+
+## 5. 전환 완료
+
+1. `OLD_ALGORITHM_KEY`를 제거하고 새 키만으로 재기동한다.
+2. 대표 사용자 읽기·쓰기와 전체 대상 복호화를 다시 검증한다.
+3. 복호화 실패·약한 키 경고가 없는지 확인한다.
+4. 운영 보존정책에 따라 구 키와 임시 도구·중간 산출물을 폐기한다. 폐기 증거는 secure channel에 남긴다.
+
+## 6. 롤백
+
+- 재암호화 전: 새 배포를 내리고 이전 키로 복귀한다.
+- 부분 재암호화 후: dual-key 상태를 유지한 채 실패 원인을 해결하거나, 승인된 백업으로 전체 데이터를 복원하고
+  이전 키로 복귀한다.
+- old key를 먼저 폐기하거나 서로 다른 시점의 DB와 key를 조합하지 않는다.
+
+## 완료 체크리스트
+
+- [ ] 실행 직전 대상 행 수 확인
+- [ ] 새 키를 secret manager에 저장하고 원문 비노출 확인
+- [ ] 백업 복구 가능성 확인
+- [ ] 대상이 있으면 dry-run 100% 성공과 일회성 도구 acceptance contract 충족
+- [ ] 새 키 단독 전체 복호화 및 대표 읽기·쓰기 성공
+- [ ] old key 제거 후 재검증
+- [ ] 임시 자산·구 키의 승인된 폐기 확인

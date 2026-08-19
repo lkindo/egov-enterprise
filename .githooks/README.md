@@ -14,29 +14,25 @@ git config core.hooksPath .githooks
 | `pre-commit` | 커밋 | DTO/Controller/api-docs.json/생성타입 스테이징 시 `codegen:verify(:zod)` 드리프트 점검 | ⚠ 경고(비차단) |
 | `pre-push` | 푸시 | 공용 메모리·문서 링크 계약은 항상 실행. 문서-only는 fast-pass, Atlas HTML은 전용 계약만 추가 실행, 소스 변경은 컴파일·타입·codegen·하네스까지 실행 | ❌ 실행된 범위에서 차단 |
 
-> **계약 게이트의 untracked 구멍(2026-08-01 봉합)**: `codegen:verify` 계열은 `git diff --exit-code <path>` 로 판정하는데, 대상 파일이 **언트랙이면 diff 가 무조건 exit 0** 이라 게이트가 조용히 vacuous 통과한다. 즉 `git rm --cached api-docs.json` 하나로 3중 계약 결속이 동시에 무력화됐다. (파일이 아예 없으면 `fatal: ambiguous argument` 로 loud fail 하므로, 위험 구간은 정확히 '디스크에는 있으나 언트랙' 하나다.) 이제 `git ls-files --error-unmatch` 선행 검사를 pre-push·`codegen:verify`·`codegen:verify:zod`·CI 4곳에 넣었다.
-
-> **하네스 린터를 pre-push 로 올린 이유(2026-07-26)**: 하네스 실행이 원격 CI에만 의존하면 로컬에서 baseline·예외 목록 변조를 늦게 발견한다. 새 린터를 다는 것보다 **있는 린터를 실제 경로에서 돌게 만드는 것**이 우선이었다. 실측 소요 **1m58s**(대부분은 Spring 컨텍스트를 띄우는 `SecurityAuthAnnotationLinterTest`). 다만 훅은 우회 가능하므로 최종 권위는 required CI다.
+현재 계약 게이트는 `api-docs.json`과 생성 타입/Zod 파일이 Git에 추적되는지 먼저 확인한 뒤 diff를 판정한다. 하네스는 소스 변경의 pre-push 경로에도 연결하지만 훅은 우회 가능하므로 최종 병합 권위는 required CI다.
 
 ## 게이트 계층 (무엇이 어디서 도는가)
 
-| 계층 | 명령 | 범위 | 소요(실측) |
+| 계층 | 명령 | 범위 | 상대 비용 |
 |---|---|---|---|
-| pre-commit | 자동 | 시크릿 스캔(미설치 시 **경고 출력**)·계약 드리프트 경고 | 수 초 |
-| pre-push 문서-only | 자동 | 공용 메모리 계약 + 문서 링크 무결성. Atlas HTML이면 전용 docs-as-code 계약 추가 | 수 초~수십 초 |
-| pre-push 소스 변경 | 자동 | 위 + 컴파일 + tsc + codegen(+**tracked 선행검사**) + **하네스 31종** | ~2분 |
-| **병합 전 전수** | `./gradlew localGate` | 위 + **실PG 스키마 검증** + 전 모듈 테스트 + **JaCoCo LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫 | ~12분 |
-| CI | `.github/workflows/ci.yml` | **secret-scan(gitleaks)** + 전체 + 실PG 스키마 검증 + 프론트 gzip 번들 예산 + E2E + 뮤테이션 | 상시 |
+| pre-commit | 자동 | 시크릿 스캔(미설치 시 **경고 출력**)·계약 드리프트 경고 | 낮음 |
+| pre-push 문서-only | 자동 | 공용 메모리 계약 + 문서 링크 무결성. Atlas HTML이면 전용 docs-as-code 계약 추가 | 낮음 |
+| pre-push 소스 변경 | 자동 | 위 + 컴파일 + tsc + codegen(tracked 선행검사) + `harnessTest` | 중간 |
+| **병합 전 전수** | `./gradlew localGate` | 위 + **실PG 스키마 검증** + 전 모듈 테스트 + **JaCoCo LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫 | 높음 |
+| CI | `.github/workflows/ci.yml` | **secret-scan(gitleaks)** + 전체 + 실PG 스키마 검증 + 프론트 gzip 번들 예산 + E2E + 뮤테이션 | 가장 높음 |
 
-> **하네스 개수 정정(2026-08-16 실측)**: 두 수치를 구분해야 한다.
-> - **실행 집합 = 31클래스/39테스트** — 현재 `nuri.api.harness` 패키지(= `harnessTest` 가 실제로 돌리는 것). *(2026-08-16 `ControllerScanBaseLinterTest` 신설로 30→31. 종전 표기 30클래스/37테스트.)*
-> - **동결 집합 = 37클래스** — `baseline-manifest.properties` 의 `__harness.classes`(4개 모듈). 이 중 6종(`RbacAuthorizationMatrixTest`, `SchemaValidationIntegrationTest`, business/foundation 의 ArchUnit 등)은 **harnessTest 필터 밖이라 pre-push 에서 돌지 않는다** — 실행 경로는 `test`/`localGate`/CI 다. "모든 하네스 게이트가 pre-push 에서 돈다" 는 전제는 거짓이므로 여기 명시한다.
+`harnessTest`의 실행 집합과 `baseline-manifest.properties`의 동결 집합은 동일하지 않다. business/foundation ArchUnit과 schema-validation 등은 `test`·`localGate`·CI 경로가 소유하므로, pre-push 하나를 모든 하네스의 실행 증거로 간주하지 않는다. 현재 census와 알려진 공백은 Governance Atlas 및 공용 gap 인덱스에서 확인한다.
 
-### 2026-08-15 입력 의미 계약 게이트
+### 입력 의미 계약 게이트
 
-`InputContractMirrorLinterTest` 2건이 게시판 마스터를 포함한 관리자 입력 12 DTO의 길이 61필드와 Y/N enum 13필드를 Entity 저장 상한 및 `api-docs.json`과 대조한다. 하류 `codegen:verify`/`codegen:verify:zod`와 결합해 Entity → DTO → OpenAPI → TypeScript/Zod 드리프트를 pre-push에서 차단한다.
+`InputContractMirrorLinterTest`가 등록된 관리자 입력 DTO의 문자열 길이와 Y/N enum을 Entity 저장 상한 및 `api-docs.json`과 대조한다. 대상 목록과 필드 수는 테스트 소스가 정본이다. 하류 `codegen:verify`/`codegen:verify:zod`와 결합해 Entity → DTO → OpenAPI → TypeScript/Zod 드리프트를 pre-push에서 차단한다.
 
-### 2026-08-01 Wave 0 신설 게이트 6종
+### 대표 거버넌스 하네스
 
 | 클래스 | 막는 회귀 |
 |---|---|
@@ -47,20 +43,19 @@ git config core.hooksPath .githooks
 | `HandlerReachesServiceLinterTest` | 저장 경로 없는 쓰기 핸들러가 200/success 반환(거짓 성공) |
 | `DockerfilePackageManagerLinterTest` | 배포 이미지가 CI 검증 트리와 다른 패키지 매니저로 빌드 |
 
-### pre-push fast-pass 정책 변경(2026-08-01)
+### pre-push fast-pass 정책
 
-확장자 **allowlist → denylist 로 반전**했다. 종전에는 '코드로 인정할 확장자'를 열거했기 때문에, 확장자가 없거나 목록에 없는 파일이 전부 검증 없이 통과했다 — 그리고 하필 그 집합이 **게이트를 무력화할 수 있는 파일들**이었다: `.githooks/` 자신, `baseline-manifest.properties`(동결 기준), `gradle/libs.versions.toml`, `gradle-wrapper.properties`, `gradlew`, Dockerfile 2종, `scripts/*.mjs|ps1|sh`. 즉 게이트를 끄는 편집이 게이트를 통과했다(AGENTS H5).
-이제는 문서·이미지·폰트 등 **확실히 비코드인 확장자만** fast-pass 하고 나머지는 전부 코드로 간주한다. 예외적으로 `frontend/public/governance_harness_atlas.html`은 전용 계약 테스트가 먼저 통과한 경우에만 fast-pass한다. 다중 ref 푸시에서 마지막 ref 만 평가하던 버그도 함께 고쳤다.
+문서·이미지·폰트 등 **확실히 비코드인 확장자만** fast-pass하고 나머지는 소스 변경으로 간주한다. `.githooks/`, baseline manifest, Gradle 설정, wrapper, Dockerfile, 스크립트처럼 게이트를 바꿀 수 있는 파일은 확장자 유무와 관계없이 전체 소스 경로를 탄다. `frontend/public/governance_harness_atlas.html`은 전용 계약 테스트가 통과한 경우에만 fast-pass한다.
 
 ### 실 PostgreSQL 스키마 검증 (`./gradlew :api-server:schemaValidationTest`)
 
-빈 PostgreSQL 17 컨테이너에 **Flyway 마이그레이션 전량을 적용**한 뒤 Hibernate `ddl-auto: validate` 로 전 엔티티 매핑을 대조한다(실측 2m14s, **Docker 필요**). 단위 테스트 프로파일은 H2 + `create-drop` 이라 "엔티티가 엔티티와 일치한다" 는 동어반복만 검증한다 — 2026-07-26 사고(36자 UUID ↔ `varchar(7)`)가 전부 그린이었던 이유다.
+빈 PostgreSQL 17 컨테이너에 **Flyway 마이그레이션 전량을 적용**한 뒤 Hibernate `ddl-auto: validate`로 엔티티 매핑을 대조한다(**Docker 필요**). 단위 테스트 프로파일의 H2 + `create-drop` 결과는 운영 물리 스키마 정합 증거가 아니다.
 
 Docker 없는 환경을 깨지 않도록 기본 `test` 태스크에서는 `schema-validation` 태그로 제외되지만, **조용히 스킵되는 것이 아니라** 전용 태스크·`localGate`·CI 에서 반드시 실행된다.
 
-> Windows/Docker Desktop 함정(빌드 스크립트에 이미 반영): Testcontainers 는 `//./pipe/docker_engine` 만 찾고, Docker Engine 29 는 `MinAPIVersion=1.44` 라 구버전 API 협상이 400 으로 거부된다. 증상은 `docker version` 은 정상인데 테스트만 "Could not find a valid Docker environment" 다. 다른 엔진을 쓰면 `DOCKER_HOST` / `DOCKER_API_VERSION` 으로 덮어쓴다.
+> `docker version`은 성공하지만 Testcontainers가 엔진을 찾지 못하면 현재 Docker context와 `DOCKER_HOST` / `DOCKER_API_VERSION` 오버라이드를 확인한다. 특정 Docker 버전의 과거 기본값을 그대로 가정하지 않는다.
 
-> `business-*` 모듈 테스트는 실측 **7m48s** 라 push 마다 돌릴 수 없다. 그래서 pre-push 에서 제외하고 `localGate` 로 분리했다 — 제외 사실을 숨기지 않기 위해 여기에 명시한다. "HEAD 자체가 red" 인 상태(2026-07-26 §6.2)는 이 계층에서만 잡힌다.
+> `business-*` 모듈 전수 테스트와 프론트 전체 coverage는 pre-push에서 제외하고 `localGate`가 소유한다. 따라서 pre-push green만으로 해당 범위가 검증됐다고 보고하지 않는다.
 
 ## 훅 자동 설치
 

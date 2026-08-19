@@ -83,7 +83,7 @@ dependencies {
     //   그럼에도 api 스코프라 전 모듈과 배포 아티팩트에 실려 있었다 —
     //   쓰지 않는 코드가 배포물에 남으면 공급망 표면만 넓힌다(Dependabot 알림 2건도 이것이었다).
     //   ⚠ 수집 스택을 세우기로 결정하면 이 의존성과 appender 를 **함께** 되살릴 것.
-    //     (그 결정은 docs/04-operations/wave2-carryover.md §4 D-2 에 미결로 남아 있다.)
+    //     현재 선택 경계는 docs/04-operations/pending-decisions.md 의 PD-OPS-001 이 관리한다.
 
     // Utils
     api libs.icu4j

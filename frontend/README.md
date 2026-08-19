@@ -5,7 +5,7 @@
 ## 🛠 주요 기술 스택
 
 - **Framework**: Next.js 16.2.x (App Router, cacheComponents/PPR)
-- **Library**: React 19.0.0
+- **Library**: React 19.2.x
 - **Styling**: Tailwind CSS 4, 시맨틱 디자인 토큰
 - **Data Fetching**: Axios(동일 출처 `/api/v1` 프록시), TanStack Query 5.x
 - **State Management**: Zustand, React Context
@@ -40,4 +40,3 @@ pnpm build
 - `src/hooks`: 커스텀 훅 (인증, 공통 기능 등)
 
 ---
-*Last Updated: 2026-08-15 (Next.js 16 · 동일 출처 프록시 · 한국어 UI 제품정책 · 시맨틱 토큰 반영)*

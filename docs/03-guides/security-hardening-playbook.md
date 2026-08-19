@@ -1,19 +1,19 @@
 # Security Hardening & Authentication Playbook
 
-본 플레이북은 **eGov Enterprise v5** 플랫폼의 인증(Authentication), 인가(Authorization), 세션 라이프사이클 및 어드민 위상 제어를 안전하게 수호하기 위한 실무 트러블슈팅 런북이다. 본 플레이북은 **OWASP Top 10** 표준을 엄격히 충족하고 제로 트러스트(Zero-Trust) 모델을 코드에 안착시키기 위해 작성되었으며, 에이전트와 개발자 모두에게 보안 진단의 핵심 나침반 역할을 한다.
+본 플레이북은 인증(Authentication), 인가(Authorization), 세션 라이프사이클 및 관리자 접근 제어를 진단하는 실무 런북이다. 상위 규범은 [백엔드 헌법](../../.agent/knowledge/backend-api-constitution/artifacts/constitution.md)과 [프론트엔드 헌법](../../.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)이며, OWASP 원칙의 충족 여부는 이 문구가 아니라 현재 코드·보안 테스트·CI 증거로 판정한다.
 
 ---
 
 ## 1. 프론트-백엔드 인증 동기화 아키텍처
 
-eGov Enterprise는 프론트엔드(Next.js App Router)와 백엔드(Spring Boot API Server) 간에 **쿠키 기반 보안 JWT 세션**을 활용하며, 다음과 같은 고도로 설계된 이중 인증 검증 체계를 운영한다.
+eGov Enterprise는 프론트엔드(Next.js App Router)와 백엔드(Spring Boot API Server) 사이에 **쿠키 기반 JWT 세션**을 사용한다. 프론트 Proxy의 조기 라우팅 판단과 백엔드 Spring Security의 최종 인가를 서로 다른 방어선으로 둔다.
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor User as Web Browser
-    participant Mid as Next.js Middleware<br>(Edge RBAC)
-    participant Client as TanStack Query<br>(Client Component)
+    participant Mid as Next.js Proxy<br>(routing guard)
+    participant Client as Browser/RSC API client
     participant BE as Spring Security<br>(api-server)
 
     User->>Mid: Access /admin/community
@@ -30,22 +30,24 @@ sequenceDiagram
 ```
 
 ### 1.1 쿠키 세션 & 헤더 바인딩 핵심 메커니즘
-- **Access Token 관리**: 현재 클라이언트 구현상 액세스 JWT는 `localStorage`에 보관되며, 토큰 재발급 시 JS로 심는 비-`HttpOnly` `SameSite=Lax` 쿠키(`frontend/src/lib/api/client.ts` 38·133·134행)로도 전파된다. 따라서 `HttpOnly`·`Secure`·`SameSite=Strict` 쿠키 저장은 아직 달성되지 않은 **목표 상태(target hardening)**이며, 이 이행 전까지 액세스 토큰은 XSS로 탈취될 수 있어 '원천 봉쇄'로 간주하지 않는다. (진정한 `HttpOnly` 저장은 §1.2의 refresh token에만 적용된다.)
-- **클라이언트 전파**: 프론트엔드 `AuthContext`는 마운트 시점에 해당 쿠키 토큰을 획득하여 `TanStack Query` 및 HTTP `ApiService` 통신 레이어의 HTTP Header `Authorization: Bearer {token}` 주입용 상태로 관리한다.
-- **CORS & Credentials 주의사항**: 로컬 개발(localhost:3000 -> localhost:8080) 및 실서버 이종 도메인 환경에서는 백엔드 CORS 설정 시 `allowedOrigins`에 와일드카드(`*`) 사용이 불가하며, 반드시 특정 Origin을 지정하고 `allowCredentials(true)`를 활성화해야 세션 쿠키가 정상 바인딩된다. SameSite는 개발 환경 로컬 테스트 편의를 위해 `Lax`로 유연화할 수 있으나 운영 배포 시에는 `Strict`를 강제한다.
+- **Access Token 관리**: Next.js 로그인·재발급 Route Handler가 access JWT를 `HttpOnly`, `SameSite=Strict`, 운영 `Secure` 쿠키로 설정하고 응답 본문에는 토큰을 노출하지 않는다. 브라우저 코드가 `localStorage`나 JavaScript로 읽을 수 있는 쿠키에 access token을 저장해서는 안 된다.
+- **클라이언트 전파**: 브라우저 요청은 `withCredentials`로 같은 출처 프록시에 쿠키를 보내며 `frontend/src/proxy.ts`가 `/api/v1`·`/actuator`·`/ws` 요청에 Bearer 헤더를 주입한다. SSR 경로는 서버의 `cookies()`로 토큰을 읽어 백엔드 요청 헤더에 싣는다. 백엔드가 서명과 최종 인가를 authoritative하게 재검증한다.
+- **CORS & Credentials 주의사항**: 이종 origin에서 자격증명 요청을 허용할 때는 `allowedOrigins=*`를 사용하지 않고 활성 프로필의 `cors.allowed-origins`에 실제 origin을 명시한다. 기본 브라우저 경로는 same-origin Next.js proxy이며, 개발 포트도 문서가 아니라 현재 설정에서 확인한다. 인증 cookie의 SameSite 정책을 완화하려면 실제 배포 토폴로지와 CSRF 영향을 별도 검토한다.
 
 ### 1.2 Refresh Token을 활용한 Silent Refresh (재발급) 파이프라인
 - Access Token 만료에 따른 잦은 로그아웃(401) 방지를 위해, `HttpOnly` 쿠키에 더 긴 수명을 가진 `refreshToken`을 병행 저장한다.
-- 401 에러 발생 시 Axios Interceptor가 가로채어(Intercept) 백엔드 `/api/v1/auth/refresh` 엔드포인트로 백그라운드 갱신 요청을 시도(Silent Refresh)하며, 성공 시 원래 실패했던 API 요청을 재시도(Retry)한다.
+- 401 발생 시 Axios interceptor가 Next.js `/api/auth/reissue` Route Handler를 호출한다. Route Handler는 refresh cookie를 백엔드 `/api/v1/auth/reissue`에 전달하고 새 access token을 HttpOnly cookie로 재설정한다. 성공 후 원 요청을 한 번 재시도하며, 재발급 요청 자체와 로그인 경로는 무한 루프 방지를 위해 제외한다.
 
 ---
 
-## 2. Next.js Edge Middleware & Spring Security 이중 방어
+## 2. Next.js Proxy & Spring Security 이중 방어
 
 보안 위상 강화를 위해 프론트엔드 에지 단(Edge Node Routing)과 백엔드 애플리케이션 코어 단(Spring Filter Chain)에서 각각 **역할 기반 접근 제어(RBAC)**를 이중으로 집행한다.
 
 ### 2.1 Next.js Proxy 위상 설정 (`frontend/src/proxy.ts`)
 프론트엔드 웹 라우팅 진입 시점에서 사용자의 미인증 접근을 원천 차단하고 어드민 메뉴로의 부적절한 권한 진입을 즉각 라우팅시킵니다.
+
+아래 코드는 구조를 설명하는 축약 예시다. 허용·제외 경로, origin guard, WebSocket 처리와 JWT 검증 결과 타입은 현재 [`frontend/src/proxy.ts`](../../frontend/src/proxy.ts)가 정본이다.
 
 ```typescript
 import { NextResponse } from 'next/server';
@@ -123,9 +125,8 @@ export async function proxy(request: NextRequest) {
     }
 
     // 4. /admin 접근 통제 — 기본값 = ADMIN/SYSTEM 전용(deny-by-default).
-    //    2026-07-20(401c43f4c)에 과거의 5-접두사(system/user/security/stats/workflow) allow-by-default
-    //    화이트리스트를 뒤집었다. 일반 사용자에게는 명시 허용 경로만 열고, 그 안의 관리 콘솔은 다시 도려낸다.
-    //    (실제 목록·헬퍼는 frontend/src/proxy.ts — 발췌라 상수 정의는 생략)
+    // 일반 사용자에게는 명시 허용 경로만 열고, 그 안의 관리 콘솔은 다시 제외한다.
+    // 실제 목록·헬퍼는 frontend/src/proxy.ts가 정본이다.
     const normalizedPath = pathname.toLowerCase(); // /Admin 대소문자 우회 차단
     if (matchesPrefix(normalizedPath, '/admin')) {
         const normalizedRole = userRole.toUpperCase();
@@ -159,6 +160,8 @@ export const config = {
 
 ### 2.2 Spring Boot Security Filter Chain 설정 (`api-server`)
 스프링 시큐리티는 프론트엔드 라우팅 우회 침투에 대비하여 API 엔드포인트 레벨에서 인가를 강제한다.
+
+아래는 개념 예시이며 API 런타임의 실제 matcher 순서, DB URL 인가와 공개 경로는 [`ApiSecurityConfig.java`](../../api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java)를 직접 확인한다. `business-core`의 fallback `SecurityConfig`는 `ApiSecurityConfig`가 없는 컨텍스트에서만 활성화된다.
 
 ```java
 @Bean
@@ -194,7 +197,7 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
    │            YES: 2단계로 진행.
    │
    ├──▶ 2단계: API 요청 헤더(Network ➔ Request Headers)에 "Authorization: Bearer eyJ..." 포맷이 정확한가?
-   │            NO: ApiService 또는 Axios interceptor 설정 에러. frontend/src/lib/api/client.ts(Axios request/response 인터셉터 — Bearer 주입 및 401 Silent Refresh) 및 필요 시 frontend/src/services/core/ApiService.ts(client 위임 래퍼)를 검사하십시오.
+   │            NO: 브라우저 경로는 frontend/src/proxy.ts의 쿠키→Bearer 중개와 rewrite를, SSR은 해당 server action/component의 cookies()→헤더 구성을 확인하십시오. frontend/src/lib/api/client.ts는 withCredentials와 401 재발급 흐름을 확인합니다.
    │            YES: 3단계로 진행.
    │
    └──▶ 3단계: 백엔드 서버 로그에 "ExpiredJwtException" 또는 "SignatureException"이 찍혀있는가?
@@ -206,11 +209,10 @@ public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
 토큰은 올바르나 자원에 접근할 권한이 없는 상태에서의 조치 방법:
 
-1. **`hasRole()` vs `hasAuthority()` 동작 차이 이해**:
-   - `hasRole("ADMIN")`은 내부적으로 **`ROLE_` 접두사를 자동으로 붙여** `ROLE_ADMIN` 권한을 탐색한다.
-   - 따라서 JWT Claims의 `authorities` 배열에 `ROLE_ADMIN`이 들어 있어야 한다.
-   - 만약 JWT에 접두사 없이 `ADMIN`만 박혀 있다면 `hasAuthority("ADMIN")`을 사용하거나, JWT 토큰 발급 시 `ROLE_` 접두사를 포함하도록 수정해야 한다.
-   - **프로젝트 표준**: SecurityConfig에서 `hasRole("ADMIN")` 사용 → JWT Claims에 `ROLE_ADMIN` 저장.
+1. **`hasRole()` vs `hasAuthority()`와 권한 원본 확인**:
+   - `hasRole("ADMIN")`은 내부적으로 `ROLE_ADMIN` 권한을 탐색한다.
+   - access JWT의 subject는 `esntlId`이고 `role` claim은 프론트 라우팅의 심층 방어에 쓰인다. 백엔드 `JwtTokenProvider.getAuthentication()`은 subject로 현재 `UserDetails`를 다시 로드하므로 claim을 백엔드 권한 원본으로 보지 않는다.
+   - 백엔드 403은 `tb_user_authrt_map`·`tb_authrt_role_map`, `JpaUserAuthAdapter`, `CustomUserDetails.getAuthorities()`와 role hierarchy를 같은 요청 시점 기준으로 대조한다. `ROLE_` 정규화 문제를 숨기기 위해 `hasAuthority("ADMIN")`로 의미를 바꾸지 않는다.
 2. **SecurityUtil 디버깅**:
    - 비즈니스 레이어에서 `SecurityUtil.hasRole("ROLE_ADMIN")`이 `false`를 뱉는다면, `SecurityContextHolder` 내부에 저장된 `Authentication` 객체의 `Authorities` 배열에 해당 String 역할명이 정상 파싱되어 적재되어 있는지 디버깅 브레이크포인트를 걸고 분석한다.
 
@@ -227,11 +229,9 @@ OWASP Top 10의 '암호화 실패(Cryptographic Failures)'를 방어하기 위�
 ### 4.2 개인 식별 정보(PII) 로그 마스킹
 - 주민등록번호, 연락처, 이메일 등의 PII 데이터는 `api-server`의 전역 로깅 인터셉터나 예외 핸들러에서 로깅(Logger.error)될 때 반드시 정규식을 통해 마스킹(Masking, 예: `010-****-1234`) 처리되어야 한다.
 
-### 4.3 요청 상관관계(Trace) 추적 — **2026-08-02 재작성**
+### 4.3 요청 상관관계(Trace) 추적
 
-> ⚠ 이 절의 종전 내용(“애플리케이션이 UUID 를 만들어 `MDC` 의 `traceId` 에 적재하고, 로그 패턴에 `%X{traceId}` 를 포함시킬 것”)은 **W1-D1 이 제거한 결함을 그대로 지시하고 있었다.** 그 지시를 따르면 아래 결함이 되살아난다. 지시 자체를 폐기하고 현행 설계로 대체한다.
-
-- **traceId 소유권은 Micrometer/OTel 브리지 단독이다.** 애플리케이션 필터는 `traceId` MDC 키를 조작하지 않는다. 종전에는 필터가 8자 UUID 를, Micrometer 가 32-hex 를 **같은 키**에 써서 응답 헤더 값과 로그 값이 서로 달랐다.
+- **traceId 소유권은 Micrometer/OTel 브리지 단독이다.** 애플리케이션 필터는 `traceId` MDC 키를 별도로 생성하거나 덮어쓰지 않는다.
 - **로그 패턴에 `%X{traceId}` 를 추가하지 말 것.** Spring Boot 가 `logging.pattern.correlation`(= `%correlationId`)으로 이미 출력하고 있다. 중복 추가하면 위 키 충돌을 되살린다.
 - **`X-Trace-Id` 응답 헤더는 유지**하되 값은 OTel 의 traceId 를 싣는다. **클라이언트가 보낸 `X-Trace-Id` 는 수신하지 않는다** — 무검증 반영은 순수한 로그 위조 벡터였다.
 - PII 마스킹(§4.2)과의 결속은 `%correlationId` 를 공통 축으로 삼는다(마스킹 유틸은 `nuri.foundation.core.util.PiiMaskUtil`).
@@ -244,10 +244,9 @@ OWASP Top 10의 '암호화 실패(Cryptographic Failures)'를 방어하기 위�
 
 ### 5.1 작동 메커니즘
 - **타겟 도메인 패키지**: `nuri.api.controller` 하위 패키지에 정의된 REST 컨트롤러.
-- **오딧 검증(실제 집행 범위 — 2026-08-15 현행화)**: 게이트의 자기 서술은 집행이 바뀔 때마다 함께 바뀌어야 합니다.
+- **오딧 검증(실제 집행 범위)**: 게이트의 자기 서술은 집행이 바뀔 때마다 함께 바뀌어야 합니다.
   - **Test#1** (`auditSecurityAnnotationsOnRestControllers`): **패키지 skip 없이** `nuri.api.controller` 하위 **전 컨트롤러의 읽기·쓰기**를 순회합니다. 단 다음 중 하나면 통과시킵니다 — ① `PUBLIC_PATH_WHITELIST` 매칭 ② `@PreAuthorize`/`@Secured`/메타 애노테이션 **존재** ③ `rbac.db-auth.secure-paths` 또는 DB 프로그램 URL 매칭.
   - **Test#2** (`auditWriteEndpointAuthorizationOnNonAdminPaths`): 전 컨트롤러를 보지만 **쓰기(POST/PUT/DELETE/PATCH)만** 보며, `/api/v1/admin/` 접두는 URL 시큐리티에 위임해 skip 합니다.
-  - **2026-08-15 해소**: 쓰기 사유로 읽기까지 통과시키던 `READ_COVERED_BY_WRITE_RATIONALE` 30건과 `WRITE_AUTHZ_GUARDED_ELSEWHERE` 클래스 면제 12건을 도메인별로 판정하고 삭제했습니다. 12개 컨트롤러는 `@Authenticated`를 명시하고 개인 데이터는 기존 사용자 스코프·소유자/참여자 서비스 가드와 결속했습니다.
   - **남은 사각지대**: ③은 문자열/DB URL 매칭이므로 선언 동기화 게이트가 필요합니다. ②는 `@PreAuthorize("isAuthenticated()")`처럼 객체 소유권을 증명하지 않는 애노테이션도 통과시키므로, 개인 데이터는 서비스 가드와 음성 테스트가 별도로 필요합니다.
   - 요컨대 **"모든 컨트롤러를 순회한다"는 참이지만 "모든 인가를 검증한다"는 거짓**입니다. 이 게이트의 그린은 "인가 애노테이션이 빠지지 않았다"이지 "인가가 옳다"가 아닙니다. 최신 범위는 항상 `SecurityAuthAnnotationLinterTest` 의 클래스 javadoc 을 SSOT 로 삼으십시오.
 - **예외 처리 (White-list)**: 비인가 접근이 허용되어야 하는 공개 API(예: 회원가입, 아이디 중복 확인 등)는 `SecurityAuthAnnotationLinterTest`의 `PUBLIC_PATH_WHITELIST` 상수에 등록하여 통과시키거나, `@PreAuthorize("permitAll()")`를 명시적으로 선언하도록 강제합니다.
@@ -255,9 +254,9 @@ OWASP Top 10의 '암호화 실패(Cryptographic Failures)'를 방어하기 위�
 
 ### 5.2 검증 수행 명령
 ```powershell
-./gradlew :api-server:test --tests "*SecurityAuthAnnotationLinterTest*"
+./gradlew :api-server:harnessTest --tests "*SecurityAuthAnnotationLinterTest*"
 ```
 
 ---
-*Last Updated: 2026-08-15 (Read authorization census and blanket controller exemption retired)*
+*Last reviewed against current sources: 2026-08-19.*
 *Governed by: OWASP Hardening & Zero-Trust Security Playbook / Security Auth Linter Harness*

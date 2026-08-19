@@ -106,8 +106,9 @@ public class ClientIpResolver {
         // 최우측 채택은 어느 형상에서도 최좌측보다 나쁘지 않으면서(홉이 1개면 동일),
         // 프록시가 append 하는 형상에서는 실제 클라이언트 IP 를 보존한다.
         //
-        // ⚠ 근본 해법은 신뢰 대역을 실제 프록시 IP 로 좁혀 이 분기 자체가 발생하지 않게 하는 것이다.
-        //    그러려면 운영 토폴로지 확정이 필요하다 — docs/04-operations/wave2-carryover.md 참조.
+        // 운영 compose 는 신뢰 대역을 egov-net 으로 좁혀 이 분기를 실제 프록시 요청에만 허용한다.
+        // LB·nginx·CDN 추가 등 홉이 바뀌면 docker-compose.prod.yml 의 TRUSTED_PROXIES 와 네트워크
+        // 서브넷을 함께 재판정한다. ConfigSafetyLinterTest 가 현재 두 선언의 정합을 강제한다.
         for (int i = hops.length - 1; i >= 0; i--) {
             String candidate = normalize(hops[i]);
             if (candidate != null) {

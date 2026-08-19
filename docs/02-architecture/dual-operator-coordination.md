@@ -1,6 +1,6 @@
-# Gemini·Claude 실시간 조정 계층 설계 (legacy dual-operator design)
+# 레거시 Gemini·Claude 실시간 조정 계층 설계 (구현 보류)
 
-> **상태**: 설계(Design) — 구현 보류. 본 문서는 구현 착수 전 리뷰·승인용 SSOT다.
+> **상태**: 설계(Design) — 구현 보류. 본 문서는 이 설계안의 구현 착수 전 리뷰·승인용 원본이다.
 > **적용 범위**: 2026-07-07 당시 Antigravity(Gemini) ↔ Claude Code 두 도구를 대상으로 한 설계다. 현재 [AGENTS.md](../../AGENTS.md)는 Codex 등을 포함한 다중 operator 공통 계약이며, 공용 메모리는 이 문서의 실시간 claim/lock 구현을 대체하지 않는다.
 > **거버넌스**: 본 설계의 구현은 `.claude/settings.json`·`.agents/hooks.json`·`coord.js` 신설과 공통 운영 정책 변경을 수반하므로, [AGENTS.md](../../AGENTS.md#규칙-계층과-단일-원본)에 따라 착수 전 **사용자 명시 승인**이 필요하다. 도구별 어댑터에는 연결만 추가한다.
 
@@ -12,7 +12,7 @@
 
 현재 조정(coordination)은 전적으로 **문서·관습 기반**이다. 런타임 조정 채널이 전혀 없다.
 
-- **공유되는 것**: git 워킹트리 + `git commit --only -- <path>` 규율, `.agent/memory/`의 파생 프로젝트 메모리, stateless `db-bridge.js`(Node+pg, one-shot). 과거 `.gemini/tasks/*.md` 작업 저널은 2026-08-19 정리됐으며 실시간 조정 채널로 사용하지 않는다.
+- **공유되는 것**: git 워킹트리 + `git commit --only -- <path>` 규율, `.agent/memory/`의 파생 프로젝트 메모리, stateless `db-bridge.js`(Node+pg, one-shot). `.gemini/tasks/*.md`는 실시간 조정 채널로 사용하지 않는다.
 - **없는 것**: 실시간 조정용 MCP, lock/`.lock` 관습, file watcher, socket/named-pipe IPC, presence/status 레지스트리.
 
 ## 1. 불가침의 천장 (The Hard Ceiling)
@@ -42,7 +42,7 @@ Antigravity는 기존 관습-only 가정보다 훨씬 확장성이 높고, **조
 | **라이프사이클 hook** (PreToolUse/PostToolUse/Pre·PostInvocation/Stop) | ✅ | `.agents/hooks.json` | stdin-JSON in → `{allow_tool, deny_reason}` out(exit 0). 툴 경계마다 coord CLI shell out → **양쪽에서 lock/awareness 강제** |
 | **로컬 CLI/node 실행** | ✅ (Security Preset gate) | 에이전트 액션 | `db-bridge.js`처럼 `node coord.js claim <path>`를 에이전트·hook·skill이 직접 호출 |
 
-**⚠ 확장성의 약점(weak spot)**: Antigravity의 rules 파일(`GEMINI.md`/`AGENTS.md`/`.agents/rules`) 로드는 **세션 시작 시 1회**이며 reload 버그 리포트가 존재한다. → **rules 파일을 라이브 버스로 쓰면 안 된다.** 모든 peer 상태는 hook/MCP가 **매 턴 디스크에서 새로 읽어야** 한다.
+**⚠ 확장성의 약점(weak spot)**: 규칙 컨텍스트의 갱신 시점은 도구별로 다르고 세션 중 reload를 보장할 수 없다. 현행 Gemini 경로도 사용자 홈 네이티브 진입점과 저장소 `GEMINI.md` 어댑터를 거칠 뿐, Claude·Codex의 글로벌 파일을 런타임에 상속하지 않는다. 특정 PC에서 글로벌 파일의 내용이 같더라도 그것은 저장소 계약이나 import 체인의 증거가 아니다. 따라서 **rules 파일을 라이브 버스로 쓰면 안 된다.** 모든 peer 상태는 hook/MCP가 **매 턴 디스크에서 새로 읽어야** 한다.
 
 ## 3. 설계안 평가 (5 Approaches Evaluated)
 
@@ -191,4 +191,4 @@ Claude 측은 **오늘 전부 구축 가능**(`.claude/` 비어 있음, hook 이
 - 📦 `.agent/scripts/db-bridge.js` — stateless one-shot CLI 그레인의 원형
 
 ---
-*작성: 2026-07-07 (dual-operator 실시간 조정 계층 설계 감사 — research→5안 병렬 설계→적대적 검증→종합. 구현 보류, 승인 대기.)*
+*Original design: 2026-07-07 · Verified against current AGENTS/adapters: 2026-08-19 · Implementation deferred pending approval.*

@@ -1,42 +1,31 @@
 ---
 name: docs-as-code-sync
-description: >-
-  Autonomous documentation synchronization skill. Triggers when significant architectural logic,
-  APIs, or DB schemas are modified. Automatically updates corresponding Markdown docs,
-  Mermaid diagrams, and Constitutions to prevent documentation drift.
-version: 1.0.0
+description: 코드·설정·API·DB 변경이 영향을 주는 현행 문서와 파생 메모리를 찾아 최소 범위로 동기화한다.
+version: 2.0.0
 ---
 
-# Docs-as-Code Sync Skill (Antigravity Native)
+# Docs-as-Code Sync
 
-**Use this skill when:** You complete a task that alters business logic, modifies database structures, introduces new APIs, or changes the overall system architecture.
+## 목적
 
----
+문서는 실행 중인 코드·설정·ADR과 검증 가능한 관계를 유지해야 한다. 사건 일지와 완료 수치를 운영 가이드에 누적하지 않고, 현재 절차·불변 원칙·정본 링크를 남긴다.
 
-## 1. Core Objective: Zero Documentation Debt
+## 절차
 
-Code changes constantly, but documentation often rots. The **Docs-as-Code Sync** skill keeps the eGov-Enterprise source set—`AGENTS.md`, `.agent/knowledge/` constitutions, accepted ADRs, current code/configuration, and `docs/`—consistent without treating the Gemini/Claude adapters as policy originals.
+1. 변경의 소비자와 문서 영향 반경을 검색한다.
+2. 정본을 하나만 정하고 다른 문서는 요약과 링크만 둔다.
+3. 흐름이나 경계가 바뀌었을 때만 Mermaid와 예시를 갱신한다.
+4. accepted 아키텍처 결정은 ADR에 기록하고 `.agent/memory/decisions.md`는 인덱스만 갱신한다.
+5. 지속적인 사실·결정·gap이 달라졌을 때만 `.agent/memory/` 3종을 같은 변경 세트로 갱신한다.
+6. 헌법 변경이 필요하면 제안과 근거를 먼저 제시하고 사용자의 명시 승인 전에는 본문을 수정하지 않는다.
+7. 링크·문서 계약과 관련 코드 검증을 실행하고, 확인하지 못한 외부 상태를 분리한다.
 
----
+## 기록 기준
 
-## 2. Synchronization Protocol
+- 유지: 현재 사용 절차, 불변 계약, 결정 이유, 운영 runbook, 활성 gap과 재개 조건
+- 축약·대체: 날짜별 작업 나열, 일회성 명령 출력, 완료율·수동 census, 이미 코드가 증명하는 과거 수정 내역
+- 삭제 후보: 대체 정본이 있고 소비 링크가 없으며 활성 결정·runbook·법적/감사 가치도 없는 완료 계획·중간 보고서
 
-When a significant code change is made, execute the following steps before reporting the task as complete:
+## 보고
 
-1. **Impact Radius Analysis**: Identify which documents are affected by the code change (e.g., API documentation, testing guides, DB standard terms).
-2. **Mermaid Diagram Sync**: If architectural flow or DB relationships changed, locate the relevant ````mermaid` blocks in the docs and rewrite the topology graph.
-3. **Constitution Proposal**: If a new standard was established (e.g., a new DB abbreviation), identify the affected Constitution and request the explicit user approval required by `AGENTS.md` before changing it.
-4. **Validation**: Ensure no dangling links or conflicting legacy statements remain.
-
-## 3. Output Requirements
-
-Print the following block after syncing:
-
-```markdown
-### 📚 [DOCS-AS-CODE SYNC REPORT] ###
-- **Triggered By**: Modification of `AuthService.java`
-- **Updated Artifacts**:
-  - `docs/02-architecture/domain-resilience.md` (Updated Mermaid flow for Auth)
-- **Status**: SSOT perfectly synchronized.
-#####################################
-```
+갱신한 문서, 근거가 된 정본, 실행한 검증, 삭제 후보와 남은 확인 사항을 구분한다. 일부 링크 검사만으로 “완전 동기화”라고 표현하지 않는다.

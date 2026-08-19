@@ -1,372 +1,111 @@
-# 성능 최적화 가이드
+# 성능 최적화 운영 가이드
 
-본 가이드는 eGov Enterprise 프로젝트에서 적용된 성능 최적화 기법과 실전 팁을 공유합니다.
+성능 최적화는 “좋아 보이는 기법 적용”이 아니라 **사용자 증상 → 기준선 → 병목 증거 → 최소 변경 → 동일 조건
+재측정** 순서로 수행한다. 과거의 단발 측정값이나 코드 주석의 예상 효과를 현재 성능 사실로 사용하지 않는다.
 
----
+## 측정 도구 지도
 
-## 📋 목차
+| 층 | 정본·도구 | 무엇을 확인하는가 |
+|---|---|---|
+| 브라우저 runtime | [`lighthouse.yml`](../../.github/workflows/lighthouse.yml), [`frontend/lighthouserc.json`](../../frontend/lighthouserc.json) | production build의 `/login` 성능·접근성 관측 |
+| 프론트 bundle | `pnpm -C frontend run analyze`, `bundle:check` | route chunk·dependency·예산 drift |
+| API 부하 | [k6 가이드](load-test-guide.md) | 혼합 workload의 latency·error·JVM/DB 상관 |
+| JVM·HTTP | Actuator metrics/prometheus | request latency, heap/GC, thread, Hikari 상태 |
+| Hibernate | `dev,dev-performance` profile | SQL 호출·binding·session 통계 |
+| PostgreSQL | [DB 최적화 가이드](database-optimization-guide.md) | query plan, lock, I/O, table/index 통계 |
 
-1. [N+1 쿼리 해결](#n1-쿼리-해결)
-2. [캐싱 전략](#캐싱-전략)
-3. [프론트엔드 최적화](#프론트엔드-최적화)
-4. [데이터베이스 최적화](#데이터베이스-최적화)
-5. [모니터링](#모니터링)
+각 도구가 보지 못하는 층을 명시한다. k6는 브라우저 렌더링을, Lighthouse는 인증된 업무 흐름과 DB 용량을,
+bundle analyzer는 runtime latency를 증명하지 않는다.
 
----
+## 1. 성능 문제 정의
 
-## N+1 쿼리 해결
+다음 형식으로 목표를 고정한다.
 
-### 문제 설명
-
-N+1 쿼리 문제는 엔티티를 조회할 때 관련 엔티티를 별도의 쿼리로 로딩하여 발생하는 성능 문제입니다.
-
-```java
-// ❌ N+1 문제 발생
-List<Menu> menus = menuRepository.findAll();
-for (Menu menu : menus) {
-    // 메뉴마다 권한 조회 (N 개의 추가 쿼리)
-    List<MenuAuthority> auths = menuAuthorityRepository.findByMenuId(menu.getId());
-}
-// 총 쿼리 수: 1 + N
+```text
+사용자 흐름:
+측정 환경·SHA·데이터량:
+현재 p50/p95/p99·오류율·처리량:
+목표 SLO 또는 이전 기준선:
+의심 병목과 반증 가능한 관측:
+변경하지 않을 범위:
 ```
 
-### 해결 방법 1: Fetch JOIN
+환경과 입력이 다른 두 숫자를 비교하지 않는다. “빨라졌다”는 주장은 같은 조건의 반복 측정과 raw artifact가 있어야 한다.
 
-```java
-// ✅ 단일 쿼리로 메뉴와 권한 함께 조회
-@Query("""
-    SELECT m, ma
-    FROM Menu m
-    LEFT JOIN MenuAuthority ma ON m.id = ma.id.menuNo
-    ORDER BY m.upperMenuNo ASC, m.menuOrdr ASC
-""")
-List<Object[]> findAllWithAuthorities();
-```
-
-**효과**:
-- 쿼리 수: 1+N → 1
-- 응답 시간: 100-200ms → 10-50ms (95% 단축)
-
-### 해결 방법 2: EntityGraph
-
-```java
-@EntityGraph(attributePaths = {"menuAuthorityList"})
-List<Menu> findAll();
-```
-
-### 해결 방법 3: Batch Size
-
-```java
-@OneToMany(fetch = FetchType.LAZY)
-@BatchSize(size = 25)
-private List<MenuAuthority> authorities;
-```
-
-### 실제 적용 사례
-
-#### MenuService
-
-```java
-private List<MenuDto> buildMenuTree(Long rootMenuNo, List<String> roles) {
-    // [성능 개선] 단일 쿼리로 메뉴와 권한 정보를 함께 조회 (N+1 방지)
-    List<Object[]> menuWithAuthResults = menuRepository.findAllWithAuthorities();
-
-    // 메뉴와 권한 매핑
-    Map<Long, Menu> menuMap = new LinkedHashMap<>();
-    Map<Long, List<MenuAuthority>> authorityMap = new HashMap<>();
-
-    for (Object[] result : menuWithAuthResults) {
-        Menu menu = (Menu) result[0];
-        MenuAuthority authority = (MenuAuthority) result[1];
-        // ... 매핑 로직
-    }
-}
-```
-
-#### UserService
-
-```java
-@Cacheable(value = "users", key = "'userList'")
-public List<UserDto> getUserList() {
-    // [성능 개선] 단일 쿼리로 사용자와 권한 정보를 함께 조회
-    List<Object[]> results = userRepository.findAllWithAuthorities();
-    
-    // 매핑 로직...
-}
-```
-
----
-
-## 캐싱 전략
-
-### Spring Cache 적용
-
-#### 1. 메뉴 계층 구조
-
-```java
-@Cacheable(value = "menuHierarchy", 
-           key = "SecurityContextHolder.getContext().getAuthentication().getAuthorities()")
-public List<MenuDto> getMenuHierarchy() {
-    // DB 조회 로직
-}
-```
-
-**캐시 키**: 사용자 권한 목록  
-**캐시 미스**: 첫 번째 요청 또는 권한 변경 시  
-**캐시 히트**: 10-50ms
-
-#### 2. 사용자 목록
-
-```java
-@Cacheable(value = "users", key = "'userList'")
-public List<UserDto> getUserList() {
-    // DB 조회 로직
-}
-```
-
-#### 3. 전체 메뉴 목록
-
-```java
-@Cacheable(value = "allMenus")
-public List<MenuDto> getAllMenus() {
-    // DB 조회 로직
-}
-```
-
-### 캐시 설정 (`application.yml`)
-
-```yaml
-spring:
-  cache:
-    type: caffeine
-    caffeine:
-      spec: maximumSize=10000,expireAfterAccess=30m
-```
-
-### 캐시 무효화
-
-```java
-@CacheEvict(value = { "allMenus", "menuHierarchy", "menuParentMap" }, allEntries = true)
-@Transactional
-public void insertMenuManage(MenuDto vo) {
-    // 메뉴 생성 로직
-}
-```
-
----
-
-## 프론트엔드 최적화
-
-### 1. Bundle Analyzer
-
-번들 크기 분석:
-
-```bash
-npm run analyze
-```
-
-**확인 항목**:
-- `main.js` 번들 크기 (목표: 500KB 미만)
-- 페이지별 청크 크기
-- 큰 의존성 모듈
-
-### 2. 코드 스플리팅
-
-동적 임포트:
-
-```tsx
-// 무거운 컴포넌트 지연 로딩
-const HeavyComponent = dynamic(() => import('./HeavyComponent'), {
-  loading: () => <p>Loading...</p>,
-  ssr: false,
-});
-```
-
-### 3. 이미지 최적화
-
-```tsx
-import Image from 'next/image';
-
-<Image
-  src="/logo.png"
-  width={500}
-  height={300}
-  alt="로고"
-  priority  // LCP 요소에 사용
-/>
-```
-
-### 4. 폰트 최적화
-
-```tsx
-import { Inter } from 'next/font/google';
-
-const inter = Inter({ 
-  subsets: ['latin'],
-  display: 'swap',  // FOIT 방지
-});
-```
-
-### 5. Package Imports 최적화
-
-`next.config.ts`:
-
-```typescript
-experimental: {
-  optimizePackageImports: [
-    'lucide-react',
-    '@radix-ui/react-dialog',
-    '@radix-ui/react-dropdown-menu',
-    // ... 11 개 라이브러리
-  ],
-},
-```
-
-**효과**: 빌드 속도 200-800ms 단축
-
----
-
-## 데이터베이스 최적화
-
-### 1. 인덱스 설정
-
-```sql
--- 메뉴 조회 성능 향상
-CREATE INDEX idx_menu_upper_menu_no ON menu(upper_menu_no, menu_ordr);
-
--- 사용자 권한 조회 성능 향상
-CREATE INDEX idx_user_authority_uniq_id ON user_authority(uniq_id);
-
--- 알림 조회 성능 향상
-CREATE INDEX idx_notification_receiver_read ON n_user_notification(receiver_id, is_read);
-```
-
-### 2. HikariCP 풀 설정
-
-```yaml
-spring:
-  datasource:
-    hikari:
-      maximum-pool-size: 20  # 기본값
-      minimum-idle: 5
-      idle-timeout: 300000
-      max-lifetime: 600000
-      connection-timeout: 20000
-```
-
-**고트래픽 환경**:
-```yaml
-maximum-pool-size: 30-50  # CPU 코어 수 * 2 + 1
-```
-
-### 3. Hibernate 배치 처리
-
-```yaml
-spring:
-  jpa:
-    properties:
-      hibernate:
-        jdbc:
-          batch_size: 25  # 기본값
-        order_inserts: true
-        order_updates: true
-```
-
-**대량 삽입/업데이트**:
-```yaml
-batch_size: 50-100
-```
-
-### 4. 쿼리 로그 및 통계
-
-```yaml
-spring:
-  jpa:
-    show-sql: true
-    properties:
-      hibernate:
-        format_sql: true
-        use_sql_comments: true
-        generate_statistics: true
-logging:
-  level:
-    org.hibernate.SQL: debug
-    org.hibernate.orm.jdbc.bind: trace
-    org.hibernate.stat: debug
-```
-
----
-
-## 모니터링
-
-### 1. Spring Boot Actuator
-
-```yaml
-management:
-  endpoints:
-    web:
-      exposure:
-        include: "health,info,metrics,prometheus"
-  metrics:
-    export:
-      prometheus:
-        enabled: true
-```
-
-**엔드포인트**:
-- `/actuator/health` - 헬스 체크
-- `/actuator/metrics` - 메트릭스
-- `/actuator/prometheus` - Prometheus 포맷
-
-### 2. Prometheus + Grafana
-
-**주요 메트릭스**:
-- `jvm_memory_used_bytes` - JVM 메모리 사용량
-- `http_server_requests_seconds` - HTTP 요청 처리 시간
-- `hikaricp_connections_active` - 활성 커넥션 수
-
-### 3. 로컬 성능 테스트
-
-```bash
-# k6 부하 테스트
-k6 run --scenario users-100 test/load-tests/scenarios/load-levels.js
-
-# 결과 확인
-# Req Sent: 10000
-# HTTP Req Duration: avg=50ms, p95=100ms
-```
-
----
-
-## 성능 체크리스트
-
-### 백엔드
-
-- [ ] N+1 쿼리 해결됨 (로그 확인)
-- [ ] @Cacheable 적용 (메뉴, 사용자)
-- [ ] 인덱스 설정됨 (주요 조회 컬럼)
-- [ ] 배치 사이즈 설정됨 (25 이상)
-- [ ] 쿼리 로그로 검증 완료
+## 2. 병목 분리
 
 ### 프론트엔드
 
-- [ ] Bundle Analyzer 로 번들 크기 확인
-- [ ] Lighthouse Performance 80 점 이상
-- [ ] FCP 1.5 초 미만
-- [ ] LCP 2.5 초 미만
-- [ ] 이미지 최적화 적용
+```bash
+pnpm -C frontend run bundle:check
+pnpm -C frontend run analyze
+pnpm -C frontend run build
+pnpm -C frontend run lighthouse
+```
 
-### 데이터베이스
+- LCP element와 blocking resource를 먼저 찾는다.
+- 큰 client component는 bundle 크기뿐 아니라 hydration·interaction 비용으로 분리한다.
+- dynamic import는 초기 경로에서 필요 없는 무거운 모듈에만 적용한다. 핵심 above-the-fold UI를 무조건 지연시키지 않는다.
+- `next/image`, `next/font`, package import 최적화는 현재 [`next.config.ts`](../../frontend/next.config.ts)와 실제
+  build artifact로 검증한다.
 
-- [ ] HikariCP 풀 사이즈 적정
-- [ ] 슬로우 쿼리 로그 확인
-- [ ] 인덱스 사용 여부 확인 (EXPLAIN)
+Lighthouse workflow의 performance threshold는 runner 변동 때문에 관측 경고이고 accessibility만 hard assertion이다.
+주간 green을 사용자 환경 RUM으로 해석하지 않는다.
 
----
+### API·서비스
 
-## 관련 문서
+- endpoint별 query count, 외부 호출, serialization, cache hit/miss, executor queue를 나눠 측정한다.
+- N+1은 “연관관계가 있다”가 아니라 같은 요청에서 반복 SQL이 실제 발생하는지로 판정한다.
+- fetch join·projection·batch fetch 중 하나를 workload cardinality에 맞게 선택한다.
+- cache는 권한·tenant·사용자별 key 의미와 write invalidation을 검증한다. 잘못된 공유 cache는 빠른 정보 노출이다.
 
-- [테스트 가이드](../03-guides/testing-guide.md)
-- [데이터베이스 최적화 가이드](./database-optimization-guide.md)
-- [부하 테스트 가이드](./load-test-guide.md)
-- [CI/CD 파이프라인 가이드](../03-guides/cicd-pipeline.md)
+현재 메뉴·사용자·공통코드 등에 cache와 단일 조회 경로가 있지만, 존재만으로 효과를 단정하지 않는다.
+구현 정본은 [`MenuService`](../../business-core/src/main/java/nuri/business/service/menu/MenuService.java),
+[`UserService`](../../business-core/src/main/java/nuri/business/service/user/UserService.java)와 관련 harness다.
+
+### DB·connection
+
+[`application.yml`](../../api-server/src/main/resources/application.yml)의 Hikari·Hibernate 설정이 실제 binding되는지 확인하고,
+[DB 최적화 가이드](database-optimization-guide.md)에 따라 plan·lock·pool pending을 대조한다. pool 확대, index 추가,
+batch size 변경을 동시에 하지 않는다.
+
+## 3. 변경 단위
+
+한 번에 하나의 병목 가설만 검증한다.
+
+| 가설 | 최소 변경 예 | 함께 확인할 회귀 |
+|---|---|---|
+| 반복 query가 지배 | projection/fetch/batch 중 한 가지 | row 폭증, pagination, memory |
+| 비싼 순수 조회 반복 | 범위가 명확한 cache | stale data, 권한 key, invalidation |
+| 초기 JS 과다 | route split 또는 dependency 제거 | loading UX, hydration, SEO |
+| pool 대기 | transaction·query 단축 후 제한 조정 | DB 총 connection, timeout, 503 |
+| index 부재 | 근거 있는 단일 migration | write 비용, lock, 중복 index |
+
+소스에 특정 “95% 개선”, “200–800ms 단축”을 고정하지 않는다. 그런 값은 재현 가능한 benchmark artifact에만 둔다.
+
+## 4. 검증 매트릭스
+
+| 변경 | 최소 검증 |
+|---|---|
+| 프론트 bundle·render | type-check, 관련 test, production build, bundle budget; 필요 시 Lighthouse |
+| cache·query | 관련 unit/integration test, query count 또는 metric 전후 비교, backend compile |
+| pool·Hibernate | 설정 binding test, representative load, timeout/error/JVM·DB metric |
+| index·SQL | live schema 확인, before/after plan, Flyway 검증, rollback |
+| SLO·threshold | 같은 환경 반복 실행, artifact 보존, false-red/false-green 검토 |
+
+AGENTS의 [변경 범위별 검증](../../AGENTS.md#verification-by-change-scope)이 항상 하한이다. 부하·Lighthouse·DB
+실측을 하지 않았으면 compile/test 성공과 구분해 보고한다.
+
+## 5. 결과 기록
+
+장기 가치가 있는 성능 결정은 ADR 또는 코드 근거에 남긴다. 단발 benchmark는 다음 metadata와 함께 CI artifact나
+승인된 운영 저장소에 둔다.
+
+- commit SHA, profile, host·container 자원
+- 데이터 snapshot과 warm-up·측정 회차
+- 명령·시나리오·threshold
+- raw report 위치
+- 변경 전·후와 confidence/noise
+- 부작용·rollback 여부
+
+완료 과정 로그를 이 가이드에 누적하지 않는다.

@@ -1,25 +1,24 @@
 ---
 name: deep-context-mapper
 description: >-
-  Leverages Antigravity's ultra-large context window to load and map the entire project topology.
-  Maintains an architectural sandbox map including multi-module structures, database physical schemas,
-  DTO contracts, and meta governance rules for precise Zero-Shot code modifications.
-version: 1.0.0
+  Builds an evidence-backed map of the relevant multi-module topology, physical database schema,
+  DTO contracts, and governance sources before a cross-cutting change.
+version: 1.1.0
 ---
 
-# Deep Context Mapper Skill (Antigravity Native)
+# Deep Context Mapper Skill
 
-**Use this skill when:** Initiating large refactoring tasks, performing database migrations (OCI PostgreSQL), creating new endpoints spanning multi-module layers (api-server, business-suite, foundation), or auditing TypeScript/Java type synchronization.
+**Use this skill when:** Initiating a large refactor, performing a database migration, creating an endpoint that spans several modules, or auditing TypeScript/Java contract synchronization.
 
 ---
 
-## 1. The Power of Large Context
+## 1. Evidence-Bounded Context
 
-Traditional models are forced to look at the codebase through a keyhole due to context limits (~10k-30k tokens). Antigravity features a massive **1M+ token context window**, which allows mapping the entire codebase topology directly into the working memory.
+Map only the consumers and contracts that can affect the requested change. A large context window is not evidence that the entire repository was loaded or understood; current files, manifests, schema metadata, and executable checks remain authoritative.
 
 ```
-[Traditional Keyhole Search] -> High risk of duplicating code, missing abstractions, or breaking patterns.
-[Deep Context Mapping]        -> Full system topology loaded. Absolute consistency across Java DTOs, PostgreSQL, and Next.js.
+[Unbounded search]       -> Noise, stale assumptions, and unjustified completeness claims.
+[Evidence-bounded map]  -> Relevant consumers, contracts, exceptions, and validation paths are explicit.
 ```
 
 ---
@@ -34,24 +33,26 @@ graph TD
     B --> C[Extract Layer Contracts: Java entities, DTOs, TypeScript definitions]
     C --> D[Audit PostgreSQL Standards via DB Bridge]
     D --> E[Build Local Context Sandbox Map]
-    E --> F[Deliver Zero-Shot Coherent Fix]
+    E --> F[Deliver Evidence-Backed Minimal Fix]
 ```
 
 ### Phase 1: Structure Extraction
 Map out the module boundary relationships to understand data flows.
-* **foundation module**: Shared utilities, basic audit objects, configurations.
-* **business-suite module**: PostgreSQL entities, JPA repositories, core business transactional services.
-* **api-server module**: REST Controllers, Spring Security filter chain, OpenAPI spec exposure.
-* **frontend module**: Next.js Server Components, API proxy layers, Playwright E2E suites.
+* **foundation module**: Shared kernel, ports, audit primitives, and cross-cutting utilities.
+* **business-core module**: Reusable administration/domain core.
+* **business-app module**: Project-specific entities, repositories, providers, and services.
+* **api-server module**: REST controllers, security configuration, and OpenAPI exposure.
+* **migration-tool module**: Optional offline legacy-data migration CLI.
+* **frontend module**: Next.js Server Components, proxy/API clients, and Playwright E2E suites.
 
 ### Phase 2: DB Standard Word Governance (SSOT)
-Use the OCI PostgreSQL Local Bridge (`node .agent/scripts/db-bridge.js`) to load metadata tables (`meta_standard_words`, `meta_standard_domains`, `meta_standard_terms`).
-* Ensure physical column definitions (e.g., `SRVY_RSPDNT_ID`) strictly follow abbreviation standards in memory before writing Java JPA entity mappings or Liquibase/flyway migration SQL.
+Use the read-only DB bridge (`node .agent/scripts/db-bridge.js`) to query `information_schema` and the metadata tables (`meta_standard_words`, `meta_standard_domains`, `meta_standard_terms`) when the task depends on a live database.
+* Confirm lowercase physical names and types from live evidence before writing JPA mappings or Flyway SQL. Do not substitute H2 or remembered schema details for that evidence.
 
 ### Phase 3: Contract Synchronization Auditing
 Audit boundaries between Frontend and Backend:
 ```
-Java DTO Class -> Spring Controller (OpenAPI spec JSON) -> npm run codegen:ts -> generated-api.d.ts -> React Client Component
+Java DTO -> Spring Controller/OpenAPI -> api-docs.json -> pnpm codegen:file + codegen:zod -> generated types/schemas -> frontend consumer
 ```
 Verify that modifying any field in the Spring JPA entity triggers contract updates across the entire pipeline.
 
@@ -59,22 +60,21 @@ Verify that modifying any field in the Spring JPA entity triggers contract updat
 
 ## 3. Sandbox Context Map Template
 
-When mapping complex module topologies, write a concise structural sandbox index inside `.gemini/tasks/` or the task report:
+When mapping complex module topologies, keep the concise structural sandbox index in the current task response or PR evidence. Do not create a repository session journal; promote only durable, source-backed facts through the shared-memory rules in `AGENTS.md`.
 
 ```markdown
 ### 🗺️ [DEEP CONTEXT SANDBOX MAP] ###
 - **Target Subsystems**: [e.g., LoginPolicy, BBS, Community]
 - **Topology Chain**:
-  - `Database Table`: `COMTN_LOGIN_POLICY` (OCI PostgreSQL standard terms verified)
-  - `Backend Entity`: `LoginPolicy.java` (Line range / column mappings)
-  - `Backend Controller`: `LoginPolicyApiController.java` (REST entrypoint)
-  - `Frontend Client Hook`: `useLoginPolicy.ts` (TypeScript types matching generated-api.d.ts)
+  - `Database Table`: `<live-verified lowercase table>` (metadata source and query recorded)
+  - `Backend Entity/DTO`: `<path and relevant symbols>`
+  - `Backend Controller`: `<REST entrypoint>`
+  - `Frontend Consumer`: `<RSC/client path and generated contract>`
 - **Type Compatibility Check**:
-  - [x] Java entity mappings match physical table columns exactly.
-  - [x] TypeScript generated fields have 100% property compliance.
+  - [ ] Java entity mappings match verified physical columns and types.
+  - [ ] Generated frontend fields match the current API artifact.
 - **Architectural Rules Applied**:
-  - Backend API Constitution (15 Articles) -> Article 4 (Unified response structure) applied.
-  - Database Standard Constitution (8 Articles) -> Article 2 (Standard abbreviations only) applied.
+  - `AGENTS.md` Evidence guardrails and the relevant named constitution sections were checked.
 #####################################
 ```
 
@@ -82,8 +82,7 @@ When mapping complex module topologies, write a concise structural sandbox index
 
 ## 4. Key Performance Benefits
 
-* **Zero Duplication (YAGNI)**: Avoids creating a custom sorting utility because deep context search reveals that `foundation/utils/SortUtils.java` already has a verified, highly performant implementation.
-* **Perfect Mappings**: Prevents JPA runtime persistence errors (`USE_YN` mapping mismatch to `CHAR(1)` flag columns) by cross-referencing PostgreSQL type metadata in real-time.
+* **Focused reuse**: Consumer search can reveal an existing abstraction before a duplicate is introduced.
+* **Schema accuracy**: Live metadata comparison catches JPA/DDL name and type mismatches that compile-only checks cannot detect.
 
 ---
-*Verified: 2026-05-18 (Optimized for Antigravity Large Context Processing)*

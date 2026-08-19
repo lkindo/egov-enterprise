@@ -1,83 +1,86 @@
-# 백엔드 및 API 구현 가이드 (Backend & API Implementation Guide)
+# 백엔드·API 구현 가이드
 
-본 문서는 `API 및 백엔드 아키텍처 헌법`의 조항을 실제 코드로 구현하는 방법과 예시를 다룹니다.
+이 문서는 [백엔드·API 헌법](./constitution.md)의 구현 진입점이다. 필드와 메서드 계약의 정본은 아래 Java 소스이며, 이 문서의 예시와 충돌하면 현재 소스와 테스트를 우선해 문서를 함께 고친다.
 
-## 1. ApiResponse 표준 구조 (헌법 제6조 관련)
-모든 API 응답은 아래와 같은 JSON 구조를 유지해야 합니다.
+- 공통 응답: `foundation/src/main/java/nuri/foundation/core/response/ApiResponse.java`
+- 페이징 응답: `foundation/src/main/java/nuri/foundation/core/response/PageResponse.java`
+- 예외 매핑: `foundation/src/main/java/nuri/foundation/core/exception/GlobalExceptionHandler.java`
+- 소유권 가드: `business-core/src/main/java/nuri/business/security/util/SecurityUtil.java`
+- OpenAPI·codegen 절차: `docs/03-guides/api-documentation-guide.md`
+- 식별자 축: `docs/03-guides/identity-model-guide.md`
+
+## 1. 공통 응답
+
+일반 JSON API는 `ApiResponse<T>`를 사용한다. 현재 envelope 필드는 `success`, `status`, `code`, `message`, `data`, `timestamp`이며 검증 실패에만 `errors`가 추가될 수 있다.
 
 ```json
 {
-  "status": "SUCCESS",
-  "code": 200,
-  "message": "요청이 성공적으로 처리되었습니다.",
-  "data": { ... },
-  "timestamp": "2026-05-14T09:00:00"
+  "success": true,
+  "status": 200,
+  "code": "COMMON_001",
+  "message": "Success",
+  "data": {},
+  "timestamp": "2026-08-19 09:00:00"
 }
 ```
 
-## 2. 페이징 및 정렬 표준
-대량의 데이터를 반환하는 모든 목록 API는 페이징 처리를 수행해야 합니다.
+HTTP 상태와 body의 `status`는 같아야 한다. 기본 `ErrorCode` 상태와 다른 HTTP 상태를 써야 할 때는 상태를 받는 `ApiResponse.error(HttpStatus, ErrorCode, String)` 팩토리를 사용한다.
 
-- **요청 파라미터**: `page`(0-based index), `size`(페이지 당 건수), `sort`(정렬 조건)
-- **응답 페이징 메타데이터**:
+바이너리 다운로드·스트림처럼 wrapper를 적용할 수 없는 응답은 현재 구현과 헌법 사이에 승인되지 않은 예외가 남아 있다. 자동으로 wrapper로 변환하지 말고 [공용 gap registry](../../../memory/known-gaps.md)와 해당 컨트롤러 계약을 먼저 확인한다.
+
+## 2. 페이징 응답
+
+목록 응답은 `PageResponse<T>`의 현재 필드 계약을 따른다.
+
 ```json
 {
-  "data": {
-    "list": [...],
-    "pagination": {
-      "totalElements": 105,
-      "totalPages": 11,
-      "currentPage": 0,
-      "pageSize": 10,
-      "isFirst": true,
-      "isLast": false
-    }
-  }
+  "list": [],
+  "total": 105,
+  "page": 1,
+  "size": 10,
+  "totalPage": 11
 }
 ```
 
-## 3. 입력값 검증 및 OpenAPI (헌법 제7조 관련)
-DTO 레벨에서 선언적 검증을 수행하며, Swagger 어노테이션을 통해 문서를 자동화합니다.
+`PageResponse.of(Page<T>)`는 Spring Data의 0-based 페이지 번호를 외부 응답에서 1-based로 바꾼다. 목록·숫자를 직접 받는 overload는 전달받은 `page`를 그대로 사용하므로 호출자는 외부 1-based 계약을 명시적으로 지켜야 한다.
+
+## 3. 입력 검증과 OpenAPI
+
+요청 DTO에는 Bean Validation을 선언하고, 외부 계약이 되는 필드에는 `@Schema` 설명을 제공한다.
 
 ```java
-@Schema(description = "게시글 작성 요청")
 public record PostRequest(
     @Schema(description = "제목", example = "새로운 소식")
-    @NotBlank(message = "제목은 필수입니다.")
-    @Size(max = 200, message = "제목은 200자를 초과할 수 없습니다.")
+    @NotBlank
+    @Size(max = 200)
     String title,
 
     @Schema(description = "내용")
-    @NotBlank(message = "내용은 필수입니다.")
+    @NotBlank
     String content
 ) {}
 ```
 
-## 4. 권한 재검증 패턴 (헌법 제8조 관련)
-컨트롤러 레이어뿐만 아니라 서비스 레이어에서도 리소스 소유권을 재검증합니다.
+API 계약 변경 뒤에는 서버 기동에 의존하지 않는 오프라인 codegen을 기본으로 실행한다.
 
-```java
-@Service
-public class PostService {
-    @Transactional
-    public void updatePost(PostRequest dto) {
-        Post entity = postRepository.findById(dto.getId())
-            .orElseThrow(() -> new BusinessException(ErrorCode.DATA_NOT_FOUND));
-        
-        // 서비스 레이어 권한 재검증 (리소스 소유자 체크)
-        SecurityUtil.checkOwner(entity.getRegId()); 
-        
-        entity.update(dto.toEntity());
-    }
-}
+```bash
+pnpm -C frontend codegen:file
+pnpm -C frontend codegen:zod
 ```
 
-## 5. 에러 코드 정의 (헌법 제7조 관련)
-비즈니스 예외는 사전에 정의된 `ErrorCode`를 활용합니다.
+## 4. 서비스 계층 인가
 
-| 에러 코드 | HTTP 상태 | 메시지 |
-| :--- | :--- | :--- |
-| `COMMON-001` | 400 | 잘못된 요청 형식입니다. |
-| `AUTH-001` | 401 | 인증 정보가 유효하지 않습니다. |
-| `DATA-001` | 404 | 요청한 데이터를 찾을 수 없습니다. |
-| `BIZ-001` | 409 | 비즈니스 로직 위반이 발생했습니다. |
+컨트롤러 인가만으로 끝내지 않고 쓰기와 민감 조회에서 서비스 계층 가드를 다시 적용한다. 소유자 필드의 식별자 축과 관리자 우회 허용 여부를 먼저 결정한다.
+
+| 의도 | 표준 헬퍼 | 식별자 축 | 관리자 우회 |
+|---|---|---|---|
+| 감사 컬럼 작성자 | `assertOwnerOrAdmin` | `loginId` | 허용 |
+| 도메인 소유자 | `assertOwnerOrAdminByEsntlId` | `esntlId` | 허용 |
+| 결재·신청 등 본인 행위 | `assertOwnerByEsntlId` | `esntlId` | 불가 |
+| 관리자 전용 | `assertAdmin` | 역할 | 해당 없음 |
+
+도메인별 수기 가드를 표준 헬퍼로 기계 치환하면 의미가 약해질 수 있다. 변경 전 [식별자 모델 가이드](../../../../docs/03-guides/identity-model-guide.md)와 기존 네거티브 테스트를 확인한다.
+
+## 5. 오류 코드
+
+오류 코드는 `CommonErrorCode` 등 `ErrorCode` 구현을 재사용한다. 문서에 별도의 가상 코드 목록을 복제하지 않는다. 새 코드는 HTTP 상태·기계 판독 코드·사용자 메시지를 함께 정의하고 `GlobalExceptionHandler`와 API 계약 테스트로 실제 응답을 검증한다.

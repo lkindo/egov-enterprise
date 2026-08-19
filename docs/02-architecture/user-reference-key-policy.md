@@ -1,38 +1,42 @@
-# 사용자 참조 키 규약 (User Reference Key Policy)
+# 사용자 참조 키 규약
 
-> **제정**: 2026-07-17 (P2 이행, 사용자 승인) · **지위**: 백엔드 헌법 제8조(권한 재검증)·DB 헌법 제5조(도메인)와 병행 적용되는 이행 규약
-> **배경**: `tb_user_info` 는 이중 식별자를 가진다 — **esntl_id**(PK, 불변 대리키, `USRCNFRM_`/`USR_` 접두)와
-> **user_id**(loginId, UNIQUE `uk_tb_user_info_user_id`, 화면 노출용 자연키). 2026-07 표준화 감사에서 테이블마다
-> 참조 키가 달라 FK 확장이 불가능했던 근본 원인이 "무질서한 혼용"이 아니라 **계층 미구분**임이 실측으로 판명되어,
-> 전면 단일화 대신 아래 3계층 규약을 명문화한다.
+`tb_user_info`에는 서로 다른 의미의 두 식별자가 있다.
 
----
+- `esntl_id`: 내부 불변 대리키이자 PK
+- `user_id`: 사람이 입력하고 화면에 노출되는 로그인 ID이자 unique 자연키
 
-## 계층별 키 규약
+컬럼 이름만 보고 값을 선택하지 않는다. 참조 목적을 먼저 판정하고 아래 축을 적용한다.
 
-| 계층 | 키 | FK | 근거 |
+## 키 선택 규칙
+
+| 목적 | 저장 값 | FK | 예시·이유 |
 |---|---|---|---|
-| **① 소유·참조** (콘텐츠 저자, 매핑, 알림 수신자, 소유권 검사 등 도메인 데이터) | **esntl_id 의무** | **의무** (`→ tb_user_info.esntl_id`) | 불변 대리키만이 참조 무결성을 보장. V2_12·V2_14 로 이행 완료(authrt_map, bbs_item.user_id, comment/adbk.wrter_id, user_noti.rcvr_id, blog_user_map.user_id, user_absn.user_id 등) |
-| **② 행위자 표기** (감사컬럼 `frst_rgtr_id`/`last_mdfr_id`, `tb_web_log`/`tb_sys_log` 등 로그) | **loginId (스냅샷)** | **금지** | 감사·로그는 "그 시점의 행위자 표기"다 — 사용자 삭제 후에도 보존돼야 하므로 FK 를 걸지 않으며, 사람이 읽는 용도라 loginId 의 가독성이 자산. JPA Auditing 이 loginId 를 기록하는 현행 거동은 **의도된 설계**로 인정한다 |
-| **③ 인증 산출물** | **조회 시점 키** | 선택 | `tb_login_policy` = **loginId** (정책 검증이 로그인 전 — esntl_id 를 알 수 없는 시점 — 에 수행됨. UNIQUE 대상 FK `fk_tb_login_policy_tb_user_info` 로 무결성 확보) / `tb_auth_rfsh_tk` = **esntl_id** (발급 시점엔 인증 완료 — 발급·재발급·로그아웃 전 경로가 esntl_id 키잉임을 2026-07-17 실측 확인, 레거시 loginId 키 행은 V2_18 정리) |
+| 도메인 소유자·수신자·권한 주체 | `esntl_id` | `tb_user_info.esntl_id`로 강제 | 사용자명 변경과 무관한 불변 참조가 필요하다. `scrty_dcsn_trgt_id`, 게시물 소유자 등이 이 축이다. |
+| 감사자·로그 행위자 스냅샷 | `user_id`(loginId) | 원칙적으로 두지 않음 | 사용자 삭제 뒤에도 당시 행위자 표기가 남아야 한다. `frst_rgtr_id`, `last_mdfr_id`와 행위 로그가 이 축이다. |
+| 로그인 전 정책 조회 | `user_id` | 계약에 따라 unique key FK 가능 | 인증 전에는 `esntl_id`를 아직 모를 수 있다. `tb_login_policy.user_id`가 이 축이다. |
+| 인증 후 토큰·세션 소유자 | `esntl_id` | 저장소 계약에 따라 강제 | 발급·재발급·폐기 경로가 동일한 불변 주체를 사용해야 한다. |
 
-## 파생 규칙
+레거시 컬럼명이 `user_id`라고 해서 값도 반드시 loginId인 것은 아니다. 기존 스키마의 의미를 바꿀 때는 live 데이터, FK 대상, 서비스 비교 축을 함께 확인한다.
 
-1. **loginId(user_id)는 불변이다** — `User.changeUserId` 는 제거됨(2026-07-17, 프로덕션 호출 0건). 가변 자연키는
-   ③계층의 loginId FK 를 파손시킬 수 있다. 로그인 ID 변경이 제품 요구로 필요해지면 Expand-and-Contract +
-   loginId 계층 전체 재키잉 설계로 재도입한다.
-2. **신규 설계 판단 순서**: "이 컬럼이 사용자를 *참조*하는가(→①), *표기*하는가(→②), 인증 플로우 산출물인가(→③)".
-   ①이면 컬럼명에 관계없이 esntl_id 값 + FK 를 강제한다 (컬럼명이 `user_id` 여도 값은 esntl_id — `tb_bbs_item.user_id` 선례).
-3. **②계층의 개인정보**: 사용자 삭제 후 로그의 loginId 잔존은 무결성 문제가 아니라 **개인정보 보존 정책** 사안이다
-   — 익명화 vs 보존은 별도 제품 결정 대기 항목(감사 로그 삭제 정책과 동일 트랙).
-4. `SecurityUtil`/`CustomUserDetails.getUsername()` 은 **esntl_id 를 반환**한다 — ①계층 기록 시 이것을 그대로 쓰면 되고,
-   ②계층 표기가 필요하면 loginId 를 명시 조회한다. (재발성 피트폴 — [esntlId vs userId pitfall] 참조)
+## 애플리케이션 규칙
 
-## 이행 상태 (2026-07-17)
+1. `SecurityUtil.getCurrentEsntlId()`는 소유·참조 축 비교에 사용한다.
+2. `SecurityUtil.getCurrentLoginId()`는 감사 컬럼이나 loginId 기반 정책 비교에 사용한다.
+3. `SecurityUtil.getCurrentUserId()`는 호환용 deprecated 별칭이며 새 코드에서 사용하지 않는다.
+4. `BaseEntity.frstRgtrId`와 `lastMdfrId`에는 `LoginUserAuditorAware`가 loginId를 기록한다. 이 필드를 `esntl_id`와 비교하지 않는다.
+5. 신규 사용자 참조는 이름보다 의미를 먼저 정하고, 소유·참조라면 `esntl_id`와 FK를 기본값으로 한다.
+6. 로그인 ID 변경 기능을 도입하려면 loginId 기반 정책·로그·외부 계약의 영향 범위를 먼저 정의한다. 자연키 변경을 단순 필드 수정으로 처리하지 않는다.
 
-- ①: **완료** — FK 58건 체제에 편입, 고아 정리 완결 (V2_12·V2_14·V2_16)
-- ②: **현행 인정** — 변경 없음 (개인정보 정책만 결정 대기)
-- ③: login_policy 완료(키 혼용 결함 정정 포함) / rfsh_tk 는 경로 전체 esntl_id 실측 확인, 레거시 행 1건 정리는 V2_18 포함
+## 개인정보와 삭제
+
+사용자 삭제 뒤 로그에 loginId를 보존하거나 가명화하는 문제는 참조 무결성과 별개의 보존 정책이다. FK를 제거했다고 개인정보 의무가 사라지지 않으며, 보존·가명화·삭제 기준은 [로그 보존 정책](../04-operations/log-retention-policy.md)과 활성 결정 레지스트리에서 관리한다.
+
+## 변경 검증
+
+- Entity와 Flyway FK가 같은 대상 키를 가리키는지 live metadata로 확인한다.
+- 서비스 인가 비교가 저장된 값과 같은 축인지 허용·거부 테스트로 검증한다.
+- 사용자 삭제·loginId 변경·토큰 재발급 경로를 함께 확인한다.
+- 단순 컬럼 리네임이나 기계적 helper 치환으로 식별자 의미를 바꾸지 않는다.
 
 ---
-*근거 실측·경위: [DB 표준화 평가](db-standardization-assessment.md) 및 V2_12·V2_14·V2_16 마이그레이션*
+*Verified against `SecurityUtil`, `LoginUserAuditorAware`, and current user/auth mappings: 2026-08-19*

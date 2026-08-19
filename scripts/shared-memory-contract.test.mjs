@@ -95,6 +95,13 @@ test('shared memory files have a stable schema and valid canonical sources', () 
       cwd: repoRoot,
       stdio: 'ignore',
     });
+    execFileSync('git', ['merge-base', '--is-ancestor', fm.verified_against, 'HEAD'], {
+      cwd: repoRoot,
+      stdio: 'ignore',
+    });
+    const verifiedAt = Date.parse(`${fm.verified_at}T00:00:00Z`);
+    assert.ok(Number.isFinite(verifiedAt), `${file}: verified_at을 날짜로 해석할 수 없습니다.`);
+    assert.ok(verifiedAt <= Date.now() + 26 * 60 * 60 * 1000, `${file}: verified_at이 미래 날짜입니다.`);
 
     for (const source of fm.canonical_sources) {
       assert.ok(!path.isAbsolute(source), `${file}: canonical source는 상대경로여야 합니다: ${source}`);
@@ -113,7 +120,7 @@ test('shared memory files have a stable schema and valid canonical sources', () 
 });
 
 test('all agent entrypoints discover the same shared memory', () => {
-  const entrypoints = ['AGENTS.md', 'GEMINI.md', 'CLAUDE.md', 'docs/README.md'];
+  const entrypoints = ['AGENTS.md', 'GEMINI.md', 'CLAUDE.md'];
   for (const entrypoint of entrypoints) {
     const text = readRepoFile(entrypoint);
     for (const file of Object.keys(documents)) {
@@ -130,6 +137,30 @@ test('all agent entrypoints discover the same shared memory', () => {
     assert.match(text, /@\.?\/?AGENTS\.md/u, `${adapter}: AGENTS.md import가 없습니다.`);
     assert.ok(text.split(/\r?\n/).length <= 40, `${adapter}: 얇은 어댑터가 40행을 넘었습니다.`);
     assert.doesNotMatch(text, /[A-Za-z]:[\\/]Users[\\/]/u, `${adapter}: 사용자 홈 절대경로를 고정하면 안 됩니다.`);
+  }
+
+  const expectedImports = {
+    'GEMINI.md': [
+      '@./AGENTS.md',
+      '@./.agent/memory/project-context.md',
+      '@./.agent/memory/decisions.md',
+      '@./.agent/memory/known-gaps.md',
+    ],
+    'CLAUDE.md': [
+      '@AGENTS.md',
+      '@.agent/memory/project-context.md',
+      '@.agent/memory/decisions.md',
+      '@.agent/memory/known-gaps.md',
+    ],
+  };
+  for (const [adapter, expected] of Object.entries(expectedImports)) {
+    const imports = readRepoFile(adapter).split(/\r?\n/).filter((line) => line.startsWith('@'));
+    assert.deepEqual(imports, expected, `${adapter}: import 집합·순서가 공통 계약과 다릅니다.`);
+  }
+
+  const docsIndex = readRepoFile('docs/README.md');
+  for (const file of Object.keys(documents)) {
+    assert.match(docsIndex, new RegExp(file.replace('.', '\\.'), 'u'), `docs/README.md: ${file} 링크가 없습니다.`);
   }
 });
 
@@ -184,6 +215,8 @@ test('shared memory is public-repository safe', () => {
     /(?:^|\s)\/(?:Users|home)\//u,
     /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/u,
     /(?:api[_-]?key|access[_-]?token|password|client[_-]?secret)\s*[:=]\s*['"][^'"]+['"]/iu,
+    /~\/\.(?:agents|gemini|claude|codex)\//u,
+    /(?:\bNTFS\b|\bFile\s*ID\b|\bhardlink\b|하드링크)/iu,
   ];
   for (const pattern of forbidden) assert.doesNotMatch(text, pattern);
 
@@ -198,5 +231,35 @@ test('shared memory is public-repository safe', () => {
     } catch (error) {
       assert.notEqual(error?.code, 'ERR_ASSERTION', error?.message);
     }
+  }
+});
+
+test('active instructions do not recreate deleted session journals', () => {
+  const instructionFiles = [
+    '.agent/skills/deep-context-mapper/SKILL.md',
+    '.agent/skills/visual-auditor/SKILL.md',
+    'api-server/src/test/java/nuri/api/harness/HarnessBaselineIntegrityTest.java',
+    'api-server/src/test/java/nuri/api/harness/SignupContractLinterTest.java',
+  ];
+  for (const file of instructionFiles) {
+    assert.doesNotMatch(readRepoFile(file), /\.gemini\/tasks\//u, `${file}: 삭제한 세션 저널 경로를 다시 지시합니다.`);
+  }
+});
+
+test('constitution metadata points to the project rule SSOT, not tool adapters', () => {
+  const metadataFiles = [
+    '.agent/knowledge/backend-api-constitution/metadata.json',
+    '.agent/knowledge/frontend-ux-constitution/metadata.json',
+    '.agent/knowledge/db-standard-constitution/metadata.json',
+  ];
+  for (const file of metadataFiles) {
+    const metadata = JSON.parse(readRepoFile(file));
+    const references = metadata.references ?? [];
+    assert.ok(!references.includes('GEMINI.md'), `${file}: GEMINI 어댑터를 규칙 원본으로 참조합니다.`);
+    assert.ok(!references.includes('CLAUDE.md'), `${file}: CLAUDE 어댑터를 규칙 원본으로 참조합니다.`);
+  }
+  for (const file of metadataFiles.slice(0, 2)) {
+    const metadata = JSON.parse(readRepoFile(file));
+    assert.ok(metadata.references.includes('AGENTS.md'), `${file}: AGENTS.md 규칙 SSOT 참조가 없습니다.`);
   }
 });

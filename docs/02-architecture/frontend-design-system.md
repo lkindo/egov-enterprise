@@ -49,4 +49,4 @@
 *   **Level 2 (Active)**: `backdrop-blur` + `bg-slate-900/40` - 모달, 팝오버, 플로팅 요소.
 
 ---
-*Last Updated: 2026-07-12 (브랜딩 토큰화 반영 — 컴포넌트는 테마-안전 시맨틱 토큰 소비, slate 스케일은 팔레트 프리미티브. 이전: 2026-05-14)*
+*Verified against the frontend constitution token catalog and `globals.css`: 2026-08-19*

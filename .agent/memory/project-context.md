@@ -5,10 +5,12 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-08-18
-verified_against: aa744fd48a232d6bda388094cca6dd2487ef8950
+verified_at: 2026-08-19
+verified_against: e7f3c0e4603a28cb37beeb4f9444f094b66c1e4f
 canonical_sources:
   - ../../AGENTS.md
+  - ../../GEMINI.md
+  - ../../CLAUDE.md
   - ../../README.md
   - ../../settings.gradle
   - ../../build.gradle
@@ -19,6 +21,7 @@ refresh_triggers:
   - source-change
   - dependency-or-module-change
   - release-topology-change
+  - agent-entrypoint-change
 ---
 
 # 공용 프로젝트 컨텍스트
@@ -48,7 +51,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 |---|---|---|---|
 | CTX-001 | Gradle 포함 모듈은 `foundation`, `business-core`, `business-app`, `api-server`, `migration-tool` 5개다. | [settings.gradle](../../settings.gradle) | 2026-08-18 |
 | CTX-002 | 백엔드는 Java 21, Spring Boot 3.5.16, eGovFrame 5.0.0 축이다. | [build.gradle](../../build.gradle), [version catalog](../../gradle/libs.versions.toml) | 2026-08-18 |
-| CTX-003 | 루트와 프론트는 Node 22 이상·pnpm 9 축이며, 프론트는 Next.js 16.2.12 계열·React 19.2.8 계열이다. | [package.json](../../package.json), [frontend/package.json](../../frontend/package.json), [.nvmrc](../../.nvmrc) | 2026-08-18 |
+| CTX-003 | 루트 스크립트는 Node 22 이상과 npm lockfile을, 프런트엔드는 Node 22 이상·pnpm 9 lockfile을 사용한다. 프런트는 Next.js 16.2.12 계열·React 19.2.8 계열이다. | [package.json](../../package.json), [package-lock.json](../../package-lock.json), [frontend/package.json](../../frontend/package.json), [frontend/pnpm-lock.yaml](../../frontend/pnpm-lock.yaml), [.nvmrc](../../.nvmrc) | 2026-08-19 |
 | CTX-004 | 프론트 계약 생성의 결정적 기본 경로는 `codegen:file` 뒤 `codegen:zod`이며, live `codegen:ts`는 API 서버가 필요하다. | [frontend/package.json](../../frontend/package.json), [API 문서 가이드](../../docs/03-guides/api-documentation-guide.md) | 2026-08-18 |
 | CTX-005 | main 병합의 저장소 required check 명세는 backend, frontend, secret-scan, E2E 3 shard, mutation 집계의 7개다. | [.github/required-checks.json](../../.github/required-checks.json) | 2026-08-18 |
 | CTX-006 | DB 표준의 규범 SSOT는 DB 헌법이고, 물리 변경 판단은 live metadata/schema 실측을 함께 요구한다. | [DB 헌법](../knowledge/db-standard-constitution/artifacts/constitution.md), [AGENTS Evidence guardrails](../../AGENTS.md#evidence-guardrails) | 2026-08-18 |
@@ -64,11 +67,11 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 ## 공유 워킹트리와 에이전트 인수인계
 
 - Gemini, Claude Code, Codex를 포함한 모든 에이전트가 같은 디스크와 Git index를 공유할 수 있다. 변경 전 현재 상태를 읽고 자기 경로만 커밋한다.
-- Gemini의 글로벌 규칙이나 각 도구의 개인 세션 저장소는 다른 에이전트가 자동 상속하지 못한다. 공통이어야 하는 규칙은 `AGENTS.md`, 지속 가능한 사실만 이 디렉터리에 둔다.
-- `.gemini/tasks/`의 과거 작업 저널, Claude/Codex의 원시 세션·내부 DB, 로컬 설정과 scratch는 공용 메모리로 일괄 복사하지 않는다. 현재 코드로 재검증된 항목만 승격한다.
+- 프로젝트 공통 규칙은 `AGENTS.md` 한 곳에 두고, 저장소 `GEMINI.md`·`CLAUDE.md`는 이를 연결하는 얇은 어댑터로만 유지한다. 각 도구의 사용자 홈 글로벌 규칙이나 개인 세션 저장소는 다른 에이전트가 자동 상속하지 못한다.
+- 사용자 글로벌 규칙은 저장소 밖의 도구별 네이티브 경로에 별도로 프로비저닝한다. 특정 PC의 파일 동기화 방식은 프로젝트 필수 설정이나 CI 계약이 아니며 저장소 clone에 자동 전파되지 않는다.
+- `.gemini/tasks/`에는 활성 세션 저널을 두지 않고 기존 census·archive 지원 자산만 유지한다. Claude/Codex의 원시 세션·내부 DB, 로컬 설정과 scratch도 공용 메모리로 일괄 복사하지 않으며, 현재 코드로 재검증된 항목만 승격한다.
 - 이 메모리는 실시간 작업 claim이나 lock이 아니다. 동시에 편집 중인 파일의 소유권은 `git status`, diff, 에이전트 조정 채널로 확인한다.
 
 ## 재검증 트리거
 
 모듈 include/의존 방향, 런타임 버전, required checks, release topology, codegen 경로, migration-tool 안전성 또는 에이전트 진입점이 바뀌면 관련 CTX 행과 `verified_at`을 같은 변경에서 갱신한다.
-
