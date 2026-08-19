@@ -37,6 +37,30 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
             sessionLossProbe('E2E-SESSION-CLEARED-ME-401',
                 /\/api\/v1\/auth\/me(?:\?|$)/, 'GET', 2,
                 '재발급 실패로 도착한 로그인 화면의 세션 확인 요청이다.'),
+            {
+                id: 'E2E-SESSION-CLEARED-WS-ERROR',
+                specScope: '20-common-security-validation.spec.ts :: Session Integrity: Handling Token Clearance',
+                channel: 'console' as const,
+                urlPattern: null,
+                messagePattern: /HTTP Authentication failed|WebSocket connection to.*failed/,
+                method: null,
+                status: null,
+                maxOccurrences: 3,
+                reason: '토큰 삭제 후 SockJS WebSocket 연결이 인증 거부되는 콘솔 에러다.',
+                expiresAt: '2026-12-31',
+            },
+            {
+                id: 'E2E-SESSION-CLEARED-NOTIF-CONSOLE-ERROR',
+                specScope: '20-common-security-validation.spec.ts :: Session Integrity: Handling Token Clearance',
+                channel: 'console' as const,
+                urlPattern: null,
+                messagePattern: /Failed to fetch notifications.*유효하지 않은 토큰입니다/,
+                method: null,
+                status: null,
+                maxOccurrences: 3,
+                reason: '토큰 삭제 후 알림 폴링 실패 시 콘솔에 로깅되는 에러다.',
+                expiresAt: '2026-12-31',
+            },
         ]);
         console.log('>>> Step 1: Navigating to a protected admin page');
         await page.goto('/admin/community/boards/master');

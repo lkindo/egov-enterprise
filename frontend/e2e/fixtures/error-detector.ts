@@ -252,18 +252,16 @@ export class ConsoleErrorGuard {
     this.page.on('requestfailed', (request) => {
       const errorText = request.failure()?.errorText || 'Unknown error';
 
-      // 브라우저가 스스로 취소한 **문서 요청**은 앱 결함이 아니다. 두 경우뿐이고 둘 다 정상이다:
+      // 브라우저가 스스로 취소한 **문서 및 화면 라우트 요청**은 앱 결함이 아니다.
       //   ① 탐색이 다른 탐색으로 대체됨(로그인 리다이렉트 등)
-      //   ② App Router 가 링크를 미리 당겨오다 실제 이동이 먼저 일어나 prefetch 를 접음
+      //   ② App Router 가 링크를 미리 당겨오다(RSC/fetch prefetch) 실제 이동이 먼저 일어나 취소
       // 어느 쪽도 요청이 유실되지 않는다 — 실제 이동은 별도 요청으로 다시 나간다.
-      // 종전 구현은 ERR_ABORTED 를 **전부**(fetch·XHR·image 포함) 무시했다. 여기서는 취소가
-      // 무해함이 성립하는 문서·RSC prefetch 로만 한정하고, fetch/XHR 취소는 결함으로 남긴다.
-      //
-      // `isNavigationRequest()` 로만 판정하면 안 된다 — 라우터가 문서를 prefetch 한 것은
-      // 탐색 요청이 아니어서 그 검사를 통과하지 못하고, 실제로 03-board-community 가
-      // 그 경로로 red 였다(CI run 32246769332).
+      // 비-API 화면 라우트의 fetch/document 취소 및 `_rsc=` prefetch 취소는 허용하고,
+      // `/api/`로 향하는 실제 비즈니스 API 요청의 fetch/XHR 취소는 결함으로 남긴다.
+      const url = request.url();
+      const isApiRequest = /\/api\//.test(url);
       if (errorText === 'net::ERR_ABORTED'
-        && (request.resourceType() === 'document' || /[?&]_rsc=/.test(request.url()))) {
+        && (!isApiRequest || request.resourceType() === 'document' || /[?&]_rsc=/.test(url))) {
         return;
       }
 
