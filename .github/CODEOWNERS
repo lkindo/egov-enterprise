@@ -52,7 +52,7 @@
 /frontend/e2e/**/*.test.tsx @lkindo
 /frontend/e2e/fixtures/error-detector.ts @lkindo
 /frontend/e2e/scripts/cleanup-db.ts @lkindo
-/frontend/e2e/scripts/run-e2e-with-coverage.js @lkindo
+/frontend/scripts/run-e2e-with-coverage.js @lkindo
 /frontend/src/__tests__/ @lkindo
 /frontend/src/test-utils/ @lkindo
 /frontend/src/**/*.test.ts @lkindo

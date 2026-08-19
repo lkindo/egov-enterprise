@@ -28,7 +28,7 @@ help:
 	@echo " make test         : Run tests (fast-fail locally)"
 	@echo " make test-ci      : Run tests for CI (continue on fail)"
 	@echo " make coverage     : Run tests & generate Jacoco coverage"
-	@echo " make verify       : UNIFIED full-stack gate (BE compile+test + FE tsc/build/vitest) — §2.H"
+	@echo " make verify       : full 프로파일 전 스택 게이트 (실 PostgreSQL 스키마 검증 포함 — Docker 필요)"
 	@echo " make clean        : Clean Gradle build outputs"
 	@echo "=========================================================="
 
@@ -48,12 +48,13 @@ test-ci:
 coverage:
 	$(GRADLEW) test jacocoRootReport --continue $(TEST_OPTS) $(GRADLE_CLI_ARGS)
 
-# ── UNIFIED full-stack verification gate (§2.H 검증 파편화 해소) ──────────────
-# "실제로 안 깨진다"를 단일 명령으로 증명: 백엔드 전 모듈 컴파일+테스트 + 프론트 tsc/next build/vitest.
-# (e2e 는 서버 기동 필요 → 별도. CI 빌링 복구 시 ci.yml 이 이 게이트를 상시 실행.)
-# scripts/verify.mjs 를 단일 소스로 위임(OS 감지·Makefile/npm 정합). e2e 는 서버 기동 필요라 별도.
+# ── 전 스택 검증 게이트 ────────────────────────────────────────────────────
+# scripts/verify.mjs 가 단일 소스이며 프로파일은 비용 순으로 중첩된다: docs < fast < push < full.
+# full 은 실 PostgreSQL 스키마 검증을 포함하므로 Docker 가 필요하다.
+# 브라우저 E2E(verify:e2e)와 원격 ruleset 실측(verify:ops)은 서비스·자격이 필요해 별도로 둔다.
+# 로컬 게이트는 빠른 피드백이고 병합 권위는 .github/required-checks.json 에 결속된 required CI 다.
 verify:
-	node scripts/verify.mjs all
+	node scripts/verify.mjs full
 
 verify-be:
 	node scripts/verify.mjs be
