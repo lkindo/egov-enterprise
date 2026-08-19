@@ -40,15 +40,24 @@ PostgreSQL 기반의 eGov Enterprise 시스템에서 스키마 변경 시 발생
    - 모든 비즈니스 로직과 API 참조 대상을 신규 구조로 일원화하고, 프론트엔드 연동 상태를 재검증.
 4. **Phase 4: Contract (축소 및 정리)**
    - 앱에서 기존 컬럼 참조가 완전히 제거된 후, 구버전 컬럼을 안전하게 `DROP`하고 인덱스/제약조건 네이밍 표준화를 이행.
-   - **Linter Ignore (라인 단위)**: Contract 단계의 안전 근거와 소비처 제거를 확인한 경우에만 해당 SQL과 같은 라인에 `-- linter:ignore (사유)`를 둔다. 이 지시어는 안전성 증거를 대신하지 않는다.
-   - **Linter Disable File (파일 단위)**: `-- linter:disable-file`은 구현상 지원되지만 모든 규칙을 끄므로 신규 마이그레이션의 일반 해법으로 사용하지 않는다. 불가피하면 파일 전체 면제가 필요한 이유와 별도 검증을 변경 설명에 남기고, 가능한 한 라인 단위 예외로 축소한다.
+   - **Linter Ignore (라인 단위)**: 신규 Contract 예외는 해당 SQL과 같은 라인에 `-- linter:ignore ZDM-YYYY-NNNN <인라인 사유>` 형식의 안정 ID와 사유를 두고, [`zdm-waivers.json`](../../config/governance/zdm-waivers.json)의 `waivers`에 같은 ID와 `path`, `directive`, `reason`, `owner`, `approvedAt`, `expiresAt`, `evidence`를 등록한다. marker와 레지스트리는 한 곳에만 1:1로 존재해야 하며, 미등록·중복·사유 누락·만료·경로 불일치는 하네스를 실패시킨다.
+   - **Linter Disable File (파일 단위)**: 파일 전체 면제가 불가피하면 `-- linter:disable-file ZDM-YYYY-NNNN <인라인 사유>`와 `directive: "disable-file"`을 같은 방식으로 등록한다. 모든 규칙을 끄므로 일반 해법으로 사용하지 않고 가능한 한 라인 단위 예외로 축소한다.
+
+### 3.1 적용 완료 migration의 레거시 예외
+
+레지스트리 도입 전에 적용된 versioned Flyway SQL은 checksum 때문에 주석도 고칠 수 없다. 따라서 기존 자유형 `linter:ignore` 188건/43파일은 승인된 waiver로 소급 변환하지 않고 `legacyDebt`에 `status: legacy-debt-unapproved`로 기록한다. 각 항목은 파일별 marker 수, 줄바꿈을 정규화한 전체 내용 SHA-256, owner, reviewBy와 “소급 승인이 아님”이라는 사유를 갖는다.
+
+- 기존 파일의 내용 또는 marker 수 drift는 실패한다.
+- 레지스트리에 없는 신규 자유형 marker는 실패한다.
+- `reviewBy`가 도래한 레거시 부채와 `expiresAt`이 도래한 신규 waiver는 실패한다.
+- 이 인벤토리는 기존 파괴 DDL의 안전성을 증명하거나 승인하지 않는다. 정기 검토 시 운영 증거를 확인하고, 적용 migration을 수정하는 대신 후속 보정 migration·문서·배포 통제로 부채를 해소한다.
 
 ## 4. 모니터링 연동
 이 하네스는 `./gradlew :api-server:harnessTest`에 포함되고, 소스 변경 시 로컬 pre-push와 상위 검증 경로에서 실행된다. 문서-only fast-pass는 이를 실행하지 않는다. 위반 감지 시 JUnit 테스트를 실패시키며, 규칙이나 실행 경로를 바꿀 때는 의도적 위반이 red가 되는지 확인한다.
 
 현재 헌법 제7조 3항과 구현은 같은 계약을 사용한다. 환경별 warn-only 모드 없이 항상 hard-stop하고, 마이그레이션 디렉터리의 전체 SQL을 전수 검사하며, 헌법에 열거된 파괴적 패턴을 차단한다.
 
-다만 이 하네스는 정규식 기반 정적 검사다. 실제 lock 시간, 배포 순서, dual-write/backfill 완결성, 구버전 인스턴스의 참조 제거를 증명하지 않는다. `linter:ignore` 또는 `linter:disable-file`을 사용한 Contract 변경은 소비처 census와 실제 배포·롤백 증거를 별도로 요구한다.
+다만 이 하네스는 정규식 기반 정적 검사이며, 레지스트리의 `evidence`도 증거 위치와 승인 수명 주기를 결속할 뿐 내용의 진실성을 자동 증명하지 않는다. 실제 lock 시간, 배포 순서, dual-write/backfill 완결성, 구버전 인스턴스의 참조 제거는 소비처 census와 실제 배포·롤백 증거로 별도 확인한다.
 
 ---
 *Verified against `ZeroDowntimeMigrationLinterTest` and its harness execution path: 2026-08-19*

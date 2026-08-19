@@ -1,6 +1,7 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +17,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -31,6 +31,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>순수 정적 소스 텍스트 스캔(모듈 main 소스). SchemaNamingLinterTest 의 경로 해석 관행을 재사용한다.
  */
+@Tag("governance-harness")
 class IdentityAxisLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(IdentityAxisLinterTest.class);
@@ -71,7 +72,7 @@ class IdentityAxisLinterTest {
 
         for (Path p : files) {
             String fileName = p.getFileName().toString();
-            String src = stripComments(Files.readString(p));
+            String src = stripComments(HarnessSourceIndex.read(p));
 
             // 1) getCurrentUserId 호출 — 정의부(SecurityUtil)는 제외, 그 외 호출은 위반
             if (!fileName.equals("SecurityUtil.java") && GET_CURRENT_USER_ID_CALL.matcher(src).find()) {
@@ -110,20 +111,7 @@ class IdentityAxisLinterTest {
     // ---- 소스 수집(멀티모듈 main) --------------------------------------------------
 
     private List<Path> collectMainJava() throws IOException {
-        Path root = resolveRepoRoot();
-        List<Path> result = new ArrayList<>();
-        for (String module : MODULES) {
-            Path srcDir = root.resolve(module).resolve("src/main/java");
-            if (!Files.exists(srcDir)) {
-                continue;
-            }
-            try (Stream<Path> paths = Files.walk(srcDir)) {
-                paths.filter(Files::isRegularFile)
-                        .filter(p -> p.toString().endsWith(".java"))
-                        .forEach(result::add);
-            }
-        }
-        return result;
+        return HarnessSourceIndex.productionJavaSources(MODULES);
     }
 
     /** cwd 또는 상위에서 settings.gradle 을 가진 저장소 루트를 찾는다(SchemaNamingLinter 경로해석 관행). */

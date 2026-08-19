@@ -4,10 +4,7 @@
  * 사용자 인증 API 의 성능을 테스트합니다.
  * 
  * 실행 방법:
- *   k6 run --vus 10 --duration 30s login-test.js
- *   k6 run --scenario smoke login-test.js
- *   k6 run --scenario load login-test.js
- *   k6 run --scenario stress login-test.js
+ *   k6 run login-test.js  # 아래에 정의된 모든 시나리오 실행
  */
 
 import http from 'k6/http';

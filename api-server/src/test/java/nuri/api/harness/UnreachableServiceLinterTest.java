@@ -1,22 +1,19 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -64,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔.
  */
+@Tag("governance-harness")
 class UnreachableServiceLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(UnreachableServiceLinterTest.class);
@@ -94,22 +92,11 @@ class UnreachableServiceLinterTest {
     @Test
     @DisplayName("🕳️ @Service·@Repository 빈이 생산 코드에서 도달 가능한가 — '완성됐는데 아무도 안 부르는' 코드 차단")
     void auditUnreachableServices() throws IOException {
-        Path root = repoRoot();
-        List<Path> mainSources = new ArrayList<>();
-        for (String module : MODULES) {
-            Path srcMain = root.resolve(module).resolve("src/main/java");
-            if (Files.isDirectory(srcMain)) {
-                try (Stream<Path> s = Files.walk(srcMain)) {
-                    s.filter(p -> p.toString().endsWith(".java")).forEach(mainSources::add);
-                }
-            }
-        }
+        Path root = HarnessSourceIndex.repoRoot();
+        List<Path> mainSources = HarnessSourceIndex.productionJavaSources(MODULES);
 
         // 파일당 1회만 읽는다 — 서비스 수 × 파일 수 만큼 재읽기하면 수 분이 걸린다.
-        Map<Path, String> corpus = new LinkedHashMap<>();
-        for (Path p : mainSources) {
-            corpus.put(p, Files.readString(p, StandardCharsets.UTF_8));
-        }
+        Map<Path, String> corpus = new LinkedHashMap<>(HarnessSourceIndex.corpus(mainSources));
 
         List<String> violations = new ArrayList<>();
         int serviceCount = 0;
@@ -200,20 +187,4 @@ class UnreachableServiceLinterTest {
         return null;
     }
 
-    /**
-     * 저장소 루트 해석. 테스트 작업 디렉터리가 모듈이든 루트든 동작해야 한다
-     * ({@code IdentityAxisLinterTest} 관행과 동일).
-     */
-    private Path repoRoot() {
-        Path cwd = Paths.get("").toAbsolutePath();
-        Path candidate = cwd;
-        for (int i = 0; i < 4 && candidate != null; i++) {
-            if (Files.isDirectory(candidate.resolve("business-core"))
-                    && Files.isDirectory(candidate.resolve("api-server"))) {
-                return candidate;
-            }
-            candidate = candidate.getParent();
-        }
-        return cwd;
-    }
 }

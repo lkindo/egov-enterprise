@@ -11,7 +11,6 @@ export class ProductivitySuitePage {
     async gotoApproval() {
         console.log(`>>> Navigating to Electronic Approval (Sanction)`);
         await this.page.goto('/admin/sanctn/forms');
-        await this.page.waitForTimeout(1000); // Wait for DOM
     }
 
     async verifyApprovalStateTransition() {
@@ -40,7 +39,6 @@ export class ProductivitySuitePage {
     async gotoCalendar() {
         console.log(`>>> Navigating to Work Hub (Calendar Tab)`);
         await this.page.goto('/admin/work-hub?tab=calendar');
-        await this.page.waitForTimeout(1000); // Wait for DOM
     }
 
     async verifyCalendarSynchronization() {

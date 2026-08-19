@@ -5,6 +5,7 @@ import jakarta.persistence.Table;
 import nuri.business.service.file.AttachmentSource;
 import nuri.business.service.file.AttachmentSourceContributor;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,6 +45,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(클래스패스 스캔 + 리플렉션).
  */
+@Tag("governance-harness")
 class AttachmentSourceRegistryLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(AttachmentSourceRegistryLinterTest.class);

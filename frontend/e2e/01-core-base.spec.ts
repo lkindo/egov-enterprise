@@ -21,7 +21,21 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
     //   이 테스트가 고유하게 보던 '로그인 후 전자정부 5.0 배지'는 아래
     //   'Widgets and Charts Rendering' 이 저장된 세션으로 이미 검증한다.
 
-    test('Accessibility Audit for Login Page', async ({ page }) => {
+    test('Accessibility Audit for Login Page', async ({ page, consoleGuard }) => {
+        // 비로그인 상태의 로그인 화면은 AuthContext 가 세션 유무를 확인하며 401 을 받는다.
+        // 이 테스트의 계약은 접근성이고 401 은 화면 진입의 정상 부산물이다.
+        consoleGuard.expectErrors([{
+            id: 'E2E-CORE-LOGIN-A11Y-ME-401',
+            specScope: '01-core-base.spec.ts :: Accessibility Audit for Login Page',
+            channel: 'response',
+            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+            messagePattern: null,
+            method: 'GET',
+            status: 401,
+            maxOccurrences: 4,
+            reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+            expiresAt: '2026-12-31',
+        }]);
         await page.goto('/login?e2e=true');
         const a11y = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze(); // color-contrast: CI 테마 가변성 방어
         expect(a11y.violations, JSON.stringify(a11y.violations.map((v) => v.id))).toEqual([]);
@@ -80,7 +94,20 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         //   포워딩하는데(logout/route.ts), 그 만료가 누락돼도 종전 단언은 전부 그린이었다:
         //   리다이렉트는 클라이언트가 수행하므로 쿠키가 남아 있어도 /login 으로 간다.
         //   → 쿠키 소멸과 '보호 경로 재진입 차단'까지 확인해 제목이 약속한 것을 실제로 검증한다.
-        test('Logout Redirection and Session Cleanup', async ({ page, context }) => {
+        test('Logout Redirection and Session Cleanup', async ({ page, context, consoleGuard }) => {
+            consoleGuard.expectErrors([{
+                id: 'E2E-CORE-LOGOUT-ME-401',
+                specScope: '01-core-base.spec.ts :: Logout Redirection and Session Cleanup',
+                channel: 'response',
+                urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+                messagePattern: null,
+                method: 'GET',
+                status: 401,
+                minOccurrences: 0,
+                maxOccurrences: 2,
+                reason: '로그아웃 후 보호 경로 재진입 시 /login 으로 튕겨나와 세션 유무를 확인하는 요청이다.',
+                expiresAt: '2026-12-31',
+            }]);
             console.log('>>> Step 1: Triggering User Menu');
             const profileTrigger = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
             await expect(profileTrigger).toBeVisible({ timeout: 15000 });

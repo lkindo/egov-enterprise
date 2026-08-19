@@ -1,6 +1,10 @@
 [
   { "table_name": "tb_user_info", "column_name": "user_id" },
+  { "table_name": "tb_user_info", "column_name": "esntl_id" },
   { "table_name": "tb_user_info", "column_name": "user_nm" },
+  { "table_name": "tb_user_info", "column_name": "cnt" },
+  { "table_name": "tb_user_info", "column_name": "ognz_id" },
   { "table_name": "tb_user_info", "column_name": "user_stts_cd" },
-  { "table_name": "tb_user_info", "column_name": "frst_rgtr_id" }
+  { "table_name": "tb_user_info", "column_name": "frst_rgtr_id" },
+  { "table_name": "tb_ognz_info", "column_name": "ognz_id" }
 ]

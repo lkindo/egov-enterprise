@@ -81,11 +81,11 @@ $k6Script = Join-Path $projectRoot "test\load-tests\scenarios\load-levels.js"
 $jsonOutput = Join-Path $resultsDir "results-$LoadLevel-$timestamp.json"
 
 & $k6Path run `
+    -e "K6_SCENARIO=$scenario" `
     --out json=$jsonOutput `
     --tag load_level=$LoadLevel `
     --tag git_sha=local `
     --tag git_ref=local `
-    --scenario $scenario `
     $k6Script
 
 $exitCode = $LASTEXITCODE

@@ -54,7 +54,7 @@ export class SupportPage {
         const searchInput = this.page.locator('input[placeholder*="검색"]').first();
         await searchInput.fill(keyword);
         await this.page.keyboard.press('Enter');
-        await this.page.waitForTimeout(2000);
+        await expect(searchInput).toHaveValue(keyword);
     }
 
     async createKnowledgeEntry(title: string, content: string) {
@@ -67,16 +67,13 @@ export class SupportPage {
         await titleInput.fill(title);
         await expect(titleInput).toHaveValue(title);
         await titleInput.press('Tab'); // Trigger blur and react-hook-form change validation
-        
-        await this.page.waitForTimeout(500); // Wait for form state synchronization
-        
+
         const editor = this.page.locator('.tiptap[contenteditable="true"], .ProseMirror, [contenteditable="true"], textarea').last();
         await editor.waitFor({ state: 'visible' });
         await editor.click();
-        await this.page.waitForTimeout(200);
         await this.page.keyboard.type(content);
-        
-        await this.page.waitForTimeout(300); // Brief pause before submission
+        await expect(editor).toContainText(content);
+
         await this.page.getByRole('button', { name: /등록 완료|저장|Commit/i }).click();
         await expect(this.page.getByText(/성공|완료|등록되었습니다/i)).toBeVisible({ timeout: 15000 });
     }

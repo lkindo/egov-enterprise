@@ -4,11 +4,67 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('Session Integrity: Handling Token Clearance', async ({ page, context, consoleGuard }) => {
-        // 이 테스트는 토큰을 의도적으로 비워 세션 만료를 시뮬레이션한다 → 그로 인한 401(알림 폴링/토큰 재발급 실패)은
-        // '정상적인 만료 처리'의 일부이므로 콘솔 가드에서 무시한다(검증 대상은 로그인 리다이렉트).
-        consoleGuard.addIgnorePattern(
-            /notifications|auth\/reissue|\/ws(?:\/|$)/i,
-        );
+        // [2026-08-19 정정] 종전 주석은 "알림·재발급 오류는 이 계약에 필요하지 않으므로 발생하면
+        //   독립 결함으로 실패한다"였다. 그러나 이 테스트는 쿠키만 지우고 페이지는 마운트된 채로 두므로,
+        //   그 401들은 부산물이 아니라 **복구 경로 자체의 인과 사슬**이다:
+        //     살아있는 useNotifications 폴링이 401 → 인터셉터가 /api/auth/reissue 시도 → 401
+        //     → client.ts 가 /login?expired=true 로 이동 → 로그인 화면이 /auth/me 로 세션 확인 → 401
+        //   즉 이 401들이 없으면 앱은 세션 소실을 감지하지도, 로그인으로 보내지도 못한다.
+        //   광역 무시로 되돌리지 않고 이 테스트 범위에서 endpoint·method·status·횟수를 못박아
+        //   401 폭주 같은 회귀는 계속 잡히게 한다.
+        const sessionLossProbe = (id: string, urlPattern: RegExp, method: string, maxOccurrences: number, reason: string) => ({
+            id,
+            specScope: '20-common-security-validation.spec.ts :: Session Integrity: Handling Token Clearance',
+            channel: 'response' as const,
+            urlPattern,
+            messagePattern: null,
+            method,
+            status: 401,
+            minOccurrences: 0,
+            maxOccurrences,
+            reason,
+            expiresAt: '2026-12-31',
+        });
+        consoleGuard.expectErrors([
+            sessionLossProbe('E2E-SESSION-CLEARED-NOTIFICATIONS-401',
+                /\/api\/v1\/notifications(?:\?|$)/, 'GET', 3,
+                '마운트된 알림 폴링이 세션 소실을 발견하는 지점이다.'),
+            sessionLossProbe('E2E-SESSION-CLEARED-UNREAD-COUNT-401',
+                /\/api\/v1\/notifications\/unread-count(?:\?|$)/, 'GET', 3,
+                '알림 폴링과 같은 회차에 나가는 미읽음 수 조회다.'),
+            sessionLossProbe('E2E-SESSION-CLEARED-REISSUE-401',
+                /\/api\/auth\/reissue(?:\?|$)/, 'POST', 2,
+                'refreshToken 도 지워졌으므로 설계된 재발급 시도가 정상 실패한다.'),
+            sessionLossProbe('E2E-SESSION-CLEARED-ME-401',
+                /\/api\/v1\/auth\/me(?:\?|$)/, 'GET', 2,
+                '재발급 실패로 도착한 로그인 화면의 세션 확인 요청이다.'),
+            {
+                id: 'E2E-SESSION-CLEARED-WS-ERROR',
+                specScope: '20-common-security-validation.spec.ts :: Session Integrity: Handling Token Clearance',
+                channel: 'console' as const,
+                urlPattern: null,
+                messagePattern: /HTTP Authentication failed|WebSocket connection to.*failed/,
+                method: null,
+                status: null,
+                minOccurrences: 0,
+                maxOccurrences: 3,
+                reason: '토큰 삭제 후 SockJS WebSocket 연결이 인증 거부되는 콘솔 에러다.',
+                expiresAt: '2026-12-31',
+            },
+            {
+                id: 'E2E-SESSION-CLEARED-NOTIF-CONSOLE-ERROR',
+                specScope: '20-common-security-validation.spec.ts :: Session Integrity: Handling Token Clearance',
+                channel: 'console' as const,
+                urlPattern: null,
+                messagePattern: /Failed to fetch notifications.*유효하지 않은 토큰입니다/,
+                method: null,
+                status: null,
+                minOccurrences: 0,
+                maxOccurrences: 3,
+                reason: '토큰 삭제 후 알림 폴링 실패 시 콘솔에 로깅되는 에러다.',
+                expiresAt: '2026-12-31',
+            },
+        ]);
         console.log('>>> Step 1: Navigating to a protected admin page');
         await page.goto('/admin/community/boards/master');
         await expect(page).toHaveURL(/.*master/);

@@ -1,13 +1,9 @@
 package nuri.api.schema;
 
-import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -19,23 +15,15 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
-@Testcontainers(disabledWithoutDocker = false)
 @DisplayName("행사 문자열 PK/외부인사 FK -> BIGINT IDENTITY/FK 마이그레이션")
-class EventInfoBigintMigrationIntegrationTest {
-
-    @Container
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:17-alpine")
-                    .withDatabaseName("egovdb")
-                    .withUsername("egov")
-                    .withPassword("egov123");
+class EventInfoBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     @Test
     @DisplayName("기존 행사와 외부인사를 보존하고 숫자 관계로 재결속한다")
     void migratesLegacyEventAndExternalHrRelationship() throws SQLException {
         flyway(MigrationVersion.fromVersion("2.79")).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
                     INSERT INTO tb_event_info (
@@ -58,7 +46,7 @@ class EventInfoBigintMigrationIntegrationTest {
 
         flyway(null).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             long migratedSn;
             try (ResultSet rows = statement.executeQuery("""
@@ -116,16 +104,6 @@ class EventInfoBigintMigrationIntegrationTest {
                     VALUES (%d, 'HR_NEW_000001', '신규 전문가')
                     """.formatted(generatedSn));
         }
-    }
-
-    private Flyway flyway(MigrationVersion target) {
-        var configuration = Flyway.configure()
-                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration");
-        if (target != null) {
-            configuration.target(target);
-        }
-        return configuration.load();
     }
 
     private boolean columnExists(Statement statement, String tableName, String columnName) throws SQLException {

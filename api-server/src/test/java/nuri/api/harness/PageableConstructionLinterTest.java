@@ -1,20 +1,17 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -55,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔.
  */
+@Tag("governance-harness")
 class PageableConstructionLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(PageableConstructionLinterTest.class);
@@ -79,39 +77,29 @@ class PageableConstructionLinterTest {
     @Test
     @DisplayName("🧨 페이징 변환을 손수 재구현하지 않는가 — BaseSearchDto#toPageable() 우회 차단")
     void auditManualPageableConstruction() throws IOException {
-        Path root = repoRoot();
+        Path root = HarnessSourceIndex.repoRoot();
         List<String> violations = new ArrayList<>();
         int scanned = 0;
 
-        for (String module : MODULES) {
-            Path srcMain = root.resolve(module).resolve("src/main/java");
-            if (!Files.isDirectory(srcMain)) {
+        for (Path f : HarnessSourceIndex.productionJavaSources(MODULES)) {
+            String rel = root.relativize(f).toString().replace('\\', '/');
+            // 헬퍼 자신은 당연히 이 계산을 갖는다 — 유일한 정당한 보유자다.
+            if (rel.endsWith("nuri/business/domain/common/BaseSearchDto.java")) {
                 continue;
             }
-            List<Path> files = new ArrayList<>();
-            try (Stream<Path> s = Files.walk(srcMain)) {
-                s.filter(p -> p.toString().endsWith(".java")).forEach(files::add);
+            scanned++;
+            String src = stripComments(HarnessSourceIndex.read(f));
+
+            Matcher idx = MANUAL_PAGE_INDEX.matcher(src);
+            while (idx.find()) {
+                violations.add(rel + " — 1-based→0-based 변환을 손수 구현: `"
+                        + squeeze(idx.group()) + "`");
             }
-            for (Path f : files) {
-                String rel = root.relativize(f).toString().replace('\\', '/');
-                // 헬퍼 자신은 당연히 이 계산을 갖는다 — 유일한 정당한 보유자다.
-                if (rel.endsWith("nuri/business/domain/common/BaseSearchDto.java")) {
-                    continue;
-                }
-                scanned++;
-                String src = stripComments(Files.readString(f, StandardCharsets.UTF_8));
 
-                Matcher idx = MANUAL_PAGE_INDEX.matcher(src);
-                while (idx.find()) {
-                    violations.add(rel + " — 1-based→0-based 변환을 손수 구현: `"
-                            + squeeze(idx.group()) + "`");
-                }
-
-                Matcher unit = MANUAL_PAGE_UNIT.matcher(src);
-                while (unit.find()) {
-                    violations.add(rel + " — 페이지 크기 기본값 분기를 손수 구현: `"
-                            + squeeze(unit.group()) + "`");
-                }
+            Matcher unit = MANUAL_PAGE_UNIT.matcher(src);
+            while (unit.find()) {
+                violations.add(rel + " — 페이지 크기 기본값 분기를 손수 구현: `"
+                        + squeeze(unit.group()) + "`");
             }
         }
 
@@ -149,17 +137,4 @@ class PageableConstructionLinterTest {
         return s.replaceAll("\\s+", " ").trim();
     }
 
-    /** 저장소 루트를 찾는다 — 테스트 작업 디렉터리가 모듈 하위일 수 있다. */
-    private Path repoRoot() {
-        Path cwd = Paths.get("").toAbsolutePath();
-        Path candidate = cwd;
-        for (int i = 0; i < 4 && candidate != null; i++) {
-            if (Files.isDirectory(candidate.resolve("business-core"))
-                    && Files.isDirectory(candidate.resolve("api-server"))) {
-                return candidate;
-            }
-            candidate = candidate.getParent();
-        }
-        return cwd;
-    }
 }

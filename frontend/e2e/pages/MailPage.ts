@@ -40,7 +40,6 @@ export class MailPage {
 
         // Submit
         const sendBtn = this.page.getByTestId('mail-send-btn');
-        await this.page.waitForTimeout(1000); // Wait for form state stabilization
         await expect(sendBtn).toBeEnabled({ timeout: 10000 });
         await sendBtn.click({ force: true });
         
@@ -72,9 +71,11 @@ export class MailPage {
             await searchInput.fill(subject);
             await this.page.keyboard.press('Enter');
             
-            // Wait for list to refresh and check visibility
-            await this.page.waitForTimeout(2000); 
-            if (await mailItem.isVisible().catch(() => false)) {
+            const mailVisible = await mailItem
+                .waitFor({ state: 'visible', timeout: 5000 })
+                .then(() => true)
+                .catch(() => false);
+            if (mailVisible) {
                 found = true;
                 break;
             }
@@ -124,7 +125,6 @@ export class MailPage {
         await searchInput.clear();
         await searchInput.fill(subject);
         await this.page.keyboard.press('Enter');
-        await this.page.waitForTimeout(2000);
 
         const mailItem = this.page.getByTestId('mail-item').filter({ hasText: subject }).first();
         await mailItem.waitFor({ state: 'visible', timeout: 10000 });

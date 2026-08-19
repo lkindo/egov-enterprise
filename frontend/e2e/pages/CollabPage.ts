@@ -42,7 +42,6 @@ export class CollabPage {
         const searchInput = this.page.getByTestId('mail-recipient-input');
         await expect(searchInput).toBeVisible({ timeout: 60000 });
         await searchInput.click();
-        await this.page.waitForTimeout(500);
         
         console.log(`>>> [Collab] Searching for recipient: ${recipient}`);
         await this.page.keyboard.press('Control+A');
@@ -85,7 +84,6 @@ export class CollabPage {
         const emailInput = this.page.getByTestId('identity-email-input').first();
         const telInput = this.page.getByTestId('identity-tel-input').first();
         await expect(nameInput).toBeVisible();
-        await this.page.waitForTimeout(1000);
         
         await nameInput.click();
         await nameInput.fill(name);
@@ -130,8 +128,6 @@ export class CollabPage {
                 const searchInput = this.page.getByPlaceholder(/메일 제목 또는 수신자 검색/i);
                 await searchInput.click();
                 await searchInput.fill(subject);
-                // Wait for potential debounce and network request
-                await this.page.waitForTimeout(2000);
             }
 
             // Target only the data rows, avoiding the header
@@ -140,13 +136,16 @@ export class CollabPage {
                 ? mailRows.filter({ hasText: subject }).first() 
                 : mailRows.first();
             
-            if (await targetRow.isVisible()) {
+            const rowVisible = await targetRow
+                .waitFor({ state: 'visible', timeout: 5000 })
+                .then(() => true)
+                .catch(() => false);
+            if (rowVisible) {
                 console.log('>>> [Collab] Target row found in history');
                 found = true;
                 break;
             }
             console.log(`>>> [Collab] Target row not found, retrying... (${i+1}/3)`);
-            await this.page.waitForTimeout(2000);
         }
 
         if (!found) {

@@ -109,7 +109,7 @@ if ($output -like "*k6*") {
     Write-Host "=== 설치 성공! ===" -ForegroundColor Green
     Write-Host ""
     Write-Host "다음 명령으로 테스트 실행:" -ForegroundColor Cyan
-    Write-Host "  k6 run --scenario users-100 test/load-tests/scenarios/load-levels.js" -ForegroundColor White
+    Write-Host "  k6 run -e K6_SCENARIO=users-100 test/load-tests/scenarios/load-levels.js" -ForegroundColor White
 } else {
     Write-Host "⚠ k6 명령어를 찾을 수 없습니다." -ForegroundColor Yellow
     Write-Host "  새 PowerShell 창을 열어 다시 시도하거나," -ForegroundColor Yellow

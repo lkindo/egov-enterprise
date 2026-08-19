@@ -49,7 +49,6 @@ export class OpsGovernancePage {
         // Wait for tree to load
         console.log(`>>> Verifying menu tree for role`);
         await expect(this.page.getByText(/시스템 메뉴|기능 노드 트리/i)).toBeVisible();
-        await this.page.waitForTimeout(2000); // Give it time to render the tree nodes
         
         // Check that either nodes are rendered or the "no menus" message is visible
         const nodeIcons = this.page.locator('.lucide-folder, .lucide-file');

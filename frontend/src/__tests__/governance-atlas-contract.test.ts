@@ -36,7 +36,9 @@ describe('Governance Atlas docs-as-code contract', () => {
   it('derives census numbers from the current Java test inventory', () => {
     const harnessDirectory = join(REPO_DIR, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness');
     const allApiTests = filesEndingWith(join(REPO_DIR, 'api-server', 'src', 'test', 'java'), '.java');
-    const harnessCount = filesEndingWith(harnessDirectory, '.java').length;
+    const harnessCount = filesEndingWith(harnessDirectory, '.java').filter(path =>
+      /@Tag\s*\(\s*"governance-harness"\s*\)/.test(readFileSync(path, 'utf8')),
+    ).length;
     const schemaValidationCount = allApiTests.filter(path =>
       /@Tag\s*\(\s*"schema-validation"\s*\)/.test(readFileSync(path, 'utf8')),
     ).length;
@@ -72,7 +74,7 @@ describe('Governance Atlas docs-as-code contract', () => {
     expect(migrationText).toContain('dry-run');
     expect(migrationText).toContain('commit');
     expect(migrationText).toContain('PASS / WARN / FAIL');
-    expect(migrationText).toContain('exit code 0');
+    expect(migrationText).toContain('non-zero');
     expect(migrationText).toContain('source read-only');
     expect(migrationText).toContain('PostgreSQL·Oracle·Tibero E2E');
     expect(migrationPanel?.querySelector(
@@ -81,17 +83,20 @@ describe('Governance Atlas docs-as-code contract', () => {
     expect(ATLAS_HTML).toContain('Legacy ETL 정확성·이관 안전성');
   });
 
-  it('derives baseline coverage and migration-waiver debt from source files', () => {
-    const baseline = readFileSync(
-      join(REPO_DIR, 'api-server', 'src', 'test', 'resources', 'harness', 'baseline-manifest.properties'),
-      'utf8',
-    );
-    const baselineClasses = baseline.match(/^__harness\.classes=(.+)$/m)?.[1].split(',') ?? [];
-    const baselineSchemaClasses = baselineClasses.filter(name => name.includes('SchemaValidation')).length;
-    const schemaValidationCount = filesEndingWith(
-      join(REPO_DIR, 'api-server', 'src', 'test', 'java'),
-      '.java',
-    ).filter(path => /@Tag\s*\(\s*"schema-validation"\s*\)/.test(readFileSync(path, 'utf8'))).length;
+  it('derives central gate coverage and migration-waiver debt from source files', () => {
+    const registry = JSON.parse(
+      readFileSync(join(REPO_DIR, 'config', 'governance', 'gates.json'), 'utf8'),
+    ) as {
+      gateSets: Array<{ id: string; rules?: Array<{ id: string }> }>;
+      executionProfiles: unknown[];
+      qualityPopulations: unknown[];
+      qualityRatchets: unknown[];
+    };
+    const rulesFor = (id: string) => registry.gateSets.find(set => set.id === id)?.rules ?? [];
+    const governanceCount = rulesFor('GATESET-GOVERNANCE-HARNESS').length;
+    const architectureCount = rulesFor('GATESET-ARCHITECTURE').length;
+    const schemaValidationCount = rulesFor('GATESET-SCHEMA-VALIDATION').length;
+    const runnerCount = registry.gateSets.length - 3;
     const migrationFiles = filesEndingWith(
       join(REPO_DIR, 'api-server', 'src', 'main', 'resources', 'db', 'migration'),
       '.sql',
@@ -101,11 +106,15 @@ describe('Governance Atlas docs-as-code contract', () => {
       return total + (readFileSync(path, 'utf8').match(/linter:ignore/g)?.length ?? 0);
     }, 0);
 
-    expect(ATLAS_TEXT).toContain(`manifest는 ${baselineClasses.length}개 클래스를 동결`);
     expect(ATLAS_TEXT).toContain(
-      `schema-validation ${schemaValidationCount}개 중 ${baselineSchemaClasses}개만 포함`,
+      `governance ${governanceCount}·ArchUnit ${architectureCount}·schema-validation ${schemaValidationCount}개`,
     );
+    expect(ATLAS_TEXT).toContain(`${runnerCount}개 runner catalog`);
+    expect(ATLAS_TEXT).toContain(`execution profile ${registry.executionProfiles.length}개`);
+    expect(ATLAS_TEXT).toContain(`quality population ${registry.qualityPopulations.length}개`);
+    expect(ATLAS_TEXT).toContain(`${registry.qualityRatchets.length}개 quality ratchet`);
     expect(ATLAS_TEXT).toContain(`linter:ignore ${waiverCount}건/${migrationsWithWaivers.length}파일`);
+    expect(ATLAS_TEXT).not.toContain('schema-validation 36개가 baseline 밖');
   });
 
   it('mirrors package/build versions and every required status-check context', () => {
@@ -134,7 +143,41 @@ describe('Governance Atlas docs-as-code contract', () => {
     expect(ATLAS_TEXT).toContain(`Node.js ≥${node}`);
     expect(ATLAS_TEXT).toContain(`pnpm ${pnpm}`);
     expect(ATLAS_TEXT).toContain(`Next.js ${next}`);
-    for (const { context } of requiredChecks.requiredChecks) expect(ATLAS_TEXT).toContain(context);
+
+    const requiredPanel = ATLAS_DOCUMENT.getElementById('required-check-contexts');
+    const renderedContexts = [...requiredPanel?.querySelectorAll('[data-required-context]') ?? []]
+      .map(element => element.getAttribute('data-required-context'));
+    const expectedContexts = requiredChecks.requiredChecks.map(check => check.context);
+    expect(requiredPanel).not.toBeNull();
+    expect(Number(requiredPanel?.dataset.requiredCount)).toBe(expectedContexts.length);
+    expect(renderedContexts).toEqual(expectedContexts);
+  });
+
+  it('mirrors dependency, frontend audit and load-runner control boundaries', () => {
+    const ci = readFileSync(join(REPO_DIR, '.github', 'workflows', 'ci.yml'), 'utf8');
+    const producer = readFileSync(
+      join(REPO_DIR, '.github', 'workflows', 'dependency-submission.yml'),
+      'utf8',
+    );
+    const publisher = readFileSync(
+      join(REPO_DIR, '.github', 'workflows', 'dependency-submission-publish.yml'),
+      'utf8',
+    );
+    const auditPolicy = readFileSync(join(REPO_DIR, 'scripts', 'frontend-audit-policy.mjs'), 'utf8');
+    const loadRunner = readFileSync(join(REPO_DIR, 'scripts', 'run-load-test.ps1'), 'utf8');
+
+    expect(producer).toContain('dependency-graph: generate-and-upload');
+    expect(publisher).toContain('workflow_run:');
+    expect(ci).toContain('SNAPSHOT_WAIT_SECONDS: "600"');
+    expect(auditPolicy).toContain('pnpm audit --json --audit-level low');
+    expect(loadRunner).toContain('-e "K6_SCENARIO=$scenario"');
+
+    expect(ATLAS_TEXT).toContain('trusted workflow_run');
+    expect(ATLAS_TEXT).toContain('최대 600초 fail-closed');
+    expect(ATLAS_TEXT).toContain('Critical 전체와 운영 High를 차단');
+    expect(ATLAS_HTML).toContain('K6_SCENARIO');
+    expect(ATLAS_TEXT).toContain('data-keymap 원자성');
+    expect(ATLAS_HTML).not.toContain('Gradle PR head snapshot producer가 없어');
   });
 
   it('does not reintroduce known stale or unsafe claims', () => {

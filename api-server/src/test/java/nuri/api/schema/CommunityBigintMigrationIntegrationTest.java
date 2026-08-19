@@ -1,13 +1,9 @@
 package nuri.api.schema;
 
-import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -18,23 +14,15 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
-@Testcontainers(disabledWithoutDocker = false)
 @DisplayName("커뮤니티 문자열 PK → BIGINT IDENTITY 폐포 마이그레이션")
-class CommunityBigintMigrationIntegrationTest {
-
-    @Container
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:17-alpine")
-                    .withDatabaseName("egovdb")
-                    .withUsername("egov")
-                    .withPassword("egov123");
+class CommunityBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     @Test
     @DisplayName("기존 커뮤니티·멤버십·게시판 참조를 숫자 키로 보존한다")
     void migratesExistingCommunityClosureAndEnforcesIdentityGeneration() throws SQLException {
         flyway(MigrationVersion.fromVersion("2.70")).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
                     INSERT INTO tb_cmnty_info
@@ -55,7 +43,7 @@ class CommunityBigintMigrationIntegrationTest {
 
         flyway(null).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             long cmntySn = singleLong(statement,
                     "SELECT cmnty_sn FROM tb_cmnty_info WHERE cmnty_nm='기존 커뮤니티'");
@@ -86,14 +74,6 @@ class CommunityBigintMigrationIntegrationTest {
                     "SELECT cmnty_sn FROM tb_cmnty_info WHERE cmnty_nm='신규 자동 채번 커뮤니티'"))
                     .isGreaterThan(cmntySn);
         }
-    }
-
-    private Flyway flyway(MigrationVersion target) {
-        var configuration = Flyway.configure()
-                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration");
-        if (target != null) configuration.target(target);
-        return configuration.load();
     }
 
     private long singleLong(Statement statement, String sql) throws SQLException {

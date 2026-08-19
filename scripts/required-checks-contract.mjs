@@ -1,4 +1,11 @@
 const WORKFLOW_PATH = '.github/workflows/ci.yml';
+const PULL_REQUEST_POLICY_FIELDS = [
+  'requiredApprovingReviewCount',
+  'requireCodeOwnerReview',
+  'requireLastPushApproval',
+  'dismissStaleReviewsOnPush',
+  'requiredReviewThreadResolution',
+];
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -23,6 +30,21 @@ function directScalar(block, key) {
   const pattern = new RegExp(`^ {4}${escapeRegExp(key)}:\\s*([^#\\r\\n]*?)(?:\\s+#.*)?$`, 'm');
   const match = pattern.exec(block);
   return match ? unquote(match[1]) : null;
+}
+
+function scalarAtIndent(block, key, indent) {
+  const pattern = new RegExp(`^ {${indent}}${escapeRegExp(key)}:\\s*([^#\\r\\n]*?)(?:\\s+#.*)?$`, 'm');
+  const match = pattern.exec(block);
+  return match ? unquote(match[1]) : null;
+}
+
+function directNeeds(block) {
+  const raw = directScalar(block, 'needs');
+  if (raw === null) return [];
+  const inline = /^\[([^\]]*)\]$/.exec(raw);
+  return inline
+    ? inline[1].split(',').map(value => unquote(value)).filter(Boolean)
+    : [raw];
 }
 
 function stepScalar(block, key) {
@@ -126,6 +148,132 @@ function stepRun(stepBlock) {
   return body.join('\n').trim();
 }
 
+function runShellDefault(parent, defaultsIndent) {
+  const defaults = nestedBlock(parent, 'defaults', defaultsIndent);
+  if (!defaults) return null;
+  const run = nestedBlock(defaults, 'run', defaultsIndent + 2);
+  return run ? scalarAtIndent(run, 'shell', defaultsIndent + 4) : null;
+}
+
+function checkoutProvenanceErrors(jobBlock, jobId) {
+  const lines = jobBlock.replace(/\r\n/g, '\n').split('\n');
+  const starts = lines
+    .map((line, index) => /^ {6}- uses:\s*actions\/checkout@/.test(line) ? index : -1)
+    .filter(index => index >= 0);
+  if (starts.length === 0) return [`job '${jobId}' must checkout the workflow commit`];
+
+  const errors = [];
+  for (const start of starts) {
+    let end = lines.length;
+    for (let index = start + 1; index < lines.length; index += 1) {
+      if (/^ {6}- /.test(lines[index])) {
+        end = index;
+        break;
+      }
+    }
+    if (/\bref\s*:/.test(lines.slice(start, end).join('\n'))) {
+      errors.push(`job '${jobId}' checkout cannot override ref; it must test the workflow commit`);
+    }
+  }
+  return errors;
+}
+
+function validateCriticalSteps(criticalSteps, jobs) {
+  if (!Array.isArray(criticalSteps) || criticalSteps.length === 0) {
+    return ['manifest criticalSteps must be a non-empty array'];
+  }
+
+  const errors = [];
+  const seen = new Set();
+  for (const criticalStep of criticalSteps) {
+    const jobId = typeof criticalStep?.jobId === 'string' ? criticalStep.jobId.trim() : '';
+    const name = typeof criticalStep?.name === 'string' ? criticalStep.name.trim() : '';
+    if (!jobId || !name) {
+      errors.push('critical step requires non-empty jobId and name');
+      continue;
+    }
+    const identity = `${jobId}:${name}`;
+    if (seen.has(identity)) errors.push(`duplicate critical step mapping '${identity}'`);
+    seen.add(identity);
+
+    const job = jobs.get(jobId);
+    if (!job) {
+      errors.push(`critical step job '${jobId}' does not exist`);
+      continue;
+    }
+    const step = parseNamedSteps(job).get(name);
+    if (!step) {
+      errors.push(`critical step '${name}' does not exist in '${jobId}'`);
+      continue;
+    }
+
+    const hasRun = typeof criticalStep.run === 'string' && criticalStep.run.length > 0;
+    const hasUses = typeof criticalStep.uses === 'string' && criticalStep.uses.length > 0;
+    if (hasRun === hasUses) {
+      errors.push(`critical step '${name}' must declare exactly one of run or uses`);
+    } else if (hasRun && stepRun(step) !== criticalStep.run) {
+      errors.push(`critical step '${name}' must run its manifest command exactly`);
+    } else if (hasUses && stepScalar(step, 'uses') !== criticalStep.uses) {
+      errors.push(`critical step '${name}' must use '${criticalStep.uses}' exactly`);
+    }
+
+    const expectedIf = typeof criticalStep.if === 'string' ? criticalStep.if : null;
+    const actualIf = stepScalar(step, 'if');
+    if (expectedIf === null ? actualIf !== null
+      : normalizeExpression(actualIf ?? '') !== normalizeExpression(expectedIf)) {
+      errors.push(`critical step '${name}' must retain its exact if condition`);
+    }
+    if (Object.hasOwn(criticalStep, 'env')) {
+      if (!criticalStep.env || typeof criticalStep.env !== 'object' || Array.isArray(criticalStep.env)) {
+        errors.push(`critical step '${name}' env must be an object`);
+      } else {
+        const expectedEnv = new Map(Object.entries(criticalStep.env));
+        const actualEnv = nestedScalarMap(step, 'env', 8) ?? new Map();
+        const expectedEntries = [...expectedEnv.entries()].sort();
+        const actualEntries = [...actualEnv.entries()].sort();
+        if (JSON.stringify(actualEntries) !== JSON.stringify(expectedEntries)) {
+          errors.push(`critical step '${name}' must retain its exact env`);
+        }
+      }
+    }
+    if (stepScalar(step, 'continue-on-error') !== null) {
+      errors.push(`critical step '${name}' cannot use continue-on-error`);
+    }
+    if (stepScalar(step, 'shell') !== null) {
+      errors.push(`critical step '${name}' cannot override the runner shell`);
+    }
+  }
+  return errors;
+}
+
+export function validatePinnedWorkflowUses(workflowFiles) {
+  if (!Array.isArray(workflowFiles)) {
+    return ['workflow action pin contract requires an array of workflow files'];
+  }
+
+  const errors = [];
+  for (const workflowFile of workflowFiles) {
+    const filePath = typeof workflowFile?.path === 'string' && workflowFile.path
+      ? workflowFile.path
+      : '(unknown workflow)';
+    const content = typeof workflowFile?.content === 'string' ? workflowFile.content : '';
+    const lines = content.replace(/\r\n/g, '\n').split('\n');
+
+    for (let index = 0; index < lines.length; index += 1) {
+      const match = /^\s*(?:-\s*)?uses:\s*(.*?)\s*$/.exec(lines[index]);
+      if (!match) continue;
+      const action = unquote(match[1].replace(/\s+#.*$/, ''));
+      if (action.startsWith('./') || action.startsWith('docker://')) continue;
+
+      const pinnedAction = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_./-]+)?@[0-9a-fA-F]{40}$/;
+      if (!pinnedAction.test(action)) {
+        errors.push(`${filePath}:${index + 1} third-party action '${action}' must use a 40-character commit SHA`);
+      }
+    }
+  }
+  return errors;
+}
+
 function validateAggregate(check, jobs) {
   const aggregate = check.aggregate;
   if (!aggregate || typeof aggregate !== 'object') return [];
@@ -135,8 +283,13 @@ function validateAggregate(check, jobs) {
     'sourceStepName',
     'sourceRun',
     'aggregateStepName',
+    'aggregateRun',
     'resultExpression',
     'successResult',
+    'sourceJobIf',
+    'scopeExpression',
+    'classifierResultExpression',
+    'skippedResult',
   ];
   for (const field of requiredFields) {
     if (typeof aggregate[field] !== 'string' || aggregate[field].length === 0) {
@@ -144,27 +297,76 @@ function validateAggregate(check, jobs) {
     }
   }
   if (!aggregate.sourceEnv || typeof aggregate.sourceEnv !== 'object'
-    || Array.isArray(aggregate.sourceEnv) || Object.keys(aggregate.sourceEnv).length === 0) {
-    errors.push(`aggregate mapping for '${check.context}' requires non-empty 'sourceEnv'`);
+    || Array.isArray(aggregate.sourceEnv)) {
+    errors.push(`aggregate mapping for '${check.context}' requires object 'sourceEnv'`);
+  }
+  if (!Array.isArray(aggregate.sourceNeeds)
+    || aggregate.sourceNeeds.some(value => typeof value !== 'string' || value.length === 0)) {
+    errors.push(`aggregate mapping for '${check.context}' requires string-array 'sourceNeeds'`);
+  }
+  if (!Object.hasOwn(aggregate, 'sourceWorkingDirectory')
+    || (aggregate.sourceWorkingDirectory !== null
+      && (typeof aggregate.sourceWorkingDirectory !== 'string'
+        || aggregate.sourceWorkingDirectory.length === 0))) {
+    errors.push(`aggregate mapping for '${check.context}' requires string-or-null 'sourceWorkingDirectory'`);
+  }
+  if (aggregate.successResult !== 'success') {
+    errors.push(`aggregate mapping for '${check.context}' successResult must remain canonical 'success'`);
+  }
+  if (aggregate.skippedResult !== 'skipped') {
+    errors.push(`aggregate mapping for '${check.context}' skippedResult must remain canonical 'skipped'`);
   }
   if (errors.length > 0) return errors;
 
   const aggregateJob = jobs.get(check.jobId);
   const sourceJob = jobs.get(aggregate.sourceJobId);
+  if (!aggregateJob) {
+    return [`aggregate job '${check.jobId}' for '${check.context}' does not exist`];
+  }
   if (!sourceJob) {
     return [`aggregate source job '${aggregate.sourceJobId}' for '${check.context}' does not exist`];
   }
-  if (directScalar(aggregateJob, 'needs') !== aggregate.sourceJobId) {
-    errors.push(`aggregate job '${check.jobId}' must need exactly '${aggregate.sourceJobId}'`);
+  errors.push(...checkoutProvenanceErrors(sourceJob, aggregate.sourceJobId));
+  if (JSON.stringify(directNeeds(sourceJob)) !== JSON.stringify(aggregate.sourceNeeds)) {
+    errors.push(`aggregate source job '${aggregate.sourceJobId}' needs must exactly match ${JSON.stringify(aggregate.sourceNeeds)}`);
+  }
+  if (!directNeeds(aggregateJob).includes(aggregate.sourceJobId)) {
+    errors.push(`aggregate job '${check.jobId}' must need '${aggregate.sourceJobId}'`);
   }
   if (directScalar(sourceJob, 'continue-on-error') !== null) {
     errors.push(`aggregate source job '${aggregate.sourceJobId}' cannot use job-level continue-on-error`);
+  }
+  if (normalizeExpression(directScalar(sourceJob, 'if') ?? '') !== normalizeExpression(aggregate.sourceJobIf)) {
+    errors.push(`aggregate source job '${aggregate.sourceJobId}' must retain its fail-closed scope condition`);
+  }
+  if (aggregate.sourceMatrix !== undefined) {
+    const expectedMatrix = aggregate.sourceMatrix;
+    const actualEntries = parseMatrix(sourceJob) ?? [];
+    const axis = actualEntries.find(({ key }) => key === expectedMatrix.key);
+    if (actualEntries.length !== 1 || !axis?.values
+      || JSON.stringify(axis.values) !== JSON.stringify(expectedMatrix.values)) {
+      errors.push(`aggregate source job '${aggregate.sourceJobId}' matrix must exactly match ${JSON.stringify(expectedMatrix.values)}`);
+    }
+    if (expectedMatrix.completeCoordinates === true) {
+      const coordinates = expectedMatrix.values?.map(value => /^(\d+)\/(\d+)$/.exec(value)) ?? [];
+      const denominator = coordinates[0] ? Number(coordinates[0][2]) : 0;
+      const numerators = coordinates.map(match => match ? Number(match[1]) : 0).sort((a, b) => a - b);
+      const complete = denominator === coordinates.length
+        && coordinates.every(match => match && Number(match[2]) === denominator)
+        && numerators.every((value, index) => value === index + 1);
+      if (!complete) {
+        errors.push(`aggregate source job '${aggregate.sourceJobId}' must define complete 1/N..N/N coordinates`);
+      }
+    }
   }
 
   const sourceStep = parseNamedSteps(sourceJob).get(aggregate.sourceStepName);
   if (!sourceStep) {
     errors.push(`aggregate source step '${aggregate.sourceStepName}' does not exist in '${aggregate.sourceJobId}'`);
   } else {
+    if (stepScalar(sourceStep, 'shell') !== null) {
+      errors.push(`aggregate source step '${aggregate.sourceStepName}' cannot override the runner shell`);
+    }
     if (stepScalar(sourceStep, 'if') !== null) {
       errors.push(`aggregate source step '${aggregate.sourceStepName}' cannot use a step-level if`);
     }
@@ -174,8 +376,16 @@ function validateAggregate(check, jobs) {
     if (stepRun(sourceStep) !== aggregate.sourceRun) {
       errors.push(`aggregate source step '${aggregate.sourceStepName}' must run '${aggregate.sourceRun}'`);
     }
+    const actualWorkingDirectory = stepScalar(sourceStep, 'working-directory');
+    if (actualWorkingDirectory !== aggregate.sourceWorkingDirectory) {
+      errors.push(`aggregate source step '${aggregate.sourceStepName}' working-directory must remain ${JSON.stringify(aggregate.sourceWorkingDirectory)}`);
+    }
     const sourceEnv = nestedScalarMap(sourceStep, 'env', 8) ?? new Map();
-    for (const [key, expectedValue] of Object.entries(aggregate.sourceEnv)) {
+    const expectedSourceEnv = new Map(Object.entries(aggregate.sourceEnv));
+    if (sourceEnv.size !== expectedSourceEnv.size) {
+      errors.push(`aggregate source step '${aggregate.sourceStepName}' env keys must exactly match the manifest`);
+    }
+    for (const [key, expectedValue] of expectedSourceEnv) {
       if (sourceEnv.get(key) !== expectedValue) {
         errors.push(`aggregate source step '${aggregate.sourceStepName}' env '${key}' must remain '${expectedValue}'`);
       }
@@ -193,18 +403,25 @@ function validateAggregate(check, jobs) {
   if (stepScalar(aggregateStep, 'continue-on-error') !== null) {
     errors.push(`aggregate result step '${aggregate.aggregateStepName}' cannot use continue-on-error`);
   }
-  const run = stepRun(aggregateStep) ?? '';
-  const resultAssignment = new RegExp(
-    `RESULT=["']\\$\\{\\{\\s*${escapeRegExp(aggregate.resultExpression)}\\s*\\}\\}["']`,
-  );
-  if (!resultAssignment.test(run)) {
-    errors.push(`aggregate result step must consume '${aggregate.resultExpression}'`);
+  if (stepRun(aggregateStep) !== aggregate.aggregateRun) {
+    errors.push(`aggregate result step must run '${aggregate.aggregateRun}' exactly`);
   }
-  const failureCondition = new RegExp(
-    `if\\s+\\[\\s*["']?\\$RESULT["']?\\s*!=\\s*["']${escapeRegExp(aggregate.successResult)}["']\\s*\\]\\s*;\\s*then[\\s\\S]*?\\bexit\\s+1\\b[\\s\\S]*?\\bfi\\b`,
-  );
-  if (!failureCondition.test(run)) {
-    errors.push(`aggregate result step must exit 1 when result is not '${aggregate.successResult}'`);
+  if (stepScalar(aggregateStep, 'shell') !== null) {
+    errors.push(`aggregate result step '${aggregate.aggregateStepName}' cannot override the runner shell`);
+  }
+  const aggregateEnv = nestedScalarMap(aggregateStep, 'env', 8) ?? new Map();
+  const expectedAggregateEnv = new Map([
+    ['CLASSIFIER_RESULT', `\${{ ${aggregate.classifierResultExpression} }}`],
+    ['EXPECTED_WORK', `\${{ ${aggregate.scopeExpression} }}`],
+    ['SOURCE_RESULT', `\${{ ${aggregate.resultExpression} }}`],
+  ]);
+  if (aggregateEnv.size !== expectedAggregateEnv.size) {
+    errors.push('aggregate result step env keys must exactly match the manifest expressions');
+  }
+  for (const [key, expectedValue] of expectedAggregateEnv) {
+    if (aggregateEnv.get(key) !== expectedValue) {
+      errors.push(`aggregate result step env '${key}' must consume '${expectedValue}'`);
+    }
   }
   return errors;
 }
@@ -247,6 +464,36 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
   if (!Number.isSafeInteger(manifest.integrationId) || manifest.integrationId <= 0) {
     errors.push('manifest integrationId must be a positive integer');
   }
+  const pullRequestPolicy = manifest.pullRequestPolicy;
+  if (!pullRequestPolicy || typeof pullRequestPolicy !== 'object' || Array.isArray(pullRequestPolicy)) {
+    errors.push('manifest pullRequestPolicy must be an object');
+  } else {
+    const actualFields = Object.keys(pullRequestPolicy).sort();
+    const expectedFields = [...PULL_REQUEST_POLICY_FIELDS].sort();
+    if (JSON.stringify(actualFields) !== JSON.stringify(expectedFields)) {
+      errors.push(`manifest pullRequestPolicy must define exactly: ${expectedFields.join(', ')}`);
+    }
+    if (!Number.isSafeInteger(pullRequestPolicy.requiredApprovingReviewCount)
+      || pullRequestPolicy.requiredApprovingReviewCount < 1) {
+      errors.push('manifest pullRequestPolicy requires at least one approving review');
+    }
+    for (const field of PULL_REQUEST_POLICY_FIELDS.filter(
+      field => field !== 'requiredApprovingReviewCount',
+    )) {
+      if (typeof pullRequestPolicy[field] !== 'boolean') {
+        errors.push(`manifest pullRequestPolicy '${field}' must be boolean`);
+      }
+    }
+    for (const field of [
+      'requireCodeOwnerReview',
+      'requireLastPushApproval',
+      'requiredReviewThreadResolution',
+    ]) {
+      if (pullRequestPolicy[field] !== true) {
+        errors.push(`manifest pullRequestPolicy cannot weaken '${field}'`);
+      }
+    }
+  }
   if (manifest.requiredChecks.length === 0) {
     errors.push('invalid manifest: requiredChecks must not be empty');
     return errors;
@@ -256,6 +503,41 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
   if (jobs.size < 3) {
     errors.push(`workflow job parsing failed: only ${jobs.size} job(s) found`);
   }
+  errors.push(...validatePinnedWorkflowUses([{ path: workflowPath, content: ciContent }]));
+  if (runShellDefault(ciContent, 0) !== null) {
+    errors.push('workflow-level defaults.run.shell cannot override required command execution');
+  }
+
+  const changeScopeJob = jobs.get('change-scope');
+  if (!changeScopeJob) {
+    errors.push("job 'change-scope' must exist and checkout the workflow commit");
+  } else {
+    errors.push(...checkoutProvenanceErrors(changeScopeJob, 'change-scope'));
+  }
+
+  const secretScanJob = jobs.get('secret-scan');
+  if (secretScanJob) {
+    const operationalStepName = 'Verify repository operational contracts';
+    const operationalStep = parseNamedSteps(secretScanJob).get(operationalStepName);
+    if (!operationalStep) {
+      errors.push(`required operational contracts step '${operationalStepName}' is missing from job 'secret-scan'`);
+    } else {
+      if (stepScalar(operationalStep, 'if') !== null) {
+        errors.push('required operational contracts step cannot use a step-level if');
+      }
+      if (stepScalar(operationalStep, 'continue-on-error') !== null) {
+        errors.push('required operational contracts step cannot use continue-on-error');
+      }
+      if (stepScalar(operationalStep, 'shell') !== null) {
+        errors.push('required operational contracts step cannot override the runner shell');
+      }
+      if (stepRun(operationalStep) !== 'npm run test:operational-contracts') {
+        errors.push("required operational contracts step must run 'npm run test:operational-contracts' exactly");
+      }
+    }
+  }
+
+  errors.push(...validateCriticalSteps(manifest.criticalSteps, jobs));
 
   const seenContexts = new Set();
   const checksByJob = new Map();
@@ -281,6 +563,7 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
       }
       continue;
     }
+    errors.push(...checkoutProvenanceErrors(jobBlock, jobId));
 
     const jobName = directScalar(jobBlock, 'name');
     if (jobName !== null) {
@@ -289,6 +572,22 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
     const continueOnError = directScalar(jobBlock, 'continue-on-error');
     if (continueOnError !== null) {
       errors.push(`job-level continue-on-error on required job '${jobId}' weakens its blocking result`);
+    }
+
+    const serializedNeeds = checks.map(check => JSON.stringify(check.needs ?? []));
+    const expectedNeedsDefinitions = new Set(serializedNeeds);
+    if (expectedNeedsDefinitions.size !== 1) {
+      errors.push(`required check mappings for job '${jobId}' disagree on needs`);
+    } else {
+      const expectedNeeds = JSON.parse(serializedNeeds[0]);
+      if (!Array.isArray(expectedNeeds) || expectedNeeds.some(value => typeof value !== 'string' || !value)) {
+        errors.push(`required check mappings for job '${jobId}' have invalid needs`);
+      } else {
+        const actualNeeds = directNeeds(jobBlock);
+        if (JSON.stringify(actualNeeds) !== JSON.stringify(expectedNeeds)) {
+          errors.push(`required job '${jobId}' needs ${JSON.stringify(expectedNeeds)} but workflow has ${JSON.stringify(actualNeeds)}`);
+        }
+      }
     }
 
     const expectedConditions = new Set(checks.map(check => check.jobIf ?? ''));
@@ -377,6 +676,20 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
     errors.push(...validateAggregate(check, jobs));
   }
 
+  const shellProtectedJobs = new Set(['change-scope', 'secret-scan']);
+  for (const check of manifest.requiredChecks) {
+    if (typeof check?.jobId === 'string') shellProtectedJobs.add(check.jobId);
+    if (typeof check?.aggregate?.sourceJobId === 'string') {
+      shellProtectedJobs.add(check.aggregate.sourceJobId);
+    }
+  }
+  for (const jobId of shellProtectedJobs) {
+    const job = jobs.get(jobId);
+    if (job && runShellDefault(job, 4) !== null) {
+      errors.push(`job '${jobId}' defaults.run.shell cannot override required command execution`);
+    }
+  }
+
   return errors;
 }
 
@@ -410,4 +723,17 @@ export function compareRequiredChecks(expectedContexts, actualChecks, expectedIn
 
 export function compareRequiredContexts(expectedContexts, actualContexts) {
   return compareRequiredChecks(expectedContexts, actualContexts);
+}
+
+export function comparePullRequestPolicy(expectedPolicy, actualPolicy) {
+  const errors = [];
+  if (!actualPolicy || typeof actualPolicy !== 'object' || Array.isArray(actualPolicy)) {
+    return ['pull request policy is missing or unreadable'];
+  }
+  for (const field of PULL_REQUEST_POLICY_FIELDS) {
+    if (actualPolicy[field] !== expectedPolicy?.[field]) {
+      errors.push(`pull request policy '${field}' expected ${String(expectedPolicy?.[field])} but found ${String(actualPolicy[field])}`);
+    }
+  }
+  return errors;
 }

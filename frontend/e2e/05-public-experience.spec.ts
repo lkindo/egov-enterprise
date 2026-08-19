@@ -30,7 +30,6 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             // Navigate to ensure userPage has a valid session context with localStorage
             await userPage.goto('/admin/survey/polls/participate');
             await userPage.waitForLoadState('domcontentloaded');
-            await userPage.waitForTimeout(1000);
             
             // Cast vote directly via API using userPage's auth context
             await userSurvey.voteByPollSn(pollSn);
@@ -62,17 +61,17 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
         await test.step('User: Verify Promotion Visibility', async () => {
             console.log(`>>> Verifying popup and banner on Dashboard`);
             await userPage.goto('/');
-            
-            // Wait for potential server action delay
-            await userPage.waitForTimeout(3000);
 
             // Popups might take a moment to render or require a refresh
             const popupTitleLoc = userPage.getByText(popupTitle);
             for (let i = 0; i < 3; i++) {
-                if (await popupTitleLoc.isVisible({ timeout: 5000 }).catch(() => false)) break;
+                const popupVisible = await popupTitleLoc.first()
+                    .waitFor({ state: 'visible', timeout: 5000 })
+                    .then(() => true)
+                    .catch(() => false);
+                if (popupVisible) break;
                 console.log(`>>> [Promotion] Popup not found (attempt ${i+1}), reloading...`);
                 await userPage.reload();
-                await userPage.waitForTimeout(2000);
             }
 
             // [E2E 감사 B] else-warn 통과 제거 — 관리자가 만든 팝업/배너가 사용자에게 실제로 보여야 한다(무조건 단언).
@@ -88,14 +87,25 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             const bannerTitleLoc = userPage.getByText(bannerTitle).first();
             const nextSlideBtn = userPage.getByRole('button', { name: '다음 슬라이드' });
 
-            if (!(await bannerTitleLoc.isVisible({ timeout: 5000 }).catch(() => false))) {
+            const bannerVisible = await bannerTitleLoc
+                .waitFor({ state: 'visible', timeout: 5000 })
+                .then(() => true)
+                .catch(() => false);
+            if (!bannerVisible) {
                 // 슬라이드가 1장뿐이면 이동 버튼이 없다(그 경우 위 검사로 이미 판정된다).
-                const hasNext = await nextSlideBtn.isVisible({ timeout: 5000 }).catch(() => false);
+                const hasNext = await nextSlideBtn
+                    .waitFor({ state: 'visible', timeout: 5000 })
+                    .then(() => true)
+                    .catch(() => false);
                 if (hasNext) {
                     // 한 바퀴 돌면 반드시 만난다. 여유를 두되 무한 루프는 만들지 않는다.
                     for (let i = 0; i < 20; i++) {
                         await nextSlideBtn.click();
-                        if (await bannerTitleLoc.isVisible({ timeout: 1000 }).catch(() => false)) break;
+                        const currentSlideVisible = await bannerTitleLoc
+                            .waitFor({ state: 'visible', timeout: 1000 })
+                            .then(() => true)
+                            .catch(() => false);
+                        if (currentSlideVisible) break;
                     }
                 }
             }
@@ -126,15 +136,17 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             const faqTab = userPage.getByRole('button', { name: /고객지원|FAQ/ }).first();
             await expect(faqTab).toBeVisible({ timeout: 15000 });
             await faqTab.click();
-            await userPage.waitForTimeout(3000); 
-            await userPage.waitForLoadState('domcontentloaded');
             
             console.log(`>>> [FAQ] Checking visibility for: ${faqQuestion}`);
             const faqItem = userPage.getByText(faqQuestion).first();
             
             // Eventual consistency retry loop
             for (let i = 0; i < 5; i++) {
-                if (await faqItem.isVisible({ timeout: 2000 }).catch(() => false)) break;
+                const faqVisible = await faqItem
+                    .waitFor({ state: 'visible', timeout: 2000 })
+                    .then(() => true)
+                    .catch(() => false);
+                if (faqVisible) break;
                 
                 console.log(`>>> [FAQ] Not found (attempt ${i+1}), searching/reloading...`);
                 const searchInput = userPage.getByPlaceholder(/검색|Search|키워드/i);
@@ -144,7 +156,6 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
                 } else {
                     await userPage.reload();
                 }
-                await userPage.waitForTimeout(2000);
             }
 
             await expect(faqItem).toBeVisible({ timeout: 10000 });
@@ -177,7 +188,6 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             // Navigate to participate page to establish context
             await userPage.goto('/admin/survey/polls/participate');
             await userPage.waitForLoadState('domcontentloaded');
-            await userPage.waitForTimeout(1000);
             
             // First vote - use API for reliability
             await userSurvey.voteByPollSn(pollSn);
@@ -191,13 +201,11 @@ test.describe('Tier 5: Public Engagement & Experience', () => {
             await expect(surveyCard).toBeVisible({ timeout: 10000 });
             await surveyCard.click();
             
-            // Wait for view to load
-            await userPage.waitForTimeout(1000);
-            
             // [E2E 감사 B] '!submitBtn.isVisible()' 분기 제거 — 깨진/빈 참여 화면(버튼 미렌더)도 통과시키던
             // 항상-참 disjunct였음. 이미-참여 메시지 또는 명시적 disabled 상태만 유효한 차단 증거로 인정한다.
             const message = userPage.getByText(/이미 참여|already participated|참여.*완료/i).first();
             const submitBtn = userPage.getByRole('button', { name: /투표|제출|Vote/i }).first();
+            await expect(message.or(submitBtn)).toBeVisible({ timeout: 10000 });
 
             const messageVisible = await message.isVisible().catch(() => false);
             const btnDisabled = await submitBtn.isDisabled().catch(() => false);

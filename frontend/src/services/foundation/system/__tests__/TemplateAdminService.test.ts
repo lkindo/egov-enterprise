@@ -46,18 +46,16 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-// client 모듈 전체를 대체한다 — axios 인스턴스/인터셉터를 로드하지 않기 위해 hoisted 로 선언한다.
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  patch: vi.fn(),
-  delete: vi.fn(),
+// axios 인스턴스/인터셉터는 로드하지 않고, 파일별 mock 격리는 유지한다.
+vi.mock('@/lib/api/client', async () => ({
+  default: (await import('@/test-utils/api-client-test-double')).apiClientTestDouble,
 }));
 
-vi.mock('@/lib/api/client', () => ({ default: client }));
-
 import { templateAdminService, type TmplatInfo } from '../TemplateAdminService';
+import {
+  apiClientTestDouble as client,
+  resetApiClientTestDouble,
+} from '@/test-utils/api-client-test-double';
 
 /**
  * 이 서비스의 모든 요청이 공유하는 접두.
@@ -76,7 +74,7 @@ const newTemplate: TmplatInfo = {
 };
 
 describe('TemplateAdminService — 템플릿 관리자 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => resetApiClientTestDouble());
 
   describe('템플릿 목록 조회 (getTemplateList)', () => {
     it('목록은 admin/system/templates 로 나가며 컬렉션 경로에 후행 슬래시가 붙지 않는다', async () => {

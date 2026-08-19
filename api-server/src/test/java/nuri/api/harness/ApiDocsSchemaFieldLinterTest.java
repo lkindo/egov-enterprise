@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -52,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(api-docs.json 파싱 + 클래스패스 리플렉션).
  * pre-push 의 {@code :api-server:harnessTest} 로 기계강제된다.
  */
+@Tag("governance-harness")
 class ApiDocsSchemaFieldLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(ApiDocsSchemaFieldLinterTest.class);
@@ -146,7 +148,7 @@ class ApiDocsSchemaFieldLinterTest {
 
     private Map<String, Set<String>> loadSchemaProperties() throws IOException {
         Path apiDocs = resolveApiDocs();
-        JsonNode root = new ObjectMapper().readTree(Files.readString(apiDocs));
+        JsonNode root = new ObjectMapper().readTree(HarnessSourceIndex.read(apiDocs));
         JsonNode schemas = root.path("components").path("schemas");
         if (!schemas.isObject()) {
             fail("게이트 무결성 파손: api-docs.json 에 components.schemas 가 없습니다 (" + apiDocs + ").");

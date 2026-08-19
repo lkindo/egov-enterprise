@@ -1,12 +1,12 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -47,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔. 경로 해석은 IdentityAxisLinterTest 관행을 따른다.
  */
+@Tag("governance-harness")
 class SignupContractLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(SignupContractLinterTest.class);
@@ -128,7 +129,7 @@ class SignupContractLinterTest {
         }
 
         // ── ① 요청 필드 집합 동결 ────────────────────────────────────────────────
-        String dtoCode = stripAnnotations(stripComments(Files.readString(dtoFile, StandardCharsets.UTF_8)));
+        String dtoCode = stripAnnotations(stripComments(HarnessSourceIndex.read(dtoFile)));
         String classBody = extractClassBody(dtoCode, DTO_CLASS);
         if (classBody == null) {
             fail("게이트 무결성 파손: " + DTO_PATH + " 에서 class " + DTO_CLASS + " 의 본문을 추출하지 못했습니다."
@@ -162,7 +163,7 @@ class SignupContractLinterTest {
         }
 
         // ── ② signup() 권한 상수 고정 ───────────────────────────────────────────
-        String serviceCode = stripComments(Files.readString(serviceFile, StandardCharsets.UTF_8));
+        String serviceCode = stripComments(HarnessSourceIndex.read(serviceFile));
         SignupSlice slice = sliceMethod(serviceCode, SIGNUP_METHOD, DTO_CLASS);
         if (slice == null) {
             fail("게이트 무결성 파손: " + SERVICE_PATH + " 에서 " + SIGNUP_METHOD + "(" + DTO_CLASS

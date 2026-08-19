@@ -6,6 +6,7 @@ import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -50,6 +50,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>이 린터는 Spring 컨텍스트를 띄우지 않는 순수 정적 테스트다(엔티티는 클래스패스 스캔·리플렉션).
  */
+@Tag("governance-harness")
 class UniqueConstraintMirrorLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(UniqueConstraintMirrorLinterTest.class);
@@ -135,20 +136,16 @@ class UniqueConstraintMirrorLinterTest {
     private Map<String, List<Set<String>>> collectDbUniqueColumnSets() throws IOException {
         Path migrationDir = resolveMigrationDir();
         Map<String, List<Set<String>>> result = new HashMap<>();
-        try (Stream<Path> paths = Files.walk(migrationDir)) {
-            List<Path> files = paths.filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".sql"))
-                    .sorted()
-                    .collect(Collectors.toList());
-            for (Path p : files) {
-                String sql = stripComments(Files.readString(p));
-                // 문장(;) 단위로 분리해 매칭 — ALTER TABLE ↔ ADD CONSTRAINT 의 DOTALL 매칭이
-                // 다른 문장으로 새어나가 테이블↔UNIQUE 오귀속되는 것을 방지.
-                for (String stmt : sql.split(";")) {
-                    addMatches(ADD_UNIQUE, stmt, result);
-                    addMatches(CREATE_UNIQUE_INDEX, stmt, result);
-                    removeDroppedColumnUniques(stmt, result);
-                }
+        List<Path> files = HarnessSourceIndex.filesUnder(migrationDir, p -> p.toString().endsWith(".sql"))
+                .stream().sorted().collect(Collectors.toList());
+        for (Path p : files) {
+            String sql = stripComments(HarnessSourceIndex.read(p));
+            // 문장(;) 단위로 분리해 매칭 — ALTER TABLE ↔ ADD CONSTRAINT 의 DOTALL 매칭이
+            // 다른 문장으로 새어나가 테이블↔UNIQUE 오귀속되는 것을 방지.
+            for (String stmt : sql.split(";")) {
+                addMatches(ADD_UNIQUE, stmt, result);
+                addMatches(CREATE_UNIQUE_INDEX, stmt, result);
+                removeDroppedColumnUniques(stmt, result);
             }
         }
         return result;

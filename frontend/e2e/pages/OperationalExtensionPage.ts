@@ -47,9 +47,9 @@ export class OperationalExtensionPage {
 
     async switchReportTab(tab: string) {
         console.log(`>>> Switching to report tab: ${tab}`);
-        await this.page.getByText(tab, { exact: true }).click();
-        await this.page.waitForLoadState('networkidle');
-        await this.page.waitForTimeout(1000); // Buffer for React state sync
+        const tabControl = this.page.getByRole('tab', { name: tab, exact: true });
+        await tabControl.click();
+        await expect(tabControl).toHaveAttribute('aria-selected', 'true');
     }
 
     // Rough Map

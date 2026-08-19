@@ -54,9 +54,6 @@ export class NotificationPage {
         // Wait for the opacity-60 class to be applied (visual confirmation of state change)
         // Bento Grid uses opacity-60 for read items
         await expect(notificationItem).toHaveClass(/opacity-60/, { timeout: 15000 });
-        
-        // Also wait a bit for the badge count to sync (background update)
-        await this.page.waitForTimeout(1000);
     }
 
     async readAllNotifications() {

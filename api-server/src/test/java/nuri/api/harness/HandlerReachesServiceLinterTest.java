@@ -1,12 +1,12 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,7 +16,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -52,6 +51,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔. 경로 해석은 IdentityAxisLinterTest 관행을 따른다.
  */
+@Tag("governance-harness")
 class HandlerReachesServiceLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(HandlerReachesServiceLinterTest.class);
@@ -114,7 +114,7 @@ class HandlerReachesServiceLinterTest {
         List<String> extractionFailures = new ArrayList<>();
 
         for (Path file : controllers) {
-            String src = stripComments(Files.readString(file, StandardCharsets.UTF_8));
+            String src = stripComments(HarnessSourceIndex.read(file));
             boolean wired = STORAGE_DEPENDENCY.matcher(src).find();
 
             Matcher m = WRITE_MAPPING.matcher(src);
@@ -181,23 +181,11 @@ class HandlerReachesServiceLinterTest {
     // ---- 수집 ---------------------------------------------------------------
 
     private static List<Path> collectRestControllers() throws IOException {
-        Path root = resolveRepoRoot();
         List<Path> result = new ArrayList<>();
-        for (String module : MODULES) {
-            Path srcDir = root.resolve(module).resolve("src/main/java");
-            if (!Files.exists(srcDir)) {
-                continue;
-            }
-            try (Stream<Path> paths = Files.walk(srcDir)) {
-                List<Path> javaFiles = paths.filter(Files::isRegularFile)
-                        .filter(p -> p.toString().endsWith(".java"))
-                        .toList();
-                for (Path p : javaFiles) {
-                    String src = stripComments(Files.readString(p, StandardCharsets.UTF_8));
-                    if (REST_CONTROLLER.matcher(src).find()) {
-                        result.add(p);
-                    }
-                }
+        for (Path source : HarnessSourceIndex.productionJavaSources(MODULES)) {
+            String src = stripComments(HarnessSourceIndex.read(source));
+            if (REST_CONTROLLER.matcher(src).find()) {
+                result.add(source);
             }
         }
         return result;

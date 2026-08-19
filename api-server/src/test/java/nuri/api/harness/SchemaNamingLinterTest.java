@@ -1,6 +1,7 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,7 +15,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -32,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>예외 체계: 예외 대장(docs/02-architecture/db-naming-exceptions.md)과 동기화된 화이트리스트 +
  * 위반 라인 끝 '-- naming-linter:ignore' 지시어(사유 병기 필수).
  */
+@Tag("governance-harness")
 class SchemaNamingLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(SchemaNamingLinterTest.class);
@@ -86,13 +87,10 @@ class SchemaNamingLinterTest {
 
         List<String> violations = new ArrayList<>();
 
-        try (Stream<Path> paths = Files.walk(migrationDir)) {
-            paths.filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".sql"))
-                    .filter(p -> !EXCLUDED_FILES.contains(p.getFileName().toString()))
-                    .sorted()
-                    .forEach(path -> auditFile(path, violations));
-        }
+        HarnessSourceIndex.filesUnder(migrationDir, p -> p.toString().endsWith(".sql")).stream()
+                .filter(p -> !EXCLUDED_FILES.contains(p.getFileName().toString()))
+                .sorted()
+                .forEach(path -> auditFile(path, violations));
 
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -115,7 +113,7 @@ class SchemaNamingLinterTest {
         String fileName = path.getFileName().toString();
         String raw;
         try {
-            raw = Files.readString(path);
+            raw = HarnessSourceIndex.read(path);
         } catch (IOException e) {
             fail("Failed to read migration file: " + path);
             return;

@@ -25,44 +25,48 @@
 ```
 push/PR / workflow_dispatch
     │
-    └─ backend-build (Ubuntu, timeout 75분, concurrency 중복취소)
-        ├─ Strict Schema Integrity Validation (엔티티/마이그레이션 변경 시, --no-build-cache)
-        ├─ Gradle 빌드·테스트·커버리지 래칫 (build jacocoRootCoverageVerification check)
-        ├─ Pre-pull postgres:17 & Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)
-        ├─ api-docs.json 신선도 게이트 (git diff --exit-code → 계약 드리프트 시 FAIL)
-        └─ JaCoCo 커버리지 업로드
-        │
-        ├─ frontend-build (needs: backend-build)
-        │   ├─ pnpm install --frozen-lockfile
-        │   ├─ codegen:verify / codegen:verify:zod (계약 드리프트 게이트 → 불일치 시 FAIL)
-        │   ├─ Lint (ESLint, error 0건 하드게이트)
-        │   ├─ Security Audit (critical — blocking / high — advisory)
-        │   ├─ Next.js 빌드 및 Vitest 단위 테스트
-        │   └─ Next.js build cache 업로드
-        │
-        ├─ mutation-scope (needs: backend-build, 10개 스코프 병렬)
-        │   └─ 증분 PIT (STRICT_MUTATION=true, Mutation Score 75% HARD 게이트)
-        ├─ mutation-test (needs: mutation-scope)
-        │   └─ 매트릭스 전체 결과 집계 + required check 이름 보존
-        │
-        └─ e2e-tests (needs: backend-build + frontend-build, 3 shard 병렬)
-            ├─ Docker Compose (DB + API)
-            ├─ Playwright 테스트
-            └─ e2e-merge-reports (needs: e2e-tests) — Shard 리포트 병합
+    └─ change-scope (삭제·rename old path를 포함한 fail-closed 분류)
+        ├─ secret-scan (운영 계약·snapshot readiness·PR runtime 의존성 review·비밀 스캔)
+        ├─ backend-scope (backend=true인 경우의 실제 무거운 실행)
+        │   ├─ Gradle 빌드·테스트·커버리지·OpenAPI 신선도
+        │   └─ schema=true일 때만 PostgreSQL schema-validation
+        ├─ backend-build (backend-scope를 집계해 항상 완료되는 안정 required context)
+        ├─ frontend-scope (frontend=true인 경우의 실제 무거운 실행, backend와 독립)
+        │   └─ codegen·lint·audit·Next build·Vitest coverage·bundle budget
+        ├─ frontend-build (frontend-scope를 집계해 항상 완료되는 안정 required context)
+        ├─ mutation-scope (mutation=true, registry의 PIT 스코프 병렬)
+        │   └─ mutation-test (항상 완료되는 안정 required aggregate)
+        └─ e2e-tests (e2e=true, backend/frontend 결과 확인 후 내부 3 shard)
+            ├─ 실행시간 profile 기반 명시적 spec 분배
+            ├─ e2e-merge-reports (비필수 리포트 병합)
+            └─ e2e-test (항상 완료되는 안정 required aggregate)
 ```
 
-> **CI와 로컬 피드백의 경계**: pre-commit/pre-push는 빠른 범위별 피드백이며 일부 계약 검사를 선행할 수 있지만 우회 가능하다. 아래 required CI가 병합 권위를 소유하며 현재 커밋의 실제 check 상태로 판정한다.
+Gradle PR 의존성 그래프는 write token으로 PR 코드를 실행하지 않도록 다음 신뢰 경계로 분리한다.
+
+```
+dependency-submission.yml (pull_request, contents:read)
+    └─ Gradle graph 생성·artifact upload
+        └─ dependency-submission-publish.yml (workflow_run, actions:read + contents:write)
+            └─ checkout/run 없이 공식 Gradle action으로 artifact 제출
+                └─ secret-scan: base/head snapshot을 최대 600초 확인
+                    └─ runtime High 이상 신규 의존성 review
+```
+
+`workflow_run` publisher는 해당 workflow 파일이 기본 브랜치에 존재한 뒤부터 활성화된다. 따라서 정적 계약 검증만으로 public fork 경로의 운영 집행을 완료로 보지 않으며, 기본 브랜치 반영 후 고위험 runtime 의존성 probe PR로 artifact 제출·readiness·차단을 확인한다. `push`와 `workflow_dispatch`에서는 producer workflow의 trusted job이 그래프를 직접 제출한다.
+
+> **CI와 로컬 피드백의 경계**: pre-commit/pre-push는 빠른 범위별 피드백이며 일부 계약 검사를 선행할 수 있지만 우회 가능하다. required CI 5개가 병합 권위를 소유하며 현재 커밋의 실제 check 상태로 판정한다. `backend-build`·`frontend-build`·`e2e-test`·`mutation-test`는 scope가 선택되면 source 성공만, 선택되지 않으면 명시적 skip만 허용하는 안정 aggregate라 docs-only SHA에서도 완료 상태가 남는다.
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
 > - **스키마 무결성 (HARD, CI FAIL)**: 엔티티/마이그레이션 변경 감지 시 `Strict Schema Integrity Validation` 이 `--no-build-cache` 로 `:foundation:test` 를 강제 실행하며, Testcontainers 기반 `Real PostgreSQL 17 Schema Validation` 이 Flyway 전량 적용 + Hibernate `ddl-auto:validate` 로 물리 스키마 정합성을 검증.
-> - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 규칙 0건 유지(`pnpm run lint`) 및 `pnpm audit --audit-level critical` 차단.
+> - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 규칙 0건 유지(`pnpm run lint`). 의존성 감사는 `pnpm audit --json` 단일 조회를 정책 evaluator가 판정해 Critical 전체와 운영 의존성 High를 차단하고, 개발 전용 High는 warning으로 남기며 형식·네트워크 오류는 실패 처리한다.
 > - **증분 뮤테이션 (HARD, CI FAIL)**: `mutation-scope`는 10개 PIT 스코프 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. `mutation-test`는 매트릭스 전체 결론을 집계하고 required check 이름을 보존한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
-> - **OWASP Dependency-Check 분리**: 매 푸시 파이프라인 병목 방지를 위해 별도의 주간 스케줄 워크플로우(`.github/workflows/dependency-check.yml`)로 분리 운용 중.
+> - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
-> **브랜치 보호 SSOT와 한계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치와 exact required context, 원본 job/matrix 매핑, 신뢰할 GitHub Actions integration ID를 정의한다. `scripts/verify-branch-protection.mjs`는 이 명세와 live ruleset의 required check·strict/provider/bypass 정합을 확인한다. 현재 verifier와 manifest는 approval 수, code-owner, last-push, stale review, thread resolution 정책을 exact-match하지 않으므로 그 항목까지 보호됐다는 증거로 사용하지 않는다. 외부 상태와 개선안은 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
+> **브랜치 보호 SSOT와 live 경계**: `.github/required-checks.json`이 보호·릴리스 기준 브랜치, 안정 required context 5개, 원본 job/matrix, 신뢰할 GitHub Actions integration ID와 review policy 목표를 정의한다. `scripts/verify-branch-protection.mjs`는 required check·strict/provider/bypass뿐 아니라 approval 수, code-owner, last-push, stale review, thread resolution을 live ruleset과 exact-match한다. 저장소 명세가 바뀌어도 원격 설정은 자동 변경되지 않으므로 `verify:ops`가 green이기 전에는 적용 완료로 보지 않는다. 현재 외부 drift는 [공용 gap 인덱스](../../.agent/memory/known-gaps.md)를 따른다.
 
 ### 실행 트리거
 
-- **Push**: `main`, `master`, `feature/**` 브랜치
+- **Push**: `main`, `master` 브랜치
 - **Pull Request**: base 브랜치 제한 없이 모든 PR
 - **Workflow Dispatch**: GitHub UI / CLI 에서 수동 실행 지원 (`workflow_dispatch`)
 - **Concurrency**: 동일 ref 연속 푸시 시 이전 실행 자동 중단 (`concurrency: group: ci-${{ github.ref }}, cancel-in-progress: true`)
@@ -85,7 +89,7 @@ push/PR / workflow_dispatch
 ### 실행 명령어
 
 ```bash
-# 1. 스키마/엔티티 변경 감지 시 (dorny/paths-filter)
+# 1. fail-closed classifier가 schema 영향으로 판정했을 때
 ./gradlew :foundation:test --no-build-cache
 
 # 2. 메인 빌드 및 테스트 (OpenAPI Spec 정적 추출 포함)
@@ -137,11 +141,19 @@ pnpm install --frozen-lockfile
 pnpm run codegen:verify        # 계약 드리프트 게이트 (spec ↔ 생성 타입)
 pnpm run codegen:verify:zod    # 계약 드리프트 게이트 (spec ↔ Zod)
 pnpm run lint                  # ESLint error 규칙 0건 게이트
-pnpm audit --audit-level critical # 보안 감사 (critical 차단)
-pnpm audit --audit-level high # 보안 감사 (high 권고, advisory)
+node ../scripts/frontend-audit-policy.mjs # pnpm audit JSON 단일 조회·정책 판정
 pnpm run build
-pnpm run test
+pnpm run test:coverage
 ```
+
+프론트 의존성 감사 정책은 다음과 같다.
+
+| 결과 | CI 판정 |
+|---|---|
+| Critical advisory | 운영/개발 구분 없이 차단 |
+| High + 운영 의존성 | 차단 |
+| High + 개발 전용 의존성 | GitHub warning, 비차단 |
+| JSON 형식·severity/count 불일치, 실행/네트워크 오류 | fail-closed |
 
 ### 생성 아티팩트
 
@@ -155,7 +167,7 @@ pnpm run test
 
 ### Playwright Sharding
 
-3 개의 shard 로 분할하여 병렬 실행:
+`1/3`·`2/3`·`3/3`은 내부 실행 job label이다. 브랜치 보호에는 shard 개수와 무관한 안정 context `e2e-test` 하나만 노출한다. 실제 spec 배정은 Playwright의 개수 기반 `--shard`가 아니라 [실행시간 profile](../../frontend/e2e/shard-duration-profile.json)을 [planner](../../scripts/e2e-shard-plan.mjs)가 LPT 방식으로 균형 분배한다. 새·삭제 spec, 잘못된 source 증거, 누락·중복 또는 15% 초과 예상 편차는 운영 계약이 실패 처리한다.
 
 ```yaml
 strategy:
@@ -166,9 +178,10 @@ strategy:
 
 ### 실행 흐름
 
-1. **Docker Compose 시작**
+1. **API 이미지 빌드와 Docker Compose 시작**
    ```bash
-   docker-compose up -d db api
+   docker compose build api
+   docker compose up -d db api
    ```
 
 2. **백엔드 헬스 체크**
@@ -180,16 +193,18 @@ strategy:
 3. **Playwright 테스트 실행**
    ```bash
    cd frontend
-   pnpm run dev -- -p 3001 &
+   pnpm run build
+   pnpm run start:3001 &
    pnpm exec wait-on http://127.0.0.1:3001/login
-   pnpm exec playwright test --shard=1/3
+   mapfile -t E2E_SPECS < <(node ../scripts/e2e-shard-plan.mjs --shard 1/3)
+   pnpm exec playwright test --project=full-suite "${E2E_SPECS[@]}" --reporter=blob,line
    ```
 
 ### 리포트 병합
 
 - **스펙 구성**: `01-core-base` ~ `25-deptjob-workreport-journey` 26개 스펙 파일로 테스트가 정의되어 있다(계층 정의의 SSOT는 [testing-guide.md](./testing-guide.md) §E2E).
 - **Playwright projects 는 2개다**: `setup`(`*.setup.ts`)과 `full-suite`(`*.spec.ts`, `dependencies: [setup]`). 스펙 파일 수와 Playwright project 수를 혼동하지 않고, 현재 값은 `frontend/playwright.config.ts`에서 확인한다.
-- **Sharding (병렬 실행)**: CI 환경에서 전체 테스트 스위트를 3개의 Shard로 분할하여 병렬로 실행함으로써 전체 테스트 시간을 단축합니다.
+- **Sharding (병렬 실행)**: 내부 3개 job은 비용 병렬화를 위한 구현 세부사항이고 required context는 `e2e-test` 하나다. spec별 최근 성공 실행시간이 바뀌면 profile의 source 증거와 `durationsMs`를 함께 갱신한다. 단순 파일 수 균등이나 수동 목록은 사용하지 않는다.
 
 #### 병합 리포트 생성 (`ci.yml`)
 
@@ -224,9 +239,20 @@ strategy:
 
 ## 보안 스캔
 
-### OWASP Dependency-Check (분리 워크플로우)
+### PR 증분 의존성 검사
 
-매 Commit 푸시 빌드의 타임아웃/병목 방지를 위해 OWASP 취약점 스캔은 주간 정기 스케줄 워크플로우(`.github/workflows/dependency-check.yml`)로 분리 운용 중입니다.
+| 통제 | 트리거·경로 | 집행 의미 |
+|---|---|---|
+| Gradle dependency graph | PR read-only producer → trusted `workflow_run` publisher | write token을 가진 job은 PR 코드를 checkout하거나 실행하지 않는다. |
+| Snapshot readiness | `secret-scan`, backend/frontend 영향 PR | GitHub compare API의 base/head snapshot warning이 사라질 때까지 최대 600초 기다리고, 미완전·비재시도 API 오류·시간 초과를 실패 처리한다. |
+| Dependency review | readiness 성공 뒤 `actions/dependency-review-action` | 새 runtime 의존성의 High 이상을 required `secret-scan`에서 차단한다. |
+| Frontend audit policy | `frontend-scope` | lockfile을 한 번 조회해 Critical 전체·운영 High를 차단하고 개발 High만 warning으로 남긴다. |
+
+구성의 회귀 방지는 [`dependency-submission-contract.mjs`](../../scripts/dependency-submission-contract.mjs)와 운영 계약 catalog가 담당한다. public fork에서의 live 증거가 확보되기 전 상태는 [GAP-DEP-001](../../.agent/memory/known-gaps.md)에서 추적한다.
+
+### OWASP Dependency-Check (주간·수동 전수 스캔)
+
+기존 의존성 전수 CVE 검사는 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)로 분리돼 있다. Gradle 설정의 `failBuildOnCVSS = 7`과 달리 workflow의 scan step은 외부 NVD 가용성을 고려해 `continue-on-error`이며 PR required check가 아니다. 단, 애플리케이션 모듈 리포트가 생성되지 않은 실행은 후속 검증 단계가 실패한다. 이 outcome 차이와 대응 SLA는 GAP-DEP-001의 별도 정책 정렬 과제다.
 
 #### 설정 (`build.gradle`)
 

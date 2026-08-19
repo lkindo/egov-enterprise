@@ -1,293 +1,746 @@
 package nuri.api.harness;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.config.YamlPropertiesFactoryBean;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.core.annotation.AnnotationUtils;
-import org.springframework.security.access.annotation.Secured;
+import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Controller;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.mvc.method.RequestMappingInfo;
 import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 
-import java.lang.reflect.Method;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
+import java.util.TreeSet;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * 🔐 Spring Security API 권한 제어 어노테이션 유실 방지 하네스
+ * 쓰기 인가 의미 정책 하네스.
  *
- * <p>화이트리스트(Public API) 또는 DB 구동 인가 대상(URL 매핑)을 제외한 비공개 비즈니스 API 에
- * {@code @PreAuthorize}/{@code @Secured} 등 인가 애노테이션이 선언돼 있는지 리플렉션으로 오딧한다.
+ * <p>종전 구현은 {@code @PreAuthorize}가 <em>존재</em>하기만 하면
+ * {@code permitAll()} 같은 완화도 통과시켰고, 서비스의 수동 소유권 판정은 별도 census 밖이었다.
+ * 이 구현은 {@code config/governance/authorization-policies.json}을 단일 정책표로 삼아 다음을 결속한다.
  *
- * <p><b>⚠ 이 게이트가 실제로 보는 범위 — 2026-08-03 재정정</b>
- *
- * <p>이 절은 두 번 틀렸다. 처음엔 "모든 엔드포인트를 전수 조사" 라는 <b>과장</b>이었고(2026-08-02 정정),
- * 그 다음엔 정정본이 <b>낡아서</b> 틀렸다 — 패키지 skip 이 삭제됐는데 서술은 "3개 클래스만·7.0%" 로
- * 남아 있었다. 게이트의 자기 서술은 집행이 바뀔 때마다 함께 바뀌어야 한다.
- *
- * <p><b>Test#1</b>({@link #auditSecurityAnnotationsOnRestControllers}) — <b>패키지 skip 없음</b>.
- * {@code nuri.api.controller} 하위 <b>전 컨트롤러의 읽기·쓰기 모두</b>를 순회한다.
- * ({@code .business}/{@code .foundation} 을 통째로 건너뛰던 조건은 삭제됐다.)
- * 다만 아래 중 하나에 해당하면 통과시킨다 — <b>이것이 실질 커버리지를 결정한다</b>:
  * <ol>
- *   <li>{@link #PUBLIC_PATH_WHITELIST} 매칭 (공개 API)</li>
- *   <li>{@code @PreAuthorize}/{@code @Secured} 선언이 있음 — <b>내용은 보지 않는다</b></li>
- *   <li>{@link #isDbProtected}: {@code rbac.db-auth.secure-paths} 에 매칭 — 즉 URL 시큐리티에 위임</li>
+ *   <li>Spring MVC가 실제 등록한 모든 POST/PUT/PATCH/DELETE 경로, HTTP 메서드, handler</li>
+ *   <li>합성 애노테이션까지 펼친 정확한 {@code @PreAuthorize} SpEL과 URL 필터 게이트</li>
+ *   <li>{@code STRICT_OWNER}, {@code OWNER_OR_ADMIN}, {@code ADMIN_OR_SYSTEM} 등 도메인 의미</li>
+ *   <li>{@code SecurityUtil} 호출 전수와 Note/Memo/File 등 손수 작성한 guard의 메서드 내부 fingerprint</li>
  * </ol>
  *
- * <p><b>Test#2</b>({@link #auditWriteEndpointAuthorizationOnNonAdminPaths}) — <b>쓰기</b>
- * (POST/PUT/DELETE/PATCH)만 보고, {@code /api/v1/admin/} 접두는 URL 시큐리티에 위임해 skip.
- *
- * <p><b>남아 있는 사각지대 (커버리지를 과신하지 말 것)</b>
- * <ul>
- *   <li><b>3번 통과가 지배적이다.</b> 다수 엔드포인트가 {@code secure-paths} <b>문자열 목록</b> 매칭만으로
- *       통과한다. 그 목록에서 빠진 신규 도메인은 <b>런타임 인가와 이 린터가 동시에</b> 뚫린다 —
- *       단일 실패점이며, 로드맵 P1-22 가 지목한 미해결 항목이다.</li>
- *   <li>2번은 <b>애노테이션의 존재</b>만 본다. {@code @PreAuthorize("isAuthenticated()")} 는 인증만 요구하므로
- *       IDOR 방어력이 없다 — 그럼에도 이 게이트는 통과시킨다(예: {@code FileApiController} 첨부 다운로드).</li>
- * </ul>
- * <p>요컨대 <b>"모든 컨트롤러를 순회한다"는 참이지만 "모든 인가를 검증한다"는 거짓</b>이다.
- * 이 게이트의 그린은 "인가 애노테이션이 빠지지 않았다" 이지 "인가가 옳다" 가 아니다.
- *
- * <p><b>이 게이트가 보장하지 <u>않는</u> 것</b>
- * <ul>
- *   <li>애노테이션의 <b>내용</b>은 보지 않는다. {@code @PreAuthorize("permitAll()")} 도 통과한다.
- *       역할 값 정합은 {@code RbacAuthorizationMatrixTest} 가 담당한다.</li>
- *   <li>DB 구동 인가 판정은 테스트 프로파일에서 {@code tb_prgrm_lst} 가 비어 있어
- *       사실상 {@code rbac.db-auth.secure-paths} 만으로 이뤄진다({@link #initDbProtectedUrls} 의 조회 실패 경로 참조).</li>
- * </ul>
+ * <p><b>정직한 한계</b>: 엔드포인트/애노테이션은 Spring 런타임 리플렉션으로 exact-match한다. 서비스는
+ * 별도 Java AST 라이브러리를 추가하지 않고 주석을 제거한 소스의 메서드 body를 lexical 분석하므로,
+ * 필요한 guard 문장이 같은 메서드에 남는 것은 증명하지만 모든 제어흐름에서 도달함까지 증명하지는 않는다.
+ * 이 한계는 registry에도 기록하며, 실제 guard 완화/삭제 mutation이 red가 되는 것으로 유효성을 보완한다.
  */
 @SpringBootTest(classes = nuri.ApiServerApplication.class)
 @ActiveProfiles("test")
+@Tag("governance-harness")
 class SecurityAuthAnnotationLinterTest {
+
+    private static final String POLICY_FILE = "config/governance/authorization-policies.json";
+    private static final String RBAC_SEED_FILE =
+            "api-server/src/main/resources/db/migration/V2_11__seed_authorization_chain.sql";
+    private static final String ROLE_HIERARCHY_SEED_FILE =
+            "api-server/src/main/resources/db/migration/V2_3__seed_role_hierarchy.sql";
+    private static final String MAIN_APPLICATION_FILE = "api-server/src/main/resources/application.yml";
+    private static final String HELPER_ACTUAL_OUT = "build/harness/authorization-helper-census.actual.txt";
+    private static final String MANUAL_ACTUAL_OUT = "build/harness/authorization-manual-deny-census.actual.txt";
+
+    private static final List<String> SOURCE_ROOTS = List.of(
+            "business-core/src/main/java",
+            "business-app/src/main/java",
+            "api-server/src/main/java",
+            "foundation/src/main/java");
+    private static final Set<RequestMethod> WRITE_METHODS = Set.of(
+            RequestMethod.POST, RequestMethod.PUT, RequestMethod.PATCH, RequestMethod.DELETE);
+    private static final Set<String> KNOWN_POLICIES = Set.of(
+            "PUBLIC",
+            "AUTHENTICATED",
+            "STRICT_SELF",
+            "SELF_WITH_CREDENTIAL",
+            "STRICT_OWNER",
+            "OWNER_OR_ADMIN",
+            "OWNER_OR_ADMIN_OR_CREDENTIAL",
+            "PARTICIPANT_OR_ADMIN",
+            "REACHABILITY_WITH_PRIVACY",
+            "ADMIN_OR_SYSTEM",
+            "ADMIN_ROLE_WITH_HIERARCHY",
+            "SYSTEM_ACCOUNT_IMMUTABLE");
+    private static final Set<String> OWNER_POLICIES = Set.of(
+            "STRICT_SELF",
+            "SELF_WITH_CREDENTIAL",
+            "STRICT_OWNER",
+            "OWNER_OR_ADMIN",
+            "OWNER_OR_ADMIN_OR_CREDENTIAL",
+            "PARTICIPANT_OR_ADMIN",
+            "REACHABILITY_WITH_PRIVACY");
+    private static final Pattern GUARD_CALL = Pattern.compile(
+            "SecurityUtil\\s*\\.\\s*(assertOwnerByEsntlId|assertOwnerOrAdminByEsntlId|assertOwnerOrAdmin|assertAdmin)\\s*\\(");
+    private static final Pattern MANUAL_DENY = Pattern.compile(
+            "CommonErrorCode\\s*\\.\\s*(?:ACCESS_DENIED|HANDLE_ACCESS_DENIED)");
 
     @Autowired
     private WebApplicationContext context;
 
-    @Autowired
-    private org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+    @Value("${security.whitelist:#{T(java.util.Collections).emptyList()}}")
+    private List<String> publicPaths;
 
-    @org.springframework.beans.factory.annotation.Value("${rbac.db-auth.secure-paths:#{T(java.util.Collections).emptyList()}}")
+    @Value("${rbac.db-auth.secure-paths:#{T(java.util.Collections).emptyList()}}")
     private List<String> securePaths;
 
-    private final org.springframework.util.AntPathMatcher pathMatcher = new org.springframework.util.AntPathMatcher();
-    private List<String> dbProtectedUrls = null;
+    private final AntPathMatcher pathMatcher = new AntPathMatcher();
 
-    // 허용되는 비인가/퍼블릭 및 공통 엔드포인트 화이트리스트 패턴
-    private static final List<String> PUBLIC_PATH_WHITELIST = List.of(
-            "/api/v1/health",
-            "/api/v1/auth",
-            "/api/v1/public",
-            "/api/v1/menus",       // 프론트엔드 UI 라우터 참조용 허용
-            "/api/v1/images",
-            "/api/v1/users/signup",
-            "/api/v1/users/check-id",
-            "/actuator/health",
-            "/error"
-    );
+    @Test
+    @DisplayName("쓰기 endpoint/method/handler/SpEL/정책 의미 matrix exact-match")
+    void auditWriteAuthorizationPolicyMatrix() throws Exception {
+        PolicyRegistry registry = loadRegistry();
+        validateRegistryShape(registry);
 
-    private void initDbProtectedUrls() {
-        if (dbProtectedUrls == null) {
-            dbProtectedUrls = new ArrayList<>();
-            // 1. application.yml의 secure-paths 목록 추가
-            if (securePaths != null) {
-                dbProtectedUrls.addAll(securePaths);
-            }
-            // 2. DB tb_prgrm_lst 조회된 URL 목록 추가
-            try {
-                List<String> urlsFromDb = jdbcTemplate.queryForList("SELECT url FROM tb_prgrm_lst WHERE url IS NOT NULL", String.class);
-                dbProtectedUrls.addAll(urlsFromDb);
-            } catch (Exception e) {
-                System.out.println("[SecurityLinter] tb_prgrm_lst 조회 실패 (테이블 부재 등): " + e.getMessage());
+        Map<String, EndpointPolicy> expected = new LinkedHashMap<>();
+        for (EndpointPolicy row : registry.endpointPolicies()) {
+            EndpointPolicy previous = expected.put(row.key(), row);
+            if (previous != null) {
+                fail("인가 정책 registry 중복 endpoint: " + row.key());
             }
         }
-    }
 
-    private boolean isDbProtected(String pattern) {
-        initDbProtectedUrls();
-        for (String protectedPattern : dbProtectedUrls) {
-            if (pathMatcher.match(protectedPattern, pattern) || pathMatcher.match(pattern, protectedPattern)) {
-                return true;
+        Map<String, ActualEndpoint> actual = discoverWriteEndpoints();
+        if (actual.size() < 180) {
+            fail("쓰기 endpoint discovery가 예상 하한(180) 미만입니다: " + actual.size()
+                    + " — scan/context 붕괴를 green으로 처리할 수 없습니다.");
+        }
+
+        List<String> violations = new ArrayList<>();
+        for (ActualEndpoint endpoint : actual.values()) {
+            EndpointPolicy policy = expected.get(endpoint.key());
+            if (policy == null) {
+                violations.add("미등록 쓰기 endpoint: " + endpoint.describe());
+                continue;
+            }
+            if (!policy.handler().equals(endpoint.handler())) {
+                violations.add(endpoint.key() + " handler drift: expected=" + policy.handler()
+                        + ", actual=" + endpoint.handler());
+            }
+            if (!policy.methodSecurity().equals(endpoint.methodSecurity())) {
+                violations.add(endpoint.key() + " method-security drift: expected='"
+                        + policy.methodSecurity() + "', actual='" + endpoint.methodSecurity() + "'");
+            }
+            if (!policy.routeGate().equals(endpoint.routeGate())) {
+                violations.add(endpoint.key() + " URL gate drift: expected=" + policy.routeGate()
+                        + ", actual=" + endpoint.routeGate());
             }
         }
-        return false;
+        for (EndpointPolicy policy : expected.values()) {
+            if (!actual.containsKey(policy.key())) {
+                violations.add("stale/삭제 endpoint registry 행: " + policy.key() + " -> " + policy.handler());
+            }
+        }
+
+        validateEndpointSemantics(registry, violations);
+        validateRbacSourceSemantics(violations);
+        failIfAny("WRITE AUTHORIZATION POLICY MATRIX", violations);
     }
 
     @Test
-    @DisplayName("🔐 Spring Security API 권한 제어 어노테이션 유실 오딧")
-    void auditSecurityAnnotationsOnRestControllers() {
-        RequestMappingHandlerMapping mapping = context.getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
-        Map<RequestMappingInfo, HandlerMethod> handlerMethods = mapping.getHandlerMethods();
+    @DisplayName("SecurityUtil helper + 수동 owner/participant/privacy guard 의미 census exact-match")
+    void auditServiceAuthorizationGuardMatrix() throws Exception {
+        PolicyRegistry registry = loadRegistry();
+        validateRegistryShape(registry);
 
+        Set<String> expectedHelpers = new TreeSet<>();
+        Set<String> registeredGuardTargets = new HashSet<>();
         List<String> violations = new ArrayList<>();
 
-        for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
-            RequestMappingInfo mappingInfo = entry.getKey();
-            HandlerMethod handlerMethod = entry.getValue();
-
-            Method method = handlerMethod.getMethod();
-            Class<?> controllerClass = handlerMethod.getBeanType();
-
-            // 1. WebSocket/STOMP 등 비-REST 엔드포인트 패스
-            if (AnnotationUtils.findAnnotation(controllerClass, RestController.class) == null &&
-                AnnotationUtils.findAnnotation(controllerClass, Controller.class) == null) {
-                continue;
+        for (ServiceGuardPolicy guard : registry.serviceGuardPolicies()) {
+            if (!registeredGuardTargets.add(guard.target())) {
+                violations.add("중복 service guard target: " + guard.target());
             }
-
-            // 2. api-server의 커스텀 신규 API 컨트롤러(nuri.api.controller) 전수 오딧 대상 지정
-            if (!controllerClass.getPackageName().startsWith("nuri.api.controller")) {
-                continue;
-            }
-
-            // 3. 해당 메서드에 연결된 URL 추출
-            Set<String> patterns = mappingInfo.getDirectPaths();
-            if (patterns.isEmpty()) {
-                patterns = mappingInfo.getPatternValues();
-            }
-
-            for (String pattern : patterns) {
-                // 3. 화이트리스트에 포함되는 패턴은 오딧 건너뜀 (Public API)
-                if (isWhitelisted(pattern)) {
-                    continue;
-                }
-
-                // 4. 권한 제어 어노테이션이 클래스 레벨 또는 메서드 레벨에 존재하는지 확인
-                boolean hasPreAuthorize = AnnotationUtils.findAnnotation(method, PreAuthorize.class) != null ||
-                                          AnnotationUtils.findAnnotation(controllerClass, PreAuthorize.class) != null;
-                
-                boolean hasSecured = AnnotationUtils.findAnnotation(method, Secured.class) != null ||
-                                      AnnotationUtils.findAnnotation(controllerClass, Secured.class) != null;
-
-                // 4.2 커스텀 PermitAllRoute 어노테이션이 선언되어 있는지도 확인
-                boolean hasPermitAllRoute = AnnotationUtils.findAnnotation(method, nuri.foundation.core.annotation.PermitAllRoute.class) != null ||
-                                             AnnotationUtils.findAnnotation(controllerClass, nuri.foundation.core.annotation.PermitAllRoute.class) != null;
-
-                // 5. 어떠한 권한 검증 어노테이션도 없으나, DB 구동 인가(프로그램 목록/securePaths)로 검증되고 있다면 통과
-                if (!hasPreAuthorize && !hasSecured && !hasPermitAllRoute) {
-                    if (isDbProtected(pattern)) {
-                        continue;
-                    }
-                    violations.add(String.format("Controller: %s\n   Method: %s\n   Endpoint: %s\n   -> [해결책] @PreAuthorize(\"hasRole('...')\") 또는 @PreAuthorize(\"isAuthenticated()\")를 기입하거나 DB 인가 가드 대상에 등록하십시오.",
-                            controllerClass.getSimpleName(), method.getName(), pattern));
-                }
+            for (GuardMechanism mechanism : guard.mechanisms()) {
+                expectedHelpers.add(guard.target() + "#" + mechanism.helper() + "=" + mechanism.count());
+                validateHelperMeaning(guard, mechanism, violations);
             }
         }
 
-        if (!violations.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("\n========================================================================\n");
-            sb.append("🚨 [SECURITY HARNESS] 권한 제어 어노테이션 누락 감지! 빌드 실패 처리!\n");
-            sb.append("========================================================================\n");
-            for (String v : violations) {
-                sb.append("❌ ").append(v).append("\n");
+        SourceCensus census = scanSources();
+        writeActual(HELPER_ACTUAL_OUT, census.helperCalls());
+        writeActual(MANUAL_ACTUAL_OUT, census.manualDenials());
+
+        compareExact("SecurityUtil helper", expectedHelpers, census.helperCalls(), violations);
+
+        Set<String> expectedManualDenials = new TreeSet<>();
+        for (ManualGuardPolicy guard : registry.manualGuardPolicies()) {
+            if (!registeredGuardTargets.add(guard.target())) {
+                // Helper와 manual fingerprint가 같은 method를 함께 보호하는 것은 의도적이다.
+                boolean alsoHelperProtected = registry.serviceGuardPolicies().stream()
+                        .anyMatch(candidate -> candidate.target().equals(guard.target()));
+                if (!alsoHelperProtected) {
+                    violations.add("중복 manual guard target: " + guard.target());
+                }
             }
-            sb.append("\n해결책: 비공개 API에 권한 어노테이션을 누락하면 심각한 제로데이 권한 우회 위협(OWASP Top 10)에 처합니다.\n");
-            sb.append("만약 의도적인 퍼블릭 API라면 'SecurityAuthAnnotationLinterTest.java'의 화이트리스트에 등록하거나,\n");
-            sb.append("해당 API에 @PreAuthorize(\"isAuthenticated()\") 또는 적절한 Role 권한을 강제 적용하십시오.\n");
-            fail(sb.toString());
+            if (guard.denyReferences() > 0) {
+                expectedManualDenials.add(guard.target() + "=" + guard.denyReferences());
+            }
+            validateManualGuardBody(guard, violations);
+        }
+        compareExact("수동 deny", expectedManualDenials, census.manualDenials(), violations);
+
+        Set<String> allGuardTargets = new HashSet<>();
+        registry.serviceGuardPolicies().forEach(guard -> allGuardTargets.add(guard.target()));
+        registry.manualGuardPolicies().forEach(guard -> allGuardTargets.add(guard.target()));
+        for (EndpointPolicy endpoint : registry.endpointPolicies()) {
+            if (endpoint.guardRef() != null && !allGuardTargets.contains(endpoint.guardRef())) {
+                violations.add(endpoint.key() + "가 존재하지 않는 guardRef를 참조: " + endpoint.guardRef());
+            }
+        }
+
+        if (census.scannedFiles() < 200) {
+            violations.add("service source scan 하한 미달: " + census.scannedFiles() + " < 200");
+        }
+        failIfAny("SERVICE AUTHORIZATION GUARD MATRIX", violations);
+    }
+
+    private Map<String, ActualEndpoint> discoverWriteEndpoints() {
+        RequestMappingHandlerMapping mappings = context.getBean(
+                "requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
+        Map<String, ActualEndpoint> actual = new LinkedHashMap<>();
+
+        mappings.getHandlerMethods().entrySet().stream()
+                .sorted(Comparator.comparing(entry -> entry.getValue().toString()))
+                .forEach(entry -> collectEndpoint(entry, actual));
+        return actual;
+    }
+
+    private void collectEndpoint(Map.Entry<RequestMappingInfo, HandlerMethod> entry,
+            Map<String, ActualEndpoint> sink) {
+        HandlerMethod handler = entry.getValue();
+        if (!handler.getBeanType().getPackageName().startsWith("nuri.api.controller")) {
+            return;
+        }
+        Set<RequestMethod> declaredMethods = entry.getKey().getMethodsCondition().getMethods();
+        Set<RequestMethod> effectiveMethods = declaredMethods.isEmpty() ? WRITE_METHODS : declaredMethods;
+        for (RequestMethod method : effectiveMethods) {
+            if (!WRITE_METHODS.contains(method)) {
+                continue;
+            }
+            for (String path : entry.getKey().getPatternValues()) {
+                ActualEndpoint endpoint = new ActualEndpoint(
+                        method.name(),
+                        path,
+                        handler.getBeanType().getName() + "#" + handler.getMethod().getName(),
+                        mergedPreAuthorizeValue(handler),
+                        routeGate(path));
+                ActualEndpoint previous = sink.put(endpoint.key(), endpoint);
+                if (previous != null) {
+                    fail("동일 HTTP method+path가 여러 handler에 등록됨: " + previous.describe()
+                            + " <> " + endpoint.describe());
+                }
+            }
         }
     }
 
-    @Test
-    @DisplayName("🔐 비-admin 경로 쓰기 엔드포인트 인가 누락 오딧 (business/foundation 포함)")
-    void auditWriteEndpointAuthorizationOnNonAdminPaths() {
-        RequestMappingHandlerMapping mapping = context.getBean("requestMappingHandlerMapping", RequestMappingHandlerMapping.class);
-        Map<RequestMappingInfo, HandlerMethod> handlerMethods = mapping.getHandlerMethods();
-
-        List<String> violations = new ArrayList<>();
-
-        for (Map.Entry<RequestMappingInfo, HandlerMethod> entry : handlerMethods.entrySet()) {
-            RequestMappingInfo mappingInfo = entry.getKey();
-            HandlerMethod handlerMethod = entry.getValue();
-            Method method = handlerMethod.getMethod();
-            Class<?> controllerClass = handlerMethod.getBeanType();
-
-            if (AnnotationUtils.findAnnotation(controllerClass, RestController.class) == null &&
-                AnnotationUtils.findAnnotation(controllerClass, Controller.class) == null) {
-                continue;
-            }
-            if (!controllerClass.getPackageName().startsWith("nuri.api.controller")) {
-                continue;
-            }
-
-            // 쓰기(상태변경) HTTP 메서드만 대상
-            Set<RequestMethod> httpMethods = mappingInfo.getMethodsCondition().getMethods();
-            boolean isWrite = httpMethods.stream().anyMatch(m ->
-                    m == RequestMethod.POST || m == RequestMethod.PUT || m == RequestMethod.DELETE || m == RequestMethod.PATCH);
-            if (!isWrite) {
-                continue;
-            }
-
-            Set<String> patterns = mappingInfo.getDirectPaths();
-            if (patterns.isEmpty()) {
-                patterns = mappingInfo.getPatternValues();
-            }
-
-            for (String pattern : patterns) {
-                // /api/v1/admin/** 는 URL 시큐리티가 보호하므로 메서드 어노테이션 불요
-                if (pattern.startsWith("/api/v1/admin/")) {
-                    continue;
-                }
-                if (isWhitelisted(pattern)) {
-                    continue;
-                }
-
-                boolean hasPreAuthorize = AnnotationUtils.findAnnotation(method, PreAuthorize.class) != null ||
-                                          AnnotationUtils.findAnnotation(controllerClass, PreAuthorize.class) != null;
-                boolean hasSecured = AnnotationUtils.findAnnotation(method, Secured.class) != null ||
-                                     AnnotationUtils.findAnnotation(controllerClass, Secured.class) != null;
-                if (hasPreAuthorize || hasSecured) {
-                    continue;
-                }
-                // DB 구동 인가로 보호되고 있다면 통과
-                if (isDbProtected(pattern)) {
-                    continue;
-                }
-
-                violations.add(String.format("Controller: %s\n   Method: %s\n   Endpoint: %s\n   -> [해결책] 관리자 콘텐츠면 @PreAuthorize(\"hasAnyRole('ADMIN','SYSTEM')\") 를 붙이거나 DB 인가 가드 대상에 등록하고, 소유권/자기서비스면 @PreAuthorize(\"isAuthenticated()\") 와 서비스 소유권 가드를 함께 적용하십시오.",
-                        controllerClass.getSimpleName(), method.getName(), pattern));
-            }
+    private String mergedPreAuthorizeValue(HandlerMethod handler) {
+        PreAuthorize method = AnnotatedElementUtils.findMergedAnnotation(handler.getMethod(), PreAuthorize.class);
+        if (method != null) {
+            return method.value();
         }
+        PreAuthorize type = AnnotatedElementUtils.findMergedAnnotation(handler.getBeanType(), PreAuthorize.class);
+        return type != null ? type.value() : "";
+    }
 
-        if (!violations.isEmpty()) {
-            StringBuilder sb = new StringBuilder();
-            sb.append("\n========================================================================\n");
-            sb.append("🚨 [SECURITY HARNESS] 비-admin 경로 쓰기 엔드포인트 인가 누락 감지! 빌드 실패 처리!\n");
-            sb.append("========================================================================\n");
-            for (String v : violations) {
-                sb.append("❌ ").append(v).append("\n");
+    private String routeGate(String path) {
+        if (matchesAny(publicPaths, path)) {
+            return "PUBLIC_FILTER";
+        }
+        if (matchesAny(securePaths, path)) {
+            return path.startsWith("/api/v1/admin/")
+                    ? "RBAC_ADMIN_OR_SYSTEM"
+                    : "RBAC_ALIAS_ADMIN_OR_SYSTEM";
+        }
+        return "DEFAULT_AUTHENTICATED";
+    }
+
+    private boolean matchesAny(List<String> patterns, String path) {
+        return patterns != null && patterns.stream().anyMatch(pattern -> pathMatcher.match(pattern, path));
+    }
+
+    private void validateRegistryShape(PolicyRegistry registry) {
+        List<String> violations = new ArrayList<>();
+        if (registry.schemaVersion() != 1) {
+            violations.add("지원하지 않는 schemaVersion: " + registry.schemaVersion());
+        }
+        if (!"write-authorization-policy-ssot".equals(registry.authority())) {
+            violations.add("authority drift: " + registry.authority());
+        }
+        if (!registry.policyDefinitions().keySet().equals(KNOWN_POLICIES)) {
+            violations.add("policyDefinitions exact set drift: expected=" + KNOWN_POLICIES
+                    + ", actual=" + registry.policyDefinitions().keySet());
+        }
+        if (registry.endpointPolicies().size() < 180) {
+            violations.add("endpoint registry 하한 미달: " + registry.endpointPolicies().size());
+        }
+        if (registry.serviceGuardPolicies().size() < 40) {
+            violations.add("SecurityUtil guard registry 하한 미달: " + registry.serviceGuardPolicies().size());
+        }
+        if (registry.manualGuardPolicies().size() < 10) {
+            violations.add("manual guard registry 하한 미달: " + registry.manualGuardPolicies().size());
+        }
+        failIfAny("AUTHORIZATION REGISTRY INTEGRITY", violations);
+    }
+
+    private void validateEndpointSemantics(PolicyRegistry registry, List<String> violations) throws IOException {
+        Map<String, String> guardPolicies = new HashMap<>();
+        registry.serviceGuardPolicies().forEach(guard -> guardPolicies.put(guard.target(), guard.policy()));
+        registry.manualGuardPolicies().forEach(guard -> guardPolicies.put(guard.target(), guard.policy()));
+
+        for (EndpointPolicy endpoint : registry.endpointPolicies()) {
+            if (!KNOWN_POLICIES.contains(endpoint.policy())) {
+                violations.add(endpoint.key() + " unknown policy: " + endpoint.policy());
+                continue;
             }
-            sb.append("\n비-admin 경로 쓰기는 anyRequest().authenticated() 만 걸려 일반 사용자도 도달합니다.\n");
-            sb.append("관리자 콘텐츠는 @PreAuthorize 또는 DB 인가 가드로, 소유권/자기서비스는 컨트롤러 인증과 서비스 소유권 가드로 인가를 반드시 명시하십시오.\n");
-            fail(sb.toString());
+            if ("permitAll()".equals(endpoint.methodSecurity()) && !"PUBLIC".equals(endpoint.policy())) {
+                violations.add(endpoint.key() + " non-public policy에 permitAll() 선언");
+            }
+            if (!"PUBLIC".equals(endpoint.policy())
+                    && "PUBLIC_FILTER".equals(endpoint.routeGate())
+                    && (endpoint.methodSecurity().isBlank()
+                            || "permitAll()".equals(endpoint.methodSecurity()))) {
+                violations.add(endpoint.key() + " non-public policy인데 인증 집행 근거가 없음");
+            }
+            if ("PUBLIC".equals(endpoint.policy())) {
+                if (!"PUBLIC_FILTER".equals(endpoint.routeGate())
+                        && !"permitAll()".equals(endpoint.methodSecurity())) {
+                    violations.add(endpoint.key() + " PUBLIC이나 permitAll 집행 근거가 없음");
+                }
+                continue;
+            }
+            if (OWNER_POLICIES.contains(endpoint.policy())) {
+                if (endpoint.guardRef() == null) {
+                    violations.add(endpoint.key() + " " + endpoint.policy() + "에 service guardRef 누락");
+                } else if (!compatibleGuardPolicy(endpoint.policy(), guardPolicies.get(endpoint.guardRef()))) {
+                    violations.add(endpoint.key() + " endpoint/guard 의미 불일치: endpoint="
+                            + endpoint.policy() + ", guard=" + guardPolicies.get(endpoint.guardRef()));
+                }
+            }
+            validateHandlerBinding(endpoint, violations);
+            if ("ADMIN_ROLE_WITH_HIERARCHY".equals(endpoint.policy())
+                    && !"hasRole('ADMIN')".equals(endpoint.methodSecurity())) {
+                violations.add(endpoint.key() + " ADMIN_ROLE_WITH_HIERARCHY는 hasRole('ADMIN') exact 필요");
+            }
+            if ("ADMIN_OR_SYSTEM".equals(endpoint.policy())) {
+                boolean methodGate = "hasAnyRole('ADMIN','SYSTEM')".equals(endpoint.methodSecurity())
+                        || "hasRole('ADMIN')".equals(endpoint.methodSecurity());
+                boolean urlGate = endpoint.routeGate().startsWith("RBAC_");
+                boolean serviceGate = endpoint.guardRef() != null
+                        && "ADMIN_OR_SYSTEM".equals(guardPolicies.get(endpoint.guardRef()));
+                if (!methodGate && !urlGate && !serviceGate) {
+                    violations.add(endpoint.key() + " ADMIN_OR_SYSTEM 집행 근거(method/url/service) 없음");
+                }
+            }
         }
     }
 
-    /**
-     * 화이트리스트 매칭. <b>경로 세그먼트 경계</b>를 인식한다.
-     *
-     * <p>[2026-08-02] 종전에는 경계 없는 {@code startsWith} 라 {@code /api/v1/menus} 화이트리스트가
-     * {@code /api/v1/menus-admin/...} 같은 <b>다른 리소스</b>까지 면제했다. 현재 저장소에 그런 경로는
-     * 없으나(실측 181개 리터럴 중 0건), 신규 경로가 조용히 면제되는 통로이므로 닫는다.
-     * 정확 일치 또는 {@code 화이트패턴 + "/"} 접두만 인정한다.
-     */
-    private boolean isWhitelisted(String pattern) {
-        for (String whitePattern : PUBLIC_PATH_WHITELIST) {
-            if (pattern.equals(whitePattern) || pattern.startsWith(whitePattern + "/")) {
-                return true;
+    private static boolean compatibleGuardPolicy(String endpointPolicy, String guardPolicy) {
+        if (endpointPolicy.equals(guardPolicy)) {
+            return true;
+        }
+        // /users/me처럼 controller가 target ID를 현재 principal로 고정하면, 더 넓은 재사용 service
+        // guard(OWNER_OR_ADMIN) 위에서도 endpoint 자체는 STRICT_SELF다. 그 좁힘은 아래 handler token으로 고정한다.
+        return "STRICT_SELF".equals(endpointPolicy) && "OWNER_OR_ADMIN".equals(guardPolicy);
+    }
+
+    private void validateHandlerBinding(EndpointPolicy endpoint, List<String> violations) throws IOException {
+        List<String> tokens = endpoint.handlerRequiredTokens();
+        if (tokens == null || tokens.isEmpty()) {
+            if ("STRICT_SELF".equals(endpoint.policy()) || "SELF_WITH_CREDENTIAL".equals(endpoint.policy())) {
+                violations.add(endpoint.key() + " " + endpoint.policy() + "에 handler binding evidence 누락");
+            }
+            return;
+        }
+        int separator = endpoint.handler().lastIndexOf('#');
+        if (separator <= 0 || separator == endpoint.handler().length() - 1) {
+            violations.add(endpoint.key() + " handler 형식 오류: " + endpoint.handler());
+            return;
+        }
+        String className = endpoint.handler().substring(0, separator);
+        String methodName = endpoint.handler().substring(separator + 1);
+        Path source = resolveFromRepoRoot("api-server/src/main/java/" + className.replace('.', '/') + ".java");
+        if (!Files.isRegularFile(source)) {
+            violations.add(endpoint.key() + " handler source 부재: " + source);
+            return;
+        }
+        String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(HarnessSourceIndex.read(source));
+        String body = extractMethodBody(code, methodName);
+        if (body == null) {
+            violations.add(endpoint.key() + " handler body 탐지 실패: " + endpoint.handler());
+            return;
+        }
+        String normalizedBody = normalize(body);
+        for (String token : tokens) {
+            if (!normalizedBody.contains(normalize(token))) {
+                violations.add(endpoint.key() + " handler binding token 소실: " + token);
             }
         }
-        return false;
+    }
+
+    private void validateRbacSourceSemantics(List<String> violations) throws IOException {
+        YamlPropertiesFactoryBean yaml = new YamlPropertiesFactoryBean();
+        yaml.setResources(new FileSystemResource(resolveFromRepoRoot(MAIN_APPLICATION_FILE)));
+        Properties application = yaml.getObject();
+        if (application == null || !"true".equals(application.getProperty("rbac.db-auth.enabled"))) {
+            violations.add("main application.yml의 rbac.db-auth.enabled=true 선언 소실");
+        }
+        String rbac = normalizedSource(resolveFromRepoRoot(RBAC_SEED_FILE));
+        for (String token : List.of(
+                "('ADMIN_ALL', '관리자 전체', '/api/v1/admin/**'",
+                "('ADMIN_SURVEY_ALIAS', '설문 관리 별칭', '/api/v1/surveys/**'",
+                "('ADMIN_HELP_ALIAS', '도움말 관리 별칭', '/api/v1/help/**'",
+                "('ROLE_ADMIN', 'ADMIN_ALL')",
+                "('ROLE_SYSTEM', 'ADMIN_ALL')",
+                "('ROLE_ADMIN', 'ADMIN_SURVEY_ALIAS')",
+                "('ROLE_SYSTEM', 'ADMIN_SURVEY_ALIAS')",
+                "('ROLE_ADMIN', 'ADMIN_HELP_ALIAS')",
+                "('ROLE_SYSTEM', 'ADMIN_HELP_ALIAS')")) {
+            if (!rbac.contains(normalize(token))) {
+                violations.add("RBAC seed 의미 token 소실: " + token);
+            }
+        }
+        String hierarchy = normalizedSource(resolveFromRepoRoot(ROLE_HIERARCHY_SEED_FILE));
+        if (!hierarchy.contains(normalize("('ROLE_SYSTEM', 'ROLE_ADMIN', 'SYSTEM')"))) {
+            violations.add("ROLE_SYSTEM > ROLE_ADMIN hierarchy seed 소실 — ADMIN_ROLE_WITH_HIERARCHY 의미 drift");
+        }
+    }
+
+    private SourceCensus scanSources() throws IOException {
+        Set<String> helpers = new TreeSet<>();
+        Set<String> denials = new TreeSet<>();
+        int files = 0;
+        for (String root : SOURCE_ROOTS) {
+            Path directory = resolveFromRepoRoot(root);
+            if (!Files.isDirectory(directory)) {
+                fail("인가 source scan root 부재: " + root);
+            }
+            List<Path> javaFiles = HarnessSourceIndex.javaSources(directory).stream()
+                    .sorted()
+                    .toList();
+            files += javaFiles.size();
+            for (Path file : javaFiles) {
+                if (!file.getFileName().toString().equals("SecurityUtil.java")) {
+                    collectSourceCensus(file, helpers, denials);
+                }
+            }
+        }
+        return new SourceCensus(helpers, denials, files);
+    }
+
+    private void collectSourceCensus(Path file, Set<String> helpers, Set<String> denials) throws IOException {
+        String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+                HarnessSourceIndex.read(file));
+        String className = file.getFileName().toString().replace(".java", "");
+        Map<String, Integer> helperCounts = new HashMap<>();
+        Matcher guardMatcher = GUARD_CALL.matcher(code);
+        while (guardMatcher.find()) {
+            String target = className + "#" + findEnclosingMethod(code, guardMatcher.start())
+                    + "#" + guardMatcher.group(1);
+            helperCounts.merge(target, 1, Integer::sum);
+        }
+        helperCounts.forEach((target, count) -> helpers.add(target + "=" + count));
+
+        Map<String, Integer> denyCounts = new HashMap<>();
+        String portablePath = file.toString().replace('\\', '/');
+        if (portablePath.contains("/nuri/business/service/")) {
+            Matcher denyMatcher = MANUAL_DENY.matcher(code);
+            while (denyMatcher.find()) {
+                String method = findEnclosingMethod(code, denyMatcher.start());
+                denyCounts.merge(className + "#" + method, 1, Integer::sum);
+            }
+        }
+        denyCounts.forEach((target, count) -> denials.add(target + "=" + count));
+    }
+
+    private static String findEnclosingMethod(String code, int position) {
+        String prefix = code.substring(0, position);
+        Pattern declaration = Pattern.compile(
+                "(?:public|protected|private|static|final|synchronized|\\s)+\\s+[\\w\\<\\>\\[\\]]+\\s+"
+                        + "([a-zA-Z0-9_]+)\\s*\\([^\\)]*\\)\\s*(?:throws\\s+[\\w\\s,]+)?\\s*\\{");
+        Matcher matcher = declaration.matcher(prefix);
+        String lastMethod = "unknown";
+        while (matcher.find()) {
+            lastMethod = matcher.group(1);
+        }
+        return lastMethod;
+    }
+
+    private void validateHelperMeaning(ServiceGuardPolicy guard, GuardMechanism mechanism,
+            List<String> violations) {
+        String expectedPolicy;
+        String expectedAxis;
+        switch (mechanism.helper()) {
+            case "assertOwnerByEsntlId" -> {
+                expectedPolicy = "STRICT_OWNER";
+                expectedAxis = "ESNTL_ID";
+            }
+            case "assertOwnerOrAdminByEsntlId" -> {
+                expectedPolicy = "OWNER_OR_ADMIN";
+                expectedAxis = "ESNTL_ID";
+            }
+            case "assertOwnerOrAdmin" -> {
+                expectedPolicy = "OWNER_OR_ADMIN";
+                expectedAxis = "LOGIN_ID";
+            }
+            case "assertAdmin" -> {
+                expectedPolicy = "ADMIN_OR_SYSTEM";
+                expectedAxis = "ROLE";
+            }
+            default -> {
+                violations.add(guard.target() + " unknown SecurityUtil helper: " + mechanism.helper());
+                return;
+            }
+        }
+        if (!expectedPolicy.equals(guard.policy())) {
+            violations.add(guard.target() + " helper/policy drift: " + mechanism.helper()
+                    + " means " + expectedPolicy + ", registry=" + guard.policy());
+        }
+        if (!expectedAxis.equals(mechanism.identityAxis())) {
+            violations.add(guard.target() + " identity axis drift: " + mechanism.helper()
+                    + " means " + expectedAxis + ", registry=" + mechanism.identityAxis());
+        }
+        if (mechanism.count() < 1) {
+            violations.add(guard.target() + " helper count must be positive: " + mechanism.count());
+        }
+    }
+
+    private void validateManualGuardBody(ManualGuardPolicy guard, List<String> violations)
+            throws IOException {
+        Path source = resolveFromRepoRoot(guard.source());
+        if (!Files.isRegularFile(source)) {
+            violations.add(guard.target() + " source 부재: " + guard.source());
+            return;
+        }
+        String methodName = guard.target().substring(guard.target().indexOf('#') + 1);
+        String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+                HarnessSourceIndex.read(source));
+        String body = extractMethodBody(code, methodName);
+        if (body == null) {
+            violations.add(guard.target() + " method body 탐지 실패");
+            return;
+        }
+        String normalizedBody = normalize(body);
+        for (String token : guard.requiredTokens()) {
+            if (!normalizedBody.contains(normalize(token))) {
+                violations.add(guard.target() + " required guard token 소실: " + token);
+            }
+        }
+        for (String token : guard.forbiddenTokens()) {
+            if (normalizedBody.contains(normalize(token))) {
+                violations.add(guard.target() + " forbidden/완화 token 출현: " + token);
+            }
+        }
+    }
+
+    private static String extractMethodBody(String code, String methodName) {
+        Pattern declaration = Pattern.compile(
+                "(?m)^\\s*(?:public|protected|private)\\s+(?:(?:static|final|synchronized)\\s+)*"
+                        + "[\\w.$<>?,\\[\\] ]+\\s+" + Pattern.quote(methodName) + "\\s*\\(");
+        Matcher matcher = declaration.matcher(code);
+        if (!matcher.find()) {
+            return null;
+        }
+        int open = code.indexOf('{', matcher.end());
+        int semicolon = code.indexOf(';', matcher.end());
+        if (open < 0 || (semicolon >= 0 && semicolon < open)) {
+            return null;
+        }
+        int depth = 0;
+        boolean inString = false;
+        boolean inChar = false;
+        boolean escaped = false;
+        for (int index = open; index < code.length(); index++) {
+            char ch = code.charAt(index);
+            if (escaped) {
+                escaped = false;
+                continue;
+            }
+            if ((inString || inChar) && ch == '\\') {
+                escaped = true;
+                continue;
+            }
+            if (!inChar && ch == '"') {
+                inString = !inString;
+                continue;
+            }
+            if (!inString && ch == '\'') {
+                inChar = !inChar;
+                continue;
+            }
+            if (inString || inChar) {
+                continue;
+            }
+            if (ch == '{') {
+                depth++;
+            } else if (ch == '}' && --depth == 0) {
+                return code.substring(open, index + 1);
+            }
+        }
+        return null;
+    }
+
+    private PolicyRegistry loadRegistry() throws IOException {
+        Path file = resolveFromRepoRoot(POLICY_FILE);
+        if (!Files.isRegularFile(file)) {
+            fail("인가 정책 registry 부재: " + file.toAbsolutePath());
+        }
+        return new ObjectMapper().readValue(file.toFile(), PolicyRegistry.class);
+    }
+
+    private static String normalizedSource(Path path) throws IOException {
+        return normalize(HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
+                HarnessSourceIndex.read(path)));
+    }
+
+    private static String normalize(String value) {
+        return value.replaceAll("\\s+", "").trim();
+    }
+
+    private static void compareExact(String label, Set<String> expected, Set<String> actual,
+            List<String> violations) {
+        for (String entry : expected) {
+            if (!actual.contains(entry)) {
+                violations.add(label + " 소실/변경: " + entry);
+            }
+        }
+        for (String entry : actual) {
+            if (!expected.contains(entry)) {
+                violations.add(label + " 미등록 신규/변경: " + entry);
+            }
+        }
+    }
+
+    private static void writeActual(String relative, Set<String> values) {
+        try {
+            Path path = Paths.get(relative);
+            Files.createDirectories(path.getParent());
+            Files.write(path, values, StandardCharsets.UTF_8);
+        } catch (IOException ignored) {
+            // 실제 산출물은 진단 편의용이다. 비교 자체는 메모리에서 수행하므로 IO 실패가 green을 만들지 않는다.
+        }
+    }
+
+    private static void failIfAny(String title, List<String> violations) {
+        if (violations.isEmpty()) {
+            return;
+        }
+        StringBuilder message = new StringBuilder("\n============================================================\n")
+                .append("[SECURITY HARNESS] ").append(title).append(" drift\n")
+                .append("============================================================\n");
+        violations.forEach(violation -> message.append("- ").append(violation).append('\n'));
+        message.append("정당한 정책 변경은 도메인 의미/identity axis를 재판정한 뒤 registry와 함께 갱신해야 합니다.");
+        fail(message.toString());
+    }
+
+    private static Path resolveFromRepoRoot(String relative) {
+        Path root = Paths.get(relative);
+        if (Files.exists(root)) {
+            return root;
+        }
+        return Paths.get("..", relative);
+    }
+
+    private record PolicyRegistry(
+            int schemaVersion,
+            String authority,
+            String description,
+            AnalysisModel analysisModel,
+            Map<String, String> policyDefinitions,
+            List<EndpointPolicy> endpointPolicies,
+            List<ServiceGuardPolicy> serviceGuardPolicies,
+            List<ManualGuardPolicy> manualGuardPolicies) {
+    }
+
+    private record AnalysisModel(
+            String endpointEvidence,
+            String serviceEvidence,
+            List<String> knownLimits) {
+    }
+
+    private record EndpointPolicy(
+            String method,
+            String path,
+            String handler,
+            String policy,
+            String methodSecurity,
+            String routeGate,
+            String guardRef,
+            List<String> handlerRequiredTokens) {
+        String key() {
+            return method + " " + path;
+        }
+    }
+
+    private record ServiceGuardPolicy(
+            String target,
+            String policy,
+            List<GuardMechanism> mechanisms) {
+    }
+
+    private record GuardMechanism(
+            String helper,
+            int count,
+            String identityAxis) {
+    }
+
+    private record ManualGuardPolicy(
+            String target,
+            String source,
+            String policy,
+            int denyReferences,
+            List<String> requiredTokens,
+            List<String> forbiddenTokens) {
+    }
+
+    private record ActualEndpoint(
+            String method,
+            String path,
+            String handler,
+            String methodSecurity,
+            String routeGate) {
+        String key() {
+            return method + " " + path;
+        }
+
+        String describe() {
+            return key() + " -> " + handler + " [SpEL='" + methodSecurity + "', route=" + routeGate + "]";
+        }
+    }
+
+    private record SourceCensus(
+            Set<String> helperCalls,
+            Set<String> manualDenials,
+            int scannedFiles) {
     }
 }

@@ -1,12 +1,12 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -14,7 +14,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -56,6 +55,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 텍스트 스캔. 마이그레이션 경로 해석은
  * {@link SchemaNamingLinterTest#resolveMigrationDir()} 로 일원화한다(P4 게이트 무결성 관행).
  */
+@Tag("governance-harness")
 class SeedLocationLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(SeedLocationLinterTest.class);
@@ -172,7 +172,7 @@ class SeedLocationLinterTest {
      * 잘랐다가 뒤따르는 해시를 놓치는 false-negative 가 오탐보다 위험하다.)
      */
     private static List<String> findCredentialHits(Path sql, String area) throws IOException {
-        String[] lines = blankBlockComments(Files.readString(sql, StandardCharsets.UTF_8)).split("\r?\n", -1);
+        String[] lines = blankBlockComments(HarnessSourceIndex.read(sql)).split("\r?\n", -1);
         List<String> hits = new ArrayList<>();
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
@@ -207,7 +207,7 @@ class SeedLocationLinterTest {
 
     /** 운영 설정 yml 검사: 주석 아닌 라인의 seed-dev 언급 금지 + base 의 locations 명시 선언 요구. */
     private static List<String> auditProductionConfig(Path yml, String cfg) throws IOException {
-        String[] lines = Files.readString(yml, StandardCharsets.UTF_8).split("\r?\n", -1);
+        String[] lines = HarnessSourceIndex.read(yml).split("\r?\n", -1);
         List<String> found = new ArrayList<>();
         int locationsDeclared = 0;
 
@@ -241,14 +241,8 @@ class SeedLocationLinterTest {
     // ---- 유틸 ----------------------------------------------------------------------
 
     private static List<Path> collectSql(Path dir) throws IOException {
-        List<Path> result = new ArrayList<>();
-        try (Stream<Path> paths = Files.walk(dir)) {
-            paths.filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".sql"))
-                    .sorted()
-                    .forEach(result::add);
-        }
-        return result;
+        return HarnessSourceIndex.filesUnder(dir, p -> p.toString().endsWith(".sql"))
+                .stream().sorted().toList();
     }
 
     /** 블록 주석을 비우되 내부 개행은 남겨 라인 번호를 보존한다(정규식 치환은 라인 번호를 어긋나게 한다). */

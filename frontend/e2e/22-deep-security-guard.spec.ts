@@ -140,10 +140,9 @@ test.describe('Tier 22: Deep Security Guard', () => {
     test.describe('URL Integrity & Navigation Guards', () => {
         test.use({ storageState: 'playwright/.auth/admin.json' });
 
-        test('Handling Malformed UUID/IDs in URLs', async ({ page, consoleGuard }) => {
-            // [E2E 감사] 오염된 ID로 인한 '예상된' 백엔드 4xx만 해당 요청 URL 한정으로 좁게 화이트리스트.
-            // 광역 /not found|404|invalid|error/i 무시는 제거 — React 런타임 크래시는 반드시 실패해야 하므로.
-            consoleGuard.addIgnorePattern(/INVALID_ID|pstSn=999999|etc\/passwd|menuId=--/i);
+        test('Handling Malformed UUID/IDs in URLs', async ({ page }) => {
+            // 쿼리 문자열 자체는 오류가 아니다. 종전 패턴은 해당 문자열이 포함된 모든 콘솔/HTTP 오류를
+            // 상태·횟수와 무관하게 숨겼다. 셸 생존 외의 브라우저 오류가 생기면 그대로 실패시킨다.
 
             const malformedPaths = [
                 '/admin/community/boards/detail?bbsId=INVALID_ID&pstSn=999999',

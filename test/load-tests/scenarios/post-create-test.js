@@ -4,9 +4,7 @@
  * 게시글 생성 성능을 테스트합니다.
  * 
  * 실행 방법:
- *   k6 run --vus 10 --duration 30s post-create-test.js
- *   k6 run --scenario smoke post-create-test.js
- *   k6 run --scenario load post-create-test.js
+ *   k6 run post-create-test.js  # 아래에 정의된 모든 시나리오 실행
  */
 
 import http from 'k6/http';

@@ -1,180 +1,517 @@
 package nuri.api.harness;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * 🚨 Zero-Downtime Migration Safety Linter
- * 무중단 배포를 위한 데이터베이스 DDL 정적 분석 하네스
+ * Zero-Downtime Migration Safety Linter.
+ *
+ * <p>파괴적 DDL을 차단하는 것뿐 아니라 예외 자체도 fail-closed로 관리한다. 레지스트리 도입 전에
+ * 적용된 Flyway 파일은 checksum을 바꿀 수 없으므로 자유형 {@code linter:ignore}를 소급 수정하지 않는다.
+ * 대신 파일별 marker 수와 전체 내용 fingerprint를 {@code zdm-waivers.json}에 동결하고, 이를 승인으로
+ * 간주하지 않는 legacy debt로 추적한다. 새 예외는 SQL marker의 안정 ID와 승인 메타데이터가 1:1로
+ * 결속되어야 한다.
  */
+@Tag("governance-harness")
 class ZeroDowntimeMigrationLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(ZeroDowntimeMigrationLinterTest.class);
-    // 마이그레이션 경로 해석은 SchemaNamingLinterTest.resolveMigrationDir() 로 일원화 (P4 게이트 무결성)
+    private static final ObjectMapper JSON = new ObjectMapper();
 
-    // ====================================================================================
-    // 무중단 4단계 이행(Expand-and-Contract) 위반 안티패턴 정규식 정의
-    // ====================================================================================
-    
-    // 1. DROP COLUMN (COLUMN 생략형 포함, CONSTRAINT 삭제는 허용)
-    private static final Pattern FORBIDDEN_DROP = Pattern.compile("(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+DROP\\s+(?:COLUMN\\s+)?(?!CONSTRAINT\\b)\\w+");
+    private static final String WAIVER_REGISTRY_PATH = "config/governance/zdm-waivers.json";
+    private static final String LEGACY_STATUS = "legacy-debt-unapproved";
+    private static final String LEGACY_DEBT_CENSUS_SHA256 =
+            "ee36a95c7e73bd0db853130e11ec5398e6a266ce934277b61d1d504106b54b69";
+    private static final int LEGACY_DEBT_FILE_COUNT = 43;
+    private static final int LEGACY_DEBT_IGNORE_COUNT = 188;
+    private static final Pattern WAIVER_DIRECTIVE = Pattern.compile(
+            "\\blinter:(ignore|disable-file)\\b(?:\\s+(ZDM-\\d{4}-\\d{4})(?![A-Za-z0-9-])"
+                    + "(?:\\s+([^\\r\\n]+))?)?");
+    private static final Pattern STRUCTURED_WAIVER_ID = Pattern.compile("ZDM-\\d{4}-\\d{4}");
+    private static final Pattern SHA256 = Pattern.compile("[a-f0-9]{64}");
 
-    // 2. ALTER TYPE (COLUMN 생략형 포함)
-    private static final Pattern FORBIDDEN_ALTER_TYPE = Pattern.compile("(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+ALTER\\s+(?:COLUMN\\s+)?\\S+\\s+TYPE\\s+");
-
-    // 3. RENAME COLUMN/TABLE (COLUMN 생략형 포함) — RENAME CONSTRAINT 는 카탈로그 메타데이터 변경(비파괴)이라 제외
-    //    [P4 보강] 기존 정규식이 RENAME CONSTRAINT 까지 오매치하여 V2_7 이 disable-file 로 전 규칙을 우회해야 했던
-    //    결함을 네거티브 룩어헤드로 해소.
-    private static final Pattern FORBIDDEN_RENAME = Pattern.compile("(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+RENAME\\s+(?!CONSTRAINT\\b)");
-
-    // 4. ADD COLUMN ... NOT NULL without DEFAULT 문맥 파서 정규식
-    private static final Pattern ADD_CLAUSE_PATTERN = Pattern.compile("(?is)\\bADD\\s+(?:COLUMN\\s+)?(.*?)(?:,|$|;)");
-
-    // 5. [P4 신설] 최상위 파괴 DDL — 기존 4룰이 전부 ALTER TABLE 만 겨냥해 무검출 통과하던 사각지대
+    private static final Pattern FORBIDDEN_DROP = Pattern.compile(
+            "(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+DROP\\s+(?:COLUMN\\s+)?(?!CONSTRAINT\\b)\\w+");
+    private static final Pattern FORBIDDEN_ALTER_TYPE = Pattern.compile(
+            "(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+ALTER\\s+(?:COLUMN\\s+)?\\S+\\s+TYPE\\s+");
+    private static final Pattern FORBIDDEN_RENAME = Pattern.compile(
+            "(?is)\\bALTER\\s+TABLE\\s+\\S+\\s+RENAME\\s+(?!CONSTRAINT\\b)");
+    private static final Pattern ADD_CLAUSE_PATTERN = Pattern.compile(
+            "(?is)\\bADD\\s+(?:COLUMN\\s+)?(.*?)(?:,|$|;)");
     private static final Pattern FORBIDDEN_DROP_TABLE = Pattern.compile("(?is)\\bDROP\\s+TABLE\\b");
     private static final Pattern FORBIDDEN_DROP_SEQUENCE = Pattern.compile("(?is)\\bDROP\\s+SEQUENCE\\b");
-    private static final Pattern FORBIDDEN_TRUNCATE = Pattern.compile("(?is)\\bTRUNCATE\\s+(?:TABLE\\s+)?\\S+");
-
-    // 6. [P4 신설] ALTER SEQUENCE RENAME — 시퀀스명은 @SequenceGenerator/nextval 문자열과 결속되므로
-    //    코드 동기화 없는 rename 은 런타임 파손 (V2_8 유형). 동일 릴리스 코드 결속 시 linter:ignore 로 명시.
-    private static final Pattern FORBIDDEN_SEQ_RENAME = Pattern.compile("(?is)\\bALTER\\s+SEQUENCE\\s+\\S+\\s+RENAME\\s+");
+    private static final Pattern FORBIDDEN_TRUNCATE = Pattern.compile(
+            "(?is)\\bTRUNCATE\\s+(?:TABLE\\s+)?\\S+");
+    private static final Pattern FORBIDDEN_SEQ_RENAME = Pattern.compile(
+            "(?is)\\bALTER\\s+SEQUENCE\\s+\\S+\\s+RENAME\\s+");
 
     @Test
-    @DisplayName("🚨 Flyway 마이그레이션 SQL 무중단 배포 DDL 규격 오딧")
+    @DisplayName("Flyway 무중단 DDL과 waiver registry를 fail-closed로 감사")
     void auditZeroDowntimeMigrationScripts() throws IOException {
-        // [P4 게이트 무결성] Gradle 테스트 JVM 의 workingDir 이 루트로 잡혀 상대경로 해석에 실패하면
-        // 기존 구현은 조용히 skip 하여 본 린터가 사실상 무력(false-green)이었다 — 2026-07-17 뮤테이션
-        // 자가검증(위반 파일 주입)으로 실증. 경로 이중 해석 + 미발견 시 즉시 실패로 정정.
-        Path migrationDir = SchemaNamingLinterTest.resolveMigrationDir();
+        Path repoRoot = HarnessSourceIndex.repoRoot();
+        Path migrationDir = SchemaNamingLinterTest.resolveMigrationDir().toAbsolutePath().normalize();
+        List<Path> migrationFiles = HarnessSourceIndex.filesUnder(
+                        migrationDir, path -> path.getFileName().toString().endsWith(".sql"))
+                .stream()
+                .sorted()
+                .toList();
+
+        Map<String, String> migrationContents = new LinkedHashMap<>();
+        for (Path path : migrationFiles) {
+            migrationContents.put(relativePath(repoRoot, path), HarnessSourceIndex.read(path));
+        }
 
         List<String> violations = new ArrayList<>();
-
-        try (Stream<Path> paths = Files.walk(migrationDir)) {
-            paths.filter(Files::isRegularFile)
-                 .filter(p -> p.toString().endsWith(".sql"))
-                 .forEach(path -> {
-                     try {
-                         String content = Files.readString(path);
-
-                         // 화이트리스트: 파일 전체 무시 플래그 확인
-                         if (content.contains("-- linter:disable-file")) {
-                             log.info("⏩ File [{}] is skipped by linter:disable-file directive.", path.getFileName());
-                             return;
-                         }
-
-                         // 정밀한 주석 제거
-                         // 1. (?s) 플래그를 추가하여 멀티라인 /* ... */ 주석 완벽 소거
-                         // 2. 단일행 -- 주석 제거 시 라인엔드(\r\n) 보존
-                         // 3. [P4 보강] 'linter:ignore' 를 담은 주석은 보존 — 기존 구현은 주석을 먼저 지운 뒤
-                         //    매칭 라인에서 ignore 마커를 찾아 라인 단위 예외가 원천적으로 동작하지 않았다
-                         //    (V2_7/V2_13 이 disable-file 로 전 규칙을 우회해야 했던 실제 원인).
-                         String cleanContent = content
-                                 .replaceAll("(?s)/\\*.*?\\*/", "")
-                                 .replaceAll("--(?![^\r\n]*linter:ignore)[^\r\n]*", "");
-
-                         String fileName = path.getFileName().toString();
-
-                         // 1~3번 규칙 검사 (화이트리스트 라인 무시 기능 적용)
-                         checkViolationWithIgnore(fileName, cleanContent, FORBIDDEN_DROP, 
-                                 "DROP COLUMN은 하위 호환성을 파괴합니다. 무중단 4단계 이행(Contract) 최종 배포 주기에만 '-- linter:ignore'와 함께 수행하십시오.", violations);
-                          
-                         checkViolationWithIgnore(fileName, cleanContent, FORBIDDEN_ALTER_TYPE, 
-                                 "ALTER COLUMN TYPE은 테이블 Lock을 유발합니다. 신규 컬럼 생성(Expand) 후 백그라운드 데이터 복제를 수행하십시오.", violations);
-
-                         checkViolationWithIgnore(fileName, cleanContent, FORBIDDEN_RENAME,
-                                 "RENAME COLUMN/TABLE은 구버전 앱의 SELECT/INSERT 쿼리를 즉각 파괴합니다. 듀얼 라이팅을 수행하십시오.", violations);
-
-                         // 4번 규칙 검사 (ADD NOT NULL without DEFAULT 문맥 파싱)
-                         checkAddNotNullViolation(fileName, cleanContent, violations);
-
-                         // 5~6번 규칙 검사 [P4 신설]
-                         checkViolationWithIgnore(fileName, cleanContent, FORBIDDEN_DROP_TABLE,
-                                 "DROP TABLE은 최상위 파괴 DDL입니다. Contract 최종 릴리스에만 '-- linter:ignore'와 함께 수행하십시오.", violations);
-                         checkViolationWithIgnore(fileName, cleanContent, FORBIDDEN_DROP_SEQUENCE,
-                                 "DROP SEQUENCE는 채번 소비 코드를 즉각 파괴할 수 있습니다. 소비처 0건 실측 근거와 함께 '-- linter:ignore'로 명시하십시오.", violations);
-                         checkViolationWithIgnore(fileName, cleanContent, FORBIDDEN_TRUNCATE,
-                                 "TRUNCATE는 복구 불가능한 데이터 소거입니다. 자가치유 DELETE(조건부)로 대체하십시오.", violations);
-                         checkViolationWithIgnore(fileName, cleanContent, FORBIDDEN_SEQ_RENAME,
-                                 "ALTER SEQUENCE RENAME은 @SequenceGenerator/nextval 문자열 결속을 파괴합니다. 동일 릴리스 코드 동기화를 증명하고 '-- linter:ignore'로 명시하십시오.", violations);
-
-                     } catch (IOException e) {
-                         fail("Failed to read migration file: " + path);
-                     }
-                 });
+        validateWaiverRegistry(repoRoot, migrationDir, migrationContents, violations);
+        for (Map.Entry<String, String> entry : migrationContents.entrySet()) {
+            auditDdl(entry.getKey(), entry.getValue(), violations);
         }
 
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             sb.append("\n========================================================================\n");
-            sb.append("🚨 [ZERO-DOWNTIME LINTER] 파괴적 DDL 스크립트가 배포 전 최종 검증 단계에서 차단되었습니다!\n");
+            sb.append("[ZERO-DOWNTIME LINTER] 파괴적 DDL 또는 waiver registry 위반을 차단했습니다.\n");
             sb.append("========================================================================\n");
-            for (String v : violations) {
-                sb.append("❌ ").append(v).append("\n");
+            for (String violation : violations) {
+                sb.append("- ").append(violation).append("\n");
             }
-            sb.append("\n💡 조치방법: 'docs/02-architecture/zero-downtime-migration.md'를 참고하여 DDL을 변경하십시오.");
-            sb.append("\n💡 긴급상황 또는 4단계(Contract) 릴리즈 시, 위반 라인 끝에 '-- linter:ignore' 주석을 달아 예외처리 하십시오.\n");
-            
+            sb.append("\n조치: docs/02-architecture/zero-downtime-migration.md를 확인하십시오.\n");
+            sb.append("신규 예외: SQL에 '-- linter:ignore ZDM-YYYY-NNNN <reason>'을 쓰고 ")
+                    .append(WAIVER_REGISTRY_PATH)
+                    .append("에 reason/owner/approvedAt/expiresAt/evidence를 등록해야 합니다.\n");
             fail(sb.toString());
-        } else {
-            log.info("✅ 모든 Flyway 스크립트가 무중단 배포(Zero-Downtime) 규격을 완벽히 준수합니다.");
+        }
+
+        log.info("모든 Flyway SQL과 ZDM waiver registry가 fail-closed 계약을 준수합니다.");
+    }
+
+    private static void validateWaiverRegistry(
+            Path repoRoot,
+            Path migrationDir,
+            Map<String, String> migrationContents,
+            List<String> violations) throws IOException {
+        Path registryPath = repoRoot.resolve(WAIVER_REGISTRY_PATH).normalize();
+        if (!Files.isRegularFile(registryPath)) {
+            violations.add("waiver registry가 없습니다: " + WAIVER_REGISTRY_PATH);
+            return;
+        }
+
+        JsonNode root;
+        try {
+            root = JSON.readTree(HarnessSourceIndex.read(registryPath));
+        } catch (RuntimeException exception) {
+            violations.add("waiver registry JSON을 해석할 수 없습니다: " + exception.getMessage());
+            return;
+        }
+        if (!root.isObject()) {
+            violations.add("waiver registry 루트는 JSON object여야 합니다.");
+            return;
+        }
+        if (root.path("schemaVersion").asInt(-1) != 1) {
+            violations.add("waiver registry schemaVersion은 1이어야 합니다.");
+        }
+        if (!"zero-downtime-migration-waiver-registry".equals(root.path("authority").asText())) {
+            violations.add("waiver registry authority가 올바르지 않습니다.");
+        }
+        if (!"-- linter:ignore ZDM-YYYY-NNNN <reason>".equals(root.path("markerFormat").asText())) {
+            violations.add("waiver registry markerFormat이 구현 계약과 다릅니다.");
+        }
+        if (!root.path("legacyDebtPolicy").asText().toLowerCase()
+                .contains("not retroactive approval")) {
+            violations.add("legacyDebtPolicy에 기존 marker가 소급 승인이 아님을 명시해야 합니다.");
+        }
+
+        LocalDate today = LocalDate.now();
+        Set<String> legacyPaths = validateLegacyDebt(
+                root.path("legacyDebt"), repoRoot, migrationDir, migrationContents, today, violations);
+        Map<String, List<DirectiveUse>> usesById = collectDirectiveUses(
+                migrationContents, legacyPaths, violations);
+        validateStructuredWaivers(
+                root.path("waivers"), repoRoot, migrationDir, usesById, today, violations);
+    }
+
+    private static Set<String> validateLegacyDebt(
+            JsonNode entries,
+            Path repoRoot,
+            Path migrationDir,
+            Map<String, String> migrationContents,
+            LocalDate today,
+            List<String> violations) {
+        Set<String> legacyPaths = new HashSet<>();
+        List<String> censusRows = new ArrayList<>();
+        int totalIgnoreCount = 0;
+        if (!entries.isArray()) {
+            violations.add("legacyDebt는 JSON array여야 합니다.");
+            return legacyPaths;
+        }
+
+        for (int index = 0; index < entries.size(); index++) {
+            JsonNode entry = entries.get(index);
+            String label = "legacyDebt[" + index + "]";
+            String path = requiredText(entry, "path", label, violations);
+            int expectedCount = entry.path("ignoreCount").asInt(-1);
+            String expectedHash = requiredText(entry, "contentSha256", label, violations);
+            String owner = requiredText(entry, "owner", label, violations);
+            String reviewByText = requiredText(entry, "reviewBy", label, violations);
+            String status = requiredText(entry, "status", label, violations);
+            String reason = requiredText(entry, "reason", label, violations);
+            censusRows.add(path + "|" + expectedCount + "|" + expectedHash);
+            totalIgnoreCount += Math.max(expectedCount, 0);
+
+            if (!legacyPaths.add(path)) {
+                violations.add(label + ": 중복 legacy path — " + path);
+            }
+            if (expectedCount < 1) {
+                violations.add(label + ": ignoreCount는 1 이상이어야 합니다.");
+            }
+            if (!SHA256.matcher(expectedHash).matches()) {
+                violations.add(label + ": contentSha256는 소문자 SHA-256이어야 합니다.");
+            }
+            if (!LEGACY_STATUS.equals(status)) {
+                violations.add(label + ": 기존 자유형 marker는 승인으로 소급할 수 없으며 status="
+                        + LEGACY_STATUS + "여야 합니다.");
+            }
+            if (entry.has("approvedAt") || entry.has("approvedBy")
+                    || entry.path("approved").asBoolean(false)) {
+                violations.add(label + ": legacy debt에 승인 메타데이터를 소급 기록할 수 없습니다.");
+            }
+            if (!reason.toLowerCase().contains("legacy-debt")
+                    || !reason.toLowerCase().contains("not retroactive approval")) {
+                violations.add(label + ": legacy debt이며 소급 승인이 아님을 reason에 명시해야 합니다.");
+            }
+            if (owner.isBlank()) {
+                violations.add(label + ": owner가 비어 있습니다.");
+            }
+
+            LocalDate reviewBy = parseDate(reviewByText, label + ".reviewBy", violations);
+            if (reviewBy != null && !reviewBy.isAfter(today)) {
+                violations.add(label + ": reviewBy가 도래/만료했습니다 — " + reviewBy);
+            }
+
+            Path migrationPath = resolveRegisteredMigrationPath(
+                    repoRoot, migrationDir, path, label, violations);
+            String content = migrationContents.get(path);
+            if (migrationPath == null || content == null) {
+                violations.add(label + ": 등록된 migration 파일이 없습니다 — " + path);
+                continue;
+            }
+
+            int actualCount = countOccurrences(content, "linter:ignore");
+            if (actualCount != expectedCount) {
+                violations.add(label + ": 자유형 marker 수 drift — expected="
+                        + expectedCount + ", actual=" + actualCount);
+            }
+            String actualHash = sha256(normalizeNewlines(content));
+            if (!actualHash.equals(expectedHash)) {
+                violations.add(label + ": 적용 migration 내용 fingerprint drift — expected="
+                        + expectedHash + ", actual=" + actualHash);
+            }
+        }
+
+        censusRows.sort(String::compareTo);
+        String actualCensusHash = sha256(String.join("\n", censusRows));
+        if (entries.size() != LEGACY_DEBT_FILE_COUNT
+                || totalIgnoreCount != LEGACY_DEBT_IGNORE_COUNT
+                || !LEGACY_DEBT_CENSUS_SHA256.equals(actualCensusHash)) {
+            violations.add("legacy debt census drift — 기존 43파일/188건 인벤토리에 새 자유형 예외를 "
+                    + "추가하거나 교체할 수 없습니다. files=" + entries.size()
+                    + ", ignores=" + totalIgnoreCount + ", censusSha256=" + actualCensusHash);
+        }
+        return legacyPaths;
+    }
+
+    private static Map<String, List<DirectiveUse>> collectDirectiveUses(
+            Map<String, String> migrationContents,
+            Set<String> legacyPaths,
+            List<String> violations) {
+        Map<String, List<DirectiveUse>> usesById = new LinkedHashMap<>();
+        for (Map.Entry<String, String> migration : migrationContents.entrySet()) {
+            String path = migration.getKey();
+            String[] lines = normalizeNewlines(migration.getValue()).split("\n", -1);
+            for (int lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+                Matcher matcher = WAIVER_DIRECTIVE.matcher(lines[lineIndex]);
+                while (matcher.find()) {
+                    if (legacyPaths.contains(path)) {
+                        // 전체 파일 fingerprint와 marker count가 별도 검증되므로 기존 SQL은 수정하지 않는다.
+                        continue;
+                    }
+                    String directive = matcher.group(1);
+                    String id = matcher.group(2);
+                    if (id == null) {
+                        violations.add(path + ":" + (lineIndex + 1)
+                                + " 신규/미등록 자유형 linter:" + directive
+                                + " — 안정 ID와 registry 승인이 필요합니다.");
+                        continue;
+                    }
+                    String inlineReason = matcher.group(3) == null ? "" : matcher.group(3).trim();
+                    if (inlineReason.length() < 10) {
+                        violations.add(path + ":" + (lineIndex + 1)
+                                + " structured waiver marker에 10자 이상의 인라인 사유가 필요합니다 — " + id);
+                    }
+                    usesById.computeIfAbsent(id, ignored -> new ArrayList<>())
+                            .add(new DirectiveUse(path, directive, lineIndex + 1));
+                }
+            }
+        }
+        return usesById;
+    }
+
+    private static void validateStructuredWaivers(
+            JsonNode entries,
+            Path repoRoot,
+            Path migrationDir,
+            Map<String, List<DirectiveUse>> usesById,
+            LocalDate today,
+            List<String> violations) {
+        if (!entries.isArray()) {
+            violations.add("waivers는 JSON array여야 합니다.");
+            return;
+        }
+
+        Set<String> registeredIds = new HashSet<>();
+        for (int index = 0; index < entries.size(); index++) {
+            JsonNode entry = entries.get(index);
+            String label = "waivers[" + index + "]";
+            String id = requiredText(entry, "id", label, violations);
+            String path = requiredText(entry, "path", label, violations);
+            String directive = requiredText(entry, "directive", label, violations);
+            String reason = requiredText(entry, "reason", label, violations);
+            String owner = requiredText(entry, "owner", label, violations);
+            String approvedAtText = requiredText(entry, "approvedAt", label, violations);
+            String expiresAtText = requiredText(entry, "expiresAt", label, violations);
+            String evidence = requiredText(entry, "evidence", label, violations);
+
+            if (!registeredIds.add(id)) {
+                violations.add(label + ": 중복 waiver ID — " + id);
+            }
+            if (!STRUCTURED_WAIVER_ID.matcher(id).matches()) {
+                violations.add(label + ": ID는 ZDM-YYYY-NNNN 형식이어야 합니다 — " + id);
+            }
+            if (!"ignore".equals(directive) && !"disable-file".equals(directive)) {
+                violations.add(label + ": directive는 ignore 또는 disable-file이어야 합니다.");
+            }
+            if (reason.length() < 20) {
+                violations.add(label + ": reason은 구체적인 안전성 사유를 20자 이상 기록해야 합니다.");
+            }
+            if (owner.isBlank()) {
+                violations.add(label + ": owner가 비어 있습니다.");
+            }
+            resolveRegisteredMigrationPath(repoRoot, migrationDir, path, label, violations);
+            validateEvidence(repoRoot, evidence, label, violations);
+
+            LocalDate approvedAt = parseDate(approvedAtText, label + ".approvedAt", violations);
+            LocalDate expiresAt = parseDate(expiresAtText, label + ".expiresAt", violations);
+            if (approvedAt != null && approvedAt.isAfter(today)) {
+                violations.add(label + ": approvedAt이 미래입니다 — " + approvedAt);
+            }
+            if (expiresAt != null && !expiresAt.isAfter(today)) {
+                violations.add(label + ": expiresAt이 도래/만료했습니다 — " + expiresAt);
+            }
+            if (approvedAt != null && expiresAt != null && !expiresAt.isAfter(approvedAt)) {
+                violations.add(label + ": expiresAt은 approvedAt보다 뒤여야 합니다.");
+            }
+
+            List<DirectiveUse> uses = usesById.getOrDefault(id, List.of());
+            if (uses.size() != 1) {
+                violations.add(label + ": waiver ID는 SQL marker 한 곳과 1:1이어야 합니다 — actual=" + uses.size());
+            } else {
+                DirectiveUse use = uses.get(0);
+                if (!path.equals(use.path())) {
+                    violations.add(label + ": registry path와 SQL marker path가 다릅니다 — actual=" + use.path());
+                }
+                if (!directive.equals(use.directive())) {
+                    violations.add(label + ": registry directive와 SQL marker가 다릅니다 — actual="
+                            + use.directive() + " at line " + use.line());
+                }
+            }
+        }
+
+        for (Map.Entry<String, List<DirectiveUse>> use : usesById.entrySet()) {
+            if (!registeredIds.contains(use.getKey())) {
+                for (DirectiveUse location : use.getValue()) {
+                    violations.add(location.path() + ":" + location.line()
+                            + " registry에 없는 waiver ID — " + use.getKey());
+                }
+            }
         }
     }
 
-    private void checkViolationWithIgnore(String fileName, String content, Pattern pattern, String errorMessage, List<String> violations) {
+    private static void auditDdl(String path, String content, List<String> violations) {
+        Matcher directives = WAIVER_DIRECTIVE.matcher(content);
+        while (directives.find()) {
+            if ("disable-file".equals(directives.group(1))) {
+                log.info("File [{}] is skipped by structured linter:disable-file directive.", path);
+                return;
+            }
+        }
+
+        String cleanContent = content
+                .replaceAll("(?s)/\\*.*?\\*/", "")
+                .replaceAll("--(?![^\r\n]*linter:ignore)[^\r\n]*", "");
+        checkViolationWithIgnore(path, cleanContent, FORBIDDEN_DROP,
+                "DROP COLUMN은 하위 호환성을 파괴합니다. Expand-and-Contract 최종 배포에서만 수행하십시오.",
+                violations);
+        checkViolationWithIgnore(path, cleanContent, FORBIDDEN_ALTER_TYPE,
+                "ALTER COLUMN TYPE은 lock/rewrite 위험이 있습니다. 신규 컬럼과 backfill을 사용하십시오.",
+                violations);
+        checkViolationWithIgnore(path, cleanContent, FORBIDDEN_RENAME,
+                "RENAME COLUMN/TABLE은 구버전 소비자를 즉시 파괴합니다.", violations);
+        checkAddNotNullViolation(path, cleanContent, violations);
+        checkViolationWithIgnore(path, cleanContent, FORBIDDEN_DROP_TABLE,
+                "DROP TABLE은 최상위 파괴 DDL입니다.", violations);
+        checkViolationWithIgnore(path, cleanContent, FORBIDDEN_DROP_SEQUENCE,
+                "DROP SEQUENCE는 채번 소비자를 즉시 파괴할 수 있습니다.", violations);
+        checkViolationWithIgnore(path, cleanContent, FORBIDDEN_TRUNCATE,
+                "TRUNCATE는 비가역 데이터 소거입니다.", violations);
+        checkViolationWithIgnore(path, cleanContent, FORBIDDEN_SEQ_RENAME,
+                "ALTER SEQUENCE RENAME은 채번 문자열 결속을 파괴합니다.", violations);
+    }
+
+    private static void checkViolationWithIgnore(
+            String path, String content, Pattern pattern, String errorMessage, List<String> violations) {
         Matcher matcher = pattern.matcher(content);
         while (matcher.find()) {
             String matchedStatement = matcher.group(0);
-            
-            // 검출된 문장 바로 뒷부분이나 매칭 라인에 ignore 지시어가 있는지 확인
-            int matchStart = matcher.start();
-            int lineEnd = content.indexOf("\n", matchStart);
-            String targetLine = (lineEnd != -1) ? content.substring(matchStart, lineEnd) : matchedStatement;
-            
+            int lineEnd = content.indexOf("\n", matcher.start());
+            String targetLine = lineEnd != -1
+                    ? content.substring(matcher.start(), lineEnd)
+                    : matchedStatement;
             if (targetLine.contains("linter:ignore")) {
-                continue; // 화이트리스트 통과
+                continue;
             }
-
-            violations.add(String.format("File [%s]: %s\n   -> 감지된 구문: '%s'", 
-                    fileName, errorMessage, matchedStatement.trim().replaceAll("\\s+", " ")));
+            violations.add(String.format("%s: %s (구문: %s)",
+                    path, errorMessage, matchedStatement.trim().replaceAll("\\s+", " ")));
         }
     }
 
-    private void checkAddNotNullViolation(String fileName, String content, List<String> violations) {
+    private static void checkAddNotNullViolation(String path, String content, List<String> violations) {
         Matcher matcher = ADD_CLAUSE_PATTERN.matcher(content);
         while (matcher.find()) {
             String addClause = matcher.group(1);
             String upperClause = addClause.toUpperCase();
-            
-            // NOT NULL이면서 DEFAULT 키워드가 없는 경우 차단
-            if (upperClause.contains("NOT") && upperClause.contains("NULL") && !upperClause.contains("DEFAULT")) {
-                
-                // 해당 매칭 라인에 ignore 지시어가 있다면 통과
-                int matchStart = matcher.start();
-                int lineEnd = content.indexOf("\n", matchStart);
-                String targetLine = (lineEnd != -1) ? content.substring(matchStart, lineEnd) : addClause;
-
-                if (targetLine.contains("linter:ignore")) {
-                    continue;
+            if (upperClause.contains("NOT")
+                    && upperClause.contains("NULL")
+                    && !upperClause.contains("DEFAULT")) {
+                int lineEnd = content.indexOf("\n", matcher.start());
+                String targetLine = lineEnd != -1
+                        ? content.substring(matcher.start(), lineEnd)
+                        : addClause;
+                if (!targetLine.contains("linter:ignore")) {
+                    violations.add(path + ": DEFAULT 없는 NOT NULL 컬럼 추가는 구버전 INSERT를 파괴합니다."
+                            + " (구문: ADD " + addClause.trim().replaceAll("\\s+", " ") + ")");
                 }
-
-                violations.add(String.format("File [%s]: DEFAULT 값 없는 NOT NULL 컬럼 추가는 구버전 앱의 INSERT를 즉각 파괴합니다.\n" +
-                        "   -> 감지된 구문: 'ADD %s'\n" +
-                        "   -> 해결책: DEFAULT 값을 추가하거나, NULL 허용 컬럼으로 만든 뒤 수작업 백필(Backfill)을 거치십시오.", 
-                        fileName, addClause.trim().replaceAll("\\s+", " ")));
             }
         }
+    }
+
+    private static Path resolveRegisteredMigrationPath(
+            Path repoRoot, Path migrationDir, String relativePath, String label, List<String> violations) {
+        if (relativePath.isBlank() || relativePath.contains("\\") || relativePath.contains("..")) {
+            violations.add(label + ": path는 정규화된 저장소 상대 경로여야 합니다 — " + relativePath);
+            return null;
+        }
+        Path resolved = repoRoot.resolve(relativePath).toAbsolutePath().normalize();
+        if (!resolved.startsWith(migrationDir) || !relativePath.endsWith(".sql")) {
+            violations.add(label + ": path는 Flyway migration SQL이어야 합니다 — " + relativePath);
+            return null;
+        }
+        return resolved;
+    }
+
+    private static void validateEvidence(Path repoRoot, String evidence, String label, List<String> violations) {
+        if (evidence.startsWith("https://")) {
+            return;
+        }
+        if (evidence.isBlank() || evidence.contains("\\") || evidence.contains("..")) {
+            violations.add(label + ": evidence는 기존 저장소 상대 경로 또는 https URL이어야 합니다.");
+            return;
+        }
+        Path evidencePath = repoRoot.resolve(evidence).toAbsolutePath().normalize();
+        if (!evidencePath.startsWith(repoRoot) || !Files.isRegularFile(evidencePath)) {
+            violations.add(label + ": evidence 경로가 존재하지 않습니다 — " + evidence);
+        }
+    }
+
+    private static String requiredText(JsonNode entry, String field, String label, List<String> violations) {
+        JsonNode value = entry.path(field);
+        if (!value.isTextual() || value.asText().isBlank()) {
+            violations.add(label + ": 필수 문자열 필드 누락/공백 — " + field);
+            return "";
+        }
+        return value.asText();
+    }
+
+    private static LocalDate parseDate(String value, String label, List<String> violations) {
+        if (value.isBlank()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value);
+        } catch (DateTimeParseException exception) {
+            violations.add(label + ": ISO-8601 날짜가 아닙니다 — " + value);
+            return null;
+        }
+    }
+
+    private static int countOccurrences(String content, String token) {
+        int count = 0;
+        int offset = 0;
+        while ((offset = content.indexOf(token, offset)) >= 0) {
+            count++;
+            offset += token.length();
+        }
+        return count;
+    }
+
+    private static String relativePath(Path repoRoot, Path path) {
+        return repoRoot.toAbsolutePath().normalize()
+                .relativize(path.toAbsolutePath().normalize())
+                .toString()
+                .replace('\\', '/');
+    }
+
+    private static String normalizeNewlines(String content) {
+        return content.replace("\r\n", "\n").replace('\r', '\n');
+    }
+
+    private static String sha256(String content) {
+        try {
+            byte[] digest = MessageDigest.getInstance("SHA-256")
+                    .digest(content.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(digest.length * 2);
+            for (byte value : digest) {
+                hex.append(String.format("%02x", value));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException exception) {
+            throw new IllegalStateException("JVM에 SHA-256 구현이 없습니다.", exception);
+        }
+    }
+
+    private record DirectiveUse(String path, String directive, int line) {
     }
 }

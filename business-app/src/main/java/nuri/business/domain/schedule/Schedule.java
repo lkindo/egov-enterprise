@@ -9,14 +9,13 @@ import java.io.Serializable;
 /**
  * 일정 엔티티 (tb_schdl_info)
  *
- * <p>[Phase 5.2 규범] 클래스 레벨 @SuperBuilder 제거, 빌더는 정적 팩토리 {@link #create}에 @Builder 배치.
- * (@AllArgsConstructor 는 {@code new Schedule(...)} 호출부가 존재하여 유지, create() 가 위임)
+ * <p>[Phase 5.2 규범] 클래스 레벨 Lombok 생성자/빌더를 제거하고 빌더는 정적 팩토리
+ * {@link #create}에 @Builder 배치. 기존 package 호출부 호환은 명시적 package-private 생성자가 유지한다.
  */
 @Entity
 @Table(name = "tb_schdl_info")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-@AllArgsConstructor
 public class Schedule extends BaseEntity implements Serializable {
     private static final long serialVersionUID = 1L;
 
@@ -60,6 +59,25 @@ public class Schedule extends BaseEntity implements Serializable {
     private String schdlPlcNm;
     @Column(length = 12)
     private String schdlImprtCd;
+
+    Schedule(Long schdlSn, String schdlSeCd, String schdlNm, String schdlCn, String reptSeCd,
+            String schdlBgngYmd, String schdlEndYmd, String schdlIpAddr, String schdlPicId, Long atchFileSn,
+            String schdlDeptId, String schdlKndCd, String schdlPlcNm, String schdlImprtCd) {
+        this.schdlSn = schdlSn;
+        this.schdlSeCd = schdlSeCd;
+        this.schdlNm = schdlNm;
+        this.schdlCn = schdlCn;
+        this.reptSeCd = reptSeCd;
+        this.schdlBgngYmd = schdlBgngYmd;
+        this.schdlEndYmd = schdlEndYmd;
+        this.schdlIpAddr = schdlIpAddr;
+        this.schdlPicId = schdlPicId;
+        this.atchFileSn = atchFileSn;
+        this.schdlDeptId = schdlDeptId;
+        this.schdlKndCd = schdlKndCd;
+        this.schdlPlcNm = schdlPlcNm;
+        this.schdlImprtCd = schdlImprtCd;
+    }
 
     /**
      * 일정 생성 정적 팩토리(빌더 진입점). {@code Schedule.builder()...build()} 호출부는 그대로 동작한다.

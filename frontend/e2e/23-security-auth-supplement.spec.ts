@@ -96,8 +96,19 @@ async function issueFreshRefreshToken(request: APIRequestContext): Promise<strin
 //       이 테스트는 실 LoginClient→authService→Route Handler 경로를 UI 로 구동해 그 공백을 메운다.
 test.describe('Tier 23-E0: Login success (UI flow — anti-regression for double-prefix)', () => {
     test('valid credentials authenticate via Route Handler and set HttpOnly session cookie', async ({ page, context, consoleGuard }) => {
-        // /login 초기 로드 시 AuthContext 가 인증상태 확인차 /auth/me 를 부르고 미인증이라 401 을 받는 것은 정상.
-        consoleGuard.addIgnorePattern(/auth\/me/);
+        // /login 초기 로드 시 AuthContext가 인증상태 확인차 /auth/me를 호출하는 401 한 건만 허용한다.
+        consoleGuard.expectErrors([{
+            id: 'E2E-AUTH-LOGIN-PAGE-ME-401',
+            specScope: '23-security-auth-supplement.spec.ts :: valid credentials authenticate via Route Handler and set HttpOnly session cookie',
+            channel: 'response',
+            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+            messagePattern: null,
+            method: 'GET',
+            status: 401,
+            maxOccurrences: 1,
+            reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+            expiresAt: '2026-12-31',
+        }]);
         await page.goto('/login');
         await page.locator('input[name="id"]').fill('webmaster');
         await page.locator('input[name="password"]').fill('1');
@@ -124,9 +135,57 @@ test.describe('Tier 23-E0: Login success (UI flow — anti-regression for double
 // ───────────────────────── E2: 로그인 실패(잘못된 자격증명) ─────────────────────────
 test.describe('Tier 23-E2: Login failure (negative auth)', () => {
     test('invalid password shows error and does NOT authenticate', async ({ page, consoleGuard }) => {
-        // 의도된 인증 실패이므로 로그인 401 및 LoginClient의 console.error(err)를 이 테스트에 한해 허용한다.
-        consoleGuard.addIgnorePattern(/auth\/login/);
-        consoleGuard.addIgnorePattern(/로그인|login|자격|credential|Unauthorized|401|Request failed/i);
+        // 초기 세션 확인 401, 의도적으로 잘못 보낸 로그인 401, 두 catch 경계의 정확한 로그만 허용한다.
+        consoleGuard.expectErrors([
+            {
+                id: 'E2E-AUTH-INVALID-PAGE-ME-401',
+                specScope: '23-security-auth-supplement.spec.ts :: invalid password shows error and does NOT authenticate',
+                channel: 'response',
+                urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+                messagePattern: null,
+                method: 'GET',
+                status: 401,
+                maxOccurrences: 1,
+                reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+                expiresAt: '2026-12-31',
+            },
+            {
+                id: 'E2E-AUTH-INVALID-CREDENTIALS-401',
+                specScope: '23-security-auth-supplement.spec.ts :: invalid password shows error and does NOT authenticate',
+                channel: 'response',
+                urlPattern: /\/api\/auth\/login(?:\?|$)/,
+                messagePattern: null,
+                method: 'POST',
+                status: 401,
+                maxOccurrences: 1,
+                reason: '잘못된 비밀번호를 제출해 인증 거부 UI와 접근성 계약을 검증한다.',
+                expiresAt: '2026-12-31',
+            },
+            {
+                id: 'E2E-AUTH-INVALID-CONTEXT-LOG',
+                specScope: '23-security-auth-supplement.spec.ts :: invalid password shows error and does NOT authenticate',
+                channel: 'console',
+                urlPattern: null,
+                messagePattern: /^Login process error:/,
+                method: null,
+                status: null,
+                maxOccurrences: 1,
+                reason: 'AuthContext가 의도된 로그인 거부를 UI 계층으로 다시 전달하며 남기는 진단 로그다.',
+                expiresAt: '2026-12-31',
+            },
+            {
+                id: 'E2E-AUTH-INVALID-CLIENT-LOG',
+                specScope: '23-security-auth-supplement.spec.ts :: invalid password shows error and does NOT authenticate',
+                channel: 'console',
+                urlPattern: null,
+                messagePattern: /^Error: /,
+                method: null,
+                status: null,
+                maxOccurrences: 1,
+                reason: 'LoginClient가 의도된 로그인 거부를 오류 surface에 표시하기 전에 남기는 Error 로그다.',
+                expiresAt: '2026-12-31',
+            },
+        ]);
 
         await page.goto('/login');
         await page.locator('input[name="id"]').fill('webmaster');
@@ -656,7 +715,21 @@ test.describe('Tier 23-E1: Forged-token rejection (middleware signature verifica
     // header=HS512, payload={role:ROLE_ADMIN, exp:먼 미래}, 서명='invalidsig'(위조). 과거 미들웨어는 통과시켰다.
     const FORGED_ADMIN_TOKEN = 'eyJhbGciOiJIUzUxMiJ9.eyJzdWIiOiJVU1JDTkZSTV8wMDAwMDAwMDAwMSIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ.invalidsig';
 
-    test('forged (bad-signature) admin token is rejected by middleware → /login', async ({ page, context }) => {
+    test('forged (bad-signature) admin token is rejected by middleware → /login', async ({ page, context, consoleGuard }) => {
+        // 미들웨어가 /login 으로 돌려보낸 뒤 AuthContext 가 세션 유무를 확인한다. 위조 토큰이므로 401 이
+        // 나오는 것이 이 테스트가 증명하려는 거부 동작 자체다.
+        consoleGuard.expectErrors([{
+            id: 'E2E-AUTH-FORGED-TOKEN-ME-401',
+            specScope: '23-security-auth-supplement.spec.ts :: forged (bad-signature) admin token is rejected by middleware → /login',
+            channel: 'response',
+            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+            messagePattern: null,
+            method: 'GET',
+            status: 401,
+            maxOccurrences: 2,
+            reason: '거부 후 도착한 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+            expiresAt: '2026-12-31',
+        }]);
         // 유효 세션 쿠키를 위조 토큰으로 덮어쓴다. 미들웨어가 서명 검증 실패로 로그인으로 돌려보내야 한다.
         await context.addCookies([
             { name: 'accessToken', value: FORGED_ADMIN_TOKEN, url: 'http://localhost:3001', httpOnly: true, sameSite: 'Strict' },
@@ -666,7 +739,19 @@ test.describe('Tier 23-E1: Forged-token rejection (middleware signature verifica
         await expect(page).toHaveURL(/\/login/, { timeout: 20000 });
     });
 
-    test('unknown-algorithm (alg=none style) token is rejected → /login', async ({ page, context }) => {
+    test('unknown-algorithm (alg=none style) token is rejected → /login', async ({ page, context, consoleGuard }) => {
+        consoleGuard.expectErrors([{
+            id: 'E2E-AUTH-NONE-ALG-TOKEN-ME-401',
+            specScope: '23-security-auth-supplement.spec.ts :: unknown-algorithm (alg=none style) token is rejected → /login',
+            channel: 'response',
+            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+            messagePattern: null,
+            method: 'GET',
+            status: 401,
+            maxOccurrences: 2,
+            reason: '거부 후 도착한 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+            expiresAt: '2026-12-31',
+        }]);
         // alg 화이트리스트(HS256/384/512) 밖은 거부. header.alg='none'.
         const NONE_ALG_TOKEN = 'eyJhbGciOiJub25lIn0.eyJzdWIiOiJhZG1pbiIsInJvbGUiOiJST0xFX0FETUlOIiwiZXhwIjo5OTk5OTk5OTk5fQ.';
         await context.addCookies([
@@ -679,7 +764,19 @@ test.describe('Tier 23-E1: Forged-token rejection (middleware signature verifica
 
 // ──────────────── E11: 접근성(a11y) — /login (color-contrast 포함, 미비활성) ────────────────
 test.describe('Tier 23-E11: Accessibility (login page, strict)', () => {
-    test('login page has no axe violations (color-contrast included)', async ({ page }) => {
+    test('login page has no axe violations (color-contrast included)', async ({ page, consoleGuard }) => {
+        consoleGuard.expectErrors([{
+            id: 'E2E-AUTH-LOGIN-A11Y-ME-401',
+            specScope: '23-security-auth-supplement.spec.ts :: login page has no axe violations (color-contrast included)',
+            channel: 'response',
+            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+            messagePattern: null,
+            method: 'GET',
+            status: 401,
+            maxOccurrences: 2,
+            reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+            expiresAt: '2026-12-31',
+        }]);
         await page.goto('/login');
         // 04-quality의 a11y는 color-contrast/heading-order를 비활성했으나, 공개 진입점 /login은 엄격히 검사한다.
         // 단, 감사 범위를 로그인 본문(<main id="main-content">)으로 스코프한다. 루트 레이아웃(AppShell)이 모든
@@ -705,7 +802,6 @@ test.describe('Tier 23-E11: Accessibility (login page, strict)', () => {
                 transition: none !important;
             }`,
         });
-        await page.waitForTimeout(300);
 
         const results = await new AxeBuilder({ page }).include('main#main-content').analyze();
         expect(

@@ -1,6 +1,7 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
@@ -17,7 +18,6 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -65,6 +65,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 텍스트 스캔.
  */
+@Tag("governance-harness")
 class SecretLiteralLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(SecretLiteralLinterTest.class);
@@ -177,12 +178,10 @@ class SecretLiteralLinterTest {
                     + root.toAbsolutePath() + "). 조용한 skip 은 false-green → 실패 처리.");
         }
         List<Path> scripts = new ArrayList<>();
-        try (Stream<Path> paths = Files.walk(scriptsDir)) {
-            paths.filter(Files::isRegularFile)
+        HarnessSourceIndex.filesUnder(scriptsDir).stream()
                     .filter(SecretLiteralLinterTest::isScript)
                     .sorted()
                     .forEach(scripts::add);
-        }
         // vacuity 하한(실측 2026-08-01: .sh 3 + .ps1 8 = 11)
         if (scripts.size() < 8) {
             fail("게이트 무결성 파손: scripts/ 스캔 결과(" + scripts.size()
@@ -199,12 +198,10 @@ class SecretLiteralLinterTest {
                     + root.toAbsolutePath() + "). 조용한 skip 은 false-green → 실패 처리.");
         }
         List<Path> agentJavaScripts = new ArrayList<>();
-        try (Stream<Path> paths = Files.walk(agentScriptsDir)) {
-            paths.filter(Files::isRegularFile)
+        HarnessSourceIndex.filesUnder(agentScriptsDir).stream()
                     .filter(path -> path.getFileName().toString().endsWith(".js"))
                     .sorted()
                     .forEach(agentJavaScripts::add);
-        }
         if (agentJavaScripts.size() < 8) {
             fail("게이트 무결성 파손: .agent/scripts JavaScript 스캔 결과(" + agentJavaScripts.size()
                     + ")가 예상 하한(8) 미만 — 경로/확장자 필터 파손 의심.");

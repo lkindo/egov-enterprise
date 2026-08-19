@@ -12,8 +12,9 @@
 4. [E2E 테스트](#e2e-테스트)
 5. [Testcontainers](#testcontainers)
 6. [JaCoCo 커버리지](#jacoco-커버리지)
-7. [고급 오류 감지 및 디버깅](#고급-오류-감지-및-디버깅)
-8. [모범 사례](#모범-사례)
+7. [k6 부하 테스트](#k6-부하-테스트)
+8. [고급 오류 감지 및 디버깅](#고급-오류-감지-및-디버깅)
+9. [모범 사례](#모범-사례)
 
 ---
 
@@ -58,6 +59,8 @@ test('renders button with text', () => {
   expect(screen.getByText('Click me')).toBeInTheDocument();
 });
 ```
+
+API service 테스트는 [api-client-test-double.ts](../../frontend/src/test-utils/api-client-test-double.ts)의 5-method client 형태와 reset 계약을 재사용한다. 각 테스트 파일의 `vi.mock` 격리는 유지하고, 호출 이력뿐 아니라 일회성 resolve/reject 구현까지 `resetApiClientTestDouble`로 초기화해 이전 테스트의 실패 설정이 다음 테스트에 새지 않게 한다. helper는 Axios envelope가 아니라 공통 client가 이미 unwrap한 `ApiResponse.data` 값을 반환한다는 경계를 따른다. 특수 interceptor나 config 동작을 검사하는 파일은 억지로 공통화하지 않는다.
 
 ---
 
@@ -217,6 +220,22 @@ open build/reports/jacoco/aggregated/index.html
 
 ---
 
+## k6 부하 테스트
+
+Windows 실행 wrapper는 100/500/1000 중 하나를 `K6_SCENARIO=users-<load>` 환경값으로 전달하고, [`load-levels.js`](../../test/load-tests/scenarios/load-levels.js)가 정확히 일치하는 시나리오 하나만 선택한다. 알 수 없는 값은 범위를 넓히지 않고 즉시 실패한다.
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/run-load-test.ps1 `
+  -LoadLevel 100 `
+  -BaseUrl http://localhost:8080
+```
+
+`k6 run --scenario ...`은 유효한 k6 CLI 계약이 아니다. [`load-test-command-contract.test.mjs`](../../scripts/load-test-command-contract.test.mjs)는 wrapper·installer·scenario source에서 이 옵션의 재도입을 막고 `K6_SCENARIO` 전달과 unknown-selection 실패를 검사한다. 이 저비용 테스트는 `npm run test:operational-contracts` catalog를 통해 pre-push와 required `secret-scan`에서 실행된다.
+
+이 계약이 green이어도 실제 처리량·지연·오류율을 증명하지는 않는다. 실제 부하는 대상 API·격리 계정·데이터와 k6 실행 환경이 필요하며, 실행·artifact·판정 방법은 [k6 부하 테스트 운영 가이드](../04-operations/load-test-guide.md)를 따른다.
+
+---
+
 ## 고급 오류 감지 및 디버깅
 
 E2E fixture는 방문한 화면에서 기능 단언과 함께 브라우저 오류·네트워크 실패·시각 회귀 신호를 수집한다. 실행하지 않은 경로나 외부 시스템까지 증명하지는 않는다.
@@ -313,6 +332,19 @@ pnpm -C frontend exec playwright install --with-deps chromium
 
 [커버리지 워크플로](../../.agent/workflows/coverage.md)의 순서대로 실패 테스트, 집계 대상, 같은 실행에서 생성된 `.exec` 파일을 확인한 뒤 `./gradlew jacocoRootReport`를 다시 실행한다. 태스크 `SKIPPED`나 입력 0개 상태를 성공으로 간주하지 않고, `clean`은 입력 불일치가 확인된 경우에만 사용한다.
 
+## 중앙 하네스 레지스트리와 실행 분리
+
+[governance gate registry](../../config/governance/gates.json)는 논리 규칙을 한 거대 테스트로 합치는 파일이 아니라, 안정적인 rule ID와 발견 selector·실행 task·CI context·red proof를 연결하는 운영 인덱스다. 현재 registry는 governance JUnit 33개·ArchUnit 10개·schema-validation 37개, runner catalog 5개, execution profile 6개, quality population 3개와 quality ratchet 15개를 관리한다. [Node 계약](../../scripts/governance-gates-contract.mjs)이 실제 source census와 소비자 설정을 exact-match하고, JaCoCo·Vitest·PIT의 측정 population까지 동결하므로 registry/source 한쪽에만 있는 ghost gate나 include 축소·exclude 확대에 의한 분모 축소 통과는 실패한다.
+
+| 계층 | 발견 계약 | 실행 경로 |
+|---|---|---|
+| Governance JUnit | 클래스 `@Tag("governance-harness")` | `:api-server:harnessTest` |
+| Architecture | ArchUnit native `@ArchTag("architecture-gate")` | 각 모듈 기본 `test` |
+| PostgreSQL schema | 클래스 `@Tag("schema-validation")` | `:api-server:schemaValidationTest` |
+| Node 운영 계약·Frontend invariant·Vitest·Playwright·PIT | registry의 runner selector/catalog | package script·CI aggregate context |
+
+새 gate는 stable ID, selector tag, 실제 task/required context, owner, 근거와 의도적 red proof를 함께 추가한다. `scripts/*.test.mjs`처럼 catalog로 소유한 저비용 운영 계약은 파일을 추가하면 별도 runner 목록 편집 없이 편입되며, k6 CLI·CI·의존성·문서 계약도 이 경로를 사용한다. 규칙 파일 수를 줄이기 위한 무관한 통합은 실패 위치와 소유권만 흐리므로 하지 않는다. 여러 Java source를 읽는 governance gate는 `HarnessSourceIndex`를 사용해 테스트 JVM당 동일 스냅샷을 공유하고 직접 `Files.walk/readString` 재도입은 계약이 차단한다.
+
 ## 스키마 정합성 전용 게이트
 
 모듈의 일반 `application-test.yml`은 주로 H2 `create-drop`을 사용하므로 Entity 정의로 테스트 스키마를 만들며, 운영 PostgreSQL과 Flyway의 물리 정합성을 증명하지 못한다. 스키마 증거는 `api-server`의 `tc` 프로필과 `schemaValidationTest`가 소유한다.
@@ -327,7 +359,9 @@ pnpm -C frontend exec playwright install --with-deps chromium
 ./gradlew localGate
 ```
 
-CI의 `backend-build`도 같은 PostgreSQL 스키마 검증 task를 실행한다. required check 상태는 현재 커밋에서 직접 확인하며, 일반 `test`나 컴파일 green을 스키마 검증 대체물로 보고하지 않는다.
+CI의 `backend-scope`는 classifier가 schema 영향으로 판정한 경우 같은 PostgreSQL 스키마 검증 task를 실행하고, 안정 required context `backend-build`가 그 결과를 집계한다. required check 상태는 현재 커밋에서 직접 확인하며, 일반 `test`나 컴파일 green을 스키마 검증 대체물로 보고하지 않는다.
+
+35개 migration suite는 `SharedPostgresMigrationTestSupport`의 PostgreSQL 17 컨테이너 하나를 공유하되 테스트 클래스마다 격리 database를 생성·삭제한다. 공유는 startup 비용만 줄이며 DB 이름·Flyway 적용·connection lifecycle 격리 계약은 `SharedPostgresMigrationHarnessContractTest`가 보호한다. Spring `jdbc:tc` 기반 검증은 별도 컨테이너 경로이므로 전체 실행에서 PostgreSQL start는 최대 2개다.
 
 ### 2. 로컬 훅 경계
 

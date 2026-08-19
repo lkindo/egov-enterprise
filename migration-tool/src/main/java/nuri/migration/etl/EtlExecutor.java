@@ -1,6 +1,7 @@
 package nuri.migration.etl;
 
 import nuri.migration.keymap.KeyMapRegistry;
+import nuri.migration.keymap.KeyMapRegistry.Checkpoint;
 import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.IdStrategy;
@@ -18,6 +19,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -50,14 +52,20 @@ public class EtlExecutor {
     }
 
     public record TableResult(String sourceTable, String targetTable,
-                              int read, int transformed, int written, List<String> errors) {}
+                              long read, long transformed, long written, List<String> errors) {}
 
     public List<TableResult> execute(MappingSpec spec, MigrationMode mode) {
+        if (spec.source() == null) {
+            throw new IllegalArgumentException("mapping.source 접속 설정이 없습니다.");
+        }
+        if (mode == MigrationMode.COMMIT && spec.target() == null) {
+            throw new IllegalArgumentException("commit 모드에는 mapping.target 접속 설정이 필수입니다.");
+        }
         JdbcTemplate sourceJt = introspector.jdbc(spec.source());
         DataSource sourceDs = sourceJt.getDataSource();
         JdbcTemplate targetJt = spec.target() == null ? null : introspector.jdbc(spec.target());
         DataSource targetDs = targetJt == null ? null : targetJt.getDataSource();
-        boolean commit = mode == MigrationMode.COMMIT && targetDs != null;
+        boolean commit = mode == MigrationMode.COMMIT;
 
         KeyMapRegistry registry = new KeyMapRegistry();
         if (commit) {
@@ -69,12 +77,8 @@ public class EtlExecutor {
         for (TableMapping t : TableOrderer.order(spec.tables())) {
             results.add(runTable(sourceDs, targetDs, spec, t, registry, commit));
         }
-        if (commit) {
-            try {
-                registry.flushPending(targetJt); // 신규 키맵 대응 영속(감사·멱등)
-            } catch (RuntimeException e) {
-                // 키맵 영속 실패는 이관 자체를 무효화하지 않는다(인메모리 대응은 이미 적용됨).
-            }
+        if (registry.hasPending()) {
+            throw new IllegalStateException("처리 종료 후 미확정 keymap이 남았습니다 — 이관 결과를 신뢰할 수 없습니다");
         }
         return results;
     }
@@ -92,9 +96,11 @@ public class EtlExecutor {
         try {
             if (commit) {
                 targetConn = targetDs.getConnection();
+                targetConn.setReadOnly(false);
                 targetConn.setAutoCommit(false);
             }
             try (Connection sc = sourceDs.getConnection()) {
+                sc.setReadOnly(true);
                 sc.setAutoCommit(false); // PostgreSQL 서버 커서(스트리밍) 활성 조건
                 try (PreparedStatement ps = sc.prepareStatement(selectSql)) {
                     ps.setFetchSize(CHUNK);
@@ -122,29 +128,46 @@ public class EtlExecutor {
         } finally {
             safeClose(targetConn);
         }
-        return new TableResult(t.source(), t.target(), (int) c[0], (int) c[1], (int) c[2], errors);
+        return new TableResult(t.source(), t.target(), c[0], c[1], c[2], errors);
     }
 
     private void processChunk(List<Map<String, Object>> chunk, MappingSpec spec, TableMapping t,
                               List<String> targetCols, String insertSql, KeyMapRegistry reg,
                               Connection targetConn, long[] c, List<String> errors) {
-        List<Object[]> batch = new ArrayList<>(chunk.size());
+        Checkpoint chunkCheckpoint = reg.checkpoint();
+        List<PreparedRow> batch = new ArrayList<>(chunk.size());
         for (Map<String, Object> row : chunk) {
+            Checkpoint rowCheckpoint = reg.checkpoint();
             try {
                 Map<String, Object> out = transformRow(row, spec, t, reg);
                 c[1]++;
-                Object[] args = new Object[targetCols.size()];
-                for (int i = 0; i < targetCols.size(); i++) {
-                    args[i] = out.get(targetCols.get(i));
-                }
-                batch.add(args);
+                batch.add(new PreparedRow(row, toArguments(out, targetCols)));
             } catch (RuntimeException e) {
+                reg.rollback(rowCheckpoint);
                 errors.add("행 변환 실패(" + t.source() + "): " + e.getMessage());
             }
         }
-        if (targetConn != null && !batch.isEmpty()) {
-            c[2] += writeBatch(targetConn, insertSql, batch, t.target(), errors);
+        if (batch.isEmpty()) {
+            reg.rollback(chunkCheckpoint);
+            return;
         }
+        if (targetConn == null) {
+            // dry-run에서도 이후 자식 fkRef 검증에 성공한 부모 keymap은 필요하지만 pending 표식은 남기지 않는다.
+            reg.accept(chunkCheckpoint);
+            return;
+        }
+        c[2] += writeChunkAtomically(
+                targetConn, insertSql, batch, spec, t, targetCols, reg, chunkCheckpoint, errors);
+    }
+
+    private record PreparedRow(Map<String, Object> source, Object[] arguments) {}
+
+    private static Object[] toArguments(Map<String, Object> transformed, List<String> targetColumns) {
+        Object[] arguments = new Object[targetColumns.size()];
+        for (int i = 0; i < targetColumns.size(); i++) {
+            arguments[i] = transformed.get(targetColumns.get(i));
+        }
+        return arguments;
     }
 
     private Map<String, Object> transformRow(Map<String, Object> src, MappingSpec spec, TableMapping t, KeyMapRegistry reg) {
@@ -187,39 +210,128 @@ public class EtlExecutor {
         return translated;
     }
 
-    private int writeBatch(Connection conn, String sql, List<Object[]> batch, String table, List<String> errors) {
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (Object[] args : batch) {
-                bind(ps, args);
-                ps.addBatch();
-            }
-            ps.executeBatch();
-            conn.commit();
-            return batch.size();
+    private long writeChunkAtomically(Connection connection, String sql, List<PreparedRow> rows,
+                                      MappingSpec spec, TableMapping table, List<String> targetColumns,
+                                      KeyMapRegistry registry, Checkpoint checkpoint, List<String> errors) {
+        List<Object[]> batch = rows.stream().map(PreparedRow::arguments).toList();
+        long written;
+        try {
+            written = executeBatch(connection, sql, batch);
+            registry.writePending(connection, checkpoint);
         } catch (SQLException e) {
-            safeRollback(conn);
-            return writeRowByRow(conn, sql, batch, table, errors); // 배치 실패 → 행단위로 나쁜 행 격리
+            rollbackAndDiscard(connection, registry, checkpoint, table.target());
+            return writeRowsAtomically(
+                    connection, sql, rows, spec, table, targetColumns, registry, errors);
+        }
+        commitAndAccept(connection, registry, checkpoint, table.target());
+        return written;
+    }
+
+    private long writeRowsAtomically(Connection connection, String sql, List<PreparedRow> rows,
+                                     MappingSpec spec, TableMapping table, List<String> targetColumns,
+                                     KeyMapRegistry registry, List<String> errors) {
+        long written = 0L;
+        for (PreparedRow row : rows) {
+            Checkpoint rowCheckpoint = registry.checkpoint();
+            Object[] arguments;
+            try {
+                Map<String, Object> transformed = transformRow(row.source(), spec, table, registry);
+                arguments = toArguments(transformed, targetColumns);
+            } catch (RuntimeException transformFailure) {
+                registry.rollback(rowCheckpoint);
+                errors.add("행 재변환 실패(" + table.source() + "): " + transformFailure.getMessage());
+                continue;
+            }
+
+            try {
+                int updateCount = executeSingle(connection, sql, arguments);
+                registry.writePending(connection, rowCheckpoint);
+                commitAndAccept(connection, registry, rowCheckpoint, table.target());
+                written += updateCount;
+            } catch (SQLException rowFailure) {
+                rollbackAndDiscard(connection, registry, rowCheckpoint, table.target());
+                errors.add("원자 INSERT/keymap 실패(" + table.target() + "): " + rowFailure.getMessage());
+            }
+        }
+        return written;
+    }
+
+    private static long executeBatch(Connection connection, String sql, List<Object[]> batch) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            return executeBatch(statement, batch);
         }
     }
 
-    private int writeRowByRow(Connection conn, String sql, List<Object[]> batch, String table, List<String> errors) {
-        int written = 0;
-        try (PreparedStatement ps = conn.prepareStatement(sql)) {
-            for (Object[] args : batch) {
-                try {
-                    bind(ps, args);
-                    ps.executeUpdate();
-                    conn.commit();
-                    written++;
-                } catch (SQLException ex) {
-                    safeRollback(conn);
-                    errors.add("INSERT 실패(" + table + "): " + ex.getMessage());
-                }
-            }
-        } catch (SQLException e) {
-            errors.add("INSERT 준비 실패(" + table + "): " + e.getMessage());
+    static long executeBatch(PreparedStatement statement, List<Object[]> batch) throws SQLException {
+        for (Object[] arguments : batch) {
+            bind(statement, arguments);
+            statement.addBatch();
+        }
+        int[] updateCounts = statement.executeBatch();
+        long written = exactInsertedRows(updateCounts, batch.size());
+        if (written < 0) {
+            throw new SQLException("data JDBC batch updateCounts가 정확한 1행 기록을 증명하지 못했습니다");
         }
         return written;
+    }
+
+    private static int executeSingle(Connection connection, String sql, Object[] arguments) throws SQLException {
+        try (PreparedStatement statement = connection.prepareStatement(sql)) {
+            bind(statement, arguments);
+            int updateCount = statement.executeUpdate();
+            if (updateCount != 1) {
+                throw new SQLException("INSERT 영향행 불일치: expected=1, actual=" + updateCount);
+            }
+            return updateCount;
+        }
+    }
+
+    /** 각 입력 행이 정확히 한 행을 기록했다는 것을 JDBC updateCounts로 증명한다. */
+    static long exactInsertedRows(int[] updateCounts, int expectedStatements) {
+        if (updateCounts == null || updateCounts.length != expectedStatements) {
+            return -1L;
+        }
+        long written = 0L;
+        for (int count : updateCounts) {
+            if (count == Statement.SUCCESS_NO_INFO || count == Statement.EXECUTE_FAILED || count != 1) {
+                return -1L;
+            }
+            written = Math.addExact(written, count);
+        }
+        return written;
+    }
+
+    private static void rollbackAndDiscard(Connection connection, KeyMapRegistry registry,
+                                           Checkpoint checkpoint, String table) {
+        SQLException rollbackFailure = null;
+        try {
+            connection.rollback();
+        } catch (SQLException e) {
+            rollbackFailure = e;
+        }
+        registry.rollback(checkpoint);
+        if (rollbackFailure != null) {
+            throw new AtomicTransactionException(
+                    "target rollback 결과 불확정(" + table + ") — 재시도를 중단합니다", rollbackFailure);
+        }
+    }
+
+    private static void commitAndAccept(Connection connection, KeyMapRegistry registry,
+                                        Checkpoint checkpoint, String table) {
+        try {
+            connection.commit();
+        } catch (SQLException commitFailure) {
+            registry.rollback(checkpoint);
+            throw new AtomicTransactionException(
+                    "data/keymap 원자 commit 결과 불확정(" + table + ") — 재시도를 중단합니다", commitFailure);
+        }
+        registry.accept(checkpoint);
+    }
+
+    private static final class AtomicTransactionException extends IllegalStateException {
+        private AtomicTransactionException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 
     private static void bind(PreparedStatement ps, Object[] args) throws SQLException {

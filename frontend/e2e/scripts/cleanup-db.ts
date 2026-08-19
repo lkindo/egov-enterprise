@@ -34,11 +34,32 @@ function describeError(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+export interface CleanupFailure {
+  scope: string;
+  message: string;
+}
+
+function recordCleanupFailure(failures: CleanupFailure[], scope: string, error: unknown): void {
+  const failure = { scope, message: describeError(error) };
+  failures.push(failure);
+  console.warn(`  => ${scope} cleanup failed: ${failure.message}`);
+}
+
+export function assertCleanupSucceeded(failures: CleanupFailure[]): void {
+  if (failures.length === 0) return;
+  const summary = failures.map(({ scope, message }) => `${scope}: ${message}`).join('\n');
+  throw new AggregateError(
+    failures.map(({ scope, message }) => new Error(`${scope}: ${message}`)),
+    `[DB Cleanup] ${failures.length} cleanup operation(s) failed:\n${summary}`,
+  );
+}
+
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1';
 const ADMIN_ID = 'webmaster';
 const ADMIN_PW = '1';
 
-async function cleanup() {
+export async function cleanup() {
+  const failures: CleanupFailure[] = [];
   console.log('\n>>> [DB Cleanup] Starting cleanup of E2E test data...');
   
   try {
@@ -145,7 +166,7 @@ async function cleanup() {
       }
       console.log(`  => ${testPolls.length} poll(s) cleaned.`);
     } catch (error: unknown) {
-      console.warn(`  => Poll cleanup skipped: ${describeError(error)}`);
+      recordCleanupFailure(failures, 'Poll', error);
     }
     
     // 5. Cleanup Popups (Prefix: E2E Popup)
@@ -164,7 +185,7 @@ async function cleanup() {
       }
       console.log(`  => ${testPopups.length} popup(s) cleaned.`);
     } catch (error: unknown) {
-      console.warn(`  => Popup cleanup skipped: ${describeError(error)}`);
+      recordCleanupFailure(failures, 'Popup', error);
     }
 
     // 6. Cleanup Banners (Prefix: E2E Banner)
@@ -188,7 +209,7 @@ async function cleanup() {
       }
       console.log(`  => ${testBanners.length} banner(s) cleaned.`);
     } catch (error: unknown) {
-      console.warn(`  => Banner cleanup skipped: ${describeError(error)}`);
+      recordCleanupFailure(failures, 'Banner', error);
     }
 
     // 7. Cleanup Board Posts (Prefix: E2E Security FAQ, E2E ...)
@@ -207,7 +228,11 @@ async function cleanup() {
         for (const post of testPosts) {
           const postId = post.pstSn || post.id;
           if (postId === undefined) {
-            console.warn(`  => Post cleanup skipped missing ID: ${post.pstTtl || post.title || '(untitled)'}`);
+            recordCleanupFailure(
+              failures,
+              `Board ${bbsId} post`,
+              new Error(`missing ID: ${post.pstTtl || post.title || '(untitled)'}`),
+            );
             continue;
           }
           process.stdout.write(`  - Deleting Post: ${post.pstTtl || post.title} (${postId})... `);
@@ -216,7 +241,7 @@ async function cleanup() {
         }
         if (testPosts.length > 0) console.log(`  => ${testPosts.length} post(s) cleaned from ${bbsId}.`);
       } catch (error: unknown) {
-        console.warn(`  => Board ${bbsId} cleanup skipped: ${describeError(error)}`);
+        recordCleanupFailure(failures, `Board ${bbsId}`, error);
       }
     }
 
@@ -239,7 +264,7 @@ async function cleanup() {
         console.log('DONE');
       }
     } catch (error: unknown) {
-      console.warn(`  => Menu cleanup skipped: ${describeError(error)}`);
+      recordCleanupFailure(failures, 'Menu', error);
     }
 
     // 9. Cleanup Address Books (Prefix: Identity_)
@@ -258,7 +283,7 @@ async function cleanup() {
       }
       console.log(`  => ${testAddresses.length} address book entry(ies) cleaned.`);
     } catch (error: unknown) {
-      console.warn(`  => Address book cleanup skipped: ${describeError(error)}`);
+      recordCleanupFailure(failures, 'Address book', error);
     }
 
     // 10. Cleanup Online Manuals (Prefix: E2E Manual)
@@ -277,7 +302,7 @@ async function cleanup() {
       }
       console.log(`  => ${testManuals.length} manual(s) cleaned.`);
     } catch (error: unknown) {
-      console.warn(`  => Manual cleanup skipped: ${describeError(error)}`);
+      recordCleanupFailure(failures, 'Manual', error);
     }
 
     // 11. Cleanup Security Artifacts (Authorities: ROLE_E2E_, Groups: GROUP_E2E_, Roles: URL_E2E_)
@@ -300,7 +325,7 @@ async function cleanup() {
       }
       console.log(`  => ${testRoles.length} role(s) cleaned.`);
     } catch (error: unknown) {
-      console.warn(`  => Role cleanup skipped: ${describeError(error)}`);
+      recordCleanupFailure(failures, 'Role', error);
     }
     try {
       const groupsRes = await axios.get<ApiEnvelope<PagePayload<CleanupGroup>>>(`${API_BASE}/admin/system/groups`, {
@@ -318,7 +343,7 @@ async function cleanup() {
       }
       console.log(`  => ${testGroups.length} group(s) cleaned.`);
     } catch (error: unknown) {
-      console.warn(`  => Group cleanup skipped: ${describeError(error)}`);
+      recordCleanupFailure(failures, 'Group', error);
     }
     try {
       const authRes = await axios.get<ApiEnvelope<PagePayload<CleanupAuthority>>>(`${API_BASE}/admin/system/authorities`, {
@@ -334,19 +359,18 @@ async function cleanup() {
       }
       console.log(`  => ${testAuths.length} authority(ies) cleaned.`);
     } catch (error: unknown) {
-      console.warn(`  => Authority cleanup skipped: ${describeError(error)}`);
+      recordCleanupFailure(failures, 'Authority', error);
     }
-
-    console.log('>>> [DB Cleanup] All test data removed successfully!\n');
   } catch (error: unknown) {
-    console.error('>>> [DB Cleanup] ERROR occurred during cleanup:', describeError(error));
-    if (axios.isAxiosError(error) && error.response?.data) {
-        console.error('>>> [DEBUG] Response data:', JSON.stringify(error.response.data));
-    }
-    if (error instanceof Error) {
-      console.error(error.stack);
-    }
+    recordCleanupFailure(failures, 'Cleanup bootstrap/core', error);
   }
+
+  if (failures.length === 0) {
+    console.log('>>> [DB Cleanup] All test data removed successfully!\n');
+  } else {
+    console.error(`>>> [DB Cleanup] Completed with ${failures.length} failure(s).`);
+  }
+  assertCleanupSucceeded(failures);
 }
 
 export default async function globalTeardown() {
@@ -359,5 +383,8 @@ export default async function globalTeardown() {
 // 죽는다. CommonJS 의 표준 직접 실행 판정은 Playwright import(false)와 tsx 직접 실행(true)을
 // 모두 구분하면서 파일 경로/운영체제에도 의존하지 않는다.
 if (require.main === module) {
-  void cleanup();
+  void cleanup().catch((error: unknown) => {
+    console.error(error instanceof Error ? error.message : String(error));
+    process.exitCode = 1;
+  });
 }

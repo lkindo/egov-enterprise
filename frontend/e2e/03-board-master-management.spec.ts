@@ -63,7 +63,6 @@ test.describe('Tier 3: Board Master Management (Admin Flow)', () => {
         await boardMasterPage.deleteBoard(updatedName);
 
         console.log('\n>>> Step 6: Verifying Deletion');
-        await page.waitForTimeout(3000);
         await boardMasterPage.search(updatedName);
         
         // Soft delete sets use_yn='N' (rendered as "대기" in Korean UI) rather than hard deleting the row

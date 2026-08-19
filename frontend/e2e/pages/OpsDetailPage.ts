@@ -26,8 +26,6 @@ export class OpsDetailPage {
             searchInput.pressSequentially(keyword, { delay: 80 })
         ]);
         
-        // Extra buffer for React state & TanStack Query to re-render
-        await this.page.waitForTimeout(1000);
         console.log(`>>> [OpsDetail] Search API responded (status: ${response.status()})`);
     }
 
@@ -78,9 +76,7 @@ export class OpsDetailPage {
         ]);
         console.log('>>> [OpsDetail] Event creation confirmed (toast or modal closed).');
         
-        // Return to list and wait for DB to reflect the new event
-        // Invalidation happens automatically, reload is redundant and causes next-coverage build to hang.
-        await this.page.waitForTimeout(2000);
+        // 호출자는 검색 응답과 기대 행을 기다려 DB 반영을 확인한다.
     }
 
     async deleteEvent(name: string) {
@@ -90,15 +86,14 @@ export class OpsDetailPage {
         let found = false;
         for (let i = 0; i < 3; i++) {
             await this.searchEvents(name);
-            const count = await this.page.locator('tr').filter({ hasText: name }).count();
-            if (count > 0) {
+            const candidate = this.page.locator('tr').filter({ hasText: name }).first();
+            if (await candidate.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)) {
                 found = true;
                 break;
             }
             console.log(`>>> [OpsDetail] Event not found in search, retrying (${i+1}/3)...`);
             await this.page.reload();
             await this.page.waitForLoadState('networkidle');
-            await this.page.waitForTimeout(3000);
         }
 
         if (!found) {

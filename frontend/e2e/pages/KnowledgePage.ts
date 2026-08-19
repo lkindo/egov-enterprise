@@ -41,7 +41,6 @@ export class KnowledgePage {
         console.log('>>> [Knowledge] Clicked submit button, waiting for response...');
         
         // Success check - should redirect to list or show toast
-        await this.page.waitForTimeout(3000); // Give it some time
         await expect(this.page.getByText(/성공|완료|저장되었습니다|Success|Completed|Saved/i).first()).toBeVisible({ timeout: 15000 });
     }
 
@@ -51,6 +50,6 @@ export class KnowledgePage {
         await searchInput.waitFor({ state: 'visible', timeout: 15000 });
         await searchInput.fill(keyword);
         await this.page.keyboard.press('Enter');
-        await this.page.waitForTimeout(2000); // Wait for results to filter
+        await expect(searchInput).toHaveValue(keyword);
     }
 }

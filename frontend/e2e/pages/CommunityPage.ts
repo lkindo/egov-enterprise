@@ -26,8 +26,9 @@ export class CommunityPage {
             'COMMUNITY': '커뮤니티'
         };
         console.log(`>>> [Community] Selecting category: ${category}`);
-        await this.page.getByRole('tab', { name: categoryMap[category] }).click();
-        await this.page.waitForTimeout(1000);
+        const categoryTab = this.page.getByRole('tab', { name: categoryMap[category] });
+        await categoryTab.click();
+        await expect(categoryTab).toHaveAttribute('aria-selected', 'true');
     }
 
     async verifyCOPList() {

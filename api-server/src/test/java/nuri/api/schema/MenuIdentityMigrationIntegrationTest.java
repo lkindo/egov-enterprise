@@ -1,13 +1,9 @@
 package nuri.api.schema;
 
-import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -17,18 +13,10 @@ import java.sql.Statement;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
-@Testcontainers(disabledWithoutDocker = false)
 @DisplayName("메뉴 BIGINT 수동 PK → IDENTITY 생성전략 보정")
-class MenuIdentityMigrationIntegrationTest {
+class MenuIdentityMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     private static final long LEGACY_ROOT_SN = 800_000_000L;
-
-    @Container
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:17-alpine")
-                    .withDatabaseName("egovdb")
-                    .withUsername("egov")
-                    .withPassword("egov123");
 
     @Test
     @DisplayName("기존 계층·권한을 보존하고 레거시 ROOT 정리 후 충돌 없는 번호를 자동 발급한다")
@@ -38,7 +26,7 @@ class MenuIdentityMigrationIntegrationTest {
         long menuCountBefore;
         long authorityCountBefore;
         long maxBusinessMenuSn;
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             menuCountBefore = singleLong(statement, "SELECT count(*) FROM tb_menu_info");
             authorityCountBefore = singleLong(statement, "SELECT count(*) FROM tb_menu_crt_dtl");
@@ -58,7 +46,7 @@ class MenuIdentityMigrationIntegrationTest {
 
         flyway(null).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             assertThat(singleLong(statement, "SELECT count(*) FROM tb_menu_info"))
                     .isEqualTo(menuCountBefore - 1);
@@ -121,14 +109,6 @@ class MenuIdentityMigrationIntegrationTest {
                     "SELECT count(*) FROM tb_menu_crt_dtl WHERE menu_sn=" + generatedChildSn))
                     .isEqualTo(1L);
         }
-    }
-
-    private Flyway flyway(MigrationVersion target) {
-        var configuration = Flyway.configure()
-                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration");
-        if (target != null) configuration.target(target);
-        return configuration.load();
     }
 
     private long singleLong(Statement statement, String sql) throws SQLException {

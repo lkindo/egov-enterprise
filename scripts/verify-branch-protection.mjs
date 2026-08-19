@@ -2,9 +2,9 @@
 /**
  * 🔐 브랜치 보호 실효성 검증 — 저장소 명세, CI 워크플로, GitHub 실제 설정을 함께 대조한다.
  *
- * required check 이름은 `.github/required-checks.json` 한 곳에서만 정의한다. 매트릭스 잡은
- * workflow job ID(`e2e-tests`)와 실제 check context(`e2e-tests (1/3)`)가 다르므로 명세가
- * 둘을 명시적으로 연결한다. GitHub 설정은 명세와 집합이 정확히 같아야 한다.
+ * required check 이름은 `.github/required-checks.json` 한 곳에서만 정의한다. 매트릭스 leaf는
+ * 안정적인 aggregate context(`e2e-test`, `mutation-test`)에 결속해 shard/scope 수 변경이
+ * branch protection 이름을 바꾸지 않게 한다. GitHub 설정은 명세와 집합이 정확히 같아야 한다.
  *
  * 판정 불가를 통과로 처리하지 않는다. 로컬 정적 검사만 필요할 때에만 `--allow-offline`을
  * 명시하며, 그 결과는 브랜치 보호의 권위 있는 증거로 사용할 수 없다.
@@ -18,7 +18,9 @@ import path from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
+import { validateClassicAdminEnforcement } from './branch-protection-contract.mjs';
 import {
+  comparePullRequestPolicy,
   compareRequiredChecks,
   validateStaticContract,
 } from './required-checks-contract.mjs';
@@ -88,6 +90,7 @@ function resolveSlug() {
 }
 
 let requiredChecks = null;
+let pullRequestPolicies = [];
 const protections = {
   deletion: false,
   nonFastForward: false,
@@ -122,7 +125,17 @@ try {
     }
     if (rule.type === 'deletion') protections.deletion = true;
     if (rule.type === 'non_fast_forward') protections.nonFastForward = true;
-    if (rule.type === 'pull_request') protections.pullRequest = true;
+    if (rule.type === 'pull_request') {
+      protections.pullRequest = true;
+      const parameters = rule.parameters ?? {};
+      pullRequestPolicies.push({
+        requiredApprovingReviewCount: parameters.required_approving_review_count,
+        requireCodeOwnerReview: parameters.require_code_owner_review,
+        requireLastPushApproval: parameters.require_last_push_approval,
+        dismissStaleReviewsOnPush: parameters.dismiss_stale_reviews_on_push,
+        requiredReviewThreadResolution: parameters.required_review_thread_resolution,
+      });
+    }
   }
 
   for (const rulesetId of sourceRulesetIds) {
@@ -139,6 +152,7 @@ try {
 
   const classic = ghOptional404(`repos/${slug}/branches/${encodeURIComponent(protectedBranch)}/protection`);
   if (classic) {
+    failures.push(...validateClassicAdminEnforcement(classic));
     const classicChecks = classic.required_status_checks?.checks ?? [];
     if (classicChecks.length > 0) {
       for (const check of classicChecks) {
@@ -155,7 +169,19 @@ try {
     if (classic.required_status_checks?.strict === true) protections.strictStatusChecks = true;
     if (classic.allow_force_pushes?.enabled === false) protections.nonFastForward = true;
     if (classic.allow_deletions?.enabled === false) protections.deletion = true;
-    if (classic.required_pull_request_reviews) protections.pullRequest = true;
+    if (classic.required_pull_request_reviews) {
+      protections.pullRequest = true;
+      if (pullRequestPolicies.length === 0) {
+        const reviews = classic.required_pull_request_reviews;
+        pullRequestPolicies.push({
+          requiredApprovingReviewCount: reviews.required_approving_review_count,
+          requireCodeOwnerReview: reviews.require_code_owner_reviews,
+          requireLastPushApproval: reviews.require_last_push_approval,
+          dismissStaleReviewsOnPush: reviews.dismiss_stale_reviews,
+          requiredReviewThreadResolution: classic.required_conversation_resolution?.enabled,
+        });
+      }
+    }
   }
 
   requiredChecks = checks;
@@ -185,6 +211,17 @@ if (requiredChecks !== null) {
   }
   if (!protections.deletion) failures.push('기본 브랜치 삭제 차단이 없습니다.');
   if (!protections.pullRequest) failures.push('PR 경유 규칙이 없습니다.');
+  const uniquePullRequestPolicies = [
+    ...new Map(pullRequestPolicies.map(policy => [JSON.stringify(policy), policy])).values(),
+  ];
+  if (uniquePullRequestPolicies.length !== 1) {
+    failures.push(`effective pull request policy가 ${uniquePullRequestPolicies.length}종입니다 — 단일 정책으로 판정할 수 없습니다.`);
+  } else {
+    failures.push(...comparePullRequestPolicy(
+      manifest.pullRequestPolicy,
+      uniquePullRequestPolicies[0],
+    ));
+  }
 }
 
 for (const warning of warnings) console.warn(`⚠️  ${warning}`);
@@ -204,4 +241,4 @@ if (requiredChecks === null) {
   process.exit(0);
 }
 
-console.log('\n✅ required check 명세·CI 매핑·GitHub ruleset과 force-push/삭제/PR 보호가 모두 정합합니다.');
+console.log('\n✅ required check·PR review 정책·CI 매핑·GitHub ruleset과 force-push/삭제 보호가 모두 정합합니다.');

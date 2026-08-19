@@ -27,17 +27,15 @@
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
-  post: vi.fn(),
-  put: vi.fn(),
-  patch: vi.fn(),
-  delete: vi.fn(),
+vi.mock('@/lib/api/client', async () => ({
+  default: (await import('@/test-utils/api-client-test-double')).apiClientTestDouble,
 }));
 
-vi.mock('@/lib/api/client', () => ({ default: client }));
-
 import { knowledgeService } from '../knowledgeService';
+import {
+  apiClientTestDouble as client,
+  resetApiClientTestDouble,
+} from '@/test-utils/api-client-test-double';
 
 /** 소스에 하드코딩된 게시판 ID 상수 (private 이라 테스트에서 리터럴로 재선언해 고정한다) */
 const BBS = {
@@ -50,9 +48,8 @@ const BBS = {
 
 describe('knowledgeService — 지식 허브 게시판 API 계약', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
     // 정규화 메서드(getHotArticles/getActivities)가 res.list 를 읽으므로 기본 응답을 깔아둔다.
-    client.get.mockResolvedValue({ list: [] });
+    resetApiClientTestDouble({ get: { list: [] } });
   });
 
   describe('getArticles — 목록 조회', () => {

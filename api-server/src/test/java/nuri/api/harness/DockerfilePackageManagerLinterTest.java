@@ -1,12 +1,12 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -56,6 +56,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * {@code resolveRepoRoot()}(settings.gradle 탐색) 관행을 따른다 — 테스트 JVM 의 workingDir 은 모듈
  * 디렉터리(api-server)다.
  */
+@Tag("governance-harness")
 class DockerfilePackageManagerLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(DockerfilePackageManagerLinterTest.class);
@@ -248,7 +249,7 @@ class DockerfilePackageManagerLinterTest {
      * Docker 는 연속행 <b>도중에도</b> 주석 줄을 허용하므로 주석 판정을 먼저 한다.
      */
     private static List<Instruction> readInstructions(Path file) throws IOException {
-        String raw = Files.readString(file, StandardCharsets.UTF_8);
+        String raw = HarnessSourceIndex.read(file);
         List<Instruction> result = new ArrayList<>();
         String[] lines = raw.split("\r?\n", -1);
         StringBuilder buffer = null;

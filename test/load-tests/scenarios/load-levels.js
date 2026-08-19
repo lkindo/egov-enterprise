@@ -8,13 +8,6 @@
  *   K6_SCENARIO=users-500  k6 run load-levels.js
  *   K6_SCENARIO=users-1000 k6 run load-levels.js
  *
- * [2026-08-09 정정] 종전 이 주석은 `k6 run --scenario users-100` 을 안내했다.
- *   **k6 에 그런 플래그는 없다** — 실측: `level=error msg="unknown flag: --scenario"` (k6 v1.7.1).
- *   워크플로도 같은 플래그를 쓰고 있어서 부하 테스트는 한 번도 완주한 적이 없다.
- *   k6 는 시나리오를 CLI 로 고르는 수단을 제공하지 않으므로, 스크립트가 환경변수를 읽어
- *   `options.scenarios` 를 좁히는 것이 정석이다(이 파일은 이미 __ENV.K6_SCENARIO 를
- *   로깅에만 쓰고 있었다 — 원래 의도가 env 방식이었음을 보여준다).
- *
  *   ⚠ K6_SCENARIO 를 지정하지 않으면 **세 시나리오가 동시에** 돈다(합계 1600 VU · 약 20분).
  *   의도적으로 그러는 경우가 아니라면 항상 지정할 것.
  */

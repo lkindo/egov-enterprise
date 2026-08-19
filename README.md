@@ -116,7 +116,8 @@ pnpm dev
 
 ## ✅ 검증 진입점 (Verification Entry Points)
 
-- `npm run verify`: 일반 로컬 백엔드·프론트 검증. pre-push와 CI의 완전한 상위집합은 아니다.
+- `npm run verify:docs` / `verify:fast` / `verify:push` / `verify:full`: 비용 순으로 중첩된 로컬 프로파일. 변경 범위에 맞는 최소 프로파일을 고른다. `verify:full`은 실 PostgreSQL 스키마 검증을 포함해 Docker가 필요하다.
+- `npm run verify:e2e`: 브라우저 E2E. 서비스 기동이 필요해 별도로 둔다.
 - `.\gradlew.bat localGate`: Docker 기반 PostgreSQL 스키마 검증, 전 모듈 테스트, JaCoCo, 프론트 단위 검증을 포함하는 병합 전 로컬 게이트.
 - `npm run verify:ops`: 원격 ruleset 등 네트워크·관리 권한이 필요한 운영 점검.
 - 최종 병합 권위는 [.github/required-checks.json](./.github/required-checks.json)에 결속된 required CI다.
@@ -224,8 +225,10 @@ make bootstrap
 
 1. **빌드 검증**
    ```bash
-   # 일반 로컬 검증(완전한 CI parity 명령은 아님)
-   make verify        # == node scripts/verify.mjs all == npm run verify
+   # 변경 범위에 맞춰 비용 순으로 고른다: docs < fast < push < full
+   npm run verify:fast   # 컴파일·계약·타입·불변식 (가장 흔한 선택)
+   npm run verify:push   # verify:fast + 거버넌스 하네스
+   make verify           # == npm run verify:full — 실 PostgreSQL 스키마 검증 포함(Docker 필요)
 
    # Docker 사용 가능 시 병합 전 전수 로컬 게이트
    .\gradlew.bat localGate

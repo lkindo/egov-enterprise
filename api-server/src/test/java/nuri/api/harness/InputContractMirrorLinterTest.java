@@ -31,6 +31,7 @@ import nuri.business.service.system.content.community.dto.CommunityDto;
 import nuri.business.service.system.content.popup.dto.PopupDto;
 import nuri.business.service.user.dto.UserDto;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -66,6 +67,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 하류의 {@code codegen:verify}/{@code codegen:verify:zod}와 결합하면
  * Entity → DTO → OpenAPI → TypeScript/Zod 체인이 닫힌다.
  */
+@Tag("governance-harness")
 class InputContractMirrorLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(InputContractMirrorLinterTest.class);
@@ -182,7 +184,7 @@ class InputContractMirrorLinterTest {
     @Test
     @DisplayName("입력 DTO 길이와 enum 제약이 api-docs.json까지 전파된다")
     void targetedDtoConstraintsReachCommittedOpenApi() throws IOException {
-        JsonNode schemas = new ObjectMapper().readTree(Files.readString(resolveApiDocs()))
+        JsonNode schemas = new ObjectMapper().readTree(HarnessSourceIndex.read(resolveApiDocs()))
                 .path("components").path("schemas");
         if (!schemas.isObject()) {
             fail("게이트 무결성 파손: api-docs.json components.schemas가 없습니다");

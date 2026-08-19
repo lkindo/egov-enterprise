@@ -60,8 +60,12 @@ export class ObservabilityPage {
     async refresh() {
         console.log('[E2E] Clicking data-stream refresh button...');
         const syncBtn = this.page.getByRole('button', { name: /데이터 스트림 새로고침/i });
-        await syncBtn.click();
-        await this.page.waitForTimeout(1000);
+        await Promise.all([
+            this.page.waitForResponse((response) =>
+                /\/actuator\/health(?:\?|$)/.test(response.url()) && response.request().method() === 'GET',
+            ),
+            syncBtn.click(),
+        ]);
     }
 
     async exportData() {

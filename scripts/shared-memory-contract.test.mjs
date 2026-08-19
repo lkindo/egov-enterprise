@@ -172,6 +172,14 @@ test('project context covers every Gradle module', () => {
   for (const module of modules) {
     assert.ok(context.includes(`\`${module}\``), `project-context에 ${module}이 없습니다.`);
   }
+
+  const requiredChecks = JSON.parse(readRepoFile('.github/required-checks.json')).requiredChecks;
+  const requiredRow = context.split(/\r?\n/).find((line) => line.startsWith('| CTX-005 |')) ?? '';
+  assert.match(requiredRow, new RegExp(`${requiredChecks.length}개 required context`, 'u'));
+  for (const { context: requiredContext } of requiredChecks) {
+    assert.ok(requiredRow.includes(`\`${requiredContext}\``), `CTX-005에 ${requiredContext}가 없습니다.`);
+  }
+  assert.doesNotMatch(requiredRow, /e2e-tests \([1-9]\/[1-9]\)/u, '내부 shard를 required context로 기록하면 안 됩니다.');
 });
 
 test('decision memory indexes every accepted ADR', () => {
