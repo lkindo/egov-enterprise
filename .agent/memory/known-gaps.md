@@ -6,7 +6,7 @@ authority: derived-active-index
 scope: repository
 sensitivity: public-repo-safe
 verified_at: 2026-08-19
-verified_against: 6dcf383c37a20852a286af62b644684f4915efa1
+verified_against: 189c24024980bf795438ed3bc293059dd0331ceb
 canonical_sources:
   - ../../frontend/public/governance_harness_atlas.html
   - ../../docs/04-operations/verification-blindspots.md
@@ -48,7 +48,6 @@ refresh_triggers:
 | GAP-AGENT-001 | P2 | deferred | coordination | 공용 메모리는 지속 지식만 공유하며 실시간 claim·lock·presence 조정은 아직 설계 상태다. | [coordination design](../../docs/02-architecture/dual-operator-coordination.md), [AGENTS memory rule](../../AGENTS.md#documentation-and-memory) | 실제 동시 편집 충돌 비용이 정당화될 때 별도 coordination protocol을 구현한다. | 사용자 | 2026-08-18 |
 | GAP-AUTH-002 | P1 | open | authorization | 재작성된 `SecurityAuthAnnotationLinterTest`는 쓰기 메서드(POST/PUT/PATCH/DELETE)만 순회한다. 종전 린터가 HTTP 메서드 구분 없이 강제하던 "모든 핸들러는 인가 애노테이션·PUBLIC whitelist·secure-paths 중 하나에 결속" 축이 읽기 엔드포인트에서 사라졌고, 이 능력을 넘겨받은 다른 게이트가 없다. | [SecurityAuthAnnotationLinterTest](../../api-server/src/test/java/nuri/api/harness/SecurityAuthAnnotationLinterTest.java), [authorization policies](../../config/governance/authorization-policies.json) | endpoint policy registry를 읽기 엔드포인트까지 확장하거나, 최소한 "비-whitelist GET은 선언된 인가 기제를 가진다"는 축소 단언을 별도 테스트로 복원한다. 즉시 복원이 불가하면 registry의 알려진 한계와 gates.json에 범위 밖임을 명시해 커버리지 축소가 문서상 은폐되지 않게 한다. | 보안/API 소유자 | 2026-08-19 |
 | GAP-GOV-003 | P1 | open | harness integrity | 동결 census가 Java 상수에서 `config/governance/*.json` registry로 이관됐는데, `HarnessBaselineIntegrityTest`는 Java 상수와 훅 파일만 해시한다. 그 결과 인가 census·gate registry·ZDM waiver의 변경이 baseline manifest diff에 남지 않아, 목록 편집이 "두 파일이 함께 바뀐다"는 은폐 방지 결속을 벗어난다. | [HarnessBaselineIntegrityTest](../../api-server/src/test/java/nuri/api/harness/HarnessBaselineIntegrityTest.java), [authorization policies](../../config/governance/authorization-policies.json), [gate registry](../../config/governance/gates.json), [zdm waivers](../../config/governance/zdm-waivers.json) | `GATE_HOOKS`가 훅을 해시하는 방식과 동일하게 registry JSON을 `__registry.<path>` 축으로 매니페스트에 동결하고, 의도적 변경 주입으로 red를 증명한다. | 아키텍처/보안 소유자 | 2026-08-19 |
-| GAP-E2E-001 | P1 | open | session expiry behavior | 세션이 사라진 뒤에도 화면이 계속 마운트된 채 `GET /api/v1/notifications`·`/unread-count` 폴링과 `POST /api/auth/reissue`를 쏘아 401을 받는다. `20-common-security-validation.spec.ts:6`은 주석으로 "알림·재발급 401은 이 계약에 필요하지 않으므로 더 이상 광역 무시하지 않는다 — 발생하면 독립 결함으로 실패한다"고 명시했고, 실제로 발생해 실패한다. ledger 등록으로 덮으면 그 명시적 의도를 뒤집는 것이므로 제품 판단이 선행돼야 한다. `03-board-community.spec.ts:264`도 같은 401 묶음으로 실패한다. | [20-common-security-validation](../../frontend/e2e/20-common-security-validation.spec.ts), [03-board-community](../../frontend/e2e/03-board-community.spec.ts), [error-detector](../../frontend/e2e/fixtures/error-detector.ts), [CI job 96037308681](https://github.com/lkindo/egov-enterprise/actions/runs/32242157066/job/96037308681) | 세션 만료 시 폴링·재발급을 중단하고 로그인으로 전환하는 것이 옳은 동작인지 결정한다. 옳다면 프런트를 고치고 테스트는 그대로 둔다. 현행 동작이 의도된 것이라면 두 테스트에 ledger 항목을 등록하고 20-common의 주석을 함께 정정한다. 어느 쪽이든 광역 무시 패턴 복원으로 되돌리지 않는다. | 프런트/제품 소유자 | 2026-08-19 |
 | GAP-SEC-001 | P1 | blocked-external | secret lifecycle | 과거 노출 가능 자격의 외부 회전·폐기 완료 여부는 저장소만으로 증명할 수 없다. | [verification blindspots](../../docs/04-operations/verification-blindspots.md) | provider별 회전·dangling credential 폐기 증거를 secure channel에서 확인한다. 값이나 로컬 파일은 저장소에 기록하지 않는다. | 사용자/운영 관리자 | 2026-08-19 |
 
 ## 재검증 대기

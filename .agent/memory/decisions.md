@@ -6,7 +6,7 @@ authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
 verified_at: 2026-08-19
-verified_against: 6dcf383c37a20852a286af62b644684f4915efa1
+verified_against: 189c24024980bf795438ed3bc293059dd0331ceb
 canonical_sources:
   - ../../AGENTS.md
   - ../../docs/02-architecture/decisions/README.md
