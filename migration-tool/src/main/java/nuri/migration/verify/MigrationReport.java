@@ -12,11 +12,11 @@ public record MigrationReport(List<TableReport> tables, Status overall) {
 
     public enum Status { PASS, WARN, FAIL }
 
-    public record TableReport(String source, String target, int read, int transformed, int written,
-                              int errors, long targetRows, Status status, String note) {}
+    public record TableReport(String source, String target, long read, long transformed, long written,
+                              long errors, long targetRows, Status status, String note) {}
 
     public boolean ok() {
-        return overall != Status.FAIL;
+        return overall == Status.PASS;
     }
 
     public String toSummary() {

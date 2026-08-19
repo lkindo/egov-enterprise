@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "workflowRunId": "32212820616",
+    "commit": "6dcf383c37a20852a286af62b644684f4915efa1",
+    "capturedAt": "2026-08-19",
+    "runner": "ubuntu-24.04 / Playwright 1.62.1 / workers=1",
+    "workers": 1
+  },
+  "durationsMs": {
+    "01-core-base.spec.ts": 12840,
+    "02-admin-system.spec.ts": 27220,
+    "03-board-community.spec.ts": 39720,
+    "03-board-master-management.spec.ts": 36940,
+    "04-quality-resilience.spec.ts": 18880,
+    "05-public-experience.spec.ts": 47510,
+    "06-ops-governance.spec.ts": 4890,
+    "07-productivity-suite.spec.ts": 5010,
+    "08-advanced-collaboration.spec.ts": 7960,
+    "09-admin-observability-workspace.spec.ts": 9020,
+    "10-operational-extension.spec.ts": 13340,
+    "11-enterprise-workflow.spec.ts": 4300,
+    "12-notification.spec.ts": 19350,
+    "13-mail.spec.ts": 20600,
+    "14-admin-workflow.spec.ts": 3410,
+    "15-collaboration-extension.spec.ts": 1100,
+    "16-system-observability.spec.ts": 9670,
+    "17-support-governance.spec.ts": 16510,
+    "18-business-extension.spec.ts": 2640,
+    "19-hierarchy-modernization.spec.ts": 13030,
+    "20-common-security-validation.spec.ts": 3690,
+    "21-advanced-resilience.spec.ts": 3780,
+    "22-deep-security-guard.spec.ts": 6770,
+    "23-security-auth-supplement.spec.ts": 18400,
+    "24-org-schedule-journey.spec.ts": 3330,
+    "25-deptjob-workreport-journey.spec.ts": 14550
+  }
+}

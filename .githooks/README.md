@@ -12,7 +12,7 @@ git config core.hooksPath .githooks
 | 훅 | 시점 | 동작 | 강도 |
 |----|------|------|------|
 | `pre-commit` | 커밋 | DTO/Controller/api-docs.json/생성타입 스테이징 시 `codegen:verify(:zod)` 드리프트 점검 | ⚠ 경고(비차단) |
-| `pre-push` | 푸시 | 공용 메모리·문서 링크 계약은 항상 실행. 문서-only는 fast-pass, Atlas HTML은 전용 계약만 추가 실행, 소스 변경은 컴파일·타입·codegen·하네스까지 실행 | ❌ 실행된 범위에서 차단 |
+| `pre-push` | 푸시 | 운영 계약은 항상 실행. 문서-only는 fast-pass, Atlas HTML은 전용 계약만 추가 실행한다. 소스 변경은 공용 fail-closed 분류기로 backend/frontend 영향만 선택하며, 알 수 없는 파일은 양쪽 전체를 실행한다. | ❌ 실행된 범위에서 차단 |
 
 현재 계약 게이트는 `api-docs.json`과 생성 타입/Zod 파일이 Git에 추적되는지 먼저 확인한 뒤 diff를 판정한다. 하네스는 소스 변경의 pre-push 경로에도 연결하지만 훅은 우회 가능하므로 최종 병합 권위는 required CI다.
 
@@ -22,11 +22,12 @@ git config core.hooksPath .githooks
 |---|---|---|---|
 | pre-commit | 자동 | 시크릿 스캔(미설치 시 **경고 출력**)·계약 드리프트 경고 | 낮음 |
 | pre-push 문서-only | 자동 | 공용 메모리 계약 + 문서 링크 무결성. Atlas HTML이면 전용 docs-as-code 계약 추가 | 낮음 |
-| pre-push 소스 변경 | 자동 | 위 + 컴파일 + tsc + codegen(tracked 선행검사) + `harnessTest` | 중간 |
-| **병합 전 전수** | `./gradlew localGate` | 위 + **실PG 스키마 검증** + 전 모듈 테스트 + **JaCoCo LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫 | 높음 |
+| pre-push 소스 변경 | 자동 | 운영 계약 + 변경 영향이 있는 Java compile/`harnessTest` 또는 FE/E2E tsc·lint·codegen·불변식 Vitest. 미분류 파일은 양쪽 실행 | 중간 |
+| **Gradle 전수 lane** | `./gradlew localGate` | 하네스 + **실PG 스키마 검증** + 전 모듈 테스트 + **JaCoCo LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫. pre-push의 모든 정적 검사를 포함하는 superset은 아님 | 높음 |
+| **통합 전수 진입점** | `npm run verify` | 운영/문서 계약 + backend 전수 lane + FE codegen·lint·타입·build·bundle·coverage. E2E와 원격 ruleset은 각각 `verify:e2e`/`verify:ops` | 높음 |
 | CI | `.github/workflows/ci.yml` | **secret-scan(gitleaks)** + 전체 + 실PG 스키마 검증 + 프론트 gzip 번들 예산 + E2E + 뮤테이션 | 가장 높음 |
 
-`harnessTest`의 실행 집합과 `baseline-manifest.properties`의 동결 집합은 동일하지 않다. business/foundation ArchUnit과 schema-validation 등은 `test`·`localGate`·CI 경로가 소유하므로, pre-push 하나를 모든 하네스의 실행 증거로 간주하지 않는다. 현재 census와 알려진 공백은 Governance Atlas 및 공용 gap 인덱스에서 확인한다.
+[governance gates manifest](../config/governance/gates.json)가 governance JUnit tag·ArchUnit tag·schema-validation tag와 Node/Frontend/E2E/mutation runner catalog를 중앙 등록한다. 계약 테스트는 실제 source census, 실행 task, CI/훅 소비자와 quality ratchet을 대조하고 `baseline-manifest.properties`는 보호 파일의 tamper hash를 추가로 고정한다. pre-push 하나를 전체 하네스 실행 증거로 간주하지 말고 변경 범위에 맞는 registry consumer 결과를 확인한다.
 
 ### 입력 의미 계약 게이트
 

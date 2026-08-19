@@ -1,6 +1,7 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,7 +19,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -61,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * {@code nuri.api.harness.*} 패키지라 {@code :api-server:harnessTest} 에 자동 편입되고,
  * 그 태스크는 {@code .githooks/pre-push} 가 기계로 강제한다.
  */
+@Tag("governance-harness")
 class TestSecurityChainOverrideLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(TestSecurityChainOverrideLinterTest.class);
@@ -141,17 +142,15 @@ class TestSecurityChainOverrideLinterTest {
                 fail("게이트 무결성 파손: 스캔 루트를 찾을 수 없습니다 — " + root
                         + " (workingDir=" + Paths.get("").toAbsolutePath() + "). 조용한 skip 은 false-green 입니다.");
             }
-            try (Stream<Path> paths = Files.walk(dir)) {
-                List<Path> files = paths.filter(Files::isRegularFile)
+            List<Path> files = HarnessSourceIndex.filesUnder(dir).stream()
                         .filter(p -> p.toString().endsWith(".java"))
                         // 이 린터 자신은 판정 대상이 아니다(패턴 문자열이 자기 자신에 매칭된다).
                         .filter(p -> !p.getFileName().toString().equals("TestSecurityChainOverrideLinterTest.java"))
                         .sorted()
                         .collect(Collectors.toList());
-                scannedFiles += files.size();
-                for (Path file : files) {
-                    collect(file, counts);
-                }
+            scannedFiles += files.size();
+            for (Path file : files) {
+                collect(file, counts);
             }
         }
 
@@ -204,7 +203,7 @@ class TestSecurityChainOverrideLinterTest {
 
     private static void collect(Path file, java.util.Map<String, Integer> sink) throws IOException {
         String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
-                Files.readString(file, StandardCharsets.UTF_8));
+                HarnessSourceIndex.read(file));
         String className = file.getFileName().toString().replace(".java", "");
 
         Matcher chain = CHAIN_BEAN_DECL.matcher(code);

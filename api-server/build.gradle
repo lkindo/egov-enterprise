@@ -67,7 +67,9 @@ jar {
 }
 
 test {
-    useJUnitPlatform()
+    // governance harness 와 Docker schema gate 는 이름 있는 전용 태스크에서만 실행한다.
+    // 기본 test 와 겹치면 check/coverage/CI DAG 에서 같은 하네스가 두 번 실행된다.
+    useJUnitPlatform { excludeTags 'governance-harness', 'schema-validation' }
     // [P4] 마이그레이션 린터(ZeroDowntime·SchemaNaming)가 src 경로의 SQL 을 직접 읽으므로,
     // Gradle 증분 빌드가 SQL 단독 변경을 감지하도록 테스트 입력에 명시 등록한다.
     // (미등록 시 마이그레이션 파일만 바뀐 커밋에서 테스트가 UP-TO-DATE 스킵 → 린터 게이트 무력화)
@@ -80,11 +82,11 @@ test {
  * 훅이 문자열 필터를 직접 들고 있지 않아도 된다.
  */
 tasks.register('harnessTest', Test) {
-    description = '헌법/표준 하네스 린터만 실행 (nuri.api.harness.*)'
+    description = '헌법/표준 governance 하네스 린터만 실행 (@Tag governance-harness)'
     group = 'Verification'
     testClassesDirs = sourceSets.test.output.classesDirs
     classpath = sourceSets.test.runtimeClasspath
-    filter { includeTestsMatching 'nuri.api.harness.*' }
+    useJUnitPlatform { includeTags 'governance-harness' }
 
     // [필수] 이 린터들은 **타 모듈의 소스 텍스트와 마이그레이션 SQL 을 직접 읽어** 판정한다.
     // 그 파일들은 이 태스크의 입력으로 선언돼 있지 않아, 감사 대상이 바뀌어도 Gradle 은
@@ -95,14 +97,16 @@ tasks.register('harnessTest', Test) {
     outputs.cacheIf { false }
 }
 
-/**
- * 실 PostgreSQL 스키마 검증 게이트 — Docker 필요라 pre-push 가 아닌 localGate/CI 계층.
- * 기본 `test` 태스크에서는 태그로 제외해, Docker 없는 환경의 일반 테스트를 깨지 않는다.
- */
-tasks.named('test') {
-    useJUnitPlatform { excludeTags 'schema-validation' }
+// `check`가 기본 test에서 분리된 필수 governance gate를 정확히 한 번 포함하도록 한다.
+// root coverage/localGate/CI가 같은 task provider를 의존하므로 Gradle DAG가 중복 실행을 제거한다.
+tasks.named('check') {
+    dependsOn tasks.named('harnessTest')
 }
 
+/**
+ * 실 PostgreSQL 스키마 검증 게이트 — Docker 필요라 pre-push 가 아닌 localGate/CI 계층.
+ * 기본 `test` 태스크에서는 위 test 설정의 태그로 제외해, Docker 없는 환경의 일반 테스트를 깨지 않는다.
+ */
 tasks.register('schemaValidationTest', Test) {
     description = '실 PostgreSQL(Testcontainers) + Flyway migrate + Hibernate ddl-auto:validate 스키마 검증'
     group = 'Verification'

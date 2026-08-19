@@ -1,13 +1,9 @@
 package nuri.api.schema;
 
-import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -17,25 +13,17 @@ import java.sql.Statement;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
-@Testcontainers(disabledWithoutDocker = false)
 @DisplayName("웹 로그 잘린 UUID PK → BIGINT IDENTITY 데이터 마이그레이션")
-class WebLogBigintMigrationIntegrationTest {
+class WebLogBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     private static final int LEGACY_ROW_COUNT = 4_003;
-
-    @Container
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:17-alpine")
-                    .withDatabaseName("egovdb")
-                    .withUsername("egov")
-                    .withPassword("egov123");
 
     @Test
     @DisplayName("기존 4,003행과 검색 인덱스를 보존하고 자동 내부키로 전환한다")
     void migratesExistingVolumeAndEnforcesIdentityGeneration() throws SQLException {
         flyway(MigrationVersion.fromVersion("2.74")).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
                     INSERT INTO tb_web_log
@@ -55,7 +43,7 @@ class WebLogBigintMigrationIntegrationTest {
 
         flyway(null).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             assertThat(singleLong(statement, "SELECT count(*) FROM tb_web_log"))
                     .isEqualTo(LEGACY_ROW_COUNT);
@@ -99,14 +87,6 @@ class WebLogBigintMigrationIntegrationTest {
                     "SELECT web_log_sn FROM tb_web_log WHERE url='/api/v1/new'"))
                     .isGreaterThan(maxMigratedSn);
         }
-    }
-
-    private Flyway flyway(MigrationVersion target) {
-        var configuration = Flyway.configure()
-                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration");
-        if (target != null) configuration.target(target);
-        return configuration.load();
     }
 
     private long singleLong(Statement statement, String sql) throws SQLException {

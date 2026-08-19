@@ -33,13 +33,8 @@ public class SourceIntrospector {
                             rs.getString("data_type"),
                             "YES".equalsIgnoreCase(rs.getString("is_nullable"))),
                     table);
-            long count = 0L;
-            try {
-                Long c = jt.queryForObject("SELECT count(*) FROM " + ident(table), Long.class);
-                count = c == null ? 0L : c;
-            } catch (RuntimeException ignore) {
-                // 행수 조회 실패(권한/부재) 시 0 — 인트로스펙션은 계속한다.
-            }
+            Long measured = jt.queryForObject("SELECT count(*) FROM " + ident(table), Long.class);
+            long count = measured == null ? 0L : measured;
             tables.add(new SourceCatalog.SourceTable(table, cols, count));
         }
         return new SourceCatalog(tables);

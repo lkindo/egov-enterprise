@@ -264,6 +264,8 @@ subprojects { subproject ->
         targetTests = (System.getenv('PIT_TARGET_TESTS') ?: 'nuri.*').split(',').collect { it.trim() }
         outputFormats = ['HTML', 'XML']
         threads = 4
+        // 대상 글롭이 잘못되거나 제외 규칙이 전부 삼킨 경우 "분석할 mutation 0건"을 성공으로 보지 않는다.
+        failWhenNoMutations = true
 
         // 도메인 분석과 무관한 설정/예외/DTO 보일러플레이트 제외
         excludedClasses = [
@@ -487,8 +489,8 @@ tasks.register('frontendUnitTest') {
     doLast {
         // Gradle 9 에서 Project.exec 가 제거돼 ProcessBuilder 를 직접 쓴다(installGitHooks 와 동일 방식).
         def isWindows = System.getProperty('os.name').toLowerCase().contains('windows')
-        def cmd = isWindows ? ['cmd', '/c', 'pnpm', 'test'] : ['pnpm', 'test']
-        logger.lifecycle('[frontendUnitTest] pnpm test (frontend)')
+        def cmd = isWindows ? ['cmd', '/c', 'pnpm', 'run', 'test:coverage'] : ['pnpm', 'run', 'test:coverage']
+        logger.lifecycle('[frontendUnitTest] pnpm run test:coverage (frontend)')
         def proc = new ProcessBuilder(cmd)
                 .directory(frontendProjectDir)
                 .redirectErrorStream(true)
@@ -511,7 +513,7 @@ tasks.register('localGate') {
     description = '로컬 전체 게이트: 하네스 + 실PG + 전 모듈 테스트 + JaCoCo LINE 85%/BRANCH 70% + 프런트 vitest/coverage 래칫 (약 12분)'
     group = 'Verification'
     dependsOn ':api-server:harnessTest', ':api-server:schemaValidationTest',
-            ':business-core:test', ':business-app:test', ':foundation:test',
+            ':business-core:test', ':business-app:test', ':foundation:check',
             'jacocoRootCoverageVerification', 'frontendUnitTest'
 }
 

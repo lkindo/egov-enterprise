@@ -1,12 +1,12 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -40,6 +40,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p><b>이 게이트가 보장하지 <u>않는</u> 것</b>: 설정 <b>값이 옳은지</b>는 보지 않는다.
  * 두 선언이 같다는 것만 본다.
  */
+@Tag("governance-harness")
 class SpringdocDeclarationSyncLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(SpringdocDeclarationSyncLinterTest.class);
@@ -105,7 +106,7 @@ class SpringdocDeclarationSyncLinterTest {
             fail("게이트 무결성 파손: 대조 대상 파일이 없다 — " + path.toAbsolutePath()
                     + " (경로가 바뀌었다면 이 린터의 상수도 함께 갱신할 것)");
         }
-        return Files.readString(path, StandardCharsets.UTF_8);
+        return HarnessSourceIndex.read(path);
     }
 
     private String firstGroup(String content, Pattern pattern) {

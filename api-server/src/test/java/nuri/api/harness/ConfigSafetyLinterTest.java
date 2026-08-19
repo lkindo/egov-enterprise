@@ -1,6 +1,7 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -58,6 +59,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 텍스트 스캔. 경로 해석은 IdentityAxisLinterTest 의
  * {@code resolveRepoRoot()}(settings.gradle 탐색) 관행을 재사용한다.
  */
+@Tag("governance-harness")
 class ConfigSafetyLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(ConfigSafetyLinterTest.class);
@@ -154,8 +156,8 @@ class ConfigSafetyLinterTest {
 
         Map<String, String> base = flattenYaml(appYml);
         Map<String, String> prod = flattenYaml(appProdYml);
-        String composeBaseSrc = stripComments(Files.readString(composeBase, StandardCharsets.UTF_8));
-        String composeProdSrc = stripComments(Files.readString(composeProd, StandardCharsets.UTF_8));
+        String composeBaseSrc = stripComments(HarnessSourceIndex.read(composeBase));
+        String composeProdSrc = stripComments(HarnessSourceIndex.read(composeProd));
 
         // ── vacuity ②: 파싱이 조용히 붕괴하면 아래 검사가 전부 vacuous 통과가 된다.
         //    실측(2026-08-01): application.yml 147 키 / application-prod.yml 62 키.
@@ -455,7 +457,7 @@ class ConfigSafetyLinterTest {
                     + " 배포 진입점을 옮겼다면 이 린터의 DEPLOY_SCRIPT 도 함께 갱신하십시오.");
             return;
         }
-        String src = stripComments(Files.readString(script, StandardCharsets.UTF_8));
+        String src = stripComments(HarnessSourceIndex.read(script));
         if (!src.contains(COMPOSE_PROD)) {
             violations.add(DEPLOY_SCRIPT + " 이 '" + COMPOSE_PROD + "' 를 참조하지 않습니다 —"
                     + " 오버레이 없이 배포하면 application-prod.yml(무기본값 fail-fast·actuator 축소·쿠키 secure·"

@@ -1,13 +1,9 @@
 package nuri.api.schema;
 
-import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -18,9 +14,8 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
-@Testcontainers(disabledWithoutDocker = false)
 @DisplayName("첨부파일 문자열 PK → BIGINT IDENTITY 폐포 마이그레이션")
-class FileMasterBigintMigrationIntegrationTest {
+class FileMasterBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     private static final List<String> REFERENCE_TABLES = List.of(
             "tb_file_detail",
@@ -36,19 +31,12 @@ class FileMasterBigintMigrationIntegrationTest {
             "tb_rward_manage",
             "tb_schdl_info");
 
-    @Container
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:17-alpine")
-                    .withDatabaseName("egovdb")
-                    .withUsername("egov")
-                    .withPassword("egov123");
-
     @Test
     @DisplayName("기존 상세·업무 FK·팝업 URL을 숫자 키로 보존하고 신규 키를 자동 채번한다")
     void migratesExistingAttachmentClosureAndEnforcesIdentityGeneration() throws SQLException {
         flyway(MigrationVersion.fromVersion("2.71")).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
                     INSERT INTO tb_file_master (atch_file_id, use_yn, frst_rgtr_id)
@@ -71,7 +59,7 @@ class FileMasterBigintMigrationIntegrationTest {
 
         flyway(null).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             long attachmentSn = singleLong(statement,
                     "SELECT atch_file_sn FROM tb_file_master WHERE frst_rgtr_id='admin'");
@@ -108,14 +96,6 @@ class FileMasterBigintMigrationIntegrationTest {
             assertThat(singleLong(statement, "SELECT max(atch_file_sn) FROM tb_file_master"))
                     .isGreaterThan(attachmentSn);
         }
-    }
-
-    private Flyway flyway(MigrationVersion target) {
-        var configuration = Flyway.configure()
-                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration");
-        if (target != null) configuration.target(target);
-        return configuration.load();
     }
 
     private long singleLong(Statement statement, String sql) throws SQLException {

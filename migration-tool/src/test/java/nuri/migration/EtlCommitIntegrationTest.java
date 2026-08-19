@@ -44,7 +44,7 @@ class EtlCommitIntegrationTest {
         List<EtlExecutor.TableResult> results = executor.execute(spec, MigrationMode.COMMIT);
 
         JdbcTemplate tgtJt = jdbc(tgt);
-        MigrationReport report = verifier.verify(results, tgtJt);
+        MigrationReport report = verifier.verify(spec, results, tgtJt);
 
         // 검증기 전면 PASS (false-green 아님 — 실제 타깃 재조회 대조)
         assertThat(report.overall()).isEqualTo(MigrationReport.Status.PASS);
@@ -83,7 +83,7 @@ class EtlCommitIntegrationTest {
         MappingSpec spec = spec(src, tgt);
         List<EtlExecutor.TableResult> results = executor.execute(spec, MigrationMode.COMMIT);
         JdbcTemplate tgtJt = jdbc(tgt);
-        MigrationReport report = verifier.verify(results, tgtJt);
+        MigrationReport report = verifier.verify(spec, results, tgtJt);
 
         // 고아 행은 격리(오류 기록) → 해당 테이블 FAIL, 유효 2행만 적재
         assertThat(report.overall()).isEqualTo(MigrationReport.Status.FAIL);

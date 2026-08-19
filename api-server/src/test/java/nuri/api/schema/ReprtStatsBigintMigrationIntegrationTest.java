@@ -1,13 +1,9 @@
 package nuri.api.schema;
 
-import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -18,23 +14,15 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
-@Testcontainers(disabledWithoutDocker = false)
 @DisplayName("보고서 통계 문자열 PK → BIGINT IDENTITY 데이터 마이그레이션")
-class ReprtStatsBigintMigrationIntegrationTest {
-
-    @Container
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:17-alpine")
-                    .withDatabaseName("egovdb")
-                    .withUsername("egov")
-                    .withPassword("egov123");
+class ReprtStatsBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     @Test
     @DisplayName("기존 보고서 통계를 보존하고 신규 일련번호를 DB에서 발급한다")
     void migratesLegacyRowAndEnforcesIdentityGeneration() throws SQLException {
         flyway(MigrationVersion.fromVersion("2.76")).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
                     INSERT INTO tb_rptp_stats (
@@ -48,7 +36,7 @@ class ReprtStatsBigintMigrationIntegrationTest {
 
         flyway(null).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             long migratedSn;
             try (ResultSet rows = statement.executeQuery("""
@@ -88,16 +76,6 @@ class ReprtStatsBigintMigrationIntegrationTest {
             assertThat(generatedSn).isGreaterThan(migratedSn);
             assertThat(singleLong(statement, "SELECT count(*) FROM tb_rptp_stats")).isEqualTo(2L);
         }
-    }
-
-    private Flyway flyway(MigrationVersion target) {
-        var configuration = Flyway.configure()
-                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration");
-        if (target != null) {
-            configuration.target(target);
-        }
-        return configuration.load();
     }
 
     private boolean columnExists(Statement statement, String tableName, String columnName) throws SQLException {

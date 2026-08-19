@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -39,9 +40,17 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DisplayName("매핑 선언 검증 테스트")
 class MappingValidatorTest {
 
-    /** db_columns.json 이 없는 상태(타깃 컬럼 실재 검증 스킵)의 검증기. */
-    private static MappingValidator withoutSchema() {
-        return new MappingValidator(new TransformerRegistry(), "no-such-db_columns.json");
+    /** 모든 단위 시나리오가 타깃 표준 대조를 실제로 거치도록 하는 검증기. */
+    private static MappingValidator withSchema() {
+        try {
+            java.net.URL url = MappingValidatorTest.class.getClassLoader().getResource("db-columns-fixture.json");
+            if (url == null) {
+                throw new IllegalStateException("테스트 schema catalog 없음");
+            }
+            return new MappingValidator(new TransformerRegistry(), Path.of(url.toURI()).toString());
+        } catch (URISyntaxException e) {
+            throw new IllegalStateException(e);
+        }
     }
 
     private static MappingSpec spec(List<TableMapping> tables) {
@@ -53,13 +62,10 @@ class MappingValidatorTest {
     }
 
     /**
-     * db_columns.json 부재 경고를 걷어낸 나머지 경고.
-     *
-     * <p>파일이 없는 검증기는 <b>항상</b> 그 경고 하나를 낸다(대조 스킵 고지).
-     * 그것까지 세면 "다른 경고가 없다" 를 확인할 수 없다.
+     * 표준 catalog 자체는 모든 테스트에서 필수이므로 업무 경고만 반환한다.
      */
     private static List<String> warningsExceptSchemaNotice(ValidationResult r) {
-        return r.warnings().stream().filter(w -> !w.contains("db_columns.json")).toList();
+        return r.warnings();
     }
 
     private static ColumnMapping col(String source, String target) {
@@ -73,7 +79,7 @@ class MappingValidatorTest {
         @Test
         @DisplayName("타깃 테이블 미지정은 오류이고, 그 테이블의 컬럼은 더 보지 않는다")
         void missingTargetTableIsErrorAndSkipsColumns() {
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+            ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", null, null,
                             List.of(col("id", null)), null))));
 
@@ -86,7 +92,7 @@ class MappingValidatorTest {
         @Test
         @DisplayName("타깃 컬럼 미지정은 오류다")
         void missingTargetColumnIsError() {
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+            ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", null,
                             List.of(col("id", "  ")), null))));
 
@@ -98,7 +104,7 @@ class MappingValidatorTest {
         void unknownCodemapIsError() {
             ColumnMapping c = new ColumnMapping("stat", "user_stts_cd", null, null, "statusMap", null, null);
 
-            ValidationResult r = withoutSchema().validate(spec(
+            ValidationResult r = withSchema().validate(spec(
                     List.of(new TableMapping("legacy_user", "tb_user_info", null, List.of(c), null)),
                     Map.of()));
 
@@ -111,7 +117,7 @@ class MappingValidatorTest {
         void declaredCodemapIsAccepted() {
             ColumnMapping c = new ColumnMapping("stat", "user_stts_cd", null, null, "statusMap", null, null);
 
-            ValidationResult r = withoutSchema().validate(spec(
+            ValidationResult r = withSchema().validate(spec(
                     List.of(new TableMapping("legacy_user", "tb_user_info", null, List.of(c), null)),
                     Map.of("statusMap", Map.of("1", "P"))));
 
@@ -123,7 +129,7 @@ class MappingValidatorTest {
         void danglingFkRefIsError() {
             ColumnMapping fk = new ColumnMapping("dept_id", "ognz_id", null, null, null, "legacy_dept", null);
 
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+            ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", null, List.of(fk), null))));
 
             // 부모 PK 가 재채번되는데 부모 테이블이 매핑에 없으면 자식 FK 를 번역할 대상이 없다.
@@ -136,54 +142,89 @@ class MappingValidatorTest {
         void fkRefResolvesCaseInsensitively() {
             ColumnMapping fk = new ColumnMapping("dept_id", "ognz_id", null, null, null, "LEGACY_DEPT", null);
 
-            ValidationResult r = withoutSchema().validate(spec(List.of(
-                    new TableMapping("legacy_dept", "tb_ognz_info", null, List.of(col("id", "ognz_id")), null),
+            ValidationResult r = withSchema().validate(spec(List.of(
+                    new TableMapping("legacy_dept", "tb_ognz_info", null, List.of(),
+                            new IdStrategy("ognz_id", "ORG", "id")),
                     new TableMapping("legacy_user", "tb_user_info", null, List.of(fk), null))));
 
             // 소스 테이블명 수집을 소문자로 정규화하지 않으면 여기서 거짓 오류가 난다.
             assertThat(r.errors()).isEmpty();
         }
+
+        @Test
+        @DisplayName("fkRef 부모의 완전한 idStrategy가 없으면 실행 전에 차단한다")
+        void fkRefParentRequiresCompleteIdStrategy() {
+            ColumnMapping fk = new ColumnMapping("dept_id", "ognz_id", null, null, null, "legacy_dept", null);
+
+            ValidationResult r = withSchema().validate(spec(List.of(
+                    new TableMapping("legacy_dept", "tb_ognz_info", null,
+                            List.of(col("id", "ognz_id")), null),
+                    new TableMapping("legacy_user", "tb_user_info", null, List.of(fk), null))));
+
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e)
+                    .contains("fkRef 부모", "idStrategy", "완전하지"));
+        }
+
+        @Test
+        @DisplayName("같은 소스 테이블을 두 번 매핑하면 결과 identity가 모호하므로 차단한다")
+        void duplicateSourceTableMappingIsErrorCaseInsensitively() {
+            ValidationResult r = withSchema().validate(spec(List.of(
+                    new TableMapping("legacy_user", "tb_user_info", null,
+                            List.of(col("name", "user_nm")), null),
+                    new TableMapping("LEGACY_USER", "tb_ognz_info", null,
+                            List.of(col("id", "ognz_id")), null))));
+
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("중복 소스 테이블", "LEGACY_USER"));
+        }
+
+        @Test
+        @DisplayName("where는 단일 읽기 조건식만 허용하고 주석·추가 SQL을 차단한다")
+        void unsafeWhereFragmentIsError() {
+            ValidationResult r = withSchema().validate(spec(List.of(
+                    new TableMapping("legacy_user", "tb_user_info", "1=1; DELETE FROM legacy_user",
+                            List.of(col("nm", "user_nm")), null))));
+
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("where", "단일 읽기 조건식"));
+        }
     }
 
     @Nested
-    @DisplayName("막지는 않는 경고(warnings)")
-    class NonBlockingWarnings {
+    @DisplayName("값·변환 선언의 strict 검증")
+    class StrictValueValidation {
 
         @Test
-        @DisplayName("idStrategy 에 sourceKey 가 없으면 경고 — 오류는 아니다")
+        @DisplayName("idStrategy 에 sourceKey 가 없으면 이관을 막는다")
         void idStrategyWithoutSourceKeyIsWarning() {
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+            ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", null,
                             List.of(col("id", "esntl_id")),
                             new IdStrategy("esntl_id", "USRCNFRM_", null)))));
 
-            // 이관은 되지만 레거시 키 매핑이 불가해 fkRef 번역이 깨진다 — 알려야 하되 막지는 않는다.
-            assertThat(r.errors()).isEmpty();
-            assertThat(r.ok()).isTrue();
-            assertThat(warningsExceptSchemaNotice(r)).singleElement().asString().contains("sourceKey 미지정");
+            assertThat(r.ok()).isFalse();
+            assertThat(r.errors()).singleElement().asString().contains("sourceKey 미지정");
         }
 
         @Test
-        @DisplayName("idStrategy 의 column 이 없으면 경고 대상이 아니다")
-        void idStrategyWithoutColumnIsNotWarned() {
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+        @DisplayName("부분 선언된 idStrategy는 실행 경로에서 무시되지 않도록 차단한다")
+        void idStrategyWithoutColumnIsError() {
+            ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", null,
                             List.of(col("id", "esntl_id")),
                             new IdStrategy(null, "USRCNFRM_", null)))));
 
-            assertThat(warningsExceptSchemaNotice(r)).isEmpty();
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("idStrategy.column"));
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("idStrategy.sourceKey"));
         }
 
         @Test
-        @DisplayName("미등록 변환기는 경고다")
+        @DisplayName("미등록 변환기는 실행 전에 오류로 차단한다")
         void unknownTransformerIsWarning() {
             ColumnMapping c = new ColumnMapping("nm", "user_nm", "nosuchtransform", null, null, null, null);
 
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+            ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", null, List.of(c), null))));
 
-            assertThat(r.errors()).isEmpty();
-            assertThat(r.warnings()).anySatisfy(w -> assertThat(w).contains("미등록 변환기", "nosuchtransform"));
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("미등록 변환기", "nosuchtransform"));
         }
 
         @Test
@@ -191,22 +232,21 @@ class MappingValidatorTest {
         void registeredTransformerIsAccepted() {
             ColumnMapping c = new ColumnMapping("nm", "user_nm", "trim", null, null, null, null);
 
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+            ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", null, List.of(c), null))));
 
             assertThat(warningsExceptSchemaNotice(r)).isEmpty();
         }
 
         @Test
-        @DisplayName("미지 타입은 경고다 (원본 통과)")
+        @DisplayName("미지 타입은 원본 통과시키지 않고 오류로 차단한다")
         void unknownTypeIsWarning() {
             ColumnMapping c = new ColumnMapping("cnt", "cnt", null, "nosuchtype", null, null, null);
 
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+            ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", null, List.of(c), null))));
 
-            assertThat(r.errors()).isEmpty();
-            assertThat(r.warnings()).anySatisfy(w -> assertThat(w).contains("미지 타입", "nosuchtype"));
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("미지 타입", "nosuchtype"));
         }
 
         @Test
@@ -214,21 +254,21 @@ class MappingValidatorTest {
         void knownTypeIsAccepted() {
             ColumnMapping c = new ColumnMapping("cnt", "cnt", null, "int", null, null, null);
 
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+            ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", null, List.of(c), null))));
 
             assertThat(warningsExceptSchemaNotice(r)).isEmpty();
         }
 
         @Test
-        @DisplayName("source·const·fkRef 가 모두 없으면 값이 정해지지 않는다는 경고")
-        void columnWithoutAnyValueSourceIsWarned() {
+        @DisplayName("source·const·fkRef 가 모두 없으면 null 쓰기를 허용하지 않고 차단한다")
+        void columnWithoutAnyValueSourceIsError() {
             ColumnMapping c = new ColumnMapping(null, "user_nm", null, null, null, null, null);
 
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+            ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", null, List.of(c), null))));
 
-            assertThat(r.warnings()).anySatisfy(w -> assertThat(w).contains("source·const 모두 없음"));
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("source·const 모두 없음"));
         }
 
         @Test
@@ -236,23 +276,23 @@ class MappingValidatorTest {
         void constantOnlyColumnIsAccepted() {
             ColumnMapping c = new ColumnMapping(null, "frst_rgtr_id", null, null, null, null, "SYSTEM");
 
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+            ValidationResult r = withSchema().validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", null, List.of(c), null))));
 
             assertThat(warningsExceptSchemaNotice(r)).isEmpty();
         }
 
         @Test
-        @DisplayName("fkRef 로 값이 정해지는 컬럼도 경고하지 않는다")
-        void fkRefOnlyColumnIsAccepted() {
+        @DisplayName("fkRef만 있고 source가 없으면 번역이 실행되지 않으므로 차단한다")
+        void fkRefWithoutSourceColumnIsError() {
             ColumnMapping fk = new ColumnMapping(null, "ognz_id", null, null, null, "legacy_dept", null);
 
-            ValidationResult r = withoutSchema().validate(spec(List.of(
-                    new TableMapping("legacy_dept", "tb_ognz_info", null, List.of(col("id", "ognz_id")), null),
+            ValidationResult r = withSchema().validate(spec(List.of(
+                    new TableMapping("legacy_dept", "tb_ognz_info", null, List.of(),
+                            new IdStrategy("ognz_id", "ORG", "id")),
                     new TableMapping("legacy_user", "tb_user_info", null, List.of(fk), null))));
 
-            assertThat(warningsExceptSchemaNotice(r)).isEmpty();
-            assertThat(r.errors()).isEmpty();
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("fkRef", "source 컬럼"));
         }
     }
 
@@ -261,16 +301,32 @@ class MappingValidatorTest {
     class TargetColumnCheck {
 
         @Test
-        @DisplayName("파일이 없으면 대조를 건너뛰고 경고만 남긴다 — 검증 자체가 막히면 안 된다")
-        void missingSchemaFileWarnsAndSkips() {
+        @DisplayName("파일이 없으면 타깃 표준을 증명할 수 없어 검증을 막는다")
+        void missingSchemaFileFailsClosed() {
             ColumnMapping c = col("x", "definitely_not_a_standard_column");
 
-            ValidationResult r = withoutSchema().validate(spec(List.of(
+            MappingValidator missing = new MappingValidator(new TransformerRegistry(), "no-such-db_columns.json");
+            ValidationResult r = missing.validate(spec(List.of(
                     new TableMapping("legacy_user", "tb_user_info", null, List.of(c), null))));
 
-            // 파일이 없다고 모든 컬럼을 오류로 처리하면 로컬에서 검증을 아예 못 돌린다.
-            assertThat(r.errors()).isEmpty();
-            assertThat(r.warnings()).anySatisfy(w -> assertThat(w).contains("db_columns.json 부재"));
+            assertThat(r.ok()).isFalse();
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("db_columns.json 부재"));
+        }
+
+        @Test
+        @DisplayName("깨진 JSON과 빈 catalog도 검증을 건너뛰지 않는다")
+        void malformedOrEmptySchemaCatalogFailsClosed(@TempDir Path tmp) throws IOException {
+            Path malformed = tmp.resolve("malformed.json");
+            Files.writeString(malformed, "[{", StandardCharsets.UTF_8);
+            ValidationResult malformedResult = new MappingValidator(
+                    new TransformerRegistry(), malformed.toString()).validate(spec(List.of()));
+            assertThat(malformedResult.errors()).anySatisfy(e -> assertThat(e).contains("파싱 실패"));
+
+            Path empty = tmp.resolve("empty.json");
+            Files.writeString(empty, "[]", StandardCharsets.UTF_8);
+            ValidationResult emptyResult = new MappingValidator(
+                    new TransformerRegistry(), empty.toString()).validate(spec(List.of()));
+            assertThat(emptyResult.errors()).anySatisfy(e -> assertThat(e).contains("유효한", "없습니다"));
         }
 
         @Test
@@ -309,9 +365,9 @@ class MappingValidatorTest {
     }
 
     @Test
-    @DisplayName("빈 매핑은 오류도 경고도 없다 (db_columns 경고 제외)")
+    @DisplayName("유효한 catalog에서 빈 매핑 자체는 오류가 아니다")
     void emptySpecIsClean() {
-        ValidationResult r = withoutSchema().validate(spec(List.of()));
+        ValidationResult r = withSchema().validate(spec(List.of()));
 
         assertThat(r.errors()).isEmpty();
         assertThat(r.ok()).isTrue();

@@ -5,25 +5,58 @@
 #   막지는(tamper-proof) 못한다. 실제 차단은 원격 측 통제에서만 가능하다.
 #
 # [작동 조건 — 저장소 설정 필요]
-#   GitHub → Settings → Branches → Branch protection rule (main)
-#     ☑ Require a pull request before merging
-#     ☑ Require review from Code Owners
-#   위 설정 없이는 이 파일은 '알림' 이상의 효력이 없다. (2026-07-26 기준 미설정)
+#   `.github/required-checks.json`의 pullRequestPolicy와 원격 ruleset이 exact-match 해야 한다.
+#   `npm run verify:ops`가 승인 수·Code Owner·last-push·대화 해결까지 실측한다.
 #
 # 대상은 "신호를 지울 수 있는 자산" 으로 한정한다 — 일반 코드까지 걸면 리뷰가 형식화된다.
 
 # 게이트 하네스 + 동결 매니페스트 (은폐가 발생한 지점)
 /api-server/src/test/java/nuri/api/harness/       @lkindo
+/api-server/src/test/java/nuri/api/schema/        @lkindo
+/api-server/src/test/java/nuri/ArchitectureTest.java @lkindo
 /api-server/src/test/resources/harness/           @lkindo
+/business-app/src/test/java/nuri/business/ArchitectureTest.java @lkindo
+/business-app/src/test/java/nuri/business/DomainIsolationTest.java @lkindo
 /business-app/src/test/java/nuri/business/architecture/   @lkindo
+/business-core/src/test/java/nuri/business/ArchitectureTest.java @lkindo
+/business-core/src/test/java/nuri/business/ServiceLayerIsolationTest.java @lkindo
 /business-core/src/test/java/nuri/business/architecture/  @lkindo
 /foundation/src/test/java/nuri/foundation/ArchunitTest.java @lkindo
 
 # 게이트 실행 경로 (훅·CI·빌드 태스크) — 여기를 고치면 게이트 전체가 꺼진다
 /.githooks/            @lkindo
+/.github/CODEOWNERS    @lkindo
 /.github/workflows/    @lkindo
+/.github/required-checks.json @lkindo
+/config/governance/    @lkindo
+/scripts/              @lkindo
+/.agent/scripts/         @lkindo
 /build.gradle          @lkindo
+/settings.gradle       @lkindo
+/gradle/               @lkindo
+/foundation/build.gradle @lkindo
+/business-core/build.gradle @lkindo
+/business-app/build.gradle @lkindo
 /api-server/build.gradle @lkindo
+/migration-tool/build.gradle @lkindo
+/package.json          @lkindo
+/frontend/package.json @lkindo
+/frontend/eslint.config.mjs @lkindo
+/frontend/vitest.config.mts @lkindo
+/frontend/playwright.config.ts @lkindo
+/frontend/scripts/check-bundle-budget.mjs @lkindo
+/frontend/e2e/shard-duration-profile.json @lkindo
+/frontend/e2e/          @lkindo
+/frontend/e2e/**/*.spec.ts @lkindo
+/frontend/e2e/**/*.test.ts @lkindo
+/frontend/e2e/**/*.test.tsx @lkindo
+/frontend/e2e/fixtures/error-detector.ts @lkindo
+/frontend/e2e/scripts/cleanup-db.ts @lkindo
+/frontend/e2e/scripts/run-e2e-with-coverage.js @lkindo
+/frontend/src/__tests__/ @lkindo
+/frontend/src/test-utils/ @lkindo
+/frontend/src/**/*.test.ts @lkindo
+/frontend/src/**/*.test.tsx @lkindo
 
 # 규칙 원본(SSOT)과 3대 헌법 — 에이전트 단독 수정 금지 자산
 /GEMINI.md             @lkindo

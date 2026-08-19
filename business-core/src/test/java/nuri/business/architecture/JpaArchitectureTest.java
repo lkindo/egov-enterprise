@@ -2,6 +2,7 @@ package nuri.business.architecture;
 
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTag;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.junit.ArchTests;
 
@@ -10,6 +11,7 @@ import com.tngtech.archunit.junit.ArchTests;
  * 규칙 본문은 {@link JpaArchitectureRules}(testFixtures) 에 유일본으로 있다.
  */
 @AnalyzeClasses(packages = "nuri.business.domain", importOptions = ImportOption.DoNotIncludeTests.class)
+@ArchTag("architecture-gate")
 public class JpaArchitectureTest {
 
     @ArchTest

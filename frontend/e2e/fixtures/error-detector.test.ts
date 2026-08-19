@@ -1,0 +1,141 @@
+import type { Page } from '@playwright/test';
+import fs from 'node:fs';
+import path from 'node:path';
+import { describe, expect, it, vi } from 'vitest';
+import { ExpectedErrorLedger, type ExpectedErrorEntry } from './error-detector';
+
+const scope = '21-advanced-resilience.spec.ts :: Network Resilience: API 500 Error Interception';
+const now = () => new Date('2026-08-19T00:00:00.000Z');
+
+function responseEntry(overrides: Partial<ExpectedErrorEntry> = {}): ExpectedErrorEntry {
+  return {
+    id: 'E2E-RESILIENCE-USERS-500',
+    specScope: scope,
+    channel: 'response',
+    urlPattern: /\/api\/v1\/admin\/system\/users(?:\?|$)/,
+    messagePattern: null,
+    method: 'GET',
+    status: 500,
+    maxOccurrences: 1,
+    reason: '이 테스트가 사용자 목록 API 500을 의도적으로 주입한다.',
+    expiresAt: '2026-12-31',
+    ...overrides,
+  };
+}
+
+describe('ExpectedErrorLedger', () => {
+  it('정확한 scope/url/method/status 이벤트만 소진한다', () => {
+    const ledger = new ExpectedErrorLedger(scope, now);
+    ledger.register(responseEntry());
+
+    expect(ledger.consume({
+      channel: 'response',
+      url: 'http://localhost:3001/api/v1/admin/system/users?page=0',
+      message: null,
+      method: 'GET',
+      status: 500,
+    })).toBe(true);
+    expect(ledger.violations()).toEqual([]);
+  });
+
+  it('미등록 오류는 소진하지 않는다', () => {
+    const ledger = new ExpectedErrorLedger(scope, now);
+
+    expect(ledger.consume({
+      channel: 'response',
+      url: 'http://localhost:3001/api/v1/admin/system/users',
+      message: null,
+      method: 'GET',
+      status: 503,
+    })).toBe(false);
+  });
+
+  it('등록됐지만 발생하지 않은 항목을 위반으로 보고한다', () => {
+    const ledger = new ExpectedErrorLedger(scope, now);
+    ledger.register(responseEntry());
+
+    expect(ledger.violations()).toEqual([
+      expect.stringContaining('E2E-RESILIENCE-USERS-500'),
+    ]);
+    expect(ledger.violations()[0]).toContain('미발생');
+  });
+
+  it('maxOccurrences를 넘긴 항목을 위반으로 보고한다', () => {
+    const ledger = new ExpectedErrorLedger(scope, now);
+    ledger.register(responseEntry());
+    const event = {
+      channel: 'response' as const,
+      url: 'http://localhost:3001/api/v1/admin/system/users',
+      message: null,
+      method: 'GET',
+      status: 500,
+    };
+
+    expect(ledger.consume(event)).toBe(true);
+    expect(ledger.consume(event)).toBe(true);
+    expect(ledger.violations()[0]).toContain('최대 1회');
+  });
+
+  it('만료된 항목은 등록 단계에서 거부한다', () => {
+    const ledger = new ExpectedErrorLedger(scope, now);
+
+    expect(() => ledger.register(responseEntry({ expiresAt: '2026-08-18' })))
+      .toThrow(/만료/);
+  });
+
+  it('다른 spec scope의 항목은 등록 단계에서 거부한다', () => {
+    const ledger = new ExpectedErrorLedger(scope, now);
+
+    expect(() => ledger.register(responseEntry({ specScope: 'another.spec.ts :: 다른 테스트' })))
+      .toThrow(/scope/);
+  });
+
+  it('미등록 HTTP 오류를 ConsoleErrorGuard 검증 실패로 올린다', async () => {
+    const listeners = new Map<string, (value: unknown) => void>();
+    const frame = {};
+    const page = {
+      on: (event: string, listener: (value: unknown) => void) => {
+        listeners.set(event, listener);
+        return page;
+      },
+      url: () => 'http://localhost:3001/admin/user/manage',
+      mainFrame: () => frame,
+    } as unknown as Page;
+    const guard = new (await import('./error-detector')).ConsoleErrorGuard(page, scope);
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    await guard.install();
+
+    listeners.get('response')?.({
+      status: () => 503,
+      url: () => 'http://localhost:3001/api/v1/admin/system/users',
+      request: () => ({ method: () => 'GET', resourceType: () => 'fetch' }),
+    });
+
+    await expect(guard.verify()).rejects.toThrow(/HTTP 503 GET/);
+    consoleError.mockRestore();
+  });
+
+  it('spec ledger ID는 저장소에서 유일하고 legacy ignore API를 사용하지 않는다', () => {
+    const e2eDirectory = path.resolve(process.cwd(), 'e2e');
+    const specSources = fs.readdirSync(e2eDirectory)
+      .filter((fileName) => fileName.endsWith('.spec.ts'))
+      .map((fileName) => ({
+        fileName,
+        source: fs.readFileSync(path.join(e2eDirectory, fileName), 'utf8'),
+      }));
+    const seen = new Map<string, string>();
+
+    for (const { fileName, source } of specSources) {
+      expect(source, `${fileName}에서 legacy addIgnorePattern을 다시 사용함`)
+        .not.toMatch(/consoleGuard\.addIgnorePattern\s*\(/);
+      for (const match of source.matchAll(/\bid:\s*['"](E2E-[A-Z0-9-]+)['"]/g)) {
+        const id = match[1];
+        expect(seen.get(id), `expected-error ID ${id} 중복: ${seen.get(id)} / ${fileName}`)
+          .toBeUndefined();
+        seen.set(id, fileName);
+      }
+    }
+
+    expect(seen.size).toBeGreaterThan(0);
+  });
+});

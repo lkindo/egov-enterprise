@@ -1,12 +1,12 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -52,6 +52,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔.
  * 경로 해석은 {@code HandlerReachesServiceLinterTest} 관행을 따른다.
  */
+@Tag("governance-harness")
 class ControllerScanBaseLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(ControllerScanBaseLinterTest.class);
@@ -97,27 +98,21 @@ class ControllerScanBaseLinterTest {
         int scanned = 0;
         List<String> violations = new ArrayList<>();
 
-        try (Stream<Path> paths = Files.walk(apiServerSrc)) {
-            List<Path> javaFiles = paths.filter(Files::isRegularFile)
-                    .filter(p -> p.toString().endsWith(".java"))
-                    .toList();
+        for (Path file : HarnessSourceIndex.javaSources(apiServerSrc)) {
+            String src = stripComments(HarnessSourceIndex.read(file));
+            if (!REQUEST_CONTROLLER.matcher(src).find()) {
+                continue;
+            }
+            scanned++;
 
-            for (Path file : javaFiles) {
-                String src = stripComments(Files.readString(file, StandardCharsets.UTF_8));
-                if (!REQUEST_CONTROLLER.matcher(src).find()) {
-                    continue;
-                }
-                scanned++;
-
-                String pkg = packageOf(src);
-                if (pkg == null) {
-                    violations.add(file + " — package 선언을 읽지 못했습니다(파싱 파손 의심)");
-                    continue;
-                }
-                if (!pkg.equals(CONTROLLER_SCAN_BASE) && !pkg.startsWith(CONTROLLER_SCAN_BASE + ".")) {
-                    violations.add(pkg + " → " + file.getFileName()
-                            + "  (스캔 베이스 " + CONTROLLER_SCAN_BASE + " 밖 — 컨트롤러 린터가 이 파일을 보지 못합니다)");
-                }
+            String pkg = packageOf(src);
+            if (pkg == null) {
+                violations.add(file + " — package 선언을 읽지 못했습니다(파싱 파손 의심)");
+                continue;
+            }
+            if (!pkg.equals(CONTROLLER_SCAN_BASE) && !pkg.startsWith(CONTROLLER_SCAN_BASE + ".")) {
+                violations.add(pkg + " → " + file.getFileName()
+                        + "  (스캔 베이스 " + CONTROLLER_SCAN_BASE + " 밖 — 컨트롤러 린터가 이 파일을 보지 못합니다)");
             }
         }
 
@@ -153,12 +148,8 @@ class ControllerScanBaseLinterTest {
         Set<String> actual = new TreeSet<>();
         try (Stream<Path> roots = Files.list(nuriRoot)) {
             for (Path dir : roots.filter(Files::isDirectory).toList()) {
-                try (Stream<Path> inner = Files.walk(dir)) {
-                    boolean hasJava = inner.filter(Files::isRegularFile)
-                            .anyMatch(p -> p.toString().endsWith(".java"));
-                    if (hasJava) {
-                        actual.add(dir.getFileName().toString());
-                    }
+                if (!HarnessSourceIndex.javaSources(dir).isEmpty()) {
+                    actual.add(dir.getFileName().toString());
                 }
             }
         }

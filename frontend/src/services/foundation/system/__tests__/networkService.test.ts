@@ -5,18 +5,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { PageResponse, SearchParams } from '@/types/foundation/system';
 
-const client = vi.hoisted(() => ({
-  get: vi.fn(),
+vi.mock('@/lib/api/client', async () => ({
+  default: (await import('@/test-utils/api-client-test-double')).apiClientTestDouble,
 }));
 
-vi.mock('@/lib/api/client', () => ({ default: client }));
-
 import { networkService, type NetworkStatusDetailed } from '../networkService';
+import {
+  apiClientTestDouble as client,
+  resetApiClientTestDouble,
+} from '@/test-utils/api-client-test-double';
 
 const MONITORING_PATH = '/admin/system/ntwrksvc-monitoring';
 
 describe('networkService — 네트워크 모니터링 API 계약', () => {
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => resetApiClientTestDouble());
 
   it('실사용 getStatus만 공개한다', () => {
     expect(Object.keys(networkService)).toStrictEqual(['getStatus']);

@@ -3,6 +3,7 @@ package nuri.business;
 import nuri.business.architecture.LayeredArchitectureRules;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTag;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
@@ -66,6 +67,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.resideInAnyP
                 LayeredArchitectureRules.ExcludeQClasses.class
         }
 )
+@ArchTag("architecture-gate")
 public class DomainIsolationTest {
 
     /** 코어(필수 기반) 도메인 패키지 식별자 — 삭제 대상이 아니므로 참조 타깃으로 허용한다. */

@@ -7,7 +7,7 @@ name: Docker Release
 #      SHA 핀은 자동 보안패치를 멈추므로 .github/dependabot.yml 의 github-actions 엔트리와 **세트**로만
 #      의미가 있다. 둘 중 하나만 있으면 핀이 곧 방치가 된다.
 #   ② 릴리스가 검증 없이 나가던 문제를 막기 위해 build-and-push 앞에 verify 잡을 둔다.
-#      태그에서 무거운 CI 를 중복 실행하지 않고, 태그 대상 SHA 에 main 필수 체크 7종이 모두
+#      태그에서 무거운 CI 를 중복 실행하지 않고, 태그 대상 SHA 에 manifest가 선언한 main 필수 체크가 모두
 #      success 로 존재하는지를 검증한다. 검증 이력이 없는 SHA, main 밖의 SHA, red SHA 는 릴리스할 수 없다.
 
 on:

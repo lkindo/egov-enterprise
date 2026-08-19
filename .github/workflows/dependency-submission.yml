@@ -1,36 +1,29 @@
-name: Gradle Dependency Submission
+name: Gradle Dependency Graph Producer
 
-# [존재 이유] 2026-08-01 Dependabot alerts 를 켜자 60건이 보고됐는데 **전량 npm(frontend/pnpm-lock.yaml)**
-#   이었고 Gradle 은 0건이었다. 취약점이 없어서가 아니라 **GitHub 이 이 저장소의 Java 의존성을
-#   아예 모르기 때문**이다 — 의존성 그래프에 maven purl 이 하나도 없었다.
-#   즉 "CVE 60건"은 전체가 아니라 프론트만 본 수치이고, 백엔드(Spring Boot·eGovFrame·QueryDSL 등
-#   5개 모듈)의 CVE 가시성은 0이었다.
-#
-#   OWASP dependency-check(주간 스케줄)와는 상보 관계다. 그쪽은 NVD 를 직접 조회하는 스캐너이고
-#   현재 리포트 0건 상태이며(NVD_API_KEY 미등록), 이쪽은 GitHub Advisory DB 기반으로
-#   Dependabot alerts·security update PR 을 활성화한다. 둘 중 하나만으로는 백엔드가 계속 안 보인다.
-#
-# [주의] 이 워크플로는 의존성 그래프에 **쓰기**를 한다(contents: write).
-#   따라서 포크 PR 에서는 돌리지 않는다 — 토큰 권한이 없어 실패하고, 신뢰할 수 없는 코드가
-#   쓰기 권한과 함께 실행되는 경로를 만들지 않기 위해서다. main 푸시와 수동 실행으로 한정한다.
-#
-# [게이트 아님] 제출 실패가 빌드를 막지는 않지만 continue-on-error 를 붙이지도 않는다 —
-#   조용히 실패하면 "백엔드도 스캔되고 있다"는 거짓 안전감이 다시 생긴다(AGENTS.md Evidence guardrails H5).
+# GitHub/Gradle의 public-fork 권장 신뢰 경계를 따른다.
+# - pull_request: untrusted Gradle 코드는 read-only token으로 graph를 생성해 artifact만 올린다.
+# - push/workflow_dispatch: trusted ref만 contents:write로 즉시 제출한다.
+# PR artifact의 제출은 dependency-submission-publish.yml의 workflow_run 잡이 담당하며,
+# write token을 가진 잡은 PR 코드를 checkout하거나 실행하지 않는다.
 
 on:
   push:
     branches: [main]
+  pull_request:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
-  group: dependency-submission-${{ github.ref }}
+  group: dependency-graph-producer-${{ github.event.pull_request.head.sha || github.sha }}
   cancel-in-progress: true
 
 jobs:
-  dependency-submission:
+  generate-pr-snapshot:
+    if: github.event_name == 'pull_request'
+    permissions:
+      contents: read
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -42,7 +35,44 @@ jobs:
           java-version: "21"
           distribution: "temurin"
 
-      # 전 모듈(foundation / business-core / business-app / api-server / migration-tool)의
-      # 런타임·컴파일 의존성을 해석해 GitHub 의존성 그래프에 제출한다.
-      - name: Generate and submit dependency graph
-        uses: gradle/actions/dependency-submission@d9c87d481d55275bb5441eef3fe0e46805f9ef70  # v3
+      - name: Generate read-only PR dependency graph artifact
+        uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
+        env:
+          # The action does not assign scopes by default. Without this, CI's
+          # fail-on-scopes: runtime filter would ignore the Gradle graph.
+          # A constant correlator also pairs the PR snapshot with the trusted
+          # main snapshot even though the least-privilege job IDs differ.
+          GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: egov-gradle-dependency-graph
+          DEPENDENCY_GRAPH_RUNTIME_INCLUDE_CONFIGURATIONS: (compileClasspath|runtimeClasspath)
+        with:
+          dependency-graph: generate-and-upload
+          dependency-graph-continue-on-failure: false
+          artifact-retention-days: 1
+          cache-disabled: true
+          validate-wrappers: true
+
+  submit-trusted-snapshot:
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961  # v5.7.0
+        with:
+          java-version: "21"
+          distribution: "temurin"
+
+      - name: Generate and submit trusted dependency graph
+        uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb  # v6.3.0
+        env:
+          GITHUB_DEPENDENCY_GRAPH_JOB_CORRELATOR: egov-gradle-dependency-graph
+          DEPENDENCY_GRAPH_RUNTIME_INCLUDE_CONFIGURATIONS: (compileClasspath|runtimeClasspath)
+        with:
+          dependency-graph: generate-and-submit
+          dependency-graph-continue-on-failure: false
+          cache-disabled: true
+          validate-wrappers: true

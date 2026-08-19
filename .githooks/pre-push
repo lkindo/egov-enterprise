@@ -4,12 +4,7 @@
 [ -n "$SKIP_HOOKS" ] && exit 0
 set -e
 
-# [스마트 Fast-pass] 문서/비코드 파일만 변경된 푸시는 컴파일 및 하네스 검증 생략
-# stdin으로 들어오는 푸시 대상 범위(local_sha, remote_sha) 추출
-#
-# [W0-15] 다중 ref 푸시 취급 수정: 종전에는 while 루프가 매 반복마다 RANGE 를 덮어써
-#   `git push --all` 이나 `git push origin a b` 시 **마지막 ref 하나만** 평가됐다.
-#   앞선 ref 의 변경분이 fast-pass 판정에서 통째로 누락되어 게이트를 건너뛸 수 있었다.
+# stdin의 모든 push ref 범위를 합쳐 변경 파일을 과소 추정하지 않는다.
 RANGES=""
 while read local_ref local_sha remote_ref remote_sha; do
   if [ "$remote_sha" = "0000000000000000000000000000000000000000" ]; then
@@ -19,12 +14,8 @@ while read local_ref local_sha remote_ref remote_sha; do
   fi
 done
 
-# [2026-08-04] stdin 으로 범위가 안 오는 호출 형태(IDE/GUI 푸시 등)가 있어 폴백을 둔다.
-#   폴백이 없으면 **문서 한 줄 푸시에도 전체 하네스(~2분)가 돌아** fast-pass 가 사실상 죽는다.
-#
-#   ⚠ 폴백의 유일한 규칙: **과대추정은 되어도 과소추정은 안 된다.**
-#      과대추정하면 fast-pass 를 놓쳐 느려질 뿐이지만(비용), 과소추정하면 코드 변경이 게이트를
-#      건너뛴다(사고). 아래 두 폴백은 모두 `X..HEAD` 형태의 트리 비교라 실제 푸시분을 덮거나 넘는다.
+# IDE/GUI처럼 stdin 범위가 없는 경우 upstream 또는 origin/main 전체 차이를 사용한다.
+# 불확실하면 fast-pass를 포기하는 방향으로만 폴백한다.
 if [ -z "$RANGES" ]; then
   UPSTREAM=$(git rev-parse --abbrev-ref --symbolic-full-name @{u} 2>/dev/null || true)
   if [ -n "$UPSTREAM" ]; then
@@ -35,55 +26,40 @@ if [ -z "$RANGES" ]; then
   fi
 fi
 
-# [2026-08-04 안전측 정정] 범위를 특정하지 못하면 **fast-pass 하지 않는다**.
-#
-#   종전 폴백에는 `HEAD~1..HEAD` 가 있었다. 그것은 **마지막 커밋 하나만** 보는 것이라,
-#   여러 커밋을 한 번에 푸시하면 앞선 커밋의 코드 변경이 판정에서 통째로 누락된다 —
-#   마지막 커밋이 문서면 그 푸시 전체가 fast-pass 된다(과소추정).
-#   하필 그 구멍으로 나갈 수 있는 대표적 편집이 **이 훅 파일 자신**이다(매니페스트 헤더가 경고하는
-#   '편집된 훅이 자기 자신의 푸시를 승인' 하는 형태).
-#   fast-pass 는 '확실히 문서만' 일 때의 최적화이지 '모르겠을 때' 의 기본값이 아니다.
+# 범위를 특정하지 못하면 fast-pass하지 않는다.
 CHANGED_FILES=""
 if [ -n "$RANGES" ]; then
-  CHANGED_FILES=$(for r in $RANGES; do git diff --name-only $r 2>/dev/null; done | sort -u)
+  # --no-renames makes a cross-scope rename visible as delete+add. Otherwise
+  # api-server/Foo.java -> docs/Foo.md exposes only the new documentation path
+  # and can incorrectly qualify for the fast path.
+  CHANGED_FILES=$(for r in $RANGES; do git diff --no-renames --name-only --diff-filter=ACMRD $r 2>/dev/null; done | sort -u)
 else
   echo "[pre-push] ℹ 푸시 범위를 특정하지 못했습니다 — fast-pass 없이 전체 게이트를 실행합니다(안전측)."
 fi
 
-# 공용 규칙·메모리와 문서 링크는 컴파일보다 훨씬 싼 계약이다. 문서-only fast-pass도
-# 이 두 검사는 통과한 뒤에만 종료한다. 로컬 훅은 우회 가능하므로 CI secret-scan에서도 재실행한다.
-echo "  → governance: node --test scripts/shared-memory-contract.test.mjs"
-node --test scripts/shared-memory-contract.test.mjs \
-  || { echo "❌ 공용 규칙·메모리 계약 실패 — 진입점, 근거 또는 스키마가 불일치합니다"; exit 1; }
+# Node 기반 운영 계약은 하나의 catalog runner가 소유한다. 새 *.test.mjs를 추가하면
+# 별도 훅 편집 없이 자동 편입되며, 문서-only fast-pass도 이 싼 계약을 통과한 뒤 종료한다.
+echo "  → governance: npm run test:operational-contracts"
+npm run test:operational-contracts \
+  || { echo "❌ 운영 계약 실패 — 하네스 registry, CI scope, 문서·메모리 또는 실행 경로가 불일치합니다"; exit 1; }
 
-echo "  → docs: node --test scripts/docs-link-integrity.test.mjs"
-node --test scripts/docs-link-integrity.test.mjs \
-  || { echo "❌ 문서 링크 무결성 실패 — 존재하지 않는 대상을 가리키는 링크가 있습니다"; exit 1; }
+# CI와 동일한 fail-closed 분류기를 fast-pass 판정에도 사용한다. 확장자만
+# 보는 별도 allowlist를 두면 헌법 Markdown, 실행 가능한 docs 파일, rename의
+# 이전 경로가 CI와 로컬에서 서로 다르게 분류될 수 있다.
+SCOPE_DOCS_ONLY=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field docsOnly)
+SCOPE_BACKEND=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field backend)
+SCOPE_FRONTEND=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field frontend)
+echo "  → scope: docsOnly=$SCOPE_DOCS_ONLY / backend=$SCOPE_BACKEND / frontend=$SCOPE_FRONTEND"
 
 if [ -n "$CHANGED_FILES" ]; then
-  # Governance Atlas는 실행 스크립트를 포함한 정적 HTML이지만 제품 런타임 소스는 아니다.
-  # 전 스택 컴파일 대신 전용 docs-as-code 계약을 먼저 통과한 경우에만 문서 fast-pass를 허용한다.
+  # Atlas는 전용 docs-as-code 계약을 통과한 경우에만 문서 fast-pass를 허용한다.
   if echo "$CHANGED_FILES" | grep -qx 'frontend/public/governance_harness_atlas.html'; then
     echo "  → atlas: pnpm -C frontend exec vitest run src/__tests__/governance-atlas-contract.test.ts"
     pnpm -C frontend exec vitest run src/__tests__/governance-atlas-contract.test.ts \
       || { echo "❌ Governance Atlas 계약 실패 — 현행 코드·모듈·접근성 계약과 불일치합니다"; exit 1; }
   fi
 
-  # [W0-15] allowlist → denylist 반전.
-  #   종전 정규식은 '코드로 인정할 확장자'를 열거했다. 그 결과 확장자가 없거나 목록에 없는 파일이
-  #   전부 fast-pass 되었고, 하필 그 집합이 **게이트를 무력화할 수 있는 파일들**이었다:
-  #     .githooks/pre-push(이 파일 자신) · .githooks/pre-commit ·
-  #     api-server/src/test/resources/harness/baseline-manifest.properties(동결 기준) ·
-  #     gradle/libs.versions.toml(버전 카탈로그) · gradle/wrapper/gradle-wrapper.properties(툴체인 URL) ·
-  #     gradlew / gradlew.bat · api-server/Dockerfile · frontend/Dockerfile ·
-  #     scripts/*.mjs · scripts/*.ps1 · scripts/*.sh · *.properties · *.css
-  #   즉 '게이트를 끄는 편집'이 게이트를 통과했다 (AGENTS.md Evidence guardrails H5).
-  #   (참고: `^Dockerfile` 은 행 시작 앵커라 하위 경로 Dockerfile 을 하나도 매칭하지 못하는 死조건이었다.)
-  #   이제는 '확실히 비코드'인 확장자만 fast-pass 하고 나머지는 전부 코드로 간주한다(안전측 기본값).
-  CODE_CHANGES=$(echo "$CHANGED_FILES" \
-    | grep -vE '\.(md|mdx|txt|csv|png|jpe?g|gif|svg|webp|ico|pdf|woff2?|ttf|eot|mp4|webm)$' \
-    | grep -vE '^frontend/public/governance_harness_atlas\.html$' || true)
-  if [ -z "$CODE_CHANGES" ]; then
+  if [ "$SCOPE_DOCS_ONLY" = "true" ]; then
     echo "[pre-push] 📝 문서/비코드 변경만 감지됨 — 컴파일 및 하네스 검증 생략 (Fast-pass)"
     echo "  → 변경 파일:"
     echo "$CHANGED_FILES" | sed 's/^/     - /'
@@ -93,77 +69,38 @@ fi
 
 echo "[pre-push] AGENTS.md change-scoped source verification"
 
-echo "  → reusable base profile: node --test scripts/reusable-base-census.test.mjs"
-node --test scripts/reusable-base-census.test.mjs \
-  || { echo "❌ reusable base 프로필 계약 실패 — 도메인/테이블 소유권 또는 pack 의존 방향 위반"; exit 1; }
+if [ "$SCOPE_BACKEND" = "true" ]; then
+  echo "  → backend: ./gradlew compileJava compileTestJava"
+  ./gradlew compileJava compileTestJava -q \
+    || { echo "❌ Java 컴파일 실패 — 빌드 에러 0건 이후에만 push 허용 (AGENTS.md Verification)"; exit 1; }
+else
+  echo "  → backend: 변경 영향 없음 — Java compile/harness 생략"
+fi
 
-echo "  → backend: ./gradlew compileJava compileTestJava"
-./gradlew compileJava compileTestJava -q \
-  || { echo "❌ Java 컴파일 실패 — 빌드 에러 0건 이후에만 push 허용 (AGENTS.md Verification)"; exit 1; }
-
-if [ -f frontend/package.json ]; then
+if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
   echo "  → frontend: npx tsc --noEmit"
   ( cd frontend && npx tsc --noEmit ) \
     || { echo "❌ TypeScript 타입 컴파일 실패 (AGENTS.md Verification)"; exit 1; }
 
-  # [2026-08-10 신설] E2E 전용 타입 게이트.
-  #
-  #   위의 `tsc --noEmit` 은 frontend/tsconfig.json 을 쓰는데, 그 exclude 에 `"e2e"` 가 들어 있다.
-  #   즉 **E2E 스펙(26개 파일·POM 24개)은 지금까지 어떤 게이트에도 타입 검사를 받은 적이 없다.**
-  #   Playwright 러너도 타입을 검사하지 않고 벗겨내기만 하므로(transpile-only), E2E 의 타입 오류는
-  #   CI 의 4분짜리 e2e 잡이 실패해야만 드러났다.
-  #
-  #   실증(2026-08-10, 이 게이트를 처음 돌린 결과): 죽은 선언 3건이 즉시 검출됐다 —
-  #     SurveyPage.selectDate(호출부 0) · SurveyPage.ensurePopoverClosed(호출부 0) ·
-  #     05-public-experience 의 미사용 지역변수. 아무도 모르는 채 남아 있던 것들이다.
-  #   위반 주입으로 red 가 되는 것도 확인했다(TS2322/TS2339 → exit 2).
+  # 루트 tsconfig가 제외하는 E2E 스펙·fixture·POM을 별도 구성으로 검사한다.
   echo "  → frontend: npx tsc -p tsconfig.e2e.json --noEmit (E2E 스펙·POM)"
   ( cd frontend && npx tsc -p tsconfig.e2e.json --noEmit ) \
     || { echo "❌ E2E TypeScript 타입 검사 실패 — 루트 tsconfig 는 e2e 를 exclude 하므로 이 게이트가 유일 관문입니다."; exit 1; }
 
-  # [2026-08-04 신설] ESLint — 이 훅에 없어서 실제로 뚫린 구멍이다.
-  #
-  #   2026-08-03 실측: `useAppForm.test.tsx` 의 인라인 z.object 1건이 lint 에러였는데
-  #   pre-push 가 eslint 를 돌지 않아 그대로 push 됐다. 그 결과 CI 의 frontend-build 가 죽었고,
-  #   e2e-tests 는 frontend-build 에 needs 로 매달려 있어 **22티어가 통째로 skip** 됐다.
-  #   즉 lint 에러 1건이 E2E 전체를 재우고 있었고, 그 상태가 여러 커밋에 걸쳐 유지됐다.
-  #
-  #   tsc 가 통과해도 lint 는 떨어질 수 있다 — 이 저장소의 lint 는 타입 검사가 아니라
-  #   **계약 규칙**(예: 인라인 z.object 금지 = 백엔드 생성 스키마 SSOT 강제)을 담고 있어서
-  #   tsc 로는 원리적으로 대체되지 않는다.
-  #
-  #   ⚠ 경고는 차단하지 않는다. 현행 457건은 점진 정리 대상이고(react-hooks 계열 등),
-  #   경고까지 막으면 게이트가 오탐 지배가 되어 SKIP 사용을 정당화한다. 막는 것은 error 뿐이다.
+  # ESLint error는 계약 위반으로 차단하고 warning은 package.json 래칫으로 관리한다.
   echo "  → frontend: pnpm run lint (error 만 차단 — warning 은 통과)"
   ( cd frontend && pnpm run lint ) \
-    || { echo "❌ ESLint 에러 — CI frontend-build 가 죽고 e2e 전체가 skip 됩니다(2026-08-03 실측)."; \
-         echo "   경고(warning)는 차단 대상이 아닙니다. 위 출력에서 'error' 로 표시된 항목만 고치면 됩니다."; exit 1; }
+    || { echo "❌ ESLint 에러 — 경고는 package.json 래칫 범위에서 통과하지만 error는 수정해야 합니다."; exit 1; }
 
-  # [2026-08-11 신설] 프런트 **저장소 불변식 게이트**(frontend/src/__tests__).
-  #
-  #   여기가 비어 있어서 실제로 한 회차를 통째로 날렸다(2026-08-10, CI run 31369018355):
-  #   blind-wait 하향 래칫 1건이 red 였는데 pre-push 는 vitest 를 돌지 않아 그대로 push 됐고,
-  #   CI 의 `e2e-tests` 는 `needs: [backend-build, frontend-build]` 라 **E2E 3샤드가 통째로 skip**
-  #   됐다. 즉 정작 검증하려던 것이 한 번도 실행되지 않았다(2026-08-03 lint 사고와 동일 구조).
-  #
-  #   전수(64파일·337건)는 로컬 실측 약 147초라 이 훅의 예산에 맞지 않는다. 그래서 **규약을
-  #   인코딩한 게이트만** 돌린다 — src/__tests__ 5파일·18건, 실측 10초:
-  #     e2e-blind-wait-ratchet · fe-auth-hardening · middleware ·
-  #     form-action-confirm-deadlock-guard · hardcoded-color-guard
-  #   전수는 `./gradlew localGate` 계층이 소유한다(frontendUnitTest 태스크).
+  # 빠른 저장소 불변식만 pre-push에서 실행하고 전수 Vitest/coverage는 CI가 소유한다.
   echo "  → frontend: vitest src/__tests__ (저장소 불변식 게이트)"
   ( cd frontend && npx vitest run src/__tests__ ) \
-    || { echo "❌ 프런트 불변식 게이트 실패 — 이 상태로 push 하면 CI frontend-build 가 죽고"; \
-         echo "   e2e-tests 3샤드가 통째로 skip 됩니다(2026-08-10 실측: run 31369018355)."; \
-         echo "   💡 하향 래칫(예: blind wait)이면 개선분을 BASELINE 에 확정해야 통과합니다."; exit 1; }
+    || { echo "❌ 프런트 불변식 게이트 실패 — 위반을 수정하고 하향 래칫의 개선분은 정본에 반영하세요."; exit 1; }
 
   # [계약 드리프트 게이트] api-docs.json ↔ generated-api.d.ts/generated-zod.ts 정합.
   # CI(ci.yml)에도 있으며, 로컬 pre-push에서는 빠른 드리프트 피드백을 위해 같은 계약을 선제 검사한다.
   # 커밋된 api-docs.json 기반(오프라인·결정적)이라 백엔드 재빌드 불요.
-  # [W0-12] 계약 SSOT 가 git 에 추적되고 있는지 먼저 확인한다.
-  #   codegen:verify 는 `git diff --exit-code <path>` 로 판정하는데, 대상이 **언트랙이면 diff 가
-  #   무조건 exit 0** 이라 게이트가 조용히 vacuous 통과한다. 파일이 아예 없으면 loud fail 이므로
-  #   위험 구간은 정확히 '디스크에는 있으나 언트랙' 하나다.
+  # 언트랙 파일은 git diff에 잡히지 않으므로 계약 SSOT의 추적 상태를 먼저 확인한다.
   git ls-files --error-unmatch api-docs.json >/dev/null 2>&1 \
     || { echo "❌ api-docs.json 이 git 에 추적되지 않습니다 — 계약 드리프트 게이트가 vacuous 통과합니다"; exit 1; }
 
@@ -172,17 +109,16 @@ if [ -f frontend/package.json ]; then
     || { echo "❌ codegen 드리프트 — api-docs.json 과 generated-api.d.ts/generated-zod.ts 불일치. 'pnpm -C frontend codegen:file && pnpm -C frontend codegen:zod' 로 재생성 후 커밋하세요 (계약 드리프트 방어)"; exit 1; }
 fi
 
-# [하네스 게이트] 헌법/표준 린터를 실제로 실행한다.
-# 이 단계가 없던 동안 하네스 린터(PK 채번 표준·인가 애노테이션·동결 목록 무결성 등)는 CI(과금차단)에만
-# 걸려 있어 사실상 어디서도 실행되지 않았다 — 2026-07-26 감사에서 "게이트가 있는데 돌지 않는" 상태로 확인.
-# 린터를 새로 다는 것보다 '돌게 만드는 것'이 우선이라 pre-push 로 승격한다.
-# 우회: SKIP_HARNESS=1 git push  (Spring 컨텍스트 기동 포함이라 1~2분 소요)
-if [ -z "$SKIP_HARNESS" ]; then
-  echo "  → harness: ./gradlew :api-server:harnessTest (약 2분 — 실측 1m58s)"
-  ./gradlew :api-server:harnessTest -q \
-    || { echo "❌ 하네스 게이트 실패 — 헌법/표준 린터 위반. 리포트: api-server/build/reports/tests/test/index.html"; echo "   ⚠ 목록(동결·예외)을 고쳐 신호를 지우는 것은 수정이 아니라 은폐다 (AGENTS.md Evidence guardrails H2)"; exit 1; }
-else
-  echo "  ⚠ harness 게이트 건너뜀(SKIP_HARNESS) — CI 또는 로컬에서 별도 실행 필요"
+# 헌법·표준 governance 하네스. 로컬은 우회 가능하며 authoritative merge gate는 CI다.
+# 우회: SKIP_HARNESS=1 git push
+if [ "$SCOPE_BACKEND" = "true" ]; then
+  if [ -z "$SKIP_HARNESS" ]; then
+    echo "  → harness: ./gradlew :api-server:harnessTest"
+    ./gradlew :api-server:harnessTest -q \
+      || { echo "❌ 하네스 게이트 실패 — 헌법/표준 린터 위반. 리포트: api-server/build/reports/tests/harnessTest/index.html"; echo "   ⚠ 목록(동결·예외)을 고쳐 신호를 지우는 것은 수정이 아니라 은폐다 (AGENTS.md Evidence guardrails H2)"; exit 1; }
+  else
+    echo "  ⚠ harness 게이트 건너뜀(SKIP_HARNESS) — CI 또는 로컬에서 별도 실행 필요"
+  fi
 fi
 
-echo "[pre-push] ✅ 컴파일 + 계약 + 하네스 게이트 통과"
+echo "[pre-push] ✅ 변경 영향 범위의 컴파일·계약·하네스 게이트 통과"

@@ -1,13 +1,9 @@
 package nuri.api.schema;
 
-import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -20,23 +16,15 @@ import java.util.List;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
-@Testcontainers(disabledWithoutDocker = false)
 @DisplayName("SMS 문자열 PK/FK → BIGINT IDENTITY 관계 마이그레이션")
-class SmsBigintMigrationIntegrationTest {
-
-    @Container
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:17-alpine")
-                    .withDatabaseName("egovdb")
-                    .withUsername("egov")
-                    .withPassword("egov123");
+class SmsBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     @Test
     @DisplayName("기존 발송·수신 관계를 보존하고 신규 전송 일련번호를 DB에서 발급한다")
     void migratesLegacySmsGraphAndEnforcesIdentityGeneration() throws SQLException {
         flyway(MigrationVersion.fromVersion("2.82")).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
                     INSERT INTO tb_sms_info (
@@ -62,7 +50,7 @@ class SmsBigintMigrationIntegrationTest {
 
         flyway(null).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             long migratedSn;
             try (ResultSet rows = statement.executeQuery("""
@@ -134,16 +122,6 @@ class SmsBigintMigrationIntegrationTest {
             assertThat(singleLong(statement, "SELECT count(*) FROM tb_sms_info")).isEqualTo(2L);
             assertThat(singleLong(statement, "SELECT count(*) FROM tb_sms_rcptn")).isEqualTo(2L);
         }
-    }
-
-    private Flyway flyway(MigrationVersion target) {
-        var configuration = Flyway.configure()
-                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration");
-        if (target != null) {
-            configuration.target(target);
-        }
-        return configuration.load();
     }
 
     private boolean columnExists(Statement statement, String tableName, String columnName) throws SQLException {

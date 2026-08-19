@@ -2,6 +2,7 @@ package nuri.business;
 
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.junit.AnalyzeClasses;
+import com.tngtech.archunit.junit.ArchTag;
 import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.junit.ArchTests;
 import nuri.business.architecture.LayeredArchitectureRules;
@@ -20,6 +21,7 @@ import nuri.business.architecture.LayeredArchitectureRules;
                 LayeredArchitectureRules.ExcludeDtoClasses.class
         }
 )
+@ArchTag("architecture-gate")
 public class ArchitectureTest {
 
     @ArchTest

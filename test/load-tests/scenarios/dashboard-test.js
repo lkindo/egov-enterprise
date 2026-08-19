@@ -4,8 +4,7 @@
  * 인증된 사용자의 대시보드 데이터 조회 성능을 테스트합니다.
  * 
  * 실행 방법:
- *   k6 run --vus 10 --duration 30s dashboard-test.js
- *   k6 run --scenario load dashboard-test.js
+ *   k6 run dashboard-test.js  # 아래에 정의된 모든 시나리오 실행
  */
 
 import http from 'k6/http';

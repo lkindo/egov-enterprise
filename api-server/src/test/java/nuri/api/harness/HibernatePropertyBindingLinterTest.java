@@ -4,6 +4,7 @@ import jakarta.persistence.EntityManagerFactory;
 import org.hibernate.boot.spi.SessionFactoryOptions;
 import org.hibernate.engine.spi.SessionFactoryImplementor;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -19,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Deque;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -73,6 +73,7 @@ import static org.assertj.core.api.Assertions.assertThat;
                 "spring.jpa.hibernate.jdbc.batch_size=7"
         })
 @ActiveProfiles("test")
+@Tag("governance-harness")
 class HibernatePropertyBindingLinterTest {
 
     /**
@@ -195,15 +196,13 @@ class HibernatePropertyBindingLinterTest {
             if (!Files.isDirectory(dir)) {
                 continue;
             }
-            try (Stream<Path> walk = Files.walk(dir, 1)) {
-                walk.filter(Files::isRegularFile)
+            HarnessSourceIndex.filesUnder(dir, 1).stream()
                         .filter(p -> {
                             String name = p.getFileName().toString();
                             return name.startsWith("application")
                                     && (name.endsWith(".yml") || name.endsWith(".yaml"));
                         })
                         .forEach(found::add);
-            }
         }
         assertThat(found)
                 .as("스캔 대상 설정 파일을 하나도 찾지 못했습니다 — 경로가 바뀌었다면 CONFIG_ROOTS 를 "

@@ -1,13 +1,9 @@
 package nuri.api.schema;
 
-import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -17,23 +13,15 @@ import java.sql.Statement;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
-@Testcontainers(disabledWithoutDocker = false)
 @DisplayName("게시물 문자열 PK → BIGINT IDENTITY 폐포 마이그레이션")
-class BoardPostBigintMigrationIntegrationTest {
-
-    @Container
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:17-alpine")
-                    .withDatabaseName("egovdb")
-                    .withUsername("egov")
-                    .withPassword("egov123");
+class BoardPostBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     @Test
     @DisplayName("기존 게시물·답글·댓글·만족도·스크랩·통계 관계를 숫자 FK로 보존한다")
     void migratesExistingBoardPostClosureAndEnforcesIdentityGeneration() throws SQLException {
         flyway(MigrationVersion.fromVersion("2.68")).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
                     INSERT INTO tb_bbs_item (pst_id, bbs_id, up_pst_id, pst_ttl, use_yn)
@@ -60,7 +48,7 @@ class BoardPostBigintMigrationIntegrationTest {
 
         flyway(null).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             long rootSn;
             long replySn;
@@ -111,14 +99,6 @@ class BoardPostBigintMigrationIntegrationTest {
                     "SELECT pst_sn FROM tb_bbs_item WHERE pst_ttl='신규 자동 채번 글'"))
                     .isGreaterThan(replySn);
         }
-    }
-
-    private Flyway flyway(MigrationVersion target) {
-        var configuration = Flyway.configure()
-                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration");
-        if (target != null) configuration.target(target);
-        return configuration.load();
     }
 
     private long singleLong(Statement statement, String sql) throws SQLException {

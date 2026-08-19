@@ -1,6 +1,7 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,7 +25,6 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -66,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(소스 텍스트 파싱).
  */
+@Tag("governance-harness")
 class HarnessBaselineIntegrityTest {
 
     private static final Logger log = LoggerFactory.getLogger(HarnessBaselineIntegrityTest.class);
@@ -130,13 +131,11 @@ class HarnessBaselineIntegrityTest {
                         + " (workingDir=" + Paths.get("").toAbsolutePath() + "). 조용한 skip 은 false-green 입니다.");
             }
             String module = root.split("/")[0];
-            try (Stream<Path> paths = Files.walk(dir)) {
-                paths.filter(Files::isRegularFile)
+            HarnessSourceIndex.filesUnder(dir).stream()
                         .filter(p -> p.toString().endsWith(".java"))
                         .filter(p -> isGateSource(p))
                         .forEach(p -> gateSources.put(
                                 module + "/" + p.getFileName().toString().replace(".java", ""), p));
-            }
         }
 
         // 게이트 무결성(false-green 방지): 스캔이 조용히 붕괴하면 vacuous 통과가 되므로 차단
@@ -151,7 +150,7 @@ class HarnessBaselineIntegrityTest {
             String className = entry.getKey();
             Path src = entry.getValue();
             actualClasses.add(className);
-            String code = stripCommentsPreservingStrings(Files.readString(src, StandardCharsets.UTF_8));
+            String code = stripCommentsPreservingStrings(HarnessSourceIndex.read(src));
             for (Map.Entry<String, String> e : extractConstants(code).entrySet()) {
                 actual.put(className + "." + e.getKey(), e.getValue());
             }
@@ -169,7 +168,7 @@ class HarnessBaselineIntegrityTest {
                 actual.put(hookKey, "MISSING");
                 continue;
             }
-            String content = Files.readString(hookPath, StandardCharsets.UTF_8).replace("\r\n", "\n");
+            String content = HarnessSourceIndex.read(hookPath).replace("\r\n", "\n");
             actual.put(hookKey, sha256Short(content));
         }
 

@@ -81,8 +81,20 @@ test.describe('Tier 4: Quality & Resilience', () => {
             await page.locator('input[name="pstTtl"]').fill(draftTitle);
             await page.locator('.ProseMirror').fill('This is a test content for auto-save verification.');
             
-            console.log('>>> Waiting for auto-save trigger...');
-            await page.waitForTimeout(5000); 
+            console.log('>>> Waiting for auto-save state...');
+            const draftStorageKey = 'egov-draft-board_insert_BBSMSTR_AAAAAAAAAAAA';
+            await expect.poll(
+                () => page.evaluate((key) => {
+                    const raw = localStorage.getItem(key);
+                    if (!raw) return null;
+                    try {
+                        return (JSON.parse(raw) as { title?: string }).title ?? null;
+                    } catch {
+                        return null;
+                    }
+                }, draftStorageKey),
+                { timeout: 10000, message: '자동 임시저장이 localStorage에 기록되지 않음' },
+            ).toBe(draftTitle);
             
             console.log('>>> Simulating crash (Refresh)');
             await page.reload();
@@ -118,10 +130,9 @@ test.describe('Tier 4: Quality & Resilience', () => {
             );
 
             await page.goto('/admin');
-            // Wait for charts to animate
-            await page.waitForTimeout(3000);
             console.log('>>> Capturing Dashboard Visual Snapshot');
             await expect(page).toHaveScreenshot('dashboard-baseline.png', {
+                animations: 'disabled',
                 mask: [
                     page.locator('.recharts-surface'), // Mask dynamic charts
                     page.locator('.tabular-nums'), // Mask dynamic numbers

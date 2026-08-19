@@ -25,20 +25,14 @@
 - **Cleanup**: 테스트가 종료되면 가능한 한 직접 데이터를 삭제(Teardown)하거나, 아래의 클린업 명령어를 통해 가비지 데이터를 정리합니다.
 
 ### 3. 구조적 설계 (POM & Fixtures)
-- **Page Object Model (POM)**: 모든 페이지 요소와 동작은 `e2e/pages` 폴더의 클래스로 캡슐화하여 유지보수성을 높입니다.
-- **Fixtures**: `e2e/fixtures/base-test.ts`를 상속받아 온보딩 투어 우회 및 공통 객체 주입을 자동화합니다.
+- **Page Object Model (POM)**: 복수 spec이 공유하거나 복잡한 화면 의미를 재사용할 때만 `e2e/pages`에 둔다. 단일 소비·미사용 POM은 유지비만 늘리므로 hygiene 계약이 차단한다.
+- **Fixtures**: `e2e/fixtures/base-test.ts`는 실제 spec이 소비하는 공통 객체만 노출한다. provider를 추가할 때 소비 spec과 타입 검증을 같은 변경에 포함한다.
 
-### 4. Locator와 선택형 self-healing fixture의 경계
+### 4. Locator 계약
 
 - 제품 E2E의 성공 조건은 `getByRole`, `getByLabel`, 명시적인 stable test id처럼 사용자 의미를 고정하는 locator로 작성한다. Tailwind 클래스나 DOM 배치에 결합된 CSS/XPath selector는 우선 선택지가 아니다.
-- `base-test.ts`가 노출하는 `SelfHealingAgent`는 주 selector 실패 시 role·부분 텍스트·폼 요소 스캔으로 후보를 고르는 **로컬 진단 보조물**이다. fuzzy fallback은 접근성 이름이나 화면 계약이 깨졌는데도 다른 요소를 선택할 수 있으므로 커밋된 CI 테스트의 성공 조건으로 사용하지 않는다.
-- 현재 `frontend/e2e/**/*.spec.ts`에서 `healingAgent`, `safeClick`, `safeFill`의 직접 소비는 0건이다. 따라서 이 fixture를 required E2E 품질 게이트나 자동 복구 보장으로 해석하지 않는다. 다음 명령으로 소비 상태를 재확인한다.
-
-```bash
-rg -n --glob '*.spec.ts' 'healingAgent|safeClick|safeFill' frontend/e2e
-```
-
-로컬 실험에서 fallback이 요소를 찾더라도 그 실행은 원 locator가 실패했다는 진단 증거일 뿐이다. 의미 기반 locator를 수정한 뒤 self-healing 없이 일반 Playwright 실행으로 다시 통과해야 완료로 인정한다. 향후 fixture를 CI에 도입하려면 모호하거나 의미가 다른 후보를 선택하지 못하는 부정 테스트와 trace 기반 검토 절차를 먼저 마련한다.
+- fuzzy self-healing은 접근성 이름이나 화면 계약이 깨져도 다른 요소를 골라 false-green을 만들 수 있어 required E2E fixture에서 제거했다. 실패한 locator는 trace와 접근성 트리를 근거로 직접 고치고 일반 Playwright 실행으로 재검증한다.
+- `frontend/src/__tests__/e2e-harness-hygiene.test.ts`가 제거된 self-healing/layout fixture와 미사용 POM의 재도입, 고정 시간 대기를 차단한다.
 
 ---
 
@@ -57,7 +51,7 @@ rg -n --glob '*.spec.ts' 'healingAgent|safeClick|safeFill' frontend/e2e
 | 항목 | 로컬 | CI 환경 | 근거 |
 |------|------|---------|------|
 | **Retries** | 0 | **1** | 재시도 통과도 리포트에서 flaky 신호로 추적 |
-| **Workers** | 1 | 1 | 공유 DB 오염·OOM 방지. 병렬성은 `ci.yml`의 3-shard 매트릭스로만 확보 |
+| **Workers** | 1 | 1 | 공유 DB 오염·OOM 방지. 병렬성은 `ci.yml`의 실행시간 기반 3-job 분배로만 확보 |
 | **Timeout** | **180,000ms (3분)** | 동일 | 특정 느린 경로는 전역 완화 대신 표적 timeout 사용 |
 | **Expect Timeout** | **20,000ms** | 동일 | 요소 부재 실패의 피드백 비용 제한 |
 
@@ -69,6 +63,8 @@ rg -n --glob '*.spec.ts' 'healingAgent|safeClick|safeFill' frontend/e2e
 `setup`(인증 storageState 생성) + `full-suite`(전 스펙) **2개뿐**이다.
 
 특정 계층만 돌리려면 프로젝트를 추가하지 말고 **파일/제목으로 지정**한다. `full-suite` 이름은 CI와 스냅샷 파일명이 소비하므로 변경 전 소비자를 함께 확인한다.
+
+CI의 `1/3`·`2/3`·`3/3`은 내부 실행 job label이고 브랜치 보호 required context는 안정 이름 `e2e-test` 하나다. `frontend/e2e/shard-duration-profile.json`과 `scripts/e2e-shard-plan.mjs`가 최근 성공 run의 spec별 시간을 사용해 명시적 spec 집합을 배정한다. spec을 추가·삭제하거나 실행 분포가 달라지면 workflow run ID·commit·수집시각·runner·worker 수와 duration을 함께 갱신하고 `npm run test:operational-contracts`로 누락·중복·편차를 확인한다.
 
 ---
 
@@ -95,15 +91,26 @@ E2E가 방문한 경로에서 기능 단언 외의 브라우저 오류를 놓치
   - `console.warn` 감지 시 **`⚠️ [FORBIDDEN CONSOLE WARNING]`** 결함으로 식별하여 즉시 E2E 테스트를 실패 처리합니다.
   - `console.log`/`console.info` 감지 시(단, Next.js 개발 서버의 Fast Refresh 및 빌드 도구의 내부 시스템 로깅 제외), **`⚠️ [FORBIDDEN CONSOLE LOG]`** 결함으로 간주하여 빌드를 즉시 중단 및 실패 처리합니다.
 
-### 4. 특정 테스트에서 의도된 에러 무시 방법 (Escape Hatch)
-만약 특정 테스트 스펙에서 고의로 에러 콘솔 로그를 유도하거나 테스트 목적상 특정 API 오류를 넘겨야 하는 경우, E2E 스펙 파일에서 `consoleGuard` 인스턴스를 확보하여 예외 패턴을 추가할 수 있습니다:
+### 4. 특정 테스트에서 의도된 오류를 등록하는 방법
+
+광역 정규식이나 상태 코드 전체를 무시하지 않는다. 의도한 오류는 stable ID, 정확한 spec scope, channel, URL 또는 message, method/status, 최대 횟수, 사유와 만료일을 가진 ledger로 등록한다. 미발생·초과·만료·scope 불일치도 실패하므로 예외가 영구 allow-list로 변하지 않는다.
+
 ```typescript
-test('특정 에러 발생 시나리오 테스트', async ({ page, consoleGuard }) => {
-  // 특정 URL이나 텍스트 패턴을 일시적으로 감지 대상에서 무시 설정
-  consoleGuard.addIgnorePattern(/\/api\/v1\/temporary-error/);
-  
-  // 에러를 유발하는 UI 클릭 액션
-  await page.click('#trigger-error-btn');
+test('API 500 복원력을 검증한다', async ({ page, consoleGuard }) => {
+  consoleGuard.expectErrors([{
+    id: 'E2E-RESILIENCE-USERS-500',
+    specScope: '21-advanced-resilience.spec.ts :: API 500 복원력을 검증한다',
+    channel: 'response',
+    urlPattern: /\/api\/v1\/admin\/system\/users(?:\?|$)/,
+    messagePattern: null,
+    method: 'GET',
+    status: 500,
+    maxOccurrences: 1,
+    reason: '이 테스트가 의도적으로 주입한 단일 upstream 500 응답',
+    expiresAt: '2026-12-31',
+  }]);
+
+  // 500 주입과 복구 UI를 검증한다.
 });
 ```
 
@@ -170,9 +177,10 @@ pnpm -C frontend type-check:e2e
 ---
 
 ## 🛠️ 유지보수 지침
-- **POM 활용**: 새로운 페이지 추가 시 `e2e/pages`에 클래스를 정의하고 `fixtures/base-test.ts`에 등록하십시오.
+- **POM 활용**: 복수 spec이 공유하거나 복잡한 화면 의미를 캡슐화할 때만 `e2e/pages`에 추가한다. 생성만 하고 소비하지 않는 POM/fixture는 만들지 않으며 `base-test.ts` provider 등록과 실제 spec 소비를 같은 변경에서 증명한다.
 - **자동 클린업**: 테스트 종료 시 `globalTeardown`에 등록된 `cleanup-db.ts`가 가비지 데이터를 자동으로 정리합니다.
 - **에러 감시**: `ConsoleErrorGuard`가 모든 테스트에서 자동으로 동작하며, 하이드레이션 오류나 런타임 예외 발생 시 테스트를 즉시 실패 처리합니다.
+- **대기 방식**: `waitForTimeout`은 금지한다. locator 상태, URL, response, localStorage 등 관찰 가능한 조건을 기다리며 zero-tolerance ratchet이 재도입을 차단한다.
 
 ---
 *Last reviewed against current sources: 2026-08-19.*

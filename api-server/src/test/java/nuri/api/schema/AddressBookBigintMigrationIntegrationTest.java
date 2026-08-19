@@ -5,9 +5,6 @@ import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -18,16 +15,8 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Tag("schema-validation")
-@Testcontainers(disabledWithoutDocker = false)
 @DisplayName("주소록 문자열 PK → BIGINT IDENTITY 데이터 마이그레이션")
-class AddressBookBigintMigrationIntegrationTest {
-
-    @Container
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:17-alpine")
-                    .withDatabaseName("egovdb")
-                    .withUsername("egov")
-                    .withPassword("egov123");
+class AddressBookBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     @Test
     @DisplayName("기존 주소록·회원 행을 보존하고 숫자 PK/FK와 자동 채번으로 전환한다")
@@ -35,7 +24,7 @@ class AddressBookBigintMigrationIntegrationTest {
         Flyway before = flyway(MigrationVersion.fromVersion("2.48"));
         before.migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
                     INSERT INTO tb_adbk_manage (adbk_id, adbk_nm, use_yn)
@@ -49,7 +38,7 @@ class AddressBookBigintMigrationIntegrationTest {
 
         flyway(null).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             try (ResultSet rows = statement.executeQuery("""
                     SELECT m.adbk_sn, i.adbk_mbr_sn, i.adbk_sn, m.adbk_nm, i.nm
@@ -82,16 +71,6 @@ class AddressBookBigintMigrationIntegrationTest {
                     .isInstanceOf(SQLException.class)
                     .hasMessageContaining("fk_tb_adbk_info_tb_adbk_manage");
         }
-    }
-
-    private Flyway flyway(MigrationVersion target) {
-        var configuration = Flyway.configure()
-                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration");
-        if (target != null) {
-            configuration.target(target);
-        }
-        return configuration.load();
     }
 
     private boolean columnExists(Statement statement, String tableName, String columnName) throws SQLException {

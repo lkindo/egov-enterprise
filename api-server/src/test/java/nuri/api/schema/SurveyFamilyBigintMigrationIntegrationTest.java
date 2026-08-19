@@ -1,13 +1,9 @@
 package nuri.api.schema;
 
-import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.MigrationVersion;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -17,23 +13,15 @@ import java.sql.Statement;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Tag("schema-validation")
-@Testcontainers(disabledWithoutDocker = false)
 @DisplayName("설문 5개 기술 PK와 응답자 복합 참조키 → BIGINT 데이터 마이그레이션")
-class SurveyFamilyBigintMigrationIntegrationTest {
-
-    @Container
-    private static final PostgreSQLContainer<?> POSTGRES =
-            new PostgreSQLContainer<>("postgres:17-alpine")
-                    .withDatabaseName("egovdb")
-                    .withUsername("egov")
-                    .withPassword("egov123");
+class SurveyFamilyBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     @Test
     @DisplayName("기존 설문 전체 관계와 응답자 복합키를 보존하고 5개 기술 PK를 자동 숫자 키로 전환한다")
     void migratesExistingSurveyGraphAndEnforcesIdentityGeneration() throws SQLException {
         flyway(MigrationVersion.fromVersion("2.67")).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             statement.executeUpdate("""
                     INSERT INTO tb_srvy_tmplt (
@@ -91,7 +79,7 @@ class SurveyFamilyBigintMigrationIntegrationTest {
 
         flyway(null).migrate();
 
-        try (Connection connection = POSTGRES.createConnection("");
+        try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             long templateSn;
             long surveySn;
@@ -221,14 +209,6 @@ class SurveyFamilyBigintMigrationIntegrationTest {
             assertThat(generatedArticleSn).isGreaterThan(articleSn);
             assertThat(generatedResponseSn).isGreaterThan(responseSn);
         }
-    }
-
-    private Flyway flyway(MigrationVersion target) {
-        var configuration = Flyway.configure()
-                .dataSource(POSTGRES.getJdbcUrl(), POSTGRES.getUsername(), POSTGRES.getPassword())
-                .locations("classpath:db/migration");
-        if (target != null) configuration.target(target);
-        return configuration.load();
     }
 
     private void assertOldColumnsRemoved(Statement statement) throws SQLException {

@@ -1,6 +1,4 @@
 import { test as base, Page } from '@playwright/test';
-import { BBSPage } from '../pages/BBSPage';
-import { UserAdminPage } from '../pages/UserAdminPage';
 import { BoardMasterPage } from '../pages/BoardMasterPage';
 import { SecurityAdminPage } from '../pages/SecurityAdminPage';
 import { CollabPage } from '../pages/CollabPage';
@@ -8,16 +6,12 @@ import { StatsPage } from '../pages/StatsPage';
 import { OpsDetailPage } from '../pages/OpsDetailPage';
 import { OperationalExtensionPage } from '../pages/OperationalExtensionPage';
 import { BusinessExtensionPage } from '../pages/BusinessExtensionPage';
-import { ConsoleErrorGuard } from './error-detector';
-import { SelfHealingAgent } from './self-healing-agent';
-import { LayoutBreathingGuard } from './layout-breathing-guard';
+import { buildSpecScope, ConsoleErrorGuard } from './error-detector';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 
 type MyFixtures = {
-  bbsPage: BBSPage;
-  userAdminPage: UserAdminPage;
   boardMasterPage: BoardMasterPage;
   securityAdminPage: SecurityAdminPage;
   collabPage: CollabPage;
@@ -26,8 +20,6 @@ type MyFixtures = {
   operationalPage: OperationalExtensionPage;
   businessPage: BusinessExtensionPage;
   consoleGuard: ConsoleErrorGuard;
-  healingAgent: SelfHealingAgent;
-  layoutGuard: LayoutBreathingGuard;
   adminPage: Page;
   userPage: Page;
   coverage?: void;
@@ -53,32 +45,15 @@ export const test = base.extend<MyFixtures>({
     }
   }, { auto: true }],
 
-  // 선택형 로컬 진단 fixture. fuzzy 후보는 다른 요소를 고를 수 있으므로 커밋된 spec의
-  // 성공 조건으로 사용하지 않는다. 현재 제품 *.spec.ts의 직접 소비는 0건이다.
-  healingAgent: async ({ page }, use) => {
-    await use(new SelfHealingAgent(page));
-  },
-
-  // 디자인 숨통 자동 검증 가드 Fixture
-  layoutGuard: async ({ page }, use) => {
-    await use(new LayoutBreathingGuard(page));
-  },
-
   // 콘솔 가드 Fixture (auto: true로 설정하여 모든 테스트에서 자동 실행)
-  consoleGuard: [async ({ page }, use) => {
-    const guard = new ConsoleErrorGuard(page);
+  consoleGuard: [async ({ page }, use, testInfo) => {
+    const guard = new ConsoleErrorGuard(page, buildSpecScope(testInfo.file, testInfo.title));
     await guard.install();
     await use(guard);
     // 테스트 종료 후 에러 검증
     await guard.verify();
   }, { auto: true }],
 
-  bbsPage: async ({ page }, use) => {
-    await use(new BBSPage(page));
-  },
-  userAdminPage: async ({ page }, use) => {
-    await use(new UserAdminPage(page));
-  },
   boardMasterPage: async ({ page }, use) => {
     await use(new BoardMasterPage(page));
   },
@@ -101,20 +76,20 @@ export const test = base.extend<MyFixtures>({
     await use(new BusinessExtensionPage(page));
   },
 
-  adminPage: async ({ browser }, use) => {
+  adminPage: async ({ browser }, use, testInfo) => {
     const context = await browser.newContext({ storageState: 'playwright/.auth/admin.json' });
     const page = await context.newPage();
-    const guard = new ConsoleErrorGuard(page);
+    const guard = new ConsoleErrorGuard(page, buildSpecScope(testInfo.file, testInfo.title));
     await guard.install();
     await use(page);
     await guard.verify();
     await context.close();
   },
 
-  userPage: async ({ browser }, use) => {
+  userPage: async ({ browser }, use, testInfo) => {
     const context = await browser.newContext({ storageState: 'playwright/.auth/user.json' });
     const page = await context.newPage();
-    const guard = new ConsoleErrorGuard(page);
+    const guard = new ConsoleErrorGuard(page, buildSpecScope(testInfo.file, testInfo.title));
     await guard.install();
     await use(page);
     await guard.verify();

@@ -44,11 +44,7 @@ export class BoardMasterPage {
     }
     
     console.log('>>> Wizard click sent');
-    await this.page.waitForTimeout(2000);
-    if (!(this.page.url().includes('maker'))) {
-      console.log(`>>> Current URL: ${this.page.url()}, waiting for maker...`);
-      await this.page.waitForURL(/.*maker/, { timeout: 15000 }).catch(() => {});
-    }
+    await expect(this.page).toHaveURL(/.*maker/, { timeout: 15000 });
     console.log('>>> Wizard started');
   }
 
@@ -64,9 +60,9 @@ export class BoardMasterPage {
   async fillStep2(templateName: string = '지식 허브') {
     console.log(`>>> Step 2: Selecting template [${templateName}]`);
 
-    // Wait for step 2 content to be ready (ensure template cards are visible in DOM)
-    await this.page.waitForSelector('.group.relative.p-8, .p-8.rounded-3xl, h4:has-text("Layout strategy select")', { timeout: 25000 }).catch(() => {});
-    await this.page.waitForTimeout(2000); // Wait for animation and mount
+    // Step 2 is ready only when at least one template card is visible.
+    const templateCards = this.page.locator('.group.relative.p-8, .p-8.rounded-3xl');
+    await expect(templateCards.first()).toBeVisible({ timeout: 25000 });
 
     const selectors = [
       this.page.getByText(templateName, { exact: true }).first(),
@@ -76,7 +72,7 @@ export class BoardMasterPage {
 
     let found = false;
     for (const selector of selectors) {
-      if (await selector.isVisible({ timeout: 2000 }).catch(() => false)) {
+      if (await selector.isVisible().catch(() => false)) {
         console.log(`>>> Found template selector: ${selector}`);
         await selector.scrollIntoViewIfNeeded();
         await selector.click({ force: true });
@@ -88,15 +84,11 @@ export class BoardMasterPage {
     if (!found) {
       console.log('>>> Warning: Specific template not found visible, trying fallback (first card)...');
       const fallback = this.page.locator('.group.relative.p-8, .p-8.rounded-3xl').first();
-      if (await fallback.isVisible({ timeout: 5000 }).catch(() => false)) {
-        await fallback.scrollIntoViewIfNeeded();
-        await fallback.click({ force: true });
-      } else {
-        console.log('>>> CRITICAL: No template cards found!');
-      }
+      await expect(fallback).toBeVisible({ timeout: 5000 });
+      await fallback.scrollIntoViewIfNeeded();
+      await fallback.click({ force: true });
     }
 
-    await this.page.waitForTimeout(500);
     await expect(this.nextButton).toBeEnabled({ timeout: 10000 });
     console.log('>>> Clicking Next button after template selection');
     await this.nextButton.scrollIntoViewIfNeeded();
@@ -143,8 +135,6 @@ export class BoardMasterPage {
       console.log(`>>> Search API response received for: ${keyword}`);
     }
     
-    await this.page.waitForLoadState('networkidle').catch(() => {});
-    await this.page.waitForTimeout(1000); // Wait for DOM to render the results
     console.log(`>>> Search completed for: ${keyword}`);
   }
 
@@ -187,7 +177,6 @@ export class BoardMasterPage {
     
     await expect(this.page.locator('[role="alert"], .toast, :text-matches("업데이트되었습니다", "i")').first()).toBeVisible({ timeout: 10000 });
     await expect(this.page.getByText('Board Configuration')).not.toBeVisible({ timeout: 15000 });
-    await this.page.waitForTimeout(1000);
   }
 
   async deleteBoard(boardName: string) {
@@ -213,7 +202,6 @@ export class BoardMasterPage {
     await deleteResponse;
 
     await expect(this.page.locator('[role="alert"], .toast, :text-matches("삭제되었습니다", "i")').first()).toBeVisible({ timeout: 10000 });
-    await this.page.waitForTimeout(1000);
   }
 
   async verifySuccess(menuName: string) {

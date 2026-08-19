@@ -42,8 +42,6 @@ export class WorkflowAdminPage {
         const node = this.page.locator('div.cursor-pointer').filter({ hasText: nodeLabel }).first();
         await expect(node).toBeVisible({ timeout: 10000 });
         await node.click();
-        // Node Intelligence panel plays a slide-in on selection change.
-        await this.page.waitForTimeout(600);
     }
 
     /**

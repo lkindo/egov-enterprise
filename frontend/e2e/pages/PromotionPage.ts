@@ -88,7 +88,6 @@ export class PromotionPage {
 
         const fileInput = this.page.locator('input[type="file"]').first();
         await fileInput.setInputFiles(dummyPath);
-        await this.page.waitForTimeout(1000); // Allow time for upload preview if any
         console.log('>>> [Promotion] Image uploaded successfully.');
     }
 
@@ -121,14 +120,13 @@ export class PromotionPage {
         
         // Retry a few times with reloads if not visible (sometimes session/cache delay)
         for (let i = 0; i < 3; i++) {
-            if (await popup.isVisible()) {
+            if (await popup.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)) {
                 console.log('>>> [Promotion] Popup is visible on dashboard!');
                 return;
             }
             console.log(`>>> [Promotion] Popup not found (attempt ${i+1}), reloading...`);
             await this.page.reload();
             await this.page.waitForLoadState('networkidle');
-            await this.page.waitForTimeout(2000);
         }
         
         console.log('>>> Warning: Popup not visible on dashboard. This may be due to popup creation failing silently.');

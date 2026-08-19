@@ -36,7 +36,7 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         const testMessage = 'System integrity check required for the communication node.';
 
         console.log('>>> Waiting for WebSocket connection...');
-        await page.waitForTimeout(2000);
+        await expect(page.getByText('실시간 연결됨', { exact: true })).toBeVisible({ timeout: 15000 });
 
         console.log('>>> Step 1: Creating notification via API');
         // Create notification for the current user (webmaster)
@@ -87,7 +87,7 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         console.log('>>> Notification workflow verified successfully!');
     });
 
-    test('Notification: Long Content and UI Stability', async ({ request, page, layoutGuard }) => {
+    test('Notification: Long Content and UI Stability', async ({ request, page }) => {
         const testTitle = `Looong_Title_${Date.now()}`;
         const testMessage = 'A'.repeat(500) + ' [END]'; // Very long content
 
@@ -111,8 +111,16 @@ test.describe('Tier 12: Notification & Communication Intelligence', () => {
         const contentText = await contentLocator.textContent();
         expect(contentText?.length).toBeGreaterThan(50);
         
-        // 디자인 숨통 정량 검증 가드 실행 (여백 40% 체크)
-        await layoutGuard.verifyBreathingRatio('div.group', 'Notification Item Drawer');
+        // 종전 LayoutBreathingGuard는 임의 보정계수로 밀도를 계산한 뒤 경고만 남겨 항상 green이었다.
+        // 긴 단어가 실제 카드 폭을 넘지 않는다는 사용자 관찰 가능 계약을 직접 검증한다.
+        const { scrollWidth, clientWidth } = await notificationItem.evaluate((element) => ({
+            scrollWidth: element.scrollWidth,
+            clientWidth: element.clientWidth,
+        }));
+        expect(
+            scrollWidth,
+            `긴 알림이 카드 너비를 넘침 (scrollWidth=${scrollWidth}, clientWidth=${clientWidth})`,
+        ).toBeLessThanOrEqual(clientWidth + 1);
 
         await notificationPage.closeNotificationDrawer();
     });

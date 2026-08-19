@@ -3,6 +3,7 @@ package nuri.api.harness;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,8 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
@@ -45,6 +44,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * SnakeYAML 도 그렇게 파싱하므로 키 조회 시 {@code "on"} 과 {@code Boolean.TRUE} 를 모두 본다.
  * (이 사실을 모르면 "트리거가 없다"는 거짓 위반이 난다.)
  */
+@Tag("governance-harness")
 class WorkflowManifestLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(WorkflowManifestLinterTest.class);
@@ -131,7 +131,7 @@ class WorkflowManifestLinterTest {
                     + requiredChecksPath.toAbsolutePath());
         }
         JsonNode requiredChecks = new ObjectMapper()
-                .readTree(Files.readString(requiredChecksPath, StandardCharsets.UTF_8))
+                .readTree(HarnessSourceIndex.read(requiredChecksPath))
                 .path("requiredChecks");
         if (!requiredChecks.isArray() || requiredChecks.isEmpty()) {
             fail("required check SSOT 의 requiredChecks 배열이 비어 있거나 유효하지 않습니다.");
@@ -148,10 +148,9 @@ class WorkflowManifestLinterTest {
         }
 
         List<String> violations = new ArrayList<>();
-        String ciWorkflow = Files.readString(repoRoot.resolve(WORKFLOW_DIR).resolve("ci.yml"),
-                StandardCharsets.UTF_8);
-        if (!ciWorkflow.contains("node --test scripts/required-checks-contract.test.mjs")) {
-            violations.add("ci.yml 에 required check SSOT 회귀 테스트 실행 경로가 없음");
+        String ciWorkflow = HarnessSourceIndex.read(repoRoot.resolve(WORKFLOW_DIR).resolve("ci.yml"));
+        if (!ciWorkflow.contains("npm run test:operational-contracts")) {
+            violations.add("ci.yml 에 required check를 포함한 운영 계약 집계 실행 경로가 없음");
         }
         Map<?, ?> permissions = asMap(root.get("permissions"));
         if (!"read".equals(Objects.toString(permissions.get("checks"), ""))) {
@@ -218,9 +217,9 @@ class WorkflowManifestLinterTest {
     @DisplayName("📈 백엔드·프런트 커버리지 하한이 CI와 localGate 양쪽 실행 경로에 결속된다")
     void auditCoverageThresholdsAreBlockingAndWired() throws IOException {
         Path root = resolveRepoRoot();
-        String ci = Files.readString(root.resolve(WORKFLOW_DIR).resolve("ci.yml"), StandardCharsets.UTF_8);
-        String gradle = Files.readString(root.resolve("build.gradle"), StandardCharsets.UTF_8);
-        String vitest = Files.readString(root.resolve("frontend/vitest.config.mts"), StandardCharsets.UTF_8);
+        String ci = HarnessSourceIndex.read(root.resolve(WORKFLOW_DIR).resolve("ci.yml"));
+        String gradle = HarnessSourceIndex.read(root.resolve("build.gradle"));
+        String vitest = HarnessSourceIndex.read(root.resolve("frontend/vitest.config.mts"));
 
         List<String> violations = new ArrayList<>();
         if (!ci.contains("jacocoRootCoverageVerification")) {
@@ -229,27 +228,11 @@ class WorkflowManifestLinterTest {
         if (!gradle.matches("(?s).*tasks\\.register\\('localGate'\\).*?jacocoRootCoverageVerification.*")) {
             violations.add("localGate가 JaCoCo 하한 태스크에 결속되지 않음");
         }
-        // [2026-08-15 정정] 종전에는 `minimum = 0.50` 을 **문자열로 일치**시켰다.
-        //   그 결과 하한을 0.85 로 **올리는 강화 변경까지 red** 가 됐다 — 이 클래스가 스스로 선언한
-        //   원칙("래칫은 문자열 일치가 아니라 방향성을 검증한다", extractInteger javadoc)과 정면으로
-        //   어긋나고, 바로 아래 프런트 vitest 래칫은 이미 방향성으로 구현돼 있어 두 축이 갈라져 있었다.
-        //   문자열 고정은 커버리지 하한을 **영원히 50% 에 묶는다** — 게이트를 강화할 수 없는 게이트다.
-        //   값을 추출해 하한 이상인지로 판정한다(완화는 여전히 red).
-        Double lineFloor = extractDouble(gradle,
-                "(?s)jacocoRootCoverageVerification.*?counter\\s*=\\s*'LINE'.*?minimum\\s*=\\s*([0-9.]+)");
-        if (lineFloor == null) {
-            violations.add("백엔드 전체 라인 커버리지 하한(LINE) 선언이 없음");
-        } else if (lineFloor < 0.50) {
-            violations.add("백엔드 전체 라인 커버리지 하한 완화: " + lineFloor + " < 0.50");
-        }
-        // BRANCH 하한(2026-08-15 신설)도 함께 고정한다. LINE 만 보면 조건 분기를 통째로 건너뛴
-        // 테스트가 라인 수치만 채우고 통과하므로, 그 룰이 조용히 삭제되는 것을 막는다(AGENTS.md Evidence guardrails H5).
-        Double branchFloor = extractDouble(gradle,
-                "(?s)jacocoRootCoverageVerification.*?counter\\s*=\\s*'BRANCH'.*?minimum\\s*=\\s*([0-9.]+)");
-        if (branchFloor == null) {
-            violations.add("백엔드 분기 커버리지 하한(BRANCH) 선언이 없음");
-        } else if (branchFloor < 0.70) {
-            violations.add("백엔드 분기 커버리지 하한 완화: " + branchFloor + " < 0.70");
+        // 수치의 단일 정본은 config/governance/gates.json 이다. Node 운영 계약이 실제 Gradle/Vitest
+        // 소비자의 값을 exact-match 하므로, 이 Java 게이트는 실행 데이터와 실행 경로만 검사한다.
+        // 같은 임계값을 여기에도 복제하면 강화 변경 때 두 원장을 함께 고쳐야 하고 drift가 생긴다.
+        if (!ci.contains("npm run test:operational-contracts")) {
+            violations.add("ci.yml이 중앙 품질 래칫 계약을 실행하지 않음");
         }
         if (!gradle.matches("(?s).*tasks\\.register\\('jacocoRootCoverageVerification'.*?"
                 + "classDirectories\\.setFrom\\(jacocoAggregateClassDirectories\\).*?"
@@ -262,21 +245,6 @@ class WorkflowManifestLinterTest {
                 || !gradle.contains("key != 'user.dir'")) {
             violations.add("JaCoCo 실행 데이터가 프로젝트·Test 태스크별로 격리되지 않아 덮어쓰기 가능");
         }
-        Map<String, Integer> coverageFloors = Map.of(
-                "statements", 20,
-                "branches", 15,
-                "functions", 14,
-                "lines", 20);
-        for (Map.Entry<String, Integer> floor : coverageFloors.entrySet()) {
-            Integer actual = extractInteger(vitest,
-                    "(?m)^\\s*" + Pattern.quote(floor.getKey()) + "\\s*:\\s*(\\d+)\\s*,?\\s*$");
-            if (actual == null) {
-                violations.add("프런트 전체소스 coverage 래칫 누락: " + floor.getKey());
-            } else if (actual < floor.getValue()) {
-                violations.add("프런트 전체소스 coverage 래칫 완화: " + floor.getKey()
-                        + "=" + actual + " < " + floor.getValue());
-            }
-        }
         if (!vitest.contains("src/app/**") || !vitest.contains("src/services/**")
                 || !vitest.contains("src/components/**")) {
             violations.add("프런트 coverage include가 핵심 소스 축을 재지 않음");
@@ -286,34 +254,39 @@ class WorkflowManifestLinterTest {
             fail("\n📈 [COVERAGE WIRING GATE] 보고서만 만들고 통과시키는 경로가 열렸습니다:\n❌ "
                     + String.join("\n❌ ", violations));
         }
-        log.info("✅ Backend JaCoCo(LINE {} / BRANCH {})와 Frontend 전체소스 래칫이 CI/localGate에 결속됨.",
-                lineFloor, branchFloor);
+        log.info("✅ Backend/Frontend coverage 실행 경로와 중앙 품질 래칫 계약이 CI/localGate에 결속됨.");
     }
 
     @Test
     @DisplayName("📦 프런트는 린트·운영 의존성·임시 시크릿·번들 예산·테스트를 강제한다")
     void auditFrontendBuildIsFailFastAndBundleBudgetIsBlocking() throws IOException {
         Path root = resolveRepoRoot();
-        String ci = Files.readString(root.resolve(WORKFLOW_DIR).resolve("ci.yml"), StandardCharsets.UTF_8);
-        String packageJson = Files.readString(root.resolve("frontend/package.json"), StandardCharsets.UTF_8);
-        String verify = Files.readString(root.resolve("scripts/verify.mjs"), StandardCharsets.UTF_8);
-        String budget = Files.readString(
-                root.resolve("frontend/scripts/check-bundle-budget.mjs"), StandardCharsets.UTF_8);
+        String ci = HarnessSourceIndex.read(root.resolve(WORKFLOW_DIR).resolve("ci.yml"));
+        String packageJson = HarnessSourceIndex.read(root.resolve("frontend/package.json"));
+        String verify = HarnessSourceIndex.read(root.resolve("scripts/verify.mjs"));
+        String budget = HarnessSourceIndex.read(root.resolve("frontend/scripts/check-bundle-budget.mjs"));
+        String auditPolicy = HarnessSourceIndex.read(root.resolve("scripts/frontend-audit-policy.mjs"));
 
         List<String> violations = new ArrayList<>();
         int secretIndex = ci.indexOf("Generate ephemeral JWT secret (frontend build only)");
         int buildIndex = ci.indexOf("pnpm run build", secretIndex);
         int bundleIndex = ci.indexOf("pnpm run bundle:check", buildIndex);
         int testIndex = ci.indexOf("pnpm run test", bundleIndex);
-        Integer maxWarnings = extractInteger(packageJson,
-                "\\\"lint\\\"\\s*:\\s*\\\"[^\\\"]*--max-warnings\\s+(\\d+)");
-        if (maxWarnings == null) {
-            violations.add("프런트 ESLint warning 래칫 누락");
-        } else if (maxWarnings > 295) {
-            violations.add("프런트 ESLint warning 래칫 완화: " + maxWarnings + " > 295");
+        // 종전 판정축은 ci.yml 의 인라인 `pnpm audit --prod --audit-level high` 문자열이었다.
+        // 그 명령은 운영 의존성 high 이상만 보므로 개발 의존성의 critical 을 놓쳤고, 종료코드로만
+        // 판정해 JSON 형식 오류·집계 불일치를 조용히 통과시켰다. 지금은 같은 lockfile 을 한 번
+        // 조회해 판정하는 정책 스크립트로 대체됐다 — 축이 사라진 게 아니라 좁은 축이 넓은 축으로
+        // 교체된 것이므로, 게이트가 실제로 존재하고 우회 불가한지를 세 지점에서 다시 결속한다.
+        if (!ci.contains("node ../scripts/frontend-audit-policy.mjs")) {
+            violations.add("운영 의존성 취약점 차단 게이트(frontend-audit-policy) 가 CI 에서 실행되지 않음");
         }
-        if (!ci.contains("pnpm audit --prod --audit-level high")) {
-            violations.add("운영 의존성 high 취약점 차단 게이트 누락");
+        if (!auditPolicy.contains("severity === 'critical' || (severity === 'high' && production)")) {
+            violations.add("audit 정책이 critical 전체와 운영 의존성 high 를 차단 대상으로 삼지 않음");
+        }
+        // 조회·해석 실패를 통과시키면 '취약점 0건' 과 '조회 실패' 가 구분되지 않는다(H5 거짓 그린).
+        if (!auditPolicy.contains("frontend dependency audit failed closed")
+                || !auditPolicy.contains("process.exitCode = 2")) {
+            violations.add("audit 정책이 조회·형식 오류에서 fail-closed 하지 않음");
         }
         if (secretIndex < 0 || !ci.substring(secretIndex, Math.max(secretIndex, buildIndex))
                 .contains("openssl rand -hex 44")) {
@@ -332,11 +305,12 @@ class WorkflowManifestLinterTest {
                 || !verify.contains("JWT_SECRET")) {
             violations.add("로컬 통합 verify가 운영 빌드용 일회성 JWT_SECRET을 안전하게 생성하지 않음");
         }
-        for (String threshold : List.of(
-                "total: 2_250_000", "single: 150_000", "total: 40_000", "single: 38_000")) {
-            if (!budget.contains(threshold)) {
-                violations.add("번들 gzip 고정 래칫 누락/완화: " + threshold);
-            }
+        if (!budget.contains("BUDGETS") || !budget.contains("gzipSync")
+                || !budget.contains(".byteLength")) {
+            violations.add("번들 gzip 예산 판정 구현 누락");
+        }
+        if (!ci.contains("npm run test:operational-contracts")) {
+            violations.add("프런트 품질 수치의 중앙 registry exact-match 계약이 CI에서 실행되지 않음");
         }
 
         if (!violations.isEmpty()) {
@@ -385,21 +359,6 @@ class WorkflowManifestLinterTest {
 
     private List<?> asList(Object value) {
         return value instanceof List<?> list ? list : List.of();
-    }
-
-    /**
-     * 래칫은 과거 값과의 문자열 일치가 아니라 방향성을 검증한다.
-     * 커버리지 하한을 올리거나 warning 상한을 낮춘 강화 변경은 통과해야 한다.
-     */
-    private Integer extractInteger(String content, String regex) {
-        Matcher matcher = Pattern.compile(regex).matcher(content);
-        return matcher.find() ? Integer.valueOf(matcher.group(1)) : null;
-    }
-
-    /** {@link #extractInteger} 의 소수 판. JaCoCo 하한은 {@code 0.85} 형태의 비율이다. */
-    private Double extractDouble(String content, String regex) {
-        Matcher matcher = Pattern.compile(regex).matcher(content);
-        return matcher.find() ? Double.valueOf(matcher.group(1)) : null;
     }
 
     /** api-server 모듈에서 실행되므로 저장소 루트는 한 단계 위다(다른 하네스 린터와 동일 관례). */

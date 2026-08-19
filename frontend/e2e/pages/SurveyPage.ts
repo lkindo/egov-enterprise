@@ -83,7 +83,6 @@ export class SurveyPage {
         // Bearer 를 주입하므로 토큰을 수동 추출/첨부하지 않는다(HttpOnly 전환 정합).
         await this.page.goto('/admin/survey/manage');
         await this.page.waitForLoadState('domcontentloaded');
-        await this.page.waitForTimeout(1000); // Small buffer for script execution
 
         const result = await this.page.evaluate(async ({ data }) => {
             const res = await fetch('/api/v1/polls', {
@@ -112,7 +111,6 @@ export class SurveyPage {
         }
 
         console.log(`>>> Survey Creation Step Finished (API). pollSn=${pollSn}`);
-        await this.page.waitForTimeout(500);
         await this.gotoManage();
         return pollSn;
     }
@@ -202,12 +200,9 @@ export class SurveyPage {
                 await this.searchInput.press('Enter');
             }
             
-            await this.page.waitForLoadState('networkidle').catch(() => {});
-            await this.page.waitForTimeout(3000);
-            
             if (expectedText) {
                 const expectedLoc = this.page.getByText(expectedText).first();
-                if (await expectedLoc.isVisible({ timeout: 5000 }).catch(() => false)) {
+                if (await expectedLoc.waitFor({ state: 'visible', timeout: 5000 }).then(() => true).catch(() => false)) {
                     console.log(`>>> [Survey] Found expected text: ${expectedText}`);
                     return;
                 }

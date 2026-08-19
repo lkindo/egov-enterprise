@@ -38,7 +38,6 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             await addBtn.click();
 
             await expect(page.locator('text=신규 사용자 등록')).toBeVisible({ timeout: 10000 });
-            await page.waitForTimeout(1000); // Modal animation
 
             // --- Step 3: Fill Form ---
             console.log('>>> Step 3: Filling form fields');
@@ -60,8 +59,6 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             } else {
                 console.log('>>> Step 3: 등록된 부서가 없어 소속 없음(GLOBAL)으로 진행');
             }
-            await page.waitForTimeout(500);
-
             // --- Step 4: Submit ---
             console.log('>>> Step 4: Clicking submit button');
             // Submit button is form button[type="submit"] with text "신규 등록"
@@ -83,7 +80,6 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             const searchInput = page.locator('input[placeholder*="검색"], input[placeholder*="identity"]').first();
             await searchInput.fill(testName);
             await page.keyboard.press('Enter');
-            await page.waitForTimeout(2000);
             await expect(page.locator(`text=${testName}`).first()).toBeVisible({ timeout: 15000 });
 
             // --- Step 7: Update ---
@@ -165,7 +161,6 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             // --- Step 8: Delete ---
             console.log('>>> Step 8: Deleting user');
             await page.locator(`text=${updatedName}`).first().click();
-            await page.waitForTimeout(1000);
 
             // [2026-07-27 정정] 종전 셀렉터는 '접근 차단' / '접근차단실행' / 토스트 '말소' 였다.
             // 그러나 앱이 의도적으로 문구를 고쳤다 — UserOrgHubClient 주석: "실제 동작은 계정 삭제다.

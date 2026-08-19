@@ -34,7 +34,6 @@ test.describe('Tier 13: Enterprise Mail System E2E', () => {
         const searchInput = page.getByRole('textbox', { name: '메일 검색' });
         await searchInput.fill(subject);
         await searchInput.press('Enter');
-        await page.waitForTimeout(500);
 
         await mailPage.deleteMail(subject);
     });

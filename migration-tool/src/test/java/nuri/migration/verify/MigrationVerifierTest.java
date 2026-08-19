@@ -1,6 +1,7 @@
 package nuri.migration.verify;
 
 import nuri.migration.etl.EtlExecutor.TableResult;
+import nuri.migration.model.MappingSpec;
 import nuri.migration.verify.MigrationReport.Status;
 import nuri.migration.verify.MigrationReport.TableReport;
 import org.junit.jupiter.api.DisplayName;
@@ -9,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -124,7 +126,7 @@ class MigrationVerifierTest {
             MigrationReport report = verifier.verify(List.of(result(10, 8, 8)), targetWithRows(8));
 
             assertThat(report.overall()).isEqualTo(Status.WARN);
-            assertThat(report.ok()).as("WARN 은 실패가 아니다").isTrue();
+            assertThat(report.ok()).as("strict 실행에서 WARN도 성공 신호가 아니다").isFalse();
             assertThat(report.tables().get(0).note()).contains("행 드롭");
         }
 
@@ -140,20 +142,19 @@ class MigrationVerifierTest {
         }
 
         @Test
-        @DisplayName("타깃 조회가 실패하면(-1) 유령 기록 검사만 건너뛴다")
-        void unreadableTargetSkipsGhostCheckOnly() {
+        @DisplayName("타깃 조회가 실패하면 성공을 증명할 수 없으므로 FAIL")
+        void unreadableTargetFailsClosed() {
             JdbcTemplate jt = mock(JdbcTemplate.class);
             given(jt.queryForObject(anyString(), eq(Long.class)))
                     .willThrow(new org.springframework.dao.DataAccessResourceFailureException("테이블 없음"));
 
-            // 대조 불가(-1)여도 쓰기 유실 검사는 살아 있어야 한다.
+            // 대조 불가(-1)는 다른 수치가 맞더라도 운영 성공으로 볼 수 없다.
             MigrationReport lost = verifier.verify(List.of(result(10, 10, 8)), jt);
             assertThat(lost.overall()).isEqualTo(Status.FAIL);
-            assertThat(lost.tables().get(0).note()).contains("쓰기 유실");
+            assertThat(lost.tables().get(0).note()).contains("대조 실패");
             assertThat(lost.tables().get(0).targetRows()).isEqualTo(-1L);
 
-            // 그 외에는 정상 등급.
-            assertThat(verifier.verify(List.of(result(10, 10, 10)), jt).overall()).isEqualTo(Status.PASS);
+            assertThat(verifier.verify(List.of(result(10, 10, 10)), jt).overall()).isEqualTo(Status.FAIL);
         }
 
         @Test
@@ -236,12 +237,30 @@ class MigrationVerifierTest {
         }
 
         @Test
-        @DisplayName("테이블이 없으면 PASS 다")
-        void emptyResultIsPass() {
+        @DisplayName("실행 결과가 비어 있으면 성공을 증명할 수 없어 FAIL")
+        void emptyResultFailsClosed() {
             MigrationReport report = verifier.verify(List.of(), null);
 
-            assertThat(report.overall()).isEqualTo(Status.PASS);
-            assertThat(report.tables()).isEmpty();
+            assertThat(report.overall()).isEqualTo(Status.FAIL);
+            assertThat(report.tables()).singleElement().satisfies(table ->
+                    assertThat(table.note()).contains("비어", "증명"));
+        }
+
+        @Test
+        @DisplayName("선언 대비 실행 결과의 개수나 source→target identity가 다르면 FAIL")
+        void resultCardinalityAndIdentityMustMatchTheMapping() {
+            MappingSpec.TableMapping expected = new MappingSpec.TableMapping(
+                    "src_tbl", "tgt_tbl", null, List.of(), null);
+            MappingSpec spec = new MappingSpec(null, null, List.of(expected), Map.of());
+
+            MigrationReport missing = verifier.verify(spec, List.of(), null);
+            MigrationReport wrongTarget = verifier.verify(spec,
+                    List.of(new TableResult("src_tbl", "other_tgt", 1, 1, 0, List.of())), null);
+
+            assertThat(missing.overall()).isEqualTo(Status.FAIL);
+            assertThat(missing.tables().get(0).note()).contains("cardinality/identity");
+            assertThat(wrongTarget.overall()).isEqualTo(Status.FAIL);
+            assertThat(wrongTarget.tables().get(0).note()).contains("src_tbl -> tgt_tbl", "other_tgt");
         }
     }
 
@@ -250,10 +269,10 @@ class MigrationVerifierTest {
     class Reporting {
 
         @Test
-        @DisplayName("ok() 는 FAIL 일 때만 false 다")
-        void okIsFalseOnlyForFail() {
+        @DisplayName("ok() 는 strict 성공인 PASS 에서만 true 다")
+        void okIsTrueOnlyForPass() {
             assertThat(new MigrationReport(List.of(), Status.PASS).ok()).isTrue();
-            assertThat(new MigrationReport(List.of(), Status.WARN).ok()).as("WARN 은 통과다").isTrue();
+            assertThat(new MigrationReport(List.of(), Status.WARN).ok()).isFalse();
             assertThat(new MigrationReport(List.of(), Status.FAIL).ok()).isFalse();
         }
 

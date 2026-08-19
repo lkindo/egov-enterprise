@@ -4,9 +4,7 @@
  * 관리자용 사용자 목록 조회 성능을 테스트합니다.
  * 
  * 실행 방법:
- *   k6 run --vus 10 --duration 30s users-list-test.js
- *   k6 run --scenario smoke users-list-test.js
- *   k6 run --scenario load users-list-test.js
+ *   k6 run users-list-test.js  # 아래에 정의된 모든 시나리오 실행
  */
 
 import http from 'k6/http';

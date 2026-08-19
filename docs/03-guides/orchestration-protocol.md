@@ -129,7 +129,18 @@
 | **Database** | `db-bridge` 쿼리 실행 결과·행(Row) 수, `flyway_schema_history` 확인, `EXPLAIN ANALYZE` 결과, 스키마 변경 확인 로그. **엔티티·DDL 변경 시 `./gradlew :api-server:schemaValidationTest`**(빈 PostgreSQL 17 + Flyway 전량 적용 + Hibernate `ddl-auto:validate`, Docker 필요). ⚠ 단위 테스트 프로파일은 **H2 + `create-drop`** 이라 물리 스키마 불일치를 **원리적으로 검출하지 못한다** — 그 그린을 스키마 증거로 제시하지 말 것. |
 | **아키텍처/규칙** | 신설·수정한 ArchUnit/린트 게이트가 그린임을 대상 테스트 직접 실행(`--tests`)으로 증명. **게이트를 신설·수정했다면 그린 확인만으로 부족하다 — 의도적으로 위반을 주입해 red 가 되는 것까지 증명한다**(그린만 확인하면 vacuous 통과·UP-TO-DATE 스킵과 구분되지 않는다. [AGENTS.md Evidence guardrails H5](../../AGENTS.md#evidence-guardrails)). |
 
-> **게이트 계층**: pre-commit은 빠른 경고, pre-push는 변경 범위별 로컬 차단, `localGate`는 Docker를 포함한 넓은 로컬 검증, required CI는 병합 권위다. 정확한 포함 task와 우회 경계는 [.githooks/README.md](../../.githooks/README.md), required check 이름은 [.github/required-checks.json](../../.github/required-checks.json)을 따른다.
+공통 검증 진입점은 비용과 범위가 `verify:docs` ⊂ `verify:fast` ⊂ `verify:push` ⊂ `verify:full`이 되도록 구성한다.
+
+| 명령 | 용도와 경계 |
+|---|---|
+| `npm run verify:docs` | 운영 계약과 Atlas 문서 계약. 문서 전용 변경의 최소 fail-closed 경로 |
+| `npm run verify:fast` | docs + Java compile + FE/E2E type-check·lint·codegen + 빠른 Vitest |
+| `npm run verify:push` | fast + governance harness. 수동 사전 검증용이며 실제 pre-push 훅의 변경분 최적화와 동일하다고 가정하지 않음 |
+| `npm run verify` / `verify:full` | backend test·harness·JaCoCo·실 PostgreSQL schema-validation + frontend build·bundle·coverage. 브라우저 E2E와 원격 정책은 포함하지 않음 |
+| `npm run verify:e2e` | 실행 중인 격리 서비스에 대한 E2E type-check·Playwright. 운영 대상을 향해 실행하지 않음 |
+| `npm run verify:ops` | `.github/required-checks.json`과 현재 GitHub ruleset exact-match. 네트워크와 admin read 권한 필요 |
+
+> **게이트 계층**: pre-commit은 빠른 경고, pre-push는 변경 범위별 로컬 차단, `localGate`는 Docker를 포함한 넓은 Gradle 검증, required CI는 병합 권위다. 하네스 목록·실행 소비자는 [governance gates manifest](../../config/governance/gates.json), 훅의 정확한 포함 task와 우회 경계는 [.githooks/README.md](../../.githooks/README.md), required check·review 정책은 [.github/required-checks.json](../../.github/required-checks.json)을 따른다.
 >
 > ⚠ **pre-push 에는 E2E 가 없다.** 로컬 게이트 전부 그린이어도 E2E 는 검증되지 않은 상태다.
 > UI 를 건드리는 변경은 과거 문서나 로컬 결과로 CI 상태를 추정하지 말고, **현재 required CI와 E2E 결과를 직접 확인한 뒤에** 완료로 선언한다.

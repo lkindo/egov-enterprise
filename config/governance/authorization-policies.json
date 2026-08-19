@@ -1,0 +1,2201 @@
+{
+  "schemaVersion": 1,
+  "authority": "write-authorization-policy-ssot",
+  "description": "Exact Spring MVC write endpoint census plus service-layer authorization semantics. Endpoint rows are reviewed policy, not generated defaults.",
+  "analysisModel": {
+    "endpointEvidence": "Spring RequestMappingHandlerMapping plus merged @PreAuthorize value and configured URL gate.",
+    "serviceEvidence": "Comment-stripped lexical method-body census for SecurityUtil helpers, explicit manual-deny sites, and query/credential guards.",
+    "knownLimits": [
+      "Static service checks prove required guard statements remain in the registered method, not full Java control-flow reachability.",
+      "DB-driven URL semantics are fixed to ADMIN/SYSTEM by the current secure-path config and V2_11 seed; live DB drift remains an operational concern.",
+      "The policy label ADMIN_ROLE_WITH_HIERARCHY means hasRole(ADMIN); ROLE_SYSTEM currently inherits ROLE_ADMIN and is therefore effectively included."
+    ]
+  },
+  "policyDefinitions": {
+    "PUBLIC": "No authentication required.",
+    "AUTHENTICATED": "Any authenticated principal; no resource-owner assertion is claimed.",
+    "STRICT_SELF": "The endpoint binds the target identifier to the current principal; no arbitrary target selector or administrator bypass is exposed by that endpoint.",
+    "SELF_WITH_CREDENTIAL": "Principal-bound self service plus current credential proof.",
+    "STRICT_OWNER": "Resource owner/participant only; administrator bypass is forbidden by the service guard.",
+    "OWNER_OR_ADMIN": "Resource owner or ADMIN/SYSTEM service guard.",
+    "OWNER_OR_ADMIN_OR_CREDENTIAL": "Owner/admin, or the resource credential branch defined by the service.",
+    "PARTICIPANT_OR_ADMIN": "Named resource participant or ADMIN/SYSTEM.",
+    "REACHABILITY_WITH_PRIVACY": "Owner/shared reachability; ADMIN/SYSTEM cannot bypass personal-reference privacy.",
+    "ADMIN_OR_SYSTEM": "ADMIN or SYSTEM through method security, DB URL authorization, or service guard.",
+    "ADMIN_ROLE_WITH_HIERARCHY": "hasRole(ADMIN); current ROLE_SYSTEM > ROLE_ADMIN hierarchy also grants SYSTEM.",
+    "SYSTEM_ACCOUNT_IMMUTABLE": "Invariant deny protecting the system re-assignment account."
+  },
+  "endpointPolicies": [
+    {
+      "method": "POST",
+      "path": "/api/v1/address-books",
+      "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#createAddressBook",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/address-books/{adbkSn}",
+      "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#deleteAddressBook",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "AddressBookService#deleteAddressBook"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/address-books/{adbkSn}",
+      "handler": "nuri.api.controller.business.addressbook.AddressBookApiController#updateAddressBook",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "AddressBookService#updateAddressBook"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/comments/{id}",
+      "handler": "nuri.api.controller.business.admin.CommentApiController#deleteComment",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/content/community",
+      "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#createCommunity",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/content/community/{cmntySn}",
+      "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#deleteCommunity",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/content/community/{cmntySn}",
+      "handler": "nuri.api.controller.business.admin.content.community.CommunityApiController#updateCommunity",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/content/files",
+      "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/operation/events",
+      "handler": "nuri.api.controller.business.operation.EventApiController#createEvent",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/operation/events/{evntSn}",
+      "handler": "nuri.api.controller.business.operation.EventApiController#deleteEvent",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/operation/events/{evntSn}",
+      "handler": "nuri.api.controller.business.operation.EventApiController#updateEvent",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/operation/external-hr",
+      "handler": "nuri.api.controller.business.operation.ExternalHrApiController#createExternalHr",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/operation/files",
+      "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/operation/rewards",
+      "handler": "nuri.api.controller.business.operation.RewardManageApiController#createReward",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/operation/sms",
+      "handler": "nuri.api.controller.business.sms.SmsApiController#sendSms",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/authorities",
+      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthors",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/authorities",
+      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#createAuthor",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/authorities/{authrtCd}",
+      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#deleteAuthor",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/authorities/{authrtCd}",
+      "handler": "nuri.api.controller.foundation.controller.system.AuthorApiController#updateAuthor",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/authorities/{authrtCd}/roles",
+      "handler": "nuri.api.controller.foundation.controller.system.AuthorRoleApiController#saveAuthorRoles",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/banners",
+      "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#insertBanner",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/banners/{bnrSn}",
+      "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#deleteBanner",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/banners/{bnrSn}",
+      "handler": "nuri.api.controller.business.admin.content.banner.BannerApiController#updateBanner",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/board-masters",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#createBoardMaster",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/board-masters/batch/delete",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMastersInBatch",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/board-masters/batch/status",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updateBoardMasterStatusInBatch",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMaster",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updateBoardMaster",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}/physical",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMasterPhysically",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/codes/administ",
+      "handler": "nuri.api.controller.foundation.controller.code.AdministCodeApiController#createAdministCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/codes/administ/{code}",
+      "handler": "nuri.api.controller.foundation.controller.code.AdministCodeApiController#deleteAdministCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/codes/administ/{code}",
+      "handler": "nuri.api.controller.foundation.controller.code.AdministCodeApiController#updateAdministCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/codes/cl",
+      "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#createClCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/codes/cl/{clCode}",
+      "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#deleteClCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/codes/cl/{clCode}",
+      "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateClCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/codes/cmmn",
+      "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#createCmmnCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/codes/cmmn/batch-hierarchy",
+      "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateCmmnCodeHierarchy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/codes/cmmn/{codeId}",
+      "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#deleteCmmnCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/codes/cmmn/{codeId}",
+      "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateCmmnCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/codes/detail",
+      "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#createDetailCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/codes/detail/{codeId}/{code}",
+      "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#deleteDetailCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/codes/detail/{codeId}/{code}",
+      "handler": "nuri.api.controller.foundation.controller.code.CommonCodeApiController#updateDetailCode",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/codes/institution/receptions/process",
+      "handler": "nuri.api.controller.foundation.controller.code.InstitutionCodeApiController#processInstitutionCodeRecptn",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/departments",
+      "handler": "nuri.api.controller.system.DeptApiController#insertDept",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/departments/batch-hierarchy",
+      "handler": "nuri.api.controller.system.DeptApiController#updateDeptHierarchy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/departments/{deptId}",
+      "handler": "nuri.api.controller.system.DeptApiController#deleteDept",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/departments/{deptId}",
+      "handler": "nuri.api.controller.system.DeptApiController#updateDept",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/dept-authorities/batch",
+      "handler": "nuri.api.controller.system.DeptAuthorityApiController#saveDeptUserAuthorities",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/files",
+      "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/groups",
+      "handler": "nuri.api.controller.foundation.controller.system.GroupApiController#deleteGroups",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/groups",
+      "handler": "nuri.api.controller.foundation.controller.system.GroupApiController#createGroup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/groups/{groupId}",
+      "handler": "nuri.api.controller.foundation.controller.system.GroupApiController#deleteGroup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/groups/{groupId}",
+      "handler": "nuri.api.controller.foundation.controller.system.GroupApiController#updateGroup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/isg",
+      "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#registerIsg",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#deleteIsg",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/isg/{itntSrvcSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.isg.InternetSvcGuidanceApiController#updateIsg",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/ism",
+      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#registerInformalSanction",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/ism/{informalSanctionId}",
+      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#deleteInformalSanction",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "InformalSanctionService#deleteInformalSanction"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/ism/{informalSanctionId}",
+      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#updateInformalSanction",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "InformalSanctionService#updateInformalSanction"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/system/ism/{informalSanctionId}/confirm",
+      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM",
+      "guardRef": "InformalSanctionService#confirmInformalSanction"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/login-policies/{userId}",
+      "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#deleteLoginPolicy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/login-policies/{userId}",
+      "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#insertLoginPolicy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/login-policies/{userId}",
+      "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#updateLoginPolicy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/menus",
+      "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#createMenu",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/menus/batch-order",
+      "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#updateMenuOrder",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/menus/creation/{authorCode}",
+      "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#createMenuCreation",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/menus/{menuNo}",
+      "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#deleteMenu",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/menus/{menuNo}",
+      "handler": "nuri.api.controller.foundation.controller.system.MenuApiController#updateMenu",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/ntwrksvc-monitoring",
+      "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#createNetwork",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
+      "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#deleteNetwork",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/ntwrksvc-monitoring/{id}",
+      "handler": "nuri.api.controller.foundation.controller.system.log.NetworkMonitoringApiController#updateNetwork",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/policies/{type}",
+      "handler": "nuri.api.controller.foundation.controller.system.policy.PolicyApiController#updatePolicy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/polls",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.OnlinePollApiController#insertPoll",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/polls/{pollSn}/vote",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.OnlinePollApiController#vote",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/popups",
+      "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#createPopup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/popups/{popupSn}",
+      "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#deletePopup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/popups/{popupSn}",
+      "handler": "nuri.api.controller.business.admin.content.popup.PopupApiController#updatePopup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/programs",
+      "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#createProgram",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/programs/{progrmFileNm}",
+      "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#deleteProgram",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/programs/{progrmFileNm}",
+      "handler": "nuri.api.controller.foundation.controller.system.ProgramApiController#updateProgram",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/roles",
+      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#deleteRoles",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/roles",
+      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#createRole",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/roles/{roleCode}",
+      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#deleteRole",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/roles/{roleCode}",
+      "handler": "nuri.api.controller.foundation.controller.system.RoleApiController#updateRole",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/survey-responses/{srvyRspnsSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#deleteResponse",
+      "policy": "ADMIN_ROLE_WITH_HIERARCHY",
+      "methodSecurity": "hasRole('ADMIN')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/surveys",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertSurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/surveys/questions/items/{srvyArtclSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/surveys/questions/{srvyQstnSn}/items",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/surveys/templates",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertTemplate",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteTemplate",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/surveys/templates/{srvyTmpltSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateTemplate",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/surveys/{srvySn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteSurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/surveys/{srvySn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateSurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/surveys/{srvySn}/questions",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertQuestion",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteQuestion",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/surveys/{srvySn}/questions/{srvyQstnSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateQuestion",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/surveys/{srvySn}/respondents",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyRespondentApiController#createRespondent",
+      "policy": "ADMIN_ROLE_WITH_HIERARCHY",
+      "methodSecurity": "hasRole('ADMIN')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/surveys/{srvySn}/respondents/{respondentId}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyRespondentApiController#deleteRespondent",
+      "policy": "ADMIN_ROLE_WITH_HIERARCHY",
+      "methodSecurity": "hasRole('ADMIN')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/surveys/{srvySn}/respondents/{respondentId}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyRespondentApiController#updateRespondent",
+      "policy": "ADMIN_ROLE_WITH_HIERARCHY",
+      "methodSecurity": "hasRole('ADMIN')",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/templates",
+      "handler": "nuri.api.controller.foundation.controller.system.template.TemplateApiController#insertTmplatInfo",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/user-absences/{emplyrId}",
+      "handler": "nuri.api.controller.foundation.controller.system.user.UserAbsenceApiController#updateAbsence",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/user-authorities",
+      "handler": "nuri.api.controller.foundation.controller.system.UserAuthorityApiController#deleteUserAuthorities",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/user-authorities",
+      "handler": "nuri.api.controller.foundation.controller.system.UserAuthorityApiController#saveUserAuthorities",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/users",
+      "handler": "nuri.api.controller.UserApiController#deleteUsers",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/users",
+      "handler": "nuri.api.controller.UserApiController#insertUser",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/system/users/dept",
+      "handler": "nuri.api.controller.UserApiController#moveUsersToDept",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/system/users/role",
+      "handler": "nuri.api.controller.UserApiController#updateUsersRole",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/system/users/status",
+      "handler": "nuri.api.controller.UserApiController#updateUsersStatus",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/users/{userId}",
+      "handler": "nuri.api.controller.UserApiController#deleteUser",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/users/{userId}",
+      "handler": "nuri.api.controller.UserApiController#updateUser",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/system/users/{userId}/password",
+      "handler": "nuri.api.controller.UserApiController#updatePasswordByAdmin",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/workspace/mypage/contents",
+      "handler": "nuri.api.controller.business.workspace.MyPageApiController#createContent",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/workspace/mypage/contents/{contsSn}",
+      "handler": "nuri.api.controller.business.workspace.MyPageApiController#deleteContent",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/workspace/mypage/contents/{contsSn}",
+      "handler": "nuri.api.controller.business.workspace.MyPageApiController#updateContent",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/approvals/{id}/confirm",
+      "handler": "nuri.api.controller.business.approval.ApprovalApiController#confirm",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "InformalSanctionService#confirmInformalSanction"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/login",
+      "handler": "nuri.api.controller.foundation.auth.AuthApiController#login",
+      "policy": "PUBLIC",
+      "methodSecurity": "",
+      "routeGate": "PUBLIC_FILTER"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/logout",
+      "handler": "nuri.api.controller.foundation.auth.AuthApiController#logout",
+      "policy": "PUBLIC",
+      "methodSecurity": "",
+      "routeGate": "PUBLIC_FILTER"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/auth/reissue",
+      "handler": "nuri.api.controller.foundation.auth.AuthApiController#reissue",
+      "policy": "PUBLIC",
+      "methodSecurity": "",
+      "routeGate": "PUBLIC_FILTER"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/bbs/{bbsId}",
+      "handler": "nuri.api.controller.business.board.BbsApiController#createBbsPost",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/bbs/{bbsId}/posts/{pstSn}",
+      "handler": "nuri.api.controller.business.board.BbsApiController#deleteBbsPost",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "BoardService#deletePost"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/bbs/{bbsId}/posts/{pstSn}",
+      "handler": "nuri.api.controller.business.board.BbsApiController#updateBbsPost",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "BoardService#updatePost"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/boards/posts",
+      "handler": "nuri.api.controller.business.board.BoardApiController#createPost",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}",
+      "handler": "nuri.api.controller.business.board.BoardApiController#deletePost",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "BoardService#deletePost"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}",
+      "handler": "nuri.api.controller.business.board.BoardApiController#updatePost",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "BoardService#updatePost"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/like",
+      "handler": "nuri.api.controller.business.board.BoardApiController#likePost",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions",
+      "handler": "nuri.api.controller.business.board.SatisfactionApiController#create",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}",
+      "handler": "nuri.api.controller.business.board.SatisfactionApiController#delete",
+      "policy": "OWNER_OR_ADMIN_OR_CREDENTIAL",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "SatisfactionService#assertCanModify"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}",
+      "handler": "nuri.api.controller.business.board.SatisfactionApiController#update",
+      "policy": "OWNER_OR_ADMIN_OR_CREDENTIAL",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "SatisfactionService#assertCanModify"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/satisfactions/{dgstfnSn}/moderate",
+      "handler": "nuri.api.controller.business.board.SatisfactionApiController#moderate",
+      "policy": "ADMIN_ROLE_WITH_HIERARCHY",
+      "methodSecurity": "hasRole('ADMIN')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/comments",
+      "handler": "nuri.api.controller.business.comment.CommentApiController#createComment",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/comments/{commentNo}",
+      "handler": "nuri.api.controller.business.comment.CommentApiController#deleteComment",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "CommentService#deleteComment"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/comments/{commentNo}",
+      "handler": "nuri.api.controller.business.comment.CommentApiController#updateComment",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "CommentService#updateComment"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/communities/{cmntySn}/join",
+      "handler": "nuri.api.controller.business.community.CommunityUserApiController#joinCommunity",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/dept-jobs",
+      "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#createDeptJob",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/dept-jobs/boxes",
+      "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#createDeptJobBox",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}",
+      "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#deleteDeptJobBox",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/dept-jobs/boxes/{deptTaskBoxSn}",
+      "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#updateDeptJobBox",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/dept-jobs/{deptTaskSn}",
+      "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#deleteDeptJob",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "DeptJobService#assertPicOrAdmin"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/dept-jobs/{deptTaskSn}",
+      "handler": "nuri.api.controller.business.smarttoolkit.DeptJobApiController#updateDeptJob",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "DeptJobService#assertPicOrAdmin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/files",
+      "handler": "nuri.api.controller.business.file.FileApiController#uploadFiles",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/help/hpcm",
+      "handler": "nuri.api.controller.business.help.HelpApiController#insertHpcm",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/help/hpcm/{hlpSn}",
+      "handler": "nuri.api.controller.business.help.HelpApiController#deleteHpcm",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/help/hpcm/{hlpSn}",
+      "handler": "nuri.api.controller.business.help.HelpApiController#updateHpcm",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/help/manuals",
+      "handler": "nuri.api.controller.business.help.HelpApiController#createManual",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/help/manuals/{onlnMnlSn}",
+      "handler": "nuri.api.controller.business.help.HelpApiController#deleteManual",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/help/manuals/{onlnMnlSn}",
+      "handler": "nuri.api.controller.business.help.HelpApiController#updateManual",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/informal-sanctions",
+      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#registerInformalSanction",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/informal-sanctions/{informalSanctionId}",
+      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#deleteInformalSanction",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "InformalSanctionService#deleteInformalSanction"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/informal-sanctions/{informalSanctionId}",
+      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#updateInformalSanction",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "InformalSanctionService#updateInformalSanction"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/informal-sanctions/{informalSanctionId}/confirm",
+      "handler": "nuri.api.controller.business.approval.InformalSanctionApiController#confirmInformalSanction",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "InformalSanctionService#confirmInformalSanction"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/mails",
+      "handler": "nuri.api.controller.business.mail.MailApiController#sendMail",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/mails/{emlDsptchSn}",
+      "handler": "nuri.api.controller.business.mail.MailApiController#deleteMail",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "MailService#deleteMail"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/memo-reports",
+      "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#createMemoReport",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/memo-reports/{memoRptSn}",
+      "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#deleteMemoReport",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "MemoReportService#deleteMemoReport"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/memo-reports/{memoRptSn}",
+      "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#updateMemoReport",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "MemoReportService#updateMemoReport"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/memo-reports/{memoRptSn}/instr-cn",
+      "handler": "nuri.api.controller.business.memoreport.MemoReportApiController#updateDrctMatter",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "MemoReportService#assertParticipantOrAdmin"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notes",
+      "handler": "nuri.api.controller.business.note.NoteApiController#sendNote",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/notes/{relationSn}",
+      "handler": "nuri.api.controller.business.note.NoteApiController#deleteNote",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "NoteService#deleteNote"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notifications",
+      "handler": "nuri.api.controller.business.notification.NotificationApiController#createNotification",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/notifications/{notiSn}",
+      "handler": "nuri.api.controller.business.notification.NotificationApiController#deleteNotification",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "NotificationService#findOwnedNotification"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/notifications/{notiSn}/read",
+      "handler": "nuri.api.controller.business.notification.NotificationApiController#markAsRead",
+      "policy": "STRICT_OWNER",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "NotificationService#findOwnedNotification"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/polls",
+      "handler": "nuri.api.controller.business.poll.PollApiController#createPoll",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "OnlinePollService#insertPoll"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/polls/{pollSn}",
+      "handler": "nuri.api.controller.business.poll.PollApiController#deletePoll",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "OnlinePollService#deletePoll"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/polls/{pollSn}",
+      "handler": "nuri.api.controller.business.poll.PollApiController#updatePoll",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "OnlinePollService#updatePoll"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/polls/{pollSn}/vote/{pollArtclSn}",
+      "handler": "nuri.api.controller.business.poll.PollApiController#vote",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/schedules",
+      "handler": "nuri.api.controller.business.smarttoolkit.ScheduleApiController#createSchedule",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/schedules/{schdlSn}",
+      "handler": "nuri.api.controller.business.smarttoolkit.ScheduleApiController#deleteSchedule",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "ScheduleService#deleteSchedule"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/schedules/{schdlSn}",
+      "handler": "nuri.api.controller.business.smarttoolkit.ScheduleApiController#updateSchedule",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "ScheduleService#updateSchedule"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/scraps",
+      "handler": "nuri.api.controller.business.smarttoolkit.ScrapApiController#createScrap",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/scraps/{scrapSn}",
+      "handler": "nuri.api.controller.business.smarttoolkit.ScrapApiController#deleteScrap",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "ScrapService#deleteScrap"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/scraps/{scrapSn}",
+      "handler": "nuri.api.controller.business.smarttoolkit.ScrapApiController#updateScrap",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "ScrapService#updateScrap"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/surveys",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertSurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/surveys/questions/items/{srvyArtclSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/surveys/questions/items/{srvyArtclSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/surveys/questions/{srvyQstnSn}/items",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/surveys/templates",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertTemplate",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/surveys/templates/{srvyTmpltSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteTemplate",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/surveys/templates/{srvyTmpltSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateTemplate",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/surveys/{srvySn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteSurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/surveys/{srvySn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateSurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/surveys/{srvySn}/questions",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#insertQuestion",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#deleteQuestion",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/surveys/{srvySn}/questions/{srvyQstnSn}",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveyApiController#updateQuestion",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/surveys/{srvySn}/responses",
+      "handler": "nuri.api.controller.foundation.controller.system.service.survey.SurveySubmissionApiController#submit",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "RBAC_ALIAS_ADMIN_OR_SYSTEM"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/users/me",
+      "handler": "nuri.api.controller.UserApiController#updateMe",
+      "policy": "STRICT_SELF",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "UserService#updateUser",
+      "handlerRequiredTokens": [
+        "userService.updateUser(userDetails.getUserId(), userDto)"
+      ]
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/users/me/password",
+      "handler": "nuri.api.controller.UserApiController#changePassword",
+      "policy": "SELF_WITH_CREDENTIAL",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "UserService#changePassword",
+      "handlerRequiredTokens": [
+        "userService.changePassword(userDetails.getUserId(), request.getOldPassword(), request.getNewPassword())"
+      ]
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/users/signup",
+      "handler": "nuri.api.controller.UserApiController#signup",
+      "policy": "PUBLIC",
+      "methodSecurity": "permitAll()",
+      "routeGate": "PUBLIC_FILTER"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/work-reports",
+      "handler": "nuri.api.controller.business.report.WorkReportApiController#createWorkReport",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/work-reports/{rptpSn}",
+      "handler": "nuri.api.controller.business.report.WorkReportApiController#deleteWorkReport",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "WorkReportService#deleteWorkReport"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/work-reports/{rptpSn}",
+      "handler": "nuri.api.controller.business.report.WorkReportApiController#updateWorkReport",
+      "policy": "OWNER_OR_ADMIN",
+      "methodSecurity": "isAuthenticated()",
+      "routeGate": "DEFAULT_AUTHENTICATED",
+      "guardRef": "WorkReportService#updateWorkReport"
+    }
+  ],
+  "serviceGuardPolicies": [
+    {
+      "target": "AddressBookService#deleteAddressBook",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "AddressBookService#getAddressBook",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "AddressBookService#updateAddressBook",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "BoardService#deletePost",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdminByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "BoardService#updatePost",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdminByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "CommentService#deleteComment",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "CommentService#updateComment",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "DeptJobBoxService#createDeptJobBox",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "DeptJobBoxService#deleteDeptJobBox",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "DeptJobBoxService#updateDeptJobBox",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "DeptJobService#assertPicOrAdmin",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        },
+        {
+          "helper": "assertOwnerOrAdminByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "InformalSanctionService#confirmInformalSanction",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "InformalSanctionService#deleteInformalSanction",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "InformalSanctionService#updateInformalSanction",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "MailService#deleteMail",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "MailService#getSentMail",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "MemoReportService#deleteMemoReport",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "MemoReportService#getMemoReportList",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "MemoReportService#updateMemoReport",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "OnlinePollService#deletePoll",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "OnlinePollService#insertPoll",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "OnlinePollService#updatePoll",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "SatisfactionService#assertCanModify",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "SatisfactionService#deleteByModerator",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "ScheduleService#deleteSchedule",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "ScheduleService#getSchedule",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "ScheduleService#updateSchedule",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "ScrapService#deleteScrap",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "ScrapService#getScrap",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "ScrapService#updateScrap",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "UserService#deleteUser",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "UserService#deleteUserList",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "UserService#moveUsersToDept",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "UserService#registerUser",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "UserService#updatePasswordByAdmin",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "UserService#updateUser",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdminByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "UserService#updateUsersRole",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "UserService#updateUsersStatus",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertAdmin",
+          "count": 1,
+          "identityAxis": "ROLE"
+        }
+      ]
+    },
+    {
+      "target": "WorkReportService#deleteWorkReport",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "WorkReportService#getWorkReport",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    },
+    {
+      "target": "WorkReportService#updateWorkReport",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdmin",
+          "count": 1,
+          "identityAxis": "LOGIN_ID"
+        }
+      ]
+    }
+  ],
+  "manualGuardPolicies": [
+    {
+      "target": "FileAccessPolicy#assertReadable",
+      "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
+      "policy": "REACHABILITY_WITH_PRIVACY",
+      "denyReferences": 2,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentLoginId()",
+        "SecurityUtil.getCurrentEsntlId()",
+        "grants.ownerGrant() || grants.sharedGrant()",
+        "admin && !grants.personalReference()",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "MailService#resolveSenderScope",
+      "source": "business-app/src/main/java/nuri/business/service/mail/MailService.java",
+      "policy": "OWNER_OR_ADMIN",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)",
+        "SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_SYSTEM)",
+        "SecurityUtil.getCurrentLoginId()",
+        ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "MemoReportService#assertParticipantOrAdmin",
+      "source": "business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_ADMIN)",
+        "SecurityUtil.hasRole(nuri.business.security.AuthorityConstants.ROLE_SYSTEM)",
+        "!esntlId.equals(entity.getUserId()) && !esntlId.equals(entity.getRptrId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "MemoReportService#currentEsntlIdOrDeny",
+      "source": "business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentEsntlId()",
+        ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "NoteService#deleteNote",
+      "source": "business-app/src/main/java/nuri/business/service/note/NoteService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 2,
+      "requiredTokens": [
+        "currentUserId == null || !currentUserId.equals(trnsmit.getSndrId())",
+        "currentUserId == null || !currentUserId.equals(recptn.getRcvrId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin"
+      ]
+    },
+    {
+      "target": "NoteService#getNoteDetail",
+      "source": "business-app/src/main/java/nuri/business/service/note/NoteService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 2,
+      "requiredTokens": [
+        "currentUserId == null || !currentUserId.equals(trnsmit.getSndrId())",
+        "currentUserId == null || !currentUserId.equals(recptn.getRcvrId())",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin"
+      ]
+    },
+    {
+      "target": "NotificationService#findOwnedNotification",
+      "source": "business-app/src/main/java/nuri/business/service/notification/NotificationService.java",
+      "policy": "STRICT_OWNER",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "notificationRepository.findByNotiSnAndRcvrId(Objects.requireNonNull(notiSn), userId)"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin"
+      ]
+    },
+    {
+      "target": "SatisfactionService#assertCanModify",
+      "source": "business-app/src/main/java/nuri/business/service/board/SatisfactionService.java",
+      "policy": "OWNER_OR_ADMIN_OR_CREDENTIAL",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId())",
+        "passwordEncoder.matches(pswd, entity.getPswd())",
+        "CommonErrorCode.HANDLE_ACCESS_DENIED"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "UserService#changePassword",
+      "source": "business-core/src/main/java/nuri/business/service/user/UserService.java",
+      "policy": "SELF_WITH_CREDENTIAL",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "passwordEncoder.matches(oldPassword, user.getPswd())",
+        "throw new BusinessException(UserErrorCode.INVALID_PASSWORD);",
+        "user.updatePassword(passwordEncoder.encode(newPassword))"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "UserService#cleanupDependentsAndDelete",
+      "source": "business-core/src/main/java/nuri/business/service/user/UserService.java",
+      "policy": "SYSTEM_ACCOUNT_IMMUTABLE",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "esntlIds.contains(Constants.User.SYSTEM_ADMIN_ESNTL_ID)",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": []
+    },
+    {
+      "target": "UserService#searchAssignableUsers",
+      "source": "business-core/src/main/java/nuri/business/service/user/UserService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "SecurityUtil.getCurrentEsntlId().isEmpty()",
+        "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);"
+      ],
+      "forbiddenTokens": []
+    }
+  ]
+}

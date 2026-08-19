@@ -17,8 +17,8 @@ export class SecurityAdminPage {
         console.log(`>>> Creating Authority: ${authCode}`);
         // Use a more specific locator for the header button to avoid tooltip conflicts
         await this.page.locator('button:has-text("신규 보안 아키텍처 설정")').first().click();
-        await this.page.waitForTimeout(1000); // Wait for modal animation
-        
+        await expect(this.page.locator('#authrtCd')).toBeVisible({ timeout: 10000 });
+
         await this.page.locator('#authrtCd').fill(authCode);
         await this.page.locator('#authrtNm').fill(authNm);
         await this.page.locator('#authrtExpln').fill(`${authNm} description for E2E`);
@@ -41,8 +41,8 @@ export class SecurityAdminPage {
     async createGroup(groupId: string, groupNm: string) {
         console.log(`>>> Creating Group: ${groupId}`);
         await this.page.getByRole('button', { name: /신규 보안 그룹 설정/i }).click();
-        await this.page.waitForTimeout(1000); // Wait for modal animation
-        
+        await expect(this.page.locator('#groupId')).toBeVisible({ timeout: 10000 });
+
         await this.page.locator('#groupId').fill(groupId);
         await this.page.locator('#groupNm').fill(groupNm);
         await this.page.locator('#groupDc').fill(`${groupNm} description for E2E`);
@@ -63,8 +63,8 @@ export class SecurityAdminPage {
     async createRole(roleCode: string, roleNm: string) {
         console.log(`>>> Creating Role: ${roleCode}`);
         await this.page.locator('button:has-text("신규 보안 롤 설정")').first().click();
-        await this.page.waitForTimeout(1000); // Wait for modal animation
-        
+        await expect(this.page.locator('#roleId')).toBeVisible({ timeout: 10000 });
+
         await this.page.locator('#roleId').fill(roleCode);
         await this.page.locator('#roleNm').fill(roleNm);
         await this.page.locator('#rolePatrn').fill('/**'); 

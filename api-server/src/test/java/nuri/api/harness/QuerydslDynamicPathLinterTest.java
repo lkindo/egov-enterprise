@@ -1,20 +1,17 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -56,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔.
  */
+@Tag("governance-harness")
 class QuerydslDynamicPathLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(QuerydslDynamicPathLinterTest.class);
@@ -81,38 +79,28 @@ class QuerydslDynamicPathLinterTest {
     @Test
     @DisplayName("🧨 QueryDSL 경로를 문자열로 동적 구성하지 않는가 — HQL 인젝션(CVE-2024-49203) 차단")
     void auditDynamicPathConstruction() throws IOException {
-        Path root = repoRoot();
+        Path root = HarnessSourceIndex.repoRoot();
         List<String> violations = new ArrayList<>();
         int scanned = 0;
 
-        for (String module : MODULES) {
-            Path srcMain = root.resolve(module).resolve("src/main/java");
-            if (!Files.isDirectory(srcMain)) {
-                continue;
-            }
-            List<Path> files = new ArrayList<>();
-            try (Stream<Path> s = Files.walk(srcMain)) {
-                s.filter(p -> p.toString().endsWith(".java")).forEach(files::add);
-            }
-            for (Path f : files) {
-                scanned++;
-                String src = stripComments(Files.readString(f, StandardCharsets.UTF_8));
-                String rel = root.relativize(f).toString().replace('\\', '/');
+        for (Path f : HarnessSourceIndex.productionJavaSources(MODULES)) {
+            scanned++;
+            String src = stripComments(HarnessSourceIndex.read(f));
+            String rel = root.relativize(f).toString().replace('\\', '/');
 
-                if (PATH_BUILDER.matcher(src).find()) {
-                    violations.add(rel + " — PathBuilder 사용. 문자열이 식별자가 되는 경로다. "
-                            + "Q-클래스 경로를 직접 쓰거나, 사용자 입력은 화이트리스트로 Q-클래스에 매핑하라.");
-                }
+            if (PATH_BUILDER.matcher(src).find()) {
+                violations.add(rel + " — PathBuilder 사용. 문자열이 식별자가 되는 경로다. "
+                        + "Q-클래스 경로를 직접 쓰거나, 사용자 입력은 화이트리스트로 Q-클래스에 매핑하라.");
+            }
 
-                Matcher m = EXPRESSIONS_PATH.matcher(src);
-                while (m.find()) {
-                    String args = m.group(1).trim();
-                    if (args.isEmpty() || LITERAL_LAST_ARG.matcher(args).matches()) {
-                        continue;   // 리터럴 경로명은 사용자 입력이 아니다
-                    }
-                    violations.add(rel + " — Expressions 경로 팩토리에 비(非)리터럴 인자: `" + args + "`. "
-                            + "변수를 경로명으로 넘기면 그 값이 식별자로 엮인다.");
+            Matcher m = EXPRESSIONS_PATH.matcher(src);
+            while (m.find()) {
+                String args = m.group(1).trim();
+                if (args.isEmpty() || LITERAL_LAST_ARG.matcher(args).matches()) {
+                    continue;   // 리터럴 경로명은 사용자 입력이 아니다
                 }
+                violations.add(rel + " — Expressions 경로 팩토리에 비(非)리터럴 인자: `" + args + "`. "
+                        + "변수를 경로명으로 넘기면 그 값이 식별자로 엮인다.");
             }
         }
 
@@ -143,20 +131,4 @@ class QuerydslDynamicPathLinterTest {
         return noBlock.replaceAll("(?m)//.*$", " ");
     }
 
-    /**
-     * 저장소 루트를 찾는다 — 테스트 작업 디렉터리가 모듈 하위일 수 있다
-     * ({@code IdentityAxisLinterTest} 관행과 동일).
-     */
-    private Path repoRoot() {
-        Path cwd = Paths.get("").toAbsolutePath();
-        Path candidate = cwd;
-        for (int i = 0; i < 4 && candidate != null; i++) {
-            if (Files.isDirectory(candidate.resolve("business-core"))
-                    && Files.isDirectory(candidate.resolve("api-server"))) {
-                return candidate;
-            }
-            candidate = candidate.getParent();
-        }
-        return cwd;
-    }
 }

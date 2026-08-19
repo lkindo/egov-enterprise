@@ -1,12 +1,12 @@
 package nuri.api.harness;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -38,6 +38,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * URL 단위 인가는 원리적으로 소유권(IDOR)을 표현하지 못하므로, 여기 등재됐다는 사실이
  * "그 도메인의 인가가 충분하다" 는 뜻은 아니다. 이 게이트가 막는 것은 <b>세 선언의 이탈</b> 하나다.
  */
+@Tag("governance-harness")
 class SecurePathsDeclarationSyncLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(SecurePathsDeclarationSyncLinterTest.class);
@@ -65,7 +66,7 @@ class SecurePathsDeclarationSyncLinterTest {
                 problems.add(site + " — 파일 없음(선언 지점이 이동·삭제됐다면 이 목록도 함께 갱신할 것)");
                 continue;
             }
-            String content = Files.readString(file, StandardCharsets.UTF_8);
+            String content = HarnessSourceIndex.read(file);
             Matcher m = DECLARATION.matcher(content);
             if (!m.find()) {
                 problems.add(site + " — secure-paths 선언을 찾지 못함");

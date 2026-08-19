@@ -11,9 +11,19 @@ test.describe('Tier 21: Advanced Resilience', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
 
     test('Network Resilience: API 500 Error Interception', async ({ page, consoleGuard }) => {
-        // Broadly ignore 500 errors for this specific fault injection test
-        consoleGuard.addIgnorePattern(/users/); // Ignore 500 from users API
-        consoleGuard.addIgnorePattern(/Simulated/i);
+        consoleGuard.expectErrors([{
+            id: 'E2E-RESILIENCE-USERS-500',
+            specScope: '21-advanced-resilience.spec.ts :: Network Resilience: API 500 Error Interception',
+            channel: 'response',
+            urlPattern: /\/api\/v1\/admin\/system\/users(?:\?|$)/,
+            messagePattern: null,
+            method: 'GET',
+            status: 500,
+            // 전역 QueryClient retry:1 때문에 같은 fault injection이 최대 두 번 관측될 수 있다.
+            maxOccurrences: 2,
+            reason: '사용자 목록의 graceful degradation을 검증하려고 이 테스트가 500 응답을 주입한다.',
+            expiresAt: '2026-12-31',
+        }]);
 
         console.log('>>> Step 1: Navigating to User Management');
         await page.goto('/admin/user/manage');
@@ -71,8 +81,19 @@ test.describe('Tier 21: Advanced Resilience', () => {
         // [E2E 감사 B/C3] 광역 addIgnorePattern(/value/i, /controlled/i) 제거 — 실제 경고를 은폐하던 패턴.
         // 경계값(255자) 제출은 zod 검증 실패를 '의도'한다. useAppForm이 검증 실패 시
         // 브라우저 콘솔에 'Validation Errors:'를 출력하므로, 이 예상된 검증-실패 노이즈만
-        // 정밀 무시한다(다른 콘솔 결함은 그대로 감지 유지).
-        consoleGuard.addIgnorePattern(/Validation Errors/i);
+        // 정밀 ledger로 한 번만 허용한다(다른 콘솔 결함은 그대로 감지 유지).
+        consoleGuard.expectErrors([{
+            id: 'E2E-VALIDATION-HUGE-TITLE',
+            specScope: '21-advanced-resilience.spec.ts :: Data Integrity: Boundary Input (Huge Payload)',
+            channel: 'console',
+            urlPattern: null,
+            messagePattern: /^Validation Errors:/,
+            method: null,
+            status: null,
+            maxOccurrences: 1,
+            reason: '255자 제목 제출의 zod 실패 콜백이 검증 오류를 한 번 기록하는 것이 테스트 시나리오다.',
+            expiresAt: '2026-12-31',
+        }]);
         await page.goto('/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA');
         
         const hugeTitle = 'B'.repeat(255); // Near common DB limit for VARCHAR

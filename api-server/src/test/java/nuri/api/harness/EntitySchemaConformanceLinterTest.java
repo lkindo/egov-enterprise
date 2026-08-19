@@ -16,6 +16,7 @@ import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,7 +26,6 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,7 +42,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -73,6 +72,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 테스트(SQL 파싱 + 클래스패스 스캔·리플렉션).
  */
+@Tag("governance-harness")
 class EntitySchemaConformanceLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(EntitySchemaConformanceLinterTest.class);
@@ -218,20 +218,18 @@ class EntitySchemaConformanceLinterTest {
     /** {@code 테이블 -> (컬럼 -> 타입)} — V* 델타를 버전 순으로 적용한 유효 스키마 */
     private Map<String, Map<String, String>> replayMigrations() throws IOException {
         Path dir = resolveMigrationDir();
-        List<Path> files;
-        try (Stream<Path> paths = Files.walk(dir)) {
-            files = paths.filter(Files::isRegularFile)
-                    .filter(p -> p.getFileName().toString().matches("V\\d+_\\d+__.*\\.sql"))
-                    .sorted(Comparator.comparing(EntitySchemaConformanceLinterTest::versionKey))
-                    .collect(Collectors.toList());
-        }
+        List<Path> files = HarnessSourceIndex.filesUnder(dir, p ->
+                        p.getFileName().toString().matches("V\\d+_\\d+__.*\\.sql"))
+                .stream()
+                .sorted(Comparator.comparing(EntitySchemaConformanceLinterTest::versionKey))
+                .collect(Collectors.toList());
         if (files.size() < 20) {
             fail("게이트 무결성 파손: 마이그레이션 파일 " + files.size() + "건 — 경로/명명 파손 의심 (" + dir.toAbsolutePath() + ").");
         }
 
         Map<String, Map<String, String>> schema = new TreeMap<>();
         for (Path file : files) {
-            String sql = Files.readString(file, StandardCharsets.UTF_8);
+            String sql = HarnessSourceIndex.read(file);
             for (String stmt : splitStatements(stripSqlComments(sql))) {
                 applyStatement(schema, stmt);
             }

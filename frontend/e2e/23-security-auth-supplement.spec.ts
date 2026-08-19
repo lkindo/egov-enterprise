@@ -96,8 +96,19 @@ async function issueFreshRefreshToken(request: APIRequestContext): Promise<strin
 //       이 테스트는 실 LoginClient→authService→Route Handler 경로를 UI 로 구동해 그 공백을 메운다.
 test.describe('Tier 23-E0: Login success (UI flow — anti-regression for double-prefix)', () => {
     test('valid credentials authenticate via Route Handler and set HttpOnly session cookie', async ({ page, context, consoleGuard }) => {
-        // /login 초기 로드 시 AuthContext 가 인증상태 확인차 /auth/me 를 부르고 미인증이라 401 을 받는 것은 정상.
-        consoleGuard.addIgnorePattern(/auth\/me/);
+        // /login 초기 로드 시 AuthContext가 인증상태 확인차 /auth/me를 호출하는 401 한 건만 허용한다.
+        consoleGuard.expectErrors([{
+            id: 'E2E-AUTH-LOGIN-PAGE-ME-401',
+            specScope: '23-security-auth-supplement.spec.ts :: valid credentials authenticate via Route Handler and set HttpOnly session cookie',
+            channel: 'response',
+            urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+            messagePattern: null,
+            method: 'GET',
+            status: 401,
+            maxOccurrences: 1,
+            reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+            expiresAt: '2026-12-31',
+        }]);
         await page.goto('/login');
         await page.locator('input[name="id"]').fill('webmaster');
         await page.locator('input[name="password"]').fill('1');
@@ -124,9 +135,57 @@ test.describe('Tier 23-E0: Login success (UI flow — anti-regression for double
 // ───────────────────────── E2: 로그인 실패(잘못된 자격증명) ─────────────────────────
 test.describe('Tier 23-E2: Login failure (negative auth)', () => {
     test('invalid password shows error and does NOT authenticate', async ({ page, consoleGuard }) => {
-        // 의도된 인증 실패이므로 로그인 401 및 LoginClient의 console.error(err)를 이 테스트에 한해 허용한다.
-        consoleGuard.addIgnorePattern(/auth\/login/);
-        consoleGuard.addIgnorePattern(/로그인|login|자격|credential|Unauthorized|401|Request failed/i);
+        // 초기 세션 확인 401, 의도적으로 잘못 보낸 로그인 401, 두 catch 경계의 정확한 로그만 허용한다.
+        consoleGuard.expectErrors([
+            {
+                id: 'E2E-AUTH-INVALID-PAGE-ME-401',
+                specScope: '23-security-auth-supplement.spec.ts :: invalid password shows error and does NOT authenticate',
+                channel: 'response',
+                urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+                messagePattern: null,
+                method: 'GET',
+                status: 401,
+                maxOccurrences: 1,
+                reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+                expiresAt: '2026-12-31',
+            },
+            {
+                id: 'E2E-AUTH-INVALID-CREDENTIALS-401',
+                specScope: '23-security-auth-supplement.spec.ts :: invalid password shows error and does NOT authenticate',
+                channel: 'response',
+                urlPattern: /\/api\/auth\/login(?:\?|$)/,
+                messagePattern: null,
+                method: 'POST',
+                status: 401,
+                maxOccurrences: 1,
+                reason: '잘못된 비밀번호를 제출해 인증 거부 UI와 접근성 계약을 검증한다.',
+                expiresAt: '2026-12-31',
+            },
+            {
+                id: 'E2E-AUTH-INVALID-CONTEXT-LOG',
+                specScope: '23-security-auth-supplement.spec.ts :: invalid password shows error and does NOT authenticate',
+                channel: 'console',
+                urlPattern: null,
+                messagePattern: /^Login process error:/,
+                method: null,
+                status: null,
+                maxOccurrences: 1,
+                reason: 'AuthContext가 의도된 로그인 거부를 UI 계층으로 다시 전달하며 남기는 진단 로그다.',
+                expiresAt: '2026-12-31',
+            },
+            {
+                id: 'E2E-AUTH-INVALID-CLIENT-LOG',
+                specScope: '23-security-auth-supplement.spec.ts :: invalid password shows error and does NOT authenticate',
+                channel: 'console',
+                urlPattern: null,
+                messagePattern: /^Error: /,
+                method: null,
+                status: null,
+                maxOccurrences: 1,
+                reason: 'LoginClient가 의도된 로그인 거부를 오류 surface에 표시하기 전에 남기는 Error 로그다.',
+                expiresAt: '2026-12-31',
+            },
+        ]);
 
         await page.goto('/login');
         await page.locator('input[name="id"]').fill('webmaster');
@@ -705,7 +764,6 @@ test.describe('Tier 23-E11: Accessibility (login page, strict)', () => {
                 transition: none !important;
             }`,
         });
-        await page.waitForTimeout(300);
 
         const results = await new AxeBuilder({ page }).include('main#main-content').analyze();
         expect(

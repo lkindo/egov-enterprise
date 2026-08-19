@@ -15,7 +15,7 @@ export class ScrapPage {
         const searchInput = this.page.locator('input[placeholder*="검색"], #search-input').first();
         await searchInput.fill(keyword);
         await this.page.keyboard.press('Enter');
-        await this.page.waitForTimeout(1000);
+        await expect(searchInput).toHaveValue(keyword);
     }
 
     async verifyScrapVisible(title: string) {

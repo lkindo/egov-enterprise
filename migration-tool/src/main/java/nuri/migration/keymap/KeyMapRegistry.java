@@ -2,9 +2,14 @@ package nuri.migration.keymap;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -24,8 +29,13 @@ public class KeyMapRegistry {
 
     /** sourceTable(lower) → (legacyKey → newKey). */
     private final Map<String, Map<String, String>> maps = new LinkedHashMap<>();
-    /** 아직 타깃에 영속되지 않은 신규 대응 {sourceTable, legacyKey, newKey}. */
-    private final List<String[]> pending = new ArrayList<>();
+    /** 아직 현재 target transaction에 동반 기록되지 않은 신규 대응. */
+    private final List<PendingMapping> pending = new ArrayList<>();
+
+    /** pending suffix의 시작점을 나타내는 rollback/accept 토큰. */
+    public record Checkpoint(int pendingSize) {}
+
+    private record PendingMapping(String sourceTable, String legacyKey, String newKey) {}
 
     /** 부모 PK 채번: 기존 대응이 있으면 재사용(멱등), 없으면 신규 생성·적재. legacyKey null 이면 null. */
     public String mintOrGet(String sourceTable, String legacyKey, String generatorPrefix) {
@@ -39,7 +49,7 @@ public class KeyMapRegistry {
         }
         String newKey = StandardIdGenerator.generate(generatorPrefix);
         m.put(legacyKey, newKey);
-        pending.add(new String[]{key(sourceTable), legacyKey, newKey});
+        pending.add(new PendingMapping(key(sourceTable), legacyKey, newKey));
         return newKey;
     }
 
@@ -76,22 +86,87 @@ public class KeyMapRegistry {
         });
     }
 
-    /** 아직 미영속 대응을 타깃에 배치 적재(best-effort). preload 로 기존은 걸러졌으므로 PK 충돌 없음. */
-    public int flushPending(JdbcTemplate target) {
-        if (pending.isEmpty()) {
-            return 0;
+    /** 현재 pending suffix를 구분할 checkpoint를 만든다. */
+    public Checkpoint checkpoint() {
+        return new Checkpoint(pending.size());
+    }
+
+    /**
+     * checkpoint 이후 신규 keymap을 호출자가 관리하는 동일 target transaction에 기록한다.
+     * commit/rollback은 호출자가 data INSERT와 함께 수행한다.
+     */
+    public long writePending(Connection connection, Checkpoint checkpoint) throws SQLException {
+        int from = checkedOffset(checkpoint);
+        int expected = pending.size() - from;
+        if (expected == 0) {
+            return 0L;
         }
-        List<Object[]> args = new ArrayList<>(pending.size());
-        for (String[] p : pending) {
-            args.add(new Object[]{p[0], p[1], p[2]});
+        try (PreparedStatement statement = connection.prepareStatement(
+                "INSERT INTO " + TABLE + " (source_table, legacy_key, new_key) VALUES (?, ?, ?)")) {
+            for (int i = from; i < pending.size(); i++) {
+                PendingMapping mapping = pending.get(i);
+                statement.setString(1, mapping.sourceTable());
+                statement.setString(2, mapping.legacyKey());
+                statement.setString(3, mapping.newKey());
+                statement.addBatch();
+            }
+            int[] updateCounts = statement.executeBatch();
+            long written = exactInsertedRows(updateCounts, expected);
+            if (written < 0) {
+                throw new SQLException("키맵 JDBC batch updateCounts가 정확한 1행 기록을 증명하지 못했습니다");
+            }
+            return written;
         }
-        int[] r = target.batchUpdate(
-                "INSERT INTO " + TABLE + " (source_table, legacy_key, new_key) VALUES (?, ?, ?)", args);
-        pending.clear();
-        return r.length;
+    }
+
+    /** transaction commit 성공 뒤 pending 표식만 제거하고 인메모리 번역 map은 유지한다. */
+    public void accept(Checkpoint checkpoint) {
+        int from = checkedOffset(checkpoint);
+        pending.subList(from, pending.size()).clear();
+    }
+
+    /** transaction rollback 시 신규 pending과 그에 대응하는 인메모리 번역을 함께 제거한다. */
+    public void rollback(Checkpoint checkpoint) {
+        int from = checkedOffset(checkpoint);
+        for (int i = pending.size() - 1; i >= from; i--) {
+            PendingMapping mapping = pending.get(i);
+            Map<String, String> tableMappings = maps.get(mapping.sourceTable());
+            if (tableMappings != null) {
+                tableMappings.remove(mapping.legacyKey(), mapping.newKey());
+                if (tableMappings.isEmpty()) {
+                    maps.remove(mapping.sourceTable());
+                }
+            }
+        }
+        pending.subList(from, pending.size()).clear();
+    }
+
+    public boolean hasPending() {
+        return !pending.isEmpty();
+    }
+
+    private int checkedOffset(Checkpoint checkpoint) {
+        if (checkpoint == null || checkpoint.pendingSize() < 0 || checkpoint.pendingSize() > pending.size()) {
+            throw new IllegalStateException("유효하지 않은 keymap checkpoint: " + checkpoint);
+        }
+        return checkpoint.pendingSize();
+    }
+
+    private static long exactInsertedRows(int[] updateCounts, int expectedStatements) {
+        if (updateCounts == null || updateCounts.length != expectedStatements) {
+            return -1L;
+        }
+        long written = 0L;
+        for (int count : updateCounts) {
+            if (count == Statement.SUCCESS_NO_INFO || count == Statement.EXECUTE_FAILED || count != 1) {
+                return -1L;
+            }
+            written += count;
+        }
+        return written;
     }
 
     private static String key(String sourceTable) {
-        return sourceTable == null ? "" : sourceTable.toLowerCase();
+        return sourceTable == null ? "" : sourceTable.toLowerCase(Locale.ROOT);
     }
 }
