@@ -88,6 +88,12 @@ public @interface IntegrationTest {
 
 > `webEnvironment = MOCK` + `@AutoConfigureMockMvc` 조합으로 실제 서블릿 포트를 열지 않고 `MockMvc`로 검증하며, `@Transactional`로 각 테스트가 자동 롤백됩니다. `mock-security` 프로필과 `TestSecurityConfig`로 인증 컨텍스트를 주입합니다.
 
+> **보안 검증 경계:** `TestSecurityConfig`는 `anyRequest().permitAll()`을 사용하므로 이 stereotype의
+> MockMvc 성공은 production 인증·인가 체인의 증거가 아닙니다. 서비스·HTTP 계약 검증에만 사용하고,
+> 401/403·역할·소유권을 단언하는 테스트는 production `ApiSecurityConfig`를 로드하는 보안 테스트 기반을
+> 사용합니다. 남은 stereotype 분리 과제는
+> [GAP-TEST-001](../../.agent/memory/known-gaps.md)에서 관리합니다.
+
 ### 사용 예시
 
 [MenuServiceIntegrationTest.java](../../business-core/src/test/java/nuri/business/service/menu/MenuServiceIntegrationTest.java)처럼 `@IntegrationTest`를 붙이고, 테스트가 소유한 데이터를 `@BeforeEach`에서 명시적으로 준비한다. 쿼리 수·캐시·권한 같은 비기능 계약을 주장하려면 그 계약을 실제로 관측하는 단언을 포함한다.

@@ -28,6 +28,18 @@
 - **Page Object Model (POM)**: 모든 페이지 요소와 동작은 `e2e/pages` 폴더의 클래스로 캡슐화하여 유지보수성을 높입니다.
 - **Fixtures**: `e2e/fixtures/base-test.ts`를 상속받아 온보딩 투어 우회 및 공통 객체 주입을 자동화합니다.
 
+### 4. Locator와 선택형 self-healing fixture의 경계
+
+- 제품 E2E의 성공 조건은 `getByRole`, `getByLabel`, 명시적인 stable test id처럼 사용자 의미를 고정하는 locator로 작성한다. Tailwind 클래스나 DOM 배치에 결합된 CSS/XPath selector는 우선 선택지가 아니다.
+- `base-test.ts`가 노출하는 `SelfHealingAgent`는 주 selector 실패 시 role·부분 텍스트·폼 요소 스캔으로 후보를 고르는 **로컬 진단 보조물**이다. fuzzy fallback은 접근성 이름이나 화면 계약이 깨졌는데도 다른 요소를 선택할 수 있으므로 커밋된 CI 테스트의 성공 조건으로 사용하지 않는다.
+- 현재 `frontend/e2e/**/*.spec.ts`에서 `healingAgent`, `safeClick`, `safeFill`의 직접 소비는 0건이다. 따라서 이 fixture를 required E2E 품질 게이트나 자동 복구 보장으로 해석하지 않는다. 다음 명령으로 소비 상태를 재확인한다.
+
+```bash
+rg -n --glob '*.spec.ts' 'healingAgent|safeClick|safeFill' frontend/e2e
+```
+
+로컬 실험에서 fallback이 요소를 찾더라도 그 실행은 원 locator가 실패했다는 진단 증거일 뿐이다. 의미 기반 locator를 수정한 뒤 self-healing 없이 일반 Playwright 실행으로 다시 통과해야 완료로 인정한다. 향후 fixture를 CI에 도입하려면 모호하거나 의미가 다른 후보를 선택하지 못하는 부정 테스트와 trace 기반 검토 절차를 먼저 마련한다.
+
 ---
 
 ## 🚀 실행 환경 최적화

@@ -47,13 +47,19 @@ Invoke-WebRequest http://localhost:8080/actuator/health
 실제 부하 기준선을 얻으려면 production과 유사한 승인 환경을 사용한다. 로컬 compose 결과를 운영 용량으로
 일반화하지 않는다.
 
-### 2. 단일 부하 단계 실행
+대상이 응답하지 않으면 k6를 재실행하기 전에 compose 상태와 API·DB 로그를 확인한다.
 
 ```powershell
-$env:BASE_URL = 'http://localhost:8080'
-$env:TEST_USERNAME = '<load-test-user>'
-$env:TEST_PASSWORD = '<secure-channel-value>'
+docker compose ps -a
+docker compose logs --tail 150 db api
+```
 
+### 2. 단일 부하 단계 실행
+
+`BASE_URL`, `TEST_USERNAME`, `TEST_PASSWORD`는 실행 전에 현재 셸에 secure channel로 주입한다. 실제 값을
+문서, 스크립트, 셸 기록에 저장하지 않는다.
+
+```powershell
 k6 run `
   --out json=test-results/k6/results.json `
   -e "BASE_URL=$env:BASE_URL" `
@@ -114,4 +120,4 @@ secret 미설정 fallback은 개발 compose용일 뿐 운영 성능 계정 정�
 - k6는 브라우저 렌더링 성능을 재지 않는다. 프론트 런타임은 [Lighthouse workflow](../../.github/workflows/lighthouse.yml)를 본다.
 
 관련: [성능 최적화 가이드](performance-optimization-guide.md),
-[DB 최적화 가이드](database-optimization-guide.md), [k6 퀵스타트](k6-load-test-quickstart.md).
+[DB 최적화 가이드](database-optimization-guide.md).

@@ -27,7 +27,12 @@ function isOwnedDoc(file) {
 
 function trackedMarkdown() {
   const out = execFileSync('git', ['ls-files', '*.md'], { cwd: repoRoot, encoding: 'utf8' });
-  const tracked = out.trim().split('\n').filter(Boolean).filter(isOwnedDoc);
+  // `git ls-files`는 커밋 전 삭제 예정 파일도 index 기준으로 반환한다. 현재 워킹트리에
+  // 존재하는 문서만 읽되, 남아 있는 문서가 삭제 대상을 링크하면 아래 존재 검사에서 실패한다.
+  const tracked = out.trim().split('\n')
+    .filter(Boolean)
+    .filter(isOwnedDoc)
+    .filter(file => fs.existsSync(path.join(repoRoot, file)));
   const memoryRoot = path.join(repoRoot, '.agent', 'memory');
   const memory = fs.existsSync(memoryRoot)
     ? fs.readdirSync(memoryRoot)

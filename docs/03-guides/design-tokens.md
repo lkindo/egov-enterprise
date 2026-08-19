@@ -1,6 +1,6 @@
 # 디자인 토큰 & 브랜딩 규약 (Design Tokens & Branding Convention)
 
-> **목적**: quality-score §2.B 재사용성 — "리브랜딩 = 토큰 한 벌 수정"을 성립시키기 위한 색상 토큰 SSOT.
+> **목적**: "리브랜딩 = 토큰 한 벌 수정"을 성립시키기 위한 색상 토큰 SSOT.
 > 프론트엔드 헌법 제6조(디자인 토큰) 실무 지침. 색은 팔레트 리터럴(`slate-500`)이 아니라 **시맨틱 토큰**으로 참조한다.
 > **정의 위치**: [frontend/src/app/globals.css](../../frontend/src/app/globals.css) (`@theme` + `:root`/`.dark` HSL 변수).
 
@@ -104,7 +104,24 @@
 
 #### ESLint 자문 규칙과의 경계
 
-`eslint.config.mjs`의 `local-theme/enforce-design-tokens`는 정적 `className`의 일부 팔레트·utility와 불투명 `bg-white`를 찾는 `warn` 규칙이다. 동적 조합과 전 팔레트를 증명하지 않으므로, 이 규칙의 경고 예산을 넓혀 색상 계약을 대신하지 않는다. 전 팔레트 회귀는 위 두 Vitest 래칫이 소유하며 자세한 사용법은 [Tailwind 린트 규칙](./tailwind-lint-rules.md)을 따른다.
+`eslint.config.mjs`의 `local-theme/enforce-design-tokens`는 빠른 작성 피드백을 위한 `warn` 규칙이다. 현재 구현은 JSX의 정적 `className` 문자열과 template literal의 정적 조각에서 다음 항목만 찾는다.
+
+- `bg|text|border|ring` + `red|blue|green|yellow|orange|purple|pink|indigo|teal` + `100`~`900`
+- 투명도 접미사가 없는 불투명 `bg-white` (`bg-white/80` 등은 제외)
+
+동적 클래스 조합, 위 목록 밖의 utility·variant·팔레트는 이 규칙만으로 증명할 수 없다. 또한 warning 수를 허용하거나 `lint`가 종료 코드 0을 반환했다고 해서 색상 계약이 통과한 것은 아니다. 전 팔레트 회귀의 하드 차단은 위 두 exact-match Vitest 래칫이 소유한다.
+
+```bash
+# 빠른 자문 피드백
+pnpm -C frontend run lint
+
+# 팔레트 리터럴 하드 차단 계약
+pnpm -C frontend exec vitest run \
+  src/__tests__/hardcoded-color-guard.test.ts \
+  src/__tests__/status-color-guard.test.ts
+```
+
+래칫 실패는 기본적으로 리터럴을 시맨틱 토큰으로 치환해 해결한다. 감소했다면 같은 변경에서 baseline을 현재 실측값으로 낮추고, 신규 예외로 baseline을 올려야 한다면 토큰으로 표현할 수 없는 이유와 라이트·다크 시각 증거를 리뷰에 남긴다.
 
 > **원칙**: 정적 검증(`tsc`/`next build`)은 통과해도 **색·다크모드 시각 회귀는 잡지 못한다**. 대규모 색 변경 후에는 반드시 라이트/다크 **육안 검증**을 병행한다(프론트 헌법 제6조).
 

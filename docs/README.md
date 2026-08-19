@@ -42,14 +42,12 @@
 | [pitest-mutation-testing.md](02-architecture/pitest-mutation-testing.md) | PITest 증분 Mutation Testing 연동 설계 |
 | [dual-operator-coordination.md](02-architecture/dual-operator-coordination.md) | 레거시 Gemini↔Claude 실시간 조정 설계(구현 보류); 현행 다중 operator 공통 계약은 [AGENTS.md](../AGENTS.md) |
 
-### 02-architecture 비정본·정리 상태
+### 02-architecture 참조 보존 tombstone
 
-아래 문서는 시점별 진단이나 완료 이력이 본문을 지배한다. 현행 판단에는 대체 정본을 사용하며, 삭제 전 immutable Flyway 주석 같은 소비 링크를 별도로 처리한다.
+아래 문서는 적용된 Flyway의 immutable 주석이 특정 절을 참조하므로 최소 근거만 남긴다. 현행 판단에는 대체 정본을 사용한다.
 
-| 후보 | 상태 | 대체 정본 |
+| 문서 | 상태 | 대체 정본 |
 |---|---|---|
-| [framework-reusability-assessment.md](02-architecture/framework-reusability-assessment.md) | 삭제 후보 | [ADR-0001](02-architecture/decisions/ADR-0001-core-app-product-boundary.md), [reusable-base-guide.md](03-guides/reusable-base-guide.md) |
-| [quality-score-root-cause-analysis.md](02-architecture/quality-score-root-cause-analysis.md) | 삭제 후보 | 잔여 암호 데이터 census·입력 계약·운영 복구 위험을 [known-gaps.md](../.agent/memory/known-gaps.md)로 이관했으므로 소비 링크 최종 확인 후 제거 |
 | [db-standardization-assessment.md](02-architecture/db-standardization-assessment.md) | tombstone 유지 | 적용된 Flyway 주석의 immutable 참조; DB 헌법·예외 대장·live metadata로 대체 |
 | [a-group-decision-recommendations.md](02-architecture/a-group-decision-recommendations.md) | tombstone 유지 | 적용된 `V2_32` 주석의 immutable 참조; [pending-decisions.md](04-operations/pending-decisions.md)로 대체 |
 
@@ -79,13 +77,6 @@
 | [design-tokens.md](03-guides/design-tokens.md) | 디자인 토큰 & 브랜딩 규약 (+ 색 하드코딩 게이트) |
 | [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 재사용 Base 생성 가이드 |
 
-### 03-guides 정리 후보
-
-| 후보 | 상태 | 대체 정본 |
-|---|---|---|
-| [tailwind-lint-rules.md](03-guides/tailwind-lint-rules.md) | 삭제 후보 | [design-tokens.md](03-guides/design-tokens.md), `frontend/eslint.config.mjs`, 색상 guard 테스트 |
-| [e2e-self-healing-guide.md](03-guides/e2e-self-healing-guide.md) | 삭제 후보 | [e2e-test-guide.md](03-guides/e2e-test-guide.md), 실제 fixture 소스; 현 spec 소비 0건 |
-
 ## 04-operations — 운영
 
 | 문서 | 내용 |
@@ -100,14 +91,6 @@
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 
-### 04-operations 비정본·정리 후보
-
-| 후보 | 상태 | 대체 정본·선행조건 |
-|---|---|---|
-| [wave2-carryover.md](04-operations/wave2-carryover.md) | 이관 후 삭제 후보 | 활성 `TestSecurityConfig` 위험과 source 주석 소비자를 gap/현행 문서로 이관 |
-| [k6-load-test-quickstart.md](04-operations/k6-load-test-quickstart.md) | 중복 삭제 후보 | [load-test-guide.md](04-operations/load-test-guide.md) |
-| [harness-architecture-guide.html](04-operations/harness-architecture-guide.html) | 삭제 후보 | [Governance & Harness Atlas](../frontend/public/governance_harness_atlas.html), 하네스 소스, required checks |
-
 ## archived — 구버전 보관
 
 > 아래는 **더 이상 현행이 아니다.** 현행 상태를 판단하는 근거로 쓰지 말 것.
@@ -116,10 +99,6 @@
 |---|---|
 | [PRD.MD](archived/PRD.MD) | 초기 제품 요구의 역사 원본 — 대체 PRD 확정 전 보존 또는 tombstone 축약 |
 | [TRD.MD](archived/TRD.MD) | 초기 기술 요구 역사 원본 — PRD와 함께 보존 여부 결정 |
-| [DB_COMPLIANCE_TRACKER.md](archived/DB_COMPLIANCE_TRACKER.md) | 삭제 후보 — 현 DB 헌법·live metadata로 대체됨 |
-| [detailed-module-audit.md](archived/detailed-module-audit.md) | 삭제 후보 — 과거 점수·분기 로드맵 |
-| [modernization-walkthrough.md](archived/modernization-walkthrough.md) | 삭제 후보 — 과거 UI 완료 보고 |
-| [ui-ux-improvement-plan.md](archived/ui-ux-improvement-plan.md) | 삭제 후보 — 구버전 Next.js 완료 체크리스트 |
 
 ---
 

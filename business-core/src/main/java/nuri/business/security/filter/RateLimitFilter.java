@@ -114,7 +114,8 @@ public class RateLimitFilter implements Filter {
      * 여기서 {@code MeterRegistry} 를 생성자 주입하면 그 빈이 없는 컨텍스트(단위 테스트 슬라이스 등)에서
      * 필터 생성이 실패해 <b>레이트리밋이 통째로 빠진 채 테스트가 초록</b>이 되는 위험이 있다.
      * 카운터는 프로세스 내부 {@link java.util.concurrent.atomic.AtomicLong} 으로 두고, 로그를 1차 신호로 삼는다.
-     * (Micrometer 게이지 배선은 actuator 노출면 결정과 함께 다루는 것이 맞다 — wave2-carryover 참조.)
+     * 외부 카운터가 필요해지면 선택 주입과 actuator 노출면을 함께 설계한다. 그 전까지는 429 로그가
+     * 운영 관측 계약이고 이 값은 프로세스 내부 진단용이다.
      */
     private void recordRejection(HttpServletRequest request, String clientIp, int tokens) {
         long total = rejectedCount.incrementAndGet();

@@ -47,11 +47,12 @@ import static org.junit.jupiter.api.Assertions.fail;
  *       이 프로파일에서는 <b>로드조차 되지 않는다</b>.</li>
  * </ul>
  *
- * <p><b>현행 위반의 성격</b>(해소는 Wave 2 이월 — {@code docs/04-operations/wave2-carryover.md} §2)
+ * <p><b>현행 위반의 성격</b> — 활성 위험은
+ * {@code .agent/memory/known-gaps.md}의 {@code GAP-TEST-001}에서 관리한다.
  * <ul>
  *   <li>{@code business-core}/{@code business-app} 의 {@code TestSecurityConfig} 는
- *       {@code anyRequest().permitAll()} 이며 {@code IntegrationTest} 가 그것을 물린다 →
- *       <b>모든 {@code @IntegrationTest} 가 보안 전면 개방 상태로 돈다.</b> 저장소 최대의 false-green 표면이다.</li>
+ *       {@code anyRequest().permitAll()} 이며 {@code IntegrationTest} 가 그것을 물린다.
+ *       따라서 이 stereotype을 쓰는 MockMvc 테스트는 production 인증·인가 체인을 증명하지 않는다.</li>
  *   <li>{@code api-server} 의 {@code SecurityTestConfig} 는 {@code /api/v1/admin/** → hasRole("ADMIN")} 을
  *       하드코딩하는데 프로덕션 인가는 DB secure-paths 기반이라, 그 위의 admin 401/403 단언은 운영 계약이 아니다.</li>
  * </ul>
@@ -122,7 +123,7 @@ class TestSecurityChainOverrideLinterTest {
     //
     // [2026-08-05 중복 정리] TestSecurityConfig#chainBean / #mockProfile / IntegrationTest#mockProfile 을 2 → 1.
     //   ⚠ **위반이 해소된 것이 아니다.** `anyRequest().permitAll()` 은 business-core 사본에 그대로 살아 있다
-    //   (wave2-carryover.md §2 A-1 잔여② 미해소). 줄어든 것은 **중복** 이다 —
+    //   (known-gaps.md GAP-TEST-001). 줄어든 것은 **중복** 이다 —
     //   business-app/src/testFixtures 가 business-core 와 FQN 까지 동일한 18파일 복제였고,
     //   api-server 가 양쪽 testFixtures 를 동시에 의존해 같은 이름의 클래스가 클래스패스 순서로
     //   서로를 가리고 있었다. 사본을 지우고 business-app 이 business-core 것을 재노출하도록 바꿨다.

@@ -122,6 +122,7 @@
 **/test-output/
 **/surefire-reports/
 **/test-results/
+test/load-tests/results/
 **/playwright-report/
 **/blob-report/
 **/playwright-screenshots/

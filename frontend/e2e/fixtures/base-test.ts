@@ -53,7 +53,8 @@ export const test = base.extend<MyFixtures>({
     }
   }, { auto: true }],
 
-  // 자가 치유 에이전트 Fixture
+  // 선택형 로컬 진단 fixture. fuzzy 후보는 다른 요소를 고를 수 있으므로 커밋된 spec의
+  // 성공 조건으로 사용하지 않는다. 현재 제품 *.spec.ts의 직접 소비는 0건이다.
   healingAgent: async ({ page }, use) => {
     await use(new SelfHealingAgent(page));
   },
