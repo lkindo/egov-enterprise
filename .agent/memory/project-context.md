@@ -5,8 +5,8 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-08-19
-verified_against: 189c24024980bf795438ed3bc293059dd0331ceb
+verified_at: 2026-08-20
+verified_against: 2919358da6442e599b21e18480560e43692a55cf
 canonical_sources:
   - ../../AGENTS.md
   - ../../GEMINI.md
@@ -56,7 +56,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | CTX-002 | 백엔드는 Java 21, Spring Boot 3.5.16, eGovFrame 5.0.0 축이다. | [build.gradle](../../build.gradle), [version catalog](../../gradle/libs.versions.toml) | 2026-08-18 |
 | CTX-003 | 루트 스크립트는 Node 22 이상과 npm lockfile을, 프런트엔드는 Node 22 이상·pnpm 9 lockfile을 사용한다. 프런트는 Next.js 16.2.12 계열·React 19.2.8 계열이다. | [package.json](../../package.json), [package-lock.json](../../package-lock.json), [frontend/package.json](../../frontend/package.json), [frontend/pnpm-lock.yaml](../../frontend/pnpm-lock.yaml), [.nvmrc](../../.nvmrc) | 2026-08-19 |
 | CTX-004 | 프론트 계약 생성의 결정적 기본 경로는 `codegen:file` 뒤 `codegen:zod`이며, live `codegen:ts`는 API 서버가 필요하다. | [frontend/package.json](../../frontend/package.json), [API 문서 가이드](../../docs/03-guides/api-documentation-guide.md) | 2026-08-18 |
-| CTX-005 | main 병합 목표 명세는 `backend-build`, `frontend-build`, `secret-scan`, 안정 이름의 `e2e-test`, `mutation-test` 5개 required context와 approval 1·code-owner·last-push·thread-resolution policy다. 원격 적용 여부는 `verify:ops`로 별도 실측한다. | [.github/required-checks.json](../../.github/required-checks.json), [branch verifier](../../scripts/verify-branch-protection.mjs) | 2026-08-19 |
+| CTX-005 | main 병합 명세는 `backend-build`, `frontend-build`, `secret-scan`, 안정 이름의 `e2e-test`, `mutation-test` 5개 required context와, DEC-OPS-009로 확정된 단독 운영 review policy(approval 0·code-owner/last-push/thread-resolution 비활성)다. 2026-08-20 `verify:ops` 실측에서 원격 ruleset이 이 전부와 exact-match했다. reviewer 확보 시 후속 DEC로 상향한다. | [.github/required-checks.json](../../.github/required-checks.json), [branch verifier](../../scripts/verify-branch-protection.mjs), [decisions.md](decisions.md) | 2026-08-20 |
 | CTX-006 | DB 표준의 규범 SSOT는 DB 헌법이고, 물리 변경 판단은 live metadata/schema 실측을 함께 요구한다. | [DB 헌법](../knowledge/db-standard-constitution/artifacts/constitution.md), [AGENTS Evidence guardrails](../../AGENTS.md#evidence-guardrails) | 2026-08-18 |
 | CTX-007 | `migration-tool`은 data와 해당 chunk/row keymap을 같은 target transaction에 묶고 batch 실패 시 행 단위로 원자 재시도하며 실패 mapping을 제거한다. commit/rollback 불확정은 fatal이지만, run 전체 원자성·source-system/run namespace·durable checkpoint/upsert·불확정 commit reconciliation·실 DB/cutover 증거가 없어 production 도구 전체는 PARTIAL 상태다. | [EtlExecutor](../../migration-tool/src/main/java/nuri/migration/etl/EtlExecutor.java), [KeyMapRegistry](../../migration-tool/src/main/java/nuri/migration/keymap/KeyMapRegistry.java), [atomic integration test](../../migration-tool/src/test/java/nuri/migration/EtlAtomicKeyMapIntegrationTest.java), [Atlas migration section](../../frontend/public/governance_harness_atlas.html#content-migration) | 2026-08-19 |
 | CTX-008 | 중앙 gate registry가 governance JUnit 35개·ArchUnit 10개·schema-validation 37개, runner catalog 5개, execution profile 6개, quality population 3개와 ratchet 15개를 source·task·실행 tier·CI 소비자에 exact-match한다. | [gate registry](../../config/governance/gates.json), [registry contract](../../scripts/governance-gates-contract.mjs) | 2026-08-20 |

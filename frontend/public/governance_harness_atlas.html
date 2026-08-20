@@ -7,7 +7,7 @@
   <meta name="robots" content="noindex,nofollow">
   
   <!-- Web Fonts: 외부 CDN 의존을 제거하고 시스템 폰트 스택으로 렌더한다.
-       이 문서는 앱의 CSP(next.config.ts headers)를 그대로 적용받는데, 종전에는 CDN 3곳
+       이 문서에는 src/proxy.ts 가 전용 정적 정책(ATLAS_CSP)을 부여하는데, 종전에는 CDN 3곳
        (fonts.googleapis / fonts.gstatic / cdn.jsdelivr)에서 폰트를 받으려 했다. 그중
        cdn.jsdelivr(Pretendard)는 CSP 에 등재된 적이 없어 **이미 차단**되고 있었다 — 즉 이 문서는
        CSP 와 어긋난 채 본문 폰트가 조용히 fallback 되던 상태였다.
@@ -18,9 +18,10 @@
 
        🚨 이 문서를 갱신할 때 외부 CDN <link>(fonts.googleapis / cdn.jsdelivr 등)를 다시 넣지 말 것.
           CSP 가 차단하지만 **오류를 띄우지 않고 조용히 fallback** 되므로, 넣어도 "적용된 줄 알고" 넘어가게 된다
-          (Pretendard 가 실제로 그렇게 죽어 있었다). 이 문서는 proxy.ts 의 인증 면제 공개 경로이면서
-          앱 CSP 를 그대로 적용받는다 — 새 폰트가 필요하면 CDN 링크가 아니라 next.config.ts 의 CSP 와
-          함께 검토해야 한다. -->
+          (Pretendard 가 실제로 그렇게 죽어 있었다). 이 문서는 proxy.ts 의 인증 면제 공개 경로이며,
+          앱 본체의 요청별 nonce CSP 대신 이 문서 전용 ATLAS_CSP(정적 inline script 허용 +
+          inline 핸들러 차단)를 받는다 — 새 폰트가 필요하면 CDN 링크가 아니라 proxy.ts 의
+          ATLAS_CSP 와 함께 검토해야 한다. -->
   <style>
     /* 'Outfit'·'Fira Code' 를 시스템 스택으로 해석시키기 위한 별칭 — 개별 선언을 고치지 않고
        한 곳에서 대체한다(선언 30여 곳). @font-face 로 로컬 후보를 먼저 찾고 없으면 fallback. */
@@ -1365,7 +1366,7 @@
       <div class="sidebar-footer">
         <div>STATIC EVIDENCE ATLAS</div>
         <div>SSOT가 항상 우선</div>
-        <div>검증 기준 2026-08-19</div>
+        <div>검증 기준 2026-08-20</div>
       </div>
     </aside>
 
@@ -1387,7 +1388,7 @@
       <div class="freshness-banner" role="note" aria-label="문서 현행성 정보">
         <span class="status-dot" aria-hidden="true"></span>
         <div>
-          <strong>저장소·하네스·규칙 2026-08-19 검증 스냅샷</strong> · 이 페이지는 설명용 아틀라스이며 규칙 원본이 아닙니다.
+          <strong>저장소·하네스·규칙 2026-08-20 검증 스냅샷</strong> · 이 페이지는 설명용 아틀라스이며 규칙 원본이 아닙니다.
           충돌 시 플랫폼·도구 글로벌 규칙 → <code>AGENTS.md</code> → orchestration protocol → 관련 헌법 → Accepted ADR·현재 코드/설정/DB 실측 순으로 확인하세요. 공용 메모리는 비규범 파생 인덱스입니다.
         </div>
         <a href="https://github.com/lkindo/egov-enterprise" target="_blank" rel="noopener noreferrer">저장소에서 최신 상태 확인</a>
@@ -1457,6 +1458,7 @@
         <div class="callout">
           <strong>읽는 법:</strong> <span class="badge badge-success">ENFORCED</span>는 실행 경로와 실패 조건을 확인한 통제,
           <span class="badge badge-warning">PARTIAL</span>은 일부만 기계 집행되는 통제,
+          <span class="badge badge-warning">DECIDED</span>는 통제를 끄는 쪽으로 <em>명시적 결정</em>이 내려져 명세·계약이 그 값에 동결된 상태(숨은 공백이 아니라 기록된 트레이드오프),
           <span class="badge badge-error">CONFIRMED GAP</span>은 실제 미집행 상태입니다. “100%”, “완벽 차단” 같은 근거 없는 효과 수치는 사용하지 않습니다.
         </div>
 
@@ -1472,10 +1474,13 @@
             <code data-required-context="secret-scan">secret-scan</code> ·
             <code data-required-context="e2e-test">e2e-test</code> ·
             <code data-required-context="mutation-test">mutation-test</code>
-            <br><small>내부 실행은 duration-balanced E2E 3 shard이며 원격 ruleset은 아직 이 목표 manifest로 전환되지 않았습니다.</small>
+            <br><small>내부 실행은 duration-balanced E2E 3 shard입니다. 원격 ruleset은 2026-08-20 이 manifest로 전환됐고 <code>npm run verify:ops</code>가 context 5개·review 정책·force-push/삭제 보호의 exact-match를 실측합니다.</small>
           </p>
           <p style="color: var(--text-muted); line-height: 1.7; margin-top: 0.6rem;">
             <strong>Dependency controls:</strong> PR Gradle graph는 read-only producer가 artifact를 만들고 checkout/run 없는 trusted <code>workflow_run</code>이 제출합니다. <code>secret-scan</code>은 base/head snapshot을 최대 600초 fail-closed 확인한 뒤 신규 runtime High 이상을 review합니다. 프론트 감사는 <code>pnpm audit --json</code> 단일 조회로 Critical 전체와 운영 High를 차단하고 개발 전용 High만 warning으로 남기며 형식·네트워크 오류는 실패 처리합니다.
+          </p>
+          <p style="color: var(--text-muted); line-height: 1.7; margin-top: 0.6rem;">
+            <strong>Frontend CSP:</strong> production <code>script-src</code>는 <code>'self'</code>+요청별 nonce뿐이며 <code>'unsafe-inline'</code>·<code>'unsafe-eval'</code>이 없습니다(단일 소스 <code>src/proxy.ts</code>, 전 페이지 동적 렌더 전제 — PPR 포기 제품 결정). Next 밖 inline script(next-themes)에는 <code>x-nonce</code> 헤더로 nonce를 전파합니다. 이 정적 Atlas 문서 1건만 Phase 2 예외 정책을 받고, <code>csp-policy</code> 계약 6축이 정책 완화·이중 소스·정적 프리렌더·배선 소실·inline 핸들러 재유입을 차단합니다. <code>style-src</code>의 <code>'unsafe-inline'</code>은 Phase 3 잔여로 추적합니다.
           </p>
         </div>
 
@@ -1509,7 +1514,7 @@
                   Next.js Proxy (Auth Gateway)
                   <span class="flow-step-badge frontend">Frontend Routing</span>
                 </div>
-                <div class="flow-step-desc">보호 라우트 진입 전 쿠키 기반 인증 상태와 JWT를 확인합니다. 이 정적 아틀라스 경로는 공개 예외로 등록되어 있습니다.</div>
+                <div class="flow-step-desc">보호 라우트 진입 전 쿠키 기반 인증 상태와 JWT 서명·만료를 확인하고, HTML 문서 응답에 요청별 nonce CSP를 부여합니다(앱 문서=nonce 정책, 이 정적 아틀라스=전용 Phase 2 정책, API/정적 자산=CSP 없음). 이 정적 아틀라스 경로는 공개 예외로 등록되어 있습니다.</div>
                 <div class="flow-step-file">frontend/src/proxy.ts</div>
               </div>
               <div class="flow-step-number">02</div>
@@ -1694,8 +1699,8 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
               <tbody>
                 <tr><td>pre-push 훅</td><td><span class="badge badge-warning">LOCAL BLOCK</span></td><td>공용 규칙·메모리 계약과 문서 링크 검사를 항상 먼저 실행합니다. docs-only는 두 경량 계약 후 fast-pass하고 Atlas 변경은 전용 계약도 추가합니다. 소스 범위는 재사용 base census · Java compile · 앱/E2E tsc · ESLint · 불변식 · codegen · 하네스 테스트를 실행하지만 <code>--no-verify</code>/<code>SKIP_HOOKS</code>/<code>SKIP_HARNESS</code>로 우회 가능하므로 병합 권위는 CI입니다.</td></tr>
                 <tr><td><code>localGate</code></td><td><span class="badge badge-error">HARD</span></td><td>하네스·실 PostgreSQL schema validation·JaCoCo를 포함하지만 pre-push의 모든 정적 검사를 포함하지는 않습니다.</td></tr>
-                <tr><td>CI required 목표</td><td><span class="badge badge-primary">5 STABLE</span></td><td><code>backend-build</code> · <code>frontend-build</code> · <code>secret-scan</code> · <code>e2e-test</code> · <code>mutation-test</code>. 조건부 heavy job은 내부 <code>*-scope</code>로 분리하고 네 aggregate는 항상 완료되므로 docs-only SHA도 릴리스가 소비할 성공 증거를 남깁니다. E2E 내부 3 shard는 구현 세부사항이고 mutation은 <code>STRICT_MUTATION=true</code>, 75% 하드 게이트입니다.</td></tr>
-                <tr><td>원격 branch policy</td><td><span class="badge badge-error">LIVE GAP</span></td><td>원격은 아직 과거 required context 7개와 approval 0·CODEOWNERS/last-push/thread resolution false 상태입니다. <code>verify:ops</code>가 이 drift를 실패로 보고하며, 작성자 외 reviewer 확보 후 관리자가 목표 manifest와 policy를 함께 적용해야 합니다.</td></tr>
+                <tr><td>CI required</td><td><span class="badge badge-primary">5 STABLE</span></td><td><code>backend-build</code> · <code>frontend-build</code> · <code>secret-scan</code> · <code>e2e-test</code> · <code>mutation-test</code>. 조건부 heavy job은 내부 <code>*-scope</code>로 분리하고 네 aggregate는 항상 완료되므로 docs-only SHA도 릴리스가 소비할 성공 증거를 남깁니다. E2E 내부 3 shard는 구현 세부사항이고 mutation은 <code>STRICT_MUTATION=true</code>, 75% 하드 게이트입니다.</td></tr>
+                <tr><td>원격 branch policy</td><td><span class="badge badge-success">정합</span></td><td>2026-08-20 기준 원격 ruleset이 위 required 5개·strict 최신 브랜치·force-push/삭제 차단과 exact-match하고, review 정책은 단독 운영 결정값(DEC-OPS-009: approval 0·code-owner/last-push/thread-resolution 비활성)에 양방향 동결돼 있습니다. <code>npm run verify:ops</code>가 이 전부를 원격 실측으로 대조하며, reviewer 확보 시 후속 DEC로 상향합니다.</td></tr>
               </tbody>
             </table>
           </div>
@@ -1908,20 +1913,20 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 <tr>
                   <td><strong>CI</strong></td>
                   <td>GitHub Actions</td>
-                  <td>필수 7 check. 실 PostgreSQL 17 검증과 <code>STRICT_MUTATION=true</code> 75%가 backend/mutation job에 연결됩니다.</td>
+                  <td>안정 required context 5개(<code>backend-build</code>·<code>frontend-build</code>·<code>secret-scan</code>·<code>e2e-test</code>·<code>mutation-test</code>). 실 PostgreSQL 17 검증과 <code>STRICT_MUTATION=true</code> 75%가 backend/mutation job에 연결됩니다.</td>
                   <td><span class="badge badge-success">REMOTE HARD</span></td>
                 </tr>
                 <tr>
                   <td><strong>PR review</strong></td>
                   <td>GitHub ruleset</td>
-                  <td>required checks는 집행되지만 승인 리뷰 수·CODEOWNERS review는 현재 0/false입니다.</td>
-                  <td><span class="badge badge-error">GAP</span></td>
+                  <td>required checks·strict 최신 브랜치·force-push/삭제 차단이 집행됩니다. 승인 리뷰 0·CODEOWNERS review 비활성은 단독 운영 기간의 명시적 결정(DEC-OPS-009)이며 명세·계약이 이 값에 동결돼 있습니다.</td>
+                  <td><span class="badge badge-warning">DECIDED</span></td>
                 </tr>
                 <tr>
                   <td><strong>운영 점검</strong></td>
                   <td><code>npm run verify:ops</code></td>
-                  <td>manifest↔workflow↔ruleset을 대조하지만 PR rule의 세부 승인 파라미터는 아직 검증하지 않습니다.</td>
-                  <td><span class="badge badge-warning">PARTIAL</span></td>
+                  <td>manifest↔workflow↔원격 ruleset의 required context 5개, PR review 정책 4건, force-push/삭제 보호를 exact 대조합니다(2026-08-20 완전 정합 실측).</td>
+                  <td><span class="badge badge-success">ENFORCED</span></td>
                 </tr>
               </tbody>
             </table>
@@ -2335,11 +2340,11 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 0.5rem;">평가 기준</h3>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65;">
-            2026-08-19 기준 중앙 registry가 <strong>governance JUnit 33개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 37개</strong>와 runner catalog 5개, execution profile 6개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다. 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
+            2026-08-20 기준 중앙 registry가 <strong>governance JUnit 35개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 37개</strong>와 runner catalog 5개, execution profile 6개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다(수치는 <code>gates.json</code> 실측이며 현행 대시보드 수치와 같은 원본을 공유합니다). 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
           </p>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65; margin-top: 0.9rem; border-top: 1px solid var(--border-color); padding-top: 0.9rem;">
             <strong style="color: var(--accent-success);">핵심 집행:</strong> 태그 기반 전수 census, 단일 source index, 의미 기반 인가 정책 matrix, Entity Lombok gate, schema suite의 공유 PostgreSQL, 구조화 E2E 오류 ledger·고정 대기 0건·실행시간 기반 shard, 85/70/75 exact ratchet이 실행 경로에 결속돼 있습니다.
-            <br><strong style="color: var(--accent-warning);">남은 핵심 공백:</strong> registry에 동결된 미승인 legacy DDL debt 188건, 원격 required/review policy 미적용, migration-tool의 실 DB/cutover 증거, 일부 헌법과 현행 구현의 의미 drift는 아래 로드맵에서 추적합니다.
+            <br><strong style="color: var(--accent-warning);">남은 핵심 공백:</strong> registry에 동결된 미승인 legacy DDL debt 188건, migration-tool의 실 DB/cutover 증거, dependency publisher의 public fork probe, 일부 헌법과 현행 구현의 의미 drift는 아래 로드맵에서 추적합니다.
           </p>
         </div>
 
@@ -2352,9 +2357,9 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       <!-- [11] Verified gaps and recommended roadmap -->
       <section id="content-gaps" class="tab-content">
         <h2 class="section-title">확인된 공백 &amp; 개선 로드맵</h2>
-        <p class="section-subtitle">2026-08-19 저장소·실행 manifest·원격 ruleset을 교차 확인한 결과입니다. 완료된 보강은 현행 통제로, 외부 적용·헌법 승인·추가 구현이 필요한 항목만 활성 공백으로 구분합니다.</p>
+        <p class="section-subtitle">2026-08-20 저장소·실행 manifest·원격 ruleset을 교차 확인한 결과입니다. 완료된 보강은 현행 통제로, 외부 적용·헌법 승인·추가 구현이 필요한 항목만 활성 공백으로 구분합니다.</p>
 
-        <div class="callout"><strong>현행 자동 통제:</strong> 중앙 <code>gates.json</code>, governance/architecture/schema 태그 census, source 접근 공통화, 의미 기반 인가 registry, Entity Lombok 검사, 공유 PostgreSQL schema runner, E2E expected-error ledger·blind wait 0건 ratchet·duration shard, migration CLI fail-closed, PR dependency snapshot 신뢰 경계·readiness, 프론트 단일 audit policy, k6 실행 명령 계약, 목표 branch policy exact verifier가 연결돼 있습니다.</div>
+        <div class="callout"><strong>현행 자동 통제:</strong> 중앙 <code>gates.json</code>, governance/architecture/schema 태그 census, source 접근 공통화, 의미 기반 인가 registry(설문 별칭은 DEC-OPS-010 메서드 인가), Entity Lombok 검사, 공유 PostgreSQL schema runner, E2E expected-error ledger·blind wait 0건 ratchet·duration shard, migration CLI fail-closed, PR dependency snapshot 신뢰 경계·readiness, 프론트 단일 audit policy, 요청별 nonce CSP와 csp-policy 계약 6축, k6 실행 명령 계약, DEC-OPS-009에 동결된 branch policy exact verifier(2026-08-20 원격 완전 정합)가 연결돼 있습니다.</div>
 
         <div class="glass-card">
           <h3 class="glow-header">우선순위별 권장안</h3>
@@ -2365,22 +2370,10 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
               </thead>
               <tbody>
                 <tr>
-                  <td><span class="badge badge-error">P0</span></td>
-                  <td>원격 ruleset은 approval 0·CODEOWNERS/last-push/thread false이며 저장소 목표 policy와 불일치</td>
-                  <td><code>.github/required-checks.json</code>과 verifier의 exact 계약은 구현됨. 작성자/마지막 push 주체 외 reviewer 1인 이상(총 2인 운영)을 먼저 확보한 뒤 저장소 관리자가 목표값을 원격에 적용하고 <code>verify:ops</code> red를 해소</td>
-                  <td><strong>대상 아님</strong> — 코드 헌법이 아닌 운영 policy 적용</td>
-                </tr>
-                <tr>
                   <td><span class="badge badge-warning">P1</span></td>
                   <td>적용된 SQL의 <code>linter:ignore</code> 188건/43파일은 내용 hash·owner·reviewBy와 함께 <code>legacy-debt-unapproved</code>로 동결됐지만 승인된 waiver나 제거 완료를 뜻하지 않음</td>
                   <td>신규 예외는 안정 ID·reason·owner·approvedAt·expiresAt·evidence를 1:1 등록하고, legacy debt는 reviewBy 전에 재검토해 신규 보정 migration과 배포 증거로 위험을 단계적으로 상환</td>
                   <td><strong>권장</strong> — “구조화 waiver·만료·선행 release 증거” 원칙만 조문에 추가, 세부 schema는 manifest로 분리</td>
-                </tr>
-                <tr>
-                  <td><span class="badge badge-warning">P1</span></td>
-                  <td>의미 기반 인가 registry는 구현됐지만 survey response route가 실제 ADMIN/SYSTEM 경계에 묶여 있고, <code>@AdminOnly</code>는 role hierarchy상 SYSTEM도 허용해 이름과 의미가 다름</td>
-                  <td>제품 의도를 확인해 survey route를 교정하거나 제한을 명시하고, <code>ADMIN_ROLE_WITH_HIERARCHY</code> 같은 실제 의미를 표준 helper/annotation 이름과 조문에 일치시킴</td>
-                  <td><strong>권장</strong> — 백엔드 헌법 제8조의 의미 정책·표준 helper 최신화</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
@@ -2414,9 +2407,9 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">P1</span></td>
-                  <td>프론트 헌법이 삭제된 <code>middleware.ts</code>와 “CI/pre-push lint 미실행”을 서술하고, root dashboard의 RSC cache/Suspense 경로를 포괄하지 못함</td>
-                  <td><code>proxy.ts</code>·lint 실행 현황을 정정하고, root dashboard를 TanStack hydration으로 통일할지 RSC native cache/Suspense 예외를 인정할지 결정</td>
-                  <td><strong>승인 필요</strong> — 프론트 헌법 제4조·제6조 현행화</td>
+                  <td>root dashboard가 React <code>cache</code>/<code>Suspense</code> 경로를 사용해 프론트 헌법 제4조의 TanStack Query/dehydrate 표준 패턴과 충돌함 (파일 경로·lint 실행 서술 드리프트는 2026-08-20 정정 완료)</td>
+                  <td>root dashboard를 TanStack hydration으로 통일할지, RSC native cache/Suspense를 승인된 예외로 조문화할지 결정</td>
+                  <td><strong>승인 필요</strong> — 프론트 헌법 제4조 예외 조항 여부</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-primary">P2</span></td>
@@ -2436,10 +2429,10 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
               <thead><tr><th>모델</th><th>설정</th><th>장점</th><th>비용·전제</th></tr></thead>
               <tbody>
                 <tr>
-                  <td><span class="badge badge-error">CURRENT</span></td>
-                  <td>approval 0 · codeOwner false · lastPush false · thread false · dismissStale false</td>
-                  <td>1인 운영에서도 PR 교착이 없고 자동 check만 통과하면 병합 가능</td>
-                  <td>사람 검토·CODEOWNERS 책임·최신 push 검증을 보증하지 못함</td>
+                  <td><span class="badge badge-warning">CURRENT = DECIDED</span></td>
+                  <td>approval 0 · codeOwner false · lastPush false · thread false · dismissStale false (DEC-OPS-009로 명세·계약에 양방향 동결)</td>
+                  <td>1인 운영에서도 PR 교착이 없고 자동 check만 통과하면 병합 가능. <code>verify:ops</code>가 상시 초록이라 신호 가치가 살아 있음</td>
+                  <td>사람 검토·CODEOWNERS 책임·최신 push 검증을 보증하지 못함 — 기록된 트레이드오프이며 reviewer 확보 시 후속 DEC로 상향</td>
                 </tr>
                 <tr>
                   <td><span class="badge badge-warning">INTERIM</span></td>
@@ -2521,7 +2514,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
           "OpenAPI snapshot→TypeScript/Zod codegen diff를 pre-push와 CI에서 검증",
           "Entity 클래스 수준 Lombok 금지는 source gate가 전수 검사하고 실제 위반 3건을 제거함",
           "endpoint·helper·hand-written guard는 authorization policy registry와 semantic matrix가 약화 회귀를 차단함",
-          "조문 공백: 제8조의 helper/role-hierarchy 의미는 현행 registry와 별도 승인 정렬이 필요함"
+          "제8조 2항(2026-08-20 신설)이 @AdminOnly의 role hierarchy 의미(SYSTEM 포함)와 별칭·공개 경로에서 메서드 애노테이션=단독 방어선임을 명문화함 — DEC-OPS-010 설문 개방이 적용 사례"
         ]
       },
       {
@@ -2531,6 +2524,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         color: "linear-gradient(90deg, var(--accent-success), var(--accent-secondary))",
         details: [
           "Next.js 16 proxy 기반 인증 경계, Server Component 우선, 상태·오류·접근성 규칙",
+          "production CSP는 요청별 nonce로 script-src의 unsafe-inline을 제거(단일 소스 proxy.ts·전 페이지 동적 렌더·PPR 포기, 제10조 2·3항 현행화)하고 csp-policy 계약 6축이 완화·재유입을 차단",
           "앱 tsc·E2E tsc·Next build·Vitest·Playwright shard가 훅/CI에 분산 연결",
           "Zod 생성물 drift는 codegen:verify:zod hard gate",
           "디자인 토큰 ESLint는 CI·pre-push에서 실행되지만 규칙 severity는 warning",
@@ -2578,7 +2572,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 2,
         title: "백엔드 아키텍처·인가·소유권 규칙",
-        desc: "ArchUnit/JUnit이 모듈 경계·트랜잭션·정체성 축을 검사하고, authorization-policies.json이 endpoint/helper/manual guard 의미를 동결합니다. Entity 클래스 수준 Lombok 금지도 source gate가 전수 검사합니다. 제품 의미와 조문 정렬은 별도 검토 대상입니다.",
+        desc: "ArchUnit/JUnit이 모듈 경계·트랜잭션·정체성 축을 검사하고, authorization-policies.json이 endpoint/helper/manual guard 의미를 동결합니다. Entity 클래스 수준 Lombok 금지도 source gate가 전수 검사합니다. 설문 별칭 경로는 DEC-OPS-010으로 URL 게이트를 제거하고 메서드 인가(@Authenticated 열람·제출 / @AdminOrSystem 관리)가 단독 방어선이 됐으며, 백엔드 헌법 제8조 2항이 role hierarchy 의미(@AdminOnly의 SYSTEM 포함)를 명문화했습니다.",
         badge1: "Backend", badge2: "Hard", badge3: "Semantic", type1: "primary", type2: "success", type3: "cyan",
         impl: "ArchitectureTest.java · SecurityAuthAnnotationLinterTest.java · EntityLombokSourceLinterTest.java · authorization-policies.json",
         doc: "Backend constitution", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/.agent/knowledge/backend-api-constitution/artifacts/constitution.md",
@@ -2614,7 +2608,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 6,
         title: "프론트엔드 정적·컴포넌트 검증",
-        desc: "앱/E2E TypeScript, Next build, Vitest, ESLint가 훅과 CI에 연결됩니다. 프론트 의존성 감사는 pnpm JSON을 한 번만 조회해 Critical 전체와 운영 High를 차단하고 개발 High는 warning, 형식·네트워크 오류는 fail-closed 처리합니다. 디자인 토큰 규칙은 lint 안의 warning이며 시각·접근성 검증은 별도입니다.",
+        desc: "앱/E2E TypeScript, Next build, Vitest, ESLint가 훅과 CI에 연결됩니다. 프론트 의존성 감사는 pnpm JSON을 한 번만 조회해 Critical 전체와 운영 High를 차단하고 개발 High는 warning, 형식·네트워크 오류는 fail-closed 처리합니다. csp-policy 계약 6축이 nonce CSP의 전제(전면 동적 렌더)와 배선(x-nonce→next-themes), 정책 완화·이중 소스·inline 핸들러 재유입을 차단합니다. 디자인 토큰 규칙은 lint 안의 warning이며 시각·접근성 검증은 별도입니다.",
         badge1: "Frontend", badge2: "Mixed", type1: "cyan", type2: "warning",
         impl: "frontend/package.json · eslint.config.mjs · frontend/src/__tests__ · ci.yml",
         doc: "Frontend constitution", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md",
@@ -2641,8 +2635,8 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 9,
         title: "운영 manifest·의존성 신뢰 경계·원격 branch protection",
-        desc: "안정 required check 5개와 목표 PR policy를 manifest/verifier가 exact-match합니다. Gradle PR graph도 read-only producer→trusted workflow_run 제출→600초 readiness→runtime High review로 분리돼 있지만 기본 브랜치 선반영과 public fork probe가 남았습니다. 원격 ruleset은 아직 과거 7 contexts와 approval 0/관련 false라 verifier가 red입니다.",
-        badge1: "Operations", badge2: "Critical Gap", type1: "primary", type2: "error",
+        desc: "안정 required check 5개와 DEC-OPS-009 review 정책을 manifest/verifier가 exact-match하며, 2026-08-20 원격 ruleset 실측(verify:ops)이 완전 정합입니다. Gradle PR graph도 read-only producer→trusted workflow_run 제출→600초 readiness→runtime High review로 분리돼 있습니다. 남은 것은 public fork에서 고위험 runtime 의존성 probe로 live 차단을 증명하는 일입니다.",
+        badge1: "Operations", badge2: "Live Verified", type1: "primary", type2: "success",
         impl: ".github/required-checks.json · scripts/verify-branch-protection.mjs · GitHub ruleset 12501346",
         doc: "Required checks manifest", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/.github/required-checks.json",
         color: "linear-gradient(90deg, var(--accent-danger), var(--accent-warning))",
@@ -3035,8 +3029,8 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
        ========================================================================== */
     /**
      * [CSP] inline 이벤트 핸들러(onclick= 등)를 전부 addEventListener 로 배선한다.
-     * 앱 CSP 가 script-src-attr 'none' 으로 조여지면 inline 핸들러는 조용히 죽는다 —
-     * public/ 정적 HTML 에도 앱 CSP 헤더가 그대로 적용되기 때문이다(위 CSP 주석 참조).
+     * 이 문서가 받는 전용 정책(proxy.ts 의 ATLAS_CSP)은 정적 inline <script> 요소는 허용하되
+     * script-src-attr 'none' 으로 inline 핸들러를 차단한다 — 핸들러를 되살리면 조용히 죽는다.
      * src/__tests__/csp-policy.test.ts 가 inline 핸들러 재유입을 차단한다.
      */
     function wireDeclarativeHandlers() {

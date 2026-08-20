@@ -5,8 +5,8 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-08-19
-verified_against: 189c24024980bf795438ed3bc293059dd0331ceb
+verified_at: 2026-08-20
+verified_against: 2919358da6442e599b21e18480560e43692a55cf
 canonical_sources:
   - ../../AGENTS.md
   - ../../docs/02-architecture/decisions/README.md
@@ -49,6 +49,7 @@ refresh_triggers:
 | DEC-OPS-008 | accepted | 조건부 heavy job은 내부 `*-scope`로 두고 브랜치 보호에는 항상 완료되는 안정 aggregate context만 노출한다. | docs-only처럼 작업이 명시적으로 제외된 SHA도 릴리스가 요구하는 `completed + success` 증거를 남기고, shard·matrix·scope 구조 변경이 원격 required 이름을 흔들지 않게 하기 위해서다. | [.github/required-checks.json](../../.github/required-checks.json), [CI workflow](../../.github/workflows/ci.yml), [aggregate evaluator](../../scripts/aggregate-required-check.mjs) | 2026-08-19 | - |
 | DEC-OPS-009 | accepted | 단독 운영 기간의 main review policy는 approval 0·code-owner/last-push/thread-resolution 전부 비활성으로 확정하고, 명세·계약을 이 값에 양방향 동결한다. | 작성자 외 reviewer가 없는 상태에서 approval ≥ 1을 원격에 적용하면 자기 PR을 자기가 승인할 수 없어 모든 병합이 막히고, 명세만 강하게 두면 `verify:ops`가 영구 red로 남아 신호 가치가 죽는다. reviewer 확보 시 후속 DEC로 상향한다. | [.github/required-checks.json](../../.github/required-checks.json), [required-checks contract](../../scripts/required-checks-contract.mjs) | 2026-08-20 | DEC-OPS-007 |
 | DEC-OPS-010 | accepted | 설문 열람(목록·상세·문항)과 제출은 인증 사용자(`@Authenticated`)에게 개방하고, 설문·템플릿·문항·항목의 관리 뮤테이션은 `@AdminOrSystem`으로 유지한다. 별칭 경로(`/api/v1/surveys/**`)의 URL 게이트(secure-paths + DB seed)는 V2_84로 제거하고 메서드 인가를 단독 방어선으로 한다. | 종전에는 컨트롤러에 메서드 인가가 없어 URL 게이트 1겹에만 의존했고, 제출 엔드포인트의 `@Authenticated`가 핸들러 도달 전에 403으로 죽어 애노테이션 의미와 실행 의미가 어긋났다(GAP-AUTH-001). 설문은 일반 사용자가 응답하는 제품이므로 열람·제출 개방이 제품 의도다. | [SurveyApiController](../../api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiController.java), [V2_84](../../api-server/src/main/resources/db/migration/V2_84__open_survey_alias_to_authenticated.sql), [authorization policies](../../config/governance/authorization-policies.json) | 2026-08-20 | - |
+| DEC-OPS-011 | accepted | production CSP의 `script-src`에서 `unsafe-inline`을 요청별 nonce로 대체하고, 그 전제로 PPR(cacheComponents)을 포기해 전 페이지를 동적 렌더로 전환한다. `strict-dynamic`은 채택하지 않는다. | nonce는 요청마다 달라야 하므로 정적 프리렌더 HTML과 양립할 수 없고(정적 셸의 inline script가 전면 차단됨 — CI e2e 실측), strict-dynamic은 Next가 스트리밍 중 삽입하는 lazy chunk에 nonce가 없어 앱을 전면 파손시킨다(CI run 32310837353 실측). TTFB 비용은 실측 +2ms 수준으로 비물질적이며, PD-CSP-001 결정을 집행한 것이다. | [proxy.ts](../../frontend/src/proxy.ts), [next.config.ts](../../frontend/next.config.ts), [csp-policy contract](../../frontend/src/__tests__/csp-policy.test.ts), [FE 헌법 제10조](../knowledge/frontend-ux-constitution/artifacts/constitution.md) | 2026-08-20 | - |
 
 ## 기록 템플릿
 

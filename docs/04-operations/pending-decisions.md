@@ -9,14 +9,13 @@
 - `open`: 선택지가 현재 구현에 실제 영향을 주며 사용자 판단이 필요하다.
 - `blocked-input`: 인수처 정책·외부 스펙·운영 토폴로지가 없으면 선택할 수 없다.
 - 결정 후에는 코드·ADR 등 정본을 먼저 갱신하고 이 행을 제거한다. 완료 이력은 이 파일에 누적하지 않는다.
-- 아래의 코드·설정 사실은 2026-08-19 워킹트리 기준이다. 착수 전 대상 파일과 live DB·외부 설정을 다시 확인한다.
+- 아래의 코드·설정 사실은 2026-08-20 워킹트리 기준이다. 착수 전 대상 파일과 live DB·외부 설정을 다시 확인한다.
 
 ## 제품·보안 결정
 
 | ID | 상태 | 결정할 것 | 현재 확인된 경계 | 권장안·재개 조건 | 근거 |
 |---|---|---|---|---|---|
 | PD-AUTH-001 | blocked-input | 로그인 응답 본문의 `accessToken`을 없애고 순수 HttpOnly 쿠키 계약으로 갈지 | `refreshToken`은 이미 응답에서 숨기지만 `accessToken`은 E2E setup·정리 스크립트 등 비브라우저 소비자가 사용한다. | 외부 API 소비자 지원 정책을 먼저 정한다. 제거한다면 소비자를 쿠키 또는 별도 machine-to-machine 인증으로 전환한 뒤 공급 계약을 축소한다. | [TokenResponse](../../business-core/src/main/java/nuri/business/service/auth/dto/TokenResponse.java), [E2E auth setup](../../frontend/e2e/auth.setup.ts) |
-| PD-CSP-001 | open | `unsafe-inline` 제거를 위해 `cacheComponents`를 포기하고 nonce 기반 strict CSP로 전환할지 | production CSP는 `unsafe-eval`을 제거했지만 RSC 부트스트랩 때문에 script/style `unsafe-inline`이 남아 있다. | 성능 이득과 XSS 방어 강화를 실제 Lighthouse·CSP 위반 자료로 비교한 뒤 결정한다. 결정 전에는 nonce 전환을 착수하지 않는다. | [next.config.ts](../../frontend/next.config.ts), [known gap](../../.agent/memory/known-gaps.md) |
 | PD-CSP-002 | blocked-input | CSP 위반 리포트를 자체 로그로 보관할지 외부 수집기로 보낼지 | 수신 Route Handler는 있으나 장기 수집·경보 소유자는 정해지지 않았다. | 보존기간, 개인정보 마스킹, 경보 담당자와 외부 SaaS 허용 여부가 정해질 때 재개한다. | [CSP report route](../../frontend/src/app/api/security/csp/route.ts) |
 | PD-NOTE-001 | blocked-input | 양측이 삭제한 쪽지를 즉시 물리 삭제할지 야간 배치로 수거할지 | 사용자 관점 삭제와 물리 보존 수명은 별도 정책이다. | 복구 요구·감사 보존·예상 데이터량을 받은 뒤 선택한다. 소규모이고 별도 보존 의무가 없다면 즉시 수거를 우선한다. | [쪽지 도메인](../../business-app/src/main/java/nuri/business/domain/note) |
 | PD-NOTE-002 | blocked-input | 미개봉 쪽지 회수 기능을 제품에 넣을지 | 회수는 삭제 정책과 다른 사용자 계약이다. | 요구사항이 없으면 구현하지 않는다. 채택 시 수신·읽음과 동시성 의미를 먼저 정의한다. | [NoteApiController](../../api-server/src/main/java/nuri/api/controller/business/note/NoteApiController.java) |
@@ -45,6 +44,6 @@
 
 ## 결정과 별개로 남은 실행 조건
 
-- CSP Phase 2(Report-Only 계측)와 Phase 3(`style-src` 세분화)는 production build에서 sonner·framer-motion의 런타임 style 주입을 측정한 뒤 수행한다. nonce 기반 Phase 4는 `PD-CSP-001` 결정 뒤에만 착수한다.
+- CSP Phase 3(`style-src` 세분화)는 production build에서 sonner·framer-motion의 런타임 style 주입을 측정한 뒤 수행한다. nonce 기반 Phase 4는 PD-CSP-001 결정(DEC-OPS-011: PPR 포기·전 페이지 동적 렌더)으로 2026-08-20 집행 완료됐다 — 상세는 [known-gaps GAP-FE-001](../../.agent/memory/known-gaps.md)을 본다.
 - 외부 자격·환경 때문에 실행하지 못한 NVD 스캔, 실제 k6, 인증 ZAP은 [검증 사각지대 런북](verification-blindspots.md)의 `blocked-external` 규칙으로 관리한다.
 - 단순 리팩터 아이디어나 완료 항목은 이 레지스트리에 두지 않는다. 필요해지면 구체적 목표·근거·소유자를 갖춘 이슈로 새로 만든다.
