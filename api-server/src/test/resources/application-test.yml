@@ -82,6 +82,6 @@ rbac:
     enabled: true
   db-auth:
     enabled: false
-    secure-paths: "/api/v1/admin/**,/actuator/**,/api/v1/surveys,/api/v1/surveys/**,/api/v1/help,/api/v1/help/**"
+    secure-paths: "/api/v1/admin/**,/actuator/**,/api/v1/help,/api/v1/help/**"
 
 

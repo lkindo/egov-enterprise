@@ -28,7 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
                 "spring.jpa.hibernate.ddl-auto=create-drop",
                 "rbac.shadow.enabled=true",
                 "rbac.db-auth.enabled=true",
-                "rbac.db-auth.secure-paths=/api/v1/admin/**,/actuator/**,/api/v1/surveys,/api/v1/surveys/**,/api/v1/help,/api/v1/help/**"
+                "rbac.db-auth.secure-paths=/api/v1/admin/**,/actuator/**,/api/v1/help,/api/v1/help/**"
         }
 )
 @AutoConfigureMockMvc
@@ -48,9 +48,12 @@ class RbacAuthorizationMatrixTest {
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
+    // [2026-08-20 V2_84] '/api/v1/surveys' 별칭은 제품 결정으로 URL 게이트에서 제외됐다
+    // (설문 제출 일반 개방 — 인가는 SurveyApiController 메서드 애노테이션이 담당).
+    // 이 테스트는 DB 인가 '기제'를 검증하므로 표본을 정식 경로로 교체한다.
     private static final List<String> SECURE_TEST_PATHS = List.of(
             "/api/v1/admin/system/users",
-            "/api/v1/surveys",
+            "/api/v1/admin/system/surveys",
             "/api/v1/help"
     );
 
@@ -79,7 +82,7 @@ class RbacAuthorizationMatrixTest {
 
         // 3. tb_prgrm_lst 시드 (어드민 경로 및 6개 별칭 경로 전수 시드)
         jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) VALUES ('ADMIN_USERS', '사용자관리', '/api/v1/admin/system/users')");
-        jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) VALUES ('ADMIN_SURVEYS', '설문관리', '/api/v1/surveys')");
+        jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) VALUES ('ADMIN_SURVEYS', '설문관리', '/api/v1/admin/system/surveys')");
         jdbcTemplate.execute("INSERT INTO tb_prgrm_lst (prgrm_file_nm, prgrm_korn_nm, url) VALUES ('ADMIN_HELP', '도움말관리', '/api/v1/help')");
 
         // 4. tb_role_prgrm_map 시드
