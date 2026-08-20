@@ -66,12 +66,21 @@ describe('🔒 FE 인증 하드닝 회귀 방지 게이트 (§2.F)', () => {
   });
 
   it('prod CSP: script-src 에 unsafe-eval 이 없다', () => {
-    const cfg = read('next.config.ts');
-    const prodMatch = cfg.match(/cspProd\s*=\s*`([^`]*)`/);
-    expect(prodMatch, 'cspProd 정의를 찾지 못함(구조 변경?)').not.toBeNull();
-    const cspProd = prodMatch![1];
-    expect(cspProd, "prod CSP 에 unsafe-eval 부활 회귀").not.toContain('unsafe-eval');
-    expect(cspProd, "object-src 'none' 회귀").toContain("object-src 'none'");
-    expect(cspProd, "frame-ancestors 'none' 회귀").toContain("frame-ancestors 'none'");
+    // [csp Phase 4 · 2026-08-20] CSP 단일 소스가 next.config.ts(정적 cspProd 리터럴)에서
+    // src/proxy.ts 의 buildAppCsp(요청당 nonce)로 이관됐다. 판정축은 동일하게 유지하되
+    // 새 소스에 재결속한다. unsafe-eval 은 dev 분기(isProd=false)에만 존재해야 한다.
+    const proxy = read('src/proxy.ts');
+    const bodyStart = proxy.indexOf('function buildAppCsp(');
+    expect(bodyStart, 'buildAppCsp 정의를 찾지 못함(구조 변경?) — 추출이 깨지면 이 게이트는 vacuous 하다')
+      .toBeGreaterThan(-1);
+    const body = proxy.slice(bodyStart, proxy.indexOf('\n}', bodyStart));
+
+    // prod 분기: `isProd ? A : B` 의 A(참 분기)에 unsafe-eval 이 없어야 한다.
+    const prodBranch = body.match(/isProd\s*\?\s*`([^`]*)`/)?.[1] ?? null;
+    expect(prodBranch, 'prod script-src 분기를 찾지 못함(구조 변경?)').not.toBeNull();
+    expect(prodBranch!, 'prod CSP 에 unsafe-eval 부활 회귀').not.toContain('unsafe-eval');
+
+    expect(body, "object-src 'none' 회귀").toContain("object-src 'none'");
+    expect(body, "frame-ancestors 'none' 회귀").toContain("frame-ancestors 'none'");
   });
 });

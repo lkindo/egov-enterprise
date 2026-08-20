@@ -2,7 +2,14 @@ import withBundleAnalyzer from '@next/bundle-analyzer';
 import { fileURLToPath } from 'node:url';
 
 const nextConfig = {
-  cacheComponents: true,
+  // [csp Phase 4 · 2026-08-20] PPR/정적 셸 비활성 — nonce CSP 의 전제 조건.
+  //   nonce 는 요청마다 다른데 cacheComponents(PPR)는 페이지 셸을 빌드타임에 정적 프리렌더한다.
+  //   그 셸에 구워진 Next 부트스트랩 inline <script> 에는 nonce 가 없어, 런타임 CSP 의
+  //   'nonce-…' 와 불일치 → 전 페이지에서 스크립트가 차단된다(2026-08-20 CI e2e 3샤드 실측:
+  //   05-public-experience 전 스펙에서 동일 해시 2개의 inline script 차단).
+  //   'use cache' 사용처는 0건(전수 grep)이라 기능 손실 없음. 되켜려면 nonce CSP 를 먼저
+  //   철회해야 한다 — csp-policy 계약이 이 값의 재활성화를 차단한다.
+  cacheComponents: false,
   // [2026-08-08] Next 는 기본으로 `X-Powered-By: Next.js` 를 붙인다.
   //   OWASP ZAP 첫 유효 스캔에서 실제로 지적됐다 — `Server Leaks Information via
   //   "X-Powered-By" HTTP Response Header Field [10037]`.
@@ -33,7 +40,6 @@ const nextConfig = {
     root: fileURLToPath(new URL('..', import.meta.url)),
   },
   async headers() {
-    const isProd = process.env.NODE_ENV === 'production';
     // [csp Phase 1] prod/dev 분리.
     //  - script-src: prod 는 'unsafe-eval' 제거(앱 소스 eval 0건 실측). 'unsafe-inline' 은 Next RSC 부트스트랩
     //    요구로 잔존(제거는 nonce+strict-dynamic=Phase 4, PPR 포기 제품결정에 게이트).
@@ -51,17 +57,13 @@ const nextConfig = {
     //    → public/ 에 정적 HTML 을 추가할 때 이 CSP 가 그대로 적용된다는 점에 주의할 것.
     //    폰트 세분화(style-src-elem/attr)는 sonner·framer-motion 런타임 <style> 주입 검증이
     //    선행돼야 하므로 Phase 3 잔여로 둔다.
-    //  - [csp Phase 2 · 2026-08-20] script-src-attr 'none' 추가(prod/dev 공통).
-    //    script-src 의 'unsafe-inline' 은 <script> 요소(elem)와 on* 속성(attr)을 함께 허용하는데,
-    //    Next RSC 부트스트랩이 요구하는 것은 **elem 쪽뿐**이다. attr 쪽(onclick= 등 inline 핸들러)은
-    //    React 가 전혀 쓰지 않고(합성 이벤트=addEventListener), 반사형 XSS 가 주입하는 대표 벡터다.
-    //    유일한 실사용처였던 public/governance_harness_atlas.html 의 inline 핸들러 10건은
-    //    addEventListener 로 전환했다(src/__tests__/csp-policy.test.ts 가 재유입 차단).
-    //    ⚠ script-src 에서 'unsafe-inline' 자체를 빼는 것(nonce+strict-dynamic)은 여전히 Phase 4 다 —
-    //    nonce 는 요청마다 달라야 하므로 전 페이지가 동적 렌더로 강등되며(PPR 포기), 그 트레이드오프는
-    //    제품 결정에 게이트된다(위 Phase 1 주석과 동일한 결론).
-    const cspProd = `default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' https://images.unsplash.com blob: data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'; report-uri /api/security/csp; report-to csp-endpoint;`;
-    const cspDev = `default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; script-src-attr 'none'; style-src 'self' 'unsafe-inline'; img-src 'self' https://images.unsplash.com blob: data:; font-src 'self'; connect-src 'self' ws: wss:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none';`;
+    //  - [csp Phase 4 · 2026-08-20] CSP 헤더는 여기서 **정의하지 않는다** — src/proxy.ts 로 이관됐다.
+    //    nonce 는 요청마다 달라야 하므로 정적 headers() 로는 만들 수 없다. 미들웨어가 요청당
+    //    nonce 를 생성해 script-src 에서 'unsafe-inline' 을 제거했고(strict-dynamic), 그 대가로
+    //    전 페이지가 동적 렌더로 전환됐다(PPR 포기 — 2026-08-20 제품 결정 승인).
+    //    여기에 CSP 를 되살리면 미들웨어 정책과 이중 소스가 되어 어느 쪽이 이기는지가 배포 형상에
+    //    좌우된다 — csp-policy 계약이 이 파일의 CSP 재유입을 차단한다.
+    //    (아래 나머지 보안 헤더들은 요청 무관 정적 값이라 계속 여기서 관리한다.)
     return [
       {
         source: '/:path*',
@@ -104,7 +106,6 @@ const nextConfig = {
             value: 'camera=(), microphone=(), geolocation=(), payment=(), usb=(), magnetometer=(), gyroscope=(), accelerometer=()',
           },
           { key: 'Reporting-Endpoints', value: 'csp-endpoint="/api/security/csp"' },
-          { key: 'Content-Security-Policy', value: isProd ? cspProd : cspDev },
         ],
       },
     ];

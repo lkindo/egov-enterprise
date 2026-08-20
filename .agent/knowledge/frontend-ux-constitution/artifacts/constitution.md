@@ -71,11 +71,14 @@
 
 ### 제10조 (보안 헤더 및 외부 리소스)
 1. `next.config.ts`의 CSP 설정과 외부 리소스(Google Fonts 등) 연동 시 충돌 여부를 상시 확인한다.
-2. **[최소 보안 헤더 베이스라인]** `next.config.ts`의 `headers()`는 아래 하드닝 헤더를 prod/dev 분리로 전역 경로(`/:path*`)에 부여하며, 이 베이스라인의 약화(헤더 삭제·완화)는 헌법 위반으로 간주한다.
-   - **Content-Security-Policy**: prod는 `script-src`에서 `'unsafe-eval'`을 제거하고 `connect-src`를 `'self'`로 한정한다. prod/dev 공통으로 `object-src 'none'`·`base-uri 'self'`·`frame-ancestors 'none'`·`form-action 'self'`를 선언하며, 위반은 `report-uri /api/security/csp`(+ `Reporting-Endpoints`)로 수집한다. (dev는 HMR을 위해 `'unsafe-eval'`·`ws:`/`wss:`를 한시 허용한다.)
+2. **[최소 보안 헤더 베이스라인]** 보안 헤더는 두 소스로 나뉘며, 이 베이스라인의 약화(헤더 삭제·완화)는 헌법 위반으로 간주한다. **CSP는 `src/proxy.ts`(미들웨어)가 단일 소스**다 — nonce는 요청마다 달라야 하므로 정적 `headers()`로는 만들 수 없고, `next.config.ts`에 CSP가 재유입되면 이중 소스가 된다(`csp-policy` 계약이 차단). 요청 무관 정적 헤더만 `next.config.ts`의 `headers()`가 전역 경로(`/:path*`)에 부여한다.
+   - **Content-Security-Policy** (proxy.ts): prod `script-src`는 `'self' 'nonce-…'`뿐이다 — `'unsafe-inline'`·`'unsafe-eval'` 없음. `script-src-attr 'none'`으로 inline 이벤트 핸들러를 차단하고, `connect-src`는 `'self'`로 한정한다. prod/dev 공통으로 `object-src 'none'`·`base-uri 'self'`·`frame-ancestors 'none'`·`form-action 'self'`를 선언하며, 위반은 `report-uri /api/security/csp`(+ `Reporting-Endpoints`)로 수집한다. (dev는 HMR을 위해 `'unsafe-eval'`·`ws:`/`wss:`를 한시 허용한다. 정적 문서 `public/governance_harness_atlas.html` 1건만 nonce를 심을 수 없어 Phase 2 정책 예외이며, 예외 확산은 `csp-policy` 계약이 차단한다.)
    - **Strict-Transport-Security**: `max-age=63072000; includeSubDomains; preload`.
    - **X-Frame-Options**: `DENY` · **X-Content-Type-Options**: `nosniff` · **Referrer-Policy**: `strict-origin-when-cross-origin` · **X-XSS-Protection**: `0`(deprecated·XS-Leaks 벡터라 비활성 — 방어는 CSP로 대체).
-3. **[unsafe-inline 잔존의 정직한 기록]** 현재 prod CSP의 `script-src`에는 Next.js RSC(React Server Components) 부트스트랩 요구로 인해 `'unsafe-inline'`이 잔존한다. 이는 알려진 잔여 위험이며, `nonce` + `strict-dynamic` 기반으로의 승격은 PPR(부분 사전 렌더링) 채택 여부와 결부된 제품 결정 과제로 남긴다. 본 조는 이 잔존 사유와 승격 경로를 은폐하지 않고 명시적으로 기록·추적할 것을 의무화한다.
+3. **[nonce CSP의 전제와 한계의 정직한 기록]** `script-src`의 `'unsafe-inline'`은 2026-08-20 요청별 nonce로 제거됐다(PPR 포기 제품 결정). 이 승격은 두 가지 실측 제약 위에 서 있으며, 본 조는 이를 은폐하지 않고 기록·추적할 것을 의무화한다.
+   - **전 페이지 동적 렌더가 전제다**: 정적 프리렌더 HTML의 inline script에는 요청 nonce가 없어 통째로 차단된다(2026-08-20 CI e2e 실측). `cacheComponents`(PPR) 비활성과 루트 layout의 `force-dynamic`을 `csp-policy` 계약이 고정하며, 되돌리려면 nonce CSP 철회가 선행돼야 한다.
+   - **`'strict-dynamic'`은 채택하지 않는다**: Next.js가 스트리밍 중 삽입하는 lazy chunk `<script src>`에 nonce가 없어 host 허용(`'self'`)이 꺼지면 앱이 전면 파손된다(2026-08-20 CI 실측). 방어는 `'self'`+nonce 조합으로 달성한다.
+   - **잔여 위험**: `style-src`의 `'unsafe-inline'`은 React style prop·라이브러리 런타임 `<style>` 주입 검증(Phase 3)이 끝날 때까지 잔존하며 별도 추적한다.
 
 ---
 
