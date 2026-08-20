@@ -265,10 +265,10 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
 //  이 전환(= PPR 포기)이 바로 이 Phase 를 막고 있던 제품 결정이며 2026-08-20 승인됐다.
 //
 //  정책 구성:
-//   - script-src 'self' 'nonce-…' 'strict-dynamic': nonce 없는 주입 스크립트는 실행되지 않는다.
-//     strict-dynamic 지원 브라우저(CSP3)에서는 'self' 가 무시되고 nonce 스크립트가 로드한
-//     체인만 허용된다. 'self' 는 CSP2 폴백이다. 앱 소스에 커스텀 inline <script>·next/script 는
-//     0건이라(2026-08-20 전수 grep) nonce 전파(x-nonce)는 필요 없다.
+//   - script-src 'self' 'nonce-…': nonce 없는 주입 inline 스크립트는 실행되지 않고, 외부
+//     호스트 스크립트는 'self' 가 차단한다. ('strict-dynamic' 미채택 사유는 buildAppCsp 참조.)
+//     Next 가 만들지 않는 inline <script>(next-themes 테마 초기화)에는 x-nonce 요청 헤더로
+//     nonce 를 전파해 layout 이 prop 으로 넘긴다 — nextWithCsp 의 주석 참조.
 //   - script-src-attr 'none': Phase 2 유지 — inline 이벤트 핸들러 차단.
 //   - style-src 'unsafe-inline' 잔존: React style prop(= style 속성)이 전면 사용 중이라
 //     여기서 빼면 앱 전체 스타일이 죽는다. 세분화는 Phase 3(sonner·framer-motion 검증) 별건.
@@ -393,6 +393,13 @@ export async function proxy(request: NextRequest) {
   const nextWithCsp = (): NextResponse => {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('content-security-policy', csp);
+    // Next 의 자동 nonce 부착은 **Next 가 생성하는** <script> 에만 미친다. 앱/라이브러리가 직접
+    // 렌더하는 inline <script>(현재 next-themes 테마 초기화 1건)는 layout 이 headers() 로 이
+    // 값을 읽어 nonce prop 으로 넘겨야 한다 — 빠뜨리면 그 스크립트만 조용히 차단된다
+    // (2026-08-20 CI e2e 실측: sha256-J9cZ… 단일 해시 전 페이지 차단. "앱 소스에 inline
+    // <script> 0건" 전수 grep 은 라이브러리가 렌더하는 것을 보지 못했다).
+    // ⚠ set() 은 외부에서 실어 보낸 x-nonce 를 덮어쓴다 — 외부 주입값이 문서에 닿을 일은 없다.
+    requestHeaders.set('x-nonce', nonce);
     return withNonce(NextResponse.next({ request: { headers: requestHeaders } }));
   };
 

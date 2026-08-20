@@ -16,6 +16,7 @@ const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
  *   ③ next.config.ts 에 CSP 가 재유입되지 않는다 (이중 소스 차단)
  *   ④ public/ 정적 HTML 에 inline 핸들러가 재유입되지 않는다
  *   ⑤ 정적 프리렌더가 되살아나지 않는다 (cacheComponents off + 루트 force-dynamic)
+ *   ⑥ Next 밖 inline script(next-themes)로의 nonce 전파 배선이 유지된다 (x-nonce → prop)
  */
 describe('CSP nonce 계약', () => {
   const proxySource = readFileSync(join(FRONTEND_DIR, 'src', 'proxy.ts'), 'utf8');
@@ -94,6 +95,27 @@ describe('CSP nonce 계약', () => {
         'cookies() 사용이 우연히 전 라우트를 동적으로 만들지만, 그 부수효과에 기대면 리팩터링 한 번에 ' +
         '정적 라우트가 조용히 부활해 해당 페이지가 CSP 로 전면 차단됩니다.',
     ).toMatch(/export const dynamic = 'force-dynamic'/);
+  });
+
+  it('next-themes inline script 로의 nonce 전파 배선이 유지된다 (x-nonce → ThemeProvider prop)', () => {
+    // Next 의 자동 nonce 부착은 Next 가 생성하는 <script> 에만 미친다. next-themes 의 FOUC 방지
+    // inline script 는 앱이 직접 넘긴 nonce prop 이 없으면 nonce 없이 렌더돼 그 스크립트만
+    // 조용히 차단된다(2026-08-20 CI e2e 실측: sha256-J9cZ… 단일 해시가 전 페이지에서 차단,
+    // 로컬 프로드 렌더의 inline 11개 중 유일한 무-nonce 스크립트로 해시 일치 확인).
+    expect(
+      proxySource,
+      'proxy.ts 가 x-nonce 요청 헤더를 싣지 않으면 layout 이 nonce 를 읽을 수 없습니다.',
+    ).toMatch(/requestHeaders\.set\('x-nonce', nonce\)/);
+
+    const layoutSource = readFileSync(join(FRONTEND_DIR, 'src', 'app', 'layout.tsx'), 'utf8');
+    expect(
+      layoutSource,
+      'layout 이 x-nonce 를 읽지 않습니다 — next-themes inline script 가 nonce 없이 렌더됩니다.',
+    ).toMatch(/headers\(\)\)\.get\('x-nonce'\)/);
+    expect(
+      layoutSource,
+      'ThemeProvider 에 nonce prop 이 전달되지 않습니다 — 테마 초기화 script 만 조용히 차단됩니다.',
+    ).toMatch(/nonce=\{nonce\}/);
   });
 
   it('public/ 정적 HTML 에 inline 이벤트 핸들러가 없다', () => {
