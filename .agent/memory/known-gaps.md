@@ -6,7 +6,7 @@ authority: derived-active-index
 scope: repository
 sensitivity: public-repo-safe
 verified_at: 2026-08-20
-verified_against: 2919358da6442e599b21e18480560e43692a55cf
+verified_against: 8cf281d71b36abbdfb60975e8a50494216a26b4c
 canonical_sources:
   - ../../frontend/public/governance_harness_atlas.html
   - ../../docs/04-operations/verification-blindspots.md

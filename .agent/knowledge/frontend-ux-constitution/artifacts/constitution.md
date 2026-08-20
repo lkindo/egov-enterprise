@@ -70,7 +70,7 @@
 2. 키보드만으로 모든 기능을 조작할 수 있어야 하며, 스크린 리더 사용자를 위한 `aria-label` 등 적절한 속성을 부여한다.
 
 ### 제10조 (보안 헤더 및 외부 리소스)
-1. `next.config.ts`의 CSP 설정과 외부 리소스(Google Fonts 등) 연동 시 충돌 여부를 상시 확인한다.
+1. 외부 리소스(폰트·이미지·스크립트 출처 등)를 추가·변경할 때는 `src/proxy.ts`의 CSP(및 `next.config.ts`의 정적 보안 헤더)와 충돌 여부를 상시 확인한다. CSP가 차단하는 리소스는 오류 없이 조용히 fallback될 수 있으므로 "적용된 것처럼 보임"을 증거로 삼지 않는다.
 2. **[최소 보안 헤더 베이스라인]** 보안 헤더는 두 소스로 나뉘며, 이 베이스라인의 약화(헤더 삭제·완화)는 헌법 위반으로 간주한다. **CSP는 `src/proxy.ts`(미들웨어)가 단일 소스**다 — nonce는 요청마다 달라야 하므로 정적 `headers()`로는 만들 수 없고, `next.config.ts`에 CSP가 재유입되면 이중 소스가 된다(`csp-policy` 계약이 차단). 요청 무관 정적 헤더만 `next.config.ts`의 `headers()`가 전역 경로(`/:path*`)에 부여한다.
    - **Content-Security-Policy** (proxy.ts): prod `script-src`는 `'self' 'nonce-…'`뿐이다 — `'unsafe-inline'`·`'unsafe-eval'` 없음. `script-src-attr 'none'`으로 inline 이벤트 핸들러를 차단하고, `connect-src`는 `'self'`로 한정한다. prod/dev 공통으로 `object-src 'none'`·`base-uri 'self'`·`frame-ancestors 'none'`·`form-action 'self'`를 선언하며, 위반은 `report-uri /api/security/csp`(+ `Reporting-Endpoints`)로 수집한다. (dev는 HMR을 위해 `'unsafe-eval'`·`ws:`/`wss:`를 한시 허용한다. 정적 문서 `public/governance_harness_atlas.html` 1건만 nonce를 심을 수 없어 Phase 2 정책 예외이며, 예외 확산은 `csp-policy` 계약이 차단한다.)
    - **Strict-Transport-Security**: `max-age=63072000; includeSubDomains; preload`.
