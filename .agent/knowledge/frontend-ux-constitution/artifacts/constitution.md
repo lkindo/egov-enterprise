@@ -34,8 +34,8 @@
 5. **SSR 초기 데이터 하이드레이션 패턴**: Server Component에서 fetch한 초기 데이터는 `dehydrate(queryClient)` → `<HydrationBoundary>`를 통해 클라이언트의 TanStack Query 캐시로 인계하는 것을 표준 패턴으로 한다. Server Component 내에서 `useQuery` 등 클라이언트 훅을 직접 호출하는 것은 엄격히 금지한다.
 6. **인증 세션 보안 모델 (Authentication Session Security)**: 인증 토큰의 저장·전송·검증은 다음 규범을 예외 없이 준수하여 URL·클라이언트 저장소로의 자격증명 누출을 차단한다.
    - **① 토큰 저장소 격리**: `accessToken`은 `HttpOnly` + `Secure` + `SameSite` 속성을 부여한 쿠키에만 저장하며, `localStorage`·`sessionStorage` 등 JavaScript로 접근 가능한 저장소에 토큰을 보관하는 것을 엄격히 금지한다(XSS를 통한 토큰 탈취 차단).
-   - **② Same-Origin 프록시 경유**: 브라우저에서 백엔드로의 모든 API 호출은 동일 출처(same-origin) 프록시(클라이언트 `baseURL='/api/v1'` + `next.config.ts`의 `rewrites`)를 경유하며, 토큰은 미들웨어(`frontend/src/middleware.ts`)가 `Authorization: Bearer` 헤더로 주입한다. 브라우저 코드가 토큰 문자열을 직접 읽어 헤더에 싣지 않는다.
-   - **③ 미들웨어 서명 검증(심층 방어)**: 페이지 접근 게이트인 미들웨어(`frontend/src/middleware.ts`)는 `accessToken` JWT의 HMAC 서명과 만료(`exp`)를 Web Crypto(`crypto.subtle.verify`)로 실제 검증하되, `alg`는 화이트리스트(`HS256`/`HS384`/`HS512`)로만 매핑하여 `alg=none` 및 대칭·비대칭 혼동(confusion) 공격을 차단한다. 미들웨어 검증은 위조 토큰의 관리자 UI 셸 열람을 막는 심층 방어 계층이며, 토큰의 authoritative(최종 권위) 재검증은 백엔드가 수행한다.
+   - **② Same-Origin 프록시 경유**: 브라우저에서 백엔드로의 모든 API 호출은 동일 출처(same-origin) 프록시(클라이언트 `baseURL='/api/v1'` + `next.config.ts`의 `rewrites`)를 경유하며, 토큰은 미들웨어(`frontend/src/proxy.ts`)가 `Authorization: Bearer` 헤더로 주입한다. 브라우저 코드가 토큰 문자열을 직접 읽어 헤더에 싣지 않는다.
+   - **③ 미들웨어 서명 검증(심층 방어)**: 페이지 접근 게이트인 미들웨어(`frontend/src/proxy.ts`)는 `accessToken` JWT의 HMAC 서명과 만료(`exp`)를 Web Crypto(`crypto.subtle.verify`)로 실제 검증하되, `alg`는 화이트리스트(`HS256`/`HS384`/`HS512`)로만 매핑하여 `alg=none` 및 대칭·비대칭 혼동(confusion) 공격을 차단한다. 미들웨어 검증은 위조 토큰의 관리자 UI 셸 열람을 막는 심층 방어 계층이며, 토큰의 authoritative(최종 권위) 재검증은 백엔드가 수행한다.
 
 ---
 
@@ -46,7 +46,7 @@
 2. 다양한 디바이스 환경을 지원하기 위해 **Mobile-First** 전략을 취하며, 프로젝트 표준 브레이크포인트(`sm`, `md`, `lg`, `xl`)를 엄격히 준수한다.
 
 ### 제6조 (디자인 토큰 준수)
-1. 하드코딩된 수치 대신 사전에 정의된 **디자인 토큰** CSS 변수를 반드시 사용한다. 색상 토큰의 SSOT는 `frontend/src/app/globals.css`(`@theme` + `:root`/`.dark` HSL 변수)이며, 그 실무 지침·팔레트 리터럴→토큰 매핑 규약은 `docs/03-guides/design-tokens.md`를 따른다(팔레트 리터럴 `slate-500` 대신 시맨틱 토큰 `bg-muted` 등을 참조). 이 준수는 `frontend/eslint.config.mjs`의 `local-theme/enforce-design-tokens` 규칙으로 탐지되나 그 레벨은 **자문(`warn`)** 이며 CI·`pre-push` 게이트가 lint를 실행하지 않으므로 하드 차단 게이트가 아니다. 정적 검증(`tsc --noEmit`/`next build`)은 색·다크모드 시각 회귀를 잡지 못하므로, 대규모 색 변경 시에는 **라이트/다크 양 모드 육안 검증**을 병행하는 것을 의무로 한다.
+1. 하드코딩된 수치 대신 사전에 정의된 **디자인 토큰** CSS 변수를 반드시 사용한다. 색상 토큰의 SSOT는 `frontend/src/app/globals.css`(`@theme` + `:root`/`.dark` HSL 변수)이며, 그 실무 지침·팔레트 리터럴→토큰 매핑 규약은 `docs/03-guides/design-tokens.md`를 따른다(팔레트 리터럴 `slate-500` 대신 시맨틱 토큰 `bg-muted` 등을 참조). 이 준수는 `frontend/eslint.config.mjs`의 `local-theme/enforce-design-tokens` 규칙으로 탐지된다. lint 자체는 CI·`pre-push` 게이트에서 실행되지만 이 규칙의 레벨이 **자문(`warn`)** 이라 위반이 빌드를 막지는 않는다 — 하드 차단 게이트가 아니다. 정적 검증(`tsc --noEmit`/`next build`)은 색·다크모드 시각 회귀를 잡지 못하므로, 대규모 색 변경 시에는 **라이트/다크 양 모드 육안 검증**을 병행하는 것을 의무로 한다.
 2. 모든 모션 컴포넌트는 기본적으로 감쇠비가 높은 감속형 모션(Damped Motion) 프로필을 공통 상속해야 하며, 사용자의 스크롤을 저해하는 스크롤 하이재킹(Scroll Hijacking)과 같은 인위적인 시각 효과는 적용하지 않는다.
 3. **[모션 접근성 존중 의무]** 사용자의 운영체제가 모션 감소를 요청한 경우(`prefers-reduced-motion: reduce`), 모든 전환 애니메이션의 duration을 0ms로 축소하거나 즉시 전환(instant transition) 처리하여 전정 장애(Vestibular Disorder) 사용자의 접근성을 보장한다. 이는 제9조(WCAG 2.1 AA)의 하위 이행 조항으로서 예외 없이 적용된다.
 
@@ -70,7 +70,7 @@
 2. 키보드만으로 모든 기능을 조작할 수 있어야 하며, 스크린 리더 사용자를 위한 `aria-label` 등 적절한 속성을 부여한다.
 
 ### 제10조 (보안 헤더 및 외부 리소스)
-1. `next.config.ts`의 CSP 설정과 외부 리소스(Google Fonts 등) 연동 시 충돌 여부를 상시 확인한다.
+1. 외부 리소스(폰트·이미지·스크립트 출처 등)를 추가·변경할 때는 `src/proxy.ts`의 CSP(및 `next.config.ts`의 정적 보안 헤더)와 충돌 여부를 상시 확인한다. CSP가 차단하는 리소스는 오류 없이 조용히 fallback될 수 있으므로 "적용된 것처럼 보임"을 증거로 삼지 않는다.
 2. **[최소 보안 헤더 베이스라인]** 보안 헤더는 두 소스로 나뉘며, 이 베이스라인의 약화(헤더 삭제·완화)는 헌법 위반으로 간주한다. **CSP는 `src/proxy.ts`(미들웨어)가 단일 소스**다 — nonce는 요청마다 달라야 하므로 정적 `headers()`로는 만들 수 없고, `next.config.ts`에 CSP가 재유입되면 이중 소스가 된다(`csp-policy` 계약이 차단). 요청 무관 정적 헤더만 `next.config.ts`의 `headers()`가 전역 경로(`/:path*`)에 부여한다.
    - **Content-Security-Policy** (proxy.ts): prod `script-src`는 `'self' 'nonce-…'`뿐이다 — `'unsafe-inline'`·`'unsafe-eval'` 없음. `script-src-attr 'none'`으로 inline 이벤트 핸들러를 차단하고, `connect-src`는 `'self'`로 한정한다. prod/dev 공통으로 `object-src 'none'`·`base-uri 'self'`·`frame-ancestors 'none'`·`form-action 'self'`를 선언하며, 위반은 `report-uri /api/security/csp`(+ `Reporting-Endpoints`)로 수집한다. (dev는 HMR을 위해 `'unsafe-eval'`·`ws:`/`wss:`를 한시 허용한다. 정적 문서 `public/governance_harness_atlas.html` 1건만 nonce를 심을 수 없어 Phase 2 정책 예외이며, 예외 확산은 `csp-policy` 계약이 차단한다.)
    - **Strict-Transport-Security**: `max-age=63072000; includeSubDomains; preload`.
