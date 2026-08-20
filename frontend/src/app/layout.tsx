@@ -39,6 +39,12 @@ export const metadata: Metadata = {
   description: 'KRDS 기반 모던 전사 공통 모듈 및 디지털 정부 혁신 플랫폼',
 };
 
+// [csp Phase 4] nonce CSP 는 모든 문서가 요청 시점에 렌더된다는 전제 위에 서 있다 —
+// 정적 프리렌더 HTML 의 inline script 에는 그 요청의 nonce 가 없어 통째로 차단된다.
+// 아래 cookies() 사용만으로도 현재는 전 라우트가 동적이지만, 그 사실은 리팩터링 한 번에
+// 조용히 사라질 수 있는 부수효과라 명시적 불변식으로 고정한다(csp-policy 계약이 유지를 강제).
+export const dynamic = 'force-dynamic';
+
 async function AppShell({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;

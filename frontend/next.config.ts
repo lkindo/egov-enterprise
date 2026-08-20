@@ -2,7 +2,14 @@ import withBundleAnalyzer from '@next/bundle-analyzer';
 import { fileURLToPath } from 'node:url';
 
 const nextConfig = {
-  cacheComponents: true,
+  // [csp Phase 4 · 2026-08-20] PPR/정적 셸 비활성 — nonce CSP 의 전제 조건.
+  //   nonce 는 요청마다 다른데 cacheComponents(PPR)는 페이지 셸을 빌드타임에 정적 프리렌더한다.
+  //   그 셸에 구워진 Next 부트스트랩 inline <script> 에는 nonce 가 없어, 런타임 CSP 의
+  //   'nonce-…' 와 불일치 → 전 페이지에서 스크립트가 차단된다(2026-08-20 CI e2e 3샤드 실측:
+  //   05-public-experience 전 스펙에서 동일 해시 2개의 inline script 차단).
+  //   'use cache' 사용처는 0건(전수 grep)이라 기능 손실 없음. 되켜려면 nonce CSP 를 먼저
+  //   철회해야 한다 — csp-policy 계약이 이 값의 재활성화를 차단한다.
+  cacheComponents: false,
   // [2026-08-08] Next 는 기본으로 `X-Powered-By: Next.js` 를 붙인다.
   //   OWASP ZAP 첫 유효 스캔에서 실제로 지적됐다 — `Server Leaks Information via
   //   "X-Powered-By" HTTP Response Header Field [10037]`.

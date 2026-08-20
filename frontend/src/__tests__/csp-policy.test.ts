@@ -6,15 +6,16 @@ import { fileURLToPath } from 'node:url';
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
 
 /**
- * CSP 계약 (GAP-FE-001 Phase 4 — nonce + strict-dynamic, 2026-08-20 제품 결정: PPR 포기).
+ * CSP 계약 (GAP-FE-001 Phase 4 — 요청별 nonce, 2026-08-20 제품 결정: PPR 포기).
  *
  * CSP 의 단일 소스는 src/proxy.ts 다. nonce 는 요청마다 달라야 하므로 next.config 의 정적
  * headers() 로는 만들 수 없고, 거기에 CSP 가 되살아나면 미들웨어 정책과 이중 소스가 되어
- * 어느 쪽이 이기는지가 배포 형상에 좌우된다. 이 계약은 네 방향을 고정한다:
- *   ① 앱 정책이 nonce+strict-dynamic 을 유지하고 script-src 에 'unsafe-inline' 이 없다
+ * 어느 쪽이 이기는지가 배포 형상에 좌우된다. 이 계약은 다섯 방향을 고정한다:
+ *   ① 앱 정책이 'self'+nonce 를 유지하고 script-src 에 'unsafe-inline'·'strict-dynamic' 이 없다
  *   ② Phase 2(script-src-attr 'none')가 앱·Atlas 양쪽 정책에서 유지된다
  *   ③ next.config.ts 에 CSP 가 재유입되지 않는다 (이중 소스 차단)
  *   ④ public/ 정적 HTML 에 inline 핸들러가 재유입되지 않는다
+ *   ⑤ 정적 프리렌더가 되살아나지 않는다 (cacheComponents off + 루트 force-dynamic)
  */
 describe('CSP nonce 계약', () => {
   const proxySource = readFileSync(join(FRONTEND_DIR, 'src', 'proxy.ts'), 'utf8');
@@ -74,6 +75,25 @@ describe('CSP nonce 계약', () => {
       nextConfig,
       'CSP 는 src/proxy.ts 가 단일 소스입니다. next.config 에 되살리면 이중 소스가 됩니다.',
     ).not.toMatch(/key:\s*['"]Content-Security-Policy['"]/);
+  });
+
+  it('정적 프리렌더를 되살리지 않는다 — nonce CSP 는 전 페이지 동적 렌더가 전제다', () => {
+    // 정적 셸(PPR)·정적 라우트의 HTML 은 빌드타임에 구워져 inline script 에 nonce 가 없다.
+    // 런타임 CSP 는 요청마다 새 nonce 를 요구하므로 그 페이지는 통째로 차단된다
+    // (2026-08-20 CI e2e 3샤드 실측: 05-public-experience 전 스펙 동일 실패).
+    expect(
+      nextConfig,
+      'cacheComponents(PPR)가 다시 켜졌습니다 — 정적 셸의 inline script 는 nonce 가 없어 차단됩니다. ' +
+        '되켜려면 nonce CSP 철회가 선행돼야 합니다.',
+    ).toMatch(/cacheComponents:\s*false/);
+
+    const layoutSource = readFileSync(join(FRONTEND_DIR, 'src', 'app', 'layout.tsx'), 'utf8');
+    expect(
+      layoutSource,
+      "루트 layout 의 export const dynamic = 'force-dynamic' 이 사라졌습니다 — 현재는 layout 의 " +
+        'cookies() 사용이 우연히 전 라우트를 동적으로 만들지만, 그 부수효과에 기대면 리팩터링 한 번에 ' +
+        '정적 라우트가 조용히 부활해 해당 페이지가 CSP 로 전면 차단됩니다.',
+    ).toMatch(/export const dynamic = 'force-dynamic'/);
   });
 
   it('public/ 정적 HTML 에 inline 이벤트 핸들러가 없다', () => {
