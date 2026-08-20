@@ -14,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -134,18 +135,15 @@ class SecurityAuthorityAccessControlTest {
     }
 
     @Test
-    @DisplayName("보안 검증 - [Phase1 방어심층] 일반 USER가 비-admin alias(/api/v1/surveys)로 관리자 설문 등록 시도 시 403 (URL alias 우회 차단)")
-    void surveyAdminAlias_shouldBeForbidden_forNormalUser() throws Exception {
-        // Given: 일반 USER 가 admin 별칭 경로(/api/v1/surveys)로 접근한다.
-        //
-        // ⚠[W1-04 주석 정정 — 거짓 안전감 제거] 종전 주석은 "SurveyApiController 의 클래스 레벨
-        //   @PreAuthorize(ADMIN/SYSTEM)로 차단되어야 한다(방어심층)" 이라고 적혀 있었으나 **사실이 아니다**.
-        //   SurveyApiController 에는 클래스·메서드 레벨 인가 애노테이션이 하나도 없다(실측).
-        //   이 요청이 실제로 차단되는 유일한 이유는 rbac.db-auth.secure-paths(application.yml)에
-        //   '/api/v1/surveys' 가 열거돼 있어 DbUrlAuthorizationManager 가 fail-closed 로 거부하기 때문이다.
-        //   즉 방어 계층은 **1겹뿐**이며, 그 문자열 목록에서 이 경로가 빠지는 순간(신규 도메인 추가 시
-        //   목록을 갱신하지 않는 경우가 정확히 그렇다 — W1-22 fail-open) 인증만으로 접근 가능해진다.
-        //   테스트 자체는 유지한다. 고친 것은 '무엇이 우리를 지키고 있는가' 에 대한 서술이다.
+    @DisplayName("보안 검증 - [DEC-OPS-010] 설문 alias: USER 열람은 200, 관리 뮤테이션은 403 (메서드 인가가 단독 방어선)")
+    void surveyAlias_readOpen_mutationForbidden_forNormalUser() throws Exception {
+        // [2026-08-20 DEC-OPS-010 개정] 종전 이 테스트는 GET /api/v1/surveys 의 403 을 단언했다.
+        //   그때의 방어는 W1-04 주석이 스스로 밝혔듯 **secure-paths URL 게이트 1겹뿐**이었다
+        //   (SurveyApiController 에 메서드 인가가 하나도 없었다).
+        //   제품 결정으로 설문 열람·제출이 일반 개방되면서 그 게이트는 V2_84 로 제거됐고,
+        //   방어는 **메서드 인가**(@Authenticated / @AdminOrSystem)로 이동했다. 이 테스트는 이제
+        //   그 새 의미를 양방향으로 고정한다 — 열람이 막히면(red) 제품 회귀이고,
+        //   뮤테이션이 뚫리면(red) 인가 회귀다.
         CustomUserDetails normalUser = CustomUserDetails.builder()
                 .userId("normal_user")
                 .esntlId("USR_001")
@@ -153,9 +151,15 @@ class SecurityAuthorityAccessControlTest {
                 .roleName("USER")
                 .build();
 
-        // When & Then: alias 경로(GET, @Valid 검증 개입 없음)로 관리자 설문 목록 접근 → @PreAuthorize에 의해 403 Forbidden.
-        // (POST는 @Valid(400)가 method-security(403)보다 먼저 평가되므로 순수 인가 검증에는 GET을 사용한다.)
+        // ① 열람 개방: 일반 USER 의 목록 조회는 200 이어야 한다 (@Authenticated).
         mockMvc.perform(get("/api/v1/surveys")
+                        .with(user(normalUser))
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // ② 관리 차단: 별칭 경로의 관리 뮤테이션은 @AdminOrSystem 이 단독 방어선이다.
+        //    DELETE 는 @Valid 본문이 없어 400 개입 없이 순수 인가(403)를 관찰할 수 있다.
+        mockMvc.perform(delete("/api/v1/surveys/{srvySn}", 999999L)
                         .with(user(normalUser))
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden());
