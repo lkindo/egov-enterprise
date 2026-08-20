@@ -10,7 +10,7 @@ import { Inter, Outfit } from 'next/font/google';
 import localFont from 'next/font/local';
 import { PageTransition } from './components/layout/page-transition';
 import { GlobalUIComponents } from './components/layout/GlobalUIComponents';
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { getInitialMenus } from '@/lib/api/menu-loader';
 import { Suspense } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
@@ -38,6 +38,12 @@ export const metadata: Metadata = {
   title: '전자정부 표준프레임워크 - 엔터프라이즈 포털',
   description: 'KRDS 기반 모던 전사 공통 모듈 및 디지털 정부 혁신 플랫폼',
 };
+
+// [csp Phase 4] nonce CSP 는 모든 문서가 요청 시점에 렌더된다는 전제 위에 서 있다 —
+// 정적 프리렌더 HTML 의 inline script 에는 그 요청의 nonce 가 없어 통째로 차단된다.
+// 아래 cookies() 사용만으로도 현재는 전 라우트가 동적이지만, 그 사실은 리팩터링 한 번에
+// 조용히 사라질 수 있는 부수효과라 명시적 불변식으로 고정한다(csp-policy 계약이 유지를 강제).
+export const dynamic = 'force-dynamic';
 
 async function AppShell({ children }: { children: React.ReactNode }) {
   const cookieStore = await cookies();
@@ -108,11 +114,17 @@ async function ProvidersWithAuth({ children }: { children: React.ReactNode }) {
   );
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  // [csp Phase 4] next-themes 는 FOUC 방지 inline <script> 를 직접 렌더하는데, Next 의 자동
+  // nonce 부착은 Next 가 생성하는 태그에만 미쳐 이 스크립트는 nonce 없이 나간다 — 그러면
+  // CSP 가 테마 초기화만 조용히 차단한다(2026-08-20 CI e2e 실측: sha256-J9cZ… 전 페이지 차단,
+  // 로컬 프로드 렌더에서 inline 11개 중 유일한 무-nonce 스크립트로 해시까지 일치 확인).
+  // proxy.ts(nextWithCsp)가 요청당 x-nonce 를 실어 주고 여기서 prop 으로 넘긴다.
+  const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
     <html lang="ko" suppressHydrationWarning>
       <body className={`${pretendard.variable} ${inter.variable} ${outfit.variable} antialiased font-sans`}>
@@ -122,6 +134,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
           enableColorScheme
+          nonce={nonce}
         >
           {/* [a11y] 이 폴백은 최외곽이라 표시되는 동안 헤더/사이드바/main 이 전혀 렌더되지 않는다.
               종전 순수 div 였던 탓에 이 상태에서는 landmark-one-main·region·page-has-heading-one 이

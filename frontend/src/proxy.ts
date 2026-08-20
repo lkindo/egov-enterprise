@@ -256,6 +256,69 @@ function matchesPrefix(pathname: string, prefix: string): boolean {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);
 }
 
+// ────────────────────────────────────────────────────────────────────────────
+// [csp Phase 4 · 2026-08-20] nonce 기반 CSP — 'unsafe-inline' 제거 (제품 결정: PPR 포기)
+//
+//  왜 여기(미들웨어)인가: nonce 는 요청마다 달라야 하므로 next.config 의 정적 headers() 로는
+//  만들 수 없다. Next 는 미들웨어가 **요청 헤더**에 실은 Content-Security-Policy 에서 nonce 를
+//  읽어 자기가 생성하는 모든 <script> 태그에 자동으로 붙이고, 해당 페이지를 동적 렌더로 전환한다.
+//  이 전환(= PPR 포기)이 바로 이 Phase 를 막고 있던 제품 결정이며 2026-08-20 승인됐다.
+//
+//  정책 구성:
+//   - script-src 'self' 'nonce-…': nonce 없는 주입 inline 스크립트는 실행되지 않고, 외부
+//     호스트 스크립트는 'self' 가 차단한다. ('strict-dynamic' 미채택 사유는 buildAppCsp 참조.)
+//     Next 가 만들지 않는 inline <script>(next-themes 테마 초기화)에는 x-nonce 요청 헤더로
+//     nonce 를 전파해 layout 이 prop 으로 넘긴다 — nextWithCsp 의 주석 참조.
+//   - script-src-attr 'none': Phase 2 유지 — inline 이벤트 핸들러 차단.
+//   - style-src 'unsafe-inline' 잔존: React style prop(= style 속성)이 전면 사용 중이라
+//     여기서 빼면 앱 전체 스타일이 죽는다. 세분화는 Phase 3(sonner·framer-motion 검증) 별건.
+//   - dev 는 'unsafe-eval' 추가(HMR)·connect-src ws: 만 다르고 nonce 구조는 동일하다 —
+//     dev/prod 정책 구조가 갈라지면 위반을 dev 에서 못 보고 CI 에서 처음 만나게 된다.
+//
+//  ⚠ public/governance_harness_atlas.html 은 예외다. 정적 파일이라 Next 가 nonce 를 심어 줄
+//  수 없고, 자체 inline <script> 블록으로 동작한다. 그 문서에만 Phase 2 정책(elem inline 허용 +
+//  attr 차단)을 유지한다. 예외의 재확산은 csp-policy 계약이 차단한다(정확히 이 한 경로만 허용).
+// ────────────────────────────────────────────────────────────────────────────
+
+/** Edge 런타임 Web Crypto 로 요청당 128bit nonce 를 만든다. */
+function generateNonce(): string {
+  const bytes = new Uint8Array(16);
+  crypto.getRandomValues(bytes);
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary);
+}
+
+function buildAppCsp(nonce: string): string {
+  const isProd = process.env.NODE_ENV === 'production';
+  // ⚠ 'strict-dynamic' 을 쓰지 않는다 — CI run 32310837353 실측: strict-dynamic 은 host 허용
+  //   ('self')을 꺼버리는데, Next 가 스트리밍 중 문서에 삽입(parser-inserted)하는 lazy chunk
+  //   <script src="/_next/static/chunks/…"> 태그 일부에 nonce 가 붙지 않아 앱이 전면 차단됐다
+  //   (e2e 3샤드 전체 red — "Loading the script … violates … Note that 'strict-dynamic' is
+  //   present, so host-based allowlisting is disabled"). 로컬 /login 검증은 초기 청크만 건드려
+  //   이 경로를 지나치지 않았다.
+  //   'self'+nonce 조합의 실효 방어는 이 앱에서 동등하다: 주입 inline <script> 는 nonce 가 없어
+  //   차단되고, 외부 호스트 스크립트는 'self' 가 차단하며, 같은 출처 업로드 파일을 script 로
+  //   로드하는 우회는 전역 X-Content-Type-Options: nosniff(비-JS MIME 실행 거부)가 차단한다.
+  const scriptSrc = isProd
+    ? `script-src 'self' 'nonce-${nonce}'`
+    : `script-src 'self' 'nonce-${nonce}' 'unsafe-eval'`;
+  const connectSrc = isProd ? `connect-src 'self'` : `connect-src 'self' ws: wss:`;
+  return (
+    `default-src 'self'; ${scriptSrc}; script-src-attr 'none'; ` +
+    `style-src 'self' 'unsafe-inline'; img-src 'self' https://images.unsplash.com blob: data:; ` +
+    `font-src 'self'; ${connectSrc}; object-src 'none'; base-uri 'self'; form-action 'self'; ` +
+    `frame-ancestors 'none'; report-uri /api/security/csp; report-to csp-endpoint;`
+  );
+}
+
+/** Atlas 전용 — Phase 2 정책(inline <script> 요소 허용 + inline 핸들러 차단). */
+const ATLAS_CSP =
+  `default-src 'self'; script-src 'self' 'unsafe-inline'; script-src-attr 'none'; ` +
+  `style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self'; ` +
+  `connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; ` +
+  `frame-ancestors 'none'; report-uri /api/security/csp; report-to csp-endpoint;`;
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
@@ -307,9 +370,42 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. 로그인 페이지, Next.js 자체 API Route(/api/auth/* 등), 정적 리소스 등은 라우트 보호 생략
-  if (pathname.startsWith('/login') || pathname.startsWith('/api') || pathname.startsWith('/images') || pathname.startsWith('/_next') || pathname === '/favicon.ico' || pathname === '/governance_harness_atlas.html') {
+  // 2-a. Atlas 정적 문서 — nonce 를 심을 수 없는 자체 inline <script> 문서라 Phase 2 정책을 유지한다.
+  if (pathname === '/governance_harness_atlas.html') {
+    const atlasResponse = NextResponse.next();
+    atlasResponse.headers.set('Content-Security-Policy', ATLAS_CSP);
+    return atlasResponse;
+  }
+
+  // 2-b. Next.js 자체 API Route(/api/auth/* 등)·정적 리소스 — 문서가 아니므로 CSP 불요.
+  if (pathname.startsWith('/api') || pathname.startsWith('/images') || pathname.startsWith('/_next') || pathname === '/favicon.ico') {
     return NextResponse.next();
+  }
+
+  // 여기부터는 HTML 문서 응답 경로다. 요청당 nonce 를 만들고 **요청 헤더**에 CSP 를 실어
+  // Next 가 자기 <script> 태그 전부에 nonce 를 붙이게 한 뒤, 응답 헤더에도 같은 정책을 단다.
+  const nonce = generateNonce();
+  const csp = buildAppCsp(nonce);
+  const withNonce = (response: NextResponse): NextResponse => {
+    response.headers.set('Content-Security-Policy', csp);
+    return response;
+  };
+  const nextWithCsp = (): NextResponse => {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('content-security-policy', csp);
+    // Next 의 자동 nonce 부착은 **Next 가 생성하는** <script> 에만 미친다. 앱/라이브러리가 직접
+    // 렌더하는 inline <script>(현재 next-themes 테마 초기화 1건)는 layout 이 headers() 로 이
+    // 값을 읽어 nonce prop 으로 넘겨야 한다 — 빠뜨리면 그 스크립트만 조용히 차단된다
+    // (2026-08-20 CI e2e 실측: sha256-J9cZ… 단일 해시 전 페이지 차단. "앱 소스에 inline
+    // <script> 0건" 전수 grep 은 라이브러리가 렌더하는 것을 보지 못했다).
+    // ⚠ set() 은 외부에서 실어 보낸 x-nonce 를 덮어쓴다 — 외부 주입값이 문서에 닿을 일은 없다.
+    requestHeaders.set('x-nonce', nonce);
+    return withNonce(NextResponse.next({ request: { headers: requestHeaders } }));
+  };
+
+  // 2-c. 로그인 페이지 — 라우트 보호는 생략하되 문서이므로 nonce CSP 는 적용한다.
+  if (pathname.startsWith('/login')) {
+    return nextWithCsp();
   }
 
   const accessToken = request.cookies.get('accessToken')?.value;
@@ -330,7 +426,8 @@ export async function proxy(request: NextRequest) {
   if (!userRole) {
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
-    const redirect = NextResponse.redirect(loginUrl);
+    // 리다이렉트는 문서를 렌더하지 않지만, 헤더 일관성을 위해 CSP 를 함께 싣는다.
+    const redirect = withNonce(NextResponse.redirect(loginUrl));
     redirect.headers.set('x-mw-auth', authDiag);
     return redirect;
   }
@@ -355,7 +452,7 @@ export async function proxy(request: NextRequest) {
       if (!isUserAccessible) {
         const fallbackUrl = new URL('/', request.url);
         fallbackUrl.searchParams.set('auth_error', 'unauthorized');
-        const denied = NextResponse.redirect(fallbackUrl);
+        const denied = withNonce(NextResponse.redirect(fallbackUrl));
         // 인증은 됐고 **권한**이 부족한 경우다. /login 리다이렉트와 구분돼야 진단이 성립한다.
         denied.headers.set('x-mw-auth', `${authDiag};deny=role`);
         return denied;
@@ -363,7 +460,7 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  const pass = NextResponse.next();
+  const pass = nextWithCsp();
   pass.headers.set('x-mw-auth', authDiag);
   return pass;
 }
