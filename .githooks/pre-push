@@ -37,6 +37,17 @@ else
   echo "[pre-push] ℹ 푸시 범위를 특정하지 못했습니다 — fast-pass 없이 전체 게이트를 실행합니다(안전측)."
 fi
 
+# Git은 hook 프로세스에 GIT_DIR/GIT_WORK_TREE 등의 저장소 로컬 환경을
+# 주입한다. 이를 하위 npm/pnpm/git 검사에 그대로 넘기면 별도 worktree나
+# 테스트용 임시 저장소가 현재 push 저장소로 오인될 수 있다. 변경 범위를
+# 계산한 뒤 Git이 공식적으로 열거한 로컬 변수만 제거하고 cwd 기반으로
+# 현재 worktree를 다시 발견하게 한다.
+GIT_LOCAL_ENV_VARS=$(git rev-parse --local-env-vars)
+for GIT_LOCAL_ENV_VAR in $GIT_LOCAL_ENV_VARS; do
+  unset "$GIT_LOCAL_ENV_VAR"
+done
+unset GIT_LOCAL_ENV_VARS GIT_LOCAL_ENV_VAR
+
 # Node 기반 운영 계약은 하나의 catalog runner가 소유한다. 새 *.test.mjs를 추가하면
 # 별도 훅 편집 없이 자동 편입되며, 문서-only fast-pass도 이 싼 계약을 통과한 뒤 종료한다.
 echo "  → governance: npm run test:operational-contracts"
