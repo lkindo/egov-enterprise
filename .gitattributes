@@ -25,6 +25,11 @@
 *.json text working-tree-encoding=UTF-8
 *.md text working-tree-encoding=UTF-8
 
+# Durable UI-quality summaries are byte-addressed. Keep checkout bytes identical
+# across Windows and CI so SHA-256 and committed Git blob readback cannot drift.
+config/ui-quality-baseline/** text working-tree-encoding=UTF-8 eol=lf
+config/ui-quality-baseline-index.json text working-tree-encoding=UTF-8 eol=lf
+
 # [2026-07-28 신설] 리눅스/컨테이너에서 실행되는 셸 스크립트는 반드시 LF 로 체크아웃한다.
 #   위의 `* text=auto` 만으로는 core.autocrlf=true 인 Windows 체크아웃에서 CRLF 가 되고,
 #   그러면 shebang 이 `#!/bin/sh\r` 로 읽혀 커널이 인터프리터를 찾지 못한다 → **exit 127**.

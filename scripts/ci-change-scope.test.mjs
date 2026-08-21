@@ -283,3 +283,17 @@ test('pre-push consumes the shared fail-closed classifier before its documentati
   assert.match(hook, /if \[ "\$SCOPE_BACKEND" = "true" \]; then/);
   assert.match(hook, /if \[ "\$SCOPE_FRONTEND" = "true" \] && \[ -f frontend\/package\.json \]; then/);
 });
+
+test('pre-push clears Git hook-local repository state before nested repository checks', () => {
+  const hook = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
+  const localEnvDiscovery = hook.indexOf('git rev-parse --local-env-vars');
+  const localEnvClear = hook.indexOf('unset "$GIT_LOCAL_ENV_VAR"');
+  const operationalGate = hook.indexOf('npm run test:operational-contracts');
+
+  assert.ok(localEnvDiscovery >= 0, 'pre-push must enumerate Git hook-local environment variables');
+  assert.ok(localEnvClear > localEnvDiscovery, 'pre-push must clear each Git hook-local variable');
+  assert.ok(
+    localEnvClear < operationalGate,
+    'Git hook-local state must be cleared before nested npm/pnpm/git repository checks',
+  );
+});

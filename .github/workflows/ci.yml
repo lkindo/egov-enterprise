@@ -5,7 +5,8 @@ on:
     branches: [main, master]
   # 모든 PR에 체크를 등록한다. base 필터는 스택 PR에 검증 자체가 없는 fail-open 경로를 만든다.
   pull_request:
-  # 커밋을 추가하지 않고도 전체 파이프라인을 재검증할 수 있다.
+  # 수동 진단 실행은 허용하되, immutable event base가 없는 durability required gate는
+  # 의도적으로 fail-closed하므로 병합 권위의 green을 대체할 수 없다.
   workflow_dispatch:
 
 permissions:
@@ -99,8 +100,15 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Install pinned operational contract dependencies
+        run: npm ci --ignore-scripts
+
       # 우회 가능한 로컬 훅에 의존하지 않도록 저장소 운영 계약을 required CI에서 다시 검증한다.
       - name: Verify repository operational contracts
+        env:
+          # PR/push 전체 변경 구간의 immutable base를 사용한다. 수동 실행에는
+          # 신뢰 가능한 predecessor가 없으므로 durability gate가 의도적으로 fail-closed한다.
+          UI_QUALITY_INDEX_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: npm run test:operational-contracts
 
       - name: Set up pnpm for Atlas contract
