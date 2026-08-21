@@ -24,6 +24,13 @@ const CREDENTIAL_LIKE = [
   /\b(?:\d{1,3}\.){3}\d{1,3}\b/u,
   /(?:^|[^A-Za-z0-9])[A-Za-z]:[\\/]/u,
 ];
+const GIT_LOCAL_ENVIRONMENT_KEYS = Object.freeze([
+  'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_CONFIG', 'GIT_CONFIG_PARAMETERS',
+  'GIT_CONFIG_COUNT', 'GIT_OBJECT_DIRECTORY', 'GIT_DIR', 'GIT_WORK_TREE',
+  'GIT_IMPLICIT_WORK_TREE', 'GIT_GRAFT_FILE', 'GIT_INDEX_FILE',
+  'GIT_NO_REPLACE_OBJECTS', 'GIT_REPLACE_REF_BASE', 'GIT_PREFIX',
+  'GIT_SHALLOW_FILE', 'GIT_COMMON_DIR',
+]);
 const R12_SCENARIO_STATE_COUNTS = Object.freeze({
   'auth-login': 12,
   'admin-shell-hub': 6,
@@ -864,9 +871,12 @@ export function evaluateDurableEvidence({
 }
 
 function gitOutput(repoRoot, args, encoding = 'utf8') {
+  const environment = { ...process.env };
+  for (const key of GIT_LOCAL_ENVIRONMENT_KEYS) delete environment[key];
   return execFileSync('git', args, {
     cwd: repoRoot,
     encoding,
+    env: environment,
     stdio: ['ignore', 'pipe', 'ignore'],
     windowsHide: true,
   });

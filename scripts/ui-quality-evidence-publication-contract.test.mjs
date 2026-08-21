@@ -29,10 +29,21 @@ import {
   verifyDurableEvidenceFromRepository,
 } from './ui-quality-evidence-durability.mjs';
 
+const GIT_LOCAL_ENVIRONMENT_KEYS = [
+  'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_CONFIG', 'GIT_CONFIG_PARAMETERS',
+  'GIT_CONFIG_COUNT', 'GIT_OBJECT_DIRECTORY', 'GIT_DIR', 'GIT_WORK_TREE',
+  'GIT_IMPLICIT_WORK_TREE', 'GIT_GRAFT_FILE', 'GIT_INDEX_FILE',
+  'GIT_NO_REPLACE_OBJECTS', 'GIT_REPLACE_REF_BASE', 'GIT_PREFIX',
+  'GIT_SHALLOW_FILE', 'GIT_COMMON_DIR',
+];
+
 function runGit(root, args) {
+  const environment = { ...process.env };
+  for (const key of GIT_LOCAL_ENVIRONMENT_KEYS) delete environment[key];
   return execFileSync('git', args, {
     cwd: root,
     encoding: 'utf8',
+    env: environment,
     windowsHide: true,
     stdio: ['ignore', 'pipe', 'pipe'],
   }).trim();
@@ -583,6 +594,40 @@ test('repository publication is durable only after committed readback and never 
 test('current repository enforces the append-only index against the CI event base', () => {
   const repoRoot = fileURLToPath(new URL('..', import.meta.url));
   assert.doesNotThrow(() => assertRepositoryIndexAppendOnly({ repoRoot }));
+});
+
+test('an explicit repository root ignores inherited Git hook repository state', () => {
+  const root = mkdtempSync(join(tmpdir(), 'ui-quality-publication-git-env-'));
+  const inherited = new Map([
+    ['GIT_DIR', process.env.GIT_DIR],
+    ['GIT_WORK_TREE', process.env.GIT_WORK_TREE],
+  ]);
+  try {
+    runGit(root, ['init']);
+    runGit(root, ['config', 'user.email', 'ui-quality-contract@example.invalid']);
+    runGit(root, ['config', 'user.name', 'UI Quality Contract']);
+    writeCanonicalIndex(root, fixtureIndex([]));
+    runGit(root, ['add', 'config/ui-quality-baseline-index.json']);
+    runGit(root, ['commit', '-m', 'prepared isolated index']);
+
+    const outerRoot = fileURLToPath(new URL('..', import.meta.url));
+    process.env.GIT_DIR = execFileSync('git', ['rev-parse', '--absolute-git-dir'], {
+      cwd: outerRoot,
+      encoding: 'utf8',
+      windowsHide: true,
+    }).trim();
+    process.env.GIT_WORK_TREE = outerRoot;
+    assert.doesNotThrow(() => assertRepositoryIndexAppendOnly({
+      repoRoot: root,
+      previousRevision: 'HEAD',
+    }));
+  } finally {
+    for (const [key, value] of inherited) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+    rmSync(root, { recursive: true, force: true });
+  }
 });
 
 test('baseline index history is an exact append-only prefix', () => {
