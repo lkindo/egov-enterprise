@@ -580,6 +580,11 @@ test('repository publication is durable only after committed readback and never 
   });
 });
 
+test('current repository enforces the append-only index against the CI event base', () => {
+  const repoRoot = fileURLToPath(new URL('..', import.meta.url));
+  assert.doesNotThrow(() => assertRepositoryIndexAppendOnly({ repoRoot }));
+});
+
 test('baseline index history is an exact append-only prefix', () => {
   const empty = {
     schemaVersion: 1,
