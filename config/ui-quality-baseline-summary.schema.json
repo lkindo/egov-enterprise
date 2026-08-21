@@ -1,0 +1,764 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "config/ui-quality-baseline-summary.schema.json",
+  "title": "UI quality r12 automated-only compact summary",
+  "$comment": "Closed structural allowlist for the r12 automated-only compact summary. Canonical bytes are UTF-8 without BOM, recursively key-sorted compact JSON, followed by exactly one LF. scripts/ui-quality-evidence-durability.mjs is authoritative for canonical-byte verification, credential-like value rejection, cross-field recomputation, source-inventory readback, performance-stat ordering, and digest or cross-file equality. artifactDigest and Git blob identity are index-only and intentionally absent here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "evidenceKind",
+    "baselineRunId",
+    "evidenceScope",
+    "provenance",
+    "sourceInventory",
+    "automated",
+    "diagnostics",
+    "manual",
+    "redaction",
+    "limitations",
+    "promotion"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "evidenceKind": { "const": "ui-quality-baseline-compact-summary" },
+    "baselineRunId": { "const": "r12" },
+    "evidenceScope": { "const": "automated-only" },
+    "provenance": { "$ref": "#/$defs/provenance" },
+    "sourceInventory": { "$ref": "#/$defs/sourceInventory" },
+    "automated": { "$ref": "#/$defs/automated" },
+    "diagnostics": { "$ref": "#/$defs/diagnostics" },
+    "manual": { "$ref": "#/$defs/manual" },
+    "redaction": { "$ref": "#/$defs/redaction" },
+    "limitations": {
+      "type": "array",
+      "uniqueItems": true
+    },
+    "promotion": { "$ref": "#/$defs/promotion" }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "redaction": {
+            "properties": {
+              "status": { "const": "automated-privacy-guard-passed-human-review-pending" }
+            },
+            "required": ["status"]
+          }
+        },
+        "required": ["redaction"]
+      },
+      "then": {
+        "properties": {
+          "promotion": {
+            "properties": {
+              "blockerCodes": { "$ref": "#/$defs/pendingBlockers" }
+            }
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "promotion": {
+            "properties": {
+              "blockerCodes": { "$ref": "#/$defs/approvedBlockers" }
+            }
+          }
+        }
+      }
+    },
+    {
+      "oneOf": [
+        {
+          "properties": {
+            "provenance": {
+              "properties": {
+                "toolingHashStatus": { "const": "retrospective-protocol-record-current-bytes-match" }
+              }
+            },
+            "redaction": {
+              "properties": {
+                "status": { "const": "automated-privacy-guard-passed-human-review-pending" }
+              }
+            },
+            "limitations": { "$ref": "#/$defs/pendingLimitations" }
+          }
+        },
+        {
+          "properties": {
+            "provenance": {
+              "properties": {
+                "toolingHashStatus": { "const": "retrospective-protocol-record-current-bytes-match" }
+              }
+            },
+            "redaction": {
+              "properties": {
+                "status": { "const": "approved" }
+              }
+            },
+            "limitations": { "$ref": "#/$defs/approvedLimitations" }
+          }
+        },
+        {
+          "properties": {
+            "provenance": {
+              "properties": {
+                "toolingHashStatus": { "const": "retrospective-protocol-record-current-bytes-drifted" }
+              }
+            },
+            "redaction": {
+              "properties": {
+                "status": { "const": "automated-privacy-guard-passed-human-review-pending" }
+              }
+            },
+            "limitations": { "$ref": "#/$defs/driftedPendingLimitations" }
+          }
+        },
+        {
+          "properties": {
+            "provenance": {
+              "properties": {
+                "toolingHashStatus": { "const": "retrospective-protocol-record-current-bytes-drifted" }
+              }
+            },
+            "redaction": {
+              "properties": {
+                "status": { "const": "approved" }
+              }
+            },
+            "limitations": { "$ref": "#/$defs/driftedApprovedLimitations" }
+          }
+        }
+      ]
+    }
+  ],
+  "$defs": {
+    "sha1": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "sha256ImageId": {
+      "type": "string",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "utcInstant": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$"
+    },
+    "scenarioId": {
+      "enum": [
+        "auth-login",
+        "admin-shell-hub",
+        "dense-user-logs",
+        "user-management-hub",
+        "board-article-composer",
+        "faq-admin-user-lifecycle",
+        "board-maker-wizard",
+        "first-use-onboarding"
+      ]
+    },
+    "taskEvidenceId": {
+      "enum": [
+        "role-status-mutation-readback-executed",
+        "synthetic-role-status-rollback-complete",
+        "faq-authoritative-save-readback",
+        "admin-created-faq-readback",
+        "cross-role-created-answer-readback",
+        "single-deploy-authoritative-readback"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolVersion",
+        "protocolHash",
+        "protocolHashStatus",
+        "runnerVersion",
+        "buildSha",
+        "executionScenarioManifestHash",
+        "executionPlanHash",
+        "executionPlanHashStatus",
+        "routeTruthHash",
+        "privacyRuleHash",
+        "buildInputTreeHash",
+        "dirtyBuildInputDiffHash",
+        "runnerHash",
+        "coreHash",
+        "runnerContractHash",
+        "scenarioContractHash",
+        "toolingHashStatus",
+        "startedAt",
+        "finishedAt",
+        "frontendBuildId",
+        "backendBuildId",
+        "finishVerificationScenarioCount"
+      ],
+      "properties": {
+        "protocolVersion": { "const": 1 },
+        "protocolHash": { "type": "null" },
+        "protocolHashStatus": { "const": "not-recorded-in-r12" },
+        "runnerVersion": { "const": 1 },
+        "buildSha": { "const": "c9d07f260a3c41161362ceef444188fddeaa11bf" },
+        "executionScenarioManifestHash": { "const": "c4e6142f1dafe66cdcc274e36048d2e20b1461e657b40f4a27c5e0b7a1f301ff" },
+        "executionPlanHash": { "const": "573ad03186dd630e3ab86dcd6f125b2578628a475dad36ebaad591d61ead6927" },
+        "executionPlanHashStatus": {
+          "const": "retrospective-current-plan-matched-r12-snapshots"
+        },
+        "routeTruthHash": { "const": "8956fb5dee0d42b4eaf704e145cb51db4703fc69ebca3e9436ad2085fd263b6e" },
+        "privacyRuleHash": {
+          "const": "efd981ddde3b84363c15893d333810821e1be79cc239c23af852c359c8e2ed86"
+        },
+        "buildInputTreeHash": { "const": "5ebb43f59773661c65df645f9da3c0ebe0a9af1cef93b046a3a56c4707cd9c05" },
+        "dirtyBuildInputDiffHash": { "const": "929b3b571c10dfc7f8f5d5606a441e7da478e21e9b04ebd417b72037cdc14a0e" },
+        "runnerHash": { "const": "66092706a07b4903fadcd6c26be34166434f3d21389956e807ada66679dcc712" },
+        "coreHash": { "const": "ec41b33fdfef10f927bbd7c3f37b413144a7d8a9fcb3ce729dc6134d5dae196a" },
+        "runnerContractHash": { "const": "704e2bab956995a8b7ba9b36be8ac5830636cae30d658ea59f9a381a5c16e173" },
+        "scenarioContractHash": { "const": "5c6ce3b5997e6dab2d06749393659bd634f6546828ba34106f87b0dbe65c0a13" },
+        "toolingHashStatus": {
+          "const": "retrospective-protocol-record-current-bytes-drifted"
+        },
+        "startedAt": { "const": "2026-08-21T08:03:03.803Z" },
+        "finishedAt": { "const": "2026-08-21T08:13:41.730Z" },
+        "frontendBuildId": { "const": "sha256:999534250148a783f17ea98041d040df8e36931eb128d2b1b386a278a2fdd804" },
+        "backendBuildId": { "const": "sha256:70f8042a67c61db857a8524ddf5e8919d5c821e312f1db37adfb269c8729fd59" },
+        "finishVerificationScenarioCount": { "const": 8 }
+      }
+    },
+    "sourceInventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "aggregateAlgorithm",
+        "inventoryDigest",
+        "automatedInventoryDigest",
+        "diagnosticInventoryDigest",
+        "jsonFileCount",
+        "automatedJsonFileCount",
+        "diagnosticJsonFileCount",
+        "totalBytes",
+        "nonJsonFileCount",
+        "symlinkCount"
+      ],
+      "properties": {
+        "aggregateAlgorithm": { "const": "sha256-json-sorted-content-digests-v1" },
+        "inventoryDigest": { "const": "2a4f890de0f5ff79e0f66cb3dbc042982a25e2eed7c330fe81104d1a46d91328" },
+        "automatedInventoryDigest": { "const": "071bcd42f36e5bdf79110c3a954a9fcb2a38d270fd92d02162e9540fac230d39" },
+        "diagnosticInventoryDigest": { "const": "1cf2b8bf1059248dad0df29a6101196766aa34cdb13d04b75db44b8b7fc8dfb6" },
+        "jsonFileCount": { "const": 290 },
+        "automatedJsonFileCount": { "const": 282 },
+        "diagnosticJsonFileCount": { "const": 8 },
+        "totalBytes": { "const": 4727118 },
+        "nonJsonFileCount": { "const": 0 },
+        "symlinkCount": { "const": 0 }
+      }
+    },
+    "automated": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenarioCount",
+        "renderCaseCount",
+        "plannedStateCaseCount",
+        "observedStateCaseCount",
+        "invalidStateCaseCount",
+        "plannedPerformanceCaseCount",
+        "observedPerformanceCaseCount",
+        "invalidPerformanceCaseCount",
+        "performanceConditionRunCount",
+        "assertionCount",
+        "passedAssertionCount",
+        "failedAssertionCount",
+        "mutationRequiredCaseCount",
+        "mutationExecutedCaseCount",
+        "mutationReadbackCaseCount",
+        "mutationRollbackCaseCount",
+        "mutationCleanupCaseCount",
+        "activeMutationResidueCount",
+        "nonMutationEmptyEvidenceCaseCount",
+        "axeViolationCaseCount",
+        "axeViolationNodeCount",
+        "horizontalOverflowCaseCount",
+        "findingCount",
+        "stateCases",
+        "scenarios",
+        "performance"
+      ],
+      "properties": {
+        "scenarioCount": { "const": 8 },
+        "renderCaseCount": { "const": 48 },
+        "plannedStateCaseCount": { "const": 96 },
+        "observedStateCaseCount": { "const": 96 },
+        "invalidStateCaseCount": { "const": 0 },
+        "plannedPerformanceCaseCount": { "const": 48 },
+        "observedPerformanceCaseCount": { "const": 48 },
+        "invalidPerformanceCaseCount": { "const": 0 },
+        "performanceConditionRunCount": { "const": 288 },
+        "assertionCount": { "const": 156 },
+        "passedAssertionCount": { "const": 156 },
+        "failedAssertionCount": { "const": 0 },
+        "mutationRequiredCaseCount": { "const": 36 },
+        "mutationExecutedCaseCount": { "const": 36 },
+        "mutationReadbackCaseCount": { "const": 36 },
+        "mutationRollbackCaseCount": { "const": 36 },
+        "mutationCleanupCaseCount": { "const": 36 },
+        "activeMutationResidueCount": { "const": 0 },
+        "nonMutationEmptyEvidenceCaseCount": { "const": 60 },
+        "axeViolationCaseCount": { "const": 0 },
+        "axeViolationNodeCount": { "const": 0 },
+        "horizontalOverflowCaseCount": { "const": 0 },
+        "findingCount": { "const": 0 },
+        "stateCases": { "$ref": "#/$defs/stateCases" },
+        "scenarios": { "$ref": "#/$defs/scenarios" },
+        "performance": { "$ref": "#/$defs/performanceCases" }
+      }
+    },
+    "stateCases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/stateCase" },
+      "minItems": 96,
+      "maxItems": 96,
+      "uniqueItems": true
+    },
+    "stateCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "caseId",
+        "scenarioId",
+        "status",
+        "automatedOutcome",
+        "assertionCount",
+        "passedAssertionCount",
+        "failedAssertionCount",
+        "axeViolationCount",
+        "horizontalOverflowPx",
+        "findingCount",
+        "requiredTaskEvidenceId",
+        "taskEvidenceComplete"
+      ],
+      "properties": {
+        "caseId": { "type": "string", "pattern": "^uiq-[0-9a-f]{20}$" },
+        "scenarioId": { "$ref": "#/$defs/scenarioId" },
+        "status": { "const": "automated-state-observed" },
+        "automatedOutcome": { "const": "no-automated-finding-observed" },
+        "assertionCount": { "type": "integer", "minimum": 0 },
+        "passedAssertionCount": { "type": "integer", "minimum": 0 },
+        "failedAssertionCount": { "const": 0 },
+        "axeViolationCount": { "const": 0 },
+        "horizontalOverflowPx": { "const": 0 },
+        "findingCount": { "const": 0 },
+        "requiredTaskEvidenceId": {
+          "oneOf": [
+            { "$ref": "#/$defs/taskEvidenceId" },
+            { "type": "null" }
+          ]
+        },
+        "taskEvidenceComplete": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "requiredTaskEvidenceId": { "type": "null" }
+            },
+            "required": ["requiredTaskEvidenceId"]
+          },
+          "then": {
+            "properties": {
+              "taskEvidenceComplete": { "const": false }
+            }
+          },
+          "else": {
+            "properties": {
+              "taskEvidenceComplete": { "const": true }
+            }
+          }
+        }
+      ]
+    },
+    "scenarios": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/scenario" },
+      "minItems": 8,
+      "maxItems": 8,
+      "uniqueItems": true,
+      "allOf": [
+        { "$ref": "#/$defs/hasAuthLoginScenario" },
+        { "$ref": "#/$defs/hasAdminShellHubScenario" },
+        { "$ref": "#/$defs/hasDenseUserLogsScenario" },
+        { "$ref": "#/$defs/hasUserManagementHubScenario" },
+        { "$ref": "#/$defs/hasBoardArticleComposerScenario" },
+        { "$ref": "#/$defs/hasFaqAdminUserLifecycleScenario" },
+        { "$ref": "#/$defs/hasBoardMakerWizardScenario" },
+        { "$ref": "#/$defs/hasFirstUseOnboardingScenario" }
+      ]
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenarioId",
+        "plannedStateCaseCount",
+        "observedStateCaseCount",
+        "invalidStateCaseCount",
+        "plannedPerformanceCaseCount",
+        "observedPerformanceCaseCount",
+        "invalidPerformanceCaseCount",
+        "axeViolationCaseCount",
+        "failedAssertionCaseCount",
+        "status"
+      ],
+      "properties": {
+        "scenarioId": { "$ref": "#/$defs/scenarioId" },
+        "plannedStateCaseCount": { "enum": [6, 12, 18] },
+        "observedStateCaseCount": { "enum": [6, 12, 18] },
+        "invalidStateCaseCount": { "const": 0 },
+        "plannedPerformanceCaseCount": { "const": 6 },
+        "observedPerformanceCaseCount": { "const": 6 },
+        "invalidPerformanceCaseCount": { "const": 0 },
+        "axeViolationCaseCount": { "const": 0 },
+        "failedAssertionCaseCount": { "const": 0 },
+        "status": { "const": "partial-automated-evidence" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "scenarioId": { "enum": ["admin-shell-hub", "first-use-onboarding"] }
+            },
+            "required": ["scenarioId"]
+          },
+          "then": {
+            "properties": {
+              "plannedStateCaseCount": { "const": 6 },
+              "observedStateCaseCount": { "const": 6 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "scenarioId": { "enum": ["dense-user-logs", "faq-admin-user-lifecycle"] }
+            },
+            "required": ["scenarioId"]
+          },
+          "then": {
+            "properties": {
+              "plannedStateCaseCount": { "const": 18 },
+              "observedStateCaseCount": { "const": 18 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "scenarioId": {
+                "enum": [
+                  "auth-login",
+                  "user-management-hub",
+                  "board-article-composer",
+                  "board-maker-wizard"
+                ]
+              }
+            },
+            "required": ["scenarioId"]
+          },
+          "then": {
+            "properties": {
+              "plannedStateCaseCount": { "const": 12 },
+              "observedStateCaseCount": { "const": 12 }
+            }
+          }
+        }
+      ]
+    },
+    "hasAuthLoginScenario": {
+      "contains": { "properties": { "scenarioId": { "const": "auth-login" } }, "required": ["scenarioId"] },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "hasAdminShellHubScenario": {
+      "contains": { "properties": { "scenarioId": { "const": "admin-shell-hub" } }, "required": ["scenarioId"] },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "hasDenseUserLogsScenario": {
+      "contains": { "properties": { "scenarioId": { "const": "dense-user-logs" } }, "required": ["scenarioId"] },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "hasUserManagementHubScenario": {
+      "contains": { "properties": { "scenarioId": { "const": "user-management-hub" } }, "required": ["scenarioId"] },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "hasBoardArticleComposerScenario": {
+      "contains": { "properties": { "scenarioId": { "const": "board-article-composer" } }, "required": ["scenarioId"] },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "hasFaqAdminUserLifecycleScenario": {
+      "contains": { "properties": { "scenarioId": { "const": "faq-admin-user-lifecycle" } }, "required": ["scenarioId"] },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "hasBoardMakerWizardScenario": {
+      "contains": { "properties": { "scenarioId": { "const": "board-maker-wizard" } }, "required": ["scenarioId"] },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "hasFirstUseOnboardingScenario": {
+      "contains": { "properties": { "scenarioId": { "const": "first-use-onboarding" } }, "required": ["scenarioId"] },
+      "minContains": 1,
+      "maxContains": 1
+    },
+    "performanceCases": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/performanceCase" },
+      "minItems": 48,
+      "maxItems": 48,
+      "uniqueItems": true
+    },
+    "performanceCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["renderCaseId", "scenarioId", "status", "cold", "warm"],
+      "properties": {
+        "renderCaseId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*(?:--[a-z0-9][a-z0-9-]*){3}$"
+        },
+        "scenarioId": { "$ref": "#/$defs/scenarioId" },
+        "status": { "const": "lab-performance-observed" },
+        "cold": { "$ref": "#/$defs/performanceCondition" },
+        "warm": { "$ref": "#/$defs/performanceCondition" }
+      }
+    },
+    "performanceCondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["routeJsTransferBytes", "lcpMs", "cls", "readinessLatencyProxyMs"],
+      "properties": {
+        "routeJsTransferBytes": { "$ref": "#/$defs/performanceStats" },
+        "lcpMs": { "$ref": "#/$defs/performanceStats" },
+        "cls": { "$ref": "#/$defs/performanceStats" },
+        "readinessLatencyProxyMs": { "$ref": "#/$defs/performanceStats" }
+      }
+    },
+    "performanceStats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "median", "maximum", "medianAbsoluteDeviation"],
+      "properties": {
+        "minimum": { "type": "number", "minimum": 0 },
+        "median": { "type": "number", "minimum": 0 },
+        "maximum": { "type": "number", "minimum": 0 },
+        "medianAbsoluteDeviation": { "type": "number", "minimum": 0 }
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidenceKind",
+        "plannedCaseCount",
+        "completedCaseCount",
+        "invalidCaseCount",
+        "mutationEvidenceCount",
+        "activeMutationResidueCount"
+      ],
+      "properties": {
+        "evidenceKind": { "const": "diagnostic-not-baseline-evidence" },
+        "plannedCaseCount": { "const": 6 },
+        "completedCaseCount": { "const": 6 },
+        "invalidCaseCount": { "const": 0 },
+        "mutationEvidenceCount": { "const": 6 },
+        "activeMutationResidueCount": { "const": 0 }
+      }
+    },
+    "manual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredEvidenceCount",
+        "completedEvidenceCount",
+        "reviewRequiredCount",
+        "blockedExternalCount",
+        "status"
+      ],
+      "properties": {
+        "requiredEvidenceCount": { "const": 48 },
+        "completedEvidenceCount": { "const": 0 },
+        "reviewRequiredCount": { "const": 40 },
+        "blockedExternalCount": { "const": 8 },
+        "status": { "const": "not-collected" }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "automatedGuardStatus",
+        "scannedJsonFileCount",
+        "unsafeFileCount",
+        "rawTraceStoredCount",
+        "responsePayloadStoredCount",
+        "humanReviewCompletedCount",
+        "humanReviewPendingCount",
+        "reviewQuorum",
+        "approvedByRoles",
+        "status"
+      ],
+      "properties": {
+        "automatedGuardStatus": { "const": "passed" },
+        "scannedJsonFileCount": { "const": 290 },
+        "unsafeFileCount": { "const": 0 },
+        "rawTraceStoredCount": { "const": 0 },
+        "responsePayloadStoredCount": { "const": 0 },
+        "humanReviewCompletedCount": { "enum": [0, 8] },
+        "humanReviewPendingCount": { "enum": [0, 8] },
+        "reviewQuorum": { "const": 1 },
+        "approvedByRoles": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "quality-engineering",
+              "repository-governance"
+            ]
+          },
+          "maxItems": 2,
+          "uniqueItems": true
+        },
+        "status": {
+          "enum": [
+            "automated-privacy-guard-passed-human-review-pending",
+            "approved"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": { "const": "automated-privacy-guard-passed-human-review-pending" }
+            },
+            "required": ["status"]
+          },
+          "then": {
+            "properties": {
+              "humanReviewCompletedCount": { "const": 0 },
+              "humanReviewPendingCount": { "const": 8 },
+              "approvedByRoles": {
+                "maxItems": 0
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "status": { "const": "approved" },
+              "humanReviewCompletedCount": { "const": 8 },
+              "humanReviewPendingCount": { "const": 0 },
+              "approvedByRoles": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "pendingLimitations": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "raw-artifact-was-unversioned-before-compaction" },
+        { "const": "protocol-hash-not-captured-at-run" },
+        { "const": "tooling-hashes-not-recorded-in-raw-artifact" },
+        { "const": "human-redaction-review-pending" },
+        { "const": "manual-evidence-not-collected" }
+      ],
+      "items": false,
+      "minItems": 5,
+      "maxItems": 5,
+      "uniqueItems": true
+    },
+    "approvedLimitations": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "raw-artifact-was-unversioned-before-compaction" },
+        { "const": "protocol-hash-not-captured-at-run" },
+        { "const": "tooling-hashes-not-recorded-in-raw-artifact" },
+        { "const": "manual-evidence-not-collected" }
+      ],
+      "items": false,
+      "minItems": 4,
+      "maxItems": 4,
+      "uniqueItems": true
+    },
+    "driftedPendingLimitations": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "raw-artifact-was-unversioned-before-compaction" },
+        { "const": "protocol-hash-not-captured-at-run" },
+        { "const": "tooling-hashes-not-recorded-in-raw-artifact" },
+        { "const": "current-tooling-drifted-after-r12" },
+        { "const": "human-redaction-review-pending" },
+        { "const": "manual-evidence-not-collected" }
+      ],
+      "items": false,
+      "minItems": 6,
+      "maxItems": 6,
+      "uniqueItems": true
+    },
+    "driftedApprovedLimitations": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "raw-artifact-was-unversioned-before-compaction" },
+        { "const": "protocol-hash-not-captured-at-run" },
+        { "const": "tooling-hashes-not-recorded-in-raw-artifact" },
+        { "const": "current-tooling-drifted-after-r12" },
+        { "const": "manual-evidence-not-collected" }
+      ],
+      "items": false,
+      "minItems": 5,
+      "maxItems": 5,
+      "uniqueItems": true
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "eligible", "blockerCodes"],
+      "properties": {
+        "status": { "const": "partial-automated-evidence" },
+        "eligible": { "const": false },
+        "blockerCodes": { "type": "array", "uniqueItems": true }
+      }
+    },
+    "pendingBlockers": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "manual-at-evidence" },
+        { "const": "redaction-review" }
+      ],
+      "items": false,
+      "minItems": 2,
+      "maxItems": 2,
+      "uniqueItems": true
+    },
+    "approvedBlockers": {
+      "type": "array",
+      "prefixItems": [
+        { "const": "manual-at-evidence" }
+      ],
+      "items": false,
+      "minItems": 1,
+      "maxItems": 1,
+      "uniqueItems": true
+    }
+  }
+}

@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "decisionId": "PD-UIQ-001",
+  "status": "accepted",
+  "storeMode": "versioned-compact-summary",
+  "artifactProvider": "git-tracked-versioned-file-with-git-blob-identity-and-sha256-readback",
+  "retentionDays": 3650,
+  "readers": [
+    "public"
+  ],
+  "publishers": [
+    "repository-maintainer-via-main-required-ci"
+  ],
+  "trackedIndexPath": "config/ui-quality-baseline-index.json",
+  "indexSchema": {
+    "summaryPathTemplate": "config/ui-quality-baseline/summaries/sha256-{artifactDigest}.json",
+    "requiredFields": [
+      "schemaVersion",
+      "baselineRunId",
+      "evidenceScope",
+      "buildSha",
+      "protocolVersion",
+      "protocolHash",
+      "protocolHashStatus",
+      "buildInputTreeHash",
+      "dirtyBuildInputDiffHash",
+      "executionScenarioManifestHash",
+      "executionPlanHash",
+      "runnerHash",
+      "coreHash",
+      "runnerContractHash",
+      "scenarioContractHash",
+      "routeTruthHash",
+      "privacyRuleHash",
+      "sourceArtifactAggregateDigest",
+      "artifactDigest",
+      "jsonFileCount",
+      "automatedJsonFileCount",
+      "diagnosticJsonFileCount",
+      "manualEvidenceCount",
+      "mediaType",
+      "immutableObjectIdentity",
+      "createdAt",
+      "retentionExpiry",
+      "redactionStatus",
+      "status",
+      "supersedes"
+    ]
+  },
+  "redactionReviewers": {
+    "roles": [
+      "quality-engineering",
+      "repository-governance"
+    ],
+    "quorum": 1,
+    "reReviewWhen": [
+      "summary-schema-change",
+      "source-evidence-digest-change",
+      "privacy-rule-change",
+      "manual-evidence-addition",
+      "allowlist-expansion"
+    ]
+  },
+  "replacementPolicy": {
+    "mode": "append-new-digest-and-supersedes",
+    "currentPointer": "currentDigest",
+    "overwriteExistingSummary": false,
+    "requireExactPredecessor": true
+  },
+  "expiryAndLegalHold": {
+    "automaticDeletion": false,
+    "minimumRetentionDays": 3650,
+    "expiryAction": "explicit-governance-approval-and-append-tombstone",
+    "legalHoldAction": "block-removal-and-history-rewrite",
+    "providerWormClaimed": false
+  }
+}

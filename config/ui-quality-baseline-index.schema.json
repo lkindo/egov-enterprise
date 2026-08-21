@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "config/ui-quality-baseline-index.schema.json",
+  "title": "UI quality durable compact summary index",
+  "$comment": "The exact prepared state is currentDigest=null with entries=[]. A pending-redaction summary is a local candidate only and cannot appear in this index; every indexed entry is approved and published. scripts/ui-quality-evidence-durability.mjs is authoritative for canonical summary SHA-256 equality, summary-to-entry field equality, committed Git blob readback, exact createdAt+3650-day retention arithmetic, digest and blob-identity uniqueness, currentDigest equality with the last entry, and the exact append-only supersedes chain because those cross-value and cross-file constraints are not expressible completely in portable JSON Schema.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "decisionId",
+    "storeMode",
+    "currentDigest",
+    "entries"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "decisionId": { "const": "PD-UIQ-001" },
+    "storeMode": { "const": "versioned-compact-summary" },
+    "currentDigest": {
+      "oneOf": [
+        { "$ref": "#/$defs/sha256" },
+        { "type": "null" }
+      ]
+    },
+    "entries": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/indexEntry" },
+      "uniqueItems": true
+    }
+  },
+  "oneOf": [
+    {
+      "properties": {
+        "currentDigest": { "type": "null" },
+        "entries": { "maxItems": 0 }
+      }
+    },
+    {
+      "properties": {
+        "currentDigest": { "$ref": "#/$defs/sha256" },
+        "entries": { "minItems": 1 }
+      }
+    }
+  ],
+  "$defs": {
+    "sha1": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "utcInstant": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$"
+    },
+    "indexEntry": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schemaVersion",
+        "baselineRunId",
+        "evidenceScope",
+        "buildSha",
+        "protocolVersion",
+        "protocolHash",
+        "protocolHashStatus",
+        "buildInputTreeHash",
+        "dirtyBuildInputDiffHash",
+        "executionScenarioManifestHash",
+        "executionPlanHash",
+        "runnerHash",
+        "coreHash",
+        "runnerContractHash",
+        "scenarioContractHash",
+        "routeTruthHash",
+        "privacyRuleHash",
+        "sourceArtifactAggregateDigest",
+        "artifactDigest",
+        "jsonFileCount",
+        "automatedJsonFileCount",
+        "diagnosticJsonFileCount",
+        "manualEvidenceCount",
+        "mediaType",
+        "immutableObjectIdentity",
+        "createdAt",
+        "retentionExpiry",
+        "redactionStatus",
+        "status",
+        "supersedes"
+      ],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "baselineRunId": { "const": "r12" },
+        "evidenceScope": { "const": "automated-only" },
+        "buildSha": { "const": "c9d07f260a3c41161362ceef444188fddeaa11bf" },
+        "protocolVersion": { "const": 1 },
+        "protocolHash": { "type": "null" },
+        "protocolHashStatus": { "const": "not-recorded-in-r12" },
+        "buildInputTreeHash": { "const": "5ebb43f59773661c65df645f9da3c0ebe0a9af1cef93b046a3a56c4707cd9c05" },
+        "dirtyBuildInputDiffHash": { "const": "929b3b571c10dfc7f8f5d5606a441e7da478e21e9b04ebd417b72037cdc14a0e" },
+        "executionScenarioManifestHash": { "const": "c4e6142f1dafe66cdcc274e36048d2e20b1461e657b40f4a27c5e0b7a1f301ff" },
+        "executionPlanHash": { "const": "573ad03186dd630e3ab86dcd6f125b2578628a475dad36ebaad591d61ead6927" },
+        "runnerHash": { "const": "66092706a07b4903fadcd6c26be34166434f3d21389956e807ada66679dcc712" },
+        "coreHash": { "const": "ec41b33fdfef10f927bbd7c3f37b413144a7d8a9fcb3ce729dc6134d5dae196a" },
+        "runnerContractHash": { "const": "704e2bab956995a8b7ba9b36be8ac5830636cae30d658ea59f9a381a5c16e173" },
+        "scenarioContractHash": { "const": "5c6ce3b5997e6dab2d06749393659bd634f6546828ba34106f87b0dbe65c0a13" },
+        "routeTruthHash": { "const": "8956fb5dee0d42b4eaf704e145cb51db4703fc69ebca3e9436ad2085fd263b6e" },
+        "privacyRuleHash": {
+          "const": "efd981ddde3b84363c15893d333810821e1be79cc239c23af852c359c8e2ed86"
+        },
+        "sourceArtifactAggregateDigest": { "const": "2a4f890de0f5ff79e0f66cb3dbc042982a25e2eed7c330fe81104d1a46d91328" },
+        "artifactDigest": { "$ref": "#/$defs/sha256" },
+        "jsonFileCount": { "const": 1 },
+        "automatedJsonFileCount": { "const": 282 },
+        "diagnosticJsonFileCount": { "const": 8 },
+        "manualEvidenceCount": { "const": 0 },
+        "mediaType": { "const": "application/vnd.egov.ui-quality-baseline-summary+json" },
+        "immutableObjectIdentity": {
+          "type": "string",
+          "pattern": "^git-blob-sha1:[0-9a-f]{40}$"
+        },
+        "createdAt": { "$ref": "#/$defs/utcInstant" },
+        "retentionExpiry": { "$ref": "#/$defs/utcInstant" },
+        "redactionStatus": { "const": "approved" },
+        "status": { "const": "published" },
+        "supersedes": {
+          "oneOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        }
+      }
+    }
+  }
+}

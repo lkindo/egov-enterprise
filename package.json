@@ -41,5 +41,8 @@
   "dependencies": {
     "cross-env": "^7.0.3",
     "pg": "^8.22.0"
+  },
+  "devDependencies": {
+    "ajv": "8.20.0"
   }
 }
