@@ -9,6 +9,7 @@ import { Footer } from './components/layout/footer';
 import { Inter, Outfit } from 'next/font/google';
 import localFont from 'next/font/local';
 import { PageTransition } from './components/layout/page-transition';
+import { resolveBrandTheme } from '@/lib/theme/brand-theme';
 import { GlobalUIComponents } from './components/layout/GlobalUIComponents';
 import { cookies, headers } from 'next/headers';
 import { getInitialMenus } from '@/lib/api/menu-loader';
@@ -139,8 +140,11 @@ export default async function RootLayout({
   // 로컬 프로드 렌더에서 inline 11개 중 유일한 무-nonce 스크립트로 해시까지 일치 확인).
   // proxy.ts(nextWithCsp)가 요청당 x-nonce 를 실어 주고 여기서 prop 으로 넘긴다.
   const nonce = (await headers()).get('x-nonce') ?? undefined;
+  // 브랜드 프로필은 배포 단위 서버 설정이다 — allowlist 검증을 거쳐 <html> 한 곳에만 배선한다
+  // (라우트별 배정은 ADR-0004 금지, 미설정 시 premium). theme-token-contract 가 이 배선을 강제한다.
+  const brandTheme = resolveBrandTheme(process.env.BRAND_THEME);
   return (
-    <html lang="ko" className="scroll-pt-16" suppressHydrationWarning>
+    <html lang="ko" className="scroll-pt-16" data-brand-theme={brandTheme} suppressHydrationWarning>
       <body className={`${pretendard.variable} ${inter.variable} ${outfit.variable} antialiased font-sans`}>
         <ThemeProvider
           attribute="class"

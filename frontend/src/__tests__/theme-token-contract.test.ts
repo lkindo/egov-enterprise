@@ -119,4 +119,25 @@ describe('브랜드 프로필 토큰 계약', () => {
 
     expect(css, '프로필 CSS import 가 사라졌습니다.').toMatch(/@import\s+"\.\.\/styles\/themes\//);
   });
+
+  it('루트 레이아웃이 서버 검증된 env 값으로 <html data-brand-theme> 를 전역 배선한다', () => {
+    // 프로필 CSS 는 data-brand-theme 속성이 있어야 활성화된다. 배선이 없으면 비기본 프로필은
+    // 전 번들에 실려 나가는 죽은 CSS 다. 배선은 ①전역 1곳(<html>) — 라우트별 배정은
+    // ADR-0004 가 금지한다 — ②allowlist 검증을 거친 서버 env 값이어야 한다(임의 문자열 주입 차단).
+    const layout = readFileSync(join(FRONTEND_DIR, 'src', 'app', 'layout.tsx'), 'utf8');
+    expect(layout, '<html> 의 data-brand-theme 배선이 없습니다 — 비기본 프로필이 죽은 CSS 로 남습니다.')
+      .toMatch(/<html[^>]*data-brand-theme=\{brandTheme\}/);
+    expect(layout, 'env 값이 resolveBrandTheme allowlist 검증을 거치지 않습니다.')
+      .toMatch(/resolveBrandTheme\(process\.env\.BRAND_THEME\)/);
+
+    const resolverPath = join(FRONTEND_DIR, 'src', 'lib', 'theme', 'brand-theme.ts');
+    expect(existsSync(resolverPath), 'brand-theme resolver 모듈이 없습니다.').toBe(true);
+    const resolver = readFileSync(resolverPath, 'utf8');
+    // allowlist 는 실제 존재하는 프로필 CSS 파일과 1:1 이어야 한다 — 없는 프로필을 허용하면
+    // 그 값이 켜지는 순간 시맨틱 변수 전체가 미정의로 남는다.
+    for (const file of readdirSync(THEMES_DIR).filter((f) => f.endsWith('.css'))) {
+      const profile = file.replace(/\.css$/, '');
+      expect(resolver, `resolver allowlist 에 프로필 '${profile}' 이 없습니다.`).toContain(`'${profile}'`);
+    }
+  });
 });
