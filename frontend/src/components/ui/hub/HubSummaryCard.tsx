@@ -16,22 +16,25 @@ export interface HubSummaryCardProps {
   e2eLabel?: string;
 }
 
+// hub-* 토큰이 다크에서 재정의되므로(themes/*.css) 종전의 dark: 팔레트 리터럴 fallback 을 걷어낸다.
+// orange/purple 의 라이트 절제(neutral card+foreground) 구성은 의도이므로 구조는 유지하고
+// 다크 전경만 토큰으로 회수한다.
 const colorMap: Record<HubSummaryColor, string> = {
   blue: "bg-hub-blue/5 dark:bg-hub-blue/10 text-hub-blue border-hub-blue/20 shadow-xl shadow-hub-blue/5",
-  orange: "bg-card dark:bg-white/5 text-foreground dark:text-orange-400 border-primary/20 dark:border-orange-500/30 shadow-xl shadow-primary/5",
+  orange: "bg-card dark:bg-white/5 text-foreground dark:text-hub-orange border-primary/20 dark:border-hub-orange/30 shadow-xl shadow-primary/5",
   purple: "bg-card dark:bg-white/5 text-foreground dark:text-hub-purple border-border dark:border-hub-purple/30 shadow-xl dark:shadow-none",
-  emerald: "bg-hub-emerald/5 dark:bg-hub-emerald/10 text-hub-emerald dark:text-emerald-400 border-hub-emerald/20 dark:border-emerald-500/30 shadow-xl shadow-hub-emerald/5",
-  rose: "bg-hub-rose/5 dark:bg-hub-rose/10 text-hub-rose dark:text-rose-400 border-hub-rose/20 dark:border-rose-500/30 shadow-xl shadow-hub-rose/5",
-  amber: "bg-hub-amber/5 dark:bg-hub-amber/10 text-hub-amber dark:text-amber-400 border-hub-amber/20 dark:border-amber-500/30 shadow-xl shadow-hub-amber/5"
+  emerald: "bg-hub-emerald/5 dark:bg-hub-emerald/10 text-hub-emerald border-hub-emerald/20 shadow-xl shadow-hub-emerald/5",
+  rose: "bg-hub-rose/5 dark:bg-hub-rose/10 text-hub-rose border-hub-rose/20 shadow-xl shadow-hub-rose/5",
+  amber: "bg-hub-amber/5 dark:bg-hub-amber/10 text-hub-amber border-hub-amber/20 shadow-xl shadow-hub-amber/5"
 };
 
 const iconBgMap: Record<HubSummaryColor, string> = {
   blue: "bg-hub-blue/10 text-hub-blue",
-  orange: "bg-primary/20 text-primary dark:bg-orange-950/40 dark:text-orange-400",
+  orange: "bg-primary/20 text-primary dark:bg-hub-orange/15 dark:text-hub-orange",
   purple: "bg-muted dark:bg-hub-purple/40 text-foreground dark:text-hub-purple",
-  emerald: "bg-hub-emerald/10 text-hub-emerald dark:bg-emerald-950/40 dark:text-emerald-400",
-  rose: "bg-hub-rose/10 text-hub-rose dark:bg-rose-950/40 dark:text-rose-400",
-  amber: "bg-hub-amber/10 text-hub-amber dark:bg-amber-950/40 dark:text-amber-400"
+  emerald: "bg-hub-emerald/10 text-hub-emerald",
+  rose: "bg-hub-rose/10 text-hub-rose",
+  amber: "bg-hub-amber/10 text-hub-amber"
 };
 
 const cardVariants: Variants = {
