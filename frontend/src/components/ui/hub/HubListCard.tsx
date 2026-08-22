@@ -24,18 +24,20 @@ export interface HubListCardProps {
   className?: string;
 }
 
+// hub-* 토큰이 다크에서 재정의되므로(themes/*.css) blue 와 동일한 토큰 패턴으로 통일한다.
+// 종전의 dark: 리터럴들은 토큰 다크값 부재를 메우던 fallback 이었다.
 const colorMap: Record<string, string> = {
   blue: "bg-hub-blue/10 text-hub-blue",
-  emerald: "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400",
-  amber: "bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400",
-  rose: "bg-rose-100 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400"
+  emerald: "bg-hub-emerald/10 text-hub-emerald",
+  amber: "bg-hub-amber/10 text-hub-amber",
+  rose: "bg-hub-rose/10 text-hub-rose"
 };
 
 const itemHoverColorMap: Record<string, string> = {
   blue: "group-hover/item:border-hub-blue/30 group-hover/item:bg-hub-blue/5",
-  emerald: "group-hover/item:border-emerald-500/30 group-hover/item:bg-emerald-50/50 dark:group-hover/item:bg-emerald-500/5",
-  amber: "group-hover/item:border-amber-500/30 group-hover/item:bg-amber-50/50 dark:group-hover/item:bg-amber-500/5",
-  rose: "group-hover/item:border-rose-500/30 group-hover/item:bg-rose-50/50 dark:group-hover/item:bg-rose-500/5"
+  emerald: "group-hover/item:border-hub-emerald/30 group-hover/item:bg-hub-emerald/5",
+  amber: "group-hover/item:border-hub-amber/30 group-hover/item:bg-hub-amber/5",
+  rose: "group-hover/item:border-hub-rose/30 group-hover/item:bg-hub-rose/5"
 };
 
 const listVariants = {
@@ -94,7 +96,7 @@ export function HubListCard({
                 <span className="text-xs font-bold text-muted-foreground/40 tracking-tight tabular-nums">
                   {item.date || item.frstRegisterPnttmStr?.split(' ')[0] || '-'}
                 </span>
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-200 dark:bg-white/10 group-hover/item:bg-primary transition-colors" />
+                <div className="w-1.5 h-1.5 rounded-full bg-border group-hover/item:bg-primary transition-colors" />
               </div>
               <span className="text-[15px] font-bold text-foreground line-clamp-1 tracking-tight">
                 {item.title || item.pstTtl}
