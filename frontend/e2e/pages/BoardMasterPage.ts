@@ -211,6 +211,6 @@ export class BoardMasterPage {
     console.log(`>>> Verifying board/menu deployment success for: ${menuName}`);
     await expect(this.page.getByRole('heading', { name: '게시판 생성 완료', exact: true }))
       .toBeVisible({ timeout: 30000 });
-    await expect(this.page.getByText(menuName, { exact: true })).toBeVisible();
+    await expect(this.page.getByText(`'${menuName}'`, { exact: true })).toBeVisible();
   }
 }
