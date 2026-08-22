@@ -60,7 +60,7 @@ const TEMPLATES = [
  description: '지식 공유에 최적화된 고도화된 대시보드형 레이아웃',
  typeCode: 'BBST01',
  icon: BookOpen,
- color: 'bg-hub-indigo',
+ color: 'bg-primary text-primary-foreground',
  },
  {
  id: 'TMPLT_LIST',
@@ -68,7 +68,7 @@ const TEMPLATES = [
  description: '빠른 검색과 가독성을 중시하는 표준 데이터 테이블',
  typeCode: 'BBST02',
  icon: List,
- color: 'bg-emerald-500',
+ color: 'bg-success text-success-foreground',
  },
  {
  id: 'TMPLT_GALLERY',
@@ -76,7 +76,7 @@ const TEMPLATES = [
  description: '이미지 및 카드 중심의 시각적 커뮤니티 레이아웃',
  typeCode: 'BBST03',
  icon: ImageIcon,
- color: 'bg-rose-500',
+ color: 'bg-destructive text-destructive-foreground',
  },
  {
  id: 'TMPLT_QNA',
@@ -84,7 +84,7 @@ const TEMPLATES = [
  description: '질문과 해결 중심의 사내 기술 지원 및 상담 레이아웃',
  typeCode: 'BBST04',
  icon: HelpCircle,
- color: 'bg-amber-500',
+ color: 'bg-warning text-warning-foreground',
  },
  {
  id: 'TMPLT_CALENDAR',
@@ -92,7 +92,7 @@ const TEMPLATES = [
  description: '날짜 기반의 전사 일정 및 교육 현황 관리 레이아웃',
  typeCode: 'BBST05',
  icon: CalendarDays,
- color: 'bg-info',
+ color: 'bg-info text-info-foreground',
  },
  {
  id: 'TMPLT_FAQ',
@@ -100,7 +100,7 @@ const TEMPLATES = [
  description: '질문과 답변을 한눈에 펼쳐보는 아코디언 스타일의 FAQ 레이아웃',
  typeCode: 'BBST06',
  icon: MessageSquare,
- color: 'bg-hub-purple',
+ color: 'bg-primary text-primary-foreground',
  },
  {
  id: 'TMPLT_WIKI',
@@ -108,7 +108,7 @@ const TEMPLATES = [
  description: '방대한 정보를 체계적으로 정리하는 도큐먼트형 위키 레이아웃',
  typeCode: 'BBST07',
  icon: Book,
- color: 'bg-slate-700',
+ color: 'bg-surface-inverse text-surface-inverse-foreground',
  },
 ];
 
@@ -212,7 +212,6 @@ export function BoardMakerWizard() {
 
  setIsSuccess(true);
  } catch (error: unknown) {
- console.error('Validation/Submission Error:', error);
  setStatus('');
  setSubmitError(
  error instanceof Error && error.message
@@ -228,11 +227,11 @@ export function BoardMakerWizard() {
  return (
  <Card className="max-w-3xl mx-auto border-none shadow-2xl rounded-lg overflow-hidden bg-card mt-10">
  <CardContent className="p-20 flex flex-col items-center text-center gap-10">
- <div className="w-32 h-32 rounded-lg bg-green-500 flex items-center justify-center text-white animate-bounce-short">
+ <div className="w-32 h-32 rounded-lg bg-success flex items-center justify-center text-success-foreground animate-bounce-short">
  <Check size={64} strokeWidth={4} />
  </div>
  <div className="space-y-4">
- <h2 className="text-5xl font-bold tracking-tighter text-foreground transition-colors">MISSION COMPLETE!</h2>
+ <h1 className="text-5xl font-bold tracking-tighter text-foreground transition-colors">게시판 생성 완료</h1>
  <p className="text-xl text-muted-foreground dark:text-muted-foreground font-bold leading-relaxed max-w-md mx-auto transition-colors">
  게시판이 생성되었으며 <span className="text-primary">'{watch('menuNm')}'</span> 메뉴에 성공적으로 연결되었습니다.
  </p>
@@ -259,6 +258,7 @@ export function BoardMakerWizard() {
 
  return (
  <div className="max-w-5xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-20 text-left">
+ <h1 className="sr-only">게시판 생성 마법사</h1>
  {/* Stepper Header */}
  <div className="flex justify-between items-center px-4 relative">
  <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
@@ -272,8 +272,8 @@ export function BoardMakerWizard() {
  <div
  className={cn(
  "w-14 h-11 rounded-lg flex items-center justify-center transition-all duration-500 border-4",
- isActive ? "bg-primary border-primary text-white shadow-xl shadow-primary/30 scale-110" :
- isCompleted ? "bg-green-500 border-green-500 text-white" :
+ isActive ? "bg-primary border-primary text-primary-foreground shadow-xl shadow-primary/30 scale-110" :
+ isCompleted ? "bg-success border-success text-success-foreground" :
  "bg-card border-border text-muted-foreground"
  )}
  >
@@ -293,7 +293,7 @@ export function BoardMakerWizard() {
  </div>
 
  {/* Main Content Card */}
- <Card className="border-none shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-white/80 backdrop-blur-xl ring-1 ring-border/50">
+ <Card className="border-none shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] rounded-lg overflow-hidden bg-card/95 backdrop-blur-xl ring-1 ring-border/50">
  {/* [2026-07-26] 프로덕션 코드에 남아 있던 디버그 로그 제거. 검증 실패는 폼 UI(필드별 메시지)가
      이미 사용자에게 알리므로 콘솔 출력은 정보 가치가 없다. 게다가 E2E 의 콘솔 오류 가드가 이를
      금지 로그로 잡아 테스트를 실패시켰다(Validation Edge Case: Creation Failure with Empty Name).
@@ -336,11 +336,11 @@ export function BoardMakerWizard() {
  placeholder="예) 사내 소식 공유 게시판"
  className={cn(
  "h-11 text-xl rounded-lg border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm bg-card",
- errors.bbsTtl ? "border-red-500 bg-red-50/10" : "border-border"
+ errors.bbsTtl ? "border-destructive bg-destructive/10" : "border-border"
  )}
  {...register('bbsTtl')}
  />
- {errors.bbsTtl && <p className="text-red-500 text-sm font-bold ml-2">{errors.bbsTtl.message}</p>}
+ {errors.bbsTtl && <p className="text-destructive-emphasis text-sm font-bold ml-2">{errors.bbsTtl.message}</p>}
  </div>
 
  <div className="space-y-4 text-left">
@@ -359,13 +359,15 @@ export function BoardMakerWizard() {
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
  <div className="flex items-center justify-between p-8 rounded-lg border-2 border-border bg-muted/30 group hover:border-primary/20 transition-all text-left">
  <div className="space-y-1 text-left">
- <Label className="text-lg font-bold text-foreground flex items-center gap-2">
+ <Label htmlFor="comments-enabled" className="text-lg font-bold text-foreground flex items-center gap-2">
  댓글 사용 여부
- <Info className="w-4 h-4 text-slate-300" />
+ <Info className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
  </Label>
- <p className="text-xs text-muted-foreground font-bold whitespace-nowrap">게시글에 댓글을 작성할 수 있도록 합니다.</p>
+ <p id="comments-enabled-description" className="text-xs text-muted-foreground font-bold whitespace-nowrap">게시글에 댓글을 작성할 수 있도록 합니다.</p>
  </div>
  <Switch
+ id="comments-enabled"
+ aria-describedby="comments-enabled-description"
  checked={watch('ansPsbltyYn')}
  onCheckedChange={(checked) => setValue('ansPsbltyYn', checked)}
  className="data-[state=checked]:bg-primary scale-125"
@@ -374,13 +376,15 @@ export function BoardMakerWizard() {
 
  <div className="flex items-center justify-between p-8 rounded-lg border-2 border-border bg-muted/30 group hover:border-primary/20 transition-all text-left">
  <div className="space-y-1 text-left">
- <Label className="text-lg font-bold text-foreground flex items-center gap-2 transition-colors">
+ <Label htmlFor="attachments-enabled" className="text-lg font-bold text-foreground flex items-center gap-2 transition-colors">
  파일 첨부 여부
- <Info className="w-4 h-4 text-slate-300 dark:text-muted-foreground" />
+ <Info className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
  </Label>
- <p className="text-xs text-muted-foreground font-bold whitespace-nowrap text-left transition-colors">문서 및 이미지를 첨부할 수 있게 합니다.</p>
+ <p id="attachments-enabled-description" className="text-xs text-muted-foreground font-bold whitespace-nowrap text-left transition-colors">문서 및 이미지를 첨부할 수 있게 합니다.</p>
  </div>
  <Switch
+ id="attachments-enabled"
+ aria-describedby="attachments-enabled-description"
  checked={watch('fileAtchPsbltyYn')}
  onCheckedChange={(checked) => setValue('fileAtchPsbltyYn', checked)}
  className="data-[state=checked]:bg-primary scale-125 transition-colors"
@@ -424,7 +428,7 @@ export function BoardMakerWizard() {
  )}
  >
  <div className={cn(
- "w-16 h-11 rounded-lg flex items-center justify-center text-white transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg",
+ "w-16 h-11 rounded-lg flex items-center justify-center transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-lg",
  tpl.color
  )}>
  <Icon size={32} />
@@ -441,7 +445,7 @@ export function BoardMakerWizard() {
 
  <div className={cn(
  "w-8 h-8 rounded-lg border-2 flex items-center justify-center transition-all",
- isSelected ? "bg-primary border-primary text-white" : "border-border text-transparent"
+ isSelected ? "bg-primary border-primary text-primary-foreground" : "border-border text-transparent"
  )}>
  <Check size={16} strokeWidth={4} />
  </div>
@@ -449,7 +453,7 @@ export function BoardMakerWizard() {
  );
  })}
  </div>
- <div className="p-8 bg-muted rounded-lg text-muted-foreground dark:text-white/40 font-mono text-xs tracking-widest leading-relaxed text-left border border-border transition-colors">
+ <div className="p-8 bg-muted rounded-lg text-muted-foreground font-mono text-xs tracking-widest leading-relaxed text-left border border-border transition-colors">
  디자인 최적화 활성 <br />
  UI 렌더링 모드: 고해상도 <br />
  템플릿 ID: {selectedTemplate}
@@ -603,8 +607,10 @@ export function BoardMakerWizard() {
  size="lg"
  disabled={isSubmitting}
  className={cn(
- "h-11 px-12 rounded-lg font-bold text-xl shadow-xl transition-all text-white min-w-[220px] tracking-tighter",
- currentStep === STEPS.length ? "bg-primary shadow-primary/30 hover:scale-105" : "bg-slate-900 dark:bg-primary hover:bg-slate-800 dark:hover:bg-primary/90"
+ "h-11 px-12 rounded-lg font-bold text-xl shadow-xl transition-all min-w-[220px] tracking-tighter",
+ currentStep === STEPS.length
+ ? "bg-primary text-primary-foreground shadow-primary/30 hover:scale-105"
+ : "bg-surface-inverse text-surface-inverse-foreground dark:bg-primary dark:text-primary-foreground hover:bg-surface-inverse/90 dark:hover:bg-primary/90"
  )}
  >
  {isSubmitting ? (

@@ -104,7 +104,7 @@ export default function AdminStatsClient({
   return (
     <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
       <PageHeader
-        title="인텔리전스 시스템 아키텍처 분석"
+        title="관리자 통계"
         breadcrumbs={[{ label: '시스템관리' }, { label: '분석 대시보드' }]}
       />
 
@@ -130,9 +130,9 @@ export default function AdminStatsClient({
       )}
 
       <HubHeader
-        title="시스템 분석"
-        highlight="매트릭스"
-        subtitle="전체 시스템의 실시간 트래픽 및 주요 메트릭 상호작용 통계 인텔리전스"
+        title="최근 1개월"
+        highlight="접속 통계"
+        subtitle="사용자·게시물 누적 현황과 일자별 접속 집계를 확인합니다"
         icon={BarChart3}
         actions={
           <div className="flex gap-4 p-2 items-center">
@@ -169,7 +169,7 @@ export default function AdminStatsClient({
       <div className="grid grid-cols-12 gap-10 px-2 mt-4">
         <div className="col-span-12 flex flex-col gap-10">
           <HubSectionCard
-            title="네트워크 트래픽 진화"
+        title="일자별 접속 추이"
             description="최근 1개월 간 일자별 접속 건수 추이입니다"
             icon={Activity}
           >
@@ -191,7 +191,7 @@ export default function AdminStatsClient({
       {/*
         [삭제] '지리적 트래픽 분포' 섹션 (감사 P1-5 — 근거 없는 지표).
         `NationalDistributionMap` 은 `MOCK_MAP_DATA`(서울 1250 · 경상 1050 …) 하드코딩을
-        "실시간 지리적 접속 및 업무 분포(분석 엔진 기반)" 이라고 표기한다. 백엔드에 지역 집계
+        운영 지역 통계처럼 표시했다. 백엔드에 지역 집계
         소스가 없어 실제 값으로 대체할 수 없고, 컴포넌트 내부 문구는 이 화면에서 고칠 수 없으므로
         (소유 경로 밖) '카드 삭제' 원칙을 적용한다. 지역 통계 집계 API 가 생기면 재도입할 것.
       */}

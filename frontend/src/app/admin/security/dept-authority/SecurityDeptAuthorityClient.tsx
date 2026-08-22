@@ -353,6 +353,7 @@ export default function SecurityDeptAuthorityClient() {
         keyField="authrtCd"
         emptyMessage="시스템에 등록된 권한 그룹 정보가 없습니다."
         onRowClick={(item) => setSelectedAuthorCode(item.authrtCd)}
+        rowActionLabel={(item) => `${item.authrtNm || item.authrtCd} 권한 선택`}
         className="border-none bg-transparent"
         pagination={{
           currentPage: rolePage,

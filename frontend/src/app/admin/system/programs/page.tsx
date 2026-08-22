@@ -48,7 +48,6 @@ export default async function ProgramAdminPage({
     if ((error as { response?: { status?: number } })?.response?.status === 401) {
       redirect('/login?expired=true&redirect=/admin/system/programs');
     }
-    console.error('Server-side fetch programs failed:', error);
     initialError = error instanceof Error && error.message
       ? error.message
       : '프로그램 목록을 불러오지 못했습니다.';
@@ -59,6 +58,7 @@ export default async function ProgramAdminPage({
     <div className="pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
       <Suspense fallback={
         <div className="animate-pulse space-y-12">
+          <h1 className="sr-only">프로그램 관리를 불러오는 중</h1>
           <div className="h-11 bg-muted rounded-lg w-1/3" />
           <div className="h-[600px] bg-muted rounded-lg" />
         </div>

@@ -18,7 +18,7 @@ vi.mock('next/config', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, cleanup } from '@testing-library/react';
 import { useAutoSaveDraft } from '../use-auto-save-draft';
 
 vi.mock('@/app/components/ui/toast', () => ({
@@ -47,7 +47,8 @@ describe('useAutoSaveDraft', () => {
   });
 
   afterEach(() => {
-    vi.runOnlyPendingTimers();
+    cleanup();
+    vi.clearAllTimers();
     vi.useRealTimers();
     localStorage.clear();
     vi.restoreAllMocks();

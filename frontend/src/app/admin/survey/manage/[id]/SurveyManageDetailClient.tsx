@@ -25,7 +25,7 @@ import { parseStorageYmd, toDisplayYmd, toStorageYmd } from "@/lib/format-date";
 import { AlertTriangle, CalendarIcon, ArrowLeft, RefreshCcw, Save, Sparkles } from "lucide-react";
 import { pollUserService } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO } from '@/types/business/poll';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useToast } from '@/app/components/ui/toast';
 
 /**
@@ -139,7 +139,7 @@ export default function SurveyManageDetailClient() {
                             <Save className="w-3.5 h-3.5" />
                             <span className="text-xs font-bold tracking-widest">설문 편집</span>
                         </div>
-                        <CardTitle className="text-3xl font-bold tracking-tighter">설문 상세 관리</CardTitle>
+                        <h1 className="text-3xl font-bold tracking-tighter">설문 상세 관리</h1>
                         <p className="font-medium opacity-70">설문의 기본 정보와 일정을 수정합니다.</p>
                     </div>
                 </CardHeader>

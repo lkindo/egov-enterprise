@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import { createHmac } from 'node:crypto';
 import type { NextRequest } from 'next/server';
 
@@ -67,9 +67,22 @@ function redirectedToLogin(res: Response): boolean {
 }
 
 describe('proxy 인증 게이트', () => {
-  it('백엔드와 같은 시크릿으로 서명된 토큰은 통과한다', async () => {
-    const res = await proxy(requestWith(signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, SECRET)));
-    expect(redirectedToLogin(res)).toBe(false);
+  it('같은 시크릿의 토큰은 통과하고 진단은 비밀 파생값 없이 필요한 메타만 남긴다', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+    try {
+      const res = await proxy(requestWith(signToken({ sub: 'webmaster', role: 'ADMIN', exp: futureExp() }, SECRET)));
+      const messages = warn.mock.calls.map(([message]) => String(message));
+      const hasMessage = (pattern: RegExp) => messages.some((message) => pattern.test(message));
+
+      expect(redirectedToLogin(res)).toBe(false);
+      expect(hasMessage(/JWT 검증 성공/u)).toBe(true);
+      expect(hasMessage(/시크릿 출처=환경변수 JWT_SECRET/u)).toBe(true);
+      expect(hasMessage(/JWT_SECRET=있음/u)).toBe(true);
+      expect(hasMessage(/지문|fingerprint/iu)).toBe(false);
+      expect(hasMessage(/E2E_DIAG=(?:있음|없음)/u)).toBe(true);
+    } finally {
+      warn.mockRestore();
+    }
   });
 
   it.each(['HS256', 'HS384', 'HS512'] as const)('%s 로 서명해도 통과한다(alg 화이트리스트)', async (alg) => {

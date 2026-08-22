@@ -7,7 +7,7 @@ import axios from '@/lib/api/client';
 import type { components } from '@/types/generated-api';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -112,6 +112,7 @@ const SelectScrapDetailClient = () => {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
+        <h1 className="sr-only">스크랩 상세를 불러오는 중</h1>
         <div className="w-10 h-10 border-4 border-hub-indigo border-t-transparent rounded-full animate-spin" />
       </div>
     );
@@ -122,7 +123,7 @@ const SelectScrapDetailClient = () => {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4 text-center">
         <AlertTriangle className="w-10 h-10 text-rose-500" />
-        <p className="text-sm font-bold text-foreground">스크랩 정보를 불러오지 못했습니다.</p>
+        <h1 className="text-sm font-bold text-foreground">스크랩 정보를 불러오지 못했습니다.</h1>
         <p className="text-xs text-muted-foreground">{(error as Error)?.message}</p>
         <div className="flex gap-3">
           <Button variant="outline" onClick={() => { void refetch(); }}>다시 시도</Button>
@@ -145,9 +146,9 @@ const SelectScrapDetailClient = () => {
                   <Bookmark className="w-8 h-8 text-white fill-white/20" />
                 </div>
                 <div className="space-y-1">
-                  <CardTitle className="text-3xl font-bold tracking-tighter text-foreground">
+                  <h1 className="text-3xl font-bold tracking-tighter text-foreground">
                     스크랩 상세
-                  </CardTitle>
+                  </h1>
                   <p className="text-sm font-bold text-muted-foreground leading-relaxed tracking-tight">
                     저장된 스크랩을 확인하고 수정할 수 있습니다.
                   </p>

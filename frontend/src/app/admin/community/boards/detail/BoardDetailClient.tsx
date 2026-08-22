@@ -16,6 +16,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useAuth } from '@/contexts/AuthContext';
 import { knowledgeService, KnowledgeDto } from '@/services/business/knowledge/knowledgeService';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { fileService } from '@/services/foundation/file/FileService';
@@ -36,11 +37,23 @@ interface BoardDetailClientProps {
   }>;
 }
 
+const BOARD_ADMIN_ROLES = new Set(['ADMIN', 'SYSTEM', 'ROLE_ADMIN', 'ROLE_SYSTEM']);
+
+export function canManageBoardArticle(
+  user: { id: string; esntlId?: string; role?: string } | null | undefined,
+  authorId: string | undefined,
+): boolean {
+  if (!user) return false;
+  if (user.role && BOARD_ADMIN_ROLES.has(user.role)) return true;
+  return Boolean(authorId && user.esntlId && user.esntlId === authorId);
+}
+
 import { motion } from 'framer-motion';
 
 export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   const initialData = use(dataPromise);
   const router = useRouter();
+  const { user } = useAuth();
   const { toast } = useToast();
   const confirm = useConfirm();
   const searchParams = useSearchParams();
@@ -64,6 +77,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     initialData: initialData.article,
     enabled: !!initialData.article && hasValidPstSn,
   });
+  const canManageArticle = canManageBoardArticle(user, article?.userId);
 
   // 감사 P1-5/P1-6: 첨부 영역은 과거 "Technical_Spec_Unit_XXXX.pdf · 3.4 MB" 라는 존재하지 않는 파일을
   // 하드코딩해 보여주고, 다운로드 아이콘에는 핸들러조차 없었다. 이미 있는 fileService 로 실제 목록을 배선한다.
@@ -107,6 +121,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   if (!mounted) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[600px] space-y-6">
+        <h1 className="sr-only">게시글 상세를 불러오는 중</h1>
         <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
         <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase animate-pulse">게시글을 불러오는 중...</p>
       </div>
@@ -119,7 +134,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       <div role="alert" className="flex flex-col items-center justify-center min-h-[600px] space-y-6 text-center px-6">
         <AlertTriangle size={48} className="text-destructive-emphasis" aria-hidden="true" />
         <div className="space-y-2">
-          <p className="text-xl font-bold text-foreground">게시글을 불러오지 못했습니다</p>
+          <h1 className="text-xl font-bold text-foreground">게시글을 불러오지 못했습니다</h1>
           <p className="text-sm font-medium text-muted-foreground max-w-md">{initialData.fetchError}</p>
         </div>
         <div className="flex gap-3">
@@ -133,7 +148,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   if (!article) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[600px] space-y-6">
-        <p className="text-sm font-bold tracking-widest text-muted-foreground">게시글을 찾을 수 없습니다. 삭제되었거나 주소가 올바르지 않습니다.</p>
+        <h1 className="text-sm font-bold tracking-widest text-muted-foreground">게시글을 찾을 수 없습니다. 삭제되었거나 주소가 올바르지 않습니다.</h1>
         <Button onClick={() => router.back()} aria-label="뒤로 가기">목록으로 돌아가기</Button>
       </div>
     );
@@ -198,14 +213,16 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           transition={{ delay: 0.3 }}
           className="flex items-center gap-4 relative z-10"
         >
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&pstSn=${pstSn}`)}
-            className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
-            aria-label="게시글 수정"
-          >
-            <Edit3 size={20} className="text-primary" /> 수정
-          </Button>
+          {canManageArticle && (
+            <Button
+              variant="outline"
+              onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&pstSn=${pstSn}`)}
+              className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
+              aria-label="게시글 수정"
+            >
+              <Edit3 size={20} className="text-primary" /> 수정
+            </Button>
+          )}
           <Button
             variant="outline"
             onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&parnts=${pstSn}&replyYn=Y`)}
@@ -237,44 +254,46 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             → 확인을 transition 밖(onClick)에서 먼저 받고, 확정된 뒤에 서버 액션을 호출한다.
               폼이 없어졌으므로 FormData 는 직접 구성한다(종전 hidden input 과 동일한 키).
           */}
-          <Button
-            type="button"
-            variant="outline"
-            disabled={deleting}
-            onClick={async () => {
-              const isConfirmed = await confirm({
-                title: '게시글 삭제',
-                message: `[${article.pstTtl || '제목 없음'}] 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-                confirmText: '삭제',
-                variant: 'destructive'
-              });
-              if (!isConfirmed) return;
+          {canManageArticle && (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={deleting}
+              onClick={async () => {
+                const isConfirmed = await confirm({
+                  title: '게시글 삭제',
+                  message: `[${article.pstTtl || '제목 없음'}] 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+                  confirmText: '삭제',
+                  variant: 'destructive'
+                });
+                if (!isConfirmed) return;
 
-              const formData = new FormData();
-              formData.append('bbsId', bbsId ?? '');
-              formData.append('pstSn', String(pstSn));
+                const formData = new FormData();
+                formData.append('bbsId', bbsId ?? '');
+                formData.append('pstSn', String(pstSn));
 
-              setDeleting(true);
-              try {
-                const res = await deleteBoardArticle(null, formData);
-                if (res.success) {
-                  toast('게시글이 삭제되었습니다.', 'success');
-                  queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
-                  router.push(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
-                } else {
-                  toast(res.message || '게시글 삭제에 실패했습니다.', 'error');
+                setDeleting(true);
+                try {
+                  const res = await deleteBoardArticle(null, formData);
+                  if (res.success) {
+                    toast('게시글이 삭제되었습니다.', 'success');
+                    queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+                    router.push(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
+                  } else {
+                    toast(res.message || '게시글 삭제에 실패했습니다.', 'error');
+                  }
+                } catch {
+                  toast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+                } finally {
+                  setDeleting(false);
                 }
-              } catch (err: unknown) {
-                toast(err instanceof Error && err.message ? err.message : '게시글 삭제 중 오류가 발생했습니다.', 'error');
-              } finally {
-                setDeleting(false);
-              }
-            }}
-            className="h-14 w-20 rounded-2xl border-2 text-rose-500 border-rose-100 bg-rose-50/30 hover:bg-rose-500 hover:text-white shadow-xl hover:-translate-y-2 transition-all active:scale-95"
-            aria-label="게시글 삭제"
-          >
-            <Trash2 size={24} />
-          </Button>
+              }}
+              className="h-14 w-20 rounded-2xl border-2 text-rose-500 border-rose-100 bg-rose-50/30 hover:bg-rose-500 hover:text-white shadow-xl hover:-translate-y-2 transition-all active:scale-95"
+              aria-label="게시글 삭제"
+            >
+              <Trash2 size={24} />
+            </Button>
+          )}
         </motion.div>
       </div>
 

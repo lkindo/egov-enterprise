@@ -1,8 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import { getJwtExpiryMs, cookieMaxAgeSecondsFrom } from '@/lib/auth/jwt';
+import { safeLoginFailure } from '@/lib/auth/login-error';
 
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://127.0.0.1:8080/api/v1').replace(/\/$/, '');
+
+function upstreamStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const response = (error as { response?: unknown }).response;
+  if (!response || typeof response !== 'object') return undefined;
+  const status = (response as { status?: unknown }).status;
+  return typeof status === 'number' ? status : undefined;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -63,15 +72,10 @@ export async function POST(request: NextRequest) {
       return nextResponse;
     }
 
-    return NextResponse.json(responseData, { status: response.status });
-  } catch (error: any) {
-    console.error('[API Proxy Login Error]', error.message);
-    const status = error.response?.status || 500;
-    const errorData = error.response?.data || {
-      success: false,
-      code: 'LOGIN_PROXY_ERROR',
-      message: '로그인 중개 처리 중 오류가 발생했습니다.',
-    };
-    return NextResponse.json(errorData, { status });
+    const failure = safeLoginFailure(response.status);
+    return NextResponse.json(failure.body, { status: failure.status });
+  } catch (error: unknown) {
+    const failure = safeLoginFailure(upstreamStatus(error));
+    return NextResponse.json(failure.body, { status: failure.status });
   }
 }

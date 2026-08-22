@@ -16,6 +16,8 @@ public class BoardSearchCondition {
     private String orderBy; // "date", "views", "comments"
     private String qnaSttsCd;
     private String qnaCatCd;
+    private String viewerEsntlId;
+    private boolean secretPostAdminOverride;
     // Default constructor for cases where full initialization isn't needed
     // immediately
     public BoardSearchCondition() {

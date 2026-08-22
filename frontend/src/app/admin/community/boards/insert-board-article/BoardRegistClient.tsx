@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Save, Zap,
-  Layers, Package, Monitor, Loader2
+  Layers, Package, Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,9 +33,13 @@ const boardSchema = BoardSaveRequestSchema.extend({
 });
 
 type BoardFormValues = z.infer<typeof boardSchema>;
+type BoardInitialData = Partial<BoardFormValues> & {
+  userNm?: string;
+  pswd?: string;
+};
 
 interface BoardRegistClientProps {
-  initialData?: any;
+  initialData?: BoardInitialData | null;
   bbsId: string;
   pstSn?: number;
   parnts?: number;
@@ -88,11 +92,6 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
     }
   }, [hasDraft, restoreDraft, toast, pstSn, form]);
 
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   const onSubmit = async (values: BoardFormValues) => {
     // Debug log removed for Zero-Tolerance clean console requirement
     if (!values.pstCn || values.pstCn === '<p></p>') {
@@ -122,26 +121,17 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
       if (result.success) {
         queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
         clearDraft();
-        toast(result.message || '저장되었습니다.', 'success');
+        toast(pstSn ? '게시글을 수정했습니다.' : '게시글을 등록했습니다.', 'success');
         router.push(result.redirect || `/admin/community/boards/select-board-list?bbsId=${bbsId}`);
       } else {
-        toast(result.message || '저장 중 오류가 발생했습니다.', 'error');
+        toast('게시글을 저장하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.', 'error');
       }
-    } catch (err) {
-      console.error('>>> [BoardRegistClient] Submit error thrown:', err);
-      toast('등록 중 오류가 발생했습니다.', 'error');
+    } catch {
+      toast('게시글을 저장하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.', 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  if (!mounted) {
-    return (
-      <div className="max-w-5xl mx-auto space-y-16 pb-24 pt-8 min-h-screen flex items-center justify-center">
-        <Loader2 className="animate-spin w-8 h-8 text-primary" />
-      </div>
-    );
-  }
 
   return (
     <motion.div 
@@ -190,7 +180,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="p-12 bg-white/70 backdrop-blur-3xl rounded-[2.5rem] border border-white shadow-2xl relative overflow-hidden group ring-1 ring-black/5"
+            className="p-12 bg-card/95 backdrop-blur-3xl rounded-[2.5rem] border border-border shadow-2xl relative overflow-hidden group ring-1 ring-border/50"
           >
             <div className="absolute top-0 right-0 p-16 opacity-[0.02] pointer-events-none group-focus-within:opacity-10 transition-opacity">
               <Layers size={180} className="rotate-12 text-foreground" />
@@ -212,12 +202,12 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
                         {...field}
                         data-testid="article-title-input"
                         className="h-16 bg-transparent border-none text-foreground text-4xl font-black placeholder:text-muted-foreground focus-visible:ring-0 p-0 tracking-tighter"
-                        placeholder="INJECT SUBJECT LINE..."
+                        placeholder="제목을 입력하세요."
                         autoFocus
                         aria-label="게시글 제목"
                       />
                     </FormControl>
-                    <FormMessage className="font-black text-rose-500 uppercase text-[10px] tracking-widest pt-2" />
+                    <FormMessage className="font-black text-destructive-emphasis uppercase text-[10px] tracking-widest pt-2" />
                   </FormItem>
                 )}
               />
@@ -234,14 +224,10 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
           >
             <div className="flex items-center justify-between px-4">
               <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-surface-inverse flex items-center justify-center text-white shadow-lg">
+                <div className="w-10 h-10 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg">
                   <Package size={20} />
                 </div>
                 <h3 className="text-[10px] font-black text-foreground tracking-[0.1em]">본문 내용</h3>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.5)]" />
-                <span className="text-[10px] font-black text-muted-foreground tracking-tight">작성 중</span>
               </div>
             </div>
             <FormField
@@ -249,16 +235,17 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
               name="pstCn"
               render={({ field }) => (
                 <FormItem>
-                  <FormControl>
-                    <div className="rounded-[2.5rem] overflow-hidden border-2 border-border bg-card shadow-2xl" data-testid="rich-text-editor">
+                  <div className="rounded-[2.5rem] overflow-hidden border-2 border-border bg-card shadow-2xl" data-testid="rich-text-editor">
+                    <FormControl>
                       <RichTextEditor
                         value={field.value}
                         onChange={field.onChange}
                         placeholder="내용을 입력하세요..."
+                        aria-label="게시글 본문 내용"
                       />
-                    </div>
-                  </FormControl>
-                  <FormMessage className="font-black text-rose-500 uppercase text-[10px] tracking-widest pt-4 pl-4" />
+                    </FormControl>
+                  </div>
+                  <FormMessage className="font-black text-destructive-emphasis uppercase text-[10px] tracking-widest pt-4 pl-4" />
                 </FormItem>
               )}
             />
@@ -269,22 +256,8 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="flex flex-col sm:flex-row items-center justify-between gap-10 pt-12 border-t-2 border-border"
+            className="flex flex-col sm:flex-row items-center justify-end gap-10 pt-12 border-t-2 border-border"
           >
-            <div className="flex items-center gap-10">
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.1em] leading-none mb-2">게시판 유형</span>
-                <span className="text-sm font-black text-foreground uppercase tracking-tight">{bbsId.split('_')[1] || 'CORE'}</span>
-              </div>
-              <div className="w-[2px] h-10 bg-muted" />
-              <div className="flex flex-col">
-                <span className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.1em] leading-none mb-2">보안 등급</span>
-                <span className="text-sm font-black text-emerald-500 uppercase tracking-tight flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" /> 인증됨
-                </span>
-              </div>
-            </div>
-
             <div className="flex items-center gap-5 w-full sm:w-auto">
               <Button
                 type="button"
@@ -298,17 +271,18 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
               <Button
                 type="submit"
                 disabled={isSubmitting}
-                className="h-16 flex-1 sm:flex-none px-16 rounded-[1.5rem] bg-surface-inverse text-white font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] gap-4 group"
-                aria-label="게시글 저장"
+                className="h-16 flex-1 sm:flex-none px-16 rounded-[1.5rem] bg-surface-inverse text-surface-inverse-foreground font-black tracking-widest text-[10px] uppercase hover:scale-105 active:scale-95 transition-all shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] gap-4 group"
+                aria-label={pstSn ? '게시글 수정' : '게시글 등록'}
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="animate-spin w-5 h-5" />
-                    <span>저장 중...</span>
+                    <span>저장 중…</span>
                   </>
                 ) : (
                   <>
-                    <Save size={20} className="group-hover:rotate-12 transition-transform" /> 저장
+                    <Save size={20} className="group-hover:rotate-12 transition-transform" />
+                    {pstSn ? '게시글 수정' : '게시글 등록'}
                   </>
                 )}
               </Button>
@@ -317,18 +291,6 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
         </form>
       </Form>
 
-      {/* Footer Insight */}
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        className="text-center pt-8"
-      >
-        <div className="inline-flex items-center gap-4 px-8 py-3 bg-card rounded-2xl border border-border shadow-xl">
-          <Monitor size={16} className="text-slate-200" />
-          <span className="text-[10px] font-black text-slate-200 uppercase tracking-[0.5em]">Enterprise Command Node - Unit Ver 3.0.0</span>
-        </div>
-      </motion.div>
     </motion.div>
   );
 }

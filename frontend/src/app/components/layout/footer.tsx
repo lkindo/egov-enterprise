@@ -18,7 +18,7 @@ export function Footer({ className }: FooterProps) {
             &copy; 2026 전자정부 프레임워크 현대화 프로젝트.
           </p>
           <p className="text-xs font-bold text-muted-foreground tracking-tight">
-            Modern KRDS 아키텍처 및 Antigravity AI 기반
+            전사 업무와 협업 기능을 위한 포털
           </p>
         </div>
         {/*

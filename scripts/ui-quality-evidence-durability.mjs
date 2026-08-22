@@ -8,14 +8,19 @@ import {
   assertArtifactSafe,
   buildExecutionPlan,
   classifyPerformanceObservation,
+  createProductionBuildInputTreeHash,
+  PRODUCTION_BUILD_INPUT_PATHS,
   stableJson,
 } from '../frontend/scripts/ui-quality-baseline-core.mjs';
 
 const HEX40 = /^[0-9a-f]{40}$/u;
 const HEX64 = /^[0-9a-f]{64}$/u;
+const UUID_V4 = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u;
 const ISO_INSTANT = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{3})?Z$/u;
 const CASE_ID = /^uiq-[0-9a-f]{20}$/u;
 const RENDER_CASE_ID = /^[a-z0-9][a-z0-9-]*(?:--[a-z0-9][a-z0-9-]*){3}$/u;
+const SAFE_VERSION = /^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$/u;
+const ISSUE_CODE = /^UIQ-MANUAL-[A-Z0-9-]{3,64}$/u;
 const CREDENTIAL_LIKE = [
   /-----BEGIN [A-Z ]*PRIVATE KEY-----/u,
   /\bBearer\s+[^\s]+/iu,
@@ -75,6 +80,20 @@ const R12_SOURCE_INVENTORY = Object.freeze({
   diagnosticInventoryDigest: '1cf2b8bf1059248dad0df29a6101196766aa34cdb13d04b75db44b8b7fc8dfb6',
   totalBytes: 4_727_118,
 });
+const R12_PUBLISHED_DIGEST = 'e7822b6a31dcf9ff5e129238e42cce7be29d5f126554e8ea400cf249c69af8e4';
+const COMBINED_V2_BASELINE_RUN_ID = 'r13';
+const COMBINED_V2_RUNNER_VERSION = 2;
+const COMBINED_V2_PROTOCOL_PATH = 'docs/04-operations/ui-ux-baseline-protocol.md';
+const MANUAL_ENVIRONMENT_BY_CHECK = Object.freeze({
+  'keyboard-only': 'keyboard-only-manual',
+  'nvda-chrome': 'nvda-chrome-manual',
+  'text-200-percent': 'chrome-text-200-percent-manual',
+  'zoom-400-reflow-320': 'chrome-zoom-400-reflow-320-css-px-manual',
+  'forced-colors': 'windows-forced-colors-manual',
+  'reduced-motion': 'os-reduced-motion-manual',
+});
+const MANUAL_REVIEWER_ROLES = Object.freeze(['accessibility-reviewer', 'quality-engineering']);
+const REDACTION_REVIEWER_ROLES = Object.freeze(['quality-engineering', 'repository-governance']);
 const R12_PRIVACY_POLICY = Object.freeze({
   syntheticDataOnly: true,
   rawTraceRepositoryStorage: 'forbidden',
@@ -86,6 +105,27 @@ const R12_PRIVACY_POLICY = Object.freeze({
   redactionProcedureRef: 'docs/04-operations/ui-ux-baseline-protocol.md#9-privacy-redaction-and-artifact-handling',
 });
 const R12_PRIVACY_RULE_HASH = sha256Hex(canonicalJsonBytes(R12_PRIVACY_POLICY));
+const COMBINED_V2_MANIFEST = JSON.parse(fs.readFileSync(
+  new URL('../config/ui-quality-scenarios.json', import.meta.url),
+  'utf8',
+));
+const COMBINED_V2_PLAN = buildExecutionPlan(COMBINED_V2_MANIFEST);
+const COMBINED_V2_MANIFEST_HASH = sha256Hex(Buffer.from(stableJson(COMBINED_V2_MANIFEST), 'utf8'));
+const COMBINED_V2_PLAN_HASH = sha256Hex(Buffer.from(stableJson(COMBINED_V2_PLAN), 'utf8'));
+const COMBINED_V2_PROTOCOL_HASH = sha256Hex(fs.readFileSync(
+  new URL(`../${COMBINED_V2_PROTOCOL_PATH}`, import.meta.url),
+));
+const R12_PUBLISHED_SUMMARY = JSON.parse(fs.readFileSync(
+  new URL(`../config/ui-quality-baseline/summaries/sha256-${R12_PUBLISHED_DIGEST}.json`, import.meta.url),
+  'utf8',
+));
+const R12_AUTOMATED_PAYLOAD_DIGEST = sha256Hex(canonicalJsonBytes(R12_PUBLISHED_SUMMARY.automated));
+const COMBINED_V2_STATE_CASE_BY_ID = new Map(
+  COMBINED_V2_PLAN.stateCases.map((stateCase) => [stateCase.caseId, stateCase]),
+);
+const COMBINED_V2_PERFORMANCE_BY_ID = new Map(
+  COMBINED_V2_PLAN.performanceCases.map((performanceCase) => [performanceCase.renderCaseId, performanceCase]),
+);
 const TOOLING_PATHS = Object.freeze({
   runnerHash: 'frontend/scripts/ui-quality-baseline-runner.mjs',
   coreHash: 'frontend/scripts/ui-quality-baseline-core.mjs',
@@ -98,6 +138,7 @@ const SUMMARY_KEYS = [
   'provenance', 'sourceInventory', 'automated', 'diagnostics', 'manual',
   'redaction', 'limitations', 'promotion',
 ];
+const COMBINED_SUMMARY_KEYS = [...SUMMARY_KEYS, 'sourceRun'];
 const PROVENANCE_KEYS = [
   'protocolVersion', 'protocolHash', 'protocolHashStatus', 'runnerVersion',
   'buildSha', 'executionScenarioManifestHash', 'executionPlanHash',
@@ -111,6 +152,11 @@ const INVENTORY_KEYS = [
   'aggregateAlgorithm', 'inventoryDigest', 'automatedInventoryDigest',
   'diagnosticInventoryDigest', 'jsonFileCount', 'automatedJsonFileCount',
   'diagnosticJsonFileCount', 'totalBytes', 'nonJsonFileCount', 'symlinkCount',
+];
+const COMBINED_INVENTORY_KEYS = [
+  ...INVENTORY_KEYS,
+  'automatedEvidenceJsonFileCount', 'automatedEvidenceInventoryDigest',
+  'automatedRunSealFileDigest',
 ];
 const AUTOMATED_KEYS = [
   'scenarioCount', 'renderCaseCount', 'plannedStateCaseCount',
@@ -157,6 +203,59 @@ const REDACTION_KEYS = [
   'approvedByRoles', 'status',
 ];
 const PROMOTION_KEYS = ['status', 'eligible', 'blockerCodes'];
+const COMBINED_PROVENANCE_KEYS = [
+  'protocolVersion', 'protocolHash', 'protocolHashStatus', 'protocolHashVerifiedAtFinish',
+  'runnerVersion', 'executionId', 'buildSha',
+  'executionScenarioManifestHash', 'executionPlanHash',
+  'executionPlanHashStatus',
+  'routeTruthHash', 'privacyRuleHash', 'buildInputTreeHash', 'dirtyBuildInputDiffHash',
+  'runnerHash', 'coreHash', 'runnerContractHash', 'scenarioContractHash',
+  'toolingHashStatus',
+  'startedAt', 'finishedAt', 'frontendBuildId', 'backendBuildId',
+  'finishVerificationScenarioCount',
+];
+const COMBINED_MANUAL_KEYS = [
+  'requiredEvidenceCount', 'completedEvidenceCount', 'findingCount',
+  'automatedEvidenceDigest', 'evidenceDigest', 'status', 'observations',
+];
+const MANUAL_OBSERVATION_KEYS = [
+  'evidenceKind', 'scenarioId', 'checkId', 'status', 'environment',
+  'coverage', 'reviewerRole', 'executionId', 'startedAt', 'finishedAt', 'buildSha',
+  'executionScenarioManifestHash', 'executionPlanHash',
+  'automatedEvidenceDigest', 'protocolHash', 'protocolHashVerifiedAtStart',
+  'protocolHashVerifiedAtFinish', 'finding', 'evidenceDigest', 'redaction',
+];
+const MANUAL_REDACTION_KEYS = ['status', 'reviewedByRole'];
+const MANUAL_ENVIRONMENT_KEYS = [
+  'kind', 'evidenceMode', 'osFamily', 'osVersion', 'browserFamily',
+  'browserVersion', 'assistiveTechnology', 'assistiveTechnologyVersion',
+  'brandTheme', 'colorModes', 'viewportIds',
+];
+const MANUAL_COVERAGE_KEYS = ['stepIds'];
+const MANUAL_FINDING_KEYS = ['issueCodes', 'impactCodes', 'severity'];
+const COMBINED_REDACTION_KEYS = [
+  'automatedGuardStatus', 'manualGuardStatus', 'unsafeFileCount',
+  'rawTraceStoredCount', 'responsePayloadStoredCount', 'reviewQuorum',
+  'approvedByRoles', 'status',
+];
+const SOURCE_RUN_KEYS = [
+  'evidenceKind', 'baselineRunId', 'executionId', 'status', 'final',
+  'runnerVersion', 'startedAt', 'finishedAt',
+  'runSummaryDigest', 'runProgressDigest', 'environmentDigest',
+  'protocolHash', 'protocolHashVerifiedAtFinish', 'buildSha',
+  'buildInputTreeHash', 'dirtyBuildInputDiffHash',
+  'executionScenarioManifestHash', 'executionPlanHash',
+  'routeTruthHash', 'privacyRuleHash', 'runnerHash', 'coreHash',
+  'runnerContractHash', 'scenarioContractHash', 'frontendBuildId', 'backendBuildId',
+  'automatedInventoryDigest', 'automatedProjectionDigest',
+  'plannedStateCaseCount', 'completedStateCaseCount', 'invalidStateCaseCount',
+  'plannedPerformanceCaseCount', 'completedPerformanceCaseCount',
+  'invalidPerformanceCaseCount', 'sealDigest',
+];
+const COMBINED_AUTOMATED_EVIDENCE_KEYS = [
+  'baselineRunId', 'sourceRun', 'provenance', 'sourceInventory',
+  'automated', 'diagnostics', 'automatedEvidenceDigest',
+];
 const INDEX_KEYS = ['schemaVersion', 'decisionId', 'storeMode', 'currentDigest', 'entries'];
 const ENTRY_KEYS = [
   'schemaVersion', 'baselineRunId', 'evidenceScope', 'buildSha',
@@ -656,6 +755,1026 @@ export function assertCompactSummary(summary) {
   return summary;
 }
 
+function assertCombinedStateCases(automated) {
+  if (!Array.isArray(automated.stateCases)
+    || automated.stateCases.length !== 96
+    || automated.stateCases.length !== automated.plannedStateCaseCount) {
+    throw new Error('combined stateCases must preserve the exact 96-case population');
+  }
+  const caseIds = new Set();
+  const scenarioCounts = new Map();
+  const evidenceCounts = new Map();
+  const totals = {
+    assertionCount: 0,
+    passedAssertionCount: 0,
+    failedAssertionCount: 0,
+    mutationRequiredCaseCount: 0,
+    mutationExecutedCaseCount: 0,
+    mutationReadbackCaseCount: 0,
+    mutationRollbackCaseCount: 0,
+    mutationCleanupCaseCount: 0,
+    axeViolationCaseCount: 0,
+    axeViolationNodeCount: 0,
+    horizontalOverflowCaseCount: 0,
+    findingCount: 0,
+  };
+  for (const [index, stateCase] of automated.stateCases.entries()) {
+    const label = `automated.stateCases[${index}]`;
+    assertExactKeys(stateCase, STATE_CASE_KEYS, label);
+    if (typeof stateCase.caseId !== 'string' || !CASE_ID.test(stateCase.caseId)
+      || caseIds.has(stateCase.caseId)) {
+      throw new Error(`${label}.caseId must be a unique privacy-safe case ID`);
+    }
+    if (index > 0 && automated.stateCases[index - 1].caseId.localeCompare(stateCase.caseId) >= 0) {
+      throw new Error('combined stateCases must be in strict ascending caseId order');
+    }
+    caseIds.add(stateCase.caseId);
+    if (!Object.hasOwn(R12_SCENARIO_STATE_COUNTS, stateCase.scenarioId)) {
+      throw new Error(`${label}.scenarioId is not in the closed eight-scenario population`);
+    }
+    const plannedStateCase = COMBINED_V2_STATE_CASE_BY_ID.get(stateCase.caseId);
+    if (!plannedStateCase
+      || plannedStateCase.scenarioId !== stateCase.scenarioId
+      || plannedStateCase.requiredTaskEvidenceId !== stateCase.requiredTaskEvidenceId) {
+      throw new Error(`${label} is substituted or relocated from the exact r13 execution plan`);
+    }
+    scenarioCounts.set(stateCase.scenarioId, (scenarioCounts.get(stateCase.scenarioId) ?? 0) + 1);
+    assertEnum(stateCase.status, ['automated-state-observed'], `${label}.status`);
+    assertEnum(
+      stateCase.automatedOutcome,
+      ['no-automated-finding-observed', 'automated-findings-observed'],
+      `${label}.automatedOutcome`,
+    );
+    for (const key of [
+      'assertionCount', 'passedAssertionCount', 'failedAssertionCount',
+      'axeViolationCount', 'findingCount',
+    ]) assertInteger(stateCase[key], `${label}.${key}`);
+    assertFiniteNonnegative(stateCase.horizontalOverflowPx, `${label}.horizontalOverflowPx`);
+    if (stateCase.passedAssertionCount + stateCase.failedAssertionCount !== stateCase.assertionCount) {
+      throw new Error(`${label} assertion counts are inconsistent`);
+    }
+    const hasFinding = stateCase.failedAssertionCount > 0
+      || stateCase.axeViolationCount > 0
+      || stateCase.horizontalOverflowPx > 1
+      || stateCase.findingCount > 0;
+    const expectedOutcome = hasFinding
+      ? 'automated-findings-observed'
+      : 'no-automated-finding-observed';
+    if (stateCase.automatedOutcome !== expectedOutcome) {
+      throw new Error(`${label} must preserve its automated finding outcome`);
+    }
+    const evidenceRequired = stateCase.requiredTaskEvidenceId !== null;
+    if (evidenceRequired
+      && (typeof stateCase.requiredTaskEvidenceId !== 'string'
+        || !Object.hasOwn(R12_TASK_EVIDENCE_COUNTS, stateCase.requiredTaskEvidenceId))) {
+      throw new Error(`${label}.requiredTaskEvidenceId is not in the closed task population`);
+    }
+    if (stateCase.taskEvidenceComplete !== evidenceRequired) {
+      throw new Error(`${label} task evidence completeness must match the declared requirement`);
+    }
+    if (evidenceRequired) {
+      evidenceCounts.set(
+        stateCase.requiredTaskEvidenceId,
+        (evidenceCounts.get(stateCase.requiredTaskEvidenceId) ?? 0) + 1,
+      );
+    }
+    totals.assertionCount += stateCase.assertionCount;
+    totals.passedAssertionCount += stateCase.passedAssertionCount;
+    totals.failedAssertionCount += stateCase.failedAssertionCount;
+    totals.mutationRequiredCaseCount += Number(evidenceRequired);
+    totals.mutationExecutedCaseCount += Number(stateCase.taskEvidenceComplete);
+    totals.mutationReadbackCaseCount += Number(stateCase.taskEvidenceComplete);
+    totals.mutationRollbackCaseCount += Number(stateCase.taskEvidenceComplete);
+    totals.mutationCleanupCaseCount += Number(stateCase.taskEvidenceComplete);
+    totals.axeViolationCaseCount += Number(stateCase.axeViolationCount > 0);
+    totals.axeViolationNodeCount += stateCase.axeViolationCount;
+    totals.horizontalOverflowCaseCount += Number(stateCase.horizontalOverflowPx > 1);
+    totals.findingCount += stateCase.findingCount;
+  }
+  for (const [scenarioId, expectedCount] of Object.entries(R12_SCENARIO_STATE_COUNTS)) {
+    if (scenarioCounts.get(scenarioId) !== expectedCount) {
+      throw new Error(`combined stateCases do not preserve the exact ${scenarioId} population`);
+    }
+  }
+  for (const [evidenceId, expectedCount] of Object.entries(R12_TASK_EVIDENCE_COUNTS)) {
+    if (evidenceCounts.get(evidenceId) !== expectedCount) {
+      throw new Error(`combined stateCases do not preserve the exact ${evidenceId} population`);
+    }
+  }
+  for (const [key, expected] of Object.entries(totals)) {
+    if (automated[key] !== expected) {
+      throw new Error(`automated.${key} does not match combined stateCases recomputation`);
+    }
+  }
+  if (automated.activeMutationResidueCount !== 0
+    || automated.nonMutationEmptyEvidenceCaseCount !== 60) {
+    throw new Error('combined automated mutation completion is inconsistent');
+  }
+}
+
+function assertCombinedScenarioBreakdown(automated) {
+  if (!Array.isArray(automated.scenarios) || automated.scenarios.length !== 8) {
+    throw new Error('combined scenarios must preserve the exact eight-scenario population');
+  }
+  const expectedIds = Object.keys(R12_SCENARIO_STATE_COUNTS).sort();
+  for (const [index, scenario] of automated.scenarios.entries()) {
+    const label = `automated.scenarios[${index}]`;
+    assertExactKeys(scenario, SCENARIO_KEYS, label);
+    if (scenario.scenarioId !== expectedIds[index]) {
+      throw new Error('combined scenarios must be in the exact ascending eight-scenario order');
+    }
+    for (const key of SCENARIO_KEYS.filter((key) => key.endsWith('Count'))) {
+      assertInteger(scenario[key], `${label}.${key}`);
+    }
+    if (scenario.status !== 'measured'
+      || scenario.plannedStateCaseCount !== R12_SCENARIO_STATE_COUNTS[scenario.scenarioId]
+      || scenario.observedStateCaseCount !== scenario.plannedStateCaseCount
+      || scenario.invalidStateCaseCount !== 0
+      || scenario.plannedPerformanceCaseCount !== 6
+      || scenario.observedPerformanceCaseCount !== 6
+      || scenario.invalidPerformanceCaseCount !== 0) {
+      throw new Error(`${label} is not an exact measured automated population`);
+    }
+    const stateCases = automated.stateCases.filter(({ scenarioId }) => scenarioId === scenario.scenarioId);
+    if (scenario.axeViolationCaseCount
+        !== stateCases.filter(({ axeViolationCount }) => axeViolationCount > 0).length
+      || scenario.failedAssertionCaseCount
+        !== stateCases.filter(({ failedAssertionCount }) => failedAssertionCount > 0).length) {
+      throw new Error(`${label} finding counters do not match the bounded state population`);
+    }
+  }
+}
+
+function automatedEvidenceDigest(summary) {
+  return sha256Hex(canonicalJsonBytes({
+    baselineRunId: summary.baselineRunId,
+    sourceRun: summary.sourceRun,
+    provenance: summary.provenance,
+    sourceInventory: summary.sourceInventory,
+    automated: summary.automated,
+    diagnostics: summary.diagnostics,
+  }));
+}
+
+export function getCombinedV2ExecutionContract() {
+  return {
+    baselineRunId: COMBINED_V2_BASELINE_RUN_ID,
+    executionScenarioManifestHash: COMBINED_V2_MANIFEST_HASH,
+    executionPlanHash: COMBINED_V2_PLAN_HASH,
+    protocolHash: COMBINED_V2_PROTOCOL_HASH,
+    stateCaseBindings: COMBINED_V2_PLAN.stateCases.map((stateCase) => ({
+      caseId: stateCase.caseId,
+      scenarioId: stateCase.scenarioId,
+      requiredTaskEvidenceId: stateCase.requiredTaskEvidenceId,
+    })),
+    performanceCaseBindings: COMBINED_V2_PLAN.performanceCases.map((performanceCase) => ({
+      renderCaseId: performanceCase.renderCaseId,
+      scenarioId: performanceCase.scenarioId,
+    })),
+    scenarioStepIds: Object.fromEntries(COMBINED_V2_MANIFEST.scenarios.map((scenario) => [
+      scenario.id,
+      scenario.journeySteps.map(({ id }) => id).sort(),
+    ])),
+  };
+}
+
+function manualObservationDigest(observation) {
+  const projection = Object.fromEntries(
+    MANUAL_OBSERVATION_KEYS
+      .filter((key) => key !== 'evidenceDigest')
+      .map((key) => [key, observation[key]]),
+  );
+  return sha256Hex(canonicalJsonBytes(projection));
+}
+
+function sourceRunSealDigest(sourceRun) {
+  return sha256Hex(canonicalJsonBytes(Object.fromEntries(
+    SOURCE_RUN_KEYS
+      .filter((key) => key !== 'sealDigest')
+      .map((key) => [key, sourceRun[key]]),
+  )));
+}
+
+function assertCombinedSourceRun(summary) {
+  const sourceRun = summary.sourceRun;
+  assertExactKeys(sourceRun, SOURCE_RUN_KEYS, 'summary.sourceRun');
+  for (const key of [
+    'runSummaryDigest', 'runProgressDigest', 'environmentDigest', 'protocolHash',
+    'buildInputTreeHash', 'executionScenarioManifestHash', 'executionPlanHash',
+    'routeTruthHash', 'privacyRuleHash', 'runnerHash', 'coreHash',
+    'runnerContractHash', 'scenarioContractHash', 'automatedInventoryDigest',
+    'automatedProjectionDigest', 'sealDigest',
+  ]) assertHex(sourceRun[key], HEX64, `sourceRun.${key}`);
+  assertHex(sourceRun.buildSha, HEX40, 'sourceRun.buildSha');
+  assertInteger(sourceRun.runnerVersion, 'sourceRun.runnerVersion', COMBINED_V2_RUNNER_VERSION);
+  if (sourceRun.runnerVersion !== COMBINED_V2_RUNNER_VERSION) {
+    throw new Error('combined source run seal uses an unsupported runner version');
+  }
+  for (const key of [
+    'plannedStateCaseCount', 'completedStateCaseCount', 'invalidStateCaseCount',
+    'plannedPerformanceCaseCount', 'completedPerformanceCaseCount',
+    'invalidPerformanceCaseCount',
+  ]) assertInteger(sourceRun[key], `sourceRun.${key}`);
+  if (sourceRun.evidenceKind !== 'automated-run-seal-v2'
+    || sourceRun.baselineRunId !== COMBINED_V2_BASELINE_RUN_ID
+    || !UUID_V4.test(sourceRun.executionId)
+    || sourceRun.status !== 'automated-run-complete'
+    || sourceRun.final !== true
+    || sourceRun.protocolHashVerifiedAtFinish !== true
+    || !isUtcInstant(sourceRun.startedAt)
+    || !isUtcInstant(sourceRun.finishedAt)
+    || sourceRun.dirtyBuildInputDiffHash !== null
+    || !/^sha256:[0-9a-f]{64}$/u.test(sourceRun.frontendBuildId)
+    || !/^sha256:[0-9a-f]{64}$/u.test(sourceRun.backendBuildId)
+    || sourceRun.automatedInventoryDigest !== summary.sourceInventory.automatedEvidenceInventoryDigest
+    || sourceRun.plannedStateCaseCount !== 96
+    || sourceRun.completedStateCaseCount !== 96
+    || sourceRun.invalidStateCaseCount !== 0
+    || sourceRun.plannedPerformanceCaseCount !== 48
+    || sourceRun.completedPerformanceCaseCount !== 48
+    || sourceRun.invalidPerformanceCaseCount !== 0
+    || sourceRun.sealDigest !== sourceRunSealDigest(sourceRun)) {
+    throw new Error('combined source run seal is incomplete or has mixed provenance');
+  }
+  for (const key of [
+    'executionId', 'runnerVersion', 'startedAt', 'finishedAt', 'protocolHash', 'buildSha',
+    'buildInputTreeHash', 'dirtyBuildInputDiffHash', 'executionScenarioManifestHash',
+    'executionPlanHash', 'routeTruthHash', 'privacyRuleHash', 'runnerHash', 'coreHash',
+    'runnerContractHash', 'scenarioContractHash', 'frontendBuildId', 'backendBuildId',
+  ]) {
+    if (sourceRun[key] !== summary.provenance[key]) {
+      throw new Error(`combined source run ${key} has mixed provenance`);
+    }
+  }
+}
+
+function assertCombinedManualEvidence(summary) {
+  const manual = summary.manual;
+  assertExactKeys(manual, COMBINED_MANUAL_KEYS, 'summary.manual');
+  if (manual.requiredEvidenceCount !== 48
+    || manual.completedEvidenceCount !== 48
+    || manual.status !== 'collected'
+    || !Array.isArray(manual.observations)
+    || manual.observations.length !== 48) {
+    throw new Error('combined manual evidence must preserve the exact 48-item 8x6 population');
+  }
+  const expectedAutomatedDigest = automatedEvidenceDigest(summary);
+  if (manual.automatedEvidenceDigest !== expectedAutomatedDigest) {
+    throw new Error('combined manual automated evidence digest is invalid');
+  }
+  const expectedPairs = Object.keys(R12_SCENARIO_STATE_COUNTS).sort().flatMap(
+    (scenarioId) => Object.keys(MANUAL_ENVIRONMENT_BY_CHECK).sort().map(
+      (checkId) => `${scenarioId}\u0000${checkId}`,
+    ),
+  );
+  const observedPairs = new Set();
+  let findingCount = 0;
+  for (const [index, observation] of manual.observations.entries()) {
+    const label = `manual.observations[${index}]`;
+    assertExactKeys(observation, MANUAL_OBSERVATION_KEYS, label);
+    if (observation.evidenceKind !== 'manual-observation-v2') {
+      throw new Error(`${label}.evidenceKind is invalid`);
+    }
+    const pair = `${observation.scenarioId}\u0000${observation.checkId}`;
+    if (pair !== expectedPairs[index] || observedPairs.has(pair)) {
+      throw new Error('combined manual evidence requires each unique scenarioId/checkId in exact 8x6 order');
+    }
+    observedPairs.add(pair);
+    assertEnum(observation.status, ['pass', 'fail'], `${label}.status`);
+    const expectedEnvironment = MANUAL_ENVIRONMENT_BY_CHECK[observation.checkId];
+    assertExactKeys(observation.environment, MANUAL_ENVIRONMENT_KEYS, `${label}.environment`);
+    const environment = observation.environment;
+    if (!expectedEnvironment || environment.kind !== expectedEnvironment) {
+      throw new Error(`${label}.environment is not the closed check environment`);
+    }
+    assertEnum(environment.evidenceMode, ['expert-manual', 'user-at'], `${label}.environment.evidenceMode`);
+    assertEnum(environment.osFamily, ['windows', 'macos', 'linux'], `${label}.environment.osFamily`);
+    if (!SAFE_VERSION.test(environment.osVersion)
+      || environment.browserFamily !== 'chrome'
+      || !SAFE_VERSION.test(environment.browserVersion)
+      || environment.brandTheme !== 'current-default') {
+      throw new Error(`${label}.environment has invalid bounded runtime metadata`);
+    }
+    const expectedAt = observation.checkId === 'nvda-chrome' ? 'nvda' : 'none';
+    if (environment.assistiveTechnology !== expectedAt
+      || (expectedAt === 'nvda' && (!SAFE_VERSION.test(environment.assistiveTechnologyVersion)
+        || environment.osFamily !== 'windows'))
+      || (expectedAt === 'none' && environment.assistiveTechnologyVersion !== null)
+      || (observation.checkId === 'forced-colors' && environment.osFamily !== 'windows')) {
+      throw new Error(`${label}.environment is inconsistent with the manual check`);
+    }
+    for (const [key, allowed] of [
+      ['colorModes', ['light', 'dark']],
+      ['viewportIds', ['mobile-320', 'tablet-768', 'desktop-1280']],
+    ]) {
+      const values = environment[key];
+      if (!Array.isArray(values) || values.length === 0
+        || new Set(values).size !== values.length
+        || values.some((value) => !allowed.includes(value))
+        || values.some((value, valueIndex) => valueIndex > 0
+          && allowed.indexOf(values[valueIndex - 1]) >= allowed.indexOf(value))) {
+        throw new Error(`${label}.environment.${key} must use the ordered closed population`);
+      }
+    }
+    assertExactKeys(observation.coverage, MANUAL_COVERAGE_KEYS, `${label}.coverage`);
+    const expectedStepIds = COMBINED_V2_MANIFEST.scenarios
+      .find(({ id }) => id === observation.scenarioId)?.journeySteps
+      .map(({ id }) => id).sort();
+    if (!expectedStepIds || !Array.isArray(observation.coverage.stepIds)
+      || stableJson(observation.coverage.stepIds) !== stableJson(expectedStepIds)) {
+      throw new Error(`${label}.coverage must preserve every frozen scenario step`);
+    }
+    assertEnum(observation.reviewerRole, MANUAL_REVIEWER_ROLES, `${label}.reviewer role`);
+    if (!UUID_V4.test(observation.executionId)
+      || observation.executionId !== summary.provenance.executionId) {
+      throw new Error(`${label} has mixed automated execution identity`);
+    }
+    if (!isUtcInstant(observation.startedAt) || !isUtcInstant(observation.finishedAt)
+      || Date.parse(observation.startedAt) < Date.parse(summary.provenance.finishedAt)
+      || Date.parse(observation.finishedAt) < Date.parse(observation.startedAt)) {
+      throw new Error(`${label} manual session timestamps are invalid`);
+    }
+    if (observation.buildSha !== summary.provenance.buildSha
+      || observation.executionScenarioManifestHash !== summary.provenance.executionScenarioManifestHash
+      || observation.executionPlanHash !== summary.provenance.executionPlanHash) {
+      throw new Error(`${label} has mixed automated build or plan provenance`);
+    }
+    if (observation.automatedEvidenceDigest !== expectedAutomatedDigest) {
+      throw new Error(`${label} has a mixed automated evidence digest`);
+    }
+    if (observation.protocolHash !== summary.provenance.protocolHash
+      || observation.protocolHashVerifiedAtStart !== true
+      || observation.protocolHashVerifiedAtFinish !== true) {
+      throw new Error(`${label} protocol hash must use the same automated provenance`);
+    }
+    assertExactKeys(observation.finding, MANUAL_FINDING_KEYS, `${label}.finding`);
+    const finding = observation.finding;
+    const allowedImpacts = [
+      'task-blocked', 'task-error-risk', 'task-understanding-risk',
+      'task-recovery-risk', 'no-adverse-impact-observed',
+    ];
+    if (!Array.isArray(finding.issueCodes)
+      || new Set(finding.issueCodes).size !== finding.issueCodes.length
+      || finding.issueCodes.some((code) => !ISSUE_CODE.test(code))
+      || !Array.isArray(finding.impactCodes)
+      || new Set(finding.impactCodes).size !== finding.impactCodes.length
+      || finding.impactCodes.some((code) => !allowedImpacts.includes(code))) {
+      throw new Error(`${label}.finding must use closed privacy-safe issue and impact codes`);
+    }
+    if ((observation.status === 'pass'
+      && (finding.issueCodes.length !== 0
+        || stableJson(finding.impactCodes) !== stableJson(['no-adverse-impact-observed'])
+        || finding.severity !== null))
+      || (observation.status === 'fail'
+        && (finding.issueCodes.length === 0
+          || finding.impactCodes.length === 0
+          || finding.impactCodes.includes('no-adverse-impact-observed')
+          || !['P0', 'P1', 'P2', 'P3'].includes(finding.severity)))) {
+      throw new Error(`${label}.finding must preserve pass or fail meaning without hiding findings`);
+    }
+    findingCount += finding.issueCodes.length;
+    assertHex(observation.evidenceDigest, HEX64, `${label}.evidenceDigest`);
+    if (observation.evidenceDigest !== manualObservationDigest(observation)) {
+      throw new Error(`${label}.evidenceDigest is not bound to the closed manual observation`);
+    }
+    assertExactKeys(observation.redaction, MANUAL_REDACTION_KEYS, `${label}.redaction`);
+    if (observation.redaction.status !== 'approved') {
+      throw new Error(`${label}.redaction must be approved`);
+    }
+    assertEnum(
+      observation.redaction.reviewedByRole,
+      REDACTION_REVIEWER_ROLES,
+      `${label}.redaction reviewer role`,
+    );
+    if (!summary.redaction.approvedByRoles.includes(observation.redaction.reviewedByRole)) {
+      throw new Error(`${label}.redaction reviewer role is not attested by the combined summary`);
+    }
+  }
+  if (manual.findingCount !== findingCount) {
+    throw new Error('combined manual finding count must preserve every fail observation');
+  }
+  const expectedManualDigest = sha256Hex(canonicalJsonBytes(manual.observations));
+  if (manual.evidenceDigest !== expectedManualDigest) {
+    throw new Error('combined manual evidence digest is invalid');
+  }
+}
+
+export function assertCombinedCompactSummary(summary) {
+  assertExactKeys(summary, COMBINED_SUMMARY_KEYS, 'combined compact summary');
+  if (summary.schemaVersion !== 2
+    || summary.evidenceKind !== 'ui-quality-baseline-combined-summary'
+    || summary.evidenceScope !== 'combined'
+    || summary.baselineRunId !== COMBINED_V2_BASELINE_RUN_ID) {
+    throw new Error('combined summary identity must describe the exact new r13 run after r12');
+  }
+
+  assertExactKeys(summary.provenance, COMBINED_PROVENANCE_KEYS, 'summary.provenance');
+  const provenance = summary.provenance;
+  assertInteger(provenance.protocolVersion, 'provenance.protocolVersion', 1);
+  assertInteger(provenance.runnerVersion, 'provenance.runnerVersion', COMBINED_V2_RUNNER_VERSION);
+  if (provenance.runnerVersion !== COMBINED_V2_RUNNER_VERSION) {
+    throw new Error('combined provenance requires the exact r13 runner version');
+  }
+  if (!UUID_V4.test(provenance.executionId)) {
+    throw new Error('combined provenance requires a lowercase UUID-v4 execution identity');
+  }
+  assertHex(provenance.protocolHash, HEX64, 'provenance.protocolHash');
+  if (provenance.protocolHashStatus !== 'recorded'
+    || provenance.protocolHashVerifiedAtFinish !== true
+    || provenance.protocolHash !== COMBINED_V2_PROTOCOL_HASH) {
+    throw new Error('combined provenance requires a nonzero execution-recorded protocol hash verified at finish');
+  }
+  if (provenance.executionPlanHashStatus !== 'recomputed-from-run-snapshot'
+    || provenance.toolingHashStatus !== 'resolved-from-clean-build-commit') {
+    throw new Error('combined derived provenance must declare its bounded non-retrospective source');
+  }
+  if (provenance.executionScenarioManifestHash !== COMBINED_V2_MANIFEST_HASH
+    || provenance.executionPlanHash !== COMBINED_V2_PLAN_HASH) {
+    throw new Error('combined provenance does not match the exact frozen r13 manifest and execution plan');
+  }
+  assertHex(provenance.buildSha, HEX40, 'provenance.buildSha');
+  if (/^0+$/u.test(provenance.buildSha)) throw new Error('combined build SHA must be nonzero');
+  for (const key of [
+    'executionScenarioManifestHash', 'executionPlanHash', 'routeTruthHash',
+    'privacyRuleHash', 'buildInputTreeHash', 'runnerHash', 'coreHash',
+    'runnerContractHash', 'scenarioContractHash',
+  ]) assertHex(provenance[key], HEX64, `provenance.${key}`);
+  if (provenance.dirtyBuildInputDiffHash !== null) {
+    throw new Error('combined evidence requires a clean build commit for tooling provenance readback');
+  }
+  if (provenance.privacyRuleHash !== R12_PRIVACY_RULE_HASH) {
+    throw new Error('combined provenance privacy rule hash is not the approved publication policy');
+  }
+  if (!isUtcInstant(provenance.startedAt) || !isUtcInstant(provenance.finishedAt)
+    || Date.parse(provenance.finishedAt) <= Date.parse(provenance.startedAt)
+    || Date.parse(provenance.startedAt) <= Date.parse(R12_EXECUTION_PROVENANCE.finishedAt)) {
+    throw new Error('combined provenance must be a later valid UTC execution interval');
+  }
+  for (const key of ['frontendBuildId', 'backendBuildId']) {
+    if (typeof provenance[key] !== 'string' || !/^sha256:[0-9a-f]{64}$/u.test(provenance[key])) {
+      throw new Error(`provenance.${key} must be a SHA-256 image ID`);
+    }
+  }
+  if (provenance.finishVerificationScenarioCount !== 8) {
+    throw new Error('combined finish verification must cover exactly eight scenarios');
+  }
+
+  assertExactKeys(summary.sourceInventory, COMBINED_INVENTORY_KEYS, 'summary.sourceInventory');
+  const inventory = summary.sourceInventory;
+  if (inventory.aggregateAlgorithm !== 'sha256-json-sorted-path-content-digests-v2') {
+    throw new Error('combined source inventory algorithm is invalid');
+  }
+  for (const key of [
+    'inventoryDigest', 'automatedInventoryDigest', 'diagnosticInventoryDigest',
+    'automatedEvidenceInventoryDigest', 'automatedRunSealFileDigest',
+  ]) {
+    assertHex(inventory[key], HEX64, `sourceInventory.${key}`);
+  }
+  for (const key of [
+    'jsonFileCount', 'automatedJsonFileCount', 'diagnosticJsonFileCount',
+    'automatedEvidenceJsonFileCount',
+    'totalBytes', 'nonJsonFileCount', 'symlinkCount',
+  ]) assertInteger(inventory[key], `sourceInventory.${key}`);
+  if (inventory.automatedJsonFileCount !== 283
+    || inventory.automatedEvidenceJsonFileCount !== 282
+    || inventory.diagnosticJsonFileCount !== 0
+    || inventory.jsonFileCount !== inventory.automatedJsonFileCount + inventory.diagnosticJsonFileCount
+    || inventory.totalBytes <= 0
+      || inventory.nonJsonFileCount !== 0
+      || inventory.symlinkCount !== 0) {
+    throw new Error('combined source inventory must preserve the exact automated JSON population');
+  }
+  assertCombinedSourceRun(summary);
+  if (inventory.inventoryDigest !== inventory.automatedInventoryDigest
+    || inventory.diagnosticInventoryDigest !== aggregatePathBoundContentDigest([])
+    || inventory.automatedRunSealFileDigest
+      !== sha256Hex(canonicalJsonBytes(summary.sourceRun))) {
+    throw new Error('combined source inventory does not bind the canonical runner seal and empty diagnostics');
+  }
+
+  assertExactKeys(summary.automated, AUTOMATED_KEYS, 'summary.automated');
+  const automated = summary.automated;
+  if (sha256Hex(canonicalJsonBytes(automated)) === R12_AUTOMATED_PAYLOAD_DIGEST) {
+    throw new Error('historical r12 automated payload cannot seed r13 combined evidence');
+  }
+  for (const key of AUTOMATED_KEYS.filter((key) => key.endsWith('Count'))) {
+    assertInteger(automated[key], `automated.${key}`);
+  }
+  if (automated.scenarioCount !== 8
+    || automated.renderCaseCount !== 48
+    || automated.plannedStateCaseCount !== 96
+    || automated.observedStateCaseCount !== 96
+    || automated.invalidStateCaseCount !== 0
+    || automated.plannedPerformanceCaseCount !== 48
+    || automated.observedPerformanceCaseCount !== 48
+    || automated.invalidPerformanceCaseCount !== 0) {
+    throw new Error('combined automated evidence must preserve exact 96 state and 48 performance completion');
+  }
+  if (sha256Hex(canonicalJsonBytes(automated)) === R12_AUTOMATED_PAYLOAD_DIGEST
+    || inventory.automatedInventoryDigest === R12_SOURCE_INVENTORY.automatedInventoryDigest) {
+    throw new Error('historical r12 automated evidence cannot be relabeled as the fresh r13 run');
+  }
+  assertCombinedStateCases(automated);
+  assertPerformance(automated);
+  const expectedPerformanceIds = [...COMBINED_V2_PERFORMANCE_BY_ID.keys()].sort();
+  for (const [index, performance] of automated.performance.entries()) {
+    const planned = COMBINED_V2_PERFORMANCE_BY_ID.get(performance.renderCaseId);
+    if (performance.renderCaseId !== expectedPerformanceIds[index]
+      || !planned
+      || planned.scenarioId !== performance.scenarioId) {
+      throw new Error('combined performance evidence is substituted from the exact r13 execution plan');
+    }
+  }
+  assertCombinedScenarioBreakdown(automated);
+  if (summary.sourceRun.automatedProjectionDigest
+    !== sha256Hex(canonicalJsonBytes(automated))) {
+    throw new Error('combined automated projection digest does not match the runner seal');
+  }
+
+  assertExactKeys(summary.diagnostics, DIAGNOSTIC_KEYS, 'summary.diagnostics');
+  const diagnostics = summary.diagnostics;
+  for (const key of DIAGNOSTIC_KEYS.filter((key) => key.endsWith('Count'))) {
+    assertInteger(diagnostics[key], `diagnostics.${key}`);
+  }
+  const expectedDiagnosticCases = inventory.diagnosticJsonFileCount === 8 ? 6 : 0;
+  if (diagnostics.evidenceKind !== 'diagnostic-not-baseline-evidence'
+    || diagnostics.plannedCaseCount !== expectedDiagnosticCases
+    || diagnostics.completedCaseCount !== expectedDiagnosticCases
+    || diagnostics.invalidCaseCount !== 0
+    || diagnostics.mutationEvidenceCount !== expectedDiagnosticCases
+    || diagnostics.activeMutationResidueCount !== 0) {
+    throw new Error('combined diagnostics must stay complete and separate from baseline evidence');
+  }
+
+  assertExactKeys(summary.redaction, COMBINED_REDACTION_KEYS, 'summary.redaction');
+  const redaction = summary.redaction;
+  for (const key of ['unsafeFileCount', 'rawTraceStoredCount', 'responsePayloadStoredCount', 'reviewQuorum']) {
+    assertInteger(redaction[key], `redaction.${key}`);
+  }
+  const rolesValid = Array.isArray(redaction.approvedByRoles)
+    && redaction.approvedByRoles.length >= redaction.reviewQuorum
+    && new Set(redaction.approvedByRoles).size === redaction.approvedByRoles.length
+    && redaction.approvedByRoles.every((role) => REDACTION_REVIEWER_ROLES.includes(role))
+    && redaction.approvedByRoles.every((role, index) => index === 0
+      || REDACTION_REVIEWER_ROLES.indexOf(redaction.approvedByRoles[index - 1])
+        < REDACTION_REVIEWER_ROLES.indexOf(role));
+  if (redaction.automatedGuardStatus !== 'passed'
+    || redaction.manualGuardStatus !== 'passed'
+    || redaction.unsafeFileCount !== 0
+    || redaction.rawTraceStoredCount !== 0
+    || redaction.responsePayloadStoredCount !== 0
+    || redaction.reviewQuorum !== 1
+    || redaction.status !== 'approved'
+    || !rolesValid) {
+    throw new Error('combined redaction requires closed role-only approval and zero unsafe artifacts');
+  }
+
+  assertCombinedManualEvidence(summary);
+  if (!Array.isArray(summary.limitations) || summary.limitations.length !== 0) {
+    throw new Error('measured combined evidence cannot retain unresolved evidence limitations');
+  }
+  assertExactKeys(summary.promotion, PROMOTION_KEYS, 'summary.promotion');
+  if (summary.promotion.status !== 'measured'
+    || summary.promotion.eligible !== true
+    || !Array.isArray(summary.promotion.blockerCodes)
+    || summary.promotion.blockerCodes.length !== 0) {
+    throw new Error('combined promotion must be exact measured eligibility without hidden blockers');
+  }
+  assertNoCredentialLikeValue(summary, 'combined summary');
+  return summary;
+}
+
+function rawArtifactBytes(value) {
+  return Buffer.from(`${JSON.stringify(value, null, 2)}\n`, 'utf8');
+}
+
+function assertJsonArtifactBufferPopulation(values, expectedCount, label) {
+  if (!Array.isArray(values) || values.length !== expectedCount
+    || values.some((value) => !Buffer.isBuffer(value))) {
+    throw new Error(`${label} must contain the exact JSON artifact buffer population`);
+  }
+  return values.map((bytes, index) => {
+    let value;
+    try {
+      value = JSON.parse(bytes.toString('utf8'));
+    } catch {
+      throw new Error(`${label}[${index}] must be valid JSON bytes`);
+    }
+    if (!bytes.equals(rawArtifactBytes(value))) {
+      throw new Error(`${label}[${index}] must use canonical JSON artifact bytes`);
+    }
+    assertArtifactSafe(value, R12_PRIVACY_POLICY.forbiddenArtifactKeys, `${label}[${index}]`);
+    return value;
+  });
+}
+
+function assertJsonArtifactEntryPopulation(entries, expectedCount, label) {
+  if (!Array.isArray(entries) || entries.length !== expectedCount) {
+    throw new Error(`${label} must contain the exact path-bound JSON artifact population`);
+  }
+  const parsed = entries.map((entry, index) => {
+    if (!entry || typeof entry.relativePath !== 'string' || !Buffer.isBuffer(entry.bytes)) {
+      throw new Error(`${label}[${index}] must contain a relative path and raw bytes`);
+    }
+    const relativePath = entry.relativePath.replaceAll('\\', '/');
+    if (relativePath !== entry.relativePath
+      || relativePath.startsWith('/')
+      || relativePath.split('/').some((segment) => !segment || segment === '.' || segment === '..')
+      || !relativePath.endsWith('.json')) {
+      throw new Error(`${label}[${index}] has an unsafe or noncanonical relative path`);
+    }
+    const [value] = assertJsonArtifactBufferPopulation([entry.bytes], 1, `${label}[${index}]`);
+    return { relativePath, bytes: entry.bytes, value };
+  });
+  if (new Set(parsed.map(({ relativePath }) => relativePath)).size !== parsed.length) {
+    throw new Error(`${label} has duplicate artifact paths`);
+  }
+  return parsed;
+}
+
+function combinedAutomatedEvidencePaths() {
+  const expected = new Set(['run-summary.json', 'run-progress.json']);
+  for (const scenarioId of Object.keys(R12_SCENARIO_STATE_COUNTS)) {
+    for (const relativePath of [
+      `${scenarioId}/environment.json`,
+      `${scenarioId}/manifest-snapshot.json`,
+      `${scenarioId}/task-observations.json`,
+      `${scenarioId}/manual/manual-checks.json`,
+      `${scenarioId}/baseline-result.json`,
+    ]) expected.add(relativePath);
+  }
+  for (const stateCase of COMBINED_V2_PLAN.stateCases) {
+    expected.add(`checkpoints/${stateCase.caseId}.json`);
+    expected.add(`${stateCase.scenarioId}/axe/${stateCase.caseId}.json`);
+  }
+  for (const performance of COMBINED_V2_PLAN.performanceCases) {
+    expected.add(`${performance.scenarioId}/performance/${performance.renderCaseId}.json`);
+  }
+  if (expected.size !== 282) throw new Error('combined execution plan artifact population is invalid');
+  return expected;
+}
+
+function assertCombinedAutomatedRawProjection(automated, artifactsByPath) {
+  const compactStateById = new Map(automated.stateCases.map((stateCase) => [stateCase.caseId, stateCase]));
+  for (const planned of COMBINED_V2_PLAN.stateCases) {
+    const checkpoint = artifactsByPath.get(`checkpoints/${planned.caseId}.json`);
+    const axe = artifactsByPath.get(`${planned.scenarioId}/axe/${planned.caseId}.json`);
+    if (!checkpoint || !axe || checkpoint.caseId !== planned.caseId || axe.caseId !== planned.caseId
+      || !Array.isArray(axe.violations) || !Array.isArray(checkpoint.assertions)
+      || !Array.isArray(checkpoint.automatedFindingCodes)) {
+      throw new Error('combined raw state or axe evidence is missing or substituted');
+    }
+    const axeCounts = summarizeRedactedAxe(axe.violations);
+    const passed = checkpoint.assertions.filter(({ passed: value }) => value === true).length;
+    const failed = checkpoint.assertions.filter(({ passed: value }) => value === false).length;
+    if (passed + failed !== checkpoint.assertions.length
+      || checkpoint.axeViolationCount !== axeCounts.violationCount
+      || checkpoint.invalidReasonCode !== null) {
+      throw new Error('combined raw state evidence has inconsistent counters or invalid status');
+    }
+    const taskEvidenceComplete = assertExecutedTaskEvidence(
+      checkpoint.taskEvidence,
+      planned.requiredTaskEvidenceId,
+      planned.caseId,
+    );
+    const projection = {
+      caseId: planned.caseId,
+      scenarioId: planned.scenarioId,
+      status: checkpoint.status,
+      automatedOutcome: checkpoint.automatedOutcome,
+      assertionCount: checkpoint.assertions.length,
+      passedAssertionCount: passed,
+      failedAssertionCount: failed,
+      axeViolationCount: axeCounts.violationCount,
+      horizontalOverflowPx: checkpoint.responsive?.horizontalOverflowPx ?? 0,
+      findingCount: checkpoint.automatedFindingCodes.length,
+      requiredTaskEvidenceId: planned.requiredTaskEvidenceId,
+      taskEvidenceComplete,
+    };
+    assertStableEqual(compactStateById.get(planned.caseId), projection, 'combined raw state projection');
+  }
+
+  const compactPerformanceById = new Map(
+    automated.performance.map((performance) => [performance.renderCaseId, performance]),
+  );
+  for (const planned of COMBINED_V2_PLAN.performanceCases) {
+    const observation = artifactsByPath.get(
+      `${planned.scenarioId}/performance/${planned.renderCaseId}.json`,
+    );
+    if (!observation || observation.renderCaseId !== planned.renderCaseId
+      || classifyPerformanceObservation(
+        observation.conditionRuns,
+        COMBINED_V2_MANIFEST.repeatPolicy,
+      ).status !== 'lab-performance-observed'
+      || observation.status !== 'lab-performance-observed'
+      || observation.invalidReasonCode !== null
+      || observation.failureStage !== null) {
+      throw new Error('combined raw performance evidence is missing, substituted, or invalid');
+    }
+    const projection = {
+      renderCaseId: planned.renderCaseId,
+      scenarioId: planned.scenarioId,
+      status: observation.status,
+      cold: summarizePerformanceRuns(observation.conditionRuns, 'cold'),
+      warm: summarizePerformanceRuns(observation.conditionRuns, 'warm'),
+    };
+    assertStableEqual(
+      compactPerformanceById.get(planned.renderCaseId),
+      projection,
+      'combined raw performance projection',
+    );
+  }
+
+  const snapshots = Object.keys(R12_SCENARIO_STATE_COUNTS).flatMap((scenarioId) => {
+    const snapshot = artifactsByPath.get(`${scenarioId}/manifest-snapshot.json`);
+    if (!snapshot || snapshot.scenarioId !== scenarioId
+      || snapshot.manifestHash !== COMBINED_V2_MANIFEST_HASH
+      || snapshot.executionPlanHash !== COMBINED_V2_PLAN_HASH
+      || !Array.isArray(snapshot.cases)) {
+      throw new Error('combined raw execution plan snapshot is missing or substituted');
+    }
+    return snapshot.cases;
+  }).sort((left, right) => left.caseId.localeCompare(right.caseId));
+  const expectedStateCases = [...COMBINED_V2_PLAN.stateCases]
+    .sort((left, right) => left.caseId.localeCompare(right.caseId));
+  assertStableEqual(snapshots, expectedStateCases, 'combined raw execution plan snapshots');
+}
+
+export function prepareCombinedAutomatedEvidence({
+  baselineRunId,
+  provenance,
+  automated,
+  diagnostics,
+  automatedArtifactEntries,
+  diagnosticArtifactBytes,
+  automatedRunSeal,
+  runSummary,
+  runProgress,
+  environmentRecords,
+} = {}) {
+  if (baselineRunId !== COMBINED_V2_BASELINE_RUN_ID) {
+    throw new Error('combined automated evidence is reserved for the exact r13 run');
+  }
+  const parsedAutomatedEntries = assertJsonArtifactEntryPopulation(
+    automatedArtifactEntries,
+    283,
+    'automated artifacts',
+  );
+  const automatedArtifactBytes = parsedAutomatedEntries.map(({ bytes }) => bytes);
+  if (!Array.isArray(diagnosticArtifactBytes) || diagnosticArtifactBytes.length !== 0) {
+    throw new Error('diagnostic artifacts must remain separate from authoritative combined evidence');
+  }
+  assertJsonArtifactBufferPopulation(
+    diagnosticArtifactBytes,
+    diagnosticArtifactBytes.length,
+    'diagnostic artifacts',
+  );
+  if (!Array.isArray(environmentRecords) || environmentRecords.length !== 8) {
+    throw new Error('combined automated evidence requires exactly eight environment records');
+  }
+  assertExactKeys(automatedRunSeal, SOURCE_RUN_KEYS, 'runner-emitted automated run seal');
+  const sealEntry = parsedAutomatedEntries.find(
+    ({ relativePath }) => relativePath === 'automated-run-seal.json',
+  );
+  if (!sealEntry || !sealEntry.bytes.equals(rawArtifactBytes(automatedRunSeal))) {
+    throw new Error('runner-emitted automated run seal is not the direct final marker file');
+  }
+  const evidenceEntries = parsedAutomatedEntries.filter(
+    ({ relativePath }) => relativePath !== 'automated-run-seal.json',
+  );
+  const evidenceArtifactBytes = evidenceEntries.map(({ bytes }) => bytes);
+  const automatedRunSealBytes = sealEntry.bytes;
+  if (evidenceEntries.length !== 282) {
+    throw new Error('runner-emitted seal must be the separate 283rd automated JSON artifact');
+  }
+  const expectedPaths = [...combinedAutomatedEvidencePaths()].sort();
+  const observedPaths = evidenceEntries.map(({ relativePath }) => relativePath).sort();
+  if (observedPaths.some((relativePath, index) => relativePath !== expectedPaths[index])) {
+    throw new Error('sealed automated evidence has a missing, extra, or substituted artifact path');
+  }
+  for (const [index, { value }] of evidenceEntries.entries()) {
+    if (value?.baselineRunId !== baselineRunId || value?.executionId !== provenance?.executionId) {
+      throw new Error(`sealed automated evidence artifact ${index} has mixed execution identity`);
+    }
+  }
+  const artifactsByPath = new Map(evidenceEntries.map(
+    ({ relativePath, value }) => [relativePath, value],
+  ));
+  const artifactEntriesByPath = new Map(evidenceEntries.map(
+    (entry) => [entry.relativePath, entry],
+  ));
+  const requireExactPathRecord = (relativePath, record, label) => {
+    const entry = artifactEntriesByPath.get(relativePath);
+    if (!entry || !entry.bytes.equals(rawArtifactBytes(record))) {
+      throw new Error(`${label} is not bound to its designated path`);
+    }
+    return entry.bytes;
+  };
+  const runSummaryBytes = requireExactPathRecord(
+    'run-summary.json',
+    runSummary,
+    'run summary final marker',
+  );
+  const runProgressBytes = requireExactPathRecord(
+    'run-progress.json',
+    runProgress,
+    'run progress final marker',
+  );
+  const environmentBytes = Object.keys(R12_SCENARIO_STATE_COUNTS).map(
+    (scenarioId, index) => requireExactPathRecord(
+      `${scenarioId}/environment.json`,
+      environmentRecords[index],
+      `environment record ${index}`,
+    ),
+  );
+  if (!runSummary || runSummary.baselineRunId !== baselineRunId
+    || runSummary.executionId !== provenance?.executionId
+    || runSummary.runnerVersion !== provenance.runnerVersion
+    || runSummary.startedAt !== provenance.startedAt
+    || runSummary.finishedAt !== provenance.finishedAt
+    || runSummary.buildSha !== provenance.buildSha
+    || runSummary.manifestHash !== provenance.executionScenarioManifestHash
+    || runSummary.executionPlanHash !== provenance.executionPlanHash
+    || runSummary.protocolHash !== provenance.protocolHash
+    || runSummary.scenarioCount !== 8
+    || runSummary.plannedRenderCaseCount !== 48
+    || runSummary.plannedStateCaseCount !== 96
+    || runSummary.includePerformance !== true
+    || !Array.isArray(runSummary.scenarios)
+    || runSummary.scenarios.length !== 8) {
+    throw new Error('combined run summary final marker is incomplete or has mixed provenance');
+  }
+  for (const scenario of runSummary.scenarios) {
+    if (!Object.hasOwn(R12_SCENARIO_STATE_COUNTS, scenario.scenarioId)
+      || scenario.plannedCaseCount !== R12_SCENARIO_STATE_COUNTS[scenario.scenarioId]
+      || scenario.invalidCaseCount !== 0
+      || scenario.plannedPerformanceCaseCount !== 6
+      || scenario.completedPerformanceCaseCount !== 6
+      || scenario.invalidPerformanceCaseCount !== 0) {
+      throw new Error('combined run summary scenario population is incomplete');
+    }
+  }
+  if (!runProgress || runProgress.baselineRunId !== baselineRunId
+    || runProgress.executionId !== provenance.executionId
+    || runProgress.runnerVersion !== provenance.runnerVersion
+    || runProgress.startedAt !== provenance.startedAt
+    || runProgress.phase !== 'complete'
+    || runProgress.plannedStateCaseCount !== 96
+    || runProgress.completedStateCaseCount !== 96
+    || runProgress.invalidStateCaseCount !== 0
+    || runProgress.plannedPerformanceCaseCount !== 48
+    || runProgress.completedPerformanceCaseCount !== 48
+    || runProgress.invalidPerformanceCaseCount !== 0
+    || runProgress.final !== true) {
+    throw new Error('combined run progress is not an exact final 96/48 marker');
+  }
+  for (const environment of environmentRecords) {
+    if (environment.baselineRunId !== baselineRunId
+      || environment.executionId !== provenance.executionId
+      || environment.protocolHash !== provenance.protocolHash
+      || environment.protocolHashVerifiedAtFinish !== true
+      || environment.buildSha !== provenance.buildSha
+      || environment.manifestHash !== provenance.executionScenarioManifestHash
+      || environment.executionPlanHash !== provenance.executionPlanHash
+      || environment.runnerVersion !== provenance.runnerVersion
+      || environment.startedAt !== provenance.startedAt
+      || environment.buildInputTreeHash !== provenance.buildInputTreeHash
+      || environment.dirtyBuildInputDiffHash !== provenance.dirtyBuildInputDiffHash) {
+      throw new Error('combined environment records have mixed or unverified provenance');
+    }
+  }
+
+  assertExactKeys(automated, AUTOMATED_KEYS, 'combined automated evidence');
+  if (sha256Hex(canonicalJsonBytes(automated)) === R12_AUTOMATED_PAYLOAD_DIGEST) {
+    throw new Error('historical r12 automated payload cannot seed r13 combined evidence');
+  }
+  assertCombinedStateCases(automated);
+  assertPerformance(automated);
+  assertCombinedScenarioBreakdown(automated);
+  for (const performance of automated.performance) {
+    const planned = COMBINED_V2_PERFORMANCE_BY_ID.get(performance.renderCaseId);
+    if (!planned || planned.scenarioId !== performance.scenarioId) {
+      throw new Error('combined performance evidence is not in the exact r13 execution plan');
+    }
+  }
+  assertCombinedAutomatedRawProjection(automated, artifactsByPath);
+
+  const allArtifactBytes = [...automatedArtifactBytes, ...diagnosticArtifactBytes];
+  const automatedInventoryDigest = aggregatePathBoundContentDigest(parsedAutomatedEntries);
+  const automatedEvidenceInventoryDigest = aggregatePathBoundContentDigest(evidenceEntries);
+  const diagnosticInventoryDigest = aggregatePathBoundContentDigest([]);
+  const sourceInventory = {
+    aggregateAlgorithm: 'sha256-json-sorted-path-content-digests-v2',
+    inventoryDigest: automatedInventoryDigest,
+    automatedInventoryDigest,
+    diagnosticInventoryDigest,
+    jsonFileCount: allArtifactBytes.length,
+    automatedJsonFileCount: automatedArtifactBytes.length,
+    diagnosticJsonFileCount: diagnosticArtifactBytes.length,
+    totalBytes: allArtifactBytes.reduce((sum, bytes) => sum + bytes.length, 0),
+    nonJsonFileCount: 0,
+    symlinkCount: 0,
+    automatedEvidenceJsonFileCount: evidenceArtifactBytes.length,
+    automatedEvidenceInventoryDigest,
+    automatedRunSealFileDigest: sha256Hex(canonicalJsonBytes(automatedRunSeal)),
+  };
+  if (sourceInventory.automatedEvidenceInventoryDigest === R12_SOURCE_INVENTORY.automatedInventoryDigest) {
+    throw new Error('historical r12 automated inventory cannot seed r13 combined evidence');
+  }
+  const sourceRun = structuredClone(automatedRunSeal);
+  if (sourceRun.runSummaryDigest !== sha256Hex(runSummaryBytes)
+    || sourceRun.runProgressDigest !== sha256Hex(runProgressBytes)
+    || sourceRun.environmentDigest !== aggregateContentDigest(environmentBytes)
+    || sourceRun.automatedInventoryDigest !== sourceInventory.automatedEvidenceInventoryDigest) {
+    throw new Error('runner-emitted automated run seal does not bind the exact raw artifact inventory');
+  }
+  if (sourceRun.automatedProjectionDigest !== sha256Hex(canonicalJsonBytes(automated))) {
+    throw new Error('runner-emitted automated projection digest does not match the raw-derived compact evidence');
+  }
+  assertCombinedSourceRun({ sourceRun, provenance, sourceInventory });
+  const evidence = {
+    baselineRunId,
+    sourceRun,
+    provenance: structuredClone(provenance),
+    sourceInventory,
+    automated: structuredClone(automated),
+    diagnostics: structuredClone(diagnostics),
+    automatedEvidenceDigest: null,
+  };
+  evidence.automatedEvidenceDigest = automatedEvidenceDigest(evidence);
+  return evidence;
+}
+
+export function sealCombinedManualObservation(observation) {
+  const sealed = structuredClone(observation);
+  sealed.evidenceDigest = manualObservationDigest(sealed);
+  return sealed;
+}
+
+export function buildCombinedCompactSummary({
+  automatedEvidence,
+  manualObservations,
+  redaction,
+} = {}) {
+  assertExactKeys(
+    automatedEvidence,
+    COMBINED_AUTOMATED_EVIDENCE_KEYS,
+    'combined automated evidence envelope',
+  );
+  if (!Array.isArray(manualObservations)) throw new Error('manual observations must be an array');
+  const summary = {
+    schemaVersion: 2,
+    evidenceKind: 'ui-quality-baseline-combined-summary',
+    baselineRunId: automatedEvidence.baselineRunId,
+    evidenceScope: 'combined',
+    sourceRun: structuredClone(automatedEvidence.sourceRun),
+    provenance: structuredClone(automatedEvidence.provenance),
+    sourceInventory: structuredClone(automatedEvidence.sourceInventory),
+    automated: structuredClone(automatedEvidence.automated),
+    diagnostics: structuredClone(automatedEvidence.diagnostics),
+    manual: null,
+    redaction: structuredClone(redaction),
+    limitations: [],
+    promotion: {
+      status: 'measured',
+      eligible: true,
+      blockerCodes: [],
+    },
+  };
+  const digest = automatedEvidenceDigest(summary);
+  if (automatedEvidence.automatedEvidenceDigest !== digest) {
+    throw new Error('combined automated evidence envelope digest is invalid');
+  }
+  for (const [index, observation] of manualObservations.entries()) {
+    if (observation?.automatedEvidenceDigest !== digest) {
+      throw new Error(`manual observation ${index} has missing or mixed automated evidence provenance`);
+    }
+  }
+  const checkOrder = Object.keys(MANUAL_ENVIRONMENT_BY_CHECK).sort();
+  const observations = structuredClone(manualObservations)
+    .sort((left, right) => left.scenarioId.localeCompare(right.scenarioId)
+      || checkOrder.indexOf(left.checkId) - checkOrder.indexOf(right.checkId));
+  summary.manual = {
+    requiredEvidenceCount: 48,
+    completedEvidenceCount: observations.filter(({ status }) => ['pass', 'fail'].includes(status)).length,
+    findingCount: observations.reduce(
+      (count, observation) => count + observation.finding.issueCodes.length,
+      0,
+    ),
+    automatedEvidenceDigest: digest,
+    evidenceDigest: sha256Hex(canonicalJsonBytes(observations)),
+    status: 'collected',
+    observations,
+  };
+  return assertCombinedCompactSummary(summary);
+}
+
+function assertPublishedSummary(summary) {
+  if (summary?.schemaVersion === 1) return assertCompactSummary(summary);
+  if (summary?.schemaVersion === 2) return assertCombinedCompactSummary(summary);
+  throw new Error('published summary schema version is unsupported');
+}
+
 export function approveR12CompactSummary(summary, { reviewerRole } = {}) {
   assertCompactSummary(summary);
   if (summary.redaction.status !== 'automated-privacy-guard-passed-human-review-pending') {
@@ -678,8 +1797,10 @@ export function approveR12CompactSummary(summary, { reviewerRole } = {}) {
 
 function assertEntry(entry, summary, index) {
   assertExactKeys(entry, ENTRY_KEYS, 'baseline index entry');
-  if (entry.schemaVersion !== 1 || entry.status !== 'published') throw new Error('entry status must be immutable published');
-  assertCompactSummary(summary);
+  if (entry.schemaVersion !== summary?.schemaVersion || entry.status !== 'published') {
+    throw new Error('entry status and schema version must match the immutable published summary');
+  }
+  assertPublishedSummary(summary);
   const digest = sha256Hex(canonicalJsonBytes(summary));
   if (entry.artifactDigest !== digest) throw new Error('entry artifact digest does not match canonical summary bytes');
   assertHex(entry.artifactDigest, HEX64, 'entry.artifactDigest');
@@ -718,12 +1839,22 @@ function assertEntry(entry, summary, index) {
   for (const [key, expected] of Object.entries(mappings)) {
     if (entry[key] !== expected) throw new Error(`entry.${key} does not match the compact summary`);
   }
-  if (entry.jsonFileCount !== 1
-    || entry.mediaType !== 'application/vnd.egov.ui-quality-baseline-summary+json') {
+  const expectedMediaType = summary.schemaVersion === 2
+    ? 'application/vnd.egov.ui-quality-baseline-combined-summary.v2+json'
+    : 'application/vnd.egov.ui-quality-baseline-summary+json';
+  if (entry.jsonFileCount !== 1 || entry.mediaType !== expectedMediaType) {
     throw new Error('entry media inventory is invalid');
   }
   if (entry.redactionStatus !== 'approved' || summary.redaction.status !== 'approved') {
     throw new Error('every published index entry requires approved human redaction review');
+  }
+  if (summary.schemaVersion === 2
+    && (entry.baselineRunId !== COMBINED_V2_BASELINE_RUN_ID
+      || entry.evidenceScope !== 'combined'
+      || entry.protocolHashStatus !== 'recorded'
+      || entry.manualEvidenceCount !== 48
+      || entry.supersedes !== R12_PUBLISHED_DIGEST)) {
+    throw new Error('combined v2 entry must supersede the exact published r12 digest');
   }
 }
 
@@ -733,17 +1864,20 @@ export function buildPublishedIndexEntry({
   createdAt,
   supersedes,
 } = {}) {
-  assertCompactSummary(summary);
+  assertPublishedSummary(summary);
   if (summary.redaction.status !== 'approved') {
     throw new Error('published index entry requires an approved compact summary');
   }
   if (!isUtcInstant(createdAt)) throw new Error('published entry creation time is invalid');
   if (supersedes !== null) assertHex(supersedes, HEX64, 'entry.supersedes');
+  if (summary.schemaVersion === 2 && supersedes !== R12_PUBLISHED_DIGEST) {
+    throw new Error('combined v2 entry must supersede the exact published r12 digest');
+  }
   const retentionExpiry = new Date(
     Date.parse(createdAt) + (3650 * 24 * 60 * 60 * 1000),
   ).toISOString();
   const entry = {
-    schemaVersion: 1,
+    schemaVersion: summary.schemaVersion,
     baselineRunId: summary.baselineRunId,
     evidenceScope: summary.evidenceScope,
     buildSha: summary.provenance.buildSha,
@@ -766,7 +1900,9 @@ export function buildPublishedIndexEntry({
     automatedJsonFileCount: summary.sourceInventory.automatedJsonFileCount,
     diagnosticJsonFileCount: summary.sourceInventory.diagnosticJsonFileCount,
     manualEvidenceCount: summary.manual.completedEvidenceCount,
-    mediaType: 'application/vnd.egov.ui-quality-baseline-summary+json',
+    mediaType: summary.schemaVersion === 2
+      ? 'application/vnd.egov.ui-quality-baseline-combined-summary.v2+json'
+      : 'application/vnd.egov.ui-quality-baseline-summary+json',
     immutableObjectIdentity,
     createdAt,
     retentionExpiry,
@@ -806,6 +1942,13 @@ export function assertBaselineIndex(index, summariesByDigest = new Map()) {
     identities.add(entry.immutableObjectIdentity);
     const expectedPredecessor = position === 0 ? null : index.entries[position - 1].artifactDigest;
     if (entry.supersedes !== expectedPredecessor) throw new Error('index supersedes chain is not append-only');
+    if (entry.schemaVersion === 1 && position !== 0) {
+      throw new Error('historical r12 entry must remain the first published entry');
+    }
+    if (entry.schemaVersion === 2
+      && (position !== 1 || expectedPredecessor !== R12_PUBLISHED_DIGEST)) {
+      throw new Error('combined r13 entry must be the exact successor of published r12');
+    }
   }
   if (index.currentDigest !== index.entries.at(-1).artifactDigest) {
     throw new Error('current digest must be the last append-only entry');
@@ -867,6 +2010,51 @@ export function evaluateDurableEvidence({
   if (trackedBlobIdentityByDigest.get(index.currentDigest) !== entry.immutableObjectIdentity) {
     return { verified: false, reasonCode: 'durable-current-summary-not-tracked' };
   }
+  const currentSummary = summariesByDigest.get(index.currentDigest);
+  if (entry.schemaVersion === 2
+    && currentSummary?.evidenceScope === 'combined'
+    && currentSummary?.promotion?.status === 'measured'
+    && currentSummary?.promotion?.eligible === true) {
+    const automatedFindings = new Map(Object.keys(R12_SCENARIO_STATE_COUNTS).map(
+      (scenarioId) => [scenarioId, 0],
+    ));
+    for (const stateCase of currentSummary.automated.stateCases) {
+      automatedFindings.set(
+        stateCase.scenarioId,
+        automatedFindings.get(stateCase.scenarioId) + stateCase.findingCount,
+      );
+    }
+    const manualFindings = new Map(Object.keys(R12_SCENARIO_STATE_COUNTS).map(
+      (scenarioId) => [scenarioId, 0],
+    ));
+    for (const observation of currentSummary.manual.observations) {
+      manualFindings.set(
+        observation.scenarioId,
+        manualFindings.get(observation.scenarioId) + observation.finding.issueCodes.length,
+      );
+    }
+    return {
+      verified: true,
+      reasonCode: 'durable-combined-summary-measured-eligible',
+      baselineRunId: currentSummary.baselineRunId,
+      executionId: currentSummary.provenance.executionId,
+      currentDigest: index.currentDigest,
+      scenarioEvidence: currentSummary.automated.scenarios.map((scenario) => ({
+        scenarioId: scenario.scenarioId,
+        status: scenario.status,
+        plannedStateCaseCount: scenario.plannedStateCaseCount,
+        observedStateCaseCount: scenario.observedStateCaseCount,
+        invalidStateCaseCount: scenario.invalidStateCaseCount,
+        plannedPerformanceCaseCount: scenario.plannedPerformanceCaseCount,
+        observedPerformanceCaseCount: scenario.observedPerformanceCaseCount,
+        invalidPerformanceCaseCount: scenario.invalidPerformanceCaseCount,
+        automatedFindingCount: automatedFindings.get(scenario.scenarioId),
+        manualFindingCount: manualFindings.get(scenario.scenarioId),
+        findingCount: automatedFindings.get(scenario.scenarioId)
+          + manualFindings.get(scenario.scenarioId),
+      })),
+    };
+  }
   return { verified: false, reasonCode: 'durable-r12-automated-summary-not-measured-eligible' };
 }
 
@@ -926,6 +2114,77 @@ export function assertRepositoryIndexAppendOnly({
   return assertAppendOnlyIndexTransition(previous, current);
 }
 
+function committedBytesAt(root, revision, relativePath, label) {
+  assertResolvableCommit(root, revision, `${label} revision`);
+  const tracked = gitOutput(root, ['ls-tree', '--name-only', revision, '--', relativePath]).trim();
+  if (tracked.replaceAll('\\', '/') !== relativePath) {
+    throw new Error(`${label} is not tracked at the bound revision`);
+  }
+  return gitOutput(root, ['show', `${revision}:${relativePath}`], null);
+}
+
+export function assertCombinedRepositoryProvenance(root, summary) {
+  const { buildSha } = summary.provenance;
+  const protocolBytes = committedBytesAt(
+    root,
+    buildSha,
+    COMBINED_V2_PROTOCOL_PATH,
+    'combined protocol',
+  );
+  if (sha256Hex(protocolBytes) !== summary.provenance.protocolHash) {
+    throw new Error('combined protocol committed bytes do not match the execution-captured hash');
+  }
+
+  const trackedBuildInputs = gitOutput(root, [
+    'ls-tree', '-r', '--name-only', '-z', buildSha, '--', ...PRODUCTION_BUILD_INPUT_PATHS,
+  ], null).toString('utf8').split('\0').filter(Boolean);
+  const committedBuildInputTreeHash = createProductionBuildInputTreeHash({
+    trackedPaths: trackedBuildInputs,
+    readCommittedFile: (relativePath) => committedBytesAt(
+      root,
+      buildSha,
+      relativePath,
+      'combined build input',
+    ),
+  });
+  if (committedBuildInputTreeHash !== summary.provenance.buildInputTreeHash) {
+    throw new Error('combined committed production build inputs do not match provenance');
+  }
+  const currentProtocolBytes = committedBytesAt(
+    root,
+    'HEAD',
+    COMBINED_V2_PROTOCOL_PATH,
+    'current combined protocol',
+  );
+  if (!currentProtocolBytes.equals(protocolBytes)
+    || !fs.readFileSync(path.join(root, ...COMBINED_V2_PROTOCOL_PATH.split('/'))).equals(currentProtocolBytes)) {
+    throw new Error('combined protocol changed after the r13 execution or differs from committed readback');
+  }
+
+  const manifestPath = 'config/ui-quality-scenarios.json';
+  const manifestBytes = committedBytesAt(root, buildSha, manifestPath, 'combined scenario manifest');
+  const manifest = JSON.parse(manifestBytes.toString('utf8'));
+  if (sha256Hex(Buffer.from(stableJson(manifest), 'utf8'))
+      !== summary.provenance.executionScenarioManifestHash
+    || sha256Hex(Buffer.from(stableJson(buildExecutionPlan(manifest)), 'utf8'))
+      !== summary.provenance.executionPlanHash
+    || sha256Hex(canonicalJsonBytes(manifest.privacy)) !== summary.provenance.privacyRuleHash) {
+    throw new Error('combined committed manifest and execution plan do not match provenance');
+  }
+  for (const [hashKey, relativePath] of Object.entries(TOOLING_PATHS)) {
+    const bytes = committedBytesAt(root, buildSha, relativePath, `combined ${hashKey}`);
+    if (sha256Hex(bytes) !== summary.provenance[hashKey]) {
+      throw new Error(`combined ${hashKey} does not match the clean build commit`);
+    }
+  }
+  const routeTruthPath = 'config/ui-route-capabilities.json';
+  const routeTruthBytes = committedBytesAt(root, buildSha, routeTruthPath, 'combined route truth');
+  const routeTruth = JSON.parse(routeTruthBytes.toString('utf8'));
+  if (sha256Hex(Buffer.from(stableJson(routeTruth), 'utf8')) !== summary.provenance.routeTruthHash) {
+    throw new Error('combined route truth does not match the clean build commit');
+  }
+}
+
 export function verifyDurableEvidenceFromRepository({ repoRoot = process.cwd() } = {}) {
   const root = path.resolve(repoRoot);
   const indexRelativePath = 'config/ui-quality-baseline-index.json';
@@ -979,6 +2238,7 @@ export function verifyDurableEvidenceFromRepository({ repoRoot = process.cwd() }
       if (!Buffer.isBuffer(committedBytes) || !committedBytes.equals(bytes)) {
         throw new Error('summary worktree bytes differ from the committed object');
       }
+      if (summary.schemaVersion === 2) assertCombinedRepositoryProvenance(root, summary);
       summariesByDigest.set(entry.artifactDigest, summary);
       trackedBlobIdentityByDigest.set(entry.artifactDigest, `git-blob-sha1:${objectId}`);
     }
@@ -994,6 +2254,24 @@ export function aggregateContentDigest(values) {
   }
   const contentDigests = values.map((value) => sha256Hex(value)).sort();
   return sha256Hex(Buffer.from(JSON.stringify(contentDigests), 'utf8'));
+}
+
+export function aggregatePathBoundContentDigest(entries) {
+  if (!Array.isArray(entries) || entries.some((entry) => (
+    !entry || typeof entry.relativePath !== 'string' || !Buffer.isBuffer(entry.bytes)
+  ))) {
+    throw new Error('path-bound aggregate digest requires relative paths and canonical buffers');
+  }
+  const records = entries.map(({ relativePath, bytes }) => ({
+    relativePath,
+    contentDigest: sha256Hex(bytes),
+  })).sort((left, right) => (
+    left.relativePath < right.relativePath ? -1 : Number(left.relativePath > right.relativePath)
+  ));
+  if (new Set(records.map(({ relativePath }) => relativePath)).size !== records.length) {
+    throw new Error('path-bound aggregate digest requires unique relative paths');
+  }
+  return sha256Hex(canonicalJsonBytes(records));
 }
 
 export function countCollectedManualEvidence(values) {

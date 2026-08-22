@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SecurityHubClient from '../SecurityHubClient';
@@ -88,13 +88,29 @@ vi.mock('../components/SecurityMatrixVisualizer', () => ({
   ),
 }));
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ columns, data, onRowClick, onRetry, pagination, keyField }: any) => (
+  StandardDataTable: ({ columns, data, onRowClick, onRetry, pagination, keyField, rowActionLabel }: any) => (
     <div data-testid={`table-${keyField}`}>
-      {data.map((item: any, rowIndex: number) => (
-        <button type="button" key={rowIndex} onClick={() => onRowClick(item)}>
-          {columns.map((column: any, index: number) => <span key={index}>{column.accessor(item)}</span>)}
-        </button>
-      ))}
+      <table>
+        <tbody>
+          {data.map((item: any, rowIndex: number) => {
+            const actionLabel = typeof rowActionLabel === 'function'
+              ? rowActionLabel(item, rowIndex)
+              : rowActionLabel;
+            return (
+              <tr key={rowIndex}>
+                {columns.map((column: any, index: number) => <td key={index}>{column.accessor(item)}</td>)}
+                {onRowClick && (
+                  <td>
+                    <button type="button" aria-label={actionLabel} onClick={() => onRowClick(item)}>
+                      {actionLabel}
+                    </button>
+                  </td>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
       <button type="button" onClick={onRetry}>{keyField} 재시도</button>
       <button type="button" onClick={() => pagination.onPageChange(2)}>{keyField} 다음</button>
     </div>
@@ -154,12 +170,13 @@ describe('SecurityHubClient', () => {
   it('selects a role and persists explicit user revocation and menu grants', async () => {
     renderClient();
     expect(await screen.findByText('관리자')).toBeInTheDocument();
+    expect(document.querySelector('button button')).toBeNull();
 
-    fireEvent.click(screen.getByText('관리자').closest('button')!);
+    fireEvent.click(within(screen.getByTestId('table-authrtCd')).getByRole('button', { name: '관리자 역할 선택' }));
     expect(await screen.findByText('관리자 계정')).toBeInTheDocument();
     expect(await screen.findByRole('button', { name: '사용자 관리 메뉴 접근 권한 부여' })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('관리자 계정').closest('button')!);
+    fireEvent.click(within(screen.getByTestId('table-scrtyDcsnTrgtId')).getByRole('button', { name: '관리자 계정 사용자 할당 해제' }));
     fireEvent.click(screen.getByRole('button', { name: /사용자 할당 저장/ }));
     await waitFor(() => expect(mocks.deleteUsers).toHaveBeenCalledWith(['U1']));
     expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ variant: 'destructive' }));

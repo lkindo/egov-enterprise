@@ -6,6 +6,7 @@ import { Search, X, ChevronLeft, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { motion, AnimatePresence } from "framer-motion";
 import { ErrorStateDisplay, EmptyStateDisplay } from './status-displays';
+import { useOverflowRegion } from '@/components/ui/table';
 
 export interface Column<T> {
   header: string;
@@ -20,18 +21,20 @@ interface BulkAction<T> {
   onClick: (selectedItems: T[]) => void;
 }
 
-export interface StandardDataTableProps<T> {
+interface StandardDataTableBaseProps<T> {
   columns: Column<T>[];
   data: T[];
+  /** 스크린리더가 같은 화면의 여러 표를 구분할 수 있는 이름. */
+  accessibleLabel?: string;
   loading?: boolean;
-  onRowClick?: (item: T) => void;
   emptyMessage?: string;
   enableSelection?: boolean;
   bulkActions?: BulkAction<T>[];
   keyField?: keyof T;
   className?: string;
   isPremium?: boolean;
-  error?: Error | null;
+  /** ErrorStateDisplay와 동일하게 문자열·axios 오류·Error를 모두 전달할 수 있다. */
+  error?: unknown;
   onRetry?: () => void;
   pagination?: {
     /** 1-base 현재 페이지 번호 */
@@ -58,6 +61,24 @@ export interface StandardDataTableProps<T> {
   rowTestId?: string;
 }
 
+export type RowActionLabel<T> = string | ((item: T, index: number) => string);
+
+/**
+ * 행 작업이 있으면 호출부가 실제 intent를 명시해야 한다. 선택·토글을 "상세 보기"로
+ * 오표기하지 않도록 onRowClick과 rowActionLabel을 타입 단계에서 함께 묶는다.
+ */
+type StandardDataTableRowActionProps<T> =
+  | {
+      onRowClick: (item: T) => void;
+      rowActionLabel: RowActionLabel<T>;
+    }
+  | {
+      onRowClick?: undefined;
+      rowActionLabel?: never;
+    };
+
+export type StandardDataTableProps<T> = StandardDataTableBaseProps<T> & StandardDataTableRowActionProps<T>;
+
 interface DataRowProps<T extends object> {
   item: T;
   columns: Column<T>[];
@@ -66,6 +87,7 @@ interface DataRowProps<T extends object> {
   enableSelection: boolean;
   onToggle: () => void;
   onRowClick?: (item: T) => void;
+  rowActionLabel?: string;
   rowTestId?: string;
 }
 
@@ -77,6 +99,15 @@ function renderCell<T extends object>(column: Column<T>, item: T, index: number)
     : item[column.accessor] as React.ReactNode;
 }
 
+function resolveRowActionLabel<T extends object>(
+  label: RowActionLabel<T> | undefined,
+  item: T,
+  index: number,
+): string {
+  const resolved = typeof label === 'function' ? label(item, index) : label;
+  return resolved?.trim() || `${index + 1}번째 항목 작업`;
+}
+
 function DataRowComponent<T extends object>({
   item,
   columns,
@@ -85,22 +116,18 @@ function DataRowComponent<T extends object>({
   enableSelection,
   onToggle,
   onRowClick,
+  rowActionLabel,
   rowTestId
 }: DataRowProps<T>) {
   if (!item) return null;
 
   return (
     <tr
-      tabIndex={onRowClick ? 0 : undefined}
-      aria-label={onRowClick ? '상세 보기' : undefined}
       data-testid={rowTestId}
-      onKeyDown={(e) => { if((e.key === 'Enter' || e.key === ' ') && onRowClick) { e.preventDefault(); onRowClick(item); } }}
       className={cn(
         "group transition-all duration-300 outline-none focus-within:bg-muted/30 focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-inset",
-        isSelected ? "bg-primary/5" : "hover:bg-muted/40",
-        onRowClick && "cursor-pointer"
+        isSelected ? "bg-primary/5" : "hover:bg-muted/40"
       )}
-      onClick={() => onRowClick?.(item)}
     >
       {enableSelection && (
         <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
@@ -124,6 +151,19 @@ function DataRowComponent<T extends object>({
           </div>
         </td>
       ))}
+      {onRowClick && (
+        <td className="px-6 py-5 text-right">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            aria-label={rowActionLabel}
+            onClick={() => onRowClick(item)}
+          >
+            {rowActionLabel}
+          </Button>
+        </td>
+      )}
     </tr>
   );
 }
@@ -139,7 +179,8 @@ function MobileCardComponent<T extends object>({
   index,
   enableSelection,
   onToggle,
-  onRowClick
+  onRowClick,
+  rowActionLabel,
 }: MobileCardProps<T>) {
   if (!item) return null;
   const primaryColumn = columns[0];
@@ -147,14 +188,10 @@ function MobileCardComponent<T extends object>({
 
   return (
     <div
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if((e.key === 'Enter' || e.key === ' ') && onRowClick) { e.preventDefault(); onRowClick(item); } }}
       className={cn(
-        "text-left w-full p-6 rounded-lg border-2 transition-all relative overflow-hidden focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+        "text-left w-full p-6 rounded-lg border-2 transition-all relative overflow-hidden focus-within:ring-2 focus-within:ring-primary",
         isSelected ? "border-primary bg-primary/5 shadow-lg scale-[1.02]" : "border-border bg-card hover:border-primary/30"
       )}
-      onClick={() => onRowClick?.(item)}
     >
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3 flex-1 overflow-hidden">
@@ -165,7 +202,7 @@ function MobileCardComponent<T extends object>({
             </div>
           )}
           <div className="flex flex-col gap-1 overflow-hidden">
-            <span className="text-xs font-bold text-primary/90 uppercase tracking-[0.2em]">{primaryColumn.header}</span>
+            <span className="text-xs font-bold text-primary uppercase tracking-[0.2em]">{primaryColumn.header}</span>
             <div className="font-[number:var(--font-weight-hub-title)] text-lg text-foreground truncate tracking-tight">
               {renderCell(primaryColumn, item, index)}
             </div>
@@ -183,6 +220,19 @@ function MobileCardComponent<T extends object>({
           </div>
         ))}
       </div>
+      {onRowClick && (
+        <div className="mt-5 flex justify-end border-t border-border/50 pt-4">
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            aria-label={rowActionLabel}
+            onClick={() => onRowClick(item)}
+          >
+            {rowActionLabel}
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
@@ -194,8 +244,10 @@ const EMPTY_SELECTED_IDS = new Set<unknown>();
 export function StandardDataTable<T extends object>({
   columns,
   data,
+  accessibleLabel = "데이터 목록",
   loading,
   onRowClick,
+  rowActionLabel,
   emptyMessage = "데이터가 없습니다.",
   enableSelection = false,
   bulkActions = [],
@@ -322,6 +374,7 @@ export function StandardDataTable<T extends object>({
   const rowRange = (currentPage && pageSize && pageSize > 0 && totalCount !== undefined && totalCount > 0)
     ? { from: (currentPage - 1) * pageSize + 1, to: Math.min(currentPage * pageSize, totalCount) }
     : null;
+  const desktopScrollRegionProps = useOverflowRegion<HTMLDivElement>(`${accessibleLabel} 스크롤 영역`);
 
   return (
     <div className={cn("space-y-6", isPremium ? "animate-in fade-in slide-in-from-bottom-4 duration-700" : "", className)}>
@@ -411,15 +464,19 @@ export function StandardDataTable<T extends object>({
 
       {/* 1. Desktop View - Glass Style Table */}
       <div className={cn(
-        "hidden md:block w-full border-2 border-border/60 bg-card shadow-sm transition-all relative",
+        "hidden md:block w-full border-2 border-border/60 bg-card shadow-sm transition-all relative outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
         isPremium ? "rounded-2xl" : "rounded-lg",
-        stickyHeader ? "max-h-[700px] overflow-auto" : "overflow-hidden"
-      )}>
+        stickyHeader ? "max-h-[700px] overflow-auto" : "overflow-x-auto overflow-y-hidden"
+      )}
+        data-slot="standard-data-table-scroll-region"
+        {...desktopScrollRegionProps}
+      >
         <div className="w-full">
           <table className={cn(
             "w-full text-sm text-left border-collapse",
             stickyHeader && "table-sticky-header"
           )}>
+            <caption className="sr-only">{accessibleLabel}</caption>
             <thead className="relative z-20">
               <tr className="bg-muted/80 backdrop-blur-xl border-b-2 border-border/80">
                 {enableSelection && (
@@ -442,6 +499,11 @@ export function StandardDataTable<T extends object>({
                     </div>
                   </th>
                 ))}
+                {onRowClick && (
+                  <th className="px-6 py-5 text-right" scope="col">
+                    <span className="sr-only">행 작업</span>
+                  </th>
+                )}
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
@@ -458,17 +520,21 @@ export function StandardDataTable<T extends object>({
                         <div className="h-4 bg-muted/40 rounded-lg w-3/4" />
                       </td>
                     ))}
+                    {onRowClick ? (
+                      // eslint-disable-next-line jsx-a11y/control-has-associated-label
+                      <td role="presentation" className="px-6 py-5"><div className="h-8 w-20 bg-muted/40 rounded-lg ml-auto" /></td>
+                    ) : null}
                   </tr>
                 ))
               ) : error ? (
                 <tr>
-                  <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="px-6 py-20 text-center">
+                  <td colSpan={columns.length + (enableSelection ? 1 : 0) + (onRowClick ? 1 : 0)} className="px-6 py-20 text-center">
                     <ErrorStateDisplay error={error} onRetry={onRetry} />
                   </td>
                 </tr>
               ) : (data || []).length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + (enableSelection ? 1 : 0)} className="px-6 py-20 text-center" data-testid="empty-table-msg">
+                  <td colSpan={columns.length + (enableSelection ? 1 : 0) + (onRowClick ? 1 : 0)} className="px-6 py-20 text-center" data-testid="empty-table-msg">
                     <EmptyStateDisplay message={resolvedEmptyMessage} />
                   </td>
                 </tr>
@@ -486,6 +552,7 @@ export function StandardDataTable<T extends object>({
                       enableSelection={enableSelection}
                       onToggle={() => toggleOne(item?.[keyField])}
                       onRowClick={onRowClick}
+                      rowActionLabel={resolveRowActionLabel(rowActionLabel, item, rowIdx)}
                       rowTestId={rowTestId}
                     />
                   );
@@ -525,6 +592,7 @@ export function StandardDataTable<T extends object>({
                   enableSelection={enableSelection}
                   onToggle={() => toggleOne(item?.[keyField])}
                   onRowClick={onRowClick}
+                  rowActionLabel={resolveRowActionLabel(rowActionLabel, item, idx)}
                 />
               );
             })}

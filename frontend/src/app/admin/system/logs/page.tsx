@@ -21,7 +21,7 @@ export default async function LogDashboardPage() {
     }));
 
   return (
-    <Suspense fallback={<div className="p-24 text-center font-black text-xs tracking-widest animate-pulse text-muted-foreground">로그 데이터를 불러오는 중...</div>}>
+    <Suspense fallback={<div className="p-24 text-center font-black text-xs tracking-widest animate-pulse text-muted-foreground"><h1 className="sr-only">통합 로그를 불러오는 중</h1>로그 데이터를 불러오는 중...</div>}>
       <LogDashboardClient systemLogsPromise={systemLogsPromise} />
     </Suspense>
   );

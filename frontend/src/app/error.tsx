@@ -1,28 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { AlertCircle, RotateCcw, Home, MessageSquare } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import Link from 'next/link';
 
 export default function Error({
-    error,
     reset,
 }: {
     error: Error & { digest?: string };
     reset: () => void;
 }) {
-    const queryClient = useQueryClient();
-
-    useEffect(() => {
-        // 에러 로그 기록 (실제 서비스에서는 Sentry 등에 전송)
-        console.error('Global Error:', error);
-    }, [error]);
-
     const handleReset = () => {
-        queryClient.refetchQueries();
         reset();
     };
 
@@ -42,11 +31,6 @@ export default function Error({
                         일시적인 오류이거나 처리 중 예상치 못한 문제가 발생했습니다.<br />
                         페이지를 새로고침하거나 잠시 후 다시 시도해 주세요.
                     </p>
-                    {error.digest && (
-                        <code className="block text-xs font-mono text-muted-foreground/50 bg-muted/30 py-1 px-2 rounded-md w-fit mx-auto mt-2">
-                            Error ID: {error.digest}
-                        </code>
-                    )}
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">

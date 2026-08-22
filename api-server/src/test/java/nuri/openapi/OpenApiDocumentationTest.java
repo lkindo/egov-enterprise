@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
+import static org.hamcrest.Matchers.hasItem;
 
 /**
  * OpenAPI 문서화 테스트
@@ -61,6 +62,28 @@ class OpenApiDocumentationTest {
       java.nio.file.Files.writeString(path, normalizeForCommit(content),
           java.nio.charset.StandardCharsets.UTF_8);
     }
+  }
+
+  @Test
+  @DisplayName("공개 FAQ 전용 경로와 closed response schema가 OpenAPI에 노출된다")
+  void publicFaqQueryContract_isDocumented() throws Exception {
+    mockMvc.perform(get("/v3/api-docs")
+        .contentType(MediaType.APPLICATION_JSON))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$['paths']['/api/v1/boards/public-faqs']['get']").exists())
+        .andExpect(jsonPath("$['paths']['/api/v1/boards/public-faqs/{pstSn}']['get']").exists())
+        .andExpect(jsonPath(
+            "$['paths']['/api/v1/boards/{bbsId}']['get']['parameters'][?(@['name'] == 'publicOnly')]")
+            .isEmpty())
+        .andExpect(jsonPath("$.components.schemas.PublicFaqListItemResponse.properties.pstCn").doesNotExist())
+        .andExpect(jsonPath("$.components.schemas.PublicFaqListItemResponse.properties.userId").doesNotExist())
+        .andExpect(jsonPath("$.components.schemas.PublicFaqDetailResponse.properties.userId").doesNotExist())
+        .andExpect(jsonPath("$.components.schemas.PublicFaqDetailResponse.required")
+            .value(hasItem("bbsId")))
+        .andExpect(jsonPath("$.components.schemas.PublicFaqDetailResponse.required")
+            .value(hasItem("useYn")))
+        .andExpect(jsonPath("$.components.schemas.PublicFaqDetailResponse.required")
+            .value(hasItem("scrtYn")));
   }
 
   /**

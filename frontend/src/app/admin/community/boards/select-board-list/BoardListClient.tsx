@@ -334,9 +334,9 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    className="flex items-center gap-3"
  >
  <div className={cn("w-2 h-10 rounded-full shadow-lg", tmpltId === 'TMPLT_HUB' ? "bg-gradient-to-b from-hub-indigo to-hub-purple" : "bg-gradient-to-b from-primary to-primary/60")} />
- <h2 className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
+ <h1 className="text-4xl font-black tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700">
  {masterInfo?.bbsTtl || (bbsId?.includes('NOTICE') ? '공지사항' : '게시판')}
- </h2>
+ </h1>
  {tmpltId === 'TMPLT_HUB' && <Badge className="bg-hub-indigo/10 text-hub-indigo border-hub-indigo/20 font-bold ml-2 px-3 py-1 rounded-lg">지식 허브</Badge>}
  </motion.div>
  <motion.p 

@@ -2,28 +2,25 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { useRouter } from 'next/navigation';
 import { Search, 
   ArrowRight, 
-  Settings, 
-  User, 
   LogOut, 
-  Bell, 
-  FileText, 
   ShieldCheck, 
   LayoutDashboard, 
-  Globe, 
   Zap, 
-  History as HistoryIcon, 
-  GitBranch, 
   Users } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useShortcut } from './global-shortcut-provider';
 import { menuService } from '@/services/business/user/MenuService';
 import { useAuth } from '@/contexts/AuthContext';
+import {
+  normalizeInternalRoute,
+  resolveMenuInternalRoute,
+} from '@/lib/navigation/internal-route';
 
 interface CommandItem {
   id: string;
   name: string;
   url?: string;
-  action?: () => void;
+  action?: () => void | Promise<void>;
   category: '메뉴' | '액션' | '시스템' | '검색';
   icon?: React.ReactNode;
   description?: string;
@@ -39,17 +36,40 @@ export function GlobalCommandCenter() {
   const router = useRouter();
   const { logout } = useAuth();
   const inputRef = useRef<HTMLInputElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const previouslyFocusedElementRef = useRef<HTMLElement | null>(null);
+  const wasOpenRef = useRef(false);
+
+  const restorePreviousFocus = useCallback(() => {
+    const previouslyFocusedElement = previouslyFocusedElementRef.current;
+    previouslyFocusedElementRef.current = null;
+
+    if (previouslyFocusedElement?.isConnected) {
+      previouslyFocusedElement.focus();
+    }
+  }, []);
+
+  const openCommandCenter = useCallback(() => {
+    if (document.activeElement instanceof HTMLElement) {
+      previouslyFocusedElementRef.current = document.activeElement;
+    }
+    setSelectedIndex(0);
+    setSearch('');
+    setIsOpen(true);
+  }, []);
+
+  const closeCommandCenter = useCallback(() => {
+    setIsOpen(false);
+    setSearch('');
+  }, []);
 
   // 1. 단축키 등록 (CMD/Ctrl+K)
   useShortcut('k', true, () => {
-    setIsOpen(prev => {
-      const next = !prev;
-      if (next) {
-        setSelectedIndex(0);
-        setSearch('');
-      }
-      return next;
-    });
+    if (isOpen) {
+      closeCommandCenter();
+    } else {
+      openCommandCenter();
+    }
   });
 
   // 2. 초기 메뉴 데이터 로드
@@ -61,38 +81,44 @@ export function GlobalCommandCenter() {
       try {
         const head = await menuService.getHeadMenus();
         if (head && head.length > 0) {
-          const allHead: CommandItem[] = head.map(m => ({
-            id: `cmd-head-${m.menuNo}`,
-            name: m.menuNm,
-            url: m.chkURL || '#',
-            category: '메뉴' as const,
-            icon: <LayoutDashboard size={16} />
-          }));
+          const allHead: CommandItem[] = head.flatMap(m => {
+            const url = resolveMenuInternalRoute(m);
+            return url ? [{
+              id: `cmd-head-${m.menuNo}`,
+              name: m.menuNm,
+              url,
+              category: '메뉴' as const,
+              icon: <LayoutDashboard size={16} />
+            }] : [];
+          });
 
           setMenus(allHead);
 
           // 하위 메뉴 로드
           for (const m of head) {
-            menuService.getLeftMenus(m.menuNo).then(left => {
+            void menuService.getLeftMenus(m.menuNo).then(left => {
               if (left && left.length > 0) {
-                const subItems: CommandItem[] = left.map((l: any) => ({
-                  id: `cmd-left-${m.menuNo}-${l.menuNo}`,
-                  name: `${m.menuNm} > ${l.menuNm}`,
-                  url: l.chkURL || '#',
-                  category: '메뉴' as const,
-                  icon: <ArrowRight size={14} />
-                }));
+                const subItems: CommandItem[] = left.flatMap((l) => {
+                  const url = resolveMenuInternalRoute(l);
+                  return url ? [{
+                    id: `cmd-left-${m.menuNo}-${l.menuNo}`,
+                    name: `${m.menuNm} > ${l.menuNm}`,
+                    url,
+                    category: '메뉴' as const,
+                    icon: <ArrowRight size={14} />
+                  }] : [];
+                });
                 setMenus(prev => {
                   const existingIds = new Set(prev.map(i => i.id));
                   const newItems = subItems.filter(i => !existingIds.has(i.id));
                   return [...prev, ...newItems];
                 });
               }
-            });
+            }).catch(() => undefined);
           }
         }
-      } catch (e) {
-        console.error('Failed to load command menus', e);
+      } catch {
+        // 메뉴 조회 실패 시에도 로그아웃 같은 로컬 안전 작업은 계속 제공한다.
       } finally {
         setIsSearching(false);
       }
@@ -101,17 +127,22 @@ export function GlobalCommandCenter() {
   }, [isOpen, menus.length]); 
 
   // 3. 고정 액션 정의
+  // 관리자 mutation이나 구현 상태가 섞인 화면을 여기서 추정해 노출하지 않는다.
+  // 권한별 업무 메뉴는 backend가 현재 authority로 필터링한 menuService 응답만 사용한다.
+  const logoutAndLeaveAuthenticatedSurface = useCallback(async () => {
+    try {
+      await logout();
+    } catch {
+      // 세션 종료 API 실패가 화면 이탈을 막으면 캐시된 민감 화면이 남을 수 있다.
+    } finally {
+      router.replace('/login');
+    }
+  }, [logout, router]);
+
   const quickActions: CommandItem[] = useMemo(() => [
-    { id: 'act-notif', name: '스마트 메시징 센터', url: '/admin/notifications', icon: <Bell size={16} />, category: '메뉴', description: '전사 알림 통합 모니터링 및 AI 디스패치' },
-    { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '조직도 및 지능형 회의/자원 관리' },
-    { id: 'act-audit', name: '보안 감사 타임머신', url: '/admin/system/audit', icon: <HistoryIcon size={16} />, category: '메뉴', description: '데이터 변경 이력 추적 및 시각적 감사 분석' },
-    { id: 'act-workflow', name: '프로세스 캔버스', url: '/admin/workflow', icon: <GitBranch size={16} />, category: '메뉴', description: '비즈니스 워크플로우 설계 및 모니터링' },
-    { id: 'act-form', name: '스마트 서식 엔진', url: '/admin/sanctn/forms', icon: <FileText size={16} />, category: '메뉴', description: '행정 서식 설계 및 문서 자동화 관리' },
-    { id: 'act-create-post', name: '새 게시글 작성', url: '/admin/community/boards/insert-board-article', icon: <FileText size={16} />, category: '액션', description: '공지사항 및 갤러리 게시글 신규 등록' },
-    { id: 'sys-1', name: '마이페이지', url: '/admin/workspace/my-page', icon: <User size={16} />, category: '시스템' },
-    { id: 'sys-settings', name: '환경 설정', url: '/admin/system/menus', icon: <Settings size={16} />, category: '시스템' },
-    { id: 'sys-logout', name: '로그아웃', action: logout, icon: <LogOut size={16} />, category: '시스템' },
-  ], [logout]);
+    { id: 'act-collab', name: '협업 통합 허브', url: '/admin/collaboration', icon: <Users size={16} />, category: '메뉴', description: '주소록과 협업 기능으로 이동' },
+    { id: 'sys-logout', name: '로그아웃', action: logoutAndLeaveAuthenticatedSurface, icon: <LogOut size={16} />, category: '시스템' },
+  ], [logoutAndLeaveAuthenticatedSurface]);
 
   // 4. 통합 검색 필터링
   const filteredItems = useMemo(() => {
@@ -141,24 +172,139 @@ export function GlobalCommandCenter() {
 
   // 5. 핸들바 및 포커스 관리
   useEffect(() => {
-    if (isOpen && inputRef.current) {
-      setTimeout(() => inputRef.current?.focus(), 100);
-    }
+    if (!isOpen) return;
+
+    const dialog = dialogRef.current;
+    const modalLayer = dialog?.parentElement;
+    if (!dialog || !modalLayer) return;
+
+    const snapshots = new Map<HTMLElement, {
+      ariaHidden: string | null;
+      inert: string | null;
+    }>();
+
+    const isolateSiblingSubtrees = () => {
+      let activeBranch: HTMLElement = modalLayer;
+
+      while (true) {
+        const parent: HTMLElement | null = activeBranch.parentElement;
+        if (!parent) break;
+
+        for (const sibling of Array.from(parent.children)) {
+          if (sibling === activeBranch || !(sibling instanceof HTMLElement)) continue;
+
+          if (!snapshots.has(sibling)) {
+            snapshots.set(sibling, {
+              ariaHidden: sibling.getAttribute('aria-hidden'),
+              inert: sibling.getAttribute('inert'),
+            });
+          }
+
+          sibling.setAttribute('aria-hidden', 'true');
+          sibling.setAttribute('inert', '');
+        }
+
+        activeBranch = parent;
+        if (parent === document.body) break;
+      }
+    };
+
+    const isInIsolatedSubtree = (target: EventTarget | null) =>
+      target instanceof Node
+      && Array.from(snapshots.keys()).some(element => element.contains(target));
+
+    const preventBackgroundClick = (event: MouseEvent) => {
+      if (!isInIsolatedSubtree(event.target)) return;
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    };
+
+    const keepFocusInDialog = (event: FocusEvent) => {
+      if (!isInIsolatedSubtree(event.target)) return;
+      event.preventDefault();
+      (inputRef.current ?? dialog).focus();
+    };
+
+    isolateSiblingSubtrees();
+    const observer = new MutationObserver(isolateSiblingSubtrees);
+    observer.observe(document.body, { childList: true, subtree: true });
+    document.addEventListener('click', preventBackgroundClick, true);
+    document.addEventListener('focusin', keepFocusInDialog, true);
+
+    return () => {
+      observer.disconnect();
+      document.removeEventListener('click', preventBackgroundClick, true);
+      document.removeEventListener('focusin', keepFocusInDialog, true);
+
+      for (const [element, snapshot] of Array.from(snapshots.entries()).reverse()) {
+        if (snapshot.ariaHidden === null) {
+          element.removeAttribute('aria-hidden');
+        } else {
+          element.setAttribute('aria-hidden', snapshot.ariaHidden);
+        }
+
+        if (snapshot.inert === null) {
+          element.removeAttribute('inert');
+        } else {
+          element.setAttribute('inert', snapshot.inert);
+        }
+      }
+    };
   }, [isOpen]);
 
-  const handleSelect = useCallback((item: CommandItem) => {
+  useEffect(() => {
+    if (isOpen) {
+      wasOpenRef.current = true;
+      inputRef.current?.focus();
+      return;
+    }
+
+    if (wasOpenRef.current) {
+      wasOpenRef.current = false;
+      restorePreviousFocus();
+    }
+  }, [isOpen, restorePreviousFocus]);
+
+  useEffect(() => () => restorePreviousFocus(), [restorePreviousFocus]);
+
+  const handleSelect = useCallback(async (item: CommandItem) => {
     if (!item) return;
     if (item.action) {
-      item.action();
+      await item.action();
     } else if (item.url) {
-      router.push(item.url);
+      const route = normalizeInternalRoute(item.url);
+      if (route) router.push(route);
     }
-    setIsOpen(false);
-    setSearch('');
-  }, [router]);
+    closeCommandCenter();
+  }, [router, closeCommandCenter]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'ArrowDown') {
+    if (e.key === 'Tab') {
+      const dialog = dialogRef.current;
+      if (!dialog) return;
+
+      const focusableElements = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter(element => element.getAttribute('aria-hidden') !== 'true');
+
+      if (focusableElements.length === 0) {
+        e.preventDefault();
+        dialog.focus();
+        return;
+      }
+
+      const firstElement = focusableElements[0];
+      const lastElement = focusableElements[focusableElements.length - 1];
+      const activeElement = document.activeElement;
+
+      if (e.shiftKey && (activeElement === firstElement || !dialog.contains(activeElement))) {
+        e.preventDefault();
+        lastElement.focus();
+      } else if (!e.shiftKey && (activeElement === lastElement || !dialog.contains(activeElement))) {
+        e.preventDefault();
+        firstElement.focus();
+      }
+    } else if (e.key === 'ArrowDown') {
       e.preventDefault();
       setSelectedIndex(prev => (prev + 1) % filteredItems.length);
     } else if (e.key === 'ArrowUp') {
@@ -166,9 +312,10 @@ export function GlobalCommandCenter() {
       setSelectedIndex(prev => (prev - 1 + filteredItems.length) % filteredItems.length);
     } else if (e.key === 'Enter') {
       e.preventDefault();
-      handleSelect(filteredItems[selectedIndex]);
+      void handleSelect(filteredItems[selectedIndex]);
     } else if (e.key === 'Escape') {
-      setIsOpen(false);
+      e.preventDefault();
+      closeCommandCenter();
     }
   };
 
@@ -177,23 +324,18 @@ export function GlobalCommandCenter() {
   return (
     <div className="fixed inset-0 z-[10000] flex items-start justify-center pt-[12vh] px-4 md:px-6">
       <div
-        role="button"
-        tabIndex={0}
-        aria-label="커맨드 센터 닫기"
+        aria-hidden="true"
+        data-testid="global-command-backdrop"
         className="fixed inset-0 bg-[#020617] animate-in fade-in duration-300"
-        onClick={() => setIsOpen(false)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
-            e.preventDefault();
-            setIsOpen(false);
-          }
-        }}
+        onClick={closeCommandCenter}
       />
 
       <div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="글로벌 커맨드 센터"
+        tabIndex={-1}
         className="relative w-full max-w-3xl bg-card border-2 border-primary/20 rounded-lg shadow-2xl overflow-hidden animate-in zoom-in-95 slide-in-from-top-4 duration-500 ring-1 ring-white/30"
         onKeyDown={handleKeyDown}
       >
@@ -240,13 +382,14 @@ export function GlobalCommandCenter() {
                         return (
                           <button
                             key={item.id}
+                            aria-label={item.name}
                             className={cn(
                               "w-full flex items-center justify-between p-5 rounded-lg transition-all duration-300 group text-left",
                               isFocused
                                 ? "bg-primary text-primary-foreground shadow-2xl shadow-primary/30 scale-[1.01] z-10"
                                 : "hover:bg-primary/5 text-foreground"
                             )}
-                            onClick={() => handleSelect(item)}
+                            onClick={() => void handleSelect(item)}
                             onMouseEnter={() => setSelectedIndex(globalIndex)}
                           >
                             <div className="flex items-center gap-5">
@@ -308,15 +451,9 @@ export function GlobalCommandCenter() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4">
-            <div className="h-6 w-px bg-muted-foreground/20" />
-            <div className="flex items-center gap-3">
-              <Globe size={14} className="text-emerald-500 animate-pulse" />
-              <span className="text-xs font-bold text-muted-foreground tracking-tight tracking-tighter">
-                시스템 상태: <span className="text-emerald-500">최적화됨</span>
+              <span className="text-xs font-bold text-muted-foreground">
+                업무 메뉴는 현재 계정 권한에 따라 제공됩니다.
               </span>
-            </div>
-          </div>
         </div>
       </div>
     </div>

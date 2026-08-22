@@ -149,6 +149,7 @@ class AuthApiControllerTest {
         UserDto userDto = UserDto.builder()
                 .userId("user01")
                 .userNm("Test User")
+                .esntlId("ESNTL_000000000001")
                 .role(Role.USER.name())
                 .build();
         when(userService.getUserById("user01")).thenReturn(userDto);
@@ -157,7 +158,10 @@ class AuthApiControllerTest {
         mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.id").value("user01"))
-                .andExpect(jsonPath("$.data.name").value("Test User"));
+                .andExpect(jsonPath("$.data.name").value("Test User"))
+                .andExpect(jsonPath("$.data.esntlId").value("ESNTL_000000000001"))
+                .andExpect(jsonPath("$.data.pswd").doesNotExist())
+                .andExpect(jsonPath("$.data.password").doesNotExist());
         
         SecurityContextHolder.clearContext();
     }
@@ -194,13 +198,15 @@ class AuthApiControllerTest {
         UserDto userDto = UserDto.builder()
                 .userId("user01")
                 .userNm("Test User")
+                .esntlId("ESNTL_000000000001")
                 .role(Role.USER.name())
                 .build();
         when(userService.getUserById("user01")).thenReturn(userDto);
  
         mockMvc.perform(get("/api/v1/auth/me"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.data.id").value("user01"));
+                .andExpect(jsonPath("$.data.id").value("user01"))
+                .andExpect(jsonPath("$.data.esntlId").value("ESNTL_000000000001"));
         
         SecurityContextHolder.clearContext();
     }

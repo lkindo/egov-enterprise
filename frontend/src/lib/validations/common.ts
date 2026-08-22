@@ -46,9 +46,11 @@ export const commonSchemas = {
 /**
  * 전역 폼 제출 에러 처리 (Sonner Toast 연동용)
  */
-export const handleFormError = (errors: any, toast: any) => {
-  console.error('Validation Errors:', errors);
-  const firstError = Object.values(errors)[0] as any;
+type ValidationErrors = Record<string, { message?: string }>;
+type ErrorToast = { error: (message: string) => void };
+
+export const handleFormError = (errors: ValidationErrors, toast: ErrorToast) => {
+  const firstError = Object.values(errors)[0];
   if (firstError?.message) {
     toast.error(firstError.message);
   } else {

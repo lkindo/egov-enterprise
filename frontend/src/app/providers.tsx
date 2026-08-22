@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider, focusManager } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import { AuthProvider } from '@/contexts/AuthContext';
 import { WebSocketProvider } from '@/contexts/websocket-context';
 import { LayoutProvider } from '@/contexts/LayoutContext';
@@ -18,6 +19,15 @@ import { MotionConfig } from 'framer-motion';
 const GlobalCommandCenter = dynamic(() => import('./components/ui/global-command-center').then(mod => mod.GlobalCommandCenter), { ssr: false });
 const SmartOnboardingHub = dynamic(() => import('./components/ui/smart-onboarding-hub').then(mod => mod.SmartOnboardingHub), { ssr: false });
 const SessionExpiryWarning = dynamic(() => import('./components/ui/session-expiry-warning').then(mod => mod.SessionExpiryWarning), { ssr: false });
+
+export function RouteScopedGlobalOverlays({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isLoginRoute = pathname === '/login' || pathname.startsWith('/login/');
+
+  if (isLoginRoute) return null;
+
+  return <>{children}</>;
+}
 
 
 import { z } from 'zod';
@@ -121,9 +131,11 @@ export default function Providers({
                       <StandardErrorBoundary>
                         {children}
                       </StandardErrorBoundary>
-                      <GlobalCommandCenter />
-                      <SessionExpiryWarning />
-                      <SmartOnboardingHub />
+                      <RouteScopedGlobalOverlays>
+                        <GlobalCommandCenter />
+                        <SessionExpiryWarning />
+                        <SmartOnboardingHub />
+                      </RouteScopedGlobalOverlays>
                     </TooltipProvider>
                   </WebSocketProvider>
                 </LayoutProvider>

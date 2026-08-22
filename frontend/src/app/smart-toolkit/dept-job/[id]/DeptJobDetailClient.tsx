@@ -7,7 +7,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { ArrowLeft, ChevronRight, Home, Pencil, Trash2, User, Flag, Inbox } from 'lucide-react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -73,6 +73,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
     if (isLoading) {
         return (
             <div className="p-10 space-y-6">
+                <h1 className="sr-only">부서 업무 상세를 불러오는 중</h1>
                 <div className="h-8 w-64 bg-muted rounded animate-pulse" />
                 <div className="h-64 bg-muted rounded animate-pulse" />
             </div>
@@ -82,9 +83,9 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
     if (isError || !job) {
         return (
             <div className="p-10 text-center space-y-4">
-                <p className="text-sm font-bold text-muted-foreground">
+                <h1 className="text-sm font-bold text-muted-foreground">
                     업무를 찾을 수 없습니다. 이미 삭제되었을 수 있습니다.
-                </p>
+                </h1>
                 <Button variant="outline" onClick={() => router.push('/smart-toolkit/dept-job')} className="font-bold">
                     목록으로
                 </Button>
@@ -107,9 +108,9 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
             <Card className="border-border shadow-sm">
                 <CardHeader className="flex flex-row items-start justify-between gap-4 border-b border-border pb-6">
                     <div className="space-y-2 min-w-0">
-                        <CardTitle className="text-xl font-black tracking-tight break-words">
+                        <h1 className="text-xl font-black tracking-tight break-words">
                             {job.deptTaskNm}
-                        </CardTitle>
+                        </h1>
                         <div className="flex flex-wrap items-center gap-2">
                             <Badge variant="secondary" className="font-bold gap-1">
                                 <Flag size={12} />

@@ -21,8 +21,7 @@ export default async function PolicyViewPage({
 
   try {
     policy = await policyAdminService.getPolicy(type);
-  } catch (err) {
-    console.error('Failed to load policy on Server Component:', err);
+  } catch {
     // API 통신 실패 시 폴백 기본값 반환
     policy = {
       plcyTypeCd: type,
@@ -34,6 +33,7 @@ export default async function PolicyViewPage({
   return (
     <div className="container mx-auto py-20 px-6 max-w-4xl animate-in slide-in-from-bottom-5 duration-700">
       <HubHeader 
+        headingLevel={1}
         title={policy?.plcyTtl || '시스템 정책'} 
         subtitle="POLICY & LEGAL"
         icon={Scale}

@@ -53,6 +53,7 @@ export default async function BoardListPage({ searchParams }: { searchParams: Pr
 function BoardListSkeleton() {
   return (
     <div className="flex flex-col gap-6 p-6">
+      <h1 className="sr-only">게시판 목록을 불러오는 중</h1>
       <Skeleton className="h-10 w-48 rounded-lg" />
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
         <Skeleton className="lg:col-span-2 h-64 rounded-lg" />

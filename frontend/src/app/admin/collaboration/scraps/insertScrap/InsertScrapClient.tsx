@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from '@/lib/api/client';
 import { useToast } from '@/app/components/ui/toast';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -65,9 +65,9 @@ const InsertScrapClient = () => {
                 <Bookmark className="w-8 h-8 text-white fill-white/20" />
               </div>
               <div className="space-y-1">
-                <CardTitle className="text-3xl font-bold tracking-tighter text-foreground">
+                <h1 className="text-3xl font-bold tracking-tighter text-foreground">
                   스크랩 신규 등록
-                </CardTitle>
+                </h1>
                 <div className="flex items-center gap-3">
                   <div className="h-1 w-12 bg-hub-indigo rounded-lg" />
                   <p className="text-sm font-bold text-muted-foreground tracking-tight">자주 보는 링크와 자료를 보관합니다.</p>

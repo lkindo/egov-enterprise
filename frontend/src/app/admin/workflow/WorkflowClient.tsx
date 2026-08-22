@@ -5,6 +5,7 @@
 //   FE /approvals(ApprovalHubClient)·/admin/system/ism(IsmClient) ↔ BE /api/v1/approvals·/api/v1/admin/system/ism ↔ InformalSanction(tb_ifml_atrz_info).
 // 신규 SI에서 워크플로우 엔진이 필요하면 대응 백엔드(컨트롤러/서비스/테이블)를 신설해 이 화면에 배선할 것.
 import { useState } from 'react';
+import Link from 'next/link';
 import { GitBranch,
     History,
     Plus,
@@ -49,33 +50,39 @@ export default function WorkflowClient() {
 
             <HubHeader
                 title="Process"
-                highlight="Studio"
-                subtitle="실시간 이벤트 기반 워크플로우를 설계하고 비즈니스 로직을 시각화합니다."
+                highlight="Studio · 데모"
+                subtitle="정적 예시 데이터로 워크플로우 캔버스의 형태와 탐색 동작만 확인합니다."
                 icon={GitBranch}
                 actions={
                     <div className="flex gap-4">
-                        <Button variant="outline" className="h-11 px-8 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
+                        <Button disabled title="정적 데모에서는 히스토리를 제공하지 않습니다." variant="outline" className="h-11 px-8 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
                             <History size={18} /> 히스토리
                         </Button>
-                        <Button className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
+                        <Button disabled title="정적 데모에서는 설계를 저장할 수 없습니다." className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
                             <Plus size={20} /> 설계 등록
                         </Button>
                     </div>
                 }
             />
 
+            <div role="status" className="rounded-xl border border-warning/30 bg-warning/10 px-5 py-4 text-sm leading-relaxed">
+                <strong className="font-bold">정적 데모 화면입니다.</strong>{' '}
+                아래 노드·담당자·시간·수치는 모두 예시이며 실제 저장·실행·운영 지표를 제공하지 않습니다.
+                실제 전자결재 조회와 승인·반려는 <Link className="font-bold underline underline-offset-4" href="/approvals">전자결재함</Link>에서 수행합니다.
+            </div>
+
             <HubMetricGrid>
-                <HubMetricCard title="활성 설계" value="24" icon={Layers} color="primary" />
-                <HubMetricCard title="실행 중" value="156" icon={Zap} color="emerald" status="정상" />
-                <HubMetricCard title="성공률" value="99.9%" icon={CheckCircle2} color="indigo" />
-                <HubMetricCard title="시스템 부하" value="LOW" icon={Activity} color="amber" />
+                <HubMetricCard title="샘플 활성 설계" value="24" icon={Layers} color="primary" status="정적 예시" />
+                <HubMetricCard title="샘플 실행 중" value="156" icon={Zap} color="emerald" status="정적 예시" />
+                <HubMetricCard title="샘플 성공률" value="99.9%" icon={CheckCircle2} color="indigo" status="정적 예시" />
+                <HubMetricCard title="샘플 시스템 부하" value="LOW" icon={Activity} color="amber" status="정적 예시" />
             </HubMetricGrid>
 
             <div className="grid grid-cols-12 gap-10">
                 <div className="col-span-12 lg:col-span-8">
                     <HubSectionCard
                         title="프로세스 캔버스"
-                        description="현재 활성화된 비즈니스 프로세스의 노드 및 엣지 스트림입니다."
+                        description="샘플 휴가 결재 흐름의 노드와 연결선을 탐색하는 정적 캔버스입니다."
                         icon={Layers}
                         className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
                     >
@@ -85,7 +92,7 @@ export default function WorkflowClient() {
                                     <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase">Active_Process:</span>
                                     <span className="text-sm font-bold text-foreground">연차/휴가 결재 v1.2</span>
                                 </div>
-                                <Button variant="ghost" size="icon" aria-label="프로세스 캔버스 새로고침" className="h-8 w-8 rounded-lg">
+                                <Button disabled title="정적 데모에는 새로 불러올 데이터가 없습니다." variant="ghost" size="icon" aria-label="프로세스 캔버스 새로고침 (미지원)" className="h-8 w-8 rounded-lg">
                                     <RefreshCcw size={14} className="text-muted-foreground" />
                                 </Button>
                             </div>
@@ -148,8 +155,8 @@ export default function WorkflowClient() {
                                     </div>
                                 </div>
 
-                                <Button className="w-full h-12 bg-surface-inverse hover:bg-primary text-surface-inverse-foreground rounded-xl font-bold text-xs tracking-widest uppercase shadow-2xl transition-all">
-                                    Execute Action
+                                <Button disabled title="정적 데모에서는 작업을 실행할 수 없습니다." className="w-full h-12 bg-surface-inverse hover:bg-primary text-surface-inverse-foreground rounded-xl font-bold text-xs tracking-widest uppercase shadow-2xl transition-all">
+                                    작업 실행 (미지원)
                                 </Button>
                             </div>
                         ) : (

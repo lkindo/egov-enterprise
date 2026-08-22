@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { X,
   ChevronLeft, 
@@ -12,6 +12,12 @@ import { X,
   ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 interface TourStep {
   title: string;
@@ -22,6 +28,7 @@ interface TourStep {
 export function SmartOnboardingHub() {
   const [isOpen, setIsOpen] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -30,13 +37,17 @@ export function SmartOnboardingHub() {
       const isTestEnv = process.env.NEXT_PUBLIC_APP_ENV === 'test' || window.location.search.includes('e2e=true');
       const hasSeenTour = localStorage.getItem('egov_smart_tour_v1');
 
-      // ⚠ 인증 화면에서는 절대 띄우지 않는다. 이 투어는 z-[10000] 전면 오버레이라 로그인 폼을 덮어
-      //   아이디 입력과 제출 자체를 차단한다(localStorage 가 빈 신규 사용자·시크릿창에서 재현됨).
-      //   투어는 로그인에 성공해 실제 업무 화면에 진입한 뒤 최초 1회만 노출한다.
+      // 인증 화면에서는 띄우지 않는다. 투어는 로그인에 성공해 실제 업무 화면에
+      // 진입한 뒤 최초 1회만 표준 modal dialog로 노출한다.
       const isAuthRoute = (pathname || '').startsWith('/login');
 
       if (!hasSeenTour && !isTestEnv && !isAuthRoute) {
-        const timer = setTimeout(() => setIsOpen(true), 2000);
+        const timer = setTimeout(() => {
+          previousFocusRef.current = document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+          setIsOpen(true);
+        }, 2000);
         return () => clearTimeout(timer);
       }
     }
@@ -48,17 +59,6 @@ export function SmartOnboardingHub() {
     }
     setIsOpen(false);
   };
-
-  // 키보드 탈출구(ESC). role="alertdialog" 전면 오버레이가 어떤 이유로든 떴을 때 사용자가
-  // 마우스 없이도 빠져나갈 수 있어야 한다. 닫으면 '봤음'으로 기록되어 다시 뜨지 않는다.
-  useEffect(() => {
-    if (!isOpen) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') handleComplete();
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isOpen]);
 
   const nextStep = () => {
     if (currentStep < steps.length - 1) {
@@ -76,61 +76,74 @@ export function SmartOnboardingHub() {
 
   const steps: TourStep[] = [
     {
-      title: "eGov 5.0 Intelligence Platform",
-      description: "차세대 공공 행정 시스템을 선도하는 지능형 운영 플랫폼에 오신 것을 환영합니다. 인프라 관점의 비즈니스 오퍼레이션까지, 데이터 중심의 업무 환경 혁신이 기다립니다.",
+      title: "업무 포털 둘러보기",
+      description: "업무 포털의 주요 이동 방법과 화면 상태 안내를 차례로 확인할 수 있습니다. 언제든 닫고 현재 업무로 돌아갈 수 있습니다.",
       icon: <Sparkles className="text-primary animate-pulse" size={40} />
     },
     {
-      title: "인텔리전스 커맨드 센터",
-      description: "명령어 기반의 빠른 탐색과 액션을 경험하세요. 마우스 없이 CMD+K 만으로 시스템의 모든 구석구석을 제어하고 정보를 찾을 수 있습니다.",
+      title: "빠른 메뉴 찾기",
+      description: "Ctrl 또는 Command와 K 키를 함께 누르면 사용할 수 있는 메뉴와 바로가기를 검색할 수 있습니다. 표시되는 항목은 현재 권한에 따라 달라집니다.",
       icon: <Command className="text-hub-purple" size={40} />
     },
     {
-      title: "실시간 시스템 관측 (Observability)",
-      description: "서버의 심장박동을 실시간으로 추적합니다. CPU, 메모리, DB 커넥션을 3초 주기로 정밀 분석하여 안정적인 서비스 운영을 보장합니다.",
-      icon: <Activity className="text-rose-500" size={40} />
+      title: "화면 상태 확인",
+      description: "화면은 불러오는 중, 결과 없음, 일부 실패, 권한 없음, 미지원 상태를 구분해 안내합니다. 오류가 계속되면 화면의 다시 시도 또는 고객지원 경로를 이용하세요.",
+      icon: <Activity className="text-destructive-emphasis" size={40} />
     },
     {
-      title: "워크플로우 프로세스 캔버스",
-      description: "복잡한 비즈니스 로직을 시각화된 캔버스에서 관리하세요. 이벤트 기반 오케스트레이션 엔진이 당신의 업무 프로세스를 유연하게 연결합니다.",
+      title: "키보드로 이동하기",
+      description: "Tab 키로 주요 작업을 이동하고 Enter 또는 Space 키로 실행할 수 있습니다. 팝업이 열리면 Escape 키로 닫을 수 있습니다.",
       icon: <Layout className="text-hub-indigo" size={40} />
     },
     {
-      title: "하이크-데이터 그리드",
-      description: "엔터프라이즈급 대용량 데이터를 고성능 그리드로 완벽하게 제어합니다. 컬럼 고정, 실시간 필터링, 인라인 수정을 통해 데이터 통찰력을 극대화하세요.",
-      icon: <CheckCircle2 className="text-emerald-500" size={40} />
+      title: "도움말 이용하기",
+      description: "화면 아래 고객지원에서 도움말을 확인할 수 있습니다. 제공되지 않는 기능은 가능한 작업과 제한 사유를 화면에서 안내합니다.",
+      icon: <CheckCircle2 className="text-success-emphasis" size={40} />
     }
   ];
 
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center p-6 bg-[#020617] animate-in fade-in duration-1000"
-      role="alertdialog"
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) handleComplete();
+      }}
     >
-      <div className="relative max-w-4xl w-full bg-[#0f172a] border border-white/10 rounded-lg shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden animate-in zoom-in-95 duration-700 flex flex-col md:flex-row min-h-[500px]">
+      <DialogContent
+        showCloseButton={false}
+        aria-modal="true"
+        aria-labelledby="smart-onboarding-title"
+        aria-describedby="smart-onboarding-description"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+          previousFocusRef.current?.focus();
+          previousFocusRef.current = null;
+        }}
+        className="relative max-w-4xl w-full bg-surface-inverse text-surface-inverse-foreground border border-surface-inverse-border rounded-lg shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] overflow-hidden p-0 flex flex-col md:flex-row min-h-[500px] gap-0"
+      >
         {/* Progress Strip */}
         <div className="absolute top-0 left-0 w-full h-1 flex px-10 pt-4 gap-2 z-20">
           {steps.map((_, idx) => (
-            <div key={idx} className={cn("h-1 rounded-lg flex-1 transition-all duration-700", idx <= currentStep ? "bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]" : "bg-white/10")} />
+            <div key={idx} className={cn("h-1 rounded-lg flex-1 transition-all duration-700", idx <= currentStep ? "bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]" : "bg-surface-inverse-border")} />
           ))}
         </div>
 
         {/* Left Side: Visual Preview */}
         <div className="flex-1 bg-surface-inverse p-12 flex items-center justify-center relative overflow-hidden group">
           <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-hub-purple/10 opacity-30" />
-          <div className="relative z-10 w-full aspect-video rounded-lg border border-white/10 bg-black shadow-2xl flex items-center justify-center overflow-hidden">
+          <div className="relative z-10 w-full aspect-video rounded-lg border border-surface-inverse-border bg-surface-inverse shadow-2xl flex items-center justify-center overflow-hidden">
             <div className="absolute inset-0 opacity-20 group-hover:opacity-40 transition-opacity" style={{ backgroundImage: 'radial-gradient(circle, #3b82f6 1px, transparent 1px)', backgroundSize: '20px 20px' }} />
             <div className="flex flex-col items-center gap-6 animate-in slide-in-from-bottom-4 duration-1000">
-              <div className="p-6 bg-white/5 rounded-lg border border-white/10 shadow-inner">
+              <div className="p-6 bg-surface-inverse-foreground/5 rounded-lg border border-surface-inverse-border shadow-inner">
                 {steps[currentStep].icon}
               </div>
             </div>
           </div>
           <div className="absolute bottom-10 left-10 flex items-center gap-3">
             <div className="w-2 h-2 rounded-full bg-primary animate-ping" />
-            <span className="text-xs font-bold text-white/50 tracking-[0.4em]">기능 스포트라이트</span>
+            <span className="text-xs font-bold text-surface-inverse-muted tracking-[0.4em]">기능 스포트라이트</span>
           </div>
         </div>
 
@@ -140,56 +153,56 @@ export function SmartOnboardingHub() {
             onClick={handleComplete}
             aria-label="온보딩 닫기"
             data-testid="onboarding-close"
-            className="absolute top-8 right-8 p-3 hover:bg-white/5 rounded-lg transition-colors group"
+            className="absolute top-8 right-8 p-3 hover:bg-surface-inverse-foreground/5 rounded-lg transition-colors group"
           >
-            <X size={20} className="text-white/30 group-hover:text-white transition-colors" />
+            <X size={20} className="text-surface-inverse-muted group-hover:text-surface-inverse-foreground transition-colors" />
           </button>
 
           <div className="space-y-10 py-10">
             <div className="space-y-4 animate-in fade-in slide-in-from-right-4 duration-700">
               <div className="flex items-center gap-2">
                 <div className="h-px w-8 bg-primary" />
-                <span className="text-xs font-bold text-primary tracking-[0.3em]">모듈 가이드</span>
+                <span className="text-xs font-bold text-surface-inverse-muted tracking-[0.3em]">사용 안내</span>
               </div>
-              <h2 className="text-3xl font-bold tracking-tighter text-white leading-[1.1]">
+              <DialogTitle id="smart-onboarding-title" className="text-3xl font-bold tracking-tighter text-surface-inverse-foreground leading-[1.1]">
                 {steps[currentStep].title}
-              </h2>
-              <p className="text-base text-white/60 font-medium leading-relaxed">
+              </DialogTitle>
+              <DialogDescription id="smart-onboarding-description" className="text-base text-surface-inverse-muted font-medium leading-relaxed">
                 {steps[currentStep].description}
-              </p>
+              </DialogDescription>
             </div>
 
             <div className="flex flex-col gap-4">
               <div className="flex items-center gap-3">
-                <CheckCircle2 size={16} className="text-emerald-500" />
-                <span className="text-sm font-bold text-white/80">직관적인 사용자 인터페이스</span>
+                <CheckCircle2 size={16} className="text-success-emphasis" />
+                <span className="text-sm font-bold text-surface-inverse-foreground">권한에 맞는 메뉴와 바로가기</span>
               </div>
               <div className="flex items-center gap-3">
-                <CheckCircle2 size={16} className="text-emerald-500" />
-                <span className="text-sm font-bold text-white/80">실시간 데이터 연동 및 분석</span>
+                <CheckCircle2 size={16} className="text-success-emphasis" />
+                <span className="text-sm font-bold text-surface-inverse-foreground">작업 상태와 제한 사항 안내</span>
               </div>
             </div>
           </div>
 
-          <div className="flex items-center justify-between gap-4 pt-10 border-t border-white/5">
-            <Button variant="ghost" onClick={prevStep} className={cn("rounded-lg font-bold h-12 px-6 text-white/40 hover:text-white transition-all", currentStep === 0 && "invisible")}>
+          <div className="flex items-center justify-between gap-4 pt-10 border-t border-surface-inverse-border">
+            <Button variant="ghost" onClick={prevStep} className={cn("rounded-lg font-bold h-12 px-6 text-surface-inverse-muted hover:text-surface-inverse-foreground transition-all", currentStep === 0 && "invisible")}>
               <ChevronLeft size={20} /> 이전
             </Button>
 
             <div className="flex gap-3">
               {currentStep < steps.length - 1 ? (
-                <Button onClick={nextStep} className="rounded-lg font-bold h-11 px-10 bg-primary text-white shadow-[0_15px_30px_-5px_rgba(59,130,246,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
+                <Button onClick={nextStep} className="rounded-lg font-bold h-11 px-10 bg-primary text-primary-foreground shadow-[0_15px_30px_-5px_rgba(59,130,246,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
                   {currentStep === 0 ? "플랫폼 둘러보기" : "다음 기능"} <ArrowRight size={18} />
                 </Button>
               ) : (
-                <Button onClick={handleComplete} className="rounded-lg font-bold h-11 px-12 bg-emerald-500 text-white shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
+                <Button onClick={handleComplete} className="rounded-lg font-bold h-11 px-12 bg-success text-success-foreground shadow-[0_15px_30px_-5px_rgba(16,185,129,0.3)] hover:scale-[1.05] active:scale-95 transition-all gap-3">
                   시작하기 <CheckCircle2 size={18} />
                 </Button>
               )}
             </div>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 }

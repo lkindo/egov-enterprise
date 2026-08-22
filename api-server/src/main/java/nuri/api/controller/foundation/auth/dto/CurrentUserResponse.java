@@ -5,10 +5,13 @@ package nuri.api.controller.foundation.auth.dto;
  *
  * <p>해당 엔드포인트가 ad-hoc {@code Map<String, Object>}를 반환하던 것을
  * 백엔드 헌법 제3조(레이어 간 격리 — DTO 전문 클래스 반환)에 맞춰 대체한다.
- * JSON 필드명(id, name, role, userSe, email)은 기존 응답 계약과 동일하게 유지한다.
+ * {@code id}는 사람이 입력하는 loginId이고, {@code esntlId}는 Board처럼 내부 PK를
+ * 소유권 축으로 쓰는 도메인에서 현재 사용자 본인 여부를 판정할 때만 사용하는 불투명 식별자다.
+ * 비밀번호·토큰·인증 자격은 이 DTO에 포함하지 않는다.
  */
 public record CurrentUserResponse(
         String id,
+        String esntlId,
         String name,
         String role,
         String userSe,

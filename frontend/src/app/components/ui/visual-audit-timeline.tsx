@@ -77,7 +77,7 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  <div>
  <h2 className="text-2xl font-bold tracking-tighter text-foreground ">{title}</h2>
  <div className="flex items-center gap-3 mt-1">
- <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 tracking-tight">
+ <div className="flex items-center gap-1.5 text-xs font-bold text-success-emphasis tracking-tight">
    <ShieldCheck size={12} /> 보안 거버넌스 엔진 활성
  </div>
  <div className="h-3 w-px bg-muted" />

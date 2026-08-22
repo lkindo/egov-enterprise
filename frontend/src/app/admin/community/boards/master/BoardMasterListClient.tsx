@@ -353,6 +353,7 @@ export function BoardMasterListClient() {
           onRetry={() => refetch()}
           isPremium={true}
           enableSelection={true}
+          keyField="bbsId"
           bulkActions={[
             {
               label: '일괄 활성화',

@@ -9,7 +9,9 @@
  */
 export function StatsHubFallback() {
   return (
-    <div className="space-y-10 pb-20 animate-pulse" aria-hidden="true">
+    <>
+      <h1 className="sr-only">관리자 통계를 불러오는 중</h1>
+      <div className="space-y-10 pb-20 animate-pulse" aria-hidden="true">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2 md:px-4">
         <div className="flex items-center gap-4">
           <div className="w-14 h-11 rounded-lg bg-muted" />
@@ -43,7 +45,8 @@ export function StatsHubFallback() {
           <div className="min-h-[500px] rounded-lg bg-muted" />
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }
 
