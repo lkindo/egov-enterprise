@@ -54,6 +54,7 @@ export default async function InformalSanctionPage() {
 function IsmLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-20">
+      <h1 className="sr-only">약식 결재 관리를 불러오는 중</h1>
       <div className="h-11 w-1/3 bg-muted rounded-lg" />
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
         {[1, 2, 3].map(i => <div key={i} className="h-44 bg-muted rounded-lg" />)}

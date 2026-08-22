@@ -14,8 +14,7 @@ class MenuService extends ApiService {
     try {
       const res = await this.get<{ list: MenuInfo[] }>('/head', config);
       return res?.list || [];
-    } catch (error) {
-      console.warn('Failed to fetch head menus:', error);
+    } catch {
       return [];
     }
   }
@@ -27,8 +26,7 @@ class MenuService extends ApiService {
     try {
       const res = await this.get<{ list: MenuInfo[] }>(`/left?menuNo=${menuNo}`, config);
       return res?.list || [];
-    } catch (error) {
-      console.warn('Failed to fetch left menus:', error);
+    } catch {
       return [];
     }
   }

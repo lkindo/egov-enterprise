@@ -19,6 +19,19 @@ public class BoardPredicate {
             builder.and(bbsIdEq(condition.getBbsId()));
         }
 
+        if (StringUtils.hasText(condition.getUseYn())) {
+            builder.and(QBoard.board.useYn.eq(condition.getUseYn()));
+        }
+
+        if (!condition.isSecretPostAdminOverride()) {
+            BooleanBuilder visiblePosts = new BooleanBuilder(
+                    QBoard.board.scrtYn.eq("N").or(QBoard.board.scrtYn.isNull()));
+            if (StringUtils.hasText(condition.getViewerEsntlId())) {
+                visiblePosts.or(QBoard.board.userId.eq(condition.getViewerEsntlId()));
+            }
+            builder.and(visiblePosts);
+        }
+
         if (StringUtils.hasText(condition.getSearchWrd())) {
             String searchWrd = condition.getSearchWrd();
             if ("0".equals(condition.getSearchCnd())) { // Title

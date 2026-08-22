@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/input';
 ;
 import dynamic from 'next/dynamic';
 import { Settings, Edit2, FileText, CheckCircle2 } from 'lucide-react';
-import { Skeleton } from '@/app/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
  ssr: false,
@@ -67,7 +67,6 @@ export default function PolicyAdminClient() {
  const data = await policyAdminService.getPolicies();
  setPolicies(data);
  } catch (err) {
- console.error('Failed to fetch policies:', err);
  setError(toError(err));
  setPolicies([]);
  toast('정책 목록을 불러오는 데 실패했습니다.', 'error');
@@ -104,8 +103,7 @@ export default function PolicyAdminClient() {
  toast('정책이 성공적으로 수정되었습니다', 'success');
  setIsEditModalOpen(false);
  fetchPolicies();
- } catch (err) {
- console.error('Failed to update policy:', err);
+ } catch {
  toast('정책 수정에 실패했습니다.', 'error');
  }
  };
@@ -161,6 +159,7 @@ export default function PolicyAdminClient() {
  // 루트 레이아웃이 이미 max-w-7xl · p-6/md:p-12/lg:p-16 을 제공하므로 화면 단위 p-10 이중 여백을 제거한다.
  <div className="space-y-10 animate-in fade-in duration-1000">
  <HubHeader 
+ headingLevel={1}
  title="시스템 정책" 
  highlight="관리" 
  subtitle="전사 서비스 운영을 위한 법적, 관리적 정책 아키텍처를 통합 관리합니다." 

@@ -28,12 +28,15 @@ import { Button, buttonVariants } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-;
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { menuService } from '@/services/business/user/MenuService';
 import { MenuInfo } from '@/types/foundation/menu';
 import { HeaderSearchParamSync } from './HeaderSearchParamSync';
+import {
+  normalizeInternalRoute,
+  resolveMenuInternalRoute,
+} from '@/lib/navigation/internal-route';
 
 const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
   1000000: LayoutGrid, // 워크스페이스
@@ -48,6 +51,8 @@ const DOMAIN_ROUTE_MAP: Record<number, string> = {
   9000000: '/admin/system/menus',
 };
 
+const ADMINISTRATIVE_ROLES = new Set(['ADMIN', 'SYSTEM', 'ROLE_ADMIN', 'ROLE_SYSTEM']);
+
 export function Header({ 
   initialMenus = [],
   menusPromise
@@ -59,6 +64,7 @@ export function Header({
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
+  const isAdministrativeUser = ADMINISTRATIVE_ROLES.has(user?.role ?? '');
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   const { notifications, unreadCount, error: notificationsError, markAsRead, markAllAsRead, refresh: refreshNotifications } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
@@ -74,32 +80,46 @@ export function Header({
   });
   const [mounted, setMounted] = useState(false);
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {
+      // 네트워크 실패가 현재 화면의 캐시된 사용자 데이터를 계속 노출하게 두지 않는다.
+    } finally {
+      router.replace('/login');
+    }
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
   return (
-    <header className="sticky top-0 z-[100] w-full border-b border-border bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60 relative overflow-hidden">
+    <header
+      data-sidebar-modal-background="header"
+      className="sticky top-0 z-[100] w-full border-b border-border bg-card/80 backdrop-blur-xl supports-[backdrop-filter]:bg-card/60"
+    >
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
       <React.Suspense fallback={null}>
         <HeaderSearchParamSync menus={menus} activeMenuNo={activeMenuNo} setActiveMenuNo={setActiveMenuNo} />
       </React.Suspense>
-      <div className="flex h-11 items-center px-4 md:px-6 gap-4">
+      <div className="flex h-11 items-center px-4 md:px-6 gap-3 sm:gap-4">
         {/* Mobile Sidebar Toggle */}
         <Button 
           variant="ghost" 
           size="icon" 
           className="lg:hidden text-muted-foreground mr-1" 
           onClick={toggleSidebar} 
-          aria-label="사이드바 메뉴 열기/닫기"
+          aria-label={isSidebarOpen ? '주 메뉴 닫기' : '주 메뉴 열기'}
           aria-expanded={isSidebarOpen}
+          aria-controls="primary-sidebar"
         >
           {isSidebarOpen ? <X size={22} /> : <Menu size={22} />}
         </Button>
 
         <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80 shrink-0">
           <div className="w-10 h-10 bg-surface-inverse rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
-            <span className="text-primary font-bold text-lg">EG</span>
+            <span className="text-surface-inverse-foreground font-bold text-lg">EG</span>
           </div>
           <div className="hidden sm:flex flex-col">
             <span className="text-sm font-bold leading-tight text-foreground">전자정부 5.0</span>
@@ -113,28 +133,44 @@ export function Header({
               const Icon = DOMAIN_ICON_MAP[menu.menuNo] || CircleDot;
               const isActive = activeMenuNo === menu.menuNo;
               
-              let targetRoute = menu.modernRoute;
-              if (!targetRoute || targetRoute === 'dir' || targetRoute === '#') {
-                targetRoute = DOMAIN_ROUTE_MAP[menu.menuNo] || '/';
-              }
-
-              return (
-                <Link
-                  key={menu.menuNo || `head-${index}`}
-                  href={targetRoute || '#'}
-                  onClick={(e) => {
-                    setActiveMenuNo(menu.menuNo);
-                  }}
-                  className={cn(
-                    "inline-flex items-center justify-center whitespace-nowrap px-6 h-10 font-bold text-xs tracking-tight transition-all rounded-[var(--radius-hub-item)] gap-2.5",
-                    isActive
-                      ? "bg-surface-inverse text-surface-inverse-foreground shadow-xl"
-                      : "text-muted-foreground hover:text-foreground hover:bg-card"
-                  )}
-                >
+              const targetRoute = resolveMenuInternalRoute(menu)
+                ?? normalizeInternalRoute(DOMAIN_ROUTE_MAP[menu.menuNo]);
+              const itemClassName = cn(
+                "inline-flex items-center justify-center whitespace-nowrap px-6 h-10 font-bold text-xs tracking-tight transition-all rounded-[var(--radius-hub-item)] gap-2.5",
+                isActive
+                  ? "bg-surface-inverse text-surface-inverse-foreground shadow-xl"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card"
+              );
+              const itemContent = (
+                <>
                   <Icon size={14} className={cn("transition-transform", isActive ? "scale-110" : "opacity-100")} />
                   {menu.menuNm}
+                </>
+              );
+
+              return targetRoute ? (
+                <Link
+                  key={menu.menuNo || `head-${index}`}
+                  href={targetRoute}
+                  aria-label={menu.menuNm}
+                  onClick={() => {
+                    setActiveMenuNo(menu.menuNo);
+                  }}
+                  className={itemClassName}
+                >
+                  {itemContent}
                 </Link>
+              ) : (
+                <button
+                  key={menu.menuNo || `head-${index}`}
+                  type="button"
+                  disabled
+                  aria-disabled="true"
+                  aria-label={`${menu.menuNm} 이동 불가`}
+                  className={cn(itemClassName, 'cursor-not-allowed opacity-50')}
+                >
+                  {itemContent}
+                </button>
               );
             })}
           </nav>
@@ -191,7 +227,7 @@ export function Header({
                       </div>
                       <div className="flex flex-col items-start mr-1 hidden sm:flex">
                         <span className="text-sm font-bold leading-none">{user.name}</span>
-                        <span className="text-xs text-muted-foreground font-semibold mt-0.5 tracking-tight">{user.userSe === 'USR' ? '사용자' : '관리자'}</span>
+                        <span className="text-xs text-muted-foreground font-semibold mt-0.5 tracking-tight">{isAdministrativeUser ? '관리자' : '사용자'}</span>
                       </div>
                       <ChevronDown size={14} className="text-muted-foreground hidden sm:block" />
                     </Button>
@@ -202,18 +238,22 @@ export function Header({
                       <p className="text-sm text-muted-foreground truncate">{user.id}</p>
                     </div>
                     <div className="space-y-0.5">
-                      <Link href="/admin/workspace/my-page" aria-label="마이페이지 이동" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
-                        <span className="flex items-center gap-2"><User size={14} /> 마이페이지</span>
-                      </Link>
-                      <Link href="/admin/system/menus" aria-label="환경설정 이동" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
-                        <span className="flex items-center gap-2"><Settings size={14} /> 환경설정</span>
-                      </Link>
-                      <div className="h-px bg-muted my-1" />
+                      {isAdministrativeUser && (
+                        <>
+                          <Link href="/admin/workspace/my-page" aria-label="마이페이지 환경 설정 이동" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
+                            <span className="flex items-center gap-2"><User size={14} /> 마이페이지 환경 설정</span>
+                          </Link>
+                          <Link href="/admin/system/menus" aria-label="시스템 메뉴 관리 이동" className={cn(buttonVariants({ variant: "ghost" }), "w-full justify-start text-sm h-9 gap-2 font-medium")}>
+                            <span className="flex items-center gap-2"><Settings size={14} /> 시스템 메뉴 관리</span>
+                          </Link>
+                          <div className="h-px bg-muted my-1" />
+                        </>
+                      )}
                       <Button
                         variant="ghost"
                         aria-label="로그아웃"
                         className="w-full justify-start text-sm h-9 gap-2 text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10 font-medium"
-                        onClick={() => logout().then(() => router.push('/login'))}
+                        onClick={handleLogout}
                       >
                         <LogOut size={14} /> 로그아웃
                       </Button>

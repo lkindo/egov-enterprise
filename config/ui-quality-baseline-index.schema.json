@@ -92,32 +92,45 @@
         "supersedes"
       ],
       "properties": {
-        "schemaVersion": { "const": 1 },
-        "baselineRunId": { "const": "r12" },
-        "evidenceScope": { "const": "automated-only" },
-        "buildSha": { "const": "c9d07f260a3c41161362ceef444188fddeaa11bf" },
+        "schemaVersion": { "enum": [1, 2] },
+        "baselineRunId": { "enum": ["r12", "r13"] },
+        "evidenceScope": { "enum": ["automated-only", "combined"] },
+        "buildSha": { "$ref": "#/$defs/sha1" },
         "protocolVersion": { "const": 1 },
-        "protocolHash": { "type": "null" },
-        "protocolHashStatus": { "const": "not-recorded-in-r12" },
-        "buildInputTreeHash": { "const": "5ebb43f59773661c65df645f9da3c0ebe0a9af1cef93b046a3a56c4707cd9c05" },
-        "dirtyBuildInputDiffHash": { "const": "929b3b571c10dfc7f8f5d5606a441e7da478e21e9b04ebd417b72037cdc14a0e" },
-        "executionScenarioManifestHash": { "const": "c4e6142f1dafe66cdcc274e36048d2e20b1461e657b40f4a27c5e0b7a1f301ff" },
-        "executionPlanHash": { "const": "573ad03186dd630e3ab86dcd6f125b2578628a475dad36ebaad591d61ead6927" },
-        "runnerHash": { "const": "66092706a07b4903fadcd6c26be34166434f3d21389956e807ada66679dcc712" },
-        "coreHash": { "const": "ec41b33fdfef10f927bbd7c3f37b413144a7d8a9fcb3ce729dc6134d5dae196a" },
-        "runnerContractHash": { "const": "704e2bab956995a8b7ba9b36be8ac5830636cae30d658ea59f9a381a5c16e173" },
-        "scenarioContractHash": { "const": "5c6ce3b5997e6dab2d06749393659bd634f6546828ba34106f87b0dbe65c0a13" },
-        "routeTruthHash": { "const": "8956fb5dee0d42b4eaf704e145cb51db4703fc69ebca3e9436ad2085fd263b6e" },
-        "privacyRuleHash": {
-          "const": "efd981ddde3b84363c15893d333810821e1be79cc239c23af852c359c8e2ed86"
+        "protocolHash": {
+          "oneOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
         },
-        "sourceArtifactAggregateDigest": { "const": "2a4f890de0f5ff79e0f66cb3dbc042982a25e2eed7c330fe81104d1a46d91328" },
+        "protocolHashStatus": { "enum": ["not-recorded-in-r12", "recorded"] },
+        "buildInputTreeHash": { "$ref": "#/$defs/sha256" },
+        "dirtyBuildInputDiffHash": {
+          "oneOf": [
+            { "$ref": "#/$defs/sha256" },
+            { "type": "null" }
+          ]
+        },
+        "executionScenarioManifestHash": { "$ref": "#/$defs/sha256" },
+        "executionPlanHash": { "$ref": "#/$defs/sha256" },
+        "runnerHash": { "$ref": "#/$defs/sha256" },
+        "coreHash": { "$ref": "#/$defs/sha256" },
+        "runnerContractHash": { "$ref": "#/$defs/sha256" },
+        "scenarioContractHash": { "$ref": "#/$defs/sha256" },
+        "routeTruthHash": { "$ref": "#/$defs/sha256" },
+        "privacyRuleHash": { "$ref": "#/$defs/sha256" },
+        "sourceArtifactAggregateDigest": { "$ref": "#/$defs/sha256" },
         "artifactDigest": { "$ref": "#/$defs/sha256" },
         "jsonFileCount": { "const": 1 },
-        "automatedJsonFileCount": { "const": 282 },
-        "diagnosticJsonFileCount": { "const": 8 },
-        "manualEvidenceCount": { "const": 0 },
-        "mediaType": { "const": "application/vnd.egov.ui-quality-baseline-summary+json" },
+        "automatedJsonFileCount": { "enum": [282, 283] },
+        "diagnosticJsonFileCount": { "enum": [0, 8] },
+        "manualEvidenceCount": { "enum": [0, 48] },
+        "mediaType": {
+          "enum": [
+            "application/vnd.egov.ui-quality-baseline-summary+json",
+            "application/vnd.egov.ui-quality-baseline-combined-summary.v2+json"
+          ]
+        },
         "immutableObjectIdentity": {
           "type": "string",
           "pattern": "^git-blob-sha1:[0-9a-f]{40}$"
@@ -132,7 +145,50 @@
             { "type": "null" }
           ]
         }
-      }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "schemaVersion": { "const": 1 },
+            "baselineRunId": { "const": "r12" },
+            "evidenceScope": { "const": "automated-only" },
+            "buildSha": { "const": "c9d07f260a3c41161362ceef444188fddeaa11bf" },
+            "protocolHash": { "type": "null" },
+            "protocolHashStatus": { "const": "not-recorded-in-r12" },
+            "buildInputTreeHash": { "const": "5ebb43f59773661c65df645f9da3c0ebe0a9af1cef93b046a3a56c4707cd9c05" },
+            "dirtyBuildInputDiffHash": { "const": "929b3b571c10dfc7f8f5d5606a441e7da478e21e9b04ebd417b72037cdc14a0e" },
+            "executionScenarioManifestHash": { "const": "c4e6142f1dafe66cdcc274e36048d2e20b1461e657b40f4a27c5e0b7a1f301ff" },
+            "executionPlanHash": { "const": "573ad03186dd630e3ab86dcd6f125b2578628a475dad36ebaad591d61ead6927" },
+            "runnerHash": { "const": "66092706a07b4903fadcd6c26be34166434f3d21389956e807ada66679dcc712" },
+            "coreHash": { "const": "ec41b33fdfef10f927bbd7c3f37b413144a7d8a9fcb3ce729dc6134d5dae196a" },
+            "runnerContractHash": { "const": "704e2bab956995a8b7ba9b36be8ac5830636cae30d658ea59f9a381a5c16e173" },
+            "scenarioContractHash": { "const": "5c6ce3b5997e6dab2d06749393659bd634f6546828ba34106f87b0dbe65c0a13" },
+            "routeTruthHash": { "const": "8956fb5dee0d42b4eaf704e145cb51db4703fc69ebca3e9436ad2085fd263b6e" },
+            "privacyRuleHash": { "const": "efd981ddde3b84363c15893d333810821e1be79cc239c23af852c359c8e2ed86" },
+            "sourceArtifactAggregateDigest": { "const": "2a4f890de0f5ff79e0f66cb3dbc042982a25e2eed7c330fe81104d1a46d91328" },
+            "automatedJsonFileCount": { "const": 282 },
+            "diagnosticJsonFileCount": { "const": 8 },
+            "manualEvidenceCount": { "const": 0 },
+            "mediaType": { "const": "application/vnd.egov.ui-quality-baseline-summary+json" },
+            "supersedes": { "type": "null" }
+          }
+        },
+        {
+          "properties": {
+            "schemaVersion": { "const": 2 },
+            "baselineRunId": { "const": "r13" },
+            "evidenceScope": { "const": "combined" },
+            "protocolHash": { "$ref": "#/$defs/sha256" },
+            "protocolHashStatus": { "const": "recorded" },
+            "dirtyBuildInputDiffHash": { "type": "null" },
+            "automatedJsonFileCount": { "const": 283 },
+            "diagnosticJsonFileCount": { "const": 0 },
+            "manualEvidenceCount": { "const": 48 },
+            "mediaType": { "const": "application/vnd.egov.ui-quality-baseline-combined-summary.v2+json" },
+            "supersedes": { "const": "e7822b6a31dcf9ff5e129238e42cce7be29d5f126554e8ea400cf249c69af8e4" }
+          }
+        }
+      ]
     }
   }
 }

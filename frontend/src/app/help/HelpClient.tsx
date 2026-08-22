@@ -7,10 +7,15 @@ import { useToast } from '@/app/components/ui/toast';
 import { HelpCircle,  MessageCircle,  ChevronDown,  Search,  PlusCircle,  Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { StatusBadge } from '@/app/components/ui/status-badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmptyStateDisplay } from '@/app/components/ui/status-displays';
+
+type FaqDetailState =
+  | { status: 'loading' }
+  | { status: 'error' }
+  | { status: 'success'; answer: string };
 
 export default function HelpClient() {
   const { toast } = useToast();
@@ -19,6 +24,8 @@ export default function HelpClient() {
   const [qnas, setQnas] = useState<QNA[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
+  const [faqDetails, setFaqDetails] = useState<Record<string, FaqDetailState>>({});
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -61,7 +68,28 @@ export default function HelpClient() {
     }
   ];
 
-  const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
+  const loadFaqDetail = async (faqId: string) => {
+    setFaqDetails((current) => ({ ...current, [faqId]: { status: 'loading' } }));
+    try {
+      const detail = await helpUserService.getFaqDetail(faqId);
+      setFaqDetails((current) => ({
+        ...current,
+        [faqId]: { status: 'success', answer: detail.ansCn },
+      }));
+    } catch {
+      setFaqDetails((current) => ({ ...current, [faqId]: { status: 'error' } }));
+    }
+  };
+
+  const toggleFaq = (faqId: string) => {
+    if (expandedFaq === faqId) {
+      setExpandedFaq(null);
+      return;
+    }
+
+    setExpandedFaq(faqId);
+    if (!faqDetails[faqId]) void loadFaqDetail(faqId);
+  };
 
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-24 p-8 animate-in fade-in duration-1000">
@@ -122,25 +150,36 @@ export default function HelpClient() {
                 faqs.map((faq) => (
                   <div key={faq.faqId} className="bg-card border-2 border-border/40 rounded-lg overflow-hidden transition-all hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/20 scale-100 hover:scale-[1.005]">
                     <button
-                      onClick={() => setExpandedFaq(expandedFaq === faq.faqId ? null : faq.faqId)}
+                      id={`faq-question-${faq.faqId}`}
+                      aria-controls={`faq-answer-${faq.faqId}`}
+                      aria-expanded={expandedFaq === faq.faqId}
+                      onClick={() => toggleFaq(faq.faqId)}
                       className="w-full px-12 py-10 flex items-center justify-between group text-left"
                     >
                       <span className="font-bold text-2xl text-foreground group-hover:text-primary transition-colors flex items-start gap-4 tracking-tighter">
-                        <span className="text-primary opacity-30 text-3xl">Q.</span> {faq.qstnTtl}
+                        <span className="text-primary text-3xl">Q.</span> {faq.qstnTtl}
                       </span>
                       <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all", expandedFaq === faq.faqId ? "bg-primary text-white rotate-180" : "bg-muted font-bold text-muted-foreground group-hover:bg-accent")}>
                         <ChevronDown size={24} />
                       </div>
                     </button>
                     {expandedFaq === faq.faqId && (
-                      <div className="px-12 pb-12 pt-2">
+                      <div
+                        id={`faq-answer-${faq.faqId}`}
+                        role="region"
+                        aria-labelledby={`faq-question-${faq.faqId}`}
+                        className="px-12 pb-12 pt-2"
+                      >
                         <motion.div
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           className="p-10 bg-accent/30 rounded-lg border-2 border-accent/50 text-foreground/80 font-bold leading-[1.8] text-lg flex items-start gap-4 shadow-inner"
                         >
-                          <span className="text-primary/20 text-3xl font-bold shrink-0 pt-1">A.</span>
-                          {faq.ansCn}
+                          <span className="text-primary text-3xl font-bold shrink-0 pt-1">A.</span>
+                          <FaqAnswer
+                            state={faqDetails[faq.faqId] ?? { status: 'loading' }}
+                            onRetry={() => void loadFaqDetail(faq.faqId)}
+                          />
                         </motion.div>
                       </div>
                     )}
@@ -180,6 +219,29 @@ export default function HelpClient() {
   );
 }
 
+function FaqAnswer({ state, onRetry }: { state: FaqDetailState; onRetry: () => void }) {
+  if (state.status === 'loading') {
+    return <p role="status" className="whitespace-pre-line">답변을 불러오는 중입니다.</p>;
+  }
+
+  if (state.status === 'error') {
+    return (
+      <div className="space-y-4">
+        <p role="alert">답변을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.</p>
+        <Button type="button" variant="outline" onClick={onRetry}>
+          답변 다시 불러오기
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <p className="whitespace-pre-line">
+      {state.answer || '등록된 답변 내용이 없습니다.'}
+    </p>
+  );
+}
+
 function TabButton({ active, onClick, icon, label }: any) {
   return (
     <button
@@ -188,7 +250,7 @@ function TabButton({ active, onClick, icon, label }: any) {
         "flex items-center gap-3 px-10 py-5 rounded-lg font-bold text-xs transition-all duration-500 uppercase tracking-widest",
         active
           ? "bg-background text-foreground shadow-2xl scale-105 z-10"
-          : "text-muted-foreground/60 hover:text-foreground"
+          : "text-muted-foreground hover:text-foreground"
       )}
     >
       {icon}

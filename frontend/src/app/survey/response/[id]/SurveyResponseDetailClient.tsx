@@ -20,6 +20,7 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <h1 className="sr-only">설문 응답 상세를 불러오는 중</h1>
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
                 <p className="text-muted-foreground font-medium">응답 상세 정보를 불러오는 중입니다...</p>
             </div>
@@ -29,9 +30,9 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
     if (isError) {
         return (
             <div className="p-8 text-center space-y-4">
-                <div className="bg-destructive/10 text-destructive-emphasis p-4 rounded-lg inline-block">
+                <h1 className="bg-destructive/10 text-destructive-emphasis p-4 rounded-lg inline-block">
                     {error instanceof Error ? error.message : '데이터를 불러오지 못했습니다.'}
-                </div>
+                </h1>
                 <Button onClick={() => router.back()}>뒤로 가기</Button>
             </div>
         );

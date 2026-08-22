@@ -15,8 +15,8 @@ import { surveyAdminService } from '@/services/foundation/system/SurveyAdminServ
 import { statsAdminService } from '@/services/foundation/system/StatsAdminService';
 
 // Components
-import PollManagePage from '../manage/page';
-import SurveyStatsPage from '../stats/page';
+import SurveyManageClient from '../manage/SurveyManageClient';
+import SurveyStatsClient from '../stats/SurveyStatsClient';
 import SurveyQuestionsPanel from '../components/SurveyQuestionsPanel';
 import SurveyTemplatesPanel from '../components/SurveyTemplatesPanel';
 import SurveyRespondentsClient from '../respondents/SurveyRespondentsClient';
@@ -213,7 +213,7 @@ export function SurveyHubClient() {
  transition={{ duration: 0.4, ease: "circOut" }}
  >
  <TabsContent value="manage" className="m-0 focus-visible:outline-none">
- <PollManagePage />
+ <SurveyManageClient embedded />
  </TabsContent>
 
  <TabsContent value="questions" className="m-0 focus-visible:outline-none">
@@ -225,11 +225,11 @@ export function SurveyHubClient() {
  </TabsContent>
 
  <TabsContent value="respondents" className="m-0 focus-visible:outline-none">
- <SurveyRespondentsClient />
+ <SurveyRespondentsClient embedded />
  </TabsContent>
 
  <TabsContent value="stats" className="m-0 focus-visible:outline-none">
- <SurveyStatsPage />
+ <SurveyStatsClient embedded />
  </TabsContent>
  </motion.div>
  </AnimatePresence>

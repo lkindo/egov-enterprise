@@ -3,7 +3,9 @@
 import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
 import { revalidatePath } from 'next/cache';
-import { extractErrorMessage } from './actionUtils';
+
+const BOARD_SAVE_ERROR = '게시글 저장 중 오류가 발생했습니다.';
+const BOARD_DELETE_ERROR = '게시글 삭제 중 오류가 발생했습니다.';
 
 interface ActionResponse {
   success: boolean;
@@ -140,9 +142,10 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       redirect: `/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${targetId}`
     };
   } catch (error) {
-    const errorMessage = extractErrorMessage(error, '알 수 없는 오류가 발생했습니다.');
-    console.error('Save Action Error:', error);
-    return { success: false, message: errorMessage };
+    const message = error instanceof Error && error.message === '저장에 실패했습니다.'
+      ? error.message
+      : BOARD_SAVE_ERROR;
+    return { success: false, message };
   }
 }
 
@@ -159,10 +162,8 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
     
     revalidatePath(`/admin/community/boards/select-board-list`);
     return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
-  } catch (error) {
-    const errorMessage = extractErrorMessage(error, '삭제 중 오류가 발생했습니다.');
-    console.error('Delete Action Error:', error);
-    return { success: false, message: errorMessage };
+  } catch {
+    return { success: false, message: BOARD_DELETE_ERROR };
   }
 }
 
@@ -179,8 +180,7 @@ export async function likeBoardArticle(bbsId: string, pstSn: number): Promise<{ 
     } else {
       return { success: false };
     }
-  } catch (error) {
-    console.error('Like Action Error:', error);
+  } catch {
     return { success: false };
   }
 }

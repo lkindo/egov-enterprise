@@ -849,6 +849,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                         error={listConfig.error}
                         onRetry={listConfig.refetch}
                         onRowClick={(item) => setSelectedItemId(listConfig.rowId(item))}
+                        rowActionLabel={(item) => `${listConfig.label} ${String(listConfig.rowId(item))} 상세 열기`}
                         keyField={listConfig.keyField}
                         isPremium={false}
                         className="bg-transparent border-none shadow-none"

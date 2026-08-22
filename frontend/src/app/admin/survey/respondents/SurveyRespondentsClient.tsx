@@ -29,7 +29,7 @@ const formatBrdt = (brdt?: string) =>
  * {@code /surveys/{srvySn}/respondents} 이고, 서비스도 설문 범위로 한정해 조회한다.
  * 종전에는 범위 한정이 빠져 다른 설문의 참여자가 섞여 나왔다(D-4 1단계에서 수정).
  */
-export default function SurveyRespondentsClient() {
+export default function SurveyRespondentsClient({ embedded = false }: { embedded?: boolean }) {
   const [srvySn, setSrvySn] = useState<number | null>(null);
   const [page, setPage] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -92,10 +92,12 @@ export default function SurveyRespondentsClient() {
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="설문 응답자 관리"
-        breadcrumbs={[{ label: '설문조사' }, { label: '응답자 관리' }]}
-      />
+      {!embedded && (
+        <PageHeader
+          title="설문 응답자 관리"
+          breadcrumbs={[{ label: '설문조사' }, { label: '응답자 관리' }]}
+        />
+      )}
 
       <HubHeader
         title="참여자 명부"

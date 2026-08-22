@@ -173,7 +173,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <div className="relative z-20 text-center w-full max-w-4xl space-y-8 px-2 font-sans">
  <div className="space-y-3">
  <h1 className="text-3xl md:text-5xl font-bold text-surface-inverse-foreground tracking-tighter leading-none">지식 베이스</h1>
- <p className="text-xs md:text-sm font-bold text-white/40">{CATEGORY_LABEL[activeCategory]} 데이터셋</p>
+ <p className="text-xs md:text-sm font-bold text-surface-inverse-muted">{CATEGORY_LABEL[activeCategory]} 데이터셋</p>
  </div>
 
  <div className="space-y-6">
@@ -181,14 +181,14 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <label htmlFor="knowledge-search" className="sr-only">지식 검색어</label>
  <Search className={cn(
  "absolute left-6 md:left-8 top-1/2 -translate-y-1/2 transition-all scale-110 md:scale-150 duration-500 pointer-events-none",
- isSearching ? "text-primary" : "text-white/20 group-focus-within:text-primary",
+ isSearching ? "text-primary" : "text-surface-inverse-muted group-focus-within:text-primary",
  "w-[18px] md:w-[20px] h-[18px] md:h-[20px]"
  )} />
  <Input
  id="knowledge-search"
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
- className="h-14 md:h-20 bg-white/5 border-2 border-white/5 rounded-lg px-16 md:px-24 text-surface-inverse-foreground text-lg md:text-2xl font-bold placeholder:text-white/20 focus:bg-card focus:text-foreground transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] focus:ring-[16px] focus:ring-primary/10 tracking-tight"
+ className="h-14 md:h-20 bg-white/5 border-2 border-white/5 rounded-lg px-16 md:px-24 text-surface-inverse-foreground text-lg md:text-2xl font-bold placeholder:text-surface-inverse-muted focus:bg-card focus:text-foreground transition-all shadow-[0_30px_60px_-15px_rgba(0,0,0,0.5)] focus:ring-[16px] focus:ring-primary/10 tracking-tight"
  placeholder="제목·내용 검색..."
  />
  </div>
@@ -199,7 +199,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <FilterButton active={sortBy === 'views'} onClick={() => setSortBy('views')} label="조회순" />
  </div>
  <div className="h-6 w-[1px] bg-white/10 hidden sm:block" />
- <div className="text-xs font-bold text-white/40 tracking-tight">
+ <div className="text-xs font-bold text-surface-inverse-muted tracking-tight">
  {isArticlesError ? '조회 실패' : `총 ${(articlesData?.total ?? 0).toLocaleString()}건`}
  </div>
  </div>
@@ -325,7 +325,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">상태</span>
  <StatusBadge status={item.statusCd} type={activeCategory} />
  </div>
- <ArrowRight className="text-muted-foreground/40 group-hover:text-primary group-hover:translate-x-2 transition-all w-5 h-5 md:w-6 md:h-6" />
+ <ArrowRight className="text-muted-foreground group-hover:text-primary group-hover:translate-x-2 transition-all w-5 h-5 md:w-6 md:h-6" />
  </div>
  </motion.button>
  ))}
@@ -351,7 +351,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  aria-label={`${item.pstTtl} 상세 보기`}
  className="w-full flex items-center gap-5 p-4 rounded-lg hover:bg-muted transition-all cursor-pointer group text-left"
  >
- <span className="text-3xl font-bold text-muted-foreground/20 group-hover:text-primary/20 transition-colors w-8 tabular-nums">{idx + 1}</span>
+ <span className="text-3xl font-bold text-muted-foreground group-hover:text-primary transition-colors w-8 tabular-nums">{idx + 1}</span>
  <div className="flex-1 min-w-0">
  <p className="text-sm font-bold text-foreground tracking-tight truncate leading-none">{item.pstTtl}</p>
  <div className="flex items-center gap-2 mt-2">
@@ -359,7 +359,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <span className="text-xs font-bold text-muted-foreground tabular-nums">{(item.inqCnt || 0).toLocaleString()} 조회</span>
  </div>
  </div>
- <ChevronRight size={16} className="text-muted-foreground/40" />
+ <ChevronRight size={16} className="text-muted-foreground" />
  </button>
  ))}
  </div>
@@ -373,7 +373,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  {isActivityError ? (
  <p role="alert" className="py-8 text-center text-xs font-bold text-rose-400">최근 활동을 불러오지 못했습니다.</p>
  ) : (activityData || []).length === 0 ? (
- <p className="py-8 text-center text-xs font-bold text-white/40">표시할 활동이 없습니다.</p>
+ <p className="py-8 text-center text-xs font-bold text-surface-inverse-muted">표시할 활동이 없습니다.</p>
  ) : (activityData || []).slice(0, 5).map((activity: { id: string; title: string; user: string; time: string }) => (
  <div key={activity.id} className="flex items-center gap-5 p-5 bg-white/5 border border-white/5 rounded-lg hover:bg-white/10 transition-all group/activity shadow-lg backdrop-blur-3xl">
  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover/activity:rotate-12 transition-all">
@@ -381,7 +381,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </div>
  <div className="flex-1 min-w-0">
  <p className="text-xs font-bold text-white/90 tracking-tight truncate leading-none mb-1.5">{activity.title}</p>
- <div className="flex items-center gap-3 text-white/60">
+ <div className="flex items-center gap-3 text-surface-inverse-muted">
  <span className="text-xs font-bold tracking-tight">{activity.user}</span>
  <div className="w-1 h-1 rounded-full bg-white/60" />
  <span className="text-xs font-bold tracking-tight tabular-nums">{activity.time}</span>
@@ -406,8 +406,8 @@ function FilterButton({ active, onClick, label }: { active: boolean; onClick: ()
  className={cn(
  "px-6 py-2 rounded-lg text-xs font-bold tracking-tight transition-all",
  active
- ? "bg-primary text-white shadow-lg shadow-primary/20"
- : "text-white/60 hover:text-surface-inverse-foreground hover:bg-white/5"
+ ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20"
+ : "text-surface-inverse-muted hover:text-surface-inverse-foreground hover:bg-white/5"
  )}
  >
  {label}
@@ -456,7 +456,7 @@ function StatusBadge({ status, type }: { status?: string, type: KnowledgeCategor
  }
 
  return (
- <span className="text-xs font-bold text-emerald-500 mt-1">
+ <span className="text-xs font-bold text-success-emphasis mt-1">
  공개
  </span>
  );

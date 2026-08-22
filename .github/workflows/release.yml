@@ -181,7 +181,8 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            NEXT_PUBLIC_API_URL=/api/v1
+            BACKEND_API_URL=${{ vars.BACKEND_API_URL }}
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
 
       # 트리거가 tags/v* 단독이라 종전의 `if: startsWith(github.ref, 'refs/tags/')` 도 항상 참이었다.
       - name: Create GitHub Release

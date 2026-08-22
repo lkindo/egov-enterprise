@@ -39,7 +39,7 @@
 | ID | 상태 | 결정할 것 | 현재 확인된 경계 | 권장안·재개 조건 | 근거 |
 |---|---|---|---|---|---|
 | PD-RBAC-001 | open | DB 인가 전환의 사후 shadow 증명을 수행할지 현재 위험을 수용할지 | `rbac.db-auth.enabled=true`, `rbac.shadow.enabled=false`이며 URL 인가와 객체 소유권은 서로 다른 방어선이다. | 현재 패턴과 DB 정책의 불일치 0을 재현한 뒤 하드코딩 fallback의 처분을 결정하는 안을 권장한다. | [application.yml](../../api-server/src/main/resources/application.yml), [ApiSecurityConfig](../../api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java) |
-| PD-UX-001 | blocked-input | 메뉴 중복·고아 경로를 어떤 정보구조로 재편할지 | census 도구는 현황을 측정하지만 제품 내비게이션 우선순위를 결정하지 않는다. | IA 소유자가 목표 메뉴 트리를 승인한 뒤 `scripts/menu-census.mjs` 결과를 다시 수집한다. | [menu census](../../scripts/menu-census.mjs) |
+| PD-UX-001 | blocked-input | ADR-0004의 하이브리드 잠정 방향을 어떤 exact target tree와 119+2 route disposition으로 승인할지 | repository owner는 prototype/research 방향만 선택했다. live menu·authority/effective exposure, 역할별 연구와 route별 authorization/privacy 승인은 없다. | 제품/IA owner가 live evidence와 holdout 연구를 검토해 exact label/group/order/visibility를 승인한 뒤 final acceptance record를 만든다. | [ADR-0004](../02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md), [IA package](../01-product/information-architecture.md), [menu census](../../scripts/menu-census.mjs) |
 | PD-UX-002 | blocked-input | 로그 검색 조건을 URL에 얼마나 보존할지 | 공유·새로고침 복원성과 URL 내 개인정보 노출 위험이 충돌한다. | 페이지·탭 등 비민감 상태만 URL에 두고 자유 검색어·식별자는 메모리에 두는 안을 기본으로 검토한다. | [frontend log routes](../../frontend/src/app/admin/system/logs) |
 
 ## 결정과 별개로 남은 실행 조건

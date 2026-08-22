@@ -189,6 +189,7 @@ export default function EventManagementClient() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
       <HubHeader
+        headingLevel={1}
         title="행사 운영 센터"
         highlight="Event Ops"
         subtitle="사내 엔터프라이즈 통합 행사 및 캠페인 관리 매트릭스입니다."

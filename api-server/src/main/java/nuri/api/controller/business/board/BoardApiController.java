@@ -6,6 +6,8 @@ import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
+import nuri.api.controller.business.board.dto.PublicFaqDetailResponse;
+import nuri.api.controller.business.board.dto.PublicFaqListItemResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,8 +42,28 @@ public class BoardApiController {
             @RequestParam(required = false) String qnaStatus,
             @RequestParam(required = false) String qnaCategory,
             @PageableDefault(size = 10) Pageable pageable) {
-        Page<BoardDto> result = boardService.getBoardPosts(bbsId, searchCnd, searchWrd, orderBy, startDate, endDate, qnaStatus, qnaCategory, pageable);
+        Page<BoardDto> result = boardService.getBoardPosts(
+                bbsId, searchCnd, searchWrd, orderBy, startDate, endDate,
+                qnaStatus, qnaCategory, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
+    }
+
+    @Operation(summary = "공개 FAQ 목록 조회", description = "활성 FAQ 게시판의 공개 글 제목만 검색하여 조회합니다.")
+    @GetMapping("/public-faqs")
+    public ResponseEntity<ApiResponse<PageResponse<PublicFaqListItemResponse>>> getPublicFaqs(
+            @RequestParam(required = false, defaultValue = "") String keyword,
+            @PageableDefault(size = 10) Pageable pageable) {
+        Page<PublicFaqListItemResponse> result = boardService.getPublicFaqPosts(keyword, pageable)
+                .map(PublicFaqListItemResponse::from);
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
+    }
+
+    @Operation(summary = "공개 FAQ 상세 조회", description = "활성 FAQ 게시판의 공개 글 상세만 조회합니다.")
+    @GetMapping("/public-faqs/{pstSn}")
+    public ResponseEntity<ApiResponse<PublicFaqDetailResponse>> getPublicFaqDetail(
+            @Parameter(description = "FAQ 게시글 ID", example = "1") @PathVariable Long pstSn) {
+        return ResponseEntity.ok(ApiResponse.success(
+                PublicFaqDetailResponse.from(boardService.getPublicFaqDetail(pstSn))));
     }
 
     @Operation(summary = "게시판 통계 조회", description = "특정 게시판의 전체 게시글 수, 조회수 총합 등의 통계 정보를 조회합니다.")

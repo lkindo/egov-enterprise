@@ -26,10 +26,10 @@ const SearchShell = ({ children }: { children: React.ReactNode }) => {
                 <div className="space-y-4 relative">
                     <div className="flex items-center justify-center gap-3 mb-2">
                         <Database className="text-primary w-5 h-5 animate-pulse" />
-                        <span className="text-xs font-bold text-primary uppercase tracking-[0.4em] font-mono">통합 신경망 검색 분석</span>
+                        <span className="text-xs font-bold text-primary tracking-[0.2em]">임직원·바로가기 검색</span>
                     </div>
-                    <h2 className="text-4xl font-bold tracking-tighter text-foreground leading-tight">데이터 인구조사 분석 중...</h2>
-                    <p className="text-sm font-bold text-muted-foreground max-w-xs mx-auto tracking-tight uppercase leading-relaxed font-mono">실시간 분산 검색 인덱스에서 최적의 파라미터를 추출하고 있습니다.</p>
+                    <h1 className="text-4xl font-bold tracking-tighter text-foreground leading-tight">검색 결과를 불러오는 중</h1>
+                    <p className="text-sm font-bold text-muted-foreground max-w-xs mx-auto tracking-tight leading-relaxed">임직원과 바로가기 검색 결과를 준비하고 있습니다.</p>
                 </div>
                 <div className="w-64 h-1.5 bg-muted rounded-lg overflow-hidden relative">
                     <div className="absolute inset-0 bg-primary w-1/3 animate-[progress_2s_infinite_ease-in-out]" />

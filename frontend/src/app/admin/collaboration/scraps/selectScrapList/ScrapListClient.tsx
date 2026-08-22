@@ -7,7 +7,7 @@ import axios from '@/lib/api/client';
 import type { components } from '@/types/generated-api';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Bookmark, Plus, Trash2, ExternalLink, FileText, RefreshCcw } from "lucide-react";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
@@ -129,9 +129,9 @@ const ScrapListClient = () => {
             <Card className="border-none shadow-md overflow-hidden">
                 <CardHeader className="flex flex-row items-center justify-between pb-6 bg-gradient-to-r from-muted/50 to-transparent border-b px-10 pt-10">
                     <div className="space-y-1">
-                        <CardTitle className="text-2xl font-bold tracking-tight flex items-center gap-2">
+                        <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
                             <Bookmark className="w-6 h-6 text-primary" /> 스크랩 목록
-                        </CardTitle>
+                        </h1>
                         <p className="text-sm text-muted-foreground">나중에 다시 볼 중요한 페이지와 정보를 관리하세요.</p>
                     </div>
                     <div className="flex items-center gap-3">

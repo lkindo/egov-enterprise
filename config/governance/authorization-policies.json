@@ -1644,6 +1644,17 @@
       ]
     },
     {
+      "target": "BoardService#getPostDetail",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrAdminByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
       "target": "BoardService#updatePost",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [

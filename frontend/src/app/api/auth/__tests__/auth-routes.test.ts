@@ -34,6 +34,7 @@ vi.mock('axios', () => ({
 }));
 
 const mockedPost = vi.mocked(axios.post);
+const LOGIN_ERROR_COPY = '로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.';
 
 /** 서명은 검증되지 않으므로(만료힌트 전용 디코더) 페이로드만 실제 형식으로 만든다. */
 function tokenWithExp(expSeconds: number): string {
@@ -158,15 +159,42 @@ describe('POST /api/auth/login', () => {
     expect(setCookie(response, 'refreshToken')?.value).toBe('rt-value');
   });
 
-  it('자격증명이 틀리면 백엔드의 상태코드와 바디를 그대로 전파하고 쿠키를 심지 않는다', async () => {
+  it('자격증명이 틀리면 상태만 보존하고 backend 상세는 안전한 로그인 오류로 정규화한다', async () => {
     const backendBody = { success: false, code: 'A005', message: 'Login Failed' };
     mockedPost.mockRejectedValue(axiosError(401, backendBody));
 
     const response = await login(postRequest('/api/auth/login', { userId: 'u', password: 'wrong' }));
 
     expect(response.status).toBe(401);
-    await expect(response.json()).resolves.toEqual(backendBody);
+    await expect(response.json()).resolves.toEqual({
+      success: false,
+      code: 'LOGIN_INVALID_CREDENTIALS',
+      message: LOGIN_ERROR_COPY,
+    });
     expect(setCookie(response, 'accessToken')).toBeNull();
+  });
+
+  it('upstream 오류의 내부 메시지와 payload를 응답이나 console에 노출하지 않는다', async () => {
+    const privateMessage = 'jdbc:postgresql://internal-db/users/42?token=secret';
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    mockedPost.mockRejectedValue(axiosError(503, {
+      success: false,
+      code: 'INTERNAL_AUTH_TRACE',
+      message: privateMessage,
+    }));
+
+    const response = await login(postRequest('/api/auth/login', { userId: 'u', password: 'p' }));
+    const body = await response.json();
+
+    expect(response.status).toBe(502);
+    expect(body).toEqual({
+      success: false,
+      code: 'LOGIN_PROXY_ERROR',
+      message: '로그인 서비스에 일시적으로 연결할 수 없습니다. 잠시 후 다시 시도해주세요.',
+    });
+    expect(JSON.stringify(body)).not.toContain(privateMessage);
+    expect(consoleError).not.toHaveBeenCalled();
+    consoleError.mockRestore();
   });
 
   it('백엔드에 닿지 못하면 500 과 중개 오류 코드를 낸다', async () => {
@@ -237,24 +265,73 @@ describe('POST /api/auth/reissue', () => {
     expect((config as { headers: Record<string, string> }).headers.Cookie).toContain('refreshToken=rt-abc');
   });
 
-  it('리프레시 토큰이 만료되면 백엔드 상태를 그대로 전파한다', async () => {
-    mockedPost.mockRejectedValue(axiosError(401, { success: false, code: 'A003' }));
+  it('리프레시 토큰이 만료되면 401은 보존하고 백엔드 원문은 숨긴다', async () => {
+    const privateMessage = 'refresh token row 42 expired for private-user@example.test';
+    mockedPost.mockRejectedValue(axiosError(401, {
+      success: false,
+      code: 'A003',
+      message: privateMessage,
+    }));
+
+    const response = await reissue(postRequest('/api/auth/reissue'));
+    const body = await response.json();
+
+    expect(response.status).toBe(401);
+    expect(body).toEqual({
+      success: false,
+      code: 'SESSION_EXPIRED',
+      message: '세션이 만료되었습니다. 다시 로그인해주세요.',
+    });
+    expect(JSON.stringify(body)).not.toContain(privateMessage);
+    expect(setCookie(response, 'accessToken')).toBeNull();
+  });
+
+  it('백엔드 5xx의 원문과 응답 데이터를 클라이언트에 노출하지 않는다', async () => {
+    const privateMessage = 'jdbc://internal-db/private-user failed';
+    mockedPost.mockRejectedValue(axiosError(503, {
+      success: false,
+      code: 'INTERNAL-42',
+      message: privateMessage,
+    }));
+
+    const response = await reissue(postRequest('/api/auth/reissue'));
+    const body = await response.json();
+
+    expect(response.status).toBe(502);
+    expect(body).toEqual({
+      success: false,
+      code: 'REISSUE_PROXY_ERROR',
+      message: '세션 연장 서비스에 일시적으로 연결할 수 없습니다.',
+    });
+    expect(JSON.stringify(body)).not.toContain(privateMessage);
+  });
+
+  it('200 응답이라도 새 accessToken이 없으면 실패를 정규화한다', async () => {
+    mockedPost.mockResolvedValue({
+      status: 200,
+      data: { success: false, code: 'PRIVATE', message: 'internal session record missing' },
+      headers: {},
+    });
 
     const response = await reissue(postRequest('/api/auth/reissue'));
 
-    expect(response.status).toBe(401);
-    expect(setCookie(response, 'accessToken')).toBeNull();
+    expect(response.status).toBe(502);
+    expect(await response.json()).toEqual({
+      success: false,
+      code: 'REISSUE_PROXY_ERROR',
+      message: '세션 연장 서비스에 일시적으로 연결할 수 없습니다.',
+    });
   });
 });
 
 describe('POST /api/auth/logout', () => {
-  it('accessToken 과 session_exp 쿠키를 즉시 만료시킨다', async () => {
+  it('성공 시 accessToken·refreshToken·session_exp 쿠키를 모두 즉시 만료시킨다', async () => {
     mockedPost.mockResolvedValue({ status: 200, data: { success: true }, headers: {} });
 
     const response = await logout(postRequest('/api/auth/logout', undefined, { cookie: 'accessToken=t' }));
 
     expect(response.status).toBe(200);
-    for (const name of ['accessToken', 'session_exp']) {
+    for (const name of ['accessToken', 'refreshToken', 'session_exp']) {
       const cookie = setCookie(response, name);
       expect(cookie?.value).toBe('');
       expect(new Date(cookie?.attrs.get('expires') ?? '').getTime()).toBe(0);
@@ -270,14 +347,21 @@ describe('POST /api/auth/logout', () => {
     expect((config as { headers: Record<string, string> }).headers.Authorization).toBe('Bearer tok-123');
   });
 
-  it('백엔드가 실패해도 로컬 쿠키는 지운다 (fail-safe)', async () => {
+  it('백엔드가 실패해도 accessToken·refreshToken·session_exp 를 모두 즉시 만료시킨다 (fail-safe)', async () => {
     mockedPost.mockRejectedValue(axiosError(500, { success: false }));
 
     const response = await logout(postRequest('/api/auth/logout', undefined, { cookie: 'accessToken=t' }));
 
     // ⑤ 여기서 쿠키가 남으면 사용자는 로그아웃했다고 믿는데 세션이 살아 있다.
     expect(response.status).toBe(200);
-    expect(setCookie(response, 'accessToken')?.value).toBe('');
-    expect(setCookie(response, 'session_exp')?.value).toBe('');
+    await expect(response.clone().json()).resolves.toEqual({
+      success: true,
+      message: 'Logged out with local session cleared',
+    });
+    for (const name of ['accessToken', 'refreshToken', 'session_exp']) {
+      const cookie = setCookie(response, name);
+      expect(cookie?.value).toBe('');
+      expect(new Date(cookie?.attrs.get('expires') ?? '').getTime()).toBe(0);
+    }
   });
 });

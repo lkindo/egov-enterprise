@@ -64,7 +64,12 @@ function StatsContent() {
 
 export default function SurveyStatsClient() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-20"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>}>
+    <Suspense fallback={
+      <div className="flex justify-center py-20">
+        <h1 className="sr-only">설문 결과 통계를 불러오는 중</h1>
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
       <StatsContent />
     </Suspense>
   );

@@ -89,6 +89,7 @@ export default function SurveyClient() {
           data={data}
           loading={loading}
           onRowClick={(item) => router.push(`/survey/${item.srvySn}`)}
+          rowActionLabel={(item) => `${item.srvyTtl || `${item.srvySn}번`} 설문 응답 열기`}
           emptyMessage="등록된 설문 조사가 없습니다."
         />
       </div>

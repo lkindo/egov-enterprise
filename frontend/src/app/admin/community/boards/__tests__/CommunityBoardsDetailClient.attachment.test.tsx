@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { ReactNode } from 'react';
 import CommunityBoardsDetailClient from '../[id]/CommunityBoardsDetailClient';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { fileAdminService } from '@/services/foundation/system/FileAdminService';
@@ -25,11 +26,18 @@ import { fileAdminService } from '@/services/foundation/system/FileAdminService'
  * "값이 어디에도 전달되지 않는다" 를 가장 직접적으로 보는 층이 여기다.
  */
 
-// 이 화면은 공용 셸의 DynamicBreadcrumb 를 함께 렌더하므로 라우팅 훅 3종이 모두 필요하다.
+// 등록 후 이동만 이 테스트 범위이므로 라우터 push 만 관측한다.
 vi.mock('next/navigation', () => ({
     useRouter: () => ({ push: vi.fn() }),
     usePathname: () => '/admin/community/boards/insert-board-article',
     useSearchParams: () => new URLSearchParams(),
+}));
+
+// 첨부 배선 테스트에 공용 PageHeader → DynamicBreadcrumb 메뉴 조회를 섞지 않는다.
+vi.mock('@/app/components/layout/page-header', () => ({
+    PageHeader: ({ title, actions }: { title: string; actions?: ReactNode }) => (
+        <header><h1>{title}</h1>{actions}</header>
+    ),
 }));
 
 vi.mock('@/services/business/user/board/BoardUserService', () => ({

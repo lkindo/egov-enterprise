@@ -26,6 +26,9 @@ const SystemLogsUserClient = () => {
             size: PAGE_SIZE,
             searchKeyword,
         }),
+        // 이 목록은 StandardDataTable이 검색어를 유지한 채 오류와 scoped retry를 직접 제공한다.
+        // 전역 5xx 승격을 적용하면 route boundary가 폼을 unmount해 filter/recovery 맥락을 잃는다.
+        throwOnError: false,
     });
 
     const logs: UserLogTableRow[] = (data?.list ?? []).map((item, index) => {

@@ -59,6 +59,7 @@ export default function AdminNetworkPage() {
 function NetworkAdminLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse pb-24 h-[calc(100vh-120px)] flex flex-col text-left">
+      <h1 className="sr-only">네트워크 관리를 불러오는 중</h1>
       <div className="h-11 w-96 bg-muted rounded-lg" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8 shrink-0">
         {[1, 2, 3, 4].map(i => <div key={i} className="h-44 bg-muted rounded-lg" />)}

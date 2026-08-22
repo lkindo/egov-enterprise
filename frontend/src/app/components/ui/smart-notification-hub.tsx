@@ -1,19 +1,9 @@
 'use client';
 
-import { useState,  useMemo } from 'react';
-import { Bell,  
-  Shield,  
-  Zap,  
-  Activity, 
-  RefreshCw, 
-  Layers, 
-  Search, 
-  MoreVertical } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Bell, Zap, RefreshCw, Layers, Search, MoreVertical } from 'lucide-react';
 import { cn } from '@/lib/utils';
-;
 import { Button } from '@/components/ui/button';
-;
-;
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -31,13 +21,19 @@ interface Notification {
   status: 'new' | 'read' | 'archived';
 }
 
+const NOTIFICATION_TABS = [
+  { id: 'all', label: '전체 알림' },
+  { id: 'unread', label: '읽지 않은 알림' },
+  { id: 'critical', label: '중요 알림' },
+] as const;
+
 export function SmartNotificationHub() {
   const [activeTab, setActiveTab] = useState<'all' | 'critical' | 'unread'>('all');
   const [searchKeyword, setSearchKeyword] = useState('');
 
   // 실제 알림 API(/notifications)를 헤더 드로어와 동일한 useNotifications 훅으로 연결.
   // (과거엔 SAMPLE_NOTIFICATIONS 하드코딩이라 새로 생성한 알림이 검색/목록에 절대 안 나타났음.)
-  const { notifications: rawNotifications } = useNotifications();
+  const { notifications: rawNotifications, error, refresh } = useNotifications();
   const notifications = useMemo<Notification[]>(
     () =>
       (rawNotifications || []).map((n) => ({
@@ -131,7 +127,14 @@ export function SmartNotificationHub() {
       header: '관리',
       accessor: () => (
         <div className="flex items-center justify-end pr-4">
-          <Button variant="ghost" size="icon" aria-label="알림 옵션" className="w-10 h-10 rounded-lg">
+          <Button
+            variant="ghost"
+            size="icon"
+            aria-label="알림 옵션 (미지원)"
+            title="개별 알림 옵션은 아직 연결되지 않았습니다."
+            className="w-10 h-10 rounded-lg"
+            disabled
+          >
             <MoreVertical size={16} className="text-muted-foreground" />
           </Button>
         </div>
@@ -142,30 +145,38 @@ export function SmartNotificationHub() {
 
   return (
     <div className="space-y-8 animate-in fade-in duration-700">
-      <HubHeader 
-        title="Intelligence" 
-        highlight="Hub" 
-        subtitle="실시간 시스템 인텔리전스 및 알림 스트림을 통합 관리합니다." 
-        icon={Bell} 
+      <HubHeader
+        title="알림"
+        highlight="목록"
+        subtitle="현재 계정의 알림 API 응답과 연결 상태를 확인합니다."
+        icon={Bell}
         actions={
           <div className="flex gap-3">
              <div className="flex bg-muted p-1 rounded-xl border border-border/50">
-               {['all', 'unread', 'critical'].map((tab) => (
+               {NOTIFICATION_TABS.map((tab) => (
                  <Button
-                   key={tab}
+                   key={tab.id}
                    variant="ghost"
                    size="sm"
+                   aria-label={`${tab.label} 필터`}
+                   aria-pressed={activeTab === tab.id}
                    className={cn(
                      "h-8 rounded-lg px-4 text-[10px] font-black uppercase transition-all",
-                     activeTab === tab ? "bg-card shadow-sm text-primary" : "text-muted-foreground"
+                     activeTab === tab.id ? "bg-card shadow-sm text-primary" : "text-muted-foreground"
                    )}
-                   onClick={() => setActiveTab(tab as any)}
+                   onClick={() => setActiveTab(tab.id)}
                  >
-                   {tab}
+                   {tab.label}
                  </Button>
                ))}
              </div>
-             <Button variant="outline" size="icon" aria-label="알림 스트림 새로고침" className="h-10 w-10 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
+             <Button
+               variant="outline"
+               size="icon"
+               aria-label="알림 목록 새로고침"
+               className="h-10 w-10 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
+               onClick={refresh}
+             >
                 <RefreshCw size={18} />
              </Button>
           </div>
@@ -175,13 +186,11 @@ export function SmartNotificationHub() {
       <HubMetricGrid>
         <HubMetricCard title="전체 알림" value={notifications.length} icon={Layers} color="primary" />
         <HubMetricCard title="미열람" value={notifications.filter(n => n.status === 'new').length} icon={Zap} color="amber" />
-        <HubMetricCard title="시스템 건전성" value="98.2%" icon={Activity} color="emerald" status="최적" />
-        <HubMetricCard title="보안 프로토콜" value="ACTIVE" icon={Shield} color="indigo" />
       </HubMetricGrid>
 
-      <HubSectionCard 
-        title="알림 스트림 매트릭스" 
-        description="시스템에서 감지된 모든 이벤트 및 보안 알림의 실시간 스트림입니다." 
+      <HubSectionCard
+        title="알림 목록"
+        description="알림 API가 반환한 항목입니다. 조회 실패는 빈 목록과 구분해 표시합니다."
         icon={Bell}
         className="bg-card/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
       >
@@ -190,10 +199,11 @@ export function SmartNotificationHub() {
             <div className="relative group max-w-xl w-full">
               <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
               <Input 
+                aria-label="알림 제목 또는 내용 검색"
                 value={searchKeyword}
                 onChange={(e) => setSearchKeyword(e.target.value)}
                 className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all" 
-                placeholder="알림 제목 또는 내용 검색.." 
+                placeholder="알림 제목 또는 내용 검색"
               />
             </div>
           </div>
@@ -202,7 +212,9 @@ export function SmartNotificationHub() {
             <StandardDataTable
               columns={columns}
               data={filteredNotifications}
-              emptyMessage="감지된 알림 노드가 없습니다."
+              emptyMessage="표시할 알림이 없습니다."
+              error={error}
+              onRetry={refresh}
               isPremium={true}
               className="border-none bg-transparent shadow-none"
             />

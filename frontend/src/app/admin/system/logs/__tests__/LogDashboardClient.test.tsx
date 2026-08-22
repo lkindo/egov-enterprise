@@ -15,6 +15,7 @@ interface MockTableProps {
   columns: MockColumn[];
   data: Array<Record<string, unknown>>;
   onRowClick?: (item: Record<string, unknown>) => void;
+  rowActionLabel: string | ((item: Record<string, unknown>, index: number) => string);
 }
 
 interface MockQueryOptions {
@@ -95,20 +96,25 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
     const props = rawProps as MockTableProps;
     return (
       <div data-testid="dashboard-table">
-        {props.data.map((item, rowIndex) => (
-          <div data-testid="dashboard-row" key={`row-${rowIndex}`}>
-            {props.columns.map((column, columnIndex) => (
-              <span key={`${column.header}-${columnIndex}`}>
-                {typeof column.accessor === 'function'
-                  ? column.accessor(item, rowIndex)
-                  : item[column.accessor] as ReactNode}
-              </span>
-            ))}
-            <button type="button" onClick={() => props.onRowClick?.(item)}>
-              {`open row ${rowIndex}`}
-            </button>
-          </div>
-        ))}
+        {props.data.map((item, rowIndex) => {
+          const actionLabel = typeof props.rowActionLabel === 'function'
+            ? props.rowActionLabel(item, rowIndex)
+            : props.rowActionLabel;
+          return (
+            <div data-testid="dashboard-row" key={`row-${rowIndex}`}>
+              {props.columns.map((column, columnIndex) => (
+                <span key={`${column.header}-${columnIndex}`}>
+                  {typeof column.accessor === 'function'
+                    ? column.accessor(item, rowIndex)
+                    : item[column.accessor] as ReactNode}
+                </span>
+              ))}
+              <button type="button" onClick={() => props.onRowClick?.(item)}>
+                {actionLabel}
+              </button>
+            </div>
+          );
+        })}
       </div>
     );
   },
@@ -244,7 +250,7 @@ describe('integrated log dashboard contracts', () => {
     dashboardHarness.queryData = pageOf(WEB_ROW);
 
     await renderDashboard();
-    fireEvent.click(screen.getByRole('button', { name: 'open row 0' }));
+    fireEvent.click(screen.getByRole('button', { name: '웹 로그 101 상세 열기' }));
 
     expect(screen.getByRole('dialog', { name: '로그 상세 정보' })).toHaveTextContent('101');
   });
@@ -254,7 +260,9 @@ describe('integrated log dashboard contracts', () => {
     dashboardHarness.queryData = pageOf(USER_ROW);
 
     await renderDashboard();
-    fireEvent.click(screen.getByRole('button', { name: 'open row 0' }));
+    fireEvent.click(screen.getByRole('button', {
+      name: '사용자 활동 20260813/user-001/UserService/updateUser 상세 열기',
+    }));
 
     expect(screen.getByRole('dialog', { name: '로그 상세 정보' })).toHaveTextContent(
       '20260813/user-001/UserService/updateUser',

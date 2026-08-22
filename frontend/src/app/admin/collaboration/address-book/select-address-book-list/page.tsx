@@ -15,6 +15,7 @@ const AddressBookListClient = dynamic(() => import('./AddressBookListClient'), {
 function AddressBookListSkeleton() {
   return (
     <div className="flex flex-col gap-12 w-full animate-pulse">
+      <h1 className="sr-only">주소록 목록을 불러오는 중</h1>
       <div className="h-24 bg-muted rounded-lg" />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         <div className="h-40 bg-muted rounded-lg" />

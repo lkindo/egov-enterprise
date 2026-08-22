@@ -1,5 +1,23 @@
 import { test, expect } from './fixtures/base-test';
 import AxeBuilder from '@axe-core/playwright';
+import type { Page } from '@playwright/test';
+
+async function stabilizeAccessibilityAudit(page: Page) {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.addStyleTag({
+        content: `
+            *, *::before, *::after {
+                animation-duration: 0s !important;
+                animation-delay: 0s !important;
+                transition-duration: 0s !important;
+                transition-delay: 0s !important;
+            }
+        `,
+    });
+    await page.evaluate(() => new Promise<void>((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    }));
+}
 
 /**
  * [Tier 1] Core Base: Authentication & Dashboard Hub
@@ -11,7 +29,6 @@ import AxeBuilder from '@axe-core/playwright';
  */
 
 test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
-
     // [2026-08-10 중복제거] 삭제됨: 'User Authentication Flow (UI based)'.
     //   23-security-auth-supplement 의 E0 가 **같은 UI 로그인 경로의 상위집합**이다 —
     //   폼 입력·제출·`/admin` 착지까지 동일하게 하고, 거기에 더해
@@ -36,8 +53,17 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
             reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
             expiresAt: '2026-12-31',
         }]);
+        // Axe 감사에만 reduced-motion을 적용한다. 일반 UI 회귀는 실제 motion 경로를 계속 검증한다.
+        await page.emulateMedia({ reducedMotion: 'reduce' });
         await page.goto('/login?e2e=true');
-        const a11y = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze(); // color-contrast: CI 테마 가변성 방어
+        await expect(page.getByRole('dialog', { name: '엔터프라이즈' })).toBeVisible({ timeout: 30000 });
+        await expect(page.getByRole('heading', { level: 1, name: '엔터프라이즈' })).toBeVisible();
+        await expect(page.getByRole('textbox', { name: '아이디' })).toBeVisible();
+        await expect(page.locator('[role="status"]').filter({
+            hasText: /^(?:로딩 중|로그인 화면을 불러오는 중|애플리케이션을 준비하는 중|보안 세션을 확인하는 중)/,
+        })).toHaveCount(0);
+        await stabilizeAccessibilityAudit(page);
+        const a11y = await new AxeBuilder({ page }).analyze();
         expect(a11y.violations, JSON.stringify(a11y.violations.map((v) => v.id))).toEqual([]);
     });
 
@@ -50,8 +76,8 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
 
         test('Widgets and Charts Rendering', async ({ page }) => {
             console.log('>>> Step 1: Verifying Stat Cards');
-            await expect(page.locator('text=ID 레지스트리').first()).toBeVisible();
-            await expect(page.locator('text=보안 거버넌스').first()).toBeVisible();
+            await expect(page.getByText('등록 사용자', { exact: true }).first()).toBeVisible();
+            await expect(page.getByText('등록 권한', { exact: true }).first()).toBeVisible();
 
             console.log('>>> Step 2: Verifying Audit Intelligence Widget');
             // [2026-07-27 정정] 종전에는 `.recharts-surface` 를 기다렸으나 **대시보드에는 recharts 가 없다**.
@@ -67,11 +93,20 @@ test.describe('Tier 1: Core Base (Auth & Dashboard)', () => {
         });
 
         test('Accessibility Audit for Admin Dashboard', async ({ page }) => {
+            // describe.beforeEach에서 이미 이동했으므로, 선호를 설정한 뒤 다시 렌더해 최초 motion도 억제한다.
+            await page.emulateMedia({ reducedMotion: 'reduce' });
+            await page.reload();
             // [2026-07-27] 렌더 완료를 먼저 기다린다. 종전에는 최외곽 Suspense 폴백("보안 세션을 확인하는 중...")
             // 상태에서 감사가 돌아 **스피너를 검사**했고, 그래서 landmark/heading 위반이 나왔다(감사 대상 오인).
-            // 페이지 제목(h1)이 뜨면 레이아웃·본문이 모두 렌더된 상태다.
-            await expect(page.getByRole('heading', { level: 1 }).first()).toBeVisible({ timeout: 30000 });
-            const a11y = await new AxeBuilder({ page }).disableRules(['color-contrast']).analyze(); // color-contrast: CI 테마 가변성 방어
+            // 공통 loading/Suspense 폴백도 sr-only h1을 갖는다. 임의 h1이 아니라
+            // 관리자 대시보드의 정확한 제목을 기다려 transient spinner 감사를 막는다.
+            await expect(page.getByRole('heading', { level: 1, name: '관리자 업무 현황' }))
+                .toBeVisible({ timeout: 30000 });
+            await expect(page.locator('[role="status"]').filter({
+                hasText: /^(?:페이지 콘텐츠를 불러오는 중|애플리케이션을 준비하는 중|보안 세션을 확인하는 중)/,
+            })).toHaveCount(0);
+            await stabilizeAccessibilityAudit(page);
+            const a11y = await new AxeBuilder({ page }).analyze();
             expect(a11y.violations, JSON.stringify(a11y.violations.map((v) => v.id))).toEqual([]);
         });
 

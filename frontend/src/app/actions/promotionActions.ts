@@ -35,7 +35,6 @@ export async function saveBannerAction(prevState: unknown, { mode, data, id }: S
         return { success: true, message: `배너가 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
-        console.error('Save Banner Error:', error);
         return { success: false, message: errorMessage };
     }
 }
@@ -55,7 +54,6 @@ export async function deleteBannerAction(prevState: unknown, bnrSn: number): Pro
         return { success: true, message: '배너가 삭제되었습니다.' };
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '삭제 중 오류 발생');
-        console.error('Delete Banner Error:', error);
         return { success: false, message: errorMessage };
     }
 }
@@ -78,7 +76,6 @@ export async function savePopupAction(prevState: unknown, { mode, data, id }: Sa
         return { success: true, message: `팝업이 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
-        console.error('Save Popup Error:', error);
         return { success: false, message: errorMessage };
     }
 }
@@ -97,7 +94,6 @@ export async function deletePopupAction(prevState: unknown, id: number): Promise
         return { success: true, message: '팝업이 삭제되었습니다.' };
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '삭제 중 오류 발생');
-        console.error('Delete Popup Error:', error);
         return { success: false, message: errorMessage };
     }
 }

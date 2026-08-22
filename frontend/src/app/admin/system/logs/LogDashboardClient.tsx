@@ -306,6 +306,7 @@ export default function LogDashboardClient({
                 onRetry={() => refetch()}
                 className="border-none bg-transparent shadow-none"
                 onRowClick={(item) => setSelectedLog({ category: activeCategory, row: item })}
+                rowActionLabel={(item) => `${activeLabel} ${getLogIdentifier(item, activeCategory)} 상세 열기`}
                 isPremium={true}
                 pagination={{
                   currentPage: page,

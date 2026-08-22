@@ -41,11 +41,18 @@ describe('RealTimeDashboard', () => {
     const statsHandler = handlers.get('/topic/dashboard/stats')!;
 
     act(() => statsHandler({ body: JSON.stringify({ activeUsers: -1 }) }));
-    expect(screen.getByText('실시간 접속자').previousElementSibling).toHaveTextContent('0');
+    expect(screen.getByText('현재 접속자').previousElementSibling).toHaveTextContent('—');
 
     act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 1 }) }));
     expect(screen.getByText('7')).toBeInTheDocument();
     expect(screen.getByText('3명/분')).toBeInTheDocument();
+  });
+
+  it('유효한 통계를 한 번도 수신하지 않은 상태를 실제 0으로 표시하지 않는다', () => {
+    render(<RealTimeDashboard />);
+
+    expect(screen.getByRole('status')).toHaveTextContent('통계 수신 대기 중');
+    expect(screen.getAllByText('—')).toHaveLength(4);
   });
 
   it('브라우저 알림 권한은 진입 즉시가 아니라 사용자가 알림을 열 때만 요청한다', () => {
@@ -54,6 +61,7 @@ describe('RealTimeDashboard', () => {
 
     const button = screen.getByRole('button', { name: '알림 열기' });
     expect(button).toHaveAttribute('aria-expanded', 'false');
+    expect(button).not.toHaveAttribute('aria-haspopup');
     fireEvent.click(button);
 
     expect(requestPermission).toHaveBeenCalledTimes(1);

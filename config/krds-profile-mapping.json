@@ -1,0 +1,484 @@
+{
+  "schemaVersion": "1.0.0",
+  "status": "draft-internal-contract",
+  "checkedAt": "2026-08-21",
+  "checkBy": "2026-11-21",
+  "owner": "design-system-accessibility",
+  "ownerAssignment": "unassigned",
+  "sourcePolicy": {
+    "authoritativeDomains": [
+      "www.krds.go.kr",
+      "github.com/KRDS-uiux/krds-uiux",
+      "www.w3.org"
+    ],
+    "guideline": {
+      "name": "디지털 정부서비스 UI/UX 가이드라인",
+      "version": "2025.08",
+      "url": "https://www.krds.go.kr/html/site/outline/outline_05.html",
+      "changeSummary": "컴포넌트와 서비스 패턴 사용성 가이드라인 수정"
+    },
+    "documentation": {
+      "version": "live-unversioned-pages-checked-2026-08-21",
+      "url": "https://www.krds.go.kr/",
+      "versionBoundary": "Live pages can change independently of the pinned 2025.08 PDF and are evidence only as checkedAt."
+    },
+    "componentKit": {
+      "name": "KRDS HTML Component Kit",
+      "version": "1.1.0",
+      "url": "https://github.com/KRDS-uiux/krds-uiux/releases/tag/v1.1.0",
+      "repository": "https://github.com/KRDS-uiux/krds-uiux"
+    },
+    "license": {
+      "name": "공공누리 제1유형 (KOGL Type 1)",
+      "url": "https://www.krds.go.kr/html/eng/utility/utility_05.html",
+      "requiresAttribution": true,
+      "commercialUse": true,
+      "modification": true,
+      "attribution": "본 저작물은 행정안전부에서 작성하여 공공누리 제1유형으로 개방한 KRDS(Korea Design System) 자료를 이용하였으며, 원문은 https://www.krds.go.kr/에서 확인할 수 있습니다."
+    },
+    "accessibilityBoundary": {
+      "url": "https://www.krds.go.kr/html/site/utility/utility_04.html",
+      "statement": "KRDS component use supports accessibility work but does not by itself prove complete accessibility conformance.",
+      "projectStandard": "WCAG 2.2 A and AA plus approved KWCAG and KRDS mappings"
+    }
+  },
+  "claimPolicy": {
+    "forbiddenClaims": [
+      "KRDS compliant",
+      "KRDS 준수 완료",
+      "웹 접근성 준수 완료",
+      "KWCAG compliant"
+    ],
+    "allowedStates": ["target", "aligned", "verified-scope"],
+    "verifiedScopeRequires": [
+      "exact profile and route-state-role population",
+      "all applicable mapping entries adopted or an approved non-stale exception",
+      "rendered profile-mode-state evidence",
+      "official self-checklist evidence",
+      "manual keyboard, screen reader, reflow, forced-colors and reduced-motion evidence",
+      "identity eligibility and attribution approval when identity elements are enabled"
+    ]
+  },
+  "profiles": [
+    {
+      "id": "krds-standard",
+      "purpose": "공식 공공 디지털 서비스용 표준형 후보",
+      "currentClaim": "target",
+      "maximumClaimWithoutReleaseEvidence": "target",
+      "identityElements": "blocked-input",
+      "identityOwner": "product-institution-owner",
+      "reviewBy": "2026-10-31",
+      "requirements": [
+        "official-service eligibility",
+        "pinned standard-style mapping",
+        "approved masthead, identifier, header and footer content",
+        "KOGL attribution",
+        "self-checklist and accessibility evidence"
+      ]
+    },
+    {
+      "id": "krds-aligned",
+      "purpose": "KRDS 원칙·패턴을 채택하고 기관별 시각 확장을 허용하는 후보",
+      "currentClaim": "target",
+      "maximumClaimWithoutReleaseEvidence": "target",
+      "identityElements": "off-by-default",
+      "identityOwner": "product-institution-owner",
+      "reviewBy": "2026-10-31",
+      "requirements": [
+        "documented adaptation and deviation",
+        "semantic token and interaction parity",
+        "accessibility evidence",
+        "no government identity without eligibility"
+      ]
+    },
+    {
+      "id": "premium",
+      "purpose": "참조 구현과 비공공 파생 제품용 선택 프로필",
+      "currentClaim": "no-krds-claim",
+      "maximumClaimWithoutReleaseEvidence": "no-krds-claim",
+      "identityElements": "forbidden",
+      "identityOwner": "product-owner",
+      "reviewBy": "2026-10-31",
+      "requirements": [
+        "same semantic, state, interaction and accessibility floor",
+        "no official-government impersonation",
+        "KRDS-derived resource attribution when used"
+      ]
+    }
+  ],
+  "mapping": [
+    {
+      "id": "PRINCIPLE-USER-CENTRED",
+      "category": "principle",
+      "title": "사용자 중심의 서비스",
+      "disposition": "adopted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/utility/utility_02.html",
+      "localEvidence": [
+        "docs/01-product/ui-ux-modernization-brief.md",
+        "docs/02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md"
+      ],
+      "notes": "Principle is adopted; actual user-research results remain blocked-input."
+    },
+    {
+      "id": "PRINCIPLE-INCLUSIVE",
+      "category": "principle",
+      "title": "모든 사용자를 포용하는 서비스",
+      "disposition": "adopted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/utility/utility_02.html",
+      "localEvidence": [
+        ".agent/knowledge/frontend-ux-constitution/artifacts/constitution.md",
+        "docs/01-product/ui-ux-modernization-brief.md"
+      ],
+      "notes": "Adopted as a requirement, not a conformance claim."
+    },
+    {
+      "id": "PRINCIPLE-CONSISTENT-FLEXIBLE",
+      "category": "principle",
+      "title": "일관성과 사용자 선택을 함께 보장",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/utility/utility_02.html",
+      "localEvidence": ["docs/02-architecture/frontend-design-system.md"],
+      "deviation": "Brand profile and color mode are modeled as independent axes rather than one visual theme.",
+      "notes": "Rendered parity is not yet proven."
+    },
+    {
+      "id": "STYLE-COLOR",
+      "category": "style",
+      "title": "색상과 상태 의미",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/style/style_02.html",
+      "localEvidence": [
+        "frontend/src/app/globals.css",
+        "docs/03-guides/design-tokens.md"
+      ],
+      "deviation": "Current single token set uses Hub Blue and is not the KRDS standard palette; semantic roles and contrast ratchets are retained.",
+      "notes": "Task 2.2 must implement profile-specific adapters before any standard-profile claim."
+    },
+    {
+      "id": "STYLE-TYPOGRAPHY",
+      "category": "style",
+      "title": "타이포그래피",
+      "disposition": "deferred",
+      "applicableProfiles": ["krds-standard", "krds-aligned"],
+      "upstream": "https://www.krds.go.kr/html/site/style/style_03.html",
+      "reason": "The current app uses Pretendard Variable, Inter and Outfit; Pretendard GOV and profile-specific hierarchy have not been evaluated.",
+      "owner": "design-system-accessibility",
+      "reviewBy": "2026-10-31"
+    },
+    {
+      "id": "STYLE-SHAPE",
+      "category": "style",
+      "title": "형태",
+      "disposition": "deferred",
+      "applicableProfiles": ["krds-standard", "krds-aligned"],
+      "upstream": "https://www.krds.go.kr/html/site/style/style_04.html",
+      "reason": "Current premium radii and KRDS standard/adaptive shape scales have not been separated by profile.",
+      "owner": "design-system",
+      "reviewBy": "2026-10-31"
+    },
+    {
+      "id": "STYLE-LAYOUT-REFLOW",
+      "category": "style",
+      "title": "레이아웃과 반응형 reflow",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/style/style_01.html",
+      "localEvidence": [
+        "docs/02-architecture/frontend-design-system.md",
+        "docs/02-architecture/ui-ux-modernization-plan.md"
+      ],
+      "deviation": "The contract targets task-preserving reflow, while route-level rendered evidence is tracked separately.",
+      "notes": "No full responsive conformance claim."
+    },
+    {
+      "id": "STYLE-ICON",
+      "category": "style",
+      "title": "아이콘",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/style/style_06.html",
+      "localEvidence": ["docs/02-architecture/frontend-design-system.md"],
+      "deviation": "The current app uses Lucide icons rather than the KRDS asset set; accessible name, consistency and non-text contrast remain mandatory.",
+      "notes": "Asset substitution requires visual and licensing review."
+    },
+    {
+      "id": "STYLE-ELEVATION",
+      "category": "style",
+      "title": "엘리베이션",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/style/style_08.html",
+      "localEvidence": ["docs/03-guides/design-tokens.md"],
+      "deviation": "Premium shadow and blur recipes remain profile-specific; high-contrast separation must use borders.",
+      "notes": "Profile implementation is pending."
+    },
+    {
+      "id": "STYLE-HIGH-CONTRAST",
+      "category": "style",
+      "title": "선명한 화면 모드",
+      "disposition": "deferred",
+      "applicableProfiles": ["krds-standard", "krds-aligned"],
+      "upstream": "https://www.krds.go.kr/html/site/style/style_09.html",
+      "reason": "Current dark mode is not equivalent to the KRDS high-contrast mode and forced-colors evidence is missing.",
+      "owner": "design-system-accessibility",
+      "reviewBy": "2026-10-31"
+    },
+    {
+      "id": "STYLE-TOKENS",
+      "category": "style",
+      "title": "primitive-semantic-component token architecture",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/outline/outline_03.html",
+      "localEvidence": [
+        "frontend/src/app/globals.css",
+        "docs/03-guides/design-tokens.md"
+      ],
+      "deviation": "Local semantic token names are stable adapters; upstream token files are not copied wholesale.",
+      "notes": "Upstream values must be introduced through a versioned profile adapter."
+    },
+    {
+      "id": "IDENTITY-MASTHEAD-STANDARD",
+      "category": "identity",
+      "title": "공식 배너",
+      "disposition": "deferred",
+      "applicableProfiles": ["krds-standard"],
+      "upstream": "https://www.krds.go.kr/html/site/component/component_02_01.html",
+      "reason": "This repository is a reference implementation and has no approved official-service eligibility or institution content.",
+      "owner": "product-institution-owner",
+      "reviewBy": "2026-10-31"
+    },
+    {
+      "id": "IDENTITY-MASTHEAD-NONSTANDARD",
+      "category": "identity",
+      "title": "비공식 프로필의 공식 배너 금지",
+      "disposition": "notApplicable",
+      "applicableProfiles": ["krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/component/component_02_01.html",
+      "reason": "KRDS explicitly prohibits the official banner on services that are not official government services."
+    },
+    {
+      "id": "IDENTITY-HEADER-FOOTER",
+      "category": "identity",
+      "title": "헤더·푸터·운영기관 식별자",
+      "disposition": "deferred",
+      "applicableProfiles": ["krds-standard", "krds-aligned"],
+      "upstream": "https://www.krds.go.kr/html/site/component/component_02_04.html",
+      "reason": "Generic shell components exist, but institution identity, policy links, contact details and exact KRDS ordering are unapproved.",
+      "owner": "product-institution-owner",
+      "reviewBy": "2026-10-31"
+    },
+    {
+      "id": "COMPONENT-SKIP-LINK",
+      "category": "component",
+      "title": "본문 바로가기",
+      "disposition": "adopted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/component/component_03_01.html",
+      "localEvidence": ["frontend/src/app/layout.tsx"],
+      "notes": "Current shell provides the link before repeated shell content and a focusable main target; browser evidence remains part of Task 0.5."
+    },
+    {
+      "id": "COMPONENT-BUTTON-LINK",
+      "category": "component",
+      "title": "버튼·링크",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/utility/utility_04.html",
+      "localEvidence": [
+        "frontend/src/components/ui/button.tsx",
+        "docs/03-guides/frontend-content-style.md"
+      ],
+      "deviation": "Local Radix/shadcn-derived primitives are retained; semantics, names, keyboard operation and target size are mapped instead of copying markup classes.",
+      "notes": "Rendered state coverage is incomplete."
+    },
+    {
+      "id": "COMPONENT-FORM-CONTROLS",
+      "category": "component",
+      "title": "입력·선택·날짜 컨트롤",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/utility/utility_04.html",
+      "localEvidence": [
+        "frontend/src/components/ui/input.tsx",
+        "frontend/src/components/ui/form.tsx"
+      ],
+      "deviation": "Existing React primitives are mapped by semantic and interaction contract; exact KRDS markup and all error states are not yet proven.",
+      "notes": "Pilot form evidence is required."
+    },
+    {
+      "id": "COMPONENT-STRUCTURED-LIST-TABLE",
+      "category": "component",
+      "title": "구조화 목록·표·페이지 탐색",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/component/component_04_01.html",
+      "localEvidence": ["frontend/src/app/components/ui/standard-data-table.tsx"],
+      "deviation": "StandardDataTable is a local composite with desktop table, mobile cards, state and pagination contracts.",
+      "notes": "Dense-list pilot and responsive semantics must be verified before scope approval."
+    },
+    {
+      "id": "COMPONENT-FEEDBACK-ERROR",
+      "category": "component",
+      "title": "피드백·오류·상태",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/utility/utility_04.html",
+      "localEvidence": [
+        "frontend/src/app/components/ui/status-displays.tsx",
+        "docs/03-guides/frontend-content-style.md"
+      ],
+      "deviation": "Local state components preserve error/empty distinctions; complete focus and live-region coverage is pending.",
+      "notes": "Do not infer accessibility conformance from component presence."
+    },
+    {
+      "id": "PATTERN-LIST-NAVIGATION",
+      "category": "basic-pattern",
+      "title": "목록 탐색",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/global/global_04.html",
+      "localEvidence": ["frontend/src/app/components/ui/standard-data-table.tsx"],
+      "deviation": "Local dense-list patterns retain product-specific columns and card transformations.",
+      "notes": "Task success and AT evidence are unmeasured."
+    },
+    {
+      "id": "PATTERN-FILTER-SORT",
+      "category": "basic-pattern",
+      "title": "필터링·정렬",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/global/global_10.html",
+      "localEvidence": ["frontend/src/app/components/ui/standard-data-table.tsx"],
+      "deviation": "Server and local filtering contracts vary by domain and must disclose scope.",
+      "notes": "Filtered-zero and focus-after-update are pilot gates."
+    },
+    {
+      "id": "PATTERN-ERROR",
+      "category": "basic-pattern",
+      "title": "오류와 입력 보존",
+      "disposition": "adopted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/utility/utility_04.html",
+      "localEvidence": [
+        ".agent/knowledge/frontend-ux-constitution/artifacts/constitution.md",
+        "docs/03-guides/frontend-content-style.md"
+      ],
+      "notes": "Policy is adopted; route-level implementation evidence remains incomplete."
+    },
+    {
+      "id": "PATTERN-INPUT-FORM",
+      "category": "basic-pattern",
+      "title": "입력 폼",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/utility/utility_04.html",
+      "localEvidence": [
+        "frontend/src/hooks/useAppForm.ts",
+        "frontend/src/components/ui/form.tsx"
+      ],
+      "deviation": "Shared validation primitives exist, but section heading, required-field, error focus and long-content behavior vary by route.",
+      "notes": "Composer and wizard pilots own proof."
+    },
+    {
+      "id": "PATTERN-PERSONAL-DATA",
+      "category": "basic-pattern",
+      "title": "개인 식별 정보 입력",
+      "disposition": "deferred",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/global/global_summary.html",
+      "reason": "Field-level purpose, minimization, masking, retention and analytics rules require domain and privacy-owner approval.",
+      "owner": "security-privacy",
+      "reviewBy": "2026-10-31"
+    },
+    {
+      "id": "SERVICE-LOGIN",
+      "category": "service-pattern",
+      "title": "로그인",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/service/service_03_01.html",
+      "localEvidence": [
+        "frontend/src/app/login/LoginClient.tsx",
+        "frontend/src/proxy.ts"
+      ],
+      "deviation": "Current reference login supports one credential method; identity recovery and approved session-extension policy are outside current evidence.",
+      "notes": "Authentication security policy outranks visual pattern matching."
+    },
+    {
+      "id": "SERVICE-SEARCH",
+      "category": "service-pattern",
+      "title": "검색",
+      "disposition": "adapted",
+      "applicableProfiles": ["krds-standard", "krds-aligned", "premium"],
+      "upstream": "https://www.krds.go.kr/html/site/service/service_02_02.html",
+      "localEvidence": ["frontend/src/app/search/SearchClient.tsx"],
+      "deviation": "The current route has role/API asymmetry and unsupported article search; capability truth takes precedence.",
+      "notes": "It cannot be treated as a complete KRDS search journey."
+    },
+    {
+      "id": "SERVICE-APPLICATION",
+      "category": "service-pattern",
+      "title": "신청·다단계 입력",
+      "disposition": "deferred",
+      "applicableProfiles": ["krds-standard", "krds-aligned"],
+      "upstream": "https://www.krds.go.kr/html/site/service/service_04_01.html",
+      "reason": "No product owner has selected an application journey as an applicable public-service pilot; generic wizard styling cannot establish applicability.",
+      "owner": "product-ux",
+      "reviewBy": "2026-10-31"
+    },
+    {
+      "id": "SERVICE-POLICY-INFORMATION",
+      "category": "service-pattern",
+      "title": "정책 정보 확인",
+      "disposition": "deferred",
+      "applicableProfiles": ["krds-standard", "krds-aligned"],
+      "upstream": "https://www.krds.go.kr/html/site/service/service_05_03.html",
+      "reason": "Help and policy routes exist, but current content ownership, freshness and direct-detail journey evidence are unapproved.",
+      "owner": "content-product-owner",
+      "reviewBy": "2026-10-31"
+    },
+    {
+      "id": "VERIFICATION-SELF-CHECKLIST",
+      "category": "verification",
+      "title": "KRDS 자체 검증 체크리스트",
+      "disposition": "deferred",
+      "applicableProfiles": ["krds-standard", "krds-aligned"],
+      "upstream": "https://www.krds.go.kr/html/site/community/community_04_01.html?nttId=2",
+      "reason": "The official checklist has not been executed against an approved profile-route-state population.",
+      "owner": "quality-accessibility",
+      "reviewBy": "2026-10-31"
+    }
+  ],
+  "refreshTriggers": [
+    {
+      "id": "scheduled-upstream-review",
+      "condition": "current date is after checkBy",
+      "action": "fail the mapping contract until checkedAt/checkBy and affected entries are reviewed"
+    },
+    {
+      "id": "guideline-version-change",
+      "condition": "official resource page lists a guideline newer than 2025.08",
+      "action": "diff changed principles, components and service patterns before updating the pinned version"
+    },
+    {
+      "id": "component-kit-release",
+      "condition": "official component kit release differs from 1.1.0",
+      "action": "review assets, markup, accessibility notes and license before adoption"
+    },
+    {
+      "id": "profile-or-identity-change",
+      "condition": "brand profile, masthead, identifier, header or footer eligibility changes",
+      "action": "require product/institution approval and rerun identity mapping"
+    },
+    {
+      "id": "accessibility-standard-change",
+      "condition": "project WCAG/KWCAG target or official KRDS accessibility mapping changes",
+      "action": "refresh success-criterion coverage and manual test matrix"
+    }
+  ]
+}

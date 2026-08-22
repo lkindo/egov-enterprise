@@ -1,9 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
-import { useQueryClient } from '@tanstack/react-query';
 import { AlertTriangle, RefreshCcw, Home, ArrowLeft, Bug, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+
+function statusFrom(value: unknown): number | undefined {
+  if (!value || typeof value !== 'object') return undefined;
+  const record = value as Record<string, unknown>;
+  const directStatus = record.status ?? record.statusCode;
+  if (typeof directStatus === 'number') return directStatus;
+
+  return statusFrom(record.response) ?? statusFrom(record.cause);
+}
 
 /**
  * Next.js App Router 에러 바운더리 (admin 레이아웃 전용)
@@ -21,20 +29,12 @@ export default function AdminError({
   error: Error & { digest?: string };
   reset: () => void;
 }) {
-  const queryClient = useQueryClient();
-
-  useEffect(() => {
-    // 프로덕션 환경에서는 에러 리포팅 서비스로 전송
-    console.error('[AdminErrorBoundary]', error);
-  }, [error]);
-
   const handleReset = () => {
-    queryClient.refetchQueries();
     reset();
   };
 
   // 에러 메시지 및 구조화된 프로퍼티에서 HTTP 상태 코드 추출
-  const statusCode = (error as any).status || (error as any).statusCode || (error as any).response?.status || (error as any).cause?.status;
+  const statusCode = statusFrom(error);
   const is401 = statusCode === 401 || error.message?.includes('401');
   const is403 = statusCode === 403 || error.message?.includes('403') || error.message?.includes('Forbidden');
   const is404 = statusCode === 404 || error.message?.includes('404') || error.message?.includes('Not Found');
@@ -58,7 +58,7 @@ export default function AdminError({
                 window.location.href = `/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
               }}
             />
-            <ActionButton icon={<Home size={18} />} label="메인으로" onClick={() => (window.location.href = '/')} />
+            <ActionButton icon={<Home size={18} />} label="메인으로" href="/" />
           </>
         }
       />
@@ -76,7 +76,7 @@ export default function AdminError({
         actions={
           <>
             <ActionButton primary icon={<ArrowLeft size={18} />} label="이전으로" onClick={() => window.history.back()} />
-            <ActionButton icon={<Home size={18} />} label="메인으로" onClick={() => (window.location.href = '/admin')} />
+            <ActionButton icon={<Home size={18} />} label="메인으로" href="/admin/work-hub" />
           </>
         }
       />
@@ -94,7 +94,7 @@ export default function AdminError({
         actions={
           <>
             <ActionButton primary icon={<ArrowLeft size={18} />} label="이전으로" onClick={() => window.history.back()} />
-            <ActionButton icon={<Home size={18} />} label="메인으로" onClick={() => (window.location.href = '/admin')} />
+            <ActionButton icon={<Home size={18} />} label="메인으로" href="/admin/work-hub" />
           </>
         }
       />
@@ -112,10 +112,9 @@ export default function AdminError({
       actions={
         <>
           <ActionButton primary icon={<RefreshCcw size={18} />} label="다시 시도" onClick={handleReset} />
-          <ActionButton icon={<Home size={18} />} label="메인으로" onClick={() => (window.location.href = '/admin')} />
+          <ActionButton icon={<Home size={18} />} label="메인으로" href="/admin/work-hub" />
         </>
       }
-      digest={error.digest}
     />
   );
 }
@@ -129,7 +128,6 @@ function ErrorLayout({
   title,
   description,
   actions,
-  digest,
 }: {
   icon: React.ReactNode;
   iconColor: string;
@@ -137,7 +135,6 @@ function ErrorLayout({
   title: string;
   description: string;
   actions: React.ReactNode;
-  digest?: string;
 }) {
   return (
     <div className="flex items-center justify-center min-h-[60vh] p-8">
@@ -148,14 +145,9 @@ function ErrorLayout({
         className="flex flex-col items-center text-center max-w-lg"
       >
         <div className={`p-6 rounded-lg ${iconBg} ${iconColor} mb-6`}>{icon}</div>
-        <h2 className="text-2xl font-bold text-foreground tracking-tight mb-3">{title}</h2>
+        <h1 className="text-2xl font-bold text-foreground tracking-tight mb-3">{title}</h1>
         <p className="text-muted-foreground font-medium leading-relaxed mb-8">{description}</p>
         <div className="flex items-center gap-3">{actions}</div>
-        {digest && (
-          <p className="mt-8 text-xs text-muted-foreground/50 font-mono">
-            참조 코드: {digest}
-          </p>
-        )}
       </motion.div>
     </div>
   );
@@ -166,23 +158,40 @@ function ActionButton({
   icon,
   label,
   onClick,
+  href,
 }: {
   primary?: boolean;
   icon: React.ReactNode;
   label: string;
-  onClick: () => void;
+  onClick?: () => void;
+  href?: string;
 }) {
+  const className = `flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all active:scale-95 ${
+    primary
+      ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl'
+      : 'border-2 border-border text-muted-foreground hover:bg-accent'
+  }`;
+  const content = (
+    <>
+      <span aria-hidden="true">{icon}</span>
+      {label}
+    </>
+  );
+
+  if (href) {
+    return (
+      <Link href={href} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-6 py-3 rounded-lg font-bold text-sm transition-all active:scale-95 ${
-        primary
-          ? 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl'
-          : 'border-2 border-border text-muted-foreground hover:bg-accent'
-      }`}
+      className={className}
     >
-      {icon}
-      {label}
+      {content}
     </button>
   );
 }

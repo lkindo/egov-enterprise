@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import test from 'node:test';
@@ -21,6 +21,42 @@ import {
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const registryPath = path.join(repoRoot, 'config', 'governance', 'gates.json');
+const UI_UX_FOUNDATION_CONTRACT_ASSETS = [
+  'config/frontend-visible-terms.json',
+  'config/krds-profile-mapping.json',
+  'config/ui-navigation-disposition-proposal.json',
+  'config/ui-navigation-disposition.schema.json',
+  'config/ui-quality-baseline-index.json',
+  'config/ui-quality-baseline-index.schema.json',
+  'config/ui-quality-baseline-summary.schema.json',
+  'config/ui-quality-evidence-policy.json',
+  'config/ui-quality-scenarios.json',
+  'config/ui-route-capabilities.json',
+  'config/ui-url-state-census.json',
+  'docs/02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md',
+  'docs/02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md',
+  'frontend/scripts/ui-quality-baseline-core.mjs',
+  'frontend/scripts/ui-quality-baseline-runner.mjs',
+  'scripts/frontend-reachability-census.mjs',
+  'scripts/frontend-reachability-census.test.mjs',
+  'scripts/api-docker-context-contract.test.mjs',
+  'scripts/frontend-docker-context-contract.test.mjs',
+  'scripts/frontend-sensitive-console-contract.test.mjs',
+  'scripts/frontend-visible-terms-contract.test.mjs',
+  'scripts/krds-profile-mapping-contract.test.mjs',
+  'scripts/playwright-auth-artifact-contract.test.mjs',
+  'scripts/ui-navigation-disposition-contract.mjs',
+  'scripts/ui-navigation-disposition-contract.test.mjs',
+  'scripts/ui-quality-baseline-runner-contract.test.mjs',
+  'scripts/ui-quality-evidence-durability.mjs',
+  'scripts/ui-quality-evidence-durability-contract.test.mjs',
+  'scripts/ui-quality-evidence-publication-contract.test.mjs',
+  'scripts/ui-quality-scenarios-contract.test.mjs',
+  'scripts/ui-route-capabilities-contract.mjs',
+  'scripts/ui-route-capabilities-contract.test.mjs',
+  'scripts/ui-url-state-census.mjs',
+  'scripts/ui-url-state-census.test.mjs',
+];
 
 function clone(value) {
   return structuredClone(value);
@@ -68,6 +104,34 @@ const REQUIRED_QUALITY_POPULATIONS = [
 test('repository governance registry exactly covers every tagged gate and current quality control', () => {
   const registry = loadGovernanceRegistry(registryPath);
   assert.deepEqual(validate(registry), []);
+});
+
+test('UI/UX foundation contract assets remain present in the required Node catalog', () => {
+  const registry = loadGovernanceRegistry(registryPath);
+  const operational = registry.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS');
+
+  assert.ok(UI_UX_FOUNDATION_CONTRACT_ASSETS.every((source) => existsSync(path.join(repoRoot, source))));
+  assert.ok(
+    operational.selector.catalogs.some(
+      ({ root, suffixes, recursive }) => root === 'scripts'
+        && suffixes.includes('.test.mjs')
+        && recursive === false,
+    ),
+  );
+  assert.equal(
+    operational.selector.packageScript.command,
+    'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js"',
+  );
+  assert.ok([
+    'config/ui-quality-evidence-policy.json',
+    'config/ui-quality-baseline-index.json',
+    'config/ui-quality-baseline-summary.schema.json',
+    'config/ui-quality-baseline-index.schema.json',
+    'docs/02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md',
+    'scripts/ui-quality-evidence-durability.mjs',
+    'scripts/ui-quality-evidence-durability-contract.test.mjs',
+    'scripts/ui-quality-evidence-publication-contract.test.mjs',
+  ].every((source) => UI_UX_FOUNDATION_CONTRACT_ASSETS.includes(source)));
 });
 
 test('registry keeps the eight authoritative gate sets and five runner catalogs', () => {

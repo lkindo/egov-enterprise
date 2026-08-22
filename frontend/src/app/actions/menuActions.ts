@@ -32,7 +32,6 @@ export async function saveMenuAction(prevState: unknown, { mode, data }: SaveMen
     return { success: true, message: `메뉴가 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
-    console.error('Save Menu Error:', error);
     return { success: false, message: errorMessage };
   }
 }
@@ -49,7 +48,6 @@ export async function updateMenuOrdersAction(menus: MenuInfo[]): Promise<ActionR
     return { success: true, message: '순서가 저장되었습니다.' };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '순서 저장 중 오류 발생');
-    console.error('Update Menu Orders Error:', error);
     return { success: false, message: errorMessage };
   }
 }
@@ -66,7 +64,6 @@ export async function deleteMenuAction(prevState: unknown, id: number): Promise<
     return { success: true, message: '메뉴가 삭제되었습니다.' };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '삭제 중 오류 발생');
-    console.error('Delete Menu Error:', error);
     return { success: false, message: errorMessage };
   }
 }
