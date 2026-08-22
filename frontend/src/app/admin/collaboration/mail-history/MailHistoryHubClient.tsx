@@ -337,8 +337,12 @@ export default function MailHistoryHubClient() {
               <div className="flex gap-4 pt-6">
                 <Button
                   variant="destructive"
-                  data-testid="delete-mail-btn"
-                  aria-label={`${selectedMail.sj} 발송 이력 삭제`}
+                  // 목록 행 액션(위 columns 정의)과 **다른 식별자**여야 한다. 종전에는 둘 다
+                  // `delete-mail-btn` + 같은 aria-label 이라, 같은 메일을 선택하면 testid 도
+                  // 접근 이름도 구분되지 않았다(2026-08-22 CI: strict mode violation).
+                  // 가시 텍스트 "이력 삭제"를 접근 이름에 포함해 WCAG 2.5.3(Label in Name)을 지킨다.
+                  data-testid="mail-detail-delete-btn"
+                  aria-label={`선택한 메일 ${selectedMail.sj} 발송 이력 삭제`}
                   onClick={() => { void handleDelete(selectedMail); }}
                   className="flex-1 h-12 rounded-xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs tracking-widest transition-all shadow-xl"
                 >

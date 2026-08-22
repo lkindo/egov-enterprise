@@ -127,7 +127,12 @@ export class MailPage {
         await expect(this.page.getByRole('heading', { name: '발신 상세', exact: true }))
             .toBeVisible({ timeout: 10000 });
 
-        const deleteBtn = this.page.getByTestId('delete-mail-btn');
+        // [2026-08-22 정정] 상세 패널 삭제 버튼의 testid 를 목록 행 액션과 분리했다
+        //   (MailHistoryHubClient.tsx:340 `mail-detail-delete-btn`). 종전에는 둘이 같은
+        //   `delete-mail-btn` 이라 strict mode violation 이 났고, StandardDataTable 의
+        //   테이블·카드 이중 렌더까지 겹쳐 요소가 3개→7개로 늘었다.
+        //   스코프 대신 **식별자 분리**로 해결했으므로 여기서는 page 범위 조회로 정확히 1개다.
+        const deleteBtn = this.page.getByTestId('mail-detail-delete-btn');
         await deleteBtn.waitFor({ state: 'visible', timeout: 5000 });
         await deleteBtn.click();
 

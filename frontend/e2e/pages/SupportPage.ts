@@ -74,7 +74,11 @@ export class SupportPage {
         await this.page.keyboard.type(content);
         await expect(editor).toContainText(content);
 
-        await this.page.getByRole('button', { name: /등록 완료|저장|Commit/i }).click();
-        await expect(this.page.getByText(/성공|완료|등록되었습니다/i)).toBeVisible({ timeout: 15000 });
+        // [2026-08-22 정정] 제출 버튼의 접근 이름이 '게시글 저장' → '게시글 등록' 으로 바뀌었다
+        //   (BoardRegistClient.tsx:275,285). '등록 완료' 는 메뉴·온라인매뉴얼 화면 문구라 여기엔 없다.
+        //   종전 정규식은 전체 문자열 매칭이라 어떤 후보와도 맞지 않아 180초 test timeout 이 났다.
+        await this.page.getByRole('button', { name: '게시글 등록', exact: true }).click();
+        // 사라지는 토스트 대신 저장 후 착지한 상세 화면을 단언한다(KnowledgePage 와 동일 사유).
+        await expect(this.page.getByRole('heading', { name: title, exact: true })).toBeVisible({ timeout: 15000 });
     }
 }
