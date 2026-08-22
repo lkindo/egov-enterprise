@@ -32,7 +32,8 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 // [하향 래칫 2026-08-21] 허위 command/status 문구 제거와 contextual contrast 수리로 중립/브랜드 리터럴 2건 제거.
 // [하향 래칫 2026-08-21(2)] r4 접근성 triage에서 preview·onboarding·editor의 저대비 중립 리터럴 20건을 semantic token으로 치환.
 // [하향 래칫 2026-08-21(3)] board maker의 template/action 중립 리터럴 3건도 검증된 semantic pair로 치환.
-const BASELINE = 78;
+// [하향 래칫 2026-08-23] HubStatusBadge default 라벨의 저대비 중립 리터럴 1건을 muted pair로 치환.
+const BASELINE = 77;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
