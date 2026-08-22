@@ -718,7 +718,7 @@ test('PR dependency review blocks only newly introduced high-risk runtime depend
 
   const expectedIf = "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.frontend == 'true')";
   assert.match(step, new RegExp(`^        if: ${expectedIf.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
-  assert.match(step, /actions\/dependency-review-action@2031cfc080254a8a887f58cffee85186f0e49e48/);
+  assert.match(step, /actions\/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294/);
   assert.match(step, /fail-on-severity: high/);
   assert.match(step, /fail-on-scopes: runtime/);
   assert.match(step, /warn-only: false/);
