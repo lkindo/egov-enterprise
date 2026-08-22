@@ -233,7 +233,7 @@ test('Docker invocations use tar stdin, never the current working directory, and
   const invocations = createDockerBuildInvocations({
     buildSha: BUILD_SHA,
     buildInputTreeHash: TREE_HASH,
-    apiImage: 'egov-uiux-r13-api:0123456789ab',
+    apiImage: 'egov-uiux-r13-api:fixture',
     frontendImage: 'egov-uiux-r13-frontend:0123456789ab',
     backendApiUrl: 'http://egov-uiux-r13-api:8080/api/v1',
     publicApiUrl: 'http://egov-uiux-r13-api:8080/api/v1',
@@ -274,7 +274,7 @@ test('Docker invocation rejects unsafe URLs and image identifiers before executi
   const base = {
     buildSha: BUILD_SHA,
     buildInputTreeHash: TREE_HASH,
-    apiImage: 'egov-uiux-r13-api:0123456789ab',
+    apiImage: 'egov-uiux-r13-api:fixture',
     frontendImage: 'egov-uiux-r13-frontend:0123456789ab',
     backendApiUrl: 'http://api:8080/api/v1',
     publicApiUrl: 'http://api:8080/api/v1',
@@ -503,11 +503,11 @@ function imageInspectionBytes({
 
 test('image inspect is bounded, tag-bound, and returns only immutable identity labels', () => {
   const invocation = createDockerImageInspectInvocation({
-    imageReference: 'egov-uiux-r13-api:0123456789ab',
+    imageReference: 'egov-uiux-r13-api:fixture',
   });
   assert.equal(invocation.command, 'docker');
   assert.deepEqual(invocation.args.slice(0, 3), ['image', 'inspect', '--format']);
-  assert.equal(invocation.args.at(-1), 'egov-uiux-r13-api:0123456789ab');
+  assert.equal(invocation.args.at(-1), 'egov-uiux-r13-api:fixture');
   assert.equal(invocation.timeoutMs, 5_000);
   assert.equal(invocation.maxOutputBytes, 4_096);
   assert.match(invocation.args.at(-2), /\.Id/);
