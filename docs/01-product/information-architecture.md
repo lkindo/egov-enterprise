@@ -895,11 +895,15 @@ UX, domain, security/privacy, accessibility reviewer가 독립적으로 cognitiv
 
 `T0`는 제품 소유자·IA owner·privacy owner가 지정되고 G1 decision workshop 날짜가 잡힌 날이다. 상대 기한은 계획용 SLA이며 현재 약속된 날짜가 아니다.
 
+> **지명 기록 (2026-08-23, DEC-OPS-013)** — 단독 운영 기간의 세 owner 역할(Product owner·IA owner·Security/Privacy owner)은 저장소 소유자 **lkindo** 로 지명됐다. 승인 채널은 이 저장소의 PR 리뷰다.
+>
+> **워크숍 기록 (2026-08-23, ADR-0007)** — 같은 날 G1 decision workshop 이 개최돼 **T0 가 성립**했다. 결과는 [§14.3](#143-2026-08-23-g1-decision-workshop-기록): PD-UX-001 은 **참조-기본 범위로 accepted**(사용자 연구 없는 승인임을 accepted-risk 로 영구 기록), PD-UX-002 는 deferred. live census·연구·AT 증거 요건은 **기관 채택 시점의 재검증 의무로 이전**됐으므로, 아래 표에서 해당 입력들의 T0 기준 SLA 는 adoption-triggered 로 읽는다. route 별 disposition 은 일괄 승인되지 않았고 owner PR 리뷰로 개별 승인한다.
+
 | ID | 필요한 입력 | 상태 | Owner | reviewBy/SLA | 차단 범위 |
 |---|---|---|---|---|---|
-| IA-OI-01 | 대상 기관/파생 제품/profile과 critical role | `blocked-input` | Product owner | T0 | 카드 set·목표 tree |
-| IA-OI-02 | IA/product owner 실명과 승인 채널 | `blocked-input` | Product owner | T0 | `PD-UX-001` 전체 |
-| IA-OI-03 | security/privacy owner와 로그 URL 분류 승인 | `blocked-input` | Product owner | T0 | `PD-UX-002` 전체 |
+| IA-OI-01 | 대상 기관/파생 제품/profile과 critical role | `received 2026-08-23 (참조 범위)` — 대상 제품 = 참조 구현 자체(ADR-0007). 기관별 입력은 채택 시점 재입력 | Product owner | T0 → adoption-triggered | 카드 set·목표 tree |
+| IA-OI-02 | IA/product owner 실명과 승인 채널 | `received 2026-08-23` — lkindo, 채널=저장소 PR 리뷰(위 지명 기록). T0 는 워크숍 개최로 성립 | Product owner | T0 | `PD-UX-001` 전체 |
+| IA-OI-03 | security/privacy owner와 로그 URL 분류 승인 | `partial 2026-08-23` — owner 는 lkindo 로 지명됨. 로그 URL 분류 **승인은 계속 blocked-input** | Product owner | T0 | `PD-UX-002` 전체 |
 | IA-OI-03B | 전역 URL/privacy pending decision의 등록 여부·scope·owner | `blocked-input` | Product owner + security/privacy | G1 전 | redirect·login·locator·전역 parser |
 | IA-OI-04 | live DB 접속과 `tb_menu_info` 구조 census artifact | `blocked-external` | DB/menu operator | T0+5 영업일 | duplicate/orphan 구조 후보 |
 | IA-OI-04B | `tb_menu_crt_dtl` authority assignment + effective synthetic-user menu와 manifest join | `blocked-input` | DB/menu operator + FE architecture | T0+10 영업일 | 역할별 menu exposure·G1 |
@@ -958,6 +962,49 @@ finalAcceptanceRecord: <ADR-0004와 구분되는 final acceptance record link; o
 **`PD-UX-002` 제안**
 
 > 로그 화면 URL에는 typed allowlist가 승인한 비민감·공유 가치·복원 가치 상태만 둔다. 초기 allowlist는 category와 bounded page이며 default/unknown은 canonicalize한다. 로그 검색의 개인정보, IP, 자유 검색어, 응답/콘텐츠, record identifier와 exact 조사 상태는 URL·client log·analytics에서 금지하고 memory 또는 승인된 POST 검색을 사용한다.
+
+### 14.3 2026-08-23 G1 decision workshop 기록
+
+참조 구현에는 운영 DB·실사용자가 구조적으로 부재해 원 G1 증거 요건이 영구 미충족임이 상정됐고, [ADR-0007](../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md)이 G1을 참조-기본(reference-default) 범위로 재정의했다. 원 요건은 기관 채택 시점의 재검증 의무로 이전됐다.
+
+```yaml
+decisionId: PD-UX-001
+status: accepted            # 참조-기본 범위 한정 — exact tree/disposition 일괄 승인 아님
+scope:
+  productProfile: reference-default (기관 미지정 — 채택 시 재검증)
+  releaseSha: 02a4aaae1
+  routeManifestSha256: 51e44c78d112e95d1ac68a5063a4f5e46f8e64f26b67ef073e268d50e0193ffd
+evidence:
+  liveMenuStructure: structurally-absent → 채택 시점 의무로 이전(ADR-0007)
+  menuAuthorityAssignment: structurally-absent → 채택 시점 의무로 이전(ADR-0007)
+  effectiveSyntheticMenus: blocked (IA-OI-04B)
+  dispositionOverlay: config/ui-navigation-disposition-proposal.json (state=proposed 유지)
+  urlProducerConsumerCensus: config/ui-url-state-census.json (분류·승인은 PD-UX-002 잔여)
+  researchProtocolVersion: 미수행 — accepted-risk(ADR-0007), 채택 시 §11.8 원 기준 적용
+  participantSummary: 0 (참여자 없음 — 사실 그대로 기록)
+  findings: []
+decision: 하이브리드 IA(ADR-0004 방향)를 참조-기본 IA로 승인한다. route별 disposition은
+  본 결정으로 일괄 승인되지 않으며 owner PR 리뷰로 개별 승인한다(ADR-0007 §Decision 4).
+exceptions: [사용자 연구 미수행 — accepted-risk 영구 기록]
+acceptanceThresholds: [채택 시점 재검증에서 §11.8 원 기준 적용]
+rollbackTriggers: [채택 기관 재검증에서 hybrid 구조가 §11.8 기준 미달 시 참조-기본 IA 재심의]
+owner: lkindo (DEC-OPS-013)
+approvers:
+  - role: Product owner · IA owner · Security/Privacy owner
+    name: lkindo
+    approvedAt: 2026-08-23
+reviewBy: 기관 채택 시점 (adoption-triggered)
+finalAcceptanceRecord: ../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md
+```
+
+```yaml
+decisionId: PD-UX-002
+status: deferred
+decision: 분류는 면제가 아니라 수행 대상이다 — URL-state census 523 record의 프라이버시
+  분류 초안 작성을 별도 태스크로 선행한 뒤 승인 회의를 다시 연다.
+owner: lkindo (DEC-OPS-013)
+reviewBy: 분류 초안 완성 시
+```
 
 **별도 전역 URL follow-up 제안 — pending registry 미등록**
 
