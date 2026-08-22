@@ -153,6 +153,8 @@ export function Header({
                   key={menu.menuNo || `head-${index}`}
                   href={targetRoute}
                   aria-label={menu.menuNm}
+                  // 활성 도메인은 섹션 표지라 'true' — 'page' 는 하위 화면에서 페이지 사칭이 된다(IA §7.3).
+                  aria-current={isActive ? 'true' : undefined}
                   onClick={() => {
                     setActiveMenuNo(menu.menuNo);
                   }}

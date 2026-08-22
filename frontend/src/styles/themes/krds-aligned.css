@@ -93,6 +93,13 @@
     --destructive-foreground: 0 0% 100%; /* #FFFFFF gray-0 */
     --destructive-emphasis: 0 91% 65%; /* 0 91% 65% DEVIATION: 공식 danger 단계(5/50/70) 중 다크 4.5:1 을 만족하는 유채색 없음(50=4.04) — premium 다크값 유지 */
     --success-emphasis: 142 70% 55%; /* 142 70% 55% DEVIATION: 공식 success 단계 중 다크 4.5:1 을 만족하는 유채색 없음(50=4.03) — premium 다크값 유지 */
+    /* hub 장식 액센트 다크 전경값 — 라이트 축(hue/sat)을 유지하고 명도만 올린 DEVIATION.
+       실측(card 12.9% / background 8% 기준): emerald 8.50/9.68 · rose 5.61/6.39 ·
+       amber 9.05/10.31 · orange 5.68/6.46 — 전부 AA(4.5:1) 이상. */
+    --hub-emerald: 133.1 59.8% 58%;
+    --hub-rose: 354.9 65.1% 68%;
+    --hub-amber: 40.2 100% 55%;
+    --hub-orange: 17.5 88.3% 60%;
     --border: 222 8.9% 22%; /* #33363D gray-80 */
     --input: 222 8.9% 22%; /* #33363D gray-80 */
     --ring: 219.2 90.4% 63.1%; /* #4C87F6 primary-40 */
