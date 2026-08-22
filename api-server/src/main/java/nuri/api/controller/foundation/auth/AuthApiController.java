@@ -80,6 +80,7 @@ public class AuthApiController {
             // [헌법 제3조] ad-hoc Map 대신 응답 전용 DTO(record)로 계약을 명시한다. JSON 필드명은 기존과 동일.
             CurrentUserResponse body = new CurrentUserResponse(
                     userDto.userId(),
+                    userDto.esntlId(),
                     userDto.userNm(),
                     userDto.role(),
                     userDto.userSe(),

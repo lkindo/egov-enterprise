@@ -246,6 +246,7 @@ export default function MailHistoryHubClient() {
       error={isError ? (error as Error) : null}
       onRetry={() => { void refetch(); }}
       onRowClick={(item) => setSelectedMail(item)}
+      rowActionLabel={(item) => `${item.sj || `${item.emlDsptchSn}번`} 발신 이력 상세 열기`}
       emptyMessage="발신 이력이 없습니다."
       isPremium={true}
       rowTestId="mail-item"

@@ -199,6 +199,7 @@ export default function LoginPolicyAdminClient() {
     /* 루트 레이아웃이 이미 max-w-7xl + p-6/md:p-12/lg:p-16 을 주므로 화면별 p-10 은 이중 여백이라 제거했다. */
     <div className="space-y-12 animate-in fade-in duration-1000 text-left">
       <HubHeader 
+        headingLevel={1}
         title="로그인 보안 정책" 
         highlight="관리" 
         subtitle="개별 사용자의 접속 IP, 시간대 제한 및 2단계 인증(OTP) 활성화 여부를 정밀 제어합니다." 

@@ -17,14 +17,13 @@ export default async function ManualAdminPage() {
   const initialManuals = await manualAdminService.getManualList({
     page: 0,
     size: 10
-  }, axiosConfig).catch((error: unknown) => {
-    console.error('[manual-admin] 매뉴얼 목록 프리페치 실패:', error);
+  }, axiosConfig).catch(() => {
     return null;
   });
 
   // 클라이언트가 useSearchParams(페이지 URL 동기화)를 쓰므로 Suspense 경계를 둔다.
   return (
-    <Suspense fallback={<div className="p-24 text-center text-xs font-bold tracking-widest text-muted-foreground animate-pulse">매뉴얼 목록을 불러오는 중입니다...</div>}>
+    <Suspense fallback={<div className="p-24 text-center text-xs font-bold tracking-widest text-muted-foreground animate-pulse"><h1 className="sr-only">온라인 매뉴얼을 불러오는 중</h1>매뉴얼 목록을 불러오는 중입니다...</div>}>
       <ManualAdminClient initialManuals={initialManuals} />
     </Suspense>
   );

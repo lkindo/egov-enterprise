@@ -32,8 +32,6 @@ export default async function BannerAdminPage() {
     initialBanners = bannersRes?.list ?? [];
     initialPopups = popupsRes?.list ?? [];
   } catch (error: unknown) {
-    console.error('Server-side fetch banners/popups failed:', error);
-
     // 만약 401 에러(인증 만료)라면 로그인 페이지로 리다이렉트
     const status = (error as { response?: { status?: number } })?.response?.status;
     if (status === 401) {
@@ -60,6 +58,7 @@ export default async function BannerAdminPage() {
 function BannerAdminLoading() {
   return (
     <div className="max-w-6xl mx-auto space-y-12 animate-pulse">
+      <h1 className="sr-only">배너와 팝업 관리를 불러오는 중</h1>
       <div className="h-11 w-96 bg-muted rounded-lg" />
       <div className="flex justify-center">
         <div className="h-11 w-[400px] bg-muted rounded-lg" />

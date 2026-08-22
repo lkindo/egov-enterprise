@@ -18,7 +18,7 @@ export default async function TemplateAdminPage() {
   const templatesPromise = templateAdminService.getTemplateList(axiosConfig);
 
   return (
-    <Suspense fallback={<div className="p-24 text-center text-muted-foreground font-bold">템플릿 라이브러리를 불러오는 중...</div>}>
+    <Suspense fallback={<div className="p-24 text-center text-muted-foreground font-bold"><h1 className="sr-only">커뮤니티 템플릿 라이브러리</h1>템플릿 라이브러리를 불러오는 중...</div>}>
       <TemplateAdminClient templatesPromise={templatesPromise} />
     </Suspense>
   );

@@ -45,7 +45,6 @@ export default async function CommonCodePage({
     groups = groupsRes.list || [];
     details = (detailsRes.list || []) as CmmnDetailCode[];
   } catch (error: unknown) {
-    console.error('Server-side fetch common codes failed:', error);
     const status = (error as { response?: { status?: number } })?.response?.status;
     if (status === 401 || !accessToken) {
       redirect('/login?expired=true');
@@ -70,6 +69,7 @@ export default async function CommonCodePage({
 function CommonCodeLoading() {
   return (
     <div className="space-y-12 animate-pulse">
+      <h1 className="sr-only">공통코드 통합 관리를 불러오는 중</h1>
       <div className="flex items-center gap-6 mb-12">
         <div className="h-11 w-16 bg-muted rounded-lg" />
         <div className="space-y-4">

@@ -10,6 +10,8 @@ export interface KnowledgeDto {
   pstCn: string;
   atchFileSn?: number;
   frstRgtrId?: string;
+  /** 게시글 owner-or-admin mutation 판정에 사용하는 API 작성자 식별자. */
+  userId?: string;
   crtDt?: string;
   inqCnt?: number;
   frstRegisterNm?: string;

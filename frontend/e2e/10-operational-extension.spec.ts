@@ -42,7 +42,7 @@ test.describe('Tier 10: Operational Extension & Uncovered Modules', () => {
         for (const tab of ['발신함', '전체', '수신함']) {
             await operationalPage.switchReportTab(tab);
             await expect(
-                operationalPage.page.getByText('메모 보고 관리').first(),
+                operationalPage.page.getByRole('heading', { name: '메모 보고 관리', exact: true }),
                 `'${tab}' 탭 전환 후 메모 보고 허브가 사라졌다`,
             ).toBeVisible();
         }

@@ -3,7 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Briefcase, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
@@ -43,10 +43,10 @@ export default function DeptJobCreateClient() {
 
       <Card className="border-border shadow-sm">
         <CardHeader className="border-b border-border pb-6">
-          <CardTitle className="text-xl font-black tracking-tight flex items-center gap-2">
+          <h1 className="text-xl font-black tracking-tight flex items-center gap-2">
             <Briefcase size={20} />
             부서 업무 등록
-          </CardTitle>
+          </h1>
         </CardHeader>
         <CardContent className="pt-6">
           <DeptJobForm

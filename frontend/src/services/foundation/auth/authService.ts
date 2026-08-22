@@ -9,11 +9,55 @@ export interface LoginResponse {
  role: string;
 }
 
-export interface UserInfo {
+export interface AuthUser {
  id: string;
+ /** Board.userId처럼 esntlId 축을 쓰는 도메인의 본인 판정 전용 불투명 식별자. */
+ esntlId?: string;
  name: string;
  role?: string;
  userSe?: string;
+ email?: string;
+}
+
+/** 기존 소비자 호환 별칭. 신규 인증 경계 코드는 AuthUser 의미를 따른다. */
+export type UserInfo = AuthUser;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+ return typeof value === 'object' && value !== null;
+}
+
+function identityText(value: unknown): string | undefined {
+ return typeof value === 'string' && value.length > 0 && value === value.trim()
+   ? value
+   : undefined;
+}
+
+function optionalText(value: unknown): string | undefined {
+ return typeof value === 'string' && value.trim().length > 0 ? value : undefined;
+}
+
+/**
+ * `/auth/me` 응답을 전역 인증 상태의 명시적 allowlist로 축소한다.
+ * 필수 loginId/표시명이 모호하면 세션을 신뢰하지 않으며, esntlId가 없다고 loginId로 대체하지 않는다.
+ */
+export function normalizeAuthUser(value: unknown): AuthUser {
+ if (!isRecord(value)) throw new Error('현재 사용자 응답이 올바르지 않습니다.');
+
+ const id = identityText(value.id);
+ const name = optionalText(value.name);
+ if (!id || !name) throw new Error('현재 사용자 응답이 올바르지 않습니다.');
+
+ const user: AuthUser = { id, name };
+ const esntlId = identityText(value.esntlId);
+ const role = identityText(value.role);
+ const userSe = identityText(value.userSe);
+ const email = optionalText(value.email);
+
+ if (esntlId) user.esntlId = esntlId;
+ if (role) user.role = role;
+ if (userSe) user.userSe = userSe;
+ if (email) user.email = email;
+ return user;
 }
 
 const BASE_URL = 'auth';
@@ -42,6 +86,7 @@ export const authService = {
 
  /** 현재 사용자정보 조회 (백엔드에 직접 쏘며, 미들웨어가 accessToken 쿠키를 낚아채 Bearer 헤더를 주입해 줌) */
  getCurrentUser: async (): Promise<UserInfo> => {
-   return client.get<UserInfo>(`${BASE_URL}/me`);
+   const response = await client.get<unknown>(`${BASE_URL}/me`);
+   return normalizeAuthUser(response);
  },
 };

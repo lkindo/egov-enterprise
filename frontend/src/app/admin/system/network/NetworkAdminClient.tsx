@@ -5,7 +5,6 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
@@ -14,13 +13,10 @@ import { Input } from '@/components/ui/input';
 import { NetworkForm } from '@/components/admin/system/NetworkForm';
 import { Plus, 
     Network as NetworkIcon, 
-    Server, 
-    Activity, 
     Cpu, 
     Settings, 
     Trash2, 
     Search, 
-    Zap, 
     Globe, 
     Database } from 'lucide-react';
 import type { Network } from '@/services/foundation/system/NetworkAdminService';
@@ -69,9 +65,6 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
      */
     const WRITE_NOT_IMPLEMENTED = true;
     const writeDisabledReason = '백엔드 저장 기능이 아직 구현되지 않았습니다 (서버가 501을 반환합니다).';
-    const activeNodeCount = nodes.filter(n => n.useYn === 'Y').length;
-    const inactiveNodeCount = nodes.length - activeNodeCount;
-    const assignedIpCount = nodes.filter(n => n.ntwrkIp).length;
 
     const handleCreate = () => {
         setEditingNode(null);
@@ -137,11 +130,11 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
             )
         },
         {
-            header: '운영 상태',
+            header: '사용 설정',
             accessor: (item: Network) => (
                 <HubStatusBadge 
-                    label={item.useYn === 'Y' ? '정상 운영' : '운영 중지'} 
-                    variant={item.useYn === 'Y' ? 'success' : 'secondary'} 
+                    label={item.useYn === 'Y' ? '사용 설정' : '사용 안 함'}
+                    variant="secondary"
                 />
             ),
             className: 'w-32'
@@ -187,8 +180,8 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
 
             <HubHeader
                 title="인프라"
-                highlight="네트워크 노드 관리"
-                subtitle="전사 서비스 노드의 IP 할당 정책, 게이트웨이 및 서브넷 구성을 물리적으로 매핑하여 관리합니다."
+                highlight="네트워크 계측 연동 대기"
+                subtitle="계측·저장 원천이 연결되기 전까지 기능 상태와 필요한 연동 조건만 안내합니다."
                 icon={NetworkIcon}
                 actions={
                     <Button
@@ -217,30 +210,17 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
                         (globals.css 에 정의된 emphasis 토큰은 --destructive-emphasis 하나뿐이다). */}
                     <Settings size={18} className="mt-0.5 shrink-0 text-foreground" aria-hidden="true" />
                     <div className="text-sm leading-relaxed">
-                        <strong className="font-bold">조회 전용 화면입니다.</strong>{' '}
-                        네트워크 노드의 등록·수정·삭제는 <strong>백엔드가 아직 구현하지 않았습니다</strong>
-                        (서버가 <code className="rounded bg-muted px-1 py-0.5 text-xs">501 Not Implemented</code> 를 반환합니다).
-                        아래 목록은 실제 저장된 데이터이며, 값이 없으면 등록된 노드가 없다는 뜻입니다 —
-                        조회 실패가 빈 목록으로 위장되지는 않습니다.
+                        <strong className="font-bold">현재 운영 판단에 사용할 수 없는 화면입니다.</strong>{' '}
+                        계측·저장 원천이 연결되지 않아 현재 조회 결과는 항상 비어 있습니다. 따라서 빈 결과는
+                        실제 등록 건수가 0이라는 뜻이 아닙니다. 등록·수정·삭제도 아직 구현되지 않아 서버가{' '}
+                        <code className="rounded bg-muted px-1 py-0.5 text-xs">501 Not Implemented</code> 를 반환합니다.
                     </div>
                 </div>
             )}
 
-            {/*
-              [P1-5] '네트워크 가용성 99.9%' / '평균 응답 속도 4ms' 카드 삭제.
-              두 값 모두 어떤 계측 소스도 없는 고정 문자열이라 운영 판단 근거가 될 수 없었다.
-              대신 목록에서 실제 산출 가능한 운영/중지 노드 수로 대체한다.
-            */}
-            <HubMetricGrid>
-                <HubMetricCard title="관리 대상 노드" value={nodes.length} icon={Server} color="primary" status="등록 건수" />
-                <HubMetricCard title="운영 중 노드" value={activeNodeCount} icon={Activity} color="emerald" status="useYn=Y" />
-                <HubMetricCard title="운영 중지 노드" value={inactiveNodeCount} icon={Zap} color="amber" status="useYn=N" />
-                <HubMetricCard title="IP 할당 노드" value={assignedIpCount} icon={Database} color="indigo" status="IP 보유" />
-            </HubMetricGrid>
-
-            <HubSectionCard 
-                title="인프라 노드 검색기" 
-                description="시스템에 등록된 모든 가상 및 물리 네트워크 엔드포인트의 중앙 집중 관리 목록입니다." 
+            <HubSectionCard
+                title="네트워크 계측 연결 결과"
+                description="계측 원천이 연결되면 이 영역에 수집된 노드가 표시됩니다. 현재 API는 의도적으로 빈 결과만 반환합니다."
                 icon={Database}
             >
                 <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
@@ -263,7 +243,7 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
                     keyField="ntwrkId"
                     error={listError}
                     onRetry={() => router.refresh()}
-                    emptyMessage="조회된 네트워크 자산이 없습니다."
+                    emptyMessage="연결된 네트워크 계측 원천이 없습니다."
                     className="border-none bg-transparent"
                 />
             </HubSectionCard>

@@ -67,18 +67,13 @@ function parseNotification(body: string): RealTimeNotification | null {
 
 export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
   const { client, isConnected } = useWebSocket();
-  const [stats, setStats] = useState<RealTimeStats>({
-    activeUsers: 0,
-    visitsPerMinute: 0,
-    newPosts: 0,
-    alerts: 0
-  });
+  const [stats, setStats] = useState<RealTimeStats | null>(null);
   const [notifications, setNotifications] = useState<RealTimeNotification[]>([]);
   const [showNotifications, setShowNotifications] = useState(false);
 
   // 실시간 통계 업데이트
   const handleStatsUpdate = useCallback((data: RealTimeStats) => {
-    setStats(prev => ({ ...prev, ...data }));
+    setStats(data);
   }, []);
 
   // 실시간 알림 처리
@@ -139,7 +134,7 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
             isConnected ? "bg-green-500 animate-pulse" : "bg-gray-300"
           )} />
           <span className="text-sm font-bold text-muted-foreground" role="status" aria-live="polite">
-            {isConnected ? '실시간 연결됨' : '연결 끊김'}
+            {!isConnected ? '연결 끊김' : stats ? '통계 수신 중' : '통계 수신 대기 중'}
           </span>
         </div>
 
@@ -154,7 +149,6 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
             aria-label={`알림 ${showNotifications ? '닫기' : '열기'}${unreadCount ? `, 읽지 않음 ${unreadCount}개` : ''}`}
             aria-expanded={showNotifications}
             aria-controls="realtime-notification-panel"
-            aria-haspopup="dialog"
           >
             <Bell size={18} />
             {unreadCount > 0 && (
@@ -214,29 +208,29 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
       {/* 실시간 통계 카드 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <RealTimeStatCard
-          title="실시간 접속자"
-          value={stats.activeUsers}
+          title="현재 접속자"
+          value={stats?.activeUsers ?? null}
           icon={<Users size={20} />}
-          trend={`${stats.visitsPerMinute}명/분`}
+          trend={stats ? `${stats.visitsPerMinute}명/분` : undefined}
           color="blue"
         />
         <RealTimeStatCard
           title="분당 방문"
-          value={stats.visitsPerMinute}
+          value={stats?.visitsPerMinute ?? null}
           icon={<TrendingUp size={20} />}
           trend="방문/분"
           color="green"
         />
         <RealTimeStatCard
           title="신규 게시글"
-          value={stats.newPosts}
+          value={stats?.newPosts ?? null}
           icon={<Activity size={20} />}
           trend="오늘"
           color="purple"
         />
         <RealTimeStatCard
           title="알림"
-          value={stats.alerts}
+          value={stats?.alerts ?? null}
           icon={<AlertCircle size={20} />}
           isAlert
           color="red"
@@ -255,7 +249,7 @@ const statColorClasses = {
 
 interface RealTimeStatCardProps {
   title: string;
-  value: number;
+  value: number | null;
   icon: ReactNode;
   trend?: string;
   isAlert?: boolean;
@@ -267,7 +261,7 @@ function RealTimeStatCard({ title, value, icon, trend, isAlert = false, color = 
   return (
     <Card className={cn(
       "transition-all hover:shadow-md",
-      isAlert && value > 0 && "border-destructive/20 bg-destructive/5"
+      isAlert && value !== null && value > 0 && "border-destructive/20 bg-destructive/5"
     )}>
       <CardContent className="p-6">
         <div className="flex justify-between items-start mb-4">
@@ -280,7 +274,7 @@ function RealTimeStatCard({ title, value, icon, trend, isAlert = false, color = 
             </span>
           )}
         </div>
-        <h4 className="text-2xl font-bold text-foreground">{value?.toLocaleString() ?? 0}</h4>
+        <p className="text-2xl font-bold text-foreground">{value === null ? '—' : value.toLocaleString()}</p>
         <p className="text-xs font-bold text-muted-foreground tracking-tight mt-1">
           {title}
         </p>

@@ -4,26 +4,42 @@ import {
   mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
 import Ajv2020 from 'ajv/dist/2020.js';
 
 import {
+  buildExecutionPlan,
+  createProductionBuildInputTreeHash,
+  PRODUCTION_BUILD_INPUT_PATHS,
+  REQUIRED_PRODUCTION_BUILD_INPUT_FILES,
+  selectProductionBuildInputPaths,
+  stableJson,
+} from '../frontend/scripts/ui-quality-baseline-core.mjs';
+
+import {
   aggregateContentDigest,
+  aggregatePathBoundContentDigest,
   approveR12CompactSummary,
   assertAppendOnlyIndexTransition,
   assertBaselineIndex,
   assertCanonicalJsonBytes,
+  assertCombinedCompactSummary,
   assertCompactSummary,
   assertPublicationPrivacyPolicy,
+  assertCombinedRepositoryProvenance,
   assertRepositoryIndexAppendOnly,
   assertR12ProvenanceAgreement,
+  buildCombinedCompactSummary,
   buildPublishedIndexEntry,
   canonicalJsonBytes,
   countCollectedManualEvidence,
   evaluateDurableEvidence,
+  getCombinedV2ExecutionContract,
   isUtcInstant,
+  prepareCombinedAutomatedEvidence,
+  sealCombinedManualObservation,
   sha256Hex,
   summarizeRedactedAxe,
   verifyDurableEvidenceFromRepository,
@@ -49,10 +65,29 @@ function runGit(root, args) {
   }).trim();
 }
 
+function runGitBuffer(root, args) {
+  const environment = { ...process.env };
+  for (const key of GIT_LOCAL_ENVIRONMENT_KEYS) delete environment[key];
+  return execFileSync('git', args, {
+    cwd: root,
+    encoding: 'buffer',
+    env: environment,
+    windowsHide: true,
+    stdio: ['ignore', 'pipe', 'pipe'],
+  });
+}
+
 function writeCanonicalIndex(root, value) {
   const target = join(root, 'config', 'ui-quality-baseline-index.json');
   mkdirSync(join(root, 'config'), { recursive: true });
   writeFileSync(target, canonicalJsonBytes(value));
+}
+
+function writeRepositoryFile(root, relativePath, bytes) {
+  const target = join(root, ...relativePath.split('/'));
+  mkdirSync(dirname(target), { recursive: true });
+  writeFileSync(target, bytes);
+  return target;
 }
 
 function fixtureIndex(entries) {
@@ -67,6 +102,11 @@ function fixtureIndex(entries) {
 
 const HEX64 = 'a'.repeat(64);
 const HEX40 = 'b'.repeat(40);
+const R12_PUBLISHED_DIGEST = 'e7822b6a31dcf9ff5e129238e42cce7be29d5f126554e8ea400cf249c69af8e4';
+const TEST_EXECUTION_PLAN = buildExecutionPlan(JSON.parse(readFileSync(
+  new URL('../config/ui-quality-scenarios.json', import.meta.url),
+  'utf8',
+)));
 const PRIVACY_POLICY = {
   syntheticDataOnly: true,
   rawTraceRepositoryStorage: 'forbidden',
@@ -313,6 +353,396 @@ function sampleSummary(overrides = {}) {
   };
 }
 
+const MANUAL_ENVIRONMENTS = Object.freeze({
+  'keyboard-only': 'keyboard-only-manual',
+  'nvda-chrome': 'nvda-chrome-manual',
+  'text-200-percent': 'chrome-text-200-percent-manual',
+  'zoom-400-reflow-320': 'chrome-zoom-400-reflow-320-css-px-manual',
+  'forced-colors': 'windows-forced-colors-manual',
+  'reduced-motion': 'os-reduced-motion-manual',
+});
+
+function sampleManualObservations(automatedEvidence) {
+  const execution = getCombinedV2ExecutionContract();
+  let sequence = 0;
+  return SCENARIOS.flatMap(([scenarioId]) => Object.entries(MANUAL_ENVIRONMENTS).map(
+    ([checkId, environmentKind], checkIndex) => {
+      sequence += 1;
+      const status = checkIndex % 2 === 0 ? 'pass' : 'fail';
+      return sealCombinedManualObservation({
+        evidenceKind: 'manual-observation-v2',
+        scenarioId,
+        checkId,
+        status,
+        environment: {
+          kind: environmentKind,
+          evidenceMode: 'expert-manual',
+          osFamily: 'windows',
+          osVersion: '11-test-fixture',
+          browserFamily: 'chrome',
+          browserVersion: '140.0-test-fixture',
+          assistiveTechnology: checkId === 'nvda-chrome' ? 'nvda' : 'none',
+          assistiveTechnologyVersion: checkId === 'nvda-chrome' ? '2026.1-test-fixture' : null,
+          brandTheme: 'current-default',
+          colorModes: ['light', 'dark'],
+          viewportIds: ['mobile-320', 'tablet-768', 'desktop-1280'],
+        },
+        coverage: { stepIds: execution.scenarioStepIds[scenarioId] },
+        reviewerRole: 'accessibility-reviewer',
+        executionId: automatedEvidence.provenance.executionId,
+        startedAt: '2026-08-22T01:30:00.000Z',
+        finishedAt: '2026-08-22T01:31:00.000Z',
+        buildSha: automatedEvidence.provenance.buildSha,
+        executionScenarioManifestHash: automatedEvidence.provenance.executionScenarioManifestHash,
+        executionPlanHash: automatedEvidence.provenance.executionPlanHash,
+        automatedEvidenceDigest: automatedEvidence.automatedEvidenceDigest,
+        protocolHash: automatedEvidence.provenance.protocolHash,
+        protocolHashVerifiedAtStart: true,
+        protocolHashVerifiedAtFinish: true,
+        finding: status === 'pass'
+          ? { issueCodes: [], impactCodes: ['no-adverse-impact-observed'], severity: null }
+          : {
+            issueCodes: [`UIQ-MANUAL-FIXTURE-${sequence.toString().padStart(3, '0')}`],
+            impactCodes: ['task-understanding-risk'],
+            severity: 'P2',
+          },
+        redaction: {
+          status: 'approved',
+          reviewedByRole: 'repository-governance',
+        },
+      });
+    },
+  ));
+}
+
+function sampleCombinedAutomatedEvidence(mutate = () => {}, provenanceOverrides = {}) {
+  const execution = getCombinedV2ExecutionContract();
+  const executionId = '018f3f5e-7b21-4b6a-8c9d-0123456789ab';
+  const provenance = {
+    protocolVersion: 1,
+    protocolHash: execution.protocolHash,
+    protocolHashStatus: 'recorded',
+    protocolHashVerifiedAtFinish: true,
+    runnerVersion: 2,
+    executionId,
+    buildSha: 'd'.repeat(40),
+    executionScenarioManifestHash: execution.executionScenarioManifestHash,
+    executionPlanHash: execution.executionPlanHash,
+    executionPlanHashStatus: 'recomputed-from-run-snapshot',
+    routeTruthHash: '3'.repeat(64),
+    privacyRuleHash: PRIVACY_RULE_HASH,
+    buildInputTreeHash: '4'.repeat(64),
+    dirtyBuildInputDiffHash: null,
+    runnerHash: '5'.repeat(64),
+    coreHash: '6'.repeat(64),
+    runnerContractHash: '7'.repeat(64),
+    scenarioContractHash: '8'.repeat(64),
+    toolingHashStatus: 'resolved-from-clean-build-commit',
+    startedAt: '2026-08-22T01:00:00.000Z',
+    finishedAt: '2026-08-22T01:20:00.000Z',
+    frontendBuildId: `sha256:${'9'.repeat(64)}`,
+    backendBuildId: `sha256:${'a'.repeat(64)}`,
+    finishVerificationScenarioCount: 8,
+    ...provenanceOverrides,
+  };
+  const stateCases = execution.stateCaseBindings.map((binding, index) => ({
+    ...binding,
+    status: 'automated-state-observed',
+    automatedOutcome: 'no-automated-finding-observed',
+    assertionCount: index < 60 ? 2 : 1,
+    passedAssertionCount: index < 60 ? 2 : 1,
+    failedAssertionCount: 0,
+    axeViolationCount: 0,
+    horizontalOverflowPx: 0,
+    findingCount: 0,
+    taskEvidenceComplete: binding.requiredTaskEvidenceId !== null,
+  })).sort((left, right) => left.caseId.localeCompare(right.caseId));
+  const automated = {
+    ...structuredClone(sampleSummary().automated),
+    stateCases,
+    performance: execution.performanceCaseBindings.map((binding, index) => ({
+      ...binding,
+      status: 'lab-performance-observed',
+      cold: conditionSummary(index + 1000),
+      warm: conditionSummary(index + 900),
+    })).sort((left, right) => left.renderCaseId.localeCompare(right.renderCaseId)),
+  };
+  automated.scenarios.forEach((scenario) => { scenario.status = 'measured'; });
+  const runSummary = {
+    baselineRunId: 'r13',
+    executionId,
+    runnerVersion: provenance.runnerVersion,
+    startedAt: provenance.startedAt,
+    finishedAt: provenance.finishedAt,
+    buildSha: provenance.buildSha,
+    manifestHash: provenance.executionScenarioManifestHash,
+    executionPlanHash: provenance.executionPlanHash,
+    protocolHash: provenance.protocolHash,
+    evidenceDurability: {
+      status: 'ephemeral-ignored',
+      eligibleForMeasuredPromotion: false,
+      reasonCode: 'ignored-artifact-not-durable',
+    },
+    scenarioCount: 8,
+    plannedRenderCaseCount: 48,
+    plannedStateCaseCount: 96,
+    includePerformance: true,
+    scenarios: SCENARIOS.map(([scenarioId, stateCount]) => ({
+      scenarioId,
+      plannedCaseCount: stateCount,
+      invalidCaseCount: 0,
+      plannedPerformanceCaseCount: 6,
+      completedPerformanceCaseCount: 6,
+      invalidPerformanceCaseCount: 0,
+    })),
+  };
+  const runProgress = {
+    baselineRunId: 'r13',
+    executionId,
+    runnerVersion: provenance.runnerVersion,
+    startedAt: provenance.startedAt,
+    phase: 'complete',
+    plannedStateCaseCount: 96,
+    completedStateCaseCount: 96,
+    invalidStateCaseCount: 0,
+    plannedPerformanceCaseCount: 48,
+    completedPerformanceCaseCount: 48,
+    invalidPerformanceCaseCount: 0,
+    final: true,
+  };
+  const environment = {
+    baselineRunId: 'r13',
+    executionId,
+    protocolHash: provenance.protocolHash,
+    protocolHashVerifiedAtFinish: true,
+    buildSha: provenance.buildSha,
+    manifestHash: provenance.executionScenarioManifestHash,
+    executionPlanHash: provenance.executionPlanHash,
+    runnerVersion: provenance.runnerVersion,
+    startedAt: provenance.startedAt,
+    buildInputTreeHash: provenance.buildInputTreeHash,
+    dirtyBuildInputDiffHash: provenance.dirtyBuildInputDiffHash,
+  };
+  const environmentRecords = Array.from({ length: 8 }, () => ({ ...environment }));
+  const rawRecords = [runSummary, runProgress, ...environmentRecords];
+  const identity = { baselineRunId: 'r13', executionId };
+  const bindIdentity = (value) => ({ ...value, ...identity });
+  const artifactEntry = (relativePath, value) => ({
+    relativePath,
+    bytes: Buffer.from(`${JSON.stringify(value, null, 2)}\n`, 'utf8'),
+  });
+  const automatedEvidenceArtifactEntries = [
+    artifactEntry('run-summary.json', runSummary),
+    artifactEntry('run-progress.json', runProgress),
+  ];
+  const rawStateById = new Map();
+  for (const stateCase of automated.stateCases) {
+    const assertions = Array.from({ length: stateCase.assertionCount }, (_, index) => ({
+      passed: index < stateCase.passedAssertionCount,
+    }));
+    const taskEvidence = stateCase.requiredTaskEvidenceId === null ? [] : [{
+      id: stateCase.requiredTaskEvidenceId,
+      caseId: stateCase.caseId,
+      syntheticNamespace: 'uiq-baseline-mutation-v1',
+      mutationObserved: 'observed',
+      authoritativeReadback: 'observed',
+      rollbackReadback: 'observed',
+      cleanupReadback: 'zero-active-residue',
+      activeResidueCount: 0,
+      status: 'executed',
+    }];
+    const checkpoint = bindIdentity({
+      caseId: stateCase.caseId,
+      status: stateCase.status,
+      automatedOutcome: stateCase.automatedOutcome,
+      automatedFindingCodes: [],
+      assertions,
+      taskEvidence,
+      failedAssertionCount: stateCase.failedAssertionCount,
+      responsive: { horizontalOverflowPx: stateCase.horizontalOverflowPx },
+      axe: [],
+      axeViolationCount: stateCase.axeViolationCount,
+      invalidReasonCode: null,
+    });
+    rawStateById.set(stateCase.caseId, checkpoint);
+    automatedEvidenceArtifactEntries.push(
+      artifactEntry(`checkpoints/${stateCase.caseId}.json`, checkpoint),
+      artifactEntry(`${stateCase.scenarioId}/axe/${stateCase.caseId}.json`, bindIdentity({
+        caseId: stateCase.caseId,
+        violations: [],
+      })),
+    );
+  }
+  const rawPerformanceById = new Map();
+  for (const performance of automated.performance) {
+    const conditionRuns = ['cold', 'warm'].flatMap((condition) => (
+      Array.from({ length: 3 }, (_, index) => ({
+        condition,
+        repetition: index + 1,
+        metrics: Object.fromEntries(Object.entries(performance[condition]).map(
+          ([metric, stats]) => [metric, stats.median],
+        )),
+      }))
+    ));
+    const rawPerformance = bindIdentity({
+      renderCaseId: performance.renderCaseId,
+      status: performance.status,
+      invalidReasonCode: null,
+      failureStage: null,
+      conditionRuns,
+      summary: { cold: performance.cold, warm: performance.warm },
+    });
+    rawPerformanceById.set(performance.renderCaseId, rawPerformance);
+    automatedEvidenceArtifactEntries.push(artifactEntry(
+      `${performance.scenarioId}/performance/${performance.renderCaseId}.json`,
+      rawPerformance,
+    ));
+  }
+  SCENARIOS.forEach(([scenarioId], index) => {
+    const cases = automated.stateCases
+      .filter((stateCase) => stateCase.scenarioId === scenarioId)
+      .map((stateCase) => rawStateById.get(stateCase.caseId));
+    const performanceMetrics = automated.performance
+      .filter((performance) => performance.scenarioId === scenarioId)
+      .map((performance) => rawPerformanceById.get(performance.renderCaseId));
+    const manualChecks = [];
+    const taskObservation = bindIdentity({ authoritativeTaskReadbackComplete: true });
+    automatedEvidenceArtifactEntries.push(
+      artifactEntry(`${scenarioId}/environment.json`, environmentRecords[index]),
+      artifactEntry(`${scenarioId}/manifest-snapshot.json`, bindIdentity({
+        scenarioId,
+        manifestHash: provenance.executionScenarioManifestHash,
+        executionPlanHash: provenance.executionPlanHash,
+        routeTruthHash: provenance.routeTruthHash,
+        cases: TEST_EXECUTION_PLAN.stateCases.filter(
+          (stateCase) => stateCase.scenarioId === scenarioId,
+        ),
+      })),
+      artifactEntry(`${scenarioId}/task-observations.json`, taskObservation),
+      artifactEntry(`${scenarioId}/manual/manual-checks.json`, bindIdentity({ checks: manualChecks })),
+      artifactEntry(`${scenarioId}/baseline-result.json`, bindIdentity({
+        scenarioId,
+        cases,
+        performanceMetrics,
+        manual: manualChecks,
+        taskMetrics: [taskObservation],
+      })),
+    );
+  });
+  assert.equal(automatedEvidenceArtifactEntries.length, 282);
+  const diagnosticArtifactBytes = [];
+  const automatedRunSeal = {
+    evidenceKind: 'automated-run-seal-v2',
+    baselineRunId: 'r13',
+    executionId,
+    status: 'automated-run-complete',
+    final: true,
+    runnerVersion: provenance.runnerVersion,
+    startedAt: provenance.startedAt,
+    finishedAt: provenance.finishedAt,
+    runSummaryDigest: sha256Hex(Buffer.from(`${JSON.stringify(runSummary, null, 2)}\n`, 'utf8')),
+    runProgressDigest: sha256Hex(Buffer.from(`${JSON.stringify(runProgress, null, 2)}\n`, 'utf8')),
+    environmentDigest: aggregateContentDigest(rawRecords.slice(2).map(
+      (value) => Buffer.from(`${JSON.stringify(value, null, 2)}\n`, 'utf8'),
+    )),
+    protocolHash: provenance.protocolHash,
+    protocolHashVerifiedAtFinish: true,
+    buildSha: provenance.buildSha,
+    buildInputTreeHash: provenance.buildInputTreeHash,
+    dirtyBuildInputDiffHash: provenance.dirtyBuildInputDiffHash,
+    executionScenarioManifestHash: provenance.executionScenarioManifestHash,
+    executionPlanHash: provenance.executionPlanHash,
+    routeTruthHash: provenance.routeTruthHash,
+    privacyRuleHash: provenance.privacyRuleHash,
+    runnerHash: provenance.runnerHash,
+    coreHash: provenance.coreHash,
+    runnerContractHash: provenance.runnerContractHash,
+    scenarioContractHash: provenance.scenarioContractHash,
+    frontendBuildId: provenance.frontendBuildId,
+    backendBuildId: provenance.backendBuildId,
+    automatedInventoryDigest: aggregatePathBoundContentDigest(automatedEvidenceArtifactEntries),
+    automatedProjectionDigest: sha256Hex(canonicalJsonBytes(automated)),
+    plannedStateCaseCount: 96,
+    completedStateCaseCount: 96,
+    invalidStateCaseCount: 0,
+    plannedPerformanceCaseCount: 48,
+    completedPerformanceCaseCount: 48,
+    invalidPerformanceCaseCount: 0,
+    sealDigest: null,
+  };
+  automatedRunSeal.sealDigest = sha256Hex(canonicalJsonBytes(Object.fromEntries(
+    Object.entries(automatedRunSeal).filter(([key]) => key !== 'sealDigest'),
+  )));
+  const automatedRunSealBytes = Buffer.from(`${JSON.stringify(automatedRunSeal, null, 2)}\n`, 'utf8');
+  const automatedArtifactEntries = [
+    ...automatedEvidenceArtifactEntries,
+    { relativePath: 'automated-run-seal.json', bytes: automatedRunSealBytes },
+  ];
+  const inputs = {
+    baselineRunId: 'r13',
+    provenance,
+    automated,
+    diagnostics: {
+      evidenceKind: 'diagnostic-not-baseline-evidence',
+      plannedCaseCount: 0,
+      completedCaseCount: 0,
+      invalidCaseCount: 0,
+      mutationEvidenceCount: 0,
+      activeMutationResidueCount: 0,
+    },
+    automatedArtifactEntries,
+    diagnosticArtifactBytes,
+    automatedRunSeal,
+    runSummary,
+    runProgress,
+    environmentRecords,
+  };
+  mutate(inputs);
+  return prepareCombinedAutomatedEvidence(inputs);
+}
+
+function sampleCombinedSummary({ provenanceOverrides = {} } = {}) {
+  const automatedEvidence = sampleCombinedAutomatedEvidence(() => {}, provenanceOverrides);
+  return buildCombinedCompactSummary({
+    automatedEvidence,
+    manualObservations: sampleManualObservations(automatedEvidence),
+    redaction: {
+      automatedGuardStatus: 'passed',
+      manualGuardStatus: 'passed',
+      unsafeFileCount: 0,
+      rawTraceStoredCount: 0,
+      responsePayloadStoredCount: 0,
+      reviewQuorum: 1,
+      approvedByRoles: ['repository-governance'],
+      status: 'approved',
+    },
+  });
+}
+
+function recomputeManualDigest(summary) {
+  summary.manual.observations = summary.manual.observations.map(
+    (observation) => sealCombinedManualObservation(observation),
+  );
+  summary.manual.evidenceDigest = sha256Hex(canonicalJsonBytes(summary.manual.observations));
+  return summary;
+}
+
+function rebindManualToAutomatedProjection(summary) {
+  const automatedEvidenceDigest = sha256Hex(canonicalJsonBytes({
+    baselineRunId: summary.baselineRunId,
+    sourceRun: summary.sourceRun,
+    provenance: summary.provenance,
+    sourceInventory: summary.sourceInventory,
+    automated: summary.automated,
+    diagnostics: summary.diagnostics,
+  }));
+  summary.manual.automatedEvidenceDigest = automatedEvidenceDigest;
+  for (const observation of summary.manual.observations) {
+    observation.automatedEvidenceDigest = automatedEvidenceDigest;
+  }
+  return recomputeManualDigest(summary);
+}
+
 test('canonical summary bytes are cross-platform deterministic and strictly read back', () => {
   const summary = sampleSummary();
   const canonical = canonicalJsonBytes(summary);
@@ -521,6 +951,23 @@ test('content inventory digest is order independent and changes with content', (
   assert.equal(aggregateContentDigest([first, second]), aggregateContentDigest([second, first]));
   assert.notEqual(aggregateContentDigest([first, second]), aggregateContentDigest([first, Buffer.from('changed')]));
   assert.throws(() => aggregateContentDigest([first, 'not-a-buffer']), /array of buffers/u);
+
+  const pathBound = [
+    { relativePath: 'a.json', bytes: first },
+    { relativePath: 'b.json', bytes: second },
+  ];
+  assert.equal(
+    aggregatePathBoundContentDigest(pathBound),
+    aggregatePathBoundContentDigest([...pathBound].reverse()),
+  );
+  assert.notEqual(
+    aggregatePathBoundContentDigest(pathBound),
+    aggregatePathBoundContentDigest([
+      { relativePath: 'a.json', bytes: second },
+      { relativePath: 'b.json', bytes: first },
+    ]),
+    'the same byte multiset in different canonical slots must not preserve the digest',
+  );
 });
 
 test('48 runner placeholders never impersonate collected manual evidence', () => {
@@ -604,6 +1051,7 @@ test('an explicit repository root ignores inherited Git hook repository state', 
   ]);
   try {
     runGit(root, ['init']);
+    runGit(root, ['config', 'core.autocrlf', 'false']);
     runGit(root, ['config', 'user.email', 'ui-quality-contract@example.invalid']);
     runGit(root, ['config', 'user.name', 'UI Quality Contract']);
     writeCanonicalIndex(root, fixtureIndex([]));
@@ -833,6 +1281,457 @@ test('automated-only or pending-redaction summary can never satisfy measured pro
   ])), /every published index entry requires approved/u);
 });
 
+test('a protocol-captured combined v2 summary binds exact 96/48 automation to finding-preserving 8x6 manual evidence', () => {
+  const combined = sampleCombinedSummary();
+  assert.doesNotThrow(() => assertCombinedCompactSummary(combined));
+  assert.equal(combined.schemaVersion, 2);
+  assert.equal(combined.baselineRunId, 'r13');
+  assert.equal(combined.provenance.protocolHashStatus, 'recorded');
+  assert.equal(combined.provenance.protocolHashVerifiedAtFinish, true);
+  assert.equal(
+    combined.sourceInventory.aggregateAlgorithm,
+    'sha256-json-sorted-path-content-digests-v2',
+  );
+  assert.equal(
+    combined.sourceRun.automatedProjectionDigest,
+    sha256Hex(canonicalJsonBytes(combined.automated)),
+  );
+  assert.equal(
+    combined.sourceInventory.automatedRunSealFileDigest,
+    sha256Hex(canonicalJsonBytes(combined.sourceRun)),
+  );
+  assert.equal(combined.automated.plannedStateCaseCount, 96);
+  assert.equal(combined.automated.observedStateCaseCount, 96);
+  assert.equal(combined.automated.plannedPerformanceCaseCount, 48);
+  assert.equal(combined.automated.observedPerformanceCaseCount, 48);
+  assert.equal(combined.manual.requiredEvidenceCount, 48);
+  assert.equal(combined.manual.completedEvidenceCount, 48);
+  assert.equal(combined.manual.findingCount, 24, 'manual fail findings must be preserved, not hidden');
+  assert.deepEqual(combined.promotion, {
+    status: 'measured',
+    eligible: true,
+    blockerCodes: [],
+  });
+
+  const r12 = assertCanonicalJsonBytes(readFileSync(new URL(
+    `../config/ui-quality-baseline/summaries/sha256-${R12_PUBLISHED_DIGEST}.json`,
+    import.meta.url,
+  )));
+  assert.equal(sha256Hex(canonicalJsonBytes(r12)), R12_PUBLISHED_DIGEST);
+  const r12Entry = buildPublishedIndexEntry({
+    summary: r12,
+    immutableObjectIdentity: `git-blob-sha1:${HEX40}`,
+    createdAt: '2026-08-21T14:45:54.299Z',
+    supersedes: null,
+  });
+  const combinedEntry = buildPublishedIndexEntry({
+    summary: combined,
+    immutableObjectIdentity: `git-blob-sha1:${'c'.repeat(40)}`,
+    createdAt: '2026-08-22T02:00:00.000Z',
+    supersedes: R12_PUBLISHED_DIGEST,
+  });
+  const index = fixtureIndex([r12Entry, combinedEntry]);
+  const summariesByDigest = new Map([
+    [r12Entry.artifactDigest, r12],
+    [combinedEntry.artifactDigest, combined],
+  ]);
+  assert.doesNotThrow(() => assertBaselineIndex(index, summariesByDigest));
+  const verified = evaluateDurableEvidence({
+    index,
+    summariesByDigest,
+    trackedBlobIdentityByDigest: new Map([
+      [r12Entry.artifactDigest, r12Entry.immutableObjectIdentity],
+      [combinedEntry.artifactDigest, combinedEntry.immutableObjectIdentity],
+    ]),
+  });
+  assert.equal(verified.verified, true);
+  assert.equal(verified.reasonCode, 'durable-combined-summary-measured-eligible');
+  assert.equal(verified.baselineRunId, 'r13');
+  assert.equal(verified.executionId, combined.provenance.executionId);
+  assert.equal(verified.currentDigest, combinedEntry.artifactDigest);
+  assert.equal(verified.scenarioEvidence.length, 8);
+  assert.deepEqual(verified.scenarioEvidence.map(({ scenarioId }) => scenarioId),
+    combined.automated.scenarios.map(({ scenarioId }) => scenarioId));
+  assert.equal(verified.scenarioEvidence.reduce(
+    (count, scenario) => count + scenario.manualFindingCount,
+    0,
+  ), 24);
+});
+
+test('combined v2 becomes measured only after clean committed protocol, build-input, tooling, and blob readback', () => {
+  const root = mkdtempSync(join(tmpdir(), 'uiq-combined-readback-'));
+  try {
+    runGit(root, ['init']);
+    runGit(root, ['config', 'user.name', 'Repository Governance']);
+    runGit(root, ['config', 'user.email', 'repository-governance@example.invalid']);
+    const protocolPath = 'docs/04-operations/ui-ux-baseline-protocol.md';
+    const manifestPath = 'config/ui-quality-scenarios.json';
+    const routeTruthPath = 'config/ui-route-capabilities.json';
+    const toolingPaths = {
+      runnerHash: 'frontend/scripts/ui-quality-baseline-runner.mjs',
+      coreHash: 'frontend/scripts/ui-quality-baseline-core.mjs',
+      runnerContractHash: 'scripts/ui-quality-baseline-runner-contract.test.mjs',
+      scenarioContractHash: 'scripts/ui-quality-scenarios-contract.test.mjs',
+    };
+    const buildPaths = new Set([
+      ...REQUIRED_PRODUCTION_BUILD_INPUT_FILES,
+      protocolPath,
+      manifestPath,
+      routeTruthPath,
+      ...Object.values(toolingPaths),
+    ]);
+    for (const relativePath of buildPaths) {
+      writeRepositoryFile(root, relativePath, readFileSync(new URL(`../${relativePath}`, import.meta.url)));
+    }
+    runGit(root, ['add', '--', '.']);
+    runGit(root, ['commit', '-m', 'fixture: freeze r13 execution inputs']);
+    const buildSha = runGit(root, ['rev-parse', 'HEAD']);
+    const selectedBuildInputs = selectProductionBuildInputPaths(runGitBuffer(root, [
+      'ls-tree', '-r', '--name-only', '-z', buildSha, '--', ...PRODUCTION_BUILD_INPUT_PATHS,
+    ]).toString('utf8').split('\0').filter(Boolean));
+    for (const requiredPath of REQUIRED_PRODUCTION_BUILD_INPUT_FILES) {
+      assert.equal(selectedBuildInputs.includes(requiredPath), true);
+    }
+    const buildInputTreeHash = createProductionBuildInputTreeHash({
+      trackedPaths: selectedBuildInputs,
+      readCommittedFile: (relativePath) => runGitBuffer(
+        root,
+        ['show', `${buildSha}:${relativePath}`],
+      ),
+    });
+    const manifest = JSON.parse(readFileSync(join(root, ...manifestPath.split('/')), 'utf8'));
+    const routeTruth = JSON.parse(readFileSync(join(root, ...routeTruthPath.split('/')), 'utf8'));
+    const provenanceOverrides = {
+      buildSha,
+      protocolHash: sha256Hex(readFileSync(join(root, ...protocolPath.split('/')))),
+      executionScenarioManifestHash: sha256Hex(Buffer.from(stableJson(manifest), 'utf8')),
+      executionPlanHash: sha256Hex(Buffer.from(stableJson(buildExecutionPlan(manifest)), 'utf8')),
+      routeTruthHash: sha256Hex(Buffer.from(stableJson(routeTruth), 'utf8')),
+      privacyRuleHash: sha256Hex(canonicalJsonBytes(manifest.privacy)),
+      buildInputTreeHash,
+      ...Object.fromEntries(Object.entries(toolingPaths).map(([key, relativePath]) => [
+        key,
+        sha256Hex(readFileSync(join(root, ...relativePath.split('/')))),
+      ])),
+    };
+    const combined = sampleCombinedSummary({ provenanceOverrides });
+    assert.doesNotThrow(() => assertCombinedRepositoryProvenance(root, combined));
+    const r12 = assertCanonicalJsonBytes(readFileSync(new URL(
+      `../config/ui-quality-baseline/summaries/sha256-${R12_PUBLISHED_DIGEST}.json`,
+      import.meta.url,
+    )));
+    const summaryDirectory = join(root, 'config', 'ui-quality-baseline', 'summaries');
+    mkdirSync(summaryDirectory, { recursive: true });
+    const r12RelativePath = `config/ui-quality-baseline/summaries/sha256-${R12_PUBLISHED_DIGEST}.json`;
+    const combinedDigest = sha256Hex(canonicalJsonBytes(combined));
+    const combinedRelativePath = `config/ui-quality-baseline/summaries/sha256-${combinedDigest}.json`;
+    writeRepositoryFile(root, r12RelativePath, canonicalJsonBytes(r12));
+    writeRepositoryFile(root, combinedRelativePath, canonicalJsonBytes(combined));
+    const r12Entry = buildPublishedIndexEntry({
+      summary: r12,
+      immutableObjectIdentity: `git-blob-sha1:${runGit(root, ['hash-object', r12RelativePath])}`,
+      createdAt: '2026-08-21T14:45:54.299Z',
+      supersedes: null,
+    });
+    const combinedEntry = buildPublishedIndexEntry({
+      summary: combined,
+      immutableObjectIdentity: `git-blob-sha1:${runGit(root, ['hash-object', combinedRelativePath])}`,
+      createdAt: '2026-08-22T02:00:00.000Z',
+      supersedes: R12_PUBLISHED_DIGEST,
+    });
+    writeCanonicalIndex(root, fixtureIndex([r12Entry, combinedEntry]));
+    runGit(root, ['add', '--', 'config/ui-quality-baseline-index.json', 'config/ui-quality-baseline']);
+    runGit(root, ['commit', '-m', 'fixture: publish combined durable evidence']);
+
+    const verified = verifyDurableEvidenceFromRepository({ repoRoot: root });
+    assert.equal(verified.verified, true);
+    assert.equal(verified.baselineRunId, 'r13');
+    assert.equal(verified.currentDigest, combinedDigest);
+    assert.equal(verified.scenarioEvidence.length, 8);
+
+    writeRepositoryFile(
+      root,
+      protocolPath,
+      Buffer.concat([readFileSync(join(root, ...protocolPath.split('/'))), Buffer.from('\n')]),
+    );
+    assert.deepEqual(verifyDurableEvidenceFromRepository({ repoRoot: root }), {
+      verified: false,
+      reasonCode: 'durable-repository-readback-invalid',
+    });
+
+    writeRepositoryFile(
+      root,
+      protocolPath,
+      runGitBuffer(root, ['show', `HEAD:${protocolPath}`]),
+    );
+    assert.equal(verifyDurableEvidenceFromRepository({ repoRoot: root }).verified, true);
+
+    const tampered = structuredClone(combined);
+    for (const key of ['minimum', 'median', 'maximum']) {
+      tampered.automated.performance[0].cold.lcpMs[key] += 777;
+    }
+    rebindManualToAutomatedProjection(tampered);
+    const tamperedDigest = sha256Hex(canonicalJsonBytes(tampered));
+    const tamperedRelativePath = `config/ui-quality-baseline/summaries/sha256-${tamperedDigest}.json`;
+    rmSync(join(root, ...combinedRelativePath.split('/')));
+    writeRepositoryFile(root, tamperedRelativePath, canonicalJsonBytes(tampered));
+    const tamperedEntry = {
+      ...combinedEntry,
+      artifactDigest: tamperedDigest,
+      immutableObjectIdentity: `git-blob-sha1:${runGit(root, ['hash-object', tamperedRelativePath])}`,
+    };
+    writeCanonicalIndex(root, fixtureIndex([r12Entry, tamperedEntry]));
+    runGit(root, ['add', '-A', '--', 'config/ui-quality-baseline-index.json', 'config/ui-quality-baseline']);
+    runGit(root, ['commit', '-m', 'fixture: attempt sealed projection rewrite']);
+    assert.deepEqual(verifyDurableEvidenceFromRepository({ repoRoot: root }), {
+      verified: false,
+      reasonCode: 'durable-index-or-summary-invalid',
+    });
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('combined v2 consumes one direct finalized runner seal and rejects cross-attempt raw artifacts', () => {
+  assert.throws(() => sampleCombinedAutomatedEvidence((inputs) => {
+    inputs.automatedRunSeal.final = false;
+  }), /runner-emitted.*seal|sealed automated artifact inventory/u);
+
+  assert.throws(() => sampleCombinedAutomatedEvidence((inputs) => {
+    const mixed = JSON.parse(inputs.automatedArtifactEntries[20].bytes.toString('utf8'));
+    mixed.executionId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+    inputs.automatedArtifactEntries[20].bytes = Buffer.from(
+      `${JSON.stringify(mixed, null, 2)}\n`,
+      'utf8',
+    );
+  }), /mixed execution identity/u);
+
+  assert.throws(() => sampleCombinedAutomatedEvidence((inputs) => {
+    const entry = inputs.automatedArtifactEntries[20];
+    entry.bytes = Buffer.from(`${JSON.stringify(JSON.parse(entry.bytes.toString('utf8')))}\n`, 'utf8');
+  }), /canonical JSON artifact bytes/u);
+
+  assert.throws(() => sampleCombinedAutomatedEvidence((inputs) => {
+    const checkpoint = inputs.automatedArtifactEntries.find(
+      ({ relativePath }) => relativePath.startsWith('checkpoints/'),
+    );
+    checkpoint.relativePath = 'checkpoints/uiq-ffffffffffffffffffff.json';
+  }), /missing, extra, or substituted artifact path/u);
+
+  assert.throws(() => sampleCombinedAutomatedEvidence((inputs) => {
+    const checkpoint = inputs.automatedArtifactEntries.find(
+      ({ relativePath }) => relativePath.startsWith('checkpoints/'),
+    );
+    const raw = JSON.parse(checkpoint.bytes.toString('utf8'));
+    raw.automatedFindingCodes = ['raw-finding-must-not-be-hidden'];
+    raw.automatedOutcome = 'automated-findings-observed';
+    checkpoint.bytes = Buffer.from(`${JSON.stringify(raw, null, 2)}\n`, 'utf8');
+  }), /raw state projection/u);
+
+  assert.throws(() => sampleCombinedAutomatedEvidence((inputs) => {
+    const runSummary = inputs.automatedArtifactEntries.find(
+      ({ relativePath }) => relativePath === 'run-summary.json',
+    );
+    const manualPlaceholder = inputs.automatedArtifactEntries.find(
+      ({ relativePath }) => relativePath === 'auth-login/manual/manual-checks.json',
+    );
+    [runSummary.bytes, manualPlaceholder.bytes] = [manualPlaceholder.bytes, runSummary.bytes];
+  }), /path-bound|run summary.*path|final marker.*path/u);
+
+  assert.throws(() => sampleCombinedAutomatedEvidence((inputs) => {
+    const manualPlaceholder = inputs.automatedArtifactEntries.find(
+      ({ relativePath }) => relativePath === 'auth-login/manual/manual-checks.json',
+    );
+    const taskObservation = inputs.automatedArtifactEntries.find(
+      ({ relativePath }) => relativePath === 'auth-login/task-observations.json',
+    );
+    [manualPlaceholder.bytes, taskObservation.bytes] = [taskObservation.bytes, manualPlaceholder.bytes];
+  }), /path-bound|raw artifact inventory|mixed provenance/u);
+
+  const mixedManualAttempt = sampleCombinedSummary();
+  mixedManualAttempt.manual.observations[0].executionId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa';
+  recomputeManualDigest(mixedManualAttempt);
+  assert.throws(() => assertCombinedCompactSummary(mixedManualAttempt), /mixed automated execution identity/u);
+});
+
+test('combined v2 builder rejects missing or caller-substituted manual automation bindings', () => {
+  const automatedEvidence = sampleCombinedAutomatedEvidence();
+  const missing = sampleManualObservations(automatedEvidence);
+  delete missing[0].automatedEvidenceDigest;
+  assert.throws(() => buildCombinedCompactSummary({
+    automatedEvidence,
+    manualObservations: missing,
+    redaction: sampleCombinedSummary().redaction,
+  }), /missing or mixed automated evidence provenance/u);
+
+  const wrong = sampleManualObservations(automatedEvidence);
+  wrong[0].automatedEvidenceDigest = 'f'.repeat(64);
+  assert.throws(() => buildCombinedCompactSummary({
+    automatedEvidence,
+    manualObservations: wrong,
+    redaction: sampleCombinedSummary().redaction,
+  }), /missing or mixed automated evidence provenance/u);
+});
+
+test('combined v2 seal commits the exact raw-derived automated projection', () => {
+  const tampered = sampleCombinedSummary();
+  for (const key of ['minimum', 'median', 'maximum']) {
+    tampered.automated.performance[0].cold.lcpMs[key] += 777;
+  }
+  rebindManualToAutomatedProjection(tampered);
+  assert.throws(
+    () => assertCombinedCompactSummary(tampered),
+    /automated projection digest/u,
+  );
+});
+
+test('combined v2 rejects substituted plans, relocated task evidence, and relabeled r12 automation', () => {
+  const substitutedState = sampleCombinedSummary();
+  substitutedState.automated.stateCases[0].caseId = `uiq-${'f'.repeat(20)}`;
+  assert.throws(() => assertCombinedCompactSummary(substitutedState), /exact r13 execution plan/u);
+
+  const relocatedTask = sampleCombinedSummary();
+  const taskCases = relocatedTask.automated.stateCases.filter(
+    ({ requiredTaskEvidenceId }) => requiredTaskEvidenceId !== null,
+  );
+  [taskCases[0].requiredTaskEvidenceId, taskCases[1].requiredTaskEvidenceId] = [
+    taskCases[1].requiredTaskEvidenceId,
+    taskCases[0].requiredTaskEvidenceId,
+  ];
+  assert.throws(() => assertCombinedCompactSummary(relocatedTask), /exact r13 execution plan/u);
+
+  const wrongPlanHash = sampleCombinedSummary();
+  wrongPlanHash.provenance.executionPlanHash = 'f'.repeat(64);
+  assert.throws(() => assertCombinedCompactSummary(wrongPlanHash), /frozen r13 manifest and execution plan/u);
+
+  const relabeledR12 = sampleCombinedSummary();
+  relabeledR12.automated = assertCanonicalJsonBytes(readFileSync(new URL(
+    `../config/ui-quality-baseline/summaries/sha256-${R12_PUBLISHED_DIGEST}.json`,
+    import.meta.url,
+  ))).automated;
+  assert.throws(() => assertCombinedCompactSummary(relabeledR12), /historical r12 automated payload/u);
+
+  const relabeledAttempt = sampleCombinedSummary();
+  relabeledAttempt.baselineRunId = 'r999';
+  assert.throws(() => assertCombinedCompactSummary(relabeledAttempt), /exact new r13|identity/u);
+});
+
+test('combined v2 rejects 47/48, extra, and duplicate manual scenario/check populations', () => {
+  const missing = sampleCombinedSummary();
+  missing.manual.observations.pop();
+  missing.manual.completedEvidenceCount = 47;
+  recomputeManualDigest(missing);
+  assert.throws(() => assertCombinedCompactSummary(missing), /exact 48|8x6|manual population/u);
+
+  const extra = sampleCombinedSummary();
+  extra.manual.observations.push(structuredClone(extra.manual.observations[0]));
+  extra.manual.completedEvidenceCount = 49;
+  recomputeManualDigest(extra);
+  assert.throws(() => assertCombinedCompactSummary(extra), /exact 48|8x6|manual population/u);
+
+  const duplicate = sampleCombinedSummary();
+  duplicate.manual.observations.at(-1).scenarioId = duplicate.manual.observations[0].scenarioId;
+  duplicate.manual.observations.at(-1).checkId = duplicate.manual.observations[0].checkId;
+  duplicate.manual.observations.at(-1).environment = duplicate.manual.observations[0].environment;
+  recomputeManualDigest(duplicate);
+  assert.throws(() => assertCombinedCompactSummary(duplicate), /unique scenarioId.*checkId|8x6/u);
+});
+
+test('combined v2 rejects mixed provenance, wrong binding digests, and incomplete manual statuses', () => {
+  const mixed = sampleCombinedSummary();
+  mixed.manual.observations[0].protocolHash = 'e'.repeat(64);
+  recomputeManualDigest(mixed);
+  assert.throws(() => assertCombinedCompactSummary(mixed), /protocol.*same|mixed provenance/u);
+
+  for (const verificationField of [
+    'protocolHashVerifiedAtStart',
+    'protocolHashVerifiedAtFinish',
+  ]) {
+    const unverifiedSession = sampleCombinedSummary();
+    unverifiedSession.manual.observations[0][verificationField] = false;
+    recomputeManualDigest(unverifiedSession);
+    assert.throws(
+      () => assertCombinedCompactSummary(unverifiedSession),
+      /protocol hash must use the same automated provenance/u,
+    );
+  }
+
+  const wrongAutomatedDigest = sampleCombinedSummary();
+  wrongAutomatedDigest.manual.automatedEvidenceDigest = 'f'.repeat(64);
+  assert.throws(() => assertCombinedCompactSummary(wrongAutomatedDigest), /automated evidence digest/u);
+
+  const wrongManualDigest = sampleCombinedSummary();
+  wrongManualDigest.manual.evidenceDigest = 'f'.repeat(64);
+  assert.throws(() => assertCombinedCompactSummary(wrongManualDigest), /manual evidence digest/u);
+
+  const wrongObservationDigest = sampleCombinedSummary();
+  wrongObservationDigest.manual.observations[0].evidenceDigest = 'f'.repeat(64);
+  wrongObservationDigest.manual.evidenceDigest = sha256Hex(canonicalJsonBytes(
+    wrongObservationDigest.manual.observations,
+  ));
+  assert.throws(() => assertCombinedCompactSummary(wrongObservationDigest), /evidenceDigest.*bound/u);
+
+  for (const status of ['blocked', 'not-run', 'invalid']) {
+    const incomplete = sampleCombinedSummary();
+    incomplete.manual.observations[0].status = status;
+    recomputeManualDigest(incomplete);
+    assert.throws(
+      () => assertCombinedCompactSummary(incomplete),
+      /manual.*status|pass.*fail|complete/u,
+      `${status} must never count as completed manual evidence`,
+    );
+  }
+});
+
+test('combined v2 closes environment, reviewer-role, redaction, and privacy-safe field vocabularies', () => {
+  const invalidEnvironment = sampleCombinedSummary();
+  invalidEnvironment.manual.observations[0].environment = 'simulation';
+  recomputeManualDigest(invalidEnvironment);
+  assert.throws(() => assertCombinedCompactSummary(invalidEnvironment), /environment/u);
+
+  const namedReviewer = sampleCombinedSummary();
+  namedReviewer.manual.observations[0].reviewerRole = 'named-person';
+  recomputeManualDigest(namedReviewer);
+  assert.throws(() => assertCombinedCompactSummary(namedReviewer), /reviewer role/u);
+
+  const pendingRedaction = sampleCombinedSummary();
+  pendingRedaction.manual.observations[0].redaction.status = 'pending';
+  recomputeManualDigest(pendingRedaction);
+  assert.throws(() => assertCombinedCompactSummary(pendingRedaction), /redaction/u);
+
+  for (const forbiddenField of [
+    'rawPath', 'url', 'locator', 'dom', 'request', 'response',
+    'authorization', 'ipAddress', 'reviewerName',
+  ]) {
+    const unsafe = sampleCombinedSummary();
+    unsafe.manual.observations[0][forbiddenField] = 'forbidden';
+    recomputeManualDigest(unsafe);
+    assert.throws(
+      () => assertCombinedCompactSummary(unsafe),
+      /closed key set|forbidden|privacy/u,
+      `${forbiddenField} must not enter durable evidence`,
+    );
+  }
+});
+
+test('combined v2 cannot retrofit r12 protocol provenance or supersede any digest except published r12', () => {
+  const retrospective = sampleCombinedSummary();
+  retrospective.baselineRunId = 'r12';
+  assert.throws(() => assertCombinedCompactSummary(retrospective), /new run|r12|identity/u);
+
+  const forgedR12 = sampleSummary();
+  forgedR12.provenance.protocolHash = 'c'.repeat(64);
+  forgedR12.provenance.protocolHashStatus = 'recorded';
+  assert.throws(() => assertCompactSummary(forgedR12), /not execution-captured|must remain null/u);
+
+  assert.throws(() => buildPublishedIndexEntry({
+    summary: sampleCombinedSummary(),
+    immutableObjectIdentity: `git-blob-sha1:${'c'.repeat(40)}`,
+    createdAt: '2026-08-22T02:00:00.000Z',
+    supersedes: 'f'.repeat(64),
+  }), /exact published r12|supersede/u);
+});
+
 test('a human role attestation produces one approved historical summary and exact index entry', () => {
   const pending = sampleSummary();
   const approved = approveR12CompactSummary(pending, {
@@ -892,6 +1791,10 @@ test('JSON schemas mirror the executable closed summary and index contracts', ()
     new URL('../config/ui-quality-baseline-index.schema.json', import.meta.url),
     'utf8',
   ));
+  const combinedSchema = JSON.parse(readFileSync(
+    new URL('../config/ui-quality-baseline-combined-summary-v2.schema.json', import.meta.url),
+    'utf8',
+  ));
   const policy = JSON.parse(readFileSync(
     new URL('../config/ui-quality-evidence-policy.json', import.meta.url),
     'utf8',
@@ -901,6 +1804,7 @@ test('JSON schemas mirror the executable closed summary and index contracts', ()
     'utf8',
   ));
   const summary = sampleSummary();
+  const combined = sampleCombinedSummary();
 
   assert.equal(summarySchema.additionalProperties, false);
   assert.deepEqual([...summarySchema.required].sort(), Object.keys(summary).sort());
@@ -919,6 +1823,18 @@ test('JSON schemas mirror the executable closed summary and index contracts', ()
     '^git-blob-sha1:[0-9a-f]{40}$',
   );
   assert.equal(indexSchema.$defs.indexEntry.properties.status.const, 'published');
+  assert.equal(combinedSchema.additionalProperties, false);
+  assert.deepEqual([...combinedSchema.required].sort(), Object.keys(combined).sort());
+  assert.deepEqual([...combinedSchema.$defs.provenance.required].sort(),
+    Object.keys(combined.provenance).sort());
+  assert.deepEqual([...combinedSchema.$defs.sourceRun.required].sort(),
+    Object.keys(combined.sourceRun).sort());
+  assert.deepEqual([...combinedSchema.$defs.sourceInventory.required].sort(),
+    Object.keys(combined.sourceInventory).sort());
+  assert.deepEqual([...combinedSchema.$defs.manual.required].sort(),
+    Object.keys(combined.manual).sort());
+  assert.deepEqual([...combinedSchema.$defs.manualObservation.required].sort(),
+    Object.keys(combined.manual.observations[0]).sort());
 
   const ajv = new Ajv2020({
     allErrors: true,
@@ -932,9 +1848,36 @@ test('JSON schemas mirror the executable closed summary and index contracts', ()
     },
   });
   const validateSummary = ajv.compile(summarySchema);
+  const validateCombined = ajv.compile(combinedSchema);
   const validateIndex = ajv.compile(indexSchema);
   assert.equal(validateSummary(summary), true, JSON.stringify(validateSummary.errors));
+  assert.equal(validateCombined(combined), true, JSON.stringify(validateCombined.errors));
   assert.equal(validateIndex(index), true, JSON.stringify(validateIndex.errors));
+
+  const combinedMissing = structuredClone(combined);
+  combinedMissing.manual.observations.pop();
+  combinedMissing.manual.completedEvidenceCount = 47;
+  assert.equal(validateCombined(combinedMissing), false, 'combined schema must reject 47/48 manual evidence');
+  const combinedIncomplete = structuredClone(combined);
+  combinedIncomplete.manual.observations[0].status = 'blocked';
+  assert.equal(validateCombined(combinedIncomplete), false, 'combined schema must reject blocked manual evidence');
+  const combinedUnsafe = structuredClone(combined);
+  combinedUnsafe.manual.observations[0].rawPath = 'forbidden';
+  assert.equal(validateCombined(combinedUnsafe), false, 'combined schema must reject raw forbidden fields');
+  const combinedMixedAttempt = structuredClone(combined);
+  combinedMixedAttempt.manual.observations[0].executionId = 'not-an-execution-id';
+  assert.equal(validateCombined(combinedMixedAttempt), false, 'combined schema must reject invalid execution identity');
+  const combinedWrongEnvironmentKind = structuredClone(combined);
+  const keyboardObservation = combinedWrongEnvironmentKind.manual.observations.find(
+    ({ checkId }) => checkId === 'keyboard-only',
+  );
+  keyboardObservation.environment.kind = 'nvda-chrome-manual';
+  recomputeManualDigest(combinedWrongEnvironmentKind);
+  assert.equal(
+    validateCombined(combinedWrongEnvironmentKind),
+    false,
+    'combined schema must bind every manual check ID to its exact environment kind',
+  );
 
   const manualExtra = structuredClone(summary);
   manualExtra.manual.unexpected = true;
@@ -1010,4 +1953,26 @@ test('JSON schemas mirror the executable closed summary and index contracts', ()
   const pendingEntry = structuredClone(activeIndex);
   pendingEntry.entries[0].redactionStatus = 'automated-privacy-guard-passed-human-review-pending';
   assert.equal(validateIndex(pendingEntry), false, 'published index entries must reject pending redaction');
+
+  const publishedR12 = assertCanonicalJsonBytes(readFileSync(new URL(
+    `../config/ui-quality-baseline/summaries/sha256-${R12_PUBLISHED_DIGEST}.json`,
+    import.meta.url,
+  )));
+  const r12Entry = buildPublishedIndexEntry({
+    summary: publishedR12,
+    immutableObjectIdentity: `git-blob-sha1:${HEX40}`,
+    createdAt: '2026-08-21T14:45:54.299Z',
+    supersedes: null,
+  });
+  const combinedEntry = buildPublishedIndexEntry({
+    summary: combined,
+    immutableObjectIdentity: `git-blob-sha1:${'c'.repeat(40)}`,
+    createdAt: '2026-08-22T02:00:00.000Z',
+    supersedes: R12_PUBLISHED_DIGEST,
+  });
+  const combinedIndex = fixtureIndex([r12Entry, combinedEntry]);
+  assert.equal(validateIndex(combinedIndex), true, JSON.stringify(validateIndex.errors));
+  const wrongPredecessor = structuredClone(combinedIndex);
+  wrongPredecessor.entries[1].supersedes = 'f'.repeat(64);
+  assert.equal(validateIndex(wrongPredecessor), false, 'combined index schema must freeze the r12 predecessor');
 });

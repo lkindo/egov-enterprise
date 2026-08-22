@@ -88,7 +88,7 @@ describe('AuthContext', () => {
       await act(async () => {
         await result.current.login({ id: 'bad', password: 'bad' });
       });
-    }).rejects.toThrow('Login Failed');
+    }).rejects.toThrow('로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.');
   });
 
   it('AuthProvider 외부에서 useAuth 사용 시 에러를 던져야 함', () => {

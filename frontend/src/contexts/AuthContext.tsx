@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
+import { LOGIN_FAILURE_MESSAGE } from '@/lib/auth/login-error';
 
 interface AuthContextType {
   user: UserInfo | null;
@@ -56,10 +57,8 @@ export function AuthProvider({
       // 전역 상태 업데이트
       const userData = await authService.getCurrentUser();
       setUser(userData);
-    } catch (error: unknown) {
-      const message = error instanceof Error ? error.message : '로그인 중 오류가 발생했습니다.';
-      console.error('Login process error:', message);
-      throw new Error(message);
+    } catch {
+      throw new Error(LOGIN_FAILURE_MESSAGE);
     }
   }, []);
 
@@ -67,8 +66,8 @@ export function AuthProvider({
     try {
       // Next.js Route Handler 로그아웃 호출 (쿠키 만료 처리 포함)
       await authService.logout();
-    } catch (error) {
-      console.error('Logout API call failed', error);
+    } catch {
+      // 로그아웃 요청이 실패해도 로컬 인증 상태는 반드시 제거한다.
     } finally {
       setUser(null);
     }

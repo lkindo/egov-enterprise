@@ -1,11 +1,10 @@
 'use client';
 
-import { useEffect, use } from 'react';
+import { useEffect, use, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   X,
-  Database,
-  Sparkles
+  Database
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -18,6 +17,42 @@ import { MenuInfo } from '@/types/foundation/menu';
 import { NavItem } from './NavItem';
 import { MobileDomainNode } from './MobileDomainNode';
 
+const SIDEBAR_FOCUSABLE_SELECTOR = [
+  'a[href]',
+  'button:not([disabled])',
+  'input:not([disabled])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+  '[tabindex]:not([tabindex="-1"])',
+].join(', ');
+
+function isAvailableSidebarFocusTarget(element: HTMLElement, boundary: HTMLElement) {
+  if (element.tabIndex < 0) return false;
+
+  let current: HTMLElement | null = element;
+  while (current) {
+    if (
+      current.hidden
+      || current.hasAttribute('inert')
+      || current.getAttribute('aria-hidden') === 'true'
+      || current.hasAttribute('disabled')
+      || current.matches(':disabled')
+    ) {
+      return false;
+    }
+
+    const style = window.getComputedStyle(current);
+    if (style.display === 'none' || style.visibility === 'hidden' || style.visibility === 'collapse') {
+      return false;
+    }
+
+    if (current === boundary) return true;
+    current = current.parentElement;
+  }
+
+  return false;
+}
+
 
 
 export function Sidebar({ 
@@ -29,6 +64,96 @@ export function Sidebar({
 }) {
   const resolvedMenus = menusPromise ? use(menusPromise) : initialMenus;
   const { isSidebarOpen, setSidebarOpen, activeMenuNo, setActiveMenuNo } = useLayout();
+  const [isDesktop, setIsDesktop] = useState(false);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 1024px)');
+    const syncViewport = () => setIsDesktop(media.matches);
+    syncViewport();
+    media.addEventListener('change', syncViewport);
+    return () => media.removeEventListener('change', syncViewport);
+  }, []);
+
+  useEffect(() => {
+    if (isDesktop || !isSidebarOpen) return;
+
+    returnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const previousOverflow = document.body.style.overflow;
+    const backgroundStates = [...document.querySelectorAll<HTMLElement>(
+      '[data-sidebar-modal-background]',
+    )]
+      .filter((element) => !element.contains(sidebarRef.current))
+      .map((element) => ({
+        element,
+        hadInertAttribute: element.hasAttribute('inert'),
+        inertAttributeValue: element.getAttribute('inert'),
+        ariaHiddenValue: element.getAttribute('aria-hidden'),
+      }));
+
+    for (const { element } of backgroundStates) {
+      element.setAttribute('inert', '');
+      element.setAttribute('aria-hidden', 'true');
+    }
+    document.body.style.overflow = 'hidden';
+    closeButtonRef.current?.focus();
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setSidebarOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const sidebar = sidebarRef.current;
+      const focusable = sidebar
+        ? [...sidebar.querySelectorAll<HTMLElement>(SIDEBAR_FOCUSABLE_SELECTOR)]
+          .filter((element) => isAvailableSidebarFocusTarget(element, sidebar))
+        : [];
+      if (focusable.length === 0) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('keydown', onKeyDown);
+      for (const {
+        element,
+        hadInertAttribute,
+        inertAttributeValue,
+        ariaHiddenValue,
+      } of backgroundStates) {
+        if (hadInertAttribute) {
+          element.setAttribute('inert', inertAttributeValue ?? '');
+        } else {
+          element.removeAttribute('inert');
+        }
+
+        if (ariaHiddenValue === null) {
+          element.removeAttribute('aria-hidden');
+        } else {
+          element.setAttribute('aria-hidden', ariaHiddenValue);
+        }
+      }
+      document.body.style.overflow = previousOverflow;
+      const returnTarget = returnFocusRef.current;
+      if (returnTarget?.isConnected) returnTarget.focus();
+      returnFocusRef.current = null;
+    };
+  }, [isDesktop, isSidebarOpen, setSidebarOpen]);
 
   // Head Menus (Top Domains) Query
   // ⚠ initialData 에 빈 배열을 넘기면 React Query 는 "데이터 이미 있음"으로 판정하고 staleTime 동안
@@ -78,14 +203,24 @@ export function Sidebar({
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm lg:hidden"
             onClick={() => setSidebarOpen(false)}
+            aria-hidden="true"
           />
         )}
       </AnimatePresence>
 
-      <aside className={cn(
+      <aside
+        id="primary-sidebar"
+        ref={sidebarRef}
+        role={!isDesktop && isSidebarOpen ? 'dialog' : undefined}
+        aria-modal={!isDesktop && isSidebarOpen ? 'true' : undefined}
+        aria-label={!isDesktop && isSidebarOpen ? '주 메뉴' : undefined}
+        aria-hidden={!isDesktop && !isSidebarOpen ? 'true' : undefined}
+        inert={!isDesktop && !isSidebarOpen ? true : undefined}
+        className={cn(
         "fixed left-0 top-0 lg:top-16 z-[100] h-full lg:h-[calc(100vh-4rem)] w-72 border-r bg-card transition-transform duration-500 lg:translate-x-0",
         isSidebarOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
-      )}>
+        )}
+      >
         <div className="flex flex-col h-full py-8 px-5 overflow-y-auto no-scrollbar">
           {/* Mobile Header in Sidebar */}
           <div className="flex items-center justify-between mb-10 px-2 lg:hidden">
@@ -99,6 +234,7 @@ export function Sidebar({
               </div>
             </Link>
             <Button
+              ref={closeButtonRef}
               variant="ghost"
               size="icon"
               onClick={() => setSidebarOpen(false)}
@@ -131,6 +267,38 @@ export function Sidebar({
 
             {/* Desktop View */}
             <div className="hidden lg:block space-y-1">
+              {/*
+                lg(1024)~xl(1279)에서는 상단 GNB가 아직 숨고 모바일 토글도 사라진다.
+                이 전환기가 없으면 현재 도메인의 하위 메뉴만 남아 다른 서비스 영역으로
+                이동할 수 없다. xl부터는 상단 GNB가 같은 책임을 맡으므로 중복 노출하지 않는다.
+              */}
+              <nav
+                aria-label="서비스 영역 선택"
+                className="hidden lg:block xl:hidden mb-6 space-y-1 border-b border-border/60 pb-5"
+              >
+                <p className="mb-2 px-2 text-xs font-bold text-muted-foreground">서비스 영역</p>
+                {topMenus.map((domain, index) => {
+                  const isActive = activeMenuNo === domain.menuNo;
+                  return (
+                    <Button
+                      key={domain.menuNo || `desktop-domain-${index}`}
+                      type="button"
+                      variant="ghost"
+                      aria-pressed={isActive}
+                      onClick={() => setActiveMenuNo(domain.menuNo)}
+                      className={cn(
+                        "h-10 w-full justify-start rounded-[var(--radius-hub-item)] px-3 text-xs font-bold",
+                        isActive
+                          ? "bg-surface-inverse text-surface-inverse-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground"
+                          : "text-muted-foreground",
+                      )}
+                    >
+                      {domain.menuNm}
+                    </Button>
+                  );
+                })}
+              </nav>
+
               <div className="mb-6 px-2 flex items-center justify-between">
                 <div className="text-xs font-bold text-muted-foreground tracking-tight">
                   전체 메뉴
@@ -149,13 +317,13 @@ export function Sidebar({
                   ))}
                 </div>
               ) : menus.length === 0 ? (
-                <div className="p-8 text-center space-y-3 opacity-20">
+                <div className="p-8 text-center space-y-3 text-muted-foreground">
                   <Database size={32} className="mx-auto" />
                   <p className="text-sm font-bold tracking-tight">메뉴를 불러올 수 없습니다.</p>
                 </div>
               ) : (
                 <nav className="space-y-1" aria-label="메인 사이드바">
-                  {menus.map((item: any, index: number) => (
+                  {menus.map((item, index: number) => (
                     <NavItem key={item.menuNo || `menu-${index}`} item={item} />
                   ))}
                 </nav>
@@ -165,18 +333,10 @@ export function Sidebar({
 
           {/* Sidebar Footer */}
           <div className="mt-auto pt-8 px-2 pb-10">
-            <div className="p-5 rounded-[var(--radius-hub-item)] bg-surface-inverse text-surface-inverse-foreground border-none shadow-2xl relative overflow-hidden group">
-              <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:rotate-12 transition-transform">
-                <Sparkles size={40} className="text-primary" />
-              </div>
-              <div className="flex items-center gap-2 mb-3">
-                <Sparkles size={14} className="text-primary" />
-                <span className="text-xs font-bold text-primary tracking-tight">_ 허브_노드_v5.0</span>
-              </div>
-              <p className="text-xs font-bold text-muted-foreground leading-relaxed uppercase font-mono">
-                고급 기업용 핵심 엔진
-                <br />
-                빌드 버전: 1.0.2_STABLE
+            <div className="rounded-[var(--radius-hub-item)] border border-border bg-muted/40 p-4">
+              <p className="text-xs font-bold text-foreground">업무 포털</p>
+              <p className="mt-1 text-xs font-medium leading-relaxed text-muted-foreground">
+                계정 권한에 따라 사용할 수 있는 메뉴가 표시됩니다.
               </p>
             </div>
           </div>

@@ -5,7 +5,6 @@
 // 결재양식 CRUD·엔진·배포를 실동작시키려면 대응 백엔드를 신설해 배선할 것.
 // (진입점 /admin/sanctn/workflow는 메뉴 SSOT 정합상 /admin/workflow로 리다이렉트됨 — 이 컴포넌트는 /admin/sanctn/forms에서 렌더)
 import React, { useState } from 'react';
-;
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -57,17 +56,23 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
   <CheckSquare size={28} className="text-surface-inverse-foreground" />
   </div>
   <div>
-  <h2 className="text-3xl font-bold text-foreground tracking-tighter leading-none">
+  <h1 className="text-3xl font-bold text-foreground tracking-tighter leading-none">
   전자결재 워크플로우 허브
-  </h2>
+  </h1>
   <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">
-  통합 결재 및 감사 관리 센터
+  결재 양식·워크플로우 UI 정적 예시
   </p>
   </div>
   </div>
-  <Button className="h-11 px-8 rounded-lg bg-primary text-white font-bold tracking-tight shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all gap-3">
+  <Button disabled title="정적 데모에서는 배포할 수 없습니다." className="h-11 px-8 rounded-lg bg-primary text-white font-bold tracking-tight shadow-xl shadow-primary/20 hover:-translate-y-1 transition-all gap-3">
   <Zap size={20} /> 워크플로우 배포
   </Button>
+  </div>
+
+  <div role="status" className="mx-4 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4 text-sm leading-relaxed">
+    <strong className="font-bold">정적 데모 화면입니다.</strong>{' '}
+    아래 양식·사용량·승인 단계·엔진 수치는 실제 결재 양식·엔진 상태·배포 결과가 아닙니다.
+    탭 전환과 샘플 선택만 동작하며 생성·수정·실행·배포는 지원하지 않습니다.
   </div>
 
   <div className="grid grid-cols-12 gap-8 px-2">
@@ -92,12 +97,12 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
   <Workflow size={100} />
   </div>
   <div className="relative z-10 space-y-4">
-  <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 tracking-tight animate-pulse">
-  <div className="w-2 h-2 rounded-full bg-emerald-400" /> Engine Healthy
+  <div className="flex items-center gap-2 text-xs font-bold text-warning-foreground tracking-tight">
+  <div className="w-2 h-2 rounded-full bg-warning" /> 정적 엔진 샘플
   </div>
   <div className="space-y-1">
-  <h4 className="text-2xl font-bold tracking-tighter">99.9% Uptime</h4>
-  <p className="text-xs text-white/40 font-bold tracking-tight leading-relaxed">Cluster: SANCTN-NODE-01</p>
+  <h4 className="text-2xl font-bold tracking-tighter">99.9% 예시</h4>
+  <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">실제 cluster 미연결</p>
   </div>
   </div>
   </Card>
@@ -125,11 +130,11 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
                     </CardTitle>
                     <p className="text-[10px] font-bold text-muted-foreground mt-1 uppercase tracking-widest">Enterprise Resource List</p>
                   </div>
-                  <Button size="icon" aria-label="양식 추가" className="w-10 h-10 bg-surface-inverse rounded-lg shadow-lg hover:-translate-y-1 transition-all"><Plus size={20} /></Button>
+                  <Button disabled title="정적 데모에서는 양식을 추가할 수 없습니다." size="icon" aria-label="양식 추가 (미지원)" className="w-10 h-10 bg-surface-inverse rounded-lg shadow-lg hover:-translate-y-1 transition-all"><Plus size={20} /></Button>
                 </div>
                 <div className="relative group">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-primary transition-colors" size={14} />
-                  <Input className="pl-9 h-11 bg-card border-border rounded-lg text-sm font-bold shadow-sm focus:ring-4 focus:ring-primary/5 transition-all" placeholder="양식명 또는 ID 검색..." />
+                  <Input disabled className="pl-9 h-11 bg-card border-border rounded-lg text-sm font-bold shadow-sm focus:ring-4 focus:ring-primary/5 transition-all" placeholder="정적 데모에서는 검색을 지원하지 않습니다" />
                 </div>
               </CardHeader>
               <CardContent className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
@@ -175,7 +180,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
                       <p className={cn("text-[10px] font-bold opacity-40 font-mono tracking-tighter uppercase")}>UID: {form.id}</p>
                     </div>
                     <div className="text-right flex flex-col items-end gap-1 relative z-10">
-                      <span className="text-[10px] font-bold opacity-30 uppercase tracking-widest">Usage</span>
+                      <span className="text-[10px] font-bold opacity-60 uppercase tracking-widest">샘플 사용량</span>
                       <span className={cn("text-base font-black tracking-tighter tabular-nums", selectedFormId === form.id ? "text-primary" : "text-foreground")}>
                         {form.usage > 1000 ? (form.usage / 1000).toFixed(1) + 'K' : form.usage}
                       </span>
@@ -197,7 +202,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
                     </h3>
                     <h2 className="text-2xl font-bold text-foreground tracking-tighter">{forms.find(f => f.id === selectedFormId)?.title}</h2>
                   </div>
-                  <Button variant="ghost" size="icon" className="rounded-lg border border-border"><MoreHorizontal size={20} /></Button>
+                  <Button disabled title="정적 데모에서는 추가 작업을 지원하지 않습니다." variant="ghost" size="icon" className="rounded-lg border border-border"><MoreHorizontal size={20} /></Button>
                 </CardHeader>
                 
                 <CardContent className="flex-1 p-10 relative overflow-hidden bg-muted/50 flex items-center justify-center">
@@ -214,8 +219,8 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
                 </CardContent>
 
                 <div className="p-10 border-t bg-card flex gap-4">
-                  <Button variant="outline" className="h-11 flex-1 rounded-lg font-bold tracking-tight text-xs border-2 opacity-50">로직 수정</Button>
-                  <Button className="h-11 flex-[2] bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold tracking-tight text-xs shadow-2xl">인스턴스 실행</Button>
+                  <Button disabled title="정적 데모에서는 로직을 수정할 수 없습니다." variant="outline" className="h-11 flex-1 rounded-lg font-bold tracking-tight text-xs border-2 opacity-50">로직 수정</Button>
+                  <Button disabled title="정적 데모에서는 인스턴스를 실행할 수 없습니다." className="h-11 flex-[2] bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold tracking-tight text-xs shadow-2xl">인스턴스 실행</Button>
                 </div>
               </Card>
             ) : (
@@ -241,8 +246,8 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
             <GitBranch size={40} />
           </div>
           <h3 className="text-3xl font-bold text-foreground tracking-tighter">워크플로우 배포 관리</h3>
-          <p className="text-muted-foreground font-bold max-w-md mx-auto">현재 활성화된 워크플로우 인스턴스를 관리하고 배포 정책을 설정합니다.</p>
-          <Button className="h-11 px-10 rounded-lg font-bold tracking-tight shadow-xl shadow-primary/20">새 워크플로우 생성</Button>
+          <p className="text-muted-foreground font-bold max-w-md mx-auto">워크플로우 관리 UI의 정적 예시입니다. 실제 인스턴스와 배포 정책은 연결되지 않았습니다.</p>
+          <Button disabled title="정적 데모에서는 워크플로우를 생성할 수 없습니다." className="h-11 px-10 rounded-lg font-bold tracking-tight shadow-xl shadow-primary/20">새 워크플로우 생성</Button>
         </motion.div>
       )}
 
@@ -254,9 +259,9 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
           exit={{ opacity: 0, y: -20 }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
         >
-          <MonitorCard title="시스템 상태" value="Optimal" icon={<ShieldCheck size={24} className="text-emerald-500" />} status="Healthy" description="All nodes in the cluster are performing within expected latency parameters." />
-          <MonitorCard title="엔진 가동률" value="42%" icon={<Zap size={24} className="text-amber-500" />} status="Moderate" description="Current workflow processing load across active worker nodes." />
-          <MonitorCard title="동시 세션" value="1,240" icon={<History size={24} className="text-hub-indigo" />} status="Active" description="Real-time concurrent user sessions participating in approval flows." />
+          <MonitorCard title="샘플 시스템 상태" value="Optimal" icon={<ShieldCheck size={24} className="text-emerald-500" />} status="정적 예시" description="실제 시스템 상태가 아닌 화면 구성 예시입니다." />
+          <MonitorCard title="샘플 엔진 가동률" value="42%" icon={<Zap size={24} className="text-amber-500" />} status="정적 예시" description="실제 처리 부하가 아닌 화면 구성 예시입니다." />
+          <MonitorCard title="샘플 동시 세션" value="1,240" icon={<History size={24} className="text-hub-indigo" />} status="정적 예시" description="실제 사용자 세션이 아닌 화면 구성 예시입니다." />
         </motion.div>
       )}
     </AnimatePresence>
@@ -313,7 +318,17 @@ function MonitorCard({ title, value, icon, status, description }: { title: strin
   );
 }
 
-function WorkflowNode({ type, label, date, active = false }: any) {
+function WorkflowNode({
+ type,
+ label,
+ date,
+ active = false,
+}: {
+ type: 'START' | 'APPROVE' | 'END';
+ label: string;
+ date: string;
+ active?: boolean;
+}) {
  return (
  <div className={cn(
  "p-5 rounded-lg border-2 flex items-center gap-5 mx-10 transition-all",
@@ -334,13 +349,16 @@ function WorkflowNode({ type, label, date, active = false }: any) {
  );
 }
 
-function ShieldCheck(props: any) {
+function ShieldCheck({
+ size = 24,
+ ...props
+}: React.SVGProps<SVGSVGElement> & { size?: number | string }) {
  return (
  <svg
  {...props}
  xmlns="http://www.w3.org/2000/svg"
- width="24"
- height="24"
+ width={size}
+ height={size}
  viewBox="0 0 24 24"
  fill="none"
  stroke="currentColor"

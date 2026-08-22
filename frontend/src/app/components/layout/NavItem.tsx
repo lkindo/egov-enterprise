@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import type { ComponentProps, ElementType } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
@@ -24,8 +25,9 @@ import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { useLayout } from '@/contexts/LayoutContext';
 import { MenuInfo } from '@/types/foundation/menu';
+import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
 
-const ICON_MAP: Record<string, any> = {
+const ICON_MAP: Record<string, ElementType> = {
   '대시보드': LayoutDashboard,
   '관리자': Settings,
   '사용자관리': Users,
@@ -55,18 +57,12 @@ const ICON_MAP: Record<string, any> = {
 };
 
 // Users 아이콘이 이미 임포트되어 있으므로 UserCheck를 명시적으로 대응합니다.
-function UserCheckIcon(props: any) {
+function UserCheckIcon(props: ComponentProps<typeof Users>) {
   return <Users {...props} />;
 }
 
 /** 읽기 전용 쿼리 접근자 (next/navigation 의 ReadonlyURLSearchParams 와 URLSearchParams 를 모두 수용) */
 type QueryParams = { get(name: string): string | null; toString(): string };
-
-/** 메뉴의 raw URL 을 앞 슬래시가 보장된 형태로 정규화한다. 링크가 아닌 항목은 '#'. */
-function normalizeHref(rawUrl?: string | null): string {
-  if (!rawUrl || rawUrl === '#') return '#';
-  return rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`;
-}
 
 /**
  * 현재 위치가 이 메뉴 자신을 가리키는지 판정한다.
@@ -77,10 +73,8 @@ function normalizeHref(rawUrl?: string | null): string {
  *   가 false 라 쿼리를 가진 메뉴는 영영 활성화되지 못하고, 쿼리 없는 형제가 대신 활성화됐다.
  *   그래서 경로와 쿼리를 함께 판정한다.
  */
-function matchesLocation(rawUrl: string | null | undefined, pathname: string, searchParams: QueryParams): boolean {
-  const href = normalizeHref(rawUrl);
-  if (href === '#') return false;
-
+function matchesLocation(href: string | null, pathname: string, searchParams: QueryParams): boolean {
+  if (!href) return false;
   const [hrefPath, hrefQuery] = href.split('?');
 
   // prefix 오매칭 방지: '/admin/work-hub' 가 '/admin/work-hub-archive' 를 잡지 않도록
@@ -104,7 +98,7 @@ function matchesLocation(rawUrl: string | null | undefined, pathname: string, se
 
 /** 자신 또는 후손 중 하나라도 현재 위치와 일치하면 true. 부모 강조·자동 펼침 판정에 쓴다. */
 function subtreeMatchesLocation(item: MenuInfo, pathname: string, searchParams: QueryParams): boolean {
-  if (matchesLocation(item.modernRoute || item.chkURL, pathname, searchParams)) return true;
+  if (matchesLocation(resolveMenuInternalRoute(item), pathname, searchParams)) return true;
   return (item.children || []).some((child) => subtreeMatchesLocation(child, pathname, searchParams));
 }
 
@@ -123,7 +117,7 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
   const Icon = ICON_MAP[item.menuNm] || ICON_MAP['기본'];
 
   // URL normalization and mapping
-  const href = useMemo(() => normalizeHref(item.modernRoute || item.chkURL), [item.modernRoute, item.chkURL]);
+  const href = resolveMenuInternalRoute(item);
 
   // 자신 또는 후손이 현재 위치(경로 + 쿼리)와 일치할 때 활성. 판정 규칙은 matchesLocation 주석 참조.
   const isActive = useMemo(
@@ -139,25 +133,13 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
   }, [isActive, hasChildren]);
 
   
-  const isRestricted = false;
+  const isRestricted = !href && !hasChildren;
 
-  const handleLinkClick = (e: React.MouseEvent) => {
-    if (isRestricted) {
-      e.preventDefault();
-      return;
-    }
+  const handleLinkClick = () => {
     setSidebarOpen(false);
-    if (href === '#') {
-      if (hasChildren) {
-        e.preventDefault();
-        setIsOpen(!isOpen);
-      }
-    } else if (href.endsWith('.do')) {
-      console.warn(`[Sidebar] Legacy URL detected: ${href}`);
-    }
   };
 
-  const isDummyLink = href === '#';
+  const isNonNavigable = href === null;
 
   const innerContent = (
     <div className={cn(
@@ -166,6 +148,7 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
         ? "bg-surface-inverse text-surface-inverse-foreground shadow-xl"
         : "text-muted-foreground hover:bg-surface-inverse hover:text-surface-inverse-foreground",
       isRestricted && "opacity-40 cursor-not-allowed grayscale",
+      hasChildren && !isNonNavigable && "pr-12",
       depth === 1 && "pl-10",
       depth === 2 && "pl-14",
       depth >= 3 && "pl-16",
@@ -197,34 +180,12 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
           게다가 두 버튼은 같은 동작(setIsOpen)이라 기능적으로도 중복이다.
           → 래퍼가 버튼인 경우 셰브론은 **장식**으로만 렌더하고, 링크인 경우에만 독립 토글 버튼을 둔다
             (링크는 이동, 버튼은 펼침으로 역할이 갈리므로 그때는 중첩이 아니다). */}
-      {hasChildren && isDummyLink && (
+      {hasChildren && isNonNavigable && (
         <span aria-hidden="true" className="p-1">
           <motion.div animate={{ rotate: isOpen ? 180 : 0 }} transition={{ duration: 0.2 }}>
             <ChevronDown size={14} className="opacity-60" />
           </motion.div>
         </span>
-      )}
-      {hasChildren && !isDummyLink && (
-        <button
-          type="button"
-          aria-label={`${item.menuNm} 서브메뉴 ${isOpen ? '접기' : '펼치기'}`}
-          aria-expanded={isOpen}
-          className="p-1 hover:bg-white/10 rounded-md transition-colors"
-          onClick={(e) => {
-            if (!isDummyLink) {
-              e.preventDefault();
-              e.stopPropagation();
-              setIsOpen(!isOpen);
-            }
-          }}
-        >
-          <motion.div
-            animate={{ rotate: isOpen ? 180 : 0 }}
-            transition={{ duration: 0.2 }}
-          >
-            <ChevronDown size={14} className="opacity-60" />
-          </motion.div>
-        </button>
       )}
     </div>
   );
@@ -233,24 +194,44 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
 
   return (
     <div className="w-full relative">
-      {isDummyLink ? (
+      {isNonNavigable ? (
         <button
           type="button"
-          aria-expanded={isOpen}
-          aria-label={`${item.menuNm} 하위 메뉴 토글`}
+          disabled={!hasChildren}
+          aria-disabled={!hasChildren ? true : undefined}
+          aria-expanded={hasChildren ? isOpen : undefined}
+          aria-label={hasChildren ? `${item.menuNm} 하위 메뉴 토글` : `${item.menuNm} 이동 불가`}
           className="block w-full text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[var(--radius-hub-item)]"
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={hasChildren ? () => setIsOpen(!isOpen) : undefined}
         >
           {innerContent}
         </button>
       ) : (
-        <Link
-          href={href}
-          className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[var(--radius-hub-item)]"
-          onClick={handleLinkClick}
-        >
-          {innerContent}
-        </Link>
+        <>
+          <Link
+            href={href}
+            className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[var(--radius-hub-item)]"
+            onClick={handleLinkClick}
+          >
+            {innerContent}
+          </Link>
+          {hasChildren && (
+          <button
+            type="button"
+            aria-label={`${item.menuNm} 서브메뉴 ${isOpen ? '접기' : '펼치기'}`}
+            aria-expanded={isOpen}
+            className="absolute right-2 top-1/2 flex min-h-7 min-w-7 -translate-y-1/2 items-center justify-center rounded-md transition-colors hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            <motion.div
+              animate={{ rotate: isOpen ? 180 : 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              <ChevronDown size={14} className="opacity-60" />
+            </motion.div>
+          </button>
+          )}
+        </>
       )}
 
       {hasChildren && isOpen && (

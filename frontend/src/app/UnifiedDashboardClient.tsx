@@ -9,10 +9,9 @@ import {
   Clock, 
   CheckCircle2, 
   Zap, 
-  Bell, 
-  ShieldCheck
+  Bell
 } from 'lucide-react';
-import { Skeleton } from '@/app/components/ui/skeleton';
+import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
 import { motion } from 'framer-motion';
 
@@ -72,7 +71,12 @@ export default function UnifiedDashboardClient({
   }, [user, loading, router, isMounted]);
 
   if (!isMounted || loading || !user) {
-    return <DashboardSkeleton />;
+    return (
+      <>
+        <h1 className="sr-only">통합 대시보드를 불러오는 중</h1>
+        <DashboardSkeleton />
+      </>
+    );
   }
 
   return (
@@ -89,12 +93,12 @@ export default function UnifiedDashboardClient({
       {/* Header Section */}
       <motion.div variants={hubItemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
         <div className="space-y-2">
-          <HubInsightBadge label="인텔리전트 엔진" />
+          <HubInsightBadge label="관리 업무" />
           <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground leading-tight">
             안녕하세요, <span className="text-primary ">{user.name}</span>님
           </h1>
           <p className="text-lg text-muted-foreground font-medium max-w-xl">
-            오늘은 <span className="text-foreground font-bold underline decoration-primary/30 underline-offset-4">주요 인사이트</span> 및 실시간 지표를 분석했습니다.
+            필요한 관리 업무를 선택하세요.
           </p>
         </div>
 
@@ -130,7 +134,6 @@ export default function UnifiedDashboardClient({
           value={taskList.length.toString().padStart(2, '0')}
           description={`신규 배정된 업무 ${taskList.filter((t: DashboardTask) => t.isNew).length}건이 있습니다.`}
           icon={<Zap size={24} />}
-          trend={-5}
           color="orange"
         />
         <HubSummaryCard
@@ -139,16 +142,14 @@ export default function UnifiedDashboardClient({
           value={pendingCount.toString().padStart(2, '0')}
           description="현재 대기 중인 결재 요청입니다."
           icon={<Bell size={24} />}
-          trend={pendingCount > 0 ? 10 : 0}
           color="purple"
         />
         <HubSummaryCard
-          key="summary-security"
-          title="보안 지수"
-          value="안전"
-          description="시스템 보안 및 인증 상태가 양호합니다."
-          icon={<ShieldCheck size={24} />}
-          trend={0}
+          key="summary-notices"
+          title="공지사항"
+          value={notiList.length.toString().padStart(2, '0')}
+          description="현재 목록에 표시된 공지사항 건수입니다."
+          icon={<Bell size={24} />}
           color="emerald"
         />
       </motion.div>
@@ -186,52 +187,13 @@ export default function UnifiedDashboardClient({
               <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
                 <Clock size={22} className="text-primary" />
               </div>
-              실시간 피드
+              최근 활동
             </h3>
             <div className="relative z-10">
               <ActivityFeed />
             </div>
           </motion.div>
 
-          <motion.div
-            variants={hubItemVariants}
-            className="hub-card-premium p-10 group"
-          >
-            <div className="flex items-center justify-between mb-8">
-              <h3 className="hub-label-accent flex items-center gap-3">
-                <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
-                시스템 활성 지표
-              </h3>
-            </div>
-            <div className="space-y-8">
-               <div className="space-y-2">
-                 <div className="flex justify-between text-sm font-bold">
-                   <span className="opacity-80">CPU 사용률</span>
-                   <span className="text-primary">24%</span>
-                 </div>
-                 <div className="h-1.5 w-full bg-muted dark:bg-white/5 rounded-lg overflow-hidden">
-                   <motion.div 
-                     initial={{ width: 0 }}
-                     animate={{ width: '24%' }}
-                     className="h-full bg-primary"
-                   />
-                 </div>
-               </div>
-               <div className="space-y-2">
-                 <div className="flex justify-between text-sm font-bold">
-                   <span className="opacity-80">메모리</span>
-                   <span className="text-emerald-500">42%</span>
-                 </div>
-                 <div className="h-1.5 w-full bg-muted dark:bg-white/5 rounded-lg overflow-hidden">
-                   <motion.div 
-                     initial={{ width: 0 }}
-                     animate={{ width: '42%' }}
-                     className="h-full bg-emerald-500"
-                   />
-                 </div>
-               </div>
-            </div>
-          </motion.div>
         </div>
       </div>
     </motion.div>

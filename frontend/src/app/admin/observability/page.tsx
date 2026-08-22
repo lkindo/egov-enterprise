@@ -92,7 +92,7 @@ export default function ObservabilityPage() {
     // same-origin /actuator 프록시를 통해 실측 액추에이터 메트릭을 병렬 조회한다.
     const [health, cpu, httpReq, uptime, httpErr] = await Promise.all([
       fetch('/actuator/health', { cache: 'no-store' })
-        .then((r) => r.json() as Promise<ActuatorHealth>)
+        .then((r) => r.ok ? r.json() as Promise<ActuatorHealth> : null)
         .catch(() => null),
       fetchMetric('system.cpu.usage'),
       fetchMetric('http.server.requests'),

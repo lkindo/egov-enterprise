@@ -6,6 +6,11 @@ import { usePathname, useSearchParams } from 'next/navigation';
 import { Home, ChevronRight } from 'lucide-react';
 import { menuService } from '@/services/business/user/MenuService';
 import { cn } from '@/lib/utils';
+import type { MenuInfo } from '@/types/foundation/menu';
+import {
+  normalizeInternalRoute,
+  resolveMenuInternalRoute,
+} from '@/lib/navigation/internal-route';
 
 interface BreadcrumbItem {
   name: string;
@@ -23,24 +28,37 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
         const menus = await menuService.getHeadMenus() || [];
         const path: BreadcrumbItem[] = [];
         
-        if (!Array.isArray(menus)) return;
+        if (!Array.isArray(menus)) {
+          setItems([]);
+          return;
+        }
         
         // 게시판 ID(bbsId)가 쿼리 스트링에 있는 경우, 해당 메뉴를 우선 탐색
         const bbsIdParam = searchParams.get('bbsId');
         
         // 1. 메뉴 트리에서 현재 경로 또는 BBS ID가 연결된 메뉴 찾기
-        const findPath = (menuList: any[], targetPath: string, searchBbsId?: string | null): boolean => {
+        const findPath = (menuList: MenuInfo[], targetPath: string, searchBbsId?: string | null): boolean => {
           for (const menu of menuList) {
-            // 정의된 라우트(modernRoute)가 있고, 현재 경로와 일치하거나 해당 메뉴의 쿼리 스트링에 bbsId가 포함되어 있는지 확인
-            const isMatch = (menu.modernRoute && (targetPath === menu.modernRoute || targetPath.startsWith(menu.modernRoute + '/'))) 
-                          || (searchBbsId && String(menu.modernRoute || '').includes(`bbsId=${searchBbsId}`));
+            const route = resolveMenuInternalRoute(menu);
+            const routePath = route?.split(/[?#]/, 1)[0];
+            const routeBbsId = route
+              ? new URL(route, 'https://egov.invalid').searchParams.get('bbsId')
+              : null;
+            const isMatch = Boolean(
+              routePath
+              && (
+                targetPath === routePath
+                || targetPath.startsWith(`${routePath}/`)
+                || (searchBbsId && routeBbsId === searchBbsId)
+              )
+            );
 
             if (isMatch) {
-              path.push({ name: menu.menuNm, href: menu.modernRoute });
+              path.push({ name: menu.menuNm, href: route ?? undefined });
               return true;
             }
             if (menu.children && findPath(menu.children, targetPath, searchBbsId)) {
-              path.unshift({ name: menu.menuNm, href: menu.modernRoute });
+              path.unshift({ name: menu.menuNm, href: route ?? undefined });
               return true;
             }
           }
@@ -56,15 +74,18 @@ export function DynamicBreadcrumb({ customItems = [] }: { customItems?: Breadcru
         }
 
         setItems(path);
-      } catch (err) {
-        console.error('Failed to resolve breadcrumb path', err);
+      } catch {
+        setItems([]);
       }
     };
 
     fetchPath();
-  }, [pathname]);
+  }, [pathname, searchParams]);
 
-  const finalItems = customItems.length > 0 ? customItems : items;
+  const finalItems = (customItems.length > 0 ? customItems : items).map(item => ({
+    ...item,
+    href: normalizeInternalRoute(item.href) ?? undefined,
+  }));
 
   return (
     <nav className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/30 p-3 px-5 rounded-lg w-fit mb-4 border border-primary/5 shadow-sm">

@@ -20,17 +20,17 @@ export class WorkflowAdminPage {
     async goto() {
         console.log('[E2E] Navigating to Workflow Process Studio (/admin/workflow)...');
         await this.page.goto('/admin/workflow', { waitUntil: 'load' });
-        // PageHeader <h1> title (WorkflowClient.tsx:42) — matched by text to stay heading-level agnostic.
-        await expect(this.page.getByText('프로세스 설계 및 관제')).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', { name: '프로세스 설계 및 관제', exact: true }))
+            .toBeVisible({ timeout: 15000 });
     }
 
     /** Verifies the studio shell rendered: hub metric cards + canvas/panel section cards. */
     async verifyHubLoaded() {
         console.log('[E2E] Verifying Process Studio hub shell...');
-        await expect(this.page.getByText('활성 설계')).toBeVisible({ timeout: 10000 });
-        await expect(this.page.getByText('실행 중')).toBeVisible();
-        await expect(this.page.getByText('성공률')).toBeVisible();
-        await expect(this.page.getByText('시스템 부하')).toBeVisible();
+        await expect(this.page.getByText('샘플 활성 설계', { exact: true })).toBeVisible({ timeout: 10000 });
+        await expect(this.page.getByText('샘플 실행 중', { exact: true })).toBeVisible();
+        await expect(this.page.getByText('샘플 성공률', { exact: true })).toBeVisible();
+        await expect(this.page.getByText('샘플 시스템 부하', { exact: true })).toBeVisible();
         await expect(this.page.getByRole('heading', { name: '프로세스 캔버스' })).toBeVisible();
         await expect(this.page.getByRole('heading', { name: '노드 인텔리전스' })).toBeVisible();
     }

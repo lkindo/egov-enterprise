@@ -3,6 +3,28 @@ import axios from 'axios';
 
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://127.0.0.1:8080/api/v1').replace(/\/$/, '');
 
+function expireLocalSessionCookies(response: NextResponse) {
+  const expires = new Date(0);
+
+  response.cookies.set('accessToken', '', {
+    httpOnly: true,
+    path: '/',
+    expires,
+  });
+
+  response.cookies.set('refreshToken', '', {
+    httpOnly: true,
+    path: '/',
+    expires,
+  });
+
+  response.cookies.set('session_exp', '', {
+    httpOnly: false,
+    path: '/',
+    expires,
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     // 백엔드로 로그아웃 전송 (쿠키 및 Authorization 헤더 포함 중개)
@@ -25,20 +47,6 @@ export async function POST(request: NextRequest) {
       data: response.data?.data || 'Logged out successfully',
     });
 
-    // accessToken 쿠키 즉시 만료 제거
-    nextResponse.cookies.set('accessToken', '', {
-      httpOnly: true,
-      path: '/',
-      expires: new Date(0),
-    });
-
-    // 비민감 만료힌트 쿠키도 함께 제거
-    nextResponse.cookies.set('session_exp', '', {
-      httpOnly: false,
-      path: '/',
-      expires: new Date(0),
-    });
-
     // 백엔드가 돌려준 Set-Cookie 헤더(예: refreshToken 삭제 쿠키 등)가 있으면 포워딩
     const setCookieHeader = response.headers['set-cookie'];
     if (setCookieHeader) {
@@ -47,28 +55,19 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // 백엔드 응답과 무관하게 로컬 세션 쿠키를 마지막에 만료시킨다.
+    // refreshToken 이 남으면 reissue 가 새 accessToken 을 만들어 로그아웃을 되돌릴 수 있다.
+    expireLocalSessionCookies(nextResponse);
+
     return nextResponse;
-  } catch (error: any) {
-    console.error('[API Proxy Logout Error]', error.message);
-    
+  } catch {
     // 백엔드 통신 실패 시에도 브라우저 로컬 쿠키는 지워주는 것이 Fail-Safe 함
     const nextResponse = NextResponse.json({
       success: true,
       message: 'Logged out with local session cleared',
     });
     
-    nextResponse.cookies.set('accessToken', '', {
-      httpOnly: true,
-      path: '/',
-      expires: new Date(0),
-    });
-
-    // 비민감 만료힌트 쿠키도 함께 제거
-    nextResponse.cookies.set('session_exp', '', {
-      httpOnly: false,
-      path: '/',
-      expires: new Date(0),
-    });
+    expireLocalSessionCookies(nextResponse);
     
     return nextResponse;
   }

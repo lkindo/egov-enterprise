@@ -80,7 +80,11 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             const searchInput = page.locator('input[placeholder*="검색"], input[placeholder*="identity"]').first();
             await searchInput.fill(testName);
             await page.keyboard.press('Enter');
-            await expect(page.locator(`text=${testName}`).first()).toBeVisible({ timeout: 15000 });
+            const createdUserAction = page.getByRole('button', {
+                name: `${testName} 상세 열기`,
+                exact: true,
+            });
+            await expect(createdUserAction).toBeVisible({ timeout: 15000 });
 
             // --- Step 7: Update ---
             // [2026-08-10 신설 → 2026-08-11 활성화] 이 테스트의 이름은 줄곧
@@ -92,11 +96,10 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             //   ⚠ 이름에 밑줄을 쓰지 않는다 — UserDto.userNm 의 @Pattern 이 밑줄을 불허한다.
             console.log('>>> Step 7: Updating user');
             const updatedName = `${testName} UPD`;
-            await page.locator(`text=${testName}`).first().click();
+            await createdUserAction.click();
 
-            // ⚠ '정보 수정'이라는 접근가능 이름을 가진 버튼이 상세 패널에 **둘** 있다
-            //   (연필 아이콘 버튼 aria-label + 하단 텍스트 버튼). 모달이 열리면 제출 버튼까지 셋이 된다.
-            //   이 시점에는 모달이 닫혀 있으므로 상세 패널의 첫 번째를 집는다.
+            // 사용자명 텍스트 자체가 아니라 StandardDataTable의 명시적 행 작업 버튼으로 상세를 연다.
+            // 토스트/모바일 카드 등 같은 문자열이 추가되어도 선택 대상이 흔들리지 않는다.
             const editTrigger = page.getByRole('button', { name: '정보 수정', exact: true }).first();
             await expect(editTrigger).toBeVisible({ timeout: 15000 });
             await editTrigger.click();
@@ -156,11 +159,15 @@ test.describe('Tier 2: Admin System (Core Management)', () => {
             // 결재 상신 사례가 있다(11 티어 주석). 목록에 실제로 반영됐는지까지 확인한다.
             await searchInput.fill(updatedName);
             await page.keyboard.press('Enter');
-            await expect(page.locator(`text=${updatedName}`).first()).toBeVisible({ timeout: 15000 });
+            const updatedUserAction = page.getByRole('button', {
+                name: `${updatedName} 상세 열기`,
+                exact: true,
+            });
+            await expect(updatedUserAction).toBeVisible({ timeout: 15000 });
 
             // --- Step 8: Delete ---
             console.log('>>> Step 8: Deleting user');
-            await page.locator(`text=${updatedName}`).first().click();
+            await updatedUserAction.click();
 
             // [2026-07-27 정정] 종전 셀렉터는 '접근 차단' / '접근차단실행' / 토스트 '말소' 였다.
             // 그러나 앱이 의도적으로 문구를 고쳤다 — UserOrgHubClient 주석: "실제 동작은 계정 삭제다.

@@ -34,6 +34,9 @@ refresh_triggers:
 |---|---|---|---|---|---|---|
 | ADR-0001 | accepted | core/app 제품 경계와 main·release-tag 배포 기준을 분리한다. | 재사용 기반과 제품 구현의 결합을 낮추기 위해서다. | [ADR-0001](../../docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md) | 2026-08-16 | - |
 | ADR-0002 | accepted | UI는 한국어 우선이고 API의 ko/en 메시지 계약은 유지한다. | 사용자 언어 일관성과 재사용 API 호환성을 함께 지키기 위해서다. | [ADR-0002](../../docs/02-architecture/decisions/ADR-0002-korean-first-frontend.md) | 2026-08-16 | - |
+| ADR-0003 | accepted | 프런트엔드 UX 현대화는 사용자 과업을 우선하고, 브랜드 중립 프로필·WCAG 2.2·측정 기반 데이터 소유권·위험 기반 복구와 mutation 원칙을 적용한다. | 특정 미학과 일시적인 API를 core 헌법에 고정하지 않고 공공·민간 프로필이 같은 접근성·상태 계약을 공유하게 하기 위해서다. | [ADR-0003](../../docs/02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md) | 2026-08-20 | - |
+| ADR-0004 | accepted | 과업 중심 기본 내비게이션과 명시적 관리 센터를 결합한 하이브리드 IA를 prototype·research의 잠정 방향으로 채택하고 canonical URL과 route-level blocker는 유지한다. | live menu·role·privacy·사용자 연구를 창작하지 않으면서 최적 후보 하나에 검증을 집중하고, final IA 승인 전 consumer migration을 막기 위해서다. | [ADR-0004](../../docs/02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md) | 2026-08-21 | - |
+| ADR-0005 | accepted | UI 품질 증거는 digest-derived versioned compact summary와 tracked index로 보존하고 기존 summary를 덮어쓰지 않는다. | ignored r12 원본 JSON을 source에 복제하거나 허위 CI provenance를 만들지 않으면서 clean checkout에서 bounded aggregate와 provenance를 장기 검증하기 위해서다. | [ADR-0005](../../docs/02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md) | 2026-08-21 | - |
 
 ## 운영 결정 index
 

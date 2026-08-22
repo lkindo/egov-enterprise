@@ -32,7 +32,7 @@ interface InsightBannerProps {
 }
 
 /**
- * 인텔리전스 인사이트 배너
+ * 분석 알림 배너
  *
  * 상위에서 전달된 실제 분석 결과만 렌더한다. 자체적으로 데이터를 만들어내지 않는다.
  * 전달된 인사이트가 없으면 "데이터 없음"을 명시하는 빈 상태를 보여준다.
@@ -77,7 +77,7 @@ export const InsightBanner: React.FC<InsightBannerProps> = ({ insights = [] }) =
  <div
  className="relative min-h-[140px] rounded-lg border border-dashed border-border bg-card/60 p-10 flex flex-col lg:flex-row items-center gap-8 text-left"
  role="region"
- aria-label="시스템 인텔리전스 인사이트"
+ aria-label="시스템 분석 알림"
  >
  <div className="flex-shrink-0 w-16 h-11 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
  <Info size={28} />
@@ -85,10 +85,10 @@ export const InsightBanner: React.FC<InsightBannerProps> = ({ insights = [] }) =
 
  <div className="flex-1 space-y-3 text-center lg:text-left">
  <p className="text-lg font-bold tracking-tight text-foreground">
- 표시할 인사이트가 없습니다
+ 표시할 분석 알림이 없습니다
  </p>
  <p className="text-xs font-medium text-muted-foreground leading-relaxed max-w-2xl">
- 인사이트 분석 엔진이 아직 연동되지 않았습니다. 이 영역은 시스템 상태나 보안 이상 유무를
+ 분석 결과 데이터가 아직 연결되지 않았습니다. 이 영역은 시스템 상태나 보안 이상 유무를
  나타내지 않으므로, <strong className="font-bold">정상 여부의 근거로 사용하지 마십시오.</strong>
  </p>
  <Link
@@ -113,7 +113,7 @@ export const InsightBanner: React.FC<InsightBannerProps> = ({ insights = [] }) =
  <div className={cn(
  "relative min-h-[140px] rounded-lg border-2 bg-card/80 backdrop-blur-3xl p-10 flex flex-col lg:flex-row items-center gap-10 transition-all duration-700 overflow-hidden shadow-2xl hover:shadow-primary/5",
  getSeverityStyles(activeInsight.severity)
- )} role="region" aria-label="시스템 인텔리전스 인사이트">
+ )} role="region" aria-label="시스템 분석 알림">
  {/* Animated Wave Background Area */}
  <div className="absolute inset-0 opacity-5 pointer-events-none overflow-hidden">
  <div className="absolute inset-0 opacity-10 bg-[url('data:image/svg+xml,%3Csvg%20viewBox=%220%200%20200%20200%22%20xmlns=%22http://www.w3.org/2000/svg%22%3E%3Cfilter%20id=%22noiseFilter%22%3E%3CfeTurbulence%20type=%22fractalNoise%22%20baseFrequency=%220.65%22%20numOctaves=%223%22%20stitchTiles=%22stitch%22/%3E%3C/filter%3E%3Crect%20width=%22100%25%22%20height=%22100%25%22%20filter=%22url(%23noiseFilter)%22/%3E%3C/svg%3E')]" />
@@ -131,9 +131,9 @@ export const InsightBanner: React.FC<InsightBannerProps> = ({ insights = [] }) =
  {/* Message Stream */}
  <div className="flex-1 space-y-4 relative z-10 text-center lg:text-left">
  <div className="flex items-center justify-center lg:justify-start gap-3">
- <div className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-black/5 border border-black/5 text-xs font-bold tracking-widest uppercase " aria-label="AI 인사이트 엔진">
+ <div className="flex items-center gap-2 px-4 py-1.5 rounded-lg bg-black/5 border border-black/5 text-xs font-bold tracking-widest uppercase " aria-label="분석 알림">
  {getIcon(activeInsight.type)}
- AI_INSIGHT_ENGINE
+ 분석 알림
  </div>
  <div className="w-1.5 h-1.5 rounded-full bg-current animate-ping" />
  <span className="text-xs font-bold opacity-100 uppercase tracking-widest">{activeInsight.timestamp}</span>

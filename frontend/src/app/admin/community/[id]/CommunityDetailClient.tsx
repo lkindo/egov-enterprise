@@ -125,6 +125,7 @@ function CommunityDetailContent() {
                 error={isError ? error : null}
                 onRetry={() => void refetch()}
                 onRowClick={(item) => router.push(`/admin/community/boards/detail?bbsId=${item.bbsId}&pstSn=${item.pstSn}`)}
+                rowActionLabel={(item) => `${item.pstTtl || `${item.pstSn}번`} 게시글 열기`}
                 emptyMessage="게시글이 존재하지 않습니다."
             />
 
@@ -144,6 +145,7 @@ export default function CommunityDetailClient() {
     return (
         <Suspense fallback={
             <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-0 py-8 animate-pulse">
+                <h1 className="sr-only">커뮤니티 상세를 불러오는 중</h1>
                 {/* PageHeader 1:1 스켈레톤 */}
                 <div className="flex justify-between items-center pb-6 border-b border-border">
                     <div className="space-y-2 w-1/3">

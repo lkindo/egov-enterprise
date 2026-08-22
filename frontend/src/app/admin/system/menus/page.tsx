@@ -36,7 +36,6 @@ export default async function MenuAdminPage() {
             return { data: list as unknown as MenuInfo[], error: null };
         })
         .catch((error: unknown) => {
-            console.error('Server-side fetch menus failed:', error);
             return { data: [] as MenuInfo[], error: toMessage(error) };
         });
 
@@ -44,7 +43,6 @@ export default async function MenuAdminPage() {
         .getProgramList({ page: 0, size: 1000 }, axiosConfig)
         .then((data) => ({ data: (data?.list ?? []) as ProgramOption[], error: null }))
         .catch((error: unknown) => {
-            console.error('Server-side fetch programs failed:', error);
             return { data: [] as ProgramOption[], error: toMessage(error) };
         });
 
@@ -54,6 +52,7 @@ export default async function MenuAdminPage() {
         <div className="pb-32 animate-in fade-in slide-in-from-bottom-6 duration-1000">
             <Suspense fallback={
                 <div className="animate-pulse space-y-12">
+                    <h1 className="sr-only">시스템 메뉴 아키텍처를 불러오는 중</h1>
                     <div className="h-11 bg-muted rounded-lg w-1/3" />
                     <div className="grid grid-cols-12 gap-8">
                         <div className="col-span-12 lg:col-span-5 h-[800px] bg-muted rounded-lg" />

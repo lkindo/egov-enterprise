@@ -19,7 +19,7 @@ function totalResponses(poll: OnlinePollDto): number {
   return poll.pollArticles?.reduce((sum, item) => sum + (item.pollIemCo || 0), 0) ?? 0;
 }
 
-export default function SurveyStatsClient() {
+export default function SurveyStatsClient({ embedded = false }: { embedded?: boolean }) {
   const [page, setPage] = useState(0); // 0-base (서버 Pageable 과 동일)
   const [keyword, setKeyword] = useState('');
   const debouncedKeyword = useDebouncedValue(keyword, 300);
@@ -120,7 +120,11 @@ export default function SurveyStatsClient() {
             </div>
             <span className="text-sm font-bold text-amber-600 tracking-tight">데이터 분석</span>
           </div>
-          <h2 className="text-4xl font-bold tracking-tighter text-foreground">설문 통계 <span className="text-amber-500">분석</span></h2>
+          {embedded ? (
+            <h2 className="text-4xl font-bold tracking-tighter text-foreground">설문 통계 <span className="text-amber-500">분석</span></h2>
+          ) : (
+            <h1 className="text-4xl font-bold tracking-tighter text-foreground">설문 통계 <span className="text-amber-500">분석</span></h1>
+          )}
           <p className="text-muted-foreground font-bold text-sm max-w-lg">등록된 설문별 응답 수와 진행 상태를 확인합니다.</p>
         </div>
       </div>

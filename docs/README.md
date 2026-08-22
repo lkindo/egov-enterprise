@@ -26,6 +26,10 @@
 
 [01-product/README.md](01-product/README.md) — 현행 제품 정의의 상태와 이력 원본 위치.
 
+[ui-ux-modernization-brief.md](01-product/ui-ux-modernization-brief.md) — 참조 구현·재사용 base의 adopter/end-user 분리 제품 brief와 사용자 연구 protocol(승인 전 Draft).
+
+[information-architecture.md](01-product/information-architecture.md) — ADR-0004의 hybrid 잠정 방향, 119 route disposition, 로그 URL allowlist와 별도 전역 URL 후속 결정, 연구·최종 승인 계약(`PD-UX-001/002`는 계속 blocked-input).
+
 ## 02-architecture — 설계
 
 | 문서 | 내용 |
@@ -33,6 +37,8 @@
 | [backend-architecture.md](02-architecture/backend-architecture.md) | Backend Architecture Blueprint — 멀티모듈 구조·레이어 |
 | [frontend-architecture.md](02-architecture/frontend-architecture.md) | Frontend Architecture (Next.js App Router 기준) |
 | [frontend-design-system.md](02-architecture/frontend-design-system.md) | Design System |
+| [krds-profile-mapping.md](02-architecture/krds-profile-mapping.md) | KRDS 공식 자산과 standard/aligned/premium 프로필의 채택·조정·보류 매핑(승인 전 Draft) |
+| [ui-ux-modernization-plan.md](02-architecture/ui-ux-modernization-plan.md) | Claude 원안의 적대적 재검토와 사용자 과업 중심 UI/UX 전면 현대화 실행 계획 |
 | [domain-resilience.md](02-architecture/domain-resilience.md) | 도메인 보안 및 회복탄력성 |
 | [jpa-performance-guardrail.md](02-architecture/jpa-performance-guardrail.md) | JPA N+1 쿼리 가드레일 |
 | [zero-downtime-migration.md](02-architecture/zero-downtime-migration.md) | 무중단 배포 4단계 이행 및 DDL 린터 |
@@ -58,6 +64,8 @@
 | [decisions/README.md](02-architecture/decisions/README.md) | ADR 목록·작성 규약 |
 | [ADR-0001](02-architecture/decisions/ADR-0001-core-app-product-boundary.md) | 코어/앱 제품 경계와 배포 기준 |
 | [ADR-0002](02-architecture/decisions/ADR-0002-korean-first-frontend.md) | 한국어 우선 프런트엔드와 API 메시지 범위 |
+| [ADR-0003](02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md) | 사용자 과업 중심 UX·브랜드 프로필·접근성·데이터 소유권 원칙 |
+| [ADR-0004](02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md) | 하이브리드 정보구조를 검증용 잠정 방향으로 채택 |
 
 ## 03-guides — 개발 지침
 
@@ -75,6 +83,8 @@
 | [security-hardening-playbook.md](03-guides/security-hardening-playbook.md) | 보안 강화·인증 플레이북 |
 | [cross-cutting-conventions.md](03-guides/cross-cutting-conventions.md) | 횡단관심사 관례 |
 | [design-tokens.md](03-guides/design-tokens.md) | 디자인 토큰 & 브랜딩 규약 (+ 색 하드코딩 게이트) |
+| [frontend-content-style.md](03-guides/frontend-content-style.md) | 한국어 우선 UI 문구·오류·복구·도메인 용어 계약 |
+| [ui-ux-modernization-execution-loop-prompt.md](03-guides/ui-ux-modernization-execution-loop-prompt.md) | UI/UX 현대화 계획을 승인 경계·검증·재개 루프로 끝까지 실행하는 복사형 프롬프트 |
 | [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 재사용 Base 생성 가이드 |
 
 ## 04-operations — 운영
@@ -83,6 +93,9 @@
 |---|---|
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
+| [ui-ux-baseline-protocol.md](04-operations/ui-ux-baseline-protocol.md) | 긴급 수리 후·파일럿 전 8개 대표 시나리오 reference baseline·접근성·성능·증거 수집 프로토콜 |
+| [ui-quality-assisted-accessibility.md](04-operations/ui-quality-assisted-accessibility.md) | 수동 접근성 평가를 대체하지 않는 keyboard·viewport·forced-colors·reduced-motion 자동 보조 증거 |
+| [ui-ux-modernization-user-action-runbook.md](04-operations/ui-ux-modernization-user-action-runbook.md) | 자동화 완료 후 사용자·제품·운영 책임자가 남은 작업을 한 단계씩 검증·승인하는 마감 런북 |
 | [crypto-key-rotation.md](04-operations/crypto-key-rotation.md) | 암호화 마스터 키 로테이션·PII 재암호화 런북 |
 | [log-retention-policy.md](04-operations/log-retention-policy.md) | 로그 보존기간·개인정보 파기 정책 |
 | [database-optimization-guide.md](04-operations/database-optimization-guide.md) | DB 최적화 |

@@ -46,6 +46,10 @@ RUN ./gradlew :api-server:bootJar -x test --no-daemon
 
 # Stage 2: Run
 FROM eclipse-temurin:21-jre-alpine@sha256:3f08b13888f595cc49edabea7250ba69499ba25602b267da591720769400e08c
+ARG BASELINE_BUILD_SHA
+ARG BASELINE_BUILD_INPUT_TREE_SHA256
+LABEL org.opencontainers.image.revision="${BASELINE_BUILD_SHA}" \
+      io.egov.ui-quality.build-input-tree-sha256="${BASELINE_BUILD_INPUT_TREE_SHA256}"
 WORKDIR /app
 
 # Create non-root user and setup directory permissions

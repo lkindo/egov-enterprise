@@ -3,6 +3,7 @@ package nuri.api.controller.business.board;
 import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardSaveRequest;
+import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
@@ -20,6 +21,7 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -48,6 +50,9 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.list[0].pstSn").value(1));
+
+        verify(boardService).getBoardPosts(
+                eq("BBS_001"), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
     }
 
     @Test
@@ -62,6 +67,86 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data.pstSn").value(1));
+    }
+
+    @Test
+    @DisplayName("공개 FAQ 목록 요청은 전용 공개 projection으로 위임")
+    void getPublicFaqs_UsesDedicatedClosedProjection() throws Exception {
+        Page<BoardDto> page = new PageImpl<>(List.of(
+                BoardDto.builder()
+                        .pstSn(1L)
+                        .bbsId("BBSMSTR_AAAAAAAAAAAA")
+                        .pstTtl("Public FAQ")
+                        .pstCn("must-not-be-in-list")
+                        .userId("must-not-be-in-response")
+                        .useYn("Y")
+                        .scrtYn("N")
+                        .build()));
+        given(boardService.getPublicFaqPosts(eq("account"), any(Pageable.class)))
+                .willReturn(page);
+
+        mockMvc.perform(get("/api/v1/boards/public-faqs")
+                        .param("keyword", "account")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].pstSn").value(1))
+                .andExpect(jsonPath("$.data.list[0].bbsId").value("BBSMSTR_AAAAAAAAAAAA"))
+                .andExpect(jsonPath("$.data.list[0].useYn").value("Y"))
+                .andExpect(jsonPath("$.data.list[0].scrtYn").value("N"))
+                .andExpect(jsonPath("$.data.list[0].pstCn").doesNotExist())
+                .andExpect(jsonPath("$.data.list[0].userId").doesNotExist());
+
+        verify(boardService).getPublicFaqPosts(eq("account"), any(Pageable.class));
+    }
+
+    @Test
+    @DisplayName("공개 FAQ 상세 요청은 비밀글 제외 전용 상세로 위임")
+    void getPublicFaqDetail_UsesDedicatedClosedProjection() throws Exception {
+        given(boardService.getPublicFaqDetail(42L))
+                .willReturn(BoardDto.builder()
+                        .pstSn(42L)
+                        .bbsId("BBSMSTR_AAAAAAAAAAAA")
+                        .pstCn("public answer")
+                        .useYn("Y")
+                        .scrtYn("N")
+                        .build());
+
+        mockMvc.perform(get("/api/v1/boards/public-faqs/42")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.pstSn").value(42))
+                .andExpect(jsonPath("$.data.pstCn").value("public answer"))
+                .andExpect(jsonPath("$.data.bbsId").value("BBSMSTR_AAAAAAAAAAAA"))
+                .andExpect(jsonPath("$.data.useYn").value("Y"))
+                .andExpect(jsonPath("$.data.scrtYn").value("N"))
+                .andExpect(jsonPath("$.data.userId").doesNotExist())
+                .andExpect(jsonPath("$.data.userNm").doesNotExist())
+                .andExpect(jsonPath("$.data.pswd").doesNotExist())
+                .andExpect(jsonPath("$.data.atchFileSn").doesNotExist())
+                .andExpect(jsonPath("$.data.qnaSttsCd").doesNotExist());
+
+        verify(boardService).getPublicFaqDetail(42L);
+    }
+
+    @Test
+    @DisplayName("게시판 통계 응답은 viewer-scoped 서비스 집계 필드를 그대로 노출한다")
+    void getStats_UsesViewerScopedServiceResponse() throws Exception {
+        given(boardService.getBoardStats("BBS_001")).willReturn(BoardStatsResponse.builder()
+                .totalArticles(3L)
+                .totalViews(305L)
+                .topContributor("Visible contributor")
+                .intelligenceScore(76)
+                .build());
+
+        mockMvc.perform(get("/api/v1/boards/BBS_001/stats")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.totalArticles").value(3))
+                .andExpect(jsonPath("$.data.totalViews").value(305))
+                .andExpect(jsonPath("$.data.topContributor").value("Visible contributor"))
+                .andExpect(jsonPath("$.data.intelligenceScore").value(76));
+
+        verify(boardService).getBoardStats("BBS_001");
     }
 
     @Test

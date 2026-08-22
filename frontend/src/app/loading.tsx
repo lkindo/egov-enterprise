@@ -16,7 +16,7 @@ export default function GlobalLoading() {
 
  {/* Loading Text */}
  <div className="mt-8 flex flex-col items-center gap-2">
-    <h3 className="text-xl font-bold tracking-tighter text-primary">엔터프라이즈 지능형 포털</h3>
+    <h1 className="text-xl font-bold tracking-tighter text-primary">전사 업무 포털</h1>
     <div className="flex items-center gap-1.5">
       <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[bounce_1s_infinite_0ms]" />
       <div className="w-1.5 h-1.5 bg-primary rounded-full animate-[bounce_1s_infinite_200ms]" />

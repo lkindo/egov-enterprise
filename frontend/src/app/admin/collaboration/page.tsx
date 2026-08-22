@@ -14,7 +14,12 @@ export const metadata: Metadata = {
  */
 export default function CollaborationHubPage() {
   return (
-    <Suspense fallback={<HubListSkeleton />}>
+    <Suspense fallback={
+      <>
+        <h1 className="sr-only">협업 허브를 불러오는 중</h1>
+        <HubListSkeleton />
+      </>
+    }>
       <CollaborationHubClient defaultTab="MESSAGES" />
     </Suspense>
   );

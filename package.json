@@ -24,6 +24,8 @@
     "test:required-checks": "node --test scripts/required-checks-contract.test.mjs",
     "test:shared-memory": "node --test scripts/shared-memory-contract.test.mjs",
     "test:base-profile": "node --test scripts/reusable-base-census.test.mjs",
+    "ui-quality:baseline:build": "node --test scripts/ui-quality-baseline-build-contract.test.mjs && node scripts/ui-quality-baseline-build.mjs",
+    "ui-quality:baseline:launch": "node scripts/ui-quality-baseline-launch.mjs",
     "base:census": "node scripts/reusable-base-census.mjs --check",
     "base:generate-db": "node scripts/generate-reusable-base-db.mjs",
     "base:generate-source": "node scripts/generate-reusable-base-source.mjs",

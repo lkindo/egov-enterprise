@@ -1,0 +1,587 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "config/ui-navigation-disposition.schema.json",
+  "title": "UI navigation disposition overlay",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "state",
+    "authority",
+    "schemaRef",
+    "manifestRef",
+    "provisionalDirection",
+    "acceptedDecision",
+    "acceptanceEvidence",
+    "consumerBindings",
+    "routes",
+    "externalAliases"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "state": {
+      "enum": [
+        "proposed",
+        "accepted"
+      ]
+    },
+    "authority": {
+      "const": "non-normative-pre-decision-evidence"
+    },
+    "schemaRef": {
+      "const": "config/ui-navigation-disposition.schema.json"
+    },
+    "manifestRef": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "path",
+        "sha256"
+      ],
+      "properties": {
+        "path": {
+          "const": "config/ui-route-capabilities.json"
+        },
+        "sha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "provisionalDirection": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/provisionalDirection"
+        }
+      ]
+    },
+    "acceptedDecision": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/acceptedDecision"
+        }
+      ]
+    },
+    "acceptanceEvidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "researchArtifactSha256",
+        "liveMenuArtifactSha256",
+        "authorityAssignmentArtifactSha256",
+        "effectiveMenuArtifactSha256"
+      ],
+      "properties": {
+        "researchArtifactSha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "liveMenuArtifactSha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "authorityAssignmentArtifactSha256": {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        "effectiveMenuArtifactSha256": {
+          "$ref": "#/$defs/nullableSha256"
+        }
+      }
+    },
+    "consumerBindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "menu",
+        "generator"
+      ],
+      "properties": {
+        "menu": {
+          "$ref": "#/$defs/consumerBinding"
+        },
+        "generator": {
+          "$ref": "#/$defs/consumerBinding"
+        }
+      }
+    },
+    "routes": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/routeRecord"
+      }
+    },
+    "externalAliases": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "$ref": "#/$defs/externalAliasRecord"
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "proposed"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "acceptedDecision": {
+            "type": "null"
+          },
+          "consumerBindings": {
+            "properties": {
+              "menu": {
+                "$ref": "#/$defs/disabledConsumerBinding"
+              },
+              "generator": {
+                "$ref": "#/$defs/disabledConsumerBinding"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "state": {
+            "const": "accepted"
+          }
+        },
+        "required": [
+          "state"
+        ]
+      },
+      "then": {
+        "properties": {
+          "acceptedDecision": {
+            "$ref": "#/$defs/acceptedDecision"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "sha256": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "nullableSha256": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/sha256"
+        }
+      ]
+    },
+    "isoDate": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}$"
+    },
+    "nonEmptyString": {
+      "type": "string",
+      "minLength": 1
+    },
+    "reviewState": {
+      "enum": [
+        "blocked-input",
+        "proposed",
+        "approved"
+      ]
+    },
+    "disposition": {
+      "enum": [
+        "retain-canonical",
+        "retain-alias-permanent",
+        "retain-alias-temporary",
+        "non-menu-child",
+        "profile-conditional",
+        "demo-isolated",
+        "unavailable-hidden",
+        "consolidate-to-canonical",
+        "retire-candidate",
+        "blocked-review"
+      ]
+    },
+    "routeReviewStatus": {
+      "enum": [
+        "unverified",
+        "verified",
+        "not-applicable"
+      ]
+    },
+    "aliasReviewStatus": {
+      "enum": [
+        "unverified",
+        "verified",
+        "blocked"
+      ]
+    },
+    "approval": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "reviewer",
+            "reviewedAt",
+            "evidence"
+          ],
+          "properties": {
+            "reviewer": {
+              "$ref": "#/$defs/nonEmptyString"
+            },
+            "reviewedAt": {
+              "$ref": "#/$defs/isoDate"
+            },
+            "evidence": {
+              "type": "array",
+              "minItems": 1,
+              "uniqueItems": true,
+              "items": {
+                "$ref": "#/$defs/nonEmptyString"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "approvals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "domain",
+        "productIa",
+        "securityPrivacy",
+        "accessibility"
+      ],
+      "properties": {
+        "domain": {
+          "$ref": "#/$defs/approval"
+        },
+        "productIa": {
+          "$ref": "#/$defs/approval"
+        },
+        "securityPrivacy": {
+          "$ref": "#/$defs/approval"
+        },
+        "accessibility": {
+          "$ref": "#/$defs/approval"
+        }
+      }
+    },
+    "routeRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "route",
+        "reviewState",
+        "disposition",
+        "authorizationReview",
+        "privacyReview",
+        "effectiveMenuExposureReview",
+        "capabilityReview",
+        "profileOwnershipReview",
+        "owner",
+        "reviewBy",
+        "approvals"
+      ],
+      "properties": {
+        "route": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "reviewState": {
+          "$ref": "#/$defs/reviewState"
+        },
+        "disposition": {
+          "$ref": "#/$defs/disposition"
+        },
+        "authorizationReview": {
+          "$ref": "#/$defs/routeReviewStatus"
+        },
+        "privacyReview": {
+          "$ref": "#/$defs/routeReviewStatus"
+        },
+        "effectiveMenuExposureReview": {
+          "$ref": "#/$defs/routeReviewStatus"
+        },
+        "capabilityReview": {
+          "enum": [
+            "unverified",
+            "verified"
+          ]
+        },
+        "profileOwnershipReview": {
+          "$ref": "#/$defs/routeReviewStatus"
+        },
+        "owner": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/nonEmptyString"
+            }
+          ]
+        },
+        "reviewBy": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/isoDate"
+            }
+          ]
+        },
+        "approvals": {
+          "$ref": "#/$defs/approvals"
+        }
+      }
+    },
+    "externalAliasRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "reviewState",
+        "disposition",
+        "consumerEvidenceReview",
+        "queryMappingReview",
+        "privacyReview",
+        "authorizationReview",
+        "owner",
+        "reviewBy",
+        "approvals"
+      ],
+      "properties": {
+        "source": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "reviewState": {
+          "$ref": "#/$defs/reviewState"
+        },
+        "disposition": {
+          "$ref": "#/$defs/disposition"
+        },
+        "consumerEvidenceReview": {
+          "enum": [
+            "unverified",
+            "verified"
+          ]
+        },
+        "queryMappingReview": {
+          "enum": [
+            "unverified",
+            "verified"
+          ]
+        },
+        "privacyReview": {
+          "$ref": "#/$defs/aliasReviewStatus"
+        },
+        "authorizationReview": {
+          "$ref": "#/$defs/aliasReviewStatus"
+        },
+        "owner": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/nonEmptyString"
+            }
+          ]
+        },
+        "reviewBy": {
+          "oneOf": [
+            {
+              "type": "null"
+            },
+            {
+              "$ref": "#/$defs/isoDate"
+            }
+          ]
+        },
+        "approvals": {
+          "$ref": "#/$defs/approvals"
+        }
+      }
+    },
+    "consumerBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "entrypoints"
+      ],
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "entrypoints": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "$ref": "#/$defs/nonEmptyString"
+          }
+        }
+      }
+    },
+    "disabledConsumerBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "enabled",
+        "entrypoints"
+      ],
+      "properties": {
+        "enabled": {
+          "const": false
+        },
+        "entrypoints": {
+          "type": "array",
+          "maxItems": 0
+        }
+      }
+    },
+    "provisionalDirection": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "status",
+        "optionId",
+        "adrId",
+        "adrPath",
+        "decidedAt",
+        "decisionAuthority",
+        "scope",
+        "unresolved",
+        "reviewBy",
+        "adrSha256"
+      ],
+      "properties": {
+        "status": {
+          "const": "accepted-provisional-direction"
+        },
+        "optionId": {
+          "const": "hybrid-task-centered-management-center"
+        },
+        "adrId": {
+          "const": "ADR-0004"
+        },
+        "adrPath": {
+          "const": "docs/02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md"
+        },
+        "decidedAt": {
+          "$ref": "#/$defs/isoDate"
+        },
+        "decisionAuthority": {
+          "const": "repository-owner"
+        },
+        "scope": {
+          "type": "array",
+          "minItems": 4,
+          "maxItems": 4,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "prototype-and-research-default",
+              "preserve-canonical-urls",
+              "separate-navigation-metadata-from-route-and-authorization",
+              "isolate-high-risk-administration-in-management-center"
+            ]
+          }
+        },
+        "unresolved": {
+          "type": "array",
+          "minItems": 5,
+          "maxItems": 5,
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "exact-labels-groups-order-and-route-dispositions",
+              "live-menu-authority-and-effective-role-exposure",
+              "route-level-authorization-privacy-and-profile-ownership",
+              "url-privacy-allowlists-and-external-telemetry",
+              "user-research-thresholds-and-g1-approval"
+            ]
+          }
+        },
+        "reviewBy": {
+          "$ref": "#/$defs/isoDate"
+        },
+        "adrSha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    },
+    "acceptedDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "adrId",
+        "adrPath",
+        "approvedAt",
+        "productOwner",
+        "productIaOwner",
+        "securityPrivacyOwner",
+        "accessibilityOwner",
+        "manifestSha256",
+        "proposedOverlaySha256"
+      ],
+      "properties": {
+        "adrId": {
+          "type": "string",
+          "pattern": "^ADR-[0-9]{4}$"
+        },
+        "adrPath": {
+          "type": "string",
+          "pattern": "^docs/02-architecture/decisions/[^.][^/]*\\.md$"
+        },
+        "approvedAt": {
+          "$ref": "#/$defs/isoDate"
+        },
+        "productOwner": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "productIaOwner": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "securityPrivacyOwner": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "accessibilityOwner": {
+          "$ref": "#/$defs/nonEmptyString"
+        },
+        "manifestSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "proposedOverlaySha256": {
+          "$ref": "#/$defs/sha256"
+        }
+      }
+    }
+  }
+}

@@ -2133,6 +2133,75 @@ export const ApiResponseMapStringDoubleSchema = z.object({
 export type ApiResponseMapStringDouble = z.infer<typeof ApiResponseMapStringDoubleSchema>;
 
 // ==========================================================================
+// ApiResponsePageResponsePublicFaqListItemResponse Schema
+// ==========================================================================
+export const ApiResponsePageResponsePublicFaqListItemResponseSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponsePublicFaqListItemResponseSchema).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponsePageResponsePublicFaqListItemResponse = z.infer<typeof ApiResponsePageResponsePublicFaqListItemResponseSchema>;
+
+// ==========================================================================
+// PageResponsePublicFaqListItemResponse Schema
+// ==========================================================================
+export const PageResponsePublicFaqListItemResponseSchema = z.object({
+  list: z.array(z.lazy(() => PublicFaqListItemResponseSchema)).optional(),
+  total: z.number().optional(),
+  page: z.number().optional(),
+  size: z.number().optional(),
+  totalPage: z.number().optional(),
+});
+export type PageResponsePublicFaqListItemResponse = z.infer<typeof PageResponsePublicFaqListItemResponseSchema>;
+
+// ==========================================================================
+// PublicFaqListItemResponse Schema
+// ==========================================================================
+export const PublicFaqListItemResponseSchema = z.object({
+  bbsId: z.enum(["BBSMSTR_AAAAAAAAAAAA"]),
+  pstSn: z.number(),
+  pstTtl: z.string().optional(),
+  inqCnt: z.number().optional(),
+  crtDt: z.string().optional(),
+  useYn: z.enum(["Y"]),
+  scrtYn: z.enum(["N"]),
+});
+export type PublicFaqListItemResponse = z.infer<typeof PublicFaqListItemResponseSchema>;
+
+// ==========================================================================
+// ApiResponsePublicFaqDetailResponse Schema
+// ==========================================================================
+export const ApiResponsePublicFaqDetailResponseSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PublicFaqDetailResponseSchema).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponsePublicFaqDetailResponse = z.infer<typeof ApiResponsePublicFaqDetailResponseSchema>;
+
+// ==========================================================================
+// PublicFaqDetailResponse Schema
+// ==========================================================================
+export const PublicFaqDetailResponseSchema = z.object({
+  bbsId: z.enum(["BBSMSTR_AAAAAAAAAAAA"]),
+  pstSn: z.number(),
+  pstTtl: z.string().optional(),
+  pstCn: z.string().optional(),
+  inqCnt: z.number().optional(),
+  crtDt: z.string().optional(),
+  useYn: z.enum(["Y"]),
+  scrtYn: z.enum(["N"]),
+});
+export type PublicFaqDetailResponse = z.infer<typeof PublicFaqDetailResponseSchema>;
+
+// ==========================================================================
 // ApiResponseListBannerDto Schema
 // ==========================================================================
 export const ApiResponseListBannerDtoSchema = z.object({
@@ -2165,6 +2234,7 @@ export type ApiResponseCurrentUserResponse = z.infer<typeof ApiResponseCurrentUs
 // ==========================================================================
 export const CurrentUserResponseSchema = z.object({
   id: z.string().optional(),
+  esntlId: z.string().optional(),
   name: z.string().optional(),
   role: z.string().optional(),
   userSe: z.string().optional(),

@@ -117,9 +117,10 @@ export default function AdminDashboardClient() {
   return (
     <div className="space-y-6 md:space-y-8 pb-12 animate-in fade-in duration-700">
       <HubHeader
+        headingLevel={1}
         title="관리자"
-        highlight="인텔리전스 센터"
-        subtitle="시스템 전반의 오퍼레이션 상태, 지능형 데이터 분석 및 보안 거버넌스 통합 관제 패널"
+        highlight="업무 현황"
+        subtitle="사용자, 권한, 보안 감사 현황을 확인하고 관련 관리 화면으로 이동합니다."
         icon={LayoutDashboard}
       />
 
@@ -157,7 +158,7 @@ export default function AdminDashboardClient() {
       */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
         <DashboardStatCard
-          title="ID 레지스트리"
+          title="등록 사용자"
           e2eLabel="IDENTITY_RESOURCES"
           value={isUsersError ? '조회 실패' : (usersData?.total?.toLocaleString() ?? '-')}
           icon={<Users className="w-5 h-5" />}
@@ -166,7 +167,7 @@ export default function AdminDashboardClient() {
           description="등록된 전체 사용자 수"
         />
         <DashboardStatCard
-          title="보안 거버넌스"
+          title="등록 권한"
           e2eLabel="CLUSTER_POLICY"
           value={isAuthorsError ? '조회 실패' : `${authorsData?.total?.toLocaleString() ?? '-'}개 역할`}
           icon={<ShieldCheck className="w-5 h-5" />}
@@ -253,7 +254,7 @@ function DashboardStatCard({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Link href={link} aria-label={`${title} — ${description}. 상세 화면으로 이동`}>
+        <Link href={link} aria-label={`${title} — ${description}. 상세 화면으로 이동`} data-e2e-label={e2eLabel}>
           <motion.div
             whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
             whileTap={{ scale: 0.98 }}
@@ -270,7 +271,6 @@ function DashboardStatCard({
             <div className="space-y-4">
               <p className="text-xs font-bold text-foreground tracking-[0.3em] uppercase font-mono flex items-center gap-2">
                 {title}
-                <span className="e2e-label">{e2eLabel}</span>
               </p>
               {/* a11y(heading-order): stat 값은 문서 섹션 제목이 아니므로 heading(h3) 대신 p로 — h1→h3 레벨 스킵 위반 제거 */}
               <p className="text-4xl font-bold text-foreground tracking-tighter tabular-nums group-hover:text-primary transition-colors leading-none">{value}</p>

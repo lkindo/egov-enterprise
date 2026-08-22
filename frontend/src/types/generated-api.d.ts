@@ -3616,6 +3616,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/boards/public-faqs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 공개 FAQ 목록 조회
+         * @description 활성 FAQ 게시판의 공개 글 제목만 검색하여 조회합니다.
+         */
+        get: operations["getPublicFaqs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/public-faqs/{pstSn}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 공개 FAQ 상세 조회
+         * @description 활성 FAQ 게시판의 공개 글 상세만 조회합니다.
+         */
+        get: operations["getPublicFaqDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/banners/reflected": {
         parameters: {
             query?: never;
@@ -7032,6 +7072,109 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
+        ApiResponsePageResponsePublicFaqListItemResponse: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponsePublicFaqListItemResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        PageResponsePublicFaqListItemResponse: {
+            list?: components["schemas"]["PublicFaqListItemResponse"][];
+            /** Format: int64 */
+            total?: number;
+            /** Format: int32 */
+            page?: number;
+            /** Format: int32 */
+            size?: number;
+            /** Format: int32 */
+            totalPage?: number;
+        };
+        PublicFaqListItemResponse: {
+            /**
+             * @description 게시판 ID
+             * @enum {string}
+             */
+            bbsId: "BBSMSTR_AAAAAAAAAAAA";
+            /**
+             * Format: int64
+             * @description 게시글 ID
+             */
+            pstSn: number;
+            /** @description FAQ 질문 제목 */
+            pstTtl?: string;
+            /**
+             * Format: int32
+             * @description 조회수
+             */
+            inqCnt?: number;
+            /**
+             * Format: date-time
+             * @description 등록일시
+             */
+            crtDt?: string;
+            /**
+             * @description 활성 상태
+             * @enum {string}
+             */
+            useYn: "Y";
+            /**
+             * @description 비밀글 여부
+             * @enum {string}
+             */
+            scrtYn: "N";
+        };
+        ApiResponsePublicFaqDetailResponse: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PublicFaqDetailResponse"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        PublicFaqDetailResponse: {
+            /**
+             * @description 게시판 ID
+             * @enum {string}
+             */
+            bbsId: "BBSMSTR_AAAAAAAAAAAA";
+            /**
+             * Format: int64
+             * @description 게시글 ID
+             */
+            pstSn: number;
+            /** @description FAQ 질문 제목 */
+            pstTtl?: string;
+            /** @description FAQ 답변 본문 */
+            pstCn?: string;
+            /**
+             * Format: int32
+             * @description 조회수
+             */
+            inqCnt?: number;
+            /**
+             * Format: date-time
+             * @description 등록일시
+             */
+            crtDt?: string;
+            /**
+             * @description 활성 상태
+             * @enum {string}
+             */
+            useYn: "Y";
+            /**
+             * @description 비밀글 여부
+             * @enum {string}
+             */
+            scrtYn: "N";
+        };
         ApiResponseListBannerDto: {
             success?: boolean;
             /** Format: int32 */
@@ -7056,6 +7199,7 @@ export interface components {
         };
         CurrentUserResponse: {
             id?: string;
+            esntlId?: string;
             name?: string;
             role?: string;
             userSe?: string;
@@ -28957,6 +29101,141 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseMapStringDouble"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getPublicFaqs: {
+        parameters: {
+            query?: {
+                keyword?: string;
+                /** @description Zero-based page index (0..N) */
+                page?: number;
+                /** @description The size of the page to be returned */
+                size?: number;
+                /** @description Sorting criteria in the format: property,(asc|desc). Default sort order is ascending. Multiple sort criteria are supported. */
+                sort?: string[];
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponsePublicFaqListItemResponse"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getPublicFaqDetail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description FAQ 게시글 ID
+                 * @example 1
+                 */
+                pstSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePublicFaqDetailResponse"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

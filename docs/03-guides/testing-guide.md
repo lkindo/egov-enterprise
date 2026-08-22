@@ -169,6 +169,34 @@ pnpm -C frontend test:e2e:ui
 pnpm -C frontend test:cleanup
 ```
 
+### UI/UX 변경 전 기준선 계약
+
+UI/UX 현대화의 변경 전 기준선은 기존 smoke E2E의 통과 여부만으로 대체하지 않는다. 다음 자산이 측정 범위와 증거 경계를 나눈다.
+
+| 자산 | 역할 |
+|---|---|
+| [UI/UX 기준선 측정 프로토콜](../04-operations/ui-ux-baseline-protocol.md) | 첫 사용 안내를 포함한 8개 대표 작업의 실행 순서, 수동 접근성 절차, 개인정보 redaction, 재검증 규칙 |
+| [시나리오 manifest](../../config/ui-quality-scenarios.json) | route·role·state·theme·viewport, task/performance metric, evidence 경로의 기계 판독 가능한 입력 |
+| [manifest 계약 테스트](../../scripts/ui-quality-scenarios-contract.test.mjs) | 저장소 route population, 필수 metric, deterministic axe, bounded 상태와 privacy 금지 key를 fail-closed 검증 |
+| [자동 기준선 runner](../../frontend/scripts/ui-quality-baseline-runner.mjs) | exact 8 scenario × 1 brand theme × 2 color mode × 3 viewport와 선언된 모든 state를 실행한다. 일반 case는 안내 완료 상태를 주입하고 전용 first-use case만 안내 모달을 연 상태로 관측한다. |
+| [runner 계약 테스트](../../scripts/ui-quality-baseline-runner-contract.test.mjs) | 48 render case·96 state case의 완전성, first-use 상태 격리, 민감정보 차단, loopback/격리 preflight, 성능 반복 계약과 package script 연결을 검증 |
+
+```bash
+# manifest/runner 계약 확인 + 임시 위반 fixture의 red 증명
+node --test scripts/ui-quality-scenarios-contract.test.mjs scripts/ui-quality-baseline-runner-contract.test.mjs
+
+# 실행 계획만 확인(서비스·자격증명 불필요, 산출물 미생성)
+pnpm -C frontend run ui-quality:plan
+
+# 프로토콜 §4.1의 격리 stack·build ID·synthetic seed·private auth preflight를 충족한 뒤 실행
+pnpm -C frontend run ui-quality:baseline
+
+# 기존 smoke/resilience source의 회귀 확인(격리 서비스 필요)
+pnpm -C frontend exec playwright test e2e/01-core-base.spec.ts e2e/04-quality-resilience.spec.ts
+```
+
+manifest의 현재 baseline 상태는 `unmeasured`이며 Playwright 성능값이나 사용자 연구 결과를 뜻하지 않는다. 기본 산출물 경로는 git ignored이므로 runner 결과만으로 `measured`로 승격할 수 없고, 프로토콜의 내구성 조건을 먼저 충족해야 한다. `UI_BASELINE_DIAGNOSTIC_LIMIT`으로 만든 제한 실행은 runner 진단일 뿐 baseline 증거가 아니다. 자동 axe는 고정된 Chromium·locale·timezone에서 실행하고 `color-contrast` rule을 비활성화할 수 없다. 자동 검사는 키보드 작업 완수, NVDA 발화 의미, zoom/reflow, forced-colors, reduced-motion을 증명하지 않으므로 프로토콜의 수동 검사를 별도 artifact로 남긴다. 기존 E2E source는 기능 preflight 증거일 뿐 이 baseline의 task metric·cold/warm 성능·전체 state×render matrix를 대신하지 않는다.
+
 ---
 
 ## Testcontainers
@@ -334,7 +362,7 @@ pnpm -C frontend exec playwright install --with-deps chromium
 
 ## 중앙 하네스 레지스트리와 실행 분리
 
-[governance gate registry](../../config/governance/gates.json)는 논리 규칙을 한 거대 테스트로 합치는 파일이 아니라, 안정적인 rule ID와 발견 selector·실행 task·CI context·red proof를 연결하는 운영 인덱스다. 현재 registry는 governance JUnit 33개·ArchUnit 10개·schema-validation 37개, runner catalog 5개, execution profile 6개, quality population 3개와 quality ratchet 15개를 관리한다. [Node 계약](../../scripts/governance-gates-contract.mjs)이 실제 source census와 소비자 설정을 exact-match하고, JaCoCo·Vitest·PIT의 측정 population까지 동결하므로 registry/source 한쪽에만 있는 ghost gate나 include 축소·exclude 확대에 의한 분모 축소 통과는 실패한다.
+[governance gate registry](../../config/governance/gates.json)는 논리 규칙을 한 거대 테스트로 합치는 파일이 아니라, 안정적인 rule ID와 발견 selector·실행 task·CI context·red proof를 연결하는 운영 인덱스다. 현재 registry는 governance JUnit 35개·ArchUnit 10개·schema-validation 37개, runner catalog 5개, execution profile 6개, quality population 3개와 quality ratchet 15개를 관리한다. [Node 계약](../../scripts/governance-gates-contract.mjs)이 실제 source census와 소비자 설정을 exact-match하고, JaCoCo·Vitest·PIT의 측정 population까지 동결하므로 registry/source 한쪽에만 있는 ghost gate나 include 축소·exclude 확대에 의한 분모 축소 통과는 실패한다.
 
 | 계층 | 발견 계약 | 실행 경로 |
 |---|---|---|

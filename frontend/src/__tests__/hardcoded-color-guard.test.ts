@@ -29,7 +29,10 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 // [하향 래칫 2026-07-18(2)] 死 camelCase 게시판 라우트 3종 삭제로 40 감소 → 247→207.
 // [하향 래칫 2026-08-13] 실측 104까지 감소했으나 기준선이 207에 머물러 있던 103건의 여유를 제거.
 // [하향 래칫 2026-08-16] reusable-base 정리로 미사용 대시보드 위젯의 하드코딩 색상 1건 제거.
-const BASELINE = 103;
+// [하향 래칫 2026-08-21] 허위 command/status 문구 제거와 contextual contrast 수리로 중립/브랜드 리터럴 2건 제거.
+// [하향 래칫 2026-08-21(2)] r4 접근성 triage에서 preview·onboarding·editor의 저대비 중립 리터럴 20건을 semantic token으로 치환.
+// [하향 래칫 2026-08-21(3)] board maker의 template/action 중립 리터럴 3건도 검증된 semantic pair로 치환.
+const BASELINE = 78;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];

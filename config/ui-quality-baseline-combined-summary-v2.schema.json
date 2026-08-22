@@ -1,0 +1,819 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "config/ui-quality-baseline-combined-summary-v2.schema.json",
+  "title": "UI quality r13 combined durable evidence summary",
+  "$comment": "Closed structural contract for a fresh protocol-captured r13 automated run and exactly 48 finding-preserving manual observations. The r12 schema remains separate and automated-only. scripts/ui-quality-evidence-durability.mjs is authoritative for exact execution-plan population, cross-record execution identity and digest equality, canonical bytes, privacy scanning, append-only predecessor binding, and committed repository readback.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "evidenceKind",
+    "baselineRunId",
+    "evidenceScope",
+    "sourceRun",
+    "provenance",
+    "sourceInventory",
+    "automated",
+    "diagnostics",
+    "manual",
+    "redaction",
+    "limitations",
+    "promotion"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 2 },
+    "evidenceKind": { "const": "ui-quality-baseline-combined-summary" },
+    "baselineRunId": { "const": "r13" },
+    "evidenceScope": { "const": "combined" },
+    "sourceRun": { "$ref": "#/$defs/sourceRun" },
+    "provenance": { "$ref": "#/$defs/provenance" },
+    "sourceInventory": { "$ref": "#/$defs/sourceInventory" },
+    "automated": { "$ref": "#/$defs/automated" },
+    "diagnostics": { "$ref": "#/$defs/diagnostics" },
+    "manual": { "$ref": "#/$defs/manual" },
+    "redaction": { "$ref": "#/$defs/redaction" },
+    "limitations": { "type": "array", "maxItems": 0 },
+    "promotion": { "$ref": "#/$defs/promotion" }
+  },
+  "$defs": {
+    "sha1": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "uuidV4": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$"
+    },
+    "utcInstant": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d{3})?Z$"
+    },
+    "safeVersion": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._+-]{0,63}$"
+    },
+    "scenarioId": {
+      "enum": [
+        "auth-login",
+        "admin-shell-hub",
+        "dense-user-logs",
+        "user-management-hub",
+        "board-article-composer",
+        "faq-admin-user-lifecycle",
+        "board-maker-wizard",
+        "first-use-onboarding"
+      ]
+    },
+    "taskEvidenceId": {
+      "enum": [
+        "role-status-mutation-readback-executed",
+        "synthetic-role-status-rollback-complete",
+        "faq-authoritative-save-readback",
+        "admin-created-faq-readback",
+        "cross-role-created-answer-readback",
+        "single-deploy-authoritative-readback"
+      ]
+    },
+    "automated": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenarioCount",
+        "renderCaseCount",
+        "plannedStateCaseCount",
+        "observedStateCaseCount",
+        "invalidStateCaseCount",
+        "plannedPerformanceCaseCount",
+        "observedPerformanceCaseCount",
+        "invalidPerformanceCaseCount",
+        "performanceConditionRunCount",
+        "assertionCount",
+        "passedAssertionCount",
+        "failedAssertionCount",
+        "mutationRequiredCaseCount",
+        "mutationExecutedCaseCount",
+        "mutationReadbackCaseCount",
+        "mutationRollbackCaseCount",
+        "mutationCleanupCaseCount",
+        "activeMutationResidueCount",
+        "nonMutationEmptyEvidenceCaseCount",
+        "axeViolationCaseCount",
+        "axeViolationNodeCount",
+        "horizontalOverflowCaseCount",
+        "findingCount",
+        "stateCases",
+        "scenarios",
+        "performance"
+      ],
+      "properties": {
+        "scenarioCount": { "const": 8 },
+        "renderCaseCount": { "const": 48 },
+        "plannedStateCaseCount": { "const": 96 },
+        "observedStateCaseCount": { "const": 96 },
+        "invalidStateCaseCount": { "const": 0 },
+        "plannedPerformanceCaseCount": { "const": 48 },
+        "observedPerformanceCaseCount": { "const": 48 },
+        "invalidPerformanceCaseCount": { "const": 0 },
+        "performanceConditionRunCount": { "const": 288 },
+        "assertionCount": { "type": "integer", "minimum": 0 },
+        "passedAssertionCount": { "type": "integer", "minimum": 0 },
+        "failedAssertionCount": { "type": "integer", "minimum": 0 },
+        "mutationRequiredCaseCount": { "const": 36 },
+        "mutationExecutedCaseCount": { "const": 36 },
+        "mutationReadbackCaseCount": { "const": 36 },
+        "mutationRollbackCaseCount": { "const": 36 },
+        "mutationCleanupCaseCount": { "const": 36 },
+        "activeMutationResidueCount": { "const": 0 },
+        "nonMutationEmptyEvidenceCaseCount": { "const": 60 },
+        "axeViolationCaseCount": { "type": "integer", "minimum": 0 },
+        "axeViolationNodeCount": { "type": "integer", "minimum": 0 },
+        "horizontalOverflowCaseCount": { "type": "integer", "minimum": 0 },
+        "findingCount": { "type": "integer", "minimum": 0 },
+        "stateCases": {
+          "type": "array",
+          "minItems": 96,
+          "maxItems": 96,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/stateCase" }
+        },
+        "scenarios": {
+          "type": "array",
+          "minItems": 8,
+          "maxItems": 8,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/scenario" }
+        },
+        "performance": {
+          "type": "array",
+          "minItems": 48,
+          "maxItems": 48,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/performanceCase" }
+        }
+      }
+    },
+    "stateCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "caseId",
+        "scenarioId",
+        "status",
+        "automatedOutcome",
+        "assertionCount",
+        "passedAssertionCount",
+        "failedAssertionCount",
+        "axeViolationCount",
+        "horizontalOverflowPx",
+        "findingCount",
+        "requiredTaskEvidenceId",
+        "taskEvidenceComplete"
+      ],
+      "properties": {
+        "caseId": { "type": "string", "pattern": "^uiq-[0-9a-f]{20}$" },
+        "scenarioId": { "$ref": "#/$defs/scenarioId" },
+        "status": { "const": "automated-state-observed" },
+        "automatedOutcome": {
+          "enum": ["no-automated-finding-observed", "automated-findings-observed"]
+        },
+        "assertionCount": { "type": "integer", "minimum": 0 },
+        "passedAssertionCount": { "type": "integer", "minimum": 0 },
+        "failedAssertionCount": { "type": "integer", "minimum": 0 },
+        "axeViolationCount": { "type": "integer", "minimum": 0 },
+        "horizontalOverflowPx": { "type": "number", "minimum": 0 },
+        "findingCount": { "type": "integer", "minimum": 0 },
+        "requiredTaskEvidenceId": {
+          "oneOf": [
+            { "$ref": "#/$defs/taskEvidenceId" },
+            { "type": "null" }
+          ]
+        },
+        "taskEvidenceComplete": { "type": "boolean" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": { "requiredTaskEvidenceId": { "type": "null" } },
+            "required": ["requiredTaskEvidenceId"]
+          },
+          "then": { "properties": { "taskEvidenceComplete": { "const": false } } },
+          "else": { "properties": { "taskEvidenceComplete": { "const": true } } }
+        }
+      ]
+    },
+    "scenario": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "scenarioId",
+        "plannedStateCaseCount",
+        "observedStateCaseCount",
+        "invalidStateCaseCount",
+        "plannedPerformanceCaseCount",
+        "observedPerformanceCaseCount",
+        "invalidPerformanceCaseCount",
+        "axeViolationCaseCount",
+        "failedAssertionCaseCount",
+        "status"
+      ],
+      "properties": {
+        "scenarioId": { "$ref": "#/$defs/scenarioId" },
+        "plannedStateCaseCount": { "enum": [6, 12, 18] },
+        "observedStateCaseCount": { "enum": [6, 12, 18] },
+        "invalidStateCaseCount": { "const": 0 },
+        "plannedPerformanceCaseCount": { "const": 6 },
+        "observedPerformanceCaseCount": { "const": 6 },
+        "invalidPerformanceCaseCount": { "const": 0 },
+        "axeViolationCaseCount": { "type": "integer", "minimum": 0 },
+        "failedAssertionCaseCount": { "type": "integer", "minimum": 0 },
+        "status": { "const": "measured" }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "scenarioId": { "enum": ["admin-shell-hub", "first-use-onboarding"] }
+            },
+            "required": ["scenarioId"]
+          },
+          "then": {
+            "properties": {
+              "plannedStateCaseCount": { "const": 6 },
+              "observedStateCaseCount": { "const": 6 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "scenarioId": { "enum": ["dense-user-logs", "faq-admin-user-lifecycle"] }
+            },
+            "required": ["scenarioId"]
+          },
+          "then": {
+            "properties": {
+              "plannedStateCaseCount": { "const": 18 },
+              "observedStateCaseCount": { "const": 18 }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "scenarioId": {
+                "enum": [
+                  "auth-login",
+                  "user-management-hub",
+                  "board-article-composer",
+                  "board-maker-wizard"
+                ]
+              }
+            },
+            "required": ["scenarioId"]
+          },
+          "then": {
+            "properties": {
+              "plannedStateCaseCount": { "const": 12 },
+              "observedStateCaseCount": { "const": 12 }
+            }
+          }
+        }
+      ]
+    },
+    "performanceCase": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["renderCaseId", "scenarioId", "status", "cold", "warm"],
+      "properties": {
+        "renderCaseId": {
+          "type": "string",
+          "pattern": "^[a-z0-9][a-z0-9-]*(?:--[a-z0-9][a-z0-9-]*){3}$"
+        },
+        "scenarioId": { "$ref": "#/$defs/scenarioId" },
+        "status": { "const": "lab-performance-observed" },
+        "cold": { "$ref": "#/$defs/performanceCondition" },
+        "warm": { "$ref": "#/$defs/performanceCondition" }
+      }
+    },
+    "performanceCondition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["routeJsTransferBytes", "lcpMs", "cls", "readinessLatencyProxyMs"],
+      "properties": {
+        "routeJsTransferBytes": { "$ref": "#/$defs/performanceStats" },
+        "lcpMs": { "$ref": "#/$defs/performanceStats" },
+        "cls": { "$ref": "#/$defs/performanceStats" },
+        "readinessLatencyProxyMs": { "$ref": "#/$defs/performanceStats" }
+      }
+    },
+    "performanceStats": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["minimum", "median", "maximum", "medianAbsoluteDeviation"],
+      "properties": {
+        "minimum": { "type": "number", "minimum": 0 },
+        "median": { "type": "number", "minimum": 0 },
+        "maximum": { "type": "number", "minimum": 0 },
+        "medianAbsoluteDeviation": { "type": "number", "minimum": 0 }
+      }
+    },
+    "diagnostics": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidenceKind",
+        "plannedCaseCount",
+        "completedCaseCount",
+        "invalidCaseCount",
+        "mutationEvidenceCount",
+        "activeMutationResidueCount"
+      ],
+      "properties": {
+        "evidenceKind": { "const": "diagnostic-not-baseline-evidence" },
+        "plannedCaseCount": { "const": 0 },
+        "completedCaseCount": { "const": 0 },
+        "invalidCaseCount": { "const": 0 },
+        "mutationEvidenceCount": { "const": 0 },
+        "activeMutationResidueCount": { "const": 0 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "protocolVersion",
+        "protocolHash",
+        "protocolHashStatus",
+        "protocolHashVerifiedAtFinish",
+        "runnerVersion",
+        "executionId",
+        "buildSha",
+        "executionScenarioManifestHash",
+        "executionPlanHash",
+        "executionPlanHashStatus",
+        "routeTruthHash",
+        "privacyRuleHash",
+        "buildInputTreeHash",
+        "dirtyBuildInputDiffHash",
+        "runnerHash",
+        "coreHash",
+        "runnerContractHash",
+        "scenarioContractHash",
+        "toolingHashStatus",
+        "startedAt",
+        "finishedAt",
+        "frontendBuildId",
+        "backendBuildId",
+        "finishVerificationScenarioCount"
+      ],
+      "properties": {
+        "protocolVersion": { "const": 1 },
+        "protocolHash": { "$ref": "#/$defs/sha256" },
+        "protocolHashStatus": { "const": "recorded" },
+        "protocolHashVerifiedAtFinish": { "const": true },
+        "runnerVersion": { "const": 2 },
+        "executionId": { "$ref": "#/$defs/uuidV4" },
+        "buildSha": { "$ref": "#/$defs/sha1" },
+        "executionScenarioManifestHash": { "$ref": "#/$defs/sha256" },
+        "executionPlanHash": { "$ref": "#/$defs/sha256" },
+        "executionPlanHashStatus": { "const": "recomputed-from-run-snapshot" },
+        "routeTruthHash": { "$ref": "#/$defs/sha256" },
+        "privacyRuleHash": { "$ref": "#/$defs/sha256" },
+        "buildInputTreeHash": { "$ref": "#/$defs/sha256" },
+        "dirtyBuildInputDiffHash": { "type": "null" },
+        "runnerHash": { "$ref": "#/$defs/sha256" },
+        "coreHash": { "$ref": "#/$defs/sha256" },
+        "runnerContractHash": { "$ref": "#/$defs/sha256" },
+        "scenarioContractHash": { "$ref": "#/$defs/sha256" },
+        "toolingHashStatus": { "const": "resolved-from-clean-build-commit" },
+        "startedAt": { "$ref": "#/$defs/utcInstant" },
+        "finishedAt": { "$ref": "#/$defs/utcInstant" },
+        "frontendBuildId": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "backendBuildId": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "finishVerificationScenarioCount": { "const": 8 }
+      }
+    },
+    "sourceInventory": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "aggregateAlgorithm",
+        "inventoryDigest",
+        "automatedInventoryDigest",
+        "diagnosticInventoryDigest",
+        "jsonFileCount",
+        "automatedJsonFileCount",
+        "diagnosticJsonFileCount",
+        "totalBytes",
+        "nonJsonFileCount",
+        "symlinkCount",
+        "automatedEvidenceJsonFileCount",
+        "automatedEvidenceInventoryDigest",
+        "automatedRunSealFileDigest"
+      ],
+      "properties": {
+        "aggregateAlgorithm": { "const": "sha256-json-sorted-path-content-digests-v2" },
+        "inventoryDigest": { "$ref": "#/$defs/sha256" },
+        "automatedInventoryDigest": { "$ref": "#/$defs/sha256" },
+        "diagnosticInventoryDigest": { "$ref": "#/$defs/sha256" },
+        "jsonFileCount": { "const": 283 },
+        "automatedJsonFileCount": { "const": 283 },
+        "diagnosticJsonFileCount": { "const": 0 },
+        "totalBytes": { "type": "integer", "minimum": 1 },
+        "nonJsonFileCount": { "const": 0 },
+        "symlinkCount": { "const": 0 },
+        "automatedEvidenceJsonFileCount": { "const": 282 },
+        "automatedEvidenceInventoryDigest": { "$ref": "#/$defs/sha256" },
+        "automatedRunSealFileDigest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "sourceRun": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidenceKind",
+        "baselineRunId",
+        "executionId",
+        "status",
+        "final",
+        "runnerVersion",
+        "startedAt",
+        "finishedAt",
+        "runSummaryDigest",
+        "runProgressDigest",
+        "environmentDigest",
+        "protocolHash",
+        "protocolHashVerifiedAtFinish",
+        "buildSha",
+        "buildInputTreeHash",
+        "dirtyBuildInputDiffHash",
+        "executionScenarioManifestHash",
+        "executionPlanHash",
+        "routeTruthHash",
+        "privacyRuleHash",
+        "runnerHash",
+        "coreHash",
+        "runnerContractHash",
+        "scenarioContractHash",
+        "frontendBuildId",
+        "backendBuildId",
+        "automatedInventoryDigest",
+        "automatedProjectionDigest",
+        "plannedStateCaseCount",
+        "completedStateCaseCount",
+        "invalidStateCaseCount",
+        "plannedPerformanceCaseCount",
+        "completedPerformanceCaseCount",
+        "invalidPerformanceCaseCount",
+        "sealDigest"
+      ],
+      "properties": {
+        "evidenceKind": { "const": "automated-run-seal-v2" },
+        "baselineRunId": { "const": "r13" },
+        "executionId": { "$ref": "#/$defs/uuidV4" },
+        "status": { "const": "automated-run-complete" },
+        "final": { "const": true },
+        "runnerVersion": { "const": 2 },
+        "startedAt": { "$ref": "#/$defs/utcInstant" },
+        "finishedAt": { "$ref": "#/$defs/utcInstant" },
+        "runSummaryDigest": { "$ref": "#/$defs/sha256" },
+        "runProgressDigest": { "$ref": "#/$defs/sha256" },
+        "environmentDigest": { "$ref": "#/$defs/sha256" },
+        "protocolHash": { "$ref": "#/$defs/sha256" },
+        "protocolHashVerifiedAtFinish": { "const": true },
+        "buildSha": { "$ref": "#/$defs/sha1" },
+        "buildInputTreeHash": { "$ref": "#/$defs/sha256" },
+        "dirtyBuildInputDiffHash": { "type": "null" },
+        "executionScenarioManifestHash": { "$ref": "#/$defs/sha256" },
+        "executionPlanHash": { "$ref": "#/$defs/sha256" },
+        "routeTruthHash": { "$ref": "#/$defs/sha256" },
+        "privacyRuleHash": { "$ref": "#/$defs/sha256" },
+        "runnerHash": { "$ref": "#/$defs/sha256" },
+        "coreHash": { "$ref": "#/$defs/sha256" },
+        "runnerContractHash": { "$ref": "#/$defs/sha256" },
+        "scenarioContractHash": { "$ref": "#/$defs/sha256" },
+        "frontendBuildId": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "backendBuildId": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "automatedInventoryDigest": { "$ref": "#/$defs/sha256" },
+        "automatedProjectionDigest": { "$ref": "#/$defs/sha256" },
+        "plannedStateCaseCount": { "const": 96 },
+        "completedStateCaseCount": { "const": 96 },
+        "invalidStateCaseCount": { "const": 0 },
+        "plannedPerformanceCaseCount": { "const": 48 },
+        "completedPerformanceCaseCount": { "const": 48 },
+        "invalidPerformanceCaseCount": { "const": 0 },
+        "sealDigest": { "$ref": "#/$defs/sha256" }
+      }
+    },
+    "manual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "requiredEvidenceCount",
+        "completedEvidenceCount",
+        "findingCount",
+        "automatedEvidenceDigest",
+        "evidenceDigest",
+        "status",
+        "observations"
+      ],
+      "properties": {
+        "requiredEvidenceCount": { "const": 48 },
+        "completedEvidenceCount": { "const": 48 },
+        "findingCount": { "type": "integer", "minimum": 0 },
+        "automatedEvidenceDigest": { "$ref": "#/$defs/sha256" },
+        "evidenceDigest": { "$ref": "#/$defs/sha256" },
+        "status": { "const": "collected" },
+        "observations": {
+          "type": "array",
+          "minItems": 48,
+          "maxItems": 48,
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/manualObservation" }
+        }
+      }
+    },
+    "manualObservation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "evidenceKind",
+        "scenarioId",
+        "checkId",
+        "status",
+        "environment",
+        "coverage",
+        "reviewerRole",
+        "executionId",
+        "startedAt",
+        "finishedAt",
+        "buildSha",
+        "executionScenarioManifestHash",
+        "executionPlanHash",
+        "automatedEvidenceDigest",
+        "protocolHash",
+        "protocolHashVerifiedAtStart",
+        "protocolHashVerifiedAtFinish",
+        "finding",
+        "evidenceDigest",
+        "redaction"
+      ],
+      "properties": {
+        "evidenceKind": { "const": "manual-observation-v2" },
+        "scenarioId": {
+          "enum": [
+            "auth-login",
+            "admin-shell-hub",
+            "dense-user-logs",
+            "user-management-hub",
+            "board-article-composer",
+            "faq-admin-user-lifecycle",
+            "board-maker-wizard",
+            "first-use-onboarding"
+          ]
+        },
+        "checkId": {
+          "enum": [
+            "keyboard-only",
+            "nvda-chrome",
+            "text-200-percent",
+            "zoom-400-reflow-320",
+            "forced-colors",
+            "reduced-motion"
+          ]
+        },
+        "status": { "enum": ["pass", "fail"] },
+        "environment": { "$ref": "#/$defs/manualEnvironment" },
+        "coverage": { "$ref": "#/$defs/manualCoverage" },
+        "reviewerRole": { "enum": ["accessibility-reviewer", "quality-engineering"] },
+        "executionId": { "$ref": "#/$defs/uuidV4" },
+        "startedAt": { "$ref": "#/$defs/utcInstant" },
+        "finishedAt": { "$ref": "#/$defs/utcInstant" },
+        "buildSha": { "$ref": "#/$defs/sha1" },
+        "executionScenarioManifestHash": { "$ref": "#/$defs/sha256" },
+        "executionPlanHash": { "$ref": "#/$defs/sha256" },
+        "automatedEvidenceDigest": { "$ref": "#/$defs/sha256" },
+        "protocolHash": { "$ref": "#/$defs/sha256" },
+        "protocolHashVerifiedAtStart": { "const": true },
+        "protocolHashVerifiedAtFinish": { "const": true },
+        "finding": { "$ref": "#/$defs/manualFinding" },
+        "evidenceDigest": { "$ref": "#/$defs/sha256" },
+        "redaction": { "$ref": "#/$defs/manualRedaction" }
+      },
+      "oneOf": [
+        {
+          "properties": {
+            "status": { "const": "pass" },
+            "finding": {
+              "properties": {
+                "issueCodes": { "maxItems": 0 },
+                "impactCodes": { "const": ["no-adverse-impact-observed"] },
+                "severity": { "type": "null" }
+              }
+            }
+          }
+        },
+        {
+          "properties": {
+            "status": { "const": "fail" },
+            "finding": {
+              "properties": {
+                "issueCodes": { "minItems": 1 },
+                "impactCodes": {
+                  "minItems": 1,
+                  "not": { "contains": { "const": "no-adverse-impact-observed" } }
+                },
+                "severity": { "enum": ["P0", "P1", "P2", "P3"] }
+              }
+            }
+          }
+        }
+      ],
+      "allOf": [
+        {
+          "if": { "properties": { "checkId": { "const": "keyboard-only" } }, "required": ["checkId"] },
+          "then": { "properties": { "environment": { "properties": { "kind": { "const": "keyboard-only-manual" } } } } }
+        },
+        {
+          "if": { "properties": { "checkId": { "const": "nvda-chrome" } }, "required": ["checkId"] },
+          "then": { "properties": { "environment": { "properties": { "kind": { "const": "nvda-chrome-manual" } } } } }
+        },
+        {
+          "if": { "properties": { "checkId": { "const": "text-200-percent" } }, "required": ["checkId"] },
+          "then": { "properties": { "environment": { "properties": { "kind": { "const": "chrome-text-200-percent-manual" } } } } }
+        },
+        {
+          "if": { "properties": { "checkId": { "const": "zoom-400-reflow-320" } }, "required": ["checkId"] },
+          "then": { "properties": { "environment": { "properties": { "kind": { "const": "chrome-zoom-400-reflow-320-css-px-manual" } } } } }
+        },
+        {
+          "if": { "properties": { "checkId": { "const": "forced-colors" } }, "required": ["checkId"] },
+          "then": { "properties": { "environment": { "properties": { "kind": { "const": "windows-forced-colors-manual" } } } } }
+        },
+        {
+          "if": { "properties": { "checkId": { "const": "reduced-motion" } }, "required": ["checkId"] },
+          "then": { "properties": { "environment": { "properties": { "kind": { "const": "os-reduced-motion-manual" } } } } }
+        }
+      ]
+    },
+    "manualEnvironment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "evidenceMode",
+        "osFamily",
+        "osVersion",
+        "browserFamily",
+        "browserVersion",
+        "assistiveTechnology",
+        "assistiveTechnologyVersion",
+        "brandTheme",
+        "colorModes",
+        "viewportIds"
+      ],
+      "properties": {
+        "kind": {
+          "enum": [
+            "keyboard-only-manual",
+            "nvda-chrome-manual",
+            "chrome-text-200-percent-manual",
+            "chrome-zoom-400-reflow-320-css-px-manual",
+            "windows-forced-colors-manual",
+            "os-reduced-motion-manual"
+          ]
+        },
+        "evidenceMode": { "enum": ["expert-manual", "user-at"] },
+        "osFamily": { "enum": ["windows", "macos", "linux"] },
+        "osVersion": { "$ref": "#/$defs/safeVersion" },
+        "browserFamily": { "const": "chrome" },
+        "browserVersion": { "$ref": "#/$defs/safeVersion" },
+        "assistiveTechnology": { "enum": ["none", "nvda"] },
+        "assistiveTechnologyVersion": {
+          "oneOf": [
+            { "$ref": "#/$defs/safeVersion" },
+            { "type": "null" }
+          ]
+        },
+        "brandTheme": { "const": "current-default" },
+        "colorModes": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 2,
+          "uniqueItems": true,
+          "items": { "enum": ["light", "dark"] }
+        },
+        "viewportIds": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 3,
+          "uniqueItems": true,
+          "items": { "enum": ["mobile-320", "tablet-768", "desktop-1280"] }
+        }
+      }
+    },
+    "manualCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stepIds"],
+      "properties": {
+        "stepIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^[a-z0-9][a-z0-9-]{1,63}$"
+          }
+        }
+      }
+    },
+    "manualFinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["issueCodes", "impactCodes", "severity"],
+      "properties": {
+        "issueCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "type": "string",
+            "pattern": "^UIQ-MANUAL-[A-Z0-9-]{3,64}$"
+          }
+        },
+        "impactCodes": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "task-blocked",
+              "task-error-risk",
+              "task-understanding-risk",
+              "task-recovery-risk",
+              "no-adverse-impact-observed"
+            ]
+          }
+        },
+        "severity": {
+          "oneOf": [
+            { "enum": ["P0", "P1", "P2", "P3"] },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "manualRedaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "reviewedByRole"],
+      "properties": {
+        "status": { "const": "approved" },
+        "reviewedByRole": { "enum": ["quality-engineering", "repository-governance"] }
+      }
+    },
+    "redaction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "automatedGuardStatus",
+        "manualGuardStatus",
+        "unsafeFileCount",
+        "rawTraceStoredCount",
+        "responsePayloadStoredCount",
+        "reviewQuorum",
+        "approvedByRoles",
+        "status"
+      ],
+      "properties": {
+        "automatedGuardStatus": { "const": "passed" },
+        "manualGuardStatus": { "const": "passed" },
+        "unsafeFileCount": { "const": 0 },
+        "rawTraceStoredCount": { "const": 0 },
+        "responsePayloadStoredCount": { "const": 0 },
+        "reviewQuorum": { "const": 1 },
+        "approvedByRoles": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "enum": ["quality-engineering", "repository-governance"] }
+        },
+        "status": { "const": "approved" }
+      }
+    },
+    "promotion": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "eligible", "blockerCodes"],
+      "properties": {
+        "status": { "const": "measured" },
+        "eligible": { "const": true },
+        "blockerCodes": { "type": "array", "maxItems": 0 }
+      }
+    }
+  }
+}

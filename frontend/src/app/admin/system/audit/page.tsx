@@ -8,7 +8,7 @@ import { AuditTimelineClient } from './AuditTimelineClient';
 export default function AuditTimelinePage() {
   // 클라이언트가 useSearchParams(URL 페이지 동기화)를 사용하므로 Suspense 경계가 필요하다.
   return (
-    <Suspense fallback={<div className="p-24 text-center text-xs font-bold tracking-widest text-muted-foreground animate-pulse">감사 이력을 불러오는 중...</div>}>
+    <Suspense fallback={<div className="p-24 text-center text-xs font-bold tracking-widest text-muted-foreground animate-pulse"><h1 className="sr-only">감사 이력을 불러오는 중</h1>감사 이력을 불러오는 중...</div>}>
       <AuditTimelineClient />
     </Suspense>
   );

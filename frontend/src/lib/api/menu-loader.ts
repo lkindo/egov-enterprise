@@ -19,8 +19,7 @@ export const getInitialMenus = cache(async (accessToken?: string) => {
         }
       })
     );
-  } catch (error) {
-    console.error('Failed to pre-fetch menus:', error);
+  } catch {
     return [];
   }
 });

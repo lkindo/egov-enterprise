@@ -35,7 +35,13 @@ const VARIANT = '(?:dark:|hover:|focus:|group-hover:|focus-within:|active:|group
 const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3}(?:\\/[0-9]{1,3})?`, 'g');
 
 // [동결 2026-08-16] 게이트 신설 시점 실측 census. 래칫의 정상 방향은 감소다.
-const BASELINE = 786;
+// [하향 래칫 2026-08-21] demo/fake 상태 문구 정직성, shell 대비, 알림·오류 상태 수리에서 status 리터럴 12건 제거.
+// [하향 래칫 2026-08-21(2)] r4 접근성 triage에서 오류·완료·onboarding 상태색 12건을 semantic pair로 치환.
+// [하향 래칫 2026-08-21(3)] board maker의 template/완료 상태 리터럴 6건을 success/destructive/warning pair로 치환.
+// [하향 래칫 2026-08-21(4)] onboarding 단계 아이콘 2건을 destructive/success semantic emphasis로 치환.
+// [하향 래칫 2026-08-21(5)] r6 dark dashboard의 감사 상태 라벨 1건을 success-emphasis로 치환.
+// [하향 래칫 2026-08-21(6)] KnowledgeHub FAQ 공개 상태 1건을 theme-aware success emphasis token으로 이행.
+const BASELINE = 752;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

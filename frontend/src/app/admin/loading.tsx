@@ -14,7 +14,7 @@ import { HubMetricSkeleton } from '@/components/ui/hub/HubSkeleton';
 export default function AdminLoading() {
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-500" aria-busy="true" aria-live="polite">
-      <span className="sr-only">관리자 화면을 불러오는 중입니다.</span>
+      <h1 className="sr-only">관리자 화면을 불러오는 중입니다.</h1>
 
       {/* 1. PageHeader 자리 — 브레드크럼 + 타이틀 + 액센트 바 */}
       <div className="flex flex-col gap-6 mb-12">

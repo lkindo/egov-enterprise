@@ -37,7 +37,6 @@ export async function saveNetworkAction(prevState: unknown, formData: FormData):
         return { success: true, message: '네트워크 정보가 저장되었습니다.' };
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
-        console.error('Save Network Error:', error);
         return { success: false, message: errorMessage };
     }
 }
@@ -54,7 +53,6 @@ export async function deleteNetworkAction(id: string): Promise<ActionResponse> {
         return { success: true, message: '네트워크 정보가 삭제되었습니다.' };
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '삭제 중 오류 발생');
-        console.error('Delete Network Error:', error);
         return { success: false, message: errorMessage };
     }
 }

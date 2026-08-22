@@ -7,7 +7,7 @@ import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { FormField } from '@/app/components/ui/standard-form';
 import { UserPicker } from '@/app/components/ui/user-picker';
-import { StatusBadge } from '@/app/components/ui/status-badge';
+import { StatusBadge } from '@/components/ui/status-badge';
 import { noteService, Note } from '@/services/business/user/NoteService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -190,6 +190,7 @@ export default function NotePage() {
           data={notes}
           loading={loading}
           onRowClick={handleDetail}
+          rowActionLabel={(item) => `${item.noteSj || `${item.noteSn}번`} 쪽지 열기`}
           emptyMessage={tab === 'received' ? "받은 메시지가 없습니다." : "작성된 메시지가 없습니다."}
           className="border-none shadow-none rounded-none"
         />

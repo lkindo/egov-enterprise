@@ -18,29 +18,16 @@ const JWT_SECRET = process.env.JWT_SECRET || DEV_JWT_SECRET;
 const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', HS512: 'SHA-512' };
 
 // ────────────────────────────────────────────────────────────────────────────
-// [진단] 시크릿 지문 — 값이 아니라 SHA-256 앞 8자만 남긴다.
+// [진단] 인증 검증 메타 — 결과·설정 출처·환경변수 존재 여부만 최초 1회 남긴다.
 //
 // 백엔드와 시크릿이 어긋나면 서명 검증이 전량 실패하는데, 그 실패는 지금까지 완전히 무음이었다:
 // 로그인 API 는 200 을 주고(미들웨어를 우회하는 경로다), 그 다음 페이지 진입에서 307 로 /login 에
 // 되돌아가므로 사용자에겐 "인증 완료 후 다시 로그인창" 으로만 보인다. 원인을 알려주는 신호가
 // 코드 어디에도 없어 2026-07-19 에 실제로 오래 헤맸다.
 //
-// JwtTokenProvider 도 기동 시 같은 규칙의 지문을 찍는다. 두 지문이 다르면 그것이 곧 원인이다.
-// ────────────────────────────────────────────────────────────────────────────
-// ⚠ [2026-07-29 정정] 종전 주석은 **"Edge 런타임의 console 은 next start stdout 에 도달하지 않는다"**
-//   고 단언했으나 **그것은 틀렸다.** 근본 원인(cross-realm ArrayBuffer)을 고친 뒤 CI 실측에서
-//   이 console.warn 이 next-start.log 에 정상 출력됐다:
-//     `[Middleware] JWT 검증 성공. ... 지문=dfbc83f2`   (CI run 30417048669)
-//
-//   로그가 없던 진짜 이유는 채널이 아니라 **도달하지 못했기 때문**이다. 이 함수는
-//   `crypto.subtle.verify` **직후**에 호출되는데 그 verify 가 TypeError 를 던져 버려
-//   호출 자체가 일어나지 않았다. "무조건 실행되는 위치"라는 전제가 깨져 있었다.
-//
-//   → 교훈은 채널을 바꾸라는 것이 아니라, **"신호가 없다"에서 원인을 추론하지 말라**는 것이다.
-//     부재는 (a) 채널 불통 (b) 코드 미도달 (c) 조건 미충족 을 구분하지 못한다. 2026-07-28 에
-//     그 부재를 근거로 "실패는 서명 비교 이전"이라 추론했고, 그 추론은 실제로 틀렸다.
-//   → 다만 `x-mw-auth` 응답 헤더는 그대로 **주 관측 채널로 유지한다.** console 보다 확실하고
-//     (E2E·curl 에서 바로 읽힌다) 실패 경로에서도 반드시 응답에 실리기 때문이다.
+// 시크릿 원문뿐 아니라 해시·접두사 같은 안정적인 파생값도 로그에 남기지 않는다. 요청별 결과는
+// 비밀값이 없는 `x-mw-auth` 응답 헤더가 주 관측 채널이며, 이 1회 로그는 Edge 환경의 설정 존재와
+// 검증 코드 도달 여부만 보조한다.
 //
 // [2026-07-28] 이 진단에는 **조건을 걸지 않는다.**
 //   같은 함정을 두 번 밟았다. 처음엔 `if (!IS_DEV) return` 이라 프로덕션에서 침묵했고,
@@ -49,9 +36,7 @@ const HMAC_HASH: Record<string, string> = { HS256: 'SHA-256', HS384: 'SHA-384', 
 //   이 줄이 없었다 — `!valid` 경로를 탔으므로 함수는 호출됐고 게이트만 false 였다).
 //   두 번 다 **정작 문제가 나는 환경에서만 진단이 꺼지는** 구조였다.
 //   조건을 없애면 "진단이 켜졌는가"라는 변수 자체가 방정식에서 사라진다.
-//   비용은 프로세스당 1회이고, 남기는 것은 SHA-256 앞 8자와 env **존재 여부**(값 아님)뿐이라
-//   로그로 시크릿이 새지 않는다.
-let fingerprintLogged = false;
+let authDiagnosticLogged = false;
 
 /**
  * 토큰 검증 결과 — 역할과 **검증이 끝난 지점**을 함께 돌려준다.
@@ -71,36 +56,26 @@ let fingerprintLogged = false;
  */
 type VerifyVerdict = { role: string | null; outcome: string };
 
-async function sha256Prefix(input: string): Promise<string> {
-  const digest = await crypto.subtle.digest('SHA-256', utf8ToBytes(input));
-  return Array.from(new Uint8Array(digest))
-    .slice(0, 4)
-    .map((b) => b.toString(16).padStart(2, '0'))
-    .join('');
-}
-
 /**
- * 미들웨어가 실제로 쥔 시크릿의 지문을 최초 1회만 남긴다.
+ * 인증 검증 결과와 secret-free 설정 메타를 최초 1회만 남긴다.
  *
  * ⚠ 성공·실패와 **무관하게** 남긴다. 그린일 때의 정상값을 모르면 red 를 해석할 수 없고,
  *   실패 시에만 찍으면 "로그가 없다"가 정상인지 진단 미발동인지 구분되지 않는다.
  */
-async function logSecretFingerprintOnce(outcome: string): Promise<void> {
-  if (fingerprintLogged) return;
-  fingerprintLogged = true;
-  const fingerprint = await sha256Prefix(JWT_SECRET);
+function logAuthDiagnosticOnce(outcome: string): void {
+  if (authDiagnosticLogged) return;
+  authDiagnosticLogged = true;
   const source = process.env.JWT_SECRET ? '환경변수 JWT_SECRET' : '내장 dev 기본값(DEV_JWT_SECRET)';
   // Edge 샌드박스가 **어떤 env 를 보는가** 자체가 미관측 변수였다(E2E_DIAG 가 전달됐는데도 안 보였다).
   // 값이 아니라 존재 여부만 남겨 다음 회차에 그 변수를 확정한다.
   const envSeen =
-    `NODE_ENV=${process.env.NODE_ENV ?? '(없음)'} · ` +
+    `NODE_ENV=${process.env.NODE_ENV ? '있음' : '없음'} · ` +
     `JWT_SECRET=${process.env.JWT_SECRET ? '있음' : '없음'} · ` +
-    `E2E_DIAG=${process.env.E2E_DIAG ?? '(없음)'}`;
+    `E2E_DIAG=${process.env.E2E_DIAG ? '있음' : '없음'}`;
   console.warn(
-    `[Middleware] JWT 검증 ${outcome}. 미들웨어가 쓰는 시크릿 출처=${source}, 지문=${fingerprint}.\n` +
-      `  Edge env 가시성: ${envSeen}\n` +
-      `  백엔드 기동 로그의 "JWT secret fingerprint" 와 이 값이 다르면 좌우 시크릿 비대칭이 원인입니다.\n` +
-      `  (한쪽만 루트 .env 를 받은 경우 발생. 'npm run dev' 로 함께 띄우면 대칭이 보장됩니다.)`
+    `[Middleware] JWT 검증 ${outcome}. 미들웨어가 쓰는 시크릿 출처=${source}.\n` +
+      `  Edge env 가시성(존재 여부만): ${envSeen}\n` +
+      `  요청별 검증 결과는 x-mw-auth 응답 헤더에서 확인하십시오.`
   );
 }
 
@@ -184,9 +159,9 @@ async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
     const dataBytes = utf8ToBytes(`${headerB64}.${payloadB64}`);
     stage = 'verify';
     const valid = await crypto.subtle.verify('HMAC', key, sigBytes, dataBytes);
-    // 서명 불일치는 위조일 수도, 좌우 시크릿 비대칭일 수도 있다. 어느 쪽인지는 지문 대조로만 갈린다.
-    stage = 'fingerprint';
-    await logSecretFingerprintOnce(valid ? '성공' : '실패(서명 불일치)');
+    // 서명 불일치는 위조 또는 설정 비대칭일 수 있으므로 secret-free 진단 메타와 요청 결과를 남긴다.
+    stage = 'diagnostic';
+    logAuthDiagnosticOnce(valid ? '성공' : '실패(서명 불일치)');
     if (!valid) {
       return { role: null, outcome: 'sig-mismatch' };
     }

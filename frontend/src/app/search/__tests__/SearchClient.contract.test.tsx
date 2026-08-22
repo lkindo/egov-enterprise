@@ -4,7 +4,7 @@ import { SearchResultsContent } from '../SearchClient';
 
 const mocks = vi.hoisted(() => ({
   legacyGet: vi.fn(),
-  getUserList: vi.fn(),
+  searchAssignableUsers: vi.fn(),
   push: vi.fn(),
 }));
 
@@ -18,44 +18,37 @@ vi.mock('@/lib/api/client', () => ({
   default: { get: mocks.legacyGet },
 }));
 
-vi.mock('@/services/foundation/system/UserAdminService', () => ({
-  userAdminService: { getUserList: mocks.getUserList },
+vi.mock('@/services/business/user/UserSearchService', () => ({
+  userSearchService: { searchAssignableUsers: mocks.searchAssignableUsers },
 }));
 
 const emptyResults = { articles: [], users: [], menus: [] };
-const userPage = {
-  list: [
-    {
-      userId: 'hong',
-      userNm: '홍길동',
-      emlAddr: 'hong@example.com',
-      userSttsCd: 'P',
-    },
-  ],
-  total: 1,
-  page: 1,
-  size: 10,
-  totalPage: 1,
-};
+const users = [{ esntlId: 'synthetic-user-1', userNm: '홍길동', deptNm: '연구부' }];
 
 describe('SearchResultsContent 사용자 검색 계약', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.legacyGet.mockResolvedValue(userPage);
-    mocks.getUserList.mockResolvedValue(userPage);
+    mocks.legacyGet.mockResolvedValue(users);
+    mocks.searchAssignableUsers.mockResolvedValue(users);
   });
 
-  it('PageResponse.list의 임직원을 렌더링하고 표준 사용자 서비스로 조회한다', async () => {
-    render(<SearchResultsContent initialResults={emptyResults} query="홍" />);
+  it('일반 인증 사용자용 최소정보 검색 API로 조회한다', async () => {
+    render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
 
     expect(await screen.findByText('홍길동')).toBeInTheDocument();
-    expect(screen.getByText('hong')).toBeInTheDocument();
-    expect(mocks.getUserList).toHaveBeenCalledWith({
-      pageNo: 1,
-      searchKeyword: '홍',
-      size: 10,
-    });
+    expect(screen.getByText('연구부')).toBeInTheDocument();
+    expect(mocks.searchAssignableUsers).toHaveBeenCalledWith('홍길');
     expect(mocks.legacyGet).not.toHaveBeenCalled();
+  });
+
+  it('사용자 검색 실패를 결과 0건으로 위장하지 않는다', async () => {
+    mocks.searchAssignableUsers.mockRejectedValue(new Error('private upstream detail'));
+
+    render(<SearchResultsContent initialResults={emptyResults} query="홍길" />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('임직원 검색 결과를 불러오지 못했습니다');
+    expect(screen.queryByText('일치하는 결과가 없습니다.')).not.toBeInTheDocument();
+    expect(screen.queryByText('private upstream detail')).not.toBeInTheDocument();
   });
 
   it('빈 검색어에서는 사용자 API를 호출하지 않는다', async () => {
@@ -63,7 +56,7 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
 
     await waitFor(() => {
       expect(mocks.legacyGet).not.toHaveBeenCalled();
-      expect(mocks.getUserList).not.toHaveBeenCalled();
+      expect(mocks.searchAssignableUsers).not.toHaveBeenCalled();
     });
   });
 });

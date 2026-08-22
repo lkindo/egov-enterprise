@@ -22,6 +22,7 @@ describe('Hub 공통 컴포넌트', () => {
         highlight="허브"
         subtitle="통합 관제"
         icon={ForwardIcon}
+        headingLevel={1}
         actions={<button type="button">새로고침</button>}
       />,
     );
@@ -29,6 +30,19 @@ describe('Hub 공통 컴포넌트', () => {
     expect(screen.getByRole('heading', { level: 1, name: '시스템 허브' })).toBeInTheDocument();
     expect(screen.getByTestId('forward-icon')).toHaveAttribute('data-size', '32');
     expect(screen.getByRole('button', { name: '새로고침' })).toBeInTheDocument();
+  });
+
+  it('섹션 헤더는 기본 h2이고 페이지 제목으로 명시한 경우에만 h1을 렌더링한다', () => {
+    const { rerender } = render(
+      <HubHeader title="하위 관제" icon={ForwardIcon} />,
+    );
+
+    expect(screen.getByRole('heading', { level: 2, name: '하위 관제' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+
+    rerender(<HubHeader title="독립 관제 화면" icon={ForwardIcon} headingLevel={1} />);
+    expect(screen.getByRole('heading', { level: 1, name: '독립 관제 화면' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { level: 2 })).not.toBeInTheDocument();
   });
 
   it('이미 생성된 아이콘 요소의 크기는 덮어쓰지 않고 기본 아이콘도 제공한다', () => {

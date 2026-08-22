@@ -549,7 +549,7 @@ export default function UserOrgHubClient({
             <h4 className={cn("text-sm font-black tracking-tighter leading-none ", selectedItemId === user.esntlId ? "text-white" : "text-foreground")}>
               {user.userNm}
             </h4>
-            <p className={cn("text-[10px] font-bold tracking-tight opacity-60 ", selectedItemId === user.esntlId ? "text-white/80" : "text-muted-foreground")}>{user.userId}</p>
+            <p className="text-[10px] font-bold tracking-tight text-muted-foreground">{user.userId}</p>
           </div>
         </div>
       )
@@ -617,19 +617,19 @@ export default function UserOrgHubClient({
         <div className={cn("col-span-12 lg:col-span-7 h-full flex flex-col gap-6 transition-opacity duration-300", isPending && "opacity-50")}>
           <HubSectionCard
             title={activeTab === 'DEPTS' ? '조직 구조' : activeTab === 'POLICIES' ? '조직 정책' : '사용자 목록'}
-            description="실시간으로 동기화되는 조직 및 사용자 명세입니다."
+            description="선택한 조직 및 사용자 정보를 확인하고 관리합니다."
             icon={activeTab === 'DEPTS' ? Network : activeTab === 'POLICIES' ? ShieldCheck : Users}
           >
             <div className="space-y-6">
               <div className="flex items-center justify-between px-1 pt-1 border-b border-border/50 pb-6">
                 <div>
-                  <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">실시간 데이터 동기화</span>
+                  <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">조직·사용자 데이터</span>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <button 
                       type="button"
-                      aria-label="서버 데이터 동기화"
+                      aria-label="조직·사용자 데이터 새로고침"
                       // 무인자 invalidateQueries() 는 메뉴·알림 등 이 화면과 무관한 캐시까지
                       // 전부 재요청시킨다 — 이 화면이 쓰는 두 키로 좁힌다(감사 P2).
                       onClick={() => {
@@ -638,11 +638,11 @@ export default function UserOrgHubClient({
                       }}
                       className="h-10 rounded-xl px-5 text-[10px] font-black tracking-widest gap-2 bg-muted hover:bg-surface-inverse text-foreground hover:text-surface-inverse-foreground border border-border/60 transition-all group shadow-sm uppercase flex items-center justify-center outline-none cursor-pointer"
                     >
-                      <RefreshCcw size={14} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> 동기화
+                      <RefreshCcw size={14} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> 새로고침
                     </button>
                   </TooltipTrigger>
                   <TooltipContent side="left" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
-                    데이터 동기화
+                    최신 데이터 다시 불러오기
                   </TooltipContent>
                 </Tooltip>
               </div>
@@ -669,7 +669,12 @@ export default function UserOrgHubClient({
                 </div>
               )}
 
-              <div className="overflow-y-auto pr-2 custom-scrollbar max-h-[600px]">
+              <div
+                role="region"
+                aria-label="조직·사용자 결과 스크롤 영역"
+                tabIndex={0}
+                className="overflow-y-auto pr-2 custom-scrollbar max-h-[600px] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+              >
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
@@ -764,8 +769,7 @@ export default function UserOrgHubClient({
                                       } else {
                                         toast(res.message, 'error');
                                       }
-                                    } catch (_err) {
-                                      console.error(_err);
+                                    } catch {
                                       toast('구조 저장 중 오류 발생', 'error');
                                     } finally {
                                       setIsSaving(false);
@@ -812,6 +816,7 @@ export default function UserOrgHubClient({
                               onRowClick={(item) => {
                                   if (item.userId) setSelectedItemId(item.userId);
                               }}
+                              rowActionLabel={(item) => `${item.userNm || item.userId || '사용자'} 상세 열기`}
                               keyField="userId"
                               // ⚠ e2e(23-security-auth-supplement E12)가 /검색 결과가 없습니다|데이터가 존재하지 않습니다/ 로 단언한다.
                               emptyMessage={debouncedKeyword ? `'${debouncedKeyword}' 검색 결과가 없습니다.` : '데이터가 존재하지 않습니다.'}
@@ -976,8 +981,8 @@ export default function UserOrgHubClient({
                 <div className="w-28 h-24 rounded-2xl bg-card border border-border flex items-center justify-center text-muted-foreground/40 shadow-xl mb-10 group-hover:rotate-6 transition-transform duration-700">
                   <Contact2 size={50} className="opacity-20 group-hover:opacity-100 transition-opacity" />
                 </div>
-                <h3 className="text-3xl font-black text-muted-foreground/50 tracking-tighter">선택 대기 중</h3>
-                <p className="text-[10px] font-bold text-muted-foreground tracking-widest mt-4 leading-relaxed max-w-[280px]">스트림에서 부서 또는 사용자를 선택하여 관리를 시작하십시오.</p>
+                <h3 className="text-3xl font-black text-muted-foreground tracking-tighter">선택 대기 중</h3>
+                <p className="text-[10px] font-bold text-muted-foreground tracking-widest mt-4 leading-relaxed max-w-[280px]">목록에서 부서 또는 사용자를 선택하세요.</p>
                 <div className="mt-10 flex gap-4 opacity-10 grayscale">
                   <Fingerprint size={24} />
                   <Database size={24} />
