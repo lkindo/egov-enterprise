@@ -125,6 +125,13 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
     [item, pathname, searchParams]
   );
 
+  // aria-current="page" 는 IA §7.3 의 canonical node 선언이다. isActive(자손 포함)에 달면
+  // 조상 그룹까지 '현재 페이지'를 사칭하므로 자기 자신 일치에만 단다.
+  const isCurrentPage = useMemo(
+    () => matchesLocation(href, String(pathname), searchParams),
+    [href, pathname, searchParams]
+  );
+
   useEffect(() => {
     setIsMounted(true);
     if (isActive && hasChildren) {
@@ -210,6 +217,7 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
         <>
           <Link
             href={href}
+            aria-current={isCurrentPage ? 'page' : undefined}
             className="block w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-[var(--radius-hub-item)]"
             onClick={handleLinkClick}
           >
