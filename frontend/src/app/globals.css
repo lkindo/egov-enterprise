@@ -360,6 +360,81 @@
     @apply cursor-col-resize select-none;
   }
 
+  /* --- 반응형 표: md 미만에서 표를 카드 스택으로 전환 (ADR-0006) ---
+     종전에는 데스크톱 <table> 과 모바일 카드 <div> 를 **둘 다 렌더**하고 hidden/md:hidden 으로
+     한쪽만 보였다. 그 결과 accessor 가 행×열마다 2회 실행되고 accessor 가 만든 testid·aria-label 이
+     2벌씩 생겨 Playwright strict mode 가 깨졌다(2026-08-22 CI run 32555133776).
+     이제 DOM 은 하나이고 표현만 CSS 로 바꾼다 — JS·상태·하이드레이션 경계가 없다.
+
+     ⚠ display 를 바꾸면 <table> 의 암시 role 이 사라지므로 컴포넌트가 role="table/rowgroup/row"
+        를 명시한다. 여기서 그 명시 role 을 지우면 md 미만에서 표 시맨틱이 통째로 사라진다.
+     ⚠ thead 는 display:none 이 아니라 **시각적으로만** 숨긴다. none 이면 접근성 트리에서도
+        사라져 열 이름을 잃는다. */
+  @media (max-width: 767px) {
+    .standard-data-table-responsive,
+    .standard-data-table-responsive > thead,
+    .standard-data-table-responsive > tbody,
+    .standard-data-table-responsive > tbody > tr,
+    .standard-data-table-responsive > tbody > tr > td {
+      display: block;
+      width: 100%;
+    }
+
+    .standard-data-table-responsive > thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0 0 0 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    .standard-data-table-responsive > tbody > tr {
+      margin-bottom: 1.25rem;
+      padding: 0.25rem 0;
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-hub-item);
+      background-color: var(--color-card);
+    }
+
+    .standard-data-table-responsive > tbody > tr:last-child {
+      margin-bottom: 0;
+    }
+
+    /* 소비자가 넘긴 column.className(w-32·text-right 등)은 표 격자 전용이므로
+       카드 표현에서는 이 규칙이 이긴다. 선택자 특이성 (0,1,3) > 유틸리티 (0,1,0). */
+    .standard-data-table-responsive > tbody > tr > td {
+      display: grid;
+      grid-template-columns: minmax(5rem, 38%) 1fr;
+      gap: 1rem;
+      align-items: center;
+      padding: 0.75rem 1.25rem;
+      text-align: left;
+      white-space: normal;
+    }
+
+    .standard-data-table-responsive > tbody > tr > td::before {
+      content: attr(data-label);
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--color-muted-foreground);
+    }
+
+    /* 라벨이 없는 셀 — 선택 체크박스, 행 액션 버튼, colSpan 상태 표시(빈/오류) */
+    .standard-data-table-responsive > tbody > tr > td:not([data-label]) {
+      grid-template-columns: 1fr;
+    }
+
+    .standard-data-table-responsive > tbody > tr > td:not([data-label])::before {
+      content: none;
+    }
+  }
+
   /* --- Phase 6: Performance & A11y Fallbacks --- */
   @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {

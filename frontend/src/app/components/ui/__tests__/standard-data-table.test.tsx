@@ -42,14 +42,23 @@ function renderTable(overrides: TestTableOverrides = {}) {
 }
 
 describe('StandardDataTable', () => {
-  it('모바일 카드의 반복 열 라벨을 opacity 합성 없이 시맨틱 전경으로 렌더한다', () => {
+  it('md 미만 카드 표현이 쓸 열 라벨을 각 셀의 data-label 로 제공한다', () => {
+    // [2026-08-22 ADR-0006] 종전에는 모바일 전용 카드 컴포넌트가 열 라벨을 SPAN 으로 **한 벌 더**
+    //   렌더했다(그래서 이 테스트가 `.md\:hidden` 안의 SPAN 을 찾았다). 이제 DOM 은 하나이고
+    //   카드 표현은 CSS 가 `td::before { content: attr(data-label) }` 로 만든다.
+    //   라벨의 존재는 여기서, 시각 표현은 globals.css 의 미디어쿼리에서 책임진다.
     renderTable();
 
-    const mobileColumnLabel = screen.getAllByText('이름').find((element) => (
-      element.tagName === 'SPAN' && element.closest('.md\\:hidden')
-    ));
-    expect(mobileColumnLabel).toHaveClass('text-primary');
-    expect(mobileColumnLabel).not.toHaveClass('text-primary/90');
+    const table = screen.getByRole('table');
+    const firstBodyRow = within(table).getAllByRole('row')[1];
+    const labels = within(firstBodyRow)
+      .getAllByRole('cell')
+      .map((cell) => cell.getAttribute('data-label'));
+
+    // 문자열 header 를 가진 열은 모두 라벨을 갖는다. 라벨이 없으면 md 미만에서 값만 남아
+    // "이게 무슨 값인지" 알 수 없게 된다.
+    expect(labels).toContain('이름');
+    expect(labels).toContain('상태');
   });
 
   it('표에 접근 가능한 이름을 제공하고 클릭 콜백이 없으면 모바일 카드를 버튼으로 노출하지 않는다', () => {
@@ -198,7 +207,7 @@ describe('StandardDataTable', () => {
     expect(onRowClick).not.toHaveBeenCalled();
 
     const rowActions = screen.getAllByRole('button', { name: '홍길동 계정 선택' });
-    expect(rowActions).toHaveLength(2);
+    expect(rowActions).toHaveLength(1);
     expect(rowActions[0]).toHaveTextContent('홍길동 계정 선택');
     rowActions[0].focus();
     await user.keyboard('{Enter}');
@@ -214,8 +223,8 @@ describe('StandardDataTable', () => {
       rowTestId: 'desktop-row',
     });
 
-    expect(screen.getAllByText('홍길동')).toHaveLength(2);
-    expect(screen.getAllByText('활성-0')).toHaveLength(2);
+    expect(screen.getAllByText('홍길동')).toHaveLength(1);
+    expect(screen.getAllByText('활성-0')).toHaveLength(1);
 
     const desktopRow = screen.getAllByTestId('desktop-row')[0];
     expect(desktopRow).not.toHaveAttribute('tabindex');
@@ -253,7 +262,7 @@ describe('StandardDataTable', () => {
   it('행 작업 문구가 비어 있으면 상세 동작을 추측하지 않고 중립 문구로 축소한다', () => {
     renderTable({ onRowClick: vi.fn(), rowActionLabel: '   ' });
 
-    expect(screen.getAllByRole('button', { name: '1번째 항목 작업' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: '1번째 항목 작업' })).toHaveLength(1);
     expect(screen.queryByText('상세 보기')).not.toBeInTheDocument();
   });
 
@@ -278,7 +287,7 @@ describe('StandardDataTable', () => {
     await user.type(input, 'alpha');
     await user.click(screen.getByRole('button', { name: '검색' }));
     expect(onSearch).toHaveBeenCalledWith('alpha');
-    expect(screen.getAllByText('"alpha"에 대한 검색 결과가 없습니다.')).toHaveLength(2);
+    expect(screen.getAllByText('"alpha"에 대한 검색 결과가 없습니다.')).toHaveLength(1);
 
     await user.click(screen.getByRole('button', { name: '검색어 지우기' }));
     expect(onClear).toHaveBeenCalledOnce();
@@ -326,8 +335,8 @@ describe('StandardDataTable', () => {
     const onRetry = vi.fn();
     const { rerender } = renderTable({ data: [], error: new Error('network down'), onRetry });
 
-    expect(screen.getAllByRole('alert')).toHaveLength(2);
-    expect(screen.getAllByText('network down')).toHaveLength(2);
+    expect(screen.getAllByRole('alert')).toHaveLength(1);
+    expect(screen.getAllByText('network down')).toHaveLength(1);
     await user.click(screen.getAllByRole('button', { name: '데이터 다시 불러오기' })[0]);
     expect(onRetry).toHaveBeenCalledOnce();
 
@@ -339,7 +348,7 @@ describe('StandardDataTable', () => {
         emptyMessage="표시할 행이 없습니다."
       />,
     );
-    expect(screen.getAllByText('표시할 행이 없습니다.')).toHaveLength(2);
+    expect(screen.getAllByText('표시할 행이 없습니다.')).toHaveLength(1);
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 });

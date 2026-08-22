@@ -170,7 +170,29 @@ test('accepted policy and approved r12 historical publication remain non-measure
   assert.match(adr, /versioned-compact-summary/u);
   assert.match(runbook, /\| 3 \| UA-03 [^\n]*\| `DONE` \|/u);
   assert.match(runbook, /\| 4 \| UA-04 [^\n]*\| `DONE` \|/u);
-  assert.match(runbook, /\| 5 \| UA-05 [^\n]*\| `IN_PROGRESS` \|/u);
+  // [2026-08-22 DEC-OPS-012] UA-05 는 사용자 결정으로 보류됐다. 값 교체이지 신호 완화가 아니므로
+  //   같은 변경에서 아래 assert 3건을 **추가**해 게이트 수를 늘린다:
+  //   ① 보류 어휘가 §2 에 실제로 정의돼 있을 것(정의 없는 상태값 남용 차단)
+  //   ② 보류가 뒤 단계 잠금을 풀지 않았을 것(UA-06~10 이 LOCKED 유지)
+  //   ③ §12 에 "현재 실행 중" 이라는 거짓 진술이 남지 않을 것
+  assert.match(runbook, /\| 5 \| UA-05 [^\n]*\| `DEFERRED` \(DEC-OPS-012\) \|/u);
+  assert.match(
+    runbook,
+    /- `DEFERRED` — 선행 조건은 충족됐으나 \*\*명시적 결정으로 실행을 미뤘다\.\*\*/u,
+    'DEFERRED 상태를 쓰려면 §2 진행 규칙이 그 의미와 "뒤 단계 잠금을 풀지 않는다"를 먼저 정의해야 한다',
+  );
+  for (const locked of ['6 \\| UA-06', '7 \\| UA-07', '8 \\| UA-08', '9 \\| UA-09', '10 \\| UA-10']) {
+    assert.match(
+      runbook,
+      new RegExp(`\\| ${locked} [^\\n]*\\| \`LOCKED\` \\|`, 'u'),
+      'UA-05 보류가 뒤 단계의 잠금을 해제해서는 안 된다 — 보류는 증거를 만들지 않는다',
+    );
+  }
+  assert.doesNotMatch(
+    runbook,
+    /현재 실행 중인 대상은 \*\*UA-05/u,
+    '§12 가 UA-05 를 실행 중이라고 계속 주장하면 보류 기록이 문서 안에서 자기모순이 된다',
+  );
   assert.match(runbook, /f39ba9930df973710318088ccb00a2800643d9a3/u);
   assert.match(runbook, /32502622801/u);
   assert.match(runbook, /32504902346/u);
