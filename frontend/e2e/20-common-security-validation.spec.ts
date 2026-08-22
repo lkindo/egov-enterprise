@@ -45,6 +45,14 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
             sessionLossProbe('E2E-SESSION-CLEARED-SOCKJS-401',
                 /\/ws\//, 'POST', 5,
                 '세션 소실 후 SockJS 폴백 전송이 인증 거부되는 지점이다.'),
+            // SockJS 는 폴백 전송을 붙이기 전에 GET /ws/info 로 전송 능력부터 조회한다.
+            // 쿠키 소실 뒤 재연결은 이 handshake 에서 시작하므로 위 POST 폴백과 같은 사슬의
+            // 첫 요청이며, 쿠키 삭제와 로그인 리다이렉트 사이 창에 재연결이 걸릴 때만
+            // 간헐 관측된다 (CI run 32573925248 shard 2 에서 이 항목 부재로 red — 위
+            // POST 전용 항목이 GET 을 소비하지 못했다).
+            sessionLossProbe('E2E-SESSION-CLEARED-SOCKJS-INFO-401',
+                /\/ws\/info(?:\?|$)/, 'GET', 2,
+                '세션 소실 후 SockJS 재연결 handshake(transport 조회)가 인증 거부되는 지점이다.'),
             {
                 id: 'E2E-SESSION-CLEARED-WS-ERROR',
                 specScope: '20-common-security-validation.spec.ts :: Session Integrity: Handling Token Clearance',
