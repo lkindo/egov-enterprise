@@ -260,6 +260,7 @@ export default function CommunityBoardClient() {
   return (
     <Suspense fallback={
       <div className="space-y-6 max-w-7xl mx-auto px-4 md:px-0 py-8 animate-pulse">
+        <h1 className="sr-only">커뮤니티 게시글을 불러오는 중</h1>
         {/* PageHeader 1:1 스켈레톤 */}
         <div className="flex justify-between items-center pb-6 border-b border-border">
           <div className="space-y-2 w-1/3">

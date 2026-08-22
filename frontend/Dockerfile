@@ -35,12 +35,18 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG BACKEND_API_URL
 ARG NEXT_PUBLIC_API_URL
+# FRONTEND_API_BUILD_URL_VALIDATION
+RUN node -e "const names = ['BACKEND_API_URL', 'NEXT_PUBLIC_API_URL']; const valid = (raw) => { if (typeof raw !== 'string' || raw.length === 0 || raw !== raw.trim() || /[\u0000-\u0020\u007f]/u.test(raw) || raw.includes('?') || raw.includes('#')) return false; const schemeEnd = raw.indexOf('://'); if (schemeEnd < 0) return false; const scheme = raw.slice(0, schemeEnd).toLowerCase(); if (scheme !== 'http' && scheme !== 'https') return false; const authorityStart = schemeEnd + 3; const pathStart = raw.indexOf('/', authorityStart); if (pathStart < 0) return false; const authority = raw.slice(authorityStart, pathStart); const pathname = raw.slice(pathStart); if (authority.length === 0 || authority.includes('@') || (pathname !== '/api/v1' && pathname !== '/api/v1/')) return false; let url; try { url = new URL(raw); } catch { return false; } return url.hostname !== '' && url.username === '' && url.password === '' && url.search === '' && url.hash === '' && url.pathname === pathname; }; if (!names.every((name) => valid(process.env[name]))) { console.error('Invalid frontend API build configuration.'); process.exit(1); }"
 ENV BACKEND_API_URL=$BACKEND_API_URL
 ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
 RUN pnpm run build
 
 # Stage 3: Runner
 FROM node:22-alpine@sha256:c610fcdfb1d5b4740dd70c284ed3cb16bb857e0f7166196e36a5501df7a3aa32 AS runner
+ARG BASELINE_BUILD_SHA
+ARG BASELINE_BUILD_INPUT_TREE_SHA256
+LABEL org.opencontainers.image.revision="${BASELINE_BUILD_SHA}" \
+      io.egov.ui-quality.build-input-tree-sha256="${BASELINE_BUILD_INPUT_TREE_SHA256}"
 WORKDIR /app
 
 ENV NODE_ENV=production

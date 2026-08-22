@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import {
   Column,
+  RowActionLabel,
   StandardDataTable,
   StandardDataTableProps,
 } from '../standard-data-table';
@@ -23,7 +24,14 @@ const columns: Column<TestRow>[] = [
   { header: '상태', accessor: (row, index) => `${row.state}-${index}` },
 ];
 
-function renderTable(overrides: Partial<StandardDataTableProps<TestRow>> = {}) {
+type TestTableOverrides = Partial<
+  Omit<StandardDataTableProps<TestRow>, 'onRowClick' | 'rowActionLabel'>
+> & (
+  | { onRowClick: (item: TestRow) => void; rowActionLabel: RowActionLabel<TestRow> }
+  | { onRowClick?: undefined; rowActionLabel?: never }
+);
+
+function renderTable(overrides: TestTableOverrides = {}) {
   const props: StandardDataTableProps<TestRow> = {
     columns,
     data: rows,
@@ -34,31 +42,201 @@ function renderTable(overrides: Partial<StandardDataTableProps<TestRow>> = {}) {
 }
 
 describe('StandardDataTable', () => {
+  it('모바일 카드의 반복 열 라벨을 opacity 합성 없이 시맨틱 전경으로 렌더한다', () => {
+    renderTable();
+
+    const mobileColumnLabel = screen.getAllByText('이름').find((element) => (
+      element.tagName === 'SPAN' && element.closest('.md\\:hidden')
+    ));
+    expect(mobileColumnLabel).toHaveClass('text-primary');
+    expect(mobileColumnLabel).not.toHaveClass('text-primary/90');
+  });
+
+  it('표에 접근 가능한 이름을 제공하고 클릭 콜백이 없으면 모바일 카드를 버튼으로 노출하지 않는다', () => {
+    renderTable();
+
+    expect(screen.getByRole('table', { name: '데이터 목록' })).toBeInTheDocument();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+  });
+
+  it('실제 desktop overflow에만 표 이름과 결속된 키보드 스크롤 영역을 제공한다', () => {
+    const clientWidthDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+    const scrollWidthDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollWidth');
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get() {
+        return (this as HTMLElement).dataset.slot === 'standard-data-table-scroll-region' ? 320 : 0;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
+      configurable: true,
+      get() {
+        return (this as HTMLElement).dataset.slot === 'standard-data-table-scroll-region' ? 640 : 0;
+      },
+    });
+
+    try {
+      renderTable({ accessibleLabel: '사용자 목록' });
+
+      const region = screen.getByRole('region', { name: '사용자 목록 스크롤 영역' });
+      expect(region).toHaveAttribute('tabindex', '0');
+      expect(region).toHaveClass('focus-visible:ring-2');
+      region.focus();
+      expect(region).toHaveFocus();
+    } finally {
+      if (clientWidthDescriptor) {
+        Object.defineProperty(HTMLElement.prototype, 'clientWidth', clientWidthDescriptor);
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, 'clientWidth');
+      }
+      if (scrollWidthDescriptor) {
+        Object.defineProperty(HTMLElement.prototype, 'scrollWidth', scrollWidthDescriptor);
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollWidth');
+      }
+    }
+  });
+
+  it('중첩된 실제 table과 동적 셀 변경을 관찰해 스크롤 영역 상태를 즉시 갱신한다', async () => {
+    const originalResizeObserver = globalThis.ResizeObserver;
+    const observedTargets = new Set<Element>();
+    const clientWidthDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'clientWidth');
+    const scrollWidthDescriptor = Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'scrollWidth');
+
+    class TrackingResizeObserver {
+      observe(target: Element) {
+        observedTargets.add(target);
+      }
+      unobserve() {}
+      disconnect() {}
+    }
+
+    globalThis.ResizeObserver = TrackingResizeObserver as unknown as typeof ResizeObserver;
+    Object.defineProperty(HTMLElement.prototype, 'clientWidth', {
+      configurable: true,
+      get() {
+        return (this as HTMLElement).dataset.slot === 'standard-data-table-scroll-region' ? 320 : 0;
+      },
+    });
+    Object.defineProperty(HTMLElement.prototype, 'scrollWidth', {
+      configurable: true,
+      get() {
+        if ((this as HTMLElement).dataset.slot !== 'standard-data-table-scroll-region') return 0;
+        return this.textContent?.includes('동적으로 길어진 셀 내용') ? 640 : 320;
+      },
+    });
+
+    try {
+      const { rerender } = renderTable({ accessibleLabel: '동적 사용자 목록' });
+      const table = screen.getByRole('table', { name: '동적 사용자 목록' });
+
+      expect(observedTargets).toContain(table);
+      expect(screen.queryByRole('region', { name: '동적 사용자 목록 스크롤 영역' })).not.toBeInTheDocument();
+
+      rerender(
+        <StandardDataTable
+          columns={columns}
+          data={[{ ...rows[0], name: '동적으로 길어진 셀 내용' }, rows[1]]}
+          keyField="id"
+          accessibleLabel="동적 사용자 목록"
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.getByRole('region', { name: '동적 사용자 목록 스크롤 영역' }))
+          .toHaveAttribute('tabindex', '0');
+      });
+
+      rerender(
+        <StandardDataTable
+          columns={columns}
+          data={rows}
+          keyField="id"
+          accessibleLabel="동적 사용자 목록"
+        />,
+      );
+
+      await waitFor(() => {
+        expect(screen.queryByRole('region', { name: '동적 사용자 목록 스크롤 영역' }))
+          .not.toBeInTheDocument();
+      });
+    } finally {
+      globalThis.ResizeObserver = originalResizeObserver;
+      if (clientWidthDescriptor) {
+        Object.defineProperty(HTMLElement.prototype, 'clientWidth', clientWidthDescriptor);
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, 'clientWidth');
+      }
+      if (scrollWidthDescriptor) {
+        Object.defineProperty(HTMLElement.prototype, 'scrollWidth', scrollWidthDescriptor);
+      } else {
+        Reflect.deleteProperty(HTMLElement.prototype, 'scrollWidth');
+      }
+    }
+  });
+
+  it('행 작업은 호출부가 명시한 실제 intent로 표시하고 셀 내부 조작은 행 작업을 실행하지 않는다', async () => {
+    const user = userEvent.setup();
+    const onRowClick = vi.fn();
+    const actionColumns: Column<TestRow>[] = [
+      ...columns,
+      {
+        header: '작업',
+        accessor: () => <button type="button">행 메뉴</button>,
+      },
+    ];
+
+    renderTable({
+      columns: actionColumns,
+      onRowClick,
+      rowActionLabel: (row) => `${row.name} 계정 선택`,
+    });
+
+    expect(document.querySelector('button button')).toBeNull();
+    const firstRowAction = screen.getAllByRole('button', { name: '행 메뉴' })[0];
+    await user.click(firstRowAction);
+    expect(onRowClick).not.toHaveBeenCalled();
+
+    const rowActions = screen.getAllByRole('button', { name: '홍길동 계정 선택' });
+    expect(rowActions).toHaveLength(2);
+    expect(rowActions[0]).toHaveTextContent('홍길동 계정 선택');
+    rowActions[0].focus();
+    await user.keyboard('{Enter}');
+    expect(onRowClick).toHaveBeenCalledOnce();
+    expect(onRowClick).toHaveBeenCalledWith(rows[0]);
+  });
+
   it('키 접근자와 함수 접근자를 데스크톱·모바일 뷰에 동일하게 렌더링한다', () => {
     const onRowClick = vi.fn();
-    renderTable({ onRowClick, rowTestId: 'desktop-row' });
+    renderTable({
+      onRowClick,
+      rowActionLabel: (row) => `${row.name} 상세 열기`,
+      rowTestId: 'desktop-row',
+    });
 
     expect(screen.getAllByText('홍길동')).toHaveLength(2);
     expect(screen.getAllByText('활성-0')).toHaveLength(2);
 
     const desktopRow = screen.getAllByTestId('desktop-row')[0];
-    fireEvent.keyDown(desktopRow, { key: 'Enter' });
-    fireEvent.keyDown(desktopRow, { key: ' ' });
-    expect(onRowClick).toHaveBeenNthCalledWith(1, rows[0]);
-    expect(onRowClick).toHaveBeenNthCalledWith(2, rows[0]);
+    expect(desktopRow).not.toHaveAttribute('tabindex');
+    expect(onRowClick).not.toHaveBeenCalled();
   });
 
   it('행·전체 선택을 실제 항목 배열로 bulk action에 전달하고 전체 해제한다', async () => {
     const user = userEvent.setup();
     const onBulkAction = vi.fn();
+    const onRowClick = vi.fn();
     renderTable({
       enableSelection: true,
+      onRowClick,
+      rowActionLabel: (row) => `${row.name} 상세 열기`,
       bulkActions: [{ label: '상태 변경', onClick: onBulkAction }],
     });
 
     const table = screen.getByRole('table');
     const checkboxes = within(table).getAllByRole('checkbox');
     await user.click(checkboxes[1]);
+    expect(onRowClick).not.toHaveBeenCalled();
     expect(screen.getByText('1')).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: '상태 변경' }));
@@ -70,6 +248,13 @@ describe('StandardDataTable', () => {
     await user.click(checkboxes[0]);
     await user.click(screen.getByRole('button', { name: '상태 변경' }));
     expect(onBulkAction).toHaveBeenLastCalledWith(rows);
+  });
+
+  it('행 작업 문구가 비어 있으면 상세 동작을 추측하지 않고 중립 문구로 축소한다', () => {
+    renderTable({ onRowClick: vi.fn(), rowActionLabel: '   ' });
+
+    expect(screen.getAllByRole('button', { name: '1번째 항목 작업' })).toHaveLength(2);
+    expect(screen.queryByText('상세 보기')).not.toBeInTheDocument();
   });
 
   it('검색 제출·초기화와 페이지 탐색을 상위 콜백에 결속한다', async () => {

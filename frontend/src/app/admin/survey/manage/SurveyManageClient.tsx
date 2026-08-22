@@ -19,7 +19,7 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 const PAGE_SIZE = 10;
 
-export default function SurveyManageClient() {
+export default function SurveyManageClient({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
   // 기준일은 저장 포맷과 동일한 'yyyyMMdd' 문자열로 고정한다.
   // (SSR 시점 시각을 쓰면 하이드레이션 불일치가 나므로 마운트 후 세팅)
@@ -125,10 +125,12 @@ export default function SurveyManageClient() {
 
   return (
     <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="설문 및 거버넌스 관리"
-        breadcrumbs={[{ label: '설문관리' }, { label: '설문설정' }]}
-      />
+      {!embedded && (
+        <PageHeader
+          title="설문 및 거버넌스 관리"
+          breadcrumbs={[{ label: '설문관리' }, { label: '설문설정' }]}
+        />
+      )}
 
       <HubHeader
         title="설문"
@@ -200,6 +202,7 @@ export default function SurveyManageClient() {
               error={isError ? error : null}
               onRetry={() => void refetch()}
               onRowClick={(poll) => router.push(`/admin/survey/manage/${poll.pollSn}`)}
+              rowActionLabel={(poll) => `${poll.pollNm || `${poll.pollSn}번`} 설문 관리 열기`}
               emptyMessage="등록된 설문 정보가 없습니다."
               isPremium={true}
               className="border-none bg-transparent shadow-none"

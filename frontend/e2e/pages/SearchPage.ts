@@ -5,11 +5,11 @@ export class SearchPage {
 
     async navigate() {
         await this.page.goto('/search', { waitUntil: 'domcontentloaded' });
-        await expect(this.page.getByPlaceholder(/검색어를 입력하고 지식을 발견하세요/)).toBeVisible();
+        await expect(this.page.getByPlaceholder(/임직원 또는 바로가기 이름을 입력하세요/)).toBeVisible();
     }
 
     async performSearch(query: string) {
-        const input = this.page.getByPlaceholder(/검색어를 입력하고 지식을 발견하세요/);
+        const input = this.page.getByPlaceholder(/임직원 또는 바로가기 이름을 입력하세요/);
         await input.fill(query);
         await Promise.all([
             this.page.waitForURL((url) => (

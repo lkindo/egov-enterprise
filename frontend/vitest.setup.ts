@@ -181,23 +181,51 @@ vi.mock('@/components/ui/tabs', () => ({
   TabsContent: ({ children }: any) => children,
 }));
 
-// Mock framer-motion
+// Mock framer-motion without leaking animation-only props onto real DOM nodes.
+const MOTION_ONLY_PROPS = new Set([
+  'animate',
+  'exit',
+  'initial',
+  'layout',
+  'layoutId',
+  'transition',
+  'variants',
+  'viewport',
+  'whileDrag',
+  'whileFocus',
+  'whileHover',
+  'whileInView',
+  'whileTap',
+]);
+
+function mockMotionElement(tag: keyof React.JSX.IntrinsicElements) {
+  function MockMotionElement({ children, ...props }: React.PropsWithChildren<Record<string, unknown>>) {
+    const domProps = Object.fromEntries(
+      Object.entries(props).filter(([name]) => !MOTION_ONLY_PROPS.has(name)),
+    );
+    return React.createElement(tag, domProps, children);
+  }
+
+  MockMotionElement.displayName = `MockMotion.${tag}`;
+  return MockMotionElement;
+}
+
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => React.createElement('div', props, children),
-    header: ({ children, ...props }: any) => React.createElement('header', props, children),
-    main: ({ children, ...props }: any) => React.createElement('main', props, children),
-    section: ({ children, ...props }: any) => React.createElement('section', props, children),
-    nav: ({ children, ...props }: any) => React.createElement('nav', props, children),
-    a: ({ children, ...props }: any) => React.createElement('a', props, children),
-    button: ({ children, ...props }: any) => React.createElement('button', props, children),
-    span: ({ children, ...props }: any) => React.createElement('span', props, children),
-    li: ({ children, ...props }: any) => React.createElement('li', props, children),
-    ul: ({ children, ...props }: any) => React.createElement('ul', props, children),
-    p: ({ children, ...props }: any) => React.createElement('p', props, children),
-    h1: ({ children, ...props }: any) => React.createElement('h1', props, children),
-    h2: ({ children, ...props }: any) => React.createElement('h2', props, children),
-    h3: ({ children, ...props }: any) => React.createElement('h3', props, children),
+    div: mockMotionElement('div'),
+    header: mockMotionElement('header'),
+    main: mockMotionElement('main'),
+    section: mockMotionElement('section'),
+    nav: mockMotionElement('nav'),
+    a: mockMotionElement('a'),
+    button: mockMotionElement('button'),
+    span: mockMotionElement('span'),
+    li: mockMotionElement('li'),
+    ul: mockMotionElement('ul'),
+    p: mockMotionElement('p'),
+    h1: mockMotionElement('h1'),
+    h2: mockMotionElement('h2'),
+    h3: mockMotionElement('h3'),
   },
   AnimatePresence: ({ children }: any) => children,
   useScroll: () => ({ scrollY: { onChange: vi.fn() } }),

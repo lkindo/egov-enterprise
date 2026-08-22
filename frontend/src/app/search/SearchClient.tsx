@@ -11,15 +11,12 @@ import { Search,
     ChevronRight, 
     MessageSquare, 
     Clock, 
-    Filter, 
-    CheckCircle2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+    AlertTriangle } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { StandardTabs } from '@/app/components/ui/standard-tabs';
-import { userAdminService } from '@/services/foundation/system/UserAdminService';
-import type { UserManage } from '@/types/foundation/user';
+import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 
 interface SearchArticle {
     bbsId: string;
@@ -31,7 +28,7 @@ interface SearchArticle {
     frstRegisterNm?: string;
 }
 
-type SearchUser = Pick<UserManage, 'userId' | 'userNm'>;
+type SearchUser = UserSearchResult;
 
 interface SearchMenu {
     name: string;
@@ -75,6 +72,7 @@ export const SearchResultsContent = ({
     //    읽으면 red 가 된다.)
     const [loading, setLoading] = useState(false);
     const [results, setResults] = useState(initialResults);
+    const [searchError, setSearchError] = useState<string | null>(null);
 
     // 결과 조회. 검색어가 있을 때만 돈다.
     //
@@ -90,25 +88,26 @@ export const SearchResultsContent = ({
 
         const fetchResults = async () => {
             setLoading(true);
+            setSearchError(null);
             try {
                 // 전역 게시글 검색 백엔드 엔드포인트는 부재(/api/v1/bbs는 /{bbsId} 기반이라 /bbs는 404) → 팬텀 호출 제거.
-                const userPage = await userAdminService.getUserList({
-                    pageNo: 1,
-                    searchKeyword: query,
-                    size: 10,
-                });
+                // 모든 인증 사용자가 접근하는 route이므로 연락처·주소까지 담은
+                // admin 전용 목록이 아닌 식별자·성명·부서만 반환하는 최소정보 API를 사용한다.
+                const users = await userSearchService.searchAssignableUsers(query);
                 if (cancelled) return;
 
                 setResults({
                     articles: [],
-                    users: userPage.list.slice(0, 10),
+                    users: users.slice(0, 10),
                     menus: [
                         { name: '공지사항 관리', path: '/admin/system/menus', category: '시스템' },
                         { name: '자유 게시판', path: '/admin/community/boards', category: '커뮤니티' }
                     ].filter(m => m.name.includes(String(query || '')))
                 });
-            } catch (error) {
-                if (!cancelled) console.error('Search failed', error);
+            } catch {
+                if (!cancelled) {
+                    setSearchError('임직원 검색 결과를 불러오지 못했습니다.');
+                }
             } finally {
                 if (!cancelled) setLoading(false);
             }
@@ -141,7 +140,7 @@ export const SearchResultsContent = ({
                     <div className="flex flex-col md:flex-row items-center justify-between gap-6">
                         <div className="space-y-2">
                         <h1 className="text-3xl md:text-3xl font-bold text-surface-inverse-foreground tracking-tighter ">
-                            통합 지식 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">인텔리전스</span>
+                            통합 <span className="text-primary underline decoration-8 decoration-primary/20 underline-offset-8">검색</span>
                         </h1>
                         <p className="text-muted-foreground font-medium text-lg">워크스페이스 전체에서 필요한 정보를 정확하게 찾아드립니다.</p>
                     </div>
@@ -172,7 +171,7 @@ export const SearchResultsContent = ({
                             <Input
                                 name="q"
                                 defaultValue={query}
-                                placeholder="검색어를 입력하고 지식을 발견하세요.."
+                                placeholder="임직원 또는 바로가기 이름을 입력하세요"
                                 className="h-11 pl-16 pr-40 rounded-lg border-0 bg-card ring-offset-0 focus:ring-4 focus:ring-primary/20 transition-all font-bold text-xl placeholder:text-slate-300 placeholder:font-bold"
                             />
                             <Button
@@ -187,17 +186,11 @@ export const SearchResultsContent = ({
             </div>
 
             <div className="flex flex-col md:flex-row gap-10">
-                {/* Sidebar Filters */}
+                {/* 검색 범위 안내 */}
                 <div className="w-full md:w-64 space-y-8 shrink-0">
-                    <div className="p-8 bg-card border-2 border-primary/5 rounded-lg shadow-xl">
-                        <h3 className="text-sm font-bold tracking-[0.2em] text-muted-foreground mb-6 flex items-center gap-2">
-                            <Filter size={14} className="text-primary" /> 필터 옵션
-                        </h3>
-                        <div className="space-y-4">
-                            <FilterToggle label="정확도순" active />
-                            <FilterToggle label="최신순" />
-                            <FilterToggle label="조회수순" />
-                        </div>
+                    <div className="p-8 bg-card border-2 border-primary/5 rounded-lg shadow-xl space-y-3">
+                        <h2 className="text-sm font-bold tracking-tight text-foreground">현재 검색 범위</h2>
+                        <p className="text-sm text-muted-foreground leading-relaxed">임직원과 메뉴 바로가기를 검색합니다. 게시글 통합 검색은 아직 제공되지 않습니다.</p>
                     </div>
 
                     <div className="p-8 bg-surface-inverse rounded-lg text-surface-inverse-foreground shadow-2xl relative overflow-hidden group">
@@ -237,7 +230,13 @@ export const SearchResultsContent = ({
                     ) : null}
 
                     <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 min-h-[500px]">
-                        {loading ? (
+                        {searchError ? (
+                            <div role="alert" className="flex flex-col items-center justify-center py-24 text-center space-y-4 rounded-lg border border-destructive/30 bg-destructive/5 px-6">
+                                <AlertTriangle size={36} className="text-destructive-emphasis" />
+                                <h3 className="text-lg font-bold text-foreground">{searchError}</h3>
+                                <p className="text-sm text-muted-foreground">입력한 검색어는 유지됩니다. 잠시 후 ‘검색 실행’을 다시 선택해 주세요.</p>
+                            </div>
+                        ) : loading ? (
                             <div className="space-y-6">
                                 {[1, 2, 3, 4].map(i => (
                                     <div key={`search-skeleton-${i}`} className="h-32 bg-muted/40 animate-pulse rounded-lg" />
@@ -268,8 +267,8 @@ export const SearchResultsContent = ({
                                 {(activeTab === 'all' || activeTab === 'users') && results.users.length > 0 ? (
                                     <ResultSection title="임직원" count={results.users.length}>
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                            {results.users.map((item) => (
-                                                <UserResultItem key={item.userId} item={item} />
+                                            {results.users.map((item, index) => (
+                                                <UserResultItem key={item.esntlId ?? `${item.userNm ?? 'user'}-${index}`} item={item} />
                                             ))}
                                         </div>
                                     </ResultSection>
@@ -293,18 +292,6 @@ export const SearchResultsContent = ({
 };
 
 // --- Helper Components ---
-
-function FilterToggle({ label, active = false }: { label: string, active?: boolean }) {
-    return (
-        <button className={cn(
-            "w-full flex items-center justify-between p-3 rounded-lg transition-all font-bold text-sm",
-            active ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-muted-foreground hover:bg-muted"
-        )}>
-            {label}
-            {active ? <CheckCircle2 size={14} /> : null}
-        </button>
-    );
-}
 
 function ResultSection({ title, count, children }: { title: string; count: number; children: ReactNode }) {
     return (
@@ -358,7 +345,7 @@ function UserResultItem({ item }: { item: SearchUser }) {
             </div>
             <div className="flex-1 min-w-0">
                 <h4 className="font-bold text-lg tracking-tight truncate">{item.userNm}</h4>
-                <p className="text-sm text-muted-foreground font-bold">{item.userId}</p>
+                <p className="text-sm text-muted-foreground font-bold">{item.deptNm || '부서 정보 없음'}</p>
             </div>
             <Badge variant="secondary" className="rounded-lg font-bold text-xs ">직원</Badge>
         </div>

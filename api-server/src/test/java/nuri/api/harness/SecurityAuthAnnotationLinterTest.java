@@ -79,9 +79,9 @@ class SecurityAuthAnnotationLinterTest {
     private static final String READ_SURFACE_ACTUAL_OUT = "build/harness/authorization-read-surface.actual.txt";
 
     /**
-     * 읽기 인가 표면 동결 해시(2026-08-19 실측: endpoint 166건).
+     * 읽기 인가 표면 동결 해시(2026-08-22 실측: endpoint 168건).
      *
-     * <p>분포: RBAC_ADMIN_OR_SYSTEM 96 · DEFAULT_AUTHENTICATED 54 · RBAC_ALIAS_ADMIN_OR_SYSTEM 10 ·
+     * <p>분포: RBAC_ADMIN_OR_SYSTEM 96 · DEFAULT_AUTHENTICATED 62 · RBAC_ALIAS_ADMIN_OR_SYSTEM 4 ·
      * PUBLIC_FILTER 6({@code auth/me}, {@code health}, {@code menus/head}, {@code menus/left},
      * {@code users/check-id}, {@code public/debug/error}). 마지막 항목은 {@code @Profile("!prod")}
      * 라 운영에는 등재되지 않는다.
@@ -96,8 +96,10 @@ class SecurityAuthAnnotationLinterTest {
             // [2026-08-20 V2_84 갱신] 설문 별칭 GET 6행의 gate 가 RBAC_ALIAS_ADMIN_OR_SYSTEM →
             // DEFAULT_AUTHENTICATED 로 바뀌고 메서드 SpEL 이 부여됐다(목록·상세·문항·stats 는
             // isAuthenticated — 제품 결정에 따른 의도된 개방 / 템플릿 2행은 hasAnyRole 로 관리 유지).
-            // 관리자 경로 공개 노출 하드 불변식은 계속 그린이다. endpoint 수 166 불변.
-            "4507921093ed47ec745e2efeafee73401cfb94450e7a611c8611e2dda8b79fb1";
+            // [2026-08-22 공개 FAQ 경계 갱신] 고정 FAQ 게시판의 active/public 목록·상세 GET 2행을
+            // DEFAULT_AUTHENTICATED 로 추가했다. 비밀글·비활성 글은 서버 조회 경계에서 제외하며,
+            // 관리자 경로 공개 노출 하드 불변식은 계속 그린이다. endpoint 수 166 -> 168.
+            "2075fa9346a6eb65be26c80ef3c26511825bdf70d07396b47049adbe3872b3d3";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;

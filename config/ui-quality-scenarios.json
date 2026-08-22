@@ -1,0 +1,775 @@
+{
+  "schemaVersion": 1,
+  "asOf": "2026-08-21",
+  "authority": "baseline-input-not-results",
+  "protocol": "docs/04-operations/ui-ux-baseline-protocol.md",
+  "routeTruthSource": "config/ui-route-capabilities.json",
+  "artifactRoot": "build/reports/ui-quality-baseline",
+  "caseIdentityFields": [
+    "route",
+    "role",
+    "state",
+    "brandTheme",
+    "colorMode",
+    "viewport"
+  ],
+  "unknownPolicy": {
+    "allowedBoundedStatuses": [
+      "unverified",
+      "unmeasured",
+      "blocked-external"
+    ],
+    "maxReviewDays": 90
+  },
+  "dimensions": {
+    "brandThemes": [
+      {
+        "id": "current-default",
+        "status": "unverified",
+        "description": "현재 렌더 기본값을 식별하기 위한 baseline label이며 승인된 기관 브랜드 profile이 아니다.",
+        "owner": "design-system + product/UX",
+        "reviewBy": "2026-10-31"
+      }
+    ],
+    "colorModes": [
+      "light",
+      "dark"
+    ],
+    "viewports": [
+      {
+        "id": "mobile-320",
+        "width": 320,
+        "height": 800
+      },
+      {
+        "id": "tablet-768",
+        "width": 768,
+        "height": 1024
+      },
+      {
+        "id": "desktop-1280",
+        "width": 1280,
+        "height": 800
+      }
+    ]
+  },
+  "repeatPolicy": {
+    "cold": {
+      "repetitions": 3,
+      "browserContext": "new-context-per-repeat",
+      "httpCache": "disabled",
+      "precondition": "storage and application caches cleared; required synthetic auth state restored before navigation"
+    },
+    "warm": {
+      "repetitions": 3,
+      "browserContext": "same-context-after-one-unrecorded-prime",
+      "httpCache": "enabled",
+      "precondition": "same build, role, state, theme, color mode, viewport and synthetic dataset as cold run"
+    },
+    "summaryStatistics": [
+      "median",
+      "minimum",
+      "maximum",
+      "median-absolute-deviation"
+    ]
+  },
+  "metrics": {
+    "task": [
+      {
+        "id": "task-success",
+        "unit": "categorical",
+        "definition": "authoritative readback까지 unassisted-success, assisted-success, failed, invalid-attempt 중 하나로 판정"
+      },
+      {
+        "id": "completion-time-ms",
+        "unit": "milliseconds",
+        "definition": "prompt 종료부터 authoritative readback까지의 monotonic elapsed time; 사전 기록한 진행자·환경 pause 제외"
+      },
+      {
+        "id": "critical-error-count",
+        "unit": "count",
+        "definition": "권한 오부여, 데이터 손실·중복, 개인정보 노출, 잘못된 대상의 파괴적 변경 횟수"
+      },
+      {
+        "id": "noncritical-error-count",
+        "unit": "count",
+        "definition": "과업을 즉시 파손하지 않지만 우회·재입력·오해를 만든 오류 횟수"
+      },
+      {
+        "id": "assistance-count",
+        "unit": "count",
+        "definition": "진행자가 경로 또는 해결 정보를 제공한 횟수; 중립적 prompt 반복은 별도 기록"
+      },
+      {
+        "id": "first-click-correct",
+        "unit": "boolean",
+        "definition": "과업 시작 후 첫 목적지 선택이 사전 정의한 유효 경로 집합에 포함되는지"
+      },
+      {
+        "id": "recovery-success",
+        "unit": "categorical",
+        "definition": "주입한 오류 뒤 입력·focus·완료 상태를 보존해 unassisted, assisted, failed 중 하나로 판정"
+      }
+    ],
+    "performance": [
+      {
+        "id": "route-js-transfer-bytes",
+        "unit": "bytes",
+        "definition": "해당 navigation의 same-origin script PerformanceResourceTiming transferSize 합과 개별 resource 목록"
+      },
+      {
+        "id": "lcp-ms",
+        "unit": "milliseconds",
+        "definition": "buffered LargestContentfulPaint entry의 startTime; 관측 종료 시점과 실제 element를 함께 기록"
+      },
+      {
+        "id": "lcp-element-resource",
+        "unit": "structured",
+        "definition": "LCP element의 닫힌 tag/role, size, resource same-origin 분류와 bounded redacted route template/category만 기록; raw URL/path/selector/filename은 제외"
+      },
+      {
+        "id": "cls",
+        "unit": "score",
+        "definition": "hadRecentInput=false인 layout-shift entry의 누적값과 가장 큰 shift source의 redacted locator"
+      },
+      {
+        "id": "interaction-latency-proxy-ms",
+        "unit": "milliseconds",
+        "definition": "지정 action 시작부터 observable state와 authoritative readback 후 안정 paint까지의 controlled proxy; field INP로 표현하지 않음"
+      }
+    ]
+  },
+  "automation": {
+    "axe": {
+      "runner": "@axe-core/playwright",
+      "deterministic": true,
+      "browserProject": "chromium",
+      "locale": "ko-KR",
+      "timezone": "Asia/Seoul",
+      "animations": "disabled",
+      "runOnlyTags": [
+        "wcag2a",
+        "wcag2aa",
+        "wcag21a",
+        "wcag21aa",
+        "wcag22a",
+        "wcag22aa"
+      ],
+      "requiredRules": [
+        "color-contrast"
+      ],
+      "disabledRules": [],
+      "readyContract": "scenario step의 heading, data fixture와 pending indicator 종료를 명시적으로 기다린 뒤 scan"
+    },
+    "limitations": [
+      "axe는 현재 렌더된 DOM과 실행된 state만 검사하며 방문하지 않은 route, 가상화 밖 행, 닫힌 overlay와 미주입 오류를 증명하지 않는다.",
+      "axe green은 keyboard task completion, 화면낭독기 발화 품질, focus 복귀, 콘텐츠 이해 또는 WCAG 2.2 준수를 증명하지 않는다.",
+      "color-contrast rule은 활성화하지만 이미지·gradient·투명 합성·forced-colors와 모든 interaction state의 사람 검토를 대체하지 않는다."
+    ]
+  },
+  "manualChecks": [
+    {
+      "id": "keyboard-only",
+      "required": true,
+      "wcag": [
+        "2.1.1",
+        "2.1.2",
+        "2.4.3",
+        "2.4.7",
+        "2.4.11"
+      ],
+      "procedureRef": "docs/04-operations/ui-ux-baseline-protocol.md#71-keyboard-only"
+    },
+    {
+      "id": "nvda-chrome",
+      "required": true,
+      "wcag": [
+        "1.3.1",
+        "2.4.2",
+        "2.4.6",
+        "3.3.1",
+        "3.3.2",
+        "4.1.2",
+        "4.1.3"
+      ],
+      "procedureRef": "docs/04-operations/ui-ux-baseline-protocol.md#72-nvdachrome"
+    },
+    {
+      "id": "text-200-percent",
+      "required": true,
+      "wcag": [
+        "1.4.4"
+      ],
+      "procedureRef": "docs/04-operations/ui-ux-baseline-protocol.md#73-200-text"
+    },
+    {
+      "id": "zoom-400-reflow-320",
+      "required": true,
+      "wcag": [
+        "1.4.10"
+      ],
+      "procedureRef": "docs/04-operations/ui-ux-baseline-protocol.md#74-400-zoom320-css-px-reflow"
+    },
+    {
+      "id": "forced-colors",
+      "required": true,
+      "wcag": [
+        "1.4.1",
+        "1.4.3",
+        "1.4.11",
+        "2.4.7"
+      ],
+      "procedureRef": "docs/04-operations/ui-ux-baseline-protocol.md#75-forced-colors"
+    },
+    {
+      "id": "reduced-motion",
+      "required": true,
+      "wcag": [
+        "2.2.2",
+        "2.3.1"
+      ],
+      "procedureRef": "docs/04-operations/ui-ux-baseline-protocol.md#76-reduced-motion"
+    }
+  ],
+  "privacy": {
+    "syntheticDataOnly": true,
+    "rawTraceRepositoryStorage": "forbidden",
+    "forbiddenArtifactKeys": [
+      "authorization",
+      "cookie",
+      "password",
+      "accessToken",
+      "refreshToken",
+      "userId",
+      "email",
+      "phone",
+      "ipAddress",
+      "residentRegistrationNumber",
+      "rawInput",
+      "freeText",
+      "searchKeyword",
+      "responseBody"
+    ],
+    "redactionProcedureRef": "docs/04-operations/ui-ux-baseline-protocol.md#9-privacy-redaction-and-artifact-handling"
+  },
+  "executionBlockers": [
+    {
+      "id": "baseline-runtime-evidence",
+      "status": "unmeasured",
+      "reason": "current authoritative r12는 exact 8개 scenario·96/96 state·48/48 performance를 invalid 0으로 완료했고, synthetic mutation task evidence 36건도 case-bound 실행·authoritative readback·rollback·cleanup·active residue 0으로 닫았다. r12 automated-only durable publication은 UA-04에서 완료됐지만 execution-captured protocol hash와 manual evidence 48건이 없어 8개 scenario 모두 partial-automated-evidence다.",
+      "owner": "quality engineering",
+      "reviewBy": "2026-10-31"
+    },
+    {
+      "id": "baseline-artifact-durability",
+      "status": "unmeasured",
+      "reason": "r12 automated-only summary는 사람 redaction review 8/8을 거쳐 canonical digest e7822b6a31dcf9ff5e129238e42cce7be29d5f126554e8ea400cf249c69af8e4와 tracked index 첫 entry로 발행됐다. clean-checkout committed Git blob identity readback, PR #434 required CI와 merge commit f39ba9930df973710318088ccb00a2800643d9a3의 post-merge CI가 모두 통과해 UA-04 durable publication은 완료됐지만, r12는 execution-captured protocol hash와 manual evidence 부재로 measured 승격 대상이 아니다.",
+      "owner": "quality engineering + repository governance",
+      "reviewBy": "2026-10-31"
+    },
+    {
+      "id": "manual-at-evidence",
+      "status": "blocked-external",
+      "reason": "r12 manual evidence 48건 중 40건은 전문가 검토가 필요하고 NVDA/Chrome 8건은 외부 차단 상태다. 실제 Windows 접근성 설정을 사용하는 지정 평가자, 격리 계정과 기록 승인 없이는 수동 결과를 만들 수 없다.",
+      "owner": "accessibility owner",
+      "reviewBy": "2026-10-31"
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "auth-login",
+      "archetype": "authentication",
+      "title": "로그인 오류와 목적지 복귀",
+      "primaryTask": "잘못된 synthetic 자격정보의 오류를 이해하고 올바른 계정으로 로그인해 원래 목적지로 복귀한다.",
+      "journeySteps": [
+        {
+          "id": "invalid-credentials",
+          "route": "/login",
+          "queryTemplate": "?redirect={safeRelativeRoute}",
+          "source": "frontend/src/app/login/page.tsx",
+          "role": "ANONYMOUS",
+          "state": {
+            "data": "synthetic-invalid-credentials",
+            "interaction": "submit-error",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + auth domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        },
+        {
+          "id": "successful-login",
+          "route": "/login",
+          "queryTemplate": "?redirect={safeRelativeRoute}",
+          "source": "frontend/src/app/login/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-valid-admin",
+            "interaction": "authenticate-and-return",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + auth domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        }
+      ],
+      "renderMatrix": {
+        "brandThemes": ["current-default"],
+        "colorModes": ["light", "dark"],
+        "viewports": ["mobile-320", "tablet-768", "desktop-1280"]
+      },
+      "taskMetricIds": ["task-success", "completion-time-ms", "critical-error-count", "noncritical-error-count", "assistance-count", "first-click-correct", "recovery-success"],
+      "performanceMetricIds": ["route-js-transfer-bytes", "lcp-ms", "lcp-element-resource", "cls", "interaction-latency-proxy-ms"],
+      "performanceTargetStepId": "successful-login",
+      "currentBaseline": {
+        "status": "unmeasured",
+        "reason": "r12 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
+        "artifactPath": "build/reports/ui-quality-baseline/auth-login/baseline-result.json",
+        "owner": "UX research + quality engineering",
+        "reviewBy": "2026-10-31"
+      },
+      "sourceEvidence": [
+        "frontend/src/app/login/page.tsx",
+        "frontend/e2e/01-core-base.spec.ts",
+        "frontend/e2e/23-security-auth-supplement.spec.ts"
+      ]
+    },
+    {
+      "id": "admin-shell-hub",
+      "archetype": "shell-hub-navigation",
+      "title": "관리자 shell과 hub 탐색",
+      "primaryTask": "관리자 시작 화면에서 지정 업무 목적지를 찾고 overlay·sidebar를 거쳐 본문으로 이동한다.",
+      "journeySteps": [
+        {
+          "id": "hub-ready",
+          "route": "/admin",
+          "source": "frontend/src/app/admin/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-dashboard-ready",
+            "interaction": "navigate-shell",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + admin-shell owner",
+            "reviewBy": "2026-10-31"
+          }
+        }
+      ],
+      "renderMatrix": {
+        "brandThemes": ["current-default"],
+        "colorModes": ["light", "dark"],
+        "viewports": ["mobile-320", "tablet-768", "desktop-1280"]
+      },
+      "taskMetricIds": ["task-success", "completion-time-ms", "critical-error-count", "noncritical-error-count", "assistance-count", "first-click-correct", "recovery-success"],
+      "performanceMetricIds": ["route-js-transfer-bytes", "lcp-ms", "lcp-element-resource", "cls", "interaction-latency-proxy-ms"],
+      "performanceTargetStepId": "hub-ready",
+      "currentBaseline": {
+        "status": "unmeasured",
+        "reason": "r12 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
+        "artifactPath": "build/reports/ui-quality-baseline/admin-shell-hub/baseline-result.json",
+        "owner": "UX research + quality engineering",
+        "reviewBy": "2026-10-31"
+      },
+      "sourceEvidence": [
+        "frontend/src/app/admin/page.tsx",
+        "frontend/e2e/01-core-base.spec.ts",
+        "frontend/e2e/04-quality-resilience.spec.ts"
+      ]
+    },
+    {
+      "id": "dense-user-logs",
+      "archetype": "dense-list",
+      "title": "사용자 로그 dense list 검색과 상태 구분",
+      "primaryTask": "synthetic 사용자 로그를 필터링하고 loaded, filtered-zero, server-error를 구분해 복구한다.",
+      "journeySteps": [
+        {
+          "id": "dense-list-ready",
+          "route": "/admin/system/logs/user",
+          "source": "frontend/src/app/admin/system/logs/user/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-dense-log-page",
+            "interaction": "filter-and-open-detail",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + logging domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        },
+        {
+          "id": "filtered-zero",
+          "route": "/admin/system/logs/user",
+          "source": "frontend/src/app/admin/system/logs/user/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-filtered-zero",
+            "interaction": "clear-filter-and-recover",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + logging domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        },
+        {
+          "id": "server-error",
+          "route": "/admin/system/logs/user",
+          "source": "frontend/src/app/admin/system/logs/user/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-existing-log-page",
+            "interaction": "scoped-retry",
+            "network": "injected-5xx"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + logging domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        }
+      ],
+      "renderMatrix": {
+        "brandThemes": ["current-default"],
+        "colorModes": ["light", "dark"],
+        "viewports": ["mobile-320", "tablet-768", "desktop-1280"]
+      },
+      "taskMetricIds": ["task-success", "completion-time-ms", "critical-error-count", "noncritical-error-count", "assistance-count", "first-click-correct", "recovery-success"],
+      "performanceMetricIds": ["route-js-transfer-bytes", "lcp-ms", "lcp-element-resource", "cls", "interaction-latency-proxy-ms"],
+      "performanceTargetStepId": "dense-list-ready",
+      "currentBaseline": {
+        "status": "unmeasured",
+        "reason": "r12 dense-list 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
+        "artifactPath": "build/reports/ui-quality-baseline/dense-user-logs/baseline-result.json",
+        "owner": "UX research + quality engineering",
+        "reviewBy": "2026-10-31"
+      },
+      "sourceEvidence": [
+        "frontend/src/app/admin/system/logs/user/page.tsx",
+        "frontend/src/app/admin/system/logs/user/SystemLogsUserClient.tsx"
+      ]
+    },
+    {
+      "id": "user-management-hub",
+      "archetype": "master-detail-hub",
+      "title": "실제 사용자·조직 관리 hub",
+      "primaryTask": "synthetic 사용자를 찾아 역할/상태 변경의 대상과 영향을 확인하고 authoritative readback으로 완료한다.",
+      "journeySteps": [
+        {
+          "id": "user-hub-ready",
+          "requiredTaskEvidenceId": "role-status-mutation-readback-executed",
+          "route": "/admin/user/manage",
+          "source": "frontend/src/app/admin/user/manage/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-users-and-departments",
+            "interaction": "search-select-edit-readback",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + user domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        },
+        {
+          "id": "mutation-error",
+          "requiredTaskEvidenceId": "synthetic-role-status-rollback-complete",
+          "route": "/admin/user/manage",
+          "source": "frontend/src/app/admin/user/manage/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-user-edit-preserved",
+            "interaction": "mutation-error-and-retry",
+            "network": "injected-5xx"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + user domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        }
+      ],
+      "renderMatrix": {
+        "brandThemes": ["current-default"],
+        "colorModes": ["light", "dark"],
+        "viewports": ["mobile-320", "tablet-768", "desktop-1280"]
+      },
+      "taskMetricIds": ["task-success", "completion-time-ms", "critical-error-count", "noncritical-error-count", "assistance-count", "first-click-correct", "recovery-success"],
+      "performanceMetricIds": ["route-js-transfer-bytes", "lcp-ms", "lcp-element-resource", "cls", "interaction-latency-proxy-ms"],
+      "performanceTargetStepId": "user-hub-ready",
+      "currentBaseline": {
+        "status": "unmeasured",
+        "reason": "r12 synthetic user mutation task evidence 12건과 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
+        "artifactPath": "build/reports/ui-quality-baseline/user-management-hub/baseline-result.json",
+        "owner": "UX research + quality engineering",
+        "reviewBy": "2026-10-31"
+      },
+      "sourceEvidence": [
+        "frontend/src/app/admin/user/manage/page.tsx",
+        "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+        "frontend/e2e/02-admin-system.spec.ts"
+      ]
+    },
+    {
+      "id": "board-article-composer",
+      "archetype": "form-composer-upload-autosave",
+      "title": "실제 게시글 composer와 임시저장 회복",
+      "primaryTask": "synthetic 게시판에서 제목·본문을 작성하고 validation과 reload 뒤 draft를 복구한 다음 저장 결과를 확인하며, 첨부 action은 지원 여부가 검증되기 전 성공 과업으로 간주하지 않는다.",
+      "journeySteps": [
+        {
+          "id": "composer-ready",
+          "route": "/admin/community/boards/insert-board-article",
+          "queryTemplate": "?bbsId={syntheticBoardId}",
+          "source": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-board-composer-empty",
+            "interaction": "compose-validate-autosave-and-audit-attachment-exposure",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + board domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        },
+        {
+          "id": "draft-restoration",
+          "route": "/admin/community/boards/insert-board-article",
+          "queryTemplate": "?bbsId={syntheticBoardId}",
+          "source": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-local-draft",
+            "interaction": "reload-restore-and-submit",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + board domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        }
+      ],
+      "renderMatrix": {
+        "brandThemes": ["current-default"],
+        "colorModes": ["light", "dark"],
+        "viewports": ["mobile-320", "tablet-768", "desktop-1280"]
+      },
+      "taskMetricIds": ["task-success", "completion-time-ms", "critical-error-count", "noncritical-error-count", "assistance-count", "first-click-correct", "recovery-success"],
+      "performanceMetricIds": ["route-js-transfer-bytes", "lcp-ms", "lcp-element-resource", "cls", "interaction-latency-proxy-ms"],
+      "performanceTargetStepId": "composer-ready",
+      "currentBaseline": {
+        "status": "unmeasured",
+        "reason": "r12 composer 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
+        "artifactPath": "build/reports/ui-quality-baseline/board-article-composer/baseline-result.json",
+        "owner": "UX research + quality engineering",
+        "reviewBy": "2026-10-31"
+      },
+      "sourceEvidence": [
+        "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
+        "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
+        "frontend/e2e/03-board-community.spec.ts",
+        "frontend/e2e/04-quality-resilience.spec.ts"
+      ]
+    },
+    {
+      "id": "faq-admin-user-lifecycle",
+      "archetype": "cross-role-complete-process",
+      "title": "관리자 작성에서 사용자 FAQ 검색까지",
+      "primaryTask": "관리자가 synthetic FAQ를 작성·목록 확인하고 일반 사용자가 도움말에서 같은 항목을 찾아 답을 확인한다.",
+      "journeySteps": [
+        {
+          "id": "admin-compose-faq",
+          "requiredTaskEvidenceId": "faq-authoritative-save-readback",
+          "route": "/admin/community/boards/insert-board-article",
+          "queryTemplate": "?bbsId={syntheticFaqBoardId}",
+          "source": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-faq-draft",
+            "interaction": "compose-and-submit",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + help/board domain owners",
+            "reviewBy": "2026-10-31"
+          }
+        },
+        {
+          "id": "admin-faq-readback",
+          "requiredTaskEvidenceId": "admin-created-faq-readback",
+          "route": "/admin/help/faq",
+          "source": "frontend/src/app/admin/help/faq/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-created-faq",
+            "interaction": "verify-list-readback",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + help domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        },
+        {
+          "id": "user-faq-search",
+          "requiredTaskEvidenceId": "cross-role-created-answer-readback",
+          "route": "/help",
+          "source": "frontend/src/app/help/page.tsx",
+          "role": "USER",
+          "state": {
+            "data": "synthetic-created-faq",
+            "interaction": "find-search-open-answer",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + help domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        }
+      ],
+      "renderMatrix": {
+        "brandThemes": ["current-default"],
+        "colorModes": ["light", "dark"],
+        "viewports": ["mobile-320", "tablet-768", "desktop-1280"]
+      },
+      "taskMetricIds": ["task-success", "completion-time-ms", "critical-error-count", "noncritical-error-count", "assistance-count", "first-click-correct", "recovery-success"],
+      "performanceMetricIds": ["route-js-transfer-bytes", "lcp-ms", "lcp-element-resource", "cls", "interaction-latency-proxy-ms"],
+      "performanceTargetStepId": "user-faq-search",
+      "currentBaseline": {
+        "status": "unmeasured",
+        "reason": "r12 synthetic FAQ mutation task evidence 18건과 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
+        "artifactPath": "build/reports/ui-quality-baseline/faq-admin-user-lifecycle/baseline-result.json",
+        "owner": "UX research + quality engineering",
+        "reviewBy": "2026-10-31"
+      },
+      "sourceEvidence": [
+        "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
+        "frontend/src/app/admin/help/faq/page.tsx",
+        "frontend/src/app/help/page.tsx",
+        "frontend/e2e/05-public-experience.spec.ts",
+        "frontend/e2e/pages/KnowledgePage.ts"
+      ]
+    },
+    {
+      "id": "board-maker-wizard",
+      "archetype": "complex-wizard",
+      "title": "게시판 생성 wizard",
+      "primaryTask": "관리자가 synthetic 게시판 정의를 단계별로 입력하고 validation을 회복해 배포 결과를 확인한다.",
+      "journeySteps": [
+        {
+          "id": "wizard-ready",
+          "requiredTaskEvidenceId": "single-deploy-authoritative-readback",
+          "route": "/admin/community/boards/maker",
+          "source": "frontend/src/app/admin/community/boards/maker/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-board-definition",
+            "interaction": "four-step-wizard",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + board domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        },
+        {
+          "id": "wizard-validation",
+          "route": "/admin/community/boards/maker",
+          "source": "frontend/src/app/admin/community/boards/maker/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-invalid-board-definition",
+            "interaction": "validation-error-focus-and-recover",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + board domain owner",
+            "reviewBy": "2026-10-31"
+          }
+        }
+      ],
+      "renderMatrix": {
+        "brandThemes": ["current-default"],
+        "colorModes": ["light", "dark"],
+        "viewports": ["mobile-320", "tablet-768", "desktop-1280"]
+      },
+      "taskMetricIds": ["task-success", "completion-time-ms", "critical-error-count", "noncritical-error-count", "assistance-count", "first-click-correct", "recovery-success"],
+      "performanceMetricIds": ["route-js-transfer-bytes", "lcp-ms", "lcp-element-resource", "cls", "interaction-latency-proxy-ms"],
+      "performanceTargetStepId": "wizard-ready",
+      "currentBaseline": {
+        "status": "unmeasured",
+        "reason": "r12 synthetic board deploy task evidence 6건과 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
+        "artifactPath": "build/reports/ui-quality-baseline/board-maker-wizard/baseline-result.json",
+        "owner": "UX research + quality engineering",
+        "reviewBy": "2026-10-31"
+      },
+      "sourceEvidence": [
+        "frontend/src/app/admin/community/boards/maker/page.tsx",
+        "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
+        "frontend/e2e/03-board-master-management.spec.ts",
+        "frontend/e2e/pages/BoardMasterPage.ts"
+      ]
+    },
+    {
+      "id": "first-use-onboarding",
+      "archetype": "first-use-guidance",
+      "title": "첫 사용 업무 포털 안내",
+      "primaryTask": "관리자가 첫 사용 세션에서 업무 포털 안내 모달의 내용과 단계 이동을 확인하고 닫은 뒤 원래 업무 화면으로 복귀한다.",
+      "journeySteps": [
+        {
+          "id": "onboarding-first-use",
+          "route": "/admin",
+          "source": "frontend/src/app/admin/page.tsx",
+          "role": "ADMIN",
+          "state": {
+            "data": "synthetic-first-use-session",
+            "interaction": "onboarding-dialog-open",
+            "network": "online"
+          },
+          "truth": {
+            "status": "unverified",
+            "owner": "product/UX + onboarding owner",
+            "reviewBy": "2026-10-31"
+          }
+        }
+      ],
+      "renderMatrix": {
+        "brandThemes": ["current-default"],
+        "colorModes": ["light", "dark"],
+        "viewports": ["mobile-320", "tablet-768", "desktop-1280"]
+      },
+      "taskMetricIds": ["task-success", "completion-time-ms", "critical-error-count", "noncritical-error-count", "assistance-count", "first-click-correct", "recovery-success"],
+      "performanceMetricIds": ["route-js-transfer-bytes", "lcp-ms", "lcp-element-resource", "cls", "interaction-latency-proxy-ms"],
+      "performanceTargetStepId": "onboarding-first-use",
+      "currentBaseline": {
+        "status": "unmeasured",
+        "reason": "r12 first-use 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다.",
+        "artifactPath": "build/reports/ui-quality-baseline/first-use-onboarding/baseline-result.json",
+        "owner": "UX research + quality engineering",
+        "reviewBy": "2026-10-31"
+      },
+      "sourceEvidence": [
+        "frontend/src/app/admin/page.tsx",
+        "frontend/src/app/providers.tsx",
+        "frontend/src/app/components/ui/smart-onboarding-hub.tsx",
+        "frontend/src/app/components/ui/__tests__/smart-onboarding-hub.test.tsx"
+      ]
+    }
+  ]
+}

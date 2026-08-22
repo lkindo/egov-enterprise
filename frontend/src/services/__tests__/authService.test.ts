@@ -6,7 +6,7 @@ vi.mock('next/config', () => ({
 }));
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { authService } from '../foundation/auth/authService';
+import { authService, normalizeAuthUser } from '../foundation/auth/authService';
 import api from '@/lib/api/client';
 
 vi.mock('@/lib/api/client', () => ({
@@ -52,12 +52,46 @@ describe('authService', () => {
  });
 
  it('getCurrentUser should call api.get', async () => {
- const mockResponse = { result: { id: 'user01', name: 'Tester' } };
- (api.get as any).mockResolvedValue(mockResponse);
+ const wireUser = {
+   id: 'user01',
+   name: 'Tester',
+   esntlId: 'ESNTL_000000000001',
+   role: 'ROLE_USER',
+   userSe: 'USR',
+   email: 'tester@example.test',
+   pswd: 'must-not-enter-auth-state',
+ };
+ (api.get as any).mockResolvedValue(wireUser);
 
  const result = await authService.getCurrentUser();
 
  expect(api.get).toHaveBeenCalledWith('auth/me');
- expect(result).toEqual(mockResponse);
+ expect(result).toEqual({
+   id: 'user01',
+   name: 'Tester',
+   esntlId: 'ESNTL_000000000001',
+   role: 'ROLE_USER',
+   userSe: 'USR',
+   email: 'tester@example.test',
+ });
+ expect(result).not.toHaveProperty('pswd');
+ });
+
+ it('does not synthesize esntlId from the human login id', () => {
+   expect(normalizeAuthUser({ id: 'user01', name: 'Tester', role: 'USER' })).toEqual({
+     id: 'user01',
+     name: 'Tester',
+     role: 'USER',
+   });
+ });
+
+ it.each([
+   null,
+   {},
+   { id: '', name: 'Tester' },
+   { id: 'user01', name: '' },
+   { id: ' user01', name: 'Tester' },
+ ])('rejects an ambiguous current-user response: %j', (wireValue) => {
+   expect(() => normalizeAuthUser(wireValue)).toThrow('현재 사용자 응답이 올바르지 않습니다.');
  });
 });

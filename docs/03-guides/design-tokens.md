@@ -1,14 +1,15 @@
 # 디자인 토큰 & 브랜딩 규약 (Design Tokens & Branding Convention)
 
-> **목적**: "리브랜딩 = 토큰 한 벌 수정"을 성립시키기 위한 색상 토큰 SSOT.
+> **목적**: 컴포넌트가 브랜드 리터럴이 아니라 안정된 시맨틱 계약을 소비하도록 하는 색상 토큰 SSOT.
 > 프론트엔드 헌법 제6조(디자인 토큰) 실무 지침. 색은 팔레트 리터럴(`slate-500`)이 아니라 **시맨틱 토큰**으로 참조한다.
 > **정의 위치**: [frontend/src/app/globals.css](../../frontend/src/app/globals.css) (`@theme` + `:root`/`.dark` HSL 변수).
+> **목표 구조**: [ADR-0003](../02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md)에 따라 브랜드 프로필과 색상 모드를 독립 축으로 분리한다. 현재 구현은 아직 단일 token set의 light/dark이므로 목표 상태를 지원 완료로 표현하지 않는다.
 
 ---
 
-## 1. 리브랜딩 방법 (한 곳만 고친다)
+## 1. 현재 단일 프로필의 리브랜딩 방법
 
-새 SI 프로젝트로 복제 후 브랜드를 바꾸려면 **globals.css 의 토큰 값만** 수정한다. 컴포넌트 클래스는 손대지 않는다.
+현재 새 SI 프로젝트로 복제해 단일 브랜드로 쓸 때는 **globals.css 의 토큰 값만** 수정하고 컴포넌트 클래스는 손대지 않는다. KRDS와 premium처럼 여러 프로필을 동시에 지원할 때는 같은 시맨틱 토큰 이름을 구현하는 profile adapter를 사용하며, source import를 바꾸는 방식으로 프로필을 가장하지 않는다.
 
 | 바꾸려는 것 | 수정할 토큰(`:root`, 필요 시 `.dark`) |
 |---|---|

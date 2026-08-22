@@ -1,0 +1,2230 @@
+{
+  "schemaVersion": 1,
+  "state": "proposed",
+  "authority": "non-normative-pre-decision-evidence",
+  "schemaRef": "config/ui-navigation-disposition.schema.json",
+  "manifestRef": {
+    "path": "config/ui-route-capabilities.json",
+    "sha256": "51e44c78d112e95d1ac68a5063a4f5e46f8e64f26b67ef073e268d50e0193ffd"
+  },
+  "provisionalDirection": {
+    "status": "accepted-provisional-direction",
+    "optionId": "hybrid-task-centered-management-center",
+    "adrId": "ADR-0004",
+    "adrPath": "docs/02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md",
+    "decidedAt": "2026-08-21",
+    "decisionAuthority": "repository-owner",
+    "scope": [
+      "prototype-and-research-default",
+      "preserve-canonical-urls",
+      "separate-navigation-metadata-from-route-and-authorization",
+      "isolate-high-risk-administration-in-management-center"
+    ],
+    "unresolved": [
+      "exact-labels-groups-order-and-route-dispositions",
+      "live-menu-authority-and-effective-role-exposure",
+      "route-level-authorization-privacy-and-profile-ownership",
+      "url-privacy-allowlists-and-external-telemetry",
+      "user-research-thresholds-and-g1-approval"
+    ],
+    "reviewBy": "2026-10-31",
+    "adrSha256": "b68f0228f6329cabd73a64a72529825e22a70247e76d0cb0dc1c76d87eadfd55"
+  },
+  "acceptedDecision": null,
+  "acceptanceEvidence": {
+    "researchArtifactSha256": null,
+    "liveMenuArtifactSha256": null,
+    "authorityAssignmentArtifactSha256": null,
+    "effectiveMenuArtifactSha256": null
+  },
+  "consumerBindings": {
+    "menu": {
+      "enabled": false,
+      "entrypoints": []
+    },
+    "generator": {
+      "enabled": false,
+      "entrypoints": []
+    }
+  },
+  "routes": [
+    {
+      "route": "/",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/collaboration",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/collaboration/address-book",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/collaboration/address-book/insert-address-book",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/collaboration/address-book/select-address-book-detail/[id]",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/collaboration/address-book/select-address-book-list",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/collaboration/mail-history",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/collaboration/mail-send",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/collaboration/scraps",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/collaboration/scraps/insertScrap",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/collaboration/scraps/selectScrapDetail/[id]",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/collaboration/scraps/selectScrapList",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community/[id]",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community/board",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community/boards",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community/boards/[id]",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community/boards/detail",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community/boards/insert-board-article",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community/boards/maker",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community/boards/master",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community/boards/select-board-list",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community/boards/write",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/community/templates",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/help",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/help/faq",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/help/qna",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/notifications",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/observability",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/operation/events",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/operation/external-hr",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/operation/memo-reports",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/operation/rewards",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/operation/rough-map",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/sanctn/forms",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/sanctn/workflow",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/security/audit",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/security/authority",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/security/dept-authority",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/security/group",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/security/login-policy",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/security/role",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/stats",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/stats/board",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/stats/data-usage",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/stats/report",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/stats/screen",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/stats/user",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/hub",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/items",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/manage",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/manage/[id]",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/manage/create",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/polls",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/polls/manage",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/polls/participate",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/questions",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/respondents",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/stats",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/survey/templates",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/audit",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/banner",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/codes/administ",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/codes/institution",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/comments",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/common-code",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/common-code/codes",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/hpcm",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/ism",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/layout",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/logs",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/logs/login",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/logs/privacy",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/logs/system",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/logs/user",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/logs/web",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/menus",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/menus/by-authority",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/monitoring",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/monitoring/hub",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/network",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/policies",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/system/programs",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/user/absences",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/user/departments",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/user/indvdl-info-policy",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/user/login-policy",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/user/manage",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/uss/ion/sms",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/uss/olh/online-manual",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/work-hub",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/workflow",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/workspace/my-page",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/approvals",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/approvals/draft",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/cop/cmy/selectCommunityDetail/[id]",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/cop/cmy/selectCommunityList",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/cop/sms/selectSmsList",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/help",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/help/policies/[type]",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/login",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/note",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/search",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/smart-toolkit/dept-job",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/smart-toolkit/dept-job/[id]",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/smart-toolkit/dept-job/create",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/smart-toolkit/dept-job/insertDeptJob",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/smart-toolkit/dept-job/selectDeptJobDetail/[id]",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/smart-toolkit/dept-job/selectDeptJobList",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/smart-toolkit/schedule",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/smart-toolkit/schedule/dept",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/smart-toolkit/work-report",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/survey",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/survey/[id]",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/survey/response",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/survey/response/[id]",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/survey/stats",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    }
+  ],
+  "externalAliases": [
+    {
+      "source": "/admin/community/boards/insertBoardArticle",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "consumerEvidenceReview": "unverified",
+      "queryMappingReview": "unverified",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "product/IA + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "source": "/admin/community/boards/selectBoardList",
+      "reviewState": "blocked-input",
+      "disposition": "blocked-review",
+      "consumerEvidenceReview": "unverified",
+      "queryMappingReview": "unverified",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "product/IA + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    }
+  ]
+}

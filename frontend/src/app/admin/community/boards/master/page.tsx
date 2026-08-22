@@ -4,7 +4,10 @@ import dynamic from 'next/dynamic';
 
 const BoardMasterListClient = dynamic(
   () => import('./BoardMasterListClient').then(mod => mod.BoardMasterListClient),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => <h1 className="sr-only">게시판 마스터를 불러오는 중</h1>,
+  }
 );
 
 /**

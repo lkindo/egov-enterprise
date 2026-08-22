@@ -5,8 +5,8 @@ import AdminStatsClient from './AdminStatsClient';
 import { SummaryStats, ConnectPoint } from '@/types/foundation/stats';
 
 export const metadata = {
-  title: '인텔리전스 통계 대시보드 | 전자정부 프레임워크',
-  description: '시스템 전반의 활동 데이터와 메트릭스를 실시간으로 분석합니다',
+  title: '관리자 통계 | 전자정부 프레임워크',
+  description: '최근 1개월 접속 집계와 누적 사용자·게시물 현황을 확인합니다',
 };
 
 /** 집계 수치 정규화 — 숫자가 아니면 0. (문자열 숫자도 허용) */
@@ -58,8 +58,7 @@ export default async function AdminStatsPage() {
         statsCo: typeof item.statsCo === 'number' ? item.statsCo : 0,
       };
     });
-  } catch (error) {
-    console.error('[admin/stats] 통계 데이터 조회 실패', error);
+  } catch {
     loadError = '통계 데이터를 불러오지 못했습니다. 네트워크 상태를 확인한 뒤 새로고침해 주세요.';
     initialSummary = null;
     initialConnectData = [];
@@ -80,6 +79,7 @@ function AdminStatsLoading() {
   return (
     /* 루트 layout 이 이미 `max-w-7xl mx-auto p-6/md:p-12/lg:p-16` 을 주므로 여기서 여백을 다시 주지 않는다(감사 P2) */
     <div className="space-y-12 animate-pulse pb-24">
+      <h1 className="sr-only">관리자 통계를 불러오는 중</h1>
       <div className="h-11 w-96 bg-muted rounded-lg" />
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         {[1, 2, 3, 4].map(i => <div key={`stats-skeleton-${i}`} className="h-56 bg-muted rounded-lg" />)}

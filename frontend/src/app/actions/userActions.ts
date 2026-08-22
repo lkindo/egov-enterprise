@@ -22,7 +22,6 @@ export async function bulkUpdateUserStatusAction(userIds: string[], status: stri
     return { success: true, message: `${userIds.length}명의 사용자 상태가 변경되었습니다.` };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '상태 변경 중 오류 발생');
-    console.error('Bulk Update Status Error:', error);
     return { success: false, message: errorMessage };
   }
 }
@@ -39,7 +38,6 @@ export async function bulkMoveUserDeptAction(userIds: string[], ognzId: string):
     return { success: true, message: `${userIds.length}명의 사용자가 부서 이동되었습니다.` };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '부서 이동 중 오류 발생');
-    console.error('Bulk Move Dept Error:', error);
     return { success: false, message: errorMessage };
   }
 }
@@ -56,7 +54,6 @@ export async function bulkDeleteUsersAction(userIds: string[]): Promise<ActionRe
     return { success: true, message: `${userIds.length}명의 사용자가 삭제되었습니다.` };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '일괄 삭제 중 오류 발생');
-    console.error('Bulk Delete Users Error:', error);
     return { success: false, message: errorMessage };
   }
 }
@@ -73,7 +70,6 @@ export async function bulkUpdateUserRoleAction(userIds: string[], role: string):
     return { success: true, message: `${userIds.length}명의 사용자 권한이 변경되었습니다.` };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '권한 변경 중 오류 발생');
-    console.error('Bulk Update Role Error:', error);
     return { success: false, message: errorMessage };
   }
 }

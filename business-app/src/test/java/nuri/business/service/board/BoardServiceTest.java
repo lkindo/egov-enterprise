@@ -5,6 +5,8 @@ import nuri.business.domain.user.exception.UserErrorCode;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import nuri.business.domain.board.*;
+import nuri.business.domain.board.exception.BoardErrorCode;
+import nuri.business.security.AuthorityConstants;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardMapperImpl;
 import nuri.business.service.board.dto.BoardSaveRequest;
@@ -125,9 +127,77 @@ class BoardServiceTest {
         assertThat(cond.getOrderBy()).isEqualTo("views");
         assertThat(cond.getQnaSttsCd()).isEqualTo("R");
         assertThat(cond.getQnaCatCd()).isEqualTo("CAT1");
+        assertThat(cond.isSecretPostAdminOverride()).isFalse();
+        assertThat(cond.getViewerEsntlId()).isNull();
         // 종료일은 그날 자정이 아니라 하루 끝까지 포함해야 당일 글이 누락되지 않는다.
         assertThat(cond.getStartDate()).isEqualTo(java.time.LocalDate.of(2026, 1, 1).atStartOfDay());
         assertThat(cond.getEndDate()).isEqualTo(java.time.LocalDate.of(2026, 12, 31).atTime(java.time.LocalTime.MAX));
+    }
+
+    @Test
+    @DisplayName("범용 목록은 비관리자의 현재 esntlId를 SQL 비밀글 visibility에 전달한다")
+    void getBoardPostsBindsNonAdminViewerToSecretVisibility() {
+        String bbsId = "BBS_01";
+        Pageable pageable = PageRequest.of(0, 10);
+        given(boardMasterRepository.findById(bbsId))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("ESNTL_VIEWER"));
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
+                org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), eq(pageable)))
+                .willReturn(Page.empty(pageable));
+
+        boardService.getBoardPosts(bbsId, pageable);
+
+        assertThat(captor.getValue().getViewerEsntlId()).isEqualTo("ESNTL_VIEWER");
+        assertThat(captor.getValue().isSecretPostAdminOverride()).isFalse();
+        securityUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.hasRole(
+                AuthorityConstants.ROLE_ADMIN));
+        securityUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.hasRole(
+                AuthorityConstants.ROLE_SYSTEM));
+    }
+
+    @Test
+    @DisplayName("범용 목록은 exact ADMIN에게 비밀글 전체 visibility를 허용한다")
+    void getBoardPostsAllowsExactAdminSecretVisibility() {
+        assertElevatedRoleCanReadAllSecretPosts(AuthorityConstants.ROLE_ADMIN);
+    }
+
+    @Test
+    @DisplayName("범용 목록은 exact SYSTEM에게 비밀글 전체 visibility를 허용한다")
+    void getBoardPostsAllowsExactSystemSecretVisibility() {
+        assertElevatedRoleCanReadAllSecretPosts(AuthorityConstants.ROLE_SYSTEM);
+    }
+
+    @Test
+    @DisplayName("범용 목록은 비활성 게시판 master를 repository 조회 전에 거부한다")
+    void getBoardPostsRejectsInactiveBoardMaster() {
+        String bbsId = "BBS_INACTIVE";
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(
+                BoardMaster.builder().bbsId(bbsId).useYn("N").build()));
+
+        assertThatThrownBy(() -> boardService.getBoardPosts(bbsId, PageRequest.of(0, 10)))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
+        verify(boardRepository, never()).searchArticles(any(), any());
+    }
+
+    private void assertElevatedRoleCanReadAllSecretPosts(String role) {
+        String bbsId = "BBS_" + role;
+        Pageable pageable = PageRequest.of(0, 10);
+        given(boardMasterRepository.findById(bbsId))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole(role))
+                .thenReturn(true);
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
+                org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), eq(pageable)))
+                .willReturn(Page.empty(pageable));
+
+        boardService.getBoardPosts(bbsId, pageable);
+
+        assertThat(captor.getValue().isSecretPostAdminOverride()).isTrue();
     }
 
     @Test
@@ -221,9 +291,10 @@ class BoardServiceTest {
     void getBoardStats() {
         // given
         String bbsId = "BBS_01";
-        given(boardRepository.countByBbsIdAndUseYn(bbsId, "Y")).willReturn(10L);
-        given(boardRepository.sumInqCntByBbsIdAndUseYn(bbsId, "Y")).willReturn(100L);
-        given(boardRepository.findTopContributorByBbsIdAndUseYn(bbsId, "Y")).willReturn("user1");
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(
+                BoardMaster.builder().bbsId(bbsId).useYn("Y").build()));
+        given(boardRepository.aggregateVisibleStats(any(BoardSearchCondition.class)))
+                .willReturn(new BoardStatsResult(10L, 100L, "user1"));
 
         // when
         BoardStatsResponse result = boardService.getBoardStats(bbsId);
@@ -405,9 +476,11 @@ class BoardServiceTest {
         BoardDetailResult detail = BoardDetailResult.builder()
                 .pstSn(pstSn)
                 .bbsId(bbsId)
+                .userId("ESNTL_owner")
+                .scrtYn("N")
                 .build();
 
-        given(boardRepository.findArticleDetail(pstSn)).willReturn(Optional.of(detail));
+        given(boardRepository.findActiveArticleDetail(bbsId, pstSn)).willReturn(Optional.of(detail));
 
         // when
         BoardDto result = boardService.getPostDetail(bbsId, pstSn);
@@ -415,6 +488,257 @@ class BoardServiceTest {
         // then
         assertThat(result.pstSn()).isEqualTo(pstSn);
         verify(viewCountService).increaseViewCount(pstSn);
+    }
+
+    @Test
+    @DisplayName("게시판 통계는 현재 viewer와 exact role visibility를 repository 집계에 결속한다")
+    void getBoardStatsBindsViewerVisibility() {
+        String bbsId = "BBS_STATS";
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(
+                BoardMaster.builder().bbsId(bbsId).useYn("Y").build()));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("ESNTL_VIEWER"));
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor =
+                org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.aggregateVisibleStats(captor.capture()))
+                .willReturn(new BoardStatsResult(1L, 5L, "Public contributor"));
+
+        BoardStatsResponse result = boardService.getBoardStats(bbsId);
+
+        assertThat(result.getTotalArticles()).isEqualTo(1L);
+        assertThat(result.getTotalViews()).isEqualTo(5L);
+        assertThat(captor.getValue().getBbsId()).isEqualTo(bbsId);
+        assertThat(captor.getValue().getUseYn()).isEqualTo("Y");
+        assertThat(captor.getValue().getViewerEsntlId()).isEqualTo("ESNTL_VIEWER");
+        assertThat(captor.getValue().isSecretPostAdminOverride()).isFalse();
+    }
+
+    @Test
+    @DisplayName("게시판 통계는 비활성 master를 집계 전에 거부한다")
+    void getBoardStatsRejectsInactiveBoardMaster() {
+        String bbsId = "BBS_STATS_INACTIVE";
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(
+                BoardMaster.builder().bbsId(bbsId).useYn("N").build()));
+
+        assertThatThrownBy(() -> boardService.getBoardStats(bbsId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
+        verify(boardRepository, never()).aggregateVisibleStats(any());
+    }
+
+    @Test
+    @DisplayName("비밀글 상세 조회 - 작성자 esntlId가 일치하면 본문과 조회수를 제공한다")
+    void getPostDetail_secretOwnerAllowed() {
+        Long pstSn = 11L;
+        BoardDetailResult detail = BoardDetailResult.builder()
+                .pstSn(pstSn)
+                .bbsId("BBS_01")
+                .userId("ESNTL_owner")
+                .scrtYn("Y")
+                .pstCn("private content")
+                .build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", pstSn)).willReturn(Optional.of(detail));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("ESNTL_owner"));
+
+        BoardDto result = boardService.getPostDetail("BBS_01", pstSn);
+
+        assertThat(result.pstCn()).isEqualTo("private content");
+        verify(viewCountService).increaseViewCount(pstSn);
+    }
+
+    @Test
+    @DisplayName("비밀글 상세 조회 - 비소유 인증 사용자는 ACCESS_DENIED이고 조회수도 올리지 않는다")
+    void getPostDetail_secretNonOwnerDenied() {
+        Long pstSn = 12L;
+        BoardDetailResult detail = BoardDetailResult.builder()
+                .pstSn(pstSn)
+                .bbsId("BBS_01")
+                .userId("ESNTL_owner")
+                .scrtYn("Y")
+                .pstCn("must not be returned")
+                .build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", pstSn)).willReturn(Optional.of(detail));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("ESNTL_other"));
+
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", pstSn))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verify(viewCountService, never()).increaseViewCount(pstSn);
+    }
+
+    @Test
+    @DisplayName("비밀글 상세 조회 - ADMIN은 기존 owner-or-admin 의미대로 열람할 수 있다")
+    void getPostDetail_secretAdminAllowed() {
+        Long pstSn = 13L;
+        BoardDetailResult detail = BoardDetailResult.builder()
+                .pstSn(pstSn)
+                .bbsId("BBS_01")
+                .userId("ESNTL_owner")
+                .scrtYn("Y")
+                .build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", pstSn)).willReturn(Optional.of(detail));
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN"))
+                .thenReturn(true);
+
+        assertThat(boardService.getPostDetail("BBS_01", pstSn).pstSn()).isEqualTo(pstSn);
+        verify(viewCountService).increaseViewCount(pstSn);
+    }
+
+    @Test
+    @DisplayName("게시글 상세는 요청 게시판과 활성 상태가 결속된 조회만 사용한다")
+    void getPostDetailUsesAuthoritativeBoardAndActiveBoundary() {
+        Long pstSn = 14L;
+        given(boardRepository.findActiveArticleDetail("BBS_REQUESTED", pstSn))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_REQUESTED", pstSn))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+
+        verify(boardRepository).findActiveArticleDetail("BBS_REQUESTED", pstSn);
+        verify(viewCountService, never()).increaseViewCount(anyLong());
+    }
+
+    @Test
+    @DisplayName("논리 삭제 게시글 상세 - ADMIN은 복구·감사를 위해 열람할 수 있다")
+    void getPostDetail_softDeletedVisibleToAdmin() {
+        Long pstSn = 15L;
+        BoardDetailResult deleted = BoardDetailResult.builder()
+                .pstSn(pstSn)
+                .bbsId("BBS_01")
+                .userId("ESNTL_owner")
+                .scrtYn("N")
+                .useYn("N")
+                .pstCn("deleted content")
+                .build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", pstSn)).willReturn(Optional.empty());
+        given(boardRepository.findArticleDetailIncludingDeleted("BBS_01", pstSn))
+                .willReturn(Optional.of(deleted));
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN"))
+                .thenReturn(true);
+
+        assertThat(boardService.getPostDetail("BBS_01", pstSn).pstCn()).isEqualTo("deleted content");
+    }
+
+    @Test
+    @DisplayName("논리 삭제 게시글 상세 - 비관리자는 여전히 404이고 삭제 포함 조회 자체를 하지 않는다")
+    void getPostDetail_softDeletedHiddenFromNonAdmin() {
+        Long pstSn = 16L;
+        given(boardRepository.findActiveArticleDetail("BBS_01", pstSn)).willReturn(Optional.empty());
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN"))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", pstSn))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+
+        // 권한이 없으면 삭제 포함 조회를 **시도조차** 하지 않아야 한다. 결과만 404 로 같아도
+        // 질의가 나갔다면 관리자 전용 경로가 일반 사용자에게 열려 있다는 뜻이다.
+        verify(boardRepository, never()).findArticleDetailIncludingDeleted(anyString(), anyLong());
+        verify(viewCountService, never()).increaseViewCount(anyLong());
+    }
+
+    @Test
+    @DisplayName("공개 FAQ 목록은 고정 보드·활성·비밀 아님·제목 검색만 저장소에 전달한다")
+    void getPublicFaqPostsUsesFixedPublicProjection() {
+        Pageable pageable = PageRequest.of(0, 10);
+        given(boardMasterRepository.findById("BBSMSTR_AAAAAAAAAAAA"))
+                .willReturn(Optional.of(BoardMaster.builder()
+                        .bbsId("BBSMSTR_AAAAAAAAAAAA")
+                        .useYn("Y")
+                        .build()));
+        given(boardRepository.searchPublicFaqArticles(
+                "BBSMSTR_AAAAAAAAAAAA", "secret-search-marker", pageable))
+                .willReturn(Page.empty(pageable));
+
+        boardService.getPublicFaqPosts("secret-search-marker", pageable);
+
+        verify(boardMasterRepository).findById("BBSMSTR_AAAAAAAAAAAA");
+        verify(boardRepository).searchPublicFaqArticles(
+                "BBSMSTR_AAAAAAAAAAAA", "secret-search-marker", pageable);
+        verify(boardRepository, never()).searchArticles(any(), any());
+    }
+
+    @Test
+    @DisplayName("공개 FAQ 목록은 게시판 master가 없으면 projection 조회 전에 거부한다")
+    void getPublicFaqPostsRejectsMissingBoardMaster() {
+        given(boardMasterRepository.findById("BBSMSTR_AAAAAAAAAAAA"))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> boardService.getPublicFaqPosts(
+                "keyword", PageRequest.of(0, 10)))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
+
+        verify(boardRepository, never()).searchPublicFaqArticles(anyString(), any(), any());
+    }
+
+    @Test
+    @DisplayName("공개 FAQ 목록은 비활성 게시판 master를 projection 조회 전에 거부한다")
+    void getPublicFaqPostsRejectsInactiveBoardMaster() {
+        given(boardMasterRepository.findById("BBSMSTR_AAAAAAAAAAAA"))
+                .willReturn(Optional.of(BoardMaster.builder()
+                        .bbsId("BBSMSTR_AAAAAAAAAAAA")
+                        .useYn("N")
+                        .build()));
+
+        assertThatThrownBy(() -> boardService.getPublicFaqPosts(
+                "keyword", PageRequest.of(0, 10)))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
+
+        verify(boardRepository, never()).searchPublicFaqArticles(anyString(), any(), any());
+    }
+
+    @Test
+    @DisplayName("공개 FAQ 상세는 비밀글을 SQL에서 제외하는 전용 조회만 사용한다")
+    void getPublicFaqDetailUsesNonSecretRepositoryBoundary() {
+        Long pstSn = 15L;
+        BoardDetailResult detail = BoardDetailResult.builder()
+                .bbsId("BBSMSTR_AAAAAAAAAAAA")
+                .pstSn(pstSn)
+                .pstCn("public-body-marker")
+                .useYn("Y")
+                .scrtYn("N")
+                .userId("must-not-leave-service")
+                .userNm("must-not-leave-service")
+                .pswd("must-not-leave-service")
+                .atchFileSn(99L)
+                .qnaSttsCd("must-not-leave-service")
+                .build();
+        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn))
+                .willReturn(Optional.of(detail));
+
+        BoardDto result = boardService.getPublicFaqDetail(pstSn);
+
+        assertThat(result.pstCn()).isEqualTo("public-body-marker");
+        assertThat(result.bbsId()).isEqualTo("BBSMSTR_AAAAAAAAAAAA");
+        assertThat(result.useYn()).isEqualTo("Y");
+        assertThat(result.scrtYn()).isEqualTo("N");
+        assertThat(result.userId()).isNull();
+        assertThat(result.userNm()).isNull();
+        assertThat(result.pswd()).isNull();
+        assertThat(result.atchFileSn()).isNull();
+        assertThat(result.qnaSttsCd()).isNull();
+        verify(boardRepository).findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn);
+        verify(boardRepository, never()).findActiveArticleDetail(anyString(), anyLong());
+        verify(viewCountService).increaseViewCount(pstSn);
+    }
+
+    @Test
+    @DisplayName("공개 FAQ 상세가 없으면 본문과 조회수 없이 동일한 not-found로 종료한다")
+    void getPublicFaqDetailDeniesSecretInactiveOrWrongBoardBeforeViewCount() {
+        Long pstSn = 16L;
+        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn))
+                .willReturn(Optional.empty());
+
+        assertThatThrownBy(() -> boardService.getPublicFaqDetail(pstSn))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+
+        verify(viewCountService, never()).increaseViewCount(anyLong());
     }
 
     @Test
@@ -756,9 +1080,10 @@ class BoardServiceTest {
     void getBoardStats_SystemContributor() {
         // given
         String bbsId = "BBS_01";
-        given(boardRepository.countByBbsIdAndUseYn(bbsId, "Y")).willReturn(0L);
-        given(boardRepository.sumInqCntByBbsIdAndUseYn(bbsId, "Y")).willReturn(0L);
-        given(boardRepository.findTopContributorByBbsIdAndUseYn(bbsId, "Y")).willReturn(null);
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(
+                BoardMaster.builder().bbsId(bbsId).useYn("Y").build()));
+        given(boardRepository.aggregateVisibleStats(any(BoardSearchCondition.class)))
+                .willReturn(new BoardStatsResult(0L, 0L, null));
 
         // when
         BoardStatsResponse result = boardService.getBoardStats(bbsId);
@@ -771,7 +1096,7 @@ class BoardServiceTest {
     @DisplayName("존재하지 않는 게시글 조회 시 예외 발생")
     void getPostDetail_NotFound() {
         // given
-        given(boardRepository.findArticleDetail(any(Long.class))).willReturn(Optional.empty());
+        given(boardRepository.findActiveArticleDetail(anyString(), any(Long.class))).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 999L))

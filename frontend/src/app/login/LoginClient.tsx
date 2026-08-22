@@ -6,13 +6,49 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import { User, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck, Zap } from "lucide-react";
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
-import { extractErrorMessage } from '@/app/actions/actionUtils';
+import { LOGIN_FAILURE_MESSAGE } from '@/lib/auth/login-error';
 const LOGIN_ERROR_EMPTY = '아이디와 비밀번호를 입력해주세요.';
-const LOGIN_ERROR_FAILED = '로그인에 실패했습니다. 아이디 또는 비밀번호를 확인해주세요.';
+const DEFAULT_POST_LOGIN_PATH = '/admin/work-hub';
+const REDIRECT_VALIDATION_ORIGIN = 'https://internal.invalid';
+
+export function resolveInternalRedirect(rawRedirect: string | null): string {
+    if (
+        !rawRedirect
+        || !rawRedirect.startsWith('/')
+        || /[\\\u0000-\u001f\u007f]/.test(rawRedirect)
+        || /%(?:0[0-9a-f]|1[0-9a-f]|7f)/i.test(rawRedirect)
+    ) {
+        return DEFAULT_POST_LOGIN_PATH;
+    }
+
+    try {
+        const parsed = new URL(rawRedirect, REDIRECT_VALIDATION_ORIGIN);
+        if (
+            parsed.origin !== REDIRECT_VALIDATION_ORIGIN
+            || parsed.protocol !== 'https:'
+            || parsed.username
+            || parsed.password
+        ) {
+            return DEFAULT_POST_LOGIN_PATH;
+        }
+
+        const canonicalPath = parsed.pathname;
+        if (parsed.pathname.startsWith('//')) return DEFAULT_POST_LOGIN_PATH;
+
+        // Dot-segment normalization can turn an apparently local path into a protocol-relative
+        // string (for example "/a/..//host"). Validate the exact value handed to navigation again.
+        const navigationTarget = new URL(canonicalPath, REDIRECT_VALIDATION_ORIGIN);
+        if (navigationTarget.origin !== REDIRECT_VALIDATION_ORIGIN) return DEFAULT_POST_LOGIN_PATH;
+
+        return canonicalPath;
+    } catch {
+        return DEFAULT_POST_LOGIN_PATH;
+    }
+}
 
 function LoginContent() {
     const [id, setId] = useState('');
@@ -23,12 +59,16 @@ function LoginContent() {
     const [authStep, setAuthStep] = useState(0); // 0: Idle, 1: Connecting, 2: Finalizing
     const { login, user, loading } = useAuth();
     const router = useRouter();
+    const shouldReduceMotion = useReducedMotion();
+    const loginRootRef = React.useRef<HTMLDivElement>(null);
+    const progressRef = React.useRef<HTMLDivElement>(null);
+    const returnFocusRef = React.useRef<HTMLElement | null>(null);
 
     const searchParams = useSearchParams();
-    // 오픈 리다이렉트 방지: 동일 출처 상대경로("/..."로 시작, 단 "//"·"/\\" 프로토콜상대/백슬래시 우회 차단)만 허용.
-    // 절대 URL(https://evil.com)·프로토콜상대 URL(//evil.com)은 기본 경로로 폴백한다.
-    const rawRedirect = searchParams.get('redirect') || '/admin/work-hub';
-    const redirectUrl = /^\/(?![/\\])/.test(rawRedirect) ? rawRedirect : '/admin/work-hub';
+    // URL parser가 제거하는 제어문자까지 먼저 거부한 뒤, 고정된 검증 origin으로 파싱해
+    // 동일 출처의 canonical pathname만 이동 지점에 전달한다. 로그인 intent에 원래 query/fragment를
+    // 재전파하지 않아 record locator나 자유 입력값이 인증 경계를 넘어 URL에 남는 것을 막는다.
+    const redirectUrl = resolveInternalRedirect(searchParams.get('redirect'));
 
     // 이번 제출로 인증된 것인지(=세션 경계), 이미 인증된 상태로 이 페이지를 방문한 것인지 구분한다.
     // 두 경우는 필요한 이동 방식이 다르다(아래 각 주석 참조). ref 이므로 렌더를 유발하지 않는다.
@@ -37,6 +77,86 @@ function LoginContent() {
     // [W1-24] 로그인 실패 시 포커스를 되돌릴 대상. 실패해도 포커스가 '로그인' 버튼에 머물러 있어서
     //   키보드·스크린리더 사용자는 오류 위치도 재입력 위치도 알 수 없었다.
     const idInputRef = React.useRef<HTMLInputElement>(null);
+    const restoreIdFocusAfterFailureRef = React.useRef(false);
+
+    // 로그인은 전역 AppShell 안에서 렌더되지만 시각적으로는 독립된 modal surface다. 배경의
+    // skip link/header/sidebar/footer가 보이면서도 키보드·접근성 트리에는 남아 있으면 사용자가 로그인
+    // 폼을 벗어나 비활성 shell을 탐색하게 된다. mount 동안만 외부 landmark를 격리하고 기존
+    // 속성을 정확히 복원한다. (로그인 콘텐츠 내부 landmark가 생겨도 격리하지 않는다.)
+    React.useEffect(() => {
+        const loginRoot = loginRootRef.current;
+        if (!loginRoot) return;
+
+        returnFocusRef.current = document.activeElement instanceof HTMLElement
+            ? document.activeElement
+            : null;
+        const shellLandmarks = [...new Set(document.querySelectorAll<HTMLElement>(
+            '[data-sidebar-modal-background], header, aside, footer',
+        ))].filter((element) => (
+            !loginRoot.contains(element) && !element.contains(loginRoot)
+        ));
+        const snapshots = shellLandmarks.map((element) => ({
+            element,
+            ariaHidden: element.getAttribute('aria-hidden'),
+            hadInertAttribute: element.hasAttribute('inert'),
+            inertAttributeValue: element.getAttribute('inert'),
+        }));
+
+        for (const { element } of snapshots) {
+            element.setAttribute('aria-hidden', 'true');
+            element.setAttribute('inert', '');
+        }
+
+        const onKeyDown = (event: KeyboardEvent) => {
+            if (event.key !== 'Tab') return;
+            const focusable = [...loginRoot.querySelectorAll<HTMLElement>(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            )].filter((element) => !element.closest('[inert]') && element.getAttribute('aria-hidden') !== 'true');
+
+            if (focusable.length === 0) {
+                event.preventDefault();
+                (progressRef.current ?? loginRoot).focus();
+                return;
+            }
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            if (event.shiftKey && (document.activeElement === first || !loginRoot.contains(document.activeElement))) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && (document.activeElement === last || !loginRoot.contains(document.activeElement))) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+
+        document.addEventListener('keydown', onKeyDown);
+        idInputRef.current?.focus();
+
+        return () => {
+            document.removeEventListener('keydown', onKeyDown);
+            for (const { element, ariaHidden, hadInertAttribute, inertAttributeValue } of snapshots) {
+                if (ariaHidden === null) element.removeAttribute('aria-hidden');
+                else element.setAttribute('aria-hidden', ariaHidden);
+                if (hadInertAttribute) element.setAttribute('inert', inertAttributeValue ?? '');
+                else element.removeAttribute('inert');
+            }
+            const returnTarget = returnFocusRef.current;
+            if (returnTarget?.isConnected) returnTarget.focus();
+            returnFocusRef.current = null;
+        };
+    }, []);
+
+    React.useEffect(() => {
+        if (isSubmitting) progressRef.current?.focus();
+    }, [isSubmitting, authStep]);
+
+    React.useEffect(() => {
+        if (!isSubmitting && error && restoreIdFocusAfterFailureRef.current) {
+            restoreIdFocusAfterFailureRef.current = false;
+            idInputRef.current?.focus();
+        }
+    }, [error, isSubmitting]);
 
     // [소프트 전환] 이미 인증된 상태로 로그인 페이지에 온 경우의 자동 이동.
     // 이때는 루트 레이아웃이 이미 토큰을 가진 채 렌더되어 메뉴도 적재된 상태이므로 소프트 전환으로 충분하다.
@@ -57,6 +177,7 @@ function LoginContent() {
             return;
         }
 
+        restoreIdFocusAfterFailureRef.current = false;
         setError('');
         setIsSubmitting(true);
         setAuthStep(1);
@@ -78,27 +199,30 @@ function LoginContent() {
             // 과거 이 갱신은 router.refresh() 가 대신했으나, 두 번째 replace 와 동시 발사되어 진행 중이던
             // 전환을 무효화시키는 무한 "인증중" 고착의 원인이었다. 하드 전환은 그 부작용 없이 목적을 이룬다.
             window.location.replace(redirectUrl);
-        } catch (err) {
+        } catch {
             justLoggedIn.current = false;
-            console.error(err);
-            setError(extractErrorMessage(err, LOGIN_ERROR_FAILED));
+            restoreIdFocusAfterFailureRef.current = true;
+            setError(LOGIN_FAILURE_MESSAGE);
             setIsSubmitting(false);
             setAuthStep(0);
-            // [W1-24] 포커스 복귀는 setIsSubmitting(false) **이후**여야 한다.
-            //   isSubmitting 이 true 인 동안은 전체 오버레이가 떠 있어, 그 상태에서 포커스를 옮기면
-            //   가려진 요소에 포커스가 가서 사용자가 더 길을 잃는다.
-            idInputRef.current?.focus();
+            // 포커스는 위 effect에서 form의 inert 제거가 DOM에 커밋된 뒤 복원한다.
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-muted bg-[url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E')] bg-repeat">
+        <div
+            ref={loginRootRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="login-title"
+            tabIndex={-1}
+            className="min-h-screen flex items-center justify-center bg-muted bg-[url('data:image/svg+xml,%3Csvg viewBox=\'0 0 200 200\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cfilter id=\'noiseFilter\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.65\' numOctaves=\'3\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23noiseFilter)\'/%3E%3C/svg%3E')] bg-repeat"
+        >
             {/* Background Overlay from previous design style */}
-            <h1 className="sr-only">전자정부 Enterprise 로그인</h1>
             <div className="absolute inset-0 bg-surface-inverse/40 backdrop-blur-[2px]" />
 
             <motion.div
-                initial={{ opacity: 0, y: 30 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{
                     duration: 0.8,
@@ -106,19 +230,28 @@ function LoginContent() {
                 }}
                 className="w-full max-w-md relative z-10 px-4"
             >
-                <Card className="relative overflow-hidden border-0 shadow-2xl bg-card/95 backdrop-blur-xl rounded-[var(--radius-hub-section)]">
+                <Card
+                    data-login-card
+                    aria-busy={isSubmitting}
+                    className="relative overflow-hidden border-0 shadow-2xl bg-card/95 backdrop-blur-xl rounded-[var(--radius-hub-section)]"
+                >
 
                     {/* Advanced Loading Overlay (Functionality Ported) */}
                     <AnimatePresence>
                         {isSubmitting && (
                             <motion.div
-                                initial={{ opacity: 0 }}
+                                ref={progressRef}
+                                role="status"
+                                aria-live="polite"
+                                aria-atomic="true"
+                                tabIndex={-1}
+                                initial={shouldReduceMotion ? false : { opacity: 0 }}
                                 animate={{ opacity: 1 }}
-                                exit={{ opacity: 0 }}
+                                exit={shouldReduceMotion ? undefined : { opacity: 0 }}
                                 className="absolute inset-0 z-50 bg-surface-inverse/80 backdrop-blur-md flex flex-col items-center justify-center p-8 text-center"
                             >
                                 <motion.div
-                                    initial={{ scale: 0.8 }}
+                                    initial={shouldReduceMotion ? false : { scale: 0.8 }}
                                     animate={{ scale: 1 }}
                                     className="w-20 h-11 bg-card rounded-lg shadow-2xl flex items-center justify-center mb-6"
                                 >
@@ -130,11 +263,11 @@ function LoginContent() {
                                 </motion.div>
 
                                 <div className="space-y-2">
-                                    <h3 className="text-xl font-bold text-surface-inverse-foreground">
+                                    <p className="text-xl font-bold text-surface-inverse-foreground">
                                         {authStep === 1 ? "로그인 인증 중" : "인증 완료"}
-                                    </h3>
+                                    </p>
                                     <p className="text-muted-foreground text-sm">
-                                        {authStep === 1 ? "보안 노드에 접속 시도 중..." : "사용자 업무 환경 동기화 중..."}
+                                        {authStep === 1 ? "로그인 정보를 확인하는 중..." : "업무 화면으로 이동하는 중..."}
                                     </p>
                                 </div>
                             </motion.div>
@@ -143,25 +276,29 @@ function LoginContent() {
 
                     <CardHeader className="space-y-2 text-center pt-10">
                         <motion.div
-                            initial={{ scale: 0.5, opacity: 0 }}
+                            initial={shouldReduceMotion ? false : { scale: 0.5, opacity: 0 }}
                             animate={{ scale: 1, opacity: 1 }}
                             transition={{ delay: 0.3, duration: 0.5 }}
                             className="w-12 h-12 bg-primary/10 rounded-[var(--radius-hub-item)] mx-auto flex items-center justify-center mb-2"
                         >
                             <Zap className="text-primary w-6 h-6 fill-primary" />
                         </motion.div>
-                        <CardTitle className="text-2xl font-bold tracking-tight text-foreground">
+                        <h1 id="login-title" className="text-2xl font-bold tracking-tight text-foreground">
                             엔터프라이즈
-                        </CardTitle>
+                        </h1>
                         <CardDescription className="text-muted-foreground font-bold text-xs tracking-tight">
                             글로벌 통합 관리 콘솔
                         </CardDescription>
                     </CardHeader>
 
-                    <form onSubmit={handleSubmit}>
+                    <form
+                        onSubmit={handleSubmit}
+                        inert={isSubmitting ? true : undefined}
+                        aria-hidden={isSubmitting ? 'true' : undefined}
+                    >
                         <CardContent className="space-y-5 px-8">
                             <motion.div
-                                initial={{ opacity: 0, x: -10 }}
+                                initial={shouldReduceMotion ? false : { opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.4 }}
                                 className="space-y-2"
@@ -183,7 +320,7 @@ function LoginContent() {
                             </motion.div>
 
                             <motion.div
-                                initial={{ opacity: 0, x: -10 }}
+                                initial={shouldReduceMotion ? false : { opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.5 }}
                                 className="space-y-2"
@@ -225,7 +362,7 @@ function LoginContent() {
 
                             {error && (
                                 <motion.div
-                                    initial={{ opacity: 0, scale: 0.95 }}
+                                    initial={shouldReduceMotion ? false : { opacity: 0, scale: 0.95 }}
                                     animate={{ opacity: 1, scale: 1 }}
                                     // [W1-24] role="alert" 는 aria-live="assertive" 를 함의한다.
                                     //   이 블록은 error 가 false→true 로 바뀌며 노드가 새로 삽입되는 구조라,
@@ -233,7 +370,7 @@ function LoginContent() {
                                     //   (시각 사용자만 animate-shake 로 인지했다).
                                     role="alert"
                                     data-testid="login-error"
-                                    className="text-xs font-bold text-rose-500 text-center bg-rose-50 p-4 rounded-[var(--radius-hub-item)] border border-rose-100 animate-shake uppercase font-mono"
+                                    className="text-xs font-bold text-destructive-emphasis text-center bg-destructive/5 p-4 rounded-[var(--radius-hub-item)] border border-destructive/20 animate-shake uppercase font-mono"
                                 >
                                     오류: {error}
                                 </motion.div>
@@ -242,7 +379,7 @@ function LoginContent() {
 
                         <CardFooter className="px-8 pb-10 pt-2">
                             <motion.div
-                                initial={{ opacity: 0, y: 10 }}
+                                initial={shouldReduceMotion ? false : { opacity: 0, y: 10 }}
                                 animate={{ opacity: 1, y: 0 }}
                                 transition={{ delay: 0.7 }}
                                 className="w-full"
@@ -260,7 +397,7 @@ function LoginContent() {
                     </form>
                 </Card>
                 <p className="mt-8 text-center text-xs font-bold text-foreground tracking-tight">
-                    &copy; 2026 관리 통합 시스템. 보안 노드 01.
+                    &copy; 2026 관리 통합 시스템.
                 </p>
             </motion.div>
         </div>
@@ -269,7 +406,12 @@ function LoginContent() {
 
 export default function LoginClient() {
     return (
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-muted">로딩 중...</div>}>
+        <Suspense fallback={
+            <div className="min-h-screen flex items-center justify-center bg-muted">
+                <h1 className="sr-only">로그인 화면을 불러오는 중</h1>
+                <p role="status">로딩 중...</p>
+            </div>
+        }>
             <LoginContent />
         </Suspense>
     );

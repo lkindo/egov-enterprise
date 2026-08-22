@@ -69,7 +69,7 @@ const TAB_ROUTE_MAP: Partial<Record<StatsTab, string>> = {
 };
 
 const TAB_TITLE: Record<StatsTab, string> = {
-  DASHBOARD: '글로벌 개요',
+  DASHBOARD: '통계 개요',
   USER_STATS: '사용자 통계 분석',
   CONTENT_STATS: '콘텐츠 지표 분석',
   SYSTEM_STATS: '시스템 활성 지표',
@@ -225,11 +225,11 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             <BarChart3 size={28} className="text-surface-inverse-foreground" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-foreground tracking-tighter">
-              통계 <span className="text-primary">인텔리전스</span>
-            </h2>
+            <h1 className="text-2xl font-bold text-foreground tracking-tighter">
+              통계 <span className="text-primary">현황</span>
+            </h1>
             <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">
-              거버넌스 인사이트 및 데이터 분석
+              최근 1개월 집계 및 항목별 통계
             </p>
           </div>
         </div>
@@ -244,7 +244,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             onClick={handleForceRefresh}
             className="h-11 px-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight shadow-xl hover:-translate-y-1 transition-all gap-2"
           >
-            <RefreshCcw size={20} className={cn(chartQuery.isFetching && 'animate-spin')} /> 강제 새로고침
+            <RefreshCcw size={20} className={cn(chartQuery.isFetching && 'animate-spin')} /> 통계 새로고침
           </Button>
         </div>
       </div>
@@ -259,7 +259,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           */}
           <nav aria-label="통계 분석 뷰" className="block">
             <Card className="rounded-lg border-0 bg-card shadow-2xl p-4 ring-1 ring-border">
-              <NavButton icon={<LayoutDashboard size={20} />} label="글로벌 개요" active={activeTab === 'DASHBOARD'} onClick={() => handleSelectTab('DASHBOARD')} />
+              <NavButton icon={<LayoutDashboard size={20} />} label="통계 개요" active={activeTab === 'DASHBOARD'} onClick={() => handleSelectTab('DASHBOARD')} />
               <NavButton icon={<Users size={20} />} label="사용자 통계" active={activeTab === 'USER_STATS'} onClick={() => handleSelectTab('USER_STATS')} />
               <NavButton icon={<Box size={20} />} label="콘텐츠 지표" active={activeTab === 'CONTENT_STATS'} onClick={() => handleSelectTab('CONTENT_STATS')} />
               <NavButton icon={<Database size={20} />} label="시스템 활성" active={activeTab === 'SYSTEM_STATS'} onClick={() => handleSelectTab('SYSTEM_STATS')} />
@@ -313,14 +313,14 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
           )}
           {isSummaryError && (
             <p role="alert" className="px-2 text-xs font-bold tracking-tight text-rose-600">
-              일부 통계를 불러오지 못했습니다. &lsquo;강제 새로고침&rsquo;으로 다시 시도해 주세요.
+              일부 통계를 불러오지 못했습니다. &lsquo;통계 새로고침&rsquo;으로 다시 시도해 주세요.
             </p>
           )}
 
           <Card className="rounded-lg border-0 bg-card shadow-2xl overflow-hidden ring-1 ring-border min-h-[500px] flex flex-col">
             <CardHeader className="bg-muted/50 border-b p-6 md:p-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div className="space-y-1">
-                <h3 className="text-xs font-bold text-muted-foreground tracking-tight">_ 심층 분석 뷰포트</h3>
+                <h3 className="text-xs font-bold text-muted-foreground tracking-tight">선택한 통계</h3>
                 <CardTitle className="text-2xl font-bold text-foreground tracking-tighter">
                   {TAB_TITLE[activeTab]}
                 </CardTitle>

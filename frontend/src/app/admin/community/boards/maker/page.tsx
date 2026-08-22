@@ -4,7 +4,10 @@ import dynamic from 'next/dynamic';
 
 const BoardMakerWizard = dynamic(
   () => import('./components/BoardMakerWizard').then(mod => mod.BoardMakerWizard),
-  { ssr: false }
+  {
+    ssr: false,
+    loading: () => <h1 className="sr-only">게시판 생성 마법사를 불러오는 중</h1>,
+  }
 );
 
 /**

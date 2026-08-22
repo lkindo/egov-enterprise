@@ -39,11 +39,6 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       reconnectDelay: 5000,
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
-      debug: (str) => {
-        if (process.env.NODE_ENV === 'development') {
-          console.debug('[WebSocket]', str);
-        }
-      },
     });
 
     client.onConnect = () => {
@@ -53,8 +48,7 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       // 구독과 중복되어 알림 하나당 토스트가 두 번 뜬다. 목적별 구독·payload 검증은 소비자가 맡는다.
     };
 
-    client.onStompError = (frame) => {
-      console.error('STOMP error', frame);
+    client.onStompError = () => {
       setConnection(current => current?.client === client ? null : current);
       isConnecting.current = false;
     };

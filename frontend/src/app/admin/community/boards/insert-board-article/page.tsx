@@ -16,11 +16,8 @@ export default async function InsertBoardArticlePage({ searchParams }: PageProps
 
   let initialData = null;
   if (pstSn) {
-    try {
-      initialData = await knowledgeService.getArticle(bbsId, pstSn);
-    } catch (error) {
-      console.error('Failed to fetch initial article data:', error);
-    }
+    // 수정 대상 조회 실패를 빈 신규 작성 폼으로 위장하지 않고 상위 error boundary에 맡긴다.
+    initialData = await knowledgeService.getArticle(bbsId, pstSn);
   }
 
   return (

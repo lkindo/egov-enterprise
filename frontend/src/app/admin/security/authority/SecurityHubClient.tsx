@@ -695,6 +695,7 @@ export default function SecurityHubClient({
                       error={authorsError as Error | null}
                       onRetry={() => refetchAuthors()}
                       onRowClick={(item) => handleRoleSelect((item as AuthorInfo).authrtCd)}
+                      rowActionLabel={(item) => `${item.authrtNm || item.authrtCd} 역할 선택`}
                       keyField="authrtCd"
                       isPremium={false}
                       className="border-none bg-transparent"
@@ -764,6 +765,7 @@ export default function SecurityHubClient({
                           error={usersError as Error | null}
                           onRetry={() => refetchUsers()}
                           onRowClick={(item) => toggleUserMapping((item as AuthorGroupProjection).scrtyDcsnTrgtId)}
+                          rowActionLabel={(item) => `${item.userNm || item.userId || item.scrtyDcsnTrgtId} 사용자 할당 ${tempUserMappings.has(item.scrtyDcsnTrgtId) ? '해제' : '추가'}`}
                           keyField="scrtyDcsnTrgtId"
                           isPremium={false}
                           className="border-none bg-transparent"

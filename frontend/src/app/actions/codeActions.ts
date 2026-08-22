@@ -28,7 +28,6 @@ export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetai
     return { success: true, message: '상세 코드가 저장되었습니다.' };
   } catch (error) {
     const message = extractErrorMessage(error, '저장 중 오류 발생');
-    console.error('Save Code Detail Error:', error);
     return { success: false, message };
   }
 }
@@ -45,7 +44,6 @@ export async function deleteCodeDetail(prevState: unknown, { cdId, dtlCd }: { cd
     return { success: true, message: '상세 코드가 삭제되었습니다.' };
   } catch (error) {
     const message = extractErrorMessage(error, '삭제 중 오류 발생');
-    console.error('Delete Code Detail Error:', error);
     return { success: false, message };
   }
 }

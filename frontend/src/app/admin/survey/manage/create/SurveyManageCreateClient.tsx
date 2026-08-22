@@ -23,7 +23,7 @@ import { toDisplayYmd, toStorageYmd } from "@/lib/format-date";
 import { CalendarIcon, Plus, Send, ArrowLeft, Sparkles } from "lucide-react";
 import { createPoll } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO } from '@/types/business/poll';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 // sonner 직접 호출 대신 useToast 로 수렴한다 — 문자열 정규화 페일세이프가 없으면
 // 에러 객체가 그대로 넘어가 '[object Object]' 가 노출된다(P2).
 import { useToast } from '@/app/components/ui/toast';
@@ -46,7 +46,7 @@ export default function SurveyManageCreateClient() {
   const handleSave = async () => {
     if (isSaving) return; // 연타 시 같은 설문이 두 건 등록되는 것을 막는다
     if (!formData.pollNm || !beginDate || !endDate) {
-      toastError('필수 항목을 입력해주세요.');
+      toastError('필수 항목을 입력해 주세요.');
       return;
     }
 
@@ -62,10 +62,10 @@ export default function SurveyManageCreateClient() {
       pollBgngYmd: toStorageYmd(beginDate),
       pollEndYmd: toStorageYmd(endDate),
       pollArticles: [
-        { pollArtclNm: '매우 만족 (Highly Satisfied)' },
-        { pollArtclNm: '만족 (Satisfied)' },
-        { pollArtclNm: '보통 (Neutral)' },
-        { pollArtclNm: '불만족 (Unsatisfied)' }
+        { pollArtclNm: '매우 만족' },
+        { pollArtclNm: '만족' },
+        { pollArtclNm: '보통' },
+        { pollArtclNm: '불만족' }
       ]
     };
 
@@ -74,8 +74,8 @@ export default function SurveyManageCreateClient() {
       await createPoll(payload);
       success('설문이 등록되었습니다.');
       router.push('/admin/survey/manage');
-    } catch (error) {
-      toastError(error instanceof Error ? error.message : '설문 등록에 실패했습니다.');
+    } catch {
+      toastError('설문을 등록하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.');
     } finally {
       setIsSaving(false);
     }
@@ -98,10 +98,10 @@ export default function SurveyManageCreateClient() {
             <div className="relative z-10 space-y-2">
                 <div className="flex items-center gap-2 px-3 py-1 bg-white/10 w-fit rounded-lg border border-white/10 mb-4">
                     <Plus className="w-3.5 h-3.5 text-primary-foreground" />
-                    <span className="text-xs font-bold tracking-widest uppercase">Survey System</span>
+                    <span className="text-xs font-bold tracking-widest">온라인 설문</span>
                 </div>
-                <CardTitle className="text-3xl font-bold tracking-tighter">설문 등록</CardTitle>
-                <p className="font-medium opacity-70">새로운 온라인 설문을 성격에 맞게 등록합니다.</p>
+                <h1 className="text-3xl font-bold tracking-tighter">만족도 설문 등록</h1>
+                <p className="font-medium opacity-70">응답 선택지가 매우 만족·만족·보통·불만족으로 고정된 설문을 등록합니다.</p>
             </div>
         </CardHeader>
         <CardContent className="p-10 space-y-10">
@@ -194,7 +194,7 @@ export default function SurveyManageCreateClient() {
               disabled={isSaving}
               className="w-full h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-lg tracking-widest shadow-2xl hover:bg-primary transition-all active:scale-95 gap-3"
             >
-                <Send className="w-5 h-5" /> {isSaving ? '등록 중…' : '설문 등록 완료'}
+                <Send className="w-5 h-5" /> {isSaving ? '등록 중…' : '설문 등록'}
             </Button>
           </div>
         </CardContent>

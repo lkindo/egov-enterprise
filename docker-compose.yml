@@ -84,11 +84,15 @@ services:
   frontend:
     build:
       context: ./frontend
+      args:
+        BACKEND_API_URL: http://api:8080/api/v1
+        NEXT_PUBLIC_API_URL: http://api:8080/api/v1
     container_name: egov-frontend
     restart: always
     ports:
       - "3000:3000"
     environment:
+      BACKEND_API_URL: http://api:8080/api/v1
       NEXT_PUBLIC_API_URL: http://api:8080/api/v1
       # [2026-08-08 신설] frontend 미들웨어는 JWT 를 **자기가 검증**하므로 서명 키가 필요하다.
       #   없으면 prod 환경에서 fail-fast 로 죽고 **모든 요청이 500** 이 된다:

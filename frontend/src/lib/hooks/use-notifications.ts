@@ -85,7 +85,6 @@ export function useNotifications() {
     ]);
 
     if (listResult.status === 'rejected') {
-      console.error('Failed to fetch notifications:', listResult.reason);
       setError('알림을 불러오지 못했습니다.');
       // 60초 폴링이라 매번 토스트를 띄우면 화면이 잠긴다. 오류 '전이' 에서만 한 번 알린다.
       if (!errorNotifiedRef.current) {
@@ -126,10 +125,9 @@ export function useNotifications() {
     if (countResult.status === 'fulfilled') {
       const countData = countResult.value as unknown as number | { count: number };
       setUnreadCount(typeof countData === 'number' ? countData : (countData?.count || 0));
-    } else {
-      // 배지를 0 으로 떨어뜨리지 않는다 — '미읽음 없음' 은 조회 실패와 구분돼야 한다.
-      console.error('Failed to fetch unread notification count:', countResult.reason);
     }
+    // 카운트 실패 시 배지를 0 으로 떨어뜨리지 않는다. 오류 객체에는 요청 정보가 포함될 수 있으므로
+    // 브라우저 콘솔에도 보내지 않고 직전 값을 유지한다.
   }, [toast]);
 
   const handleNewNotification = useCallback((message: IMessage) => {
@@ -137,12 +135,10 @@ export function useNotifications() {
     try {
       decoded = JSON.parse(message.body) as unknown;
     } catch {
-      console.warn('Ignored malformed WebSocket notification payload');
       return;
     }
     const newNotif = normalizeNotification(decoded);
     if (!newNotif) {
-      console.warn('Ignored WebSocket notification that violates the notification contract');
       return;
     }
 
@@ -182,8 +178,7 @@ export function useNotifications() {
       // Update local state immediately for better UX
       setNotifications(prev => prev.map(n => n.notiSn === id ? { ...n, readYn: 'Y' } : n));
       setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+    } catch {
       toast('알림 읽음 처리에 실패했습니다.', 'error');
     }
   };
@@ -197,8 +192,7 @@ export function useNotifications() {
       setNotifications(prev => prev.map(n => ({ ...n, readYn: 'Y' })));
       setUnreadCount(0);
       toast('모든 알림을 읽음 처리했습니다.', 'success');
-    } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+    } catch {
       // [2026-08-04] 종전에는 조용히 재조회만 했다. 사용자는 '모두 읽음' 을 눌렀는데
       //   아무 반응이 없고 배지가 그대로라 버튼이 고장 난 것으로 읽는다.
       //   일부만 성공했을 수도 있으므로 서버 상태로 되맞추되, 실패 사실은 알린다.

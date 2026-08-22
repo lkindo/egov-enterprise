@@ -38,8 +38,8 @@ vi.mock('next/navigation', () => ({
 }));
 
 // 결과 조회는 이 테스트의 관심사가 아니다 — 네트워크를 타지 않게 막는다.
-vi.mock('@/services/foundation/system/UserAdminService', () => ({
-    userAdminService: { getUserList: vi.fn().mockResolvedValue({ list: [] }) },
+vi.mock('@/services/business/user/UserSearchService', () => ({
+    userSearchService: { searchAssignableUsers: vi.fn().mockResolvedValue([]) },
 }));
 
 describe('/search 하이드레이션 불변식', () => {

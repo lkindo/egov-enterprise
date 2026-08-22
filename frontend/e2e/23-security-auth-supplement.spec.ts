@@ -135,7 +135,8 @@ test.describe('Tier 23-E0: Login success (UI flow — anti-regression for double
 // ───────────────────────── E2: 로그인 실패(잘못된 자격증명) ─────────────────────────
 test.describe('Tier 23-E2: Login failure (negative auth)', () => {
     test('invalid password shows error and does NOT authenticate', async ({ page, consoleGuard }) => {
-        // 초기 세션 확인 401, 의도적으로 잘못 보낸 로그인 401, 두 catch 경계의 정확한 로그만 허용한다.
+        // 초기 세션 확인 401과 의도적으로 잘못 보낸 로그인 401만 허용한다. 인증 거부는 사용자 오류
+        // surface로 처리하며 AuthContext/LoginClient가 콘솔에 중복 오류를 남기지 않는 것이 현재 계약이다.
         consoleGuard.expectErrors([
             {
                 id: 'E2E-AUTH-INVALID-PAGE-ME-401',
@@ -159,30 +160,6 @@ test.describe('Tier 23-E2: Login failure (negative auth)', () => {
                 status: 401,
                 maxOccurrences: 1,
                 reason: '잘못된 비밀번호를 제출해 인증 거부 UI와 접근성 계약을 검증한다.',
-                expiresAt: '2026-12-31',
-            },
-            {
-                id: 'E2E-AUTH-INVALID-CONTEXT-LOG',
-                specScope: '23-security-auth-supplement.spec.ts :: invalid password shows error and does NOT authenticate',
-                channel: 'console',
-                urlPattern: null,
-                messagePattern: /^Login process error:/,
-                method: null,
-                status: null,
-                maxOccurrences: 1,
-                reason: 'AuthContext가 의도된 로그인 거부를 UI 계층으로 다시 전달하며 남기는 진단 로그다.',
-                expiresAt: '2026-12-31',
-            },
-            {
-                id: 'E2E-AUTH-INVALID-CLIENT-LOG',
-                specScope: '23-security-auth-supplement.spec.ts :: invalid password shows error and does NOT authenticate',
-                channel: 'console',
-                urlPattern: null,
-                messagePattern: /^Error: /,
-                method: null,
-                status: null,
-                maxOccurrences: 1,
-                reason: 'LoginClient가 의도된 로그인 거부를 오류 surface에 표시하기 전에 남기는 Error 로그다.',
                 expiresAt: '2026-12-31',
             },
         ]);

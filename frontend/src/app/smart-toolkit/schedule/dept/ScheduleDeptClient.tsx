@@ -75,8 +75,7 @@ export default function ScheduleDeptClient() {
             } else {
                 setSchedules([]);
             }
-        } catch (error) {
-            console.error('Failed to fetch schedules', error);
+        } catch {
             setSchedules([]);
         }
     }, [params]);
@@ -137,7 +136,7 @@ export default function ScheduleDeptClient() {
     return (
         <div className="space-y-6 p-6">
             <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold tracking-tight">부서 일정 관리</h2>
+                <h1 className="text-2xl font-bold tracking-tight">부서 일정 관리</h1>
                 <Button onClick={handleCreate} className="rounded-lg shadow-lg font-bold">
                     <Plus className="mr-2 h-4 w-4" />
                     일정 등록

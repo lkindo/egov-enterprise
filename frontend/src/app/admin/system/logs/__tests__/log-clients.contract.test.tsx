@@ -76,6 +76,7 @@ import SystemLogsPrivacyClient from '../privacy/SystemLogsPrivacyClient';
 import SystemLogsSystemClient from '../system/SystemLogsSystemClient';
 import SystemLogsUserClient from '../user/SystemLogsUserClient';
 import SystemLogsWebClient from '../web/SystemLogsWebClient';
+import { metadata as userLogMetadata } from '../user/page';
 
 type SysLogDto = components['schemas']['SysLogDto'];
 type LoginLogDto = components['schemas']['LoginLogDto'];
@@ -158,6 +159,11 @@ describe('dedicated system log clients generated-DTO contracts', () => {
     clientHarness.queryData = undefined;
     clientHarness.latestTableProps = undefined;
     clientHarness.setPage.mockReset();
+  });
+
+  it('publishes a stable descriptive document title for the user-log route', () => {
+    expect(userLogMetadata.title).toBe('사용자 로그 | 전자정부 엔터프라이즈 포털');
+    expect(userLogMetadata.description).toBeTruthy();
   });
 
   it('renders the SYS generated DTO fields and uses sysLogSn as the row key', () => {

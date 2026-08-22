@@ -126,6 +126,7 @@ describe('boardActions', () => {
     });
 
     it('should handle catch error', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
       const formData = new FormData();
       formData.append('pstTtl', 'title');
       formData.append('pstCn', 'content');
@@ -138,7 +139,9 @@ describe('boardActions', () => {
       const result = await saveBoardArticle({}, formData);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe('Network Error');
+      expect(result.message).toBe('게시글 저장 중 오류가 발생했습니다.');
+      expect(result.message).not.toContain('Network Error');
+      expect(consoleError).not.toHaveBeenCalled();
     });
   });
 
@@ -159,6 +162,7 @@ describe('boardActions', () => {
     });
 
     it('should handle delete failure', async () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
       const formData = new FormData();
       formData.append('pstSn', '100');
       formData.append('bbsId', 'BBS_001');
@@ -169,7 +173,8 @@ describe('boardActions', () => {
       const result = await deleteBoardArticle({}, formData);
 
       expect(result.success).toBe(false);
-      expect(result.message).toBe('삭제 중 오류가 발생했습니다.');
+      expect(result.message).toBe('게시글 삭제 중 오류가 발생했습니다.');
+      expect(consoleError).not.toHaveBeenCalled();
     });
   });
 });

@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 export function MonitoringHubSkeleton() {
   return (
     <div className="space-y-12 pb-24" aria-busy="true" aria-live="polite">
+      <h1 className="sr-only">통합 모니터링을 불러오는 중</h1>
       <div className="space-y-3">
         <Skeleton className="h-4 w-48 rounded-lg" />
         <Skeleton className="h-9 w-80 rounded-lg" />

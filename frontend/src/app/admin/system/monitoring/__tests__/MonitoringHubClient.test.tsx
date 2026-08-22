@@ -91,15 +91,31 @@ vi.mock('@/app/components/ui/standard-modal', () => ({
 }));
 
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ columns, data, onRowClick, onRetry, pagination }: any) => (
+  StandardDataTable: ({ columns, data, onRowClick, onRetry, pagination, rowActionLabel }: any) => (
     <div>
-      {data.map((item: any, rowIndex: number) => (
-        <button type="button" key={rowIndex} onClick={() => onRowClick(item)}>
-          {columns.map((column: any, columnIndex: number) => (
-            <span key={columnIndex}>{column.accessor(item)}</span>
-          ))}
-        </button>
-      ))}
+      <table>
+        <tbody>
+          {data.map((item: any, rowIndex: number) => {
+            const actionLabel = typeof rowActionLabel === 'function'
+              ? rowActionLabel(item, rowIndex)
+              : rowActionLabel;
+            return (
+              <tr key={rowIndex}>
+                {columns.map((column: any, columnIndex: number) => (
+                  <td key={columnIndex}>{column.accessor(item)}</td>
+                ))}
+                {onRowClick && (
+                  <td>
+                    <button type="button" aria-label={actionLabel} onClick={() => onRowClick(item)}>
+                      {actionLabel}
+                    </button>
+                  </td>
+                )}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
       <button type="button" onClick={onRetry}>목록 재시도</button>
       <button type="button" onClick={() => pagination.onPageChange(2)}>다음 페이지</button>
     </div>
@@ -183,7 +199,7 @@ describe('MonitoringHubClient', () => {
     renderHub(query);
 
     expect(await screen.findByText(rowText)).toBeInTheDocument();
-    fireEvent.click(screen.getByText(rowText).closest('button')!);
+    fireEvent.click(screen.getByRole('button', { name: /상세 열기/ }));
     expect(screen.getByText(/객체 상세 분석/)).toBeInTheDocument();
 
     fireEvent.change(screen.getByRole('textbox', { name: '로그 검색어' }), {
@@ -205,7 +221,8 @@ describe('MonitoringHubClient', () => {
     expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: '로그 검색어' })).not.toBeInTheDocument();
 
-    fireEvent.click(screen.getByText('삭제할 댓글').closest('button')!);
+    fireEvent.click(screen.getByRole('button', { name: '서비스 피드백 관리 44 상세 열기' }));
+    expect(document.querySelector('button button')).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: '댓글 삭제' }));
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({

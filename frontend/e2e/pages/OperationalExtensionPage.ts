@@ -42,7 +42,8 @@ export class OperationalExtensionPage {
     async gotoMemoReports() {
         console.log('>>> Navigating to Memo Reports');
         await this.page.goto('/admin/operation/memo-reports');
-        await expect(this.page.getByText('메모 보고 관리')).toBeVisible();
+        // Suspense fallback의 sr-only 제목('…불러오는 중')과 부분 일치하지 않도록 실제 화면 제목을 고정한다.
+        await expect(this.page.getByRole('heading', { name: '메모 보고 관리', exact: true })).toBeVisible();
     }
 
     async switchReportTab(tab: string) {

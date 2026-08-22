@@ -98,6 +98,7 @@ export default function OnlinePollParticipateClient() {
  if (loading && viewMode === 'list') {
  return (
  <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+ <h1 className="sr-only">여론조사 목록을 불러오는 중</h1>
  <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
  <p className="text-muted-foreground font-bold tracking-widest uppercase text-xs">Syncing Matrix Data...</p>
  </div>

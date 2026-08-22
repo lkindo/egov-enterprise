@@ -36,7 +36,7 @@ const outfit = Outfit({
 
 export const metadata: Metadata = {
   title: '전자정부 표준프레임워크 - 엔터프라이즈 포털',
-  description: 'KRDS 기반 모던 전사 공통 모듈 및 디지털 정부 혁신 플랫폼',
+  description: '전사 업무 포털에서 공통 업무와 협업 기능을 제공합니다.',
 };
 
 // [csp Phase 4] nonce CSP 는 모든 문서가 요청 시점에 렌더된다는 전제 위에 서 있다 —
@@ -55,6 +55,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
       {/* Skip Navigation: 본문 바로가기 링크 추가 (웹 접근성 준수) */}
       <a
         href="#main-content"
+        data-sidebar-modal-background="skip-link"
         className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:bg-surface-inverse focus:text-surface-inverse-foreground focus:px-5 focus:py-3 focus:rounded-[var(--radius-hub-item)] focus:font-bold focus:shadow-2xl focus:border focus:border-white/10 focus:outline-none focus:ring-2 focus:ring-primary transition-all duration-300"
       >
         본문 바로가기
@@ -69,12 +70,18 @@ async function AppShell({ children }: { children: React.ReactNode }) {
         {/* id="main-content" 및 tabIndex={-1} 속성을 주입하여 Skip Navigation 타겟 바인딩 (포커스 outline은 기본 제거) */}
         <main
           id="main-content"
+          data-sidebar-modal-background="main"
           tabIndex={-1}
-          className="flex-1 lg:pl-72 pt-1 min-w-0 transition-opacity duration-300 overflow-x-hidden outline-none"
+          className="flex-1 lg:pl-72 pt-1 min-w-0 scroll-mt-16 transition-opacity duration-300 overflow-x-hidden outline-none"
         >
           <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-11rem)]">
             <PageTransition>
-              <Suspense fallback={<div className="flex h-full w-full items-center justify-center min-h-[500px] text-muted-foreground font-medium">페이지 콘텐츠를 불러오는 중...</div>}>
+              <Suspense fallback={
+                <div className="flex h-full w-full flex-col items-center justify-center min-h-[500px] text-muted-foreground font-medium">
+                  <h1 className="sr-only">페이지 콘텐츠를 불러오는 중</h1>
+                  <p role="status" aria-live="polite">페이지 콘텐츠를 불러오는 중...</p>
+                </div>
+              }>
                 {children}
               </Suspense>
             </PageTransition>
@@ -105,7 +112,14 @@ async function ProvidersWithAuth({ children }: { children: React.ReactNode }) {
       <Suspense fallback={null}>
         <GlobalUIComponents />
       </Suspense>
-      <Suspense fallback={<div className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">애플리케이션을 준비하는 중...</div>}>
+      <Suspense fallback={
+        <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
+          <div>
+            <h1 className="sr-only">전자정부 Enterprise</h1>
+            <p role="status" aria-live="polite">애플리케이션을 준비하는 중...</p>
+          </div>
+        </main>
+      }>
         <AppShell>
           {children}
         </AppShell>
@@ -126,7 +140,7 @@ export default async function RootLayout({
   // proxy.ts(nextWithCsp)가 요청당 x-nonce 를 실어 주고 여기서 prop 으로 넘긴다.
   const nonce = (await headers()).get('x-nonce') ?? undefined;
   return (
-    <html lang="ko" suppressHydrationWarning>
+    <html lang="ko" className="scroll-pt-16" suppressHydrationWarning>
       <body className={`${pretendard.variable} ${inter.variable} ${outfit.variable} antialiased font-sans`}>
         <ThemeProvider
           attribute="class"
@@ -142,7 +156,10 @@ export default async function RootLayout({
               로딩 상태도 랜드마크 안에 있어야 하고, 진행 상황은 스크린리더에 알려야 한다. */}
           <Suspense fallback={
             <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
-              <p role="status" aria-live="polite">보안 세션을 확인하는 중...</p>
+              <div>
+                <h1 className="sr-only">전자정부 Enterprise</h1>
+                <p role="status" aria-live="polite">보안 세션을 확인하는 중...</p>
+              </div>
             </main>
           }>
             <ProvidersWithAuth>

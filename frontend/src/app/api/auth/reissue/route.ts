@@ -4,6 +4,50 @@ import { getJwtExpiryMs, cookieMaxAgeSecondsFrom } from '@/lib/auth/jwt';
 
 const BACKEND_URL = (process.env.BACKEND_API_URL || 'http://127.0.0.1:8080/api/v1').replace(/\/$/, '');
 
+const SESSION_EXPIRED_MESSAGE = '세션이 만료되었습니다. 다시 로그인해주세요.';
+const REISSUE_UNAVAILABLE_MESSAGE = '세션 연장 서비스에 일시적으로 연결할 수 없습니다.';
+
+function upstreamStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const response = (error as { response?: unknown }).response;
+  if (!response || typeof response !== 'object') return undefined;
+  const status = (response as { status?: unknown }).status;
+  return typeof status === 'number' ? status : undefined;
+}
+
+function safeReissueFailure(status?: number) {
+  if (status === 401 || status === 403) {
+    return {
+      status,
+      body: {
+        success: false as const,
+        code: 'SESSION_EXPIRED' as const,
+        message: SESSION_EXPIRED_MESSAGE,
+      },
+    };
+  }
+
+  if (status === 429) {
+    return {
+      status,
+      body: {
+        success: false as const,
+        code: 'REISSUE_RATE_LIMITED' as const,
+        message: '세션 연장 요청이 많습니다. 잠시 후 다시 시도해주세요.',
+      },
+    };
+  }
+
+  return {
+    status: status !== undefined && status >= 400 && status < 500 ? status : 502,
+    body: {
+      success: false as const,
+      code: 'REISSUE_PROXY_ERROR' as const,
+      message: REISSUE_UNAVAILABLE_MESSAGE,
+    },
+  };
+}
+
 export async function POST(request: NextRequest) {
   try {
     // 백엔드로 reissue 요청 (쿠키 포워딩)
@@ -65,15 +109,10 @@ export async function POST(request: NextRequest) {
       return nextResponse;
     }
 
-    return NextResponse.json(responseData, { status: response.status });
-  } catch (error: any) {
-    console.error('[API Proxy Reissue Error]', error.message);
-    const status = error.response?.status || 500;
-    const errorData = error.response?.data || {
-      success: false,
-      code: 'REISSUE_PROXY_ERROR',
-      message: '토큰 재발행 중개 처리 중 오류가 발생했습니다.',
-    };
-    return NextResponse.json(errorData, { status });
+    const failure = safeReissueFailure();
+    return NextResponse.json(failure.body, { status: failure.status });
+  } catch (error: unknown) {
+    const failure = safeReissueFailure(upstreamStatus(error));
+    return NextResponse.json(failure.body, { status: failure.status });
   }
 }

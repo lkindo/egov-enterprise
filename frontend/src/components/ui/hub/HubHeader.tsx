@@ -7,6 +7,8 @@ interface HubHeaderProps {
   highlight?: string;
   subtitle?: string;
   icon: HubIcon;
+  /** PageHeader 아래의 섹션이면 h2(기본), 이 컴포넌트가 페이지 제목을 소유할 때만 h1. */
+  headingLevel?: 1 | 2;
   className?: string;
   actions?: React.ReactNode;
 }
@@ -16,9 +18,12 @@ export function HubHeader({
   highlight, 
   subtitle, 
   icon, 
+  headingLevel = 2,
   className,
   actions
 }: HubHeaderProps) {
+  const Heading = headingLevel === 1 ? 'h1' : 'h2';
+
   return (
     <div className={cn("flex flex-col md:flex-row items-start md:items-center justify-between px-6 gap-8 mb-8 animate-in fade-in slide-in-from-top-8 duration-700", className)}>
       <div className="flex items-center gap-6">
@@ -28,17 +33,10 @@ export function HubHeader({
           </div>
         </div>
         <div className="space-y-1">
-          {/*
-            같은 화면에서 PageHeader 가 이미 h1 을 렌더하므로(41화면 h1 2중 렌더) 여기서는 h2 로 강등한다.
-            시각 스케일은 hub-title-main 토큰을 그대로 유지해 변화가 없다.
-            "전자정부" 접두 라벨과 "HUB" 접미 하드코딩 문구는 제거 — 제목은 title/highlight prop 만으로 구성한다.
-          */}
-          {/* [a11y] 페이지 제목이므로 h1 이다. 종전 h2 라 axe `page-has-heading-one`(문서에 레벨1 제목
-              없음)이 관리자 전 화면에서 위반이었다. HubHeader 는 페이지당 1회 쓰이는 헤더이며
-              시각 스케일은 hub-title-main 토큰이 담당하므로 태그 변경으로 디자인은 달라지지 않는다. */}
-          <h1 className="hub-title-main flex items-center gap-3">
+          {/* 시각 스케일은 동일하게 유지하고, effective route에서의 역할만 명시적으로 고른다. */}
+          <Heading className="hub-title-main flex items-center gap-3">
              {title} {highlight && <span className="text-primary">{highlight}</span>}
-          </h1>
+          </Heading>
           {subtitle && (
             <p className="hub-subtitle-label mt-2 tracking-tight">
                {subtitle}

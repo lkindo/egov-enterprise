@@ -260,6 +260,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  error={tableError}
  onRetry={handleRetry}
  onRowClick={() => router.push('/note')}
+ rowActionLabel="쪽지함 열기"
  emptyMessage="받은 쪽지가 없습니다."
  isPremium={true}
  className="border-none bg-transparent shadow-none"
@@ -274,6 +275,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  error={tableError}
  onRetry={handleRetry}
  onRowClick={(item) => router.push(`/admin/collaboration/scraps/selectScrapDetail/${item.scrapSn}`)}
+ rowActionLabel={(item) => `${item.scrapNm || `${item.scrapSn}번`} 스크랩 열기`}
  emptyMessage="저장된 스크랩이 없습니다."
  isPremium={true}
  className="border-none bg-transparent shadow-none"

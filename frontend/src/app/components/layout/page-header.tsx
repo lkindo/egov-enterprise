@@ -1,5 +1,3 @@
-'use client';
-
 import React, { Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import { DynamicBreadcrumb } from './DynamicBreadcrumb';
@@ -10,7 +8,7 @@ interface BreadcrumbItem {
 }
 
 interface PageHeaderProps {
-  title?: string;
+  title: string;
   /**
    * [하위호환] 화면에서 직접 넘기는 명시 브레드크럼.
    *
@@ -42,7 +40,7 @@ export function PageHeader({ title, breadcrumbs, actions, className }: PageHeade
         </Suspense>
       </div>
 
-      {/* Title and Actions - Hub Style Scaling */}
+      {/* 정적 제목 shell은 Server Component에서도 렌더 가능하고, breadcrumb만 client leaf다. */}
       <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6">
         <div className="space-y-4 min-w-0">
            <h1 className="text-3xl md:text-5xl font-[number:var(--font-weight-hub-title)] tracking-tighter text-foreground truncate leading-[1.1]">

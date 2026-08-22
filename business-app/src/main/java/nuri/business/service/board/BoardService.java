@@ -11,6 +11,7 @@ import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.board.BoardSearchCondition;
+import nuri.business.domain.board.BoardStatsResult;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardMapper;
 import nuri.business.service.board.dto.BoardSaveRequest;
@@ -19,6 +20,8 @@ import nuri.business.service.board.event.PostCreatedEvent;
 import nuri.business.service.file.FileService;
 import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserDto;
+import nuri.business.security.AuthorityConstants;
+import nuri.business.security.util.SecurityUtil;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 import lombok.extern.slf4j.Slf4j;
@@ -41,6 +44,8 @@ import java.util.List;
 @Slf4j
 @Service
 public class BoardService extends BaseAbstractService {
+
+        private static final String PUBLIC_FAQ_BOARD_ID = "BBSMSTR_AAAAAAAAAAAA";
 
         private final BoardRepository boardRepository;
         private final BoardMasterRepository boardMasterRepository;
@@ -85,9 +90,9 @@ public class BoardService extends BaseAbstractService {
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
                         String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
                         @NonNull Pageable pageable) {
-                log.info("Fetching board posts - bbsId: {}, searchWrd: '{}', orderBy: {}", bbsId, searchWrd, orderBy);
-                boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                log.info("Fetching board posts - bbsId: {}, searchApplied: {}, orderBy: {}",
+                                bbsId, StringUtils.hasText(searchWrd), orderBy);
+                assertActiveBoardMaster(bbsId);
 
                 BoardSearchCondition condition = new BoardSearchCondition();
                 condition.setBbsId(bbsId);
@@ -97,6 +102,7 @@ public class BoardService extends BaseAbstractService {
                 condition.setOrderBy(orderBy);
                 condition.setQnaSttsCd(qnaStatus);
                 condition.setQnaCatCd(qnaCategory);
+                bindCurrentViewerVisibility(condition);
 
                 if (StringUtils.hasText(startDate)) {
                         try {
@@ -122,20 +128,49 @@ public class BoardService extends BaseAbstractService {
         }
 
         @Transactional(readOnly = true)
+        public Page<BoardDto> getPublicFaqPosts(
+                        String searchWrd, @NonNull Pageable pageable) {
+                assertPublicFaqBoardAvailable();
+
+                return boardRepository.searchPublicFaqArticles(
+                                PUBLIC_FAQ_BOARD_ID,
+                                searchWrd,
+                                required(pageable, "pageable 는 null 일 수 없습니다"))
+                                .map(boardMapper::toDto);
+        }
+
+        @Transactional(readOnly = true)
         public BoardStatsResponse getBoardStats(@NonNull String bbsId) {
-                long totalArticles = boardRepository.countByBbsIdAndUseYn(bbsId, "Y");
-                long totalViews = boardRepository.sumInqCntByBbsIdAndUseYn(bbsId, "Y");
-                String topContributor = boardRepository.findTopContributorByBbsIdAndUseYn(bbsId, "Y");
+                assertActiveBoardMaster(bbsId);
+                BoardSearchCondition condition = new BoardSearchCondition(bbsId);
+                condition.setUseYn("Y");
+                bindCurrentViewerVisibility(condition);
+                BoardStatsResult stats = boardRepository.aggregateVisibleStats(condition);
 
                 // Logic derived from frontend: (count * 2) + 70, capped at 100
-                int intelligenceScore = (int) Math.min(100, (totalArticles * 2) + 70);
+                int intelligenceScore = (int) Math.min(100, (stats.totalArticles() * 2) + 70);
 
                 return BoardStatsResponse.builder()
-                                .totalArticles(totalArticles)
-                                .totalViews(totalViews)
-                                .topContributor(topContributor != null ? topContributor : "System")
+                                .totalArticles(stats.totalArticles())
+                                .totalViews(stats.totalViews())
+                                .topContributor(stats.topContributor() != null ? stats.topContributor() : "System")
                                 .intelligenceScore(intelligenceScore)
                                 .build();
+        }
+
+        private void assertActiveBoardMaster(String bbsId) {
+                boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
+                                .filter(master -> "Y".equals(master.getUseYn()))
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+        }
+
+        private void bindCurrentViewerVisibility(BoardSearchCondition condition) {
+                boolean secretPostAdminOverride = SecurityUtil.hasRole(AuthorityConstants.ROLE_ADMIN)
+                                || SecurityUtil.hasRole(AuthorityConstants.ROLE_SYSTEM);
+                condition.setSecretPostAdminOverride(secretPostAdminOverride);
+                condition.setViewerEsntlId(secretPostAdminOverride
+                                ? null
+                                : SecurityUtil.getCurrentEsntlId().orElse(null));
         }
 
         @Transactional
@@ -301,13 +336,55 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional(readOnly = true)
         public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long pstSn) {
-                BoardDetailResult detail = boardRepository.findArticleDetail(pstSn)
+                // [2026-08-22 제품 결정] 논리 삭제(useYn='N') 게시글은 일반 사용자에게 404 지만
+                // **관리자에게는 열람을 허용**한다. 복구·감사 경로가 404 로 막히면 관리자가 삭제된 글의
+                // 내용을 확인할 방법이 사라진다.
+                // 확대 범위는 정확히 "관리자 × 논리 삭제 게시글" 하나이며 나머지 방어선은 그대로다:
+                //   · 아래 비밀글 소유권 가드는 삭제 여부와 무관하게 계속 적용된다.
+                //   · 비활성 게시판(BoardMaster.useYn='N')은 완화하지 않는다 — 별개 결정이다.
+                //   · hasRole("ADMIN") 은 role hierarchy 로 SYSTEM 을 포함한다(백엔드 헌법 제8조 2항).
+                BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
+                                .or(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")
+                                                ? boardRepository.findArticleDetailIncludingDeleted(bbsId, pstSn)
+                                                : java.util.Optional.empty())
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
+
+                // 비밀글은 인증됐다는 사실만으로 본문을 공개하지 않는다. Board.userId 는 생성 시
+                // UserDetails.getUsername() (= esntlId)으로 고정되므로 같은 축의 owner-or-admin 가드를 쓴다.
+                // 비밀번호 검증 입력/계약이 없는 상세 API에서 저장 비밀번호를 임의로 재사용하지 않는다.
+                if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
+                        nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(detail.getUserId());
+                }
 
                 // Redis 기반 쓰기 지연 처리
                 viewCountService.increaseViewCount(pstSn);
 
                 return boardMapper.toDto(detail);
+        }
+
+        @Transactional(readOnly = true)
+        public BoardDto getPublicFaqDetail(@NonNull Long pstSn) {
+                BoardDetailResult detail = boardRepository
+                                .findPublicArticleDetail(PUBLIC_FAQ_BOARD_ID, pstSn)
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
+
+                viewCountService.increaseViewCount(pstSn);
+                return BoardDto.builder()
+                                .bbsId(detail.getBbsId())
+                                .pstSn(detail.getPstSn())
+                                .pstTtl(detail.getPstTtl())
+                                .pstCn(detail.getPstCn())
+                                .inqCnt(detail.getInqCnt())
+                                .crtDt(detail.getCrtDt())
+                                .useYn(detail.getUseYn())
+                                .scrtYn(detail.getScrtYn())
+                                .build();
+        }
+
+        private void assertPublicFaqBoardAvailable() {
+                boardMasterRepository.findById(PUBLIC_FAQ_BOARD_ID)
+                                .filter(master -> "Y".equalsIgnoreCase(master.getUseYn()))
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
         }
 
         @Transactional

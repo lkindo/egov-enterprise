@@ -51,7 +51,6 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
     return { success: true, message: '댓글이 등록되었습니다.' };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '오류가 발생했습니다.');
-    console.error('Comment Create Error:', error);
     return { success: false, message: errorMessage };
   }
 }
@@ -76,7 +75,6 @@ export async function deleteComment(prevState: unknown, formData: FormData): Pro
     return { success: true, message: '댓글이 삭제되었습니다.' };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '삭제 중 오류가 발생했습니다.');
-    console.error('Comment Delete Error:', error);
     return { success: false, message: errorMessage };
   }
 }
@@ -111,7 +109,6 @@ export async function updateComment(prevState: unknown, formData: FormData): Pro
     return { success: true, message: '댓글이 수정되었습니다.' };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '수정 중 오류가 발생했습니다.');
-    console.error('Comment Update Error:', error);
     return { success: false, message: errorMessage };
   }
 }

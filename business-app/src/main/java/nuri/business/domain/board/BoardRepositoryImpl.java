@@ -1,8 +1,10 @@
 package nuri.business.domain.board;
 
-import com.querydsl.core.types.Projections;
 import com.querydsl.core.BooleanBuilder;
+import com.querydsl.core.Tuple;
 import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.Projections;
+import com.querydsl.core.types.dsl.NumberExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import jakarta.persistence.EntityManager;
 import org.springframework.data.domain.Page;
@@ -23,10 +25,63 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         }
 
         @Override
-        public Optional<BoardDetailResult> findArticleDetail(@NonNull Long pstSn) {
+        public Optional<BoardDetailResult> findActiveArticleDetail(
+                        @NonNull String bbsId, @NonNull Long pstSn) {
+                return findArticleDetail(bbsId, pstSn, false);
+        }
+
+        @Override
+        public Optional<BoardDetailResult> findArticleDetailIncludingDeleted(
+                        @NonNull String bbsId, @NonNull Long pstSn) {
+                return findArticleDetail(bbsId, pstSn, true);
+        }
+
+        @Override
+        public Optional<BoardDetailResult> findPublicArticleDetail(
+                        @NonNull String bbsId, @NonNull Long pstSn) {
                 BoardDetailResult result = queryFactory
                                 .select(Projections.fields(BoardDetailResult.class,
-                                                 QBoardMaster.boardMaster.bbsId,
+                                                QBoard.board.bbsId,
+                                                QBoard.board.pstSn,
+                                                QBoard.board.pstTtl,
+                                                QBoard.board.pstCn,
+                                                QBoard.board.inqCnt,
+                                                QBoard.board.crtDt.as("crtDt"),
+                                                QBoard.board.useYn,
+                                                QBoard.board.scrtYn))
+                                .from(QBoard.board)
+                                .innerJoin(QBoardMaster.boardMaster)
+                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
+                                .where(QBoard.board.bbsId.eq(bbsId),
+                                                QBoard.board.pstSn.eq(pstSn),
+                                                QBoard.board.useYn.eq("Y"),
+                                                QBoard.board.scrtYn.eq("N"),
+                                                QBoardMaster.boardMaster.useYn.eq("Y"))
+                                .fetchOne();
+
+                return Optional.ofNullable(result);
+        }
+
+        /**
+         * @param includeDeleted 논리 삭제(useYn='N')된 게시글까지 포함할지 여부.
+         *                       <b>호출부가 관리자 권한을 이미 판정한 경우에만</b> true 를 넘긴다
+         *                       (BoardService#getPostDetail 의 복구·감사 경로). 게시판 마스터의
+         *                       useYn 조건은 완화하지 않는다 — 비활성 게시판 전체 노출은 별개 결정이다.
+         */
+        private Optional<BoardDetailResult> findArticleDetail(
+                        String bbsId, Long pstSn, boolean includeDeleted) {
+                BooleanBuilder visibility = new BooleanBuilder()
+                                .and(QBoard.board.bbsId.eq(bbsId))
+                                .and(QBoard.board.pstSn.eq(pstSn))
+                                .and(QBoardMaster.boardMaster.useYn.eq("Y"));
+
+                if (!includeDeleted) {
+                        visibility.and(QBoard.board.useYn.eq("Y"));
+                }
+
+                BoardDetailResult result = queryFactory
+                                .select(Projections.fields(BoardDetailResult.class,
+                                                 QBoard.board.bbsId,
                                                  QBoard.board.pstSn,
                                                  QBoard.board.pstTtl,
                                                  QBoard.board.userId,
@@ -58,7 +113,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 .leftJoin(QUser.user).on(QBoard.board.frstRgtrId.eq(QUser.user.esntlId))
                                 .leftJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
-                                .where(QBoard.board.pstSn.eq(pstSn))
+                                .where(visibility)
                                 .fetchOne();
 
                 return Optional.ofNullable(result);
@@ -99,12 +154,9 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.qnaSttsCd,
                                                  QBoard.board.qnaCatCd))
                                 .from(QBoard.board)
-                                // [W1-25 P3④] 사용하지 않는 leftJoin(QUser) 제거 — 가장 뜨거운 목록 쿼리가
-                                //   content/count 양쪽에서 tb_user_info 를 조인하고 있었으나 셀렉트(86-100행)는
-                                //   전부 QBoard.board.*, where(BoardPredicate)도 작성자 검색조차
-                                //   QBoard.board.userNm 을 쓰며, orderBy 도 QBoard 전용이라 기여가 0이었다.
-                                //   조인 조건의 esntlId 는 User 의 @Id 라 매칭이 최대 1건 → 행 수도 불변이다.
-                                .where(builder)
+                                .innerJoin(QBoardMaster.boardMaster)
+                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
+                                .where(builder, QBoardMaster.boardMaster.useYn.eq("Y"))
                                 .orderBy(orderSpecifier, QBoard.board.ansSn.asc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
@@ -113,12 +165,88 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 Long total = queryFactory
                                 .select(QBoard.board.count())
                                 .from(QBoard.board)
-                                // [W1-25 P3④] 동일 — count 쿼리는 select 가 count() 하나라 더 명백하다.
-                                .where(builder)
+                                .innerJoin(QBoardMaster.boardMaster)
+                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
+                                .where(builder, QBoardMaster.boardMaster.useYn.eq("Y"))
                                 .fetchOne();
 
                 return new PageImpl<>(results, pageable,
                                 total != null ? total.longValue() : 0L);
+        }
+
+        @Override
+        public BoardStatsResult aggregateVisibleStats(@NonNull BoardSearchCondition condition) {
+                BooleanBuilder visibility = BoardPredicate.searchBoard(condition);
+                NumberExpression<Long> articleCount = QBoard.board.count();
+                NumberExpression<Long> viewSum = QBoard.board.inqCnt.longValue().sum();
+
+                Tuple totals = queryFactory
+                                .select(articleCount, viewSum)
+                                .from(QBoard.board)
+                                .innerJoin(QBoardMaster.boardMaster)
+                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
+                                .where(visibility, QBoardMaster.boardMaster.useYn.eq("Y"))
+                                .fetchOne();
+
+                NumberExpression<Long> contributorArticleCount = QBoard.board.count();
+                String topContributor = queryFactory
+                                .select(QBoard.board.userNm)
+                                .from(QBoard.board)
+                                .innerJoin(QBoardMaster.boardMaster)
+                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
+                                .where(visibility,
+                                                QBoardMaster.boardMaster.useYn.eq("Y"))
+                                .groupBy(QBoard.board.userNm)
+                                .orderBy(contributorArticleCount.desc(), QBoard.board.userNm.asc())
+                                .fetchFirst();
+
+                Long totalArticles = totals != null ? totals.get(articleCount) : null;
+                Long totalViews = totals != null ? totals.get(viewSum) : null;
+                return new BoardStatsResult(
+                                totalArticles != null ? totalArticles : 0L,
+                                totalViews != null ? totalViews : 0L,
+                                topContributor);
+        }
+
+        @Override
+        public Page<BoardSearchResult> searchPublicFaqArticles(
+                        @NonNull String bbsId, String keyword, @NonNull Pageable pageable) {
+                BooleanBuilder visibility = new BooleanBuilder()
+                                .and(QBoard.board.bbsId.eq(bbsId))
+                                .and(QBoard.board.useYn.eq("Y"))
+                                .and(QBoard.board.scrtYn.eq("N"))
+                                .and(QBoardMaster.boardMaster.useYn.eq("Y"));
+                if (StringUtils.hasText(keyword)) {
+                        visibility.and(QBoard.board.pstTtl.contains(keyword));
+                }
+
+                List<BoardSearchResult> results = queryFactory
+                                .select(Projections.fields(BoardSearchResult.class,
+                                                QBoard.board.pstSn,
+                                                QBoard.board.bbsId,
+                                                QBoard.board.pstTtl,
+                                                QBoard.board.crtDt.as("crtDt"),
+                                                QBoard.board.inqCnt,
+                                                QBoard.board.useYn,
+                                                QBoard.board.scrtYn))
+                                .from(QBoard.board)
+                                .innerJoin(QBoardMaster.boardMaster)
+                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
+                                .where(visibility)
+                                .orderBy(QBoard.board.sortOrdr.desc(), QBoard.board.ansSn.asc())
+                                .offset(pageable.getOffset())
+                                .limit(pageable.getPageSize())
+                                .fetch();
+
+                Long total = queryFactory
+                                .select(QBoard.board.count())
+                                .from(QBoard.board)
+                                .innerJoin(QBoardMaster.boardMaster)
+                                .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
+                                .where(visibility)
+                                .fetchOne();
+
+                return new PageImpl<>(results, pageable, total != null ? total : 0L);
         }
 
         @Override

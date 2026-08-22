@@ -14,7 +14,6 @@ export default async function MenuByAuthorityPage() {
     .getAuthorList({ pageNo: 1, searchCondition: '1', searchKeyword: '' }, axiosConfig)
     .then((res) => ({ data: res?.list ?? [], error: null }))
     .catch((error: unknown) => {
-      console.error('Server-side fetch authorities failed:', error);
       return {
         data: [] as AuthorInfo[],
         error: error instanceof Error && error.message ? error.message : '권한 목록을 불러오지 못했습니다.',
@@ -22,7 +21,7 @@ export default async function MenuByAuthorityPage() {
     });
 
   return (
-    <Suspense fallback={<div className="p-24 text-center text-xs tracking-widest animate-pulse text-muted-foreground">권한 인벤토리를 불러오는 중...</div>}>
+    <Suspense fallback={<div className="p-24 text-center text-xs tracking-widest animate-pulse text-muted-foreground"><h1 className="sr-only">권한별 메뉴를 불러오는 중</h1>권한 인벤토리를 불러오는 중...</div>}>
       <MenuByAuthorityClient authorsPromise={authorsPromise} />
     </Suspense>
   );

@@ -15,6 +15,7 @@
 5. [보안 스캔](#보안-스캔)
 6. [캐싱 전략](#캐싱-전략)
 7. [로컬 테스트](#로컬-테스트)
+8. [릴리스 프런트엔드 런타임 인계](#릴리스-프런트엔드-런타임-인계)
 
 ---
 
@@ -379,6 +380,28 @@ git config core.hooksPath .githooks
 
 ---
 
+## 릴리스 프런트엔드 런타임 인계
+
+`release.yml`은 frontend image를 build/push할 뿐 배포하지 않는다. build step의 repository variables는 Next production build를 검증하기 위한 입력이고, 발행된 image를 어느 backend에 연결할지는 runtime deploy owner가 별도로 인계해야 한다. build arguments가 container runtime environment를 대신한다고 간주하지 않는다.
+
+<!-- FRONTEND_RELEASE_RUNTIME_API_HANDOFF -->
+
+```yaml
+releaseRuntimeContract:
+  publisher: image-only
+  requiredEnvironment: [BACKEND_API_URL, NEXT_PUBLIC_API_URL]
+  buildArgsSubstituteRuntimeEnvironment: false
+  evidenceValuePolicy: names-and-validation-only
+```
+
+- `BACKEND_API_URL`: absolute http(s) URL ending `/api/v1` 또는 `/api/v1/`.
+- `NEXT_PUBLIC_API_URL`: absolute http(s) URL ending `/api/v1` 또는 `/api/v1/`.
+- 두 값 모두 credential, query, fragment, 제어문자와 상대 URL을 허용하지 않는다.
+- 배포 manifest/secret provider는 두 이름을 container runtime에 명시적으로 주입한다. endpoint는 자격증명은 아니지만 내부 topology일 수 있으므로 release handoff evidence에는 raw value를 복제하지 않고 image digest, 변수 이름 2개, validator 성공 여부와 bounded health category만 남긴다.
+- 누락·형식 오류는 fallback URL로 발행을 계속하지 않고 배포 preflight를 실패시킨다. 저장소의 기본/e2e Compose는 같은 계약을 정적으로 검증하지만 별도 Kubernetes·PaaS·`docker run` 배포는 인수처 manifest와 secure channel에서 이 인계를 증명해야 한다.
+
+---
+
 ## 문제 해결
 
 ### Gradle 캐시 미스
@@ -415,4 +438,4 @@ export NVD_API_KEY=your-key
 - [E2E 테스트 운영 런북](./e2e-test-guide.md)
 - [API 문서화 가이드](./api-documentation-guide.md)
 
-*Last reviewed against current sources: 2026-08-19.*
+*Last reviewed against current sources: 2026-08-21.*
