@@ -1,5 +1,3 @@
-import AxeBuilder from '@axe-core/playwright';
-import { chromium } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import {
@@ -128,6 +126,17 @@ function commandOutput(command, args, cwd = repoRoot) {
 function packageManagerVersion() {
   const { command, args } = packageManagerVersionCommand();
   return commandOutput(command, args);
+}
+
+async function loadBrowserAutomation() {
+  const [axeModule, playwrightModule] = await Promise.all([
+    import('@axe-core/playwright'),
+    import('@playwright/test'),
+  ]);
+  return {
+    AxeBuilder: axeModule.default,
+    chromium: playwrightModule.chromium,
+  };
 }
 
 function parseArgs(argv) {
@@ -1882,7 +1891,14 @@ function redactedAxe(analysis) {
   }));
 }
 
-async function auditStateCase(browser, stateCase, manifest, baseOrigin, mutationRunNonce) {
+async function auditStateCase(
+  browser,
+  stateCase,
+  manifest,
+  baseOrigin,
+  mutationRunNonce,
+  AxeBuilder,
+) {
   let context;
   let stage = 'context';
   try {
@@ -2331,6 +2347,7 @@ async function execute(contract, includePerformance) {
     includePerformance,
     baseOrigin,
   });
+  const { AxeBuilder, chromium } = await loadBrowserAutomation();
   const buildShaAtStart = commandOutput('git', ['rev-parse', 'HEAD']);
   const commitTreeIdAtStart = commandOutput('git', ['rev-parse', `${buildShaAtStart}^{tree}`]);
   const dirtyBuildInputDiffHashAtStart = dirtyBuildInputFingerprint();
@@ -2420,6 +2437,7 @@ async function execute(contract, includePerformance) {
           manifest,
           baseOrigin,
           mutationRunNonce,
+          AxeBuilder,
         ),
         execution,
       );
