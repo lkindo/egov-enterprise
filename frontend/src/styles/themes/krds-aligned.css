@@ -1,0 +1,106 @@
+/*
+ * Brand profile: krds-aligned
+ *
+ * 공개된 KRDS(대한민국 정부 디자인시스템) 팔레트 단계값을 이 저장소의 시맨틱 계약에 매핑한
+ * 참조 프로필이다. 모든 색 hex 는 공개 문서의 공식 단계에서만 취했고, 판단은 "어느 단계를
+ * 어느 역할에 쓰는가"에만 적용했다(각 선언 주석에 단계 출처 병기). 예외 2건은 명시된
+ * deviation 이다: hub-orange·hub-purple 은 KRDS 에 대응 계열이 없어 premium 값을 유지한다.
+ *
+ * ⚠ 이 프로필은 krds-standard(공식 정부 identity)가 아니다 — masthead·운영기관 식별자·공식
+ *   KRDS claim 은 기관 자격(UA-06/G0) 없이 금지된다(config/krds-profile-mapping.json).
+ * 출처: krds.go.kr 스타일 가이드(공개), 집계 문서 대조. 공식 Figma 킷 원본 대조는 미수행 —
+ *   기관 채택 시 그 대조가 선행 조건이다. KOGL(공공누리) 출처 표기 의무를 이 주석이 이행한다.
+ * 대비: status-token-contrast 계약과 동일한 수학으로 전 축 사전 검증 후 생성됐다(생성기:
+ *   scratchpad/gen-krds.mjs — 실패 시 파일을 만들지 않는 fail-closed).
+ *
+ * 셀렉터 특이성 규칙은 premium.css 와 동일하다 — 다크 블록의 (0,3,0) 조합 셀렉터를 지우면
+ * 브랜드 속성이 켜진 순간 다크 모드가 무력화된다(theme-token-contract 가 강제).
+ */
+
+@layer base {
+  :root[data-brand-theme="krds-aligned"] {
+    --background: 0 0% 100%; /* #FFFFFF gray-0 */
+    --foreground: 210 9.1% 12.9%; /* #1E2124 gray-90 */
+    --hub-blue: 218.8 90.4% 55.1%; /* #256EF4 primary-50 */
+    --hub-indigo: 211.9 69.6% 36.1%; /* #1C589C secondary-60 */
+    --hub-orange: 17.5 88.3% 40.4%; /* #C2410C DEVIATION: 공식 orange 계열 없음 — premium 값 유지 */
+    --hub-purple: 262.1 83.3% 57.8%; /* #7C3AED DEVIATION: 공식 purple 계열 없음 — premium 값 유지 */
+    --hub-emerald: 133.1 59.8% 33.1%; /* #228738 success-50 */
+    --hub-rose: 354.9 65.1% 53.9%; /* #D63D4A point-50 */
+    --hub-amber: 40.2 100% 19%; /* #614100 warning-70(텍스트 겸용 진한 앰버) */
+    --primary: 218.8 90.4% 55.1%; /* #256EF4 primary-50 */
+    --primary-foreground: 0 0% 100%; /* #FFFFFF gray-0 */
+    --secondary: 213.3 36% 95.1%; /* #EEF2F7 secondary-5 */
+    --secondary-foreground: 211.6 90.2% 23.9%; /* #063A74 secondary-70 */
+    --muted: 210 10% 96.1%; /* #F4F5F6 gray-5 */
+    --muted-foreground: 210 9.3% 38%; /* #58616A gray-60 */
+    --accent: 220 90% 96.1%; /* #ECF2FE primary-5 */
+    --accent-foreground: 219 89.5% 30%; /* #083891 primary-70 */
+    --destructive: 10 85% 47.1%; /* #DE3412 danger-50 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF gray-0 */
+    --destructive-emphasis: 10.2 80.4% 30%; /* #8A240F danger-70 */
+    --success: 133.1 59.8% 33.1%; /* #228738 success-50 */
+    --success-foreground: 0 0% 100%; /* #FFFFFF gray-0 */
+    --success-emphasis: 132.5 39.8% 26.1%; /* #285D33 success-70 */
+    --warning: 40.1 100% 53.9%; /* #FFB114 warning-50 */
+    --warning-foreground: 40.2 100% 19%; /* #614100 warning-70 */
+    --info: 205.9 89.7% 42%; /* #0B78CB info-50 */
+    --info-foreground: 0 0% 100%; /* #FFFFFF gray-0 */
+    --border: 210 8.7% 82%; /* #CDD1D5 gray-20 */
+    --input: 210 8.7% 82%; /* #CDD1D5 gray-20 */
+    --ring: 218.8 90.4% 55.1%; /* #256EF4 primary-50 */
+    --card: 0 0% 100%; /* #FFFFFF gray-0 */
+    --card-foreground: 210 9.1% 12.9%; /* #1E2124 gray-90 */
+    --popover: 0 0% 100%; /* #FFFFFF gray-0 */
+    --popover-foreground: 210 9.1% 12.9%; /* #1E2124 gray-90 */
+    --surface-inverse: 210 9.1% 12.9%; /* #1E2124 gray-90 */
+    --surface-inverse-foreground: 210 10% 96.1%; /* #F4F5F6 gray-5 */
+    --surface-inverse-muted: 207.7 9.1% 72%; /* #B1B8BE gray-30 */
+    --surface-inverse-border: 212.3 8.5% 30%; /* #464C53 gray-70 */
+    --surface-sunken: 210 10% 96.1%; /* #F4F5F6 gray-5 */
+    --surface-raised: 0 0% 100%; /* #FFFFFF gray-0 */
+
+    /* 비색상 토큰 — premium 과 동일(형상·타이포 프로필 분화는 STYLE-SHAPE/TYPOGRAPHY 보류 범위) */
+    --radius: 0.5rem;
+    --font-size-hub-title: 1.875rem;
+    --font-size-hub-subtitle: 0.8125rem;
+    --font-weight-hub-title: 900;
+    --letter-spacing-hub: -0.05em;
+    --letter-spacing-label: -0.025em;
+    --radius-hub-section: 1rem;
+    --radius-hub-widget: 0.75rem;
+    --radius-hub-item: 0.5rem;
+    --gap-base: 1rem;
+    --gap-hub-section: 3rem;
+    --gap-hub-widget: 1.5rem;
+    --shadow-hub-premium: 0 32px 64px -16px rgba(0, 0, 0, 0.08);
+    --color-premium-slate: 222.2 47.4% 11.2%;
+    --color-premium-emerald: 142.1 76.2% 36.3%;
+  }
+
+  :root[data-brand-theme="krds-aligned"].dark {
+    --background: 220 7.3% 8%; /* #131416 gray-95 */
+    --foreground: 210 10% 96.1%; /* #F4F5F6 gray-5 */
+    --primary: 219.2 90.4% 63.1%; /* #4C87F6 primary-40 */
+    --primary-foreground: 218.9 90.2% 8%; /* #020F27 primary-95 */
+    --secondary: 222 8.9% 22%; /* #33363D gray-80 */
+    --secondary-foreground: 210 10% 96.1%; /* #F4F5F6 gray-5 */
+    --muted: 222 8.9% 22%; /* #33363D gray-80 */
+    --muted-foreground: 207.7 9.1% 72%; /* #B1B8BE gray-30 */
+    --accent: 212.3 8.5% 30%; /* #464C53 gray-70 */
+    --accent-foreground: 210 10% 96.1%; /* #F4F5F6 gray-5 */
+    --destructive: 10.2 80.4% 30%; /* #8A240F danger-70 */
+    --destructive-foreground: 0 0% 100%; /* #FFFFFF gray-0 */
+    --destructive-emphasis: 0 91% 65%; /* 0 91% 65% DEVIATION: 공식 danger 단계(5/50/70) 중 다크 4.5:1 을 만족하는 유채색 없음(50=4.04) — premium 다크값 유지 */
+    --success-emphasis: 142 70% 55%; /* 142 70% 55% DEVIATION: 공식 success 단계 중 다크 4.5:1 을 만족하는 유채색 없음(50=4.03) — premium 다크값 유지 */
+    --border: 222 8.9% 22%; /* #33363D gray-80 */
+    --input: 222 8.9% 22%; /* #33363D gray-80 */
+    --ring: 219.2 90.4% 63.1%; /* #4C87F6 primary-40 */
+    --card: 210 9.1% 12.9%; /* #1E2124 gray-90 */
+    --card-foreground: 210 10% 96.1%; /* #F4F5F6 gray-5 */
+    --popover: 210 9.1% 12.9%; /* #1E2124 gray-90 */
+    --popover-foreground: 210 10% 96.1%; /* #F4F5F6 gray-5 */
+    --surface-sunken: 0 0% 0%; /* #000000 gray-100 */
+    --surface-raised: 222 8.9% 22%; /* #33363D gray-80 */
+  }
+}
