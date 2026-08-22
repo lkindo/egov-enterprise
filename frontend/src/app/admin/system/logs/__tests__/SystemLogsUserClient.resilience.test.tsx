@@ -91,7 +91,9 @@ describe('SystemLogsUserClient scoped error recovery', () => {
 
     const retryButtons = await screen.findAllByRole('button', { name: '데이터 다시 불러오기' });
     expect(input).toHaveValue(FAILURE_PROBE);
-    expect(screen.getAllByTestId('error-state-display')).toHaveLength(2);
+    // [2026-08-22 ADR-0006] 종전에는 표·카드 이중 렌더 때문에 오류 표시가 2벌이었다.
+    //   단일 표 트리로 바뀌어 정확히 1벌이다 — 계약 완화가 아니라 실제 DOM 수의 정정이다.
+    expect(screen.getAllByTestId('error-state-display')).toHaveLength(1);
 
     await user.click(retryButtons[0]);
 

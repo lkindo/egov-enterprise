@@ -27,7 +27,13 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         @Override
         public Optional<BoardDetailResult> findActiveArticleDetail(
                         @NonNull String bbsId, @NonNull Long pstSn) {
-                return findArticleDetail(bbsId, pstSn);
+                return findArticleDetail(bbsId, pstSn, false);
+        }
+
+        @Override
+        public Optional<BoardDetailResult> findArticleDetailIncludingDeleted(
+                        @NonNull String bbsId, @NonNull Long pstSn) {
+                return findArticleDetail(bbsId, pstSn, true);
         }
 
         @Override
@@ -56,13 +62,22 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 return Optional.ofNullable(result);
         }
 
+        /**
+         * @param includeDeleted 논리 삭제(useYn='N')된 게시글까지 포함할지 여부.
+         *                       <b>호출부가 관리자 권한을 이미 판정한 경우에만</b> true 를 넘긴다
+         *                       (BoardService#getPostDetail 의 복구·감사 경로). 게시판 마스터의
+         *                       useYn 조건은 완화하지 않는다 — 비활성 게시판 전체 노출은 별개 결정이다.
+         */
         private Optional<BoardDetailResult> findArticleDetail(
-                        String bbsId, Long pstSn) {
+                        String bbsId, Long pstSn, boolean includeDeleted) {
                 BooleanBuilder visibility = new BooleanBuilder()
                                 .and(QBoard.board.bbsId.eq(bbsId))
                                 .and(QBoard.board.pstSn.eq(pstSn))
-                                .and(QBoard.board.useYn.eq("Y"))
                                 .and(QBoardMaster.boardMaster.useYn.eq("Y"));
+
+                if (!includeDeleted) {
+                        visibility.and(QBoard.board.useYn.eq("Y"));
+                }
 
                 BoardDetailResult result = queryFactory
                                 .select(Projections.fields(BoardDetailResult.class,

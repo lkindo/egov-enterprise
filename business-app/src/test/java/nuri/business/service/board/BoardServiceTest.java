@@ -602,6 +602,45 @@ class BoardServiceTest {
     }
 
     @Test
+    @DisplayName("논리 삭제 게시글 상세 - ADMIN은 복구·감사를 위해 열람할 수 있다")
+    void getPostDetail_softDeletedVisibleToAdmin() {
+        Long pstSn = 15L;
+        BoardDetailResult deleted = BoardDetailResult.builder()
+                .pstSn(pstSn)
+                .bbsId("BBS_01")
+                .userId("ESNTL_owner")
+                .scrtYn("N")
+                .useYn("N")
+                .pstCn("deleted content")
+                .build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", pstSn)).willReturn(Optional.empty());
+        given(boardRepository.findArticleDetailIncludingDeleted("BBS_01", pstSn))
+                .willReturn(Optional.of(deleted));
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN"))
+                .thenReturn(true);
+
+        assertThat(boardService.getPostDetail("BBS_01", pstSn).pstCn()).isEqualTo("deleted content");
+    }
+
+    @Test
+    @DisplayName("논리 삭제 게시글 상세 - 비관리자는 여전히 404이고 삭제 포함 조회 자체를 하지 않는다")
+    void getPostDetail_softDeletedHiddenFromNonAdmin() {
+        Long pstSn = 16L;
+        given(boardRepository.findActiveArticleDetail("BBS_01", pstSn)).willReturn(Optional.empty());
+        securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN"))
+                .thenReturn(false);
+
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", pstSn))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+
+        // 권한이 없으면 삭제 포함 조회를 **시도조차** 하지 않아야 한다. 결과만 404 로 같아도
+        // 질의가 나갔다면 관리자 전용 경로가 일반 사용자에게 열려 있다는 뜻이다.
+        verify(boardRepository, never()).findArticleDetailIncludingDeleted(anyString(), anyLong());
+        verify(viewCountService, never()).increaseViewCount(anyLong());
+    }
+
+    @Test
     @DisplayName("공개 FAQ 목록은 고정 보드·활성·비밀 아님·제목 검색만 저장소에 전달한다")
     void getPublicFaqPostsUsesFixedPublicProjection() {
         Pageable pageable = PageRequest.of(0, 10);

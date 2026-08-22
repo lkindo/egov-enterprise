@@ -6,7 +6,9 @@ export class StatsPage {
     async goto() {
         console.log('>>> Navigating to Intelligence Stats Dashboard');
         await this.page.goto('/admin/stats');
-        await expect(this.page.getByRole('heading', { name: /인텔리전스 시스템 아키텍처 분석/i })).toBeVisible();
+        // [2026-08-22 정정] 화면 제목이 '인텔리전스 시스템 아키텍처 분석' → '관리자 통계' 로
+        //   개편됐다(AdminStatsClient.tsx:107, 정직성 개편). 실제 문자열로 좁혀 단언한다.
+        await expect(this.page.getByRole('heading', { name: '관리자 통계', exact: true })).toBeVisible();
     }
 
     async refresh() {
@@ -38,7 +40,8 @@ export class StatsPage {
         // 사라졌고, 그중 '지리적 트래픽 분포' 카드는 하드코딩 목 데이터를 실측치처럼 표기하던
         // 것이라 감사 P1-5 로 **의도적으로 삭제**됐다(AdminStatsClient 주석 참조).
         // 즉 실패는 앱 회귀가 아니라 테스트 드리프트다 — 현행 화면 구성으로 단언을 옮긴다.
-        await expect(this.page.getByRole('heading', { name: '네트워크 트래픽 진화' })).toBeVisible();
+        // [2026-08-22 정정] '네트워크 트래픽 진화' → '일자별 접속 추이'(AdminStatsClient.tsx:172).
+        await expect(this.page.getByRole('heading', { name: '일자별 접속 추이' })).toBeVisible();
         // 섹션 제목만으로는 차트 자체가 떴는지 증명되지 않는다 — 차트 래퍼 제목까지 확인한다.
         await expect(this.page.getByRole('heading', { name: '일자별 접속 건수 추이' })).toBeVisible();
         // 차트의 원본 수치를 싣는 표 섹션(엑셀 내보내기 대상)도 함께 렌더되어야 한다.

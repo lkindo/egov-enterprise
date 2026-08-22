@@ -3656,6 +3656,33 @@ test('dense log recovery binds the exact user-observed retry accessible name', (
   );
 });
 
+test('runner module defers browser-only dependencies until validated execution', () => {
+  assert.doesNotMatch(
+    runnerSource,
+    /^import .* from ['"](?:@axe-core\/playwright|@playwright\/test)['"];$/mu,
+    'root operational contracts must import the runner without frontend-only packages installed',
+  );
+  assert.match(
+    runnerSource,
+    /async function loadBrowserAutomation\(\)[\s\S]*import\('@axe-core\/playwright'\)[\s\S]*import\('@playwright\/test'\)/u,
+  );
+
+  const executeStart = runnerSource.indexOf('async function execute(');
+  const executeEnd = runnerSource.indexOf('\nasync function main()', executeStart);
+  const executeSource = runnerSource.slice(executeStart, executeEnd);
+  const executionPreflight = executeSource.indexOf(
+    'captureExecutionPreflightRequirements({',
+  );
+  const browserDependencyLoad = executeSource.indexOf('await loadBrowserAutomation()');
+  assert.ok(
+    executeStart >= 0
+      && executeEnd > executeStart
+      && executionPreflight >= 0
+      && browserDependencyLoad > executionPreflight,
+    'browser-only packages must load only after execution preflight succeeds',
+  );
+});
+
 test('package scripts bind the complete baseline runner and non-loopback execution turns red', () => {
   assert.equal(
     frontendPackage.scripts['ui-quality:plan'],

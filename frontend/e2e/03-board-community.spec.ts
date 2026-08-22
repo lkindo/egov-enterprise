@@ -181,7 +181,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
                 await updateTitleInput.fill(`${articleTitle} [Updated]`);
                 await updateEditor.fill('Updated content.');
 
-                const saveButton = page.locator('button[type="submit"]').filter({ hasText: /Commit Knowledge|Saving Node|저장/ }).first();
+                const saveButton = page.getByRole('button', { name: '게시글 수정', exact: true });
                 await saveButton.waitFor({ state: 'visible', timeout: 15000 });
                 await saveButton.click();
                 

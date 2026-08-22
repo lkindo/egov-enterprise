@@ -76,6 +76,7 @@ test('the recommended hybrid is selected only as a bounded provisional direction
 
 test('the proposed overlay is a sparse, mechanically derived 119 + 2 review population', () => {
   const initial = createUnreviewedProposal(manifest, manifestRaw);
+  const manifestLf = manifestRaw.toString('utf8').replace(/\r\n?/gu, '\n');
   assert.equal(initial.provisionalDirection, null);
   assert.equal(overlay.state, 'proposed');
   assert.equal(overlay.authority, 'non-normative-pre-decision-evidence');
@@ -85,7 +86,7 @@ test('the proposed overlay is a sparse, mechanically derived 119 + 2 review popu
   });
   assert.equal(
     canonicalTextSha256(manifestRaw),
-    canonicalTextSha256(manifestRaw.toString('utf8').replaceAll('\n', '\r\n')),
+    canonicalTextSha256(manifestLf.replaceAll('\n', '\r\n')),
     'manifest identity must not drift between Windows CRLF and CI LF checkouts',
   );
   assert.deepEqual(overlay.routes.map(({ route }) => route), initial.routes.map(({ route }) => route));
@@ -296,7 +297,14 @@ test('package and governance bindings fail red when the operational catalog is n
     'config/ui-navigation-disposition-proposal.json',
     'docs/02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md',
   ]) {
-    const missingFoundationBinding = governanceTestSource.replace(`  '${asset}',\n`, '');
+    const bindingLine = `  '${asset}',`;
+    assert.equal(
+      governanceTestSource.split(/\r?\n/u).filter((line) => line === bindingLine).length,
+      1,
+      `negative fixture requires exactly one governance binding for ${asset}`,
+    );
+    const missingFoundationBinding = governanceTestSource.replace(bindingLine, '');
+    assert.notEqual(missingFoundationBinding, governanceTestSource);
     assert.match(
       validateOperationalBinding({
         packageJson,

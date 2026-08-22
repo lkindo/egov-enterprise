@@ -41,6 +41,11 @@ const FRONTEND_CONTAINER = `${PROJECT}-frontend`;
 const WEB_PORT = 31_013;
 const API_PORT = 18_091;
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const externalAttestationPath = path.join(
+  path.parse(repositoryRoot).root,
+  'outside',
+  'attestation.json',
+);
 
 const temporaryRoots = [];
 test.afterEach(() => {
@@ -283,7 +288,7 @@ test('root package and protocol expose the exact contract-first launch and bound
 test('runner environment is a closed allowlist and does not inherit database, JWT or unrelated secrets', () => {
   const environment = createClosedBaselineRunnerEnvironment({
     sourceEnvironment: executionEnvironment(),
-    attestationPath: 'D:\\outside\\attestation.json',
+    attestationPath: externalAttestationPath,
     attestationSha256: 'f'.repeat(64),
     frontendContainerId: FRONTEND_CONTAINER_ID,
     backendContainerId: API_CONTAINER_ID,
@@ -495,15 +500,15 @@ test('runner failure is redacted, cleanup failure leaves a bounded recovery file
 
 test('CLI parser requires exact launch/recovery arguments and rejects injection-shaped ports/projects', () => {
   assert.deepEqual(parseBaselineLaunchArguments([
-    '--attestation', 'D:\\outside\\attestation.json',
+    '--attestation', externalAttestationPath,
     '--attestation-sha256', 'f'.repeat(64),
     '--web-port', String(WEB_PORT),
     '--api-port', String(API_PORT),
     '--execute', 'confirmed',
-  ], { repositoryRoot: 'D:\\repo' }), {
+  ], { repositoryRoot }), {
     mode: 'launch',
-    repositoryRoot: 'D:\\repo',
-    attestationPath: path.resolve('D:\\outside\\attestation.json'),
+    repositoryRoot,
+    attestationPath: externalAttestationPath,
     attestationSha256: 'f'.repeat(64),
     webPort: WEB_PORT,
     apiPort: API_PORT,
@@ -511,20 +516,20 @@ test('CLI parser requires exact launch/recovery arguments and rejects injection-
   assert.deepEqual(parseBaselineLaunchArguments([
     '--recover-project', PROJECT,
     '--execute', 'confirmed',
-  ], { repositoryRoot: 'D:\\repo' }), {
+  ], { repositoryRoot }), {
     mode: 'recover',
-    repositoryRoot: 'D:\\repo',
+    repositoryRoot,
     projectName: PROJECT,
   });
   assert.throws(() => parseBaselineLaunchArguments([
-    '--attestation', 'D:\\outside\\attestation.json',
+    '--attestation', externalAttestationPath,
     '--attestation-sha256', 'f'.repeat(64),
     '--web-port', `${WEB_PORT};docker rm -f victim`,
     '--api-port', String(API_PORT),
     '--execute', 'confirmed',
-  ], { repositoryRoot: 'D:\\repo' }), /arguments are invalid/);
+  ], { repositoryRoot }), /arguments are invalid/);
   assert.throws(() => parseBaselineLaunchArguments([
     '--recover-project', `${PROJECT};docker rm -f victim`,
     '--execute', 'confirmed',
-  ], { repositoryRoot: 'D:\\repo' }), /arguments are invalid/);
+  ], { repositoryRoot }), /arguments are invalid/);
 });

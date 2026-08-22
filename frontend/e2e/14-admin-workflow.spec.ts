@@ -15,8 +15,13 @@ test.describe('Tier 14: Administrative Workflow Management', () => {
     });
 
     test('should render the process studio hub with metrics and canvas', async ({ page }) => {
-        // HubHeader subtitle uniquely identifies the studio shell.
-        await expect(page.getByText('실시간 이벤트 기반 워크플로우를 설계하고 비즈니스 로직을 시각화합니다.')).toBeVisible();
+        // 이 경로는 실제 워크플로우 엔진이 아니라 정적 데모다. 현재 subtitle과 명시적 status 고지를
+        // 함께 확인해 샘플 데이터를 운영 데이터로 오인시키는 과거 문구가 되돌아오지 않게 한다.
+        await expect(page.getByText(
+            '정적 예시 데이터로 워크플로우 캔버스의 형태와 탐색 동작만 확인합니다.',
+            { exact: true },
+        )).toBeVisible();
+        await expect(page.getByRole('status').filter({ hasText: '정적 데모 화면입니다.' })).toBeVisible();
 
         // Hub metric cards + canvas/panel section cards.
         await workflowPage.verifyHubLoaded();

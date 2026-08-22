@@ -11,7 +11,7 @@ jobs:
     name: Scan the application
     steps:
       - name: Checkout
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262  # v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       
       # [2026-08-08] `--wait` 로 교체하고 `sleep 30` 스텝을 제거한다.
       #   종전에는 `up -d` 뒤 고정 30초를 기다렸다. 그런데 그 30초는 컨테이너가 **Started** 된

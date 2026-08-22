@@ -97,7 +97,11 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
   <Workflow size={100} />
   </div>
   <div className="relative z-10 space-y-4">
-  <div className="flex items-center gap-2 text-xs font-bold text-warning-foreground tracking-tight">
+  {/* [2026-08-22] text-warning-foreground 는 bg-warning **위에서만** 대비가 성립하는 배지 전경
+      토큰(38 95% 12%, 거의 검은 앰버)이다. surface-inverse(고정 다크 서피스) 위에 단독으로 쓰면
+      1.40:1 로 라벨이 사실상 보이지 않는다(실측). 다크 서피스 위 텍스트는 --warning 자체가
+      8.35:1 로 통과한다 — status-token-contrast 계약이 이 대비들을 수학으로 고정한다. */}
+  <div className="flex items-center gap-2 text-xs font-bold text-warning tracking-tight">
   <div className="w-2 h-2 rounded-full bg-warning" /> 정적 엔진 샘플
   </div>
   <div className="space-y-1">

@@ -205,11 +205,12 @@ export class BoardMasterPage {
   }
 
   async verifySuccess(menuName: string) {
-    // [E2E 감사 A3] 실제 배포 성공 화면(BoardMakerWizard의 'MISSION COMPLETE!')을 하드 단언한다.
+    // [E2E 감사 A3] 실제 배포 성공 화면의 제목과 연결된 메뉴명을 하드 단언한다.
     // (과거: waitForSelector(...).catch(()=>{})로 실패를 삼키고 includes(menuName) console.log만 실행 →
     //  menuName은 방금 입력한 값이라 DOM에 항상 존재 → 배포가 실패해도 그린 통과하던 false-green)
     console.log(`>>> Verifying board/menu deployment success for: ${menuName}`);
-    await expect(this.page.getByText('MISSION COMPLETE', { exact: false }).first())
+    await expect(this.page.getByRole('heading', { name: '게시판 생성 완료', exact: true }))
       .toBeVisible({ timeout: 30000 });
+    await expect(this.page.getByText(`'${menuName}'`, { exact: true })).toBeVisible();
   }
 }

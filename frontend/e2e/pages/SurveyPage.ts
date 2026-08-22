@@ -23,11 +23,18 @@ export class SurveyPage {
     }
 
     async gotoManage() {
-        await this.page.goto('/admin/survey/manage');
+        // [2026-08-22 정정] `/admin/survey/manage` 는 next.config.ts:130 이 허브로 redirect 한다.
+        //   정본 URL 을 직접 열어 redirect 왕복을 없앤다.
+        await this.page.goto('/admin/survey/hub?tab=manage');
         // [2026-07-27 정정] 종전 getByText(/설문.*관리/).first() 는 **전역 메가메뉴의 숨겨진 링크**
         // '설문 및 여론조사 관리' 를 DOM 순서상 먼저 집었다. 그 요소는 접힌 메뉴 안이라 영원히 visible 이
         // 되지 않아 60초 타임아웃으로 죽었다(페이지는 정상 렌더됐다). 페이지 자신의 heading 으로 단언한다.
-        await expect(this.page.getByRole('heading', { name: '설문 및 거버넌스 관리' })).toBeVisible({ timeout: 30000 });
+        // [2026-08-22 정정] 종전 '설문 및 거버넌스 관리' 는 SurveyManageClient 의 PageHeader 였는데,
+        //   허브가 `<SurveyManageClient embedded />` 로 마운트하면서 그 PageHeader 를 렌더하지 않는다.
+        //   이는 회귀가 아니라 **h1 중복 제거**다(종전에는 허브 h1 과 함께 2개가 떴고 테스트가 그
+        //   중복에 의존했다). shell-accessibility-contract.test.ts 가 embedded 를 계약으로 고정한다.
+        //   실제 도달 화면의 h1(hub/page.tsx:42)으로 단언한다.
+        await expect(this.page.getByRole('heading', { name: '설문 통합 관리 워크벤치', exact: true })).toBeVisible({ timeout: 30000 });
     }
 
     async gotoCreate() {

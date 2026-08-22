@@ -5,8 +5,8 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-08-20
-verified_against: 8cf281d71b36abbdfb60975e8a50494216a26b4c
+verified_at: 2026-08-22
+verified_against: c72bb7285811549bf2577593ff4eb69c56a60cf3
 canonical_sources:
   - ../../AGENTS.md
   - ../../docs/02-architecture/decisions/README.md
@@ -37,6 +37,7 @@ refresh_triggers:
 | ADR-0003 | accepted | 프런트엔드 UX 현대화는 사용자 과업을 우선하고, 브랜드 중립 프로필·WCAG 2.2·측정 기반 데이터 소유권·위험 기반 복구와 mutation 원칙을 적용한다. | 특정 미학과 일시적인 API를 core 헌법에 고정하지 않고 공공·민간 프로필이 같은 접근성·상태 계약을 공유하게 하기 위해서다. | [ADR-0003](../../docs/02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md) | 2026-08-20 | - |
 | ADR-0004 | accepted | 과업 중심 기본 내비게이션과 명시적 관리 센터를 결합한 하이브리드 IA를 prototype·research의 잠정 방향으로 채택하고 canonical URL과 route-level blocker는 유지한다. | live menu·role·privacy·사용자 연구를 창작하지 않으면서 최적 후보 하나에 검증을 집중하고, final IA 승인 전 consumer migration을 막기 위해서다. | [ADR-0004](../../docs/02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md) | 2026-08-21 | - |
 | ADR-0005 | accepted | UI 품질 증거는 digest-derived versioned compact summary와 tracked index로 보존하고 기존 summary를 덮어쓰지 않는다. | ignored r12 원본 JSON을 source에 복제하거나 허위 CI provenance를 만들지 않으면서 clean checkout에서 bounded aggregate와 provenance를 장기 검증하기 위해서다. | [ADR-0005](../../docs/02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md) | 2026-08-21 | - |
+| ADR-0006 | accepted | 반응형 표현은 단일 SSR DOM 위에서 CSS로만 전환한다. 같은 데이터를 두 벌 렌더해 `hidden`/`md:hidden`으로 한쪽만 보이거나, `matchMedia`·`useSyncExternalStore`·`next/dynamic ssr:false` 로 본문 데이터 표현을 분기하지 않는다. | nonce CSP 때문에 전 페이지가 force-dynamic 이라 SSR HTML 이 사용자가 보는 첫 화면이다. 훅 방식은 49개 화면에 새 하이드레이션 경계를 만들고, 이중 렌더는 accessor 를 2회 실행해 소비자가 만든 testid·aria-label 을 2벌로 복제한다(CI run 32555133776 strict mode violation). | [ADR-0006](../../docs/02-architecture/decisions/ADR-0006-css-only-responsive-table.md) | 2026-08-22 | - |
 
 ## 운영 결정 index
 
@@ -53,6 +54,7 @@ refresh_triggers:
 | DEC-OPS-009 | accepted | 단독 운영 기간의 main review policy는 approval 0·code-owner/last-push/thread-resolution 전부 비활성으로 확정하고, 명세·계약을 이 값에 양방향 동결한다. | 작성자 외 reviewer가 없는 상태에서 approval ≥ 1을 원격에 적용하면 자기 PR을 자기가 승인할 수 없어 모든 병합이 막히고, 명세만 강하게 두면 `verify:ops`가 영구 red로 남아 신호 가치가 죽는다. reviewer 확보 시 후속 DEC로 상향한다. | [.github/required-checks.json](../../.github/required-checks.json), [required-checks contract](../../scripts/required-checks-contract.mjs) | 2026-08-20 | DEC-OPS-007 |
 | DEC-OPS-010 | accepted | 설문 열람(목록·상세·문항)과 제출은 인증 사용자(`@Authenticated`)에게 개방하고, 설문·템플릿·문항·항목의 관리 뮤테이션은 `@AdminOrSystem`으로 유지한다. 별칭 경로(`/api/v1/surveys/**`)의 URL 게이트(secure-paths + DB seed)는 V2_84로 제거하고 메서드 인가를 단독 방어선으로 한다. | 종전에는 컨트롤러에 메서드 인가가 없어 URL 게이트 1겹에만 의존했고, 제출 엔드포인트의 `@Authenticated`가 핸들러 도달 전에 403으로 죽어 애노테이션 의미와 실행 의미가 어긋났다(GAP-AUTH-001). 설문은 일반 사용자가 응답하는 제품이므로 열람·제출 개방이 제품 의도다. | [SurveyApiController](../../api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiController.java), [V2_84](../../api-server/src/main/resources/db/migration/V2_84__open_survey_alias_to_authenticated.sql), [authorization policies](../../config/governance/authorization-policies.json) | 2026-08-20 | - |
 | DEC-OPS-011 | accepted | production CSP의 `script-src`에서 `unsafe-inline`을 요청별 nonce로 대체하고, 그 전제로 PPR(cacheComponents)을 포기해 전 페이지를 동적 렌더로 전환한다. `strict-dynamic`은 채택하지 않는다. | nonce는 요청마다 달라야 하므로 정적 프리렌더 HTML과 양립할 수 없고(정적 셸의 inline script가 전면 차단됨 — CI e2e 실측), strict-dynamic은 Next가 스트리밍 중 삽입하는 lazy chunk에 nonce가 없어 앱을 전면 파손시킨다(CI run 32310837353 실측). TTFB 비용은 실측 +2ms 수준으로 비물질적이며, PD-CSP-001 결정을 집행한 것이다. | [proxy.ts](../../frontend/src/proxy.ts), [next.config.ts](../../frontend/next.config.ts), [csp-policy contract](../../frontend/src/__tests__/csp-policy.test.ts), [FE 헌법 제10조](../knowledge/frontend-ux-constitution/artifacts/constitution.md) | 2026-08-20 | - |
+| DEC-OPS-012 | accepted | UI quality baseline 의 새 authoritative run(r13)과 수동 접근성 48건 수집을 보류하고, r12 를 현재 자동 증거로 유지한 채 UI 개선 작업을 재개한다. r12 를 `measured` 로 승격하지 않는다. | 측정 인프라가 4,000줄을 넘긴 반면 사용자에게 보이는 개선은 소규모에 머물렀고, r4~r12 재실행의 상당수가 runner 자체 결함 수정이었다. r13 이 필요한 유일한 사유는 실행 시점 protocol hash 부재라는 메타데이터 한 축이며, 수동 48건 중 NVDA 8건은 외부 평가자·환경이 없으면 닫히지 않아 완벽 기준이 진척을 무기한 인질로 잡는다. 보류는 증거를 만들지 않으므로 UA-06 이후 게이트는 계속 잠긴 채 두고, r12 의 `unmeasured` 판정도 그대로 유지한다. | [사용자 런북 §8](../../docs/04-operations/ui-ux-modernization-user-action-runbook.md), [ADR-0005](../../docs/02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md), [durability 계약](../../scripts/ui-quality-evidence-durability-contract.test.mjs) | 2026-08-22 | - |
 
 ## 기록 템플릿
 

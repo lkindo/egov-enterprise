@@ -336,7 +336,17 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional(readOnly = true)
         public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long pstSn) {
+                // [2026-08-22 제품 결정] 논리 삭제(useYn='N') 게시글은 일반 사용자에게 404 지만
+                // **관리자에게는 열람을 허용**한다. 복구·감사 경로가 404 로 막히면 관리자가 삭제된 글의
+                // 내용을 확인할 방법이 사라진다.
+                // 확대 범위는 정확히 "관리자 × 논리 삭제 게시글" 하나이며 나머지 방어선은 그대로다:
+                //   · 아래 비밀글 소유권 가드는 삭제 여부와 무관하게 계속 적용된다.
+                //   · 비활성 게시판(BoardMaster.useYn='N')은 완화하지 않는다 — 별개 결정이다.
+                //   · hasRole("ADMIN") 은 role hierarchy 로 SYSTEM 을 포함한다(백엔드 헌법 제8조 2항).
                 BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
+                                .or(() -> nuri.business.security.util.SecurityUtil.hasRole("ADMIN")
+                                                ? boardRepository.findArticleDetailIncludingDeleted(bbsId, pstSn)
+                                                : java.util.Optional.empty())
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
                 // 비밀글은 인증됐다는 사실만으로 본문을 공개하지 않는다. Board.userId 는 생성 시
