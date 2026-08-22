@@ -16,6 +16,20 @@ describe('app shell accessibility source contract', () => {
     expect(pageHeader).toContain('<DynamicBreadcrumb customItems={customItems} />');
   });
 
+  it('breadcrumb 은 이름 있는 nav + 순서 목록 + aria-current 구조를 유지한다 (KRDS/WCAG)', () => {
+    // [2026-08-22 정렬] 종전에는 이름 없는 <nav> 안에 평평한 Link/span 나열이라 스크린리더가
+    // "몇 단계 중 어디"도 "여기가 현재 페이지"도 알 수 없었다. 네 요소가 한 세트다 —
+    // 하나라도 빠지면 구조 정보가 그만큼 소실된다.
+    const breadcrumb = readAppSource('components', 'layout', 'DynamicBreadcrumb.tsx');
+
+    expect(breadcrumb, 'nav 의 접근 이름이 사라졌습니다').toMatch(/aria-label="현재 위치"/);
+    expect(breadcrumb, '순서 목록(ol) 시맨틱이 사라졌습니다').toMatch(/<ol[\s>]/);
+    expect(breadcrumb, '현재 항목의 aria-current="page" 가 사라졌습니다')
+      .toMatch(/aria-current=\{isCurrent \? 'page' : undefined\}/);
+    expect(breadcrumb, '장식 구분자(ChevronRight)가 접근성 트리에 노출됩니다')
+      .toMatch(/<ChevronRight[^>]*aria-hidden="true"/);
+  });
+
   it('sticky header와 skip target이 focus occlusion 여유를 갖고 모바일 trigger를 dialog에 연결한다', () => {
     const layout = readAppSource('layout.tsx');
     const header = readAppSource('components', 'layout', 'header.tsx');

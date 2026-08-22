@@ -326,4 +326,31 @@
       backdrop-filter: none !important;
     }
   }
+
+  /* --- Forced Colors (Windows 고대비) 안전장치 — KRDS/KWCAG 정렬 ---
+     forced-colors 모드는 우리 팔레트를 시스템 색으로 강제 치환한다. 이때 두 축이 조용히 깨진다:
+     ① 반투명·그림자·blur 로만 구분되던 표면 경계가 사라진다 → 시스템 색 실선 테두리로 복원
+     ② 선택·활성 상태를 배경색으로만 표현하던 곳이 평평해진다 → Highlight 시스템 색으로 복원
+     여기서는 광범위한 재스킨 없이, 경계 소실이 실측 가능한 공용 표면(card 계열·glass·표)만
+     다룬다. forced-colors 는 sRGB 팔레트를 무시하므로 색 가드·대비 계약과는 별개 축이다.
+     ⚠ forced-color-adjust: none 으로 시스템 강제를 끄는 안티패턴은 쓰지 않는다 —
+        사용자가 고대비를 켠 이유를 존중하는 것이 KWCAG 의 취지다. */
+  @media (forced-colors: active) {
+    .standard-glass,
+    .hub-card-section,
+    .hub-bento-card,
+    [data-slot="standard-data-table-scroll-region"] {
+      border: 1px solid CanvasText;
+    }
+
+    .standard-data-table-responsive > tbody > tr {
+      border-color: CanvasText;
+    }
+
+    [aria-current="page"],
+    [aria-selected="true"] {
+      outline: 2px solid Highlight;
+      outline-offset: 1px;
+    }
+  }
 }
