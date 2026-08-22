@@ -189,7 +189,7 @@ jobs:
       # 실패 보고서를 항상 보존해 탐지 위치를 확인할 수 있게 한다.
       - name: Upload gitleaks reports
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: gitleaks-reports
           path: |
@@ -288,7 +288,7 @@ jobs:
 
       - name: Upload OpenAPI Spec (if changed)
         if: steps.openapi-changes.outputs.api == 'true'
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: openapi-spec-changed
           path: api-docs.json
@@ -296,13 +296,13 @@ jobs:
         continue-on-error: true # 아티팩트 업로드 — 게이트 아님
 
       - name: Upload JaCoCo Report
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: jacoco-report
           path: build/reports/jacoco/aggregated
 
       - name: Upload OpenAPI Spec
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: openapi-spec
           path: api-docs.json
@@ -411,7 +411,7 @@ jobs:
         working-directory: frontend
 
       - name: Upload Next.js build cache
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: next-build-cache
           path: frontend/.next/cache
@@ -695,7 +695,7 @@ jobs:
 
       # 잘리지 않은 원본 로그를 남긴다 — 애노테이션의 2000자 제한이 이번 진단을 세 번 막았다.
       - name: Upload diagnostic logs
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: always()
         with:
           name: e2e-diagnostics-shard-${{ strategy.job-index }}
@@ -710,7 +710,7 @@ jobs:
           if-no-files-found: warn
 
       - name: Upload Playwright Report
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: always()
         with:
           # slash가 있는 matrix.shard 대신 안전한 strategy.job-index를 아티팩트 이름에 사용한다.
@@ -793,7 +793,7 @@ jobs:
 
       - name: Upload merged report
         if: hashFiles('frontend/playwright-report/**') != ''
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: playwright-report-merged
           path: frontend/playwright-report
@@ -939,7 +939,7 @@ jobs:
 
       - name: Upload PIT report
         if: always()
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
           name: pitest-report-${{ matrix.scope }}
           path: "**/build/reports/pitest"

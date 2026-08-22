@@ -115,7 +115,7 @@ jobs:
       # 커밋하지 않더라도 사람이 이미지를 눈으로 확인할 수 있어야 한다.
       # "현재 화면을 정답으로 굳히는" 행위이므로 확인 경로를 반드시 남긴다.
       - name: Upload generated baselines (확인용)
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02  # v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: always()
         with:
           name: visual-baselines
