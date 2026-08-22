@@ -96,7 +96,7 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
         ]);
 
         await expect(page).toHaveURL(/\/login(?:\?|$)/);
-        await expect(page.getByRole('heading', { name: '전자정부 Enterprise 로그인' })).toBeVisible();
+        await expect(page.getByRole('heading', { name: '엔터프라이즈', exact: true })).toBeVisible();
         console.log('>>> Correctly redirected to login after session loss');
     });
 

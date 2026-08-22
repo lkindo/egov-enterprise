@@ -89,31 +89,21 @@ export class MailPage {
         }
         await mailItem.waitFor({ state: 'visible', timeout: 15000 });
 
-        // 2. Click without force: true to ensure React event handler catches it
-        console.log('[E2E] Clicking mail item...');
-        await mailItem.click();
-        
-        // 3. 상세 패널 확인
-        // [2026-07-27 정정] 종전엔 .lg:col-span-7 을 상세 패널로 봤다. 실제 MailHistoryHubClient 는
-        //   목록 = col-span-7(메일 선택 시) / col-span-12(미선택) · 상세 = col-span-5
-        // 라 좌표가 뒤바뀌어 있었고, 그래서 목록 제목 '발신 로그 목록' 을 읽고 'Mail Intelligence' 와
-        // 비교해 실패했다. 'Mail Intelligence' 와 'Select Dispatch Node' 는 저장소에 없는 팬텀 문구다.
-        // 상세 패널은 selectedMail 일 때만 마운트되므로(AnimatePresence) 빈 상태 요소 자체가 없다 —
-        // '패널이 나타났는가' 로 확인한다.
-        const detailPanel = this.page.locator('.lg\\:col-span-5');
+        // StandardDataTable 행은 더 이상 자체 클릭 계약을 갖지 않는다. 호출부가 제공한
+        // 실제 intent의 접근 가능한 작업 버튼으로 상세를 연다.
+        console.log('[E2E] Opening mail history detail...');
+        const openDetailButton = mailItem.getByRole('button', {
+            name: `${subject} 발신 이력 상세 열기`,
+            exact: true,
+        });
+        await expect(openDetailButton).toBeVisible({ timeout: 10000 });
+        await openDetailButton.click();
 
-        try {
-            await expect(detailPanel).toBeVisible({ timeout: 5000 });
-        } catch (e) {
-            console.log('[E2E] Detail panel not updating, clicking again...');
-            await mailItem.click();
-            await expect(detailPanel).toBeVisible({ timeout: 10000 });
-        }
-
-        // 4. Final verification of content
-        await expect(detailPanel.getByText('발신 상세')).toBeVisible({ timeout: 15000 });
-        const detailSubject = detailPanel.locator('h3');
-        await expect(detailSubject).toContainText(subject, { timeout: 20000 });
+        // 레이아웃용 Tailwind 클래스가 아니라 화면이 공개하는 헤딩 계약으로 상세 마운트를 확인한다.
+        await expect(this.page.getByRole('heading', { name: '발신 상세', exact: true }))
+            .toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', { name: subject, exact: true }))
+            .toBeVisible({ timeout: 20000 });
         
         console.log(`[E2E] Success: Mail "${subject}" verified in detail panel.`);
     }
@@ -128,12 +118,16 @@ export class MailPage {
 
         const mailItem = this.page.getByTestId('mail-item').filter({ hasText: subject }).first();
         await mailItem.waitFor({ state: 'visible', timeout: 10000 });
-        await mailItem.click();
-        
-        const detailPanel = this.page.locator('.lg\\:col-span-5');
-        await expect(detailPanel.getByText('발신 상세')).toBeVisible({ timeout: 10000 });
+        const openDetailButton = mailItem.getByRole('button', {
+            name: `${subject} 발신 이력 상세 열기`,
+            exact: true,
+        });
+        await expect(openDetailButton).toBeVisible({ timeout: 10000 });
+        await openDetailButton.click();
+        await expect(this.page.getByRole('heading', { name: '발신 상세', exact: true }))
+            .toBeVisible({ timeout: 10000 });
 
-        const deleteBtn = detailPanel.getByTestId('delete-mail-btn');
+        const deleteBtn = this.page.getByTestId('delete-mail-btn');
         await deleteBtn.waitFor({ state: 'visible', timeout: 5000 });
         await deleteBtn.click();
 
