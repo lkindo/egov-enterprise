@@ -18,7 +18,12 @@
 
 ## 2. 진행 규칙
 
-1. 아래 순서를 건너뛰지 않는다. `READY`인 단계 하나만 시작하고, 시작한 단계는 `IN_PROGRESS`로 표시해 완료 또는 중단까지 이어간다.
+1. 아래 순서를 건너뛰지 않는다. `READY`인 단계 하나만 시작하고, 시작한 단계는 `IN_PROGRESS`로 표시해 완료 또는 중단까지 이어간다. 상태 어휘는 다음 5개뿐이다.
+   - `READY` — 선행 조건이 충족돼 지금 시작할 수 있다.
+   - `IN_PROGRESS` — 시작했고 완료 또는 중단까지 이어가는 중이다.
+   - `DEFERRED` — 선행 조건은 충족됐으나 **명시적 결정으로 실행을 미뤘다.** 결정 ID와 재개 조건을 함께 적는다. 보류는 증거를 만들지 않으므로 **뒤 단계의 잠금을 해제하지 않는다.**
+   - `DONE` — 기대 결과가 실측으로 확인됐다.
+   - `LOCKED` — 선행 단계나 외부 입력이 없어 시작할 수 없다.
 2. 명령 출력에는 토큰·쿠키·비밀번호·개인키·인증 상태 파일 내용·원시 응답을 포함하지 않는다.
 3. 기대 결과와 다르면 같은 명령을 반복하거나 예외를 넓히지 말고 `STOP` 결과를 전달한다.
 4. 체크박스는 실행자와 검토자가 증거를 확인한 뒤에만 표시한다.
@@ -33,7 +38,7 @@
 | 2 | UA-02 | 과거 개인키·Docker cache/image 노출 가능성 판정 및 자격 수명주기 조치 | `DONE — RETAIN_ACTIVE_TEST_KEY` | 2026-08-21 사용자 accepted-risk 판정 |
 | 3 | UA-03 | `PD-UIQ-001` durable evidence 정책 10개 입력 승인 | `DONE` | 2026-08-21 ADR-0005와 closed policy 계약 반영 |
 | 4 | UA-04 | r12 자동 artifact의 compact summary 후보를 검증하고 tracked index로 결속 | `DONE` | 2026-08-22 원격 병합·required CI·post-merge CI 완료 |
-| 5 | UA-05 | execution-captured protocol hash를 가진 새 authoritative run과 수동 접근성 48건을 combined summary로 발행 | `IN_PROGRESS` | protocol-hash capture와 combined-v2 계약 구현·검증 후 새 run 및 사람 평가 |
+| 5 | UA-05 | execution-captured protocol hash를 가진 새 authoritative run과 수동 접근성 48건을 combined summary로 발행 | `DEFERRED` (DEC-OPS-012) | 수동 접근성 평가자·승인된 Windows 기록 환경 확보 시 재개. 구현물(launch 실행기·combined v2 계약)은 그대로 보존돼 있어 재개에 추가 구현이 필요 없다 |
 | 6 | UA-06 | G0 제품·사용자 연구·브랜드/KRDS 입력 승인 | `LOCKED` | 지정 product/UX owner 확보 |
 | 7 | UA-07 | G1 live menu·역할 노출·119+2 route disposition 최종 승인 | `LOCKED` | UA-06 및 live read-only evidence 확보 |
 | 8 | UA-08 | release build/runtime 변수와 배포 owner handoff 검증 | `LOCKED` | 배포 환경의 실제 URL 확정 |
@@ -258,6 +263,14 @@ UA-03 승인 뒤 로컬 발행·clean-checkout 검증·원격 병합·required C
 
 ## 8. UA-05 — 수동 접근성 평가 48건
 
+> **보류 중 (`DEFERRED`, DEC-OPS-012, 2026-08-22).** 이 단계의 자동화 구현(protocol-hash capture 실행기,
+> combined summary v2 계약)은 완료돼 보존돼 있고, 남은 것은 지정 평가자와 승인된 Windows 접근성 기록
+> 환경이라는 **외부 입력**뿐이다. 그 입력이 확보되면 추가 구현 없이 아래 절차를 그대로 재개한다.
+>
+> 보류 기간에 재개된 UI 개선 작업은 **이 런북 체인 밖**이며 UA-06(G0) 이후 단계의 진척으로 계산되지
+> 않는다. UA-06~UA-10 은 계속 `LOCKED` 이고, r12 는 실행 시점 protocol hash 가 없어 ADR-0005 상
+> 영구히 `measured` 자격이 없다 — 보류가 이 판정을 바꾸지 않는다.
+
 8개 시나리오 각각에 다음 6개 검사를 수행한다.
 
 - keyboard-only
@@ -366,4 +379,4 @@ secrets-or-personal-data-pasted: false
 notes: <bounded, redacted>
 ```
 
-현재 실행 중인 대상은 **UA-05의 protocol-hash capture와 combined evidence v2 준비**다. UA-04의 후보 생성·기계 검증·사람 redaction review·digest-derived summary/index·tracked commit·clean-checkout readback·원격 병합·required CI는 완료됐다. r12 자체는 계속 `unmeasured`이며, 새 authoritative run과 사람 수동 증거 48건을 실제로 수집하기 전에는 UA-05를 완료하거나 `measured`로 승격하지 않는다.
+UA-05는 2026-08-22 사용자 결정(DEC-OPS-012)으로 **보류**됐다. UA-04의 후보 생성·기계 검증·사람 redaction review·digest-derived summary/index·tracked commit·clean-checkout readback·원격 병합·required CI는 완료됐다. r12 자체는 계속 `unmeasured`이며, 새 authoritative run과 사람 수동 증거 48건을 실제로 수집하기 전에는 UA-05를 완료하거나 `measured`로 승격하지 않는다. **보류는 이 사실을 바꾸지 않는다** — 미뤘다는 것이지 충족했다는 뜻이 아니다.
