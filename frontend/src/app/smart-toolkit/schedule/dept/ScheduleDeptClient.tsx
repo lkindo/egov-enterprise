@@ -45,8 +45,18 @@ const inputToYmd = (value: string) => value.replace(/-/g, '');
 const formatYmd = (ymd?: string) =>
     ymd && ymd.length >= 8 ? `${ymd.slice(0, 4)}.${ymd.slice(4, 6)}.${ymd.slice(6, 8)}` : '-';
 
+/** 조회 실패 사유를 Error 로 정규화한다(목록 영역에 그대로 노출하기 위함). */
+const toError = (value: unknown): Error => {
+    if (value instanceof Error) return value;
+    if (typeof value === 'string' && value) return new Error(value);
+    return new Error('부서 일정 목록을 불러오지 못했습니다.');
+};
+
 export default function ScheduleDeptClient() {
     const [schedules, setSchedules] = useState<DeptSchedule[]>([]);
+    const [loading, setLoading] = useState(true);
+    // 조회 실패를 "등록된 일정 없음"으로 위장하지 않기 위해 실패 사유를 목록 영역에 그대로 노출한다.
+    const [fetchError, setFetchError] = useState<Error | null>(null);
     // 서버는 pageIndex/pageUnit 을 받는다. 종전의 pageNo 는 ApiService 매핑 대상이 아니라
     // 그대로 전달돼 서버에서 무시됐고, 그래서 '조회' 버튼이 사실상 무동작이었다.
     const [params, setParams] = useState<ScheduleSearchParams>({
@@ -68,15 +78,17 @@ export default function ScheduleDeptClient() {
     });
 
     const fetchList = useCallback(async () => {
+        setLoading(true);
+        setFetchError(null);
         try {
             const response = await getDeptScheduleList(params);
-            if (response && response.list) {
-                setSchedules(response.list);
-            } else {
-                setSchedules([]);
-            }
-        } catch {
+            setSchedules(response?.list ?? []);
+        } catch (err) {
+            // 실패를 빈 목록으로 삼키면 화면이 "일정 0건"으로 거짓말한다 — 사유와 재시도 수단을 노출한다.
+            setFetchError(toError(err));
             setSchedules([]);
+        } finally {
+            setLoading(false);
         }
     }, [params]);
 
@@ -165,7 +177,31 @@ export default function ScheduleDeptClient() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {schedules.length === 0 ? (
+                        {loading ? (
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-32 text-center">
+                                    <span className="sr-only">부서 일정을 불러오는 중</span>
+                                    <div aria-hidden="true" className="animate-pulse space-y-3 py-4">
+                                        <div className="h-4 bg-muted rounded mx-8" />
+                                        <div className="h-4 bg-muted rounded mx-8" />
+                                        <div className="h-4 bg-muted rounded mx-8" />
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : fetchError ? (
+                            // 조회 실패는 "0건"과 다른 상태다 — 사유를 밝히고 재시도 수단을 준다.
+                            <TableRow>
+                                <TableCell colSpan={5} className="h-32 text-center">
+                                    <div role="alert" className="space-y-3">
+                                        <p className="font-bold text-destructive-emphasis">부서 일정 목록을 불러오지 못했습니다.</p>
+                                        <p className="text-sm text-muted-foreground">{fetchError.message}</p>
+                                        <Button variant="outline" onClick={fetchList} className="rounded-lg font-bold">
+                                            다시 시도
+                                        </Button>
+                                    </div>
+                                </TableCell>
+                            </TableRow>
+                        ) : schedules.length === 0 ? (
                                 // <tbody> 직속 자식은 <tr> 이어야 한다. TableRow 없이 TableCell 을 두면
                                 // 브라우저가 DOM 을 교정하면서 SSR 결과와 어긋나 hydration 오류가 난다.
                                 <TableRow>
