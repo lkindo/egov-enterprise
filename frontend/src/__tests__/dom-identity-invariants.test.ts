@@ -60,13 +60,49 @@ describe('DOM 정체성 불변식', () => {
     ).toMatch(/initial=\{[\s\S]*?animate=\{/);
   });
 
+  it('StandardDataTable 은 display 전환에도 표 시맨틱이 남도록 명시 role 을 유지한다', () => {
+    // md 미만에서 globals.css 가 table/thead/tbody/tr/td 를 display:block 으로 바꾼다(ADR-0006).
+    // display 를 바꾸면 <table> 계열의 **암시 role 이 사라지므로** 명시 role 이 유일한 방어선이다.
+    //
+    // ⚠ 이 검사가 왜 렌더 테스트가 아니라 소스 계약인가: jsdom 은 CSS 를 적용하지 않아
+    //   role 속성을 지워도 암시 role 로 통과한다(2026-08-22 red 증명에서 실측). 렌더 테스트로는
+    //   이 축을 원리적으로 지킬 수 없다.
+    const source = stripComments(
+      readFileSync(join(SRC_DIR, 'app', 'components', 'ui', 'standard-data-table.tsx'), 'utf8'),
+    );
+
+    for (const [element, role] of [
+      ['table', 'table'],
+      ['thead', 'rowgroup'],
+      ['tbody', 'rowgroup'],
+    ] as const) {
+      expect(
+        source,
+        `<${element}> 에 role="${role}" 이 없습니다 — md 미만 display:block 전환에서 표 시맨틱이 ` +
+          '통째로 사라져 보조기술 사용자가 행·열 관계를 잃습니다.',
+      ).toMatch(new RegExp(`<${element}[\\s\\n]+role="${role}"`));
+    }
+
+    // 카드 표현이 열 이름을 보여주는 유일한 경로다. 사라지면 md 미만에서 값만 남는다.
+    expect(
+      source,
+      'td 의 data-label 이 사라졌습니다 — globals.css 의 td::before content:attr(data-label) 이 빈 값이 됩니다.',
+    ).toContain('data-label=');
+
+    // 이중 트리 부활의 직접 신호. 단일 표 트리에는 이 조합이 존재할 이유가 없다.
+    expect(
+      source,
+      "'md:hidden' 이 되살아났습니다 — 표·카드 이중 렌더가 부활했을 가능성이 높습니다(ADR-0006).",
+    ).not.toContain('md:hidden');
+  });
+
   it('한 파일 안에서 같은 data-testid 리터럴이 두 번 이상 쓰이지 않는다', () => {
     // 목록 행 액션과 상세 패널 액션이 같은 testid 를 공유하면, 같은 항목을 선택했을 때
     // testid 로도 접근 이름으로도 구분되지 않는다(MailHistoryHubClient 가 실제로 그랬다).
     //
-    // ⚠ 이 계약의 한계: **소스의 정적 리터럴만** 본다. StandardDataTable 이 데스크톱 테이블과
-    //   모바일 카드를 동시 렌더해 accessor 산출물이 런타임에 2배가 되는 축(PROD-3)은 잡지 못한다.
-    //   그 축은 별도 과제이며 여기서 잡힌다고 오해하지 말 것.
+    // ⚠ 이 계약은 **소스의 정적 리터럴만** 본다. accessor 가 런타임에 만드는 식별자의 중복은
+    //   여기서 잡히지 않는다 — 그 축(구 PROD-3, 표·카드 이중 렌더)은 2026-08-22 ADR-0006 으로
+    //   해소됐고 회귀는 ui/__tests__/standard-data-table-single-render.test.tsx 가 담당한다.
     const offenders: string[] = [];
 
     const walk = (dir: string): void => {

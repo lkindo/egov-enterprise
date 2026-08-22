@@ -91,8 +91,6 @@ interface DataRowProps<T extends object> {
   rowTestId?: string;
 }
 
-type MobileCardProps<T extends object> = Omit<DataRowProps<T>, 'rowTestId'>;
-
 function renderCell<T extends object>(column: Column<T>, item: T, index: number): React.ReactNode {
   return typeof column.accessor === 'function'
     ? column.accessor(item, index)
@@ -141,6 +139,9 @@ function DataRowComponent<T extends object>({
       {columns.map((column, colIdx) => (
         <td
           key={`row-cell-${colIdx}`}
+          // md 미만에서 thead 가 시각적으로 숨겨지므로 각 셀이 자기 열 이름을 스스로 보여줘야 한다.
+          // 문자열 header 만 라벨로 쓴다(ReactNode header 는 CSS content 로 표현할 수 없다).
+          data-label={typeof column.header === 'string' ? column.header : undefined}
           className={cn(
             "px-6 py-5 text-sm font-medium text-foreground/80 tracking-tight transition-colors group-hover:text-foreground",
             column.className
@@ -171,73 +172,6 @@ function DataRowComponent<T extends object>({
 // React.memo 의 기본 선언은 제네릭 함수의 T 를 unknown 으로 지운다. 구현 시그니처를
 // 다시 노출해 columns/data/onRowClick 이 같은 행 타입으로 끝까지 결속되게 한다.
 const DataRow = memo(DataRowComponent) as typeof DataRowComponent;
-
-function MobileCardComponent<T extends object>({
-  item,
-  columns,
-  isSelected,
-  index,
-  enableSelection,
-  onToggle,
-  onRowClick,
-  rowActionLabel,
-}: MobileCardProps<T>) {
-  if (!item) return null;
-  const primaryColumn = columns[0];
-  if (!primaryColumn) return null;
-
-  return (
-    <div
-      className={cn(
-        "text-left w-full p-6 rounded-lg border-2 transition-all relative overflow-hidden focus-within:ring-2 focus-within:ring-primary",
-        isSelected ? "border-primary bg-primary/5 shadow-lg scale-[1.02]" : "border-border bg-card hover:border-primary/30"
-      )}
-    >
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3 flex-1 overflow-hidden">
-          {enableSelection && (
-            // 상위 카드(button)로의 이벤트 전파만 차단하는 래퍼 — 자체는 조작 대상이 아니므로 presentation
-            <div role="presentation" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()} className="relative z-10">
-              <Checkbox checked={isSelected} onCheckedChange={onToggle} className="w-6 h-6 rounded-lg" aria-label="항목 선택" />
-            </div>
-          )}
-          <div className="flex flex-col gap-1 overflow-hidden">
-            <span className="text-xs font-bold text-primary uppercase tracking-[0.2em]">{primaryColumn.header}</span>
-            <div className="font-[number:var(--font-weight-hub-title)] text-lg text-foreground truncate tracking-tight">
-              {renderCell(primaryColumn, item, index)}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-y-5 gap-x-4 pt-5 border-t border-border/50">
-        {columns.slice(1).map((column, idx) => (
-          <div key={`mobile-col-${idx}`} className="space-y-1 overflow-hidden">
-            <p className="text-xs font-bold text-muted-foreground uppercase tracking-[0.2em]">{column.header}</p>
-            <div className="text-sm font-bold text-foreground/80 truncate">
-              {renderCell(column, item, index)}
-            </div>
-          </div>
-        ))}
-      </div>
-      {onRowClick && (
-        <div className="mt-5 flex justify-end border-t border-border/50 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            aria-label={rowActionLabel}
-            onClick={() => onRowClick(item)}
-          >
-            {rowActionLabel}
-          </Button>
-        </div>
-      )}
-    </div>
-  );
-}
-
-const MobileCard = memo(MobileCardComponent) as typeof MobileCardComponent;
 
 const EMPTY_SELECTED_IDS = new Set<unknown>();
 
@@ -462,9 +396,12 @@ export function StandardDataTable<T extends object>({
         )}
       </AnimatePresence>
 
-      {/* 1. Desktop View - Glass Style Table */}
+      {/* 단일 표 트리 — 뷰포트 전환은 CSS 만 담당한다(ADR-0006).
+          종전에는 이 블록(hidden md:block)과 모바일 카드 블록(md:hidden)이 **형제로 항상 함께 렌더**돼
+          accessor 가 행×열마다 2회 실행되고 accessor 가 만든 testid·aria-label 이 2벌씩 생겼다.
+          md 미만 카드 표현은 globals.css 의 `.standard-data-table-responsive` 규칙이 담당한다. */}
       <div className={cn(
-        "hidden md:block w-full border-2 border-border/60 bg-card shadow-sm transition-all relative outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
+        "block w-full border-2 border-border/60 bg-card shadow-sm transition-all relative outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset",
         isPremium ? "rounded-2xl" : "rounded-lg",
         stickyHeader ? "max-h-[700px] overflow-auto" : "overflow-x-auto overflow-y-hidden"
       )}
@@ -472,13 +409,16 @@ export function StandardDataTable<T extends object>({
         {...desktopScrollRegionProps}
       >
         <div className="w-full">
-          <table className={cn(
-            "w-full text-sm text-left border-collapse",
-            stickyHeader && "table-sticky-header"
-          )}>
+          <table
+            role="table"
+            className={cn(
+              "w-full text-sm text-left border-collapse standard-data-table-responsive",
+              stickyHeader && "table-sticky-header"
+            )}
+          >
             <caption className="sr-only">{accessibleLabel}</caption>
-            <thead className="relative z-20">
-              <tr className="bg-muted/80 backdrop-blur-xl border-b-2 border-border/80">
+            <thead role="rowgroup" className="relative z-20">
+              <tr role="row" className="bg-muted/80 backdrop-blur-xl border-b-2 border-border/80">
                 {enableSelection && (
                   <th className="px-6 py-5 w-16 text-center" scope="col" aria-label="전체 항목 선택">
                     <Checkbox
@@ -506,7 +446,7 @@ export function StandardDataTable<T extends object>({
                 )}
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/40">
+            <tbody role="rowgroup" className="divide-y divide-border/40">
               {loading ? (
                 Array.from({ length: 5 }).map((_, i) => (
                   // 로딩 스켈레톤은 순수 장식이므로 접근성 트리에서 제외한다(중복 낭독 방지).
@@ -561,43 +501,6 @@ export function StandardDataTable<T extends object>({
             </tbody>
           </table>
         </div>
-      </div>
-
-      {/* 2. Mobile View (Premium Cards) */}
-      <div className="md:hidden space-y-5 px-1">
-        {loading ? (
-          Array.from({ length: 3 }).map((_, i) => (
-            <div key={`loading-card-${i}`} className="h-56 bg-muted/20 animate-pulse rounded-lg" />
-          ))
-        ) : error ? (
-          <div className="p-16 bg-card border-2 border-border/60 rounded-lg text-center shadow-inner">
-            <ErrorStateDisplay error={error} onRetry={onRetry} />
-          </div>
-        ) : (data || []).length === 0 ? (
-          <div className="p-16 bg-card border-2 border-dashed border-border/60 rounded-lg text-center shadow-inner">
-            <EmptyStateDisplay message={resolvedEmptyMessage} />
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 gap-5">
-            {(data || []).map((item, idx) => {
-              if (!item) return null;
-              const itemId = item?.[keyField] ?? idx;
-              return (
-                <MobileCard
-                  key={`card-${itemId}`}
-                  item={item}
-                  columns={columns}
-                  index={idx}
-                  isSelected={selectedIds.has(item?.[keyField])}
-                  enableSelection={enableSelection}
-                  onToggle={() => toggleOne(item?.[keyField])}
-                  onRowClick={onRowClick}
-                  rowActionLabel={resolveRowActionLabel(rowActionLabel, item, idx)}
-                />
-              );
-            })}
-          </div>
-        )}
       </div>
 
       {/* Pagination Controls — 총 건수·페이지 번호 노출 (PagePagination 과 동일한 윈도우 규칙) */}

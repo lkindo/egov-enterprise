@@ -37,6 +37,7 @@ refresh_triggers:
 | ADR-0003 | accepted | 프런트엔드 UX 현대화는 사용자 과업을 우선하고, 브랜드 중립 프로필·WCAG 2.2·측정 기반 데이터 소유권·위험 기반 복구와 mutation 원칙을 적용한다. | 특정 미학과 일시적인 API를 core 헌법에 고정하지 않고 공공·민간 프로필이 같은 접근성·상태 계약을 공유하게 하기 위해서다. | [ADR-0003](../../docs/02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md) | 2026-08-20 | - |
 | ADR-0004 | accepted | 과업 중심 기본 내비게이션과 명시적 관리 센터를 결합한 하이브리드 IA를 prototype·research의 잠정 방향으로 채택하고 canonical URL과 route-level blocker는 유지한다. | live menu·role·privacy·사용자 연구를 창작하지 않으면서 최적 후보 하나에 검증을 집중하고, final IA 승인 전 consumer migration을 막기 위해서다. | [ADR-0004](../../docs/02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md) | 2026-08-21 | - |
 | ADR-0005 | accepted | UI 품질 증거는 digest-derived versioned compact summary와 tracked index로 보존하고 기존 summary를 덮어쓰지 않는다. | ignored r12 원본 JSON을 source에 복제하거나 허위 CI provenance를 만들지 않으면서 clean checkout에서 bounded aggregate와 provenance를 장기 검증하기 위해서다. | [ADR-0005](../../docs/02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md) | 2026-08-21 | - |
+| ADR-0006 | accepted | 반응형 표현은 단일 SSR DOM 위에서 CSS로만 전환한다. 같은 데이터를 두 벌 렌더해 `hidden`/`md:hidden`으로 한쪽만 보이거나, `matchMedia`·`useSyncExternalStore`·`next/dynamic ssr:false` 로 본문 데이터 표현을 분기하지 않는다. | nonce CSP 때문에 전 페이지가 force-dynamic 이라 SSR HTML 이 사용자가 보는 첫 화면이다. 훅 방식은 49개 화면에 새 하이드레이션 경계를 만들고, 이중 렌더는 accessor 를 2회 실행해 소비자가 만든 testid·aria-label 을 2벌로 복제한다(CI run 32555133776 strict mode violation). | [ADR-0006](../../docs/02-architecture/decisions/ADR-0006-css-only-responsive-table.md) | 2026-08-22 | - |
 
 ## 운영 결정 index
 
