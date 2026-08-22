@@ -302,6 +302,21 @@ describe('StandardDataTable', () => {
     ))).toBeInTheDocument();
   });
 
+  it('페이지 탐색은 순서 목록(ol/li) 시맨틱을 가진다 (KRDS/WCAG — breadcrumb 과 동일 규격)', () => {
+    renderTable({
+      pagination: { currentPage: 5, totalPages: 20, onPageChange: vi.fn() },
+    });
+
+    const nav = screen.getByRole('navigation', { name: '페이지 탐색' });
+    const list = within(nav).getByRole('list');
+    // 이전/다음 + 표시 페이지 번호들이 각각 listitem 이어야 스크린리더가
+    // "몇 개 중 몇 번째"를 셈할 수 있다 (aria-hidden 인 말줄임 li 는 셈에서 제외됨).
+    const items = within(list).getAllByRole('listitem');
+    expect(items.length).toBeGreaterThanOrEqual(4);
+    expect(within(list).getByRole('button', { name: '이전 페이지' })).toBeInTheDocument();
+    expect(within(list).getByRole('button', { name: '다음 페이지' })).toBeInTheDocument();
+  });
+
   it('페이지 범위가 바뀌는 즉시 이전 선택을 폐기한다', async () => {
     const user = userEvent.setup();
     const onPageChange = vi.fn();
