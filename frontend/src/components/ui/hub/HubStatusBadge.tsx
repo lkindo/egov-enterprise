@@ -20,12 +20,14 @@ export function HubStatusBadge({
 }: HubStatusBadgeProps) {
   const displayLabel = labels && status ? labels[status] : (label || status || 'N/A');
   
+  // default 는 라이트에서 순백 카드 위 slate-200(1.23:1)으로 상태 라벨이 보이지 않던 실측 결함.
+  // secondary 와 동일한 muted pair 로 통일해 다크는 바이트 불변, 깨진 라이트 경로만 이동한다.
   const variantStyles = {
-    default: 'bg-white/10 dark:bg-muted text-slate-200 dark:text-muted-foreground',
+    default: 'bg-muted text-muted-foreground',
     secondary: 'bg-muted text-muted-foreground',
-    success: 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-300',
-    warning: 'bg-amber-500/15 text-amber-700 dark:text-amber-300',
-    error: 'bg-rose-500/15 text-rose-700 dark:text-rose-300'
+    success: 'bg-success/15 text-success-emphasis',
+    warning: 'bg-warning/15 text-warning-foreground',
+    error: 'bg-destructive/15 text-destructive-emphasis'
   };
 
   // Auto-variant based on status if not provided

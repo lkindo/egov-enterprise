@@ -25,11 +25,13 @@ export function HubMetricCard({
   className 
 }: HubMetricProps) {
 
+  // rose 는 라이트에서 파스텔 틴트 배경 위 흰 아이콘(실측 1.10:1)으로 오류 지표가 보이지 않던 결함이라
+  // 양 프로필에서 4.5:1 이상이 검증된 semantic pair 로 치환한다. indigo/slate 는 측정된 실패가 없어 유지.
   const iconBgMap = {
-    primary: "bg-primary text-white shadow-primary/20",
-    emerald: "bg-emerald-500 text-white shadow-emerald-500/20",
-    rose: "bg-rose-50 text-white shadow-rose-500/20 dark:bg-rose-500",
-    amber: "bg-amber-500 text-white shadow-amber-500/20",
+    primary: "bg-primary text-primary-foreground shadow-primary/20",
+    emerald: "bg-success text-success-foreground shadow-success/20",
+    rose: "bg-destructive text-destructive-foreground shadow-destructive/20",
+    amber: "bg-warning text-warning-foreground shadow-warning/20",
     indigo: "bg-hub-indigo text-white shadow-hub-indigo/20",
     slate: "bg-primary/10 text-primary border border-primary/20 shadow-primary/5 dark:bg-primary/20 dark:text-primary",
   };
@@ -51,7 +53,7 @@ export function HubMetricCard({
             {trend && (
                 <span className={cn(
                     "text-[10px] font-bold px-2 py-0.5 rounded-lg border tracking-tighter uppercase",
-                    color === 'rose' ? "bg-rose-50 text-rose-500 dark:bg-rose-950/40 dark:text-rose-400 border-rose-100 dark:border-rose-900/30" : "bg-emerald-50 text-emerald-500 dark:bg-emerald-950/40 dark:text-emerald-400 border-emerald-100 dark:border-emerald-900/30"
+                    color === 'rose' ? "bg-destructive/10 text-destructive-emphasis border-destructive/20" : "bg-success/10 text-success-emphasis border-success/20"
                 )}>
                     {trend}
                 </span>
