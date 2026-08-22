@@ -43,7 +43,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 // [하향 래칫 2026-08-21(6)] KnowledgeHub FAQ 공개 상태 1건을 theme-aware success emphasis token으로 이행.
 // [하향 래칫 2026-08-23] hub 프리미티브 대비 수리 — HubMetrics 아이콘/트렌드 19건, HubStatusBadge 상태 변형 9건을
 //   양 프로필 4.5:1 검증된 success/warning/destructive pair로 치환(라이트 1.10:1 오류 아이콘·1.23:1 상태 라벨 해소).
-const BASELINE = 724;
+// [하향 래칫 2026-08-23(2)] StatusBadge 승인/반려 8건과 Badge success 변형 3건(2.54:1 미소비 변형)을
+//   계약 검증된 채움형 pair(bg-X + text-X-foreground)로 치환.
+const BASELINE = 713;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

@@ -5,10 +5,12 @@ interface StatusBadgeProps {
   className?: string;
 }
 
+// 채움형 pair(bg-X + text-X-foreground)는 status-token-contrast 계약이 양 프로필·양 모드에서
+// 4.5:1 이상을 검증하는 조합이다(BoardMakerWizard 의 landed 선례와 동일).
 const STATUS_CONFIG: Record<string, { label: string; color: string }> = {
-  Y: { label: '승인', color: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' },
-  N: { label: '반려', color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' },
-  R: { label: '대기', color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' },
+  Y: { label: '승인', color: 'bg-success text-success-foreground' },
+  N: { label: '반려', color: 'bg-destructive text-destructive-foreground' },
+  R: { label: '대기', color: 'bg-info text-info-foreground' },
   C: { label: '완료', color: 'bg-muted text-foreground' },
 };
 
