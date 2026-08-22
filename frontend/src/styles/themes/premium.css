@@ -1,0 +1,148 @@
+/*
+ * Brand profile: premium (기본 프로필)
+ *
+ * 이 파일은 globals.css 의 :root / .dark 블록을 **값 변경 없이** 옮긴 것이다.
+ * 시맨틱 이름(--background·--primary·--hub-*·--surface-inverse …)은 그대로 유지된다 —
+ * 그것이 3층 토큰 구조의 2층이며, 110개 .tsx 소비자와 색 가드 2종(78/752)이
+ * 이 이름들에 결속돼 있기 때문이다. globals.css 의 @theme 블록도 손대지 않는다.
+ *
+ * ⚠ 셀렉터 특이성 (설계가 경고한 함정):
+ *   :root                              = (0,1,0)
+ *   :root[data-brand-theme="premium"]  = (0,2,0)
+ *   .dark                              = (0,1,0)
+ *   :root[data-brand-theme="premium"].dark = (0,3,0)
+ *   브랜드 속성이 켜진 상태에서 라이트 규칙(0,2,0)이 .dark(0,1,0)를 이겨 다크가 깨지는 것을
+ *   막으려면 다크 규칙에 반드시 (0,3,0) 조합 셀렉터를 함께 둬야 한다. 아래 구조를 바꾸지 말 것.
+ *   (theme-contract 계약이 이 형태를 강제한다.)
+ */
+
+@layer base {
+  :root,
+  :root[data-brand-theme="premium"] {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    /* Hub Accent Colors (Updated to #0055FF) */
+    --hub-blue: 219 100% 50%;
+    --hub-indigo: 243 75% 59%;   /* indigo-600 — 지배적 액센트 변이 토큰화(브랜딩 재사용성) */
+    --hub-orange: 24.6 95% 45%;
+    --hub-purple: 262.1 83.3% 50%;
+    --hub-emerald: 142.1 70.6% 35%;
+    --hub-rose: 346.8 77.2% 40%;
+    --hub-amber: 37.9 94.1% 40%;
+
+    --primary: 221.2 100% 50%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 30%; /* Darkened further to ensure >4.5:1 contrast even with minor opacity */
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 45%;
+    --destructive-foreground: 210 40% 98%;
+    /* [I-1] 전경(텍스트·아이콘) 전용 위험색. --destructive 는 `bg-destructive` 용으로 설계된
+       어두운 빨강이라, 그대로 텍스트에 쓰면 다크 모드에서 대비가 1.99:1(카드 위 1.78:1)까지 떨어진다.
+       배경용과 전경용은 요구가 정반대이므로 토큰을 나눈다. 라이트에서는 기존 값이 이미 5.42:1 이라 동일. */
+    --destructive-emphasis: 0 84.2% 45%;
+
+    /* [I-1] bg-success 위 흰 전경이 4.5:1 을 넘도록 배경 명도를 36.3%→30% 로 낮췄다(3.0 → 4.62). */
+    --success: 142.1 76.2% 30%;
+    --success-foreground: 0 0% 100%;
+    /* bg-success와 분리한 전경 전용 성공색. 라이트 배경 대비를 위해 배경 토큰과 같은 짙은 값을 쓴다. */
+    --success-emphasis: 142.1 76.2% 30%;
+
+    /* [I-1] 종전 amber-100 전경은 amber-500 배경 위에서 1.92:1 이었다 — 라이트/다크 공통 실패.
+       같은 색상(hue)의 어두운 값으로 바꿔 6.67:1 확보. */
+    --warning: 38 92% 50%;
+    --warning-foreground: 38 95% 12%;
+
+    /* [I-1] 종전 slate-50 전경은 sky-500 배경 위에서 2.72:1 이었다 → 5.75:1. */
+    --info: 199 89% 48%;
+    --info-foreground: 199 95% 10%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 100% 50%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    /* Surface-Inverse (의도적 다크 서피스 — slate-900 계열, 라이트/다크 공통 고정) */
+    --surface-inverse: 222.2 47.4% 11.2%;        /* slate-900 */
+    --surface-inverse-foreground: 210 40% 98%;   /* slate-50 (다크 서피스 위 본문) */
+    --surface-inverse-muted: 215 20.2% 75%;      /* slate-300 (다크 서피스 위 보조) */
+    --surface-inverse-border: 215 27.9% 27%;     /* slate-700 (다크 서피스 경계) */
+
+    --radius: 0.5rem;
+    --surface-sunken: 210 40% 98%;
+    --surface-raised: 0 0% 100%;
+
+    /* --- Core Design Tokens (Project-wide) --- */
+    --font-size-hub-title: 1.875rem;    /* 3xl */
+    --font-size-hub-subtitle: 0.8125rem; /* 13px */
+    --font-weight-hub-title: 900;       /* black */
+    --letter-spacing-hub: -0.05em;      /* tracking-tighter */
+    --letter-spacing-label: -0.025em;   /* wide label tracking (normalized to tight) */
+    
+    --radius-hub-section: 1rem;         /* Hub main section cards (Normalized) */
+    --radius-hub-widget: 0.75rem;       /* Hub mini widgets (Normalized) */
+    --radius-hub-item: 0.5rem;          /* Hub list items / Summaries (Normalized) */
+
+    --gap-base: 1rem;
+    --gap-hub-section: 3rem;            /* Spacing between major sections (48px) */
+    --gap-hub-widget: 1.5rem;           /* Spacing between widgets (24px) */
+    
+    --shadow-hub-premium: 0 32px 64px -16px rgba(0, 0, 0, 0.08);
+    --color-premium-slate: 222.2 47.4% 11.2%; /* slate-900 equivalent */
+    --color-premium-emerald: 142.1 76.2% 36.3%; /* emerald-600 equivalent */
+  }
+
+  .dark,
+  :root[data-brand-theme="premium"].dark {
+    --background: 222.2 47.4% 4.3%;
+    --foreground: 210 40% 98%;
+
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 75%; /* Lightened from 65.1% to 75% for better visibility against dark background */
+
+    --accent: 217.2 32.6% 25%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    /* [I-1] 다크에서 --destructive(30.6% 명도)를 텍스트로 쓰면 배경 대비 1.99:1 · 카드 위 1.78:1 로
+       WCAG AA(4.5:1)의 절반에도 못 미친다. 전경 전용 토큰은 반대로 밝게 가야 한다 → 6.04:1 / 5.41:1.
+       (--destructive 자체를 밝히면 bg-destructive 19곳이 밝은 빨강 배경이 되어 파손된다.) */
+    --destructive-emphasis: 0 91% 65%;
+
+    /* 다크 카드 위 텍스트·아이콘은 밝은 성공색으로 4.5:1 이상 대비를 확보한다. */
+    --success-emphasis: 142 70% 55%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 48%;
+
+    --card: 222.2 47.4% 11.2%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 47.4% 11.2%;
+    --popover-foreground: 210 40% 98%;
+
+    --surface-sunken: 0 0% 0%;
+    --surface-raised: 222.2 47.4% 15%;
+
+    /* Slate overrides removed to restore default Tailwind dark mode values */
+  }
+}
