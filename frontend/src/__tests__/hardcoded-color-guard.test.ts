@@ -34,7 +34,8 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 // [하향 래칫 2026-08-21(3)] board maker의 template/action 중립 리터럴 3건도 검증된 semantic pair로 치환.
 // [하향 래칫 2026-08-23] HubStatusBadge default 라벨의 저대비 중립 리터럴 1건을 muted pair로 치환.
 // [하향 래칫 2026-08-23(2)] StatusBadge 대기 상태의 blue 리터럴 4건을 계약 검증된 info pair로 치환.
-const BASELINE = 73;
+// [하향 래칫 2026-08-23(3)] HubListCard 장식 점의 slate 리터럴 1건을 theme-aware border 토큰으로 치환.
+const BASELINE = 72;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
