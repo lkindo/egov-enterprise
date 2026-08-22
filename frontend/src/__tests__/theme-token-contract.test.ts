@@ -76,9 +76,11 @@ describe('브랜드 프로필 토큰 계약', () => {
     // 남거나(캐스케이드) 빈 값이 된다. 어느 쪽이든 조용한 시각 파손이다.
     const perProfile = themeFiles.map((file) => {
       const css = readFileSync(join(THEMES_DIR, file), 'utf8');
+      // 기본 프로필(premium)은 `:root,` 를 앞에 달고, 비기본 프로필은 브랜드 셀렉터만 갖는다.
+      // 두 형태 모두 브랜드 셀렉터 위치에서 블록을 찾으면 같은 라이트 블록에 도달한다.
       return {
         file,
-        light: declaredKeys(blockAfter(css, /:root,\s*\n?\s*:root\[data-brand-theme="[^"]+"\]\s*\{/)),
+        light: declaredKeys(blockAfter(css, /:root\[data-brand-theme="[^"]+"\][^\n{]*\{/)),
       };
     });
 

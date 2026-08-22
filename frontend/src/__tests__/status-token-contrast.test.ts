@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const FRONTEND_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
-const PREMIUM = join(FRONTEND_DIR, 'src', 'styles', 'themes', 'premium.css');
+const THEMES_DIR = join(FRONTEND_DIR, 'src', 'styles', 'themes');
 
 /**
  * 상태색 WCAG 대비 계약.
@@ -43,10 +43,10 @@ function contrast(a: string, b: string): number {
 }
 
 /** 프로필 CSS의 라이트/다크 블록에서 토큰 → 값 맵을 만든다. 다크는 라이트 위에 오버레이된다. */
-function readTokens(): { light: Map<string, string>; dark: Map<string, string> } {
-  const css = readFileSync(PREMIUM, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+function readTokens(file: string): { light: Map<string, string>; dark: Map<string, string> } {
+  const css = readFileSync(join(THEMES_DIR, file), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   const blocks = [...css.matchAll(/\{([^{}]*)\}/g)].map((m) => m[1]);
-  expect(blocks.length, 'premium.css 에서 선언 블록을 찾지 못했습니다 — 계약이 vacuous 합니다').toBeGreaterThanOrEqual(2);
+  expect(blocks.length, `${file} 에서 선언 블록을 찾지 못했습니다 — 계약이 vacuous 합니다`).toBeGreaterThanOrEqual(2);
 
   const toMap = (body: string) =>
     new Map([...body.matchAll(/(--[a-z0-9-]+)\s*:\s*([^;]+);/gi)].map((m) => [m[1], m[2].trim()]));
@@ -57,13 +57,17 @@ function readTokens(): { light: Map<string, string>; dark: Map<string, string> }
   return { light, dark };
 }
 
+const PROFILE_FILES = readdirSync(THEMES_DIR).filter(
+  (name) => name.endsWith('.css') && !name.startsWith('_'),
+);
+
 const AA_TEXT = 4.5;
 
-describe('상태색 WCAG 대비 계약', () => {
-  const { light, dark } = readTokens();
+describe.each(PROFILE_FILES)('상태색 WCAG 대비 계약 — %s', (profileFile) => {
+  const { light, dark } = readTokens(profileFile);
   const get = (map: Map<string, string>, key: string): string => {
     const value = map.get(key);
-    expect(value, `${key} 가 프로필에 정의돼 있지 않습니다`).toBeTruthy();
+    expect(value, `${key} 가 ${profileFile} 에 정의돼 있지 않습니다`).toBeTruthy();
     return value as string;
   };
 
