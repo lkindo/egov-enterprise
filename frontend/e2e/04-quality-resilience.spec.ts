@@ -1,5 +1,6 @@
 import { test, expect } from './fixtures/base-test';
 import { getAdminBearerToken } from './utils/admin-token';
+import { buildSpecScope, ConsoleErrorGuard } from './fixtures/error-detector';
 
 /**
  * [Tier 4] Quality & Resilience: Security, UX, A11y, Visual
@@ -117,7 +118,20 @@ test.describe('Tier 4: Quality & Resilience', () => {
         //   ※ 01 은 감사 전에 h1 렌더 완료를 기다린다 — 이 테스트에는 그 대기가 없어
         //     Suspense 폴백(스피너)을 감사할 여지도 있었다.
 
-        test('Visual Regression Baseline', async ({ page }) => {
+        // [2026-08-23 D6 파일럿 확장] 대시보드 1장 → 파일럿 대표 라우트 4장.
+        //   추가 라우트는 **결정적(deterministic) 상태**만 캡처한다 — VRT 는 기준선 생성 시점과
+        //   비교 시점의 DB 상태가 다르면 마스크로도 못 막는 레이아웃 시프트가 생기기 때문이다.
+        //     · 로그인 로그: 무매칭 검색어로 고정된 empty-state 를 캡처(로그 행 수는 실행마다 다르다).
+        //     · 공통코드 허브: Flyway seed 파생 화면 — 신선한 CI DB 에서 항상 동일하다.
+        //     · 로그인 화면: 비인증 컨텍스트로 캡처. /auth/me 401 은 로그인 화면 진입의 정상
+        //       부산물이며(01-core-base 의 E2E-CORE-LOGIN-A11Y-ME-401 과 동일 계약) ledger 로 관리한다.
+        //   결재함(/approvals)은 목록 내용이 같은 샤드에서 먼저 실행된 테스트(E7 결재 confirm,
+        //   11 기안 등)에 의존해 비결정적이므로 파일럿에서 제외했다 — 고정 fixture 설계가 선행돼야 한다.
+        //   ⚠ 신규 캡처는 이 테스트 **안**에 둔다: e2e-harness-hygiene 계약이 e2e 전체에서
+        //   test.skip 1건(이 테스트의 플랫폼 한정)만 허용하므로 테스트를 쪼개면 게이트가 red 가 된다.
+        //   기준선 생성은 기존 update-visual-baseline.yml 의 `-g "Visual Regression Baseline"`
+        //   경로를 그대로 탄다(테스트 제목 불변 — 워크플로 수정 불필요).
+        test('Visual Regression Baseline', async ({ page, browser }, testInfo) => {
             // [2026-07-27 정책 결정: CI(리눅스) 전용] 스크린샷은 폰트 렌더링·안티에일리어싱이 OS 마다
             // 달라 win32 에서 만든 기준선은 ubuntu 러너에서 **반드시** 실패한다(파일명이 …-win32.png 인
             // 것이 그 증거다). 기준선은 CI 플랫폼에서 한 번 생성해 커밋하고, 검증도 그 플랫폼에서만 한다.
@@ -142,6 +156,82 @@ test.describe('Tier 4: Quality & Resilience', () => {
                 // 동적 영역은 위 mask로만 처리한다. (서버 기동 후 baseline 재캡처가 필요할 수 있음)
                 maxDiffPixelRatio: 0.01
             });
+
+            // ── 파일럿 ②: admin 로그인 로그 목록 (/admin/system/logs/login) ──────────
+            // 로그 행은 같은 잡에서 먼저 실행된 로그인 횟수에 따라 달라지므로(기준선 생성
+            // 워크플로는 setup 만 돌고, CI 샤드는 앞선 스펙들이 로그인을 쌓는다) 행이 있는
+            // 상태는 결정적이지 않다. 무매칭 검색어로 고정한 empty-state 를 계약으로 캡처한다 —
+            // PageHeader·HubHeader·검색바·표 헤더·EmptyStateDisplay·'총 0건' 요약이 전부 결정적이다.
+            console.log('>>> Capturing Login Log List (deterministic empty-search) Visual Snapshot');
+            await page.goto('/admin/system/logs/login');
+            // exact: Suspense 폴백의 sr-only h1('로그인 로그를 불러오는 중')이 부분일치로 잡히지 않게 한다.
+            await expect(page.getByRole('heading', { level: 1, name: '로그인 로그', exact: true })).toBeVisible({ timeout: 30000 });
+            const logSearchInput = page.getByPlaceholder('사용자ID, 접속IP 검색..');
+            await expect(logSearchInput).toBeVisible({ timeout: 20000 });
+            await logSearchInput.fill('vrt-no-match');
+            await logSearchInput.press('Enter');
+            const emptyLogMessage = page.getByTestId('empty-table-msg');
+            await expect(emptyLogMessage).toBeVisible({ timeout: 20000 });
+            await expect(emptyLogMessage).toContainText('"vrt-no-match"에 대한 검색 결과가 없습니다.');
+            await expect(page).toHaveScreenshot('admin-login-logs-baseline.png', {
+                animations: 'disabled',
+                // 셸의 동적 숫자(뱃지·카운터) 방어 — 매칭이 없으면 no-op 이다(dashboard 와 동일 규율).
+                mask: [page.locator('.tabular-nums')],
+                maxDiffPixelRatio: 0.01
+            });
+
+            // ── 파일럿 ③: 공통코드 통합 허브 (/admin/system/common-code) ───────────
+            // 서버 컴포넌트가 Flyway seed 코드를 조회해 렌더한다 — 기준선 워크플로와 CI 모두
+            // 신선한 compose DB 라 같은 seed 를 보고, 코드를 생성/삭제하는 e2e 는 없다(실측 grep).
+            console.log('>>> Capturing Common Code Hub Visual Snapshot');
+            await page.goto('/admin/system/common-code');
+            await expect(page.getByRole('heading', { level: 1, name: '마스터 데이터 거버넌스', exact: true })).toBeVisible({ timeout: 30000 });
+            // 데이터 적재 증거 — 19-hierarchy 스펙과 동일한 Explorer 도메인 카운트 노출을 기다린다.
+            await expect(page.getByText(/\d+ Domains/).first()).toBeVisible({ timeout: 20000 });
+            await expect(page).toHaveScreenshot('common-code-hub-baseline.png', {
+                animations: 'disabled',
+                mask: [page.locator('.tabular-nums')],
+                maxDiffPixelRatio: 0.01
+            });
+
+            // ── 파일럿 ④: 로그인 화면 (/login, 비인증) ─────────────────────────────
+            // 이 describe 는 admin storageState 라 /login 진입 시 LoginClient 가 즉시
+            // redirectUrl 로 소프트 전환한다(이미 인증됨). 별도 비인증 컨텍스트로 캡처하되,
+            // 가드·ledger 를 수동 설치해 기본 page 픽스처와 동일한 오류 규율을 적용한다.
+            console.log('>>> Capturing Login Page (anonymous) Visual Snapshot');
+            const anonContext = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+            try {
+                const anonPage = await anonContext.newPage();
+                const anonGuard = new ConsoleErrorGuard(anonPage, buildSpecScope(testInfo.file, testInfo.title));
+                await anonGuard.install();
+                anonGuard.expectErrors([{
+                    id: 'E2E-VRT-LOGIN-ME-401',
+                    specScope: '04-quality-resilience.spec.ts :: Visual Regression Baseline',
+                    channel: 'response',
+                    urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
+                    messagePattern: null,
+                    method: 'GET',
+                    status: 401,
+                    // 기준선 생성 워크플로 실측(run 32634871785): 이 401 은 환경에 따라 발생하지
+                    // 않을 수 있다(비로그인 컨텍스트가 세션 확인을 생략하는 경로). 발생 필수로
+                    // 두면 "기대 오류 미발생" 위반으로 생성이 죽으므로 선택적 항목으로 둔다.
+                    minOccurrences: 0,
+                    maxOccurrences: 4,
+                    reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다(발생 시에만 소비).',
+                    expiresAt: '2026-12-31',
+                }]);
+                // ?e2e=true: 온보딩 투어 자동 비활성(01-core-base 로그인 a11y 테스트와 동일 진입 계약).
+                await anonPage.goto('/login?e2e=true');
+                await expect(anonPage.getByRole('heading', { level: 1, name: '엔터프라이즈', exact: true })).toBeVisible({ timeout: 30000 });
+                await expect(anonPage.getByRole('textbox', { name: '아이디' })).toBeVisible();
+                await expect(anonPage).toHaveScreenshot('login-page-baseline.png', {
+                    animations: 'disabled',
+                    maxDiffPixelRatio: 0.01
+                });
+                await anonGuard.verify();
+            } finally {
+                await anonContext.close();
+            }
         });
     });
 
