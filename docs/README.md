@@ -105,6 +105,7 @@
 | [performance-optimization-guide.md](04-operations/performance-optimization-guide.md) | 성능 최적화 |
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
+| [url-state-privacy-classification-draft.md](04-operations/url-state-privacy-classification-draft.md) | URL 상태 census 523건의 프라이버시 분류 **초안** — `PD-UX-002` 승인 회의 입력물(승인 아님) |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 
 ## archived — 구버전 보관
