@@ -1,4 +1,4 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import type { ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { components } from '@/types/generated-api';
@@ -7,27 +7,72 @@ import type { PageResponse } from '@/types/foundation/system';
 interface MockColumn {
   header: string;
   accessor: string | ((item: Record<string, unknown>, index?: number) => ReactNode);
+  sortKey?: string;
+}
+
+interface MockPagination {
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  totalCount?: number;
+  pageSize?: number;
+  onPageSizeChange?: (size: number) => void;
+  pageSizeOptions?: number[];
+}
+
+interface MockSearch {
+  value?: string;
+  onSearch: (keyword: string) => void;
+  onClear?: () => void;
 }
 
 interface MockTableProps {
   columns: MockColumn[];
   data: Array<Record<string, unknown>>;
   keyField?: string;
+  pagination?: MockPagination;
+  search?: MockSearch;
 }
 
 const clientHarness = vi.hoisted(() => ({
   queryData: undefined as unknown,
   latestTableProps: undefined as unknown,
+  latestQueryOptions: undefined as unknown,
   setPage: vi.fn(),
 }));
 
+const toastHarness = vi.hoisted(() => ({
+  error: vi.fn(),
+  success: vi.fn(),
+}));
+
+const downloadHarness = vi.hoisted(() => ({
+  navigateToDownload: vi.fn(),
+}));
+
 vi.mock('@tanstack/react-query', () => ({
-  useQuery: () => ({
-    data: clientHarness.queryData,
-    error: null,
-    isLoading: false,
-    refetch: vi.fn(),
+  useQuery: (options: unknown) => {
+    clientHarness.latestQueryOptions = options;
+    return {
+      data: clientHarness.queryData,
+      error: null,
+      isLoading: false,
+      refetch: vi.fn(),
+    };
+  },
+}));
+
+vi.mock('@/app/components/ui/toast', () => ({
+  useToast: () => ({
+    toast: vi.fn(),
+    success: toastHarness.success,
+    error: toastHarness.error,
+    removeToast: () => {},
   }),
+}));
+
+vi.mock('@/lib/navigation/full-result-download', () => ({
+  navigateToDownload: downloadHarness.navigateToDownload,
 }));
 
 vi.mock('@/app/admin/system/logs/use-log-url-state', () => ({
@@ -39,8 +84,8 @@ vi.mock('@/app/components/layout/page-header', () => ({
 }));
 
 vi.mock('@/components/ui/hub/HubHeader', () => ({
-  HubHeader: ({ title, highlight }: { title: string; highlight?: string }) => (
-    <header>{title} {highlight}</header>
+  HubHeader: ({ title, highlight, actions }: { title: string; highlight?: string; actions?: ReactNode }) => (
+    <header>{title} {highlight}{actions}</header>
   ),
 }));
 
@@ -77,6 +122,7 @@ import SystemLogsSystemClient from '../system/SystemLogsSystemClient';
 import SystemLogsUserClient from '../user/SystemLogsUserClient';
 import SystemLogsWebClient from '../web/SystemLogsWebClient';
 import { metadata as userLogMetadata } from '../user/page';
+import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 
 type SysLogDto = components['schemas']['SysLogDto'];
 type LoginLogDto = components['schemas']['LoginLogDto'];
@@ -224,5 +270,168 @@ describe('dedicated system log clients generated-DTO contracts', () => {
       expect(table.getByText(value)).toBeInTheDocument();
     }
     expect(currentTableProps().keyField).toBe('prvcLogSn');
+  });
+});
+
+type LogServiceMethod = 'getLoginLogs' | 'getSystemLogs' | 'getUserLogs' | 'getWebLogs' | 'getPrivacyLogs';
+
+interface ClusterCase {
+  name: string;
+  Component: () => ReactNode;
+  row: Record<string, unknown>;
+  method: LogServiceMethod;
+  /** header → 원시 정렬 키(sortKey). 현재 페이지 클라이언트 정렬 계약(StandardDataTable). */
+  sortKeys: Record<string, string>;
+}
+
+const CLUSTER_CASES: ClusterCase[] = [
+  {
+    name: 'LGN',
+    Component: SystemLogsLoginClient,
+    row: LOGIN_ROW,
+    method: 'getLoginLogs',
+    sortKeys: { 발생시점: 'creatDt', 사용자ID: 'loginId', 구분: 'loginMthd' },
+  },
+  {
+    name: 'SYS',
+    Component: SystemLogsSystemClient,
+    row: SYSTEM_ROW,
+    method: 'getSystemLogs',
+    sortKeys: { 발생일자: 'ocrnYmd', 서비스설명: 'srvcNm', 처리구분: 'prcsSeCd' },
+  },
+  {
+    name: 'USR',
+    Component: SystemLogsUserClient,
+    row: USER_ROW,
+    method: 'getUserLogs',
+    sortKeys: { 발생일자: 'ocrnYmd', 요청자: 'dmndUserId', 서비스설명: 'srvcNm' },
+  },
+  {
+    name: 'WEB',
+    Component: SystemLogsWebClient,
+    row: WEB_ROW,
+    method: 'getWebLogs',
+    sortKeys: { 등록일시: 'occrYmd', 요청자: 'dmndUserId', 응답시간: 'prcsTm' },
+  },
+  {
+    name: 'PRV',
+    Component: SystemLogsPrivacyClient,
+    row: PRIVACY_ROW,
+    method: 'getPrivacyLogs',
+    sortKeys: { 조회일시: 'inqDt', 조회자: 'dmndUserId', 서비스명: 'srvcNm' },
+  },
+];
+
+function currentQueryFn(): () => Promise<unknown> {
+  const options = clientHarness.latestQueryOptions as { queryFn?: () => Promise<unknown> } | undefined;
+  if (!options?.queryFn) throw new Error('useQuery options were not captured');
+  return options.queryFn;
+}
+
+describe('logs cluster modernization (m-1): page-size opt-in and current-page sorting', () => {
+  beforeEach(() => {
+    clientHarness.queryData = undefined;
+    clientHarness.latestTableProps = undefined;
+    clientHarness.latestQueryOptions = undefined;
+    clientHarness.setPage.mockReset();
+    vi.restoreAllMocks();
+  });
+
+  it.each(CLUSTER_CASES)(
+    '$name client opts into the page-size selector and forwards the chosen size to the service',
+    async ({ Component, row, method }) => {
+      clientHarness.queryData = pageOf(row);
+      render(<Component />);
+
+      const { pagination } = currentTableProps();
+      expect(pagination?.pageSize).toBe(10);
+      expect(pagination?.pageSizeOptions).toEqual([10, 20, 50, 100]);
+      expect(typeof pagination?.onPageSizeChange).toBe('function');
+
+      act(() => pagination?.onPageSizeChange?.(50));
+
+      // 페이지 크기 변경은 1페이지로 복귀해야 한다(범위를 벗어난 현재 페이지 방지).
+      expect(clientHarness.setPage).toHaveBeenCalledWith(1);
+      expect(currentTableProps().pagination?.pageSize).toBe(50);
+
+      // 최신 렌더의 queryFn 이 바뀐 size 를 서비스에 전달한다
+      // (size→pageUnit 변환은 SystemLogAdminService.test.ts 가 별도 검증).
+      const spy = vi
+        .spyOn(systemLogAdminService, method)
+        .mockResolvedValue(pageOf(row) as never);
+      await currentQueryFn()();
+      expect(spy).toHaveBeenCalledWith(expect.objectContaining({ size: 50 }));
+    },
+  );
+
+  it.each(CLUSTER_CASES)(
+    '$name client marks date/user/type columns sortable via sortKey (current-page sorting)',
+    ({ Component, row, sortKeys }) => {
+      clientHarness.queryData = pageOf(row);
+      render(<Component />);
+
+      const { columns } = currentTableProps();
+      for (const [header, sortKey] of Object.entries(sortKeys)) {
+        const column = columns.find((candidate) => candidate.header === header);
+        expect(column, `${header} column`).toBeDefined();
+        expect(column?.sortKey, `${header} sortKey`).toBe(sortKey);
+      }
+      // 정렬은 opt-in 이다 — 지정한 열 밖에는 sortKey 가 새지 않아야 한다.
+      const sortableHeaders = columns.filter((c) => c.sortKey !== undefined).map((c) => c.header);
+      expect(sortableHeaders.sort()).toEqual(Object.keys(sortKeys).sort());
+    },
+  );
+});
+
+describe('logs cluster modernization (m-1): LGN full-result xlsx export wiring', () => {
+  beforeEach(() => {
+    clientHarness.queryData = undefined;
+    clientHarness.latestTableProps = undefined;
+    clientHarness.latestQueryOptions = undefined;
+    clientHarness.setPage.mockReset();
+    toastHarness.error.mockReset();
+    downloadHarness.navigateToDownload.mockReset();
+  });
+
+  it('navigates to the export endpoint without parameters when no search keyword is applied', () => {
+    clientHarness.queryData = pageOf(LOGIN_ROW);
+    render(<SystemLogsLoginClient />);
+
+    fireEvent.click(screen.getByRole('button', { name: '전체 결과 엑셀 다운로드' }));
+
+    expect(downloadHarness.navigateToDownload).toHaveBeenCalledWith(
+      '/api/v1/admin/system/logs/login/export.xlsx',
+    );
+  });
+
+  it('carries the current search keyword into the export URL', () => {
+    clientHarness.queryData = pageOf(LOGIN_ROW);
+    render(<SystemLogsLoginClient />);
+
+    act(() => currentTableProps().search?.onSearch('alice'));
+    fireEvent.click(screen.getByRole('button', { name: '전체 결과 엑셀 다운로드' }));
+
+    expect(downloadHarness.navigateToDownload).toHaveBeenCalledWith(
+      '/api/v1/admin/system/logs/login/export.xlsx?searchKeyword=alice',
+    );
+  });
+
+  it('blocks navigation and explains the server row cap when the result set exceeds it', () => {
+    clientHarness.queryData = { ...pageOf(LOGIN_ROW), total: 100_001 };
+    render(<SystemLogsLoginClient />);
+
+    fireEvent.click(screen.getByRole('button', { name: '전체 결과 엑셀 다운로드' }));
+
+    expect(downloadHarness.navigateToDownload).not.toHaveBeenCalled();
+    expect(toastHarness.error).toHaveBeenCalledWith(expect.stringContaining('100,000'));
+  });
+
+  it('does not wire a fake full-export button on log screens without an export endpoint', () => {
+    for (const { Component, row } of CLUSTER_CASES.filter((c) => c.name !== 'LGN')) {
+      clientHarness.queryData = pageOf(row);
+      const { unmount } = render(<Component />);
+      expect(screen.queryByRole('button', { name: '전체 결과 엑셀 다운로드' })).toBeNull();
+      unmount();
+    }
   });
 });
