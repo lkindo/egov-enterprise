@@ -109,12 +109,10 @@ export const CURRENT_REPOSITORY_ASSERTIONS = Object.freeze({
   runtimeReachable: [
     'frontend/src/app/admin/user/UserOrgHubClient.tsx',
   ],
-  notRuntimeReachable: [
-    'frontend/src/app/admin/user/manage/UserManageClient.tsx',
-  ],
-  deletionClasses: {
-    'frontend/src/app/admin/user/manage/UserManageClient.tsx': 'test-only',
-  },
+  // [2026-08-23 m-2] test-only 였던 admin/user/manage/UserManageClient.tsx 는 전용 테스트와 함께
+  // 삭제됐다(장식 카드·死버튼 정리 — 실제 라우트는 UserOrgHubClient 를 렌더한다).
+  notRuntimeReachable: [],
+  deletionClasses: {},
 });
 
 function normalizePath(path) {

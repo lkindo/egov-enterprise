@@ -11,7 +11,7 @@ export default async function LoginPolicyPage() {
 
   // [P1: Waterfall Elimination] Initiate promises without awaiting
   const usersPromise = userAdminService
-    .getUserList({ pageNo: 1, searchKeyword: '' }, axiosConfig)
+    .getUserList({ page: 0, size: 10, searchKeyword: '' }, axiosConfig)
     .catch(() => {
       // 실패를 빈 목록으로 바꾸면 화면이 '0건'이라고 거짓말한다(감사 P1-1).
       // null 은 '시드 없음' 표식이며, 클라이언트 쿼리가 즉시 재조회해 실패를 화면에 드러낸다.

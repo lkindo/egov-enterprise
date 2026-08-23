@@ -49,8 +49,8 @@ test.describe('Tier 21: Advanced Resilience', () => {
         await page.keyboard.press('Enter');
 
         console.log('>>> Step 4: Verifying Error Surface (Sonner toast)');
-        // UserManageClient는 500을 ErrorStateDisplay가 아니라 client.ts 인터셉터의 전역
-        // 'api-error' 이벤트 → ToastProvider → Sonner 토스트(role="status")로 노출하며,
+        // /admin/user/manage(UserOrgHubClient)는 500을 client.ts 인터셉터의 전역
+        // 'api-error' 이벤트 → ToastProvider → Sonner 토스트(role="status")로도 노출하며,
         // 백엔드 메시지(모의 500 body의 message)를 그대로 표시한다.
         // 과거 셀렉터 [role="alert"]는 Sonner의 '빈' aria-live announcer만 매칭해 타임아웃되었으므로,
         // 실제 렌더 텍스트('Internal Server Error (Simulated)')로 단언한다.
