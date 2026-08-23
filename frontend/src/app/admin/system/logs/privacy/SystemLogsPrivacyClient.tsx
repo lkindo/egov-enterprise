@@ -10,18 +10,20 @@ import { StandardDataTable, Column } from '@/app/components/ui/standard-data-tab
 import { ShieldAlert, Calendar, User, Tag } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const SystemLogsPrivacyClient = () => {
     const [page, setPage] = usePageParam();
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
     const [searchKeyword, setSearchKeyword] = useState('');
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<PrivacyLog>>({
-        queryKey: ['admin-logs-privacy', page, searchKeyword],
+        queryKey: ['admin-logs-privacy', page, pageSize, searchKeyword],
         // 서비스가 `pageIndex`(1-base)만 읽는다. 기존 `pageNo` 전달은 무시돼 항상 1페이지가 조회됐다.
         queryFn: () => systemLogAdminService.getPrivacyLogs({
             pageIndex: page,
-            size: PAGE_SIZE,
+            size: pageSize,
             searchKeyword,
         }),
     });
@@ -39,6 +41,8 @@ const SystemLogsPrivacyClient = () => {
     const columns: Column<PrivacyLog>[] = [
         {
             header: '조회일시',
+            // 현재 페이지 범위 클라이언트 정렬(opt-in) — 원시 ISO 문자열이 정렬 키다.
+            sortKey: 'inqDt',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     <Calendar size={14} className="opacity-30" />
@@ -58,6 +62,7 @@ const SystemLogsPrivacyClient = () => {
         },
         {
             header: '서비스명',
+            sortKey: 'srvcNm',
             accessor: (item: PrivacyLog) => (
                 <div className="flex items-center gap-2">
                     <Tag size={12} className="text-primary/40" />
@@ -69,6 +74,7 @@ const SystemLogsPrivacyClient = () => {
         },
         {
             header: '조회자',
+            sortKey: 'dmndUserId',
             accessor: (item: PrivacyLog) => (
                 <div className="px-3 py-1 bg-card border rounded-lg w-fit shadow-sm text-xs font-bold text-foreground">
                     {item.dmndUserId}
@@ -113,7 +119,10 @@ const SystemLogsPrivacyClient = () => {
                     totalPages: totalPageCount,
                     onPageChange: setPage,
                     totalCount,
-                    pageSize: PAGE_SIZE,
+                    pageSize,
+                    // 페이지 크기 변경 시 1페이지로 복귀 — 줄어든 총 페이지 밖에 남지 않게 한다.
+                    onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
+                    pageSizeOptions: PAGE_SIZE_OPTIONS,
                 }}
                 search={{
                     placeholder: '조회 대상 정보로 검색..',
