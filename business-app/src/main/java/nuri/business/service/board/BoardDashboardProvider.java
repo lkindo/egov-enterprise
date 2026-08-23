@@ -2,6 +2,7 @@ package nuri.business.service.board;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import nuri.business.core.config.BoardIdProperties;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.foundation.core.dashboard.DashboardItemProvider;
 import org.springframework.data.domain.Page;
@@ -24,24 +25,21 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class BoardDashboardProvider implements DashboardItemProvider {
 
-    /** 할 일 게시판(공통) 식별자. */
-    private static final String TASK_BOARD_ID = "BBSMSTR_CCCCCCCCCCCC";
-    /** 공지사항 게시판 식별자. */
-    private static final String NOTICE_BOARD_ID = "BBSMSTR_AAAAAAAAAAAA";
-
     private final BoardService boardService;
+    /** 게시판 인스턴스 ID 설정({@code nuri.boards.*}) — 리터럴 하드코딩을 설정 소비로 역전(기본값=종전 리터럴). */
+    private final BoardIdProperties boardIdProperties;
 
     @Override
     public void provideDashboardData(String userId, Map<String, Object> result) {
         try {
-            Page<BoardDto> taskList = boardService.getBoardPosts(TASK_BOARD_ID, PageRequest.of(0, 5));
+            Page<BoardDto> taskList = boardService.getBoardPosts(boardIdProperties.getTaskId(), PageRequest.of(0, 5));
             result.put("taskList", taskList.getContent());
         } catch (Exception e) {
             log.error("Failed to fetch task list", e);
             result.put("taskList", List.of());
         }
         try {
-            Page<BoardDto> notiList = boardService.getBoardPosts(NOTICE_BOARD_ID, PageRequest.of(0, 5));
+            Page<BoardDto> notiList = boardService.getBoardPosts(boardIdProperties.getNoticeId(), PageRequest.of(0, 5));
             result.put("notiList", notiList.getContent());
         } catch (Exception e) {
             log.error("Failed to fetch notice list", e);
