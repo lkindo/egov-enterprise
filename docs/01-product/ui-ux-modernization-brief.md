@@ -624,7 +624,7 @@ Fallback은 명백한 결함 수정과 연구 준비에는 사용할 수 있지�
 | Security/privacy 승인 | **없음** |
 | Accessibility 범위 승인 | **없음** |
 | G0 | **미통과** |
-| G1 | **미통과** |
+| G1 | **원 정의 미통과** — 2026-08-23 [ADR-0007](../02-architecture/decisions/ADR-0007-reference-default-ia-approval.md)이 참조-기본 범위로 재정의·승인(사용자 연구 없음 = accepted-risk). 기관 채택 시 원 정의 G1 재수행 의무 |
 | 사용자 연구 결과 | **없음** |
 | 다음 재개 조건 | OI-01~OI-03, OI-08~OI-10의 owner·입력·날짜 지정 |
 
