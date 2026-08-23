@@ -6,9 +6,10 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { Milestone } from 'lucide-react';
+import { SITE_IDENTITY } from '@/config/site-identity';
 
 export const metadata = {
-  title: '행정코드 관리 | 전자정부 표준프레임워크',
+  title: `행정코드 관리 | ${SITE_IDENTITY.frameworkName}`,
   description: '법정동 및 행정동 코드를 관리합니다.',
 };
 

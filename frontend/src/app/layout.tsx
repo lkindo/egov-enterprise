@@ -15,6 +15,7 @@ import { cookies, headers } from 'next/headers';
 import { getInitialMenus } from '@/lib/api/menu-loader';
 import { Suspense } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
+import { SITE_IDENTITY } from '@/config/site-identity';
 
 const pretendard = localFont({
   src: '../../public/fonts/PretendardVariable.woff2',
@@ -36,8 +37,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: '전자정부 표준프레임워크 - 엔터프라이즈 포털',
-  description: '전사 업무 포털에서 공통 업무와 협업 기능을 제공합니다.',
+  title: SITE_IDENTITY.siteName,
+  description: SITE_IDENTITY.siteDescription,
 };
 
 // [csp Phase 4] nonce CSP 는 모든 문서가 요청 시점에 렌더된다는 전제 위에 서 있다 —
@@ -116,7 +117,7 @@ async function ProvidersWithAuth({ children }: { children: React.ReactNode }) {
       <Suspense fallback={
         <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
           <div>
-            <h1 className="sr-only">전자정부 Enterprise</h1>
+            <h1 className="sr-only">{SITE_IDENTITY.siteAccessibleName}</h1>
             <p role="status" aria-live="polite">애플리케이션을 준비하는 중...</p>
           </div>
         </main>
@@ -161,7 +162,7 @@ export default async function RootLayout({
           <Suspense fallback={
             <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
               <div>
-                <h1 className="sr-only">전자정부 Enterprise</h1>
+                <h1 className="sr-only">{SITE_IDENTITY.siteAccessibleName}</h1>
                 <p role="status" aria-live="polite">보안 세션을 확인하는 중...</p>
               </div>
             </main>
