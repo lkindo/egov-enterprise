@@ -30,6 +30,21 @@ describe('app shell accessibility source contract', () => {
       .toMatch(/<ChevronRight[^>]*aria-hidden="true"/);
   });
 
+  it('primary nav 는 현재 route 의 canonical node 에 aria-current 를 선언한다 (IA §7.3)', () => {
+    // 사이드바: 자손 일치(subtreeMatchesLocation)는 강조·자동 펼침용이다. aria-current="page" 를
+    // 그 판정에 달면 조상 그룹까지 '현재 페이지'를 사칭하므로, 자기 자신 일치(matchesLocation)에만 단다.
+    const navItem = readAppSource('components', 'layout', 'NavItem.tsx');
+    expect(navItem, '사이드바 canonical node 의 aria-current="page" 가 사라졌습니다')
+      .toMatch(/aria-current=\{isCurrentPage \? 'page' : undefined\}/);
+    expect(navItem, 'aria-current 판정이 자기 자신 일치(matchesLocation)가 아닙니다')
+      .toMatch(/const isCurrentPage = useMemo\(\s*\(\) => matchesLocation\(/);
+
+    // GNB: 활성 도메인은 섹션 표지다. 'page' 를 쓰면 하위 화면에서도 페이지를 사칭하므로 'true' 로 선언한다.
+    const header = readAppSource('components', 'layout', 'header.tsx');
+    expect(header, 'GNB 활성 도메인의 aria-current="true" 가 사라졌습니다')
+      .toMatch(/aria-current=\{isActive \? 'true' : undefined\}/);
+  });
+
   it('sticky header와 skip target이 focus occlusion 여유를 갖고 모바일 trigger를 dialog에 연결한다', () => {
     const layout = readAppSource('layout.tsx');
     const header = readAppSource('components', 'layout', 'header.tsx');

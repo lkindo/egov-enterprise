@@ -528,80 +528,93 @@ export function StandardDataTable<T extends object>({
             <nav
               role="navigation"
               aria-label="페이지 탐색"
-              className="order-1 sm:order-2 flex items-center gap-1.5"
+              className="order-1 sm:order-2"
             >
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-10 h-10 rounded-lg border-2"
-                disabled={pagination.currentPage <= 1}
-                onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
-                aria-label="이전 페이지"
-              >
-                <ChevronLeft size={18} aria-hidden="true" />
-              </Button>
-
-              {pageNumbers[0] > 1 && (
-                <>
+              {/* 페이지 컨트롤은 순서 목록(ol/li)이어야 스크린리더가 "몇 개 중 몇 번째"를
+                  셈할 수 있다 — breadcrumb(DynamicBreadcrumb)과 동일한 KRDS/WCAG 규격이다. */}
+              <ol className="flex items-center gap-1.5">
+                <li>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    className="w-10 h-10 rounded-lg font-bold"
-                    onClick={() => pagination.onPageChange(1)}
-                    aria-label="1 페이지"
+                    className="w-10 h-10 rounded-lg border-2"
+                    disabled={pagination.currentPage <= 1}
+                    onClick={() => pagination.onPageChange(pagination.currentPage - 1)}
+                    aria-label="이전 페이지"
                   >
-                    1
+                    <ChevronLeft size={18} aria-hidden="true" />
                   </Button>
-                  {pageNumbers[0] > 2 && (
-                    <span className="px-1 text-muted-foreground" aria-hidden="true">…</span>
-                  )}
-                </>
-              )}
+                </li>
 
-              {pageNumbers.map((pageNo) => (
-                <Button
-                  key={`page-${pageNo}`}
-                  variant={pageNo === pagination.currentPage ? "outline" : "ghost"}
-                  size="icon"
-                  className={cn(
-                    "w-10 h-10 rounded-lg font-bold",
-                    pageNo === pagination.currentPage && "border-2 border-primary text-primary"
-                  )}
-                  onClick={() => pagination.onPageChange(pageNo)}
-                  aria-label={`${pageNo} 페이지`}
-                  aria-current={pageNo === pagination.currentPage ? "page" : undefined}
-                >
-                  {pageNo}
-                </Button>
-              ))}
+                {pageNumbers[0] > 1 && (
+                  <>
+                    <li>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-10 h-10 rounded-lg font-bold"
+                        onClick={() => pagination.onPageChange(1)}
+                        aria-label="1 페이지"
+                      >
+                        1
+                      </Button>
+                    </li>
+                    {pageNumbers[0] > 2 && (
+                      <li className="px-1 text-muted-foreground" aria-hidden="true">…</li>
+                    )}
+                  </>
+                )}
 
-              {pageNumbers[pageNumbers.length - 1] < totalPages && (
-                <>
-                  {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
-                    <span className="px-1 text-muted-foreground" aria-hidden="true">…</span>
-                  )}
+                {pageNumbers.map((pageNo) => (
+                  <li key={`page-${pageNo}`}>
+                    <Button
+                      variant={pageNo === pagination.currentPage ? "outline" : "ghost"}
+                      size="icon"
+                      className={cn(
+                        "w-10 h-10 rounded-lg font-bold",
+                        pageNo === pagination.currentPage && "border-2 border-primary text-primary"
+                      )}
+                      onClick={() => pagination.onPageChange(pageNo)}
+                      aria-label={`${pageNo} 페이지`}
+                      aria-current={pageNo === pagination.currentPage ? "page" : undefined}
+                    >
+                      {pageNo}
+                    </Button>
+                  </li>
+                ))}
+
+                {pageNumbers[pageNumbers.length - 1] < totalPages && (
+                  <>
+                    {pageNumbers[pageNumbers.length - 1] < totalPages - 1 && (
+                      <li className="px-1 text-muted-foreground" aria-hidden="true">…</li>
+                    )}
+                    <li>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="w-10 h-10 rounded-lg font-bold"
+                        onClick={() => pagination.onPageChange(totalPages)}
+                        aria-label={`${totalPages} 페이지`}
+                      >
+                        {totalPages}
+                      </Button>
+                    </li>
+                  </>
+                )}
+
+                <li>
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="icon"
-                    className="w-10 h-10 rounded-lg font-bold"
-                    onClick={() => pagination.onPageChange(totalPages)}
-                    aria-label={`${totalPages} 페이지`}
+                    className="w-10 h-10 rounded-lg border-2"
+                    disabled={pagination.currentPage >= pagination.totalPages}
+                    onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
+                    aria-label="다음 페이지"
                   >
-                    {totalPages}
+                    <ChevronRight size={18} aria-hidden="true" />
                   </Button>
-                </>
-              )}
-
-              <Button
-                variant="outline"
-                size="icon"
-                className="w-10 h-10 rounded-lg border-2"
-                disabled={pagination.currentPage >= pagination.totalPages}
-                onClick={() => pagination.onPageChange(pagination.currentPage + 1)}
-                aria-label="다음 페이지"
-              >
-                <ChevronRight size={18} aria-hidden="true" />
-              </Button>
+                </li>
+              </ol>
             </nav>
           )}
         </div>
