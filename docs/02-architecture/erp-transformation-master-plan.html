@@ -1,0 +1,296 @@
+<title>ERP 전환 마스터플랜</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+KR:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root {
+    --paper: #FAFBFC; --surface: #FFFFFF; --ink: #1A1F27; --ink-soft: #4A5260;
+    --line: #D8DEE6; --line-soft: #E8EDF2;
+    --blue: #1C64D9; --blue-soft: #EAF1FC;
+    --amber: #B4550A; --amber-soft: #FCF3E8;
+    --green: #22733A; --green-soft: #EAF5EE;
+    --red: #B3261E;
+    --mono: "IBM Plex Mono", Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #12161C; --surface: #1A2029; --ink: #E8ECF1; --ink-soft: #A6AFBC;
+      --line: #323B47; --line-soft: #242C36;
+      --blue: #6BA1F2; --blue-soft: #1C2B42;
+      --amber: #E5924A; --amber-soft: #33261A;
+      --green: #6FBF87; --green-soft: #1B2E22;
+      --red: #E58A84;
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #12161C; --surface: #1A2029; --ink: #E8ECF1; --ink-soft: #A6AFBC;
+    --line: #323B47; --line-soft: #242C36;
+    --blue: #6BA1F2; --blue-soft: #1C2B42;
+    --amber: #E5924A; --amber-soft: #33261A;
+    --green: #6FBF87; --green-soft: #1B2E22;
+    --red: #E58A84;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--paper); color: var(--ink);
+    font-family: "IBM Plex Sans KR", "Pretendard", "Malgun Gothic", sans-serif;
+    font-size: 15px; line-height: 1.7; -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 48px 24px 96px; }
+  header.doc { border-bottom: 2px solid var(--ink); padding-bottom: 24px; margin-bottom: 8px; }
+  .eyebrow { font-family: var(--mono); font-size: 11px; letter-spacing: .14em; color: var(--blue); text-transform: uppercase; margin: 0 0 10px; }
+  h1 { font-size: 34px; font-weight: 700; letter-spacing: -.02em; line-height: 1.25; margin: 0 0 12px; text-wrap: balance; }
+  .thesis { font-size: 16.5px; color: var(--ink-soft); max-width: 62ch; margin: 0; }
+  .meta { display: flex; flex-wrap: wrap; gap: 6px 20px; margin-top: 18px; font-family: var(--mono); font-size: 12px; color: var(--ink-soft); }
+  .meta b { color: var(--ink); font-weight: 500; }
+
+  .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); margin: 28px 0 40px; }
+  .stat { background: var(--surface); padding: 14px 16px; }
+  .stat .n { font-family: var(--mono); font-size: 22px; font-weight: 500; font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .stat .l { font-size: 12px; color: var(--ink-soft); margin-top: 2px; }
+
+  h2 { font-size: 21px; font-weight: 700; letter-spacing: -.01em; margin: 52px 0 6px; text-wrap: balance; }
+  h2 + .lede { margin: 0 0 20px; color: var(--ink-soft); max-width: 65ch; }
+  .rule { height: 1px; background: var(--line); margin: 10px 0 22px; }
+
+  .verdict { display: grid; gap: 12px; margin: 22px 0; }
+  .v-item { border-left: 3px solid var(--blue); background: var(--surface); border-top: 1px solid var(--line-soft); border-right: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 12px 16px; }
+  .v-item b { font-weight: 600; }
+  .v-item p { margin: 0; color: var(--ink-soft); font-size: 14px; }
+  .v-item .t { color: var(--ink); font-size: 15px; margin-bottom: 3px; }
+
+  .phase { display: grid; grid-template-columns: 56px 1fr; gap: 0 20px; margin: 26px 0; }
+  .ph-no { font-family: var(--mono); font-size: 26px; font-weight: 500; color: var(--blue); text-align: right; line-height: 1.2; padding-top: 2px; font-variant-numeric: tabular-nums; }
+  .ph-no small { display: block; font-size: 10.5px; letter-spacing: .1em; color: var(--ink-soft); margin-top: 3px; }
+  .ph-body { border-left: 2px solid var(--line); padding: 0 0 8px 20px; }
+  .phase.now .ph-body { border-left-color: var(--green); }
+  .phase.gated .ph-body { border-left-color: var(--amber); }
+  .ph-body h3 { margin: 0 0 4px; font-size: 17px; font-weight: 600; letter-spacing: -.01em; }
+  .ph-goal { margin: 0 0 10px; color: var(--ink-soft); font-size: 14px; max-width: 66ch; }
+  .ph-body ul { margin: 0 0 10px; padding-left: 18px; font-size: 14px; }
+  .ph-body li { margin: 4px 0; }
+  .ph-body li::marker { color: var(--blue); }
+  .exit { font-size: 13px; background: var(--green-soft); border: 1px solid var(--line-soft); padding: 8px 12px; margin-top: 8px; }
+  .exit b { color: var(--green); font-weight: 600; }
+  .gatechip { display: inline-block; font-family: var(--mono); font-size: 11px; padding: 1px 8px; border: 1px solid var(--amber); color: var(--amber); margin-left: 8px; vertical-align: 2px; }
+  .nowchip { display: inline-block; font-family: var(--mono); font-size: 11px; padding: 1px 8px; border: 1px solid var(--green); color: var(--green); margin-left: 8px; vertical-align: 2px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+  .tblwrap { overflow-x: auto; border: 1px solid var(--line); margin: 18px 0; }
+  th { text-align: left; font-size: 11.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-soft); font-weight: 600; padding: 9px 12px; background: var(--surface); border-bottom: 2px solid var(--line); white-space: nowrap; }
+  td { padding: 9px 12px; border-bottom: 1px solid var(--line-soft); vertical-align: top; background: var(--surface); }
+  tr:last-child td { border-bottom: none; }
+  td.id { font-family: var(--mono); font-size: 12.5px; white-space: nowrap; color: var(--blue); font-weight: 500; }
+  td.ph { font-family: var(--mono); font-size: 12px; white-space: nowrap; color: var(--ink-soft); }
+  .rec { color: var(--green); font-weight: 600; }
+
+  .cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  @media (max-width: 640px) { .cols2 { grid-template-columns: 1fr; } }
+  .panel { border: 1px solid var(--line); background: var(--surface); padding: 16px 18px; }
+  .panel h3 { margin: 0 0 10px; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; }
+  .panel.risk h3 { color: var(--red); }
+  .panel.anti h3 { color: var(--amber); }
+  .panel ol, .panel ul { margin: 0; padding-left: 18px; font-size: 13.5px; }
+  .panel li { margin: 5px 0; }
+
+  code { font-family: var(--mono); font-size: .88em; background: var(--blue-soft); padding: 1px 5px; color: inherit; }
+  .exit code, .v-item code { background: transparent; padding: 0; }
+  footer.doc { margin-top: 56px; border-top: 1px solid var(--line); padding-top: 14px; font-size: 12.5px; color: var(--ink-soft); }
+  @media (prefers-reduced-motion: no-preference) {
+    .v-item, .phase, .panel { animation: rise .4s ease both; }
+    @keyframes rise { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+  }
+</style>
+
+<div class="wrap">
+  <header class="doc">
+    <p class="eyebrow">eGov Enterprise · Transformation Master Plan · 2026-08-23</p>
+    <h1>공통 프레임워크 × ERP·공공 업무시스템 전환 계획</h1>
+    <p class="thesis">두 비전 — 어떤 프로젝트에도 적용 가능한 공통 프레임워크, ERP·공공기관 업무시스템에 최적화된 UI/UX — 은 신규 구축이 아니라 <b>이미 완성된 메커니즘에 결손된 콘텐츠를 채우는 문제</b>다. 119개 화면을 하나씩 다시 그리는 대신, 밀도·구조 토큰 축을 신설해 프로필 스왑 메커니즘에 싣는다.</p>
+    <div class="meta">
+      <span>근거 <b>5축 read-only 실측 분석 + 디스크 스팟체크</b></span>
+      <span>전제 <b>ADR-0003/0006/0007 · DEC-OPS-012 준수</b></span>
+      <span>신규 측정 인프라 <b>0</b></span>
+    </div>
+  </header>
+
+  <div class="stats">
+    <div class="stat"><div class="n">45–60</div><div class="l">예상 PR 수</div></div>
+    <div class="stat"><div class="n">14–20주</div><div class="l">솔로 기준 기간</div></div>
+    <div class="stat"><div class="n">~12종</div><div class="l">신설 밀도·구조 토큰</div></div>
+    <div class="stat"><div class="n">3+1</div><div class="l">수정 지점 (래퍼 3 + layout 1)</div></div>
+    <div class="stat"><div class="n">57</div><div class="l">테이블 facade 소비 화면</div></div>
+    <div class="stat"><div class="n">121</div><div class="l">disposition 대상 (routes+alias)</div></div>
+  </div>
+
+  <h2>현재 상태 판정</h2>
+  <div class="rule"></div>
+  <div class="verdict">
+    <div class="v-item">
+      <p class="t"><b>메커니즘은 성숙, 콘텐츠가 결손.</b></p>
+      <p><code>data-brand-theme</code> 속성 스왑 + 키 패리티 계약 + 4.5:1 대비 수학 검증이라는 기계는 완성돼 있으나 색 축만 쓰고 있다. 밀도·형태·타이포 토큰은 0종 — 컨트롤 높이·셀 패딩·페이지 폭이 Tailwind 리터럴로 박혀 있어 프로필이 갈아끼울 대상 자체가 없다.</p>
+    </div>
+    <div class="v-item">
+      <p class="t"><b>밀도 인플레이션은 4곳에 집중돼 있다.</b></p>
+      <p>프리미티브(button h-9, table p-2)는 이미 compact하다. 부풀리는 것은 래퍼 3개 — <code>StandardDataTable</code>(px-6 py-5), <code>StandardSearchFilter</code>(h-12/p-8) — 와 <code>layout.tsx</code>의 max-w-7xl 한 곳이다. 여기만 토큰화하면 전 화면이 따라온다.</p>
+    </div>
+    <div class="v-item">
+      <p class="t"><b>ERP 최대 갭은 스타일이 아니라 기능이다.</b></p>
+      <p>열 정렬(aria-sort 0건)·page-size 선택·컬럼 리사이즈/숨김·인라인 편집·전체 결과 export·인쇄가 전부 부재. 624줄 자체 그리드를 57개 화면이 소비하므로, facade 뒤 headless 교체가 최대 지렛대다.</p>
+    </div>
+    <div class="v-item">
+      <p class="t"><b>프레임워크 축은 "설계 과잉 · 실행 증거 결손".</b></p>
+      <p>생성기·census·계약은 성숙하나 공식 릴리스 태그 0개, 생성된 base는 메뉴/권한 시드 부재로 day-1 관리자 잠금, 코어에 <code>BBSMSTR_*</code> 데모 하드코딩 잔존 — 전부 재설계가 아닌 마감 작업이다.</p>
+    </div>
+  </div>
+
+  <h2>실행 단계</h2>
+  <p class="lede">Phase 번호는 실제 의존 순서다. Track B(프레임워크 축)는 파일 충돌이 거의 없어 Phase 1부터 병행한다. <span class="nowchip">오늘 시작</span>은 결정 불요, <span class="gatechip">D#</span>는 아래 결정 목록의 한 문장 승인이 선행 조건.</p>
+
+  <div class="phase now">
+    <div class="ph-no">0<small>RUNWAY</small></div>
+    <div class="ph-body">
+      <h3>병합·문서·계약 정합 <span class="nowchip">오늘 시작</span></h3>
+      <p class="ph-goal">전환의 전제를 main에 안착시키고 이후 단계가 기댈 계약 구멍을 봉쇄한다.</p>
+      <ul>
+        <li>PR #457(전역 브랜드 축) → #458(owner 지명) → #459(ADR-0007) 순 병합 — 임계 경로</li>
+        <li><code>design-tokens.md</code>의 계약 모순 지시 폐기, "30분 브랜드 프로필" 레시피로 재작성</li>
+        <li>theme-token-contract에 import-parity 단언 추가 (red 증명 포함)</li>
+        <li>파일럿 전 렌더 실측 1회로 정적 산출치 보정 (기록만, 인프라 아님)</li>
+      </ul>
+      <div class="exit"><b>Exit</b> — main에 세 PR 안착 · 문서-계약 모순 0 · red 증명 로그 확보</div>
+    </div>
+  </div>
+
+  <div class="phase gated">
+    <div class="ph-no">1<small>TOKENS</small></div>
+    <div class="ph-body">
+      <h3>밀도·구조 토큰 축 신설 — 시각 무변경 리팩터 <span class="gatechip">D2</span></h3>
+      <p class="ph-goal">밀도 결정값 전부를 리터럴에서 <code>var()</code>로 이행하되 현행 등가값 유지 — 시각 diff 0이 곧 회귀 증명이다. 시각 baseline이 1장뿐인 약점을 이 단계 분리가 방어한다. 약 2–3주, 6–9 PR.</p>
+      <ul>
+        <li>양 프로필 4블록에 <code>--control-h · --cell-px/py · --font-size-body · --page-max-w</code> 등 ~12종을 현행 등가값으로 선언 (키 패리티 계약이 동시 정의 강제)</li>
+        <li>프리미티브(button/input) → 래퍼(테이블·필터) → <code>layout.tsx</code> 폭 순으로 소비 이행</li>
+        <li>StandardTabs의 Radix 위임(tablist/방향키 결함 해소), 페이지네이션 3종 수렴 조사</li>
+      </ul>
+      <div class="exit"><b>Exit</b> — 전 밀도값 var 구동 · e2e green + baseline 무변경 · CSS 40KB 예산 내 · 리터럴 재유입 차단 단언 red 증명</div>
+    </div>
+  </div>
+
+  <div class="phase gated">
+    <div class="ph-no">2<small>DENSITY</small></div>
+    <div class="ph-body">
+      <h3>ERP 밀도 값 전달 + 장식 하향 <span class="gatechip">D1</span></h3>
+      <p class="ph-goal">선택된 메커니즘으로 compact 값 세트(행 32–40px · 컨트롤 h-8 · 본문 13px · 전폭)를 전달한다. env 선택이므로 기본 배포는 무변화. 약 2주, 4–6 PR.</p>
+      <ul>
+        <li>D1 구현: <b>직교 <code>data-density</code> 축(권고)</b> 또는 제3 프로필 <code>erp-dense</code>(저비용) — KRDS 대민(큰 타깃)과 ERP 업무(고밀도)는 반대 방향이라 직교 축이면 한 저장소에서 둘 다 낸다</li>
+        <li>테이블 장식 하향: uppercase 헤더·장식 도트·진입 애니메이션·플로팅 bulk bar를 compact에서 비활성</li>
+        <li>필터 크롬 축소: "고급 필터링 시스템" 장식 문구·아이콘 박스 제거 — 첫 데이터 행 도달 단축</li>
+      </ul>
+      <div class="exit"><b>Exit</b> — env 전환만으로 전 화면 ERP 밀도(행 ≤40px · 첫 데이터 행 ≤200px 실측) · 기본 배포 diff 0 · density 계약 red 증명</div>
+    </div>
+  </div>
+
+  <div class="phase gated">
+    <div class="ph-no">3<small>PATTERNS</small></div>
+    <div class="ph-body">
+      <h3>공유 work-pattern 업그레이드 <span class="gatechip">D3·D4</span></h3>
+      <p class="ph-goal">ERP 최대 갭인 그리드·필터 기능을 facade 뒤에서 채운다 — 57개 소비 화면 무수정. 약 3–4주, 8–12 PR.</p>
+      <ul>
+        <li>(D3) StandardDataTable 내부를 headless <b>TanStack Table</b>로 교체 — props 계약 유지, aria-sort 열 정렬, 컬럼 숨김/리사이즈/고정. 스타일 내장 그리드(AG Grid류)는 토큰 체계·ADR-0006과 충돌이라 배제</li>
+        <li>page-size 선택(10/20/50/100) + 페이지네이션 3종 → 1종 수렴 (10페이지 캡 결함도 소멸)</li>
+        <li>StandardSearchFilter v2(연산자·저장 필터·URL 동기화는 PD-UX-002 잠정 원칙 내) · CodePicker 신설(공통코드 도움 팝업) · 단축키 등록 확장(조회 Enter·신규 Ctrl+N…)</li>
+        <li>(D4) 서버측 전체 결과 xlsx export — 백엔드 헌법 제6조 binary 예외 명문화와 동반 (GAP-API-001 연계)</li>
+      </ul>
+      <div class="exit"><b>Exit</b> — 정렬·page-size·컬럼 제어가 소비자 무수정 동작 · 페이지네이션 1종 잔존 grep 증명 · facade 시그니처 diff 0</div>
+    </div>
+  </div>
+
+  <div class="phase gated">
+    <div class="ph-no">4<small>PILOT</small></div>
+    <div class="ph-body">
+      <h3>파일럿 업무 화면 클러스터 — 배수 효과 순 <span class="gatechip">D6</span></h3>
+      <p class="ph-goal">패턴이 없는 곳만 화면 단위 pass. 재설계 1회의 배수가 최대인 클러스터부터. 약 3주, 6–9 PR.</p>
+      <ul>
+        <li><b>로그·감사 7라우트</b>(1패턴 공유): PAGE_SIZE 고정→선택, export 배선</li>
+        <li><b>admin/user/manage</b>: 무근거 장식 카드 제거 + 死버튼 CRUD 실기능화(H3 인가 의미 보존 선행) — 가장 가시적 개선</li>
+        <li>공통코드(마스터-디테일 밀집화 + CodePicker 원형) · 결재/워크플로(전폭 해방) · 권한 매트릭스 밀집 그리드</li>
+      </ul>
+      <div class="exit"><b>Exit</b> — 파일럿 화면 행 32–40px·첫 데이터 행 ≤200px 실측 + e2e 단언 · user/manage CRUD 실동작 green</div>
+    </div>
+  </div>
+
+  <div class="phase gated">
+    <div class="ph-no">5<small>IA</small></div>
+    <div class="ph-body">
+      <h3>IA·메뉴 dispositions — ADR-0007 경로 <span class="gatechip">D5</span></h3>
+      <p class="ph-goal">방금 열린 owner-PR 승인 파이프라인으로 참조-기본 IA를 전진. 초안 작성은 오늘 가능, 메뉴 실소비 해제만 D5가 잠금. 2–4주 elapsed, 5–8 PR.</p>
+      <ul>
+        <li>121 레코드 disposition 초안 작성 → 저위험 묶음(demo-isolated·unavailable)부터 승인 웨이브 <span class="nowchip">초안은 오늘 시작</span></li>
+        <li>제안 메뉴 트리 prototype + PD-UX-002 선행 태스크(URL-state 523 record 프라이버시 분류 초안)</li>
+        <li>(D5) acceptanceEvidence 4슬롯을 reference-default 증거로 재정의하는 계약 개정 → 메뉴 소비 해제</li>
+      </ul>
+      <div class="exit"><b>Exit</b> — 저위험 레코드 60–80% approved · 분류 초안 제출 · (D5 후) 메뉴 소비 red→green 증명</div>
+    </div>
+  </div>
+
+  <div class="phase now">
+    <div class="ph-no">B<small>병행 TRACK</small></div>
+    <div class="ph-body">
+      <h3>Adoption Kit — 프레임워크 축 <span class="nowchip">1–4 오늘 시작</span> <span class="gatechip">D7–D10</span></h3>
+      <p class="ph-goal">"어떤 프로젝트에도 적용" 축의 결손을 닫는다. UI 축과 파일 충돌이 거의 없어 Phase 1부터 병행. 4주 분산, 10–14 PR.</p>
+      <ul>
+        <li>base bootstrap seed 1급화 — 생성 산출물의 day-1 관리자 잠금 해소 + 부팅·로그인·메뉴 smoke 게이트</li>
+        <li>사이트 정체성 config 1파일(사이트명·로고·저작권) — 9+곳 하드코딩 소거</li>
+        <li><code>BBSMSTR_*</code> 결합 역전(설정·상수 경유) — 코어 순수성 회복 · 생성 스크립트 결함 수정</li>
+        <li>(D9) 첫 v* 릴리스 태그 + 3 프로필 공식 생성 완주 · (D7) survey/poll의 pack 승격 · (D10) adopter baseline 재동결 절차 · 입양 결정 체크리스트 문서</li>
+        <li>app→app 결합 6→0 역전(리스너 분리 선례 3건 활용, 매 건 census 하향으로 비가역화)</li>
+      </ul>
+      <div class="exit"><b>Exit</b> — clean checkout에서 생성→부팅→로그인→메뉴 smoke green · v* 태그 1개 · 정체성 grep-편집 대상 0 · 결합 6→0</div>
+    </div>
+  </div>
+
+  <h2>당신의 결정 10건 — 각각 한 문장이면 됩니다</h2>
+  <div class="rule"></div>
+  <div class="tblwrap">
+    <table>
+      <thead><tr><th>ID</th><th>여는 것</th><th>결정할 것</th><th>권고</th></tr></thead>
+      <tbody>
+        <tr><td class="id">D2</td><td class="ph">Phase 1</td><td>밀도·구조 토큰 ~12종 신설 (FE 헌법 토큰 어휘 확장)</td><td class="rec">승인 권고 — 전 계획의 문턱</td></tr>
+        <tr><td class="id">D1</td><td class="ph">Phase 2</td><td>밀도 전달: 직교 <code>data-density</code> 축 vs 제3 프로필 erp-dense</td><td class="rec">직교 축 권고 (대민·업무 동시 지원)</td></tr>
+        <tr><td class="id">D3</td><td class="ph">Phase 3</td><td>StandardDataTable 내부 TanStack Table 교체 (의존성 1개, facade 유지)</td><td class="rec">승인 권고 — 기능 갭 최대 지렛대</td></tr>
+        <tr><td class="id">D4</td><td class="ph">Phase 3</td><td>백엔드 헌법 제6조에 binary/stream 예외 명문화 (전체 export용)</td><td class="rec">승인 권고</td></tr>
+        <tr><td class="id">D6</td><td class="ph">Phase 4</td><td>파일럿 3–5장 시각 baseline 추가 vs 기존 1장 + e2e 단언 유지</td><td>선택 — 소량 추가가 보조 방어</td></tr>
+        <tr><td class="id">D5</td><td class="ph">Phase 5</td><td>disposition acceptanceEvidence를 reference-default 증거로 재정의 (메뉴 소비의 마지막 잠금)</td><td>Phase 5 중반에 결정해도 됨</td></tr>
+        <tr><td class="id">D9</td><td class="ph">Track B</td><td>첫 v* 릴리스 태그 발행 + 3 프로필 공식 생성 완주</td><td class="rec">승인 권고</td></tr>
+        <tr><td class="id">D7</td><td class="ph">Track B</td><td>business-app system 분할 — survey/poll의 pack 승격</td><td>선택</td></tr>
+        <tr><td class="id">D10</td><td class="ph">Track B</td><td>adopter baseline 재동결 절차 도입 (diff 리뷰 의무화 조건)</td><td>선택</td></tr>
+        <tr><td class="id">D8</td><td class="ph">Track B</td><td>원격 Maven 발행 트랙 (의존-채택 경로) — 낮은 긴급도</td><td>보류 가능</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cols2">
+    <div class="panel risk">
+      <h3>3대 리스크</h3>
+      <ol>
+        <li><b>e2e 결속</b> — 26 spec이 현행 DOM·문구·testid에 결속. spec 변경 시 shard 프로필 재생성 동반.</li>
+        <li><b>시각 회귀 방어 취약</b> — baseline 1장(dashboard·linux)뿐. Phase 1의 "무변경 리팩터" 분리가 주 완화책, D6이 보조.</li>
+        <li><b>양방향 ratchet 동행 비용</b> — 색 가드 72/676 exact, CSS 40KB 예산(토큰 추가와 첫 충돌 — 미사용 CSS 제거로 상쇄), census hash 재생성.</li>
+      </ol>
+    </div>
+    <div class="panel anti">
+      <h3>하지 않을 것 (anti-goals)</h3>
+      <ul>
+        <li>두 번째 컴포넌트 라이브러리 / "ERP 전용" 병렬 트리 fork</li>
+        <li>ADR-0006 위반 (이중 렌더·뷰포트 데이터 분기)</li>
+        <li>baseline 인상·비우기 (H2) · 119 화면 ad hoc 재작성</li>
+        <li>krds-aligned 프로필에 ERP 밀도 주입 (대민 축 파괴)</li>
+        <li>KRDS/KWCAG "준수 완료" 주장 · 신규 측정 인프라</li>
+        <li>기관 identity·masthead·krds-standard 활성화 (자격 필요 — 이 계획이 열지 않음)</li>
+      </ul>
+    </div>
+  </div>
+
+  <footer class="doc">
+    근거: 5축 병렬 분석(재사용 구조 · UI 실측 vs ERP · KRDS/공공 · 거버넌스 활주로 · 채택 경험, 전부 read-only) + 세션 내 디스크 스팟체크. 렌더 실측은 미수행이므로 픽셀 수치는 Phase 0에서 1회 보정한다. 문서 기준 시점 2026-08-23, main <code>19f13ce05</code>.
+  </footer>
+</div>
