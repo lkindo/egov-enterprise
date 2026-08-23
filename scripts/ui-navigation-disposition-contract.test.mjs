@@ -52,6 +52,33 @@ const PROVISIONAL_HYBRID_UNRESOLVED = [
   'user-research-thresholds-and-g1-approval',
 ];
 
+// D5 웨이브 1 (2026-08-23): 저위험 8건만 owner PR 리뷰로 개별 approved 전이
+// (ADR-0007 §Decision 4, 승인 채널 DEC-OPS-013). 종전의 "승인 0건" 고정은 이 값으로
+// 갱신하고, 잔여 113건에는 기존 population·null 검사를 그대로 유지한다.
+const WAVE1_APPROVED_ROUTES = [
+  '/admin/sanctn/forms',
+  '/admin/sanctn/workflow',
+  '/admin/survey/polls/manage',
+  '/admin/system/network',
+  '/admin/workflow',
+  '/approvals/draft',
+];
+const WAVE1_APPROVED_ALIASES = [
+  '/admin/community/boards/insertBoardArticle',
+  '/admin/community/boards/selectBoardList',
+];
+const WAVE1_REVIEWER = 'lkindo (DEC-OPS-013)';
+const WAVE1_REVIEWED_AT = '2026-08-23';
+
+function isWave1Approval(approval) {
+  return approval !== null
+    && approval.reviewer === WAVE1_REVIEWER
+    && approval.reviewedAt === WAVE1_REVIEWED_AT
+    && Array.isArray(approval.evidence)
+    && approval.evidence.length > 0
+    && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
+}
+
 test('the recommended hybrid is selected only as a bounded provisional direction', () => {
   assert.equal(overlay.state, 'proposed');
   assert.equal(overlay.acceptedDecision, null);
@@ -70,8 +97,15 @@ test('the recommended hybrid is selected only as a bounded provisional direction
   assert.match(overlay.provisionalDirection?.adrSha256 ?? '', /^[a-f0-9]{64}$/u);
   assert.equal(overlay.consumerBindings.menu.enabled, false);
   assert.equal(overlay.consumerBindings.generator.enabled, false);
-  assert.ok(overlay.routes.every(({ reviewState }) => reviewState === 'proposed'));
-  assert.ok(overlay.externalAliases.every(({ reviewState }) => reviewState === 'proposed'));
+  assert.ok(overlay.routes.every(({ reviewState }) => ['proposed', 'approved'].includes(reviewState)));
+  assert.deepEqual(
+    overlay.routes.filter(({ reviewState }) => reviewState === 'approved').map(({ route }) => route),
+    WAVE1_APPROVED_ROUTES,
+  );
+  assert.deepEqual(
+    overlay.externalAliases.filter(({ reviewState }) => reviewState === 'approved').map(({ source }) => source),
+    WAVE1_APPROVED_ALIASES,
+  );
 });
 
 test('the proposed overlay drafts dispositions over the sparse 119 + 2 review population', () => {
@@ -96,28 +130,39 @@ test('the proposed overlay drafts dispositions over the sparse 119 + 2 review po
   );
   assert.equal(overlay.routes.length, 119);
   assert.equal(overlay.externalAliases.length, 2);
-  assert.ok(overlay.routes.every((record, index) => (
-    record.reviewState === 'proposed'
-      && record.disposition !== 'blocked-review'
+  assert.ok(overlay.routes.every((record, index) => {
+    const shared = record.disposition !== 'blocked-review'
+      && record.owner === manifest.routes[index].review.owner
+      && record.reviewBy === manifest.routes[index].review.reviewBy;
+    if (WAVE1_APPROVED_ROUTES.includes(record.route)) {
+      return shared
+        && record.reviewState === 'approved'
+        && record.authorizationReview === 'verified'
+        && record.privacyReview === 'verified'
+        && record.effectiveMenuExposureReview === 'not-applicable'
+        && record.capabilityReview === 'verified'
+        && record.profileOwnershipReview === 'verified'
+        && Object.values(record.approvals).every(isWave1Approval);
+    }
+    return shared
+      && record.reviewState === 'proposed'
       && record.authorizationReview === 'unverified'
       && record.privacyReview === 'unverified'
       && record.effectiveMenuExposureReview === 'unverified'
       && record.capabilityReview === 'unverified'
       && record.profileOwnershipReview === 'unverified'
-      && record.owner === manifest.routes[index].review.owner
-      && record.reviewBy === manifest.routes[index].review.reviewBy
-      && Object.values(record.approvals).every((approval) => approval === null)
-  )));
+      && Object.values(record.approvals).every((approval) => approval === null);
+  }));
   assert.ok(overlay.externalAliases.every((record) => (
-    record.reviewState === 'proposed'
+    record.reviewState === 'approved'
       && record.disposition === 'retain-alias-permanent'
-      && record.consumerEvidenceReview === 'unverified'
-      && record.queryMappingReview === 'unverified'
-      && record.privacyReview === 'unverified'
-      && record.authorizationReview === 'unverified'
+      && record.consumerEvidenceReview === 'verified'
+      && record.queryMappingReview === 'verified'
+      && record.privacyReview === 'verified'
+      && record.authorizationReview === 'verified'
       && record.owner === 'product/IA + domain owner'
       && record.reviewBy === '2026-10-31'
-      && Object.values(record.approvals).every((approval) => approval === null)
+      && Object.values(record.approvals).every(isWave1Approval)
   )));
 });
 

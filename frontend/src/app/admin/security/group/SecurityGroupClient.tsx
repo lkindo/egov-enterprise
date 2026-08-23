@@ -145,13 +145,14 @@ export default function SecurityGroupClient() {
  const columns: Column<GroupManage>[] = [
  {
  header: '도메인 그룹 ID',
+ // 셀 밀도: td 가 이미 --cell-px/--cell-py 토큰을 소비하므로 accessor 내부의 추가 py 를 두지 않는다.
  accessor: (item: GroupManage) => (
- <div className="flex items-center gap-4 py-3">
+ <div className="flex items-center gap-4">
  <div className="w-10 h-10 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-xl group-hover:rotate-12 transition-all duration-500">
  <Fingerprint size={18} className="text-primary" />
  </div>
  <div className="flex flex-col">
- <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">GROUP_UID</span>
+ <span className="text-xs font-bold text-muted-foreground/30 tracking-tight leading-none mb-1">그룹 ID</span>
  <span className="font-mono text-xs font-bold text-foreground tracking-widest uppercase">{item.groupId}</span>
  </div>
  </div>
@@ -254,9 +255,7 @@ export default function SecurityGroupClient() {
  <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">그룹 검색</Button>
  </form>
  </div>
- <div>
- <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono ">기능 그룹 테이블 프로브</span>
- </div>
+ {/* [정직성] '기능 그룹 테이블 프로브' 장식 라벨 제거 — 어떤 계측·기능과도 연결되지 않은 문구였다. */}
  </div>
 
  <div className="min-h-[500px]">

@@ -216,6 +216,27 @@ describe('브랜드 프로필 토큰 계약', () => {
         .toBe(closes);
     });
 
+    it('전폭 위임이 끝난 화면은 자체 max-w 픽셀 캡을 재도입하지 않는다', () => {
+      // --page-max-w 는 루트 레이아웃 한 곳이 소비한다(layout.tsx). 화면이 자체
+      // max-w-[NNNNpx] mx-auto 캡을 다시 두면 compact 의 전폭(--page-max-w: 100%)이
+      // 그 화면에서만 조용히 무효화된다. 위임을 마친 화면을 여기 등록해 재도입을 차단한다.
+      const WIDTH_DELEGATED_FILES = [
+        join(FRONTEND_DIR, 'src', 'app', 'approvals', 'ApprovalHubClient.tsx'),
+        join(FRONTEND_DIR, 'src', 'app', 'approvals', 'draft', 'ApprovalDraftHubClient.tsx'),
+      ];
+      for (const file of WIDTH_DELEGATED_FILES) {
+        expect(existsSync(file), `전폭 위임 등록 파일이 없습니다: ${file}`).toBe(true);
+        const source = readFileSync(file, 'utf8')
+          .replace(/\/\*[\s\S]*?\*\//g, '')
+          .replace(/\/\/[^\n]*/g, '');
+        expect(
+          source,
+          `${file} 에 페이지 자체 max-w 픽셀 캡(max-w-[NNNNpx] mx-auto)이 있습니다 — ` +
+            '--page-max-w 토큰 위임이 깨져 compact 전폭이 무효화됩니다.',
+        ).not.toMatch(/max-w-\[\d+px\]\s+mx-auto/);
+      }
+    });
+
     it('--filter-control-h 기본값(3rem = 종전 h-12)이 모든 프로필의 라이트·다크 블록에 선언된다', () => {
       // comfortable 기본 무변경 계약: StandardSearchFilter 의 h-12(3rem) 컨트롤은 --control-h(2.25rem)로
       // 옮기면 기본 배포가 줄어들므로 전용 토큰 --filter-control-h 를 3rem 으로 따로 갖는다.
