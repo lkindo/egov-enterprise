@@ -50,6 +50,13 @@ const EVIDENCE_KEYS = [
   'authorityAssignmentArtifactSha256',
   'effectiveMenuArtifactSha256',
 ];
+// ADR-0007 (reference-default IA): 연구·live census 계열 증거는 기관 채택 시점의
+// 재검증 의무로 이전할 수 있다. 이전은 아래 exact 레코드로만 기록되고, 그 ADR 본문
+// 내용(hash)·이전 조항·accepted-risk 기록에 결속된다.
+const REFERENCE_DEFAULT_ADR_PATH = 'docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md';
+const ADOPTION_DEFERRED_EVIDENCE_KEYS = ['status', 'adrId', 'adrPath', 'adrSha256', 'acceptedRisk'];
+const ADOPTION_DEFERRED_STATUS = 'deferred-to-institution-adoption';
+const ADOPTION_DEFERRED_ACCEPTED_RISK = 'approved-without-user-research';
 const REQUIRED_FOUNDATION_ASSETS = [
   'config/ui-navigation-disposition-proposal.json',
   'config/ui-navigation-disposition.schema.json',
@@ -100,6 +107,48 @@ function validateStringArray(value, label, errors, { nonEmpty = false } = {}) {
 function validateOptionalHash(value, label, errors) {
   if (value !== null && (typeof value !== 'string' || !HASH_PATTERN.test(value))) {
     errors.push(`${label} must be null or a lowercase SHA-256`);
+  }
+}
+
+function validateAcceptanceEvidenceValue(value, label, repoRoot, errors) {
+  if (value === null) return;
+  if (typeof value === 'string') {
+    if (!HASH_PATTERN.test(value)) {
+      errors.push(`${label} must be null, a lowercase SHA-256, or an ADR-0007 deferral record`);
+    }
+    return;
+  }
+  if (!exactKeys(value, ADOPTION_DEFERRED_EVIDENCE_KEYS, label, errors)) return;
+  const expectedScalars = {
+    status: ADOPTION_DEFERRED_STATUS,
+    adrId: 'ADR-0007',
+    adrPath: REFERENCE_DEFAULT_ADR_PATH,
+    acceptedRisk: ADOPTION_DEFERRED_ACCEPTED_RISK,
+  };
+  for (const [key, expected] of Object.entries(expectedScalars)) {
+    if (value[key] !== expected) errors.push(`${label}.${key} must equal ${expected}`);
+  }
+  if (typeof value.adrSha256 !== 'string' || !HASH_PATTERN.test(value.adrSha256)) {
+    errors.push(`${label}.adrSha256 must be a lowercase SHA-256`);
+    return;
+  }
+  const absolute = path.resolve(repoRoot, REFERENCE_DEFAULT_ADR_PATH);
+  if (!existsSync(absolute)) {
+    errors.push(`${label}.adrPath does not exist`);
+    return;
+  }
+  const content = readFileSync(absolute, 'utf8');
+  if (value.adrSha256 !== canonicalTextSha256(content)) {
+    errors.push(`${label}.adrSha256 drifted from the reference-default ADR`);
+  }
+  if (!/(?:status|상태)[^\n]*accepted/iu.test(content)) {
+    errors.push(`${label}.adrPath does not record accepted status`);
+  }
+  if (!content.includes('기관 채택 시점의 재검증 의무로 이전')) {
+    errors.push(`${label}.adrPath does not transfer the evidence obligation to institution adoption`);
+  }
+  if (!/accepted risk/iu.test(content)) {
+    errors.push(`${label}.adrPath does not record the permanent accepted risk`);
   }
 }
 
@@ -518,6 +567,27 @@ export function validateSchemaDefinition(schema) {
   for (const key of ['routeRecord', 'externalAliasRecord', 'approval']) {
     if (!isObject(schema.$defs?.[key])) errors.push(`schema must define $defs.${key}`);
   }
+  const adoptionDeferred = schema.$defs?.adoptionDeferredEvidence;
+  if (adoptionDeferred?.additionalProperties !== false
+    || !Array.isArray(adoptionDeferred?.required)
+    || [...adoptionDeferred.required].sort().join('\n')
+      !== [...ADOPTION_DEFERRED_EVIDENCE_KEYS].sort().join('\n')
+    || adoptionDeferred?.properties?.status?.const !== ADOPTION_DEFERRED_STATUS
+    || adoptionDeferred?.properties?.adrId?.const !== 'ADR-0007'
+    || adoptionDeferred?.properties?.adrPath?.const !== REFERENCE_DEFAULT_ADR_PATH
+    || adoptionDeferred?.properties?.acceptedRisk?.const !== ADOPTION_DEFERRED_ACCEPTED_RISK) {
+    errors.push('schema $defs.adoptionDeferredEvidence must reject extra fields and pin the exact ADR-0007 deferral record');
+  }
+  if (!JSON.stringify(schema.$defs?.acceptanceEvidenceValue ?? {}).includes('adoptionDeferredEvidence')) {
+    errors.push('schema $defs.acceptanceEvidenceValue must admit the ADR-0007 deferral record');
+  }
+  const evidenceProperties = schema.properties?.acceptanceEvidence?.properties ?? {};
+  for (const key of EVIDENCE_KEYS) {
+    const serialized = JSON.stringify(evidenceProperties[key] ?? {});
+    if (!serialized.includes('acceptanceEvidenceValue') && !serialized.includes('adoptionDeferredEvidence')) {
+      errors.push(`schema acceptanceEvidence.${key} must admit the ADR-0007 deferral record`);
+    }
+  }
   const dispositionEnum = schema.$defs?.disposition?.enum;
   if (!Array.isArray(dispositionEnum)
     || [...dispositionEnum].sort().join('\n') !== [...DISPOSITIONS].sort().join('\n')) {
@@ -565,7 +635,7 @@ export function validateSchemaDefinition(schema) {
     }
   }
   const proposedRule = JSON.stringify(schema.allOf ?? []);
-  if (!proposedRule.includes('disabledConsumerBinding') || !proposedRule.includes('acceptedDecision')) {
+  if (!proposedRule.includes('approvalGatedConsumerBinding') || !proposedRule.includes('acceptedDecision')) {
     errors.push('schema must keep the proposed-state consumer and accepted-decision guard');
   }
   return errors;
@@ -702,7 +772,9 @@ export function validateDispositionContract({
   }
 
   if (exactKeys(overlay.acceptanceEvidence, EVIDENCE_KEYS, 'acceptanceEvidence', errors)) {
-    for (const key of EVIDENCE_KEYS) validateOptionalHash(overlay.acceptanceEvidence[key], `acceptanceEvidence.${key}`, errors);
+    for (const key of EVIDENCE_KEYS) {
+      validateAcceptanceEvidenceValue(overlay.acceptanceEvidence[key], `acceptanceEvidence.${key}`, repoRoot, errors);
+    }
   }
   if (exactKeys(overlay.consumerBindings, ['menu', 'generator'], 'consumerBindings', errors)) {
     validateConsumerBinding(overlay.consumerBindings.menu, 'consumerBindings.menu', errors);
@@ -713,12 +785,36 @@ export function validateDispositionContract({
     if (overlay.acceptedDecision !== null) {
       errors.push('proposed overlay must not carry acceptedDecision metadata');
     }
-    if (overlay.consumerBindings?.menu?.enabled !== false
-      || overlay.consumerBindings?.generator?.enabled !== false) {
-      errors.push('proposed overlay must not enable menu or generator consumers');
+    // ADR-0007 §Decision 4: overlay가 proposed로 남아 있어도, 참조-기본 결정이
+    // acceptanceEvidence 4축 전부에 기록되고(측정 hash 또는 ADR-0007 deferral)
+    // owner PR 리뷰로 개별 approved된 record가 최소 1건 존재할 때만 menu/generator
+    // 소비를 열 수 있다. 소비자는 approved record만 읽어야 하며, 실행 소스는
+    // 등록된 entrypoint여야 한다(미등록 소비는 red).
+    const enabledWhileProposed = ['menu', 'generator']
+      .filter((key) => overlay.consumerBindings?.[key]?.enabled === true);
+    if (enabledWhileProposed.length > 0) {
+      const evidenceRecorded = EVIDENCE_KEYS
+        .every((key) => overlay.acceptanceEvidence?.[key] !== null
+          && overlay.acceptanceEvidence?.[key] !== undefined);
+      const approvedRecordCount = [
+        ...(Array.isArray(overlay.routes) ? overlay.routes : []),
+        ...(Array.isArray(overlay.externalAliases) ? overlay.externalAliases : []),
+      ].filter((record) => record?.reviewState === 'approved').length;
+      if (!evidenceRecorded) {
+        errors.push('proposed consumers require every acceptanceEvidence axis to be measured or ADR-0007-deferred');
+      }
+      if (approvedRecordCount === 0) {
+        errors.push('proposed consumers require at least one individually approved record (ADR-0007 Decision 4)');
+      }
     }
-    if (sourceReferences.length > 0) {
-      errors.push(`proposed overlay is referenced by executable consumers: ${sourceReferences.join(', ')}`);
+    const registeredProposedEntrypoints = [
+      ...(overlay.consumerBindings?.menu?.entrypoints ?? []),
+      ...(overlay.consumerBindings?.generator?.entrypoints ?? []),
+    ];
+    for (const source of sourceReferences) {
+      if (!registeredProposedEntrypoints.includes(source)) {
+        errors.push(`proposed executable consumer is not registered: ${source}`);
+      }
     }
   }
 

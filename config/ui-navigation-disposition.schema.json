@@ -80,16 +80,16 @@
       ],
       "properties": {
         "researchArtifactSha256": {
-          "$ref": "#/$defs/nullableSha256"
+          "$ref": "#/$defs/acceptanceEvidenceValue"
         },
         "liveMenuArtifactSha256": {
-          "$ref": "#/$defs/nullableSha256"
+          "$ref": "#/$defs/acceptanceEvidenceValue"
         },
         "authorityAssignmentArtifactSha256": {
-          "$ref": "#/$defs/nullableSha256"
+          "$ref": "#/$defs/acceptanceEvidenceValue"
         },
         "effectiveMenuArtifactSha256": {
-          "$ref": "#/$defs/nullableSha256"
+          "$ref": "#/$defs/acceptanceEvidenceValue"
         }
       }
     },
@@ -146,10 +146,10 @@
           "consumerBindings": {
             "properties": {
               "menu": {
-                "$ref": "#/$defs/disabledConsumerBinding"
+                "$ref": "#/$defs/approvalGatedConsumerBinding"
               },
               "generator": {
-                "$ref": "#/$defs/disabledConsumerBinding"
+                "$ref": "#/$defs/approvalGatedConsumerBinding"
               }
             }
           }
@@ -449,20 +449,45 @@
         }
       }
     },
-    "disabledConsumerBinding": {
+    "approvalGatedConsumerBinding": {
+      "description": "state=proposed에서 enabled=true는 ADR-0007 §Decision 4 게이트를 통과해야만 유효하다 — acceptanceEvidence 4축 전부가 측정 hash 또는 ADR-0007 deferral로 기록되고, 개별 approved record가 최소 1건 존재하며, 실행 소비자는 entrypoints에 등록돼야 한다. 이 교차 필드 게이트는 scripts/ui-navigation-disposition-contract.mjs가 집행한다.",
+      "$ref": "#/$defs/consumerBinding"
+    },
+    "acceptanceEvidenceValue": {
+      "oneOf": [
+        {
+          "$ref": "#/$defs/nullableSha256"
+        },
+        {
+          "$ref": "#/$defs/adoptionDeferredEvidence"
+        }
+      ]
+    },
+    "adoptionDeferredEvidence": {
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "enabled",
-        "entrypoints"
+        "status",
+        "adrId",
+        "adrPath",
+        "adrSha256",
+        "acceptedRisk"
       ],
       "properties": {
-        "enabled": {
-          "const": false
+        "status": {
+          "const": "deferred-to-institution-adoption"
         },
-        "entrypoints": {
-          "type": "array",
-          "maxItems": 0
+        "adrId": {
+          "const": "ADR-0007"
+        },
+        "adrPath": {
+          "const": "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md"
+        },
+        "adrSha256": {
+          "$ref": "#/$defs/sha256"
+        },
+        "acceptedRisk": {
+          "const": "approved-without-user-research"
         }
       }
     },
