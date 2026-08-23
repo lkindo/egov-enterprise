@@ -16,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { MenuInfo } from '@/types/foundation/menu';
 import { NavItem } from './NavItem';
 import { MobileDomainNode } from './MobileDomainNode';
+import { SITE_IDENTITY } from '@/config/site-identity';
 
 const SIDEBAR_FOCUSABLE_SELECTOR = [
   'a[href]',
@@ -226,11 +227,11 @@ export function Sidebar({
           <div className="flex items-center justify-between mb-10 px-2 lg:hidden">
             <Link href="/" aria-label="메인 화면으로 이동" className="flex items-center gap-3.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg" onClick={() => setSidebarOpen(false)}>
               <div className="w-10 h-10 bg-surface-inverse rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
-                <span className="text-primary font-bold text-lg">EG</span>
+                <span className="text-primary font-bold text-lg">{SITE_IDENTITY.logoMark}</span>
               </div>
               <div className="flex flex-col">
-                <span className="text-base font-bold tracking-tighter leading-none text-foreground">엔터프라이즈</span>
-                <span className="text-xs text-muted-foreground font-semibold tracking-tight">포털 5.0</span>
+                <span className="text-base font-bold tracking-tighter leading-none text-foreground">{SITE_IDENTITY.siteShortName}</span>
+                <span className="text-xs text-muted-foreground font-semibold tracking-tight">{SITE_IDENTITY.portalShortName}</span>
               </div>
             </Link>
             <Button

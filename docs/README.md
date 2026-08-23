@@ -69,6 +69,7 @@
 | [ADR-0004](02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md) | 하이브리드 정보구조를 검증용 잠정 방향으로 채택 |
 | [ADR-0005](02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md) | UI 품질 증거를 버전형 compact summary와 tracked index로 보존 |
 | [ADR-0006](02-architecture/decisions/ADR-0006-css-only-responsive-table.md) | 반응형 표현은 단일 SSR DOM 위에서 CSS로만 전환 |
+| [ADR-0007](02-architecture/decisions/ADR-0007-reference-default-ia-approval.md) | 하이브리드 IA를 참조-기본 IA로 승인, 증거 요건은 채택 시점 재검증으로 이전 |
 
 ## 03-guides — 개발 지침
 

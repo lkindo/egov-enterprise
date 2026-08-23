@@ -10,11 +10,13 @@ import { Inter, Outfit } from 'next/font/google';
 import localFont from 'next/font/local';
 import { PageTransition } from './components/layout/page-transition';
 import { resolveBrandTheme } from '@/lib/theme/brand-theme';
+import { resolveDensity } from '@/lib/theme/density';
 import { GlobalUIComponents } from './components/layout/GlobalUIComponents';
 import { cookies, headers } from 'next/headers';
 import { getInitialMenus } from '@/lib/api/menu-loader';
 import { Suspense } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
+import { SITE_IDENTITY } from '@/config/site-identity';
 
 const pretendard = localFont({
   src: '../../public/fonts/PretendardVariable.woff2',
@@ -36,8 +38,8 @@ const outfit = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: '전자정부 표준프레임워크 - 엔터프라이즈 포털',
-  description: '전사 업무 포털에서 공통 업무와 협업 기능을 제공합니다.',
+  title: SITE_IDENTITY.siteName,
+  description: SITE_IDENTITY.siteDescription,
 };
 
 // [csp Phase 4] nonce CSP 는 모든 문서가 요청 시점에 렌더된다는 전제 위에 서 있다 —
@@ -116,7 +118,7 @@ async function ProvidersWithAuth({ children }: { children: React.ReactNode }) {
       <Suspense fallback={
         <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
           <div>
-            <h1 className="sr-only">전자정부 Enterprise</h1>
+            <h1 className="sr-only">{SITE_IDENTITY.siteAccessibleName}</h1>
             <p role="status" aria-live="polite">애플리케이션을 준비하는 중...</p>
           </div>
         </main>
@@ -143,8 +145,11 @@ export default async function RootLayout({
   // 브랜드 프로필은 배포 단위 서버 설정이다 — allowlist 검증을 거쳐 <html> 한 곳에만 배선한다
   // (라우트별 배정은 ADR-0004 금지, 미설정 시 premium). theme-token-contract 가 이 배선을 강제한다.
   const brandTheme = resolveBrandTheme(process.env.BRAND_THEME);
+  // 밀도 축은 브랜드와 직교하는 배포 단위 서버 설정이다(D1, DEC-OPS-015) — 같은 규칙으로
+  // allowlist 검증 뒤 <html> 한 곳에만 배선한다(미설정 시 comfortable = 렌더링 무변경).
+  const density = resolveDensity(process.env.UI_DENSITY);
   return (
-    <html lang="ko" className="scroll-pt-16" data-brand-theme={brandTheme} suppressHydrationWarning>
+    <html lang="ko" className="scroll-pt-16" data-brand-theme={brandTheme} data-density={density} suppressHydrationWarning>
       <body className={`${pretendard.variable} ${inter.variable} ${outfit.variable} antialiased font-sans`}>
         <ThemeProvider
           attribute="class"
@@ -161,7 +166,7 @@ export default async function RootLayout({
           <Suspense fallback={
             <main className="min-h-screen flex items-center justify-center font-bold text-lg text-primary">
               <div>
-                <h1 className="sr-only">전자정부 Enterprise</h1>
+                <h1 className="sr-only">{SITE_IDENTITY.siteAccessibleName}</h1>
                 <p role="status" aria-live="polite">보안 세션을 확인하는 중...</p>
               </div>
             </main>

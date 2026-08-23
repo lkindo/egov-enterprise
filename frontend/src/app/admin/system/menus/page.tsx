@@ -5,9 +5,10 @@ import { menuAdminService } from '@/services/foundation/system/MenuAdminService'
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
 import { MenuInfo } from '@/types/foundation/menu';
 import MenuAdminClient, { type FetchResult, type ProgramOption } from './MenuAdminClient';
+import { SITE_IDENTITY } from '@/config/site-identity';
 
 export const metadata = {
-    title: '시스템 메뉴 아키텍처 | 전자정부 표준프레임워크',
+    title: `시스템 메뉴 아키텍처 | ${SITE_IDENTITY.frameworkName}`,
     description: '시스템 트리 구조와 프로그램 연결 체계를 통합 관리합니다.',
 };
 
