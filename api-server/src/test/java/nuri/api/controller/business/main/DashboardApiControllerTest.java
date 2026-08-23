@@ -25,7 +25,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebMvcTest(DashboardApiController.class)
 // 대시보드 위젯은 DashboardItemProvider 포트로만 수집(§2.B) → 슬라이스 테스트에 실 provider 로드(mock 서비스 주입).
 // board(할 일/공지)도 BoardDashboardProvider 로 역전됐으므로 함께 import 해야 taskList/notiList 가 채워진다.
-@Import({InformalSanctionDashboardProvider.class, BoardDashboardProvider.class})
+// BoardIdProperties 는 provider 가 소비하는 게시판 ID 설정 — 슬라이스에 nuri.boards.* 미설정이므로
+// 기본값(=종전 리터럴)이 쓰이고, 아래 BBSMSTR_* 리터럴 stub 매칭이 그 불변을 그대로 검증한다.
+@Import({InformalSanctionDashboardProvider.class, BoardDashboardProvider.class,
+        nuri.business.core.config.BoardIdProperties.class})
 class DashboardApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
