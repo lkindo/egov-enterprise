@@ -128,7 +128,7 @@ function DataRowComponent<T extends object>({
       )}
     >
       {enableSelection && (
-        <td className="px-6 py-4 text-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        <td className="px-[var(--cell-px)] py-4 text-center" onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
           <Checkbox
             checked={isSelected}
             onCheckedChange={onToggle}
@@ -143,7 +143,7 @@ function DataRowComponent<T extends object>({
           // 문자열 header 만 라벨로 쓴다(ReactNode header 는 CSS content 로 표현할 수 없다).
           data-label={typeof column.header === 'string' ? column.header : undefined}
           className={cn(
-            "px-6 py-5 text-sm font-medium text-foreground/80 tracking-tight transition-colors group-hover:text-foreground",
+            "px-[var(--cell-px)] py-[var(--cell-py)] text-sm font-medium text-foreground/80 tracking-tight transition-colors group-hover:text-foreground",
             column.className
           )}
         >
@@ -153,7 +153,7 @@ function DataRowComponent<T extends object>({
         </td>
       ))}
       {onRowClick && (
-        <td className="px-6 py-5 text-right">
+        <td className="px-[var(--cell-px)] py-[var(--cell-py)] text-right">
           <Button
             type="button"
             variant="ghost"
@@ -420,7 +420,7 @@ export function StandardDataTable<T extends object>({
             <thead role="rowgroup" className="relative z-20">
               <tr role="row" className="bg-muted/80 backdrop-blur-xl border-b-2 border-border/80">
                 {enableSelection && (
-                  <th className="px-6 py-5 w-16 text-center" scope="col" aria-label="전체 항목 선택">
+                  <th className="px-[var(--cell-px)] py-[var(--cell-py)] w-16 text-center" scope="col" aria-label="전체 항목 선택">
                     <Checkbox
                       checked={(data || []).length > 0 && selectedIds.size === (data || []).length}
                       onCheckedChange={toggleAll}
@@ -430,7 +430,7 @@ export function StandardDataTable<T extends object>({
                 )}
                 {columns.map((column, idx) => (
                   <th key={`header-${idx}`} className={cn(
-                    "px-6 py-5 font-bold text-foreground text-xs uppercase tracking-[0.25em] whitespace-nowrap",
+                    "px-[var(--cell-px)] py-[var(--cell-py)] font-bold text-foreground text-xs uppercase tracking-[0.25em] whitespace-nowrap",
                     column.className
                   )} scope="col" aria-label={typeof column.header === 'string' && column.header ? column.header : '열'}>
                     <div className="flex items-center gap-2">
@@ -440,7 +440,7 @@ export function StandardDataTable<T extends object>({
                   </th>
                 ))}
                 {onRowClick && (
-                  <th className="px-6 py-5 text-right" scope="col">
+                  <th className="px-[var(--cell-px)] py-[var(--cell-py)] text-right" scope="col">
                     <span className="sr-only">행 작업</span>
                   </th>
                 )}
@@ -453,28 +453,28 @@ export function StandardDataTable<T extends object>({
                   <tr key={`loading-row-${i}`} className="animate-pulse" aria-hidden="true">
                     {/* control-has-associated-label 은 빈 td 를 컨트롤로 오판한다. 이 행은 aria-hidden 장식이라 라벨 대상이 아니다. */}
                     {/* eslint-disable-next-line jsx-a11y/control-has-associated-label */}
-                    {enableSelection ? <td role="presentation" className="px-6 py-5 text-center"><div className="w-5 h-5 bg-muted rounded m-auto opacity-50" /></td> : null}
+                    {enableSelection ? <td role="presentation" className="px-[var(--cell-px)] py-[var(--cell-py)] text-center"><div className="w-5 h-5 bg-muted rounded m-auto opacity-50" /></td> : null}
                     {columns.map((_, j) => (
                       // eslint-disable-next-line jsx-a11y/control-has-associated-label
-                      <td key={`loading-cell-${j}`} role="presentation" className="px-6 py-5">
+                      <td key={`loading-cell-${j}`} role="presentation" className="px-[var(--cell-px)] py-[var(--cell-py)]">
                         <div className="h-4 bg-muted/40 rounded-lg w-3/4" />
                       </td>
                     ))}
                     {onRowClick ? (
                       // eslint-disable-next-line jsx-a11y/control-has-associated-label
-                      <td role="presentation" className="px-6 py-5"><div className="h-8 w-20 bg-muted/40 rounded-lg ml-auto" /></td>
+                      <td role="presentation" className="px-[var(--cell-px)] py-[var(--cell-py)]"><div className="h-8 w-20 bg-muted/40 rounded-lg ml-auto" /></td>
                     ) : null}
                   </tr>
                 ))
               ) : error ? (
                 <tr>
-                  <td colSpan={columns.length + (enableSelection ? 1 : 0) + (onRowClick ? 1 : 0)} className="px-6 py-20 text-center">
+                  <td colSpan={columns.length + (enableSelection ? 1 : 0) + (onRowClick ? 1 : 0)} className="px-[var(--cell-px)] py-20 text-center">
                     <ErrorStateDisplay error={error} onRetry={onRetry} />
                   </td>
                 </tr>
               ) : (data || []).length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length + (enableSelection ? 1 : 0) + (onRowClick ? 1 : 0)} className="px-6 py-20 text-center" data-testid="empty-table-msg">
+                  <td colSpan={columns.length + (enableSelection ? 1 : 0) + (onRowClick ? 1 : 0)} className="px-[var(--cell-px)] py-20 text-center" data-testid="empty-table-msg">
                     <EmptyStateDisplay message={resolvedEmptyMessage} />
                   </td>
                 </tr>

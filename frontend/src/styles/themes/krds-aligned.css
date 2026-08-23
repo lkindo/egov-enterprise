@@ -76,6 +76,20 @@
     --shadow-hub-premium: 0 32px 64px -16px rgba(0, 0, 0, 0.08);
     --color-premium-slate: 222.2 47.4% 11.2%;
     --color-premium-emerald: 142.1 76.2% 36.3%;
+
+    /* 밀도·구조 토큰 (D2, Phase 1) — premium 과 동일한 현행 등가값(밀도 프로필 분화는 후속 범위) */
+    --control-h: 2.25rem;
+    --control-h-sm: 2rem;
+    --cell-px: 1.5rem;
+    --cell-py: 1.25rem;
+    --font-size-body: 0.875rem;
+    --form-gap: 1rem;
+    --page-max-w: 80rem;
+    --page-pad: 1.5rem;
+    --page-pad-md: 3rem;
+    --page-pad-lg: 4rem;
+    --radius-control: 0.5rem;
+    --filter-pad: 2rem;
   }
 
   :root[data-brand-theme="krds-aligned"].dark {
@@ -109,5 +123,19 @@
     --popover-foreground: 210 10% 96.1%; /* #F4F5F6 gray-5 */
     --surface-sunken: 0 0% 0%; /* #000000 gray-100 */
     --surface-raised: 222 8.9% 22%; /* #33363D gray-80 */
+
+    /* 밀도·구조 토큰 — 라이트와 동일(밀도는 모드 불변) */
+    --control-h: 2.25rem;
+    --control-h-sm: 2rem;
+    --cell-px: 1.5rem;
+    --cell-py: 1.25rem;
+    --font-size-body: 0.875rem;
+    --form-gap: 1rem;
+    --page-max-w: 80rem;
+    --page-pad: 1.5rem;
+    --page-pad-md: 3rem;
+    --page-pad-lg: 4rem;
+    --radius-control: 0.5rem;
+    --filter-pad: 2rem;
   }
 }
