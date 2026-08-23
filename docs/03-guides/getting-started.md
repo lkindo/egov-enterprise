@@ -41,7 +41,7 @@ git clone <this-repo> my-platform && cd my-platform
 ./gradlew clean compileJava compileTestJava
 ```
 
-> `rename-project.ps1`은 `nuri.*` 패키지·`group`·`rootProject.name`·로깅/메트릭 태그를 일괄 치환한다. **반드시 `-DryRun` 선확인** 후 실행하고, 완료 후 컴파일로 검증한다.
+> `rename-project.ps1`은 `nuri.*` 패키지·`group`·`rootProject.name`·로깅/메트릭 태그를 일괄 치환한다. 치환 대상 확장자는 구명칭을 실제 포함하는 tracked 파일의 `git ls-files` census 로 도출했고(`.mjs`·`.sql`·`.html`·`.ps1`·`.sh`·`.py`·`.toml`·`.imports`·`CODEOWNERS` 포함), `node_modules`·`.git`·`build` 류는 경로 세그먼트 필터로 재귀에서 실제 제외된다. **반드시 `-DryRun` 선확인** 후 실행하고, 완료 후 컴파일로 검증한다.
 
 ---
 
@@ -106,12 +106,12 @@ pnpm -C frontend exec tsc --noEmit        # 프론트엔드 타입 무결성
 ### 5.1 프로젝트 고유 기능 삭제
 
 ```powershell
-# 삭제 대상 도메인의 BE(도메인/서비스/리포/API)·FE(app/services/types) 경로를 일괄 제거
+# manifest(config/reusable-base-profiles.json) 기반으로 도메인 BE 경로를 제거 (여러 도메인은 쉼표 구분)
 ./scripts/delete-domain.ps1 -DomainName "informalsanction" -DryRun   # 먼저 확인
 ./scripts/delete-domain.ps1 -DomainName "informalsanction"
 ```
 
-> 삭제 대상 후보(`business-app`)와 필수 유지(`business-core`)의 분류는 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)과 [재사용 프로필 manifest](../../config/reusable-base-profiles.json)를 기준으로 한다. 생성형 프로필을 사용할 때는 [재사용 Base 가이드](./reusable-base-guide.md)를 따르고, 수동 삭제 후에는 반드시 `clean compileJava compileTestJava`로 회귀 확인한다.
+> `delete-domain.ps1`은 [재사용 프로필 manifest](../../config/reusable-base-profiles.json)를 SSOT 로 소비한다. manifest 에 없는 도메인명은 즉시 에러이고, `clusters`(예: `informalsanction`→`operation`, `board`→`comment`·`scrap`·`dashboard`)는 자동 동반 삭제된다. 삭제 후에는 잔존 Java 참조와 `tb_menu_info` 잔존 시드 라우트 후보를 경고로 출력하므로, 메뉴 정리는 후속 versioned migration 으로 수행한다. frontend 경로는 manifest 가 pack 단위(`frontend.removePaths`)로만 소유하므로 pack 도메인 전체를 지정할 때만 일괄 삭제되며, 그 외 화면 제거는 [재사용 Base 가이드](./reusable-base-guide.md)의 projection 을 사용한다. 삭제 대상 후보(`business-app`)와 필수 유지(`business-core`)의 분류는 [ADR-0001](../02-architecture/decisions/ADR-0001-core-app-product-boundary.md)이 정본이며, 수동 삭제 후에는 반드시 `clean compileJava compileTestJava`로 회귀 확인한다.
 > FE 라우트는 문자열 URL 참조를 타입 검사만으로 모두 잡을 수 없으므로 `frontend/src/config/project-modules.ts` 매니페스트도 함께 정리한다.
 
 ### 5.2 신규 도메인 추가(스캐폴드)
