@@ -16,7 +16,7 @@
       "description": "core + 게시판 클러스터 + 메일·쪽지·알림·SMS"
     },
     "demo": {
-      "packs": ["core", "collaboration", "demo"],
+      "packs": ["core", "collaboration", "survey", "demo"],
       "description": "현재 제품의 전체 참조 기능"
     }
   },
@@ -111,8 +111,43 @@
         ]
       }
     },
-    "demo": {
+    "survey": {
       "rank": 2,
+      "backend": {
+        "appDomains": [
+          "survey"
+        ]
+      },
+      "frontend": {
+        "removePaths": [
+          "src/app/admin/survey",
+          "src/app/survey",
+          "src/lib/api/survey.ts",
+          "src/services/business/user/poll",
+          "src/services/foundation/survey",
+          "src/services/foundation/system/OnlinePollAdminService.ts",
+          "src/services/foundation/system/SurveyAdminService.ts",
+          "src/types/business/poll.ts",
+          "src/types/business/survey.ts"
+        ]
+      },
+      "database": {
+        "sequences": [],
+        "tables": [
+          "tb_onln_poll_artcl",
+          "tb_onln_poll_manage",
+          "tb_onln_poll_rslt",
+          "tb_srvy_artcl",
+          "tb_srvy_info",
+          "tb_srvy_qstn",
+          "tb_srvy_rslt",
+          "tb_srvy_rspdnt",
+          "tb_srvy_tmplt"
+        ]
+      }
+    },
+    "demo": {
+      "rank": 3,
       "backend": {
         "appDomains": [
           "addressbook",
@@ -143,7 +178,6 @@
           "src/app/admin/operation",
           "src/app/admin/sanctn",
           "src/app/admin/stats",
-          "src/app/admin/survey",
           "src/app/admin/system/banner",
           "src/app/admin/system/hpcm",
           "src/app/admin/system/ism",
@@ -155,10 +189,8 @@
           "src/app/help",
           "src/app/smart-toolkit/schedule",
           "src/app/smart-toolkit/work-report",
-          "src/app/survey",
           "src/components/business/report",
           "src/components/business/schedule",
-          "src/lib/api/survey.ts",
           "src/services/business/community",
           "src/services/business/memoreport",
           "src/services/business/roughmap",
@@ -169,26 +201,20 @@
           "src/services/business/user/addressbook",
           "src/services/business/user/approval",
           "src/services/business/user/help",
-          "src/services/business/user/poll",
           "src/services/foundation/operation/OperationAdminService.ts",
           "src/services/foundation/operation/eventService.ts",
           "src/services/foundation/operation/__tests__/eventService.test.ts",
-          "src/services/foundation/survey",
           "src/services/foundation/system/BannerAdminService.ts",
           "src/services/foundation/system/CommunityAdminService.ts",
           "src/services/foundation/system/HpcmAdminService.ts",
           "src/services/foundation/system/IsmAdminService.ts",
-          "src/services/foundation/system/OnlinePollAdminService.ts",
           "src/services/foundation/system/PopupAdminService.ts",
           "src/services/foundation/system/StatsAdminService.ts",
-          "src/services/foundation/system/SurveyAdminService.ts",
           "src/services/foundation/system/TemplateAdminService.ts",
           "src/services/foundation/user",
           "src/types/business/addressbook.ts",
           "src/types/business/community.ts",
-          "src/types/business/poll.ts",
           "src/types/business/schedule.ts",
-          "src/types/business/survey.ts",
           "src/types/foundation/banner.ts",
           "src/types/foundation/stats.ts"
         ]
@@ -212,20 +238,11 @@
           "tb_intrn_svc",
           "tb_memo_rpt_info",
           "tb_onln_mnl_info",
-          "tb_onln_poll_artcl",
-          "tb_onln_poll_manage",
-          "tb_onln_poll_rslt",
           "tb_popup_info",
           "tb_rpt_info",
           "tb_rptp_stats",
           "tb_rward_manage",
-          "tb_schdl_info",
-          "tb_srvy_artcl",
-          "tb_srvy_info",
-          "tb_srvy_qstn",
-          "tb_srvy_rslt",
-          "tb_srvy_rspdnt",
-          "tb_srvy_tmplt"
+          "tb_schdl_info"
         ]
       }
     }

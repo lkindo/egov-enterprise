@@ -1,8 +1,8 @@
 package nuri.api.controller.foundation.controller.system.service.survey;
 
 import nuri.business.security.annotation.WithMockCustomUser;
-import nuri.business.service.system.service.survey.OnlinePollService;
-import nuri.business.service.system.service.survey.dto.OnlinePollManageDto;
+import nuri.business.service.survey.OnlinePollService;
+import nuri.business.service.survey.dto.OnlinePollManageDto;
 import nuri.api.support.ApiHttpIntegrationTest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
