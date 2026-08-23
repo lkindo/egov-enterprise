@@ -13,6 +13,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,12 +32,15 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <p>[왜 census 인가] 현행 위반을 즉시 전부 고치는 것은 이 게이트의 목적이 아니다.
  * {@code Map} 반환 5건 중 {@code DashboardApiController} 는 foundation 의
  * {@code DashboardItemProvider} SPI 시그니처에 페이로드가 규정돼 있어 typed 이행이 SPI 계약 변경을
- * 동반하고, {@code FileApiController} 의 wrapper 밖 반환은 <b>정당한 binary/stream 예외</b>이지만
- * 헌법에 예외 조항이 없어 명문화(사용자 승인)가 선행돼야 한다.
+ * 동반한다. 그래서 <b>지금 있는 이탈을 동결</b>한다. 늘어나면 red 이고, <b>줄어도 red</b> 다 —
+ * 정당한 상환 시에만 상수가 함께 바뀌어 diff 에 의도가 남는다.
  *
- * <p>그래서 <b>지금 있는 이탈을 동결</b>한다. 늘어나면 red 이고, <b>줄어도 red</b> 다 — 정당한 상환
- * 시에만 상수가 함께 바뀌어 diff 에 의도가 남는다. 화이트리스트({@code EXCLUDED_*})를 두지 않는
- * 이유도 같다: 목록은 늘어나기만 하고, 실제로 이 저장소에서 신호 은폐에 쓰인 전례가 있다(H2).
+ * <p>[binary 허용 census — 제6조 3항] wrapper 밖 반환은 2026-08-23 헌법 제6조 3항(사용자 위임 D4)이
+ * 제한적으로 명문화한 binary/stream 예외다. 익명 개수 동결이 아니라 <b>파일명·핸들러 단위 명시
+ * census</b>({@link #BINARY_ALLOWED_HANDLERS})로 강화한다 — 목록 밖 {@code ResponseEntity<Resource>}
+ * 신설도 red, 목록에 남은 stale 행도 red 인 <b>양방향 exact-match</b> 라서, grow-only 예외
+ * 화이트리스트({@code EXCLUDED_*} — H2 가 금지하는 신호 은폐 패턴)와 달리 어느 방향의 변경도
+ * diff 에 의도가 남는다.
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 스캔이다.
  */
@@ -73,14 +77,26 @@ class ResponseContractLinterTest {
     private static final int UNTYPED_PAYLOAD_COUNT = 5;
 
     /**
-     * 공통 래퍼 밖 반환 동결(2026-08-20 실측 1건).
+     * 헌법 제6조 3항 binary/stream 예외의 허용 census — <b>파일 경로 {@code #} 핸들러 메서드</b> 단위.
      *
-     * <p>{@code FileApiController#downloadFile} 의 {@code ResponseEntity<Resource>}.
-     * JSON 래퍼로 감싸면 base64 로 전송량이 33% 늘고 전량 메모리 적재에 브라우저 네이티브
-     * 다운로드도 불가하므로 <b>기술적으로 정당</b>하다. 다만 헌법 제6조에 예외 조항이 없어
-     * 현재는 문언상 이탈이며, 예외 명문화는 사용자 승인이 필요한 별건이다(GAP-API-001).
+     * <p>[등재 조건 — 제6조 3항] ① {@code Content-Disposition: attachment} ② 명시적 {@code produces}
+     * (동적 타입 다운로드는 응답 시점 {@code Content-Type} 지정으로 갈음) ③ 이 목록 등재.
+     * 이 린터가 기계 강제하는 것은 ③ 이고, ①·② 는 각 엔드포인트의 컨트롤러 테스트가 헤더로 검증한다.
+     *
+     * <p>[행별 근거]
+     * <ul>
+     *   <li>{@code FileApiController#downloadFile} — 파일 다운로드. JSON 래퍼로 감싸면 base64 로
+     *       전송량이 33% 늘고 전량 메모리 적재에 브라우저 네이티브 다운로드도 불가하다(2026-08-20 동결분).</li>
+     *   <li>{@code LoginLogApiController#exportLoginLogs} — 로그인 로그 전체 결과 xlsx export
+     *       (2026-08-23 사용자 위임 D4). SXSSF 스트리밍 + 행 상한 400 가드.</li>
+     * </ul>
+     *
+     * <p>실제 wrapper 밖 반환 집합과 이 목록은 <b>양방향 exact-match</b> 다 — 목록 밖 신설도,
+     * stale 행 잔존도 red. 광역 패턴(디렉터리·와일드카드) 등재는 금지한다(파일명·메서드 단위 명시).
      */
-    private static final int UNWRAPPED_COUNT = 1;
+    private static final Set<String> BINARY_ALLOWED_HANDLERS = Set.of(
+            "api-server/src/main/java/nuri/api/controller/business/file/FileApiController.java#downloadFile",
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/LoginLogApiController.java#exportLoginLogs");
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 325건 대비 여유). */
     private static final int HANDLER_FLOOR = 250;
@@ -93,6 +109,7 @@ class ResponseContractLinterTest {
 
         List<String> untyped = new ArrayList<>();
         List<String> unwrapped = new ArrayList<>();
+        Set<String> unwrappedHandlers = new TreeSet<>();
         int handlers = 0;
 
         for (Path source : sources) {
@@ -109,6 +126,7 @@ class ResponseContractLinterTest {
                     untyped.add(relative + "#" + method + " => " + returnType);
                 } else if (!WRAPPED.matcher(returnType).find()) {
                     unwrapped.add(relative + "#" + method + " => " + returnType);
+                    unwrappedHandlers.add(relative + "#" + method);
                 }
             }
         }
@@ -129,10 +147,22 @@ class ResponseContractLinterTest {
                     + " → " + untyped.size() + " 로 변했습니다:\n   " + String.join("\n   ", untyped)
                     + "\n   늘었다면 전용 DTO 로 바꾸십시오(제3조 2항). 줄였다면 상수를 낮춰 되돌릴 수 없게 하십시오.");
         }
-        if (unwrapped.size() != UNWRAPPED_COUNT) {
-            violations.add("공통 래퍼(ApiResponse) 밖 반환이 " + UNWRAPPED_COUNT
-                    + " → " + unwrapped.size() + " 로 변했습니다:\n   " + String.join("\n   ", unwrapped)
-                    + "\n   binary/stream 이 아니라면 제6조 위반입니다. 정당한 예외는 헌법 명문화가 선행돼야 합니다.");
+
+        // binary 허용 census — 양방향 exact-match (제6조 3항).
+        for (String actualHandler : unwrappedHandlers) {
+            if (!BINARY_ALLOWED_HANDLERS.contains(actualHandler)) {
+                violations.add("binary 허용 census 밖의 공통 래퍼(ApiResponse) 밖 반환 신설: " + actualHandler
+                        + "\n   binary/stream 이 아니라면 제6조 위반입니다. 정당한 binary/stream 이면"
+                        + " 제6조 3항의 3조건(attachment·produces·census 등재)을 충족하고"
+                        + " BINARY_ALLOWED_HANDLERS 에 근거와 함께 등재하십시오.");
+            }
+        }
+        for (String allowed : BINARY_ALLOWED_HANDLERS) {
+            if (!unwrappedHandlers.contains(allowed)) {
+                violations.add("binary 허용 census 의 stale 행: " + allowed
+                        + "\n   해당 핸들러가 사라졌거나 래퍼 반환으로 바뀌었습니다."
+                        + " 목록에서 제거해 census 를 실제와 일치시키십시오(잔존 행은 미래 우회 슬롯이 됩니다).");
+            }
         }
 
         if (!violations.isEmpty()) {
@@ -142,8 +172,9 @@ class ResponseContractLinterTest {
             sb.append("========================================================================\n");
             violations.forEach(v -> sb.append("❌ ").append(v).append('\n'));
             sb.append("\n💡 이 게이트는 현행 이탈을 '동결' 한다. 늘어도 red, 줄어도 red 다 —\n");
-            sb.append("   정당한 상환일 때만 상수가 함께 바뀌어 diff 에 의도가 남게 하기 위해서다.\n");
-            sb.append("   예외 목록(EXCLUDED_*)을 만드는 방향으로 해소하지 말 것(AGENTS.md H2).\n");
+            sb.append("   정당한 상환/등재일 때만 상수·census 가 함께 바뀌어 diff 에 의도가 남게 하기 위해서다.\n");
+            sb.append("   binary census 는 파일명·메서드 단위 양방향 exact-match 다(제6조 3항).\n");
+            sb.append("   grow-only 예외 목록(EXCLUDED_*)을 만드는 방향으로 해소하지 말 것(AGENTS.md H2).\n");
             fail(sb.toString());
         }
 

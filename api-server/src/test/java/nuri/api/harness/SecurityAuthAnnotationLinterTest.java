@@ -79,7 +79,7 @@ class SecurityAuthAnnotationLinterTest {
     private static final String READ_SURFACE_ACTUAL_OUT = "build/harness/authorization-read-surface.actual.txt";
 
     /**
-     * 읽기 인가 표면 동결 해시(2026-08-22 실측: endpoint 168건).
+     * 읽기 인가 표면 동결 해시(2026-08-23 실측: endpoint 169건).
      *
      * <p>분포: RBAC_ADMIN_OR_SYSTEM 96 · DEFAULT_AUTHENTICATED 62 · RBAC_ALIAS_ADMIN_OR_SYSTEM 4 ·
      * PUBLIC_FILTER 6({@code auth/me}, {@code health}, {@code menus/head}, {@code menus/left},
@@ -99,7 +99,11 @@ class SecurityAuthAnnotationLinterTest {
             // [2026-08-22 공개 FAQ 경계 갱신] 고정 FAQ 게시판의 active/public 목록·상세 GET 2행을
             // DEFAULT_AUTHENTICATED 로 추가했다. 비밀글·비활성 글은 서버 조회 경계에서 제외하며,
             // 관리자 경로 공개 노출 하드 불변식은 계속 그린이다. endpoint 수 166 -> 168.
-            "2075fa9346a6eb65be26c80ef3c26511825bdf70d07396b47049adbe3872b3d3";
+            // [2026-08-23 로그인 로그 export 신설(D4)] GET /api/v1/admin/system/logs/login/export.xlsx
+            // 1행 추가 — RBAC_ADMIN_OR_SYSTEM|hasAnyRole('ADMIN','SYSTEM'). 기존 목록 API 와 같은
+            // ADMIN/SYSTEM 축에 @AdminOrSystem 메서드 인가를 더한 것이라 완화가 아니라 강화다.
+            // endpoint 수 168 -> 169.
+            "45d9d302f109bf3379d6244978aaa810185244a1f05e97a40794ebec45190561";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;
