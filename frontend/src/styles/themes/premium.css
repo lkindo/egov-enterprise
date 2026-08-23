@@ -119,6 +119,10 @@
     --page-pad-lg: 4rem;         /* lg:p-16 축 */
     --radius-control: 0.5rem;    /* rounded-lg */
     --filter-pad: 2rem;          /* p-8 */
+    /* StandardSearchFilter 컨트롤 높이(종전 h-12). --control-h(2.25rem)로 옮기면 기본
+       배포가 줄어들므로 전용 토큰으로 분리한다 — comfortable 3rem 등가, compact 는
+       globals.css 오버라이드(D1). */
+    --filter-control-h: 3rem;    /* h-12 */
   }
 
   .dark,
@@ -183,6 +187,7 @@
     --page-pad-lg: 4rem;
     --radius-control: 0.5rem;
     --filter-pad: 2rem;
+    --filter-control-h: 3rem;
 
     /* Slate overrides removed to restore default Tailwind dark mode values */
   }
