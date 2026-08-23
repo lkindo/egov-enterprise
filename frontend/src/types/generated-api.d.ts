@@ -4111,6 +4111,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/logs/login/export.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 로그인 로그 전체 결과 xlsx export
+         * @description 검색 조건(검색어·기간)은 목록 API 와 동일하게 바인딩하되 페이지 파라미터는 무시하고 조건 일치 전체 결과를 xlsx 로 스트리밍한다. 행 수가 100000 을 초과하면 400 을 반환한다(조건을 좁혀 재시도).
+         */
+        get: operations["exportLoginLogs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/login-policies": {
         parameters: {
             query?: never;
@@ -30881,6 +30901,74 @@ export interface operations {
             };
             /** @description 대상을 찾을 수 없음 (code: C003/C007) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    exportLoginLogs: {
+        parameters: {
+            query?: {
+                searchCondition?: string;
+                searchKeyword?: string;
+                searchUseYn?: string;
+                pageIndex?: number;
+                pageUnit?: number;
+                pageSize?: number;
+                firstIndex?: number;
+                lastIndex?: number;
+                recordCountPerPage?: number;
+                searchKeywordFrom?: string;
+                searchKeywordTo?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description xlsx 바이너리 스트림 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

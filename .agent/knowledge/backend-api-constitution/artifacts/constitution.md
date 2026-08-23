@@ -45,6 +45,7 @@
 ### 제6조 (응답 포맷의 통일)
 1. 모든 API 응답은 전사 공통 래퍼(Wrapper) 클래스인 `ApiResponse`를 사용해야 한다.
 2. 응답 데이터는 `data` 필드에 담으며, 메시지와 상태 코드를 포함하여 프론트엔드와의 통신 규격을 일원화한다.
+3. **binary/stream 예외** *(2026-08-23 사용자 위임 D4 개정)*: 파일 다운로드·전체 결과 export 등 JSON 으로 표현할 수 없는 binary/stream 응답에 한하여 `ResponseEntity<Resource>`(또는 스트리밍 등가물 `ResponseEntity<StreamingResponseBody>`)의 공통 래퍼 밖 반환을 제한적으로 허용한다. 허용 조건은 다음 3가지의 동시 충족이다 — ① `Content-Disposition: attachment` 헤더 명시, ② 명시적 `produces` 미디어 타입 선언(다운로드 대상 타입이 요청마다 동적인 경우 응답 시점의 명시적 `Content-Type` 지정으로 갈음 — 현행 동결분 `FileApiController#downloadFile` 이 이 형태다), ③ `ResponseContractLinterTest` 의 binary 허용 census(파일명·핸들러 단위 명시 목록) 등재. 목록 밖 래퍼 이탈 신설과 목록에 남은 stale 행은 해당 린터가 red 로 차단하며(양방향 exact census), JSON 으로 표현 가능한 응답을 이 예외로 우회하는 것은 금지한다.
 
 ### 제7조 (에러 핸들링 및 예외 처리)
 1. 모든 예외는 `GlobalExceptionHandler`에서 중앙 집중식으로 처리한다.
