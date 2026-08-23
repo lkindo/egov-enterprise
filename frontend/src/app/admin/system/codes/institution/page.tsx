@@ -6,9 +6,10 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { Building2 } from 'lucide-react';
+import { SITE_IDENTITY } from '@/config/site-identity';
 
 export const metadata = {
-  title: '기관코드 관리 | 전자정부 표준프레임워크',
+  title: `기관코드 관리 | ${SITE_IDENTITY.frameworkName}`,
   description: '행정기관 코드를 수신하고 관리합니다.',
 };
 

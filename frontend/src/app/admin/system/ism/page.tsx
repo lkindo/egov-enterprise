@@ -3,9 +3,10 @@ import { cookies } from 'next/headers';
 import { ismAdminService, InformalSanctionDto } from '@/services/foundation/system/IsmAdminService';
 import IsmClient from './IsmClient';
 import { selectFieldsList } from '@/lib/utils/serialization';
+import { SITE_IDENTITY } from '@/config/site-identity';
 
 export const metadata = {
-  title: '약식결재 및 승인 관리 | 전자정부 표준프레임워크',
+  title: `약식결재 및 승인 관리 | ${SITE_IDENTITY.frameworkName}`,
   description: '시스템에서 발생하는 약식 결재 요청을 승인 또는 반려 처리합니다',
 };
 

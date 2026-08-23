@@ -11,6 +11,7 @@ import { User, Lock, Eye, EyeOff, LogIn, Loader2, ShieldCheck, Zap } from "lucid
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 import { LOGIN_FAILURE_MESSAGE } from '@/lib/auth/login-error';
+import { SITE_IDENTITY } from '@/config/site-identity';
 const LOGIN_ERROR_EMPTY = '아이디와 비밀번호를 입력해주세요.';
 const DEFAULT_POST_LOGIN_PATH = '/admin/work-hub';
 const REDIRECT_VALIDATION_ORIGIN = 'https://internal.invalid';
@@ -284,7 +285,7 @@ function LoginContent() {
                             <Zap className="text-primary w-6 h-6 fill-primary" />
                         </motion.div>
                         <h1 id="login-title" className="text-2xl font-bold tracking-tight text-foreground">
-                            엔터프라이즈
+                            {SITE_IDENTITY.siteShortName}
                         </h1>
                         <CardDescription className="text-muted-foreground font-bold text-xs tracking-tight">
                             글로벌 통합 관리 콘솔
