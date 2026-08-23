@@ -35,7 +35,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 // [하향 래칫 2026-08-23] HubStatusBadge default 라벨의 저대비 중립 리터럴 1건을 muted pair로 치환.
 // [하향 래칫 2026-08-23(2)] StatusBadge 대기 상태의 blue 리터럴 4건을 계약 검증된 info pair로 치환.
 // [하향 래칫 2026-08-23(3)] HubListCard 장식 점의 slate 리터럴 1건을 theme-aware border 토큰으로 치환.
-const BASELINE = 72;
+// [하향 래칫 2026-08-23(4)] 공통코드 밀집화(m-3) — 신규 등록 버튼의 bg-slate-900 1건을 Button 기본
+//   variant(bg-primary 토큰)로 회수(사전 red 실측: 71 != 72).
+const BASELINE = 71;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];

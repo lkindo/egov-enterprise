@@ -47,7 +47,10 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   계약 검증된 채움형 pair(bg-X + text-X-foreground)로 치환.
 // [하향 래칫 2026-08-23(3)] hub 토큰 다크 재정의(themes/*.css)로 HubListCard 21건·HubSummaryCard 16건의
 //   dark: 팔레트 fallback 을 hub-* 토큰으로 회수(전 값 양 테마 AA 실측, 토큰 주석 참조).
-const BASELINE = 676;
+// [하향 래칫 2026-08-23(4)] 공통코드 밀집화(m-3) — 계층 Save 버튼 emerald 2건(bg-emerald-500·
+//   hover:bg-emerald-600)을 success pair 로, 상세코드 삭제 버튼 rose 2건(text-rose-500·
+//   hover:bg-rose-50)을 destructive pair 로 치환(사전 red 실측: 672 != 676).
+const BASELINE = 672;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

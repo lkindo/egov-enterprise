@@ -54,6 +54,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { StandardModal } from '@/app/components/ui/standard-modal';
+import { CodePicker, CodePickerSelection } from '@/app/components/ui/code-picker';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
 import { z } from 'zod';
 import { 
@@ -142,7 +143,7 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  ? "bg-muted/50 hover:bg-muted/50 border border-transparent" 
  : "hover:bg-muted border border-transparent",
  isSelected && isCluster && "bg-surface-inverse text-surface-inverse-foreground shadow-xl border-surface-inverse-border",
- isSelected && !isCluster && "bg-primary text-white shadow-lg shadow-primary/20 border-primary/20",
+ isSelected && !isCluster && "bg-primary text-primary-foreground shadow-lg shadow-primary/20 border-primary/20",
  isOverlay && "bg-card shadow-2xl border-primary ring-4 ring-primary/5 scale-105"
  )}
  >
@@ -151,20 +152,21 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
  "w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0",
  isCluster 
  ? (isSelected ? "bg-primary/20 text-primary" : "bg-card text-muted-foreground border border-border shadow-sm")
- : (isSelected ? "bg-white/20 text-white" : "bg-muted text-muted-foreground group-hover:text-primary")
+ : (isSelected ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground group-hover:text-primary")
  )}>
  {isCluster ? <Layers size={14} /> : <Tag size={14} />}
  </div>
  <div className="flex flex-col truncate items-start">
+ {/* 선택 배경이 cluster=surface-inverse / group=primary 로 달라 전경 토큰도 짝을 맞춘다 */}
  <span className={cn(
  "text-xs font-bold truncate leading-tight uppercase tracking-tight",
- isSelected ? "text-white" : "text-foreground"
+ isSelected ? (isCluster ? "text-surface-inverse-foreground" : "text-primary-foreground") : "text-foreground"
  )}>
  {node.name}
  </span>
  <span className={cn(
  "text-xs font-mono font-bold tracking-tighter opacity-60",
- isSelected ? "text-white" : "text-muted-foreground"
+ isSelected ? (isCluster ? "text-surface-inverse-foreground" : "text-primary-foreground") : "text-muted-foreground"
  )}>
  {node.id}
  </span>
@@ -209,6 +211,7 @@ export default function CommonCodeClient({
 
  // --- State ---
  const [searchQuery, setSearchQuery] = useState('');
+ const [isPickerOpen, setIsPickerOpen] = useState(false);
  const [isModalOpen, setIsOpen] = useState(false);
  const [isSaving, setIsSaving] = useState(false);
  const [editingDetail, setEditingDetail] = useState<CmmnDetailCode | null>(null);
@@ -369,6 +372,20 @@ export default function CommonCodeClient({
  setSelectedGroup(group);
  };
 
+ /**
+  * CodePicker 1호 소비처 — 팝업에서 고른 코드의 그룹을 탐색기에서 그대로 선택한다.
+  * (상세 목록은 기존 useQuery 경로가 이어받는다. 신규 조회 경로를 만들지 않는다.)
+  */
+ const handlePickCode = ({ group, code }: CodePickerSelection) => {
+ const cluster = initialClusters.find(c => (c.groups || []).some(g => g?.cdId === group.cdId));
+ const treeGroup = cluster ? (cluster.groups || []).find(g => g?.cdId === group.cdId) : null;
+ if (cluster && treeGroup) {
+ setSelectedClusterId(cluster.id);
+ setSelectedGroup(treeGroup);
+ }
+ toast(`‘${code.dtlCdNm}’(${code.dtlCd}) — ${group.cdIdNm} 그룹이 선택되었습니다.`, 'success');
+ };
+
  // Synchronize initial state from props
  useEffect(() => {
  if (selectedGroupId && (initialClusters || []).length > 0) {
@@ -465,11 +482,12 @@ export default function CommonCodeClient({
  }
  };
 
+ /* 셀 py-4 오버라이드를 제거해 표 밀도를 --cell-py(밀도 축) 단일 소스로 되돌린다. */
  const columns: Column<CmmnDetailCode>[] = [
  {
  header: '코드',
  accessor: (item: CmmnDetailCode) => <span className="font-black text-foreground tracking-tight text-xs">{item.dtlCd}</span>,
- className: 'w-24 py-4'
+ className: 'w-24'
  },
  {
  header: '코드 명칭',
@@ -478,17 +496,16 @@ export default function CommonCodeClient({
  <span className="font-black text-foreground tracking-tighter text-sm">{item.dtlCdNm}</span>
  <span className="text-[10px] font-bold text-muted-foreground line-clamp-1 uppercase tracking-tight">{item.dtlCdExpln || '등록된 설명 없음'}</span>
  </div>
- ),
- className: 'py-4'
+ )
  },
  {
  header: '상태',
  accessor: (item: CmmnDetailCode) => <HubStatusBadge status={item.useYn === 'Y' ? '사용 중' : '미사용'} />,
- className: 'w-32 py-4'
+ className: 'w-32'
  },
  {
  header: '관리',
- className: 'text-right w-24 py-4',
+ className: 'text-right w-24',
  accessor: (item: CmmnDetailCode) => (
  <div className="flex justify-end gap-1.5">
  <Button
@@ -506,7 +523,7 @@ export default function CommonCodeClient({
  variant="ghost"
  size="icon"
  aria-label={`${item.dtlCdNm} 코드 삭제`}
- className="h-8 w-8 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
+ className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
  onClick={(e) => { e.preventDefault(); handleDeleteDetail(item); }}
  >
  <Trash2 size={14} aria-hidden="true" />
@@ -519,12 +536,13 @@ export default function CommonCodeClient({
  const activeNode = activeId ? flattenedNodes.find(n => n.id === activeId) : null;
 
  return (
- <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
- <div className="flex flex-col lg:flex-row gap-8 min-h-[700px]">
+ <div className="space-y-[var(--page-pad)] animate-in fade-in slide-in-from-bottom-4 duration-700">
+ <div className="flex flex-col lg:flex-row gap-[var(--page-pad)] min-h-[700px]">
  {/* --- Left Sidebar: Code Tree --- */}
- <aside className="w-full lg:w-[380px] flex flex-col gap-6">
- <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl overflow-hidden flex flex-col h-full ring-1 ring-black/5">
- <div className="p-6 border-b border-border/50 bg-muted/30 space-y-4">
+ <aside className="w-full lg:w-[380px] flex flex-col gap-[var(--form-gap)]">
+ {/* 글래스(bg-white/40 backdrop-blur) 리터럴 → 시맨틱 표면 토큰(card/border) 회수 + 밀도 토큰 소비 */}
+ <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col h-full">
+ <div className="p-[var(--page-pad)] border-b border-border/50 bg-muted/30 space-y-[var(--form-gap)]">
  <div className="flex items-center justify-between">
  <div className="flex items-center gap-2.5">
  <div className="w-8 h-8 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg">
@@ -541,12 +559,20 @@ export default function CommonCodeClient({
  onClick={handleSaveExplorerChanges}
  disabled={isSaving}
  aria-label="변경한 코드 계층 구조 저장"
- className="px-3 py-1.5 rounded-lg bg-emerald-500 text-white text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+ className="px-3 py-1.5 rounded-lg bg-success text-success-foreground text-[10px] font-black uppercase tracking-widest hover:bg-success/90 transition-all flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
  >
  <Save size={12} aria-hidden="true" /> {isSaving ? '저장 중…' : 'Save'}
  </button>
  )}
- <span className="px-2.5 py-1 rounded-lg bg-white/60 text-muted-foreground text-[10px] font-black tracking-widest border border-white/80 uppercase shadow-sm">
+ <button
+ type="button"
+ onClick={() => setIsPickerOpen(true)}
+ aria-label="공통코드 검색 팝업 열기"
+ className="px-2.5 py-1 rounded-lg bg-card text-muted-foreground hover:text-foreground hover:bg-muted text-[10px] font-black tracking-widest border border-border uppercase shadow-sm transition-colors"
+ >
+ 코드 검색
+ </button>
+ <span className="px-2.5 py-1 rounded-lg bg-muted text-muted-foreground text-[10px] font-black tracking-widest border border-border uppercase shadow-sm">
  {clCodes.length} Domains
  </span>
  </div>
@@ -559,7 +585,7 @@ export default function CommonCodeClient({
  aria-label="코드 분류·그룹 검색"
  value={searchQuery}
  onChange={(e) => setSearchQuery(e.target.value)}
- className="h-10 pl-12 pr-6 bg-white/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
+ className="pl-12 pr-4 bg-muted border-none rounded-lg text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
  />
  </div>
  </div>
@@ -621,20 +647,21 @@ export default function CommonCodeClient({
  </aside>
 
  {/* --- Right Content Area --- */}
- <main className="flex-1 space-y-6">
+ <main className="flex-1 space-y-[var(--form-gap)]">
  {selectedGroup ? (
- <div className="space-y-6">
- <div className="p-8 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl flex flex-col md:flex-row md:items-center justify-between gap-6 ring-1 ring-black/5">
- <div className="flex items-center gap-6">
- <div className="w-14 h-11 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-2xl rotate-2">
- <Fingerprint size={24} />
+ <div className="space-y-[var(--form-gap)]">
+ {/* 마스터-디테일 헤더 밀집화 — 글래스 리터럴을 card/border 토큰으로, 여백은 밀도 토큰으로 회수 */}
+ <div className="p-[var(--page-pad)] rounded-lg bg-card border border-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-[var(--form-gap)]">
+ <div className="flex items-center gap-4">
+ <div className="w-11 h-11 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-sm shrink-0">
+ <Fingerprint size={20} />
  </div>
- <div className="space-y-1.5">
+ <div className="space-y-1">
  <div className="flex items-center gap-3">
- <h2 className="text-xl font-black tracking-tighter text-foreground uppercase">
+ <h2 className="text-lg font-black tracking-tighter text-foreground uppercase">
  {selectedGroup.cdIdNm}
  </h2>
- <div className="px-2.5 py-1 rounded-lg bg-white/60 border border-white/80 text-[10px] font-black text-muted-foreground tracking-widest shadow-sm">
+ <div className="px-2.5 py-1 rounded-lg bg-muted border border-border text-[10px] font-black text-muted-foreground tracking-widest shadow-sm">
  {selectedGroup.cdId}
  </div>
  </div>
@@ -644,17 +671,17 @@ export default function CommonCodeClient({
  </div>
  </div>
  <div className="flex items-center gap-3">
- <Button onClick={handleCreateDetail} size="lg" className="h-10 px-6 rounded-xl bg-slate-900 text-white font-black text-xs tracking-widest uppercase shadow-xl hover:-translate-y-0.5 transition-all gap-2 active:scale-95">
+ <Button onClick={handleCreateDetail} className="h-[var(--control-h)] px-5 rounded-lg font-black text-xs tracking-widest uppercase gap-2 active:scale-95">
  <Plus size={16} /> 신규 등록
  </Button>
  </div>
  </div>
 
  <div className={cn(
- "bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl overflow-hidden ring-1 ring-black/5 transition-all",
+ "bg-card rounded-lg border border-border shadow-sm overflow-hidden transition-all",
  detailsLoading ? "opacity-30 pointer-events-none scale-[0.99] grayscale" : "opacity-100"
  )}>
- <div className="p-6 border-b border-border/50 flex items-center justify-between bg-muted/30">
+ <div className="p-[var(--page-pad)] border-b border-border/50 flex items-center justify-between bg-muted/30">
  <div className="flex items-center gap-3">
  <div className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-primary shadow-sm">
  {detailsLoading ? <RefreshCcw size={16} className="animate-spin" /> : <Layers size={16} />}
@@ -693,7 +720,7 @@ export default function CommonCodeClient({
  </div>
  </div>
  ) : (
- <div className="h-full flex flex-col items-center justify-center p-12 rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5 min-h-[500px]">
+ <div className="h-full flex flex-col items-center justify-center p-[var(--filter-pad)] rounded-lg bg-card border border-border shadow-sm min-h-[500px]">
  <div className="w-24 h-20 rounded-2xl bg-card border border-border flex items-center justify-center text-muted-foreground/40 mb-8 shadow-xl group hover:rotate-6 transition-transform">
  <Database size={40} className="opacity-20 group-hover:opacity-100 transition-opacity" />
  </div>
@@ -702,11 +729,11 @@ export default function CommonCodeClient({
  좌측 탐색기에서 분류 또는 코드 그룹을 선택하면<br />상세 코드를 관리할 수 있습니다.
  </p>
  <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
- <div className="p-6 rounded-xl bg-white/60 border border-white/80 flex flex-col gap-2 items-start shadow-sm">
+ <div className="p-[var(--page-pad)] rounded-lg bg-muted border border-border flex flex-col gap-2 items-start shadow-sm">
  <span className="text-[10px] font-black text-muted-foreground tracking-widest">코드 분류</span>
  <span className="text-2xl font-black text-foreground ">{initialClusters.length}</span>
  </div>
- <div className="p-6 rounded-xl bg-white/60 border border-white/80 flex flex-col gap-2 items-start shadow-sm">
+ <div className="p-[var(--page-pad)] rounded-lg bg-muted border border-border flex flex-col gap-2 items-start shadow-sm">
  <span className="text-[10px] font-black text-muted-foreground tracking-widest">코드 그룹</span>
  <span className="text-2xl font-black text-foreground ">{groups.length}</span>
  </div>
@@ -715,6 +742,13 @@ export default function CommonCodeClient({
  )}
  </main>
  </div>
+
+ {/* CodePicker — 그룹→코드 2단 검색 팝업 (1호 소비처) */}
+ <CodePicker
+ isOpen={isPickerOpen}
+ onClose={() => setIsPickerOpen(false)}
+ onSelect={handlePickCode}
+ />
 
  {/* Standard Modal for CRUD */}
  <StandardModal
