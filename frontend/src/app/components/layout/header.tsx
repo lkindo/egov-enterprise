@@ -37,6 +37,7 @@ import {
   normalizeInternalRoute,
   resolveMenuInternalRoute,
 } from '@/lib/navigation/internal-route';
+import { SITE_IDENTITY } from '@/config/site-identity';
 
 const DOMAIN_ICON_MAP: Record<number, React.ComponentType<{ size?: number; className?: string }>> = {
   1000000: LayoutGrid, // 워크스페이스
@@ -119,11 +120,11 @@ export function Header({
 
         <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80 shrink-0">
           <div className="w-10 h-10 bg-surface-inverse rounded-[var(--radius-hub-item)] flex items-center justify-center shadow-lg">
-            <span className="text-surface-inverse-foreground font-bold text-lg">EG</span>
+            <span className="text-surface-inverse-foreground font-bold text-lg">{SITE_IDENTITY.logoMark}</span>
           </div>
           <div className="hidden sm:flex flex-col">
-            <span className="text-sm font-bold leading-tight text-foreground">전자정부 5.0</span>
-            <span className="text-xs text-muted-foreground font-semibold tracking-tight">전자정부 포털</span>
+            <span className="text-sm font-bold leading-tight text-foreground">{SITE_IDENTITY.brandName}</span>
+            <span className="text-xs text-muted-foreground font-semibold tracking-tight">{SITE_IDENTITY.sitePortalName}</span>
           </div>
         </Link>
 
