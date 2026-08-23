@@ -2,9 +2,10 @@ import { Suspense } from 'react';
 import { cookies } from 'next/headers';
 import { networkAdminService, Network } from '@/services/foundation/system/NetworkAdminService';
 import NetworkAdminClient from './NetworkAdminClient';
+import { SITE_IDENTITY } from '@/config/site-identity';
 
 export const metadata = {
-  title: '네트워크 인프라 지형 관리 및 최적화 | 전자정부 표준프레임워크',
+  title: `네트워크 인프라 지형 관리 및 최적화 | ${SITE_IDENTITY.frameworkName}`,
   description: '시스템 전반의 네트워크 토폴로지 정보를 관리하고 최적의 연결성을 보장합니다',
 };
 

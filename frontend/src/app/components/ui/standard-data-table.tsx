@@ -1,9 +1,27 @@
 import React, { useState, useMemo, memo, useCallback, useEffect } from 'react';
+import {
+  createSortedRowModel,
+  rowSortingFeature,
+  sortFn_alphanumeric,
+  sortFn_basic,
+  sortFn_datetime,
+  sortFn_text,
+  tableFeatures,
+  useTable,
+  type ColumnDef,
+} from '@tanstack/react-table';
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Search, X, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, X, ChevronLeft, ChevronRight, ArrowUp, ArrowDown, ArrowUpDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { motion, AnimatePresence } from "framer-motion";
 import { ErrorStateDisplay, EmptyStateDisplay } from './status-displays';
 import { useOverflowRegion } from '@/components/ui/table';
@@ -12,6 +30,50 @@ export interface Column<T> {
   header: string;
   accessor: keyof T | ((item: T, index?: number) => React.ReactNode);
   className?: string;
+  /**
+   * 지정한 열만 클릭 정렬이 켜진다(opt-in). 미지정 열은 종전과 완전히 동일하다.
+   * 정렬 값은 표시 accessor 가 아니라 이 키의 원시 값이며, **현재 페이지 데이터에 한한**
+   * 클라이언트 정렬이다 — 서버 페이지네이션·서버 정렬 계약은 바꾸지 않는다.
+   */
+  sortKey?: keyof T;
+}
+
+/**
+ * headless TanStack Table 기능 셋 (모듈 정적 1회 구성).
+ * 마크업·role·data-label 은 전부 이 컴포넌트의 JSX 가 소유하고, TanStack 은
+ * row model(정렬 순서·row id)과 정렬 상태 머신만 제공한다.
+ */
+const standardTableFeatures = tableFeatures({
+  rowSortingFeature,
+  sortedRowModel: createSortedRowModel(),
+  sortFns: {
+    alphanumeric: sortFn_alphanumeric,
+    basic: sortFn_basic,
+    datetime: sortFn_datetime,
+    text: sortFn_text,
+  },
+});
+type StandardTableFeatures = typeof standardTableFeatures;
+
+/**
+ * 우리 Column<T> 계약 → TanStack ColumnDef 어댑터.
+ * 표시용 accessor 는 ColumnDef 에 넣지 않는다 — 셀 렌더는 DataRow 가 행×열당 정확히
+ * 1회 실행한다(단일 렌더 계약, ADR-0006). sortKey 열만 정렬용 accessorFn 을 가진다.
+ */
+function buildColumnDefs<T extends object>(columns: Column<T>[]): ColumnDef<StandardTableFeatures, T>[] {
+  return columns.map((column, index) => {
+    const { sortKey } = column;
+    if (sortKey === undefined) {
+      return { id: `col-${index}`, enableSorting: false };
+    }
+    return {
+      id: `col-${index}`,
+      accessorFn: (item: T) => item?.[sortKey],
+      enableSorting: true,
+      // 숫자 열의 auto 방향(desc 우선)을 무시하고 모든 열이 none→asc→desc→none 으로 순환한다.
+      sortDescFirst: false,
+    };
+  });
 }
 
 interface BulkAction<T> {
@@ -45,6 +107,13 @@ interface StandardDataTableBaseProps<T> {
     totalCount?: number;
     /** 페이지당 건수(요약/페이저 계산 보조). 미지정 시 10 */
     pageSize?: number;
+    /**
+     * 지정한 경우에만 요약 옆에 페이지당 건수 셀렉트가 노출된다(opt-in).
+     * 미지정 시 기존 소비자 DOM 은 한 글자도 달라지지 않는다.
+     */
+    onPageSizeChange?: (size: number) => void;
+    /** onPageSizeChange 지정 시 선택지. 기본 [10, 20, 50, 100] */
+    pageSizeOptions?: number[];
   };
   search?: {
     placeholder?: string;
@@ -310,6 +379,23 @@ export function StandardDataTable<T extends object>({
     : null;
   const desktopScrollRegionProps = useOverflowRegion<HTMLDivElement>(`${accessibleLabel} 스크롤 영역`);
 
+  // headless TanStack Table — row model(정렬 순서·row id)과 정렬 상태만 위임한다.
+  // 마크업·role·data-label·선택 상태는 종전 그대로 이 컴포넌트가 소유한다(ADR-0006 DOM 불변).
+  const tableData = useMemo(() => data ?? [], [data]);
+  const columnDefs = useMemo(() => buildColumnDefs(columns), [columns]);
+  const getRowId = useCallback(
+    (item: T, index: number) => String(item?.[keyField] ?? index),
+    [keyField],
+  );
+  const table = useTable({
+    features: standardTableFeatures,
+    data: tableData,
+    columns: columnDefs,
+    getRowId,
+  });
+  const leafColumns = table.getAllLeafColumns();
+  const tableRows = table.getRowModel().rows;
+
   return (
     <div className={cn("space-y-6", isPremium ? "animate-in fade-in slide-in-from-bottom-4 duration-700" : "", className)}>
       {/* Search Bar integration if provided */}
@@ -428,17 +514,51 @@ export function StandardDataTable<T extends object>({
                     />
                   </th>
                 )}
-                {columns.map((column, idx) => (
-                  <th key={`header-${idx}`} className={cn(
-                    "px-[var(--cell-px)] py-[var(--cell-py)] font-bold text-foreground text-xs uppercase tracking-[0.25em] whitespace-nowrap",
-                    column.className
-                  )} scope="col" aria-label={typeof column.header === 'string' && column.header ? column.header : '열'}>
-                    <div className="flex items-center gap-2">
-                      {column.header}
-                      <div className="w-1 h-1 bg-primary/30 rounded-full" />
-                    </div>
-                  </th>
-                ))}
+                {columns.map((column, idx) => {
+                  const tanColumn = leafColumns[idx];
+                  const canSort = tanColumn?.getCanSort() ?? false;
+                  const sortDirection = canSort ? tanColumn.getIsSorted() : false;
+                  return (
+                    <th
+                      key={`header-${idx}`}
+                      className={cn(
+                        "px-[var(--cell-px)] py-[var(--cell-py)] font-bold text-foreground text-xs uppercase tracking-[0.25em] whitespace-nowrap",
+                        column.className
+                      )}
+                      scope="col"
+                      aria-label={typeof column.header === 'string' && column.header ? column.header : '열'}
+                      // aria-sort 는 정렬 가능한 th 에만 둔다(none|ascending|descending).
+                      aria-sort={canSort
+                        ? (sortDirection === 'asc' ? 'ascending' : sortDirection === 'desc' ? 'descending' : 'none')
+                        : undefined}
+                    >
+                      {canSort ? (
+                        <button
+                          type="button"
+                          onClick={tanColumn.getToggleSortingHandler()}
+                          // 서버 페이지네이션은 그대로다 — 정렬 범위를 정직하게 문서화한다.
+                          title="현재 페이지의 행만 정렬합니다"
+                          className="flex items-center gap-2 font-bold uppercase tracking-[0.25em] text-foreground transition-colors hover:text-primary outline-none rounded-sm focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          {column.header}
+                          {sortDirection === 'asc' ? (
+                            <ArrowUp className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+                          ) : sortDirection === 'desc' ? (
+                            <ArrowDown className="w-3.5 h-3.5 text-primary" aria-hidden="true" />
+                          ) : (
+                            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground/70" aria-hidden="true" />
+                          )}
+                          <span className="w-1 h-1 bg-primary/30 rounded-full" aria-hidden="true" />
+                        </button>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          {column.header}
+                          <div className="w-1 h-1 bg-primary/30 rounded-full" />
+                        </div>
+                      )}
+                    </th>
+                  );
+                })}
                 {onRowClick && (
                   <th className="px-[var(--cell-px)] py-[var(--cell-py)] text-right" scope="col">
                     <span className="sr-only">행 작업</span>
@@ -479,20 +599,22 @@ export function StandardDataTable<T extends object>({
                   </td>
                 </tr>
               ) : (
-                (data || []).map((item, rowIdx) => {
+                // TanStack row model 이 표시 순서(정렬 반영)와 row id(keyField→getRowId)를 소유한다.
+                // index 는 표시 위치다 — 정렬이 없으면 종전 data 인덱스와 동일하다.
+                tableRows.map((row, displayIdx) => {
+                  const item = row.original;
                   if (!item) return null;
-                  const itemId = item?.[keyField] ?? rowIdx;
                   return (
                     <DataRow
-                      key={`row-${itemId}`}
+                      key={`row-${row.id}`}
                       item={item}
                       columns={columns}
-                      index={rowIdx}
+                      index={displayIdx}
                       isSelected={selectedIds.has(item?.[keyField])}
                       enableSelection={enableSelection}
                       onToggle={() => toggleOne(item?.[keyField])}
                       onRowClick={onRowClick}
-                      rowActionLabel={resolveRowActionLabel(rowActionLabel, item, rowIdx)}
+                      rowActionLabel={resolveRowActionLabel(rowActionLabel, item, displayIdx)}
                       rowTestId={rowTestId}
                     />
                   );
@@ -504,25 +626,58 @@ export function StandardDataTable<T extends object>({
       </div>
 
       {/* Pagination Controls — 총 건수·페이지 번호 노출 (PagePagination 과 동일한 윈도우 규칙) */}
-      {pagination && (pagination.totalPages > 1 || pagination.totalCount !== undefined) && (
+      {pagination && (pagination.totalPages > 1 || pagination.totalCount !== undefined || pagination.onPageSizeChange !== undefined) && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-8 pb-4">
-          <p className="text-xs font-bold text-muted-foreground tracking-wider order-2 sm:order-1" aria-live="polite">
-            {pagination.totalCount !== undefined && (
+          {(() => {
+            const summary = (
               <>
-                총 <span className="text-foreground font-black">{pagination.totalCount.toLocaleString()}</span>건
-                <span className="mx-2 opacity-40">·</span>
+                {pagination.totalCount !== undefined && (
+                  <>
+                    총 <span className="text-foreground font-black">{pagination.totalCount.toLocaleString()}</span>건
+                    <span className="mx-2 opacity-40">·</span>
+                  </>
+                )}
+                {rowRange && (
+                  <>
+                    {rowRange.from.toLocaleString()}–{rowRange.to.toLocaleString()}번째
+                    <span className="mx-2 opacity-40">·</span>
+                  </>
+                )}
+                <span className="text-foreground font-black">{pagination.currentPage}</span>
+                {' / '}
+                {Math.max(pagination.totalPages, 1)} 페이지
               </>
-            )}
-            {rowRange && (
-              <>
-                {rowRange.from.toLocaleString()}–{rowRange.to.toLocaleString()}번째
-                <span className="mx-2 opacity-40">·</span>
-              </>
-            )}
-            <span className="text-foreground font-black">{pagination.currentPage}</span>
-            {' / '}
-            {Math.max(pagination.totalPages, 1)} 페이지
-          </p>
+            );
+            const { onPageSizeChange } = pagination;
+            if (!onPageSizeChange) {
+              // opt-in 미사용 시 기존 소비자 DOM 을 그대로 유지한다(래퍼도 추가하지 않는다).
+              return (
+                <p className="text-xs font-bold text-muted-foreground tracking-wider order-2 sm:order-1" aria-live="polite">
+                  {summary}
+                </p>
+              );
+            }
+            return (
+              <div className="flex flex-wrap items-center justify-center gap-3 order-2 sm:order-1">
+                <p className="text-xs font-bold text-muted-foreground tracking-wider" aria-live="polite">
+                  {summary}
+                </p>
+                <Select
+                  value={String(pagination.pageSize ?? 10)}
+                  onValueChange={(value) => onPageSizeChange(Number(value))}
+                >
+                  <SelectTrigger size="sm" aria-label="페이지당 항목 수" className="rounded-lg text-xs font-bold">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(pagination.pageSizeOptions ?? [10, 20, 50, 100]).map((size) => (
+                      <SelectItem key={size} value={String(size)}>{size}개씩</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            );
+          })()}
 
           {pagination.totalPages > 1 && (
             <nav

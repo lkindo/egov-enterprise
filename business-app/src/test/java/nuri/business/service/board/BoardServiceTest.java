@@ -74,7 +74,10 @@ class BoardServiceTest {
                 eventPublisher,
                 meterRegistry,
                 viewCountService,
-                new BoardMapperImpl());
+                new BoardMapperImpl(),
+                // 설정 미주입 기본값 = 종전 PUBLIC_FAQ_BOARD_ID 리터럴(BBSMSTR_AAAAAAAAAAAA).
+                // 아래 FAQ 테스트들의 기존 리터럴 기대값을 그대로 두어 기본값 동작 불변을 검증한다.
+                new nuri.business.core.config.BoardIdProperties());
     }
 
     @org.junit.jupiter.api.AfterEach

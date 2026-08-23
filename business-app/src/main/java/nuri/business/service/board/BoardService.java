@@ -4,6 +4,7 @@ import nuri.business.domain.user.exception.UserErrorCode;
 import nuri.business.domain.board.exception.BoardErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
+import nuri.business.core.config.BoardIdProperties;
 import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.board.Board;
 import nuri.business.domain.board.BoardDetailResult;
@@ -45,8 +46,6 @@ import java.util.List;
 @Service
 public class BoardService extends BaseAbstractService {
 
-        private static final String PUBLIC_FAQ_BOARD_ID = "BBSMSTR_AAAAAAAAAAAA";
-
         private final BoardRepository boardRepository;
         private final BoardMasterRepository boardMasterRepository;
         private final UserService userService;
@@ -55,6 +54,13 @@ public class BoardService extends BaseAbstractService {
         private final MeterRegistry meterRegistry;
         private final BoardViewCountService viewCountService;
         private final BoardMapper boardMapper;
+        /**
+         * 게시판 인스턴스 ID 설정({@code nuri.boards.*}) — 종전 {@code PUBLIC_FAQ_BOARD_ID}
+         * 리터럴({@code BBSMSTR_AAAAAAAAAAAA})을 설정 소비로 역전. 기본값이 종전 리터럴과
+         * 동일하므로 설정이 없어도 거동이 같다. FAQ 통합 축(공지 게시판과 같은 인스턴스)의
+         * 의미는 {@link BoardIdProperties} javadoc 참조 — 값 정합화는 제품 판단 대기.
+         */
+        private final BoardIdProperties boardIdProperties;
 
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
@@ -63,7 +69,8 @@ public class BoardService extends BaseAbstractService {
                         ApplicationEventPublisher eventPublisher,
                         MeterRegistry meterRegistry,
                         BoardViewCountService viewCountService,
-                        BoardMapper boardMapper) {
+                        BoardMapper boardMapper,
+                        BoardIdProperties boardIdProperties) {
                 this.boardRepository = required(boardRepository, "boardRepository 는 null 일 수 없습니다");
                 this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
                 this.userService = required(userService, "userService 는 null 일 수 없습니다");
@@ -72,6 +79,7 @@ public class BoardService extends BaseAbstractService {
                 this.meterRegistry = required(meterRegistry, "meterRegistry 는 null 일 수 없습니다");
                 this.viewCountService = required(viewCountService, "viewCountService 는 null 일 수 없습니다");
                 this.boardMapper = required(boardMapper, "boardMapper 는 null 일 수 없습니다");
+                this.boardIdProperties = required(boardIdProperties, "boardIdProperties 는 null 일 수 없습니다");
         }
 
 
@@ -133,7 +141,7 @@ public class BoardService extends BaseAbstractService {
                 assertPublicFaqBoardAvailable();
 
                 return boardRepository.searchPublicFaqArticles(
-                                PUBLIC_FAQ_BOARD_ID,
+                                boardIdProperties.getFaqId(),
                                 searchWrd,
                                 required(pageable, "pageable 는 null 일 수 없습니다"))
                                 .map(boardMapper::toDto);
@@ -365,7 +373,7 @@ public class BoardService extends BaseAbstractService {
         @Transactional(readOnly = true)
         public BoardDto getPublicFaqDetail(@NonNull Long pstSn) {
                 BoardDetailResult detail = boardRepository
-                                .findPublicArticleDetail(PUBLIC_FAQ_BOARD_ID, pstSn)
+                                .findPublicArticleDetail(boardIdProperties.getFaqId(), pstSn)
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
                 viewCountService.increaseViewCount(pstSn);
@@ -382,7 +390,7 @@ public class BoardService extends BaseAbstractService {
         }
 
         private void assertPublicFaqBoardAvailable() {
-                boardMasterRepository.findById(PUBLIC_FAQ_BOARD_ID)
+                boardMasterRepository.findById(boardIdProperties.getFaqId())
                                 .filter(master -> "Y".equalsIgnoreCase(master.getUseYn()))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
         }
