@@ -10,20 +10,22 @@ import { StandardDataTable, Column } from '@/app/components/ui/standard-data-tab
 import { History, Terminal, FileText, Calendar } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 type UserLogTableRow = UserLog & { rowKey: string };
 
 const SystemLogsUserClient = () => {
     const [page, setPage] = usePageParam();
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
     const [searchKeyword, setSearchKeyword] = useState('');
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<UserLog>>({
-        queryKey: ['admin-logs-user', page, searchKeyword],
+        queryKey: ['admin-logs-user', page, pageSize, searchKeyword],
         // 서비스가 `pageIndex`(1-base)만 읽는다. 기존 `pageNo` 전달은 무시돼 항상 1페이지가 조회됐다.
         queryFn: () => systemLogAdminService.getUserLogs({
             pageIndex: page,
-            size: PAGE_SIZE,
+            size: pageSize,
             searchKeyword,
         }),
         // 이 목록은 StandardDataTable이 검색어를 유지한 채 오류와 scoped retry를 직접 제공한다.
@@ -44,6 +46,8 @@ const SystemLogsUserClient = () => {
     const columns: Column<UserLogTableRow>[] = [
         {
             header: '발생일자',
+            // 현재 페이지 범위 클라이언트 정렬(opt-in) — YYYYMMDD 문자열이 정렬 키다.
+            sortKey: 'ocrnYmd',
             accessor: (item: UserLogTableRow) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
@@ -54,6 +58,7 @@ const SystemLogsUserClient = () => {
         },
         {
             header: '서비스설명',
+            sortKey: 'srvcNm',
             accessor: (item: UserLogTableRow) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
@@ -73,6 +78,8 @@ const SystemLogsUserClient = () => {
         },
         {
             header: '요청자',
+            // 표시값은 userNm 우선이지만 정렬 키는 항상 존재하는 계정 ID 다(결측 없는 안정 정렬).
+            sortKey: 'dmndUserId',
             accessor: (item: UserLogTableRow) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-card border rounded-lg w-fit shadow-sm">
                     <span className="text-xs font-bold text-foreground">{item.userNm || item.dmndUserId}</span>
@@ -136,7 +143,10 @@ const SystemLogsUserClient = () => {
                     totalPages: totalPageCount,
                     onPageChange: setPage,
                     totalCount,
-                    pageSize: PAGE_SIZE,
+                    pageSize,
+                    // 페이지 크기 변경 시 1페이지로 복귀 — 줄어든 총 페이지 밖에 남지 않게 한다.
+                    onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
+                    pageSizeOptions: PAGE_SIZE_OPTIONS,
                 }}
                 search={{
                     placeholder: '요청자명으로 검색..',

@@ -10,18 +10,20 @@ import { StandardDataTable, Column } from '@/app/components/ui/standard-data-tab
 import { Globe, Clock, Terminal, Link } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const SystemLogsWebClient = () => {
     const [page, setPage] = usePageParam();
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
     const [searchKeyword, setSearchKeyword] = useState('');
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<WebLog>>({
-        queryKey: ['admin-logs-web', page, searchKeyword],
+        queryKey: ['admin-logs-web', page, pageSize, searchKeyword],
         // 서비스가 `pageIndex`(1-base)만 읽는다. 기존 `pageNo` 전달은 무시돼 항상 1페이지가 조회됐다.
         queryFn: () => systemLogAdminService.getWebLogs({
             pageIndex: page,
-            size: PAGE_SIZE,
+            size: pageSize,
             searchKeyword,
         }),
     });
@@ -52,6 +54,8 @@ const SystemLogsWebClient = () => {
         },
         {
             header: '요청자',
+            // 현재 페이지 범위 클라이언트 정렬(opt-in).
+            sortKey: 'dmndUserId',
             accessor: (item: WebLog) => (
                 <span className="text-xs font-bold text-foreground">{item.dmndUserId || '-'}</span>
             ),
@@ -59,6 +63,8 @@ const SystemLogsWebClient = () => {
         },
         {
             header: '응답시간',
+            // 숫자 필드라 수치 정렬이 그대로 성립한다(느린 요청 탐색용).
+            sortKey: 'prcsTm',
             accessor: (item: WebLog) => (
                 <div className="flex items-center gap-1.5 font-bold text-muted-foreground">
                     <Clock size={12} className="opacity-30" />
@@ -80,6 +86,7 @@ const SystemLogsWebClient = () => {
         },
         {
             header: '등록일시',
+            sortKey: 'occrYmd',
             accessor: (item: WebLog) => (
                 <div className="font-mono text-xs text-muted-foreground tabular-nums">
                     {item.occrYmd || '-'}
@@ -115,7 +122,10 @@ const SystemLogsWebClient = () => {
                     totalPages: totalPageCount,
                     onPageChange: setPage,
                     totalCount,
-                    pageSize: PAGE_SIZE,
+                    pageSize,
+                    // 페이지 크기 변경 시 1페이지로 복귀 — 줄어든 총 페이지 밖에 남지 않게 한다.
+                    onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
+                    pageSizeOptions: PAGE_SIZE_OPTIONS,
                 }}
                 search={{
                     placeholder: 'URL, IP 검색..',
