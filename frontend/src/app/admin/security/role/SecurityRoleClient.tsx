@@ -135,13 +135,14 @@ export default function SecurityRoleClient() {
   const columns: Column<RoleManage>[] = [
     {
       header: '보안 롤 프로파일',
+      // 셀 밀도: td 가 이미 --cell-px/--cell-py 토큰을 소비하므로 accessor 내부의 추가 py 를 두지 않는다.
       accessor: (item: RoleManage) => (
-        <div className="flex items-center gap-4 py-3">
+        <div className="flex items-center gap-4">
           <div className="w-10 h-10 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-xl group-hover:rotate-12 transition-all duration-500">
             <Lock size={18} className="text-primary" />
           </div>
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono leading-none mb-1">ROLE_UID</span>
+            <span className="text-xs font-bold text-muted-foreground/30 tracking-tight leading-none mb-1">롤 ID</span>
             <span className="font-mono text-xs font-bold text-foreground tracking-widest uppercase">{item.roleId}</span>
           </div>
         </div>
@@ -251,9 +252,7 @@ export default function SecurityRoleClient() {
  <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">패턴 분석</Button>
  </form>
  </div>
- <div>
- <span className="text-xs font-bold text-muted-foreground/30 tracking-[0.4em] uppercase font-mono ">기능 역할 테이블 프로브</span>
- </div>
+ {/* [정직성] '기능 역할 테이블 프로브' 장식 라벨 제거 — 어떤 계측·기능과도 연결되지 않은 문구였다. */}
  </div>
 
  <div className="min-h-[500px]">
@@ -336,9 +335,9 @@ export default function SecurityRoleClient() {
       onChange={(e) => setFormData(prev => ({ ...prev, roleTypeCd: e.target.value }))}
       className="w-full h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-xs font-bold tracking-widest uppercase focus:ring-8 focus:ring-primary/5 outline-none transition-all shadow-inner cursor-pointer"
     >
-      <option value="url">URL_RESOURCE</option>
-      <option value="method">METHOD_INVOCATION</option>
-      <option value="api">REST_ENDPOINT</option>
+      <option value="url">URL 리소스</option>
+      <option value="method">메서드 호출</option>
+      <option value="api">REST 엔드포인트</option>
     </select>
   </FormField>
  <FormField htmlFor="roleSort" label="우선순위 (Sort Order)" description="보안 필터 체인에서의 적용 우선순위">

@@ -2,19 +2,16 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FileText,  
-  Zap,  
-  ShieldCheck,  
-  ArrowLeft,  
-  Plus,  
-  ChevronRight,  
-  Calendar,  
-  CreditCard,  
-  ShoppingBag,  
-  Clock,  
-  Send, 
-  User, 
-  Info } from 'lucide-react';
+import { FileText,
+  Zap,
+  ArrowLeft,
+  Plus,
+  ChevronRight,
+  Calendar,
+  CreditCard,
+  ShoppingBag,
+  Clock,
+  Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -93,10 +90,11 @@ export default function ApprovalDraftHubClient() {
     toast('이 화면은 아직 상신을 저장하지 않습니다. 작성한 내용은 전송되지 않았습니다.', 'error');
   };
 
+  // 폭 위임: 화면 자체 max-w-[1200px] 캡을 제거하고 루트 레이아웃의 --page-max-w 토큰에
+  // 폭·여백을 위임한다(compact 배포에서 전폭, theme-token-contract 고정).
   return (
-    <div className="min-h-screen bg-muted p-4 lg:p-8 animate-in fade-in duration-1000">
-      <div className="max-w-[1200px] mx-auto space-y-12">
-        
+    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+
         {/* --- Header --- */}
         <div className="flex items-center justify-between px-4">
           <div className="flex items-center gap-6">
@@ -117,11 +115,8 @@ export default function ApprovalDraftHubClient() {
               </p>
             </div>
           </div>
-          
-          <div className="hidden md:flex items-center gap-2 px-6 py-3 bg-card rounded-lg shadow-xl border border-border">
-            <ShieldCheck size={16} className="text-emerald-500" />
-            <span className="text-xs font-bold text-muted-foreground tracking-tight">Encryption Active</span>
-          </div>
+          {/* [정직성] 'Encryption Active' 상시 배지 제거 — 어떤 암호화 상태도 계측하지 않으면서
+              항상 켜져 있던 근거 없는 보안 지표였다. */}
         </div>
 
         <AnimatePresence mode="wait">
@@ -157,7 +152,7 @@ export default function ApprovalDraftHubClient() {
                           <span className="text-xs font-bold tracking-tight text-primary bg-primary/5 px-2 py-0.5 rounded">
                             {form.category}
                           </span>
-                          <span className="text-xs font-bold text-muted-foreground">_ #{form.id}</span>
+                          <span className="text-xs font-bold text-muted-foreground">#{form.id}</span>
                         </div>
                         <h3 className="text-xl font-bold text-foreground tracking-tight leading-none group-hover:text-primary transition-colors">
                           {form.title}
@@ -176,14 +171,8 @@ export default function ApprovalDraftHubClient() {
                   </motion.div>
                 ))}
               </div>
-              
-              <div className="p-12 bg-surface-inverse rounded-[2.5rem] shadow-2xl relative overflow-hidden text-center">
-                <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'radial-gradient(circle, #fff 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }} />
-                <div className="relative z-10 space-y-4">
-                  <h4 className="text-xl font-bold text-surface-inverse-foreground tracking-tighter">_ "Precision in every dispatch."</h4>
-                  <p className="text-xs text-surface-inverse-muted font-bold tracking-tight">Enterprise Autonomous Governance Core</p>
-                </div>
-              </div>
+              {/* [정직성] 'Precision in every dispatch' 인용 카드 제거 — 어떤 기능·데이터와도
+                  연결되지 않은 장식 슬로건이었다. */}
             </motion.div>
           ) : (
             <motion.div
@@ -207,49 +196,18 @@ export default function ApprovalDraftHubClient() {
                         </div>
                         <div>
                           <h4 className="text-lg font-bold text-foreground tracking-tight">{selectedForm?.title}</h4>
-                          <p className="text-xs font-bold text-muted-foreground tracking-tight">{selectedForm?.category} MODULE</p>
+                          <p className="text-xs font-bold text-muted-foreground tracking-tight">{selectedForm?.category}</p>
                         </div>
                       </div>
-                      
-                      <div className="p-6 bg-muted rounded-lg border border-border space-y-4">
-                        <div className="flex items-center justify-between text-xs font-bold text-muted-foreground tracking-tight">
-                           <span>Originating Node</span>
-                           <span className="text-primary">SECURE</span>
-                        </div>
-                        <div className="flex items-center gap-3">
-                           <div className="w-10 h-10 rounded-lg bg-card shadow-sm flex items-center justify-center text-muted-foreground">
-                              <User size={18} />
-                           </div>
-                           <div className="space-y-1">
-                              <p className="text-sm font-bold text-foreground leading-none">Senior Administrator</p>
-                              <p className="text-xs font-bold text-muted-foreground opacity-60">_ AUTH_TOKEN: XX-9901</p>
-                           </div>
-                        </div>
-                      </div>
-                      
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground tracking-tight">
-                           <Info size={14} className="text-primary" /> Logic Path
-                        </div>
-                        <div className="flex items-center gap-2">
-                           <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                           <span className="text-xs font-bold text-muted-foreground tracking-tight">Draft</span>
-                           <ChevronRight size={12} className="text-muted-foreground" />
-                           <div className="w-1.5 h-1.5 rounded-full bg-muted" />
-                           <span className="text-xs font-bold text-muted-foreground tracking-tight opacity-50">L1 Approval</span>
-                           <ChevronRight size={12} className="text-muted-foreground" />
-                           <div className="w-1.5 h-1.5 rounded-full bg-muted" />
-                           <span className="text-xs font-bold text-muted-foreground tracking-tight opacity-50">Commit</span>
-                        </div>
-                      </div>
+
+                      <p className="text-xs font-bold text-muted-foreground leading-relaxed">
+                        {selectedForm?.description}
+                      </p>
+                      {/* [정직성] 창작 신원 박스('Senior Administrator'/'AUTH_TOKEN: XX-9901')와
+                          창작 결재선('Logic Path: Draft → L1 Approval → Commit'), 근거 없는 감사 문구
+                          ('Audit Protocol' 인용) 제거 — 이 화면은 백엔드 미연동 양식 작성 화면이며,
+                          존재하지 않는 인증 토큰·결재 경로·감사 체계를 사실처럼 표시하지 않는다. */}
                    </div>
-                </Card>
-                
-                <Card className="rounded-[2.5rem] border-none bg-surface-inverse text-surface-inverse-foreground shadow-2xl p-10 space-y-4">
-                   <h4 className="text-xs font-bold text-primary tracking-tight">Audit Protocol</h4>
-                   <p className="text-sm font-bold text-surface-inverse-muted leading-relaxed">
-                    "All submissions are subject to real-time integrity checks and permanent ledger logging."
-                   </p>
                 </Card>
               </div>
 
@@ -320,7 +278,6 @@ export default function ApprovalDraftHubClient() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
     </div>
   );
 }
