@@ -153,7 +153,7 @@ export default function CommonCodeHubClient({
             transition={{ type: "spring", stiffness: 300, damping: 30 }}
           >
             {activeTab === 'STANDARD' && (
-              <div className="hub-card-section p-4 lg:p-12 border ring-1 ring-border relative overflow-hidden bg-white/50 backdrop-blur-xl">
+              <div className="hub-card-section p-4 lg:p-[var(--page-pad-md)] border ring-1 ring-border relative overflow-hidden bg-card">
                  <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-primary/5 rounded-lg blur-[120px] -ml-64 -mt-64 opacity-60 pointer-events-none" />
                  <CommonCodeClient 
                   clCodes={clCodes} 
@@ -164,13 +164,13 @@ export default function CommonCodeHubClient({
               </div>
             )}
             {activeTab === 'ADMINIST' && (
-              <div className="hub-card-section p-4 lg:p-12 border ring-1 ring-border relative overflow-hidden bg-white/50 backdrop-blur-xl">
+              <div className="hub-card-section p-4 lg:p-[var(--page-pad-md)] border ring-1 ring-border relative overflow-hidden bg-card">
                 <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-primary/5 rounded-lg blur-[120px] -mr-64 -mt-64 opacity-60 pointer-events-none" />
                 <AdministCodeClient initialData={{ list: [], total: 0 }} />
               </div>
             )}
             {activeTab === 'INSTITUTION' && (
-              <div className="hub-card-section p-4 lg:p-12 border ring-1 ring-border relative overflow-hidden bg-white/50 backdrop-blur-xl">
+              <div className="hub-card-section p-4 lg:p-[var(--page-pad-md)] border ring-1 ring-border relative overflow-hidden bg-card">
                 <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-hub-indigo/5 rounded-lg blur-[120px] -ml-64 -mt-64 opacity-60 pointer-events-none" />
                 <InstitutionCodeClient initialData={{ list: [], total: 0 }} />
               </div>
@@ -200,7 +200,7 @@ function HubTabButton({ id, panelId, icon: Icon, label, active, onClick }: { id:
         "relative flex items-center gap-3 px-10 py-4 rounded-lg text-xs font-bold tracking-tight transition-all active:scale-95 overflow-hidden group",
         active
           ? "bg-card text-foreground shadow-2xl ring-1 ring-border"
-          : "text-muted-foreground hover:text-foreground hover:bg-white/50"
+          : "text-muted-foreground hover:text-foreground hover:bg-card/70"
       )}
     >
       <div className={cn(
