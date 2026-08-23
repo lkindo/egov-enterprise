@@ -47,7 +47,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
   return (
     <div className={cn(
       "border-2 border-border/60 bg-card shadow-sm mb-8 transition-all group overflow-hidden", 
-      isPremium ? "p-8 rounded-lg" : "p-5 rounded-lg",
+      isPremium ? "p-[var(--filter-pad)] rounded-lg" : "p-5 rounded-lg",
       className
     )}>
       <form onSubmit={handleSubmit} className="space-y-6">
