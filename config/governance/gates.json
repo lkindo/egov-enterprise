@@ -670,6 +670,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/BannerBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-SEED-ADMIN-BOOTSTRAP",
+          "source": "api-server/src/test/java/nuri/api/schema/BaseAdminBootstrapSeedIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-BLOG-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/BlogBigintMigrationIntegrationTest.java"
         },
