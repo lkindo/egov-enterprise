@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "e9eeb1e1c06c4f0cc8a113772ec680f84a6def23631acc16a87e027cca2506b1"
+    "inventoryHash": "361145cd59a5f3a26112111db9c54390d661ec22a14a8dacf0fb561171d9ccb3"
   },
   "summary": {
-    "sourceFileCount": 480,
-    "records": 526,
-    "syntaxOccurrences": 598,
-    "ambiguousRecords": 505,
-    "unverifiedRecords": 526,
+    "sourceFileCount": 481,
+    "records": 527,
+    "syntaxOccurrences": 599,
+    "ambiguousRecords": 506,
+    "unverifiedRecords": 527,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 11,
@@ -40,7 +40,7 @@
     "byKind": {
       "config-redirect": 15,
       "dynamic-segment": 11,
-      "form-producer": 45,
+      "form-producer": 46,
       "navigation-producer": 153,
       "page-redirect": 5,
       "query-builder": 21,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 361,
+      "navigation": 362,
       "request-telemetry": 165
     }
   },
@@ -13699,6 +13699,46 @@
       "evidence": {
         "source": "frontend/src/app/components/layout/sidebar.tsx",
         "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-1BA06D3AA9C4F5",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "implicit-or-computed-method",
+      "source": "frontend/src/app/components/ui/code-picker.tsx",
+      "producerFile": "frontend/src/app/components/ui/code-picker.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "form-method-or-interception-unresolved",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/ui/code-picker.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },

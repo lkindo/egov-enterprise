@@ -37,7 +37,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 // [하향 래칫 2026-08-23(3)] HubListCard 장식 점의 slate 리터럴 1건을 theme-aware border 토큰으로 치환.
 // [하향 래칫 2026-08-23(4)] 결재 허브의 hover 전용 퀵액션 오버레이 제거(m-4 전폭·정직성 정리)로
 //   dark:from/via-slate-800 그라데이션 리터럴 2건 제거.
-const BASELINE = 70;
+// [하향 래칫 2026-08-23(5)] 공통코드 밀집화(m-3) — 신규 등록 버튼의 bg-slate-900 1건을 Button 기본
+//   variant(bg-primary 토큰)로 회수(m-3 단독 사전 red 실측: 71 != 72; m-4 하향과 병합해 70→69).
+const BASELINE = 69;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
