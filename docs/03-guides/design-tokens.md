@@ -137,4 +137,16 @@ pnpm -C frontend exec vitest run \
 
 > **원칙**: 정적 검증(`tsc`/`next build`)은 통과해도 **색·다크모드 시각 회귀는 잡지 못한다**. 대규모 색 변경 후에는 반드시 라이트/다크 **육안 검증**을 병행한다(프론트 헌법 제6조).
 
-*Last reviewed against current sources: 2026-08-19.*
+---
+
+## 5. 밀도 축 (data-density) — 브랜드와 직교
+
+브랜드 프로필과 **직교**하는 배포 단위 축이다(DEC-OPS-015). allowlist는 `comfortable`(기본)·`compact` 2값이며, 서버 env `UI_DENSITY`를 [density.ts](../../frontend/src/lib/theme/density.ts)가 allowlist 검증한 뒤 `<html data-density>` **전역 한 곳**에만 배선한다. **라우트별 밀도 배정은 브랜드 축과 동일하게 ADR-0004가 금지한다.**
+
+- **comfortable**: 오버라이드가 전혀 없다 — 밀도·구조 토큰(`--control-h`·`--cell-py`·`--page-max-w`·`--filter-pad`·`--filter-control-h` 등)은 프로필 CSS 선언값 그대로이며, `UI_DENSITY` 미설정 배포는 렌더링이 1px도 변하지 않는다.
+- **compact**: [globals.css](../../frontend/src/app/globals.css)의 `:root[data-density="compact"]` 블록 **한 곳**이 같은 토큰을 고밀도 값으로 덮어쓴다. 이 블록은 의도적으로 **무레이어**다 — 프로필 선언은 전부 `@layer base` 안이라, 무레이어 규칙이 특이성·순서와 무관하게 두 프로필 × 라이트·다크 4개 블록을 전부 이긴다. 밀도는 컬러 모드에도 불변이므로 다크 재선언이 필요 없다.
+- **프로필 파일에 밀도 오버라이드를 넣지 않는다**: 밀도는 어느 브랜드에서도 같은 커스텀 프로퍼티를 같은 값으로 덮으므로, 프로필별 복제는 드리프트만 만든다.
+
+배선·토큰 전수·무레이어·import 후행은 theme-token-contract가 강제한다. 검증: `pnpm -C frontend exec vitest run src/__tests__/theme-token-contract.test.ts src/lib/theme/__tests__/density.test.ts`.
+
+*Last reviewed against current sources: 2026-08-23.*

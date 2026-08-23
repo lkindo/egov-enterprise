@@ -78,6 +78,39 @@
   }
 }
 
+/* --- 밀도 축(data-density) 오버라이드 (D1, DEC-OPS-015) ---
+   밀도는 브랜드와 직교하고 컬러 모드에 불변이므로 프로필 파일이 아니라 여기 한 곳에서
+   같은 커스텀 프로퍼티를 덮어쓴다. comfortable(기본)은 오버라이드가 전혀 없어 프로필
+   선언값 그대로다 — 미설정 배포의 렌더링 무변경이 계약이다(theme-token-contract).
+
+   ⚠ 캐스케이드 근거 — 이 블록은 의도적으로 **무레이어**다. 프로필 선언은 전부
+   @layer base 안에 있고, 무레이어 author 규칙은 특이성·소스 순서와 무관하게 모든
+   @layer 규칙을 이긴다. 그래서 이 블록 하나가 두 프로필 × 라이트·다크 4개 블록
+   전부를 이긴다 — 브랜드 셀렉터와 특이성 동점 경쟁이나 다크 조합 셀렉터 대응이
+   필요 없다. 이 블록을 @layer 안으로 옮기면 그 순간 브랜드/다크 블록에 져서
+   compact 가 조용히 무력화된다(theme-token-contract 가 무레이어·import 후행을 강제). */
+:root[data-density="compact"] {
+  --control-h: 2rem;           /* 2.25rem → h-8 급 컨트롤 */
+  --cell-px: 0.75rem;          /* 1.5rem → px-3 */
+  --cell-py: 0.5rem;           /* 1.25rem → py-2 */
+  --font-size-body: 0.8125rem; /* 0.875rem → 13px */
+  --form-gap: 0.75rem;         /* 1rem → gap-3 */
+  --page-max-w: 100%;          /* 80rem → 전폭(ERP 작업면) */
+  --page-pad: 1rem;            /* 1.5rem → p-4 */
+  --page-pad-md: 1.25rem;      /* 3rem → p-5 */
+  --page-pad-lg: 1.5rem;       /* 4rem → p-6 */
+  --filter-pad: 1rem;          /* 2rem → p-4 */
+  --filter-control-h: 2rem;    /* 3rem → h-8 급 필터 컨트롤 */
+}
+
+/* compact 전용 장식 감량 — 표 머리글의 넓은 자간(0.25em)·대문자 변환은 고밀도 화면에서
+   가로 공간을 잡아먹는 순수 장식이다. th 유틸리티(text-xs uppercase tracking-…)는
+   @layer utilities 소속이라 이 무레이어 규칙이 !important 없이 이긴다. DOM·TSX 는
+   손대지 않는다(ADR-0006: 표현 분기는 CSS 만 담당). */
+:root[data-density="compact"] .standard-data-table-responsive thead th {
+  letter-spacing: 0.025em;
+  text-transform: none;
+}
 
 @layer base {
   * {

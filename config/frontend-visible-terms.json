@@ -194,7 +194,7 @@
       "id": "content-login",
       "route": "/login",
       "roles": ["ANONYMOUS"],
-      "sources": ["frontend/src/app/login/LoginClient.tsx"],
+      "sources": ["frontend/src/app/login/LoginClient.tsx", "frontend/src/config/site-identity.ts"],
       "evidenceLevel": "static-source",
       "status": "open",
       "owner": "content-design",

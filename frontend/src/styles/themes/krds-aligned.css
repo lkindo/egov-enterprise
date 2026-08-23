@@ -90,6 +90,7 @@
     --page-pad-lg: 4rem;
     --radius-control: 0.5rem;
     --filter-pad: 2rem;
+    --filter-control-h: 3rem; /* StandardSearchFilter 컨트롤(종전 h-12) — premium 과 동일 등가값 */
   }
 
   :root[data-brand-theme="krds-aligned"].dark {
@@ -137,5 +138,6 @@
     --page-pad-lg: 4rem;
     --radius-control: 0.5rem;
     --filter-pad: 2rem;
+    --filter-control-h: 3rem;
   }
 }

@@ -5,9 +5,10 @@ import { programAdminService } from '@/services/foundation/system/ProgramAdminSe
 import ProgramAdminClient from './ProgramAdminClient';
 import { Program } from '@/types/foundation/program';
 import { PageResponse } from '@/types/foundation/system';
+import { SITE_IDENTITY } from '@/config/site-identity';
 
 export const metadata = {
-  title: '시스템 프로그램 미들웨어 | 전자정부 표준프레임워크',
+  title: `시스템 프로그램 미들웨어 | ${SITE_IDENTITY.frameworkName}`,
   description: '시스템 아키텍처 내의 각 프로그램과 엔드포인트를 정의하고 통합 관리합니다.',
 };
 

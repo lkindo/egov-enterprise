@@ -35,7 +35,8 @@ clean v* release tag
 
 프로필은 누적된다. 낮은 pack이 높은 pack을 의존할 수 없고, 물리 테이블·독립 시퀀스는 한 pack만
 소유한다. `board`·`comment`·`scrap`처럼 함께 선택해야 하는 클러스터와 `tb_tmplt_info`처럼 공유되는
-테이블 계약도 매니페스트에 명시한다.
+테이블 계약도 매니페스트에 명시한다. 수동 도메인 삭제 스크립트 `scripts/delete-domain.ps1`도 이
+매니페스트의 `appDomains`·`clusters`를 같은 SSOT 로 소비한다([getting-started §5.1](getting-started.md#51-프로젝트-고유-기능-삭제)).
 
 ## 3. 공식 생성
 
