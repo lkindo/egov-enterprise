@@ -50,7 +50,10 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 // [하향 래칫 2026-08-23(4)] 결재 허브·기안 화면의 계측 없는 장식 지표 제거(m-4 정직성 정리)로
 //   emerald/rose 리터럴 10건 제거(퀵액션 오버레이 4·가짜 컴플라이언스 카드 2·'검증된 경로' 칩 2·
 //   기안 화면 'Encryption Active'/'Logic Path' 각 1).
-const BASELINE = 666;
+// [하향 래칫 2026-08-23(4)] m-2: 라우트가 렌더하지 않는 test-only 死화면
+//   admin/user/manage/UserManageClient.tsx 삭제로 status 리터럴 6건 감소(실측 676→670 red 확인 후 하향).
+// [병합 확정 2026-08-23] main(666)과 m-2(-6)의 독립 하향을 병합 트리 실측 660으로 확정.
+const BASELINE = 660;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

@@ -289,7 +289,10 @@ export default function UserOrgHubClient({
 
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', debouncedKeyword, userPage],
-    queryFn: () => userAdminService.getUserList({ pageNo: userPage, searchKeyword: debouncedKeyword }),
+    // 서버(GET /admin/system/users)는 searchKeyword + Spring Pageable(page/size, 0-based)만 읽는다.
+    // 종전의 {pageNo}는 ApiService 매핑 대상도 Pageable 파라미터도 아니라 그대로 무시됐고,
+    // 몇 페이지를 눌러도 항상 첫 페이지가 왔다(死 페이저 — 감사 m-2).
+    queryFn: () => userAdminService.getUserList({ page: userPage - 1, size: 10, searchKeyword: debouncedKeyword }),
     enabled: activeTab === 'USERS' || activeTab === 'ABSENCES',
     // 서버 프리페치가 실패했다면(null) 시드를 쓰지 않는다 — 빈 목록을 시드로 넣으면
     // staleTime 동안 재조회가 막혀 조회 실패가 '0건'으로 위장된다(감사 P1-1).
@@ -383,9 +386,13 @@ export default function UserOrgHubClient({
         toast('사용자 정보가 수정되었습니다.', 'success');
       }
       refetchUsers();
+      queryClient.invalidateQueries({ queryKey: ['admin-user-detail'] });
       setIsUserModalOpen(false);
-    } catch (_error) {
-      toast('사용자 저장 중 오류가 발생했습니다.', 'error');
+    } catch (error) {
+      // 인가 실패(403 등)를 포함한 서버 메시지를 그대로 보여준다 — 일반 문구로 뭉개면
+      // 사용자는 권한 문제인지 입력 문제인지 알 수 없다(H3 의미 보존, 감사 m-2).
+      const message = error instanceof Error ? error.message : '사용자 저장 중 오류가 발생했습니다.';
+      toast(message, 'error');
     }
   };
 
@@ -533,6 +540,20 @@ export default function UserOrgHubClient({
       : activeTab === 'DEPTS' ? (selectedDept ?? null)
         : (activeTab === 'USERS' || activeTab === 'ABSENCES') ? (selectedUser ?? null)
           : null;
+
+  /**
+   * 목록 API projection(UserDto 10필드)에는 ognzId·userSttsCd 가 없다. 목록 행만으로 상세 패널을
+   * 그리면 소속이 전원 '미지정'으로 보이고, 수정 폼이 ognzId='' 를 왕복시켜 부분수정 계약
+   * ("" = 지움, UserService.updateUser 참조)에 따라 실제 소속 부서를 지워버린다.
+   * 실존 상세 API(GET /admin/system/users/{userId})로 전체 레코드를 가져와 패널·수정 폼에 쓴다.
+   */
+  const { data: selectedUserDetail } = useQuery({
+    queryKey: ['admin-user-detail', selectedItemId],
+    queryFn: () => userAdminService.getUser(selectedItemId as string),
+    enabled: Boolean(selectedUser) && activeTab !== 'DEPTS',
+  });
+  const displayedUser: UserManage | undefined =
+    activeTab !== 'DEPTS' ? ((selectedUserDetail as UserManage | undefined) ?? selectedUser) : undefined;
 
   const userColumns: Column<UserManage>[] = [
     {
@@ -859,19 +880,20 @@ export default function UserOrgHubClient({
                     <div className="flex items-center gap-8">
                       <div className="w-24 h-20 bg-surface-inverse rounded-2xl flex items-center justify-center font-black text-4xl text-surface-inverse-foreground shadow-2xl rotate-2 group hover:rotate-6 transition-transform">
                         <span className="text-primary">
-                          {activeTab === 'DEPTS' ? (selectedItem as Department)?.ognzNm?.[0] : (selectedItem as UserManage)?.userNm?.[0]}
+                          {activeTab === 'DEPTS' ? (selectedItem as Department)?.ognzNm?.[0] : displayedUser?.userNm?.[0]}
                         </span>
                       </div>
                       <div className="space-y-4 pt-1">
                         <h2 className="text-4xl font-black text-foreground tracking-tighter leading-none truncate max-w-[350px]">
-                          {activeTab === 'DEPTS' ? (selectedItem as Department)?.ognzNm : (selectedItem as UserManage)?.userNm}
+                          {activeTab === 'DEPTS' ? (selectedItem as Department)?.ognzNm : displayedUser?.userNm}
                         </h2>
                         {/* 종전에는 상태와 무관하게 '인증됨' 이 항상, ABSENCES 탭에서는 전원 '자리비움' 이
                             표시됐다. 실제 계정 상태 코드(userSttsCd)에서만 배지를 만든다(감사 P1-5). */}
                         {activeTab !== 'DEPTS' && (
                           <div className="flex gap-3">
                             {(() => {
-                              const status = USER_STATUS_LABELS[(selectedItem as UserManage)?.userSttsCd ?? ''];
+                              // 목록 projection 에는 userSttsCd 가 없다 — 상세 API 데이터로만 배지를 만든다.
+                              const status = USER_STATUS_LABELS[displayedUser?.userSttsCd ?? ''];
                               if (!status) return null;
                               return (
                                 <span className={cn(
@@ -914,10 +936,11 @@ export default function UserOrgHubClient({
                         </>
                       ) : (
                         <>
-                          <InfoBlock icon={<Mail size={16} />} label="이메일 주소" value={(selectedItem as UserManage)?.emlAddr || '미지정'} />
-                          <InfoBlock icon={<Phone size={16} />} label="연락처" value={(selectedItem as UserManage)?.mblTelno || '미등록'} />
-                          <InfoBlock icon={<Building2 size={16} />} label="소속 부서" value={(selectedItem as UserManage)?.ognzId || '미지정'} />
-                          <InfoBlock icon={<Fingerprint size={16} />} label="사번" value={(selectedItem as UserManage)?.emplNo || '미지정'} />
+                          <InfoBlock icon={<Mail size={16} />} label="이메일 주소" value={displayedUser?.emlAddr || '미지정'} />
+                          <InfoBlock icon={<Phone size={16} />} label="연락처" value={displayedUser?.mblTelno || '미등록'} />
+                          {/* 소속·상태는 목록 projection 에 없다 — 상세 API(displayedUser)에서만 나온다. */}
+                          <InfoBlock icon={<Building2 size={16} />} label="소속 부서" value={displayedUser?.ognzId || '미지정'} />
+                          <InfoBlock icon={<Fingerprint size={16} />} label="사번" value={displayedUser?.emplNo || '미지정'} />
                         </>
                       )}
                     </div>
@@ -1001,8 +1024,12 @@ export default function UserOrgHubClient({
         maxWidth="2xl"
       >
         <UserManageForm
+          // 수정 시드는 반드시 상세 레코드여야 한다. 목록 행에는 ognzId 가 없어 '' 로 왕복되고,
+          // 부분수정 계약("" = 지움)이 실제 소속 부서를 지운다. 상세가 뒤늦게 도착하면
+          // key 로 폼을 다시 시드한다(defaultValues 는 최초 마운트에만 반영되기 때문).
+          key={formMode === 'edit' ? `edit-${displayedUser?.userId ?? ''}-${selectedUserDetail ? 'detail' : 'list'}` : 'create'}
           mode={formMode}
-          initialData={formMode === 'edit' ? (selectedItem as UserManage) : undefined}
+          initialData={formMode === 'edit' ? displayedUser : undefined}
           departments={departments}
           onSubmit={onUserSubmit}
           onCancel={() => setIsUserModalOpen(false)}

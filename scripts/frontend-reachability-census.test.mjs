@@ -69,14 +69,11 @@ test('current repository keeps the known live chain and user hub split explicit'
     ],
   );
 
-  const unusedClient = byFile(census, 'frontend/src/app/admin/user/manage/UserManageClient.tsx');
-  assert.equal(unusedClient.reachability.productionCompile, false);
-  assert.equal(unusedClient.reachability.test, true);
-  assert.equal(unusedClient.deletionClass, 'test-only');
-  assert.equal(unusedClient.deletionDecision, 'review-required');
+  // [2026-08-23 m-2] test-only 로 분류돼 있던 manage/UserManageClient.tsx 는 전용 테스트와 함께
+  // 삭제됐다 — 실제 라우트가 렌더하는 것은 아래 UserOrgHubClient 다. 재유입은 census 에 다시 잡힌다.
   assert.equal(
-    unusedClient.evidencePaths.test.nodes[0],
-    'frontend/src/app/admin/user/manage/__tests__/UserManageClient.test.tsx',
+    census.files.some((file) => file.file.includes('UserManageClient')),
+    false,
   );
 
   const liveHub = byFile(census, 'frontend/src/app/admin/user/UserOrgHubClient.tsx');
