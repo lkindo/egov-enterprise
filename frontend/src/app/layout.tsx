@@ -76,7 +76,7 @@ async function AppShell({ children }: { children: React.ReactNode }) {
           tabIndex={-1}
           className="flex-1 lg:pl-72 pt-1 min-w-0 scroll-mt-16 transition-opacity duration-300 overflow-x-hidden outline-none"
         >
-          <div className="max-w-7xl mx-auto p-6 md:p-12 lg:p-16 min-h-[calc(100vh-11rem)]">
+          <div className="max-w-[var(--page-max-w)] mx-auto p-[var(--page-pad)] md:p-[var(--page-pad-md)] lg:p-[var(--page-pad-lg)] min-h-[calc(100vh-11rem)]">
             <PageTransition>
               <Suspense fallback={
                 <div className="flex h-full w-full flex-col items-center justify-center min-h-[500px] text-muted-foreground font-medium">

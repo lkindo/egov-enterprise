@@ -23,7 +23,7 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "b8e5bee533987c43d010115b1890d58ee4d3a57e6468ee0b93962f42fbebe3f7"
+    "inventoryHash": "d19645df152a462ad2ef2ae3dcf1f39092e59bd6702c2f8f5355ad57dbe96cb0"
   },
   "summary": {
     "sourceFileCount": 478,
@@ -18585,7 +18585,7 @@
       }
     },
     {
-      "id": "URL-4F049BC42CC201",
+      "id": "URL-7ECCA935AF8E40",
       "surface": "request-telemetry",
       "kind": "request-query-producer",
       "operation": "client.get",
@@ -18593,7 +18593,7 @@
       "producerFile": "frontend/src/services/business/user/help/HelpUserService.ts",
       "consumerFile": null,
       "routePattern": "unresolved",
-      "targetCandidate": "/BBSMSTR_DDDDDDDDDDDD",
+      "targetCandidate": "/[computed]",
       "stateItems": [
         {
           "name": "<computed-request-query>",
@@ -18620,12 +18620,13 @@
       "riskSignals": [],
       "ambiguityReasons": [
         "computed-request-query",
+        "computed-request-target",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/BBSMSTR_DDDDDDDDDDDD",
+        "routeCandidate": "/[computed]",
         "status": "unverified"
       },
       "authorizationBoundary": {
