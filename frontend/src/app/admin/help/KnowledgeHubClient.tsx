@@ -12,6 +12,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { knowledgeService, type KnowledgeDto } from '@/services/business/knowledge/knowledgeService';
+import {
+ COMMUNITY_BOARD_ID,
+ HELP_FAQ_BOARD_ID,
+ KNOWLEDGE_FALLBACK_BOARD_ID,
+ QNA_BOARD_ID,
+ WIKI_BOARD_ID,
+} from '@/config/board-ids';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -41,10 +48,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
  const resolveCategory = (): KnowledgeCategory => {
  const bbsId = searchParams.get('bbsId');
- if (bbsId === 'BBSMSTR_CCCCCCCCCCCC') return 'COMMUNITY';
- if (bbsId === 'BBSMSTR_AAAAAAAAAAAA') return 'FAQ';
- if (bbsId === 'BBSMSTR_DDDDDDDDDDDD') return 'QNA';
- if (bbsId === 'BBSMSTR_EEEEEEEEEEEE') return 'WIKI';
+ if (bbsId === COMMUNITY_BOARD_ID) return 'COMMUNITY';
+ if (bbsId === HELP_FAQ_BOARD_ID) return 'FAQ';
+ if (bbsId === QNA_BOARD_ID) return 'QNA';
+ if (bbsId === WIKI_BOARD_ID) return 'WIKI';
 
  // 메뉴(tb_menu_info)가 위키·FAQ·Q&A 를 모두 /admin/help/faq?tab=* 로 보내는데
  // 이 값을 읽지 않아 서로 다른 3개 메뉴가 전부 FAQ 화면으로 착지했다.
@@ -67,11 +74,11 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  };
 
  const currentBbsId = React.useMemo(() => {
- if (activeCategory === 'COMMUNITY') return 'BBSMSTR_CCCCCCCCCCCC';
- if (activeCategory === 'FAQ') return 'BBSMSTR_AAAAAAAAAAAA';
- if (activeCategory === 'QNA') return 'BBSMSTR_DDDDDDDDDDDD';
- if (activeCategory === 'WIKI') return 'BBSMSTR_EEEEEEEEEEEE';
- return 'BBSMSTR_NNNNNNNNNNNN'; // DEFAULT/NOTICE
+ if (activeCategory === 'COMMUNITY') return COMMUNITY_BOARD_ID;
+ if (activeCategory === 'FAQ') return HELP_FAQ_BOARD_ID;
+ if (activeCategory === 'QNA') return QNA_BOARD_ID;
+ if (activeCategory === 'WIKI') return WIKI_BOARD_ID;
+ return KNOWLEDGE_FALLBACK_BOARD_ID; // DEFAULT/NOTICE
  }, [activeCategory]);
 
  const isAccessRestricted = !isAdmin && (activeCategory === 'WIKI' || activeCategory === 'FAQ');

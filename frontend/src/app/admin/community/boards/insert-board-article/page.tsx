@@ -1,5 +1,6 @@
 import { BoardRegistClient } from './BoardRegistClient';
 import { knowledgeService } from '@/services/business/knowledge/knowledgeService';
+import { NOTICE_BOARD_ID } from '@/config/board-ids';
 
 interface PageProps {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
@@ -7,7 +8,7 @@ interface PageProps {
 
 export default async function InsertBoardArticlePage({ searchParams }: PageProps) {
   const params = await searchParams;
-  const bbsId = (params.bbsId as string) || 'BBSMSTR_AAAAAAAAAAAA';
+  const bbsId = (params.bbsId as string) || NOTICE_BOARD_ID;
   const pstSnValue = params.pstSn ? Number(params.pstSn) : undefined;
   const parentValue = params.parnts || params.parntsId;
   const parntsSn = parentValue ? Number(parentValue) : undefined;
