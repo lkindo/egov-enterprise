@@ -3,6 +3,7 @@ import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { getInitialBoardData } from './BoardListServer';
 import { Skeleton } from "@/components/ui/skeleton";
+import { LEGACY_DEFAULT_BOARD_ID } from '@/config/board-ids';
 
 /** 
  * 클라이언트 컴포넌트를 지연 로딩하여 서버/클라이언트 경계를 명확히 함 
@@ -22,7 +23,7 @@ export const metadata: Metadata = {
  */
 export default async function BoardListPage({ searchParams }: { searchParams: Promise<any> }) {
   const resolvedSearchParams = await searchParams;
-  const bbsId = resolvedSearchParams.bbsId || 'BBSMSTR_000000000001';
+  const bbsId = resolvedSearchParams.bbsId || LEGACY_DEFAULT_BOARD_ID;
   const page = Number(resolvedSearchParams.page) || 1;
   const searchWrd = resolvedSearchParams.searchWrd || '';
   const searchCnd = resolvedSearchParams.searchCnd || '0';

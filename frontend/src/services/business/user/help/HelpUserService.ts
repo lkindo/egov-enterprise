@@ -2,8 +2,10 @@ import { UserService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
 import type { components } from '@/types/generated-api';
 import { AxiosRequestConfig } from 'axios';
+import { HELP_FAQ_BOARD_ID, QNA_BOARD_ID } from '@/config/board-ids';
 
-const FAQ_BOARD_ID = 'BBSMSTR_AAAAAAAAAAAA';
+// help 축 FAQ는 공지 게시판(AAAA)으로 통합돼 있다 — board-ids SSOT의 별칭을 사용.
+const FAQ_BOARD_ID = HELP_FAQ_BOARD_ID;
 
 type BoardFaqListItem = components['schemas']['PublicFaqListItemResponse'];
 type BoardFaqDetail = components['schemas']['PublicFaqDetailResponse'];
@@ -89,7 +91,7 @@ class HelpUserService extends UserService {
 
   /** Q&A 목록 조회 (페이지) */
   async getQnas(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<QNA>> {
-    const response = await this.get<PageResponse<any>>('/BBSMSTR_DDDDDDDDDDDD', {
+    const response = await this.get<PageResponse<any>>(`/${QNA_BOARD_ID}`, {
       ...config,
       params: {
         ...params,
@@ -116,7 +118,7 @@ class HelpUserService extends UserService {
   /** Q&A 등록 */
   async createQna(data: Partial<QNA>, config?: AxiosRequestConfig): Promise<void> {
     const boardData = {
-      bbsId: 'BBSMSTR_DDDDDDDDDDDD',
+      bbsId: QNA_BOARD_ID,
       pstTtl: data.qstnTtl,
       pstCn: data.qstnCn,
       pswd: data.writngPassword,

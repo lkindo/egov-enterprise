@@ -15,8 +15,9 @@ import { cn } from '@/lib/utils';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
+import { FREE_BOARD_ID, NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
 
-const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 공지사항 기본값
+const DEFAULT_BBS_ID = NOTICE_BOARD_ID; // 공지사항 기본값
 
 const PAGE_SIZE = 10;
 
@@ -111,9 +112,9 @@ function CommunityBoardContent() {
  className="h-11 px-8 bg-card border-2 border-border rounded-lg font-bold text-xs tracking-widest outline-none focus:border-primary/20 transition-all shadow-sm"
  aria-label="게시판 선택"
  >
- <option value="BBSMSTR_AAAAAAAAAAAA">시스템 공지사항</option>
- <option value="BBSMSTR_BBBBBBBBBBBB">자유게시판</option>
- <option value="BBSMSTR_CCCCCCCCCCCC">갤러리 게시판</option>
+ <option value={NOTICE_BOARD_ID}>시스템 공지사항</option>
+ <option value={FREE_BOARD_ID}>자유게시판</option>
+ <option value={TASK_BOARD_ID}>갤러리 게시판</option>
  </select>
  {/* 감사 P1-6: 핸들러가 없던 '상세 필터' 버튼은 삭제하고, 실제로 동작하는 새로고침(refetch)만 남긴다. */}
  <Button

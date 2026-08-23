@@ -1,5 +1,6 @@
 package nuri.business.service.menu;
 
+import nuri.business.core.config.BoardIdProperties;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.business.service.menu.dto.MenuUIContext;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.List;
 public class MenuIntegrationService {
 
     private final MenuService menuService;
+    private final BoardIdProperties boardIdProperties;
 
     /**
      * 현재 요청 정보를 바탕으로 메뉴 관련 UI 컨텍스트를 생성합니다.
@@ -72,9 +74,10 @@ public class MenuIntegrationService {
         if (uri == null) return null;
 
         if (uri.contains("selectBoardList.do") || uri.contains("selectBoardArticle.do")) {
-            if ("BBSMSTR_AAAAAAAAAAAA".equals(bbsId)) {
+            // 데모 인스턴스 ID 하드코딩을 nuri.boards.* 설정으로 역전 — 기본값은 종전 리터럴과 동일.
+            if (bbsId != null && bbsId.equals(boardIdProperties.getNoticeId())) {
                 return "EgovInfoNotice";
-            } else if ("BBSMSTR_CCCCCCCCCCCC".equals(bbsId)) {
+            } else if (bbsId != null && bbsId.equals(boardIdProperties.getTaskId())) {
                 return "EgovInfoWork";
             }
         }
