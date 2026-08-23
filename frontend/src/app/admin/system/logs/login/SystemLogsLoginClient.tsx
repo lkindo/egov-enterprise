@@ -8,10 +8,24 @@ import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
-import { KeyRound, Terminal, Calendar, Globe } from 'lucide-react';
+import { useToast } from '@/app/components/ui/toast';
+import { navigateToDownload } from '@/lib/navigation/full-result-download';
+import { KeyRound, Terminal, Calendar, Globe, FileDown } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
+
+/**
+ * 서버 export 행 상한 미러 — {@code LoginLogApiController.MAX_EXPORT_ROWS}.
+ * 초과 시 서버가 400 을 반환하므로, 목록 조회가 이미 알고 있는 totalCount
+ * (같은 검색 조건·같은 count 쿼리)로 내비게이션 전에 같은 규칙을 적용해
+ * 사용자에게 원인과 대처(조건 좁히기)를 즉시 안내한다.
+ */
+const MAX_EXPORT_ROWS = 100_000;
+
+/** 전체 결과 xlsx export 엔드포인트 (DEC-OPS-016 — 로그 화면 중 login 에만 존재). */
+const EXPORT_XLSX_URL = '/api/v1/admin/system/logs/login/export.xlsx';
 
 const EXPORT_HEADERS = [
     { label: '로그인 일련번호', key: 'lgnSn' },
@@ -25,13 +39,15 @@ const EXPORT_HEADERS = [
 
 const SystemLogsLoginClient = () => {
     const [page, setPage] = usePageParam();
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
     const [searchKeyword, setSearchKeyword] = useState('');
+    const { error: toastError } = useToast();
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<LoginLog>>({
-        queryKey: ['admin-logs-login', page, searchKeyword],
+        queryKey: ['admin-logs-login', page, pageSize, searchKeyword],
         queryFn: () => systemLogAdminService.getLoginLogs({
             page: page - 1,
-            size: PAGE_SIZE,
+            size: pageSize,
             searchWrd: searchKeyword
         }),
     });
@@ -39,6 +55,24 @@ const SystemLogsLoginClient = () => {
     const logs = data?.list ?? [];
     const totalPageCount = data?.totalPage || 1;
     const totalCount = Number(data?.total || 0);
+
+    /**
+     * 전체 결과 xlsx 다운로드 — 현재 검색 조건을 그대로 실어 보낸다.
+     * 서버는 페이지 파라미터를 무시하고 조건 일치 전량을 스트리밍하므로
+     * page/size 는 부치지 않는다(검색어만 서버 계약 키 searchKeyword 로 전달).
+     */
+    const handleFullExport = () => {
+        if (totalCount > MAX_EXPORT_ROWS) {
+            toastError(
+                `전체 결과가 ${totalCount.toLocaleString('ko-KR')}건으로 export 상한(${MAX_EXPORT_ROWS.toLocaleString('ko-KR')}건)을 초과합니다. 검색 조건을 좁혀 다시 시도하십시오.`,
+            );
+            return;
+        }
+        const params = new URLSearchParams();
+        if (searchKeyword) params.set('searchKeyword', searchKeyword);
+        const query = params.toString();
+        navigateToDownload(query ? `${EXPORT_XLSX_URL}?${query}` : EXPORT_XLSX_URL);
+    };
 
     const columns: Column<LoginLog>[] = [
         {
@@ -53,6 +87,8 @@ const SystemLogsLoginClient = () => {
         },
         {
             header: '발생시점',
+            // 현재 페이지 범위 클라이언트 정렬(opt-in) — 원시 ISO 문자열이 정렬 키다.
+            sortKey: 'creatDt',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     <Calendar size={14} className="opacity-30 text-primary" />
@@ -63,6 +99,7 @@ const SystemLogsLoginClient = () => {
         },
         {
             header: '사용자ID',
+            sortKey: 'loginId',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center gap-2 px-3 py-1 bg-card border rounded-lg w-fit shadow-sm">
                     <span className="text-xs font-bold text-foreground">{item.loginId || '-'}</span>
@@ -82,6 +119,7 @@ const SystemLogsLoginClient = () => {
         },
         {
             header: '구분',
+            sortKey: 'loginMthd',
             accessor: (item: LoginLog) => (
                 <div className="flex items-center justify-center">
                     <span className={`px-2 py-0.5 rounded-md text-xs font-bold border tracking-tighter ${
@@ -124,12 +162,24 @@ const SystemLogsLoginClient = () => {
                 subtitle="시스템 접속 및 로그인/로그아웃 이력을 투명하게 관리하여 보안 사고를 미연에 방지합니다."
                 icon={KeyRound}
                 actions={
-                    <DataExportExcel
-                        data={logs}
-                        headers={EXPORT_HEADERS}
-                        filename="로그인로그"
-                        className="flex items-center gap-2 h-12 px-6 rounded-lg border-2 font-bold text-xs tracking-widest hover:bg-accent transition-colors"
-                    />
+                    <div className="flex flex-wrap items-center gap-3">
+                        {/* 현재 페이지 CSV(기존 자산) — 전체 결과 xlsx 와 라벨로 범위를 구분한다. */}
+                        <DataExportExcel
+                            data={logs}
+                            headers={EXPORT_HEADERS}
+                            filename="로그인로그"
+                            className="flex items-center gap-2 h-12 px-6 rounded-lg border-2 font-bold text-xs tracking-widest hover:bg-accent transition-colors"
+                        />
+                        {/* 전체 결과 xlsx — 서버 스트리밍 export(DEC-OPS-016). login 로그에만 엔드포인트가 있다. */}
+                        <button
+                            type="button"
+                            onClick={handleFullExport}
+                            className="flex items-center gap-2 h-12 px-6 rounded-lg border-2 border-primary/40 text-primary font-bold text-xs tracking-widest hover:bg-primary/5 transition-colors"
+                        >
+                            <FileDown size={16} aria-hidden="true" />
+                            전체 결과 엑셀 다운로드
+                        </button>
+                    </div>
                 }
             />
 
@@ -145,7 +195,10 @@ const SystemLogsLoginClient = () => {
                     totalPages: totalPageCount,
                     onPageChange: setPage,
                     totalCount,
-                    pageSize: PAGE_SIZE,
+                    pageSize,
+                    // 페이지 크기 변경 시 1페이지로 복귀 — 줄어든 총 페이지 밖에 남지 않게 한다.
+                    onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
+                    pageSizeOptions: PAGE_SIZE_OPTIONS,
                 }}
                 search={{
                     placeholder: '사용자ID, 접속IP 검색..',

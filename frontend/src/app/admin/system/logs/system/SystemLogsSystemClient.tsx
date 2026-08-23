@@ -11,7 +11,8 @@ import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { Activity, Clock, Terminal, FileText } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
 const EXPORT_HEADERS = [
     { label: '시스템 로그 일련번호', key: 'sysLogSn' },
@@ -27,13 +28,14 @@ const EXPORT_HEADERS = [
 
 const SystemLogsSystemClient = () => {
     const [page, setPage] = usePageParam();
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
     const [searchKeyword, setSearchKeyword] = useState('');
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<SysLog>>({
-        queryKey: ['admin-logs-system', page, searchKeyword],
+        queryKey: ['admin-logs-system', page, pageSize, searchKeyword],
         queryFn: () => systemLogAdminService.getSystemLogs({
             page: page - 1,
-            size: PAGE_SIZE,
+            size: pageSize,
             searchWrd: searchKeyword
         }),
     });
@@ -55,6 +57,8 @@ const SystemLogsSystemClient = () => {
         },
         {
             header: '발생일자',
+            // 현재 페이지 범위 클라이언트 정렬(opt-in) — YYYYMMDD 문자열이 정렬 키다.
+            sortKey: 'ocrnYmd',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2 font-mono text-xs font-bold text-muted-foreground tabular-nums">
                     {item.ocrnYmd || '-'}
@@ -64,6 +68,7 @@ const SystemLogsSystemClient = () => {
         },
         {
             header: '서비스설명',
+            sortKey: 'srvcNm',
             accessor: (item: SysLog) => (
                 <div className="flex items-center gap-2">
                     <FileText size={14} className="text-primary/40" />
@@ -96,6 +101,7 @@ const SystemLogsSystemClient = () => {
             // 기존 '상태' 열은 데이터와 무관하게 전 행에 SUCCESS 배지를 찍는 거짓 지표였다.
             // SysLogDto 에 성공/실패 필드가 없으므로 실제 값인 처리구분(prcsSeCd)을 노출한다.
             header: '처리구분',
+            sortKey: 'prcsSeCd',
             accessor: (item: SysLog) => (
                 <div className="flex items-center justify-center">
                     <span className="px-2 py-0.5 bg-muted text-muted-foreground text-xs font-bold rounded-md border border-border tracking-tighter">
@@ -145,7 +151,10 @@ const SystemLogsSystemClient = () => {
                     totalPages: totalPageCount,
                     onPageChange: setPage,
                     totalCount,
-                    pageSize: PAGE_SIZE,
+                    pageSize,
+                    // 페이지 크기 변경 시 1페이지로 복귀 — 줄어든 총 페이지 밖에 남지 않게 한다.
+                    onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
+                    pageSizeOptions: PAGE_SIZE_OPTIONS,
                 }}
                 search={{
                     placeholder: '서비스설명, 요청ID 검색..',
