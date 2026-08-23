@@ -32,10 +32,34 @@
   },
   "acceptedDecision": null,
   "acceptanceEvidence": {
-    "researchArtifactSha256": null,
-    "liveMenuArtifactSha256": null,
-    "authorityAssignmentArtifactSha256": null,
-    "effectiveMenuArtifactSha256": null
+    "researchArtifactSha256": {
+      "status": "deferred-to-institution-adoption",
+      "adrId": "ADR-0007",
+      "adrPath": "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md",
+      "adrSha256": "162e507776b243072b11a77816763e21649a3a13a7424b98fb5f7309619f312f",
+      "acceptedRisk": "approved-without-user-research"
+    },
+    "liveMenuArtifactSha256": {
+      "status": "deferred-to-institution-adoption",
+      "adrId": "ADR-0007",
+      "adrPath": "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md",
+      "adrSha256": "162e507776b243072b11a77816763e21649a3a13a7424b98fb5f7309619f312f",
+      "acceptedRisk": "approved-without-user-research"
+    },
+    "authorityAssignmentArtifactSha256": {
+      "status": "deferred-to-institution-adoption",
+      "adrId": "ADR-0007",
+      "adrPath": "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md",
+      "adrSha256": "162e507776b243072b11a77816763e21649a3a13a7424b98fb5f7309619f312f",
+      "acceptedRisk": "approved-without-user-research"
+    },
+    "effectiveMenuArtifactSha256": {
+      "status": "deferred-to-institution-adoption",
+      "adrId": "ADR-0007",
+      "adrPath": "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md",
+      "adrSha256": "162e507776b243072b11a77816763e21649a3a13a7424b98fb5f7309619f312f",
+      "acceptedRisk": "approved-without-user-research"
+    }
   },
   "consumerBindings": {
     "menu": {

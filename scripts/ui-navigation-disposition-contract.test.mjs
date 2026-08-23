@@ -173,7 +173,68 @@ test('the current proposed artifact is structurally green but explicitly blocked
   assert.ok(result.blockers.includes('acceptedDecision is blocked-input'));
   assert.ok(result.blockers.some((blocker) => /authorizationReview remains unverified/.test(blocker)));
   assert.ok(result.blockers.some((blocker) => /privacyReview remains unverified/.test(blocker)));
+  // D5 2단계 (ADR-0007 §Decision 3): 연구·live census 계열 4축은 기관 채택 시점의
+  // 재검증 의무로 이전 기록됐으므로 더 이상 blocked-input이 아니다.
+  assert.ok(!result.blockers.some((blocker) => blocker.startsWith('acceptanceEvidence.')));
   assert.deepEqual(findDispositionSourceReferences(repoRoot), []);
+});
+
+test('acceptance evidence deferral must bind the reference-default ADR exactly', () => {
+  // 전건 이전 기록: 4축 모두 exact deferral 레코드이고 ADR-0007 본문 hash에 결속된다.
+  for (const key of [
+    'researchArtifactSha256',
+    'liveMenuArtifactSha256',
+    'authorityAssignmentArtifactSha256',
+    'effectiveMenuArtifactSha256',
+  ]) {
+    const record = overlay.acceptanceEvidence[key];
+    assert.equal(record.status, 'deferred-to-institution-adoption');
+    assert.equal(record.adrId, 'ADR-0007');
+    assert.equal(
+      record.adrPath,
+      'docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md',
+    );
+    assert.equal(record.acceptedRisk, 'approved-without-user-research');
+    assert.equal(
+      record.adrSha256,
+      canonicalTextSha256(readFileSync(path.join(repoRoot, record.adrPath), 'utf8')),
+    );
+  }
+
+  const driftedAdr = clone(overlay);
+  driftedAdr.acceptanceEvidence.researchArtifactSha256.adrSha256 = '0'.repeat(64);
+  assert.match(
+    validate(driftedAdr).errors.join('\n'),
+    /acceptanceEvidence\.researchArtifactSha256\.adrSha256 drifted from the reference-default ADR/i,
+  );
+
+  const fabricatedStatus = clone(overlay);
+  fabricatedStatus.acceptanceEvidence.liveMenuArtifactSha256.status = 'measured';
+  assert.match(
+    validate(fabricatedStatus).errors.join('\n'),
+    /acceptanceEvidence\.liveMenuArtifactSha256\.status must equal deferred-to-institution-adoption/i,
+  );
+
+  const extraField = clone(overlay);
+  extraField.acceptanceEvidence.effectiveMenuArtifactSha256.measuredAt = '2026-08-24';
+  assert.match(
+    validate(extraField).errors.join('\n'),
+    /acceptanceEvidence\.effectiveMenuArtifactSha256 keys must exactly equal/i,
+  );
+
+  const wrongAdr = clone(overlay);
+  wrongAdr.acceptanceEvidence.authorityAssignmentArtifactSha256.adrId = 'ADR-0004';
+  assert.match(
+    validate(wrongAdr).errors.join('\n'),
+    /acceptanceEvidence\.authorityAssignmentArtifactSha256\.adrId must equal ADR-0007/i,
+  );
+
+  // null은 여전히 blocked-input이다 — 이전 기록이 지워지면 다시 acceptance blocker가 된다.
+  const erasedDeferral = clone(overlay);
+  erasedDeferral.acceptanceEvidence.researchArtifactSha256 = null;
+  const erasedResult = validate(erasedDeferral);
+  assert.deepEqual(erasedResult.errors, []);
+  assert.ok(erasedResult.blockers.includes('acceptanceEvidence.researchArtifactSha256 is blocked-input'));
 });
 
 test('route and external alias populations fail closed on missing, duplicate, and extra keys', () => {
@@ -230,6 +291,29 @@ test('invalid disposition and manifest/schema drift are semantic red fixtures', 
     validateSchemaDefinition(missingDirectionSchema).join('\n'),
     /provisionalDirection must reject extra fields and require the exact bounded decision/i,
   );
+
+  const weakenedDeferralSchema = clone(schema);
+  delete weakenedDeferralSchema.$defs.adoptionDeferredEvidence.properties.acceptedRisk.const;
+  assert.match(
+    validateSchemaDefinition(weakenedDeferralSchema).join('\n'),
+    /adoptionDeferredEvidence must reject extra fields and pin the exact ADR-0007 deferral record/i,
+  );
+
+  const detachedEvidenceSchema = clone(schema);
+  detachedEvidenceSchema.properties.acceptanceEvidence.properties.researchArtifactSha256 = {
+    $ref: '#/$defs/nullableSha256',
+  };
+  assert.match(
+    validateSchemaDefinition(detachedEvidenceSchema).join('\n'),
+    /acceptanceEvidence\.researchArtifactSha256 must admit the ADR-0007 deferral record/i,
+  );
+
+  const droppedConsumerGuardSchema = clone(schema);
+  droppedConsumerGuardSchema.allOf = [];
+  assert.match(
+    validateSchemaDefinition(droppedConsumerGuardSchema).join('\n'),
+    /proposed-state consumer and accepted-decision guard/i,
+  );
 });
 
 test('the provisional direction cannot erase evidence blockers or drift from its accepted ADR', () => {
@@ -281,7 +365,7 @@ test('unverified authorization/privacy and missing approvals cannot impersonate 
   assert.match(errors, /accepted transition blocked: routes\[0\]\.approvals\.domain is blocked-input/i);
 });
 
-test('a proposed overlay cannot bind a menu, generator, or executable source consumer', () => {
+test('proposed consumers unlock only through the ADR-0007 gates and stay fail-closed otherwise', () => {
   const prematureDecision = clone(overlay);
   prematureDecision.acceptedDecision = {};
   assert.match(
@@ -289,18 +373,49 @@ test('a proposed overlay cannot bind a menu, generator, or executable source con
     /proposed overlay must not carry acceptedDecision metadata/i,
   );
 
-  const boundMenu = clone(overlay);
-  boundMenu.consumerBindings.menu = {
-    enabled: true,
-    entrypoints: ['frontend/src/app/components/layout/sidebar.tsx'],
-  };
-  assert.match(validate(boundMenu).errors.join('\n'), /proposed overlay must not enable menu or generator/i);
+  const consumerEntrypoint = 'frontend/src/app/components/layout/sidebar.tsx';
 
+  // 해제 경로(green): 참조-기본 결정 4축 기록 + 개별 approved record ≥ 1 + 등록된 entrypoint.
+  const gatedMenu = clone(overlay);
+  gatedMenu.consumerBindings.menu = { enabled: true, entrypoints: [consumerEntrypoint] };
+  assert.deepEqual(
+    validate(gatedMenu, { sourceReferences: [consumerEntrypoint] }).errors,
+    [],
+  );
+
+  // red: 개별 approved record가 하나도 없으면 소비를 열 수 없다(일괄 승인 창작 금지).
+  const noApprovedRecords = clone(gatedMenu);
+  for (const record of noApprovedRecords.routes) {
+    if (record.reviewState === 'approved') record.reviewState = 'proposed';
+  }
+  for (const record of noApprovedRecords.externalAliases) {
+    if (record.reviewState === 'approved') record.reviewState = 'proposed';
+  }
   assert.match(
-    validate(overlay, {
-      sourceReferences: ['frontend/src/app/components/layout/sidebar.tsx'],
-    }).errors.join('\n'),
-    /proposed overlay is referenced by executable consumers/i,
+    validate(noApprovedRecords).errors.join('\n'),
+    /proposed consumers require at least one individually approved record/i,
+  );
+
+  // red: acceptanceEvidence 축이 하나라도 미기록(null)이면 소비를 열 수 없다.
+  const missingEvidence = clone(gatedMenu);
+  missingEvidence.acceptanceEvidence.researchArtifactSha256 = null;
+  assert.match(
+    validate(missingEvidence).errors.join('\n'),
+    /proposed consumers require every acceptanceEvidence axis/i,
+  );
+
+  // red: entrypoint에 등록되지 않은 실행 소비자는 binding disabled 여부와 무관하게 차단된다.
+  assert.match(
+    validate(overlay, { sourceReferences: [consumerEntrypoint] }).errors.join('\n'),
+    /proposed executable consumer is not registered/i,
+  );
+
+  // red: enabled인데 entrypoints가 비면 실행 소비자를 특정하지 못한다.
+  const anonymousConsumer = clone(overlay);
+  anonymousConsumer.consumerBindings.menu = { enabled: true, entrypoints: [] };
+  assert.match(
+    validate(anonymousConsumer).errors.join('\n'),
+    /entrypoints must identify an executable consumer while enabled/i,
   );
 });
 
