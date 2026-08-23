@@ -895,11 +895,13 @@ UX, domain, security/privacy, accessibility reviewer가 독립적으로 cognitiv
 
 `T0`는 제품 소유자·IA owner·privacy owner가 지정되고 G1 decision workshop 날짜가 잡힌 날이다. 상대 기한은 계획용 SLA이며 현재 약속된 날짜가 아니다.
 
+> **지명 기록 (2026-08-23, DEC-OPS-013)** — 단독 운영 기간의 세 owner 역할(Product owner·IA owner·Security/Privacy owner)은 저장소 소유자 **lkindo** 로 지명됐다. 승인 채널은 이 저장소의 PR 리뷰다. **G1 decision workshop 날짜는 사용자 결정으로 보류됐다** — 따라서 T0 는 아직 성립하지 않았고, T0 기준 SLA(+5일 census·+10일 참여자 모집)도 시작되지 않았다. 이 기록은 역할 지명이지 IA-OI-01 의 기관/제품/critical role 입력이나 IA-OI-03 의 로그 URL 분류 **승인이 아니다** — 그 입력들은 아래 표대로 계속 blocked 다.
+
 | ID | 필요한 입력 | 상태 | Owner | reviewBy/SLA | 차단 범위 |
 |---|---|---|---|---|---|
 | IA-OI-01 | 대상 기관/파생 제품/profile과 critical role | `blocked-input` | Product owner | T0 | 카드 set·목표 tree |
-| IA-OI-02 | IA/product owner 실명과 승인 채널 | `blocked-input` | Product owner | T0 | `PD-UX-001` 전체 |
-| IA-OI-03 | security/privacy owner와 로그 URL 분류 승인 | `blocked-input` | Product owner | T0 | `PD-UX-002` 전체 |
+| IA-OI-02 | IA/product owner 실명과 승인 채널 | `received 2026-08-23` — lkindo, 채널=저장소 PR 리뷰(위 지명 기록). 단 G1 날짜 보류로 T0 미성립 | Product owner | T0 | `PD-UX-001` 전체 |
+| IA-OI-03 | security/privacy owner와 로그 URL 분류 승인 | `partial 2026-08-23` — owner 는 lkindo 로 지명됨. 로그 URL 분류 **승인은 계속 blocked-input** | Product owner | T0 | `PD-UX-002` 전체 |
 | IA-OI-03B | 전역 URL/privacy pending decision의 등록 여부·scope·owner | `blocked-input` | Product owner + security/privacy | G1 전 | redirect·login·locator·전역 parser |
 | IA-OI-04 | live DB 접속과 `tb_menu_info` 구조 census artifact | `blocked-external` | DB/menu operator | T0+5 영업일 | duplicate/orphan 구조 후보 |
 | IA-OI-04B | `tb_menu_crt_dtl` authority assignment + effective synthetic-user menu와 manifest join | `blocked-input` | DB/menu operator + FE architecture | T0+10 영업일 | 역할별 menu exposure·G1 |
