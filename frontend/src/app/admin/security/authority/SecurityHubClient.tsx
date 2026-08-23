@@ -407,8 +407,9 @@ export default function SecurityHubClient({
   const roleColumns: Column<AuthorInfo>[] = [
     {
       header: '역할',
+      // 셀 밀도: td 가 이미 --cell-px/--cell-py 토큰을 소비하므로 accessor 내부의 추가 py 를 두지 않는다.
       accessor: (auth) => (
-        <div className="flex items-center justify-between w-full group/role-item py-1">
+        <div className="flex items-center justify-between w-full group/role-item">
           <div className="flex flex-col gap-1">
             <span className={cn("text-sm font-bold tracking-tighter truncate leading-none", selectedAuthorCode === auth.authrtCd ? "text-surface-inverse-foreground" : "text-foreground")}>
               {auth.authrtNm}
@@ -443,8 +444,9 @@ export default function SecurityHubClient({
   const userColumns: Column<AuthorGroupProjection>[] = [
     {
       header: '사용자',
+      // 셀 밀도: td 가 이미 --cell-px/--cell-py 토큰을 소비하므로 accessor 내부의 추가 py 를 두지 않는다.
       accessor: (user) => (
-        <div className="flex items-center justify-between w-full py-1">
+        <div className="flex items-center justify-between w-full">
           <div className="flex items-center gap-4 relative z-10">
             <div className={cn(
               "w-10 h-10 rounded-lg flex items-center justify-center transition-all",
@@ -512,7 +514,7 @@ export default function SecurityHubClient({
               "text-xs font-bold tracking-tight opacity-40 truncate",
               tempMenuMappings.has(node.menuNo) ? "text-surface-inverse-foreground/40" : "text-muted-foreground"
             )}>
-              NODE_{node.menuNo}
+              #{node.menuNo}
             </span>
           </div>
 
@@ -814,7 +816,7 @@ export default function SecurityHubClient({
                       <ShieldCheck size={28} className="text-primary" />
                     </div>
                     <div className="relative z-10 space-y-1">
-                      <span className="text-xs font-bold text-surface-inverse-foreground/30 tracking-tight">Policy_Manifest</span>
+                      <span className="text-xs font-bold text-surface-inverse-foreground/30 tracking-tight">정책 매핑 현황</span>
                       <div className="text-surface-inverse-foreground text-lg font-bold tracking-tighter leading-none">
                         {tempMenuMappings.size} 개의 활성 노드가 <span className="text-primary">{selectedAuthorCode || 'N/A'}</span> 에 매핑됨
                       </div>
@@ -843,7 +845,7 @@ export default function SecurityHubClient({
                       ) : isMenusLoading ? (
                         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-24 gap-6">
                           <RotateCcw className="animate-spin text-primary opacity-40 shadow-inner" size={48} />
-                          <p className="text-xs font-bold tracking-tight text-muted-foreground/40">Mapping_Topology_Stream...</p>
+                          <p className="text-xs font-bold tracking-tight text-muted-foreground/40">메뉴 계층을 불러오는 중…</p>
                         </motion.div>
                       ) : (
                         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-2 p-2 rounded-lg bg-muted/50">

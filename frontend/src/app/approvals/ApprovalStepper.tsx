@@ -16,9 +16,14 @@ interface ApprovalStepperProps {
 }
 
 export function ApprovalStepper({ steps }: ApprovalStepperProps) {
-  // Calculate completion percentage for the progress line
-  const completedCount = steps.filter(s => s.status === 'completed' || s.status === 'rejected').length;
-  const progressPercentage = (completedCount / (steps.length - 1)) * 100;
+  // 진행선은 '마지막으로 처리된 단계의 위치'까지만 채운다.
+  // 종전의 처리 건수/(단계-1) 공식은 전 단계 완료 시 100%를 넘겨(150~200%) 컨테이너를
+  // 넘치고, 첫 단계만 끝나도 선이 끝까지 차는 과장을 만들었다.
+  const lastDoneIndex = steps.reduce(
+    (acc, step, idx) => (step.status === 'completed' || step.status === 'rejected' ? idx : acc),
+    0,
+  );
+  const progressPercentage = steps.length > 1 ? (lastDoneIndex / (steps.length - 1)) * 100 : 0;
 
   return (
     <div className="w-full py-12 px-4">
