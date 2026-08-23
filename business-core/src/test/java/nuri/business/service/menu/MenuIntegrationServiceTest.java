@@ -1,5 +1,6 @@
 package nuri.business.service.menu;
 
+import nuri.business.core.config.BoardIdProperties;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.business.service.menu.dto.MenuUIContext;
 import org.junit.jupiter.api.DisplayName;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.Spy;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.ArrayList;
@@ -26,6 +28,10 @@ class MenuIntegrationServiceTest {
 
     @Mock
     private MenuService menuService;
+
+    /** 설정 미주입 시 기본값이 종전 하드코딩과 동일함을 그대로 검증하기 위해 실제 기본값 인스턴스를 사용한다. */
+    @Spy
+    private BoardIdProperties boardIdProperties = new BoardIdProperties();
 
     @Test
     @DisplayName("메뉴 컨텍스트 처리 - 일반 URI 및 쿼리스트링")

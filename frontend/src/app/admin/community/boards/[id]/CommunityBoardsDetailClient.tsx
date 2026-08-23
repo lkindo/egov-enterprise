@@ -12,6 +12,7 @@ import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
 import { Send, X, AlertCircle } from 'lucide-react';
+import { FREE_BOARD_ID, NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
 
 export default function CommunityBoardsDetailClient() {
     const router = useRouter();
@@ -19,7 +20,7 @@ export default function CommunityBoardsDetailClient() {
     const confirm = useConfirm();
 
     const [formData, setFormData] = useState({
-        bbsId: 'BBSMSTR_AAAAAAAAAAAA',
+        bbsId: NOTICE_BOARD_ID,
         pstTtl: '',
         pstCn: '',
         noticeAt: 'N' as 'Y' | 'N',
@@ -127,9 +128,9 @@ export default function CommunityBoardsDetailClient() {
                                 onChange={(e) => setFormData({ ...formData, bbsId: e.target.value })}
                                 className="w-full h-12 px-4 rounded-lg border bg-card text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
                             >
-                                <option value="BBSMSTR_AAAAAAAAAAAA">공지사항</option>
-                                <option value="BBSMSTR_BBBBBBBBBBBB">자유게시판</option>
-                                <option value="BBSMSTR_CCCCCCCCCCCC">업무게시판</option>
+                                <option value={NOTICE_BOARD_ID}>공지사항</option>
+                                <option value={FREE_BOARD_ID}>자유게시판</option>
+                                <option value={TASK_BOARD_ID}>업무게시판</option>
                             </select>
                         </FormField>
 

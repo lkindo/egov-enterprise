@@ -3,6 +3,7 @@
 import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
 import { revalidatePath } from 'next/cache';
+import { QNA_BOARD_ID } from '@/config/board-ids';
 
 const BOARD_SAVE_ERROR = '게시글 저장 중 오류가 발생했습니다.';
 const BOARD_DELETE_ERROR = '게시글 삭제 중 오류가 발생했습니다.';
@@ -83,8 +84,8 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       pstBgngYmd: pstBgngYmd || undefined,
       pstEndYmd: pstEndYmd || undefined,
       evntDt: evntDt || undefined, 
-      qnaSttsCd: qnaSttsCd || (bbsId === 'BBSMSTR_DDDDDDDDDDDD' ? 'QA01' : undefined), 
-      qnaCatCd: qnaCatCd || (bbsId === 'BBSMSTR_DDDDDDDDDDDD' ? 'CAT01' : undefined),
+      qnaSttsCd: qnaSttsCd || (bbsId === QNA_BOARD_ID ? 'QA01' : undefined),
+      qnaCatCd: qnaCatCd || (bbsId === QNA_BOARD_ID ? 'CAT01' : undefined),
       pswd: pswd || '1',
       scrtYn: scrtYn === 'Y' ? 'Y' : 'N',
       useYn: useYn === 'N' ? 'N' : 'Y'
