@@ -322,10 +322,16 @@ function main() {
     mkdirSync(join(output, 'db', 'migration'), { recursive: true });
     writeFileSync(join(output, 'db', 'migration', 'V1_0__baseline.sql'), baseline, 'utf8');
     writeFileSync(join(output, 'db', 'migration', 'V1_1__seed_meta_standard.sql'), metaSeed, 'utf8');
-    copyFileSync(
-      join(ROOT, 'api-server', 'src', 'main', 'resources', 'db', 'migration', 'R__seed_framework.sql'),
-      join(output, 'db', 'migration', 'R__seed_framework.sql'),
-    );
+    // 프로필-안전 repeatable 만 번들에 태운다. R__seed_demo.sql 은 collaboration 테이블을
+    // 참조하므로 core 프로필에서 깨진다 — 데모 프로필의 정의로 남겨두고 복사하지 않는다.
+    // R__zz_seed_base_admin.sql 이 빠지면 verify 단계의 admin bootstrap 단언이 red 다.
+    const REPEATABLE_SEEDS = ['R__seed_framework.sql', 'R__zz_seed_base_admin.sql'];
+    for (const seed of REPEATABLE_SEEDS) {
+      copyFileSync(
+        join(ROOT, 'api-server', 'src', 'main', 'resources', 'db', 'migration', seed),
+        join(output, 'db', 'migration', seed),
+      );
+    }
 
     const lock = {
       schemaVersion: 1,
@@ -348,11 +354,19 @@ function main() {
     verifyCreated = true;
     restore(args.container, user, verifyDb, baseline);
     restore(args.container, user, verifyDb, metaSeed);
+    // Flyway repeatable 과 동일한 순서(description 알파벳순)로 재적용한다:
+    // seed_framework → zz_seed_base_admin.
     restore(
       args.container,
       user,
       verifyDb,
       readFileSync(join(output, 'db', 'migration', 'R__seed_framework.sql')),
+    );
+    restore(
+      args.container,
+      user,
+      verifyDb,
+      readFileSync(join(output, 'db', 'migration', 'R__zz_seed_base_admin.sql')),
     );
     assertSameSet(listObjects(args.container, user, verifyDb, 'table'), desiredTables, '재적용 DB table');
     assertSameSet(listObjects(args.container, user, verifyDb, 'sequence'), desiredSequences, '재적용 DB sequence');
@@ -363,6 +377,22 @@ function main() {
     }
     if (metaMismatches.length) fail(`재적용 DB meta row 수 불일치: ${metaMismatches.join(', ')}`);
 
+    // day-1 관리자 부트스트랩 단언 — 이게 비면 생성 base 는 부팅 후 관리자가
+    // 메뉴 0건 + URL 인가 fail-closed(403) 로 잠긴다. (R__zz_seed_base_admin.sql 계약)
+    const bootstrapChecks = [
+      ['tb_menu_info 관리자 메뉴 트리', 'SELECT count(*) FROM public.tb_menu_info'],
+      ['tb_menu_crt_dtl ROLE_ADMIN 매핑', "SELECT count(*) FROM public.tb_menu_crt_dtl WHERE authrt_cd='ROLE_ADMIN'"],
+      ['tb_prgrm_lst URL 인가 레지스트리', 'SELECT count(*) FROM public.tb_prgrm_lst'],
+      ['tb_role_prgrm_map ROLE_ADMIN→/api/v1/admin/**',
+        "SELECT count(*) FROM public.tb_role_prgrm_map rpm JOIN public.tb_prgrm_lst p ON p.prgrm_file_nm = rpm.prgrm_file_nm WHERE rpm.role_id='ROLE_ADMIN' AND p.url='/api/v1/admin/**'"],
+    ];
+    for (const [label, sql] of bootstrapChecks) {
+      const count = Number(psql(args.container, user, verifyDb, sql));
+      if (!Number.isFinite(count) || count < 1) {
+        fail(`재적용 DB admin bootstrap 시드 부재 — ${label} (count=${count}). 생성 base 가 day-1 관리자 잠금 상태로 출하됩니다.`);
+      }
+    }
+
     writeFileSync(
       join(output, 'README.md'),
       `# Reusable Base DB — ${args.profile}\n\n` +
@@ -370,7 +400,8 @@ function main() {
         `- packs: ${profile.packs.join(', ')}\n` +
         `- tables: ${desiredTables.length}\n` +
         `- sequences: ${desiredSequences.length}\n` +
-        `- 검증: 별도 빈 PostgreSQL DB에 baseline → meta seed → framework seed 재적용 완료\n\n` +
+        `- 검증: 별도 빈 PostgreSQL DB에 baseline → meta seed → framework seed → admin bootstrap seed 재적용 완료\n` +
+        `- day-1 관리자 부트스트랩: 최소 메뉴 트리·URL 인가(ROLE_ADMIN→/api/v1/admin/**) SQL 단언 PASS\n\n` +
         `운영 DB 축소용 마이그레이션이 아니다. 신규 프로젝트의 빈 DB에서만 사용한다.\n`,
       'utf8',
     );
