@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Trophy, Search, Plus, Layers, RefreshCcw, ShieldCheck, Zap, Activity, Filter } from 'lucide-react';
+import { Trophy, Search, Plus, Layers, RefreshCcw, ShieldCheck, Activity } from 'lucide-react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
@@ -194,11 +194,11 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
         }
       />
 
+      {/* [정직성] 종전에는 계측 원천이 없는 "동기화상태 확인됨"·"감시 프로브 안전함" 을 실측처럼
+          표시했다. 실제 데이터에서 파생되는 값만 남긴다 (e2e 10-operational-extension 단언 동반 갱신). */}
       <HubMetricGrid>
-        <HubMetricCard title="포상 현황" value={totalItems} icon={Layers} color="amber" />
-        <HubMetricCard title="동기화상태" value="확인됨" icon={Zap} color="emerald" status="동기화됨" />
-        <HubMetricCard title="활성 레코드" value={rewards.length} icon={Activity} color="primary" />
-        <HubMetricCard title="감시 프로브" value="안전함" icon={Filter} color="indigo" />
+        <HubMetricCard title="포상 현황" value={totalItems} icon={Layers} color="amber" status="집계" />
+        <HubMetricCard title="활성 레코드" value={rewards.length} icon={Activity} color="primary" status="집계" />
       </HubMetricGrid>
 
       <HubSectionCard

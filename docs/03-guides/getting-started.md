@@ -66,6 +66,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\bootstrap.ps1
 | `CORS_ORIGIN_1` / `CORS_ORIGIN_2` | 운영 CORS 오리진 | `application-prod.yml` |
  
 > 로컬/개발은 `application.yml`의 개발용 기본값으로 동작하거나, `bootstrap`이 구성하는 `.env` 및 `application-local.yml`로 구동되지만, **운영(`prod`) 프로필은 위 값이 없으면 기동을 거부**한다. 시크릿은 절대 커밋하지 말 것(`.gitignore`가 `*.key`/`*.pem` 차단, `pre-commit`에 gitleaks 훅 — 설치 시 스테이징 시크릿 차단).
+
+선택 환경변수(시크릿 아님): `BRAND_THEME` — 브랜드 프로필 축(`premium`|`krds-aligned`, 미설정 시 premium, allowlist 밖 값은 premium 강등). 새 브랜드 추가는 [design-tokens.md의 "30분 브랜드 프로필"](design-tokens.md#1-30분-브랜드-프로필--새-브랜드-추가-레시피)을 따른다.
  
 ### 3.3 로컬 DB 기동 (수동 설정 시)
  

@@ -14,9 +14,10 @@ test.describe('Tier 10: Operational Extension & Uncovered Modules', () => {
         // Search
         await operationalPage.searchRewards('test');
         
-        // Verify stats are visible
+        // Verify stats are visible — 종전 '동기화상태' 카드는 계측 원천 없는 조작 지표라 제거됐다.
+        // 실데이터 파생 카드 2종이 정직성 수리의 계약이다.
         await expect(operationalPage.page.getByText('포상 현황')).toBeVisible();
-        await expect(operationalPage.page.getByText('동기화상태')).toBeVisible();
+        await expect(operationalPage.page.getByText('활성 레코드')).toBeVisible();
     });
 
     test('Operational: External HR Information Management', async ({ operationalPage }) => {

@@ -7,7 +7,7 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { hpcmAdminService, Hpcm } from '@/services/foundation/system/HpcmAdminService';
-import { HelpCircle, FileText, Search, Plus, Terminal, Zap, BookOpen, ShieldCheck } from 'lucide-react';
+import { HelpCircle, FileText, Search, Plus, BookOpen, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
 import { z } from 'zod';
@@ -125,10 +125,10 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
         }
       />
 
+      {/* [정직성] 종전에는 하드코딩 "최근_업데이트_로그 2"·"시스템_무결성 99.9% OPTIMIZED"·"SYNCED" 를
+          실측처럼 표시했다. 계측 원천이 없는 값은 만들지 않는다 — 실제 목록에서 파생되는 값만 남긴다. */}
       <HubMetricGrid>
-        <HubMetricCard title="전체_도움말_자산" value={hpcmList.length} icon={FileText} color="primary" status="SYNCED" />
-        <HubMetricCard title="최근_업데이트_로그" value={2} icon={Zap} color="amber" />
-        <HubMetricCard title="시스템_무결성" value="99.9%" icon={Terminal} color="emerald" status="OPTIMIZED" />
+        <HubMetricCard title="전체 도움말 자산" value={hpcmList.length} icon={FileText} color="primary" status="집계" />
       </HubMetricGrid>
 
       <HubSectionCard title="콘텐츠 인벤토리" description="현재 클러스터에 배포된 모든 도움말 콘텐츠 명세입니다." icon={Search}>

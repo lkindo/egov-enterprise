@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { myPageAdminService } from '@/services/foundation/workspace/MyPageAdminService';
 import { useToast } from '@/app/components/ui/toast';
-import { Settings,  LayoutGrid,  Layers,  Zap,  Activity,  RefreshCcw,  Search,  MoreVertical } from 'lucide-react';
+import { Settings,  LayoutGrid,  Layers,  Zap,  RefreshCcw,  Search,  MoreVertical } from 'lucide-react';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
@@ -115,11 +115,11 @@ export default function WorkspaceMyPage() {
         }
       />
 
+      {/* [정직성] 종전에는 계측 원천이 없는 "사용량 HIGH"·"보안 상태 SAFE" 를 실측처럼 표시했다.
+          실제 콘텐츠 목록에서 파생되는 값만 남긴다. */}
       <HubMetricGrid>
-        <HubMetricCard title="전체 콘텐츠" value={contents.length} icon={Layers} color="primary" />
-        <HubMetricCard title="활성 위젯" value={contents.filter(c => c.cntntsUseYn === 'Y').length} icon={Zap} color="emerald" status="정상" />
-        <HubMetricCard title="사용량" value="HIGH" icon={Activity} color="indigo" />
-        <HubMetricCard title="보안 상태" value="SAFE" icon={RefreshCcw} color="amber" />
+        <HubMetricCard title="전체 콘텐츠" value={contents.length} icon={Layers} color="primary" status="집계" />
+        <HubMetricCard title="활성 위젯" value={contents.filter(c => c.cntntsUseYn === 'Y').length} icon={Zap} color="emerald" status="집계" />
       </HubMetricGrid>
 
       <HubSectionCard
