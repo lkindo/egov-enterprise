@@ -1,5 +1,12 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
+import {
+  COMMUNITY_BOARD_ID,
+  KNOWLEDGE_FAQ_BOARD_ID,
+  NOTICE_BOARD_ID,
+  QNA_BOARD_ID,
+  WIKI_BOARD_ID,
+} from '@/config/board-ids';
 
 /**
  * 지식 기반 서비스 DTO (Enterprise v5 Standard)
@@ -36,12 +43,14 @@ export interface KnowledgeDto {
  * 공지사항, FAQ, QNA, WIKI, 커뮤니티 등 게시판 기반 지식 데이터 연동
  */
 class KnowledgeService extends ApiService {
+  // 카테고리→게시판 대응은 board-ids SSOT를 쓰되, FAQ 축이 help(공지 통합)와
+  // 다른 기존 값(KNOWLEDGE_FAQ_BOARD_ID)을 그대로 보존한다(H4).
   private readonly BBS_IDS = {
-    NOTICE: 'BBSMSTR_AAAAAAAAAAAA',
-    FAQ: 'BBSMSTR_BBBBBBBBBBBB',
-    COMMUNITY: 'BBSMSTR_CCCCCCCCCCCC',
-    QNA: 'BBSMSTR_DDDDDDDDDDDD',
-    WIKI: 'BBSMSTR_EEEEEEEEEEEE',
+    NOTICE: NOTICE_BOARD_ID,
+    FAQ: KNOWLEDGE_FAQ_BOARD_ID,
+    COMMUNITY: COMMUNITY_BOARD_ID,
+    QNA: QNA_BOARD_ID,
+    WIKI: WIKI_BOARD_ID,
   };
 
   constructor() {

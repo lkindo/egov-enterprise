@@ -70,11 +70,11 @@ test('the recommended hybrid is selected only as a bounded provisional direction
   assert.match(overlay.provisionalDirection?.adrSha256 ?? '', /^[a-f0-9]{64}$/u);
   assert.equal(overlay.consumerBindings.menu.enabled, false);
   assert.equal(overlay.consumerBindings.generator.enabled, false);
-  assert.ok(overlay.routes.every(({ reviewState }) => reviewState === 'blocked-input'));
-  assert.ok(overlay.externalAliases.every(({ reviewState }) => reviewState === 'blocked-input'));
+  assert.ok(overlay.routes.every(({ reviewState }) => reviewState === 'proposed'));
+  assert.ok(overlay.externalAliases.every(({ reviewState }) => reviewState === 'proposed'));
 });
 
-test('the proposed overlay is a sparse, mechanically derived 119 + 2 review population', () => {
+test('the proposed overlay drafts dispositions over the sparse 119 + 2 review population', () => {
   const initial = createUnreviewedProposal(manifest, manifestRaw);
   const manifestLf = manifestRaw.toString('utf8').replace(/\r\n?/gu, '\n');
   assert.equal(initial.provisionalDirection, null);
@@ -97,8 +97,8 @@ test('the proposed overlay is a sparse, mechanically derived 119 + 2 review popu
   assert.equal(overlay.routes.length, 119);
   assert.equal(overlay.externalAliases.length, 2);
   assert.ok(overlay.routes.every((record, index) => (
-    record.reviewState === 'blocked-input'
-      && record.disposition === 'blocked-review'
+    record.reviewState === 'proposed'
+      && record.disposition !== 'blocked-review'
       && record.authorizationReview === 'unverified'
       && record.privacyReview === 'unverified'
       && record.effectiveMenuExposureReview === 'unverified'
@@ -109,8 +109,8 @@ test('the proposed overlay is a sparse, mechanically derived 119 + 2 review popu
       && Object.values(record.approvals).every((approval) => approval === null)
   )));
   assert.ok(overlay.externalAliases.every((record) => (
-    record.reviewState === 'blocked-input'
-      && record.disposition === 'blocked-review'
+    record.reviewState === 'proposed'
+      && record.disposition === 'retain-alias-permanent'
       && record.consumerEvidenceReview === 'unverified'
       && record.queryMappingReview === 'unverified'
       && record.privacyReview === 'unverified'
