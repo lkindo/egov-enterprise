@@ -69,14 +69,18 @@ class CrossDomainCouplingLinterTest {
             "^nuri\\.business\\.(?:service|domain|repository)\\.(\\w+)");
 
     /**
-     * app → app 결합 동결(2026-08-20 실측 6건).
+     * app → app 결합 동결(2026-08-23 실측 5건).
      *
-     * <p>board→comment 2건(이벤트 리스너), dashboard→notification, stats→board,
+     * <p>board→comment 1건({@code BoardEventListener}), dashboard→notification, stats→board,
      * informalsanction→sms, informalsanction→mail.
+     *
+     * <p>2026-08-23 {@code BoardUserDeletionCleanupListener} 의 comment 정리를
+     * {@code CommentUserDeletionCleanupListener}(comment 도메인 자체 UserDeletionEvent 구독)로
+     * 역전해 6→5 로 낮췄다.
      *
      * <p>이것이 "도메인 통째 삭제" 재사용성을 실제로 깨는 부채다. 늘리지 말고, 역전하면 값을 낮춘다.
      */
-    private static final int APP_TO_APP_COUPLING = 6;
+    private static final int APP_TO_APP_COUPLING = 5;
 
     /**
      * app → core 결합 동결(2026-08-20 실측 8건).
