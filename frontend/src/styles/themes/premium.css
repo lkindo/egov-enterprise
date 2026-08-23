@@ -102,6 +102,23 @@
     --shadow-hub-premium: 0 32px 64px -16px rgba(0, 0, 0, 0.08);
     --color-premium-slate: 222.2 47.4% 11.2%; /* slate-900 equivalent */
     --color-premium-emerald: 142.1 76.2% 36.3%; /* emerald-600 equivalent */
+
+    /* --- 밀도·구조 토큰 (D2, Phase 1 — 표면 선언만) ---
+       값은 전부 현행 화면의 실사용값과 등가(h-9·h-8·px-6·py-5·text-sm·gap-4·
+       max-w-7xl·p-6/12/16·rounded-lg·p-8)라 렌더링 무변경이다. 소비자 이행은 후속 PR.
+       밀도는 컬러 모드 불변이므로 다크 블록에도 같은 값을 재선언한다. */
+    --control-h: 2.25rem;        /* h-9 */
+    --control-h-sm: 2rem;        /* h-8 */
+    --cell-px: 1.5rem;           /* px-6 */
+    --cell-py: 1.25rem;          /* py-5 */
+    --font-size-body: 0.875rem;  /* text-sm */
+    --form-gap: 1rem;            /* gap-4 */
+    --page-max-w: 80rem;         /* max-w-7xl */
+    --page-pad: 1.5rem;          /* p-6 */
+    --page-pad-md: 3rem;         /* md:p-12 축 */
+    --page-pad-lg: 4rem;         /* lg:p-16 축 */
+    --radius-control: 0.5rem;    /* rounded-lg */
+    --filter-pad: 2rem;          /* p-8 */
   }
 
   .dark,
@@ -152,6 +169,20 @@
 
     --surface-sunken: 0 0% 0%;
     --surface-raised: 222.2 47.4% 15%;
+
+    /* 밀도·구조 토큰 — 라이트와 동일(밀도는 모드 불변) */
+    --control-h: 2.25rem;
+    --control-h-sm: 2rem;
+    --cell-px: 1.5rem;
+    --cell-py: 1.25rem;
+    --font-size-body: 0.875rem;
+    --form-gap: 1rem;
+    --page-max-w: 80rem;
+    --page-pad: 1.5rem;
+    --page-pad-md: 3rem;
+    --page-pad-lg: 4rem;
+    --radius-control: 0.5rem;
+    --filter-pad: 2rem;
 
     /* Slate overrides removed to restore default Tailwind dark mode values */
   }
