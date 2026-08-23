@@ -2,22 +2,33 @@
 
 > **목적**: 컴포넌트가 브랜드 리터럴이 아니라 안정된 시맨틱 계약을 소비하도록 하는 색상 토큰 SSOT.
 > 프론트엔드 헌법 제6조(디자인 토큰) 실무 지침. 색은 팔레트 리터럴(`slate-500`)이 아니라 **시맨틱 토큰**으로 참조한다.
-> **정의 위치**: [frontend/src/app/globals.css](../../frontend/src/app/globals.css) (`@theme` + `:root`/`.dark` HSL 변수).
-> **목표 구조**: [ADR-0003](../02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md)에 따라 브랜드 프로필과 색상 모드를 독립 축으로 분리한다. 현재 구현은 아직 단일 token set의 light/dark이므로 목표 상태를 지원 완료로 표현하지 않는다.
+> **정의 위치**: 값의 소유자는 [frontend/src/styles/themes/](../../frontend/src/styles/themes/)의 **프로필 CSS**(`premium.css`·`krds-aligned.css`)다. [globals.css](../../frontend/src/app/globals.css)는 `@theme` 간접 참조(`--color-x: hsl(var(--x))`)만 소유하며 `:root` 시맨틱 블록을 되돌리면 계약이 red다(theme-token-contract).
+> **구조**: [ADR-0003](../02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md)의 브랜드 프로필 × 색상 모드 2축이 **구현 완료**됐다 — `<html data-brand-theme>`가 서버 env(`BRAND_THEME`)에서 전역 배선되며(레이아웃 1곳, 라우트별 배정은 ADR-0004 금지), 프로필 선택은 배포 단위 설정이다.
 
 ---
 
-## 1. 현재 단일 프로필의 리브랜딩 방법
+## 1. 30분 브랜드 프로필 — 새 브랜드 추가 레시피
 
-현재 새 SI 프로젝트로 복제해 단일 브랜드로 쓸 때는 **globals.css 의 토큰 값만** 수정하고 컴포넌트 클래스는 손대지 않는다. KRDS와 premium처럼 여러 프로필을 동시에 지원할 때는 같은 시맨틱 토큰 이름을 구현하는 profile adapter를 사용하며, source import를 바꾸는 방식으로 프로필을 가장하지 않는다.
+새 SI 프로젝트의 브랜드는 **globals.css를 수정하지 않는다**. 프로필 CSS 한 장을 추가하고 allowlist에 올리면 끝이다:
 
-| 바꾸려는 것 | 수정할 토큰(`:root`, 필요 시 `.dark`) |
+1. **프로필 CSS 생성**: `frontend/src/styles/themes/<name>.css` — `premium.css`를 복사해 값만 바꾼다. 셀렉터 형태는 계약이 강제한다: 라이트 `:root[data-brand-theme="<name>"]`, 다크는 특이성 함정 때문에 반드시 조합 셀렉터 `:root[data-brand-theme="<name>"].dark`.
+2. **키 패리티**: 라이트 블록은 기준 프로필과 **같은 시맨틱 키 집합을 완전 정의**해야 한다(누락 시 이전 프로필 값이 캐스케이드로 남는 조용한 파손 — theme-token-contract가 차단).
+3. **import 연결**: `globals.css`에 `@import "../styles/themes/<name>.css";` 추가.
+4. **allowlist 등록**: [brand-theme.ts](../../frontend/src/lib/theme/brand-theme.ts)의 `BRAND_THEMES`에 `'<name>'` 추가 — allowlist 밖 env 값은 premium으로 강등된다.
+5. **대비 검증**: 상태색 pair는 status-token-contrast 계약이 양 모드 4.5:1을 수학 검증한다 — 값 선정 시 이 하한을 만족해야 계약이 green이다.
+6. **활성화**: 배포 env `BRAND_THEME=<name>`. 미설정 시 premium(기본 셀렉터 `:root,`가 premium에 붙어 있어 속성 유무와 무관하게 동일).
+
+검증: `pnpm -C frontend exec vitest run src/__tests__/theme-token-contract.test.ts src/__tests__/status-token-contrast.test.ts`.
+
+바꾸는 값의 의미는 아래 표를 따른다(수정 대상은 이제 프로필 CSS다):
+
+| 바꾸려는 것 | 프로필 CSS에서 수정할 토큰(라이트 블록, 필요 시 다크 블록) |
 |---|---|
 | 주 브랜드색 | `--primary`, `--ring` |
 | 다크 서피스(프리미엄 다크 카드/히어로) 색조 | `--surface-inverse` (+ `-foreground`/`-muted`/`-border`) |
 | 중립 바탕/보조 | `--background`·`--card`·`--muted`·`--border`·`--muted-foreground` |
-| 강조 카테고리(대시보드 위젯) | `--hub-blue`·`--hub-orange`·`--hub-purple`·… |
-| 상태색 | `--success`·`--warning`·`--info`·`--destructive` |
+| 강조 카테고리(대시보드 위젯) | `--hub-blue`·`--hub-orange`·`--hub-purple`·… (다크 전경 재정의 포함) |
+| 상태색 | `--success`·`--warning`·`--info`·`--destructive` (+ `-foreground`/`-emphasis`) |
 
 ---
 

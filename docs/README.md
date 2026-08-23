@@ -39,6 +39,7 @@
 | [frontend-design-system.md](02-architecture/frontend-design-system.md) | Design System |
 | [krds-profile-mapping.md](02-architecture/krds-profile-mapping.md) | KRDS 공식 자산과 standard/aligned/premium 프로필의 채택·조정·보류 매핑(승인 전 Draft) |
 | [ui-ux-modernization-plan.md](02-architecture/ui-ux-modernization-plan.md) | Claude 원안의 적대적 재검토와 사용자 과업 중심 UI/UX 전면 현대화 실행 계획 |
+| [erp-transformation-master-plan.html](02-architecture/erp-transformation-master-plan.html) | 공통 프레임워크 × ERP·공공 업무시스템 전환 6단계 마스터플랜(2026-08-23, 결정 D1~D10 포함) |
 | [domain-resilience.md](02-architecture/domain-resilience.md) | 도메인 보안 및 회복탄력성 |
 | [jpa-performance-guardrail.md](02-architecture/jpa-performance-guardrail.md) | JPA N+1 쿼리 가드레일 |
 | [zero-downtime-migration.md](02-architecture/zero-downtime-migration.md) | 무중단 배포 4단계 이행 및 DDL 린터 |
@@ -66,6 +67,8 @@
 | [ADR-0002](02-architecture/decisions/ADR-0002-korean-first-frontend.md) | 한국어 우선 프런트엔드와 API 메시지 범위 |
 | [ADR-0003](02-architecture/decisions/ADR-0003-frontend-ux-modernization-principles.md) | 사용자 과업 중심 UX·브랜드 프로필·접근성·데이터 소유권 원칙 |
 | [ADR-0004](02-architecture/decisions/ADR-0004-provisional-hybrid-information-architecture.md) | 하이브리드 정보구조를 검증용 잠정 방향으로 채택 |
+| [ADR-0005](02-architecture/decisions/ADR-0005-ui-quality-durable-evidence.md) | UI 품질 증거를 버전형 compact summary와 tracked index로 보존 |
+| [ADR-0006](02-architecture/decisions/ADR-0006-css-only-responsive-table.md) | 반응형 표현은 단일 SSR DOM 위에서 CSS로만 전환 |
 | [ADR-0007](02-architecture/decisions/ADR-0007-reference-default-ia-approval.md) | 하이브리드 IA를 참조-기본 IA로 승인, 증거 요건은 채택 시점 재검증으로 이전 |
 
 ## 03-guides — 개발 지침
@@ -103,6 +106,7 @@
 | [performance-optimization-guide.md](04-operations/performance-optimization-guide.md) | 성능 최적화 |
 | [load-test-guide.md](04-operations/load-test-guide.md) | k6 부하 테스트 |
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
+| [url-state-privacy-classification-draft.md](04-operations/url-state-privacy-classification-draft.md) | URL 상태 census 523건의 프라이버시 분류 **초안** — `PD-UX-002` 승인 회의 입력물(승인 아님) |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
 
 ## archived — 구버전 보관
