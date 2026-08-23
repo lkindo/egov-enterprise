@@ -1410,7 +1410,7 @@
               <div class="stat-desc"><code>nuri.api.harness</code> 실측</div>
             </div>
             <div class="stat-card">
-              <div class="stat-val">37</div>
+              <div class="stat-val">38</div>
               <div class="stat-label">PostgreSQL 스키마 검증 클래스</div>
               <div class="stat-desc"><code>@Tag("schema-validation")</code> 실측</div>
             </div>
@@ -1446,7 +1446,7 @@
           <article class="status-card">
             <span class="badge badge-success">ENFORCED</span>
             <h3>중앙 gate registry</h3>
-            <p><code>gates.json</code>이 governance 35·ArchUnit 10·schema-validation 37개와 5개 runner catalog, 6개 execution profile, 3개 quality population, 15개 quality ratchet을 source·task·실행 tier·CI 소비자 계약으로 관리합니다.</p>
+            <p><code>gates.json</code>이 governance 35·ArchUnit 10·schema-validation 38개와 5개 runner catalog, 6개 execution profile, 3개 quality population, 15개 quality ratchet을 source·task·실행 tier·CI 소비자 계약으로 관리합니다.</p>
           </article>
           <article class="status-card">
             <span class="badge badge-warning">ADVISORY</span>
@@ -2340,7 +2340,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
         <div class="glass-card" style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(6, 182, 212, 0.05) 100%);">
           <h3 style="font-family: 'Outfit', sans-serif; font-size: 1.15rem; color: var(--text-main); font-weight: 700; margin-bottom: 0.5rem;">평가 기준</h3>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65;">
-            2026-08-20 기준 중앙 registry가 <strong>governance JUnit 35개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 37개</strong>와 runner catalog 5개, execution profile 6개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다(수치는 <code>gates.json</code> 실측이며 현행 대시보드 수치와 같은 원본을 공유합니다). 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
+            2026-08-23 기준 중앙 registry가 <strong>governance JUnit 35개</strong>·<strong>ArchUnit 10개</strong>·<strong>schema-validation 38개</strong>와 runner catalog 5개, execution profile 6개, quality population 3개, quality ratchet 15개를 source·task·실행 tier·CI 소비자 계약으로 관리합니다(수치는 <code>gates.json</code> 실측이며 현행 대시보드 수치와 같은 원본을 공유합니다). 개별 프론트/E2E 테스트는 파일을 수동 열거하지 않고 runner selector로 발견합니다.
           </p>
           <p style="color: var(--text-muted); font-size: 0.88rem; line-height: 1.65; margin-top: 0.9rem; border-top: 1px solid var(--border-color); padding-top: 0.9rem;">
             <strong style="color: var(--accent-success);">핵심 집행:</strong> 태그 기반 전수 census, 단일 source index, 의미 기반 인가 정책 matrix, Entity Lombok gate, schema suite의 공유 PostgreSQL, 구조화 E2E 오류 ledger·고정 대기 0건·실행시간 기반 shard, 85/70/75 exact ratchet이 실행 경로에 결속돼 있습니다.
@@ -2543,7 +2543,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
 
     const dbModelMapping = [
       { layer: "DB 표준 단어", example: "<code>INQ_CNT</code> (조회수)", spec: "<code>meta_standard_words</code>와 migration의 실제 예시", audit: "<span class='badge badge-warning'>PARTIAL</span> SchemaNaming은 접두·snake_case·제약·audit 중심이며 모든 표준 단어 의미를 전수 검증하지 않습니다.", badge: "cyan" },
-      { layer: "DB 물리 컬럼", example: "<code>tb_bbs_item.inq_cnt</code>", spec: "Flyway가 재현하는 PostgreSQL 17 스키마", audit: "<span class='badge badge-success'>HARD</span> schema-validation이 migration 적용·Hibernate validate·write smoke를 수행하고 37개 tag census를 중앙 registry가 exact-match합니다.", badge: "primary" },
+      { layer: "DB 물리 컬럼", example: "<code>tb_bbs_item.inq_cnt</code>", spec: "Flyway가 재현하는 PostgreSQL 17 스키마", audit: "<span class='badge badge-success'>HARD</span> schema-validation이 migration 적용·Hibernate validate·write smoke를 수행하고 38개 tag census를 중앙 registry가 exact-match합니다.", badge: "primary" },
       { layer: "Backend JPA", example: "<code>Board.inqCnt : Integer</code>", spec: "Entity ↔ 물리 컬럼 타입/nullable 계약", audit: "<span class='badge badge-success'>HARD</span> Hibernate validate 대상. live 운영 DB가 아니라 테스트 컨테이너의 repo migration 기준입니다.", badge: "success" },
       { layer: "Frontend Zod", example: "<code>inqCnt: z.number().optional()</code>", spec: "OpenAPI snapshot에서 생성한 Zod 계약", audit: "<span class='badge badge-success'>HARD</span> codegen diff는 생성물 drift를 잡지만 도메인 의미·최솟값까지 자동 추론하는 것은 아닙니다.", badge: "warning" }
     ];
@@ -2581,7 +2581,7 @@ npm run verify:ops             # 네트워크·GitHub admin read 필요: 원격 
       {
         num: 3,
         title: "실 PostgreSQL 스키마·쓰기 검증",
-        desc: "37개 schema-validation 클래스가 PostgreSQL 17에 Flyway 전량 적용, Hibernate validate, PK/constraint/type 및 쓰기 smoke를 수행합니다. 35개 migration suite는 컨테이너 1개를 공유하되 각자 격리 DB를 생성·삭제하고 registry가 전수 tag를 동결합니다.",
+        desc: "38개 schema-validation 클래스가 PostgreSQL 17에 Flyway 전량 적용, Hibernate validate, PK/constraint/type 및 쓰기 smoke를 수행합니다. 35개 migration suite는 컨테이너 1개를 공유하되 각자 격리 DB를 생성·삭제하고 registry가 전수 tag를 동결합니다.",
         badge1: "Database", badge2: "CI Hard", badge3: "Shared + Isolated", type1: "error", type2: "success", type3: "success",
         impl: "SharedPostgresMigrationTestSupport.java · SharedPostgresMigrationHarnessContractTest.java · :api-server:schemaValidationTest",
         doc: "Schema validation guide", docLink: "https://github.com/lkindo/egov-enterprise/blob/main/docs/03-guides/getting-started.md",
