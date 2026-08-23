@@ -86,19 +86,20 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <div className="absolute -inset-2 bg-primary/20 rounded-lg blur-xl opacity-0 group-hover:opacity-100 transition-opacity" />
  </div>
  <div>
- <h3 className="text-2xl font-bold text-surface-inverse-foreground tracking-tighter uppercase leading-none">Security_Matrix_Observer</h3>
- <p className="text-xs font-bold text-white/30 tracking-[0.4em] uppercase mt-2">Global Access Plane & Permission Heatmap</p>
+ <h3 className="text-2xl font-bold text-surface-inverse-foreground tracking-tighter leading-none">권한 매트릭스</h3>
+ <p className="text-xs font-bold text-white/30 tracking-tight mt-2">역할 × 메뉴 접근 허용 현황</p>
  </div>
  </div>
 
+ {/* 두 지표 모두 현재 로드된 mappings 집계에서 파생된 실측값이다. */}
  <div className="flex items-center gap-10 relative z-10 bg-white/5 p-6 rounded-lg border border-white/5 backdrop-blur-md">
  <div className="space-y-1">
- <p className="text-xs font-bold text-white/30 tracking-widest uppercase">Coverage_Index</p>
+ <p className="text-xs font-bold text-white/30 tracking-widest">허용 비율</p>
  <p className="text-2xl font-bold text-surface-inverse-foreground tabular-nums">{coverage.toFixed(1)}%</p>
  </div>
  <div className="w-px h-10 bg-white/10" />
  <div className="space-y-1 text-right">
- <p className="text-xs font-bold text-white/30 tracking-widest uppercase">Active_Nodes</p>
+ <p className="text-xs font-bold text-white/30 tracking-widest">허용 셀</p>
  <div className="flex items-center gap-2 text-emerald-400">
  <Zap size={12} />
  <p className="text-2xl font-bold tabular-nums">{activeCells}</p>
@@ -146,8 +147,10 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <table className="w-full border-collapse table-fixed min-w-[1000px]">
  <caption className="sr-only">역할별 메뉴 접근 권한 매트릭스. 각 셀은 해당 역할의 메뉴 접근 허용 여부를 토글합니다.</caption>
  <thead>
+ {/* 매트릭스 셀 밀도 — p-8/p-6 고정 패딩 대신 표준 셀 밀도 토큰(--cell-px/--cell-py)을
+     소비한다. compact(UI_DENSITY) 배포에서 StandardDataTable 과 같은 축으로 조밀해진다. */}
  <tr className="border-b-2 border-border divide-x-2 divide-border">
- <th scope="col" className="sticky left-0 top-0 z-30 w-[240px] bg-surface-inverse p-8 text-left border-r-4 border-surface-inverse-border">
+ <th scope="col" className="sticky left-0 top-0 z-30 w-[240px] bg-surface-inverse px-[var(--cell-px)] py-[var(--cell-py)] text-left border-r-4 border-surface-inverse-border">
  <div className="flex items-center gap-3">
  <Monitor size={16} className="text-primary" aria-hidden="true" />
  <span className="text-xs font-bold text-white/40 tracking-widest">메뉴 노드</span>
@@ -157,7 +160,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  const code = auth.authrtCd;
  const name = auth.authrtNm;
  return (
- <th key={code} scope="col" aria-label={`권한: ${name} (${code})`} className="p-8 bg-muted/50 min-w-[150px] transition-colors hover:bg-muted">
+ <th key={code} scope="col" aria-label={`권한: ${name} (${code})`} className="px-[var(--cell-px)] py-[var(--cell-py)] bg-muted/50 min-w-[150px] transition-colors hover:bg-muted">
  <div className="flex flex-col items-center gap-2 group/header">
  <div className="w-10 h-10 rounded-lg bg-card border-2 border-border flex items-center justify-center text-muted-foreground transition-all group-hover/header:bg-surface-inverse group-hover/header:text-surface-inverse-foreground group-hover/header:scale-110 shadow-sm">
  <Lock size={14} aria-hidden="true" />
@@ -173,7 +176,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <tbody className="divide-y-2 divide-border">
  {filteredMenus.map((menu) => (
  <tr key={menu.menuNo} className="divide-x-2 divide-border hover:bg-muted/50 transition-colors group/row">
- <th scope="row" aria-label={`메뉴: ${menu.menuNm}`} className="sticky left-0 z-20 bg-card p-6 border-r-4 border-border text-left font-normal group-hover/row:bg-muted transition-colors">
+ <th scope="row" aria-label={`메뉴: ${menu.menuNm}`} className="sticky left-0 z-20 bg-card px-[var(--cell-px)] py-[var(--cell-py)] border-r-4 border-border text-left font-normal group-hover/row:bg-muted transition-colors">
  <div className="flex items-center gap-4">
  <div className={cn(
  "w-8 h-8 rounded-lg flex items-center justify-center transition-all",
@@ -183,7 +186,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </div>
  <div className="flex flex-col min-w-0">
  <span className="text-sm font-bold text-foreground truncate tracking-tight">{menu.menuNm}</span>
- <span className="text-xs font-bold text-muted-foreground tracking-widest font-mono uppercase">NODE_{menu.menuNo}</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-widest font-mono">#{menu.menuNo}</span>
  </div>
  </div>
  </th>
@@ -201,31 +204,33 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  aria-label={`${auth.authrtNm || code} 역할의 '${menu.menuNm}' 메뉴 접근 ${isSelected ? '허용됨' : '차단됨'}`}
  aria-pressed={!!isSelected}
  onClick={() => onToggle(code, menu.menuNo)}
+ // 행 높이 토큰화 — 셀 토글 높이를 --control-h 로 위임해 compact 에서 행이 함께 조밀해진다.
  className={cn(
- "w-full h-11 rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden group/cell",
+ "w-full h-[var(--control-h)] rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden group/cell",
  isSelected
  ? "bg-surface-inverse shadow-xl border-none"
  : "bg-card hover:bg-muted border-2 border-dashed border-border hover:border-border"
  )}
  >
+ {/* 토큰화된 행 높이(--control-h) 안에 들어가도록 아이콘·라벨을 가로로 배치한다. */}
  <AnimatePresence mode="wait">
  {isSelected ? (
  <motion.div
  initial={{ scale: 0, rotate: -20 }}
  animate={{ scale: 1, rotate: 0 }}
  exit={{ scale: 0, rotate: 20 }}
- className="flex flex-col items-center gap-1"
+ className="flex items-center gap-1.5"
  >
- <ShieldCheck size={20} className="text-primary" aria-hidden="true" />
+ <ShieldCheck size={16} className="text-primary" aria-hidden="true" />
  <span className="text-xs font-bold text-surface-inverse-foreground/60 tracking-tight">허용</span>
  </motion.div>
  ) : (
  <motion.div
  initial={{ opacity: 0 }}
  animate={{ opacity: 0.2 }}
- className="flex flex-col items-center gap-1 group-hover/cell:opacity-100 transition-opacity"
+ className="flex items-center gap-1.5 group-hover/cell:opacity-100 transition-opacity"
  >
- <Lock size={16} className="text-muted-foreground" aria-hidden="true" />
+ <Lock size={14} className="text-muted-foreground" aria-hidden="true" />
  <span className="text-xs font-bold text-muted-foreground tracking-tight">차단</span>
  </motion.div>
  )}
@@ -252,7 +257,7 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <Info size={24} aria-hidden="true" />
  </div>
  <div className="space-y-1">
- <p className="text-sm font-bold text-foreground tracking-tight leading-none uppercase underline decoration-primary/20 decoration-4 underline-offset-4">Governance_Protocol_Guide</p>
+ <p className="text-sm font-bold text-foreground tracking-tight leading-none underline decoration-primary/20 decoration-4 underline-offset-4">사용 안내</p>
  <p className="text-xs font-medium text-muted-foreground">
  각 격자(Cell)를 클릭하여 해당 역할에 대한 메뉴 접근 권한을 토글합니다. 변경 사항은 우측 상단의 <span className="text-foreground font-bold">변경사항 저장</span> 버튼을 눌러 실제 아키텍처에 반영해야 합니다.
  </p>
