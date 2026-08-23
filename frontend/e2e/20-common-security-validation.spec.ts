@@ -53,6 +53,13 @@ test.describe('Tier 20: Common Security & UI Validation', () => {
             sessionLossProbe('E2E-SESSION-CLEARED-SOCKJS-INFO-401',
                 /\/ws\/info(?:\?|$)/, 'GET', 2,
                 '세션 소실 후 SockJS 재연결 handshake(transport 조회)가 인증 거부되는 지점이다.'),
+            // 이 테스트는 board-masters 화면을 마운트한 채 쿠키를 지운다. 그 화면 자신의 목록
+            // 재조회(focus/refetch)가 리다이렉트 이전 창에 걸리면 401 이 되며, 이 역시 위 알림·
+            // 재발급과 같은 "마운트된 페이지가 세션 소실을 발견하는 사슬"이다 (CI run 32616382252
+            // attempt 1·2 연속 재현 — 이 항목 부재로 red).
+            sessionLossProbe('E2E-SESSION-CLEARED-PAGE-DATA-401',
+                /\/api\/v1\/admin\/system\/board-masters(?:\?|$)/, 'GET', 2,
+                '쿠키 삭제 후 마운트된 board-masters 화면의 목록 재조회가 정상적으로 인증 거부되는 지점이다.'),
             {
                 id: 'E2E-SESSION-CLEARED-WS-ERROR',
                 specScope: '20-common-security-validation.spec.ts :: Session Integrity: Handling Token Clearance',
