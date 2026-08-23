@@ -149,6 +149,15 @@ nuri:
     #     LB·nginx·CDN 추가 등 운영 홉이 바뀌면 둘을 함께 재판정한다.
     trusted-proxies: ${TRUSTED_PROXIES:127.0.0.1/32,::1/128,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
 
+  # 데모 게시판 인스턴스 ID — business-core(BoardIdProperties)가 하드코딩 대신 읽는 설정.
+  #   값은 데모 시드(R__seed_demo.sql)의 인스턴스 ID와 동일하며, 미설정 시에도 같은 기본값으로
+  #   거동이 완전히 같다. 다른 제품은 코어 수정 없이 이 값만 자기 게시판 ID로 바꾼다.
+  #   ⚠ faq-id 는 데모 시드에서 공지 게시판과 같은 인스턴스로 통합돼 있다(FAQ 통합 축).
+  boards:
+    notice-id: BBSMSTR_AAAAAAAAAAAA
+    task-id: BBSMSTR_CCCCCCCCCCCC
+    faq-id: BBSMSTR_AAAAAAAAAAAA
+
 logging:
   level:
     root: warn
