@@ -680,38 +680,94 @@
     },
     {
       "route": "/admin/sanctn/forms",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "demo-isolated",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "not-applicable",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-10-31",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/sanctn/forms] — sanction.forms-catalog·sanction.engine-health status=demo(static-mock·hardcoded-metrics), sanction.mutations status=unavailable (asOf 2026-08-21)",
+            "frontend/src/app/admin/sanctn/WorkflowHubClient.tsx:3 — '[데모 스캐폴드]' 자가선언 주석과 가시 고지 '정적 데모 화면입니다.'"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+            "docs/01-product/information-architecture.md §8.2 — demo-isolated 사용 조건(데모 격리·가시 고지·core menu 비노출 후속) 대조 검토"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/sanctn/forms] — sourceShellAccess=shellAccess=admin-system; 처분이 인가 경계를 완화하지 않음(AGENTS H3)",
+            "config/ui-route-capabilities.json routes[/admin/sanctn/forms] — dataSource=static-mock·hardcoded-metrics; 정적 경로에 개인 데이터·동적 식별자 없음"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "frontend/src/app/admin/sanctn/WorkflowHubClient.tsx:73 — 가시 텍스트 고지 '정적 데모 화면입니다.'와 미지원 컨트롤의 disabled+title/aria-label 명시",
+            ".agent/memory/decisions.md DEC-OPS-012 — 본 승인은 노출 격리/경로 보존 처분이며 접근성 적합성 주장이 아님"
+          ]
+        }
       }
     },
     {
       "route": "/admin/sanctn/workflow",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "demo-isolated",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "not-applicable",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-10-31",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "frontend/next.config.ts:142 — config-redirect /admin/sanctn/workflow → /admin/workflow(permanent:false); 자체 UI 없음, 목적지가 같은 웨이브의 demo-isolated 승인 대상",
+            "config/ui-route-capabilities.json routes[/admin/sanctn/workflow] — routing.kind=config-redirect target=/admin/workflow, directProjectionProfiles=[demo]"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+            "docs/01-product/information-architecture.md §8.2 — demo-isolated 사용 조건(데모 격리·가시 고지·core menu 비노출 후속) 대조 검토"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/sanctn/workflow] — sourceShellAccess=shellAccess=admin-system; redirect 목적지도 같은 admin-system shell(인가 완화 없음, AGENTS H3)",
+            "frontend/next.config.ts:142 — 경로 전용 redirect; URL에 개인 데이터·동적 식별자 없음"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "frontend/src/app/admin/workflow/WorkflowClient.tsx:69 — redirect 목적지의 가시 고지·disabled 컨트롤 명시를 승계",
+            ".agent/memory/decisions.md DEC-OPS-012 — 본 승인은 노출 격리/경로 보존 처분이며 접근성 적합성 주장이 아님"
+          ]
+        }
       }
     },
     {
@@ -1058,20 +1114,48 @@
     },
     {
       "route": "/admin/survey/polls/manage",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "unavailable-hidden",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "not-applicable",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-10-31",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/survey/polls/manage] — poll-governance status=unavailable, dataSource=none (asOf 2026-08-21)",
+            "frontend/src/app/admin/survey/polls/manage/page.tsx:16 — 정직한 준비 중 고지 '여론조사 거버넌스 준비 중'"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+            "docs/01-product/information-architecture.md §8.2 — unavailable-hidden 사용 조건(지원 재개 조건·owner/reviewBy·정직한 unavailable 고지) 대조 검토; 재개 조건 재검토 기한은 reviewBy 2026-10-31"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/survey/polls/manage] — sourceShellAccess=shellAccess=admin-system; 처분이 인가 경계를 완화하지 않음(AGENTS H3)",
+            "config/ui-route-capabilities.json routes[/admin/survey/polls/manage] — dataSource=none; 정적 경로에 개인 데이터·동적 식별자 없음"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "frontend/src/app/admin/survey/polls/manage/page.tsx:16 — 준비 중 상태를 가시 텍스트로 고지(빈 화면 위장 없음)",
+            ".agent/memory/decisions.md DEC-OPS-012 — 본 승인은 노출 격리/경로 보존 처분이며 접근성 적합성 주장이 아님"
+          ]
+        }
       }
     },
     {
@@ -1526,20 +1610,48 @@
     },
     {
       "route": "/admin/system/network",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "unavailable-hidden",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "not-applicable",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-10-31",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/network] — network.monitoring status=unavailable, dataSource=canonical-empty-api (E2: api-server .../log/NetworkMonitoringApiController.java)",
+            "frontend/src/app/admin/system/network/NetworkAdminClient.tsx:214 — 빈 결과가 의도된 상태임을 화면에 명시(빈 목록 위장 방지)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+            "docs/01-product/information-architecture.md §8.2 — unavailable-hidden 사용 조건(지원 재개 조건·owner/reviewBy·정직한 unavailable 고지) 대조 검토; 재개 조건 재검토 기한은 reviewBy 2026-10-31"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/network] — sourceShellAccess=shellAccess=admin-system; 처분이 인가 경계를 완화하지 않음(AGENTS H3)",
+            "config/ui-route-capabilities.json routes[/admin/system/network] — dataSource=canonical-empty-api; 수집 원천 미연결로 노출 데이터 없음"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "frontend/src/app/admin/system/network/NetworkAdminClient.tsx:214 — 빈 상태 사유를 가시 텍스트로 고지",
+            ".agent/memory/decisions.md DEC-OPS-012 — 본 승인은 노출 격리/경로 보존 처분이며 접근성 적합성 주장이 아님"
+          ]
+        }
       }
     },
     {
@@ -1724,20 +1836,48 @@
     },
     {
       "route": "/admin/workflow",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "demo-isolated",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "not-applicable",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-10-31",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/workflow] — workflow.canvas·workflow.metrics status=demo(static-mock·hardcoded-metrics), workflow.mutations status=unavailable (asOf 2026-08-21)",
+            "frontend/src/app/admin/workflow/WorkflowClient.tsx:3 — '[데모 스캐폴드]' 자가선언 주석과 가시 고지 '정적 데모 화면입니다.'"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+            "docs/01-product/information-architecture.md §8.2 — demo-isolated 사용 조건(데모 격리·가시 고지·core menu 비노출 후속) 대조 검토"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/workflow] — sourceShellAccess=shellAccess=admin-system; 처분이 인가 경계를 완화하지 않음(AGENTS H3)",
+            "config/ui-route-capabilities.json routes[/admin/workflow] — dataSource=static-mock·hardcoded-metrics; 정적 경로에 개인 데이터·동적 식별자 없음"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "frontend/src/app/admin/workflow/WorkflowClient.tsx:69 — 가시 텍스트 고지 '정적 데모 화면입니다.'와 미지원 컨트롤의 disabled+title/aria-label 명시",
+            ".agent/memory/decisions.md DEC-OPS-012 — 본 승인은 노출 격리/경로 보존 처분이며 접근성 적합성 주장이 아님"
+          ]
+        }
       }
     },
     {
@@ -1778,20 +1918,48 @@
     },
     {
       "route": "/approvals/draft",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "demo-isolated",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "not-applicable",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-10-31",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/approvals/draft] — draft.form-catalog status=demo(hardcoded-local-state), draft.submit status=unavailable(E3, frontend/e2e/11-enterprise-workflow.spec.ts)",
+            "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx:93 — 미전송 사실을 사용자에게 명시('작성한 내용은 전송되지 않았습니다')"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+            "docs/01-product/information-architecture.md §8.2 — demo-isolated 사용 조건(데모 격리·가시 고지·core menu 비노출 후속) 대조 검토"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/approvals/draft] — sourceShellAccess=shellAccess=authenticated; 처분이 인가 경계를 완화하지 않음(AGENTS H3)",
+            "config/ui-route-capabilities.json routes[/approvals/draft] — dataSource=hardcoded-local-state; 서버 전송 0건, 정적 경로에 개인 데이터·동적 식별자 없음"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx:292 — '상신 기능은 아직 연결되지 않았습니다' 가시 고지와 상신 버튼 disabled+title 명시",
+            ".agent/memory/decisions.md DEC-OPS-012 — 본 승인은 노출 격리/경로 보존 처분이며 접근성 적합성 주장이 아님"
+          ]
+        }
       }
     },
     {
@@ -2194,36 +2362,92 @@
   "externalAliases": [
     {
       "source": "/admin/community/boards/insertBoardArticle",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-alias-permanent",
-      "consumerEvidenceReview": "unverified",
-      "queryMappingReview": "unverified",
-      "privacyReview": "unverified",
-      "authorizationReview": "unverified",
+      "consumerEvidenceReview": "verified",
+      "queryMappingReview": "verified",
+      "privacyReview": "verified",
+      "authorizationReview": "verified",
       "owner": "product/IA + domain owner",
       "reviewBy": "2026-10-31",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "frontend/next.config.ts:122 — permanent:true redirect /admin/community/boards/insertBoardArticle → /admin/community/boards/insert-board-article(레거시 camelCase → kebab-case 정규 경로, 기존 북마크/딥링크 보존 주석)",
+            "2026-08-23 저장소 전수 grep — next.config.ts redirect 정의 외 내부 소비자 0건; 외부 레거시 북마크/딥링크는 열거 불가하므로 영구 보존이 fail-safe. 레거시 eGov 명명 계약 흔적: business-core/src/main/java/nuri/business/service/menu/MenuIntegrationService.java:76"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+            "docs/01-product/information-architecture.md §8.2 — retain-alias-permanent 사용 조건(terminal target·query mapping·문서화된 영구 사유) 대조 검토"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json externalAliases[/admin/community/boards/insertBoardArticle] — sourceShellAccess=shellAccess=authenticated; redirect가 인가 경계를 바꾸지 않고 목적지 shell 게이트는 frontend/src/proxy.ts가 집행(AGENTS H3)",
+            "frontend/next.config.ts:122 — 경로 전용 매핑(query 재작성 없음); source/target 경로에 개인 데이터·동적 식별자 없음"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "자동 redirect로 자체 이용자 표면 없음 — 북마크·히스토리 연속성은 docs/01-product/information-architecture.md §9 redirect 계약을 따름",
+            ".agent/memory/decisions.md DEC-OPS-012 — 본 승인은 노출 격리/경로 보존 처분이며 접근성 적합성 주장이 아님"
+          ]
+        }
       }
     },
     {
       "source": "/admin/community/boards/selectBoardList",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-alias-permanent",
-      "consumerEvidenceReview": "unverified",
-      "queryMappingReview": "unverified",
-      "privacyReview": "unverified",
-      "authorizationReview": "unverified",
+      "consumerEvidenceReview": "verified",
+      "queryMappingReview": "verified",
+      "privacyReview": "verified",
+      "authorizationReview": "verified",
       "owner": "product/IA + domain owner",
       "reviewBy": "2026-10-31",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "frontend/next.config.ts:117 — permanent:true redirect /admin/community/boards/selectBoardList → /admin/community/boards/select-board-list(레거시 camelCase → kebab-case 정규 경로, 기존 북마크/딥링크 보존 주석)",
+            "2026-08-23 저장소 전수 grep — next.config.ts redirect 정의 외 내부 소비자 0건; 외부 레거시 북마크/딥링크는 열거 불가하므로 영구 보존이 fail-safe. 레거시 eGov 명명 계약 흔적: business-core/src/main/java/nuri/business/service/menu/MenuIntegrationService.java:76"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "docs/02-architecture/decisions/ADR-0007-reference-default-ia-approval.md §Decision 4 — route별 disposition은 owner PR 리뷰로 개별 승인한다(승인 채널 DEC-OPS-013)",
+            "docs/01-product/information-architecture.md §8.2 — retain-alias-permanent 사용 조건(terminal target·query mapping·문서화된 영구 사유) 대조 검토"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "config/ui-route-capabilities.json externalAliases[/admin/community/boards/selectBoardList] — sourceShellAccess=shellAccess=authenticated; redirect가 인가 경계를 바꾸지 않고 목적지 shell 게이트는 frontend/src/proxy.ts가 집행(AGENTS H3)",
+            "frontend/next.config.ts:117 — 경로 전용 매핑(query 재작성 없음); source/target 경로에 개인 데이터·동적 식별자 없음"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (DEC-OPS-013)",
+          "reviewedAt": "2026-08-23",
+          "evidence": [
+            "자동 redirect로 자체 이용자 표면 없음 — 북마크·히스토리 연속성은 docs/01-product/information-architecture.md §9 redirect 계약을 따름",
+            ".agent/memory/decisions.md DEC-OPS-012 — 본 승인은 노출 격리/경로 보존 처분이며 접근성 적합성 주장이 아님"
+          ]
+        }
       }
     }
   ]
