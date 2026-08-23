@@ -140,4 +140,25 @@ describe('브랜드 프로필 토큰 계약', () => {
       expect(resolver, `resolver allowlist 에 프로필 '${profile}' 이 없습니다.`).toContain(`'${profile}'`);
     }
   });
+
+  it('프로필 CSS ↔ globals @import ↔ allowlist 가 3방향 완전 패리티다', () => {
+    // 셋 중 하나라도 어긋나면 조용한 파손이 된다: import 누락 = 프로필이 번들에 실리지 않아
+    // env 를 켜는 순간 시맨틱 변수 전체 미정의, allowlist 항목의 파일 부재 = 같은 증상,
+    // 파일만 있고 allowlist 에 없으면 死 CSS. "30분 브랜드 프로필" 레시피(design-tokens.md §1)의
+    // 1·3·4단계가 항상 함께 이행됨을 이 계약이 강제한다.
+    const globalsCss = readFileSync(GLOBALS, 'utf8');
+    const files = readdirSync(THEMES_DIR).filter((f) => f.endsWith('.css'));
+    const resolver = readFileSync(join(FRONTEND_DIR, 'src', 'lib', 'theme', 'brand-theme.ts'), 'utf8');
+
+    for (const file of files) {
+      expect(globalsCss, `globals.css 에 themes/${file} 의 @import 가 없습니다 — 프로필이 번들에 실리지 않습니다.`)
+        .toContain(`../styles/themes/${file}`);
+    }
+
+    const allowlisted = [...resolver.matchAll(/'([a-z0-9-]+)'/g)].map((m) => m[1]);
+    for (const name of allowlisted) {
+      expect(files, `allowlist 프로필 '${name}' 의 CSS 파일(themes/${name}.css)이 없습니다.`)
+        .toContain(`${name}.css`);
+    }
+  });
 });
