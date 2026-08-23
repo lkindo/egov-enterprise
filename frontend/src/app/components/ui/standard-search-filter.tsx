@@ -86,7 +86,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
                     value={values[field.name] === '' ? '__ALL__' : (values[field.name] || '')}
                     onValueChange={(v) => handleValueChange(field.name, v === '__ALL__' ? '' : v)}
                   >
-                    <SelectTrigger className="h-12 rounded-lg border border-input bg-background focus:ring-4 focus:ring-primary/10 hover:border-primary/50 transition-all font-bold text-sm ring-offset-background shadow-sm">
+                    <SelectTrigger className="h-[var(--filter-control-h)] rounded-lg border border-input bg-background focus:ring-4 focus:ring-primary/10 hover:border-primary/50 transition-all font-bold text-sm ring-offset-background shadow-sm">
                       <SelectValue placeholder={field.placeholder || "전체"} />
                     </SelectTrigger>
                     <SelectContent className="rounded-lg shadow-2xl border-border bg-background p-1">
@@ -107,7 +107,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
                       <Button
                         variant="outline"
                         className={cn(
-                          "w-full h-12 justify-start text-left font-bold text-sm rounded-lg border border-input bg-background transition-all hover:border-primary/50 shadow-sm",
+                          "w-full h-[var(--filter-control-h)] justify-start text-left font-bold text-sm rounded-lg border border-input bg-background transition-all hover:border-primary/50 shadow-sm",
                           !values[field.name] && "text-muted-foreground/50"
                         )}
                       >
@@ -144,7 +144,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
                     type="date"
                     value={values[field.name] || ''}
                     onChange={(e) => handleValueChange(field.name, e.target.value)}
-                    className="h-12 rounded-lg border border-input bg-background font-bold text-sm ring-offset-background transition-all hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm"
+                    className="h-[var(--filter-control-h)] rounded-lg border border-input bg-background font-bold text-sm ring-offset-background transition-all hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm"
                   />
                 ) : (
                   <div className="relative">
@@ -153,7 +153,7 @@ function SmartSearchPanel({ fields, onSearch, onReset, className, isPremium = tr
                       placeholder={field.placeholder?.toUpperCase()}
                       value={values[field.name] || ''}
                       onChange={(e) => handleValueChange(field.name, e.target.value)}
-                      className="h-12 pl-11 rounded-lg border border-input bg-background font-bold text-sm ring-offset-background transition-all hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm placeholder:font-bold placeholder:text-xs placeholder:tracking-widest"
+                      className="h-[var(--filter-control-h)] pl-11 rounded-lg border border-input bg-background font-bold text-sm ring-offset-background transition-all hover:border-primary/50 focus-visible:ring-4 focus-visible:ring-primary/10 shadow-sm placeholder:font-bold placeholder:text-xs placeholder:tracking-widest"
                     />
                   </div>
                 )}
