@@ -108,6 +108,7 @@
 | [dependabot-alert-census.md](04-operations/dependabot-alert-census.md) | 의존성 취약점 판정 절차 |
 | [url-state-privacy-classification-draft.md](04-operations/url-state-privacy-classification-draft.md) | URL 상태 census 523건의 프라이버시 분류 **초안** — `PD-UX-002` 승인 회의 입력물(승인 아님) |
 | [project-safe-deletion-analysis.md](04-operations/project-safe-deletion-analysis.md) | 프레임워크 간접 소비를 포함한 안전 삭제 절차 |
+| [adopter-baseline-refreeze.md](04-operations/adopter-baseline-refreeze.md) | 파생 제품(adopter)이 base 채택 후 밀도·브랜드·래칫 기준선을 자기 실측으로 재동결하는 절차 (D10) |
 
 ## archived — 구버전 보관
 
