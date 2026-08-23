@@ -195,7 +195,7 @@ subprojects { subproject ->
     //                  1.49→1.62 는 minor 도약이라 micrometer-tracing-bridge-otel 과의 호환을
     //                  컴파일·테스트로 검증한 뒤에만 유지한다.
     ext['jackson-bom.version'] = '2.21.5'
-    ext['log4j2.version'] = '2.25.4'
+    ext['log4j2.version'] = '2.25.5'
     ext['opentelemetry.version'] = '1.62.0'
 
     dependencyManagement {
