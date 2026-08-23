@@ -1,7 +1,7 @@
 package nuri.api.controller.foundation.controller.system.service.survey;
 
-import nuri.business.service.system.service.survey.SurveyRespondentService;
-import nuri.business.service.system.service.survey.dto.SurveyRespondentDto;
+import nuri.business.service.survey.SurveyRespondentService;
+import nuri.business.service.survey.dto.SurveyRespondentDto;
 import nuri.foundation.core.exception.GlobalExceptionHandler;
 import nuri.foundation.security.annotation.AdminOnly;
 import nuri.foundation.security.annotation.AdminOrSystem;

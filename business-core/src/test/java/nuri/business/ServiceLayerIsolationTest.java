@@ -38,12 +38,12 @@ public class ServiceLayerIsolationTest {
                             "nuri.business.domain.system.content.banner..",
                             "nuri.business.domain.system.content.popup..",
                             "nuri.business.domain.system.content.community..",
-                            "nuri.business.domain.system.service.survey..",
+                            "nuri.business.domain.survey..",
                             "nuri.business.domain.system.service.consult..",
                             "nuri.business.service.system.content.banner..",
                             "nuri.business.service.system.content.popup..",
                             "nuri.business.service.system.content.community..",
-                            "nuri.business.service.system.service.survey..",
+                            "nuri.business.service.survey..",
                             "nuri.business.service.system.service.consult..")
                     .because("삭제 가능한 샘플 도메인은 business-app에만 있어야 business-core가 재사용 필수 코어로 유지된다");
 }

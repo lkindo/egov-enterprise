@@ -1,11 +1,11 @@
 package nuri.api.controller.foundation.controller.system.service.survey;
 
 import nuri.business.test.BaseControllerTest;
-import nuri.business.service.system.service.survey.SurveyService;
-import nuri.business.service.system.service.survey.dto.SurveyInfoDto;
-import nuri.business.service.system.service.survey.dto.SurveyTemplateDto;
-import nuri.business.service.system.service.survey.dto.SurveyArticleDto;
-import nuri.business.service.system.service.survey.dto.SurveyQuestionDto;
+import nuri.business.service.survey.SurveyService;
+import nuri.business.service.survey.dto.SurveyInfoDto;
+import nuri.business.service.survey.dto.SurveyTemplateDto;
+import nuri.business.service.survey.dto.SurveyArticleDto;
+import nuri.business.service.survey.dto.SurveyQuestionDto;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
