@@ -10,8 +10,9 @@ import { boardUserService } from '@/services/business/user/board/BoardUserServic
 import { BoardPost } from '@/types/business/board';
 import { useSearchState } from '@/lib/hooks/use-search-state';
 import { Plus, Eye } from 'lucide-react';
+import { FREE_BOARD_ID, NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
 
-const DEFAULT_BBS_ID = 'BBSMSTR_AAAAAAAAAAAA'; // 공지사항 기본값
+const DEFAULT_BBS_ID = NOTICE_BOARD_ID; // 공지사항 기본값
 
 function CommunityDetailContent() {
     const router = useRouter();
@@ -98,9 +99,9 @@ function CommunityDetailContent() {
                         label: '게시판 선택',
                         type: 'select',
                         options: [
-                            { label: '공지사항', value: 'BBSMSTR_AAAAAAAAAAAA' },
-                            { label: '자유게시판', value: 'BBSMSTR_BBBBBBBBBBBB' },
-                            { label: '업무게시판', value: 'BBSMSTR_CCCCCCCCCCCC' }
+                            { label: '공지사항', value: NOTICE_BOARD_ID },
+                            { label: '자유게시판', value: FREE_BOARD_ID },
+                            { label: '업무게시판', value: TASK_BOARD_ID }
                         ]
                     },
                     { name: 'searchWrd', label: '검색어', type: 'text', placeholder: '제목, 내용 입력...' },
