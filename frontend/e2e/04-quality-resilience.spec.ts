@@ -212,8 +212,12 @@ test.describe('Tier 4: Quality & Resilience', () => {
                     messagePattern: null,
                     method: 'GET',
                     status: 401,
+                    // 기준선 생성 워크플로 실측(run 32634871785): 이 401 은 환경에 따라 발생하지
+                    // 않을 수 있다(비로그인 컨텍스트가 세션 확인을 생략하는 경로). 발생 필수로
+                    // 두면 "기대 오류 미발생" 위반으로 생성이 죽으므로 선택적 항목으로 둔다.
+                    minOccurrences: 0,
                     maxOccurrences: 4,
-                    reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다.',
+                    reason: '비로그인 상태의 로그인 화면이 세션 유무를 확인하는 초기 요청이다(발생 시에만 소비).',
                     expiresAt: '2026-12-31',
                 }]);
                 // ?e2e=true: 온보딩 투어 자동 비활성(01-core-base 로그인 a11y 테스트와 동일 진입 계약).
