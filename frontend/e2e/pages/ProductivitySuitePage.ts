@@ -32,7 +32,8 @@ export class ProductivitySuitePage {
         console.log(`>>> Verifying Address Book Navigation`);
         await expect(this.page.getByRole('heading', { name: '통합 주소록 관리' })).toBeVisible({ timeout: 15000 });
         await expect(this.page.getByRole('textbox', { name: '주소록 검색' })).toBeVisible();
-        await expect(this.page.getByRole('button', { name: '주소록 등록', exact: true })).toBeVisible();
+        // [2026-08-24 A1 이행] 링크 안 버튼 중첩을 없애 role 이 link 로 바뀌었다(페이지 이동).
+        await expect(this.page.getByRole('link', { name: '주소록 등록', exact: true })).toBeVisible();
     }
 
     // 일정 관리(Calendar)

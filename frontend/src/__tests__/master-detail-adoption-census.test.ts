@@ -82,6 +82,9 @@ describe('A2 master-detail adoption census', () => {
     // e2e(11-enterprise-workflow)가 붙잡는 두 접근 이름 — 셸 이행 뒤에도 같은 이름으로 남는다.
     expect(client).toContain('title="결재 허브"');
     expect(client).toContain('새 결재 기안');
+    // 이름만 고정하면 **역할이 바뀐 것**을 놓친다(2026-08-24 CI 실측: 기안 버튼이 button -> link 로
+    // 바뀌어 e2e 가 180초 타임아웃). 페이지 이동은 link 가 옳으므로 그 구조를 계약으로 못 박는다.
+    expect(client).toMatch(/<Button asChild[\s\S]*?<Link href="\/approvals\/draft">/);
     // 표가 아니라 compact 마스터 목록이다 — 6열 표를 좁은 마스터 폭에 두지 않는다.
     expect(client).not.toMatch(/from\s+['"]@\/app\/components\/ui\/standard-data-table['"]/);
   });

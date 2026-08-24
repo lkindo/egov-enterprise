@@ -32,7 +32,10 @@ test.describe('Tier 11: Enterprise Workflow & Productivity', () => {
         
         // 2. Draft New Approval
         console.log('>>> Navigating to Draft Center');
-        await page.getByRole('button', { name: '새 결재 기안' }).click();
+        // [2026-08-24 A2 이행] 종전에는 <Link> 안에 <Button> 이 중첩돼(유효하지 않은 마크업)
+        //   접근성 트리에 button 이 남아 있었다. 셸 이행에서 Button asChild 로 링크 하나만
+        //   렌더하도록 고쳐 role 이 link 로 바뀌었다 — 페이지 이동이므로 link 가 옳은 역할이다.
+        await page.getByRole('link', { name: '새 결재 기안' }).click();
         await expect(page).toHaveURL(/\/approvals\/draft/);
         
         // 3. Select Template (e.g., 일반 지출 결의서)
