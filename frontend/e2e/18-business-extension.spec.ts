@@ -17,8 +17,12 @@ test.describe('Tier 18: Business Extensions & Identity Governance', () => {
 
     test('HPCM: Help Content Management Access', async ({ businessPage }) => {
         await businessPage.gotoHpcm();
-        // Verify content inventory
-        await expect(businessPage.page.getByText(/콘텐츠 인벤토리|도움말_자산/i).first()).toBeVisible();
-        await expect(businessPage.page.getByText(/도움말 콘텐츠 아키텍처/i).first()).toBeVisible();
+        await expect(businessPage.page.getByRole('heading', {
+            level: 1,
+            name: '도움말 콘텐츠 관리(HPCM)',
+        })).toBeVisible();
+        await expect(businessPage.page.getByRole('table', {
+            name: '도움말 콘텐츠 목록',
+        })).toBeVisible();
     });
 });

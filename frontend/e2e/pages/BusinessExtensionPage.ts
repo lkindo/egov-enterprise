@@ -16,7 +16,10 @@ export class BusinessExtensionPage {
     async gotoHpcm() {
         console.log('>>> [Business] Navigating to Help Content Management (HPCM)');
         await this.page.goto('/admin/system/hpcm');
-        await expect(this.page.getByText(/도움말 콘텐츠 아키텍처|HPCM/i).first()).toBeVisible({ timeout: 15000 });
+        await expect(this.page.getByRole('heading', {
+            level: 1,
+            name: '도움말 콘텐츠 관리(HPCM)',
+        })).toBeVisible({ timeout: 15000 });
     }
 
     async verifyIsmMetrics() {
