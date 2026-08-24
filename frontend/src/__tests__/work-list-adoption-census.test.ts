@@ -24,8 +24,8 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
  * 값을 바꿀 때는 소스를 먼저 고치고 **실측 red 를 확인한 뒤** 상수를 갱신한다.
  * ADOPTERS 상향과 DIRECT_ONLY 하향만 정상 경로다(AGENTS H2).
  */
-const ADOPTERS = 24;
-const DIRECT_ONLY = 25;
+const ADOPTERS = 26;
+const DIRECT_ONLY = 23;
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';
 const SHELL_IMPORT = 'components/patterns/work-list-page';
