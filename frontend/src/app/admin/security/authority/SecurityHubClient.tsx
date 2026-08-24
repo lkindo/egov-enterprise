@@ -92,6 +92,14 @@ export default function SecurityHubClient({
 
   // --- Matrix Mode States ---
   const [globalMappings, setGlobalMappings] = useState<Map<string, Set<number>>>(new Map());
+  /**
+   * 서버에서 읽어온 시점의 매트릭스. 변경 셀·변경 역할 판정의 기준선이다.
+   *
+   * ⚠ 이것이 없으면 저장이 **손대지 않은 역할까지 전부 다시 쓴다** — 동시 편집 중인 다른
+   *   운영자의 변경을 조용히 덮고, "변경 셀 수와 저장 결과 건수 일치"(카탈로그 A5 합격 기준)도
+   *   성립하지 않는다.
+   */
+  const [globalBaseline, setGlobalBaseline] = useState<Map<string, Set<number>>>(new Map());
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
 
   /**
@@ -295,6 +303,8 @@ export default function SecurityHubClient({
       });
       await Promise.all(promises);
       setGlobalMappings(allMappings);
+      // 기준선은 항상 서버 응답의 사본이어야 한다(같은 Set 참조를 공유하면 토글이 기준선을 함께 바꾼다).
+      setGlobalBaseline(new Map(Array.from(allMappings, ([code, set]) => [code, new Set(set)] as [string, Set<number>])));
     } catch {
       toast('글로벌 매트릭스 데이터 로드 중 오류가 발생했습니다.', 'error');
     } finally {
@@ -330,14 +340,45 @@ export default function SecurityHubClient({
     });
   };
 
+  /** 기준선과 다른 셀 좌표(`권한코드:메뉴번호`). 변경 표시·요약·저장 범위가 모두 이 한 집합에서 나온다. */
+  const globalChangedCells = useMemo(() => {
+    const changed = new Set<string>();
+    const codes = new Set([...globalMappings.keys(), ...globalBaseline.keys()]);
+    codes.forEach((code) => {
+      const current = globalMappings.get(code) ?? new Set<number>();
+      const base = globalBaseline.get(code) ?? new Set<number>();
+      current.forEach((menuNo) => { if (!base.has(menuNo)) changed.add(`${code}:${menuNo}`); });
+      base.forEach((menuNo) => { if (!current.has(menuNo)) changed.add(`${code}:${menuNo}`); });
+    });
+    return changed;
+  }, [globalMappings, globalBaseline]);
+
+  const globalChangedAuthorCodes = useMemo(
+    () => new Set(Array.from(globalChangedCells, (key) => key.slice(0, key.lastIndexOf(':')))),
+    [globalChangedCells],
+  );
+
   const handleSaveGlobal = async () => {
+    // 변경이 없으면 아무것도 쓰지 않는다 — "저장했다"는 성공 토스트만 남기는 것이 가장 나쁜 결과다.
+    if (globalChangedAuthorCodes.size === 0) {
+      toast('변경된 권한이 없습니다.', 'info');
+      return;
+    }
+
     setIsGlobalLoading(true);
     try {
-      const promises = Array.from(globalMappings.entries()).map(([code, set]) =>
-        menuAdminService.saveMenuCreation(code, Array.from(set))
-      );
-      await Promise.all(promises);
-      toast('글로벌 보안 정책이 전사적으로 동기화되었습니다.', 'success');
+      // 손대지 않은 역할은 쓰지 않는다(동시 편집 덮어쓰기 방지 · AGENTS H3 인가 의미 보존).
+      const targets = Array.from(globalChangedAuthorCodes);
+      await Promise.all(targets.map((code) =>
+        menuAdminService.saveMenuCreation(code, Array.from(globalMappings.get(code) ?? new Set<number>()))
+      ));
+      toast(`권한 ${targets.length}건의 메뉴 접근 정책을 저장했습니다.`, 'success');
+      // 저장 성공분만 기준선으로 승격한다 — 실패 시 변경 표시가 남아야 한다.
+      setGlobalBaseline((prev) => {
+        const next = new Map(Array.from(prev, ([code, set]) => [code, new Set(set)] as [string, Set<number>]));
+        targets.forEach((code) => next.set(code, new Set(globalMappings.get(code) ?? new Set<number>())));
+        return next;
+      });
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus'] });
     } catch {
       toast('글로벌 정책 저장 중 오류가 발생했습니다.', 'error');
@@ -656,6 +697,7 @@ export default function SecurityHubClient({
               authors={authorities}
               menus={menusData?.allMenus || []}
               mappings={globalMappings}
+              changedCells={globalChangedCells}
               onToggle={handleToggleGlobal}
               onSave={handleSaveGlobal}
               isSaving={isGlobalLoading}
