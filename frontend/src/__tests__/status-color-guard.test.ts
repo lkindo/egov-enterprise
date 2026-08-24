@@ -62,7 +62,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   (hover:bg-rose-500/10·hover:text-rose-500)을 destructive pair 로 치환(사전 red 실측: 654 != 656).
 // [하향 래칫 2026-08-24(2)] W3 wave 2 — 행사 운영 센터의 장식 카운터 카드(rose 그라데이션 1건)
 //   제거로 감소(사전 red 실측: 653 != 654).
-const BASELINE = 653;
+// [하향 래칫 2026-08-24(3)] A2 메뉴·부서 이행에서 선택·저장·삭제 상태 팔레트를
+//   primary/destructive/Button semantic variant로 회수(사전 red 실측: 642 != 653).
+const BASELINE = 642;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

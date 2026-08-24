@@ -73,6 +73,17 @@ describe('app shell accessibility source contract', () => {
     expect(shell, '셸이 제목을 title prop 으로 받지 않습니다').toMatch(/\{title\}<\/h1>/);
   });
 
+  it('A2 전체 셸과 점진 레이아웃 소비자는 최종 h1을 하나만 소유한다', () => {
+    const shell = readAppSource('components', 'patterns', 'master-detail-page.tsx');
+    const menus = readAppSource('admin', 'system', 'menus', 'MenuAdminClient.tsx');
+    const userOrg = readAppSource('admin', 'user', 'UserOrgHubClient.tsx');
+
+    expect(shell.match(/<h1\b/g), 'MasterDetailPage가 h1을 잃었거나 둘 이상 갖습니다').toHaveLength(1);
+    expect(shell).toMatch(/\{title\}<\/h1>/);
+    expect(menus, '메뉴 화면은 h1을 MasterDetailPage에 위임해야 합니다').not.toMatch(/<h1\b/);
+    expect(userOrg, '부서 화면은 h1을 PageHeader에 위임해야 합니다').not.toMatch(/<h1\b/);
+  });
+
   it('A1 이행 화면은 제목을 셸에 위임한다(자체 h1 을 다시 만들지 않는다)', () => {
     const delegatedHeadingSources = [
       ['admin', 'collaboration', 'scraps', 'selectScrapList', 'ScrapListClient.tsx'],

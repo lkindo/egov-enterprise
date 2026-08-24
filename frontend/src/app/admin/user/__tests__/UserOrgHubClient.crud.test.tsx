@@ -21,6 +21,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import UserOrgHubClient from '../UserOrgHubClient';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
 import { bulkUpdateUserStatusAction } from '@/app/actions/userActions';
+import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
 
 const { mockToast, mockConfirm } = vi.hoisted(() => ({
   mockToast: vi.fn(),
@@ -54,7 +55,13 @@ vi.mock('framer-motion', () => {
 });
 
 vi.mock('@dnd-kit/core', () => ({
-  DndContext: ({ children }: any) => <>{children}</>,
+  DndContext: ({ children, onDragStart, onDragEnd }: any) => (
+    <>
+      <button type="button" onClick={() => onDragStart?.({ active: { id: 'D-100' } })}>test-drag-start</button>
+      <button type="button" onClick={() => onDragEnd?.({ active: { id: 'D-100' }, over: { id: 'D-100' } })}>test-drag-end</button>
+      {children}
+    </>
+  ),
   DragOverlay: () => null,
   KeyboardSensor: function KeyboardSensor() {},
   PointerSensor: function PointerSensor() {},
@@ -213,13 +220,13 @@ function resolvedThenable<T>(value: T): Promise<T> {
   return thenable;
 }
 
-function renderHub() {
+function renderHub(defaultTab: 'USERS' | 'DEPTS' = 'USERS') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={queryClient}>
       <Suspense fallback={<div>loading</div>}>
         <UserOrgHubClient
-          defaultTab="USERS"
+          defaultTab={defaultTab}
           usersPromise={resolvedThenable(null)}
           deptsPromise={resolvedThenable(null)}
         />
@@ -239,9 +246,72 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     vi.mocked(userAdminService.getUserList).mockResolvedValue(listPage as any);
     vi.mocked(userAdminService.getUser).mockResolvedValue(detailRecord as any);
     vi.mocked(deptAdminService.getDeptList).mockResolvedValue({
-      list: [{ ognzId: 'D-100', ognzNm: '기획부', upOgnzId: null }],
-      total: 1,
+      list: [
+        { ognzId: 'D-100', ognzNm: '기획부', upOgnzId: null },
+        { ognzId: 'D-200', ognzNm: '개발부', upOgnzId: null },
+      ],
+      total: 2,
     } as any);
+  });
+
+  it('부서 route에만 A2 선택·방향키·상세 진입 계약을 적용한다', async () => {
+    renderHub('DEPTS');
+
+    const layout = await screen.findByTestId('master-detail-incremental-layout');
+    expect(screen.getByRole('heading', { level: 1, name: '부서 관리' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: '부서 조직 구조' })).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('왼쪽 조직 구조에서 확인하거나 편집할 부서를 선택하세요.');
+
+    const saveButton = screen.getByRole('button', { name: '조직 계층 저장' });
+    expect(saveButton).toBeDisabled();
+    fireEvent.keyDown(layout, { key: 's', ctrlKey: true });
+    expect(saveDeptHierarchyAction).not.toHaveBeenCalled();
+
+    const planningButton = (await screen.findByText('기획부')).closest('button');
+    const developmentButton = screen.getByText('개발부').closest('button');
+    expect(planningButton).not.toBeNull();
+    expect(developmentButton).not.toBeNull();
+    expect(planningButton).toHaveAttribute('data-a2-master-item');
+    expect(planningButton).toHaveAttribute('tabindex', '0');
+    const dragHandle = screen.getByRole('button', { name: '기획부 (D-100) 순서 이동 핸들' });
+    dragHandle.focus();
+    fireEvent.keyDown(dragHandle, { key: 'ArrowDown' });
+    expect(document.querySelector('[data-a2-master-item][aria-current="true"]')).toBeNull();
+    expect(dragHandle).toHaveFocus();
+
+    fireEvent.click(planningButton!);
+    expect(planningButton).toHaveAttribute('aria-current', 'true');
+    expect(screen.getByRole('heading', { level: 2, name: '기획부' })).toBeInTheDocument();
+
+    fireEvent.keyDown(planningButton!, { key: 'ArrowDown' });
+    await waitFor(() => {
+      expect(developmentButton).toHaveAttribute('aria-current', 'true');
+      expect(planningButton).not.toHaveAttribute('aria-current');
+    });
+
+    fireEvent.keyDown(developmentButton!, { key: 'Tab' });
+    expect(screen.getByRole('button', { name: '정보 수정' })).toHaveFocus();
+    expect(screen.getByRole('button', { name: '부서 삭제' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '권한 설정 열기' })).toBeNull();
+  });
+
+  it('부서 DnD가 선택과 변경을 만든 뒤 화면 버튼과 같은 저장 동작을 Ctrl+S로 실행한다', async () => {
+    vi.mocked(saveDeptHierarchyAction).mockResolvedValue({ success: true, message: '조직 계층을 저장했습니다.' });
+    renderHub('DEPTS');
+
+    const layout = await screen.findByTestId('master-detail-incremental-layout');
+    await screen.findByText('기획부');
+    fireEvent.click(screen.getByRole('button', { name: 'test-drag-start' }));
+    fireEvent.click(screen.getByRole('button', { name: 'test-drag-end' }));
+
+    const saveButton = screen.getByRole('button', { name: '조직 계층 저장' });
+    await waitFor(() => expect(saveButton).toBeEnabled());
+
+    fireEvent.keyDown(layout, { key: 's', ctrlKey: true });
+    await waitFor(() => {
+      expect(saveDeptHierarchyAction).toHaveBeenCalledTimes(1);
+    });
+    expect(mockToast).toHaveBeenCalledWith('조직 계층을 저장했습니다.', 'success');
   });
 
   it('목록 조회를 서버가 실제로 읽는 Spring Pageable 계약(page/size, 0-based)으로 호출한다', async () => {

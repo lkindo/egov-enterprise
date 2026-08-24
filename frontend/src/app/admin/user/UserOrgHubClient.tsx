@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { Users,
+import { type LucideIcon,
+  Users,
   Network,
   UserMinus,
   ShieldCheck,
@@ -30,7 +31,8 @@ import { Users,
   Contact2,
   SearchSlash,
   Info,
-  Save } from 'lucide-react';
+  Save,
+  GripVertical } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -44,6 +46,7 @@ import { deptAdminService, Department } from '@/services/foundation/system/DeptA
 import { useToast } from '@/app/components/ui/toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { MasterDetailLayout } from '@/app/components/patterns/master-detail-page';
 import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
@@ -107,11 +110,12 @@ const dropAnimation: DropAnimation = {
 interface SortableDeptNodeProps {
     node: FlattenedDept;
     isSelected: boolean;
+    isTabStop: boolean;
     onClick: () => void;
     isOverlay?: boolean;
 }
 
-const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: SortableDeptNodeProps) => {
+const SortableDeptNode = ({ node, isSelected, isTabStop, onClick, isOverlay = false }: SortableDeptNodeProps) => {
     const {
         attributes,
         listeners,
@@ -119,7 +123,7 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: node.ognzId || '' });
+    } = useSortable({ id: node.ognzId || '', disabled: isOverlay });
 
     const style = {
         transform: isOverlay ? undefined : CSS.Translate.toString(transform),
@@ -131,6 +135,7 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
         <div
             ref={setNodeRef}
             style={style}
+            aria-hidden={isOverlay ? true : undefined}
             className={cn(
                 "group relative mb-1 outline-none",
                 isDragging && !isOverlay && "opacity-30",
@@ -145,35 +150,49 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
                 </>
             )}
 
-            <button
+            <div
+              className={cn(
+                "flex w-full items-center gap-1 rounded-lg border border-transparent p-1 transition-colors",
+                "hover:bg-muted",
+                isSelected && "border-primary/30 bg-primary/10",
+                isOverlay && "border-primary bg-card shadow-2xl ring-4 ring-primary/5"
+              )}
+            >
+              <button
                 type="button"
                 {...attributes}
                 {...listeners}
+                disabled={isOverlay}
+                aria-label={`${node.ognzNm} (${node.ognzId}) 순서 이동 핸들`}
+                className="shrink-0 cursor-grab rounded p-2 text-muted-foreground hover:bg-card hover:text-foreground active:cursor-grabbing"
+              >
+                <GripVertical size={16} aria-hidden="true" />
+              </button>
+              <button
+                type="button"
+                data-a2-master-item={isOverlay ? undefined : ''}
+                aria-current={isSelected ? 'true' : undefined}
+                tabIndex={isTabStop ? 0 : -1}
                 onClick={onClick}
-                className={cn(
-                    "w-full flex items-center justify-between p-3 rounded-lg transition-all relative overflow-hidden",
-                    "hover:bg-muted border border-transparent",
-                    isSelected && "bg-primary text-white shadow-lg shadow-primary/20 border-primary/20",
-                    isOverlay && "bg-card shadow-2xl border-primary ring-4 ring-primary/5 scale-105"
-                )}
-            >
-                <div className="flex items-center gap-3 truncate relative z-10 w-full">
+                className="flex min-w-0 flex-1 items-center gap-3 rounded p-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+              >
+                <div className="flex min-w-0 flex-1 items-center gap-3">
                     <div className={cn(
                         "w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0",
-                        isSelected ? "bg-white/20 text-white" : "bg-hub-indigo/10 text-hub-indigo group-hover:bg-primary/10 group-hover:text-primary"
+                        isSelected ? "bg-primary text-primary-foreground" : "bg-hub-indigo/10 text-hub-indigo group-hover:bg-primary/10 group-hover:text-primary"
                     )}>
-                        <Building2 size={14} />
+                        <Building2 size={14} aria-hidden="true" />
                     </div>
                     <div className="flex flex-col truncate items-start">
                         <span className={cn(
                             "text-xs font-bold truncate leading-tight tracking-tight",
-                            isSelected ? "text-white" : "text-foreground"
+                            isSelected ? "text-primary" : "text-foreground"
                         )}>
                             {node.ognzNm}
                         </span>
                         <span className={cn(
                             "text-xs font-bold tracking-tighter opacity-60",
-                            isSelected ? "text-white" : "text-muted-foreground"
+                            isSelected ? "text-primary" : "text-muted-foreground"
                         )}>
                             {node.ognzId}
                         </span>
@@ -184,10 +203,50 @@ const SortableDeptNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
                         </div>
                     )}
                 </div>
-            </button>
+              </button>
+            </div>
         </div>
     );
 };
+
+function UserOrgMasterSection({
+  compact,
+  title,
+  description,
+  icon: Icon,
+  children,
+}: {
+  compact: boolean;
+  title: string;
+  description: string;
+  icon: LucideIcon;
+  children: React.ReactNode;
+}) {
+  if (!compact) {
+    return (
+      <HubSectionCard title={title} description={description} icon={Icon}>
+        {children}
+      </HubSectionCard>
+    );
+  }
+
+  return (
+    <section aria-labelledby="department-master-title" className="flex min-h-0 flex-1 flex-col rounded-md border border-border bg-card">
+      <header className="border-b border-border p-[var(--filter-pad)]">
+        <div className="flex items-start gap-3">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded bg-primary/10 text-primary">
+            <Icon size={16} aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h2 id="department-master-title" className="text-sm font-semibold text-foreground">{title}</h2>
+            <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">{description}</p>
+          </div>
+        </div>
+      </header>
+      <div className="min-h-0 flex-1 p-[var(--filter-pad)]">{children}</div>
+    </section>
+  );
+}
 
 type UserOrgTab = 'USERS' | 'DEPTS' | 'ABSENCES' | 'POLICIES';
 
@@ -555,6 +614,27 @@ export default function UserOrgHubClient({
   const displayedUser: UserManage | undefined =
     activeTab !== 'DEPTS' ? ((selectedUserDetail as UserManage | undefined) ?? selectedUser) : undefined;
 
+  const handleSaveDeptHierarchy = async () => {
+    // A2 계약: 선택한 마스터 항목이 없거나 실제 변경이 없으면 저장하지 않는다.
+    if (!selectedDept || !hasDeptChanges || isSaving || isDeptModalOpen) return;
+
+    setIsSaving(true);
+    try {
+      const res = await saveDeptHierarchyAction(flattenedDepts);
+      if (res.success) {
+        toast(res.message, 'success');
+        setHasDeptChanges(false);
+        router.refresh();
+      } else {
+        toast(res.message, 'error');
+      }
+    } catch {
+      toast('구조 저장 중 오류 발생', 'error');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const userColumns: Column<UserManage>[] = [
     {
       header: '사용자 정보',
@@ -579,13 +659,29 @@ export default function UserOrgHubClient({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="space-y-10 pb-24 animate-in fade-in duration-1000">
+      <div className={cn("space-y-10 pb-24", activeTab !== 'DEPTS' && "animate-in fade-in duration-1000")}>
       <PageHeader
-        title="조직 및 사용자 관리"
-        breadcrumbs={[{ label: '사용자 관리' }, { label: '조직 통합 허브' }]}
+        title={activeTab === 'DEPTS' ? '부서 관리' : '조직 및 사용자 관리'}
+        breadcrumbs={activeTab === 'DEPTS'
+          ? [{ label: '사용자 관리' }, { label: '부서 관리' }]
+          : [{ label: '사용자 관리' }, { label: '조직 통합 허브' }]}
+        className={activeTab === 'DEPTS' ? 'mb-4 [animation:none]' : undefined}
+        animateEntrance={activeTab !== 'DEPTS'}
+        actions={activeTab === 'DEPTS' ? (
+          <Button
+            type="button"
+            onClick={() => {
+              setFormMode('create');
+              setIsDeptModalOpen(true);
+            }}
+            className="h-10 gap-2 font-semibold"
+          >
+            <LayoutGrid size={18} aria-hidden="true" /> 부서 등록
+          </Button>
+        ) : undefined}
       />
 
-      <HubHeader
+      {activeTab !== 'DEPTS' && <HubHeader
         title="사용자"
         highlight="관리 허브"
         subtitle="전사 인적 자원 및 조직 계층 구조를 통합 관리하는 컨트롤 센터입니다."
@@ -600,28 +696,24 @@ export default function UserOrgHubClient({
                     type="button"
                     onClick={() => {
                       setFormMode('create');
-                      if (activeTab === 'DEPTS') {
-                        setIsDeptModalOpen(true);
-                      } else {
-                        setIsUserModalOpen(true);
-                      }
+                      setIsUserModalOpen(true);
                     }}
                     className="h-10 px-8 rounded-xl bg-surface-inverse border-none text-surface-inverse-foreground font-black text-xs tracking-tight shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group flex items-center justify-center shrink-0 cursor-pointer outline-none"
                   >
-                    {activeTab === 'DEPTS' ? <LayoutGrid size={18} /> : <UserPlus size={18} />}
+                    <UserPlus size={18} aria-hidden="true" />
                     {/* 부재 등록 API 가 화면에 배선되기 전까지 이 버튼은 '사용자 등록'이다.
                         '부재 등록'으로 표기하면 사용자 등록 폼이 열려 라벨이 거짓이 된다. */}
-                    <span>{activeTab === 'DEPTS' ? '부서 등록' : '사용자 등록'}</span>
+                    <span>사용자 등록</span>
                   </button>
                 </TooltipTrigger>
                 <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
-                  {activeTab === 'DEPTS' ? '새로운 부서 추가' : '새로운 사용자 생성'}
+                  새로운 사용자 생성
                 </TooltipContent>
               </Tooltip>
             )}
           </div>
         }
-      />
+      />}
 
       {/* --- Horizontal Premium Tab Controls (탭 = 라우트, 감사 P1-7) --- */}
       <nav
@@ -634,9 +726,23 @@ export default function UserOrgHubClient({
         <NavButton icon={<ShieldCheck size={16} />} label="조직 정책" active={activeTab === 'POLICIES'} onClick={() => handleTabChange('POLICIES')} />
       </nav>
 
-      <div className={cn("grid grid-cols-12 gap-8 min-h-[800px] transition-opacity duration-500", isPending && "opacity-60 pointer-events-none")}>
-        <div className={cn("col-span-12 lg:col-span-7 h-full flex flex-col gap-6 transition-opacity duration-300", isPending && "opacity-50")}>
-          <HubSectionCard
+      <MasterDetailLayout
+        active={activeTab === 'DEPTS'}
+        onSaveShortcut={handleSaveDeptHierarchy}
+        saveShortcutDisabled={!hasDeptChanges || isSaving || isDeptModalOpen}
+        className={cn(
+          activeTab !== 'DEPTS' && "grid grid-cols-12 gap-8 min-h-[800px] transition-opacity duration-500",
+          isPending && "opacity-60 pointer-events-none",
+        )}
+      >
+        <div className={cn(
+          activeTab === 'DEPTS'
+            ? "min-w-0 h-full flex flex-col gap-4"
+            : "col-span-12 lg:col-span-7 h-full flex flex-col gap-6 transition-opacity duration-300",
+          isPending && "opacity-50",
+        )}>
+          <UserOrgMasterSection
+            compact={activeTab === 'DEPTS'}
             title={activeTab === 'DEPTS' ? '조직 구조' : activeTab === 'POLICIES' ? '조직 정책' : '사용자 목록'}
             description="선택한 조직 및 사용자 정보를 확인하고 관리합니다."
             icon={activeTab === 'DEPTS' ? Network : activeTab === 'POLICIES' ? ShieldCheck : Users}
@@ -644,7 +750,9 @@ export default function UserOrgHubClient({
             <div className="space-y-6">
               <div className="flex items-center justify-between px-1 pt-1 border-b border-border/50 pb-6">
                 <div>
-                  <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">조직·사용자 데이터</span>
+                  <span className="text-xs font-semibold text-muted-foreground">
+                    {activeTab === 'DEPTS' ? '부서 데이터' : '조직·사용자 데이터'}
+                  </span>
                 </div>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -657,7 +765,7 @@ export default function UserOrgHubClient({
                         queryClient.invalidateQueries({ queryKey: ['admin-users'] });
                         queryClient.invalidateQueries({ queryKey: ['admin-depts'] });
                       }}
-                      className="h-10 rounded-xl px-5 text-[10px] font-black tracking-widest gap-2 bg-muted hover:bg-surface-inverse text-foreground hover:text-surface-inverse-foreground border border-border/60 transition-all group shadow-sm uppercase flex items-center justify-center outline-none cursor-pointer"
+                      className="h-10 rounded-xl px-5 text-xs font-semibold gap-2 bg-muted hover:bg-surface-inverse text-foreground hover:text-surface-inverse-foreground border border-border/60 transition-all group shadow-sm flex items-center justify-center outline-none cursor-pointer"
                     >
                       <RefreshCcw size={14} className={cn("text-primary group-hover:text-white transition-colors", isUsersLoading || isDeptsLoading ? "animate-spin" : "group-hover:rotate-180")} /> 새로고침
                     </button>
@@ -683,6 +791,7 @@ export default function UserOrgHubClient({
                     // 결과가 1페이지뿐이어도 3페이지를 요청해 빈 화면이 됐다(감사 P1-8).
                     onChange={(e) => {
                       setSearchKeyword(e.target.value);
+                      if (activeTab === 'DEPTS') setSelectedItemId(null);
                       if (userPage !== 1) goToPage(1);
                     }}
                     suppressHydrationWarning
@@ -692,14 +801,14 @@ export default function UserOrgHubClient({
 
               <div
                 role="region"
-                aria-label="조직·사용자 결과 스크롤 영역"
+                aria-label={activeTab === 'DEPTS' ? '부서 조직 구조' : '조직·사용자 결과 스크롤 영역'}
                 tabIndex={0}
                 className="overflow-y-auto pr-2 custom-scrollbar max-h-[600px] outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
               >
                 <AnimatePresence mode="wait">
                   <motion.div
                     key={activeTab}
-                    initial={{ opacity: 0, y: 10 }}
+                    initial={activeTab === 'DEPTS' ? false : { opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: -10 }}
                     transition={{ duration: 0.5 }}
@@ -718,6 +827,7 @@ export default function UserOrgHubClient({
                                 measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
                                 onDragStart={(e) => {
                                     setActiveDeptId(e.active.id as string);
+                                    setSelectedItemId(e.active.id as string);
                                     // 시작 시 드롭 대상을 자기 자신으로 두어야 첫 프레임부터 투영이 계산된다.
                                     setOverDeptId(e.active.id as string);
                                     setDeptOffsetLeft(0);
@@ -751,11 +861,12 @@ export default function UserOrgHubClient({
                             >
                                 <SortableContext items={previewDepts.map(n => n.ognzId || '')} strategy={verticalListSortingStrategy}>
                                     <div className="space-y-1">
-                                        {previewDepts.map((node) => (
+                                        {previewDepts.map((node, index) => (
                                             <SortableDeptNode
                                                 key={node.ognzId}
                                                 node={node}
                                                 isSelected={selectedItemId === node.ognzId}
+                                                isTabStop={selectedItemId === node.ognzId || (selectedItemId === null && index === 0)}
                                                 onClick={() => setSelectedItemId(node.ognzId || null)}
                                             />
                                         ))}
@@ -768,6 +879,7 @@ export default function UserOrgHubClient({
                                             <SortableDeptNode
                                                 node={flattenedDepts.find(n => n.ognzId === activeDeptId)!}
                                                 isSelected={false}
+                                                isTabStop={false}
                                                 onClick={() => {}}
                                                 isOverlay
                                             />
@@ -776,40 +888,22 @@ export default function UserOrgHubClient({
                                     document.body
                                 )}
                             </DndContext>
-                            {hasDeptChanges && (
-                              <div className="py-4">
-                                <Button
-                                  onClick={async () => {
-                                    setIsSaving(true);
-                                    try {
-                                      const res = await saveDeptHierarchyAction(flattenedDepts);
-                                      if (res.success) {
-                                        toast(res.message, 'success');
-                                        setHasDeptChanges(false);
-                                        router.refresh();
-                                      } else {
-                                        toast(res.message, 'error');
-                                      }
-                                    } catch {
-                                      toast('구조 저장 중 오류 발생', 'error');
-                                    } finally {
-                                      setIsSaving(false);
-                                    }
-                                  }}
-                                  disabled={isSaving}
-                                  className="w-full h-11 rounded-xl bg-emerald-500 text-white font-black text-xs tracking-widest shadow-lg hover:bg-emerald-600 transition-all gap-2 uppercase"
-                                >
-                                  {isSaving ? <RefreshCcw size={14} className="animate-spin" /> : <Save size={14} />} 
-                                  조직 계층 저장
-                                </Button>
-                              </div>
-                            )}
+                            <div className="py-4">
+                              <Button
+                                onClick={handleSaveDeptHierarchy}
+                                disabled={!hasDeptChanges || !selectedDept || isSaving || isDeptModalOpen}
+                                className="w-full h-11 rounded-xl font-semibold text-xs gap-2"
+                              >
+                                {isSaving ? <RefreshCcw size={14} className="animate-spin" aria-hidden="true" /> : <Save size={14} aria-hidden="true" />}
+                                조직 계층 저장
+                              </Button>
+                            </div>
                             {flattenedDepts.length === 0 && !isDeptsLoading && (
                                 <div className="py-20 text-center space-y-4">
                                     <div className="w-16 h-10 rounded-xl bg-muted flex items-center justify-center mx-auto text-muted-foreground border border-border shadow-inner">
                                         <SearchSlash size={32} />
                                     </div>
-                                    <p className="text-xs font-bold text-muted-foreground tracking-widest">
+                                    <p className="text-xs font-semibold text-muted-foreground">
                                       {deptKeyword ? `'${deptKeyword}' 에 해당하는 부서가 없습니다.` : '등록된 부서가 없습니다.'}
                                     </p>
                                 </div>
@@ -858,15 +952,19 @@ export default function UserOrgHubClient({
                 </AnimatePresence>
               </div>
             </div>
-          </HubSectionCard>
+          </UserOrgMasterSection>
         </div>
 
-        <div className="col-span-12 lg:col-span-5 h-full">
+        <div
+          data-a2-detail={activeTab === 'DEPTS' ? '' : undefined}
+          tabIndex={activeTab === 'DEPTS' ? -1 : undefined}
+          className={activeTab === 'DEPTS' ? "min-w-0 h-full" : "col-span-12 lg:col-span-5 h-full"}
+        >
           <AnimatePresence mode="wait">
-            {selectedItemId ? (
+            {selectedItem ? (
               <motion.div
                 key={selectedItemId}
-                initial={{ opacity: 0, x: 20 }}
+                initial={activeTab === 'DEPTS' ? false : { opacity: 0, x: 20 }}
                 animate={{ opacity: 1, x: 0 }}
                 exit={{ opacity: 0, x: -20 }}
                 className="h-full flex flex-col gap-6"
@@ -897,7 +995,7 @@ export default function UserOrgHubClient({
                               if (!status) return null;
                               return (
                                 <span className={cn(
-                                  "text-[10px] font-black px-4 py-1.5 rounded-lg tracking-widest border shadow-sm flex items-center gap-2",
+                                  "text-xs font-semibold px-4 py-1.5 rounded-lg border shadow-sm flex items-center gap-2",
                                   status.className
                                 )}>
                                   <ShieldCheck size={14} aria-hidden="true" /> {status.label}
@@ -908,22 +1006,29 @@ export default function UserOrgHubClient({
                         )}
                       </div>
                     </div>
-                    <Button 
-                      variant="ghost" 
-                      size="icon" 
-                      aria-label="정보 수정"
-                      className="h-10 w-14 rounded-xl bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground shadow-sm border border-border transition-all group"
-                      onClick={() => {
-                        setFormMode('edit');
-                        if (activeTab === 'DEPTS') {
-                          setIsDeptModalOpen(true);
-                        } else {
-                          setIsUserModalOpen(true);
-                        }
-                      }}
-                    >
-                      <Pencil size={20} className="group-hover:scale-110 transition-transform" />
-                    </Button>
+                    <div className="flex flex-wrap items-center justify-end gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label="정보 수정"
+                        className="h-10 w-14 rounded-xl bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground shadow-sm border border-border transition-all group"
+                        onClick={() => {
+                          setFormMode('edit');
+                          if (activeTab === 'DEPTS') {
+                            setIsDeptModalOpen(true);
+                          } else {
+                            setIsUserModalOpen(true);
+                          }
+                        }}
+                      >
+                        <Pencil size={20} className="group-hover:scale-110 transition-transform" />
+                      </Button>
+                      {activeTab === 'DEPTS' && (
+                        <Button variant="destructive" size="sm" onClick={handleDeleteDept}>
+                          부서 삭제
+                        </Button>
+                      )}
+                    </div>
                   </div>
 
                   <div className="flex-1 space-y-10 relative z-10">
@@ -945,14 +1050,14 @@ export default function UserOrgHubClient({
                       )}
                     </div>
 
-                    <div className="pt-10 border-t border-border/50 space-y-8">
+                    {activeTab !== 'DEPTS' && <div className="pt-10 border-t border-border/50 space-y-8">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                             <ShieldCheck size={16} aria-hidden="true" />
                           </div>
                           <div>
-                            <h4 className="text-[10px] font-black text-muted-foreground tracking-widest leading-none mb-1.5">접근 제어</h4>
+                            <h4 className="text-xs font-semibold text-muted-foreground leading-none mb-1.5">접근 제어</h4>
                             <p className="text-sm font-black text-foreground tracking-tighter leading-none">권한 정책 관리</p>
                           </div>
                         </div>
@@ -969,43 +1074,44 @@ export default function UserOrgHubClient({
                       <p className="text-xs font-bold text-muted-foreground leading-relaxed">
                         사용자별 권한은 <span className="text-foreground">권한 정책 관리</span> 화면에서 부여·회수합니다.
                       </p>
-                    </div>
+                    </div>}
                   </div>
 
-                  <div className="flex gap-4 pt-10 mt-auto border-t border-border/50 relative z-10">
+                  {activeTab !== 'DEPTS' && <div className="flex gap-4 pt-10 mt-auto border-t border-border/50 relative z-10">
                     {/* 탭에 따라 삭제 대상이 다르다. 종전에는 분기가 없어 부서 탭에서도 사용자 삭제 API 를 호출했다. */}
                     <button
                       type="button"
-                      onClick={activeTab === 'DEPTS' ? handleDeleteDept : handleDeleteUser}
-                      className="flex-1 h-10 bg-muted text-rose-500 rounded-xl font-black tracking-widest text-[10px] hover:bg-rose-500 hover:text-white transition-all shadow-sm uppercase outline-none cursor-pointer flex items-center justify-center"
+                      onClick={handleDeleteUser}
+                      className="flex-1 h-10 bg-muted text-rose-500 rounded-xl font-semibold text-xs hover:bg-rose-500 hover:text-white transition-all shadow-sm outline-none cursor-pointer flex items-center justify-center"
                     >
                       {/* 실제 동작은 계정 삭제다. '접근 차단'은 무엇을 하는지 오인시킨다. */}
-                      {activeTab === 'DEPTS' ? '부서 삭제' : '사용자 삭제'}
+                      사용자 삭제
                     </button>
                     {/* 수정은 편집 다이얼로그에서 저장한다. 종전에는 onClick 이 없는 死버튼이라 눌러도 아무 일도 없었다. */}
                     <Button
                       onClick={() => {
                         setFormMode('edit');
-                        if (activeTab === 'DEPTS') {
-                          setIsDeptModalOpen(true);
-                        } else {
-                          setIsUserModalOpen(true);
-                        }
+                        setIsUserModalOpen(true);
                       }}
-                      className="flex-[2] h-10 bg-surface-inverse text-surface-inverse-foreground rounded-xl font-black tracking-widest text-[10px] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 group uppercase"
+                      className="flex-[2] h-10 bg-surface-inverse text-surface-inverse-foreground rounded-xl font-semibold text-xs shadow-2xl hover:bg-primary transition-all group"
                     >
                       <Zap size={16} className="text-primary group-hover:animate-pulse" /> 정보 수정
                     </Button>
-                  </div>
+                  </div>}
                 </div>
               </motion.div>
             ) : (
-              <div className="h-full rounded-2xl border-4 border-dashed border-border bg-muted/50 flex flex-col items-center justify-center p-20 text-center select-none group">
+              <div
+                role={activeTab === 'DEPTS' ? 'status' : undefined}
+                className="h-full rounded-2xl border-4 border-dashed border-border bg-muted/50 flex flex-col items-center justify-center p-20 text-center select-none group"
+              >
                 <div className="w-28 h-24 rounded-2xl bg-card border border-border flex items-center justify-center text-muted-foreground/40 shadow-xl mb-10 group-hover:rotate-6 transition-transform duration-700">
                   <Contact2 size={50} className="opacity-20 group-hover:opacity-100 transition-opacity" />
                 </div>
                 <h3 className="text-3xl font-black text-muted-foreground tracking-tighter">선택 대기 중</h3>
-                <p className="text-[10px] font-bold text-muted-foreground tracking-widest mt-4 leading-relaxed max-w-[280px]">목록에서 부서 또는 사용자를 선택하세요.</p>
+                <p className="text-xs font-semibold text-muted-foreground mt-4 leading-relaxed max-w-[280px]">
+                  {activeTab === 'DEPTS' ? '왼쪽 조직 구조에서 확인하거나 편집할 부서를 선택하세요.' : '목록에서 부서 또는 사용자를 선택하세요.'}
+                </p>
                 <div className="mt-10 flex gap-4 opacity-10 grayscale">
                   <Fingerprint size={24} />
                   <Database size={24} />
@@ -1015,7 +1121,7 @@ export default function UserOrgHubClient({
             )}
           </AnimatePresence>
         </div>
-      </div>
+      </MasterDetailLayout>
 
       <StandardModal
         isOpen={isUserModalOpen}
@@ -1321,7 +1427,7 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        "flex-1 flex items-center justify-center gap-3 py-3 px-6 rounded-xl text-xs font-black tracking-widest uppercase transition-all duration-300 relative overflow-hidden",
+        "flex-1 flex items-center justify-center gap-3 py-3 px-6 rounded-xl text-xs font-semibold transition-all duration-300 relative overflow-hidden",
         active
           ? "bg-surface-inverse text-surface-inverse-foreground shadow-lg scale-[1.02] z-10"
           : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-white/40"

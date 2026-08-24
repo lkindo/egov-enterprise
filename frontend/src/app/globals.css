@@ -382,6 +382,7 @@
     }
 
     [aria-current="page"],
+    [aria-current="true"],
     [aria-selected="true"] {
       outline: 2px solid Highlight;
       outline-offset: 1px;
