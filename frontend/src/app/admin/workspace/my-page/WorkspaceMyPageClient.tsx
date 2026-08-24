@@ -1,13 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { myPageAdminService } from '@/services/foundation/workspace/MyPageAdminService';
 import { useToast } from '@/app/components/ui/toast';
-import { Settings,  LayoutGrid,  Layers,  Zap,  RefreshCcw,  Search,  MoreVertical } from 'lucide-react';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { RefreshCcw, MoreVertical } from 'lucide-react';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -91,68 +89,49 @@ export default function WorkspaceMyPage() {
     }
   ];
 
+  const visibleContents = contents.filter((c) => c.cntntsNm.includes(searchKeyword));
+
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="마이페이지 환경 설정"
-        breadcrumbs={[{ label: '워크스페이스' }, { label: '설정' }]}
-      />
-
-      <HubHeader
-        title="Workspace"
-        highlight="Customizer"
-        subtitle="사용자 개인별 대시보드 콘텐츠 및 레이아웃 위젯을 관리합니다."
-        icon={LayoutGrid}
-        actions={
-          <div className="flex gap-4">
-            <Button variant="outline" aria-label="마이페이지 새로고침" onClick={() => window.location.reload()} className="h-11 w-14 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
-              <RefreshCcw size={20} />
-            </Button>
-            <Button className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
-               콘텐츠 동기화
-            </Button>
-          </div>
-        }
-      />
-
-      {/* [정직성] 종전에는 계측 원천이 없는 "사용량 HIGH"·"보안 상태 SAFE" 를 실측처럼 표시했다.
-          실제 콘텐츠 목록에서 파생되는 값만 남긴다. */}
-      <HubMetricGrid>
-        <HubMetricCard title="전체 콘텐츠" value={contents.length} icon={Layers} color="primary" status="집계" />
-        <HubMetricCard title="활성 위젯" value={contents.filter(c => c.cntntsUseYn === 'Y').length} icon={Zap} color="emerald" status="집계" />
-      </HubMetricGrid>
-
-      <HubSectionCard
-        title="마이페이지 콘텐츠 매트릭스"
-        description="시스템에서 가용한 모든 마이페이지 구성 요소 및 위젯 명세입니다."
-        icon={Settings}
-        className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
-      >
-        <div className="space-y-8">
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
-            <div className="relative group max-w-xl w-full">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
-              <Input
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-                placeholder="콘텐츠 명칭으로 검색.."
-              />
-            </div>
-          </div>
-
-          <div className="min-h-[500px]">
-            <StandardDataTable
-              columns={columns}
-              data={contents.filter(c => c.cntntsNm.includes(searchKeyword))}
-              loading={loading}
-              emptyMessage="등록된 콘텐츠가 없습니다."
-              isPremium={true}
-              className="border-none bg-transparent shadow-none"
-            />
-          </div>
+    <WorkListPage
+      title="마이페이지 환경 설정"
+      description="개인 대시보드에 배치할 콘텐츠와 위젯을 관리합니다."
+      breadcrumbItems={[{ label: '워크스페이스' }, { label: '설정' }]}
+      filterStateKey="workspace-my-page"
+      totalCount={contents.length}
+      actions={
+        /* 종전의 '콘텐츠 동기화' 버튼은 onClick 이 없는 死버튼이라 제거했다(카탈로그 G10). */
+        <Button
+          variant="outline"
+          size="sm"
+          aria-label="마이페이지 새로고침"
+          onClick={() => window.location.reload()}
+          className="gap-2"
+        >
+          <RefreshCcw size={16} aria-hidden="true" />
+          새로고침
+        </Button>
+      }
+      filter={
+        <div className="min-w-60 max-w-xl space-y-1">
+          <label htmlFor="my-page-search" className="text-[length:var(--font-size-body)] font-medium">
+            콘텐츠 명칭
+          </label>
+          <Input
+            id="my-page-search"
+            value={searchKeyword}
+            onChange={(e) => setSearchKeyword(e.target.value)}
+            placeholder="콘텐츠 명칭으로 검색"
+          />
         </div>
-      </HubSectionCard>
-    </div>
+      }
+    >
+      <StandardDataTable
+        accessibleLabel="마이페이지 콘텐츠 목록"
+        columns={columns}
+        data={visibleContents}
+        loading={loading}
+        emptyMessage={emptyResultMessage(searchKeyword, '등록된 콘텐츠가 없습니다.')}
+      />
+    </WorkListPage>
   );
 }

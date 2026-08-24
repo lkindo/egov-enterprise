@@ -1,16 +1,15 @@
 'use client';
-import React, { useCallback, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { operationAdminService, type ExternalHr } from '@/services/foundation/operation/OperationAdminService';
 import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
-import { Plus, Search, Users, ShieldCheck, RefreshCcw, Layers } from 'lucide-react';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { Plus, ShieldCheck, RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { z } from 'zod';
@@ -47,7 +46,8 @@ const externalHrSchema = ExternalHrDtoSchema.extend({
 
 type ExternalHrFormValues = z.infer<typeof externalHrSchema>;
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 export default function ExternalHrClient({ initialPage }: { initialPage: PageResponse<ExternalHr> | null }) {
   const queryClient = useQueryClient();
@@ -67,7 +67,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [router, pathname, searchParams]);
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
@@ -92,11 +92,11 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
    * 조회 실패는 삼키지 않고 StandardDataTable 의 error/onRetry 로 화면에 드러낸다.
    */
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin-external-hr', searchKeyword, page],
+    queryKey: ['admin-external-hr', searchKeyword, page, pageSize],
     queryFn: () => operationAdminService.getExternalHrList({
       name: searchKeyword,
       page: page - 1,
-      size: PAGE_SIZE,
+      size: pageSize,
     }),
     // SSR 프리페치 결과는 검색어 없는 1페이지에 한해서만 초기값으로 쓴다.
     // 서버 프리페치가 실패했으면 initialPage 가 null 이므로 클라이언트가 다시 조회하고 실패를 노출한다.
@@ -105,13 +105,12 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
 
   const rows: ExternalHr[] = data?.list ?? [];
   const totalItems = data?.total ?? 0;
-  const totalPages = data?.totalPage ?? Math.ceil(totalItems / PAGE_SIZE);
+  const totalPages = data?.totalPage ?? Math.ceil(totalItems / pageSize);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSearch = (keyword: string) => {
     // 3페이지에서 검색해 빈 화면이 되는 것을 막는다.
     if (page !== 1) setPage(1);
-    setSearchKeyword(searchTerm.trim());
+    setSearchKeyword(keyword);
   };
 
   const onRegisterSubmit = async (values: ExternalHrFormValues) => {
@@ -142,7 +141,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       header: '번호',
       accessor: (_, index) => (
         <span className="font-mono text-xs font-bold text-muted-foreground">
-          {(index !== undefined ? index + 1 + (page - 1) * PAGE_SIZE : 0).toString().padStart(2, '0')}
+          {(index !== undefined ? index + 1 + (page - 1) * pageSize : 0).toString().padStart(2, '0')}
         </span>
       ),
       className: 'w-20 text-center'
@@ -195,85 +194,58 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
   ];
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="외부 인사 인벤토리"
-        breadcrumbs={[{ label: '운영지원' }, { label: '행사관리' }, { label: '외부인사정보' }]}
+    <WorkListPage
+      title="외부 인사 인벤토리"
+      description="조직과 협력하는 외부 전문가 및 인사 정보를 조회·등록합니다."
+      breadcrumbItems={[{ label: '운영지원' }, { label: '행사관리' }, { label: '외부인사정보' }]}
+      filterStateKey="operation-external-hr"
+      // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
+      totalCount={isError ? undefined : totalItems}
+      actions={
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            aria-label="외부 인사 목록 새로고침"
+            className="gap-2"
+          >
+            <RefreshCcw size={16} aria-hidden="true" />
+            새로고침
+          </Button>
+          <Button size="sm" onClick={() => setIsModalOpen(true)} className="gap-2">
+            <Plus size={16} aria-hidden="true" /> 인사 등록
+          </Button>
+        </>
+      }
+      filter={
+        <KeywordFilter
+          label="인사 성명"
+          placeholder="인사 성명으로 검색"
+          value={searchKeyword}
+          onSearch={handleSearch}
+        />
+      }
+    >
+      <StandardDataTable
+        accessibleLabel="외부 인사 목록"
+        columns={columns}
+        data={rows}
+        loading={isLoading}
+        error={isError ? (error as Error) : null}
+        onRetry={() => refetch()}
+        emptyMessage={emptyResultMessage(searchKeyword, '등록된 외부인사 정보가 없습니다.')}
+        keyField="otsdHrId"
+        pagination={{
+          currentPage: page,
+          totalPages: totalPages,
+          // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+          pageSize,
+          onPageChange: setPage,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+          pageSizeOptions: PAGE_SIZE_OPTIONS,
+        }}
       />
-
-      <HubHeader
-        title="외부 인사"
-        highlight="Personnel"
-        subtitle="조직과 협력하는 외부 전문가 및 인사 정보를 통합 관리합니다."
-        icon={Users}
-        actions={
-          <div className="flex gap-4">
-            <Button
-              variant="outline"
-              onClick={() => refetch()}
-              aria-label="외부 인사 목록 새로고침"
-              className="h-11 w-14 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
-            >
-              <RefreshCcw size={20} aria-hidden="true" />
-            </Button>
-            <Button
-              onClick={() => setIsModalOpen(true)}
-              className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl"
-            >
-              <Plus size={20} aria-hidden="true" /> 인사 등록
-            </Button>
-          </div>
-        }
-      />
-
-      <HubMetricGrid>
-        <HubMetricCard title="전체 인사" value={totalItems} icon={Layers} color="primary" />
-        <HubMetricCard title="이메일 보유 (현재 페이지)" value={rows.filter(i => !!i.emlAddr).length} icon={Users} color="amber" />
-      </HubMetricGrid>
-
-      <HubSectionCard
-        title="인사 정보 매트릭스"
-        description="협력 관계에 있는 외부 인사들의 핵심 메타데이터 스트림입니다."
-        icon={Users}
-        className="bg-card/60 backdrop-blur-md border border-border/60 shadow-xl ring-1 ring-black/5"
-      >
-        <div className="space-y-8">
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
-            <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} aria-hidden="true" />
-              <Input
-                placeholder="인사 성명으로 검색..."
-                aria-label="인사 성명으로 검색"
-                className="h-11 pl-16 rounded-xl border-none bg-muted/50 text-sm font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <Button type="submit" className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-xl hover:bg-primary transition-all">검색</Button>
-            </form>
-          </div>
-
-          <div className="min-h-[500px]">
-            <StandardDataTable
-              columns={columns}
-              data={rows}
-              loading={isLoading}
-              error={isError ? (error as Error) : null}
-              onRetry={() => refetch()}
-              emptyMessage="등록된 외부인사 정보가 없습니다."
-              keyField="otsdHrId"
-              isPremium={true}
-              className="border-none bg-transparent shadow-none"
-              pagination={{
-                currentPage: page,
-                totalPages: totalPages,
-                totalCount: totalItems,
-                pageSize: PAGE_SIZE,
-                onPageChange: setPage
-              }}
-            />
-          </div>
-        </div>
-      </HubSectionCard>
 
       <StandardModal
         isOpen={isModalOpen}
@@ -430,6 +402,6 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
           </form>
         </Form>
       </StandardModal>
-    </div>
+    </WorkListPage>
   );
 }

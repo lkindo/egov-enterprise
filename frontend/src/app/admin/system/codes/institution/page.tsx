@@ -4,7 +4,6 @@ import { PageResponse } from '@/types/foundation/system';
 import InstitutionCodeClient from './InstitutionCodeClient';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { PageHeader } from '@/app/components/layout/page-header';
 import { Building2 } from 'lucide-react';
 import { SITE_IDENTITY } from '@/config/site-identity';
 
@@ -37,11 +36,7 @@ export default async function InstitutionCodePage() {
 
   return (
     <div className="space-y-12">
-      <PageHeader
-        title="공공기관 코드 관리"
-        breadcrumbs={[{ label: '시스템 관리' }, { label: '코드 관리' }, { label: '기관 코드' }]}
-      />
-      
+      {/* 제목·브레드크럼은 A1 셸(WorkListPage)이 소유한다 — 클라이언트가 탭에 따라 설명을 바꾼다. */}
       <Suspense fallback={
         <div className="w-full h-[600px] flex flex-col items-center justify-center gap-6 bg-muted/50 rounded-lg border-2 border-dashed border-border animate-pulse">
             <div className="w-20 h-11 rounded-lg bg-muted/50 flex items-center justify-center">

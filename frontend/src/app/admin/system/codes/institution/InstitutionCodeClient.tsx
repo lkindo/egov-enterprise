@@ -12,24 +12,19 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { Clock,
  RefreshCw,
  Database,
- Search,
  Plus,
  ShieldCheck,
  Building2,
  History,
  Server,
- Globe,
- Zap,
  MonitorCheck,
  CheckCircle2,
  Network } from 'lucide-react';
-import { PagePagination } from '@/components/common/PagePagination';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { motion, AnimatePresence } from 'framer-motion';
 
 type InstitutionTab = 'list' | 'reception';
 
@@ -245,15 +240,15 @@ export default function InstitutionCodeClient({ initialData }: { initialData?: P
  const panelId = 'institution-tabpanel';
 
  return (
- <div className="space-y-10 pb-24 animate-in fade-in duration-1000">
-
- <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 border-b border-border/50 pb-8">
- <div className="space-y-1">
- <h4 className="text-2xl font-black tracking-tighter text-foreground uppercase leading-none">{activeTab === 'list' ? '기관 인벤토리' : '수신 파이프라인'}</h4>
- <p className="text-[10px] font-black text-muted-foreground tracking-[0.3em] uppercase mt-2">{activeTab === 'list' ? '활성 기관 목록' : '기관코드 수신 이력'}</p>
- </div>
- {/* [P2] 수제 탭에 tablist/tab 시맨틱 부여 */}
- <div role="tablist" aria-label="기관코드 화면 전환" className="flex bg-white/40 backdrop-blur-md p-1.5 rounded-xl border border-white/60 shadow-xl ring-1 ring-black/5">
+ <WorkListPage
+ title="공공기관 코드 관리"
+ description={activeTab === 'list' ? '공공기관 코드 목록을 조회합니다.' : '기관코드 변동 수신 이력을 조회합니다.'}
+ breadcrumbItems={[{ label: '시스템 관리' }, { label: '코드 관리' }, { label: '기관 코드' }]}
+ filterStateKey="system-codes-institution"
+ totalCount={total}
+ actions={
+ /* 탭은 조회 조건이 아니라 조회 대상 전환이라 헤더에 둔다. */
+ <div role="tablist" aria-label="기관코드 화면 전환" className="flex rounded-md border border-border p-0.5">
  <button
  type="button"
  role="tab"
@@ -262,8 +257,8 @@ export default function InstitutionCodeClient({ initialData }: { initialData?: P
  aria-controls={panelId}
  onClick={() => handleTabChange('list')}
  className={cn(
- "px-6 h-10 rounded-lg font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
- activeTab === 'list' ? "bg-surface-inverse text-surface-inverse-foreground shadow-xl" : "text-muted-foreground hover:bg-white/50 hover:text-muted-foreground"
+ "flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors",
+ activeTab === 'list' ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"
  )}>
  <Server size={14} aria-hidden="true" /> 기관 목록
  </button>
@@ -275,64 +270,33 @@ export default function InstitutionCodeClient({ initialData }: { initialData?: P
  aria-controls={panelId}
  onClick={() => handleTabChange('reception')}
  className={cn(
- "px-6 h-10 rounded-lg font-black text-[10px] tracking-widest uppercase transition-all flex items-center gap-2",
- activeTab === 'reception' ? "bg-surface-inverse text-surface-inverse-foreground shadow-xl" : "text-muted-foreground hover:bg-white/50 hover:text-muted-foreground"
+ "flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors",
+ activeTab === 'reception' ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"
  )}>
  <History size={14} aria-hidden="true" /> 수신 이력
  </button>
  </div>
- </div>
-
- {/*
-   * [P1-5] 지표는 실측값만 노출한다.
-   * 종전의 '동기화망: 안전' 카드는 산출 근거가 없어 삭제했고,
-   * 페이지 단위 집계임을 제목에 명시한다(서버 집계 API 부재).
-   */}
- {activeTab === 'list' ? (
- <HubMetricGrid>
- <HubMetricCard title="전체 기관" value={total} icon={Database} color="primary" />
- <HubMetricCard title="사용 중 (현재 페이지)" value={listData.filter(i => i.ablYn === '0').length} icon={ShieldCheck} color="emerald" />
- <HubMetricCard title="폐지 (현재 페이지)" value={listData.filter(i => i.ablYn !== '0').length} icon={Clock} color="amber" />
- </HubMetricGrid>
- ) : (
- <HubMetricGrid>
- <HubMetricCard title="전체 수신 건" value={total} icon={Database} color="primary" />
- <HubMetricCard title="처리 완료 (현재 페이지)" value={receptionData.filter(i => i.procSe === '1').length} icon={CheckCircle2} color="emerald" />
- <HubMetricCard
- title="처리 대기 (현재 페이지)"
- value={receptionData.filter(i => i.procSe !== '1').length}
- icon={Clock}
- color="amber"
- status={receptionData.some(i => i.procSe !== '1') ? '대기 중' : '정상'}
- />
- </HubMetricGrid>
- )}
-
- <HubSectionCard
- title={activeTab === 'list' ? "기관 인벤토리" : "수집 파이프라인"}
- description={activeTab === 'list' ? "모든 공공기관 코드의 목록입니다." : "지속적으로 유입되는 코드 변동 데이터의 수신 이력입니다."}
- icon={activeTab === 'list' ? Globe : Zap}
- >
- <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl p-8 mb-8 ring-1 ring-black/5">
- <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
- <div className="flex-1">
- <div className="relative group/search max-w-xl">
- <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} aria-hidden="true" />
+ }
+ filter={
+ <div className="min-w-60 max-w-xl space-y-1">
+ <label htmlFor="institution-search" className="text-[length:var(--font-size-body)] font-medium">
+ 기관명 · 코드
+ </label>
  <Input
- placeholder="기관명 또는 코드를 입력하세요..."
+ id="institution-search"
+ placeholder="기관명 또는 코드를 입력하세요"
  aria-label="기관코드 검색"
  value={keyword}
  onChange={(e) => handleKeywordChange(e.target.value)}
- className="h-10 pl-14 pr-8 w-full bg-muted/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
  />
  </div>
- </div>
- {/*
+ }
+ toolbarActions={
+ /*
    * [P1-6] 무동작 Export 버튼 → 동작 검증된 DataExportExcel(BOM 포함 CSV) 배선.
-   * 서버 전량 반출이 아니라 현재 페이지 반출임을 filename 으로 구분하지 않는 대신,
-   * 목록/수신 탭 각각의 실제 컬럼을 헤더로 매핑한다.
-   */}
- {activeTab === 'list' ? (
+   * 서버 전량 반출이 아니라 현재 페이지 반출이며, 탭별 실제 컬럼을 헤더로 매핑한다.
+   */
+ activeTab === 'list' ? (
  <DataExportExcel
  data={listData}
  headers={[
@@ -343,7 +307,7 @@ export default function InstitutionCodeClient({ initialData }: { initialData?: P
  { label: '폐지여부', key: 'ablYn' },
  ]}
  filename="기관코드"
- className="h-10 px-8 rounded-xl border border-border bg-card font-black text-xs tracking-widest uppercase flex items-center gap-2 hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-sm"
+ className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:text-primary"
  />
  ) : (
  <DataExportExcel
@@ -356,64 +320,52 @@ export default function InstitutionCodeClient({ initialData }: { initialData?: P
  { label: '처리구분', key: 'procSe' },
  ]}
  filename="기관코드_수신이력"
- className="h-10 px-8 rounded-xl border border-border bg-card font-black text-xs tracking-widest uppercase flex items-center gap-2 hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-sm"
+ className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:text-primary"
  />
- )}
- </div>
- </div>
-
+ )
+ }
+ >
  <div
  role="tabpanel"
  id={panelId}
  aria-labelledby={activeTab === 'list' ? 'institution-tab-list' : 'institution-tab-reception'}
- className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl overflow-hidden ring-1 ring-black/5"
  >
- <div className="p-2 overflow-hidden">
  {activeTab === 'list' ? (
  <StandardDataTable<InstitutionCode>
+ accessibleLabel="공공기관 코드 목록"
  columns={listColumns}
  data={listData}
  loading={listQuery.isLoading}
  error={listQuery.error}
  onRetry={() => listQuery.refetch()}
  keyField="instCd"
- emptyMessage="데이터가 존재하지 않습니다."
- className="border-none bg-transparent shadow-none"
- isPremium={true}
+ emptyMessage={emptyResultMessage(keyword, '등록된 기관 코드가 없습니다.')}
+ pagination={{
+ currentPage: page,
+ totalPages: Math.max(Math.ceil(total / PAGE_SIZE), 1),
+ onPageChange: setPage,
+ pageSize: PAGE_SIZE,
+ }}
  />
  ) : (
  <StandardDataTable<InstitutionCodeRecptn>
+ accessibleLabel="기관코드 수신 이력"
  columns={receptionColumns}
  data={receptionData}
  loading={receptionQuery.isLoading}
  error={receptionQuery.error}
  onRetry={() => receptionQuery.refetch()}
  keyField="jobSn"
- emptyMessage="수신 내역이 존재하지 않습니다."
- className="border-none bg-transparent shadow-none"
- isPremium={true}
+ emptyMessage={emptyResultMessage(keyword, '수신 내역이 없습니다.')}
+ pagination={{
+ currentPage: page,
+ totalPages: Math.max(Math.ceil(total / PAGE_SIZE), 1),
+ onPageChange: setPage,
+ pageSize: PAGE_SIZE,
+ }}
  />
  )}
  </div>
- </div>
-
- <AnimatePresence>
- {total > PAGE_SIZE && (
- <motion.div
- initial={{ opacity: 0, y: 10 }}
- animate={{ opacity: 1, y: 0 }}
- className="mt-10 flex justify-center"
- >
- <PagePagination
- total={total}
- size={PAGE_SIZE}
- page={page}
- onPageChange={setPage}
- />
- </motion.div>
- )}
- </AnimatePresence>
- </HubSectionCard>
- </div>
+ </WorkListPage>
  );
 }

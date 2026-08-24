@@ -28,9 +28,9 @@ test('current manifest covers every filesystem route exactly once without struct
   const analysis = currentAnalysis();
 
   assert.deepEqual(analysis.result.errors, []);
-  assert.equal(analysis.result.summary.filesystemRoutes, 119);
-  assert.equal(analysis.result.summary.manifestRoutes, 119);
-  assert.equal(new Set(analysis.manifest.routes.map(({ route }) => route)).size, 119);
+  assert.equal(analysis.result.summary.filesystemRoutes, 120);
+  assert.equal(analysis.result.summary.manifestRoutes, 120);
+  assert.equal(new Set(analysis.manifest.routes.map(({ route }) => route)).size, 120);
 });
 
 test('route discovery covers every Next page extension and fails closed on URL collisions', (t) => {
@@ -85,10 +85,10 @@ test('proxy shell access is measured separately from unresolved capability roles
 
   assert.equal(sourceShellCounts.public?.length, 1);
   assert.equal(sourceShellCounts.authenticated?.length, 49);
-  assert.equal(sourceShellCounts['admin-system']?.length, 69);
+  assert.equal(sourceShellCounts['admin-system']?.length, 70);
   assert.equal(effectiveShellCounts.public?.length, 1);
   assert.equal(effectiveShellCounts.authenticated?.length, 48);
-  assert.equal(effectiveShellCounts['admin-system']?.length, 70);
+  assert.equal(effectiveShellCounts['admin-system']?.length, 71);
   assert.equal(analysis.result.summary.effectiveAliases, 18);
   assert.equal(analysis.result.summary.externalAliases, 2);
   const legacySms = analysis.manifest.routes.find(({ route }) => route === '/cop/sms/selectSmsList');

@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-navigation-disposition.schema.json",
   "manifestRef": {
     "path": "config/ui-route-capabilities.json",
-    "sha256": "51e44c78d112e95d1ac68a5063a4f5e46f8e64f26b67ef073e268d50e0193ffd"
+    "sha256": "0536d0908c24c85c4f891e994e076dac7ac06b5860138ed8e1ff8db5d9eb4c65"
   },
   "provisionalDirection": {
     "status": "accepted-provisional-direction",
@@ -688,6 +688,24 @@
       "route": "/admin/operation/rough-map",
       "reviewState": "proposed",
       "disposition": "retain-canonical",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-10-31",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/admin/patterns",
+      "reviewState": "proposed",
+      "disposition": "demo-isolated",
       "authorizationReview": "unverified",
       "privacyReview": "unverified",
       "effectiveMenuExposureReview": "unverified",

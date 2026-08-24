@@ -1,32 +1,19 @@
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { codeAdminService, AdministCode } from '@/services/foundation/system/CodeAdminService';
 import { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
-import { Plus, 
- MapPin, 
- Search, 
- Layers, 
- ShieldCheck, 
- Database, 
- SearchCode, 
- Milestone, 
- Monitor, 
- RefreshCcw, 
- Map, 
- Compass } from 'lucide-react';
-import { PagePagination } from '@/components/common/PagePagination';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { Plus, MapPin, ShieldCheck, RefreshCcw, Compass } from 'lucide-react';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { motion, AnimatePresence } from 'framer-motion';
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
@@ -60,8 +47,7 @@ export default function AdministCodeClient({ initialData }: { initialData?: Part
  const [isModalOpen, setIsModalOpen] = useState(false);
  const [registerLoading, setRegisterLoading] = useState(false);
  const { toast } = useToast();
- /** 입력 중인 검색어 / 실제 서버에 제출된 검색어 (이 화면은 제출형 검색이라 디바운스 대상이 아니다) */
- const [searchWrd, setSearchWrd] = useState('');
+ /** 실제 서버에 제출된 검색어. 입력 중 값은 KeywordFilter 가 소유한다(제출형 검색). */
  const [appliedSearch, setAppliedSearch] = useState('');
  const [pageNumber, setPageNumber] = useState(1);
 
@@ -120,20 +106,6 @@ export default function AdministCodeClient({ initialData }: { initialData?: Part
      setRegisterLoading(false);
    }
  };
-
- /*
-  * [P1-5] 지표는 실제 계산 가능한 값만 남긴다.
-  * 법정동/행정동/사용중 비율은 서버 집계 API 가 없어 현재 페이지 기준이며, 제목에 그 사실을 명시한다.
-  */
- const stats = useMemo(() => {
- const legalDist = data.filter(item => item?.admdstSeCd === '1').length;
- const adminDist = data.filter(item => item?.admdstSeCd === '2').length;
- const activeRate = data.length > 0
- ? Math.round(data.filter(item => item?.useYn === 'Y').length / data.length * 100)
- : 0;
-
- return { totalCount: total, legalDist, adminDist, activeRate };
- }, [total, data]);
 
  const columns: Column<AdministCode>[] = [
  { 
@@ -195,135 +167,54 @@ export default function AdministCodeClient({ initialData }: { initialData?: Part
  ];
 
  return (
- <div className="space-y-10 pb-24 animate-in fade-in duration-1000">
- 
- <HubHeader 
- title="행정 구역" 
- highlight="관리 인벤토리" 
- subtitle="전국 행정 구역에 따른 법정동 및 행정동 코드 체계를 관리합니다." 
- icon={Milestone} 
+ <WorkListPage
+ title="행정 구역 코드 관리"
+ description="법정동·행정동 코드 체계를 조회·등록합니다."
+ breadcrumbItems={[{ label: '시스템관리' }, { label: '코드 관리' }, { label: '행정 구역' }]}
+ filterStateKey="system-codes-administ"
+ totalCount={error ? undefined : total}
  actions={
- <div className="flex gap-3 p-1 items-center">
+ <>
  <Button
- variant="ghost"
+ variant="outline"
+ size="sm"
  aria-label="행정 구역 목록 새로고침"
  onClick={() => refetch()}
- className="h-10 w-12 rounded-xl bg-card border border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-sm group active:scale-95 px-4"
+ className="gap-2"
  >
- <RefreshCcw size={20} aria-hidden="true" className="group-hover:rotate-180 transition-transform duration-700" />
+ <RefreshCcw size={16} aria-hidden="true" />
+ 새로고침
  </Button>
- <Button 
-  onClick={() => setIsModalOpen(true)}
-  className="h-10 px-8 rounded-xl bg-surface-inverse border-none text-surface-inverse-foreground font-black text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group"
- >
- <Plus size={18} /> 신규 등록
+ <Button size="sm" onClick={() => setIsModalOpen(true)} className="gap-2">
+ <Plus size={16} aria-hidden="true" /> 신규 등록
  </Button>
- </div>
+ </>
  }
+ filter={
+ <KeywordFilter
+ label="행정구역명"
+ placeholder="행정구역명을 입력하세요"
+ value={appliedSearch}
+ onSearch={handleSearchSubmit}
  />
-
- <HubMetricGrid>
- <HubMetricCard title="전체 구역" value={stats.totalCount} icon={Database} color="primary" />
- <HubMetricCard title="법정동 (현재 페이지)" value={stats.legalDist} icon={Map} color="indigo" />
- <HubMetricCard title="행정동 (현재 페이지)" value={stats.adminDist} icon={Compass} color="amber" />
- <HubMetricCard title="사용 중 비율 (현재 페이지)" value={`${stats.activeRate}%`} icon={ShieldCheck} color="emerald" />
- </HubMetricGrid>
-
- <div className="grid grid-cols-12 gap-8">
- {/* Navigation Sidebar */}
- <div className="col-span-12 lg:col-span-4 h-full">
- <div className="rounded-2xl bg-white/40 backdrop-blur-md text-foreground p-10 shadow-xl relative overflow-hidden group h-full border border-white/60 ring-1 ring-black/5 min-h-[500px]">
- <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
- <Milestone size={240} className="text-primary" />
- </div>
- <div className="relative z-10 space-y-10">
- <div className="space-y-4">
- <div className="w-16 h-10 rounded-xl bg-surface-inverse flex items-center justify-center shadow-2xl">
- <Monitor size={28} className="text-primary" />
- </div>
- <h4 className="text-2xl font-black tracking-tighter leading-tight uppercase text-foreground">공간 인텔리전스<br />허브</h4>
- </div>
- 
- <p className="text-xs font-bold text-muted-foreground leading-relaxed border-l-4 border-primary pl-6">
- 행정구역코드는 법정동·행정동 체계를 코드로 관리하는 표준 메타데이터입니다.
- </p>
-
- {/*
-   * [P1-5] '데이터 수집 엔진: Normal' / '동기화 빈도: Daily 00:00' 두 지표를 삭제했다.
-   * 배치·수집 스케줄러가 실재하지 않아 근거 없는 고정 문구였다.
-   */}
- <div className="space-y-5 pt-10 border-t border-border/50">
- <div className="flex items-center justify-between">
- <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">현재 페이지 건수</span>
- <span className="text-sm font-black text-foreground tabular-nums">{data.length}건</span>
- </div>
- <div className="flex items-center justify-between">
- <span className="text-[10px] font-black text-muted-foreground tracking-widest uppercase">전체 등록 건수</span>
- <span className="text-sm font-black text-foreground tabular-nums">{stats.totalCount}건</span>
- </div>
- </div>
- </div>
- </div>
- </div>
-
- {/* Data Area */}
- <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
- <HubSectionCard title="행정 코드 탐색기" description="행정 구역 및 법정동 메타데이터 상세 정보입니다." icon={SearchCode}>
- <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl p-8 mb-8 ring-1 ring-black/5">
- <form role="search" onSubmit={(e) => { e.preventDefault(); handleSearchSubmit(searchWrd); }} className="flex flex-col md:flex-row md:items-center justify-between gap-6">
- <div className="relative group/search flex-1">
- <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} aria-hidden="true" />
- <Input
- placeholder="행정구역명을 입력하세요..."
- aria-label="행정구역명 검색"
- value={searchWrd}
- onChange={(e) => setSearchWrd(e.target.value)}
- className="h-10 pl-14 pr-6 w-full bg-muted/50 border-none rounded-xl text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
- />
- </div>
- <Button type="submit" size="lg" className="h-10 px-8 rounded-xl bg-surface-inverse border-none text-surface-inverse-foreground font-black text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2 group active:scale-95">
- <Layers size={18} className="group-hover:rotate-180 transition-transform duration-700" /> 검색 실행
- </Button>
- </form>
- </div>
-
- <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl overflow-hidden ring-1 ring-black/5">
- <div className="overflow-hidden min-h-[500px] p-2">
- <AnimatePresence mode="wait">
- <motion.div
- key={appliedSearch + pageNumber}
- initial={{ opacity: 0, scale: 0.99 }}
- animate={{ opacity: 1, scale: 1 }}
- exit={{ opacity: 0, scale: 1.01 }}
- transition={{ duration: 0.4, ease: "circOut" }}
+ }
  >
  <StandardDataTable<AdministCode>
+ accessibleLabel="행정 구역 코드 목록"
  columns={columns}
  data={data}
  loading={isLoading}
  error={error}
  onRetry={() => refetch()}
  keyField="admdstCd"
- emptyMessage="데이터가 존재하지 않습니다."
- className="border-none bg-transparent shadow-none"
- isPremium={true}
+ emptyMessage={emptyResultMessage(appliedSearch, '등록된 행정 구역 코드가 없습니다.')}
+ pagination={{
+ currentPage: pageNumber,
+ totalPages: Math.max(Math.ceil(total / PAGE_SIZE), 1),
+ onPageChange: setPageNumber,
+ pageSize: PAGE_SIZE,
+ }}
  />
- </motion.div>
- </AnimatePresence>
- </div>
- </div>
-
- <div className="mt-10 flex justify-center">
- <PagePagination
- total={total}
- size={PAGE_SIZE}
- page={pageNumber}
- onPageChange={setPageNumber}
- />
- </div>
- </HubSectionCard>
- </div>
- </div>
 
  <StandardModal
    isOpen={isModalOpen}
@@ -419,7 +310,7 @@ export default function AdministCodeClient({ initialData }: { initialData?: Part
      </form>
    </Form>
  </StandardModal>
- </div>
+ </WorkListPage>
  );
 }
 

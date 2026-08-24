@@ -23,16 +23,16 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "361145cd59a5f3a26112111db9c54390d661ec22a14a8dacf0fb561171d9ccb3"
+    "inventoryHash": "689f3ca9868c26d46c40973fdbe1217b8a9544c7064c19578ef5dde0f49dab0d"
   },
   "summary": {
-    "sourceFileCount": 481,
-    "records": 527,
-    "syntaxOccurrences": 599,
-    "ambiguousRecords": 506,
-    "unverifiedRecords": 527,
+    "sourceFileCount": 486,
+    "records": 531,
+    "syntaxOccurrences": 601,
+    "ambiguousRecords": 510,
+    "unverifiedRecords": 531,
     "exactPopulations": {
-      "filesystemRoutes": 119,
+      "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
       "configRedirects": 15,
       "pageRedirects": 5
@@ -40,8 +40,8 @@
     "byKind": {
       "config-redirect": 15,
       "dynamic-segment": 11,
-      "form-producer": 46,
-      "navigation-producer": 153,
+      "form-producer": 48,
+      "navigation-producer": 155,
       "page-redirect": 5,
       "query-builder": 21,
       "query-consumer": 58,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 362,
+      "navigation": 366,
       "request-telemetry": 165
     }
   },
@@ -7071,7 +7071,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
         "detector": "jsx-form",
-        "occurrenceCount": 2
+        "occurrenceCount": 1
       }
     },
     {
@@ -7717,7 +7717,46 @@
       "evidence": {
         "source": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
         "detector": "jsx-form",
-        "occurrenceCount": 2
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-8722C24263F049",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "implicit-or-computed-method",
+      "source": "frontend/src/app/admin/patterns/PatternGalleryClient.tsx",
+      "producerFile": "frontend/src/app/admin/patterns/PatternGalleryClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/patterns",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "form-method-or-interception-unresolved",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/patterns/PatternGalleryClient.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
       }
     },
     {
@@ -10017,7 +10056,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/codes/administ/AdministCodeClient.tsx",
         "detector": "jsx-form",
-        "occurrenceCount": 2
+        "occurrenceCount": 1
       }
     },
     {
@@ -13703,6 +13742,46 @@
       }
     },
     {
+      "id": "URL-E389C1DB2A1A7D",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "implicit-or-computed-method",
+      "source": "frontend/src/app/components/patterns/keyword-filter.tsx",
+      "producerFile": "frontend/src/app/components/patterns/keyword-filter.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "form-method-or-interception-unresolved",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/patterns/keyword-filter.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-1BA06D3AA9C4F5",
       "surface": "navigation",
       "kind": "form-producer",
@@ -15876,10 +15955,10 @@
       }
     },
     {
-      "id": "URL-C05CCAD4E4A0E9",
+      "id": "URL-71FEA757441A7F",
       "surface": "navigation",
       "kind": "navigation-producer",
-      "operation": "router.push",
+      "operation": "jsx-href",
       "source": "frontend/src/app/UnifiedDashboardClient.tsx",
       "producerFile": "frontend/src/app/UnifiedDashboardClient.tsx",
       "consumerFile": null,
@@ -15910,7 +15989,86 @@
       },
       "evidence": {
         "source": "frontend/src/app/UnifiedDashboardClient.tsx",
-        "detector": "router-navigation",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-4215DBA00DEFFD",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/UnifiedDashboardClient.tsx",
+      "producerFile": "frontend/src/app/UnifiedDashboardClient.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/approvals",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/approvals",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/UnifiedDashboardClient.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 2
+      }
+    },
+    {
+      "id": "URL-DA5FE613193396",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/UnifiedDashboardClient.tsx",
+      "producerFile": "frontend/src/app/UnifiedDashboardClient.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/UnifiedDashboardClient.tsx",
+        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },

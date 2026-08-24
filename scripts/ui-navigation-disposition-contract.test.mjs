@@ -108,7 +108,7 @@ test('the recommended hybrid is selected only as a bounded provisional direction
   );
 });
 
-test('the proposed overlay drafts dispositions over the sparse 119 + 2 review population', () => {
+test('the proposed overlay drafts dispositions over the sparse 120 + 2 review population', () => {
   const initial = createUnreviewedProposal(manifest, manifestRaw);
   const manifestLf = manifestRaw.toString('utf8').replace(/\r\n?/gu, '\n');
   assert.equal(initial.provisionalDirection, null);
@@ -128,7 +128,7 @@ test('the proposed overlay drafts dispositions over the sparse 119 + 2 review po
     overlay.externalAliases.map(({ source }) => source),
     initial.externalAliases.map(({ source }) => source),
   );
-  assert.equal(overlay.routes.length, 119);
+  assert.equal(overlay.routes.length, 120);
   assert.equal(overlay.externalAliases.length, 2);
   assert.ok(overlay.routes.every((record, index) => {
     const shared = record.disposition !== 'blocked-review'

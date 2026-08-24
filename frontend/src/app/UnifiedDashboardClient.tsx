@@ -2,24 +2,13 @@
 
 import { useState, useEffect, use } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
 import { useRouter } from 'next/navigation';
-import { 
-  Plus, 
-  Clock, 
-  CheckCircle2, 
-  Zap, 
-  Bell
-} from 'lucide-react';
+import { Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { DashboardSkeleton } from '@/app/components/dashboard/DashboardSkeleton';
-import { motion } from 'framer-motion';
-
-// Hub Common Components & Animations
-import { HubSummaryCard } from '@/components/ui/hub/HubSummaryCard';
-import { HubInsightBadge } from '@/components/ui/hub/HubInsightBadge';
-import { HubListCard } from '@/components/ui/hub/HubListCard';
-import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { DashboardTask } from '@/types/foundation/dashboard';
 
 // Optimization: Priority 2 - Dynamic Imports for heavy components
@@ -30,9 +19,9 @@ const BannerSlider = dynamic(() => import('@/app/components/dashboard/BannerSlid
 });
 const PopupManager = dynamic(() => import('@/app/components/dashboard/PopupManager').then(mod => mod.PopupManager), { ssr: false });
 /* reusable-base:demo:end */
-const ActivityFeed = dynamic(() => import('@/app/components/dashboard/ActivityFeed').then(mod => mod.ActivityFeed), { 
-  loading: () => <div className="space-y-4 pt-10"><Skeleton className="h-11 w-full" /><Skeleton className="h-11 w-full" /></div>,
-  ssr: false 
+const ActivityFeed = dynamic(() => import('@/app/components/dashboard/ActivityFeed').then(mod => mod.ActivityFeed), {
+  loading: () => <div className="space-y-2"><Skeleton className="h-8 w-full" /><Skeleton className="h-8 w-full" /></div>,
+  ssr: false
 });
 const RealTimeDashboard = dynamic(() => import('@/components/features/dashboard/RealTimeDashboard').then(mod => mod.RealTimeDashboard), {
   loading: () => <Skeleton className="h-[150px] w-full rounded-lg" />,
@@ -47,8 +36,69 @@ interface UnifiedDashboardClientProps {
   }>;
 }
 
-export default function UnifiedDashboardClient({ 
-  dataPromise 
+/**
+ * 업무 홈 — 포털형 랜딩의 대체.
+ *
+ * 정본 스펙: docs/02-architecture/work-screen-grammar-catalog.md §3(공통 규칙)·§7 W4.
+ *
+ * 종전에는 인사말 히어로 → 배너 슬라이더 → 실시간 위젯 → 큰 요약 카드 3장 → 480px 고정 높이
+ * 목록 카드 순서라, "내가 지금 처리해야 할 것"이 화면 한참 아래에 있었다. 순서를 뒤집어
+ * **처리 대기 → 내 목록 → 상태·활동 → 홍보**로 놓는다.
+ *
+ * ⚠ 목록 항목은 링크가 아니다 — 대시보드 응답(DashboardTask)에는 항목별 목적지가 없다.
+ *   종전 카드는 `cursor-pointer` 로 클릭 가능한 것처럼 보였지만 핸들러가 없었다(G10 죽은 어포던스).
+ *   목적지가 있는 것만 링크로 만들고, 나머지는 섹션 단위 '전체 보기'로 보낸다.
+ */
+
+interface HomeListSectionProps {
+  title: string;
+  items: DashboardTask[];
+  moreHref: string;
+  moreLabel: string;
+  emptyMessage: string;
+}
+
+function HomeListSection({ title, items, moreHref, moreLabel, emptyMessage }: HomeListSectionProps) {
+  const headingId = `home-section-${moreLabel}`;
+
+  return (
+    <section aria-labelledby={headingId} className="rounded-md border border-border bg-card">
+      <div className="flex items-center justify-between gap-2 border-b border-border px-4 py-2">
+        <h2 id={headingId} className="text-[length:var(--font-size-body)] font-semibold text-foreground">
+          {title}
+        </h2>
+        <Link
+          href={moreHref}
+          className="text-[length:var(--font-size-body)] text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+        >
+          {moreLabel}
+        </Link>
+      </div>
+      {items.length > 0 ? (
+        <ul className="divide-y divide-border">
+          {items.slice(0, 6).map((item, index) => (
+            <li key={item.id || `${title}-${index}`} className="flex items-baseline justify-between gap-3 px-4 py-2">
+              <span className="min-w-0 flex-1 truncate text-[length:var(--font-size-body)] text-foreground">
+                {item.title}
+                {item.isNew && (
+                  <span className="ml-2 rounded bg-info px-1.5 py-0.5 text-xs font-bold text-info-foreground">신규</span>
+                )}
+              </span>
+              <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{item.date || '-'}</span>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="px-4 py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">
+          {emptyMessage}
+        </p>
+      )}
+    </section>
+  );
+}
+
+export default function UnifiedDashboardClient({
+  dataPromise
 }: UnifiedDashboardClientProps) {
   const data = use(dataPromise);
   const notiList = data.initialNotiList || [];
@@ -73,131 +123,95 @@ export default function UnifiedDashboardClient({
   if (!isMounted || loading || !user) {
     return (
       <>
-        <h1 className="sr-only">통합 대시보드를 불러오는 중</h1>
+        <h1 className="sr-only">업무 홈을 불러오는 중</h1>
         <DashboardSkeleton />
       </>
     );
   }
 
+  const newTaskCount = taskList.filter((task: DashboardTask) => task.isNew).length;
+
   return (
-    <motion.div
-      initial="hidden"
-      animate="visible"
-      variants={hubContainerVariants}
-      className="space-y-10 pb-20 px-2 lg:px-0"
-    >
+    <div className="space-y-4">
       {/* reusable-base:demo:start */}
       <PopupManager />
       {/* reusable-base:demo:end */}
 
-      {/* Header Section */}
-      <motion.div variants={hubItemVariants} className="flex flex-col lg:flex-row justify-between items-start lg:items-end gap-10">
-        <div className="space-y-2">
-          <HubInsightBadge label="관리 업무" />
-          <h1 className="text-2xl md:text-3xl font-bold tracking-tighter text-foreground leading-tight">
-            안녕하세요, <span className="text-primary ">{user.name}</span>님
-          </h1>
-          <p className="text-lg text-muted-foreground font-medium max-w-xl">
-            필요한 관리 업무를 선택하세요.
+      <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold tracking-tight text-foreground">업무 홈</h1>
+          <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
+            안녕하세요, {user.name}님. 오늘 처리할 업무입니다.
           </p>
         </div>
-
-        <div className="flex gap-4 w-full lg:w-auto">
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => router.push('/admin/community/boards')}
-            aria-label="새 게시글 작성"
-            className="flex-1 lg:flex-none flex items-center justify-center gap-3 px-10 py-5 border border-border/60 bg-background text-foreground dark:bg-card dark:text-foreground dark:border-white/10 rounded-lg font-bold hover:bg-muted transition-all shadow-sm"
-          >
-            <Plus size={20} /> 새 게시글 작성
-          </motion.button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button asChild size="sm" variant="outline">
+            <Link href="/admin/community/boards">
+              <Plus size={16} aria-hidden="true" /> 새 게시글 작성
+            </Link>
+          </Button>
+          <Button asChild size="sm">
+            <Link href="/approvals">결재함 열기</Link>
+          </Button>
         </div>
-      </motion.div>
+      </header>
+
+      {/* 처리 대기 요약 — 목적지가 있는 항목만 링크한다(G10). */}
+      <ul className="grid gap-2 sm:grid-cols-3">
+        <li className="rounded-md border border-border bg-card px-4 py-3">
+          <Link href="/approvals" className="group block focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+            <span className="text-[length:var(--font-size-body)] text-muted-foreground group-hover:text-primary">결재 대기</span>
+            <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{pendingCount}건</span>
+          </Link>
+        </li>
+        <li className="rounded-md border border-border bg-card px-4 py-3">
+          <span className="text-[length:var(--font-size-body)] text-muted-foreground">배정된 업무</span>
+          <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{taskList.length}건</span>
+          <span className="text-xs text-muted-foreground">신규 {newTaskCount}건</span>
+        </li>
+        <li className="rounded-md border border-border bg-card px-4 py-3">
+          <span className="text-[length:var(--font-size-body)] text-muted-foreground">최근 공지</span>
+          <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{notiList.length}건</span>
+        </li>
+      </ul>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <HomeListSection
+          title="배정된 업무"
+          items={taskList}
+          moreHref="/admin/community/boards"
+          moreLabel="업무 전체 보기"
+          emptyMessage="배정된 업무가 없습니다."
+        />
+        <HomeListSection
+          title="최근 공지사항"
+          items={notiList}
+          moreHref="/admin/community/boards"
+          moreLabel="공지 전체 보기"
+          emptyMessage="새 공지사항이 없습니다."
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <section aria-labelledby="home-realtime" className="rounded-md border border-border bg-card p-4">
+          <h2 id="home-realtime" className="mb-3 text-[length:var(--font-size-body)] font-semibold text-foreground">
+            실시간 상태
+          </h2>
+          <RealTimeDashboard />
+        </section>
+        <section aria-labelledby="home-activity" className="rounded-md border border-border bg-card p-4">
+          <h2 id="home-activity" className="mb-3 text-[length:var(--font-size-body)] font-semibold text-foreground">
+            최근 활동
+          </h2>
+          <ActivityFeed />
+        </section>
+      </div>
 
       {/* reusable-base:demo:start */}
-      <motion.div variants={hubItemVariants} className="relative rounded-lg overflow-hidden shadow-2xl">
+      <div className="overflow-hidden rounded-md">
         <BannerSlider />
-      </motion.div>
-      {/* reusable-base:demo:end */}
-
-      {/* Real-time Insights */}
-      <motion.div variants={hubItemVariants} className="p-4 md:p-8 border border-border/80 rounded-lg bg-card/40 dark:bg-card/20 shadow-sm">
-        <RealTimeDashboard />
-      </motion.div>
-
-      {/* Summary Cards */}
-      <motion.div variants={hubContainerVariants} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        <HubSummaryCard
-          key="summary-tasks"
-          title="업무 현황"
-          value={taskList.length.toString().padStart(2, '0')}
-          description={`신규 배정된 업무 ${taskList.filter((t: DashboardTask) => t.isNew).length}건이 있습니다.`}
-          icon={<Zap size={24} />}
-          color="orange"
-        />
-        <HubSummaryCard
-          key="summary-notifications"
-          title="결재 대기"
-          value={pendingCount.toString().padStart(2, '0')}
-          description="현재 대기 중인 결재 요청입니다."
-          icon={<Bell size={24} />}
-          color="purple"
-        />
-        <HubSummaryCard
-          key="summary-notices"
-          title="공지사항"
-          value={notiList.length.toString().padStart(2, '0')}
-          description="현재 목록에 표시된 공지사항 건수입니다."
-          icon={<Bell size={24} />}
-          color="emerald"
-        />
-      </motion.div>
-
-      {/* Main Content Grid */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-12">
-        <div className="xl:col-span-2 space-y-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <HubListCard
-              key="list-notices"
-              title="최근 공지사항"
-              items={notiList}
-              icon={<Bell size={20} />}
-              moreHref="/admin/community/boards"
-              color="blue"
-            />
-            <HubListCard
-              key="list-tasks"
-              title="배정된 업무"
-              items={taskList}
-              icon={<CheckCircle2 size={20} />}
-              moreHref="/admin/community/boards"
-              color="emerald"
-            />
-          </div>
-        </div>
-
-        {/* Sidebar Widgets */}
-        <div className="space-y-12">
-          <motion.div
-            variants={hubItemVariants}
-            className="hub-card-dark min-h-[500px] group"
-          >
-            <h3 className="text-2xl font-bold mb-12 flex items-center gap-4 relative z-10 tracking-tight">
-              <div className="w-10 h-10 rounded-lg bg-white/10 flex items-center justify-center">
-                <Clock size={22} className="text-primary" />
-              </div>
-              최근 활동
-            </h3>
-            <div className="relative z-10">
-              <ActivityFeed />
-            </div>
-          </motion.div>
-
-        </div>
       </div>
-    </motion.div>
+      {/* reusable-base:demo:end */}
+    </div>
   );
 }
-
-
