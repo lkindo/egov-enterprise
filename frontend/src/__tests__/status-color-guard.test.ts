@@ -64,7 +64,11 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   제거로 감소(사전 red 실측: 653 != 654).
 // [하향 래칫 2026-08-24(3)] A2 메뉴·부서 이행에서 선택·저장·삭제 상태 팔레트를
 //   primary/destructive/Button semantic variant로 회수(사전 red 실측: 642 != 653).
-const BASELINE = 642;
+// [하향 래칫 2026-08-24(4)] A2 메일 이력 이행에서 성공·대기·실패 badge와 삭제·상세 surface의
+//   emerald/amber/rose 리터럴 13건을 success/warning/destructive pair로 회수(사전 red 실측: 629 != 642).
+// [하향 래칫 2026-08-24(5)] A2 공통코드 이행에서 상세코드 폼의 필수·오류·사용 상태
+//   rose/emerald 리터럴 8건을 destructive/success emphasis 토큰으로 회수(사전 red 실측: 621 != 629).
+const BASELINE = 621;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

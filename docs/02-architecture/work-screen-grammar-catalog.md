@@ -122,7 +122,7 @@
 - **금지:** 좌·우를 각각 다른 페이지로 분리해 왕복시키기, 선택 없이 활성인 저장 버튼.
 - **키보드:** 좌측 `↑`/`↓` 이동, `Tab`으로 우측 진입, `Ctrl+S` 저장.
 - **합격:** 항목 전환 시 우측이 전체 리로드 없이 갱신 · 선택 상태가 새로고침 후 복원(URL allowlist 범위 내, [IA §5.5](../01-product/information-architecture.md) 준수).
-- **현재 화면:** `/admin/system/common-code`, `/admin/system/codes/*`, `/admin/user/departments`, `/admin/system/menus`, `/admin/collaboration/mail-history`(목록 + 우측 상세 패널 구조라 A1 셸에 넣지 않고 A2 셸을 기다린다 — W5).
+- **현재 화면:** `/admin/system/common-code`의 STANDARD 탭, `/admin/user/departments`, `/admin/system/menus`, `/admin/collaboration/mail-history`. `/admin/system/codes/administ`·`institution`은 이미 A1 목록이고 `/admin/system/common-code/codes`는 canonical route로 이동하는 alias라 A2 소비자로 세지 않는다.
 
 ### A3. 목록 → 편집 폼 (List to Form)
 
@@ -190,24 +190,24 @@
 
 | 항목 | 값 | 의미 |
 |---|---|---|
-| `StandardDataTable` 소비 화면 | 51 | 문법 전달의 모집단 |
+| `StandardDataTable` 소비 화면 | 50 | 문법 전달의 모집단 |
 | 그중 `WorkListPage` 셸 경유 | **21** | W3 wave 1~4 — 되돌리기는 게이트가 red |
-| 그중 셸 없이 직접 조립 | **30** | 신규 유입은 게이트가 red. A2·A4·A5 셸이 생기면 함께 내려간다 |
+| 그중 셸 없이 직접 조립 | **29** | 신규 유입은 게이트가 red. 화면이 맞는 archetype 셸로 이행하면 함께 내려간다 |
 | `sortKey`(열 정렬) 채택 | 11 | G5 — 이행 전 7 |
 | `onPageSizeChange` 채택 | 14 | A1 필수 — 이행 전 6 |
 | `KeywordFilter` 경유 조회 조건 | 9 | G2 — 조회 조건 조립의 단일 경로 |
 | `emptyResultMessage` 경유 빈 상태 | 17 | G15 — 결과 없음/데이터 없음 구분 |
-| `PagePagination` 별도 소비 | 3 | 표 하단 페이저와 이중 존재 — 이행 시 표 pagination 으로 수렴한다 |
+| `PagePagination` 별도 소비 | 4 | A2 compact master 등 표가 아닌 페이지 목록이 소유한다 |
 | `bulkActions` 채택 | 3 | A4 필수 미이행 |
 | `DataExportExcel` 소비 | 9 | A6 필수 부분 이행 |
 
 > 정정: 최초 작성 시 적었던 58·7·6·10·4는 파일 안의 **문자열 언급**을 센 값이라 주석만 있는 파일 7건이 섞여 있었다. 위 표는 import 기준 재측정값이며 게이트와 정의가 같다.
 
-**핵심 판정:** 기능은 [standard-data-table.tsx](../../frontend/src/app/components/ui/standard-data-table.tsx)(headless TanStack 기반, 정렬 상태머신·`aria-sort`·페이지당 건수·일괄 액션 보유)에 이미 있고, A1 셸 소비는 **21/51(약 41%)**이다. 따라서 이행의 병목은 컴포넌트 개발이 아니라 **화면이 archetype을 선언하도록 만드는 것**이다.
+**핵심 판정:** 기능은 [standard-data-table.tsx](../../frontend/src/app/components/ui/standard-data-table.tsx)(headless TanStack 기반, 정렬 상태머신·`aria-sort`·페이지당 건수·일괄 액션 보유)에 이미 있고, A1 셸 소비는 **21/50(42%)**이다. 따라서 이행의 병목은 컴포넌트 개발이 아니라 **화면이 archetype을 선언하도록 만드는 것**이다.
 
 로그 클러스터는 5화면 중 4화면(`privacy`·`system`·`user`·`web`)이 이행됐고, `login`은 아래 VRT 보류에 남아 있다. 이행된 4화면이 A6·A1의 참조 구현이다.
 
-A2는 [채택 census 게이트](../../frontend/src/__tests__/master-detail-adoption-census.test.ts)가 route→consumer와 importer exact 집합을 별도로 고정한다. 1차 소비자는 `/admin/user/departments`와 `/admin/system/menus` 2화면이다. `UserOrgHubClient`는 USERS의 직접 표와 DEPTS의 A2를 함께 가지므로 A2 import를 이유로 위 A1 직접 소비 30을 낮추지 않는다.
+A2는 [채택 census 게이트](../../frontend/src/__tests__/master-detail-adoption-census.test.ts)가 route→consumer와 importer exact 집합을 별도로 고정한다. 3차 이행 후 소비자는 `/admin/user/departments`·`/admin/system/menus`·`/admin/collaboration/mail-history`·`/admin/system/common-code` STANDARD 4화면이다. `UserOrgHubClient`는 USERS의 직접 표와 DEPTS의 A2를 함께 가지므로 A2 import를 이유로 위 A1 직접 소비를 추가로 낮추지 않는다. 메일 이력은 6열 표를 18–24rem master에 축소하지 않고 제목·상태 중심 compact 목록으로 바꿔 직접 표 소비가 30→29로 내려갔다. 공통코드는 기존 상세 `StandardDataTable`을 보존해 `StandardDataTable` 50·직접 조립 29·`WorkListPage` 21·`PagePagination` 4의 census를 바꾸지 않는다. STANDARD만 전체 `MasterDetailPage`로 이행하고 포털 hero·metrics·진입 motion을 걷어 1280×720에서도 실제 탐색·상세 업무 영역이 보이게 했다. DnD handle과 선택 버튼을 분리하고 검색 중 이동을 비활성화했으며, 물리 스키마가 정렬 순서를 저장하지 않는 계약에 맞춰 분류 자체와 같은 분류 안의 순서 이동은 허용하지 않고 **그룹의 소속 분류 변경만** 저장한다. 선택 항목이 있으면서 소속 분류가 변경된 경우에만 저장하고, 검색 결과에서 사라진 선택은 상세와 함께 해제한다. 허브가 공통 h1·breadcrumb를 먼저 단독 소유하고, STANDARD `MasterDetailPage`와 ADMINIST·INSTITUTION `WorkListPage`는 활성 tabpanel 안에서 h2로 임베드된다. 두 A1의 중복 page header·hero·metrics 래퍼는 제거했고 `/admin/system/common-code/codes` canonical alias는 그대로다. 기존 `groupId` query consumer 1건은 `deny`·`unverified` legacy로 유지하고 새 producer나 local/session storage를 만들지 않았다. URL 이행과 privacy 승인은 별도 과제로 보류한다.
 
 ## 7. 이행 순서와 소비 계약
 
@@ -215,9 +215,9 @@ A2는 [채택 census 게이트](../../frontend/src/__tests__/master-detail-adopt
 |---|---|---|---|
 | W1 | **완료(2026-08-24)** | 이 카탈로그 + 밀도 계약 테스트 | 본 문서, [work-screen-grammar-contract.test.ts](../../frontend/src/__tests__/work-screen-grammar-contract.test.ts) — 값 드리프트·토큰 누락 red 실측 완료 |
 | W2 | **완료(2026-08-24)** | A1 archetype 셸 신설 + 패턴 갤러리 | [work-list-page.tsx](../../frontend/src/app/components/patterns/work-list-page.tsx), [갤러리 화면](../../frontend/src/app/admin/patterns/PatternGalleryClient.tsx), [문법 불변식 테스트](../../frontend/src/app/components/patterns/__tests__/work-list-page.test.tsx)(G1 순서 위반 red 실측 완료). 라우트 census 3종(capabilities 119→120 · disposition 119→120 · url-state 재생성)과 shell 집계를 같은 변경에서 갱신했고, 갤러리는 demo pack 소유(`demo-isolated` 제안, `reviewState=proposed`)라 core·collaboration 산출물에는 실리지 않는다 |
-| W3 | **진행 중(wave 1~4 완료 2026-08-24)** | A1 이행 웨이브 | wave 1(협업 2): 스크랩·주소록. wave 2(9): 로그 4종 + 운영 5종. wave 3(5): 설문 응답자·네트워크·HPCM·온라인 매뉴얼·마이페이지 설정. wave 4(4): 행정구역 코드·기관 코드(탭형)·공개 설문 목록·커뮤니티 목록 — 장식 사이드바·조작 지표(`1.2k+` 등 계측 원천 없는 고정 문구)·죽은 검색(`console.log` onSearch)을 함께 제거했다. 공통 조립기 [KeywordFilter](../../frontend/src/app/components/patterns/keyword-filter.tsx)·[emptyResultMessage](../../frontend/src/app/components/patterns/empty-result-message.ts) 신설. [채택 census 게이트](../../frontend/src/__tests__/work-list-adoption-census.test.ts) 21/30(유입·이중 표기 red 실측, 오탐 1건 수정), status color BASELINE 656→653, h1 소유 계약을 셸 위임형으로 개정. **남은 대상: 30화면** |
+| W3 | **진행 중(wave 1~4 완료 2026-08-24)** | A1 이행 웨이브 | wave 1(협업 2): 스크랩·주소록. wave 2(9): 로그 4종 + 운영 5화면. wave 3(5): 설문 응답자·네트워크·HPCM·온라인 매뉴얼·마이페이지 설정. wave 4(4): 행정구역 코드·기관 코드(탭형)·공개 설문 목록·커뮤니티 목록 — 장식 사이드바·조작 지표(`1.2k+` 등 계측 원천 없는 고정 문구)·죽은 검색(`console.log` onSearch)을 함께 제거했다. 공통 조립기 [KeywordFilter](../../frontend/src/app/components/patterns/keyword-filter.tsx)·[emptyResultMessage](../../frontend/src/app/components/patterns/empty-result-message.ts) 신설. [채택 census 게이트](../../frontend/src/__tests__/work-list-adoption-census.test.ts) 21/29(유입·이중 표기 red 실측, 오탐 1건 수정), status color BASELINE 656→653, h1 소유 계약을 셸 위임형으로 개정. **남은 직접 표 대상: 29화면** |
 | W4 | **완료(2026-08-24)** | 랜딩 포털 → 업무 홈 | [UnifiedDashboardClient](../../frontend/src/app/UnifiedDashboardClient.tsx) — 순서를 **처리 대기 → 내 목록 → 상태·활동 → 홍보**로 뒤집고 히어로·480px 고정 카드·진입 애니메이션 제거. 항목별 목적지가 없는 목록의 `cursor-pointer` 죽은 어포던스도 제거(G10). e2e 결속(팝업·배너·실시간 위젯)은 보존. VRT 기준선은 `/admin` 을 캡처하므로 영향 없음 |
-| W5 | **진행 중(A2 1차 완료 2026-08-24)** | A2·A4·A5 셸 신설 + 이행 | [MasterDetailPage](../../frontend/src/app/components/patterns/master-detail-page.tsx) 신설 후 부서·메뉴 2화면 이행. 단일 responsive DOM, 고정폭 master, 미선택 안내, 검색, `aria-current`, `↑`/`↓`, 상세 `Tab`, 선택+변경 시 `Ctrl+S`를 계약으로 고정했다. [A2 exact census](../../frontend/src/__tests__/master-detail-adoption-census.test.ts)가 두 route의 실제 활성 분기까지 검증한다. **선택 새로고침 복원은 보류:** IA가 조직·record 식별자의 URL 기록을 금지하고 두 route의 privacy review가 미확정이라, owner 승인 typed allowlist 전에는 query·브라우저 저장소를 만들지 않는다. 남은 범위는 공통코드·codes·mail-history A2와 작업 큐(A4)·매트릭스(A5)다 |
+| W5 | **진행 중(A2 3차 완료 2026-08-24)** | A2·A4·A5 셸 신설 + 이행 | [MasterDetailPage](../../frontend/src/app/components/patterns/master-detail-page.tsx) 신설 후 1차 부서·메뉴, 2차 메일 이력, 3차 공통코드 STANDARD까지 4화면을 이행했다. 단일 responsive DOM, 고정폭 master, 미선택 안내, 검색, `aria-current`, `↑`/`↓`, 상세 `Tab`, 저장 가능한 화면의 선택+변경 시 `Ctrl+S`를 계약으로 고정했다. 메일은 저장 동작이 없는 조회·삭제 화면이라 단축키를 만들지 않고, 6열 표 대신 compact master + 상세 구조로 바꿨다. 공통코드 STANDARD는 포털 hero·metrics·진입 motion을 제거해 1280×720에서도 탐색·상세 업무 영역을 노출하고, DnD handle/선택 분리·검색 중 이동 비활성·그룹의 교차 분류 이동만 저장·검색 stale 선택 해제를 결속했다. 허브 공통 h1·breadcrumb 뒤의 활성 panel에서 STANDARD A2와 ADMINIST·INSTITUTION A1을 h2로 임베드하고, 중복 포털 래퍼를 제거했으며 `/admin/system/common-code/codes` alias도 유지한다. [A2 exact census](../../frontend/src/__tests__/master-detail-adoption-census.test.ts)가 네 route의 실제 소비를 검증하며, `StandardDataTable` 50·직접 조립 29·`WorkListPage` 21·`PagePagination` 4는 불변이다. status color BASELINE은 메일 이행 642→629에 이어 공통코드의 필수·오류·사용 상태 리터럴을 semantic token으로 이행해 629→621이 됐다. **선택 새로고침 복원은 보류:** 메뉴·부서·메일 식별자는 IA와 미확정 privacy review에 따라 새 query·브라우저 저장소를 만들지 않으며, 공통코드의 기존 `groupId` query consumer 1건도 `deny`·`unverified` legacy로 보존하고 새 producer·저장소를 만들지 않는다. URL 이행과 privacy 승인은 별도 과제다. **남은 W5 범위는 작업 큐(A4)·매트릭스(A5)다** |
 
 **보류 1건 — `/admin/system/logs/login`:** 로그 5화면 중 로그인 로그만 A1 이행에서 제외했다. 이 화면은 시각 회귀 기준선 4장 중 하나(DEC-OPS-017: 무매칭 검색 empty-state)라, 이행하면 리눅스 기준선을 `update-visual-baseline` workflow_dispatch(commit=true)로 다시 만들기 전까지 VRT 가 red 다. win32 로컬 스냅샷 커밋은 폰트 렌더 차이로 금지이므로 **기준선 재생성과 같은 변경에서** 이행한다. 그때까지 로그 클러스터는 4:1 로 섞인 상태다.
 

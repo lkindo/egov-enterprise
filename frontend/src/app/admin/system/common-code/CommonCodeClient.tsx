@@ -9,9 +9,10 @@ import { DndContext,
  DragStartEvent, 
  DragEndEvent, 
  MeasuringStrategy, 
- DropAnimation } from '@dnd-kit/core';
+ DropAnimation,
+ type Announcements,
+ type ScreenReaderInstructions } from '@dnd-kit/core';
 import {
- arrayMove,
  SortableContext,
  sortableKeyboardCoordinates,
  verticalListSortingStrategy,
@@ -19,19 +20,18 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { createPortal } from 'react-dom';
-import { flattenCodeTree,  getCodeProjection,  FlattenedCodeNode } from './treeUtils';
+import { flattenCodeTree, FlattenedCodeNode } from './treeUtils';
 import { cn } from '@/lib/utils';
 import { Layers,  
  Tag,  
- Database,  
  Search,  
  SearchSlash,  
  Plus,  
- RefreshCcw,  
  Settings,  
  Trash2, 
  Fingerprint, 
- Save } from 'lucide-react';
+ Save,
+ GripVertical } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
@@ -39,7 +39,7 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppForm } from '@/hooks/useAppForm';
 ;
 import { 
@@ -68,8 +68,18 @@ import {
  CmmnDetailCode 
 } from '@/types/foundation/system';
 import { DomainCluster, GroupCode } from '@/types/foundation/code';
+import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 
 const INDENTATION_WIDTH = 24;
+
+function formatClassificationLabel(name?: string): string {
+ if (!name) return '알 수 없는 분류';
+ return name.endsWith('분류') ? name : `${name} 분류`;
+}
+
+const CODE_DND_SCREEN_READER_INSTRUCTIONS: ScreenReaderInstructions = {
+ draggable: '스페이스 또는 엔터 키로 코드 그룹 이동을 시작합니다. 방향키로 대상 분류를 찾고 스페이스 또는 엔터 키로 이동을 확정합니다. Escape 키로 취소합니다.',
+};
 
 import { CmmnDetailCodeDtoSchema } from '@/types/generated-zod';
 
@@ -89,37 +99,60 @@ const dropAnimation: DropAnimation = {
  }),
 };
 
+function filterCodeNodes(nodes: FlattenedCodeNode[], query: string): FlattenedCodeNode[] {
+ if (!query) return nodes;
+ const lowerQuery = query.toLowerCase();
+ const matches = new Set<string>();
+
+ nodes.forEach((node) => {
+ if (node.name.toLowerCase().includes(lowerQuery) || node.id.toLowerCase().includes(lowerQuery)) {
+ matches.add(node.id);
+ if (node.parentId) matches.add(node.parentId);
+ }
+ });
+
+ return nodes.filter((node) => matches.has(node.id));
+}
+
 interface SortableCodeNodeProps {
  node: FlattenedCodeNode;
  isSelected: boolean;
  onClick: () => void;
- isOverlay?: boolean;
+ tabIndex: number;
+ dragDisabled?: boolean;
+ parentClassificationName?: string;
 }
 
-const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: SortableCodeNodeProps) => {
- const {
- attributes,
- listeners,
- setNodeRef,
- transform,
- transition,
- isDragging,
- } = useSortable({ id: node.id });
+interface CodeNodeRowProps extends SortableCodeNodeProps {
+ isOverlay?: boolean;
+ nodeRef?: React.Ref<HTMLDivElement>;
+ style?: React.CSSProperties;
+ isDragging?: boolean;
+ dragHandleProps?: React.ButtonHTMLAttributes<HTMLButtonElement>;
+}
 
- const style = {
- transform: isOverlay ? undefined : CSS.Translate.toString(transform),
- transition: isOverlay ? undefined : transition,
- paddingLeft: isOverlay ? 0 : `${node.depth * INDENTATION_WIDTH}px`,
- };
-
+const CodeNodeRow = ({
+ node,
+ isSelected,
+ onClick,
+ tabIndex,
+ dragDisabled = false,
+ parentClassificationName,
+ isOverlay = false,
+ nodeRef,
+ style,
+ isDragging = false,
+ dragHandleProps,
+}: CodeNodeRowProps) => {
  const isCluster = node.type === 'cluster';
 
  return (
  <div
- ref={setNodeRef}
+ ref={nodeRef}
  style={style}
+ aria-hidden={isOverlay || undefined}
  className={cn(
- "group relative mb-1 outline-none",
+ "group relative mb-1 flex items-stretch gap-1 outline-none",
  isDragging && !isOverlay && "opacity-30",
  isOverlay && "z-[9999] pointer-events-none"
  )}
@@ -134,78 +167,140 @@ const SortableCodeNode = ({ node, isSelected, onClick, isOverlay = false }: Sort
 
  <button
  type="button"
- {...attributes}
- {...listeners}
+ {...dragHandleProps}
+ disabled={isOverlay || dragDisabled}
+ tabIndex={isOverlay || dragDisabled || isCluster || !isSelected ? -1 : 0}
+ aria-roledescription={!isCluster && !isOverlay ? '코드 그룹 소속 분류 이동 핸들' : undefined}
+ aria-label={isCluster
+ ? `${node.name} (${node.id}) 분류는 이동할 수 없음`
+ : `${node.name} (${node.id}) 소속 분류 이동 핸들 — 현재 ${formatClassificationLabel(parentClassificationName)}`}
+ className="flex w-9 shrink-0 items-center justify-center rounded-md border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-50"
+ >
+ <GripVertical size={16} aria-hidden="true" />
+ </button>
+ <button
+ type="button"
  onClick={onClick}
+ disabled={isOverlay}
+ tabIndex={isOverlay ? -1 : tabIndex}
+ data-a2-master-item={isOverlay ? undefined : ''}
+ data-a2-master-item-type={isOverlay ? undefined : node.type}
+ aria-current={isSelected ? 'true' : undefined}
+ aria-label={`${node.name} (${node.id}) 선택`}
  className={cn(
- "w-full flex items-center justify-between p-3 rounded-lg transition-all relative overflow-hidden",
+ "relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-md border p-3 text-left transition-colors",
  isCluster 
- ? "bg-muted/50 hover:bg-muted/50 border border-transparent" 
- : "hover:bg-muted border border-transparent",
- isSelected && isCluster && "bg-surface-inverse text-surface-inverse-foreground shadow-xl border-surface-inverse-border",
- isSelected && !isCluster && "bg-primary text-primary-foreground shadow-lg shadow-primary/20 border-primary/20",
- isOverlay && "bg-card shadow-2xl border-primary ring-4 ring-primary/5 scale-105"
+ ? "border-transparent bg-muted/50 hover:bg-muted"
+ : "border-transparent hover:bg-muted",
+ isSelected && "border-primary bg-primary text-primary-foreground hover:bg-primary",
+ isOverlay && "border-primary bg-card shadow-lg"
  )}
  >
  <div className="flex items-center gap-3 truncate relative z-10 w-full">
  <div className={cn(
- "w-8 h-8 rounded-lg flex items-center justify-center transition-all shrink-0",
- isCluster 
- ? (isSelected ? "bg-primary/20 text-primary" : "bg-card text-muted-foreground border border-border shadow-sm")
- : (isSelected ? "bg-primary-foreground/20 text-primary-foreground" : "bg-muted text-muted-foreground group-hover:text-primary")
+ "flex h-8 w-8 shrink-0 items-center justify-center rounded-md",
+ isSelected ? "bg-primary-foreground/20 text-primary-foreground" : "bg-card text-muted-foreground"
  )}>
- {isCluster ? <Layers size={14} /> : <Tag size={14} />}
+ {isCluster ? <Layers size={14} aria-hidden="true" /> : <Tag size={14} aria-hidden="true" />}
  </div>
  <div className="flex flex-col truncate items-start">
  {/* 선택 배경이 cluster=surface-inverse / group=primary 로 달라 전경 토큰도 짝을 맞춘다 */}
  <span className={cn(
- "text-xs font-bold truncate leading-tight uppercase tracking-tight",
- isSelected ? (isCluster ? "text-surface-inverse-foreground" : "text-primary-foreground") : "text-foreground"
+ "truncate text-xs font-semibold leading-tight",
+ isSelected ? "text-primary-foreground" : "text-foreground"
  )}>
  {node.name}
  </span>
  <span className={cn(
- "text-xs font-mono font-bold tracking-tighter opacity-60",
- isSelected ? (isCluster ? "text-surface-inverse-foreground" : "text-primary-foreground") : "text-muted-foreground"
+ "font-mono text-xs",
+ isSelected ? "text-primary-foreground" : "text-muted-foreground"
  )}>
  {node.id}
  </span>
  </div>
- {isSelected && (
- <div className="ml-auto">
- <div className={cn(
- "w-1.5 h-1.5 rounded-full",
- isCluster ? "bg-primary animate-pulse" : "bg-primary-foreground animate-pulse"
- )} />
  </div>
- )}
- </div>
- 
- {/* Background decorative elements for selected cluster */}
- {isSelected && isCluster && (
- <div className="absolute top-0 right-0 p-4 opacity-5 pointer-events-none">
- <Layers size={40} />
- </div>
- )}
  </button>
  </div>
  );
 };
+
+const SortableCodeNode = ({
+ node,
+ isSelected,
+ onClick,
+ tabIndex,
+ dragDisabled = false,
+ parentClassificationName,
+}: SortableCodeNodeProps) => {
+ const nodeDragDisabled = dragDisabled || node.type === 'cluster';
+ const {
+ attributes,
+ listeners,
+ setNodeRef,
+ transform,
+ transition,
+ isDragging,
+ } = useSortable({
+ id: node.id,
+ disabled: {
+ draggable: nodeDragDisabled,
+ droppable: dragDisabled,
+ },
+ });
+
+ return (
+ <CodeNodeRow
+ node={node}
+ isSelected={isSelected}
+ onClick={onClick}
+ tabIndex={tabIndex}
+ dragDisabled={nodeDragDisabled}
+ parentClassificationName={parentClassificationName}
+ nodeRef={setNodeRef}
+ style={{
+ transform: CSS.Translate.toString(transform),
+ transition,
+ paddingLeft: `${node.depth * INDENTATION_WIDTH}px`,
+ }}
+ isDragging={isDragging}
+ dragHandleProps={{ ...attributes, ...listeners } as React.ButtonHTMLAttributes<HTMLButtonElement>}
+ />
+ );
+};
+
+const CodeNodeOverlay = ({ node }: { node: FlattenedCodeNode }) => (
+ <CodeNodeRow
+ node={node}
+ isSelected={false}
+ onClick={() => {}}
+ tabIndex={-1}
+ dragDisabled
+ isOverlay
+ style={{ paddingLeft: 0 }}
+ />
+);
 
 interface CommonCodeClientProps {
  clCodes: CmmnClCode[];
  groups: CmmnCode[];
  details: CmmnDetailCode[];
  selectedGroupId?: string | null;
+ notice?: React.ReactNode;
+ loadFailed?: boolean;
+ embedded?: boolean;
 }
 
 export default function CommonCodeClient({
  clCodes,
  groups,
  details,
- selectedGroupId
+ selectedGroupId,
+ notice,
+ loadFailed = false,
+ embedded = false,
 }: CommonCodeClientProps) {
  const router = useRouter();
+ const queryClient = useQueryClient();
  const { toast } = useToast();
  const confirm = useConfirm();
 
@@ -215,11 +310,13 @@ export default function CommonCodeClient({
  const [isModalOpen, setIsOpen] = useState(false);
  const [isSaving, setIsSaving] = useState(false);
  const [editingDetail, setEditingDetail] = useState<CmmnDetailCode | null>(null);
+ const [modalTargetGroup, setModalTargetGroup] = useState<Pick<GroupCode, 'cdId' | 'cdIdNm'> | null>(null);
  
  // D&D States
  const [flattenedNodes, setFlattenedNodes] = useState<FlattenedCodeNode[]>([]);
  const [activeId, setActiveId] = useState<string | null>(null);
  const [hasExplorerChanges, setHasExplorerChanges] = useState(false);
+ const hierarchyRevisionRef = React.useRef(0);
 
  const form = useAppForm(codeDetailFormSchema, {
  defaultValues: {
@@ -229,18 +326,19 @@ export default function CommonCodeClient({
  dtlCdExpln: ''
  }
  });
+ const resetForm = form.reset;
 
  useEffect(() => {
  if (isModalOpen) {
  if (editingDetail) {
- form.reset({
+ resetForm({
  dtlCd: editingDetail.dtlCd,
  dtlCdNm: editingDetail.dtlCdNm,
  useYn: (editingDetail.useYn as 'Y' | 'N') || 'Y',
  dtlCdExpln: editingDetail.dtlCdExpln || ''
  });
  } else {
- form.reset({
+ resetForm({
  dtlCd: '',
  dtlCdNm: '',
  useYn: 'Y',
@@ -248,12 +346,20 @@ export default function CommonCodeClient({
  });
  }
  }
- }, [isModalOpen, editingDetail, form]);
+ }, [editingDetail, isModalOpen, resetForm]);
 
  const initialClusters = React.useMemo(() => {
- const safeClCodes = Array.isArray(clCodes) ? clCodes.filter(Boolean) : [];
- const safeGroups = Array.isArray(groups) ? groups.filter(Boolean) : [];
- const safeDetails = Array.isArray(details) ? details.filter(Boolean) : [];
+ const compareId = (left: string | undefined, right: string | undefined) => {
+ const safeLeft = left ?? '';
+ const safeRight = right ?? '';
+ return safeLeft < safeRight ? -1 : safeLeft > safeRight ? 1 : 0;
+ };
+ const safeClCodes = Array.isArray(clCodes)
+ ? [...clCodes.filter(Boolean)].sort((left, right) => compareId(left.clsfCd, right.clsfCd))
+ : [];
+ const safeGroups = Array.isArray(groups)
+ ? [...groups.filter(Boolean)].sort((left, right) => compareId(left.cdId, right.cdId))
+ : [];
 
  return safeClCodes.map(cl => ({
  ...cl,
@@ -263,17 +369,50 @@ export default function CommonCodeClient({
  .filter(g => g.clsfCd === cl.clsfCd)
  .map(g => ({
  ...g,
- details: g.cdId === selectedGroupId ? safeDetails : []
+ details: []
  })) as GroupCode[]
  })) as DomainCluster[];
- }, [clCodes, groups, details, selectedGroupId]);
+ }, [clCodes, groups]);
+
+ const hierarchySignature = React.useMemo(
+ () => JSON.stringify(initialClusters),
+ [initialClusters],
+ );
+ const hierarchySeedSignatureRef = React.useRef<string | undefined>(undefined);
 
  useEffect(() => {
+ const previousSignature = hierarchySeedSignatureRef.current;
+ if (previousSignature === hierarchySignature) return;
+ hierarchySeedSignatureRef.current = hierarchySignature;
  setFlattenedNodes(flattenCodeTree(initialClusters));
- }, [initialClusters]);
+ if (previousSignature !== undefined && hasExplorerChanges) {
+ hierarchyRevisionRef.current += 1;
+ setHasExplorerChanges(false);
+ setActiveId(null);
+ toast('서버의 코드 구조가 갱신되어 저장되지 않은 소속 분류 변경을 취소했습니다.', 'info');
+ }
+ }, [hasExplorerChanges, hierarchySignature, initialClusters, toast]);
 
  const [selectedClusterId, setSelectedClusterId] = useState<string | null>(null);
  const [selectedGroup, setSelectedGroup] = useState<GroupCode | null>(null);
+ const previousSelectedGroupIdRef = React.useRef<string | null | undefined>(undefined);
+ const selectedGroupSeedResolvedRef = React.useRef(false);
+ const selectedGroupSeedHierarchyRef = React.useRef<string | undefined>(undefined);
+
+ const selectNode = (node: FlattenedCodeNode) => {
+ if (node.type === 'cluster') {
+ setSelectedClusterId(node.id);
+ setSelectedGroup(null);
+ return;
+ }
+ setSelectedClusterId(node.parentId);
+ setSelectedGroup(node.data);
+ };
+
+ const selectedNodeId = selectedGroup?.cdId ?? selectedClusterId;
+ const selectedNode = selectedNodeId
+ ? flattenedNodes.find((node) => node.id === selectedNodeId) ?? null
+ : null;
 
  /*
   * [P1-1] 상세코드 조회를 useQuery 로 옮긴다.
@@ -303,7 +442,9 @@ export default function CommonCodeClient({
   * SSR 로 이미 받아 둔 상세 목록만 자리표시자로 재사용한다.
   * 직전 그룹의 데이터(prev)를 넘기면 다른 그룹의 코드가 잠깐 노출되므로 쓰지 않는다.
   */
- placeholderData: selectedCdId && selectedCdId === selectedGroupId ? details : undefined,
+ placeholderData: selectedCdId && selectedCdId === selectedGroupId
+ ? details.filter((item): item is CmmnDetailCode => Boolean(item) && item.cdId === selectedCdId)
+ : undefined,
  });
 
  const detailList: CmmnDetailCode[] = detailRows ?? [];
@@ -314,62 +455,137 @@ export default function CommonCodeClient({
  useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
  );
 
+ const dndAnnouncements = React.useMemo<Announcements>(() => {
+ const findNode = (id: string | number) => flattenedNodes.find((node) => node.id === String(id));
+ const clusterName = (clusterId: string | null) => (
+ flattenedNodes.find((node) => node.type === 'cluster' && node.id === clusterId)?.name ?? '알 수 없는'
+ );
+ const clusterLabel = (clusterId: string | null) => {
+ const name = clusterName(clusterId);
+ return formatClassificationLabel(name);
+ };
+ const targetParentId = (overId: string | number | undefined) => {
+ if (overId == null) return null;
+ const overNode = findNode(overId);
+ return overNode?.type === 'cluster' ? overNode.id : overNode?.parentId ?? null;
+ };
+
+ return {
+ onDragStart: ({ active }) => {
+ const activeNode = findNode(active.id);
+ if (!activeNode || activeNode.type !== 'group') return '코드 그룹 이동을 시작했습니다.';
+ return `${activeNode.name} 그룹 이동을 시작했습니다. 현재 소속은 ${clusterLabel(activeNode.parentId)}입니다.`;
+ },
+ onDragOver: ({ active, over }) => {
+ const activeNode = findNode(active.id);
+ if (!activeNode || activeNode.type !== 'group') return undefined;
+ const nextParentId = targetParentId(over?.id);
+ if (!nextParentId) return `${activeNode.name} 그룹을 이동할 분류를 찾고 있습니다.`;
+ if (nextParentId === activeNode.parentId) {
+ return `${activeNode.name} 그룹은 현재 ${clusterLabel(nextParentId)} 위에 있습니다. 같은 분류 안의 순서는 저장되지 않습니다.`;
+ }
+ return `${activeNode.name} 그룹을 ${clusterLabel(nextParentId)}로 이동할 위치입니다.`;
+ },
+ onDragEnd: ({ active, over }) => {
+ const activeNode = findNode(active.id);
+ if (!activeNode || activeNode.type !== 'group') return '코드 그룹 이동이 끝났습니다.';
+ const nextParentId = targetParentId(over?.id);
+ if (!nextParentId || nextParentId === activeNode.parentId) {
+ return `${activeNode.name} 그룹의 소속 분류는 변경되지 않았습니다.`;
+ }
+ return `${activeNode.name} 그룹을 ${clusterLabel(nextParentId)}로 이동했습니다. 변경 내용을 저장해야 반영됩니다.`;
+ },
+ onDragCancel: ({ active }) => {
+ const activeNode = findNode(active.id);
+ return `${activeNode?.name ?? '코드'} 그룹 이동을 취소했습니다.`;
+ },
+ };
+ }, [flattenedNodes]);
+
  const handleDragStart = (event: DragStartEvent) => {
- setActiveId(event.active.id as string);
+ if (searchQuery || isSaving) return;
+ const nextActiveId = event.active.id as string;
+ const activeNode = flattenedNodes.find((node) => node.id === nextActiveId);
+ if (!activeNode || activeNode.type !== 'group') return;
+ setActiveId(nextActiveId);
+ selectNode(activeNode);
  };
 
  const handleDragEnd = (event: DragEndEvent) => {
+ if (searchQuery || isSaving) {
+ setActiveId(null);
+ return;
+ }
  const { active, over } = event;
- 
- if (over && active.id !== over.id) {
- setFlattenedNodes((items) => {
- const oldIndex = items.findIndex(n => n.id === active.id);
- const newIndex = items.findIndex(n => n.id === over.id);
- 
- const newItems = arrayMove(items, oldIndex, newIndex);
- const activeItem = items[oldIndex];
- 
- // If it's a group, ensure it has a parent cluster
- if (activeItem.type === 'group') {
- // Re-calculate projection to find parent
- const proj = getCodeProjection(newItems, active.id as string, over.id as string, 0, INDENTATION_WIDTH);
-  if (proj?.parentId) {
-  const idx = newItems.findIndex(n => n.id === active.id);
-  newItems[idx] = { ...activeItem, parentId: proj.parentId };
-  }
+ const activeItem = flattenedNodes.find((node) => node.id === active.id);
+ const overId = over?.id;
+ const overItem = overId == null ? null : flattenedNodes.find((node) => node.id === overId);
+ if (!activeItem || activeItem.type !== 'group' || !overItem || active.id === overId) {
+ setActiveId(null);
+ return;
  }
- 
- return newItems;
- });
+
+ const targetParentId = overItem.type === 'cluster' ? overItem.id : overItem.parentId;
+ if (!targetParentId || targetParentId === activeItem.parentId) {
+ toast('같은 분류 안의 순서는 저장되지 않습니다. 다른 분류로 이동해 주세요.', 'info');
+ setActiveId(null);
+ return;
+ }
+
+ const remainingNodes = flattenedNodes.filter((node) => node.id !== activeItem.id);
+ const targetClusterIndex = remainingNodes.findIndex(
+ (node) => node.type === 'cluster' && node.id === targetParentId,
+ );
+ if (targetClusterIndex < 0) {
+ setActiveId(null);
+ return;
+ }
+
+ let insertionIndex = targetClusterIndex + 1;
+ while (
+ insertionIndex < remainingNodes.length
+ && remainingNodes[insertionIndex].type === 'group'
+ && remainingNodes[insertionIndex].parentId === targetParentId
+ ) {
+ insertionIndex += 1;
+ }
+ const movedItem: FlattenedCodeNode = { ...activeItem, parentId: targetParentId };
+ setFlattenedNodes([
+ ...remainingNodes.slice(0, insertionIndex),
+ movedItem,
+ ...remainingNodes.slice(insertionIndex),
+ ]);
+ setSelectedClusterId(targetParentId);
+ hierarchyRevisionRef.current += 1;
  setHasExplorerChanges(true);
- toast('코드 도메인 구조가 재구성되었습니다.', 'info');
- }
+ toast('코드 그룹의 소속 분류가 변경되었습니다.', 'info');
 
  setActiveId(null);
  };
 
  const handleSaveExplorerChanges = async () => {
+ if (!hasExplorerChanges || !selectedNode || isSaving || isModalOpen || isPickerOpen) return;
+ const savingRevision = hierarchyRevisionRef.current;
  setIsSaving(true);
  try {
  const res = await saveCmmnCodeHierarchyAction(flattenedNodes);
  if (res.success) {
  toast(res.message, 'success');
+ if (hierarchyRevisionRef.current === savingRevision) {
  setHasExplorerChanges(false);
  router.refresh();
+ } else {
+ toast('저장 중 추가된 소속 분류 변경이 남아 있습니다. 다시 저장해 주세요.', 'info');
+ }
  } else {
  toast(res.message, 'error');
  }
  } catch (err) {
  console.error(err);
- toast('계층 구조 저장 중 오류 발생', 'error');
+ toast('그룹 소속 저장 중 오류 발생', 'error');
  } finally {
  setIsSaving(false);
  }
- };
-
- /** 그룹 선택 — 상세 목록은 useQuery(queryKey=cdId)가 담당한다. */
- const selectGroup = (group: GroupCode) => {
- setSelectedGroup(group);
  };
 
  /**
@@ -379,47 +595,116 @@ export default function CommonCodeClient({
  const handlePickCode = ({ group, code }: CodePickerSelection) => {
  const cluster = initialClusters.find(c => (c.groups || []).some(g => g?.cdId === group.cdId));
  const treeGroup = cluster ? (cluster.groups || []).find(g => g?.cdId === group.cdId) : null;
- if (cluster && treeGroup) {
+ if (!cluster || !treeGroup) {
+ toast('선택한 코드 그룹을 현재 탐색기에서 찾을 수 없습니다. 데이터를 새로고침한 뒤 다시 시도해 주세요.', 'error');
+ return;
+ }
+ setSearchQuery('');
  setSelectedClusterId(cluster.id);
  setSelectedGroup(treeGroup);
- }
  toast(`‘${code.dtlCdNm}’(${code.dtlCd}) — ${group.cdIdNm} 그룹이 선택되었습니다.`, 'success');
  };
 
  // Synchronize initial state from props
  useEffect(() => {
- if (selectedGroupId && (initialClusters || []).length > 0) {
- if (!selectedGroup || selectedGroup.cdId !== selectedGroupId) {
- const cluster = initialClusters.find(c => (c.groups || []).some(g => g?.cdId === selectedGroupId));
- if (cluster) {
- const group = (cluster.groups || []).find(g => g?.cdId === selectedGroupId);
- if (group) {
- setSelectedClusterId(cluster.id);
- setSelectedGroup(group);
+ const nextSelectedGroupId = selectedGroupId ?? null;
+ const previousSelectedGroupId = previousSelectedGroupIdRef.current;
+ const seedChanged = previousSelectedGroupId !== nextSelectedGroupId;
+ const hierarchyChanged = selectedGroupSeedHierarchyRef.current !== hierarchySignature;
+ if (!seedChanged && !hierarchyChanged) return;
+ previousSelectedGroupIdRef.current = nextSelectedGroupId;
+ selectedGroupSeedHierarchyRef.current = hierarchySignature;
+
+ const findGroup = (groupId: string) => {
+ const cluster = initialClusters.find((item) => item.groups.some((group) => group.cdId === groupId));
+ const group = cluster?.groups.find((item) => item.cdId === groupId);
+ return cluster && group ? { cluster, group } : null;
+ };
+ const revealSelectionIfHidden = (nodeId: string) => {
+ if (!searchQuery) return;
+ const nextVisibleNodes = filterCodeNodes(flattenCodeTree(initialClusters), searchQuery);
+ if (!nextVisibleNodes.some((node) => node.id === nodeId)) setSearchQuery('');
+ };
+
+ if (!seedChanged) {
+ if (selectedGroup) {
+ const currentSelection = findGroup(selectedGroup.cdId);
+ if (currentSelection) {
+ revealSelectionIfHidden(currentSelection.group.cdId);
+ setSelectedClusterId(currentSelection.cluster.id);
+ setSelectedGroup(currentSelection.group);
+ return;
  }
+ if (selectedGroup.cdId === nextSelectedGroupId) selectedGroupSeedResolvedRef.current = false;
+ setSelectedClusterId(null);
+ setSelectedGroup(null);
+ return;
  }
+
+ if (selectedClusterId) {
+ const clusterStillExists = initialClusters.some((cluster) => cluster.id === selectedClusterId);
+ if (clusterStillExists) revealSelectionIfHidden(selectedClusterId);
+ else setSelectedClusterId(null);
+ return;
  }
+
+ if (selectedGroupSeedResolvedRef.current || !nextSelectedGroupId) return;
+ const lateSelection = findGroup(nextSelectedGroupId);
+ if (!lateSelection) return;
+ selectedGroupSeedResolvedRef.current = true;
+ setSearchQuery('');
+ setSelectedClusterId(lateSelection.cluster.id);
+ setSelectedGroup(lateSelection.group);
+ return;
  }
- }, [selectedGroupId, initialClusters, selectedGroup]);
+
+ selectedGroupSeedResolvedRef.current = false;
+
+ if (!nextSelectedGroupId) {
+ selectedGroupSeedResolvedRef.current = true;
+ if (previousSelectedGroupId !== undefined) {
+ setSelectedClusterId(null);
+ setSelectedGroup(null);
+ }
+ return;
+ }
+
+ const seededSelection = findGroup(nextSelectedGroupId);
+ if (seededSelection) {
+ selectedGroupSeedResolvedRef.current = true;
+ setSearchQuery('');
+ setSelectedClusterId(seededSelection.cluster.id);
+ setSelectedGroup(seededSelection.group);
+ return;
+ }
+ setSelectedClusterId(null);
+ setSelectedGroup(null);
+ }, [
+ hierarchySignature,
+ initialClusters,
+ selectedClusterId,
+ selectedGroup,
+ selectedGroupId,
+ searchQuery,
+ ]);
 
  // Filtered Nodes
- const visibleNodes = React.useMemo(() => {
- if (!searchQuery) return flattenedNodes;
- const lowerQuery = searchQuery.toLowerCase();
- 
- // Find matching nodes and their parents
- const matches = new Set<string>();
- flattenedNodes.forEach(node => {
- if (node.name.toLowerCase().includes(lowerQuery) || node.id.toLowerCase().includes(lowerQuery)) {
- matches.add(node.id);
- if (node.parentId) matches.add(node.parentId);
- }
- });
+ const visibleNodes = React.useMemo(
+ () => filterCodeNodes(flattenedNodes, searchQuery),
+ [flattenedNodes, searchQuery],
+ );
 
- return flattenedNodes.filter(node => matches.has(node.id));
- }, [flattenedNodes, searchQuery]);
+ const handleSearchChange = (nextQuery: string) => {
+ setSearchQuery(nextQuery);
+ if (!selectedNodeId) return;
+ if (filterCodeNodes(flattenedNodes, nextQuery).some((node) => node.id === selectedNodeId)) return;
+ setSelectedClusterId(null);
+ setSelectedGroup(null);
+ };
 
  const handleEditDetail = (detail: CmmnDetailCode) => {
+ if (!selectedGroup) return;
+ setModalTargetGroup({ cdId: selectedGroup.cdId, cdIdNm: selectedGroup.cdIdNm });
  setEditingDetail(detail);
  setIsOpen(true);
  };
@@ -427,6 +712,7 @@ export default function CommonCodeClient({
  /** [P1-9] 확인 본문에 대상 식별자(코드·명칭)를 노출해 오삭제를 막는다. */
  const handleDeleteDetail = async (detail: CmmnDetailCode) => {
  if (!selectedGroup) return;
+ const targetGroupId = selectedGroup.cdId;
 
  const ok = await confirm({
  title: '상세 코드 삭제',
@@ -437,11 +723,10 @@ export default function CommonCodeClient({
 
  if (ok) {
  try {
- const res = await deleteCodeDetail(null, { cdId: selectedGroup.cdId, dtlCd: detail.dtlCd });
+ const res = await deleteCodeDetail(null, { cdId: targetGroupId, dtlCd: detail.dtlCd });
  if (res.success) {
  toast(res.message, 'success');
- // 삭제 성공 후 우측 구성 명세 목록 실시간 리로드
- refetchDetails();
+ await queryClient.invalidateQueries({ queryKey: ['cmmn-detail-codes', targetGroupId] });
  } else {
  toast(res.message, 'error');
  }
@@ -456,24 +741,40 @@ export default function CommonCodeClient({
  toast('코드 명세를 등록할 그룹 코드를 먼저 선택하십시오.', 'info');
  return;
  }
+ setModalTargetGroup({ cdId: selectedGroup.cdId, cdIdNm: selectedGroup.cdIdNm });
  setEditingDetail(null);
  setIsOpen(true);
  };
 
+ const forceCloseDetailModal = () => {
+ setIsOpen(false);
+ setEditingDetail(null);
+ setModalTargetGroup(null);
+ };
+
+ const closeDetailModal = () => {
+ if (form.formState.isSubmitting) return;
+ forceCloseDetailModal();
+ };
+
  const onSubmit = async (values: any) => {
+ if (!modalTargetGroup) {
+ toast('저장할 코드 그룹을 확인할 수 없습니다. 창을 닫고 다시 시도해 주세요.', 'error');
+ return;
+ }
+ const targetGroupId = modalTargetGroup.cdId;
  try {
  const res = await saveCodeDetail(null, {
  ...values,
  useYn: values.useYn as 'Y' | 'N',
- cdId: selectedGroup?.cdId || '',
+ cdId: targetGroupId,
  isNew: !editingDetail
  });
 
  if (res.success) {
  toast(res.message, 'success');
- setIsOpen(false);
- // 저장 성공 후 우측 구성 명세 목록 실시간 리로드
- refetchDetails();
+ await queryClient.invalidateQueries({ queryKey: ['cmmn-detail-codes', targetGroupId] });
+ forceCloseDetailModal();
  } else {
  toast(res.message, 'error');
  }
@@ -494,7 +795,7 @@ export default function CommonCodeClient({
  accessor: (item: CmmnDetailCode) => (
  <div className="flex flex-col gap-0.5">
  <span className="font-black text-foreground tracking-tighter text-sm">{item.dtlCdNm}</span>
- <span className="text-[10px] font-bold text-muted-foreground line-clamp-1 uppercase tracking-tight">{item.dtlCdExpln || '등록된 설명 없음'}</span>
+ <span className="line-clamp-1 text-xs text-muted-foreground">{item.dtlCdExpln || '등록된 설명 없음'}</span>
  </div>
  )
  },
@@ -523,7 +824,7 @@ export default function CommonCodeClient({
  variant="ghost"
  size="icon"
  aria-label={`${item.dtlCdNm} 코드 삭제`}
- className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
+ className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 rounded-lg transition-colors"
  onClick={(e) => { e.preventDefault(); handleDeleteDetail(item); }}
  >
  <Trash2 size={14} aria-hidden="true" />
@@ -534,177 +835,138 @@ export default function CommonCodeClient({
  ];
 
  const activeNode = activeId ? flattenedNodes.find(n => n.id === activeId) : null;
+ const saveDisabled = !hasExplorerChanges || !selectedNode || isSaving || isModalOpen || isPickerOpen;
+ const DetailSubheading = embedded ? 'h4' : 'h3';
 
  return (
- <div className="space-y-[var(--page-pad)] animate-in fade-in slide-in-from-bottom-4 duration-700">
- <div className="flex flex-col lg:flex-row gap-[var(--page-pad)] min-h-[700px]">
- {/* --- Left Sidebar: Code Tree --- */}
- <aside className="w-full lg:w-[380px] flex flex-col gap-[var(--form-gap)]">
- {/* 글래스(bg-white/40 backdrop-blur) 리터럴 → 시맨틱 표면 토큰(card/border) 회수 + 밀도 토큰 소비 */}
- <div className="bg-card rounded-lg border border-border shadow-sm overflow-hidden flex flex-col h-full">
- <div className="p-[var(--page-pad)] border-b border-border/50 bg-muted/30 space-y-[var(--form-gap)]">
- <div className="flex items-center justify-between">
- <div className="flex items-center gap-2.5">
- <div className="w-8 h-8 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg">
- <Database size={16} />
- </div>
- <h3 className="text-[10px] font-black tracking-widest text-foreground uppercase">
- Explorer
- </h3>
- </div>
- <div className="flex items-center gap-2">
- {hasExplorerChanges && (
- <button
+ <div>
+ <MasterDetailPage
+ title="공통 코드 관리"
+ headingLevel={embedded ? 2 : 1}
+ description="코드 분류와 그룹을 선택해 상세 코드를 조회하고 관리합니다."
+ breadcrumbItems={[{ label: '시스템관리' }, { label: '코드관리' }, { label: '공통 코드' }]}
+ notice={notice}
+ showBreadcrumb={!embedded}
+ actions={(
+ <Button
  type="button"
  onClick={handleSaveExplorerChanges}
- disabled={isSaving}
- aria-label="변경한 코드 계층 구조 저장"
- className="px-3 py-1.5 rounded-lg bg-success text-success-foreground text-[10px] font-black uppercase tracking-widest hover:bg-success/90 transition-all flex items-center gap-1.5 shadow-md active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+ disabled={saveDisabled}
+ className="gap-2"
  >
- <Save size={12} aria-hidden="true" /> {isSaving ? '저장 중…' : 'Save'}
- </button>
+ <Save size={16} aria-hidden="true" />
+ {isSaving ? '그룹 소속 저장 중…' : '그룹 소속 저장'}
+ </Button>
  )}
- <button
- type="button"
- onClick={() => setIsPickerOpen(true)}
- aria-label="공통코드 검색 팝업 열기"
- className="px-2.5 py-1 rounded-lg bg-card text-muted-foreground hover:text-foreground hover:bg-muted text-[10px] font-black tracking-widest border border-border uppercase shadow-sm transition-colors"
- >
+ masterTitle="코드 분류 및 그룹"
+ masterDescription={`분류 ${clCodes.length}개 · 그룹 ${groups.length}개`}
+ masterTools={(
+ <Button type="button" variant="outline" size="sm" onClick={() => setIsPickerOpen(true)}>
  코드 검색
- </button>
- <span className="px-2.5 py-1 rounded-lg bg-muted text-muted-foreground text-[10px] font-black tracking-widest border border-border uppercase shadow-sm">
- {clCodes.length} Domains
- </span>
- </div>
- </div>
- <div className="relative group">
- <Search size={16} aria-hidden="true" className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 group-focus-within:text-primary transition-colors" />
- {/* 이 검색은 이미 받아 둔 트리를 클라이언트에서 거르는 필터라 서버 요청이 없다 → 디바운스 대상 아님 */}
+ </Button>
+ )}
+ master={(
+ <div className="space-y-3">
+ <div className="relative">
+ <Search size={16} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
  <Input
  placeholder="분류·그룹명 또는 코드로 검색"
- aria-label="코드 분류·그룹 검색"
+ aria-label="분류·그룹명 또는 코드로 검색"
  value={searchQuery}
- onChange={(e) => setSearchQuery(e.target.value)}
- className="pl-12 pr-4 bg-muted border-none rounded-lg text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
+ onChange={(event) => handleSearchChange(event.target.value)}
+ className="pl-10"
  />
  </div>
- </div>
+ {searchQuery && (
+ <p className="text-xs text-muted-foreground">검색 중에는 코드 그룹의 소속 분류를 변경할 수 없습니다.</p>
+ )}
 
- <div className="flex-1 overflow-y-auto p-3 custom-scrollbar max-h-[600px]">
  {visibleNodes.length === 0 ? (
- <div className="py-20 text-center space-y-4">
- <div className="w-16 h-10 rounded-xl bg-muted flex items-center justify-center mx-auto text-muted-foreground/40 border border-border shadow-inner">
- <SearchSlash size={32} aria-hidden="true" />
- </div>
- <p className="text-[10px] font-black tracking-widest text-muted-foreground">검색 결과가 없습니다</p>
+ <div role="status" className="flex min-h-40 flex-col items-center justify-center gap-3 text-center text-muted-foreground">
+ <SearchSlash size={28} aria-hidden="true" />
+ <p className="text-sm font-semibold">
+ {loadFailed
+ ? '코드 분류·그룹을 불러오지 못했습니다.'
+ : searchQuery
+ ? '검색 결과가 없습니다'
+ : '등록된 코드 분류·그룹이 없습니다.'}
+ </p>
  </div>
  ) : (
  <DndContext
  sensors={sensors}
+ accessibility={{
+ announcements: dndAnnouncements,
+ screenReaderInstructions: CODE_DND_SCREEN_READER_INSTRUCTIONS,
+ }}
  collisionDetection={closestCenter}
  measuring={{ droppable: { strategy: MeasuringStrategy.Always } }}
  onDragStart={handleDragStart}
  onDragEnd={handleDragEnd}
+ onDragCancel={() => setActiveId(null)}
  >
- <SortableContext items={visibleNodes.map(n => n.id)} strategy={verticalListSortingStrategy}>
+ <SortableContext items={visibleNodes.map((node) => node.id)} strategy={verticalListSortingStrategy}>
  <div className="space-y-1">
- {visibleNodes.map((node) => (
+ {visibleNodes.map((node, index) => {
+ const isSelected = selectedNode?.id === node.id;
+ return (
  <SortableCodeNode
  key={node.id}
  node={node}
- isSelected={node.type === 'cluster' ? selectedClusterId === node.id : selectedGroup?.cdId === node.id}
- onClick={() => {
- if (node.type === 'cluster') {
- setSelectedClusterId(node.id);
- setSelectedGroup(null);
- } else {
- setSelectedClusterId(node.parentId);
- selectGroup(node.data);
- }
- }}
+ isSelected={isSelected}
+ tabIndex={isSelected || (!selectedNode && index === 0) ? 0 : -1}
+ dragDisabled={Boolean(searchQuery) || isSaving}
+ parentClassificationName={node.type === 'group'
+ ? flattenedNodes.find((candidate) => candidate.type === 'cluster' && candidate.id === node.parentId)?.name
+ : undefined}
+ onClick={() => selectNode(node)}
  />
- ))}
+ );
+ })}
  </div>
  </SortableContext>
 
  {typeof document !== 'undefined' && createPortal(
  <DragOverlay dropAnimation={dropAnimation}>
  {activeId && activeNode ? (
- <SortableCodeNode
- node={activeNode}
- isSelected={false}
- onClick={() => {}}
- isOverlay
- />
+ <CodeNodeOverlay node={activeNode} />
  ) : null}
  </DragOverlay>,
- document.body
+ document.body,
  )}
  </DndContext>
  )}
  </div>
- </div>
- </aside>
-
- {/* --- Right Content Area --- */}
- <main className="flex-1 space-y-[var(--form-gap)]">
- {selectedGroup ? (
- <div className="space-y-[var(--form-gap)]">
- {/* 마스터-디테일 헤더 밀집화 — 글래스 리터럴을 card/border 토큰으로, 여백은 밀도 토큰으로 회수 */}
- <div className="p-[var(--page-pad)] rounded-lg bg-card border border-border shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-[var(--form-gap)]">
- <div className="flex items-center gap-4">
- <div className="w-11 h-11 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-sm shrink-0">
- <Fingerprint size={20} />
- </div>
- <div className="space-y-1">
- <div className="flex items-center gap-3">
- <h2 className="text-lg font-black tracking-tighter text-foreground uppercase">
- {selectedGroup.cdIdNm}
- </h2>
- <div className="px-2.5 py-1 rounded-lg bg-muted border border-border text-[10px] font-black text-muted-foreground tracking-widest shadow-sm">
- {selectedGroup.cdId}
- </div>
- </div>
- <p className="text-xs font-bold text-muted-foreground ">
- {selectedGroup.cdIdExpln || '정의된 명세가 없습니다.'}
- </p>
- </div>
- </div>
- <div className="flex items-center gap-3">
- <Button onClick={handleCreateDetail} className="h-[var(--control-h)] px-5 rounded-lg font-black text-xs tracking-widest uppercase gap-2 active:scale-95">
- <Plus size={16} /> 신규 등록
+ )}
+ selectedItemLabel={selectedNode?.name}
+ detailTitle="코드 상세"
+ detailDescription={selectedNode?.type === 'group'
+ ? (selectedNode.data.cdIdExpln || `그룹 코드 ${selectedNode.id}`)
+ : selectedNode?.type === 'cluster'
+ ? `분류 코드 ${selectedNode.id}`
+ : undefined}
+ detailActions={selectedGroup ? (
+ <Button type="button" onClick={handleCreateDetail} className="gap-2">
+ <Plus size={16} aria-hidden="true" /> 신규 상세 코드 등록
  </Button>
- </div>
- </div>
-
- <div className={cn(
- "bg-card rounded-lg border border-border shadow-sm overflow-hidden transition-all",
- detailsLoading ? "opacity-30 pointer-events-none scale-[0.99] grayscale" : "opacity-100"
- )}>
- <div className="p-[var(--page-pad)] border-b border-border/50 flex items-center justify-between bg-muted/30">
+ ) : undefined}
+ detail={selectedNode?.type === 'group' ? (
+ <div className="space-y-4">
+ <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-muted p-3">
  <div className="flex items-center gap-3">
- <div className="w-9 h-9 rounded-xl bg-card border border-border flex items-center justify-center text-primary shadow-sm">
- {detailsLoading ? <RefreshCcw size={16} className="animate-spin" /> : <Layers size={16} />}
- </div>
- <div className="text-left">
- <h3 className="text-xs font-black tracking-widest text-foreground uppercase leading-none mb-1.5">구성 명세</h3>
- <p className="text-[10px] font-bold text-muted-foreground leading-none">
- {detailsLoading ? '불러오는 중…' : `총 ${detailList.length}건`}
- </p>
+ <Fingerprint size={18} className="text-primary" aria-hidden="true" />
+ <div>
+ <DetailSubheading className="text-sm font-semibold text-foreground">상세 코드</DetailSubheading>
+ <p className="text-xs text-muted-foreground">{detailsLoading ? '불러오는 중…' : `총 ${detailList.length}건`}</p>
  </div>
  </div>
- {/*
-   * [P1-5] 'Integrity 99.9%' 지표 삭제 — 무결성을 측정하는 소스가 없는 고정 문구였다.
-   * 대신 실측 가능한 사용/미사용 건수를 노출한다.
-   */}
- <div className="flex flex-col items-end pr-4 text-right">
- <span className="text-[10px] font-black text-muted-foreground uppercase tracking-widest leading-none mb-1.5">사용 / 미사용</span>
- <span className="text-[10px] font-black text-foreground tracking-widest tabular-nums">
- {detailList.filter(d => d.useYn === 'Y').length} / {detailList.filter(d => d.useYn !== 'Y').length}
- </span>
+ <div className="text-right text-xs text-muted-foreground">
+ <span>사용 / 미사용</span>
+ <strong className="ml-2 tabular-nums text-foreground">
+ {detailList.filter((detail) => detail.useYn === 'Y').length} / {detailList.filter((detail) => detail.useYn !== 'Y').length}
+ </strong>
  </div>
  </div>
- <div className="p-2">
  <StandardDataTable<CmmnDetailCode>
  columns={columns}
  data={detailList}
@@ -714,34 +976,31 @@ export default function CommonCodeClient({
  keyField="dtlCd"
  emptyMessage="데이터가 존재하지 않습니다."
  className="border-none shadow-none bg-transparent"
- isPremium={true}
+ isPremium={false}
  />
  </div>
+ ) : selectedNode?.type === 'cluster' ? (
+ <section className="space-y-3" aria-labelledby="selected-code-classification-heading">
+ <DetailSubheading id="selected-code-classification-heading" className="text-sm font-semibold text-foreground">코드 분류 정보</DetailSubheading>
+ <dl className="grid gap-3 rounded-md bg-muted p-4 sm:grid-cols-2">
+ <div>
+ <dt className="text-xs text-muted-foreground">분류 코드</dt>
+ <dd className="mt-1 font-mono text-sm font-semibold text-foreground">{selectedNode.id}</dd>
  </div>
+ <div>
+ <dt className="text-xs text-muted-foreground">포함 그룹</dt>
+ <dd className="mt-1 text-sm font-semibold text-foreground">
+ {flattenedNodes.filter((node) => node.type === 'group' && node.parentId === selectedNode.id).length}개
+ </dd>
  </div>
- ) : (
- <div className="h-full flex flex-col items-center justify-center p-[var(--filter-pad)] rounded-lg bg-card border border-border shadow-sm min-h-[500px]">
- <div className="w-24 h-20 rounded-2xl bg-card border border-border flex items-center justify-center text-muted-foreground/40 mb-8 shadow-xl group hover:rotate-6 transition-transform">
- <Database size={40} className="opacity-20 group-hover:opacity-100 transition-opacity" />
- </div>
- <h3 className="text-xl font-black tracking-widest text-muted-foreground/60 mb-4">선택된 코드 없음</h3>
- <p className="text-xs font-black text-muted-foreground/70 text-center max-w-sm leading-relaxed mb-10">
- 좌측 탐색기에서 분류 또는 코드 그룹을 선택하면<br />상세 코드를 관리할 수 있습니다.
- </p>
- <div className="grid grid-cols-2 gap-4 w-full max-w-lg">
- <div className="p-[var(--page-pad)] rounded-lg bg-muted border border-border flex flex-col gap-2 items-start shadow-sm">
- <span className="text-[10px] font-black text-muted-foreground tracking-widest">코드 분류</span>
- <span className="text-2xl font-black text-foreground ">{initialClusters.length}</span>
- </div>
- <div className="p-[var(--page-pad)] rounded-lg bg-muted border border-border flex flex-col gap-2 items-start shadow-sm">
- <span className="text-[10px] font-black text-muted-foreground tracking-widest">코드 그룹</span>
- <span className="text-2xl font-black text-foreground ">{groups.length}</span>
- </div>
- </div>
- </div>
- )}
- </main>
- </div>
+ </dl>
+ </section>
+ ) : undefined}
+ emptyDetailTitle="선택된 코드 없음"
+ emptyDetailDescription="왼쪽 목록에서 코드 분류 또는 그룹을 선택하세요."
+ onSaveShortcut={handleSaveExplorerChanges}
+ saveShortcutDisabled={saveDisabled}
+ />
 
  {/* CodePicker — 그룹→코드 2단 검색 팝업 (1호 소비처) */}
  <CodePicker
@@ -753,16 +1012,23 @@ export default function CommonCodeClient({
  {/* Standard Modal for CRUD */}
  <StandardModal
  isOpen={isModalOpen}
- onClose={() => setIsOpen(false)}
+ onClose={closeDetailModal}
  title={editingDetail ? '아키텍처 명세 수정' : '신규 명세 등록'}
  maxWidth="3xl"
  footer={
  <div className="flex w-full gap-4">
- <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2 border-border shadow-sm">취소</Button>
+ <Button
+ variant="outline"
+ onClick={closeDetailModal}
+ disabled={form.formState.isSubmitting}
+ className="h-11 flex-1 rounded-lg border-2 border-border text-xs font-bold shadow-sm"
+ >
+ 취소
+ </Button>
  <Button
  onClick={form.handleSubmit(onSubmit)}
  disabled={form.formState.isSubmitting}
- className="flex-[2] h-11 rounded-lg bg-primary border-none text-white font-bold text-xs tracking-widest shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 group"
+ className="h-11 flex-[2] rounded-lg border-none bg-primary text-xs font-bold text-primary-foreground shadow-sm"
  >
  <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 저장
  </Button>
@@ -775,14 +1041,14 @@ export default function CommonCodeClient({
  <div className="space-y-8">
  {/* [P2] 폼 컨트롤이 아닌 읽기 전용 표시라 <label> 이 아닌 <span> + aria-describedby 로 연결한다. */}
  <div className="space-y-1.5 p-0.5">
- <span id="cmmn-parent-group-label" className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <span id="cmmn-parent-group-label" className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
  상위 그룹 식별자
  </span>
  <div
  aria-labelledby="cmmn-parent-group-label"
  className="h-11 flex items-center px-6 rounded-lg bg-muted border-none font-mono text-xs font-bold shadow-inner text-muted-foreground"
  >
- {selectedGroup?.cdId}
+ {modalTargetGroup?.cdId}
  </div>
  </div>
 
@@ -791,8 +1057,8 @@ export default function CommonCodeClient({
  name="dtlCd"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
- 코드 식별자 (Unique ID) <span className="text-rose-500 font-bold text-xs">*</span>
+ <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
+ 코드 식별자 (Unique ID) <span className="text-xs font-bold text-destructive-emphasis">*</span>
  </FormLabel>
  <FormControl>
  <Input
@@ -803,7 +1069,7 @@ export default function CommonCodeClient({
  placeholder="Unique code indicator (최대 12자)"
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs font-bold text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -813,8 +1079,8 @@ export default function CommonCodeClient({
  name="dtlCdNm"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
- 표기 레이블 (Label) <span className="text-rose-500 font-bold text-xs">*</span>
+ <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
+ 표기 레이블 (Label) <span className="text-xs font-bold text-destructive-emphasis">*</span>
  </FormLabel>
  <FormControl>
  <Input
@@ -824,7 +1090,7 @@ export default function CommonCodeClient({
  placeholder="레이블 명칭 입력 (최대 100자)"
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs font-bold text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -836,7 +1102,7 @@ export default function CommonCodeClient({
  name="useYn"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
  활성 상태 프로토콜
  </FormLabel>
  <Select
@@ -845,20 +1111,20 @@ export default function CommonCodeClient({
  value={field.value}
  >
  <FormControl>
- <SelectTrigger className="h-11 rounded-lg border-none bg-muted font-bold text-xs tracking-widest uppercase shadow-inner">
+ <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
  <SelectValue />
  </SelectTrigger>
  </FormControl>
  <SelectContent className="rounded-lg shadow-xl z-[9999]">
- <SelectItem value="Y" className="h-12 rounded-lg text-xs font-bold tracking-widest uppercase text-emerald-500">
- --- 사용 중 (ACTIVE) ---
+ <SelectItem value="Y" className="h-12 rounded-lg text-xs font-bold text-success-emphasis">
+ 사용 중 (ACTIVE)
  </SelectItem>
- <SelectItem value="N" className="h-12 rounded-lg text-xs font-bold tracking-widest uppercase text-rose-500">
- --- 미사용 (INACTIVE) ---
+ <SelectItem value="N" className="h-12 rounded-lg text-xs font-bold text-destructive-emphasis">
+ 미사용 (INACTIVE)
  </SelectItem>
  </SelectContent>
  </Select>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs font-bold text-destructive-emphasis" />
  </FormItem>
  )}
  />
@@ -868,18 +1134,18 @@ export default function CommonCodeClient({
  name="dtlCdExpln"
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
+ <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
  메타데이터 컨텍스트 설명
  </FormLabel>
  <FormControl>
  <textarea
  {...field}
  maxLength={4000}
- className="w-full min-h-[160px] p-6 rounded-lg border-none bg-muted text-xs font-bold focus:ring-4 focus:ring-primary/10 transition-all outline-none resize-none shadow-inner text-left"
+ className="w-full min-h-[160px] resize-none rounded-lg border-none bg-muted p-6 text-left text-xs font-bold shadow-inner outline-none transition-all focus-visible:ring-2 focus-visible:ring-ring"
  placeholder="코드 사용처 및 시스템 제약 조건 설명... (최대 4000자)"
  />
  </FormControl>
- <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
+ <FormMessage className="mt-1 px-1 text-xs font-bold text-destructive-emphasis" />
  </FormItem>
  )}
  />

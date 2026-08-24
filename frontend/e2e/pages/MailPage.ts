@@ -89,8 +89,7 @@ export class MailPage {
         }
         await mailItem.waitFor({ state: 'visible', timeout: 15000 });
 
-        // StandardDataTable 행은 더 이상 자체 클릭 계약을 갖지 않는다. 호출부가 제공한
-        // 실제 intent의 접근 가능한 작업 버튼으로 상세를 연다.
+        // A2 compact master의 mail-item 안에서 실제 intent를 가진 선택 버튼으로 상세를 연다.
         console.log('[E2E] Opening mail history detail...');
         const openDetailButton = mailItem.getByRole('button', {
             name: `${subject} 발신 이력 상세 열기`,
@@ -99,10 +98,12 @@ export class MailPage {
         await expect(openDetailButton).toBeVisible({ timeout: 10000 });
         await openDetailButton.click();
 
-        // 레이아웃용 Tailwind 클래스가 아니라 화면이 공개하는 헤딩 계약으로 상세 마운트를 확인한다.
-        await expect(this.page.getByRole('heading', { name: '발신 상세', exact: true }))
+        // A2 선택 시맨틱과 상세/선택 제목 heading으로 상세 마운트를 확인한다.
+        await expect(this.page.getByTestId('master-detail-page')).toHaveCount(1);
+        await expect(openDetailButton).toHaveAttribute('aria-current', 'true');
+        await expect(this.page.getByRole('heading', { name: '발신 상세', exact: true, level: 2 }))
             .toBeVisible({ timeout: 15000 });
-        await expect(this.page.getByRole('heading', { name: subject, exact: true }))
+        await expect(this.page.getByRole('heading', { name: subject, exact: true, level: 3 }))
             .toBeVisible({ timeout: 20000 });
         
         console.log(`[E2E] Success: Mail "${subject}" verified in detail panel.`);
@@ -124,14 +125,14 @@ export class MailPage {
         });
         await expect(openDetailButton).toBeVisible({ timeout: 10000 });
         await openDetailButton.click();
-        await expect(this.page.getByRole('heading', { name: '발신 상세', exact: true }))
+        await expect(openDetailButton).toHaveAttribute('aria-current', 'true');
+        await expect(this.page.getByRole('heading', { name: '발신 상세', exact: true, level: 2 }))
+            .toBeVisible({ timeout: 10000 });
+        await expect(this.page.getByRole('heading', { name: subject, exact: true, level: 3 }))
             .toBeVisible({ timeout: 10000 });
 
-        // [2026-08-22 정정] 상세 패널 삭제 버튼의 testid 를 목록 행 액션과 분리했다
-        //   (MailHistoryHubClient.tsx:340 `mail-detail-delete-btn`). 종전에는 둘이 같은
-        //   `delete-mail-btn` 이라 strict mode violation 이 났고, StandardDataTable 의
-        //   테이블·카드 이중 렌더까지 겹쳐 요소가 3개→7개로 늘었다.
-        //   스코프 대신 **식별자 분리**로 해결했으므로 여기서는 page 범위 조회로 정확히 1개다.
+        // A2 compact master에는 행별 삭제가 없고, 선택 상세만 이 파괴적 작업을 소유한다.
+        // testid는 전역에서 정확히 하나여야 하므로 page 범위 조회를 유지한다.
         const deleteBtn = this.page.getByTestId('mail-detail-delete-btn');
         await deleteBtn.waitFor({ state: 'visible', timeout: 5000 });
         await deleteBtn.click();

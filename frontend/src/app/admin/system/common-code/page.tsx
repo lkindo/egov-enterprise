@@ -16,7 +16,8 @@ export default async function CommonCodePage({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
   const resolvedSearchParams = await searchParams;
-  const groupId = (resolvedSearchParams.groupId as string) || null;
+  const rawGroupId = resolvedSearchParams.groupId;
+  const groupId = typeof rawGroupId === 'string' && rawGroupId.length > 0 ? rawGroupId : null;
 
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
@@ -43,7 +44,9 @@ export default async function CommonCodePage({
 
     clCodes = clRes.list || [];
     groups = groupsRes.list || [];
-    details = (detailsRes.list || []) as CmmnDetailCode[];
+    details = groupId
+      ? (detailsRes.list || []).filter((item): item is CmmnDetailCode => Boolean(item) && item.cdId === groupId)
+      : [];
   } catch (error: unknown) {
     const status = (error as { response?: { status?: number } })?.response?.status;
     if (status === 401 || !accessToken) {

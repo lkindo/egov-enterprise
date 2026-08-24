@@ -180,15 +180,20 @@ test.describe('Tier 4: Quality & Resilience', () => {
                 maxDiffPixelRatio: 0.01
             });
 
-            // ── 파일럿 ③: 공통코드 통합 허브 (/admin/system/common-code) ───────────
+            // ── 파일럿 ③: 공통코드 관리 A2 작업영역 (/admin/system/common-code) ────
             // 서버 컴포넌트가 Flyway seed 코드를 조회해 렌더한다 — 기준선 워크플로와 CI 모두
             // 신선한 compose DB 라 같은 seed 를 보고, 코드를 생성/삭제하는 e2e 는 없다(실측 grep).
-            console.log('>>> Capturing Common Code Hub Visual Snapshot');
+            console.log('>>> Capturing Common Code A2 Work Area Visual Snapshot');
             await page.goto('/admin/system/common-code');
-            await expect(page.getByRole('heading', { level: 1, name: '마스터 데이터 거버넌스', exact: true })).toBeVisible({ timeout: 30000 });
-            // 데이터 적재 증거 — 19-hierarchy 스펙과 동일한 Explorer 도메인 카운트 노출을 기다린다.
-            await expect(page.getByText(/\d+ Domains/).first()).toBeVisible({ timeout: 20000 });
-            await expect(page).toHaveScreenshot('common-code-hub-baseline.png', {
+            await expect(page.getByRole('heading', { level: 1, name: '코드 관리', exact: true })).toBeVisible({ timeout: 30000 });
+            await expect(page.getByRole('heading', { level: 2, name: '공통 코드 관리', exact: true })).toHaveCount(1);
+            const commonCodeWorkArea = page.getByTestId('master-detail-page');
+            await expect(commonCodeWorkArea).toHaveCount(1);
+            await expect(commonCodeWorkArea.getByTestId('master-detail-master')).toHaveCount(1);
+            await expect(commonCodeWorkArea.getByTestId('master-detail-detail')).toHaveCount(1);
+            await expect(commonCodeWorkArea.locator('[data-a2-master-item-type="group"]').first()).toBeVisible({ timeout: 20000 });
+            // 페이지 상단 포털 장식이 아니라 실제 마스터-디테일 업무영역 전체를 기준선으로 고정한다.
+            await expect(commonCodeWorkArea).toHaveScreenshot('common-code-hub-baseline.png', {
                 animations: 'disabled',
                 mask: [page.locator('.tabular-nums')],
                 maxDiffPixelRatio: 0.01

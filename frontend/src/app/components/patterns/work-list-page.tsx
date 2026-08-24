@@ -29,8 +29,9 @@ import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
  * 밀도는 전부 토큰(--filter-pad·--font-size-body)에서 오므로 data-density 축이 그대로 관통한다.
  */
 export interface WorkListPageProps {
-  /** 화면 제목. 이 셸이 페이지의 h1 을 소유한다. */
+  /** 화면 제목. 기본은 h1이며, 상위 허브가 h1을 소유한 활성 패널에서만 h2를 쓴다. */
   title: string;
+  headingLevel?: 1 | 2;
   /** 제목 아래 한 줄 보조 설명. 마케팅 문구가 아니라 조회 범위·기준을 적는다. */
   description?: string;
   /** 제목 우측 주요 액션(신규 등). 상태·권한으로 걸러진 것만 넘긴다(G10). */
@@ -81,6 +82,7 @@ function readStoredOpen(key: string | undefined): boolean | null {
 
 export function WorkListPage({
   title,
+  headingLevel = 1,
   description,
   actions,
   filter,
@@ -96,6 +98,8 @@ export function WorkListPage({
 }: WorkListPageProps) {
   const filterHeadingId = useId();
   const filterRef = useRef<HTMLDetailsElement>(null);
+  const PageHeading = headingLevel === 1 ? 'h1' : 'h2';
+  const FilterHeading = headingLevel === 1 ? 'h2' : 'h3';
 
   // 저장된 상태는 마운트 후 DOM 속성으로만 복원한다(렌더 상태를 만들지 않는다).
   useEffect(() => {
@@ -134,7 +138,7 @@ export function WorkListPage({
 
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="truncate text-xl font-bold tracking-tight text-foreground">{title}</h1>
+          <PageHeading className="truncate text-xl font-bold tracking-tight text-foreground">{title}</PageHeading>
           {description && (
             <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">{description}</p>
           )}
@@ -152,12 +156,12 @@ export function WorkListPage({
           className="group rounded-md border border-border bg-card"
         >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-[var(--filter-pad)] py-2 marker:content-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
-            <h2
+            <FilterHeading
               id={filterHeadingId}
               className="text-[length:var(--font-size-body)] font-semibold text-foreground"
             >
               {filterLabel}
-            </h2>
+            </FilterHeading>
             <ChevronDown
               aria-hidden="true"
               className="size-4 shrink-0 text-muted-foreground transition-transform group-open:rotate-180"

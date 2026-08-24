@@ -31,7 +31,13 @@ type InstitutionTab = 'list' | 'reception';
 /** 서버 페이지 크기(백엔드 기본 pageUnit). PagePagination 계산과 동일해야 한다. */
 const PAGE_SIZE = 10;
 
-export default function InstitutionCodeClient({ initialData }: { initialData?: Partial<PageResponse<InstitutionCode>> }) {
+export default function InstitutionCodeClient({
+ initialData,
+ embedded = false,
+}: {
+ initialData?: Partial<PageResponse<InstitutionCode>>;
+ embedded?: boolean;
+}) {
  const [activeTab, setActiveTab] = useState<InstitutionTab>('list');
  const [keyword, setKeyword] = useState('');
  /** [P1-8] 타이핑마다 서버 요청이 나가지 않도록 공용 훅으로 디바운스한다. */
@@ -242,6 +248,8 @@ export default function InstitutionCodeClient({ initialData }: { initialData?: P
  return (
  <WorkListPage
  title="공공기관 코드 관리"
+ headingLevel={embedded ? 2 : 1}
+ showBreadcrumb={!embedded}
  description={activeTab === 'list' ? '공공기관 코드 목록을 조회합니다.' : '기관코드 변동 수신 이력을 조회합니다.'}
  breadcrumbItems={[{ label: '시스템 관리' }, { label: '코드 관리' }, { label: '기관 코드' }]}
  filterStateKey="system-codes-institution"

@@ -69,19 +69,31 @@ describe('app shell accessibility source contract', () => {
     //   주 제목 소유를 판정할 수 없다 — 셸이 정확히 하나의 h1 을 갖는다는 사실이 그 자리를 대신한다.
     const shell = readAppSource('components', 'patterns', 'work-list-page.tsx');
 
-    expect(shell.match(/<h1\b/g), 'WorkListPage 가 h1 을 잃었거나 둘 이상 갖습니다').toHaveLength(1);
-    expect(shell, '셸이 제목을 title prop 으로 받지 않습니다').toMatch(/\{title\}<\/h1>/);
+    expect(shell, 'WorkListPage의 기본 주 제목 수준이 h1이 아닙니다').toMatch(/headingLevel\s*=\s*1/);
+    expect(shell, '임베디드 A1 제목 수준을 h2로 낮추는 계약이 없습니다').toMatch(
+      /const PageHeading = headingLevel === 1 \? 'h1' : 'h2'/,
+    );
+    expect(shell.match(/<PageHeading\b/g), 'WorkListPage가 주 제목을 잃었거나 둘 이상 갖습니다').toHaveLength(1);
+    expect(shell, '셸이 제목을 title prop으로 받지 않습니다').toMatch(/<PageHeading[^>]*>\{title\}<\/PageHeading>/);
   });
 
   it('A2 전체 셸과 점진 레이아웃 소비자는 최종 h1을 하나만 소유한다', () => {
     const shell = readAppSource('components', 'patterns', 'master-detail-page.tsx');
     const menus = readAppSource('admin', 'system', 'menus', 'MenuAdminClient.tsx');
     const userOrg = readAppSource('admin', 'user', 'UserOrgHubClient.tsx');
+    const mailHistory = readAppSource(
+      'admin', 'collaboration', 'mail-history', 'MailHistoryHubClient.tsx',
+    );
 
-    expect(shell.match(/<h1\b/g), 'MasterDetailPage가 h1을 잃었거나 둘 이상 갖습니다').toHaveLength(1);
-    expect(shell).toMatch(/\{title\}<\/h1>/);
+    expect(shell, 'MasterDetailPage의 기본 주 제목 수준이 h1이 아닙니다').toMatch(/headingLevel\s*=\s*1/);
+    expect(shell, '임베디드 A2 제목 수준을 h2로 낮추는 계약이 없습니다').toMatch(
+      /const PageHeading = headingLevel === 1 \? 'h1' : 'h2'/,
+    );
+    expect(shell.match(/<PageHeading\b/g), 'MasterDetailPage가 주 제목을 잃었거나 둘 이상 갖습니다').toHaveLength(1);
+    expect(shell).toMatch(/<PageHeading[^>]*>\{title\}<\/PageHeading>/);
     expect(menus, '메뉴 화면은 h1을 MasterDetailPage에 위임해야 합니다').not.toMatch(/<h1\b/);
     expect(userOrg, '부서 화면은 h1을 PageHeader에 위임해야 합니다').not.toMatch(/<h1\b/);
+    expect(mailHistory, '메일 이력 화면은 h1을 MasterDetailPage에 위임해야 합니다').not.toMatch(/<h1\b/);
   });
 
   it('A1 이행 화면은 제목을 셸에 위임한다(자체 h1 을 다시 만들지 않는다)', () => {

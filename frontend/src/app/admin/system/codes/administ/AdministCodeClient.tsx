@@ -43,7 +43,13 @@ type AdministCodeFormValues = z.infer<typeof administCodeSchema>;
 /** 서버 페이지 크기(백엔드 기본 pageUnit). PagePagination 계산과 동일해야 한다. */
 const PAGE_SIZE = 10;
 
-export default function AdministCodeClient({ initialData }: { initialData?: Partial<PageResponse<AdministCode>> }) {
+export default function AdministCodeClient({
+ initialData,
+ embedded = false,
+}: {
+ initialData?: Partial<PageResponse<AdministCode>>;
+ embedded?: boolean;
+}) {
  const [isModalOpen, setIsModalOpen] = useState(false);
  const [registerLoading, setRegisterLoading] = useState(false);
  const { toast } = useToast();
@@ -169,6 +175,8 @@ export default function AdministCodeClient({ initialData }: { initialData?: Part
  return (
  <WorkListPage
  title="행정 구역 코드 관리"
+ headingLevel={embedded ? 2 : 1}
+ showBreadcrumb={!embedded}
  description="법정동·행정동 코드 체계를 조회·등록합니다."
  breadcrumbItems={[{ label: '시스템관리' }, { label: '코드 관리' }, { label: '행정 구역' }]}
  filterStateKey="system-codes-administ"
