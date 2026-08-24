@@ -92,4 +92,18 @@ describe('E2E harness dead-asset contract', () => {
     expect(visualSpec).toContain("process.platform !== 'linux'");
     expect(visualSpec).toContain('비주얼 회귀는 CI(리눅스) 전용이다');
   });
+
+  it('로그인 VRT는 admin fixture를 상속하지 않는 익명 context와 고정 URL을 사용한다', () => {
+    const visualSpec = readFileSync(join(FRONTEND_DIR, 'e2e/04-quality-resilience.spec.ts'), 'utf8');
+    const anonymousCapture = visualSpec.match(
+      /const anonContext = await browser\.newContext\(\{[\s\S]*?await anonGuard\.verify\(\);/,
+    )?.[0];
+
+    expect(anonymousCapture, '로그인 VRT 익명 캡처 블록을 찾지 못했습니다').toBeDefined();
+    expect(anonymousCapture).toMatch(/storageState:\s*\{\s*cookies:\s*\[\],\s*origins:\s*\[\]\s*\}/);
+    expect(anonymousCapture).toMatch(
+      /goto\('\/login\?e2e=true'\)[\s\S]*?toHaveURL\(\/\\\/login\\\?e2e=true\$\/\)[\s\S]*?toHaveScreenshot\('login-page-baseline\.png'/,
+    );
+    expect(anonymousCapture?.match(/toHaveURL\(\/\\\/login\\\?e2e=true\$\/\)/g)).toHaveLength(2);
+  });
 });

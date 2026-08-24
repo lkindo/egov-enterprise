@@ -204,7 +204,11 @@ test.describe('Tier 4: Quality & Resilience', () => {
             // redirectUrl 로 소프트 전환한다(이미 인증됨). 별도 비인증 컨텍스트로 캡처하되,
             // 가드·ledger 를 수동 설치해 기본 page 픽스처와 동일한 오류 규율을 적용한다.
             console.log('>>> Capturing Login Page (anonymous) Visual Snapshot');
-            const anonContext = await browser.newContext({ viewport: { width: 1280, height: 720 } });
+            const anonContext = await browser.newContext({
+                viewport: { width: 1280, height: 720 },
+                // Playwright fixture의 admin storageState가 수동 context에도 병합되므로 명시적으로 비운다.
+                storageState: { cookies: [], origins: [] },
+            });
             try {
                 const anonPage = await anonContext.newPage();
                 const anonGuard = new ConsoleErrorGuard(anonPage, buildSpecScope(testInfo.file, testInfo.title));
@@ -227,8 +231,11 @@ test.describe('Tier 4: Quality & Resilience', () => {
                 }]);
                 // ?e2e=true: 온보딩 투어 자동 비활성(01-core-base 로그인 a11y 테스트와 동일 진입 계약).
                 await anonPage.goto('/login?e2e=true');
+                await expect(anonPage).toHaveURL(/\/login\?e2e=true$/);
                 await expect(anonPage.getByRole('heading', { level: 1, name: '엔터프라이즈', exact: true })).toBeVisible({ timeout: 30000 });
                 await expect(anonPage.getByRole('textbox', { name: '아이디' })).toBeVisible();
+                // 인증 화면이 effect redirect로 바뀐 뒤 잘못된 기준선을 쓰는 경쟁을 막는다.
+                await expect(anonPage).toHaveURL(/\/login\?e2e=true$/);
                 await expect(anonPage).toHaveScreenshot('login-page-baseline.png', {
                     animations: 'disabled',
                     maxDiffPixelRatio: 0.01
