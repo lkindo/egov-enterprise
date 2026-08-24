@@ -6,6 +6,10 @@ vi.mock('@/services/business/user/MenuService', () => ({
   menuService: { getHeadMenus: vi.fn().mockResolvedValue([]) },
 }));
 
+vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({
+  DynamicBreadcrumb: () => <nav aria-label="현재 위치" />,
+}));
+
 function precedes(first: Element, second: Element): boolean {
   return Boolean(first.compareDocumentPosition(second) & Node.DOCUMENT_POSITION_FOLLOWING);
 }
@@ -174,5 +178,22 @@ describe('MasterDetailPage — A2 archetype 문법', () => {
 
     expect(container.querySelectorAll('[data-testid="master-detail-master"]')).toHaveLength(1);
     expect(container.querySelectorAll('[data-testid="master-detail-detail"]')).toHaveLength(1);
+  });
+
+  it('긴 master와 detail을 단일 DOM 안에서 각각 스크롤 가능한 높이로 제한한다', () => {
+    renderPage();
+
+    expect(screen.getByTestId('master-detail-layout')).toHaveClass('lg:h-[min(70vh,48rem)]');
+    expect(screen.getByTestId('master-detail-master')).toHaveClass('max-h-[60vh]', 'overflow-auto');
+    expect(screen.getByTestId('master-detail-detail')).toHaveClass('overflow-auto');
+  });
+
+  it('상위 허브가 h1을 소유하면 패널과 양쪽 section heading을 한 단계 내린다', () => {
+    renderPage({ headingLevel: 2, showBreadcrumb: false });
+
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '부서 관리' })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 3, name: '부서 목록' })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 3, name: '기획부' })).toBeVisible();
   });
 });

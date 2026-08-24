@@ -107,6 +107,14 @@ describe('WorkListPage — A1 archetype 문법', () => {
     expect(screen.queryByRole('navigation', { name: '현재 위치' })).toBeNull();
   });
 
+  it('상위 허브가 h1을 소유하면 패널 제목과 조회 조건 heading을 한 단계 내린다', () => {
+    renderPage({ headingLevel: 2, showBreadcrumb: false });
+
+    expect(screen.queryByRole('heading', { level: 1 })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: '업무 요청 목록' })).toBeVisible();
+    expect(screen.getByRole('heading', { level: 3, name: '조회 조건' })).toBeVisible();
+  });
+
   it('조회 조건이 없으면 조회 조건 영역 자체를 렌더하지 않는다', () => {
     renderPage({ filter: undefined });
 

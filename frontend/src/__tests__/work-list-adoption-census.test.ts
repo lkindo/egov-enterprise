@@ -17,15 +17,15 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
  *   ADOPTERS       WorkListPage 를 경유하는 화면 수 — 줄어들면 red(이행 되돌리기 차단)
  *   DIRECT_ONLY    셸 없이 StandardDataTable 을 직접 조립하는 화면 수 — 늘어나면 red(신규 유입 차단)
  *
- * ⚠ DIRECT_ONLY 의 목표는 0 이 아니다. 마스터-디테일(A2)·매트릭스(A5)처럼 아직 셸이 없는
- *   archetype 은 정당하게 직접 소비한다 — 그 셸이 생기는 시점에 함께 내려간다. 지금 0 을
+ * ⚠ DIRECT_ONLY 의 목표는 0 이 아니다. 마스터-디테일(A2)·매트릭스(A5)처럼 A1이 아닌
+ *   archetype 은 정당하게 직접 소비한다 — 각 화면이 자기 셸로 이행할 때 함께 내려간다. 지금 0 을
  *   목표로 잡으면 A1 이 아닌 화면을 A1 셸에 우겨넣는 잘못된 압력이 된다.
  *
  * 값을 바꿀 때는 소스를 먼저 고치고 **실측 red 를 확인한 뒤** 상수를 갱신한다.
  * ADOPTERS 상향과 DIRECT_ONLY 하향만 정상 경로다(AGENTS H2).
  */
 const ADOPTERS = 21;
-const DIRECT_ONLY = 30;
+const DIRECT_ONLY = 29;
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';
 const SHELL_IMPORT = 'components/patterns/work-list-page';

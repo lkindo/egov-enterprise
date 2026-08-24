@@ -19,8 +19,9 @@ import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
  * 민감 식별자를 정하면 프론트엔드 헌법 제4조의 화면별 상태 경계를 침범하기 때문이다.
  */
 export interface MasterDetailPageProps {
-  /** 화면 제목. 이 셸이 페이지의 h1을 소유한다. */
+  /** 화면 제목. 기본은 h1이며, 상위 허브가 h1을 소유한 활성 패널에서만 h2를 쓴다. */
   title: string;
+  headingLevel?: 1 | 2;
   /** 과업 범위·편집 대상을 설명하는 한 줄. 마케팅 문구를 넣지 않는다. */
   description?: string;
   /** 권한·상태상 실제로 실행 가능한 주요 액션. */
@@ -166,6 +167,7 @@ export function MasterDetailLayout({
 
 export function MasterDetailPage({
   title,
+  headingLevel = 1,
   description,
   actions,
   navigation,
@@ -189,6 +191,8 @@ export function MasterDetailPage({
 }: MasterDetailPageProps) {
   const masterHeadingId = useId();
   const detailHeadingId = useId();
+  const PageHeading = headingLevel === 1 ? 'h1' : 'h2';
+  const SectionHeading = headingLevel === 1 ? 'h2' : 'h3';
   const masterContentRef = useRef<HTMLDivElement>(null);
   const detailSectionRef = useRef<HTMLElement>(null);
   const detailContentRef = useRef<HTMLDivElement>(null);
@@ -273,7 +277,7 @@ export function MasterDetailPage({
 
       <header className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold tracking-tight text-foreground">{title}</h1>
+          <PageHeading className="text-xl font-bold tracking-tight text-foreground">{title}</PageHeading>
           {description && (
             <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">{description}</p>
           )}
@@ -287,7 +291,7 @@ export function MasterDetailPage({
 
       <div
         data-testid="master-detail-layout"
-        className="grid min-h-[32rem] min-w-0 gap-4 lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]"
+        className="grid min-h-[32rem] min-w-0 gap-4 lg:h-[min(70vh,48rem)] lg:grid-cols-[minmax(18rem,24rem)_minmax(0,1fr)]"
       >
         <section
           aria-labelledby={masterHeadingId}
@@ -296,7 +300,7 @@ export function MasterDetailPage({
           <header className="border-b border-border p-[var(--filter-pad)]">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
-                <h2 id={masterHeadingId} className="text-sm font-semibold text-foreground">{masterTitle}</h2>
+                <SectionHeading id={masterHeadingId} className="text-sm font-semibold text-foreground">{masterTitle}</SectionHeading>
                 {masterDescription && (
                   <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
                     {masterDescription}
@@ -312,7 +316,7 @@ export function MasterDetailPage({
             aria-label={`${masterTitle} 항목`}
             onKeyDown={handleMasterKeyDown}
             data-testid="master-detail-master"
-            className="min-h-0 flex-1 overflow-auto p-[var(--filter-pad)]"
+            className="max-h-[60vh] min-h-0 flex-1 overflow-auto p-[var(--filter-pad)] lg:max-h-none"
           >
             {master}
           </div>
@@ -326,9 +330,9 @@ export function MasterDetailPage({
           <header className="border-b border-border p-[var(--filter-pad)]">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div className="min-w-0">
-                <h2 id={detailHeadingId} className="text-sm font-semibold text-foreground">
+                <SectionHeading id={detailHeadingId} className="text-sm font-semibold text-foreground">
                   {selectedItemLabel ?? detailTitle}
-                </h2>
+                </SectionHeading>
                 {detailDescription && (
                   <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
                     {detailDescription}
@@ -346,7 +350,7 @@ export function MasterDetailPage({
             tabIndex={-1}
             data-a2-detail
             data-testid="master-detail-detail"
-            className="min-h-0 flex-1 p-[var(--filter-pad)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
+            className="min-h-0 flex-1 overflow-auto p-[var(--filter-pad)] focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-ring"
           >
             {detail ?? (
               <div role="status" className="flex min-h-56 flex-col items-center justify-center p-6 text-center">

@@ -41,7 +41,10 @@ jobs:
       # 백엔드/프론트가 같은 시크릿으로 서명·검증해야 한다(ci.yml e2e 잡과 동일 규율).
       # 어긋나면 로그인 후 곧바로 /login 으로 되돌아가 대시보드를 캡처할 수 없다.
       - name: Generate ephemeral JWT secret (backend/frontend 대칭)
-        run: echo "JWT_SECRET=$(openssl rand -hex 44)" >> "$GITHUB_ENV"
+        run: |
+          jwt_secret="$(openssl rand -hex 44)"
+          echo "::add-mask::$jwt_secret"
+          echo "JWT_SECRET=$jwt_secret" >> "$GITHUB_ENV"
 
       - name: Build API image
         run: docker compose build api

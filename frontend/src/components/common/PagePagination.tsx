@@ -8,6 +8,7 @@ import {
   PaginationEllipsis,
 } from "@/components/ui/pagination";
 import { PaginationInfo } from '@/types/foundation/system';
+import { cn } from '@/lib/utils';
 
 interface PagePaginationProps {
   pagination?: PaginationInfo;
@@ -26,6 +27,9 @@ export function PagePagination({ pagination, total, page, size, onPageChange }: 
     : (pagination?.totalPageCount || 0);
 
   if (totalPageCount <= 1 && totalRecordCount <= recordCountPerPage) return null;
+
+  const isFirstPage = currentPageNo <= 1;
+  const isLastPage = currentPageNo >= totalPageCount;
 
   const renderPageNumbers = () => {
     const pages = [];
@@ -79,9 +83,12 @@ export function PagePagination({ pagination, total, page, size, onPageChange }: 
           <PaginationItem key="pagination-prev">
             <PaginationPrevious
               href="#"
+              aria-disabled={isFirstPage || undefined}
+              tabIndex={isFirstPage ? -1 : undefined}
+              className={cn(isFirstPage && 'pointer-events-none opacity-50')}
               onClick={(e) => {
                 e.preventDefault();
-                if (currentPageNo > 1) onPageChange(currentPageNo - 1);
+                if (!isFirstPage) onPageChange(currentPageNo - 1);
               }}
             />
           </PaginationItem>
@@ -91,9 +98,12 @@ export function PagePagination({ pagination, total, page, size, onPageChange }: 
           <PaginationItem key="pagination-next">
             <PaginationNext
               href="#"
+              aria-disabled={isLastPage || undefined}
+              tabIndex={isLastPage ? -1 : undefined}
+              className={cn(isLastPage && 'pointer-events-none opacity-50')}
               onClick={(e) => {
                 e.preventDefault();
-                if (currentPageNo < totalPageCount) onPageChange(currentPageNo + 1);
+                if (!isLastPage) onPageChange(currentPageNo + 1);
               }}
             />
           </PaginationItem>
