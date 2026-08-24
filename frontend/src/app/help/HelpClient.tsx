@@ -1,14 +1,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { helpUserService, FAQ, QNA } from '@/services/business/user/help/HelpUserService';
 import { useToast } from '@/app/components/ui/toast';
-import { HelpCircle,  MessageCircle,  ChevronDown,  Search,  PlusCircle,  Sparkles } from 'lucide-react';
+import { HelpCircle, MessageCircle, ChevronDown, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { StatusBadge } from '@/components/ui/status-badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmptyStateDisplay } from '@/app/components/ui/status-displays';
 
@@ -92,48 +93,43 @@ export default function HelpClient() {
   };
 
   return (
-    <div className="max-w-6xl mx-auto space-y-12 pb-24 p-8 animate-in fade-in duration-1000">
-      <PageHeader
-        title="도움말 커스터머 센터"
-        breadcrumbs={[{ label: '지원서비스' }, { label: '도움말센터' }]}
-      />
-
-      <div className="hub-glass-premium rounded-lg p-16 text-center relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-12 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
-            <Sparkles size={200} className="text-primary" />
+    <WorkListPage
+      title="도움말 센터"
+      description="자주 묻는 질문을 확인하거나 1:1 문의 내역을 조회합니다."
+      breadcrumbItems={[{ label: '지원서비스' }, { label: '도움말센터' }]}
+      filterStateKey="help-center"
+      actions={
+        <div role="tablist" aria-label="도움말 구분" className="flex rounded-md border border-border p-0.5">
+          <TabButton
+            active={tab === 'faq'}
+            onClick={() => setTab('faq')}
+            icon={<HelpCircle size={16} aria-hidden="true" />}
+            label="FAQ 자주 묻는 질문"
+          />
+          <TabButton
+            active={tab === 'qna'}
+            onClick={() => setTab('qna')}
+            icon={<MessageCircle size={16} aria-hidden="true" />}
+            label="1:1 Q&A 문의"
+          />
         </div>
-        <div className="relative z-10 space-y-6">
-            <h2 className="text-5xl hub-title-normal hub-text-gradient">_ 무엇을 도와드릴까요?</h2>
-            <p className="text-muted-foreground text-lg font-medium max-w-2xl mx-auto uppercase tracking-tight">자주 묻는 질문을 확인하거나 1:1 전담 문의를 통해 문제를 신속하게 해결하세요.</p>
-            <div className="max-w-xl mx-auto relative mt-12 scale-100 group-hover:scale-[1.02] transition-transform">
-            <Search className="absolute left-6 top-5 text-muted-foreground/40 group-focus-within:text-primary transition-colors" size={24} />
-            <input
-                type="text"
-                aria-label="도움말 키워드 검색"
-                placeholder="키워드로 신속하게 검색하세요..."
-                value={searchKeyword}
-                onChange={(e) => setSearchKeyword(e.target.value)}
-                className="w-full h-11 pl-16 pr-6 rounded-lg bg-background/50 border-2 border-border focus:border-primary text-foreground text-lg font-bold outline-none focus:ring-8 focus:ring-primary/5 transition-all placeholder:text-muted-foreground/30"
-            />
-            </div>
+      }
+      filter={
+        <div className="min-w-60 max-w-xl space-y-1">
+          <label htmlFor="help-search" className="text-[length:var(--font-size-body)] font-medium">
+            도움말 키워드
+          </label>
+          <Input
+            id="help-search"
+            type="text"
+            aria-label="도움말 키워드 검색"
+            placeholder="키워드로 검색"
+            value={searchKeyword}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSearchKeyword(e.target.value)}
+          />
         </div>
-      </div>
-
-      <div className="flex justify-center p-2 bg-muted rounded-lg w-fit mx-auto">
-        <TabButton
-          active={tab === 'faq'}
-          onClick={() => setTab('faq')}
-          icon={<HelpCircle size={22} />}
-          label="FAQ 자주 묻는 질문"
-        />
-        <TabButton
-          active={tab === 'qna'}
-          onClick={() => setTab('qna')}
-          icon={<MessageCircle size={22} />}
-          label="1:1 Q&A 전문가 상담"
-        />
-      </div>
-
+      }
+    >
       <div className="space-y-6">
         <AnimatePresence mode="wait">
           {tab === 'faq' ? (
@@ -200,8 +196,10 @@ export default function HelpClient() {
                       <h3 className="text-2xl font-bold tracking-tight uppercase">_ 나의 문의 내역</h3>
                       <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase">Private Interaction History</p>
                   </div>
-                  <Button className="h-11 px-8 rounded-lg bg-foreground text-background border-none font-bold text-xs tracking-widest gap-3 shadow-2xl hover:bg-primary hover:text-white transition-all uppercase">
-                      <PlusCircle size={20} /> 새로운 문의 작성
+                  {/* onClick 도 대상 라우트도 없던 死버튼이다(카탈로그 G10). 문의 등록 경로가
+                      생기기 전까지 사유를 밝혀 비활성으로 남긴다. */}
+                  <Button size="sm" disabled title="문의 등록 화면이 아직 연결되지 않았습니다" className="gap-2">
+                      <PlusCircle size={16} aria-hidden="true" /> 새로운 문의 작성
                   </Button>
               </div>
               <StandardDataTable
@@ -215,7 +213,7 @@ export default function HelpClient() {
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </WorkListPage>
   );
 }
 
@@ -245,12 +243,13 @@ function FaqAnswer({ state, onRetry }: { state: FaqDetailState; onRetry: () => v
 function TabButton({ active, onClick, icon, label }: any) {
   return (
     <button
+      type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-10 py-5 rounded-lg font-bold text-xs transition-all duration-500 uppercase tracking-widest",
-        active
-          ? "bg-background text-foreground shadow-2xl scale-105 z-10"
-          : "text-muted-foreground hover:text-foreground"
+        "flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors",
+        active ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"
       )}
     >
       {icon}
