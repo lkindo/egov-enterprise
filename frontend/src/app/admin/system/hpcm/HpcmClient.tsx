@@ -1,13 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { hpcmAdminService, Hpcm } from '@/services/foundation/system/HpcmAdminService';
-import { HelpCircle, FileText, Search, Plus, BookOpen, ShieldCheck } from 'lucide-react';
+import { Plus, BookOpen, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
 import { z } from 'zod';
@@ -104,44 +101,24 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
   ];
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="도움말 콘텐츠 아키텍처"
-        breadcrumbs={[{ label: '시스템관리' }, { label: 'HPCM' }]}
+    <WorkListPage
+      title="도움말 콘텐츠 관리(HPCM)"
+      description="시스템 가이드와 도움말 콘텐츠를 등록·관리합니다."
+      breadcrumbItems={[{ label: '시스템관리' }, { label: 'HPCM' }]}
+      totalCount={hpcmList.length}
+      actions={
+        <Button size="sm" onClick={() => setIsModalOpen(true)} className="gap-2">
+          <Plus size={16} aria-hidden="true" /> 콘텐츠 등록
+        </Button>
+      }
+    >
+      <StandardDataTable
+        accessibleLabel="도움말 콘텐츠 목록"
+        columns={columns}
+        data={hpcmList}
+        loading={loading}
+        emptyMessage="등록된 도움말 콘텐츠가 없습니다."
       />
-
-      <HubHeader 
-        title="HPCM" 
-        highlight="Help Content" 
-        subtitle="사용자 경험 최적화를 위해 모든 시스템 가이드와 도움말 콘텐츠를 중앙 집중식으로 관리합니다." 
-        icon={HelpCircle} 
-        actions={
-          <Button 
-            onClick={() => setIsModalOpen(true)}
-            className="h-12 px-8 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-primary transition-all"
-          >
-            <Plus size={16} className="mr-2" /> 콘텐츠 등록
-          </Button>
-        }
-      />
-
-      {/* [정직성] 종전에는 하드코딩 "최근_업데이트_로그 2"·"시스템_무결성 99.9% OPTIMIZED"·"SYNCED" 를
-          실측처럼 표시했다. 계측 원천이 없는 값은 만들지 않는다 — 실제 목록에서 파생되는 값만 남긴다. */}
-      <HubMetricGrid>
-        <HubMetricCard title="전체 도움말 자산" value={hpcmList.length} icon={FileText} color="primary" status="집계" />
-      </HubMetricGrid>
-
-      <HubSectionCard title="콘텐츠 인벤토리" description="현재 클러스터에 배포된 모든 도움말 콘텐츠 명세입니다." icon={Search}>
-        <div className="overflow-hidden min-h-[500px]">
-          <StandardDataTable
-            columns={columns}
-            data={hpcmList}
-            loading={loading}
-            emptyMessage="조회된 도움말 콘텐츠가 현재 클러스터에 존재하지 않습니다."
-            className="border-none bg-transparent"
-          />
-        </div>
-      </HubSectionCard>
 
       <StandardModal
         isOpen={isModalOpen}
@@ -209,7 +186,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
           </form>
         </Form>
       </StandardModal>
-    </div>
+    </WorkListPage>
   );
 }
 

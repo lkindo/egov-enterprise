@@ -85,9 +85,12 @@ describe('SystemLogsUserClient scoped error recovery', () => {
     renderWithQueryClient(<SystemLogsUserClient />);
 
     await screen.findAllByText('SyntheticService');
-    const input = screen.getByRole('textbox', { name: '데이터 검색' });
+    // [2026-08-24 A1 이행] 조회 조건이 표 내부 검색창에서 WorkListPage 의 조회 조건 영역으로
+    //   올라갔다(카탈로그 G2). 검사 대상은 여전히 "제출한 조건이 오류·재시도를 건너뛰고 살아남는가"다
+    //   — 셀렉터만 새 조회 조건(라벨 '요청자명', 실행 버튼 '조회')으로 옮긴다.
+    const input = screen.getByRole('textbox', { name: '요청자명' });
     await user.type(input, FAILURE_PROBE);
-    await user.click(screen.getByRole('button', { name: '검색' }));
+    await user.click(screen.getByRole('button', { name: '조회' }));
 
     const retryButtons = await screen.findAllByRole('button', { name: '데이터 다시 불러오기' });
     expect(input).toHaveValue(FAILURE_PROBE);

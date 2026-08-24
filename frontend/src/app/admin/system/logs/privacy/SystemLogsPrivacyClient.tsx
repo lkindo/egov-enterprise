@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import type { PageResponse, PrivacyLog } from '@/types/foundation/system';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { ShieldAlert, Calendar, User, Tag } from 'lucide-react';
+import { Calendar, User, Tag } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -94,44 +95,43 @@ const SystemLogsPrivacyClient = () => {
     ];
 
     return (
-        <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader
-                title="개인정보 접근 로그"
-                breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '개인정보 접근 로그' }]}
-            />
-
-            <HubHeader
-                title="프라이버시 가드"
-                highlight="개인정보 접근 로그"
-                subtitle="개인정보 접근 및 처리 이력을 추적하여 데이터 보호 컴플라이언스를 보장합니다."
-                icon={ShieldAlert}
-            />
-
+        <WorkListPage
+            title="개인정보 접근 로그"
+            description="개인정보 접근 및 처리 이력을 추적합니다."
+            breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '개인정보 접근 로그' }]}
+            filterStateKey="system-logs-privacy"
+            // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
+            totalCount={error ? undefined : totalCount}
+            filter={
+                <KeywordFilter
+                    label="조회 대상 정보"
+                    placeholder="조회 대상 정보로 검색"
+                    value={searchKeyword}
+                    onSearch={(keyword) => { setSearchKeyword(keyword); setPage(1); }}
+                />
+            }
+        >
             <StandardDataTable
+                accessibleLabel="개인정보 접근 로그 목록"
                 columns={columns}
                 data={logs}
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
+                emptyMessage={emptyResultMessage(searchKeyword, '조회된 개인정보 접근 로그가 없습니다.')}
                 keyField="prvcLogSn"
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,
                     onPageChange: setPage,
-                    totalCount,
+                    // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
                     pageSize,
                     // 페이지 크기 변경 시 1페이지로 복귀 — 줄어든 총 페이지 밖에 남지 않게 한다.
                     onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
                     pageSizeOptions: PAGE_SIZE_OPTIONS,
                 }}
-                search={{
-                    placeholder: '조회 대상 정보로 검색..',
-                    value: searchKeyword,
-                    onSearch: (keyword: string) => { setSearchKeyword(keyword); setPage(1); },
-                    onClear: () => { setSearchKeyword(''); setPage(1); },
-                }}
             />
-        </div>
+        </WorkListPage>
     );
 };
 

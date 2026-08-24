@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
-import { StandardSearchFilter } from '@/app/components/ui/standard-search-filter';
 import { surveyAdminService } from '@/services/foundation/survey/SurveyAdminService';
 import { Survey } from '@/types/business/survey';
 import { useToast } from '@/app/components/ui/toast';
@@ -16,6 +15,7 @@ export default function SurveyClient() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<Survey[]>([]);
+  const [total, setTotal] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     async function loadData() {
@@ -23,6 +23,7 @@ export default function SurveyClient() {
         setLoading(true);
         const res = await surveyAdminService.getSurveys({ page: 0, size: 10 });
         setData(res.list || []);
+        setTotal(typeof res.total === 'number' ? res.total : undefined);
       } catch {
         toast('설문 목록을 불러오지 못했습니다.', 'error');
       } finally {
@@ -70,29 +71,26 @@ export default function SurveyClient() {
   ];
 
   return (
-    <div className="space-y-6">
-      <PageHeader
-        title="온라인 설문 조사"
-        breadcrumbs={[{ label: '업무지원' }, { label: '설문조사' }]}
+    /*
+      종전 이 화면의 검색 필터는 onSearch 가 `console.log` 뿐인 **동작하지 않는 컨트롤**이었다
+      (카탈로그 G10 금지). 서버 검색 계약을 새로 만드는 것은 이 이행의 범위가 아니므로
+      거짓 어포던스를 제거한다 — 검색이 필요해지면 조회 조건을 서버 파라미터와 함께 되살린다.
+    */
+    <WorkListPage
+      title="온라인 설문 조사"
+      description="참여할 수 있는 설문을 확인합니다."
+      breadcrumbItems={[{ label: '업무지원' }, { label: '설문조사' }]}
+      totalCount={total}
+    >
+      <StandardDataTable<Survey>
+        accessibleLabel="설문 조사 목록"
+        columns={columns}
+        data={data}
+        loading={loading}
+        onRowClick={(item) => router.push(`/survey/${item.srvySn}`)}
+        rowActionLabel={(item) => `${item.srvyTtl || `${item.srvySn}번`} 설문 응답 열기`}
+        emptyMessage="등록된 설문 조사가 없습니다."
       />
-
-      <StandardSearchFilter
-        fields={[
-          { name: 'searchWrd', label: '설문명 검색', type: 'text', placeholder: '제목 입력...' }
-        ]}
-        onSearch={(v) => console.log('Filtering...', v)}
-      />
-
-      <div className="grid grid-cols-1 gap-6">
-        <StandardDataTable<Survey>
-          columns={columns}
-          data={data}
-          loading={loading}
-          onRowClick={(item) => router.push(`/survey/${item.srvySn}`)}
-          rowActionLabel={(item) => `${item.srvyTtl || `${item.srvySn}번`} 설문 응답 열기`}
-          emptyMessage="등록된 설문 조사가 없습니다."
-        />
-      </div>
-    </div>
+    </WorkListPage>
   );
 }

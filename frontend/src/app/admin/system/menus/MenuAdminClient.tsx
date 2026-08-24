@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, use } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 import { MenuInfo } from '@/types/foundation/menu';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -16,25 +16,17 @@ import {
   FileCode,
   Save,
   Layers,
-  Link as LinkIcon,
   ChevronsDownUp,
   ChevronsUpDown,
-  SearchCode,
-  Network,
-  Database,
+  Search,
   GripVertical,
   AlertTriangle,
   RefreshCcw,
-  Unlink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { Input } from '@/components/ui/input';
-;
 import { Button } from '@/components/ui/button';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { saveMenuAction, updateMenuOrdersAction, deleteMenuAction } from '@/app/actions/menuActions';
 import { menuSchema } from '@/lib/validation/schemas';
 import { Textarea } from '@/components/ui/textarea';
@@ -109,26 +101,26 @@ const dropAnimation: DropAnimation = {
 interface SortableMenuNodeProps {
     item: FlattenedItem;
     depth: number;
-    isSaving: boolean;
-    onEdit: (item: MenuInfo) => void;
-    onCreate: (id: number) => void;
-    onDelete: (item: FlattenedItem) => void;
     onToggle: (id: number) => void;
+    onSelect: (item: FlattenedItem) => void;
+    isSelected: boolean;
     isExpanded: boolean;
     hasChildren: boolean;
+    isTabStop: boolean;
+    dragDisabled?: boolean;
     isOverlay?: boolean;
 }
 
 const SortableMenuNode = ({ 
     item, 
     depth, 
-    isSaving, 
-    onEdit, 
-    onCreate, 
-    onDelete, 
     onToggle,
+    onSelect,
+    isSelected,
     isExpanded,
     hasChildren,
+    isTabStop,
+    dragDisabled = false,
     isOverlay = false
 }: SortableMenuNodeProps) => {
     const {
@@ -138,7 +130,7 @@ const SortableMenuNode = ({
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: item.menuNo });
+    } = useSortable({ id: item.menuNo, disabled: dragDisabled });
 
     const style = {
         transform: isOverlay ? undefined : CSS.Translate.toString(transform),
@@ -148,9 +140,9 @@ const SortableMenuNode = ({
 
     const content = (
         <div className={cn(
-            "group select-none relative transition-all duration-300",
-            isDragging && !isOverlay && "opacity-40 scale-[0.98] ring-2 ring-primary/30 ring-dashed bg-primary/5 rounded-lg",
-            isOverlay && "shadow-3xl z-[9999] pointer-events-none"
+            "group relative select-none",
+            isDragging && !isOverlay && "opacity-40",
+            isOverlay && "pointer-events-none z-[9999] shadow-xl",
         )}>
             {/* 계층 연결 라인 */}
             {!isOverlay && depth > 0 && (
@@ -163,123 +155,57 @@ const SortableMenuNode = ({
             )}
 
             <div className={cn(
-                "flex items-center justify-between p-4 rounded-lg border transition-all relative overflow-hidden",
-                depth === 0 
-                  ? "bg-surface-inverse border-surface-inverse-border shadow-xl min-h-[5rem]"
-                  : depth === 1 
-                    ? "bg-card border-border shadow-sm"
-                    : "bg-muted border-transparent",
-                "hover:border-primary/40 backdrop-blur-xl mb-2",
-                depth !== 0 && "bg-card/60",
-                isOverlay && "border-primary bg-card shadow-3xl ring-8 ring-primary/5 scale-[1.02]",
-                !isOverlay && depth > 0 && "ml-3"
+                "mb-1 flex min-w-0 items-center gap-1 rounded-md border border-transparent p-1",
+                isSelected && !isOverlay && "border-primary/30 bg-primary/10",
+                !isSelected && "hover:border-border hover:bg-muted",
+                isOverlay && "border-primary bg-card",
+                !isOverlay && depth > 0 && "ml-2",
             )}>
-                <div className="flex items-center gap-5 relative z-10 w-full">
-                    <div
+                    <button
+                        type="button"
                         {...attributes}
                         {...listeners}
+                        disabled={dragDisabled}
                         aria-label={`${item.menuNm} 순서 이동 핸들`}
-                        className={cn(
-                          "p-2 hover:bg-muted rounded-lg cursor-grab active:cursor-grabbing transition-colors",
-                          depth === 0 ? "text-muted-foreground hover:text-surface-inverse-foreground" : "text-muted-foreground hover:text-primary"
-                        )}
+                        title={dragDisabled ? '검색 중에는 순서와 계층을 변경할 수 없습니다.' : undefined}
+                        className="shrink-0 cursor-grab rounded p-2 text-muted-foreground hover:bg-card hover:text-foreground active:cursor-grabbing"
                     >
-                        <GripVertical size={20} />
-                    </div>
+                        <GripVertical size={16} aria-hidden="true" />
+                    </button>
 
-                    <div className="flex items-center gap-5 flex-1">
-                        <div className="flex items-center">
                             {hasChildren && (
                                 <button
                                     type="button"
                                     aria-label={`${item.menuNm} 하위 메뉴 ${isExpanded ? '접기' : '펼치기'}`}
                                     aria-expanded={isExpanded}
                                     onClick={(e) => { e.stopPropagation(); onToggle(item.menuNo); }}
-                                    className={cn(
-                                      "p-2 hover:bg-muted rounded-lg transition-colors mr-2",
-                                      depth === 0 ? "text-muted-foreground hover:text-surface-inverse-foreground" : "text-muted-foreground"
-                                    )}
+                                    className="shrink-0 rounded p-2 text-muted-foreground hover:bg-card hover:text-foreground"
                                 >
-                                    <ChevronRight size={22} className={cn("transition-transform duration-300", isExpanded && "rotate-90")} />
+                                    <ChevronRight size={16} aria-hidden="true" className={cn("transition-transform", isExpanded && "rotate-90")} />
                                 </button>
                             )}
-                            {!hasChildren && depth < 2 ? <div className="w-10" /> : null}
-                            <div className={cn(
-                                "w-11 h-11 rounded-xl flex items-center justify-center shadow-lg transition-transform group-hover:scale-110",
-                                depth === 0 ? "bg-card text-foreground" : depth === 1 ? "bg-surface-inverse text-surface-inverse-foreground" : "bg-card text-muted-foreground border border-border shadow-sm"
-                            )}>
-                                {depth === 0 ? <FolderTree size={20} className="stroke-[2.5]" /> : depth === 1 ? <Layers size={16} /> : <FileCode size={14} />}
-                            </div>
-                        </div>
-                        <div className="flex flex-col">
-                            <span className={cn(
-                              "font-black tracking-tight transition-colors", 
-                              depth === 0 ? "text-surface-inverse-foreground text-base" : depth === 1 ? "text-foreground text-sm" : "text-muted-foreground text-xs"
-                            )}>
-                                {item.menuNm}
-                            </span>
-                            <div className="flex items-center gap-3 mt-1">
-                                <span className={cn(
-                                  "text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest",
-                                   depth === 0 ? "bg-white/10 text-surface-inverse-muted" : "bg-muted text-muted-foreground opacity-100"
-                                )}>
-                                    ID: {item.menuNo}
-                                </span>
-                                {item.prgrmFileNm && (
-                                    <span className={cn(
-                                      "text-[10px] flex items-center gap-1 font-black uppercase tracking-widest",
-                                       depth === 0 ? "text-muted-foreground" : "text-primary opacity-100"
-                                    )}>
-                                        <LinkIcon size={10} /> {item.prgrmFileNm}
-                                    </span>
-                                )}
-                                {(item.useYn === 'N') && (
-                                    <span className="text-[10px] flex items-center gap-1 font-black uppercase tracking-widest text-rose-500 bg-rose-50 px-2 rounded-md">
-                                        비활성
-                                    </span>
-                                )}
-                            </div>
-                        </div>
-                    </div>
 
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
-                        {depth < 2 && (
-                            <Button
-                                variant="ghost" size="icon"
-                                aria-label={`${item.menuNm} 하위 메뉴 추가`}
-                                onClick={() => onCreate(item.menuNo)}
-                                className={cn(
-                                  "h-9 w-9 rounded-lg",
-                                   depth === 0 ? "bg-slate-800 text-slate-300" : "bg-muted hover:bg-primary hover:text-white"
-                                )}
-                            >
-                                <Plus size={14} />
-                            </Button>
+                    <button
+                        type="button"
+                        data-a2-master-item={isOverlay ? undefined : ''}
+                        aria-current={isSelected ? 'true' : undefined}
+                        tabIndex={isTabStop ? 0 : -1}
+                        onClick={() => onSelect(item)}
+                        className="flex min-w-0 flex-1 items-center gap-3 rounded px-2 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                    >
+                        <span className="flex size-8 shrink-0 items-center justify-center rounded bg-muted text-muted-foreground">
+                            {depth === 0 ? <FolderTree size={16} aria-hidden="true" /> : depth === 1 ? <Layers size={15} aria-hidden="true" /> : <FileCode size={14} aria-hidden="true" />}
+                        </span>
+                        <span className="min-w-0 flex-1">
+                            <span className="block truncate text-sm font-semibold text-foreground">{item.menuNm}</span>
+                            <span className="block truncate text-xs text-muted-foreground">
+                                ID: {item.menuNo}{item.prgrmFileNm ? ` · ${item.prgrmFileNm}` : ''}
+                            </span>
+                        </span>
+                        {item.useYn === 'N' && (
+                            <span className="shrink-0 rounded bg-muted px-2 py-1 text-xs font-semibold text-muted-foreground">미사용</span>
                         )}
-                        <Button
-                            variant="ghost" size="icon"
-                            aria-label={`${item.menuNm} 수정`}
-                            onClick={() => onEdit(item)}
-                            className={cn(
-                              "h-9 w-9 rounded-lg",
-                              depth === 0 ? "bg-slate-800 text-muted-foreground hover:bg-card hover:text-foreground" : "bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground"
-                            )}
-                        >
-                            <Settings size={14} />
-                        </Button>
-                        <Button
-                            variant="ghost" size="icon"
-                            aria-label={`${item.menuNm} 삭제`}
-                            onClick={() => onDelete(item)}
-                            className={cn(
-                              "h-9 w-9 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white rounded-lg",
-                              depth === 0 && "bg-rose-950/30 hover:bg-rose-500"
-                            )}
-                        >
-                            <Trash2 size={14} />
-                        </Button>
-                    </div>
-                </div>
+                    </button>
             </div>
         </div>
     );
@@ -288,6 +214,7 @@ const SortableMenuNode = ({
         <div 
             ref={setNodeRef} 
             style={style}
+            aria-hidden={isOverlay ? true : undefined}
             className={isOverlay ? "z-[9999] pointer-events-none" : undefined}
         >
             {content}
@@ -319,6 +246,8 @@ export default function MenuAdminClient({
   const [overId, setOverId] = useState<number | null>(null);
   const [offsetLeft, setOffsetLeft] = useState(0);
   const [expandedIds, setExpandedIds] = useState<Set<number>>(new Set());
+  const [selectedMenuId, setSelectedMenuId] = useState<number | null>(null);
+  const [menuKeyword, setMenuKeyword] = useState('');
 
   // 데이터 초기화
   useEffect(() => {
@@ -333,6 +262,7 @@ export default function MenuAdminClient({
         .filter(m => flat.some(child => child.parentId === m.menuNo))
         .map(m => m.menuNo);
     setExpandedIds(new Set(idsWithChildren));
+    setSelectedMenuId((current) => current && flat.some((menu) => menu.menuNo === current) ? current : null);
   }, [initialMenus]);
 
   // 투영(Projection) 정보 계산
@@ -343,6 +273,31 @@ export default function MenuAdminClient({
 
   // 가시적 메뉴 필터링
   const visibleFlattenedMenus = useMemo(() => {
+    const normalizedKeyword = menuKeyword.trim().toLocaleLowerCase('ko-KR');
+    if (normalizedKeyword) {
+      const includedIds = new Set<number>();
+      const includeWithAncestors = (item: FlattenedItem) => {
+        includedIds.add(item.menuNo);
+        let parentId = item.parentId;
+        const visitedIds = new Set<number>();
+        while (parentId && parentId !== 0 && !visitedIds.has(parentId)) {
+          visitedIds.add(parentId);
+          includedIds.add(parentId);
+          parentId = flattenedMenus.find((candidate) => candidate.menuNo === parentId)?.parentId ?? null;
+        }
+      };
+
+      flattenedMenus.forEach((item) => {
+        const searchable = [item.menuNm, item.menuNo, item.modernRoute, item.prgrmFileNm]
+          .filter((value) => value !== undefined && value !== null)
+          .join(' ')
+          .toLocaleLowerCase('ko-KR');
+        if (searchable.includes(normalizedKeyword)) includeWithAncestors(item);
+      });
+
+      return flattenedMenus.filter((item) => includedIds.has(item.menuNo));
+    }
+
     const visible: FlattenedItem[] = [];
     const isParentExpanded = (parentId: number | null): boolean => {
         if (parentId === null || parentId === 0) return true;
@@ -362,7 +317,7 @@ export default function MenuAdminClient({
         }
     });
     return visible;
-  }, [flattenedMenus, expandedIds, activeId, projected]);
+  }, [flattenedMenus, expandedIds, activeId, menuKeyword, projected]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -384,6 +339,7 @@ export default function MenuAdminClient({
 
   const handleDragStart = (event: DragStartEvent) => {
     setActiveId(event.active.id as number);
+    setSelectedMenuId(event.active.id as number);
     setOverId(event.active.id as number);
     setOffsetLeft(0);
   };
@@ -425,6 +381,7 @@ export default function MenuAdminClient({
   };
 
   const handleToggleExpand = (id: number) => {
+    setSelectedMenuId(null);
     setExpandedIds(prev => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
@@ -440,6 +397,7 @@ export default function MenuAdminClient({
   };
 
   const handleOpenEdit = (menu: MenuInfo) => {
+    setSelectedMenuId(menu.menuNo);
     setMode('edit');
     form.reset({ menuNo: menu.menuNo, menuNm: menu.menuNm, menuOrdr: menu.menuOrdr || 0, upperMenuId: menu.upMenuSn ?? menu.upperMenuId ?? 0, prgrmFileNm: menu.prgrmFileNm || '', modernRoute: menu.modernRoute || '', menuExpln: menu.menuExpln ?? menu.menuDc ?? '', useYn: (menu.useYn || 'Y') as 'Y' | 'N' });
     setIsOpen(true);
@@ -474,76 +432,95 @@ export default function MenuAdminClient({
     });
     if (isConfirmed) {
         const res = await deleteMenuAction(null, target.menuNo);
-        if (res.success) { toast(res.message, 'success'); router.refresh(); }
+        if (res.success) {
+          toast(res.message, 'success');
+          if (selectedMenuId === target.menuNo) setSelectedMenuId(null);
+          router.refresh();
+        }
         else { toast(res.message, 'error'); }
     }
   };
 
   const activeItem = activeId ? flattenedMenus.find(m => m.menuNo === activeId) : null;
+  const selectedMenu = selectedMenuId
+    && visibleFlattenedMenus.some((menu) => menu.menuNo === selectedMenuId)
+    ? flattenedMenus.find((menu) => menu.menuNo === selectedMenuId) ?? null
+    : null;
 
   return (
-    <div className="space-y-10 pb-24">
-      <PageHeader title="시스템 메뉴 아키텍처" breadcrumbs={[{ label: '시스템관리' }, { label: '메뉴 관리' }]} />
-
-      <HubHeader
-        title="메뉴" highlight="구조 설계"
-        subtitle="항목을 자유롭게 이동하여 시스템 계층 구조를 설계하십시오."
-        icon={FolderTree}
+    <div className="pb-24">
+      <MasterDetailPage
+        title="시스템 메뉴 관리"
+        description="메뉴 계층을 선택해 연결 경로와 사용 상태를 확인하고 편집합니다."
+        breadcrumbItems={[{ label: '시스템 관리' }, { label: '메뉴 관리' }]}
         actions={
-          <Button onClick={() => handleOpenCreate(0)} size="lg" className="h-10 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-black text-xs tracking-tight shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 active:scale-95">
-            <Plus size={18} /> 신규 등록
+          <Button onClick={() => handleOpenCreate(0)} className="h-10 gap-2 font-semibold">
+            <Plus size={16} aria-hidden="true" /> 신규 메뉴 등록
           </Button>
         }
-      />
-
-      {/*
-        조회 실패를 "데이터 0건"으로 위장하지 않는다. 서버 조회가 실패했으면 그 사실과 사유를 그대로 노출하고
-        재시도(서버 컴포넌트 재실행) 수단을 제공한다.
-      */}
-      {(menusError || programsError) && (
-        <div role="alert" className="flex flex-col gap-3 rounded-lg border-2 border-destructive/30 bg-destructive/5 p-6 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-start gap-3">
-            <AlertTriangle size={20} className="mt-0.5 shrink-0 text-destructive-emphasis" aria-hidden="true" />
-            <div className="space-y-1">
-              <p className="text-sm font-black text-destructive-emphasis">데이터를 불러오지 못했습니다</p>
-              <p className="text-xs font-semibold text-muted-foreground">
-                {menusError ? `메뉴 트리: ${menusError}` : `프로그램 목록: ${programsError}`}
-                {menusError ? ' — 아래 트리는 비어 있거나 최신 상태가 아닐 수 있습니다.' : ' — 프로그램 자동완성 후보가 비어 있습니다.'}
+        notice={(menusError || programsError) ? (
+          <div role="alert" className="flex flex-col gap-3 rounded-md border border-destructive/30 bg-destructive/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <AlertTriangle size={20} className="mt-0.5 shrink-0 text-destructive-emphasis" aria-hidden="true" />
+              <div className="space-y-1">
+                <p className="text-sm font-semibold text-destructive-emphasis">데이터를 불러오지 못했습니다</p>
+                <p className="text-xs text-muted-foreground">
+                  {menusError ? `메뉴 트리: ${menusError}` : `프로그램 목록: ${programsError}`}
+                  {menusError ? ' — 아래 트리는 비어 있거나 최신 상태가 아닐 수 있습니다.' : ' — 프로그램 자동완성 후보가 비어 있습니다.'}
+                </p>
+              </div>
+            </div>
+            <Button variant="outline" onClick={() => router.refresh()} className="h-10 shrink-0 gap-2 font-semibold">
+              <RefreshCcw size={16} aria-hidden="true" /> 다시 시도
+            </Button>
+          </div>
+        ) : undefined}
+        masterTitle="네비게이션 트리"
+        masterDescription={`전체 ${flattenedMenus.length.toLocaleString()}개 메뉴 · 그립 핸들로 순서와 상하 관계를 변경합니다.`}
+        masterTools={
+          <>
+            <Button variant="outline" size="sm" aria-label="전체 메뉴 펼치기" onClick={() => {
+              setSelectedMenuId(null);
+              setExpandedIds(new Set(flattenedMenus.map(m => m.menuNo)));
+            }}>
+              <ChevronsUpDown size={14} aria-hidden="true" />
+            </Button>
+            <Button variant="outline" size="sm" aria-label="전체 메뉴 접기" onClick={() => {
+              setSelectedMenuId(null);
+              setExpandedIds(new Set());
+            }}>
+              <ChevronsDownUp size={14} aria-hidden="true" />
+            </Button>
+            <Button
+              onClick={handleSaveChanges}
+              disabled={!hasChanges || !selectedMenu || isSaving || isModalOpen}
+              size="sm"
+              className="gap-2"
+            >
+              {isSaving ? <Loader2 className="size-4" /> : <Save size={14} aria-hidden="true" />} 구조 저장
+            </Button>
+          </>
+        }
+        master={(
+          <div className="space-y-3">
+            <div className="relative">
+              <Search size={16} aria-hidden="true" className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                aria-label="메뉴 검색"
+                value={menuKeyword}
+                onChange={(event) => {
+                  setMenuKeyword(event.target.value);
+                  setSelectedMenuId(null);
+                }}
+                placeholder="메뉴 이름·ID·라우트 검색"
+                className="h-10 pl-9"
+              />
+            </div>
+            {menuKeyword.trim() && (
+              <p aria-live="polite" className="text-xs text-muted-foreground">
+                검색 결과 {visibleFlattenedMenus.length.toLocaleString()}개
               </p>
-            </div>
-          </div>
-          <Button variant="outline" onClick={() => router.refresh()} className="h-10 shrink-0 gap-2 rounded-lg font-bold">
-            <RefreshCcw size={16} /> 다시 시도
-          </Button>
-        </div>
-      )}
-
-      <HubMetricGrid>
-        <HubMetricCard title="전체 노드" value={flattenedMenus.length} icon={Database} color="primary" />
-        <HubMetricCard title="계층 깊이" value={Math.max(...flattenedMenus.map(m => m.depth), 0) + 1} icon={Layers} color="indigo" />
-        <HubMetricCard title="라우트 연결" value={flattenedMenus.filter(m => !!m.modernRoute).length} icon={Network} color="emerald" />
-        <HubMetricCard title="라우트 미지정" value={flattenedMenus.filter(m => !m.modernRoute).length} icon={Unlink} color="amber" />
-      </HubMetricGrid>
-
-      <HubSectionCard
-        title="네비게이션 트리"
-        description="그립 핸들을 사용하여 순서와 계층을 조정할 수 있습니다."
-        icon={SearchCode}
-        action={
-          <div className="flex gap-3 items-center">
-            <div className="flex bg-white/40 backdrop-blur-md p-1 rounded-xl border border-white/60 shadow-sm ring-1 ring-black/5">
-              <Button variant="ghost" className="h-8 px-4 text-[10px] font-black tracking-widest hover:bg-white/50" onClick={() => setExpandedIds(new Set(flattenedMenus.map(m => m.menuNo)))}><ChevronsUpDown size={14} className="mr-1.5" /> 전체 펼치기</Button>
-              <Button variant="ghost" className="h-8 px-4 text-[10px] font-black tracking-widest hover:bg-white/50" onClick={() => setExpandedIds(new Set())}><ChevronsDownUp size={14} className="mr-1.5" /> 전체 접기</Button>
-            </div>
-            {hasChanges && (
-                <Button onClick={handleSaveChanges} disabled={isSaving} className="bg-emerald-500 text-white hover:bg-emerald-600 h-9 px-5 rounded-lg font-black text-[10px] tracking-widest gap-2 shadow-lg scale-in-center active:scale-95">
-                    {isSaving ? <Loader2 className="animate-spin w-4 h-4" /> : <Save size={14} />} 구조 저장
-                </Button>
             )}
-          </div>
-        }
-      >
-        <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl p-6 ring-1 ring-black/5 min-h-[600px]">
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -555,18 +532,18 @@ export default function MenuAdminClient({
           >
             <SortableContext items={visibleFlattenedMenus.map(m => m.menuNo)} strategy={verticalListSortingStrategy}>
               <div className="space-y-1">
-                {visibleFlattenedMenus.map((item) => (
+                {visibleFlattenedMenus.map((item, index) => (
                   <SortableMenuNode
                     key={item.menuNo}
                     item={item}
                     depth={item.depth}
-                    isSaving={isSaving}
-                    onEdit={handleOpenEdit}
-                    onCreate={handleOpenCreate}
-                    onDelete={handleDelete}
                     onToggle={handleToggleExpand}
+                    onSelect={(menu) => setSelectedMenuId(menu.menuNo)}
+                    isSelected={selectedMenuId === item.menuNo}
+                    isTabStop={selectedMenuId === item.menuNo || (selectedMenuId === null && index === 0)}
                     isExpanded={expandedIds.has(item.menuNo)}
                     hasChildren={flattenedMenus.some(m => m.parentId === item.menuNo)}
+                    dragDisabled={Boolean(menuKeyword.trim())}
                   />
                 ))}
               </div>
@@ -578,9 +555,12 @@ export default function MenuAdminClient({
                   <SortableMenuNode
                     item={activeItem}
                     depth={activeItem.depth}
-                    isSaving={isSaving}
-                    onEdit={() => {}} onCreate={() => {}} onDelete={() => {}} onToggle={() => {}}
+                    onToggle={() => {}}
+                    onSelect={() => {}}
+                    isSelected={false}
+                    isTabStop={false}
                     isExpanded={false} hasChildren={false}
+                    dragDisabled
                     isOverlay
                   />
                 ) : null}
@@ -588,8 +568,70 @@ export default function MenuAdminClient({
               document.body
             )}
           </DndContext>
-        </div>
-      </HubSectionCard>
+          {visibleFlattenedMenus.length === 0 && (
+            <p role="status" className="py-10 text-center text-sm text-muted-foreground">
+              {menuKeyword.trim() ? '검색 조건에 맞는 메뉴가 없습니다.' : '등록된 메뉴가 없습니다.'}
+            </p>
+          )}
+          </div>
+        )}
+        selectedItemLabel={selectedMenu?.menuNm}
+        detailTitle="메뉴 상세"
+        detailDescription={selectedMenu ? `메뉴 ID ${selectedMenu.menuNo}` : undefined}
+        detailActions={selectedMenu ? (
+          <>
+            {selectedMenu.depth < 2 && (
+              <Button variant="outline" size="sm" onClick={() => handleOpenCreate(selectedMenu.menuNo)} className="gap-2">
+                <Plus size={14} aria-hidden="true" /> 하위 메뉴 추가
+              </Button>
+            )}
+            <Button variant="outline" size="sm" onClick={() => handleOpenEdit(selectedMenu)} className="gap-2">
+              <Settings size={14} aria-hidden="true" /> 메뉴 수정
+            </Button>
+            <Button variant="destructive" size="sm" onClick={() => handleDelete(selectedMenu)} className="gap-2">
+              <Trash2 size={14} aria-hidden="true" /> 메뉴 삭제
+            </Button>
+          </>
+        ) : undefined}
+        detail={selectedMenu ? (
+          <dl className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-md border border-border p-4">
+              <dt className="text-xs font-semibold text-muted-foreground">메뉴 ID</dt>
+              <dd className="mt-1 text-sm font-semibold text-foreground">{selectedMenu.menuNo}</dd>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <dt className="text-xs font-semibold text-muted-foreground">상위 메뉴</dt>
+              <dd className="mt-1 text-sm text-foreground">
+                {selectedMenu.parentId
+                  ? flattenedMenus.find((menu) => menu.menuNo === selectedMenu.parentId)?.menuNm ?? `ID ${selectedMenu.parentId}`
+                  : '최상위'}
+              </dd>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <dt className="text-xs font-semibold text-muted-foreground">연결 라우트</dt>
+              <dd className="mt-1 break-all text-sm text-foreground">{selectedMenu.modernRoute || '연결 없음'}</dd>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <dt className="text-xs font-semibold text-muted-foreground">연결 프로그램</dt>
+              <dd className="mt-1 break-all text-sm text-foreground">{selectedMenu.prgrmFileNm || '연결 없음'}</dd>
+            </div>
+            <div className="rounded-md border border-border p-4">
+              <dt className="text-xs font-semibold text-muted-foreground">사용 상태</dt>
+              <dd className="mt-1 text-sm text-foreground">{selectedMenu.useYn === 'N' ? '미사용' : '사용'}</dd>
+            </div>
+            <div className="rounded-md border border-border p-4 sm:col-span-2">
+              <dt className="text-xs font-semibold text-muted-foreground">설명</dt>
+              <dd className="mt-1 whitespace-pre-wrap text-sm text-foreground">
+                {selectedMenu.menuExpln ?? selectedMenu.menuDc ?? '등록된 설명이 없습니다.'}
+              </dd>
+            </div>
+          </dl>
+        ) : undefined}
+        emptyDetailTitle="메뉴를 선택하세요"
+        emptyDetailDescription="왼쪽 네비게이션 트리에서 확인하거나 편집할 메뉴를 선택하세요."
+        onSaveShortcut={hasChanges ? handleSaveChanges : undefined}
+        saveShortcutDisabled={isSaving || isModalOpen}
+      />
 
       <StandardModal
         isOpen={isModalOpen} onClose={() => setIsOpen(false)}

@@ -4,8 +4,9 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import type { PageResponse, WebLog } from '@/types/foundation/system';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { Globe, Clock, Terminal, Link } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
@@ -97,44 +98,43 @@ const SystemLogsWebClient = () => {
     ];
 
     return (
-        <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader
-                title="웹 로그"
-                breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '웹 로그' }]}
-            />
-
-            <HubHeader
-                title="트래픽 레이더"
-                highlight="웹 로그"
-                subtitle="모든 HTTP 요청과 응답 이력을 분석하여 시스템 성능과 보안 이상 징후를 실시간으로 감지합니다."
-                icon={Globe}
-            />
-
+        <WorkListPage
+            title="웹 로그"
+            description="HTTP 요청·응답 이력을 조회합니다."
+            breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '웹 로그' }]}
+            filterStateKey="system-logs-web"
+            // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
+            totalCount={error ? undefined : totalCount}
+            filter={
+                <KeywordFilter
+                    label="URL · IP"
+                    placeholder="URL, IP 검색"
+                    value={searchKeyword}
+                    onSearch={(keyword: string) => { setSearchKeyword(keyword); setPage(1); }}
+                />
+            }
+        >
             <StandardDataTable
+                accessibleLabel="웹 로그 목록"
                 columns={columns}
                 data={logs}
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
+                emptyMessage={emptyResultMessage(searchKeyword, '조회된 웹 로그가 없습니다.')}
                 keyField="webLogSn"
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,
                     onPageChange: setPage,
-                    totalCount,
+                    // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
                     pageSize,
                     // 페이지 크기 변경 시 1페이지로 복귀 — 줄어든 총 페이지 밖에 남지 않게 한다.
                     onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
                     pageSizeOptions: PAGE_SIZE_OPTIONS,
                 }}
-                search={{
-                    placeholder: 'URL, IP 검색..',
-                    value: searchKeyword,
-                    onSearch: (keyword: string) => { setSearchKeyword(keyword); setPage(1); },
-                    onClear: () => { setSearchKeyword(''); setPage(1); },
-                }}
             />
-        </div>
+        </WorkListPage>
     );
 };
 

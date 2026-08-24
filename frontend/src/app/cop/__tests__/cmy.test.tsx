@@ -124,7 +124,9 @@ describe('CommunityHubClient', () => {
   it('uses the one-based pageIndex contract when searching', async () => {
     renderWithClient(<CommunityHubClient initialData={mockInitialData} />);
 
-    fireEvent.change(screen.getByPlaceholderText('커뮤니티 검색...'), {
+    // [2026-08-24 A1 이행] 조회 조건이 WorkListPage 조회 조건 영역으로 올라가면서
+    //   placeholder 의 말줄임표가 사라졌다. 검사 의도(1-base pageIndex 계약)는 그대로다.
+    fireEvent.change(screen.getByPlaceholderText('커뮤니티 검색'), {
       target: { value: '보안' },
     });
 

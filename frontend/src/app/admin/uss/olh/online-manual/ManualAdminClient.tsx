@@ -3,13 +3,12 @@
 import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { manualAdminService, ManualDto } from '@/services/foundation/user/ManualAdminService';
 import { PageResponse } from '@/types/modernization';
-import { BookOpen,
-  Plus,
-  Search,
+import { Plus,
   RefreshCcw,
   FileText,
   Trash2,
@@ -41,7 +40,6 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { z } from 'zod';
-import { motion } from 'framer-motion';
 
 const PAGE_SIZE = 10;
 
@@ -233,90 +231,66 @@ export default function ManualAdminClient({
   ];
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.8, ease: "easeOut" }}
-      // 루트 admin 레이아웃이 이미 좌우 여백을 준다 — 화면별 px 를 겹쳐 넣지 않는다(감사 P2).
-      className="max-w-6xl mx-auto space-y-12 pb-24"
-    >
-      <PageHeader
-        title="온라인 매뉴얼 관리"
-        breadcrumbs={[{ label: '부가서비스' }, { label: '온라인 매뉴얼' }]}
-        actions={
-          <div className="flex items-center gap-4">
-            <Button
-              onClick={() => refetch()}
-              variant="outline"
-              aria-label="매뉴얼 목록 새로고침"
-              className="h-11 w-14 rounded-lg border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95 px-4"
-            >
-              <RefreshCcw size={18} className={cn(isFetching && "animate-spin")} aria-hidden="true" />
-            </Button>
-            <Button
-              onClick={handleOpenAdd}
-              className="h-11 px-8 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3"
-            >
-              <Plus size={18} aria-hidden="true" /> 새 매뉴얼 등록
-            </Button>
-          </div>
-        }
-      />
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.2 }}
-        className="responsive-card p-6 md:p-12 border-2 border-border bg-card/50 backdrop-blur-xl relative overflow-hidden group rounded-lg shadow-sm"
-      >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative z-10">
-          <div className="flex items-center gap-4 text-left">
-            <div className="w-12 h-12 bg-surface-inverse text-surface-inverse-foreground rounded-lg flex items-center justify-center shadow-lg">
-              <BookOpen size={24} aria-hidden="true" />
-            </div>
-            <div className="text-left">
-              <h3 className="text-xl md:text-2xl font-bold text-foreground tracking-tighter text-left">지식 자산</h3>
-              <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] text-left">온라인 매뉴얼 관리</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative group/search flex-1 md:flex-none">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-40 group-focus-within/search:opacity-100 transition-opacity" size={18} aria-hidden="true" />
-              <Input
-                placeholder="매뉴얼 검색..."
-                aria-label="매뉴얼 검색"
-                value={searchKeyword}
-                // 검색 시 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(감사 P1-8).
-                onChange={(e) => {
-                  setSearchKeyword(e.target.value);
-                  if (page !== 1) goToPage(1);
-                }}
-                className="h-11 pl-12 pr-6 w-full md:w-[300px] rounded-lg border-2 border-border font-bold text-xs tracking-tight focus:ring-4 focus:ring-primary/10 transition-all bg-card"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="px-2 overflow-x-auto relative z-10">
-          <StandardDataTable<ManualDto>
-            columns={columns}
-            data={manuals}
-            loading={isLoading}
-            error={isError ? (error as Error) : null}
-            onRetry={() => refetch()}
-            keyField="onlnMnlSn"
-            emptyMessage={debouncedKeyword ? `'${debouncedKeyword}' 에 해당하는 매뉴얼이 없습니다.` : '등록된 매뉴얼이 없습니다.'}
-            className="border-none bg-muted/50 rounded-lg p-8"
-            pagination={{
-              currentPage: page,
-              totalPages: data?.totalPage || 1,
-              totalCount: data?.total,
-              pageSize: PAGE_SIZE,
-              onPageChange: goToPage,
+    <WorkListPage
+      title="온라인 매뉴얼 관리"
+      description="사용자에게 제공하는 온라인 매뉴얼을 등록·관리합니다."
+      breadcrumbItems={[{ label: '부가서비스' }, { label: '온라인 매뉴얼' }]}
+      filterStateKey="uss-online-manual"
+      totalCount={isError ? undefined : data?.total}
+      actions={
+        <>
+          <Button
+            onClick={() => refetch()}
+            variant="outline"
+            size="sm"
+            aria-label="매뉴얼 목록 새로고침"
+            className="gap-2"
+          >
+            <RefreshCcw size={16} className={cn(isFetching && "animate-spin")} aria-hidden="true" />
+            새로고침
+          </Button>
+          <Button size="sm" onClick={handleOpenAdd} className="gap-2">
+            <Plus size={16} aria-hidden="true" /> 새 매뉴얼 등록
+          </Button>
+        </>
+      }
+      filter={
+        <div className="min-w-60 max-w-xl space-y-1">
+          <label htmlFor="manual-search" className="text-[length:var(--font-size-body)] font-medium">
+            매뉴얼 명
+          </label>
+          <Input
+            id="manual-search"
+            placeholder="매뉴얼 검색"
+            aria-label="매뉴얼 검색"
+            value={searchKeyword}
+            // 검색 시 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(감사 P1-8).
+            onChange={(e) => {
+              setSearchKeyword(e.target.value);
+              if (page !== 1) goToPage(1);
             }}
           />
         </div>
-      </motion.div>
+      }
+    >
+      <StandardDataTable<ManualDto>
+        accessibleLabel="온라인 매뉴얼 목록"
+        columns={columns}
+        data={manuals}
+        loading={isLoading}
+        error={isError ? (error as Error) : null}
+        onRetry={() => refetch()}
+        keyField="onlnMnlSn"
+        emptyMessage={emptyResultMessage(debouncedKeyword, '등록된 매뉴얼이 없습니다.')}
+        pagination={{
+          currentPage: page,
+          totalPages: data?.totalPage || 1,
+          // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+          pageSize: PAGE_SIZE,
+          onPageChange: goToPage,
+        }}
+      />
+
 
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-[500px] border-none shadow-2xl rounded-lg overflow-hidden p-0 bg-card">
@@ -413,6 +387,6 @@ export default function ManualAdminClient({
           </Form>
         </DialogContent>
       </Dialog>
-    </motion.div>
+    </WorkListPage>
   );
 }

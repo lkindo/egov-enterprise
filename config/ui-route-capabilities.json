@@ -2573,6 +2573,74 @@
       }
     },
     {
+      "route": "/admin/patterns",
+      "source": "frontend/src/app/admin/patterns/page.tsx",
+      "sourceShellAccess": "admin-system",
+      "shellAccess": "admin-system",
+      "roles": [
+        "UNVERIFIED"
+      ],
+      "surface": "admin-console",
+      "status": "unverified",
+      "dataSource": "unverified",
+      "supportedActions": [],
+      "profileOwners": [
+        "UNVERIFIED"
+      ],
+      "directProjectionProfiles": [
+        "demo"
+      ],
+      "journeys": [],
+      "visibleLabel": "unverified",
+      "menuExposure": "unverified",
+      "decisionSafe": false,
+      "routing": {
+        "kind": "page"
+      },
+      "observedPageRedirectCalls": [],
+      "owner": "product/UX + domain owner",
+      "capabilities": [
+        {
+          "id": "route-capability-review",
+          "status": "unverified",
+          "dataSource": "unverified",
+          "actions": [],
+          "unsupportedVisibleActions": [],
+          "actorScope": "UNVERIFIED",
+          "visibleLabel": "unverified",
+          "primaryTask": true,
+          "decisionSafe": false,
+          "evidenceLevel": "E0",
+          "lastVerifiedAt": "2026-08-21",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "frontend/src/app/admin/patterns/page.tsx"
+          ]
+        }
+      ],
+      "evidence": [
+        "config/reusable-base-profiles.json",
+        "frontend/next.config.ts",
+        "frontend/src/app/admin/patterns/page.tsx",
+        "frontend/src/proxy.ts"
+      ],
+      "unverifiedFields": [
+        "dataSource",
+        "journeys",
+        "menuExposure",
+        "profileOwners",
+        "roles",
+        "status",
+        "supportedActions",
+        "visibleLabel"
+      ],
+      "review": {
+        "owner": "product/UX + domain owner",
+        "reviewBy": "2026-10-31",
+        "reason": "Capability role, live/partial state, actions, product label, journey, menu exposure, and positive profile ownership require domain evidence or owner review."
+      }
+    },
+    {
       "route": "/admin/sanctn/forms",
       "source": "frontend/src/app/admin/sanctn/forms/page.tsx",
       "sourceShellAccess": "admin-system",

@@ -12,9 +12,12 @@ export class OperationalExtensionPage {
 
     async searchRewards(keyword: string) {
         console.log(`>>> Searching rewards with keyword: ${keyword}`);
-        const searchInput = this.page.getByPlaceholder('포상 명칭 또는 대상자 식별자로 분석...');
+        // [2026-08-24 A1 이행] 조회 조건이 표 내부에서 WorkListPage 조회 조건 영역으로 올라갔고
+        //   영문 'ANALYZE' 버튼이 '조회' 로 바뀌었다(카탈로그 G2·G14).
+        //   두 문구는 rewards-e2e-contract 단위 계약이 함께 고정한다.
+        const searchInput = this.page.getByPlaceholder('포상 명칭 또는 대상자로 검색');
         await searchInput.fill(keyword);
-        await this.page.getByRole('button', { name: 'ANALYZE' }).click();
+        await this.page.getByRole('button', { name: '조회' }).click();
         await this.page.waitForLoadState('networkidle');
     }
 
@@ -31,9 +34,10 @@ export class OperationalExtensionPage {
 
     async searchExternalHr(name: string) {
         console.log(`>>> Searching external HR with name: ${name}`);
-        const searchInput = this.page.getByPlaceholder('인사 성명으로 검색...');
+        // [2026-08-24 A1 이행] 조회 조건이 WorkListPage 조회 조건 영역으로 올라가면서
+        //   placeholder 의 말줄임표가 사라졌다(카탈로그 G2). Enter 제출 계약은 그대로다.
+        const searchInput = this.page.getByPlaceholder('인사 성명으로 검색');
         await searchInput.fill(name);
-        // StandardSearchFilter might have an icon or button to click
         await this.page.keyboard.press('Enter');
         await this.page.waitForLoadState('networkidle');
     }

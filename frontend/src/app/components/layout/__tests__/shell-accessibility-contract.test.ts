@@ -63,11 +63,47 @@ describe('app shell accessibility source contract', () => {
     expect(sidebar).toContain('id="primary-sidebar"');
   });
 
+  it('A1 archetype 셸이 페이지의 h1 을 단독으로 소유한다', () => {
+    // [2026-08-24 A1 이행] 조회형 목록 화면은 제목을 자기 소스에 쓰지 않고 WorkListPage 에
+    //   문자열로 넘긴다(카탈로그 §5 A1). 그래서 "화면 소스에 <h1 이 있는가"로는 더 이상
+    //   주 제목 소유를 판정할 수 없다 — 셸이 정확히 하나의 h1 을 갖는다는 사실이 그 자리를 대신한다.
+    const shell = readAppSource('components', 'patterns', 'work-list-page.tsx');
+
+    expect(shell.match(/<h1\b/g), 'WorkListPage 가 h1 을 잃었거나 둘 이상 갖습니다').toHaveLength(1);
+    expect(shell, '셸이 제목을 title prop 으로 받지 않습니다').toMatch(/\{title\}<\/h1>/);
+  });
+
+  it('A2 전체 셸과 점진 레이아웃 소비자는 최종 h1을 하나만 소유한다', () => {
+    const shell = readAppSource('components', 'patterns', 'master-detail-page.tsx');
+    const menus = readAppSource('admin', 'system', 'menus', 'MenuAdminClient.tsx');
+    const userOrg = readAppSource('admin', 'user', 'UserOrgHubClient.tsx');
+
+    expect(shell.match(/<h1\b/g), 'MasterDetailPage가 h1을 잃었거나 둘 이상 갖습니다').toHaveLength(1);
+    expect(shell).toMatch(/\{title\}<\/h1>/);
+    expect(menus, '메뉴 화면은 h1을 MasterDetailPage에 위임해야 합니다').not.toMatch(/<h1\b/);
+    expect(userOrg, '부서 화면은 h1을 PageHeader에 위임해야 합니다').not.toMatch(/<h1\b/);
+  });
+
+  it('A1 이행 화면은 제목을 셸에 위임한다(자체 h1 을 다시 만들지 않는다)', () => {
+    const delegatedHeadingSources = [
+      ['admin', 'collaboration', 'scraps', 'selectScrapList', 'ScrapListClient.tsx'],
+      ['admin', 'collaboration', 'address-book', 'select-address-book-list', 'AddressBookListClient.tsx'],
+      ['admin', 'operation', 'events', 'EventManagementClient.tsx'],
+      ['admin', 'operation', 'rewards', 'RewardManageClient.tsx'],
+      ['admin', 'system', 'logs', 'user', 'SystemLogsUserClient.tsx'],
+    ];
+
+    for (const pathParts of delegatedHeadingSources) {
+      const source = readAppSource(...pathParts);
+      expect(source, `${pathParts.join('/')}: 셸을 경유하지 않습니다`).toMatch(/<WorkListPage\b/);
+      expect(source, `${pathParts.join('/')}: 셸 밖에서 h1 을 다시 만듭니다`).not.toMatch(/<h1\b/);
+    }
+  });
+
   it('실제 UI route의 검증된 주 제목은 h1이고 preview 제목은 페이지 제목을 사칭하지 않는다', () => {
     const routeHeadingSources = [
       ['admin', 'collaboration', 'scraps', 'insertScrap', 'InsertScrapClient.tsx'],
       ['admin', 'collaboration', 'scraps', 'selectScrapDetail', '[id]', 'SelectScrapDetailClient.tsx'],
-      ['admin', 'collaboration', 'scraps', 'selectScrapList', 'ScrapListClient.tsx'],
       ['admin', 'community', 'boards', 'select-board-list', 'BoardListClient.tsx'],
       ['admin', 'sanctn', 'WorkflowHubClient.tsx'],
       ['admin', 'stats', 'IntelligenceHubClient.tsx'],
@@ -93,7 +129,7 @@ describe('app shell accessibility source contract', () => {
   it('PageHeader가 없는 standalone HubHeader route만 명시적으로 h1을 소유한다', () => {
     const standaloneHubSources = [
       ['admin', 'AdminDashboardClient.tsx'],
-      ['admin', 'operation', 'events', 'EventManagementClient.tsx'],
+      // 행사 운영 센터는 2026-08-24 A1 이행으로 WorkListPage 가 h1 을 소유한다(위 위임 계약이 검사).
       ['admin', 'security', 'login-policy', 'LoginPolicyAdminClient.tsx'],
       ['admin', 'system', 'policies', 'PolicyAdminClient.tsx'],
       ['help', 'policies', '[type]', 'page.tsx'],

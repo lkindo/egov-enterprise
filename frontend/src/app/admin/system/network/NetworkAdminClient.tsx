@@ -1,24 +1,20 @@
 'use client';
 
 import { useState } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { NetworkForm } from '@/components/admin/system/NetworkForm';
 import { Plus, 
-    Network as NetworkIcon, 
     Cpu, 
     Settings, 
     Trash2, 
-    Search, 
-    Globe, 
-    Database } from 'lucide-react';
+    Globe } from 'lucide-react';
 import type { Network } from '@/services/foundation/system/NetworkAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -172,34 +168,31 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
     ];
 
     return (
-        <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader 
-                title="네트워크 토폴로지 관리" 
-                breadcrumbs={[{ label: '시스템관리' }, { label: '네트워크 관리' }]} 
-            />
-
-            <HubHeader
-                title="인프라"
-                highlight="네트워크 계측 연동 대기"
-                subtitle="계측·저장 원천이 연결되기 전까지 기능 상태와 필요한 연동 조건만 안내합니다."
-                icon={NetworkIcon}
-                actions={
-                    <Button
-                        onClick={handleCreate}
-                        size="lg"
-                        disabled={WRITE_NOT_IMPLEMENTED}
-                        title={WRITE_NOT_IMPLEMENTED ? writeDisabledReason : undefined}
-                        className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-2"
-                    >
-                        <Plus size={18} /> 신규 노드 등록
-                    </Button>
-                }
-            />
-
-            {/*
-              [W0-P0-6 보완] 쓰기 미구현 사실을 **작업을 시작하기 전에** 알린다.
-              role="status" 로 보조기술에도 전달한다(경고가 아니라 상태 고지이므로 alert 가 아니다).
-            */}
+        <WorkListPage
+            title="네트워크 토폴로지 관리"
+            description="계측·저장 원천이 연결되기 전까지 기능 상태와 필요한 연동 조건만 안내합니다."
+            breadcrumbItems={[{ label: '시스템관리' }, { label: '네트워크 관리' }]}
+            filterStateKey="system-network"
+            actions={
+                <Button
+                    onClick={handleCreate}
+                    size="sm"
+                    disabled={WRITE_NOT_IMPLEMENTED}
+                    title={WRITE_NOT_IMPLEMENTED ? writeDisabledReason : undefined}
+                    className="gap-2"
+                >
+                    <Plus size={16} aria-hidden="true" /> 신규 노드 등록
+                </Button>
+            }
+            filter={
+                <KeywordFilter
+                    label="노드 명칭 · ID"
+                    placeholder="노드 명칭 또는 ID 검색"
+                    value={searchTerm}
+                    onSearch={(keyword) => setSearchTerm(keyword)}
+                />
+            }
+        >
             {WRITE_NOT_IMPLEMENTED && (
                 <div
                     role="status"
@@ -218,35 +211,15 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
                 </div>
             )}
 
-            <HubSectionCard
-                title="네트워크 계측 연결 결과"
-                description="계측 원천이 연결되면 이 영역에 수집된 노드가 표시됩니다. 현재 API는 의도적으로 빈 결과만 반환합니다."
-                icon={Database}
-            >
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
-                    <div className="flex flex-col md:flex-row gap-4 flex-1 text-left">
-                        <div className="relative group/search flex-1">
-                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
-                            <Input
-                                placeholder="노드 명칭 또는 ID 기반 지형 검색.."
-                                value={searchTerm}
-                                onChange={(e) => setSearchTerm(e.target.value)}
-                                className="h-11 pl-16 pr-8 rounded-lg bg-muted border-2 border-border font-bold text-md tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                <StandardDataTable
-                    columns={columns}
-                    data={filteredNodes}
-                    keyField="ntwrkId"
-                    error={listError}
-                    onRetry={() => router.refresh()}
-                    emptyMessage="연결된 네트워크 계측 원천이 없습니다."
-                    className="border-none bg-transparent"
-                />
-            </HubSectionCard>
+            <StandardDataTable
+                accessibleLabel="네트워크 노드 목록"
+                columns={columns}
+                data={filteredNodes}
+                keyField="ntwrkId"
+                error={listError}
+                onRetry={() => router.refresh()}
+                emptyMessage={emptyResultMessage(searchTerm, '연결된 네트워크 계측 원천이 없습니다.')}
+            />
 
             <StandardModal
                 isOpen={isModalOpen}
@@ -283,6 +256,6 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
                     />
                 </div>
             </StandardModal>
-        </div>
+        </WorkListPage>
     );
 }

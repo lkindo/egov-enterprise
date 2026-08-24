@@ -39,7 +39,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 //   dark:from/via-slate-800 그라데이션 리터럴 2건 제거.
 // [하향 래칫 2026-08-23(5)] 공통코드 밀집화(m-3) — 신규 등록 버튼의 bg-slate-900 1건을 Button 기본
 //   variant(bg-primary 토큰)로 회수(m-3 단독 사전 red 실측: 71 != 72; m-4 하향과 병합해 70→69).
-const BASELINE = 69;
+// [하향 래칫 2026-08-24] A2 메뉴·부서 이행에서 장식 색을 semantic surface/primary 토큰으로 회수
+//   (사전 red 실측: 66 != 69).
+const BASELINE = 66;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];

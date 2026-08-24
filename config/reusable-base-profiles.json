@@ -176,6 +176,7 @@
           "src/app/admin/community/templates",
           "src/app/admin/help",
           "src/app/admin/operation",
+          "src/app/admin/patterns",
           "src/app/admin/sanctn",
           "src/app/admin/stats",
           "src/app/admin/system/banner",

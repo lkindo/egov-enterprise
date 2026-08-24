@@ -7,16 +7,14 @@ import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Trash2, UserCircle, Layers, RefreshCcw } from "lucide-react";
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { Plus, Trash2, RefreshCcw } from "lucide-react";
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { PageHeader } from '@/app/components/layout/page-header';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import type { AddressBookInitialData } from './AddressBookListServer';
 
-const PAGE_UNIT = 10;
+const DEFAULT_PAGE_UNIT = 10;
 
 interface AddressBookListClientProps {
  dataPromise: Promise<AddressBookInitialData>;
@@ -26,6 +24,14 @@ interface AddressBookListClientProps {
  };
 }
 
+/**
+ * A1(조회형 목록) archetype 이행 — docs/02-architecture/work-screen-grammar-catalog.md §5 A1.
+ *
+ * 종전에는 PageHeader + 영문 Hub 히어로 + 지표 카드 2장 + 유리질 섹션 카드가 표 위에 쌓여
+ * 첫 데이터 행이 화면 한참 아래에 있었고, 총 건수는 지표 카드와 표 하단에 두 번 나왔다.
+ * 셸로 옮기면서 장식 계층을 걷어내고, 총 건수는 툴바 한 곳으로, 내보내기는 결과 툴바(G3)로 모았다.
+ * e2e 결속(heading '통합 주소록 관리' · textbox '주소록 검색' · button '검색')은 그대로 보존한다.
+ */
 export default function AddressBookListClient({ dataPromise, initialParams }: AddressBookListClientProps) {
  const initialData = use(dataPromise);
  const { toast } = useToast();
@@ -35,6 +41,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  const [totalCount, setTotalCount] = useState(initialData.total);
  const [totalPages, setTotalPages] = useState(initialData.totalPage);
  const [pageNo, setPageNo] = useState(initialParams.pageNo);
+ const [pageUnit, setPageUnit] = useState(DEFAULT_PAGE_UNIT);
  const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd);
  const [loading, setLoading] = useState(false);
  // [P1-1] 조회 실패를 "데이터 없음"으로 위장하지 않는다. 서버 컴포넌트의 실패도 그대로 이어받는다.
@@ -42,13 +49,13 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
    initialData.fetchError ? new Error(initialData.fetchError) : null
  );
 
- const fetchList = async (targetPageNo: number, targetSearchWrd: string) => {
+ const fetchList = async (targetPageNo: number, targetSearchWrd: string, targetPageUnit = pageUnit) => {
  setLoading(true);
  try {
  // 백엔드는 Spring Pageable(0-base page)을 받는다. pageNo/pageUnit 은 서버가 읽지 않는다.
  const response = await addressbookUserService.getAddressBooks({
    page: targetPageNo - 1,
-   size: PAGE_UNIT,
+   size: targetPageUnit,
    searchWrd: targetSearchWrd
  });
 
@@ -76,6 +83,13 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  void fetchList(target, searchWrd);
  };
 
+ /** 페이지당 건수를 바꾸면 현재 페이지 번호는 의미가 달라지므로 1페이지부터 다시 조회한다. */
+ const handlePageSizeChange = (size: number) => {
+ setPageUnit(size);
+ setPageNo(1);
+ void fetchList(1, searchWrd, size);
+ };
+
  /** [P1-9] native confirm → useConfirm. 본문에 대상 주소록 명칭을 노출한다. */
  const handleDelete = async (item: AddressBook) => {
  const ok = await confirm({
@@ -100,12 +114,13 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  header: '번호',
  accessor: (_, index) => (
  <span className="font-mono text-xs font-bold text-muted-foreground">
- {index !== undefined ? (index + 1 + (pageNo - 1) * PAGE_UNIT).toString().padStart(2, '0') : '-'}
+ {index !== undefined ? (index + 1 + (pageNo - 1) * pageUnit).toString().padStart(2, '0') : '-'}
  </span>
  ),
  className: 'w-20 text-center'
  },
  {
+ // G4 — 행을 식별하고 상세로 들어가는 진입점은 이 열이다.
  header: '주소록 명칭',
  accessor: (item) => (
  <Link href={`/admin/collaboration/address-book/select-address-book-detail/${item.adbkSn}`} className="group/item">
@@ -113,7 +128,8 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  {item.adbkNm}
  </span>
  </Link>
- )
+ ),
+ sortKey: 'adbkNm'
  },
  {
  // 목록 응답(AddressBookDto)에는 연락처·이메일이 존재하지 않는다(구성원은 상세 조회에서만 내려온다).
@@ -122,6 +138,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  accessor: (item) => (
  <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.rlsScopeCd || '-'}</span>
  ),
+ sortKey: 'rlsScopeCd',
  className: 'w-32'
  },
  {
@@ -131,6 +148,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  {(item.crtDt || '').substring(0, 10).replace(/-/g, '.')}
  </span>
  ),
+ sortKey: 'crtDt',
  className: 'w-32 text-center'
  },
  {
@@ -142,9 +160,9 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  size="icon"
  aria-label={`${item.adbkNm} 주소록 삭제`}
  onClick={() => { void handleDelete(item); }}
- className="h-10 w-10 rounded-lg hover:bg-rose-500/10 hover:text-rose-500 transition-all"
+ className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive-emphasis transition-all"
  >
- <Trash2 size={16} />
+ <Trash2 size={16} aria-hidden="true" />
  </Button>
  </div>
  ),
@@ -153,108 +171,82 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  ];
 
  return (
- <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
- <PageHeader
+ <WorkListPage
  title="통합 주소록 관리"
- breadcrumbs={[{ label: '협업관리' }, { label: '주소록' }]}
- />
-
- <HubHeader
- title="Contact"
- highlight="Directory"
- subtitle="부서 및 외부 협업을 위한 통합 주소록 센터입니다."
- icon={UserCircle}
+ description="부서 및 외부 협업을 위한 통합 연락처 목록입니다."
+ breadcrumbItems={[{ label: '협업관리' }, { label: '주소록' }]}
+ filterStateKey="collaboration-address-book"
+ // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다 — 숫자를 찍으면 빈 결과와 구분되지 않는다.
+ totalCount={fetchError ? undefined : totalCount}
  actions={
- <div className="flex gap-4">
+ <>
  <Button
  variant="outline"
+ size="sm"
  aria-label="주소록 목록 새로고침"
  onClick={() => { void fetchList(pageNo, searchWrd); }}
- className="h-11 w-14 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
+ className="gap-2"
  >
- <RefreshCcw size={20} />
+ <RefreshCcw size={16} aria-hidden="true" />
+ 새로고침
  </Button>
  <Link href="/admin/collaboration/address-book/insert-address-book">
- <Button className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
- <Plus size={20} /> 주소록 등록
+ <Button size="sm" className="gap-2">
+ <Plus size={16} aria-hidden="true" /> 주소록 등록
  </Button>
  </Link>
- </div>
+ </>
  }
- />
-
- <HubMetricGrid className="lg:grid-cols-2">
- <HubMetricCard
-   title="전체 주소록"
-   value={fetchError ? '조회 실패' : totalCount}
-   icon={Layers}
-   color="primary"
-   status="총 건수"
- />
- <HubMetricCard
-   title="현재 페이지 표시"
-   value={list.length}
-   icon={UserCircle}
-   color="emerald"
-   status={`${pageNo} / ${Math.max(totalPages, 1)} 페이지`}
- />
- </HubMetricGrid>
-
- <HubSectionCard
- title="주소록 목록"
- description="조직 내외의 통합 연락처 목록입니다."
- icon={UserCircle}
- className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
- >
- <div className="space-y-8">
- <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2 pt-2 border-b border-border/50 pb-10 mb-8">
- <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
- <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+ filter={
+ <form onSubmit={handleSearch} className="flex flex-wrap items-end gap-[var(--form-gap)]">
+ <div className="min-w-60 flex-1 space-y-1">
+ <label htmlFor="address-book-search" className="text-[length:var(--font-size-body)] font-medium">
+ 주소록 명칭
+ </label>
  <Input
+ id="address-book-search"
  aria-label="주소록 검색"
  value={searchWrd}
  onChange={(e) => setSearchWrd(e.target.value)}
- className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
- placeholder="주소록 명칭으로 검색.."
- />
- <Button type="submit" className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-xl hover:bg-primary transition-all">검색</Button>
- </form>
- {/* [P1-6] 동작하는 CSV 내보내기 컴포넌트를 재사용한다(현재 페이지 기준). */}
- <DataExportExcel
-   data={list}
-   headers={[
-     { label: '주소록 일련번호', key: 'adbkSn' },
-     { label: '주소록 명칭', key: 'adbkNm' },
-     { label: '공개 범위', key: 'rlsScopeCd' },
-     { label: '등록일자', key: 'crtDt' },
-   ]}
-   filename="주소록"
-   className="flex items-center gap-2 h-11 px-6 rounded-xl border-2 border-border text-xs font-bold text-muted-foreground hover:text-primary transition-all shrink-0"
+ placeholder="주소록 명칭으로 검색"
  />
  </div>
-
- <div className="min-h-[500px]">
+ <Button type="submit" size="sm">검색</Button>
+ </form>
+ }
+ toolbarActions={
+ /* [P1-6] 동작하는 CSV 내보내기 컴포넌트를 재사용한다(현재 페이지 기준). */
+ <DataExportExcel
+ data={list}
+ headers={[
+   { label: '주소록 일련번호', key: 'adbkSn' },
+   { label: '주소록 명칭', key: 'adbkNm' },
+   { label: '공개 범위', key: 'rlsScopeCd' },
+   { label: '등록일자', key: 'crtDt' },
+ ]}
+ filename="주소록"
+ className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:text-primary"
+ />
+ }
+ >
  <StandardDataTable<AddressBook>
+ accessibleLabel="주소록 목록"
  columns={columns}
  data={list}
  keyField="adbkSn"
  loading={loading}
  error={fetchError}
  onRetry={() => { void fetchList(pageNo, searchWrd); }}
- emptyMessage="등록된 주소록이 없습니다."
- isPremium={true}
- className="border-none bg-transparent shadow-none"
+ emptyMessage={emptyResultMessage(searchWrd, '등록된 주소록이 없습니다.')}
  pagination={{
  currentPage: pageNo,
  totalPages: totalPages,
  onPageChange: handlePageChange,
- totalCount,
- pageSize: PAGE_UNIT
+ // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+ pageSize: pageUnit,
+ onPageSizeChange: handlePageSizeChange
  }}
  />
- </div>
- </div>
- </HubSectionCard>
- </div>
+ </WorkListPage>
  );
 }

@@ -13,9 +13,8 @@ describe('r6 accessibility regressions', () => {
   it('makes the bounded user-result scroller keyboard reachable and named', () => {
     const userHub = source('app/admin/user/UserOrgHubClient.tsx');
 
-    expect(userHub).toMatch(
-      /<div\s+role="region"\s+aria-label="조직·사용자 결과 스크롤 영역"\s+tabIndex=\{0\}\s+className="[^"]*overflow-y-auto[^"]*focus-visible:ring-2[^"]*"/,
-    );
+    expect(userHub).toContain("aria-label={activeTab === 'DEPTS' ? '부서 조직 구조' : '조직·사용자 결과 스크롤 영역'}");
+    expect(userHub).toMatch(/role="region"[\s\S]*tabIndex=\{0\}[\s\S]*overflow-y-auto[^\"]*focus-visible:ring-2/);
   });
 
   it('does not dim repeated user identifiers or the empty-selection heading below the muted token', () => {
@@ -40,5 +39,13 @@ describe('r6 accessibility regressions', () => {
 
     expect(timeline).toContain('text-success-emphasis tracking-tight');
     expect(timeline).not.toContain('text-emerald-700 tracking-tight');
+  });
+
+  it('keeps A2 aria-current selection visible in Windows forced-colors mode', () => {
+    const globals = source('app/globals.css');
+    const forcedColors = globals.match(/@media \(forced-colors: active\) \{[\s\S]*?\n  \}/)?.[0] ?? '';
+
+    expect(forcedColors).toContain('[aria-current="true"]');
+    expect(forcedColors).toMatch(/\[aria-current="true"\][\s\S]*outline:\s*2px solid Highlight/);
   });
 });

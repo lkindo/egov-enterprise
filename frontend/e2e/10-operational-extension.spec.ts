@@ -14,10 +14,10 @@ test.describe('Tier 10: Operational Extension & Uncovered Modules', () => {
         // Search
         await operationalPage.searchRewards('test');
         
-        // Verify stats are visible — 종전 '동기화상태' 카드는 계측 원천 없는 조작 지표라 제거됐다.
-        // 실데이터 파생 카드 2종이 정직성 수리의 계약이다.
-        await expect(operationalPage.page.getByText('포상 현황')).toBeVisible();
-        await expect(operationalPage.page.getByText('활성 레코드')).toBeVisible();
+        // [2026-08-24 A1 이행] 실데이터 파생 지표 카드 2종('포상 현황'·'활성 레코드')은
+        //   WorkListPage 결과 툴바의 총 건수 한 곳으로 수렴했다(카탈로그 G3 — 총 건수 단일 출처).
+        //   검증 의도는 그대로다: 조회 뒤에도 집계가 화면에 남아 있는가.
+        await expect(operationalPage.page.getByTestId('work-list-toolbar')).toContainText('총');
     });
 
     test('Operational: External HR Information Management', async ({ operationalPage }) => {

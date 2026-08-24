@@ -3,17 +3,14 @@
 import { useCallback, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Search, Mail, Inbox, Zap, Layers } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { memoReportService, MemoReportInfo } from '@/services/business/memoreport/memoReportService';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { PageHeader } from '@/app/components/layout/page-header';
 import { useAuth } from '@/contexts/AuthContext';
 
 const TABS = ['RECEIVED', 'MY', 'ALL'] as const;
@@ -25,7 +22,8 @@ const TAB_LABELS: Record<ReportTab, string> = {
   ALL: '전체',
 };
 
-const PAGE_SIZE = 10;
+const DEFAULT_PAGE_SIZE = 10;
+const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 export default function MemoReportManagementClient() {
   const { user } = useAuth();
@@ -58,6 +56,7 @@ export default function MemoReportManagementClient() {
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   }, [router, pathname, searchParams]);
 
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchKeyword, setSearchKeyword] = useState('');
   // 타이핑 한 글자마다 서버 요청이 나가지 않도록 디바운스 값만 queryKey 에 넣는다.
   const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
@@ -72,9 +71,9 @@ export default function MemoReportManagementClient() {
 
   // --- Data Fetching ---
   const { data: reportsData, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['memo-reports', activeTab, debouncedKeyword, page],
+    queryKey: ['memo-reports', activeTab, debouncedKeyword, page, pageSize],
     queryFn: () => {
-      const params = { searchKeyword: debouncedKeyword, page: page - 1, size: PAGE_SIZE };
+      const params = { searchKeyword: debouncedKeyword, page: page - 1, size: pageSize };
       if (activeTab === 'MY') return memoReportService.getMyReports(params);
       if (activeTab === 'RECEIVED') return memoReportService.getReceivedReports(params);
       return memoReportService.getMemoReports(params);
@@ -85,7 +84,7 @@ export default function MemoReportManagementClient() {
 
   const displayItems: MemoReportInfo[] = reportsData?.list ?? [];
   const totalItems = reportsData?.total ?? 0;
-  const totalPages = Math.ceil(totalItems / PAGE_SIZE);
+  const totalPages = Math.ceil(totalItems / pageSize);
   const unreadOnPage = displayItems.filter((r) => !r.rptrInqDt).length;
 
   const columns: Column<MemoReportInfo>[] = [
@@ -93,7 +92,7 @@ export default function MemoReportManagementClient() {
       header: '번호',
       accessor: (_, index) => (
         <span className="font-mono text-xs font-bold text-muted-foreground">
-          {index !== undefined ? (index + 1 + (page - 1) * PAGE_SIZE).toString().padStart(2, '0') : '-'}
+          {index !== undefined ? (index + 1 + (page - 1) * pageSize).toString().padStart(2, '0') : '-'}
         </span>
       ),
       className: 'w-20 text-center'
@@ -143,85 +142,75 @@ export default function MemoReportManagementClient() {
   ];
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="메모 보고 관리"
-        breadcrumbs={[{ label: '운영지원' }, { label: '메모보고' }]}
-      />
-
-      <HubHeader
-        title="메모 보고"
-        highlight="Matrix"
-        subtitle="사내 엔터프라이즈 통합 커뮤니케이션 및 보고 내역을 관리합니다."
-        icon={Mail}
-        actions={
-          <div className="flex bg-muted p-1 rounded-xl border-2 border-border" role="tablist" aria-label="메모 보고 구분">
-            {TABS.filter((tab) => tab !== 'ALL' || isAdmin).map((tab) => (
-              <Button
-                key={tab}
-                role="tab"
-                id={`memo-report-tab-${tab}`}
-                aria-selected={activeTab === tab}
-                aria-controls="memo-report-tabpanel"
-                variant="ghost"
-                size="sm"
-                className={cn("h-9 rounded-lg px-6 font-bold text-xs", activeTab === tab && "bg-card shadow-sm text-primary")}
-                onClick={() => handleTabChange(tab)}
-              >
-                {TAB_LABELS[tab]}
-              </Button>
-            ))}
-          </div>
-        }
-      />
-
-      <HubMetricGrid>
-        <HubMetricCard title="전체 보고" value={totalItems} icon={Layers} color="primary" />
-        <HubMetricCard title="미열람 (현재 페이지)" value={unreadOnPage} icon={Zap} color="amber" />
-      </HubMetricGrid>
-
-      <HubSectionCard
-        title="리포트 스트림"
-        description="수신된 보고 및 지시사항에 대한 실시간 데이터 유닛입니다."
-        icon={Inbox}
-        className="bg-card/60 backdrop-blur-md border border-border/60 shadow-xl ring-1 ring-black/5"
-      >
-        <div className="space-y-8" role="tabpanel" id="memo-report-tabpanel" aria-labelledby={`memo-report-tab-${activeTab}`}>
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
-            <div className="relative group max-w-xl w-full">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} aria-hidden="true" />
-              <Input
-                value={searchKeyword}
-                onChange={(e) => handleSearchChange(e.target.value)}
-                aria-label="보고 제목 또는 작성자 검색"
-                className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-                placeholder="보고 제목 또는 작성자 검색.."
-              />
-            </div>
-          </div>
-
-          <div className="min-h-[500px]">
-            <StandardDataTable
-              columns={columns}
-              data={displayItems}
-              loading={isLoading}
-              error={isError ? (error as Error) : null}
-              onRetry={() => refetch()}
-              emptyMessage="등록된 메모 보고가 없습니다."
-              keyField="memoRptSn"
-              isPremium={true}
-              className="bg-transparent border-none shadow-none"
-              pagination={{
-                currentPage: page,
-                totalPages: totalPages,
-                totalCount: totalItems,
-                pageSize: PAGE_SIZE,
-                onPageChange: (p) => updateUrl({ page: p })
-              }}
-            />
-          </div>
+    <WorkListPage
+      title="메모 보고 관리"
+      description="수신·발신한 보고와 지시사항을 조회합니다."
+      breadcrumbItems={[{ label: '운영지원' }, { label: '메모보고' }]}
+      filterStateKey="operation-memo-reports"
+      // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
+      totalCount={isError ? undefined : totalItems}
+      actions={
+        // 탭은 조회 조건이 아니라 조회 범위 전환이라 헤더에 둔다(수신함·발신함·전체).
+        <div className="flex rounded-md border border-border p-0.5" role="tablist" aria-label="메모 보고 구분">
+          {TABS.filter((tab) => tab !== 'ALL' || isAdmin).map((tab) => (
+            <Button
+              key={tab}
+              role="tab"
+              id={`memo-report-tab-${tab}`}
+              aria-selected={activeTab === tab}
+              aria-controls="memo-report-tabpanel"
+              variant="ghost"
+              size="sm"
+              className={cn('px-4 font-bold text-xs', activeTab === tab && 'bg-muted text-primary')}
+              onClick={() => handleTabChange(tab)}
+            >
+              {TAB_LABELS[tab]}
+            </Button>
+          ))}
         </div>
-      </HubSectionCard>
-    </div>
+      }
+      filter={
+        <div className="min-w-60 max-w-xl space-y-1">
+          <label htmlFor="memo-report-search" className="text-[length:var(--font-size-body)] font-medium">
+            보고 제목 · 작성자
+          </label>
+          <Input
+            id="memo-report-search"
+            value={searchKeyword}
+            onChange={(e) => handleSearchChange(e.target.value)}
+            aria-label="보고 제목 또는 작성자 검색"
+            placeholder="입력하면 바로 조회됩니다"
+          />
+        </div>
+      }
+      toolbarActions={
+        <span className="text-[length:var(--font-size-body)] text-muted-foreground">
+          현재 페이지 미열람 <span className="font-bold text-foreground">{unreadOnPage}</span>건
+        </span>
+      }
+    >
+      <div role="tabpanel" id="memo-report-tabpanel" aria-labelledby={`memo-report-tab-${activeTab}`}>
+        <StandardDataTable
+          accessibleLabel="메모 보고 목록"
+          columns={columns}
+          data={displayItems}
+          loading={isLoading}
+          error={isError ? (error as Error) : null}
+          onRetry={() => refetch()}
+          emptyMessage={emptyResultMessage(debouncedKeyword, '등록된 메모 보고가 없습니다.')}
+          keyField="memoRptSn"
+          pagination={{
+            currentPage: page,
+            totalPages: totalPages,
+            // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+            pageSize,
+            onPageChange: (p) => updateUrl({ page: p }),
+            // 페이지당 건수는 URL 계약 밖의 화면 상태다 — 바꾸면 1페이지로 되돌린다.
+            onPageSizeChange: (size) => { setPageSize(size); updateUrl({ page: 1 }); },
+            pageSizeOptions: PAGE_SIZE_OPTIONS,
+          }}
+        />
+      </div>
+    </WorkListPage>
   );
 }

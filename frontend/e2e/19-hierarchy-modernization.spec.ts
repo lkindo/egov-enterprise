@@ -35,13 +35,22 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
     test('Menu Management Tree Interface', async ({ page }) => {
         console.log('\n>>> Testing Menu Management Tree');
         await page.goto('/admin/system/menus');
-        
-        // Wait for tree container
-        await expect(page.locator('text=네비게이션 트리').first()).toBeVisible({ timeout: 20000 });
+
+        await expect(page.getByRole('heading', { level: 1, name: '시스템 메뉴 관리' })).toBeVisible({ timeout: 20000 });
+        await expect(page.getByText('네비게이션 트리', { exact: true })).toHaveCount(1);
+        await expect(page.getByRole('textbox', { name: '메뉴 검색' })).toHaveCount(1);
+        await expect(page.getByTestId('master-detail-master')).toHaveCount(1);
+        await expect(page.getByTestId('master-detail-detail')).toHaveCount(1);
+        await expect(page.getByText('메뉴를 선택하세요', { exact: true })).toBeVisible();
         
         // Check for node elements (ID: prefix)
         const nodes = page.getByText(/ID: \d+/);
         await expect(nodes.first()).toBeVisible({ timeout: 15000 });
+
+        const firstMenu = page.locator('[data-a2-master-item]').first();
+        await firstMenu.click();
+        await expect(firstMenu).toHaveAttribute('aria-current', 'true');
+        await expect(page.getByRole('button', { name: '메뉴 수정' })).toBeVisible();
 
         // [2026-08-10 제거] 'data-driven modern routes' 블록을 걷어낸다. 세 겹으로 무의미했다:
         //   ① 셀렉터가 `a[href^="/admin/"]` 인데 단언이 `href` 가 `/^\/admin\/.+/` 인지 — 즉
@@ -104,15 +113,12 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
 
     test('Department Topology Tree (Hub)', async ({ page, request }) => {
         console.log('\n>>> Testing Department Topology Tree in Hub');
-        await page.goto('/admin/user/manage');
-        
-        // Switch to DEPTS tab
-        const deptTab = page.locator('button:has-text("부서 관리")').first();
-        await expect(deptTab).toBeVisible();
-        await deptTab.click();
-        
-        // Wait for tree title
-        await expect(page.locator('text=조직 구조').first()).toBeVisible({ timeout: 20000 });
+        await page.goto('/admin/user/departments');
+
+        await expect(page.getByRole('heading', { level: 1, name: '부서 관리' })).toBeVisible({ timeout: 20000 });
+        await expect(page.getByText('조직 구조', { exact: true })).toHaveCount(1);
+        await expect(page.getByRole('textbox', { name: '부서 검색' })).toHaveCount(1);
+        await expect(page.getByTestId('master-detail-incremental-layout')).toHaveCount(1);
         
         // Check for topology nodes (e.g., ORGNZT_0000000000001)
         // [2026-07-27 정정] 종전에는 기존 부서(ORGNZT_*)가 화면에 있다고 **가정**했다. 그러나 신규 DB
@@ -126,32 +132,40 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             data: { ognzNm: deptName },
         });
         expect(created.ok(), '토폴로지 검증용 부서 생성이 성공해야 한다').toBeTruthy();
-        await page.reload();
-        await page.locator('button:has-text("부서 관리")').first().click();
-        // [2026-07-27 정정] 종전 단언은 /ORGNZT_\d+/ 였다. 그러나 채번 통일 이후 부서 ID 는
-        // ORGNZT_EAF12DAFF8A14 처럼 **16진수**라 `\d+` 에 매칭되지 않는다(실측). 게다가 트리는 ID 가 아니라
-        // 부서명을 렌더하고 ID 는 상세 패널의 '부서 코드' 에만 나온다. 방금 만든 부서명으로 단언한다.
-        await expect(page.getByText(deptName, { exact: false }).first()).toBeVisible({ timeout: 20000 });
+        const createdId = (await created.json()).data as string;
+        try {
+            await page.reload();
+            // [2026-07-27 정정] 종전 단언은 /ORGNZT_\d+/ 였다. 그러나 채번 통일 이후 부서 ID 는
+            // ORGNZT_EAF12DAFF8A14 처럼 **16진수**라 `\d+` 에 매칭되지 않는다(실측). 게다가 트리는 ID 가 아니라
+            // 부서명을 렌더하고 ID 는 상세 패널의 '부서 코드' 에만 나온다. 방금 만든 부서명으로 단언한다.
+            const createdNode = page.locator('[data-a2-master-item]', { hasText: deptName });
+            await expect(createdNode).toHaveCount(1);
+            await expect(createdNode).toBeVisible({ timeout: 20000 });
+            await createdNode.click();
+            await expect(createdNode).toHaveAttribute('aria-current', 'true');
+            await expect(page.getByRole('heading', { level: 2, name: deptName, exact: true })).toBeVisible();
+        } finally {
+            await request.delete(`/api/v1/admin/system/departments/${createdId}`, { headers: auth });
+        }
         
         console.log('>>> Department Topology Tree UI: PASS');
     });
 
     test('Atomic Hierarchy Save Button Visibility', async ({ page }) => {
-        console.log('\n>>> Testing Save Button initial (hidden) state');
-        await page.goto('/admin/user/manage');
+        console.log('\n>>> Testing Save Button initial disabled state');
+        await page.goto('/admin/user/departments');
 
-        // Switch to DEPTS tab
-        await page.locator('button:has-text("부서 관리")').click();
-
-        // [E2E 감사 B] 부서 트리가 실제로 로드됐는지(positive) 먼저 단언 — 그래야 'Save 버튼 부재'가 의미를 가짐.
+        // [E2E 감사 B] 부서 트리가 실제로 로드됐는지(positive) 먼저 단언 — 그래야 저장 비활성이 의미를 갖는다.
         // (과거: not.toBeVisible만 있어 기능이 아예 렌더되지 않는 페이지도 vacuously 통과)
-        await expect(page.locator('text=조직 구조').first()).toBeVisible({ timeout: 20000 });
+        await expect(page.getByText('조직 구조', { exact: true })).toBeVisible({ timeout: 20000 });
 
         // ⚠ 종전에는 'Save Structure' 를 찾고 있었다. 그런 문자열은 이 저장소 어디에도 없다
         //   (실제 버튼 라벨은 '조직 계층 저장'). 즉 이 단언은 기능이 어떤 상태든 항상 통과하는
         //   vacuous 단언이었다 — 위의 positive 가드를 붙인 뒤에도 이 줄만은 아무것도 검증하지
         //   못하고 있었다. 실제 라벨로 교정한다.
-        await expect(page.locator('button:has-text("조직 계층 저장")')).not.toBeVisible();
+        const saveButton = page.getByRole('button', { name: '조직 계층 저장' });
+        await expect(saveButton).toBeVisible();
+        await expect(saveButton).toBeDisabled();
 
         console.log('>>> Initial Save Button State: PASS');
     });
@@ -192,25 +206,27 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             expect(res.ok(), '부서 등록이 성공해야 한다').toBeTruthy();
             return (await res.json()).data as string;
         };
-        const idA = await mk(`${prefix}_A`);
-        const idB = await mk(`${prefix}_B`);
+        const nameA = `${prefix}_A`;
+        const nameB = `${prefix}_B`;
+        const idA = await mk(nameA);
+        const idB = await mk(nameB);
 
         // 어느 쪽이 자식이 되는지는 화면 순서에 달려 있다. 정리 순서(자식 → 부모)를 위해 밖에 둔다.
         let childId = idB;
         let parentId = idA;
+        let childName = nameB;
 
         try {
-            await page.goto('/admin/user/manage');
-            await page.locator('button:has-text("부서 관리")').click();
-            await expect(page.locator('text=조직 구조').first()).toBeVisible({ timeout: 20000 });
+            await page.goto('/admin/user/departments');
+            await expect(page.getByText('조직 구조', { exact: true })).toBeVisible({ timeout: 20000 });
 
             // 방금 만든 두 부서만 남기도록 검색으로 트리를 좁힌다(기본 조회는 10건 페이지라
             // 새 부서가 첫 페이지에 없을 수 있다).
             // [2026-07-27 정정] 종전 셀렉터는 일반적인 placeholder 의 **전역 유일성**에 의존해, 전체 스위트
             // 실행 시 다른 화면/모달의 잔여 입력과 함께 3개가 매칭되어 strict mode violation 으로 실패했다.
-            // 격리 재현 2회에서 이 화면의 부서 검색 입력은 **1개**임을 확인했으므로(앱 중복 아님),
-            // 의미가 명확한 aria-label 로 좁히고 first() 로 고정한다.
-            const departmentSearch = page.getByRole('textbox', { name: '부서 검색' }).first();
+            // A2는 viewport와 무관하게 master DOM을 하나만 렌더해야 한다. first()로 중복을 숨기지 않는다.
+            const departmentSearch = page.getByRole('textbox', { name: '부서 검색' });
+            await expect(departmentSearch).toHaveCount(1);
             await Promise.all([
                 page.waitForResponse((response) => {
                     if (!response.url().includes('/api/v1/admin/system/departments')) return false;
@@ -219,13 +235,13 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
                 departmentSearch.fill(prefix),
             ]);
 
-            // [2026-07-27 정정] 부서 노드 버튼이 DOM 에 2개 매칭돼 strict mode violation 이 났다
-            // (D&D 정렬 노드가 트리/목록 양쪽에 렌더). 드래그 대상은 트리의 첫 노드이므로 first() 로 고정한다.
             // 검색은 디바운스로 트리를 다시 렌더한다. 노드를 잡은 직후 재렌더가 오면
             // scrollIntoViewIfNeeded 단계에서 "Element is not attached to the DOM" 으로 깨진다(실측).
             // 검색 응답 뒤 locator를 새로 해석해 재렌더 중 분리된 이전 노드를 잡지 않는다.
-            const nodeA = page.locator('button', { hasText: idA }).first();
-            const nodeB = page.locator('button', { hasText: idB }).first();
+            const nodeA = page.locator('[data-a2-master-item]', { hasText: idA });
+            const nodeB = page.locator('[data-a2-master-item]', { hasText: idB });
+            await expect(nodeA).toHaveCount(1);
+            await expect(nodeB).toHaveCount(1);
             await expect(nodeA).toBeVisible({ timeout: 20000 });
             await expect(nodeB).toBeVisible({ timeout: 20000 });
 
@@ -239,17 +255,23 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             expect(boxA && boxB, '두 부서 노드의 위치를 얻을 수 있어야 한다').toBeTruthy();
 
             // 위쪽 노드가 부모 후보(바로 위 형제), 아래쪽 노드가 끌 대상(자식이 된다).
-            const secondBox = (boxA!.y < boxB!.y) ? boxB! : boxA!;
             parentId = (boxA!.y < boxB!.y) ? idA : idB;
             childId = (boxA!.y < boxB!.y) ? idB : idA;
+            childName = (boxA!.y < boxB!.y) ? nameB : nameA;
 
-            // 저장 버튼은 변경 전에는 없어야 한다(변경 후 '나타나는' 것이 이 테스트의 관측 대상).
-            const saveBtn = page.locator('button:has-text("조직 계층 저장")');
-            await expect(saveBtn).not.toBeVisible();
+            // A2는 저장 동작을 항상 발견 가능하게 두되, 선택·변경 전에는 비활성화한다.
+            const saveBtn = page.getByRole('button', { name: '조직 계층 저장' });
+            await expect(saveBtn).toBeVisible();
+            await expect(saveBtn).toBeDisabled();
+
+            const dragHandle = page.getByRole('button', { name: `${childName} (${childId}) 순서 이동 핸들` });
+            await expect(dragHandle).toHaveCount(1);
+            const handleBox = await dragHandle.boundingBox();
+            expect(handleBox, '드래그 핸들의 위치를 얻을 수 있어야 한다').toBeTruthy();
 
             // ── 제자리 가로 드래그: dnd-kit 센서가 반응하도록 가로/세로 이동을 병합
-            const startX = secondBox.x + secondBox.width / 2;
-            const startY = secondBox.y + secondBox.height / 2;
+            const startX = handleBox!.x + handleBox!.width / 2;
+            const startY = handleBox!.y + handleBox!.height / 2;
             await page.mouse.move(startX, startY);
             await page.mouse.down();
             // 임계를 단계적으로 넘기며 세로 흔들림을 주어 PointerSensor를 완벽하게 활성화시킵니다.
@@ -258,8 +280,8 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             await page.mouse.move(startX + 50, startY + 5, { steps: 8 }); // 50px 이동 (depth +2 시도, 클램프로 +1 적용)
             await page.mouse.up();
 
-            // 계층이 바뀌었으므로 저장 버튼이 '나타나야' 한다. (hasDeptChanges=true)
-            await expect(saveBtn, '가로 드래그로 깊이가 바뀌면 저장 버튼이 나타나야 한다').toBeVisible({ timeout: 15000 });
+            // 계층이 바뀌었고 drag start가 해당 행을 선택했으므로 같은 저장 버튼이 활성화된다.
+            await expect(saveBtn, '가로 드래그로 깊이가 바뀌면 저장 버튼이 활성화되어야 한다').toBeEnabled({ timeout: 15000 });
             await saveBtn.click();
 
             // 저장이 실제로 영속되는지는 화면이 아니라 서버에 묻는다.

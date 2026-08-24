@@ -32,7 +32,7 @@ test('current URL-state census exactly covers critical route and URL producer po
   assert.deepEqual(validateUrlStateCensus(expected, { repoRoot }), []);
   assert.deepEqual(compareUrlStateCensus(expected, actual), []);
   assert.deepEqual(actual.summary.exactPopulations, {
-    filesystemRoutes: 119,
+    filesystemRoutes: 120,
     dynamicRoutePatterns: 11,
     configRedirects: 15,
     pageRedirects: 5,

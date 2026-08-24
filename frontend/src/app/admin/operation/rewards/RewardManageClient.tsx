@@ -1,12 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { Trophy, Search, Plus, Layers, RefreshCcw, ShieldCheck, Activity } from 'lucide-react';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { Plus, RefreshCcw, ShieldCheck } from 'lucide-react';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { operationAdminService, type Reward } from '@/services/foundation/operation/OperationAdminService';
 import type { PageResponse } from '@/types/foundation/system';
@@ -43,11 +42,10 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const [page, setPage] = useState(1);
-  const [searchTerm, setSearchTerm] = useState('');
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
-  const size = initialPage?.size || 10;
+  const [size, setSize] = useState(initialPage?.size || 10);
 
   const form = useAppForm(rewardSchema, {
     defaultValues: {
@@ -156,88 +154,55 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
     }
   ];
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-    setSearchKeyword(searchTerm.trim());
-  };
-
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="상훈 및 포상 관리 체계"
-        breadcrumbs={[{ label: '운영지원' }, { label: '상훈관리' }, { label: '포상관리' }]}
+    <WorkListPage
+      title="상훈 및 포상 관리 체계"
+      description="조직 내 성과 및 공헌에 대한 포상 기록을 조회·등록합니다."
+      breadcrumbItems={[{ label: '운영지원' }, { label: '상훈관리' }, { label: '포상관리' }]}
+      filterStateKey="operation-rewards"
+      totalCount={totalItems}
+      actions={
+        <>
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="포상 목록 새로고침"
+            onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-rewards'] })}
+            className="gap-2"
+          >
+            <RefreshCcw size={16} aria-hidden="true" />
+            새로고침
+          </Button>
+          <Button size="sm" onClick={() => setIsModalOpen(true)} className="gap-2">
+            <Plus size={16} aria-hidden="true" /> 포상 기록 등록
+          </Button>
+        </>
+      }
+      filter={
+        <KeywordFilter
+          label="포상 명칭 · 대상자"
+          placeholder="포상 명칭 또는 대상자로 검색"
+          value={searchKeyword}
+          onSearch={(keyword) => { setPage(1); setSearchKeyword(keyword); }}
+        />
+      }
+    >
+      <StandardDataTable
+        accessibleLabel="포상 기록 목록"
+        columns={columns}
+        data={rewards}
+        loading={isLoading}
+        emptyMessage={emptyResultMessage(searchKeyword, '등록된 포상 기록이 없습니다.')}
+        pagination={{
+          currentPage: page,
+          totalPages: totalPages,
+          onPageChange: (p) => setPage(p),
+          // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+          pageSize: size,
+          onPageSizeChange: (next) => { setSize(next); setPage(1); },
+          pageSizeOptions: [10, 20, 50],
+        }}
       />
-
-      <HubHeader
-        title="Reward &"
-        highlight="Honor"
-        subtitle="조직 내 우수한 성과 및 공헌에 대한 포상 기록을 관리합니다."
-        icon={Trophy}
-        actions={
-          <div className="flex gap-4">
-            <Button
-              variant="outline"
-              aria-label="포상 목록 새로고침"
-              onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-rewards'] })}
-              className="h-11 w-14 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm active:scale-95"
-            >
-              <RefreshCcw size={20} />
-            </Button>
-            <Button 
-              onClick={() => setIsModalOpen(true)}
-              className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl"
-            >
-              <Plus size={20} /> 포상 기록 등록
-            </Button>
-          </div>
-        }
-      />
-
-      {/* [정직성] 종전에는 계측 원천이 없는 "동기화상태 확인됨"·"감시 프로브 안전함" 을 실측처럼
-          표시했다. 실제 데이터에서 파생되는 값만 남긴다 (e2e 10-operational-extension 단언 동반 갱신). */}
-      <HubMetricGrid>
-        <HubMetricCard title="포상 현황" value={totalItems} icon={Layers} color="amber" status="집계" />
-        <HubMetricCard title="활성 레코드" value={rewards.length} icon={Activity} color="primary" status="집계" />
-      </HubMetricGrid>
-
-      <HubSectionCard
-        title="포상 아카이브 매트릭스"
-        description="전사적으로 관리되는 상훈 및 포상 데이터 유닛의 실시간 스트림입니다."
-        icon={Trophy}
-        className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
-      >
-        <div className="space-y-8">
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
-            <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
-              <Input
-                placeholder="포상 명칭 또는 대상자 식별자로 분석..."
-                className="h-11 pl-16 rounded-xl border-none bg-muted/50 text-sm font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-              <Button type="submit" className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">ANALYZE</Button>
-            </form>
-          </div>
-
-          <div className="min-h-[500px]">
-            <StandardDataTable
-              columns={columns}
-              data={rewards}
-              loading={isLoading}
-              emptyMessage="식별된 포상 내역 레코드가 존재하지 않습니다."
-              className="border-none bg-transparent shadow-none"
-              isPremium={true}
-              pagination={{
-                currentPage: page,
-                totalPages: totalPages,
-                onPageChange: (p) => setPage(p)
-              }}
-            />
-          </div>
-        </div>
-      </HubSectionCard>
 
       <StandardModal
         isOpen={isModalOpen}
@@ -331,6 +296,6 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
           </form>
         </Form>
       </StandardModal>
-    </div>
+    </WorkListPage>
   );
 }

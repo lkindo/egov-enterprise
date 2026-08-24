@@ -20,14 +20,20 @@ interface PageHeaderProps {
   breadcrumbs?: BreadcrumbItem[];
   actions?: React.ReactNode;
   className?: string; // Standardize with Hub style
+  /** 업무형 archetype처럼 진입 모션을 금지하는 화면은 false로 둔다. */
+  animateEntrance?: boolean;
 }
 
-export function PageHeader({ title, breadcrumbs, actions, className }: PageHeaderProps) {
+export function PageHeader({ title, breadcrumbs, actions, className, animateEntrance = true }: PageHeaderProps) {
   // PageHeader 의 { label, href } 계약 → DynamicBreadcrumb 의 { name, href } 계약으로 변환
   const customItems = breadcrumbs?.map(({ label, href }) => ({ name: label, href }));
 
   return (
-    <div className={cn("flex flex-col gap-6 mb-12 animate-in fade-in slide-in-from-left-4 duration-700", className)}>
+    <div className={cn(
+      "flex flex-col gap-6 mb-12",
+      animateEntrance && "animate-in fade-in slide-in-from-left-4 duration-700",
+      className,
+    )}>
       {/*
         Breadcrumb — 하드코딩 마크업 제거 후 DynamicBreadcrumb 로 일원화.
         - 자체 mb-4 는 부모의 gap-6 과 겹쳐 이중 여백이 되므로 여기서 상쇄한다.
@@ -55,7 +61,10 @@ export function PageHeader({ title, breadcrumbs, actions, className }: PageHeade
         </div>
 
         {actions && (
-          <div className="flex items-center gap-3 flex-wrap animate-in fade-in zoom-in-95 duration-1000 delay-300">
+          <div className={cn(
+            "flex items-center gap-3 flex-wrap",
+            animateEntrance && "animate-in fade-in zoom-in-95 duration-1000 delay-300",
+          )}>
             {actions}
           </div>
         )}
