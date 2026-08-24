@@ -21,13 +21,25 @@ function validateMaskedJwt(source) {
   ].filter(Boolean);
 }
 
+/**
+ * 줄바꿈을 LF 로 정규화해 읽는다.
+ *
+ * ⚠ 아래 red 증명은 워크플로 본문을 **줄바꿈을 포함한 문자열**로 치환해 순서를 뒤집는다.
+ *   Windows 체크아웃(core.autocrlf)에서는 파일이 CRLF 라 그 치환이 no-op 이 되고,
+ *   "위반을 만들었는데 red 가 안 난다"는 거짓 실패가 난다(2026-08-24 실측: 로컬 red / CI green).
+ *   검사 대상은 스텝의 **순서**이지 줄바꿈 표기가 아니므로 읽는 시점에 정규화한다.
+ */
+function readWorkflow() {
+  return readFileSync(workflowUrl, 'utf8').replace(/\r\n/gu, '\n');
+}
+
 test('visual baseline workflow masks its ephemeral JWT before later steps can log it', () => {
-  const source = readFileSync(workflowUrl, 'utf8');
+  const source = readWorkflow();
   assert.deepEqual(validateMaskedJwt(source), []);
 });
 
 test('removing or delaying add-mask is a reproducible red', () => {
-  const source = readFileSync(workflowUrl, 'utf8');
+  const source = readWorkflow();
   assert.match(
     validateMaskedJwt(source.replace('echo "::add-mask::$jwt_secret"', '')).join('\n'),
     /마스킹/u,
