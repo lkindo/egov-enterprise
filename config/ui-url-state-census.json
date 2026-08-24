@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "689f3ca9868c26d46c40973fdbe1217b8a9544c7064c19578ef5dde0f49dab0d"
+    "inventoryHash": "c145cdca71baedb95b3327ed9972b20eef57969272b38bbc309ba62bf7d8658f"
   },
   "summary": {
     "sourceFileCount": 487,
-    "records": 531,
-    "syntaxOccurrences": 601,
-    "ambiguousRecords": 510,
-    "unverifiedRecords": 531,
+    "records": 529,
+    "syntaxOccurrences": 599,
+    "ambiguousRecords": 508,
+    "unverifiedRecords": 529,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -40,7 +40,7 @@
     "byKind": {
       "config-redirect": 15,
       "dynamic-segment": 11,
-      "form-producer": 48,
+      "form-producer": 46,
       "navigation-producer": 155,
       "page-redirect": 5,
       "query-builder": 21,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 366,
+      "navigation": 364,
       "request-telemetry": 165
     }
   },
@@ -8181,45 +8181,6 @@
       }
     },
     {
-      "id": "URL-C43512D5A61927",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
-      "source": "frontend/src/app/admin/security/group/SecurityGroupClient.tsx",
-      "producerFile": "frontend/src/app/admin/security/group/SecurityGroupClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/security/group",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/security/group/SecurityGroupClient.tsx",
-        "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-9CAD59EBAAB35B",
       "surface": "navigation",
       "kind": "form-producer",
@@ -8254,45 +8215,6 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx",
-        "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-6AFCCB33809CF3",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
-      "source": "frontend/src/app/admin/security/role/SecurityRoleClient.tsx",
-      "producerFile": "frontend/src/app/admin/security/role/SecurityRoleClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/security/role",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/security/role/SecurityRoleClient.tsx",
         "detector": "jsx-form",
         "occurrenceCount": 1
       }

@@ -49,7 +49,7 @@ vi.mock('@/components/common/PagePagination', () => ({
   ),
 }));
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ columns, data, onRetry }: any) => (
+  StandardDataTable: ({ columns, data, onRetry, pagination }: any) => (
     <div>
       {data.map((item: any, rowIndex: number) => (
         <div key={rowIndex}>
@@ -57,6 +57,8 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
         </div>
       ))}
       <button type="button" onClick={onRetry}>그룹 목록 재시도</button>
+      {/* [2026-08-24 A1 이행] 별도 PagePagination 이 표 내장 페이저로 수렴했다. */}
+      <button type="button" onClick={() => pagination?.onPageChange(2)}>그룹 다음 페이지</button>
     </div>
   ),
 }));
@@ -98,7 +100,8 @@ describe('SecurityGroupClient', () => {
     renderClient();
 
     expect(await screen.findByText('관리자 그룹')).toBeInTheDocument();
-    expect(screen.getByText('전체 보안 그룹: 12')).toBeInTheDocument();
+    // [2026-08-24 A1 이행] 서버 총계는 지표 카드가 아니라 셸 결과 툴바가 한 곳에서 소유한다(G3).
+    expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 12건');
     expect(screen.getByText('규정 설명이 제공되지 않음')).toBeInTheDocument();
     expect(screen.getByText('N/A')).toBeInTheDocument();
 
@@ -108,7 +111,6 @@ describe('SecurityGroupClient', () => {
       target: { value: '관리자' },
     });
     await waitFor(() => expect(mocks.list).toHaveBeenCalledWith({ page: 0, searchKeyword: '관리자' }));
-    fireEvent.submit(screen.getByRole('button', { name: '그룹 검색' }).closest('form')!);
     fireEvent.click(screen.getByRole('button', { name: '보안 그룹 목록 새로고침' }));
     fireEvent.click(screen.getByRole('button', { name: '그룹 목록 재시도' }));
   });

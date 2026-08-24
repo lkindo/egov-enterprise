@@ -5,28 +5,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Loader2,
  Plus,
  Trash2,
- ShieldCheck,
  Lock,
- Search,
  RefreshCcw,
  Zap,
- Database,
  Binary,
  Workflow,
- SearchCode,
- Layers,
  ListOrdered,
  Key } from "lucide-react";
 import { roleAdminService } from '@/services/foundation/system/RoleAdminService';
 import { RoleManage } from '@/types/foundation/security';
 import { SearchParams } from '@/types/foundation/system';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 ;
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { PagePagination } from "@/components/common/PagePagination";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -97,12 +89,6 @@ export default function SecurityRoleClient() {
     },
     onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error')
   });
-
-  /** 검색은 항상 1페이지부터 — 3페이지에서 검색하면 빈 화면이 되는 결함 방지. */
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    setPage(1);
-  };
 
   const handleCreate = () => {
     setFormData({
@@ -192,92 +178,60 @@ export default function SecurityRoleClient() {
   ];
 
  return (
- <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
- <PageHeader
- title="세분화 보안 롤(Role) 아키텍처"
- breadcrumbs={[{ label: '보안 관리' }, { label: '롤 관리' }]}
- />
-
- <HubHeader
- title="Access"
- highlight="Control"
- subtitle="리소스 수준의 제어와 접근 제어를 위한 보안 롤 패턴 및 가드포인트 거버넌스"
- icon={ShieldCheck}
+ <WorkListPage
+ title="보안 롤 관리"
+ description="리소스·URL 패턴 기준의 보안 롤을 조회·설정합니다."
+ breadcrumbItems={[{ label: '보안 관리' }, { label: '롤 관리' }]}
+ filterStateKey="security-role"
+ totalCount={error ? undefined : pagination?.totalRecordCount}
  actions={
- <div className="flex gap-4 p-2 items-center">
+ <>
  <Button
- variant="ghost"
+ variant="outline"
+ size="sm"
  onClick={() => refetch()}
  aria-label="보안 롤 목록 새로고침"
- className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="gap-2"
  >
- <RefreshCcw size={22} aria-hidden="true" className="group-hover:rotate-180 transition-transform duration-700" />
+ <RefreshCcw size={16} aria-hidden="true" />
+ 새로고침
  </Button>
- <Button
- onClick={handleCreate}
- className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
- >
- <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 롤 설정
+ <Button size="sm" onClick={handleCreate} className="gap-2">
+ <Plus size={16} aria-hidden="true" /> 신규 보안 롤 설정
  </Button>
- </div>
+ </>
  }
- />
-
- {/*
-   지표는 서버가 실제로 내려준 값만 노출한다.
-   종전의 '프로브 상태=정상' · '권한 흐름=확인됨' 은 산출 근거가 없는 고정 문자열이라 삭제했다.
- */}
- <HubMetricGrid>
- <HubMetricCard title="전체 보안 롤" value={pagination?.totalRecordCount ?? 0} icon={Database} color="indigo" status="서버 집계" />
- <HubMetricCard title="현재 페이지 표시" value={roles.length} icon={Layers} color="primary" status={`${page} 페이지`} />
- </HubMetricGrid>
-
- <HubSectionCard
- title="보안 롤 패턴 매트릭스"
- description="시스템 가드포인트 및 URL 패턴 기반의 세부 보안 제어 명세 및 인벤토리입니다."
- icon={SearchCode}
- >
- <div className="space-y-8">
- <div className="flex items-center justify-between px-2 pt-2 border-b border-border pb-10 mb-8">
- <div className="flex items-center gap-8">
- <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search">
- <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
+ filter={
+ <div className="min-w-60 max-w-xl space-y-1">
+ <label htmlFor="security-role-search" className="text-[length:var(--font-size-body)] font-medium">
+ 롤코드 · 롤명
+ </label>
  <Input
+ id="security-role-search"
  aria-label="롤코드 또는 롤명 검색"
  placeholder="롤코드 또는 롤명으로 검색"
- className="w-full sm:w-[450px] h-11 pl-16 rounded-lg border-2 bg-muted/50 text-sm font-bold tracking-tight shadow-inner"
  value={searchInput}
  onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
  />
- <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">패턴 분석</Button>
- </form>
  </div>
- {/* [정직성] '기능 역할 테이블 프로브' 장식 라벨 제거 — 어떤 계측·기능과도 연결되지 않은 문구였다. */}
- </div>
-
- <div className="min-h-[500px]">
+ }
+ >
  <StandardDataTable
+ accessibleLabel="보안 롤 목록"
  keyField="roleId"
  columns={columns}
  data={roles}
  loading={isLoading}
  error={error as Error | null}
  onRetry={() => refetch()}
- emptyMessage="식별된 보안 롤 패턴 리소스가 존재하지 않습니다."
- className="border-none bg-transparent"
+ emptyMessage={emptyResultMessage(searchKeyword, '등록된 보안 롤이 없습니다.')}
+ pagination={{
+ currentPage: page,
+ totalPages: pagination?.totalPageCount ?? 1,
+ onPageChange: (p) => setPage(p),
+ pageSize: pagination?.recordCountPerPage ?? 10,
+ }}
  />
- </div>
-
- {pagination && (
- <div className="mt-12 flex justify-center">
- <PagePagination
- pagination={pagination}
- onPageChange={(p) => setPage(p)}
- />
- </div>
- )}
- </div>
- </HubSectionCard>
 
  {/* Role Provisioning Modal */}
  <StandardModal
@@ -383,6 +337,6 @@ export default function SecurityRoleClient() {
  </div>
  </div>
  </StandardModal>
- </div>
+ </WorkListPage>
  );
 }

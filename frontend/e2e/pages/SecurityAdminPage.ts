@@ -35,7 +35,8 @@ export class SecurityAdminPage {
     async gotoGroups() {
         console.log('>>> Navigating to Group Management');
         await this.page.goto('/admin/security/group');
-        await expect(this.page.getByRole('heading', { name: /그룹.*거버넌스/i }).first()).toBeVisible();
+        // [2026-08-24 A1 이행] 마케팅 제목('보안 그룹 아키텍처 거버넌스')을 업무 제목으로 바꿨다(G14).
+        await expect(this.page.getByRole('heading', { name: '보안 그룹 관리', exact: true })).toBeVisible();
     }
 
     async createGroup(groupId: string, groupNm: string) {
@@ -57,7 +58,8 @@ export class SecurityAdminPage {
     async gotoRoles() {
         console.log('>>> Navigating to Role Management');
         await this.page.goto('/admin/security/role');
-        await expect(this.page.getByRole('heading', { name: /롤.*아키텍처/i }).first()).toBeVisible();
+        // [2026-08-24 A1 이행] 마케팅 제목('세분화 보안 롤(Role) 아키텍처')을 업무 제목으로 바꿨다(G14).
+        await expect(this.page.getByRole('heading', { name: '보안 롤 관리', exact: true })).toBeVisible();
     }
 
     async createRole(roleCode: string, roleNm: string) {
