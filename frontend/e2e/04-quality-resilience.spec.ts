@@ -166,7 +166,9 @@ test.describe('Tier 4: Quality & Resilience', () => {
             await page.goto('/admin/system/logs/login');
             // exact: Suspense 폴백의 sr-only h1('로그인 로그를 불러오는 중')이 부분일치로 잡히지 않게 한다.
             await expect(page.getByRole('heading', { level: 1, name: '로그인 로그', exact: true })).toBeVisible({ timeout: 30000 });
-            const logSearchInput = page.getByPlaceholder('사용자ID, 접속IP 검색..');
+            // [2026-08-24 A1 이행] 조회 조건이 표 내부 검색창에서 WorkListPage 조회 조건 영역으로
+            //   올라가면서 placeholder 의 말줄임표가 사라졌다(카탈로그 G2). 캡처 대상(무매칭 empty-state)은 동일하다.
+            const logSearchInput = page.getByPlaceholder('사용자ID, 접속IP 검색');
             await expect(logSearchInput).toBeVisible({ timeout: 20000 });
             await logSearchInput.fill('vrt-no-match');
             await logSearchInput.press('Enter');

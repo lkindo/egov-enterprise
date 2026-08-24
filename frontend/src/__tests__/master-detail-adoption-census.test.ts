@@ -14,6 +14,7 @@ const EXPECTED_IMPORTERS = [
   'src/app/admin/system/common-code/CommonCodeClient.tsx',
   'src/app/admin/system/menus/MenuAdminClient.tsx',
   'src/app/admin/user/UserOrgHubClient.tsx',
+  'src/app/approvals/ApprovalHubClient.tsx',
 ];
 
 function screenFiles(directory: string): string[] {
@@ -30,7 +31,7 @@ function source(relativePath: string): string {
 }
 
 describe('A2 master-detail adoption census', () => {
-  it('A2 셸 importer를 부서·메뉴·메일 이력·공통코드 네 소비자로 exact 고정한다', () => {
+  it('A2 셸 importer를 부서·메뉴·메일 이력·공통코드·결재함 다섯 소비자로 exact 고정한다', () => {
     const importers = screenFiles(APP_DIR)
       .filter((path) => A2_IMPORT.test(readFileSync(path, 'utf8')))
       .map((path) => relative(FRONTEND_DIR, path).split(sep).join('/'))
@@ -70,6 +71,28 @@ describe('A2 master-detail adoption census', () => {
     expect(client).toContain('data-a2-master-item');
     expect(client).toContain("aria-current={isSelected ? 'true' : undefined}");
     expect(client).toContain('aria-label="메일 검색"');
+  });
+
+  it('/approvals가 전체 A2 페이지 셸과 선택 시맨틱을 경유한다', () => {
+    const client = source('src/app/approvals/ApprovalHubClient.tsx');
+
+    expect(client).toMatch(/<MasterDetailPage\b/);
+    expect(client).toContain('data-a2-master-item');
+    expect(client).toContain("aria-current={isSelected ? 'true' : undefined}");
+    // e2e(11-enterprise-workflow)가 붙잡는 두 접근 이름 — 셸 이행 뒤에도 같은 이름으로 남는다.
+    expect(client).toContain('title="결재 허브"');
+    expect(client).toContain('새 결재 기안');
+    // 표가 아니라 compact 마스터 목록이다 — 6열 표를 좁은 마스터 폭에 두지 않는다.
+    expect(client).not.toMatch(/from\s+['"]@\/app\/components\/ui\/standard-data-table['"]/);
+  });
+
+  it('결재함은 없는 보관함 구분을 살아 있는 탭으로 위장하지 않는다', () => {
+    const client = source('src/app/approvals/ApprovalHubClient.tsx');
+
+    // 보관함 조회 API 가 없어 종전 ARCHIVE 탭은 처리 이력과 같은 데이터를 다른 이름으로 보여줬다.
+    // 사유를 밝힌 비활성 컨트롤로만 남긴다(ADR-0003 위장 금지 · 카탈로그 G10).
+    expect(client).not.toMatch(/setActiveTab\('ARCHIVE'\)/);
+    expect(client).toMatch(/disabled title="보관함 조회 API가 아직 없어 사용할 수 없습니다"/);
   });
 
   it('/admin/system/common-code의 STANDARD만 전체 A2 페이지 셸을 사용하고 두 A1 탭은 보존한다', () => {

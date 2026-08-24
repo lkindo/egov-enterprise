@@ -68,7 +68,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   emerald/amber/rose 리터럴 13건을 success/warning/destructive pair로 회수(사전 red 실측: 629 != 642).
 // [하향 래칫 2026-08-24(5)] A2 공통코드 이행에서 상세코드 폼의 필수·오류·사용 상태
 //   rose/emerald 리터럴 8건을 destructive/success emphasis 토큰으로 회수(사전 red 실측: 621 != 629).
-const BASELINE = 621;
+// [하향 래칫 2026-08-24(5)] 결재함 A2 이행 — 상세 승인/반려 버튼의 emerald·rose 리터럴 4건을
+//   기본·destructive 버튼 variant 로 이행(사전 red 실측: 617 != 621).
+const BASELINE = 617;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

@@ -408,7 +408,12 @@ describe('logs cluster modernization (m-1): LGN full-result xlsx export wiring',
     clientHarness.queryData = pageOf(LOGIN_ROW);
     render(<SystemLogsLoginClient />);
 
-    act(() => currentTableProps().search?.onSearch('alice'));
+    // [2026-08-24 A1 이행] 조회 조건이 표 내부 검색창에서 WorkListPage 조회 조건 영역으로 올라갔다.
+    //   검사 의도(적용된 검색어가 export URL 로 전달되는가)는 그대로이고 입력 경로만 바뀐다.
+    fireEvent.change(screen.getByRole('textbox', { name: '사용자ID · 접속IP' }), {
+      target: { value: 'alice' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
     fireEvent.click(screen.getByRole('button', { name: '전체 결과 엑셀 다운로드' }));
 
     expect(downloadHarness.navigateToDownload).toHaveBeenCalledWith(

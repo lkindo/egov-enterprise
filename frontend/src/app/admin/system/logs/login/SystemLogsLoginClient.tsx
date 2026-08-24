@@ -4,13 +4,14 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import type { LoginLog, PageResponse } from '@/types/foundation/system';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { useToast } from '@/app/components/ui/toast';
 import { navigateToDownload } from '@/lib/navigation/full-result-download';
-import { KeyRound, Terminal, Calendar, Globe, FileDown } from 'lucide-react';
+import { Terminal, Calendar, Globe, FileDown } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
 
 const DEFAULT_PAGE_SIZE = 10;
@@ -150,64 +151,63 @@ const SystemLogsLoginClient = () => {
     ];
 
     return (
-        <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-            <PageHeader
-                title="로그인 로그"
-                breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '로그인 로그' }]}
-            />
-
-            <HubHeader
-                title="계정 가용성"
-                highlight="로그인 로그"
-                subtitle="시스템 접속 및 로그인/로그아웃 이력을 투명하게 관리하여 보안 사고를 미연에 방지합니다."
-                icon={KeyRound}
-                actions={
-                    <div className="flex flex-wrap items-center gap-3">
-                        {/* 현재 페이지 CSV(기존 자산) — 전체 결과 xlsx 와 라벨로 범위를 구분한다. */}
-                        <DataExportExcel
-                            data={logs}
-                            headers={EXPORT_HEADERS}
-                            filename="로그인로그"
-                            className="flex items-center gap-2 h-12 px-6 rounded-lg border-2 font-bold text-xs tracking-widest hover:bg-accent transition-colors"
-                        />
-                        {/* 전체 결과 xlsx — 서버 스트리밍 export(DEC-OPS-016). login 로그에만 엔드포인트가 있다. */}
-                        <button
-                            type="button"
-                            onClick={handleFullExport}
-                            className="flex items-center gap-2 h-12 px-6 rounded-lg border-2 border-primary/40 text-primary font-bold text-xs tracking-widest hover:bg-primary/5 transition-colors"
-                        >
-                            <FileDown size={16} aria-hidden="true" />
-                            전체 결과 엑셀 다운로드
-                        </button>
-                    </div>
-                }
-            />
-
+        <WorkListPage
+            title="로그인 로그"
+            description="시스템 접속·로그인/로그아웃 이력을 조회합니다."
+            breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '로그인 로그' }]}
+            filterStateKey="system-logs-login"
+            // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
+            totalCount={error ? undefined : totalCount}
+            filter={
+                <KeywordFilter
+                    label="사용자ID · 접속IP"
+                    placeholder="사용자ID, 접속IP 검색"
+                    value={searchKeyword}
+                    onSearch={(keyword: string) => { setSearchKeyword(keyword); setPage(1); }}
+                />
+            }
+            toolbarActions={
+                <>
+                    {/* 현재 페이지 CSV(기존 자산) — 전체 결과 xlsx 와 라벨로 범위를 구분한다. */}
+                    <DataExportExcel
+                        data={logs}
+                        headers={EXPORT_HEADERS}
+                        filename="로그인로그"
+                        className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:text-primary"
+                    />
+                    {/* 전체 결과 xlsx — 서버 스트리밍 export(DEC-OPS-016). login 로그에만 엔드포인트가 있다. */}
+                    <button
+                        type="button"
+                        onClick={handleFullExport}
+                        className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-primary/40 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/5"
+                    >
+                        <FileDown size={16} aria-hidden="true" />
+                        전체 결과 엑셀 다운로드
+                    </button>
+                </>
+            }
+        >
             <StandardDataTable
+                accessibleLabel="로그인 로그 목록"
                 columns={columns}
                 data={logs}
                 loading={isLoading}
                 error={error}
                 onRetry={() => refetch()}
+                emptyMessage={emptyResultMessage(searchKeyword, '조회된 로그인 로그가 없습니다.')}
                 keyField="lgnSn"
                 pagination={{
                     currentPage: page,
                     totalPages: totalPageCount,
                     onPageChange: setPage,
-                    totalCount,
+                    // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
                     pageSize,
                     // 페이지 크기 변경 시 1페이지로 복귀 — 줄어든 총 페이지 밖에 남지 않게 한다.
                     onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
                     pageSizeOptions: PAGE_SIZE_OPTIONS,
                 }}
-                search={{
-                    placeholder: '사용자ID, 접속IP 검색..',
-                    value: searchKeyword,
-                    onSearch: (keyword: string) => { setSearchKeyword(keyword); setPage(1); },
-                    onClear: () => { setSearchKeyword(''); setPage(1); },
-                }}
             />
-        </div>
+        </WorkListPage>
     );
 };
 
