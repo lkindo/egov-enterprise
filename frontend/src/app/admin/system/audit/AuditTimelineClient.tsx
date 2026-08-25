@@ -51,7 +51,10 @@ export function AuditTimelineClient() {
 
   const { data: auditData, isLoading, isFetching, error, refetch } = useQuery({
     queryKey: ['admin-audit-timeline', debouncedKeyword, page],
-    queryFn: () => auditAdminService.getAuditLogs({ page: page - 1, size: PAGE_SIZE, keyword: debouncedKeyword }),
+    queryFn: () => auditAdminService.getAuditLogs({ page: page - 1, size: PAGE_SIZE, searchKeyword: debouncedKeyword }),
+    // [2026-08-26] 종전 `keyword` 는 서버(BaseSearchDto.searchKeyword)에 바인딩되지 않아 무시됐다.
+    //   이 화면 자체는 next.config 리다이렉트로 도달 불가라 archetype 이행 대상이 아니지만(DEC-OPS-023),
+    //   알면서 틀린 호출을 남기지는 않는다.
     placeholderData: (previousData) => previousData,
     refetchInterval: 60000 // 1분마다 리프레시
   });
@@ -104,6 +107,7 @@ export function AuditTimelineClient() {
               이미 동작 검증된 CSV(BOM 포함) 내보내기 자산을 배선한다(현재 페이지 기준).
             */}
             <DataExportExcel
+            scope="page"
               data={logs}
               headers={EXPORT_HEADERS}
               filename="감사로그"

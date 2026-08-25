@@ -149,32 +149,32 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
     });
   });
 
-  describe('검색어(keyword) 전달 규약', () => {
-    it('keyword 는 승격·가공 없이 받은 그대로 전달된다', async () => {
-      await auditAdminService.getAuditLogs({ page: 0, keyword: '로그인' });
+  describe('검색어(searchKeyword) 전달 규약', () => {
+    it('searchKeyword 는 승격·가공 없이 받은 그대로 전달된다', async () => {
+      await auditAdminService.getAuditLogs({ page: 0, searchKeyword: '로그인' });
 
       // SurveyAdminService 처럼 searchKeyword/searchWrd 로 복제하지 않는다.
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, keyword: '로그인', pageIndex: 1 },
+        params: { page: 0, searchKeyword: '로그인', pageIndex: 1 },
       });
     });
 
-    it('keyword 를 주지 않으면 키 자체가 나가지 않는다 — 빈 문자열 기본값을 채우지 않는다', async () => {
+    it('searchKeyword 를 주지 않으면 키 자체가 나가지 않는다 — 빈 문자열 기본값을 채우지 않는다', async () => {
       await auditAdminService.getAuditLogs({ page: 0 });
 
       const [, config] = client.get.mock.calls[0] as GetCall;
 
-      // 이 서비스에는 `keyword: ''` 폴백이 없다(SurveyAdminService 와의 결정적 차이).
+      // 이 서비스에는 `searchKeyword: ''` 폴백이 없다(SurveyAdminService 와의 결정적 차이).
       // 빈 문자열을 임의로 채우면 백엔드가 "빈 검색어로 필터" 로 해석할 여지가 생긴다.
       expect(Object.keys(config.params).sort()).toEqual(['page', 'pageIndex']);
     });
 
     it('검색어를 지운 상태(빈 문자열)는 빈 문자열 그대로 전송된다', async () => {
       // 타임라인 화면은 입력을 지우면 debouncedKeyword 가 '' 가 된 채 그대로 호출한다.
-      await auditAdminService.getAuditLogs({ page: 0, size: 20, keyword: '' });
+      await auditAdminService.getAuditLogs({ page: 0, size: 20, searchKeyword: '' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, size: 20, keyword: '', pageIndex: 1, recordCountPerPage: 20 },
+        params: { page: 0, size: 20, searchKeyword: '', pageIndex: 1, recordCountPerPage: 20 },
       });
     });
   });
@@ -193,9 +193,9 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
     });
 
     it('config 를 생략해도 params 를 담은 config 객체가 반드시 만들어진다 — undefined 로 나가지 않는다', async () => {
-      await auditAdminService.getAuditLogs({ keyword: '삭제' });
+      await auditAdminService.getAuditLogs({ searchKeyword: '삭제' });
 
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { keyword: '삭제' } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { searchKeyword: '삭제' } });
       // config 를 통째로 흘려보내면 params 가 사라져 전체 목록이 조회된다.
       expect(client.get).not.toHaveBeenCalledWith(BASE, undefined);
     });
@@ -256,7 +256,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
 
   describe('읽기 전용 보장', () => {
     it('감사 로그는 GET 한 번만 발생하고 쓰기 메서드는 전혀 사용하지 않는다', async () => {
-      await auditAdminService.getAuditLogs({ page: 0, size: 5, keyword: '로그인' });
+      await auditAdminService.getAuditLogs({ page: 0, size: 5, searchKeyword: '로그인' });
 
       // 감사 추적(audit trail)은 관리자 UI 에서 변경·삭제할 수 없어야 한다.
       expect(client.get).toHaveBeenCalledTimes(1);

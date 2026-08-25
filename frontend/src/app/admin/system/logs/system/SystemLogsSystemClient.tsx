@@ -7,6 +7,7 @@ import type { PageResponse, SysLog } from '@/types/foundation/system';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
+import { PeriodFilter, EMPTY_PERIOD, periodToParams, type PeriodValue } from '@/app/components/patterns/period-filter';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { Clock, Terminal, FileText } from 'lucide-react';
@@ -31,13 +32,15 @@ const SystemLogsSystemClient = () => {
     const [page, setPage] = usePageParam();
     const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
     const [searchKeyword, setSearchKeyword] = useState('');
+    const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<SysLog>>({
-        queryKey: ['admin-logs-system', page, pageSize, searchKeyword],
+        queryKey: ['admin-logs-system', page, pageSize, searchKeyword, periodToParams(period, 'compact')],
         queryFn: () => systemLogAdminService.getSystemLogs({
             page: page - 1,
             size: pageSize,
-            searchWrd: searchKeyword
+            searchWrd: searchKeyword,
+            ...periodToParams(period, 'compact'),
         }),
     });
 
@@ -128,7 +131,13 @@ const SystemLogsSystemClient = () => {
                     placeholder="서비스설명, 요청ID 검색"
                     value={searchKeyword}
                     onSearch={(keyword: string) => { setSearchKeyword(keyword); setPage(1); }}
-                />
+                >
+                    <PeriodFilter
+                        label="조회 기간(발생일자)"
+                        value={period}
+                        onChange={(next) => { setPeriod(next); setPage(1); }}
+                    />
+                </KeywordFilter>
             }
             toolbarActions={
                 /*
@@ -136,6 +145,7 @@ const SystemLogsSystemClient = () => {
                   삭제하고, 이미 검증된 CSV(BOM 포함) 내보내기 자산을 배선한다.
                 */
                 <DataExportExcel
+            scope="page"
                     data={logs}
                     headers={EXPORT_HEADERS}
                     filename="시스템로그"

@@ -21,9 +21,27 @@ class AuditAdminService extends AdminService {
   }
 
   /**
-   * 감사 로그 목록 조회
+   * 감사 로그 목록 조회.
+   *
+   * ⚠ [2026-08-26 실측 수정] 종전 시그니처는 `keyword` 였다. 그러나 이 엔드포인트(`/logs/system`)는
+   *   `@ModelAttribute BaseSearchDto` 로 바인딩하고 그 필드명은 `searchKeyword` 다 — `keyword` 는
+   *   어떤 필드에도 매칭되지 않아 **검색어가 통째로 무시됐다**(모니터링 허브 '보안 감사 매트릭스'
+   *   탭에서 무엇을 입력해도 결과가 그대로였다). 오류가 아니라 조용한 무시라 화면만 봐서는
+   *   판정할 수 없다.
+   *
+   * 기간(`searchKeywordFrom`/`searchKeywordTo`)은 `YYYYMMDD` 형식이다 — 저장소가
+   * `ocrnYmd`(8자리) 와 하이픈 제거 없이 문자열 비교한다(period-filter.tsx 표 참조).
    */
-  async getAuditLogs(params: { page?: number; size?: number; keyword?: string }, config?: AxiosRequestConfig): Promise<PageResponse<AuditLog>> {
+  async getAuditLogs(
+    params: {
+      page?: number;
+      size?: number;
+      searchKeyword?: string;
+      searchKeywordFrom?: string;
+      searchKeywordTo?: string;
+    },
+    config?: AxiosRequestConfig,
+  ): Promise<PageResponse<AuditLog>> {
     return this.get<PageResponse<AuditLog>>('', { ...config, params });
   }
 }

@@ -219,6 +219,7 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  toolbarActions={
  /* [P1-6] 동작하는 CSV 내보내기 컴포넌트를 재사용한다(현재 페이지 기준). */
  <DataExportExcel
+            scope="page"
  data={list}
  headers={[
    { label: '주소록 일련번호', key: 'adbkSn' },
