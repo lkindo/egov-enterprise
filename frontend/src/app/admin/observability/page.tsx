@@ -184,6 +184,7 @@ export default function ObservabilityPage() {
                 <RefreshCcw size={18} aria-hidden="true" /> 지표 새로고침
             </Button>
             <DataExportExcel
+            scope="loaded"
               data={[{
                 collectedAt: new Date().toISOString(),
                 traffic: metrics.traffic,

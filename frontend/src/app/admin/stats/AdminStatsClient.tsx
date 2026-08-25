@@ -118,6 +118,7 @@ export default function AdminStatsClient({
             새로고침
           </Button>
           <DataExportExcel
+            scope="loaded"
             data={connectData}
             headers={[
               { label: '집계 일자', key: 'statsDate' },

@@ -179,6 +179,7 @@ const SystemLogsLoginClient = () => {
                 <>
                     {/* 현재 페이지 CSV(기존 자산) — 전체 결과 xlsx 와 라벨로 범위를 구분한다. */}
                     <DataExportExcel
+            scope="page"
                         data={logs}
                         headers={EXPORT_HEADERS}
                         filename="로그인로그"

@@ -107,6 +107,7 @@ export function AuditTimelineClient() {
               이미 동작 검증된 CSV(BOM 포함) 내보내기 자산을 배선한다(현재 페이지 기준).
             */}
             <DataExportExcel
+            scope="page"
               data={logs}
               headers={EXPORT_HEADERS}
               filename="감사로그"

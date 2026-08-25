@@ -235,6 +235,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
         </div>
         <div className="flex flex-wrap gap-4">
           <DataExportExcel
+            scope="loaded"
             data={exportRows}
             headers={exportHeaders}
             filename={`stats_${activeTab.toLowerCase()}`}

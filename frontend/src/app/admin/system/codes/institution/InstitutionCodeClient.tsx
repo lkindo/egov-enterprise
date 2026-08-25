@@ -308,6 +308,7 @@ export default function InstitutionCodeClient({
    */
  activeTab === 'list' ? (
  <DataExportExcel
+            scope="page"
  data={listData}
  headers={[
  { label: '기관코드', key: 'instCd' },
@@ -321,6 +322,7 @@ export default function InstitutionCodeClient({
  />
  ) : (
  <DataExportExcel
+            scope="page"
  data={receptionData}
  headers={[
  { label: '발생일자', key: 'ocrnYmd' },

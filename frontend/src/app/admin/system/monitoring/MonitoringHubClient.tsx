@@ -917,6 +917,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
             {listConfig && listConfig.data.length > 0 ? (
                <DataExportExcel
+            scope="page"
                   data={listConfig.data}
                   headers={listConfig.exportHeaders}
                   filename={listConfig.exportName}

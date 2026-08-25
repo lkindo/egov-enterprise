@@ -145,6 +145,7 @@ const SystemLogsSystemClient = () => {
                   삭제하고, 이미 검증된 CSV(BOM 포함) 내보내기 자산을 배선한다.
                 */
                 <DataExportExcel
+            scope="page"
                     data={logs}
                     headers={EXPORT_HEADERS}
                     filename="시스템로그"
