@@ -43,7 +43,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 //   (사전 red 실측: 66 != 69).
 // [하향 래칫 2026-08-25] 게시판 마스터 A1 이행 — 영문 마케팅 배너(rgba 그림자·slate 리터럴)
 //   제거로 2건 감소(사전 red 실측: 64 != 66).
-const BASELINE = 64;
+// [하향 래칫 2026-08-25(3)] 조직 권한 일괄 관리 A2 이행 — slate-100/slate-200 하드코딩
+//   3건이 셸의 빈 상태·토큰 문구로 수렴하며 제거(사전 red 실측: 61 != 64).
+const BASELINE = 61;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];
