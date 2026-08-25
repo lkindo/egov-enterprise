@@ -73,7 +73,8 @@ export class CollabPage {
 
     async createContact(name: string, email: string, tel: string = '01000000000') {
         console.log(`>>> [Collab] Creating Contact: ${name}`);
-        await this.page.getByRole('button', { name: '주소록 관리', exact: true }).click();
+        // [2026-08-25 A1 이행] 협업 허브의 주소록 진입도 페이지 이동이라 role 이 link 다.
+        await this.page.getByRole('link', { name: '주소록 관리', exact: true }).click();
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/select-address-book-list/);
 
         // [2026-08-24 A1 이행] 링크 안 버튼 중첩을 없애 role 이 link 로 바뀌었다(페이지 이동).

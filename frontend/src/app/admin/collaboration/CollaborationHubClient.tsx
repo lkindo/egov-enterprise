@@ -4,28 +4,18 @@ import { useCallback, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
  RefreshCcw,
- Inbox,
- Bookmark,
- Search,
- Plus,
- Zap,
- Share2
+ Plus
 } from 'lucide-react';
-import {
-  TooltipProvider,
-} from "@/components/ui/tooltip";
 import { cn } from '@/lib/utils';
 import { noteService, Note } from '@/services/business/user/NoteService';
 import { scrapService } from '@/services/business/user/ScrapService';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
+import Link from 'next/link';
 
 const COLLABORATION_TABS = ['MESSAGES', 'SCRAPS'] as const;
 type CollaborationTab = (typeof COLLABORATION_TABS)[number];
@@ -58,9 +48,8 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  // [P1-7] 탭은 URL 파생값이다. 공유·새로고침·뒤로가기가 그대로 복원된다.
  const activeTab: CollaborationTab = normalizeTab(searchParams.get('tab')) ?? normalizeTab(defaultTab) ?? 'MESSAGES';
 
+ // 조회 시점은 `조회`/Enter 다(G2) — 타이핑마다 서버를 때리지 않는다.
  const [searchKeyword, setSearchKeyword] = useState('');
- // [P1-8] 타이핑마다 서버 요청이 나가지 않도록 공용 훅으로 디바운스한다.
- const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
 
  const handleTabChange = useCallback((tab: CollaborationTab) => {
    setSearchKeyword('');
@@ -73,8 +62,8 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  // --- Data Fetching ---
  // 지표 카드가 실제 총 건수를 표기해야 하므로 두 쿼리를 모두 조회한다.
  const notesQuery = useQuery({
-   queryKey: ['collab-notes', debouncedKeyword],
-   queryFn: () => noteService.getReceivedNotes({ page: 0, size: 50, searchWrd: debouncedKeyword }),
+   queryKey: ['collab-notes', searchKeyword],
+   queryFn: () => noteService.getReceivedNotes({ page: 0, size: 50, searchWrd: searchKeyword }),
  });
  const notes: Note[] = notesQuery.data?.list ?? [];
 
@@ -96,9 +85,6 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
    if (activeTab === 'MESSAGES') void notesRefetch();
    else void scrapsRefetch();
  }, [activeTab, notesRefetch, scrapsRefetch]);
-
- const metricValue = (isError: boolean, total?: number): string | number =>
-   isError ? '조회 실패' : (total ?? 0);
 
  const messageColumns: Column<Note>[] = useMemo(() => [
  {
@@ -147,144 +133,110 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
  }
  ], []);
 
- const headerAction = useMemo(() => {
-    if (activeTab === 'SCRAPS') {
-      return (
-        <Button onClick={() => router.push('/admin/collaboration/scraps/insertScrap')} className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl gap-2">
-          <Plus size={18} /> 스크랩 등록
-        </Button>
-      );
-    }
-    return (
-      <Button onClick={() => router.push('/admin/collaboration/mail-send')} className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl gap-2">
-        <Plus size={18} /> 신규 발송
-      </Button>
-    );
-  }, [activeTab, router]);
+  const activeTotal = activeTab === 'MESSAGES' ? notesQuery.data?.total : scrapsQuery.data?.total;
+  const activeLoading = activeTab === 'MESSAGES' ? notesQuery.isLoading : scrapsQuery.isLoading;
 
- return (
- <TooltipProvider delayDuration={0}>
- <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
- <PageHeader
- title="협업 및 네트워크 허브"
- breadcrumbs={[{ label: '협업관리' }, { label: '커넥트매트릭스' }]}
- />
-
- <HubHeader
- title="Connect"
- highlight="Matrix"
- subtitle="조직 내 원활한 소통과 정보 공유를 위한 통합 협업 공간입니다."
- icon={Share2}
- actions={
- <div className="flex gap-4 items-center">
- <Button
- variant="outline"
- size="sm"
- className="h-10 rounded-lg px-4 text-[11px] font-black"
- onClick={() => router.push('/admin/collaboration/address-book/select-address-book-list')}
- >
- 주소록 관리
- </Button>
- <div role="tablist" aria-label="협업 데이터 구분" className="flex bg-muted p-1 rounded-xl border border-border/50">
- {COLLABORATION_TABS.map((tab) => (
- <Button
- key={tab}
- role="tab"
- id={`collab-tab-${tab}`}
- aria-selected={activeTab === tab}
- aria-controls="collab-tabpanel"
- variant="ghost"
- size="sm"
- className={cn("h-8 rounded-lg px-4 text-[11px] font-black transition-all", activeTab === tab ? "bg-card shadow-sm text-primary" : "text-muted-foreground")}
- onClick={() => handleTabChange(tab)}
- >
- {TAB_LABEL[tab]}
- </Button>
- ))}
- </div>
- {headerAction}
- </div>
- }
- />
-
- <HubMetricGrid className="lg:grid-cols-2">
- <HubMetricCard title="받은 쪽지" value={metricValue(notesQuery.isError, notesQuery.data?.total)} icon={Inbox} color="primary" status="총 건수" />
- <HubMetricCard title="내 스크랩" value={metricValue(scrapsQuery.isError, scrapsQuery.data?.total)} icon={Bookmark} color="amber" status="총 건수" />
- </HubMetricGrid>
-
- <HubSectionCard
- title={activeTab === 'MESSAGES' ? "쪽지 수신함" : "스크랩 목록"}
- description="조직 내에서 발생하는 협업 데이터 및 개인 자산 명세입니다."
- icon={Zap}
- className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
- >
- <div className="space-y-8" role="tabpanel" id="collab-tabpanel" aria-labelledby={`collab-tab-${activeTab}`}>
- <div className="flex items-center justify-between gap-4 px-2 pt-2 border-b border-border/50 pb-10 mb-8">
- {SERVER_SEARCHABLE[activeTab] ? (
- <div className="relative group max-w-xl w-full">
- <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
- <Input
- aria-label={`${TAB_LABEL[activeTab]} 검색`}
- value={searchKeyword}
- onChange={(e) => setSearchKeyword(e.target.value)}
- className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
- placeholder={`${TAB_LABEL[activeTab]} 검색어를 입력하세요.`}
- />
- </div>
- ) : (
- <Button
- variant="outline"
- onClick={() => router.push('/admin/collaboration/scraps/selectScrapList')}
- className="h-11 rounded-xl border-2 border-border font-bold text-xs px-6"
- >
- 스크랩 전체 목록으로 이동
- </Button>
- )}
- <Button
- variant="outline"
- aria-label="현재 목록 새로고침"
- onClick={handleRetry}
- className="h-11 px-6 rounded-xl border-2 border-border text-muted-foreground hover:text-primary transition-all"
- >
- <RefreshCcw size={20} />
- </Button>
- </div>
-
- <div className="min-h-[500px]">
- {activeTab === 'MESSAGES' && (
- <StandardDataTable<Note>
- columns={messageColumns}
- data={notes}
- keyField="noteSn"
- loading={notesQuery.isLoading}
- error={tableError}
- onRetry={handleRetry}
- onRowClick={() => router.push('/note')}
- rowActionLabel="쪽지함 열기"
- emptyMessage="받은 쪽지가 없습니다."
- isPremium={true}
- className="border-none bg-transparent shadow-none"
- />
- )}
- {activeTab === 'SCRAPS' && (
- <StandardDataTable<ScrapItem>
- columns={scrapColumns}
- data={scraps}
- keyField="scrapSn"
- loading={scrapsQuery.isLoading}
- error={tableError}
- onRetry={handleRetry}
- onRowClick={(item) => router.push(`/admin/collaboration/scraps/selectScrapDetail/${item.scrapSn}`)}
- rowActionLabel={(item) => `${item.scrapNm || `${item.scrapSn}번`} 스크랩 열기`}
- emptyMessage="저장된 스크랩이 없습니다."
- isPremium={true}
- className="border-none bg-transparent shadow-none"
- />
- )}
- </div>
- </div>
- </HubSectionCard>
- </div>
- </TooltipProvider>
- );
+  return (
+    <WorkListPage
+      title="협업 및 네트워크 허브"
+      description={activeTab === 'MESSAGES'
+        ? '내가 받은 쪽지를 조회합니다. 제목을 선택하면 쪽지함으로 이동합니다.'
+        : '내가 저장한 스크랩을 조회합니다. 제목을 선택하면 상세로 이동합니다.'}
+      breadcrumbItems={[{ label: '협업관리' }, { label: '협업 허브' }]}
+      filterStateKey="collaboration-hub"
+      totalCount={tableError ? undefined : activeTotal}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          {/* 탭은 조회 조건이 아니라 조회 대상 전환이라 헤더에 둔다(기관 코드 화면과 같은 규약). */}
+          <div role="tablist" aria-label="협업 데이터 구분" className="flex rounded-md border border-border p-0.5">
+            {COLLABORATION_TABS.map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                id={`collab-tab-${tab}`}
+                aria-selected={activeTab === tab}
+                aria-controls="collab-tabpanel"
+                onClick={() => handleTabChange(tab)}
+                className={cn(
+                  'flex h-[var(--control-h-sm)] items-center rounded px-4 text-xs font-bold transition-colors',
+                  activeTab === tab ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {TAB_LABEL[tab]}
+              </button>
+            ))}
+          </div>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/admin/collaboration/address-book/select-address-book-list">주소록 관리</Link>
+          </Button>
+          {activeTab === 'SCRAPS' ? (
+            <Button asChild size="sm">
+              <Link href="/admin/collaboration/scraps/insertScrap">
+                <Plus size={16} aria-hidden="true" /> 스크랩 등록
+              </Link>
+            </Button>
+          ) : (
+            <Button asChild size="sm">
+              <Link href="/admin/collaboration/mail-send">
+                <Plus size={16} aria-hidden="true" /> 신규 발송
+              </Link>
+            </Button>
+          )}
+        </div>
+      }
+      filter={
+        /* 스크랩 API 는 검색 파라미터가 없다 — 동작하지 않는 입력을 만들지 않는다. */
+        SERVER_SEARCHABLE[activeTab] ? (
+          <KeywordFilter
+            label={`${TAB_LABEL[activeTab]} 제목·발신자`}
+            placeholder={`${TAB_LABEL[activeTab]} 검색어를 입력하세요`}
+            value={searchKeyword}
+            onSearch={(keyword) => setSearchKeyword(keyword)}
+          />
+        ) : undefined
+      }
+      toolbarActions={
+        <div className="flex items-center gap-2">
+          {activeTab === 'SCRAPS' && (
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin/collaboration/scraps/selectScrapList">스크랩 전체 목록</Link>
+            </Button>
+          )}
+          <Button variant="outline" size="sm" aria-label="현재 목록 새로고침" onClick={handleRetry}>
+            <RefreshCcw size={16} aria-hidden="true" />
+          </Button>
+        </div>
+      }
+    >
+      <div role="tabpanel" id="collab-tabpanel" aria-labelledby={`collab-tab-${activeTab}`}>
+        {activeTab === 'MESSAGES' ? (
+          <StandardDataTable<Note>
+            columns={messageColumns}
+            data={notes}
+            keyField="noteSn"
+            loading={activeLoading}
+            error={tableError}
+            onRetry={handleRetry}
+            onRowClick={() => router.push('/note')}
+            rowActionLabel="쪽지함 열기"
+            emptyMessage={emptyResultMessage(searchKeyword, '받은 쪽지가 없습니다.')}
+          />
+        ) : (
+          <StandardDataTable<ScrapItem>
+            columns={scrapColumns}
+            data={scraps}
+            keyField="scrapSn"
+            loading={activeLoading}
+            error={tableError}
+            onRetry={handleRetry}
+            onRowClick={(item) => router.push(`/admin/collaboration/scraps/selectScrapDetail/${item.scrapSn}`)}
+            rowActionLabel={(item) => `${item.scrapNm || `${item.scrapSn}번`} 스크랩 열기`}
+            emptyMessage="저장된 스크랩이 없습니다."
+          />
+        )}
+      </div>
+    </WorkListPage>
+  );
 }
+
