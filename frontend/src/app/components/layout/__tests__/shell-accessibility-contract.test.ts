@@ -103,6 +103,8 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'operation', 'events', 'EventManagementClient.tsx'],
       ['admin', 'operation', 'rewards', 'RewardManageClient.tsx'],
       ['admin', 'system', 'logs', 'user', 'SystemLogsUserClient.tsx'],
+      // 시스템 정책은 2026-08-24 A1 이행으로 standalone HubHeader 를 떠나 셸에 위임한다.
+      ['admin', 'system', 'policies', 'PolicyAdminClient.tsx'],
     ];
 
     for (const pathParts of delegatedHeadingSources) {
@@ -143,7 +145,6 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'AdminDashboardClient.tsx'],
       // 행사 운영 센터는 2026-08-24 A1 이행으로 WorkListPage 가 h1 을 소유한다(위 위임 계약이 검사).
       ['admin', 'security', 'login-policy', 'LoginPolicyAdminClient.tsx'],
-      ['admin', 'system', 'policies', 'PolicyAdminClient.tsx'],
       ['help', 'policies', '[type]', 'page.tsx'],
     ];
 

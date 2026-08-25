@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { policyAdminService, SystemPolicy } from '@/services/foundation/system/PolicyAdminService';
 import { Button } from '@/components/ui/button';
@@ -9,7 +9,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { Input } from '@/components/ui/input';
 ;
 import dynamic from 'next/dynamic';
-import { Settings, Edit2, FileText, CheckCircle2 } from 'lucide-react';
+import { Settings, Edit2, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
@@ -156,28 +156,19 @@ export default function PolicyAdminClient() {
  ];
 
  return (
- // 루트 레이아웃이 이미 max-w-7xl · p-6/md:p-12/lg:p-16 을 제공하므로 화면 단위 p-10 이중 여백을 제거한다.
- <div className="space-y-10 animate-in fade-in duration-1000">
- <HubHeader 
- headingLevel={1}
- title="시스템 정책" 
- highlight="관리" 
- subtitle="전사 서비스 운영을 위한 법적, 관리적 정책 아키텍처를 통합 관리합니다." 
- icon={FileText} 
- />
-
- <div className="hub-table-container">
- <div className="flex items-center justify-between mb-8 px-4 text-left">
- <div className="space-y-1 text-left">
- <h3 className="text-xl font-bold tracking-tight text-left">서비스 정책 목록</h3>
- <p className="text-sm text-muted-foreground text-left">로그인, 개인정보 처리 방침 등 시스템 전반에서 통용되는 정책 기반 정보를 인덱싱합니다.</p>
- </div>
- <Button onClick={fetchPolicies} variant="outline" size="sm" className="rounded-lg border-2 font-bold text-xs tracking-widest uppercase">
+ <WorkListPage
+ title="시스템 정책 관리"
+ description="로그인·개인정보 처리방침 등 시스템 전반의 정책을 조회·수정합니다."
+ breadcrumbItems={[{ label: '시스템관리' }, { label: '정책 관리' }]}
+ totalCount={error ? undefined : policies.length}
+ actions={
+ <Button onClick={fetchPolicies} variant="outline" size="sm">
  새로고침
  </Button>
- </div>
-
+ }
+ >
  <StandardDataTable
+ accessibleLabel="시스템 정책 목록"
  columns={columns}
  data={policies}
  loading={loading}
@@ -186,7 +177,6 @@ export default function PolicyAdminClient() {
  keyField="plcyTypeCd"
  emptyMessage="등록된 시스템 정책이 없습니다."
  />
- </div>
 
  {/* Edit Modal */}
  <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
@@ -261,7 +251,7 @@ export default function PolicyAdminClient() {
  </Form>
  </DialogContent>
  </Dialog>
- </div>
+ </WorkListPage>
  );
 }
 

@@ -1,18 +1,16 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Plus, Search, FileText, LayoutGrid, Layers, Zap, RefreshCcw } from "lucide-react";
+import { Plus, RefreshCcw } from "lucide-react";
 import { getPollList } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO } from '@/types/business/poll';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { toDisplayYmd, todayStorageYmd } from '@/lib/format-date';
 import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
@@ -45,11 +43,6 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
   /** 검색어 변경 시 페이지를 항상 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(P1-8). */
   const handleKeywordChange = (value: string) => {
     setKeyword(value);
-    setPage(0);
-  };
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
     setPage(0);
   };
 
@@ -124,99 +117,61 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
   ];
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      {!embedded && (
-        <PageHeader
-          title="설문 및 거버넌스 관리"
-          breadcrumbs={[{ label: '설문관리' }, { label: '설문설정' }]}
+    <WorkListPage
+      title="설문 관리"
+      headingLevel={embedded ? 2 : 1}
+      showBreadcrumb={!embedded}
+      description="조직 내 의견 수렴·투표 설문을 조회하고 등록합니다."
+      breadcrumbItems={[{ label: '설문관리' }, { label: '설문설정' }]}
+      filterStateKey="survey-manage"
+      totalCount={isError ? undefined : total}
+      actions={
+        <>
+          {/* 종전에는 setParams(prev => ({...prev})) 로 동일 내용 객체만 새로 만들었다.
+              React Query 는 queryKey 를 직렬화해 해시하므로 키가 그대로여서 **재요청이 없었다**(死버튼).
+              refetch() 로 배선한다(P1-6). */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => void refetch()}
+            aria-label="설문 목록 새로고침"
+            className="gap-2"
+          >
+            <RefreshCcw size={16} className={isLoading ? 'animate-spin' : undefined} aria-hidden="true" />
+            새로고침
+          </Button>
+          <Button size="sm" onClick={() => router.push('/admin/survey/manage/create')} className="gap-2">
+            <Plus size={16} aria-hidden="true" /> 설문 등록
+          </Button>
+        </>
+      }
+      filter={
+        <KeywordFilter
+          label="설문 제목"
+          placeholder="설문 제목으로 검색"
+          value={keyword}
+          onSearch={(next) => handleKeywordChange(next)}
         />
-      )}
-
-      <HubHeader
-        title="설문"
-        highlight="거버넌스"
-        subtitle="조직 내 의견 수렴 및 투표 프로세스를 통합 관리하고 분석합니다."
-        icon={LayoutGrid}
-        actions={
-          <div className="flex gap-4">
-            {/* 종전에는 setParams(prev => ({...prev})) 로 동일 내용 객체만 새로 만들었다.
-                React Query 는 queryKey 를 직렬화해 해시하므로 키가 그대로여서 **재요청이 없었다**(死버튼).
-                refetch() 로 배선한다(P1-6). */}
-            <Button
-              variant="outline"
-              onClick={() => void refetch()}
-              aria-label="설문 목록 새로고침"
-              className="h-11 w-14 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
-            >
-              <RefreshCcw size={20} className={isLoading ? 'animate-spin' : undefined} />
-            </Button>
-            <Button onClick={() => router.push('/admin/survey/manage/create')} className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl">
-              <Plus size={20} /> 설문 등록
-            </Button>
-          </div>
-        }
+      }
+    >
+      <StandardDataTable
+        accessibleLabel="설문 목록"
+        columns={columns}
+        data={polls}
+        loading={isLoading}
+        // 조회 실패를 '데이터가 없습니다'로 위장하지 않는다(P1-1).
+        error={isError ? error : null}
+        onRetry={() => void refetch()}
+        onRowClick={(poll) => router.push(`/admin/survey/manage/${poll.pollSn}`)}
+        rowActionLabel={(poll) => `${poll.pollNm || `${poll.pollSn}번`} 설문 관리 열기`}
+        emptyMessage={emptyResultMessage(keyword, '등록된 설문이 없습니다.')}
+        pagination={{
+          currentPage: page + 1,
+          totalPages: Math.ceil(total / PAGE_SIZE),
+          onPageChange: (p) => setPage(p - 1),
+          pageSize: PAGE_SIZE,
+        }}
       />
-
-      {/* 지표는 서버가 실제로 준 값만 남긴다.
-          삭제: '참여 노드 2.4k'(하드코딩), '데이터 상태 Normal'(산출 근거 없음) — 감사 P1-5. */}
-      <HubMetricGrid>
-        <HubMetricCard title="전체 설문" value={total} unit="건" icon={Layers} color="primary" status="서버 집계" />
-        <HubMetricCard
-          title="진행중 (현재 페이지)"
-          value={todayYmd ? polls.filter(p => getPollStatus(p, todayYmd) === 'active').length : 0}
-          unit="건"
-          icon={Zap}
-          color="emerald"
-          status={`${polls.length}건 중`}
-        />
-      </HubMetricGrid>
-
-      <HubSectionCard
-        title="설문 아카이브 매트릭스"
-        description="관리 중인 모든 온라인 설문 및 투표의 핵심 데이터 스트림입니다."
-        icon={FileText}
-        className="bg-card/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
-      >
-        <div className="space-y-8">
-          <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
-            <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search max-w-xl w-full">
-              <label htmlFor="survey-manage-search" className="sr-only">설문 제목 검색</label>
-              <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
-              <Input
-                id="survey-manage-search"
-                value={keyword}
-                onChange={(e) => handleKeywordChange(e.target.value)}
-                className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-                placeholder="설문 제목으로 검색.."
-              />
-              <Button type="submit" className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-xl hover:bg-primary transition-all">검색</Button>
-            </form>
-          </div>
-
-          <div className="min-h-[500px]">
-            <StandardDataTable
-              columns={columns}
-              data={polls}
-              loading={isLoading}
-              // 조회 실패를 '데이터가 없습니다'로 위장하지 않는다(P1-1).
-              error={isError ? error : null}
-              onRetry={() => void refetch()}
-              onRowClick={(poll) => router.push(`/admin/survey/manage/${poll.pollSn}`)}
-              rowActionLabel={(poll) => `${poll.pollNm || `${poll.pollSn}번`} 설문 관리 열기`}
-              emptyMessage="등록된 설문 정보가 없습니다."
-              isPremium={true}
-              className="border-none bg-transparent shadow-none"
-              pagination={{
-                currentPage: page + 1,
-                totalPages: Math.ceil(total / PAGE_SIZE),
-                onPageChange: (p) => setPage(p - 1),
-                totalCount: total,
-                pageSize: PAGE_SIZE,
-              }}
-            />
-          </div>
-        </div>
-      </HubSectionCard>
-    </div>
+    </WorkListPage>
   );
 }
