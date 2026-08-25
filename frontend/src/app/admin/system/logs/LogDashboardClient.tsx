@@ -3,12 +3,12 @@
 import { useMemo, useState, use } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { StandardModal } from '@/app/components/ui/standard-modal';
-import { Terminal, Activity, History, Clock, Zap, Lock, Globe, UserCheck, RefreshCcw } from 'lucide-react';
+import { Terminal, Clock, Zap, Lock, Globe, UserCheck, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type {
@@ -217,44 +217,19 @@ export default function LogDashboardClient({
   }, [activeCategory]);
 
   return (
-    <div className="space-y-10 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="로그 통합 리포트"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '로그관리' }]}
-      />
-
-      <HubHeader
-        title="시스템"
-        highlight="로그 관리"
-        subtitle="시스템 전반에서 발생하는 보안, 접속, 행동, 웹 요청 로그를 통합 모니터링합니다."
-        icon={History}
-        actions={
-          <div className="flex gap-3">
-            {/*
-              기존 '상세 검색' 버튼은 onClick 이 없는 死버튼이었다(고급 검색 화면 부재).
-              삭제하고, 실제로 동작하는 재조회 버튼만 남긴다.
-            */}
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => refetch()}
-              disabled={isFetching}
-              className="h-10 px-8 rounded-xl border border-border bg-card font-black text-xs tracking-widest gap-2 shadow-sm hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all"
-            >
-              <RefreshCcw size={18} className={cn(isFetching && 'animate-spin')} /> 새로고침
-            </Button>
-          </div>
-        }
-      />
-
-      <div className="grid grid-cols-12 gap-8">
-        <div className="col-span-12 lg:col-span-3">
+    <WorkListPage
+      title="로그 통합 조회"
+      description="보안·접속·행동·웹 요청 로그를 한 화면에서 조회합니다."
+      breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }]}
+      filterStateKey="system-logs-dashboard"
+      totalCount={error ? undefined : totalCount}
+      actions={
+        <>
           <div
             role="tablist"
             aria-label="로그 카테고리"
-            aria-orientation="vertical"
-            className="rounded-2xl bg-white/40 backdrop-blur-md border border-white/60 shadow-xl p-3 flex flex-col gap-3"
             id="log-categories"
+            className="flex flex-wrap rounded-md border border-border p-0.5"
           >
             {logCategories.map((cat) => (
               <button
@@ -266,71 +241,60 @@ export default function LogDashboardClient({
                 aria-controls="log-tabpanel"
                 onClick={() => setActiveCategory(cat.id)}
                 className={cn(
-                  "w-full group p-6 rounded-xl border border-transparent transition-all flex items-center gap-5 relative overflow-hidden",
-                  activeCategory === cat.id
-                    ? "bg-surface-inverse text-surface-inverse-foreground shadow-2xl scale-[1.03] z-10"
-                    : "hover:bg-white/50 text-muted-foreground hover:text-foreground"
+                  'flex h-[var(--control-h-sm)] items-center gap-2 rounded px-3 text-xs font-bold transition-colors',
+                  activeCategory === cat.id ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground',
                 )}
               >
-                <div className={cn(
-                  "w-10 h-9 rounded-xl flex items-center justify-center transition-all shadow-md",
-                  activeCategory === cat.id ? "bg-white/10 text-surface-inverse-foreground" : "bg-card text-muted-foreground group-hover:text-primary"
-                )}>
-                  {cat.icon}
-                </div>
-                <div className="flex flex-col text-left">
-                  <span className="text-sm font-black tracking-tighter leading-tight">{cat.label}</span>
-                  <span className="text-[10px] font-bold text-muted-foreground tracking-tight opacity-100 truncate max-w-[120px]">{cat.description}</span>
-                </div>
+                {cat.label}
               </button>
             ))}
           </div>
-        </div>
-
-        <div className="col-span-12 lg:col-span-9" role="tabpanel" id="log-tabpanel" aria-labelledby={`log-tab-${activeCategory}`}>
-          <HubSectionCard
-            title="실시간 로그 스트림"
-            description={`${activeLabel} 활동 데이터입니다.`}
-            icon={Activity}
+          {/*
+            기존 '상세 검색' 버튼은 onClick 이 없는 死버튼이었다(고급 검색 화면 부재).
+            삭제하고, 실제로 동작하는 재조회 버튼만 남긴다.
+          */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            className="gap-2"
           >
-            <div className="bg-white/40 backdrop-blur-md rounded-2xl border border-white/60 shadow-xl overflow-hidden ring-1 ring-black/5">
-              {/*
-                조회 실패를 "데이터 없음"으로 위장하지 않는다 — error/onRetry 를 전달해
-                실패는 오류 상태 + 다시 시도 버튼으로 노출한다.
-              */}
-              <StandardDataTable
-                columns={columns}
-                data={logs}
-                loading={isLoading}
-                error={error}
-                onRetry={() => refetch()}
-                className="border-none bg-transparent shadow-none"
-                onRowClick={(item) => setSelectedLog({ category: activeCategory, row: item })}
-                rowActionLabel={(item) => `${activeLabel} ${getLogIdentifier(item, activeCategory)} 상세 열기`}
-                isPremium={true}
-                pagination={{
-                  currentPage: page,
-                  totalPages: Math.max(totalPages, 1),
-                  onPageChange: setPage,
-                  totalCount,
-                  pageSize: PAGE_SIZE,
-                }}
-                search={{
-                  placeholder: '검색어를 입력하세요...',
-                  value: searchKeyword,
-                  onSearch: (keyword) => {
-                    setSearchKeyword(keyword);
-                    setPage(1);
-                  },
-                  onClear: () => {
-                    setSearchKeyword('');
-                    setPage(1);
-                  },
-                }}
-              />
-            </div>
-          </HubSectionCard>
-        </div>
+            <RefreshCcw size={16} className={cn(isFetching && 'animate-spin')} aria-hidden="true" /> 새로고침
+          </Button>
+        </>
+      }
+      filter={
+        <KeywordFilter
+          label={`${activeLabel} 검색어`}
+          placeholder="검색어를 입력하세요"
+          value={searchKeyword}
+          onSearch={(keyword) => { setSearchKeyword(keyword); setPage(1); }}
+        />
+      }
+    >
+      <div role="tabpanel" id="log-tabpanel" aria-labelledby={`log-tab-${activeCategory}`}>
+        {/*
+          조회 실패를 "데이터 없음"으로 위장하지 않는다 — error/onRetry 를 전달해
+          실패는 오류 상태 + 다시 시도 버튼으로 노출한다.
+        */}
+        <StandardDataTable
+          accessibleLabel={`${activeLabel} 목록`}
+          columns={columns}
+          data={logs}
+          loading={isLoading}
+          error={error}
+          onRetry={() => refetch()}
+          onRowClick={(item) => setSelectedLog({ category: activeCategory, row: item })}
+          rowActionLabel={(item) => `${activeLabel} ${getLogIdentifier(item, activeCategory)} 상세 열기`}
+          emptyMessage={emptyResultMessage(searchKeyword, `조회된 ${activeLabel}가 없습니다.`)}
+          pagination={{
+            currentPage: page,
+            totalPages: Math.max(totalPages, 1),
+            onPageChange: setPage,
+            pageSize: PAGE_SIZE,
+          }}
+        />
       </div>
 
       {/* 로그 상세 인스펙터 */}
@@ -376,6 +340,6 @@ export default function LogDashboardClient({
           </div>
         </div>
       </StandardModal>
-    </div>
+    </WorkListPage>
   );
 }
