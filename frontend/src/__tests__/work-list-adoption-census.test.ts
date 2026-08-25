@@ -25,7 +25,7 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
  * ADOPTERS 상향과 DIRECT_ONLY 하향만 정상 경로다(AGENTS H2).
  */
 const ADOPTERS = 36;
-const DIRECT_ONLY = 9;
+const DIRECT_ONLY = 8;
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';
 const SHELL_IMPORT = 'components/patterns/work-list-page';
