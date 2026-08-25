@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
@@ -11,7 +11,7 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { noteService, Note } from '@/services/business/user/NoteService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, Sparkles, User } from 'lucide-react';
+import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, User } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { UserSearchResult } from '@/services/business/user/UserSearchService';
@@ -142,59 +142,46 @@ export default function NotePage() {
   ];
 
   return (
-    <div className="space-y-12 pb-24 p-8 animate-in fade-in duration-1000 max-w-6xl mx-auto">
-      <PageHeader
-        title="쪽지 인텔리전스 센터"
-        breadcrumbs={[{ label: '협업지원' }, { label: '쪽지관리' }]}
-        actions={
-          <Button
-            onClick={() => setWriteOpen(true)}
-            className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-sm shadow-2xl hover:bg-primary transition-all gap-3 overflow-hidden group"
-          >
-            <SendHorizonal size={20} className="group-hover:translate-x-1 transition-transform" /> 쪽지 상세 기안
+    <WorkListPage
+      title="쪽지함"
+      description="받은 쪽지와 보낸 쪽지를 조회하고 새 쪽지를 보냅니다."
+      breadcrumbItems={[{ label: '협업지원' }, { label: '쪽지관리' }]}
+      totalCount={notes.length}
+      actions={
+        <>
+          {/* 종전 좌측의 '쪽지 커뮤니케이션 아키텍처' 장식 카드(120px 배경 아이콘)는 제거했다 —
+              어떤 데이터도 담지 않으면서 표 폭의 1/3을 차지했다. */}
+          <div role="tablist" aria-label="쪽지함 구분" className="flex rounded-md border border-border p-0.5">
+            <TabButton
+              active={tab === 'received'}
+              onClick={() => setTab('received')}
+              icon={<Inbox size={16} aria-hidden="true" />}
+              label="받은 쪽지함"
+              count={tab === 'received' ? notes.length : undefined}
+            />
+            <TabButton
+              active={tab === 'sent'}
+              onClick={() => setTab('sent')}
+              icon={<Send size={16} aria-hidden="true" />}
+              label="보낸 쪽지함"
+              count={tab === 'sent' ? notes.length : undefined}
+            />
+          </div>
+          <Button size="sm" onClick={() => setWriteOpen(true)} className="gap-2">
+            <SendHorizonal size={16} aria-hidden="true" /> 새 쪽지 쓰기
           </Button>
-        }
+        </>
+      }
+    >
+      <StandardDataTable
+        accessibleLabel={tab === 'received' ? '받은 쪽지 목록' : '보낸 쪽지 목록'}
+        columns={columns}
+        data={notes}
+        loading={loading}
+        onRowClick={handleDetail}
+        rowActionLabel={(item) => `${item.noteSj || `${item.noteSn}번`} 쪽지 열기`}
+        emptyMessage={tab === 'received' ? "받은 쪽지가 없습니다." : "보낸 쪽지가 없습니다."}
       />
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-surface-inverse rounded-lg p-10 text-surface-inverse-foreground relative overflow-hidden group border-none shadow-2xl">
-                <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
-                    <Sparkles size={120} className="text-primary" />
-                </div>
-                <div className="relative z-10 space-y-4">
-                    <h4 className="text-xs font-bold text-primary uppercase tracking-[0.4em]">개인 쪽지 송수신</h4>
-                    <h3 className="text-3xl font-bold tracking-tighter leading-tight capitalize">쪽지 커뮤니케이션<br />아키텍처</h3>
-                </div>
-          </div>
-          <div className="col-span-2 flex p-2 bg-muted rounded-lg w-full items-center justify-center">
-                <TabButton
-                    active={tab === 'received'}
-                    onClick={() => setTab('received')}
-                    icon={<Inbox size={22} />}
-                    label="받은 쪽지함"
-                    count={tab === 'received' ? notes.length : undefined}
-                />
-                <TabButton
-                    active={tab === 'sent'}
-                    onClick={() => setTab('sent')}
-                    icon={<Send size={22} />}
-                    label="보낸 쪽지함"
-                    count={tab === 'sent' ? notes.length : undefined}
-                />
-          </div>
-      </div>
-
-      <div className="bg-card rounded-lg border-2 border-border shadow-2xl overflow-hidden p-6">
-        <StandardDataTable
-          columns={columns}
-          data={notes}
-          loading={loading}
-          onRowClick={handleDetail}
-          rowActionLabel={(item) => `${item.noteSj || `${item.noteSn}번`} 쪽지 열기`}
-          emptyMessage={tab === 'received' ? "받은 메시지가 없습니다." : "작성된 메시지가 없습니다."}
-          className="border-none shadow-none rounded-none"
-        />
-      </div>
 
       <StandardModal
         isOpen={isWriteModalOpen}
@@ -302,19 +289,20 @@ export default function NotePage() {
           </div>
         )}
       </StandardModal>
-    </div>
+    </WorkListPage>
   );
 }
 
 function TabButton({ active, onClick, icon, label, count }: any) {
   return (
     <button
+      type="button"
+      role="tab"
+      aria-selected={active}
       onClick={onClick}
       className={cn(
-        "flex items-center gap-3 px-10 py-5 rounded-lg font-bold text-xs transition-all duration-500 uppercase tracking-widest flex-1 justify-center",
-        active
-          ? "bg-card text-foreground shadow-2xl scale-[1.03] z-10"
-          : "text-muted-foreground hover:text-muted-foreground"
+        "flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors",
+        active ? "bg-muted text-primary" : "text-muted-foreground hover:text-foreground"
       )}
     >
       {icon}
