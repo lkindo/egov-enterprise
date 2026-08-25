@@ -659,7 +659,7 @@ export default function UserOrgHubClient({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className={cn("space-y-10 pb-24", activeTab !== 'DEPTS' && "animate-in fade-in duration-1000")}>
+      <div className="space-y-10 pb-24">
       <PageHeader
         title={activeTab === 'DEPTS' ? '부서 관리' : '조직 및 사용자 관리'}
         breadcrumbs={activeTab === 'DEPTS'

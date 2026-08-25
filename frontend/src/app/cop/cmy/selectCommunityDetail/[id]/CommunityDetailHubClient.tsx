@@ -43,7 +43,7 @@ export default function CommunityDetailHubClient({
 
   return (
     <TooltipProvider delayDuration={0}>
-      <div className="space-y-[var(--gap-hub-section)] pb-24 animate-in fade-in duration-1000">
+      <div className="space-y-[var(--gap-hub-section)] pb-24">
         <PageHeader
           title={community.cmntyNm}
           breadcrumbs={[{ label: '협업 서비스' }, { label: '커뮤니티 공간', href: '/cop/cmy/selectCommunityList' }, { label: '상세 정보' }]}

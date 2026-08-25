@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmptyStateDisplay } from '@/app/components/ui/status-displays';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 
 type FaqDetailState =
   | { status: 'loading' }
@@ -141,7 +142,7 @@ export default function HelpClient() {
               className="space-y-6"
             >
               {faqs.length === 0 ? (
-                <EmptyStateDisplay message="등록된 자주 묻는 질문이 없습니다." className="bg-card border-2 border-dashed border-border" />
+                <EmptyStateDisplay message={emptyResultMessage(searchKeyword, "등록된 자주 묻는 질문이 없습니다.")} className="bg-card border-2 border-dashed border-border" />
               ) : (
                 faqs.map((faq) => (
                   <div key={faq.faqId} className="bg-card border-2 border-border/40 rounded-lg overflow-hidden transition-all hover:shadow-2xl hover:shadow-primary/5 hover:border-primary/20 scale-100 hover:scale-[1.005]">
@@ -206,7 +207,7 @@ export default function HelpClient() {
                 columns={qnaColumns}
                 data={qnas}
                 loading={loading}
-                emptyMessage="등록된 Q&A 문의 내역이 없습니다."
+                emptyMessage={emptyResultMessage(searchKeyword, "등록된 Q&A 문의 내역이 없습니다.")}
                 className="border-none shadow-none rounded-none"
               />
             </motion.div>

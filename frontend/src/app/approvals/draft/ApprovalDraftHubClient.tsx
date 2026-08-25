@@ -93,7 +93,7 @@ export default function ApprovalDraftHubClient() {
   // 폭 위임: 화면 자체 max-w-[1200px] 캡을 제거하고 루트 레이아웃의 --page-max-w 토큰에
   // 폭·여백을 위임한다(compact 배포에서 전폭, theme-token-contract 고정).
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+    <div className="space-y-12 pb-24">
 
         {/* --- Header --- */}
         <div className="flex items-center justify-between px-4">

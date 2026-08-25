@@ -573,7 +573,7 @@ export default function SecurityHubClient({
 
   return (
     <TooltipProvider delayDuration={0}>
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+    <div className="space-y-12 pb-24">
       <PageHeader
         title="통합 보안 거버넌스 허브"
         breadcrumbs={[{ label: '보안 관리' }, { label: '권한 설정' }, { label: '통합 컨트롤' }]}

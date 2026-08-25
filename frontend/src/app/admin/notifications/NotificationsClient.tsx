@@ -28,7 +28,7 @@ export default function NotificationsClient() {
   };
 
   return (
-    <div className="space-y-10 pb-20 animate-in fade-in duration-700">
+    <div className="space-y-10 pb-20">
       <PageHeader
         title="스마트 알림 및 메시징 허브"
         breadcrumbs={[{ label: '시스템 관리' }, { label: '메시징 센터' }]}

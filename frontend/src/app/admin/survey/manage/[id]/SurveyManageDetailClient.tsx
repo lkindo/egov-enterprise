@@ -122,7 +122,7 @@ export default function SurveyManageDetailClient() {
     };
 
     return (
-        <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
+        <div className="max-w-4xl mx-auto space-y-8">
             <div className="flex items-center justify-between">
                 <Button variant="ghost" onClick={() => router.back()} className="rounded-lg font-bold gap-2">
                     <ArrowLeft className="w-4 h-4" /> 뒤로가기

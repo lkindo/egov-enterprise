@@ -231,7 +231,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  };
 
  return (
- <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+ <div className="space-y-12 pb-24">
  <PageHeader
  title="권한 기반 메뉴 거버넌스"
  breadcrumbs={[{ label: '시스템 관리' }, { label: '메뉴 관리' }, { label: '권한별 메뉴' }]}

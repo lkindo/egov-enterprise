@@ -217,7 +217,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
       ];
 
   return (
-    <div className="space-y-10 pb-20 animate-in fade-in duration-1000">
+    <div className="space-y-10 pb-20">
       {/* --- Header --- */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2 md:px-4">
         <div className="flex items-center gap-4">

@@ -16,7 +16,7 @@ const SearchShell = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className="min-h-screen bg-muted/30 p-8 space-y-12">
         <Suspense fallback={
-            <div className="min-h-[80vh] flex flex-col items-center justify-center gap-10 p-20 text-center animate-in fade-in duration-1000">
+            <div className="min-h-[80vh] flex flex-col items-center justify-center gap-10 p-20 text-center">
                 <div className="relative group">
                     <div className="absolute inset-0 bg-primary/20 rounded-lg blur-3xl group-hover:scale-150 transition-transform duration-1000 animate-pulse" />
                     <div className="relative w-32 h-32 bg-card rounded-lg border-2 border-border flex items-center justify-center shadow-2xl transition-all group-hover:rotate-12 group-hover:scale-110">

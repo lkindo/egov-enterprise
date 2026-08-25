@@ -83,7 +83,7 @@ export default function SurveyManageCreateClient() {
 
   return (
     // 루트 admin 레이아웃이 이미 여백을 준다 — 화면별 p-6 은 이중 여백이라 제거(P2).
-    <div className="max-w-4xl mx-auto space-y-8 animate-in fade-in duration-700">
+    <div className="max-w-4xl mx-auto space-y-8">
       <div className="flex items-center justify-between">
         <Button variant="ghost" onClick={() => router.back()} className="rounded-lg font-bold gap-2 hover:bg-muted transition-all">
             <ArrowLeft className="w-4 h-4" /> 뒤로가기

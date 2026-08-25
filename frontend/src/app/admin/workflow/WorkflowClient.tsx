@@ -42,7 +42,7 @@ export default function WorkflowClient() {
     const [selectedNode, setSelectedNode] = useState<WorkflowNode | null>(MOCK_WORKFLOW_NODES[2]);
 
     return (
-        <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+        <div className="space-y-12 pb-24">
             <PageHeader
                 title="프로세스 설계 및 관제"
                 breadcrumbs={[{ label: '워크플로우' }, { label: '스튜디오' }]}
