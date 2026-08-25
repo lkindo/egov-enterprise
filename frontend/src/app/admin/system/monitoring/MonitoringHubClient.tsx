@@ -34,6 +34,7 @@ import { StandardDataTable, Column } from '@/app/components/ui/standard-data-tab
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
+import { PeriodFilter, EMPTY_PERIOD, periodToParams, type PeriodValue } from '@/app/components/patterns/period-filter';
 import dynamic from 'next/dynamic';
 // dynamic fallback 은 실제 차트와 동일 높이를 잡아 청크 도착 시 레이아웃 시프트(CLS)를 없앤다.
 const GaugeChart = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.GaugeChart), {
@@ -167,6 +168,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const [isPending, startTransition] = useTransition();
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
   /* 페이지당 건수는 URL 에 싣지 않는다 — 새 query producer 를 만들지 않는다는 기존 계약을 따른다. */
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
@@ -195,6 +197,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const setActiveTab = (tab: MonitoringTab) => {
     setSelectedItemId(null);
     setSearchKeyword('');
+    setPeriod(EMPTY_PERIOD);
     updateQuery({ tab: tab.toLowerCase(), page: null });
   };
 
@@ -209,22 +212,38 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   };
 
   const { data: auditData, isLoading: isAuditLoading, error: auditError, refetch: refetchAudit } = useQuery({
-    queryKey: ['admin-audit-logs', searchKeyword, page, pageSize],
-    queryFn: () => auditAdminService.getAuditLogs({ page: page - 1, size: pageSize, keyword: searchKeyword }),
+    queryKey: ['admin-audit-logs', searchKeyword, page, pageSize, periodToParams(period, 'compact')],
+    queryFn: () => auditAdminService.getAuditLogs({
+      page: page - 1,
+      size: pageSize,
+      // 서버는 BaseSearchDto.searchKeyword 로 바인딩한다 — `keyword` 는 무시됐다.
+      searchKeyword,
+      ...periodToParams(period, 'compact'),
+    }),
     enabled: activeTab === 'SECURITY'
   });
   const auditLogs = useMemo(() => auditData?.list || [], [auditData]);
 
   const { data: systemLogData, isLoading: isSystemLoading, error: systemLogError, refetch: refetchSystemLogs } = useQuery({
-    queryKey: ['admin-system-logs', searchKeyword, page, pageSize],
-    queryFn: () => systemLogAdminService.getSystemLogs({ page: page - 1, size: pageSize, searchWrd: searchKeyword }),
+    queryKey: ['admin-system-logs', searchKeyword, page, pageSize, periodToParams(period, 'compact')],
+    queryFn: () => systemLogAdminService.getSystemLogs({
+      page: page - 1,
+      size: pageSize,
+      searchWrd: searchKeyword,
+      ...periodToParams(period, 'compact'),
+    }),
     enabled: activeTab === 'SYSTEM'
   });
   const systemLogs = useMemo(() => systemLogData?.list || [], [systemLogData]);
 
   const { data: loginLogData, isLoading: isLoginLoading, error: loginLogError, refetch: refetchLoginLogs } = useQuery({
-    queryKey: ['admin-login-logs', searchKeyword, page, pageSize],
-    queryFn: () => systemLogAdminService.getLoginLogs({ page: page - 1, size: pageSize, searchWrd: searchKeyword }),
+    queryKey: ['admin-login-logs', searchKeyword, page, pageSize, periodToParams(period, 'compact')],
+    queryFn: () => systemLogAdminService.getLoginLogs({
+      page: page - 1,
+      size: pageSize,
+      searchWrd: searchKeyword,
+      ...periodToParams(period, 'compact'),
+    }),
     enabled: activeTab === 'LOGIN'
   });
   const loginLogs = useMemo(() => loginLogData?.list || [], [loginLogData]);
@@ -783,7 +802,13 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             placeholder="서비스명·메서드·계정 검색"
             value={searchKeyword}
             onSearch={handleSearchKeywordChange}
-          />
+          >
+            <PeriodFilter
+              label="조회 기간(발생일자)"
+              value={period}
+              onChange={(next) => { setPeriod(next); setPage(1); }}
+            />
+          </KeywordFilter>
         ) : undefined
       }
       toolbarActions={

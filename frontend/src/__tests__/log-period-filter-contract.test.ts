@@ -82,6 +82,24 @@ describe('로그 조회 기간 계약', () => {
     expect(backend(`${repoBase}/WebLogRepositoryImpl.java`)).toMatch(/searchBgnDe\.replace\("-", ""\)/);
   });
 
+  it('모니터링 허브의 목록 탭도 기간을 제공하고, 감사 검색이 서버 필드명을 쓴다', () => {
+    const hub = client('app/admin/system/monitoring/MonitoringHubClient.tsx');
+
+    expect(hub, '모니터링 허브에 조회 기간이 없습니다').toMatch(/<PeriodFilter/);
+    expect(hub, '기간이 요청 파라미터에 실리지 않습니다').toMatch(/\.\.\.periodToParams\(period, 'compact'\)/);
+
+    /*
+     * `/logs/system` 은 `@ModelAttribute BaseSearchDto` 로 바인딩하고 그 필드는 `searchKeyword` 다.
+     * 종전에는 `keyword` 를 보내 **검색어가 통째로 무시**됐다(보안 감사 탭에서 무엇을 입력해도
+     * 결과가 그대로였다). 서비스 시그니처에서 `keyword` 를 없애 회귀를 타입으로도 막는다.
+     */
+    const service = client('services/foundation/system/AuditAdminService.ts');
+    expect(service, '감사 서비스가 서버 필드명을 쓰지 않습니다').toMatch(/searchKeyword\?: string;/);
+    expect(service, '무시되는 keyword 파라미터가 되살아났습니다').not.toMatch(/(?<![A-Za-z])keyword\?: string;/);
+    expect(backend('business-core/src/main/java/nuri/business/domain/common/BaseSearchDto.java'))
+      .toMatch(/private String searchKeyword = "";/);
+  });
+
   it('한쪽만 입력된 기간은 서버로 보내지 않는다', () => {
     // 저장소가 between 을 쓰므로 한쪽만 주면 조건이 통째로 무시된다 —
     // 화면은 좁혀졌다고 보여 주는데 결과는 전체인 상태가 가장 위험하다.
