@@ -1,23 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { useState } from 'react';
+import { ReportPage } from '@/app/components/patterns/report-page';
 import { StandardChartWrapper } from '@/app/components/ui/standard-chart-wrapper';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { SummaryStats, ConnectPoint } from '@/types/foundation/stats';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
-import { BarChart3,
-  RefreshCcw,
-  Cpu,
-  Activity,
-  Database,
-  ShieldCheck,
-  CloudLightning,
-  AlertTriangle,
-  CalendarDays } from 'lucide-react';
+import { RefreshCcw, CalendarDays, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toDisplayYmd } from '@/lib/format-date';
 import { useRouter } from 'next/navigation';
@@ -102,188 +91,89 @@ export default function AdminStatsClient({
   ];
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
-      <PageHeader
-        title="관리자 통계"
-        breadcrumbs={[{ label: '시스템관리' }, { label: '분석 대시보드' }]}
-      />
-
-      {loadError && (
-        <div
-          role="alert"
-          className="mx-2 flex items-start gap-4 rounded-lg border-2 border-rose-500/30 bg-rose-500/5 p-6"
-        >
-          <AlertTriangle size={22} className="mt-0.5 shrink-0 text-rose-600" />
-          <div className="space-y-2">
-            <p className="text-sm font-bold tracking-tight text-rose-700">통계 데이터 조회 실패</p>
-            <p className="text-xs font-bold tracking-tight text-rose-600/90">{loadError}</p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefresh}
-              className="mt-2 h-9 rounded-lg border-2 text-xs font-bold tracking-tight"
-            >
-              다시 시도
-            </Button>
-          </div>
+    <ReportPage
+      title="관리자 통계"
+      description="사용자·게시물 누적 현황과 일자별 접속 집계를 확인합니다."
+      breadcrumbItems={[{ label: '시스템관리' }, { label: '분석 대시보드' }]}
+      // A7 필수 — 무엇을·언제까지·어디서 센 값인지 없으면 지표는 검증할 수 없는 주장이 된다.
+      basis={`집계 기준: 최근 1개월 일자별 접속 로그 · 수집된 일수 ${connectData.length}일 · 출처: 시스템 접속 통계 API`}
+      notice={loadError && (
+        <div role="alert" className="space-y-2 rounded-md border border-destructive/30 bg-destructive/10 p-4">
+          <p className="text-sm font-semibold text-destructive-emphasis">통계 데이터 조회 실패</p>
+          <p className="text-xs text-muted-foreground">{loadError}</p>
+          <Button variant="outline" size="sm" onClick={handleRefresh}>다시 시도</Button>
         </div>
       )}
-
-      <HubHeader
-        title="최근 1개월"
-        highlight="접속 통계"
-        subtitle="사용자·게시물 누적 현황과 일자별 접속 집계를 확인합니다"
-        icon={BarChart3}
-        actions={
-          <div className="flex gap-4 p-2 items-center">
-            {/* aria-label 은 e2e POM(StatsPage.refresh)이 셀렉터로 쓰므로 문구를 바꾸지 않는다 */}
-            <Button
-              variant="outline"
-              size="lg"
-              aria-label="새로고침"
-              onClick={handleRefresh}
-              className="h-12 w-12 p-0 rounded-lg border-2 font-bold shadow-sm"
-            >
-              <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
-            </Button>
-            <div className="hidden sm:block">
-              <DataExportExcel
-                data={connectData}
-                headers={[
-                  { label: '집계 일자', key: 'statsDate' },
-                  { label: '접속 건수', key: 'statsCo' }
-                ]}
-                filename="system_connect_stats"
-              />
-            </div>
-          </div>
-        }
-      />
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 px-2">
-        <LuxuryStatCard title="누적 사용자" value={initialSummary?.totalUsers ?? 0} icon={<Database size={26} />} color="slate" />
-        <LuxuryStatCard title="금일 접속" value={initialSummary?.todayConnects ?? 0} icon={<CloudLightning size={26} />} color="primary" />
-        <LuxuryStatCard title="누적 게시물" value={initialSummary?.totalPosts ?? 0} icon={<ShieldCheck size={26} />} color="indigo" />
-      </div>
-
-      <div className="grid grid-cols-12 gap-10 px-2 mt-4">
-        <div className="col-span-12 flex flex-col gap-10">
-          <HubSectionCard
-        title="일자별 접속 추이"
-            description="최근 1개월 간 일자별 접속 건수 추이입니다"
-            icon={Activity}
+      actions={
+        <>
+          {/* aria-label 은 e2e POM(StatsPage.refresh)이 셀렉터로 쓰므로 문구를 바꾸지 않는다 */}
+          <Button
+            variant="outline"
+            size="sm"
+            aria-label="새로고침"
+            onClick={handleRefresh}
+            className="gap-2"
           >
-            <div className="p-4 bg-muted/50 rounded-lg border border-border/30 overflow-hidden group">
-              <StandardChartWrapper
-                title="일자별 접속 건수 추이"
-                type="area"
-                data={connectData}
-                dataKeys={['statsCo']}
-                loading={loading}
-                height={350}
-                className="relative z-10"
-              />
-            </div>
-          </HubSectionCard>
-        </div>
-      </div>
-
-      {/*
-        [삭제] '지리적 트래픽 분포' 섹션 (감사 P1-5 — 근거 없는 지표).
-        `NationalDistributionMap` 은 `MOCK_MAP_DATA`(서울 1250 · 경상 1050 …) 하드코딩을
-        운영 지역 통계처럼 표시했다. 백엔드에 지역 집계
-        소스가 없어 실제 값으로 대체할 수 없고, 컴포넌트 내부 문구는 이 화면에서 고칠 수 없으므로
-        (소유 경로 밖) '카드 삭제' 원칙을 적용한다. 지역 통계 집계 API 가 생기면 재도입할 것.
-      */}
-
-      <HubSectionCard
-        title="일자별 접속 통계"
-        description="차트에 사용된 접속 집계의 원본 수치입니다."
-        icon={Cpu}
-        statusBadges={
-          <HubStatusBadge label={`${connectData.length}일 집계`} variant="success" className="bg-emerald-500/10 text-emerald-800 border-none text-xs font-bold tracking-widest" />
-        }
-      >
-        <div className="px-2 overflow-x-auto">
-          {/* 조회 실패를 "데이터 없음"으로 위장하지 않는다 — error/onRetry 전달(감사 P1-1) */}
-          <StandardDataTable
-            columns={connectColumns}
-            data={pagedConnectData}
-            loading={loading}
-            error={loadError ? new Error(loadError) : null}
-            onRetry={handleRefresh}
-            pagination={{
-              currentPage,
-              totalPages,
-              onPageChange: setPage,
-              totalCount: connectData.length,
-              pageSize: CONNECT_PAGE_SIZE
-            }}
-            emptyMessage="조회된 접속 통계가 없습니다."
-            className="border-none rounded-none bg-transparent min-w-[700px]"
+            <RefreshCcw size={16} className={cn(loading && "animate-spin")} aria-hidden="true" />
+            새로고침
+          </Button>
+          <DataExportExcel
+            data={connectData}
+            headers={[
+              { label: '집계 일자', key: 'statsDate' },
+              { label: '접속 건수', key: 'statsCo' }
+            ]}
+            filename="system_connect_stats"
           />
+        </>
+      }
+      summary={
+        <div className="grid gap-2 sm:grid-cols-3">
+          <SummaryStat title="누적 사용자" value={initialSummary?.totalUsers ?? 0} />
+          <SummaryStat title="금일 접속" value={initialSummary?.todayConnects ?? 0} />
+          <SummaryStat title="누적 게시물" value={initialSummary?.totalPosts ?? 0} />
         </div>
-      </HubSectionCard>
-
-      {/*
-        과거 이 영역에는 핸들러가 없는 'Execute Global Report' 버튼과 근거 없는 영문 카피가 있었다(감사 P1-6/P1-5).
-        버튼은 제거하고, 실제 수집 결과만 문장으로 요약한다.
-      */}
-      <div className="relative group rounded-lg overflow-hidden bg-surface-inverse shadow-2xl p-8 md:p-14 lg:p-20 border border-white/5">
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-hub-indigo/5 opacity-50" />
-        <div className="absolute top-[-20%] right-[-10%] w-[600px] h-[600px] bg-primary/20 blur-[120px] rounded-lg group-hover:scale-150 transition-transform duration-[3s]" />
-        <div className="relative z-10 space-y-6 text-center lg:text-left">
-          <h2 className="text-xs font-bold tracking-[0.4em] text-surface-inverse-foreground/80 leading-none">시스템 무결성 요약</h2>
-          <h3 className="text-3xl lg:text-5xl font-bold tracking-tighter text-surface-inverse-foreground leading-tight">
-            최근 1개월 <span className="text-primary tabular-nums">{connectData.length}일</span>치 접속 집계 수집 완료
-          </h3>
-          <p className="text-base lg:text-lg text-surface-inverse-foreground/90 font-bold max-w-3xl leading-relaxed tracking-tight">
-            상세 지표는 상단 차트와 일자별 접속 통계 표에서 확인할 수 있으며, 원본 수치는 우측 상단 &lsquo;엑셀 내보내기&rsquo;로 반출할 수 있습니다.
-          </p>
-        </div>
-      </div>
-    </div>
+      }
+      chartTitle="일자별 접속 추이"
+      chart={
+        <StandardChartWrapper
+          title="일자별 접속 건수 추이"
+          type="area"
+          data={connectData}
+          dataKeys={['statsCo']}
+          loading={loading}
+          height={350}
+        />
+      }
+      tableTitle="일자별 접속 통계"
+    >
+      {/* 조회 실패를 "데이터 없음"으로 위장하지 않는다 — error/onRetry 전달(감사 P1-1) */}
+      <StandardDataTable
+        accessibleLabel="일자별 접속 통계"
+        columns={connectColumns}
+        data={pagedConnectData}
+        loading={loading}
+        error={loadError ? new Error(loadError) : null}
+        onRetry={handleRefresh}
+        pagination={{
+          currentPage,
+          totalPages,
+          onPageChange: setPage,
+          totalCount: connectData.length,
+          pageSize: CONNECT_PAGE_SIZE
+        }}
+        emptyMessage="조회된 접속 통계가 없습니다."
+      />
+    </ReportPage>
   );
 }
 
-type StatCardColor = 'slate' | 'primary' | 'indigo';
-
-const STAT_ICON_BG: Record<StatCardColor, string> = {
-  slate: "bg-surface-inverse text-surface-inverse-foreground shadow-xl",
-  primary: "bg-primary text-primary-foreground shadow-xl shadow-primary/20",
-  indigo: "bg-hub-indigo text-primary-foreground shadow-xl shadow-hub-indigo/20",
-};
-
-/**
- * 요약 지표 카드.
- * ⚠ 증감(trend) 배지는 두지 않는다 — 백엔드가 비교 기준 기간을 제공하지 않아
- *   과거 하드코딩 배지가 거짓 지표였다(감사 P1-5).
- */
-function LuxuryStatCard({ title, value, icon, color }: {
-  title: string;
-  value: number;
-  icon: React.ReactNode;
-  color: StatCardColor;
-}) {
+/** 요약 지표 한 칸. 값의 출처는 ReportPage 의 basis 가 설명한다. */
+function SummaryStat({ title, value }: { title: string; value: number }) {
   return (
-    <div className="hub-table-container p-8 md:p-12 group hover:scale-[1.05] transition-all relative overflow-hidden bg-card border-border/50">
-      <div className="flex justify-between items-start mb-10 relative z-10">
-        <div className={cn("w-16 h-11 rounded-lg flex items-center justify-center group-hover:rotate-12 transition-transform shadow-2xl", STAT_ICON_BG[color])}>
-          {icon}
-        </div>
-      </div>
-      <div className="relative z-10">
-        <h3 className="text-4xl font-bold tracking-tighter tabular-nums leading-none text-foreground">{value?.toLocaleString() ?? 0}</h3>
-        <p className="text-xs font-bold text-muted-foreground tracking-[0.4em] mt-5 flex items-center gap-3 leading-none">
-          <span className="w-6 h-0.5 bg-current opacity-100" />
-          {title}
-        </p>
-      </div>
-      <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] -rotate-12 group-hover:rotate-0 transition-all duration-1000 grayscale" aria-hidden="true">
-        {React.isValidElement<{ size?: number }>(icon)
-          ? React.cloneElement(icon, { size: 240 })
-          : null}
-      </div>
+    <div className="rounded-md border border-border bg-card px-4 py-3">
+      <p className="text-[length:var(--font-size-body)] text-muted-foreground">{title}</p>
+      <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{value.toLocaleString()}</p>
     </div>
   );
 }
