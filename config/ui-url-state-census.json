@@ -23,7 +23,7 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "4ac030962c6c56a387e269331c0bff08d8393affdb30ca65a5cd1e197938974a"
+    "inventoryHash": "bc989980d24e596437fb23abd5f65416c5073315ad13e5bf90fffe599d5382e4"
   },
   "summary": {
     "sourceFileCount": 489,
@@ -12617,6 +12617,44 @@
       }
     },
     {
+      "id": "URL-60B06A3C7CC585",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
+      "producerFile": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/work-hub",
+      "targetCandidate": "/smart-toolkit/dept-job/create",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/smart-toolkit/dept-job/create",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-559DC883BD4AC0",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -12636,44 +12674,6 @@
       "resolutionStatus": "ambiguous",
       "canonical": {
         "routeCandidate": "/smart-toolkit/dept-job/[computed]",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-E6ACF75793A00D",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/work-hub",
-      "targetCandidate": "/smart-toolkit/dept-job/create",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/smart-toolkit/dept-job/create",
         "status": "unverified"
       },
       "authorizationBoundary": {

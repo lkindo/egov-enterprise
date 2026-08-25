@@ -3,22 +3,13 @@
 import React, { useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { Briefcase,
-  Search,
-  ClipboardList,
-  FileText,
-  Plus,
-  Layers,
-  CalendarDays
-  } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 ;
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 ;
@@ -33,7 +24,6 @@ import { PRIORITY_LABEL } from '@/components/business/deptJob/DeptJobForm';
 import { useToast } from '@/app/components/ui/toast';
 import { getDeptScheduleMonthList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule/deptScheduleService';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import type { DeptSchedule } from '@/types/business/schedule';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
@@ -72,7 +62,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   const [searchKeyword, setSearchKeyword] = useState('');
   // 타이핑 한 글자마다 서버 요청이 나가던 것을 300ms 디바운스한다.
   // 입력 컨트롤에는 원본 상태를, queryKey/요청 파라미터에는 디바운스 값만 쓴다.
-  const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
+
   // 목록 페이지(1-based). 종전에는 페이저가 없어 상위 N건만 보이고 나머지는 도달할 수 없었다.
   const [jobPage, setJobPage] = useState(1);
   const [reportPage, setReportPage] = useState(1);
@@ -141,8 +131,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   } = useQuery({
     // jobScope 를 queryKey 에 포함해야 토글 시 재조회된다. 빠뜨리면 캐시된 이전 스코프 결과가
     // 그대로 남아 "토글이 먹지 않는" 것처럼 보인다.
-    queryKey: ['work-jobs', debouncedKeyword, jobPage, jobScope],
-    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: debouncedKeyword, pageIndex: jobPage, pageUnit: PAGE_UNIT, scope: jobScope }),
+    queryKey: ['work-jobs', searchKeyword, jobPage, jobScope],
+    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: searchKeyword, pageIndex: jobPage, pageUnit: PAGE_UNIT, scope: jobScope }),
     enabled: activeTab === 'job'
   });
   const jobs = jobData?.list || [];
@@ -155,8 +145,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     error: reportError,
     refetch: refetchReports,
   } = useQuery({
-    queryKey: ['work-reports', debouncedKeyword, reportPage],
-    queryFn: () => reportService.getReports({ pageIndex: reportPage, pageUnit: PAGE_UNIT, searchWrd: debouncedKeyword }),
+    queryKey: ['work-reports', searchKeyword, reportPage],
+    queryFn: () => reportService.getReports({ pageIndex: reportPage, pageUnit: PAGE_UNIT, searchWrd: searchKeyword }),
     enabled: activeTab === 'report'
   });
   const reports = reportData?.list || [];
@@ -422,222 +412,202 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     }
   ];
 
+  const TAB_LABEL = { job: '업무 워크플로우', report: '업무 보고', calendar: '일정 캘린더' } as const;
+  const activeTotal = activeTab === 'job' ? jobData?.total : activeTab === 'report' ? reportData?.total : schedules.length;
+  const activeError = activeTab === 'job' ? isJobError : activeTab === 'report' ? isReportError : isScheduleError;
+
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader
-        title="워크플로우 및 자산 관리"
-        breadcrumbs={[{ label: '업무관리' }, { label: '워크허브' }]}
-      />
-
-      <HubHeader
-        title="업무 및"
-        highlight="인텔리전스"
-        subtitle="전사 업무 프로세스 및 비즈니스 데이터 자산을 통합 관리합니다."
-        icon={Briefcase}
-        actions={
-          <div className="flex gap-4">
-             <div className="flex bg-muted p-1 rounded-xl border border-border/50">
-               <Button
-                 variant="ghost"
-                 size="sm"
-                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'job' ? "bg-card shadow-sm text-primary" : "text-muted-foreground")}
-                 onClick={() => setTab('job')}
-               >
-                 워크플로우
-               </Button>
-               <Button
-                 variant="ghost"
-                 size="sm"
-                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'report' ? "bg-card shadow-sm text-primary" : "text-muted-foreground")}
-                 onClick={() => setTab('report')}
-               >
-                 업무 보고
-               </Button>
-               <Button
-                 variant="ghost"
-                 size="sm"
-                 className={cn("h-8 rounded-lg px-6 text-[10px] font-black uppercase transition-all", activeTab === 'calendar' ? "bg-card shadow-sm text-primary" : "text-muted-foreground")}
-                 onClick={() => setTab('calendar')}
-               >
-                 일정
-               </Button>
-             </div>
-            {/* 탭마다 '생성'의 대상이 다르다. 일정·보고는 다이얼로그로 받고,
-                업무 워크플로우는 전용 등록 화면이 이미 있어 그리로 보낸다. */}
-            <Button
-              onClick={
-                activeTab === 'calendar'
-                  ? () => setScheduleModalOpen(true)
-                  : activeTab === 'report'
-                    ? () => setReportModalOpen(true)
-                    : () => router.push('/smart-toolkit/dept-job/create')
-              }
-              className="h-11 px-8 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl"
-            >
-              <Plus size={18} /> {activeTab === 'calendar' ? '일정 등록' : activeTab === 'report' ? '보고 등록' : '업무 등록'}
+    <>
+    <WorkListPage
+      title="워크플로우 및 자산 관리"
+      description={
+        activeTab === 'calendar'
+          ? '월간 일정을 조회합니다. 날짜를 선택하면 그 날짜의 일정만 표시합니다.'
+          : activeTab === 'job'
+            ? '부서 업무의 담당·기한·처리 상태를 조회합니다.'
+            : '조직에서 작성된 업무 보고를 조회합니다.'
+      }
+      breadcrumbItems={[{ label: '업무관리' }, { label: '워크허브' }]}
+      filterStateKey="work-hub"
+      /* 일정은 월 단위 조회라 서버 총계가 없다 — 현재 월 건수임을 툴바 문구가 밝힌다. */
+      totalCount={activeError ? undefined : activeTotal}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          <div role="tablist" aria-label="워크허브 영역 선택" className="flex rounded-md border border-border p-0.5">
+            {(['job', 'report', 'calendar'] as const).map((tab) => (
+              <button
+                key={tab}
+                type="button"
+                role="tab"
+                id={`work-hub-tab-${tab}`}
+                aria-selected={activeTab === tab}
+                aria-controls="work-hub-tabpanel"
+                onClick={() => setTab(tab)}
+                className={cn(
+                  'flex h-[var(--control-h-sm)] items-center rounded px-4 text-xs font-bold transition-colors',
+                  activeTab === tab ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground',
+                )}
+              >
+                {TAB_LABEL[tab]}
+              </button>
+            ))}
+          </div>
+          {/* 탭마다 '등록'의 대상이 다르다. 일정·보고는 다이얼로그로 받고,
+              업무는 전용 등록 화면이 이미 있어 그리로 보낸다. */}
+          {activeTab === 'job' ? (
+            <Button asChild size="sm">
+              <Link href="/smart-toolkit/dept-job/create">
+                <Plus size={16} aria-hidden="true" /> 업무 등록
+              </Link>
             </Button>
-          </div>
-        }
-      />
-
-      {/* 지표는 서버 총건수(total)만 표기한다.
-          종전의 '동기화 빈도: 매일' 카드는 동기화 주기를 산출하는 근거가 없는 고정 문자열이라 제거했다. */}
-      <HubMetricGrid className="lg:grid-cols-3">
-        <HubMetricCard title="업무 노드" value={isJobError ? '조회 실패' : (jobData?.total ?? jobs.length)} icon={Layers} color="primary" />
-        <HubMetricCard title="보고 데이터" value={isReportError ? '조회 실패' : (reportData?.total ?? reports.length)} icon={FileText} color="amber" />
-        <HubMetricCard title="이번 달 일정" value={isScheduleError ? '조회 실패' : schedules.length} icon={CalendarDays} color="indigo" />
-      </HubMetricGrid>
-
-      <HubSectionCard
-        title={activeTab === 'calendar' ? "일정 캘린더" : activeTab === 'job' ? "업무 워크플로우 매트릭스" : "업무 보고 아카이브"}
-        description={activeTab === 'calendar' ? "월간 일정 현황입니다. 날짜를 선택하면 해당 일자의 일정만 추려 보여줍니다." : activeTab === 'job' ? "부서별 업무 흐름 및 처리 상태에 대한 실시간 스트림입니다." : "조직 내에서 생성된 업무 보고의 명세입니다."}
-        icon={activeTab === 'calendar' ? CalendarDays : activeTab === 'job' ? ClipboardList : FileText}
-        className="bg-white/40 backdrop-blur-md border border-white/60 shadow-xl ring-1 ring-black/5"
-      >
-        <div className="space-y-8">
-          {/* 검색은 서버 필터가 있는 업무/보고 탭에만 노출한다. 일정은 월 단위 조회라 검색 대상이 아니다. */}
-          {activeTab !== 'calendar' && (
-            <div className="flex items-center justify-between px-2 pt-2 border-b border-border/50 pb-10 mb-8">
-              <div className="relative group max-w-xl w-full">
-                <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
-                <Input
-                  value={searchKeyword}
-                  onChange={(e) => { setSearchKeyword(e.target.value); setJobPage(1); setReportPage(1); }}
-                  className="h-11 bg-muted/50 border-none rounded-xl pl-16 font-bold tracking-tight text-sm shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-                  placeholder="검색어를 입력하십시오..."
-                />
-              </div>
-
-              {/* 업무 탭에만 소유 스코프 토글을 둔다. 보고 탭은 별도 소유 모델이라 대상이 아니다.
-                  상단 탭 전환과 동일한 pill 패턴을 재사용해 조작 방식을 일관되게 한다. */}
-              {activeTab === 'job' && (
-                <div className="flex bg-muted p-1 rounded-xl border border-border/50 shrink-0">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-pressed={jobScope === 'mine'}
-                    className={cn("h-8 rounded-lg px-5 text-[10px] font-black uppercase transition-all", jobScope === 'mine' ? "bg-card shadow-sm text-primary" : "text-muted-foreground")}
-                    onClick={() => { setJobScope('mine'); setJobPage(1); }}
-                  >
-                    내 업무
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    aria-pressed={jobScope === 'dept'}
-                    className={cn("h-8 rounded-lg px-5 text-[10px] font-black uppercase transition-all", jobScope === 'dept' ? "bg-card shadow-sm text-primary" : "text-muted-foreground")}
-                    onClick={() => { setJobScope('dept'); setJobPage(1); }}
-                  >
-                    부서 전체
-                  </Button>
-                </div>
-              )}
-            </div>
+          ) : (
+            <Button
+              size="sm"
+              onClick={activeTab === 'calendar' ? () => setScheduleModalOpen(true) : () => setReportModalOpen(true)}
+            >
+              <Plus size={16} aria-hidden="true" /> {activeTab === 'calendar' ? '일정 등록' : '보고 등록'}
+            </Button>
           )}
-
-          <div className="min-h-[500px]">
-            {activeTab === 'calendar' ? (
-              <div className="grid gap-10 lg:grid-cols-[auto_1fr] items-start">
-                <div className="rounded-[var(--radius-hub-item)] border border-border/50 bg-card/60 p-6 shadow-inner">
-                  <Calendar
-                    mode="single"
-                    locale={ko}
-                    selected={selectedDate}
-                    onSelect={setSelectedDate}
-                    month={currentDate}
-                    onMonthChange={(month) => { setCurrentDate(month); setSelectedDate(undefined); }}
-                    fixedWeeks
-                    // 일정이 있는 날에 강조 표시. modifiersClassNames 는 클래스 1개만 붙일 수 있어
-                    // '건수' 같은 가변 정보는 표현할 수 없다(react-day-picker v9 제약).
-                    modifiers={{ hasSchedule: scheduleDates }}
-                    modifiersClassNames={{ hasSchedule: 'font-black text-primary underline decoration-2 underline-offset-4' }}
-                    // 래퍼 기본 셀 크기는 Popover 선택기용(h-9 w-9)이라 월간 뷰에 맞게 키운다.
-                    // calendar.tsx 가 호출자 classNames 를 뒤에 스프레드하므로 이 값이 이긴다.
-                    classNames={{
-                      months: 'relative flex flex-col',
-                      month_grid: 'w-full border-collapse',
-                      day: 'h-12 w-12 text-center p-0',
-                      day_button: 'e2e-day-button h-12 w-12 rounded-lg font-bold hover:bg-muted transition-colors',
-                      weekday: 'w-12 text-[11px] font-black uppercase text-muted-foreground',
-                    }}
-                  />
-                </div>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between px-1">
-                    <h4 className="text-sm font-black tracking-tight text-foreground">
-                      {selectedDate
-                        ? `${format(selectedDate, 'yyyy년 M월 d일 (E)', { locale: ko })} 일정`
-                        : `${format(currentDate, 'yyyy년 M월', { locale: ko })} 전체 일정`}
-                    </h4>
-                    {selectedDate && (
-                      <Button variant="ghost" size="sm" className="h-8 text-[10px] font-black uppercase" onClick={() => setSelectedDate(undefined)}>
-                        전체 보기
-                      </Button>
-                    )}
-                  </div>
-                  <StandardDataTable
-                    columns={scheduleColumns}
-                    data={visibleSchedules}
-                    loading={isScheduleLoading}
-                    keyField="schdlSn"
-                    emptyMessage="등록된 일정이 없습니다."
-                    isPremium={true}
-                    className="border-none bg-transparent shadow-none"
-                    // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
-                    error={isScheduleError ? (scheduleError instanceof Error ? scheduleError : new Error('일정을 불러오지 못했습니다.')) : null}
-                    onRetry={() => void refetchSchedules()}
-                  />
+        </div>
+      }
+      filter={
+        /* 일정은 월 단위 조회라 키워드 검색 대상이 아니다 — 동작하지 않는 입력을 만들지 않는다. */
+        activeTab === 'calendar' ? undefined : (
+          <KeywordFilter
+            label={activeTab === 'job' ? '업무명·담당자' : '보고 제목·작성자'}
+            placeholder="검색어를 입력하십시오..."
+            value={searchKeyword}
+            onSearch={(keyword) => { setSearchKeyword(keyword); setJobPage(1); setReportPage(1); }}
+          >
+            {/* 업무 탭에만 소유 범위 조건을 둔다. 보고 탭은 별도 소유 모델이라 대상이 아니다. */}
+            {activeTab === 'job' && (
+              <div className="space-y-1">
+                <span id="job-scope-label" className="block text-[length:var(--font-size-body)] font-medium">조회 범위</span>
+                <div role="group" aria-labelledby="job-scope-label" className="flex rounded-md border border-border p-0.5">
+                  {(['mine', 'dept'] as const).map((scope) => (
+                    <button
+                      key={scope}
+                      type="button"
+                      aria-pressed={jobScope === scope}
+                      onClick={() => { setJobScope(scope); setJobPage(1); }}
+                      className={cn(
+                        'flex h-[var(--control-h-sm)] items-center rounded px-4 text-xs font-bold transition-colors',
+                        jobScope === scope ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground',
+                      )}
+                    >
+                      {scope === 'mine' ? '내 업무' : '부서 전체'}
+                    </button>
+                  ))}
                 </div>
               </div>
-            ) : activeTab === 'job' ? (
-              <StandardDataTable
-                columns={jobColumns}
-                data={jobs}
-                loading={isJobLoading}
-                // 목록이 '내 업무'로 좁혀진 상태의 빈 화면은 데이터 유실처럼 보이기 쉽다.
-                // 왜 비었는지와 다음 행동('부서 전체' 토글)을 문구로 알려 준다.
-                emptyMessage={
-                  jobScope === 'mine'
-                    ? '내가 담당자인 업무가 없습니다. 부서 전체를 보려면 상단의 \'부서 전체\'를 선택하십시오.'
-                    : '식별된 데이터 유닛이 없습니다.'
-                }
-                isPremium={true}
-                className="border-none bg-transparent shadow-none"
-                // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
-                error={isJobError ? (jobError instanceof Error ? jobError : new Error('업무 목록을 불러오지 못했습니다.')) : null}
-                onRetry={() => void refetchJobs()}
-                // StandardDataTable 은 처음부터 pagination 을 지원했는데 전달하지 않고 있었다.
-                // 그래서 첫 페이지 밖의 데이터에 도달할 방법이 아예 없었다.
-                pagination={{
-                  currentPage: jobPage,
-                  totalPages: Math.max(1, jobTotalPages),
-                  onPageChange: setJobPage,
-                  totalCount: jobData?.total,
-                  pageSize: PAGE_UNIT,
-                }}
-              />
-            ) : (
-              <StandardDataTable
-                columns={reportColumns}
-                data={reports}
-                loading={isReportLoading}
-                emptyMessage="식별된 데이터 유닛이 없습니다."
-                isPremium={true}
-                className="border-none bg-transparent shadow-none"
-                error={isReportError ? (reportError instanceof Error ? reportError : new Error('업무 보고를 불러오지 못했습니다.')) : null}
-                onRetry={() => void refetchReports()}
-                pagination={{
-                  currentPage: reportPage,
-                  totalPages: Math.max(1, reportTotalPages),
-                  onPageChange: setReportPage,
-                  totalCount: reportData?.total,
-                  pageSize: PAGE_UNIT,
-                }}
-              />
             )}
+          </KeywordFilter>
+        )
+      }
+      toolbarActions={
+        /* 지표 카드 3장을 한 줄 요약으로 수렴한다. 일정은 서버 총계가 없어 범위를 문구로 밝힌다. */
+        <span className="text-[length:var(--font-size-body)] text-muted-foreground">
+          {activeTab === 'calendar'
+            ? `${format(currentDate, 'yyyy년 M월', { locale: ko })} 기준`
+            : activeTab === 'job'
+              ? (jobScope === 'mine' ? '내가 담당인 업무' : '부서 전체 업무')
+              : '전체 업무 보고'}
+        </span>
+      }
+    >
+      <div role="tabpanel" id="work-hub-tabpanel" aria-labelledby={`work-hub-tab-${activeTab}`}>
+        {activeTab === 'calendar' ? (
+          <div className="grid items-start gap-6 lg:grid-cols-[auto_1fr]">
+            <div className="rounded-md border border-border bg-card p-[var(--filter-pad)]">
+              <Calendar
+                mode="single"
+                locale={ko}
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                month={currentDate}
+                onMonthChange={(month) => { setCurrentDate(month); setSelectedDate(undefined); }}
+                fixedWeeks
+                // 일정이 있는 날에 강조 표시. modifiersClassNames 는 클래스 1개만 붙일 수 있어
+                // '건수' 같은 가변 정보는 표현할 수 없다(react-day-picker v9 제약).
+                modifiers={{ hasSchedule: scheduleDates }}
+                modifiersClassNames={{ hasSchedule: 'font-bold text-primary underline decoration-2 underline-offset-4' }}
+                // 래퍼 기본 셀 크기는 Popover 선택기용(h-9 w-9)이라 월간 뷰에 맞게 키운다.
+                // calendar.tsx 가 호출자 classNames 를 뒤에 스프레드하므로 이 값이 이긴다.
+                classNames={{
+                  months: 'relative flex flex-col',
+                  month_grid: 'w-full border-collapse',
+                  day: 'h-12 w-12 text-center p-0',
+                  day_button: 'e2e-day-button h-12 w-12 rounded-lg font-bold hover:bg-muted transition-colors',
+                  weekday: 'w-12 text-[11px] font-bold uppercase text-muted-foreground',
+                }}
+              />
+            </div>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-foreground">
+                  {selectedDate
+                    ? `${format(selectedDate, 'yyyy년 M월 d일 (E)', { locale: ko })} 일정`
+                    : `${format(currentDate, 'yyyy년 M월', { locale: ko })} 전체 일정`}
+                </h2>
+                {selectedDate && (
+                  <Button variant="outline" size="sm" onClick={() => setSelectedDate(undefined)}>
+                    전체 보기
+                  </Button>
+                )}
+              </div>
+              <StandardDataTable
+                columns={scheduleColumns}
+                data={visibleSchedules}
+                loading={isScheduleLoading}
+                keyField="schdlSn"
+                emptyMessage="등록된 일정이 없습니다."
+                // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
+                error={isScheduleError ? (scheduleError instanceof Error ? scheduleError : new Error('일정을 불러오지 못했습니다.')) : null}
+                onRetry={() => void refetchSchedules()}
+              />
+            </div>
           </div>
-        </div>
-      </HubSectionCard>
+        ) : activeTab === 'job' ? (
+          <StandardDataTable
+            columns={jobColumns}
+            data={jobs}
+            loading={isJobLoading}
+            // 목록이 '내 업무'로 좁혀진 상태의 빈 화면은 데이터 유실처럼 보이기 쉽다.
+            // 왜 비었는지와 다음 행동('부서 전체' 선택)을 문구로 알려 준다.
+            emptyMessage={
+              jobScope === 'mine'
+                ? '내가 담당자인 업무가 없습니다. 부서 전체를 보려면 조회 범위에서 \'부서 전체\'를 선택하십시오.'
+                : emptyResultMessage(searchKeyword, '등록된 업무가 없습니다.')
+            }
+            error={isJobError ? (jobError instanceof Error ? jobError : new Error('업무 목록을 불러오지 못했습니다.')) : null}
+            onRetry={() => void refetchJobs()}
+            pagination={{
+              currentPage: jobPage,
+              totalPages: Math.max(1, jobTotalPages),
+              onPageChange: setJobPage,
+              // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+              pageSize: PAGE_UNIT,
+            }}
+          />
+        ) : (
+          <StandardDataTable
+            columns={reportColumns}
+            data={reports}
+            loading={isReportLoading}
+            emptyMessage={emptyResultMessage(searchKeyword, '등록된 업무 보고가 없습니다.')}
+            error={isReportError ? (reportError instanceof Error ? reportError : new Error('업무 보고를 불러오지 못했습니다.')) : null}
+            onRetry={() => void refetchReports()}
+            pagination={{
+              currentPage: reportPage,
+              totalPages: Math.max(1, reportTotalPages),
+              onPageChange: setReportPage,
+              // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+              pageSize: PAGE_UNIT,
+            }}
+          />
+        )}
+      </div>
+    </WorkListPage>
 
       {/* 일정 등록 다이얼로그 — 캘린더에서 선택한 날짜가 기본값이 된다. */}
       <StandardModal
@@ -674,6 +644,6 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           onCancel={() => { setReportModalOpen(false); setEditingReport(null); }}
         />
       </StandardModal>
-    </div>
+    </>
   );
 }

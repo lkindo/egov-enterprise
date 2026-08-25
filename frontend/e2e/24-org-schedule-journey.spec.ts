@@ -185,7 +185,10 @@ test.describe('Tier 24: 조직 ↔ 일정 통합 사슬', () => {
 
             // 캘린더 섹션이 렌더되어야 한다. (그리드 셀 자체는 react-day-picker 내부 구조라
             //  단언 대상으로 삼지 않는다 — 라이브러리 업그레이드에 취약하다.)
-            await expect(page.getByText('일정 캘린더').first()).toBeVisible({ timeout: 30000 });
+            // [2026-08-25 A1 이행] '일정 캘린더'는 이제 탭 라벨이기도 하다 —
+            // 단순 텍스트 가시성이 아니라 그 탭이 실제로 선택됐는지를 본다.
+            await expect(page.getByRole('tab', { name: '일정 캘린더' }))
+                .toHaveAttribute('aria-selected', 'true', { timeout: 30000 });
 
             // 등록 버튼 — 과거에는 onClick 이 없는 死버튼이라 등록 경로 자체가 없었다.
             const createBtn = page.getByRole('button', { name: '일정 등록' }).first();
