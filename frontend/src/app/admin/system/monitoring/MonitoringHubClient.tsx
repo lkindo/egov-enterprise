@@ -70,7 +70,8 @@ const MONITORING_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN', 'OBSERV
 /** 목록 탭(서버 데이터 조회 + 페이저를 쓰는 탭) 여부 */
 const LIST_TABS: MonitoringTab[] = ['SECURITY', 'SYSTEM', 'LOGIN', 'COMMENTS'];
 
-const PAGE_SIZE = 50;
+/** 페이지당 건수 기본값. 사용자가 바꾸면 화면 상태가 이긴다(A1 필수 — 페이지당 건수 선택). */
+const DEFAULT_PAGE_SIZE = 50;
 
 /**
  * 에이전트 하네스 아틀라스의 스킬 카탈로그.
@@ -166,6 +167,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
 
   const [isPending, startTransition] = useTransition();
   const [searchKeyword, setSearchKeyword] = useState('');
+  /* 페이지당 건수는 URL 에 싣지 않는다 — 새 query producer 를 만들지 않는다는 기존 계약을 따른다. */
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
@@ -206,22 +209,22 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   };
 
   const { data: auditData, isLoading: isAuditLoading, error: auditError, refetch: refetchAudit } = useQuery({
-    queryKey: ['admin-audit-logs', searchKeyword, page],
-    queryFn: () => auditAdminService.getAuditLogs({ page: page - 1, size: PAGE_SIZE, keyword: searchKeyword }),
+    queryKey: ['admin-audit-logs', searchKeyword, page, pageSize],
+    queryFn: () => auditAdminService.getAuditLogs({ page: page - 1, size: pageSize, keyword: searchKeyword }),
     enabled: activeTab === 'SECURITY'
   });
   const auditLogs = useMemo(() => auditData?.list || [], [auditData]);
 
   const { data: systemLogData, isLoading: isSystemLoading, error: systemLogError, refetch: refetchSystemLogs } = useQuery({
-    queryKey: ['admin-system-logs', searchKeyword, page],
-    queryFn: () => systemLogAdminService.getSystemLogs({ page: page - 1, size: PAGE_SIZE, searchWrd: searchKeyword }),
+    queryKey: ['admin-system-logs', searchKeyword, page, pageSize],
+    queryFn: () => systemLogAdminService.getSystemLogs({ page: page - 1, size: pageSize, searchWrd: searchKeyword }),
     enabled: activeTab === 'SYSTEM'
   });
   const systemLogs = useMemo(() => systemLogData?.list || [], [systemLogData]);
 
   const { data: loginLogData, isLoading: isLoginLoading, error: loginLogError, refetch: refetchLoginLogs } = useQuery({
-    queryKey: ['admin-login-logs', searchKeyword, page],
-    queryFn: () => systemLogAdminService.getLoginLogs({ page: page - 1, size: PAGE_SIZE, searchWrd: searchKeyword }),
+    queryKey: ['admin-login-logs', searchKeyword, page, pageSize],
+    queryFn: () => systemLogAdminService.getLoginLogs({ page: page - 1, size: pageSize, searchWrd: searchKeyword }),
     enabled: activeTab === 'LOGIN'
   });
   const loginLogs = useMemo(() => loginLogData?.list || [], [loginLogData]);
@@ -229,8 +232,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   // ⚠ 백엔드 CommentApiController 는 키워드 검색을 지원하지 않는다(CommentAdminService 주석 참조).
   //    따라서 COMMENTS 탭에서는 검색 입력을 렌더하지 않고, queryKey 에도 검색어를 넣지 않는다.
   const { data: commentData, isLoading: isCommentLoading, error: commentError, refetch: refetchComments } = useQuery({
-    queryKey: ['admin-comments', page],
-    queryFn: () => commentAdminService.getComments({ page: page - 1, size: PAGE_SIZE }),
+    queryKey: ['admin-comments', page, pageSize],
+    queryFn: () => commentAdminService.getComments({ page: page - 1, size: pageSize }),
     enabled: activeTab === 'COMMENTS'
   });
   const comments = useMemo(() => commentData?.list || [], [commentData]);
@@ -821,7 +824,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                 currentPage: page,
                 totalPages: listConfig.totalPage,
                 // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
-                pageSize: PAGE_SIZE,
+                pageSize,
+                onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
                 onPageChange: (p) => setPage(p)
               }}
             />
@@ -877,7 +881,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
          */}
          <div className="p-10 space-y-8 font-sans">
             <div className="space-y-2">
-               <h4 className="text-sm font-bold text-foreground tracking-tight">현재 조회 결과 반출</h4>
+               {/* 다이얼로그 제목이 이미 같은 문구를 소유한다 — 소제목을 중복시키면
+                   같은 텍스트가 두 번 잡혀 접근 이름이 모호해진다(CI e2e strict-mode 위반 실측). */}
                <p className="text-xs font-medium text-muted-foreground leading-relaxed">
                   {listConfig
                     ? `‘${listConfig.label}’ 탭에서 현재 조회된 ${listConfig.data.length}건을 엑셀(CSV · UTF-8 BOM)로 내려받습니다. 서버 전량 반출은 지원하지 않으며, 페이지를 이동한 뒤 다시 실행하면 해당 페이지가 반출됩니다.`

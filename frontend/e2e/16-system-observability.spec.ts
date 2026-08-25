@@ -36,7 +36,7 @@ test.describe('Tier 16: System Observability & Intelligence', () => {
         // exportData()가 연 '리포트 스냅샷' 모달 검증 (허브 실제 UI — 구 footer 브랜딩은 라우트 통합으로 제거됨)
         const page = obsPage['page'];
         // [2026-08-25] 모달 제목을 한국어로 정정했다(영문 마케팅 명칭 제거).
-        await expect(page.getByText('현재 조회 결과 반출')).toBeVisible();
+        await expect(page.getByRole('dialog', { name: '현재 조회 결과 반출' })).toBeVisible();
     });
 
     test('should verify advanced analytics: visitor and word statistics', async ({ page }) => {
