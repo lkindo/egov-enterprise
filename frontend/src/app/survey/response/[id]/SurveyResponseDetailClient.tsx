@@ -39,7 +39,7 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
     }
 
     return (
-        <div className="container mx-auto py-8 max-w-4xl space-y-8 animate-in fade-in duration-500">
+        <div className="container mx-auto py-8 max-w-4xl space-y-8">
             <div className="flex items-center gap-4">
                 <Button variant="ghost" size="icon" aria-label="뒤로 가기" onClick={() => router.back()} className="rounded-lg">
                     <ArrowLeft className="h-5 w-5" />

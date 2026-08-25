@@ -115,7 +115,7 @@ export default function AdminDashboardClient() {
   }, [auditData]);
 
   return (
-    <div className="space-y-6 md:space-y-8 pb-12 animate-in fade-in duration-700">
+    <div className="space-y-6 md:space-y-8 pb-12">
       <HubHeader
         headingLevel={1}
         title="관리자"

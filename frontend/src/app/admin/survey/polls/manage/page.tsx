@@ -3,7 +3,7 @@ import { Vote } from 'lucide-react';
 
 export default function SurveyPollsManagePage() {
   return (
-    <div className="space-y-6 p-8 animate-in fade-in duration-700">
+    <div className="space-y-6 p-8">
       <PageHeader
         title="설문 여론조사 관리"
         breadcrumbs={[{ label: '설문조사' }, { label: '여론조사 관리' }]}

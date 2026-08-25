@@ -160,7 +160,7 @@ export default function ObservabilityPage() {
     value === PLACEHOLDER ? '미가용' : liveLabel;
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
+    <div className="space-y-12 pb-24">
       <PageHeader
         title="시스템 통합 관제"
         breadcrumbs={[{ label: '운영환경' }, { label: '옵저버빌리티' }]}

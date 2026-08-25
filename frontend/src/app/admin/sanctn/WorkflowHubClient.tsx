@@ -48,7 +48,7 @@ export default function WorkflowHubClient({ defaultTab = 'FORMS' }: { defaultTab
  ];
 
  return (
- <div className="space-y-10 pb-20 animate-in fade-in duration-1000">
+ <div className="space-y-10 pb-20">
   {/* --- Header --- */}
   <div className="flex items-center justify-between px-4">
   <div className="flex items-center gap-4">

@@ -67,7 +67,7 @@ export default function CommunityBoardsWriteClient() {
  };
 
  return (
- <div className="space-y-10 pb-20 animate-in fade-in duration-1000">
+ <div className="space-y-10 pb-20">
  <PageHeader
  title="새 게시물 작성"
  breadcrumbs={[{ label: '커뮤니티' }, { label: '게시판 관리' }, { label: '새 게시물' }]}

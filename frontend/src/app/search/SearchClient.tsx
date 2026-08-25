@@ -131,7 +131,7 @@ export const SearchResultsContent = ({
     ];
 
     return (
-        <div className="max-w-6xl mx-auto space-y-10 pb-32 animate-in fade-in duration-700 p-4 md:p-10">
+        <div className="max-w-6xl mx-auto space-y-10 pb-32 p-4 md:p-10">
             {/* Search Header */}
             <div className="relative group p-12 bg-surface-inverse rounded-lg overflow-hidden shadow-2xl shadow-primary/10">
                 <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-primary/20 rounded-lg blur-[120px] animate-pulse" />
