@@ -18,6 +18,7 @@ const A7_IMPORT = /from\s+['"]@\/app\/components\/patterns\/report-page['"]/;
  */
 const EXPECTED_IMPORTERS = [
   'src/app/admin/stats/AdminStatsClient.tsx',
+  'src/app/admin/survey/stats/SurveyStatsClient.tsx',
 ];
 
 function screenFiles(directory: string): string[] {
@@ -53,6 +54,17 @@ describe('A7 report adoption census', () => {
     expect(shell).not.toMatch(/basis\?: React\.ReactNode;/);
     // 조회 조건 슬롯은 하나뿐이어야 차트와 표가 다른 조건으로 갈라지지 않는다.
     expect(shell.match(/filter\?: React\.ReactNode;/g)).toHaveLength(1);
+  });
+
+  it('/admin/survey/stats가 셸을 경유하고 임베드 시 제목을 중첩하지 않는다', () => {
+    const client = source('src/app/admin/survey/stats/SurveyStatsClient.tsx');
+
+    expect(client).toMatch(/<ReportPage[\s>]/);
+    expect(client).toMatch(/basis=\{/);
+    expect(client).toMatch(/headingLevel=\{embedded \? 2 : 1\}/);
+    expect(client).toContain('showBreadcrumb={!embedded}');
+    // 응답 합계가 서버 전체가 아니라 현재 페이지 기준이라는 사실을 화면이 밝힌다.
+    expect(client).toContain('현재 페이지');
   });
 
   it('/admin/stats가 지표·차트·원본 표를 한 화면에서 함께 제공한다', () => {

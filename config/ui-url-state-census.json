@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "3d4a985b4c1360dc91cc8e78515cd9c6bc5227cacac906a87c32c89c6404d6ff"
+    "inventoryHash": "3d031c5ef14ae61f1dae1a53761f6651a515454008958e54511ed8edb1730107"
   },
   "summary": {
     "sourceFileCount": 488,
-    "records": 528,
-    "syntaxOccurrences": 598,
-    "ambiguousRecords": 507,
-    "unverifiedRecords": 528,
+    "records": 527,
+    "syntaxOccurrences": 597,
+    "ambiguousRecords": 506,
+    "unverifiedRecords": 527,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -40,7 +40,7 @@
     "byKind": {
       "config-redirect": 15,
       "dynamic-segment": 11,
-      "form-producer": 45,
+      "form-producer": 44,
       "navigation-producer": 155,
       "page-redirect": 5,
       "query-builder": 21,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 363,
+      "navigation": 362,
       "request-telemetry": 165
     }
   },
@@ -9425,45 +9425,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/survey/respondents/page.tsx",
         "detector": "server-redirect-call",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-4124EEB3B6CE5A",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "implicit-or-computed-method",
-      "source": "frontend/src/app/admin/survey/stats/SurveyStatsClient.tsx",
-      "producerFile": "frontend/src/app/admin/survey/stats/SurveyStatsClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/survey/stats",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "form-method-or-interception-unresolved",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/survey/stats/SurveyStatsClient.tsx",
-        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },

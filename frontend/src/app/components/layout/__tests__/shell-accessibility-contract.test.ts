@@ -107,6 +107,16 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'system', 'policies', 'PolicyAdminClient.tsx'],
     ];
 
+    // A7(현황) 셸로 이행한 화면은 제목을 ReportPage 에 위임한다 — 자체 h1 을 다시 만들지 않는다.
+    for (const pathParts of [
+      ['admin', 'stats', 'AdminStatsClient.tsx'],
+      ['admin', 'survey', 'stats', 'SurveyStatsClient.tsx'],
+    ]) {
+      const source = readAppSource(...pathParts);
+      expect(source, `${pathParts.join('/')}: A7 셸을 경유하지 않습니다`).toMatch(/<ReportPage[\s>]/);
+      expect(source, `${pathParts.join('/')}: 셸 밖에서 h1 을 다시 만듭니다`).not.toMatch(/<h1[\s>]/);
+    }
+
     for (const pathParts of delegatedHeadingSources) {
       const source = readAppSource(...pathParts);
       expect(source, `${pathParts.join('/')}: 셸을 경유하지 않습니다`).toMatch(/<WorkListPage\b/);
@@ -121,7 +131,6 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'community', 'boards', 'select-board-list', 'BoardListClient.tsx'],
       ['admin', 'sanctn', 'WorkflowHubClient.tsx'],
       ['admin', 'stats', 'IntelligenceHubClient.tsx'],
-      ['admin', 'survey', 'stats', 'SurveyStatsClient.tsx'],
       ['admin', 'survey', 'manage', 'create', 'SurveyManageCreateClient.tsx'],
       ['admin', 'survey', 'manage', '[id]', 'SurveyManageDetailClient.tsx'],
       ['admin', 'system', 'common-code', 'codes', 'CommonCodeCodesClient.tsx'],
