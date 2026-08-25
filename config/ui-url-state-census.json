@@ -23,12 +23,12 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "3d031c5ef14ae61f1dae1a53761f6651a515454008958e54511ed8edb1730107"
+    "inventoryHash": "fc7af1e5889d2e0542878fde6cb09d849c94b671639cf950a9eb5a668f1ba4b0"
   },
   "summary": {
     "sourceFileCount": 488,
     "records": 527,
-    "syntaxOccurrences": 597,
+    "syntaxOccurrences": 596,
     "ambiguousRecords": 506,
     "unverifiedRecords": 527,
     "exactPopulations": {
@@ -4006,7 +4006,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
         "detector": "router-navigation",
-        "occurrenceCount": 2
+        "occurrenceCount": 1
       }
     },
     {

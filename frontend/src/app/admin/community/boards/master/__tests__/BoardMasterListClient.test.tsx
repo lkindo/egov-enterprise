@@ -40,6 +40,14 @@ vi.mock('@tanstack/react-query', () => ({
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mocks.push }),
+  // [2026-08-25 A1 이행] WorkListPage 의 브레드크럼이 현재 경로·쿼리를 읽는다.
+  usePathname: () => '/admin/community/boards/master',
+  useSearchParams: () => new URLSearchParams(),
+}));
+
+// 브레드크럼은 메뉴 SSOT 를 조회한다 — 이 테스트의 대상이 아니므로 응답을 고정한다.
+vi.mock('@/services/business/user/MenuService', () => ({
+  menuService: { getHeadMenus: vi.fn().mockResolvedValue([]) },
 }));
 
 vi.mock('@/contexts/AuthContext', () => ({
@@ -80,7 +88,8 @@ describe('BoardMasterListClient selection contract', () => {
     const user = userEvent.setup();
     render(<BoardMasterListClient />);
 
-    const table = screen.getByRole('table', { name: '데이터 목록' });
+    // [2026-08-25 A1 이행] 표에 화면 고유 접근 이름을 부여했다(같은 페이지의 여러 표를 구분).
+    const table = screen.getByRole('table', { name: '게시판 마스터 목록' });
     const checkboxes = within(table).getAllByRole('checkbox');
     expect(checkboxes).toHaveLength(3);
 
