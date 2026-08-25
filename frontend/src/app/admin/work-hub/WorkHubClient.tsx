@@ -69,7 +69,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   // 업무 목록의 소유 스코프. 기본은 '내 업무'(내가 담당자인 업무)이고, 토글로 부서 전체를 볼 수 있다.
   // 서버도 scope 미지정을 'mine' 으로 해석하므로 기본값이 양쪽에서 일치한다.
   const [jobScope, setJobScope] = useState<'mine' | 'dept'>('mine');
-  const PAGE_UNIT = 10;
+  /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
+  const [pageUnit, setPageUnit] = useState(10);
   // 캘린더 탭의 표시 기준 월. 월 이동 시 해당 월의 일정을 다시 조회한다.
   const initialDate = parseYmd(initialYmd);
   if (!initialDate) {
@@ -131,8 +132,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   } = useQuery({
     // jobScope 를 queryKey 에 포함해야 토글 시 재조회된다. 빠뜨리면 캐시된 이전 스코프 결과가
     // 그대로 남아 "토글이 먹지 않는" 것처럼 보인다.
-    queryKey: ['work-jobs', searchKeyword, jobPage, jobScope],
-    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: searchKeyword, pageIndex: jobPage, pageUnit: PAGE_UNIT, scope: jobScope }),
+    queryKey: ['work-jobs', searchKeyword, jobPage, jobScope, pageUnit],
+    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: searchKeyword, pageIndex: jobPage, pageUnit, scope: jobScope }),
     enabled: activeTab === 'job'
   });
   const jobs = jobData?.list || [];
@@ -145,8 +146,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     error: reportError,
     refetch: refetchReports,
   } = useQuery({
-    queryKey: ['work-reports', searchKeyword, reportPage],
-    queryFn: () => reportService.getReports({ pageIndex: reportPage, pageUnit: PAGE_UNIT, searchWrd: searchKeyword }),
+    queryKey: ['work-reports', searchKeyword, reportPage, pageUnit],
+    queryFn: () => reportService.getReports({ pageIndex: reportPage, pageUnit, searchWrd: searchKeyword }),
     enabled: activeTab === 'report'
   });
   const reports = reportData?.list || [];
@@ -586,7 +587,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
               totalPages: Math.max(1, jobTotalPages),
               onPageChange: setJobPage,
               // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
-              pageSize: PAGE_UNIT,
+              pageSize: pageUnit,
+              onPageSizeChange: (size) => { setPageUnit(size); setJobPage(1); },
             }}
           />
         ) : (
@@ -602,7 +604,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
               totalPages: Math.max(1, reportTotalPages),
               onPageChange: setReportPage,
               // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
-              pageSize: PAGE_UNIT,
+              pageSize: pageUnit,
+              onPageSizeChange: (size) => { setPageUnit(size); setReportPage(1); },
             }}
           />
         )}

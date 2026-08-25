@@ -86,7 +86,8 @@ interface BannerAdminClientProps {
 }
 
 /** 화면 페이지 크기. 서버는 Spring Pageable 의 size 를 그대로 수용한다(@PageableDefault size=10 은 미지정 시 기본값). */
-const PAGE_SIZE = 20;
+/** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
+const DEFAULT_PAGE_SIZE = 20;
 
 export default function BannerAdminClient({ initialBanners, initialPopups }: BannerAdminClientProps) {
   const [now, setNow] = useState<Date | null>(null);
@@ -120,6 +121,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  const setTab = useCallback((tab: 'banner' | 'popup') => syncUrl(tab, 1), [syncUrl]);
  const setPage = useCallback((nextPage: number) => syncUrl(activeTab, nextPage), [syncUrl, activeTab]);
 
+ const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
  const [isModalOpen, setIsOpen] = useState(false);
  const [editingItem, setEditingItem] = useState<Banner | Popup | null>(null);
  const [formFiles, setFormFiles] = useState<File[]>([]);
@@ -191,13 +193,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
    * 내려와 11번째 자산부터는 수정·게시중단이 UI 상 불가능했다. 정상 페이징 + 페이저 연결로 정정한다.
    */
   const { data: bannerPageData, isLoading: isBannersLoading, error: bannerError, refetch: refetchBanners } = useQuery({
-  queryKey: ['admin-banners', bannerPage],
-  queryFn: () => bannerAdminService.getBannerList({ page: bannerPage - 1, size: PAGE_SIZE })
+  queryKey: ['admin-banners', bannerPage, pageSize],
+  queryFn: () => bannerAdminService.getBannerList({ page: bannerPage - 1, size: pageSize })
   });
 
   const { data: popupPageData, isLoading: isPopupsLoading, error: popupError, refetch: refetchPopups } = useQuery({
-  queryKey: ['admin-popups', popupPage],
-  queryFn: () => popupAdminService.getPopupList({ page: popupPage - 1, size: PAGE_SIZE })
+  queryKey: ['admin-popups', popupPage, pageSize],
+  queryFn: () => popupAdminService.getPopupList({ page: popupPage - 1, size: pageSize })
   });
 
   /*
@@ -536,7 +538,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
             currentPage: page,
             totalPages: bannerPageData?.totalPage || 1,
             // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
-            pageSize: PAGE_SIZE,
+            pageSize,
+            onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
             onPageChange: setPage
           }}
         />
@@ -553,7 +556,8 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
             currentPage: page,
             totalPages: popupPageData?.totalPage || 1,
             // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
-            pageSize: PAGE_SIZE,
+            pageSize,
+            onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
             onPageChange: setPage
           }}
         />
