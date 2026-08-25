@@ -45,7 +45,9 @@ export default function SecurityRoleClient() {
  const searchKeyword = useDebouncedValue(searchInput, 300);
  // PagePagination은 1-based, ApiService의 표준 page 입력은 0-based다.
  // pageNo는 변환 대상이 아니어서 서버의 BaseSearchDto에서 무시된다.
- const params: SearchParams = { page: page - 1, searchKeyword };
+ /** 페이지당 건수(A1 필수). URL 에는 싣지 않는다. */
+ const [pageSize, setPageSize] = useState(10);
+ const params: SearchParams = { page: page - 1, size: pageSize, searchKeyword };
  const [isDialogOpen, setIsDialogOpen] = useState(false);
  const [formData, setFormData] = useState<RoleManage>({
     roleId: '',
@@ -58,7 +60,7 @@ export default function SecurityRoleClient() {
 
   // 조회 실패를 '데이터 없음'으로 위장하지 않는다 — error/onRetry 를 테이블까지 내려보낸다.
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: [...ROLES_QUERY_KEY, page, searchKeyword],
+    queryKey: [...ROLES_QUERY_KEY, page, searchKeyword, pageSize],
     queryFn: () => roleAdminService.getRoleList(params),
     staleTime: 5 * 60 * 1000,
   });
@@ -229,7 +231,8 @@ export default function SecurityRoleClient() {
  currentPage: page,
  totalPages: pagination?.totalPageCount ?? 1,
  onPageChange: (p) => setPage(p),
- pageSize: pagination?.recordCountPerPage ?? 10,
+ pageSize: pagination?.recordCountPerPage ?? pageSize,
+ onPageSizeChange: (size: number) => { setPageSize(size); setPage(1); },
  }}
  />
 

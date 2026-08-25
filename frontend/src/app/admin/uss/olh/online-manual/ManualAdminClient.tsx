@@ -41,7 +41,8 @@ import {
 } from '@/components/ui/form';
 import { z } from 'zod';
 
-const PAGE_SIZE = 10;
+/** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
+const DEFAULT_PAGE_SIZE = 10;
 
 export default function ManualAdminClient({
   initialManuals
@@ -64,6 +65,7 @@ export default function ManualAdminClient({
     const raw = Number(searchParams.get('page'));
     return Number.isFinite(raw) && raw >= 1 ? Math.floor(raw) : 1;
   });
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
@@ -79,12 +81,12 @@ export default function ManualAdminClient({
   }, [pathname, router, searchParams]);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['admin-manuals', debouncedKeyword, page],
+    queryKey: ['admin-manuals', debouncedKeyword, page, pageSize],
     // 서버는 Spring Pageable(0-base)을 읽는다.
     queryFn: () => manualAdminService.getManualList({
       keyword: debouncedKeyword || undefined,
       page: page - 1,
-      size: PAGE_SIZE,
+      size: pageSize,
     }),
     initialData: (page === 1 && !debouncedKeyword) ? (initialManuals ?? undefined) : undefined,
   });
@@ -286,7 +288,8 @@ export default function ManualAdminClient({
           currentPage: page,
           totalPages: data?.totalPage || 1,
           // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
-          pageSize: PAGE_SIZE,
+          pageSize,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
           onPageChange: goToPage,
         }}
       />

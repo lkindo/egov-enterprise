@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
@@ -16,11 +16,12 @@ import { Plus, Eye } from 'lucide-react';
 import { FREE_BOARD_ID, NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
 
 const DEFAULT_BBS_ID = NOTICE_BOARD_ID; // 공지사항 기본값
-/** 서버 요청 size 와 페이저 계산이 갈라지지 않도록 한 곳에서 선언한다. */
-const PAGE_SIZE = 10;
+/** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
+const DEFAULT_PAGE_SIZE = 10;
 
 function CommunityDetailContent() {
     const router = useRouter();
+    const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
     const { values, setSearchValues } = useSearchState({
         bbsId: DEFAULT_BBS_ID,
@@ -33,10 +34,10 @@ function CommunityDetailContent() {
     // "게시글이 존재하지 않습니다"(= 데이터 0건)로 위장됐다. useQuery 로 옮겨 isError/error/refetch 를
     // StandardDataTable 의 error/onRetry 로 그대로 전달한다.
     const { data, isLoading, isError, error, refetch } = useQuery({
-        queryKey: ['communityPosts', values.bbsId, values.searchWrd, values.searchCnd, values.page],
+        queryKey: ['communityPosts', values.bbsId, values.searchWrd, values.searchCnd, values.page, pageSize],
         queryFn: () => boardUserService.getPosts(values.bbsId, {
             page: Number(values.page) || 0,
-            size: PAGE_SIZE,
+            size: pageSize,
             searchWrd: values.searchWrd,
             searchCnd: values.searchCnd
         })
@@ -141,9 +142,10 @@ function CommunityDetailContent() {
                 pagination={{
                     /* 종전에는 page 상태만 있고 페이저가 없어서 11번째 글부터 도달할 수 없었다. */
                     currentPage: Number(values.page) + 1,
-                    totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+                    totalPages: Math.max(1, Math.ceil(total / pageSize)),
                     // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
-                    pageSize: PAGE_SIZE,
+                    pageSize,
+                    onPageSizeChange: (size) => { setPageSize(size); setSearchValues({ ...values, page: '0' }); },
                     onPageChange: (p) => setSearchValues({ ...values, page: String(p - 1) }),
                 }}
             />

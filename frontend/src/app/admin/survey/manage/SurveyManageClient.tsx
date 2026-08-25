@@ -15,7 +15,8 @@ import { toDisplayYmd, todayStorageYmd } from '@/lib/format-date';
 import { getPollStatus, POLL_STATUS_LABEL } from '@/lib/poll-status';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
-const PAGE_SIZE = 10;
+/** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
+const DEFAULT_PAGE_SIZE = 10;
 
 export default function SurveyManageClient({ embedded = false }: { embedded?: boolean }) {
   const router = useRouter();
@@ -29,12 +30,13 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
   // 검색어는 입력 컨트롤에 그대로 바인딩하고, 서버 요청에는 디바운스 값만 쓴다(P1-8).
   // 종전에는 params 객체에 검색어가 직접 들어 있어 **타이핑 한 글자마다 서버 요청**이 나갔다.
   const [page, setPage] = useState(0); // 0-base (서버 Pageable 과 동일)
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [keyword, setKeyword] = useState('');
   const debouncedKeyword = useDebouncedValue(keyword, 300);
 
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['admin-polls', page, debouncedKeyword],
-    queryFn: () => getPollList({ page, size: PAGE_SIZE, searchKeyword: debouncedKeyword }),
+    queryKey: ['admin-polls', page, debouncedKeyword, pageSize],
+    queryFn: () => getPollList({ page, size: pageSize, searchKeyword: debouncedKeyword }),
   });
 
   const polls: OnlinePollManageVO[] = data?.list || [];
@@ -51,7 +53,7 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
       header: '번호',
       accessor: (_, index) => (
         <span className="font-mono text-xs font-bold text-muted-foreground">
-          {(index !== undefined ? index + 1 + page * PAGE_SIZE : 0).toString().padStart(2, '0')}
+          {(index !== undefined ? index + 1 + page * pageSize : 0).toString().padStart(2, '0')}
         </span>
       ),
       className: 'w-20 text-center'
@@ -167,9 +169,10 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
         emptyMessage={emptyResultMessage(keyword, '등록된 설문이 없습니다.')}
         pagination={{
           currentPage: page + 1,
-          totalPages: Math.ceil(total / PAGE_SIZE),
+          totalPages: Math.ceil(total / pageSize),
           onPageChange: (p) => setPage(p - 1),
-          pageSize: PAGE_SIZE,
+          pageSize,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(0); },
         }}
       />
     </WorkListPage>

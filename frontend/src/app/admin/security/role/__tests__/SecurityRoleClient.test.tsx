@@ -96,13 +96,13 @@ describe('SecurityRoleClient', () => {
     renderClient();
 
     await waitFor(() => {
-      expect(mocks.list).toHaveBeenCalledWith({ page: 0, searchKeyword: '' });
+      expect(mocks.list).toHaveBeenCalledWith({ page: 0, size: 10, searchKeyword: '' });
     });
 
     fireEvent.click(await screen.findByRole('button', { name: '롤 다음 페이지' }));
 
     await waitFor(() => {
-      expect(mocks.list).toHaveBeenCalledWith({ page: 1, searchKeyword: '' });
+      expect(mocks.list).toHaveBeenCalledWith({ page: 1, size: 10, searchKeyword: '' });
     });
   });
 });

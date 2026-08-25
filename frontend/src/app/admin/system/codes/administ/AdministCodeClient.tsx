@@ -41,7 +41,8 @@ const administCodeSchema = AdministCodeDtoSchema.extend({
 type AdministCodeFormValues = z.infer<typeof administCodeSchema>;
 
 /** 서버 페이지 크기(백엔드 기본 pageUnit). PagePagination 계산과 동일해야 한다. */
-const PAGE_SIZE = 10;
+/** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
+const DEFAULT_PAGE_SIZE = 10;
 
 export default function AdministCodeClient({
  initialData,
@@ -56,6 +57,7 @@ export default function AdministCodeClient({
  /** 실제 서버에 제출된 검색어. 입력 중 값은 KeywordFilter 가 소유한다(제출형 검색). */
  const [appliedSearch, setAppliedSearch] = useState('');
  const [pageNumber, setPageNumber] = useState(1);
+ const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
  const form = useAppForm(administCodeSchema, {
    defaultValues: {
@@ -79,11 +81,11 @@ export default function AdministCodeClient({
  error,
  refetch,
  } = useQuery({
- queryKey: ['administ-codes', appliedSearch, pageNumber],
+ queryKey: ['administ-codes', appliedSearch, pageNumber, pageSize],
  queryFn: () => codeAdminService.getAdministCodeList({ searchWrd: appliedSearch, pageNo: pageNumber }),
  placeholderData: (prev) => prev ?? (
  pageNumber === 1 && appliedSearch === '' && seedList.length > 0
- ? { list: seedList, total: initialData?.total ?? seedList.length, page: 1, size: PAGE_SIZE, totalPage: 1 }
+ ? { list: seedList, total: initialData?.total ?? seedList.length, page: 1, size: pageSize, totalPage: 1 }
  : undefined
  ),
  });
@@ -218,9 +220,10 @@ export default function AdministCodeClient({
  emptyMessage={emptyResultMessage(appliedSearch, '등록된 행정 구역 코드가 없습니다.')}
  pagination={{
  currentPage: pageNumber,
- totalPages: Math.max(Math.ceil(total / PAGE_SIZE), 1),
+ totalPages: Math.max(Math.ceil(total / pageSize), 1),
  onPageChange: setPageNumber,
- pageSize: PAGE_SIZE,
+ pageSize,
+          onPageSizeChange: (size) => { setPageSize(size); setPageNumber(1); },
  }}
  />
 

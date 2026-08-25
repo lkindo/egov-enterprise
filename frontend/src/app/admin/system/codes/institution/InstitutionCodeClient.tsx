@@ -29,7 +29,8 @@ import { Input } from '@/components/ui/input';
 type InstitutionTab = 'list' | 'reception';
 
 /** 서버 페이지 크기(백엔드 기본 pageUnit). PagePagination 계산과 동일해야 한다. */
-const PAGE_SIZE = 10;
+/** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
+const DEFAULT_PAGE_SIZE = 10;
 
 export default function InstitutionCodeClient({
  initialData,
@@ -43,6 +44,7 @@ export default function InstitutionCodeClient({
  /** [P1-8] 타이핑마다 서버 요청이 나가지 않도록 공용 훅으로 디바운스한다. */
  const debouncedKeyword = useDebouncedValue(keyword, 300);
  const [page, setPage] = useState(1);
+ const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
  const { toast } = useToast();
  const confirm = useConfirm();
 
@@ -51,18 +53,18 @@ export default function InstitutionCodeClient({
  const hasSeed = seedList.length > 0;
 
  const listQuery = useQuery({
- queryKey: ['institution-codes', debouncedKeyword, page],
+ queryKey: ['institution-codes', debouncedKeyword, page, pageSize],
  queryFn: () => codeAdminService.getInstitutionCodeList({ searchWrd: debouncedKeyword, pageNo: page }),
  enabled: activeTab === 'list',
  placeholderData: (prev) => prev ?? (
  page === 1 && debouncedKeyword === '' && hasSeed
- ? { list: seedList, total: initialData?.total ?? seedList.length, page: 1, size: PAGE_SIZE, totalPage: 1 }
+ ? { list: seedList, total: initialData?.total ?? seedList.length, page: 1, size: pageSize, totalPage: 1 }
  : undefined
  ),
  });
 
  const receptionQuery = useQuery({
- queryKey: ['institution-code-receptions', debouncedKeyword, page],
+ queryKey: ['institution-code-receptions', debouncedKeyword, page, pageSize],
  queryFn: () => codeAdminService.getInstitutionCodeRecptnList({ searchWrd: debouncedKeyword, pageNo: page }),
  enabled: activeTab === 'reception',
  placeholderData: (prev) => prev,
@@ -350,9 +352,10 @@ export default function InstitutionCodeClient({
  emptyMessage={emptyResultMessage(keyword, '등록된 기관 코드가 없습니다.')}
  pagination={{
  currentPage: page,
- totalPages: Math.max(Math.ceil(total / PAGE_SIZE), 1),
+ totalPages: Math.max(Math.ceil(total / pageSize), 1),
  onPageChange: setPage,
- pageSize: PAGE_SIZE,
+ pageSize,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
  }}
  />
  ) : (
@@ -367,9 +370,10 @@ export default function InstitutionCodeClient({
  emptyMessage={emptyResultMessage(keyword, '수신 내역이 없습니다.')}
  pagination={{
  currentPage: page,
- totalPages: Math.max(Math.ceil(total / PAGE_SIZE), 1),
+ totalPages: Math.max(Math.ceil(total / pageSize), 1),
  onPageChange: setPage,
- pageSize: PAGE_SIZE,
+ pageSize,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
  }}
  />
  )}
