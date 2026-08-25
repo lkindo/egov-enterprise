@@ -21,6 +21,7 @@ import { emptyResultMessage } from '@/app/components/patterns/empty-result-messa
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useToast } from '@/app/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 import { 
   Dialog, 
   DialogContent, 
@@ -291,7 +292,9 @@ export function BoardMasterListClient() {
       filterStateKey="community-board-master"
       totalCount={isError ? undefined : totalCount}
       actions={
-        user?.role === 'ADMIN' && (
+        /* ⚠ 'ADMIN' 리터럴 하나만 보면 실제 관리자(role=ROLE_ADMIN)에게 진입이 사라진다.
+           라우트 게이트와 같은 집합을 쓴다. */
+        isAdministrativeRole(user?.role) && (
           <Button size="sm" onClick={() => router.push('/admin/community/boards/maker')} className="gap-2">
             <Plus className="w-4 h-4" aria-hidden="true" />
             생성 마법사

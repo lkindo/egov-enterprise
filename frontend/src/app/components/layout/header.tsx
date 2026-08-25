@@ -20,6 +20,7 @@ import {
   CircleDot
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 import { useLayout } from '@/contexts/LayoutContext';
 import { useNotifications } from '@/lib/hooks/use-notifications';
 import { AppNotificationDrawer } from '../ui/app-notification-drawer';
@@ -52,8 +53,6 @@ const DOMAIN_ROUTE_MAP: Record<number, string> = {
   9000000: '/admin/system/menus',
 };
 
-const ADMINISTRATIVE_ROLES = new Set(['ADMIN', 'SYSTEM', 'ROLE_ADMIN', 'ROLE_SYSTEM']);
-
 export function Header({ 
   initialMenus = [],
   menusPromise
@@ -65,7 +64,7 @@ export function Header({
   const router = useRouter();
   const { setTheme, resolvedTheme } = useTheme();
   const { user, logout } = useAuth();
-  const isAdministrativeUser = ADMINISTRATIVE_ROLES.has(user?.role ?? '');
+  const isAdministrativeUser = isAdministrativeRole(user?.role);
   const { isSidebarOpen, toggleSidebar, activeMenuNo, setActiveMenuNo } = useLayout();
   const { notifications, unreadCount, error: notificationsError, markAsRead, markAllAsRead, refresh: refreshNotifications } = useNotifications();
   const [isNotifOpen, setIsNotifOpen] = useState(false);
