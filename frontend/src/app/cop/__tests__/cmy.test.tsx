@@ -121,7 +121,7 @@ describe('CommunityHubClient', () => {
     expect(screen.queryByText('보안 커뮤니티')).not.toBeInTheDocument();
   });
 
-  it('uses the one-based pageIndex contract when searching', async () => {
+  it('서버가 실제로 읽는 파라미터로 조회한다(page/size/searchCnd/searchWrd)', async () => {
     renderWithClient(<CommunityHubClient initialData={mockInitialData} />);
 
     // [2026-08-24 A1 이행] 조회 조건이 WorkListPage 조회 조건 영역으로 올라가면서
@@ -130,10 +130,19 @@ describe('CommunityHubClient', () => {
       target: { value: '보안' },
     });
 
+    /*
+     * [2026-08-25 실측 수정] 종전 단언은 `{ pageIndex, searchKeyword }` 였다. 그러나
+     * CommunityApiController 는 Spring `Pageable`(page 0-based / size)과 `searchCnd`·`searchWrd`
+     * 를 읽는다 — 두 값 모두 서버에 닿지 않았고, 이 테스트는 **동작하지 않는 계약을 green 으로
+     * 고정하고 있었다**(클라이언트가 자기 관례를 스스로 확인한 셈이다).
+     * 서버는 이름 검색을 `searchCnd === '0'` 분기로만 지원한다.
+     */
     await waitFor(() => {
       expect(getCommunityListMock).toHaveBeenCalledWith({
-        pageIndex: 1,
-        searchKeyword: '보안',
+        page: 0,
+        size: 10,
+        searchCnd: '0',
+        searchWrd: '보안',
       });
     });
   });

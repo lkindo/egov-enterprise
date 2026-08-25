@@ -40,7 +40,8 @@ const CATEGORY_IDS = logCategories.map((c) => c.id);
 /** 카테고리 전환 시 페이지 번호를 URL 에서 함께 제거한다(3페이지에서 탭 전환 시 빈 화면 방지) */
 const TAB_RESET_PARAMS = ['page'] as const;
 
-const PAGE_SIZE = 10;
+/** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
+const DEFAULT_PAGE_SIZE = 10;
 
 /**
  * 서버 컴포넌트가 넘겨주는 첫 페이지 프리페치 결과.
@@ -78,6 +79,7 @@ export default function LogDashboardClient({
     resetParams: TAB_RESET_PARAMS,
   });
   const [page, setPage] = usePageParam();
+  const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [selectedLog, setSelectedLog] = useState<{
     category: LogCategoryId;
@@ -85,11 +87,11 @@ export default function LogDashboardClient({
   } | null>(null);
 
   const { data, isLoading, isFetching, error, refetch } = useQuery<PageResponse<IntegratedLogRow>>({
-    queryKey: ['admin-logs-integrated', activeCategory, page, searchKeyword],
+    queryKey: ['admin-logs-integrated', activeCategory, page, searchKeyword, pageSize],
     queryFn: async () => {
       // 시스템/로그인 로그 서비스는 `searchWrd`, 나머지는 `searchKeyword` 를 읽는다.
       // 둘 다 실어 보내야 카테고리 전환 후에도 검색어가 유실되지 않는다.
-      const apiParams = { page: page - 1, size: PAGE_SIZE, searchWrd: searchKeyword, searchKeyword };
+      const apiParams = { page: page - 1, size: pageSize, searchWrd: searchKeyword, searchKeyword };
       switch (activeCategory) {
         case 'LGN':
           return systemLogAdminService.getLoginLogs(apiParams);
@@ -292,7 +294,8 @@ export default function LogDashboardClient({
             currentPage: page,
             totalPages: Math.max(totalPages, 1),
             onPageChange: setPage,
-            pageSize: PAGE_SIZE,
+            pageSize,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
           }}
         />
       </div>

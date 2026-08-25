@@ -24,9 +24,10 @@ export class OpsGovernancePage {
     async verifyPolicyTab() {
         console.log(`>>> Verifying policy tab content in Monitoring Hub`);
         // tab=policy resolves to the LOGIN nav ('인증 접속 히스토리') inside the monitoring hub
-        await expect(this.page.getByText('인증 접속 히스토리')).toBeVisible();
-        // The central investigation data stream panel confirms the hub rendered
-        await expect(this.page.getByText('인베스티게이션')).toBeVisible();
+        // [2026-08-25 A1 이행] 장식 패널 라벨('데이터 스트림 / 인베스티게이션')이 사라졌다.
+        // 탭이 실제로 선택됐는지를 본다 — 텍스트 가시성보다 강한 단언이다.
+        await expect(this.page.getByRole('tab', { name: '인증 접속 히스토리' }))
+            .toHaveAttribute('aria-selected', 'true');
     }
 
     async gotoMenuByAuthority() {

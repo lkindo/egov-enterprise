@@ -23,17 +23,29 @@ export default function CommunityHubClient({
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const [page, setPage] = useState(1);
+  /** 페이지당 건수(A1 필수). URL 에는 싣지 않는다. */
+  const [pageSize, setPageSize] = useState(10);
   const [searchKeyword, setSearchKeyword] = useState('');
   // 'managed' = 내가 개설한(= 목록의 '관리자' 열) 커뮤니티. 서버에 소유자 필터 파라미터가 없어
   // 현재 조회된 페이지 안에서만 추리는 클라이언트 필터다.
   const [filter, setFilter] = useState<'all' | 'managed'>('all');
 
   const { data, isLoading, error, refetch } = useQuery({
-    queryKey: ['communities', searchKeyword, page],
-    // StandardDataTable 의 currentPage 는 1-based 이다. 공통 ApiService 의 `page`는
-    // 0-based 입력으로 간주해 +1 하므로, 여기서는 백엔드 계약인 pageIndex 를 명시한다.
-    queryFn: () => communityService.getCommunityList({ pageIndex: page, searchKeyword }),
-    initialData: (page === 1 && !searchKeyword) ? initialData : undefined
+    queryKey: ['communities', searchKeyword, page, pageSize],
+    /*
+     * [2026-08-25 실측 수정] 종전에는 `pageIndex`·`searchKeyword` 를 보냈는데
+     * CommunityApiController 는 **Spring `Pageable`(page 0-based / size)** 과
+     * `searchCnd`·`searchWrd` 를 읽는다. ApiService 의 매핑도 `page → pageIndex` 한 방향뿐이라
+     * 두 값 모두 서버에 닿지 않았다 — 페이지를 넘겨도 같은 목록이 오고, 검색어는 무시됐다.
+     * 서버가 이름 검색을 `searchCnd === '0'` 분기로만 지원하므로 그 값을 함께 보낸다.
+     */
+    queryFn: () => communityService.getCommunityList({
+      page: page - 1,
+      size: pageSize,
+      searchCnd: '0',
+      searchWrd: searchKeyword,
+    }),
+    initialData: (page === 1 && !searchKeyword && pageSize === 10) ? initialData : undefined
   });
 
   // 옵셔널 체이닝 결과를 memo 밖에서 스칼라로 고정한다. memo 안에서 user?.id 와 user.id 를
@@ -192,6 +204,8 @@ export default function CommunityHubClient({
         pagination={{
           currentPage: page,
           totalPages: data?.totalPage || 1,
+          pageSize,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
           onPageChange: (p) => setPage(p)
         }}
       />

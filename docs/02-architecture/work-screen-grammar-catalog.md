@@ -47,7 +47,7 @@
 | G2 | 조회조건은 목록 상단의 고정 영역이며, 접기/펴기 **상태를 유지**한다. | Fiori(filter bar는 list report에 필수이고 사용자가 설정한 접힘 상태를 앱이 유지해야 한다) + KRDS 상세 검색(필터 유형·수에 따라 목록 상단 막대나 사이드 패널에 배치) |
 | G3 | 결과 툴바에 **총 건수**와 뷰 설정(정렬·페이지당 건수·컬럼·내보내기)을 둔다. | KRDS 검색 결과(결과 수는 결과 페이지의 구성 요소) + Fiori(table toolbar) + MS(사용자가 표시 열과 순서를 고르고 저장) |
 | G4 | 첫 열은 사용자가 **행동할 수 있는 식별 정보**(상세 진입 지점)로 둔다. | MS(첫 열에 사용자가 선택해 상세로 갈 수 있는 중요한 정보를 둔다) + Fiori(list report → object page 진입) |
-| G5 | **시스템 기본 정렬을 정의**하고, 열 단위 정렬을 허용한다. | MS(시스템 뷰에 기본 정렬을 구현하고 열 기준 정렬을 허용) + KRDS 표(표는 대화형 요소가 아니며 **데이터 정렬이 예외**다) |
+| G5 | **시스템 기본 정렬을 정의**하고, 열 단위 정렬을 허용한다. 정렬 범위가 전체가 아니면 화면이 그 사실을 말한다. | MS(시스템 뷰에 기본 정렬을 구현하고 열 기준 정렬을 허용) + KRDS 표(표는 대화형 요소가 아니며 **데이터 정렬이 예외**다) |
 | G6 | 개수·퍼센트·용량 등 **양적 데이터는 우측 정렬**, 일반 텍스트·범주는 좌측 정렬한다. | KRDS 표 원문 |
 | G7 | **세로 열 구분선은 기본적으로 쓰지 않는다.** 시각적 복잡성을 올리므로 반드시 필요한 경우에만 넣는다. | KRDS 표 원문 |
 | G8 | 데이터 셀 텍스트는 **3줄을 넘기지 않는다.** 넘치면 요약하고 상세로 넘긴다. | KRDS 표 원문 |
@@ -184,26 +184,37 @@
 - **합격:** 중단 시 데이터 유실 경고 · 실행 결과가 건별로 보고됨.
 - **현재 화면:** 대량 등록·이관 경로. 현재 저장소에 확립된 사례가 적어 **A8은 파일럿 대상에서 후순위**다.
 
-## 6. 현재 소비 census (2026-08-24 실측)
+## 6. 현재 소비 census (2026-08-25 실측)
 
 `frontend/src/app` 기준, `__tests__`와 `loading.tsx`를 제외한 화면 파일에서 **import 경로**로 센 값이다(문자열 언급이 아니라 실제 소비). 이 정의는 [채택 census 게이트](../../frontend/src/__tests__/work-list-adoption-census.test.ts)와 같으며, 게이트가 값을 동결한다.
 
 | 항목 | 값 | 의미 |
 |---|---|---|
 | `StandardDataTable` 소비 화면 | 49 | 문법 전달의 모집단 |
-| 그중 `WorkListPage` 셸 경유 | **34** | W3 wave 1~4 — 되돌리기는 게이트가 red |
-| 그중 셸 없이 직접 조립 | **11** | 신규 유입은 게이트가 red. 화면이 맞는 archetype 셸로 이행하면 함께 내려간다 |
-| `sortKey`(열 정렬) 채택 | 11 | G5 — 이행 전 7 |
-| `onPageSizeChange` 채택 | 14 | A1 필수 — 이행 전 6 |
-| `KeywordFilter` 경유 조회 조건 | 9 | G2 — 조회 조건 조립의 단일 경로 |
-| `emptyResultMessage` 경유 빈 상태 | 17 | G15 — 결과 없음/데이터 없음 구분 |
-| `PagePagination` 별도 소비 | 4 | A2 compact master 등 표가 아닌 페이지 목록이 소유한다 |
+| 그중 `WorkListPage` 셸 경유 | **40** | W3 wave 1~13 — 되돌리기는 게이트가 red |
+| 그중 셸 없이 직접 조립 | **4** | 신규 유입은 게이트가 red. 남은 4건은 전부 이행 대상이 아니다(아래 참조) |
+| `MasterDetailPage`(A2) 소비 | 6 | 별도 exact census 가 고정 |
+| `ReportPage`(A7) 소비 | 2 | 별도 exact census 가 고정 |
+| `sortKey`(열 정렬) 채택 | 9 | G5 — 이행 전 7. **현재 구현은 클라이언트 정렬이라 범위가 현재 페이지다** — 여러 페이지 결과에서는 페이저 요약이 그 범위를 고지한다([계약](../../frontend/src/app/components/ui/__tests__/sort-scope-disclosure.test.tsx)). 서버 정렬 파라미터 도입은 별도 과제(GAP-UI-001) |
+| `onPageSizeChange` 채택 | 28 | A1 **필수**. 이행 전 6 → 14 → 28. 2026-08-25 실측에서 서버 페이징이 있는 A1 화면 15개가 컨트롤을 전달하지 않고 있었다(기능은 표가 처음부터 갖고 있었다) — [census 게이트](../../frontend/src/__tests__/page-size-adoption-census.test.ts)가 제공 여부와 queryKey 결속을 함께 고정한다 |
+| `KeywordFilter` 경유 조회 조건 | 17 | G2 — 조회 조건 조립의 단일 경로 |
+| `emptyResultMessage` 경유 빈 상태 | 30 | G15 — 결과 없음/데이터 없음 구분 |
+| `PagePagination` 별도 소비 | 0 | 표가 아닌 페이지 목록도 전부 셸·표 페이저로 수렴했다 |
 | `bulkActions` 채택 | 3 | A4 필수 미이행 |
-| `DataExportExcel` 소비 | 9 | A6 필수 부분 이행 |
+| `DataExportExcel` 소비 | 10 | A6 필수 부분 이행 |
+
+**남은 직접 조립 4건의 성격** — 2026-08-25 모니터링 허브 이행으로 **실제 이행 대상은 0건**이 됐다. 남은 4건은 archetype 이 다르거나(A5 스펙 계약), 라우트가 도달 불가하거나, 화면이 아니다.
+
+| 파일 | 성격 | 판정 |
+|---|---|---|
+| `admin/security/authority/SecurityHubClient.tsx` | 권한 매트릭스(A5) | 셸 없이 **스펙 계약**으로 고정하기로 판정(§5 A5). 이행 대상 아님 |
+| `admin/security/login-policy/LoginPolicyAdminClient.tsx` | 라우트가 리다이렉트되는 도달 불가 화면 | [next.config](../../frontend/next.config.ts) 가 `/admin/security/login-policy` 를 모니터링 허브로 보낸다. 이행해도 사용자에게 보이는 변화가 없고 채택 수치만 부풀어 **대상에서 제외**한다 |
+| `cop/sms/selectSmsList/SmsHubClient.tsx` | 같은 이유의 도달 불가 alias | 위와 동일. 정리 여부는 alias 승인 절차가 결정한다 |
+| `components/ui/smart-notification-hub.tsx` | 화면이 아니라 공유 컴포넌트 | 자기 화면 문법을 갖지 않는다. 이행 대상 아님 |
 
 > 정정: 최초 작성 시 적었던 58·7·6·10·4는 파일 안의 **문자열 언급**을 센 값이라 주석만 있는 파일 7건이 섞여 있었다. 위 표는 import 기준 재측정값이며 게이트와 정의가 같다.
 
-**핵심 판정:** 기능은 [standard-data-table.tsx](../../frontend/src/app/components/ui/standard-data-table.tsx)(headless TanStack 기반, 정렬 상태머신·`aria-sort`·페이지당 건수·일괄 액션 보유)에 이미 있고, A1 셸 소비는 **21/50(42%)**이다. 따라서 이행의 병목은 컴포넌트 개발이 아니라 **화면이 archetype을 선언하도록 만드는 것**이다.
+**핵심 판정:** 기능은 [standard-data-table.tsx](../../frontend/src/app/components/ui/standard-data-table.tsx)(headless TanStack 기반, 정렬 상태머신·`aria-sort`·페이지당 건수·일괄 액션 보유)에 이미 있고, 이행의 병목은 컴포넌트 개발이 아니라 **화면이 archetype을 선언하도록 만드는 것**이었다. 2026-08-25 기준 archetype 셸 경유는 48화면(A1 40 · A2 6 · A7 2)이고, 셸 없는 직접 조립 4건은 전부 이행 대상이 아니다(A5 스펙 계약 1 · 도달 불가 alias 2 · 공유 컴포넌트 1).
 
 로그 클러스터는 5화면 중 4화면(`privacy`·`system`·`user`·`web`)이 이행됐고, `login`은 아래 VRT 보류에 남아 있다. 이행된 4화면이 A6·A1의 참조 구현이다.
 
@@ -215,11 +226,11 @@ A2는 [채택 census 게이트](../../frontend/src/__tests__/master-detail-adopt
 |---|---|---|---|
 | W1 | **완료(2026-08-24)** | 이 카탈로그 + 밀도 계약 테스트 | 본 문서, [work-screen-grammar-contract.test.ts](../../frontend/src/__tests__/work-screen-grammar-contract.test.ts) — 값 드리프트·토큰 누락 red 실측 완료 |
 | W2 | **완료(2026-08-24)** | A1 archetype 셸 신설 + 패턴 갤러리 | [work-list-page.tsx](../../frontend/src/app/components/patterns/work-list-page.tsx), [갤러리 화면](../../frontend/src/app/admin/patterns/PatternGalleryClient.tsx), [문법 불변식 테스트](../../frontend/src/app/components/patterns/__tests__/work-list-page.test.tsx)(G1 순서 위반 red 실측 완료). 라우트 census 3종(capabilities 119→120 · disposition 119→120 · url-state 재생성)과 shell 집계를 같은 변경에서 갱신했고, 갤러리는 demo pack 소유(`demo-isolated` 제안, `reviewState=proposed`)라 core·collaboration 산출물에는 실리지 않는다 |
-| W3 | **진행 중(wave 1~4 완료 2026-08-24)** | A1 이행 웨이브 | wave 1(협업 2): 스크랩·주소록. wave 2(9): 로그 4종 + 운영 5화면. wave 3(5): 설문 응답자·네트워크·HPCM·온라인 매뉴얼·마이페이지 설정. wave 4(4): 행정구역 코드·기관 코드(탭형)·공개 설문 목록·커뮤니티 목록 — 장식 사이드바·조작 지표(`1.2k+` 등 계측 원천 없는 고정 문구)·죽은 검색(`console.log` onSearch)을 함께 제거했다. 공통 조립기 [KeywordFilter](../../frontend/src/app/components/patterns/keyword-filter.tsx)·[emptyResultMessage](../../frontend/src/app/components/patterns/empty-result-message.ts) 신설. [채택 census 게이트](../../frontend/src/__tests__/work-list-adoption-census.test.ts) 21/29(유입·이중 표기 red 실측, 오탐 1건 수정), status color BASELINE 656→653, h1 소유 계약을 셸 위임형으로 개정. **남은 직접 표 대상: 11화면**(A2·A7 셸 소비 화면은 각자 census 가 검증하므로 이 수에서 제외한다)**.** 그중 `/cop/sms/selectSmsList` 는 [next.config](../../frontend/next.config.ts) 가 `/admin/uss/ion/sms` 로 리다이렉트하는 alias 라 **클라이언트가 렌더되지 않는다**(disposition `retain-alias-temporary`) — 이행 대상이 아니며, 정리 여부는 alias 승인 절차가 결정한다 |
+| W3 | **완료(wave 1~13, 2026-08-25)** | A1 이행 웨이브 | wave 1(협업 2): 스크랩·주소록. wave 2(9): 로그 4종 + 운영 5화면. wave 3(5): 설문 응답자·네트워크·HPCM·온라인 매뉴얼·마이페이지 설정. wave 4(4): 행정구역 코드·기관 코드(탭형)·공개 설문 목록·커뮤니티 목록. wave 5~10: 설문 관리·통계·커뮤니티 허브·보안 그룹/역할·프로그램·템플릿·SMS·도움말·ISM·로그 대시보드·쪽지·게시판 마스터·온라인 설문 등. wave 11(3): 협업 허브·조직 권한(A2)·커뮤니티 상세. wave 12(2): 배너/팝업·워크허브(한 클라이언트가 3개 라우트를 담당). wave 13(1): 모니터링 허브 7탭 — 좌측 3열 세로 내비를 헤더 탭리스트로 압축하고 우측 상세 패널을 표 아래 상세 섹션으로 옮겼으며, 비활성 탭 6개가 존재하지 않는 id 를 참조하던 `aria-controls` 결함을 함께 고쳤다. 웨이브마다 장식 사이드바·조작 지표(`1.2k+` 등 계측 원천 없는 고정 문구)·죽은 검색(`console.log` onSearch)·근거 없는 지표 카드를 함께 제거했고, 조회 시점을 타이핑 디바운스에서 `조회`/Enter 로 통일했다(G2). 공통 조립기 [KeywordFilter](../../frontend/src/app/components/patterns/keyword-filter.tsx)·[emptyResultMessage](../../frontend/src/app/components/patterns/empty-result-message.ts) 신설. [채택 census 게이트](../../frontend/src/__tests__/work-list-adoption-census.test.ts) **40/4**(유입·이중 표기 red 실측, 오탐 2건 수정), status color BASELINE 656→592, hardcoded color BASELINE 64→61, h1 소유 계약을 셸 위임형으로 개정. **남은 직접 표 4건은 전부 이행 대상이 아니다** — A5 스펙 계약(권한 매트릭스)·도달 불가 alias 2건(`/cop/sms/selectSmsList`·`/admin/security/login-policy` — [next.config](../../frontend/next.config.ts) 리다이렉트)·공유 컴포넌트 1건이라 대상이 아니다(§6 표 참조) |
 | W4 | **완료(2026-08-24)** | 랜딩 포털 → 업무 홈 | [UnifiedDashboardClient](../../frontend/src/app/UnifiedDashboardClient.tsx) — 순서를 **처리 대기 → 내 목록 → 상태·활동 → 홍보**로 뒤집고 히어로·480px 고정 카드·진입 애니메이션 제거. 항목별 목적지가 없는 목록의 `cursor-pointer` 죽은 어포던스도 제거(G10). e2e 결속(팝업·배너·실시간 위젯)은 보존. VRT 기준선은 `/admin` 을 캡처하므로 영향 없음 |
 | W5 | **진행 중(A2 3차 완료 2026-08-24)** | A2·A4·A5 셸 신설 + 이행 | [MasterDetailPage](../../frontend/src/app/components/patterns/master-detail-page.tsx) 신설 후 1차 부서·메뉴, 2차 메일 이력, 3차 공통코드 STANDARD까지 4화면을 이행했다. 단일 responsive DOM, 고정폭 master, 미선택 안내, 검색, `aria-current`, `↑`/`↓`, 상세 `Tab`, 저장 가능한 화면의 선택+변경 시 `Ctrl+S`를 계약으로 고정했다. 메일은 저장 동작이 없는 조회·삭제 화면이라 단축키를 만들지 않고, 6열 표 대신 compact master + 상세 구조로 바꿨다. 공통코드 STANDARD는 포털 hero·metrics·진입 motion을 제거해 1280×720에서도 탐색·상세 업무 영역을 노출하고, DnD handle/선택 분리·검색 중 이동 비활성·그룹의 교차 분류 이동만 저장·검색 stale 선택 해제를 결속했다. 허브 공통 h1·breadcrumb 뒤의 활성 panel에서 STANDARD A2와 ADMINIST·INSTITUTION A1을 h2로 임베드하고, 중복 포털 래퍼를 제거했으며 `/admin/system/common-code/codes` alias도 유지한다. [A2 exact census](../../frontend/src/__tests__/master-detail-adoption-census.test.ts)가 네 route의 실제 소비를 검증하며, `StandardDataTable` 50·직접 조립 29·`WorkListPage` 21·`PagePagination` 4는 불변이다. status color BASELINE은 메일 이행 642→629에 이어 공통코드의 필수·오류·사용 상태 리터럴을 semantic token으로 이행해 629→621이 됐다. **선택 새로고침 복원은 보류:** 메뉴·부서·메일 식별자는 IA와 미확정 privacy review에 따라 새 query·브라우저 저장소를 만들지 않으며, 공통코드의 기존 `groupId` query consumer 1건도 `deny`·`unverified` legacy로 보존하고 새 producer·저장소를 만들지 않는다. URL 이행과 privacy 승인은 별도 과제다. 4차로 **결재 허브(`/approvals`)** 를 A2 로 이행해 A2 소비자는 5개다 — 3열 유리질 카드를 걷고 마스터를 compact 목록으로 바꿨으며, 조회 함수가 처리 이력과 같아 **같은 데이터를 다른 이름으로 보여주던 `결재 문서 보관함` 탭**은 사유를 밝힌 비활성 컨트롤로 정정했다. **A4(작업 큐)는 실소비자가 없어 셸을 만들지 않는다**(§5 A4 판정). **A5(매트릭스)는 실소비자가 권한 매트릭스 1개뿐이라 셸 대신 스펙 계약으로 고정했다**(§5 A5 판정) — 변경 셀 표시·저장 전 요약·변경 없음 시 저장 불가·격자 방향키·`Ctrl+S`를 계약이 강제하고, 저장이 손대지 않은 역할까지 다시 쓰던 결함을 같은 변경에서 고쳤다. **W5 범위는 이로써 종료다** |
 
-**VRT 기준선 재생성 필요(1건):** `/admin/system/logs/login` 을 A1 으로 이행했다. 이 화면은 시각 회귀 기준선 4장 중 하나(DEC-OPS-017: 무매칭 검색 empty-state)라 **`update-visual-baseline` workflow_dispatch(commit=true)로 리눅스 기준선을 다시 만들기 전까지 VRT 가 red 다.** win32 로컬 스냅샷 커밋은 폰트 렌더 차이로 금지다. e2e 캡처 스텝의 placeholder 셀렉터도 조회 조건 이행에 맞춰 함께 갱신했다.
+**VRT 기준선 재생성(완료, 2026-08-24):** `/admin/system/logs/login` 을 A1 으로 이행하면서 시각 회귀 기준선 4장 중 하나(DEC-OPS-017: 무매칭 검색 empty-state)가 어긋났고, `update-visual-baseline` workflow_dispatch(commit=true)로 리눅스 기준선을 다시 만들어 커밋했다(`chore(e2e): 비주얼 회귀 기준선 갱신 (linux)`). win32 로컬 스냅샷 커밋은 폰트 렌더 차이로 금지다. e2e 캡처 스텝의 placeholder 셀렉터도 조회 조건 이행에 맞춰 함께 갱신했다. 이후 wave 11~13 은 기준선 4장이 캡처하는 화면(`/admin`·로그인 로그·공통코드 허브·로그인)을 건드리지 않았고, PR CI 의 `e2e-test` 가 green 이다.
 
 **A1 참조 구현:** `/admin/patterns`. 정적 표본 데이터만 쓰므로 세션·시드와 무관하게 결정적으로 렌더되고, 조회·정렬·페이지당 건수가 표본 위에서 실제로 동작한다(죽은 컨트롤 금지 G10이 갤러리 자신에게도 적용된다). 시각 판단은 이 화면에서만 한다.
 

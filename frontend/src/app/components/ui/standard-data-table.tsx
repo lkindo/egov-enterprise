@@ -377,6 +377,18 @@ export function StandardDataTable<T extends object>({
   const rowRange = (currentPage && pageSize && pageSize > 0 && totalCount !== undefined && totalCount > 0)
     ? { from: (currentPage - 1) * pageSize + 1, to: Math.min(currentPage * pageSize, totalCount) }
     : null;
+  /**
+   * 정렬이 **현재 페이지 안에서만** 동작하는 상태인지.
+   *
+   * 정렬은 클라이언트 정렬이라 서버가 내려준 이 페이지의 행만 재배열한다. 그런데 화면에는
+   * 정렬 화살표와 `aria-sort` 만 보이므로, 여러 페이지짜리 결과에서 사용자는 **전체가 정렬됐다**고
+   * 읽는다. 로그 조사처럼 "가장 최근 것부터" 를 전제로 판단하는 화면에서 이 오해는 결론을 바꾼다.
+   * 서버 정렬 계약을 만들기 전까지, 최소한 범위를 화면이 말하게 한다.
+   */
+  const sortScopeIsPageOnly = columns.some((column) => column.sortKey !== undefined)
+    && pagination !== undefined
+    && pagination.totalPages > 1;
+
   const desktopScrollRegionProps = useOverflowRegion<HTMLDivElement>(`${accessibleLabel} 스크롤 영역`);
 
   // headless TanStack Table — row model(정렬 순서·row id)과 정렬 상태만 위임한다.
@@ -631,6 +643,12 @@ export function StandardDataTable<T extends object>({
           {(() => {
             const summary = (
               <>
+                {sortScopeIsPageOnly && (
+                  <>
+                    <span className="font-normal normal-case tracking-normal">정렬은 현재 페이지 안에서만 적용됩니다</span>
+                    <span className="mx-2 opacity-40">·</span>
+                  </>
+                )}
                 {pagination.totalCount !== undefined && (
                   <>
                     총 <span className="text-foreground font-black">{pagination.totalCount.toLocaleString()}</span>건

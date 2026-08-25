@@ -34,22 +34,20 @@ export function NavButton({ tab, icon, label, active, onClick }: { tab: Monitori
       role="tab"
       id={`monitoring-tab-${tab}`}
       aria-selected={active}
-      aria-controls={`monitoring-panel-${tab}`}
+      /*
+       * 패널 DOM 은 활성 탭 하나뿐이므로 aria-controls 대상 id 도 하나로 고정한다.
+       * 종전에는 탭마다 `monitoring-panel-${tab}` 을 가리켜 비활성 6개가 **존재하지 않는 id** 를
+       * 참조했다(스크린리더가 따라갈 대상이 없는 참조).
+       */
+      aria-controls="monitoring-panel"
       onClick={onClick}
       className={cn(
-        "w-full group p-5 rounded-lg border-2 transition-all flex items-center gap-6",
-        active
-          ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10"
-          : "bg-transparent border-transparent hover:bg-card hover:border-border text-muted-foreground hover:text-foreground"
+        'flex h-[var(--control-h-sm)] items-center gap-2 rounded px-3 text-xs font-bold transition-colors',
+        active ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground',
       )}
     >
-      <div aria-hidden="true" className={cn(
-        "w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg",
-        active ? "bg-white/10 text-surface-inverse-foreground" : "bg-card text-muted-foreground group-hover:bg-primary group-hover:text-white"
-      )}>
-        {icon}
-      </div>
-      <span className="text-xs font-bold tracking-tight text-left leading-tight">{label}</span>
+      <span aria-hidden="true" className="shrink-0">{icon}</span>
+      <span className="text-left leading-tight">{label}</span>
     </button>
   );
 }

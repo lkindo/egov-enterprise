@@ -3,11 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
@@ -26,10 +23,7 @@ import { Plus,
  Trash2, 
  Monitor, 
  Calendar, 
- Layers, 
- Sparkles, 
  Zap, 
- Megaphone, 
  Settings, 
  SearchCode, 
  Maximize2, 
@@ -45,7 +39,6 @@ import {
  savePopupAction,
  deletePopupAction
 } from '@/app/actions/promotionActions';
-import { motion, AnimatePresence } from 'framer-motion';
 import { z } from 'zod';
 import { useAppForm } from '@/hooks/useAppForm';
 import {
@@ -93,7 +86,8 @@ interface BannerAdminClientProps {
 }
 
 /** 화면 페이지 크기. 서버는 Spring Pageable 의 size 를 그대로 수용한다(@PageableDefault size=10 은 미지정 시 기본값). */
-const PAGE_SIZE = 20;
+/** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
+const DEFAULT_PAGE_SIZE = 20;
 
 export default function BannerAdminClient({ initialBanners, initialPopups }: BannerAdminClientProps) {
   const [now, setNow] = useState<Date | null>(null);
@@ -127,6 +121,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  const setTab = useCallback((tab: 'banner' | 'popup') => syncUrl(tab, 1), [syncUrl]);
  const setPage = useCallback((nextPage: number) => syncUrl(activeTab, nextPage), [syncUrl, activeTab]);
 
+ const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
  const [isModalOpen, setIsOpen] = useState(false);
  const [editingItem, setEditingItem] = useState<Banner | Popup | null>(null);
  const [formFiles, setFormFiles] = useState<File[]>([]);
@@ -198,13 +193,13 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
    * 내려와 11번째 자산부터는 수정·게시중단이 UI 상 불가능했다. 정상 페이징 + 페이저 연결로 정정한다.
    */
   const { data: bannerPageData, isLoading: isBannersLoading, error: bannerError, refetch: refetchBanners } = useQuery({
-  queryKey: ['admin-banners', bannerPage],
-  queryFn: () => bannerAdminService.getBannerList({ page: bannerPage - 1, size: PAGE_SIZE })
+  queryKey: ['admin-banners', bannerPage, pageSize],
+  queryFn: () => bannerAdminService.getBannerList({ page: bannerPage - 1, size: pageSize })
   });
 
   const { data: popupPageData, isLoading: isPopupsLoading, error: popupError, refetch: refetchPopups } = useQuery({
-  queryKey: ['admin-popups', popupPage],
-  queryFn: () => popupAdminService.getPopupList({ page: popupPage - 1, size: PAGE_SIZE })
+  queryKey: ['admin-popups', popupPage, pageSize],
+  queryFn: () => popupAdminService.getPopupList({ page: popupPage - 1, size: pageSize })
   });
 
   /*
@@ -467,153 +462,107 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  }
  ];
 
- return (
- <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
- <PageHeader
- title="배너/팝업 관리"
- breadcrumbs={[{ label: '시스템 관리' }, { label: '홍보 관리' }]}
- />
-
- <HubHeader
- title="Promotional"
- highlight="Matrix"
- subtitle="웹사이트에 노출되는 배너 자산과 공지 팝업을 등록하고 게시 상태를 제어합니다"
- icon={Megaphone}
- actions={
- <Button
- onClick={handleCreate}
- size="lg"
- className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
- >
- <Plus size={20} /> 신규 {activeTab === 'banner' ? '배너' : '팝업'} 등록
- </Button>
- }
- />
-
- {/* 지표는 전체 건수(total) 기준. 게시/예약 여부는 서버 집계가 없어 현재 페이지 기준임을 제목에 명시한다. */}
- <HubMetricGrid>
- <HubMetricCard title="전체 배너" value={bannerTotal} icon={ImageIcon} color="primary" />
- <HubMetricCard title="전체 팝업" value={popupTotal} icon={Monitor} color="emerald" status="등록됨" />
- <HubMetricCard title="예약 자산 (현재 페이지)" value={now ? popups.filter(p => new Date(p.ntceBgnde) > now).length : 0} icon={Calendar} color="amber" />
- <HubMetricCard title="전체 자산" value={bannerTotal + popupTotal} icon={Layers} color="indigo" />
- </HubMetricGrid>
-
- <div className="grid grid-cols-12 gap-12">
- <div className="col-span-12 lg:col-span-3 h-full">
- <div className="rounded-lg bg-card border-2 border-border shadow-xl h-full p-4 flex flex-col gap-4">
- {/*
- * 토글 버튼 시맨틱(aria-pressed)을 부여한다. role="tab" 은 쓰지 않는다 —
- * e2e POM(PromotionPage.ts)이 getByRole('button', {name:/배너 설정/}) 로 잡고 있어
- * 역할을 바꾸면 타 소유 파일(e2e)까지 동반 수정해야 한다.
- */}
- <button
- type="button"
- aria-pressed={activeTab === 'banner'}
- onClick={() => setTab('banner')}
- className={cn(
- "w-full group p-8 rounded-lg border-2 transition-all flex items-center gap-6 relative overflow-hidden",
- activeTab === 'banner' ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
- )}
- >
- <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'banner' ? "bg-white/10 text-white shadow-black/20" : "bg-card text-muted-foreground group-hover:bg-primary group-hover:text-white")}>
- <ImageIcon size={22} />
- </div>
- <div className="flex flex-col text-left relative z-10">
- <span className="text-xs font-bold tracking-widest uppercase mb-1 opacity-40">영역 01</span>
- <span className="text-md font-bold tracking-tighter uppercase leading-tight">배너 설정</span>
- </div>
- {activeTab === 'banner' && <div className="absolute right-0 top-0 w-32 h-32 bg-primary/20 rounded-lg blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />}
- </button>
- <button
- type="button"
- aria-pressed={activeTab === 'popup'}
- onClick={() => setTab('popup')}
- className={cn(
- "w-full group p-8 rounded-lg border-2 transition-all flex items-center gap-6 relative overflow-hidden",
- activeTab === 'popup' ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-2xl scale-[1.02] z-10" : "bg-transparent border-transparent hover:bg-muted text-muted-foreground hover:text-foreground"
- )}
- >
- <div className={cn("w-12 h-12 rounded-lg flex items-center justify-center transition-all shadow-lg relative z-10", activeTab === 'popup' ? "bg-white/10 text-white shadow-black/20" : "bg-card text-muted-foreground group-hover:bg-hub-indigo group-hover:text-white")}>
- <Monitor size={22} />
- </div>
- <div className="flex flex-col text-left relative z-10">
- <span className="text-xs font-bold tracking-widest uppercase mb-1 opacity-40">영역 02</span>
- <span className="text-md font-bold tracking-tighter uppercase leading-tight">팝업 설정</span>
- </div>
- {activeTab === 'popup' && <div className="absolute right-0 top-0 w-32 h-32 bg-hub-indigo/20 rounded-lg blur-3xl -mr-16 -mt-16 pointer-events-none opacity-50" />}
- </button>
- <div className="mt-auto p-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground space-y-4 relative overflow-hidden group">
- <div className="relative z-10 space-y-4">
- <div className="flex items-center gap-3">
- <Sparkles size={16} className="text-primary animate-pulse" />
- <span className="text-xs font-bold tracking-widest uppercase text-white/40">시스템 상태</span>
- </div>
- <h5 className="text-lg font-bold tracking-tighter uppercase leading-none">프로모션 엔진</h5>
- <p className="text-xs font-bold text-muted-foreground leading-relaxed uppercase opacity-60">등록된 모든 배너 및 팝업 자산은 시스템에 즉시 반영됩니다.</p>
- </div>
- </div>
- </div>
- </div>
-
- <div className="col-span-12 lg:col-span-9">
- <AnimatePresence mode="wait">
- <motion.div
- key={activeTab}
- initial={{ opacity: 0, y: 10 }}
- animate={{ opacity: 1, y: 0 }}
- exit={{ opacity: 0, y: -10 }}
- transition={{ duration: 0.5 }}
- >
- <HubSectionCard
- title={activeTab === 'banner' ? "배너 목록" : "팝업 목록"}
- description={activeTab === 'banner' ? "포털 메인 및 서브 섹션에 노출되는 배너 목록입니다" : "기간 지정 공지 및 안내를 위한 팝업 관리 목록입니다"}
- icon={activeTab === 'banner' ? ImageIcon : Monitor}
- >
- <div className="overflow-hidden">
- {/* 배너/팝업은 키 필드가 달라 union 캐스팅 대신 타입별로 분리 렌더한다(as any 제거). */}
- {activeTab === 'banner' ? (
- <StandardDataTable<Banner>
- columns={bannerColumns}
- data={banners}
- loading={isBannersLoading}
- error={bannerError}
- onRetry={() => refetchBanners()}
- keyField="bnrSn"
- emptyMessage="등록된 배너 자산이 존재하지 않습니다."
- className="border-none bg-transparent"
- pagination={{
- currentPage: page,
- totalPages: bannerPageData?.totalPage || 1,
- totalCount: bannerTotal,
- pageSize: PAGE_SIZE,
- onPageChange: setPage
- }}
- />
- ) : (
- <StandardDataTable<Popup>
- columns={popupColumns}
- data={popups}
- loading={isPopupsLoading}
- error={popupError}
- onRetry={() => refetchPopups()}
- keyField="popupSn"
- emptyMessage="등록된 팝업 자산이 존재하지 않습니다."
- className="border-none bg-transparent"
- pagination={{
- currentPage: page,
- totalPages: popupPageData?.totalPage || 1,
- totalCount: popupTotal,
- pageSize: PAGE_SIZE,
- onPageChange: setPage
- }}
- />
- )}
- </div>
- </HubSectionCard>
- </motion.div>
- </AnimatePresence>
- </div>
- </div>
+  return (
+    <>
+    <WorkListPage
+      title="배너/팝업 관리"
+      description={activeTab === 'banner'
+        ? '포털 메인·서브 영역에 노출되는 배너를 조회하고 게시 상태를 관리합니다.'
+        : '기간을 지정해 노출하는 공지 팝업을 조회하고 게시 상태를 관리합니다.'}
+      breadcrumbItems={[{ label: '시스템 관리' }, { label: '홍보 관리' }]}
+      filterStateKey="system-banner"
+      totalCount={activeTab === 'banner'
+        ? (bannerError ? undefined : bannerTotal)
+        : (popupError ? undefined : popupTotal)}
+      actions={
+        <div className="flex flex-wrap items-center gap-2">
+          {/*
+            토글 시맨틱은 aria-pressed 다. role="tab" 으로 바꾸지 않는다 —
+            e2e POM(PromotionPage.ts)이 getByRole('button', {name:/배너 설정/}) 로 잡고 있어
+            역할을 바꾸면 타 소유 파일까지 동반 수정해야 한다.
+          */}
+          <div className="flex rounded-md border border-border p-0.5">
+            <button
+              type="button"
+              aria-pressed={activeTab === 'banner'}
+              onClick={() => setTab('banner')}
+              className={cn(
+                'flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors',
+                activeTab === 'banner' ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <ImageIcon size={14} aria-hidden="true" /> 배너 설정
+            </button>
+            <button
+              type="button"
+              aria-pressed={activeTab === 'popup'}
+              onClick={() => setTab('popup')}
+              className={cn(
+                'flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors',
+                activeTab === 'popup' ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground',
+              )}
+            >
+              <Monitor size={14} aria-hidden="true" /> 팝업 설정
+            </button>
+          </div>
+          <Button size="sm" onClick={handleCreate}>
+            <Plus size={16} aria-hidden="true" /> 신규 {activeTab === 'banner' ? '배너' : '팝업'} 등록
+          </Button>
+        </div>
+      }
+      toolbarActions={
+        /* 지표 카드 4장을 한 줄 요약으로 수렴한다. '전체 자산'(단순 합)과 장식 카드는 제거했고,
+           서버 집계가 없는 '예약 자산'은 현재 페이지 기준임을 문구로 밝힌다. */
+        <span className="text-[length:var(--font-size-body)] text-muted-foreground">
+          배너 <span className="font-bold text-foreground">{bannerError ? '조회 실패' : bannerTotal}</span> ·
+          팝업 <span className="font-bold text-foreground">{popupError ? '조회 실패' : popupTotal}</span>
+          {activeTab === 'popup' && now && (
+            <> · 현재 페이지 게시 예정 <span className="font-bold text-foreground">
+              {popups.filter((item) => new Date(item.ntceBgnde) > now).length}
+            </span>건</>
+          )}
+        </span>
+      }
+    >
+      {/* 배너/팝업은 키 필드가 달라 union 캐스팅 대신 타입별로 분리 렌더한다. */}
+      {activeTab === 'banner' ? (
+        <StandardDataTable<Banner>
+          columns={bannerColumns}
+          data={banners}
+          loading={isBannersLoading}
+          error={bannerError}
+          onRetry={() => refetchBanners()}
+          keyField="bnrSn"
+          emptyMessage="등록된 배너가 없습니다."
+          pagination={{
+            currentPage: page,
+            totalPages: bannerPageData?.totalPage || 1,
+            // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+            pageSize,
+            onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+            onPageChange: setPage
+          }}
+        />
+      ) : (
+        <StandardDataTable<Popup>
+          columns={popupColumns}
+          data={popups}
+          loading={isPopupsLoading}
+          error={popupError}
+          onRetry={() => refetchPopups()}
+          keyField="popupSn"
+          emptyMessage="등록된 팝업이 없습니다."
+          pagination={{
+            currentPage: page,
+            totalPages: popupPageData?.totalPage || 1,
+            // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+            pageSize,
+            onPageSizeChange: (size) => { setPageSize(size); setPage(1); },
+            onPageChange: setPage
+          }}
+        />
+      )}
+    </WorkListPage>
 
  <StandardModal
  isOpen={isModalOpen}
@@ -961,7 +910,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  )}
  </div>
  </StandardModal>
- </div>
- );
+    </>
+  );
 }
 

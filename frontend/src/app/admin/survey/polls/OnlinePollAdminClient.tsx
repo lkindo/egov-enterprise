@@ -42,7 +42,8 @@ import { getPollStatus, POLL_STATUS_LABEL, type PollStatus } from '@/lib/poll-st
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { motion } from 'framer-motion';
 
-const PAGE_SIZE = 10;
+/** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
+const DEFAULT_PAGE_SIZE = 10;
 
 /** 설문 1건의 총 득표수 = 항목별 pollIemCo 합계 */
 function totalVotesOf(poll: OnlinePollDto): number {
@@ -54,6 +55,7 @@ export default function OnlinePollAdminClient() {
  const pathname = usePathname();
  const searchParams = useSearchParams();
  const { success, error: toastError } = useToast();
+ const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
 
  // 페이지는 URL 파생값이다 — 공유·새로고침·뒤로가기에서 위치가 복원된다(P1-7).
  // 검색어는 개인정보 노출 우려로 URL 에 싣지 않는다(감사 D-13, 제품 보류 항목).
@@ -81,8 +83,8 @@ export default function OnlinePollAdminClient() {
  }, []);
 
  const { data, isLoading, isError, error, refetch } = useQuery({
- queryKey: ['admin-online-polls', page, debouncedKeyword],
- queryFn: () => onlinePollAdminService.getPollList({ keyword: debouncedKeyword, page, size: PAGE_SIZE }),
+ queryKey: ['admin-online-polls', page, debouncedKeyword, pageSize],
+ queryFn: () => onlinePollAdminService.getPollList({ keyword: debouncedKeyword, page, size: pageSize }),
  });
 
  const polls: OnlinePollDto[] = data?.list || [];
@@ -283,10 +285,11 @@ export default function OnlinePollAdminClient() {
  className="border-none bg-transparent"
  pagination={{
  currentPage: page + 1,
- totalPages: Math.ceil(totalCount / PAGE_SIZE),
+ totalPages: Math.ceil(totalCount / pageSize),
  onPageChange: (p) => setPage(p - 1),
  // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
- pageSize: PAGE_SIZE,
+ pageSize,
+          onPageSizeChange: (size) => { setPageSize(size); setPage(0); },
  }}
  />
 

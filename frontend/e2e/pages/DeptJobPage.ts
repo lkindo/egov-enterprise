@@ -31,14 +31,18 @@ export class DeptJobPage {
     async gotoJobList() {
         console.log('>>> Navigating to Dept Job list (work-hub job tab)');
         await this.page.goto('/smart-toolkit/dept-job?e2e=true');
-        await expect(this.page.getByText('업무 워크플로우 매트릭스').first()).toBeVisible({ timeout: 30000 });
+        // [2026-08-25 A1 이행] 섹션 카드 제목('업무 워크플로우 매트릭스')이 사라지고
+        // 화면 제목 + 선택된 탭이 현재 영역을 나타낸다.
+        await expect(this.page.getByRole('tab', { name: '업무 워크플로우' }))
+            .toHaveAttribute('aria-selected', 'true', { timeout: 30000 });
     }
 
     /** 업무 보고 탭. */
     async gotoReportList() {
         console.log('>>> Navigating to Work Report list (work-hub report tab)');
         await this.page.goto('/smart-toolkit/work-report?e2e=true');
-        await expect(this.page.getByText('업무 보고 아카이브').first()).toBeVisible({ timeout: 30000 });
+        await expect(this.page.getByRole('tab', { name: '업무 보고' }))
+            .toHaveAttribute('aria-selected', 'true', { timeout: 30000 });
     }
 
     /** 부서 업무 등록 화면(전용 라우트). */
@@ -58,14 +62,19 @@ export class DeptJobPage {
     // 목록 공통 (업무 탭 · 보고 탭이 같은 검색창/페이저를 공유한다)
     // ─────────────────────────────────────────────────────────────────────────
 
-    /** 목록 상단 검색창. 입력 즉시 쿼리가 바뀌고 페이지는 1로 되돌아간다. */
+    /** 조회 조건 영역의 검색창. */
     get searchInput(): Locator {
         return this.page.locator('input[placeholder="검색어를 입력하십시오..."]');
     }
 
-    /** 검색어를 넣는다. fill 은 기존 값을 지우므로 연속 검색에도 그대로 쓸 수 있다. */
+    /**
+     * 검색어를 넣고 조회한다. fill 은 기존 값을 지우므로 연속 검색에도 그대로 쓸 수 있다.
+     * [2026-08-25 A1 이행] 조회 시점이 타이핑 디바운스에서 `조회`/Enter 로 바뀌었다 —
+     * fill 만 하면 결과가 바뀌지 않으므로 Enter 로 제출까지 한다.
+     */
     async search(keyword: string) {
         await this.searchInput.fill(keyword);
+        await this.searchInput.press('Enter');
     }
 
     /**

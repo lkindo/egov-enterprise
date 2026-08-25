@@ -42,7 +42,8 @@ const programSchema = ProgramDtoSchema.extend({
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
 /** 서버(BaseSearchDto)의 기본 페이지 크기와 동일하게 맞춘다. */
-const PAGE_SIZE = 10;
+/** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
+const DEFAULT_PAGE_SIZE = 10;
 
 /** 조회 실패 사유를 Error 로 정규화한다(StandardDataTable 의 error prop 계약). */
 function toError(value: unknown): Error {
@@ -99,6 +100,7 @@ export default function ProgramAdminClient({
  return initialData?.totalPage || 1;
  });
  const [page, setPage] = useState(initialPage);
+ const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
  const [loading, setLoading] = useState(false);
  const [error, setError] = useState<Error | null>(initialError ? toError(initialError) : null);
  const [currentSearchWrd, setCurrentSearchWrd] = useState(searchWrd);
@@ -109,14 +111,14 @@ export default function ProgramAdminClient({
   * 페이지 크기는 BaseSearchDto.pageUnit 이 결정하므로 pageUnit 을 함께 보낸다(size 는 recordCountPerPage 로만 매핑됨).
   * 검색어도 BaseSearchDto.searchKeyword 로 실어야 서버에 닿는다(searchWrd 는 바인딩 대상이 아니다).
   */
- const loadData = async (wrd: string = currentSearchWrd, targetPage: number = 1) => {
+ const loadData = async (wrd: string = currentSearchWrd, targetPage: number = 1, size: number = pageSize) => {
  try {
  setLoading(true);
  setError(null);
  const res = await programAdminService.getProgramList({
  page: targetPage - 1,
- size: PAGE_SIZE,
- pageUnit: PAGE_SIZE,
+ size,
+ pageUnit: size,
  searchKeyword: wrd
  });
 
@@ -272,7 +274,8 @@ export default function ProgramAdminClient({
  pagination={{
  currentPage: page,
  totalPages: totalPage,
- pageSize: PAGE_SIZE,
+ pageSize,
+ onPageSizeChange: (size) => { setPageSize(size); void loadData(currentSearchWrd, 1, size); },
  onPageChange: (p) => loadData(currentSearchWrd, p)
  }}
  />
