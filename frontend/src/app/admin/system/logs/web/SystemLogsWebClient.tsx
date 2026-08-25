@@ -7,6 +7,7 @@ import type { PageResponse, WebLog } from '@/types/foundation/system';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
+import { PeriodFilter, EMPTY_PERIOD, periodToParams, type PeriodValue } from '@/app/components/patterns/period-filter';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { Globe, Clock, Terminal, Link } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
@@ -18,14 +19,16 @@ const SystemLogsWebClient = () => {
     const [page, setPage] = usePageParam();
     const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
     const [searchKeyword, setSearchKeyword] = useState('');
+    const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<WebLog>>({
-        queryKey: ['admin-logs-web', page, pageSize, searchKeyword],
+        queryKey: ['admin-logs-web', page, pageSize, searchKeyword, periodToParams(period, 'compact')],
         // 서비스가 `pageIndex`(1-base)만 읽는다. 기존 `pageNo` 전달은 무시돼 항상 1페이지가 조회됐다.
         queryFn: () => systemLogAdminService.getWebLogs({
             pageIndex: page,
             size: pageSize,
             searchKeyword,
+            ...periodToParams(period, 'compact'),
         }),
     });
 
@@ -111,7 +114,13 @@ const SystemLogsWebClient = () => {
                     placeholder="URL, IP 검색"
                     value={searchKeyword}
                     onSearch={(keyword: string) => { setSearchKeyword(keyword); setPage(1); }}
-                />
+                >
+                    <PeriodFilter
+                        label="조회 기간(발생일자)"
+                        value={period}
+                        onChange={(next) => { setPeriod(next); setPage(1); }}
+                    />
+                </KeywordFilter>
             }
         >
             <StandardDataTable
