@@ -15,13 +15,14 @@ test.describe('Tier 14: Administrative Workflow Management', () => {
     });
 
     test('should render the process studio hub with metrics and canvas', async ({ page }) => {
-        // 이 경로는 실제 워크플로우 엔진이 아니라 정적 데모다. 현재 subtitle과 명시적 status 고지를
-        // 함께 확인해 샘플 데이터를 운영 데이터로 오인시키는 과거 문구가 되돌아오지 않게 한다.
-        await expect(page.getByText(
-            '정적 예시 데이터로 워크플로우 캔버스의 형태와 탐색 동작만 확인합니다.',
-            { exact: true },
-        )).toBeVisible();
-        await expect(page.getByRole('status').filter({ hasText: '정적 데모 화면입니다.' })).toBeVisible();
+        // 이 경로는 실제 워크플로우 엔진이 아니라 정적 데모다. 샘플 데이터를 운영 데이터로
+        // 오인시키는 문구가 되돌아오지 않도록 **고지 자체**를 단언한다.
+        // [2026-08-26] 종전에는 헤더 subtitle 문구도 함께 봤지만, 페이지 헤더 두 겹을 하나로
+        //   합치면서 그 subtitle 은 사라졌다. 같은 사실을 더 강하게 말하는 status 고지가 남아
+        //   있으므로 그쪽을 계약으로 삼는다(정보는 사라지지 않았다).
+        const demoNotice = page.getByRole('status').filter({ hasText: '정적 데모 화면입니다.' });
+        await expect(demoNotice).toBeVisible();
+        await expect(demoNotice).toContainText('실제 저장·실행·운영 지표를 제공하지 않습니다');
 
         // Hub metric cards + canvas/panel section cards.
         await workflowPage.verifyHubLoaded();

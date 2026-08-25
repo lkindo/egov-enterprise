@@ -1,9 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { Button } from '@/components/ui/button';
 import { Users,  
@@ -15,15 +14,16 @@ import { Users,
   Globe, 
   Settings, 
   UserPlus, 
-  Share2, 
   BookOpen, 
   Info } from 'lucide-react';
 ;
 ;
 import { communityService } from '@/services/business/community/communityService';
+import { communityUserService } from '@/services/business/user/community/CommunityUserService';
+import { useToast } from '@/app/components/ui/toast';
 import { CommunityVO } from '@/types/business/community';
 import Link from 'next/link';
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@/components/ui/tooltip";
+import { TooltipProvider } from "@/components/ui/tooltip";
 
 export default function CommunityDetailHubClient({ 
   cmntySn,
@@ -33,10 +33,28 @@ export default function CommunityDetailHubClient({
   initialData: CommunityVO 
 }) {
 
+  const { toast } = useToast();
+
   const { data: community } = useQuery({
     queryKey: ['community', cmntySn],
     queryFn: () => communityService.getCommunity(cmntySn),
     initialData: initialData
+  });
+
+  /**
+   * 커뮤니티 가입 신청.
+   *
+   * 서버는 상태 위반을 구분해 돌려준다 — 비활성 커뮤니티는 409(RESOURCE_IN_USE),
+   * 이미 가입/신청 중이면 409(DUPLICATE_RESOURCE). 그래서 성공·실패를 같은 문구로 뭉개지 않고
+   * 서버 메시지를 그대로 보여 준다(A3 금지 항목과 같은 규율).
+   */
+  const joinMutation = useMutation({
+    mutationFn: () => communityUserService.joinCommunity(cmntySn),
+    onSuccess: () => toast('가입을 신청했습니다. 관리자 승인 후 이용할 수 있습니다.', 'success'),
+    onError: (error: unknown) => {
+      const message = error instanceof Error ? error.message : '';
+      toast(message || '가입 신청 중 오류가 발생했습니다.', 'error');
+    },
   });
 
   if (!community) return null;
@@ -48,43 +66,28 @@ export default function CommunityDetailHubClient({
           title={community.cmntyNm}
           breadcrumbs={[{ label: '협업 서비스' }, { label: '커뮤니티 공간', href: '/cop/cmy/selectCommunityList' }, { label: '상세 정보' }]}
           actions={
-            <Link href="/cop/cmy/selectCommunityList">
-              <Button variant="outline" className="h-12 gap-3 font-bold border-2 rounded-[var(--radius-hub-item)] hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all tracking-tight text-xs">
-                <ChevronLeft size={16} /> 목록으로 돌아가기
+            <div className="flex items-center gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link href="/cop/cmy/selectCommunityList">
+                  <ChevronLeft size={16} aria-hidden="true" /> 목록으로 돌아가기
+                </Link>
               </Button>
-            </Link>
-          }
-        />
-
-        <HubHeader
-          title="Space"
-          highlight="Detail"
-          subtitle={`IDENTITY NODE: ${cmntySn}`}
-          icon={Globe}
-          actions={
-            <div className="flex gap-4 p-2 items-center">
-               <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button variant="ghost" size="lg" aria-label="커뮤니티 공유하기" className="h-11 w-14 rounded-[var(--radius-hub-item)] bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95">
-                    <Share2 size={22} />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-[var(--radius-hub-item)] px-4 py-2 text-xs font-bold tracking-tight">
-                  커뮤니티 공유하기
-                </TooltipContent>
-              </Tooltip>
-
-              <Button 
-                size="lg" 
-                className="h-11 px-10 rounded-[var(--radius-hub-item)] bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
+              <Button
+                size="sm"
+                onClick={() => joinMutation.mutate()}
+                disabled={joinMutation.isPending}
               >
-                <UserPlus size={20} />
-                커뮤니티 가입 신청
-                <ArrowUpRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
+                <UserPlus size={16} aria-hidden="true" />
+                {joinMutation.isPending ? '신청 중…' : '커뮤니티 가입 신청'}
               </Button>
             </div>
           }
         />
+
+        {/* [2026-08-26] 페이지 헤더가 두 겹이었다 — PageHeader 아래 HubHeader(`Space Detail` +
+            `IDENTITY NODE: n` 문구)가 한 번 더 있었다. 거기 붙어 있던 두 버튼은 **onClick 이 없는
+            죽은 컨트롤**이었다(G10). 공유 기능은 정의된 적이 없어 삭제하고, 가입 신청은 실제
+            API(`POST /communities/{cmntySn}/join`)가 있으므로 페이지 헤더에서 배선한다. */}
 
         <div className="grid grid-cols-12 gap-[var(--gap-hub-section)]">
           {/* Main Content Area */}

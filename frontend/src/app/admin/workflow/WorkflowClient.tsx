@@ -17,7 +17,6 @@ import { GitBranch,
     RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { WorkflowCanvas, WorkflowNode, WorkflowEdge } from '@/app/components/ui/workflow-canvas';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -46,14 +45,7 @@ export default function WorkflowClient() {
             <PageHeader
                 title="프로세스 설계 및 관제"
                 breadcrumbs={[{ label: '워크플로우' }, { label: '스튜디오' }]}
-            />
-
-            <HubHeader
-                title="Process"
-                highlight="Studio · 데모"
-                subtitle="정적 예시 데이터로 워크플로우 캔버스의 형태와 탐색 동작만 확인합니다."
-                icon={GitBranch}
-                actions={
+        actions={
                     <div className="flex gap-4">
                         <Button disabled title="정적 데모에서는 히스토리를 제공하지 않습니다." variant="outline" className="h-11 px-8 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm">
                             <History size={18} /> 히스토리
@@ -63,7 +55,11 @@ export default function WorkflowClient() {
                         </Button>
                     </div>
                 }
-            />
+      />
+
+            {/* [2026-08-26] 페이지 헤더가 두 겹이었다 — PageHeader 아래 HubHeader(영문 혼용 히어로 +
+          마케팅 문구)가 한 번 더 있었고 주요 액션이 그쪽에 붙어 있었다.
+          한 화면의 페이지 헤더는 하나이며, 액션은 그 하나가 소유한다. */}
 
             <div role="status" className="rounded-xl border border-warning/30 bg-warning/10 px-5 py-4 text-sm leading-relaxed">
                 <strong className="font-bold">정적 데모 화면입니다.</strong>{' '}

@@ -16,8 +16,15 @@ vi.mock('@/app/components/ui/data-export-excel', () => ({
   ),
 }));
 
+// [2026-08-26] 중복 헤더(HubHeader)를 걷고 주요 액션을 PageHeader 로 올렸다. 목이 title 만
+// 렌더하면 **실제로는 있는 액션이 테스트에서만 사라진다** — 목도 actions 를 렌더한다.
 vi.mock('@/app/components/layout/page-header', () => ({
-  PageHeader: ({ title }: { title: string }) => <h1>{title}</h1>,
+  PageHeader: ({ title, actions }: { title: string; actions?: React.ReactNode }) => (
+    <div>
+      <h1>{title}</h1>
+      {actions}
+    </div>
+  ),
 }));
 
 /**

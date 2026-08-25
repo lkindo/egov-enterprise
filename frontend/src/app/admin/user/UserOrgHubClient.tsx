@@ -5,7 +5,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { type LucideIcon,
   Users,
@@ -18,7 +17,6 @@ import { type LucideIcon,
   Building2,
   Activity,
   ChevronRight,
-  UserCog,
   Mail,
   Phone,
   RefreshCcw,
@@ -678,47 +676,30 @@ export default function UserOrgHubClient({
           >
             <LayoutGrid size={18} aria-hidden="true" /> 부서 등록
           </Button>
+        ) : activeTab !== 'POLICIES' ? (
+          <Button
+            type="button"
+            onClick={() => {
+              setFormMode('create');
+              setIsUserModalOpen(true);
+            }}
+            className="h-10 gap-2 font-semibold"
+          >
+            {/* 부재 등록 API 가 화면에 배선되기 전까지 이 버튼은 '사용자 등록'이다.
+                '부재 등록'으로 표기하면 사용자 등록 폼이 열려 라벨이 거짓이 된다. */}
+            <UserPlus size={18} aria-hidden="true" /> 사용자 등록
+          </Button>
         ) : undefined}
       />
 
-      {activeTab !== 'DEPTS' && <HubHeader
-        title="사용자"
-        highlight="관리 허브"
-        subtitle="전사 인적 자원 및 조직 계층 구조를 통합 관리하는 컨트롤 센터입니다."
-        icon={UserCog}
-        actions={
-          <div className="flex gap-3 p-1 items-center">
-            {/* 종전의 '환경 설정' 아이콘 버튼은 onClick 이 없는 死버튼이라 제거했다(감사 P1-6). */}
-            {activeTab !== 'POLICIES' && (
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFormMode('create');
-                      setIsUserModalOpen(true);
-                    }}
-                    className="h-10 px-8 rounded-xl bg-surface-inverse border-none text-surface-inverse-foreground font-black text-xs tracking-tight shadow-xl hover:bg-primary transition-all hover:-translate-y-1 gap-2 group flex items-center justify-center shrink-0 cursor-pointer outline-none"
-                  >
-                    <UserPlus size={18} aria-hidden="true" />
-                    {/* 부재 등록 API 가 화면에 배선되기 전까지 이 버튼은 '사용자 등록'이다.
-                        '부재 등록'으로 표기하면 사용자 등록 폼이 열려 라벨이 거짓이 된다. */}
-                    <span>사용자 등록</span>
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
-                  새로운 사용자 생성
-                </TooltipContent>
-              </Tooltip>
-            )}
-          </div>
-        }
-      />}
+      {/* 사용자 등록은 화면의 주요 액션이라 페이지 헤더가 소유한다.
+          종전에는 PageHeader(제목) 아래 HubHeader(영문 혼용 히어로 + "컨트롤 센터" 문구)가
+          한 번 더 있었고, 등록 버튼이 그 두 번째 헤더에 붙어 있었다. */}
 
       {/* --- Horizontal Premium Tab Controls (탭 = 라우트, 감사 P1-7) --- */}
       <nav
         aria-label="사용자 및 조직 관리 화면 전환"
-        className="flex bg-muted/60 backdrop-blur-md p-1.5 rounded-2xl border border-border/50 max-w-4xl w-full mb-10 relative z-10 shadow-sm"
+        className="flex w-fit rounded-md border border-border p-0.5"
       >
         <NavButton icon={<Users size={16} />} label="사용자" active={activeTab === 'USERS'} onClick={() => handleTabChange('USERS')} />
         <NavButton icon={<Network size={16} />} label="부서 관리" active={activeTab === 'DEPTS'} onClick={() => handleTabChange('DEPTS')} />
@@ -1427,10 +1408,8 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        "flex-1 flex items-center justify-center gap-3 py-3 px-6 rounded-xl text-xs font-semibold transition-all duration-300 relative overflow-hidden",
-        active
-          ? "bg-surface-inverse text-surface-inverse-foreground shadow-lg scale-[1.02] z-10"
-          : "bg-transparent text-muted-foreground hover:text-foreground hover:bg-white/40"
+        'flex h-[var(--control-h-sm)] items-center gap-2 rounded px-4 text-xs font-bold transition-colors',
+        active ? 'bg-muted text-primary' : 'text-muted-foreground hover:text-foreground'
       )}
     >
       <span className={cn(

@@ -53,7 +53,16 @@ vi.mock('@/services/foundation/system/MenuAdminService', () => ({
   },
 }));
 
-vi.mock('@/app/components/layout/page-header', () => ({ PageHeader: ({ title }: any) => <h1>{title}</h1> }));
+// [2026-08-26] 중복 헤더(HubHeader)를 걷고 주요 액션을 PageHeader 로 올렸다. 목이 title 만
+// 렌더하면 **실제로는 있는 액션이 테스트에서만 사라진다** — 목도 actions 를 렌더한다.
+vi.mock('@/app/components/layout/page-header', () => ({
+  PageHeader: ({ title, actions }: any) => (
+    <div>
+      <h1>{title}</h1>
+      {actions}
+    </div>
+  ),
+}));
 vi.mock('@/components/ui/hub/HubHeader', () => ({
   HubHeader: ({ title, actions }: any) => <header>{title}{actions}</header>,
 }));
