@@ -76,7 +76,8 @@ export class CollabPage {
         await this.page.getByRole('button', { name: '주소록 관리', exact: true }).click();
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/select-address-book-list/);
 
-        await this.page.getByRole('button', { name: '주소록 등록', exact: true }).first().click();
+        // [2026-08-24 A1 이행] 링크 안 버튼 중첩을 없애 role 이 link 로 바뀌었다(페이지 이동).
+        await this.page.getByRole('link', { name: '주소록 등록', exact: true }).first().click();
         await expect(this.page).toHaveURL(/\/admin\/collaboration\/address-book\/insert-address-book/);
         
         // soft-nav 전환 중 이전/이후 라우트 DOM이 잠깐 공존해 testid가 2개로 잡히므로 first()로 방어

@@ -56,8 +56,15 @@ vi.mock('@/components/common/PagePagination', () => ({
   ),
 }));
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ data }: { data: Array<{ roleNm?: string }> }) => (
-    <div>{data.map((role) => <span key={role.roleNm}>{role.roleNm}</span>)}</div>
+  StandardDataTable: ({ data, pagination }: {
+    data: Array<{ roleNm?: string }>;
+    pagination?: { onPageChange: (page: number) => void };
+  }) => (
+    <div>
+      {data.map((role) => <span key={role.roleNm}>{role.roleNm}</span>)}
+      {/* [2026-08-24 A1 이행] 별도 PagePagination 이 표 내장 페이저로 수렴했다. */}
+      <button type="button" onClick={() => pagination?.onPageChange(2)}>롤 다음 페이지</button>
+    </div>
   ),
 }));
 

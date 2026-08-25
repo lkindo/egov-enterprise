@@ -69,7 +69,8 @@ export class OperationalExtensionPage {
         console.log('>>> Navigating to SMS Service');
         // /cop/sms/selectSmsList -> (next.config redirect) -> /admin/uss/ion/sms (SmsAdminClient)
         await this.page.goto('/cop/sms/selectSmsList');
-        await expect(this.page.getByRole('heading', { name: '메시지 오케스트레이션' })).toBeVisible();
+        // [2026-08-24 A1 이행] 마케팅 제목('메시지 오케스트레이션')을 업무 제목으로 바꿨다(G14).
+        await expect(this.page.getByRole('heading', { name: '문자 메시지 발송 관리', exact: true })).toBeVisible();
     }
 
     async sendSms(phone: string, content: string) {
@@ -77,7 +78,8 @@ export class OperationalExtensionPage {
         await this.page.getByRole('button', { name: '새 메시지 구성' }).click();
         await this.page.getByPlaceholder('010-0000-0000').fill(phone);
         await this.page.getByPlaceholder('메시지 내용을 입력하세요...').fill(content);
-        await this.page.getByRole('button', { name: 'Execute Send' }).click();
+        // [2026-08-24 A1 이행] 영문 버튼 'Execute Send' → '발송'(G14).
+        await this.page.getByRole('button', { name: '발송', exact: true }).click();
         await expect(this.page.getByText('문자 메시지를 발송했습니다.')).toBeVisible();
     }
 }

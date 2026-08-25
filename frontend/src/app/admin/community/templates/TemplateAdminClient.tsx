@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, use } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { templateAdminService, TmplatInfo } from '@/services/foundation/system/TemplateAdminService';
 import { Layout, 
  Plus, 
- RefreshCcw, 
- FileCode, 
+ RefreshCcw,  
  CheckCircle2, 
  XCircle, 
  Code } from 'lucide-react';
@@ -134,57 +133,40 @@ export default function TemplateAdminClient({
  ];
 
  return (
- <div className="space-y-12 pb-24 animate-in fade-in slide-in-from-bottom-8 duration-1000">
- {/* 감사 P2: 루트 layout 이 이미 `max-w-7xl p-6/md:p-12/lg:p-16` 를 주므로 화면별 이중 여백(px-4)·폭 제한을 제거하고 상속한다. */}
- <PageHeader
- title="템플릿 시스템 아키텍처"
- breadcrumbs={[{ label: '시스템관리' }, { label: '커뮤니티관리' }, { label: '템플릿관리' }]}
+ <WorkListPage
+ title="템플릿 관리"
+ description="게시판·화면 구성에 쓰는 시스템 템플릿을 조회·등록합니다."
+ breadcrumbItems={[{ label: '시스템관리' }, { label: '커뮤니티관리' }, { label: '템플릿관리' }]}
+ totalCount={loadError ? undefined : templates.length}
  actions={
- <div className="flex items-center gap-4">
+ <>
  <Button
  onClick={() => void handleRefresh()}
  disabled={loading}
  variant="outline"
+ size="sm"
  aria-label="템플릿 목록 새로고침"
- title="템플릿 목록 새로고침"
- className="h-11 w-14 rounded-lg border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-md active:scale-95"
+ className="gap-2"
  >
- <RefreshCcw size={18} className={cn(loading && "animate-spin")} />
+ <RefreshCcw size={16} className={cn(loading && "animate-spin")} aria-hidden="true" />
+ 새로고침
  </Button>
- <Button
- onClick={() => setIsAddOpen(true)}
- className="h-11 px-8 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-[0.2em] shadow-xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 "
- >
- <Plus size={18} />
- 신규 블루프린트
+ <Button size="sm" onClick={() => setIsAddOpen(true)} className="gap-2">
+ <Plus size={16} aria-hidden="true" />
+ 신규 템플릿 등록
  </Button>
- </div>
+ </>
  }
- />
-
- <div className="responsive-card p-6 md:p-12 border-2 border-border bg-white/50 backdrop-blur-xl relative overflow-hidden group">
- <div className="flex items-center gap-4 mb-12">
- <div className="w-12 h-12 bg-surface-inverse text-surface-inverse-foreground rounded-lg flex items-center justify-center shadow-lg">
- <FileCode size={24} />
- </div>
- <div>
- <h3 className="text-xl md:text-2xl font-bold text-foreground tracking-tighter ">구조적 자산</h3>
- <p className="text-xs font-bold text-muted-foreground tracking-[0.3em]">등록된 시스템 템플릿</p>
- </div>
- </div>
-
- <div className="px-2 overflow-x-auto">
+ >
  <StandardDataTable
+ accessibleLabel="템플릿 목록"
  columns={columns}
  data={templates}
  loading={loading}
  error={loadError}
  onRetry={() => void handleRefresh()}
- emptyMessage="시스템에 등록된 템플릿이 없습니다."
- className="border-none bg-muted/50 rounded-lg p-8"
+ emptyMessage="등록된 템플릿이 없습니다."
  />
- </div>
- </div>
 
  <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
  <DialogContent className="sm:max-w-[500px] rounded-lg p-10 border-none shadow-2xl bg-card">
@@ -278,7 +260,7 @@ export default function TemplateAdminClient({
  </DialogFooter>
  </DialogContent>
  </Dialog>
- </div>
+ </WorkListPage>
  );
 }
 

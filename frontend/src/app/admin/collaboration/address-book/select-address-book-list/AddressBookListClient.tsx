@@ -190,11 +190,13 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  <RefreshCcw size={16} aria-hidden="true" />
  새로고침
  </Button>
+ {/* 링크 안에 버튼을 중첩하면 접근성 트리에 상호작용 요소가 2개가 된다(HTML 명세 위반).
+ asChild 로 링크 하나만 렌더한다 — 페이지 이동이므로 link 가 옳은 역할이다. */}
+ <Button asChild size="sm" className="gap-2">
  <Link href="/admin/collaboration/address-book/insert-address-book">
- <Button size="sm" className="gap-2">
  <Plus size={16} aria-hidden="true" /> 주소록 등록
- </Button>
  </Link>
+ </Button>
  </>
  }
  filter={

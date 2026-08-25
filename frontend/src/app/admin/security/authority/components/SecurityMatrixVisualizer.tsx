@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck,  
  Lock,  
@@ -33,6 +33,12 @@ interface SecurityMatrixVisualizerProps {
  authors: AuthorInfo[];
  menus: Menu[];
  mappings: Map<string, Set<number>>; // authrtCd -> set of menuNos
+ /**
+  * 기준선과 달라진 셀 좌표(`권한코드:메뉴번호`).
+  * 카탈로그 §5 A5 는 "변경된 셀의 시각 표시"와 "저장 전 변경 요약"을 필수로 두는데,
+  * 매트릭스는 변경 여부를 스스로 알 수 없다(현재 상태만 받는다) — 소유자가 내려준다.
+  */
+ changedCells?: Set<string>;
  onToggle: (authrtCd: string, menuNo: number) => void;
  onSave: () => void;
  isSaving?: boolean;
@@ -47,12 +53,15 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  authors, 
  menus, 
  mappings, 
+ changedCells,
  onToggle, 
  onSave, 
  isSaving 
 }) => {
  const [searchMenu, setSearchMenu] = useState('');
  const [isFullscreen, setIsFullscreen] = useState(false);
+ const gridRef = useRef<HTMLTableSectionElement>(null);
+ const changedCount = changedCells?.size ?? 0;
 
  /** 전체화면은 ESC 로 빠져나올 수 있어야 한다(수제 오버레이라 Radix 의 ESC 처리가 없다). */
  useEffect(() => {
@@ -63,6 +72,44 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  window.addEventListener('keydown', onKeyDown);
  return () => window.removeEventListener('keydown', onKeyDown);
  }, [isFullscreen]);
+
+ /**
+  * 저장 단축키(Ctrl/Cmd+S). 매트릭스는 셀을 여러 번 토글한 뒤 한 번 저장하는 화면이라
+  * 저장 버튼까지의 왕복이 잦다 — 카탈로그 §5 A5 의 키보드 계약이다.
+  * 변경이 없거나 저장 중일 때는 브라우저 기본 동작(페이지 저장)도 가로채지 않는다.
+  */
+ useEffect(() => {
+ const onSaveKey = (event: KeyboardEvent) => {
+ if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 's') return;
+ if (isSaving || changedCount === 0) return;
+ event.preventDefault();
+ onSave();
+ };
+ window.addEventListener('keydown', onSaveKey);
+ return () => window.removeEventListener('keydown', onSaveKey);
+ }, [isSaving, changedCount, onSave]);
+
+ /**
+  * 격자 안 방향키 이동. 셀 버튼은 표의 행·열 좌표를 data 속성으로 갖고 있어
+  * 다음 좌표의 버튼으로 포커스를 옮긴다(Tab 만으로는 큰 격자를 가로지를 수 없다).
+  */
+ const handleGridKeyDown = (event: React.KeyboardEvent<HTMLTableSectionElement>) => {
+ const keys = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'];
+ if (!keys.includes(event.key)) return;
+ const cell = (event.target as HTMLElement).closest<HTMLButtonElement>('[data-a5-cell]');
+ if (!cell || !gridRef.current) return;
+ const row = Number(cell.dataset.rowIndex);
+ const col = Number(cell.dataset.colIndex);
+ if (Number.isNaN(row) || Number.isNaN(col)) return;
+ const nextRow = event.key === 'ArrowUp' ? row - 1 : event.key === 'ArrowDown' ? row + 1 : row;
+ const nextCol = event.key === 'ArrowLeft' ? col - 1 : event.key === 'ArrowRight' ? col + 1 : col;
+ const next = gridRef.current.querySelector<HTMLButtonElement>(
+ `[data-a5-cell][data-row-index="${nextRow}"][data-col-index="${nextCol}"]`,
+ );
+ if (!next) return;
+ event.preventDefault();
+ next.focus();
+ };
 
  const filteredMenus = menus.filter(m => String(m.menuNm || '').toLowerCase().includes(searchMenu.toLowerCase()));
 
@@ -100,10 +147,18 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  <div className="w-px h-10 bg-white/10" />
  <div className="space-y-1 text-right">
  <p className="text-xs font-bold text-white/30 tracking-widest">허용 셀</p>
- <div className="flex items-center gap-2 text-emerald-400">
- <Zap size={12} />
+ <div className="flex items-center gap-2 text-surface-inverse-foreground">
+ <Zap size={12} aria-hidden="true" />
  <p className="text-2xl font-bold tabular-nums">{activeCells}</p>
  </div>
+ </div>
+ <div className="w-px h-10 bg-white/10" />
+ {/* 저장 전 변경 요약(카탈로그 §5 A5 필수). 저장이 실제로 무엇을 쓰는지 미리 보여준다. */}
+ <div className="space-y-1 text-right">
+ <p className="text-xs font-bold text-white/30 tracking-widest">저장 대기 변경</p>
+ <p aria-live="polite" className="text-2xl font-bold tabular-nums text-surface-inverse-foreground">
+ {changedCount}<span className="ml-1 text-sm font-medium text-white/40">건</span>
+ </p>
  </div>
  </div>
 
@@ -120,10 +175,11 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </Button>
  <Button 
  onClick={onSave}
- disabled={isSaving}
+ disabled={isSaving || changedCount === 0}
+ title={changedCount === 0 ? '변경된 셀이 없습니다' : `${changedCount}개 셀 변경을 저장합니다 (Ctrl+S)`}
  className="h-11 px-10 rounded-lg bg-primary text-white font-bold text-xs tracking-widest uppercase shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-1 gap-3 group"
  >
- <Save size={18} aria-hidden="true" className={cn(isSaving && "animate-spin")} /> {isSaving ? '저장 중…' : '변경사항 저장'}
+ <Save size={18} aria-hidden="true" className={cn(isSaving && "animate-spin")} /> {isSaving ? '저장 중…' : changedCount === 0 ? '변경사항 저장' : `변경사항 저장 (${changedCount}건)`}
  </Button>
  </div>
  </div>
@@ -173,8 +229,8 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  })}
  </tr>
  </thead>
- <tbody className="divide-y-2 divide-border">
- {filteredMenus.map((menu) => (
+ <tbody ref={gridRef} onKeyDown={handleGridKeyDown} className="divide-y-2 divide-border">
+ {filteredMenus.map((menu, rowIndex) => (
  <tr key={menu.menuNo} className="divide-x-2 divide-border hover:bg-muted/50 transition-colors group/row">
  <th scope="row" aria-label={`메뉴: ${menu.menuNm}`} className="sticky left-0 z-20 bg-card px-[var(--cell-px)] py-[var(--cell-py)] border-r-4 border-border text-left font-normal group-hover/row:bg-muted transition-colors">
  <div className="flex items-center gap-4">
@@ -190,26 +246,32 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </div>
  </div>
  </th>
- {authors.map((auth) => {
+ {authors.map((auth, colIndex) => {
  const code = auth.authrtCd;
  const isSelected = mappings.get(code)?.has(menu.menuNo);
+ const isChanged = changedCells?.has(`${code}:${menu.menuNo}`) ?? false;
  return (
  <td 
  key={`${code}-${menu.menuNo}`} 
  className="p-1 min-w-[150px]"
  >
  <motion.button
- whileHover={{ scale: 0.98 }}
  whileTap={{ scale: 0.95 }}
- aria-label={`${auth.authrtNm || code} 역할의 '${menu.menuNm}' 메뉴 접근 ${isSelected ? '허용됨' : '차단됨'}`}
+ data-a5-cell
+ data-row-index={rowIndex}
+ data-col-index={colIndex}
+ data-changed={isChanged || undefined}
+ // 변경 사실은 색 테두리만으로 전달하지 않는다 — 접근 이름에 '저장 대기 변경'을 함께 넣는다.
+ aria-label={`${auth.authrtNm || code} 역할의 '${menu.menuNm}' 메뉴 접근 ${isSelected ? '허용됨' : '차단됨'}${isChanged ? ', 저장 대기 변경' : ''}`}
  aria-pressed={!!isSelected}
  onClick={() => onToggle(code, menu.menuNo)}
  // 행 높이 토큰화 — 셀 토글 높이를 --control-h 로 위임해 compact 에서 행이 함께 조밀해진다.
  className={cn(
- "w-full h-[var(--control-h)] rounded-lg flex items-center justify-center transition-all duration-500 relative overflow-hidden group/cell",
+ "w-full h-[var(--control-h)] rounded-lg flex items-center justify-center transition-colors relative overflow-hidden group/cell focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring",
  isSelected
- ? "bg-surface-inverse shadow-xl border-none"
- : "bg-card hover:bg-muted border-2 border-dashed border-border hover:border-border"
+ ? "bg-surface-inverse shadow-sm border-none"
+ : "bg-card hover:bg-muted border-2 border-dashed border-border hover:border-border",
+ isChanged && "ring-2 ring-primary ring-offset-1"
  )}
  >
  {/* 토큰화된 행 높이(--control-h) 안에 들어가도록 아이콘·라벨을 가로로 배치한다. */}

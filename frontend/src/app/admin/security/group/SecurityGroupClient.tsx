@@ -6,26 +6,19 @@ import { Trash2,
  Plus,
  Loader2,
  Users,
- LayoutGrid,
- Search,
  RefreshCcw,
  Zap,
- Database,
  Fingerprint,
  Binary,
- Network,
  Calendar,
  Settings } from "lucide-react";
 import { groupAdminService } from '@/services/foundation/system/GroupAdminService';
 import { GroupManage } from '@/types/foundation/security';
 import { SearchParams } from '@/types/foundation/system';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 ;
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { PagePagination } from "@/components/common/PagePagination";
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -103,12 +96,6 @@ export default function SecurityGroupClient() {
  },
  onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error')
  });
-
- /** 검색은 항상 1페이지부터 — 3페이지에서 검색하면 빈 화면이 되는 결함 방지. */
- const handleSearch = (e: React.FormEvent) => {
- e.preventDefault();
- setPage(1);
- };
 
  const handleCreate = () => {
  setEditingGroup(null);
@@ -195,92 +182,60 @@ export default function SecurityGroupClient() {
  ];
 
  return (
- <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
- <PageHeader
- title="보안 그룹 아키텍처 거버넌스"
- breadcrumbs={[{ label: '보안 관리' }, { label: '그룹 관리' }]}
- />
-
- <HubHeader
- title="Security"
- highlight="Group"
- subtitle="시스템 접근 수준을 정의하는 격리 보안 그룹 엔터티 및 정책 아카이브 통합 제어"
- icon={Users}
+ <WorkListPage
+ title="보안 그룹 관리"
+ description="시스템 접근 수준을 정의하는 보안 그룹을 조회·설정합니다."
+ breadcrumbItems={[{ label: '보안 관리' }, { label: '그룹 관리' }]}
+ filterStateKey="security-group"
+ totalCount={error ? undefined : pagination?.totalRecordCount}
  actions={
- <div className="flex gap-4 p-2 items-center">
+ <>
  <Button
- variant="ghost"
+ variant="outline"
+ size="sm"
  onClick={() => refetch()}
  aria-label="보안 그룹 목록 새로고침"
- className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="gap-2"
  >
- <RefreshCcw size={22} aria-hidden="true" className="group-hover:rotate-180 transition-transform duration-700" />
+ <RefreshCcw size={16} aria-hidden="true" />
+ 새로고침
  </Button>
- <Button
- onClick={handleCreate}
- className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
- >
- <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 그룹 설정
+ <Button size="sm" onClick={handleCreate} className="gap-2">
+ <Plus size={16} aria-hidden="true" /> 신규 보안 그룹 설정
  </Button>
- </div>
+ </>
  }
- />
-
- {/*
-   지표는 서버가 실제로 내려준 값만 노출한다.
-   종전의 'SYNC_STATUS=STEADY' · 'SECURITY_TIER=TIER_1' 은 산출 근거가 없는 고정 문자열이라 삭제했다.
- */}
- <HubMetricGrid>
- <HubMetricCard title="전체 보안 그룹" value={pagination?.totalRecordCount ?? 0} icon={Database} color="indigo" status="서버 집계" />
- <HubMetricCard title="현재 페이지 표시" value={groups.length} icon={LayoutGrid} color="primary" status={`${page} 페이지`} />
- </HubMetricGrid>
-
- <HubSectionCard
- title="보안 도메인 그룹 매트릭스"
- description="시스템의 격리 보안 계층을 구성하는 그룹 인벤토리 및 실시간 프로비저닝 상태입니다."
- icon={Network}
- >
- <div className="space-y-8">
- <div className="flex items-center justify-between px-2 pt-2 border-b border-border pb-10 mb-8">
- <div className="flex items-center gap-8">
- <form onSubmit={handleSearch} className="flex items-center gap-4 relative group/search">
- <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within/search:text-primary transition-colors" size={18} />
+ filter={
+ <div className="min-w-60 max-w-xl space-y-1">
+ <label htmlFor="security-group-search" className="text-[length:var(--font-size-body)] font-medium">
+ 그룹ID · 그룹명
+ </label>
  <Input
+ id="security-group-search"
  aria-label="그룹ID 또는 그룹명 검색"
  placeholder="그룹ID 또는 그룹명으로 검색"
- className="w-full sm:w-[450px] h-11 pl-16 rounded-lg border-2 bg-muted/50 text-sm font-bold tracking-tight shadow-inner"
  value={searchInput}
  onChange={(e) => { setSearchInput(e.target.value); setPage(1); }}
  />
- <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-1">그룹 검색</Button>
- </form>
  </div>
- {/* [정직성] '기능 그룹 테이블 프로브' 장식 라벨 제거 — 어떤 계측·기능과도 연결되지 않은 문구였다. */}
- </div>
-
- <div className="min-h-[500px]">
+ }
+ >
  <StandardDataTable
+ accessibleLabel="보안 그룹 목록"
  keyField="groupId"
  columns={columns}
  data={groups}
  loading={isLoading}
  error={error as Error | null}
  onRetry={() => refetch()}
- emptyMessage="식별된 보안 그룹 리소스가 존재하지 않습니다."
- className="border-none bg-transparent"
+ emptyMessage={emptyResultMessage(searchKeyword, '등록된 보안 그룹이 없습니다.')}
+ pagination={{
+ currentPage: page,
+ totalPages: pagination?.totalPageCount ?? 1,
+ onPageChange: (p) => setPage(p),
+ pageSize: pagination?.recordCountPerPage ?? 10,
+ }}
  />
- </div>
-
- {pagination && (
- <div className="mt-12 flex justify-center">
- <PagePagination
- pagination={pagination}
- onPageChange={(p) => setPage(p)}
- />
- </div>
- )}
- </div>
- </HubSectionCard>
 
  {/* Group Configuration Modal */}
  <StandardModal
@@ -346,6 +301,6 @@ export default function SecurityGroupClient() {
  </div>
  </div>
  </StandardModal>
- </div>
+ </WorkListPage>
  );
 }

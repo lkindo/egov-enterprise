@@ -10,6 +10,13 @@ vi.mock('next/config', () => ({
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn() }),
   useSearchParams: () => ({ get: vi.fn().mockReturnValue('') }),
+  // [2026-08-24 A1 이행] WorkListPage 의 브레드크럼이 현재 경로를 읽는다.
+  usePathname: () => '/admin/system/programs',
+}));
+
+// 브레드크럼은 메뉴 SSOT 를 조회한다 — 이 테스트의 대상이 아니므로 응답을 고정한다.
+vi.mock('@/services/business/user/MenuService', () => ({
+  menuService: { getHeadMenus: vi.fn().mockResolvedValue([]) },
 }));
 
 // 4. Mock UI components directly
@@ -51,7 +58,9 @@ describe('ProgramAdminClient Component', () => {
 
   it('renders correctly', () => {
     render(<ProgramAdminClient initialData={mockInitialData} searchWrd="" />);
-    expect(screen.getByTestId('hub-header')).toBeInTheDocument();
+    // [2026-08-24 A1 이행] HubHeader 대신 WorkListPage 셸이 제목과 결과 툴바를 소유한다.
+    expect(screen.getByRole('heading', { level: 1, name: '시스템 프로그램 관리' })).toBeInTheDocument();
+    expect(screen.getByTestId('work-list-toolbar')).toBeInTheDocument();
   });
 
   it('opens registration modal', async () => {

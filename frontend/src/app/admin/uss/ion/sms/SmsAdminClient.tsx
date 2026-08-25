@@ -4,18 +4,14 @@ import { useCallback, useState } from 'react';
 import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { smsAdminService, SmsDto } from '@/services/foundation/operation/SmsAdminService';
 import { PageResponse } from '@/types/foundation/system';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { MessageSquare,
-  Send,
-  Search,
+import { Send,
   RefreshCcw,
   Plus,
-  History,
   Phone,
   Calendar } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -172,108 +168,57 @@ export default function SmsAdminClient({
   ];
 
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      {/* ⚠ 제목/버튼 문구 3종과 성공 토스트는 e2e POM(e2e/pages/OperationalExtensionPage.ts:61,68,71,73)이
-          정확 문자열로 매칭한다. 한글화(P2)는 POM 동시 수정이 필요해 이번 배치에서는 문구를 보존한다. */}
-      <PageHeader
-        title="메시지 오케스트레이션"
-        breadcrumbs={[{ label: '부가서비스' }, { label: '문자 메시지' }]}
-      />
-
-      <HubHeader
-        title="문자 메시지"
-        highlight="발송 관리"
-        subtitle="시스템 알림 및 인증 문자 발송 이력을 조회하고 새 메시지를 발송합니다."
-        icon={Send}
+    <WorkListPage
+        title="문자 메시지 발송 관리"
+        description="시스템 알림·인증 문자 발송 이력을 조회하고 새 메시지를 발송합니다."
+        breadcrumbItems={[{ label: '부가서비스' }, { label: '문자 메시지' }]}
+        filterStateKey="uss-sms"
+        totalCount={isError ? undefined : totalCount}
         actions={
-          <div className="flex gap-4 p-2 items-center">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={() => refetch()}
-              className="h-12 rounded-lg border-2 font-bold text-xs tracking-widest gap-2"
-            >
+          <>
+            <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
               <RefreshCcw size={16} className={cn(isFetching && "animate-spin")} aria-hidden="true" /> 새로고침
             </Button>
-            <Button
-              size="lg"
-              onClick={() => setIsSendOpen(true)}
-              className="h-12 px-8 rounded-lg font-bold text-xs tracking-widest shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2"
-            >
-              <Plus size={18} aria-hidden="true" /> 새 메시지 구성
+            <Button size="sm" onClick={() => setIsSendOpen(true)} className="gap-2">
+              <Plus size={16} aria-hidden="true" /> 새 메시지 구성
             </Button>
+          </>
+        }
+        filter={
+          <div className="min-w-60 max-w-xl space-y-1">
+            <label htmlFor="sms-search" className="text-[length:var(--font-size-body)] font-medium">
+              발신번호 · 내용
+            </label>
+            <Input
+              id="sms-search"
+              placeholder="발신번호 또는 내용 검색"
+              aria-label="문자 발송 이력 검색"
+              value={searchKeyword}
+              // 검색 시 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(감사 P1-8).
+              onChange={(e) => {
+                setSearchKeyword(e.target.value);
+                if (page !== 1) goToPage(1);
+              }}
+            />
           </div>
         }
-      />
-
-      {/*
-        종전 지표 카드 3종(ACCUMULATED LOGS / DELIVERY SUCCESS / FAILED ATTEMPTS)은
-        같은 total 값을 서로 다른 의미로 두 번 표기하고, 실패 건수는 항상 0(CRITICAL)로 고정돼 있었다.
-        산출 근거가 있는 값(총 발송 건수)만 남긴다(감사 P1-5).
-      */}
-      <div className="flex items-center gap-4 px-2">
-        <div className="hub-table-container bg-card px-8 py-6 flex items-center gap-5">
-          <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-muted-foreground border border-border/10 shadow-inner">
-            <History size={22} aria-hidden="true" />
-          </div>
-          <div className="text-left">
-            <p className="text-3xl font-bold tracking-tighter text-foreground leading-none tabular-nums">
-              {totalCount.toLocaleString()}
-            </p>
-            <p className="text-xs font-bold text-muted-foreground tracking-widest mt-2 leading-none">총 발송 건수</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Stream Area */}
-      <HubSectionCard
-        title="발송 이력"
-        description="시스템에서 처리된 문자 메시지 발송 기록입니다."
-        icon={MessageSquare}
       >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
-          <div className="text-left">
-            <h3 className="text-2xl font-bold tracking-tighter leading-none text-left">발송 로그</h3>
-            <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] mt-2 text-left">문자 발송 내역 조회</p>
-          </div>
-          <div className="flex items-center gap-4">
-            <div className="relative group/search flex-1 md:flex-none">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-40 group-focus-within/search:opacity-100 transition-opacity" size={16} aria-hidden="true" />
-              <Input
-                placeholder="발신번호 또는 내용 검색..."
-                aria-label="문자 발송 이력 검색"
-                value={searchKeyword}
-                // 검색 시 1페이지로 되돌린다 — 3페이지에서 검색하면 빈 화면이 되던 결함(감사 P1-8).
-                onChange={(e) => {
-                  setSearchKeyword(e.target.value);
-                  if (page !== 1) goToPage(1);
-                }}
-                className="h-11 pl-12 pr-6 w-full md:w-[320px] bg-muted border-none rounded-lg text-xs font-bold tracking-widest shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <StandardDataTable<SmsDto>
-            columns={columns}
-            data={smsList}
-            loading={isLoading}
-            error={isError ? (error as Error) : null}
-            onRetry={() => refetch()}
-            keyField="smsTrsmSn"
-            emptyMessage={debouncedKeyword ? `'${debouncedKeyword}' 에 해당하는 발송 내역이 없습니다.` : '발송된 문자 메시지가 없습니다.'}
-            className="border-none bg-transparent"
-            pagination={{
-              currentPage: page,
-              totalPages: data?.totalPage || 1,
-              totalCount: data?.total,
-              pageSize: PAGE_SIZE,
-              onPageChange: goToPage,
-            }}
-          />
-        </div>
-      </HubSectionCard>
+        <StandardDataTable<SmsDto>
+          accessibleLabel="문자 발송 이력"
+          columns={columns}
+          data={smsList}
+          loading={isLoading}
+          error={isError ? (error as Error) : null}
+          onRetry={() => refetch()}
+          keyField="smsTrsmSn"
+          emptyMessage={emptyResultMessage(debouncedKeyword, '발송된 문자 메시지가 없습니다.')}
+          pagination={{
+            currentPage: page,
+            totalPages: data?.totalPage || 1,
+            pageSize: PAGE_SIZE,
+            onPageChange: goToPage,
+          }}
+        />
 
       {/* Send Message Composition Dialog */}
       <Dialog open={isSendOpen} onOpenChange={setIsSendOpen}>
@@ -358,13 +303,13 @@ export default function SmsAdminClient({
                   className="h-11 px-16 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-[0.3em] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
                 >
                   {isSending ? <RefreshCcw size={18} className="animate-spin" aria-hidden="true" /> : <Send size={18} aria-hidden="true" />}
-                  Execute Send
+                  발송
                 </Button>
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-    </div>
+    </WorkListPage>
   );
 }

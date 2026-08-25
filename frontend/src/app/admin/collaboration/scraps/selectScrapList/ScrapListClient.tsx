@@ -150,11 +150,12 @@ const ScrapListClient = () => {
                         <RefreshCcw className="w-4 h-4" aria-hidden="true" />
                         새로고침
                     </Button>
-                    <Link href="/admin/collaboration/scraps/insertScrap">
-                        <Button size="sm" className="gap-2">
+                    {/* 링크 안 버튼 중첩(상호작용 2중)을 피한다 — 이동은 link 역할이 옳다. */}
+                    <Button asChild size="sm" className="gap-2">
+                        <Link href="/admin/collaboration/scraps/insertScrap">
                             <Plus className="w-4 h-4" aria-hidden="true" /> 신규 등록
-                        </Button>
-                    </Link>
+                        </Link>
+                    </Button>
                 </>
             }
         >

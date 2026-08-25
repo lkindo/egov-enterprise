@@ -229,6 +229,23 @@ describe('SecurityHubClient', () => {
     fireEvent.click(screen.getByRole('button', { name: '전역 메뉴 토글' }));
     fireEvent.click(screen.getByRole('button', { name: '전역 정책 저장' }));
     await waitFor(() => expect(mocks.saveMenus).toHaveBeenCalled());
-    expect(mocks.toast).toHaveBeenCalledWith('글로벌 보안 정책이 전사적으로 동기화되었습니다.', 'success');
+
+    // [2026-08-24 A5] 저장은 **변경된 역할만** 쓴다. 종전에는 로드된 모든 역할을 다시 써서
+    //   손대지 않은 역할의 동시 편집분을 조용히 덮었고, "변경 셀 수와 저장 결과 건수 일치"
+    //   (카탈로그 §5 A5 합격 기준)도 성립하지 않았다.
+    expect(mocks.saveMenus).toHaveBeenCalledTimes(1);
+    expect(mocks.saveMenus).toHaveBeenCalledWith('ROLE_ADMIN', expect.arrayContaining([2]));
+    expect(mocks.toast).toHaveBeenCalledWith('권한 1건의 메뉴 접근 정책을 저장했습니다.', 'success');
+  });
+
+  it('변경이 없으면 전역 매트릭스를 저장하지 않는다', async () => {
+    renderClient('view=matrix');
+    expect(await screen.findByText(/매트릭스 역할 2/)).toBeInTheDocument();
+    await waitFor(() => expect(mocks.getAuthorMenus).toHaveBeenCalledTimes(2));
+
+    fireEvent.click(screen.getByRole('button', { name: '전역 정책 저장' }));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('변경된 권한이 없습니다.', 'info'));
+    expect(mocks.saveMenus).not.toHaveBeenCalled();
   });
 });

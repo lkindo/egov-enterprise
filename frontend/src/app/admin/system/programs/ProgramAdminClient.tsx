@@ -1,12 +1,10 @@
 'use client';
 
 import { useState } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { Input } from '@/components/ui/input';
 import { Program } from '@/types/foundation/program';
 import { PageResponse } from '@/types/foundation/system';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
@@ -16,11 +14,7 @@ import { Plus,
  Trash2,
  Settings,
  Cpu,
- Link as LinkIcon,
- Search,
- Box,
- Layers,
- SearchCode } from 'lucide-react';
+ Link as LinkIcon } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import { Button } from '@/components/ui/button';
 import {
@@ -145,8 +139,6 @@ export default function ProgramAdminClient({
  };
 
  /** 검색은 항상 1페이지부터 — 3페이지에서 검색하면 빈 화면이 되는 결함 방지. */
- const handleSearch = () => loadData(currentSearchWrd, 1);
-
  const handleOpenCreate = () => {
  setMode('create');
  form.reset({ prgrmFileNm: '', prgrmStrgPath: '', prgrmKornNm: '', url: '', prgrmExpln: '' });
@@ -248,89 +240,42 @@ export default function ProgramAdminClient({
  ];
 
  return (
- <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
- <PageHeader
- title="시스템 프로그램 미들웨어"
- breadcrumbs={[{ label: '시스템관리' }, { label: '프로그램 관리' }]}
- />
-
- <HubHeader
- title="프로그램"
- highlight="자산 관리"
- subtitle="시스템을 구성하는 모든 물리 프로그램 모듈 및 API 엔드포인트의 생명주기를 관리합니다."
- icon={Box}
+ <WorkListPage
+ title="시스템 프로그램 관리"
+ description="시스템을 구성하는 프로그램 모듈과 API 엔드포인트를 조회·등록합니다."
+ breadcrumbItems={[{ label: '시스템관리' }, { label: '프로그램 관리' }]}
+ filterStateKey="system-programs"
+ totalCount={error ? undefined : total}
  actions={
- <Tooltip>
- <TooltipTrigger asChild>
- <Button
- onClick={handleOpenCreate}
- size="lg"
- className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3"
- >
- <Plus size={20} /> 신규 등록
+ <Button size="sm" onClick={handleOpenCreate} className="gap-2">
+ <Plus size={16} aria-hidden="true" /> 신규 등록
  </Button>
- </TooltipTrigger>
- <TooltipContent side="bottom" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
- 새로운 물리 프로그램 자산 정의
- </TooltipContent>
- </Tooltip>
  }
- />
-
- {/*
-   근거 없는 고정 지표('시스템 무결성 정상' · '가동시간 99.9%' · '동기화 실시간')는 산출 근거가 없어 삭제했다.
-   남긴 카드는 모두 서버 응답(total/totalPage)과 현재 목록에서 실제로 계산되는 값이다.
- */}
- <HubMetricGrid className="lg:grid-cols-3">
- <HubMetricCard title="전체 프로그램" value={total} icon={Layers} color="primary" />
- <HubMetricCard title="현재 페이지" value={`${page} / ${Math.max(totalPage, 1)}`} icon={Box} color="indigo" />
- <HubMetricCard title="현재 페이지 표시 건수" value={data.length} icon={Cpu} color="emerald" />
- </HubMetricGrid>
-
- <HubSectionCard 
- title="소프트웨어 레포지토리" 
- description="현재 시스템에 등록되어 동작 중인 모든 소프트웨어 자산의 명세 및 메타데이터 정보입니다." 
- icon={SearchCode}
- >
- <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
- <div className="flex-1 max-w-2xl text-left">
- <div className="relative group/search">
- <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={20} />
- <Input
- aria-label="프로그램 검색어"
- placeholder="프로그램명 또는 파일명을 입력하여 검색.."
+ filter={
+ <KeywordFilter
+ label="프로그램명 · 파일명"
+ placeholder="프로그램명 또는 파일명으로 검색"
  value={currentSearchWrd}
- onChange={(e) => setCurrentSearchWrd(e.target.value)}
- onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
- className="h-11 pl-16 pr-8 w-full bg-muted/50 border-none rounded-lg text-xs font-bold tracking-widest uppercase shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+ onSearch={(keyword) => { setCurrentSearchWrd(keyword); loadData(keyword, 1); }}
  />
- </div>
- </div>
- <Button onClick={handleSearch} size="lg" className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2">
- <Search size={18} /> 검색
- </Button>
- </div>
-
- <div className="overflow-hidden">
+ }
+ >
  <StandardDataTable
+ accessibleLabel="시스템 프로그램 목록"
  columns={columns}
  data={data}
  loading={loading}
  error={error}
  onRetry={() => loadData(currentSearchWrd, page)}
  keyField="prgrmFileNm"
- emptyMessage="시스템에 등록된 프로그램 자산이 존재하지 않습니다."
- className="border-none bg-transparent"
+ emptyMessage={emptyResultMessage(currentSearchWrd, '등록된 프로그램이 없습니다.')}
  pagination={{
  currentPage: page,
  totalPages: totalPage,
- totalCount: total,
  pageSize: PAGE_SIZE,
  onPageChange: (p) => loadData(currentSearchWrd, p)
  }}
  />
- </div>
- </HubSectionCard>
 
  <StandardModal
  isOpen={isModalOpen}
@@ -348,7 +293,7 @@ export default function ProgramAdminClient({
  }}
  />
  </StandardModal>
- </div>
+ </WorkListPage>
  );
 }
 
