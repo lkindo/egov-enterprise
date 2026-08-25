@@ -8,9 +8,7 @@ import { Activity,
   Clock,
   AlertTriangle,
   RefreshCcw,
-  Zap,
   Layers } from 'lucide-react';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -161,30 +159,26 @@ export default function ObservabilityPage() {
 
   return (
     <div className="space-y-12 pb-24">
+      {/* [2026-08-26] 페이지 헤더가 두 겹이었다 — PageHeader 아래 HubHeader(`실시간 지능형 관제`
+          히어로 + 마케팅 문구)가 한 번 더 있었고 주요 액션이 그쪽에 붙어 있었다.
+          한 화면의 페이지 헤더는 하나다. */}
       <PageHeader
         title="시스템 통합 관제"
         breadcrumbs={[{ label: '운영환경' }, { label: '옵저버빌리티' }]}
-      />
-
-      <HubHeader
-        title="실시간"
-        highlight="지능형 관제"
-        subtitle="전체 분산 아키텍처의 흐름과 인프라 상태를 실시간으로 모니터링합니다."
-        icon={Zap}
         actions={
           // [P1-6] '데이터 익스포트'는 onClick 이 없는 死버튼이었다.
           //        동작 검증된 DataExportExcel(UTF-8 BOM CSV)로 현재 실측 지표를 반출하도록 배선한다.
-          <div className="flex gap-4">
+          <div className="flex items-center gap-2">
             <Button
               onClick={() => { void refetch(); }}
               disabled={isFetching}
               variant="outline"
-              className="h-11 px-8 rounded-xl bg-card border-2 border-border text-muted-foreground hover:text-primary transition-all shadow-sm"
+              size="sm"
             >
-                <RefreshCcw size={18} aria-hidden="true" /> 지표 새로고침
+              <RefreshCcw size={16} aria-hidden="true" /> 지표 새로고침
             </Button>
             <DataExportExcel
-            scope="loaded"
+              scope="loaded"
               data={[{
                 collectedAt: new Date().toISOString(),
                 traffic: metrics.traffic,
@@ -196,7 +190,7 @@ export default function ObservabilityPage() {
               }]}
               headers={METRIC_EXPORT_HEADERS}
               filename="관제지표"
-              className="h-11 px-10 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs uppercase hover:bg-primary transition-all shadow-2xl flex items-center gap-2"
+              className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:text-primary"
             />
           </div>
         }

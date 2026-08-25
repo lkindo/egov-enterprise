@@ -46,7 +46,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 
@@ -577,13 +576,6 @@ export default function SecurityHubClient({
       <PageHeader
         title="통합 보안 거버넌스 허브"
         breadcrumbs={[{ label: '보안 관리' }, { label: '권한 설정' }, { label: '통합 컨트롤' }]}
-      />
-
-      <HubHeader
-        title="Security"
-        highlight="Fabric"
-        subtitle="시스템 전반 보안 역할(Role), 사용자 할당 매트릭스 및 계층적 접근 제어 정책 통합 아키텍처"
-        icon={Lock}
         actions={
           <div className="flex gap-4 p-2 items-center">
             <div role="tablist" aria-label="보안 허브 보기 전환" className="flex items-center gap-1 bg-muted p-1 rounded-lg mr-4 border-2 border-border">
@@ -669,6 +661,10 @@ export default function SecurityHubClient({
           </div>
         }
       />
+
+      {/* [2026-08-26] 페이지 헤더가 두 겹이었다 — PageHeader 아래 HubHeader(영문 혼용 히어로 +
+          마케팅 문구)가 한 번 더 있었고 주요 액션이 그쪽에 붙어 있었다.
+          한 화면의 페이지 헤더는 하나이며, 액션은 그 하나가 소유한다. */}
 
       {/*
         지표는 서버가 실제로 내려준 값만 노출한다.

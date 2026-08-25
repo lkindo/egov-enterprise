@@ -9,7 +9,6 @@ import {
  File, 
  Loader2, 
  ShieldCheck, 
- Workflow, 
  Network, 
  Lock, 
  Compass, 
@@ -25,7 +24,6 @@ import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
 import { MenuByAuthority } from '@/types/foundation/security';
 import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 import { cn } from '@/lib/utils';
@@ -235,14 +233,7 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  <PageHeader
  title="권한 기반 메뉴 거버넌스"
  breadcrumbs={[{ label: '시스템 관리' }, { label: '메뉴 관리' }, { label: '권한별 메뉴' }]}
- />
-
- <HubHeader 
- title="권한별 메뉴 관리" 
- highlight="감사" 
- subtitle="시스템 역할별 접근 가능한 메뉴 계층 구조를 시각화하고 정합성을 검증합니다." 
- icon={Workflow} 
- actions={
+        actions={
  <div className="flex gap-4 p-2 items-center">
  <Button
  variant="ghost"
@@ -262,7 +253,11 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  </Button>
  </div>
  }
- />
+      />
+
+ {/* [2026-08-26] 페이지 헤더가 두 겹이었다 — PageHeader 아래 HubHeader(영문 혼용 히어로 +
+          마케팅 문구)가 한 번 더 있었고 주요 액션이 그쪽에 붙어 있었다.
+          한 화면의 페이지 헤더는 하나이며, 액션은 그 하나가 소유한다. */}
 
  {/* 권한 목록 조회 실패는 "역할 0건"으로 위장하지 않고 사유와 재시도 수단을 노출한다. */}
  {authorityErrorMessage && (
