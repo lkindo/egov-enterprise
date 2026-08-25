@@ -99,9 +99,16 @@ vi.mock('@/components/ui/tooltip', () => ({
   TooltipTrigger: ({ children }: any) => <>{children}</>,
   TooltipContent: () => null,
 }));
-vi.mock('@/app/components/layout/page-header', () => ({ PageHeader: ({ title }: any) => <h1>{title}</h1> }));
-vi.mock('@/components/ui/hub/HubHeader', () => ({
-  HubHeader: ({ actions }: any) => <div data-testid="hub-header">{actions}</div>,
+// [2026-08-26] 종전 목은 title 만 렌더해 actions 를 통째로 버렸다. 중복 헤더(HubHeader)를 걷고
+// 주요 액션을 PageHeader 로 올리자 **실제로는 있는 버튼이 테스트에서만 사라졌다** — 목이 실제
+// 컴포넌트 계약과 어긋나 있던 것이다. 목도 actions 를 렌더한다.
+vi.mock('@/app/components/layout/page-header', () => ({
+  PageHeader: ({ title, actions }: any) => (
+    <div>
+      <h1>{title}</h1>
+      {actions}
+    </div>
+  ),
 }));
 vi.mock('@/components/ui/hub/HubSectionCard', () => ({
   HubSectionCard: ({ children }: any) => <section>{children}</section>,
