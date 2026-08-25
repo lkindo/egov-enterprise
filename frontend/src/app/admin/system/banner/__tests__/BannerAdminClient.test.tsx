@@ -199,7 +199,11 @@ describe('BannerAdminClient', () => {
     renderClient();
 
     expect(await screen.findByText('메인 배너')).toBeInTheDocument();
-    expect(screen.getByText('전체 배너: 21')).toBeInTheDocument();
+    // [2026-08-25 A1 이행] 지표 카드 4장이 셸 총계 + 툴바 한 줄 요약으로 수렴했다.
+    const toolbar = screen.getByTestId('work-list-toolbar');
+    expect(toolbar).toHaveTextContent('총 21건');
+    expect(toolbar).toHaveTextContent('배너 21');
+    expect(toolbar).toHaveTextContent('팝업 12');
     expect(screen.getByAltText('메인 배너 배너 이미지')).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '메인 배너 배너 수정' }));
