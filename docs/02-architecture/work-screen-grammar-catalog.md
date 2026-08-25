@@ -196,7 +196,7 @@
 | `MasterDetailPage`(A2) 소비 | 6 | 별도 exact census 가 고정 |
 | `ReportPage`(A7) 소비 | 2 | 별도 exact census 가 고정 |
 | `sortKey`(열 정렬) 채택 | 9 | G5 — 이행 전 7. **현재 구현은 클라이언트 정렬이라 범위가 현재 페이지다** — 여러 페이지 결과에서는 페이저 요약이 그 범위를 고지한다([계약](../../frontend/src/app/components/ui/__tests__/sort-scope-disclosure.test.tsx)). 서버 정렬 파라미터 도입은 별도 과제(GAP-UI-001) |
-| `onPageSizeChange` 채택 | 14 | A1 필수 — 이행 전 6 |
+| `onPageSizeChange` 채택 | 28 | A1 **필수**. 이행 전 6 → 14 → 28. 2026-08-25 실측에서 서버 페이징이 있는 A1 화면 15개가 컨트롤을 전달하지 않고 있었다(기능은 표가 처음부터 갖고 있었다) — [census 게이트](../../frontend/src/__tests__/page-size-adoption-census.test.ts)가 제공 여부와 queryKey 결속을 함께 고정한다 |
 | `KeywordFilter` 경유 조회 조건 | 17 | G2 — 조회 조건 조립의 단일 경로 |
 | `emptyResultMessage` 경유 빈 상태 | 30 | G15 — 결과 없음/데이터 없음 구분 |
 | `PagePagination` 별도 소비 | 0 | 표가 아닌 페이지 목록도 전부 셸·표 페이저로 수렴했다 |
