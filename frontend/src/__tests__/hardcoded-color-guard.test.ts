@@ -41,7 +41,9 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 //   variant(bg-primary 토큰)로 회수(m-3 단독 사전 red 실측: 71 != 72; m-4 하향과 병합해 70→69).
 // [하향 래칫 2026-08-24] A2 메뉴·부서 이행에서 장식 색을 semantic surface/primary 토큰으로 회수
 //   (사전 red 실측: 66 != 69).
-const BASELINE = 66;
+// [하향 래칫 2026-08-25] 게시판 마스터 A1 이행 — 영문 마케팅 배너(rgba 그림자·slate 리터럴)
+//   제거로 2건 감소(사전 red 실측: 64 != 66).
+const BASELINE = 64;
 
 function collectFiles(dir: string): string[] {
   const out: string[] = [];

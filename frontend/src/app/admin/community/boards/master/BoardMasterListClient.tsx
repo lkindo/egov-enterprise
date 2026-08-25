@@ -5,8 +5,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Plus,
   Settings2,
-  Layers,
-  Rocket,
   ArrowRight,
   Zap,
   Trash2,
@@ -15,14 +13,15 @@ import { Plus,
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
 import { boardAdminService, BoardMaster } from '@/services/foundation/system/BoardAdminService';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useToast } from '@/app/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 import { 
   Dialog, 
   DialogContent, 
@@ -34,23 +33,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { LucideIcon } from 'lucide-react';
 
 import { extractErrorMessage } from '@/app/actions/actionUtils';
-const container = {
-  hidden: { opacity: 0 },
-  show: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
-
-const item = {
-  hidden: { y: 20, opacity: 0 },
-  show: { y: 0, opacity: 1 }
-};
 
 /**
  * 첨부 파일 허용 용량 기본값(5MB).
@@ -59,13 +43,6 @@ const item = {
  */
 const DEFAULT_ATCH_PSBLTY_FILE_SZ = 5242880;
 
-interface InsightCardProps {
-  label: string;
-  value: string;
-  desc: string;
-  icon: LucideIcon;
-  color: string;
-}
 
 export function BoardMasterListClient() {
   const router = useRouter();
@@ -308,43 +285,39 @@ export function BoardMasterListClient() {
 
   // 감사 P2: 루트 layout(max-w-7xl p-6/md:p-12/lg:p-16)과 겹치던 화면별 폭/여백(max-w-[1600px] mx-auto px-4) 제거.
   return (
-    <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
-      <PageHeader 
-        title="게시판 마스터" 
-        breadcrumbs={[{ label: '커뮤니티' }, { label: '게시판 관리' }, { label: '마스터 콘솔' }]} 
-      />
-
-      <HubHeader 
-        title="마스터 콘솔" 
-        highlight="게시판 통합 관리" 
-        subtitle="생성된 모든 게시판의 라이프사이클과 권한 매트릭스를 실시간으로 제어하고 모니터링합니다" 
-        icon={Settings2} 
-        actions={
-          user?.role === 'ADMIN' && (
-            <Button 
-              onClick={() => router.push('/admin/community/boards/maker')}
-              className="h-11 px-10 rounded-lg bg-slate-900 dark:bg-primary border-none text-white font-bold text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all gap-4 ring-8 ring-slate-900/5 dark:ring-primary/5 group"
-            >
-              <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" />
-              생성 마법사
-              <Rocket className="w-4 h-4 text-primary dark:text-white opacity-40 group-hover:text-primary group-hover:opacity-100 transition-all" />
-            </Button>
-          )
-        }
-      />
-
-      <motion.div 
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="grid grid-cols-1 md:grid-cols-3 gap-8"
-      >
-        <InsightCard label="전체 게시판" value={isLoading ? '—' : totalCount.toLocaleString()} desc="등록된 게시판 마스터 수" icon={Layers} color="text-hub-indigo" />
-        <InsightCard label="활성" value={isLoading ? '—' : activeCount.toLocaleString()} desc="사용 여부 Y (서비스 중)" icon={Zap} color="text-emerald-500" />
-        <InsightCard label="대기" value={isLoading ? '—' : standbyCount.toLocaleString()} desc="사용 여부 N (비활성)" icon={Lock} color="text-amber-500" />
-      </motion.div>
-
-      <div className="hub-table-container">
+    <WorkListPage
+      title="게시판 마스터 콘솔"
+      description="생성된 게시판의 사용 여부와 설정을 조회·관리합니다."
+      breadcrumbItems={[{ label: '커뮤니티' }, { label: '게시판 관리' }, { label: '마스터 콘솔' }]}
+      filterStateKey="community-board-master"
+      totalCount={isError ? undefined : totalCount}
+      actions={
+        /* ⚠ 'ADMIN' 리터럴 하나만 보면 실제 관리자(role=ROLE_ADMIN)에게 진입이 사라진다.
+           라우트 게이트와 같은 집합을 쓴다. */
+        isAdministrativeRole(user?.role) && (
+          <Button size="sm" onClick={() => router.push('/admin/community/boards/maker')} className="gap-2">
+            <Plus className="w-4 h-4" aria-hidden="true" />
+            생성 마법사
+          </Button>
+        )
+      }
+      filter={
+        <KeywordFilter
+          label="게시판 명칭 · 시스템 ID"
+          placeholder="게시판 명칭, 시스템 ID 검색"
+          value={searchWrd}
+          onSearch={(keyword) => setSearchWrd(keyword)}
+        />
+      }
+      toolbarActions={
+        /* 지표 카드 3장(hover ring 30px·아이콘 확대)을 한 줄 요약으로 수렴한다.
+           값은 모두 서버 응답에서 파생된다. */
+        <span className="text-[length:var(--font-size-body)] text-muted-foreground">
+          활성 <span className="font-bold text-foreground">{isLoading ? '—' : activeCount.toLocaleString()}</span>건 ·
+          대기 <span className="font-bold text-foreground">{isLoading ? '—' : standbyCount.toLocaleString()}</span>건
+        </span>
+      }
+    >
         <StandardDataTable<BoardMaster>
           columns={columns}
           data={boardList}
@@ -425,29 +398,15 @@ export function BoardMasterListClient() {
               }
             }
           ]}
-          search={{
-            placeholder: '게시판 명칭, 시스템 ID 검색..',
-            onSearch: (keyword) => setSearchWrd(keyword)
-          }}
+          accessibleLabel="게시판 마스터 목록"
+          emptyMessage={emptyResultMessage(searchWrd, '등록된 게시판이 없습니다.')}
         />
-      </div>
 
-      <div className="p-12 rounded-lg bg-muted border border-border dark:border-none text-foreground overflow-hidden relative group transition-colors">
-        <div className="absolute top-0 right-0 p-20 opacity-[0.03] dark:opacity-[0.05] group-hover:scale-110 transition-transform duration-[10s] pointer-events-none grayscale">
-          <Rocket size={400} />
-        </div>
-        <div className="max-w-3xl space-y-8 relative z-10">
-          <h3 className="text-5xl font-bold tracking-tighter leading-tight uppercase transition-colors">Ready to scale your <span className="text-primary underline decoration-primary/30 decoration-8 underline-offset-8">ecosystem?</span></h3>
-          <p className="text-xl text-muted-foreground dark:text-muted-foreground font-bold leading-relaxed tracking-tight transition-colors">생태계를 확장할 준비가 되셨습니까? 마법사를 통해 복잡한 과정 없이 단 4단계만으로 사내 지식 허브를 구축하십시오.</p>
-          <Button 
-            onClick={() => router.push('/admin/community/boards/maker')}
-            className="h-11 px-12 rounded-lg bg-primary text-white text-2xl font-bold tracking-tighter shadow-[0_30px_60px_-15px_rgba(59,130,246,0.4)] hover:scale-110 active:scale-95 transition-all gap-4 ring-8 ring-primary/5 "
-          >
-            라이브 마법사 실행 <Rocket className="w-8 h-8" />
-          </Button>
-        </div>
-      </div>
-
+      {/*
+        [정직성·G14] 종전 이 자리에는 "Ready to scale your ecosystem?" 5xl 영문 카피와
+        400px Rocket 배경이 있었다. 같은 동작(생성 마법사)을 헤더 액션이 이미 제공하므로
+        업무 화면에서 마케팅 배너를 제거한다.
+      */}
       {/* Settings Modal */}
       <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
         <DialogContent className="sm:max-w-[600px] rounded-lg p-0 overflow-hidden border-none shadow-2xl">
@@ -515,23 +474,6 @@ export function BoardMasterListClient() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function InsightCard({ label, value, desc, icon: Icon, color }: InsightCardProps) {
-  return (
-    <motion.div variants={item} className="hub-card-premium p-8 space-y-6 group hover:ring-[30px] hover:ring-border/30 transition-all border-2 border-border/50">
-      <div className="flex items-center justify-between">
-        <div className={cn("w-14 h-11 rounded-lg bg-muted flex items-center justify-center border border-border group-hover:scale-110 transition-transform text-muted-foreground", color)}>
-          <Icon size={28} aria-hidden="true" />
-        </div>
-      </div>
-      <div className="space-y-1">
-        <p className="text-xs font-bold text-muted-foreground tracking-widest leading-none text-left">{label}</p>
-        <h4 className="text-4xl font-bold text-foreground tracking-tighter leading-none group-hover:text-primary transition-colors text-left">{value}</h4>
-        <p className="text-xs font-bold text-muted-foreground/60 leading-none mt-2 text-left">{desc}</p>
-      </div>
-    </motion.div>
+    </WorkListPage>
   );
 }

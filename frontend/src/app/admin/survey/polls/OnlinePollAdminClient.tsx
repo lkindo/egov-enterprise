@@ -1,24 +1,20 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { PageHeader } from '@/app/components/layout/page-header';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
+import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { onlinePollAdminService, type OnlinePollDto } from '@/services/foundation/system/OnlinePollAdminService';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import {
  Vote,
  Plus,
- Search,
+ Zap,
  RefreshCcw,
  Calendar,
  XCircle,
- Layers,
  Trash2,
- TrendingUp,
- Zap,
  UserCheck,
  Clock,
 } from 'lucide-react';
@@ -228,88 +224,54 @@ export default function OnlinePollAdminClient() {
  ];
 
  return (
- <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
- <PageHeader
+ <WorkListPage
  title="온라인 설문 관리"
- breadcrumbs={[{ label: '설문조사' }, { label: '온라인 설문 관리' }]}
- />
-
- <HubHeader
- title="온라인"
- highlight="설문"
- subtitle="전사 사용자 피드백을 수집하고 참여 현황을 확인합니다."
- icon={Vote}
+ description="전사 사용자 피드백 설문을 조회·등록하고 참여 현황을 확인합니다."
+ breadcrumbItems={[{ label: '설문조사' }, { label: '온라인 설문 관리' }]}
+ filterStateKey="survey-polls"
+ totalCount={isError ? undefined : totalCount}
  actions={
- <div className="flex gap-4 p-2">
+ <>
  <Button
  variant="outline"
- size="lg"
+ size="sm"
  onClick={() => void refetch()}
  aria-label="설문 목록 새로고침"
- className="h-12 rounded-lg border-2 font-bold text-xs tracking-widest gap-2"
+ className="gap-2"
  >
- <RefreshCcw size={16} className={cn(isLoading && "animate-spin")} /> 새로고침
+ <RefreshCcw size={16} className={cn(isLoading && "animate-spin")} aria-hidden="true" /> 새로고침
  </Button>
- <Button
- size="lg"
- onClick={() => setIsAddOpen(true)}
- className="h-12 px-8 rounded-lg font-bold text-xs tracking-widest shadow-lg shadow-primary/20 hover:-translate-y-1 transition-all gap-2"
- >
- <Plus size={18} /> 신규 설문 등록
+ <Button size="sm" onClick={() => setIsAddOpen(true)} className="gap-2">
+ <Plus size={16} aria-hidden="true" /> 신규 설문 등록
  </Button>
- </div>
+ </>
  }
- />
-
- {/* 지표는 서버가 준 값만 남긴다.
-     삭제: '분석 노드'(= 현재 페이지 배열 길이를 다른 의미로 표기한 거짓 지표),
-     'SYSTEM STATUS: NOMINAL/STEADY/동기화됨'(근거 없는 상태 배지) — 감사 P1-5. */}
- <div className="grid grid-cols-1 md:grid-cols-2 gap-8 px-2">
- <SummaryBlock
- title="전체 설문"
- value={totalCount}
- unit="건"
- icon={<Layers size={26} />}
- caption="서버 집계"
- color="text-primary"
- />
- <SummaryBlock
- title="진행중 (현재 페이지)"
- value={todayYmd ? polls.filter(p => getPollStatus(p, todayYmd) === 'active').length : 0}
- unit="건"
- icon={<Zap size={26} />}
- caption={`조회된 ${polls.length}건 기준`}
- color="text-emerald-500"
- />
- </div>
-
- <HubSectionCard
- title="설문 목록"
- description="등록된 모든 온라인 설문의 기간·참여 수·진행 상태입니다."
- icon={TrendingUp}
- >
- <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 pb-10 border-b border-border/30">
- <div>
- <h3 className="text-2xl font-bold tracking-tighter leading-none">설문 인벤토리</h3>
- <p className="text-xs font-bold text-muted-foreground tracking-widest mt-2 opacity-50">전사 피드백 모니터링</p>
- </div>
- <div className="flex items-center gap-4">
- <div className="relative group/search flex-1 md:flex-none">
- <label htmlFor="online-poll-search" className="sr-only">설문 검색</label>
- <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/search:opacity-100 transition-opacity" size={16} />
+ filter={
+ <div className="min-w-60 max-w-xl space-y-1">
+ <label htmlFor="online-poll-search" className="text-[length:var(--font-size-body)] font-medium">
+ 설문명
+ </label>
  <Input
  id="online-poll-search"
- placeholder="설문명으로 검색..."
+ placeholder="설문명으로 검색"
  value={keyword}
  onChange={(e) => handleKeywordChange(e.target.value)}
- className="h-11 pl-12 pr-6 w-full md:w-[320px] bg-muted/30 border-none rounded-lg text-xs font-bold tracking-tight shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
  />
  </div>
- </div>
- </div>
-
- <div className="overflow-x-auto">
+ }
+ toolbarActions={
+ /* 지표는 서버가 준 값만 남긴다. 카드 2장(180px 배경 아이콘·hover scale)을 한 줄로 수렴한다.
+    삭제 이력: '분석 노드'(현재 페이지 길이를 다른 의미로 표기한 거짓 지표),
+    'SYSTEM STATUS: NOMINAL'(근거 없는 상태 배지) — 감사 P1-5. */
+ <span className="text-[length:var(--font-size-body)] text-muted-foreground">
+ 진행중 <span className="font-bold text-foreground">
+ {todayYmd ? polls.filter(p => getPollStatus(p, todayYmd) === 'active').length : 0}
+ </span>건 · 조회된 {polls.length}건 기준
+ </span>
+ }
+ >
  <StandardDataTable
+ accessibleLabel="온라인 설문 목록"
  columns={columns}
  data={polls}
  loading={isLoading}
@@ -317,18 +279,16 @@ export default function OnlinePollAdminClient() {
  error={isError ? error : null}
  onRetry={() => void refetch()}
  keyField="pollSn"
- emptyMessage="등록된 온라인 설문이 없습니다."
+ emptyMessage={emptyResultMessage(keyword, '등록된 온라인 설문이 없습니다.')}
  className="border-none bg-transparent"
  pagination={{
  currentPage: page + 1,
  totalPages: Math.ceil(totalCount / PAGE_SIZE),
  onPageChange: (p) => setPage(p - 1),
- totalCount,
+ // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
  pageSize: PAGE_SIZE,
  }}
  />
- </div>
- </HubSectionCard>
 
  <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
  <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto rounded-lg p-12 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl relative overflow-x-hidden">
@@ -472,45 +432,6 @@ export default function OnlinePollAdminClient() {
  </DialogFooter>
  </DialogContent>
  </Dialog>
- </div>
- );
-}
-
-function SummaryBlock({
- title,
- value,
- unit,
- icon,
- caption,
- color,
-}: {
- title: string;
- value: number;
- unit?: string;
- icon: React.ReactElement<{ size?: number }>;
- caption: string;
- color: string;
-}) {
- return (
- <div className="hub-table-container p-12 group hover:scale-[1.02] transition-all relative overflow-hidden bg-card border-border/50 shadow-md">
- <div className="flex justify-between items-start mb-10">
- <div className={cn("w-14 h-11 rounded-lg bg-muted dark:bg-muted/10 flex items-center justify-center shadow-inner border border-border/10 group-hover:rotate-12 transition-transform", color)}>
- {icon}
- </div>
- <span className="text-[10px] font-bold text-muted-foreground tracking-widest px-3 py-1 rounded-lg border border-border/50 bg-muted/40">
- {caption}
- </span>
- </div>
- <div>
- <h3 className="text-4xl font-bold tracking-tighter text-foreground leading-none tabular-nums flex items-baseline gap-1.5">
- {value.toLocaleString()}
- {unit && <span className="text-sm font-bold text-muted-foreground">{unit}</span>}
- </h3>
- <p className="text-xs font-bold text-muted-foreground/40 tracking-widest mt-4 leading-none">{title}</p>
- </div>
- <div className="absolute right-[-14%] bottom-[-14%] opacity-[0.02] group-hover:scale-125 group-hover:rotate-12 transition-all duration-1000 grayscale">
- {React.cloneElement(icon, { size: 180 })}
- </div>
- </div>
+ </WorkListPage>
  );
 }
