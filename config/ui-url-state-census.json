@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "bc989980d24e596437fb23abd5f65416c5073315ad13e5bf90fffe599d5382e4"
+    "inventoryHash": "8d00610f78e31cc4acff35b5da0ac5ef61ec9bc428ce23096533ba4bcc7887b7"
   },
   "summary": {
     "sourceFileCount": 489,
-    "records": 527,
-    "syntaxOccurrences": 596,
-    "ambiguousRecords": 506,
-    "unverifiedRecords": 527,
+    "records": 526,
+    "syntaxOccurrences": 595,
+    "ambiguousRecords": 505,
+    "unverifiedRecords": 526,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -41,7 +41,7 @@
       "config-redirect": 15,
       "dynamic-segment": 11,
       "form-producer": 44,
-      "navigation-producer": 155,
+      "navigation-producer": 154,
       "page-redirect": 5,
       "query-builder": 21,
       "query-consumer": 58,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 362,
+      "navigation": 361,
       "request-telemetry": 165
     }
   },
@@ -10868,44 +10868,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
         "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-6FB9A995D4CF87",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
-      "producerFile": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/system/monitoring",
-      "targetCandidate": "/admin/security/authority",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/security/authority",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
-        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },

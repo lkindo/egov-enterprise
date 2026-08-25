@@ -191,6 +191,9 @@ describe('MonitoringHubClient', () => {
     mocks.memory.mockResolvedValue(45.67);
   });
 
+  /** 조회 조건 입력의 접근 이름(KeywordFilter 의 label). */
+  const LOG_SEARCH_LABEL = '서비스명 · 메서드 · 계정';
+
   it.each([
     ['', mocks.audit, 'authorize'],
     ['tab=system', mocks.system, 'healthCheck'],
@@ -200,18 +203,22 @@ describe('MonitoringHubClient', () => {
 
     expect(await screen.findByText(rowText)).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /상세 열기/ }));
-    expect(screen.getByText(/객체 상세 분석/)).toBeInTheDocument();
+    // [2026-08-25 A1 이행] 우측 3열 패널이 표 아래 상세 섹션으로 바뀌었다.
+    expect(screen.getByRole('region', { name: '선택 항목 상세' })).toBeInTheDocument();
 
-    fireEvent.change(screen.getByRole('textbox', { name: '로그 검색어' }), {
+    // 조회 시점이 타이핑 디바운스에서 `조회` 제출로 바뀌었다 — 입력만으로는 재조회되지 않는다.
+    fireEvent.change(screen.getByRole('textbox', { name: LOG_SEARCH_LABEL }), {
       target: { value: 'needle' },
     });
+    expect(service).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole('button', { name: '조회' }));
     await waitFor(() => expect(service).toHaveBeenCalledTimes(2));
 
     fireEvent.click(screen.getByRole('button', { name: '다음 페이지' }));
     expect(mocks.replace).toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: '데이터 스트림 새로고침' }));
     fireEvent.click(screen.getByRole('button', { name: '리포트 스냅샷' }));
-    expect(screen.getByRole('region', { name: 'Intelligence Report Generator' }))
+    expect(screen.getByRole('region', { name: '현재 조회 결과 반출' }))
       .toHaveTextContent('1건 반출');
   });
 
@@ -219,7 +226,7 @@ describe('MonitoringHubClient', () => {
     renderHub('tab=comments');
 
     expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
-    expect(screen.queryByRole('textbox', { name: '로그 검색어' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: LOG_SEARCH_LABEL })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '서비스 피드백 관리 44 상세 열기' }));
     expect(document.querySelector('button button')).toBeNull();
