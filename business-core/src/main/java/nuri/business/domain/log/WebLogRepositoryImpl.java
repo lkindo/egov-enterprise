@@ -52,9 +52,11 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
         if (!StringUtils.hasText(searchBgnDe) || !StringUtils.hasText(searchEndDe)) {
             return null;
         }
-        String start = searchBgnDe.replace("-", "");
-        String end = searchEndDe.replace("-", "");
-        return QWebLog.webLog.occrYmd.between(start, end);
+        // 종전에는 하이픈만 제거해 형식 검증이 없었다 — 해석 불가 값이 그대로 비교에 들어가
+        // 조용히 빈 결과를 만들었다.
+        return QWebLog.webLog.occrYmd.between(
+                LogSearchPeriod.toCompact(searchBgnDe, "searchKeywordFrom"),
+                LogSearchPeriod.toCompact(searchEndDe, "searchKeywordTo"));
     }
 
     @Override

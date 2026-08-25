@@ -7,10 +7,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.util.StringUtils;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 
@@ -53,14 +51,13 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
                 if (!StringUtils.hasText(searchBgnDe) || !StringUtils.hasText(searchEndDe)) {
                         return null;
                 }
-                try {
-                        LocalDateTime start = LocalDate.parse(searchBgnDe, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                                        .atStartOfDay();
-                        LocalDateTime end = LocalDate.parse(searchEndDe, DateTimeFormatter.ofPattern("yyyy-MM-dd"))
-                                        .atTime(LocalTime.MAX);
-                        return QPrivacyLog.privacyLog.inqDt.between(start, end);
-                } catch (Exception e) {
-                        return null;
-                }
+                /*
+                 * [2026-08-26] 종전에는 yyyy-MM-dd 만 파싱하고 실패를 catch 로 삼켜 조건을 null 로
+                 * 만들었다 — 8자리 값이 오면 필터가 통째로 무시된 채 전체 결과가 나갔다.
+                 * 개인정보 조회 이력에서 이 실패는 특히 위험하다(좁혔다고 믿고 전체를 본다).
+                 */
+                LocalDateTime start = LogSearchPeriod.toLocalDate(searchBgnDe, "searchKeywordFrom").atStartOfDay();
+                LocalDateTime end = LogSearchPeriod.toLocalDate(searchEndDe, "searchKeywordTo").atTime(LocalTime.MAX);
+                return QPrivacyLog.privacyLog.inqDt.between(start, end);
         }
 }

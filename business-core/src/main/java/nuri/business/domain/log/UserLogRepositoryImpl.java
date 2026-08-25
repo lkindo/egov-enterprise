@@ -39,9 +39,9 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
 
         // 발생일자 범위 조건
         if (searchBgnDe != null && !searchBgnDe.isEmpty() && searchEndDe != null && !searchEndDe.isEmpty()) {
-            String fromDe = searchBgnDe.replace("-", "");
-            String toDe = searchEndDe.replace("-", "");
-            predicates.add(cb.between(root.get("ocrnYmd"), fromDe, toDe));
+            predicates.add(cb.between(root.get("ocrnYmd"),
+                    LogSearchPeriod.toCompact(searchBgnDe, "searchKeywordFrom"),
+                    LogSearchPeriod.toCompact(searchEndDe, "searchKeywordTo")));
         }
 
         cq.where(predicates.toArray(new Predicate[0]));
@@ -63,9 +63,9 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
             countPredicates.add(cb.like(countUserJoin.get("userNm"), "%" + searchWrd + "%"));
         }
         if (searchBgnDe != null && !searchBgnDe.isEmpty() && searchEndDe != null && !searchEndDe.isEmpty()) {
-            String fromDe = searchBgnDe.replace("-", "");
-            String toDe = searchEndDe.replace("-", "");
-            countPredicates.add(cb.between(countRoot.get("ocrnYmd"), fromDe, toDe));
+            countPredicates.add(cb.between(countRoot.get("ocrnYmd"),
+                    LogSearchPeriod.toCompact(searchBgnDe, "searchKeywordFrom"),
+                    LogSearchPeriod.toCompact(searchEndDe, "searchKeywordTo")));
         }
 
         countCq.where(countPredicates.toArray(new Predicate[0]));
