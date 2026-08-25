@@ -24,7 +24,9 @@ export class BusinessExtensionPage {
 
     async verifyIsmMetrics() {
         console.log('>>> [Business] Verifying ISM Metrics');
-        await expect(this.page.getByText(/결재_대기_시퀀스|승인_자산_수/i).first()).toBeVisible();
+        // [2026-08-24 A1 이행] 밑줄 의사코드 지표 라벨(결재_대기_시퀀스 등)을 업무 문구로 바꿨다(G14).
+        //   집계는 결과 툴바에 '조회분 기준 · 대기 N건 · 승인 N건 · 반려 N건'으로 한 줄로 모였다.
+        await expect(this.page.getByTestId('work-list-toolbar')).toContainText('조회분 기준');
     }
 
     async approveFirstPendingSanction(opinion: string) {

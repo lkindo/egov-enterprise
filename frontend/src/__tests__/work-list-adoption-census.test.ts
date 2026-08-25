@@ -24,11 +24,20 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
  * 값을 바꿀 때는 소스를 먼저 고치고 **실측 red 를 확인한 뒤** 상수를 갱신한다.
  * ADOPTERS 상향과 DIRECT_ONLY 하향만 정상 경로다(AGENTS H2).
  */
-const ADOPTERS = 30;
-const DIRECT_ONLY = 19;
+const ADOPTERS = 31;
+const DIRECT_ONLY = 15;
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';
 const SHELL_IMPORT = 'components/patterns/work-list-page';
+/**
+ * A1 이 아닌 archetype 셸들. 이 셸을 쓰는 화면은 "셸 없이 직접 조립"이 아니다 —
+ * A2(마스터-디테일)·A7(현황+원본 표)은 각자의 census 가 따로 검증한다.
+ * 여기서 빼지 않으면 이미 이행한 화면이 영원히 미이행으로 집계된다.
+ */
+const OTHER_SHELL_IMPORTS = [
+  'components/patterns/master-detail-page',
+  'components/patterns/report-page',
+];
 
 /** 화면 파일만 센다 — 테스트와 로딩 스켈레톤은 소비자가 아니다. */
 function screenFiles(directory: string): string[] {
@@ -61,11 +70,12 @@ function census() {
   for (const path of screenFiles(APP_DIR)) {
     const source = readFileSync(path, 'utf8');
     const usesShell = source.includes(SHELL_IMPORT);
+    const usesOtherShell = OTHER_SHELL_IMPORTS.some((shell) => source.includes(shell));
     const usesTable = source.includes(TABLE_IMPORT);
     const relativePath = relative(FRONTEND_DIR, path).split(sep).join('/');
 
     if (usesShell) adopters.push(relativePath);
-    else if (usesTable) directOnly.push(relativePath);
+    else if (usesTable && !usesOtherShell) directOnly.push(relativePath);
   }
 
   return { adopters: adopters.sort(), directOnly: directOnly.sort() };

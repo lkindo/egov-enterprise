@@ -1,10 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { PageHeader } from '@/app/components/layout/page-header';
-import { HubHeader } from '@/components/ui/hub/HubHeader';
-import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
-import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
+import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import {
@@ -15,13 +12,9 @@ import {
 } from '@/services/foundation/system/IsmAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { ShieldCheck,
- FileText,
  CheckCircle2,
  XCircle,
- Clock,
  Activity,
- Terminal, 
- Cpu, 
  Fingerprint, 
  User, 
  Zap, 
@@ -183,91 +176,40 @@ export default function IsmClient({
  ];
 
  return (
- <div className="space-y-12 pb-24 animate-in fade-in duration-1000">
- <PageHeader
- title="인포멀 생션 아키텍처"
- breadcrumbs={[{ label: '시스템관리' }, { label: '약식결재' }]}
- />
-
- <HubHeader 
- title="결재" 
- highlight="결재 시퀀스" 
- subtitle="규격화되지 않은 비정형 결재 요청을 유연하게 검증하고 전사 의사결정 체계를 통합 관리합니다." 
- icon={ShieldCheck} 
+ <WorkListPage
+ title="약식 결재 관리"
+ description="규격화되지 않은 비정형 결재 요청을 조회하고 승인·반려합니다."
+ breadcrumbItems={[{ label: '시스템관리' }, { label: '약식결재' }]}
+ totalCount={listError ? undefined : ismList.length}
  actions={
  // [P1-5] '의사결정_허브: 온라인' 고정 배지 제거 — 실제 가동 상태를 계측하지 않으면서
  // 상시 초록 'ONLINE' 을 표시해 장애를 은폐하던 근거 없는 지표였다.
  <Button
- variant="ghost"
+ variant="outline"
+ size="sm"
  aria-label="약식 결재 목록 새로고침"
  onClick={() => router.refresh()}
- className="h-11 w-14 rounded-lg bg-card border-2 border-border text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all shadow-xl group active:scale-95 px-4"
+ className="gap-2"
  >
- <Activity size={22} className="group-hover:rotate-180 transition-transform duration-700" />
+ <Activity size={16} aria-hidden="true" />
+ 새로고침
  </Button>
  }
- />
-
- {/*
- [P1-5] 지표 배지는 근거 없는 고정 문구('주의'/'최적') 대신 실제 목록 집계에서 파생시킨다.
- 값·배지 모두 현재 조회된 결재 대기함(최대 50건) 기준이라는 사실을 문구로 밝힌다.
- */}
- <HubMetricGrid>
- <HubMetricCard
- title="결재_대기_시퀀스"
- value={pendingCount}
- icon={Clock}
- color="amber"
- status={pendingCount > 0 ? '조치 필요' : '대기 없음'}
- />
- <HubMetricCard title="승인_자산_수" value={approvedCount} icon={CheckCircle2} color="emerald" status="조회분 집계" />
- <HubMetricCard title="반려_로그_수" value={rejectedCount} icon={XCircle} color="rose" status="조회분 집계" />
- <HubMetricCard title="전체_의사결정_수" value={ismList.length} icon={FileText} color="primary" status="조회분 집계" />
- </HubMetricGrid>
-
- <div className="grid grid-cols-12 gap-12 text-left">
- {/* Intelligence Shield Panel */}
- <div className="col-span-12 lg:col-span-4 h-full">
- <div className="rounded-lg bg-surface-inverse text-surface-inverse-foreground p-12 shadow-2xl relative overflow-hidden group h-full border-none">
- <div className="absolute top-0 right-0 p-16 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6">
- <Terminal size={240} className="text-primary" />
- </div>
- <div className="relative z-10 space-y-12">
- <div className="space-y-4">
- <div className="w-20 h-11 rounded-lg bg-white/10 flex items-center justify-center border border-white/5 shadow-inner">
- <Cpu size={36} className="text-primary" />
- </div>
- <h4 className="text-3xl font-bold tracking-tighter leading-tight uppercase">불변<br />의결 저장</h4>
- </div>
- 
- <p className="text-sm text-muted-foreground font-bold leading-relaxed border-l-4 border-primary pl-8">
- 모든 약식 결재 아키텍처는 데이터 무결성 검증을 거치며 결정 근거는 분산 저장되어 영구적으로 기록되어 감사가 가능합니다.
- </p>
-
- {/*
- [P1-5] '로직_허브_무결성: 정상' / '보안_프로토콜: ENF_2.0' 고정 지표 제거.
- 어떤 계측도 하지 않으면서 상시 '정상'을 표시해 운영자에게 거짓 확신을 주었다.
- 대신 실제 조회 결과에서 파생되는 대기 건수를 노출한다.
- */}
- <div className="space-y-6 pt-12 border-t border-white/5">
- <div className="flex items-center justify-between group/stat">
- <span className="text-xs font-bold text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-primary transition-colors">결재 대기 건수</span>
- <span className="text-lg font-bold font-mono tracking-tighter text-primary">{pendingCount}</span>
- </div>
- <div className="flex items-center justify-between group/stat">
- <span className="text-xs font-bold text-white/40 tracking-[0.3em] uppercase group-hover/stat:text-amber-500 transition-colors">조회된 총 건수</span>
- <span className="text-lg font-bold font-mono tracking-tighter">{ismList.length}</span>
- </div>
- </div>
- </div>
- </div>
- </div>
-
- {/* Approval Inventory */}
- <div className="col-span-12 lg:col-span-8 flex flex-col gap-8">
- <HubSectionCard title="약식 결재 시퀀스 데이터 매트릭스" description="시스템의 유연한 의사결정을 위해 캡처된 모든 비정형 결재 요청 실시간 명세입니다." icon={SearchCode}>
- <div className="overflow-hidden min-h-[500px]">
+ toolbarActions={
+ /*
+   [P1-5] 지표는 근거 없는 고정 문구가 아니라 조회분 집계에서 파생시킨다.
+   종전 `결재_대기_시퀀스` 같은 밑줄 의사코드 라벨은 업무 문구로 정정한다(카탈로그 G14).
+   값은 현재 조회된 결재 대기함(최대 50건) 기준이라는 사실을 라벨에 밝힌다.
+ */
+ <span className="text-[length:var(--font-size-body)] text-muted-foreground">
+ 조회분 기준 · 대기 <span className="font-bold text-foreground">{pendingCount}</span>건 ·
+ 승인 <span className="font-bold text-foreground">{approvedCount}</span>건 ·
+ 반려 <span className="font-bold text-foreground">{rejectedCount}</span>건
+ </span>
+ }
+ >
  <StandardDataTable
+ accessibleLabel="약식 결재 목록"
  columns={columns}
  data={ismList}
  loading={loading}
@@ -275,12 +217,7 @@ export default function IsmClient({
  error={listError}
  onRetry={() => router.refresh()}
  emptyMessage="결재 대기 중인 약식 결재 요청이 없습니다."
- className="border-none bg-transparent"
  />
- </div>
- </HubSectionCard>
- </div>
- </div>
 
  <StandardModal
  isOpen={isModalOpen}
@@ -360,7 +297,7 @@ export default function IsmClient({
  </form>
  </Form>
  </StandardModal>
- </div>
+ </WorkListPage>
  );
 }
 

@@ -72,7 +72,11 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   기본·destructive 버튼 variant 로 이행(사전 red 실측: 617 != 621).
 // [하향 래칫 2026-08-24(6)] 권한 매트릭스 A5 계약 — 허용 셀 지표의 emerald 리터럴 1건을
 //   surface-inverse-foreground 로 이행(사전 red 실측: 616 != 617).
-const BASELINE = 616;
+// [하향 래칫 2026-08-25] 약식 결재 A1 이행 — 지표 카드의 amber/emerald/rose 계열 리터럴이
+//   결과 툴바 한 줄 요약으로 수렴하며 1건 감소(사전 red 실측: 615 != 616).
+// [하향 래칫 2026-08-25(2)] 관리자 통계 A7 이행 — 장식 지표 카드(LuxuryStatCard)의
+//   emerald/indigo/rose 계열 리터럴 7건이 셸의 요약 지표로 수렴하며 제거(사전 red 실측: 608 != 615).
+const BASELINE = 608;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;
