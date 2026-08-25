@@ -162,7 +162,7 @@
 - **금지:** 현재 페이지만 내보내면서 `전체 내보내기`로 라벨링, 자유 검색어를 URL에 싣기([IA §1.1](../01-product/information-architecture.md) 6항).
 - **키보드:** A1과 동일 + 기간 프리셋 단축 이동.
 - **합격:** 대용량 조회에서 첫 페이지 응답이 열화되지 않음 · export 건수와 총 건수 일치.
-- **현재 화면:** `/admin/system/logs`(+ `login`·`privacy`·`system`·`user`·`web`), `/admin/system/audit`, `/admin/security/audit`. **정렬·페이지당 건수는 이미 이행됨**(§6).
+- **현재 화면:** `/admin/system/logs`(+ `login`·`privacy`·`system`·`user`·`web`), `/admin/system/audit`, `/admin/security/audit`. **정렬·페이지당 건수 이행 완료**(§6). **기간 프리셋은 2026-08-26 이행** — [PeriodFilter](../../frontend/src/app/components/patterns/period-filter.tsx)(최근 1일·1주·1개월·전체 + 직접 입력). 서버 저장소 5종은 처음부터 `searchBgnDe`/`searchEndDe` 를 구현하고 있었고 화면이 그 값을 보내지 않았을 뿐이다. ⚠ 엔드포인트마다 파싱 형식이 달라 틀리면 **조용히 무시되거나 빈 결과**가 되므로 화면별 형식을 [계약](../../frontend/src/__tests__/log-period-filter-contract.test.ts)으로 백엔드 소스와 함께 고정했다(불일치 자체는 GAP-UI-002). **서버측 전체 export 는 로그인 로그만 이행됨**(DEC-OPS-016) — 나머지는 현재 페이지 반출이며 그 범위를 문구로 밝힌다.
 
 ### A7. 현황 + 원본 표 (Report)
 
