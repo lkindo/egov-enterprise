@@ -24,8 +24,8 @@ const APP_DIR = join(FRONTEND_DIR, 'src', 'app');
  * 값을 바꿀 때는 소스를 먼저 고치고 **실측 red 를 확인한 뒤** 상수를 갱신한다.
  * ADOPTERS 상향과 DIRECT_ONLY 하향만 정상 경로다(AGENTS H2).
  */
-const ADOPTERS = 34;
-const DIRECT_ONLY = 11;
+const ADOPTERS = 35;
+const DIRECT_ONLY = 10;
 
 const TABLE_IMPORT = 'components/ui/standard-data-table';
 const SHELL_IMPORT = 'components/patterns/work-list-page';
@@ -106,7 +106,9 @@ describe('A1 archetype 채택 census', () => {
       // 셸이 총 건수를 소유하므로 표 pagination 에 totalCount 를 다시 넘기면 위아래 이중 표기가 된다.
       // ⚠ 검사는 pagination 블록 **안**으로 한정한다 — 파일 전체를 훑으면 셸에 정상적으로 넘긴
       //   `totalCount={...}` 까지 걸려 오탐이 난다(2026-08-24 실측: 설문 응답자 화면).
-      return paginationBlocks(code).some((block) => /\btotalCount\b/.test(block));
+      // ⚠ **속성 전달**만 본다. `totalPages: Math.ceil(totalCount / PAGE_SIZE)` 처럼 계산식에
+      //   식별자로 쓰는 것은 이중 표기가 아니다(2026-08-25 실측: 온라인 설문 관리에서 오탐).
+      return paginationBlocks(code).some((block) => /(^|[\s,{])totalCount\s*[,:}]/.test(block));
     });
 
     expect(duplicated, `총 건수 이중 표기:\n${duplicated.join('\n')}`).toEqual([]);
