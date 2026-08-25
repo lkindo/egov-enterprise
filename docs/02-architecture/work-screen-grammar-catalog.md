@@ -162,7 +162,7 @@
 - **금지:** 현재 페이지만 내보내면서 `전체 내보내기`로 라벨링, 자유 검색어를 URL에 싣기([IA §1.1](../01-product/information-architecture.md) 6항).
 - **키보드:** A1과 동일 + 기간 프리셋 단축 이동.
 - **합격:** 대용량 조회에서 첫 페이지 응답이 열화되지 않음 · export 건수와 총 건수 일치.
-- **현재 화면:** `/admin/system/logs`(+ `login`·`privacy`·`system`·`user`·`web`), `/admin/system/audit`, `/admin/security/audit`. **정렬·페이지당 건수 이행 완료**(§6). **기간 프리셋은 2026-08-26 이행** — [PeriodFilter](../../frontend/src/app/components/patterns/period-filter.tsx)(최근 1일·1주·1개월·전체 + 직접 입력). 서버 저장소 5종은 처음부터 `searchBgnDe`/`searchEndDe` 를 구현하고 있었고 화면이 그 값을 보내지 않았을 뿐이다. ⚠ 엔드포인트마다 파싱 형식이 달라 틀리면 **조용히 무시되거나 빈 결과**가 되므로 화면별 형식을 [계약](../../frontend/src/__tests__/log-period-filter-contract.test.ts)으로 백엔드 소스와 함께 고정했다(불일치 자체는 GAP-UI-002). **서버측 전체 export 는 로그인 로그만 이행됨**(DEC-OPS-016) — 나머지는 현재 페이지 반출이며 그 범위를 문구로 밝힌다.
+- **현재 화면:** `/admin/system/logs`(+ `login`·`privacy`·`system`·`user`·`web`), `/admin/system/audit`, `/admin/security/audit`. **정렬·페이지당 건수 이행 완료**(§6). **기간 프리셋은 2026-08-26 이행** — [PeriodFilter](../../frontend/src/app/components/patterns/period-filter.tsx)(최근 1일·1주·1개월·전체 + 직접 입력). 서버 저장소 5종은 처음부터 `searchBgnDe`/`searchEndDe` 를 구현하고 있었고 화면이 그 값을 보내지 않았을 뿐이다. ⚠ 엔드포인트마다 파싱 형식이 달라 틀리면 **조용히 무시되거나 빈 결과**가 되므로 화면별 형식을 [계약](../../frontend/src/__tests__/log-period-filter-contract.test.ts)으로 백엔드 소스와 함께 고정했다(불일치 자체는 GAP-UI-002). **서버측 전체 export 는 로그인 로그만 이행됨**(DEC-OPS-016). 나머지는 현재 페이지 반출이며, 2026-08-26 부터 `DataExportExcel` 의 `scope` 가 **필수 prop** 이라 호출부가 범위를 선언하고 버튼 문구가 그 선언을 따른다(`page` → `현재 페이지 엑셀 내보내기`). 서버 페이징 화면이 `loaded` 를 주장하면 [census](../../frontend/src/__tests__/export-scope-census.test.ts)가 red 다.
 
 ### A7. 현황 + 원본 표 (Report)
 
@@ -199,9 +199,10 @@
 | `onPageSizeChange` 채택 | 28 | A1 **필수**. 이행 전 6 → 14 → 28. 2026-08-25 실측에서 서버 페이징이 있는 A1 화면 15개가 컨트롤을 전달하지 않고 있었다(기능은 표가 처음부터 갖고 있었다) — [census 게이트](../../frontend/src/__tests__/page-size-adoption-census.test.ts)가 제공 여부와 queryKey 결속을 함께 고정한다 |
 | `KeywordFilter` 경유 조회 조건 | 17 | G2 — 조회 조건 조립의 단일 경로 |
 | `emptyResultMessage` 경유 빈 상태 | 30 | G15 — 결과 없음/데이터 없음 구분 |
+| `PeriodFilter` 경유 조회 기간 | 6화면 | A6 **필수**. 로그 5화면 + 모니터링 허브 목록 탭. 서버 저장소는 처음부터 기간 조건을 갖고 있었고 화면이 보내지 않았다([계약](../../frontend/src/__tests__/log-period-filter-contract.test.ts)) |
 | `PagePagination` 별도 소비 | 0 | 표가 아닌 페이지 목록도 전부 셸·표 페이저로 수렴했다 |
 | `bulkActions` 채택 | 3 | A4 필수 미이행 |
-| `DataExportExcel` 소비 | 10 | A6 필수 부분 이행 |
+| `DataExportExcel` 소비 | 9화면 | A6 필수 부분 이행. 2026-08-26 부터 `scope` 가 필수 prop 이라 **현재 페이지 반출(6)과 결과 전량 반출(3)이 라벨로 구분된다** — 서버측 전량 반출은 로그인 로그만 별도 구현([census](../../frontend/src/__tests__/export-scope-census.test.ts)) |
 
 **남은 직접 조립 4건의 성격** — 2026-08-25 모니터링 허브 이행으로 **실제 이행 대상은 0건**이 됐다. 남은 4건은 archetype 이 다르거나(A5 스펙 계약), 라우트가 도달 불가하거나, 화면이 아니다.
 
