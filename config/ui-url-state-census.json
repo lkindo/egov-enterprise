@@ -23,7 +23,7 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "38d95baa06594e586f572507e208bff0b751745d8dd22d4e2c89be92f919f2c7"
+    "inventoryHash": "4ac030962c6c56a387e269331c0bff08d8393affdb30ca65a5cd1e197938974a"
   },
   "summary": {
     "sourceFileCount": 489,
@@ -2701,6 +2701,44 @@
       }
     },
     {
+      "id": "URL-3A5BA2353CA816",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
+      "producerFile": "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community/[id]",
+      "targetCandidate": "/admin/community/boards/write",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/community/boards/write",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-FE372ADB20125F",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -2741,44 +2779,6 @@
       "resolutionStatus": "ambiguous",
       "canonical": {
         "routeCandidate": "/admin/community/boards/detail",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-11D3141105EF39",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/[id]/CommunityDetailClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/[id]",
-      "targetCandidate": "/admin/community/boards/write",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/community/boards/write",
         "status": "unverified"
       },
       "authorizationBoundary": {
