@@ -84,8 +84,11 @@ test.describe('Tier 3: Board Master Management (Admin Flow)', () => {
         if (!isNextDisabled) {
             await nextBtn.click();
             // 색상 구현 클래스가 아니라 사용자가 실제로 받는 Zod 검증 문구를 단언한다.
-            await expect(page.getByText('게시판 명칭은 최소 2글자 이상이어야 합니다', { exact: true }))
-                .toBeVisible({ timeout: 15000 });
+            const boardNameInput = page.getByRole('textbox', { name: '게시판 명칭', exact: true });
+            await expect(page.locator('#bbsTtl-error'))
+                .toHaveText('게시판 명칭을 2자 이상 입력해 주세요.', { timeout: 15000 });
+            await expect(boardNameInput).toHaveAttribute('aria-invalid', 'true');
+            await expect(boardNameInput).toBeFocused();
         } else {
             // [E2E 감사 B] else 무단언 제거 — 빈 이름일 때 다음 버튼이 실제로 비활성인지 단언한다.
             await expect(nextBtn).toBeDisabled();

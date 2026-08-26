@@ -81,6 +81,7 @@ describe('BoardMakerWizard validation', () => {
     await screen.findByRole('heading', { name: '접근 권한 안내' });
     fireEvent.click(screen.getByRole('button', { name: /다음 단계로/ }));
     await screen.findByRole('heading', { name: '메뉴 배포' });
+    expect(createBoardMaster).not.toHaveBeenCalled();
     fireEvent.click(screen.getByRole('button', { name: '게시판 생성 및 메뉴 배포' }));
 
     expect(await screen.findByText('같은 게시판 명칭이 이미 존재합니다.')).toBeInTheDocument();
@@ -103,6 +104,7 @@ describe('BoardMakerWizard validation', () => {
     await screen.findByRole('heading', { name: '접근 권한 안내' });
     fireEvent.click(screen.getByRole('button', { name: /다음 단계로/ }));
     await screen.findByRole('heading', { name: '메뉴 배포' });
+    expect(createBoardMaster).not.toHaveBeenCalled();
     const submit = screen.getByRole('button', { name: '게시판 생성 및 메뉴 배포' });
     const form = submit.closest('form');
     expect(form).not.toBeNull();

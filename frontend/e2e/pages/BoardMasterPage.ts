@@ -53,7 +53,9 @@ export class BoardMasterPage {
     await this.bbsNmInput.fill(name);
     await this.bbsIntrcnInput.fill(description);
     await this.nextButton.scrollIntoViewIfNeeded();
-    await this.nextButton.click({ force: true });
+    await this.nextButton.click();
+    await expect(this.page.getByRole('heading', { name: '템플릿 선택', exact: true }))
+      .toBeVisible({ timeout: 10000 });
     console.log('>>> Step 1 completed');
   }
 
@@ -92,19 +94,25 @@ export class BoardMasterPage {
     await expect(this.nextButton).toBeEnabled({ timeout: 10000 });
     console.log('>>> Clicking Next button after template selection');
     await this.nextButton.scrollIntoViewIfNeeded();
-    await this.nextButton.click({ force: true });
+    await this.nextButton.click();
+    await expect(this.page.getByRole('heading', { name: '접근 권한 안내', exact: true }))
+      .toBeVisible({ timeout: 10000 });
     console.log('>>> Step 2 completed');
   }
 
   async fillStep3() {
+    await expect(this.page.getByRole('heading', { name: '접근 권한 안내', exact: true }))
+      .toBeVisible({ timeout: 10000 });
     await expect(this.nextButton).toBeVisible({ timeout: 10000 });
     await this.nextButton.scrollIntoViewIfNeeded();
-    await this.nextButton.click({ force: true });
+    await this.nextButton.click();
+    await expect(this.page.getByRole('heading', { name: '메뉴 배포', exact: true }))
+      .toBeVisible({ timeout: 10000 });
     console.log('>>> Step 3 completed');
   }
 
   async fillStep4(menuName: string) {
-    const menuInput = this.page.locator('input[name="menuNm"], input[placeholder*="메뉴"], input[placeholder*="Menu"]').first();
+    const menuInput = this.page.getByLabel('메뉴 명칭', { exact: true });
     await expect(menuInput).toBeVisible({ timeout: 10000 });
     await menuInput.fill(menuName);
     await this.deployButton.scrollIntoViewIfNeeded();

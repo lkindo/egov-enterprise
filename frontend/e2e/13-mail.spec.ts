@@ -58,7 +58,15 @@ test.describe('Tier 13: Enterprise Mail System E2E', () => {
         await page.getByTestId('mail-content-textarea').fill('Recipient is intentionally empty.');
         await page.getByTestId('mail-send-btn').click();
 
-        await expect(page.getByText('수신자를 선택해 주세요.')).toBeVisible();
+        const recipientInput = page.getByTestId('mail-recipient-input');
+        await expect(page.locator('#recptnPerson-error')).toHaveText('수신자를 선택해 주세요.');
+        await expect(recipientInput).toHaveAttribute('aria-invalid', 'true');
+        await expect(recipientInput).toHaveAttribute('aria-errormessage', 'recptnPerson-error');
+        await expect(recipientInput).toBeFocused();
+        await expect(
+            page.locator('[data-form-error-summary="true"]')
+                .getByRole('button', { name: '수신자: 수신자를 선택해 주세요.' }),
+        ).toBeVisible();
         await expect(page).toHaveURL(/\/admin\/collaboration\/mail-send/);
         await expect(page.getByTestId('selected-recipient-badge')).toHaveCount(0);
 

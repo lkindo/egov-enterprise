@@ -1,6 +1,6 @@
 'use client';
 
-import { useOptimistic, useRef, useState, useTransition } from 'react';
+import { useOptimistic, useRef, useState, useTransition, type FormEvent } from 'react';
 import { MessageSquare, User, Clock, Trash2, Edit2, Send, X, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -35,7 +35,7 @@ type OptimisticCommentAction =
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CommentSection({ pstSn, bbsId, initialComments }: CommentSectionProps) {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const { toast } = useToast();
   
   // Optimistic State Management (React 19)
@@ -58,6 +58,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
   const [ansCn, setAnsCn] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editCn, setEditCn] = useState('');
+  const [createPending, setCreatePending] = useState(false);
   const [editPendingId, setEditPendingId] = useState<number | null>(null);
   const [deletePendingId, setDeletePendingId] = useState<number | null>(null);
   const createPendingRef = useRef(false);
@@ -73,12 +74,14 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
     labels: commentEditValidationLabels,
     focusTargets: { editCn: () => editInputRef.current },
   });
+  const hasWritePending = createPending || editPendingId !== null || deletePendingId !== null;
 
-  const handleCreate = async (formData: FormData) => {
+  const handleCreate = (formData: FormData) => {
     if (createPendingRef.current) return;
     const validated = createValidation.validate({ pstSn, bbsId, ansCn });
     if (!validated) return;
     createPendingRef.current = true;
+    setCreatePending(true);
     const content = validated.ansCn;
     formData.set('pstSn', String(validated.pstSn));
     formData.set('bbsId', validated.bbsId);
@@ -122,8 +125,14 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
         toast('댓글 등록 중 오류가 발생했습니다.', 'error');
       } finally {
         createPendingRef.current = false;
+        setCreatePending(false);
       }
     });
+  };
+
+  const handleCreateSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleCreate(new FormData(event.currentTarget));
   };
 
   const handleDelete = async (id: number) => {
@@ -272,7 +281,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                disabled={isPending || editPendingId === comment.ansSn}
+                                disabled={hasWritePending}
                                 aria-busy={editPendingId === comment.ansSn}
                                 onClick={() => { void handleEdit(comment.ansSn); }}
                                 aria-label={editPendingId === comment.ansSn ? '댓글 수정 저장 중' : '댓글 수정 저장'}
@@ -286,7 +295,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                disabled={isPending}
+                                disabled={hasWritePending}
                                 onClick={() => {
                                   editValidation.setFormErrors({}, false);
                                   setEditingId(null);
@@ -301,7 +310,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                disabled={isPending}
+                                disabled={hasWritePending}
                                 onClick={() => {
                                   editValidation.setFormErrors({}, false);
                                   setEditingId(comment.ansSn);
@@ -314,7 +323,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                               <Button
                                 variant="ghost"
                                 size="sm"
-                                disabled={isPending || deletePendingId === comment.ansSn}
+                                disabled={hasWritePending}
                                 aria-busy={deletePendingId === comment.ansSn}
                                 onClick={() => { void handleDelete(comment.ansSn); }}
                                 aria-label={deletePendingId === comment.ansSn ? '댓글 삭제 중' : '댓글 삭제'}
@@ -371,7 +380,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
 
       {/* Comment Form */}
       <motion.form 
-        action={handleCreate} 
+        onSubmit={handleCreateSubmit}
         noValidate
         className="relative group pt-16"
         initial={{ opacity: 0, y: 20 }}
@@ -412,10 +421,11 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
             <div className="flex justify-end border-t border-border pt-8">
               <Button
                 type="submit"
-                disabled={isPending}
+                disabled={hasWritePending}
+                aria-busy={createPending}
                 className="h-16 px-12 rounded-[1.5rem] bg-surface-inverse hover:bg-black text-surface-inverse-foreground font-black tracking-widest text-xs uppercase shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex gap-4 active:scale-95 transition-all group"
               >
-                {isPending ? (
+                {createPending ? (
                   <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> COMMITTING...</>
                 ) : (
                   <><Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> Commit Response</>

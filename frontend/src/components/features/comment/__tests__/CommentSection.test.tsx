@@ -146,8 +146,13 @@ describe('CommentSection Component', () => {
     fireEvent.submit(form!);
 
     await waitFor(() => expect(commentActions.createComment).toHaveBeenCalledTimes(1));
-    expect(submit).toBeDisabled();
-    resolveCreate({ success: true, message: '성공' });
+    await waitFor(() => expect(submit).toBeDisabled());
+    expect(submit).toHaveAttribute('aria-busy', 'true');
+    expect(submit).toHaveTextContent('COMMITTING...');
+
+    await act(async () => resolveCreate({ success: true, message: '성공' }));
+    await waitFor(() => expect(submit).not.toBeDisabled());
+    expect(submit).toHaveAttribute('aria-busy', 'false');
   });
 
   it('handles comment update', async () => {

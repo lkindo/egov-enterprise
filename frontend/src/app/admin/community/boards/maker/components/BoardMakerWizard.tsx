@@ -723,7 +723,10 @@ export function BoardMakerWizard() {
 
  <Button
  type={currentStep === STEPS.length ? 'submit' : 'button'}
- onClick={currentStep === STEPS.length ? undefined : () => void handleNextStep()}
+ onClick={currentStep === STEPS.length ? undefined : (event) => {
+ event.preventDefault();
+ void handleNextStep();
+ }}
  size="lg"
  disabled={isSubmitting}
  className={cn(

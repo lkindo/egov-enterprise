@@ -110,8 +110,10 @@ test.describe('Tier 23-E0: Login success (UI flow — anti-regression for double
             expiresAt: '2026-12-31',
         }]);
         await page.goto('/login');
-        await page.locator('input[name="id"]').fill('webmaster');
-        await page.locator('input[name="password"]').fill('1');
+        const idInput = page.getByRole('textbox', { name: '아이디', exact: true });
+        const passwordInput = page.getByLabel('비밀번호', { exact: true });
+        await idInput.fill('webmaster');
+        await passwordInput.fill('1');
 
         // Route Handler(/api/auth/login) 200 을 실제로 관측 — 이중 프리픽스면 이 응답이 오지 않는다.
         const [loginResp] = await Promise.all([
@@ -165,8 +167,10 @@ test.describe('Tier 23-E2: Login failure (negative auth)', () => {
         ]);
 
         await page.goto('/login');
-        await page.locator('input[name="id"]').fill('webmaster');
-        await page.locator('input[name="password"]').fill('definitely-wrong-pw-Zz9!');
+        const idInput = page.getByRole('textbox', { name: '아이디', exact: true });
+        const passwordInput = page.getByLabel('비밀번호', { exact: true });
+        await idInput.fill('webmaster');
+        await passwordInput.fill('definitely-wrong-pw-Zz9!');
         await page.locator('button[type="submit"]').click();
 
         // LoginClient는 실패 시 data-testid="login-error"로 오류를 표시하고 /admin으로 이동하지 않는다.
@@ -182,7 +186,7 @@ test.describe('Tier 23-E2: Login failure (negative auth)', () => {
 
         // [W1-24] 실패 후 포커스가 아이디 입력으로 돌아오는지.
         //   종전에는 '로그인' 버튼에 머물러 키보드 사용자가 재입력 위치를 찾지 못했다.
-        await expect(page.locator('input[name="id"]')).toBeFocused();
+        await expect(idInput).toBeFocused();
 
         // [W1-24] 死 컨트롤 2종이 사라졌는지. 특히 '비밀번호 찾기' 는 type 누락으로 form 을 제출해
         //   클릭 시 진짜 로그인 시도가 발사됐다(로그인 로그 오염·잠금 카운터 소모).
