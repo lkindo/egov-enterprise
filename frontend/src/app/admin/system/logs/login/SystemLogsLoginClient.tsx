@@ -11,20 +11,13 @@ import { PeriodFilter, EMPTY_PERIOD, periodToParams, type PeriodValue } from '@/
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { useToast } from '@/app/components/ui/toast';
-import { navigateToDownload } from '@/lib/navigation/full-result-download';
+import { requestFullExport } from '@/app/components/patterns/full-result-export';
 import { Terminal, Calendar, Globe, FileDown } from 'lucide-react';
 import { usePageParam } from '../use-log-url-state';
 
 const DEFAULT_PAGE_SIZE = 10;
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100];
 
-/**
- * 서버 export 행 상한 미러 — {@code LoginLogApiController.MAX_EXPORT_ROWS}.
- * 초과 시 서버가 400 을 반환하므로, 목록 조회가 이미 알고 있는 totalCount
- * (같은 검색 조건·같은 count 쿼리)로 내비게이션 전에 같은 규칙을 적용해
- * 사용자에게 원인과 대처(조건 좁히기)를 즉시 안내한다.
- */
-const MAX_EXPORT_ROWS = 100_000;
 
 /** 전체 결과 xlsx export 엔드포인트 (DEC-OPS-016 — 로그 화면 중 login 에만 존재). */
 const EXPORT_XLSX_URL = '/api/v1/admin/system/logs/login/export.xlsx';
@@ -65,17 +58,19 @@ const SystemLogsLoginClient = () => {
      * 서버는 페이지 파라미터를 무시하고 조건 일치 전량을 스트리밍하므로
      * page/size 는 부치지 않는다(검색어만 서버 계약 키 searchKeyword 로 전달).
      */
+    /*
+     * [2026-08-26] 종전에는 이 화면만 export URL 을 손으로 조립했고 **기간을 빼먹고 있었다** —
+     * 조회 기간을 배선한 뒤에는 화면에서 좁힌 조건과 파일 내용이 어긋난다는 뜻이다.
+     * 다섯 로그가 같은 계약을 쓰므로 공용 조립기로 수렴시킨다.
+     */
     const handleFullExport = () => {
-        if (totalCount > MAX_EXPORT_ROWS) {
-            toastError(
-                `전체 결과가 ${totalCount.toLocaleString('ko-KR')}건으로 export 상한(${MAX_EXPORT_ROWS.toLocaleString('ko-KR')}건)을 초과합니다. 검색 조건을 좁혀 다시 시도하십시오.`,
-            );
-            return;
-        }
-        const params = new URLSearchParams();
-        if (searchKeyword) params.set('searchKeyword', searchKeyword);
-        const query = params.toString();
-        navigateToDownload(query ? `${EXPORT_XLSX_URL}?${query}` : EXPORT_XLSX_URL);
+        requestFullExport({
+            url: EXPORT_XLSX_URL,
+            totalCount,
+            searchKeyword,
+            period,
+            onTooMany: (message) => toastError(message),
+        });
     };
 
     const columns: Column<LoginLog>[] = [
@@ -156,7 +151,7 @@ const SystemLogsLoginClient = () => {
     return (
         <WorkListPage
             title="로그인 로그"
-            description="시스템 접속·로그인/로그아웃 이력을 조회합니다."
+            description="시스템 접속·로그인/로그아웃 이력을 접속일시 최신순으로 조회합니다."
             breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '로그인 로그' }]}
             filterStateKey="system-logs-login"
             // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.

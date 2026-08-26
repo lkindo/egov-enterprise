@@ -32,6 +32,48 @@ DB 성능 변경은 추정이나 일반 권장값이 아니라 **현재 workload
 임의의 “응답 1초”, “cache hit 95%”, “bloat 20%”를 보편 합격선으로 쓰지 않는다. 서비스 SLO와 이전
 기준선을 먼저 정한다.
 
+## 1.5 스키마 최신성 확인 (실측 전 필수)
+
+실측으로 스키마를 판단하기 전에 **그 DB 가 저장소와 같은 스키마인지** 먼저 본다. 뒤처진 DB 로 실측하면
+현재가 아닌 과거 스키마를 근거로 결정하게 되며, 이는 실측을 하지 않는 것보다 위험할 수 있다
+(2026-08-26 실측: 한 환경이 88개 중 38개만 적용된 상태였고, 그 사이 추가된 인덱스가 없어
+"인덱스가 없다"는 잘못된 결론으로 이어질 뻔했다).
+
+```sql
+-- 적용 수와 최대 버전을 저장소의 마이그레이션 파일 수·최신 버전과 대조한다.
+SELECT count(*) FILTER (WHERE success) AS applied,
+       count(*) FILTER (WHERE NOT success) AS failed,
+       max(installed_on) AS last_applied
+FROM flyway_schema_history;
+```
+
+저장소 쪽 기준값은 `api-server/src/main/resources/db/migration/` 의 파일 수와 최신 `V*` 번호다.
+
+### 뒤처진 환경 현행화
+
+Flyway 는 앱 기동 시 실행된다(별도 CLI 태스크 없음). 기본 프로필은 `JWT_SECRET` 만 요구하므로
+데이터소스 3개만 덮어 기동하면 마이그레이션이 적용된다(`prod` 프로필은 메일·암호화 키까지 요구한다).
+
+```bash
+DB_URL=jdbc:postgresql://<host>:<port>/<db>?currentSchema=public&prepareThreshold=0 DB_USERNAME=<user> DB_PASSWORD=<pass> JWT_SECRET=<secret> ./gradlew :api-server:bootRun
+```
+
+⚠ **데이터 정합성 가드에서 멈출 수 있다.** bigint identity 계열 마이그레이션은 부모 없는 자식 행이나
+FK 자리의 빈 문자열이 있으면 키를 채울 수 없어 `RAISE EXCEPTION` 으로 중단한다 — 이는 결함이 아니라
+**잘못된 데이터로 키를 채우는 것을 막는 정상 동작**이며, PostgreSQL 트랜잭션 DDL 이라 해당 마이그레이션은
+통째로 롤백되고 실패 이력도 남지 않는다.
+
+실제로 관측된 두 유형(2026-08-26):
+
+| 지점 | 조건 | 성격 |
+|---|---|---|
+| `V2_49` 주소록 | `tb_adbk_info` 에 부모(`tb_adbk_manage`)가 없는 행 | `V2_12` 가 부모만 정리하고 자식을 남겨 생긴 고아 |
+| `V2_71` 커뮤니티 | `tb_bbs_master.cmnty_id = ''` | 빈 문자열이 FK 로 오인됨(참조가 아니라 "없음") |
+
+정리는 **데이터 변경이므로 사용자 승인이 필요하다**(AGENTS 안전 규칙). 승인 후에는 대상 건수를 먼저 세고,
+삭제·정규화 뒤 같은 조건이 0건인지 확인하는 것을 한 트랜잭션으로 묶는다. 판단 근거를 남기려면 조치 전에
+대상 행을 조회해 기록한다.
+
 ## 2. read-only 진단
 
 저장소 스크립트:

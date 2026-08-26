@@ -1,6 +1,8 @@
 package nuri.api.controller.foundation.controller.system.log;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +14,8 @@ import nuri.foundation.core.response.PageResponse;
 import nuri.foundation.security.annotation.AdminOrSystem;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
+import java.util.List;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -49,5 +53,53 @@ public class WebLogApiController {
             @ModelAttribute BaseSearchDto searchDto) {
         Page<WebLogDto> page = webLogManageService.selectWebLogList(searchDto);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
+    }
+
+    /**
+     * 웹 로그 전체 결과 xlsx export.
+     *
+     * <p>[검색 조건 동일 바인딩] 목록 API 와 같은 {@link BaseSearchDto} 를 같은 서비스 메서드에 그대로
+     * 전달하므로 화면에서 보던 필터(검색어·기간)와 정확히 같은 모집단이 내려간다. 페이지 파라미터만
+     * 전체 결과로 덮어써 페이지와 무관하게 조건 일치 전량을 내보낸다.
+     *
+     * <p>[상한 판정] 이 서비스는 {@code Page} 를 돌려주므로 1건만 조회해 총 건수를 먼저 읽고,
+     * 상한을 넘지 않을 때만 전량을 다시 조회한다 — 상한 초과 요청이 힙에 전량을 올리지 않게 한다.
+     *
+     * <p>[인가 — H3] 목록 API 와 동일한 ADMIN/SYSTEM 축이다. URL 게이트로도 덮이지만 그 목록 한 줄이
+     * 빠지면 함께 사라지는 단일 실패점이므로 {@code @AdminOrSystem} 을 메서드에 직접 붙인다.
+     *
+     * <p>[헌법 제6조 3항] binary/stream 예외의 세 조건(attachment · 명시 produces · 허용 census)을 따른다.
+     */
+    @Operation(summary = "웹 로그 전체 결과 xlsx export",
+            description = "검색 조건(검색어·기간)은 목록 API 와 동일하게 바인딩하되 페이지 파라미터는 무시하고 "
+                    + "조건 일치 전체 결과를 xlsx 로 스트리밍한다. 행 수가 상한을 초과하면 400 을 반환한다.")
+    @io.swagger.v3.oas.annotations.responses.ApiResponse(responseCode = "200",
+            description = "xlsx 바이너리 스트림",
+            content = @Content(mediaType = LogExcelExport.XLSX_MEDIA_TYPE,
+                    schema = @Schema(type = "string", format = "binary")))
+    @AdminOrSystem
+    @GetMapping(value = "/export.xlsx", produces = LogExcelExport.XLSX_MEDIA_TYPE)
+    public ResponseEntity<StreamingResponseBody> exportWebLogs(
+            @ModelAttribute BaseSearchDto searchDto) {
+
+        searchDto.setPageIndex(1);
+        searchDto.setPageUnit(1);
+        int totalCount = (int) webLogManageService.selectWebLogList(searchDto).getTotalElements();
+        LogExcelExport.assertWithinCap(totalCount);
+
+        searchDto.setPageUnit(Math.max(totalCount, 1));
+        List<WebLogDto> rows = webLogManageService.selectWebLogList(searchDto).getContent();
+
+        return LogExcelExport.attachment("web-logs.xlsx", "web-logs",
+                new String[]{"웹 로그 일련번호", "URL", "요청자 ID", "요청 IP", "발생일자", "처리시간(ms)"},
+                rows,
+                (row, dto) -> {
+                    row.createCell(0).setCellValue(LogExcelExport.nullSafe(dto.webLogSn()));
+                    row.createCell(1).setCellValue(LogExcelExport.nullSafe(dto.url()));
+                    row.createCell(2).setCellValue(LogExcelExport.nullSafe(dto.dmndUserId()));
+                    row.createCell(3).setCellValue(LogExcelExport.nullSafe(dto.dmndUserIpAddr()));
+                    row.createCell(4).setCellValue(LogExcelExport.nullSafe(dto.occrYmd()));
+                    row.createCell(5).setCellValue(LogExcelExport.nullSafe(dto.prcsTm()));
+                });
     }
 }

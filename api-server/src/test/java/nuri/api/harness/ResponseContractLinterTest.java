@@ -89,14 +89,28 @@ class ResponseContractLinterTest {
      *       전송량이 33% 늘고 전량 메모리 적재에 브라우저 네이티브 다운로드도 불가하다(2026-08-20 동결분).</li>
      *   <li>{@code LoginLogApiController#exportLoginLogs} — 로그인 로그 전체 결과 xlsx export
      *       (2026-08-23 사용자 위임 D4). SXSSF 스트리밍 + 행 상한 400 가드.</li>
+     *   <li>{@code SystemLogApiController#exportSystemLogs} · {@code UserLogApiController#exportUserLogs}
+     *       · {@code WebLogApiController#exportWebLogs} · {@code PrivacyLogApiController#exportPrivacyLogs}
+     *       — 나머지 로그 4종의 전체 결과 xlsx export(2026-08-26). 로그인 로그와 같은 규칙을
+     *       {@code LogExcelExport} 로 공유한다: 검색 조건은 목록 API 와 동일 바인딩, 페이지 파라미터만
+     *       전량으로 덮어쓰기, 행 상한 초과 시 400, SXSSF 스트리밍.
+     *       <p>이 4개가 없던 동안 화면은 <b>현재 페이지만</b> 반출할 수 있었고, A6 의 "서버측 전체
+     *       내보내기" 필수 항목이 로그인 로그에서만 충족됐다.</li>
      * </ul>
      *
      * <p>실제 wrapper 밖 반환 집합과 이 목록은 <b>양방향 exact-match</b> 다 — 목록 밖 신설도,
      * stale 행 잔존도 red. 광역 패턴(디렉터리·와일드카드) 등재는 금지한다(파일명·메서드 단위 명시).
      */
+    private static final String LOG_CONTROLLER_DIR =
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/";
+
     private static final Set<String> BINARY_ALLOWED_HANDLERS = Set.of(
             "api-server/src/main/java/nuri/api/controller/business/file/FileApiController.java#downloadFile",
-            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/LoginLogApiController.java#exportLoginLogs");
+            LOG_CONTROLLER_DIR + "LoginLogApiController.java#exportLoginLogs",
+            LOG_CONTROLLER_DIR + "SystemLogApiController.java#exportSystemLogs",
+            LOG_CONTROLLER_DIR + "UserLogApiController.java#exportUserLogs",
+            LOG_CONTROLLER_DIR + "WebLogApiController.java#exportWebLogs",
+            LOG_CONTROLLER_DIR + "PrivacyLogApiController.java#exportPrivacyLogs");
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 325건 대비 여유). */
     private static final int HANDLER_FLOOR = 250;

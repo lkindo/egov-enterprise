@@ -8,6 +8,9 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { PeriodFilter, EMPTY_PERIOD, periodToParams, type PeriodValue } from '@/app/components/patterns/period-filter';
+import { requestFullExport } from '@/app/components/patterns/full-result-export';
+import { FileDown } from 'lucide-react';
+import { useToast } from '@/app/components/ui/toast';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
 import { Clock, Terminal, FileText } from 'lucide-react';
@@ -33,6 +36,7 @@ const SystemLogsSystemClient = () => {
     const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
     const [searchKeyword, setSearchKeyword] = useState('');
     const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
+    const { toast } = useToast();
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<SysLog>>({
         queryKey: ['admin-logs-system', page, pageSize, searchKeyword, periodToParams(period)],
@@ -47,6 +51,18 @@ const SystemLogsSystemClient = () => {
     const logs = data?.list ?? [];
     const totalPageCount = data?.totalPage || 1;
     const totalCount = Number(data?.total || 0);
+
+    /** 전체 결과 xlsx 요청. 상한 초과는 다운로드를 시작하지 않고 즉시 알린다(서버도 같은 상한으로 400). */
+    const handleFullExport = () => {
+        requestFullExport({
+            url: '/api/v1/admin/system/logs/system/export.xlsx',
+            totalCount: totalCount,
+            searchKeyword,
+            period,
+            onTooMany: (message) => toast(message, 'error'),
+        });
+    };
+
 
     const columns: Column<SysLog>[] = [
         {
@@ -120,7 +136,7 @@ const SystemLogsSystemClient = () => {
     return (
         <WorkListPage
             title="시스템 로그"
-            description="서버 동작 상태와 모듈별 수행 이력을 조회합니다."
+            description="서버 동작 상태와 모듈별 수행 이력을 발생일자 최신순으로 조회합니다."
             breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '시스템 로그' }]}
             filterStateKey="system-logs-system"
             // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
@@ -140,17 +156,27 @@ const SystemLogsSystemClient = () => {
                 </KeywordFilter>
             }
             toolbarActions={
-                /*
-                  기존 '실시간 모니터링' 버튼은 onClick 이 없는 死버튼이었다.
-                  삭제하고, 이미 검증된 CSV(BOM 포함) 내보내기 자산을 배선한다.
-                */
-                <DataExportExcel
-            scope="page"
-                    data={logs}
-                    headers={EXPORT_HEADERS}
-                    filename="시스템로그"
-                    className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
-                />
+                <div className="flex items-center gap-2">
+                    {/* 종전 '실시간 모니터링' 버튼은 onClick 이 없는 死버튼이라 삭제하고,
+                        검증된 CSV(BOM 포함) 반출을 배선했다. 이쪽은 현재 페이지 범위다. */}
+                    <DataExportExcel
+                        scope="page"
+                        data={logs}
+                        headers={EXPORT_HEADERS}
+                        filename="시스템로그"
+                        className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
+                    />
+
+                    {/* 전체 결과 xlsx — 서버 스트리밍 export. 조건 일치 전량이라 위 버튼과 범위가 다르다. */}
+                    <button
+                        type="button"
+                        onClick={handleFullExport}
+                        className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-primary/40 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/5"
+                    >
+                        <FileDown size={16} aria-hidden="true" />
+                        전체 결과 엑셀 다운로드
+                    </button>
+                </div>
             }
         >
             <StandardDataTable

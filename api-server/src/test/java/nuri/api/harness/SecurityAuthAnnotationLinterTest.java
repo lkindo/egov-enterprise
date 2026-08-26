@@ -103,7 +103,11 @@ class SecurityAuthAnnotationLinterTest {
             // 1행 추가 — RBAC_ADMIN_OR_SYSTEM|hasAnyRole('ADMIN','SYSTEM'). 기존 목록 API 와 같은
             // ADMIN/SYSTEM 축에 @AdminOrSystem 메서드 인가를 더한 것이라 완화가 아니라 강화다.
             // endpoint 수 168 -> 169.
-            "45d9d302f109bf3379d6244978aaa810185244a1f05e97a40794ebec45190561";
+            // [2026-08-26 로그 4종 export 신설] GET .../logs/{system,user,web,privacy}/export.xlsx
+            // 4행 추가 — 모두 RBAC_ADMIN_OR_SYSTEM|hasAnyRole('ADMIN','SYSTEM') 로, 각 목록 API 와
+            // **같은 인가 축**에 @AdminOrSystem 메서드 인가를 더한 것이라 완화가 아니라 강화다
+            // (AGENTS H3 — 도메인 의미 보존). 로그인 로그 export 와 같은 규칙을 공유한다.
+            "7896424b2645e735939d7f083298a0030d8a8a64fa31bfe356f5ba3c29c76276";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;
