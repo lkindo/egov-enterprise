@@ -67,10 +67,16 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
         return StringUtils.hasText(searchWrd) ? commonCode.dtlCdNm.contains(searchWrd) : null;
     }
 
+    /**
+     * 발생일자 범위. {@code ocrnYmd} 는 8자리 문자열 컬럼이라 하이픈이 섞인 값을 그대로 비교하면
+     * 조용히 빈 결과가 된다 — 두 형식을 모두 받아 8자리로 정규화하고, 해석 불가 값은 즉시 실패시킨다.
+     */
     private BooleanExpression occrrncDeBetween(String searchBgnDe, String searchEndDe) {
         if (!StringUtils.hasText(searchBgnDe) || !StringUtils.hasText(searchEndDe)) {
             return null;
         }
-        return QSysLog.sysLog.ocrnYmd.trim().between(searchBgnDe, searchEndDe);
+        return QSysLog.sysLog.ocrnYmd.trim().between(
+                LogSearchPeriod.toCompact(searchBgnDe, "searchKeywordFrom"),
+                LogSearchPeriod.toCompact(searchEndDe, "searchKeywordTo"));
     }
 }

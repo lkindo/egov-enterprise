@@ -13,7 +13,6 @@ import org.springframework.util.StringUtils;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Objects;
 import static nuri.business.domain.log.QLoginLog.loginLog;
@@ -55,14 +54,15 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
         if (!StringUtils.hasText(searchBgnDe) || !StringUtils.hasText(searchEndDe)) {
             return null;
         }
-        try {
-            LocalDateTime start = LocalDate.parse(searchBgnDe, DateTimeFormatter.ofPattern("yyyyMMdd")).atStartOfDay();
-            LocalDateTime end = LocalDate.parse(searchEndDe, DateTimeFormatter.ofPattern("yyyyMMdd"))
-                    .atTime(LocalTime.MAX);
-            return loginLog.crtDt.between(start, end);
-        } catch (Exception e) {
-            return null;
-        }
+        /*
+         * [2026-08-26] 종전에는 yyyyMMdd 만 파싱하고 실패를 catch 로 삼켜 조건을 null 로 만들었다.
+         * 그 결과 하이픈이 섞인 값이 오면 **필터가 통째로 무시된 채 전체 결과**가 나갔다 —
+         * 화면은 기간을 좁혔다고 표시하는데 실제로는 아니었다는 뜻이라, 감사 조회에서 가장 위험한
+         * 실패 형태다. 두 형식을 모두 받아들이고, 해석 불가 값은 조용히 버리지 않고 실패시킨다.
+         */
+        LocalDateTime start = LogSearchPeriod.toLocalDate(searchBgnDe, "searchKeywordFrom").atStartOfDay();
+        LocalDateTime end = LogSearchPeriod.toLocalDate(searchEndDe, "searchKeywordTo").atTime(LocalTime.MAX);
+        return loginLog.crtDt.between(start, end);
     }
 
     @Override

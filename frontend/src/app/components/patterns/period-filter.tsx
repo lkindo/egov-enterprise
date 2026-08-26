@@ -120,33 +120,21 @@ export function PeriodFilter({ value, onChange, label }: PeriodFilterProps) {
 }
 
 /**
- * 엔드포인트가 실제로 파싱하는 날짜 형식.
+ * 서버 요청 파라미터로 바꾼다.
  *
- * ⚠ 서버 계약이 **엔드포인트마다 다르다**(2026-08-26 백엔드 실측). 형식을 틀리면 오류가 아니라
- *   **조용히 틀린 결과**가 나오므로 호출부가 어느 계약을 쓰는지 명시하게 한다.
+ * [형식 — 2026-08-26 백엔드 통일 이후]
+ * 종전에는 엔드포인트마다 파싱 형식이 달랐고(system 은 8자리 문자열 비교, login 은 `yyyyMMdd`,
+ * privacy 는 `yyyy-MM-dd`), **틀리면 오류가 아니라 조용한 무시나 빈 결과**가 됐다. 백엔드가
+ * `LogSearchPeriod` 로 두 형식을 모두 받고 해석 불가 값은 400 으로 실패시키도록 통일됐으므로,
+ * 프런트는 저장소 컬럼 표준과 같은 8자리 형식 하나만 보낸다.
  *
- * | 로그 | 기대 형식 | 근거 | 틀렸을 때 |
- * |---|---|---|---|
- * | system | `YYYYMMDD` | `ocrnYmd.trim().between(...)` — 하이픈 제거 없음. 컬럼은 `@Column(length = 8)` 이고 메타 표준이 `OCRN_YMD = 연월일C8` 이다 | 문자열 비교가 어긋나 **빈 결과** |
- * | login | `YYYYMMDD` | `LocalDate.parse(x, "yyyyMMdd")` | 파싱 예외 → `catch` 가 조건을 null 로 만들어 **필터가 통째로 무시됨** |
- * | user·web | 둘 다 가능 | `x.replace("-", "")` 후 비교 | — |
- * | privacy | `yyyy-MM-dd` | `LocalDate.parse(x, "yyyy-MM-dd")` | 위와 같은 무시 |
- *
- * 이 불일치 자체는 백엔드 계약 결함이며 별도 과제다(GAP-UI-002). 여기서는 각 화면이
- * **실제 계약**을 쓰게 해서 사용자에게 거짓 결과가 보이지 않게 한다.
- */
-export type PeriodParamFormat = 'compact' | 'hyphenated';
-
-/**
- * 서버 요청 파라미터로 바꾼다. 한쪽만 입력된 기간은 **보내지 않는다** —
- * 저장소가 `between` 을 쓰므로 한쪽만 주면 조건이 통째로 무시되어, 화면은 좁혀졌다고
- * 보여 주는데 결과는 전체인 상태가 된다(가장 위험한 종류의 불일치다).
+ * ⚠ 한쪽만 입력된 기간은 **보내지 않는다** — 저장소가 `between` 을 쓰므로 한쪽만 주면 조건이
+ *   통째로 무시되어, 화면은 좁혀졌다고 보여 주는데 결과는 전체인 상태가 된다.
  */
 export function periodToParams(
   period: PeriodValue,
-  format: PeriodParamFormat,
 ): { searchKeywordFrom?: string; searchKeywordTo?: string } {
   if (!period.from || !period.to) return {};
-  const encode = (value: string) => (format === 'compact' ? value.replace(/-/g, '') : value);
-  return { searchKeywordFrom: encode(period.from), searchKeywordTo: encode(period.to) };
+  const compact = (value: string) => value.replace(/-/g, '');
+  return { searchKeywordFrom: compact(period.from), searchKeywordTo: compact(period.to) };
 }

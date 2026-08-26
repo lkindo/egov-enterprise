@@ -24,13 +24,13 @@ const SystemLogsUserClient = () => {
     const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<UserLog>>({
-        queryKey: ['admin-logs-user', page, pageSize, searchKeyword, periodToParams(period, 'compact')],
+        queryKey: ['admin-logs-user', page, pageSize, searchKeyword, periodToParams(period)],
         // 서비스가 `pageIndex`(1-base)만 읽는다. 기존 `pageNo` 전달은 무시돼 항상 1페이지가 조회됐다.
         queryFn: () => systemLogAdminService.getUserLogs({
             pageIndex: page,
             size: pageSize,
             searchKeyword,
-            ...periodToParams(period, 'compact'),
+            ...periodToParams(period),
         }),
         // 이 목록은 StandardDataTable이 검색어를 유지한 채 오류와 scoped retry를 직접 제공한다.
         // 전역 5xx 승격을 적용하면 route boundary가 폼을 unmount해 filter/recovery 맥락을 잃는다.

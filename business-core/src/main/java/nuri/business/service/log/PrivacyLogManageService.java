@@ -38,8 +38,13 @@ public class PrivacyLogManageService extends BaseAbstractService {
      * 개인정보 조회 로그 목록.
      *
      * <p>검색 술어는 이미 구현돼 있던 {@code PrivacyLogRepositoryImpl.searchPrivacyLogs} 를 그대로 쓴다
-     * (조회정보 부분일치 + 조회일시 범위). {@code BaseSearchDto} 에 기간 전용 필드가 없어 시작·종료일에
-     * <b>null 을 넘긴다</b> — 없는 계약을 지어내지 않는다. 기간 검색이 필요해지면 전용 검색 DTO 를 만들 것.
+     * (조회정보 부분일치 + 조회일시 범위). 기간 파라미터는 {@code BaseSearchDto} 의
+     * {@code searchKeywordFrom}/{@code searchKeywordTo} 를 그대로 넘긴다.
+     *
+     * <p>[2026-08-26 정정] 종전 주석은 "전용 필드가 없어 null 을 넘긴다" 였지만 <b>사실이 아니었다</b> —
+     * 그 두 필드가 있고 시스템 로그·로그인 로그 서비스는 이미 기간 조건으로 쓰고 있었다. 그 결과 이
+     * 로그만 화면이 보낸 기간이 <b>서비스 계층에서 조용히 버려졌다</b>(저장소는 처음부터 기간 조건을
+     * 구현하고 있었다). 없는 계약을 지어내는 것이 아니라 이미 있는 계약을 연결한다.
      */
     public Page<PrivacyLogDto> selectPrivacyLogList(@NonNull BaseSearchDto searchDto) {
         // [2026-08-09] 종전에는 이 계산을 손수 했고, 나머지 13개소와 달리
@@ -48,7 +53,8 @@ public class PrivacyLogManageService extends BaseAbstractService {
         //   toPageable() 로 옮기면서 0 이하는 기본값 10 으로 수렴한다 — 나머지 호출부와 동일해진다.
         Pageable pageable = searchDto.toPageable();
         return privacyLogRepository
-                .searchPrivacyLogs(searchDto.getSearchKeyword(), null, null, pageable)
+                .searchPrivacyLogs(searchDto.getSearchKeyword(),
+                        searchDto.getSearchKeywordFrom(), searchDto.getSearchKeywordTo(), pageable)
                 .map(PrivacyLogDto::from);
     }
 }

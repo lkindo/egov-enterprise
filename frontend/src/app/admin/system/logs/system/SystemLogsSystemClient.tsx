@@ -35,12 +35,12 @@ const SystemLogsSystemClient = () => {
     const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<SysLog>>({
-        queryKey: ['admin-logs-system', page, pageSize, searchKeyword, periodToParams(period, 'compact')],
+        queryKey: ['admin-logs-system', page, pageSize, searchKeyword, periodToParams(period)],
         queryFn: () => systemLogAdminService.getSystemLogs({
             page: page - 1,
             size: pageSize,
             searchWrd: searchKeyword,
-            ...periodToParams(period, 'compact'),
+            ...periodToParams(period),
         }),
     });
 

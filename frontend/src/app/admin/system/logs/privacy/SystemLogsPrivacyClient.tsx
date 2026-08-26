@@ -22,13 +22,13 @@ const SystemLogsPrivacyClient = () => {
     const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
 
     const { data, isLoading, error, refetch } = useQuery<PageResponse<PrivacyLog>>({
-        queryKey: ['admin-logs-privacy', page, pageSize, searchKeyword, periodToParams(period, 'hyphenated')],
+        queryKey: ['admin-logs-privacy', page, pageSize, searchKeyword, periodToParams(period)],
         // 서비스가 `pageIndex`(1-base)만 읽는다. 기존 `pageNo` 전달은 무시돼 항상 1페이지가 조회됐다.
         queryFn: () => systemLogAdminService.getPrivacyLogs({
             pageIndex: page,
             size: pageSize,
             searchKeyword,
-            ...periodToParams(period, 'hyphenated'),
+            ...periodToParams(period),
         }),
     });
 

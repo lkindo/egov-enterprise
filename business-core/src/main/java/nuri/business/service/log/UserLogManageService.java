@@ -38,8 +38,12 @@ public class UserLogManageService extends BaseAbstractService {
     /**
      * 사용자 활동 로그 목록.
      *
-     * <p>{@code BaseSearchDto} 에 기간 전용 필드가 없어 시작·종료일에 <b>null 을 넘긴다</b> —
-     * 없는 계약을 지어내지 않는다(웹·개인정보 로그와 동일 판단).
+     * <p>[2026-08-26 정정] 종전 주석은 "{@code BaseSearchDto} 에 기간 전용 필드가 없어 null 을 넘긴다"
+     * 였지만 <b>사실이 아니었다</b> — {@code searchKeywordFrom}/{@code searchKeywordTo} 가 있고,
+     * 시스템 로그·로그인 로그 서비스는 이미 그 필드를 기간 조건으로 넘기고 있었다. 그 결과 이 세
+     * 로그(사용자·웹·개인정보)만 화면이 보낸 기간이 <b>서비스 계층에서 조용히 버려졌다</b>.
+     * 저장소는 처음부터 기간 조건을 구현하고 있었으므로, 없는 계약을 지어내는 것이 아니라
+     * 이미 있는 계약을 연결하는 것이다.
      */
     public Page<UserLogDto> selectUserLogList(@NonNull BaseSearchDto searchDto) {
         // [2026-08-09] 종전에는 이 계산을 손수 했고, 나머지 13개소와 달리
@@ -48,7 +52,8 @@ public class UserLogManageService extends BaseAbstractService {
         //   toPageable() 로 옮기면서 0 이하는 기본값 10 으로 수렴한다 — 나머지 호출부와 동일해진다.
         Pageable pageable = searchDto.toPageable();
         return userLogRepository
-                .searchUserLogs(searchDto.getSearchKeyword(), null, null, pageable)
+                .searchUserLogs(searchDto.getSearchKeyword(),
+                        searchDto.getSearchKeywordFrom(), searchDto.getSearchKeywordTo(), pageable)
                 .map(UserLogDto::from);
     }
 }
