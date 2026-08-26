@@ -1,5 +1,7 @@
 package nuri.foundation.core.exception;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import nuri.foundation.core.storage.StorageObjectMissingException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -9,6 +11,8 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -60,7 +64,21 @@ class StorageDriftResponseParityTest {
 
         String plainBody = plain.getResponse().getContentAsString();
         String driftBody = drift.getResponse().getContentAsString();
-        assertThat(driftBody).isEqualTo(plainBody);
+
+        /*
+         * 본문 문자열을 통째로 비교하면 안 된다 — `ApiResponse` 는 `LocalDateTime.now()` 를 담고,
+         * 두 요청은 같은 시각에 일어나지 않는다. Windows 는 시계 분해능이 거칠어 두 값이 우연히
+         * 같아 통과하지만 Linux 에서는 항상 다르다(2026-08-26 CI 실측 — 로컬 green, CI red).
+         * 지키려는 것은 "타임스탬프까지 같다" 가 아니라 "타임스탬프 말고는 다른 게 없다" 다.
+         */
+        ObjectMapper mapper = new ObjectMapper();
+        TypeReference<Map<String, Object>> asMap = new TypeReference<>() {};
+        Map<String, Object> plainFields = mapper.readValue(plainBody, asMap);
+        Map<String, Object> driftFields = mapper.readValue(driftBody, asMap);
+        assertThat(plainFields).containsKey("timestamp");
+        plainFields.remove("timestamp");
+        driftFields.remove("timestamp");
+        assertThat(driftFields).isEqualTo(plainFields);
 
         // 저장 경로·파일명은 서버 로그에만 남는다 — 응답에 새어 나오면 그 자체가 정보 누출이다.
         assertThat(driftBody).doesNotContain("general/2026").doesNotContain("gone.png");
