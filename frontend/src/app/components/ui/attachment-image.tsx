@@ -51,13 +51,19 @@ export function AttachmentImage({
 
     (async () => {
       try {
-        const files = await fileService.getFileList(atchFileSn);
+        /*
+         * [2026-08-26] 실패는 **이 컴포넌트가 대체 표시로 처리한다** — 전역 토스트로 올리지 않는다.
+         * 배너처럼 주기적으로 다시 그리는 자리에서는 같은 404 가 반복 토스트가 되어 화면을 가린다
+         * (실측: 5초 간격 `Request failed with status code 404`).
+         */
+        const quiet = { suppressErrorToast: true } as const;
+        const files = await fileService.getFileList(atchFileSn, quiet);
         const first = files?.[0];
         if (!first) {
           if (!cancelled) setState('empty');
           return;
         }
-        const blob = await fileService.fetchBlob(atchFileSn, first.fileSn);
+        const blob = await fileService.fetchBlob(atchFileSn, first.fileSn, quiet);
         if (cancelled) return;
         objectUrl = URL.createObjectURL(blob);
         setSrc(objectUrl);

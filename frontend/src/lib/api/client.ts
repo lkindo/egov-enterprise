@@ -2,6 +2,19 @@ import axios from 'axios';
 import type { AxiosRequestConfig } from 'axios';
 import { cache } from 'react';
 
+/*
+ * 요청 단위 옵션 확장.
+ *
+ * `suppressErrorToast` 를 선언한 요청의 실패는 전역 `api-error` 토스트를 띄우지 않는다 —
+ * **호출부가 화면에서 그 실패를 이미 처리하는 경우**에만 쓴다(예: 첨부 이미지가 대체 표시로 넘어감).
+ * 선언하지 않으면 종전대로 토스트가 뜬다.
+ */
+declare module 'axios' {
+  export interface AxiosRequestConfig {
+    suppressErrorToast?: boolean;
+  }
+}
+
 /** 필드 단위 검증 오류 1건. [W1-14] */
 export interface FieldErrorItem {
   field: string;
@@ -170,7 +183,20 @@ axiosInstance.interceptors.response.use(
     const backendMessage = error.response?.data?.message;
     const message = backendMessage || error.message || '요청 처리 중 오류가 발생했습니다.';
     
-    if (typeof window !== 'undefined') {
+    /*
+     * [2026-08-26] 모든 실패를 전역 토스트로 올리면 **호출부가 이미 처리한 실패까지 화면을 가린다**.
+     * 실측 사례: 대시보드 배너의 첨부 이미지가 404 일 때 `AttachmentImage` 는 조용히 대체 표시로
+     * 넘어가는데, 이 인터셉터가 5초마다 `Request failed with status code 404` 토스트를 띄웠다 —
+     * 사용자가 할 수 있는 일이 없는 실패를 반복해서 알린 셈이다.
+     *
+     * 그래서 호출부가 `suppressErrorToast` 로 "이 실패는 내가 화면에서 처리한다"를 선언할 수 있게 한다.
+     * 기본값은 종전 그대로 토스트를 띄우는 쪽이라, 선언하지 않은 호출부의 동작은 바뀌지 않는다.
+     */
+    const suppressToast = Boolean(
+      (error.config as (AxiosRequestConfig & { suppressErrorToast?: boolean }) | undefined)?.suppressErrorToast,
+    );
+
+    if (typeof window !== 'undefined' && !suppressToast) {
       window.dispatchEvent(new CustomEvent('api-error', {
         detail: { message, status: error.response?.status }
       }));
