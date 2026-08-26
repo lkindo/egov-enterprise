@@ -1867,7 +1867,7 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "stateInvariant": "The selected department and all-member scope persist exactly the chosen authority assignment.",
       "structuredPayloads": [
-        "{\r\n deptId: selectedDept!,\r\n authrtId,\r\n allMembers: true\r\n }",
+        "{\n deptId: selectedDept!,\n authrtId,\n allMembers: true\n }",
         "selectedAuthorCode"
       ],
       "testEvidence": [

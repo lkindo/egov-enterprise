@@ -1774,6 +1774,82 @@ test('structured UI state writes require an exact payload ledger and invariant',
   }
 });
 
+test('structured payloads canonicalize CRLF sources to LF and reject noncanonical ledgers', () => {
+  const source = [
+    "import { saveHierarchy } from './actions';",
+    'export function HierarchyOwner(){',
+    '  const [isSaving, setIsSaving] = useState(false);',
+    '  const savePendingRef = useRef(false);',
+    '  const handleSaveHierarchy = async () => {',
+    '    if (savePendingRef.current) return;',
+    '    savePendingRef.current = true;',
+    '    setIsSaving(true);',
+    '    try {',
+    '      await saveHierarchy({',
+    '        nodeId,',
+    '        parentId,',
+    '      });',
+    "    } catch { setError('hierarchy failed'); }",
+    '    finally { setIsSaving(false); savePendingRef.current = false; }',
+    '  };',
+    '  return <><form role="search"><input /></form><button disabled={isSaving} aria-busy={isSaving} onClick={handleSaveHierarchy}>구조 저장</button></>;',
+    '}',
+  ].join('\r\n');
+  const subject = fixture({
+    'frontend/src/HierarchyOwner.tsx': source,
+    'frontend/src/HierarchyOwner.test.tsx': `
+      test('HierarchyOwner saveHierarchy pending and failure', async () => {
+        fireEvent.click(save); fireEvent.click(save);
+        expect(saveHierarchy).toHaveBeenCalledTimes(1);
+        expect(save).toBeDisabled();
+        expect(save).toHaveAttribute('aria-busy', 'true');
+        saveHierarchy.mockRejectedValue(new Error('failed'));
+        expect(await findByText('failed')).toBeVisible();
+      });
+    `,
+  });
+  try {
+    const candidate = subject.discovery.candidates.find(({ kind }) => kind === 'secondary-action');
+    assert.ok(candidate);
+    assert.deepEqual(candidate.writePayloads, ['{\n        nodeId,\n        parentId,\n      }']);
+    const manifest = createDraftManifest(subject.discovery);
+    const action = manifest.entries.find(({ kind }) => kind === 'secondary-action');
+    assert.ok(action);
+    Object.assign(action, {
+      status: 'compliant',
+      validationMode: 'structured-ui-state-validation',
+      schemaSource: 'structured-ui-state:hierarchy-membership',
+      errorNavigation: 'structured-state-action-feedback',
+      serverErrors: 'action-error-feedback-preserves-state',
+      pendingGuard: 'action-pending-lock-and-disabled',
+      stateInvariant: 'each hierarchy node keeps one reviewed parent membership',
+      structuredPayloads: candidate.writePayloads,
+      testEvidence: ['frontend/src/HierarchyOwner.test.tsx'],
+    });
+    const payloadErrors = validateFormValidationCensus({ ...subject, manifest })
+      .filter(({ key, code, message }) => key === action.key
+        && code === 'INVALID_COMPLIANCE_METADATA'
+        && message.startsWith('structuredPayloads:'));
+    assert.deepEqual(payloadErrors, []);
+
+    action.structuredPayloads = candidate.writePayloads.map((payload) => payload.replaceAll('\n', '\r\n'));
+    const noncanonicalPayloadErrors = validateFormValidationCensus({ ...subject, manifest })
+      .filter(({ key, code, message }) => key === action.key
+        && code === 'INVALID_COMPLIANCE_METADATA'
+        && message.startsWith('structuredPayloads:'));
+    assert.equal(noncanonicalPayloadErrors.length, 1);
+
+    action.structuredPayloads = candidate.writePayloads.map((payload) => payload.replace('parentId', 'differentParentId'));
+    const changedPayloadErrors = validateFormValidationCensus({ ...subject, manifest })
+      .filter(({ key, code, message }) => key === action.key
+        && code === 'INVALID_COMPLIANCE_METADATA'
+        && message.startsWith('structuredPayloads:'));
+    assert.equal(changedPayloadErrors.length, 1);
+  } finally {
+    subject.cleanup();
+  }
+});
+
 test('delete-only write boundaries and the manual validation adapter are classified honestly', () => {
   const subject = fixture({
     'frontend/src/DeleteOnly.tsx': `

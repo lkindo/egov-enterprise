@@ -1100,8 +1100,13 @@ function controlEvidenceTokens(element) {
   return uniqueSorted(tokens);
 }
 
+function normalizeStructuredPayload(payload) {
+  return typeof payload === 'string' ? payload.replace(/\r\n?/g, '\n') : payload;
+}
+
 function actionWritePayloads(writes) {
-  return uniqueSorted(writes.flatMap((call) => call.getArguments().map((argument) => argument.getText())));
+  return uniqueSorted(writes.flatMap((call) => call.getArguments()
+    .map((argument) => normalizeStructuredPayload(argument.getText()))));
 }
 
 function actionValidationMetadata(contract) {
