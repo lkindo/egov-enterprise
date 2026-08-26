@@ -28,7 +28,7 @@ function withoutComments(source: string): string {
  * **하향 전용 래칫**을 건다: 늘리면 red, 줄이면 상수를 낮춰 되돌릴 수 없게 만든다.
  * 정말 force 가 필요한 자리가 생기면 상수를 올리지 말고, 왜 정상 클릭이 불가능한지를 먼저 밝힐 것.
  */
-const FORCE_CLICK_BASELINE = 16;
+const FORCE_CLICK_BASELINE = 12;
 
 describe('E2E force-click 하향 래칫', () => {
   it('force 클릭 사용처가 baseline 을 넘지 않는다', () => {
