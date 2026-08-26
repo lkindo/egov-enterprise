@@ -259,6 +259,29 @@ describe('StandardDataTable', () => {
     expect(onBulkAction).toHaveBeenLastCalledWith(rows);
   });
 
+  it('bulk action pending 상태를 비활성화하고 보조기술에 안내한다', async () => {
+    const user = userEvent.setup();
+    const onBulkAction = vi.fn();
+    renderTable({
+      enableSelection: true,
+      bulkActions: [{
+        label: '삭제',
+        pendingLabel: '삭제 처리 중…',
+        disabled: true,
+        ariaBusy: true,
+        onClick: onBulkAction,
+      }],
+    });
+
+    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[1]);
+
+    const action = screen.getByRole('button', { name: '삭제 처리 중…' });
+    expect(action).toBeDisabled();
+    expect(action).toHaveAttribute('aria-busy', 'true');
+    await user.click(action);
+    expect(onBulkAction).not.toHaveBeenCalled();
+  });
+
   it('행 작업 문구가 비어 있으면 상세 동작을 추측하지 않고 중립 문구로 축소한다', () => {
     renderTable({ onRowClick: vi.fn(), rowActionLabel: '   ' });
 

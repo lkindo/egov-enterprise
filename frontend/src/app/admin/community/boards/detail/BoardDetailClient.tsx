@@ -101,12 +101,13 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
 
   // 게시글 추천(좋아요) — 낙관적 UI: 클릭 즉시 카운트 증가 후 서버 반영(실패 시 롤백)
   const [likeDelta, setLikeDelta] = useState(0);
-  const [liking, setLiking] = useState(false);
-  // 폼 제출(useFormStatus)을 쓰지 않게 되면서 중복 클릭 방지를 명시적으로 관리한다.
-  const [deleting, setDeleting] = useState(false);
+  // React state 반영 전 같은 tick의 추천/삭제 재진입까지 막기 위해 ref를 먼저 선점한다.
+  const actionPendingRef = React.useRef(false);
+  const [activeAction, setActiveAction] = useState<'like' | 'delete' | null>(null);
   const handleLike = async () => {
-    if (liking || !bbsId || !hasValidPstSn) return;
-    setLiking(true);
+    if (actionPendingRef.current || !bbsId || !hasValidPstSn) return;
+    actionPendingRef.current = true;
+    setActiveAction('like');
     setLikeDelta((d) => d + 1);
     try {
       await boardUserService.likePost(bbsId, pstSn);
@@ -114,7 +115,41 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       setLikeDelta((d) => d - 1);
       toast('추천 처리 중 오류가 발생했습니다.', 'error');
     } finally {
-      setLiking(false);
+      actionPendingRef.current = false;
+      setActiveAction(null);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (actionPendingRef.current) return;
+    actionPendingRef.current = true;
+    setActiveAction('delete');
+    try {
+      const isConfirmed = await confirm({
+        title: '게시글 삭제',
+        message: `[${article?.pstTtl || '제목 없음'}] 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+        confirmText: '삭제',
+        variant: 'destructive'
+      });
+      if (!isConfirmed) return;
+
+      const formData = new FormData();
+      formData.append('bbsId', bbsId ?? '');
+      formData.append('pstSn', String(pstSn));
+
+      const res = await deleteBoardArticle(null, formData);
+      if (res.success) {
+        toast('게시글이 삭제되었습니다.', 'success');
+        queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+        router.push(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
+      } else {
+        toast(res.message || '게시글 삭제에 실패했습니다.', 'error');
+      }
+    } catch {
+      toast('게시글 삭제 중 오류가 발생했습니다.', 'error');
+    } finally {
+      actionPendingRef.current = false;
+      setActiveAction(null);
     }
   };
 
@@ -234,9 +269,10 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           <Button
             variant="outline"
             onClick={handleLike}
-            disabled={liking}
+            disabled={activeAction !== null}
+            aria-busy={activeAction === 'like' || undefined}
+            aria-label={activeAction === 'like' ? '게시글 추천 처리 중' : '게시글 추천'}
             className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
-            aria-label="게시글 추천"
           >
             <ThumbsUp size={20} className="text-primary" /> 추천 {(article.likeCnt ?? 0) + likeDelta}
           </Button>
@@ -258,38 +294,11 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             <Button
               type="button"
               variant="outline"
-              disabled={deleting}
-              onClick={async () => {
-                const isConfirmed = await confirm({
-                  title: '게시글 삭제',
-                  message: `[${article.pstTtl || '제목 없음'}] 게시글을 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-                  confirmText: '삭제',
-                  variant: 'destructive'
-                });
-                if (!isConfirmed) return;
-
-                const formData = new FormData();
-                formData.append('bbsId', bbsId ?? '');
-                formData.append('pstSn', String(pstSn));
-
-                setDeleting(true);
-                try {
-                  const res = await deleteBoardArticle(null, formData);
-                  if (res.success) {
-                    toast('게시글이 삭제되었습니다.', 'success');
-                    queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
-                    router.push(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
-                  } else {
-                    toast(res.message || '게시글 삭제에 실패했습니다.', 'error');
-                  }
-                } catch {
-                  toast('게시글 삭제 중 오류가 발생했습니다.', 'error');
-                } finally {
-                  setDeleting(false);
-                }
-              }}
+              disabled={activeAction !== null}
+              onClick={() => { void handleDelete(); }}
+              aria-busy={activeAction === 'delete' || undefined}
               className="h-14 w-20 rounded-2xl border-2 text-rose-500 border-rose-100 bg-rose-50/30 hover:bg-rose-500 hover:text-white shadow-xl hover:-translate-y-2 transition-all active:scale-95"
-              aria-label="게시글 삭제"
+              aria-label={activeAction === 'delete' ? '게시글 삭제 중' : '게시글 삭제'}
             >
               <Trash2 size={24} />
             </Button>

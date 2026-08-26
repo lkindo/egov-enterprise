@@ -27,6 +27,7 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import type { DeptSchedule } from '@/types/business/schedule';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
 
 interface WorkHubClientProps {
   defaultTab?: string;
@@ -86,6 +87,10 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
   // 업무 보고 등록 다이얼로그. 종전에는 이 탭의 '새 업무 생성' 버튼에 onClick 이 없었다.
   const [isReportModalOpen, setReportModalOpen] = useState(false);
   const [editingReport, setEditingReport] = useState<WorkReport | null>(null);
+  const reportActionPendingRef = React.useRef(false);
+  const scheduleActionPendingRef = React.useRef(false);
+  const [reportAction, setReportAction] = useState<{ type: 'save' | 'delete'; id?: number } | null>(null);
+  const [scheduleAction, setScheduleAction] = useState<{ type: 'save' | 'delete'; id?: number } | null>(null);
   const confirm = useConfirm();
   const { toast } = useToast();
 
@@ -191,6 +196,9 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
 
   /** 업무 보고 등록. 작성자(userId)는 서버가 인증 주체로 채우므로 보내지 않는다. */
   const handleSubmitReport = async (values: ReportFormValues) => {
+    if (reportActionPendingRef.current) return;
+    reportActionPendingRef.current = true;
+    setReportAction({ type: 'save', id: editingReport?.rptpSn });
     try {
       if (editingReport?.rptpSn) {
         await reportService.updateReport(editingReport.rptpSn, values);
@@ -203,25 +211,35 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       setEditingReport(null);
       await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
     } catch (error) {
+      if (extractFieldErrors(error)) throw error;
       toast(error instanceof Error ? error.message : '업무 보고 저장 중 오류가 발생했습니다.', 'error');
+    } finally {
+      reportActionPendingRef.current = false;
+      setReportAction(null);
     }
   };
 
   /** 보고 삭제. 서버가 작성자 본인 또는 관리자만 허용하므로 실패는 그대로 알린다. */
   const handleDeleteReport = async (item: WorkReport) => {
-    const ok = await confirm({
-      title: '업무 보고 삭제',
-      message: `'${item.rptTtl || '제목 없음'}' 보고를 삭제하시겠습니까?`,
-      variant: 'destructive',
-      confirmText: '삭제',
-    });
-    if (!ok) return;
+    if (reportActionPendingRef.current) return;
+    reportActionPendingRef.current = true;
+    setReportAction({ type: 'delete', id: item.rptpSn });
     try {
+      const ok = await confirm({
+        title: '업무 보고 삭제',
+        message: `'${item.rptTtl || '제목 없음'}' 보고를 삭제하시겠습니까?`,
+        variant: 'destructive',
+        confirmText: '삭제',
+      });
+      if (!ok) return;
       await reportService.deleteReport(item.rptpSn);
       toast('업무 보고가 삭제되었습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['work-reports'] });
     } catch {
       toast('삭제에 실패했습니다. 작성자 본인 또는 관리자만 삭제할 수 있습니다.', 'error');
+    } finally {
+      reportActionPendingRef.current = false;
+      setReportAction(null);
     }
   };
 
@@ -230,6 +248,9 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
    * 담당자(schdlPicId)·부서(schdlDeptId)·PK 는 서버가 인증 주체 기준으로 채우므로 보내지 않는다.
    */
   const handleSubmitSchedule = async (values: ScheduleFormValues) => {
+    if (scheduleActionPendingRef.current) return;
+    scheduleActionPendingRef.current = true;
+    setScheduleAction({ type: 'save', id: editingSchedule?.schdlSn });
     try {
       if (editingSchedule?.schdlSn) {
         await updateDeptSchedule(editingSchedule.schdlSn, values as Parameters<typeof updateDeptSchedule>[1]);
@@ -240,29 +261,36 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       }
       setScheduleModalOpen(false);
       setEditingSchedule(null);
-      // 현재 보고 있는 달의 일정을 다시 불러온다.
+      // 저장 오류는 ScheduleCreateForm이 필드 귀속/일반 안내를 단독 처리한다.
+      // 성공한 경우에만 현재 보고 있는 달의 일정을 다시 불러온다.
       await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
-    } catch (error) {
-      toast(error instanceof Error ? error.message : '일정 저장 중 오류가 발생했습니다.', 'error');
+    } finally {
+      scheduleActionPendingRef.current = false;
+      setScheduleAction(null);
     }
   };
 
   /** 일정 삭제. 서버는 소유자/관리자만 허용하므로 권한 오류 메시지를 그대로 노출한다. */
   const handleDeleteSchedule = async (item: DeptSchedule) => {
-    if (!item.schdlSn) return;
-    const ok = await confirm({
-      title: '일정 삭제',
-      message: `'${item.schdlNm || '제목 없음'}' 일정을 삭제하시겠습니까?`,
-      variant: 'destructive',
-      confirmText: '삭제',
-    });
-    if (!ok) return;
+    if (!item.schdlSn || scheduleActionPendingRef.current) return;
+    scheduleActionPendingRef.current = true;
+    setScheduleAction({ type: 'delete', id: item.schdlSn });
     try {
+      const ok = await confirm({
+        title: '일정 삭제',
+        message: `'${item.schdlNm || '제목 없음'}' 일정을 삭제하시겠습니까?`,
+        variant: 'destructive',
+        confirmText: '삭제',
+      });
+      if (!ok) return;
       await deleteDeptSchedule(item.schdlSn);
       toast('일정이 삭제되었습니다.', 'success');
       await queryClient.invalidateQueries({ queryKey: ['work-schedules'] });
     } catch (error) {
       toast(error instanceof Error ? error.message : '일정 삭제 중 오류가 발생했습니다.', 'error');
+    } finally {
+      scheduleActionPendingRef.current = false;
+      setScheduleAction(null);
     }
   };
 
@@ -294,6 +322,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             size="sm"
             data-testid="schedule-edit"
             aria-label={`${item.schdlNm || '제목 없음'} 일정 수정`}
+            disabled={scheduleAction !== null}
             className="h-8 px-3 text-[10px] font-black uppercase"
             onClick={() => { setEditingSchedule(item); setScheduleModalOpen(true); }}
           >
@@ -303,7 +332,9 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             variant="ghost"
             size="sm"
             data-testid="schedule-delete"
-            aria-label={`${item.schdlNm || '제목 없음'} 일정 삭제`}
+            aria-label={`${item.schdlNm || '제목 없음'} 일정 ${scheduleAction?.type === 'delete' && scheduleAction.id === item.schdlSn ? '삭제 중' : '삭제'}`}
+            aria-busy={scheduleAction?.type === 'delete' && scheduleAction.id === item.schdlSn || undefined}
+            disabled={scheduleAction !== null}
             className="h-8 px-3 text-[10px] font-black uppercase text-rose-500 hover:bg-rose-500 hover:text-white"
             onClick={() => handleDeleteSchedule(item)}
           >
@@ -394,6 +425,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             size="sm"
             className="h-9 font-bold text-[11px]"
             aria-label={`${item.rptTtl || '제목 없음'} 보고 수정`}
+            disabled={reportAction !== null}
             onClick={() => { setEditingReport(item); setReportModalOpen(true); }}
           >
             수정
@@ -402,7 +434,9 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             variant="ghost"
             size="sm"
             className="h-9 font-bold text-[11px] text-rose-600 hover:text-rose-700"
-            aria-label={`${item.rptTtl || '제목 없음'} 보고 삭제`}
+            aria-label={`${item.rptTtl || '제목 없음'} 보고 ${reportAction?.type === 'delete' && reportAction.id === item.rptpSn ? '삭제 중' : '삭제'}`}
+            aria-busy={reportAction?.type === 'delete' && reportAction.id === item.rptpSn || undefined}
+            disabled={reportAction !== null}
             onClick={() => handleDeleteReport(item)}
           >
             삭제
@@ -464,6 +498,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           ) : (
             <Button
               size="sm"
+              disabled={activeTab === 'calendar' ? scheduleAction !== null : reportAction !== null}
               onClick={activeTab === 'calendar' ? () => setScheduleModalOpen(true) : () => setReportModalOpen(true)}
             >
               <Plus size={16} aria-hidden="true" /> {activeTab === 'calendar' ? '일정 등록' : '보고 등록'}
@@ -616,6 +651,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       <StandardModal
         isOpen={isScheduleModalOpen}
         onClose={() => { setScheduleModalOpen(false); setEditingSchedule(null); }}
+        closeDisabled={scheduleAction?.type === 'save'}
         title={editingSchedule ? '일정 수정' : '일정 등록'}
         maxWidth="lg"
       >
@@ -627,6 +663,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           defaultYmd={format(selectedDate ?? currentDate, 'yyyyMMdd')}
           onSubmit={handleSubmitSchedule}
           onCancel={() => { setScheduleModalOpen(false); setEditingSchedule(null); }}
+          isPending={scheduleAction?.type === 'save'}
         />
       </StandardModal>
 
@@ -634,6 +671,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
       <StandardModal
         isOpen={isReportModalOpen}
         onClose={() => { setReportModalOpen(false); setEditingReport(null); }}
+        closeDisabled={reportAction?.type === 'save'}
         title={editingReport ? '업무 보고 수정' : '업무 보고 등록'}
         maxWidth="lg"
       >
@@ -645,6 +683,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
           defaultYmd={format(currentDate, 'yyyyMMdd')}
           onSubmit={handleSubmitReport}
           onCancel={() => { setReportModalOpen(false); setEditingReport(null); }}
+          isPending={reportAction?.type === 'save'}
         />
       </StandardModal>
     </>

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { myPageAdminService } from '@/services/foundation/workspace/MyPageAdminService';
@@ -10,10 +10,21 @@ import { StandardDataTable, Column } from '@/app/components/ui/standard-data-tab
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+type WorkspaceContent = {
+  contsSn: number;
+  cntntsNm: string;
+  cntcUrl: string;
+  cntntsUseYn: 'Y' | 'N';
+  cntntsLinkUrl?: string;
+  cntntsDc?: string;
+};
+
 export default function WorkspaceMyPage() {
-  const [contents, setContents] = useState<any[]>([]);
+  const [contents, setContents] = useState<WorkspaceContent[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [pendingContentIds, setPendingContentIds] = useState<Set<number>>(new Set());
+  const pendingContentIdsRef = useRef(new Set<number>());
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,18 +41,30 @@ export default function WorkspaceMyPage() {
     load();
   }, [toast]);
 
-  const toggleStatus = async (item: any) => {
+  const toggleStatus = async (item: WorkspaceContent) => {
+    if (pendingContentIdsRef.current.has(item.contsSn)) return;
+    pendingContentIdsRef.current.add(item.contsSn);
+    setPendingContentIds((current) => new Set(current).add(item.contsSn));
     const newStatus = item.cntntsUseYn === 'Y' ? 'N' : 'Y';
     try {
       await myPageAdminService.updateContent(item.contsSn, { ...item, cntntsUseYn: newStatus });
-      setContents(contents.map(c => c.contsSn === item.contsSn ? { ...c, cntntsUseYn: newStatus } : c));
+      setContents((current) => current.map((content) => (
+        content.contsSn === item.contsSn ? { ...content, cntntsUseYn: newStatus } : content
+      )));
       toast(`${item.cntntsNm} 상태가 변경되었습니다.`, 'success');
     } catch {
       toast('상태 변경 중 오류가 발생했습니다.', 'error');
+    } finally {
+      pendingContentIdsRef.current.delete(item.contsSn);
+      setPendingContentIds((current) => {
+        const next = new Set(current);
+        next.delete(item.contsSn);
+        return next;
+      });
     }
   };
 
-  const columns: Column<any>[] = [
+  const columns: Column<WorkspaceContent>[] = [
     {
       header: '번호',
       accessor: (_, index) => <span className="font-mono text-xs font-bold text-muted-foreground">{(index! + 1).toString().padStart(2, '0')}</span>,
@@ -62,10 +85,14 @@ export default function WorkspaceMyPage() {
     },
     {
       header: '상태',
-      accessor: (item: any) => (
+      accessor: (item) => {
+        const isPending = pendingContentIds.has(item.contsSn);
+        return (
         <button 
           onClick={(e) => { e.stopPropagation(); toggleStatus(item); }}
-          aria-label={`${item.cntntsNm || '콘텐츠'} 상태 변경`}
+          aria-label={`${item.cntntsNm || '콘텐츠'} ${isPending ? '상태 변경 중' : '상태 변경'}`}
+          aria-busy={isPending || undefined}
+          disabled={isPending}
           className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-bold transition-all shadow-sm ${
             item.cntntsUseYn === 'Y' ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-muted text-muted-foreground border border-border'
           }`}
@@ -73,7 +100,8 @@ export default function WorkspaceMyPage() {
           <span className={`w-2 h-2 rounded-full ${item.cntntsUseYn === 'Y' ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground'}`} />
           {item.cntntsUseYn === 'Y' ? '활성' : '중단'}
         </button>
-      ),
+        );
+      },
       className: 'w-32 text-center'
     },
     {

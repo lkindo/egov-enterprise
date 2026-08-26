@@ -71,7 +71,7 @@ export function FormField({
       <div className="relative">
         {children}
       </div>
-      {error ? <p id={`${htmlFor}-error`} role="alert" className="text-xs font-bold text-rose-600 px-1 mt-1">{error}</p> : null}
+      {error ? <p id={`${htmlFor}-error`} className="text-xs font-bold text-destructive-emphasis px-1 mt-1">{error}</p> : null}
       {description ? <p id={`${htmlFor}-description`} className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">{description}</p> : null}
     </div>
   );

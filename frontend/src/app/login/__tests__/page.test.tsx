@@ -70,9 +70,40 @@ describe('LoginPage Component', () => {
     expect(screen.getByText(/아이디/i)).toBeDefined();
     expect(screen.getAllByText(/비밀번호/i).length).toBeGreaterThan(0);
     expect(screen.getByRole('button', { name: /로그인/i })).toBeDefined();
+    expect(screen.getByRole('textbox', { name: '아이디' })).toHaveAttribute('aria-required', 'true');
+    expect(screen.getByRole('textbox', { name: '아이디' })).toHaveAttribute('maxlength', '20');
+    expect(screen.getByLabelText('비밀번호')).toHaveAttribute('aria-required', 'true');
   });
 
-  it('calls login service with credentials', async () => {
+  it('필수 자격증명이 비어 있으면 인증 요청 없이 첫 오류로 이동하고 필드별 안내를 제공한다', async () => {
+    render(<LoginPage />);
+    const idInput = screen.getByRole('textbox', { name: '아이디' });
+
+    fireEvent.click(screen.getByRole('button', { name: /로그인/ }));
+
+    expect(mockLogin).not.toHaveBeenCalled();
+    expect(await screen.findByText('아이디를 입력해 주세요.')).toBeInTheDocument();
+    expect(screen.getByText('비밀번호를 입력해 주세요.')).toBeInTheDocument();
+    expect(screen.getByTestId('login-validation-summary')).toHaveTextContent('입력 오류 2개');
+    expect(idInput).toHaveAttribute('aria-invalid', 'true');
+    await waitFor(() => expect(idInput).toHaveFocus());
+  });
+
+  it('아이디 20자 상한을 넘으면 값을 보존하고 인증 요청을 차단한다', async () => {
+    render(<LoginPage />);
+    const idInput = screen.getByRole('textbox', { name: '아이디' });
+    fireEvent.change(idInput, { target: { value: 'u'.repeat(21) } });
+    fireEvent.change(screen.getByLabelText('비밀번호'), { target: { value: 'password' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /로그인/ }));
+
+    expect(mockLogin).not.toHaveBeenCalled();
+    expect(await screen.findByText('아이디: 최대 20자까지 입력할 수 있습니다.')).toBeInTheDocument();
+    expect(idInput).toHaveValue('u'.repeat(21));
+    await waitFor(() => expect(idInput).toHaveFocus());
+  });
+
+  it('calls login service once and locks the form for same-tick duplicate submits', async () => {
     mockLogin.mockImplementationOnce(() => new Promise(() => undefined));
     render(<LoginPage />);
     
@@ -82,11 +113,19 @@ describe('LoginPage Component', () => {
 
     fireEvent.change(idInput, { target: { value: 'testuser' } });
     fireEvent.change(pwInput, { target: { value: 'password123' } });
-    fireEvent.click(submitButton);
+    const form = submitButton.closest('form');
+    expect(form).not.toBeNull();
+    act(() => {
+      fireEvent.submit(form!);
+      fireEvent.submit(form!);
+    });
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith({ id: 'testuser', password: 'password123' });
+      expect(mockLogin).toHaveBeenCalledTimes(1);
     });
+    expect(submitButton).toBeDisabled();
+    expect(form).toHaveAttribute('inert');
   });
 
   it('shows error message on login failure', async () => {

@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -17,6 +17,7 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
   FormControl,
+  FormErrorSummary,
   FormField as ShadcnFormField,
   FormItem,
   FormLabel,
@@ -32,16 +33,17 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 
 import { ExternalHrDtoSchema } from '@/types/generated-zod';
 
-const externalHrSchema = ExternalHrDtoSchema.extend({
-  evntSn: z.number().int().positive('행사 일련번호를 입력하세요.'),
-  otsdHrId: z.string().min(1, '외부인사 ID를 입력하세요.').max(20),
-  otsdHrNm: z.string().min(1),
-  ogdpInstNm: z.string().min(1),
-  areaNo: z.string().min(1).max(4),
-  mdTelno: z.string().min(1).max(4),
-  endTelno: z.string().min(1).max(4),
-  emlAddr: z.string().email(),
-  brdtYmd: z.string().length(8, '생년월일 8자리를 입력하세요(예: 19900101).'),
+export const externalHrSchema = ExternalHrDtoSchema.extend({
+  evntSn: ExternalHrDtoSchema.shape.evntSn.int().positive('행사 일련번호를 입력하세요.'),
+  otsdHrId: ExternalHrDtoSchema.shape.otsdHrId.min(1, '외부인사 ID를 입력하세요.'),
+  otsdHrNm: ExternalHrDtoSchema.shape.otsdHrNm.unwrap().min(1, '성명을 입력하세요.'),
+  ogdpInstNm: ExternalHrDtoSchema.shape.ogdpInstNm.unwrap().min(1, '소속기관을 입력하세요.'),
+  areaNo: ExternalHrDtoSchema.shape.areaNo.unwrap().min(1, '지역번호를 입력하세요.'),
+  mdTelno: ExternalHrDtoSchema.shape.mdTelno.unwrap().min(1, '국번을 입력하세요.'),
+  endTelno: ExternalHrDtoSchema.shape.endTelno.unwrap().min(1, '종번을 입력하세요.'),
+  emlAddr: ExternalHrDtoSchema.shape.emlAddr.unwrap().min(1, '이메일을 입력하세요.').email(),
+  brdtYmd: ExternalHrDtoSchema.shape.brdtYmd.unwrap()
+    .length(8, '생년월일 8자리를 입력하세요(예: 19900101).'),
 });
 
 type ExternalHrFormValues = z.infer<typeof externalHrSchema>;
@@ -71,6 +73,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
+  const registerSubmitLock = useRef(false);
 
   const form = useAppForm(externalHrSchema, {
     defaultValues: {
@@ -85,6 +88,11 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       brdtYmd: '',
     }
   });
+
+  const closeRegisterModal = () => {
+    if (registerSubmitLock.current) return;
+    setIsModalOpen(false);
+  };
 
   /**
    * 목록 조회. 서버 응답은 PageResponse(list/total/page/size/totalPage) 이며,
@@ -114,6 +122,8 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
   };
 
   const onRegisterSubmit = async (values: ExternalHrFormValues) => {
+    if (registerSubmitLock.current) return;
+    registerSubmitLock.current = true;
     try {
       setRegisterLoading(true);
       const submitData: Partial<ExternalHr> = {
@@ -128,9 +138,12 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       // 최신 등록건은 crtDt DESC 정렬로 1페이지 선두에 노출된다
       if (page !== 1) setPage(1);
       queryClient.invalidateQueries({ queryKey: ['admin-external-hr'] });
-    } catch {
-      toast('등록 중 오류가 발생했습니다.', 'error');
+    } catch (error) {
+      if (!form.applyServerErrors(error)) {
+        toast('등록 중 오류가 발생했습니다.', 'error');
+      }
     } finally {
+      registerSubmitLock.current = false;
       setRegisterLoading(false);
     }
   };
@@ -249,27 +262,57 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
 
       <StandardModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={closeRegisterModal}
         title="외부 인사 정보 등록"
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2">취소</Button>
             <Button
-              onClick={form.handleSubmit(onRegisterSubmit)}
-              disabled={registerLoading}
+              type="button"
+              variant="outline"
+              onClick={closeRegisterModal}
+              disabled={registerLoading || form.formState.isSubmitting}
+              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2"
+            >
+              취소
+            </Button>
+            <Button
+              type="submit"
+              form="external-hr-register-form"
+              disabled={registerLoading || form.formState.isSubmitting}
               className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
             >
-              <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" aria-hidden="true" /> 최종 등록
+              <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" aria-hidden="true" />
+              {registerLoading ? '등록 중…' : '최종 등록'}
             </Button>
           </div>
         }
       >
         <Form {...form}>
-          <form className="space-y-6 pt-4 text-left">
+          <form
+            id="external-hr-register-form"
+            noValidate
+            onSubmit={form.handleSubmit(onRegisterSubmit)}
+            className="space-y-6 pt-4 text-left"
+          >
+            <FormErrorSummary
+              labels={{
+                evntSn: '행사 일련번호',
+                otsdHrId: '외부인사 ID',
+                otsdHrNm: '성명',
+                ogdpInstNm: '소속기관',
+                areaNo: '지역번호',
+                mdTelno: '국번',
+                endTelno: '종번',
+                emlAddr: '이메일',
+                brdtYmd: '생년월일',
+              }}
+              onNavigate={form.focusError}
+            />
             <ShadcnFormField
               control={form.control}
               name="evntSn"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">행사 일련번호</FormLabel>
@@ -291,6 +334,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             <ShadcnFormField
               control={form.control}
               name="otsdHrId"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">외부인사 ID</FormLabel>
@@ -309,11 +353,12 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             <ShadcnFormField
               control={form.control}
               name="otsdHrNm"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">성명</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="홍길동" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={100} placeholder="홍길동" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -322,11 +367,12 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             <ShadcnFormField
               control={form.control}
               name="ogdpInstNm"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">소속기관</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="한국인재개발원" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={100} placeholder="한국인재개발원" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -336,11 +382,12 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
               <ShadcnFormField
                 control={form.control}
                 name="areaNo"
+                required
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">지역번호</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="02" className="h-11 rounded-lg bg-muted border-border" />
+                      <Input {...field} maxLength={4} inputMode="numeric" placeholder="02" className="h-11 rounded-lg bg-muted border-border" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -349,11 +396,12 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
               <ShadcnFormField
                 control={form.control}
                 name="mdTelno"
+                required
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">국번</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="1234" className="h-11 rounded-lg bg-muted border-border" />
+                      <Input {...field} maxLength={4} inputMode="numeric" placeholder="1234" className="h-11 rounded-lg bg-muted border-border" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -362,11 +410,12 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
               <ShadcnFormField
                 control={form.control}
                 name="endTelno"
+                required
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">종번</FormLabel>
                     <FormControl>
-                      <Input {...field} placeholder="5678" className="h-11 rounded-lg bg-muted border-border" />
+                      <Input {...field} maxLength={4} inputMode="numeric" placeholder="5678" className="h-11 rounded-lg bg-muted border-border" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -376,11 +425,12 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             <ShadcnFormField
               control={form.control}
               name="emlAddr"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">이메일</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="example@domain.com" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} type="email" maxLength={50} placeholder="example@domain.com" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -389,11 +439,12 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
             <ShadcnFormField
               control={form.control}
               name="brdtYmd"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">생년월일 (8자리)</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="19900101" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={8} inputMode="numeric" placeholder="19900101" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

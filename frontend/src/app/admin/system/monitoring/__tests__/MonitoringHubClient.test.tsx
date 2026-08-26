@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MonitoringHubClient from '../MonitoringHubClient';
@@ -244,6 +244,37 @@ describe('MonitoringHubClient', () => {
     })));
     await waitFor(() => expect(mocks.deleteComment).toHaveBeenCalledWith(44));
     expect(mocks.toast).toHaveBeenCalledWith('댓글이 성공적으로 삭제되었습니다.', 'success');
+  });
+
+  it('댓글 삭제는 confirm 전에 동기 선점하고 시작 버튼에 pending 상태를 알리며 실패 후 재시도할 수 있다', async () => {
+    let rejectDelete!: (reason?: unknown) => void;
+    mocks.deleteComment.mockReturnValueOnce(new Promise<void>((_, reject) => {
+      rejectDelete = reject;
+    }));
+    renderHub('tab=comments');
+
+    expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '서비스 피드백 관리 44 상세 열기' }));
+    const remove = screen.getByRole('button', { name: '댓글 삭제' });
+
+    act(() => {
+      fireEvent.click(remove);
+      fireEvent.click(remove);
+    });
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.deleteComment).toHaveBeenCalledTimes(1));
+    expect(remove).toBeDisabled();
+    expect(remove).toHaveAttribute('aria-busy', 'true');
+    expect(remove).toHaveAccessibleName('댓글 삭제 중');
+
+    rejectDelete(new Error('댓글 삭제 서버 오류'));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('댓글 삭제 서버 오류', 'error'));
+    expect(screen.getByText('삭제할 댓글')).toBeInTheDocument();
+    expect(remove).not.toBeDisabled();
+    expect(remove).not.toHaveAttribute('aria-busy');
+    expect(remove).toHaveAccessibleName('댓글 삭제');
   });
 
   it('shows honest actuator failure state and retries health collection', async () => {

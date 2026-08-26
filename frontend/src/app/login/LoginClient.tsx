@@ -12,7 +12,14 @@ import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 
 import { LOGIN_FAILURE_MESSAGE } from '@/lib/auth/login-error';
 import { SITE_IDENTITY } from '@/config/site-identity';
-const LOGIN_ERROR_EMPTY = '아이디와 비밀번호를 입력해주세요.';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { loginFormSchema } from './login-form-validation';
+
+const LOGIN_FORM_LABELS = {
+    userId: '아이디',
+    password: '비밀번호',
+};
 const DEFAULT_POST_LOGIN_PATH = '/admin/work-hub';
 const REDIRECT_VALIDATION_ORIGIN = 'https://internal.invalid';
 
@@ -58,6 +65,7 @@ function LoginContent() {
     const [error, setError] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [authStep, setAuthStep] = useState(0); // 0: Idle, 1: Connecting, 2: Finalizing
+    const submittingRef = React.useRef(false);
     const { login, user, loading } = useAuth();
     const router = useRouter();
     const shouldReduceMotion = useReducedMotion();
@@ -79,6 +87,10 @@ function LoginContent() {
     //   키보드·스크린리더 사용자는 오류 위치도 재입력 위치도 알 수 없었다.
     const idInputRef = React.useRef<HTMLInputElement>(null);
     const restoreIdFocusAfterFailureRef = React.useRef(false);
+    const validation = useManualFormValidation(loginFormSchema, {
+        labels: LOGIN_FORM_LABELS,
+        focusTargets: { userId: () => idInputRef.current },
+    });
 
     // 로그인은 전역 AppShell 안에서 렌더되지만 시각적으로는 독립된 modal surface다. 배경의
     // skip link/header/sidebar/footer가 보이면서도 키보드·접근성 트리에는 남아 있으면 사용자가 로그인
@@ -173,20 +185,20 @@ function LoginContent() {
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        if (!id || !password) {
-            setError(LOGIN_ERROR_EMPTY);
-            return;
-        }
-
-        restoreIdFocusAfterFailureRef.current = false;
+        if (submittingRef.current) return;
         setError('');
+        const validated = validation.validate({ userId: id, password });
+        if (!validated) return;
+
+        submittingRef.current = true;
+        restoreIdFocusAfterFailureRef.current = false;
         setIsSubmitting(true);
         setAuthStep(1);
         // login() 이 user 를 세팅하는 순간 위 useEffect 가 소프트 전환을 발사하는 것을 막는다(경합 차단).
         justLoggedIn.current = true;
 
         try {
-            await login({ id, password });
+            await login({ id: validated.userId, password: validated.password });
 
             // 인증 성공 → "인증 완료 / 업무 환경 동기화" 단계 표시.
             // (기존에는 setAuthStep(2) 호출이 저장소 어디에도 없어 이 분기가 도달 불가능한 死코드였다.)
@@ -201,6 +213,7 @@ function LoginContent() {
             // 전환을 무효화시키는 무한 "인증중" 고착의 원인이었다. 하드 전환은 그 부작용 없이 목적을 이룬다.
             window.location.replace(redirectUrl);
         } catch {
+            submittingRef.current = false;
             justLoggedIn.current = false;
             restoreIdFocusAfterFailureRef.current = true;
             setError(LOGIN_FAILURE_MESSAGE);
@@ -293,31 +306,49 @@ function LoginContent() {
                     </CardHeader>
 
                     <form
+                        noValidate
                         onSubmit={handleSubmit}
                         inert={isSubmitting ? true : undefined}
                         aria-hidden={isSubmitting ? 'true' : undefined}
                     >
                         <CardContent className="space-y-5 px-8">
+                            <FormErrorSummary
+                                data-testid="login-validation-summary"
+                                errors={validation.errors}
+                                labels={LOGIN_FORM_LABELS}
+                                onNavigate={validation.focusError}
+                            />
                             <motion.div
                                 initial={shouldReduceMotion ? false : { opacity: 0, x: -10 }}
                                 animate={{ opacity: 1, x: 0 }}
                                 transition={{ delay: 0.4 }}
                                 className="space-y-2"
                             >
-                                <Label htmlFor="id" className="text-xs font-bold text-muted-foreground tracking-tight ml-1">아이디</Label>
+                                <Label htmlFor="id" className="text-xs font-bold text-muted-foreground tracking-tight ml-1">
+                                    아이디
+                                </Label>
                                 <div className="relative group">
                                     <User className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="id"
-                                        name="id"
+                                        maxLength={20}
+                                        aria-required="true"
+                                        {...validation.fieldProps('userId')}
                                         ref={idInputRef}
                                         placeholder="아이디를 입력하세요..."
                                         value={id}
-                                        onChange={(e) => setId(e.target.value)}
+                                        onChange={(e) => {
+                                            setId(e.target.value);
+                                            setError('');
+                                            validation.clearError('userId');
+                                        }}
                                         className="h-11 pl-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-card transition-all shadow-inner font-mono text-sm"
                                         autoComplete="username"
                                     />
                                 </div>
+                                {validation.errors.userId ? (
+                                    <p {...validation.messageProps('userId')} className="text-xs font-bold text-destructive-emphasis" />
+                                ) : null}
                             </motion.div>
 
                             <motion.div
@@ -326,16 +357,23 @@ function LoginContent() {
                                 transition={{ delay: 0.5 }}
                                 className="space-y-2"
                             >
-                                <Label htmlFor="password" className="text-xs font-bold text-muted-foreground tracking-tight ml-1">비밀번호</Label>
+                                <Label htmlFor="password" className="text-xs font-bold text-muted-foreground tracking-tight ml-1">
+                                    비밀번호
+                                </Label>
                                 <div className="relative group">
                                     <Lock className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-300 group-focus-within:text-primary transition-colors" />
                                     <Input
                                         id="password"
-                                        name="password"
+                                        aria-required="true"
+                                        {...validation.fieldProps('password')}
                                         type={showPassword ? 'text' : 'password'}
                                         placeholder="비밀번호를 입력하세요"
                                         value={password}
-                                        onChange={(e) => setPassword(e.target.value)}
+                                        onChange={(e) => {
+                                            setPassword(e.target.value);
+                                            setError('');
+                                            validation.clearError('password');
+                                        }}
                                         className="h-11 pl-12 pr-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-card transition-all shadow-inner font-mono"
                                         autoComplete="current-password"
                                     />
@@ -350,6 +388,9 @@ function LoginContent() {
                                         {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                                     </Button>
                                 </div>
+                                {validation.errors.password ? (
+                                    <p {...validation.messageProps('password')} className="text-xs font-bold text-destructive-emphasis" />
+                                ) : null}
                             </motion.div>
 
                             {/* [W1-24] 동작하지 않던 컨트롤 2종 제거.

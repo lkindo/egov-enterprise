@@ -3,11 +3,12 @@
 import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
 import { revalidatePath } from 'next/cache';
-import { extractErrorMessage } from './actionUtils';
+import { extractErrorMessage, extractFieldErrors } from './actionUtils';
 
-interface ActionResponse {
+export interface ActionResponse {
   success: boolean;
   message: string;
+  fieldErrors?: Record<string, string>;
 }
 
 interface CreateCommentData {
@@ -25,7 +26,11 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
     return { success: false, message: '유효한 게시글 번호가 필요합니다.' };
   }
   if (!ansCn || ansCn.trim() === '') {
-    return { success: false, message: '댓글 내용을 입력해주세요.' };
+    return {
+      success: false,
+      message: '댓글 내용을 입력해주세요.',
+      fieldErrors: { ansCn: '댓글 내용을 입력해주세요.' },
+    };
   }
 
   try {
@@ -51,7 +56,12 @@ export async function createComment(prevState: unknown, formData: FormData): Pro
     return { success: true, message: '댓글이 등록되었습니다.' };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '오류가 발생했습니다.');
-    return { success: false, message: errorMessage };
+    const fieldErrors = extractFieldErrors(error);
+    return {
+      success: false,
+      message: errorMessage,
+      ...(fieldErrors ? { fieldErrors } : {}),
+    };
   }
 }
 
@@ -89,7 +99,11 @@ export async function updateComment(prevState: unknown, formData: FormData): Pro
     return { success: false, message: '유효한 게시글 번호가 필요합니다.' };
   }
   if (!ansCn || ansCn.trim() === '') {
-    return { success: false, message: '댓글 내용을 입력해주세요.' };
+    return {
+      success: false,
+      message: '댓글 내용을 입력해주세요.',
+      fieldErrors: { ansCn: '댓글 내용을 입력해주세요.' },
+    };
   }
 
   try {
@@ -109,6 +123,11 @@ export async function updateComment(prevState: unknown, formData: FormData): Pro
     return { success: true, message: '댓글이 수정되었습니다.' };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '수정 중 오류가 발생했습니다.');
-    return { success: false, message: errorMessage };
+    const fieldErrors = extractFieldErrors(error);
+    return {
+      success: false,
+      message: errorMessage,
+      ...(fieldErrors ? { fieldErrors } : {}),
+    };
   }
 }

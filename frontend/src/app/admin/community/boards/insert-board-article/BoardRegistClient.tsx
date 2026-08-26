@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Save, Zap,
@@ -16,7 +16,16 @@ import { useAutoSaveDraft } from '@/hooks/use-auto-save-draft';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAppForm } from '@/hooks/useAppForm';
 import { z } from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import {
+  Form,
+  FormControl,
+  FormErrorSummary,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  useFormField,
+} from '@/components/ui/form';
 import { motion } from 'framer-motion';
 
 const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
@@ -30,6 +39,9 @@ const boardSchema = BoardSaveRequestSchema.extend({
   pstSn: z.coerce.number().int().positive().optional(),
   parnts: z.coerce.number().int().positive().optional(),
   replyYn: z.string().optional(),
+  pstCn: BoardSaveRequestSchema.shape.pstCn
+    .min(1, '내용을 입력해 주세요.')
+    .refine((value) => !/^<p>(?:<br\s*\/?>)?<\/p>$/i.test(value.trim()), '내용을 입력해 주세요.'),
 });
 
 type BoardFormValues = z.infer<typeof boardSchema>;
@@ -45,11 +57,64 @@ interface BoardRegistClientProps {
   parnts?: number;
 }
 
+function RichTextFieldControl({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { error, formMessageId, name } = useFormField();
+
+  useEffect(() => {
+    const syncAccessibility = () => {
+      const editor = containerRef.current?.querySelector<HTMLElement>('.ProseMirror');
+      if (!editor) return;
+      editor.dataset.errorFocus = name;
+      editor.dataset.formFieldName = name;
+      editor.setAttribute('aria-required', 'true');
+      if (error) {
+        editor.setAttribute('aria-invalid', 'true');
+        editor.setAttribute('aria-errormessage', formMessageId);
+      } else {
+        editor.setAttribute('aria-invalid', 'false');
+        editor.removeAttribute('aria-errormessage');
+      }
+    };
+
+    syncAccessibility();
+    const observer = new MutationObserver(syncAccessibility);
+    if (containerRef.current) {
+      observer.observe(containerRef.current, { childList: true, subtree: true });
+    }
+    return () => observer.disconnect();
+  }, [error, formMessageId, name]);
+
+  return (
+    <div
+      ref={containerRef}
+      className="rounded-[2.5rem] overflow-hidden border-2 border-border bg-card shadow-2xl"
+      data-testid="rich-text-editor"
+    >
+      <FormControl>
+        <RichTextEditor
+          value={value}
+          onChange={onChange}
+          placeholder="내용을 입력하세요..."
+          aria-label="게시글 본문 내용 (필수)"
+        />
+      </FormControl>
+    </div>
+  );
+}
+
 export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRegistClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submittingRef = useRef(false);
 
   const form = useAppForm(boardSchema, {
     defaultValues: {
@@ -93,12 +158,8 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
   }, [hasDraft, restoreDraft, toast, pstSn, form]);
 
   const onSubmit = async (values: BoardFormValues) => {
-    // Debug log removed for Zero-Tolerance clean console requirement
-    if (!values.pstCn || values.pstCn === '<p></p>') {
-      toast('내용을 입력해 주세요.', 'error');
-      return;
-    }
-
+    if (submittingRef.current) return;
+    submittingRef.current = true;
     setIsSubmitting(true);
 
     try {
@@ -124,11 +185,16 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
         toast(pstSn ? '게시글을 수정했습니다.' : '게시글을 등록했습니다.', 'success');
         router.push(result.redirect || `/admin/community/boards/select-board-list?bbsId=${bbsId}`);
       } else {
+        if (!form.applyServerErrors(result)) {
+          toast('게시글을 저장하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.', 'error');
+        }
+      }
+    } catch (error) {
+      if (!form.applyServerErrors(error)) {
         toast('게시글을 저장하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.', 'error');
       }
-    } catch {
-      toast('게시글을 저장하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.', 'error');
     } finally {
+      submittingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -174,7 +240,12 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
       </div>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit, () => {})} className="space-y-12 px-4">
+        <form noValidate onSubmit={form.handleSubmit(onSubmit)} className="space-y-12 px-4">
+          <FormErrorSummary
+            labels={{ pstTtl: '제목', pstCn: '본문 내용' }}
+            onNavigate={form.focusError}
+            className="scroll-mt-6"
+          />
           {/* Title Input Area */}
           <motion.div 
             initial={{ y: 20, opacity: 0 }}
@@ -186,17 +257,18 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
               <Layers size={180} className="rotate-12 text-foreground" />
             </div>
             <div className="relative z-10 space-y-8">
-              <div className="flex items-center gap-5">
-                <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner">
-                  <Zap size={24} />
-                </div>
-                <FormLabel className="text-[10px] font-black tracking-[0.1em] text-muted-foreground">제목</FormLabel>
-              </div>
               <FormField
                 control={form.control}
                 name="pstTtl"
+                required
                 render={({ field }) => (
                   <FormItem>
+                    <div className="flex items-center gap-5">
+                      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-inner">
+                        <Zap size={24} />
+                      </div>
+                      <FormLabel className="text-[10px] font-black tracking-[0.1em] text-muted-foreground">제목</FormLabel>
+                    </div>
                     <FormControl>
                       <Input
                         {...field}
@@ -205,6 +277,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
                         placeholder="제목을 입력하세요."
                         autoFocus
                         aria-label="게시글 제목"
+                        maxLength={100}
                       />
                     </FormControl>
                     <FormMessage className="font-black text-destructive-emphasis uppercase text-[10px] tracking-widest pt-2" />
@@ -222,29 +295,21 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
             transition={{ delay: 0.3 }}
             className="space-y-8"
           >
-            <div className="flex items-center justify-between px-4">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg">
-                  <Package size={20} />
-                </div>
-                <h3 className="text-[10px] font-black text-foreground tracking-[0.1em]">본문 내용</h3>
-              </div>
-            </div>
             <FormField
               control={form.control}
               name="pstCn"
+              required
               render={({ field }) => (
                 <FormItem>
-                  <div className="rounded-[2.5rem] overflow-hidden border-2 border-border bg-card shadow-2xl" data-testid="rich-text-editor">
-                    <FormControl>
-                      <RichTextEditor
-                        value={field.value}
-                        onChange={field.onChange}
-                        placeholder="내용을 입력하세요..."
-                        aria-label="게시글 본문 내용"
-                      />
-                    </FormControl>
+                  <div className="flex items-center justify-between px-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg">
+                        <Package size={20} />
+                      </div>
+                      <FormLabel className="text-[10px] font-black text-foreground tracking-[0.1em]">본문 내용</FormLabel>
+                    </div>
                   </div>
+                  <RichTextFieldControl value={field.value} onChange={field.onChange} />
                   <FormMessage className="font-black text-destructive-emphasis uppercase text-[10px] tracking-widest pt-4 pl-4" />
                 </FormItem>
               )}

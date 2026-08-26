@@ -7,8 +7,8 @@ describe('Standardized Validation Schemas', () => {
     it('should validate correct poll data', () => {
       const validData = {
         pollNm: '2024 하반기 설문',
-        pollBgngYmd: '2024-01-01',
-        pollEndYmd: '2024-12-31',
+        pollBgngYmd: '20240101',
+        pollEndYmd: '20241231',
         pollKndCd: '001',
       };
       const result = pollSchema.safeParse(validData);
@@ -18,8 +18,8 @@ describe('Standardized Validation Schemas', () => {
     it('should reject empty title', () => {
       const invalidData = {
         pollNm: '',
-        pollBgngYmd: '2024-01-01',
-        pollEndYmd: '2024-12-31',
+        pollBgngYmd: '20240101',
+        pollEndYmd: '20241231',
         pollKndCd: '001',
       };
       const result = pollSchema.safeParse(invalidData);
@@ -34,8 +34,8 @@ describe('Standardized Validation Schemas', () => {
     it('should reject if end date is before start date', () => {
       const invalidData = {
         pollNm: '날짜 오류 테스트',
-        pollBgngYmd: '2024-12-31',
-        pollEndYmd: '2024-01-01',
+        pollBgngYmd: '20241231',
+        pollEndYmd: '20240101',
         pollKndCd: '001',
       };
       const result = pollSchema.safeParse(invalidData);

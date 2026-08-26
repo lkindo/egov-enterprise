@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { surveyAdminService } from '@/services/foundation/system/SurveyAdminService';
 import { Survey, SurveyQuestion } from '@/types/business/survey';
@@ -8,6 +8,15 @@ import { PageResponse } from '@/types/foundation/system';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Loader2, Plus, Trash2, ListChecks, MessageSquareText } from 'lucide-react';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import {
+  surveyItemCreateSchema,
+  surveyItemValidationLabels,
+  surveyQuestionCreateSchema,
+  surveyQuestionValidationLabels,
+} from './survey-panel-form-validation';
 
 /** '1' = 객관식. 그 외는 주관식으로 취급한다(백엔드 통계 DTO 와 같은 규약). */
 const MULTIPLE_CHOICE = '1';
@@ -29,6 +38,16 @@ export default function SurveyQuestionsPanel() {
   const [newItemFor, setNewItemFor] = useState<number | null>(null);
   const [newItemText, setNewItemText] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [deletingTarget, setDeletingTarget] = useState<string | null>(null);
+  const questionPendingRef = useRef(false);
+  const itemPendingRef = useRef(false);
+  const deletePendingRef = useRef(false);
+  const questionValidation = useManualFormValidation(surveyQuestionCreateSchema, {
+    labels: surveyQuestionValidationLabels,
+  });
+  const itemValidation = useManualFormValidation(surveyItemCreateSchema, {
+    labels: surveyItemValidationLabels,
+  });
 
   const { data: surveys } = useQuery<PageResponse<Survey>>({
     queryKey: ['admin-surveys-for-questions'],
@@ -43,22 +62,25 @@ export default function SurveyQuestionsPanel() {
   });
 
   const invalidate = () => queryClient.invalidateQueries({ queryKey: questionsKey });
-  const onError = (e: unknown) => setError(e instanceof Error ? e.message : '처리에 실패했습니다.');
+  const onError = (e: unknown) => setError(extractErrorMessage(e, '처리에 실패했습니다.'));
 
   const addQuestion = useMutation({
-    mutationFn: () =>
-      surveyAdminService.createQuestion(srvySn!, {
-        srvySn: srvySn!,
-        qstnCn: newQuestion,
-        qstnTypeCd: MULTIPLE_CHOICE,
-        qstnSn: questions.length + 1,
-      }),
+    mutationFn: (payload: { srvySn: number; qstnCn: string; qstnTypeCd: string; qstnSn: number }) =>
+      surveyAdminService.createQuestion(payload.srvySn, payload),
     onSuccess: () => {
       setNewQuestion('');
       setError(null);
+      questionValidation.setFormErrors({}, false);
       invalidate();
     },
-    onError,
+    onError: (mutationError: unknown) => {
+      const fieldErrors = extractFieldErrors(mutationError);
+      if (fieldErrors) questionValidation.setFormErrors(fieldErrors);
+      else onError(mutationError);
+    },
+    onSettled: () => {
+      questionPendingRef.current = false;
+    },
   });
 
   const removeQuestion = useMutation({
@@ -68,18 +90,30 @@ export default function SurveyQuestionsPanel() {
       invalidate();
     },
     onError,
+    onSettled: () => {
+      deletePendingRef.current = false;
+      setDeletingTarget(null);
+    },
   });
 
   const addItem = useMutation({
-    mutationFn: ({ qstnSn, cn }: { qstnSn: number; cn: string }) =>
-      surveyAdminService.createItem(qstnSn, { srvyQstnSn: qstnSn, srvySn: srvySn!, artclCn: cn }),
+    mutationFn: (payload: { srvyQstnSn: number; srvySn: number; artclCn: string }) =>
+      surveyAdminService.createItem(payload.srvyQstnSn, payload),
     onSuccess: () => {
       setNewItemFor(null);
       setNewItemText('');
       setError(null);
+      itemValidation.setFormErrors({}, false);
       invalidate();
     },
-    onError,
+    onError: (mutationError: unknown) => {
+      const fieldErrors = extractFieldErrors(mutationError);
+      if (fieldErrors) itemValidation.setFormErrors(fieldErrors);
+      else onError(mutationError);
+    },
+    onSettled: () => {
+      itemPendingRef.current = false;
+    },
   });
 
   const removeItem = useMutation({
@@ -89,7 +123,19 @@ export default function SurveyQuestionsPanel() {
       invalidate();
     },
     onError,
+    onSettled: () => {
+      deletePendingRef.current = false;
+      setDeletingTarget(null);
+    },
   });
+
+  const beginDelete = (target: string, remove: () => void) => {
+    if (deletePendingRef.current || questionPendingRef.current || itemPendingRef.current) return;
+    deletePendingRef.current = true;
+    setDeletingTarget(target);
+    setError(null);
+    remove();
+  };
 
   return (
     <div className="space-y-6">
@@ -103,6 +149,8 @@ export default function SurveyQuestionsPanel() {
           onChange={(e) => {
             setSrvySn(e.target.value ? Number(e.target.value) : null);
             setError(null);
+            questionValidation.setFormErrors({}, false);
+            itemValidation.setFormErrors({}, false);
           }}
           className="border rounded-lg px-3 py-2 text-sm bg-card max-w-md w-full"
         >
@@ -115,7 +163,7 @@ export default function SurveyQuestionsPanel() {
         </select>
       </div>
 
-      {error && <p className="text-sm text-destructive-emphasis">{error}</p>}
+      {error && <p role="alert" className="text-sm text-destructive-emphasis">{error}</p>}
 
       {srvySn === null ? (
         <div className="p-16 text-center bg-card rounded-lg border-2 border-dashed">
@@ -131,23 +179,50 @@ export default function SurveyQuestionsPanel() {
           <form
             onSubmit={(e) => {
               e.preventDefault();
-              if (!newQuestion.trim()) {
-                setError('문항 내용을 입력해 주세요.');
-                return;
-              }
-              addQuestion.mutate();
+              if (questionPendingRef.current || itemPendingRef.current || deletePendingRef.current) return;
+              const validated = questionValidation.validate({
+                srvySn,
+                qstnCn: newQuestion,
+                qstnTypeCd: MULTIPLE_CHOICE,
+                qstnSn: questions.length + 1,
+              });
+              if (!validated) return;
+              setError(null);
+              questionPendingRef.current = true;
+              addQuestion.mutate(validated);
             }}
-            className="flex gap-2"
+            noValidate
+            className="space-y-2"
           >
-            <Input
-              value={newQuestion}
-              onChange={(e) => setNewQuestion(e.target.value)}
-              placeholder="새 문항 내용"
-              aria-label="새 문항 내용"
+            <FormErrorSummary
+              errors={questionValidation.errors}
+              labels={surveyQuestionValidationLabels}
+              onNavigate={questionValidation.focusError}
             />
-            <Button type="submit" disabled={addQuestion.isPending} className="shrink-0">
-              <Plus className="h-4 w-4 mr-1" /> 문항 추가
-            </Button>
+            <div className="flex gap-2">
+              <Input
+                {...questionValidation.fieldProps('qstnCn')}
+                value={newQuestion}
+                onChange={(e) => {
+                  questionValidation.clearError('qstnCn');
+                  setNewQuestion(e.target.value);
+                }}
+                placeholder="새 문항 내용"
+                aria-label="새 문항 내용"
+                maxLength={4000}
+                required
+              />
+              <Button
+                type="submit"
+                disabled={addQuestion.isPending || addItem.isPending || deletingTarget !== null}
+                className="shrink-0"
+              >
+                <Plus className="h-4 w-4 mr-1" /> 문항 추가
+              </Button>
+            </div>
+            {questionValidation.errors.qstnCn ? (
+              <p {...questionValidation.messageProps('qstnCn')} className="text-xs font-bold text-destructive-emphasis" />
+            ) : null}
           </form>
 
           {questions.length === 0 ? (
@@ -167,11 +242,20 @@ export default function SurveyQuestionsPanel() {
                     <Button
                       variant="ghost"
                       size="icon"
-                      aria-label={`${q.qstnCn} 문항 삭제`}
+                      aria-label={deletingTarget === `question-${q.srvyQstnSn}`
+                        ? `${q.qstnCn} 문항 삭제 중`
+                        : `${q.qstnCn} 문항 삭제`}
+                      aria-busy={deletingTarget === `question-${q.srvyQstnSn}`}
+                      disabled={deletingTarget !== null || addQuestion.isPending || addItem.isPending}
                       className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 shrink-0"
-                      onClick={() => removeQuestion.mutate(q.srvyQstnSn)}
+                      onClick={() => beginDelete(
+                        `question-${q.srvyQstnSn}`,
+                        () => removeQuestion.mutate(q.srvyQstnSn),
+                      )}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      {deletingTarget === `question-${q.srvyQstnSn}`
+                        ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                        : <Trash2 className="h-4 w-4" aria-hidden="true" />}
                     </Button>
                   </div>
 
@@ -189,11 +273,20 @@ export default function SurveyQuestionsPanel() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              aria-label={`${item.artclCn} 항목 삭제`}
+                              aria-label={deletingTarget === `item-${item.srvyArtclSn}`
+                                ? `${item.artclCn} 항목 삭제 중`
+                                : `${item.artclCn} 항목 삭제`}
+                              aria-busy={deletingTarget === `item-${item.srvyArtclSn}`}
+                              disabled={deletingTarget !== null || addQuestion.isPending || addItem.isPending}
                               className="h-7 w-7 text-destructive-emphasis hover:bg-destructive/10"
-                              onClick={() => removeItem.mutate(item.srvyArtclSn)}
+                              onClick={() => beginDelete(
+                                `item-${item.srvyArtclSn}`,
+                                () => removeItem.mutate(item.srvyArtclSn),
+                              )}
                             >
-                              <Trash2 className="h-3.5 w-3.5" />
+                              {deletingTarget === `item-${item.srvyArtclSn}`
+                                ? <Loader2 className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                                : <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />}
                             </Button>
                           </li>
                         ))}
@@ -204,32 +297,73 @@ export default function SurveyQuestionsPanel() {
                       <form
                         onSubmit={(e) => {
                           e.preventDefault();
-                          if (!newItemText.trim()) return;
-                          addItem.mutate({ qstnSn: q.srvyQstnSn, cn: newItemText });
+                          if (itemPendingRef.current || questionPendingRef.current || deletePendingRef.current) return;
+                          const validated = itemValidation.validate({
+                            srvyQstnSn: q.srvyQstnSn,
+                            srvySn: srvySn,
+                            artclCn: newItemText,
+                          });
+                          if (!validated) return;
+                          setError(null);
+                          itemPendingRef.current = true;
+                          addItem.mutate(validated);
                         }}
-                        className="flex gap-2 pt-2"
+                        noValidate
+                        className="space-y-2 pt-2"
                       >
-                        <Input
-                          autoFocus
-                          value={newItemText}
-                          onChange={(e) => setNewItemText(e.target.value)}
-                          placeholder="항목 내용"
-                          aria-label="새 항목 내용"
-                          className="h-8 text-sm"
+                        <FormErrorSummary
+                          errors={itemValidation.errors}
+                          labels={surveyItemValidationLabels}
+                          onNavigate={itemValidation.focusError}
                         />
-                        <Button type="submit" size="sm" disabled={addItem.isPending}>
-                          추가
-                        </Button>
-                        <Button type="button" size="sm" variant="ghost" onClick={() => setNewItemFor(null)}>
-                          취소
-                        </Button>
+                        <div className="flex gap-2">
+                          <Input
+                            {...itemValidation.fieldProps('artclCn')}
+                            autoFocus
+                            value={newItemText}
+                            onChange={(e) => {
+                              itemValidation.clearError('artclCn');
+                              setNewItemText(e.target.value);
+                            }}
+                            placeholder="항목 내용"
+                            aria-label="새 항목 내용"
+                            className="h-8 text-sm"
+                            maxLength={4000}
+                            required
+                          />
+                          <Button
+                            type="submit"
+                            size="sm"
+                            disabled={addItem.isPending || addQuestion.isPending || deletingTarget !== null}
+                          >
+                            추가
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            disabled={addItem.isPending || addQuestion.isPending || deletingTarget !== null}
+                            onClick={() => {
+                              if (itemPendingRef.current || questionPendingRef.current || deletePendingRef.current) return;
+                              itemValidation.setFormErrors({}, false);
+                              setNewItemFor(null);
+                            }}
+                          >
+                            취소
+                          </Button>
+                        </div>
+                        {itemValidation.errors.artclCn ? (
+                          <p {...itemValidation.messageProps('artclCn')} className="text-xs font-bold text-destructive-emphasis" />
+                        ) : null}
                       </form>
                     ) : (
                       <Button
                         variant="ghost"
                         size="sm"
                         className="text-xs h-7"
+                        disabled={addQuestion.isPending || addItem.isPending || deletingTarget !== null}
                         onClick={() => {
+                          itemValidation.setFormErrors({}, false);
                           setNewItemFor(q.srvyQstnSn);
                           setNewItemText('');
                         }}

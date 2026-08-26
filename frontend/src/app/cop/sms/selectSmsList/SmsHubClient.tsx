@@ -1,6 +1,6 @@
 'use client';
 
-import { useState,  useMemo } from 'react';
+import { useState, useMemo, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubHeader } from '@/components/ui/hub/HubHeader';
@@ -25,6 +25,10 @@ import { cn } from '@/lib/utils';
 import { smsAdminService, SmsDto } from '@/services/foundation/operation/SmsAdminService';
 import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { smsSchema } from '@/lib/validation/schemas';
 import { Dialog,  
   DialogContent,  
   DialogHeader,  
@@ -39,6 +43,12 @@ type SmsFormState = {
   sndngCn: string;
 };
 
+const smsValidationLabels: Record<string, string> = {
+  sndngTelno: '발신 번호',
+  rcptnTelno: '수신 번호',
+  sndngCn: '메시지 내용',
+};
+
 export default function SmsHubClient({ 
   initialData 
 }: { 
@@ -49,11 +59,17 @@ export default function SmsHubClient({
   const [page, setPage] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSending, setIsSending] = useState(false);
+  const sendPendingRef = useRef(false);
   
   const [newSms, setNewSms] = useState<SmsFormState>({
     sndngTelno: '010-1234-5678',
     rcptnTelno: '',
     sndngCn: '',
+  });
+
+  const validation = useManualFormValidation(smsSchema, {
+    labels: smsValidationLabels,
   });
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -75,12 +91,46 @@ export default function SmsHubClient({
       toast('SMS가 성공적으로 전송되었습니다.', 'success');
       setIsDialogOpen(false);
       setNewSms((current) => ({ ...current, rcptnTelno: '', sndngCn: '' }));
+      validation.setFormErrors({}, false);
       queryClient.invalidateQueries({ queryKey: ['sms-list'] });
     },
     onError: (err: unknown) => {
-      toast(err instanceof Error ? err.message : 'SMS 전송에 실패했습니다.', 'error');
-    }
+      const fieldErrors = extractFieldErrors(err);
+      if (fieldErrors) {
+        const normalized = Object.fromEntries(
+          Object.entries(fieldErrors).map(([field, message]) => {
+            if (field.includes('rcptnTelno')) return ['rcptnTelno', message];
+            if (field.includes('sndngTelno')) return ['sndngTelno', message];
+            if (field.includes('sndngCn')) return ['sndngCn', message];
+            return [field, message];
+          }),
+        );
+        validation.setFormErrors(normalized);
+      } else {
+        toast(extractErrorMessage(err, 'SMS 전송에 실패했습니다.'), 'error');
+      }
+    },
+    onSettled: () => {
+      sendPendingRef.current = false;
+      setIsSending(false);
+    },
   });
+
+  const handleSend = () => {
+    if (sendPendingRef.current) return;
+    const values = validation.validate(newSms);
+    if (!values) return;
+
+    sendPendingRef.current = true;
+    setIsSending(true);
+    sendMutation.mutate(values);
+  };
+
+  const handleDialogOpenChange = (open: boolean) => {
+    if (!open && sendPendingRef.current) return;
+    if (open) validation.setFormErrors({}, false);
+    setIsDialogOpen(open);
+  };
 
   const smsList = useMemo(() => {
     return (data?.list || []) as SmsDto[];
@@ -149,7 +199,7 @@ export default function SmsHubClient({
           icon={MessageSquare}
           actions={
             <div className="flex gap-4 p-2 items-center">
-               <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+               <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                 <DialogTrigger asChild>
                   <Button 
                     size="lg" 
@@ -177,49 +227,85 @@ export default function SmsHubClient({
                             </DialogHeader>
                         </div>
                     </div>
-                    <div className="p-10 space-y-10">
+                    <form
+                      noValidate
+                      className="p-10 space-y-10"
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        handleSend();
+                      }}
+                    >
+                        <FormErrorSummary
+                          errors={validation.errors}
+                          labels={smsValidationLabels}
+                          onNavigate={validation.focusError}
+                        />
                         <div className="space-y-6">
                             <div className="space-y-3">
-                                <Label className="text-xs font-bold text-muted-foreground tracking-tight">_ Recipient_Phone_Number</Label>
+                                <Label htmlFor="sms-hub-recipient" className="text-xs font-bold text-muted-foreground tracking-tight">수신 번호</Label>
                                 <div className="relative group">
                                     <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} />
                                     <Input
+                                        id="sms-hub-recipient"
+                                        {...validation.fieldProps('rcptnTelno')}
+                                        required
+                                        inputMode="tel"
+                                        maxLength={20}
                                         placeholder="010-0000-0000"
                                         className="pl-16 h-11 bg-muted border-2 border-border rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
                                         value={newSms.rcptnTelno}
-                                        onChange={(e) => setNewSms({ ...newSms, rcptnTelno: e.target.value })}
+                                        onChange={(e) => {
+                                          setNewSms((current) => ({ ...current, rcptnTelno: e.target.value }));
+                                          validation.clearError('rcptnTelno');
+                                        }}
                                     />
                                 </div>
+                                {validation.errors.rcptnTelno && (
+                                  <p {...validation.messageProps('rcptnTelno')} className="text-xs font-bold text-destructive" />
+                                )}
                             </div>
                             <div className="space-y-3">
-                                <Label className="text-xs font-bold text-muted-foreground tracking-tight">_ Message_Content_Payload</Label>
+                                <Label htmlFor="sms-hub-content" className="text-xs font-bold text-muted-foreground tracking-tight">메시지 내용</Label>
                                 <div className="relative group">
                                     <Textarea
+                                        id="sms-hub-content"
+                                        {...validation.fieldProps('sndngCn')}
+                                        required
+                                        maxLength={80}
                                         placeholder="전달할 메시지 내용을 입력하세요..."
                                         className="min-h-[200px] p-8 bg-muted border-2 border-border rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground leading-relaxed"
                                         value={newSms.sndngCn}
-                                        onChange={(e) => setNewSms({ ...newSms, sndngCn: e.target.value })}
+                                        onChange={(e) => {
+                                          setNewSms((current) => ({ ...current, sndngCn: e.target.value }));
+                                          validation.clearError('sndngCn');
+                                        }}
                                     />
                                     <div className="absolute bottom-6 right-6 px-4 py-2 bg-muted rounded-lg text-xs font-bold text-muted-foreground tracking-tight">
-                                        _ {newSms.sndngCn.length} / 80 BYTES
+                                        {newSms.sndngCn.length} / 80자
                                     </div>
                                 </div>
+                                {validation.errors.sndngCn && (
+                                  <p {...validation.messageProps('sndngCn')} className="text-xs font-bold text-destructive" />
+                                )}
                             </div>
                         </div>
                         <div className="flex gap-4 pt-4 border-t border-border">
                             <Button 
+                                type="button"
                                 variant="ghost" 
-                                onClick={() => setIsDialogOpen(false)}
+                                disabled={isSending || sendMutation.isPending}
+                                onClick={() => handleDialogOpenChange(false)}
                                 className="h-11 px-10 rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-muted"
                             >
                                 ABORT_OPERATION
                             </Button>
                             <Button 
-                                disabled={sendMutation.isPending}
-                                onClick={() => sendMutation.mutate(newSms)}
+                                type="submit"
+                                disabled={isSending || sendMutation.isPending}
+                                aria-busy={(isSending || sendMutation.isPending) || undefined}
                                 className="flex-1 h-11 rounded-[var(--radius-hub-item)] bg-slate-900 text-white font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all gap-4 group"
                             >
-                                {sendMutation.isPending ? 'PROCESSING...' : (
+                                {isSending || sendMutation.isPending ? 'PROCESSING...' : (
                                     <>
                                         EXECUTE_TRANSMISSION
                                         <Send size={18} className="group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
@@ -227,7 +313,7 @@ export default function SmsHubClient({
                                 )}
                             </Button>
                         </div>
-                    </div>
+                    </form>
                 </DialogContent>
               </Dialog>
             </div>

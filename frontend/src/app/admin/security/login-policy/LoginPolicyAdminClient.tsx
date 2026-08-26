@@ -36,16 +36,49 @@ import {
   FormLabel,
   FormMessage,
   FormDescription,
+  FormErrorSummary,
 } from '@/components/ui/form';
 
 import { LoginPolicyDtoSchema } from '@/types/generated-zod';
 
-const loginPolicySchema = LoginPolicyDtoSchema.extend({
+const optionalStartTimeSchema = LoginPolicyDtoSchema.shape.bgngTm
+  .unwrap()
+  .trim()
+  .max(5, '시작 시간은 HH:mm 형식으로 입력해 주세요.')
+  .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, '시작 시간은 HH:mm 형식으로 입력해 주세요.')
+  .or(z.literal(''));
+
+const optionalEndTimeSchema = LoginPolicyDtoSchema.shape.endTm
+  .unwrap()
+  .trim()
+  .max(5, '종료 시간은 HH:mm 형식으로 입력해 주세요.')
+  .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, '종료 시간은 HH:mm 형식으로 입력해 주세요.')
+  .or(z.literal(''));
+
+export const loginPolicySchema = LoginPolicyDtoSchema.extend({
+  ipAddr: LoginPolicyDtoSchema.shape.ipAddr
+    .unwrap()
+    .trim()
+    .max(30, '접속 제한 IP는 최대 30자까지 입력할 수 있습니다.'),
   lmtYn: z.enum(['Y', 'N']),
-  bgngTm: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm 형식이 아니거나 잘못된 시간입니다.').optional().or(z.literal('')),
-  endTm: z.string().regex(/^([01]\d|2[0-3]):([0-5]\d)$/, 'HH:mm 형식이 아니거나 잘못된 시간입니다.').optional().or(z.literal('')),
+  bgngTm: optionalStartTimeSchema,
+  endTm: optionalEndTimeSchema,
   otpUseYn: z.enum(['Y', 'N']),
+}).pick({
+  ipAddr: true,
+  lmtYn: true,
+  bgngTm: true,
+  endTm: true,
+  otpUseYn: true,
 });
+
+const LOGIN_POLICY_FORM_LABELS = {
+  ipAddr: '접속 제한 IP',
+  bgngTm: '접속 허용 시작 시간',
+  endTm: '접속 허용 종료 시간',
+  lmtYn: '계정 접속 제한',
+  otpUseYn: '2단계 인증 적용',
+};
 
 type LoginPolicyFormValues = z.infer<typeof loginPolicySchema>;
 
@@ -115,8 +148,10 @@ export default function LoginPolicyAdminClient() {
       toast('로그인 정책이 성공적으로 업데이트되었습니다.', 'success');
       setIsEditModalOpen(false);
       queryClient.invalidateQueries({ queryKey: LOGIN_POLICIES_QUERY_KEY });
-    } catch {
-      toast('정책 저장 중 오류가 발생했습니다.', 'error');
+    } catch (error: unknown) {
+      if (!form.applyServerErrors(error)) {
+        toast('정책 저장 중 오류가 발생했습니다.', 'error');
+      }
     }
   };
 
@@ -253,7 +288,12 @@ export default function LoginPolicyAdminClient() {
       </HubSectionCard>
 
       {/* Edit Modal */}
-      <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+      <Dialog
+        open={isEditModalOpen}
+        onOpenChange={(open) => {
+          if (!form.formState.isSubmitting) setIsEditModalOpen(open);
+        }}
+      >
         <DialogContent className="max-w-2xl rounded-lg overflow-hidden border-none shadow-2xl p-0">
           <div className="bg-surface-inverse p-8 text-surface-inverse-foreground flex items-center justify-between">
             <div className="space-y-1">
@@ -270,7 +310,8 @@ export default function LoginPolicyAdminClient() {
           </div>
 
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onFormSubmit)} className="p-10 space-y-8">
+            <form onSubmit={form.handleSubmit(onFormSubmit)} className="p-10 space-y-8" noValidate>
+              <FormErrorSummary labels={LOGIN_POLICY_FORM_LABELS} onNavigate={form.focusError} />
               <div className="grid grid-cols-2 gap-8">
                 <FormField
                   control={form.control}
@@ -278,12 +319,12 @@ export default function LoginPolicyAdminClient() {
                   render={({ field }) => (
                     <FormItem className="col-span-2">
                       <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">접속 제한 IP</FormLabel>
-                      <FormControl>
-                        <div className="relative group">
-                          <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="예: 192.168.0.1 (미입력 시 제한 없음)" className="h-11 pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
-                        </div>
-                      </FormControl>
+                      <div className="relative group">
+                        <Globe className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+                        <FormControl>
+                          <Input {...field} maxLength={30} placeholder="예: 192.168.0.1 (미입력 시 제한 없음)" className="h-11 pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
+                        </FormControl>
+                      </div>
                       <FormDescription className="text-xs font-medium opacity-60">특정 IP에서만 접근을 허용하려면 입력하십시오.</FormDescription>
                       <FormMessage />
                     </FormItem>
@@ -296,12 +337,12 @@ export default function LoginPolicyAdminClient() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">접속 허용 시작 시간</FormLabel>
-                      <FormControl>
-                        <div className="relative group">
-                          <Timer className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="09:00" className="h-11 pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
-                        </div>
-                      </FormControl>
+                      <div className="relative group">
+                        <Timer className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+                        <FormControl>
+                          <Input {...field} maxLength={5} placeholder="09:00" className="h-11 pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
+                        </FormControl>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -313,12 +354,12 @@ export default function LoginPolicyAdminClient() {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold tracking-widest uppercase opacity-40">접속 허용 종료 시간</FormLabel>
-                      <FormControl>
-                        <div className="relative group">
-                          <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
-                          <Input {...field} placeholder="18:00" className="h-11 pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
-                        </div>
-                      </FormControl>
+                      <div className="relative group">
+                        <Clock className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
+                        <FormControl>
+                          <Input {...field} maxLength={5} placeholder="18:00" className="h-11 pl-12 rounded-lg border-2 bg-muted/50 font-bold" />
+                        </FormControl>
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -369,9 +410,9 @@ export default function LoginPolicyAdminClient() {
               </div>
 
               <DialogFooter className="pt-6">
-                <Button variant="ghost" type="button" onClick={() => setIsEditModalOpen(false)} className="h-11 px-8 rounded-lg font-bold text-xs tracking-widest uppercase">취소</Button>
-                <Button type="submit" className="h-11 px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">
-                  정책 동기화 적용
+                <Button variant="ghost" type="button" disabled={form.formState.isSubmitting} onClick={() => setIsEditModalOpen(false)} className="h-11 px-8 rounded-lg font-bold text-xs tracking-widest uppercase">취소</Button>
+                <Button type="submit" disabled={form.formState.isSubmitting} className="h-11 px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-widest uppercase shadow-xl hover:bg-primary transition-all">
+                  {form.formState.isSubmitting ? '정책 적용 중…' : '정책 동기화 적용'}
                 </Button>
               </DialogFooter>
             </form>

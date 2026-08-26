@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo, use } from 'react';
+import { useState, useEffect, useMemo, use, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
@@ -26,6 +26,7 @@ import {
 import { cn } from '@/lib/utils';
 import dynamic from 'next/dynamic';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { saveMenuAction, updateMenuOrdersAction, deleteMenuAction } from '@/app/actions/menuActions';
 import { menuSchema } from '@/lib/validation/schemas';
@@ -34,6 +35,7 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
   FormControl,
+  FormErrorSummary,
   FormField as ShadcnFormField,
   FormItem,
   FormLabel,
@@ -70,6 +72,17 @@ import { CSS } from '@dnd-kit/utilities';
 import { flattenTree,  FlattenedItem,  getProjection,  listToTree } from './treeUtils';
 
 type MenuFormValues = z.infer<typeof menuSchema>;
+
+const menuValidationLabels: Record<string, string> = {
+  menuNm: '메뉴 명칭',
+  modernRoute: '연결 라우트',
+  prgrmFileNm: '연결 프로그램',
+  menuExpln: '메뉴 설명',
+  menuOrdr: '정렬 순서',
+  useYn: '사용 여부',
+};
+
+const MENU_EDITOR_FORM_ID = 'menu-editor-form';
 
 /**
  * 서버 조회 결과 봉투.
@@ -240,6 +253,9 @@ export default function MenuAdminClient({
   const confirm = useConfirm();
   
   const [isSaving, setIsSaving] = useState(false);
+  const hierarchySavePendingRef = useRef(false);
+  const deletePendingRef = useRef(false);
+  const [deletingMenuId, setDeletingMenuId] = useState<number | null>(null);
   const [flattenedMenus, setFlattenedMenus] = useState<FlattenedItem[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
   const [activeId, setActiveId] = useState<number | null>(null);
@@ -325,6 +341,8 @@ export default function MenuAdminClient({
   );
 
   const [isModalOpen, setIsOpen] = useState(false);
+  const [isModalSaving, setIsModalSaving] = useState(false);
+  const modalSavePendingRef = useRef(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
 
   const form = useAppForm<typeof menuSchema, MenuFormValues>(menuSchema, {
@@ -338,6 +356,7 @@ export default function MenuAdminClient({
   /* -------------------------------------------------------------------------- */
 
   const handleDragStart = (event: DragStartEvent) => {
+    if (hierarchySavePendingRef.current || isSaving) return;
     setActiveId(event.active.id as number);
     setSelectedMenuId(event.active.id as number);
     setOverId(event.active.id as number);
@@ -345,14 +364,22 @@ export default function MenuAdminClient({
   };
 
   const handleDragMove = (event: DragMoveEvent) => {
+    if (hierarchySavePendingRef.current || isSaving) return;
     setOffsetLeft(event.delta.x);
   };
 
   const handleDragOver = (event: DragOverEvent) => {
+    if (hierarchySavePendingRef.current || isSaving) return;
     setOverId(event.over?.id as number ?? null);
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
+    if (hierarchySavePendingRef.current || isSaving) {
+      setActiveId(null);
+      setOverId(null);
+      setOffsetLeft(0);
+      return;
+    }
     const { active, over } = event;
     
     if (over && projected) {
@@ -391,12 +418,14 @@ export default function MenuAdminClient({
   };
 
   const handleOpenCreate = (parentId: number = 0) => {
+    if (hierarchySavePendingRef.current || deletePendingRef.current || modalSavePendingRef.current) return;
     setMode('create');
     form.reset({ menuNm: '', menuOrdr: 999, upperMenuId: parentId, prgrmFileNm: '', modernRoute: '', menuExpln: '', useYn: 'Y' as 'Y' | 'N' });
     setIsOpen(true);
   };
 
   const handleOpenEdit = (menu: MenuInfo) => {
+    if (hierarchySavePendingRef.current || deletePendingRef.current || modalSavePendingRef.current) return;
     setSelectedMenuId(menu.menuNo);
     setMode('edit');
     form.reset({ menuNo: menu.menuNo, menuNm: menu.menuNm, menuOrdr: menu.menuOrdr || 0, upperMenuId: menu.upMenuSn ?? menu.upperMenuId ?? 0, prgrmFileNm: menu.prgrmFileNm || '', modernRoute: menu.modernRoute || '', menuExpln: menu.menuExpln ?? menu.menuDc ?? '', useYn: (menu.useYn || 'Y') as 'Y' | 'N' });
@@ -404,12 +433,51 @@ export default function MenuAdminClient({
   };
 
   const onFormSubmit = async (values: MenuFormValues) => {
-    const res = await saveMenuAction(null, { mode, data: { ...values, upMenuSn: values.upperMenuId } as any });
-    if (res.success) { toast(res.message, 'success'); setIsOpen(false); router.refresh(); }
-    else { toast(res.message, 'error'); }
+    if (modalSavePendingRef.current || hierarchySavePendingRef.current || deletePendingRef.current) return;
+    modalSavePendingRef.current = true;
+    setIsModalSaving(true);
+    try {
+      const res = await saveMenuAction(null, { mode, data: { ...values, upMenuSn: values.upperMenuId } as any });
+      if (res.success) {
+        toast(res.message, 'success');
+        setIsOpen(false);
+        router.refresh();
+      } else if (res.fieldErrors) {
+        form.applyServerErrors({
+          response: {
+            data: {
+              errors: Object.entries(res.fieldErrors).map(([field, message]) => ({ field, message })),
+            },
+          },
+        });
+      } else {
+        toast(res.message, 'error');
+      }
+    } catch (error) {
+      if (!form.applyServerErrors(error)) {
+        toast(error instanceof Error ? error.message : '메뉴 저장 중 오류가 발생했습니다.', 'error');
+      }
+    } finally {
+      modalSavePendingRef.current = false;
+      setIsModalSaving(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    if (modalSavePendingRef.current || hierarchySavePendingRef.current || deletePendingRef.current) return;
+    setIsOpen(false);
   };
 
   const handleSaveChanges = async () => {
+    if (
+      hierarchySavePendingRef.current
+      || modalSavePendingRef.current
+      || deletePendingRef.current
+      || !hasChanges
+      || isSaving
+      || isModalOpen
+    ) return;
+    hierarchySavePendingRef.current = true;
     try {
       setIsSaving(true);
       const submitData = flattenedMenus.map((item, idx) => ({
@@ -418,19 +486,27 @@ export default function MenuAdminClient({
       const res = await updateMenuOrdersAction(submitData as any);
       if (res.success) { toast(res.message, 'success'); setHasChanges(false); router.refresh(); }
       else { toast(res.message, 'error'); }
-    } catch (err: any) { console.error(err); toast('저장 중 오류 발생', 'error'); }
-    finally { setIsSaving(false); }
+    } catch { toast('저장 중 오류 발생', 'error'); }
+    finally {
+      hierarchySavePendingRef.current = false;
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = async (target: FlattenedItem) => {
+    if (deletePendingRef.current || hierarchySavePendingRef.current || modalSavePendingRef.current) return;
+    deletePendingRef.current = true;
+    setDeletingMenuId(target.menuNo);
     const childCount = flattenedMenus.filter(m => m.parentId === target.menuNo).length;
-    const isConfirmed = await confirm({
-      title: '메뉴 삭제',
-      message: `[${target.menuNm}] 메뉴를 삭제하시겠습니까?${childCount > 0 ? ` 하위 메뉴 ${childCount}건이 함께 삭제될 수 있습니다.` : ''} 이 작업은 되돌릴 수 없습니다.`,
-      confirmText: '삭제 실행',
-      variant: 'destructive'
-    });
-    if (isConfirmed) {
+    try {
+      const isConfirmed = await confirm({
+        title: '메뉴 삭제',
+        message: `[${target.menuNm}] 메뉴를 삭제하시겠습니까?${childCount > 0 ? ` 하위 메뉴 ${childCount}건이 함께 삭제될 수 있습니다.` : ''} 이 작업은 되돌릴 수 없습니다.`,
+        confirmText: '삭제 실행',
+        variant: 'destructive'
+      });
+      if (!isConfirmed) return;
+
         const res = await deleteMenuAction(null, target.menuNo);
         if (res.success) {
           toast(res.message, 'success');
@@ -438,6 +514,11 @@ export default function MenuAdminClient({
           router.refresh();
         }
         else { toast(res.message, 'error'); }
+    } catch {
+      toast('메뉴 삭제 중 오류가 발생했습니다.', 'error');
+    } finally {
+      deletePendingRef.current = false;
+      setDeletingMenuId(null);
     }
   };
 
@@ -493,11 +574,13 @@ export default function MenuAdminClient({
             </Button>
             <Button
               onClick={handleSaveChanges}
-              disabled={!hasChanges || !selectedMenu || isSaving || isModalOpen}
+              disabled={!hasChanges || !selectedMenu || isSaving || isModalOpen || deletingMenuId !== null}
+              aria-busy={isSaving || undefined}
               size="sm"
               className="gap-2"
             >
-              {isSaving ? <Loader2 className="size-4" /> : <Save size={14} aria-hidden="true" />} 구조 저장
+              {isSaving ? <Loader2 className="size-4" /> : <Save size={14} aria-hidden="true" />}
+              {isSaving ? '구조 저장 중…' : '구조 저장'}
             </Button>
           </>
         }
@@ -543,7 +626,7 @@ export default function MenuAdminClient({
                     isTabStop={selectedMenuId === item.menuNo || (selectedMenuId === null && index === 0)}
                     isExpanded={expandedIds.has(item.menuNo)}
                     hasChildren={flattenedMenus.some(m => m.parentId === item.menuNo)}
-                    dragDisabled={Boolean(menuKeyword.trim())}
+                    dragDisabled={Boolean(menuKeyword.trim()) || isSaving || deletingMenuId !== null || isModalSaving}
                   />
                 ))}
               </div>
@@ -581,15 +664,36 @@ export default function MenuAdminClient({
         detailActions={selectedMenu ? (
           <>
             {selectedMenu.depth < 2 && (
-              <Button variant="outline" size="sm" onClick={() => handleOpenCreate(selectedMenu.menuNo)} className="gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => handleOpenCreate(selectedMenu.menuNo)}
+                disabled={isSaving || deletingMenuId !== null || isModalSaving}
+                className="gap-2"
+              >
                 <Plus size={14} aria-hidden="true" /> 하위 메뉴 추가
               </Button>
             )}
-            <Button variant="outline" size="sm" onClick={() => handleOpenEdit(selectedMenu)} className="gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleOpenEdit(selectedMenu)}
+              disabled={isSaving || deletingMenuId !== null || isModalSaving}
+              className="gap-2"
+            >
               <Settings size={14} aria-hidden="true" /> 메뉴 수정
             </Button>
-            <Button variant="destructive" size="sm" onClick={() => handleDelete(selectedMenu)} className="gap-2">
-              <Trash2 size={14} aria-hidden="true" /> 메뉴 삭제
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => handleDelete(selectedMenu)}
+              disabled={deletingMenuId !== null || isSaving || isModalSaving}
+              aria-busy={deletingMenuId === selectedMenu.menuNo || undefined}
+              className="gap-2"
+            >
+              {deletingMenuId === selectedMenu.menuNo
+                ? <><Loader2 className="size-4" /> 메뉴 삭제 중…</>
+                : <><Trash2 size={14} aria-hidden="true" /> 메뉴 삭제</>}
             </Button>
           </>
         ) : undefined}
@@ -634,26 +738,54 @@ export default function MenuAdminClient({
       />
 
       <StandardModal
-        isOpen={isModalOpen} onClose={() => setIsOpen(false)}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+        closeDisabled={isModalSaving || form.formState.isSubmitting}
         title={mode === 'create' ? '신규 메뉴 정의' : '메뉴 구성 수정'}
         maxWidth="2xl"
         footer={
           <div className="flex w-full gap-4 pt-4">
-            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-lg font-bold">취소</Button>
-            <Button onClick={form.handleSubmit(onFormSubmit)} disabled={form.formState.isSubmitting} className="flex-[2] h-11 rounded-lg bg-primary text-white font-bold shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-2">
-              <Save size={18} /> {mode === 'create' ? '등록 완료' : '수정 완료'}
+            <Button
+              type="button"
+              variant="outline"
+              disabled={isModalSaving || form.formState.isSubmitting}
+              onClick={handleCloseModal}
+              className="flex-1 h-11 rounded-lg font-bold"
+            >
+              취소
+            </Button>
+            <Button
+              type="submit"
+              form={MENU_EDITOR_FORM_ID}
+              disabled={isModalSaving || form.formState.isSubmitting}
+              aria-busy={(isModalSaving || form.formState.isSubmitting) || undefined}
+              className="flex-[2] h-11 rounded-lg bg-primary text-white font-bold shadow-2xl hover:brightness-110 transition-all hover:-translate-y-1 gap-2"
+            >
+              {isModalSaving || form.formState.isSubmitting ? <Loader2 className="h-4 w-4" /> : <Save size={18} />}
+              {isModalSaving || form.formState.isSubmitting
+                ? (mode === 'create' ? '등록 중...' : '수정 중...')
+                : (mode === 'create' ? '등록 완료' : '수정 완료')}
             </Button>
           </div>
         }
       >
         <Form {...form}>
-          <form className="space-y-6 pt-4">
+          <form
+            id={MENU_EDITOR_FORM_ID}
+            noValidate
+            className="space-y-6 pt-4"
+            onSubmit={(event) => {
+              void form.handleSubmit(onFormSubmit)(event);
+            }}
+          >
+            <FormErrorSummary labels={menuValidationLabels} onNavigate={form.focusError} />
             <ShadcnFormField
               control={form.control} name="menuNm"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-foreground ml-1">메뉴 명칭 *</FormLabel>
-                  <FormControl><Input {...field} className="h-11 rounded-lg font-bold px-5" placeholder="메뉴 이름 입력" /></FormControl>
+                  <FormControl><Input {...field} maxLength={100} className="h-11 rounded-lg font-bold px-5" placeholder="메뉴 이름 입력" /></FormControl>
                   <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
                 </FormItem>
               )}
@@ -671,6 +803,7 @@ export default function MenuAdminClient({
                     <Input
                       {...field}
                       value={field.value ?? ''}
+                      maxLength={500}
                       className="h-11 rounded-lg font-bold px-5"
                       placeholder="/admin/system/menus 형식으로 입력 (비우면 그룹 노드)"
                     />
@@ -689,6 +822,7 @@ export default function MenuAdminClient({
                     <Input
                       {...field}
                       value={field.value ?? ''}
+                      maxLength={100}
                       list="menu-program-options"
                       className="h-11 rounded-lg font-bold px-5"
                       placeholder="프로그램 파일명을 선택하거나 입력 (선택)"
@@ -716,6 +850,7 @@ export default function MenuAdminClient({
                     <Textarea
                       {...field}
                       value={field.value ?? ''}
+                      maxLength={4000}
                       rows={2}
                       className="rounded-lg font-semibold px-5 py-3"
                       placeholder="메뉴의 용도를 입력합니다 (선택)"
@@ -727,17 +862,28 @@ export default function MenuAdminClient({
             />
             <div className="grid grid-cols-2 gap-6">
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-foreground ml-1">상위 노드</FormLabel>
+                  <Label className="text-xs font-bold text-foreground ml-1">상위 노드</Label>
                   <div className="h-11 rounded-lg border-2 border-border flex items-center px-5 text-xs font-bold bg-muted/50 text-muted-foreground">
                     {form.getValues('upperMenuId') === 0 ? '최상위(루트)' : `상위 메뉴 ID ${form.getValues('upperMenuId')}`}
                   </div>
                 </FormItem>
                 <ShadcnFormField
                   control={form.control} name="menuOrdr"
+                  required
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold text-foreground ml-1">정렬 순서 *</FormLabel>
-                      <FormControl><Input {...field} type="number" onChange={e => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold px-5" /></FormControl>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="number"
+                          step={1}
+                          min={-2147483648}
+                          max={2147483647}
+                          onChange={e => field.onChange(Number(e.target.value))}
+                          className="h-11 rounded-lg font-bold px-5"
+                        />
+                      </FormControl>
                       <FormMessage className="text-xs font-bold text-rose-600 ml-1" />
                     </FormItem>
                   )}

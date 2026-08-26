@@ -5,11 +5,15 @@ vi.mock('next/config', () => ({
   }),
 }));
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { act, render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import CommentSection from '../CommentSection';
 import * as commentActions from '@/app/actions/commentActions';
 import { CommentVO } from '@/types/business/comment';
+import {
+  commentCreateFormSchema,
+  commentEditFormSchema,
+} from '../comment-form-validation';
 
 // Mock dependencies
 vi.mock('@/app/actions/commentActions');
@@ -25,9 +29,10 @@ vi.mock('date-fns', () => ({
 }));
 
 // Mock toast
+const toastMock = vi.hoisted(() => vi.fn());
 vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({
-    toast: vi.fn(),
+    toast: toastMock,
   }),
 }));
 
@@ -49,6 +54,20 @@ describe('CommentSection Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => {});
+  });
+
+  it('generated CommentDto와 entity의 ID·본문 길이/필수 경계를 보존한다', () => {
+    const create = { pstSn: 1, bbsId: 'BBS_001', ansCn: '가'.repeat(4000) };
+    const edit = { pstSn: 1, bbsId: 'BBS_001', editCn: '가'.repeat(4000) };
+
+    expect(commentCreateFormSchema.safeParse(create).success).toBe(true);
+    expect(commentCreateFormSchema.safeParse({ ...create, ansCn: '' }).success).toBe(false);
+    expect(commentCreateFormSchema.safeParse({ ...create, ansCn: '가'.repeat(4001) }).success).toBe(false);
+    expect(commentCreateFormSchema.safeParse({ ...create, bbsId: 'A'.repeat(21) }).success).toBe(false);
+    expect(commentCreateFormSchema.safeParse({ ...create, pstSn: 0 }).success).toBe(false);
+    expect(commentCreateFormSchema.safeParse({ ...create, pstSn: 1.5 }).success).toBe(false);
+    expect(commentEditFormSchema.safeParse(edit).success).toBe(true);
+    expect(commentEditFormSchema.safeParse({ ...edit, editCn: '가'.repeat(4001) }).success).toBe(false);
   });
 
   it('renders comments correctly', async () => {
@@ -82,6 +101,55 @@ describe('CommentSection Component', () => {
     });
   });
 
+  it('등록 본문 길이 오류는 write 없이 인라인 연결하고 입력으로 이동한다', async () => {
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
+    const textarea = screen.getByLabelText('새 댓글 작성');
+    fireEvent.change(textarea, { target: { value: '가'.repeat(4001) } });
+
+    fireEvent.click(screen.getByRole('button', { name: /commit response/i }));
+
+    expect(commentActions.createComment).not.toHaveBeenCalled();
+    expect(await screen.findByRole('alert', { name: /입력 오류/ })).toHaveTextContent('최대 4000자');
+    expect(textarea).toHaveAttribute('aria-invalid', 'true');
+    await waitFor(() => expect(textarea).toHaveFocus());
+  });
+
+  it('등록 서버 필드 오류를 인라인으로 연결하고 원문을 보존한다', async () => {
+    vi.mocked(commentActions.createComment).mockResolvedValue({
+      success: false,
+      message: '검증 실패',
+      fieldErrors: { ansCn: '댓글에 사용할 수 없는 표현이 있습니다.' },
+    });
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
+    const textarea = screen.getByLabelText('새 댓글 작성');
+    fireEvent.change(textarea, { target: { value: '보존할 댓글 원문' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /commit response/i }));
+
+    expect(await screen.findByText('댓글에 사용할 수 없는 표현이 있습니다.')).toBeVisible();
+    expect(textarea).toHaveValue('보존할 댓글 원문');
+    expect(textarea).toHaveAttribute('aria-invalid', 'true');
+    await waitFor(() => expect(textarea).toHaveFocus());
+  });
+
+  it('등록 pending 시작 전 동기 잠금으로 같은 submit을 한 번만 보낸다', async () => {
+    let resolveCreate!: (result: { success: boolean; message: string }) => void;
+    vi.mocked(commentActions.createComment).mockReturnValueOnce(new Promise((resolve) => {
+      resolveCreate = resolve;
+    }));
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
+    fireEvent.change(screen.getByLabelText('새 댓글 작성'), { target: { value: '중복 방지 댓글' } });
+    const submit = screen.getByRole('button', { name: /commit response/i });
+    const form = submit.closest('form');
+
+    fireEvent.submit(form!);
+    fireEvent.submit(form!);
+
+    await waitFor(() => expect(commentActions.createComment).toHaveBeenCalledTimes(1));
+    expect(submit).toBeDisabled();
+    resolveCreate({ success: true, message: '성공' });
+  });
+
   it('handles comment update', async () => {
     vi.mocked(commentActions.updateComment).mockResolvedValue({ success: true, message: '성공' });
 
@@ -101,6 +169,100 @@ describe('CommentSection Component', () => {
     await waitFor(() => {
       expect(commentActions.updateComment).toHaveBeenCalled();
     });
+  });
+
+  it('수정 본문 길이 오류는 write 없이 인라인 연결하고 편집 입력으로 이동한다', async () => {
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
+    fireEvent.click(screen.getByTestId('comment-edit-button'));
+    const editArea = screen.getByLabelText('댓글 수정 내용');
+    fireEvent.change(editArea, { target: { value: '가'.repeat(4001) } });
+
+    fireEvent.click(screen.getByTestId('edit-save-button'));
+
+    expect(commentActions.updateComment).not.toHaveBeenCalled();
+    expect(editArea).toHaveAttribute('aria-invalid', 'true');
+    expect(await screen.findByRole('alert', { name: /입력 오류/ })).toHaveTextContent('최대 4000자');
+    await waitFor(() => expect(editArea).toHaveFocus());
+  });
+
+  it('수정 서버 필드 오류를 인라인으로 연결하고 편집 원문을 보존한다', async () => {
+    vi.mocked(commentActions.updateComment).mockResolvedValue({
+      success: false,
+      message: '검증 실패',
+      fieldErrors: { ansCn: '수정 댓글 형식을 확인해 주세요.' },
+    });
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
+    fireEvent.click(screen.getByTestId('comment-edit-button'));
+    const editArea = screen.getByLabelText('댓글 수정 내용');
+    fireEvent.change(editArea, { target: { value: '보존할 수정 댓글' } });
+
+    fireEvent.click(screen.getByTestId('edit-save-button'));
+
+    expect(await screen.findByText('수정 댓글 형식을 확인해 주세요.')).toBeVisible();
+    expect(screen.getByLabelText('댓글 수정 내용')).toHaveValue('보존할 수정 댓글');
+    expect(screen.getByLabelText('댓글 수정 내용')).toHaveAttribute('aria-invalid', 'true');
+    await waitFor(() => expect(screen.getByLabelText('댓글 수정 내용')).toHaveFocus());
+  });
+
+  it('수정을 동기 잠금하고 pending 제어를 알리며 실패 시 편집 원문을 보존한다', async () => {
+    let rejectUpdate!: (reason?: unknown) => void;
+    vi.mocked(commentActions.updateComment).mockReturnValueOnce(new Promise((_, reject) => {
+      rejectUpdate = reject;
+    }));
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
+    fireEvent.click(screen.getByTestId('comment-edit-button'));
+    fireEvent.change(screen.getByLabelText('댓글 수정 내용'), { target: { value: '중복 방지 수정' } });
+    const save = screen.getByTestId('edit-save-button');
+
+    act(() => {
+      fireEvent.click(save);
+      fireEvent.click(save);
+    });
+
+    await waitFor(() => expect(commentActions.updateComment).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId('edit-save-button')).toBe(save);
+    expect(save).toBeDisabled();
+    expect(save).toHaveAttribute('aria-busy', 'true');
+    expect(save).toHaveAccessibleName('댓글 수정 저장 중');
+
+    act(() => rejectUpdate(new Error('댓글 수정 서버 오류')));
+
+    await waitFor(() => {
+      expect(toastMock).toHaveBeenCalledWith('댓글 수정 중 오류가 발생했습니다.', 'error');
+    });
+    const restoredEditArea = screen.getByLabelText('댓글 수정 내용');
+    expect(restoredEditArea).toBeVisible();
+    expect(restoredEditArea).toHaveValue('중복 방지 수정');
+    expect(save).not.toBeDisabled();
+    expect(save).toHaveAttribute('aria-busy', 'false');
+    expect(save).toHaveAccessibleName('댓글 수정 저장');
+  });
+
+  it('삭제 pending 중 재요청을 막고 실패하면 댓글 행과 제어를 복구한다', async () => {
+    let rejectDelete!: (reason?: unknown) => void;
+    vi.mocked(commentActions.deleteComment).mockReturnValueOnce(new Promise((_, reject) => {
+      rejectDelete = reject;
+    }));
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
+    const remove = screen.getByTestId('comment-delete-button');
+
+    act(() => {
+      fireEvent.click(remove);
+      fireEvent.click(remove);
+    });
+
+    await waitFor(() => expect(commentActions.deleteComment).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId('comment-delete-button')).toBe(remove);
+    expect(remove).toBeDisabled();
+    expect(remove).toHaveAttribute('aria-busy', 'true');
+    expect(remove).toHaveAccessibleName('댓글 삭제 중');
+    expect(screen.getByText('First Comment')).toBeInTheDocument();
+
+    rejectDelete(new Error('댓글 삭제 서버 오류'));
+
+    await waitFor(() => expect(screen.getByTestId('comment-delete-button')).not.toBeDisabled());
+    expect(screen.getByText('First Comment')).toBeInTheDocument();
   });
 
   it('handles comment deletion', async () => {

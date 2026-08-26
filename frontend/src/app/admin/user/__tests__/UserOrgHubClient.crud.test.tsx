@@ -15,17 +15,24 @@
  *      부분수정 계약("" = 지움)에 따라 실제 소속 부서가 지워진다(UserService.updateUser 주석 참조).
  */
 import React, { Suspense } from 'react';
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { act, render, screen, waitFor, fireEvent, within } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import UserOrgHubClient from '../UserOrgHubClient';
 import { userAdminService } from '@/services/foundation/system/UserAdminService';
-import { bulkUpdateUserStatusAction } from '@/app/actions/userActions';
+import {
+  bulkDeleteUsersAction,
+  bulkMoveUserDeptAction,
+  bulkUpdateUserRoleAction,
+  bulkUpdateUserStatusAction,
+} from '@/app/actions/userActions';
 import { saveDeptHierarchyAction } from '@/app/actions/deptActions';
 
-const { mockToast, mockConfirm } = vi.hoisted(() => ({
+const { mockToast, mockConfirm, mockUserFormError, mockDeptFormError } = vi.hoisted(() => ({
   mockToast: vi.fn(),
   mockConfirm: vi.fn(),
+  mockUserFormError: vi.fn(),
+  mockDeptFormError: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -120,10 +127,11 @@ vi.mock('@/app/components/ui/status-displays', () => ({
 }));
 vi.mock('@/lib/hooks/use-debounced-value', () => ({ useDebouncedValue: (value: any) => value }));
 vi.mock('@/app/components/ui/standard-modal', () => ({
-  StandardModal: ({ isOpen, title, children }: any) =>
+  StandardModal: ({ isOpen, onClose, title, children }: any) =>
     isOpen ? (
       <div role="dialog">
         <h2>{title}</h2>
+        <button type="button" onClick={onClose}>modal-close</button>
         {children}
       </div>
     ) : null,
@@ -137,8 +145,14 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
         </button>
       ))}
       {(props.bulkActions ?? []).map((action: any) => (
-        <button key={action.label} type="button" onClick={() => action.onClick(props.data ?? [])}>
-          {`bulk-${action.label}`}
+        <button
+          key={action.label}
+          type="button"
+          aria-busy={action.ariaBusy || undefined}
+          disabled={action.disabled}
+          onClick={() => action.onClick(props.data ?? [])}
+        >
+          {action.ariaBusy && action.pendingLabel ? action.pendingLabel : `bulk-${action.label}`}
         </button>
       ))}
       <button type="button" onClick={() => props.pagination?.onPageChange(2)}>go-page-2</button>
@@ -146,14 +160,16 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
   ),
 }));
 vi.mock('@/components/admin/user/UserManageForm', () => ({
-  UserManageForm: ({ mode, initialData, onSubmit }: any) => (
+  UserManageForm: ({ mode, initialData, onSubmit, onCancel, isPending, externalBusy }: any) => (
     <div>
       <div data-testid="user-form-mode">{mode}</div>
       <div data-testid="user-form-initial">{JSON.stringify(initialData ?? null)}</div>
       <button
         type="button"
-        onClick={() =>
-          onSubmit({
+        aria-busy={isPending || undefined}
+        disabled={isPending || externalBusy}
+        onClick={() => {
+          void onSubmit({
             userId: initialData?.userId ?? 'newuser1',
             userNm: initialData?.userNm ?? '신규사용자',
             emlAddr: initialData?.emlAddr ?? '',
@@ -161,15 +177,32 @@ vi.mock('@/components/admin/user/UserManageForm', () => ({
             // 실제 폼과 동일한 왕복 계약: 시드에 없으면 '' 로 나간다("" = 지움).
             ognzId: initialData?.ognzId ?? '',
             pswd: mode === 'create' ? 'Password1!' : '',
-          })
-        }
+          }).catch(mockUserFormError);
+        }}
       >
-        form-submit
+        {isPending ? 'form-submit-pending' : 'form-submit'}
       </button>
+      <button type="button" disabled={isPending || externalBusy} onClick={onCancel}>user-form-cancel</button>
     </div>
   ),
 }));
-vi.mock('@/components/admin/user/DepartmentForm', () => ({ DepartmentForm: () => null }));
+vi.mock('@/components/admin/user/DepartmentForm', () => ({
+  DepartmentForm: ({ onSubmit, onCancel, isPending, externalBusy }: any) => (
+    <div>
+      <button
+        type="button"
+        aria-busy={isPending || undefined}
+        disabled={isPending || externalBusy}
+        onClick={() => {
+          void onSubmit({ ognzNm: '신규 부서', ognzExpln: '' }).catch(mockDeptFormError);
+        }}
+      >
+        {isPending ? 'dept-form-submit-pending' : 'dept-form-submit'}
+      </button>
+      <button type="button" disabled={isPending || externalBusy} onClick={onCancel}>dept-form-cancel</button>
+    </div>
+  ),
+}));
 vi.mock('@/app/actions/deptActions', () => ({ saveDeptHierarchyAction: vi.fn() }));
 vi.mock('@/app/actions/userActions', () => ({
   bulkUpdateUserStatusAction: vi.fn(),
@@ -225,6 +258,16 @@ function resolvedThenable<T>(value: T): Promise<T> {
   thenable.status = 'fulfilled';
   thenable.value = value;
   return thenable;
+}
+
+function deferred<T>() {
+  let resolve: (value: T) => void = () => undefined;
+  let reject: (reason?: unknown) => void = () => undefined;
+  const promise = new Promise<T>((next, fail) => {
+    resolve = next;
+    reject = fail;
+  });
+  return { promise, reject, resolve };
 }
 
 function renderHub(defaultTab: 'USERS' | 'DEPTS' = 'USERS') {
@@ -302,11 +345,12 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     expect(screen.queryByRole('button', { name: '권한 설정 열기' })).toBeNull();
   });
 
-  it('부서 DnD가 선택과 변경을 만든 뒤 화면 버튼과 같은 저장 동작을 Ctrl+S로 실행한다', async () => {
-    vi.mocked(saveDeptHierarchyAction).mockResolvedValue({ success: true, message: '조직 계층을 저장했습니다.' });
+  it('부서 계층 저장을 동기 잠금하고 pending·실패 후 변경 상태 보존을 안내한다', async () => {
+    const pending = deferred<{ success: boolean; message: string }>();
+    vi.mocked(saveDeptHierarchyAction).mockReturnValueOnce(pending.promise);
     renderHub('DEPTS');
 
-    const layout = await screen.findByTestId('master-detail-incremental-layout');
+    await screen.findByTestId('master-detail-incremental-layout');
     await screen.findByText('기획부');
     fireEvent.click(screen.getByRole('button', { name: 'test-drag-start' }));
     fireEvent.click(screen.getByRole('button', { name: 'test-drag-end' }));
@@ -314,11 +358,23 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     const saveButton = screen.getByRole('button', { name: '조직 계층 저장' });
     await waitFor(() => expect(saveButton).toBeEnabled());
 
-    fireEvent.keyDown(layout, { key: 's', ctrlKey: true });
-    await waitFor(() => {
-      expect(saveDeptHierarchyAction).toHaveBeenCalledTimes(1);
+    act(() => {
+      saveButton.click();
+      saveButton.click();
     });
-    expect(mockToast).toHaveBeenCalledWith('조직 계층을 저장했습니다.', 'success');
+
+    await waitFor(() => expect(saveDeptHierarchyAction).toHaveBeenCalledTimes(1));
+    const busy = screen.getByRole('button', { name: '조직 계층 저장 중…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    const remove = screen.getByRole('button', { name: '부서 삭제' });
+    expect(remove).toBeDisabled();
+    expect(remove).not.toHaveAttribute('aria-busy');
+
+    await act(async () => pending.reject(new Error('계층 저장 API 장애')));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('구조 저장 중 오류 발생', 'error'));
+    expect(screen.getByRole('button', { name: '조직 계층 저장' })).toBeEnabled();
+    expect(screen.getByRole('heading', { level: 2, name: '기획부' })).toBeVisible();
   });
 
   it('목록 조회를 서버가 실제로 읽는 Spring Pageable 계약(page/size, 0-based)으로 호출한다', async () => {
@@ -362,6 +418,98 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith('접근 권한이 없습니다.', 'error');
     });
+  });
+
+  it('사용자 form submit은 parent action을 잠그고 서버 필드 오류 뒤 모달 상태를 복구한다', async () => {
+    const serverError = {
+      response: { data: { errors: [{ field: 'userId', message: '이미 사용 중인 아이디입니다.' }] } },
+    };
+    const pending = deferred<void>();
+    vi.mocked(userAdminService.createUser).mockReturnValueOnce(pending.promise as any);
+    renderHub();
+    await screen.findByText('row-user1');
+
+    fireEvent.click(screen.getByRole('button', { name: /사용자 등록/ }));
+    const dialog = await screen.findByRole('dialog');
+    const submit = within(dialog).getByRole('button', { name: 'form-submit' });
+    const cancel = within(dialog).getByRole('button', { name: 'user-form-cancel' });
+    act(() => {
+      submit.click();
+      submit.click();
+    });
+
+    await waitFor(() => expect(userAdminService.createUser).toHaveBeenCalledTimes(1));
+    const busy = within(dialog).getByRole('button', { name: 'form-submit-pending' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    expect(cancel).toBeDisabled();
+    const bulkDelete = screen.getByRole('button', { name: 'bulk-일괄 삭제' });
+    expect(bulkDelete).toBeDisabled();
+    expect(bulkDelete).not.toHaveAttribute('aria-busy');
+    act(() => {
+      bulkDelete.click();
+      cancel.click();
+      within(dialog).getByRole('button', { name: 'modal-close' }).click();
+    });
+    expect(bulkDeleteUsersAction).not.toHaveBeenCalled();
+    expect(dialog).toBeInTheDocument();
+
+    await act(async () => pending.reject(serverError));
+
+    await waitFor(() => expect(mockUserFormError).toHaveBeenCalledWith(serverError));
+    expect(mockToast).not.toHaveBeenCalledWith(expect.any(String), 'error');
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'form-submit' })).toBeEnabled();
+    expect(cancel).toBeEnabled();
+    expect(bulkDelete).toBeEnabled();
+  });
+
+  it('부서 form submit은 delete/edit을 잠그고 서버 필드 오류 뒤 모달 상태를 복구한다', async () => {
+    const serverError = {
+      response: { data: { errors: [{ field: 'ognzNm', message: '이미 사용 중인 부서명입니다.' }] } },
+    };
+    const pending = deferred<void>();
+    vi.mocked(deptAdminService.createDept).mockReturnValueOnce(pending.promise as any);
+    renderHub('DEPTS');
+    const planning = (await screen.findByText('기획부')).closest('button');
+    fireEvent.click(planning!);
+
+    fireEvent.click(screen.getByRole('button', { name: '부서 등록' }));
+    const dialog = await screen.findByRole('dialog');
+    const submit = within(dialog).getByRole('button', { name: 'dept-form-submit' });
+    const cancel = within(dialog).getByRole('button', { name: 'dept-form-cancel' });
+    act(() => {
+      submit.click();
+      submit.click();
+    });
+
+    await waitFor(() => expect(deptAdminService.createDept).toHaveBeenCalledTimes(1));
+    const busy = within(dialog).getByRole('button', { name: 'dept-form-submit-pending' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    expect(cancel).toBeDisabled();
+    const remove = screen.getByRole('button', { name: '부서 삭제' });
+    const edit = screen.getByRole('button', { name: '정보 수정' });
+    expect(remove).toBeDisabled();
+    expect(remove).not.toHaveAttribute('aria-busy');
+    expect(edit).toBeDisabled();
+    act(() => {
+      remove.click();
+      edit.click();
+      cancel.click();
+      within(dialog).getByRole('button', { name: 'modal-close' }).click();
+    });
+    expect(deptAdminService.deleteDept).not.toHaveBeenCalled();
+    expect(dialog).toBeInTheDocument();
+
+    await act(async () => pending.reject(serverError));
+
+    await waitFor(() => expect(mockDeptFormError).toHaveBeenCalledWith(serverError));
+    expect(mockToast).not.toHaveBeenCalledWith(expect.any(String), 'error');
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'dept-form-submit' })).toBeEnabled();
+    expect(cancel).toBeEnabled();
+    expect(remove).toBeEnabled();
   });
 
   it('상세 패널의 소속·상태는 상세 API 의 실데이터로 표시한다', async () => {
@@ -409,16 +557,94 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     });
   });
 
-  it('사용자 삭제는 확인 승인 후에만 deleteUser 를 호출한다', async () => {
+  it('사용자 삭제를 동기 잠금하고 pending·실패 피드백과 선택 상태를 보존한다', async () => {
+    const pending = deferred<void>();
     mockConfirm.mockResolvedValue(true);
-    vi.mocked(userAdminService.deleteUser).mockResolvedValue(undefined as any);
+    vi.mocked(userAdminService.deleteUser).mockReturnValueOnce(pending.promise as any);
     await selectFirstRow();
+    await screen.findByText('D-100');
+    fireEvent.click(screen.getAllByRole('button', { name: /정보 수정/ })[0]);
+    const dialog = await screen.findByRole('dialog');
+    const formSubmit = within(dialog).getByRole('button', { name: 'form-submit' });
+    const formCancel = within(dialog).getByRole('button', { name: 'user-form-cancel' });
 
-    fireEvent.click(await screen.findByRole('button', { name: '사용자 삭제' }));
-    await waitFor(() => {
-      expect(userAdminService.deleteUser).toHaveBeenCalledWith('user1');
+    const remove = await screen.findByRole('button', { name: '사용자 삭제' });
+    act(() => {
+      remove.click();
+      remove.click();
     });
-    expect(mockToast).toHaveBeenCalledWith("'홍길동' 사용자를 삭제했습니다.", 'success');
+
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(userAdminService.deleteUser).toHaveBeenCalledTimes(1));
+    expect(userAdminService.deleteUser).toHaveBeenCalledWith('user1');
+    const busy = screen.getByRole('button', { name: '사용자 삭제 중…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    expect(formSubmit).toBeDisabled();
+    expect(formSubmit).not.toHaveAttribute('aria-busy');
+    expect(formCancel).toBeDisabled();
+    screen.getAllByRole('button', { name: /정보 수정/ }).forEach((button) => expect(button).toBeDisabled());
+    act(() => {
+      formSubmit.click();
+      formCancel.click();
+      within(dialog).getByRole('button', { name: 'modal-close' }).click();
+    });
+    expect(userAdminService.updateUser).not.toHaveBeenCalled();
+    expect(dialog).toBeInTheDocument();
+
+    await act(async () => pending.reject(new Error('접근 권한이 없습니다.')));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('접근 권한이 없습니다.', 'error'));
+    expect(screen.getByRole('heading', { level: 2, name: '홍길동' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '사용자 삭제' })).toBeEnabled();
+    expect(within(dialog).getByRole('button', { name: 'form-submit' })).toBeEnabled();
+    expect(formCancel).toBeEnabled();
+  });
+
+  it('부서 삭제를 동기 잠금하고 pending·실패 피드백과 선택 상태를 보존한다', async () => {
+    const pending = deferred<void>();
+    mockConfirm.mockResolvedValue(true);
+    vi.mocked(deptAdminService.deleteDept).mockReturnValueOnce(pending.promise as any);
+    renderHub('DEPTS');
+    const planningButton = (await screen.findByText('기획부')).closest('button');
+    fireEvent.click(planningButton!);
+    fireEvent.click(screen.getByRole('button', { name: '정보 수정' }));
+    const dialog = await screen.findByRole('dialog');
+    const formSubmit = within(dialog).getByRole('button', { name: 'dept-form-submit' });
+    const formCancel = within(dialog).getByRole('button', { name: 'dept-form-cancel' });
+    const remove = await screen.findByRole('button', { name: '부서 삭제' });
+
+    act(() => {
+      remove.click();
+      remove.click();
+    });
+
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(deptAdminService.deleteDept).toHaveBeenCalledTimes(1));
+    expect(deptAdminService.deleteDept).toHaveBeenCalledWith('D-100');
+    const busy = screen.getByRole('button', { name: '부서 삭제 중…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    expect(formSubmit).toBeDisabled();
+    expect(formSubmit).not.toHaveAttribute('aria-busy');
+    expect(formCancel).toBeDisabled();
+    expect(screen.getByRole('button', { name: '정보 수정' })).toBeDisabled();
+    const hierarchySave = screen.getByRole('button', { name: '조직 계층 저장' });
+    expect(hierarchySave).toBeDisabled();
+    expect(hierarchySave).not.toHaveAttribute('aria-busy');
+    act(() => {
+      formSubmit.click();
+      formCancel.click();
+      within(dialog).getByRole('button', { name: 'modal-close' }).click();
+    });
+    expect(deptAdminService.updateDept).not.toHaveBeenCalled();
+    expect(dialog).toBeInTheDocument();
+
+    await act(async () => pending.reject(new Error('소속 사용자가 남아 있습니다.')));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('소속 사용자가 남아 있습니다.', 'error'));
+    expect(screen.getByRole('heading', { level: 2, name: '기획부' })).toBeVisible();
+    expect(screen.getByRole('button', { name: '부서 삭제' })).toBeEnabled();
+    expect(within(dialog).getByRole('button', { name: 'dept-form-submit' })).toBeEnabled();
+    expect(formCancel).toBeEnabled();
   });
 
   it('삭제 확인을 거부하면 deleteUser 를 호출하지 않는다', async () => {
@@ -443,22 +669,33 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     });
   });
 
-  it('상태 일괄 변경 모달이 bulkUpdateUserStatusAction 에 배선된다', async () => {
-    vi.mocked(bulkUpdateUserStatusAction).mockResolvedValue({
-      success: true,
-      message: '1명의 사용자 상태가 변경되었습니다.',
-    });
+  it('상태 일괄 변경을 동기 잠금하고 pending·실패 피드백과 모달을 보존한다', async () => {
+    const pending = deferred<{ success: boolean; message: string }>();
+    vi.mocked(bulkUpdateUserStatusAction).mockReturnValueOnce(pending.promise);
     renderHub();
     await screen.findByText('row-user1');
 
     fireEvent.click(screen.getByText('bulk-상태 변경'));
     await screen.findByText('사용자 상태 일괄 변경');
-    fireEvent.click(screen.getByRole('button', { name: '상태 일괄 적용' }));
-
-    await waitFor(() => {
-      expect(bulkUpdateUserStatusAction).toHaveBeenCalledWith(['user1'], 'P');
+    const submit = screen.getByRole('button', { name: '상태 일괄 적용' });
+    act(() => {
+      submit.click();
+      submit.click();
     });
-    expect(mockToast).toHaveBeenCalledWith('1명의 사용자 상태가 변경되었습니다.', 'success');
+
+    await waitFor(() => expect(bulkUpdateUserStatusAction).toHaveBeenCalledTimes(1));
+    expect(bulkUpdateUserStatusAction).toHaveBeenCalledWith(['user1'], 'P');
+    const busy = screen.getByRole('button', { name: '상태 일괄 적용 중…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    const bulkDelete = screen.getByRole('button', { name: 'bulk-일괄 삭제' });
+    expect(bulkDelete).toBeDisabled();
+    expect(bulkDelete).not.toHaveAttribute('aria-busy');
+
+    await act(async () => pending.reject(new Error('상태 변경 API 장애')));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('상태 변경 중 오류 발생', 'error'));
+    expect(screen.getByText('사용자 상태 일괄 변경')).toBeVisible();
+    expect(screen.getByRole('button', { name: '상태 일괄 적용' })).toBeEnabled();
   });
 
   it('상태 일괄 변경 인가 실패 시 액션 실패 메시지를 error 로 표시한다', async () => {
@@ -476,5 +713,99 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     await waitFor(() => {
       expect(mockToast).toHaveBeenCalledWith('관리자 권한이 필요합니다.', 'error');
     });
+  });
+
+  it('일괄 삭제는 같은 tick 중복 실행을 막고 pending·실패 피드백을 제공한다', async () => {
+    const pending = deferred<{ success: boolean; message: string }>();
+    mockConfirm.mockResolvedValue(true);
+    vi.mocked(bulkDeleteUsersAction).mockReturnValueOnce(pending.promise);
+    renderHub();
+    await screen.findByText('row-user1');
+
+    const remove = screen.getByText('bulk-일괄 삭제');
+    act(() => {
+      remove.click();
+      remove.click();
+    });
+
+    await waitFor(() => expect(mockConfirm).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(bulkDeleteUsersAction).toHaveBeenCalledTimes(1));
+    expect(bulkDeleteUsersAction).toHaveBeenCalledWith(['user1']);
+    const busy = screen.getByRole('button', { name: '일괄 삭제 처리 중…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+
+    await act(async () => pending.resolve({ success: false, message: '일괄 삭제 권한이 없습니다.' }));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('일괄 삭제 권한이 없습니다.', 'error'));
+  });
+
+  it('부서 일괄 이동을 동기 잠금하고 pending·실패 피드백과 선택값을 보존한다', async () => {
+    const pending = deferred<{ success: boolean; message: string }>();
+    vi.mocked(bulkMoveUserDeptAction).mockReturnValueOnce(pending.promise);
+    renderHub();
+    await screen.findByText('row-user1');
+
+    fireEvent.click(screen.getByText('bulk-부서 이동'));
+    fireEvent.click(await screen.findByRole('radio', { name: /개발부/ }));
+    const submit = screen.getByRole('button', { name: '부서 이동 실행' });
+    act(() => {
+      submit.click();
+      submit.click();
+    });
+
+    await waitFor(() => expect(bulkMoveUserDeptAction).toHaveBeenCalledTimes(1));
+    expect(bulkMoveUserDeptAction).toHaveBeenCalledWith(['user1'], 'D-200');
+    const busy = screen.getByRole('button', { name: '부서 이동 실행 중…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+
+    await act(async () => pending.reject(new Error('부서 이동 API 장애')));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('부서 이동 중 오류 발생', 'error'));
+    expect(screen.getByText('부서 일괄 이동')).toBeVisible();
+    expect(screen.getByRole('radio', { name: /개발부/ })).toBeChecked();
+    expect(screen.getByRole('button', { name: '부서 이동 실행' })).toBeEnabled();
+  });
+
+  it('handleBulkRoleUpdate 권한 일괄 변경은 같은 tick 중복 실행을 막고 pending·실패 상태를 안내한다', async () => {
+    const pending = deferred<{ success: boolean; message: string }>();
+    vi.mocked(bulkUpdateUserRoleAction).mockReturnValueOnce(pending.promise);
+    renderHub();
+    await screen.findByText('row-user1');
+
+    fireEvent.click(screen.getByText('bulk-권한 변경'));
+    fireEvent.click(await screen.findByRole('radio', { name: /시스템 관리자/ }));
+    const submit = screen.getByRole('button', { name: '권한 변경 실행' });
+    act(() => {
+      submit.click();
+      submit.click();
+    });
+
+    await waitFor(() => expect(bulkUpdateUserRoleAction).toHaveBeenCalledTimes(1));
+    expect(bulkUpdateUserRoleAction).toHaveBeenCalledWith(['user1'], 'ADMIN');
+    const busy = screen.getByRole('button', { name: '권한 변경 실행 중…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+
+    await act(async () => pending.reject(new Error('권한 변경 API 장애')));
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('권한 변경 중 오류 발생', 'error'));
+    expect(screen.getByText('사용자 권한 일괄 변경')).toBeVisible();
+    expect(screen.getByRole('radio', { name: /시스템 관리자/ })).toBeChecked();
+    expect(screen.getByText('홍길동')).toBeVisible();
+    const restored = screen.getByRole('button', { name: '권한 변경 실행' });
+    expect(restored).toBeEnabled();
+    expect(restored).not.toHaveAttribute('aria-busy');
+  });
+
+  it('권한 일괄 변경 성공을 안내하고 모달을 닫는다', async () => {
+    vi.mocked(bulkUpdateUserRoleAction).mockResolvedValueOnce({ success: true, message: '권한을 변경했습니다.' });
+    renderHub();
+    await screen.findByText('row-user1');
+
+    fireEvent.click(screen.getByText('bulk-권한 변경'));
+    fireEvent.click(await screen.findByRole('radio', { name: /시스템 관리자/ }));
+    fireEvent.click(screen.getByRole('button', { name: '권한 변경 실행' }));
+
+    await waitFor(() => expect(mockToast).toHaveBeenCalledWith('권한을 변경했습니다.', 'success'));
+    expect(screen.queryByText('사용자 권한 일괄 변경')).not.toBeInTheDocument();
   });
 });

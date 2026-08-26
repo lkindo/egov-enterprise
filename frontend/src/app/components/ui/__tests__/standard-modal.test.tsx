@@ -4,7 +4,6 @@ vi.mock('next/config', () => ({
     serverRuntimeConfig: {},
   }),
 }));
-
 import { render, screen, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, afterEach } from 'vitest';
@@ -111,7 +110,46 @@ describe('StandardModal', () => {
     // (포털 루트의 첫 자식 = 오버레이, 둘째 = role="dialog" 패널)
     const backdrop = screen.getByRole('dialog').parentElement?.firstElementChild;
     expect(backdrop).toBeTruthy();
-    fireEvent.click(backdrop as Element);
+    fireEvent.pointerDown(backdrop as Element, { button: 0, ctrlKey: false });
+
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('closeDisabled이면 X·배경 outside·Escape 닫기 요청을 모두 차단한다', async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <StandardModal isOpen closeDisabled onClose={onClose} title="저장 중인 모달">
+        <button type="button">보존할 작성 내용</button>
+      </StandardModal>
+    );
+    const dialog = screen.getByRole('dialog', { name: '저장 중인 모달' });
+    const close = getCloseButton();
+    const backdrop = dialog.parentElement?.firstElementChild;
+    expect(backdrop).toBeTruthy();
+    expect(close).toBeDisabled();
+
+    await user.click(close);
+    fireEvent.pointerDown(backdrop as Element, { button: 0, ctrlKey: false });
+    screen.getByRole('button', { name: '보존할 작성 내용' }).focus();
+    await user.keyboard('{Escape}');
+
+    expect(onClose).not.toHaveBeenCalled();
+    expect(dialog).toBeVisible();
+    expect(screen.getByText('보존할 작성 내용')).toBeVisible();
+  });
+
+  it('closeDisabled가 아니면 Escape 닫기 요청을 정상 전달한다', async () => {
+    const onClose = vi.fn();
+    const user = userEvent.setup();
+    render(
+      <StandardModal isOpen onClose={onClose} title="닫을 수 있는 모달">
+        <div>본문 내용</div>
+      </StandardModal>
+    );
+
+    getCloseButton().focus();
+    await user.keyboard('{Escape}');
 
     expect(onClose).toHaveBeenCalledTimes(1);
   });

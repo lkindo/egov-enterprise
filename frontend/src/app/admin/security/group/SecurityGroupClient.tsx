@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Trash2,
  Plus,
@@ -27,15 +27,29 @@ import { FormField } from '@/app/components/ui/standard-form';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+import { GroupManageDtoSchema } from '@/types/generated-zod';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { FormErrorSummary } from '@/components/ui/form';
 ;
 
 /** 이 화면이 소유한 쿼리 키. 새로고침/무효화는 반드시 이 범위로만 좁힌다. */
 const GROUPS_QUERY_KEY = ['admin-groups'] as const;
 
+export const securityGroupFormSchema = GroupManageDtoSchema.extend({
+ groupId: GroupManageDtoSchema.shape.groupId.unwrap().trim()
+  .min(1, '그룹 ID를 입력해 주세요.'),
+ groupNm: GroupManageDtoSchema.shape.groupNm.unwrap().trim()
+  .min(1, '그룹 명칭을 입력해 주세요.'),
+ groupDc: GroupManageDtoSchema.shape.groupDc.unwrap().trim(),
+});
+
 export default function SecurityGroupClient() {
  const queryClient = useQueryClient();
  const { toast } = useToast();
  const confirm = useConfirm();
+ const submitPendingRef = useRef(false);
+ const deletePendingRef = useRef(false);
  const [page, setPage] = useState(1);
  /**
   * 입력 컨트롤에는 원본(searchInput)을, 서버 요청/queryKey 에는 디바운스 값만 쓴다.
@@ -50,11 +64,14 @@ export default function SecurityGroupClient() {
  const params: SearchParams = { page: page - 1, size: pageSize, searchKeyword };
  const [isDialogOpen, setIsDialogOpen] = useState(false);
  const [editingGroup, setEditingGroup] = useState<GroupManage | null>(null);
+ const [deletingGroupId, setDeletingGroupId] = useState<string | null>(null);
  const [formData, setFormData] = useState<GroupManage>({
  groupId: '',
  groupNm: '',
  groupDc: '',
  });
+ const validationLabels = { groupId: '그룹 ID', groupNm: '그룹 명칭', groupDc: '그룹 설명' };
+ const validation = useManualFormValidation(securityGroupFormSchema, { labels: validationLabels });
 
  // 조회 실패를 '데이터 없음'으로 위장하지 않는다 — error/onRetry 를 테이블까지 내려보낸다.
  const { data, isLoading, error, refetch } = useQuery({
@@ -77,7 +94,12 @@ export default function SecurityGroupClient() {
  setIsDialogOpen(false);
  toast('신규 보안 그룹 아키텍처가 설정되었습니다.', 'success');
  },
- onError: () => toast('그룹 생성 중 시스템 예외가 발생했습니다.', 'error')
+ onError: (error) => {
+  const fieldErrors = extractFieldErrors(error);
+  if (fieldErrors) validation.setFormErrors(fieldErrors);
+  else toast('그룹 생성 중 시스템 예외가 발생했습니다.', 'error');
+ },
+ onSettled: () => { submitPendingRef.current = false; },
  });
 
  const updateMutation = useMutation({
@@ -87,7 +109,12 @@ export default function SecurityGroupClient() {
  setIsDialogOpen(false);
  toast('보안 그룹 명세가 성공적으로 수정되었습니다.', 'success');
  },
- onError: () => toast('정보 수정 중 시스템 예외가 발생했습니다.', 'error')
+ onError: (error) => {
+  const fieldErrors = extractFieldErrors(error);
+  if (fieldErrors) validation.setFormErrors(fieldErrors);
+  else toast('정보 수정 중 시스템 예외가 발생했습니다.', 'error');
+ },
+ onSettled: () => { submitPendingRef.current = false; },
  });
 
  const deleteMutation = useMutation({
@@ -96,38 +123,71 @@ export default function SecurityGroupClient() {
  queryClient.invalidateQueries({ queryKey: GROUPS_QUERY_KEY });
  toast('보안 그룹 프로필이 영구적으로 파기되었습니다.', 'success');
  },
- onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error')
+ onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error'),
+ onSettled: () => {
+  deletePendingRef.current = false;
+  setDeletingGroupId(null);
+ },
  });
 
+ const isSubmitPending = createMutation.isPending || updateMutation.isPending;
+ const isDeletePending = deletingGroupId !== null;
+
+ const handleCloseDialog = () => {
+ if (submitPendingRef.current || deletePendingRef.current) return;
+ setIsDialogOpen(false);
+ };
+
  const handleCreate = () => {
+ if (submitPendingRef.current || deletePendingRef.current) return;
  setEditingGroup(null);
  setFormData({ groupId: '', groupNm: '', groupDc: '' });
+ validation.setFormErrors({}, false);
  setIsDialogOpen(true);
  };
 
  const handleEdit = (group: GroupManage) => {
+ if (submitPendingRef.current || deletePendingRef.current) return;
  setEditingGroup(group);
  setFormData(group);
+ validation.setFormErrors({}, false);
  setIsDialogOpen(true);
  };
 
  /** 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상 그룹 명칭을 노출한다. */
  const handleDelete = async (group: GroupManage) => {
- const ok = await confirm({
- title: '보안 그룹 삭제',
- message: `'${group.groupNm || group.groupId}'(${group.groupId}) 그룹을 삭제하시겠습니까? 이 그룹에 연결된 접근 정책이 함께 사라집니다.`,
- confirmText: '삭제',
- variant: 'destructive',
- });
- if (!ok) return;
- deleteMutation.mutate(group.groupId);
+ if (deletePendingRef.current || submitPendingRef.current) return;
+ deletePendingRef.current = true;
+ setDeletingGroupId(group.groupId);
+ try {
+  const ok = await confirm({
+  title: '보안 그룹 삭제',
+  message: `'${group.groupNm || group.groupId}'(${group.groupId}) 그룹을 삭제하시겠습니까? 이 그룹에 연결된 접근 정책이 함께 사라집니다.`,
+  confirmText: '삭제',
+  variant: 'destructive',
+  });
+  if (!ok) {
+  deletePendingRef.current = false;
+  setDeletingGroupId(null);
+  return;
+  }
+  deleteMutation.mutate(group.groupId);
+ } catch {
+  deletePendingRef.current = false;
+  setDeletingGroupId(null);
+  toast('삭제 확인을 시작하지 못했습니다.', 'error');
+ }
  };
 
- const handleSubmit = async () => {
+ const handleSubmit = () => {
+ if (submitPendingRef.current || deletePendingRef.current) return;
+ const validated = validation.validate(formData);
+ if (!validated) return;
+ submitPendingRef.current = true;
  if (editingGroup) {
- updateMutation.mutate(formData);
+ updateMutation.mutate(validated);
  } else {
- createMutation.mutate(formData);
+ createMutation.mutate(validated);
  }
  };
 
@@ -172,11 +232,21 @@ export default function SecurityGroupClient() {
  className: 'text-right w-32',
  accessor: (item: GroupManage) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" onClick={() => handleEdit(item)} aria-label={`${item.groupNm || item.groupId} 그룹 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold shadow-sm group">
+ <Button variant="ghost" size="icon" disabled={isDeletePending || isSubmitPending} onClick={() => handleEdit(item)} aria-label={`${item.groupNm || item.groupId} 그룹 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold shadow-sm group">
  <Settings size={16} aria-hidden="true" className="group-hover:rotate-45 transition-transform" />
  </Button>
- <Button variant="ghost" size="icon" disabled={deleteMutation.isPending} onClick={() => handleDelete(item)} aria-label={`${item.groupNm || item.groupId} 그룹 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all shadow-sm">
- <Trash2 size={16} aria-hidden="true" />
+ <Button
+  variant="ghost"
+  size="icon"
+  disabled={isDeletePending || isSubmitPending}
+  aria-busy={deletingGroupId === item.groupId || undefined}
+  onClick={() => { void handleDelete(item); }}
+  aria-label={`${item.groupNm || item.groupId} 그룹 ${deletingGroupId === item.groupId ? '삭제 중' : '삭제'}`}
+  className="h-10 w-10 text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all shadow-sm"
+ >
+ {deletingGroupId === item.groupId
+  ? <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+  : <Trash2 size={16} aria-hidden="true" />}
  </Button>
  </div>
  )
@@ -202,7 +272,7 @@ export default function SecurityGroupClient() {
  <RefreshCcw size={16} aria-hidden="true" />
  새로고침
  </Button>
- <Button size="sm" onClick={handleCreate} className="gap-2">
+ <Button size="sm" onClick={handleCreate} disabled={isDeletePending || isSubmitPending} className="gap-2">
  <Plus size={16} aria-hidden="true" /> 신규 보안 그룹 설정
  </Button>
  </>
@@ -243,32 +313,49 @@ export default function SecurityGroupClient() {
  {/* Group Configuration Modal */}
  <StandardModal
  isOpen={isDialogOpen}
- onClose={() => setIsDialogOpen(false)}
+ onClose={handleCloseDialog}
  title={editingGroup ? '보안 그룹 아키텍처 수정' : '신규 보안 도메인 그룹 설정'}
  maxWidth="xl"
  >
  <div className="p-4 space-y-12">
+ <FormErrorSummary
+ errors={validation.errors}
+ labels={validationLabels}
+ onNavigate={(name) => { validation.focusError(name); }}
+ />
  <div className="grid grid-cols-2 gap-10">
- <FormField htmlFor="groupId" label="도메인 그룹 식별자(Group ID)" required description="보안 레이어 내의 유일한 논리 식별자">
+ <FormField htmlFor="groupId" label="도메인 그룹 식별자(Group ID)" required error={validation.errors.groupId} description="보안 레이어 내의 유일한 논리 식별자">
  <div className="relative group/id">
  <Fingerprint size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
  <Input
  id="groupId"
+ {...validation.fieldProps('groupId')}
  value={formData.groupId || ''}
- onChange={(e) => setFormData(prev => ({ ...prev, groupId: e.target.value }))}
+ onChange={(e) => {
+  validation.clearError('groupId');
+  setFormData(prev => ({ ...prev, groupId: e.target.value }));
+ }}
  disabled={!!editingGroup}
+ required
+ maxLength={20}
  className="h-11 pl-16 rounded-lg border-2 text-md font-bold tracking-widest uppercase shadow-inner"
  placeholder="그룹 식별자"
  />
  </div>
  </FormField>
- <FormField htmlFor="groupNm" label="그룹 레이블 명칭" required description="UI 상에 노출될 그룹 리터럴 이름">
+ <FormField htmlFor="groupNm" label="그룹 레이블 명칭" required error={validation.errors.groupNm} description="UI 상에 노출될 그룹 리터럴 이름">
  <div className="relative group/nm">
  <Users size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
  <Input
  id="groupNm"
+ {...validation.fieldProps('groupNm')}
  value={formData.groupNm || ''}
- onChange={(e) => setFormData(prev => ({ ...prev, groupNm: e.target.value }))}
+ onChange={(e) => {
+  validation.clearError('groupNm');
+  setFormData(prev => ({ ...prev, groupNm: e.target.value }));
+ }}
+ required
+ maxLength={100}
  className="h-11 pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
  placeholder="그룹 명칭 입력"
  />
@@ -276,13 +363,18 @@ export default function SecurityGroupClient() {
  </FormField>
  </div>
 
- <FormField htmlFor="groupDc" label="그룹 정책 상세 명세" description="해당 보안 그룹의 비즈니스 목적 및 데이터 접근 범위 명세">
+ <FormField htmlFor="groupDc" label="그룹 정책 상세 명세" error={validation.errors.groupDc} description="해당 보안 그룹의 비즈니스 목적 및 데이터 접근 범위 명세">
  <div className="relative group/dc">
  <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
  <Textarea
  id="groupDc"
+ {...validation.fieldProps('groupDc')}
  value={formData.groupDc || ''}
- onChange={(e) => setFormData(prev => ({ ...prev, groupDc: e.target.value }))}
+ onChange={(e) => {
+  validation.clearError('groupDc');
+  setFormData(prev => ({ ...prev, groupDc: e.target.value }));
+ }}
+ maxLength={4000}
  className="min-h-[160px] pl-16 p-8 rounded-lg border-2 bg-muted/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
  placeholder="상세 명세 입력..."
  />
@@ -292,13 +384,14 @@ export default function SecurityGroupClient() {
  <div className="flex gap-6 pt-4">
   <button
     type="button"
-    onClick={() => setIsDialogOpen(false)}
+    onClick={handleCloseDialog}
+    disabled={isSubmitPending || isDeletePending}
     className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
   >
     취소
   </button>
- <Button onClick={handleSubmit} disabled={createMutation.isPending || updateMutation.isPending} className="flex-[2] h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
- {(createMutation.isPending || updateMutation.isPending) ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
+ <Button onClick={handleSubmit} aria-busy={isSubmitPending || undefined} disabled={isSubmitPending || isDeletePending} className="flex-[2] h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
+ {isSubmitPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
  <span className="ml-2">{editingGroup ? '그룹 수정' : '신규 그룹 배포'}</span>
  </Button>
  </div>

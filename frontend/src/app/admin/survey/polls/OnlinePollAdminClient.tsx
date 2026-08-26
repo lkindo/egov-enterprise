@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -41,6 +41,10 @@ import {
 import { getPollStatus, POLL_STATUS_LABEL, type PollStatus } from '@/lib/poll-status';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { motion } from 'framer-motion';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { adminPollFormSchema } from '../manage/poll-form-validation';
 
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
@@ -108,6 +112,19 @@ export default function OnlinePollAdminClient() {
  pollArticles: [{ pollArtclNm: '' }, { pollArtclNm: '' }],
  });
  const [newPoll, setNewPoll] = useState<OnlinePollDto>(emptyPoll);
+ const savingRef = useRef(false);
+ const validationLabels = {
+  pollNm: '설문명',
+  pollBgngYmd: '시작일',
+  pollEndYmd: '종료일',
+  pollKndCd: '설문 유형',
+  pollDsuseYn: '사용 여부',
+  ...(newPoll.pollArticles ?? []).reduce<Record<string, string>>((labels, _item, index) => {
+   labels[`pollArticles.${index}.pollArtclNm`] = `선택 항목 ${index + 1}`;
+   return labels;
+  }, {}),
+ };
+ const validation = useManualFormValidation(adminPollFormSchema, { labels: validationLabels });
 
  const handleAddItem = () => {
  setNewPoll(prev => ({
@@ -124,32 +141,30 @@ export default function OnlinePollAdminClient() {
  };
 
  const handleAdd = async () => {
- if (isSaving) return;
- if (!newPoll.pollNm || !newPoll.pollArticles?.every(item => item.pollArtclNm)) {
- toastError('설문 명과 모든 항목 내용을 입력해주세요.');
- return;
- }
+ if (savingRef.current) return;
+ const validated = validation.validate({
+  ...newPoll,
+  // API 조회 타입은 선택 항목을 optional 로 선언하지만, 신규 등록 계약은 최소 2개를 요구한다.
+  // undefined 를 빈 배열로 정규화해야 검증이 실패로 안내되고 타입 단언으로 우회되지 않는다.
+  pollArticles: newPoll.pollArticles ?? [],
+ });
+ if (!validated) return;
 
- // 날짜는 'yyyyMMdd' 8자여야 서버 @Size(max = 8) 를 통과한다.
- if (!newPoll.pollBgngYmd || !newPoll.pollEndYmd) {
- toastError('설문 시작일과 종료일을 입력해주세요.');
- return;
- }
- if (newPoll.pollBgngYmd > newPoll.pollEndYmd) {
- toastError('설문 시작일은 종료일보다 빨라야 합니다.');
- return;
- }
-
+ savingRef.current = true;
  setIsSaving(true);
  try {
- await onlinePollAdminService.createPoll(newPoll);
+ await onlinePollAdminService.createPoll(validated);
  success('새 설문을 등록했습니다.');
  setIsAddOpen(false);
  setNewPoll(emptyPoll());
+ validation.setFormErrors({}, false);
  await refetch();
  } catch (e) {
- toastError(e instanceof Error ? e.message : '설문 등록에 실패했습니다.');
+ const fieldErrors = extractFieldErrors(e);
+ if (fieldErrors) validation.setFormErrors(fieldErrors);
+ else toastError(e instanceof Error ? e.message : '설문 등록에 실패했습니다.');
  } finally {
+ savingRef.current = false;
  setIsSaving(false);
  }
  };
@@ -243,7 +258,14 @@ export default function OnlinePollAdminClient() {
  >
  <RefreshCcw size={16} className={cn(isLoading && "animate-spin")} aria-hidden="true" /> 새로고침
  </Button>
- <Button size="sm" onClick={() => setIsAddOpen(true)} className="gap-2">
+ <Button
+ size="sm"
+ onClick={() => {
+ validation.setFormErrors({}, false);
+ setIsAddOpen(true);
+ }}
+ className="gap-2"
+ >
  <Plus size={16} aria-hidden="true" /> 신규 설문 등록
  </Button>
  </>
@@ -293,7 +315,13 @@ export default function OnlinePollAdminClient() {
  }}
  />
 
- <Dialog open={isAddOpen} onOpenChange={setIsAddOpen}>
+ <Dialog
+ open={isAddOpen}
+ onOpenChange={(open) => {
+ if (!open && savingRef.current) return;
+ setIsAddOpen(open);
+ }}
+ >
  <DialogContent className="sm:max-w-[650px] max-h-[90vh] overflow-y-auto rounded-lg p-12 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl relative overflow-x-hidden">
  <div className="absolute top-[-15%] left-[-15%] w-64 h-64 bg-primary/5 blur-[80px] rounded-lg pointer-events-none" />
 
@@ -310,6 +338,11 @@ export default function OnlinePollAdminClient() {
  </DialogHeader>
 
  <div className="space-y-10 py-10 relative z-10">
+ <FormErrorSummary
+ errors={validation.errors}
+ labels={validationLabels}
+ onNavigate={(name) => { validation.focusError(name); }}
+ />
  <section className="space-y-5">
  <label htmlFor="new-poll-name" className="text-xs font-bold text-muted-foreground tracking-widest ml-2 flex items-center gap-3">
  <div className="w-1.5 h-1.5 bg-primary rounded-full" />
@@ -317,40 +350,65 @@ export default function OnlinePollAdminClient() {
  </label>
  <Input
  id="new-poll-name"
+ {...validation.fieldProps('pollNm')}
  placeholder="설문 명..."
  value={newPoll.pollNm}
- onChange={(e) => setNewPoll(prev => ({ ...prev, pollNm: e.target.value }))}
+ onChange={(e) => {
+ validation.clearError('pollNm');
+ setNewPoll(prev => ({ ...prev, pollNm: e.target.value }));
+ }}
+ required
+ maxLength={100}
  className="h-11 px-8 rounded-lg border-none bg-muted text-xl font-bold focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner tracking-tight"
  />
+ {validation.errors.pollNm ? (
+ <p {...validation.messageProps('pollNm')} className="text-sm text-destructive-emphasis" />
+ ) : null}
  </section>
 
  <section className="grid grid-cols-2 gap-8">
  <div className="space-y-4">
- <label htmlFor="new-poll-begin" className="text-xs font-bold text-muted-foreground tracking-widest ml-2 block">시작일</label>
+ <label htmlFor="new-poll-begin" className="text-xs font-bold text-muted-foreground tracking-widest ml-2 block">시작일 (필수)</label>
  <div className="relative group">
  <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
  {/* input[type=date] 는 'yyyy-MM-dd' 를 요구하고 저장은 'yyyyMMdd' 다 — 경계에서 변환한다. */}
  <Input
  id="new-poll-begin"
+ {...validation.fieldProps('pollBgngYmd')}
  type="date"
  value={toDateInputValue(newPoll.pollBgngYmd)}
- onChange={(e) => setNewPoll(prev => ({ ...prev, pollBgngYmd: fromDateInputValue(e.target.value) }))}
+ onChange={(e) => {
+ validation.clearError('pollBgngYmd');
+ setNewPoll(prev => ({ ...prev, pollBgngYmd: fromDateInputValue(e.target.value) }));
+ }}
+ required
  className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-card transition-all shadow-inner"
  />
  </div>
+ {validation.errors.pollBgngYmd ? (
+ <p {...validation.messageProps('pollBgngYmd')} className="text-sm text-destructive-emphasis" />
+ ) : null}
  </div>
  <div className="space-y-4">
- <label htmlFor="new-poll-end" className="text-xs font-bold text-muted-foreground tracking-widest ml-2 block">종료일</label>
+ <label htmlFor="new-poll-end" className="text-xs font-bold text-muted-foreground tracking-widest ml-2 block">종료일 (필수)</label>
  <div className="relative group">
  <Calendar className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={18} />
  <Input
  id="new-poll-end"
+ {...validation.fieldProps('pollEndYmd')}
  type="date"
  value={toDateInputValue(newPoll.pollEndYmd)}
- onChange={(e) => setNewPoll(prev => ({ ...prev, pollEndYmd: fromDateInputValue(e.target.value) }))}
+ onChange={(e) => {
+ validation.clearError('pollEndYmd');
+ setNewPoll(prev => ({ ...prev, pollEndYmd: fromDateInputValue(e.target.value) }));
+ }}
+ required
  className="h-11 pl-14 pr-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-card transition-all shadow-inner"
  />
  </div>
+ {validation.errors.pollEndYmd ? (
+ <p {...validation.messageProps('pollEndYmd')} className="text-sm text-destructive-emphasis" />
+ ) : null}
  </div>
  </section>
 
@@ -384,10 +442,12 @@ export default function OnlinePollAdminClient() {
  <label htmlFor={`new-poll-article-${index}`} className="sr-only">{`선택 항목 ${index + 1} 내용`}</label>
  <Input
  id={`new-poll-article-${index}`}
+ {...validation.fieldProps(`pollArticles.${index}.pollArtclNm`)}
  placeholder={`항목 ${index + 1} 내용...`}
  value={item.pollArtclNm}
  onChange={(e) => {
  const value = e.target.value;
+ validation.clearError(`pollArticles.${index}.pollArtclNm`);
  setNewPoll(prev => ({
  ...prev,
  pollArticles: (prev.pollArticles || []).map((article, i) =>
@@ -395,8 +455,16 @@ export default function OnlinePollAdminClient() {
  ),
  }));
  }}
+ required
+ maxLength={100}
  className="h-11 px-6 rounded-lg border-none bg-muted font-bold text-sm focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner tracking-tight"
  />
+ {validation.errors[`pollArticles.${index}.pollArtclNm`] ? (
+ <p
+ {...validation.messageProps(`pollArticles.${index}.pollArtclNm`)}
+ className="mt-1 text-sm text-destructive-emphasis"
+ />
+ ) : null}
  </div>
  {index > 1 && (
  <Button
@@ -420,6 +488,7 @@ export default function OnlinePollAdminClient() {
  <Button
  variant="outline"
  onClick={() => setIsAddOpen(false)}
+ disabled={isSaving}
  className="h-11 px-12 rounded-lg border-2 border-border font-bold text-xs tracking-widest hover:bg-muted"
  >
  취소

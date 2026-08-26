@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { cn } from "@/lib/utils";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import { BoardPost } from '@/types/business/board';
+import { useToast } from '@/app/components/ui/toast';
 
 // Import refactored components
 import { BoardListFilters } from './components/BoardListFilters';
@@ -43,6 +44,9 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
  const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
  const router = useRouter();
+ const { toast } = useToast();
+ const likePendingRef = React.useRef(false);
+ const [pendingLikePstSn, setPendingLikePstSn] = useState<number | null>(null);
 
  const [mounted, setMounted] = useState(false);
 
@@ -162,6 +166,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   onError: (err, pstSn, context) => {
   // 실패 시 롤백
   queryClient.setQueryData(queryKey, context?.previousData);
+  toast(err instanceof Error && err.message ? err.message : '추천 처리 중 오류가 발생했습니다.', 'error');
   },
   onSettled: () => {
   // 최종적으로 서버 데이터와 동기화
@@ -169,10 +174,20 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
   }
  });
 
- const handleLike = (e: React.MouseEvent, pstSn: number) => {
+ const handleLike = async (e: React.MouseEvent, pstSn: number) => {
   e.preventDefault();
   e.stopPropagation();
-  likeMutation.mutate(pstSn);
+  if (likePendingRef.current) return;
+  likePendingRef.current = true;
+  setPendingLikePstSn(pstSn);
+  try {
+   await likeMutation.mutateAsync(pstSn);
+  } catch {
+   // mutation onError가 롤백과 사용자 안내를 소유한다.
+  } finally {
+   likePendingRef.current = false;
+   setPendingLikePstSn(null);
+  }
  };
 
  const list: BoardPost[] = data?.list || [];
@@ -285,22 +300,22 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
            transition={{ duration: 0.3 }}
          >
            {tmpltId === 'TMPLT_HUB' ? (
-             <HubTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} page={queryPage} totalCount={totalCount} />
+             <HubTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} page={queryPage} totalCount={totalCount} />
            ) : tmpltId === 'TMPLT_GALLERY' ? (
-             <GalleryTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} />
+             <GalleryTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
            ) : tmpltId === 'TMPLT_QNA' ? (
-             <QnaTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} />
+             <QnaTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
            ) : tmpltId === 'TMPLT_CALENDAR' ? (
              <CalendarTemplate 
-               list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} 
+               list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn}
                currentViewDate={currentViewDate} onPrevMonth={handlePrevMonth} onNextMonth={handleNextMonth} 
              />
            ) : tmpltId === 'TMPLT_FAQ' ? (
-             <FaqTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} />
+             <FaqTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
            ) : tmpltId === 'TMPLT_WIKI' ? (
-             <WikiTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} />
+             <WikiTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
            ) : (
-             <DefaultTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} isLikePending={likeMutation.isPending} page={queryPage} totalCount={totalCount} />
+             <DefaultTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} page={queryPage} totalCount={totalCount} />
            )}
          </motion.div>
        </AnimatePresence>

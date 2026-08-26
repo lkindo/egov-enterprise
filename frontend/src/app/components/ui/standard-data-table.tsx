@@ -80,6 +80,9 @@ interface BulkAction<T> {
   label: string;
   icon?: React.ReactNode;
   variant?: 'default' | 'destructive' | 'outline';
+  disabled?: boolean;
+  ariaBusy?: boolean;
+  pendingLabel?: string;
   onClick: (selectedItems: T[]) => void;
 }
 
@@ -471,9 +474,11 @@ export function StandardDataTable<T extends object>({
                     size="sm"
                     className="h-10 sm:h-12 px-4 sm:px-6 rounded-xl font-bold text-[10px] sm:text-xs tracking-widest gap-2 bg-white/10 hover:bg-surface-inverse-foreground text-surface-inverse-foreground hover:text-surface-inverse transition-all border border-white/5 hover:border-surface-inverse-foreground shadow-xl group whitespace-nowrap"
                     onClick={() => action.onClick(selectedItems)}
+                    disabled={action.disabled}
+                    aria-busy={action.ariaBusy || undefined}
                   >
                     {action.icon && <span className="group-hover:scale-110 transition-transform shrink-0">{action.icon}</span>}
-                    {action.label}
+                    {action.ariaBusy && action.pendingLabel ? action.pendingLabel : action.label}
                   </Button>
                 ))}
               </div>

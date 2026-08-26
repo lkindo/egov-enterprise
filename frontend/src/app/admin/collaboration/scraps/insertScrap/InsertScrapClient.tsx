@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from '@/lib/api/client';
 import { useToast } from '@/app/components/ui/toast';
@@ -11,6 +11,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Bookmark, Send, ArrowLeft, FileText, Globe, Info } from "lucide-react";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import {
+  scrapCreateFormSchema,
+  scrapValidationLabels,
+} from '../scrap-form-validation';
 
 const InsertScrapClient = () => {
   const router = useRouter();
@@ -21,34 +28,31 @@ const InsertScrapClient = () => {
     scrapExpln: ''
   });
   const [loading, setLoading] = useState(false);
+  const submitPendingRef = useRef(false);
+  const validation = useManualFormValidation(scrapCreateFormSchema, {
+    labels: scrapValidationLabels,
+  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitPendingRef.current) return;
+    const validated = validation.validate({ ...formData, useYn: 'Y' });
+    if (!validated) return;
 
-    // Basic Validation
-    if (!formData.scrapNm.trim()) {
-      toast('스크랩명을 입력해주세요.', 'error');
-      return;
-    }
-    if (!formData.scrapUrl.trim()) {
-      toast('URL을 입력해주세요.', 'error');
-      return;
-    }
-    if (!/^https?:\/\//i.test(formData.scrapUrl)) {
-      toast('올바른 URL 형식이 아닙니다. (http:// 또는 https:// 로 시작해야 합니다)', 'error');
-      return;
-    }
-
+    submitPendingRef.current = true;
     setLoading(true);
     try {
       // useYn 은 서버 DTO 필수값(@NotBlank)이다 — 누락 시 등록이 100% 400 으로 실패한다.
       // 소유자(userId)는 서버가 인증 주체에서 파생하므로 전송하지 않는다.
-      await axios.post<number>('/scraps', { ...formData, useYn: 'Y' });
+      await axios.post<number>('/scraps', validated);
       toast('스크랩이 등록되었습니다.', 'success');
       router.push('/admin/collaboration/scraps/selectScrapList');
-    } catch (error) {
-      toast(error instanceof Error && error.message ? error.message : '등록에 실패했습니다.', 'error');
+    } catch (error: unknown) {
+      const fieldErrors = extractFieldErrors(error);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      else toast(extractErrorMessage(error, '등록에 실패했습니다.'), 'error');
     } finally {
+      submitPendingRef.current = false;
       setLoading(false);
     }
   };
@@ -58,7 +62,7 @@ const InsertScrapClient = () => {
       <DynamicBreadcrumb />
 
       <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-card ring-1 ring-border">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <CardHeader className="border-b bg-muted/40 pb-12 pt-12 px-10">
             <div className="flex items-center gap-5">
               <div className="p-4 bg-hub-indigo rounded-lg shadow-xl shadow-hub-indigo/20">
@@ -77,6 +81,11 @@ const InsertScrapClient = () => {
           </CardHeader>
 
           <CardContent className="p-10 space-y-10">
+            <FormErrorSummary
+              errors={validation.errors}
+              labels={scrapValidationLabels}
+              onNavigate={validation.focusError}
+            />
             <div className="grid gap-8">
               {/* Scrap Name */}
               <div className="group space-y-3">
@@ -89,13 +98,21 @@ const InsertScrapClient = () => {
                   </div>
                   <Input
                     id="scrapNm"
+                    {...validation.fieldProps('scrapNm')}
                     placeholder="스크랩 명을 입력하세요"
                     value={formData.scrapNm}
-                    onChange={(e) => setFormData({ ...formData, scrapNm: e.target.value })}
+                    onChange={(e) => {
+                      validation.clearError('scrapNm');
+                      setFormData({ ...formData, scrapNm: e.target.value });
+                    }}
                     className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    maxLength={100}
                     required
                   />
                 </div>
+                {validation.errors.scrapNm ? (
+                  <p {...validation.messageProps('scrapNm')} className="text-xs font-bold text-destructive-emphasis" />
+                ) : null}
               </div>
 
               {/* Scrap URL */}
@@ -109,13 +126,22 @@ const InsertScrapClient = () => {
                   </div>
                   <Input
                     id="scrapUrl"
+                    {...validation.fieldProps('scrapUrl')}
+                    type="url"
                     placeholder="https://example.com"
                     value={formData.scrapUrl}
-                    onChange={(e) => setFormData({ ...formData, scrapUrl: e.target.value })}
+                    onChange={(e) => {
+                      validation.clearError('scrapUrl');
+                      setFormData({ ...formData, scrapUrl: e.target.value });
+                    }}
                     className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    maxLength={1000}
                     required
                   />
                 </div>
+                {validation.errors.scrapUrl ? (
+                  <p {...validation.messageProps('scrapUrl')} className="text-xs font-bold text-destructive-emphasis" />
+                ) : null}
               </div>
 
               {/* Scrap Description */}
@@ -125,11 +151,18 @@ const InsertScrapClient = () => {
                 </Label>
                 <Textarea
                   id="scrapExpln"
+                  {...validation.fieldProps('scrapExpln')}
                   placeholder="이 자료에 대한 설명을 입력하세요."
                   value={formData.scrapExpln}
-                  onChange={(e) => setFormData({ ...formData, scrapExpln: e.target.value })}
+                  onChange={(e) => {
+                    validation.clearError('scrapExpln');
+                    setFormData({ ...formData, scrapExpln: e.target.value });
+                  }}
                   className="min-h-[180px] p-6 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-medium leading-relaxed resize-none shadow-inner"
                 />
+                {validation.errors.scrapExpln ? (
+                  <p {...validation.messageProps('scrapExpln')} className="text-xs font-bold text-destructive-emphasis" />
+                ) : null}
               </div>
             </div>
 

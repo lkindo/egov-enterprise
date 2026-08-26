@@ -3,11 +3,12 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { networkAdminService, Network } from '@/services/foundation/system/NetworkAdminService';
-import { extractErrorMessage } from './actionUtils';
+import { extractErrorMessage, extractFieldErrors } from './actionUtils';
 
 interface ActionResponse {
     success: boolean;
     message: string;
+    fieldErrors?: Record<string, string>;
 }
 
 export async function saveNetworkAction(prevState: unknown, formData: FormData): Promise<ActionResponse> {
@@ -37,7 +38,12 @@ export async function saveNetworkAction(prevState: unknown, formData: FormData):
         return { success: true, message: '네트워크 정보가 저장되었습니다.' };
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
-        return { success: false, message: errorMessage };
+        const fieldErrors = extractFieldErrors(error);
+        return {
+            success: false,
+            message: errorMessage,
+            ...(fieldErrors ? { fieldErrors } : {}),
+        };
     }
 }
 

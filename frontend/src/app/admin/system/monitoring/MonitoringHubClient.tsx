@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useTransition } from 'react';
+import { useState, useMemo, useRef, useTransition } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 ;
 import { Button } from '@/components/ui/button';
@@ -174,6 +174,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedItemId, setSelectedItemId] = useState<string | number | null>(null);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
+  const deleteCommentPendingRef = useRef(false);
+  const [deletingCommentId, setDeletingCommentId] = useState<number | null>(null);
 
   // [P1-8] 타이핑 한 글자마다 서버 요청이 나가던 문제 → 300ms 디바운스 후에만 조회한다.
 
@@ -325,17 +327,28 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
    * 과거에는 서비스 경로 오조립(404)으로 삭제가 "잠복"해 있었을 뿐, 무확인 1클릭 삭제 구조였다.
    */
   const handleDeleteComment = async (comment: { ansSn?: number | null; ansCn?: string; wrterId?: string }) => {
-    if (comment?.ansSn === undefined || comment?.ansSn === null) return;
+    if (comment?.ansSn === undefined || comment?.ansSn === null || deleteCommentPendingRef.current) return;
     const ansSn = comment.ansSn;
-    const preview = (comment.ansCn || '').trim();
-    const isConfirmed = await confirm({
-      title: '댓글 영구 삭제',
-      message: `${preview ? `"${preview.length > 60 ? `${preview.slice(0, 60)}…` : preview}" ` : ''}댓글(작성자: ${comment.wrterId || '알 수 없음'})을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-      confirmText: '영구 삭제',
-      variant: 'destructive'
-    });
-    if (!isConfirmed) return;
-    deleteCommentMutation.mutate(ansSn);
+    deleteCommentPendingRef.current = true;
+    setDeletingCommentId(ansSn);
+    try {
+      const preview = (comment.ansCn || '').trim();
+      const isConfirmed = await confirm({
+        title: '댓글 영구 삭제',
+        message: `${preview ? `"${preview.length > 60 ? `${preview.slice(0, 60)}…` : preview}" ` : ''}댓글(작성자: ${comment.wrterId || '알 수 없음'})을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+        confirmText: '영구 삭제',
+        variant: 'destructive'
+      });
+      if (!isConfirmed) return;
+      try {
+        await deleteCommentMutation.mutateAsync(ansSn);
+      } catch {
+        // mutation onError가 오류 안내를 소유하며 선택된 댓글은 그대로 보존한다.
+      }
+    } finally {
+      deleteCommentPendingRef.current = false;
+      setDeletingCommentId(null);
+    }
   };
 
   const selectedItem = useMemo(() => {
@@ -442,8 +455,9 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             <Button 
                 variant="ghost" 
                 size="icon" 
-                aria-label="댓글 삭제"
-                disabled={deleteCommentMutation.isPending}
+                aria-label={deletingCommentId === c.ansSn ? '댓글 삭제 중' : '댓글 삭제'}
+                aria-busy={deletingCommentId === c.ansSn || undefined}
+                disabled={deletingCommentId !== null}
                 onClick={(e) => { e.stopPropagation(); void handleDeleteComment(c); }}
                 className="text-white bg-rose-500/20 hover:bg-rose-500/40 rounded-lg transition-all relative z-10 shrink-0 h-10 w-10"
             >

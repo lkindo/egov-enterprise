@@ -66,7 +66,11 @@ describe('남은 서버 액션', () => {
       const result = await createComment(null, form({ pstSn: '1', bbsId: 'B1', ansCn: '   ' }));
 
       // 공백만 있는 댓글을 서버로 보내면 빈 댓글이 목록에 쌓인다.
-      expect(result).toEqual({ success: false, message: '댓글 내용을 입력해주세요.' });
+      expect(result).toEqual({
+        success: false,
+        message: '댓글 내용을 입력해주세요.',
+        fieldErrors: { ansCn: '댓글 내용을 입력해주세요.' },
+      });
       expect(client.post).not.toHaveBeenCalled();
     });
 
@@ -137,13 +141,22 @@ describe('남은 서버 액션', () => {
 
     it('백엔드 오류는 throw 하지 않고 메시지로 돌려준다', async () => {
       vi.mocked(client.post).mockRejectedValueOnce({
-        response: { data: { message: '삭제된 게시글입니다.' } },
+        response: {
+          data: {
+            message: '삭제된 게시글입니다.',
+            errors: [{ field: 'ansCn', message: '댓글 형식을 확인해 주세요.' }],
+          },
+        },
       });
 
       const result = await createComment(null, form({ pstSn: '1', bbsId: 'B1', ansCn: '내용' }));
 
       // 서버 액션이 throw 하면 Next 가 500 을 내고 사용자는 이유를 못 본다.
-      expect(result).toEqual({ success: false, message: '삭제된 게시글입니다.' });
+      expect(result).toEqual({
+        success: false,
+        message: '삭제된 게시글입니다.',
+        fieldErrors: { ansCn: '댓글 형식을 확인해 주세요.' },
+      });
     });
 
     it('토큰이 없으면 빈 설정으로 호출한다', async () => {
@@ -206,6 +219,26 @@ describe('남은 서버 액션', () => {
       expect(result).toEqual({ success: false, message: '상위 메뉴가 없습니다.' });
       expect(revalidatePath).not.toHaveBeenCalled();
     });
+
+    it('메뉴 저장 검증 실패의 구조화된 필드 오류를 클라이언트까지 보존한다', async () => {
+      vi.mocked(menuAdminService.createMenu).mockRejectedValueOnce({
+        response: {
+          data: {
+            message: '입력값을 확인해 주세요.',
+            errors: [{ field: 'menuNm', message: '이미 사용 중인 메뉴 명칭입니다.' }],
+          },
+        },
+      });
+
+      const result = await saveMenuAction(null, { mode: 'create', data: { menuNm: '중복 메뉴' } as never });
+
+      expect(result).toEqual({
+        success: false,
+        message: '입력값을 확인해 주세요.',
+        fieldErrors: { menuNm: '이미 사용 중인 메뉴 명칭입니다.' },
+      });
+      expect(revalidatePath).not.toHaveBeenCalled();
+    });
   });
 
   describe('네트워크', () => {
@@ -256,6 +289,26 @@ describe('남은 서버 액션', () => {
       const result = await deleteNetworkAction('N7');
 
       expect(result).toEqual({ success: false, message: '삭제 중 오류 발생' });
+    });
+
+    it('저장 검증 실패의 구조화된 필드 오류를 폼까지 보존한다', async () => {
+      vi.mocked(networkAdminService.createNetwork).mockRejectedValueOnce({
+        response: {
+          data: {
+            message: '입력값을 확인해 주세요.',
+            errors: [{ field: 'ntwrkIp', message: '이미 등록된 IP 주소입니다.' }],
+          },
+        },
+      });
+
+      const result = await saveNetworkAction(null, form(FIELDS));
+
+      expect(result).toEqual({
+        success: false,
+        message: '입력값을 확인해 주세요.',
+        fieldErrors: { ntwrkIp: '이미 등록된 IP 주소입니다.' },
+      });
+      expect(revalidatePath).not.toHaveBeenCalled();
     });
   });
 });

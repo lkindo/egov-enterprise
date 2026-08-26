@@ -5,6 +5,7 @@ import * as z from 'zod';
 import {
   Form,
   FormControl,
+  FormErrorSummary,
   FormField,
   FormItem,
   FormLabel,
@@ -38,16 +39,37 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
 
     const { isSubmitting } = form.formState;
 
+    const handleSubmit = async (values: NetworkFormValues) => {
+        try {
+            await onSubmit(values);
+        } catch (error) {
+            if (!form.applyServerErrors(error)) throw error;
+        }
+    };
+
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form noValidate onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+                <FormErrorSummary
+                    labels={{
+                        manageIem: '관리항목',
+                        userNm: '사용자명',
+                        ntwrkIp: 'IP 주소',
+                        subnet: '서브넷 마스크',
+                        gtwy: '게이트웨이',
+                        domnServer: 'DNS 서버',
+                        useYn: '사용 여부',
+                    }}
+                    onNavigate={form.focusError}
+                />
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                         control={form.control}
                         name="manageIem"
+                        required
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>관리항목 <span className="text-destructive-emphasis">*</span></FormLabel>
+                                <FormLabel>관리항목</FormLabel>
                                 <FormControl>
                                     <Input {...field} placeholder="예: 내부망 서버" />
                                 </FormControl>
@@ -58,9 +80,10 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                     <FormField
                         control={form.control}
                         name="userNm"
+                        required
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>사용자명 <span className="text-destructive-emphasis">*</span></FormLabel>
+                                <FormLabel>사용자명</FormLabel>
                                 <FormControl>
                                     <Input {...field} placeholder="관리자 성명" />
                                 </FormControl>
@@ -71,9 +94,10 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                     <FormField
                         control={form.control}
                         name="ntwrkIp"
+                        required
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>IP 주소 <span className="text-destructive-emphasis">*</span></FormLabel>
+                                <FormLabel>IP 주소</FormLabel>
                                 <FormControl>
                                     <Input {...field} placeholder="192.168.0.1" className="font-mono" />
                                 </FormControl>
@@ -84,9 +108,10 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                     <FormField
                         control={form.control}
                         name="subnet"
+                        required
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>서브넷 마스크 <span className="text-destructive-emphasis">*</span></FormLabel>
+                                <FormLabel>서브넷 마스크</FormLabel>
                                 <FormControl>
                                     <Input {...field} placeholder="255.255.255.0" className="font-mono" />
                                 </FormControl>
@@ -97,9 +122,10 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                     <FormField
                         control={form.control}
                         name="gtwy"
+                        required
                         render={({ field }) => (
                             <FormItem>
-                                <FormLabel>게이트웨이 <span className="text-destructive-emphasis">*</span></FormLabel>
+                                <FormLabel>게이트웨이</FormLabel>
                                 <FormControl>
                                     <Input {...field} placeholder="192.168.0.254" className="font-mono" />
                                 </FormControl>
@@ -124,9 +150,10 @@ export function NetworkForm({ initialData, onSubmit, onCancel }: NetworkFormProp
                 <FormField
                     control={form.control}
                     name="useYn"
+                    required
                     render={({ field }) => (
                         <FormItem>
-                            <FormLabel>사용 여부 <span className="text-destructive-emphasis">*</span></FormLabel>
+                            <FormLabel>사용 여부</FormLabel>
                             <FormControl>
                                 <select
                                     {...field}

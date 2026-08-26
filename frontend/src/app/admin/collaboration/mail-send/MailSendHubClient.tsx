@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
+import * as z from 'zod';
 import { useRouter } from 'next/navigation';
 import {
   Send,
@@ -19,7 +20,11 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/app/components/ui/toast';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { mailService } from '@/services/business/mail/MailService';
+import { SentMailDtoSchema } from '@/types/generated-zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
 
@@ -29,10 +34,39 @@ interface Recipient {
   email: string;
 }
 
+/** SentMail 물리 컬럼 계약: 제목/수신자 100자, 본문 4,000자. */
+export const mailSendSchema = SentMailDtoSchema.pick({
+  recptnPerson: true,
+  sj: true,
+  emailCn: true,
+}).extend({
+  recptnPerson: SentMailDtoSchema.shape.recptnPerson.unwrap()
+    .trim()
+    .min(1, '수신자를 선택해 주세요.')
+    .max(100, '수신자는 최대 100자까지 입력할 수 있습니다.'),
+  sj: SentMailDtoSchema.shape.sj.unwrap()
+    .trim()
+    .min(1, '메일 제목을 입력해 주세요.')
+    .max(100, '메일 제목은 최대 100자까지 입력할 수 있습니다.'),
+  emailCn: SentMailDtoSchema.shape.emailCn.unwrap()
+    .trim()
+    .min(1, '메일 본문을 입력해 주세요.')
+    .max(4000, '메일 본문은 최대 4000자까지 입력할 수 있습니다.'),
+});
+
+type MailSendValues = z.infer<typeof mailSendSchema>;
+
+const mailValidationLabels: Record<keyof MailSendValues, string> = {
+  recptnPerson: '수신자',
+  sj: '메일 제목',
+  emailCn: '메일 본문',
+};
+
 export default function MailSendHubClient() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const submitPendingRef = useRef(false);
   const [recipientSearch, setRecipientSearch] = useState('');
   const [selectedRecipients, setSelectedRecipients] = useState<Recipient[]>([]);
 
@@ -50,6 +84,7 @@ export default function MailSendHubClient() {
     sj: '',
     emailCn: ''
   });
+  const validation = useManualFormValidation(mailSendSchema, { labels: mailValidationLabels });
 
   const handleAddRecipient = () => {
     const value = recipientSearch.trim();
@@ -58,32 +93,32 @@ export default function MailSendHubClient() {
       ...previous,
       { id: value, name: value, email: value.includes('@') ? value : '' },
     ]);
+    validation.clearError('recptnPerson');
     setRecipientSearch('');
   };
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedRecipients.length === 0) {
-      toast('수신자를 선택해 주세요.', 'error');
-      return;
-    }
-    if (!form.sj.trim() || !form.emailCn.trim()) {
-      toast('제목과 내용을 입력해 주세요.', 'error');
-      return;
-    }
+    if (submitPendingRef.current) return;
+    const validated = validation.validate({
+      recptnPerson: selectedRecipients.map((recipient) => recipient.email || recipient.id).join(', '),
+      sj: form.sj,
+      emailCn: form.emailCn,
+    });
+    if (!validated) return;
 
+    submitPendingRef.current = true;
     setIsSubmitting(true);
     try {
-      await mailService.sendMail({
-        recptnPerson: selectedRecipients.map(r => r.email || r.id).join(', '),
-        sj: form.sj,
-        emailCn: form.emailCn
-      });
+      await mailService.sendMail(validated);
       toast('메일이 발송 요청되었습니다.', 'success');
       router.push('/admin/collaboration/mail-history');
-    } catch {
-      toast('메일 발송에 실패했습니다.', 'error');
+    } catch (error: unknown) {
+      const fieldErrors = extractFieldErrors(error);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      else toast(extractErrorMessage(error, '메일 발송에 실패했습니다.'), 'error');
     } finally {
+      submitPendingRef.current = false;
       setIsSubmitting(false);
     }
   };
@@ -110,7 +145,13 @@ export default function MailSendHubClient() {
         </div>
       </div>
 
-      <form onSubmit={handleSend} className="space-y-10 px-2">
+      <form onSubmit={handleSend} noValidate className="space-y-10 px-2">
+
+        <FormErrorSummary
+          errors={validation.errors}
+          labels={mailValidationLabels}
+          onNavigate={validation.focusError}
+        />
 
         {/* 2. Recipient Selection */}
         <div className="hub-card-premium p-10 bg-card border-2 border-border shadow-2xl relative overflow-hidden group rounded-lg">
@@ -123,7 +164,9 @@ export default function MailSendHubClient() {
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                   <Search size={20} />
                 </div>
-                <Label htmlFor="mail-recipient-search" className="text-xs font-bold tracking-tight text-muted-foreground">수신자 선택</Label>
+                <Label htmlFor="mail-recipient-search" className="text-xs font-bold tracking-tight text-muted-foreground">
+                  수신자 선택 <span aria-hidden="true" className="text-destructive-emphasis">*</span>
+                </Label>
               </div>
               {selectedRecipients.length > 0 && (
                 <Badge className="bg-emerald-500 text-white border-none font-bold text-xs px-3 py-1.5 rounded-lg tracking-tight animate-in zoom-in duration-300">
@@ -155,7 +198,10 @@ export default function MailSendHubClient() {
                           <button
                             type="button"
                             aria-label={`${recipient.name} 수신자 제외`}
-                            onClick={() => setSelectedRecipients(prev => prev.filter(r => r.id !== recipient.id))}
+                            onClick={() => {
+                              validation.clearError('recptnPerson');
+                              setSelectedRecipients(prev => prev.filter(r => r.id !== recipient.id));
+                            }}
                             className="w-5 h-5 rounded-md flex items-center justify-center hover:bg-rose-500 transition-colors"
                           >
                             <X size={12} />
@@ -169,17 +215,23 @@ export default function MailSendHubClient() {
                 <div className="flex gap-3">
                   <Input
                     id="mail-recipient-search"
+                    {...validation.fieldProps('recptnPerson')}
                     data-testid="mail-recipient-input"
                     placeholder="수신자 ID 또는 이메일을 입력하세요"
                     className="h-11 text-xl font-bold tracking-tight bg-muted border-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
                     value={recipientSearch}
-                    onChange={(e) => setRecipientSearch(e.target.value)}
+                    onChange={(e) => {
+                      validation.clearError('recptnPerson');
+                      setRecipientSearch(e.target.value);
+                    }}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') {
                         event.preventDefault();
                         handleAddRecipient();
                       }
                     }}
+                    maxLength={100}
+                    required
                   />
                   <Button
                     type="button"
@@ -190,6 +242,9 @@ export default function MailSendHubClient() {
                     <Plus size={16} className="mr-2" /> 추가
                   </Button>
                 </div>
+                {validation.errors.recptnPerson ? (
+                  <p {...validation.messageProps('recptnPerson')} className="text-xs font-bold text-destructive-emphasis" />
+                ) : null}
               </div>
             </div>
           </div>
@@ -205,17 +260,27 @@ export default function MailSendHubClient() {
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20">
                 <Mail size={20} />
               </div>
-              <Label htmlFor="mail-subject" className="text-xs font-bold tracking-tight text-muted-foreground">메일 제목</Label>
+              <Label htmlFor="mail-subject" className="text-xs font-bold tracking-tight text-muted-foreground">
+                메일 제목 <span aria-hidden="true" className="text-destructive-emphasis">*</span>
+              </Label>
             </div>
             <Input
               id="mail-subject"
+              {...validation.fieldProps('sj')}
               data-testid="mail-subject-input"
               value={form.sj}
-              onChange={(e) => setForm({ ...form, sj: e.target.value })}
+              onChange={(e) => {
+                validation.clearError('sj');
+                setForm({ ...form, sj: e.target.value });
+              }}
               className="h-11 bg-transparent border-none text-foreground text-3xl font-bold placeholder:text-foreground/10 focus-visible:ring-0 p-0 tracking-tight"
               placeholder="제목을 입력하세요."
+              maxLength={100}
               required
             />
+            {validation.errors.sj ? (
+              <p {...validation.messageProps('sj')} className="text-xs font-bold text-destructive-emphasis" />
+            ) : null}
             <div className="h-[1px] w-full bg-gradient-to-r from-primary/40 to-transparent" />
           </div>
         </div>
@@ -225,18 +290,28 @@ export default function MailSendHubClient() {
           <div className="flex items-center justify-between px-2">
             <div className="flex items-center gap-3">
               <Layers size={18} className="text-primary" />
-              <Label htmlFor="mail-content" className="text-sm font-bold text-foreground tracking-tight transition-colors">메일 본문</Label>
+              <Label htmlFor="mail-content" className="text-sm font-bold text-foreground tracking-tight transition-colors">
+                메일 본문 <span aria-hidden="true" className="text-destructive-emphasis">*</span>
+              </Label>
             </div>
           </div>
           <Textarea
             id="mail-content"
+            {...validation.fieldProps('emailCn')}
             data-testid="mail-content-textarea"
             value={form.emailCn}
-            onChange={(e) => setForm({ ...form, emailCn: e.target.value })}
+            onChange={(e) => {
+              validation.clearError('emailCn');
+              setForm({ ...form, emailCn: e.target.value });
+            }}
             className="min-h-[300px] p-10 text-lg font-medium leading-relaxed bg-card border-2 border-border rounded-lg shadow-xl focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
             placeholder="전달할 상세 내용을 입력하세요."
+            maxLength={4000}
             required
           />
+          {validation.errors.emailCn ? (
+            <p {...validation.messageProps('emailCn')} className="text-xs font-bold text-destructive-emphasis" />
+          ) : null}
         </div>
 
         {/* 5. Bottom Actions */}

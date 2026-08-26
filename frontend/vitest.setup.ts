@@ -94,8 +94,20 @@ vi.mock('@/components/ui/dialog', () => {
     return React.createElement(DialogOpenContext.Provider, { value }, children);
   }
 
-  function DialogContent({ children, showCloseButton = true, ...props }: any) {
+  function DialogContent({
+    children,
+    showCloseButton: _showCloseButton = true,
+    onEscapeKeyDown,
+    onPointerDownOutside,
+    onInteractOutside,
+    ...props
+  }: any) {
     const ctx = React.useContext(DialogOpenContext);
+
+    const requestDismiss = (event: any, handlers: Array<((event: any) => void) | undefined>) => {
+      for (const handler of handlers) handler?.(event);
+      if (!event.defaultPrevented && ctx.onOpenChange) ctx.onOpenChange(false);
+    };
 
     React.useEffect(() => {
       if (ctx.open) {
@@ -113,9 +125,17 @@ vi.mock('@/components/ui/dialog', () => {
       null,
       React.createElement('div', {
         'data-slot': 'dialog-overlay',
+        onPointerDown: (event: any) => requestDismiss(event, [onPointerDownOutside, onInteractOutside]),
         onClick: () => ctx.onOpenChange && ctx.onOpenChange(false),
       }),
-      React.createElement('div', { role: 'dialog', 'aria-modal': 'true', ...props }, children)
+      React.createElement('div', {
+        role: 'dialog',
+        'aria-modal': 'true',
+        onKeyDown: (event: any) => {
+          if (event.key === 'Escape') requestDismiss(event, [onEscapeKeyDown]);
+        },
+        ...props,
+      }, children)
     );
   }
 

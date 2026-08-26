@@ -1,8 +1,9 @@
 'use client';
 
+import { useRef, useState, type FormEvent } from 'react';
 import { useAppForm } from '@/hooks/useAppForm';
 import * as z from 'zod';
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Form, FormControl, FormErrorSummary, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -34,10 +35,14 @@ interface ReportCreateFormProps {
     mode?: 'create' | 'edit';
     onSubmit: (data: ReportFormValues) => Promise<void>;
     onCancel: () => void;
+    /** 합성 화면이 소유하는 저장/삭제 상호 배제 상태. */
+    isPending?: boolean;
 }
 
-export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onSubmit, onCancel }: ReportCreateFormProps) {
+export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onSubmit, onCancel, isPending = false }: ReportCreateFormProps) {
     const isEdit = mode === 'edit';
+    const submitPendingRef = useRef(false);
+    const [isSubmitPending, setSubmitPending] = useState(false);
     const form = useAppForm(reportFormSchema, {
         defaultValues: {
             rptTtl: initialData?.rptTtl ?? '',
@@ -50,22 +55,47 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
     });
 
     const { isSubmitting } = form.formState;
+    const isSavePending = isSubmitting || isSubmitPending || isPending;
+
+    const handleSubmit = async (values: ReportFormValues) => {
+        if (submitPendingRef.current) return;
+        submitPendingRef.current = true;
+        setSubmitPending(true);
+        try {
+            await onSubmit(values);
+        } catch (error) {
+            if (!form.applyServerErrors(error)) throw error;
+        } finally {
+            submitPendingRef.current = false;
+            setSubmitPending(false);
+        }
+    };
+
+    const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
+        void form.handleSubmit(handleSubmit)(event);
+    };
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-2 text-left">
+            <form noValidate onSubmit={handleFormSubmit} className="space-y-6 pt-2 text-left">
+                <FormErrorSummary
+                    labels={{ rptTtl: '보고 제목', rptYmd: '보고 일자', rptCn: '보고 내용' }}
+                    onNavigate={form.focusError}
+                />
                 <FormField
                     control={form.control}
                     name="rptTtl"
+                    required
                     render={({ field, fieldState }) => (
                         <FormItem>
                             <FormLabel className="text-xs font-bold text-foreground uppercase tracking-tight ml-1">
-                                보고 제목 <span className="text-rose-500">*</span>
+                                보고 제목
                             </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
                                     value={field.value ?? ''}
+                                    maxLength={200}
                                     className={cn('h-11 rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
                                     placeholder="예: 7월 3주차 업무 보고"
                                 />
@@ -78,6 +108,7 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                 <FormField
                     control={form.control}
                     name="rptYmd"
+                    required
                     render={({ field, fieldState }) => (
                         <FormItem>
                             <FormLabel className="text-xs font-bold text-foreground uppercase tracking-tight ml-1">보고 일자</FormLabel>
@@ -108,11 +139,11 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                 />
 
                 <div className="flex gap-3 pt-2">
-                    <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-11 rounded-lg font-bold">
+                    <Button type="button" variant="outline" onClick={onCancel} disabled={isSavePending} className="flex-1 h-11 rounded-lg font-bold">
                         취소
                     </Button>
-                    <Button type="submit" disabled={isSubmitting} className="flex-[2] h-11 rounded-lg font-bold shadow-lg">
-                        {isSubmitting ? '저장 중…' : isEdit ? '수정 저장' : '보고 등록'}
+                    <Button type="submit" disabled={isSavePending} aria-busy={isSavePending || undefined} className="flex-[2] h-11 rounded-lg font-bold shadow-lg">
+                        {isSavePending ? '저장 중…' : isEdit ? '수정 저장' : '보고 등록'}
                     </Button>
                 </div>
             </form>

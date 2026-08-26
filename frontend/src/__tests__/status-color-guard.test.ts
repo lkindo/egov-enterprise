@@ -84,7 +84,10 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   결과 툴바 한 줄 요약으로 수렴하며 제거(사전 red 실측: 595 != 596).
 // [하향 래칫 2026-08-25(6)] 조직 권한 일괄 관리 A2 이행 — rose-500 경고 아이콘·밑줄 강조
 //   3건이 평문 안내 문구로 수렴하며 제거(사전 red 실측: 592 != 595).
-const BASELINE = 592;
+// [하향 래칫 2026-08-26] frontend 입력 검증 루프 — 신규 오류 안내·삭제 동작의 status 색을
+//   모두 destructive semantic token으로 작성하고, 인접 폼 정리에서 기존 리터럴 44건을 제거
+//   (최종 diff 신규 status 리터럴 0건, 사전 red 실측: 548 != 592).
+const BASELINE = 548;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

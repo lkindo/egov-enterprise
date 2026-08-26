@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, use, useEffect } from 'react';
+import React, { useState, useMemo, use, useEffect, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -62,6 +62,7 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 
 import { UserManageForm, UserFormValues } from '@/components/admin/user/UserManageForm';
 import { DepartmentForm, DeptFormValues } from '@/components/admin/user/DepartmentForm';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
 import {
     DndContext,
     closestCenter,
@@ -94,6 +95,17 @@ const INDENTATION_WIDTH = 24;
  * (종전 size:10 → 11번째 부서부터 트리에서도 모달에서도 보이지 않았다.)
  */
 const DEPT_LIST_SIZE = 1000;
+
+type UserOrgWriteOperation =
+  | 'user-form'
+  | 'dept-form'
+  | 'delete-user'
+  | 'delete-dept'
+  | 'bulk-delete'
+  | 'bulk-status'
+  | 'bulk-move'
+  | 'bulk-role'
+  | 'dept-hierarchy';
 
 const dropAnimation: DropAnimation = {
     sideEffects: defaultDropAnimationSideEffects({
@@ -293,7 +305,9 @@ export default function UserOrgHubClient({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [isSaving, setIsSaving] = useState(false);
+  const [activeWriteOperation, setActiveWriteOperation] = useState<UserOrgWriteOperation | null>(null);
+  const actionRequestRef = useRef<UserOrgWriteOperation | null>(null);
+  const isSaving = activeWriteOperation !== null;
   const [searchKeyword, setSearchKeyword] = useState('');
   /** 타이핑 한 글자마다 서버를 때리지 않도록 300ms 디바운스한다(감사 P1-8). */
   const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
@@ -343,6 +357,68 @@ export default function UserOrgHubClient({
   const [targetStatus, setTargetStatus] = useState('P');
   const [targetDeptId, setTargetDeptId] = useState('');
   const [targetRole, setTargetRole] = useState('USER');
+
+  const beginNonFormAction = (operation: UserOrgWriteOperation) => {
+    if (actionRequestRef.current) return false;
+    actionRequestRef.current = operation;
+    setActiveWriteOperation(operation);
+    return true;
+  };
+
+  const finishNonFormAction = (operation: UserOrgWriteOperation) => {
+    if (actionRequestRef.current !== operation) return;
+    actionRequestRef.current = null;
+    setActiveWriteOperation(null);
+  };
+
+  const handleOpenUserCreate = () => {
+    if (actionRequestRef.current) return;
+    setFormMode('create');
+    setIsUserModalOpen(true);
+  };
+
+  const handleOpenDeptCreate = () => {
+    if (actionRequestRef.current) return;
+    setFormMode('create');
+    setIsDeptModalOpen(true);
+  };
+
+  const handleOpenUserEdit = () => {
+    if (actionRequestRef.current) return;
+    setFormMode('edit');
+    setIsUserModalOpen(true);
+  };
+
+  const handleOpenDeptEdit = () => {
+    if (actionRequestRef.current) return;
+    setFormMode('edit');
+    setIsDeptModalOpen(true);
+  };
+
+  const handleCloseUserModal = () => {
+    if (actionRequestRef.current) return;
+    setIsUserModalOpen(false);
+  };
+
+  const handleCloseDeptModal = () => {
+    if (actionRequestRef.current) return;
+    setIsDeptModalOpen(false);
+  };
+
+  const handleCloseBulkStatusModal = () => {
+    if (actionRequestRef.current) return;
+    setIsBulkStatusModalOpen(false);
+  };
+
+  const handleCloseBulkMoveModal = () => {
+    if (actionRequestRef.current) return;
+    setIsBulkMoveModalOpen(false);
+  };
+
+  const handleCloseBulkRoleModal = () => {
+    if (actionRequestRef.current) return;
+    setIsBulkRoleModalOpen(false);
+  };
 
   const { data: usersData, isLoading: isUsersLoading, isError: isUsersError, error: usersError, refetch: refetchUsers } = useQuery({
     queryKey: ['admin-users', debouncedKeyword, userPage],
@@ -434,6 +510,8 @@ export default function UserOrgHubClient({
   );
 
   const onUserSubmit = async (values: UserFormValues) => {
+    const operation = 'user-form' as const;
+    if (!beginNonFormAction(operation)) return;
     try {
       if (formMode === 'create') {
         await userAdminService.createUser(values as UserManage);
@@ -446,14 +524,19 @@ export default function UserOrgHubClient({
       queryClient.invalidateQueries({ queryKey: ['admin-user-detail'] });
       setIsUserModalOpen(false);
     } catch (error) {
+      if (extractFieldErrors(error)) throw error;
       // 인가 실패(403 등)를 포함한 서버 메시지를 그대로 보여준다 — 일반 문구로 뭉개면
       // 사용자는 권한 문제인지 입력 문제인지 알 수 없다(H3 의미 보존, 감사 m-2).
       const message = error instanceof Error ? error.message : '사용자 저장 중 오류가 발생했습니다.';
       toast(message, 'error');
+    } finally {
+      finishNonFormAction(operation);
     }
   };
 
   const onDeptSubmit = async (values: DeptFormValues) => {
+    const operation = 'dept-form' as const;
+    if (!beginNonFormAction(operation)) return;
     try {
       if (formMode === 'create') {
         await deptAdminService.createDept(values as Department);
@@ -464,33 +547,39 @@ export default function UserOrgHubClient({
       }
       refetchDepts();
       setIsDeptModalOpen(false);
-    } catch (_error) {
+    } catch (error) {
+      if (extractFieldErrors(error)) throw error;
       toast('부서 저장 중 오류가 발생했습니다.', 'error');
+    } finally {
+      finishNonFormAction(operation);
     }
   };
 
   const handleDeleteUser = async () => {
-    if (!selectedItemId) return;
+    const operation = 'delete-user' as const;
+    if (!selectedItemId || !beginNonFormAction(operation)) return;
 
-    // 확인 본문에 대상 식별자(이름·아이디)를 노출한다 — 무엇을 지우는지 모른 채 누르는 오삭제 방지(감사 P1-9).
-    const targetName = (selectedItem as UserManage)?.userNm ?? String(selectedItemId);
-    const ok = await confirm({
-      title: '사용자 삭제',
-      message: `'${targetName}(${selectedItemId})' 사용자의 계정과 접근 권한을 영구히 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?`,
-      variant: 'destructive',
-      confirmText: '삭제'
-    });
+    try {
+      // 확인 본문에 대상 식별자(이름·아이디)를 노출한다 — 무엇을 지우는지 모른 채 누르는 오삭제 방지(감사 P1-9).
+      const targetName = (selectedItem as UserManage)?.userNm ?? String(selectedItemId);
+      const ok = await confirm({
+        title: '사용자 삭제',
+        message: `'${targetName}(${selectedItemId})' 사용자의 계정과 접근 권한을 영구히 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?`,
+        variant: 'destructive',
+        confirmText: '삭제'
+      });
 
-    if (ok) {
-      try {
+      if (ok) {
         await userAdminService.deleteUser(selectedItemId as string);
         toast(`'${targetName}' 사용자를 삭제했습니다.`, 'success');
         setSelectedItemId(null);
         refetchUsers();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : '사용자 삭제 중 오류가 발생했습니다.';
-        toast(message, 'error');
       }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '사용자 삭제 중 오류가 발생했습니다.';
+      toast(message, 'error');
+    } finally {
+      finishNonFormAction(operation);
     }
   };
 
@@ -500,47 +589,115 @@ export default function UserOrgHubClient({
    * 서버는 소속 사용자·하위 부서가 남아 있으면 409(RESOURCE_IN_USE)로 막으므로 그 메시지를 그대로 보여준다.
    */
   const handleDeleteDept = async () => {
-    if (!selectedItemId) return;
+    const operation = 'delete-dept' as const;
+    if (!selectedItemId || !beginNonFormAction(operation)) return;
 
-    const targetName = (selectedItem as Department)?.ognzNm ?? String(selectedItemId);
-    const ok = await confirm({
-      title: '부서 삭제',
-      message: `'${targetName}(${selectedItemId})' 부서를 삭제하시겠습니까? 소속 사용자나 하위 부서가 남아 있으면 삭제할 수 없습니다.`,
-      variant: 'destructive',
-      confirmText: '삭제'
-    });
+    try {
+      const targetName = (selectedItem as Department)?.ognzNm ?? String(selectedItemId);
+      const ok = await confirm({
+        title: '부서 삭제',
+        message: `'${targetName}(${selectedItemId})' 부서를 삭제하시겠습니까? 소속 사용자나 하위 부서가 남아 있으면 삭제할 수 없습니다.`,
+        variant: 'destructive',
+        confirmText: '삭제'
+      });
 
-    if (ok) {
-      try {
+      if (ok) {
         await deptAdminService.deleteDept(selectedItemId as string);
         toast(`'${targetName}' 부서를 삭제했습니다.`, 'success');
         setSelectedItemId(null);
         refetchDepts();
-      } catch (error) {
-        const message = error instanceof Error ? error.message : '부서 삭제 중 오류가 발생했습니다.';
-        toast(message, 'error');
       }
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '부서 삭제 중 오류가 발생했습니다.';
+      toast(message, 'error');
+    } finally {
+      finishNonFormAction(operation);
     }
   };
 
   const handleBulkDelete = async (items: (UserManage | Department)[]) => {
+    const operation = 'bulk-delete' as const;
+    if (!beginNonFormAction(operation)) return;
     const userItems = items as UserManage[];
     const names = userItems.map(u => u.userNm).filter(Boolean);
     const preview = names.slice(0, 5).join(', ') + (names.length > 5 ? ` 외 ${names.length - 5}명` : '');
-    const ok = await confirm({
-      title: '사용자 일괄 삭제',
-      message: `${userItems.length}명의 계정을 영구히 삭제합니다. 되돌릴 수 없습니다.\n대상: ${preview}`,
-      variant: 'destructive',
-      confirmText: '삭제'
-    });
-    if (ok) {
-      try {
+    try {
+      const ok = await confirm({
+        title: '사용자 일괄 삭제',
+        message: `${userItems.length}명의 계정을 영구히 삭제합니다. 되돌릴 수 없습니다.\n대상: ${preview}`,
+        variant: 'destructive',
+        confirmText: '삭제'
+      });
+      if (ok) {
         const res = await bulkDeleteUsersAction(userItems.map(u => u.userId));
         toast(res.message, res.success ? 'success' : 'error');
         if (res.success) refetchUsers();
-      } catch (error) {
-        toast(error instanceof Error ? error.message : '일괄 삭제 중 오류가 발생했습니다.', 'error');
       }
+    } catch (error) {
+      toast(error instanceof Error ? error.message : '일괄 삭제 중 오류가 발생했습니다.', 'error');
+    } finally {
+      finishNonFormAction(operation);
+    }
+  };
+
+  const handleBulkStatusUpdate = async () => {
+    const operation = 'bulk-status' as const;
+    if (!beginNonFormAction(operation)) return;
+    try {
+      const res = await bulkUpdateUserStatusAction(selectedBulkItems.map(u => u.userId), targetStatus);
+      if (res.success) {
+        toast(res.message, 'success');
+        refetchUsers();
+        setIsBulkStatusModalOpen(false);
+      } else {
+        toast(res.message, 'error');
+      }
+    } catch {
+      toast('상태 변경 중 오류 발생', 'error');
+    } finally {
+      finishNonFormAction(operation);
+    }
+  };
+
+  const handleBulkDeptMove = async () => {
+    if (!targetDeptId) {
+      toast('이동할 부서를 선택해주세요.', 'error');
+      return;
+    }
+    const operation = 'bulk-move' as const;
+    if (!beginNonFormAction(operation)) return;
+    try {
+      const res = await bulkMoveUserDeptAction(selectedBulkItems.map(u => u.userId), targetDeptId);
+      if (res.success) {
+        toast(res.message, 'success');
+        refetchUsers();
+        setIsBulkMoveModalOpen(false);
+      } else {
+        toast(res.message, 'error');
+      }
+    } catch {
+      toast('부서 이동 중 오류 발생', 'error');
+    } finally {
+      finishNonFormAction(operation);
+    }
+  };
+
+  const handleBulkRoleUpdate = async () => {
+    const operation = 'bulk-role' as const;
+    if (!beginNonFormAction(operation)) return;
+    try {
+      const res = await bulkUpdateUserRoleAction(selectedBulkItems.map(u => u.userId), targetRole);
+      if (res.success) {
+        toast(res.message, 'success');
+        refetchUsers();
+        setIsBulkRoleModalOpen(false);
+      } else {
+        toast(res.message, 'error');
+      }
+    } catch {
+      toast('권한 변경 중 오류 발생', 'error');
+    } finally {
+      finishNonFormAction(operation);
     }
   };
 
@@ -548,7 +705,9 @@ export default function UserOrgHubClient({
     {
       label: '상태 변경',
       icon: <Activity size={16} />,
+      disabled: isSaving,
       onClick: (items: (UserManage | Department)[]) => {
+        if (actionRequestRef.current) return;
         setSelectedBulkItems(items as UserManage[]);
         setIsBulkStatusModalOpen(true);
       }
@@ -556,7 +715,9 @@ export default function UserOrgHubClient({
     {
       label: '부서 이동',
       icon: <Network size={16} />,
+      disabled: isSaving,
       onClick: (items: (UserManage | Department)[]) => {
+        if (actionRequestRef.current) return;
         setSelectedBulkItems(items as UserManage[]);
         setIsBulkMoveModalOpen(true);
       }
@@ -564,7 +725,9 @@ export default function UserOrgHubClient({
     {
       label: '권한 변경',
       icon: <ShieldCheck size={16} />,
+      disabled: isSaving,
       onClick: (items: (UserManage | Department)[]) => {
+        if (actionRequestRef.current) return;
         setSelectedBulkItems(items as UserManage[]);
         setIsBulkRoleModalOpen(true);
       }
@@ -573,6 +736,9 @@ export default function UserOrgHubClient({
       label: '일괄 삭제',
       icon: <UserMinus size={16} />,
       variant: 'destructive' as const,
+      disabled: isSaving,
+      ariaBusy: activeWriteOperation === 'bulk-delete',
+      pendingLabel: '일괄 삭제 처리 중…',
       onClick: handleBulkDelete
     }
   ];
@@ -613,10 +779,10 @@ export default function UserOrgHubClient({
     activeTab !== 'DEPTS' ? ((selectedUserDetail as UserManage | undefined) ?? selectedUser) : undefined;
 
   const handleSaveDeptHierarchy = async () => {
+    const operation = 'dept-hierarchy' as const;
     // A2 계약: 선택한 마스터 항목이 없거나 실제 변경이 없으면 저장하지 않는다.
-    if (!selectedDept || !hasDeptChanges || isSaving || isDeptModalOpen) return;
+    if (!selectedDept || !hasDeptChanges || isDeptModalOpen || !beginNonFormAction(operation)) return;
 
-    setIsSaving(true);
     try {
       const res = await saveDeptHierarchyAction(flattenedDepts);
       if (res.success) {
@@ -629,7 +795,7 @@ export default function UserOrgHubClient({
     } catch {
       toast('구조 저장 중 오류 발생', 'error');
     } finally {
-      setIsSaving(false);
+      finishNonFormAction(operation);
     }
   };
 
@@ -668,10 +834,8 @@ export default function UserOrgHubClient({
         actions={activeTab === 'DEPTS' ? (
           <Button
             type="button"
-            onClick={() => {
-              setFormMode('create');
-              setIsDeptModalOpen(true);
-            }}
+            onClick={handleOpenDeptCreate}
+            disabled={isSaving}
             className="h-10 gap-2 font-semibold"
           >
             <LayoutGrid size={18} aria-hidden="true" /> 부서 등록
@@ -679,10 +843,8 @@ export default function UserOrgHubClient({
         ) : activeTab !== 'POLICIES' ? (
           <Button
             type="button"
-            onClick={() => {
-              setFormMode('create');
-              setIsUserModalOpen(true);
-            }}
+            onClick={handleOpenUserCreate}
+            disabled={isSaving}
             className="h-10 gap-2 font-semibold"
           >
             {/* 부재 등록 API 가 화면에 배선되기 전까지 이 버튼은 '사용자 등록'이다.
@@ -873,10 +1035,11 @@ export default function UserOrgHubClient({
                               <Button
                                 onClick={handleSaveDeptHierarchy}
                                 disabled={!hasDeptChanges || !selectedDept || isSaving || isDeptModalOpen}
+                                aria-busy={activeWriteOperation === 'dept-hierarchy' || undefined}
                                 className="w-full h-11 rounded-xl font-semibold text-xs gap-2"
                               >
-                                {isSaving ? <RefreshCcw size={14} className="animate-spin" aria-hidden="true" /> : <Save size={14} aria-hidden="true" />}
-                                조직 계층 저장
+                                {activeWriteOperation === 'dept-hierarchy' ? <RefreshCcw size={14} className="animate-spin" aria-hidden="true" /> : <Save size={14} aria-hidden="true" />}
+                                {activeWriteOperation === 'dept-hierarchy' ? '조직 계층 저장 중…' : '조직 계층 저장'}
                               </Button>
                             </div>
                             {flattenedDepts.length === 0 && !isDeptsLoading && (
@@ -993,20 +1156,20 @@ export default function UserOrgHubClient({
                         size="icon"
                         aria-label="정보 수정"
                         className="h-10 w-14 rounded-xl bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground shadow-sm border border-border transition-all group"
-                        onClick={() => {
-                          setFormMode('edit');
-                          if (activeTab === 'DEPTS') {
-                            setIsDeptModalOpen(true);
-                          } else {
-                            setIsUserModalOpen(true);
-                          }
-                        }}
+                        disabled={isSaving}
+                        onClick={activeTab === 'DEPTS' ? handleOpenDeptEdit : handleOpenUserEdit}
                       >
                         <Pencil size={20} className="group-hover:scale-110 transition-transform" />
                       </Button>
                       {activeTab === 'DEPTS' && (
-                        <Button variant="destructive" size="sm" onClick={handleDeleteDept}>
-                          부서 삭제
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={handleDeleteDept}
+                          disabled={isSaving}
+                          aria-busy={activeWriteOperation === 'delete-dept' || undefined}
+                        >
+                          {activeWriteOperation === 'delete-dept' ? '부서 삭제 중…' : '부서 삭제'}
                         </Button>
                       )}
                     </div>
@@ -1063,17 +1226,17 @@ export default function UserOrgHubClient({
                     <button
                       type="button"
                       onClick={handleDeleteUser}
+                      disabled={isSaving}
+                      aria-busy={activeWriteOperation === 'delete-user' || undefined}
                       className="flex-1 h-10 bg-muted text-rose-500 rounded-xl font-semibold text-xs hover:bg-rose-500 hover:text-white transition-all shadow-sm outline-none cursor-pointer flex items-center justify-center"
                     >
                       {/* 실제 동작은 계정 삭제다. '접근 차단'은 무엇을 하는지 오인시킨다. */}
-                      사용자 삭제
+                      {activeWriteOperation === 'delete-user' ? '사용자 삭제 중…' : '사용자 삭제'}
                     </button>
                     {/* 수정은 편집 다이얼로그에서 저장한다. 종전에는 onClick 이 없는 死버튼이라 눌러도 아무 일도 없었다. */}
                     <Button
-                      onClick={() => {
-                        setFormMode('edit');
-                        setIsUserModalOpen(true);
-                      }}
+                      onClick={handleOpenUserEdit}
+                      disabled={isSaving}
                       className="flex-[2] h-10 bg-surface-inverse text-surface-inverse-foreground rounded-xl font-semibold text-xs shadow-2xl hover:bg-primary transition-all group"
                     >
                       <Zap size={16} className="text-primary group-hover:animate-pulse" /> 정보 수정
@@ -1106,7 +1269,7 @@ export default function UserOrgHubClient({
 
       <StandardModal
         isOpen={isUserModalOpen}
-        onClose={() => setIsUserModalOpen(false)}
+        onClose={handleCloseUserModal}
         title={formMode === 'create' ? '신규 사용자 등록' : '사용자 정보 수정'}
         maxWidth="2xl"
       >
@@ -1119,13 +1282,15 @@ export default function UserOrgHubClient({
           initialData={formMode === 'edit' ? displayedUser : undefined}
           departments={departments}
           onSubmit={onUserSubmit}
-          onCancel={() => setIsUserModalOpen(false)}
+          onCancel={handleCloseUserModal}
+          isPending={activeWriteOperation === 'user-form'}
+          externalBusy={activeWriteOperation !== null && activeWriteOperation !== 'user-form'}
         />
       </StandardModal>
 
       <StandardModal
         isOpen={isDeptModalOpen}
-        onClose={() => setIsDeptModalOpen(false)}
+        onClose={handleCloseDeptModal}
         title={formMode === 'create' ? '신규 부서 등록' : '부서 정보 수정'}
         maxWidth="lg"
       >
@@ -1133,14 +1298,16 @@ export default function UserOrgHubClient({
           mode={formMode}
           initialData={formMode === 'edit' ? (selectedItem as Department) : undefined}
           onSubmit={onDeptSubmit}
-          onCancel={() => setIsDeptModalOpen(false)}
+          onCancel={handleCloseDeptModal}
+          isPending={activeWriteOperation === 'dept-form'}
+          externalBusy={activeWriteOperation !== null && activeWriteOperation !== 'dept-form'}
         />
       </StandardModal>
 
       {/* Bulk Status Modal */}
       <StandardModal
         isOpen={isBulkStatusModalOpen}
-        onClose={() => setIsBulkStatusModalOpen(false)}
+        onClose={handleCloseBulkStatusModal}
         title="사용자 상태 일괄 변경"
         maxWidth="sm"
       >
@@ -1169,6 +1336,7 @@ export default function UserOrgHubClient({
                   type="button"
                   role="radio"
                   aria-checked={targetStatus === s.code}
+                  disabled={isSaving}
                   onClick={() => setTargetStatus(s.code)}
                   className={cn(
                     "w-full flex items-center justify-between p-4 rounded-lg border-2 transition-all",
@@ -1188,33 +1356,21 @@ export default function UserOrgHubClient({
           <div className="flex gap-4 pt-4">
             <button 
               type="button"
-              onClick={() => setIsBulkStatusModalOpen(false)} 
+              disabled={isSaving}
+              onClick={handleCloseBulkStatusModal}
               className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
             >
               취소
             </button>
             <Button 
-              onClick={async () => {
-                setIsSaving(true);
-                try {
-                  const res = await bulkUpdateUserStatusAction(selectedBulkItems.map(u => u.userId), targetStatus);
-                  if (res.success) {
-                    toast(res.message, 'success');
-                    refetchUsers();
-                    setIsBulkStatusModalOpen(false);
-                  } else {
-                    toast(res.message, 'error');
-                  }
-                } catch (_err) {
-                  toast('상태 변경 중 오류 발생', 'error');
-                } finally {
-                  setIsSaving(false);
-                }
-              }}
+              onClick={() => void handleBulkStatusUpdate()}
               disabled={isSaving}
+              aria-busy={activeWriteOperation === 'bulk-status' || undefined}
               className="flex-[2] h-11 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
             >
-              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : '상태 일괄 적용'}
+              {activeWriteOperation === 'bulk-status' ? (
+                <><RefreshCcw size={16} className="animate-spin" aria-hidden="true" /> 상태 일괄 적용 중…</>
+              ) : '상태 일괄 적용'}
             </Button>
           </div>
         </div>
@@ -1223,7 +1379,7 @@ export default function UserOrgHubClient({
       {/* Bulk Move Modal */}
       <StandardModal
         isOpen={isBulkMoveModalOpen}
-        onClose={() => setIsBulkMoveModalOpen(false)}
+        onClose={handleCloseBulkMoveModal}
         title="부서 일괄 이동"
         maxWidth="md"
       >
@@ -1256,6 +1412,7 @@ export default function UserOrgHubClient({
                     type="button"
                     role="radio"
                     aria-checked={targetDeptId === node.ognzId}
+                    disabled={isSaving}
                     onClick={() => setTargetDeptId(node.ognzId || '')}
                     className={cn(
                       "w-full flex items-center gap-3 p-3 rounded-lg transition-all text-left",
@@ -1274,37 +1431,21 @@ export default function UserOrgHubClient({
           <div className="flex gap-4 pt-4">
             <button 
               type="button"
-              onClick={() => setIsBulkMoveModalOpen(false)} 
+              disabled={isSaving}
+              onClick={handleCloseBulkMoveModal}
               className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
             >
               취소
             </button>
             <Button 
-              onClick={async () => {
-                if (!targetDeptId) {
-                  toast('이동할 부서를 선택해주세요.', 'error');
-                  return;
-                }
-                setIsSaving(true);
-                try {
-                  const res = await bulkMoveUserDeptAction(selectedBulkItems.map(u => u.userId), targetDeptId);
-                  if (res.success) {
-                    toast(res.message, 'success');
-                    refetchUsers();
-                    setIsBulkMoveModalOpen(false);
-                  } else {
-                    toast(res.message, 'error');
-                  }
-                } catch (_err) {
-                  toast('부서 이동 중 오류 발생', 'error');
-                } finally {
-                  setIsSaving(false);
-                }
-              }}
+              onClick={() => void handleBulkDeptMove()}
               disabled={isSaving}
+              aria-busy={activeWriteOperation === 'bulk-move' || undefined}
               className="flex-[2] h-11 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
             >
-              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : '부서 이동 실행'}
+              {activeWriteOperation === 'bulk-move' ? (
+                <><RefreshCcw size={16} className="animate-spin" aria-hidden="true" /> 부서 이동 실행 중…</>
+              ) : '부서 이동 실행'}
             </Button>
           </div>
         </div>
@@ -1313,7 +1454,7 @@ export default function UserOrgHubClient({
       {/* Bulk Role Modal */}
       <StandardModal
         isOpen={isBulkRoleModalOpen}
-        onClose={() => setIsBulkRoleModalOpen(false)}
+        onClose={handleCloseBulkRoleModal}
         title="사용자 권한 일괄 변경"
         maxWidth="sm"
       >
@@ -1340,6 +1481,7 @@ export default function UserOrgHubClient({
                   type="button"
                   role="radio"
                   aria-checked={targetRole === r.code}
+                  disabled={isSaving}
                   onClick={() => setTargetRole(r.code)}
                   className={cn(
                     "w-full flex items-center justify-between p-5 rounded-lg border-2 transition-all",
@@ -1364,33 +1506,21 @@ export default function UserOrgHubClient({
           <div className="flex gap-4 pt-4">
             <button 
               type="button"
-              onClick={() => setIsBulkRoleModalOpen(false)} 
+              disabled={isSaving}
+              onClick={handleCloseBulkRoleModal}
               className="flex-1 h-11 rounded-lg font-bold text-xs tracking-tight border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
             >
               취소
             </button>
             <Button 
-              onClick={async () => {
-                setIsSaving(true);
-                try {
-                  const res = await bulkUpdateUserRoleAction(selectedBulkItems.map(u => u.userId), targetRole);
-                  if (res.success) {
-                    toast(res.message, 'success');
-                    refetchUsers();
-                    setIsBulkRoleModalOpen(false);
-                  } else {
-                    toast(res.message, 'error');
-                  }
-                } catch (_err) {
-                  toast('권한 변경 중 오류 발생', 'error');
-                } finally {
-                  setIsSaving(false);
-                }
-              }}
+              onClick={() => void handleBulkRoleUpdate()}
               disabled={isSaving}
+              aria-busy={activeWriteOperation === 'bulk-role' || undefined}
               className="flex-[2] h-11 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all"
             >
-              {isSaving ? <RefreshCcw size={16} className="animate-spin" /> : '권한 변경 실행'}
+              {activeWriteOperation === 'bulk-role' ? (
+                <><RefreshCcw size={16} className="animate-spin" aria-hidden="true" /> 권한 변경 실행 중…</>
+              ) : '권한 변경 실행'}
             </Button>
           </div>
         </div>
