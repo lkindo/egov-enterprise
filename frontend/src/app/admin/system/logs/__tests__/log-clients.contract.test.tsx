@@ -431,11 +431,17 @@ describe('logs cluster modernization (m-1): LGN full-result xlsx export wiring',
     expect(toastHarness.error).toHaveBeenCalledWith(expect.stringContaining('100,000'));
   });
 
-  it('does not wire a fake full-export button on log screens without an export endpoint', () => {
-    for (const { Component, row } of CLUSTER_CASES.filter((c) => c.name !== 'LGN')) {
+  /*
+   * [2026-08-26] 종전 이 테스트는 **엔드포인트가 없다는 사실**을 고정하고 있었다 — 로그인 로그
+   * 외에는 서버측 전량 export 가 없었으므로 "가짜 버튼을 만들지 마라"가 옳은 계약이었다.
+   * 나머지 4종에도 `/export.xlsx` 가 생겼으므로(DEC-OPS-016 census 등재) 계약을 뒤집는다:
+   * 이제 **다섯 화면 모두** 전량 export 를 제공해야 하고, 그 버튼이 사라지면 red 다.
+   */
+  it('다섯 로그 화면 모두 서버측 전량 export 를 제공한다', () => {
+    for (const { Component, row } of CLUSTER_CASES) {
       clientHarness.queryData = pageOf(row);
       const { unmount } = render(<Component />);
-      expect(screen.queryByRole('button', { name: '전체 결과 엑셀 다운로드' })).toBeNull();
+      expect(screen.getByRole('button', { name: '전체 결과 엑셀 다운로드' })).toBeInTheDocument();
       unmount();
     }
   });
