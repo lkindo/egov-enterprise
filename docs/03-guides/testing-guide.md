@@ -362,7 +362,7 @@ pnpm -C frontend exec playwright install --with-deps chromium
 
 ## 중앙 하네스 레지스트리와 실행 분리
 
-[governance gate registry](../../config/governance/gates.json)는 논리 규칙을 한 거대 테스트로 합치는 파일이 아니라, 안정적인 rule ID와 발견 selector·실행 task·CI context·red proof를 연결하는 운영 인덱스다. 현재 registry는 governance JUnit 35개·ArchUnit 10개·schema-validation 37개, runner catalog 5개, execution profile 6개, quality population 3개와 quality ratchet 15개를 관리한다. [Node 계약](../../scripts/governance-gates-contract.mjs)이 실제 source census와 소비자 설정을 exact-match하고, JaCoCo·Vitest·PIT의 측정 population까지 동결하므로 registry/source 한쪽에만 있는 ghost gate나 include 축소·exclude 확대에 의한 분모 축소 통과는 실패한다.
+[governance gate registry](../../config/governance/gates.json)는 논리 규칙을 한 거대 테스트로 합치는 파일이 아니라, 안정적인 rule ID와 발견 selector·실행 task·CI context·red proof를 연결하는 운영 인덱스다. 현재 registry는 governance JUnit 35개·ArchUnit 10개·schema-validation 38개, runner catalog 6개, execution profile 6개, quality population 3개와 quality ratchet 15개를 관리한다. [Node 계약](../../scripts/governance-gates-contract.mjs)이 실제 source census와 소비자 설정을 exact-match하고, JaCoCo·Vitest·PIT의 측정 population까지 동결하므로 registry/source 한쪽에만 있는 ghost gate나 include 축소·exclude 확대에 의한 분모 축소 통과는 실패한다.
 
 | 계층 | 발견 계약 | 실행 경로 |
 |---|---|---|

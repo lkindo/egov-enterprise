@@ -68,6 +68,7 @@ function validate(registry) {
 
 const REQUIRED_GATE_SETS = [
   'GATESET-ARCHITECTURE',
+  'GATESET-FRONTEND-FORM-VALIDATION',
   'GATESET-FRONTEND-INVARIANTS',
   'GATESET-FRONTEND-VITEST',
   'GATESET-GOVERNANCE-HARNESS',
@@ -134,16 +135,17 @@ test('UI/UX foundation contract assets remain present in the required Node catal
   ].every((source) => UI_UX_FOUNDATION_CONTRACT_ASSETS.includes(source)));
 });
 
-test('registry keeps the eight authoritative gate sets and five runner catalogs', () => {
+test('registry keeps the nine authoritative gate sets and six runner catalogs', () => {
   const registry = loadGovernanceRegistry(registryPath);
   const runnerSets = registry.gateSets.filter(({ selector }) => selector.type !== 'java-class-annotation');
   const byId = new Map(runnerSets.map((set) => [set.id, set]));
 
   assert.deepEqual(registry.gateSets.map(({ id }) => id).sort(), REQUIRED_GATE_SETS);
-  assert.equal(runnerSets.length, 5);
+  assert.equal(runnerSets.length, 6);
   assert.ok(runnerSets.every(({ rules }) => rules === undefined));
   assert.equal(byId.get('GATESET-NODE-OPERATIONAL-CONTRACTS').selector.forbidSkips, true);
   assert.equal(byId.get('GATESET-FRONTEND-INVARIANTS').selector.forbidSkips, true);
+  assert.equal(byId.get('GATESET-FRONTEND-FORM-VALIDATION').selector.forbidSkips, true);
   const playwright = byId.get('GATESET-PLAYWRIGHT-E2E');
   assert.equal(playwright.requiredCiContext, 'e2e-test');
   assert.equal(playwright.selector.forbidSkips, undefined);

@@ -50,6 +50,8 @@
 /frontend/vitest.config.mts @lkindo
 /frontend/playwright.config.ts @lkindo
 /frontend/scripts/check-bundle-budget.mjs @lkindo
+/frontend/scripts/frontend-form-validation-census.mjs @lkindo
+/frontend/scripts/frontend-form-validation-census.test.mjs @lkindo
 /frontend/e2e/shard-duration-profile.json @lkindo
 /frontend/e2e/          @lkindo
 /frontend/e2e/**/*.spec.ts @lkindo
@@ -69,6 +71,7 @@
 /AGENTS.md             @lkindo
 /.agent/memory/        @lkindo
 /docs/03-guides/orchestration-protocol.md   @lkindo
+/docs/03-guides/frontend-form-validation-loop.md @lkindo
 /.agent/knowledge/**/artifacts/constitution.md @lkindo
 
 # DB 물리 스키마 — 되돌리기 어려운 변경
