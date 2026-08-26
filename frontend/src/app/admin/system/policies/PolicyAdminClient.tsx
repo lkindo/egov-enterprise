@@ -7,7 +7,6 @@ import { policyAdminService, SystemPolicy } from '@/services/foundation/system/P
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-;
 import dynamic from 'next/dynamic';
 import { Settings, Edit2, CheckCircle2 } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -26,14 +25,32 @@ import {
  FormItem,
  FormLabel,
  FormMessage,
+ FormErrorSummary,
 } from '@/components/ui/form';
 
-import { PolicySchema as GeneratedPolicySchema } from '@/types/generated-zod';
+import { PolicyUpdateRequestSchema } from '@/types/generated-zod';
 
-const policySchema = GeneratedPolicySchema.extend({
-  plcyTtl: z.string().min(1).max(100),
-  plcyCn: z.string().min(1).max(4000)
+export const policySchema = PolicyUpdateRequestSchema.extend({
+  plcyTtl: PolicyUpdateRequestSchema.shape.plcyTtl
+    .trim()
+    .min(1, '정책 제목을 입력해 주세요.')
+    .max(100, '정책 제목은 최대 100자까지 입력할 수 있습니다.'),
+  plcyCn: PolicyUpdateRequestSchema.shape.plcyCn
+    .trim()
+    .min(1, '정책 내용을 입력해 주세요.')
+    .max(4000, '정책 내용은 최대 4,000자까지 입력할 수 있습니다.'),
+}).superRefine((values, context) => {
+  const plainText = values.plcyCn.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+  if (!plainText) {
+    context.addIssue({ code: 'custom', path: ['plcyCn'], message: '정책 내용을 입력해 주세요.' });
+  }
 });
+
+const POLICY_FORM_LABELS = {
+ plcyTtl: '정책 제목',
+ plcyCn: '정책 내용',
+ 'root.server': '저장 오류',
+};
 
 type PolicyFormValues = z.infer<typeof policySchema>;
 
@@ -92,7 +109,8 @@ export default function PolicyAdminClient() {
  if (!selectedPolicy) return;
  // 정책 유형 코드가 없으면 PUT 경로가 잘못 구성되므로 사전 차단한다.
  if (!selectedPolicy.plcyTypeCd) {
- toast('정책 유형 코드가 없어 저장할 수 없습니다.', 'error');
+ form.setError('root.server', { type: 'server', message: '정책 유형 코드가 없어 저장할 수 없습니다.' });
+ void form.focusError('root.server', 'server');
  return;
  }
  try {
@@ -103,8 +121,10 @@ export default function PolicyAdminClient() {
  toast('정책이 성공적으로 수정되었습니다', 'success');
  setIsEditModalOpen(false);
  fetchPolicies();
- } catch {
- toast('정책 수정에 실패했습니다.', 'error');
+ } catch (error: unknown) {
+ if (!form.applyServerErrors(error)) {
+ toast('정책 수정에 실패했습니다. 입력값은 유지됩니다.', 'error');
+ }
  }
  };
 
@@ -179,7 +199,12 @@ export default function PolicyAdminClient() {
  />
 
  {/* Edit Modal */}
- <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
+ <Dialog
+ open={isEditModalOpen}
+ onOpenChange={(open) => {
+ if (!form.formState.isSubmitting) setIsEditModalOpen(open);
+ }}
+ >
  <DialogContent className="max-w-5xl rounded-lg overflow-hidden border-none shadow-2xl p-0">
  <div className="bg-surface-inverse p-8 text-surface-inverse-foreground flex items-center justify-between">
  <DialogHeader>
@@ -193,17 +218,20 @@ export default function PolicyAdminClient() {
  </div>
 
  <Form {...form}>
- <form onSubmit={form.handleSubmit(onFormSubmit)}>
+ <form onSubmit={form.handleSubmit(onFormSubmit)} noValidate>
  <div className="p-10 space-y-8 max-h-[70vh] overflow-y-auto custom-scrollbar text-left">
+ <FormErrorSummary labels={POLICY_FORM_LABELS} onNavigate={form.focusError} />
  <ShadcnFormField
  control={form.control}
  name="plcyTtl"
+ required
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-sm font-bold tracking-widest uppercase opacity-40 ml-2">정책 제목</FormLabel>
  <FormControl>
  <Input 
  {...field}
+ maxLength={100}
  placeholder="정책 제목을 입력하세요"
  className="h-11 rounded-lg border-2 border-border/50 focus:border-primary/50 bg-muted/50 font-bold text-lg"
  />
@@ -216,6 +244,7 @@ export default function PolicyAdminClient() {
  <ShadcnFormField
  control={form.control}
  name="plcyCn"
+ required
  render={({ field }) => (
  <FormItem className="space-y-3">
  <FormLabel className="text-sm font-bold tracking-widest uppercase opacity-40 ml-2">정책 내용</FormLabel>
@@ -237,7 +266,7 @@ export default function PolicyAdminClient() {
  * 수정 즉시 프론트엔드 인터페이스 및 정책 페이지에 반영됩니다.
  </div>
  <div className="flex gap-3">
- <Button variant="ghost" type="button" onClick={() => setIsEditModalOpen(false)} className="rounded-lg h-12 px-8 font-bold text-xs tracking-widest uppercase">취소</Button>
+ <Button variant="ghost" type="button" disabled={form.formState.isSubmitting} onClick={() => setIsEditModalOpen(false)} className="rounded-lg h-12 px-8 font-bold text-xs tracking-widest uppercase">취소</Button>
  <Button 
  type="submit"
  disabled={form.formState.isSubmitting}

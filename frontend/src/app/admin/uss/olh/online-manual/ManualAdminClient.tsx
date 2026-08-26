@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -12,6 +12,7 @@ import { Plus,
   RefreshCcw,
   FileText,
   Trash2,
+  Loader2,
   Edit2,
   ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -27,6 +28,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from '@/app/components/ui/toast';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { manualSchema } from '@/lib/validation/schemas';
@@ -34,12 +36,20 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
   FormControl,
+  FormErrorSummary,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
 import { z } from 'zod';
+
+const manualValidationLabels: Record<string, string> = {
+  onlnMnlNm: '매뉴얼 명칭',
+  onlnMnlSeCd: '매뉴얼 구분 코드',
+  onlnMnlDfn: '리소스 경로',
+  onlnMnlExpln: '상세 설명',
+};
 
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
@@ -57,6 +67,9 @@ export default function ManualAdminClient({
   const searchParams = useSearchParams();
 
   const [isSaving, setIsSaving] = useState(false);
+  const savePendingRef = useRef(false);
+  const deletePendingRef = useRef(false);
+  const [deletingManualId, setDeletingManualId] = useState<number | null>(null);
   const [searchKeyword, setSearchKeyword] = useState('');
   /** 타이핑마다 서버를 때리지 않도록 300ms 디바운스(감사 P1-8). */
   const debouncedKeyword = useDebouncedValue(searchKeyword, 300);
@@ -104,12 +117,14 @@ export default function ManualAdminClient({
   });
 
   const handleOpenAdd = () => {
+    if (savePendingRef.current || deletePendingRef.current) return;
     setMode('create');
     form.reset({ onlnMnlSn: undefined, onlnMnlNm: '', onlnMnlExpln: '', onlnMnlDfn: '', onlnMnlSeCd: 'GNR' });
     setIsFormOpen(true);
   };
 
   const handleOpenEdit = (manual: ManualDto) => {
+    if (savePendingRef.current || deletePendingRef.current) return;
     setMode('edit');
     form.reset({
       onlnMnlSn: manual.onlnMnlSn,
@@ -121,7 +136,14 @@ export default function ManualAdminClient({
     setIsFormOpen(true);
   };
 
+  const handleFormOpenChange = (open: boolean) => {
+    if (savePendingRef.current || deletePendingRef.current) return;
+    setIsFormOpen(open);
+  };
+
   const onFormSubmit = async (values: z.infer<typeof manualSchema>) => {
+    if (savePendingRef.current || deletePendingRef.current) return;
+    savePendingRef.current = true;
     setIsSaving(true);
     // 스키마는 설명·경로를 optional 로 두지만 ManualDto 계약은 필수다 —
     // 캐스팅으로 덮지 않고 빈 문자열로 정규화해 실제 계약을 맞춘다.
@@ -142,31 +164,43 @@ export default function ManualAdminClient({
       setIsFormOpen(false);
       refetch();
     } catch (err) {
-      toast(err instanceof Error ? err.message : '저장에 실패했습니다.', 'error');
+      if (!form.applyServerErrors(err)) {
+        toast(extractErrorMessage(err, '저장에 실패했습니다.'), 'error');
+      }
     } finally {
+      savePendingRef.current = false;
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (manual: ManualDto) => {
-    if (!manual.onlnMnlSn) return;
-    // native confirm 은 대상이 무엇인지 알려주지 않는다 → useConfirm + 대상명 노출(감사 P1-9).
-    const ok = await confirm({
-      title: '매뉴얼 삭제',
-      message: `'${manual.onlnMnlNm}' 매뉴얼을 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?`,
-      variant: 'destructive',
-      confirmText: '삭제',
-    });
-    if (!ok) return;
+    if (!manual.onlnMnlSn || savePendingRef.current || deletePendingRef.current) return;
+    deletePendingRef.current = true;
+    const manualId = manual.onlnMnlSn;
+    setDeletingManualId(manualId);
 
     try {
-      await manualAdminService.deleteManual(manual.onlnMnlSn);
+      // native confirm 은 대상이 무엇인지 알려주지 않는다 → useConfirm + 대상명 노출(감사 P1-9).
+      const ok = await confirm({
+        title: '매뉴얼 삭제',
+        message: `'${manual.onlnMnlNm}' 매뉴얼을 삭제합니다. 되돌릴 수 없습니다. 계속하시겠습니까?`,
+        variant: 'destructive',
+        confirmText: '삭제',
+      });
+      if (!ok) return;
+
+      await manualAdminService.deleteManual(manualId);
       toast(`'${manual.onlnMnlNm}' 매뉴얼을 삭제했습니다.`, 'success');
       refetch();
     } catch (err) {
       toast(err instanceof Error ? err.message : '삭제에 실패했습니다.', 'error');
+    } finally {
+      deletePendingRef.current = false;
+      setDeletingManualId(null);
     }
   };
+
+  const isWritePending = isSaving || deletingManualId !== null;
 
   const columns: Column<ManualDto>[] = [
     {
@@ -213,6 +247,7 @@ export default function ManualAdminClient({
             variant="ghost"
             size="sm"
             aria-label={`${item.onlnMnlNm} 수정`}
+            disabled={isWritePending}
             onClick={() => handleOpenEdit(item)}
             className="h-10 w-10 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/5 transition-all"
           >
@@ -221,11 +256,15 @@ export default function ManualAdminClient({
           <Button
             variant="ghost"
             size="sm"
-            aria-label={`${item.onlnMnlNm} 삭제`}
+            aria-label={`${item.onlnMnlNm} ${deletingManualId === item.onlnMnlSn ? '삭제 중…' : '삭제'}`}
+            aria-busy={deletingManualId === item.onlnMnlSn || undefined}
+            disabled={isWritePending}
             onClick={() => handleDelete(item)}
             className="h-10 w-10 rounded-lg text-rose-400 hover:text-rose-600 hover:bg-rose-500/10 transition-all"
           >
-            <Trash2 size={16} aria-hidden="true" />
+            {deletingManualId === item.onlnMnlSn
+              ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+              : <Trash2 size={16} aria-hidden="true" />}
           </Button>
         </div>
       )
@@ -251,7 +290,7 @@ export default function ManualAdminClient({
             <RefreshCcw size={16} className={cn(isFetching && "animate-spin")} aria-hidden="true" />
             새로고침
           </Button>
-          <Button size="sm" onClick={handleOpenAdd} className="gap-2">
+          <Button size="sm" disabled={isWritePending} onClick={handleOpenAdd} className="gap-2">
             <Plus size={16} aria-hidden="true" /> 새 매뉴얼 등록
           </Button>
         </>
@@ -295,10 +334,15 @@ export default function ManualAdminClient({
       />
 
 
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+      <Dialog open={isFormOpen} onOpenChange={handleFormOpenChange}>
         <DialogContent className="sm:max-w-[500px] border-none shadow-2xl rounded-lg overflow-hidden p-0 bg-card">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onFormSubmit)}>
+            <form
+              noValidate
+              onSubmit={(event) => {
+                void form.handleSubmit(onFormSubmit)(event);
+              }}
+            >
               <DialogHeader className="p-8 pb-0 space-y-4">
                 <div className="w-16 h-11 bg-primary text-white rounded-lg flex items-center justify-center shadow-2xl shadow-primary/30 mx-auto">
                   {mode === 'edit' ? <Edit2 size={28} aria-hidden="true" /> : <Plus size={28} aria-hidden="true" />}
@@ -314,15 +358,18 @@ export default function ManualAdminClient({
               </DialogHeader>
 
               <div className="p-8 space-y-8 text-left">
+                <FormErrorSummary labels={manualValidationLabels} onNavigate={form.focusError} />
                 <FormField
                   control={form.control}
                   name="onlnMnlNm"
+                  required
                   render={({ field }) => (
                     <FormItem className="space-y-3">
                       <FormLabel className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-2">매뉴얼 명칭</FormLabel>
                       <FormControl>
                         <Input
                           {...field}
+                          maxLength={100}
                           placeholder="매뉴얼 명을 입력하세요..."
                           className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-lg font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                         />
@@ -341,6 +388,7 @@ export default function ManualAdminClient({
                       <FormControl>
                         <Input
                           {...field}
+                          maxLength={1000}
                           placeholder="/src/docs/manuals/..."
                           className="h-11 px-8 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                         />
@@ -359,6 +407,7 @@ export default function ManualAdminClient({
                       <FormControl>
                         <Textarea
                           {...field}
+                          maxLength={4000}
                           placeholder="매뉴얼 설명을 입력하세요..."
                           className="min-h-[120px] p-8 rounded-lg border-2 border-border bg-muted/50 text-sm font-bold outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
                         />
@@ -373,14 +422,16 @@ export default function ManualAdminClient({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsFormOpen(false)}
+                  disabled={isWritePending}
+                  onClick={() => handleFormOpenChange(false)}
                   className="h-11 px-10 rounded-lg border-2 border-border font-bold text-xs tracking-[0.2em] hover:bg-muted transition-all flex-1"
                 >
                   취소
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSaving}
+                  disabled={isWritePending || form.formState.isSubmitting}
+                  aria-busy={isSaving || undefined}
                   className="h-11 px-16 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-[0.3em] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex-1"
                 >
                   {isSaving ? '처리 중...' : mode === 'edit' ? '수정 완료' : '등록 완료'}

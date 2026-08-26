@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
@@ -32,6 +32,7 @@ export default function SecurityDeptAuthorityClient() {
  const [searchKeyword, setSearchKeyword] = useState('');
  const [selectedAuthorCode, setSelectedAuthorCode] = useState<string | null>(null);
  const [rolePage, setRolePage] = useState(1);
+ const saveRequestRef = useRef(false);
 
  const { data: deptsData, isLoading: deptsLoading, error: deptsError, refetch: refetchDepts } = useQuery({
  queryKey: [...DEPTS_KEY, DEPT_LIST_SIZE],
@@ -123,6 +124,7 @@ export default function SecurityDeptAuthorityClient() {
   * native confirm 대신 useConfirm 을 쓰고, 본문에 대상 부서명·권한명을 그대로 노출한다.
   */
  const handleSave = async () => {
+ if (saveRequestRef.current || saveMutation.isPending) return;
  if (!selectedDept) {
  toast('설정할 부서를 먼저 선택해 주세요.', 'info');
  return;
@@ -135,6 +137,8 @@ export default function SecurityDeptAuthorityClient() {
  const deptName = depts.find(d => d.ognzId === selectedDept)?.ognzNm || selectedDept;
  const roleName = roles.find(r => r.authrtCd === selectedAuthorCode)?.authrtNm || selectedAuthorCode;
 
+ saveRequestRef.current = true;
+ try {
  const ok = await confirm({
  title: '조직 권한 일괄 배포',
  message: `'${deptName}' 부서의 모든 구성원에게 '${roleName}'(${selectedAuthorCode}) 권한을 강제 적용합니다. 구성원이 보유한 기존 개별 권한은 파기됩니다. 계속하시겠습니까?`,
@@ -143,7 +147,14 @@ export default function SecurityDeptAuthorityClient() {
  });
  if (!ok) return;
 
- saveMutation.mutate(selectedAuthorCode);
+ try {
+ await saveMutation.mutateAsync(selectedAuthorCode);
+ } catch {
+ // useMutation.onError가 사용자 피드백을 소유한다. action boundary 밖으로 예외를 흘리지 않는다.
+ }
+ } finally {
+ saveRequestRef.current = false;
+ }
  };
 
  const currentDept = depts.find(d => d.ognzId === selectedDept);
@@ -230,7 +241,12 @@ export default function SecurityDeptAuthorityClient() {
       detailTitle="권한 그룹 선택"
       detailDescription={selectedDept ? '선택한 권한 그룹이 이 부서 구성원 전체에 적용됩니다.' : undefined}
       detailActions={
-        <Button size="sm" onClick={() => void handleSave()} disabled={!selectedAuthorCode || saveMutation.isPending}>
+        <Button
+          size="sm"
+          aria-busy={saveMutation.isPending || undefined}
+          onClick={() => void handleSave()}
+          disabled={!selectedAuthorCode || saveMutation.isPending}
+        >
           <Save size={16} aria-hidden="true" /> {saveMutation.isPending ? '적용 중…' : '부서 전체에 적용'}
         </Button>
       }

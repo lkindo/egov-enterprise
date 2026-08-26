@@ -18,6 +18,8 @@ interface StandardModalProps {
   children: React.ReactNode;
   footer?: React.ReactNode;
   maxWidth?: 'sm' | 'md' | 'lg' | 'xl' | '2xl' | '3xl' | '4xl' | '5xl';
+  /** 저장 중 ESC/배경/닫기 버튼으로 작성 상태를 잃지 않도록 닫기 요청을 잠근다. */
+  closeDisabled?: boolean;
 }
 
 /**
@@ -54,12 +56,13 @@ export function StandardModal({
   children,
   footer,
   maxWidth = 'md',
+  closeDisabled = false,
 }: StandardModalProps) {
   return (
     <Dialog
       open={isOpen}
       onOpenChange={(open) => {
-        if (!open) onClose();
+        if (!open && !closeDisabled) onClose();
       }}
     >
       <DialogContent
@@ -71,6 +74,15 @@ export function StandardModal({
         // Radix 는 DialogTitle 로 aria-labelledby 를 이미 걸지만,
         // 종전 계약(`aria-label={title}`)에 의존하는 호출부/테스트를 위해 유지한다.
         aria-label={title}
+        onEscapeKeyDown={(event) => {
+          if (closeDisabled) event.preventDefault();
+        }}
+        onPointerDownOutside={(event) => {
+          if (closeDisabled) event.preventDefault();
+        }}
+        onInteractOutside={(event) => {
+          if (closeDisabled) event.preventDefault();
+        }}
         className={cn(
           'flex flex-col gap-0 overflow-hidden p-0',
           'w-[calc(100%-2rem)] border-border shadow-xl',
@@ -88,6 +100,7 @@ export function StandardModal({
               variant="ghost"
               size="icon"
               aria-label="닫기"
+              disabled={closeDisabled}
               className="rounded-lg h-9 w-9 text-muted-foreground hover:text-foreground"
             >
               <X size={18} />

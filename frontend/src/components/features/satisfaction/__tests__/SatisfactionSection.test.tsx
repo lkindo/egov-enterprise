@@ -1,9 +1,10 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import SatisfactionSection from '../SatisfactionSection';
 import { satisfactionService } from '@/services/business/board/SatisfactionService';
+import { satisfactionCreateSchema } from '../satisfaction-form-validation';
 
 vi.mock('@/services/business/board/SatisfactionService', () => ({
   satisfactionService: {
@@ -32,6 +33,7 @@ describe('SatisfactionSection', () => {
     vi.clearAllMocks();
     mocked.list.mockResolvedValue([]);
     mocked.average.mockResolvedValue({ average: 0 });
+    mocked.remove.mockResolvedValue(undefined);
   });
 
   it('게시글 경로(bbsId/pstSn)를 서비스에 그대로 전달한다', async () => {
@@ -41,6 +43,21 @@ describe('SatisfactionSection', () => {
       expect(mocked.list).toHaveBeenCalledWith('BBS_01', 1);
       expect(mocked.average).toHaveBeenCalledWith('BBS_01', 1);
     });
+  });
+
+  it('generated SatisfactionDto와 entity/화면의 점수·내용·Y/N 경계를 보존한다', () => {
+    const valid = {
+      dgstfnScr: 5,
+      dgstfnCn: '가'.repeat(4000),
+      useYn: 'Y',
+    };
+
+    expect(satisfactionCreateSchema.safeParse(valid).success).toBe(true);
+    expect(satisfactionCreateSchema.safeParse({ ...valid, dgstfnScr: 0 }).success).toBe(false);
+    expect(satisfactionCreateSchema.safeParse({ ...valid, dgstfnScr: 6 }).success).toBe(false);
+    expect(satisfactionCreateSchema.safeParse({ ...valid, dgstfnScr: 1.5 }).success).toBe(false);
+    expect(satisfactionCreateSchema.safeParse({ ...valid, dgstfnCn: '가'.repeat(4001) }).success).toBe(false);
+    expect(satisfactionCreateSchema.safeParse({ ...valid, useYn: 'X' }).success).toBe(false);
   });
 
   it('평균과 응답 수를 표시한다', async () => {
@@ -74,6 +91,64 @@ describe('SatisfactionSection', () => {
 
     expect(await screen.findByText('별점을 선택해 주세요.')).toBeInTheDocument();
     expect(mocked.create).not.toHaveBeenCalled();
+    const scoreGroup = screen.getByRole('radiogroup', { name: '별점' });
+    expect(scoreGroup).toHaveAttribute('aria-invalid', 'true');
+    await waitFor(() => expect(scoreGroup).toHaveFocus());
+  });
+
+  it('의견 길이 오류는 write 없이 인라인으로 연결하고 의견 입력으로 이동한다', async () => {
+    const user = userEvent.setup();
+    renderWidget();
+    await user.click(await screen.findByRole('radio', { name: '4점' }));
+    const content = screen.getByRole('textbox', { name: '만족도 의견' });
+    fireEvent.change(content, { target: { value: '가'.repeat(4001) } });
+
+    await user.click(screen.getByRole('button', { name: '만족도 등록' }));
+
+    expect(mocked.create).not.toHaveBeenCalled();
+    expect(content).toHaveAttribute('aria-invalid', 'true');
+    expect(await screen.findByRole('alert', { name: /입력 오류/ })).toHaveTextContent('최대 4000자');
+    await waitFor(() => expect(content).toHaveFocus());
+  });
+
+  it('서버 필드 오류를 인라인으로 연결하고 별점·의견을 보존한다', async () => {
+    mocked.create.mockRejectedValueOnce({
+      response: { data: { errors: [{ field: 'dgstfnCn', message: '의견에 사용할 수 없는 표현이 있습니다.' }] } },
+    });
+    const user = userEvent.setup();
+    renderWidget();
+    await user.click(await screen.findByRole('radio', { name: '4점' }));
+    const content = screen.getByRole('textbox', { name: '만족도 의견' });
+    await user.type(content, '보존할 의견');
+
+    await user.click(screen.getByRole('button', { name: '만족도 등록' }));
+
+    expect(await screen.findByText('의견에 사용할 수 없는 표현이 있습니다.')).toBeVisible();
+    expect(content).toHaveValue('보존할 의견');
+    expect(screen.getByRole('radio', { name: '4점' })).toHaveAttribute('aria-checked', 'true');
+    expect(content).toHaveAttribute('aria-invalid', 'true');
+    await waitFor(() => expect(content).toHaveFocus());
+  });
+
+  it('pending 시작 전 동기 잠금으로 같은 submit을 한 번만 보낸다', async () => {
+    let resolveCreate!: (value: number) => void;
+    mocked.create.mockReturnValueOnce(new Promise<number>((resolve) => {
+      resolveCreate = resolve;
+    }));
+    const user = userEvent.setup();
+    renderWidget();
+    await user.click(await screen.findByRole('radio', { name: '4점' }));
+    const submit = screen.getByRole('button', { name: '만족도 등록' });
+    const form = submit.closest('form');
+
+    fireEvent.submit(form!);
+    fireEvent.submit(form!);
+
+    await waitFor(() => expect(mocked.create).toHaveBeenCalledTimes(1));
+    expect(submit).toBeDisabled();
+    await act(async () => {
+      resolveCreate(1);
+    });
   });
 
   it('별점을 고르고 제출하면 선택한 점수가 그대로 전달된다', async () => {
@@ -81,7 +156,7 @@ describe('SatisfactionSection', () => {
     mocked.create.mockResolvedValue(1);
     renderWidget();
 
-    await user.click(await screen.findByRole('button', { name: '4점' }));
+    await user.click(await screen.findByRole('radio', { name: '4점' }));
     await user.click(screen.getByRole('button', { name: '만족도 등록' }));
 
     await waitFor(() => {
@@ -108,6 +183,26 @@ describe('SatisfactionSection', () => {
 
     expect(await screen.findByText('본인 확인에 실패했습니다.')).toBeInTheDocument();
     expect(mocked.remove).toHaveBeenCalledWith('BBS_01', 1, 7);
+  });
+
+  it('삭제는 같은 tick 중복 실행을 막고 pending 상태를 안내한다', async () => {
+    let rejectDelete!: (reason?: unknown) => void;
+    mocked.list.mockResolvedValue([{ dgstfnSn: 7, dgstfnScr: 5, userNm: '삭제대상', useYn: 'Y' }]);
+    mocked.remove.mockReturnValueOnce(new Promise((_, reject) => { rejectDelete = reject; }));
+    renderWidget();
+    const deleteButton = await screen.findByRole('button', { name: '삭제대상의 만족도 삭제' });
+
+    act(() => {
+      deleteButton.click();
+      deleteButton.click();
+    });
+
+    await waitFor(() => expect(mocked.remove).toHaveBeenCalledTimes(1));
+    const pendingButton = screen.getByRole('button', { name: '삭제대상의 만족도 삭제 중…' });
+    expect(pendingButton).toBeDisabled();
+    expect(pendingButton).toHaveAttribute('aria-busy', 'true');
+    await act(async () => rejectDelete(new Error('삭제 처리 실패')));
+    expect(await screen.findByText('삭제 처리 실패')).toBeVisible();
   });
 
   it('만족도가 없으면 안내 문구를 보여준다', async () => {

@@ -63,6 +63,7 @@ export default function MailHistoryHubClient() {
   const confirm = useConfirm();
   const searchInputRef = useRef<HTMLInputElement>(null);
   const mailButtonRefs = useRef(new Map<number, HTMLButtonElement>());
+  const deleteRequestRef = useRef(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   const [page, setPage] = useState(1);
   const [selectedMailId, setSelectedMailId] = useState<number | null>(null);
@@ -107,6 +108,9 @@ export default function MailHistoryHubClient() {
   });
 
   const handleDelete = useCallback(async (mail: SentMail) => {
+    if (deleteRequestRef.current || deleteMutation.isPending) return;
+    deleteRequestRef.current = true;
+    try {
     const confirmed = await confirm({
       title: '메일 이력 삭제',
       message: `'${mail.sj}' 발송 이력을 삭제합니다. 삭제한 이력은 복구할 수 없습니다.`,
@@ -114,8 +118,12 @@ export default function MailHistoryHubClient() {
       variant: 'destructive',
     });
 
-    if (confirmed) {
-      deleteMutation.mutate(mail.emlDsptchSn);
+      if (!confirmed) return;
+      await deleteMutation.mutateAsync(mail.emlDsptchSn);
+    } catch {
+      // useMutation.onError가 사용자 피드백을 소유한다. action boundary 밖으로 예외를 흘리지 않는다.
+    } finally {
+      deleteRequestRef.current = false;
     }
   }, [confirm, deleteMutation]);
 
@@ -280,12 +288,13 @@ export default function MailHistoryHubClient() {
             variant="destructive"
             size="sm"
             data-testid="mail-detail-delete-btn"
-            aria-label={`선택한 메일 ${selectedMail.sj} 발송 이력 삭제`}
+            aria-label={`선택한 메일 ${selectedMail.sj} 발송 이력 ${deleteMutation.isPending ? '삭제 중' : '삭제'}`}
+            aria-busy={deleteMutation.isPending || undefined}
             disabled={deleteMutation.isPending}
             onClick={() => { void handleDelete(selectedMail); }}
           >
             <Trash2 aria-hidden="true" />
-            이력 삭제
+            {deleteMutation.isPending ? '삭제 중…' : '이력 삭제'}
           </Button>
         </>
       ) : undefined}

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -10,7 +10,6 @@ import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { StandardFileUploader } from '@/app/components/ui/standard-file-uploader';
 import { AttachmentImage } from '@/app/components/ui/attachment-image';
-;
 import { Banner, Popup } from '@/types/foundation/banner';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -21,6 +20,7 @@ import { Plus,
  Image as ImageIcon, 
  ExternalLink, 
  Trash2, 
+ Loader2,
  Monitor, 
  Calendar, 
  Zap, 
@@ -32,6 +32,7 @@ import { Plus,
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
  saveBannerAction,
@@ -44,6 +45,7 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
  Form,
  FormControl,
+ FormErrorSummary,
  FormField as ShadcnFormField,
  FormItem,
  FormLabel,
@@ -52,22 +54,41 @@ import {
 
 import { BannerDtoSchema, PopupDtoSchema } from '@/types/generated-zod';
 
-const bannerSchema = BannerDtoSchema.extend({
- bnrNm: z.string().min(1),
+export const bannerSchema = BannerDtoSchema.extend({
+ bnrNm: BannerDtoSchema.shape.bnrNm.min(1),
  sortOrdr: z.coerce.number().min(0, '정렬 순서는 0 이상의 숫자여야 합니다.'),
- rfltYn: z.enum(['Y', 'N']),
+ rfltYn: BannerDtoSchema.shape.rfltYn.unwrap(),
 });
 
-const popupSchema = PopupDtoSchema.extend({
- popupTtlNm: z.string().min(1),
- ntceBgnde: z.string().min(1),
- ntceEndde: z.string().min(1),
- popupWdthPstn: z.coerce.number().min(0) as any,
- popupVrtcPstn: z.coerce.number().min(0) as any,
- popupWdthSz: z.coerce.number().min(100) as any,
- popupVrtcSz: z.coerce.number().min(100) as any,
- ntceYn: z.enum(['Y', 'N']),
- stopvewSetupYn: z.enum(['Y', 'N']),
+const popupNumberSchema = (
+ generatedField: z.ZodOptional<z.ZodString>,
+ minimum: number,
+) => z.coerce.string()
+ .pipe(generatedField.unwrap().min(1, '숫자를 입력하세요.'))
+ .transform(Number)
+ .pipe(z.number().min(minimum));
+
+const isoDateSchema = (generatedField: z.ZodOptional<z.ZodString>) => generatedField.unwrap()
+ .min(1, '게시 일자를 입력하세요.')
+ .regex(/^\d{4}-\d{2}-\d{2}$/, '게시 일자는 YYYY-MM-DD 형식이어야 합니다.')
+ .refine((value) => {
+ const [year, month, day] = value.split('-').map(Number);
+ const parsed = new Date(Date.UTC(year, month - 1, day));
+ return parsed.getUTCFullYear() === year
+ && parsed.getUTCMonth() === month - 1
+ && parsed.getUTCDate() === day;
+ }, '유효한 게시 일자를 입력하세요.');
+
+export const popupSchema = PopupDtoSchema.extend({
+ popupTtlNm: PopupDtoSchema.shape.popupTtlNm.min(1),
+ ntceBgnde: isoDateSchema(PopupDtoSchema.shape.ntceBgnde),
+ ntceEndde: isoDateSchema(PopupDtoSchema.shape.ntceEndde),
+ popupWdthPstn: popupNumberSchema(PopupDtoSchema.shape.popupWdthPstn, 0),
+ popupVrtcPstn: popupNumberSchema(PopupDtoSchema.shape.popupVrtcPstn, 0),
+ popupWdthSz: popupNumberSchema(PopupDtoSchema.shape.popupWdthSz, 100),
+ popupVrtcSz: popupNumberSchema(PopupDtoSchema.shape.popupVrtcSz, 100),
+ ntceYn: PopupDtoSchema.shape.ntceYn.unwrap(),
+ stopvewSetupYn: PopupDtoSchema.shape.stopvewSetupYn.unwrap(),
 }).refine(data => {
  if (!data.ntceBgnde || !data.ntceEndde) return true;
  const start = data.ntceBgnde.replace(/\D/g, '');
@@ -78,6 +99,9 @@ const popupSchema = PopupDtoSchema.extend({
  message: '종료일은 시작일보다 빠를 수 없습니다.',
  path: ['ntceEndde']
  });
+
+type BannerFormValues = z.infer<typeof bannerSchema>;
+type PopupFormValues = z.infer<typeof popupSchema>;
 
 
 interface BannerAdminClientProps {
@@ -125,8 +149,14 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  const [isModalOpen, setIsOpen] = useState(false);
  const [editingItem, setEditingItem] = useState<Banner | Popup | null>(null);
  const [formFiles, setFormFiles] = useState<File[]>([]);
+ const bannerValidationLock = useRef(false);
+ const popupValidationLock = useRef(false);
+ const bannerSubmitLock = useRef(false);
+ const popupSubmitLock = useRef(false);
+ const deletePendingRef = useRef(false);
+ const [deletingAssetKey, setDeletingAssetKey] = useState<string | null>(null);
 
- const bannerForm = useAppForm(bannerSchema, {
+ const bannerForm = useAppForm<typeof bannerSchema, BannerFormValues>(bannerSchema, {
  defaultValues: {
  bnrNm: '',
  linkUrl: '',
@@ -136,19 +166,23 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  }
  });
 
- const popupForm = useAppForm(popupSchema, {
+ const popupForm = useAppForm<typeof popupSchema, PopupFormValues>(popupSchema, {
  defaultValues: {
  popupTtlNm: '',
  ntceBgnde: '',
  ntceEndde: '',
- popupWdthPstn: 0 as any,
- popupVrtcPstn: 0 as any,
- popupWdthSz: 400 as any,
- popupVrtcSz: 400 as any,
- ntceYn: 'Y' as any,
- stopvewSetupYn: 'Y' as any
+ popupWdthPstn: 0,
+ popupVrtcPstn: 0,
+ popupWdthSz: 400,
+ popupVrtcSz: 400,
+ ntceYn: 'Y',
+ stopvewSetupYn: 'Y'
  }
  });
+ const isAssetSubmitting = activeTab === 'banner'
+ ? bannerForm.formState.isSubmitting
+ : popupForm.formState.isSubmitting;
+ const isAssetWritePending = isAssetSubmitting || deletingAssetKey !== null;
 
  const resetBannerForm = bannerForm.reset;
  const resetPopupForm = popupForm.reset;
@@ -213,20 +247,31 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
   const popupTotal = popupPageData?.total ?? (popupError ? 0 : initialPopups.length);
 
  const handleCreate = () => {
+ if (bannerValidationLock.current || popupValidationLock.current
+ || bannerSubmitLock.current || popupSubmitLock.current || deletePendingRef.current || isModalOpen) return;
  setEditingItem(null);
  setFormFiles([]);
  setIsOpen(true);
  };
 
  const handleEdit = (item: Banner | Popup) => {
+ if (bannerValidationLock.current || popupValidationLock.current
+ || bannerSubmitLock.current || popupSubmitLock.current || deletePendingRef.current || isModalOpen) return;
  setEditingItem(item);
  setFormFiles([]);
  setIsOpen(true);
  };
 
  /** [P1-9] 확인 본문에 대상 식별자(명칭)를 노출해 오삭제를 막는다. */
- const handleDelete = async (id: string | number, name: string) => {
- const kind = activeTab === 'banner' ? '배너' : '팝업';
+ const handleDelete = async (assetType: 'banner' | 'popup', id: string | number, name: string) => {
+ if (deletePendingRef.current || bannerValidationLock.current || popupValidationLock.current
+ || bannerSubmitLock.current || popupSubmitLock.current || isModalOpen) return;
+ deletePendingRef.current = true;
+ const assetKey = `${assetType}:${id}`;
+ const kind = assetType === 'banner' ? '배너' : '팝업';
+ setDeletingAssetKey(assetKey);
+
+ try {
  const ok = await confirm({
  title: `${kind} 삭제 확인`,
  message: `‘${name}’ ${kind}을(를) 시스템에서 영구적으로 삭제합니다. 게시 중인 경우 즉시 중단되며 되돌릴 수 없습니다.`,
@@ -236,23 +281,28 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  if (!ok) return;
 
- try {
- const res = activeTab === 'banner'
+ const res = assetType === 'banner'
  ? await deleteBannerAction(null, Number(id))
  : await deletePopupAction(null, Number(id));
 
  if (res.success) {
  toast(res.message, 'success');
- activeTab === 'banner' ? refetchBanners() : refetchPopups();
+ if (assetType === 'banner') void refetchBanners();
+ else void refetchPopups();
  } else {
  toast(res.message, 'error');
  }
  } catch {
  toast('자산 삭제 처리 중 예외가 발생했습니다.', 'error');
+ } finally {
+ deletePendingRef.current = false;
+ setDeletingAssetKey(null);
  }
  };
 
- const onBannerSubmit = async (values: any) => {
+ const onBannerSubmit = async (values: z.infer<typeof bannerSchema>) => {
+ if (bannerSubmitLock.current || popupSubmitLock.current || deletePendingRef.current) return;
+ bannerSubmitLock.current = true;
  try {
  const data = {
  ...values,
@@ -280,15 +330,22 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  toast(res.message, 'success');
  setIsOpen(false);
  refetchBanners();
- } else {
+ } else if (!bannerForm.applyServerErrors(res)) {
  toast(res.message, 'error');
  }
- } catch {
+ } catch (error) {
+ if (!bannerForm.applyServerErrors(error)) {
  toast('데이터 처리 중 오류가 발생했습니다.', 'error');
+ }
+ } finally {
+ bannerSubmitLock.current = false;
+ bannerValidationLock.current = false;
  }
  };
 
- const onPopupSubmit = async (values: any) => {
+ const onPopupSubmit = async (values: z.infer<typeof popupSchema>) => {
+ if (popupSubmitLock.current || bannerSubmitLock.current || deletePendingRef.current) return;
+ popupSubmitLock.current = true;
  try {
  const data = {
  ...values,
@@ -326,12 +383,55 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  toast(res.message, 'success');
  setIsOpen(false);
  refetchPopups();
- } else {
+ } else if (!popupForm.applyServerErrors(res)) {
  toast(res.message, 'error');
  }
- } catch {
+ } catch (error) {
+ if (!popupForm.applyServerErrors(error)) {
  toast('데이터 처리 중 오류가 발생했습니다.', 'error');
  }
+ } finally {
+ popupSubmitLock.current = false;
+ popupValidationLock.current = false;
+ }
+ };
+
+ const closeAssetModal = () => {
+ if (bannerValidationLock.current || popupValidationLock.current
+ || bannerSubmitLock.current || popupSubmitLock.current || deletePendingRef.current) return;
+ setIsOpen(false);
+ };
+
+ const submitBannerForm = (event?: React.BaseSyntheticEvent) => {
+ if (bannerValidationLock.current || popupValidationLock.current
+ || bannerSubmitLock.current || popupSubmitLock.current || deletePendingRef.current) {
+ event?.preventDefault();
+ return;
+ }
+ bannerValidationLock.current = true;
+ const submit = bannerForm.handleSubmit(onBannerSubmit, () => {
+ bannerValidationLock.current = false;
+ });
+ void submit(event).catch(() => {
+ bannerValidationLock.current = false;
+ bannerSubmitLock.current = false;
+ });
+ };
+
+ const submitPopupForm = (event?: React.BaseSyntheticEvent) => {
+ if (popupValidationLock.current || bannerValidationLock.current
+ || popupSubmitLock.current || bannerSubmitLock.current || deletePendingRef.current) {
+ event?.preventDefault();
+ return;
+ }
+ popupValidationLock.current = true;
+ const submit = popupForm.handleSubmit(onPopupSubmit, () => {
+ popupValidationLock.current = false;
+ });
+ void submit(event).catch(() => {
+ popupValidationLock.current = false;
+ popupSubmitLock.current = false;
+ });
  };
 
  const bannerColumns: Column<Banner>[] = [
@@ -395,11 +495,21 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className: 'text-right',
  accessor: (item: Banner) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
+ <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 수정`} disabled={isAssetWritePending || isModalOpen} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
  <Settings size={16} aria-hidden="true" />
  </Button>
- <Button variant="ghost" size="icon" aria-label={`${item.bnrNm} 배너 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.bnrSn, item.bnrNm)}>
- <Trash2 size={16} aria-hidden="true" />
+ <Button
+ variant="ghost"
+ size="icon"
+ aria-label={`${item.bnrNm} 배너 ${deletingAssetKey === `banner:${item.bnrSn}` ? '삭제 중…' : '삭제'}`}
+ aria-busy={deletingAssetKey === `banner:${item.bnrSn}` || undefined}
+ disabled={isAssetWritePending || isModalOpen}
+ className="h-10 w-10 text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all"
+ onClick={() => handleDelete('banner', item.bnrSn, item.bnrNm)}
+ >
+ {deletingAssetKey === `banner:${item.bnrSn}`
+ ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+ : <Trash2 size={16} aria-hidden="true" />}
  </Button>
  </div>
  )
@@ -451,11 +561,21 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  className: 'text-right w-32',
  accessor: (item: Popup) => (
  <div className="flex justify-end gap-2 pr-4">
- <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 수정`} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
+ <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 수정`} disabled={isAssetWritePending || isModalOpen} className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all font-bold" onClick={() => handleEdit(item)}>
  <Settings size={16} aria-hidden="true" />
  </Button>
- <Button variant="ghost" size="icon" aria-label={`${item.popupTtlNm} 팝업 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all" onClick={() => handleDelete(item.popupSn, item.popupTtlNm)}>
- <Trash2 size={16} aria-hidden="true" />
+ <Button
+ variant="ghost"
+ size="icon"
+ aria-label={`${item.popupTtlNm} 팝업 ${deletingAssetKey === `popup:${item.popupSn}` ? '삭제 중…' : '삭제'}`}
+ aria-busy={deletingAssetKey === `popup:${item.popupSn}` || undefined}
+ disabled={isAssetWritePending || isModalOpen}
+ className="h-10 w-10 text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all"
+ onClick={() => handleDelete('popup', item.popupSn, item.popupTtlNm)}
+ >
+ {deletingAssetKey === `popup:${item.popupSn}`
+ ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+ : <Trash2 size={16} aria-hidden="true" />}
  </Button>
  </div>
  )
@@ -505,7 +625,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
               <Monitor size={14} aria-hidden="true" /> 팝업 설정
             </button>
           </div>
-          <Button size="sm" onClick={handleCreate}>
+          <Button size="sm" onClick={handleCreate} disabled={isAssetWritePending || isModalOpen}>
             <Plus size={16} aria-hidden="true" /> 신규 {activeTab === 'banner' ? '배너' : '팝업'} 등록
           </Button>
         </div>
@@ -566,18 +686,19 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
 
  <StandardModal
  isOpen={isModalOpen}
- onClose={() => setIsOpen(false)}
+ onClose={closeAssetModal}
  title={activeTab === 'banner' ? (editingItem ? '배너 명세 수정' : '신규 비주얼 자산 등록') : (editingItem ? '팝업 아키텍처 수정' : '신규 레이어 팝업 설계')}
  maxWidth="3xl"
  footer={
  <div className="flex w-full gap-4">
- <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2">취소</Button>
+ <Button variant="outline" onClick={closeAssetModal} disabled={isAssetWritePending} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border-2">취소</Button>
  <Button
- onClick={activeTab === 'banner' ? (bannerForm.handleSubmit(onBannerSubmit) as any) : (popupForm.handleSubmit(onPopupSubmit) as any)}
- disabled={activeTab === 'banner' ? bannerForm.formState.isSubmitting : popupForm.formState.isSubmitting}
+ onClick={activeTab === 'banner' ? () => submitBannerForm() : () => submitPopupForm()}
+ disabled={isAssetWritePending}
+ aria-busy={isAssetSubmitting || undefined}
  className="flex-[2] h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group"
  >
- <Zap size={18} className="group-hover:animate-pulse mr-2" /> {editingItem ? '자산 수정' : '운영 배포'}
+ <Zap size={18} className="group-hover:animate-pulse mr-2" /> {isAssetSubmitting ? '배포 중…' : editingItem ? '자산 수정' : '운영 배포'}
  </Button>
  </div>
  }
@@ -585,17 +706,28 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <div className="pt-4 p-4">
  {activeTab === 'banner' ? (
  <Form {...bannerForm}>
- <form onSubmit={bannerForm.handleSubmit(onBannerSubmit) as any} className="space-y-12">
+ <form noValidate onSubmit={submitBannerForm} className="space-y-12">
+ <FormErrorSummary
+ labels={{
+ bnrNm: '배너 명칭',
+ linkUrl: '랜딩 페이지',
+ sortOrdr: '노출 순서',
+ rfltYn: '자산 로드 상태',
+ bnrExpln: '자산 설명',
+ }}
+ onNavigate={bannerForm.focusError}
+ />
  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
  <div className="space-y-8">
  <ShadcnFormField
  control={bannerForm.control}
  name="bnrNm"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">배너 명칭 (Internal Label) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">배너 명칭 (Internal Label)</FormLabel>
  <FormControl>
- <Input {...field} className="h-11 rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="배너 이름 입력" />
+ <Input {...field} maxLength={100} className="h-11 rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="배너 이름 입력" />
  </FormControl>
  <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">관리용 명칭입니다</p>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
@@ -611,7 +743,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <div className="relative group/link">
  <LinkIcon size={16} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/link:opacity-100 transition-opacity" />
  <FormControl>
- <Input {...field} className="h-11 pl-16 rounded-lg font-mono text-xs font-bold shadow-inner" placeholder="/pages/..." />
+ <Input {...field} maxLength={512} className="h-11 pl-16 rounded-lg font-mono text-xs font-bold shadow-inner" placeholder="/pages/..." />
  </FormControl>
  </div>
  <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">클릭 시 이동할 프론트엔드 라우트 또는 외부 경로</p>
@@ -623,11 +755,19 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <ShadcnFormField
  control={bannerForm.control}
  name="sortOrdr"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">노출 순서 Priority <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">노출 순서 Priority</FormLabel>
  <FormControl>
- <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold shadow-inner" />
+ <Input
+ {...field}
+ value={field.value ?? ''}
+ type="number"
+ min={0}
+ onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+ className="h-11 rounded-lg font-bold shadow-inner"
+ />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
@@ -636,6 +776,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <ShadcnFormField
  control={bannerForm.control}
  name="rfltYn"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 로드 상태</FormLabel>
@@ -662,7 +803,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">자산 명세 및 설명 (Metadata)</FormLabel>
  <FormControl>
- <textarea {...field} className="w-full min-h-[120px] p-6 rounded-lg border-2 border-border bg-muted text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
+ <textarea {...field} maxLength={4000} className="w-full min-h-[120px] p-6 rounded-lg border-2 border-border bg-muted text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
@@ -671,7 +812,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  <div className="space-y-12">
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <Label className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload)</Label>
  <div className="p-4 border-4 border-dashed border-border rounded-lg bg-muted/50 hover:bg-muted transition-colors shadow-inner relative group/upload">
  <StandardFileUploader onFilesChange={(f) => setFormFiles(f)} maxFiles={1} />
  <div className="mt-4 flex items-center justify-center gap-4 text-muted-foreground/30">
@@ -698,17 +839,32 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </Form>
  ) : (
  <Form {...popupForm}>
- <form onSubmit={popupForm.handleSubmit(onPopupSubmit) as any} className="space-y-12">
+ <form noValidate onSubmit={submitPopupForm} className="space-y-12">
+ <FormErrorSummary
+ labels={{
+ popupTtlNm: '팝업 타이틀',
+ ntceBgnde: '게시 시작 시점',
+ ntceEndde: '게시 종료 시점',
+ popupWdthPstn: '가로 좌표',
+ popupVrtcPstn: '세로 좌표',
+ popupWdthSz: '가로 폭',
+ popupVrtcSz: '세로 높이',
+ ntceYn: '게시 설정',
+ stopvewSetupYn: '다시보지않기 처리',
+ }}
+ onNavigate={popupForm.focusError}
+ />
  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
  <div className="space-y-8">
  <ShadcnFormField
  control={popupForm.control}
  name="popupTtlNm"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">팝업 타이틀 (Header) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">팝업 타이틀 (Header)</FormLabel>
  <FormControl>
- <Input {...field} className="h-11 rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="팝업 제목 입력" />
+ <Input {...field} maxLength={100} className="h-11 rounded-lg text-md font-bold tracking-tight shadow-inner" placeholder="팝업 제목 입력" />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
@@ -718,13 +874,16 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <ShadcnFormField
  control={popupForm.control}
  name="ntceBgnde"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 시작 시점 (T-0) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 시작 시점 (T-0)</FormLabel>
  <FormControl>
  <Input 
  {...field} 
  type="text" 
+ maxLength={10}
+ inputMode="numeric"
  placeholder="YYYY-MM-DD"
  onChange={(e) => {
  const value = e.target.value.replace(/\D/g, '');
@@ -748,13 +907,16 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <ShadcnFormField
  control={popupForm.control}
  name="ntceEndde"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 종료 시점 (T-End) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">게시 종료 시점 (T-End)</FormLabel>
  <FormControl>
  <Input 
  {...field} 
  type="text" 
+ maxLength={10}
+ inputMode="numeric"
  placeholder="YYYY-MM-DD"
  onChange={(e) => {
  const value = e.target.value.replace(/\D/g, '');
@@ -780,11 +942,20 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <ShadcnFormField
  control={popupForm.control}
  name="popupWdthPstn"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 좌표 (X_Pivot) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 좌표 (X_Pivot)</FormLabel>
  <FormControl>
- <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold shadow-inner" />
+ <Input
+ {...field}
+ value={field.value ?? ''}
+ type="number"
+ min={0}
+ max={999999999999}
+ onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+ className="h-11 rounded-lg font-bold shadow-inner"
+ />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
@@ -793,11 +964,20 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <ShadcnFormField
  control={popupForm.control}
  name="popupVrtcPstn"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 좌표 (Y_Pivot) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 좌표 (Y_Pivot)</FormLabel>
  <FormControl>
- <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold shadow-inner" />
+ <Input
+ {...field}
+ value={field.value ?? ''}
+ type="number"
+ min={0}
+ max={999999999999}
+ onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+ className="h-11 rounded-lg font-bold shadow-inner"
+ />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
@@ -808,11 +988,20 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <ShadcnFormField
  control={popupForm.control}
  name="popupWdthSz"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 폭 (W_Res) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">가로 폭 (W_Res)</FormLabel>
  <FormControl>
- <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold shadow-inner" />
+ <Input
+ {...field}
+ value={field.value ?? ''}
+ type="number"
+ min={100}
+ max={999999999999}
+ onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+ className="h-11 rounded-lg font-bold shadow-inner"
+ />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
@@ -821,11 +1010,20 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <ShadcnFormField
  control={popupForm.control}
  name="popupVrtcSz"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 높이 (H_Res) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">세로 높이 (H_Res)</FormLabel>
  <FormControl>
- <Input {...field} type="number" onChange={(e) => field.onChange(Number(e.target.value))} className="h-11 rounded-lg font-bold shadow-inner" />
+ <Input
+ {...field}
+ value={field.value ?? ''}
+ type="number"
+ min={100}
+ max={999999999999}
+ onChange={(e) => field.onChange(e.target.value === '' ? undefined : Number(e.target.value))}
+ className="h-11 rounded-lg font-bold shadow-inner"
+ />
  </FormControl>
  <FormMessage className="text-xs font-bold text-rose-600 px-1 mt-1" />
  </FormItem>
@@ -835,7 +1033,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  </div>
  <div className="space-y-12">
  <FormItem className="space-y-1.5 p-0.5">
- <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload) <span className="text-rose-500 font-bold text-xs">*</span></FormLabel>
+ <Label className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">미디어 자산 업로드 (Visual Payload)</Label>
  <div className="p-4 border-4 border-dashed border-border rounded-lg bg-muted/50 hover:bg-muted transition-colors shadow-inner relative group/upload">
  <StandardFileUploader onFilesChange={(f) => setFormFiles(f)} maxFiles={1} />
  <div className="mt-4 flex items-center justify-center gap-4 text-muted-foreground/30">
@@ -862,6 +1060,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <ShadcnFormField
  control={popupForm.control}
  name="ntceYn"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">게시 설정</FormLabel>
@@ -883,6 +1082,7 @@ export default function BannerAdminClient({ initialBanners, initialPopups }: Ban
  <ShadcnFormField
  control={popupForm.control}
  name="stopvewSetupYn"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight tracking-widest uppercase">다시보지않기 처리</FormLabel>

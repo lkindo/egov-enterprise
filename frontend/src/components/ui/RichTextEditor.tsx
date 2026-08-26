@@ -19,9 +19,11 @@ import { Button } from '@/components/ui/button';
 
 export interface RichTextEditorProps extends Pick<
   React.AriaAttributes,
-  'aria-label' | 'aria-labelledby' | 'aria-describedby' | 'aria-invalid'
+  'aria-label' | 'aria-labelledby' | 'aria-describedby' | 'aria-invalid' | 'aria-required' | 'aria-errormessage'
 > {
   id?: string;
+  name?: string;
+  'data-form-field-name'?: string;
   value: string;
   onChange: (content: string) => void;
   placeholder?: string;
@@ -35,6 +37,10 @@ function buildEditableAttributes({
   ariaLabelledBy,
   ariaDescribedBy,
   ariaInvalid,
+  ariaRequired,
+  ariaErrorMessage,
+  name,
+  formFieldName,
 }: {
   id?: string;
   placeholder?: string;
@@ -42,6 +48,10 @@ function buildEditableAttributes({
   ariaLabelledBy?: string;
   ariaDescribedBy?: string;
   ariaInvalid?: React.AriaAttributes['aria-invalid'];
+  ariaRequired?: React.AriaAttributes['aria-required'];
+  ariaErrorMessage?: React.AriaAttributes['aria-errormessage'];
+  name?: string;
+  formFieldName?: string;
 }): Record<string, string> {
   return {
     class: cn(
@@ -57,6 +67,10 @@ function buildEditableAttributes({
     ...(ariaLabelledBy ? { 'aria-labelledby': ariaLabelledBy } : {}),
     ...(ariaDescribedBy ? { 'aria-describedby': ariaDescribedBy } : {}),
     ...(ariaInvalid !== undefined ? { 'aria-invalid': String(ariaInvalid) } : {}),
+    ...(ariaRequired !== undefined ? { 'aria-required': String(ariaRequired) } : {}),
+    ...(ariaErrorMessage ? { 'aria-errormessage': ariaErrorMessage } : {}),
+    ...(name ? { name } : {}),
+    ...(formFieldName ? { 'data-form-field-name': formFieldName } : {}),
   };
 }
 
@@ -70,6 +84,10 @@ export default function RichTextEditor({
   'aria-labelledby': ariaLabelledBy,
   'aria-describedby': ariaDescribedBy,
   'aria-invalid': ariaInvalid,
+  'aria-required': ariaRequired,
+  'aria-errormessage': ariaErrorMessage,
+  name,
+  'data-form-field-name': formFieldName,
 }: RichTextEditorProps) {
   const editableAttributes = buildEditableAttributes({
     id,
@@ -78,6 +96,10 @@ export default function RichTextEditor({
     ariaLabelledBy,
     ariaDescribedBy,
     ariaInvalid,
+    ariaRequired,
+    ariaErrorMessage,
+    name,
+    formFieldName,
   });
   const editor = useEditor({
     extensions: [

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { HubStatusBadge } from '@/components/ui/hub/HubStatusBadge';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -21,7 +21,6 @@ import { ShieldCheck,
  Layers, 
  SearchCode, 
  AlertCircle } from 'lucide-react';
-;
 import { Button } from '@/components/ui/button';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
@@ -34,16 +33,25 @@ import {
  FormItem,
  FormLabel,
  FormMessage,
+ FormErrorSummary,
 } from '@/components/ui/form';
 
 import { InformalSanctionDtoSchema } from '@/types/generated-zod';
 
-const ismSchema = InformalSanctionDtoSchema.extend({
- taskSeCd: z.string().optional(),
- aplcntId: z.string().optional(),
- aprvrId: z.string().optional(),
- rjctRsnCn: z.string().min(1),
+export const ismSchema = InformalSanctionDtoSchema.extend({
+ taskSeCd: InformalSanctionDtoSchema.shape.taskSeCd.optional(),
+ aplcntId: InformalSanctionDtoSchema.shape.aplcntId.optional(),
+ aprvrId: InformalSanctionDtoSchema.shape.aprvrId.optional(),
+ rjctRsnCn: InformalSanctionDtoSchema.shape.rjctRsnCn
+ .unwrap()
+ .trim()
+ .min(1, '결재 또는 반려 사유를 입력해 주세요.')
+ .max(4000, '결재 또는 반려 사유는 최대 4,000자까지 입력할 수 있습니다.'),
 });
+
+const ISM_FORM_LABELS = {
+ rjctRsnCn: '결재 또는 반려 사유',
+};
 
 type IsmFormValues = z.infer<typeof ismSchema>;
 
@@ -63,6 +71,7 @@ export default function IsmClient({
  const [isModalOpen, setIsOpen] = useState(false);
  const [selectedSanctn, setSelectedSanctn] = useState<InformalSanctionDto | null>(null);
  const [loading, setLoading] = useState(false);
+ const submittingRef = useRef(false);
 
  const form = useAppForm(ismSchema, {
  defaultValues: {
@@ -88,19 +97,26 @@ export default function IsmClient({
 
  const onFormSubmit = async (values: IsmFormValues, aprvYn: 'C' | 'R') => {
  if (!selectedSanctn?.ifmlAtrzSn) return;
+ if (submittingRef.current) return;
+ submittingRef.current = true;
  try {
  setLoading(true);
  await ismAdminService.confirmInfrmlSanctn(selectedSanctn.ifmlAtrzSn, aprvYn, values.rjctRsnCn);
  toast(`결재 시퀀스가 ${aprvYn === SANCTION_STATUS.APPROVED ? '성공적으로 승인' : '반려'} 처리되었습니다.`, 'success');
  setIsOpen(false);
  router.refresh();
- } catch (error) {
- // 서버가 사유를 내려주면 그대로 노출한다(권한·상태 불일치 등 원인 파악 가능).
- const message = error instanceof Error && error.message ? error.message : '';
- toast(message || '결재 처리 중 오류가 발생했습니다.', 'error');
+ } catch (error: unknown) {
+ if (!form.applyServerErrors(error)) {
+ toast('결재 처리 중 오류가 발생했습니다. 입력한 사유는 유지됩니다.', 'error');
+ }
  } finally {
+ submittingRef.current = false;
  setLoading(false);
  }
+ };
+
+ const closeModal = () => {
+ if (!submittingRef.current) setIsOpen(false);
  };
 
  // [삭제 버튼 제거] 서버는 '신청자 본인 + 신청(A) 상태'에서만 삭제를 허용한다.
@@ -221,31 +237,34 @@ export default function IsmClient({
 
  <StandardModal
  isOpen={isModalOpen}
- onClose={() => setIsOpen(false)}
+ onClose={closeModal}
  title="결재 시퀀스 실행"
  maxWidth="xl"
  footer={
  <div className="flex w-full gap-4">
- <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">조사_취소</Button>
+ <Button variant="outline" type="button" disabled={loading} onClick={closeModal} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">취소</Button>
  <Button 
+ type="button"
  onClick={form.handleSubmit((v) => onFormSubmit(v, SANCTION_STATUS.REJECTED))}
  disabled={loading}
  className="flex-1 h-11 bg-rose-50 text-rose-500 rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-rose-500 hover:text-white transition-all active:scale-95 border-2 border-rose-100 flex items-center justify-center gap-3"
  >
- <XCircle size={18} strokeWidth={3} /> 시퀀스 반려
+ <XCircle size={18} strokeWidth={3} aria-hidden="true" /> {loading ? '처리 중…' : '반려'}
  </Button>
  <Button
+ type="button"
  onClick={form.handleSubmit((v) => onFormSubmit(v, SANCTION_STATUS.APPROVED))}
  disabled={loading}
  className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-2 hover:bg-primary transition-all active:scale-95 group"
  >
- <CheckCircle2 size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 승인
+ <CheckCircle2 size={18} strokeWidth={3} aria-hidden="true" className="text-primary group-hover:rotate-12 transition-transform" /> {loading ? '처리 중…' : '최종 승인'}
  </Button>
  </div>
  }
  >
  <Form {...form}>
- <form className="space-y-12 pt-4 text-left">
+ <form className="space-y-12 pt-4 text-left" noValidate>
+ <FormErrorSummary labels={ISM_FORM_LABELS} onNavigate={form.focusError} />
  <div className="p-10 bg-surface-inverse rounded-lg shadow-2xl relative overflow-hidden group/modal-target">
  <div className="relative z-10 space-y-4">
  <div className="flex items-center gap-3">
@@ -271,14 +290,16 @@ export default function IsmClient({
  <ShadcnFormField
  control={form.control}
  name="rjctRsnCn"
+ required
  render={({ field }) => (
  <FormItem className="space-y-4">
  <FormLabel className="text-xs font-bold tracking-[0.4em] text-muted-foreground uppercase flex items-center gap-3">
- <SearchCode size={14} className="text-primary" /> 결재/반려 의사결정 로그 (Decision Opinion) <span className="text-rose-500 animate-pulse">*</span>
+ <SearchCode size={14} className="text-primary" aria-hidden="true" /> 결재/반려 의사결정 로그 (Decision Opinion)
  </FormLabel>
  <FormControl>
  <textarea
  {...field}
+ maxLength={4000}
  placeholder="결재 또는 반려 사유를 입력하세요..."
  className="w-full min-h-[200px] p-10 rounded-lg border-2 bg-muted font-bold text-lg outline-none focus:bg-card focus:ring-[12px] focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner leading-relaxed resize-none placeholder:text-muted-foreground"
  />

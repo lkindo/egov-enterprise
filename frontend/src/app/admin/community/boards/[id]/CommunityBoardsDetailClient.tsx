@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardEditor } from '@/app/components/ui/standard-editor';
@@ -13,18 +13,51 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
 import { Send, X, AlertCircle } from 'lucide-react';
 import { FREE_BOARD_ID, NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { BoardSaveRequestSchema } from '@/types/generated-zod';
+
+// Generated schema의 pstCn min(0)은 백엔드 BoardSaveRequest @NotBlank보다 약하므로 required만 보강한다.
+export const communityBoardCreateSchema = BoardSaveRequestSchema.pick({
+    bbsId: true,
+    pstTtl: true,
+    pstCn: true,
+    scrtYn: true,
+}).extend({
+    bbsId: BoardSaveRequestSchema.shape.bbsId.trim()
+        .min(1, '게시판을 선택해 주세요.'),
+    pstTtl: BoardSaveRequestSchema.shape.pstTtl.trim()
+        .min(1, '게시글 제목을 입력해 주세요.'),
+    pstCn: BoardSaveRequestSchema.shape.pstCn.trim()
+        .min(1, '내용을 입력해 주세요.'),
+});
+
+const boardValidationLabels = {
+    bbsId: '게시판',
+    pstTtl: '게시글 제목',
+    pstCn: '내용',
+    scrtYn: '비밀글 설정',
+};
 
 export default function CommunityBoardsDetailClient() {
     const router = useRouter();
     const { toast } = useToast();
     const confirm = useConfirm();
+    const [isSaving, setIsSaving] = useState(false);
+    const savePendingRef = useRef(false);
 
     const [formData, setFormData] = useState({
         bbsId: NOTICE_BOARD_ID,
         pstTtl: '',
         pstCn: '',
-        noticeAt: 'N' as 'Y' | 'N',
-        secretAt: 'N' as 'Y' | 'N'
+        scrtYn: 'N' as 'Y' | 'N'
+    });
+    const validation = useManualFormValidation(communityBoardCreateSchema, {
+        labels: boardValidationLabels,
+        focusTargets: {
+            pstCn: () => document.querySelector<HTMLTextAreaElement>('[aria-label="에디터 본문 내용"]'),
+        },
     });
 
     // [2026-08-11 결함 수정] 종전에는 `const [, setFiles] = useState<File[]>([])` 였다 —
@@ -40,19 +73,21 @@ export default function CommunityBoardsDetailClient() {
     const { clear } = useAutoSave('bbs_write', formData, (data) => setFormData(data));
 
     const handleSave = async () => {
-        if (!formData.pstTtl.trim()) {
-            toast('제목을 입력해 주세요.', 'error');
-            return;
-        }
+        if (savePendingRef.current) return;
+        const validated = validation.validate(formData);
+        if (!validated) return;
 
-        const isConfirmed = await confirm({
-            title: '게시글 등록',
-            message: '작성하신 내용을 등록하시겠습니까?',
-            confirmText: '등록'
-        });
+        savePendingRef.current = true;
+        setIsSaving(true);
 
-        if (isConfirmed) {
-            try {
+        try {
+            const isConfirmed = await confirm({
+                title: '게시글 등록',
+                message: '작성하신 내용을 등록하시겠습니까?',
+                confirmText: '등록'
+            });
+
+            if (isConfirmed) {
                 // 첨부가 있으면 **먼저 업로드**해 식별자를 받고, 그 id 를 게시글 본문에 실어 보낸다.
                 //   REST 계약상 POST /boards/posts 는 JSON 전용(@RequestBody BoardSaveRequest)이라
                 //   파일 자체를 함께 보낼 수 없다. 배너 화면이 쓰는 것과 같은 2단계 방식이다.
@@ -62,15 +97,20 @@ export default function CommunityBoardsDetailClient() {
                     ? await fileAdminService.uploadFiles(files)
                     : undefined;
 
-                const res = await boardUserService.createPost({ ...formData, atchFileSn });
+                const res = await boardUserService.createPost({ ...validated, atchFileSn });
                 if (res) {
                     toast('성공적으로 등록되었습니다.', 'success');
                     clear(); // 자동 저장 데이터 삭제
                     router.push('/admin/community/boards');
                 }
-            } catch {
-                toast('등록 중 오류가 발생했습니다.', 'error');
             }
+        } catch (error) {
+            const fieldErrors = extractFieldErrors(error);
+            if (fieldErrors) validation.setFormErrors(fieldErrors);
+            else toast(extractErrorMessage(error, '등록 중 오류가 발생했습니다.'), 'error');
+        } finally {
+            savePendingRef.current = false;
+            setIsSaving(false);
         }
     };
 
@@ -84,33 +124,51 @@ export default function CommunityBoardsDetailClient() {
                         <button onClick={() => router.back()} className="px-4 py-2 border rounded-lg font-bold hover:bg-accent transition-all flex items-center gap-2">
                             <X size={18} /> 취소
                         </button>
-                        <button onClick={handleSave} className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all flex items-center gap-2">
-                            <Send size={18} /> 등록
+                        <button disabled={isSaving} onClick={handleSave} aria-label={isSaving ? '게시글 등록 중' : '게시글 등록'} className="px-6 py-2 bg-primary text-white rounded-lg font-bold shadow-md hover:bg-primary/90 transition-all flex items-center gap-2 disabled:cursor-not-allowed disabled:opacity-60">
+                            <Send size={18} aria-hidden="true" /> {isSaving ? '등록 중...' : '등록'}
                         </button>
                     </div>
                 }
             />
 
+            <FormErrorSummary
+                errors={validation.errors}
+                labels={boardValidationLabels}
+                onNavigate={validation.focusError}
+            />
+
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Form (Left) */}
                 <div className="lg:col-span-2 space-y-6">
-                    <FormField label="게시글 제목" required>
+                    <FormField htmlFor="pstTtl" label="게시글 제목" required error={validation.errors.pstTtl}>
                         <input
+                            id="pstTtl"
+                            {...validation.fieldProps('pstTtl')}
                             type="text"
                             aria-label="게시글 제목"
                             value={formData.pstTtl}
-                            onChange={(e) => setFormData({ ...formData, pstTtl: e.target.value })}
+                            onChange={(e) => {
+                                validation.clearError('pstTtl');
+                                setFormData({ ...formData, pstTtl: e.target.value });
+                            }}
                             placeholder="제목을 입력해 주세요."
+                            required
+                            maxLength={100}
                             className="w-full h-12 px-4 rounded-lg border bg-card text-lg font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
                         />
                     </FormField>
 
-                    <FormField label="내용 작성" required>
-                        <StandardEditor
-                            value={formData.pstCn}
-                            onChange={(val) => setFormData({ ...formData, pstCn: val })}
-                            minHeight="450px"
-                        />
+                    <FormField htmlFor="pstCn" label="내용 작성" required error={validation.errors.pstCn}>
+                        <div id="pstCn" {...validation.fieldProps('pstCn')} aria-required="true">
+                            <StandardEditor
+                                value={formData.pstCn}
+                                onChange={(val) => {
+                                    validation.clearError('pstCn');
+                                    setFormData({ ...formData, pstCn: val });
+                                }}
+                                minHeight="450px"
+                            />
+                        </div>
                     </FormField>
                 </div>
 
@@ -122,10 +180,16 @@ export default function CommunityBoardsDetailClient() {
                             게시 옵션
                         </h3>
 
-                        <FormField label="게시판 선택">
+                        <FormField htmlFor="bbsId" label="게시판 선택" required error={validation.errors.bbsId}>
                             <select
+                                id="bbsId"
+                                {...validation.fieldProps('bbsId')}
                                 value={formData.bbsId}
-                                onChange={(e) => setFormData({ ...formData, bbsId: e.target.value })}
+                                onChange={(e) => {
+                                    validation.clearError('bbsId');
+                                    setFormData({ ...formData, bbsId: e.target.value });
+                                }}
+                                required
                                 className="w-full h-12 px-4 rounded-lg border bg-card text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
                             >
                                 <option value={NOTICE_BOARD_ID}>공지사항</option>
@@ -135,26 +199,22 @@ export default function CommunityBoardsDetailClient() {
                         </FormField>
 
                         <div className="flex flex-col gap-3 pt-2">
+                            {/* BoardSaveRequest에는 공지 여부 필드가 없으므로 효과 없는 noticeAt 입력은 노출하지 않는다. */}
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <input
-                                    type="checkbox"
-                                    aria-label="중요 공지로 등록"
-                                    checked={formData.noticeAt === 'Y'}
-                                    onChange={(e) => setFormData({ ...formData, noticeAt: e.target.checked ? 'Y' : 'N' })}
-                                    className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                                />
-                                <span className="text-sm font-medium group-hover:text-primary transition-colors">중요 공지로 등록</span>
-                            </label>
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                                <input
+                                    {...validation.fieldProps('scrtYn')}
                                     type="checkbox"
                                     aria-label="비밀글로 설정"
-                                    checked={formData.secretAt === 'Y'}
-                                    onChange={(e) => setFormData({ ...formData, secretAt: e.target.checked ? 'Y' : 'N' })}
+                                    checked={formData.scrtYn === 'Y'}
+                                    onChange={(e) => {
+                                        validation.clearError('scrtYn');
+                                        setFormData({ ...formData, scrtYn: e.target.checked ? 'Y' : 'N' });
+                                    }}
                                     className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                                 />
                                 <span className="text-sm font-medium group-hover:text-primary transition-colors">비밀글로 설정</span>
                             </label>
+                            {validation.errors.scrtYn ? <p {...validation.messageProps('scrtYn')} className="text-xs font-bold text-destructive-emphasis" /> : null}
                         </div>
                     </div>
 

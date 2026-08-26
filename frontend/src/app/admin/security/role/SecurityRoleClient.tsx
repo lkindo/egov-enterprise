@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { z } from 'zod';
 import { Loader2,
  Plus,
  Trash2,
@@ -27,15 +28,40 @@ import { FormField } from '@/app/components/ui/standard-form';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+import { RoleManageDtoSchema } from '@/types/generated-zod';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { FormErrorSummary } from '@/components/ui/form';
 ;
 
 /** 이 화면이 소유한 쿼리 키. 새로고침/무효화는 반드시 이 범위로만 좁힌다. */
 const ROLES_QUERY_KEY = ['admin-roles'] as const;
 
+export const securityRoleFormSchema = RoleManageDtoSchema.extend({
+ roleId: RoleManageDtoSchema.shape.roleId.unwrap().trim()
+  .min(1, '롤 ID를 입력해 주세요.'),
+ roleNm: RoleManageDtoSchema.shape.roleNm.trim()
+  .min(1, '롤 명칭을 입력해 주세요.'),
+ rolePatrn: RoleManageDtoSchema.shape.rolePatrn.unwrap().trim()
+  .min(1, '접근 패턴을 입력해 주세요.'),
+ roleExpln: RoleManageDtoSchema.shape.roleExpln.unwrap().trim(),
+ roleTypeCd: RoleManageDtoSchema.shape.roleTypeCd.unwrap().trim()
+  .min(1, '롤 타입을 선택해 주세요.'),
+ roleSort: z.string().trim()
+  .min(1, '우선순위를 입력해 주세요.')
+  .regex(/^\d+$/, '우선순위는 0 이상의 정수여야 합니다.')
+  .refine((value) => {
+   const number = Number(value);
+   return Number.isSafeInteger(number) && number <= 2_147_483_647;
+  }, '우선순위는 0 이상의 정수여야 합니다.'),
+});
+
 export default function SecurityRoleClient() {
  const queryClient = useQueryClient();
- const { toast } = useToast();
- const confirm = useConfirm();
+  const { toast } = useToast();
+  const confirm = useConfirm();
+  const submitPendingRef = useRef(false);
+  const deletePendingRef = useRef(false);
  const [page, setPage] = useState(1);
  /**
   * 입력 컨트롤에는 원본(searchInput)을, 서버 요청/queryKey 에는 디바운스 값만 쓴다.
@@ -49,6 +75,7 @@ export default function SecurityRoleClient() {
  const [pageSize, setPageSize] = useState(10);
  const params: SearchParams = { page: page - 1, size: pageSize, searchKeyword };
  const [isDialogOpen, setIsDialogOpen] = useState(false);
+ const [deletingRoleId, setDeletingRoleId] = useState<string | null>(null);
  const [formData, setFormData] = useState<RoleManage>({
     roleId: '',
     roleNm: '',
@@ -57,6 +84,15 @@ export default function SecurityRoleClient() {
     roleTypeCd: '',
     roleSort: '',
   });
+ const validationLabels = {
+  roleId: '롤 ID',
+  roleNm: '롤 명칭',
+  rolePatrn: '접근 패턴',
+  roleTypeCd: '롤 타입',
+  roleSort: '우선순위',
+  roleExpln: '롤 설명',
+ };
+ const validation = useManualFormValidation(securityRoleFormSchema, { labels: validationLabels });
 
   // 조회 실패를 '데이터 없음'으로 위장하지 않는다 — error/onRetry 를 테이블까지 내려보낸다.
   const { data, isLoading, error, refetch } = useQuery({
@@ -80,7 +116,12 @@ export default function SecurityRoleClient() {
       setIsDialogOpen(false);
       toast('신규 세분화 보안 롤(Role)이 성공적으로 설정되었습니다.', 'success');
     },
-    onError: () => toast('롤 생성 중 시스템 예외가 발생했습니다.', 'error')
+    onError: (error) => {
+      const fieldErrors = extractFieldErrors(error);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      else toast('롤 생성 중 시스템 예외가 발생했습니다.', 'error');
+    },
+    onSettled: () => { submitPendingRef.current = false; },
   });
 
   const deleteMutation = useMutation({
@@ -89,10 +130,23 @@ export default function SecurityRoleClient() {
       queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
       toast('보안 롤 프로필이 영구적으로 파기되었습니다.', 'success');
     },
-    onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error')
+    onError: () => toast('삭제 처리 중 시스템 예외가 발생했습니다.', 'error'),
+    onSettled: () => {
+      deletePendingRef.current = false;
+      setDeletingRoleId(null);
+    },
   });
 
+  const isSubmitPending = createMutation.isPending;
+  const isDeletePending = deletingRoleId !== null;
+
+  const handleCloseDialog = () => {
+    if (submitPendingRef.current || deletePendingRef.current) return;
+    setIsDialogOpen(false);
+  };
+
   const handleCreate = () => {
+    if (submitPendingRef.current || deletePendingRef.current) return;
     setFormData({
       roleId: '',
       roleNm: '',
@@ -101,23 +155,41 @@ export default function SecurityRoleClient() {
       roleTypeCd: 'url',
       roleSort: '1',
     });
+    validation.setFormErrors({}, false);
     setIsDialogOpen(true);
   };
 
   /** 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상 롤 명칭을 노출한다. */
   const handleDelete = async (role: RoleManage) => {
-    const ok = await confirm({
-      title: '보안 롤 삭제',
-      message: `'${role.roleNm || role.roleId}'(${role.roleId}) 롤을 삭제하시겠습니까? 이 롤에 연결된 접근 패턴이 함께 사라집니다.`,
-      confirmText: '삭제',
-      variant: 'destructive',
-    });
-    if (!ok) return;
-    deleteMutation.mutate(role.roleId);
+    if (deletePendingRef.current || submitPendingRef.current) return;
+    deletePendingRef.current = true;
+    setDeletingRoleId(role.roleId);
+    try {
+      const ok = await confirm({
+        title: '보안 롤 삭제',
+        message: `'${role.roleNm || role.roleId}'(${role.roleId}) 롤을 삭제하시겠습니까? 이 롤에 연결된 접근 패턴이 함께 사라집니다.`,
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) {
+        deletePendingRef.current = false;
+        setDeletingRoleId(null);
+        return;
+      }
+      deleteMutation.mutate(role.roleId);
+    } catch {
+      deletePendingRef.current = false;
+      setDeletingRoleId(null);
+      toast('삭제 확인을 시작하지 못했습니다.', 'error');
+    }
   };
 
-  const handleSubmit = async () => {
-    createMutation.mutate(formData);
+  const handleSubmit = () => {
+    if (submitPendingRef.current || deletePendingRef.current) return;
+    const validated = validation.validate(formData);
+    if (!validated) return;
+    submitPendingRef.current = true;
+    createMutation.mutate(validated);
   };
 
   const columns: Column<RoleManage>[] = [
@@ -167,12 +239,15 @@ export default function SecurityRoleClient() {
           <Button
             variant="ghost"
             size="icon"
-            disabled={deleteMutation.isPending}
-            onClick={() => handleDelete(item)}
-            aria-label={`${item.roleNm || item.roleId} 롤 삭제`}
-            className="h-10 w-10 text-rose-500 bg-rose-50 hover:bg-rose-500 hover:text-white border border-rose-100 rounded-lg transition-all shadow-sm"
+            disabled={isDeletePending || isSubmitPending}
+            aria-busy={deletingRoleId === item.roleId || undefined}
+            onClick={() => { void handleDelete(item); }}
+            aria-label={`${item.roleNm || item.roleId} 롤 ${deletingRoleId === item.roleId ? '삭제 중' : '삭제'}`}
+            className="h-10 w-10 text-destructive-emphasis bg-destructive/10 hover:bg-destructive hover:text-destructive-foreground border border-destructive/20 rounded-lg transition-all shadow-sm"
           >
-            <Trash2 size={16} aria-hidden="true" />
+            {deletingRoleId === item.roleId
+              ? <Loader2 size={16} aria-hidden="true" className="animate-spin" />
+              : <Trash2 size={16} aria-hidden="true" />}
           </Button>
         </div>
       )
@@ -198,7 +273,7 @@ export default function SecurityRoleClient() {
  <RefreshCcw size={16} aria-hidden="true" />
  새로고침
  </Button>
- <Button size="sm" onClick={handleCreate} className="gap-2">
+ <Button size="sm" onClick={handleCreate} disabled={isDeletePending || isSubmitPending} className="gap-2">
  <Plus size={16} aria-hidden="true" /> 신규 보안 롤 설정
  </Button>
  </>
@@ -239,31 +314,48 @@ export default function SecurityRoleClient() {
  {/* Role Provisioning Modal */}
  <StandardModal
  isOpen={isDialogOpen}
- onClose={() => setIsDialogOpen(false)}
+ onClose={handleCloseDialog}
  title="신규 세분화 보안 롤 설정"
  maxWidth="xl"
  >
  <div className="p-4 space-y-12">
+ <FormErrorSummary
+ errors={validation.errors}
+ labels={validationLabels}
+ onNavigate={(name) => { validation.focusError(name); }}
+ />
  <div className="grid grid-cols-2 gap-10">
-      <FormField htmlFor="roleId" label="보안 롤 식별값(Role Code)" required description="보안 레이어 내의 유일한 규칙 식별자">
+      <FormField htmlFor="roleId" label="보안 롤 식별값(Role Code)" required error={validation.errors.roleId} description="보안 레이어 내의 유일한 규칙 식별자">
         <div className="relative group/id">
           <Key size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/id:opacity-100 transition-opacity" />
           <Input
             id="roleId"
+            {...validation.fieldProps('roleId')}
             value={formData.roleId || ''}
-            onChange={(e) => setFormData(prev => ({ ...prev, roleId: e.target.value }))}
+            onChange={(e) => {
+              validation.clearError('roleId');
+              setFormData(prev => ({ ...prev, roleId: e.target.value }));
+            }}
+            required
+            maxLength={20}
             className="h-11 pl-16 rounded-lg border-2 text-md font-bold tracking-widest uppercase shadow-inner"
             placeholder="롤 식별값"
           />
         </div>
       </FormField>
- <FormField htmlFor="roleNm" label="롤 레이블 명칭" required description="보안 아카이브에서 식별될 규칙 명칭">
+ <FormField htmlFor="roleNm" label="롤 레이블 명칭" required error={validation.errors.roleNm} description="보안 아카이브에서 식별될 규칙 명칭">
  <div className="relative group/nm">
  <Lock size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/nm:opacity-100 transition-opacity" />
  <Input
  id="roleNm"
+ {...validation.fieldProps('roleNm')}
  value={formData.roleNm || ''}
- onChange={(e) => setFormData(prev => ({ ...prev, roleNm: e.target.value }))}
+ onChange={(e) => {
+  validation.clearError('roleNm');
+  setFormData(prev => ({ ...prev, roleNm: e.target.value }));
+ }}
+ required
+ maxLength={100}
  className="h-11 pl-16 rounded-lg border-2 text-md font-bold tracking-tight shadow-inner"
  placeholder="롤 명칭 입력"
  />
@@ -271,13 +363,19 @@ export default function SecurityRoleClient() {
  </FormField>
  </div>
 
-  <FormField htmlFor="rolePatrn" label="접근 패턴 (URL/Resource Pattern)" required description="보안 필터가 인터셉트할 리소스 경로 규칙">
+  <FormField htmlFor="rolePatrn" label="접근 패턴 (URL/Resource Pattern)" required error={validation.errors.rolePatrn} description="보안 필터가 인터셉트할 리소스 경로 규칙">
     <div className="relative group/ptn">
       <Workflow size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/ptn:opacity-100 transition-opacity" />
       <Input
         id="rolePatrn"
+        {...validation.fieldProps('rolePatrn')}
         value={formData.rolePatrn || ''}
-        onChange={(e) => setFormData(prev => ({ ...prev, rolePatrn: e.target.value }))}
+        onChange={(e) => {
+          validation.clearError('rolePatrn');
+          setFormData(prev => ({ ...prev, rolePatrn: e.target.value }));
+        }}
+        required
+        maxLength={300}
         className="h-11 pl-16 rounded-lg border-2 text-md font-mono font-bold shadow-inner"
         placeholder="/api/v1/resource/**"
       />
@@ -285,11 +383,16 @@ export default function SecurityRoleClient() {
   </FormField>
 
  <div className="grid grid-cols-2 gap-10">
-  <FormField htmlFor="roleTypeCd" label="롤 아키텍처 타입" description="보안 규칙이 적용될 기술 레이어">
+  <FormField htmlFor="roleTypeCd" label="롤 아키텍처 타입" required error={validation.errors.roleTypeCd} description="보안 규칙이 적용될 기술 레이어">
     <select
       id="roleTypeCd"
+      {...validation.fieldProps('roleTypeCd')}
       value={formData.roleTypeCd || ''}
-      onChange={(e) => setFormData(prev => ({ ...prev, roleTypeCd: e.target.value }))}
+      onChange={(e) => {
+        validation.clearError('roleTypeCd');
+        setFormData(prev => ({ ...prev, roleTypeCd: e.target.value }));
+      }}
+      required
       className="w-full h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-xs font-bold tracking-widest uppercase focus:ring-8 focus:ring-primary/5 outline-none transition-all shadow-inner cursor-pointer"
     >
       <option value="url">URL 리소스</option>
@@ -297,14 +400,23 @@ export default function SecurityRoleClient() {
       <option value="api">REST 엔드포인트</option>
     </select>
   </FormField>
- <FormField htmlFor="roleSort" label="우선순위 (Sort Order)" description="보안 필터 체인에서의 적용 우선순위">
+ <FormField htmlFor="roleSort" label="우선순위 (Sort Order)" required error={validation.errors.roleSort} description="보안 필터 체인에서의 적용 우선순위">
  <div className="relative group/sort">
  <ListOrdered size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/sort:opacity-100 transition-opacity" />
  <Input
  id="roleSort"
+ {...validation.fieldProps('roleSort')}
  type="number"
  value={formData.roleSort || ''}
- onChange={(e) => setFormData(prev => ({ ...prev, roleSort: e.target.value }))}
+ onChange={(e) => {
+  validation.clearError('roleSort');
+  setFormData(prev => ({ ...prev, roleSort: e.target.value }));
+ }}
+ required
+ min={0}
+ max={2_147_483_647}
+ step={1}
+ inputMode="numeric"
  className="h-11 pl-16 rounded-lg border-2 text-md font-bold shadow-inner"
  placeholder="1"
  />
@@ -312,13 +424,18 @@ export default function SecurityRoleClient() {
  </FormField>
  </div>
 
-  <FormField htmlFor="roleExpln" label="롤 정책 상세 명세" description="해당 보안 롤의 구체적인 정책 범위 및 비즈니스 요건">
+  <FormField htmlFor="roleExpln" label="롤 정책 상세 명세" error={validation.errors.roleExpln} description="해당 보안 롤의 구체적인 정책 범위 및 비즈니스 요건">
     <div className="relative group/dc">
       <Binary size={18} className="absolute left-6 top-6 text-muted-foreground opacity-30 group-focus-within/dc:opacity-100 transition-opacity" />
       <Textarea
         id="roleExpln"
+        {...validation.fieldProps('roleExpln')}
         value={formData.roleExpln || ''}
-        onChange={(e) => setFormData(prev => ({ ...prev, roleExpln: e.target.value }))}
+        onChange={(e) => {
+          validation.clearError('roleExpln');
+          setFormData(prev => ({ ...prev, roleExpln: e.target.value }));
+        }}
+        maxLength={4000}
         className="min-h-[140px] pl-16 p-8 rounded-lg border-2 bg-muted/50 text-xs font-bold focus:ring-8 focus:ring-primary/5 outline-none transition-all resize-none shadow-inner"
         placeholder="상세 명세 입력..."
       />
@@ -328,13 +445,14 @@ export default function SecurityRoleClient() {
  <div className="flex gap-6 pt-4">
   <button
     type="button"
-    onClick={() => setIsDialogOpen(false)}
+    onClick={handleCloseDialog}
+    disabled={isSubmitPending || isDeletePending}
     className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
   >
     취소
   </button>
- <Button onClick={handleSubmit} disabled={createMutation.isPending} className="flex-[2] h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
- {createMutation.isPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
+ <Button onClick={handleSubmit} aria-busy={isSubmitPending || undefined} disabled={isSubmitPending || isDeletePending} className="flex-[2] h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
+ {isSubmitPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
  <span className="ml-2">롤 아키텍처 배포</span>
  </Button>
  </div>

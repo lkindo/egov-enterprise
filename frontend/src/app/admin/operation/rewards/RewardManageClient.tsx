@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, RefreshCcw, ShieldCheck } from 'lucide-react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -17,6 +17,7 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
   FormControl,
+  FormErrorSummary,
   FormField as ShadcnFormField,
   FormItem,
   FormLabel,
@@ -28,12 +29,13 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 
 import { RewardManageDtoSchema } from '@/types/generated-zod';
 
-const rewardSchema = RewardManageDtoSchema.extend({
-  rwardNm: z.string().min(1),
-  rwardwnrId: z.string().min(1),
-  rwardCode: z.string().min(1),
-  rwardDe: z.string().length(8, '포상일자 8자리를 입력하세요(예: 20260515).'),
-  pblenCn: z.string().min(1),
+export const rewardSchema = RewardManageDtoSchema.extend({
+  rwardNm: RewardManageDtoSchema.shape.rwardNm.unwrap().min(1).max(100),
+  rwardwnrId: RewardManageDtoSchema.shape.rwardwnrId.unwrap().min(1).max(20),
+  rwardCode: RewardManageDtoSchema.shape.rwardCode.unwrap().min(1).max(12),
+  rwardDe: RewardManageDtoSchema.shape.rwardDe.unwrap()
+    .length(8, '포상일자 8자리를 입력하세요(예: 20260515).'),
+  pblenCn: RewardManageDtoSchema.shape.pblenCn.unwrap().min(1).max(4000),
 });
 
 type RewardFormValues = z.infer<typeof rewardSchema>;
@@ -45,6 +47,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   const [searchKeyword, setSearchKeyword] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
+  const registerSubmitLock = useRef(false);
   const [size, setSize] = useState(initialPage?.size || 10);
 
   const form = useAppForm(rewardSchema, {
@@ -56,6 +59,11 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
       pblenCn: '',
     }
   });
+
+  const closeRegisterModal = () => {
+    if (registerSubmitLock.current) return;
+    setIsModalOpen(false);
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ['admin-rewards', searchKeyword, page, size],
@@ -74,6 +82,8 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   const totalPages = data?.totalPage ?? Math.ceil(totalItems / size);
 
   const onRegisterSubmit = async (values: RewardFormValues) => {
+    if (registerSubmitLock.current) return;
+    registerSubmitLock.current = true;
     try {
       setRegisterLoading(true);
       const submitData = {
@@ -83,16 +93,19 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
         frstRgtrId: 'SYSTEM',
         lastMdfrId: 'SYSTEM',
       };
-      await operationAdminService.createReward(submitData as any);
+      await operationAdminService.createReward(submitData);
       toast('포상 기록이 성공적으로 등록되었습니다.', 'success');
       setIsModalOpen(false);
       form.reset();
       // 최신 등록건은 crtDt DESC 정렬로 1페이지 선두에 노출된다
       setPage(1);
       queryClient.invalidateQueries({ queryKey: ['admin-rewards'] });
-    } catch {
-      toast('포상 기록 등록 중 오류가 발생했습니다.', 'error');
+    } catch (error) {
+      if (!form.applyServerErrors(error)) {
+        toast('포상 기록 등록 중 오류가 발생했습니다.', 'error');
+      }
     } finally {
+      registerSubmitLock.current = false;
       setRegisterLoading(false);
     }
   };
@@ -206,32 +219,58 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
 
       <StandardModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={closeRegisterModal}
         title="포상 기록 등록"
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">취소</Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeRegisterModal}
+              disabled={registerLoading || form.formState.isSubmitting}
+              className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2"
+            >
+              취소
+            </Button>
             <Button 
-              onClick={form.handleSubmit(onRegisterSubmit)}
-              disabled={registerLoading}
+              type="submit"
+              form="reward-register-form"
+              disabled={registerLoading || form.formState.isSubmitting}
               className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
             >
-              <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 등록
+              <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" />
+              {registerLoading ? '등록 중…' : '최종 등록'}
             </Button>
           </div>
         }
       >
         <Form {...form}>
-          <form className="space-y-6 pt-4 text-left">
+          <form
+            id="reward-register-form"
+            noValidate
+            onSubmit={form.handleSubmit(onRegisterSubmit)}
+            className="space-y-6 pt-4 text-left"
+          >
+            <FormErrorSummary
+              labels={{
+                rwardNm: '포상 명칭',
+                rwardwnrId: '수상자 ID',
+                rwardCode: '포상 코드',
+                rwardDe: '포상 일자',
+                pblenCn: '공적 내용',
+              }}
+              onNavigate={form.focusError}
+            />
             <ShadcnFormField
               control={form.control}
               name="rwardNm"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">포상 명칭</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="모범 사원상" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={100} placeholder="모범 사원상" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -240,11 +279,12 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
             <ShadcnFormField
               control={form.control}
               name="rwardwnrId"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">수상자 ID</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="USR_000000000001" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={20} placeholder="USR_000000000001" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -253,11 +293,12 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
             <ShadcnFormField
               control={form.control}
               name="rwardCode"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">포상 코드</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="R01" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={12} placeholder="R01" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -266,11 +307,12 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
             <ShadcnFormField
               control={form.control}
               name="rwardDe"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">포상 일자 (8자리)</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="20260606" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={8} inputMode="numeric" placeholder="20260606" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -279,12 +321,14 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
             <ShadcnFormField
               control={form.control}
               name="pblenCn"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">공적 내용</FormLabel>
                   <FormControl>
                     <textarea 
                       {...field} 
+                      maxLength={4000}
                       placeholder="사내 인프라 아키텍처 개선 및 현대화 프로젝트 공헌" 
                       className="w-full min-h-[120px] p-3 rounded-lg border bg-muted border-border focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
                     />

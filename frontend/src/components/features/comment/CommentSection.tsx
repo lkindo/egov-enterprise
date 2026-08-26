@@ -1,7 +1,7 @@
 'use client';
 
-import { useOptimistic, useState, useTransition } from 'react';
-import { MessageSquare, User, Clock, Trash2, Edit2, Send, X, Check } from 'lucide-react';
+import { useOptimistic, useRef, useState, useTransition, type FormEvent } from 'react';
+import { MessageSquare, User, Clock, Trash2, Edit2, Send, X, Check, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
@@ -10,6 +10,15 @@ import { CommentVO } from '@/types/business/comment';
 import { format } from 'date-fns';
 import { createComment, deleteComment, updateComment } from '@/app/actions/commentActions';
 import { useToast } from '@/app/components/ui/toast';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import {
+  commentCreateFormSchema,
+  commentCreateValidationLabels,
+  commentEditFormSchema,
+  commentEditValidationLabels,
+  mapCommentEditFieldErrors,
+} from './comment-form-validation';
 
 interface CommentSectionProps {
   pstSn: number;
@@ -26,7 +35,7 @@ type OptimisticCommentAction =
 import { motion, AnimatePresence } from 'framer-motion';
 
 export default function CommentSection({ pstSn, bbsId, initialComments }: CommentSectionProps) {
-  const [isPending, startTransition] = useTransition();
+  const [, startTransition] = useTransition();
   const { toast } = useToast();
   
   // Optimistic State Management (React 19)
@@ -49,10 +58,34 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
   const [ansCn, setAnsCn] = useState('');
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editCn, setEditCn] = useState('');
+  const [createPending, setCreatePending] = useState(false);
+  const [editPendingId, setEditPendingId] = useState<number | null>(null);
+  const [deletePendingId, setDeletePendingId] = useState<number | null>(null);
+  const createPendingRef = useRef(false);
+  const editPendingRef = useRef(false);
+  const deletePendingRef = useRef(false);
+  const createInputRef = useRef<HTMLTextAreaElement>(null);
+  const editInputRef = useRef<HTMLTextAreaElement>(null);
+  const createValidation = useManualFormValidation(commentCreateFormSchema, {
+    labels: commentCreateValidationLabels,
+    focusTargets: { ansCn: () => createInputRef.current },
+  });
+  const editValidation = useManualFormValidation(commentEditFormSchema, {
+    labels: commentEditValidationLabels,
+    focusTargets: { editCn: () => editInputRef.current },
+  });
+  const hasWritePending = createPending || editPendingId !== null || deletePendingId !== null;
 
-  const handleCreate = async (formData: FormData) => {
-    const content = formData.get('ansCn') as string;
-    if (!content.trim()) return;
+  const handleCreate = (formData: FormData) => {
+    if (createPendingRef.current) return;
+    const validated = createValidation.validate({ pstSn, bbsId, ansCn });
+    if (!validated) return;
+    createPendingRef.current = true;
+    setCreatePending(true);
+    const content = validated.ansCn;
+    formData.set('pstSn', String(validated.pstSn));
+    formData.set('bbsId', validated.bbsId);
+    formData.set('ansCn', content);
 
     setAnsCn(''); // Clear input immediately
     
@@ -82,21 +115,36 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
         if (!result.success) {
           // 요청 중 사용자가 새로 입력했다면 덮어쓰지 않고, 비어 있을 때만 실패한 원문을 복구한다.
           setAnsCn(current => current.trim() ? current : content);
-          toast(result.message || '댓글 등록에 실패했습니다.', 'error');
+          if (result.fieldErrors) createValidation.setFormErrors(result.fieldErrors);
+          else toast(result.message || '댓글 등록에 실패했습니다.', 'error');
+        } else {
+          createValidation.setFormErrors({}, false);
         }
       } catch {
         setAnsCn(current => current.trim() ? current : content);
         toast('댓글 등록 중 오류가 발생했습니다.', 'error');
+      } finally {
+        createPendingRef.current = false;
+        setCreatePending(false);
       }
     });
   };
 
+  const handleCreateSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    handleCreate(new FormData(event.currentTarget));
+  };
+
   const handleDelete = async (id: number) => {
-    if (!confirm('댓글을 삭제하시겠습니까?')) return;
+    if (deletePendingRef.current || editPendingRef.current || createPendingRef.current) return;
+    deletePendingRef.current = true;
+    if (!confirm('댓글을 삭제하시겠습니까?')) {
+      deletePendingRef.current = false;
+      return;
+    }
+    setDeletePendingId(id);
     
     startTransition(async () => {
-      addOptimisticComment({ type: 'delete', payload: id });
-      
       const formData = new FormData();
       formData.append('id', id.toString());
       formData.append('bbsId', bbsId);
@@ -106,18 +154,25 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
         const result = await deleteComment(null, formData);
         if (!result.success) {
           toast(result.message || '삭제에 실패했습니다.', 'error');
+        } else {
+          addOptimisticComment({ type: 'delete', payload: id });
         }
       } catch {
         toast('댓글 삭제 중 오류가 발생했습니다.', 'error');
+      } finally {
+        deletePendingRef.current = false;
+        setDeletePendingId(null);
       }
     });
   };
 
   const handleEdit = async (id: number) => {
-    if (!editCn.trim()) return;
-    
-    const originalContent = editCn;
-    setEditingId(null);
+    if (editPendingRef.current || createPendingRef.current || deletePendingRef.current) return;
+    const validated = editValidation.validate({ pstSn, bbsId, editCn });
+    if (!validated) return;
+    editPendingRef.current = true;
+    setEditPendingId(id);
+    const originalContent = validated.editCn;
     
     startTransition(async () => {
       addOptimisticComment({ type: 'update', payload: { ansSn: id, ansCn: originalContent } });
@@ -125,8 +180,8 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
       const formData = new FormData();
       formData.append('id', id.toString());
       formData.append('ansCn', originalContent);
-      formData.append('bbsId', bbsId);
-      formData.append('pstSn', String(pstSn));
+      formData.append('bbsId', validated.bbsId);
+      formData.append('pstSn', String(validated.pstSn));
       
       try {
         const result = await updateComment(null, formData);
@@ -134,12 +189,22 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
           // 낙관적 본문은 useOptimistic이 원복한다. 편집 폼도 다시 열어 사용자의 수정 원문을 보존한다.
           setEditingId(id);
           setEditCn(originalContent);
-          toast(result.message || '수정에 실패했습니다.', 'error');
+          if (result.fieldErrors) {
+            editValidation.setFormErrors(mapCommentEditFieldErrors(result.fieldErrors));
+          } else {
+            toast(result.message || '수정에 실패했습니다.', 'error');
+          }
+        } else {
+          editValidation.setFormErrors({}, false);
+          setEditingId(null);
         }
       } catch {
         setEditingId(id);
         setEditCn(originalContent);
         toast('댓글 수정 중 오류가 발생했습니다.', 'error');
+      } finally {
+        editPendingRef.current = false;
+        setEditPendingId(null);
       }
     });
   };
@@ -213,13 +278,62 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                           {editingId === comment.ansSn ? (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => handleEdit(comment.ansSn)} aria-label="댓글 수정 저장" className="h-10 w-10 p-0 rounded-xl text-success-emphasis hover:bg-success/10" data-testid="edit-save-button"><Check className="w-5 h-5" /></Button>
-                              <Button variant="ghost" size="sm" onClick={() => setEditingId(null)} aria-label="댓글 수정 취소" className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted" data-testid="edit-cancel-button"><X className="w-5 h-5" /></Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={hasWritePending}
+                                aria-busy={editPendingId === comment.ansSn}
+                                onClick={() => { void handleEdit(comment.ansSn); }}
+                                aria-label={editPendingId === comment.ansSn ? '댓글 수정 저장 중' : '댓글 수정 저장'}
+                                className="h-10 w-10 p-0 rounded-xl text-success-emphasis hover:bg-success/10"
+                                data-testid="edit-save-button"
+                              >
+                                {editPendingId === comment.ansSn
+                                  ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                                  : <Check className="w-5 h-5" aria-hidden="true" />}
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={hasWritePending}
+                                onClick={() => {
+                                  editValidation.setFormErrors({}, false);
+                                  setEditingId(null);
+                                }}
+                                aria-label="댓글 수정 취소"
+                                className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted"
+                                data-testid="edit-cancel-button"
+                              ><X className="w-5 h-5" /></Button>
                             </>
                           ) : (
                             <>
-                              <Button variant="ghost" size="sm" onClick={() => { setEditingId(comment.ansSn); setEditCn(comment.ansCn); }} aria-label="댓글 수정" className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted" data-testid="comment-edit-button"><Edit2 className="w-5 h-5" /></Button>
-                              <Button variant="ghost" size="sm" onClick={() => handleDelete(comment.ansSn)} aria-label="댓글 삭제" className="h-10 w-10 p-0 rounded-xl text-rose-400 hover:bg-rose-50" data-testid="comment-delete-button"><Trash2 className="w-5 h-5" /></Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={hasWritePending}
+                                onClick={() => {
+                                  editValidation.setFormErrors({}, false);
+                                  setEditingId(comment.ansSn);
+                                  setEditCn(comment.ansCn);
+                                }}
+                                aria-label="댓글 수정"
+                                className="h-10 w-10 p-0 rounded-xl text-muted-foreground hover:bg-muted"
+                                data-testid="comment-edit-button"
+                              ><Edit2 className="w-5 h-5" /></Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                disabled={hasWritePending}
+                                aria-busy={deletePendingId === comment.ansSn}
+                                onClick={() => { void handleDelete(comment.ansSn); }}
+                                aria-label={deletePendingId === comment.ansSn ? '댓글 삭제 중' : '댓글 삭제'}
+                                className="h-10 w-10 p-0 rounded-xl text-destructive-emphasis hover:bg-destructive/10"
+                                data-testid="comment-delete-button"
+                              >
+                                {deletePendingId === comment.ansSn
+                                  ? <Loader2 className="w-5 h-5 animate-spin" aria-hidden="true" />
+                                  : <Trash2 className="w-5 h-5" aria-hidden="true" />}
+                              </Button>
                             </>
                           )}
                         </div>
@@ -227,12 +341,29 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                       </div>
 
                       {editingId === comment.ansSn ? (
-                        <Textarea
-                          aria-label="댓글 수정 내용"
-                          value={editCn}
-                          onChange={(e) => setEditCn(e.target.value)}
-                          className="min-h-[120px] rounded-2xl border-border focus:ring-slate-900 border-2 text-foreground font-bold text-lg p-6 bg-muted/50"
-                        />
+                        <div className="space-y-3">
+                          <FormErrorSummary
+                            errors={editValidation.errors}
+                            labels={commentEditValidationLabels}
+                            onNavigate={editValidation.focusError}
+                          />
+                          <Textarea
+                            ref={editInputRef}
+                            {...editValidation.fieldProps('editCn')}
+                            aria-label="댓글 수정 내용"
+                            value={editCn}
+                            onChange={(e) => {
+                              editValidation.clearError('editCn');
+                              setEditCn(e.target.value);
+                            }}
+                            maxLength={4000}
+                            required
+                            className="min-h-[120px] rounded-2xl border-border focus:ring-slate-900 border-2 text-foreground font-bold text-lg p-6 bg-muted/50"
+                          />
+                          {editValidation.errors.editCn ? (
+                            <p {...editValidation.messageProps('editCn')} className="text-xs font-bold text-destructive-emphasis" />
+                          ) : null}
+                        </div>
                       ) : (
                         <p className="text-foreground font-bold text-lg leading-relaxed whitespace-pre-wrap pl-1">
                           {comment.ansCn}
@@ -249,7 +380,8 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
 
       {/* Comment Form */}
       <motion.form 
-        action={handleCreate} 
+        onSubmit={handleCreateSubmit}
+        noValidate
         className="relative group pt-16"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -260,25 +392,40 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
         <div className="absolute -inset-2 bg-gradient-to-r from-primary/20 via-slate-200/20 to-hub-indigo/20 rounded-[2.5rem] blur-xl opacity-25 group-hover:opacity-100 transition duration-1000"></div>
         <Card className="relative border border-white shadow-2xl rounded-[2.5rem] bg-white/80 backdrop-blur-3xl ring-1 ring-black/5 overflow-hidden">
           <CardContent className="p-12 space-y-8">
+            <FormErrorSummary
+              errors={createValidation.errors}
+              labels={commentCreateValidationLabels}
+              onNavigate={createValidation.focusError}
+            />
             <div className="flex items-center gap-4 mb-2">
               <Badge className="px-5 py-2 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-black tracking-widest text-[10px] uppercase hover:bg-surface-inverse shadow-xl">Initiate Response</Badge>
               <div className="h-[2px] flex-1 bg-muted" />
             </div>
             <Textarea
-              name="ansCn"
+              ref={createInputRef}
+              {...createValidation.fieldProps('ansCn')}
               aria-label="새 댓글 작성"
               placeholder="Inject your thoughts into the collective knowledge..."
               value={ansCn}
-              onChange={(e) => setAnsCn(e.target.value)}
+              onChange={(e) => {
+                createValidation.clearError('ansCn');
+                setAnsCn(e.target.value);
+              }}
+              maxLength={4000}
+              required
               className="min-h-[180px] border-none focus-visible:ring-0 text-2xl font-black text-foreground tracking-tighter resize-none p-0 bg-transparent placeholder:text-muted-foreground placeholder:uppercase"
             />
+            {createValidation.errors.ansCn ? (
+              <p {...createValidation.messageProps('ansCn')} className="text-xs font-bold text-destructive-emphasis" />
+            ) : null}
             <div className="flex justify-end border-t border-border pt-8">
               <Button
                 type="submit"
-                disabled={isPending || !ansCn.trim()}
+                disabled={hasWritePending}
+                aria-busy={createPending}
                 className="h-16 px-12 rounded-[1.5rem] bg-surface-inverse hover:bg-black text-surface-inverse-foreground font-black tracking-widest text-xs uppercase shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex gap-4 active:scale-95 transition-all group"
               >
-                {isPending ? (
+                {createPending ? (
                   <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> COMMITTING...</>
                 ) : (
                   <><Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> Commit Response</>

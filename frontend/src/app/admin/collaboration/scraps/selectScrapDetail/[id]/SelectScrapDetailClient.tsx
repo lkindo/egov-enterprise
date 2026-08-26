@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import axios from '@/lib/api/client';
@@ -12,8 +12,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Bookmark, Globe, FileText, ArrowLeft, Send, Trash2, AlertTriangle } from "lucide-react";
+import { Bookmark, Globe, FileText, ArrowLeft, Send, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import {
+  scrapEditFormSchema,
+  scrapValidationLabels,
+} from '../../scrap-form-validation';
 
 /** 스크랩 계약의 SSOT 는 생성 타입이다(로컬 인터페이스 재선언 금지). */
 type Scrap = components['schemas']['ScrapDto'];
@@ -43,6 +50,12 @@ const SelectScrapDetailClient = () => {
     useYn: 'Y'
   });
   const [loading, setLoading] = useState(false);
+  const [isDeletePending, setIsDeletePending] = useState(false);
+  const savePendingRef = useRef(false);
+  const deletePendingRef = useRef(false);
+  const validation = useManualFormValidation(scrapEditFormSchema, {
+    labels: scrapValidationLabels,
+  });
 
   const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['scrap-detail', scrapSn],
@@ -64,48 +77,49 @@ const SelectScrapDetailClient = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (savePendingRef.current || deletePendingRef.current) return;
+    const validated = validation.validate(formData);
+    if (!validated) return;
 
-    if (!formData.scrapNm?.trim()) {
-      toast('스크랩명을 입력해주세요.', 'error');
-      return;
-    }
-    if (!formData.scrapUrl?.trim()) {
-      toast('URL을 입력해주세요.', 'error');
-      return;
-    }
-
+    savePendingRef.current = true;
     setLoading(true);
     try {
       // useYn 은 서버 DTO 필수값(@NotBlank) — 상태에 항상 보유하고 그대로 전송한다.
-      await axios.put<void>(`/scraps/${scrapSn}`, { ...formData, useYn: formData.useYn || 'Y' });
+      await axios.put<void>(`/scraps/${scrapSn}`, validated);
       toast('스크랩이 수정되었습니다.', 'success');
       router.push(LIST_PATH);
-    } catch (err) {
-      toast(err instanceof Error && err.message ? err.message : '수정에 실패했습니다.', 'error');
+    } catch (err: unknown) {
+      const fieldErrors = extractFieldErrors(err);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      else toast(extractErrorMessage(err, '수정에 실패했습니다.'), 'error');
     } finally {
+      savePendingRef.current = false;
       setLoading(false);
     }
   };
 
   /** [P1-9] native confirm → useConfirm. 본문에 대상 스크랩명을 노출한다. */
   const handleDelete = async () => {
-    const ok = await confirm({
-      title: '스크랩 삭제',
-      message: `'${formData.scrapNm || '제목 없음'}' 스크랩을 삭제합니다. 삭제한 항목은 복구할 수 없습니다.`,
-      confirmText: '삭제',
-      variant: 'destructive',
-    });
-    if (!ok) return;
-
-    setLoading(true);
+    if (deletePendingRef.current || savePendingRef.current) return;
+    deletePendingRef.current = true;
+    setIsDeletePending(true);
     try {
+      const ok = await confirm({
+        title: '스크랩 삭제',
+        message: `'${formData.scrapNm || '제목 없음'}' 스크랩을 삭제합니다. 삭제한 항목은 복구할 수 없습니다.`,
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
+
       await axios.delete<void>(`/scraps/${scrapSn}`);
       toast('스크랩이 삭제되었습니다.', 'success');
       router.push(LIST_PATH);
-    } catch (err) {
-      toast(err instanceof Error && err.message ? err.message : '삭제에 실패했습니다.', 'error');
+    } catch (err: unknown) {
+      toast(extractErrorMessage(err, '삭제에 실패했습니다.'), 'error');
     } finally {
-      setLoading(false);
+      deletePendingRef.current = false;
+      setIsDeletePending(false);
     }
   };
 
@@ -138,7 +152,7 @@ const SelectScrapDetailClient = () => {
       <DynamicBreadcrumb />
 
       <Card className="shadow-2xl border-none overflow-hidden rounded-lg bg-card ring-1 ring-border">
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} noValidate>
           <CardHeader className="border-b bg-muted/40 pb-12 pt-12 px-10">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
               <div className="flex items-center gap-5">
@@ -157,17 +171,28 @@ const SelectScrapDetailClient = () => {
               <Button
                 type="button"
                 variant="destructive"
-                aria-label={`${formData.scrapNm || '스크랩'} 삭제`}
+                aria-label={isDeletePending
+                  ? `${formData.scrapNm || '스크랩'} 삭제 중`
+                  : `${formData.scrapNm || '스크랩'} 삭제`}
                 onClick={() => { void handleDelete(); }}
-                disabled={loading}
+                disabled={loading || isDeletePending}
+                aria-busy={isDeletePending || undefined}
                 className="rounded-lg h-12 gap-2 shadow-lg shrink-0"
               >
-                <Trash2 size={16} /> 삭제
+                {isDeletePending
+                  ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                  : <Trash2 size={16} aria-hidden="true" />}
+                {isDeletePending ? '삭제 중...' : '삭제'}
               </Button>
             </div>
           </CardHeader>
 
           <CardContent className="p-10 space-y-10">
+            <FormErrorSummary
+              errors={validation.errors}
+              labels={scrapValidationLabels}
+              onNavigate={validation.focusError}
+            />
             <div className="grid gap-8">
               <div className="group space-y-3">
                 <Label htmlFor="scrapNm" className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-1 group-focus-within:text-hub-indigo transition-colors">
@@ -179,13 +204,21 @@ const SelectScrapDetailClient = () => {
                   </div>
                   <Input
                     id="scrapNm"
+                    {...validation.fieldProps('scrapNm')}
                     placeholder="스크랩 명을 입력하세요"
                     value={formData.scrapNm}
-                    onChange={(e) => setFormData({ ...formData, scrapNm: e.target.value })}
+                    onChange={(e) => {
+                      validation.clearError('scrapNm');
+                      setFormData({ ...formData, scrapNm: e.target.value });
+                    }}
                     className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    maxLength={100}
                     required
                   />
                 </div>
+                {validation.errors.scrapNm ? (
+                  <p {...validation.messageProps('scrapNm')} className="text-xs font-bold text-destructive-emphasis" />
+                ) : null}
               </div>
 
               <div className="group space-y-3">
@@ -198,13 +231,22 @@ const SelectScrapDetailClient = () => {
                   </div>
                   <Input
                     id="scrapUrl"
+                    {...validation.fieldProps('scrapUrl')}
+                    type="url"
                     placeholder="https://example.com"
                     value={formData.scrapUrl}
-                    onChange={(e) => setFormData({ ...formData, scrapUrl: e.target.value })}
+                    onChange={(e) => {
+                      validation.clearError('scrapUrl');
+                      setFormData({ ...formData, scrapUrl: e.target.value });
+                    }}
                     className="h-11 pl-16 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-bold"
+                    maxLength={1000}
                     required
                   />
                 </div>
+                {validation.errors.scrapUrl ? (
+                  <p {...validation.messageProps('scrapUrl')} className="text-xs font-bold text-destructive-emphasis" />
+                ) : null}
               </div>
 
               <div className="group space-y-3">
@@ -213,11 +255,18 @@ const SelectScrapDetailClient = () => {
                 </Label>
                 <Textarea
                   id="scrapExpln"
+                  {...validation.fieldProps('scrapExpln')}
                   placeholder="이 자료에 대한 설명을 입력하세요."
                   value={formData.scrapExpln}
-                  onChange={(e) => setFormData({ ...formData, scrapExpln: e.target.value })}
+                  onChange={(e) => {
+                    validation.clearError('scrapExpln');
+                    setFormData({ ...formData, scrapExpln: e.target.value });
+                  }}
                   className="min-h-[180px] p-6 rounded-lg border-2 border-border bg-muted/30 focus:bg-card focus:ring-4 focus:ring-hub-indigo/10 focus:border-hub-indigo transition-all font-medium leading-relaxed resize-none shadow-inner"
                 />
+                {validation.errors.scrapExpln ? (
+                  <p {...validation.messageProps('scrapExpln')} className="text-xs font-bold text-destructive-emphasis" />
+                ) : null}
               </div>
             </div>
           </CardContent>
@@ -233,7 +282,8 @@ const SelectScrapDetailClient = () => {
             </Button>
             <Button
               type="submit"
-              disabled={loading}
+              aria-busy={loading || undefined}
+              disabled={loading || isDeletePending}
               className="w-full md:flex-1 h-11 rounded-lg font-bold text-lg shadow-xl shadow-hub-indigo/10 bg-hub-indigo hover:bg-hub-indigo/90 hover:-translate-y-1 transition-all flex items-center gap-3 group"
             >
               {loading ? (

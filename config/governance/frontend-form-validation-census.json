@@ -1,0 +1,2145 @@
+{
+  "schemaVersion": 1,
+  "authority": "frontend-form-validation-census",
+  "generatedAt": "2026-08-26",
+  "expected": {
+    "nativeFormOccurrences": 47,
+    "nativeFormFiles": 45,
+    "memberFormOccurrences": 1,
+    "memberFormFiles": 1,
+    "formlessWriteBoundaries": 21,
+    "secondaryActionBoundaries": 52,
+    "candidateCount": 121
+  },
+  "entries": [
+    {
+      "key": "formless-write:frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx#MailHistoryHubClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx",
+      "owner": "MailHistoryHubClient",
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/mail-history/__tests__/MailHistoryHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx#CommunityBoardsDetailClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/community/boards/[id]/CommunityBoardsDetailClient.tsx",
+      "owner": "CommunityBoardsDetailClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:communityBoardCreateSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/__tests__/CommunityBoardsDetailClient.attachment.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx#BoardMasterListClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
+      "owner": "BoardMasterListClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:boardMasterEditSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/__tests__/BoardMasterListClient.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/community/templates/TemplateAdminClient.tsx#TemplateAdminClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/community/templates/TemplateAdminClient.tsx",
+      "owner": "TemplateAdminClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:templateFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/templates/__tests__/TemplateAdminClient.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:AuthorForm+authority-mapping-actions",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "composedChildContracts": [
+        {
+          "actionHandlers": [
+            "handleAuthorDelete",
+            "handleSaveGlobal",
+            "handleSaveMenuMapping",
+            "handleSaveUserMapping"
+          ],
+          "component": "AuthorForm",
+          "handler": "onAuthorSubmit",
+          "writeSinks": [
+            "authorAdminService.createAuthor",
+            "authorAdminService.updateAuthor"
+          ]
+        }
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx#SecurityDeptAuthorityClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx",
+      "owner": "SecurityDeptAuthorityClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/dept-authority/__tests__/SecurityDeptAuthorityClient.contract.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/security/group/SecurityGroupClient.tsx#SecurityGroupClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/security/group/SecurityGroupClient.tsx",
+      "owner": "SecurityGroupClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:securityGroupFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/group/__tests__/SecurityGroupClient.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/security/role/SecurityRoleClient.tsx#SecurityRoleClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/security/role/SecurityRoleClient.tsx",
+      "owner": "SecurityRoleClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:securityRoleFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/role/__tests__/SecurityRoleClient.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/survey/manage/[id]/SurveyManageDetailClient.tsx#SurveyManageDetailClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/survey/manage/[id]/SurveyManageDetailClient.tsx",
+      "owner": "SurveyManageDetailClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:pollFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/manage/__tests__/SurveyManageValidation.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/survey/manage/create/SurveyManageCreateClient.tsx#SurveyManageCreateClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/survey/manage/create/SurveyManageCreateClient.tsx",
+      "owner": "SurveyManageCreateClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:pollFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/manage/__tests__/SurveyManageValidation.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/survey/polls/OnlinePollAdminClient.tsx#OnlinePollAdminClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/survey/polls/OnlinePollAdminClient.tsx",
+      "owner": "OnlinePollAdminClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:adminPollFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/polls/__tests__/OnlinePollAdminClient.validation.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:DepartmentForm+UserManageForm+organization-actions",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "composedChildContracts": [
+        {
+          "actionHandlers": [
+            "bulkAction:일괄 삭제",
+            "handleBulkDeptMove",
+            "handleBulkRoleUpdate",
+            "handleBulkStatusUpdate",
+            "handleDeleteDept",
+            "handleDeleteUser",
+            "handleSaveDeptHierarchy"
+          ],
+          "component": "UserManageForm",
+          "handler": "onUserSubmit",
+          "writeSinks": [
+            "userAdminService.createUser",
+            "userAdminService.updateUser"
+          ]
+        },
+        {
+          "actionHandlers": [
+            "bulkAction:일괄 삭제",
+            "handleBulkDeptMove",
+            "handleBulkRoleUpdate",
+            "handleBulkStatusUpdate",
+            "handleDeleteDept",
+            "handleDeleteUser",
+            "handleSaveDeptHierarchy"
+          ],
+          "component": "DepartmentForm",
+          "handler": "onDeptSubmit",
+          "writeSinks": [
+            "deptAdminService.createDept",
+            "deptAdminService.updateDept"
+          ]
+        }
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx",
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx#WorkspaceMyPage",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx",
+      "owner": "WorkspaceMyPage",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/workspace/my-page/__tests__/WorkspaceMyPageClient.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/note/page.tsx#NotePage",
+      "kind": "formless-write",
+      "file": "frontend/src/app/note/page.tsx",
+      "owner": "NotePage",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:noteComposeSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/note/__tests__/NotePage.validation.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/smart-toolkit/schedule/dept/ScheduleDeptClient.tsx#ScheduleDeptClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/smart-toolkit/schedule/dept/ScheduleDeptClient.tsx",
+      "owner": "ScheduleDeptClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:deptScheduleFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/smart-toolkit/schedule/dept/__tests__/ScheduleDeptClient.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/survey/response/SurveyResponseClient.tsx#SurveyResponseClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/survey/response/SurveyResponseClient.tsx",
+      "owner": "SurveyResponseClient",
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/survey/response/__tests__/SurveyResponseClient.test.tsx"
+      ]
+    },
+    {
+      "key": "member-form:frontend/src/components/features/comment/CommentSection.tsx#CommentSection[1]",
+      "kind": "member-form",
+      "file": "frontend/src/components/features/comment/CommentSection.tsx",
+      "owner": "CommentSection",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:commentCreateFormSchema+commentEditFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/features/comment/__tests__/CommentSection.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx#AddressBookInsertHubClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/collaboration/address-book/insert-address-book/AddressBookInsertHubClient.tsx",
+      "owner": "AddressBookInsertHubClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:addressBookCreateFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/address-book/__tests__/AddressBookFormValidation.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx#SelectAddressBookDetailClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx",
+      "owner": "SelectAddressBookDetailClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:addressBookEditFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/address-book/__tests__/AddressBookFormValidation.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx#AddressBookListClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx",
+      "owner": "AddressBookListClient",
+      "classification": "search-filter",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx#MailSendHubClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx",
+      "owner": "MailSendHubClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:mailSendSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/mail-send/__tests__/MailSendHubClient.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx#InsertScrapClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/collaboration/scraps/insertScrap/InsertScrapClient.tsx",
+      "owner": "InsertScrapClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:scrapCreateFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx#SelectScrapDetailClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
+      "owner": "SelectScrapDetailClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:scrapEditFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx#BoardRegistClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
+      "owner": "BoardRegistClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:boardSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/insert-board-article/__tests__/BoardRegistClient.validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx#BoardMakerWizard[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
+      "owner": "BoardMakerWizard",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:boardMakerFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/maker/components/__tests__/BoardMakerWizard.validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/community/boards/select-board-list/components/BoardListFilters.tsx#BoardListFilters[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/community/boards/select-board-list/components/BoardListFilters.tsx",
+      "owner": "BoardListFilters",
+      "classification": "search-filter",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx#CommunityBoardsWriteClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/community/boards/write/CommunityBoardsWriteClient.tsx",
+      "owner": "CommunityBoardsWriteClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:communityBoardSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/write/__tests__/CommunityBoardsWriteClient.validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/operation/events/EventManagementClient.tsx#EventManagementClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
+      "owner": "EventManagementClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:eventCreateSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/events/__tests__/EventManagementClient.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx#ExternalHrClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
+      "owner": "ExternalHrClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:externalHrSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/__tests__/operation-form-validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/operation/rewards/RewardManageClient.tsx#RewardManageClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
+      "owner": "RewardManageClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:rewardSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/__tests__/operation-form-validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/patterns/PatternGalleryClient.tsx#PatternGalleryClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/patterns/PatternGalleryClient.tsx",
+      "owner": "PatternGalleryClient",
+      "classification": "primitive",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx#LoginPolicyAdminClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/security/login-policy/LoginPolicyAdminClient.tsx",
+      "owner": "LoginPolicyAdminClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:loginPolicySchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/login-policy/__tests__/LoginPolicyAdminClient.behavior.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx#<anonymous>[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "owner": "<anonymous>",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:surveyItemCreateSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyQuestionsPanel.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx#SurveyQuestionsPanel[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "owner": "SurveyQuestionsPanel",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:surveyQuestionCreateSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyQuestionsPanel.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx#SurveyTemplatesPanel[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx",
+      "owner": "SurveyTemplatesPanel",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:surveyTemplateCreateSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyTemplatesPanel.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/system/banner/BannerAdminClient.tsx#BannerAdminClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
+      "owner": "BannerAdminClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:bannerSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/system/banner/BannerAdminClient.tsx#BannerAdminClient[2]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
+      "owner": "BannerAdminClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:popupSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/system/codes/administ/AdministCodeClient.tsx#AdministCodeClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/system/codes/administ/AdministCodeClient.tsx",
+      "owner": "AdministCodeClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:administCodeSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/system/common-code/CommonCodeClient.tsx#CommonCodeClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/system/common-code/CommonCodeClient.tsx",
+      "owner": "CommonCodeClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:codeDetailFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/common-code/__tests__/CommonCodeClient.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/system/hpcm/HpcmClient.tsx#HpcmClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "owner": "HpcmClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:hpcmSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/hpcm/__tests__/HpcmClient.behavior.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/system/ism/IsmClient.tsx#IsmClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/system/ism/IsmClient.tsx",
+      "owner": "IsmClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:ismSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/ism/__tests__/IsmClient.behavior.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/system/menus/MenuAdminClient.tsx#MenuAdminClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
+      "owner": "MenuAdminClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:menuSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/menus/__tests__/MenuAdminClient.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/system/policies/PolicyAdminClient.tsx#PolicyAdminClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/system/policies/PolicyAdminClient.tsx",
+      "owner": "PolicyAdminClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:policySchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/policies/__tests__/PolicyAdminClient.behavior.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx#SmsAdminClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/uss/ion/sms/SmsAdminClient.tsx",
+      "owner": "SmsAdminClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:smsSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/uss/ion/sms/__tests__/SmsAdminClient.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx#ManualAdminClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
+      "owner": "ManualAdminClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:manualSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/uss/olh/online-manual/__tests__/ManualAdminClient.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/components/patterns/keyword-filter.tsx#KeywordFilter[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/components/patterns/keyword-filter.tsx",
+      "owner": "KeywordFilter",
+      "classification": "primitive",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/components/ui/code-picker.tsx#CodePicker[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/components/ui/code-picker.tsx",
+      "owner": "CodePicker",
+      "classification": "primitive",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/components/ui/standard-data-table.tsx#StandardDataTable[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/components/ui/standard-data-table.tsx",
+      "owner": "StandardDataTable",
+      "classification": "primitive",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/components/ui/standard-form.tsx#StandardForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/components/ui/standard-form.tsx",
+      "owner": "StandardForm",
+      "classification": "primitive",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/components/ui/standard-search-filter.tsx#SmartSearchPanel[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/components/ui/standard-search-filter.tsx",
+      "owner": "SmartSearchPanel",
+      "classification": "primitive",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/components/ui/user-picker.tsx#UserPicker[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/components/ui/user-picker.tsx",
+      "owner": "UserPicker",
+      "classification": "primitive",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/cop/sms/selectSmsList/SmsHubClient.tsx#SmsHubClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/cop/sms/selectSmsList/SmsHubClient.tsx",
+      "owner": "SmsHubClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:smsSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/cop/sms/selectSmsList/__tests__/SmsHubClient.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/login/LoginClient.tsx#LoginContent[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/login/LoginClient.tsx",
+      "owner": "LoginContent",
+      "classification": "auth",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:loginFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "form-level-auth-error-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/login/__tests__/page.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/search/SearchClient.tsx#SearchResultsContent[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/search/SearchClient.tsx",
+      "owner": "SearchResultsContent",
+      "classification": "search-filter",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/app/survey/stats/SurveyStatsClient.tsx#StatsContent[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/survey/stats/SurveyStatsClient.tsx",
+      "owner": "StatsContent",
+      "classification": "search-filter",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": []
+    },
+    {
+      "key": "native-form:frontend/src/components/admin/security/AuthorForm.tsx#AuthorForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/admin/security/AuthorForm.tsx",
+      "owner": "AuthorForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:authorSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/admin/system/NetworkForm.tsx#NetworkForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/admin/system/NetworkForm.tsx",
+      "owner": "NetworkForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:networkSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
+        "frontend/src/app/admin/system/network/NetworkAdminClient.validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/admin/system/ProgramForm.tsx#ProgramForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/admin/system/ProgramForm.tsx",
+      "owner": "ProgramForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:programFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
+        "frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/admin/user/DepartmentForm.tsx#DepartmentForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/admin/user/DepartmentForm.tsx",
+      "owner": "DepartmentForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:deptSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/admin/user/UserManageForm.tsx#UserManageForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/admin/user/UserManageForm.tsx",
+      "owner": "UserManageForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:userSchema+createUserSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/business/deptJob/DeptJobForm.tsx#DeptJobForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/business/deptJob/DeptJobForm.tsx",
+      "owner": "DeptJobForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:deptJobFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
+        "frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.validation.test.tsx",
+        "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/business/report/ReportCreateForm.tsx#ReportCreateForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/business/report/ReportCreateForm.tsx",
+      "owner": "ReportCreateForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:reportFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
+        "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/business/schedule/ScheduleCreateForm.tsx#ScheduleCreateForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/business/schedule/ScheduleCreateForm.tsx",
+      "owner": "ScheduleCreateForm",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:scheduleFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx",
+        "frontend/src/components/business/schedule/__tests__/ScheduleCreateForm.test.tsx",
+        "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/components/features/satisfaction/SatisfactionSection.tsx#SatisfactionSection[1]",
+      "kind": "native-form",
+      "file": "frontend/src/components/features/satisfaction/SatisfactionSection.tsx",
+      "owner": "SatisfactionSection",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:satisfactionCreateSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/features/satisfaction/__tests__/SatisfactionSection.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx#SelectAddressBookDetailClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx",
+      "owner": "SelectAddressBookDetailClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "addressbookUserService.deleteAddressBook",
+        "deleteMutation.mutateAsync"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/address-book/__tests__/AddressBookFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx#AddressBookListClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx",
+      "owner": "AddressBookListClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "addressbookUserService.deleteAddressBook"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/address-book/__tests__/AddressBookListClient.delete.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx#SelectScrapDetailClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
+      "owner": "SelectScrapDetailClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "axios.delete"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx#BoardMasterListClient.bulkAction:완전 말소[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
+      "owner": "BoardMasterListClient",
+      "handler": "bulkAction:완전 말소",
+      "triggerLabel": "완전 말소",
+      "writeSinks": [
+        "boardAdminService.batchDeleteBoardMastersPhysically"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/__tests__/BoardMasterListClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx#BoardMasterListClient.bulkAction:일괄 비활성[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
+      "owner": "BoardMasterListClient",
+      "handler": "bulkAction:일괄 비활성",
+      "triggerLabel": "일괄 비활성",
+      "writeSinks": [
+        "boardAdminService.batchUpdateBoardMasterStatus"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/__tests__/BoardMasterListClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx#BoardMasterListClient.bulkAction:일괄 활성화[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
+      "owner": "BoardMasterListClient",
+      "handler": "bulkAction:일괄 활성화",
+      "triggerLabel": "일괄 활성화",
+      "writeSinks": [
+        "boardAdminService.batchUpdateBoardMasterStatus"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/__tests__/BoardMasterListClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/operation/events/EventManagementClient.tsx#EventManagementClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
+      "owner": "EventManagementClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMutation.mutateAsync",
+        "eventService.deleteEvent"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/events/__tests__/EventManagementClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx#SurveyQuestionsPanel.beginDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "owner": "SurveyQuestionsPanel",
+      "handler": "beginDelete",
+      "writeSinks": [
+        "removeQuestion.mutate",
+        "surveyAdminService.deleteQuestion"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyQuestionsPanel.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx#SurveyQuestionsPanel.beginDelete[2]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "owner": "SurveyQuestionsPanel",
+      "handler": "beginDelete",
+      "writeSinks": [
+        "removeItem.mutate",
+        "surveyAdminService.deleteItem"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyQuestionsPanel.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx#SurveyTemplatesPanel.beginDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx",
+      "owner": "SurveyTemplatesPanel",
+      "handler": "beginDelete",
+      "writeSinks": [
+        "remove.mutate",
+        "surveyAdminService.deleteTemplate"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyTemplatesPanel.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/banner/BannerAdminClient.tsx#BannerAdminClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
+      "owner": "BannerAdminClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteBannerAction",
+        "deletePopupAction"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/banner/__tests__/BannerAdminClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/banner/BannerAdminClient.tsx#BannerAdminClient.handleDelete[2]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
+      "owner": "BannerAdminClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteBannerAction",
+        "deletePopupAction"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/banner/__tests__/BannerAdminClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/common-code/CommonCodeClient.tsx#CommonCodeClient.handleDeleteDetail[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/system/common-code/CommonCodeClient.tsx",
+      "owner": "CommonCodeClient",
+      "handler": "handleDeleteDetail",
+      "writeSinks": [
+        "deleteCodeDetail"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/common-code/__tests__/CommonCodeClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/common-code/CommonCodeClient.tsx#CommonCodeClient.handleSaveExplorerChanges[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/system/common-code/CommonCodeClient.tsx",
+      "owner": "CommonCodeClient",
+      "handler": "handleSaveExplorerChanges",
+      "writeSinks": [
+        "saveCmmnCodeHierarchyAction"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:common-code-hierarchy-membership",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Each code group persists under exactly the classification represented by flattenedNodes.",
+      "structuredPayloads": [
+        "flattenedNodes"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/system/common-code/__tests__/CommonCodeClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/menus/MenuAdminClient.tsx#MenuAdminClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
+      "owner": "MenuAdminClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMenuAction"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/menus/__tests__/MenuAdminClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/menus/MenuAdminClient.tsx#MenuAdminClient.handleSaveChanges[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
+      "owner": "MenuAdminClient",
+      "handler": "handleSaveChanges",
+      "writeSinks": [
+        "updateMenuOrdersAction"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:menu-hierarchy-order",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Each menu node persists one parent and its visible stable one-based hierarchy order.",
+      "structuredPayloads": [
+        "submitData as any"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/system/menus/__tests__/MenuAdminClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.bulkAction:일괄 삭제[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "bulkAction:일괄 삭제",
+      "triggerLabel": "일괄 삭제",
+      "writeSinks": [
+        "bulkDeleteUsersAction"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx#ManualAdminClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
+      "owner": "ManualAdminClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "manualAdminService.deleteManual"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/uss/olh/online-manual/__tests__/ManualAdminClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/components/admin/system/ProgramForm.tsx#ProgramForm.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/admin/system/ProgramForm.tsx",
+      "owner": "ProgramForm",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "programAdminService.deleteProgram"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/components/features/comment/CommentSection.tsx#CommentSection.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/features/comment/CommentSection.tsx",
+      "owner": "CommentSection",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteComment"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/features/comment/__tests__/CommentSection.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/components/features/comment/CommentSection.tsx#CommentSection.handleEdit[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/features/comment/CommentSection.tsx",
+      "owner": "CommentSection",
+      "handler": "handleEdit",
+      "writeSinks": [
+        "updateComment"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "validated-secondary-ui-action",
+      "schemaSource": "local:commentEditFormSchema",
+      "validatedFields": [
+        "bbsId",
+        "editCn",
+        "pstSn"
+      ],
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/features/comment/__tests__/CommentSection.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/components/features/satisfaction/SatisfactionSection.tsx#SatisfactionSection.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/components/features/satisfaction/SatisfactionSection.tsx",
+      "owner": "SatisfactionSection",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMutation.mutate",
+        "satisfactionService.remove"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/components/features/satisfaction/__tests__/SatisfactionSection.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx#MailHistoryHubClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx",
+      "owner": "MailHistoryHubClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMutation.mutateAsync",
+        "mailService.deleteMail"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/mail-history/__tests__/MailHistoryHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx#BoardMasterListClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
+      "owner": "BoardMasterListClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "boardAdminService.deleteBoardMaster",
+        "boardAdminService.deleteBoardMasterPhysically"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/__tests__/BoardMasterListClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleAuthorDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "handler": "handleAuthorDelete",
+      "writeSinks": [
+        "authorAdminService.deleteAuthor"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveUserMapping[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "handler": "handleSaveUserMapping",
+      "writeSinks": [
+        "saveUserMappingMutation.mutate",
+        "userAuthorityAdminService.deleteUserAuthorities",
+        "userAuthorityAdminService.saveUserAuthorities"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:user-authority-assignment-set",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Each user persists exactly the selected authority assignments after revoked mappings are removed.",
+      "structuredPayloads": [
+        "mappings",
+        "revokeTargets"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/group/SecurityGroupClient.tsx#SecurityGroupClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/group/SecurityGroupClient.tsx",
+      "owner": "SecurityGroupClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMutation.mutate",
+        "groupAdminService.deleteGroup"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/group/__tests__/SecurityGroupClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/role/SecurityRoleClient.tsx#SecurityRoleClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/role/SecurityRoleClient.tsx",
+      "owner": "SecurityRoleClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMutation.mutate",
+        "roleAdminService.deleteRole"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/role/__tests__/SecurityRoleClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleDeleteDept[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleDeleteDept",
+      "writeSinks": [
+        "deptAdminService.deleteDept"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleDeleteUser[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleDeleteUser",
+      "writeSinks": [
+        "userAdminService.deleteUser"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/note/page.tsx#NotePage.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/note/page.tsx",
+      "owner": "NotePage",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "noteService.deleteNote"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/note/__tests__/NotePage.validation.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/smart-toolkit/schedule/dept/ScheduleDeptClient.tsx#ScheduleDeptClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/smart-toolkit/schedule/dept/ScheduleDeptClient.tsx",
+      "owner": "ScheduleDeptClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteDeptSchedule"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/smart-toolkit/schedule/dept/__tests__/ScheduleDeptClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/survey/response/SurveyResponseClient.tsx#SurveyResponseClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/survey/response/SurveyResponseClient.tsx",
+      "owner": "SurveyResponseClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMutation.mutate",
+        "deleteQustnrRespondInfo"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/survey/response/__tests__/SurveyResponseClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveMenuMapping[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "handler": "handleSaveMenuMapping",
+      "writeSinks": [
+        "menuAdminService.saveMenuCreation",
+        "saveMenuMappingMutation.mutate"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:authority-menu-assignment-set",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "The selected authority persists exactly the menu assignments represented by tempMenuMappings.",
+      "structuredPayloads": [
+        "Array.from(tempMenuMappings)",
+        "selectedAuthorCode"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx#SecurityDeptAuthorityClient.handleSave[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx",
+      "owner": "SecurityDeptAuthorityClient",
+      "handler": "handleSave",
+      "writeSinks": [
+        "deptAuthorityAdminService.updateDeptAuthorities",
+        "saveMutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:department-authority-assignment",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "The selected department and all-member scope persist exactly the chosen authority assignment.",
+      "structuredPayloads": [
+        "{\n deptId: selectedDept!,\n authrtId,\n allMembers: true\n }",
+        "selectedAuthorCode"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/security/dept-authority/__tests__/SecurityDeptAuthorityClient.contract.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleBulkDeptMove[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleBulkDeptMove",
+      "writeSinks": [
+        "bulkMoveUserDeptAction"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:bulk-user-department-move",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Every selected user moves to exactly the target department chosen in the bulk action.",
+      "structuredPayloads": [
+        "selectedBulkItems.map(u => u.userId)",
+        "targetDeptId"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleBulkRoleUpdate[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleBulkRoleUpdate",
+      "writeSinks": [
+        "bulkUpdateUserRoleAction"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:bulk-user-role-assignment",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Every selected user persists exactly the target role chosen in the bulk action.",
+      "structuredPayloads": [
+        "selectedBulkItems.map(u => u.userId)",
+        "targetRole"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleBulkStatusUpdate[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleBulkStatusUpdate",
+      "writeSinks": [
+        "bulkUpdateUserStatusAction"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:bulk-user-status-update",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Every selected user persists exactly the target status chosen in the bulk action.",
+      "structuredPayloads": [
+        "selectedBulkItems.map(u => u.userId)",
+        "targetStatus"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleSaveDeptHierarchy[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleSaveDeptHierarchy",
+      "writeSinks": [
+        "saveDeptHierarchyAction"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:department-hierarchy-order",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Each department persists one parent and the stable hierarchy order represented by flattenedDepts.",
+      "structuredPayloads": [
+        "flattenedDepts"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx#WorkspaceMyPage.toggleStatus[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx",
+      "owner": "WorkspaceMyPage",
+      "handler": "toggleStatus",
+      "writeSinks": [
+        "myPageAdminService.updateContent"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/workspace/my-page/__tests__/WorkspaceMyPageClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveGlobal[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "handler": "handleSaveGlobal",
+      "writeSinks": [
+        "menuAdminService.saveMenuCreation"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:global-authority-menu-matrix",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Only changed authorities persist exactly the menu assignments represented by the global matrix.",
+      "structuredPayloads": [
+        "Array.from(globalMappings.get(code) ?? new Set<number>())",
+        "code"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/system/network/NetworkAdminClient.tsx",
+      "owner": "NetworkAdminClient",
+      "composedChildContracts": [{"actionHandlers":["handleDelete"],"component":"NetworkForm","handler":"inline-action","writeSinks":["saveNetworkNodeAction"]}],
+      "classification": "mutation",
+      "status": "exception",
+      "validationMode": "not-applicable-disabled-write",
+      "schemaSource": "not-applicable:backend-write-501",
+      "errorNavigation": "not-applicable-disabled-write",
+      "serverErrors": "not-applicable-disabled-write",
+      "pendingGuard": "compile-time-disabled-write",
+      "testEvidence": ["frontend/src/app/admin/system/network/NetworkAdminClient.tsx"]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/system/programs/ProgramAdminClient.tsx#ProgramAdminClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
+      "owner": "ProgramAdminClient",
+      "composedChildContracts": [{"actionHandlers":["handleDelete"],"component":"ProgramForm","handler":"submitProgramForm","writeSinks":["programAdminService.createProgram","programAdminService.updateProgram"]}],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:ProgramForm+program-actions",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "testEvidence": ["frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx"]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
+      "owner": "WorkHubClient",
+      "composedChildContracts": [{"actionHandlers":["handleDeleteSchedule"],"component":"ScheduleCreateForm","handler":"handleSubmitSchedule","writeSinks":["createDeptSchedule","updateDeptSchedule"]},{"actionHandlers":["handleDeleteReport"],"component":"ReportCreateForm","handler":"handleSubmitReport","writeSinks":["reportService.createReport","reportService.updateReport"]}],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:ScheduleCreateForm+ReportCreateForm+work-hub-actions",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "testEvidence": ["frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"]
+    },
+    {
+      "key": "formless-write:frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx#DeptJobDetailClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx",
+      "owner": "DeptJobDetailClient",
+      "composedChildContracts": [{"actionHandlers":["handleDelete"],"component":"DeptJobForm","handler":"handleUpdate","writeSinks":["deptJobUserService.updateDeptJob","updateMutation.mutateAsync"]}],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:DeptJobForm+dept-job-actions",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "testEvidence": ["frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.validation.test.tsx"]
+    },
+    {
+      "key": "formless-write:frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.tsx#DeptJobCreateClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.tsx",
+      "owner": "DeptJobCreateClient",
+      "composedChildContracts": [{"actionHandlers":[],"component":"DeptJobForm","handler":"handleSubmit","writeSinks":["deptJobUserService.createDeptJob"]}],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:DeptJobForm+dept-job-create",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "testEvidence": ["frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.validation.test.tsx"]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx#ScrapListClient.handleDelete[1]",
+      "kind": "secondary-action", "file": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx", "owner": "ScrapListClient", "handler": "handleDelete", "writeSinks": ["axios.delete","deleteMutation.mutateAsync"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/collaboration/scraps/__tests__/ScrapListClient.pending.test.tsx"]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx#BoardDetailClient.handleDelete[1]",
+      "kind": "secondary-action", "file": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx", "owner": "BoardDetailClient", "handler": "handleDelete", "writeSinks": ["deleteBoardArticle"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/community/boards/detail/__tests__/BoardDetailClient.pending.test.tsx"]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx#BoardDetailClient.handleLike[1]",
+      "kind": "secondary-action", "file": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx", "owner": "BoardDetailClient", "handler": "handleLike", "writeSinks": ["boardUserService.likePost"], "classification": "mutation", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/community/boards/detail/__tests__/BoardDetailClient.pending.test.tsx"]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx#BoardListClient.handleLike[1]",
+      "kind": "secondary-action", "file": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx", "owner": "BoardListClient", "handler": "handleLike", "writeSinks": ["likeBoardArticle","likeMutation.mutateAsync"], "classification": "mutation", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/community/boards/select-board-list/__tests__/BoardListClient.pending.test.tsx"]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx#MonitoringHubClient.handleDeleteComment[1]",
+      "kind": "secondary-action", "file": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx", "owner": "MonitoringHubClient", "handler": "handleDeleteComment", "writeSinks": ["commentAdminService.deleteComment","deleteCommentMutation.mutateAsync"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/system/monitoring/__tests__/MonitoringHubClient.test.tsx"]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient.handleDelete[1]",
+      "kind": "secondary-action", "file": "frontend/src/app/admin/system/network/NetworkAdminClient.tsx", "owner": "NetworkAdminClient", "handler": "handleDelete", "writeSinks": ["deleteNetworkNodeAction"], "classification": "destructive", "status": "exception", "validationMode": "not-applicable-disabled-write", "schemaSource": "not-applicable:backend-write-501", "errorNavigation": "not-applicable-disabled-write", "serverErrors": "not-applicable-disabled-write", "pendingGuard": "compile-time-disabled-write", "testEvidence": ["frontend/src/app/admin/system/network/NetworkAdminClient.tsx"]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/programs/ProgramAdminClient.tsx#ProgramAdminClient.handleDelete[1]",
+      "kind": "secondary-action", "file": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx", "owner": "ProgramAdminClient", "handler": "handleDelete", "writeSinks": ["programAdminService.deleteProgram"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx"]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient.handleDeleteReport[1]",
+      "kind": "secondary-action", "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx", "owner": "WorkHubClient", "handler": "handleDeleteReport", "writeSinks": ["reportService.deleteReport"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient.handleDeleteSchedule[1]",
+      "kind": "secondary-action", "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx", "owner": "WorkHubClient", "handler": "handleDeleteSchedule", "writeSinks": ["deleteDeptSchedule"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx#CommunityDetailHubClient.handleJoin[1]",
+      "kind": "secondary-action", "file": "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx", "owner": "CommunityDetailHubClient", "handler": "handleJoin", "writeSinks": ["communityUserService.joinCommunity","joinMutation.mutateAsync"], "classification": "mutation", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.pending.test.tsx"]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx#DeptJobDetailClient.handleDelete[1]",
+      "kind": "secondary-action", "file": "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx", "owner": "DeptJobDetailClient", "handler": "handleDelete", "writeSinks": ["deleteMutation.mutateAsync","deptJobUserService.deleteDeptJob"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.validation.test.tsx"]
+    }
+  ],
+  "exceptions": [
+    {"id":"FORM-DISABLED-NETWORK-COMPOSITION","candidateKey":"formless-write:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient","reason":"Backend network create/update is explicitly 501 Not Implemented and every entry control is compile-time disabled.","owner":"backend-foundation","expiresAt":"2026-12-31","disabledBy":"WRITE_NOT_IMPLEMENTED"},
+    {"id":"FORM-DISABLED-NETWORK-DELETE","candidateKey":"secondary-action:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient.handleDelete[1]","reason":"Backend network delete is explicitly 501 Not Implemented and the exact action control is compile-time disabled.","owner":"backend-foundation","expiresAt":"2026-12-31","disabledBy":"WRITE_NOT_IMPLEMENTED"}
+  ]
+}

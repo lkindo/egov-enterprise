@@ -42,6 +42,7 @@ interface SecurityMatrixVisualizerProps {
  onToggle: (authrtCd: string, menuNo: number) => void;
  onSave: () => void;
  isSaving?: boolean;
+ isDisabled?: boolean;
 }
 
 /**
@@ -56,7 +57,8 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  changedCells,
  onToggle, 
  onSave, 
- isSaving 
+ isSaving,
+ isDisabled,
 }) => {
  const [searchMenu, setSearchMenu] = useState('');
  const [isFullscreen, setIsFullscreen] = useState(false);
@@ -81,13 +83,13 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  useEffect(() => {
  const onSaveKey = (event: KeyboardEvent) => {
  if (!(event.ctrlKey || event.metaKey) || event.key.toLowerCase() !== 's') return;
- if (isSaving || changedCount === 0) return;
+ if (isSaving || isDisabled || changedCount === 0) return;
  event.preventDefault();
  onSave();
  };
  window.addEventListener('keydown', onSaveKey);
  return () => window.removeEventListener('keydown', onSaveKey);
- }, [isSaving, changedCount, onSave]);
+ }, [isSaving, isDisabled, changedCount, onSave]);
 
  /**
   * 격자 안 방향키 이동. 셀 버튼은 표의 행·열 좌표를 data 속성으로 갖고 있어
@@ -175,7 +177,8 @@ export const SecurityMatrixVisualizer: React.FC<SecurityMatrixVisualizerProps> =
  </Button>
  <Button 
  onClick={onSave}
- disabled={isSaving || changedCount === 0}
+ aria-busy={isSaving || undefined}
+ disabled={isSaving || isDisabled || changedCount === 0}
  title={changedCount === 0 ? '변경된 셀이 없습니다' : `${changedCount}개 셀 변경을 저장합니다 (Ctrl+S)`}
  className="h-11 px-10 rounded-lg bg-primary text-white font-bold text-xs tracking-widest uppercase shadow-2xl shadow-primary/30 hover:bg-primary/90 transition-all hover:-translate-y-1 gap-3 group"
  >

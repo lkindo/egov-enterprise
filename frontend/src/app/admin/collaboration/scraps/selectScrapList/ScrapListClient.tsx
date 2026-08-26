@@ -31,6 +31,8 @@ const ScrapListClient = () => {
     const queryClient = useQueryClient();
     const [pageNo, setPageNo] = React.useState(1);
     const [pageUnit, setPageUnit] = React.useState(DEFAULT_PAGE_UNIT);
+    const deletePendingRef = React.useRef(false);
+    const [deletingScrapSn, setDeletingScrapSn] = React.useState<number | null>(null);
 
     // 백엔드(ScrapApiController)는 pageIndex(1-base)/pageUnit 파라미터를 직접 읽는다.
     const { data, isLoading, isError, error, refetch } = useQuery({
@@ -48,19 +50,33 @@ const ScrapListClient = () => {
             toast('스크랩이 삭제되었습니다.', 'success');
             queryClient.invalidateQueries({ queryKey: ['scraps'] });
         },
-        onError: () => toast('삭제에 실패했습니다.', 'error'),
+        onError: (error: unknown) => {
+            toast(error instanceof Error && error.message ? error.message : '삭제에 실패했습니다.', 'error');
+        },
     });
 
     /** [P1-9] native confirm → useConfirm. 본문에 대상 스크랩명을 노출한다. */
     const handleDelete = async (item: Scrap) => {
-        if (!item.scrapSn) return;
-        const ok = await confirm({
-            title: '스크랩 삭제',
-            message: `'${item.scrapNm ?? '제목 없음'}' 스크랩을 삭제합니다. 삭제한 항목은 복구할 수 없습니다.`,
-            confirmText: '삭제',
-            variant: 'destructive',
-        });
-        if (ok) deleteMutation.mutate(item.scrapSn);
+        if (!item.scrapSn || deletePendingRef.current) return;
+        deletePendingRef.current = true;
+        setDeletingScrapSn(item.scrapSn);
+        try {
+            const ok = await confirm({
+                title: '스크랩 삭제',
+                message: `'${item.scrapNm ?? '제목 없음'}' 스크랩을 삭제합니다. 삭제한 항목은 복구할 수 없습니다.`,
+                confirmText: '삭제',
+                variant: 'destructive',
+            });
+            if (!ok) return;
+            try {
+                await deleteMutation.mutateAsync(item.scrapSn);
+            } catch {
+                // mutation onError가 사용자 안내를 소유한다. 목록과 선택 상태는 그대로 둔다.
+            }
+        } finally {
+            deletePendingRef.current = false;
+            setDeletingScrapSn(null);
+        }
     };
 
     const columns: Column<Scrap>[] = [
@@ -120,7 +136,9 @@ const ScrapListClient = () => {
                     <Button
                         variant="ghost"
                         size="icon"
-                        aria-label={`${item.scrapNm ?? '스크랩'} 삭제`}
+                        aria-label={`${item.scrapNm ?? '스크랩'} ${deletingScrapSn === item.scrapSn ? '삭제 중' : '삭제'}`}
+                        aria-busy={deletingScrapSn === item.scrapSn || undefined}
+                        disabled={deletingScrapSn !== null}
                         onClick={() => { void handleDelete(item); }}
                         className="h-8 w-8 text-muted-foreground hover:text-destructive-emphasis hover:bg-destructive/10 transition-all"
                     >

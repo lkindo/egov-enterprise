@@ -1,11 +1,18 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { satisfactionService, Satisfaction } from '@/services/business/board/SatisfactionService';
 import { Button } from '@/components/ui/button';
 import { Star, Trash2, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import {
+  satisfactionCreateSchema,
+  satisfactionValidationLabels,
+} from './satisfaction-form-validation';
 
 const MAX_SCORE = 5;
 
@@ -35,7 +42,8 @@ function Stars({
             type="button"
             onClick={() => onSelect(n)}
             aria-label={`${n}점`}
-            aria-pressed={filled}
+            role="radio"
+            aria-checked={n === score}
             className="p-0.5 hover:scale-110 transition-transform"
           >
             {star}
@@ -63,6 +71,14 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
   const [score, setScore] = useState(0);
   const [content, setContent] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const createPendingRef = useRef(false);
+  const deletePendingRef = useRef(false);
+  const [deletingSatisfactionId, setDeletingSatisfactionId] = useState<number | null>(null);
+  const scoreGroupRef = useRef<HTMLDivElement>(null);
+  const validation = useManualFormValidation(satisfactionCreateSchema, {
+    labels: satisfactionValidationLabels,
+    focusTargets: { dgstfnScr: () => scoreGroupRef.current },
+  });
 
   const listKey = ['satisfactions', bbsId, pstSn];
 
@@ -82,19 +98,23 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
   };
 
   const createMutation = useMutation({
-    mutationFn: () =>
-      satisfactionService.create(bbsId, pstSn, {
-        dgstfnScr: score,
-        dgstfnCn: content,
-        useYn: 'Y',
-      } as Satisfaction),
+    mutationFn: (payload: { dgstfnScr: number; dgstfnCn: string; useYn: string }) =>
+      satisfactionService.create(bbsId, pstSn, payload as Satisfaction),
     onSuccess: () => {
       setScore(0);
       setContent('');
       setError(null);
+      validation.setFormErrors({}, false);
       invalidate();
     },
-    onError: (e) => setError(e instanceof Error ? e.message : '등록에 실패했습니다.'),
+    onError: (mutationError: unknown) => {
+      const fieldErrors = extractFieldErrors(mutationError);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      else setError(extractErrorMessage(mutationError, '등록에 실패했습니다.'));
+    },
+    onSettled: () => {
+      createPendingRef.current = false;
+    },
   });
 
   const deleteMutation = useMutation({
@@ -105,7 +125,25 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
     },
     // 서버가 소유자/관리자 판정에 실패하면 403 이다. 그 사실을 그대로 알린다.
     onError: (e) => setError(e instanceof Error ? e.message : '삭제 권한이 없습니다.'),
+    onSettled: () => {
+      deletePendingRef.current = false;
+      setDeletingSatisfactionId(null);
+    },
   });
+
+  const handleDelete = (dgstfnSn: number) => {
+    if (deletePendingRef.current) return;
+    deletePendingRef.current = true;
+    setDeletingSatisfactionId(dgstfnSn);
+    setError(null);
+    try {
+      deleteMutation.mutate(dgstfnSn);
+    } catch (mutationError) {
+      deletePendingRef.current = false;
+      setDeletingSatisfactionId(null);
+      setError(mutationError instanceof Error ? mutationError.message : '삭제 권한이 없습니다.');
+    }
+  };
 
   const average = avg?.average ?? 0;
 
@@ -125,29 +163,68 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          if (score < 1) {
-            setError('별점을 선택해 주세요.');
-            return;
-          }
-          createMutation.mutate();
+          if (createPendingRef.current) return;
+          const validated = validation.validate({
+            dgstfnScr: score,
+            dgstfnCn: content,
+            useYn: 'Y',
+          });
+          if (!validated) return;
+          setError(null);
+          createPendingRef.current = true;
+          createMutation.mutate(validated);
         }}
+        noValidate
         className="mb-6 p-4 bg-card border rounded-lg space-y-3"
       >
+        <FormErrorSummary
+          errors={validation.errors}
+          labels={satisfactionValidationLabels}
+          onNavigate={validation.focusError}
+        />
         <div className="flex items-center gap-3">
-          <span className="text-sm font-medium shrink-0">별점</span>
-          <Stars score={score} onSelect={setScore} size={20} />
+          <span id="satisfaction-score-label" className="text-sm font-medium shrink-0">별점</span>
+          <div
+            ref={scoreGroupRef}
+            role="radiogroup"
+            aria-labelledby="satisfaction-score-label"
+            aria-required="true"
+            aria-invalid={validation.errors.dgstfnScr ? 'true' : undefined}
+            aria-describedby={validation.errors.dgstfnScr ? 'dgstfnScr-error' : undefined}
+            aria-errormessage={validation.errors.dgstfnScr ? 'dgstfnScr-error' : undefined}
+            tabIndex={-1}
+          >
+            <Stars
+              score={score}
+              onSelect={(nextScore) => {
+                validation.clearError('dgstfnScr');
+                setScore(nextScore);
+              }}
+              size={20}
+            />
+          </div>
         </div>
+        {validation.errors.dgstfnScr ? (
+          <p {...validation.messageProps('dgstfnScr')} className="text-xs font-bold text-destructive-emphasis" />
+        ) : null}
         {/* placeholder 는 라벨이 아니다 — 입력 중에 사라지고 스크린리더가 라벨로 읽지 않는다. */}
         <textarea
+          {...validation.fieldProps('dgstfnCn')}
           aria-label="만족도 의견"
           value={content}
-          onChange={(e) => setContent(e.target.value)}
+          onChange={(e) => {
+            validation.clearError('dgstfnCn');
+            setContent(e.target.value);
+          }}
           placeholder="의견을 남겨주세요 (선택)"
           rows={2}
           maxLength={4000}
           className="w-full text-sm border rounded-md p-2 bg-background resize-none"
         />
-        {error && <p className="text-sm text-destructive-emphasis">{error}</p>}
+        {validation.errors.dgstfnCn ? (
+          <p {...validation.messageProps('dgstfnCn')} className="text-xs font-bold text-destructive-emphasis" />
+        ) : null}
+        {error && <p role="alert" className="text-sm text-destructive-emphasis">{error}</p>}
         <div className="flex justify-end">
           {/*
             라벨을 '만족도 등록' 으로 한정한다. 이 위젯은 게시글 상세(BoardDetailClient)에서
@@ -193,12 +270,15 @@ export default function SatisfactionSection({ bbsId, pstSn }: { bbsId: string; p
               <Button
                 variant="ghost"
                 size="icon"
-                aria-label={`${item.userNm || '익명'}의 만족도 삭제`}
+                aria-label={`${item.userNm || '익명'}의 만족도 ${deletingSatisfactionId === item.dgstfnSn ? '삭제 중…' : '삭제'}`}
+                aria-busy={deletingSatisfactionId === item.dgstfnSn || undefined}
                 className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 shrink-0"
-                disabled={deleteMutation.isPending}
-                onClick={() => item.dgstfnSn && deleteMutation.mutate(item.dgstfnSn)}
+                disabled={deletingSatisfactionId !== null}
+                onClick={() => item.dgstfnSn && handleDelete(item.dgstfnSn)}
               >
-                <Trash2 className="h-4 w-4" />
+                {deletingSatisfactionId === item.dgstfnSn
+                  ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+                  : <Trash2 className="h-4 w-4" aria-hidden="true" />}
               </Button>
             </li>
           ))}

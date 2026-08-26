@@ -103,6 +103,10 @@ if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
   ( cd frontend && pnpm run lint ) \
     || { echo "❌ ESLint 에러 — 경고는 package.json 래칫 범위에서 통과하지만 error는 수정해야 합니다."; exit 1; }
 
+  echo "  → frontend: pnpm run test:form-validation (폼 경계·validation 증거 census)"
+  ( cd frontend && pnpm run test:form-validation ) \
+    || { echo "❌ 폼 validation census 실패 — 신규/누락 경계를 분류하고 비준수 화면의 검증·오류 이동·서버 오류·pending 증거를 보완하세요."; exit 1; }
+
   # 빠른 저장소 불변식만 pre-push에서 실행하고 전수 Vitest/coverage는 CI가 소유한다.
   echo "  → frontend: vitest src/__tests__ (저장소 불변식 게이트)"
   ( cd frontend && npx vitest run src/__tests__ ) \

@@ -4,11 +4,12 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 import { MenuInfo } from '@/types/foundation/menu';
-import { extractErrorMessage } from './actionUtils';
+import { extractErrorMessage, extractFieldErrors } from './actionUtils';
 
 interface ActionResponse {
   success: boolean;
   message: string;
+  fieldErrors?: Record<string, string>;
 }
 
 interface SaveMenuParams {
@@ -32,7 +33,10 @@ export async function saveMenuAction(prevState: unknown, { mode, data }: SaveMen
     return { success: true, message: `메뉴가 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
   } catch (error) {
     const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
-    return { success: false, message: errorMessage };
+    const fieldErrors = extractFieldErrors(error);
+    return fieldErrors
+      ? { success: false, message: errorMessage, fieldErrors }
+      : { success: false, message: errorMessage };
   }
 }
 

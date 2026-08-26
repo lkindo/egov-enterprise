@@ -4,11 +4,12 @@ import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import client from '@/lib/api/client';
 import { Banner, Popup } from '@/types/foundation/banner';
-import { extractErrorMessage } from './actionUtils';
+import { extractErrorMessage, extractFieldErrors } from './actionUtils';
 
 interface ActionResponse {
     success: boolean;
     message: string;
+    fieldErrors?: Record<string, string>;
 }
 
 interface SaveActionParams<T> {
@@ -35,7 +36,8 @@ export async function saveBannerAction(prevState: unknown, { mode, data, id }: S
         return { success: true, message: `배너가 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
-        return { success: false, message: errorMessage };
+        const fieldErrors = extractFieldErrors(error);
+        return { success: false, message: errorMessage, ...(fieldErrors ? { fieldErrors } : {}) };
     }
 }
 
@@ -76,7 +78,8 @@ export async function savePopupAction(prevState: unknown, { mode, data, id }: Sa
         return { success: true, message: `팝업이 ${mode === 'create' ? '등록' : '수정'}되었습니다.` };
     } catch (error) {
         const errorMessage = extractErrorMessage(error, '저장 중 오류 발생');
-        return { success: false, message: errorMessage };
+        const fieldErrors = extractFieldErrors(error);
+        return { success: false, message: errorMessage, ...(fieldErrors ? { fieldErrors } : {}) };
     }
 }
 

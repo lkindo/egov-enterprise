@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
@@ -13,6 +13,13 @@ import { Label } from "@/components/ui/label";
 import { Users, ArrowLeft, Save, Trash2, AlertTriangle, Loader2 } from "lucide-react";
 import Link from 'next/link';
 import { PageHeader } from '@/app/components/layout/page-header';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import {
+    addressBookEditFormSchema,
+    addressBookEditValidationLabels,
+} from '../../address-book-form-validation';
 
 const LIST_PATH = '/admin/collaboration/address-book/select-address-book-list';
 
@@ -35,6 +42,12 @@ const SelectAddressBookDetailClient = () => {
     const { toast } = useToast();
     const confirm = useConfirm();
     const queryClient = useQueryClient();
+    const updatePendingRef = useRef(false);
+    const deletePendingRef = useRef(false);
+    const [isDeletePending, setIsDeletePending] = useState(false);
+    const validation = useManualFormValidation(addressBookEditFormSchema, {
+        labels: addressBookEditValidationLabels,
+    });
 
     const { data, isLoading, isError, error, refetch } = useQuery({
         queryKey: ['address-book-detail', adbkSn],
@@ -48,19 +61,26 @@ const SelectAddressBookDetailClient = () => {
     }, [data?.adbkNm]);
 
     const updateMutation = useMutation({
-        mutationFn: () =>
+        mutationFn: (payload: { adbkNm: string; rlsScopeCd: string }) =>
             // adbkMan 은 전송하지 않는다 — 서버는 adbkMan 이 null 이면 구성원을 건드리지 않고,
             // 빈 배열을 보내면 구성원 전원이 삭제된다.
             addressbookUserService.updateAddressBook(adbkSn, {
-                adbkNm,
-                rlsScopeCd: data?.rlsScopeCd ?? '',
+                adbkNm: payload.adbkNm,
+                rlsScopeCd: payload.rlsScopeCd,
             }),
         onSuccess: () => {
             toast('주소록이 수정되었습니다.', 'success');
             queryClient.invalidateQueries({ queryKey: ['address-book-detail', adbkSn] });
             router.push(LIST_PATH);
         },
-        onError: () => toast('수정에 실패했습니다.', 'error'),
+        onError: (mutationError: unknown) => {
+            const fieldErrors = extractFieldErrors(mutationError);
+            if (fieldErrors) validation.setFormErrors(fieldErrors);
+            else toast(extractErrorMessage(mutationError, '수정에 실패했습니다.'), 'error');
+        },
+        onSettled: () => {
+            updatePendingRef.current = false;
+        },
     });
 
     const deleteMutation = useMutation({
@@ -69,26 +89,39 @@ const SelectAddressBookDetailClient = () => {
             toast('주소록이 삭제되었습니다.', 'success');
             router.push(LIST_PATH);
         },
-        onError: () => toast('삭제에 실패했습니다.', 'error'),
     });
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        if (!adbkNm.trim()) {
-            toast('주소록 명칭을 입력해 주세요.', 'error');
-            return;
-        }
-        updateMutation.mutate();
+        if (updatePendingRef.current || deletePendingRef.current) return;
+        const validated = validation.validate({
+            adbkNm,
+            rlsScopeCd: data?.rlsScopeCd ?? '',
+        });
+        if (!validated) return;
+        updatePendingRef.current = true;
+        updateMutation.mutate(validated);
     };
 
     const handleDelete = async () => {
-        const ok = await confirm({
-            title: '주소록 삭제',
-            message: `'${data?.adbkNm ?? adbkNm}' 주소록을 삭제합니다. 삭제 후에는 목록에서 조회할 수 없습니다.`,
-            confirmText: '삭제',
-            variant: 'destructive',
-        });
-        if (ok) deleteMutation.mutate();
+        if (deletePendingRef.current || updatePendingRef.current) return;
+        deletePendingRef.current = true;
+        setIsDeletePending(true);
+        try {
+            const ok = await confirm({
+                title: '주소록 삭제',
+                message: `'${data?.adbkNm ?? adbkNm}' 주소록을 삭제합니다. 삭제 후에는 목록에서 조회할 수 없습니다.`,
+                confirmText: '삭제',
+                variant: 'destructive',
+            });
+            if (!ok) return;
+            await deleteMutation.mutateAsync();
+        } catch {
+            toast('삭제에 실패했습니다.', 'error');
+        } finally {
+            deletePendingRef.current = false;
+            setIsDeletePending(false);
+        }
     };
 
     const members = data?.adbkMan ?? [];
@@ -132,18 +165,29 @@ const SelectAddressBookDetailClient = () => {
                             <Button
                                 type="button"
                                 variant="destructive"
-                                aria-label={`${data?.adbkNm ?? ''} 주소록 삭제`}
+                                aria-label={isDeletePending
+                                    ? `${data?.adbkNm ?? ''} 주소록 삭제 중`
+                                    : `${data?.adbkNm ?? ''} 주소록 삭제`}
+                                aria-busy={isDeletePending}
                                 onClick={() => { void handleDelete(); }}
-                                disabled={deleteMutation.isPending}
+                                disabled={isDeletePending || updateMutation.isPending}
                                 className="rounded-lg h-11 gap-2 shrink-0"
                             >
-                                <Trash2 size={16} /> 삭제
+                                {isDeletePending
+                                    ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                                    : <Trash2 size={16} aria-hidden="true" />}
+                                {isDeletePending ? '삭제 중...' : '삭제'}
                             </Button>
                         </div>
                     </CardHeader>
 
-                    <form onSubmit={handleSubmit}>
+                    <form onSubmit={handleSubmit} noValidate>
                         <CardContent className="pt-12 px-12 space-y-10">
+                            <FormErrorSummary
+                                errors={validation.errors}
+                                labels={addressBookEditValidationLabels}
+                                onNavigate={validation.focusError}
+                            />
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                                 <div className="space-y-3">
                                     <Label htmlFor="adbkNm" className="text-sm font-bold flex items-center gap-2 text-muted-foreground">
@@ -151,13 +195,20 @@ const SelectAddressBookDetailClient = () => {
                                     </Label>
                                     <Input
                                         id="adbkNm"
+                                        {...validation.fieldProps('adbkNm')}
                                         placeholder="주소록 명칭을 입력하세요"
                                         className="h-11 text-base border-2 border-border focus:border-primary/20 bg-muted/50 rounded-lg transition-all"
                                         value={adbkNm}
-                                        onChange={(e) => setAdbkNm(e.target.value)}
+                                        onChange={(e) => {
+                                            validation.clearError('adbkNm');
+                                            setAdbkNm(e.target.value);
+                                        }}
                                         maxLength={100}
                                         required
                                     />
+                                    {validation.errors.adbkNm ? (
+                                        <p {...validation.messageProps('adbkNm')} className="text-xs font-bold text-destructive-emphasis" />
+                                    ) : null}
                                 </div>
                                 <div className="space-y-3">
                                     <Label htmlFor="rlsScopeCd" className="text-sm font-bold flex items-center gap-2 text-muted-foreground">
@@ -165,10 +216,15 @@ const SelectAddressBookDetailClient = () => {
                                     </Label>
                                     <Input
                                         id="rlsScopeCd"
+                                        {...validation.fieldProps('rlsScopeCd')}
                                         className="h-11 text-base border-2 border-border bg-muted rounded-lg"
                                         value={data?.rlsScopeCd ?? ''}
                                         readOnly
+                                        aria-required="true"
                                     />
+                                    {validation.errors.rlsScopeCd ? (
+                                        <p {...validation.messageProps('rlsScopeCd')} className="text-xs font-bold text-destructive-emphasis" />
+                                    ) : null}
                                 </div>
                             </div>
 
@@ -215,7 +271,8 @@ const SelectAddressBookDetailClient = () => {
                             <Button
                                 type="submit"
                                 className="h-11 px-16 gap-3 font-bold bg-surface-inverse text-surface-inverse-foreground shadow-2xl hover:bg-primary transition-all active:scale-95 rounded-lg"
-                                disabled={updateMutation.isPending}
+                                disabled={updateMutation.isPending || isDeletePending}
+                                aria-busy={updateMutation.isPending || undefined}
                             >
                                 {updateMutation.isPending ? (
                                     <span className="flex items-center gap-2 animate-pulse">저장 중...</span>

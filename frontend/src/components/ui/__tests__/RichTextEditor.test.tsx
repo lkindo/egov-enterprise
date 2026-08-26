@@ -86,9 +86,14 @@ describe('RichTextEditor toolbar accessibility', () => {
         <span id="policy-content-help">필수 입력 항목</span>
         <RichTextEditor
           id="policy-content"
+          name="plcyCn"
+          data-form-field-name="plcyCn"
           aria-label="정책 본문"
           aria-labelledby="policy-content-label"
           aria-describedby="policy-content-help"
+          aria-required="true"
+          aria-invalid="true"
+          aria-errormessage="policy-content-error"
           value=""
           onChange={vi.fn()}
         />
@@ -101,6 +106,11 @@ describe('RichTextEditor toolbar accessibility', () => {
     expect(editable).toHaveAttribute('aria-label', '정책 본문');
     expect(editable).toHaveAttribute('aria-labelledby', 'policy-content-label');
     expect(editable).toHaveAttribute('aria-describedby', 'policy-content-help');
+    expect(editable).toHaveAttribute('aria-required', 'true');
+    expect(editable).toHaveAttribute('aria-invalid', 'true');
+    expect(editable).toHaveAttribute('aria-errormessage', 'policy-content-error');
+    expect(editable).toHaveAttribute('name', 'plcyCn');
+    expect(editable).toHaveAttribute('data-form-field-name', 'plcyCn');
     expect(editable).toHaveAttribute('aria-multiline', 'true');
   });
 

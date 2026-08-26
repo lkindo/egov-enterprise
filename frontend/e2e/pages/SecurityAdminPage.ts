@@ -15,16 +15,19 @@ export class SecurityAdminPage {
 
     async createAuthority(authCode: string, authNm: string) {
         console.log(`>>> Creating Authority: ${authCode}`);
-        // Use a more specific locator for the header button to avoid tooltip conflicts
-        await this.page.locator('button:has-text("신규 보안 아키텍처 설정")').first().click();
-        await expect(this.page.locator('#authrtCd')).toBeVisible({ timeout: 10000 });
+        await this.page.getByRole('button', { name: '신규 보안 아키텍처 설정', exact: true }).click();
+        const dialog = this.page.getByRole('dialog', { name: '신규 권한 등록' });
+        const codeInput = dialog.getByRole('textbox', { name: /보안 역할 식별자/ });
+        const nameInput = dialog.getByRole('textbox', { name: /역할 레이블 명칭/ });
+        const descriptionInput = dialog.getByRole('textbox', { name: /보안 정책 정보 명세/ });
+        await expect(codeInput).toBeVisible({ timeout: 10000 });
 
-        await this.page.locator('#authrtCd').fill(authCode);
-        await this.page.locator('#authrtNm').fill(authNm);
-        await this.page.locator('#authrtExpln').fill(`${authNm} description for E2E`);
+        await codeInput.fill(authCode);
+        await nameInput.fill(authNm);
+        await descriptionInput.fill(`${authNm} description for E2E`);
         
         console.log(`>>> Clicking '권한 배포' button`);
-        await this.page.locator('button:has-text("권한 배포")').click({ force: true });
+        await dialog.getByRole('button', { name: '권한 배포', exact: true }).click();
         
         console.log(`>>> Waiting for success toast`);
         // The toast message in AuthorForm is "보안 권한 아키텍처가 성공적으로 반영되었습니다."

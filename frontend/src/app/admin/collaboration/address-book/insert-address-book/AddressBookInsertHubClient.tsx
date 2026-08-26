@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { User,
  Phone,
@@ -12,18 +12,32 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/app/components/ui/toast';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useAuth } from '@/contexts/AuthContext';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { addressbookUserService } from '@/services/business/user/addressbook/AddressbookUserService';
 import type { NameCard } from '@/types/business/addressbook';
+import {
+ addressBookCreateFormSchema,
+ addressBookCreateValidationLabels,
+ mapAddressBookCreateFieldErrors,
+} from '../address-book-form-validation';
 
 export default function AddressBookInsertHubClient() {
  const router = useRouter();
  const { toast } = useToast();
+ const { user } = useAuth();
  const [isSubmitting, setIsSubmitting] = useState(false);
+ const submitPendingRef = useRef(false);
 
  const [form, setForm] = useState({
  adbkNm: '',
  telNo: '',
  email: '',
+ });
+ const validation = useManualFormValidation(addressBookCreateFormSchema, {
+ labels: addressBookCreateValidationLabels,
  });
 
  /**
@@ -34,43 +48,41 @@ export default function AddressBookInsertHubClient() {
 
  const handleSubmit = async (e: React.FormEvent) => {
  e.preventDefault();
-    if (!form.adbkNm.trim()) {
-      toast('주소록 명칭을 입력해 주세요.', 'error');
-      return;
-    }
-    if (form.adbkNm.length > 100) {
-      toast('주소록 명칭은 100자 이내여야 합니다.', 'error');
-      return;
-    }
-    if (form.telNo && form.telNo.replace(/-/g, '').length > 11) {
-      toast('전화번호는 11자 이내여야 합니다.', 'error');
-      return;
-    }
-    if (form.email && form.email.length > 50) {
-      toast('이메일은 50자 이내여야 합니다.', 'error');
-      return;
-    }
+ if (submitPendingRef.current) return;
+ const validated = validation.validate({
+ ...form,
+ rlsScopeCd: DEFAULT_RLS_SCOPE_CD,
+ userId: user?.id ?? '',
+ });
+ if (!validated) return;
 
+ submitPendingRef.current = true;
  setIsSubmitting(true);
  // 주소록·회원 일련번호는 서버가 채번하므로 생성 요청에서 생략한다.
  const member: NameCard = {
-   userId: '',
-   nm: form.adbkNm,
-   emlAddr: form.email,
-   mblTelno: form.telNo,
+   userId: validated.userId,
+   nm: validated.adbkNm,
+   emlAddr: validated.email,
+   mblTelno: validated.telNo,
  };
 
  try {
  await addressbookUserService.createAddressBook({
-   adbkNm: form.adbkNm,
-   rlsScopeCd: DEFAULT_RLS_SCOPE_CD,
+   adbkNm: validated.adbkNm,
+   rlsScopeCd: validated.rlsScopeCd,
    adbkMan: [member],
  });
  toast('주소록이 등록되었습니다.', 'success');
  router.push('/admin/collaboration/address-book/select-address-book-list');
- } catch {
- toast('주소록 등록에 실패했습니다.', 'error');
+ } catch (error: unknown) {
+ const fieldErrors = extractFieldErrors(error);
+ if (fieldErrors) {
+ validation.setFormErrors(mapAddressBookCreateFieldErrors(fieldErrors));
+ } else {
+ toast(extractErrorMessage(error, '주소록 등록에 실패했습니다.'), 'error');
+ }
  } finally {
+ submitPendingRef.current = false;
  setIsSubmitting(false);
  }
  };
@@ -97,7 +109,13 @@ export default function AddressBookInsertHubClient() {
  </div>
  </div>
 
- <form onSubmit={handleSubmit} className="space-y-10 px-2">
+ <form onSubmit={handleSubmit} noValidate className="space-y-10 px-2">
+
+ <FormErrorSummary
+ errors={validation.errors}
+ labels={addressBookCreateValidationLabels}
+ onNavigate={validation.focusError}
+ />
 
  {/* 2. 주소록 명칭 */}
  <div className="hub-card-premium p-10 bg-card border-2 border-border shadow-2xl relative overflow-hidden group rounded-lg">
@@ -115,8 +133,12 @@ export default function AddressBookInsertHubClient() {
  </div>
     <Input
       id="adbkNm"
+      {...validation.fieldProps('adbkNm')}
       value={form.adbkNm}
-      onChange={(e) => setForm({ ...form, adbkNm: e.target.value })}
+      onChange={(e) => {
+        validation.clearError('adbkNm');
+        setForm({ ...form, adbkNm: e.target.value });
+      }}
       className="h-11 bg-transparent border-none text-foreground text-3xl font-bold placeholder:text-foreground/10 focus-visible:ring-0 p-0 tracking-tight"
       placeholder="주소록 명칭을 입력하세요."
       data-testid="identity-name-input"
@@ -124,6 +146,9 @@ export default function AddressBookInsertHubClient() {
       required
       autoFocus
     />
+ {validation.errors.adbkNm ? (
+ <p {...validation.messageProps('adbkNm')} className="text-xs font-bold text-destructive-emphasis" />
+ ) : null}
  <div className="h-[1px] w-full bg-gradient-to-r from-primary/40 to-transparent" />
  </div>
  </div>
@@ -137,13 +162,22 @@ export default function AddressBookInsertHubClient() {
  </div>
     <Input
       id="telNo"
+      {...validation.fieldProps('telNo')}
       value={form.telNo}
-      onChange={(e) => setForm({ ...form, telNo: e.target.value })}
+      onChange={(e) => {
+        validation.clearError('telNo');
+        setForm({ ...form, telNo: e.target.value });
+      }}
       className="h-11 bg-card border-2 border-border rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
       placeholder="010-0000-0000"
       data-testid="identity-tel-input"
       maxLength={15}
+      inputMode="numeric"
+      pattern="[0-9\s-]*"
     />
+ {validation.errors.telNo ? (
+ <p {...validation.messageProps('telNo')} className="text-xs font-bold text-destructive-emphasis" />
+ ) : null}
  </div>
  <div className="hub-card-premium p-8 bg-muted border-none shadow-xl rounded-lg space-y-6">
  <div className="flex items-center gap-3">
@@ -152,14 +186,21 @@ export default function AddressBookInsertHubClient() {
  </div>
     <Input
       id="email"
+      {...validation.fieldProps('email')}
       type="email"
       value={form.email}
-      onChange={(e) => setForm({ ...form, email: e.target.value })}
+      onChange={(e) => {
+        validation.clearError('email');
+        setForm({ ...form, email: e.target.value });
+      }}
       className="h-11 bg-card border-2 border-border rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
       placeholder="example@egov.go.kr"
       data-testid="identity-email-input"
       maxLength={50}
     />
+ {validation.errors.email ? (
+ <p {...validation.messageProps('email')} className="text-xs font-bold text-destructive-emphasis" />
+ ) : null}
  </div>
  </div>
 

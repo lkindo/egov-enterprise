@@ -31,6 +31,7 @@ import { Layers,
  Trash2, 
  Fingerprint, 
  Save,
+ Loader2,
  GripVertical } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -41,10 +42,10 @@ import { useState, useEffect } from 'react';
 import React from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAppForm } from '@/hooks/useAppForm';
-;
 import { 
  Form, 
  FormControl, 
+ FormErrorSummary,
  FormField as ShadcnFormField, 
  FormItem, 
  FormLabel, 
@@ -83,11 +84,31 @@ const CODE_DND_SCREEN_READER_INSTRUCTIONS: ScreenReaderInstructions = {
 
 import { CmmnDetailCodeDtoSchema } from '@/types/generated-zod';
 
-const codeDetailFormSchema = CmmnDetailCodeDtoSchema.extend({
- dtlCd: z.string().min(1).max(12),
- dtlCdNm: z.string().min(1).max(100),
+export const codeDetailFormSchema = CmmnDetailCodeDtoSchema.extend({
+ dtlCd: CmmnDetailCodeDtoSchema.shape.dtlCd
+  .unwrap()
+  .trim()
+  .min(1, '코드 식별자를 입력해 주세요.')
+  .max(12, '코드 식별자는 12자 이하여야 합니다.'),
+ dtlCdNm: CmmnDetailCodeDtoSchema.shape.dtlCdNm
+  .unwrap()
+  .trim()
+  .min(1, '표기 레이블을 입력해 주세요.')
+  .max(100, '표기 레이블은 100자 이하여야 합니다.'),
+ dtlCdExpln: CmmnDetailCodeDtoSchema.shape.dtlCdExpln
+  .unwrap()
+  .trim()
+  .max(4000, '설명은 4000자 이하여야 합니다.'),
  useYn: z.enum(['Y', 'N']).default('Y'),
 });
+
+const CODE_DETAIL_FIELD_LABELS = {
+ dtlCd: '코드 식별자',
+ dtlCdNm: '표기 레이블',
+ dtlCdExpln: '메타데이터 컨텍스트 설명',
+ useYn: '활성 상태',
+ 'root.server': '저장 요청',
+};
 
 const dropAnimation: DropAnimation = {
  sideEffects: defaultDropAnimationSideEffects({
@@ -309,6 +330,12 @@ export default function CommonCodeClient({
  const [isPickerOpen, setIsPickerOpen] = useState(false);
  const [isModalOpen, setIsOpen] = useState(false);
  const [isSaving, setIsSaving] = useState(false);
+ const hierarchySavePendingRef = React.useRef(false);
+ const detailSubmitAttemptRef = React.useRef(false);
+ const detailSavePendingRef = React.useRef(false);
+ const detailDeletePendingRef = React.useRef(false);
+ const [isDetailSaving, setIsDetailSaving] = useState(false);
+ const [deletingDetailKey, setDeletingDetailKey] = useState<string | null>(null);
  const [editingDetail, setEditingDetail] = useState<CmmnDetailCode | null>(null);
  const [modalTargetGroup, setModalTargetGroup] = useState<Pick<GroupCode, 'cdId' | 'cdIdNm'> | null>(null);
  
@@ -318,7 +345,10 @@ export default function CommonCodeClient({
  const [hasExplorerChanges, setHasExplorerChanges] = useState(false);
  const hierarchyRevisionRef = React.useRef(0);
 
- const form = useAppForm(codeDetailFormSchema, {
+ const form = useAppForm<
+  typeof codeDetailFormSchema,
+  z.infer<typeof codeDetailFormSchema>
+ >(codeDetailFormSchema, {
  defaultValues: {
  dtlCd: '',
  dtlCdNm: '',
@@ -327,6 +357,8 @@ export default function CommonCodeClient({
  }
  });
  const resetForm = form.reset;
+ const isDetailFormPending = isDetailSaving || form.formState.isSubmitting;
+ const isDetailWritePending = isDetailFormPending || deletingDetailKey !== null;
 
  useEffect(() => {
  if (isModalOpen) {
@@ -564,7 +596,8 @@ export default function CommonCodeClient({
  };
 
  const handleSaveExplorerChanges = async () => {
- if (!hasExplorerChanges || !selectedNode || isSaving || isModalOpen || isPickerOpen) return;
+ if (hierarchySavePendingRef.current || !hasExplorerChanges || !selectedNode || isSaving || isModalOpen || isPickerOpen) return;
+ hierarchySavePendingRef.current = true;
  const savingRevision = hierarchyRevisionRef.current;
  setIsSaving(true);
  try {
@@ -580,10 +613,10 @@ export default function CommonCodeClient({
  } else {
  toast(res.message, 'error');
  }
- } catch (err) {
- console.error(err);
+ } catch {
  toast('그룹 소속 저장 중 오류 발생', 'error');
  } finally {
+ hierarchySavePendingRef.current = false;
  setIsSaving(false);
  }
  };
@@ -703,7 +736,8 @@ export default function CommonCodeClient({
  };
 
  const handleEditDetail = (detail: CmmnDetailCode) => {
- if (!selectedGroup) return;
+ if (!selectedGroup || isModalOpen || detailSubmitAttemptRef.current
+ || detailSavePendingRef.current || detailDeletePendingRef.current) return;
  setModalTargetGroup({ cdId: selectedGroup.cdId, cdIdNm: selectedGroup.cdIdNm });
  setEditingDetail(detail);
  setIsOpen(true);
@@ -711,18 +745,23 @@ export default function CommonCodeClient({
 
  /** [P1-9] 확인 본문에 대상 식별자(코드·명칭)를 노출해 오삭제를 막는다. */
  const handleDeleteDetail = async (detail: CmmnDetailCode) => {
- if (!selectedGroup) return;
- const targetGroupId = selectedGroup.cdId;
+ if (!selectedGroup || isModalOpen || detailSubmitAttemptRef.current
+ || detailSavePendingRef.current || detailDeletePendingRef.current) return;
+ detailDeletePendingRef.current = true;
+ const targetGroup = selectedGroup;
+ const targetGroupId = targetGroup.cdId;
+ setDeletingDetailKey(`${targetGroupId}:${detail.dtlCd}`);
 
+ try {
  const ok = await confirm({
  title: '상세 코드 삭제',
- message: `‘${detail.dtlCdNm}’(코드 ${detail.dtlCd}) 를 ${selectedGroup.cdIdNm} 그룹에서 영구히 삭제합니다. 되돌릴 수 없습니다.`,
+ message: `‘${detail.dtlCdNm}’(코드 ${detail.dtlCd}) 를 ${targetGroup.cdIdNm} 그룹에서 영구히 삭제합니다. 되돌릴 수 없습니다.`,
  variant: 'destructive',
  confirmText: '삭제'
  });
 
- if (ok) {
- try {
+ if (!ok) return;
+
  const res = await deleteCodeDetail(null, { cdId: targetGroupId, dtlCd: detail.dtlCd });
  if (res.success) {
  toast(res.message, 'success');
@@ -732,11 +771,15 @@ export default function CommonCodeClient({
  }
  } catch {
  toast('네트워크 오류가 발생했습니다.', 'error');
- }
+ } finally {
+ detailDeletePendingRef.current = false;
+ setDeletingDetailKey(null);
  }
  };
 
  const handleCreateDetail = () => {
+ if (isModalOpen || detailSubmitAttemptRef.current
+ || detailSavePendingRef.current || detailDeletePendingRef.current) return;
  if (!selectedGroup) {
  toast('코드 명세를 등록할 그룹 코드를 먼저 선택하십시오.', 'info');
  return;
@@ -753,16 +796,23 @@ export default function CommonCodeClient({
  };
 
  const closeDetailModal = () => {
- if (form.formState.isSubmitting) return;
+ if (detailSubmitAttemptRef.current || detailSavePendingRef.current
+ || detailDeletePendingRef.current || form.formState.isSubmitting) return;
  forceCloseDetailModal();
  };
 
- const onSubmit = async (values: any) => {
+ const onSubmit = async (values: z.infer<typeof codeDetailFormSchema>) => {
+ if (detailSavePendingRef.current || detailDeletePendingRef.current) return;
  if (!modalTargetGroup) {
- toast('저장할 코드 그룹을 확인할 수 없습니다. 창을 닫고 다시 시도해 주세요.', 'error');
+ const message = '저장할 코드 그룹을 확인할 수 없습니다. 창을 닫고 다시 시도해 주세요.';
+ form.setError('root.server', { type: 'server', message });
+ void form.focusError('root.server', 'server');
+ detailSubmitAttemptRef.current = false;
  return;
  }
  const targetGroupId = modalTargetGroup.cdId;
+ detailSavePendingRef.current = true;
+ setIsDetailSaving(true);
  try {
  const res = await saveCodeDetail(null, {
  ...values,
@@ -776,11 +826,35 @@ export default function CommonCodeClient({
  await queryClient.invalidateQueries({ queryKey: ['cmmn-detail-codes', targetGroupId] });
  forceCloseDetailModal();
  } else {
+ if (!form.applyServerErrors(res)) {
  toast(res.message, 'error');
  }
- } catch {
- toast('서버 통신 중 오류가 발생했습니다.', 'error');
  }
+ } catch (error) {
+ if (!form.applyServerErrors(error)) {
+ toast('서버 통신 중 오류가 발생했습니다. 입력 내용은 유지되므로 잠시 후 다시 시도해 주세요.', 'error');
+ }
+ } finally {
+ detailSavePendingRef.current = false;
+ detailSubmitAttemptRef.current = false;
+ setIsDetailSaving(false);
+ }
+ };
+
+ const submitDetailForm = (event?: React.BaseSyntheticEvent) => {
+ if (detailSubmitAttemptRef.current || detailSavePendingRef.current || detailDeletePendingRef.current) {
+ event?.preventDefault();
+ return;
+ }
+ detailSubmitAttemptRef.current = true;
+ const submit = form.handleSubmit(onSubmit, () => {
+ detailSubmitAttemptRef.current = false;
+ });
+ void submit(event).catch(() => {
+ detailSubmitAttemptRef.current = false;
+ detailSavePendingRef.current = false;
+ setIsDetailSaving(false);
+ });
  };
 
  /* 셀 py-4 오버라이드를 제거해 표 밀도를 --cell-py(밀도 축) 단일 소스로 되돌린다. */
@@ -807,13 +881,16 @@ export default function CommonCodeClient({
  {
  header: '관리',
  className: 'text-right w-24',
- accessor: (item: CmmnDetailCode) => (
+ accessor: (item: CmmnDetailCode) => {
+ const isDeleting = deletingDetailKey === `${selectedGroup?.cdId}:${item.dtlCd}`;
+ return (
  <div className="flex justify-end gap-1.5">
  <Button
  type="button"
  variant="ghost"
  size="icon"
  aria-label={`${item.dtlCdNm} 코드 수정`}
+ disabled={isDetailWritePending || isModalOpen}
  className="h-8 w-8 hover:bg-muted rounded-lg transition-colors"
  onClick={(e) => { e.preventDefault(); handleEditDetail(item); }}
  >
@@ -823,14 +900,19 @@ export default function CommonCodeClient({
  type="button"
  variant="ghost"
  size="icon"
- aria-label={`${item.dtlCdNm} 코드 삭제`}
+ aria-label={`${item.dtlCdNm} 코드 ${isDeleting ? '삭제 중…' : '삭제'}`}
+ aria-busy={isDeleting || undefined}
+ disabled={isDetailWritePending || isModalOpen}
  className="h-8 w-8 text-destructive-emphasis hover:bg-destructive/10 rounded-lg transition-colors"
  onClick={(e) => { e.preventDefault(); handleDeleteDetail(item); }}
  >
- <Trash2 size={14} aria-hidden="true" />
+ {isDeleting
+ ? <Loader2 size={14} className="animate-spin" aria-hidden="true" />
+ : <Trash2 size={14} aria-hidden="true" />}
  </Button>
  </div>
- )
+ );
+ }
  }
  ];
 
@@ -852,6 +934,7 @@ export default function CommonCodeClient({
  type="button"
  onClick={handleSaveExplorerChanges}
  disabled={saveDisabled}
+ aria-busy={isSaving || undefined}
  className="gap-2"
  >
  <Save size={16} aria-hidden="true" />
@@ -946,7 +1029,7 @@ export default function CommonCodeClient({
  ? `분류 코드 ${selectedNode.id}`
  : undefined}
  detailActions={selectedGroup ? (
- <Button type="button" onClick={handleCreateDetail} className="gap-2">
+ <Button type="button" onClick={handleCreateDetail} disabled={isDetailWritePending || isModalOpen} className="gap-2">
  <Plus size={16} aria-hidden="true" /> 신규 상세 코드 등록
  </Button>
  ) : undefined}
@@ -1020,23 +1103,30 @@ export default function CommonCodeClient({
  <Button
  variant="outline"
  onClick={closeDetailModal}
- disabled={form.formState.isSubmitting}
+ disabled={isDetailWritePending}
  className="h-11 flex-1 rounded-lg border-2 border-border text-xs font-bold shadow-sm"
  >
  취소
  </Button>
  <Button
- onClick={form.handleSubmit(onSubmit)}
- disabled={form.formState.isSubmitting}
+ type="button"
+ onClick={() => submitDetailForm()}
+ disabled={isDetailWritePending}
+ aria-busy={isDetailFormPending || undefined}
  className="h-11 flex-[2] rounded-lg border-none bg-primary text-xs font-bold text-primary-foreground shadow-sm"
  >
- <Plus size={18} className="group-hover:rotate-90 transition-transform" /> 저장
+ <Plus size={18} aria-hidden="true" className="group-hover:rotate-90 transition-transform" />
+ {isDetailFormPending ? '저장 중…' : '저장'}
  </Button>
  </div>
  }
  >
  <Form {...form}>
- <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-10 pt-4">
+ <form noValidate onSubmit={submitDetailForm} className="space-y-10 pt-4">
+ <FormErrorSummary
+ labels={CODE_DETAIL_FIELD_LABELS}
+ onNavigate={form.focusError}
+ />
  <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
  <div className="space-y-8">
  {/* [P2] 폼 컨트롤이 아닌 읽기 전용 표시라 <label> 이 아닌 <span> + aria-describedby 로 연결한다. */}
@@ -1055,10 +1145,11 @@ export default function CommonCodeClient({
  <ShadcnFormField
  control={form.control}
  name="dtlCd"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
- 코드 식별자 (Unique ID) <span className="text-xs font-bold text-destructive-emphasis">*</span>
+ 코드 식별자 (Unique ID)
  </FormLabel>
  <FormControl>
  <Input
@@ -1077,10 +1168,11 @@ export default function CommonCodeClient({
  <ShadcnFormField
  control={form.control}
  name="dtlCdNm"
+ required
  render={({ field }) => (
  <FormItem className="space-y-1.5 p-0.5">
  <FormLabel className="ml-1 flex items-center gap-1.5 text-xs font-bold text-foreground">
- 표기 레이블 (Label) <span className="text-xs font-bold text-destructive-emphasis">*</span>
+ 표기 레이블 (Label)
  </FormLabel>
  <FormControl>
  <Input

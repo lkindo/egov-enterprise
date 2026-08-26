@@ -119,6 +119,24 @@ describe('codeActions', () => {
       expect(revalidatePath).not.toHaveBeenCalled();
     });
 
+    it('백엔드 필드 오류를 서버 액션 결과에 보존한다', async () => {
+      vi.mocked(codeAdminService.createDetailCode).mockRejectedValueOnce({
+        response: {
+          data: {
+            message: '입력값을 확인해 주세요.',
+            errors: [{ field: 'dtlCdNm', message: '코드 명칭은 이미 사용 중입니다.' }],
+          },
+        },
+      });
+
+      const result = await saveCodeDetail(null, { cdId: 'G1', dtlCd: 'D1', dtlCdNm: '중복' });
+
+      expect(result).toMatchObject({
+        success: false,
+        fieldErrors: { dtlCdNm: '코드 명칭은 이미 사용 중입니다.' },
+      });
+    });
+
     it('메시지 없는 오류는 기본 문구로 대체한다', async () => {
       vi.mocked(codeAdminService.createDetailCode).mockRejectedValueOnce({});
 

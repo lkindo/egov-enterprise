@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "d5892cad388c040381b0360fb2b87dfb1472e4756385df2a20c48a281f689556"
+    "inventoryHash": "69f72f54c5a266ed55551e65073c9395f39ae8f1f43bb6a7d812ec5ee1d9ffa5"
   },
   "summary": {
-    "sourceFileCount": 492,
-    "records": 529,
-    "syntaxOccurrences": 598,
-    "ambiguousRecords": 509,
-    "unverifiedRecords": 529,
+    "sourceFileCount": 503,
+    "records": 530,
+    "syntaxOccurrences": 599,
+    "ambiguousRecords": 510,
+    "unverifiedRecords": 530,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -40,7 +40,7 @@
     "byKind": {
       "config-redirect": 15,
       "dynamic-segment": 11,
-      "form-producer": 44,
+      "form-producer": 45,
       "navigation-producer": 154,
       "page-redirect": 5,
       "query-builder": 21,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 363,
+      "navigation": 364,
       "request-telemetry": 166
     }
   },
@@ -14283,6 +14283,45 @@
       "evidence": {
         "source": "frontend/src/app/cop/cmy/selectCommunityList/CommunityHubClient.tsx",
         "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-C3D38F6A7A9BC8",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "implicit-or-computed-method",
+      "source": "frontend/src/app/cop/sms/selectSmsList/SmsHubClient.tsx",
+      "producerFile": "frontend/src/app/cop/sms/selectSmsList/SmsHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/cop/sms/selectSmsList",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "form-method-or-interception-unresolved",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/cop/sms/selectSmsList/SmsHubClient.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },

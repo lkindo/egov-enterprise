@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { renderHook, act } from '@testing-library/react';
+import { render, renderHook, act, waitFor, screen, fireEvent } from '@testing-library/react';
 import { z } from 'zod';
 import { useAppForm } from '../useAppForm';
 
-vi.mock('sonner', () => ({ toast: { error: vi.fn() } }));
+const mocks = vi.hoisted(() => ({ toastError: vi.fn() }));
+
+vi.mock('sonner', () => ({
+  toast: { error: mocks.toastError },
+}));
 
 const schema = z.object({
   pswd: z.string().min(8),
@@ -23,28 +27,11 @@ const schema = z.object({
  * 회귀가 조용할 수 없다.
  */
 describe('useAppForm.applyServerErrors', () => {
-  // [2026-08-09 flake 제거] applyServerErrors 는 첫 오류 필드로 포커스를 옮기려고
-  //   setTimeout(..., 100) 을 건다. 그 타이머는 취소되지 않으므로, 테스트가 즉시 끝나면
-  //   **jsdom 환경이 해체된 뒤에 콜백이 발동**해 `ReferenceError: document is not defined` 가 난다.
-  //
-  //   로컬에서는 전체 실행이 충분히 길어 우연히 살아남았고, CI 러너에서만 터졌다
-  //   (2026-08-09 #362 실측 — 테스트 269개는 전부 통과했는데 잡은 실패했다).
-  //   "테스트가 다 통과했는데 빌드가 빨간" 형태라 원인을 찾기 어렵다.
-  //
-  //   가짜 타이머로 콜백을 **jsdom 이 살아 있는 동안** 실행시켜 결정적으로 만든다.
-  //   덤으로 그동안 검증된 적 없던 포커스 이동 분기도 함께 덮인다.
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-
   afterEach(() => {
-    // 남은 타이머를 환경 해체 전에 모두 흘려보낸다.
-    vi.runOnlyPendingTimers();
-    vi.useRealTimers();
     document.body.innerHTML = '';
   });
 
-  it('첫 오류 필드로 포커스를 옮긴다', () => {
+  it('첫 오류 필드로 포커스를 옮긴다', async () => {
     const input = document.createElement('input');
     input.setAttribute('name', 'pswd');
     input.scrollIntoView = vi.fn();
@@ -53,35 +40,26 @@ describe('useAppForm.applyServerErrors', () => {
 
     const { result } = renderHook(() => useAppForm(schema));
 
-    act(() => {
+    await act(async () => {
       result.current.applyServerErrors({
         response: { data: { errors: [{ field: 'pswd', message: '8자 이상' }] } },
       });
     });
 
-    // 타이머 전에는 아직 아무 일도 없어야 한다.
-    expect(input.focus).not.toHaveBeenCalled();
-
-    act(() => {
-      vi.advanceTimersByTime(100);
-    });
-
-    // 오류가 화면 밖에 있으면 사용자는 "저장이 안 된다" 고만 느낀다 — 스크롤·포커스가 그것을 막는다.
+    await waitFor(() => expect(input.focus).toHaveBeenCalled());
     expect(input.scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'center' });
-    expect(input.focus).toHaveBeenCalled();
+    expect(input.focus).toHaveBeenCalledWith({ preventScroll: true });
   });
 
-  it('오류 필드가 화면에 없어도 안전하게 지나간다', () => {
+  it('오류 필드가 화면에 없어도 안전하게 지나간다', async () => {
     const { result } = renderHook(() => useAppForm(schema));
 
-    act(() => {
+    await expect(act(async () => {
       result.current.applyServerErrors({
         response: { data: { errors: [{ field: 'notRendered', message: 'x' }] } },
       });
-    });
-
-    // querySelector 가 null 을 돌려줄 때 그대로 진행하면 TypeError 로 폼이 죽는다.
-    expect(() => act(() => { vi.advanceTimersByTime(100); })).not.toThrow();
+      await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
+    })).resolves.toBeUndefined();
   });
 
   it('서버 필드 오류를 폼 필드에 귀속시키고 true 를 반환한다', () => {
@@ -114,6 +92,88 @@ describe('useAppForm.applyServerErrors', () => {
     expect(result.current.formState.errors.emlAddr?.message).toBe('이메일 형식이 아닙니다.');
   });
 
+  it('서버 필드 오류를 연결해도 사용자가 입력한 값은 보존한다', () => {
+    const { result } = renderHook(() => {
+      const form = useAppForm(schema, {
+        defaultValues: { pswd: 'Password1!', emlAddr: 'before@example.com' },
+      });
+      void form.formState.errors;
+      return form;
+    });
+
+    act(() => {
+      result.current.setValue('emlAddr', 'typed@example.com', { shouldDirty: true });
+      result.current.applyServerErrors({
+        fieldErrors: { emlAddr: '이미 등록된 이메일입니다.' },
+      });
+    });
+
+    expect(result.current.getValues('emlAddr')).toBe('typed@example.com');
+    expect(result.current.formState.errors.emlAddr?.message).toBe('이미 등록된 이메일입니다.');
+  });
+
+  it('같은 name을 가진 여러 폼에서는 제출한 폼 안의 오류 필드만 이동한다', async () => {
+    function SameNameForms() {
+      const first = useAppForm(schema, {
+        defaultValues: { pswd: 'Password1!', emlAddr: 'first@example.com' },
+      });
+      const second = useAppForm(schema, {
+        defaultValues: { pswd: 'Password1!', emlAddr: 'second@example.com' },
+      });
+      return (
+        <>
+          <form aria-label="첫 번째 폼" onSubmit={first.handleSubmit(() => undefined)}>
+            <input aria-label="첫 이메일" {...first.register('emlAddr')} />
+          </form>
+          <form
+            aria-label="두 번째 폼"
+            onSubmit={second.handleSubmit(() => {
+              second.applyServerErrors({ fieldErrors: { emlAddr: '두 번째 폼 오류' } });
+            })}
+          >
+            <input aria-label="두 번째 이메일" {...second.register('emlAddr')} />
+          </form>
+        </>
+      );
+    }
+
+    render(<SameNameForms />);
+    const firstInput = screen.getByLabelText('첫 이메일');
+    const secondInput = screen.getByLabelText('두 번째 이메일');
+    firstInput.focus = vi.fn();
+    secondInput.focus = vi.fn();
+    secondInput.scrollIntoView = vi.fn();
+
+    fireEvent.submit(screen.getByRole('form', { name: '두 번째 폼' }));
+
+    await waitFor(() => expect(secondInput.focus).toHaveBeenCalledWith({ preventScroll: true }));
+    expect(firstInput.focus).not.toHaveBeenCalled();
+  });
+
+  it('Server Action의 fieldErrors map도 같은 계약으로 소비한다', () => {
+    const { result } = renderHook(() => {
+      const form = useAppForm(schema);
+      void form.formState.errors;
+      return form;
+    });
+
+    let handled = false;
+    act(() => {
+      handled = result.current.applyServerErrors({
+        success: false,
+        message: '입력값을 확인해 주세요.',
+        fieldErrors: {
+          pswd: '서버 액션 비밀번호 오류',
+          emlAddr: '서버 액션 이메일 오류',
+        },
+      });
+    });
+
+    expect(handled).toBe(true);
+    expect(result.current.formState.errors.pswd?.message).toBe('서버 액션 비밀번호 오류');
+    expect(result.current.formState.errors.emlAddr?.message).toBe('서버 액션 이메일 오류');
+  });
+
   it('필드 오류가 아니면 false 를 반환해 호출부가 일반 오류로 처리하게 한다', () => {
     // react-hook-form 의 formState 는 Proxy 라, 렌더 중 접근한 키만 구독된다.
     // errors 를 렌더에서 읽지 않으면 setError 가 리렌더를 유발하지 않아 단언이 항상 undefined 가 된다.
@@ -130,5 +190,139 @@ describe('useAppForm.applyServerErrors', () => {
 
     expect(handled).toBe(false);
     expect(result.current.formState.errors.pswd).toBeUndefined();
+  });
+});
+
+describe('useAppForm validation navigation', () => {
+  beforeEach(() => {
+    mocks.toastError.mockClear();
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+    document.body.innerHTML = '';
+  });
+
+  it('expected validation 실패를 console error 로 기록하지 않고 DOM 순서의 nested 오류로 이동한다', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    const nestedSchema = z.object({
+      pswd: z.string().min(8, '비밀번호 오류'),
+      profile: z.object({
+        emlAddr: z.string().email('이메일 오류'),
+      }),
+    });
+
+    const email = document.createElement('input');
+    email.name = 'profile.emlAddr';
+    email.scrollIntoView = vi.fn();
+    email.focus = vi.fn();
+    const password = document.createElement('input');
+    password.name = 'pswd';
+    password.scrollIntoView = vi.fn();
+    password.focus = vi.fn();
+    // schema 순서는 pswd가 먼저지만 실제 화면에서는 email이 먼저다.
+    document.body.append(email, password);
+
+    const { result } = renderHook(() => useAppForm(nestedSchema, {
+      defaultValues: { pswd: '', profile: { emlAddr: '' } },
+    }));
+
+    await act(async () => {
+      await result.current.handleSubmit(vi.fn())();
+    });
+
+    await waitFor(() => expect(email.focus).toHaveBeenCalledTimes(1));
+    expect(password.focus).not.toHaveBeenCalled();
+    expect(consoleError).not.toHaveBeenCalled();
+    expect(mocks.toastError).not.toHaveBeenCalled();
+    await waitFor(() => expect(document.querySelector('[data-form-error-announcer="true"]'))
+      .toHaveTextContent('입력 오류 2개'));
+  });
+
+  it('검증 시작 전에 동기 잠금을 선점해 같은 tick의 중복 submit을 한 번만 실행한다', async () => {
+    let release: () => void = () => undefined;
+    const pending = new Promise<void>((resolve) => { release = resolve; });
+    const onValid = vi.fn(() => pending);
+    const { result } = renderHook(() => useAppForm(schema, {
+      defaultValues: { pswd: 'Password1!', emlAddr: 'user@example.com' },
+    }));
+    const submit = result.current.handleSubmit(onValid);
+    const firstEvent = new Event('submit', { cancelable: true });
+    const duplicateEvent = new Event('submit', { cancelable: true });
+
+    act(() => {
+      void submit(firstEvent as unknown as Parameters<typeof submit>[0]);
+      void submit(duplicateEvent as unknown as Parameters<typeof submit>[0]);
+    });
+
+    await waitFor(() => expect(onValid).toHaveBeenCalledTimes(1));
+    expect(firstEvent.defaultPrevented).toBe(true);
+    expect(duplicateEvent.defaultPrevented).toBe(true);
+    await act(async () => release());
+    await act(async () => submit());
+    expect(onValid).toHaveBeenCalledTimes(2);
+  });
+
+  it('reduced motion 사용자는 smooth scroll 없이 오류 필드로 이동한다', async () => {
+    vi.spyOn(window, 'matchMedia').mockImplementation((query) => ({
+      matches: query === '(prefers-reduced-motion: reduce)',
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    const input = document.createElement('input');
+    input.name = 'pswd';
+    input.scrollIntoView = vi.fn();
+    input.focus = vi.fn();
+    document.body.appendChild(input);
+    const { result } = renderHook(() => useAppForm(schema));
+
+    await act(async () => {
+      await result.current.focusError('pswd');
+    });
+
+    expect(input.scrollIntoView).toHaveBeenCalledWith({ behavior: 'auto', block: 'center' });
+    expect(input.focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  it('오류 target이 없으면 예외 없이 오류 요약으로 fallback 한다', async () => {
+    const summary = document.createElement('div');
+    summary.dataset.formErrorSummary = 'true';
+    summary.tabIndex = -1;
+    summary.focus = vi.fn();
+    document.body.appendChild(summary);
+    const { result } = renderHook(() => useAppForm(schema));
+
+    let focused = true;
+    await expect(act(async () => {
+      focused = await result.current.focusError('notRendered');
+    })).resolves.toBeUndefined();
+
+    expect(focused).toBe(false);
+    expect(summary.focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  it('숨겨진 영역을 먼저 연 뒤 새로 렌더된 field로 이동한다', async () => {
+    const input = document.createElement('input');
+    input.name = 'pswd';
+    input.scrollIntoView = vi.fn();
+    input.focus = vi.fn();
+    const revealField = vi.fn(async () => {
+      document.body.appendChild(input);
+    });
+    const { result } = renderHook(() => useAppForm(schema, undefined, { revealField }));
+
+    let focused = false;
+    await act(async () => {
+      focused = await result.current.focusError('pswd', 'server');
+    });
+
+    expect(revealField).toHaveBeenCalledWith('pswd', 'server');
+    expect(focused).toBe(true);
+    expect(input.focus).toHaveBeenCalledWith({ preventScroll: true });
   });
 });

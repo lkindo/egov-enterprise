@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { codeAdminService, type CmmnCodeHierarchyItem } from '@/services/foundation/system/CodeAdminService';
 import { CmmnDetailCode } from '@/types/foundation/system';
 import type { FlattenedCodeNode } from '@/app/admin/system/common-code/treeUtils';
-import { extractErrorMessage } from './actionUtils';
+import { extractErrorMessage, extractFieldErrors } from './actionUtils';
 
 export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetailCode> & { isNew?: boolean }) {
   try {
@@ -28,7 +28,12 @@ export async function saveCodeDetail(prevState: unknown, data: Partial<CmmnDetai
     return { success: true, message: '상세 코드가 저장되었습니다.' };
   } catch (error) {
     const message = extractErrorMessage(error, '저장 중 오류 발생');
-    return { success: false, message };
+    const fieldErrors = extractFieldErrors(error);
+    return {
+      success: false,
+      message,
+      ...(fieldErrors ? { fieldErrors } : {}),
+    };
   }
 }
 

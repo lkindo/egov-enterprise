@@ -28,7 +28,7 @@ interface TemplateProps {
   bbsId: string;
   querySearchWrd: string;
   handleLike: (e: React.MouseEvent, pstSn: number) => void;
-  isLikePending: boolean;
+  pendingLikePstSn: number | null;
   page?: number;
   totalCount?: number;
 }
@@ -133,7 +133,7 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
   );
 };
 
-export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePending }: TemplateProps) => {
+export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
     <motion.div 
@@ -175,11 +175,13 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                     type="button"
                     whileTap={{ scale: 0.9 }}
                     onClick={(e) => handleLike(e, item.pstSn)}
+                    disabled={pendingLikePstSn !== null}
+                    aria-busy={pendingLikePstSn === item.pstSn || undefined}
                     className="flex items-center gap-2 px-4 py-2 bg-card rounded-xl border border-border shadow-sm text-muted-foreground hover:text-primary hover:border-primary/30 transition-all"
-                    aria-label={`${item.pstTtl} 추천`}
+                    aria-label={`${item.pstTtl} ${pendingLikePstSn === item.pstSn ? '추천 처리 중' : '추천'}`}
                   >
-                    <ThumbsUp size={18} className={cn(isLikePending && "animate-bounce")} aria-hidden="true" />
-                    <span className="text-sm font-black text-foreground">{item.likeCnt || 0}</span>
+                    <ThumbsUp size={18} className={cn(pendingLikePstSn === item.pstSn && "animate-bounce")} aria-hidden="true" />
+                    <span className="text-sm font-black text-foreground">{pendingLikePstSn === item.pstSn ? '처리 중…' : item.likeCnt || 0}</span>
                   </motion.button>
                 </div>
               </div>
@@ -191,7 +193,7 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
   );
 };
 
-export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePending }: TemplateProps) => {
+export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
     <motion.div 
@@ -247,11 +249,13 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePen
                 <motion.button 
                   whileTap={{ scale: 0.9 }}
                   onClick={(e) => handleLike(e, item.pstSn)}
+                  disabled={pendingLikePstSn !== null}
+                  aria-busy={pendingLikePstSn === item.pstSn || undefined}
                   className="flex items-center gap-2.5 text-muted-foreground hover:text-amber-500 font-black text-[10px] tracking-widest uppercase transition-all"
-                  aria-label={`${item.pstTtl} 추천`}
+                  aria-label={`${item.pstTtl} ${pendingLikePstSn === item.pstSn ? '추천 처리 중' : '추천'}`}
                 >
-                  <ThumbsUp size={16} className={cn(isLikePending && "animate-bounce")} />
-                  <span>추천 {item.likeCnt || 0}</span>
+                  <ThumbsUp size={16} className={cn(pendingLikePstSn === item.pstSn && "animate-bounce")} />
+                  <span>{pendingLikePstSn === item.pstSn ? '추천 처리 중…' : `추천 ${item.likeCnt || 0}`}</span>
                 </motion.button>
               </div>
             </div>
@@ -537,7 +541,7 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
   );
 };
 
-export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLikePending, page = 1, totalCount = 0 }: TemplateProps) => {
+export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn, page = 1, totalCount = 0 }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
     <div className="overflow-hidden">
@@ -587,11 +591,13 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, isLik
                   <motion.button
                     whileTap={{ scale: 0.95 }}
                     onClick={(e) => handleLike(e, item.pstSn)}
+                    disabled={pendingLikePstSn !== null}
+                    aria-busy={pendingLikePstSn === item.pstSn || undefined}
                     className="font-bold text-[10px] text-muted-foreground bg-card px-2.5 py-1.5 rounded-lg flex items-center gap-1 border border-border shadow-sm hover:bg-primary hover:text-white hover:border-primary transition-all"
-                    aria-label={`${item.pstTtl} 추천`}
+                    aria-label={`${item.pstTtl} ${pendingLikePstSn === item.pstSn ? '추천 처리 중' : '추천'}`}
                   >
-                    <ThumbsUp size={12} className={cn("opacity-50", isLikePending && "animate-bounce")} />
-                    <span>{item.likeCnt || 0}</span>
+                    <ThumbsUp size={12} className={cn("opacity-50", pendingLikePstSn === item.pstSn && "animate-bounce")} />
+                    <span>{pendingLikePstSn === item.pstSn ? '처리 중…' : item.likeCnt || 0}</span>
                   </motion.button>
                 </div>
               </TableCell>

@@ -5,6 +5,7 @@ import * as z from 'zod';
 import {
   Form,
   FormControl,
+  FormErrorSummary,
   FormField,
   FormItem,
   FormLabel,
@@ -39,9 +40,18 @@ interface DepartmentFormProps {
   mode: 'create' | 'edit';
   onSubmit: (data: DeptFormValues) => Promise<void>;
   onCancel: () => void;
+  isPending?: boolean;
+  externalBusy?: boolean;
 }
 
-export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: DepartmentFormProps) {
+export function DepartmentForm({
+  initialData,
+  mode,
+  onSubmit,
+  onCancel,
+  isPending = false,
+  externalBusy = false,
+}: DepartmentFormProps) {
   const form = useAppForm(deptSchema, {
     defaultValues: {
       ognzNm: initialData?.ognzNm || '',
@@ -50,13 +60,39 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
   });
 
   const { isSubmitting } = form.formState;
+  const isWritePending = isSubmitting || isPending;
+  const areActionsDisabled = isWritePending || externalBusy;
+
+  const handleSubmit = async (values: DeptFormValues) => {
+    if (isPending || externalBusy) return;
+    try {
+      await onSubmit(values);
+    } catch (error) {
+      if (!form.applyServerErrors(error)) throw error;
+    }
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pt-4 text-left">
+      <form
+        noValidate
+        onSubmit={(event) => {
+          if (isPending || externalBusy) {
+            event.preventDefault();
+            return;
+          }
+          void form.handleSubmit(handleSubmit)(event);
+        }}
+        className="space-y-8 pt-4 text-left"
+      >
+        <FormErrorSummary
+          labels={{ ognzNm: '부서 명칭', ognzExpln: '부서 설명명세' }}
+          onNavigate={form.focusError}
+        />
         <FormField
           control={form.control}
           name="ognzNm"
+          required
           render={({ field, fieldState }) => (
             <FormItem>
               <motion.div
@@ -64,11 +100,12 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
                 transition={{ duration: 0.4 }}
               >
                 <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                  부서 명칭 <span className="text-rose-500 font-bold text-xs">*</span>
+                  부서 명칭
                 </FormLabel>
                 <FormControl>
                   <Input
                     {...field}
+                    maxLength={100}
                     className={cn(
                         "h-11 rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
@@ -97,6 +134,7 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
                 <FormControl>
                   <textarea
                     {...field}
+                    maxLength={4000}
                     className={cn(
                         "w-full min-h-[120px] p-6 rounded-lg border-2 border-border bg-muted text-xs font-bold outline-none resize-none shadow-inner transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
@@ -113,18 +151,22 @@ export function DepartmentForm({ initialData, mode, onSubmit, onCancel }: Depart
         <div className="flex w-full gap-4 pt-4 border-t border-border">
           <button 
             type="button" 
-            onClick={onCancel} 
+            disabled={areActionsDisabled}
+            onClick={() => {
+              if (!areActionsDisabled) onCancel();
+            }}
             className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
           >
             취소
           </button>
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={areActionsDisabled}
+            aria-busy={isWritePending || undefined}
             className="flex-[2] h-11 rounded-lg font-bold text-xs tracking-widest shadow-xl bg-surface-inverse text-surface-inverse-foreground hover:bg-primary transition-all group"
           >
             <Zap size={18} className="group-hover:animate-pulse mr-2" />
-            {mode === 'create' ? '부서 등록' : '정보 수정'}
+            {isWritePending ? '처리 중…' : mode === 'create' ? '부서 등록' : '정보 수정'}
           </Button>
         </div>
       </form>

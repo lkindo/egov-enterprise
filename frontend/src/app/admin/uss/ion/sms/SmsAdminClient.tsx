@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
@@ -27,6 +27,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useToast } from '@/app/components/ui/toast';
+import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { format } from 'date-fns';
 import { smsSchema } from '@/lib/validation/schemas';
@@ -34,11 +35,18 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
   FormControl,
+  FormErrorSummary,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+
+const smsValidationLabels: Record<string, string> = {
+  sndngTelno: '발신 번호',
+  rcptnTelno: '수신 번호',
+  sndngCn: '메시지 내용',
+};
 
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
@@ -63,6 +71,7 @@ export default function SmsAdminClient({
   const searchParams = useSearchParams();
 
   const [isSending, setIsSending] = useState(false);
+  const sendPendingRef = useRef(false);
   const [isSendOpen, setIsSendOpen] = useState(false);
   const [searchKeyword, setSearchKeyword] = useState('');
   /** 타이핑마다 서버를 때리지 않도록 300ms 디바운스(감사 P1-8). */
@@ -108,6 +117,8 @@ export default function SmsAdminClient({
   });
 
   const handleSend = async (values: z.infer<typeof smsSchema>) => {
+    if (sendPendingRef.current) return;
+    sendPendingRef.current = true;
     setIsSending(true);
     try {
       // 백엔드 SmsDto 는 최상위 rcptnTelno 를 받지 않는다 — 수신자는 recipients 배열로 전달해야
@@ -123,10 +134,23 @@ export default function SmsAdminClient({
       form.reset();
       refetch();
     } catch (err) {
-      toast(err instanceof Error ? err.message : '발송에 실패했습니다.', 'error');
+      if (!form.applyServerErrors(err)) {
+        toast(extractErrorMessage(err, '발송에 실패했습니다.'), 'error');
+      }
     } finally {
+      sendPendingRef.current = false;
       setIsSending(false);
     }
+  };
+
+  const handleOpenSend = () => {
+    form.reset();
+    setIsSendOpen(true);
+  };
+
+  const handleSendOpenChange = (open: boolean) => {
+    if (!open && sendPendingRef.current) return;
+    setIsSendOpen(open);
   };
 
   const columns: Column<SmsDto>[] = [
@@ -181,7 +205,7 @@ export default function SmsAdminClient({
             <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">
               <RefreshCcw size={16} className={cn(isFetching && "animate-spin")} aria-hidden="true" /> 새로고침
             </Button>
-            <Button size="sm" onClick={() => setIsSendOpen(true)} className="gap-2">
+            <Button size="sm" onClick={handleOpenSend} className="gap-2">
               <Plus size={16} aria-hidden="true" /> 새 메시지 구성
             </Button>
           </>
@@ -224,10 +248,15 @@ export default function SmsAdminClient({
         />
 
       {/* Send Message Composition Dialog */}
-      <Dialog open={isSendOpen} onOpenChange={setIsSendOpen}>
+      <Dialog open={isSendOpen} onOpenChange={handleSendOpenChange}>
         <DialogContent className="sm:max-w-[550px] rounded-lg p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl overflow-hidden relative">
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(handleSend)}>
+            <form
+              noValidate
+              onSubmit={(event) => {
+                void form.handleSubmit(handleSend)(event);
+              }}
+            >
               <div className="absolute top-[-20%] right-[-20%] w-64 h-64 bg-primary/10 blur-[80px] rounded-lg pointer-events-none" />
 
               <DialogHeader className="p-12 pb-0 space-y-6 relative z-10">
@@ -243,25 +272,29 @@ export default function SmsAdminClient({
               </DialogHeader>
 
               <div className="p-12 space-y-10 relative z-10 text-left">
+                <FormErrorSummary labels={smsValidationLabels} onNavigate={form.focusError} />
                 <FormField
                   control={form.control}
                   name="rcptnTelno"
+                  required
                   render={({ field }) => (
                     <FormItem className="space-y-4">
                       <FormLabel className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-2 flex items-center gap-3">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full" aria-hidden="true" />
                         수신 번호
                       </FormLabel>
-                      <FormControl>
-                        <div className="relative group">
-                          <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} aria-hidden="true" />
+                      <div className="relative group">
+                        <Phone className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground group-focus-within:text-primary transition-colors" size={20} aria-hidden="true" />
+                        <FormControl>
                           <Input
                             {...field}
+                            inputMode="tel"
+                            maxLength={20}
                             placeholder="010-0000-0000"
                             className="h-11 pl-16 pr-8 rounded-lg border-none bg-muted text-xl font-bold tabular-nums focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all shadow-inner tracking-wider"
                           />
-                        </div>
-                      </FormControl>
+                        </FormControl>
+                      </div>
                       <FormMessage className="text-xs font-bold" />
                     </FormItem>
                   )}
@@ -270,21 +303,23 @@ export default function SmsAdminClient({
                 <FormField
                   control={form.control}
                   name="sndngCn"
+                  required
                   render={({ field }) => (
                     <FormItem className="space-y-4">
                       <FormLabel className="text-xs font-bold text-muted-foreground tracking-[0.2em] ml-2 flex items-center gap-3">
                         <div className="w-1.5 h-1.5 bg-primary rounded-full" aria-hidden="true" />
                         메시지 내용
                       </FormLabel>
-                      <FormControl>
-                        <div className="relative">
+                      <div className="relative">
+                        <FormControl>
                           <Textarea
                             {...field}
+                            maxLength={80}
                             placeholder="메시지 내용을 입력하세요..."
                             className="min-h-[180px] p-8 rounded-lg border-none bg-muted text-base font-bold outline-none focus:bg-card focus:ring-8 focus:ring-primary/5 transition-all resize-none shadow-inner leading-relaxed"
                           />
-                        </div>
-                      </FormControl>
+                        </FormControl>
+                      </div>
                       <FormMessage className="text-xs font-bold" />
                     </FormItem>
                   )}
@@ -295,18 +330,20 @@ export default function SmsAdminClient({
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsSendOpen(false)}
+                  onClick={() => handleSendOpenChange(false)}
+                  disabled={isSending || form.formState.isSubmitting}
                   className="h-11 px-10 rounded-lg border-2 border-border font-bold text-xs tracking-widest hover:bg-muted transition-all hover:border-border"
                 >
                   취소
                 </Button>
                 <Button
                   type="submit"
-                  disabled={isSending}
+                  disabled={isSending || form.formState.isSubmitting}
+                  aria-busy={isSending || form.formState.isSubmitting}
                   className="h-11 px-16 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-[0.3em] shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 active:scale-95 flex items-center gap-3 flex-1"
                 >
                   {isSending ? <RefreshCcw size={18} className="animate-spin" aria-hidden="true" /> : <Send size={18} aria-hidden="true" />}
-                  발송
+                  {isSending ? '발송 중…' : '발송'}
                 </Button>
               </DialogFooter>
             </form>

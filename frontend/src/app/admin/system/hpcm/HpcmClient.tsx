@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { hpcmAdminService, Hpcm } from '@/services/foundation/system/HpcmAdminService';
@@ -16,6 +16,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
+  FormErrorSummary,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { useRouter } from 'next/navigation';
@@ -25,11 +26,26 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 
 import { HpcmDtoSchema } from '@/types/generated-zod';
 
-const hpcmSchema = HpcmDtoSchema.extend({
-  hlpSeCd: HpcmDtoSchema.shape.hlpSeCd.min(1),
-  hlpDfn: HpcmDtoSchema.shape.hlpDfn.min(1),
-  hlpExpln: HpcmDtoSchema.shape.hlpExpln.min(1),
+export const hpcmSchema = HpcmDtoSchema.extend({
+  hlpSeCd: HpcmDtoSchema.shape.hlpSeCd
+    .trim()
+    .min(1, '분류 구분을 입력해 주세요.')
+    .max(3, '분류 구분은 최대 3자까지 입력할 수 있습니다.'),
+  hlpDfn: HpcmDtoSchema.shape.hlpDfn
+    .trim()
+    .min(1, '도움말 명칭을 입력해 주세요.')
+    .max(1000, '도움말 명칭은 최대 1,000자까지 입력할 수 있습니다.'),
+  hlpExpln: HpcmDtoSchema.shape.hlpExpln
+    .trim()
+    .min(1, '도움말 상세 설명을 입력해 주세요.')
+    .max(65535, '도움말 상세 설명은 최대 65,535자까지 입력할 수 있습니다.'),
 });
+
+const HPCM_FORM_LABELS = {
+  hlpSeCd: '분류 구분',
+  hlpDfn: '도움말 명칭',
+  hlpExpln: '도움말 상세 설명',
+};
 
 type HpcmFormValues = z.infer<typeof hpcmSchema>;
 
@@ -39,6 +55,7 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
   const [loading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [registerLoading, setRegisterLoading] = useState(false);
+  const registeringRef = useRef(false);
   const hpcmList = initialData.list || [];
 
   const form = useAppForm(hpcmSchema, {
@@ -50,6 +67,8 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
   });
 
   const onRegisterSubmit = async (values: HpcmFormValues) => {
+    if (registeringRef.current) return;
+    registeringRef.current = true;
     try {
       setRegisterLoading(true);
       await hpcmAdminService.createHpcm(values);
@@ -57,11 +76,18 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
       setIsModalOpen(false);
       form.reset();
       router.refresh();
-    } catch {
-      toast('도움말 등록 중 오류가 발생했습니다.', 'error');
+    } catch (error: unknown) {
+      if (!form.applyServerErrors(error)) {
+        toast('도움말 등록 중 오류가 발생했습니다. 입력값은 유지됩니다.', 'error');
+      }
     } finally {
+      registeringRef.current = false;
       setRegisterLoading(false);
     }
+  };
+
+  const closeModal = () => {
+    if (!registeringRef.current) setIsModalOpen(false);
   };
 
   const columns: Column<Hpcm>[] = [
@@ -122,32 +148,36 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
 
       <StandardModal
         isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
+        onClose={closeModal}
         title="도움말 콘텐츠 등록"
         maxWidth="xl"
         footer={
           <div className="flex w-full gap-4">
-            <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">취소</Button>
+            <Button variant="outline" type="button" disabled={registerLoading} onClick={closeModal} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">취소</Button>
             <Button 
-              onClick={form.handleSubmit(onRegisterSubmit)}
+              type="submit"
+              form="hpcm-create-form"
               disabled={registerLoading}
               className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
             >
-              <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 등록
+              <ShieldCheck size={18} strokeWidth={3} aria-hidden="true" className="text-primary group-hover:rotate-12 transition-transform" />
+              {registerLoading ? '등록 중…' : '최종 등록'}
             </Button>
           </div>
         }
       >
         <Form {...form}>
-          <form className="space-y-6 pt-4 text-left">
+          <form id="hpcm-create-form" onSubmit={form.handleSubmit(onRegisterSubmit)} className="space-y-6 pt-4 text-left" noValidate>
+            <FormErrorSummary labels={HPCM_FORM_LABELS} onNavigate={form.focusError} />
             <ShadcnFormField
               control={form.control}
               name="hlpSeCd"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">분류 구분</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="예: 게시판, 로그인, 회원가입" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={3} placeholder="예: BBS" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -156,11 +186,12 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
             <ShadcnFormField
               control={form.control}
               name="hlpDfn"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">도움말 명칭</FormLabel>
                   <FormControl>
-                    <Input {...field} placeholder="게시판 물리삭제 기능 가이드" className="h-11 rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={1000} placeholder="게시판 물리삭제 기능 가이드" className="h-11 rounded-lg bg-muted border-border" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -169,12 +200,14 @@ export default function HpcmClient({ initialData }: { initialData: { list: Hpcm[
             <ShadcnFormField
               control={form.control}
               name="hlpExpln"
+              required
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">도움말 상세 설명</FormLabel>
                   <FormControl>
                     <textarea 
                       {...field} 
+                      maxLength={65535}
                       placeholder="게시판 영구 말소와 물리삭제 시 준수해야 하는 검증 프로토콜 설명입니다." 
                       className="w-full min-h-[150px] p-3 rounded-lg border bg-muted border-border focus:bg-card focus:outline-none focus:ring-2 focus:ring-primary/20 text-sm leading-relaxed resize-none"
                     />

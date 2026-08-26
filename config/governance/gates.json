@@ -958,6 +958,71 @@
       "redProof": "Break an invariant fixture or remove a runner binding; the targeted Vitest gate or registry contract must fail."
     },
     {
+      "id": "GATESET-FRONTEND-FORM-VALIDATION",
+      "selector": {
+        "type": "runner-catalog",
+        "runner": "node-test",
+        "forbidSkips": true,
+        "catalogs": [
+          {
+            "root": "frontend/scripts",
+            "suffixes": [
+              ".test.mjs"
+            ],
+            "recursive": false
+          }
+        ],
+        "packageScript": {
+          "source": "frontend/package.json",
+          "name": "test:form-validation",
+          "command": "node --test \"scripts/*.test.mjs\" && pnpm run check:form-validation"
+        },
+        "commandBindings": [
+          {
+            "source": ".githooks/pre-push",
+            "fragment": "( cd frontend && pnpm run test:form-validation ) \\",
+            "tiers": [
+              "pre-push"
+            ]
+          },
+          {
+            "source": "scripts/verify.mjs",
+            "fragment": "run('pnpm -C frontend run test:form-validation');",
+            "tiers": [
+              "local-full"
+            ]
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "fragment": "run: pnpm run test:form-validation",
+            "tiers": [
+              "ci"
+            ]
+          }
+        ]
+      },
+      "tier": [
+        "pre-push",
+        "local-full",
+        "ci"
+      ],
+      "task": "pnpm -C frontend run test:form-validation",
+      "category": "frontend-governance",
+      "owner": "frontend-platform",
+      "requiredCiContext": "frontend-build",
+      "inputs": [
+        "config/governance/frontend-form-validation-census.json",
+        "docs/03-guides/frontend-form-validation-loop.md",
+        "frontend/scripts/frontend-form-validation-census.mjs",
+        "frontend/scripts/frontend-form-validation-census.test.mjs",
+        "frontend/package.json"
+      ],
+      "evidence": [
+        "Node test TAP output and census process exit status"
+      ],
+      "redProof": "Add an unregistered native/member form, form-less editable write, action-only write control, imported/self-writing child Form composition, forwarded handle* write callback, local-variable bulk callback, axios transport, join/like action, or secondary write action; invert a pending guard, use literal/unlinked pending attributes, let a handler lock one ref while its control borrows a decoy pending state, share one generic busy identity across distinct actions, release a lock before settlement, place feedback outside catch/onError, split action evidence across test blocks or borrow another sink/control in the same block, claim aggregate composed signals without exact child-parent mutual locks, duplicate role=alert beside messageProps, disguise a mutation as search-filter, leave a stale entry, or expire an exception; the exact census must fail."
+    },
+    {
       "id": "GATESET-FRONTEND-VITEST",
       "selector": {
         "type": "runner-catalog",

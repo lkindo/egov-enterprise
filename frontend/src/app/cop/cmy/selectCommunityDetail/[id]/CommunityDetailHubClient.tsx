@@ -34,6 +34,8 @@ export default function CommunityDetailHubClient({
 }) {
 
   const { toast } = useToast();
+  const joinPendingRef = React.useRef(false);
+  const [isJoining, setJoining] = React.useState(false);
 
   const { data: community } = useQuery({
     queryKey: ['community', cmntySn],
@@ -57,6 +59,20 @@ export default function CommunityDetailHubClient({
     },
   });
 
+  const handleJoin = async () => {
+    if (joinPendingRef.current) return;
+    joinPendingRef.current = true;
+    setJoining(true);
+    try {
+      await joinMutation.mutateAsync();
+    } catch {
+      // mutation onError가 실패 안내를 소유하며 상세 화면은 그대로 유지한다.
+    } finally {
+      joinPendingRef.current = false;
+      setJoining(false);
+    }
+  };
+
   if (!community) return null;
 
   return (
@@ -74,11 +90,13 @@ export default function CommunityDetailHubClient({
               </Button>
               <Button
                 size="sm"
-                onClick={() => joinMutation.mutate()}
-                disabled={joinMutation.isPending}
+                onClick={() => { void handleJoin(); }}
+                disabled={isJoining}
+                aria-busy={isJoining || undefined}
+                aria-label={isJoining ? '커뮤니티 가입 신청 중' : '커뮤니티 가입 신청'}
               >
                 <UserPlus size={16} aria-hidden="true" />
-                {joinMutation.isPending ? '신청 중…' : '커뮤니티 가입 신청'}
+                {isJoining ? '신청 중…' : '커뮤니티 가입 신청'}
               </Button>
             </div>
           }

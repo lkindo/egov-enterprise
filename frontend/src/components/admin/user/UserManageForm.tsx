@@ -6,6 +6,7 @@ import * as z from 'zod';
 import {
   Form,
   FormControl,
+  FormErrorSummary,
   FormField,
   FormItem,
   FormLabel,
@@ -22,12 +23,16 @@ import { motion } from 'framer-motion';
 import { UserDtoSchema } from '@/types/generated-zod';
 
 export const userSchema = UserDtoSchema.partial().extend({
-  userId: z.string().min(1),
-  userNm: z.string().min(1),
-  emlAddr: z.string().optional().or(z.literal('')),
-  mblTelno: z.string().optional().or(z.literal('')),
-  ognzId: z.string().optional().or(z.literal('')),
-  pswd: z.string().optional().or(z.literal('')),
+  userId: UserDtoSchema.shape.userId,
+  userNm: UserDtoSchema.shape.userNm,
+  emlAddr: UserDtoSchema.shape.emlAddr,
+  mblTelno: UserDtoSchema.shape.mblTelno,
+  ognzId: UserDtoSchema.shape.ognzId,
+  pswd: UserDtoSchema.shape.pswd.optional().or(z.literal('')),
+});
+
+export const createUserSchema = userSchema.extend({
+  pswd: UserDtoSchema.shape.pswd,
 });
 
 export type UserFormValues = z.infer<typeof userSchema>;
@@ -38,20 +43,21 @@ interface UserManageFormProps {
   departments: Department[];
   onSubmit: (data: UserFormValues) => Promise<void>;
   onCancel: () => void;
+  isPending?: boolean;
+  externalBusy?: boolean;
 }
 
-export function UserManageForm({ initialData, mode, departments, onSubmit, onCancel }: UserManageFormProps) {
+export function UserManageForm({
+  initialData,
+  mode,
+  departments,
+  onSubmit,
+  onCancel,
+  isPending = false,
+  externalBusy = false,
+}: UserManageFormProps) {
   const schema = React.useMemo(() => {
-    return UserDtoSchema.partial().extend({
-      userId: z.string().min(1),
-      userNm: z.string().min(1),
-      emlAddr: z.string().optional().or(z.literal('')),
-      mblTelno: z.string().optional().or(z.literal('')),
-      ognzId: z.string().optional().or(z.literal('')),
-      pswd: mode === 'create'
-        ? z.string().min(8, { message: '비밀번호는 최소 8자 이상이어야 합니다.' })
-        : z.string().optional().or(z.literal('')),
-    });
+    return mode === 'create' ? createUserSchema : userSchema;
   }, [mode]);
 
   const form = useAppForm(schema, {
@@ -66,14 +72,47 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
   });
 
   const { isSubmitting } = form.formState;
+  const isWritePending = isSubmitting || isPending;
+  const areActionsDisabled = isWritePending || externalBusy;
+
+  const handleSubmit = async (values: UserFormValues) => {
+    if (isPending || externalBusy) return;
+    try {
+      await onSubmit(values);
+    } catch (error) {
+      if (!form.applyServerErrors(error)) throw error;
+    }
+  };
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pt-4 text-left">
+      <form
+        noValidate
+        onSubmit={(event) => {
+          if (isPending || externalBusy) {
+            event.preventDefault();
+            return;
+          }
+          void form.handleSubmit(handleSubmit)(event);
+        }}
+        className="space-y-8 pt-4 text-left"
+      >
+        <FormErrorSummary
+          labels={{
+            userId: '사용자 아이디',
+            userNm: '사용자 성함',
+            emlAddr: '이메일 주소',
+            mblTelno: '연락처',
+            pswd: '초기 비밀번호',
+            ognzId: '소속 부서',
+          }}
+          onNavigate={form.focusError}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <FormField
             control={form.control}
             name="userId"
+            required
             render={({ field, fieldState }) => (
               <FormItem>
                 <motion.div
@@ -81,18 +120,19 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   transition={{ duration: 0.4 }}
                 >
                   <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                    사용자 아이디 (Identity_ID) <span className="text-rose-500 font-bold text-xs">*</span>
+                    사용자 아이디 (Identity_ID)
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       readOnly={mode === 'edit'}
+                      maxLength={20}
                       className={cn(
                         "h-11 rounded-lg text-xs font-mono font-bold tracking-widest uppercase shadow-inner transition-all",
                         mode === 'edit' ? "bg-muted/50 border-none" : "focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
                       )}
-                      placeholder="ID (MIN_1)"
+                      placeholder="ID (4-20, 영문/숫자/_)"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-bold text-rose-500 mt-2 ml-2" />
@@ -103,6 +143,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
           <FormField
             control={form.control}
             name="userNm"
+            required
             render={({ field, fieldState }) => (
               <FormItem>
                 <motion.div
@@ -110,11 +151,12 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   transition={{ duration: 0.4 }}
                 >
                   <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                    사용자 성함 <span className="text-rose-500 font-bold text-xs">*</span>
+                    사용자 성함
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
+                      maxLength={50}
                       className={cn(
                         "h-11 rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
@@ -145,6 +187,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   <FormControl>
                     <Input
                       {...field}
+                      maxLength={50}
                       className={cn(
                         "h-11 rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
@@ -172,6 +215,8 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   <FormControl>
                     <Input
                       {...field}
+                      maxLength={11}
+                      inputMode="tel"
                       className={cn(
                         "h-11 rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
@@ -190,6 +235,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
           <FormField
             control={form.control}
             name="pswd"
+            required
             render={({ field, fieldState }) => (
               <FormItem>
                 <motion.div
@@ -197,12 +243,13 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                   transition={{ duration: 0.4 }}
                 >
                   <FormLabel className="text-xs font-bold text-foreground flex items-center gap-1.5 ml-1 uppercase tracking-tight">
-                    초기 비밀번호 <span className="text-rose-500 font-bold text-xs">*</span>
+                    초기 비밀번호
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       type="password"
+                      maxLength={100}
                       className={cn(
                         "h-11 rounded-lg text-xs border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-rose-500 ring-rose-500/10 ring-4"
@@ -238,7 +285,7 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
                     )}
                   >
                     <option value="">소속 없음 / GLOBAL</option>
-                    {(departments || []).filter(Boolean).map((d: any) => (
+                    {(departments || []).filter(Boolean).map((d) => (
                       <option key={d.ognzId} value={d.ognzId}>{d.ognzNm}</option>
                     ))}
                   </select>
@@ -252,18 +299,22 @@ export function UserManageForm({ initialData, mode, departments, onSubmit, onCan
         <div className="flex w-full gap-4 pt-4 border-t border-border">
           <button 
             type="button" 
-            onClick={onCancel} 
+            disabled={areActionsDisabled}
+            onClick={() => {
+              if (!areActionsDisabled) onCancel();
+            }}
             className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest border border-border text-muted-foreground bg-card hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all outline-none cursor-pointer flex items-center justify-center"
           >
             취소
           </button>
           <Button
             type="submit"
-            disabled={isSubmitting}
+            disabled={areActionsDisabled}
+            aria-busy={isWritePending || undefined}
             className="flex-[2] h-11 rounded-lg font-bold text-xs tracking-widest shadow-xl bg-surface-inverse text-surface-inverse-foreground hover:bg-primary transition-all group"
           >
             <Zap size={18} className="group-hover:animate-pulse mr-2" />
-            {mode === 'create' ? '신규 등록' : '정보 수정'}
+            {isWritePending ? '처리 중…' : mode === 'create' ? '신규 등록' : '정보 수정'}
           </Button>
         </div>
       </form>

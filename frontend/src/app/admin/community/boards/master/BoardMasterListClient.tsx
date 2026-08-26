@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
+import { z } from 'zod';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
 import { Plus,
@@ -9,7 +10,8 @@ import { Plus,
   Zap,
   Trash2,
   AlertTriangle,
-  Lock } from 'lucide-react';
+  Lock,
+  Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
@@ -34,7 +36,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 
-import { extractErrorMessage } from '@/app/actions/actionUtils';
+import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { BoardMasterDtoSchema } from '@/types/generated-zod';
+
+export const boardMasterEditSchema = BoardMasterDtoSchema.pick({
+  bbsTtl: true,
+  bbsExpln: true,
+  useYn: true,
+}).extend({
+  bbsTtl: BoardMasterDtoSchema.shape.bbsTtl.trim()
+    .min(1, '게시판 명칭을 입력해 주세요.'),
+  bbsExpln: BoardMasterDtoSchema.shape.bbsExpln.unwrap().trim().optional(),
+  useYn: z.string().pipe(BoardMasterDtoSchema.shape.useYn),
+});
+
+const boardMasterValidationLabels = {
+  bbsTtl: '게시판 명칭',
+  bbsExpln: '게시판 소개',
+  useYn: '서비스 활성화 상태',
+};
+
+type BulkPendingAction = 'activate' | 'deactivate' | 'purge';
 
 /**
  * 첨부 파일 허용 용량 기본값(5MB).
@@ -56,6 +80,13 @@ export function BoardMasterListClient() {
   const [selectedBoard, setSelectedBoard] = useState<BoardMaster | null>(null);
   const [editData, setEditData] = useState<Partial<BoardMaster>>({});
   const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const savePendingRef = useRef(false);
+  const [deletingBoardId, setDeletingBoardId] = useState<string | null>(null);
+  const deletePendingRef = useRef(false);
+  const [bulkPendingAction, setBulkPendingAction] = useState<BulkPendingAction | null>(null);
+  const bulkPendingRef = useRef(false);
+  const validation = useManualFormValidation(boardMasterEditSchema, { labels: boardMasterValidationLabels });
 
   const { data: boardData, isLoading, isError, error, refetch } = useQuery({
     queryKey: ['boardMasters', searchWrd],
@@ -76,7 +107,13 @@ export function BoardMasterListClient() {
    * 저장 시 필수 필드(@NotBlank bbsTypeCd/bbsAtrbCd, @NotNull atchPsbltyFileSz)가 유실되지 않는다.
    */
   const handleEdit = async (board: BoardMaster) => {
-    if (!board.bbsId) return;
+    if (
+      !board.bbsId
+      || savePendingRef.current
+      || deletePendingRef.current
+      || bulkPendingRef.current
+    ) return;
+    validation.setFormErrors({}, false);
     setIsDetailLoading(true);
     try {
       const detail = await boardAdminService.getBoardMaster(board.bbsId);
@@ -95,16 +132,24 @@ export function BoardMasterListClient() {
 
   const handleSave = async () => {
     if (!selectedBoard || !selectedBoard.bbsId) return;
+    if (savePendingRef.current || deletePendingRef.current || bulkPendingRef.current) return;
 
     // 백엔드 BoardMasterDto 는 bbsTypeCd/bbsAtrbCd(@NotBlank), atchPsbltyFileSz(@NotNull), useYn(@NotBlank) 을
     // 모두 요구한다. 모달이 편집하는 3개 필드만 보내면 @Valid 단계에서 항상 400 이 떨어지므로 기존 값을 병합한다.
     // 단, spring.jackson `fail-on-unknown-properties: true` 이고 crtDt/mdfcnDt 는 LocalDateTime 이므로
     // 응답 객체를 통째로 되돌려보내지 않고 서버가 실제로 사용하는 필드만 명시적으로 조립한다.
     const merged = { ...selectedBoard, ...editData };
+    const validated = validation.validate({
+      bbsTtl: merged.bbsTtl ?? '',
+      bbsExpln: merged.bbsExpln ?? '',
+      useYn: merged.useYn ?? '',
+    });
+    if (!validated) return;
+
     const payload: Partial<BoardMaster> = {
       bbsId: selectedBoard.bbsId,
-      bbsTtl: merged.bbsTtl,
-      bbsExpln: merged.bbsExpln,
+      bbsTtl: validated.bbsTtl,
+      bbsExpln: validated.bbsExpln,
       bbsTypeCd: merged.bbsTypeCd,
       bbsAtrbCd: merged.bbsAtrbCd,
       ansPsbltyYn: merged.ansPsbltyYn,
@@ -112,7 +157,7 @@ export function BoardMasterListClient() {
       atchPsbltyFileQty: merged.atchPsbltyFileQty,
       atchPsbltyFileSz: merged.atchPsbltyFileSz ?? DEFAULT_ATCH_PSBLTY_FILE_SZ,
       tmpltId: merged.tmpltId,
-      useYn: merged.useYn,
+      useYn: validated.useYn,
       ansYn: merged.ansYn,
       stsfdgYn: merged.stsfdgYn
     };
@@ -129,39 +174,60 @@ export function BoardMasterListClient() {
       return;
     }
 
+    savePendingRef.current = true;
+    setIsSaving(true);
     try {
       await boardAdminService.updateBoardMaster(selectedBoard.bbsId, payload);
       toast('게시판 설정이 업데이트되었습니다.', 'success');
       setIsModalOpen(false);
       refetch();
     } catch (err) {
-      // client.ts 인터셉터가 백엔드 message 를 Error.message 로 승격하므로 그대로 노출해 원인이 보이게 한다.
-      toast(extractErrorMessage(err, '업데이트 중 오류가 발생했습니다.'), 'error');
+      const fieldErrors = extractFieldErrors(err);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      else toast(extractErrorMessage(err, '업데이트 중 오류가 발생했습니다.'), 'error');
+    } finally {
+      savePendingRef.current = false;
+      setIsSaving(false);
     }
+  };
+
+  const handleModalOpenChange = (open: boolean) => {
+    if (
+      !open
+      && (savePendingRef.current || deletePendingRef.current || bulkPendingRef.current)
+    ) return;
+    setIsModalOpen(open);
   };
 
   const handleDelete = async (board: BoardMaster) => {
     if (!board.bbsId) return;
+    if (deletePendingRef.current || bulkPendingRef.current || savePendingRef.current) return;
 
-    if (board.useYn === 'Y') {
-      // 1. 활성 상태인 경우 -> Soft Delete (대기 상태 전환)
-      const isConfirmed = await confirm({
-        title: '게시판 서비스 비활성화',
-        message: `[${board.bbsTtl}] 게시판을 대기 상태로 전환(비활성화)하시겠습니까?`,
-        confirmText: '비활성화',
-        variant: 'destructive'
-      });
+    deletePendingRef.current = true;
+    setDeletingBoardId(board.bbsId);
 
-      if (isConfirmed) {
+    try {
+      if (board.useYn === 'Y') {
+        // 1. 활성 상태인 경우 -> Soft Delete (대기 상태 전환)
         try {
+          const isConfirmed = await confirm({
+            title: '게시판 서비스 비활성화',
+            message: `[${board.bbsTtl}] 게시판을 대기 상태로 전환(비활성화)하시겠습니까?`,
+            confirmText: '비활성화',
+            variant: 'destructive'
+          });
+
+          if (!isConfirmed) return;
+
           await boardAdminService.deleteBoardMaster(board.bbsId, 'admin');
           toast('게시판이 비활성화(대기) 상태로 전환되었습니다.', 'success');
           refetch();
         } catch {
           toast('비활성화 처리 중 오류가 발생했습니다.', 'error');
         }
+        return;
       }
-    } else {
+
       // 2. 대기(N) 상태인 경우 -> Hard Delete (물리 삭제)
       try {
         const deletable = await boardAdminService.isBoardMasterDeletable(board.bbsId);
@@ -192,7 +258,81 @@ export function BoardMasterListClient() {
         const errMsg = extractErrorMessage(error, '영구 삭제 처리 중 오류가 발생했습니다.');
         toast(errMsg, 'error');
       }
+    } finally {
+      deletePendingRef.current = false;
+      setDeletingBoardId(null);
     }
+  };
+
+  const runBulkAction = async (action: BulkPendingAction, operation: () => Promise<void>) => {
+    if (bulkPendingRef.current || deletePendingRef.current || savePendingRef.current) return;
+    bulkPendingRef.current = true;
+    setBulkPendingAction(action);
+    try {
+      await operation();
+    } finally {
+      bulkPendingRef.current = false;
+      setBulkPendingAction(null);
+    }
+  };
+
+  const handleBulkStatusChange = async (
+    items: BoardMaster[],
+    status: 'Y' | 'N',
+    action: Extract<BulkPendingAction, 'activate' | 'deactivate'>,
+  ) => {
+    const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
+    if (ids.length === 0) return;
+
+    await runBulkAction(action, async () => {
+      try {
+        await boardAdminService.batchUpdateBoardMasterStatus(ids, status);
+        toast(
+          `${items.length}개의 게시판이 일괄 ${status === 'Y' ? '활성화' : '비활성화'}되었습니다.`,
+          status === 'Y' ? 'success' : 'info',
+        );
+        refetch();
+      } catch (err) {
+        toast(extractErrorMessage(
+          err,
+          status === 'Y' ? '일괄 활성화 중 오류가 발생했습니다.' : '일괄 비활성화 중 오류가 발생했습니다.',
+        ), 'error');
+      }
+    });
+  };
+
+  const handleBulkPurge = async (items: BoardMaster[]) => {
+    const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
+    if (ids.length === 0) return;
+
+    await runBulkAction('purge', async () => {
+      try {
+        const activeBoards = items.filter(item => item.useYn === 'Y');
+        if (activeBoards.length > 0) {
+          await confirm({
+            title: '일괄 영구 삭제 불가',
+            message: `선택한 항목 중 활성 상태인 게시판([${activeBoards.map(b => b.bbsTtl).join(', ')}])이 포함되어 있습니다. 활성 상태인 게시판을 먼저 대기 상태로 변경한 후 다시 일괄 삭제를 시도해주십시오.`,
+            confirmText: '확인',
+            variant: 'default'
+          });
+          return;
+        }
+
+        const isConfirmed = await confirm({
+          title: '선택한 게시판 일괄 영구 말소',
+          message: `선택하신 ${items.length}개의 게시판과 모든 관련 설정을 데이터베이스에서 완전히 영구 말소하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
+          confirmText: '일괄 영구 삭제',
+          variant: 'destructive'
+        });
+        if (!isConfirmed) return;
+
+        await boardAdminService.batchDeleteBoardMastersPhysically(ids);
+        toast('선택한 게시판 마스터 데이터가 모두 영구 말소되었습니다.', 'success');
+        refetch();
+      } catch (err) {
+        toast(extractErrorMessage(err, '일괄 영구 삭제 중 오류가 발생했습니다.'), 'error');
+      }
+    });
   };
 
   const columns: Column<BoardMaster>[] = [
@@ -239,11 +379,20 @@ export function BoardMasterListClient() {
     // 보이게 했다(게시글 수를 주는 API 가 없음). 근거가 생길 때까지 열 자체를 제거한다.
     {
       header: '작업 컨트롤',
-      accessor: (board: BoardMaster) => (
+      accessor: (board: BoardMaster) => {
+        const isDeleting = deletingBoardId === board.bbsId;
+        const idleLabel = board.useYn === 'Y'
+          ? `${board.bbsTtl} 대기 상태로 비활성화`
+          : `${board.bbsTtl} DB에서 영구 물리삭제`;
+        const pendingLabel = board.useYn === 'Y'
+          ? `${board.bbsTtl} 비활성화 처리 중`
+          : `${board.bbsTtl} 영구 삭제 처리 중`;
+
+        return (
         <div className="flex items-center justify-end gap-3 pr-6">
           <Button
             onClick={() => void handleEdit(board)}
-            disabled={isDetailLoading}
+            disabled={isDetailLoading || isSaving || deletingBoardId !== null || bulkPendingAction !== null}
             size="icon"
             variant="ghost"
             title={`${board.bbsTtl} 설정 편집`}
@@ -253,7 +402,9 @@ export function BoardMasterListClient() {
             <Settings2 size={20} />
           </Button>
           <Button 
-            onClick={() => handleDelete(board)}
+            onClick={() => { void handleDelete(board); }}
+            disabled={isSaving || deletingBoardId !== null || bulkPendingAction !== null}
+            aria-busy={isDeleting}
             size="icon" 
             variant="ghost" 
             className={cn(
@@ -262,10 +413,12 @@ export function BoardMasterListClient() {
                 ? "hover:bg-amber-500 hover:text-white" 
                 : "hover:bg-rose-600 hover:text-white"
             )}
-            title={board.useYn === 'Y' ? `${board.bbsTtl} 대기 상태로 비활성화` : `${board.bbsTtl} DB에서 영구 물리삭제`}
-            aria-label={board.useYn === 'Y' ? `${board.bbsTtl} 대기 상태로 비활성화` : `${board.bbsTtl} DB에서 영구 물리삭제`}
+            title={isDeleting ? pendingLabel : idleLabel}
+            aria-label={isDeleting ? pendingLabel : idleLabel}
           >
-            <Trash2 size={20} />
+            {isDeleting
+              ? <Loader2 size={20} className="animate-spin" aria-hidden="true" />
+              : <Trash2 size={20} aria-hidden="true" />}
           </Button>
           <Button
             onClick={() => router.push(`/admin/community/boards/select-board-list?bbsId=${board.bbsId}`)}
@@ -278,7 +431,8 @@ export function BoardMasterListClient() {
             <ArrowRight size={20} />
           </Button>
         </div>
-      ),
+        );
+      },
       className: 'pr-10 text-right'
     }
   ];
@@ -330,72 +484,34 @@ export function BoardMasterListClient() {
           bulkActions={[
             {
               label: '일괄 활성화',
-              icon: <Zap size={16} />,
-              onClick: async (items) => {
-                const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
-                if (ids.length === 0) return;
-                try {
-                  await boardAdminService.batchUpdateBoardMasterStatus(ids, 'Y');
-                  toast(`${items.length}개의 게시판이 일괄 활성화되었습니다.`, 'success');
-                  refetch();
-                } catch (err) {
-                  toast(extractErrorMessage(err, '일괄 활성화 중 오류가 발생했습니다.'), 'error');
-                }
-              }
+              icon: bulkPendingAction === 'activate'
+                ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                : <Zap size={16} aria-hidden="true" />,
+              disabled: isSaving || bulkPendingAction !== null || deletingBoardId !== null,
+              ariaBusy: bulkPendingAction === 'activate',
+              pendingLabel: '활성화 처리 중...',
+              onClick: (items) => { void handleBulkStatusChange(items, 'Y', 'activate'); }
             },
             {
               label: '일괄 비활성',
-              icon: <Lock size={16} />,
-              onClick: async (items) => {
-                const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
-                if (ids.length === 0) return;
-                try {
-                  await boardAdminService.batchUpdateBoardMasterStatus(ids, 'N');
-                  toast(`${items.length}개의 게시판이 일괄 비활성화되었습니다.`, 'info');
-                  refetch();
-                } catch (err) {
-                  toast(extractErrorMessage(err, '일괄 비활성화 중 오류가 발생했습니다.'), 'error');
-                }
-              }
+              icon: bulkPendingAction === 'deactivate'
+                ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                : <Lock size={16} aria-hidden="true" />,
+              disabled: isSaving || bulkPendingAction !== null || deletingBoardId !== null,
+              ariaBusy: bulkPendingAction === 'deactivate',
+              pendingLabel: '비활성화 처리 중...',
+              onClick: (items) => { void handleBulkStatusChange(items, 'N', 'deactivate'); }
             },
             {
               label: '완전 말소',
-              icon: <Trash2 size={16} />,
+              icon: bulkPendingAction === 'purge'
+                ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+                : <Trash2 size={16} aria-hidden="true" />,
               variant: 'destructive',
-              onClick: async (items) => {
-                const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
-                if (ids.length === 0) return;
-
-                // 1. 활성 상태인 게시판 필터링
-                const activeBoards = items.filter(item => item.useYn === 'Y');
-                if (activeBoards.length > 0) {
-                  await confirm({
-                    title: '일괄 영구 삭제 불가',
-                    message: `선택한 항목 중 활성 상태인 게시판([${activeBoards.map(b => b.bbsTtl).join(', ')}])이 포함되어 있습니다. 활성 상태인 게시판을 먼저 대기 상태로 변경한 후 다시 일괄 삭제를 시도해주십시오.`,
-                    confirmText: '확인',
-                    variant: 'default'
-                  });
-                  return;
-                }
-
-                // 2. 최종 물리 삭제 컨펌
-                const isConfirmed = await confirm({
-                  title: '선택한 게시판 일괄 영구 말소',
-                  message: `선택하신 ${items.length}개의 게시판과 모든 관련 설정을 데이터베이스에서 완전히 영구 말소하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-                  confirmText: '일괄 영구 삭제',
-                  variant: 'destructive'
-                });
-
-                if (isConfirmed) {
-                  try {
-                    await boardAdminService.batchDeleteBoardMastersPhysically(ids);
-                    toast('선택한 게시판 마스터 데이터가 모두 영구 말소되었습니다.', 'success');
-                    refetch();
-                  } catch (err) {
-                    toast(extractErrorMessage(err, '일괄 영구 삭제 중 오류가 발생했습니다.'), 'error');
-                  }
-                }
-              }
+              disabled: isSaving || bulkPendingAction !== null || deletingBoardId !== null,
+              ariaBusy: bulkPendingAction === 'purge',
+              pendingLabel: '완전 말소 처리 중...',
+              onClick: (items) => { void handleBulkPurge(items); }
             }
           ]}
           accessibleLabel="게시판 마스터 목록"
@@ -408,7 +524,7 @@ export function BoardMasterListClient() {
         업무 화면에서 마케팅 배너를 제거한다.
       */}
       {/* Settings Modal */}
-      <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+      <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
         <DialogContent className="sm:max-w-[600px] rounded-lg p-0 overflow-hidden border-none shadow-2xl">
           <div className="bg-surface-inverse p-10 text-surface-inverse-foreground relative">
             <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">
@@ -423,24 +539,42 @@ export function BoardMasterListClient() {
           </div>
           
           <div className="p-10 space-y-8 bg-card transition-colors">
+            <FormErrorSummary
+              errors={validation.errors}
+              labels={boardMasterValidationLabels}
+              onNavigate={validation.focusError}
+            />
             <div className="space-y-3">
               <Label htmlFor="modal-bbs-name" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시판 명칭</Label>
               <Input 
                 id="modal-bbs-name"
+                {...validation.fieldProps('bbsTtl')}
                 value={editData.bbsTtl || ''} 
-                onChange={(e) => setEditData({...editData, bbsTtl: e.target.value})}
+                onChange={(e) => {
+                  validation.clearError('bbsTtl');
+                  setEditData({...editData, bbsTtl: e.target.value});
+                }}
+                required
+                maxLength={100}
                 className="h-11 rounded-lg border-2 font-bold text-lg focus:ring-4 focus:ring-primary/10 transition-all"
               />
+              {validation.errors.bbsTtl ? <p {...validation.messageProps('bbsTtl')} className="text-xs font-bold text-destructive-emphasis" /> : null}
             </div>
 
             <div className="space-y-3">
               <Label htmlFor="modal-bbs-description" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시판 소개</Label>
               <Input 
                 id="modal-bbs-description"
+                {...validation.fieldProps('bbsExpln')}
                 value={editData.bbsExpln || ''} 
-                onChange={(e) => setEditData({...editData, bbsExpln: e.target.value})}
+                onChange={(e) => {
+                  validation.clearError('bbsExpln');
+                  setEditData({...editData, bbsExpln: e.target.value});
+                }}
+                maxLength={4000}
                 className="h-11 rounded-lg border-2 font-bold focus:ring-4 focus:ring-primary/10 transition-all"
               />
+              {validation.errors.bbsExpln ? <p {...validation.messageProps('bbsExpln')} className="text-xs font-bold text-destructive-emphasis" /> : null}
             </div>
 
             <div className="flex items-center justify-between p-6 bg-muted rounded-lg border border-border transition-colors">
@@ -450,11 +584,17 @@ export function BoardMasterListClient() {
               </div>
               <Switch 
                 id="modal-bbs-use-at"
+                {...validation.fieldProps('useYn')}
+                aria-required="true"
                 checked={editData.useYn === 'Y'} 
-                onCheckedChange={(checked) => setEditData({...editData, useYn: checked ? 'Y' : 'N'})}
+                onCheckedChange={(checked) => {
+                  validation.clearError('useYn');
+                  setEditData({...editData, useYn: checked ? 'Y' : 'N'});
+                }}
                 className="scale-125"
               />
             </div>
+            {validation.errors.useYn ? <p {...validation.messageProps('useYn')} className="text-xs font-bold text-destructive-emphasis" /> : null}
 
             <div className="p-6 bg-rose-50 dark:bg-rose-950/20 rounded-lg border border-rose-100 dark:border-rose-900/50 flex items-start gap-4 transition-colors">
               <AlertTriangle className="text-rose-500 shrink-0 mt-1" size={20} />
@@ -469,8 +609,24 @@ export function BoardMasterListClient() {
           </div>
 
           <DialogFooter className="p-8 bg-muted border-t border-border transition-colors">
-            <Button variant="ghost" onClick={() => setIsModalOpen(false)} className="h-11 px-8 rounded-lg font-bold">취소</Button>
-            <Button onClick={handleSave} className="h-11 px-10 rounded-lg bg-primary text-white font-bold tracking-tighter hover:scale-105 transition-all shadow-xl shadow-primary/20">설정 적용하기</Button>
+            <Button
+              type="button"
+              variant="ghost"
+              disabled={isSaving || deletingBoardId !== null || bulkPendingAction !== null}
+              onClick={() => handleModalOpenChange(false)}
+              className="h-11 px-8 rounded-lg font-bold"
+            >
+              취소
+            </Button>
+            <Button
+              disabled={isSaving || deletingBoardId !== null || bulkPendingAction !== null}
+              aria-busy={isSaving || undefined}
+              onClick={handleSave}
+              className="h-11 px-10 rounded-lg bg-primary text-white font-bold tracking-tighter hover:scale-105 transition-all shadow-xl shadow-primary/20"
+            >
+              {isSaving ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
+              {isSaving ? '저장 중...' : '설정 적용하기'}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

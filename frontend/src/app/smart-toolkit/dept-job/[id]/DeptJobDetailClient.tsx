@@ -13,6 +13,7 @@ import { Badge } from '@/components/ui/badge';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { DeptJobForm, DeptJobFormValues, PRIORITY_LABEL } from '@/components/business/deptJob/DeptJobForm';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
 
 /**
  * 부서 업무 상세·수정 화면.
@@ -31,6 +32,8 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
     const queryClient = useQueryClient();
     const confirm = useConfirm();
     const [isEditing, setEditing] = React.useState(false);
+    const actionPendingRef = React.useRef(false);
+    const [activeAction, setActiveAction] = React.useState<'update' | 'delete' | null>(null);
 
     const { data: job, isLoading, isError } = useQuery({
         queryKey: ['dept-job', deptTaskSn],
@@ -47,7 +50,11 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
             // 업무 워크플로우 탭의 목록도 갱신 대상이다.
             queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
         },
-        onError: () => toast.error('수정에 실패했습니다. 권한이 없거나 이미 삭제된 업무일 수 있습니다.'),
+        onError: (error) => {
+            if (!extractFieldErrors(error)) {
+                toast.error('수정에 실패했습니다. 권한이 없거나 이미 삭제된 업무일 수 있습니다.');
+            }
+        },
     });
 
     const deleteMutation = useMutation({
@@ -61,13 +68,42 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
     });
 
     const handleDelete = async () => {
-        const ok = await confirm({
-            title: '업무 삭제',
-            message: `'${job?.deptTaskNm || '제목 없음'}' 업무를 삭제하시겠습니까? 삭제한 업무는 되돌릴 수 없습니다.`,
-            variant: 'destructive',
-            confirmText: '삭제',
-        });
-        if (ok) deleteMutation.mutate();
+        if (actionPendingRef.current) return;
+        actionPendingRef.current = true;
+        setActiveAction('delete');
+        try {
+            const ok = await confirm({
+                title: '업무 삭제',
+                message: `'${job?.deptTaskNm || '제목 없음'}' 업무를 삭제하시겠습니까? 삭제한 업무는 되돌릴 수 없습니다.`,
+                variant: 'destructive',
+                confirmText: '삭제',
+            });
+            if (!ok) return;
+            try {
+                await deleteMutation.mutateAsync();
+            } catch {
+                // mutation onError가 사용자 안내를 소유하며 상세 화면은 그대로 유지한다.
+            }
+        } finally {
+            actionPendingRef.current = false;
+            setActiveAction(null);
+        }
+    };
+
+    const handleUpdate = async (values: DeptJobFormValues) => {
+        if (actionPendingRef.current) return;
+        actionPendingRef.current = true;
+        setActiveAction('update');
+        try {
+            await updateMutation.mutateAsync(values);
+        } catch (error) {
+            // 필드 오류만 공용 폼이 귀속·focus하도록 되돌린다.
+            // 일반 오류는 mutation onError가 이미 안내했으므로 submit을 예외로 끝내지 않는다.
+            if (extractFieldErrors(error)) throw error;
+        } finally {
+            actionPendingRef.current = false;
+            setActiveAction(null);
+        }
     };
 
     if (isLoading) {
@@ -129,7 +165,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
 
                     {!isEditing && (
                         <div className="flex gap-2 shrink-0">
-                            <Button variant="outline" size="sm" onClick={() => setEditing(true)} className="font-bold gap-1">
+                            <Button variant="outline" size="sm" onClick={() => setEditing(true)} disabled={activeAction !== null} className="font-bold gap-1">
                                 <Pencil size={14} />
                                 수정
                             </Button>
@@ -137,7 +173,9 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                                 variant="outline"
                                 size="sm"
                                 onClick={handleDelete}
-                                disabled={deleteMutation.isPending}
+                                disabled={activeAction !== null}
+                                aria-busy={activeAction === 'delete' || undefined}
+                                aria-label={activeAction === 'delete' ? '업무 삭제 중' : '업무 삭제'}
                                 className="font-bold gap-1 text-rose-600 hover:text-rose-700"
                             >
                                 <Trash2 size={14} />
@@ -152,10 +190,9 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                         <DeptJobForm
                             mode="edit"
                             initialData={job as Partial<DeptJobFormValues>}
-                            onSubmit={async (values) => {
-                                await updateMutation.mutateAsync(values);
-                            }}
+                            onSubmit={handleUpdate}
                             onCancel={() => setEditing(false)}
+                            isPending={activeAction === 'update'}
                         />
                     ) : (
                         <div className="space-y-6">

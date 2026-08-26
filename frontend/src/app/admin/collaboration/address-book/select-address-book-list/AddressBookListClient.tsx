@@ -1,13 +1,13 @@
 'use client';
 
-import React, { use, useState } from 'react';
+import React, { use, useRef, useState } from 'react';
 import Link from 'next/link';
 import { addressbookUserService, AddressBook } from '@/services/business/user/addressbook/AddressbookUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Trash2, RefreshCcw } from "lucide-react";
+import { Loader2, Plus, Trash2, RefreshCcw } from "lucide-react";
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
@@ -44,6 +44,8 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  const [pageUnit, setPageUnit] = useState(DEFAULT_PAGE_UNIT);
  const [searchWrd, setSearchWrd] = useState(initialParams.searchWrd);
  const [loading, setLoading] = useState(false);
+ const [deletingAddressBookSn, setDeletingAddressBookSn] = useState<number | null>(null);
+ const deletePendingRef = useRef(false);
  // [P1-1] 조회 실패를 "데이터 없음"으로 위장하지 않는다. 서버 컴포넌트의 실패도 그대로 이어받는다.
  const [fetchError, setFetchError] = useState<Error | null>(
    initialData.fetchError ? new Error(initialData.fetchError) : null
@@ -92,6 +94,11 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
 
  /** [P1-9] native confirm → useConfirm. 본문에 대상 주소록 명칭을 노출한다. */
  const handleDelete = async (item: AddressBook) => {
+ if (deletePendingRef.current) return;
+ deletePendingRef.current = true;
+ setDeletingAddressBookSn(item.adbkSn);
+
+ try {
  const ok = await confirm({
    title: '주소록 삭제',
    message: `'${item.adbkNm}' 주소록을 삭제합니다. 삭제 후에는 목록에서 조회할 수 없습니다.`,
@@ -100,12 +107,14 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  });
  if (!ok) return;
 
- try {
  await addressbookUserService.deleteAddressBook(item.adbkSn);
  toast('주소록이 삭제되었습니다.', 'success');
- void fetchList(pageNo, searchWrd);
+ await fetchList(pageNo, searchWrd);
  } catch {
  toast('삭제에 실패했습니다.', 'error');
+ } finally {
+ deletePendingRef.current = false;
+ setDeletingAddressBookSn(null);
  }
  };
 
@@ -153,19 +162,26 @@ export default function AddressBookListClient({ dataPromise, initialParams }: Ad
  },
  {
  header: '관리',
- accessor: (item) => (
+ accessor: (item) => {
+ const isDeleting = deletingAddressBookSn === item.adbkSn;
+ return (
  <div className="flex items-center justify-end pr-4">
  <Button
  variant="ghost"
  size="icon"
- aria-label={`${item.adbkNm} 주소록 삭제`}
+ disabled={deletingAddressBookSn !== null}
+ aria-busy={isDeleting}
+ aria-label={isDeleting ? `${item.adbkNm} 주소록 삭제 중` : `${item.adbkNm} 주소록 삭제`}
  onClick={() => { void handleDelete(item); }}
  className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive-emphasis transition-all"
  >
- <Trash2 size={16} aria-hidden="true" />
+ {isDeleting
+   ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+   : <Trash2 size={16} aria-hidden="true" />}
  </Button>
  </div>
- ),
+ );
+ },
  className: 'w-24 text-right'
  }
  ];

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import MailHistoryHubClient from '../MailHistoryHubClient';
@@ -79,6 +79,16 @@ function renderClient() {
       <MailHistoryHubClient />
     </QueryClientProvider>,
   );
+}
+
+function deferred<T>() {
+  let resolve: (value: T) => void = () => undefined;
+  let reject: (reason?: unknown) => void = () => undefined;
+  const promise = new Promise<T>((next, fail) => {
+    resolve = next;
+    reject = fail;
+  });
+  return { promise, reject, resolve };
 }
 
 describe('MailHistoryHubClient A2 master-detail 계약', () => {
@@ -208,6 +218,38 @@ describe('MailHistoryHubClient A2 master-detail 계약', () => {
     fireEvent.click(deleteButton);
     await waitFor(() => expect(mocks.deleteMail).toHaveBeenCalledWith(101));
     await waitFor(() => expect(screen.getByRole('textbox', { name: '메일 검색' })).toHaveFocus());
+  });
+
+  it('삭제는 같은 tick 중복 실행을 막고 busy 상태와 실패 피드백을 제공한다', async () => {
+    const pending = deferred<void>();
+    mocks.deleteMail.mockReturnValueOnce(pending.promise);
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', {
+      name: '월간 운영 보고 발신 이력 상세 열기',
+    }));
+    const deleteButton = screen.getByRole('button', {
+      name: '선택한 메일 월간 운영 보고 발송 이력 삭제',
+    });
+
+    act(() => {
+      deleteButton.click();
+      deleteButton.click();
+    });
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.deleteMail).toHaveBeenCalledTimes(1));
+    const pendingButton = screen.getByRole('button', {
+      name: '선택한 메일 월간 운영 보고 발송 이력 삭제 중',
+    });
+    expect(pendingButton).toBeDisabled();
+    expect(pendingButton).toHaveAttribute('aria-busy', 'true');
+
+    await act(async () => pending.reject(new Error('삭제 API 장애')));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('메일 삭제에 실패했습니다.', 'error'));
+    expect(screen.getByRole('button', {
+      name: '선택한 메일 월간 운영 보고 발송 이력 삭제',
+    })).toBeEnabled();
   });
 
   it('신규 발송과 새로고침을 실제 동작에 연결한다', async () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
@@ -24,6 +24,7 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
  Form,
  FormControl,
+ FormErrorSummary,
  FormField,
  FormItem,
  FormLabel,
@@ -31,13 +32,20 @@ import {
 } from '@/components/ui/form';
 import { z } from 'zod';
 
+const communityBoardSchema = boardSchema.extend({
+ bbsId: boardSchema.shape.bbsId.min(1, '게시판 식별자를 입력해 주세요.'),
+ pstTtl: boardSchema.shape.pstTtl.min(1, '게시물 제목을 입력해 주세요.'),
+ pstCn: boardSchema.shape.pstCn.min(1, '게시물 본문을 입력해 주세요.'),
+});
+
 export default function CommunityBoardsWriteClient() {
  const router = useRouter();
  const queryClient = useQueryClient();
  const { toast } = useToast();
  const [loading, setLoading] = useState(false);
+ const submittingRef = useRef(false);
 
- const form = useAppForm(boardSchema, {
+ const form = useAppForm(communityBoardSchema, {
  defaultValues: {
  bbsId: '',
  pstTtl: '',
@@ -51,7 +59,9 @@ export default function CommunityBoardsWriteClient() {
  }
  });
 
- const onFormSubmit = async (data: z.infer<typeof boardSchema>) => {
+ const onFormSubmit = async (data: z.infer<typeof communityBoardSchema>) => {
+ if (submittingRef.current) return;
+ submittingRef.current = true;
  setLoading(true);
  try {
  await boardAdminService.createBoardArticle(data);
@@ -59,9 +69,12 @@ export default function CommunityBoardsWriteClient() {
  queryClient.invalidateQueries({ queryKey: ['boardList'] });
  toast('게시물이 등록되었습니다.', 'success');
  router.push(`/admin/community/boards/select-board-list?bbsId=${data.bbsId}`);
- } catch {
+ } catch (error) {
+ if (!form.applyServerErrors(error)) {
  toast('게시물을 등록하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.', 'error');
+ }
  } finally {
+ submittingRef.current = false;
  setLoading(false);
  }
  };
@@ -84,7 +97,11 @@ export default function CommunityBoardsWriteClient() {
 
  <div className="max-w-5xl mx-auto">
  <Form {...form}>
- <form onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-10">
+ <form noValidate onSubmit={form.handleSubmit(onFormSubmit)} className="space-y-10">
+ <FormErrorSummary
+ labels={{ bbsId: '게시판 식별자', pstTtl: '게시물 제목', pstCn: '게시물 본문' }}
+ onNavigate={form.focusError}
+ />
  <Card className="border-none shadow-2xl rounded-lg overflow-hidden bg-card ring-1 ring-border">
  <CardHeader className="bg-muted text-foreground p-10 pb-16 border-b border-border relative overflow-hidden">
  <div className="flex justify-between items-start relative z-10">
@@ -119,6 +136,7 @@ export default function CommunityBoardsWriteClient() {
  <FormField
  control={form.control}
  name="bbsId"
+ required
  render={({ field }) => (
  <FormItem className="space-y-2">
  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
@@ -140,6 +158,7 @@ export default function CommunityBoardsWriteClient() {
  <FormField
  control={form.control}
  name="pstTtl"
+ required
  render={({ field }) => (
  <FormItem className="space-y-2">
  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest flex items-center gap-2">
@@ -170,8 +189,12 @@ export default function CommunityBoardsWriteClient() {
  <FormField
  control={form.control}
  name="pstCn"
+ required
  render={({ field }) => (
  <FormItem className="space-y-4">
+ <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+ 게시물 본문
+ </FormLabel>
  <FormControl>
  <Textarea
  {...field}

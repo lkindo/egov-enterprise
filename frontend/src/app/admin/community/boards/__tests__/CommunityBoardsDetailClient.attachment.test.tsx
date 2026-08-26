@@ -1,10 +1,16 @@
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
-import CommunityBoardsDetailClient from '../[id]/CommunityBoardsDetailClient';
+import CommunityBoardsDetailClient, { communityBoardCreateSchema } from '../[id]/CommunityBoardsDetailClient';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
 import { fileAdminService } from '@/services/foundation/system/FileAdminService';
+
+const mocks = vi.hoisted(() => ({
+    confirm: vi.fn(),
+    push: vi.fn(),
+    toast: vi.fn(),
+}));
 
 /**
  * 🔗 게시글 첨부파일 배선 — **붙인 파일이 실제로 전송되는가.**
@@ -28,7 +34,7 @@ import { fileAdminService } from '@/services/foundation/system/FileAdminService'
 
 // 등록 후 이동만 이 테스트 범위이므로 라우터 push 만 관측한다.
 vi.mock('next/navigation', () => ({
-    useRouter: () => ({ push: vi.fn() }),
+    useRouter: () => ({ push: mocks.push }),
     usePathname: () => '/admin/community/boards/insert-board-article',
     useSearchParams: () => new URLSearchParams(),
 }));
@@ -50,10 +56,10 @@ vi.mock('@/services/foundation/system/FileAdminService', () => ({
 
 // 토스트·확인모달·자동저장은 이 테스트의 관심사가 아니다. 확인모달은 항상 승인으로 둔다.
 vi.mock('@/app/components/ui/toast', () => ({
-    useToast: () => ({ toast: vi.fn() }),
+    useToast: () => ({ toast: mocks.toast }),
 }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({
-    useConfirm: () => vi.fn().mockResolvedValue(true),
+    useConfirm: () => mocks.confirm,
 }));
 vi.mock('@/lib/hooks/use-auto-save', () => ({
     useAutoSave: () => ({ clear: vi.fn() }),
@@ -80,6 +86,7 @@ const mockedFile = vi.mocked(fileAdminService);
 /** 파일을 첨부하고 제목을 채운 뒤 등록을 누른다. */
 async function writePostWithAttachment(user: ReturnType<typeof userEvent.setup>, file: File) {
     await user.type(screen.getByRole('textbox', { name: /제목/ }), '첨부 검증용 게시글');
+    await user.type(screen.getByRole('textbox', { name: '에디터 본문 내용' }), '첨부 검증용 본문');
 
     // StandardFileUploader 의 입력은 시각적으로 숨겨져 있으나 DOM 에는 존재한다.
     const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
@@ -92,6 +99,7 @@ async function writePostWithAttachment(user: ReturnType<typeof userEvent.setup>,
 describe('게시글 첨부파일 배선', () => {
     beforeEach(() => {
         vi.clearAllMocks();
+        mocks.confirm.mockResolvedValue(true);
         mockedBoard.createPost.mockResolvedValue({} as never);
         mockedFile.uploadFiles.mockResolvedValue(101);
     });
@@ -110,7 +118,10 @@ describe('게시글 첨부파일 배선', () => {
 
         // ② 받은 식별자가 게시글 본문에 실려야 한다 — 업로드만 하고 안 실으면 첨부는 여전히 사라진다.
         await waitFor(() => expect(mockedBoard.createPost).toHaveBeenCalledTimes(1));
-        expect(mockedBoard.createPost.mock.calls[0][0]).toMatchObject({ atchFileSn: 101 });
+        const request = mockedBoard.createPost.mock.calls[0][0];
+        expect(request).toMatchObject({ atchFileSn: 101, scrtYn: 'N' });
+        expect(request).not.toHaveProperty('noticeAt');
+        expect(request).not.toHaveProperty('secretAt');
     });
 
     it('첨부가 없으면 업로드를 호출하지 않는다 (빈 업로드 회귀 방어)', async () => {
@@ -118,10 +129,117 @@ describe('게시글 첨부파일 배선', () => {
         render(<CommunityBoardsDetailClient />);
 
         await user.type(screen.getByRole('textbox', { name: /제목/ }), '첨부 없는 게시글');
+        await user.type(screen.getByRole('textbox', { name: '에디터 본문 내용' }), '첨부 없는 본문');
         await user.click(screen.getByRole('button', { name: /등록/ }));
 
         await waitFor(() => expect(mockedBoard.createPost).toHaveBeenCalledTimes(1));
         expect(mockedFile.uploadFiles, '첨부가 없는데 업로드를 호출했다').not.toHaveBeenCalled();
         expect(mockedBoard.createPost.mock.calls[0][0].atchFileSn).toBeUndefined();
+    });
+
+    it('필수 본문이 비어 있으면 확인창과 write sink에 도달하지 않는다', async () => {
+        const user = userEvent.setup();
+        render(<CommunityBoardsDetailClient />);
+        const title = screen.getByRole('textbox', { name: /제목/ });
+        await user.type(title, '본문 누락 게시글');
+
+        await user.click(screen.getByRole('button', { name: /등록/ }));
+
+        expect(mocks.confirm).not.toHaveBeenCalled();
+        expect(mockedBoard.createPost).not.toHaveBeenCalled();
+        expect(await screen.findAllByText(/내용.*입력/)).not.toHaveLength(0);
+        await waitFor(() => expect(screen.getByRole('textbox', { name: '에디터 본문 내용' })).toHaveFocus());
+    });
+
+    it('제목 max+1 입력을 write sink로 보내지 않고 제목으로 이동한다', async () => {
+        const user = userEvent.setup();
+        render(<CommunityBoardsDetailClient />);
+        const title = screen.getByRole('textbox', { name: /제목/ });
+        const content = screen.getByRole('textbox', { name: '에디터 본문 내용' });
+        fireEvent.change(title, { target: { value: '가'.repeat(101) } });
+        fireEvent.change(content, { target: { value: '정상 본문' } });
+
+        await user.click(screen.getByRole('button', { name: /등록/ }));
+
+        expect(mockedBoard.createPost).not.toHaveBeenCalled();
+        expect(await screen.findAllByText(/최대 100자/)).not.toHaveLength(0);
+        await waitFor(() => expect(title).toHaveFocus());
+    });
+
+    it('서버 필드 오류를 인라인으로 연결하고 작성값을 보존한다', async () => {
+        mockedBoard.createPost.mockRejectedValueOnce({
+            response: {
+                data: { errors: [{ field: 'pstTtl', message: '등록할 수 없는 제목입니다.' }] },
+            },
+        });
+        const user = userEvent.setup();
+        render(<CommunityBoardsDetailClient />);
+        const title = screen.getByRole('textbox', { name: /제목/ });
+        const content = screen.getByRole('textbox', { name: '에디터 본문 내용' });
+        await user.type(title, '보존할 제목');
+        await user.type(content, '보존할 본문');
+
+        await user.click(screen.getByRole('button', { name: /등록/ }));
+
+        expect(await screen.findAllByText('등록할 수 없는 제목입니다.')).not.toHaveLength(0);
+        expect(title).toHaveValue('보존할 제목');
+        expect(content).toHaveValue('보존할 본문');
+        await waitFor(() => expect(title).toHaveFocus());
+    });
+
+    it('등록 pending 중 연속 클릭해도 게시글을 한 번만 생성한다', async () => {
+        let resolveCreate!: (value: never) => void;
+        mockedBoard.createPost.mockReturnValueOnce(new Promise((resolve) => {
+            resolveCreate = resolve;
+        }));
+        const user = userEvent.setup();
+        render(<CommunityBoardsDetailClient />);
+        await user.type(screen.getByRole('textbox', { name: /제목/ }), '중복 방지 제목');
+        await user.type(screen.getByRole('textbox', { name: '에디터 본문 내용' }), '중복 방지 본문');
+        const submit = screen.getByRole('button', { name: /등록/ });
+
+        await user.dblClick(submit);
+
+        await waitFor(() => expect(mockedBoard.createPost).toHaveBeenCalledTimes(1));
+        expect(submit).toBeDisabled();
+        resolveCreate({} as never);
+        await waitFor(() => expect(mocks.push).toHaveBeenCalled());
+    });
+
+    it('일반 서버 오류는 토스트로 안내하고 작성값을 보존한다', async () => {
+        mockedBoard.createPost.mockRejectedValueOnce(new Error('게시글 서버에 연결할 수 없습니다.'));
+        const user = userEvent.setup();
+        render(<CommunityBoardsDetailClient />);
+        const title = screen.getByRole('textbox', { name: /제목/ });
+        const content = screen.getByRole('textbox', { name: '에디터 본문 내용' });
+        await user.type(title, '보존할 게시글 제목');
+        await user.type(content, '보존할 게시글 본문');
+
+        await user.click(screen.getByRole('button', { name: /등록/ }));
+
+        await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('게시글 서버에 연결할 수 없습니다.', 'error'));
+        expect(title).toHaveValue('보존할 게시글 제목');
+        expect(content).toHaveValue('보존할 게시글 본문');
+    });
+
+    it('게시글 요청 DTO의 필수/문자열 경계와 Y/N 형식을 보존한다', () => {
+        const valid = {
+            bbsId: 'B'.repeat(20),
+            pstTtl: '가'.repeat(100),
+            pstCn: '나'.repeat(4000),
+            scrtYn: 'N',
+        };
+
+        expect(communityBoardCreateSchema.safeParse(valid).success).toBe(true);
+        expect(communityBoardCreateSchema.safeParse({ ...valid, bbsId: '   ' }).success).toBe(false);
+        expect(communityBoardCreateSchema.safeParse({ ...valid, bbsId: 'B'.repeat(21) }).success).toBe(false);
+        expect(communityBoardCreateSchema.safeParse({ ...valid, pstTtl: '' }).success).toBe(false);
+        expect(communityBoardCreateSchema.safeParse({ ...valid, pstTtl: '   ' }).success).toBe(false);
+        expect(communityBoardCreateSchema.safeParse({ ...valid, pstTtl: '가'.repeat(101) }).success).toBe(false);
+        expect(communityBoardCreateSchema.safeParse({ ...valid, pstCn: '' }).success).toBe(false);
+        expect(communityBoardCreateSchema.safeParse({ ...valid, pstCn: '   ' }).success).toBe(false);
+        expect(communityBoardCreateSchema.safeParse({ ...valid, pstCn: '나'.repeat(4001) }).success).toBe(false);
+        expect(communityBoardCreateSchema.safeParse({ ...valid, scrtYn: 'X' }).success).toBe(false);
+        expect(communityBoardCreateSchema.safeParse({ ...valid, pstTtl: 123 }).success).toBe(false);
     });
 });

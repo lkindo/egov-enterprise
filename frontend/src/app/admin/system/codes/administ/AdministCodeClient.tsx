@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { codeAdminService, AdministCode } from '@/services/foundation/system/CodeAdminService';
@@ -19,6 +19,7 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
   FormControl,
+  FormErrorSummary,
   FormField as ShadcnFormField,
   FormItem,
   FormLabel,
@@ -30,12 +31,12 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 
 import { AdministCodeDtoSchema } from '@/types/generated-zod';
 
-const administCodeSchema = AdministCodeDtoSchema.extend({
-  admdstCd: z.string().min(1).max(10),
-  admdstZoneNm: z.string().min(1),
-  admdstSeCd: z.string().min(1),
-  upAdmdstCd: z.string().min(1),
-  useYn: z.string().min(1),
+export const administCodeSchema = AdministCodeDtoSchema.extend({
+  admdstCd: AdministCodeDtoSchema.shape.admdstCd.unwrap().min(1).max(10),
+  admdstZoneNm: AdministCodeDtoSchema.shape.admdstZoneNm.unwrap().min(1),
+  admdstSeCd: AdministCodeDtoSchema.shape.admdstSeCd.unwrap().min(1),
+  upAdmdstCd: AdministCodeDtoSchema.shape.upAdmdstCd.unwrap().min(1),
+  useYn: AdministCodeDtoSchema.shape.useYn.min(1),
 });
 
 type AdministCodeFormValues = z.infer<typeof administCodeSchema>;
@@ -53,6 +54,7 @@ export default function AdministCodeClient({
 }) {
  const [isModalOpen, setIsModalOpen] = useState(false);
  const [registerLoading, setRegisterLoading] = useState(false);
+ const registerSubmitLock = useRef(false);
  const { toast } = useToast();
  /** 실제 서버에 제출된 검색어. 입력 중 값은 KeywordFilter 가 소유한다(제출형 검색). */
  const [appliedSearch, setAppliedSearch] = useState('');
@@ -68,6 +70,11 @@ export default function AdministCodeClient({
      useYn: 'Y',
    }
  });
+
+ const closeRegisterModal = () => {
+ if (registerSubmitLock.current) return;
+ setIsModalOpen(false);
+ };
 
  /*
   * [P1-1] 종전에는 수동 fetch + catch→toast 였다.
@@ -100,6 +107,8 @@ export default function AdministCodeClient({
  }, []);
 
  const onRegisterSubmit = async (values: AdministCodeFormValues) => {
+   if (registerSubmitLock.current) return;
+   registerSubmitLock.current = true;
    try {
      setRegisterLoading(true);
      await codeAdminService.createAdministCode(values);
@@ -108,9 +117,12 @@ export default function AdministCodeClient({
      form.reset();
      setPageNumber(1);
      refetch();
-   } catch {
-     toast('코드 등록 중 오류가 발생했습니다.', 'error');
+   } catch (error) {
+     if (!form.applyServerErrors(error)) {
+       toast('코드 등록 중 오류가 발생했습니다.', 'error');
+     }
    } finally {
+     registerSubmitLock.current = false;
      setRegisterLoading(false);
    }
  };
@@ -229,32 +241,58 @@ export default function AdministCodeClient({
 
  <StandardModal
    isOpen={isModalOpen}
-   onClose={() => setIsModalOpen(false)}
+   onClose={closeRegisterModal}
    title="행정 구역 코드 등록"
    maxWidth="xl"
    footer={
      <div className="flex w-full gap-4">
-       <Button variant="outline" onClick={() => setIsModalOpen(false)} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">취소</Button>
+       <Button
+         type="button"
+         variant="outline"
+         onClick={closeRegisterModal}
+         disabled={registerLoading || form.formState.isSubmitting}
+         className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2"
+       >
+         취소
+       </Button>
        <Button 
-         onClick={form.handleSubmit(onRegisterSubmit)}
-         disabled={registerLoading}
+         type="submit"
+         form="administ-code-register-form"
+         disabled={registerLoading || form.formState.isSubmitting}
          className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:bg-primary transition-all active:scale-95 group"
        >
-         <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" /> 최종 등록
+         <ShieldCheck size={18} strokeWidth={3} className="text-primary group-hover:rotate-12 transition-transform" />
+         {registerLoading ? '등록 중…' : '최종 등록'}
        </Button>
      </div>
    }
  >
    <Form {...form}>
-     <form className="space-y-6 pt-4 text-left">
+      <form
+        id="administ-code-register-form"
+        noValidate
+        onSubmit={form.handleSubmit(onRegisterSubmit)}
+        className="space-y-6 pt-4 text-left"
+      >
+       <FormErrorSummary
+         labels={{
+           admdstCd: '행정 구역 식별 코드',
+           admdstSeCd: '구분',
+           admdstZoneNm: '행정 구역 명칭',
+           upAdmdstCd: '상위 행정 구역 코드',
+           useYn: '사용 여부',
+         }}
+         onNavigate={form.focusError}
+       />
        <ShadcnFormField
          control={form.control}
          name="admdstCd"
+         required
          render={({ field }) => (
            <FormItem>
              <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">행정 구역 식별 코드</FormLabel>
              <FormControl>
-               <Input {...field} placeholder="예: 1111051500" className="h-11 rounded-lg bg-muted border-border" />
+               <Input {...field} maxLength={10} inputMode="numeric" placeholder="예: 1111051500" className="h-11 rounded-lg bg-muted border-border" />
              </FormControl>
              <FormMessage />
            </FormItem>
@@ -263,6 +301,7 @@ export default function AdministCodeClient({
        <ShadcnFormField
          control={form.control}
          name="admdstSeCd"
+         required
          render={({ field }) => (
            <FormItem>
              <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">구분</FormLabel>
@@ -279,11 +318,12 @@ export default function AdministCodeClient({
        <ShadcnFormField
          control={form.control}
          name="admdstZoneNm"
+         required
          render={({ field }) => (
            <FormItem>
              <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">행정 구역 명칭</FormLabel>
              <FormControl>
-               <Input {...field} placeholder="예: 서울특별시 종로구 청운효자동" className="h-11 rounded-lg bg-muted border-border" />
+               <Input {...field} maxLength={100} placeholder="예: 서울특별시 종로구 청운효자동" className="h-11 rounded-lg bg-muted border-border" />
              </FormControl>
              <FormMessage />
            </FormItem>
@@ -292,11 +332,12 @@ export default function AdministCodeClient({
        <ShadcnFormField
          control={form.control}
          name="upAdmdstCd"
+         required
          render={({ field }) => (
            <FormItem>
              <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">상위 행정 구역 코드</FormLabel>
              <FormControl>
-               <Input {...field} placeholder="예: 1111000000" className="h-11 rounded-lg bg-muted border-border" />
+               <Input {...field} maxLength={12} inputMode="numeric" placeholder="예: 1111000000" className="h-11 rounded-lg bg-muted border-border" />
              </FormControl>
              <FormMessage />
            </FormItem>
@@ -305,6 +346,7 @@ export default function AdministCodeClient({
        <ShadcnFormField
          control={form.control}
          name="useYn"
+         required
          render={({ field }) => (
            <FormItem>
              <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">사용 여부</FormLabel>

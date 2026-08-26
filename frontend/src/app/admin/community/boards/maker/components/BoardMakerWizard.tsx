@@ -4,8 +4,6 @@ import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { BoardPreview } from './BoardPreview';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Card,  CardContent,  CardHeader,  CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +43,9 @@ import {
 import { cn } from "@/lib/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
+import { useAppForm } from '@/hooks/useAppForm';
+import { FormErrorSummary } from '@/components/ui/form';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
 
 const STEPS = [
  { id: 1, title: '기본 설정', description: '게시판의 이름과 설명을 입력하세요', icon: Settings2 },
@@ -112,18 +113,57 @@ const TEMPLATES = [
  },
 ];
 
-import { BoardMasterDtoSchema } from '@/types/generated-zod';
+import { BoardMasterDtoSchema, MenuDtoSchema } from '@/types/generated-zod';
 
-const formSchema = BoardMasterDtoSchema.extend({
- bbsTtl: z.string().min(2, '게시판 명칭은 최소 2글자 이상이어야 합니다'),
+export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
+ bbsTtl: BoardMasterDtoSchema.shape.bbsTtl
+   .trim()
+   .min(2, '게시판 명칭을 2자 이상 입력해 주세요.')
+   .max(100, '게시판 명칭은 최대 100자까지 입력할 수 있습니다.'),
+ bbsExpln: BoardMasterDtoSchema.shape.bbsExpln
+   .unwrap()
+   .trim()
+   .max(4000, '게시판 소개는 최대 4,000자까지 입력할 수 있습니다.'),
  ansPsbltyYn: z.boolean(),
  fileAtchPsbltyYn: z.boolean(),
- menuNm: z.string(),
- upperMenuNo: z.string(),
- menuOrdr: z.number(),
+ atchPsbltyFileQty: z.number().int('첨부 가능 파일 수는 정수여야 합니다.'),
+ atchPsbltyFileSz: z.number().int('첨부 가능 파일 크기는 정수여야 합니다.'),
+ tmpltId: BoardMasterDtoSchema.shape.tmpltId.unwrap().max(20),
+ menuNm: MenuDtoSchema.shape.menuNm
+   .trim()
+   .min(1, '메뉴 명칭을 입력해 주세요.')
+   .max(100, '메뉴 명칭은 최대 100자까지 입력할 수 있습니다.'),
+ upperMenuNo: z.enum(['0', '2000000', '2030000'], { message: '상위 메뉴를 선택해 주세요.' }),
+ menuOrdr: MenuDtoSchema.shape.menuOrdr.int('메뉴 순서는 정수여야 합니다.'),
 });
 
-type FormValues = z.infer<typeof formSchema>;
+type FormValues = z.infer<typeof boardMakerFormSchema>;
+
+const BOARD_MAKER_FORM_LABELS: Record<string, string> = {
+ bbsTtl: '게시판 명칭',
+ bbsExpln: '게시판 소개',
+ tmpltId: '템플릿',
+ upperMenuNo: '상위 메뉴',
+ menuNm: '메뉴 명칭',
+ menuOrdr: '메뉴 순서',
+ 'root.server': '저장 오류',
+};
+
+const BOARD_MAKER_FIELD_STEPS: Record<string, number> = {
+ bbsTtl: 1,
+ bbsExpln: 1,
+ ansPsbltyYn: 1,
+ fileAtchPsbltyYn: 1,
+ tmpltId: 2,
+ upperMenuNo: 4,
+ upMenuSn: 4,
+ menuNm: 4,
+ menuOrdr: 4,
+};
+
+const BOARD_MAKER_SERVER_FIELD_ALIASES: Record<string, keyof FormValues> = {
+ upMenuSn: 'upperMenuNo',
+};
 
 export function BoardMakerWizard() {
  const router = useRouter();
@@ -131,13 +171,14 @@ export function BoardMakerWizard() {
  const [isSubmitting, setIsSubmitting] = useState(false);
  const [isSuccess, setIsSuccess] = useState(false);
  const [status, setStatus] = useState('');
+ const submittingRef = React.useRef(false);
  // 감사 P1-1/삼킴 금지: 배포 실패 시 status 문자열만 바꿨는데 그 문자열은 isSubmitting 중에만 렌더돼
  // 제출이 끝나는 순간 사라졌다(= 실패가 화면에 전혀 남지 않음). 별도 상태로 오류를 계속 노출한다.
- const [, setSubmitError] = useState<string | null>(null);
+ const [submitError, setSubmitError] = useState<string | null>(null);
+ const submitErrorRef = React.useRef<HTMLDivElement>(null);
  const queryClient = useQueryClient();
 
- const { register, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormValues>({
- resolver: zodResolver(formSchema),
+ const form = useAppForm<typeof boardMakerFormSchema>(boardMakerFormSchema, {
  defaultValues: {
  bbsTtl: '',
  bbsExpln: '',
@@ -153,26 +194,51 @@ export function BoardMakerWizard() {
  upperMenuNo: '2000000',
  menuOrdr: 1,
  }
+ }, {
+ revealField: async (fieldName) => {
+ const targetStep = BOARD_MAKER_FIELD_STEPS[fieldName];
+ if (targetStep) setCurrentStep(targetStep);
+ },
  });
+ const { register, handleSubmit, formState: { errors }, watch, setValue } = form;
 
  const selectedTemplate = watch('tmpltId');
  const bbsTtl = watch('bbsTtl');
  const bbsExpln = watch('bbsExpln');
 
+ React.useEffect(() => {
+ if (!submitError || !submitErrorRef.current) return;
+ submitErrorRef.current.scrollIntoView?.({ behavior: 'auto', block: 'center' });
+ submitErrorRef.current.focus({ preventScroll: true });
+ }, [submitError]);
+
  const nextStep = () => {
  if (currentStep === 1 && !watch('menuNm')) {
- setValue('menuNm', bbsTtl);
+ setValue('menuNm', bbsTtl, { shouldDirty: true });
  }
  setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
+ };
+ const handleNextStep = async () => {
+ const fields: Array<keyof FormValues> = currentStep === 1
+ ? ['bbsTtl', 'bbsExpln']
+ : currentStep === 2
+ ? ['tmpltId']
+ : [];
+ const isValid = fields.length === 0 || await form.trigger(fields);
+ if (!isValid) {
+ const firstInvalid = fields.find((field) => form.getFieldState(field).invalid);
+ if (firstInvalid) await form.focusError(firstInvalid);
+ return;
+ }
+ setSubmitError(null);
+ nextStep();
  };
  const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
 
  const onSubmit = async (data: FormValues) => {
- if (currentStep < STEPS.length) {
- nextStep();
- return;
- }
+ if (submittingRef.current) return;
 
+ submittingRef.current = true;
  setIsSubmitting(true);
  setSubmitError(null);
  setStatus('게시판을 생성하는 중...');
@@ -213,12 +279,25 @@ export function BoardMakerWizard() {
  setIsSuccess(true);
  } catch (error: unknown) {
  setStatus('');
- setSubmitError(
- error instanceof Error && error.message
- ? error.message
- : '게시판 생성 및 메뉴 배포에 실패했습니다. 잠시 후 다시 시도해 주세요.'
+ const serverErrors = extractFieldErrors(error);
+ if (serverErrors && Object.keys(serverErrors).length > 0) {
+ let firstNavigableField: string | null = null;
+ for (const [serverField, message] of Object.entries(serverErrors)) {
+ const alias = BOARD_MAKER_SERVER_FIELD_ALIASES[serverField];
+ const fieldName: string = alias ?? (
+ Object.prototype.hasOwnProperty.call(BOARD_MAKER_FIELD_STEPS, serverField)
+ ? serverField as keyof FormValues
+ : 'root.server'
  );
+ form.setError(fieldName as never, { type: 'server', message });
+ if (!firstNavigableField && fieldName !== 'root.server') firstNavigableField = fieldName;
+ }
+ if (firstNavigableField) void form.focusError(firstNavigableField, 'server');
+ } else if (!form.applyServerErrors(error)) {
+ setSubmitError('게시판 생성 및 메뉴 배포에 실패했습니다. 입력값은 유지되므로 내용을 확인한 뒤 다시 시도해 주세요.');
+ }
  } finally {
+ submittingRef.current = false;
  setIsSubmitting(false);
  }
  };
@@ -298,7 +377,23 @@ export function BoardMakerWizard() {
      이미 사용자에게 알리므로 콘솔 출력은 정보 가치가 없다. 게다가 E2E 의 콘솔 오류 가드가 이를
      금지 로그로 잡아 테스트를 실패시켰다(Validation Edge Case: Creation Failure with Empty Name).
      진단이 필요하면 개발 모드 조건부로 출력할 것. */}
- <form onSubmit={handleSubmit(onSubmit)}>
+ <form onSubmit={handleSubmit(onSubmit)} noValidate>
+ <FormErrorSummary
+ errors={errors}
+ labels={BOARD_MAKER_FORM_LABELS}
+ onNavigate={form.focusError}
+ className="mx-12 mt-8"
+ />
+ {submitError ? (
+ <div
+ ref={submitErrorRef}
+ role="alert"
+ tabIndex={-1}
+ className="mx-12 mt-4 rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm font-bold text-destructive-emphasis"
+ >
+ {submitError}
+ </div>
+ ) : null}
  <CardHeader className="bg-muted p-12 text-foreground relative border-b border-border transition-colors">
  <div className="space-y-2 relative z-10 text-left">
  <h3 className="text-4xl font-bold tracking-tighter text-left">
@@ -333,6 +428,10 @@ export function BoardMakerWizard() {
  <Input
  id="bbsTtl"
  autoFocus
+ maxLength={100}
+ aria-required="true"
+ aria-invalid={errors.bbsTtl ? 'true' : 'false'}
+ aria-describedby={errors.bbsTtl ? 'bbsTtl-error' : undefined}
  placeholder="예) 사내 소식 공유 게시판"
  className={cn(
  "h-11 text-xl rounded-lg border-2 px-6 focus:ring-4 focus:ring-primary/10 transition-all font-bold shadow-inner-sm bg-card",
@@ -340,7 +439,7 @@ export function BoardMakerWizard() {
  )}
  {...register('bbsTtl')}
  />
- {errors.bbsTtl && <p className="text-destructive-emphasis text-sm font-bold ml-2">{errors.bbsTtl.message}</p>}
+ {errors.bbsTtl && <p id="bbsTtl-error" className="text-destructive-emphasis text-sm font-bold ml-2">{errors.bbsTtl.message}</p>}
  </div>
 
  <div className="space-y-4 text-left">
@@ -350,10 +449,14 @@ export function BoardMakerWizard() {
  </Label>
  <Textarea
  id="bbsExpln"
+ maxLength={4000}
+ aria-invalid={errors.bbsExpln ? 'true' : 'false'}
+ aria-describedby={errors.bbsExpln ? 'bbsExpln-error' : undefined}
  placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요."
  className="min-h-[140px] text-lg rounded-lg border-2 border-border bg-card px-6 py-4 focus:ring-4 focus:ring-primary/10 transition-all font-medium shadow-inner-sm text-left"
  {...register('bbsExpln')}
  />
+ {errors.bbsExpln && <p id="bbsExpln-error" className="text-destructive-emphasis text-sm font-bold ml-2">{errors.bbsExpln.message}</p>}
  </div>
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
@@ -532,12 +635,15 @@ export function BoardMakerWizard() {
  {currentStep === 4 && (
  <div className="space-y-12 text-left">
  <div className="space-y-6 text-left">
- <Label className="text-xl font-bold text-foreground flex items-center gap-2">
+ <Label htmlFor="upperMenuNo" className="text-xl font-bold text-foreground flex items-center gap-2">
  <span className="w-1.5 h-6 bg-primary rounded-lg inline-block" />
  상위 메뉴 선택
  </Label>
- <Select value={watch('upperMenuNo')} onValueChange={(val) => setValue('upperMenuNo', val)}>
- <SelectTrigger className="h-11 rounded-lg border-2 border-border bg-muted/50 px-8 text-xl font-bold shadow-inner-sm text-left">
+ <Select
+ value={watch('upperMenuNo')}
+ onValueChange={(val) => setValue('upperMenuNo', val as FormValues['upperMenuNo'], { shouldDirty: true, shouldValidate: true })}
+ >
+ <SelectTrigger id="upperMenuNo" aria-required="true" aria-invalid={errors.upperMenuNo ? 'true' : 'false'} className="h-11 rounded-lg border-2 border-border bg-muted/50 px-8 text-xl font-bold shadow-inner-sm text-left">
  <SelectValue placeholder="상위 메뉴를 선택하세요" className="text-left" />
  </SelectTrigger>
  <SelectContent className="rounded-lg border-none shadow-2xl">
@@ -546,28 +652,41 @@ export function BoardMakerWizard() {
  <SelectItem value="0" className="py-4 text-lg font-bold">ROOT (최상위 메뉴)</SelectItem>
  </SelectContent>
  </Select>
+ {errors.upperMenuNo && <p className="text-destructive-emphasis text-sm font-bold ml-2">{errors.upperMenuNo.message}</p>}
  </div>
 
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
  <div className="space-y-4 text-left">
- <Label className="text-xl font-bold text-foreground flex items-center gap-2">
+ <Label htmlFor="menuNm" className="text-xl font-bold text-foreground flex items-center gap-2">
  메뉴 명칭
  </Label>
  <Input
+ id="menuNm"
+ maxLength={100}
+ aria-required="true"
+ aria-invalid={errors.menuNm ? 'true' : 'false'}
+ aria-describedby={errors.menuNm ? 'menuNm-error' : undefined}
  placeholder="메뉴에 표시될 이름을 입력하세요"
  className="h-11 text-lg rounded-lg border-2 border-border bg-muted/50 px-6 font-bold shadow-inner-sm text-left"
  {...register('menuNm')}
  />
+ {errors.menuNm && <p id="menuNm-error" className="text-destructive-emphasis text-sm font-bold ml-2">{errors.menuNm.message}</p>}
  </div>
  <div className="space-y-4 text-left">
- <Label className="text-xl font-bold text-foreground flex items-center gap-2 text-left">
+ <Label htmlFor="menuOrdr" className="text-xl font-bold text-foreground flex items-center gap-2 text-left">
  메뉴 순서
  </Label>
  <Input
+ id="menuOrdr"
  type="number"
+ step="1"
+ aria-required="true"
+ aria-invalid={errors.menuOrdr ? 'true' : 'false'}
+ aria-describedby={errors.menuOrdr ? 'menuOrdr-error' : undefined}
  className="h-11 text-lg rounded-lg border-2 border-border bg-muted/50 px-6 font-bold shadow-inner-sm text-left"
  {...register('menuOrdr', { valueAsNumber: true })}
  />
+ {errors.menuOrdr && <p id="menuOrdr-error" className="text-destructive-emphasis text-sm font-bold ml-2">{errors.menuOrdr.message}</p>}
  </div>
  </div>
 
@@ -599,11 +718,15 @@ export function BoardMakerWizard() {
  disabled={currentStep === 1 || isSubmitting}
  className="h-11 px-10 rounded-lg font-bold text-muted-foreground hover:bg-card hover:text-foreground transition-all disabled:opacity-0 flex items-center gap-3 tracking-tighter"
  >
- <ChevronLeft className="w-6 h-6" /> 이전 단계
+ <ChevronLeft className="w-6 h-6" aria-hidden="true" /> 이전 단계
  </Button>
 
  <Button
- type="submit"
+ type={currentStep === STEPS.length ? 'submit' : 'button'}
+ onClick={currentStep === STEPS.length ? undefined : (event) => {
+ event.preventDefault();
+ void handleNextStep();
+ }}
  size="lg"
  disabled={isSubmitting}
  className={cn(
@@ -621,7 +744,7 @@ export function BoardMakerWizard() {
  ) : (
  <span className="flex items-center gap-3">
  {currentStep === STEPS.length ? '게시판 생성 및 메뉴 배포' : '다음 단계로'}
- <ChevronRight className="w-6 h-6" />
+ <ChevronRight className="w-6 h-6" aria-hidden="true" />
  </span>
  )}
  </Button>

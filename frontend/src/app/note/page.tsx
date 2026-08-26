@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import dynamic from 'next/dynamic';
@@ -11,10 +11,20 @@ import { StatusBadge } from '@/components/ui/status-badge';
 import { noteService, Note } from '@/services/business/user/NoteService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, User } from 'lucide-react';
+import { Inbox, Send, MailOpen, Mail, Trash2, UserPlus, SendHorizonal, Search, User, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import type { UserSearchResult } from '@/services/business/user/UserSearchService';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { noteComposeSchema } from './note-form-validation';
+
+const NOTE_FORM_LABELS = {
+  rcverId: '수신자',
+  noteSj: '제목',
+  noteCn: '내용',
+};
 
 export default function NotePage() {
   const { toast } = useToast();
@@ -29,6 +39,16 @@ export default function NotePage() {
   const [isDetailModalOpen, setDetailOpen] = useState(false);
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
   const [formData, setFormData] = useState({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
+  const [isSending, setIsSending] = useState(false);
+  const sendingRef = useRef(false);
+  const [deletingRelationSn, setDeletingRelationSn] = useState<number | null>(null);
+  const deletePendingRef = useRef(false);
+  const validation = useManualFormValidation(noteComposeSchema, {
+    labels: NOTE_FORM_LABELS,
+    focusTargets: {
+      rcverId: () => document.getElementById('note-recipient-picker-button'),
+    },
+  });
 
   const loadNotes = useCallback(async () => {
     try {
@@ -50,24 +70,42 @@ export default function NotePage() {
   }, [loadNotes]);
 
   const handleSend = async () => {
-    if (!formData.rcverId || !formData.noteSj) {
-      toast('수신자와 제목을 입력하세요.', 'error');
-      return;
-    }
+    if (sendingRef.current) return;
+    const validated = validation.validate({
+      rcverId: formData.rcverId,
+      noteSj: formData.noteSj,
+      noteCn: formData.noteCn,
+    });
+    if (!validated) return;
 
+    sendingRef.current = true;
+    setIsSending(true);
     try {
-      await noteService.sendNote(formData);
+      await noteService.sendNote(validated);
       toast('쪽지가 성공적으로 전송되었습니다.', 'success');
       setWriteOpen(false);
       setFormData({ rcverId: '', rcverNm: '', noteSj: '', noteCn: '' });
+      validation.setFormErrors({}, false);
       if (tab === 'sent') loadNotes();
-    } catch {
-      toast('전송 중 오류가 발생했습니다.', 'error');
+    } catch (error) {
+      const fieldErrors = extractFieldErrors(error);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      else toast('전송 중 오류가 발생했습니다.', 'error');
+    } finally {
+      sendingRef.current = false;
+      setIsSending(false);
     }
   };
 
   const handleUserSelect = (user: UserSearchResult) => {
-    setFormData({ ...formData, rcverId: user.esntlId ?? '', rcverNm: user.userNm ?? '' });
+    setFormData((current) => ({ ...current, rcverId: user.esntlId ?? '', rcverNm: user.userNm ?? '' }));
+    validation.clearError('rcverId');
+  };
+
+  const closeWriteModal = () => {
+    if (sendingRef.current) return;
+    setWriteOpen(false);
+    validation.setFormErrors({}, false);
   };
 
   const handleDetail = (note: Note) => {
@@ -82,21 +120,27 @@ export default function NotePage() {
       toast('삭제 대상 식별자를 찾을 수 없습니다.', 'error');
       return;
     }
-    const ok = await confirm({
-      title: '쪽지 삭제',
-      message: tab === 'received'
-        ? '이 쪽지를 받은 편지함에서 삭제하시겠습니까? (보낸 사람의 사본은 유지됩니다)'
-        : '이 쪽지를 보낸 편지함에서 삭제하시겠습니까? (받은 사람의 사본은 유지됩니다)',
-      confirmText: '삭제',
-      variant: 'destructive',
-    });
-    if (!ok) return;
+    if (deletePendingRef.current) return;
+    deletePendingRef.current = true;
+    setDeletingRelationSn(relationSn);
     try {
+      const ok = await confirm({
+        title: '쪽지 삭제',
+        message: tab === 'received'
+          ? '이 쪽지를 받은 편지함에서 삭제하시겠습니까? (보낸 사람의 사본은 유지됩니다)'
+          : '이 쪽지를 보낸 편지함에서 삭제하시겠습니까? (받은 사람의 사본은 유지됩니다)',
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
       await noteService.deleteNote(relationSn, { type: tab });
       toast('삭제되었습니다.', 'success');
-      loadNotes();
+      await loadNotes();
     } catch {
       toast('삭제 중 오류가 발생했습니다.', 'error');
+    } finally {
+      deletePendingRef.current = false;
+      setDeletingRelationSn(null);
     }
   };
 
@@ -129,15 +173,24 @@ export default function NotePage() {
     },
     {
       header: '관리',
-      accessor: (item: Note) => (
+      accessor: (item: Note) => {
+        const relationSn = tab === 'received' ? item.noteRcptnSn : item.noteSndngSn;
+        const isDeleting = deletingRelationSn === relationSn;
+        return (
         <button
-          onClick={(e) => { e.stopPropagation(); handleDelete(item); }}
-          aria-label={`${item.noteSj || '쪽지'} 삭제`}
+          type="button"
+          onClick={(e) => { e.stopPropagation(); void handleDelete(item); }}
+          disabled={deletingRelationSn !== null}
+          aria-busy={isDeleting}
+          aria-label={isDeleting ? `${item.noteSj || '쪽지'} 삭제 중` : `${item.noteSj || '쪽지'} 삭제`}
           className="p-2 hover:bg-rose-50 text-rose-400 rounded-lg transition-colors group"
         >
-          <Trash2 size={18} className="group-hover:scale-110 transition-transform" />
+          {isDeleting
+            ? <Loader2 size={18} className="animate-spin" aria-hidden="true" />
+            : <Trash2 size={18} className="group-hover:scale-110 transition-transform" aria-hidden="true" />}
         </button>
-      )
+        );
+      }
     }
   ];
 
@@ -167,7 +220,14 @@ export default function NotePage() {
               count={tab === 'sent' ? notes.length : undefined}
             />
           </div>
-          <Button size="sm" onClick={() => setWriteOpen(true)} className="gap-2">
+          <Button
+            size="sm"
+            onClick={() => {
+              validation.setFormErrors({}, false);
+              setWriteOpen(true);
+            }}
+            className="gap-2"
+          >
             <SendHorizonal size={16} aria-hidden="true" /> 새 쪽지 쓰기
           </Button>
         </>
@@ -185,23 +245,34 @@ export default function NotePage() {
 
       <StandardModal
         isOpen={isWriteModalOpen}
-        onClose={() => setWriteOpen(false)}
+        onClose={closeWriteModal}
         title="새 쪽지 기안"
         footer={
           <div className="flex gap-4 w-full">
-            <Button variant="ghost" onClick={() => setWriteOpen(false)} className="h-11 flex-1 rounded-lg font-bold text-muted-foreground">취소</Button>
-            <Button onClick={handleSend} className="h-11 flex-[2] bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all">메시지 전송</Button>
+            <Button variant="ghost" disabled={isSending} onClick={closeWriteModal} className="h-11 flex-1 rounded-lg font-bold text-muted-foreground">취소</Button>
+            <Button disabled={isSending} aria-busy={isSending} onClick={handleSend} className="h-11 flex-[2] bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all">
+              {isSending ? '메시지 전송 중…' : '메시지 전송'}
+            </Button>
           </div>
         }
       >
         <div className="space-y-8 p-4">
-          <FormField label="대상자 식별 (수신자)" required>
+          <FormErrorSummary
+            data-testid="note-form-error-summary"
+            errors={validation.errors}
+            labels={NOTE_FORM_LABELS}
+            onNavigate={validation.focusError}
+          />
+          <FormField htmlFor="rcverId" label="대상자 식별 (수신자)" required error={validation.errors.rcverId}>
             <div className="flex gap-3">
               <div className="relative flex-1 group">
                 <UserPlus size={18} className="absolute left-6 top-5 text-slate-300 group-hover:text-primary transition-colors" />
                 <input
                   type="text"
+                  id="rcverId"
                   aria-label="수신 대상자"
+                  aria-required="true"
+                  {...validation.fieldProps('rcverId')}
                   value={formData.rcverNm ? `${formData.rcverNm} (${formData.rcverId})` : ''}
                   placeholder="대상자를 식별하십시오..."
                   readOnly
@@ -209,28 +280,44 @@ export default function NotePage() {
                 />
               </div>
               <Button
+                id="note-recipient-picker-button"
                 onClick={() => setPickerOpen(true)}
+                aria-invalid={validation.errors.rcverId ? 'true' : undefined}
+                aria-describedby={validation.errors.rcverId ? 'rcverId-error' : undefined}
                 className="h-11 px-8 bg-card border-2 border-border text-foreground rounded-lg font-bold text-xs tracking-widest hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all shadow-xl active:scale-95"
               >
                 <Search size={16} className="mr-2" /> 타겟 검색
               </Button>
             </div>
           </FormField>
-          <FormField label="시스템 제목" required>
+          <FormField htmlFor="noteSj" label="시스템 제목" required error={validation.errors.noteSj}>
             <input
+              id="noteSj"
               type="text"
               aria-label="시스템 제목"
+              aria-required="true"
+              maxLength={100}
+              {...validation.fieldProps('noteSj')}
               value={formData.noteSj}
-              onChange={(e) => setFormData({ ...formData, noteSj: e.target.value })}
+              onChange={(e) => {
+                setFormData((current) => ({ ...current, noteSj: e.target.value }));
+                validation.clearError('noteSj');
+              }}
               placeholder="쪽지 아키텍처 제목을 입력하세요."
               className="w-full h-11 px-8 rounded-lg bg-muted border-none text-sm font-bold tracking-tight outline-none focus:ring-4 focus:ring-primary/10 transition-all"
             />
           </FormField>
-          <FormField label="데이터 바디 (내용)">
+          <FormField htmlFor="noteCn" label="데이터 바디 (내용)" error={validation.errors.noteCn}>
             <textarea
+              id="noteCn"
               aria-label="데이터 바디 (내용)"
+              maxLength={4000}
+              {...validation.fieldProps('noteCn')}
               value={formData.noteCn}
-              onChange={(e) => setFormData({ ...formData, noteCn: e.target.value })}
+              onChange={(e) => {
+                setFormData((current) => ({ ...current, noteCn: e.target.value }));
+                validation.clearError('noteCn');
+              }}
               className="w-full min-h-[200px] p-8 rounded-lg bg-muted border-none text-base font-bold outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-none leading-relaxed"
               placeholder="전달할 메시지 데이터를 상세히 기입하세요..."
             />
@@ -278,6 +365,7 @@ export default function NotePage() {
                   onClick={() => {
                     setDetailOpen(false);
                     setFormData({ ...formData, rcverId: selectedNote.dsptchUserId ?? '', noteSj: `Re: ${selectedNote.noteSj}` });
+                    validation.setFormErrors({}, false);
                     setWriteOpen(true);
                   }}
                   className="h-11 px-10 bg-surface-inverse text-surface-inverse-foreground rounded-lg font-bold text-sm tracking-widest shadow-2xl hover:bg-primary transition-all gap-2"

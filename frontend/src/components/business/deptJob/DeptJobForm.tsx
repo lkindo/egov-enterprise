@@ -6,6 +6,7 @@ import * as z from 'zod';
 import {
     Form,
     FormControl,
+    FormErrorSummary,
     FormField,
     FormItem,
     FormLabel,
@@ -64,6 +65,8 @@ interface DeptJobFormProps {
     initialData?: Partial<DeptJobFormValues>;
     onSubmit: (data: DeptJobFormValues) => Promise<void>;
     onCancel: () => void;
+    /** 합성 화면이 소유하는 mutation 잠금. 부모의 저장/삭제 상호 배제를 실제 폼 제어에 전달한다. */
+    isPending?: boolean;
 }
 
 /** 업무함 미지정을 나타내는 Select 값. Radix Select 는 빈 문자열 value 를 허용하지 않는다. */
@@ -75,7 +78,7 @@ const NO_BOX = '__none__';
  */
 const PIC_SEARCH_MIN_KEYWORD = 2;
 
-export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }: DeptJobFormProps) {
+export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, isPending = false }: DeptJobFormProps) {
     const isEdit = mode === 'edit';
 
     // 업무함 목록. 조회는 관리자 전용이 아니므로 일반 사용자도 선택할 수 있다
@@ -130,22 +133,43 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
     });
 
     const { isSubmitting } = form.formState;
+    const isSavePending = isSubmitting || isPending;
+
+    const handleSubmit = async (values: DeptJobFormValues) => {
+        try {
+            await onSubmit(values);
+        } catch (error) {
+            if (!form.applyServerErrors(error)) throw error;
+        }
+    };
 
     return (
         <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pt-2 text-left">
+            <form noValidate onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6 pt-2 text-left">
+                <FormErrorSummary
+                    labels={{
+                        deptTaskNm: '업무명',
+                        prrtyRnk: '우선 순위',
+                        deptTaskBoxSn: '업무함',
+                        picId: '담당자',
+                        deptTaskCn: '업무 내용',
+                    }}
+                    onNavigate={form.focusError}
+                />
                 <FormField
                     control={form.control}
                     name="deptTaskNm"
+                    required
                     render={({ field, fieldState }) => (
                         <FormItem>
                             <FormLabel className="text-xs font-bold text-foreground uppercase tracking-tight ml-1">
-                                업무명 <span className="text-rose-500">*</span>
+                                업무명
                             </FormLabel>
                             <FormControl>
                                 <Input
                                     {...field}
                                     value={field.value ?? ''}
+                                    maxLength={100}
                                     className={cn('h-11 rounded-lg text-sm font-bold tracking-tight', fieldState.error && 'border-rose-500')}
                                     placeholder="예: 3분기 예산 집행 점검"
                                 />
@@ -312,6 +336,7 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
                                 <Textarea
                                     {...field}
                                     value={field.value ?? ''}
+                                    maxLength={4000}
                                     className={cn('rounded-lg min-h-[140px]', fieldState.error && 'border-rose-500')}
                                     placeholder="업무의 목적과 범위, 완료 기준을 적어 주세요."
                                 />
@@ -322,11 +347,11 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel }
                 />
 
                 <div className="flex gap-3 pt-2">
-                    <Button type="button" variant="outline" onClick={onCancel} className="flex-1 h-11 rounded-lg font-bold">
+                    <Button type="button" variant="outline" onClick={onCancel} disabled={isSavePending} className="flex-1 h-11 rounded-lg font-bold">
                         취소
                     </Button>
-                    <Button type="submit" disabled={isSubmitting} className="flex-[2] h-11 rounded-lg font-bold shadow-lg">
-                        {isSubmitting ? '저장 중…' : isEdit ? '수정 저장' : '업무 등록'}
+                    <Button type="submit" disabled={isSavePending} aria-busy={isSavePending || undefined} className="flex-[2] h-11 rounded-lg font-bold shadow-lg">
+                        {isSavePending ? '저장 중…' : isEdit ? '수정 저장' : '업무 등록'}
                     </Button>
                 </div>
             </form>

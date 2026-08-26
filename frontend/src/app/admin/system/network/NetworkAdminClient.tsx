@@ -23,6 +23,13 @@ import {
     saveNetworkAction as saveNetworkNodeAction,
     deleteNetworkAction as deleteNetworkNodeAction
 } from '@/app/actions/networkActions';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
+
+function hasDirectFieldErrors(error: unknown): error is { fieldErrors: Record<string, string> } {
+    if (!error || typeof error !== 'object' || !('fieldErrors' in error)) return false;
+    const fieldErrors = (error as { fieldErrors?: unknown }).fieldErrors;
+    return Boolean(fieldErrors && typeof fieldErrors === 'object' && Object.keys(fieldErrors).length > 0);
+}
 
 interface NetworkAdminClientProps {
     initialNetworks: Network[];
@@ -232,26 +239,32 @@ export default function NetworkAdminClient({ initialNetworks, fetchError = null 
                         initialData={editingNode || {}} 
                         onCancel={() => setIsOpen(false)}
                         onSubmit={async (values) => {
+                            let res: Awaited<ReturnType<typeof saveNetworkNodeAction>>;
                             try {
                                 const formData = new FormData();
                                 Object.entries(values).forEach(([key, value]) => {
                                     if (value !== undefined) formData.append(key, String(value));
                                 });
-                                
-                                const res = await saveNetworkNodeAction(null, formData);
-                                if (res.success) {
-                                    toast(res.message, 'success');
-                                    setIsOpen(false);
-                                    // 전체 새로고침(window.location.reload)은 검색어·스크롤을 날리고 깜빡임을 만든다.
-                                    // 서버 컴포넌트 데이터만 재요청하도록 router.refresh() 에 위임한다.
-                                    router.refresh();
-                                } else {
-                                    toast(res.message, 'error');
-                                }
+
+                                res = await saveNetworkNodeAction(null, formData);
                             } catch (error) {
+                                if (extractFieldErrors(error) || hasDirectFieldErrors(error)) throw error;
                                 const message = error instanceof Error && error.message ? error.message : '';
                                 toast(message || '데이터 유효성 검증 및 반영에 실패했습니다.', 'error');
+                                return;
                             }
+
+                            if (!res.success) {
+                                if (res.fieldErrors) throw res;
+                                toast(res.message, 'error');
+                                return;
+                            }
+
+                            toast(res.message, 'success');
+                            setIsOpen(false);
+                            // 전체 새로고침(window.location.reload)은 검색어·스크롤을 날리고 깜빡임을 만든다.
+                            // 서버 컴포넌트 데이터만 재요청하도록 router.refresh() 에 위임한다.
+                            router.refresh();
                         }}
                     />
                 </div>

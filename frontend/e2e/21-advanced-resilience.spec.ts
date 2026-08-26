@@ -77,45 +77,43 @@ test.describe('Tier 21: Advanced Resilience', () => {
     //   보고 11건을 시딩해 그 방식을 이미 보여 준다. 조건을 만들지 않는 스트레스 테스트는
     //   스트레스를 주지 않는다.
 
-    test('Data Integrity: Boundary Input (Huge Payload)', async ({ page, consoleGuard }) => {
-        // [E2E 감사 B/C3] 광역 addIgnorePattern(/value/i, /controlled/i) 제거 — 실제 경고를 은폐하던 패턴.
-        // 경계값(255자) 제출은 zod 검증 실패를 '의도'한다. useAppForm이 검증 실패 시
-        // 브라우저 콘솔에 'Validation Errors:'를 출력하므로, 이 예상된 검증-실패 노이즈만
-        // 정밀 ledger로 한 번만 허용한다(다른 콘솔 결함은 그대로 감지 유지).
-        consoleGuard.expectErrors([{
-            id: 'E2E-VALIDATION-HUGE-TITLE',
-            specScope: '21-advanced-resilience.spec.ts :: Data Integrity: Boundary Input (Huge Payload)',
-            channel: 'console',
-            urlPattern: null,
-            messagePattern: /^Validation Errors:/,
-            method: null,
-            status: null,
-            maxOccurrences: 1,
-            reason: '255자 제목 제출의 zod 실패 콜백이 검증 오류를 한 번 기록하는 것이 테스트 시나리오다.',
-            expiresAt: '2026-12-31',
-        }]);
+    test('Data Integrity: Boundary Input (Huge Payload)', async ({ page }) => {
+        // 경계값(255자) 제출은 zod 검증 실패를 의도한다. 기대된 입력 오류는 console error가 아니라
+        // field와 프로그램적으로 연결된 inline 메시지·aria-invalid·focus 이동으로 안내되어야 한다.
         await page.goto('/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA');
         
         const hugeTitle = 'B'.repeat(255); // Near common DB limit for VARCHAR
-        const hugeContent = 'Content '.repeat(500); // ~4000 characters
+        const validContent = 'Content '.repeat(100);
 
         console.log('>>> Step 1: Filling form with large payload');
-        await page.locator('input[name="pstTtl"], input[name="nttSj"], [data-testid="article-title-input"]').first().fill(hugeTitle);
+        const titleInput = page.locator('input[name="pstTtl"], input[name="nttSj"], [data-testid="article-title-input"]').first();
+        // 실제 사용자 입력은 maxlength가 100자로 잘라 준다. 여기서는 native 방어를 먼저 확인한 뒤
+        // legacy draft/autofill/DOM 조작처럼 제한을 우회해 들어온 값도 Zod가 거부하고 오류 위치로
+        // 안내하는 defense-in-depth 경계를 검증한다.
+        await expect(titleInput).toHaveAttribute('maxlength', '100');
+        await titleInput.evaluate((element) => element.removeAttribute('maxlength'));
+        await titleInput.fill(hugeTitle);
+        await expect(titleInput).toHaveValue(hugeTitle);
         // Using locator for TipTap/ProseMirror editor with robust fallbacks
         const editor = page.locator('.ProseMirror, textarea[name="pstCn"], textarea[name="nttCn"]').first();
-        await editor.fill(hugeContent);
+        await editor.fill(validContent);
 
         console.log('>>> Step 2: Attempting to submit');
         const submitBtn = page.locator('button[type="submit"]').first();
         await submitBtn.click();
 
-        // pstTtl(255자)은 zod max(100)을 초과하므로 제출 시 검증이 '항상' 실패한다.
+        // native 제한을 우회한 pstTtl(255자)은 zod max(100)을 초과하므로 제출 시 검증이 '항상' 실패한다.
         // providers.tsx의 zod 에러맵이 too_big(string)을 '최대 {maximum}자 이하로 입력해야 합니다.'로
         // 매핑하고, 이 메시지는 pstTtl FormItem의 inline FormMessage(및 useAppForm의 Sonner 토스트)에
         // 렌더된다. 과거 getByRole('alert')는 Sonner의 '빈' announcer를 매칭하던 오탐이었으므로,
         // 실제 검증 메시지를 그 렌더 surface에서 단언한다.
         const validationMessage = page.getByText('최대 100자 이하로 입력해야 합니다').first();
         await expect(validationMessage).toBeVisible({ timeout: 30000 });
+        await expect(titleInput).toBeFocused();
+        await expect(titleInput).toHaveAttribute('aria-invalid', 'true');
+        const errorMessageId = await titleInput.getAttribute('aria-errormessage');
+        expect(errorMessageId, 'invalid title은 inline 오류 id를 aria-errormessage로 참조해야 함').toBeTruthy();
+        await expect(page.locator(`[id="${errorMessageId}"]`)).toContainText('최대 100자 이하로 입력해야 합니다');
 
         const alertText = await validationMessage.innerText();
         console.log(`>>> Submission Validation Text: '${alertText}'`);

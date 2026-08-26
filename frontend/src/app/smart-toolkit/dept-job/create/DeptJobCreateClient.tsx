@@ -8,6 +8,7 @@ import { Briefcase, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { DeptJobForm, DeptJobFormValues } from '@/components/business/deptJob/DeptJobForm';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
 
 /**
  * 부서 업무 등록 화면.
@@ -31,6 +32,7 @@ export default function DeptJobCreateClient() {
       // 응답에 식별자가 없으면(구버전 서버 등) 목록으로 되돌린다.
       router.push(newSn ? `/smart-toolkit/dept-job/${newSn}` : '/smart-toolkit/dept-job');
     } catch (error) {
+      if (extractFieldErrors(error)) throw error;
       toast.error(error instanceof Error ? error.message : '업무 등록에 실패했습니다.');
     }
   };

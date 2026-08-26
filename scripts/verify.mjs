@@ -50,6 +50,7 @@ function runFrontendStatic() {
   run('pnpm -C frontend run codegen:verify');
   run('pnpm -C frontend run codegen:verify:zod');
   run('pnpm -C frontend run lint');
+  run('pnpm -C frontend run test:form-validation');
   run('pnpm -C frontend exec tsc --noEmit');
   run('pnpm -C frontend run type-check:e2e');
 }

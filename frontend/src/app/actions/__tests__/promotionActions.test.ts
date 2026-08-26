@@ -95,6 +95,25 @@ describe('promotionActions', () => {
       expect(result).toEqual({ success: false, message: '이미지 용량이 초과되었습니다.' });
       expect(revalidatePath).not.toHaveBeenCalled();
     });
+
+    it('검증 실패의 fieldErrors를 클라이언트 폼까지 보존한다', async () => {
+      vi.mocked(client.post).mockRejectedValueOnce({
+        response: {
+          data: {
+            message: '입력값을 확인하세요.',
+            errors: [{ field: 'bnrNm', message: '배너 명칭이 중복되었습니다.' }],
+          },
+        },
+      });
+
+      const result = await saveBannerAction(null, { mode: 'create', data: {} as never });
+
+      expect(result).toEqual({
+        success: false,
+        message: '입력값을 확인하세요.',
+        fieldErrors: { bnrNm: '배너 명칭이 중복되었습니다.' },
+      });
+    });
   });
 
   describe('배너 삭제', () => {
@@ -157,6 +176,25 @@ describe('promotionActions', () => {
       const result = await savePopupAction(null, { mode: 'create', data: {} as never });
 
       expect(result).toEqual({ success: false, message: '기간이 잘못되었습니다.' });
+    });
+
+    it('팝업 검증 실패도 fieldErrors를 보존한다', async () => {
+      vi.mocked(client.post).mockRejectedValueOnce({
+        response: {
+          data: {
+            message: '입력값을 확인하세요.',
+            errors: [{ field: 'ntceEndde', message: '종료일을 확인하세요.' }],
+          },
+        },
+      });
+
+      const result = await savePopupAction(null, { mode: 'create', data: {} as never });
+
+      expect(result).toEqual({
+        success: false,
+        message: '입력값을 확인하세요.',
+        fieldErrors: { ntceEndde: '종료일을 확인하세요.' },
+      });
     });
   });
 });

@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SecurityHubClient from '../SecurityHubClient';
@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   query: '',
   replace: vi.fn(),
   toast: vi.fn(),
+  authorFormError: vi.fn(),
   confirm: vi.fn(),
   getAuthors: vi.fn(),
   createAuthor: vi.fn(),
@@ -74,25 +75,44 @@ vi.mock('@/components/ui/hub/HubMetrics', () => ({
   HubMetricCard: ({ title, value }: any) => <span>{title}: {value}</span>,
 }));
 vi.mock('@/app/components/ui/standard-modal', () => ({
-  StandardModal: ({ isOpen, title, children }: any) => isOpen
-    ? <section aria-label={title}>{children}</section>
+  StandardModal: ({ isOpen, onClose, title, children }: any) => isOpen
+    ? <section aria-label={title}><button type="button" onClick={onClose}>모달 닫기</button>{children}</section>
     : null,
 }));
 vi.mock('@/components/admin/security/AuthorForm', () => ({
-  AuthorForm: ({ mode, initialData, onSubmit, onCancel }: any) => (
+  AuthorForm: ({ mode, initialData, onSubmit, onCancel, isDisabled, isPending }: any) => (
     <div>
       <span>폼 대상 {initialData?.authrtCd || 'NEW'}</span>
-      <button type="button" onClick={() => onSubmit({ authrtCd: mode === 'edit' ? initialData.authrtCd : 'ROLE_NEW', authrtNm: '신규 역할' })}>역할 폼 저장</button>
-      <button type="button" onClick={onCancel}>역할 폼 취소</button>
+      <button
+        type="button"
+        aria-busy={isPending || undefined}
+        disabled={isDisabled || isPending}
+        onClick={() => {
+          void onSubmit({
+            authrtCd: mode === 'edit' ? initialData.authrtCd : 'ROLE_NEW',
+            authrtNm: '신규 역할',
+          }).catch(mocks.authorFormError);
+        }}
+      >
+        {isPending ? '역할 폼 저장 중…' : '역할 폼 저장'}
+      </button>
+      <button type="button" disabled={isDisabled || isPending} onClick={onCancel}>역할 폼 취소</button>
     </div>
   ),
 }));
 vi.mock('../components/SecurityMatrixVisualizer', () => ({
-  SecurityMatrixVisualizer: ({ authors, mappings, onToggle, onSave }: any) => (
+  SecurityMatrixVisualizer: ({ authors, mappings, onToggle, onSave, isSaving, isDisabled }: any) => (
     <div>
       <span>매트릭스 역할 {authors.length}, 매핑 {mappings.size}</span>
       <button type="button" onClick={() => onToggle('ROLE_ADMIN', 2)}>전역 메뉴 토글</button>
-      <button type="button" onClick={onSave}>전역 정책 저장</button>
+      <button
+        type="button"
+        aria-busy={isSaving || undefined}
+        disabled={isSaving || isDisabled}
+        onClick={onSave}
+      >
+        {isSaving ? '전역 정책 저장 중…' : '전역 정책 저장'}
+      </button>
     </div>
   ),
 }));
@@ -150,13 +170,30 @@ function renderClient(query = '') {
     status: 'fulfilled',
     value: initialPage,
   });
-  return render(
+  const clientElement = () => (
     <QueryClientProvider client={client}>
       <Suspense fallback={<span>권한 로딩</span>}>
         <SecurityHubClient authoritiesPromise={authoritiesPromise as any} />
       </Suspense>
-    </QueryClientProvider>,
+    </QueryClientProvider>
   );
+  const rendered = render(clientElement());
+  return Object.assign(rendered, {
+    rerenderClient(nextQuery: string) {
+      mocks.query = nextQuery;
+      rendered.rerender(clientElement());
+    },
+  });
+}
+
+function deferred<T>() {
+  let resolve: (value: T) => void = () => undefined;
+  let reject: (reason?: unknown) => void = () => undefined;
+  const promise = new Promise<T>((next, fail) => {
+    resolve = next;
+    reject = fail;
+  });
+  return { promise, reject, resolve };
 }
 
 describe('SecurityHubClient', () => {
@@ -195,6 +232,71 @@ describe('SecurityHubClient', () => {
     await waitFor(() => expect(mocks.saveMenus).toHaveBeenCalledWith('ROLE_ADMIN', [1, 2]));
   });
 
+  it('사용자 매핑 저장은 같은 tick 중복 요청을 막고 pending·실패 상태를 안내한다', async () => {
+    const pending = deferred<void>();
+    mocks.deleteUsers.mockReturnValueOnce(pending.promise);
+    renderClient();
+    expect(await screen.findByText('관리자')).toBeInTheDocument();
+
+    fireEvent.click(within(screen.getByTestId('table-authrtCd')).getByRole('button', { name: '관리자 역할 선택' }));
+    fireEvent.click(await within(screen.getByTestId('table-scrtyDcsnTrgtId')).findByRole('button', {
+      name: '관리자 계정 사용자 할당 해제',
+    }));
+    const submit = screen.getByRole('button', { name: '사용자 할당 저장' });
+
+    act(() => {
+      submit.click();
+      submit.click();
+    });
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.deleteUsers).toHaveBeenCalledTimes(1));
+    const busy = screen.getByRole('button', { name: '사용자 할당 저장 중…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    const remove = screen.getByRole('button', { name: '관리자 역할 삭제' });
+    expect(remove).toBeDisabled();
+    fireEvent.click(remove);
+    expect(mocks.deleteAuthor).not.toHaveBeenCalled();
+
+    await act(async () => pending.reject(new Error('사용자 매핑 저장 장애')));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      '권한 할당 저장에 실패했습니다. 잠시 후 다시 시도해주세요.',
+      'error',
+    ));
+  });
+
+  it('메뉴 매핑 저장은 같은 tick 중복 요청을 막고 pending·실패 상태를 안내한다', async () => {
+    const pending = deferred<void>();
+    mocks.saveMenus.mockReturnValueOnce(pending.promise);
+    renderClient();
+    expect(await screen.findByText('관리자')).toBeInTheDocument();
+
+    fireEvent.click(within(screen.getByTestId('table-authrtCd')).getByRole('button', { name: '관리자 역할 선택' }));
+    fireEvent.click(await screen.findByRole('button', { name: '사용자 관리 메뉴 접근 권한 부여' }));
+    const submit = screen.getByRole('button', { name: '메뉴 권한 저장' });
+
+    act(() => {
+      submit.click();
+      submit.click();
+    });
+
+    await waitFor(() => expect(mocks.saveMenus).toHaveBeenCalledTimes(1));
+    const busy = screen.getByRole('button', { name: '메뉴 권한 저장 중…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    const remove = screen.getByRole('button', { name: '관리자 역할 삭제' });
+    expect(remove).toBeDisabled();
+    fireEvent.click(remove);
+    expect(mocks.deleteAuthor).not.toHaveBeenCalled();
+
+    await act(async () => pending.reject(new Error('메뉴 매핑 저장 장애')));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      '메뉴 접근 권한 저장에 실패했습니다. 잠시 후 다시 시도해주세요.',
+      'error',
+    ));
+  });
+
   it('creates, edits and deletes the exact role selected by each action', async () => {
     renderClient();
     expect(await screen.findByText('관리자')).toBeInTheDocument();
@@ -211,6 +313,106 @@ describe('SecurityHubClient', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '사용자 역할 삭제' }));
     await waitFor(() => expect(mocks.deleteAuthor).toHaveBeenCalledWith('ROLE_USER'));
+  });
+
+  it('권한 삭제를 동기 잠금하고 세 매핑 저장을 차단하며 실패 시 선택 상태를 복구한다', async () => {
+    const pending = deferred<void>();
+    mocks.deleteAuthor.mockReturnValueOnce(pending.promise);
+    const rendered = renderClient();
+    expect(await screen.findByText('관리자')).toBeInTheDocument();
+    fireEvent.click(within(screen.getByTestId('table-authrtCd')).getByRole('button', { name: '관리자 역할 선택' }));
+    await screen.findByText('관리자 계정');
+    fireEvent.click(screen.getByRole('button', { name: '관리자 역할 수정' }));
+    const authorForm = screen.getByRole('region', { name: '보안 역할 아키텍처 상세 수정' });
+    const authorSubmit = within(authorForm).getByRole('button', { name: '역할 폼 저장' });
+    const authorCancel = within(authorForm).getByRole('button', { name: '역할 폼 취소' });
+    const remove = screen.getByRole('button', { name: '관리자 역할 삭제' });
+
+    act(() => {
+      remove.click();
+      remove.click();
+    });
+
+    await waitFor(() => expect(mocks.deleteAuthor).toHaveBeenCalledTimes(1));
+    const busy = screen.getByRole('button', { name: '관리자 역할 삭제 중' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    expect(screen.getByRole('button', { name: '사용자 할당 저장' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '메뉴 권한 저장' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /신규 보안 아키텍처 설정/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '관리자 역할 수정' })).toBeDisabled();
+    expect(authorSubmit).toBeDisabled();
+    expect(authorCancel).toBeDisabled();
+    act(() => {
+      authorSubmit.click();
+      authorCancel.click();
+      within(authorForm).getByRole('button', { name: '모달 닫기' }).click();
+    });
+    expect(mocks.updateAuthor).not.toHaveBeenCalled();
+    expect(authorForm).toBeInTheDocument();
+
+    rendered.rerenderClient('view=matrix');
+    await screen.findByText(/매트릭스 역할 2/);
+    fireEvent.click(screen.getByRole('button', { name: '전역 메뉴 토글' }));
+    const globalSave = screen.getByRole('button', { name: '전역 정책 저장' });
+    expect(globalSave).toBeDisabled();
+    fireEvent.click(globalSave);
+    expect(mocks.saveMenus).not.toHaveBeenCalled();
+
+    await act(async () => pending.reject(new Error('권한 삭제 API 장애')));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('삭제 중 오류가 발생했습니다.', 'error'));
+    expect(globalSave).toBeEnabled();
+    rendered.rerenderClient('');
+    expect(await screen.findByText('관리자')).toBeVisible();
+    expect(screen.getByRole('button', { name: '관리자 역할 삭제' })).toBeEnabled();
+  });
+
+  it('권한 저장 pending은 delete와 취소를 막고 서버 필드 오류 뒤 폼 상태를 복구한다', async () => {
+    const serverError = {
+      response: {
+        data: {
+          errors: [{ field: 'authrtNm', message: '이미 사용 중인 역할 명칭입니다.' }],
+        },
+      },
+    };
+    const pending = deferred<void>();
+    mocks.createAuthor.mockReturnValueOnce(pending.promise);
+    renderClient();
+    expect(await screen.findByText('관리자')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: /신규 보안 아키텍처 설정/ }));
+    const authorForm = screen.getByRole('region', { name: '신규 권한 등록' });
+    const submit = within(authorForm).getByRole('button', { name: '역할 폼 저장' });
+    const cancel = within(authorForm).getByRole('button', { name: '역할 폼 취소' });
+    act(() => {
+      submit.click();
+      submit.click();
+    });
+
+    await waitFor(() => expect(mocks.createAuthor).toHaveBeenCalledTimes(1));
+    const busy = within(authorForm).getByRole('button', { name: '역할 폼 저장 중…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+    expect(cancel).toBeDisabled();
+    expect(screen.getByRole('button', { name: /신규 보안 아키텍처 설정/ })).toBeDisabled();
+    const remove = screen.getByRole('button', { name: '관리자 역할 삭제' });
+    expect(remove).toBeDisabled();
+    act(() => {
+      remove.click();
+      cancel.click();
+      within(authorForm).getByRole('button', { name: '모달 닫기' }).click();
+    });
+    expect(mocks.deleteAuthor).not.toHaveBeenCalled();
+    expect(authorForm).toBeInTheDocument();
+
+    await act(async () => pending.reject(serverError));
+
+    await waitFor(() => expect(mocks.authorFormError).toHaveBeenCalledWith(serverError));
+    expect(mocks.toast).not.toHaveBeenCalledWith(expect.any(String), 'error');
+    expect(authorForm).toBeInTheDocument();
+    expect(within(authorForm).getByRole('button', { name: '역할 폼 저장' })).toBeEnabled();
+    expect(cancel).toBeEnabled();
+    expect(remove).toBeEnabled();
   });
 
   it('syncs role search, paging and view changes to the URL', async () => {
@@ -245,6 +447,37 @@ describe('SecurityHubClient', () => {
     expect(mocks.saveMenus).toHaveBeenCalledTimes(1);
     expect(mocks.saveMenus).toHaveBeenCalledWith('ROLE_ADMIN', expect.arrayContaining([2]));
     expect(mocks.toast).toHaveBeenCalledWith('권한 1건의 메뉴 접근 정책을 저장했습니다.', 'success');
+  });
+
+  it('handleSaveGlobal 전역 매핑 저장은 같은 tick 중복 요청을 막고 pending·실패 상태를 안내한다', async () => {
+    const pending = deferred<void>();
+    mocks.saveMenus.mockReturnValueOnce(pending.promise);
+    const rendered = renderClient('view=matrix');
+    expect(await screen.findByText(/매트릭스 역할 2/)).toBeInTheDocument();
+    await waitFor(() => expect(mocks.getAuthorMenus).toHaveBeenCalledTimes(2));
+
+    fireEvent.click(screen.getByRole('button', { name: '전역 메뉴 토글' }));
+    const submit = screen.getByRole('button', { name: '전역 정책 저장' });
+    act(() => {
+      submit.click();
+      submit.click();
+    });
+
+    await waitFor(() => expect(mocks.saveMenus).toHaveBeenCalledTimes(1));
+    const busy = screen.getByRole('button', { name: '전역 정책 저장 중…' });
+    expect(busy).toBeDisabled();
+    expect(busy).toHaveAttribute('aria-busy', 'true');
+
+    rendered.rerenderClient('');
+    expect(await screen.findByText('관리자')).toBeVisible();
+    const remove = screen.getByRole('button', { name: '관리자 역할 삭제' });
+    expect(remove).toBeDisabled();
+    fireEvent.click(remove);
+    expect(mocks.deleteAuthor).not.toHaveBeenCalled();
+
+    await act(async () => pending.reject(new Error('전역 매핑 저장 장애')));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('글로벌 정책 저장 중 오류가 발생했습니다.', 'error'));
+    expect(remove).toBeEnabled();
   });
 
   it('변경이 없으면 전역 매트릭스를 저장하지 않는다', async () => {

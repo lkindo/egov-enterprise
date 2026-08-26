@@ -14,6 +14,8 @@ const mocks = vi.hoisted(() => ({
   saveHierarchy: vi.fn(),
   useSortable: vi.fn(),
   reset: vi.fn(),
+  applyServerErrors: vi.fn(),
+  focusError: vi.fn(),
   announce: vi.fn(),
   isSubmitting: false,
 }));
@@ -50,6 +52,8 @@ vi.mock('@/hooks/useAppForm', () => ({
     reset: mocks.reset,
     handleSubmit: (submit: (values: any) => unknown) => () => submit(formValues),
     formState: { isSubmitting: mocks.isSubmitting },
+    applyServerErrors: mocks.applyServerErrors,
+    focusError: mocks.focusError,
   }),
 }));
 
@@ -62,6 +66,7 @@ vi.mock('@/components/ui/form', () => ({
   FormItem: ({ children }: any) => <div>{children}</div>,
   FormLabel: ({ children }: any) => <label>{children}</label>,
   FormMessage: () => null,
+  FormErrorSummary: () => <div data-testid="common-code-form-error-summary" />,
 }));
 
 vi.mock('@/components/ui/select', () => ({
@@ -200,6 +205,16 @@ function renderClient(
   };
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((nextResolve, nextReject) => {
+    resolve = nextResolve;
+    reject = nextReject;
+  });
+  return { promise, resolve, reject };
+}
+
 describe('CommonCodeClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -208,6 +223,7 @@ describe('CommonCodeClient', () => {
     mocks.saveDetail.mockResolvedValue({ success: true, message: '코드 저장 완료' });
     mocks.deleteDetail.mockResolvedValue({ success: true, message: '코드 삭제 완료' });
     mocks.saveHierarchy.mockResolvedValue({ success: true, message: '계층 저장 완료' });
+    mocks.applyServerErrors.mockReturnValue(true);
     mocks.isSubmitting = false;
     mocks.useSortable.mockImplementation(() => ({
       attributes: {}, listeners: {}, setNodeRef: vi.fn(), transform: null,
@@ -445,11 +461,7 @@ describe('CommonCodeClient', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '신규 상세 코드 등록' }));
     const createModal = screen.getByRole('region', { name: '신규 명세 등록' });
-    expect(within(createModal).getAllByText('*')).toHaveLength(2);
-    within(createModal).getAllByText('*').forEach((requiredMark) => {
-      expect(requiredMark).toHaveClass('text-destructive-emphasis');
-      expect(requiredMark).not.toHaveClass('text-destructive');
-    });
+    expect(within(createModal).getByTestId('common-code-form-error-summary')).toBeInTheDocument();
     expect(within(createModal).getByPlaceholderText(/코드 사용처 및 시스템 제약 조건 설명/))
       .toHaveClass('focus-visible:ring-2', 'focus-visible:ring-ring');
     fireEvent.click(within(createModal).getByRole('button', { name: /저장$/ }));
@@ -460,6 +472,65 @@ describe('CommonCodeClient', () => {
     fireEvent.click(screen.getByRole('button', { name: '중지 코드 삭제' }));
     await waitFor(() => expect(mocks.deleteDetail).toHaveBeenCalledWith(null, { cdId: 'GRP1', dtlCd: 'STOP' }));
     expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ message: expect.stringContaining('중지') }));
+  });
+
+  it('상세 코드 삭제는 같은 tick 중복 실행을 막고 pending·실패를 안내한다', async () => {
+    const pending = deferred<{ success: boolean; message: string }>();
+    mocks.deleteDetail.mockReturnValueOnce(pending.promise);
+    renderClient();
+    const deleteButton = await screen.findByRole('button', { name: '중지 코드 삭제' });
+
+    act(() => {
+      deleteButton.click();
+      deleteButton.click();
+    });
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.deleteDetail).toHaveBeenCalledTimes(1));
+    const pendingButton = screen.getByRole('button', { name: '중지 코드 삭제 중…' });
+    expect(pendingButton).toBeDisabled();
+    expect(pendingButton).toHaveAttribute('aria-busy', 'true');
+
+    await act(async () => pending.reject(new Error('network down')));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('네트워크 오류가 발생했습니다.', 'error'));
+  });
+
+  it('상세 코드 삭제 중에는 신규 등록·수정으로 작업 대상을 바꾸지 않는다', async () => {
+    const pending = deferred<{ success: boolean; message: string }>();
+    mocks.deleteDetail.mockReturnValueOnce(pending.promise);
+    renderClient();
+    const deleteButton = await screen.findByRole('button', { name: '중지 코드 삭제' });
+
+    fireEvent.click(deleteButton);
+    await waitFor(() => expect(mocks.deleteDetail).toHaveBeenCalledTimes(1));
+
+    const createButton = screen.getByRole('button', { name: '신규 상세 코드 등록' });
+    const editButton = screen.getByRole('button', { name: '활성 코드 수정' });
+    expect(createButton).toBeDisabled();
+    expect(editButton).toBeDisabled();
+    fireEvent.click(createButton);
+    fireEvent.click(editButton);
+    expect(screen.queryByRole('region', { name: /명세/ })).not.toBeInTheDocument();
+
+    await act(async () => pending.reject(new Error('delete failed')));
+    await waitFor(() => expect(createButton).toBeEnabled());
+  });
+
+  it('maps server-action field errors back to the editable detail form', async () => {
+    mocks.saveDetail.mockResolvedValueOnce({
+      success: false,
+      message: '입력값을 확인해 주세요.',
+      fieldErrors: { dtlCdNm: '코드 명칭은 이미 사용 중입니다.' },
+    });
+    renderClient();
+    expect(await screen.findByText('활성')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: '신규 상세 코드 등록' }));
+    fireEvent.click(within(screen.getByRole('region', { name: '신규 명세 등록' })).getByRole('button', { name: /저장$/ }));
+
+    await waitFor(() => expect(mocks.applyServerErrors).toHaveBeenCalledWith(expect.objectContaining({
+      fieldErrors: { dtlCdNm: '코드 명칭은 이미 사용 중입니다.' },
+    })));
+    expect(mocks.toast).not.toHaveBeenCalledWith('입력값을 확인해 주세요.', 'error');
   });
 
   it('keeps the modal save target bound to the group that opened it', async () => {
@@ -502,6 +573,44 @@ describe('CommonCodeClient', () => {
     expect(screen.queryByRole('region', { name: '신규 명세 등록' })).not.toBeInTheDocument();
   });
 
+  it('상세 저장 중 취소·삭제를 막고 structured 오류 뒤에도 modal·값·summary를 보존한다', async () => {
+    const pending = deferred<{ success: boolean; message: string; fieldErrors?: Record<string, string> }>();
+    mocks.saveDetail.mockReturnValueOnce(pending.promise);
+    renderClient();
+    expect(await screen.findByText('활성')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: '활성 코드 수정' }));
+    const modal = screen.getByRole('region', { name: '아키텍처 명세 수정' });
+    const saveButton = within(modal).getByRole('button', { name: /저장$/ });
+    const cancelButton = within(modal).getByRole('button', { name: '취소' });
+
+    act(() => {
+      saveButton.click();
+      cancelButton.click();
+      within(modal).getByRole('button', { name: '모달 닫기 요청' }).click();
+    });
+
+    await waitFor(() => expect(mocks.saveDetail).toHaveBeenCalledTimes(1));
+    expect(cancelButton).toBeDisabled();
+    const deleteButton = screen.getByRole('button', { name: '중지 코드 삭제' });
+    expect(deleteButton).toBeDisabled();
+    fireEvent.click(deleteButton);
+    expect(mocks.deleteDetail).not.toHaveBeenCalled();
+
+    await act(async () => pending.resolve({
+      success: false,
+      message: '입력값을 확인하세요.',
+      fieldErrors: { dtlCdNm: '이미 사용 중인 코드 명칭입니다.' },
+    }));
+
+    await waitFor(() => expect(mocks.applyServerErrors).toHaveBeenCalledWith(expect.objectContaining({
+      fieldErrors: { dtlCdNm: '이미 사용 중인 코드 명칭입니다.' },
+    })));
+    const preservedModal = screen.getByRole('region', { name: '아키텍처 명세 수정' });
+    expect(within(preservedModal).getByTestId('common-code-form-error-summary')).toBeInTheDocument();
+    expect(within(preservedModal).getByPlaceholderText(/레이블 명칭 입력/)).toHaveValue('신규 코드');
+    expect(within(preservedModal).getByRole('button', { name: '취소' })).toBeEnabled();
+  });
+
   it('moves a group to another classification and persists only that membership', async () => {
     const view = renderClient(null);
     const saveButton = screen.getByRole('button', { name: '그룹 소속 저장' });
@@ -522,30 +631,33 @@ describe('CommonCodeClient', () => {
     expect(mocks.refresh).toHaveBeenCalled();
   });
 
-  it('blocks additional group moves while a hierarchy save is in flight', async () => {
-    let resolveSave: ((result: { success: boolean; message: string }) => void) | undefined;
-    mocks.saveHierarchy.mockImplementation(() => new Promise((resolve) => {
-      resolveSave = resolve;
+  it('blocks additional group moves while a hierarchy save is in flight and reports failure', async () => {
+    let rejectSave: ((reason?: unknown) => void) | undefined;
+    mocks.saveHierarchy.mockImplementation(() => new Promise((_resolve, reject) => {
+      rejectSave = reject;
     }));
     renderClient(null);
 
     fireEvent.click(screen.getByRole('button', { name: '드래그 시작' }));
     fireEvent.click(screen.getByRole('button', { name: '다른 분류로 드래그 완료' }));
-    fireEvent.click(screen.getByRole('button', { name: '그룹 소속 저장' }));
+    const saveButton = screen.getByRole('button', { name: '그룹 소속 저장' });
+    act(() => {
+      saveButton.click();
+      saveButton.click();
+    });
+    await waitFor(() => expect(mocks.saveHierarchy).toHaveBeenCalledTimes(1));
     const savingButton = await screen.findByRole('button', { name: '그룹 소속 저장 중…' });
     expect(savingButton).toBeDisabled();
+    expect(savingButton).toHaveAttribute('aria-busy', 'true');
     expect(screen.getByRole('button', { name: '게시 상태 (GRP2) 소속 분류 이동 핸들 — 현재 업무 도메인 분류' })).toBeDisabled();
 
     fireEvent.click(screen.getByRole('button', { name: '두 번째 그룹 드래그 시작' }));
     fireEvent.click(screen.getByRole('button', { name: '두 번째 그룹 드래그 완료' }));
-    await act(async () => {
-      resolveSave?.({ success: true, message: '계층 저장 완료' });
-    });
+    await act(async () => rejectSave?.(new Error('hierarchy unavailable')));
 
-    await waitFor(() => expect(mocks.refresh).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('button', { name: '기타 분류 (OTHER) 선택' }));
-    expect(within(screen.getByTestId('master-detail-detail')).getByText('1개')).toBeVisible();
-    expect(screen.getByRole('button', { name: '그룹 소속 저장' })).toBeDisabled();
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('그룹 소속 저장 중 오류 발생', 'error'));
+    expect(mocks.refresh).not.toHaveBeenCalled();
+    expect(screen.getByRole('button', { name: '그룹 소속 저장' })).toBeEnabled();
   });
 
   it('does not mark same-classification drops as persistable order changes', () => {

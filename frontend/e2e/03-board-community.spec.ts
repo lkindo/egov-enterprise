@@ -319,6 +319,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
             // ── 삭제 (네이티브 confirm 을 쓴다 — 클릭 전에 핸들러를 걸어야 한다)
             page.once('dialog', (dialog) => dialog.accept());
             const deleteBtn = page.getByTestId('comment-delete-button').first();
+            await expect(deleteBtn).toBeEnabled({ timeout: 15000 });
             await deleteBtn.hover();
             await deleteBtn.click({ force: true });
 

@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { Program } from '@/types/foundation/program';
-import { PageResponse } from '@/types/foundation/system';
+import type { PageResponse, ProgrmManage } from '@/types/foundation/system';
 import { programAdminService } from '@/services/foundation/system/ProgramAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Plus,
+ Loader2,
  Trash2,
  Settings,
  Cpu,
@@ -22,22 +23,9 @@ import {
  TooltipContent,
  TooltipTrigger,
 } from "@/components/ui/tooltip";
-;
 import { ProgramForm } from '@/components/admin/system/ProgramForm';
-import { z } from 'zod';
-import { useAppForm } from '@/hooks/useAppForm';
-
-import { ProgramDtoSchema } from '@/types/generated-zod';
 
 import { extractErrorMessage } from '@/app/actions/actionUtils';
-const programSchema = ProgramDtoSchema.extend({
- prgrmFileNm: z.string().min(1).max(60),
- prgrmStrgPath: z.string().max(100).optional().or(z.literal('')),
- prgrmKornNm: z.string().min(1).max(60),
- url: z.string().min(1).startsWith('/', 'URL은 /로 시작해야 합니다.').max(100),
- prgrmExpln: z.string().max(200).optional().or(z.literal('')),
-});
-
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
@@ -78,17 +66,19 @@ export default function ProgramAdminClient({
  const confirm = useConfirm();
 
  const [isModalOpen, setIsOpen] = useState(false);
+ const programWritePendingRef = useRef(false);
+ const [deletingProgramFileName, setDeletingProgramFileName] = useState<string | null>(null);
  const [mode, setMode] = useState<'create' | 'edit'>('create');
- 
- const form = useAppForm(programSchema, {
- defaultValues: {
- prgrmFileNm: '',
- prgrmStrgPath: '',
- prgrmKornNm: '',
- url: '',
- prgrmExpln: ''
+ const [editingProgram, setEditingProgram] = useState<Program | null>(null);
+ const editingProgramFormData: ProgrmManage | undefined = editingProgram
+ ? {
+ prgrmFileNm: editingProgram.prgrmFileNm,
+ prgrmStrgPath: editingProgram.prgrmStrgPath,
+ prgrmKornNm: editingProgram.prgrmKornNm,
+ prgrmExpln: editingProgram.prgrmExpln ?? '',
+ url: editingProgram.url,
  }
- });
+ : undefined;
 
  const [data, setData] = useState<Program[]>(() => {
  return (initialData?.list || []) as Program[];
@@ -142,18 +132,24 @@ export default function ProgramAdminClient({
 
  /** 검색은 항상 1페이지부터 — 3페이지에서 검색하면 빈 화면이 되는 결함 방지. */
  const handleOpenCreate = () => {
+ if (programWritePendingRef.current || isModalOpen) return;
  setMode('create');
- form.reset({ prgrmFileNm: '', prgrmStrgPath: '', prgrmKornNm: '', url: '', prgrmExpln: '' });
+ setEditingProgram(null);
  setIsOpen(true);
  };
 
  const handleOpenEdit = (program: Program) => {
+ if (programWritePendingRef.current || isModalOpen) return;
  setMode('edit');
- form.reset(program);
+ setEditingProgram(program);
  setIsOpen(true);
  };
 
  const handleDelete = async (program: Program) => {
+ if (programWritePendingRef.current || isModalOpen) return;
+ programWritePendingRef.current = true;
+ setDeletingProgramFileName(program.prgrmFileNm);
+ try {
  const isConfirmed = await confirm({
  title: '프로그램 삭제',
  message: `[${program.prgrmKornNm}] (${program.prgrmFileNm}) 프로그램을 삭제하시겠습니까? 해당 프로그램과 연결된 모든 메뉴 연동이 해제될 수 있습니다.`,
@@ -161,14 +157,21 @@ export default function ProgramAdminClient({
  confirmText: '삭제 실행'
  });
  if (isConfirmed) {
- try {
  await programAdminService.deleteProgram(program.prgrmFileNm);
  toast('프로그램이 삭제되었습니다.', 'success');
  loadData(currentSearchWrd, page);
+ }
  } catch (err) {
  toast(extractErrorMessage(err, '삭제 중 오류가 발생했습니다.'), 'error');
+ } finally {
+ programWritePendingRef.current = false;
+ setDeletingProgramFileName(null);
  }
- }
+ };
+
+ const closeProgramModal = () => {
+ if (programWritePendingRef.current) return;
+ setIsOpen(false);
  };
 
  const columns: Column<Program>[] = [
@@ -213,12 +216,14 @@ export default function ProgramAdminClient({
  {
  header: '관리',
  className: 'text-right w-32',
- accessor: (item: Program) => (
+ accessor: (item: Program) => {
+ const isDeleting = deletingProgramFileName === item.prgrmFileNm;
+ return (
  <div className="flex justify-end gap-2 pr-4">
  <Tooltip>
  <TooltipTrigger asChild>
- <Button size="icon" aria-label={`${item.prgrmKornNm} 프로그램 수정`} className="h-10 w-10 rounded-lg bg-muted border border-border text-muted-foreground hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
- <Settings size={16} />
+ <Button size="icon" aria-label={`${item.prgrmKornNm} 프로그램 수정`} disabled={deletingProgramFileName !== null || isModalOpen} className="h-10 w-10 rounded-lg bg-muted border border-border text-muted-foreground hover:bg-primary hover:border-primary hover:text-white transition-all" onClick={() => handleOpenEdit(item)}>
+ <Settings size={16} aria-hidden="true" />
  </Button>
  </TooltipTrigger>
  <TooltipContent side="top" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase">
@@ -228,8 +233,17 @@ export default function ProgramAdminClient({
 
  <Tooltip>
  <TooltipTrigger asChild>
- <Button size="icon" aria-label={`${item.prgrmKornNm} 프로그램 삭제`} className="h-10 w-10 text-rose-500 bg-rose-50 border border-rose-100 hover:bg-rose-500 hover:text-white transition-all rounded-lg" onClick={() => handleDelete(item)}>
- <Trash2 size={16} />
+ <Button
+ size="icon"
+ aria-label={`${item.prgrmKornNm} 프로그램 ${isDeleting ? '삭제 중…' : '삭제'}`}
+ aria-busy={isDeleting || undefined}
+ disabled={deletingProgramFileName !== null || isModalOpen}
+ className="h-10 w-10 text-destructive-emphasis bg-destructive/10 border border-destructive/20 hover:bg-destructive hover:text-destructive-foreground transition-all rounded-lg"
+ onClick={() => handleDelete(item)}
+ >
+ {isDeleting
+ ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
+ : <Trash2 size={16} aria-hidden="true" />}
  </Button>
  </TooltipTrigger>
  <TooltipContent side="top" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-widest uppercase text-rose-300">
@@ -237,7 +251,8 @@ export default function ProgramAdminClient({
  </TooltipContent>
  </Tooltip>
  </div>
- )
+ );
+ }
  }
  ];
 
@@ -249,7 +264,7 @@ export default function ProgramAdminClient({
  filterStateKey="system-programs"
  totalCount={error ? undefined : total}
  actions={
- <Button size="sm" onClick={handleOpenCreate} className="gap-2">
+ <Button size="sm" onClick={handleOpenCreate} disabled={deletingProgramFileName !== null || isModalOpen} className="gap-2">
  <Plus size={16} aria-hidden="true" /> 신규 등록
  </Button>
  }
@@ -282,14 +297,15 @@ export default function ProgramAdminClient({
 
  <StandardModal
  isOpen={isModalOpen}
- onClose={() => setIsOpen(false)}
+ onClose={closeProgramModal}
  title={mode === 'create' ? '신규 프로그램 등록' : '프로그램 정보 수정'}
  maxWidth="2xl"
  >
  <ProgramForm 
  open={isModalOpen}
  onOpenChange={setIsOpen}
- data={mode === 'edit' ? (form.getValues() as any) : undefined}
+ onWritePendingChange={(pending) => { programWritePendingRef.current = pending; }}
+ data={mode === 'edit' ? editingProgramFormData : undefined}
  onSuccess={() => {
  loadData(currentSearchWrd, page);
  setIsOpen(false);

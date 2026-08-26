@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,10 +25,22 @@ import { Textarea } from "@/components/ui/textarea";
 ;
 ;
 import { format } from "date-fns";
-import { Pencil,  Trash2,  Plus } from "lucide-react";
+import { Loader2, Pencil,  Trash2,  Plus } from "lucide-react";
 import { getDeptScheduleList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule/deptScheduleService';
 import { DeptSchedule, ScheduleSearchParams } from '@/types/business/schedule';
 import { toast } from 'sonner';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { deptScheduleFormSchema } from './schedule-form-validation';
+
+const SCHEDULE_FORM_LABELS = {
+    schdlNm: '일정명',
+    schdlCn: '내용',
+    schdlBgngYmd: '시작일',
+    schdlEndYmd: '종료일',
+    schdlPlcNm: '장소',
+};
 
 /**
  * 일정 날짜 컬럼(schdl_bgng_ymd / schdl_end_ymd)은 varchar(8) 'yyyyMMdd' 다.
@@ -64,6 +76,10 @@ export default function ScheduleDeptClient() {
         schdlNm: '',
     });
     const [isDialogOpen, setIsDialogOpen] = useState(false);
+    const [isSaving, setIsSaving] = useState(false);
+    const savingRef = useRef(false);
+    const [deletingScheduleSn, setDeletingScheduleSn] = useState<number | null>(null);
+    const deletePendingRef = useRef(false);
     const [editingSchedule, setEditingSchedule] = useState<DeptSchedule | null>(null);
     const [formData, setFormData] = useState<Partial<DeptSchedule>>({
         schdlNm: '',
@@ -75,6 +91,9 @@ export default function ScheduleDeptClient() {
         // [필수] 이 화면은 '부서 일정'이고 GET /schedules/dept 는 schdlSeCd='1' 로 필터한다.
         //   종전에는 이 값을 보내지 않아 null 로 저장됐고, 등록에 성공해도 목록에 영영 나타나지 않았다.
         schdlSeCd: '1',
+    });
+    const validation = useManualFormValidation(deptScheduleFormSchema, {
+        labels: SCHEDULE_FORM_LABELS,
     });
 
     const fetchList = useCallback(async () => {
@@ -102,6 +121,7 @@ export default function ScheduleDeptClient() {
     };
 
     const handleCreate = () => {
+        if (savingRef.current || deletePendingRef.current) return;
         setEditingSchedule(null);
         setFormData({
             schdlNm: '',
@@ -112,44 +132,83 @@ export default function ScheduleDeptClient() {
             schdlImprtCd: 'A',
             schdlSeCd: '1', // 부서 일정 — GET /schedules/dept 의 필터 조건
         });
+        validation.setFormErrors({}, false);
         setIsDialogOpen(true);
     };
 
     const handleEdit = (schedule: DeptSchedule) => {
+        if (savingRef.current || deletePendingRef.current) return;
         setEditingSchedule(schedule);
         setFormData(schedule);
+        validation.setFormErrors({}, false);
         setIsDialogOpen(true);
     };
 
     const handleDelete = async (schdlSn: number) => {
-        if (!confirm('정말 삭제하시겠습니까?')) return;
+        if (deletePendingRef.current || savingRef.current) return;
+        deletePendingRef.current = true;
+        setDeletingScheduleSn(schdlSn);
         try {
+            if (!confirm('정말 삭제하시겠습니까?')) return;
             await deleteDeptSchedule(schdlSn);
-            fetchList();
+            await fetchList();
         } catch {
             toast.error('삭제 중 오류가 발생했습니다.');
+        } finally {
+            deletePendingRef.current = false;
+            setDeletingScheduleSn(null);
         }
     };
 
     const handleSubmit = async () => {
+        if (savingRef.current || deletePendingRef.current) return;
+        const validated = validation.validate({
+            ...formData,
+            schdlSeCd: formData.schdlSeCd ?? '1',
+            schdlNm: formData.schdlNm ?? '',
+            schdlCn: formData.schdlCn ?? '',
+            schdlBgngYmd: formData.schdlBgngYmd ?? '',
+            schdlEndYmd: formData.schdlEndYmd ?? '',
+            schdlPlcNm: formData.schdlPlcNm ?? '',
+        });
+        if (!validated) return;
+
+        savingRef.current = true;
+        setIsSaving(true);
         try {
             if (editingSchedule && editingSchedule.schdlSn) {
-                await updateDeptSchedule(editingSchedule.schdlSn, formData as DeptSchedule);
+                await updateDeptSchedule(editingSchedule.schdlSn, validated);
             } else {
-                await createDeptSchedule(formData as DeptSchedule);
+                await createDeptSchedule(validated);
             }
             setIsDialogOpen(false);
+            validation.setFormErrors({}, false);
             fetchList();
-        } catch {
-            toast.error('저장 중 오류가 발생했습니다.');
+        } catch (error) {
+            const fieldErrors = extractFieldErrors(error);
+            if (fieldErrors) validation.setFormErrors(fieldErrors);
+            else toast.error('저장 중 오류가 발생했습니다.');
+        } finally {
+            savingRef.current = false;
+            setIsSaving(false);
         }
+    };
+
+    const handleDialogOpenChange = (nextOpen: boolean) => {
+        if (savingRef.current || deletePendingRef.current) return;
+        setIsDialogOpen(nextOpen);
+        if (!nextOpen) validation.setFormErrors({}, false);
     };
 
     return (
         <div className="space-y-6 p-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-2xl font-bold tracking-tight">부서 일정 관리</h1>
-                <Button onClick={handleCreate} className="rounded-lg shadow-lg font-bold">
+                <Button
+                    onClick={handleCreate}
+                    disabled={isSaving || deletingScheduleSn !== null}
+                    className="rounded-lg shadow-lg font-bold"
+                >
                     <Plus className="mr-2 h-4 w-4" />
                     일정 등록
                 </Button>
@@ -210,7 +269,9 @@ export default function ScheduleDeptClient() {
                                     </TableCell>
                                 </TableRow>
                         ) : (
-                            schedules.map((schedule, index) => (
+                            schedules.map((schedule, index) => {
+                                const isDeleting = deletingScheduleSn === schedule.schdlSn;
+                                return (
                                 <TableRow key={schedule.schdlSn} className="hover:bg-muted/50 transition-colors">
                                     <TableCell className="text-center font-mono text-muted-foreground">{index + 1}</TableCell>
                                     <TableCell className="font-bold text-foreground">{schedule.schdlNm}</TableCell>
@@ -220,82 +281,144 @@ export default function ScheduleDeptClient() {
                                     <TableCell className="text-sm text-muted-foreground font-medium">{schedule.schdlPlcNm}</TableCell>
                                     <TableCell className="text-center">
                                         <div className="flex justify-center gap-1">
-                                            <Button variant="ghost" size="icon" onClick={() => handleEdit(schedule)} aria-label={`${schedule.schdlNm || '일정'} 수정`} className="rounded-lg hover:bg-primary/10">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => handleEdit(schedule)}
+                                                disabled={isSaving || deletingScheduleSn !== null}
+                                                aria-label={`${schedule.schdlNm || '일정'} 수정`}
+                                                className="rounded-lg hover:bg-primary/10"
+                                            >
                                                 <Pencil className="h-4 w-4 text-primary" />
                                             </Button>
-                                            <Button variant="ghost" size="icon" onClick={() => handleDelete(schedule.schdlSn!)} aria-label={`${schedule.schdlNm || '일정'} 삭제`} className="rounded-lg hover:bg-destructive/10">
-                                                <Trash2 className="h-4 w-4 text-destructive-emphasis" />
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                onClick={() => { void handleDelete(schedule.schdlSn!); }}
+                                                disabled={isSaving || deletingScheduleSn !== null}
+                                                aria-busy={isDeleting || undefined}
+                                                aria-label={isDeleting ? `${schedule.schdlNm || '일정'} 삭제 중` : `${schedule.schdlNm || '일정'} 삭제`}
+                                                className="rounded-lg hover:bg-destructive/10"
+                                            >
+                                                {isDeleting
+                                                    ? <Loader2 className="h-4 w-4 animate-spin text-destructive-emphasis" aria-hidden="true" />
+                                                    : <Trash2 className="h-4 w-4 text-destructive-emphasis" aria-hidden="true" />}
                                             </Button>
                                         </div>
                                     </TableCell>
                                 </TableRow>
-                            ))
+                                );
+                            })
                         )}
                     </TableBody>
                 </Table>
             </div>
 
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
                 <DialogContent className="max-w-md rounded-lg border-none shadow-2xl p-8">
                     <DialogHeader>
                         <DialogTitle className="text-2xl font-bold tracking-tight">{editingSchedule ? '일정 수정' : '일정 등록'}</DialogTitle>
                     </DialogHeader>
                     <div className="space-y-6 py-4">
+                        <FormErrorSummary
+                            errors={validation.errors}
+                            labels={SCHEDULE_FORM_LABELS}
+                            onNavigate={validation.focusError}
+                        />
                         <div className="space-y-2">
-                            <Label htmlFor="schdlNm" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">일정명</Label>
+                            <Label htmlFor="schdlNm" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                                일정명 <span aria-hidden="true" className="text-destructive-emphasis">*</span><span className="sr-only">(필수)</span>
+                            </Label>
                             <Input
                                 id="schdlNm"
+                                maxLength={100}
+                                aria-required="true"
+                                {...validation.fieldProps('schdlNm')}
                                 className="rounded-lg h-12"
-                                value={formData.schdlNm}
-                                onChange={(e) => setFormData(prev => ({ ...prev, schdlNm: e.target.value }))}
+                                value={formData.schdlNm ?? ''}
+                                onChange={(e) => {
+                                    setFormData(prev => ({ ...prev, schdlNm: e.target.value }));
+                                    validation.clearError('schdlNm');
+                                }}
                             />
+                            {validation.errors.schdlNm ? <p {...validation.messageProps('schdlNm')} className="text-sm text-destructive-emphasis" /> : null}
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="schdlCn" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">내용</Label>
                             <Textarea
                                 id="schdlCn"
+                                maxLength={4000}
+                                {...validation.fieldProps('schdlCn')}
                                 className="rounded-lg min-h-[100px]"
-                                value={formData.schdlCn}
-                                onChange={(e) => setFormData(prev => ({ ...prev, schdlCn: e.target.value }))}
+                                value={formData.schdlCn ?? ''}
+                                onChange={(e) => {
+                                    setFormData(prev => ({ ...prev, schdlCn: e.target.value }));
+                                    validation.clearError('schdlCn');
+                                }}
                             />
+                            {validation.errors.schdlCn ? <p {...validation.messageProps('schdlCn')} className="text-sm text-destructive-emphasis" /> : null}
                         </div>
                         {/* 날짜 입력. 저장은 'yyyyMMdd'(varchar 8) 이고 input[type=date] 는 'yyyy-MM-dd' 를
                             요구하므로 경계에서 변환한다. 종전에는 입력란 자체가 없어 항상 '오늘' 로만 등록됐다. */}
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="schdlBgngYmd" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">시작일</Label>
+                                <Label htmlFor="schdlBgngYmd" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                                    시작일 <span aria-hidden="true" className="text-destructive-emphasis">*</span><span className="sr-only">(필수)</span>
+                                </Label>
                                 <Input
                                     id="schdlBgngYmd"
                                     type="date"
+                                    aria-required="true"
+                                    {...validation.fieldProps('schdlBgngYmd')}
                                     className="rounded-lg h-12"
                                     value={ymdToInput(formData.schdlBgngYmd)}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, schdlBgngYmd: inputToYmd(e.target.value) }))}
+                                    onChange={(e) => {
+                                        setFormData(prev => ({ ...prev, schdlBgngYmd: inputToYmd(e.target.value) }));
+                                        validation.clearError('schdlBgngYmd');
+                                    }}
                                 />
+                                {validation.errors.schdlBgngYmd ? <p {...validation.messageProps('schdlBgngYmd')} className="text-sm text-destructive-emphasis" /> : null}
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="schdlEndYmd" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">종료일</Label>
+                                <Label htmlFor="schdlEndYmd" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">
+                                    종료일 <span aria-hidden="true" className="text-destructive-emphasis">*</span><span className="sr-only">(필수)</span>
+                                </Label>
                                 <Input
                                     id="schdlEndYmd"
                                     type="date"
+                                    aria-required="true"
+                                    {...validation.fieldProps('schdlEndYmd')}
                                     className="rounded-lg h-12"
                                     value={ymdToInput(formData.schdlEndYmd)}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, schdlEndYmd: inputToYmd(e.target.value) }))}
+                                    onChange={(e) => {
+                                        setFormData(prev => ({ ...prev, schdlEndYmd: inputToYmd(e.target.value) }));
+                                        validation.clearError('schdlEndYmd');
+                                    }}
                                 />
+                                {validation.errors.schdlEndYmd ? <p {...validation.messageProps('schdlEndYmd')} className="text-sm text-destructive-emphasis" /> : null}
                             </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="schdlPlcNm" className="text-xs font-bold text-muted-foreground uppercase tracking-widest">장소</Label>
                             <Input
                                 id="schdlPlcNm"
+                                maxLength={100}
+                                {...validation.fieldProps('schdlPlcNm')}
                                 className="rounded-lg h-12"
                                 value={formData.schdlPlcNm || ''}
-                                onChange={(e) => setFormData(prev => ({ ...prev, schdlPlcNm: e.target.value }))}
+                                onChange={(e) => {
+                                    setFormData(prev => ({ ...prev, schdlPlcNm: e.target.value }));
+                                    validation.clearError('schdlPlcNm');
+                                }}
                             />
+                            {validation.errors.schdlPlcNm ? <p {...validation.messageProps('schdlPlcNm')} className="text-sm text-destructive-emphasis" /> : null}
                         </div>
                     </div>
                     <DialogFooter className="gap-2">
-                        <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-lg px-10 h-12 font-bold shadow-sm">취소</Button>
-                        <Button onClick={handleSubmit} className="rounded-lg px-10 h-12 font-bold shadow-lg shadow-primary/20">저장</Button>
+                        <Button variant="outline" disabled={isSaving || deletingScheduleSn !== null} onClick={() => handleDialogOpenChange(false)} className="rounded-lg px-10 h-12 font-bold shadow-sm">취소</Button>
+                        <Button disabled={isSaving || deletingScheduleSn !== null} aria-busy={isSaving || undefined} onClick={handleSubmit} className="rounded-lg px-10 h-12 font-bold shadow-lg shadow-primary/20">
+                            {isSaving ? '저장 중…' : '저장'}
+                        </Button>
                     </DialogFooter>
                 </DialogContent>
             </Dialog>

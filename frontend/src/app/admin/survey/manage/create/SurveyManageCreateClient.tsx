@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,11 +27,24 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 // sonner 직접 호출 대신 useToast 로 수렴한다 — 문자열 정규화 페일세이프가 없으면
 // 에러 객체가 그대로 넘어가 '[object Object]' 가 노출된다(P2).
 import { useToast } from '@/app/components/ui/toast';
+import { FormErrorSummary } from '@/components/ui/form';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { pollFormSchema } from '../poll-form-validation';
+
+const pollValidationLabels = {
+  pollNm: '설문명',
+  pollBgngYmd: '시작일',
+  pollEndYmd: '종료일',
+  pollKndCd: '설문 유형',
+  pollDsuseYn: '사용 여부',
+};
 
 export default function SurveyManageCreateClient() {
   const router = useRouter();
   const { success, error: toastError } = useToast();
   const [isSaving, setIsSaving] = useState(false);
+  const savingRef = useRef(false);
   const [formData, setFormData] = useState<OnlinePollManageVO>({
     pollNm: '',
     pollBgngYmd: '',
@@ -42,25 +55,22 @@ export default function SurveyManageCreateClient() {
 
   const [beginDate, setBeginDate] = useState<Date | undefined>();
   const [endDate, setEndDate] = useState<Date | undefined>();
+  const validation = useManualFormValidation(pollFormSchema, { labels: pollValidationLabels });
 
   const handleSave = async () => {
-    if (isSaving) return; // 연타 시 같은 설문이 두 건 등록되는 것을 막는다
-    if (!formData.pollNm || !beginDate || !endDate) {
-      toastError('필수 항목을 입력해 주세요.');
-      return;
-    }
-
-    if (beginDate && endDate && beginDate > endDate) {
-      toastError('설문 시작일은 종료일보다 빨라야 합니다.');
-      return;
-    }
+    if (savingRef.current) return;
+    const validated = validation.validate({
+      ...formData,
+      pollBgngYmd: beginDate ? toStorageYmd(beginDate) : '',
+      pollEndYmd: endDate ? toStorageYmd(endDate) : '',
+    });
+    if (!validated) return;
 
     // 저장 포맷은 'yyyyMMdd' 8자다. 컬럼이 varchar(8)/DTO 가 @Size(max = 8) 이라
     // 'yyyy-MM-dd'(10자)를 보내면 등록이 100% 400 으로 실패한다.
     const payload = {
       ...formData,
-      pollBgngYmd: toStorageYmd(beginDate),
-      pollEndYmd: toStorageYmd(endDate),
+      ...validated,
       pollArticles: [
         { pollArtclNm: '매우 만족' },
         { pollArtclNm: '만족' },
@@ -69,14 +79,18 @@ export default function SurveyManageCreateClient() {
       ]
     };
 
+    savingRef.current = true;
     setIsSaving(true);
     try {
       await createPoll(payload);
       success('설문이 등록되었습니다.');
       router.push('/admin/survey/manage');
-    } catch {
-      toastError('설문을 등록하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.');
+    } catch (error) {
+      const fieldErrors = extractFieldErrors(error);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      else toastError('설문을 등록하지 못했습니다. 입력 내용은 유지됩니다. 잠시 후 다시 시도해 주세요.');
     } finally {
+      savingRef.current = false;
       setIsSaving(false);
     }
   };
@@ -105,24 +119,40 @@ export default function SurveyManageCreateClient() {
             </div>
         </CardHeader>
         <CardContent className="p-10 space-y-10">
+          <FormErrorSummary
+            errors={validation.errors}
+            labels={pollValidationLabels}
+            onNavigate={(name) => { validation.focusError(name); }}
+          />
           <div className="space-y-3">
             <Label htmlFor="pollNm" className="text-sm font-bold text-muted-foreground ml-1">설문명 (필수)</Label>
             <Input
               id="pollNm"
+              {...validation.fieldProps('pollNm')}
               value={formData.pollNm}
-              onChange={(e) => setFormData(prev => ({ ...prev, pollNm: e.target.value }))}
+              onChange={(e) => {
+                validation.clearError('pollNm');
+                setFormData(prev => ({ ...prev, pollNm: e.target.value }));
+              }}
+              required
+              maxLength={100}
               placeholder="설문 주제를 입력하세요"
               className="h-11 rounded-lg border-2 bg-muted/50 focus:bg-card transition-all font-bold px-6"
             />
+            {validation.errors.pollNm ? (
+              <p {...validation.messageProps('pollNm')} className="text-sm text-destructive-emphasis" />
+            ) : null}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="space-y-3">
-              <Label htmlFor="poll-begin-date" className="text-sm font-bold text-muted-foreground ml-1">시작일</Label>
+              <Label htmlFor="poll-begin-date" className="text-sm font-bold text-muted-foreground ml-1">시작일 (필수)</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     id="poll-begin-date"
+                    {...validation.fieldProps('pollBgngYmd')}
+                    aria-required="true"
                     variant={"outline"}
                     className={cn(
                       "h-11 w-full justify-start text-left font-bold rounded-lg border-2 bg-muted/50 px-6",
@@ -137,19 +167,27 @@ export default function SurveyManageCreateClient() {
                   <Calendar
                     mode="single"
                     selected={beginDate}
-                    onSelect={setBeginDate}
+                    onSelect={(date) => {
+                      validation.clearError('pollBgngYmd');
+                      setBeginDate(date);
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
+              {validation.errors.pollBgngYmd ? (
+                <p {...validation.messageProps('pollBgngYmd')} className="text-sm text-destructive-emphasis" />
+              ) : null}
             </div>
 
             <div className="space-y-3">
-              <Label htmlFor="poll-end-date" className="text-sm font-bold text-muted-foreground ml-1">종료일</Label>
+              <Label htmlFor="poll-end-date" className="text-sm font-bold text-muted-foreground ml-1">종료일 (필수)</Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
                     id="poll-end-date"
+                    {...validation.fieldProps('pollEndYmd')}
+                    aria-required="true"
                     variant={"outline"}
                     className={cn(
                       "h-11 w-full justify-start text-left font-bold rounded-lg border-2 bg-muted/50 px-6",
@@ -164,11 +202,17 @@ export default function SurveyManageCreateClient() {
                   <Calendar
                     mode="single"
                     selected={endDate}
-                    onSelect={setEndDate}
+                    onSelect={(date) => {
+                      validation.clearError('pollEndYmd');
+                      setEndDate(date);
+                    }}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
+              {validation.errors.pollEndYmd ? (
+                <p {...validation.messageProps('pollEndYmd')} className="text-sm text-destructive-emphasis" />
+              ) : null}
             </div>
           </div>
 
@@ -176,9 +220,17 @@ export default function SurveyManageCreateClient() {
             <Label htmlFor="poll-knd-cd" className="text-sm font-bold text-muted-foreground ml-1">설문 유형</Label>
             <Select
               value={formData.pollKndCd}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, pollKndCd: value }))}
+              onValueChange={(value) => {
+                validation.clearError('pollKndCd');
+                setFormData(prev => ({ ...prev, pollKndCd: value }));
+              }}
             >
-              <SelectTrigger id="poll-knd-cd" className="h-11 rounded-lg border-2 bg-muted/50 font-bold px-6">
+              <SelectTrigger
+                id="poll-knd-cd"
+                {...validation.fieldProps('pollKndCd')}
+                aria-required="true"
+                className="h-11 rounded-lg border-2 bg-muted/50 font-bold px-6"
+              >
                 <SelectValue placeholder="유형 선택" />
               </SelectTrigger>
               <SelectContent className="rounded-lg border-none shadow-2xl">
@@ -186,6 +238,9 @@ export default function SurveyManageCreateClient() {
                 <SelectItem value="002" className="font-bold py-3 text-foreground">🗳️ 투표</SelectItem>
               </SelectContent>
             </Select>
+            {validation.errors.pollKndCd ? (
+              <p {...validation.messageProps('pollKndCd')} className="text-sm text-destructive-emphasis" />
+            ) : null}
           </div>
 
           <div className="flex pt-6">

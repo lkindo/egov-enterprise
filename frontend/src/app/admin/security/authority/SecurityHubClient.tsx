@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, use, useTransition } from 'react';
+import { useState, useMemo, useEffect, use, useRef, useTransition } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { ShieldCheck, 
@@ -18,6 +18,7 @@ import { ShieldCheck,
   Lock, 
   Fingerprint, 
   RotateCcw, 
+  Loader2,
   ArrowUpRight, 
   AlertTriangle, 
   Settings } from 'lucide-react';
@@ -50,6 +51,7 @@ import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
 
 import { AuthorForm, AuthorFormValues } from '@/components/admin/security/AuthorForm';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
 // --- Types ---
 interface MenuNode extends Menu {
   children?: MenuNode[];
@@ -91,6 +93,9 @@ export default function SecurityHubClient({
 
   // --- Matrix Mode States ---
   const [globalMappings, setGlobalMappings] = useState<Map<string, Set<number>>>(new Map());
+  const [authorDeletePendingCode, setAuthorDeletePendingCode] = useState<string | null>(null);
+  const [authorSavePending, setAuthorSavePending] = useState(false);
+  const [mappingPendingAction, setMappingPendingAction] = useState<'user' | 'menu' | 'global' | null>(null);
   /**
    * 서버에서 읽어온 시점의 매트릭스. 변경 셀·변경 역할 판정의 기준선이다.
    *
@@ -100,6 +105,16 @@ export default function SecurityHubClient({
    */
   const [globalBaseline, setGlobalBaseline] = useState<Map<string, Set<number>>>(new Map());
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
+  const userMappingRequestRef = useRef(false);
+  const menuMappingRequestRef = useRef(false);
+  const globalSaveRequestRef = useRef(false);
+  const authorDeleteRequestRef = useRef(false);
+  const authorSaveRequestRef = useRef(false);
+  const hasMappingWriteRequest = () => (
+    userMappingRequestRef.current
+    || menuMappingRequestRef.current
+    || globalSaveRequestRef.current
+  );
 
   /**
    * 뷰 전환(토폴로지/매트릭스)과 역할 페이지는 URL 파생값이다.
@@ -200,6 +215,9 @@ export default function SecurityHubClient({
   }, [menusData, tempMenuMappings]);
 
   const onAuthorSubmit = async (values: AuthorFormValues) => {
+    if (authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest()) return;
+    authorSaveRequestRef.current = true;
+    setAuthorSavePending(true);
     try {
       if (authorMode === 'create') {
         await authorAdminService.createAuthor(values as AuthorInfo);
@@ -210,8 +228,12 @@ export default function SecurityHubClient({
       }
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
       setIsAuthorModalOpen(false);
-    } catch {
+    } catch (error) {
+      if (extractFieldErrors(error)) throw error;
       toast('저장 중 오류가 발생했습니다. 입력을 확인해주세요.', 'error');
+    } finally {
+      authorSaveRequestRef.current = false;
+      setAuthorSavePending(false);
     }
   };
 
@@ -260,21 +282,38 @@ export default function SecurityHubClient({
       toast('권한 할당 저장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
       // 실패 시 화면이 저장된 것처럼 남지 않도록 서버 상태로 되돌린다.
       queryClient.invalidateQueries({ queryKey: ['admin-user-authorities', selectedAuthorCode] });
-    }
+    },
+    onSettled: () => {
+      userMappingRequestRef.current = false;
+      setMappingPendingAction((current) => current === 'user' ? null : current);
+    },
   });
 
   /** 회수가 포함되면 확인을 받는다(권한 회수는 되돌리기 어려운 파괴적 변경이다). */
   const handleSaveUserMapping = async () => {
-    if (revokeTargets.length > 0) {
+    if (!selectedAuthorCode || authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest() || saveUserMappingMutation.isPending) return;
+    userMappingRequestRef.current = true;
+    setMappingPendingAction('user');
+    try {
+      if (revokeTargets.length > 0) {
       const ok = await confirm({
         title: '권한 회수 확인',
         message: `${revokeTargets.length}명의 '${selectedAuthorCode}' 권한이 회수됩니다. 계속하시겠습니까?`,
         confirmText: '회수하고 저장',
         variant: 'destructive',
       });
-      if (!ok) return;
+        if (!ok) {
+          userMappingRequestRef.current = false;
+          setMappingPendingAction(null);
+          return;
+        }
+      }
+      saveUserMappingMutation.mutate();
+    } catch {
+      userMappingRequestRef.current = false;
+      setMappingPendingAction(null);
+      toast('권한 할당 저장을 시작하지 못했습니다. 잠시 후 다시 시도해주세요.', 'error');
     }
-    saveUserMappingMutation.mutate();
   };
 
   const saveMenuMappingMutation = useMutation({
@@ -287,8 +326,19 @@ export default function SecurityHubClient({
     onError: () => {
       toast('메뉴 접근 권한 저장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
       queryClient.invalidateQueries({ queryKey: ['admin-author-menus', selectedAuthorCode] });
-    }
+    },
+    onSettled: () => {
+      menuMappingRequestRef.current = false;
+      setMappingPendingAction((current) => current === 'menu' ? null : current);
+    },
   });
+
+  const handleSaveMenuMapping = () => {
+    if (!selectedAuthorCode || authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest() || saveMenuMappingMutation.isPending) return;
+    menuMappingRequestRef.current = true;
+    setMappingPendingAction('menu');
+    saveMenuMappingMutation.mutate();
+  };
 
   const loadGlobalMappings = async () => {
     if (!authorities.length) return;
@@ -358,12 +408,14 @@ export default function SecurityHubClient({
   );
 
   const handleSaveGlobal = async () => {
+    if (authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest() || isGlobalLoading) return;
     // 변경이 없으면 아무것도 쓰지 않는다 — "저장했다"는 성공 토스트만 남기는 것이 가장 나쁜 결과다.
     if (globalChangedAuthorCodes.size === 0) {
       toast('변경된 권한이 없습니다.', 'info');
       return;
     }
-
+    globalSaveRequestRef.current = true;
+    setMappingPendingAction('global');
     setIsGlobalLoading(true);
     try {
       // 손대지 않은 역할은 쓰지 않는다(동시 편집 덮어쓰기 방지 · AGENTS H3 인가 의미 보존).
@@ -382,6 +434,8 @@ export default function SecurityHubClient({
     } catch {
       toast('글로벌 정책 저장 중 오류가 발생했습니다.', 'error');
     } finally {
+      globalSaveRequestRef.current = false;
+      setMappingPendingAction((current) => current === 'global' ? null : current);
       setIsGlobalLoading(false);
     }
   };
@@ -409,6 +463,7 @@ export default function SecurityHubClient({
   };
 
   const handleOpenAuthorCreate = () => {
+    if (authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest()) return;
     setEditingAuthor(null);
     setAuthorMode('create');
     setIsAuthorModalOpen(true);
@@ -420,29 +475,43 @@ export default function SecurityHubClient({
    * B 역할의 톱니를 눌러 저장하면 A 역할이 덮어써지는 사고가 났다.
    */
   const handleOpenAuthorEdit = (auth: AuthorInfo) => {
+    if (authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest()) return;
     setEditingAuthor(auth);
     setAuthorMode('edit');
     setIsAuthorModalOpen(true);
   };
 
+  const handleCloseAuthorModal = () => {
+    if (authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest()) return;
+    setIsAuthorModalOpen(false);
+  };
+
   const handleAuthorDelete = async (auth: AuthorInfo) => {
     const code = auth.authrtCd;
-    const ok = await confirm({
-      title: '권한 삭제',
-      message: `'${auth.authrtNm || code}'(${code}) 권한을 삭제하시겠습니까? 관련 할당 정보가 모두 사라집니다.`,
-      confirmText: '삭제',
-      variant: 'destructive',
-    });
-    if (!ok) return;
+    if (authorSaveRequestRef.current || authorDeleteRequestRef.current || hasMappingWriteRequest()) return;
+    authorDeleteRequestRef.current = true;
+    setAuthorDeletePendingCode(code);
     try {
+      const ok = await confirm({
+        title: '권한 삭제',
+        message: `'${auth.authrtNm || code}'(${code}) 권한을 삭제하시겠습니까? 관련 할당 정보가 모두 사라집니다.`,
+        confirmText: '삭제',
+        variant: 'destructive',
+      });
+      if (!ok) return;
       await authorAdminService.deleteAuthor(code);
       toast('권한이 삭제되었습니다.', 'success');
       queryClient.invalidateQueries({ queryKey: ['admin-authorities'] });
       if (selectedAuthorCode === code) setSelectedAuthorCode('');
     } catch {
       toast('삭제 중 오류가 발생했습니다.', 'error');
+    } finally {
+      authorDeleteRequestRef.current = false;
+      setAuthorDeletePendingCode(null);
     }
   };
+
+  const isSecurityWritePending = authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null || isGlobalLoading;
 
   const roleColumns: Column<AuthorInfo>[] = [
     {
@@ -462,6 +531,7 @@ export default function SecurityHubClient({
             <button
               type="button"
               aria-label={`${auth.authrtNm || auth.authrtCd} 역할 수정`}
+              disabled={isSecurityWritePending}
               onClick={(e) => { e.stopPropagation(); handleOpenAuthorEdit(auth); }}
               className="p-2 hover:bg-white/10 rounded-lg transition-all"
             >
@@ -469,11 +539,15 @@ export default function SecurityHubClient({
             </button>
             <button
               type="button"
-              aria-label={`${auth.authrtNm || auth.authrtCd} 역할 삭제`}
-              onClick={(e) => { e.stopPropagation(); handleAuthorDelete(auth); }}
+              aria-label={`${auth.authrtNm || auth.authrtCd} 역할 ${authorDeletePendingCode === auth.authrtCd ? '삭제 중' : '삭제'}`}
+              aria-busy={authorDeletePendingCode === auth.authrtCd || undefined}
+              disabled={isSecurityWritePending}
+              onClick={(e) => { e.stopPropagation(); void handleAuthorDelete(auth); }}
               className="p-2 hover:bg-rose-500/20 text-rose-400 rounded-lg transition-all"
             >
-              <Trash2 size={12} aria-hidden="true" />
+              {authorDeletePendingCode === auth.authrtCd
+                ? <Loader2 size={12} aria-hidden="true" className="animate-spin" />
+                : <Trash2 size={12} aria-hidden="true" />}
             </button>
           </div>
         </div>
@@ -647,8 +721,9 @@ export default function SecurityHubClient({
 
             <Tooltip>
               <TooltipTrigger asChild>
-                <Button
-                  onClick={handleOpenAuthorCreate}
+                  <Button
+                    onClick={handleOpenAuthorCreate}
+                    disabled={isSecurityWritePending}
                   className="h-11 px-10 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-tight shadow-2xl hover:bg-primary transition-all hover:-translate-y-1 gap-3 group"
                 >
                   <Plus size={20} className="group-hover:scale-110 transition-transform duration-500" /> 신규 보안 아키텍처 설정
@@ -697,6 +772,7 @@ export default function SecurityHubClient({
               onToggle={handleToggleGlobal}
               onSave={handleSaveGlobal}
               isSaving={isGlobalLoading}
+              isDisabled={authorSavePending || authorDeletePendingCode !== null || (mappingPendingAction !== null && mappingPendingAction !== 'global')}
             />
           </motion.div>
         ) : (
@@ -761,10 +837,11 @@ export default function SecurityHubClient({
                       <Button
                         size="sm"
                         onClick={handleSaveUserMapping}
-                        disabled={!selectedAuthorCode}
+                        aria-busy={mappingPendingAction === 'user' || undefined}
+                        disabled={!selectedAuthorCode || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
                         className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                       >
-                        <Save size={14} aria-hidden="true" /> 사용자 할당 저장
+                        <Save size={14} aria-hidden="true" /> {mappingPendingAction === 'user' ? '사용자 할당 저장 중…' : '사용자 할당 저장'}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
@@ -832,11 +909,12 @@ export default function SecurityHubClient({
                     <TooltipTrigger asChild>
                       <Button
                         size="sm"
-                        onClick={() => saveMenuMappingMutation.mutate()}
-                        disabled={!selectedAuthorCode}
+                        onClick={handleSaveMenuMapping}
+                        aria-busy={mappingPendingAction === 'menu' || undefined}
+                        disabled={!selectedAuthorCode || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
                         className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
                       >
-                        <RefreshCcw size={14} aria-hidden="true" /> 메뉴 권한 저장
+                        <RefreshCcw size={14} aria-hidden="true" /> {mappingPendingAction === 'menu' ? '메뉴 권한 저장 중…' : '메뉴 권한 저장'}
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="top" className="bg-surface-inverse text-surface-inverse-foreground border-none rounded-lg px-4 py-2 text-xs font-bold tracking-tight">
@@ -901,7 +979,7 @@ export default function SecurityHubClient({
 
       <StandardModal
         isOpen={isAuthorModalOpen}
-        onClose={() => setIsAuthorModalOpen(false)}
+        onClose={handleCloseAuthorModal}
         title={authorMode === 'create' ? '신규 권한 등록' : '보안 역할 아키텍처 상세 수정'}
         maxWidth="xl"
       >
@@ -909,7 +987,9 @@ export default function SecurityHubClient({
           mode={authorMode}
           initialData={authorMode === 'edit' ? (editingAuthor ?? undefined) : undefined}
           onSubmit={onAuthorSubmit}
-          onCancel={() => setIsAuthorModalOpen(false)}
+          onCancel={handleCloseAuthorModal}
+          isPending={authorSavePending}
+          isDisabled={authorDeletePendingCode !== null || mappingPendingAction !== null || isGlobalLoading}
         />
       </StandardModal>
     </div>

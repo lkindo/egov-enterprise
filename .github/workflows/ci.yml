@@ -366,6 +366,11 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: frontend
 
+      - name: Form validation census and RED-proof contracts
+        id: fe-form-validation
+        run: pnpm run test:form-validation
+        working-directory: frontend
+
       # [계약 드리프트 게이트] 커밋된 api-docs.json(백엔드 job 이 신선함을 이미 검증) 으로부터
       # 타입/Zod 를 재생성해 커밋본과 diff. 스펙은 바뀌었는데 codegen 을 안 돌린 드리프트를 차단한다.
       - name: Verify generated API types are in sync with spec (contract drift gate)
@@ -421,7 +426,7 @@ jobs:
       - name: Surface failure detail (annotations)
         if: failure()
         run: |
-          echo "::error title=실패 스텝 판정::install=${{ steps.fe-install.outcome }} / codegen=${{ steps.fe-codegen.outcome }} / typecheck-e2e=${{ steps.fe-typecheck-e2e.outcome }} / lint=${{ steps.fe-lint.outcome }} / audit=${{ steps.fe-audit.outcome }} / build=${{ steps.fe-build.outcome }}"
+          echo "::error title=실패 스텝 판정::install=${{ steps.fe-install.outcome }} / form-validation=${{ steps.fe-form-validation.outcome }} / codegen=${{ steps.fe-codegen.outcome }} / typecheck-e2e=${{ steps.fe-typecheck-e2e.outcome }} / lint=${{ steps.fe-lint.outcome }} / audit=${{ steps.fe-audit.outcome }} / build=${{ steps.fe-build.outcome }}"
           for f in /tmp/fe-build.log /tmp/fe-test.log; do
             [ -f "$f" ] || continue
             echo "::error title=$(basename $f) 마지막 출력::$(tail -c 2000 "$f" | paste -sd' ' -)"

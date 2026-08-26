@@ -1,9 +1,8 @@
 'use client';
 
-;
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getQustnrRespondInfoList, deleteQustnrRespondInfo } from '@/lib/api/survey';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Link from 'next/link';
 import {
   Table,
@@ -37,6 +36,8 @@ import { toast } from 'sonner';
 export default function SurveyResponseClient() {
   const [pageNo, setPageNo] = useState(1);
   const [searchKeyword, setSearchKeyword] = useState('');
+  const [deletingResponseId, setDeletingResponseId] = useState<number | null>(null);
+  const deletingResponseIdRef = useRef<number | null>(null);
   const queryClient = useQueryClient();
 
   // ⚠ `as any` 를 걷어냈다. 종전에는 이 한 줄이 타입 검사를 통째로 무력화해서
@@ -62,7 +63,11 @@ export default function SurveyResponseClient() {
     },
     onError: (err) => {
       toast.error(`삭제 실패: ${err instanceof Error ? err.message : '알 수 없는 오류'}`);
-    }
+    },
+    onSettled: () => {
+      deletingResponseIdRef.current = null;
+      setDeletingResponseId(null);
+    },
   });
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -71,9 +76,14 @@ export default function SurveyResponseClient() {
   };
 
   const handleDelete = (srvyRspnsSn: number, name: string) => {
-    if (confirm(`${name}님의 응답을 삭제하시겠습니까?`)) {
-      deleteMutation.mutate(srvyRspnsSn);
+    if (deletingResponseIdRef.current !== null) return;
+    deletingResponseIdRef.current = srvyRspnsSn;
+    if (!confirm(`${name}님의 응답을 삭제하시겠습니까?`)) {
+      deletingResponseIdRef.current = null;
+      return;
     }
+    setDeletingResponseId(srvyRspnsSn);
+    deleteMutation.mutate(srvyRspnsSn);
   };
 
   return (
@@ -109,8 +119,10 @@ export default function SurveyResponseClient() {
           <div className="flex items-center justify-between">
             <CardTitle className="text-lg font-medium">응답 목록</CardTitle>
             <div className="relative w-64">
+              <label htmlFor="survey-response-search" className="sr-only">응답자 이름 검색</label>
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
+                id="survey-response-search"
                 type="search"
                 placeholder="응답자 이름 검색..."
                 value={searchKeyword}
@@ -176,7 +188,9 @@ export default function SurveyResponseClient() {
                           <Button
                             variant="ghost"
                             size="icon"
-                            aria-label={`${item.rspnsNm || '설문'} 응답 삭제`}
+                            aria-label={`${item.rspnsNm || '설문'} 응답 ${deletingResponseId === item.srvyRspnsSn ? '삭제 중' : '삭제'}`}
+                            aria-busy={deletingResponseId === item.srvyRspnsSn || undefined}
+                            disabled={deletingResponseId !== null}
                             className="h-8 w-8 text-destructive-emphasis hover:text-destructive-emphasis hover:bg-destructive/10"
                             onClick={() => handleDelete(item.srvyRspnsSn, item.rspnsNm)}
                           >

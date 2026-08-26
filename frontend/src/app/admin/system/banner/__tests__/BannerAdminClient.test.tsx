@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BannerAdminClient from '../BannerAdminClient';
@@ -58,6 +58,8 @@ vi.mock('@/hooks/useAppForm', () => ({
       control: { values },
       reset: isBanner ? mocks.resetBanner : mocks.resetPopup,
       handleSubmit: (submit: (value: any) => unknown) => () => submit(values),
+      applyServerErrors: vi.fn(() => false),
+      focusError: vi.fn(),
       formState: { isSubmitting: false },
     };
   },
@@ -66,6 +68,7 @@ vi.mock('@/hooks/useAppForm', () => ({
 vi.mock('@/components/ui/form', () => ({
   Form: ({ children }: any) => children,
   FormControl: ({ children }: any) => children,
+  FormErrorSummary: () => null,
   FormField: ({ control, name, render: renderField }: any) => renderField({
     field: {
       name,
@@ -122,7 +125,7 @@ vi.mock('@/components/ui/hub/HubStatusBadge', () => ({
   HubStatusBadge: ({ status }: any) => <span>{status}</span>,
 }));
 vi.mock('@/app/components/ui/attachment-image', () => ({
-  AttachmentImage: ({ alt }: any) => <img alt={alt} />,
+  AttachmentImage: ({ alt }: any) => <span role="img" aria-label={alt} />,
 }));
 vi.mock('@/app/components/ui/standard-file-uploader', () => ({
   StandardFileUploader: ({ onFilesChange }: any) => (
@@ -181,6 +184,16 @@ function renderClient(query = '') {
   );
 }
 
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((nextResolve, nextReject) => {
+    resolve = nextResolve;
+    reject = nextReject;
+  });
+  return { promise, resolve, reject };
+}
+
 describe('BannerAdminClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -204,7 +217,7 @@ describe('BannerAdminClient', () => {
     expect(toolbar).toHaveTextContent('총 21건');
     expect(toolbar).toHaveTextContent('배너 21');
     expect(toolbar).toHaveTextContent('팝업 12');
-    expect(screen.getByAltText('메인 배너 배너 이미지')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: '메인 배너 배너 이미지' })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '메인 배너 배너 수정' }));
     expect(screen.getByRole('region', { name: '배너 명세 수정' })).toHaveTextContent('기존 파일 식별자');
@@ -263,5 +276,65 @@ describe('BannerAdminClient', () => {
     fireEvent.click(screen.getByRole('button', { name: '메인 배너 배너 삭제' }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalled());
     expect(mocks.deleteBanner).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    {
+      label: '배너',
+      query: '',
+      buttonName: '메인 배너 배너 삭제',
+      pendingName: '메인 배너 배너 삭제 중…',
+      editName: '메인 배너 배너 수정',
+      createName: /신규 배너 등록/,
+      deleteMock: mocks.deleteBanner,
+      expectedId: 101,
+    },
+    {
+      label: '팝업',
+      query: 'tab=popup&page=1',
+      buttonName: '긴급 공지 팝업 삭제',
+      pendingName: '긴급 공지 팝업 삭제 중…',
+      editName: '긴급 공지 팝업 수정',
+      createName: /신규 팝업 등록/,
+      deleteMock: mocks.deletePopup,
+      expectedId: 202,
+    },
+  ])('$label 삭제는 같은 tick 중복 실행을 막고 pending·실패를 안내한다', async ({
+    query,
+    buttonName,
+    pendingName,
+    editName,
+    createName,
+    deleteMock,
+    expectedId,
+  }) => {
+    const pending = deferred<{ success: boolean; message: string }>();
+    deleteMock.mockReturnValueOnce(pending.promise);
+    renderClient(query);
+    const deleteButton = await screen.findByRole('button', { name: buttonName });
+
+    act(() => {
+      deleteButton.click();
+      deleteButton.click();
+    });
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(deleteMock).toHaveBeenCalledTimes(1));
+    expect(deleteMock).toHaveBeenCalledWith(null, expectedId);
+    const pendingButton = screen.getByRole('button', { name: pendingName });
+    expect(pendingButton).toBeDisabled();
+    expect(pendingButton).toHaveAttribute('aria-busy', 'true');
+    const editButton = screen.getByRole('button', { name: editName });
+    const createButton = screen.getByRole('button', { name: createName });
+    expect(editButton).toBeDisabled();
+    expect(createButton).toBeDisabled();
+    fireEvent.click(editButton);
+    fireEvent.click(createButton);
+    expect(screen.queryByRole('region', { name: /수정|등록|설계/ })).not.toBeInTheDocument();
+
+    await act(async () => pending.reject(new Error('delete failed')));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('자산 삭제 처리 중 예외가 발생했습니다.', 'error'));
+    expect(editButton).toBeEnabled();
+    expect(createButton).toBeEnabled();
   });
 });
