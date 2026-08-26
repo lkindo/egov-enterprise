@@ -1,6 +1,7 @@
 package nuri.business.service.file;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.core.storage.StorageObjectMissingException;
 import nuri.foundation.core.storage.FileStorageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -101,17 +102,45 @@ public class LocalFileStorageService implements FileStorageService {
         return savedFilename;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * <p>[2026-08-26] 실물 부재는 {@link StorageObjectMissingException} 으로 구분해 던진다 —
+     * DB 레코드 부재(정상 404)와 <b>DB↔저장소 드리프트</b>(운영 사고)를 가르기 위해서다.
+     * 응답은 종전과 같은 404 이며, 구분은 서버 관측에만 쓴다(존재 여부 누출 방지).
+     */
     @Override
     public Resource loadAsResource(String filename, String targetPath) {
         try {
             Path file = resolveWithinRoot(targetPath, filename);
             if (!Files.isRegularFile(file) || !Files.isReadable(file)) {
-                throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+                throw new StorageObjectMissingException(targetPath, filename);
             }
             assertRealPathWithinRoot(file);
             return new UrlResource(file.toUri());
         } catch (MalformedURLException e) {
+            // 경로가 URL 로 표현되지 않는 경우 — 실물 유무 이전의 문제라 드리프트로 보지 않는다.
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * <p>경로 정규화(루트 이탈 방지)까지 포함해 판정한다 — 루트 밖을 가리키는 값은 "없음"이다.
+     * 어떤 이유로든 판정에 실패하면 <b>없음으로 본다</b>: 점검이 예외로 중단되면 전체 규모를 못 센다.
+     */
+    @Override
+    public boolean exists(String filename, String targetPath) {
+        try {
+            Path file = resolveWithinRoot(targetPath, filename);
+            if (!Files.isRegularFile(file) || !Files.isReadable(file)) {
+                return false;
+            }
+            assertRealPathWithinRoot(file);
+            return true;
+        } catch (RuntimeException e) {
+            return false;
         }
     }
 

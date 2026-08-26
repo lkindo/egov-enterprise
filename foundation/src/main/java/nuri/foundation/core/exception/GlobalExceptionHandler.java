@@ -2,6 +2,7 @@ package nuri.foundation.core.exception;
 
 
 import nuri.foundation.core.response.ApiResponse;
+import nuri.foundation.core.storage.StorageObjectMissingException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
@@ -42,6 +43,27 @@ public class GlobalExceptionHandler {
      */
     public GlobalExceptionHandler() {
         this.messageSource = null;
+    }
+
+    /**
+     * 저장소 드리프트 — DB 에는 첨부 레코드가 있는데 저장소에 실물이 없다.
+     *
+     * <p>[왜 별도 핸들러인가] 응답은 다른 404 와 <b>똑같아야 한다</b>(존재 여부 누출 방지).
+     * 달라야 하는 것은 <b>서버가 이 사건을 어떻게 기록하는가</b>다. 일반 404 와 같은 WARN 한 줄로
+     * 묻히면 파일 유실을 아무도 모른 채 사용자가 깨진 이미지로 발견하게 된다(2026-08-26 실측).
+     *
+     * <p>그래서 ERROR 로 올리고 <b>저장소 경로·파일명</b>을 함께 남긴다 — 복구 대상을 특정할 수 있어야
+     * 조치가 가능하다. 원본 파일명은 사용자 입력이라 남기지 않는다.
+     */
+    @ExceptionHandler(StorageObjectMissingException.class)
+    protected ResponseEntity<ApiResponse<Void>> handleStorageObjectMissing(StorageObjectMissingException e) {
+        log.error(">>> STORAGE DRIFT: DB 에는 첨부가 있으나 저장소에 실물이 없습니다."
+                + " path='{}' storedFileName='{}' — 저장소 설정이 바뀌었거나 파일이 유실됐습니다.",
+                e.getStoragePath(), e.getStoredFileName());
+
+        ErrorCode errorCode = e.getErrorCode();
+        return new ResponseEntity<>(
+                ApiResponse.error(errorCode, resolveMessage(errorCode, e.getMessage())), errorCode.getStatus());
     }
 
     /**

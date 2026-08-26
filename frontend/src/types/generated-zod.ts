@@ -3896,6 +3896,31 @@ export const ApiResponseEventInfoDtoSchema = z.object({
 export type ApiResponseEventInfoDto = z.infer<typeof ApiResponseEventInfoDtoSchema>;
 
 // ==========================================================================
+// ApiResponseAttachmentIntegrityReport Schema
+// ==========================================================================
+export const ApiResponseAttachmentIntegrityReportSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => AttachmentIntegrityReportSchema).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseAttachmentIntegrityReport = z.infer<typeof ApiResponseAttachmentIntegrityReportSchema>;
+
+// ==========================================================================
+// AttachmentIntegrityReport Schema
+// ==========================================================================
+export const AttachmentIntegrityReportSchema = z.object({
+  checked: z.number().optional(),
+  missing: z.number().optional(),
+  samples: z.array(z.string()).optional(),
+  healthy: z.boolean().optional(),
+});
+export type AttachmentIntegrityReport = z.infer<typeof AttachmentIntegrityReportSchema>;
+
+// ==========================================================================
 // ApiResponseListCommunityDto Schema
 // ==========================================================================
 export const ApiResponseListCommunityDtoSchema = z.object({

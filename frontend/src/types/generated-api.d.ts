@@ -4419,6 +4419,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/files/integrity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 첨부 정합성 점검
+         * @description DB 첨부 레코드와 저장소 실물을 대조해 어긋난 건수와 조치 대상 예시를 반환한다. 읽기 전용이며 어떤 레코드도 변경하지 않는다.
+         */
+        get: operations["scan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/content/community/portlet": {
         parameters: {
             query?: never;
@@ -8708,6 +8728,25 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        ApiResponseAttachmentIntegrityReport: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["AttachmentIntegrityReport"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        AttachmentIntegrityReport: {
+            /** Format: int64 */
+            checked?: number;
+            /** Format: int64 */
+            missing?: number;
+            samples?: string[];
+            healthy?: boolean;
         };
         ApiResponseListCommunityDto: {
             success?: boolean;
@@ -32055,6 +32094,62 @@ export interface operations {
             };
             /** @description 대상을 찾을 수 없음 (code: C003/C007) */
             404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    scan: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseAttachmentIntegrityReport"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
                 headers: {
                     [name: string]: unknown;
                 };

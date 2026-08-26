@@ -107,7 +107,11 @@ class SecurityAuthAnnotationLinterTest {
             // 4행 추가 — 모두 RBAC_ADMIN_OR_SYSTEM|hasAnyRole('ADMIN','SYSTEM') 로, 각 목록 API 와
             // **같은 인가 축**에 @AdminOrSystem 메서드 인가를 더한 것이라 완화가 아니라 강화다
             // (AGENTS H3 — 도메인 의미 보존). 로그인 로그 export 와 같은 규칙을 공유한다.
-            "7896424b2645e735939d7f083298a0030d8a8a64fa31bfe356f5ba3c29c76276";
+            // [2026-08-26 첨부 정합성 진단 신설] GET /api/v1/admin/files/integrity 1행 추가 —
+            // RBAC_ADMIN_OR_SYSTEM|hasAnyRole('ADMIN','SYSTEM'). 응답에 저장 경로가 들어가므로
+            // 첨부 목록 조회와 **같은 ADMIN/SYSTEM 축**으로 제한했다(완화 아님, H3). endpoint 수
+            // 173 -> 174.
+            "c79417e3e7794946cf4f7d1183f0bd362be713e65e0b8505f52838968ffae392";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;
