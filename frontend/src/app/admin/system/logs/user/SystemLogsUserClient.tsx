@@ -140,7 +140,7 @@ const SystemLogsUserClient = () => {
     return (
         <WorkListPage
             title="사용자 로그"
-            description="사용자의 서비스 모듈별 작업 수행 이력을 조회합니다."
+            description="사용자의 서비스 모듈별 작업 수행 이력을 발생일자 최신순으로 조회합니다."
             breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '사용자 로그' }]}
             filterStateKey="system-logs-user"
             // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.

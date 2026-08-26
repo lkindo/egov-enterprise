@@ -151,7 +151,7 @@ const SystemLogsLoginClient = () => {
     return (
         <WorkListPage
             title="로그인 로그"
-            description="시스템 접속·로그인/로그아웃 이력을 조회합니다."
+            description="시스템 접속·로그인/로그아웃 이력을 접속일시 최신순으로 조회합니다."
             breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '로그인 로그' }]}
             filterStateKey="system-logs-login"
             // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.

@@ -136,7 +136,7 @@ const SystemLogsSystemClient = () => {
     return (
         <WorkListPage
             title="시스템 로그"
-            description="서버 동작 상태와 모듈별 수행 이력을 조회합니다."
+            description="서버 동작 상태와 모듈별 수행 이력을 발생일자 최신순으로 조회합니다."
             breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '시스템 로그' }]}
             filterStateKey="system-logs-system"
             // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.

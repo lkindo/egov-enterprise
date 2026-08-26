@@ -116,7 +116,7 @@ const SystemLogsPrivacyClient = () => {
     return (
         <WorkListPage
             title="개인정보 접근 로그"
-            description="개인정보 접근 및 처리 이력을 추적합니다."
+            description="개인정보 접근 및 처리 이력을 조회일시 최신순으로 추적합니다."
             breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '개인정보 접근 로그' }]}
             filterStateKey="system-logs-privacy"
             // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
