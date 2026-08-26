@@ -274,6 +274,49 @@ describe('API 클라이언트 인터셉터', () => {
       expect(event.detail).toEqual({ message: '서버 오류', status: 500 });
     });
 
+    it('suppressErrorToast 를 선언한 요청의 실패는 전역 토스트를 띄우지 않는다', async () => {
+      /*
+       * [왜 필요한가 — 2026-08-26 실측]
+       * 모든 실패를 전역 토스트로 올리면 **호출부가 이미 처리한 실패까지 화면을 가린다**.
+       * 대시보드 배너의 첨부 이미지가 404 일 때 `AttachmentImage` 는 조용히 대체 표시로 넘어가는데,
+       * 인터셉터가 5초마다 `Request failed with status code 404` 토스트를 띄우고 있었다 —
+       * 사용자가 할 수 있는 일이 없는 실패를 반복해 알린 셈이다.
+       */
+      const dispatchEvent = vi.fn();
+      Object.defineProperty(globalThis, 'window', {
+        value: { location: { pathname: '/admin', href: '' }, dispatchEvent },
+        configurable: true, writable: true,
+      });
+      const { captured } = await loadClient();
+
+      await expect(
+        captured.responseErr!(Object.assign(new Error('Request failed with status code 404'), {
+          config: { suppressErrorToast: true },
+          response: { status: 404, data: {} },
+        }))
+      ).rejects.toBeDefined();
+
+      expect(dispatchEvent).not.toHaveBeenCalled();
+    });
+
+    it('선언하지 않은 요청은 종전대로 토스트를 띄운다 — 기본값이 조용해지면 실패가 숨는다', async () => {
+      const dispatchEvent = vi.fn();
+      Object.defineProperty(globalThis, 'window', {
+        value: { location: { pathname: '/admin', href: '' }, dispatchEvent },
+        configurable: true, writable: true,
+      });
+      const { captured } = await loadClient();
+
+      await expect(
+        captured.responseErr!(Object.assign(new Error('Request failed with status code 404'), {
+          config: {},
+          response: { status: 404, data: {} },
+        }))
+      ).rejects.toBeDefined();
+
+      expect(dispatchEvent).toHaveBeenCalledTimes(1);
+    });
+
     it('401 이 아닌 오류는 재발급을 타지 않는다', async () => {
       Object.defineProperty(globalThis, 'window', {
         value: { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() },
