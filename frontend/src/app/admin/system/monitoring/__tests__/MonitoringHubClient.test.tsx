@@ -16,6 +16,7 @@ const mocks = vi.hoisted(() => ({
   health: vi.fn(),
   cpu: vi.fn(),
   memory: vi.fn(),
+  integrity: vi.fn(),
 }));
 
 vi.mock('next/navigation', () => ({
@@ -66,6 +67,10 @@ vi.mock('@/services/foundation/system/MonitoringAdminService', () => ({
     getCpuUsage: mocks.cpu,
     getMemoryUsage: mocks.memory,
   },
+}));
+
+vi.mock('@/services/foundation/system/AttachmentIntegrityService', () => ({
+  attachmentIntegrityService: { scan: mocks.integrity },
 }));
 
 vi.mock('@/app/components/layout/page-header', () => ({
@@ -189,6 +194,7 @@ describe('MonitoringHubClient', () => {
     });
     mocks.cpu.mockResolvedValue(12.34);
     mocks.memory.mockResolvedValue(45.67);
+    mocks.integrity.mockResolvedValue({ checked: 0, missing: 0, samples: [] });
   });
 
   /** 조회 조건 입력의 접근 이름(KeywordFilter 의 label). */
@@ -248,6 +254,53 @@ describe('MonitoringHubClient', () => {
     expect(screen.getByText('API Microservices: UNKNOWN')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: '다시 시도' }));
     await waitFor(() => expect(mocks.health).toHaveBeenCalledTimes(2));
+  });
+
+  /*
+   * DB↔저장소 드리프트는 정상 운영에서도 생긴다. 문제는 어긋났을 때 알 방법이 없어
+   * 사용자가 깨진 이미지로 먼저 발견했다는 점이다. 이 화면이 그것을 먼저 보여준다.
+   */
+  it('점검을 누르기 전에는 저장소를 훑지 않는다', async () => {
+    renderHub('tab=observability');
+    await screen.findByRole('button', { name: '점검 실행' });
+
+    // 전량 스캔이 배경에서 주기적으로 돌면 진단이 그 자체로 부하가 된다.
+    expect(mocks.integrity).not.toHaveBeenCalled();
+  });
+
+  it('어긋난 첨부가 있으면 건수와 조치 대상을 알린다', async () => {
+    mocks.integrity.mockResolvedValue({
+      checked: 120,
+      missing: 2,
+      samples: ['atchFileSn=7 seq=1 path=general/2026/a.png'],
+    });
+    renderHub('tab=observability');
+
+    fireEvent.click(screen.getByRole('button', { name: '점검 실행' }));
+
+    const alert = await screen.findByText(/저장소에 없습니다/);
+    expect(alert).toHaveTextContent('120');
+    expect(alert).toHaveTextContent('2');
+    // 조치하려면 어느 파일인지 특정할 수 있어야 한다.
+    expect(screen.getByText('atchFileSn=7 seq=1 path=general/2026/a.png')).toBeInTheDocument();
+  });
+
+  it('정상이면 정상이라고 말한다 — 침묵으로 대신하지 않는다', async () => {
+    mocks.integrity.mockResolvedValue({ checked: 120, missing: 0, samples: [] });
+    renderHub('tab=observability');
+
+    fireEvent.click(screen.getByRole('button', { name: '점검 실행' }));
+
+    expect(await screen.findByText(/모두 저장소에 실물이 있습니다/)).toHaveTextContent('120');
+  });
+
+  it('점검 실패를 정상으로 위장하지 않는다', async () => {
+    mocks.integrity.mockRejectedValue(new Error('boom'));
+    renderHub('tab=observability');
+
+    fireEvent.click(screen.getByRole('button', { name: '점검 실행' }));
+
+    expect(await screen.findByText(/점검을 실행하지 못했습니다/)).toBeInTheDocument();
   });
 
   it('selects both harness catalog item types and renders topology', async () => {

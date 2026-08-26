@@ -2,6 +2,7 @@ package nuri.business.service.file;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.storage.StorageObjectMissingException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -289,5 +290,42 @@ class LocalFileStorageServiceTest {
         assertThatThrownBy(() -> storageService.loadAll(".."))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+    }
+
+    @Test
+    @DisplayName("실물이 없으면 일반 404 와 구분되는 드리프트 예외로 던지고 복구 대상을 담는다")
+    void loadAsResource_Missing_CarriesRecoveryTarget() {
+        /*
+         * 사용자에게 보이는 응답은 다른 404 와 똑같아야 한다(존재 여부 누출 방지).
+         * 달라야 하는 것은 서버가 남기는 기록이다 — 어느 파일을 복구해야 하는지 특정할 수 없으면
+         * "어딘가 깨졌다" 만 알고 조치는 못 한다.
+         */
+        assertThatThrownBy(() -> storageService.loadAsResource("gone.png", "general/2026"))
+                .isInstanceOf(StorageObjectMissingException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND)
+                .hasFieldOrPropertyWithValue("storagePath", "general/2026")
+                .hasFieldOrPropertyWithValue("storedFileName", "gone.png");
+    }
+
+    @Test
+    @DisplayName("exists 는 실물 유무를 그대로 답한다")
+    void exists_ReportsPresence() throws IOException {
+        Files.createDirectories(tempDir.resolve("general"));
+        Files.writeString(tempDir.resolve("general").resolve("here.txt"), "x");
+
+        assertThat(storageService.exists("here.txt", "general")).isTrue();
+        assertThat(storageService.exists("gone.txt", "general")).isFalse();
+    }
+
+    @Test
+    @DisplayName("exists 는 어떤 입력에도 예외를 던지지 않는다")
+    void exists_NeverThrows() {
+        /*
+         * 정합성 점검은 전체 레코드를 훑는다. 병든 레코드 하나에서 예외가 나면 점검이 거기서 죽고
+         * 전체 규모를 영영 알 수 없다 — 알아야 할 때 못 알게 되는 것이 이 계약의 실패다.
+         */
+        assertThat(storageService.exists("../../etc/passwd", "general")).isFalse();
+        assertThat(storageService.exists("x.txt", "../..")).isFalse();
+        assertThat(storageService.exists("", "")).isFalse();
     }
 }

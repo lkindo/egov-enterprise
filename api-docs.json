@@ -167,6 +167,10 @@
       "description": "시스템 부서별 권한 할당 관리 API (Admin)"
     },
     {
+      "name": "AttachmentIntegrity",
+      "description": "첨부 정합성 진단 API (Admin)"
+    },
+    {
       "name": "Popup User",
       "description": "팝업 사용자 API"
     },
@@ -32518,6 +32522,68 @@
         }
       }
     },
+    "/api/v1/admin/files/integrity": {
+      "get": {
+        "tags": [
+          "AttachmentIntegrity"
+        ],
+        "summary": "첨부 정합성 점검",
+        "description": "DB 첨부 레코드와 저장소 실물을 대조해 어긋난 건수와 조치 대상 예시를 반환한다. 읽기 전용이며 어떤 레코드도 변경하지 않는다.",
+        "operationId": "scan",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseAttachmentIntegrityReport"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/content/community/portlet": {
       "get": {
         "tags": [
@@ -43265,6 +43331,59 @@
             "items": {
               "$ref": "#/components/schemas/FieldErrorItem"
             }
+          }
+        }
+      },
+      "ApiResponseAttachmentIntegrityReport": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/AttachmentIntegrityReport"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "AttachmentIntegrityReport": {
+        "type": "object",
+        "properties": {
+          "checked": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "missing": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "samples": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "healthy": {
+            "type": "boolean"
           }
         }
       },

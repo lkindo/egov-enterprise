@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "51a2996dd52c289ade436bd81b9a617800a52ab811b679b60a1786e54a86599c"
+    "inventoryHash": "d5892cad388c040381b0360fb2b87dfb1472e4756385df2a20c48a281f689556"
   },
   "summary": {
-    "sourceFileCount": 491,
-    "records": 528,
-    "syntaxOccurrences": 597,
-    "ambiguousRecords": 508,
-    "unverifiedRecords": 528,
+    "sourceFileCount": 492,
+    "records": 529,
+    "syntaxOccurrences": 598,
+    "ambiguousRecords": 509,
+    "unverifiedRecords": 529,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -46,12 +46,12 @@
       "query-builder": 21,
       "query-consumer": 58,
       "query-producer": 55,
-      "request-query-producer": 158,
+      "request-query-producer": 159,
       "url-observer": 7
     },
     "bySurface": {
       "navigation": 363,
-      "request-telemetry": 165
+      "request-telemetry": 166
     }
   },
   "requiredNegativeCases": [
@@ -20338,6 +20338,46 @@
       },
       "evidence": {
         "source": "frontend/src/services/foundation/survey/SurveyAdminService.ts",
+        "detector": "http-client-get-request",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-BD6619B0235247",
+      "surface": "request-telemetry",
+      "kind": "request-query-producer",
+      "operation": "client.get",
+      "source": "frontend/src/services/foundation/system/AttachmentIntegrityService.ts",
+      "producerFile": "frontend/src/services/foundation/system/AttachmentIntegrityService.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Request URL producer emits the observed target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-request-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/services/foundation/system/AttachmentIntegrityService.ts",
         "detector": "http-client-get-request",
         "occurrenceCount": 1
       }

@@ -30,6 +30,7 @@ import { auditAdminService } from '@/services/foundation/system/AuditAdminServic
 import { commentAdminService } from '@/services/foundation/system/CommentAdminService';
 import { systemLogAdminService } from '@/services/foundation/system/SystemLogAdminService';
 import { monitoringAdminService } from '@/services/foundation/system/MonitoringAdminService';
+import { attachmentIntegrityService } from '@/services/foundation/system/AttachmentIntegrityService';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -287,6 +288,25 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     enabled: activeTab === 'OBSERVABILITY'
   });
 
+  /**
+   * 첨부 정합성 점검 — DB 레코드와 저장소 실물 대조.
+   *
+   * ⚠ 주기 조회를 걸지 않는다(`enabled: false`). 이 점검은 첨부를 <b>전량</b> 훑으므로
+   * 배경에서 30초마다 돌면 진단이 그 자체로 부하가 된다. 관리자가 누를 때만 실행한다.
+   */
+  const {
+    data: integrityReport,
+    error: integrityError,
+    isFetching: isIntegrityRunning,
+    refetch: runIntegrityScan,
+  } = useQuery({
+    queryKey: ['admin-attachment-integrity'],
+    queryFn: () => attachmentIntegrityService.scan(),
+    enabled: false,
+    retry: false,
+    gcTime: 0,
+  });
+
   const deleteCommentMutation = useMutation({
     mutationFn: (id: number) => commentAdminService.deleteComment(id),
     onSuccess: () => {
@@ -457,6 +477,76 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
           </div>
         </div>
       )}
+
+      {/*
+        [2026-08-26] DB↔저장소 정합성.
+        DB 와 파일 저장소는 분리 운영이 정상이고 어긋나는 것도 정상 운영에서 생긴다
+        (저장소 경로 변경·다른 환경 DB 연결·백업 복원 시점 불일치). 문제는 어긋났을 때
+        알 방법이 없어 사용자가 깨진 이미지로 먼저 발견했다는 점이다. 여기서 먼저 본다.
+      */}
+      <div className="space-y-4 rounded-lg border border-border p-6">
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div className="space-y-1">
+            <h4 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">
+              첨부 정합성 (DB ↔ 저장소)
+            </h4>
+            <p className="text-xs text-muted-foreground leading-relaxed">
+              첨부 레코드와 저장소 실물을 대조합니다. 전량을 훑으므로 누를 때만 실행됩니다.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => { void runIntegrityScan(); }}
+            disabled={isIntegrityRunning}
+            className="h-9 rounded-lg text-xs font-bold shrink-0"
+          >
+            {isIntegrityRunning ? '점검 중…' : '점검 실행'}
+          </Button>
+        </div>
+
+        {integrityError && (
+          <div role="alert" className="text-xs font-medium text-destructive-emphasis">
+            점검을 실행하지 못했습니다. 잠시 후 다시 시도해 주세요.
+          </div>
+        )}
+
+        {integrityReport && !integrityError && (
+          integrityReport.missing === 0 ? (
+            <p role="status" className="text-xs font-bold text-success-emphasis">
+              첨부 {integrityReport.checked.toLocaleString()}건 모두 저장소에 실물이 있습니다.
+            </p>
+          ) : (
+            <div role="alert" className="space-y-3">
+              <p className="text-xs font-bold text-destructive-emphasis">
+                첨부 {integrityReport.checked.toLocaleString()}건 중{' '}
+                <strong>{integrityReport.missing.toLocaleString()}건</strong>이 저장소에 없습니다.
+                저장소 설정이 바뀌었거나 파일이 유실됐습니다.
+              </p>
+              {/*
+                레코드를 자동으로 지우지 않는다 — 실물이 없는 이유가 '유실' 일 수도
+                '저장소 설정이 잠깐 틀렸다' 일 수도 있는데, 후자에서 지우면 복구 가능한
+                상황을 복구 불가능하게 만든다. 화면은 대상만 알려주고 판단은 사람이 한다.
+              */}
+              {integrityReport.samples.length > 0 && (
+                <div className="space-y-1">
+                  <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+                    조치 대상 예시 (최대 {integrityReport.samples.length}건)
+                  </p>
+                  <ul className="max-h-48 overflow-y-auto rounded border border-border bg-muted/40 p-3 space-y-1">
+                    {integrityReport.samples.map((sample) => (
+                      <li key={sample} className="text-[11px] font-mono text-muted-foreground break-all">
+                        {sample}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </div>
+          )
+        )}
+      </div>
 
       {/* 실측(액추에이터) 기반 지표 */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
