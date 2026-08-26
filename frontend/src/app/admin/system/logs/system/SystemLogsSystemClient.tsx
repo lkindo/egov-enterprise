@@ -157,27 +157,25 @@ const SystemLogsSystemClient = () => {
             }
             toolbarActions={
                 <div className="flex items-center gap-2">
-                /*
-                  기존 '실시간 모니터링' 버튼은 onClick 이 없는 死버튼이었다.
-                  삭제하고, 이미 검증된 CSV(BOM 포함) 내보내기 자산을 배선한다.
-                */
-                <DataExportExcel
-            scope="page"
-                    data={logs}
-                    headers={EXPORT_HEADERS}
-                    filename="시스템로그"
-                    className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
-                />
+                    {/* 종전 '실시간 모니터링' 버튼은 onClick 이 없는 死버튼이라 삭제하고,
+                        검증된 CSV(BOM 포함) 반출을 배선했다. 이쪽은 현재 페이지 범위다. */}
+                    <DataExportExcel
+                        scope="page"
+                        data={logs}
+                        headers={EXPORT_HEADERS}
+                        filename="시스템로그"
+                        className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-border px-3 text-xs font-bold text-muted-foreground transition-colors hover:text-primary disabled:opacity-40"
+                    />
 
-                {/* 전체 결과 xlsx — 서버 스트리밍 export. 현재 페이지 반출과 달리 조건 일치 전량이다. */}
-                <button
-                    type="button"
-                    onClick={handleFullExport}
-                    className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-primary/40 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/5"
-                >
-                    <FileDown size={16} aria-hidden="true" />
-                    전체 결과 엑셀 다운로드
-                </button>
+                    {/* 전체 결과 xlsx — 서버 스트리밍 export. 조건 일치 전량이라 위 버튼과 범위가 다르다. */}
+                    <button
+                        type="button"
+                        onClick={handleFullExport}
+                        className="flex h-[var(--control-h-sm)] items-center gap-2 rounded-md border border-primary/40 px-3 text-xs font-bold text-primary transition-colors hover:bg-primary/5"
+                    >
+                        <FileDown size={16} aria-hidden="true" />
+                        전체 결과 엑셀 다운로드
+                    </button>
                 </div>
             }
         >
