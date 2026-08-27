@@ -5,11 +5,9 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { Button } from '@/components/ui/button';
-import { Users,  
-  ShieldCheck,  
+import { ShieldCheck,  
   Calendar, 
   ChevronLeft, 
-  ArrowUpRight, 
   MessageSquare, 
   Globe, 
   Settings, 
@@ -131,7 +129,12 @@ export default function CommunityDetailHubClient({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <DetailBlock icon={<ShieldCheck size={18} />} label="Operational Manager" value={community.frstRegisterNm || 'System_Admin'} />
                   <DetailBlock icon={<Calendar size={18} />} label="Initialization Date" value={community.crtDt?.substring(0, 10) || 'Unknown'} />
-                  <DetailBlock icon={<Users size={18} />} label="Member Count" value="42_Active_Entities" />
+                  {/*
+                    [2026-08-28] 'Member Count 42_Active_Entities' 제거.
+                    **회원 수를 내려주는 API 가 없다** — /api/v1/communities 는 목록·상세·join 3개뿐이고
+                    CommunityDto 에 회원 수 필드가 없다(실측). 고정 문자열을 실측값처럼 보여 주면
+                    관리자가 그 숫자를 근거로 판단한다. 값을 지어내는 대신 노출하지 않는다.
+                  */}
                   <DetailBlock icon={<Globe size={18} />} label="Visibility Protocol" value={community.useYn === 'Y' ? 'PUBLIC_ACCESS' : 'PRIVATE_NODE'} />
                 </div>
               </div>
@@ -146,8 +149,15 @@ export default function CommunityDetailHubClient({
                 <div className="w-20 h-11 bg-card border-2 border-border rounded-[var(--radius-hub-item)] flex items-center justify-center text-muted-foreground shadow-xl mb-8 group-hover:rotate-12 transition-transform">
                   <BookOpen size={32} />
                 </div>
-                <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">_ No_Posts_Detected</h4>
-                <p className="text-xs font-bold text-muted-foreground tracking-tight mt-4">해당 커뮤니티에 등록된 게시글이 없습니다</p>
+                {/*
+                  [2026-08-28] '등록된 게시글이 없습니다' → 미제공 고지.
+                  이 섹션은 **어떤 조회도 하지 않는다.** 그런데 '게시글이 없다'고 단정해,
+                  실제로 글이 있는 커뮤니티에서도 비었다고 말했다. 커뮤니티별 게시글을 내려주는
+                  경로가 아직 없으므로(BoardMasterRepository 의 커뮤니티 조회는 미노출),
+                  없다고 말하는 대신 아직 제공되지 않는다고 말한다.
+                */}
+                <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">_ Not_Available</h4>
+                <p className="text-xs font-bold text-muted-foreground tracking-tight mt-4">커뮤니티별 게시글 목록은 아직 제공되지 않습니다</p>
               </div>
             </HubSectionCard>
           </div>
@@ -166,37 +176,21 @@ export default function CommunityDetailHubClient({
                   <h4 className="text-2xl font-bold tracking-tighter leading-tight">_ SECURITY<br />POLICY</h4>
                   <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">가입 승인 필요<br />내부 임직원 전용</p>
                 </div>
-                <Button className="w-full h-11 bg-card text-foreground rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-primary hover:text-white transition-all shadow-xl group">
-                  ADMIN_PANEL_LOGIN <ChevronLeft size={16} className="rotate-180 group-hover:translate-x-1 transition-transform" />
-                </Button>
+                {/*
+                  [2026-08-28] 'ADMIN_PANEL_LOGIN' 버튼 제거 — onClick·href 가 없어 눌러도 아무 일이
+                  일어나지 않았고, 가리키던 대상 라우트가 정의된 적도 없다.
+                */}
               </div>
             </div>
 
-            <div className="hub-glass-premium rounded-[var(--radius-hub-section)] p-10 space-y-10 border-2 border-border shadow-2xl relative overflow-hidden group">
-               <div className="flex items-center justify-between border-b border-border/50 pb-6">
-                  <h4 className="text-sm font-bold text-foreground tracking-tighter">_ Member_Pulse</h4>
-                  <span className="text-xs font-bold text-primary tracking-tight">Live</span>
-               </div>
-               <div className="space-y-6">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <div key={i} className="flex items-center justify-between group/user">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-muted flex items-center justify-center text-muted-foreground font-bold text-xs group-hover/user:bg-surface-inverse group-hover/user:text-surface-inverse-foreground transition-all">
-                          ID
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-foreground tracking-tight">_ Active_Entity_{i}</p>
-                          <p className="text-xs text-muted-foreground font-bold tracking-tight">Connected</p>
-                        </div>
-                      </div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                    </div>
-                  ))}
-               </div>
-               <Button variant="ghost" className="w-full h-12 text-xs font-bold text-muted-foreground tracking-tight hover:text-primary transition-colors">
-                  VIEW_ALL_ENTITIES <ArrowUpRight size={14} className="ml-2" />
-               </Button>
-            </div>
+            {/*
+              [2026-08-28] 'Member_Pulse' 패널 통째 제거.
+              하드코딩한 다섯 명(_ Active_Entity_1~5)을 'Live' 라벨과 초록 점으로 **접속 중인 실제
+              회원처럼** 보여 주고 있었다. 회원 목록을 내려주는 API 는 없고
+              (CommunityUserRepository.findByIdCmntySn 은 main 소스에서 호출자 0건),
+              'VIEW_ALL_ENTITIES' 버튼도 onClick·href 가 없어 죽어 있었다.
+              실측 데이터가 생기면 그때 되살린다 — 지금은 없는 것을 있는 척하지 않는다.
+            */}
           </div>
         </div>
       </div>

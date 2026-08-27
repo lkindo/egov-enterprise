@@ -123,3 +123,47 @@ describe('정책: 권한 벽을 일시 장애처럼 안내하지 않는다', () 
     expect(hub).not.toContain('공개 페이지에 노출되는 정책 본문');
   });
 });
+
+/**
+ * 커뮤니티 상세: 없는 데이터를 'Live' 로 보여 주지 않는다.
+ *
+ * 이 화면은 회원 수를 '42_Active_Entities' 로 고정 출력하고, 하드코딩한 다섯 명을
+ * 'Live' 라벨과 초록 점으로 **접속 중인 실제 회원처럼** 보여 줬다. 그런데 회원 수를 내려주는
+ * API 도, 회원 목록을 내려주는 경로도 없다 — /api/v1/communities 는 목록·상세·join 3개뿐이고
+ * CommunityDto 에 회원 수 필드가 없다(2026-08-28 실측).
+ *
+ * 지어낸 숫자는 단순한 잡음이 아니다. 관리자가 그 값을 근거로 판단하기 때문이다.
+ */
+describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않는다', () => {
+  const client = stripComments(
+    readSrc('app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx'),
+  );
+
+  it('회원 수를 고정 문자열로 지어내지 않는다', () => {
+    expect(client).not.toContain('42_Active_Entities');
+    expect(client).not.toContain('Member Count');
+  });
+
+  it("하드코딩한 회원 목록을 'Live' 로 보여 주지 않는다", () => {
+    expect(client).not.toContain('Member_Pulse');
+    expect(client).not.toContain('Active_Entity_');
+  });
+
+  it('눌러도 아무 일이 없는 버튼을 두지 않는다', () => {
+    expect(client).not.toContain('ADMIN_PANEL_LOGIN');
+    expect(client).not.toContain('VIEW_ALL_ENTITIES');
+  });
+
+  it('조회하지 않은 채 게시글이 없다고 단정하지 않는다', () => {
+    // 이 섹션은 어떤 조회도 하지 않는다 — 실제로 글이 있는 커뮤니티에서도 비었다고 말했다.
+    expect(client).not.toContain('등록된 게시글이 없습니다');
+    expect(client).toContain('아직 제공되지 않습니다');
+  });
+
+  it('회원 수 API 가 여전히 없다 — 생기면 이 계약을 갱신하고 값을 되살려야 한다', () => {
+    const controller = readRepo(
+      'api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java',
+    );
+    expect(stripComments(controller)).not.toContain('members');
+  });
+});
