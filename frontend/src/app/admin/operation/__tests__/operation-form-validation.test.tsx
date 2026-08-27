@@ -277,4 +277,24 @@ describe('operation useAppForm consumers', () => {
     expect(screen.getByRole('textbox', { name: /^포상 명칭.*필수/ })).toHaveValue('모범 사원상');
     expect(cancel).toBeEnabled();
   });
+
+  it('ExternalHr: 폼이 묻지 않은 필드는 지어내 보내지 않는다', async () => {
+    // 종전에는 gndrCd:'M' 과 crTypeCd:'STANDARD' 를 덧붙여, 성별을 한 번도 묻지 않는 이 화면이
+    // 등록되는 모든 외부 인사를 남성으로 저장했다. 두 컬럼 모두 nullable 이고 읽는 곳도 없다.
+    // 이 계약은 "화면이 받지 않은 값을 payload 가 창작하지 않는다"를 고정한다.
+    renderWithClient(<ExternalHrClient initialPage={EMPTY_PAGE} />);
+    fireEvent.click(screen.getByRole('button', { name: /인사 등록/ }));
+    fillExternalHrForm();
+
+    fireEvent.click(screen.getByRole('button', { name: /최종 등록/ }));
+
+    await waitFor(() => expect(mocks.createExternalHr).toHaveBeenCalledTimes(1));
+    const payload = mocks.createExternalHr.mock.calls[0][0] as Record<string, unknown>;
+
+    expect(payload).not.toHaveProperty('gndrCd');
+    expect(payload).not.toHaveProperty('crTypeCd');
+    // 사용자가 실제로 입력한 값은 그대로 전달돼야 한다 — 축소가 아니라 창작만 막는 계약이다.
+    expect(payload.otsdHrNm).toBe('홍길동');
+    expect(payload.otsdHrId).toBe('HR-001');
+  });
 });
