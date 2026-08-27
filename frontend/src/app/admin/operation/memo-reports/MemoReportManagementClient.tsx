@@ -12,6 +12,8 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { useAuth } from '@/contexts/AuthContext';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { StandardModal } from '@/app/components/ui/standard-modal';
 
 const TABS = ['RECEIVED', 'MY', 'ALL'] as const;
 type ReportTab = (typeof TABS)[number];
@@ -33,7 +35,30 @@ export default function MemoReportManagementClient() {
 
   // '전체' 탭은 조직 전체의 비정형 보고를 조회하므로 관리자 전용이다.
   // (백엔드 GET /memo-reports 에 관리자 인가가 걸려 있어, 비관리자에게 노출하면 403 으로 무언 실패한다)
-  const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
+  // [2026-08-28] 판정을 SSOT 로 옮긴다. 종전 리터럴 비교는 SYSTEM·ROLE_SYSTEM 을 빠뜨려
+  //   **권한 있는 SYSTEM 관리자에게 '전체' 탭이 사라졌다** — 라우트는 열어 주는데 화면만
+  //   막히는 비대칭이고, 조용히 죽는 결함이다(DEC-OPS-023).
+  const isAdmin = isAdministrativeRole(user?.role);
+
+  /*
+   * [2026-08-28] 상세 열람 배선.
+   * 종전에는 행을 여는 어포던스가 **물리적으로 없었다**(onRowClick 미전달 → StandardDataTable 이
+   * 액션 셀 자체를 렌더하지 않는다). 그래서 보고 본문(rptCn)을 읽을 방법이 없었고, 화면 설명이
+   * 약속한 '지시사항'(drctnMttr)도 어디에도 표시되지 않았다. 목록이 보여 주는 '미열람' 상태를
+   * 해소할 방법도 없었다 — 열람 기록은 GET /{memoRptSn} 이 남기는데 그 호출부가 0건이었다.
+   * getMemoReport 는 프런트 서비스에 이미 있었다.
+   */
+  const [detailTarget, setDetailTarget] = useState<MemoReportInfo | null>(null);
+  const {
+    data: detail,
+    isFetching: isDetailLoading,
+    error: detailError,
+    refetch: refetchDetail,
+  } = useQuery({
+    queryKey: ['memo-report-detail', detailTarget?.memoRptSn],
+    enabled: detailTarget?.memoRptSn != null,
+    queryFn: () => memoReportService.getMemoReport(detailTarget!.memoRptSn),
+  });
 
   // 탭·페이지는 URL 파생값이다(공유·새로고침·뒤로가기 복원 + 사이드바 활성 유지).
   // 검색어는 개인정보 노출 우려로 URL 에 싣지 않는다(감사 D-13).
@@ -134,7 +159,13 @@ export default function MemoReportManagementClient() {
           "inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest transition-all",
           report.rptrInqDt ? "bg-emerald-500/10 text-emerald-600 border border-emerald-500/20" : "bg-muted text-muted-foreground border border-border"
         )}>
-          {report.rptrInqDt ? '수신확인' : '미열람'}
+          {/*
+            [2026-08-28] '수신확인' → '열람됨'. 서버는 **열람 주체를 구분하지 않는다** —
+            GET /{memoRptSn} 이 readMemoReport 를 호출하고, 그것은 작성자·수신자·관리자 중
+            누구가 열어도 rptrInqDt 를 갱신한다(MemoReportService.readMemoReport). 즉 작성자가
+            자기 보고를 다시 열기만 해도 '수신확인'으로 보였다.
+          */}
+          {report.rptrInqDt ? '열람됨' : '미열람'}
         </div>
       ),
       className: 'w-36 text-center'
@@ -186,6 +217,7 @@ export default function MemoReportManagementClient() {
       toolbarActions={
         <span className="text-[length:var(--font-size-body)] text-muted-foreground">
           현재 페이지 미열람 <span className="font-bold text-foreground">{unreadOnPage}</span>건
+          <span className="ml-2 text-xs">(열람 기록은 수신자·작성자·관리자 누구의 열람이든 남습니다)</span>
         </span>
       }
     >
@@ -198,6 +230,8 @@ export default function MemoReportManagementClient() {
           error={isError ? (error as Error) : null}
           onRetry={() => refetch()}
           emptyMessage={emptyResultMessage(debouncedKeyword, '등록된 메모 보고가 없습니다.')}
+          onRowClick={(report) => setDetailTarget(report)}
+          rowActionLabel={(report) => `${report.rptTtl || `${report.memoRptSn}번`} 보고 열기`}
           keyField="memoRptSn"
           pagination={{
             currentPage: page,
@@ -211,6 +245,76 @@ export default function MemoReportManagementClient() {
           }}
         />
       </div>
+
+      {detailTarget !== null && (
+        <StandardModal
+          isOpen
+          onClose={() => setDetailTarget(null)}
+          title={detailTarget.rptTtl || `${detailTarget.memoRptSn}번 보고`}
+          maxWidth="2xl"
+          footer={
+            <Button type="button" variant="outline" onClick={() => setDetailTarget(null)} className="w-full">
+              닫기
+            </Button>
+          }
+        >
+          {detailError ? (
+            <div className="space-y-3 py-4">
+              <p className="text-sm font-medium text-destructive-emphasis">보고를 불러오지 못했습니다.</p>
+              <Button type="button" variant="outline" size="sm" onClick={() => void refetchDetail()}>
+                다시 시도
+              </Button>
+            </div>
+          ) : isDetailLoading ? (
+            <p className="py-6 text-sm text-muted-foreground">불러오는 중…</p>
+          ) : (
+            <div className="space-y-6 py-2">
+              <dl className="grid gap-3 rounded-md bg-muted p-4 sm:grid-cols-2">
+                <div>
+                  <dt className="text-xs text-muted-foreground">작성자</dt>
+                  <dd className="mt-1 text-sm font-semibold text-foreground">{detail?.wrterNm || detail?.userId || '-'}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">수신자</dt>
+                  <dd className="mt-1 text-sm font-semibold text-foreground">{detail?.rptrNm || detail?.rptrId || '-'}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">보고 일자</dt>
+                  <dd className="mt-1 text-sm font-semibold text-foreground tabular-nums">{detail?.memoRptYmd || '-'}</dd>
+                </div>
+                <div>
+                  <dt className="text-xs text-muted-foreground">열람 기록</dt>
+                  <dd className="mt-1 text-sm font-semibold text-foreground tabular-nums">
+                    {detail?.rptrInqDt ? String(detail.rptrInqDt).replace('T', ' ').slice(0, 16) : '없음'}
+                  </dd>
+                </div>
+              </dl>
+
+              <section aria-labelledby="memo-report-body-heading" className="space-y-2">
+                <h3 id="memo-report-body-heading" className="text-sm font-bold text-foreground">보고 내용</h3>
+                <p className="whitespace-pre-wrap rounded-md border border-border p-4 text-sm text-foreground">
+                  {detail?.rptCn || '내용이 없습니다.'}
+                </p>
+              </section>
+
+              <section aria-labelledby="memo-report-instruction-heading" className="space-y-2">
+                <h3 id="memo-report-instruction-heading" className="text-sm font-bold text-foreground">지시사항</h3>
+                {detail?.drctnMttr ? (
+                  <p className="whitespace-pre-wrap rounded-md border border-border p-4 text-sm text-foreground">
+                    {detail.drctnMttr}
+                  </p>
+                ) : (
+                  // 지시사항을 남기는 경로(PATCH /instr-cn)는 아직 화면에 없다. 빈칸으로 두면
+                  // 사용자는 '아직 안 왔다'와 '남길 방법이 없다'를 구분할 수 없다.
+                  <p className="rounded-md border border-dashed border-border p-4 text-sm text-muted-foreground">
+                    등록된 지시사항이 없습니다. 지시사항을 남기는 기능은 아직 화면에 제공되지 않습니다.
+                  </p>
+                )}
+              </section>
+            </div>
+          )}
+        </StandardModal>
+      )}
     </WorkListPage>
   );
 }
