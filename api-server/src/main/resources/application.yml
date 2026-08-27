@@ -14,6 +14,8 @@ spring:
     lazy-initialization: false
     allow-bean-definition-overriding: true
   mail:
+    # spring.mail.host 가 설정되면 RealEmailSender 가, 없으면 LoggingEmailSender 가 활성화된다.
+    # 발신 주소는 nuri.mail.from 이 정본이며 미설정 시 spring.mail.username → 아래 기본값 순으로 내려간다.
     properties:
       mail:
         smtp:
@@ -113,6 +115,13 @@ jwt:
 # 근거: 개인정보의 안전성 확보조치 기준 제8조. months < 12(법정 최저) 이면 스케줄러가 삭제를 건너뛰어(전량파기 방지)
 #       오설정 사고를 코드로 막는다. 정책 상세: docs/04-operations/log-retention-policy.md.
 nuri:
+  # 메일 발신 주소(SMTP From). 화면은 발신자를 입력받지 않으므로 이 설정이 유일한 원천이다.
+  # 종전에는 요청 본문의 dsptchPerson 을 그대로 From 으로 썼는데 화면이 그 값을 채우지 않아
+  # 항상 null 이었고, SMTP 가 설정된 배포에서 전건이 실패했다(개발 환경은 실제 발송이 없어 성공으로 기록).
+  # 운영에서는 SPF/DMARC 를 통과하는 발신 도메인의 시스템 메일함 주소로 반드시 재정의한다.
+  mail:
+    from: ${MAIL_FROM:${spring.mail.username:no-reply@egov.local}}
+
   log:
     retention:
       enabled: ${LOG_RETENTION_ENABLED:true}
