@@ -15,11 +15,11 @@ public record PolicyUpdateRequest(
 
         @Schema(description = "정책 제목")
         @NotBlank(message = "{validation.required}")
-        @Size(max = 100, message = "{validation.size}")
+        @Size(max = 100, message = "{validation.size.max}")
         String plcyTtl,
 
         @Schema(description = "정책 내용")
         @NotBlank(message = "{validation.required}")
-        @Size(max = 4000, message = "{validation.size}")
+        @Size(max = 4000, message = "{validation.size.max}")
         String plcyCn) {
 }
