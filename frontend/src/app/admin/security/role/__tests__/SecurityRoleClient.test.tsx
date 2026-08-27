@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SecurityRoleClient from '../SecurityRoleClient';
@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   list: vi.fn(),
   create: vi.fn(),
+  update: vi.fn(),
   remove: vi.fn(),
 }));
 
@@ -18,6 +19,7 @@ vi.mock('@/services/foundation/system/RoleAdminService', () => ({
   roleAdminService: {
     getRoleList: mocks.list,
     createRole: mocks.create,
+    updateRole: mocks.update,
     deleteRole: mocks.remove,
   },
 }));
@@ -108,27 +110,80 @@ describe('SecurityRoleClient', () => {
     vi.clearAllMocks();
     mocks.confirm.mockResolvedValue(true);
     mocks.list.mockResolvedValue({
-      list: [{ roleId: 'ROLE_ADMIN', roleNm: '관리자 롤' }],
+      // 수정 진입이 기존 값을 그대로 싣는지 보려면 fixture 가 실제 롤 모양이어야 한다.
+      list: [{
+        roleId: 'ROLE_ADMIN',
+        roleNm: '관리자 롤',
+        rolePatrn: '관리 화면',
+        roleTypeCd: 'url',
+        roleSort: '3',
+        roleExpln: '',
+      }],
       page: 1,
       size: 10,
       total: 11,
       totalPage: 2,
     });
     mocks.create.mockResolvedValue(undefined);
+    mocks.update.mockResolvedValue(undefined);
     mocks.remove.mockResolvedValue(undefined);
+  });
+
+  /*
+   * 종전에는 등록·삭제만 있어 **롤 명칭 오타 하나도 고칠 수 없었다** — 지우고 다시 만드는 것이
+   * 유일한 방법이었다. 수정 경로는 위아래로 다 열려 있었는데(PUT /{roleCode} → updateRole →
+   * RoleInfo.update) 화면만 부르지 않았다.
+   */
+  it('목록에서 수정을 열어 저장하면 생성이 아니라 수정으로 나간다', async () => {
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '관리자 롤 롤 수정' }));
+
+    // 편집 진입이면 기존 값이 폼에 실린다.
+    expect(screen.getByLabelText('롤 레이블 명칭')).toHaveValue('관리자 롤');
+
+    // 수정 진입은 나머지 값도 그대로 물고 온다 — 여기서 다시 채우지 않아도 저장이 되어야 한다.
+    expect(screen.getByLabelText('정렬 순서')).toHaveValue(3);
+    fireEvent.change(screen.getByLabelText('롤 레이블 명칭'), { target: { value: '관리자 롤(수정)' } });
+    // 목록 행의 수정 버튼도 같은 문구로 끝나므로 모달 안에서 찾는다.
+    const dialog = screen.getByRole('region', { name: '보안 롤 수정' });
+    fireEvent.click(within(dialog).getByRole('button', { name: '롤 수정' }));
+
+    await waitFor(() => expect(mocks.update).toHaveBeenCalledTimes(1));
+    expect(mocks.update.mock.calls[0][0]).toBe('ROLE_ADMIN');
+    expect(mocks.update.mock.calls[0][1]).toMatchObject({ roleId: 'ROLE_ADMIN', roleNm: '관리자 롤(수정)' });
+    expect(mocks.create).not.toHaveBeenCalled();
+  });
+
+  it('수정 중에는 롤 ID 를 바꿀 수 없다 — PK 이자 PUT 경로 변수라 바꾸면 다른 롤을 덮어쓴다', async () => {
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '관리자 롤 롤 수정' }));
+
+    expect(screen.getByLabelText('보안 롤 식별값(Role Code)')).toHaveAttribute('readonly');
+  });
+
+  it('등록 진입은 이전 편집 값을 물고 가지 않는다', async () => {
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '관리자 롤 롤 수정' }));
+    fireEvent.click(screen.getByRole('button', { name: /신규 보안 롤 설정/ }));
+
+    expect(screen.getByLabelText('보안 롤 식별값(Role Code)')).toHaveValue('');
+    expect(screen.getByLabelText('보안 롤 식별값(Role Code)')).not.toHaveAttribute('readonly');
   });
 
   it('converts the 1-based UI page to the 0-based API page', async () => {
     renderClient();
 
     await waitFor(() => {
-      expect(mocks.list).toHaveBeenCalledWith({ page: 0, size: 10, searchKeyword: '' });
+      expect(mocks.list).toHaveBeenCalledWith({ page: 0, size: 10, pageUnit: 10, searchKeyword: '' });
     });
 
     fireEvent.click(await screen.findByRole('button', { name: '롤 다음 페이지' }));
 
     await waitFor(() => {
-      expect(mocks.list).toHaveBeenCalledWith({ page: 1, size: 10, searchKeyword: '' });
+      expect(mocks.list).toHaveBeenCalledWith({ page: 1, size: 10, pageUnit: 10, searchKeyword: '' });
     });
   });
 

@@ -33,12 +33,19 @@ class RoleApiControllerTest extends BaseControllerTest {
     @DisplayName("롤 목록 조회 성공")
     void testGetRoles() throws Exception {
         // Given
-        when(roleManageService.selectRoleList(any())).thenReturn(Collections.emptyList());
+        // 총건수는 목록과 같은 Page 에서 나온다. 검색을 무시하던 별도 count() 경로는 제거됐다.
+        when(roleManageService.selectRoleList(any())).thenReturn(
+                new org.springframework.data.domain.PageImpl<>(
+                        java.util.List.of(new RoleManageDto()),
+                        // ⚠ PageImpl 은 offset+pageSize > total 이면 total 을 content 기준으로 재계산한다.
+                        //   총건수가 페이지 크기보다 큰 실제 형태를 써야 이 단언이 의미를 갖는다.
+                        org.springframework.data.domain.PageRequest.of(0, 10), 42));
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/roles"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.total").value(42));
     }
 
     @Test

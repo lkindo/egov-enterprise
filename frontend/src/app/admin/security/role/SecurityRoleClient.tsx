@@ -12,7 +12,8 @@ import { Loader2,
  Binary,
  Workflow,
  ListOrdered,
- Key } from "lucide-react";
+ Key,
+ Settings } from "lucide-react";
 import { roleAdminService } from '@/services/foundation/system/RoleAdminService';
 import { RoleManage } from '@/types/foundation/security';
 import { SearchParams } from '@/types/foundation/system';
@@ -73,9 +74,17 @@ export default function SecurityRoleClient() {
  // pageNo는 변환 대상이 아니어서 서버의 BaseSearchDto에서 무시된다.
  /** 페이지당 건수(A1 필수). URL 에는 싣지 않는다. */
  const [pageSize, setPageSize] = useState(10);
- const params: SearchParams = { page: page - 1, size: pageSize, searchKeyword };
+ /*
+  * 서버 BaseSearchDto.toPageable() 은 pageUnit 만 본다. ApiService 가 size 로부터 만들어 주는
+  * recordCountPerPage 는 페이지 크기에 영향을 주지 않는다. 그래서 종전에는 '페이지당 50건'을
+  * 골라도 10건만 나왔고, 응답의 size(=pageUnit 기본 10)를 화면이 되읽어 **셀렉트가 10으로
+  * 되돌아갔다.** 사용자는 자기 선택이 씹히는 것을 본다.
+  */
+ const params: SearchParams = { page: page - 1, size: pageSize, pageUnit: pageSize, searchKeyword };
  const [isDialogOpen, setIsDialogOpen] = useState(false);
  const [deletingRoleId, setDeletingRoleId] = useState<string | null>(null);
+ /** null 이면 등록, 값이 있으면 그 롤을 수정한다(보안 그룹 화면과 같은 규약). */
+ const [editingRole, setEditingRole] = useState<RoleManage | null>(null);
  const [formData, setFormData] = useState<RoleManage>({
     roleId: '',
     roleNm: '',
@@ -124,6 +133,28 @@ export default function SecurityRoleClient() {
     onSettled: () => { submitPendingRef.current = false; },
   });
 
+  /*
+   * [2026-08-28] 수정 경로 배선. 종전에는 등록·삭제만 있어 **롤 명칭 오타 하나도 고칠 수 없었다** —
+   * 지우고 다시 만드는 것이 유일한 방법이었다. 반면 수정 경로는 위아래로 다 열려 있었다:
+   * RoleApiController @PutMapping("/{roleCode}") → RoleManageService.updateRole →
+   * RoleInfo.update(roleNm, rolePatrn, roleExpln, roleTypeCd, roleSort), 그리고 프런트
+   * roleAdminService.updateRole 까지. 화면만 그 경로를 부르지 않았다.
+   */
+  const updateMutation = useMutation({
+    mutationFn: (data: RoleManage) => roleAdminService.updateRole(data.roleId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ROLES_QUERY_KEY });
+      setIsDialogOpen(false);
+      toast('보안 롤 정보가 수정되었습니다.', 'success');
+    },
+    onError: (error) => {
+      const fieldErrors = extractFieldErrors(error);
+      if (fieldErrors) validation.setFormErrors(fieldErrors);
+      else toast('롤 수정 중 시스템 예외가 발생했습니다.', 'error');
+    },
+    onSettled: () => { submitPendingRef.current = false; },
+  });
+
   const deleteMutation = useMutation({
     mutationFn: (roleCode: string) => roleAdminService.deleteRole(roleCode),
     onSuccess: () => {
@@ -137,7 +168,7 @@ export default function SecurityRoleClient() {
     },
   });
 
-  const isSubmitPending = createMutation.isPending;
+  const isSubmitPending = createMutation.isPending || updateMutation.isPending;
   const isDeletePending = deletingRoleId !== null;
 
   const handleCloseDialog = () => {
@@ -147,6 +178,7 @@ export default function SecurityRoleClient() {
 
   const handleCreate = () => {
     if (submitPendingRef.current || deletePendingRef.current) return;
+    setEditingRole(null);
     setFormData({
       roleId: '',
       roleNm: '',
@@ -155,6 +187,14 @@ export default function SecurityRoleClient() {
       roleTypeCd: 'url',
       roleSort: '1',
     });
+    validation.setFormErrors({}, false);
+    setIsDialogOpen(true);
+  };
+
+  const handleEdit = (role: RoleManage) => {
+    if (submitPendingRef.current || deletePendingRef.current) return;
+    setEditingRole(role);
+    setFormData(role);
     validation.setFormErrors({}, false);
     setIsDialogOpen(true);
   };
@@ -189,7 +229,11 @@ export default function SecurityRoleClient() {
     const validated = validation.validate(formData);
     if (!validated) return;
     submitPendingRef.current = true;
-    createMutation.mutate(validated);
+    if (editingRole) {
+      updateMutation.mutate(validated);
+    } else {
+      createMutation.mutate(validated);
+    }
   };
 
   const columns: Column<RoleManage>[] = [
@@ -233,9 +277,19 @@ export default function SecurityRoleClient() {
     },
     {
       header: '관리',
-      className: 'text-right w-32',
+      className: 'text-right w-40',
       accessor: (item: RoleManage) => (
         <div className="flex justify-end gap-2 pr-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={isDeletePending || isSubmitPending}
+            onClick={() => handleEdit(item)}
+            aria-label={`${item.roleNm || item.roleId} 롤 수정`}
+            className="h-10 w-10 bg-muted hover:bg-surface-inverse hover:text-surface-inverse-foreground rounded-lg border border-border transition-all shadow-sm"
+          >
+            <Settings size={16} aria-hidden="true" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -315,7 +369,7 @@ export default function SecurityRoleClient() {
  <StandardModal
  isOpen={isDialogOpen}
  onClose={handleCloseDialog}
- title="신규 세분화 보안 롤 설정"
+ title={editingRole ? '보안 롤 수정' : '신규 세분화 보안 롤 설정'}
  maxWidth="xl"
  >
  <div className="p-4 space-y-12">
@@ -337,6 +391,8 @@ export default function SecurityRoleClient() {
               setFormData(prev => ({ ...prev, roleId: e.target.value }));
             }}
             required
+            // roleId 는 PK 이자 PUT 의 경로 변수다. 수정 중에 바꾸면 다른 롤을 덮어쓴다.
+            readOnly={!!editingRole}
             maxLength={20}
             className="h-11 pl-16 rounded-lg border-2 text-md font-bold tracking-widest uppercase shadow-inner"
             placeholder="롤 식별값"
@@ -459,8 +515,9 @@ export default function SecurityRoleClient() {
     취소
   </button>
  <Button onClick={handleSubmit} aria-busy={isSubmitPending || undefined} disabled={isSubmitPending || isDeletePending} className="flex-[2] h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-xs tracking-widest shadow-2xl hover:bg-primary transition-all hover:-translate-y-2 group">
- {isSubmitPending ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} className="group-hover:animate-pulse" />}
- <span className="ml-2">롤 아키텍처 배포</span>
+ {/* 장식 아이콘은 접근 가능한 이름에 섞이면 안 된다 — 버튼 이름이 "Zap롤 수정" 이 됐다(실측). */}
+ {isSubmitPending ? <Loader2 size={18} aria-hidden="true" className="animate-spin" /> : <Zap size={18} aria-hidden="true" className="group-hover:animate-pulse" />}
+ <span className="ml-2">{editingRole ? '롤 수정' : '롤 아키텍처 배포'}</span>
  </Button>
  </div>
  </div>
