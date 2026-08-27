@@ -22,11 +22,12 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { parseStorageYmd, toDisplayYmd, toStorageYmd } from "@/lib/format-date";
-import { AlertTriangle, CalendarIcon, ArrowLeft, RefreshCcw, Save, Sparkles } from "lucide-react";
+import { AlertTriangle, CalendarIcon, ArrowLeft, RefreshCcw, Save, Sparkles, Trash2 } from "lucide-react";
 import { pollUserService } from '@/services/business/user/poll/PollUserService';
 import { OnlinePollManageVO } from '@/types/business/poll';
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useToast } from '@/app/components/ui/toast';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
@@ -53,6 +54,8 @@ export default function SurveyManageDetailClient() {
     const routeParams = useParams();
     const queryClient = useQueryClient();
     const { success, error: toastError } = useToast();
+    // 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상 설문명과 결과 소실을 노출한다.
+    const confirm = useConfirm();
 
     const rawId = routeParams?.id;
     const pollSnParam = Array.isArray(rawId) ? rawId[0] : (rawId ?? '');
@@ -81,6 +84,13 @@ export default function SurveyManageDetailClient() {
     const [endDate, setEndDate] = useState<Date | undefined>();
     const [isSaving, setIsSaving] = useState(false);
     const savingRef = useRef(false);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const deletingRef = useRef(false);
+    /*
+     * 삭제 실패 사유를 화면에도 남긴다. 토스트는 사라지므로 "왜 안 지워졌는지"를 사용자가
+     * 놓치기 쉽고, 파괴적 액션일수록 그 사유가 화면에 머물러야 한다.
+     */
+    const [deleteError, setDeleteError] = useState<string | null>(null);
     const validation = useManualFormValidation(pollFormSchema, { labels: pollValidationLabels });
 
     // 조회 성공 시 폼을 서버 값으로 초기화한다.
@@ -134,6 +144,46 @@ export default function SurveyManageDetailClient() {
         } finally {
             savingRef.current = false;
             setIsSaving(false);
+        }
+    };
+
+    /**
+     * 설문 삭제.
+     *
+     * [2026-08-28] 삭제 경로는 위아래로 다 열려 있었는데(DELETE /api/v1/polls/{pollSn} →
+     * OnlinePollService.deletePoll → pollUserService.deletePoll) **UI 소비자가 0건**이었다.
+     * 그래서 잘못 만든 설문을 지울 방법이 제품에 없었다.
+     *
+     * ⚠ 되돌릴 수 없다 — deletePoll 은 FK(NO ACTION) 때문에 tb_onln_poll_rslt 를 먼저 지운다.
+     *   즉 **투표 결과가 함께 사라진다.** 확인 문구에 그 사실을 그대로 적는다.
+     *   진행 중인 설문을 멈추기만 하려면 아래 '폐기' 로 충분하고 그쪽은 되돌릴 수 있다.
+     */
+    const handleDelete = async () => {
+        if (deletingRef.current || savingRef.current) return;
+
+        const ok = await confirm({
+            title: '설문 삭제',
+            message: `'${poll?.pollNm ?? pollSn}' 설문을 삭제하시겠습니까? 이미 모인 투표 결과도 함께 삭제되며 되돌릴 수 없습니다. 진행을 멈추기만 하려면 '폐기'를 사용하세요.`,
+            confirmText: '삭제',
+            variant: 'destructive',
+        });
+        if (!ok) return;
+
+        deletingRef.current = true;
+        setIsDeleting(true);
+        setDeleteError(null);
+        try {
+            await pollUserService.deletePoll(pollSn);
+            success('설문을 삭제했습니다.');
+            await queryClient.invalidateQueries({ queryKey: ['admin-polls'] });
+            router.push('/admin/survey/manage');
+        } catch (e) {
+            const message = e instanceof Error ? e.message : '설문 삭제에 실패했습니다.';
+            setDeleteError(message);
+            toastError(message);
+        } finally {
+            deletingRef.current = false;
+            setIsDeleting(false);
         }
     };
 
@@ -352,15 +402,69 @@ export default function SurveyManageDetailClient() {
                                 </p>
                             </div>
 
-                            <div className="flex pt-6">
+                            <div className="space-y-3">
+                                <Label htmlFor="poll-dsuse-yn" className="text-sm font-bold text-muted-foreground ml-1">진행 상태</Label>
+                                {/*
+                                  [2026-08-28] 폐기 컨트롤 신설. pollDsuseYn 은 폼 state 에만 있고 입력이 없어
+                                  **항상 'N'(사용)으로 굳어 있었다** — 진행 중인 설문을 멈출 방법이 없었다.
+                                  서버는 이 값을 실제로 집행한다: OnlinePollService.vote 가 'Y' 면
+                                  '종료되었거나 폐기된 설문입니다.' 로 투표를 거부한다.
+                                  삭제와 달리 되돌릴 수 있고 이미 모인 결과도 보존된다.
+                                */}
+                                <Select
+                                    value={formData.pollDsuseYn}
+                                    onValueChange={(value) => {
+                                        validation.clearError('pollDsuseYn');
+                                        setFormData(prev => ({ ...prev, pollDsuseYn: value }));
+                                    }}
+                                >
+                                    <SelectTrigger
+                                        id="poll-dsuse-yn"
+                                        {...validation.fieldProps('pollDsuseYn')}
+                                        aria-required="true"
+                                        className="h-11 rounded-lg border-2 bg-muted/50 font-bold px-6"
+                                    >
+                                        <SelectValue placeholder="상태 선택" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-lg border-none shadow-2xl">
+                                        <SelectItem value="N" className="font-bold py-3 text-foreground">진행 중</SelectItem>
+                                        <SelectItem value="Y" className="font-bold py-3 text-foreground">폐기(투표 중지)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <p className="px-1 text-xs text-muted-foreground">
+                                    폐기하면 새 투표를 받지 않습니다. 이미 모인 결과는 그대로 남고 언제든 되돌릴 수 있습니다.
+                                </p>
+                                {validation.errors.pollDsuseYn ? (
+                                    <p {...validation.messageProps('pollDsuseYn')} className="text-sm text-destructive-emphasis" />
+                                ) : null}
+                            </div>
+
+                            <div className="flex flex-col gap-3 pt-6 sm:flex-row">
                                 <Button
                                     onClick={handleSave}
-                                    disabled={isSaving}
-                                    className="w-full h-11 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-lg tracking-widest shadow-2xl hover:bg-primary transition-all active:scale-95 gap-3"
+                                    disabled={isSaving || isDeleting}
+                                    aria-busy={isSaving || undefined}
+                                    className="h-11 flex-1 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-bold text-lg tracking-widest shadow-2xl hover:bg-primary transition-all active:scale-95 gap-3"
                                 >
-                                    <Save className="w-5 h-5" /> {isSaving ? '저장 중…' : '설정 저장'}
+                                    <Save className="w-5 h-5" aria-hidden="true" /> {isSaving ? '저장 중…' : '설정 저장'}
+                                </Button>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => { void handleDelete(); }}
+                                    disabled={isSaving || isDeleting}
+                                    aria-busy={isDeleting || undefined}
+                                    className="h-11 rounded-lg border-2 border-destructive/30 font-bold text-destructive-emphasis hover:bg-destructive hover:text-destructive-foreground sm:w-48"
+                                >
+                                    <Trash2 className="w-5 h-5" aria-hidden="true" /> {isDeleting ? '삭제 중…' : '설문 삭제'}
                                 </Button>
                             </div>
+
+                            {deleteError ? (
+                                <p role="alert" className="text-sm font-medium text-destructive-emphasis">
+                                    {deleteError}
+                                </p>
+                            ) : null}
                         </>
                     )}
                 </CardContent>

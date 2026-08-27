@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
-    "secondaryActionBoundaries": 53,
-    "candidateCount": 124
+    "secondaryActionBoundaries": 54,
+    "candidateCount": 125
   },
   "entries": [
     {
@@ -2452,6 +2452,26 @@
       ],
       "testEvidence": [
         "frontend/src/app/survey/__tests__/SurveyDetailClient.response.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/survey/manage/[id]/SurveyManageDetailClient.tsx#SurveyManageDetailClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/survey/manage/[id]/SurveyManageDetailClient.tsx",
+      "owner": "SurveyManageDetailClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "pollUserService.deletePoll"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/manage/__tests__/SurveyManageDetailActions.test.tsx"
       ]
     }
   ],
