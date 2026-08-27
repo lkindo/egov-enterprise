@@ -119,11 +119,18 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
   ];
 
   return (
+    /*
+     * [2026-08-28] 제목을 이 화면이 실제로 다루는 표에 맞춘다.
+     * 이 목록은 getPollList(tb_onln_poll_manage)이고, 같은 허브의 헤더 수치·문항·템플릿·응답자
+     * 탭은 tb_srvy(설문지)다. 둘 다 '설문 관리'라고 부르면 한 화면에서 같은 말이 서로 다른
+     * 엔티티를 가리킨다. '여론조사'는 저장소가 이미 쓰는 말이다
+     * (/admin/survey/polls/participate '여론조사 센터', lib/poll-status 주석).
+     */
     <WorkListPage
-      title="설문 관리"
+      title="여론조사 관리"
       headingLevel={embedded ? 2 : 1}
       showBreadcrumb={!embedded}
-      description="조직 내 의견 수렴·투표 설문을 조회하고 등록합니다."
+      description="조직 내 의견 수렴·투표를 조회하고 등록합니다."
       breadcrumbItems={[{ label: '설문관리' }, { label: '설문설정' }]}
       filterStateKey="survey-manage"
       totalCount={isError ? undefined : total}

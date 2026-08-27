@@ -126,7 +126,13 @@ export function SurveyHubClient() {
  </div>
  <div className="flex items-center gap-4">
  <div className="hidden sm:flex flex-col items-end mr-4">
- <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">등록된 설문</span>
+ {/*
+     [2026-08-28] 라벨을 값의 출처에 맞춘다. 이 수치는 surveyAdminService.getSurveyList
+     (tb_srvy)에서 오고, 아래 '설문 관리' 탭이 보여 주는 표는 getPollList(tb_onln_poll_manage)라
+     **다른 엔티티**다. 둘 다 '설문'이라고 부르면 "등록된 설문 3건" 아래에 12행이 보여도
+     관리자가 맞출 방법이 없다. 문항·템플릿·응답자 탭이 다루는 것이 이 '설문지'다.
+   */}
+ <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">등록된 설문지</span>
  {isSurveyLoading ? (
    <Skeleton className="h-8 w-20 mt-1" />
  ) : (
@@ -140,7 +146,9 @@ export function SurveyHubClient() {
  onClick={() => router.push('/admin/survey/manage/create')}
  className="h-11 px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl gap-3 group"
  >
- <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> 신규 설문 등록
+ {/* 이 버튼의 목적지(/admin/survey/manage/create)는 h1 이 '만족도 설문 등록'이고
+     tb_onln_poll_manage 행을 만든다 — 저장소가 이미 쓰는 말인 '여론조사'로 부른다. */}
+ <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" /> 신규 여론조사 등록
  </Button>
  </div>
  </motion.div>
@@ -183,7 +191,7 @@ export function SurveyHubClient() {
      {/* 값의 출처를 라벨과 일치시킨다 — 종전 'Global Response'/'Daily Active' 는 각각
          총 사용자 수·오늘 접속 수를 다른 의미로 표기한 거짓 지표였다(P1-5).
          근거가 없던 'Insight Score 88/100' 카드와 +12.4%/+2.1% 증감 배지는 삭제했다. */}
-     <MetricCard label="등록된 설문" value={totalSurveys} unit="건" icon={Layers} color="rose" />
+     <MetricCard label="등록된 설문지" value={totalSurveys} unit="건" icon={Layers} color="rose" />
      <MetricCard label="총 사용자" value={totalUsers} unit="명" icon={Users} color="primary" />
      <MetricCard label="오늘 접속" value={todayConnects} unit="회" icon={Activity} color="emerald" />
    </>
@@ -195,7 +203,7 @@ export function SurveyHubClient() {
  <Tabs value={currentTab} onValueChange={onTabChange} className="space-y-10">
  <div className="hub-glass-premium p-2 rounded-lg border-2 border-border/50 shadow-xl inline-flex w-full md:w-auto overflow-x-auto scrollbar-hide">
  <TabsList className="bg-transparent gap-2 h-auto p-0 border-none">
- <TabTrigger value="manage" icon={LayoutGrid} label="설문 관리" />
+ <TabTrigger value="manage" icon={LayoutGrid} label="여론조사 관리" />
  <TabTrigger value="questions" icon={ListChecks} label="문항 관리" />
  <TabTrigger value="templates" icon={LayoutTemplate} label="템플릿" />
  <TabTrigger value="respondents" icon={Users2} label="응답자" />
