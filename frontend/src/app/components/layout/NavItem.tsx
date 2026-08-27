@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import type { ComponentProps, ElementType } from 'react';
+import { useState, useEffect, useMemo, createContext, useContext } from 'react';
+import type { ComponentProps, ElementType, ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import {
@@ -26,6 +26,13 @@ import { motion } from 'framer-motion';
 import { useLayout } from '@/contexts/LayoutContext';
 import { MenuInfo } from '@/types/foundation/menu';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
+import {
+  NO_QUERY_DISCRIMINATORS,
+  collectQueryDiscriminators,
+  matchesLocation,
+  subtreeMatchesLocation,
+  type QueryDiscriminators,
+} from '@/lib/navigation/active-menu';
 
 const ICON_MAP: Record<string, ElementType> = {
   '대시보드': LayoutDashboard,
@@ -61,45 +68,21 @@ function UserCheckIcon(props: ComponentProps<typeof Users>) {
   return <Users {...props} />;
 }
 
-/** 읽기 전용 쿼리 접근자 (next/navigation 의 ReadonlyURLSearchParams 와 URLSearchParams 를 모두 수용) */
-type QueryParams = { get(name: string): string | null; toString(): string };
-
 /**
- * 현재 위치가 이 메뉴 자신을 가리키는지 판정한다.
+ * 같은 경로를 쿼리로 나눠 쓰는 메뉴 목록. 사이드바·모바일 내비가 자기 메뉴 트리로 채운다.
  *
- * ⚠ usePathname() 은 쿼리스트링을 제외한 경로만 돌려준다. 이 프로젝트의 메뉴는 상당수가 같은 경로에
- *   쿼리만 다른 형태다 (개인 및 부서 일정=/admin/work-hub?tab=job, 업무 보고 및 보고함=/admin/work-hub).
- *   과거처럼 pathname.startsWith(href) 로만 비교하면 "/admin/work-hub".startsWith("/admin/work-hub?tab=job")
- *   가 false 라 쿼리를 가진 메뉴는 영영 활성화되지 못하고, 쿼리 없는 형제가 대신 활성화됐다.
- *   그래서 경로와 쿼리를 함께 판정한다.
+ * 이 값이 없으면(기본 빈 Map) 쿼리 없는 메뉴는 아무에게도 양보하지 않는다 — 즉 화면이 붙인
+ * 표 페이지·검색어·필터 쿼리 때문에 활성 표시를 잃는 일이 없다. 판정 규칙은 active-menu.ts 참조.
  */
-function matchesLocation(href: string | null, pathname: string, searchParams: QueryParams): boolean {
-  if (!href) return false;
-  const [hrefPath, hrefQuery] = href.split('?');
+const QueryDiscriminatorContext = createContext<QueryDiscriminators>(NO_QUERY_DISCRIMINATORS);
 
-  // prefix 오매칭 방지: '/admin/work-hub' 가 '/admin/work-hub-archive' 를 잡지 않도록
-  // 정확 일치이거나 '/' 로 끊기는 하위 경로일 때만 경로가 맞은 것으로 본다.
-  if (pathname !== hrefPath && !pathname.startsWith(`${hrefPath}/`)) return false;
-
-  if (hrefQuery) {
-    // 쿼리로 특정되는 메뉴: 명시된 파라미터가 모두 현재 URL 과 일치해야 한다.
-    const expected = new URLSearchParams(hrefQuery);
-    let allMatch = true;
-    expected.forEach((value, key) => {
-      if (searchParams.get(key) !== value) allMatch = false;
-    });
-    return allMatch;
-  }
-
-  // 쿼리가 없는 메뉴: 현재 URL 에도 구분 쿼리가 없을 때만 활성으로 본다.
-  // (형제가 ?tab=... 로 갈라지는 경우, 더 구체적인 형제에게 활성 상태를 양보한다.)
-  return searchParams.toString() === '';
-}
-
-/** 자신 또는 후손 중 하나라도 현재 위치와 일치하면 true. 부모 강조·자동 펼침 판정에 쓴다. */
-function subtreeMatchesLocation(item: MenuInfo, pathname: string, searchParams: QueryParams): boolean {
-  if (matchesLocation(resolveMenuInternalRoute(item), pathname, searchParams)) return true;
-  return (item.children || []).some((child) => subtreeMatchesLocation(child, pathname, searchParams));
+export function NavQueryScope({ menus, children }: { menus: readonly MenuInfo[]; children: ReactNode }) {
+  const discriminators = useMemo(() => collectQueryDiscriminators(menus), [menus]);
+  return (
+    <QueryDiscriminatorContext.Provider value={discriminators}>
+      {children}
+    </QueryDiscriminatorContext.Provider>
+  );
 }
 
 interface NavItemProps {
@@ -110,6 +93,7 @@ interface NavItemProps {
 export function NavItem({ item, depth = 0 }: NavItemProps) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const discriminators = useContext(QueryDiscriminatorContext);
   const { setSidebarOpen } = useLayout();
   const hasChildren = item.children && item.children.length > 0;
   const [isOpen, setIsOpen] = useState(false);
@@ -119,17 +103,17 @@ export function NavItem({ item, depth = 0 }: NavItemProps) {
   // URL normalization and mapping
   const href = resolveMenuInternalRoute(item);
 
-  // 자신 또는 후손이 현재 위치(경로 + 쿼리)와 일치할 때 활성. 판정 규칙은 matchesLocation 주석 참조.
+  // 자신 또는 후손이 현재 위치(경로 + 쿼리)와 일치할 때 활성. 판정 규칙은 active-menu.ts 주석 참조.
   const isActive = useMemo(
-    () => subtreeMatchesLocation(item, String(pathname), searchParams),
-    [item, pathname, searchParams]
+    () => subtreeMatchesLocation(item, String(pathname), searchParams, discriminators),
+    [item, pathname, searchParams, discriminators]
   );
 
   // aria-current="page" 는 IA §7.3 의 canonical node 선언이다. isActive(자손 포함)에 달면
   // 조상 그룹까지 '현재 페이지'를 사칭하므로 자기 자신 일치에만 단다.
   const isCurrentPage = useMemo(
-    () => matchesLocation(href, String(pathname), searchParams),
-    [href, pathname, searchParams]
+    () => matchesLocation(href, String(pathname), searchParams, discriminators),
+    [href, pathname, searchParams, discriminators]
   );
 
   useEffect(() => {

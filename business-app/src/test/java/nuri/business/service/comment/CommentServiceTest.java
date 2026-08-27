@@ -23,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class CommentServiceTest {
@@ -90,10 +91,33 @@ class CommentServiceTest {
         given(commentRepository.save(any(Comment.class))).willReturn(savedComment);
 
         // when
-        Long id = commentService.createComment(request);
+        Long id = commentService.createComment("USRCNFRM_00000000001", "홍길동", request);
 
         // then
         assertThat(id).isEqualTo(1L);
+    }
+
+    @Test
+    @DisplayName("작성자는 인증 주체에서 저장한다 — 요청 본문의 주장은 무시된다")
+    void createComment_storesAuthenticatedAuthorOnly() {
+        // 종전에는 request 의 wrterId/wrterNm 을 그대로 저장했다. 화면이 그 두 필드를 보내지 않으므로
+        // **모든 댓글의 작성자가 null** 이었고, 요청이 값을 실으면 남의 이름으로 다는 것도 가능했다.
+        CommentDto request = CommentDto.builder()
+                .pstSn(1L)
+                .bbsId("BBS_01")
+                .wrterId("SPOOFED_ID")
+                .wrterNm("남의이름")
+                .ansCn("New Comment")
+                .build();
+        given(commentRepository.save(any(Comment.class)))
+                .willReturn(Comment.builder().ansSn(9L).build());
+
+        commentService.createComment("USRCNFRM_00000000001", "홍길동", request);
+
+        org.mockito.ArgumentCaptor<Comment> saved = org.mockito.ArgumentCaptor.forClass(Comment.class);
+        verify(commentRepository).save(saved.capture());
+        assertThat(saved.getValue().getWrterId()).isEqualTo("USRCNFRM_00000000001");
+        assertThat(saved.getValue().getWrterNm()).isEqualTo("홍길동");
     }
 
     @Test

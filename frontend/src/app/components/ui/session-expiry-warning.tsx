@@ -14,12 +14,30 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/compone
  * - 연장: 토큰 재발급(reissue) API 호출
  * - 무시: 만료 시 자동 로그아웃 및 로그인 페이지 이동
  */
+/** 만료 몇 분 전부터 경고할지. 경고를 여는 조건이자, 연장 성공을 판정하는 기준이다. */
+const WARNING_THRESHOLD_MS = 5 * 60 * 1000;
+
+/**
+ * 연장 실패의 성격.
+ * - `retryable`: 일시적 실패. 다시 시도가 의미 있다.
+ * - `expired`: 세션 자체가 끝났다. 다시 시도는 눌러도 절대 성공하지 못하는 죽은 어포던스다.
+ */
+type ExtendFailure = 'retryable' | 'expired';
+
+/** Route Handler 가 내려주는 실패 코드(SESSION_EXPIRED / REISSUE_RATE_LIMITED / REISSUE_PROXY_ERROR). */
+function reissueFailureCode(error: unknown): string | undefined {
+  if (!error || typeof error !== 'object') return undefined;
+  const response = (error as { response?: { data?: { code?: unknown } } }).response;
+  const code = response?.data?.code;
+  return typeof code === 'string' ? code : undefined;
+}
+
 export function SessionExpiryWarning() {
   const { user, logout } = useAuth();
   const [showWarning, setShowWarning] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(300); // 5분 = 300초
-  /** 연장 요청이 실패했는지. 실패를 조용히 삼키면 사용자가 만료를 모른 채 작업하다 튕긴다. */
-  const [extendFailed, setExtendFailed] = useState(false);
+  /** 연장 실패의 성격. 실패를 조용히 삼키면 사용자가 만료를 모른 채 작업하다 튕긴다. */
+  const [extendFailure, setExtendFailure] = useState<ExtendFailure | null>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const countdownRef = useRef<NodeJS.Timeout | null>(null);
   const extendButtonRef = useRef<HTMLButtonElement>(null);
@@ -44,7 +62,8 @@ export function SessionExpiryWarning() {
   }, []);
 
   const handleExtendSession = useCallback(async () => {
-    setExtendFailed(false);
+    setExtendFailure(null);
+    let failureCode: string | undefined;
     try {
       // ⚠ 반드시 authService.reissue()(= Next Route Handler '/api/auth/reissue')를 쓴다.
       //   종전에는 client.post('/auth/reissue') 였고, axios baseURL 이 브라우저에서 '/api/v1' 이라
@@ -56,24 +75,30 @@ export function SessionExpiryWarning() {
       // Route Handler 는 새 accessToken 과 session_exp 를 서버에서 쿠키로 재설정하므로
       // 클라이언트는 별도 저장이 불필요하다(토큰을 JS 로 저장하면 HttpOnly 전환이 무력화된다).
       const { authService } = await import('@/services/foundation/auth/authService');
-      const before = getTokenExpiry();
       await authService.reissue();
-
-      // [무한반복 방지 가드] 200 을 받았다는 것과 세션이 실제로 연장됐다는 것은 다르다.
-      // 위 회귀가 정확히 그 틈에서 났다(200 인데 쿠키는 그대로). 만료시각이 앞으로 밀렸는지
-      // 눈으로 확인한 뒤에만 경고를 닫는다. 안 밀렸으면 닫지 않고 실패로 알린다 —
-      // 조용히 닫아 30초 뒤 다시 뜨는 무한 루프로 되돌아가지 않게 하는 것이 핵심이다.
-      const after = getTokenExpiry();
-      if (after === null || (before !== null && after <= before)) {
-        setExtendFailed(true);
-        return;
-      }
-      setShowWarning(false);
-    } catch {
-      // 연장 실패 시 경고를 닫으면 사용자가 만료를 모른 채 작업하다 튕긴다.
-      // 경고를 유지해 '다시 시도' 또는 '로그아웃'을 선택할 수 있게 한다.
-      setExtendFailed(true);
+    } catch (error) {
+      // 여기서 곧장 실패로 단정하지 않는다 — 아래에서 결과로 판정한다.
+      failureCode = reissueFailureCode(error);
     }
+
+    // [판정 기준] "내 요청이 성공했는가"가 아니라 "세션이 실제로 연장됐는가"를 본다.
+    //
+    // 백엔드는 재발급 때 리프레시 토큰을 **회전**시킨다(같은 토큰 재사용은 401 — 2026-08-27 실측).
+    // 그래서 axios 인터셉터의 자동 재발급과 이 버튼이 겹치면 늦게 도착한 쪽만 401 이 되는데,
+    // 그 시점의 세션은 이미 연장돼 있다. 요청 성공 여부로 판정하면 **멀쩡한 세션을 두고
+    // "다시 시도"만 반복하는 팝업**에 사용자가 갇힌다(실제 신고 증상).
+    //
+    // 동시에, 200 을 받았다는 것도 연장의 증거가 아니다 — 과거 회귀가 정확히 그 틈이었다
+    // (200 인데 쿠키는 옛 만료시각 그대로). 결과로만 판정하면 두 방향이 함께 막힌다.
+    const expiry = getTokenExpiry();
+    if (expiry !== null && expiry - Date.now() > WARNING_THRESHOLD_MS) {
+      setShowWarning(false);
+      return;
+    }
+
+    // 연장되지 않았다. 경고를 닫으면 사용자가 만료를 모른 채 작업하다 튕기므로 유지하되,
+    // 재시도가 의미 있는 실패인지 아닌지는 구분해서 알린다.
+    setExtendFailure(failureCode === 'SESSION_EXPIRED' ? 'expired' : 'retryable');
   }, [getTokenExpiry]);
 
   const handleLogout = useCallback(async () => {
@@ -96,7 +121,6 @@ export function SessionExpiryWarning() {
       return;
     }
 
-    const WARNING_THRESHOLD = 5 * 60 * 1000; // 만료 5분 전 경고
     const CHECK_INTERVAL = 30 * 1000; // 30초마다 체크
 
     const checkExpiry = () => {
@@ -109,10 +133,10 @@ export function SessionExpiryWarning() {
       if (timeLeft <= 0) {
         // 이미 만료됨
         handleLogout();
-      } else if (timeLeft <= WARNING_THRESHOLD && !showWarning) {
+      } else if (timeLeft <= WARNING_THRESHOLD_MS && !showWarning) {
         // 5분 이내: 경고 표시
         setRemainingSeconds(Math.floor(timeLeft / 1000));
-        setExtendFailed(false);
+        setExtendFailure(null);
         setShowWarning(true);
       }
     };
@@ -195,28 +219,45 @@ export function SessionExpiryWarning() {
               보안을 위해 장시간 활동이 없으면 자동으로 로그아웃됩니다.<br />
               작업을 계속하시려면 세션을 연장해 주세요.
             </p>
-            {extendFailed && (
-              <p role="alert" className="mt-4 text-sm font-bold text-rose-600 dark:text-rose-400">
+            {extendFailure === 'retryable' && (
+              <p role="alert" className="mt-4 text-sm font-bold text-destructive-emphasis">
                 세션 연장에 실패했습니다. 다시 시도하거나, 작업을 저장한 뒤 다시 로그인해 주세요.
+              </p>
+            )}
+            {extendFailure === 'expired' && (
+              <p role="alert" className="mt-4 text-sm font-bold text-destructive-emphasis">
+                세션이 만료되었습니다. 연장할 수 없으니 작업을 저장한 뒤 다시 로그인해 주세요.
               </p>
             )}
           </div>
 
-          {/* 액션 */}
+          {/* 액션 — 세션이 끝난 뒤에는 '다시 시도'를 남겨 두지 않는다. 눌러도 성공할 수 없다. */}
           <div className="px-6 pb-6 flex gap-3">
-            <button
-              onClick={handleLogout}
-              className="flex-1 px-4 py-3 border-2 border-border text-muted-foreground font-bold text-sm rounded-lg hover:bg-accent transition-colors cursor-pointer"
-            >
-              로그아웃
-            </button>
-            <button
-              ref={extendButtonRef}
-              onClick={handleExtendSession}
-              className="flex-1 px-4 py-3 bg-primary text-primary-foreground font-bold text-sm rounded-lg hover:bg-primary/90 shadow-xl transition-all active:scale-95 cursor-pointer"
-            >
-              {extendFailed ? '다시 시도' : '세션 연장'}
-            </button>
+            {extendFailure === 'expired' ? (
+              <button
+                ref={extendButtonRef}
+                onClick={handleLogout}
+                className="flex-1 px-4 py-3 bg-primary text-primary-foreground font-bold text-sm rounded-lg hover:bg-primary/90 shadow-xl transition-all active:scale-95 cursor-pointer"
+              >
+                다시 로그인
+              </button>
+            ) : (
+              <>
+                <button
+                  onClick={handleLogout}
+                  className="flex-1 px-4 py-3 border-2 border-border text-muted-foreground font-bold text-sm rounded-lg hover:bg-accent transition-colors cursor-pointer"
+                >
+                  로그아웃
+                </button>
+                <button
+                  ref={extendButtonRef}
+                  onClick={handleExtendSession}
+                  className="flex-1 px-4 py-3 bg-primary text-primary-foreground font-bold text-sm rounded-lg hover:bg-primary/90 shadow-xl transition-all active:scale-95 cursor-pointer"
+                >
+                  {extendFailure === 'retryable' ? '다시 시도' : '세션 연장'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </DialogContent>

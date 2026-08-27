@@ -1,4 +1,4 @@
-import client from '@/lib/api/client';
+import client, { reissueSession } from '@/lib/api/client';
 
 /**
  * 인증 서비스
@@ -79,9 +79,15 @@ export const authService = {
    return client.post<void>('/api/auth/logout', undefined, ROUTE_HANDLER);
  },
 
- /** 토큰 갱신 (Next.js Route Handler를 통해 HttpOnly 쿠키 재발행) */
- reissue: async (): Promise<{ accessToken: string }> => {
-   return client.post<{ accessToken: string }>('/api/auth/reissue', undefined, ROUTE_HANDLER);
+ /**
+  * 토큰 갱신 (Next.js Route Handler를 통해 HttpOnly 쿠키 재발행).
+  *
+  * 자동 재발급(axios 인터셉터)과 **단일 실행을 공유**한다 — 백엔드가 리프레시 토큰을 회전시키므로
+  * 두 경로가 따로 쏘면 늦게 도착한 쪽만 401 이 되고, 세션은 연장됐는데 호출자만 실패로 본다.
+  * 새 토큰은 Route Handler 가 HttpOnly 쿠키로 심으므로 돌려줄 값이 없다.
+  */
+ reissue: async (): Promise<void> => {
+   await reissueSession();
  },
 
  /** 현재 사용자정보 조회 (백엔드에 직접 쏘며, 미들웨어가 accessToken 쿠키를 낚아채 Bearer 헤더를 주입해 줌) */

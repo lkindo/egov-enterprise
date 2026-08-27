@@ -31,10 +31,13 @@ test('current URL-state census exactly covers critical route and URL producer po
   assert.deepEqual(validateUrlStateCensus(actual, { repoRoot }), []);
   assert.deepEqual(validateUrlStateCensus(expected, { repoRoot }), []);
   assert.deepEqual(compareUrlStateCensus(expected, actual), []);
+  // [2026-08-27] configRedirects 15 → 14. /admin/security/login-policy 의 리다이렉트를 제거해
+  //   그 화면(로그인 보안 정책, 424줄 + API 5개)을 정본 경로로 되살렸다. 리다이렉트가 **줄어드는**
+  //   방향이라 URL 상태 표면이 넓어지지 않는다 — filesystemRoutes 120 은 불변이다.
   assert.deepEqual(actual.summary.exactPopulations, {
     filesystemRoutes: 120,
     dynamicRoutePatterns: 11,
-    configRedirects: 15,
+    configRedirects: 14,
     pageRedirects: 5,
   });
   assert.equal(actual.summary.records, actual.records.length);

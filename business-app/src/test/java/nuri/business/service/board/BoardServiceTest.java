@@ -1010,6 +1010,26 @@ class BoardServiceTest {
     }
 
     @Test
+    @DisplayName("게시글 수정 - 날짜만(YYYY-MM-DD) 온 행사일자를 자정으로 보존한다")
+    void updatePost_parsesDateOnlyEventDate() {
+        // 화면의 날짜 입력은 type="date" 라 정확히 10자로 들어온다. 종전 updatePost 는 전용 파서에서
+        // LocalDateTime.parse 만 시도해 이 형식을 파싱하지 못했고, 경고 로그 한 줄만 남기고
+        // **행사일자를 조용히 null 로** 덮어썼다. createPost 는 같은 입력을 이미 보존하고 있었다.
+        String bbsId = "BBS_01";
+        Long pstSn = 1L;
+        String userId = "user1";
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "2026-03-01", null, null, null, null, null);
+        Board board = org.mockito.Mockito.spy(Board.builder().pstSn(pstSn).userId(userId).build());
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
+
+        boardService.updatePost(bbsId, pstSn, request);
+
+        verify(board).update(any(), any(), any(), any(), any(), any(), any(), any(),
+                eq(java.time.LocalDate.of(2026, 3, 1).atStartOfDay()), any(), any(), any());
+    }
+
+    @Test
     @DisplayName("잘못된 행사 날짜 형식이 포함된 게시글 수정 (예외 처리 확인)")
     void updatePost_InvalidEventDate() {
         // given

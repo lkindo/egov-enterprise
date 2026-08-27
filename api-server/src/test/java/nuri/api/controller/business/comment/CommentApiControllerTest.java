@@ -21,6 +21,8 @@ import java.util.List;
 
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verify;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -37,12 +39,35 @@ class CommentApiControllerTest {
     @InjectMocks
     private CommentApiController commentApiController;
 
+    /** 인증 주체를 심어 두는 principal. 작성자 신원이 여기서 와야 한다. */
+    private static final nuri.foundation.security.service.CustomUserDetails PRINCIPAL =
+            nuri.foundation.security.service.CustomUserDetails.builder()
+                    .userId("writer01")
+                    .esntlId("USRCNFRM_00000000001")
+                    .userNm("홍길동")
+                    .roleName("USER")
+                    .build();
+
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(commentApiController)
                 .setControllerAdvice(new GlobalExceptionHandler())
-                .setCustomArgumentResolvers(new org.springframework.data.web.PageableHandlerMethodArgumentResolver())
+                .setCustomArgumentResolvers(
+                        new org.springframework.data.web.PageableHandlerMethodArgumentResolver(),
+                        // ⚠ 이 리졸버가 없으면 @AuthenticationPrincipal 파라미터가 **null 로 조용히 주입**돼
+                        //   "작성자를 인증 주체에서 채운다" 는 계약이 검증되지 않은 채 green 이 된다.
+                        new org.springframework.security.web.method.annotation
+                                .AuthenticationPrincipalArgumentResolver())
                 .build();
+
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(
+                        PRINCIPAL, null, PRINCIPAL.getAuthorities()));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearSecurityContext() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
     }
 
     @Test
@@ -71,10 +96,10 @@ class CommentApiControllerTest {
     }
 
     @Test
-    @DisplayName("댓글 생성 성공")
+    @DisplayName("댓글 생성 성공 — 작성자는 인증 주체에서 온다")
     void createComment_Success() throws Exception {
         // Given
-        given(commentService.createComment(any(CommentDto.class))).willReturn(1L);
+        given(commentService.createComment(anyString(), anyString(), any(CommentDto.class))).willReturn(1L);
 
         // When & Then
         mockMvc.perform(post("/api/v1/comments")
@@ -85,6 +110,34 @@ class CommentApiControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value(1));
+
+        // 종전에는 요청 본문의 작성자를 그대로 저장했고, 화면이 그 필드를 보내지 않아 전 건이 null 이었다.
+        verify(commentService).createComment(
+                org.mockito.ArgumentMatchers.eq("USRCNFRM_00000000001"),
+                org.mockito.ArgumentMatchers.eq("홍길동"),
+                any(CommentDto.class));
+    }
+
+    @Test
+    @DisplayName("[위조 차단] 요청이 작성자를 주장해도 저장되는 값은 인증 주체의 것이다")
+    void createComment_ignoresClaimedAuthor() throws Exception {
+        given(commentService.createComment(anyString(), anyString(), any(CommentDto.class))).willReturn(2L);
+
+        mockMvc.perform(post("/api/v1/comments")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"pstSn\":\"1\",\"bbsId\":\"BBS_001\",\"ansCn\":\"Content\","
+                        + "\"wrterId\":\"SPOOFED_ID\",\"wrterNm\":\"남의이름\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+
+        // DTO 의 두 필드는 READ_ONLY 라 요청 값이 바인딩되지 않는다(400 이 아니라 무시다).
+        org.mockito.ArgumentCaptor<CommentDto> body = org.mockito.ArgumentCaptor.forClass(CommentDto.class);
+        verify(commentService).createComment(
+                org.mockito.ArgumentMatchers.eq("USRCNFRM_00000000001"),
+                org.mockito.ArgumentMatchers.eq("홍길동"),
+                body.capture());
+        assertThat(body.getValue().getWrterId()).isNull();
+        assertThat(body.getValue().getWrterNm()).isNull();
     }
 
     @Test

@@ -34090,10 +34090,16 @@
             "minLength": 0
           },
           "wrterId": {
-            "type": "string"
+            "type": "string",
+            "readOnly": true
           },
           "wrterNm": {
-            "type": "string"
+            "type": "string",
+            "readOnly": true
+          },
+          "frstRgtrId": {
+            "type": "string",
+            "readOnly": true
           },
           "pswd": {
             "type": "string",

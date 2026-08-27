@@ -126,12 +126,12 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
     registerSubmitLock.current = true;
     try {
       setRegisterLoading(true);
-      const submitData: Partial<ExternalHr> = {
-        ...values,
-        gndrCd: 'M',
-        crTypeCd: 'STANDARD',
-      };
-      await operationAdminService.createExternalHr(submitData);
+      // [2026-08-27] 종전에는 gndrCd:'M'·crTypeCd:'STANDARD' 를 덧붙여 보냈다.
+      //   이 화면은 성별을 **묻지 않는데** 등록되는 모든 외부 인사가 남성으로 저장됐고,
+      //   'STANDARD' 는 어떤 Flyway 시드에도 없는 값이었다. 두 컬럼 모두 nullable 이고
+      //   (ExternalHr 엔티티 @Column(length=12), DTO 는 @Size 만) 저장소 어디에서도 읽지 않는다.
+      //   묻지 않은 개인정보를 지어내 저장하지 않는다 — 값이 없으면 보내지 않는다.
+      await operationAdminService.createExternalHr({ ...values });
       toast('성공적으로 등록되었습니다.', 'success');
       setIsModalOpen(false);
       form.reset();

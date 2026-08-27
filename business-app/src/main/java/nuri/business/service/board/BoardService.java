@@ -404,14 +404,12 @@ public class BoardService extends BaseAbstractService {
                 // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrAdminByEsntlId 기준 비교)
                 nuri.business.security.util.SecurityUtil.assertOwnerOrAdminByEsntlId(board.getUserId());
 
-                java.time.LocalDateTime eventDate = null;
-                if (StringUtils.hasText(request.evntDt())) {
-                        try {
-                                eventDate = java.time.LocalDateTime.parse(request.evntDt());
-                        } catch (Exception e) {
-                                log.warn("Failed to parse eventDate for update: {}", request.evntDt());
-                        }
-                }
+                // [2026-08-27] 전용 파서를 걷어내고 createPost(:217)·replyPost 와 같은 헬퍼로 통일한다.
+                //   종전 블록은 LocalDateTime.parse 만 시도해 **'YYYY-MM-DD'(10자)를 파싱하지 못했다.**
+                //   화면의 날짜 입력은 type="date" 라 정확히 그 10자로 들어오므로, 수정 시 행사 일자가
+                //   경고 로그 한 줄만 남기고 조용히 null 이 됐다. parseDateTime 은 10자를 자정으로
+                //   해석하고 그보다 긴 문자열은 LocalDateTime 으로 처리한다.
+                java.time.LocalDateTime eventDate = parseDateTime(request.evntDt());
 
                 board.update(request.pstTtl(), request.pstCn(),
                                 board.getUserId(),   // 저자(userId/userNm)는 불변 — request 로 재지정 금지(정체성 위조 방지)

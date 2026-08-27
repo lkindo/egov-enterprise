@@ -3134,9 +3134,7 @@
       "menuExposure": "unverified",
       "decisionSafe": false,
       "routing": {
-        "kind": "config-redirect",
-        "target": "/admin/system/monitoring/hub?tab=policy",
-        "permanent": false
+        "kind": "page"
       },
       "observedPageRedirectCalls": [],
       "owner": "product/UX + domain owner",

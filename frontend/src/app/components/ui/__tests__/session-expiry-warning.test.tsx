@@ -90,7 +90,7 @@ describe('SessionExpiryWarning', () => {
         expect(screen.getByRole('dialog')).toBeInTheDocument();
     });
 
-    it('연장 호출이 예외로 실패해도 경고를 유지한다', async () => {
+    it('연장 호출이 예외로 실패하고 세션도 그대로면 경고를 유지한다', async () => {
         setSessionExp(2 * 60 * 1000);
         reissueMock.mockRejectedValue(new Error('401 Unauthorized'));
 
@@ -99,5 +99,39 @@ describe('SessionExpiryWarning', () => {
 
         expect(await screen.findByRole('alert')).toHaveTextContent('세션 연장에 실패했습니다');
         expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('[회귀] 자동 재발급과 경합해 내 요청이 401 이어도 세션이 연장됐으면 경고를 닫는다', async () => {
+        // 백엔드는 재발급 때 리프레시 토큰을 **회전**한다(같은 토큰 재사용은 401 — 2026-08-27 실측).
+        // axios 인터셉터의 자동 재발급과 이 버튼이 겹치면 늦게 도착한 쪽만 401 이 되는데,
+        // 그때 세션은 이미 연장돼 있다. 요청 성공 여부로 판정하면 멀쩡한 세션을 두고
+        // "다시 시도"만 반복하게 된다 — 사용자가 팝업을 벗어나지 못한 실제 증상이다.
+        setSessionExp(2 * 60 * 1000);
+        reissueMock.mockImplementation(async () => {
+            setSessionExp(55 * 60 * 1000); // 동시에 진행된 자동 재발급이 세션을 연장했다
+            throw new Error('401 Unauthorized');
+        });
+
+        render(<SessionExpiryWarning />);
+        await userEvent.click(await screen.findByRole('button', { name: '세션 연장' }));
+
+        await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+        expect(screen.queryByRole('alert')).not.toBeInTheDocument();
+    });
+
+    it('세션이 실제로 만료돼 재시도가 무의미하면 다시 로그인을 안내한다', async () => {
+        // Route Handler 는 401/403 을 SESSION_EXPIRED 로 구분해 내려준다.
+        // 이때 '다시 시도'는 눌러도 절대 성공할 수 없는 죽은 어포던스다.
+        setSessionExp(2 * 60 * 1000);
+        reissueMock.mockRejectedValue({
+            response: { status: 401, data: { code: 'SESSION_EXPIRED' } },
+        });
+
+        render(<SessionExpiryWarning />);
+        await userEvent.click(await screen.findByRole('button', { name: '세션 연장' }));
+
+        expect(await screen.findByRole('alert')).toHaveTextContent('세션이 만료되었습니다');
+        expect(screen.queryByRole('button', { name: '다시 시도' })).not.toBeInTheDocument();
+        expect(screen.getByRole('button', { name: '다시 로그인' })).toBeInTheDocument();
     });
 });

@@ -111,7 +111,16 @@ class SecurityAuthAnnotationLinterTest {
             // RBAC_ADMIN_OR_SYSTEM|hasAnyRole('ADMIN','SYSTEM'). 응답에 저장 경로가 들어가므로
             // 첨부 목록 조회와 **같은 ADMIN/SYSTEM 축**으로 제한했다(완화 아님, H3). endpoint 수
             // 173 -> 174.
-            "c79417e3e7794946cf4f7d1183f0bd362be713e65e0b8505f52838968ffae392";
+            // [2026-08-27 개인정보 로그 SYSTEM 배제] GET .../logs/privacy 와 .../logs/privacy/export.xlsx
+            // 2행의 메서드 SpEL 이 hasRole('ADMIN') / hasAnyRole('ADMIN','SYSTEM') →
+            // hasRole('ADMIN') and !hasRole('SYSTEM') 로 바뀌었다. **인가 축소이며 완화가 아니다.**
+            // 배경: 이 저장소는 DB 역할 계층 ROLE_SYSTEM > ROLE_ADMIN 을 메서드 인가에도 주입하므로
+            // (RoleHierarchyConfig#methodSecurityExpressionHandler) hasRole('ADMIN') 이 SYSTEM 도
+            // 통과시켜, 컨트롤러 javadoc 이 명시한 "SYSTEM 제외"(2026-08-05 사용자 결정)가 실제로는
+            // 집행되지 않고 있었다. PrivacyLogSystemRoleExclusionTest 가 계층이 살아 있는 상태에서
+            // 두 경로의 SYSTEM 403 을 고정하며, 종전 애노테이션으로 되돌리면 red 가 되는 것을 확인했다.
+            // endpoint 수 174 로 불변(행 수 변화 없음, gate 는 URL 축이라 RBAC_ADMIN_OR_SYSTEM 유지).
+            "396464ced2d6305bb6fdf22910ecbc4e281c68b8ba67d4ca5281cf5c46cb23f9";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;
