@@ -220,12 +220,12 @@ export function SessionExpiryWarning() {
               작업을 계속하시려면 세션을 연장해 주세요.
             </p>
             {extendFailure === 'retryable' && (
-              <p role="alert" className="mt-4 text-sm font-bold text-rose-600 dark:text-rose-400">
+              <p role="alert" className="mt-4 text-sm font-bold text-destructive-emphasis">
                 세션 연장에 실패했습니다. 다시 시도하거나, 작업을 저장한 뒤 다시 로그인해 주세요.
               </p>
             )}
             {extendFailure === 'expired' && (
-              <p role="alert" className="mt-4 text-sm font-bold text-rose-600 dark:text-rose-400">
+              <p role="alert" className="mt-4 text-sm font-bold text-destructive-emphasis">
                 세션이 만료되었습니다. 연장할 수 없으니 작업을 저장한 뒤 다시 로그인해 주세요.
               </p>
             )}
