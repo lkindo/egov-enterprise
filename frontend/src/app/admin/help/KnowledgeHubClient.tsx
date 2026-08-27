@@ -15,7 +15,7 @@ import { knowledgeService, type KnowledgeDto } from '@/services/business/knowled
 import {
  COMMUNITY_BOARD_ID,
  HELP_FAQ_BOARD_ID,
- KNOWLEDGE_FALLBACK_BOARD_ID,
+ NOTICE_BOARD_ID,
  QNA_BOARD_ID,
  WIKI_BOARD_ID,
 } from '@/config/board-ids';
@@ -78,7 +78,12 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  if (activeCategory === 'FAQ') return HELP_FAQ_BOARD_ID;
  if (activeCategory === 'QNA') return QNA_BOARD_ID;
  if (activeCategory === 'WIKI') return WIKI_BOARD_ID;
- return KNOWLEDGE_FALLBACK_BOARD_ID; // DEFAULT/NOTICE
+ /*
+  * 종전 폴백 KNOWLEDGE_FALLBACK_BOARD_ID('BBSMSTR_NNNNNNNNNNNN')는 Flyway 시드에도
+  * sql/seed_knowledge_boards.sql 에도 없다(전량 grep 실측 — 등장처가 테스트 목뿐이다).
+  * DEFAULT/NOTICE 라는 주석의 의도대로 실재하는 공지 게시판을 쓴다.
+  */
+ return NOTICE_BOARD_ID; // DEFAULT/NOTICE
  }, [activeCategory]);
 
  const isAccessRestricted = !isAdmin && (activeCategory === 'WIKI' || activeCategory === 'FAQ');

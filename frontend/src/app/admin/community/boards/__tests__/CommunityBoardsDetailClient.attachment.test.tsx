@@ -1,4 +1,17 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+
+/*
+ * 이 화면은 게시판 선택지를 서버 목록(useBoardOptions → useQuery)에서 받는다.
+ * 종전에는 선택지가 하드코딩이라 QueryClient 없이 렌더됐지만, 하드코딩 목록에는
+ * 시드에 없는 게시판이 섞여 있어 고르는 순간 등록이 거부됐다. provider 를 씌워
+ * 원래 단언은 그대로 두고 렌더만 성립시킨다.
+ */
+const render = (ui: React.ReactElement) => rtlRender(
+  <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+    {ui}
+  </QueryClientProvider>,
+);
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { ReactNode } from 'react';
