@@ -20,6 +20,7 @@ import {
  WIKI_BOARD_ID,
 } from '@/config/board-ids';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -39,7 +40,10 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  const searchParams = useSearchParams();
  const { user } = useAuth();
 
- const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
+ // [2026-08-28] 리터럴 비교는 SYSTEM·ROLE_SYSTEM 을 빠뜨려 **권한 있는 관리자에게 기능이
+ //   사라진다**. proxy 의 /admin 게이트는 4종을 전부 통과시키므로, 라우트는 열어 주는데
+ //   화면만 막히는 비대칭이 된다 — DEC-OPS-023 ②가 계약으로 막으려던 형태다.
+ const isAdmin = isAdministrativeRole(user?.role);
  const [searchQuery, setSearchQuery] = useState('');
  // 타이핑 한 글자마다 서버 요청이 나가던 것을 300ms 디바운스한다.
  // 입력 컨트롤에는 원본 상태를 바인딩해야 입력 지연이 생기지 않는다.

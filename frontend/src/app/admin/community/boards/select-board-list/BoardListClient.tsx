@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Plus, Settings2, BookOpen, X, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 import { cn } from "@/lib/utils";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import { BoardPost } from '@/types/business/board';
@@ -41,7 +42,9 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const pathname = usePathname();
  const { user } = useAuth();
  const queryClient = useQueryClient();
- const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
+ // [2026-08-28] 판정 SSOT 사용. 리터럴 비교는 SYSTEM 관리자에게 '게시판 관리' 진입점을
+ //   지워 버린다(DEC-OPS-023 ②가 e2e 로 잡았던 것과 같은 결함).
+ const isAdmin = isAdministrativeRole(user?.role);
  const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
  const router = useRouter();
  const { toast } = useToast();
