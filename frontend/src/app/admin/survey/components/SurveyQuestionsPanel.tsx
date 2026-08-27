@@ -11,7 +11,10 @@ import { Loader2, Plus, Trash2, ListChecks, MessageSquareText } from 'lucide-rea
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
 import {
+  surveyInfoCreateSchema,
+  surveyInfoValidationLabels,
   surveyItemCreateSchema,
   surveyItemValidationLabels,
   surveyQuestionCreateSchema,
@@ -33,6 +36,8 @@ const MULTIPLE_CHOICE = '1';
  */
 export default function SurveyQuestionsPanel() {
   const queryClient = useQueryClient();
+  // 파괴적 액션은 native confirm 대신 useConfirm — 본문에 대상과 소실 범위를 노출한다.
+  const confirm = useConfirm();
   const [srvySn, setSrvySn] = useState<number | null>(null);
   const [newQuestion, setNewQuestion] = useState('');
   const [newItemFor, setNewItemFor] = useState<number | null>(null);
@@ -45,6 +50,19 @@ export default function SurveyQuestionsPanel() {
   const questionValidation = useManualFormValidation(surveyQuestionCreateSchema, {
     labels: surveyQuestionValidationLabels,
   });
+  /*
+   * [2026-08-28] 설문지 등록 배선.
+   * createSurvey/updateSurvey/deleteSurvey 는 서버·프런트 서비스에 모두 있는데 **소비자가
+   * 0건**이었다(전 저장소 grep). 설문지를 만들 방법이 없으니 아래 선택기가 영영 비고,
+   * 문항·응답자·통계 탭이 전부 죽는다 — 이 화면에서 가장 먼저 막히는 지점이 여기다.
+   */
+  const [newSurveyTitle, setNewSurveyTitle] = useState('');
+  const [newSurveyTemplate, setNewSurveyTemplate] = useState('');
+  const surveyPendingRef = useRef(false);
+  const surveyDeletePendingRef = useRef(false);
+  const surveyValidation = useManualFormValidation(surveyInfoCreateSchema, {
+    labels: surveyInfoValidationLabels,
+  });
   const itemValidation = useManualFormValidation(surveyItemCreateSchema, {
     labels: surveyItemValidationLabels,
   });
@@ -52,6 +70,43 @@ export default function SurveyQuestionsPanel() {
   const { data: surveys } = useQuery<PageResponse<Survey>>({
     queryKey: ['admin-surveys-for-questions'],
     queryFn: () => surveyAdminService.getSurveyList({ pageIndex: 1, size: 100 }),
+  });
+
+  const surveysKey = ['admin-surveys-for-questions'];
+  /** 템플릿은 설문지 등록의 필수 입력이다(SurveyInfoDto.srvyTmpltSn @NotNull). */
+  const { data: templates } = useQuery({
+    queryKey: ['admin-survey-templates-for-select'],
+    queryFn: () => surveyAdminService.getTemplateList({ pageIndex: 1, size: 100 }),
+  });
+
+  const addSurvey = useMutation({
+    mutationFn: (payload: { srvyTtl: string; srvyTmpltSn: number }) =>
+      surveyAdminService.createSurvey(payload),
+    onSuccess: () => {
+      setNewSurveyTitle('');
+      setError(null);
+      surveyValidation.setFormErrors({}, false);
+      void queryClient.invalidateQueries({ queryKey: surveysKey });
+    },
+    onError: (mutationError: unknown) => {
+      const fieldErrors = extractFieldErrors(mutationError);
+      if (fieldErrors) surveyValidation.setFormErrors(fieldErrors);
+      else setError(extractErrorMessage(mutationError, '설문지 등록에 실패했습니다.'));
+    },
+    onSettled: () => { surveyPendingRef.current = false; },
+  });
+
+  const removeSurvey = useMutation({
+    mutationFn: (targetSrvySn: number) => surveyAdminService.deleteSurvey(targetSrvySn),
+    onSuccess: () => {
+      setSrvySn(null);
+      setError(null);
+      void queryClient.invalidateQueries({ queryKey: surveysKey });
+    },
+    onError: (mutationError: unknown) => {
+      setError(extractErrorMessage(mutationError, '설문지 삭제에 실패했습니다.'));
+    },
+    onSettled: () => { surveyDeletePendingRef.current = false; },
   });
 
   const questionsKey = ['admin-survey-questions', srvySn];
@@ -137,8 +192,112 @@ export default function SurveyQuestionsPanel() {
     remove();
   };
 
+  const handleDeleteSurvey = async () => {
+    if (surveyDeletePendingRef.current || srvySn === null) return;
+
+    const target = surveyOptions.find((s) => s.srvySn === srvySn);
+    const ok = await confirm({
+      title: '설문지 삭제',
+      message: `'${target?.srvyTtl ?? srvySn}' 설문지를 삭제하시겠습니까? 이 설문지의 문항·선택 항목과 이미 모인 응답이 함께 사라지며 되돌릴 수 없습니다.`,
+      confirmText: '삭제',
+      variant: 'destructive',
+    });
+    if (!ok) return;
+
+    surveyDeletePendingRef.current = true;
+    setError(null);
+    removeSurvey.mutate(srvySn);
+  };
+
+  const submitSurvey = (event: React.FormEvent) => {
+    event.preventDefault();
+    if (surveyPendingRef.current) return;
+
+    const validated = surveyValidation.validate({
+      srvyTtl: newSurveyTitle,
+      srvyTmpltSn: newSurveyTemplate ? Number(newSurveyTemplate) : 0,
+      srvyPrps: '',
+    });
+    if (!validated) return;
+
+    surveyPendingRef.current = true;
+    setError(null);
+    addSurvey.mutate({ srvyTtl: validated.srvyTtl, srvyTmpltSn: validated.srvyTmpltSn });
+  };
+
+  const templateOptions = templates?.list ?? [];
+  const surveyOptions = surveys?.list ?? [];
+
   return (
     <div className="space-y-6">
+      {/*
+        [2026-08-28] 설문지 등록 폼.
+        종전에는 아래 '설문 선택'만 있고 설문지를 만드는 경로가 제품 어디에도 없었다 —
+        선택기가 비면 문항·응답자·통계 탭이 전부 죽는데, 사용자는 그 이유를 알 수 없었다.
+        createSurvey 는 서버·프런트 서비스에 이미 있었고 아무도 부르지 않았을 뿐이다.
+      */}
+      <form onSubmit={submitSurvey} noValidate className="space-y-3 rounded-lg border border-border p-4">
+        <h3 className="text-sm font-bold text-foreground">설문지 등록</h3>
+        <FormErrorSummary
+          errors={surveyValidation.errors}
+          labels={surveyInfoValidationLabels}
+          onNavigate={(name) => { surveyValidation.focusError(name); }}
+        />
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex-1 space-y-1.5">
+            <label htmlFor="new-survey-title" className="text-xs font-bold text-muted-foreground">설문지 제목</label>
+            <Input
+              id="new-survey-title"
+              {...surveyValidation.fieldProps('srvyTtl')}
+              value={newSurveyTitle}
+              onChange={(e) => {
+                surveyValidation.clearError('srvyTtl');
+                setNewSurveyTitle(e.target.value);
+              }}
+              maxLength={100}
+              placeholder="예: 2026년 사내 만족도 조사"
+            />
+            {surveyValidation.errors.srvyTtl ? (
+              <p {...surveyValidation.messageProps('srvyTtl')} className="text-xs text-destructive-emphasis" />
+            ) : null}
+          </div>
+          <div className="space-y-1.5 sm:w-64">
+            <label htmlFor="new-survey-template" className="text-xs font-bold text-muted-foreground">템플릿</label>
+            <select
+              id="new-survey-template"
+              {...surveyValidation.fieldProps('srvyTmpltSn')}
+              value={newSurveyTemplate}
+              onChange={(e) => {
+                surveyValidation.clearError('srvyTmpltSn');
+                setNewSurveyTemplate(e.target.value);
+              }}
+              className="w-full rounded-lg border bg-card px-3 py-2 text-sm"
+            >
+              <option value="">— 템플릿을 선택하세요 —</option>
+              {templateOptions.map((template) => (
+                <option key={template.srvyTmpltSn} value={template.srvyTmpltSn}>
+                  {template.srvyTmpltExpln || `템플릿 ${template.srvyTmpltSn}`}
+                </option>
+              ))}
+            </select>
+            {surveyValidation.errors.srvyTmpltSn ? (
+              <p {...surveyValidation.messageProps('srvyTmpltSn')} className="text-xs text-destructive-emphasis" />
+            ) : null}
+          </div>
+          <div className="flex items-end">
+            <Button type="submit" disabled={addSurvey.isPending} aria-busy={addSurvey.isPending || undefined} className="gap-2">
+              <Plus size={16} aria-hidden="true" /> {addSurvey.isPending ? '등록 중…' : '설문지 등록'}
+            </Button>
+          </div>
+        </div>
+        {templateOptions.length === 0 ? (
+          // 템플릿이 필수인데 없으면 등록이 원리적으로 불가능하다. 그 사실을 먼저 말한다.
+          <p className="text-xs text-muted-foreground">
+            등록된 템플릿이 없습니다. ‘템플릿’ 탭에서 먼저 템플릿을 만들어야 설문지를 등록할 수 있습니다.
+          </p>
+        ) : null}
+      </form>
+
       <div className="flex items-center gap-3">
         <label htmlFor="questions-srvy" className="text-sm font-bold shrink-0">
           설문 선택
@@ -155,12 +314,27 @@ export default function SurveyQuestionsPanel() {
           className="border rounded-lg px-3 py-2 text-sm bg-card max-w-md w-full"
         >
           <option value="">— 설문을 선택하세요 —</option>
-          {(surveys?.list ?? []).map((s) => (
+          {surveyOptions.map((s) => (
             <option key={s.srvySn} value={s.srvySn}>
               {s.srvyTtl}
             </option>
           ))}
         </select>
+        {/*
+          [2026-08-28] 설문지 삭제. deleteSurvey 도 소비자가 0건이었다 — 잘못 만든 설문지를
+          지울 방법이 없어 선택기에 영원히 쌓였다. 문항·응답이 함께 사라지므로 확인에서 말한다.
+        */}
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={srvySn === null || removeSurvey.isPending}
+          aria-busy={removeSurvey.isPending || undefined}
+          onClick={() => { void handleDeleteSurvey(); }}
+          className="shrink-0 border-destructive/30 text-destructive-emphasis hover:bg-destructive hover:text-destructive-foreground"
+        >
+          <Trash2 size={14} aria-hidden="true" /> {removeSurvey.isPending ? '삭제 중…' : '설문지 삭제'}
+        </Button>
       </div>
 
       {error && <p role="alert" className="text-sm text-destructive-emphasis">{error}</p>}
