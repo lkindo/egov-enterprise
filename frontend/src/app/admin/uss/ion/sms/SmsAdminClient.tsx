@@ -129,7 +129,14 @@ export default function SmsAdminClient({
         sndngCn: values.sndngCn,
         recipients: [{ rcptnTelno: values.rcptnTelno }],
       });
-      toast('문자 메시지를 발송했습니다.', 'success');
+      /*
+       * 종전 문구 '문자 메시지를 발송했습니다.' 는 사실이 아니었다. 이 응답은 **접수**일 뿐이고
+       * 실제 전달은 SmsAsyncProcessor 가 비동기로 수행한다. 게다가 SmsSender 구현체는
+       * LoggingSmsSender(!prod)·UnavailableSmsSender(prod) 둘뿐이고 **둘 다 항상 false 를
+       * 반환**해, 재시도 3회를 소진한 뒤 전 수신자가 rsltCd='F' 로 확정된다. 즉 초록 토스트를
+       * 보고 문자가 나갔다고 믿은 관리자가 실제로는 한 통도 못 보낸 상태였다.
+       */
+      toast('발송 요청을 접수했습니다. 전달 결과는 목록의 ‘수신자 결과’에서 확인하세요.', 'info');
       setIsSendOpen(false);
       form.reset();
       refetch();
@@ -147,6 +154,26 @@ export default function SmsAdminClient({
     form.reset();
     setIsSendOpen(true);
   };
+
+  /**
+   * 수신자별 전달 결과. 발송 이력 목록에는 rsltCd 가 없어(수신자 테이블에만 있다) 결과를
+   * 판정할 수 없다 — 그래서 종전의 '상태' 열이 전 행을 '전송완료'로 칠했고 지금은 제거돼 있다.
+   * 대신 이미 존재하던 GET /{smsTrsmSn}/recipients 를 화면에 연결해 실제 결과를 드러낸다.
+   */
+  const [recipientTarget, setRecipientTarget] = useState<SmsDto | null>(null);
+  const {
+    data: recipientRows,
+    isFetching: recipientsLoading,
+    error: recipientsError,
+    refetch: refetchRecipients,
+  } = useQuery({
+    queryKey: ['sms-recipients', recipientTarget?.smsTrsmSn],
+    enabled: recipientTarget?.smsTrsmSn != null,
+    queryFn: () => smsAdminService.getSmsRecipients(recipientTarget!.smsTrsmSn as number),
+  });
+
+  /** 이 엔드포인트는 배열을 그대로 돌려준다. 형태가 달라져도 화면 전체가 죽지 않게 좁힌다. */
+  const recipientList = Array.isArray(recipientRows) ? recipientRows : [];
 
   const handleSendOpenChange = (open: boolean) => {
     if (!open && sendPendingRef.current) return;
@@ -188,10 +215,34 @@ export default function SmsAdminClient({
           {item.sndngCn || '-'}
         </div>
       )
-    }
+    },
     // 종전의 '상태' 열은 데이터와 무관하게 전 행을 '전송완료'로 칠했다.
     // 실제 결과 코드(rsltCd)는 수신자별 상세(/recipients)에만 있어 목록에서는 판정할 수 없다 → 열을 제거했다(감사 P1-5).
+    // 대신 그 상세를 여는 경로를 붙인다 — 결과를 볼 방법이 아예 없으면 '접수했다'는 안내도 확인할 수 없다.
+    {
+      header: '전달 결과',
+      className: 'w-36',
+      accessor: (item: SmsDto) => (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setRecipientTarget(item)}
+          disabled={item.smsTrsmSn == null}
+        >
+          수신자 결과
+        </Button>
+      )
+    }
   ];
+
+  /** 서버 결과 코드(SmsService 'P' 초기값, SmsAsyncProcessor 'S'/'F')를 사용자 어휘로 옮긴다. */
+  const describeResult = (rsltCd?: string | null): { label: string; tone: string } => {
+    if (rsltCd === 'S') return { label: '전달 완료', tone: 'text-success-emphasis' };
+    if (rsltCd === 'F') return { label: '전달 실패', tone: 'text-destructive-emphasis' };
+    if (rsltCd === 'P') return { label: '대기 중', tone: 'text-muted-foreground' };
+    return { label: rsltCd || '알 수 없음', tone: 'text-muted-foreground' };
+  };
 
   return (
     <WorkListPage
@@ -350,6 +401,54 @@ export default function SmsAdminClient({
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* 수신자별 전달 결과 — 발송 이력 목록에는 rsltCd 가 없어 여기서만 실제 결과를 볼 수 있다. */}
+      {recipientTarget !== null && (
+      <Dialog open onOpenChange={(open) => { if (!open) setRecipientTarget(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>수신자 전달 결과</DialogTitle>
+            <DialogDescription>
+              발송 요청은 접수 즉시 응답하고 전달은 비동기로 이뤄집니다. 아래가 수신자별 실제 결과입니다.
+            </DialogDescription>
+          </DialogHeader>
+
+          {recipientsError ? (
+            <div className="space-y-3 py-4">
+              <p className="text-sm font-medium text-destructive-emphasis">수신자 결과를 불러오지 못했습니다.</p>
+              <Button type="button" variant="outline" size="sm" onClick={() => void refetchRecipients()}>
+                다시 시도
+              </Button>
+            </div>
+          ) : recipientsLoading ? (
+            <p className="py-6 text-sm text-muted-foreground">불러오는 중…</p>
+          ) : recipientList.length === 0 ? (
+            <p className="py-6 text-sm text-muted-foreground">이 발송에 기록된 수신자가 없습니다.</p>
+          ) : (
+            <ul className="divide-y divide-border py-2">
+              {recipientList.map((recipient) => {
+                const result = describeResult(recipient.rsltCd);
+                return (
+                  <li key={recipient.rcptnTelno} className="flex items-start justify-between gap-4 py-3">
+                    <span className="font-mono text-sm font-bold text-foreground">{recipient.rcptnTelno}</span>
+                    <span className="text-right">
+                      <span className={cn('block text-sm font-bold', result.tone)}>{result.label}</span>
+                      {recipient.rsltMsg && (
+                        <span className="block text-xs text-muted-foreground">{recipient.rsltMsg}</span>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setRecipientTarget(null)}>닫기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      )}
     </WorkListPage>
   );
 }

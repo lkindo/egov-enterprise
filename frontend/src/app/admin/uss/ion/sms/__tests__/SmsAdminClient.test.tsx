@@ -1,6 +1,8 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
+import path from 'node:path';
 
 const mocks = vi.hoisted(() => ({
   refetch: vi.fn(),
@@ -29,6 +31,7 @@ vi.mock('@tanstack/react-query', () => ({
 vi.mock('@/services/foundation/operation/SmsAdminService', () => ({
   smsAdminService: {
     getSmsList: vi.fn(),
+    getSmsRecipients: vi.fn(),
     sendSms: mocks.sendSms,
   },
 }));
@@ -156,7 +159,7 @@ describe('SmsAdminClient send validation', () => {
     await waitFor(() => expect(mocks.sendSms).toHaveBeenCalledTimes(1));
     expect(fields.submit).toBeDisabled();
     resolveSend(1);
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('문자 메시지를 발송했습니다.', 'success'));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('발송 요청을 접수했습니다. 전달 결과는 목록의 ‘수신자 결과’에서 확인하세요.', 'info'));
   });
 
   it('발송 중 취소·Escape를 막고 서버 필드 오류 뒤에도 입력 위치를 보존한다', async () => {
@@ -182,5 +185,41 @@ describe('SmsAdminClient send validation', () => {
     expect(fields.recipient).toHaveValue('010-1234-5678');
     expect(fields.content).toHaveValue('오류 뒤에도 보존할 문자');
     expect(cancel).toBeEnabled();
+  });
+});
+
+/**
+ * 발송 결과를 **말할 수 있는지**를 고정한다.
+ *
+ * SmsSender 구현체는 LoggingSmsSender(@Profile !prod)·UnavailableSmsSender(@Profile prod)
+ * 둘뿐이고 **둘 다 무조건 false 를 반환**한다. SmsAsyncProcessor 가 재시도 3회를 소진한 뒤
+ * @Recover 에서 전 수신자를 rsltCd='F'(Gateway delivery failed)로 확정한다. 그런데 화면은
+ * HTTP 200 직후 초록 '문자 메시지를 발송했습니다.' 를 띄웠다 — 관리자가 인증 문자가 나갔다고
+ * 믿고 업무를 진행하는 것이 실제 피해다.
+ *
+ * 문구만 고치면 다음 사람이 되돌린다. '전달을 단정하지 않는다'와 '결과를 볼 경로가 있다'
+ * 두 축을 함께 고정한다.
+ */
+describe('SMS 발송 결과 고지', () => {
+  // 주석 안의 문자열을 세면 "주석만 남기면 통과"가 되어 계약이 무력해진다.
+  const source = readFileSync(path.resolve(__dirname, '..', 'SmsAdminClient.tsx'), 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .replace(/\/\/.*$/gm, ' ');
+
+  it('성공 경로가 전달 완료를 단정하지 않는다', () => {
+    expect(source).not.toContain('발송했습니다');
+    expect(source).toContain('접수했습니다');
+  });
+
+  it('수신자별 실제 결과를 볼 경로가 화면에 있다', () => {
+    // 결과를 볼 방법이 없으면 '접수했다'는 안내조차 확인할 수 없다.
+    expect(source).toContain('getSmsRecipients');
+  });
+
+  it('서버 결과 코드 세 가지를 모두 사용자 어휘로 옮긴다', () => {
+    // 'P'(대기)를 빠뜨리면 아직 처리 중인 건이 '알 수 없음'으로 보인다.
+    for (const code of ["'S'", "'F'", "'P'"]) {
+      expect(source, `결과 코드 ${code} 처리가 없다`).toContain(code);
+    }
   });
 });
