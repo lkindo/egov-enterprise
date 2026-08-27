@@ -4,7 +4,7 @@ import React, { useCallback, useRef, useState } from 'react';
 import * as z from 'zod';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Loader2, Plus, Trash2, Zap } from 'lucide-react';
+import { Loader2, Plus, Settings, Trash2, Zap } from 'lucide-react';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -23,6 +23,17 @@ import { EventInfoDtoSchema } from '@/types/generated-zod';
  * 경계에서 하이픈을 제거한다.
  */
 const inputToYmd = (value?: string) => (value ?? '').replace(/-/g, '');
+
+/**
+ * 저장형(YYYYMMDD) → date input 값(YYYY-MM-DD).
+ *
+ * 편집으로 폼을 채울 때 필요하다. 8자가 아니면 빈 값으로 둔다 — 손상된 값을 임의로 보정하면
+ * 사용자가 고치지 않은 채 저장돼 잘못된 날짜가 굳는다.
+ */
+const ymdToInput = (value?: string) => {
+  const ymd = inputToYmd(value);
+  return ymd.length === 8 ? `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}` : '';
+};
 
 function isValidInputDate(value: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
@@ -126,6 +137,20 @@ export default function EventManagementClient() {
   const debouncedSearchWrd = useDebouncedValue(searchWrd, 300);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [form, setForm] = useState<EventCreateFormInput>(EMPTY_EVENT_FORM);
+  /**
+   * 편집 중인 행사의 **원본 DTO**. null 이면 등록이다.
+   *
+   * [2026-08-28] 종전에는 등록·삭제만 있었다. 수정 경로는 위아래로 다 열려 있었는데
+   * (PUT /events/{evntSn} → eventService.updateEvent) 화면이 부르지 않았다. 그래서 오타 하나에도
+   * 행사를 지우고 다시 만들어야 했고, **필수로 입력한 '상세 내용'(evntCn)을 다시 볼 방법이
+   * 아예 없었다** — 목록 컬럼에 없고 상세 화면도 없었다.
+   *
+   * ⚠ 원본을 통째로 들고 있는 이유: PUT 은 전체 DTO 를 받는데 이 폼은 5개 필드만 다룬다.
+   *   폼 값만 보내면 picNm·prepMttr·evntTypeCd·evntAprvYn 같은 **화면에 없는 값이 조용히
+   *   지워진다.** 저장할 때 원본 위에 편집분만 덮는다.
+   */
+  const [editingEvent, setEditingEvent] = useState<EventInfo | null>(null);
+  const [isLoadingEvent, setIsLoadingEvent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submitPendingRef = useRef(false);
   const [deletingEventSn, setDeletingEventSn] = useState<number | null>(null);
@@ -143,6 +168,11 @@ export default function EventManagementClient() {
   const totalPages = Math.ceil(totalItems / pageSize);
 
   // --- Mutations ---
+  const updateMutation = useMutation({
+    mutationFn: ({ evntSn, data }: { evntSn: number; data: Partial<EventInfo> }) =>
+      eventService.updateEvent(evntSn, data),
+  });
+
   const createMutation = useMutation({
     mutationFn: (data: Partial<EventInfo>) => eventService.createEvent(data),
   });
@@ -164,6 +194,24 @@ export default function EventManagementClient() {
     submitPendingRef.current = true;
     setIsSubmitting(true);
     try {
+      if (editingEvent) {
+        // 원본을 먼저 펼치고 편집분을 덮는다 — 화면에 없는 필드를 지우지 않기 위해서다.
+        await updateMutation.mutateAsync({
+          evntSn: editingEvent.evntSn,
+          data: {
+            ...editingEvent,
+            ...validated,
+            bizYr: validated.evntBgngYmd.slice(0, 4),
+          },
+        });
+        toast('행사 정보를 수정했습니다.', 'success');
+        await queryClient.invalidateQueries({ queryKey: ['events-list'] });
+        setIsCreateModalOpen(false);
+        setEditingEvent(null);
+        setForm(EMPTY_EVENT_FORM);
+        validation.setFormErrors({}, false);
+        return;
+      }
       await createMutation.mutateAsync({
         ...validated,
         bizYr: validated.evntBgngYmd.slice(0, 4),
@@ -185,12 +233,40 @@ export default function EventManagementClient() {
 
   const handleOpenCreate = () => {
     validation.setFormErrors({}, false);
+    setEditingEvent(null);
+    setForm(EMPTY_EVENT_FORM);
     setIsCreateModalOpen(true);
+  };
+
+  /** 행 열기 = 수정. 상세 전용 화면을 새로 만들지 않고 등록 모달을 그대로 재사용한다. */
+  const handleOpenEdit = async (event: EventInfo) => {
+    if (submitPendingRef.current) return;
+    validation.setFormErrors({}, false);
+    setIsLoadingEvent(true);
+    setIsCreateModalOpen(true);
+    try {
+      // 목록 응답에 없는 필드(prepMttr 등)까지 받아야 저장 시 지우지 않는다.
+      const detail = await eventService.getEvent(event.evntSn);
+      setEditingEvent(detail);
+      setForm({
+        evntNm: detail.evntNm ?? '',
+        evntCn: detail.evntCn ?? '',
+        evntBgngYmd: ymdToInput(detail.evntBgngYmd),
+        evntEndYmd: ymdToInput(detail.evntEndYmd),
+        evntUseCnt: String(detail.evntUseCnt ?? 0),
+      });
+    } catch (loadError: unknown) {
+      setIsCreateModalOpen(false);
+      toast(extractErrorMessage(loadError, '행사 정보를 불러오지 못했습니다.'), 'error');
+    } finally {
+      setIsLoadingEvent(false);
+    }
   };
 
   const handleCreateModalOpenChange = (open: boolean) => {
     if (!open && submitPendingRef.current) return;
     setIsCreateModalOpen(open);
+    if (!open) setEditingEvent(null);
   };
 
   const handleSearchChange = (value: string) => {
@@ -256,11 +332,22 @@ export default function EventManagementClient() {
     },
     {
       header: '관리',
-      className: 'text-right w-24',
+      className: 'text-right w-32',
       accessor: (event) => {
         const isDeleting = deletingEventSn === event.evntSn;
         return (
-        <div className="flex items-center justify-end pr-4">
+        <div className="flex items-center justify-end gap-1 pr-4">
+          {/* 수정 경로는 서버·서비스에 이미 있었고 화면만 부르지 않았다(2026-08-28). */}
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={deletingEventSn !== null || submitPendingRef.current}
+            aria-label={`${event.evntNm} 수정`}
+            onClick={() => { void handleOpenEdit(event); }}
+            className="w-10 h-10 rounded-lg hover:bg-muted transition-colors"
+          >
+            <Settings size={16} aria-hidden="true" />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
@@ -334,8 +421,16 @@ export default function EventManagementClient() {
         <DialogContent className="max-w-2xl bg-card rounded-lg border-none shadow-2xl p-0 overflow-hidden">
           <div className="bg-surface-inverse p-8 text-surface-inverse-foreground">
             <DialogHeader>
-              <DialogTitle className="text-2xl font-bold tracking-tighter">신규 행사 등록</DialogTitle>
-              <DialogDescription className="text-white/40 text-xs font-bold tracking-[0.2em]">행사 기본 정보를 입력하십시오.</DialogDescription>
+              <DialogTitle className="text-2xl font-bold tracking-tighter">
+                {editingEvent ? '행사 정보 수정' : '신규 행사 등록'}
+              </DialogTitle>
+              <DialogDescription className="text-white/40 text-xs font-bold tracking-[0.2em]">
+                {isLoadingEvent
+                  ? '행사 정보를 불러오는 중입니다…'
+                  : editingEvent
+                    ? '이 창에서 보이지 않는 값은 그대로 유지됩니다.'
+                    : '행사 기본 정보를 입력하십시오.'}
+              </DialogDescription>
             </DialogHeader>
           </div>
           <form onSubmit={handleSubmit} noValidate className="p-8 space-y-8">
@@ -466,7 +561,9 @@ export default function EventManagementClient() {
                 취소
               </Button>
               <Button type="submit" disabled={isSubmitting || createMutation.isPending} aria-busy={(isSubmitting || createMutation.isPending) || undefined} className="h-11 px-10 bg-primary text-white rounded-lg font-bold text-xs tracking-widest shadow-xl shadow-primary/20 gap-3">
-                {isSubmitting || createMutation.isPending ? '등록 중...' : <><Zap size={16} aria-hidden="true" /> 행사 등록</>}
+                {isSubmitting || createMutation.isPending || updateMutation.isPending
+                  ? (editingEvent ? '저장 중...' : '등록 중...')
+                  : <><Zap size={16} aria-hidden="true" /> {editingEvent ? '변경 사항 저장' : '행사 등록'}</>}
               </Button>
             </DialogFooter>
           </form>
