@@ -7,6 +7,7 @@ import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { operationAdminService, type ExternalHr } from '@/services/foundation/operation/OperationAdminService';
+import { eventService } from '@/services/foundation/operation/eventService';
 import type { PageResponse } from '@/types/foundation/system';
 import { useToast } from '@/app/components/ui/toast';
 import { Plus, ShieldCheck, RefreshCcw } from 'lucide-react';
@@ -34,7 +35,8 @@ const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal')
 import { ExternalHrDtoSchema } from '@/types/generated-zod';
 
 export const externalHrSchema = ExternalHrDtoSchema.extend({
-  evntSn: ExternalHrDtoSchema.shape.evntSn.int().positive('행사 일련번호를 입력하세요.'),
+  // [2026-08-28] 문구를 실제 조작에 맞춘다 — 이제 목록에서 고른다.
+  evntSn: ExternalHrDtoSchema.shape.evntSn.int().positive('소속 행사를 선택해 주세요.'),
   otsdHrId: ExternalHrDtoSchema.shape.otsdHrId.min(1, '외부인사 ID를 입력하세요.'),
   otsdHrNm: ExternalHrDtoSchema.shape.otsdHrNm.unwrap().min(1, '성명을 입력하세요.'),
   ogdpInstNm: ExternalHrDtoSchema.shape.ogdpInstNm.unwrap().min(1, '소속기관을 입력하세요.'),
@@ -53,6 +55,17 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 export default function ExternalHrClient({ initialPage }: { initialPage: PageResponse<ExternalHr> | null }) {
   const queryClient = useQueryClient();
+
+  /**
+   * 소속 행사 선택지. 행사 목록 API 를 그대로 소비한다(신규 API 없음).
+   * 이 화면과 행사 API 는 둘 다 관리자 전용이라 403 함정이 없다.
+   */
+  const { data: eventPage } = useQuery({
+    queryKey: ['external-hr-event-options'],
+    staleTime: 5 * 60 * 1000,
+    queryFn: () => eventService.getEvents({ page: 0, size: 200 }),
+  });
+  const eventOptions = eventPage?.list ?? [];
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -297,7 +310,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
           >
             <FormErrorSummary
               labels={{
-                evntSn: '행사 일련번호',
+                evntSn: '소속 행사',
                 otsdHrId: '외부인사 ID',
                 otsdHrNm: '성명',
                 ogdpInstNm: '소속기관',
@@ -309,24 +322,43 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
               }}
               onNavigate={form.focusError}
             />
+            {/*
+              [2026-08-28] 자유 숫자 입력 → 행사 선택.
+              종전에는 '행사 일련번호'를 손으로 치라고 요구했는데, **그 번호를 보여 주는 화면이
+              제품에 없었다** — 행사 목록의 '번호' 열은 행 순번(index+1)이고 evntSn 은 keyField·
+              삭제 인자로만 쓰여 화면에 렌더된 적이 없다(전 저장소 grep 실측). 스키마도 positive()
+              만 봐서 존재하지 않는 번호를 그대로 통과시켰다. 사용자가 맞힐 방법이 없는 입력이었다.
+              이 화면은 /admin/operation 아래라 관리자 전용이고, 행사 목록 API 도 같은 인가라
+              403 함정이 없다(proxy USER_ACCESSIBLE_ADMIN_PATHS 실측).
+            */}
             <ShadcnFormField
               control={form.control}
               name="evntSn"
               required
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">행사 일련번호</FormLabel>
+                  <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">소속 행사</FormLabel>
                   <FormControl>
-                    <Input
-                      type="number"
-                      min={1}
+                    <select
                       {...field}
                       value={field.value || ''}
-                      onChange={(event) => field.onChange(event.target.valueAsNumber)}
-                      placeholder="1"
-                      className="h-11 rounded-lg bg-muted border-border"
-                    />
+                      onChange={(event) => field.onChange(event.target.value ? Number(event.target.value) : 0)}
+                      className="h-11 w-full rounded-lg border border-border bg-muted px-3 text-sm"
+                    >
+                      <option value="">— 행사를 선택하세요 —</option>
+                      {eventOptions.map((event) => (
+                        <option key={event.evntSn} value={event.evntSn}>
+                          {event.evntNm}
+                        </option>
+                      ))}
+                    </select>
                   </FormControl>
+                  {eventOptions.length === 0 ? (
+                    // 행사가 없으면 외부인사를 붙일 곳이 없다. 빈 셀렉트만 두면 이유를 알 수 없다.
+                    <p className="text-xs text-muted-foreground">
+                      등록된 행사가 없습니다. ‘행사 관리’에서 먼저 행사를 등록해 주세요.
+                    </p>
+                  ) : null}
                   <FormMessage />
                 </FormItem>
               )}

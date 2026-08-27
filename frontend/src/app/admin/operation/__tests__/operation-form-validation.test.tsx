@@ -6,6 +6,7 @@ import ExternalHrClient from '../external-hr/ExternalHrClient';
 import RewardManageClient from '../rewards/RewardManageClient';
 
 const mocks = vi.hoisted(() => ({
+  getEvents: vi.fn(),
   createExternalHr: vi.fn(),
   createReward: vi.fn(),
   getExternalHrList: vi.fn(),
@@ -68,6 +69,12 @@ vi.mock('@/app/components/ui/toast', () => ({
   useToast: () => ({ toast: mocks.toast }),
 }));
 
+vi.mock('@/services/foundation/operation/eventService', () => ({
+  eventService: {
+    getEvents: (...args: unknown[]) => mocks.getEvents(...args),
+  },
+}));
+
 vi.mock('@/services/foundation/operation/OperationAdminService', () => ({
   operationAdminService: {
     createExternalHr: (...args: unknown[]) => mocks.createExternalHr(...args),
@@ -88,8 +95,11 @@ function fillTextBox(name: RegExp, value: string) {
   fireEvent.change(screen.getByRole('textbox', { name }), { target: { value } });
 }
 
-function fillExternalHrForm() {
-  fireEvent.change(screen.getByRole('spinbutton', { name: /행사 일련번호/ }), { target: { value: '1' } });
+async function fillExternalHrForm() {
+  // 컨트롤이 숫자 입력에서 선택으로 바뀌었다(대상 변경이지 단언 약화가 아니다).
+  // 선택지는 조회 후 채워진다 — 옵션이 렌더되기 전에 값을 바꾸면 select 가 무시한다.
+  await screen.findByRole('option', { name: '가을 워크숍' });
+  fireEvent.change(screen.getByRole('combobox', { name: /소속 행사/ }), { target: { value: '1' } });
   fillTextBox(/외부인사 ID/, 'HR-001');
   fillTextBox(/^성명.*필수/, '홍길동');
   fillTextBox(/소속기관/, '테스트 기관');
@@ -123,6 +133,8 @@ describe('operation useAppForm consumers', () => {
     vi.clearAllMocks();
     mocks.getExternalHrList.mockResolvedValue(EMPTY_PAGE);
     mocks.getRewardList.mockResolvedValue(EMPTY_PAGE);
+    // [2026-08-28] 행사 일련번호 자유 입력 → 선택. 선택지가 있어야 폼을 채울 수 있다.
+    mocks.getEvents.mockResolvedValue({ list: [{ evntSn: 1, evntNm: '가을 워크숍' }], total: 1, totalPage: 1 });
     mocks.createExternalHr.mockResolvedValue({});
     mocks.createReward.mockResolvedValue({});
   });
@@ -130,7 +142,7 @@ describe('operation useAppForm consumers', () => {
   it('ExternalHr: invalid submit은 write 없이 summary와 첫 필드로 연결된다', async () => {
     renderWithClient(<ExternalHrClient initialPage={EMPTY_PAGE} />);
     fireEvent.click(screen.getByRole('button', { name: /인사 등록/ }));
-    const firstField = screen.getByRole('spinbutton', { name: /행사 일련번호/ });
+    const firstField = screen.getByRole('combobox', { name: /소속 행사/ });
 
     fireEvent.click(screen.getByRole('button', { name: /최종 등록/ }));
 
@@ -149,7 +161,7 @@ describe('operation useAppForm consumers', () => {
     });
     renderWithClient(<ExternalHrClient initialPage={EMPTY_PAGE} />);
     fireEvent.click(screen.getByRole('button', { name: /인사 등록/ }));
-    fillExternalHrForm();
+    await fillExternalHrForm();
 
     fireEvent.click(screen.getByRole('button', { name: /최종 등록/ }));
 
@@ -166,7 +178,7 @@ describe('operation useAppForm consumers', () => {
     mocks.createExternalHr.mockReturnValueOnce(pending.promise);
     renderWithClient(<ExternalHrClient initialPage={EMPTY_PAGE} />);
     fireEvent.click(screen.getByRole('button', { name: /인사 등록/ }));
-    fillExternalHrForm();
+    await fillExternalHrForm();
     const submit = screen.getByRole('button', { name: /최종 등록/ });
 
     act(() => {
@@ -183,7 +195,7 @@ describe('operation useAppForm consumers', () => {
     mocks.createExternalHr.mockReturnValueOnce(pending.promise);
     renderWithClient(<ExternalHrClient initialPage={EMPTY_PAGE} />);
     fireEvent.click(screen.getByRole('button', { name: /인사 등록/ }));
-    fillExternalHrForm();
+    await fillExternalHrForm();
     const modal = screen.getByRole('region', { name: '외부 인사 정보 등록' });
     const formElement = modal.querySelector('form')!;
 
@@ -284,7 +296,7 @@ describe('operation useAppForm consumers', () => {
     // 이 계약은 "화면이 받지 않은 값을 payload 가 창작하지 않는다"를 고정한다.
     renderWithClient(<ExternalHrClient initialPage={EMPTY_PAGE} />);
     fireEvent.click(screen.getByRole('button', { name: /인사 등록/ }));
-    fillExternalHrForm();
+    await fillExternalHrForm();
 
     fireEvent.click(screen.getByRole('button', { name: /최종 등록/ }));
 
