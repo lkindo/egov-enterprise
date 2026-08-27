@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MenuInfo } from '@/types/foundation/menu';
-import { NavItem } from './NavItem';
+import { NavItem, NavQueryScope } from './NavItem';
 import { MobileDomainNode } from './MobileDomainNode';
 import { SITE_IDENTITY } from '@/config/site-identity';
 
@@ -324,9 +324,11 @@ export function Sidebar({
                 </div>
               ) : (
                 <nav className="space-y-1" aria-label="메인 사이드바">
-                  {menus.map((item, index: number) => (
-                    <NavItem key={item.menuNo || `menu-${index}`} item={item} />
-                  ))}
+                  <NavQueryScope menus={menus}>
+                    {menus.map((item, index: number) => (
+                      <NavItem key={item.menuNo || `menu-${index}`} item={item} />
+                    ))}
+                  </NavQueryScope>
                 </nav>
               )}
             </div>

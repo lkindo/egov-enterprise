@@ -14,7 +14,7 @@ import {
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MenuInfo } from '@/types/foundation/menu';
-import { NavItem } from './NavItem';
+import { NavItem, NavQueryScope } from './NavItem';
 
 const DOMAIN_ICON_MAP: Record<number, any> = {
   10: LayoutGrid, // 워크스페이스
@@ -88,9 +88,11 @@ export function MobileDomainNode({
               </div>
             ) : (
               <div className="space-y-1 py-1">
-                {menus.map((item, idx) => (
-                  <NavItem key={item.menuNo || `mobile-menu-${idx}`} item={item} />
-                ))}
+                <NavQueryScope menus={menus}>
+                  {menus.map((item, idx) => (
+                    <NavItem key={item.menuNo || `mobile-menu-${idx}`} item={item} />
+                  ))}
+                </NavQueryScope>
               </div>
             )}
             <div className="h-6" />
