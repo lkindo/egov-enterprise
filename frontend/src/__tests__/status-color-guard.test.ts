@@ -87,7 +87,10 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 // [하향 래칫 2026-08-26] frontend 입력 검증 루프 — 신규 오류 안내·삭제 동작의 status 색을
 //   모두 destructive semantic token으로 작성하고, 인접 폼 정리에서 기존 리터럴 44건을 제거
 //   (최종 diff 신규 status 리터럴 0건, 사전 red 실측: 548 != 592).
-const BASELINE = 548;
+// [하향 래칫 2026-08-27] 세션 연장 실패 안내 — 실패 성격을 둘로 나누며 추가한 안내 문단과
+//   기존 문단의 rose 리터럴 4건을 destructive semantic token으로 대체
+//   (신규 리터럴 0건, 사전 red 실측: 550 != 548 → 546 != 548).
+const BASELINE = 546;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;
