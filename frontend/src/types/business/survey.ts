@@ -24,6 +24,22 @@ export interface SurveyQuestion {
   items: SurveyAnswer[];
 }
 
+/**
+ * 설문 응답 제출 payload. 서버 `SurveyResponseSubmitDto` 와 같은 모양이다.
+ *
+ * srvyArtclSn 은 주관식 문항에도 반드시 필요하다 — 물리 컬럼이 NOT NULL 이라
+ * 주관식은 '기타' 성격의 단일 항목을 두고 그 ID 를 보낸다(서버 DTO 주석).
+ */
+export interface SurveyResponseSubmit {
+  rspnsNm?: string;
+  answers: {
+    srvyQstnSn: number;
+    srvyArtclSn: number;
+    rspdntAnsCn?: string;
+    etcAnsCn?: string;
+  }[];
+}
+
 /** 문항의 선택 항목(`tb_srvy_artcl`). 문항 하위 자원이라 단독으로는 의미가 없다. */
 export interface SurveyAnswer {
   srvyArtclSn: number;
