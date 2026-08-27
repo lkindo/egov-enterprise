@@ -50,10 +50,15 @@ class MailServiceTest {
      */
     private MockedStatic<SecurityUtil> securityUtil;
 
+    /** 운영에서 설정으로 주입되는 발신 주소({@code nuri.mail.from}). @Value 는 Mockito 가 채우지 않는다. */
+    private static final String SYSTEM_SENDER = "no-reply@egov.local";
+
     @BeforeEach
     void openSecurityUtilMock() {
         securityUtil = Mockito.mockStatic(SecurityUtil.class);
         asAdmin();
+        org.springframework.test.util.ReflectionTestUtils.setField(
+                mailService, "systemSenderAddress", SYSTEM_SENDER);
     }
 
     @AfterEach
@@ -127,6 +132,81 @@ class MailServiceTest {
         assertThat(emlDsptchSn).isEqualTo(1L);
         verify(sentMailRepository).save(any(SentMail.class));
         verify(mailAsyncProcessor).processSending(anyLong(), anyString(), anyString(), anyString(), anyString());
+    }
+
+    @Test
+    @DisplayName("발신 주소 - 화면이 발신자를 안 보내도 설정된 시스템 주소로 발송한다")
+    void sendMail_usesConfiguredSender_whenRequestOmitsIt() {
+        // 메일 발송 화면은 발신자 입력이 없어 dsptchPerson 이 항상 null 이었다. 종전 구현은 그 null 을
+        // 그대로 SMTP From 으로 넘겨 RealEmailSender 가 NPE 로 죽었고, 3회 재시도 뒤 전건이 실패로 남았다.
+        SentMailDto dto = SentMailDto.builder()
+                .sj("Subject")
+                .emailCn("Content")
+                .recptnPerson("receiver@test.com")
+                .build();
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(7L).build());
+
+        mailService.sendMail("user1", dto);
+
+        org.mockito.ArgumentCaptor<String> from = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(mailAsyncProcessor).processSending(
+                anyLong(), anyString(), anyString(), from.capture(), anyString());
+        assertThat(from.getValue()).isEqualTo(SYSTEM_SENDER);
+    }
+
+    @Test
+    @DisplayName("발신 주소 - 요청 본문이 발신자를 주장해도 SMTP From 은 설정 주소를 쓴다")
+    void sendMail_ignoresClaimedSender_forSmtpFrom() {
+        // 발신자는 위조 가능한 축이다. 클라이언트가 무엇을 주장하든 실제 발송 주소는 서버가 정한다.
+        SentMailDto dto = SentMailDto.builder()
+                .sj("Subject").emailCn("Content")
+                .dsptchPerson("attacker@evil.test").recptnPerson("receiver@test.com")
+                .build();
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(8L).build());
+
+        mailService.sendMail("user1", dto);
+
+        org.mockito.ArgumentCaptor<String> from = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(mailAsyncProcessor).processSending(
+                anyLong(), anyString(), anyString(), from.capture(), anyString());
+        assertThat(from.getValue()).isEqualTo(SYSTEM_SENDER);
+    }
+
+    @Test
+    @DisplayName("발신자 이력 - 인증 주체를 기록한다 (종전에는 전건 공백)")
+    void sendMail_recordsAuthenticatedSenderInHistory() {
+        SentMailDto dto = SentMailDto.builder()
+                .sj("Subject").emailCn("Content")
+                .recptnPerson("receiver@test.com")
+                .build();
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(9L).build());
+
+        mailService.sendMail("user1", dto);
+
+        org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
+        verify(sentMailRepository).save(saved.capture());
+        assertThat(saved.getValue().getSndptyNm()).isEqualTo("user1");
+    }
+
+    @Test
+    @DisplayName("발신자 이력 - 인증 주체가 없는 내부 발송은 호출자가 명시한 발신자를 남긴다")
+    void sendMail_fallsBackToDeclaredSender_forInternalDispatch() {
+        // 제재 알림 등 이벤트 기반 내부 발송에는 로그인 주체가 없다. 그 경우까지 이력이 비지 않게 한다.
+        SentMailDto dto = SentMailDto.builder()
+                .sj("Subject").emailCn("Content")
+                .dsptchPerson("admin@egov.enterprise").recptnPerson("receiver@test.com")
+                .build();
+        given(sentMailRepository.save(any(SentMail.class)))
+                .willReturn(SentMail.builder().emlDsptchSn(10L).build());
+
+        mailService.sendMail(null, dto);
+
+        org.mockito.ArgumentCaptor<SentMail> saved = org.mockito.ArgumentCaptor.forClass(SentMail.class);
+        verify(sentMailRepository).save(saved.capture());
+        assertThat(saved.getValue().getSndptyNm()).isEqualTo("admin@egov.enterprise");
     }
 
     @Test

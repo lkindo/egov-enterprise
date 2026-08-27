@@ -27,7 +27,13 @@ public class RealEmailSender implements EmailSender {
 
         helper.setSubject(Objects.requireNonNull(subject));
         helper.setText(Objects.requireNonNull(content), true);
-        helper.setFrom(Objects.requireNonNull(from));
+        // 종전에는 requireNonNull(from) 이 NullPointerException 으로 죽어 3회 재시도 뒤 실패로만 남았고,
+        // 운영자는 "왜 실패했는가" 를 로그의 NPE 스택에서 역추적해야 했다. 원인을 문장으로 남긴다.
+        if (from == null || from.isBlank()) {
+            throw new IllegalStateException(
+                    "발신 메일 주소가 비어 있습니다. nuri.mail.from 또는 spring.mail.username 을 설정하세요.");
+        }
+        helper.setFrom(from);
         helper.setTo(Objects.requireNonNull(to));
 
         javaMailSender.send(message);
