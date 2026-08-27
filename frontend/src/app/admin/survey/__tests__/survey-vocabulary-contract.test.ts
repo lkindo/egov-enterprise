@@ -35,6 +35,8 @@ const stripComments = (source: string) =>
 
 const hub = stripComments(read('admin/survey/hub/SurveyHubClient.tsx'));
 const manage = stripComments(read('admin/survey/manage/SurveyManageClient.tsx'));
+const detail = stripComments(read('admin/survey/manage/[id]/SurveyManageDetailClient.tsx'));
+const pollTypes = stripComments(read('../types/business/poll.ts'));
 
 describe('설문 허브: 수치와 목록이 서로 다른 표라는 사실이 이름에 드러난다', () => {
   it('헤더 수치와 카드는 그 값의 출처(tb_srvy)를 이름으로 말한다', () => {
@@ -61,5 +63,39 @@ describe('설문 허브: 수치와 목록이 서로 다른 표라는 사실이 �
   it('허브에 embed 되는 목록 화면도 같은 이름을 쓴다 — 탭과 패널 제목이 어긋나면 안 된다', () => {
     expect(manage).toContain('여론조사 관리');
     expect(manage).toContain('getPollList');
+  });
+});
+
+/**
+ * 응답 선택지: 볼 수는 있게, 여기서 고칠 수는 없게.
+ *
+ * 서버는 목록·상세 모두에서 `pollArticles` 를 채워 내려주는데 **프런트 타입에 선언이 없어**
+ * 화면이 존재 자체를 몰랐다. 등록 화면이 선택지 4개를 소스에 고정하므로, 실제로 무엇이
+ * 저장됐는지 확인할 수단이 아예 없다는 뜻이었다.
+ *
+ * 반대로 여기서 **고치게 두면 안 된다.** updatePoll 은 pollArticles 가 실려 오면 항목을
+ * clear-and-recreate 하는데 tb_onln_poll_rslt.poll_artcl_sn 외래키가 NO ACTION 이라(V2_67)
+ * 투표가 한 건이라도 있으면 저장이 실패한다. 그래서 읽기 형태를 쓰기 VO 와 타입 단계에서
+ * 분리해, 폼 state 를 spread 하는 실수로 그 경로를 타지 못하게 했다.
+ */
+describe('여론조사 선택지', () => {
+  it('조회 응답 타입이 선택지를 선언한다 — 선언이 없으면 화면이 존재를 모른다', () => {
+    expect(pollTypes).toContain('OnlinePollManageDetailVO');
+    expect(pollTypes).toMatch(/OnlinePollManageDetailVO[\s\S]{0,200}pollArticles/);
+  });
+
+  it('쓰기 VO 에는 선택지가 없다 — 폼 state 를 spread 해도 저장 경로로 새지 않는다', () => {
+    const writeVo = pollTypes.match(/export interface OnlinePollManageVO \{[\s\S]*?\n\}/)?.[0] ?? '';
+    expect(writeVo).not.toContain('pollArticles');
+  });
+
+  it('상세 화면이 선택지를 보여 준다', () => {
+    expect(detail).toContain('응답 선택지');
+    expect(detail).toContain('pollArticles');
+  });
+
+  it('상세 화면에 선택지 편집 컨트롤을 두지 않고 그 사실을 말한다', () => {
+    // 편집을 열면 투표가 있는 설문에서 저장이 실패한다. 안 되는 것을 되는 척하지 않는다.
+    expect(detail).toContain('이 화면에서는 바꿀 수 없습니다');
   });
 });

@@ -313,6 +313,45 @@ export default function SurveyManageDetailClient() {
                                 ) : null}
                             </div>
 
+                            {/*
+                              [2026-08-28] 응답 선택지 노출.
+                              서버는 상세 응답에 pollArticles 를 담아 보내는데 프런트 타입에 선언이 없어
+                              화면이 존재를 몰랐다 — 관리자는 자기가 만든 설문의 선택지를 어디에서도 볼 수
+                              없었다. 등록 화면이 4개를 소스에 고정하므로 실제로 무엇이 저장됐는지는 더욱
+                              중요하다.
+
+                              여기서 고칠 수는 없다: updatePoll 은 항목을 clear-and-recreate 하는데
+                              tb_onln_poll_rslt.poll_artcl_sn → tb_onln_poll_artcl 외래키가 NO ACTION 이라
+                              (V2_67) 투표가 한 건이라도 있으면 저장이 실패한다. 항목 단건 수정
+                              (OnlinePollService.updatePollItem)은 구현돼 있으나 어느 컨트롤러도 노출하지
+                              않는다. 그래서 편집 컨트롤을 두지 않고, 못 고친다는 사실을 그대로 적는다.
+                            */}
+                            <div className="space-y-3">
+                                <h2 className="text-sm font-bold text-muted-foreground ml-1">응답 선택지</h2>
+                                {(poll?.pollArticles?.length ?? 0) === 0 ? (
+                                    <p className="rounded-lg border border-border p-4 text-sm text-muted-foreground">
+                                        등록된 선택지가 없습니다.
+                                    </p>
+                                ) : (
+                                    <ul className="divide-y divide-border rounded-lg border border-border">
+                                        {poll?.pollArticles?.map((article) => (
+                                            <li
+                                                key={article.pollArtclSn ?? article.pollArtclNm}
+                                                className="flex items-center justify-between gap-4 px-4 py-3 text-sm"
+                                            >
+                                                <span className="font-medium text-foreground">{article.pollArtclNm}</span>
+                                                <span className="tabular-nums text-xs text-muted-foreground">
+                                                    {article.pollIemCo ?? 0}표
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                                <p className="px-1 text-xs text-muted-foreground">
+                                    선택지는 설문을 만들 때 정해지며 이 화면에서는 바꿀 수 없습니다.
+                                </p>
+                            </div>
+
                             <div className="flex pt-6">
                                 <Button
                                     onClick={handleSave}
