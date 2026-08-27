@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "1510ff423aec3aaa4cddabc52f10390681d32f1e766b9ee79000bf2231467a7f"
+    "inventoryHash": "03f9511497f1aab59f4c907282aafbad132a37f93ea30cc5e7871046ba973509"
   },
   "summary": {
-    "sourceFileCount": 504,
-    "records": 529,
-    "syntaxOccurrences": 599,
-    "ambiguousRecords": 510,
-    "unverifiedRecords": 529,
+    "sourceFileCount": 505,
+    "records": 530,
+    "syntaxOccurrences": 602,
+    "ambiguousRecords": 511,
+    "unverifiedRecords": 530,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -46,12 +46,12 @@
       "query-builder": 21,
       "query-consumer": 58,
       "query-producer": 55,
-      "request-query-producer": 159,
+      "request-query-producer": 160,
       "url-observer": 7
     },
     "bySurface": {
       "navigation": 363,
-      "request-telemetry": 166
+      "request-telemetry": 167
     }
   },
   "requiredNegativeCases": [
@@ -5127,6 +5127,62 @@
       }
     },
     {
+      "id": "URL-367E46124D0568",
+      "surface": "request-telemetry",
+      "kind": "request-query-producer",
+      "operation": "client.get",
+      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListServer.ts",
+      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListServer.ts",
+      "consumerFile": null,
+      "routePattern": "/admin/community/boards/select-board-list",
+      "targetCandidate": "/admin/system/board-masters",
+      "stateItems": [
+        {
+          "name": "pageIndex",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        },
+        {
+          "name": "pageUnit",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "GET request carries a computed query configuration whose field semantics require domain review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-request-query",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/board-masters",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListServer.ts",
+        "detector": "http-client-get-request",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-74C155691EA87D",
       "surface": "request-telemetry",
       "kind": "request-query-producer",
@@ -10023,7 +10079,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/common-code/CommonCodeClient.tsx",
         "detector": "jsx-form",
-        "occurrenceCount": 1
+        "occurrenceCount": 3
       }
     },
     {

@@ -116,8 +116,11 @@ function CommunityBoardContent() {
  className="h-11 px-8 bg-card border-2 border-border rounded-lg font-bold text-xs tracking-widest outline-none focus:border-primary/20 transition-all shadow-sm"
  aria-label="게시판 선택"
  >
- {/* 목록을 아직 못 받았을 때도 현재 선택값은 남겨 둔다 — 빈 select 는 선택이 풀린 것처럼 보인다. */}
- {boardOptions.length === 0 && <option value={bbsId}>게시판 불러오는 중…</option>}
+ {/* 훅이 비관리자·조회 실패에도 시드 목록으로 내려가므로 비는 경우는 없다.
+     그래도 현재 선택값이 목록에 없으면 선택이 풀린 것처럼 보이므로 남겨 둔다. */}
+ {!boardOptions.some((option) => option.value === bbsId) && (
+ <option value={bbsId}>{bbsId}</option>
+ )}
  {boardOptions.map((option) => (
  <option key={option.value} value={option.value}>{option.label}</option>
  ))}

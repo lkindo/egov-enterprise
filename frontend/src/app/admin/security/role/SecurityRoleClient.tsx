@@ -43,17 +43,17 @@ export const securityRoleFormSchema = RoleManageDtoSchema.extend({
  roleNm: RoleManageDtoSchema.shape.roleNm.trim()
   .min(1, '롤 명칭을 입력해 주세요.'),
  rolePatrn: RoleManageDtoSchema.shape.rolePatrn.unwrap().trim()
-  .min(1, '접근 패턴을 입력해 주세요.'),
+  .min(1, '적용 대상 표기를 입력해 주세요.'),
  roleExpln: RoleManageDtoSchema.shape.roleExpln.unwrap().trim(),
  roleTypeCd: RoleManageDtoSchema.shape.roleTypeCd.unwrap().trim()
   .min(1, '롤 타입을 선택해 주세요.'),
  roleSort: z.string().trim()
-  .min(1, '우선순위를 입력해 주세요.')
-  .regex(/^\d+$/, '우선순위는 0 이상의 정수여야 합니다.')
+  .min(1, '정렬 순서를 입력해 주세요.')
+  .regex(/^\d+$/, '정렬 순서는 0 이상의 정수여야 합니다.')
   .refine((value) => {
    const number = Number(value);
    return Number.isSafeInteger(number) && number <= 2_147_483_647;
-  }, '우선순위는 0 이상의 정수여야 합니다.'),
+  }, '정렬 순서는 0 이상의 정수여야 합니다.'),
 });
 
 export default function SecurityRoleClient() {
@@ -87,9 +87,9 @@ export default function SecurityRoleClient() {
  const validationLabels = {
   roleId: '롤 ID',
   roleNm: '롤 명칭',
-  rolePatrn: '접근 패턴',
-  roleTypeCd: '롤 타입',
-  roleSort: '우선순위',
+  rolePatrn: '적용 대상 표기',
+  roleTypeCd: '롤 분류',
+  roleSort: '정렬 순서',
   roleExpln: '롤 설명',
  };
  const validation = useManualFormValidation(securityRoleFormSchema, { labels: validationLabels });
@@ -167,7 +167,7 @@ export default function SecurityRoleClient() {
     try {
       const ok = await confirm({
         title: '보안 롤 삭제',
-        message: `'${role.roleNm || role.roleId}'(${role.roleId}) 롤을 삭제하시겠습니까? 이 롤에 연결된 접근 패턴이 함께 사라집니다.`,
+        message: `'${role.roleNm || role.roleId}'(${role.roleId}) 롤을 삭제하시겠습니까?`,
         confirmText: '삭제',
         variant: 'destructive',
       });
@@ -222,7 +222,7 @@ export default function SecurityRoleClient() {
       )
     },
     {
-      header: '우선순위',
+      header: '정렬 순서',
       accessor: (item: RoleManage) => (
         <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground font-mono tracking-tighter">
           <ListOrdered size={12} className="opacity-40" />
@@ -363,7 +363,14 @@ export default function SecurityRoleClient() {
  </FormField>
  </div>
 
-  <FormField htmlFor="rolePatrn" label="접근 패턴 (URL/Resource Pattern)" required error={validation.errors.rolePatrn} description="보안 필터가 인터셉트할 리소스 경로 규칙">
+  {/*
+    * [2026-08-28 문구 교정] 이 세 필드(rolePatrn·roleTypeCd·roleSort)는 **어떤 보안 필터도 읽지 않는다.**
+    * 인가 경로(DbUrlAuthorizationManager)는 securePaths 와 DB 의 URL↔권한 매핑만 보고, RoleInfo 의
+    * 이 컬럼들은 저장·조회 경로에만 등장한다(전수 grep 실측). 종전 문구는 "보안 필터가 인터셉트할",
+    * "보안 필터 체인에서의 적용 우선순위"라고 적어 **입력하면 접근이 통제된다고 약속**했다.
+    * 값이 실제로 하는 일(기록·분류)만 쓴다.
+    */}
+  <FormField htmlFor="rolePatrn" label="적용 대상 표기" required error={validation.errors.rolePatrn} description="이 롤이 어떤 자원을 겨냥하는지 적어 두는 메모입니다. 접근 통제에는 사용되지 않습니다.">
     <div className="relative group/ptn">
       <Workflow size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/ptn:opacity-100 transition-opacity" />
       <Input
@@ -377,13 +384,13 @@ export default function SecurityRoleClient() {
         required
         maxLength={300}
         className="h-11 pl-16 rounded-lg border-2 text-md font-mono font-bold shadow-inner"
-        placeholder="/api/v1/resource/**"
+        placeholder="예: 게시판 관리 화면"
       />
     </div>
   </FormField>
 
  <div className="grid grid-cols-2 gap-10">
-  <FormField htmlFor="roleTypeCd" label="롤 아키텍처 타입" required error={validation.errors.roleTypeCd} description="보안 규칙이 적용될 기술 레이어">
+  <FormField htmlFor="roleTypeCd" label="롤 분류" required error={validation.errors.roleTypeCd} description="목록에서 롤을 묶어 보기 위한 분류값입니다. 접근 통제에는 사용되지 않습니다.">
     <select
       id="roleTypeCd"
       {...validation.fieldProps('roleTypeCd')}
@@ -400,7 +407,7 @@ export default function SecurityRoleClient() {
       <option value="api">REST 엔드포인트</option>
     </select>
   </FormField>
- <FormField htmlFor="roleSort" label="우선순위 (Sort Order)" required error={validation.errors.roleSort} description="보안 필터 체인에서의 적용 우선순위">
+ <FormField htmlFor="roleSort" label="정렬 순서" required error={validation.errors.roleSort} description="목록에서 보이는 순서입니다. 접근 통제에는 사용되지 않습니다.">
  <div className="relative group/sort">
  <ListOrdered size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/sort:opacity-100 transition-opacity" />
  <Input

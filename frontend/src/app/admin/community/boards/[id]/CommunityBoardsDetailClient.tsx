@@ -195,8 +195,10 @@ export default function CommunityBoardsDetailClient() {
                                 className="w-full h-12 px-4 rounded-lg border bg-card text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
                             >
                                 {/* 선택지는 게시판 마스터에서 채운다 — 하드코딩 목록에는 시드에 없는 게시판이 있어
-                                    고르는 순간 등록이 거부됐다. 목록을 못 받았을 때도 현재 값은 남긴다. */}
-                                {boardOptions.length === 0 && <option value={formData.bbsId}>게시판 불러오는 중…</option>}
+                                    고르는 순간 등록이 거부됐다. 현재 값이 목록 밖이면 선택이 풀리지 않게 남긴다. */}
+                                {!boardOptions.some((option) => option.value === formData.bbsId) && (
+                                    <option value={formData.bbsId}>{formData.bbsId}</option>
+                                )}
                                 {boardOptions.map((option) => (
                                     <option key={option.value} value={option.value}>{option.label}</option>
                                 ))}

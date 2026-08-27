@@ -82,6 +82,34 @@ describe('게시판 선택지는 서버 목록에서 온다', () => {
     expect(code).toContain("useYn !== 'N'");
   });
 
+  it('훅은 관리자에게만 관리자 전용 API 를 호출한다 — 일반 사용자에게 403 으로 선택지를 비우지 않는다', () => {
+    /*
+     * 이 훅을 쓰는 세 화면은 proxy.ts 의 USER_ACCESSIBLE_ADMIN_PATHS('/admin/community')로
+     * **일반 사용자에게 열려 있다.** 그런데 게시판 마스터 목록은 /api/v1/admin/** 아래에 있고
+     * ApiSecurityConfig 가 그 경로를 ROLE_ADMIN·ROLE_SYSTEM 으로 강제한다. 역할을 보지 않고
+     * 조회하면 일반 사용자에게 403 이 떨어져 선택지가 통째로 비고, "죽은 게시판이 섞여 있다"가
+     * "아무 게시판도 못 고른다"로 악화된다.
+     */
+    const code = stripComments(read('hooks/api/use-board-options.ts'));
+    expect(code, '관리자 판정 SSOT 를 쓰지 않는다').toContain('isAdministrativeRole');
+    expect(code, '역할과 무관하게 조회한다').toMatch(/enabled:\s*isAdmin/);
+  });
+
+  it('폴백 목록에는 시드가 실제로 INSERT 하는 게시판만 들어간다', () => {
+    // 폴백에 죽은 ID 를 넣으면 고치려던 결함이 비관리자에게 그대로 돌아온다.
+    const code = stripComments(read('hooks/api/use-board-options.ts'));
+    for (const constant of UNSEEDED_CONSTANTS) {
+      expect(code, `폴백에 시드에 없는 ${constant} 가 들어 있다`).not.toContain(constant);
+    }
+    expect(code).toContain('NOTICE_BOARD_ID');
+  });
+
+  it('선택지가 비어 사용자가 아무것도 고르지 못하는 상태를 만들지 않는다', () => {
+    // 빈 배열을 그대로 돌려주면 select 가 비어 "게시판이 하나도 없다"고 거짓말한다.
+    const code = stripComments(read('hooks/api/use-board-options.ts'));
+    expect(code).toContain('SEEDED_FALLBACK_OPTIONS');
+  });
+
   it('시드에 없는 상수는 board-ids.ts 에서 경고와 함께 남는다 — 조용히 되살아나지 않도록', () => {
     // 값은 데모 데이터 정의라 지우지 않는다. 대신 다음 사람이 다시 배선하지 않도록 표시한다.
     const raw = read('config/board-ids.ts');

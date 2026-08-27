@@ -146,13 +146,13 @@ describe('SecurityRoleClient', () => {
 
     fireEvent.change(roleId, { target: { value: 'R'.repeat(21) } });
     fireEvent.change(screen.getByLabelText('롤 레이블 명칭'), { target: { value: '신규 롤' } });
-    fireEvent.change(screen.getByLabelText('접근 패턴 (URL/Resource Pattern)'), { target: { value: '/api/**' } });
-    fireEvent.change(screen.getByLabelText('우선순위 (Sort Order)'), { target: { value: '-1' } });
+    fireEvent.change(screen.getByLabelText('적용 대상 표기'), { target: { value: '/api/**' } });
+    fireEvent.change(screen.getByLabelText('정렬 순서'), { target: { value: '-1' } });
     fireEvent.click(screen.getByRole('button', { name: /롤 아키텍처 배포/ }));
 
     expect(mocks.create).not.toHaveBeenCalled();
     expect(await screen.findByText('롤 ID: 최대 20자까지 입력할 수 있습니다.')).toBeInTheDocument();
-    expect(screen.getByText('우선순위는 0 이상의 정수여야 합니다.')).toBeInTheDocument();
+    expect(screen.getByText('정렬 순서는 0 이상의 정수여야 합니다.')).toBeInTheDocument();
   });
 
   it('같은 tick의 롤 저장은 동기 잠금으로 한 번만 전송한다', async () => {
@@ -162,7 +162,7 @@ describe('SecurityRoleClient', () => {
     fireEvent.click(await screen.findByRole('button', { name: /신규 보안 롤 설정/ }));
     fireEvent.change(screen.getByLabelText('보안 롤 식별값(Role Code)'), { target: { value: 'ROLE_NEW' } });
     fireEvent.change(screen.getByLabelText('롤 레이블 명칭'), { target: { value: '신규 롤' } });
-    fireEvent.change(screen.getByLabelText('접근 패턴 (URL/Resource Pattern)'), { target: { value: '/api/**' } });
+    fireEvent.change(screen.getByLabelText('적용 대상 표기'), { target: { value: '/api/**' } });
     const submit = screen.getByRole('button', { name: /롤 아키텍처 배포/ });
 
     act(() => {
@@ -194,7 +194,7 @@ describe('SecurityRoleClient', () => {
     fireEvent.change(screen.getByLabelText('보안 롤 식별값(Role Code)'), { target: { value: 'ROLE_NEW' } });
     const roleName = screen.getByLabelText('롤 레이블 명칭');
     fireEvent.change(roleName, { target: { value: '입력한 롤 명칭' } });
-    fireEvent.change(screen.getByLabelText('접근 패턴 (URL/Resource Pattern)'), { target: { value: '/api/**' } });
+    fireEvent.change(screen.getByLabelText('적용 대상 표기'), { target: { value: '/api/**' } });
 
     fireEvent.click(screen.getByRole('button', { name: /롤 아키텍처 배포/ }));
 
