@@ -54,7 +54,13 @@ export default function InstitutionCodeClient({
 
  const listQuery = useQuery({
  queryKey: ['institution-codes', debouncedKeyword, page, pageSize],
- queryFn: () => codeAdminService.getInstitutionCodeList({ searchWrd: debouncedKeyword, pageNo: page }),
+ // 서버(BaseSearchDto)가 읽는 키는 searchKeyword·pageIndex·pageUnit 이다.
+ // searchWrd·pageNo 는 ApiService.get 의 매핑 대상도 아니라 셋 다 통째로 무시됐다.
+ queryFn: () => codeAdminService.getInstitutionCodeList({
+ searchKeyword: debouncedKeyword,
+ pageIndex: page,
+ pageUnit: pageSize,
+ }),
  enabled: activeTab === 'list',
  placeholderData: (prev) => prev ?? (
  page === 1 && debouncedKeyword === '' && hasSeed
@@ -65,7 +71,11 @@ export default function InstitutionCodeClient({
 
  const receptionQuery = useQuery({
  queryKey: ['institution-code-receptions', debouncedKeyword, page, pageSize],
- queryFn: () => codeAdminService.getInstitutionCodeRecptnList({ searchWrd: debouncedKeyword, pageNo: page }),
+ queryFn: () => codeAdminService.getInstitutionCodeRecptnList({
+ searchKeyword: debouncedKeyword,
+ pageIndex: page,
+ pageUnit: pageSize,
+ }),
  enabled: activeTab === 'reception',
  placeholderData: (prev) => prev,
  });
@@ -99,10 +109,13 @@ export default function InstitutionCodeClient({
  if (!ok) return;
 
  try {
+ // 서버는 @RequestBody 를 요구한다. 종전에는 본문 없이 쿼리스트링으로 보내
+ // 400(Required request body is missing)이 되어 이 버튼이 항상 실패했다.
+ // 완료 구분값(procSe)은 서버가 정한다 — 클라이언트가 상태를 정하지 않는다.
  await codeAdminService.processInstitutionCodeRecptn({
  ocrnYmd: item.ocrnYmd,
  instCd: item.instCd,
- jobSn: item.jobSn
+ jobSn: item.jobSn,
  });
  toast('성공적으로 반영되었습니다.', 'success');
  receptionQuery.refetch();

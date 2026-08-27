@@ -23,7 +23,10 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import java.util.Optional;
 
+import nuri.foundation.core.exception.BusinessException;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -57,11 +60,13 @@ class InstitutionCodeServiceTest {
         BaseSearchDto searchDto = new BaseSearchDto();
         searchDto.setPageIndex(1);
         searchDto.setPageUnit(10);
-        List<InstitutionCodeDto> result = institutionCodeService.selectInstitutionCodeList(searchDto);
+        Page<InstitutionCodeDto> result = institutionCodeService.selectInstitutionCodeList(searchDto);
 
-        // then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getInstCd()).isEqualTo("INST1");
+        // then — 내용과 총건수가 같은 질의에서 나온다. 검색을 무시한 별도 count() 는 더 이상 없다.
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getInstCd()).isEqualTo("INST1");
+        assertThat(result.getTotalElements()).isEqualTo(1);
+        verify(institutionCodeRepository, never()).count();
     }
 
     @Test
@@ -98,13 +103,23 @@ class InstitutionCodeServiceTest {
         // given
         InstitutionCodeRecptnLogId id = new InstitutionCodeRecptnLogId("20240101", "I1", 1L);
         InstitutionCodeRecptnLog entity = InstitutionCodeRecptnLog.builder().id(id).build();
-        when(institutionCodeRecptnLogRepository.findAll()).thenReturn(List.of(entity));
+        when(institutionCodeRecptnLogRepository.findByAllInstNmContaining(any(), any()))
+                .thenReturn(new PageImpl<>(List.of(entity)));
 
         // when
-        List<InstitutionCodeRecptnDto> result = institutionCodeService.selectInstitutionCodeRecptnList(new BaseSearchDto());
+        BaseSearchDto searchDto = new BaseSearchDto();
+        searchDto.setSearchKeyword("서울");
+        Page<InstitutionCodeRecptnDto> result = institutionCodeService.selectInstitutionCodeRecptnList(searchDto);
 
-        // then
-        assertThat(result).hasSize(1);
+        // then — 전량 findAll() 로 되돌아가면 red 다. 그 형태가 화면에 거짓 페이지 번호를 그렸다.
+        assertThat(result.getContent()).hasSize(1);
+        verify(institutionCodeRecptnLogRepository, never()).findAll();
+
+        ArgumentCaptor<String> keyword = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(institutionCodeRecptnLogRepository).findByAllInstNmContaining(keyword.capture(), pageable.capture());
+        assertThat(keyword.getValue()).isEqualTo("서울");
+        assertThat(pageable.getValue().getPageSize()).isEqualTo(10);
     }
 
     @Test
@@ -114,12 +129,12 @@ class InstitutionCodeServiceTest {
         InstitutionCodeRecptnLog logEntity = mock(InstitutionCodeRecptnLog.class);
         when(institutionCodeRecptnLogRepository.findById(any())).thenReturn(Optional.of(logEntity));
 
-        // when
+        // when — 호출자가 엉뚱한 값을 보내거나 아예 빠뜨려도 완료 판정은 서버가 한다.
         InstitutionCodeRecptnDto dto = InstitutionCodeRecptnDto.builder()
                 .ocrnYmd("20240101")
                 .instCd("I1")
                 .jobSn(1L)
-                .procSe("1")
+                .procSe("9")
                 .build();
         institutionCodeService.updateInstitutionCodeRecptn(dto);
 
@@ -128,11 +143,20 @@ class InstitutionCodeServiceTest {
     }
 
     @Test
-    @DisplayName("기관코드 목록 전체 개수 조회")
-    void selectInstitutionCodeListTotCnt() {
-        when(institutionCodeRepository.count()).thenReturn(5L);
-        int count = institutionCodeService.selectInstitutionCodeListTotCnt(new BaseSearchDto());
-        assertThat(count).isEqualTo(5);
+    @DisplayName("기관코드 수신 처리 — 대상이 없으면 조용히 성공하지 않는다")
+    void updateInstitutionCodeRecptnMissingTarget() {
+        // given
+        when(institutionCodeRecptnLogRepository.findById(any())).thenReturn(Optional.empty());
+
+        InstitutionCodeRecptnDto dto = InstitutionCodeRecptnDto.builder()
+                .ocrnYmd("20240101")
+                .instCd("NOPE")
+                .jobSn(1L)
+                .build();
+
+        // when / then — 종전 ifPresent 구현은 200 을 돌려줘 화면이 '반영되었습니다' 를 띄웠다.
+        assertThatThrownBy(() -> institutionCodeService.updateInstitutionCodeRecptn(dto))
+                .isInstanceOf(BusinessException.class);
     }
 
     @Test

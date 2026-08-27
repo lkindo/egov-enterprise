@@ -89,7 +89,14 @@ export default function AdministCodeClient({
  refetch,
  } = useQuery({
  queryKey: ['administ-codes', appliedSearch, pageNumber, pageSize],
- queryFn: () => codeAdminService.getAdministCodeList({ searchWrd: appliedSearch, pageNo: pageNumber }),
+ // 서버(AdministCodeApiController)는 BaseSearchDto 의 searchKeyword·pageIndex·pageUnit 만 읽는다.
+ // 종전의 searchWrd·pageNo 는 ApiService.get 의 매핑 대상도 아니라 **셋 다 통째로 무시**됐다 —
+ // 검색어를 넣어도 목록이 그대로였고 2페이지를 눌러도 늘 1페이지 10건만 나왔다.
+ queryFn: () => codeAdminService.getAdministCodeList({
+ searchKeyword: appliedSearch,
+ pageIndex: pageNumber,
+ pageUnit: pageSize,
+ }),
  placeholderData: (prev) => prev ?? (
  pageNumber === 1 && appliedSearch === '' && seedList.length > 0
  ? { list: seedList, total: initialData?.total ?? seedList.length, page: 1, size: pageSize, totalPage: 1 }

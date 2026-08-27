@@ -12,8 +12,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.data.domain.Page;
 import org.springframework.web.bind.annotation.*;
-import java.util.List;
 
 /**
  * 기관코드 관리 API 컨트롤러
@@ -32,10 +32,10 @@ public class InstitutionCodeApiController {
     public ResponseEntity<ApiResponse<PageResponse<InstitutionCodeDto>>> getInstitutionCodeList(
             @ModelAttribute BaseSearchDto searchDto) {
 
-        List<InstitutionCodeDto> list = institutionCodeService.selectInstitutionCodeList(searchDto);
-        int totCnt = institutionCodeService.selectInstitutionCodeListTotCnt(searchDto);
+        // 목록과 총건수를 한 질의에서 얻는다. 종전에는 총건수가 검색을 무시한 전체 count() 였다.
+        Page<InstitutionCodeDto> page = institutionCodeService.selectInstitutionCodeList(searchDto);
 
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 
     @Operation(summary = "기관코드 상세 조회")
@@ -50,10 +50,11 @@ public class InstitutionCodeApiController {
     public ResponseEntity<ApiResponse<PageResponse<InstitutionCodeRecptnDto>>> getInstitutionCodeRecptnList(
             @ModelAttribute BaseSearchDto searchDto) {
 
-        List<InstitutionCodeRecptnDto> list = institutionCodeService.selectInstitutionCodeRecptnList(searchDto);
-        int totCnt = list.size(); // Simplified
+        // 종전 `totCnt = list.size()` 는 전량 조회 결과의 개수라 페이지 크기와 무관했고,
+        // 화면은 그 값으로 도달할 수 없는 페이지 번호를 그렸다.
+        Page<InstitutionCodeRecptnDto> page = institutionCodeService.selectInstitutionCodeRecptnList(searchDto);
 
-        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(list, searchDto.getPageIndex(), searchDto.getPageUnit(), totCnt)));
+        return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 
     @Operation(summary = "기관코드 수신 처리")

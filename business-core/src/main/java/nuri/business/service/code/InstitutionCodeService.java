@@ -22,6 +22,9 @@ import org.springframework.lang.NonNull;
 @Service
 public class InstitutionCodeService extends BaseAbstractService {
 
+    /** 수신 이력의 '처리 완료' 구분값. 화면(InstitutionCodeClient)도 이 값으로 완료/대기를 판정한다. */
+    private static final String PROC_SE_DONE = "1";
+
     private final InstitutionCodeRepository institutionCodeRepository;
     private final InstitutionCodeRecptnLogRepository institutionCodeRecptnLogRepository;
 
@@ -32,13 +35,20 @@ public class InstitutionCodeService extends BaseAbstractService {
                 "InstitutionCodeRecptnLogRepository 는 null 일 수 없습니다");
     }
 
+    /**
+     * 기관코드 목록을 검색 조건과 함께 한 페이지 조회한다.
+     *
+     * <p>[2026-08-28] 종전에는 목록과 총건수가 <b>서로 다른 질의</b>였고
+     * {@code selectInstitutionCodeListTotCnt} 가 검색어를 무시한 채 전체 {@code count()} 를 돌려줬다.
+     * 검색이 동작하기 시작하면 "3건이 보이는데 총 240건"처럼 어긋나므로, 두 값을 한 {@link Page} 에서
+     * 함께 얻어 드리프트가 구조적으로 불가능하게 만든다.
+     */
     @Transactional(readOnly = true)
-    public List<InstitutionCodeDto> selectInstitutionCodeList(@NonNull BaseSearchDto searchVO) {
-        Pageable pageable = searchVO.toPageable();
-        Page<InstitutionCode> page = institutionCodeRepository.searchInstitutionCodes(
-                searchVO.getSearchCondition(), searchVO.getSearchKeyword(),
-                required(pageable, "pageable 는 null 일 수 없습니다"));
-        return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
+    public Page<InstitutionCodeDto> selectInstitutionCodeList(@NonNull BaseSearchDto searchVO) {
+        Pageable pageable = required(searchVO.toPageable(), "pageable 는 null 일 수 없습니다");
+        return institutionCodeRepository.searchInstitutionCodes(
+                searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable)
+                .map(this::toDto);
     }
 
     // [2026-07-28 제거] `@CacheEvict(value = "institutionCodes", allEntries = true)` 를 삭제한다.
@@ -91,20 +101,39 @@ public class InstitutionCodeService extends BaseAbstractService {
         institutionCodeRecptnLogRepository.save(required(entity, "entity 는 null 일 수 없습니다"));
     }
 
+    /**
+     * 수신 이력을 기관코드 원장에 반영 완료로 표시한다.
+     *
+     * <p>[2026-08-28] 두 가지를 고친다.
+     * <ul>
+     *   <li>완료 여부를 <b>호출자가 보낸 {@code procSe}</b> 로 정하던 것을 서버 상수로 고정한다.
+     *       호출자가 값을 빠뜨리면 {@code null} 로 덮어써 상태를 오히려 지웠다.</li>
+     *   <li>대상이 없을 때 {@code ifPresent} 로 <b>조용히 통과</b>해 200 을 돌려주던 것을 예외로 바꾼다.
+     *       화면은 "성공적으로 반영되었습니다" 를 띄우는데 아무것도 바뀌지 않는 상태였다.</li>
+     * </ul>
+     */
     @Transactional
     public void updateInstitutionCodeRecptn(InstitutionCodeRecptnDto dto) {
-        institutionCodeRecptnLogRepository.findById(new InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId(
-                dto.getOcrnYmd(), dto.getInstCd(), dto.getJobSn())).ifPresent(entity -> {
-                    entity.updateProcessSe(dto.getProcSe(), "SYSTEM");
-                });
+        InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = new InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId(
+                dto.getOcrnYmd(), dto.getInstCd(), dto.getJobSn());
+        InstitutionCodeRecptnLog entity = institutionCodeRecptnLogRepository.findById(id)
+                .orElseThrow(() -> new BusinessException(CodeErrorCode.CODE_NOT_FOUND));
+        entity.updateProcessSe(PROC_SE_DONE, "SYSTEM");
     }
 
-    public List<InstitutionCodeRecptnDto> selectInstitutionCodeRecptnList(BaseSearchDto searchVO) {
-        return institutionCodeRecptnLogRepository.findAll().stream().map(this::toLogDto).collect(Collectors.toList());
-    }
-
-    public int selectInstitutionCodeListTotCnt(BaseSearchDto searchVO) {
-        return (int) institutionCodeRepository.count();
+    /**
+     * 수신 이력을 검색 조건과 함께 한 페이지 조회한다.
+     *
+     * <p>[2026-08-28] 종전에는 {@code findAll()} 로 <b>전량</b>을 반환하면서 컨트롤러가
+     * {@code list.size()} 를 총건수로 썼다. 화면은 그 값으로 페이지 번호를 그렸으므로 2페이지를 눌러도
+     * 같은 전체 목록이 다시 나왔다. 리포지터리에는 이미 페이징·검색 메서드가 있었고 쓰이지 않았을 뿐이다.
+     */
+    @Transactional(readOnly = true)
+    public Page<InstitutionCodeRecptnDto> selectInstitutionCodeRecptnList(@NonNull BaseSearchDto searchVO) {
+        Pageable pageable = required(searchVO.toPageable(), "pageable 는 null 일 수 없습니다");
+        String keyword = searchVO.getSearchKeyword() == null ? "" : searchVO.getSearchKeyword();
+        return institutionCodeRecptnLogRepository.findByAllInstNmContaining(keyword, pageable)
+                .map(this::toLogDto);
     }
 
     public InstitutionCodeDto selectInstitutionCodeDetail(InstitutionCodeDto dto) {

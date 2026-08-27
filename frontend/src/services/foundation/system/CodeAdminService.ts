@@ -169,8 +169,11 @@ class CodeAdminService extends AdminService {
     }
 
     /** 기관코드 수신 처리 */
-    async processInstitutionCodeRecptn(params: { ocrnYmd: string, instCd: string, jobSn: number }, config?: AxiosRequestConfig): Promise<void> {
-        return this.post('/institution/receptions/process', null, { ...config, params });
+    async processInstitutionCodeRecptn(target: { ocrnYmd: string, instCd: string, jobSn: number }, config?: AxiosRequestConfig): Promise<void> {
+        // 서버 시그니처는 @Valid @RequestBody InstitutionCodeRecptnDto 다. 종전에는 본문 없이
+        // 쿼리 파라미터로만 보내 항상 400(Required request body is missing)이었다.
+        // 완료 구분값(procSe)은 보내지 않는다 — 서버가 상수로 고정한다.
+        return this.post('/institution/receptions/process', target, config);
     }
 }
 
