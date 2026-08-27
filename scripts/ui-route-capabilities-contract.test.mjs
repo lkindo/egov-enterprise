@@ -89,7 +89,10 @@ test('proxy shell access is measured separately from unresolved capability roles
   assert.equal(effectiveShellCounts.public?.length, 1);
   assert.equal(effectiveShellCounts.authenticated?.length, 48);
   assert.equal(effectiveShellCounts['admin-system']?.length, 71);
-  assert.equal(analysis.result.summary.effectiveAliases, 18);
+  // [2026-08-27] 18 → 17. /admin/security/login-policy 의 config redirect 를 제거해 그 route 가
+  //   별칭이 아니라 정본 page 가 됐다(메뉴 9020120 의 modern_route 가 이 경로를 선언한다).
+  //   별칭이 **줄어드는** 방향이라 은폐가 아니다 — 리다이렉트가 삼키던 화면을 되살린 결과다.
+  assert.equal(analysis.result.summary.effectiveAliases, 17);
   assert.equal(analysis.result.summary.externalAliases, 2);
   const legacySms = analysis.manifest.routes.find(({ route }) => route === '/cop/sms/selectSmsList');
   assert.deepEqual(

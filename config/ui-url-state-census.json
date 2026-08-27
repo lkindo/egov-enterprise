@@ -23,22 +23,22 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "69f72f54c5a266ed55551e65073c9395f39ae8f1f43bb6a7d812ec5ee1d9ffa5"
+    "inventoryHash": "f2885f62e34ae6c759016ecf0078f712f8cbad55a701d040764022fb5cd48627"
   },
   "summary": {
     "sourceFileCount": 503,
-    "records": 530,
-    "syntaxOccurrences": 599,
+    "records": 529,
+    "syntaxOccurrences": 598,
     "ambiguousRecords": 510,
-    "unverifiedRecords": 530,
+    "unverifiedRecords": 529,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
-      "configRedirects": 15,
+      "configRedirects": 14,
       "pageRedirects": 5
     },
     "byKind": {
-      "config-redirect": 15,
+      "config-redirect": 14,
       "dynamic-segment": 11,
       "form-producer": 45,
       "navigation-producer": 154,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 364,
+      "navigation": 363,
       "request-telemetry": 166
     }
   },
@@ -369,66 +369,6 @@
       "consumerFile": "frontend/next.config.ts",
       "routePattern": "/admin/security/audit",
       "targetCandidate": "/admin/system/monitoring/hub?tab=security",
-      "stateItems": [
-        {
-          "name": "<source-query>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        },
-        {
-          "name": "tab",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "Next config redirect can merge source query names into the destination; no sanitizer is approved by this census.",
-      "riskSignals": [
-        "double-encoded-query",
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [],
-      "resolutionStatus": "identified",
-      "canonical": {
-        "routeCandidate": "/admin/system/monitoring/hub",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/next.config.ts",
-        "detector": "next-config-redirect-parser",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-50D164B80E2579",
-      "surface": "navigation",
-      "kind": "config-redirect",
-      "operation": "temporary-redirect",
-      "source": "frontend/next.config.ts",
-      "producerFile": "frontend/next.config.ts",
-      "consumerFile": "frontend/next.config.ts",
-      "routePattern": "/admin/security/login-policy",
-      "targetCandidate": "/admin/system/monitoring/hub?tab=policy",
       "stateItems": [
         {
           "name": "<source-query>",
