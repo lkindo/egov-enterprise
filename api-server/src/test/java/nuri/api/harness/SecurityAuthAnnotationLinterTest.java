@@ -120,7 +120,12 @@ class SecurityAuthAnnotationLinterTest {
             // 집행되지 않고 있었다. PrivacyLogSystemRoleExclusionTest 가 계층이 살아 있는 상태에서
             // 두 경로의 SYSTEM 403 을 고정하며, 종전 애노테이션으로 되돌리면 red 가 되는 것을 확인했다.
             // endpoint 수 174 로 불변(행 수 변화 없음, gate 는 URL 축이라 RBAC_ADMIN_OR_SYSTEM 유지).
-            "396464ced2d6305bb6fdf22910ecbc4e281c68b8ba67d4ca5281cf5c46cb23f9";
+            // [2026-08-27 로그인 정책 인가 이중화] LoginPolicyApiController 의 GET 2행에 메서드 SpEL
+            // hasAnyRole('ADMIN','SYSTEM') 이 부여됐다. **완화가 아니라 강화다** — 종전에는 메서드 인가가
+            // 0건이고 URL 게이트(ADMIN_ALL) 한 겹뿐이라, 그 매핑 한 줄이 빠지면 접속 IP 제한·허용 시간대·
+            // OTP 설정이 함께 열리는 단일 실패점이었다. ADMIN_ALL 은 운영 시드에서 ROLE_ADMIN·ROLE_SYSTEM
+            // 두 롤에 매핑돼 있어 실효 접근 집합은 그대로다(동작 무변경). endpoint 수 174 불변.
+            "b88c86cab9671c79420f6bf9dcc62d94326701afd2e6c11a3d348f037d3435c7";
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 166 대비 여유). */
     private static final int READ_ENDPOINT_FLOOR = 120;

@@ -516,7 +516,7 @@
       "path": "/api/v1/admin/system/login-policies/{userId}",
       "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#deleteLoginPolicy",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -524,7 +524,7 @@
       "path": "/api/v1/admin/system/login-policies/{userId}",
       "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#insertLoginPolicy",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
@@ -532,7 +532,7 @@
       "path": "/api/v1/admin/system/login-policies/{userId}",
       "handler": "nuri.api.controller.foundation.controller.system.login.LoginPolicyApiController#updateLoginPolicy",
       "policy": "ADMIN_OR_SYSTEM",
-      "methodSecurity": "",
+      "methodSecurity": "hasAnyRole('ADMIN','SYSTEM')",
       "routeGate": "RBAC_ADMIN_OR_SYSTEM"
     },
     {
