@@ -23,7 +23,7 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "fafea4baee2a5f6ecd53470ef7471a36f0bbc24c79b172734502c54812f7a5ca"
+    "inventoryHash": "1510ff423aec3aaa4cddabc52f10390681d32f1e766b9ee79000bf2231467a7f"
   },
   "summary": {
     "sourceFileCount": 504,
@@ -840,7 +840,7 @@
       }
     },
     {
-      "id": "URL-FE53BBFED20E4E",
+      "id": "URL-ADED99BE2B255B",
       "surface": "navigation",
       "kind": "config-redirect",
       "operation": "temporary-redirect",
@@ -848,7 +848,7 @@
       "producerFile": "frontend/next.config.ts",
       "consumerFile": "frontend/next.config.ts",
       "routePattern": "/admin/user/login-policy",
-      "targetCandidate": "/admin/system/monitoring/hub?tab=policy",
+      "targetCandidate": "/admin/user/indvdl-info-policy",
       "stateItems": [
         {
           "name": "<source-query>",
@@ -859,14 +859,6 @@
           "riskSignals": [
             "computed-or-aggregate-state"
           ]
-        },
-        {
-          "name": "tab",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
         }
       ],
       "currentBehavior": "Next config redirect can merge source query names into the destination; no sanitizer is approved by this census.",
@@ -879,7 +871,7 @@
       "ambiguityReasons": [],
       "resolutionStatus": "identified",
       "canonical": {
-        "routeCandidate": "/admin/system/monitoring/hub",
+        "routeCandidate": "/admin/user/indvdl-info-policy",
         "status": "unverified"
       },
       "authorizationBoundary": {

@@ -1571,7 +1571,7 @@ function OrgPolicyPanel({ onNavigate }: { onNavigate: (href: string) => void }) 
     {
       href: '/admin/security/login-policy',
       title: '로그인 정책 관리',
-      description: '비밀번호 규칙·계정 잠금 등 접속 정책을 편집합니다.',
+      description: '사용자별 접속 IP·허용 시간대·2단계 인증(OTP)을 관리합니다.',
     },
     {
       href: '/admin/system/policies',
