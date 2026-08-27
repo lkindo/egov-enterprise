@@ -86,13 +86,15 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
     registerSubmitLock.current = true;
     try {
       setRegisterLoading(true);
-      const submitData = {
-        ...values,
-        confmAt: 'N',
-        sanctnerId: 'SYSTEM',
-        frstRgtrId: 'SYSTEM',
-        lastMdfrId: 'SYSTEM',
-      };
+      /*
+       * [2026-08-28] 위조 값 3종 제거.
+       * - sanctnerId:'SYSTEM' — 승인 절차가 제품에 없는데 **승인자 ID 를 미리 박고 있었다.**
+       *   atrzr_id 는 nullable 이고 DTO 검증도 없다. 승인자가 없으면 비워 두는 것이 사실이다.
+       * - frstRgtrId/lastMdfrId:'SYSTEM' — 서버 auditing 이 실제 등록자로 덮어쓰므로
+       *   보내봐야 버려지고, 코드만 "시스템이 등록했다"는 오해를 남긴다.
+       * confmAt:'N'(대기)은 남긴다 — 서버가 그 값을 confmYn 으로 저장하고 목록이 그대로 읽는다.
+       */
+      const submitData = { ...values, confmAt: 'N' };
       await operationAdminService.createReward(submitData);
       toast('포상 기록이 성공적으로 등록되었습니다.', 'success');
       setIsModalOpen(false);
@@ -148,23 +150,12 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
       ),
       className: 'w-32'
     },
-    {
-      header: '승인상태',
-      accessor: (item) => (
-        <div className={`inline-flex items-center px-3 py-1 rounded-lg text-[10px] font-black tracking-widest uppercase transition-all ${item.confmAt === 'Y'
-          ? 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20'
-          : 'bg-muted text-muted-foreground border border-border'
-        }`}>
-          {item.confmAt === 'Y' ? '동기화승인' : '대기중'}
-        </div>
-      ),
-      className: 'w-36 text-center'
-    },
-    {
-      header: '승인일시',
-      accessor: 'sanctnDt',
-      className: 'w-48 text-muted-foreground text-[10px] tabular-nums font-bold pr-8 text-right'
-    }
+    // [2026-08-28] '승인상태'·'승인일시' 두 열을 제거한다.
+    //   confmYn 을 'Y' 로 바꾸는 경로가 **제품 어디에도 없다** — RewardManageApiController 에는
+    //   GET 목록과 POST 등록 두 개뿐이고 PUT/PATCH 가 없으며, 서비스에도 갱신 메서드가 없다
+    //   (전 저장소 grep 실측). 그래서 두 열은 전 건 영구 '대기중'·빈칸이었고, 결재자는 무엇을
+    //   눌러야 할지 알 수 없고 등록자는 왜 안 넘어가는지 알 수 없었다.
+    //   열이 존재하는 것 자체가 없는 절차를 약속한다. 승인 기능을 만들 때 함께 되살린다.
   ];
 
   return (

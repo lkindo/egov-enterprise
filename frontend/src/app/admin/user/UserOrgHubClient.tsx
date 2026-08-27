@@ -1576,7 +1576,9 @@ function OrgPolicyPanel({ onNavigate }: { onNavigate: (href: string) => void }) 
     {
       href: '/admin/system/policies',
       title: '개인정보처리방침 · 이용약관',
-      description: '공개 페이지에 노출되는 정책 본문을 편집합니다.',
+      // '공개 페이지'가 아니다 — /help/policies/[type] 은 로그인을 요구하고, 본문 조회 API 가
+      //   /api/v1/admin/** 아래라 일반 사용자에게는 403 이다(ApiSecurityConfig 실측).
+      description: '정책 본문을 편집합니다. 현재 열람은 관리자에게만 가능합니다.',
     },
     {
       href: '/admin/security/authority',

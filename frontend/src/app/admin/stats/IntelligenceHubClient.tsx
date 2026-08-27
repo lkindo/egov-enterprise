@@ -172,6 +172,27 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             connectQuery;
   const chartData: StatsDto[] = chartQuery.data ?? [];
 
+  /**
+   * 집계를 **쓰는 쪽이 없는** 탭들.
+   *
+   * 저장소 실측(2026-08-28): 이 탭들이 읽는 저장소에 save 호출이 저장소 전체에 0건이고
+   * Flyway 시드에도 INSERT 가 없다.
+   *   - USER_STATS   → userLogRepository.countByDate      (UserLog.create 호출자 0, save 0)
+   *   - CONTENT_STATS→ dtaUseStatsRepository.countByDate  (writer 0)
+   *   - DATA_USAGE   → dtaUseStatsRepository.countByDate  (writer 0 · CONTENT_STATS 와 같은 질의다)
+   *   - REPORTS      → reprtStatsRepository.countByDate   (writer 0)
+   * 반면 SYSTEM_STATS 가 읽는 loginLog 는 LogService 가 실제로 기록한다 — 그래서 이 탭만 값이 있다.
+   *
+   * 이 상태에서 '선택한 기간에 집계된 통계가 없습니다' 라고 하면 **기간을 바꾸면 나온다는 뜻**이
+   * 되어, 사용자가 기간만 계속 바꾸게 만든다. 수집 자체가 없다는 사실을 그대로 말한다.
+   * (같은 규율의 선례: SearchClient '아직 제공되지 않습니다', observability '아직 연동되지 않았습니다')
+   */
+  const UNINSTRUMENTED_TABS: readonly StatsTab[] = ['USER_STATS', 'CONTENT_STATS', 'DATA_USAGE', 'REPORTS'];
+  const isUninstrumentedTab = UNINSTRUMENTED_TABS.includes(activeTab);
+  const emptyChartMessage = isUninstrumentedTab
+    ? '이 지표는 아직 수집되지 않습니다. 기간을 바꿔도 결과는 달라지지 않습니다.'
+    : '선택한 기간에 집계된 통계가 없습니다.';
+
   // 요약 카드는 실제 집계 합계만 표시한다(배열 길이는 "일수"일 뿐 지표가 아니다 — 감사 P0-22).
   const sumStatsCo = (rows?: StatsDto[]) => (rows ?? []).reduce((acc, row) => acc + (row.statsCo ?? 0), 0);
   const isSummaryLoading = userQuery.isLoading || connectQuery.isLoading || dataUsageQuery.isLoading;
@@ -398,7 +419,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
                   ) : chartQuery.isError ? (
                     <HubErrorState message="통계 데이터를 불러오지 못했습니다." onRetry={() => chartQuery.refetch()} />
                   ) : chartData.length === 0 ? (
-                    <HubEmptyState message="선택한 기간에 집계된 통계가 없습니다." />
+                    <HubEmptyState message={emptyChartMessage} />
                   ) : (
                     <div className="h-[400px] w-full">
                       <SafeResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>

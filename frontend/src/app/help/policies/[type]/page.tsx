@@ -21,12 +21,25 @@ export default async function PolicyViewPage({
 
   try {
     policy = await policyAdminService.getPolicy(type);
-  } catch {
-    // API 통신 실패 시 폴백 기본값 반환
+  } catch (error) {
+    /*
+     * [2026-08-28] 실패 사유를 구분한다.
+     *
+     * 이 화면은 본문을 /api/v1/admin/system/policies/{type} 에서 읽는데, ApiSecurityConfig 가
+     * /api/v1/admin/** 를 ROLE_ADMIN·ROLE_SYSTEM 으로 제한한다. 즉 **일반 사용자에게는 영구히
+     * 403** 이다. 그런데 종전 폴백은 '잠시 후 다시 시도해 주세요' 라고 안내해 일시적 장애처럼
+     * 보이게 했고, 사용자는 새로고침을 반복하게 된다. 권한 문제는 기다려도 해소되지 않는다.
+     *
+     * 비관리자도 읽을 수 있는 공개 조회 경로를 여는 것은 신규 API 표면이라 별도 결정이다.
+     */
+    const status = (error as { response?: { status?: number } })?.response?.status;
+    const isPermissionWall = status === 401 || status === 403;
     policy = {
       plcyTypeCd: type,
       plcyTtl: type === 'privacy' ? '개인정보 처리 방침' : '약관 및 정책',
-      plcyCn: '정책 내용을 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'
+      plcyCn: isPermissionWall
+        ? '이 정책 본문은 현재 관리자만 열람할 수 있습니다. 필요하면 시스템 관리자에게 문의해 주세요.'
+        : '정책 내용을 불러올 수 없습니다. 잠시 후 다시 시도해 주세요.'
     };
   }
 
