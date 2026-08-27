@@ -28,6 +28,12 @@ vi.mock('date-fns', () => ({
   format: vi.fn(() => '2024-03-10 12:00'),
 }));
 
+// 인증 주체 — 수정·삭제 버튼 노출 판정이 이 값과 등록자 로그인 ID 를 대조한다.
+const authMock = vi.hoisted(() => ({ user: { id: 'user01', name: '홍길동', role: 'ROLE_USER' } as { id: string; name: string; role: string } | null }));
+vi.mock('@/contexts/AuthContext', () => ({
+  useAuth: () => ({ user: authMock.user }),
+}));
+
 // Mock toast
 const toastMock = vi.hoisted(() => vi.fn());
 vi.mock('@/app/components/ui/toast', () => ({
@@ -46,6 +52,7 @@ describe('CommentSection Component', () => {
       bbsId: mockBbsId,
       wrterId: 'user01',
       wrterNm: 'User One',
+      frstRgtrId: 'user01',
       ansCn: 'First Comment',
       crtDt: '2024-03-10T12:00:00Z',
     },
@@ -342,11 +349,39 @@ describe('CommentSection Component', () => {
     expect(screen.queryByTestId('comment-delete-button')).toBeNull();
   });
 
-  it('확정된 댓글에는 수정·삭제 버튼이 그대로 있다 (가드 과잉 회귀 방어)', () => {
+  it('확정된 내 댓글에는 수정·삭제 버튼이 그대로 있다 (가드 과잉 회귀 방어)', () => {
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} />);
 
     expect(screen.queryByTestId('comment-edit-button')).not.toBeNull();
     expect(screen.queryByTestId('comment-delete-button')).not.toBeNull();
+  });
+
+  it('남의 댓글에는 수정·삭제 버튼을 노출하지 않는다', () => {
+    // 종전에는 판정 자체가 없어 버튼이 떴고, 사용자는 확인창을 통과한 뒤에야 서버 403 을 만났다.
+    // 판정 축은 서버 가드와 같은 등록자 로그인 ID 다.
+    const othersComment: CommentVO = { ...mockComments[0], frstRgtrId: 'someone-else' };
+
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[othersComment]} />);
+
+    expect(screen.getByText('First Comment')).toBeDefined();
+    expect(screen.queryByTestId('comment-edit-button')).toBeNull();
+    expect(screen.queryByTestId('comment-delete-button')).toBeNull();
+  });
+
+  it('관리자는 남의 댓글도 관리할 수 있다 — 라우트 게이트와 같은 역할 집합', () => {
+    // 역할 문자열을 직접 비교하면 ROLE_ADMIN 원문을 가진 관리자에게 기능이 사라진다(DEC-OPS-023).
+    const previous = authMock.user;
+    authMock.user = { id: 'admin01', name: '관리자', role: 'ROLE_ADMIN' };
+    try {
+      const othersComment: CommentVO = { ...mockComments[0], frstRgtrId: 'someone-else' };
+
+      render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[othersComment]} />);
+
+      expect(screen.queryByTestId('comment-edit-button')).not.toBeNull();
+      expect(screen.queryByTestId('comment-delete-button')).not.toBeNull();
+    } finally {
+      authMock.user = previous;
+    }
   });
 });
 

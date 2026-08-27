@@ -277,6 +277,7 @@ export const CommentDtoSchema = z.object({
   bbsId: z.string().min(0).max(20).optional(),
   wrterId: z.string().optional(),
   wrterNm: z.string().optional(),
+  frstRgtrId: z.string().optional(),
   pswd: z.string().optional(),
   ansCn: z.string().optional(),
   crtDt: z.string().optional(),

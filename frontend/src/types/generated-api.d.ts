@@ -4914,8 +4914,9 @@ export interface components {
             /** Format: int64 */
             pstSn?: number;
             bbsId?: string;
-            wrterId?: string;
-            wrterNm?: string;
+            readonly wrterId?: string;
+            readonly wrterNm?: string;
+            readonly frstRgtrId?: string;
             pswd?: string;
             ansCn?: string;
             crtDt?: string;

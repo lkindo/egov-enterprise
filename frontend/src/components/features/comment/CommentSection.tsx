@@ -33,10 +33,25 @@ type OptimisticCommentAction =
   | { type: 'update'; payload: Pick<CommentVO, 'ansSn' | 'ansCn'> };
 
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 
 export default function CommentSection({ pstSn, bbsId, initialComments }: CommentSectionProps) {
   const [, startTransition] = useTransition();
   const { toast } = useToast();
+  const { user } = useAuth();
+
+  /**
+   * 수정·삭제 버튼 노출 판정.
+   *
+   * 서버 가드({@code SecurityUtil.assertOwnerOrAdmin})와 **같은 축**을 본다 — 등록자 로그인 ID.
+   * 종전에는 판정 자체가 없어 남의 댓글에도 버튼이 떴고, 사용자는 확인창을 통과한 뒤에야 실패했다.
+   * 역할 집합은 라우트 게이트와 같은 SSOT 를 쓴다(DEC-OPS-023) — 문자열 직접 비교를 쓰면
+   * 권한 있는 관리자에게 기능이 조용히 사라진다.
+   */
+  const canManageComment = (comment: CommentView) =>
+    isAdministrativeRole(user?.role)
+    || Boolean(user?.id && comment.frstRgtrId && comment.frstRgtrId === user.id);
   
   // Optimistic State Management (React 19)
   const [optimisticComments, addOptimisticComment] = useOptimistic<CommentView[], OptimisticCommentAction>(
@@ -104,7 +119,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
           bbsId,
           ansCn: content,
           wrterId: '',
-          wrterNm: 'User', // Assume current user
+          wrterNm: user?.name ?? '', // 서버가 확정한 이름이 도착하면 대체된다
           crtDt: new Date().toISOString(),
           isOptimistic: true
         }
@@ -274,7 +289,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                           `editingId` 가 새 `ansSn` 과 어긋나 **폼이 조용히 접히며 입력이 유실된다.**
                           (카드가 이미 opacity/grayscale 로 미확정임을 알리고 있었는데, 동작만 막지 않고 있었다.)
                         */}
-                        {!comment.isOptimistic && (
+                        {!comment.isOptimistic && canManageComment(comment) && (
                         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                           {editingId === comment.ansSn ? (
                             <>
