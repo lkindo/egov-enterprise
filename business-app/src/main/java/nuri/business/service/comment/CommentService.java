@@ -23,13 +23,22 @@ public class CommentService {
                 .map(this::toDto);
     }
 
+    /**
+     * 댓글을 등록한다. 작성자 신원은 <b>인증 주체에서 온 값만</b> 저장한다.
+     *
+     * <p>종전에는 {@code commentDto.getWrterId()/getWrterNm()} 을 그대로 썼는데 화면이 그 두 필드를
+     * 보내지 않아 전 건이 null 로 저장됐다(작성자 칸 공백). 게시글이 이미 쓰는 규칙과 같게 맞춘다.
+     *
+     * @param wrterEsntlId 인증 주체의 고유 식별자(esntlId) — 요청 본문에서 오지 않는다
+     * @param wrterNm      인증 주체의 성명
+     */
     @Transactional
-    public Long createComment(CommentDto commentDto) {
+    public Long createComment(String wrterEsntlId, String wrterNm, CommentDto commentDto) {
         Comment comment = Comment.builder()
                 .pstSn(commentDto.getPstSn())
                 .bbsId(commentDto.getBbsId())
-                .wrterId(commentDto.getWrterId())
-                .wrterNm(commentDto.getWrterNm())
+                .wrterId(wrterEsntlId)
+                .wrterNm(wrterNm)
                 .pswd(commentDto.getPswd())
                 .ansCn(commentDto.getAnsCn())
                 .useYn("Y")
@@ -61,6 +70,8 @@ public class CommentService {
                 .bbsId(entity.getBbsId())
                 .wrterId(entity.getWrterId())
                 .wrterNm(entity.getWrterNm())
+                // 화면의 수정·삭제 버튼 판정은 아래 두 가드가 보는 축(frstRgtrId)과 같아야 한다.
+                .frstRgtrId(entity.getFrstRgtrId())
                 .pswd(entity.getPswd())
                 .ansCn(entity.getAnsCn())
                 .crtDt(entity.getCrtDt() != null ? entity.getCrtDt().toString() : null)
