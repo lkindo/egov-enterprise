@@ -135,4 +135,29 @@ describe('CommunityBoardsWriteClient validation contract', () => {
 
     await act(async () => pending.resolve());
   });
+
+  it('전송 payload 가 서버 계약(BoardSaveRequest) 밖의 필드를 싣지 않는다', async () => {
+    // 종전에는 defaultValues 가 noticeAt:'N'·secretAt:'N' 을 매 요청에 실었고 날짜 필드 이름도
+    // ntceBgnde/ntceEndde 였다. BoardSaveRequest 에 없는 이름이라 서버가 400 으로 거부했고,
+    // 스위치를 만지지 않아도 등록이 **항상** 실패했다(fail-on-unknown-properties: true).
+    // 이 계약은 "화면이 계약 밖 이름을 만들어 보내지 않는다" 를 고정한다.
+    const user = userEvent.setup();
+    renderSubject();
+    await user.type(screen.getByRole('textbox', { name: /게시판 식별자/ }), 'BBS_000000000000001');
+    await user.type(screen.getByRole('textbox', { name: /게시물 제목/ }), '제목');
+    fireEvent.change(screen.getByRole('textbox', { name: /게시물 본문/ }), {
+      target: { value: '본문' },
+    });
+
+    await user.click(screen.getByRole('button', { name: /게시물 등록/ }));
+
+    await waitFor(() => expect(mocks.createBoardArticle).toHaveBeenCalledTimes(1));
+    const sent = mocks.createBoardArticle.mock.calls[0][0] as Record<string, unknown>;
+
+    for (const outside of ['noticeAt', 'secretAt', 'ntceBgnde', 'ntceEndde']) {
+      expect(sent, `${outside} 은 BoardSaveRequest 에 없는 이름이다`).not.toHaveProperty(outside);
+    }
+    // 계약에 있는 이름으로는 실려야 한다 — 축소가 아니라 이름 정합이 목적이다.
+    expect(sent).toMatchObject({ scrtYn: 'N' });
+  });
 });

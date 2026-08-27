@@ -32,10 +32,17 @@ import {
 } from '@/components/ui/form';
 import { z } from 'zod';
 
+/** 비워 둔 날짜는 아예 보내지 않는다. 빈 문자열을 그대로 실으면 length=8 컬럼에 ''가 저장된다. */
+const optionalYmd = (schema: z.ZodTypeAny) =>
+ schema.transform((value: unknown) => (value === '' ? undefined : value));
+
 const communityBoardSchema = boardSchema.extend({
  bbsId: boardSchema.shape.bbsId.min(1, '게시판 식별자를 입력해 주세요.'),
  pstTtl: boardSchema.shape.pstTtl.min(1, '게시물 제목을 입력해 주세요.'),
  pstCn: boardSchema.shape.pstCn.min(1, '게시물 본문을 입력해 주세요.'),
+ pstBgngYmd: optionalYmd(boardSchema.shape.pstBgngYmd),
+ pstEndYmd: optionalYmd(boardSchema.shape.pstEndYmd),
+ evntDt: optionalYmd(boardSchema.shape.evntDt),
 });
 
 export default function CommunityBoardsWriteClient() {
@@ -50,10 +57,9 @@ export default function CommunityBoardsWriteClient() {
  bbsId: '',
  pstTtl: '',
  pstCn: '',
- ntceBgnde: '',
- ntceEndde: '',
- noticeAt: 'N' as 'Y' | 'N',
- secretAt: 'N' as 'Y' | 'N',
+ pstBgngYmd: '',
+ pstEndYmd: '',
+ scrtYn: 'N' as 'Y' | 'N',
  useYn: 'Y' as 'Y' | 'N',
  evntDt: ''
  }
@@ -218,26 +224,13 @@ export default function CommunityBoardsWriteClient() {
  </div>
 
  <div className="space-y-6">
+ {/* [2026-08-27] '공지사항 설정' 스위치 제거 — BoardSaveRequest 에 공지 여부 필드가 없어
+     서버로 보낼 방법이 자체가 없었다. 켜도 아무 일이 없는 죽은 어포던스이고, 오히려 계약 밖
+     키(noticeAt)를 payload 에 실어 등록 전체를 400 으로 만들던 원인이었다. 공지 기능이
+     필요하면 서버 계약에 필드를 먼저 만든 뒤 화면을 되살리는 것이 순서다. */}
  <FormField
  control={form.control}
- name="noticeAt"
- render={({ field }) => (
- <div className="flex items-center justify-between p-4 bg-card rounded-lg shadow-sm border border-border">
- <div className="space-y-0.5">
- <Label className="text-sm font-bold text-foreground">공지사항 설정</Label>
- <p className="text-xs font-bold text-muted-foreground tracking-tight">목록 상단에 공지로 표시합니다.</p>
- </div>
- <Switch
- checked={field.value === 'Y'}
- onCheckedChange={(checked) => field.onChange(checked ? 'Y' : 'N')}
- />
- </div>
- )}
- />
-
- <FormField
- control={form.control}
- name="secretAt"
+ name="scrtYn"
  render={({ field }) => (
  <div className="flex items-center justify-between p-4 bg-card rounded-lg shadow-sm border border-border">
  <div className="space-y-0.5">
@@ -263,7 +256,7 @@ export default function CommunityBoardsWriteClient() {
  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
  <FormField
  control={form.control}
- name="ntceBgnde"
+ name="pstBgngYmd"
  render={({ field }) => (
  <FormItem className="space-y-2">
  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시 시작일</FormLabel>
@@ -277,7 +270,7 @@ export default function CommunityBoardsWriteClient() {
 
  <FormField
  control={form.control}
- name="ntceEndde"
+ name="pstEndYmd"
  render={({ field }) => (
  <FormItem className="space-y-2">
  <FormLabel className="text-xs font-bold text-muted-foreground uppercase tracking-widest">게시 종료일</FormLabel>

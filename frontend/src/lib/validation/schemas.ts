@@ -101,11 +101,13 @@ export const boardMasterSchema = BoardMasterDtoSchema.extend({
   posblAtchFileNumber: z.coerce.number().min(0).max(10),
 });
 
+// [2026-08-27] noticeAt·secretAt 확장 제거. 이 두 줄이 zod strip 을 통과시켜 계약 밖 키를
+//   payload 에 남겼고, 서버는 fail-on-unknown-properties 라 게시물 등록이 **항상 400** 이었다.
+//   secretAt 은 계약의 scrtYn 으로 이름만 다른 같은 축이고, noticeAt(공지 여부)은 BoardSaveRequest
+//   에 대응 필드 자체가 없어 보낼 방법이 없다 — 화면의 공지 스위치도 함께 제거했다.
 export const boardSchema = BoardSaveRequestSchema.extend({
   pstSn: z.number().optional(),
   password: z.string().optional().or(z.string().max(200)),
-  noticeAt: z.enum(['Y', 'N']).optional(),
-  secretAt: z.enum(['Y', 'N']).optional(),
 });
 
 export const manualSchema = OnlineManualDtoSchema.extend({
