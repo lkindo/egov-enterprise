@@ -61,7 +61,9 @@ import { z } from 'zod';
 import { 
  saveCodeDetail, 
  deleteCodeDetail,
- saveCmmnCodeHierarchyAction
+ saveCmmnCodeHierarchyAction,
+ saveClCodeAction,
+ saveCmmnCodeAction
 } from '@/app/actions/codeActions';
 import { 
  CmmnClCode, 
@@ -82,7 +84,7 @@ const CODE_DND_SCREEN_READER_INSTRUCTIONS: ScreenReaderInstructions = {
  draggable: '스페이스 또는 엔터 키로 코드 그룹 이동을 시작합니다. 방향키로 대상 분류를 찾고 스페이스 또는 엔터 키로 이동을 확정합니다. Escape 키로 취소합니다.',
 };
 
-import { CmmnDetailCodeDtoSchema } from '@/types/generated-zod';
+import { CmmnClCodeDtoSchema, CmmnCodeDtoSchema, CmmnDetailCodeDtoSchema } from '@/types/generated-zod';
 
 export const codeDetailFormSchema = CmmnDetailCodeDtoSchema.extend({
  dtlCd: CmmnDetailCodeDtoSchema.shape.dtlCd
@@ -107,6 +109,77 @@ const CODE_DETAIL_FIELD_LABELS = {
  dtlCdNm: '표기 레이블',
  dtlCdExpln: '메타데이터 컨텍스트 설명',
  useYn: '활성 상태',
+ 'root.server': '저장 요청',
+};
+
+/**
+ * 코드 분류(cluster) 폼.
+ *
+ * 서버 DTO(CmmnClCodeDto)는 clsfCd·clsfCdNm 을 @Size 로만 제한하지만, 둘 다 비면
+ * insertCmmnClCode 의 required(...) 가 500 계열로 죽는다. 화면에서 먼저 막는다.
+ */
+const codeClusterFormSchema = CmmnClCodeDtoSchema.extend({
+ clsfCd: CmmnClCodeDtoSchema.shape.clsfCd
+  .unwrap()
+  .trim()
+  .min(1, '분류 코드를 입력해 주세요.')
+  .max(12, '분류 코드는 12자 이하여야 합니다.'),
+ clsfCdNm: CmmnClCodeDtoSchema.shape.clsfCdNm
+  .unwrap()
+  .trim()
+  .min(1, '분류명을 입력해 주세요.')
+  .max(100, '분류명은 100자 이하여야 합니다.'),
+ clsfCdExpln: CmmnClCodeDtoSchema.shape.clsfCdExpln
+  .unwrap()
+  .trim()
+  .max(4000, '설명은 4000자 이하여야 합니다.'),
+ useYn: z.enum(['Y', 'N']).default('Y'),
+});
+
+const CODE_CLUSTER_FIELD_LABELS = {
+ clsfCd: '분류 코드',
+ clsfCdNm: '분류명',
+ clsfCdExpln: '분류 설명',
+ useYn: '사용 여부',
+ 'root.server': '저장 요청',
+};
+
+/**
+ * 코드 그룹 폼.
+ *
+ * clsfCd(소속 분류)는 **등록할 때만** 반영된다 — 서버의 updateCmmnCode 는 명칭·설명·사용여부만
+ * 갱신하고 소속 분류는 건드리지 않는다(CommonCodeGroup#update). 그래서 수정 화면에서는 읽기
+ * 전용으로 보여 주고, 분류 간 이동은 탐색기 드래그앤드롭 + '그룹 소속 저장' 경로가 담당한다.
+ */
+const codeGroupFormSchema = CmmnCodeDtoSchema.extend({
+ cdId: CmmnCodeDtoSchema.shape.cdId
+  .unwrap()
+  .trim()
+  .min(1, '그룹 코드를 입력해 주세요.')
+  .max(20, '그룹 코드는 20자 이하여야 합니다.'),
+ cdIdNm: CmmnCodeDtoSchema.shape.cdIdNm
+  .unwrap()
+  .trim()
+  .min(1, '그룹명을 입력해 주세요.')
+  .max(100, '그룹명은 100자 이하여야 합니다.'),
+ cdIdExpln: CmmnCodeDtoSchema.shape.cdIdExpln
+  .unwrap()
+  .trim()
+  .max(4000, '설명은 4000자 이하여야 합니다.'),
+ clsfCd: CmmnCodeDtoSchema.shape.clsfCd
+  .unwrap()
+  .trim()
+  .min(1, '소속 분류를 선택해 주세요.')
+  .max(12, '분류 코드는 12자 이하여야 합니다.'),
+ useYn: z.enum(['Y', 'N']).default('Y'),
+});
+
+const CODE_GROUP_FIELD_LABELS = {
+ cdId: '그룹 코드',
+ cdIdNm: '그룹명',
+ cdIdExpln: '그룹 설명',
+ clsfCd: '소속 분류',
+ useYn: '사용 여부',
  'root.server': '저장 요청',
 };
 
@@ -338,6 +411,20 @@ export default function CommonCodeClient({
  const [deletingDetailKey, setDeletingDetailKey] = useState<string | null>(null);
  const [editingDetail, setEditingDetail] = useState<CmmnDetailCode | null>(null);
  const [modalTargetGroup, setModalTargetGroup] = useState<Pick<GroupCode, 'cdId' | 'cdIdNm'> | null>(null);
+
+ /**
+  * 구조(분류·그룹) 편집 모달 상태.
+  *
+  * 종전에는 상세 코드만 등록·수정할 수 있었고 그 상위인 분류·그룹은 화면에서 만들 수도 고칠 수도
+  * 없었다 — 서버와 프런트 서비스에는 CRUD 6종이 전부 살아 있는데 배선만 없었다. 그래서 새 코드
+  * 체계를 도입하려면 DB 를 직접 건드려야 했다.
+  */
+ const [structureModal, setStructureModal] = useState<
+  { kind: 'cluster' | 'group'; mode: 'create' | 'edit' } | null
+ >(null);
+ const [isStructureSaving, setIsStructureSaving] = useState(false);
+ const structureSubmitAttemptRef = React.useRef(false);
+ const structureSavePendingRef = React.useRef(false);
  
  // D&D States
  const [flattenedNodes, setFlattenedNodes] = useState<FlattenedCodeNode[]>([]);
@@ -359,6 +446,23 @@ export default function CommonCodeClient({
  const resetForm = form.reset;
  const isDetailFormPending = isDetailSaving || form.formState.isSubmitting;
  const isDetailWritePending = isDetailFormPending || deletingDetailKey !== null;
+
+ // 구조(분류·그룹) 폼. 두 종류가 필드 집합이 다르므로 폼을 각각 둔다.
+ const clusterForm = useAppForm<
+  typeof codeClusterFormSchema,
+  z.infer<typeof codeClusterFormSchema>
+ >(codeClusterFormSchema, {
+ defaultValues: { clsfCd: '', clsfCdNm: '', clsfCdExpln: '', useYn: 'Y' }
+ });
+ const groupForm = useAppForm<
+  typeof codeGroupFormSchema,
+  z.infer<typeof codeGroupFormSchema>
+ >(codeGroupFormSchema, {
+ defaultValues: { cdId: '', cdIdNm: '', cdIdExpln: '', clsfCd: '', useYn: 'Y' }
+ });
+ const isStructureFormPending = isStructureSaving
+  || clusterForm.formState.isSubmitting
+  || groupForm.formState.isSubmitting;
 
  useEffect(() => {
  if (isModalOpen) {
@@ -593,6 +697,142 @@ export default function CommonCodeClient({
  toast('코드 그룹의 소속 분류가 변경되었습니다.', 'info');
 
  setActiveId(null);
+ };
+
+ /** 선택된 분류에 속한 코드 그룹 수. 미사용 전환 고지에 쓴다. */
+ const groupCountOf = (clsfCd: string) =>
+  flattenedNodes.filter((node) => node.type === 'group' && node.parentId === clsfCd).length;
+
+ const openCreateCluster = () => {
+ clusterForm.reset({ clsfCd: '', clsfCdNm: '', clsfCdExpln: '', useYn: 'Y' });
+ setStructureModal({ kind: 'cluster', mode: 'create' });
+ };
+
+ const openEditCluster = () => {
+ if (selectedNode?.type !== 'cluster') return;
+ const source = clCodes.find((cl) => cl.clsfCd === selectedNode.id);
+ clusterForm.reset({
+ clsfCd: selectedNode.id,
+ clsfCdNm: source?.clsfCdNm ?? selectedNode.name,
+ clsfCdExpln: source?.clsfCdExpln ?? '',
+ useYn: (source?.useYn as 'Y' | 'N') ?? 'Y',
+ });
+ setStructureModal({ kind: 'cluster', mode: 'edit' });
+ };
+
+ /** 새 그룹은 반드시 분류에 속한다 — 서버가 clsfCd 를 필수로 요구한다. */
+ const openCreateGroup = () => {
+ const defaultCluster = selectedNode?.type === 'cluster'
+ ? selectedNode.id
+ : selectedNode?.type === 'group'
+ ? selectedNode.parentId ?? ''
+ : clCodes[0]?.clsfCd ?? '';
+ groupForm.reset({ cdId: '', cdIdNm: '', cdIdExpln: '', clsfCd: defaultCluster, useYn: 'Y' });
+ setStructureModal({ kind: 'group', mode: 'create' });
+ };
+
+ const openEditGroup = () => {
+ if (selectedNode?.type !== 'group') return;
+ const source = groups.find((g) => g.cdId === selectedNode.id);
+ groupForm.reset({
+ cdId: selectedNode.id,
+ cdIdNm: source?.cdIdNm ?? selectedNode.name,
+ cdIdExpln: source?.cdIdExpln ?? '',
+ clsfCd: selectedNode.parentId ?? source?.clsfCd ?? '',
+ useYn: (source?.useYn as 'Y' | 'N') ?? 'Y',
+ });
+ setStructureModal({ kind: 'group', mode: 'edit' });
+ };
+
+ const closeStructureModal = () => {
+ if (structureSubmitAttemptRef.current || structureSavePendingRef.current) return;
+ setStructureModal(null);
+ };
+
+ const onSubmitCluster = async (values: z.infer<typeof codeClusterFormSchema>) => {
+ if (structureSavePendingRef.current) return;
+ const isNew = structureModal?.mode === 'create';
+
+ /*
+  * 분류를 미사용으로 바꾸면 **소속 코드 그룹이 전부 목록에서 사라진다** —
+  * 코드그룹 조회가 commonCodeCategory.useYn.eq("Y") 로 조인 필터를 걸기 때문이다
+  * (CommonCodeGroupRepositoryImpl). 되돌릴 수는 있지만 사용자에게는 데이터가 없어진 것처럼
+  * 보이므로, 저장 전에 결과를 그대로 말한다.
+  */
+ if (!isNew && values.useYn === 'N') {
+ const affected = groupCountOf(values.clsfCd);
+ if (affected > 0) {
+ const ok = await confirm({
+ title: '분류를 미사용으로 전환',
+ message: '이 분류를 미사용으로 바꾸면 소속 코드 그룹 ' + affected + '개가 목록에서 함께 사라집니다. 그룹과 상세 코드가 지워지는 것은 아니며, 분류를 다시 사용으로 되돌리면 그대로 나타납니다.',
+ confirmText: '미사용으로 전환',
+ });
+ if (!ok) return;
+ }
+ }
+
+ structureSavePendingRef.current = true;
+ setIsStructureSaving(true);
+ try {
+ const res = await saveClCodeAction(null, { ...values, isNew });
+ if (res.success) {
+ toast(res.message, 'success');
+ setStructureModal(null);
+ router.refresh();
+ } else if (!clusterForm.applyServerErrors(res)) {
+ toast(res.message, 'error');
+ }
+ } catch (error) {
+ if (!clusterForm.applyServerErrors(error)) {
+ toast('서버 통신 중 오류가 발생했습니다. 입력 내용은 유지되므로 잠시 후 다시 시도해 주세요.', 'error');
+ }
+ } finally {
+ structureSavePendingRef.current = false;
+ structureSubmitAttemptRef.current = false;
+ setIsStructureSaving(false);
+ }
+ };
+
+ const onSubmitGroup = async (values: z.infer<typeof codeGroupFormSchema>) => {
+ if (structureSavePendingRef.current) return;
+ const isNew = structureModal?.mode === 'create';
+ structureSavePendingRef.current = true;
+ setIsStructureSaving(true);
+ try {
+ const res = await saveCmmnCodeAction(null, { ...values, isNew });
+ if (res.success) {
+ toast(res.message, 'success');
+ setStructureModal(null);
+ router.refresh();
+ } else if (!groupForm.applyServerErrors(res)) {
+ toast(res.message, 'error');
+ }
+ } catch (error) {
+ if (!groupForm.applyServerErrors(error)) {
+ toast('서버 통신 중 오류가 발생했습니다. 입력 내용은 유지되므로 잠시 후 다시 시도해 주세요.', 'error');
+ }
+ } finally {
+ structureSavePendingRef.current = false;
+ structureSubmitAttemptRef.current = false;
+ setIsStructureSaving(false);
+ }
+ };
+
+ const submitStructureForm = (event?: React.BaseSyntheticEvent) => {
+ if (structureSubmitAttemptRef.current || structureSavePendingRef.current) {
+ event?.preventDefault();
+ return;
+ }
+ structureSubmitAttemptRef.current = true;
+ const activeForm = structureModal?.kind === 'cluster' ? clusterForm : groupForm;
+ const handler = structureModal?.kind === 'cluster'
+ ? activeForm.handleSubmit(onSubmitCluster as never, () => { structureSubmitAttemptRef.current = false; })
+ : activeForm.handleSubmit(onSubmitGroup as never, () => { structureSubmitAttemptRef.current = false; });
+ void handler(event).catch(() => {
+ structureSubmitAttemptRef.current = false;
+ structureSavePendingRef.current = false;
+ setIsStructureSaving(false);
+ });
  };
 
  const handleSaveExplorerChanges = async () => {
@@ -944,9 +1184,24 @@ export default function CommonCodeClient({
  masterTitle="코드 분류 및 그룹"
  masterDescription={`분류 ${clCodes.length}개 · 그룹 ${groups.length}개`}
  masterTools={(
+ <div className="flex items-center gap-2">
+ <Button type="button" variant="outline" size="sm" onClick={openCreateCluster}>
+ 분류 등록
+ </Button>
+ <Button
+ type="button"
+ variant="outline"
+ size="sm"
+ onClick={openCreateGroup}
+ disabled={clCodes.length === 0}
+ title={clCodes.length === 0 ? '코드 그룹은 분류에 속해야 합니다. 분류를 먼저 등록하세요.' : undefined}
+ >
+ 그룹 등록
+ </Button>
  <Button type="button" variant="outline" size="sm" onClick={() => setIsPickerOpen(true)}>
  코드 검색
  </Button>
+ </div>
  )}
  master={(
  <div className="space-y-3">
@@ -1029,8 +1284,18 @@ export default function CommonCodeClient({
  ? `분류 코드 ${selectedNode.id}`
  : undefined}
  detailActions={selectedGroup ? (
+ /* 주 과업(상세 코드 등록)이 먼저다 — 목록에서 Tab 을 누르면 상세 액션의 첫 버튼으로 이동한다(A2 계약). */
+ <div className="flex flex-wrap items-center gap-2">
  <Button type="button" onClick={handleCreateDetail} disabled={isDetailWritePending || isModalOpen} className="gap-2">
  <Plus size={16} aria-hidden="true" /> 신규 상세 코드 등록
+ </Button>
+ <Button type="button" variant="outline" onClick={openEditGroup} disabled={isStructureFormPending} className="gap-2">
+ <Settings size={16} aria-hidden="true" /> 그룹 수정
+ </Button>
+ </div>
+ ) : selectedNode?.type === 'cluster' ? (
+ <Button type="button" variant="outline" onClick={openEditCluster} disabled={isStructureFormPending} className="gap-2">
+ <Settings size={16} aria-hidden="true" /> 분류 수정
  </Button>
  ) : undefined}
  detail={selectedNode?.type === 'group' ? (
@@ -1084,6 +1349,234 @@ export default function CommonCodeClient({
  onSaveShortcut={handleSaveExplorerChanges}
  saveShortcutDisabled={saveDisabled}
  />
+
+
+ {/* 구조(분류·그룹) 편집 모달 — 상세 코드 모달과 폼 패턴을 공유한다. */}
+ <StandardModal
+ isOpen={structureModal !== null}
+ onClose={closeStructureModal}
+ closeDisabled={isStructureFormPending}
+ title={structureModal?.kind === 'cluster'
+ ? (structureModal.mode === 'create' ? '코드 분류 등록' : '코드 분류 수정')
+ : (structureModal?.mode === 'create' ? '코드 그룹 등록' : '코드 그룹 수정')}
+ maxWidth="2xl"
+ footer={
+ <div className="flex w-full gap-4">
+ <Button
+ variant="outline"
+ onClick={closeStructureModal}
+ disabled={isStructureFormPending}
+ className="h-11 flex-1 rounded-lg border-2 border-border text-xs font-bold shadow-sm"
+ >
+ 취소
+ </Button>
+ <Button
+ type="button"
+ onClick={() => submitStructureForm()}
+ disabled={isStructureFormPending}
+ aria-busy={isStructureFormPending || undefined}
+ className="h-11 flex-[2] rounded-lg border-none bg-primary text-xs font-bold text-primary-foreground shadow-sm"
+ >
+ <Save size={18} aria-hidden="true" />
+ {isStructureFormPending ? '저장 중…' : '저장'}
+ </Button>
+ </div>
+ }
+ >
+ {structureModal?.kind === 'cluster' ? (
+ <Form {...clusterForm}>
+ <form noValidate onSubmit={submitStructureForm} className="space-y-8 pt-4">
+ <FormErrorSummary labels={CODE_CLUSTER_FIELD_LABELS} onNavigate={clusterForm.focusError} />
+ <ShadcnFormField
+ control={clusterForm.control}
+ name="clsfCd"
+ required
+ render={({ field }) => (
+ <FormItem className="space-y-1.5">
+ <FormLabel className="text-xs font-bold text-foreground">분류 코드</FormLabel>
+ <FormControl>
+ <Input
+ {...field}
+ readOnly={structureModal.mode === 'edit'}
+ maxLength={12}
+ className="h-11 rounded-lg border-none bg-muted font-mono text-xs font-bold shadow-inner"
+ placeholder="예: SYS (최대 12자)"
+ />
+ </FormControl>
+ <FormMessage className="text-xs font-bold text-destructive-emphasis" />
+ </FormItem>
+ )}
+ />
+ <ShadcnFormField
+ control={clusterForm.control}
+ name="clsfCdNm"
+ required
+ render={({ field }) => (
+ <FormItem className="space-y-1.5">
+ <FormLabel className="text-xs font-bold text-foreground">분류명</FormLabel>
+ <FormControl>
+ <Input {...field} maxLength={100} className="h-11 rounded-lg border-none bg-muted text-sm font-bold shadow-inner" placeholder="분류명 입력 (최대 100자)" />
+ </FormControl>
+ <FormMessage className="text-xs font-bold text-destructive-emphasis" />
+ </FormItem>
+ )}
+ />
+ <ShadcnFormField
+ control={clusterForm.control}
+ name="useYn"
+ render={({ field }) => (
+ <FormItem className="space-y-1.5">
+ <FormLabel className="text-xs font-bold text-foreground">사용 여부</FormLabel>
+ <Select onValueChange={field.onChange} value={field.value}>
+ <FormControl>
+ <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
+ <SelectValue />
+ </SelectTrigger>
+ </FormControl>
+ <SelectContent className="rounded-lg shadow-xl z-[9999]">
+ <SelectItem value="Y" className="h-12 rounded-lg text-xs font-bold text-success-emphasis">사용 중</SelectItem>
+ <SelectItem value="N" className="h-12 rounded-lg text-xs font-bold text-destructive-emphasis">미사용</SelectItem>
+ </SelectContent>
+ </Select>
+ <p className="px-1 text-xs text-muted-foreground">
+ 미사용으로 바꾸면 이 분류에 속한 코드 그룹이 목록에서 함께 사라집니다(그룹·상세 코드는 지워지지 않습니다).
+ </p>
+ <FormMessage className="text-xs font-bold text-destructive-emphasis" />
+ </FormItem>
+ )}
+ />
+ <ShadcnFormField
+ control={clusterForm.control}
+ name="clsfCdExpln"
+ render={({ field }) => (
+ <FormItem className="space-y-1.5">
+ <FormLabel className="text-xs font-bold text-foreground">분류 설명</FormLabel>
+ <FormControl>
+ <textarea {...field} maxLength={4000} className="w-full min-h-[120px] resize-none rounded-lg border-none bg-muted p-4 text-xs font-bold shadow-inner outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="이 분류가 무엇을 묶는지 설명 (최대 4000자)" />
+ </FormControl>
+ <FormMessage className="text-xs font-bold text-destructive-emphasis" />
+ </FormItem>
+ )}
+ />
+ </form>
+ </Form>
+ ) : structureModal ? (
+ <Form {...groupForm}>
+ <form noValidate onSubmit={submitStructureForm} className="space-y-8 pt-4">
+ <FormErrorSummary labels={CODE_GROUP_FIELD_LABELS} onNavigate={groupForm.focusError} />
+ <ShadcnFormField
+ control={groupForm.control}
+ name="cdId"
+ required
+ render={({ field }) => (
+ <FormItem className="space-y-1.5">
+ <FormLabel className="text-xs font-bold text-foreground">그룹 코드</FormLabel>
+ <FormControl>
+ <Input
+ {...field}
+ readOnly={structureModal.mode === 'edit'}
+ maxLength={20}
+ className="h-11 rounded-lg border-none bg-muted font-mono text-xs font-bold shadow-inner"
+ placeholder="예: COM001 (최대 20자)"
+ />
+ </FormControl>
+ <FormMessage className="text-xs font-bold text-destructive-emphasis" />
+ </FormItem>
+ )}
+ />
+ <ShadcnFormField
+ control={groupForm.control}
+ name="cdIdNm"
+ required
+ render={({ field }) => (
+ <FormItem className="space-y-1.5">
+ <FormLabel className="text-xs font-bold text-foreground">그룹명</FormLabel>
+ <FormControl>
+ <Input {...field} maxLength={100} className="h-11 rounded-lg border-none bg-muted text-sm font-bold shadow-inner" placeholder="그룹명 입력 (최대 100자)" />
+ </FormControl>
+ <FormMessage className="text-xs font-bold text-destructive-emphasis" />
+ </FormItem>
+ )}
+ />
+ {structureModal.mode === 'create' ? (
+ <ShadcnFormField
+ control={groupForm.control}
+ name="clsfCd"
+ required
+ render={({ field }) => (
+ <FormItem className="space-y-1.5">
+ <FormLabel className="text-xs font-bold text-foreground">소속 분류</FormLabel>
+ <Select onValueChange={field.onChange} value={field.value}>
+ <FormControl>
+ <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
+ <SelectValue placeholder="분류 선택" />
+ </SelectTrigger>
+ </FormControl>
+ <SelectContent className="rounded-lg shadow-xl z-[9999]">
+ {clCodes.map((cl) => (
+ <SelectItem key={cl.clsfCd} value={cl.clsfCd} className="h-12 rounded-lg text-xs font-bold">
+ {cl.clsfCdNm} ({cl.clsfCd})
+ </SelectItem>
+ ))}
+ </SelectContent>
+ </Select>
+ <FormMessage className="text-xs font-bold text-destructive-emphasis" />
+ </FormItem>
+ )}
+ />
+ ) : (
+ <div className="space-y-1.5">
+ <span id="cmmn-group-cluster-label" className="text-xs font-bold text-foreground">소속 분류</span>
+ <div
+ aria-labelledby="cmmn-group-cluster-label"
+ className="flex h-11 items-center rounded-lg bg-muted px-4 font-mono text-xs font-bold text-muted-foreground shadow-inner"
+ >
+ {groupForm.getValues('clsfCd')}
+ </div>
+ {/* 서버의 updateCmmnCode 는 clsfCd 를 갱신하지 않는다. 편집 가능한 것처럼 보이면 저장된 척하고 아무 일도 일어나지 않는다. */}
+ <p className="px-1 text-xs text-muted-foreground">
+ 소속 분류는 이 창에서 바꿀 수 없습니다. 왼쪽 탐색기에서 그룹을 다른 분류로 끌어다 놓은 뒤 &lsquo;그룹 소속 저장&rsquo;을 누르세요.
+ </p>
+ </div>
+ )}
+ <ShadcnFormField
+ control={groupForm.control}
+ name="useYn"
+ render={({ field }) => (
+ <FormItem className="space-y-1.5">
+ <FormLabel className="text-xs font-bold text-foreground">사용 여부</FormLabel>
+ <Select onValueChange={field.onChange} value={field.value}>
+ <FormControl>
+ <SelectTrigger className="h-11 rounded-lg border-none bg-muted text-xs font-bold shadow-inner">
+ <SelectValue />
+ </SelectTrigger>
+ </FormControl>
+ <SelectContent className="rounded-lg shadow-xl z-[9999]">
+ <SelectItem value="Y" className="h-12 rounded-lg text-xs font-bold text-success-emphasis">사용 중</SelectItem>
+ <SelectItem value="N" className="h-12 rounded-lg text-xs font-bold text-destructive-emphasis">미사용</SelectItem>
+ </SelectContent>
+ </Select>
+ <FormMessage className="text-xs font-bold text-destructive-emphasis" />
+ </FormItem>
+ )}
+ />
+ <ShadcnFormField
+ control={groupForm.control}
+ name="cdIdExpln"
+ render={({ field }) => (
+ <FormItem className="space-y-1.5">
+ <FormLabel className="text-xs font-bold text-foreground">그룹 설명</FormLabel>
+ <FormControl>
+ <textarea {...field} maxLength={4000} className="w-full min-h-[120px] resize-none rounded-lg border-none bg-muted p-4 text-xs font-bold shadow-inner outline-none focus-visible:ring-2 focus-visible:ring-ring" placeholder="이 그룹의 용도와 제약 설명 (최대 4000자)" />
+ </FormControl>
+ <FormMessage className="text-xs font-bold text-destructive-emphasis" />
+ </FormItem>
+ )}
+ />
+ </form>
+ </Form>
+ ) : null}
+ </StandardModal>
 
  {/* CodePicker — 그룹→코드 2단 검색 팝업 (1호 소비처) */}
  <CodePicker
