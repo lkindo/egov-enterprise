@@ -136,7 +136,12 @@ const nextConfig = {
       { source: '/admin/observability', destination: '/admin/system/monitoring/hub?tab=observability', permanent: false },
       { source: '/admin/security/audit', destination: '/admin/system/monitoring/hub?tab=security', permanent: false },
       { source: '/admin/system/audit', destination: '/admin/system/monitoring/hub?tab=system', permanent: false },
-      { source: '/admin/security/login-policy', destination: '/admin/system/monitoring/hub?tab=policy', permanent: false },
+      // (2026-08-27) /admin/security/login-policy redirect 제거 — 이 리다이렉트가 **동작하는 화면을
+      //   통째로 삼키고 있었다**. 메뉴 9020120 의 modern_route 가 이 경로를 정본으로 선언하는데
+      //   (V2_47:87-90), 목적지 허브에는 POLICY 탭이 없어 MonitoringHubClient 의 별칭이 LOGIN(로그 목록)
+      //   으로 떨어뜨렸다. 그 결과 IP 제한·허용 시간대·2단계 인증(OTP)을 설정하는 424줄 화면과
+      //   대응 API 5개가 전 경로에서 도달 불가였다 — DB 마이그레이션이 기록한 교정이 프런트 설정에
+      //   조용히 무효화된 형태다. 화면을 정본 경로로 되돌린다.
       { source: '/admin/user/login-policy', destination: '/admin/system/monitoring/hub?tab=policy', permanent: false },
       // 경로 중복(정식 메뉴 타겟으로 통합)
       { source: '/admin/sanctn/workflow', destination: '/admin/workflow', permanent: false },
