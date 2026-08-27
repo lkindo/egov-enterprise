@@ -42,8 +42,11 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
-  /** 동기 잠금 — 같은 tick 의 연속 제출이 응답 행을 두 벌 만들지 않게 한다. */
-  const submitLock = useRef(false);
+  /**
+   * 동기 잠금 — 같은 tick 의 연속 제출이 응답 행을 두 벌 만들지 않게 한다.
+   * 이름이 `...Ref` 로 끝나야 폼 validation census 의 동기 잠금 탐지가 인식한다(저장소 규약).
+   */
+  const submitPendingRef = useRef(false);
 
   const {
     data: questions,
@@ -60,8 +63,8 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
   const canSubmit = answeredCount > 0 && !isSubmitting && !isSubmitted;
 
   const handleSubmit = async () => {
-    if (submitLock.current || !canSubmit) return;
-    submitLock.current = true;
+    if (submitPendingRef.current || !canSubmit) return;
+    submitPendingRef.current = true;
     setIsSubmitting(true);
     setSubmitError(null);
 
@@ -90,7 +93,7 @@ export default function SurveyDetailClient({ srvySn }: { srvySn: number }) {
       setSubmitError(message);
       toast(message, 'error');
     } finally {
-      submitLock.current = false;
+      submitPendingRef.current = false;
       setIsSubmitting(false);
     }
   };

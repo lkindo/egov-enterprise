@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
-    "secondaryActionBoundaries": 52,
-    "candidateCount": 123
+    "secondaryActionBoundaries": 53,
+    "candidateCount": 124
   },
   "entries": [
     {
@@ -2427,6 +2427,31 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.validation.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/survey/[id]/SurveyDetailClient.tsx#SurveyDetailClient.handleSubmit[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/survey/[id]/SurveyDetailClient.tsx",
+      "owner": "SurveyDetailClient",
+      "handler": "handleSubmit",
+      "writeSinks": [
+        "surveyAdminService.submitAnswers"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:survey-question-answer-selection",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Every submitted answer names a question of this survey and an item of that question; at most one submission per user.",
+      "structuredPayloads": [
+        "payload",
+        "srvySn"
+      ],
+      "testEvidence": [
+        "frontend/src/app/survey/__tests__/SurveyDetailClient.response.test.tsx"
       ]
     }
   ],

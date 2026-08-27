@@ -13,7 +13,7 @@
  * 틀리면 사용자는 제출할 때마다 실패한다.
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import SurveyDetailClient from '../[id]/SurveyDetailClient';
@@ -123,18 +123,44 @@ describe('설문 응답 제출', () => {
     expect(screen.getByText('이 설문에는 한 번만 응답할 수 있습니다.')).toBeInTheDocument();
   });
 
-  it('서버가 거절한 사유를 그대로 보여 준다 — 일반 문구로 덮으면 왜 막혔는지 알 수 없다', async () => {
-    mocks.submitAnswers.mockRejectedValueOnce({
-      response: { data: { message: '이미 응답한 설문입니다.' } },
-    });
+  /**
+   * 제출 액션의 네 가지 성질을 **한 테스트에서** 함께 증명한다.
+   *
+   * 나눠 놓으면 각각은 통과하는데 조합이 깨질 수 있다 — 예를 들어 pending 중 재클릭이
+   * 두 번째 요청을 보내면서도 실패 안내는 정상으로 보이는 상태가 가능하다. 폼 validation
+   * census 도 같은 이유로 이 넷을 한 블록에서 요구한다.
+   *   ① 진행 중 재클릭이 두 번째 제출을 만들지 않는다(동기 잠금)
+   *   ② 진행 중 컨트롤이 disabled + aria-busy 로 상태를 드러낸다
+   *   ③ 서버 거절을 실제로 주입한다
+   *   ④ 거절 사유가 화면에 보이고 다시 시도할 수 있다
+   */
+  it('제출 중에는 한 번만 보내고 상태를 드러내며, 거절 사유를 그대로 보여 준다', async () => {
+    let rejectSubmit!: (reason?: unknown) => void;
+    mocks.submitAnswers.mockReturnValueOnce(new Promise((_resolve, reject) => { rejectSubmit = reject; }));
+
     renderClient();
-
     fireEvent.click(await screen.findByRole('radio', { name: '만족' }));
-    fireEvent.click(screen.getByRole('button', { name: '응답 제출' }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('이미 응답한 설문입니다.');
-    // 실패했으므로 다시 시도할 수 있어야 한다.
-    expect(screen.getByRole('button', { name: '응답 제출' })).toBeEnabled();
+    const submit = screen.getByRole('button', { name: '응답 제출' });
+    fireEvent.click(submit);
+
+    // ② 진행 중 상태가 컨트롤에 드러난다.
+    const pending = await screen.findByRole('button', { name: '제출 중…' });
+    expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute('aria-busy', 'true');
+
+    // ① 진행 중 재클릭은 두 번째 요청을 만들지 않는다.
+    fireEvent.click(pending);
+    expect(mocks.submitAnswers).toHaveBeenCalledTimes(1);
+
+    // ③ 서버 거절 주입 → ④ 사유가 그대로 보이고 다시 시도할 수 있다.
+    await act(async () => {
+      rejectSubmit({ response: { data: { message: '이미 응답한 설문입니다.' } } });
+    });
+
+    expect(await screen.findByText('이미 응답한 설문입니다.')).toBeVisible();
+    expect(screen.getByRole('alert')).toHaveTextContent('이미 응답한 설문입니다.');
+    await waitFor(() => expect(screen.getByRole('button', { name: '응답 제출' })).toBeEnabled());
   });
 
   it('문항이 없으면 제출 버튼을 내놓지 않는다 — 눌러도 아무 일이 없는 버튼을 만들지 않는다', async () => {
