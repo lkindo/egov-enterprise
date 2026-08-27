@@ -125,7 +125,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       await auditAdminService.getAuditLogs({ page: 4, size: 10 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 4, size: 10, pageIndex: 5, recordCountPerPage: 10 },
+        params: { page: 4, size: 10, pageUnit: 10, pageIndex: 5, recordCountPerPage: 10 },
       });
     });
 
@@ -133,9 +133,9 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       await auditAdminService.getAuditLogs({ size: 5 });
 
       // page 가 없으면 pageIndex 를 임의로 1 로 채우지 않는다 — 백엔드 기본값 판단에 맡긴다.
-      expect(client.get).toHaveBeenCalledWith(BASE, { params: { size: 5, recordCountPerPage: 5 } });
+      expect(client.get).toHaveBeenCalledWith(BASE, { params: { size: 5, pageUnit: 5, recordCountPerPage: 5 } });
       expect(client.get).not.toHaveBeenCalledWith(BASE, {
-        params: { size: 5, recordCountPerPage: 5, pageIndex: 1 },
+        params: { size: 5, pageUnit: 5, recordCountPerPage: 5, pageIndex: 1 },
       });
     });
 
@@ -144,7 +144,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       await auditAdminService.getAuditLogs({ page: 0, size: 5 });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, size: 5, pageIndex: 1, recordCountPerPage: 5 },
+        params: { page: 0, size: 5, pageUnit: 5, pageIndex: 1, recordCountPerPage: 5 },
       });
     });
   });
@@ -174,7 +174,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       await auditAdminService.getAuditLogs({ page: 0, size: 20, searchKeyword: '' });
 
       expect(client.get).toHaveBeenCalledWith(BASE, {
-        params: { page: 0, size: 20, searchKeyword: '', pageIndex: 1, recordCountPerPage: 20 },
+        params: { page: 0, size: 20, searchKeyword: '', pageUnit: 20, pageIndex: 1, recordCountPerPage: 20 },
       });
     });
   });
@@ -188,7 +188,7 @@ describe('AuditAdminService — 감사 로그 관리자 API 계약', () => {
       expect(client.get).toHaveBeenCalledWith(BASE, {
         timeout: 3000,
         signal,
-        params: { page: 0, size: 5, pageIndex: 1, recordCountPerPage: 5 },
+        params: { page: 0, size: 5, pageUnit: 5, pageIndex: 1, recordCountPerPage: 5 },
       });
     });
 

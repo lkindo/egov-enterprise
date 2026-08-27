@@ -23,7 +23,7 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "03f9511497f1aab59f4c907282aafbad132a37f93ea30cc5e7871046ba973509"
+    "inventoryHash": "dbab65c8db905989ecc9f6667f28f105e6d21453a43c0de4492c035116baebf9"
   },
   "summary": {
     "sourceFileCount": 505,
@@ -18168,7 +18168,7 @@
       }
     },
     {
-      "id": "URL-554268DC800E31",
+      "id": "URL-F93BC8A370A88F",
       "surface": "request-telemetry",
       "kind": "request-query-producer",
       "operation": "client.get",
@@ -18187,6 +18187,14 @@
           "riskSignals": [
             "computed-or-aggregate-state"
           ]
+        },
+        {
+          "name": "searchCnd",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
         }
       ],
       "currentBehavior": "GET request carries a computed query configuration whose field semantics require domain review.",
