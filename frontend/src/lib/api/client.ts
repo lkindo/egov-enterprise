@@ -105,6 +105,46 @@ const processQueue = (error: unknown, token: string | null = null) => {
   failedQueue = [];
 };
 
+/** 진행 중인 재발급. 있으면 새로 쏘지 않고 그 결과를 함께 기다린다. */
+let inFlightReissue: Promise<void> | null = null;
+
+/**
+ * 세션 재발급을 **단일 실행(single-flight)** 으로 수행한다.
+ *
+ * <p>백엔드는 재발급 때 리프레시 토큰을 <b>회전</b>시킨다 — 같은 토큰으로 두 번 부르면 두 번째는
+ * 401(SESSION_EXPIRED)이다(2026-08-27 실측). 그런데 재발급을 부르는 경로는 둘이다:
+ * 401 을 만난 요청의 자동 재발급(아래 인터셉터)과, 사용자가 누르는 세션 연장 버튼
+ * ({@link ../../app/components/ui/session-expiry-warning}). 종전에는 두 경로가 서로를 몰라
+ * 겹치면 늦게 도착한 쪽만 401 이 됐고, <b>세션은 연장됐는데 버튼만 실패</b>로 보였다.
+ *
+ * <p>여기서 한 번만 쏘고 결과를 공유하면 그 경합 자체가 사라진다. 실패도 공유되므로
+ * 호출자마다 다른 결론을 내리는 일이 없다.
+ */
+export function reissueSession(): Promise<void> {
+  if (inFlightReissue) return inFlightReissue;
+
+  inFlightReissue = axiosInstance
+    .post<ApiResponse<unknown>>(
+      '/api/auth/reissue',
+      {},
+      {
+        _retry: true,
+        // baseURL:'' — Route Handler(/api/auth/reissue) 직결. 미지정 시 '/api/v1' 전치되어
+        // '/api/v1/api/auth/reissue'→백엔드 401 로 재발급 자체가 파손된다.
+        baseURL: '',
+        headers: { 'Authorization': '' },
+      } as AxiosRequestConfig & { _retry: boolean }
+    )
+    .then((res) => {
+      if (!res.data?.success) throw new Error('Token reissue failed');
+    })
+    .finally(() => {
+      inFlightReissue = null;
+    });
+
+  return inFlightReissue;
+}
+
 // Response interceptor: 401 시 token refresh
 axiosInstance.interceptors.response.use(
   (response) => response,
@@ -142,19 +182,8 @@ axiosInstance.interceptors.response.use(
         // 응답 바디에는 토큰이 없다 — 새 accessToken 은 Route Handler 가 HttpOnly 쿠키로 재설정한다.
         // 인터셉터는 200/success 를 "재발급 성공" 신호로만 사용하고, 원요청을 재시도하면 브라우저가
         // 새 HttpOnly 쿠키를 전송 → 미들웨어가 Bearer 를 주입한다.
-        const res = await axiosInstance.post<ApiResponse<unknown>>(
-          '/api/auth/reissue',
-          {},
-          {
-            _retry: true,
-            // baseURL:'' — Route Handler(/api/auth/reissue) 직결. 미지정 시 '/api/v1' 전치되어
-            // '/api/v1/api/auth/reissue'→백엔드 401 로 재발급 자체가 파손된다.
-            baseURL: '',
-            headers: { 'Authorization': '' }
-          } as AxiosRequestConfig & { _retry: boolean }
-        );
-
-        if (!res.data?.success) throw new Error('Token reissue failed');
+        // 세션 연장 버튼과 같은 단일 실행을 공유한다(reissueSession 주석 참조).
+        await reissueSession();
 
         processQueue(null, 'reissued');
         isRetrying = false;

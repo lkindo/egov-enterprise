@@ -9,11 +9,13 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { authService, normalizeAuthUser } from '../foundation/auth/authService';
 import api from '@/lib/api/client';
 
+const reissueSessionMock = vi.fn();
 vi.mock('@/lib/api/client', () => ({
  default: {
  post: vi.fn(),
  get: vi.fn(),
  },
+ reissueSession: (...args: unknown[]) => reissueSessionMock(...args),
 }));
 
 describe('authService', () => {
@@ -41,14 +43,22 @@ describe('authService', () => {
  expect(api.post).toHaveBeenCalledWith('/api/auth/logout', undefined, { baseURL: '' });
  });
 
- it('reissue should call api.post', async () => {
- const mockResponse = { result: { accessToken: 'new-token' } };
- (api.post as any).mockResolvedValue(mockResponse);
+ // 재발급은 client.post 를 직접 부르지 않는다. 백엔드가 리프레시 토큰을 회전시키므로
+ // 자동 재발급(인터셉터)과 **같은 단일 실행**을 공유해야 하고, 그 소유자가 reissueSession 이다.
+ // 여기서 client.post 로 되돌아가면 두 경로가 각자 쏘아 늦은 쪽이 401 이 되는 회귀가 재발한다.
+ it('reissue 는 단일 실행 reissueSession 에 위임하고 client.post 를 쓰지 않는다', async () => {
+ reissueSessionMock.mockResolvedValue(undefined);
 
- const result = await authService.reissue();
+ await authService.reissue();
 
- expect(api.post).toHaveBeenCalledWith('/api/auth/reissue', undefined, { baseURL: '' });
- expect(result).toEqual(mockResponse);
+ expect(reissueSessionMock).toHaveBeenCalledTimes(1);
+ expect(api.post).not.toHaveBeenCalled();
+ });
+
+ it('reissue 실패는 호출자에게 그대로 전파된다', async () => {
+ reissueSessionMock.mockRejectedValue(new Error('401 Unauthorized'));
+
+ await expect(authService.reissue()).rejects.toThrow('401 Unauthorized');
  });
 
  it('getCurrentUser should call api.get', async () => {
