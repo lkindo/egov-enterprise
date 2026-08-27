@@ -33,6 +33,7 @@ export default function AddressBookInsertHubClient() {
 
  const [form, setForm] = useState({
  adbkNm: '',
+ nm: '',
  telNo: '',
  email: '',
  });
@@ -61,7 +62,9 @@ export default function AddressBookInsertHubClient() {
  // 주소록·회원 일련번호는 서버가 채번하므로 생성 요청에서 생략한다.
  const member: NameCard = {
    userId: validated.userId,
-   nm: validated.adbkNm,
+   // [2026-08-28] 종전에는 주소록 명칭을 성명으로 복제했다 — '영업팀 연락처' 주소록을 만들면
+   //   구성원 이름도 '영업팀 연락처' 가 되어, 상세 표의 '성명' 열이 사람 이름이 아니었다.
+   nm: validated.nm,
    emlAddr: validated.email,
    mblTelno: validated.telNo,
  };
@@ -153,7 +156,33 @@ export default function AddressBookInsertHubClient() {
  </div>
  </div>
 
- {/* 3. 연락 정보 */}
+ {/* 3. 구성원 성명 */}
+ <div className="hub-card-premium p-8 bg-muted border-none shadow-xl rounded-lg space-y-6">
+ <div className="flex items-center gap-3">
+ <User className="text-primary" size={18} />
+ <Label htmlFor="nm" className="text-xs font-bold text-muted-foreground tracking-tight">
+ 구성원 성명 <span className="text-destructive-emphasis">*</span>
+ </Label>
+ </div>
+ <Input
+ id="nm"
+ {...validation.fieldProps('nm')}
+ value={form.nm}
+ onChange={(e) => {
+ validation.clearError('nm');
+ setForm({ ...form, nm: e.target.value });
+ }}
+ className="h-11 bg-card border-2 border-border rounded-lg text-lg shadow-inner focus:border-primary/20 transition-all"
+ placeholder="연락처 주인의 이름"
+ maxLength={100}
+ required
+ />
+ {validation.errors.nm ? (
+ <p {...validation.messageProps('nm')} className="text-xs font-bold text-destructive-emphasis" />
+ ) : null}
+ </div>
+
+ {/* 4. 연락 정보 */}
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
  <div className="hub-card-premium p-8 bg-muted border-none shadow-xl rounded-lg space-y-6">
  <div className="flex items-center gap-3">

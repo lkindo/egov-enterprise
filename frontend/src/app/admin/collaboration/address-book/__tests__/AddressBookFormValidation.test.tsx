@@ -94,6 +94,8 @@ describe('address-book form validation contract', () => {
       adbkNm: '파트너 주소록',
       rlsScopeCd: 'G',
       userId: 'user-1',
+      // [2026-08-28] 구성원 성명은 이제 별도 입력이다 — 종전에는 주소록 명칭을 복제했다.
+      nm: '홍길동',
       telNo: '010-1234-5678',
       email: 'owner@example.com',
     };
@@ -103,6 +105,8 @@ describe('address-book form validation contract', () => {
     if (parsed.success) expect(parsed.data.telNo).toBe('01012345678');
     expect(addressBookCreateFormSchema.safeParse({ ...validCreate, adbkNm: '가'.repeat(101) }).success).toBe(false);
     expect(addressBookCreateFormSchema.safeParse({ ...validCreate, userId: '' }).success).toBe(false);
+    // 성명을 비우면 등록을 막는다 — 비면 상세 표의 '성명' 열이 다시 빈칸이 된다.
+    expect(addressBookCreateFormSchema.safeParse({ ...validCreate, nm: '' }).success).toBe(false);
     expect(addressBookCreateFormSchema.safeParse({ ...validCreate, telNo: '010-12AB-5678' }).success).toBe(false);
     expect(addressBookCreateFormSchema.safeParse({ ...validCreate, telNo: '1'.repeat(12) }).success).toBe(false);
     expect(addressBookCreateFormSchema.safeParse({ ...validCreate, email: 'invalid-email' }).success).toBe(false);
@@ -137,6 +141,7 @@ describe('address-book form validation contract', () => {
     const phone = screen.getByRole('textbox', { name: '전화번호' });
     const email = screen.getByRole('textbox', { name: '이메일' });
     await user.type(name, '보존할 주소록');
+    await user.type(screen.getByRole('textbox', { name: /구성원 성명/ }), '홍길동');
     await user.type(phone, '010-1234-5678');
     await user.type(email, 'owner@example.com');
 
@@ -164,6 +169,7 @@ describe('address-book form validation contract', () => {
     render(<AddressBookInsertHubClient />);
     const name = screen.getByRole('textbox', { name: /주소록 명칭/ });
     fireEvent.change(name, { target: { value: '중복 방지 주소록' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /구성원 성명/ }), { target: { value: '홍길동' } });
     const submit = screen.getByRole('button', { name: /주소록 등록$/ });
     const form = submit.closest('form');
     expect(form).not.toBeNull();

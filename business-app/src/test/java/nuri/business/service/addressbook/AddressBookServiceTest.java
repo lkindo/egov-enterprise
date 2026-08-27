@@ -21,6 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -147,6 +148,48 @@ class AddressBookServiceTest {
         assertThat(entity.getAdbkNm()).isEqualTo("Updated");
         verify(addressBookUserRepository).delete(existingUser);
         verify(addressBookUserRepository).save(any(nuri.business.domain.addressbook.AddressBookUser.class));
+    }
+
+    @Test
+    @DisplayName("주소록 수정 - 기존 구성원의 연락 정보를 실제로 갱신한다")
+    void updateAddressBook_UpdatesExistingMemberContact() {
+        /*
+         * [2026-08-28] 종전에는 같은 userId 를 만나면 아무것도 하지 않고 넘어갔다.
+         * 화면이 이메일·연락처를 바꿔 보내도 200 만 돌아오고 값은 그대로였다 —
+         * 조용히 성공하는 no-op 이라 사용자는 저장된 줄 안다.
+         */
+        Long adbkSn = 1L;
+        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("팀 주소록").build();
+        given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
+
+        nuri.business.domain.addressbook.AddressBookUser existing =
+                nuri.business.domain.addressbook.AddressBookUser.builder()
+                        .userId("KEEP_ME")
+                        .nm("옛 이름")
+                        .emlAddr("old@example.com")
+                        .mblTelno("01011112222")
+                        .addressBook(entity)
+                        .build();
+        given(addressBookUserRepository.findByAdbkSn(adbkSn)).willReturn(List.of(existing));
+
+        nuri.business.service.addressbook.dto.AddressBookUserDto changed =
+                nuri.business.service.addressbook.dto.AddressBookUserDto.builder()
+                        .userId("KEEP_ME")
+                        .nm("새 이름")
+                        .emlAddr("new@example.com")
+                        .mblTelno("01033334444")
+                        .build();
+        AddressBookDto dto = AddressBookDto.builder()
+                .adbkSn(adbkSn).adbkNm("팀 주소록").adbkMan(List.of(changed)).build();
+
+        addressBookService.updateAddressBook("user", dto);
+
+        assertThat(existing.getNm()).isEqualTo("새 이름");
+        assertThat(existing.getEmlAddr()).isEqualTo("new@example.com");
+        assertThat(existing.getMblTelno()).isEqualTo("01033334444");
+        // 유지되는 구성원을 지우거나 다시 만들지 않는다 — adbkMbrSn 이 바뀌면 참조가 끊긴다.
+        verify(addressBookUserRepository, never()).delete(existing);
+        verify(addressBookUserRepository, never()).save(any(nuri.business.domain.addressbook.AddressBookUser.class));
     }
 
     @Test
