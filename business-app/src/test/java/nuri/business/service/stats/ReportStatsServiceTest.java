@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("ReportStatsService 단위 테스트")
@@ -32,6 +33,9 @@ class ReportStatsServiceTest {
 
     @Mock
     private DtaUseStatsRepository dtaUseStatsRepository;
+
+    @Mock
+    private nuri.business.domain.board.BoardRepository boardRepository;
 
     @Test
     @DisplayName("보고서 통계 목록 조회")
@@ -118,6 +122,28 @@ class ReportStatsServiceTest {
         given(dtaUseStatsRepository.countByDate(anyString(), anyString())).willReturn(new ArrayList<>());
         reportStatsService.getDtaUseStatsByDate("2024-01-01", "2024-01-31");
         verify(dtaUseStatsRepository).countByDate(anyString(), anyString());
+    }
+
+    /**
+     * 게시물 통계가 게시글을 실제로 센다.
+     *
+     * <p>[2026-08-28] 종전 {@code getBbsStatsByDate} 는 {@code dtaUseStatsRepository.countByDate}
+     * 를 불렀다 — 바로 위 {@code getDtaUseStatsByDate} 와 <b>완전히 같은 질의</b>다. 즉 게시물
+     * 통계 화면은 게시글을 하나도 세지 않고 자료이용현황과 같은 숫자를 받고 있었고,
+     * {@code tb_dta_use_stats} 에는 쓰는 코드가 없어(writer 0건) 실제로는 늘 비어 있었다.
+     *
+     * <p>두 축을 함께 고정한다 — 게시판 저장소를 부르는가, 그리고 <b>통계 표를 더 이상 부르지
+     * 않는가</b>. 앞의 것만 검사하면 둘 다 부르는 어중간한 상태가 통과한다.
+     */
+    @Test
+    @DisplayName("일자별 게시물 통계는 게시글을 센다 — 자료이용현황 표를 읽지 않는다")
+    void getBbsStatsByDateCountsPosts() {
+        given(boardRepository.countPostsByDate(anyString(), anyString())).willReturn(new ArrayList<>());
+
+        reportStatsService.getBbsStatsByDate("2024-01-01", "2024-01-31");
+
+        verify(boardRepository).countPostsByDate("2024-01-01 00:00:00", "2024-01-31 23:59:59");
+        verify(dtaUseStatsRepository, never()).countByDate(anyString(), anyString());
     }
 
     @Test

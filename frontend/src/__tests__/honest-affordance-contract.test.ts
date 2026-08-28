@@ -74,16 +74,40 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
 
   it('계측 writer 가 없는 탭은 기간 문구가 아니라 미수집 사실을 말한다', () => {
     /*
-     * '선택한 기간에 집계된 통계가 없습니다' 는 기간을 바꾸면 나온다는 뜻이다. 아래 네 탭은
+     * '선택한 기간에 집계된 통계가 없습니다' 는 기간을 바꾸면 나온다는 뜻이다. 아래 세 탭은
      * 읽는 테이블에 쓰는 쪽이 없어 어떤 기간에도 값이 없다 — 사용자는 조건만 계속 바꾸게 된다.
+     *
+     * [2026-08-28] CONTENT_STATS 는 이 목록에서 빠졌다 — 아래 별도 케이스가 그 근거를 고정한다.
      */
     expect(client).toContain('UNINSTRUMENTED_TABS');
-    for (const tab of ['USER_STATS', 'CONTENT_STATS', 'DATA_USAGE', 'REPORTS']) {
+    for (const tab of ['USER_STATS', 'DATA_USAGE', 'REPORTS']) {
       expect(client, `${tab} 이 미수집 목록에서 빠졌다`).toMatch(
         new RegExp(`UNINSTRUMENTED_TABS[\\s\\S]{0,200}${tab}`),
       );
     }
     expect(client).toContain('아직 수집되지 않습니다');
+  });
+
+  /**
+   * CONTENT_STATS 를 미수집 목록에서 뺀 근거를 **서버 배선에 결속**한다.
+   *
+   * 종전에는 이 탭도 `dtaUseStatsRepository.countByDate` 를 불러 DATA_USAGE 와 완전히 같은
+   * 질의였다 — 게시글을 하나도 세지 않았고, 그 표에는 쓰는 코드가 없어 늘 비어 있었다.
+   * 이제 게시글을 실제로 센다.
+   *
+   * 목록에서만 빼고 서버가 되돌아가면 화면이 다시 거짓말한다("기간을 바꾸면 나온다"). 그래서
+   * 프런트 목록과 서버 배선을 **함께** 검사한다.
+   */
+  it('CONTENT_STATS 가 미수집이 아닌 이유는 서버가 게시글을 실제로 세기 때문이다', () => {
+    expect(client).not.toMatch(/UNINSTRUMENTED_TABS[\s\S]{0,200}CONTENT_STATS/);
+
+    const service = readRepo(
+      'business-app/src/main/java/nuri/business/service/stats/ReportStatsService.java',
+    );
+    const method = service.slice(service.indexOf('public List<Object[]> getBbsStatsByDate'));
+    const body = method.slice(0, method.indexOf('}'));
+    expect(body, '게시물 통계가 다시 자료이용현황 표를 읽는다').toContain('boardRepository.countPostsByDate');
+    expect(body).not.toContain('dtaUseStatsRepository');
   });
 
   it('SYSTEM_STATS 는 미수집 목록에 넣지 않는다 — 이 축만 실제 writer 가 있다', () => {

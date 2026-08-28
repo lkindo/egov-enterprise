@@ -178,16 +178,24 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
    * 저장소 실측(2026-08-28): 이 탭들이 읽는 저장소에 save 호출이 저장소 전체에 0건이고
    * Flyway 시드에도 INSERT 가 없다.
    *   - USER_STATS   → userLogRepository.countByDate      (UserLog.create 호출자 0, save 0)
-   *   - CONTENT_STATS→ dtaUseStatsRepository.countByDate  (writer 0)
-   *   - DATA_USAGE   → dtaUseStatsRepository.countByDate  (writer 0 · CONTENT_STATS 와 같은 질의다)
+   *   - DATA_USAGE   → dtaUseStatsRepository.countByDate  (writer 0)
    *   - REPORTS      → reprtStatsRepository.countByDate   (writer 0)
-   * 반면 SYSTEM_STATS 가 읽는 loginLog 는 LogService 가 실제로 기록한다 — 그래서 이 탭만 값이 있다.
+   *
+   * 값이 있는 탭은 둘이다.
+   *   - SYSTEM_STATS → loginLog. LogService 가 실제로 기록한다.
+   *   - CONTENT_STATS→ **[2026-08-28] 미수집 목록에서 뺐다.** 종전에는 이 탭도
+   *     `dtaUseStatsRepository.countByDate` 를 불러 DATA_USAGE 와 **완전히 같은 질의**였다.
+   *     이제 `boardRepository.countPostsByDate` 로 게시글을 실제로 센다 — 게시글은 제품이
+   *     `createPost` 로 직접 쓰므로 writer 가 명백히 존재한다.
+   *     ⚠ "지금 그 표에 행이 있는가" 가 아니라 "쓰는 쪽이 있는가" 가 이 목록의 기준이다.
+   *     운영 DB 가 비어 있는 것은 '미수집' 이 아니라 '아직 글이 없음' 이고, 그건 기간을 바꾸면
+   *     달라질 수 있는 사실이라 '선택한 기간에 집계된 통계가 없습니다' 가 맞는 문구다.
    *
    * 이 상태에서 '선택한 기간에 집계된 통계가 없습니다' 라고 하면 **기간을 바꾸면 나온다는 뜻**이
    * 되어, 사용자가 기간만 계속 바꾸게 만든다. 수집 자체가 없다는 사실을 그대로 말한다.
    * (같은 규율의 선례: SearchClient '아직 제공되지 않습니다', observability '아직 연동되지 않았습니다')
    */
-  const UNINSTRUMENTED_TABS: readonly StatsTab[] = ['USER_STATS', 'CONTENT_STATS', 'DATA_USAGE', 'REPORTS'];
+  const UNINSTRUMENTED_TABS: readonly StatsTab[] = ['USER_STATS', 'DATA_USAGE', 'REPORTS'];
   const isUninstrumentedTab = UNINSTRUMENTED_TABS.includes(activeTab);
   const emptyChartMessage = isUninstrumentedTab
     ? '이 지표는 아직 수집되지 않습니다. 기간을 바꿔도 결과는 달라지지 않습니다.'
