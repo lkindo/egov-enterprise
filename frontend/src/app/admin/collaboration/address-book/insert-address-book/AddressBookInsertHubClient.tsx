@@ -166,6 +166,7 @@ export default function AddressBookInsertHubClient() {
  </div>
  <Input
  id="nm"
+ data-testid="identity-member-name-input"
  {...validation.fieldProps('nm')}
  value={form.nm}
  onChange={(e) => {

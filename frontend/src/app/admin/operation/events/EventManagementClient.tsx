@@ -441,7 +441,17 @@ export default function EventManagementClient() {
 
       {/* Creation Modal */}
       <Dialog open={isCreateModalOpen} onOpenChange={handleCreateModalOpenChange}>
-        <DialogContent className="max-w-2xl bg-card rounded-lg border-none shadow-2xl p-0 overflow-hidden">
+        {/*
+          [2026-08-28] `overflow-hidden` 단독을 걷어내고 세로 스크롤을 준다.
+
+          종전에는 높이 제한도 스크롤도 없이 넘치는 부분을 **잘라내기만** 했다. 폼이 뷰포트보다
+          길어지면 DialogFooter(제출·취소)가 잘린 영역으로 들어가 **물리적으로 누를 수 없다.**
+          담당자·준비사항 두 필드를 더하자 1280×720 에서 정확히 그 상태가 됐다 — 사용자는
+          다 입력하고도 저장할 방법이 없고, e2e 는 클릭이 영원히 대기하다 죽었다(PR #508 CI).
+
+          잘라내는 것과 스크롤을 주는 것의 차이가 곧 "저장할 수 있는가" 다.
+        */}
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-card rounded-lg border-none shadow-2xl p-0">
           <div className="bg-surface-inverse p-8 text-surface-inverse-foreground">
             <DialogHeader>
               <DialogTitle className="text-2xl font-bold tracking-tighter">
