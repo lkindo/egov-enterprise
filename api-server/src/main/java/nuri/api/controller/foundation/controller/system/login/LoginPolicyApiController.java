@@ -15,13 +15,26 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 /**
- * 로그인 정책 관리를 위한 REST API 컨트롤러
+ * 로그인 정책 관리를 위한 REST API 컨트롤러.
+ *
+ * <p>[2026-08-27 인가 보강] 이 컨트롤러는 5개 엔드포인트 어디에도 메서드 인가가 없었고
+ * URL 게이트({@code secure-paths} 의 {@code /api/v1/admin/**} → {@code ADMIN_ALL}) <b>한 겹</b>에만
+ * 의존했다. 그 매핑 한 줄이 빠지면 접속 IP 제한·허용 시간대·2단계 인증(OTP) 설정이 함께 열린다.
+ * 저장소의 다른 관리 API 가 이미 쓰는 규칙대로 메서드 인가를 클래스에 직접 붙여 방어선을 이중화한다.
+ *
+ * <p><b>동작은 바뀌지 않는다.</b> {@code ADMIN_ALL} 은 운영 시드(V2_11)에서 ROLE_ADMIN·ROLE_SYSTEM
+ * 두 롤에 매핑돼 있고 {@code @AdminOrSystem} 이 정확히 같은 집합이다. 즉 지금 접근할 수 있는 사람이
+ * 계속 접근하고, URL 게이트가 사라졌을 때만 차이가 난다.
+ *
+ * <p>개인정보 증적처럼 열람 자체가 통제 대상인 자원이 아니므로
+ * {@code @PrivacyAdminOnly}(SYSTEM 배제)는 쓰지 않는다 — 인가 의미를 넓히지도 좁히지도 않는다(H3).
  */
 @Slf4j
 @Tag(name = "LoginPolicy", description = "로그인 정책 관리 API (Admin)")
 @RestController("systemLoginPolicyApiController")
 @RequestMapping("/api/v1/admin/system/login-policies")
 @RequiredArgsConstructor
+@nuri.foundation.security.annotation.AdminOrSystem
 public class LoginPolicyApiController {
 
     private final LoginPolicyManageService loginPolicyManageService;

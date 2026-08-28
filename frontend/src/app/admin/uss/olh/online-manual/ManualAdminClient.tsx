@@ -335,7 +335,7 @@ export default function ManualAdminClient({
 
 
       <Dialog open={isFormOpen} onOpenChange={handleFormOpenChange}>
-        <DialogContent className="sm:max-w-[500px] border-none shadow-2xl rounded-lg overflow-hidden p-0 bg-card">
+        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto border-none shadow-2xl rounded-lg p-0 bg-card">
           <Form {...form}>
             <form
               noValidate

@@ -1,5 +1,31 @@
 import { cookies } from 'next/headers';
 import client from '../../../../../lib/api/client';
+import { NOTICE_BOARD_ID } from '@/config/board-ids';
+
+/**
+ * bbsId 없이 진입했을 때 쓸 기본 게시판을 **실재하는 목록에서** 고른다.
+ *
+ * 종전 기본값 'BBSMSTR_000000000001' 은 Flyway 시드에도 sql/ 에도 없어(전량 grep 실측)
+ * 조회가 늘 비었다. 게시판 마스터에서 사용 중인 첫 게시판을 쓰고, 목록을 못 받으면
+ * 시드가 보장하는 공지 게시판으로 내려간다 — 여기서 다시 없는 ID 를 만들지 않는다.
+ */
+export const resolveDefaultBoardId = async (): Promise<string> => {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
+  if (!accessToken) return NOTICE_BOARD_ID;
+
+  try {
+    const response = await client.get<{ list?: Array<{ bbsId?: string; useYn?: string }> }>(
+      '/admin/system/board-masters',
+      { headers: { Authorization: `Bearer ${accessToken}` }, params: { pageIndex: 1, pageUnit: 200 } },
+    );
+    const first = (response?.list ?? []).find((board) => board.useYn !== 'N' && !!board.bbsId);
+    return first?.bbsId ?? NOTICE_BOARD_ID;
+  } catch {
+    // 목록 조회 실패는 이 화면의 본 조회에서 다시 드러난다. 여기서는 조용히 시드 기본값을 쓴다.
+    return NOTICE_BOARD_ID;
+  }
+};
 
 /**
  * 게시글 목록 데이터를 서버 사이드에서 가져오는 함수

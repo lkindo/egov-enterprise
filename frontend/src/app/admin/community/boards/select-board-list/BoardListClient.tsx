@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { MessageSquare, Plus, Settings2, BookOpen, X, AlertTriangle } from "lucide-react";
 import { useAuth } from '@/contexts/AuthContext';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 import { cn } from "@/lib/utils";
 import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
 import { BoardPost } from '@/types/business/board';
@@ -35,13 +36,34 @@ import {
 
 import { motion, AnimatePresence } from 'framer-motion';
 
+/**
+ * 서버가 읽는 형식(yyyy-MM-dd)으로 **로컬 날짜**를 만든다.
+ *
+ * [2026-08-28] 종전에는 `Date.toISOString()` 을 그대로 실어 보냈다. 두 가지가 함께 틀렸다:
+ *
+ *  1. 서버는 `LocalDate.parse(startDate)` 로 읽는데 ISO 는 시각까지 붙어 있어 파싱이 실패했고,
+ *     실패는 log.warn 한 줄로 삼켜져 **기간 조건이 조용히 사라졌다**. 사용자는 기간을 골라도
+ *     목록이 그대로인 것을 본다.
+ *  2. `toISOString()` 은 UTC 로 변환한다. KST(+9)에서 8월 28일 자정은 UTC 8월 27일 15시라,
+ *     설령 서버가 ISO 를 받아들였더라도 **하루 밀린 날짜**로 조회됐을 것이다.
+ *
+ * 그래서 UTC 변환 없이 로컬 연·월·일을 그대로 조립한다.
+ */
+export const toQueryDate = (date: Date) => {
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
 export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPromise: Promise<any>; params: any }) => {
  const initialData = use(dataPromise);
  const searchParams = useSearchParams();
  const pathname = usePathname();
  const { user } = useAuth();
  const queryClient = useQueryClient();
- const isAdmin = user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN';
+ // [2026-08-28] 판정 SSOT 사용. 리터럴 비교는 SYSTEM 관리자에게 '게시판 관리' 진입점을
+ //   지워 버린다(DEC-OPS-023 ②가 e2e 로 잡았던 것과 같은 결함).
+ const isAdmin = isAdministrativeRole(user?.role);
  const bbsId = searchParams.get('bbsId') || initialParams.bbsId;
  const router = useRouter();
  const { toast } = useToast();
@@ -54,6 +76,7 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const [searchWrd, setSearchWrd] = useState(searchParams.get('searchWrd') || "");
  const [searchCnd, setSearchCnd] = useState(searchParams.get('searchCnd') || "0");
  const [orderBy, setOrderBy] = useState(searchParams.get('orderBy') || "date");
+
  const [startDate, setStartDate] = useState<Date | undefined>(searchParams.get('startDate') ? new Date(searchParams.get('startDate')!) : undefined);
  const [endDate, setEndDate] = useState<Date | undefined>(searchParams.get('endDate') ? new Date(searchParams.get('endDate')!) : undefined);
 
@@ -76,8 +99,8 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
    if (searchWrd) params.set('searchWrd', searchWrd); else params.delete('searchWrd');
    if (searchCnd !== '0') params.set('searchCnd', searchCnd); else params.delete('searchCnd');
    if (orderBy !== 'date') params.set('orderBy', orderBy); else params.delete('orderBy');
-   if (startDate) params.set('startDate', startDate.toISOString()); else params.delete('startDate');
-   if (endDate) params.set('endDate', endDate.toISOString()); else params.delete('endDate');
+   if (startDate) params.set('startDate', toQueryDate(startDate)); else params.delete('startDate');
+   if (endDate) params.set('endDate', toQueryDate(endDate)); else params.delete('endDate');
    params.set('page', '1'); // 검색 시 1페이지로 이동
    router.push(`${pathname}?${params.toString()}`);
  };
@@ -199,13 +222,13 @@ export const BoardListClient = ({ dataPromise, params: initialParams }: { dataPr
  const handlePrevMonth = () => {
    const d = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() - 1, 1);
    const params = new URLSearchParams(searchParams.toString());
-   params.set('startDate', d.toISOString());
+   params.set('startDate', toQueryDate(d));
    router.push(`${pathname}?${params.toString()}`);
  };
  const handleNextMonth = () => {
    const d = new Date(currentViewDate.getFullYear(), currentViewDate.getMonth() + 1, 1);
    const params = new URLSearchParams(searchParams.toString());
-   params.set('startDate', d.toISOString());
+   params.set('startDate', toQueryDate(d));
    router.push(`${pathname}?${params.toString()}`);
  };
 

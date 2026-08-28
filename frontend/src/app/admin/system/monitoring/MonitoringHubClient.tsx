@@ -157,7 +157,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const searchParams = useSearchParams();
 
   const rawTab = searchParams.get('tab')?.toUpperCase();
-  const queryTab = (rawTab === 'HEALTH' ? 'OBSERVABILITY' : rawTab === 'POLICY' ? 'LOGIN' : rawTab) as MonitoringTab;
+  // [2026-08-27] POLICY → LOGIN 별칭 제거. 이 허브에는 POLICY 탭이 없는데 별칭이 그 요청을
+  //   LOGIN(로그인 **로그** 목록)으로 떨어뜨려, 정책을 열려던 사용자가 로그 목록을 보고도
+  //   자기가 다른 화면에 있다는 것을 알 수 없었다. 로그인 정책의 정본은
+  //   /admin/security/login-policy 이고 개인정보 정책은 /admin/user/indvdl-info-policy 다.
+  //   이제 ?tab=policy 는 어떤 탭에도 맞지 않아 기본 탭으로 내려간다 — 없는 탭을 있는 척하지 않는다.
+  const queryTab = (rawTab === 'HEALTH' ? 'OBSERVABILITY' : rawTab) as MonitoringTab;
 
   const activeTab = (queryTab && MONITORING_TABS.includes(queryTab))
     ? queryTab

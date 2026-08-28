@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ADMINISTRATIVE_ROLES, isAdministrativeRole } from '@/lib/auth/administrative-role';
@@ -42,5 +42,48 @@ describe('관리자 판정 parity', () => {
     );
     expect(client).toContain('isAdministrativeRole(user?.role)');
     expect(client).not.toMatch(/user\?\.role === '[A-Z_]+'/);
+  });
+
+  /**
+   * 한 파일만 지키면 다음 화면이 같은 실수를 반복한다.
+   *
+   * 실제로 그랬다 — 위 케이스가 BoardMasterListClient 만 보는 동안 KnowledgeHubClient·
+   * BoardListClient·MemoReportManagementClient 세 곳이 리터럴 비교를 그대로 갖고 있었고,
+   * 셋 다 SYSTEM 권한 관리자에게 기능이 사라지는 상태였다(2026-08-28 실측).
+   *
+   * 그래서 검사를 **전역 금지**로 넓힌다. 예외 목록은 두지 않는다 — 목록을 만들면 그 목록이
+   * 곧 서랍이 되고, 다음 위반은 목록에 한 줄 더하는 것으로 통과한다(H2 와 같은 방향의 왜곡).
+   */
+  it('어느 화면도 role 을 리터럴로 비교하지 않는다 — 판정은 SSOT 한 곳뿐이다', () => {
+    const violations: string[] = [];
+    let scanned = 0;
+
+    const walk = (dir: string) => {
+      for (const entry of readdirSync(dir, { withFileTypes: true })) {
+        const full = join(dir, entry.name);
+        if (entry.isDirectory()) {
+          if (entry.name === '__tests__' || entry.name === 'node_modules') continue;
+          walk(full);
+          continue;
+        }
+        if (!/\.tsx?$/.test(entry.name)) continue;
+        // 판정 SSOT 자신과 라우트 게이트는 값 집합을 정의하는 곳이라 제외한다.
+        if (full.endsWith(join('lib', 'auth', 'administrative-role.ts'))) continue;
+        if (full.endsWith(join('src', 'proxy.ts'))) continue;
+
+        scanned += 1;
+        const source = readFileSync(full, 'utf8')
+          .replace(/\/\*[\s\S]*?\*\//g, ' ')
+          .replace(/\/\/.*$/gm, ' ');
+        if (/\brole\s*===\s*'[A-Za-z_]+'/.test(source)) {
+          violations.push(full.slice(SRC_DIR.length + 1).replace(/\\/g, '/'));
+        }
+      }
+    };
+    walk(SRC_DIR);
+
+    // 스캔이 0건이면 게이트가 vacuous 하게 통과한다 — 그 자체를 실패로 본다.
+    expect(scanned).toBeGreaterThan(100);
+    expect(violations).toEqual([]);
   });
 });

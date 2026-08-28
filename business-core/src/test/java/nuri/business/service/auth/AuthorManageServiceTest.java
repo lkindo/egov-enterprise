@@ -46,12 +46,14 @@ class AuthorManageServiceTest {
         searchVO.setPageUnit(10);
         
         Page<Authority> page = new PageImpl<>(List.of(Authority.builder().authrtCd("ROLE_ADMIN").authrtNm("관리자").build()));
-        given(authorityRepository.findAll(any(Pageable.class))).willReturn(page);
+        given(authorityRepository.searchAuthorities(any(), any(), any(Pageable.class))).willReturn(page);
 
-        List<AuthorManageDto> result = authorManageService.selectAuthorList(searchVO);
+        Page<AuthorManageDto> result = authorManageService.selectAuthorList(searchVO);
 
-        assertEquals(1, result.size());
-        assertEquals("ROLE_ADMIN", result.get(0).getAuthrtCd());
+        // 내용과 총건수가 같은 질의에서 나온다. 검색을 무시하던 findAll 로 되돌아가면 red 다.
+        assertEquals(1, result.getContent().size());
+        assertEquals("ROLE_ADMIN", result.getContent().get(0).getAuthrtCd());
+        verify(authorityRepository, never()).findAll(any(Pageable.class));
     }
 
     @Test
@@ -150,25 +152,49 @@ class AuthorManageServiceTest {
         BaseSearchDto vo = new BaseSearchDto();
         vo.setPageIndex(3);
         vo.setPageUnit(0);
-        given(authorityRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of()));
+        given(authorityRepository.searchAuthorities(any(), any(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of()));
 
+        vo.setSearchKeyword("관리자");
         authorManageService.selectAuthorList(vo);
 
         org.mockito.ArgumentCaptor<Pageable> captor = org.mockito.ArgumentCaptor.forClass(Pageable.class);
-        verify(authorityRepository).findAll(captor.capture());
+        org.mockito.ArgumentCaptor<String> keyword = org.mockito.ArgumentCaptor.forClass(String.class);
+        org.mockito.ArgumentCaptor<String> condition = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(authorityRepository).searchAuthorities(condition.capture(), keyword.capture(), captor.capture());
+        /*
+         * searchCondition 을 any() 로 흘려보내면 이 축의 함정을 구조적으로 못 잡는다.
+         *
+         * 화면(SecurityHubClient)의 권한 질의는 searchCondition 을 싣지 않고, BaseSearchDto 의
+         * 기본값은 null 이 아니라 빈 문자열이다 — 이 값이 저장소로 흘러 "1" 게이트에 걸리지
+         * 못하면서 검색어가 통째로 버려지던 실제 경로다. 그래서 여기서는 값을 지어내지 않는지만
+         * 고정하고, 그 상태에서도 키워드가 필터로 걸리는지는
+         * AuthorityRepositorySearchTest 가 실제 질의로 검증한다.
+         */
+        assertEquals("", condition.getValue(), "화면이 안 보내는 값을 서비스가 지어내면 안 된다");
         Pageable p = captor.getValue();
         assertEquals(2, p.getPageNumber(), "1-based 3페이지는 0-based 2");
         assertEquals(10, p.getPageSize(), "pageUnit 0 이면 기본 10");
         assertNotNull(p.getSort().getOrderFor("authrtCd"), "권한코드 정렬이 유지돼야 한다");
+        // 검색어를 저장소로 전달하지 않으면 화면에서 검색이 통째로 무시된다.
+        assertEquals("관리자", keyword.getValue());
     }
 
     @Test
-    @DisplayName("총건수는 저장소 count 를 그대로 돌려준다")
-    void totalCountReflectsRepositoryCount() {
-        given(authorityRepository.count()).willReturn(7L);
+    @DisplayName("총건수는 목록과 같은 질의에서 나온다 — 조건 없는 count 로 되돌아가면 어긋난다")
+    void totalCountComesFromTheSameQuery() {
+        // 스텁 인자를 먼저 만든다 — given(...) 과 willReturn(...) 사이에서 객체를 조립하면
+        // Mockito 가 스터빙이 끝나지 않은 것으로 보고 UnfinishedStubbingException 을 낸다(실측).
+        Page<Authority> page = new PageImpl<>(
+                List.of(Authority.builder().authrtCd("ROLE_ADMIN").authrtNm("관리자").build()),
+                org.springframework.data.domain.PageRequest.of(0, 10), 42);
+        given(authorityRepository.searchAuthorities(any(), any(), any(Pageable.class))).willReturn(page);
 
-        // `replaced int return with 0` 뮤턴트가 여기서 죽는다.
-        assertEquals(7, authorManageService.selectAuthorListTotCnt(new BaseSearchDto()));
+        BaseSearchDto vo = new BaseSearchDto();
+        vo.setSearchKeyword("관리자");
+
+        assertEquals(42, authorManageService.selectAuthorList(vo).getTotalElements());
+        verify(authorityRepository, never()).count();
     }
 
     @Test

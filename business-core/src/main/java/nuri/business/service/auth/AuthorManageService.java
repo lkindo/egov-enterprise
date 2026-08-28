@@ -33,20 +33,21 @@ public class AuthorManageService {
     private final MenuAuthorityRepository menuAuthorityRepository;
 
     /**
-     * 권한 목록 조회
+     * 권한 목록을 검색 조건과 함께 한 페이지 조회한다.
+     *
+     * <p>[2026-08-28] 종전에는 {@code findAll(pageable)} 이라 <b>검색어가 통째로 무시</b>됐고,
+     * 총건수도 조건 없는 {@code count()} 였다. 화면에서 권한명을 입력해도 목록도 총건수도
+     * 그대로였고, 오류·로딩이 없어 무시됐다는 사실이 드러나지 않았다.
+     *
+     * <p>검색·페이징·건수를 모두 갖춘 QueryDSL 구현({@link AuthorityRepositoryCustom#searchAuthorities})이
+     * 이미 있었고 아무도 부르지 않았을 뿐이다. 같은 결함이 롤 축에도 있었고 1335c8ed8 에서
+     * 같은 방식으로 닫았다. 목록과 총건수를 한 {@link Page} 에서 얻어 드리프트를 구조적으로 없앤다.
      */
-    public List<AuthorManageDto> selectAuthorList(BaseSearchDto searchVO) {
-        Pageable pageable = searchVO.toPageable(Sort.by("authrtCd").ascending());
-
-        Page<Authority> page = authorityRepository.findAll(Objects.requireNonNull(pageable));
-        return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
-    }
-
-    /**
-     * 권한 목록 총 갯수
-     */
-    public int selectAuthorListTotCnt(BaseSearchDto searchVO) {
-        return (int) authorityRepository.count();
+    public Page<AuthorManageDto> selectAuthorList(BaseSearchDto searchVO) {
+        Pageable pageable = Objects.requireNonNull(searchVO.toPageable(Sort.by("authrtCd").ascending()));
+        return authorityRepository
+                .searchAuthorities(searchVO.getSearchCondition(), searchVO.getSearchKeyword(), pageable)
+                .map(this::toDto);
     }
 
     /**

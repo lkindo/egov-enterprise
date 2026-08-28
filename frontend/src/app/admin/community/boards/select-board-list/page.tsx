@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { getInitialBoardData } from './BoardListServer';
 import { Skeleton } from "@/components/ui/skeleton";
-import { LEGACY_DEFAULT_BOARD_ID } from '@/config/board-ids';
+import { resolveDefaultBoardId } from './BoardListServer';
 
 /** 
  * 클라이언트 컴포넌트를 지연 로딩하여 서버/클라이언트 경계를 명확히 함 
@@ -23,7 +23,12 @@ export const metadata: Metadata = {
  */
 export default async function BoardListPage({ searchParams }: { searchParams: Promise<any> }) {
   const resolvedSearchParams = await searchParams;
-  const bbsId = resolvedSearchParams.bbsId || LEGACY_DEFAULT_BOARD_ID;
+  /*
+   * 종전 기본값 LEGACY_DEFAULT_BOARD_ID('BBSMSTR_000000000001')는 **어떤 시드에도 없다**
+   * (Flyway·sql/ 전량 grep 실측 — 등장처가 테스트 목뿐이다). bbsId 없이 들어오면 존재하지 않는
+   * 게시판을 조회해 늘 빈 화면이 됐다. 실재하는 게시판 중 첫 번째를 기본값으로 삼는다.
+   */
+  const bbsId = resolvedSearchParams.bbsId || await resolveDefaultBoardId();
   const page = Number(resolvedSearchParams.page) || 1;
   const searchWrd = resolvedSearchParams.searchWrd || '';
   const searchCnd = resolvedSearchParams.searchCnd || '0';

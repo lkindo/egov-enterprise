@@ -1,6 +1,8 @@
 package nuri.api.controller.foundation.controller.system.policy;
 
 import jakarta.validation.Valid;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.service.system.policy.PolicyService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -30,39 +32,30 @@ public class PolicyApiController {
         return ResponseEntity.ok(ApiResponse.success(policyService.getPolicies()));
     }
 
-    @Operation(summary = "정책 내용 조회", description = "저작권(copyright) 또는 개인정보보호정책(privacy) 내용을 조회합니다.")
+    /**
+     * 정책 본문 조회.
+     *
+     * <p>[2026-08-28] <b>미등록 유형의 기본값 생성을 제거한다.</b>
+     *
+     * <p>종전에는 등록된 정책이 없으면 서버가 본문을 <b>지어내서</b> 200 으로 돌려줬다 —
+     * 특히 {@code privacy} 는 "본 시스템은 사용자의 개인정보를 소중히 다루며, 관련 법규를
+     * 준수합니다." 라는 <b>개인정보 처리 방침</b>을 만들어 냈다. 신규 설치의 기본 상태가
+     * "가짜 개인정보처리방침을 진짜처럼 게시" 였다는 뜻이다.
+     *
+     * <p>더 나쁜 것은 관리자도 구분할 수 없었다는 점이다 — 편집 화면이 이 응답을 그대로 읽으므로
+     * 화면에 보이는 본문이 저장된 것인지 서버가 만든 것인지 알 방법이 없었다.
+     *
+     * <p>법적 효력을 갖는 문서는 없으면 없다고 해야 한다. 미등록은 404 다.
+     */
+    @Operation(summary = "정책 내용 조회", description = "저작권(copyright) 또는 개인정보보호정책(privacy) 내용을 조회합니다. 등록된 정책이 없으면 404 입니다.")
     @GetMapping("/{type}")
     public ResponseEntity<ApiResponse<PolicyService.Policy>> getPolicy(@PathVariable String type) {
         // 목록 조회(getPolicies)와 동일한 필드명(plcyTypeCd/plcyTtl/plcyCn)으로 응답한다.
         PolicyService.Policy result = policyService.getPolicy(type)
-                .orElseGet(() -> defaultPolicy(type));
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND,
+                        "등록된 정책이 없습니다: " + type));
 
         return ResponseEntity.ok(ApiResponse.success(result));
-    }
-
-    /**
-     * 미등록 정책 유형에 대한 기본값
-     */
-    private PolicyService.Policy defaultPolicy(String type) {
-        if ("copyright".equalsIgnoreCase(type)) {
-            return PolicyService.Policy.builder()
-                    .plcyTypeCd(type)
-                    .plcyTtl("저작권 보호 정책")
-                    .plcyCn("본 시스템의 모든 콘텐츠는 저작권법의 보호를 받습니다.")
-                    .build();
-        }
-        if ("privacy".equalsIgnoreCase(type)) {
-            return PolicyService.Policy.builder()
-                    .plcyTypeCd(type)
-                    .plcyTtl("개인정보 처리 방침")
-                    .plcyCn("본 시스템은 사용자의 개인정보를 소중히 다루며, 관련 법규를 준수합니다.")
-                    .build();
-        }
-        return PolicyService.Policy.builder()
-                .plcyTypeCd(type)
-                .plcyTtl("기타 정책")
-                .plcyCn("준비 중인 정책 페이지입니다.")
-                .build();
     }
 
     @Operation(summary = "정책 내용 수정")

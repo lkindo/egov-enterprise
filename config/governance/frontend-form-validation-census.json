@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 47,
-    "nativeFormFiles": 45,
+    "nativeFormOccurrences": 53,
+    "nativeFormFiles": 47,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
-    "secondaryActionBoundaries": 52,
-    "candidateCount": 121
+    "secondaryActionBoundaries": 56,
+    "candidateCount": 131
   },
   "entries": [
     {
@@ -214,6 +214,63 @@
       ]
     },
     {
+      "key": "formless-write:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/system/network/NetworkAdminClient.tsx",
+      "owner": "NetworkAdminClient",
+      "composedChildContracts": [
+        {
+          "actionHandlers": [
+            "handleDelete"
+          ],
+          "component": "NetworkForm",
+          "handler": "inline-action",
+          "writeSinks": [
+            "saveNetworkNodeAction"
+          ]
+        }
+      ],
+      "classification": "mutation",
+      "status": "exception",
+      "validationMode": "not-applicable-disabled-write",
+      "schemaSource": "not-applicable:backend-write-501",
+      "errorNavigation": "not-applicable-disabled-write",
+      "serverErrors": "not-applicable-disabled-write",
+      "pendingGuard": "compile-time-disabled-write",
+      "testEvidence": [
+        "frontend/src/app/admin/system/network/NetworkAdminClient.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/system/programs/ProgramAdminClient.tsx#ProgramAdminClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
+      "owner": "ProgramAdminClient",
+      "composedChildContracts": [
+        {
+          "actionHandlers": [
+            "handleDelete"
+          ],
+          "component": "ProgramForm",
+          "handler": "submitProgramForm",
+          "writeSinks": [
+            "programAdminService.createProgram",
+            "programAdminService.updateProgram"
+          ]
+        }
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:ProgramForm+program-actions",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "testEvidence": [
+        "frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx"
+      ]
+    },
+    {
       "key": "formless-write:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient",
       "kind": "formless-write",
       "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -267,6 +324,46 @@
       ]
     },
     {
+      "key": "formless-write:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
+      "owner": "WorkHubClient",
+      "composedChildContracts": [
+        {
+          "actionHandlers": [
+            "handleDeleteSchedule"
+          ],
+          "component": "ScheduleCreateForm",
+          "handler": "handleSubmitSchedule",
+          "writeSinks": [
+            "createDeptSchedule",
+            "updateDeptSchedule"
+          ]
+        },
+        {
+          "actionHandlers": [
+            "handleDeleteReport"
+          ],
+          "component": "ReportCreateForm",
+          "handler": "handleSubmitReport",
+          "writeSinks": [
+            "reportService.createReport",
+            "reportService.updateReport"
+          ]
+        }
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:ScheduleCreateForm+ReportCreateForm+work-hub-actions",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "testEvidence": [
+        "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"
+      ]
+    },
+    {
       "key": "formless-write:frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx#WorkspaceMyPage",
       "kind": "formless-write",
       "file": "frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx",
@@ -297,6 +394,61 @@
       "testEvidence": [
         "frontend/src/app/note/__tests__/NotePage.validation.test.tsx",
         "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx#DeptJobDetailClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx",
+      "owner": "DeptJobDetailClient",
+      "composedChildContracts": [
+        {
+          "actionHandlers": [
+            "handleDelete"
+          ],
+          "component": "DeptJobForm",
+          "handler": "handleUpdate",
+          "writeSinks": [
+            "deptJobUserService.updateDeptJob",
+            "updateMutation.mutateAsync"
+          ]
+        }
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:DeptJobForm+dept-job-actions",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "testEvidence": [
+        "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.validation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.tsx#DeptJobCreateClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.tsx",
+      "owner": "DeptJobCreateClient",
+      "composedChildContracts": [
+        {
+          "actionHandlers": [],
+          "component": "DeptJobForm",
+          "handler": "handleSubmit",
+          "writeSinks": [
+            "deptJobUserService.createDeptJob"
+          ]
+        }
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "composed-child-form-validation",
+      "schemaSource": "composed:DeptJobForm+dept-job-create",
+      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
+      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
+      "pendingGuard": "composed-child-submit-and-action-locks",
+      "testEvidence": [
+        "frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.validation.test.tsx"
       ]
     },
     {
@@ -548,6 +700,40 @@
       ]
     },
     {
+      "key": "native-form:frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx#MemoReportManagementClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
+      "owner": "MemoReportManagementClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:memoInstructionSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/memo-reports/__tests__/MemoReportDetail.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx#MemoReportManagementClient[2]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
+      "owner": "MemoReportManagementClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:memoComposeSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/memo-reports/__tests__/MemoReportDetail.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
       "key": "native-form:frontend/src/app/admin/operation/rewards/RewardManageClient.tsx#RewardManageClient[1]",
       "kind": "native-form",
       "file": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
@@ -621,6 +807,23 @@
       "status": "compliant",
       "validationMode": "useManualFormValidation-zod",
       "schemaSource": "generated-or-derived:surveyQuestionCreateSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyQuestionsPanel.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx#SurveyQuestionsPanel[2]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "owner": "SurveyQuestionsPanel",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:surveyInfoCreateSchema",
       "errorNavigation": "summary-inline-focus-first-invalid",
       "serverErrors": "field-errors-mapped-with-value-retention",
       "pendingGuard": "synchronous-submit-lock-and-disabled",
@@ -711,6 +914,40 @@
       "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/system/common-code/__tests__/CommonCodeClient.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/system/common-code/CommonCodeClient.tsx#CommonCodeClient[2]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/system/common-code/CommonCodeClient.tsx",
+      "owner": "CommonCodeClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:codeClusterFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/common-code/__tests__/CommonCodeClient.structure.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/system/common-code/CommonCodeClient.tsx#CommonCodeClient[3]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/system/common-code/CommonCodeClient.tsx",
+      "owner": "CommonCodeClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:codeGroupFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/common-code/__tests__/CommonCodeClient.structure.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
@@ -915,6 +1152,23 @@
       "testEvidence": [
         "frontend/src/app/cop/sms/selectSmsList/__tests__/SmsHubClient.test.tsx",
         "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/help/HelpClient.tsx#HelpClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/help/HelpClient.tsx",
+      "owner": "HelpClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "local:askSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/help/__tests__/HelpClient.qna.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
     {
@@ -1167,6 +1421,27 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx#MailHistoryHubClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx",
+      "owner": "MailHistoryHubClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMutation.mutateAsync",
+        "mailService.deleteMail"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/mail-history/__tests__/MailHistoryHubClient.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx#SelectScrapDetailClient.handleDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/SelectScrapDetailClient.tsx",
@@ -1184,6 +1459,67 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx#ScrapListClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx",
+      "owner": "ScrapListClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "axios.delete",
+        "deleteMutation.mutateAsync"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/collaboration/scraps/__tests__/ScrapListClient.pending.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx#BoardDetailClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
+      "owner": "BoardDetailClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteBoardArticle"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/detail/__tests__/BoardDetailClient.pending.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx#BoardDetailClient.handleLike[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
+      "owner": "BoardDetailClient",
+      "handler": "handleLike",
+      "writeSinks": [
+        "boardUserService.likePost"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/detail/__tests__/BoardDetailClient.pending.test.tsx"
       ]
     },
     {
@@ -1250,6 +1586,48 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx#BoardMasterListClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
+      "owner": "BoardMasterListClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "boardAdminService.deleteBoardMaster",
+        "boardAdminService.deleteBoardMasterPhysically"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/__tests__/BoardMasterListClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx#BoardListClient.handleLike[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
+      "owner": "BoardListClient",
+      "handler": "handleLike",
+      "writeSinks": [
+        "likeBoardArticle",
+        "likeMutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/select-board-list/__tests__/BoardListClient.pending.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/admin/operation/events/EventManagementClient.tsx#EventManagementClient.handleDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/operation/events/EventManagementClient.tsx",
@@ -1268,6 +1646,172 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/operation/events/__tests__/EventManagementClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleAuthorDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "handler": "handleAuthorDelete",
+      "writeSinks": [
+        "authorAdminService.deleteAuthor"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveGlobal[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "handler": "handleSaveGlobal",
+      "writeSinks": [
+        "menuAdminService.saveMenuCreation"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:global-authority-menu-matrix",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Only changed authorities persist exactly the menu assignments represented by the global matrix.",
+      "structuredPayloads": [
+        "Array.from(globalMappings.get(code) ?? new Set<number>())",
+        "code"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveMenuMapping[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "handler": "handleSaveMenuMapping",
+      "writeSinks": [
+        "menuAdminService.saveMenuCreation",
+        "saveMenuMappingMutation.mutate"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:authority-menu-assignment-set",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "The selected authority persists exactly the menu assignments represented by tempMenuMappings.",
+      "structuredPayloads": [
+        "Array.from(tempMenuMappings)",
+        "selectedAuthorCode"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveUserMapping[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "handler": "handleSaveUserMapping",
+      "writeSinks": [
+        "saveUserMappingMutation.mutate",
+        "userAuthorityAdminService.deleteUserAuthorities",
+        "userAuthorityAdminService.saveUserAuthorities"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:user-authority-assignment-set",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Each user persists exactly the selected authority assignments after revoked mappings are removed.",
+      "structuredPayloads": [
+        "mappings",
+        "revokeTargets"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx#SecurityDeptAuthorityClient.handleSave[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx",
+      "owner": "SecurityDeptAuthorityClient",
+      "handler": "handleSave",
+      "writeSinks": [
+        "deptAuthorityAdminService.updateDeptAuthorities",
+        "saveMutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:department-authority-assignment",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "The selected department and all-member scope persist exactly the chosen authority assignment.",
+      "structuredPayloads": [
+        "{\n deptId: selectedDept!,\n authrtId,\n allMembers: true\n }",
+        "selectedAuthorCode"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/security/dept-authority/__tests__/SecurityDeptAuthorityClient.contract.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/group/SecurityGroupClient.tsx#SecurityGroupClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/group/SecurityGroupClient.tsx",
+      "owner": "SecurityGroupClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMutation.mutate",
+        "groupAdminService.deleteGroup"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/group/__tests__/SecurityGroupClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/role/SecurityRoleClient.tsx#SecurityRoleClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/role/SecurityRoleClient.tsx",
+      "owner": "SecurityRoleClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMutation.mutate",
+        "roleAdminService.deleteRole"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/security/role/__tests__/SecurityRoleClient.test.tsx"
       ]
     },
     {
@@ -1313,6 +1857,27 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx#SurveyQuestionsPanel.handleDeleteSurvey[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
+      "owner": "SurveyQuestionsPanel",
+      "handler": "handleDeleteSurvey",
+      "writeSinks": [
+        "removeSurvey.mutate",
+        "surveyAdminService.deleteSurvey"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/components/__tests__/SurveyQuestionsPanel.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx#SurveyTemplatesPanel.beginDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/survey/components/SurveyTemplatesPanel.tsx",
@@ -1331,6 +1896,26 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/survey/components/__tests__/SurveyTemplatesPanel.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/survey/manage/[id]/SurveyManageDetailClient.tsx#SurveyManageDetailClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/survey/manage/[id]/SurveyManageDetailClient.tsx",
+      "owner": "SurveyManageDetailClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "pollUserService.deletePoll"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/survey/manage/__tests__/SurveyManageDetailActions.test.tsx"
       ]
     },
     {
@@ -1420,6 +2005,26 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/system/hpcm/HpcmClient.tsx#HpcmClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "owner": "HpcmClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "hpcmAdminService.deleteHpcm"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/hpcm/__tests__/HpcmClient.behavior.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/admin/system/menus/MenuAdminClient.tsx#MenuAdminClient.handleDelete[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/system/menus/MenuAdminClient.tsx",
@@ -1464,6 +2069,67 @@
       ]
     },
     {
+      "key": "secondary-action:frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx#MonitoringHubClient.handleDeleteComment[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+      "owner": "MonitoringHubClient",
+      "handler": "handleDeleteComment",
+      "writeSinks": [
+        "commentAdminService.deleteComment",
+        "deleteCommentMutation.mutateAsync"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/monitoring/__tests__/MonitoringHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/system/network/NetworkAdminClient.tsx",
+      "owner": "NetworkAdminClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteNetworkNodeAction"
+      ],
+      "classification": "destructive",
+      "status": "exception",
+      "validationMode": "not-applicable-disabled-write",
+      "schemaSource": "not-applicable:backend-write-501",
+      "errorNavigation": "not-applicable-disabled-write",
+      "serverErrors": "not-applicable-disabled-write",
+      "pendingGuard": "compile-time-disabled-write",
+      "testEvidence": [
+        "frontend/src/app/admin/system/network/NetworkAdminClient.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/programs/ProgramAdminClient.tsx#ProgramAdminClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
+      "owner": "ProgramAdminClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "programAdminService.deleteProgram"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx"
+      ]
+    },
+    {
       "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.bulkAction:일괄 삭제[1]",
       "kind": "secondary-action",
       "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -1480,6 +2146,145 @@
       "errorNavigation": "not-applicable-action-only",
       "serverErrors": "action-error-feedback-preserves-state",
       "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleBulkDeptMove[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleBulkDeptMove",
+      "writeSinks": [
+        "bulkMoveUserDeptAction"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:bulk-user-department-move",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Every selected user moves to exactly the target department chosen in the bulk action.",
+      "structuredPayloads": [
+        "selectedBulkItems.map(u => u.userId)",
+        "targetDeptId"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleBulkRoleUpdate[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleBulkRoleUpdate",
+      "writeSinks": [
+        "bulkUpdateUserRoleAction"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:bulk-user-role-assignment",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Every selected user persists exactly the target role chosen in the bulk action.",
+      "structuredPayloads": [
+        "selectedBulkItems.map(u => u.userId)",
+        "targetRole"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleBulkStatusUpdate[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleBulkStatusUpdate",
+      "writeSinks": [
+        "bulkUpdateUserStatusAction"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:bulk-user-status-update",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Every selected user persists exactly the target status chosen in the bulk action.",
+      "structuredPayloads": [
+        "selectedBulkItems.map(u => u.userId)",
+        "targetStatus"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleDeleteDept[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleDeleteDept",
+      "writeSinks": [
+        "deptAdminService.deleteDept"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleDeleteUser[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleDeleteUser",
+      "writeSinks": [
+        "userAdminService.deleteUser"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleSaveDeptHierarchy[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
+      "owner": "UserOrgHubClient",
+      "handler": "handleSaveDeptHierarchy",
+      "writeSinks": [
+        "saveDeptHierarchyAction"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:department-hierarchy-order",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Each department persists one parent and the stable hierarchy order represented by flattenedDepts.",
+      "structuredPayloads": [
+        "flattenedDepts"
+      ],
       "testEvidence": [
         "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
       ]
@@ -1502,6 +2307,194 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/uss/olh/online-manual/__tests__/ManualAdminClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient.handleDeleteReport[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
+      "owner": "WorkHubClient",
+      "handler": "handleDeleteReport",
+      "writeSinks": [
+        "reportService.deleteReport"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient.handleDeleteSchedule[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
+      "owner": "WorkHubClient",
+      "handler": "handleDeleteSchedule",
+      "writeSinks": [
+        "deleteDeptSchedule"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx#WorkspaceMyPage.toggleStatus[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx",
+      "owner": "WorkspaceMyPage",
+      "handler": "toggleStatus",
+      "writeSinks": [
+        "myPageAdminService.updateContent"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/workspace/my-page/__tests__/WorkspaceMyPageClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx#CommunityDetailHubClient.handleJoin[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx",
+      "owner": "CommunityDetailHubClient",
+      "handler": "handleJoin",
+      "writeSinks": [
+        "communityUserService.joinCommunity",
+        "joinMutation.mutateAsync"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.pending.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/note/page.tsx#NotePage.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/note/page.tsx",
+      "owner": "NotePage",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "noteService.deleteNote"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/note/__tests__/NotePage.validation.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx#DeptJobDetailClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx",
+      "owner": "DeptJobDetailClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMutation.mutateAsync",
+        "deptJobUserService.deleteDeptJob"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.validation.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/smart-toolkit/schedule/dept/ScheduleDeptClient.tsx#ScheduleDeptClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/smart-toolkit/schedule/dept/ScheduleDeptClient.tsx",
+      "owner": "ScheduleDeptClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteDeptSchedule"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/smart-toolkit/schedule/dept/__tests__/ScheduleDeptClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/survey/[id]/SurveyDetailClient.tsx#SurveyDetailClient.handleSubmit[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/survey/[id]/SurveyDetailClient.tsx",
+      "owner": "SurveyDetailClient",
+      "handler": "handleSubmit",
+      "writeSinks": [
+        "surveyAdminService.submitAnswers"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:survey-question-answer-selection",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "Every submitted answer names a question of this survey and an item of that question; at most one submission per user.",
+      "structuredPayloads": [
+        "payload",
+        "srvySn"
+      ],
+      "testEvidence": [
+        "frontend/src/app/survey/__tests__/SurveyDetailClient.response.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/survey/response/SurveyResponseClient.tsx#SurveyResponseClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/survey/response/SurveyResponseClient.tsx",
+      "owner": "SurveyResponseClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "deleteMutation.mutate",
+        "deleteQustnrRespondInfo"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/survey/response/__tests__/SurveyResponseClient.test.tsx"
       ]
     },
     {
@@ -1589,557 +2582,24 @@
       "testEvidence": [
         "frontend/src/components/features/satisfaction/__tests__/SatisfactionSection.test.tsx"
       ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx#MailHistoryHubClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx",
-      "owner": "MailHistoryHubClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "deleteMutation.mutateAsync",
-        "mailService.deleteMail"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/collaboration/mail-history/__tests__/MailHistoryHubClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx#BoardMasterListClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
-      "owner": "BoardMasterListClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "boardAdminService.deleteBoardMaster",
-        "boardAdminService.deleteBoardMasterPhysically"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/community/boards/master/__tests__/BoardMasterListClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleAuthorDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "owner": "SecurityHubClient",
-      "handler": "handleAuthorDelete",
-      "writeSinks": [
-        "authorAdminService.deleteAuthor"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveUserMapping[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "owner": "SecurityHubClient",
-      "handler": "handleSaveUserMapping",
-      "writeSinks": [
-        "saveUserMappingMutation.mutate",
-        "userAuthorityAdminService.deleteUserAuthorities",
-        "userAuthorityAdminService.saveUserAuthorities"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:user-authority-assignment-set",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "Each user persists exactly the selected authority assignments after revoked mappings are removed.",
-      "structuredPayloads": [
-        "mappings",
-        "revokeTargets"
-      ],
-      "testEvidence": [
-        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/group/SecurityGroupClient.tsx#SecurityGroupClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/group/SecurityGroupClient.tsx",
-      "owner": "SecurityGroupClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "deleteMutation.mutate",
-        "groupAdminService.deleteGroup"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/security/group/__tests__/SecurityGroupClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/role/SecurityRoleClient.tsx#SecurityRoleClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/role/SecurityRoleClient.tsx",
-      "owner": "SecurityRoleClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "deleteMutation.mutate",
-        "roleAdminService.deleteRole"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/security/role/__tests__/SecurityRoleClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleDeleteDept[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "owner": "UserOrgHubClient",
-      "handler": "handleDeleteDept",
-      "writeSinks": [
-        "deptAdminService.deleteDept"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleDeleteUser[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "owner": "UserOrgHubClient",
-      "handler": "handleDeleteUser",
-      "writeSinks": [
-        "userAdminService.deleteUser"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/note/page.tsx#NotePage.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/note/page.tsx",
-      "owner": "NotePage",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "noteService.deleteNote"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/note/__tests__/NotePage.validation.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/smart-toolkit/schedule/dept/ScheduleDeptClient.tsx#ScheduleDeptClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/smart-toolkit/schedule/dept/ScheduleDeptClient.tsx",
-      "owner": "ScheduleDeptClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "deleteDeptSchedule"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/smart-toolkit/schedule/dept/__tests__/ScheduleDeptClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/survey/response/SurveyResponseClient.tsx#SurveyResponseClient.handleDelete[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/survey/response/SurveyResponseClient.tsx",
-      "owner": "SurveyResponseClient",
-      "handler": "handleDelete",
-      "writeSinks": [
-        "deleteMutation.mutate",
-        "deleteQustnrRespondInfo"
-      ],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/survey/response/__tests__/SurveyResponseClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveMenuMapping[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "owner": "SecurityHubClient",
-      "handler": "handleSaveMenuMapping",
-      "writeSinks": [
-        "menuAdminService.saveMenuCreation",
-        "saveMenuMappingMutation.mutate"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:authority-menu-assignment-set",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "The selected authority persists exactly the menu assignments represented by tempMenuMappings.",
-      "structuredPayloads": [
-        "Array.from(tempMenuMappings)",
-        "selectedAuthorCode"
-      ],
-      "testEvidence": [
-        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx#SecurityDeptAuthorityClient.handleSave[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx",
-      "owner": "SecurityDeptAuthorityClient",
-      "handler": "handleSave",
-      "writeSinks": [
-        "deptAuthorityAdminService.updateDeptAuthorities",
-        "saveMutation.mutateAsync"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:department-authority-assignment",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "The selected department and all-member scope persist exactly the chosen authority assignment.",
-      "structuredPayloads": [
-        "{\n deptId: selectedDept!,\n authrtId,\n allMembers: true\n }",
-        "selectedAuthorCode"
-      ],
-      "testEvidence": [
-        "frontend/src/app/admin/security/dept-authority/__tests__/SecurityDeptAuthorityClient.contract.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleBulkDeptMove[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "owner": "UserOrgHubClient",
-      "handler": "handleBulkDeptMove",
-      "writeSinks": [
-        "bulkMoveUserDeptAction"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:bulk-user-department-move",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "Every selected user moves to exactly the target department chosen in the bulk action.",
-      "structuredPayloads": [
-        "selectedBulkItems.map(u => u.userId)",
-        "targetDeptId"
-      ],
-      "testEvidence": [
-        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleBulkRoleUpdate[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "owner": "UserOrgHubClient",
-      "handler": "handleBulkRoleUpdate",
-      "writeSinks": [
-        "bulkUpdateUserRoleAction"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:bulk-user-role-assignment",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "Every selected user persists exactly the target role chosen in the bulk action.",
-      "structuredPayloads": [
-        "selectedBulkItems.map(u => u.userId)",
-        "targetRole"
-      ],
-      "testEvidence": [
-        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleBulkStatusUpdate[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "owner": "UserOrgHubClient",
-      "handler": "handleBulkStatusUpdate",
-      "writeSinks": [
-        "bulkUpdateUserStatusAction"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:bulk-user-status-update",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "Every selected user persists exactly the target status chosen in the bulk action.",
-      "structuredPayloads": [
-        "selectedBulkItems.map(u => u.userId)",
-        "targetStatus"
-      ],
-      "testEvidence": [
-        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/user/UserOrgHubClient.tsx#UserOrgHubClient.handleSaveDeptHierarchy[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/user/UserOrgHubClient.tsx",
-      "owner": "UserOrgHubClient",
-      "handler": "handleSaveDeptHierarchy",
-      "writeSinks": [
-        "saveDeptHierarchyAction"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:department-hierarchy-order",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "Each department persists one parent and the stable hierarchy order represented by flattenedDepts.",
-      "structuredPayloads": [
-        "flattenedDepts"
-      ],
-      "testEvidence": [
-        "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx#WorkspaceMyPage.toggleStatus[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx",
-      "owner": "WorkspaceMyPage",
-      "handler": "toggleStatus",
-      "writeSinks": [
-        "myPageAdminService.updateContent"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "action-only-no-editable-payload",
-      "schemaSource": "not-applicable:no-editable-payload",
-      "errorNavigation": "not-applicable-action-only",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "testEvidence": [
-        "frontend/src/app/admin/workspace/my-page/__tests__/WorkspaceMyPageClient.test.tsx"
-      ]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveGlobal[1]",
-      "kind": "secondary-action",
-      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
-      "owner": "SecurityHubClient",
-      "handler": "handleSaveGlobal",
-      "writeSinks": [
-        "menuAdminService.saveMenuCreation"
-      ],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "structured-ui-state-validation",
-      "schemaSource": "structured-ui-state:global-authority-menu-matrix",
-      "errorNavigation": "structured-state-action-feedback",
-      "serverErrors": "action-error-feedback-preserves-state",
-      "pendingGuard": "action-pending-lock-and-disabled",
-      "stateInvariant": "Only changed authorities persist exactly the menu assignments represented by the global matrix.",
-      "structuredPayloads": [
-        "Array.from(globalMappings.get(code) ?? new Set<number>())",
-        "code"
-      ],
-      "testEvidence": [
-        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
-      ]
-    },
-    {
-      "key": "formless-write:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient",
-      "kind": "formless-write",
-      "file": "frontend/src/app/admin/system/network/NetworkAdminClient.tsx",
-      "owner": "NetworkAdminClient",
-      "composedChildContracts": [{"actionHandlers":["handleDelete"],"component":"NetworkForm","handler":"inline-action","writeSinks":["saveNetworkNodeAction"]}],
-      "classification": "mutation",
-      "status": "exception",
-      "validationMode": "not-applicable-disabled-write",
-      "schemaSource": "not-applicable:backend-write-501",
-      "errorNavigation": "not-applicable-disabled-write",
-      "serverErrors": "not-applicable-disabled-write",
-      "pendingGuard": "compile-time-disabled-write",
-      "testEvidence": ["frontend/src/app/admin/system/network/NetworkAdminClient.tsx"]
-    },
-    {
-      "key": "formless-write:frontend/src/app/admin/system/programs/ProgramAdminClient.tsx#ProgramAdminClient",
-      "kind": "formless-write",
-      "file": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx",
-      "owner": "ProgramAdminClient",
-      "composedChildContracts": [{"actionHandlers":["handleDelete"],"component":"ProgramForm","handler":"submitProgramForm","writeSinks":["programAdminService.createProgram","programAdminService.updateProgram"]}],
-      "classification": "destructive",
-      "status": "compliant",
-      "validationMode": "composed-child-form-validation",
-      "schemaSource": "composed:ProgramForm+program-actions",
-      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
-      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
-      "pendingGuard": "composed-child-submit-and-action-locks",
-      "testEvidence": ["frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx"]
-    },
-    {
-      "key": "formless-write:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient",
-      "kind": "formless-write",
-      "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx",
-      "owner": "WorkHubClient",
-      "composedChildContracts": [{"actionHandlers":["handleDeleteSchedule"],"component":"ScheduleCreateForm","handler":"handleSubmitSchedule","writeSinks":["createDeptSchedule","updateDeptSchedule"]},{"actionHandlers":["handleDeleteReport"],"component":"ReportCreateForm","handler":"handleSubmitReport","writeSinks":["reportService.createReport","reportService.updateReport"]}],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "composed-child-form-validation",
-      "schemaSource": "composed:ScheduleCreateForm+ReportCreateForm+work-hub-actions",
-      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
-      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
-      "pendingGuard": "composed-child-submit-and-action-locks",
-      "testEvidence": ["frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"]
-    },
-    {
-      "key": "formless-write:frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx#DeptJobDetailClient",
-      "kind": "formless-write",
-      "file": "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx",
-      "owner": "DeptJobDetailClient",
-      "composedChildContracts": [{"actionHandlers":["handleDelete"],"component":"DeptJobForm","handler":"handleUpdate","writeSinks":["deptJobUserService.updateDeptJob","updateMutation.mutateAsync"]}],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "composed-child-form-validation",
-      "schemaSource": "composed:DeptJobForm+dept-job-actions",
-      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
-      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
-      "pendingGuard": "composed-child-submit-and-action-locks",
-      "testEvidence": ["frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.validation.test.tsx"]
-    },
-    {
-      "key": "formless-write:frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.tsx#DeptJobCreateClient",
-      "kind": "formless-write",
-      "file": "frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.tsx",
-      "owner": "DeptJobCreateClient",
-      "composedChildContracts": [{"actionHandlers":[],"component":"DeptJobForm","handler":"handleSubmit","writeSinks":["deptJobUserService.createDeptJob"]}],
-      "classification": "mutation",
-      "status": "compliant",
-      "validationMode": "composed-child-form-validation",
-      "schemaSource": "composed:DeptJobForm+dept-job-create",
-      "errorNavigation": "composed-child-summary-inline-focus-first-invalid",
-      "serverErrors": "composed-child-field-errors-mapped-with-value-retention",
-      "pendingGuard": "composed-child-submit-and-action-locks",
-      "testEvidence": ["frontend/src/app/smart-toolkit/dept-job/create/DeptJobCreateClient.validation.test.tsx"]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx#ScrapListClient.handleDelete[1]",
-      "kind": "secondary-action", "file": "frontend/src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx", "owner": "ScrapListClient", "handler": "handleDelete", "writeSinks": ["axios.delete","deleteMutation.mutateAsync"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/collaboration/scraps/__tests__/ScrapListClient.pending.test.tsx"]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx#BoardDetailClient.handleDelete[1]",
-      "kind": "secondary-action", "file": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx", "owner": "BoardDetailClient", "handler": "handleDelete", "writeSinks": ["deleteBoardArticle"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/community/boards/detail/__tests__/BoardDetailClient.pending.test.tsx"]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx#BoardDetailClient.handleLike[1]",
-      "kind": "secondary-action", "file": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx", "owner": "BoardDetailClient", "handler": "handleLike", "writeSinks": ["boardUserService.likePost"], "classification": "mutation", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/community/boards/detail/__tests__/BoardDetailClient.pending.test.tsx"]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx#BoardListClient.handleLike[1]",
-      "kind": "secondary-action", "file": "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx", "owner": "BoardListClient", "handler": "handleLike", "writeSinks": ["likeBoardArticle","likeMutation.mutateAsync"], "classification": "mutation", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/community/boards/select-board-list/__tests__/BoardListClient.pending.test.tsx"]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx#MonitoringHubClient.handleDeleteComment[1]",
-      "kind": "secondary-action", "file": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx", "owner": "MonitoringHubClient", "handler": "handleDeleteComment", "writeSinks": ["commentAdminService.deleteComment","deleteCommentMutation.mutateAsync"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/system/monitoring/__tests__/MonitoringHubClient.test.tsx"]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient.handleDelete[1]",
-      "kind": "secondary-action", "file": "frontend/src/app/admin/system/network/NetworkAdminClient.tsx", "owner": "NetworkAdminClient", "handler": "handleDelete", "writeSinks": ["deleteNetworkNodeAction"], "classification": "destructive", "status": "exception", "validationMode": "not-applicable-disabled-write", "schemaSource": "not-applicable:backend-write-501", "errorNavigation": "not-applicable-disabled-write", "serverErrors": "not-applicable-disabled-write", "pendingGuard": "compile-time-disabled-write", "testEvidence": ["frontend/src/app/admin/system/network/NetworkAdminClient.tsx"]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/system/programs/ProgramAdminClient.tsx#ProgramAdminClient.handleDelete[1]",
-      "kind": "secondary-action", "file": "frontend/src/app/admin/system/programs/ProgramAdminClient.tsx", "owner": "ProgramAdminClient", "handler": "handleDelete", "writeSinks": ["programAdminService.deleteProgram"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/system/__tests__/system-form-validation.test.tsx"]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient.handleDeleteReport[1]",
-      "kind": "secondary-action", "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx", "owner": "WorkHubClient", "handler": "handleDeleteReport", "writeSinks": ["reportService.deleteReport"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/admin/work-hub/WorkHubClient.tsx#WorkHubClient.handleDeleteSchedule[1]",
-      "kind": "secondary-action", "file": "frontend/src/app/admin/work-hub/WorkHubClient.tsx", "owner": "WorkHubClient", "handler": "handleDeleteSchedule", "writeSinks": ["deleteDeptSchedule"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/admin/work-hub/__tests__/WorkHubClient.schedule-error.test.tsx"]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx#CommunityDetailHubClient.handleJoin[1]",
-      "kind": "secondary-action", "file": "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx", "owner": "CommunityDetailHubClient", "handler": "handleJoin", "writeSinks": ["communityUserService.joinCommunity","joinMutation.mutateAsync"], "classification": "mutation", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.pending.test.tsx"]
-    },
-    {
-      "key": "secondary-action:frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx#DeptJobDetailClient.handleDelete[1]",
-      "kind": "secondary-action", "file": "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx", "owner": "DeptJobDetailClient", "handler": "handleDelete", "writeSinks": ["deleteMutation.mutateAsync","deptJobUserService.deleteDeptJob"], "classification": "destructive", "status": "compliant", "validationMode": "action-only-no-editable-payload", "schemaSource": "not-applicable:no-editable-payload", "errorNavigation": "not-applicable-action-only", "serverErrors": "action-error-feedback-preserves-state", "pendingGuard": "action-pending-lock-and-disabled", "testEvidence": ["frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.validation.test.tsx"]
     }
   ],
   "exceptions": [
-    {"id":"FORM-DISABLED-NETWORK-COMPOSITION","candidateKey":"formless-write:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient","reason":"Backend network create/update is explicitly 501 Not Implemented and every entry control is compile-time disabled.","owner":"backend-foundation","expiresAt":"2026-12-31","disabledBy":"WRITE_NOT_IMPLEMENTED"},
-    {"id":"FORM-DISABLED-NETWORK-DELETE","candidateKey":"secondary-action:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient.handleDelete[1]","reason":"Backend network delete is explicitly 501 Not Implemented and the exact action control is compile-time disabled.","owner":"backend-foundation","expiresAt":"2026-12-31","disabledBy":"WRITE_NOT_IMPLEMENTED"}
+    {
+      "id": "FORM-DISABLED-NETWORK-COMPOSITION",
+      "candidateKey": "formless-write:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient",
+      "reason": "Backend network create/update is explicitly 501 Not Implemented and every entry control is compile-time disabled.",
+      "owner": "backend-foundation",
+      "expiresAt": "2026-12-31",
+      "disabledBy": "WRITE_NOT_IMPLEMENTED"
+    },
+    {
+      "id": "FORM-DISABLED-NETWORK-DELETE",
+      "candidateKey": "secondary-action:frontend/src/app/admin/system/network/NetworkAdminClient.tsx#NetworkAdminClient.handleDelete[1]",
+      "reason": "Backend network delete is explicitly 501 Not Implemented and the exact action control is compile-time disabled.",
+      "owner": "backend-foundation",
+      "expiresAt": "2026-12-31",
+      "disabledBy": "WRITE_NOT_IMPLEMENTED"
+    }
   ]
 }

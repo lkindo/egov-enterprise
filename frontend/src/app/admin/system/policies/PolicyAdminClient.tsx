@@ -205,7 +205,7 @@ export default function PolicyAdminClient() {
  if (!form.formState.isSubmitting) setIsEditModalOpen(open);
  }}
  >
- <DialogContent className="max-w-5xl rounded-lg overflow-hidden border-none shadow-2xl p-0">
+ <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto rounded-lg border-none shadow-2xl p-0">
  <div className="bg-surface-inverse p-8 text-surface-inverse-foreground flex items-center justify-between">
  <DialogHeader>
  <DialogTitle className="text-2xl font-bold flex items-center gap-3">

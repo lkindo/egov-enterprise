@@ -1,6 +1,7 @@
 package nuri.business.service.auth;
 
 import nuri.business.domain.auth.RoleInfo;
+import nuri.business.domain.auth.RoleInfoProjection;
 import nuri.business.domain.auth.RoleInfoRepository;
 import nuri.business.service.auth.dto.RoleManageDto;
 import nuri.business.domain.common.BaseSearchDto;
@@ -43,21 +44,22 @@ class RoleManageServiceTest {
         searchVO.setPageIndex(1);
         searchVO.setPageUnit(10);
         
-        RoleInfo roleInfo = RoleInfo.builder()
+        RoleInfoProjection projection = RoleInfoProjection.builder()
                 .roleId("ROLE_USER")
                 .roleNm("User Role")
                 .build();
-        Page<RoleInfo> page = new PageImpl<>(Collections.singletonList(roleInfo));
-        
-        when(roleInfoRepository.findAll(any(Pageable.class))).thenReturn(page);
+        Page<RoleInfoProjection> page = new PageImpl<>(Collections.singletonList(projection));
+
+        when(roleInfoRepository.selectRoleList(any(), any(Pageable.class))).thenReturn(page);
 
         // When
-        List<RoleManageDto> result = roleManageService.selectRoleList(searchVO);
+        Page<RoleManageDto> result = roleManageService.selectRoleList(searchVO);
 
-        // Then
-        assertThat(result).hasSize(1);
-        assertThat(result.get(0).getRoleId()).isEqualTo("ROLE_USER");
-        verify(roleInfoRepository).findAll(any(Pageable.class));
+        // Then — 내용과 총건수가 같은 질의에서 나온다. 검색을 무시하던 findAll 로 되돌아가면 red 다.
+        assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getRoleId()).isEqualTo("ROLE_USER");
+        verify(roleInfoRepository).selectRoleList(any(), any(Pageable.class));
+        verify(roleInfoRepository, never()).findAll(any(Pageable.class));
     }
 
     @Test
@@ -179,13 +181,13 @@ class RoleManageServiceTest {
         searchVO.setPageIndex(1);
         searchVO.setPageUnit(0);
         
-        RoleInfo roleInfo = RoleInfo.builder().roleId("ROLE_USER").build();
-        Page<RoleInfo> page = new PageImpl<>(Collections.singletonList(roleInfo));
-        
-        when(roleInfoRepository.findAll(any(Pageable.class))).thenReturn(page);
-        
-        List<RoleManageDto> result = roleManageService.selectRoleList(searchVO);
-        assertThat(result).hasSize(1);
+        RoleInfoProjection projection = RoleInfoProjection.builder().roleId("ROLE_USER").build();
+        Page<RoleInfoProjection> page = new PageImpl<>(Collections.singletonList(projection));
+
+        when(roleInfoRepository.selectRoleList(any(), any(Pageable.class))).thenReturn(page);
+
+        Page<RoleManageDto> result = roleManageService.selectRoleList(searchVO);
+        assertThat(result.getContent()).hasSize(1);
     }
 
     @Test
@@ -244,24 +246,34 @@ class RoleManageServiceTest {
         BaseSearchDto vo = new BaseSearchDto();
         vo.setPageIndex(3);
         vo.setPageUnit(0);
-        given(roleInfoRepository.findAll(any(org.springframework.data.domain.Pageable.class)))
+        given(roleInfoRepository.selectRoleList(any(), any(org.springframework.data.domain.Pageable.class)))
                 .willReturn(new org.springframework.data.domain.PageImpl<>(java.util.List.of()));
 
+        vo.setSearchKeyword("관리자");
         roleManageService.selectRoleList(vo);
 
         org.mockito.ArgumentCaptor<org.springframework.data.domain.Pageable> captor =
                 org.mockito.ArgumentCaptor.forClass(org.springframework.data.domain.Pageable.class);
-        verify(roleInfoRepository).findAll(captor.capture());
+        org.mockito.ArgumentCaptor<String> keyword = org.mockito.ArgumentCaptor.forClass(String.class);
+        verify(roleInfoRepository).selectRoleList(keyword.capture(), captor.capture());
         assertEquals(2, captor.getValue().getPageNumber(), "1-based 3페이지는 0-based 2");
         assertEquals(10, captor.getValue().getPageSize(), "pageUnit 0 이면 기본 10");
+        // 검색어를 저장소로 전달하지 않으면 화면에서 검색이 통째로 무시된다.
+        assertEquals("관리자", keyword.getValue());
     }
 
     @Test
-    @DisplayName("총건수는 저장소 count 를 그대로 돌려준다")
-    void totalCountReflectsRepositoryCount() {
-        given(roleInfoRepository.count()).willReturn(5L);
+    @DisplayName("총건수는 목록과 같은 질의에서 나온다 — 조건 없는 count 로 되돌아가면 어긋난다")
+    void totalCountComesFromTheSameQuery() {
+        given(roleInfoRepository.selectRoleList(any(), any(org.springframework.data.domain.Pageable.class)))
+                .willReturn(new org.springframework.data.domain.PageImpl<>(
+                        java.util.List.of(RoleInfoProjection.builder().roleId("ROLE_USER").build()),
+                        org.springframework.data.domain.PageRequest.of(0, 10), 42));
 
-        // `replaced int return with 0` 뮤턴트가 여기서 죽는다.
-        assertEquals(5, roleManageService.selectRoleListTotCnt(new BaseSearchDto()));
+        BaseSearchDto vo = new BaseSearchDto();
+        vo.setSearchKeyword("관리자");
+
+        assertEquals(42, roleManageService.selectRoleList(vo).getTotalElements());
+        verify(roleInfoRepository, never()).count();
     }
 }

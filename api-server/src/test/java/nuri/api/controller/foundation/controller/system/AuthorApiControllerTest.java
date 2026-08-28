@@ -36,14 +36,20 @@ class AuthorApiControllerTest extends BaseControllerTest {
     @DisplayName("권한 그룹 목록 조회 성공")
     void testGetAuthors() throws Exception {
         // Given
-        when(authorManageService.selectAuthorList(any())).thenReturn(Collections.emptyList());
-        when(authorManageService.selectAuthorListTotCnt(any())).thenReturn(0);
+        // 총건수는 목록과 같은 Page 에서 나온다. 검색을 무시하던 별도 count() 경로는 제거됐다.
+        // ⚠ PageImpl 은 offset+pageSize > total 이면 total 을 content 기준으로 재계산하므로
+        //   총건수를 페이지 크기보다 크게 잡아야 이 단언이 의미를 갖는다.
+        when(authorManageService.selectAuthorList(any())).thenReturn(
+                new org.springframework.data.domain.PageImpl<>(
+                        java.util.List.of(new AuthorManageDto()),
+                        org.springframework.data.domain.PageRequest.of(0, 10), 42));
 
         // When & Then
         mockMvc.perform(get("/api/v1/admin/system/authorities")
                 .param("pageIndex", "1"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.success").value(true));
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data.total").value(42));
     }
 
     @Test

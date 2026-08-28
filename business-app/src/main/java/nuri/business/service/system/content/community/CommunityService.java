@@ -127,12 +127,17 @@ public class CommunityService {
 
         CommunityUserId id = new CommunityUserId(cmntySn, userId);
         if (communityUserRepository.existsById(id)) {
-            throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 가입했거나 가입 요청이 처리 중입니다.");
+            // [2026-08-28] '처리 중입니다' 를 걷어냈다 — 아무도 처리하지 않는다.
+            //   아래 mbrSttsCd='A'(Requested) 는 저장소 어디에서도 읽히거나 다른 상태로
+            //   옮겨지지 않는다(승인 엔드포인트·화면 부재). 진행 중인 절차가 있는 것처럼
+            //   말하면 사용자는 기다리다 다시 눌러 같은 409 를 받는다.
+            throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 가입했거나 가입을 신청한 상태입니다.");
         }
 
         CommunityUser communityUser = CommunityUser.builder()
                 .id(id)
-                .mbrSttsCd("A") // A: Requested
+                // A: Requested. ⚠ 이 값을 읽거나 전이시키는 코드가 아직 없다 — 승인 절차 미구현.
+                .mbrSttsCd("A")
                 .mngrYn("N")
                 .joinYmd(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd")))
                 .useYn("Y")

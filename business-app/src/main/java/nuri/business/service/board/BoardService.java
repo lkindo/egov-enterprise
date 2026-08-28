@@ -112,21 +112,20 @@ public class BoardService extends BaseAbstractService {
                 condition.setQnaCatCd(qnaCategory);
                 bindCurrentViewerVisibility(condition);
 
-                if (StringUtils.hasText(startDate)) {
-                        try {
-                                condition.setStartDate(java.time.LocalDate.parse(startDate).atStartOfDay());
-                        } catch (Exception e) {
-                                log.warn("Failed to parse startDate: {}", startDate);
-                        }
-                }
-
-                if (StringUtils.hasText(endDate)) {
-                        try {
-                                condition.setEndDate(java.time.LocalDate.parse(endDate).atTime(java.time.LocalTime.MAX));
-                        } catch (Exception e) {
-                                log.warn("Failed to parse endDate: {}", endDate);
-                        }
-                }
+                /*
+                 * [2026-08-28] 파싱 실패를 **삼키지 않는다.**
+                 *
+                 * 종전에는 log.warn 한 줄만 남기고 condition 에 아무것도 넣지 않았다. 그래서
+                 * 형식이 어긋난 기간 조건은 화면에 아무 신호 없이 사라졌고 — 실제로 화면이
+                 * ISO 문자열(`toISOString()`)을 보내고 있었으므로 **기간 필터가 늘 무동작이었다** —
+                 * 사용자는 기간을 골라도 목록이 그대로인 것을 보며 "해당 기간에 글이 이만큼
+                 * 있구나" 로 잘못 읽었다.
+                 *
+                 * 조건을 못 읽으면 조용히 넓은 결과를 주는 것보다 거절하는 편이 안전하다.
+                 */
+                condition.setStartDate(parseFilterDate(startDate, "startDate", java.time.LocalDate::atStartOfDay));
+                condition.setEndDate(parseFilterDate(endDate, "endDate",
+                                date -> date.atTime(java.time.LocalTime.MAX)));
 
                 condition.validateDates();
 
@@ -395,6 +394,23 @@ public class BoardService extends BaseAbstractService {
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
         }
 
+        /**
+         * 목록 기간 필터의 날짜 한쪽을 읽는다. 값이 없으면 {@code null}(조건 없음)이고,
+         * 형식이 어긋나면 400 으로 거절한다 — 조용히 무시하면 필터가 걸린 척하는 목록이 된다.
+         */
+        private java.time.LocalDateTime parseFilterDate(String raw, String field,
+                        java.util.function.Function<java.time.LocalDate, java.time.LocalDateTime> toDateTime) {
+                if (!StringUtils.hasText(raw)) {
+                        return null;
+                }
+                try {
+                        return toDateTime.apply(java.time.LocalDate.parse(raw));
+                } catch (java.time.format.DateTimeParseException e) {
+                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                        field + " 는 yyyy-MM-dd 형식이어야 합니다: " + raw);
+                }
+        }
+
         @Transactional
         public void updatePost(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request) {
                 Board board = boardRepository
@@ -411,14 +427,33 @@ public class BoardService extends BaseAbstractService {
                 //   해석하고 그보다 긴 문자열은 LocalDateTime 으로 처리한다.
                 java.time.LocalDateTime eventDate = parseDateTime(request.evntDt());
 
+                /*
+                 * [2026-08-28] **부분 갱신 의미로 통일한다.**
+                 *
+                 * 종전에는 같은 호출 안에서 두 규칙이 섞여 있었다 — pswd·qnaSttsCd 는 "안 보내면
+                 * 기존 값 유지", 나머지는 "안 보내면 null 로 덮어쓰기". Board.update 는 널 가드가
+                 * 없어 전달값을 그대로 대입하므로, 요청에 없던 값이 **조용히 지워졌다**.
+                 *
+                 * 수정 화면은 제목·본문 위주의 폼이라 게시 기간·행사 일자·Q&A 분류를 싣지 않는다.
+                 * 그래서 일정 게시판 글의 제목 오타 하나를 고치면 evntDt 가 사라져 그 글이
+                 * 캘린더에서 없어졌다. 저장은 성공하고 화면도 정상으로 보이므로 아무도 눈치채지
+                 * 못한다 — 조용한 데이터 손실이다.
+                 *
+                 * 프런트는 빈 문자열을 undefined 로 정규화해 보내므로(boardActions.ts) '값을
+                 * 비우겠다'는 의도가 null 로 표현되지 않는다. 즉 null=미전송 으로 읽어도 안전하다.
+                 * 값을 비우는 경로가 필요해지면 그때 명시적 clear 플래그를 설계한다.
+                 */
                 board.update(request.pstTtl(), request.pstCn(),
                                 board.getUserId(),   // 저자(userId/userNm)는 불변 — request 로 재지정 금지(정체성 위조 방지)
                                 board.getUserNm(),
                                 request.pswd() != null ? request.pswd() : board.getPswd(),
-                                normalizeYmd(request.pstBgngYmd()), normalizeYmd(request.pstEndYmd()),
-                                request.atchFileSn(), eventDate,
+                                request.pstBgngYmd() != null ? normalizeYmd(request.pstBgngYmd()) : board.getPstBgngYmd(),
+                                request.pstEndYmd() != null ? normalizeYmd(request.pstEndYmd()) : board.getPstEndYmd(),
+                                request.atchFileSn() != null ? request.atchFileSn() : board.getAtchFileSn(),
+                                eventDate != null ? eventDate : board.getEvntDt(),
                                 request.qnaSttsCd() != null ? request.qnaSttsCd() : board.getQnaSttsCd(),
-                                request.qnaCatCd(), request.scrtYn());
+                                request.qnaCatCd() != null ? request.qnaCatCd() : board.getQnaCatCd(),
+                                request.scrtYn() != null ? request.scrtYn() : board.getScrtYn());
         }
 
         @Transactional

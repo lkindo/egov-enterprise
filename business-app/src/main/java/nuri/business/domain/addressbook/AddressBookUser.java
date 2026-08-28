@@ -81,4 +81,23 @@ public class AddressBookUser extends BaseEntity {
                 homeTelno, mblTelno, ofcTelno, faxNo);
     }
 
+    /**
+     * 구성원 연락 정보 갱신.
+     *
+     * <p>[2026-08-28] 종전에는 갱신 경로가 없었다. {@code AddressBookService.updateAddressBook} 이
+     * 같은 {@code userId} 를 만나면 <b>조용히 건너뛰어</b>, 이메일·연락처를 바꿔 보내도 아무 일이
+     * 일어나지 않았다(요청은 200 이라 화면은 저장된 줄 안다).
+     *
+     * <p>{@code userId} 는 소속 판정 키라 여기서 바꾸지 않는다 — 바꾸려면 제거 후 추가다.
+     */
+    public void updateContact(String nm, String emlAddr, String homeTelno, String mblTelno,
+                              String ofcTelno, String faxNo) {
+        this.nm = nm;
+        this.emlAddr = emlAddr;
+        this.homeTelno = homeTelno;
+        this.mblTelno = mblTelno;
+        this.ofcTelno = ofcTelno;
+        this.faxNo = faxNo;
+    }
+
 }

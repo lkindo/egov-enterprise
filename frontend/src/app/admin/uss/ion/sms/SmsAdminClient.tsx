@@ -13,7 +13,8 @@ import { Send,
   RefreshCcw,
   Plus,
   Phone,
-  Calendar } from 'lucide-react';
+  Calendar,
+  AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -129,7 +130,14 @@ export default function SmsAdminClient({
         sndngCn: values.sndngCn,
         recipients: [{ rcptnTelno: values.rcptnTelno }],
       });
-      toast('문자 메시지를 발송했습니다.', 'success');
+      /*
+       * 종전 문구 '문자 메시지를 발송했습니다.' 는 사실이 아니었다. 이 응답은 **접수**일 뿐이고
+       * 실제 전달은 SmsAsyncProcessor 가 비동기로 수행한다. 게다가 SmsSender 구현체는
+       * LoggingSmsSender(!prod)·UnavailableSmsSender(prod) 둘뿐이고 **둘 다 항상 false 를
+       * 반환**해, 재시도 3회를 소진한 뒤 전 수신자가 rsltCd='F' 로 확정된다. 즉 초록 토스트를
+       * 보고 문자가 나갔다고 믿은 관리자가 실제로는 한 통도 못 보낸 상태였다.
+       */
+      toast('발송 요청을 접수했습니다. 전달 결과는 목록의 ‘수신자 결과’에서 확인하세요.', 'info');
       setIsSendOpen(false);
       form.reset();
       refetch();
@@ -147,6 +155,26 @@ export default function SmsAdminClient({
     form.reset();
     setIsSendOpen(true);
   };
+
+  /**
+   * 수신자별 전달 결과. 발송 이력 목록에는 rsltCd 가 없어(수신자 테이블에만 있다) 결과를
+   * 판정할 수 없다 — 그래서 종전의 '상태' 열이 전 행을 '전송완료'로 칠했고 지금은 제거돼 있다.
+   * 대신 이미 존재하던 GET /{smsTrsmSn}/recipients 를 화면에 연결해 실제 결과를 드러낸다.
+   */
+  const [recipientTarget, setRecipientTarget] = useState<SmsDto | null>(null);
+  const {
+    data: recipientRows,
+    isFetching: recipientsLoading,
+    error: recipientsError,
+    refetch: refetchRecipients,
+  } = useQuery({
+    queryKey: ['sms-recipients', recipientTarget?.smsTrsmSn],
+    enabled: recipientTarget?.smsTrsmSn != null,
+    queryFn: () => smsAdminService.getSmsRecipients(recipientTarget!.smsTrsmSn as number),
+  });
+
+  /** 이 엔드포인트는 배열을 그대로 돌려준다. 형태가 달라져도 화면 전체가 죽지 않게 좁힌다. */
+  const recipientList = Array.isArray(recipientRows) ? recipientRows : [];
 
   const handleSendOpenChange = (open: boolean) => {
     if (!open && sendPendingRef.current) return;
@@ -188,10 +216,34 @@ export default function SmsAdminClient({
           {item.sndngCn || '-'}
         </div>
       )
-    }
+    },
     // 종전의 '상태' 열은 데이터와 무관하게 전 행을 '전송완료'로 칠했다.
     // 실제 결과 코드(rsltCd)는 수신자별 상세(/recipients)에만 있어 목록에서는 판정할 수 없다 → 열을 제거했다(감사 P1-5).
+    // 대신 그 상세를 여는 경로를 붙인다 — 결과를 볼 방법이 아예 없으면 '접수했다'는 안내도 확인할 수 없다.
+    {
+      header: '전달 결과',
+      className: 'w-36',
+      accessor: (item: SmsDto) => (
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setRecipientTarget(item)}
+          disabled={item.smsTrsmSn == null}
+        >
+          수신자 결과
+        </Button>
+      )
+    }
   ];
+
+  /** 서버 결과 코드(SmsService 'P' 초기값, SmsAsyncProcessor 'S'/'F')를 사용자 어휘로 옮긴다. */
+  const describeResult = (rsltCd?: string | null): { label: string; tone: string } => {
+    if (rsltCd === 'S') return { label: '전달 완료', tone: 'text-success-emphasis' };
+    if (rsltCd === 'F') return { label: '전달 실패', tone: 'text-destructive-emphasis' };
+    if (rsltCd === 'P') return { label: '대기 중', tone: 'text-muted-foreground' };
+    return { label: rsltCd || '알 수 없음', tone: 'text-muted-foreground' };
+  };
 
   return (
     <WorkListPage
@@ -229,6 +281,31 @@ export default function SmsAdminClient({
           </div>
         }
       >
+        {/*
+          [2026-08-28] 게이트웨이 미연동을 **보내기 전에** 고지한다.
+
+          전송 구현체는 두 프로필 모두 무조건 실패를 돌려준다 —
+          LoggingSmsSender(@Profile("!prod"))·UnavailableSmsSender(@Profile("prod")) 가
+          각각 return false 다. 즉 이 화면에서 누르는 발송은 **100% 실패가 확정**돼 있다.
+          그런데 화면은 아무 사전 고지 없이 작성·발송을 유도했고, 관리자는 인증 문자를 다 쓴
+          뒤에야 결과를 뒤져 실패를 알게 됐다.
+
+          이 문구는 위 두 구현체와 양방향으로 결속돼 있다(sms-gateway-disclosure 계약) —
+          실제 게이트웨이 sender 가 생기면 계약이 red 가 되어 이 배너를 걷어내게 한다.
+        */}
+        <div
+          role="status"
+          className="mb-6 flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4"
+        >
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning-emphasis" aria-hidden="true" />
+          <div className="text-xs font-bold leading-relaxed text-foreground space-y-1">
+            <p>문자 게이트웨이가 연동되어 있지 않아 지금은 문자가 실제로 발송되지 않습니다.</p>
+            <p className="font-normal">
+              발송을 누르면 요청은 이력에 남지만 전달 결과는 ‘실패’로 기록됩니다. 아래 목록의 ‘수신자 결과’에서 확인할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
         <StandardDataTable<SmsDto>
           accessibleLabel="문자 발송 이력"
           columns={columns}
@@ -249,7 +326,7 @@ export default function SmsAdminClient({
 
       {/* Send Message Composition Dialog */}
       <Dialog open={isSendOpen} onOpenChange={handleSendOpenChange}>
-        <DialogContent className="sm:max-w-[550px] rounded-lg p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl overflow-hidden relative">
+        <DialogContent className="sm:max-w-[550px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-[0_40px_100px_-20px_rgba(0,0,0,0.5)] bg-card/95 backdrop-blur-3xl relative">
           <Form {...form}>
             <form
               noValidate
@@ -350,6 +427,74 @@ export default function SmsAdminClient({
           </Form>
         </DialogContent>
       </Dialog>
+
+      {/* 수신자별 전달 결과 — 발송 이력 목록에는 rsltCd 가 없어 여기서만 실제 결과를 볼 수 있다. */}
+      {recipientTarget !== null && (
+      <Dialog open onOpenChange={(open) => { if (!open) setRecipientTarget(null); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>수신자 전달 결과</DialogTitle>
+            <DialogDescription>
+              발송 요청은 접수 즉시 응답하고 전달은 비동기로 이뤄집니다. 아래가 수신자별 실제 결과입니다.
+            </DialogDescription>
+          </DialogHeader>
+
+          {recipientsError ? (
+            <div className="space-y-3 py-4">
+              <p className="text-sm font-medium text-destructive-emphasis">수신자 결과를 불러오지 못했습니다.</p>
+              <Button type="button" variant="outline" size="sm" onClick={() => void refetchRecipients()}>
+                다시 시도
+              </Button>
+            </div>
+          ) : recipientsLoading ? (
+            <p className="py-6 text-sm text-muted-foreground">불러오는 중…</p>
+          ) : recipientList.length === 0 ? (
+            <p className="py-6 text-sm text-muted-foreground">이 발송에 기록된 수신자가 없습니다.</p>
+          ) : (
+            <ul className="divide-y divide-border py-2">
+              {recipientList.map((recipient) => {
+                const result = describeResult(recipient.rsltCd);
+                return (
+                  <li key={recipient.rcptnTelno} className="flex items-start justify-between gap-4 py-3">
+                    <span className="font-mono text-sm font-bold text-foreground">{recipient.rcptnTelno}</span>
+                    <span className="text-right">
+                      <span className={cn('block text-sm font-bold', result.tone)}>{result.label}</span>
+                      {recipient.rsltMsg && (
+                        <span className="block text-xs text-muted-foreground">{recipient.rsltMsg}</span>
+                      )}
+                    </span>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          <DialogFooter>
+            {/*
+              [2026-08-28] 성공 경로에도 새로고침을 둔다.
+
+              전달은 비동기다(SmsAsyncProcessor 가 재시도 3회 뒤 결과를 쓴다). 그런데 전역
+              staleTime 이 60초·refetchOnWindowFocus 가 false 라, 발송 직후 이 창을 열면
+              '대기 중'이 뜨고 **그 뒤 60초 동안은 닫았다 다시 열어도 재조회되지 않는다** —
+              토스트가 시키는 대로 결과를 보러 와도 실제 '전달 실패'를 볼 수 없었다.
+              종전에는 '다시 시도' 가 오류 분기 전용이라 이 경로에 새로고침이 아예 없었다.
+            */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void refetchRecipients()}
+              disabled={recipientsLoading}
+              aria-busy={recipientsLoading || undefined}
+              className="gap-2"
+            >
+              <RefreshCcw size={16} className={cn(recipientsLoading && 'animate-spin')} aria-hidden="true" />
+              결과 새로고침
+            </Button>
+            <Button type="button" variant="outline" onClick={() => setRecipientTarget(null)}>닫기</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      )}
     </WorkListPage>
   );
 }

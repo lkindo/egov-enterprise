@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "fafea4baee2a5f6ecd53470ef7471a36f0bbc24c79b172734502c54812f7a5ca"
+    "inventoryHash": "62d02ee8f2f8c13b70500f723cbf3eed4bc2c82722654d90a10ebed13b18410d"
   },
   "summary": {
-    "sourceFileCount": 504,
-    "records": 529,
-    "syntaxOccurrences": 599,
-    "ambiguousRecords": 510,
-    "unverifiedRecords": 529,
+    "sourceFileCount": 505,
+    "records": 537,
+    "syntaxOccurrences": 612,
+    "ambiguousRecords": 518,
+    "unverifiedRecords": 537,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -40,18 +40,18 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 45,
-      "navigation-producer": 154,
+      "form-producer": 47,
+      "navigation-producer": 155,
       "page-redirect": 5,
-      "query-builder": 21,
-      "query-consumer": 58,
-      "query-producer": 55,
-      "request-query-producer": 159,
+      "query-builder": 22,
+      "query-consumer": 59,
+      "query-producer": 57,
+      "request-query-producer": 160,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 363,
-      "request-telemetry": 166
+      "navigation": 370,
+      "request-telemetry": 167
     }
   },
   "requiredNegativeCases": [
@@ -840,7 +840,7 @@
       }
     },
     {
-      "id": "URL-FE53BBFED20E4E",
+      "id": "URL-ADED99BE2B255B",
       "surface": "navigation",
       "kind": "config-redirect",
       "operation": "temporary-redirect",
@@ -848,7 +848,7 @@
       "producerFile": "frontend/next.config.ts",
       "consumerFile": "frontend/next.config.ts",
       "routePattern": "/admin/user/login-policy",
-      "targetCandidate": "/admin/system/monitoring/hub?tab=policy",
+      "targetCandidate": "/admin/user/indvdl-info-policy",
       "stateItems": [
         {
           "name": "<source-query>",
@@ -859,14 +859,6 @@
           "riskSignals": [
             "computed-or-aggregate-state"
           ]
-        },
-        {
-          "name": "tab",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
         }
       ],
       "currentBehavior": "Next config redirect can merge source query names into the destination; no sanitizer is approved by this census.",
@@ -879,7 +871,7 @@
       "ambiguityReasons": [],
       "resolutionStatus": "identified",
       "canonical": {
-        "routeCandidate": "/admin/system/monitoring/hub",
+        "routeCandidate": "/admin/user/indvdl-info-policy",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -5135,6 +5127,62 @@
       }
     },
     {
+      "id": "URL-367E46124D0568",
+      "surface": "request-telemetry",
+      "kind": "request-query-producer",
+      "operation": "client.get",
+      "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListServer.ts",
+      "producerFile": "frontend/src/app/admin/community/boards/select-board-list/BoardListServer.ts",
+      "consumerFile": null,
+      "routePattern": "/admin/community/boards/select-board-list",
+      "targetCandidate": "/admin/system/board-masters",
+      "stateItems": [
+        {
+          "name": "pageIndex",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        },
+        {
+          "name": "pageUnit",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "GET request carries a computed query configuration whose field semantics require domain review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-request-query",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/board-masters",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/select-board-list/BoardListServer.ts",
+        "detector": "http-client-get-request",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-74C155691EA87D",
       "surface": "request-telemetry",
       "kind": "request-query-producer",
@@ -7248,6 +7296,45 @@
       }
     },
     {
+      "id": "URL-74F49662D92C7C",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "implicit-or-computed-method",
+      "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
+      "producerFile": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/operation/memo-reports",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "form-method-or-interception-unresolved",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 2
+      }
+    },
+    {
       "id": "URL-8541C1A247A9FA",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -8433,7 +8520,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/survey/components/SurveyQuestionsPanel.tsx",
         "detector": "jsx-form",
-        "occurrenceCount": 2
+        "occurrenceCount": 3
       }
     },
     {
@@ -8847,7 +8934,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/survey/manage/[id]/SurveyManageDetailClient.tsx",
         "detector": "router-navigation",
-        "occurrenceCount": 2
+        "occurrenceCount": 3
       }
     },
     {
@@ -10031,7 +10118,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/common-code/CommonCodeClient.tsx",
         "detector": "jsx-form",
-        "occurrenceCount": 1
+        "occurrenceCount": 3
       }
     },
     {
@@ -10365,6 +10452,239 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
         "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-FAD5BDB69EE8A6",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.replace",
+      "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/hpcm",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+        "detector": "router-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-8D5C8E1694B5AA",
+      "surface": "navigation",
+      "kind": "query-builder",
+      "operation": "copy-existing-query",
+      "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "consumerFile": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "routePattern": "/admin/system/hpcm",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "<unknown-source-query>",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "computed-or-aggregate-state"
+          ]
+        }
+      ],
+      "currentBehavior": "Existing URL search parameters are copied before mutation, so unknown, repeated, and encoded names can survive.",
+      "riskSignals": [
+        "encoded-query-passthrough",
+        "repeated-query-passthrough",
+        "unknown-query-passthrough"
+      ],
+      "ambiguityReasons": [
+        "unknown-source-query-copied"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+        "detector": "url-search-params-constructor",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-3C31375125592B",
+      "surface": "navigation",
+      "kind": "query-consumer",
+      "operation": "get",
+      "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "producerFile": null,
+      "consumerFile": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "routePattern": "/admin/system/hpcm",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "page",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameter is consumed with get().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-E5EAB120A588D1",
+      "surface": "navigation",
+      "kind": "query-producer",
+      "operation": "delete",
+      "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/hpcm",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "page",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameter is mutated with delete().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-42EE4D074E1A4A",
+      "surface": "navigation",
+      "kind": "query-producer",
+      "operation": "set",
+      "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/hpcm",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "page",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameter is mutated with set().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+        "detector": "url-search-param-method",
         "occurrenceCount": 1
       }
     },
@@ -14293,6 +14613,45 @@
       }
     },
     {
+      "id": "URL-6FCAD925E5B4DA",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "implicit-or-computed-method",
+      "source": "frontend/src/app/help/HelpClient.tsx",
+      "producerFile": "frontend/src/app/help/HelpClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/help",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "form-method-or-interception-unresolved",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/help/HelpClient.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-F00143A254693C",
       "surface": "navigation",
       "kind": "dynamic-segment",
@@ -18120,7 +18479,7 @@
       }
     },
     {
-      "id": "URL-554268DC800E31",
+      "id": "URL-F93BC8A370A88F",
       "surface": "request-telemetry",
       "kind": "request-query-producer",
       "operation": "client.get",
@@ -18139,6 +18498,14 @@
           "riskSignals": [
             "computed-or-aggregate-state"
           ]
+        },
+        {
+          "name": "searchCnd",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
         }
       ],
       "currentBehavior": "GET request carries a computed query configuration whose field semantics require domain review.",

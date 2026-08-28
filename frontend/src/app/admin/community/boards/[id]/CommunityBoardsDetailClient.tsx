@@ -12,7 +12,8 @@ import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useAutoSave } from '@/lib/hooks/use-auto-save';
 import { Send, X, AlertCircle } from 'lucide-react';
-import { FREE_BOARD_ID, NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
+import { NOTICE_BOARD_ID } from '@/config/board-ids';
+import { useBoardOptions } from '@/hooks/api/use-board-options';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -46,6 +47,7 @@ export default function CommunityBoardsDetailClient() {
     const confirm = useConfirm();
     const [isSaving, setIsSaving] = useState(false);
     const savePendingRef = useRef(false);
+    const { options: boardOptions } = useBoardOptions();
 
     const [formData, setFormData] = useState({
         bbsId: NOTICE_BOARD_ID,
@@ -192,9 +194,14 @@ export default function CommunityBoardsDetailClient() {
                                 required
                                 className="w-full h-12 px-4 rounded-lg border bg-card text-sm font-bold outline-none focus:ring-2 focus:ring-primary/20 shadow-sm"
                             >
-                                <option value={NOTICE_BOARD_ID}>공지사항</option>
-                                <option value={FREE_BOARD_ID}>자유게시판</option>
-                                <option value={TASK_BOARD_ID}>업무게시판</option>
+                                {/* 선택지는 게시판 마스터에서 채운다 — 하드코딩 목록에는 시드에 없는 게시판이 있어
+                                    고르는 순간 등록이 거부됐다. 현재 값이 목록 밖이면 선택이 풀리지 않게 남긴다. */}
+                                {!boardOptions.some((option) => option.value === formData.bbsId) && (
+                                    <option value={formData.bbsId}>{formData.bbsId}</option>
+                                )}
+                                {boardOptions.map((option) => (
+                                    <option key={option.value} value={option.value}>{option.label}</option>
+                                ))}
                             </select>
                         </FormField>
 

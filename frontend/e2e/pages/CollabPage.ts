@@ -83,12 +83,22 @@ export class CollabPage {
         
         // soft-nav 전환 중 이전/이후 라우트 DOM이 잠깐 공존해 testid가 2개로 잡히므로 first()로 방어
         const nameInput = this.page.getByTestId('identity-name-input').first();
+        /*
+          [2026-08-28] 구성원 성명은 **주소록 명칭과 별개 필수 입력**이다.
+          종전에는 서버가 주소록 명칭을 구성원 성명으로 복제 저장했고(연락처 주인이 주소록
+          이름으로 저장되는 결함), 그것을 고치면서 별도 입력이 생겼다. 이 흐름이 그 필드를
+          채우지 않으면 등록이 검증에서 막힌다.
+        */
+        const memberNameInput = this.page.getByTestId('identity-member-name-input').first();
         const emailInput = this.page.getByTestId('identity-email-input').first();
         const telInput = this.page.getByTestId('identity-tel-input').first();
         await expect(nameInput).toBeVisible();
         
         await nameInput.click();
         await nameInput.fill(name);
+
+        await memberNameInput.click();
+        await memberNameInput.fill(name);
         
         await emailInput.click();
         await emailInput.fill(email);

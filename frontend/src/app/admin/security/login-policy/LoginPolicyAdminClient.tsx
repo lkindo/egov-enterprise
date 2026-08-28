@@ -294,7 +294,7 @@ export default function LoginPolicyAdminClient() {
           if (!form.formState.isSubmitting) setIsEditModalOpen(open);
         }}
       >
-        <DialogContent className="max-w-2xl rounded-lg overflow-hidden border-none shadow-2xl p-0">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-lg border-none shadow-2xl p-0">
           <div className="bg-surface-inverse p-8 text-surface-inverse-foreground flex items-center justify-between">
             <div className="space-y-1">
               <DialogHeader>

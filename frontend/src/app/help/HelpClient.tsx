@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
-import { helpUserService, FAQ, QNA } from '@/services/business/user/help/HelpUserService';
+import { helpUserService, isQnaSolved, FAQ, QNA } from '@/services/business/user/help/HelpUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { HelpCircle, MessageCircle, ChevronDown, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -13,11 +14,54 @@ import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmptyStateDisplay } from '@/app/components/ui/status-displays';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
+import { z } from 'zod';
+import { BoardSaveRequestSchema } from '@/types/generated-zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormErrorSummary,
+} from '@/components/ui/form';
+
+const StandardModal = dynamic(
+  () => import('@/app/components/ui/standard-modal').then((mod) => mod.StandardModal),
+  { ssr: false },
+);
 
 type FaqDetailState =
   | { status: 'loading' }
   | { status: 'error' }
   | { status: 'success'; answer: string };
+
+/**
+ * 문의 등록 스키마.
+ *
+ * Q&A 는 통합 게시판(BBS) 위에 올라가므로 길이 상한의 SSOT 는 `BoardSaveRequest` 다.
+ * 상한을 직접 적으면 서버가 바뀔 때 화면만 낡아, 사용자는 다 쓴 뒤 서버 오류로 되돌아온다.
+ * 그래서 값은 생성 스키마에서 읽고 문구만 화면이 정한다.
+ *
+ * 생성 필드를 그대로 이어 붙이지는 않는다 — `pstTtl` 에는 이미 메시지 없는 `min(1)` 이
+ * 걸려 있어, 빈 값일 때 그 기본 영문 메시지가 먼저 나온다(실측). 필수 안내는 화면의 몫이다.
+ */
+const TITLE_MAX = BoardSaveRequestSchema.shape.pstTtl.maxLength ?? 100;
+const CONTENT_MAX = BoardSaveRequestSchema.shape.pstCn.maxLength ?? 4000;
+
+const askSchema = BoardSaveRequestSchema.pick({ pstTtl: true, pstCn: true }).extend({
+  pstTtl: z.string().trim()
+    .min(1, '제목을 입력해 주세요.')
+    .max(TITLE_MAX, `제목은 ${TITLE_MAX.toLocaleString()}자까지 입력할 수 있습니다.`),
+  pstCn: z.string().trim()
+    .min(1, '문의 내용을 입력해 주세요.')
+    .max(CONTENT_MAX, `문의 내용은 ${CONTENT_MAX.toLocaleString()}자까지 입력할 수 있습니다.`),
+});
+
+type AskFormValues = z.infer<typeof askSchema>;
+
+const ASK_FORM_LABELS = { pstTtl: '제목', pstCn: '내용' };
 
 export default function HelpClient() {
   const { toast } = useToast();
@@ -28,6 +72,13 @@ export default function HelpClient() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [faqDetails, setFaqDetails] = useState<Record<string, FaqDetailState>>({});
+
+  const [askOpen, setAskOpen] = useState(false);
+  const [asking, setAsking] = useState(false);
+  const askingRef = useRef(false);
+  const [reloadToken, setReloadToken] = useState(0);
+
+  const askForm = useAppForm(askSchema, { defaultValues: { pstTtl: '', pstCn: '' } });
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -47,7 +98,42 @@ export default function HelpClient() {
       }
     }, 300); // Debounce
     return () => clearTimeout(timer);
-  }, [tab, searchKeyword, toast]);
+  }, [tab, searchKeyword, toast, reloadToken]);
+
+  const openAsk = () => {
+    askForm.reset({ pstTtl: '', pstCn: '' });
+    setAskOpen(true);
+  };
+
+  const closeAsk = () => {
+    // 제출 중에는 닫지 않는다 — 닫으면 진행 중인 등록의 결과를 사용자가 볼 수 없다.
+    if (!askingRef.current) setAskOpen(false);
+  };
+
+  const submitAsk = askForm.handleSubmit(async (values: AskFormValues) => {
+    // 동기 lock — 제출 중 재클릭이 두 번째 문의를 만들지 못하게 한다.
+    if (askingRef.current) return;
+    askingRef.current = true;
+    setAsking(true);
+    try {
+      await helpUserService.createQna({ qstnTtl: values.pstTtl, qstnCn: values.pstCn });
+      toast('문의를 등록했습니다.', 'success');
+      setAskOpen(false);
+      // 방금 쓴 글이 목록에 보여야 등록됐다는 것을 사용자가 확인할 수 있다.
+      setReloadToken((token) => token + 1);
+    } catch (error: unknown) {
+      /*
+        구조적 필드 오류는 해당 입력으로 되돌리고, 그 밖의 실패는 토스트로 알린다.
+        어느 쪽이든 입력값은 지우지 않는다 — 지우면 실패가 곧 글 손실이 된다.
+      */
+      if (!askForm.applyServerErrors(error)) {
+        toast('문의를 등록하지 못했습니다. 입력 내용은 유지됩니다.', 'error');
+      }
+    } finally {
+      askingRef.current = false;
+      setAsking(false);
+    }
+  });
 
   const qnaColumns = [
     {
@@ -65,7 +151,10 @@ export default function HelpClient() {
     {
       header: '상태',
       accessor: (item: QNA) => (
-        <StatusBadge status={item.qnaProcessSttusCode === '3' ? 'Y' : 'R'} />
+        <StatusBadge
+          status={isQnaSolved(item.qnaSttsCd) ? 'Y' : 'R'}
+          labels={{ Y: '답변완료', R: '답변 대기' }}
+        />
       )
     }
   ];
@@ -192,14 +281,21 @@ export default function HelpClient() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-8 bg-card p-12 rounded-lg border-2 border-border/40 shadow-xl overflow-hidden"
             >
-              <div className="flex justify-between items-center pb-8 border-b border-border/40">
+              <div className="flex justify-between items-center pb-8 border-b border-border/40 gap-6">
                   <div className="space-y-1">
-                      <h3 className="text-2xl font-bold tracking-tight uppercase">_ 나의 문의 내역</h3>
-                      <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase">Private Interaction History</p>
+                      {/*
+                        종전 제목은 '나의 문의 내역' 이었다. 목록은 그렇게 좁혀지지 않는다 —
+                        서버는 이 게시판의 공개 글 전체에 내 비밀 글을 더해 돌려준다
+                        (BoardPredicate: scrtYn='N' OR userId=나). 개인 목록으로 부르면
+                        남의 공개 문의가 내 것처럼 읽힌다.
+                      */}
+                      <h3 className="text-2xl font-bold tracking-tight">문의 내역</h3>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        내가 남긴 1:1 문의와 공개된 문의를 함께 보여 줍니다. 1:1 문의는 작성자와 관리자만 볼 수 있습니다.
+                      </p>
                   </div>
-                  {/* onClick 도 대상 라우트도 없던 死버튼이다(카탈로그 G10). 문의 등록 경로가
-                      생기기 전까지 사유를 밝혀 비활성으로 남긴다. */}
-                  <Button size="sm" disabled title="문의 등록 화면이 아직 연결되지 않았습니다" className="gap-2">
+                  {/* 종전에는 onClick 도 대상 라우트도 없는 死버튼이었다(카탈로그 G10). */}
+                  <Button size="sm" onClick={openAsk} className="gap-2 shrink-0">
                       <PlusCircle size={16} aria-hidden="true" /> 새로운 문의 작성
                   </Button>
               </div>
@@ -210,6 +306,62 @@ export default function HelpClient() {
                 emptyMessage={emptyResultMessage(searchKeyword, "등록된 Q&A 문의 내역이 없습니다.")}
                 className="border-none shadow-none rounded-none"
               />
+
+              <StandardModal isOpen={askOpen} onClose={closeAsk} title="1:1 문의 작성" maxWidth="xl">
+                <Form {...askForm}>
+                  {/* noValidate — 브라우저 기본 말풍선 대신 요약·인라인·첫 오류 포커스가 소유한다. */}
+                  <form onSubmit={submitAsk} noValidate className="space-y-6 text-left">
+                    <FormErrorSummary labels={ASK_FORM_LABELS} onNavigate={askForm.focusError} />
+
+                    <FormField
+                      control={askForm.control}
+                      name="pstTtl"
+                      required
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-sm font-bold text-foreground">제목</FormLabel>
+                          <FormControl>
+                            <Input {...field} maxLength={TITLE_MAX} placeholder="무엇을 도와드릴까요?" />
+                          </FormControl>
+                          <FormMessage className="text-xs font-bold text-destructive" />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={askForm.control}
+                      name="pstCn"
+                      required
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-sm font-bold text-foreground">내용</FormLabel>
+                          <FormControl>
+                            <textarea
+                              {...field}
+                              maxLength={CONTENT_MAX}
+                              placeholder="문의 내용을 입력해 주세요."
+                              className="w-full min-h-[180px] rounded-lg border border-border bg-muted/40 p-4 outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                            />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground">
+                            등록한 문의는 작성자와 관리자만 볼 수 있습니다.
+                          </p>
+                          <FormMessage className="text-xs font-bold text-destructive" />
+                        </FormItem>
+                      )}
+                    />
+
+                    <div className="flex justify-end gap-3 pt-2">
+                      <Button type="button" variant="outline" onClick={closeAsk} disabled={asking}>
+                        취소
+                      </Button>
+                      <Button type="submit" disabled={asking} aria-busy={asking}>
+                        {asking ? '등록 중…' : '문의 등록'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </StandardModal>
             </motion.div>
           )}
         </AnimatePresence>

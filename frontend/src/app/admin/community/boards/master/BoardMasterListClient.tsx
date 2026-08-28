@@ -525,7 +525,7 @@ export function BoardMasterListClient() {
       */}
       {/* Settings Modal */}
       <Dialog open={isModalOpen} onOpenChange={handleModalOpenChange}>
-        <DialogContent className="sm:max-w-[600px] rounded-lg p-0 overflow-hidden border-none shadow-2xl">
+        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-2xl">
           <div className="bg-surface-inverse p-10 text-surface-inverse-foreground relative">
             <div className="absolute top-0 right-0 p-10 opacity-10 pointer-events-none">
               <Settings2 size={120} />

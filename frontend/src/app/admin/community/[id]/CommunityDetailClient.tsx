@@ -13,7 +13,8 @@ import { boardUserService } from '@/services/business/user/board/BoardUserServic
 import { BoardPost } from '@/types/business/board';
 import { useSearchState } from '@/lib/hooks/use-search-state';
 import { Plus, Eye } from 'lucide-react';
-import { FREE_BOARD_ID, NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
+import { NOTICE_BOARD_ID } from '@/config/board-ids';
+import { useBoardOptions } from '@/hooks/api/use-board-options';
 
 const DEFAULT_BBS_ID = NOTICE_BOARD_ID; // 공지사항 기본값
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
@@ -22,6 +23,7 @@ const DEFAULT_PAGE_SIZE = 10;
 function CommunityDetailContent() {
     const router = useRouter();
     const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
+    const { options: boardOptions } = useBoardOptions();
 
     const { values, setSearchValues } = useSearchState({
         bbsId: DEFAULT_BBS_ID,
@@ -108,11 +110,8 @@ function CommunityDetailContent() {
                             name: 'bbsId',
                             label: '게시판 선택',
                             type: 'select',
-                            options: [
-                                { label: '공지사항', value: NOTICE_BOARD_ID },
-                                { label: '자유게시판', value: FREE_BOARD_ID },
-                                { label: '업무게시판', value: TASK_BOARD_ID }
-                            ]
+                            // 선택지는 게시판 마스터에서 채운다(시드에 없는 게시판이 섞여 있었다).
+                            options: boardOptions
                         },
                         { name: 'searchWrd', label: '검색어', type: 'text', placeholder: '제목, 내용 입력...' },
                         {

@@ -31,6 +31,19 @@ const memberPhoneSchema = z.preprocess(
     .regex(/^\d*$/, '전화번호는 숫자와 구분용 하이픈만 입력해 주세요.'),
 );
 
+/**
+ * 구성원 성명.
+ *
+ * 종전에는 이 입력 자체가 없었고, 등록 화면이 **주소록 명칭을 구성원 성명으로 복제 저장**했다
+ * (`nm: validated.adbkNm`). 그래서 '영업팀 연락처' 라는 주소록을 만들면 구성원 이름도
+ * '영업팀 연락처' 가 됐다 — 상세 표의 '성명' 열이 사람 이름이 아니라 주소록 제목이었다.
+ */
+const memberNameSchema = AddressBookUserDtoSchema.shape.nm
+  .unwrap()
+  .trim()
+  .min(1, '구성원 성명을 입력해 주세요.')
+  .max(100, '구성원 성명은 최대 100자까지 입력할 수 있습니다.');
+
 const memberEmailSchema = AddressBookUserDtoSchema.shape.emlAddr
   .unwrap()
   .trim()
@@ -46,6 +59,7 @@ export const addressBookCreateFormSchema = AddressBookDtoSchema.pick({
   adbkNm: addressBookNameSchema,
   rlsScopeCd: releaseScopeSchema,
   userId: memberUserIdSchema,
+  nm: memberNameSchema,
   telNo: memberPhoneSchema,
   email: memberEmailSchema,
 });
@@ -60,6 +74,7 @@ export const addressBookEditFormSchema = AddressBookDtoSchema.pick({
 
 export const addressBookCreateValidationLabels = {
   adbkNm: '주소록 명칭',
+  nm: '구성원 성명',
   email: '이메일',
   rlsScopeCd: '공개 범위',
   telNo: '전화번호',

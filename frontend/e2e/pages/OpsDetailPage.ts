@@ -11,7 +11,12 @@ export class OpsDetailPage {
 
     async searchEvents(keyword: string) {
         console.log(`>>> [OpsDetail] Searching events with keyword: ${keyword}`);
-        const searchInput = this.page.getByPlaceholder(/행사 검색/i);
+        /*
+          [2026-08-28] placeholder 가 '행사 검색' → '행사 명칭 또는 상세 내용으로 검색' 으로 바뀌었다.
+          서버가 evntCn·evntNm 을 함께 찾는데 라벨이 명칭만 말해, 제목에 없는 검색어로 행이 섞여
+          나오는 이유를 화면이 설명하지 못하던 것을 정정한 결과다(카탈로그 G15).
+        */
+        const searchInput = this.page.getByPlaceholder(/행사 명칭 또는 상세 내용으로 검색/i);
         await expect(searchInput).toBeVisible({ timeout: 10000 });
         
         await searchInput.click();

@@ -22,6 +22,10 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -48,15 +52,16 @@ class InstitutionCodeApiControllerTest {
     @Test
     @DisplayName("기관코드 목록 조회")
     void getInstitutionCodeList() throws Exception {
-        List<InstitutionCodeDto> list = List.of(new InstitutionCodeDto());
-        when(institutionCodeService.selectInstitutionCodeList(any(BaseSearchDto.class))).thenReturn(list);
-        when(institutionCodeService.selectInstitutionCodeListTotCnt(any(BaseSearchDto.class))).thenReturn(1);
+        // 총건수는 목록과 같은 Page 에서 나온다. 검색을 무시하던 별도 count() 경로는 제거됐다.
+        Page<InstitutionCodeDto> page = new PageImpl<>(List.of(new InstitutionCodeDto()), PageRequest.of(0, 10), 42);
+        when(institutionCodeService.selectInstitutionCodeList(any(BaseSearchDto.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/institution")
                 .param("pageIndex", "1")
                 .param("pageUnit", "10")
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.total").value(42));
     }
 
     @Test
@@ -75,14 +80,19 @@ class InstitutionCodeApiControllerTest {
     @Test
     @DisplayName("기관코드 수신 내역 조회")
     void getInstitutionCodeRecptnList() throws Exception {
-        List<InstitutionCodeRecptnDto> list = List.of(new InstitutionCodeRecptnDto());
-        when(institutionCodeService.selectInstitutionCodeRecptnList(any(BaseSearchDto.class))).thenReturn(list);
+        // 종전에는 서버가 전량을 내려주고 컨트롤러가 list.size() 를 총건수로 썼다 —
+        // 화면은 그 값으로 도달할 수 없는 페이지 번호를 그렸다.
+        Page<InstitutionCodeRecptnDto> page = new PageImpl<>(
+                List.of(new InstitutionCodeRecptnDto()), PageRequest.of(0, 10), 37);
+        when(institutionCodeService.selectInstitutionCodeRecptnList(any(BaseSearchDto.class))).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/admin/system/codes/institution/receptions")
                 .param("pageIndex", "1")
                 .param("processSe", "1")
                 .accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list.length()").value(1))
+                .andExpect(jsonPath("$.data.total").value(37));
     }
 
     @Test

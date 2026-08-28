@@ -80,6 +80,8 @@ export class OperationalExtensionPage {
         await this.page.getByPlaceholder('메시지 내용을 입력하세요...').fill(content);
         // [2026-08-24 A1 이행] 영문 버튼 'Execute Send' → '발송'(G14).
         await this.page.getByRole('button', { name: '발송', exact: true }).click();
-        await expect(this.page.getByText('문자 메시지를 발송했습니다.')).toBeVisible();
+        // [2026-08-28] 종전 문구 '문자 메시지를 발송했습니다.' 는 사실이 아니었다 —
+        //   응답은 접수일 뿐이고 전송 구현체는 두 프로필 모두 항상 실패를 반환한다.
+        await expect(this.page.getByText('발송 요청을 접수했습니다', { exact: false })).toBeVisible();
     }
 }

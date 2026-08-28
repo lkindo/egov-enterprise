@@ -5,11 +5,9 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { Button } from '@/components/ui/button';
-import { Users,  
-  ShieldCheck,  
+import { ShieldCheck,  
   Calendar, 
   ChevronLeft, 
-  ArrowUpRight, 
   MessageSquare, 
   Globe, 
   Settings, 
@@ -49,10 +47,16 @@ export default function CommunityDetailHubClient({
    * 서버는 상태 위반을 구분해 돌려준다 — 비활성 커뮤니티는 409(RESOURCE_IN_USE),
    * 이미 가입/신청 중이면 409(DUPLICATE_RESOURCE). 그래서 성공·실패를 같은 문구로 뭉개지 않고
    * 서버 메시지를 그대로 보여 준다(A3 금지 항목과 같은 규율).
+   *
+   * [2026-08-28] 성공 문구에서 '관리자 승인 후 이용할 수 있습니다' 를 뺐다. **그 승인 절차가
+   * 존재하지 않는다.** 가입은 `mbrSttsCd='A'`(Requested) 행을 만드는데, 이 값을 읽거나 다른
+   * 상태로 옮기는 코드가 저장소 전체에 없다 — 승인 엔드포인트도, 승인 화면도, 회원 목록
+   * API 도 없다(`CommunityUserRepository.findByIdCmntySn` 호출자 0건). 오지 않을 승인을
+   * 기다리라고 말하면 사용자는 자기 신청이 누락된 줄 알고 다시 누른다(그러면 409 다).
    */
   const joinMutation = useMutation({
     mutationFn: () => communityUserService.joinCommunity(cmntySn),
-    onSuccess: () => toast('가입을 신청했습니다. 관리자 승인 후 이용할 수 있습니다.', 'success'),
+    onSuccess: () => toast('가입을 신청했습니다.', 'success'),
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : '';
       toast(message || '가입 신청 중 오류가 발생했습니다.', 'error');
@@ -110,14 +114,15 @@ export default function CommunityDetailHubClient({
         <div className="grid grid-cols-12 gap-[var(--gap-hub-section)]">
           {/* Main Content Area */}
           <div className="col-span-12 lg:col-span-8 space-y-[var(--gap-hub-section)]">
+            {/* [2026-08-28] 영문·의사코드 라벨을 업무 문구로 정정한다(ADR-0002 한국어 우선). */}
             <HubSectionCard
-              title="Overview & Intelligence"
-              description="커뮤니티의 비전과 주요 운영 정보를 확인하세요"
+              title="커뮤니티 소개"
+              description="커뮤니티 소개와 등록 정보입니다"
               icon={Info}
             >
               <div className="space-y-[var(--gap-hub-section)] py-6">
                 <div className="space-y-6">
-                   <h3 className="text-xs font-bold text-primary tracking-tight">_ Introduction_cn</h3>
+                   <h3 className="text-xs font-bold text-primary tracking-tight">소개</h3>
                    <div className="p-10 bg-muted border-2 border-border rounded-[var(--radius-hub-widget)] shadow-inner relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6 text-primary">
                         <BookOpen size={120} />
@@ -129,25 +134,45 @@ export default function CommunityDetailHubClient({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <DetailBlock icon={<ShieldCheck size={18} />} label="Operational Manager" value={community.frstRegisterNm || 'System_Admin'} />
-                  <DetailBlock icon={<Calendar size={18} />} label="Initialization Date" value={community.crtDt?.substring(0, 10) || 'Unknown'} />
-                  <DetailBlock icon={<Users size={18} />} label="Member Count" value="42_Active_Entities" />
-                  <DetailBlock icon={<Globe size={18} />} label="Visibility Protocol" value={community.useYn === 'Y' ? 'PUBLIC_ACCESS' : 'PRIVATE_NODE'} />
+                  {/*
+                    [2026-08-28] 'Operational Manager = frstRegisterNm || System_Admin' 을 걷어냈다.
+                    **서버는 frstRegisterNm 을 어떤 경로에서도 채우지 않는다** — CommunityDto.from()
+                    이 frstRgtrId 만 매핑하고 그 필드는 빌더에서 빠져 있다(목록·상세·포틀릿 모두
+                    같은 from() 을 쓴다). 그래서 모든 커뮤니티가 'System_Admin' 으로 보였다 —
+                    바로 옆에서 지운 '42_Active_Entities' 와 정확히 같은 부류의 지어낸 값이다.
+                    서버가 실제로 채우는 등록자 ID(BaseEntity 규약상 loginId)를 그대로 보여 준다.
+                  */}
+                  <DetailBlock icon={<ShieldCheck size={18} />} label="등록자" value={community.frstRgtrId || '알 수 없음'} />
+                  <DetailBlock icon={<Calendar size={18} />} label="등록일" value={community.crtDt?.substring(0, 10) || '알 수 없음'} />
+                  {/*
+                    [2026-08-28] 'Member Count 42_Active_Entities' 제거.
+                    **회원 수를 내려주는 API 가 없다** — /api/v1/communities 는 목록·상세·join 3개뿐이고
+                    CommunityDto 에 회원 수 필드가 없다(실측). 고정 문자열을 실측값처럼 보여 주면
+                    관리자가 그 숫자를 근거로 판단한다. 값을 지어내는 대신 노출하지 않는다.
+                  */}
+                  <DetailBlock icon={<Globe size={18} />} label="사용 여부" value={community.useYn === 'Y' ? '사용' : '미사용'} />
                 </div>
               </div>
             </HubSectionCard>
 
             <HubSectionCard
-              title="Knowledge Stream"
-              description="커뮤니티 내에서 공유된 최신 지식 자산 목록입니다"
+              title="커뮤니티 게시글"
+              description="커뮤니티에서 공유된 게시글 목록입니다"
               icon={MessageSquare}
             >
               <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-border rounded-[var(--radius-hub-section)] bg-muted/30">
                 <div className="w-20 h-11 bg-card border-2 border-border rounded-[var(--radius-hub-item)] flex items-center justify-center text-muted-foreground shadow-xl mb-8 group-hover:rotate-12 transition-transform">
                   <BookOpen size={32} />
                 </div>
-                <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">_ No_Posts_Detected</h4>
-                <p className="text-xs font-bold text-muted-foreground tracking-tight mt-4">해당 커뮤니티에 등록된 게시글이 없습니다</p>
+                {/*
+                  [2026-08-28] '등록된 게시글이 없습니다' → 미제공 고지.
+                  이 섹션은 **어떤 조회도 하지 않는다.** 그런데 '게시글이 없다'고 단정해,
+                  실제로 글이 있는 커뮤니티에서도 비었다고 말했다. 커뮤니티별 게시글을 내려주는
+                  경로가 아직 없으므로(BoardMasterRepository 의 커뮤니티 조회는 미노출),
+                  없다고 말하는 대신 아직 제공되지 않는다고 말한다.
+                */}
+                <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">_ Not_Available</h4>
+                <p className="text-xs font-bold text-muted-foreground tracking-tight mt-4">커뮤니티별 게시글 목록은 아직 제공되지 않습니다</p>
               </div>
             </HubSectionCard>
           </div>
@@ -163,40 +188,32 @@ export default function CommunityDetailHubClient({
                   <ShieldCheck size={40} className="text-primary" />
                 </div>
                 <div className="space-y-4">
-                  <h4 className="text-2xl font-bold tracking-tighter leading-tight">_ SECURITY<br />POLICY</h4>
-                  <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">가입 승인 필요<br />내부 임직원 전용</p>
+                  {/*
+                    [2026-08-28] '_ SECURITY POLICY / 가입 승인 필요 / 내부 임직원 전용' 을 걷어냈다.
+                    세 문장 다 근거가 없다 — 승인 절차는 존재하지 않고(위 joinMutation 주석 참조),
+                    '내부 임직원 전용' 을 집행하는 게이트도 없다(가입 API 는 인증 사용자면 통과한다).
+                    보안 정책을 표방하면서 실제로는 아무것도 집행하지 않는 패널이었다.
+                  */}
+                  <h4 className="text-2xl font-bold tracking-tight leading-tight">가입 신청</h4>
+                  <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">
+                    신청은 기록되지만 승인 처리 화면은 아직 없습니다.<br />진행 상태는 운영 담당자에게 문의하세요.
+                  </p>
                 </div>
-                <Button className="w-full h-11 bg-card text-foreground rounded-[var(--radius-hub-item)] font-bold text-xs tracking-tight hover:bg-primary hover:text-white transition-all shadow-xl group">
-                  ADMIN_PANEL_LOGIN <ChevronLeft size={16} className="rotate-180 group-hover:translate-x-1 transition-transform" />
-                </Button>
+                {/*
+                  [2026-08-28] 'ADMIN_PANEL_LOGIN' 버튼 제거 — onClick·href 가 없어 눌러도 아무 일이
+                  일어나지 않았고, 가리키던 대상 라우트가 정의된 적도 없다.
+                */}
               </div>
             </div>
 
-            <div className="hub-glass-premium rounded-[var(--radius-hub-section)] p-10 space-y-10 border-2 border-border shadow-2xl relative overflow-hidden group">
-               <div className="flex items-center justify-between border-b border-border/50 pb-6">
-                  <h4 className="text-sm font-bold text-foreground tracking-tighter">_ Member_Pulse</h4>
-                  <span className="text-xs font-bold text-primary tracking-tight">Live</span>
-               </div>
-               <div className="space-y-6">
-                  {[1, 2, 3, 4, 5].map(i => (
-                    <div key={i} className="flex items-center justify-between group/user">
-                      <div className="flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-[var(--radius-hub-item)] bg-muted flex items-center justify-center text-muted-foreground font-bold text-xs group-hover/user:bg-surface-inverse group-hover/user:text-surface-inverse-foreground transition-all">
-                          ID
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-foreground tracking-tight">_ Active_Entity_{i}</p>
-                          <p className="text-xs text-muted-foreground font-bold tracking-tight">Connected</p>
-                        </div>
-                      </div>
-                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                    </div>
-                  ))}
-               </div>
-               <Button variant="ghost" className="w-full h-12 text-xs font-bold text-muted-foreground tracking-tight hover:text-primary transition-colors">
-                  VIEW_ALL_ENTITIES <ArrowUpRight size={14} className="ml-2" />
-               </Button>
-            </div>
+            {/*
+              [2026-08-28] 'Member_Pulse' 패널 통째 제거.
+              하드코딩한 다섯 명(_ Active_Entity_1~5)을 'Live' 라벨과 초록 점으로 **접속 중인 실제
+              회원처럼** 보여 주고 있었다. 회원 목록을 내려주는 API 는 없고
+              (CommunityUserRepository.findByIdCmntySn 은 main 소스에서 호출자 0건),
+              'VIEW_ALL_ENTITIES' 버튼도 onClick·href 가 없어 죽어 있었다.
+              실측 데이터가 생기면 그때 되살린다 — 지금은 없는 것을 있는 척하지 않는다.
+            */}
           </div>
         </div>
       </div>

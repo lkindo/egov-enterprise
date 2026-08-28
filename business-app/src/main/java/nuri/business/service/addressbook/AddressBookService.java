@@ -109,10 +109,21 @@ public class AddressBookService {
         }
 
         for (AddressBookUserDto userDto : dto.getAdbkMan()) {
-            boolean exists = existingUsers.stream()
-                    .anyMatch(u -> (u.getUserId() != null && u.getUserId().equals(userDto.getUserId())));
-            if (!exists) {
-                try {
+            /*
+             * [2026-08-28] 기존 구성원의 연락 정보를 실제로 갱신한다.
+             * 종전에는 같은 userId 를 만나면 아무것도 하지 않고 넘어갔다 — 화면이 이메일·연락처를
+             * 바꿔 보내도 200 만 돌아오고 값은 그대로였다. 조용히 성공하는 no-op 이었다.
+             */
+            AddressBookUser existing = existingUsers.stream()
+                    .filter(u -> u.getUserId() != null && u.getUserId().equals(userDto.getUserId()))
+                    .findFirst()
+                    .orElse(null);
+            if (existing != null) {
+                existing.updateContact(userDto.getNm(), userDto.getEmlAddr(), userDto.getHomeTelno(),
+                        userDto.getMblTelno(), userDto.getOfcTelno(), userDto.getFaxNo());
+                continue;
+            }
+            try {
                     AddressBookUser newUser = AddressBookUser.builder()
                             .addressBook(entity)
                             .userId(userDto.getUserId())
@@ -127,7 +138,6 @@ public class AddressBookService {
                 } catch (Exception e) {
                     throw new BusinessException("ID 생성 중 오류가 발생했습니다.", CommonErrorCode.INTERNAL_SERVER_ERROR);
                 }
-            }
         }
     }
 

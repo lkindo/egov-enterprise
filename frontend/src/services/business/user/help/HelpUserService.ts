@@ -29,7 +29,22 @@ export interface QNA {
   writngPassword?: string;
   wrterNm: string;
   writngDe: string;
-  qnaProcessSttusCode: string; // 1: 접수, 2: 처리중, 3: 답변완료
+  /**
+   * 서버가 내려주는 Q&A 상태 코드.
+   *
+   * [2026-08-28] 종전에는 이 필드를 `ansLv > 0 ? '3' : '1'` 로 **지어냈다**. `ansLv` 는
+   * 그 글 자신의 답글 깊이라, 질문 글은 답변이 달려도 영원히 '접수' 로 남고 답변 글 자체가
+   * '답변완료' 로 보였다. 게시판 응답에는 실제 상태 컬럼(`qnaSttsCd`)이 이미 실려 온다
+   * (BoardDto — 값 도메인 OPEN/SOLVED, QNA 등록 경로는 QA01 도 쓴다).
+   */
+  qnaSttsCd?: string;
+  /** 비밀글 여부. 'Y' 면 작성자와 관리자만 열람한다(BoardPredicate). */
+  scrtYn?: string;
+}
+
+/** 답변이 끝난 문의인지. 서버 값 도메인 밖은 '진행 중'으로 본다(없는 완료를 지어내지 않는다). */
+export function isQnaSolved(qnaSttsCd?: string): boolean {
+  return qnaSttsCd === 'SOLVED';
 }
 
 /**
@@ -108,21 +123,29 @@ class HelpUserService extends UserService {
         ansCn: item.pstCn || '',
         wrterNm: item.userNm || item.userId,
         writngDe: item.crtDt,
-        qnaProcessSttusCode: item.ansLv && item.ansLv > 0 ? '3' : '1'
+        qnaSttsCd: item.qnaSttsCd,
+        scrtYn: item.scrtYn,
       }));
       return response as PageResponse<QNA>;
     }
     return { list: [], total: 0, totalPage: 0, page: 0, size: 0 } as unknown as PageResponse<QNA>;
   }
 
-  /** Q&A 등록 */
+  /**
+   * Q&A 등록.
+   *
+   * 화면이 '1:1 문의' 라고 부르는 이상 기본은 비밀글이어야 한다 — 그러지 않으면 이 게시판을
+   * 여는 모든 로그인 사용자가 남의 문의를 읽는다(BoardPredicate 는 scrtYn='N' 을 전체 공개로
+   * 본다). 서버가 열람 범위를 이 값으로 집행하므로 화면 문구가 아니라 이 필드가 실제 경계다.
+   */
   async createQna(data: Partial<QNA>, config?: AxiosRequestConfig): Promise<void> {
     const boardData = {
       bbsId: QNA_BOARD_ID,
       pstTtl: data.qstnTtl,
       pstCn: data.qstnCn,
       pswd: data.writngPassword,
-      userNm: data.wrterNm
+      userNm: data.wrterNm,
+      scrtYn: 'Y',
     };
     return this.post<void>('/posts', boardData, config);
   }

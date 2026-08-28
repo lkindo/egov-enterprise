@@ -1,6 +1,6 @@
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
-import { OnlinePollManageVO, OnlinePollItemVO, OnlinePollPartcptnVO, PollSearchParams } from '@/types/business/poll';
+import { OnlinePollManageVO, OnlinePollManageDetailVO, OnlinePollItemVO, OnlinePollPartcptnVO, PollSearchParams } from '@/types/business/poll';
 import { AxiosRequestConfig } from 'axios';
 
 /**
@@ -13,8 +13,8 @@ export class PollUserService extends ApiService {
   }
 
   /** 설문 목록 조회 */
-  async getPollList(params: PollSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<OnlinePollManageVO>> {
-    return this.get<PageResponse<OnlinePollManageVO>>('', { 
+  async getPollList(params: PollSearchParams, config?: AxiosRequestConfig): Promise<PageResponse<OnlinePollManageDetailVO>> {
+    return this.get<PageResponse<OnlinePollManageDetailVO>>('', { 
       ...config, 
       params: {
         ...params,
@@ -24,8 +24,8 @@ export class PollUserService extends ApiService {
   }
 
   /** 설문 상세 조회 */
-  async getPollDetail(pollSn: number, config?: AxiosRequestConfig): Promise<OnlinePollManageVO> {
-    return this.get<OnlinePollManageVO>(`/${pollSn}`, config);
+  async getPollDetail(pollSn: number, config?: AxiosRequestConfig): Promise<OnlinePollManageDetailVO> {
+    return this.get<OnlinePollManageDetailVO>(`/${pollSn}`, config);
   }
 
   /** 설문 등록 */

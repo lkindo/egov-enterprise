@@ -13,7 +13,7 @@ import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 
 const PAGE_SIZE = 10;
 
-/** 설문 1건의 총 응답 수 = 항목별 득표수 합계. 관리자 목록 API 가 pollArticles.pollIemCo 를 채워 내려준다. */
+/** 여론조사 1건의 총 응답 수 = 항목별 득표수 합계. 관리자 목록 API 가 pollArticles.pollIemCo 를 채워 내려준다. */
 function totalResponses(poll: OnlinePollDto): number {
   return poll.pollArticles?.reduce((sum, item) => sum + (item.pollIemCo || 0), 0) ?? 0;
 }
@@ -57,7 +57,7 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
       className: 'w-20 text-center',
     },
     {
-      header: '설문 주제',
+      header: '여론조사 주제',
       accessor: (poll) => (
         <span className="text-sm font-bold text-foreground group-hover:text-amber-600 transition-colors tracking-tight">
           {poll.pollNm}
@@ -85,7 +85,7 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
     {
       header: '진행 상태',
       accessor: (poll) => {
-        // 종전에는 전 행에 '집계중' 배지를 고정 렌더했다 — 종료된 설문도 집계중으로 보였다(P1-5).
+        // 종전에는 전 행에 '집계중' 배지를 고정 렌더했다 — 종료된 여론조사도 집계중으로 보였다(P1-5).
         const status = getPollStatus(poll, todayYmd);
         const tone =
           status === 'active'
@@ -105,17 +105,17 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
 
   return (
     <ReportPage
-      title="설문 통계"
+      title="여론조사 통계"
       headingLevel={embedded ? 2 : 1}
       showBreadcrumb={!embedded}
-      description="등록된 설문별 응답 수와 진행 상태를 확인합니다."
-      breadcrumbItems={[{ label: '설문관리' }, { label: '설문 통계' }]}
+      description="등록된 여론조사별 응답 수와 진행 상태를 확인합니다."
+      breadcrumbItems={[{ label: '설문관리' }, { label: '여론조사 통계' }]}
       // A7 필수 — 값의 범위를 화면에서 밝힌다. 응답 합계는 서버 전체가 아니라 현재 페이지 기준이다.
-      basis={`집계 기준: 등록된 설문 ${totalCount.toLocaleString()}건 · 응답 합계는 현재 페이지 ${polls.length}건 기준 · 출처: 설문 응답 집계 API`}
+      basis={`집계 기준: 등록된 여론조사 ${totalCount.toLocaleString()}건 · 응답 합계는 현재 페이지 ${polls.length}건 기준 · 출처: 여론조사 응답 집계 API`}
       filter={
         <KeywordFilter
-          label="설문명"
-          placeholder="분석할 설문명을 입력하세요"
+          label="여론조사명"
+          placeholder="분석할 여론조사명을 입력하세요"
           value={keyword}
           onSearch={(next) => handleKeywordChange(next)}
         />
@@ -125,7 +125,7 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
            남은 두 값은 서버 응답에서 직접 계산된다. */
         <div className="grid gap-2 sm:grid-cols-2">
           <div className="rounded-md border border-border bg-card px-4 py-3">
-            <p className="text-[length:var(--font-size-body)] text-muted-foreground">전체 설문</p>
+            <p className="text-[length:var(--font-size-body)] text-muted-foreground">전체 여론조사</p>
             <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{totalCount.toLocaleString()}건</p>
           </div>
           <div className="rounded-md border border-border bg-card px-4 py-3">
@@ -134,10 +134,10 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
           </div>
         </div>
       }
-      tableTitle="설문별 응답 집계"
+      tableTitle="여론조사별 응답 집계"
     >
       <StandardDataTable
-        accessibleLabel="설문별 응답 집계"
+        accessibleLabel="여론조사별 응답 집계"
         columns={columns}
         data={polls}
         loading={isLoading}
@@ -145,7 +145,7 @@ export default function SurveyStatsClient({ embedded = false }: { embedded?: boo
         error={isError ? error : null}
         onRetry={() => void refetch()}
         keyField="pollSn"
-        emptyMessage={emptyResultMessage(keyword, '집계할 설문이 없습니다.')}
+        emptyMessage={emptyResultMessage(keyword, '집계할 여론조사가 없습니다.')}
         pagination={{
           currentPage: page + 1,
           totalPages: Math.ceil(totalCount / PAGE_SIZE),

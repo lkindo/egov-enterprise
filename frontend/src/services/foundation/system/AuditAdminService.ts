@@ -36,13 +36,27 @@ class AuditAdminService extends AdminService {
     params: {
       page?: number;
       size?: number;
+      pageUnit?: number;
       searchKeyword?: string;
       searchKeywordFrom?: string;
       searchKeywordTo?: string;
     },
     config?: AxiosRequestConfig,
   ): Promise<PageResponse<AuditLog>> {
-    return this.get<PageResponse<AuditLog>>('', { ...config, params });
+    /*
+     * 서버 BaseSearchDto.toPageable() 은 effectivePageUnit() = pageUnit 만 본다.
+     * recordCountPerPage(ApiService 가 size 로부터 만들어 주는 키)는 calculatePagination 전용이라
+     * 페이지 크기에 영향을 주지 않는다. 그래서 종전에는 화면이 '페이지당 50건'을 골라도
+     * **항상 10건**만 나왔고, 총 페이지 수만 10건 기준으로 부풀려졌다. 같은 화면의 SYSTEM·LOGIN
+     * 탭은 SystemLogAdminService 가 정규화해 정상이라, 같은 컨트롤이 탭마다 다르게 동작했다.
+     *
+     * ⚠ 무조건 대입(SystemLogAdminService 방식)을 복사하면 안 된다 — 이 서비스에는
+     *   "인자에 없는 키를 만들지 않는다"는 Object.keys 계약이 있다(AuditAdminService.test.ts).
+     *   호출부가 크기를 준 경우에만 채운다.
+     */
+    const pageUnit = params.pageUnit ?? params.size;
+    const requestParams = pageUnit === undefined ? params : { ...params, pageUnit };
+    return this.get<PageResponse<AuditLog>>('', { ...config, params: requestParams });
   }
 }
 

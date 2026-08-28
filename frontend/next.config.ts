@@ -142,7 +142,14 @@ const nextConfig = {
       //   으로 떨어뜨렸다. 그 결과 IP 제한·허용 시간대·2단계 인증(OTP)을 설정하는 424줄 화면과
       //   대응 API 5개가 전 경로에서 도달 불가였다 — DB 마이그레이션이 기록한 교정이 프런트 설정에
       //   조용히 무효화된 형태다. 화면을 정본 경로로 되돌린다.
-      { source: '/admin/user/login-policy', destination: '/admin/system/monitoring/hub?tab=policy', permanent: false },
+      // (2026-08-27) /admin/user/login-policy 목적지 교정 — 이 alias 는 이름과 달리 **로그인 정책
+      //   화면이 아니다**. page.tsx 가 UserOrgHubClient 를 defaultTab="POLICIES" 로 렌더하므로 정본은
+      //   같은 허브의 /admin/user/indvdl-info-policy(TAB_ROUTE_MAP.POLICIES)다. 종전 목적지는 두 번
+      //   틀렸다 — 모니터링 허브로 보낸 뒤 그 허브의 별칭이 ?tab=policy 를 LOGIN(로그인 **로그** 목록)
+      //   으로 떨어뜨려, 정책을 열려던 사용자가 로그 목록을 봤다.
+      //   ⚠ 이 줄을 삭제하지 말 것 — frontend-reachability-census 가 이 라우트의
+      //     shadowedBy.kind==='config-redirect' 를 하드 단언한다(삭제 시 red).
+      { source: '/admin/user/login-policy', destination: '/admin/user/indvdl-info-policy', permanent: false },
       // 경로 중복(정식 메뉴 타겟으로 통합)
       { source: '/admin/sanctn/workflow', destination: '/admin/workflow', permanent: false },
       { source: '/cop/sms/selectSmsList', destination: '/admin/uss/ion/sms', permanent: false },

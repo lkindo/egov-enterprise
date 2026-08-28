@@ -2,6 +2,7 @@ package nuri.business.service.auth;
 
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.domain.auth.RoleInfo;
+import nuri.business.domain.auth.RoleInfoProjection;
 import nuri.business.domain.auth.RoleInfoRepository;
 import nuri.business.service.auth.dto.RoleManageDto;
 import lombok.RequiredArgsConstructor;
@@ -25,20 +26,20 @@ public class RoleManageService {
     private final RoleInfoRepository roleInfoRepository;
 
     /**
-     * 목록 조회
+     * 목록 조회 — 검색어와 페이지를 함께 적용한다.
+     *
+     * <p>[2026-08-28] 종전에는 {@code findAll(pageable)} 이라 <b>검색어가 통째로 무시</b>됐고,
+     * 총건수도 조건 없는 {@code count()} 였다. 화면에서 롤 명칭을 입력해도 목록도 총건수도
+     * 그대로였고, 오류·로딩이 없어 무시됐다는 사실이 드러나지 않았다.
+     *
+     * <p>검색·페이징·건수를 모두 갖춘 QueryDSL 구현({@link RoleInfoRepositoryCustom#selectRoleList})이
+     * 이미 있었고 아무도 부르지 않았을 뿐이다. 목록과 총건수를 한 {@link Page} 에서 얻어
+     * 두 값이 어긋나는 축을 구조적으로 없앤다.
      */
-    public List<RoleManageDto> selectRoleList(BaseSearchDto searchVO) {
-        Pageable pageable = searchVO.toPageable();
-
-        Page<RoleInfo> page = roleInfoRepository.findAll(Objects.requireNonNull(pageable));
-        return page.getContent().stream().map(this::toDto).collect(Collectors.toList());
-    }
-
-    /**
-     * 목록 건수 조회
-     */
-    public int selectRoleListTotCnt(BaseSearchDto searchVO) {
-        return (int) roleInfoRepository.count();
+    public Page<RoleManageDto> selectRoleList(BaseSearchDto searchVO) {
+        Pageable pageable = Objects.requireNonNull(searchVO.toPageable());
+        return roleInfoRepository.selectRoleList(searchVO.getSearchKeyword(), pageable)
+                .map(this::toDto);
     }
 
     /**
@@ -97,6 +98,18 @@ public class RoleManageService {
     public void deleteRoles(String[] roleCodes) {
         roleInfoRepository
                 .deleteAllByIdInBatch(Objects.requireNonNull(Arrays.asList(Objects.requireNonNull(roleCodes))));
+    }
+
+    private RoleManageDto toDto(RoleInfoProjection projection) {
+        return RoleManageDto.builder()
+                .roleId(projection.getRoleId())
+                .roleNm(projection.getRoleNm())
+                .rolePatrn(projection.getRolePatrn())
+                .roleExpln(projection.getRoleExpln())
+                .roleTypeCd(projection.getRoleTypeCd())
+                .roleSort(projection.getRoleSort() != null ? projection.getRoleSort().toString() : null)
+                .crtDt(projection.getCrtDt() != null ? projection.getCrtDt().toString() : null)
+                .build();
     }
 
     private RoleManageDto toDto(RoleInfo entity) {

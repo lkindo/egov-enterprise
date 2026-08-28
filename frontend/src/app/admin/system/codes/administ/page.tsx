@@ -25,8 +25,8 @@ export default async function AdministCodePage() {
    */
   let initialData: Partial<PageResponse<AdministCode>> = { list: [], total: 0 };
   try {
-    // 변수명 pageNo로 정규화
-    initialData = await codeAdminService.getAdministCodeList({ pageNo: 1, pageUnit: 10 }, axiosConfig);
+    // 서버가 읽는 키는 pageIndex(1-base)·pageUnit 이다. pageNo 는 어디에도 바인딩되지 않는다.
+    initialData = await codeAdminService.getAdministCodeList({ pageIndex: 1, pageUnit: 10 }, axiosConfig);
   } catch (error: unknown) {
     const status = (error as { response?: { status?: number } })?.response?.status;
     if (status === 401) {
