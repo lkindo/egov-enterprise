@@ -61,11 +61,22 @@ export const eventCreateSchema = EventInfoDtoSchema.pick({
   evntBgngYmd: true,
   evntEndYmd: true,
   evntUseCnt: true,
+  picNm: true,
+  prepMttr: true,
 }).extend({
   evntNm: EventInfoDtoSchema.shape.evntNm.unwrap().trim().min(1, '행사 명칭을 입력해 주세요.'),
   evntCn: EventInfoDtoSchema.shape.evntCn.unwrap().trim().min(1, '상세 내용을 입력해 주세요.'),
   evntBgngYmd: eventInputDate('행사 시작일', EventInfoDtoSchema.shape.evntBgngYmd),
   evntEndYmd: eventInputDate('행사 종료일', EventInfoDtoSchema.shape.evntEndYmd),
+  /*
+    [2026-08-28] 담당자(picNm)·준비사항(prepMttr)을 폼에 올린다.
+
+    서버 계약에는 있었지만 화면 어디에도 입력·표시가 없어, 저장은 보존만 하고
+    (' 이 창에서 보이지 않는 값은 그대로 유지됩니다') 값이 실제로 무엇인지는 제품 어디에서도
+    볼 수 없었다. 필수는 아니다 — 기존 행에 값이 없을 수 있고 서버도 요구하지 않는다.
+  */
+  picNm: EventInfoDtoSchema.shape.picNm.unwrap().trim().optional(),
+  prepMttr: EventInfoDtoSchema.shape.prepMttr.unwrap().trim().optional(),
   evntUseCnt: z.string()
     .trim()
     .min(1, '참여 정원을 입력해 주세요.')
@@ -85,6 +96,8 @@ const eventValidationLabels: Record<keyof EventCreateFormInput, string> = {
   evntBgngYmd: '행사 시작일',
   evntEndYmd: '행사 종료일',
   evntUseCnt: '참여 정원',
+  picNm: '담당자',
+  prepMttr: '준비사항',
 };
 
 const EMPTY_EVENT_FORM: EventCreateFormInput = {
@@ -93,6 +106,8 @@ const EMPTY_EVENT_FORM: EventCreateFormInput = {
   evntBgngYmd: '',
   evntEndYmd: '',
   evntUseCnt: '0',
+  picNm: '',
+  prepMttr: '',
 };
 
 /** 반대 방향 — 저장된 YYYYMMDD 를 사람이 읽는 형태로. 등록이 가능해지면서 실제로 노출된다. */
@@ -251,6 +266,8 @@ export default function EventManagementClient() {
       setForm({
         evntNm: detail.evntNm ?? '',
         evntCn: detail.evntCn ?? '',
+        picNm: detail.picNm ?? '',
+        prepMttr: detail.prepMttr ?? '',
         evntBgngYmd: ymdToInput(detail.evntBgngYmd),
         evntEndYmd: ymdToInput(detail.evntEndYmd),
         evntUseCnt: String(detail.evntUseCnt ?? 0),
@@ -371,7 +388,7 @@ export default function EventManagementClient() {
   return (
     <WorkListPage
       title="행사 운영 센터"
-      description="사내 행사 및 캠페인을 조회·등록합니다."
+      description="사내 행사 및 캠페인을 조회·등록·수정합니다."
       breadcrumbItems={[{ label: '운영지원' }, { label: '행사관리' }]}
       filterStateKey="operation-events"
       // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
@@ -383,15 +400,21 @@ export default function EventManagementClient() {
       }
       filter={
         <div className="min-w-60 max-w-xl space-y-1">
+          {/*
+            [2026-08-28] 라벨이 '행사 명칭' 이었지만 서버는 명칭과 상세 내용을 함께 찾는다
+            (EventInfoRepository: evntCn LIKE … OR evntNm LIKE …). 제목에 없는 검색어로 행이
+            섞여 나오는 이유를 화면이 말하지 않았고, 라벨은 오히려 '명칭으로 찾는다'고 단정했다.
+            저장소의 다른 조회 조건 관례(예: 포상 '포상 명칭 · 대상자')와 같은 형태로 맞춘다.
+          */}
           <label htmlFor="event-search" className="text-[length:var(--font-size-body)] font-medium">
-            행사 명칭
+            행사 명칭 · 상세 내용
           </label>
           <Input
             id="event-search"
             value={searchWrd}
             onChange={(e) => handleSearchChange(e.target.value)}
-            aria-label="행사 검색"
-            placeholder="행사 검색"
+            aria-label="행사 명칭 또는 상세 내용 검색"
+            placeholder="행사 명칭 또는 상세 내용으로 검색"
           />
         </div>
       }
@@ -547,6 +570,54 @@ export default function EventManagementClient() {
                 />
                 {validation.errors.evntUseCnt ? (
                   <p {...validation.messageProps('evntUseCnt')} className="text-xs font-bold text-destructive-emphasis" />
+                ) : null}
+              </div>
+              {/*
+                [2026-08-28] 담당자·준비사항을 화면에 올린다. 서버 계약에는 있었지만 입력도
+                표시도 없어서, 저장 시 보존만 하고("이 창에서 보이지 않는 값은 그대로
+                유지됩니다") 값이 무엇인지는 제품 어디에서도 볼 수 없었다. 필수는 아니다 —
+                기존 행에 값이 없을 수 있고 서버도 요구하지 않는다.
+              */}
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="picNm" className="text-xs font-bold text-muted-foreground tracking-widest">
+                  담당자
+                </Label>
+                <Input
+                  id="picNm"
+                  {...validation.fieldProps('picNm')}
+                  aria-label="담당자"
+                  value={form.picNm ?? ''}
+                  onChange={(e) => {
+                    validation.clearError('picNm');
+                    setForm({ ...form, picNm: e.target.value });
+                  }}
+                  maxLength={300}
+                  className="h-11 bg-muted border-none rounded-lg font-bold text-sm"
+                  placeholder="예: 총무팀 김담당"
+                />
+                {validation.errors.picNm ? (
+                  <p {...validation.messageProps('picNm')} className="text-xs font-bold text-destructive-emphasis" />
+                ) : null}
+              </div>
+              <div className="col-span-2 space-y-2">
+                <Label htmlFor="prepMttr" className="text-xs font-bold text-muted-foreground tracking-widest">
+                  준비사항
+                </Label>
+                <textarea
+                  id="prepMttr"
+                  {...validation.fieldProps('prepMttr')}
+                  aria-label="준비사항"
+                  value={form.prepMttr ?? ''}
+                  onChange={(e) => {
+                    validation.clearError('prepMttr');
+                    setForm({ ...form, prepMttr: e.target.value });
+                  }}
+                  maxLength={2500}
+                  placeholder="예: 버스 2대 예약, 현수막 제작"
+                  className="w-full min-h-[120px] bg-muted border-none rounded-lg p-4 font-bold text-sm outline-none focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                />
+                {validation.errors.prepMttr ? (
+                  <p {...validation.messageProps('prepMttr')} className="text-xs font-bold text-destructive-emphasis" />
                 ) : null}
               </div>
             </div>

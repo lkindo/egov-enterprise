@@ -145,3 +145,79 @@ describe('행사 수정', () => {
     expect(mocks.updateEvent).not.toHaveBeenCalled();
   });
 });
+
+/**
+ * 계약에 있는 값이 제품 어디에서도 보이지 않던 축.
+ *
+ * 수정 경로를 붙일 때 `picNm`·`prepMttr` 는 **보존만** 했다 — 저장 시 지워지지 않게 원본을
+ * 실어 보내고 모달은 "이 창에서 보이지 않는 값은 그대로 유지됩니다" 라고 고지했다. 그런데
+ * 그 값이 무엇인지는 입력도 표시도 없어 제품 어디에서도 확인할 수 없었다. 담당자를 모르는
+ * 행사 목록은 운영에 쓸 수 없다.
+ */
+describe('행사 — 담당자·준비사항', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getEvents.mockResolvedValue({ list: [ROW], total: 1, totalPage: 1 });
+    mocks.getEvent.mockResolvedValue(DETAIL);
+    mocks.updateEvent.mockResolvedValue(undefined);
+    mocks.confirm.mockResolvedValue(true);
+  });
+
+  it('수정을 열면 담당자·준비사항이 채워진다 — 종전에는 볼 방법이 없었다', async () => {
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '가을 워크숍 수정' }));
+
+    expect(await screen.findByDisplayValue('김담당')).toBeVisible();
+    expect(screen.getByDisplayValue('버스 2대 예약')).toBeVisible();
+  });
+
+  it('두 값을 고쳐 저장하면 그대로 나간다', async () => {
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '가을 워크숍 수정' }));
+    fireEvent.change(await screen.findByLabelText('담당자'), { target: { value: '박담당' } });
+    fireEvent.change(screen.getByLabelText('준비사항'), { target: { value: '버스 3대 예약' } });
+    fireEvent.click(screen.getByRole('button', { name: /변경 사항 저장/ }));
+
+    await waitFor(() => expect(mocks.updateEvent).toHaveBeenCalledTimes(1));
+    expect(mocks.updateEvent.mock.calls[0][1]).toMatchObject({
+      picNm: '박담당',
+      prepMttr: '버스 3대 예약',
+    });
+  });
+
+  it('비워 두고도 저장된다 — 서버가 요구하지 않는 값을 강제하지 않는다', async () => {
+    mocks.getEvent.mockResolvedValue({ ...DETAIL, picNm: undefined, prepMttr: undefined });
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('button', { name: '가을 워크숍 수정' }));
+    await screen.findByDisplayValue('가을 워크숍');
+    fireEvent.click(screen.getByRole('button', { name: /변경 사항 저장/ }));
+
+    await waitFor(() => expect(mocks.updateEvent).toHaveBeenCalledTimes(1));
+  });
+});
+
+/**
+ * 조회 조건 라벨이 실제 검색 범위를 말한다(카탈로그 G15).
+ *
+ * 서버는 `evntCn LIKE … OR evntNm LIKE …` 로 **명칭과 상세 내용을 함께** 찾는데
+ * 라벨은 '행사 명칭' 이라고 단정했다. 제목에 없는 검색어로 행이 섞여 나오는 이유를 화면이
+ * 말하지 않으면 사용자는 결과를 신뢰할 수 없다.
+ */
+describe('행사 — 조회 조건 문구', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mocks.getEvents.mockResolvedValue({ list: [ROW], total: 1, totalPage: 1 });
+    mocks.getEvent.mockResolvedValue(DETAIL);
+  });
+
+  it('명칭만 찾는다고 말하지 않는다', async () => {
+    renderClient();
+    await screen.findByText('가을 워크숍');
+
+    expect(screen.getByLabelText('행사 명칭 또는 상세 내용 검색')).toBeInTheDocument();
+    expect(screen.queryByLabelText('행사 검색')).not.toBeInTheDocument();
+  });
+});
