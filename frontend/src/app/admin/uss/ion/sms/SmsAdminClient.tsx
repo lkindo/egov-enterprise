@@ -13,7 +13,8 @@ import { Send,
   RefreshCcw,
   Plus,
   Phone,
-  Calendar } from 'lucide-react';
+  Calendar,
+  AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -280,6 +281,31 @@ export default function SmsAdminClient({
           </div>
         }
       >
+        {/*
+          [2026-08-28] 게이트웨이 미연동을 **보내기 전에** 고지한다.
+
+          전송 구현체는 두 프로필 모두 무조건 실패를 돌려준다 —
+          LoggingSmsSender(@Profile("!prod"))·UnavailableSmsSender(@Profile("prod")) 가
+          각각 return false 다. 즉 이 화면에서 누르는 발송은 **100% 실패가 확정**돼 있다.
+          그런데 화면은 아무 사전 고지 없이 작성·발송을 유도했고, 관리자는 인증 문자를 다 쓴
+          뒤에야 결과를 뒤져 실패를 알게 됐다.
+
+          이 문구는 위 두 구현체와 양방향으로 결속돼 있다(sms-gateway-disclosure 계약) —
+          실제 게이트웨이 sender 가 생기면 계약이 red 가 되어 이 배너를 걷어내게 한다.
+        */}
+        <div
+          role="status"
+          className="mb-6 flex items-start gap-3 rounded-lg border border-warning/30 bg-warning/10 px-5 py-4"
+        >
+          <AlertTriangle size={16} className="mt-0.5 shrink-0 text-warning-emphasis" aria-hidden="true" />
+          <div className="text-xs font-bold leading-relaxed text-foreground space-y-1">
+            <p>문자 게이트웨이가 연동되어 있지 않아 지금은 문자가 실제로 발송되지 않습니다.</p>
+            <p className="font-normal">
+              발송을 누르면 요청은 이력에 남지만 전달 결과는 ‘실패’로 기록됩니다. 아래 목록의 ‘수신자 결과’에서 확인할 수 있습니다.
+            </p>
+          </div>
+        </div>
+
         <StandardDataTable<SmsDto>
           accessibleLabel="문자 발송 이력"
           columns={columns}
@@ -444,6 +470,26 @@ export default function SmsAdminClient({
           )}
 
           <DialogFooter>
+            {/*
+              [2026-08-28] 성공 경로에도 새로고침을 둔다.
+
+              전달은 비동기다(SmsAsyncProcessor 가 재시도 3회 뒤 결과를 쓴다). 그런데 전역
+              staleTime 이 60초·refetchOnWindowFocus 가 false 라, 발송 직후 이 창을 열면
+              '대기 중'이 뜨고 **그 뒤 60초 동안은 닫았다 다시 열어도 재조회되지 않는다** —
+              토스트가 시키는 대로 결과를 보러 와도 실제 '전달 실패'를 볼 수 없었다.
+              종전에는 '다시 시도' 가 오류 분기 전용이라 이 경로에 새로고침이 아예 없었다.
+            */}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => void refetchRecipients()}
+              disabled={recipientsLoading}
+              aria-busy={recipientsLoading || undefined}
+              className="gap-2"
+            >
+              <RefreshCcw size={16} className={cn(recipientsLoading && 'animate-spin')} aria-hidden="true" />
+              결과 새로고침
+            </Button>
             <Button type="button" variant="outline" onClick={() => setRecipientTarget(null)}>닫기</Button>
           </DialogFooter>
         </DialogContent>

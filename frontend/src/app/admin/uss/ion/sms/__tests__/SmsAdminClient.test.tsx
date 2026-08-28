@@ -1,7 +1,7 @@
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 
 const mocks = vi.hoisted(() => ({
@@ -221,5 +221,49 @@ describe('SMS 발송 결과 고지', () => {
     for (const code of ["'S'", "'F'", "'P'"]) {
       expect(source, `결과 코드 ${code} 처리가 없다`).toContain(code);
     }
+  });
+
+  /**
+   * 결과를 사후에 정직하게 말하는 것만으로는 부족하다 — **보내기 전에** 알려야 한다.
+   *
+   * 전송 구현체는 두 프로필 모두 무조건 실패다. 즉 이 화면에서 누르는 발송은 100% 실패가
+   * 확정돼 있는데, 종전에는 아무 사전 고지 없이 작성·발송을 유도했다. 관리자는 인증 문자를
+   * 다 쓴 뒤에야 결과를 뒤져 실패를 알게 된다.
+   */
+  it('게이트웨이 미연동을 보내기 전에 고지한다', () => {
+    expect(source).toContain('문자 게이트웨이가 연동되어 있지 않아');
+    expect(source).toContain('‘실패’로 기록됩니다');
+  });
+
+  /**
+   * 그 고지를 **실제 구현체와 양방향으로 묶는다.**
+   *
+   * 배너만 하드코딩하면, 나중에 진짜 게이트웨이가 붙었을 때 화면이 반대로 거짓말한다.
+   * 저장소의 SmsSender 구현체를 전수로 읽어 하나라도 성공을 돌려주면 이 계약이 red 가 되게
+   * 한다 — 그때 배너를 걷어내라는 신호다.
+   */
+  it('배너는 "모든 sender 가 실패를 돌려준다"는 사실에 결속돼 있다', () => {
+    const senderDir = path.resolve(__dirname, '..', '..', '..', '..', '..', '..', '..', '..',
+      'business-app', 'src', 'main', 'java', 'nuri', 'business', 'service', 'sms');
+    const senders = readdirSync(senderDir).filter((name) => /SmsSender\.java$/.test(name));
+
+    // 구현체가 사라지면 이 검사가 vacuous 하게 통과한다 — 그 자체를 실패로 본다.
+    expect(senders.length).toBeGreaterThanOrEqual(2);
+
+    for (const name of senders) {
+      if (name === 'SmsSender.java') continue; // 인터페이스
+      const body = readFileSync(path.join(senderDir, name), 'utf8')
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/\/\/.*$/gm, ' ');
+      expect(body, `${name} 가 성공을 돌려주면 미연동 배너는 거짓이 된다`).not.toMatch(/return\s+true\s*;/);
+    }
+  });
+
+  /**
+   * 전달은 비동기이고 전역 캐시는 60초 fresh 다. 성공 경로에 새로고침이 없으면 토스트가
+   * 시키는 대로 결과를 보러 와도 '대기 중'만 보고, 그 뒤 60초 동안 실제 실패를 볼 수 없다.
+   */
+  it('수신자 결과를 성공 경로에서도 다시 읽을 수 있다', () => {
+    expect(source).toContain('결과 새로고침');
   });
 });
