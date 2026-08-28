@@ -193,4 +193,35 @@ class CommunityServiceImplTest {
         // then
         verify(communityUserRepository, times(1)).save(any());
     }
+
+    /**
+     * 중복 가입 안내가 진행 중인 절차를 지어내지 않는다.
+     *
+     * <p>종전 문구는 "이미 가입했거나 가입 요청이 <b>처리 중</b>입니다" 였다. 처리하는 주체가
+     * 없다 — 가입이 만드는 {@code mbrSttsCd='A'}(Requested) 를 읽거나 다른 상태로 옮기는
+     * 코드가 저장소 전체에 없고, 승인 엔드포인트·화면·회원 목록 API 도 없다. 진행 중인
+     * 절차가 있는 것처럼 말하면 사용자는 기다리다 다시 눌러 같은 409 를 받는다.
+     */
+    @Test
+    @DisplayName("커뮤니티 가입 신청 - 중복은 409 이고, 없는 처리 절차를 지어내지 않는다")
+    void joinCommunityRejectsDuplicateWithoutInventingProcess() {
+        Long cmntySn = 101L;
+        Community community = Community.builder()
+                .cmntySn(cmntySn)
+                .useYn("Y")
+                .build();
+        given(communityRepository.findById(cmntySn)).willReturn(Optional.of(community));
+        given(communityUserRepository.existsById(any())).willReturn(true);
+
+        nuri.foundation.core.exception.BusinessException thrown =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        nuri.foundation.core.exception.BusinessException.class,
+                        () -> communityService.joinCommunity(cmntySn, "user1"));
+
+        org.junit.jupiter.api.Assertions.assertEquals(
+                nuri.foundation.core.exception.CommonErrorCode.DUPLICATE_RESOURCE, thrown.getErrorCode());
+        org.junit.jupiter.api.Assertions.assertFalse(thrown.getMessage().contains("처리 중"),
+                "아무도 처리하지 않는 상태를 '처리 중'이라고 부르면 안 된다");
+        verify(communityUserRepository, org.mockito.Mockito.never()).save(any());
+    }
 }

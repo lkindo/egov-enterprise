@@ -47,10 +47,16 @@ export default function CommunityDetailHubClient({
    * 서버는 상태 위반을 구분해 돌려준다 — 비활성 커뮤니티는 409(RESOURCE_IN_USE),
    * 이미 가입/신청 중이면 409(DUPLICATE_RESOURCE). 그래서 성공·실패를 같은 문구로 뭉개지 않고
    * 서버 메시지를 그대로 보여 준다(A3 금지 항목과 같은 규율).
+   *
+   * [2026-08-28] 성공 문구에서 '관리자 승인 후 이용할 수 있습니다' 를 뺐다. **그 승인 절차가
+   * 존재하지 않는다.** 가입은 `mbrSttsCd='A'`(Requested) 행을 만드는데, 이 값을 읽거나 다른
+   * 상태로 옮기는 코드가 저장소 전체에 없다 — 승인 엔드포인트도, 승인 화면도, 회원 목록
+   * API 도 없다(`CommunityUserRepository.findByIdCmntySn` 호출자 0건). 오지 않을 승인을
+   * 기다리라고 말하면 사용자는 자기 신청이 누락된 줄 알고 다시 누른다(그러면 409 다).
    */
   const joinMutation = useMutation({
     mutationFn: () => communityUserService.joinCommunity(cmntySn),
-    onSuccess: () => toast('가입을 신청했습니다. 관리자 승인 후 이용할 수 있습니다.', 'success'),
+    onSuccess: () => toast('가입을 신청했습니다.', 'success'),
     onError: (error: unknown) => {
       const message = error instanceof Error ? error.message : '';
       toast(message || '가입 신청 중 오류가 발생했습니다.', 'error');
@@ -173,8 +179,16 @@ export default function CommunityDetailHubClient({
                   <ShieldCheck size={40} className="text-primary" />
                 </div>
                 <div className="space-y-4">
-                  <h4 className="text-2xl font-bold tracking-tighter leading-tight">_ SECURITY<br />POLICY</h4>
-                  <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">가입 승인 필요<br />내부 임직원 전용</p>
+                  {/*
+                    [2026-08-28] '_ SECURITY POLICY / 가입 승인 필요 / 내부 임직원 전용' 을 걷어냈다.
+                    세 문장 다 근거가 없다 — 승인 절차는 존재하지 않고(위 joinMutation 주석 참조),
+                    '내부 임직원 전용' 을 집행하는 게이트도 없다(가입 API 는 인증 사용자면 통과한다).
+                    보안 정책을 표방하면서 실제로는 아무것도 집행하지 않는 패널이었다.
+                  */}
+                  <h4 className="text-2xl font-bold tracking-tight leading-tight">가입 신청</h4>
+                  <p className="text-xs text-white/60 font-bold tracking-tight leading-relaxed">
+                    신청은 기록되지만 승인 처리 화면은 아직 없습니다.<br />진행 상태는 운영 담당자에게 문의하세요.
+                  </p>
                 </div>
                 {/*
                   [2026-08-28] 'ADMIN_PANEL_LOGIN' 버튼 제거 — onClick·href 가 없어 눌러도 아무 일이
