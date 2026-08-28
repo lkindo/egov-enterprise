@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "90b63cf59c46f1014dffc3e15afa10aa1875e549f3e4a0ae9d660610fa1247f5"
+    "inventoryHash": "f9cf4ca38b620f66b1540f7c30b3679982e2ba9ec24ac9322267c80dbc219cb0"
   },
   "summary": {
     "sourceFileCount": 505,
-    "records": 530,
-    "syntaxOccurrences": 604,
-    "ambiguousRecords": 511,
-    "unverifiedRecords": 530,
+    "records": 531,
+    "syntaxOccurrences": 605,
+    "ambiguousRecords": 512,
+    "unverifiedRecords": 531,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -40,7 +40,7 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 45,
+      "form-producer": 46,
       "navigation-producer": 154,
       "page-redirect": 5,
       "query-builder": 21,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 363,
+      "navigation": 364,
       "request-telemetry": 167
     }
   },
@@ -14337,6 +14337,45 @@
       "evidence": {
         "source": "frontend/src/app/error.tsx",
         "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-6FCAD925E5B4DA",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "implicit-or-computed-method",
+      "source": "frontend/src/app/help/HelpClient.tsx",
+      "producerFile": "frontend/src/app/help/HelpClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/help",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "form-method-or-interception-unresolved",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/help/HelpClient.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },

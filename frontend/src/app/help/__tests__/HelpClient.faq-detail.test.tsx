@@ -80,7 +80,13 @@ describe('HelpClient FAQ detail', () => {
     await user.type(search, '계정');
     await user.click(await screen.findByRole('button', { name: /계정 잠금은 어떻게 해제하나요/ }));
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('답변을 불러오지 못했습니다.');
+    /*
+      화면에 폼(1:1 문의)이 생기면서 useAppForm 이 document.body 에 sr-only 오류 알림
+      영역(role="alert")을 하나 더 붙인다. 그래서 role 만으로는 더 이상 유일하지 않다 —
+      이 테스트가 확인하려는 것은 FAQ 상세 오류이므로 그 문단으로 범위를 좁힌다.
+    */
+    const faqError = await screen.findByText('답변을 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+    expect(faqError).toHaveAttribute('role', 'alert');
     expect(search).toHaveValue('계정');
 
     await user.click(screen.getByRole('button', { name: '답변 다시 불러오기' }));

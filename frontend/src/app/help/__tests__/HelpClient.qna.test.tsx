@@ -56,6 +56,13 @@ const openQnaTab = async (user: ReturnType<typeof userEvent.setup>) => {
 /** 목록에도 '제목' 열이 있으므로 폼 조회는 모달 안으로 범위를 좁힌다. */
 const askForm = async () => within(await screen.findByRole('dialog', { name: '1:1 문의 작성' }));
 
+/*
+  오류가 뜨면 FormErrorSummary 가 같은 라벨 텍스트를 한 번 더 그린다. 라벨로 집으면
+  그때만 조회가 모호해져 테스트가 흔들리므로, 입력은 폼 필드 이름으로 집는다.
+*/
+const titleInput = () => document.querySelector<HTMLInputElement>('input[name="pstTtl"]')!;
+const contentInput = () => document.querySelector<HTMLTextAreaElement>('textarea[name="pstCn"]')!;
+
 describe('도움말 Q&A — 문의 등록', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -80,8 +87,8 @@ describe('도움말 Q&A — 문의 등록', () => {
 
     await user.click(screen.getByRole('button', { name: /새로운 문의 작성/ }));
     const form = await askForm();
-    await user.type(form.getByLabelText(/제목/), '로그인이 안 됩니다');
-    await user.type(form.getByLabelText(/내용/), '비밀번호를 바꾼 뒤부터 로그인되지 않습니다.');
+    await user.type(titleInput(), '로그인이 안 됩니다');
+    await user.type(contentInput(), '비밀번호를 바꾼 뒤부터 로그인되지 않습니다.');
     await user.click(form.getByRole('button', { name: '문의 등록' }));
 
     await waitFor(() => expect(harness.createQna).toHaveBeenCalledTimes(1));
@@ -93,34 +100,60 @@ describe('도움말 Q&A — 문의 등록', () => {
     await waitFor(() => expect(harness.getQnas.mock.calls.length).toBeGreaterThan(callsBefore));
   });
 
-  it('빈 제목·내용은 보내지 않고 그 사실을 화면에 말한다', async () => {
+  it('빈 제목·내용은 보내지 않고 요약·인라인·첫 오류 포커스로 연결한다', async () => {
     const user = userEvent.setup();
-    render(<HelpClient />);
-    await openQnaTab(user);
-
-    await user.click(screen.getByRole('button', { name: /새로운 문의 작성/ }));
-    await user.click(await screen.findByRole('button', { name: '문의 등록' }));
-
-    expect(await screen.findByRole('alert')).toHaveTextContent('제목과 내용을 모두 입력해 주세요.');
-    expect(harness.createQna).not.toHaveBeenCalled();
-  });
-
-  it('등록에 실패하면 입력을 지우지 않고 사유를 모달에도 남긴다', async () => {
-    const user = userEvent.setup();
-    harness.createQna.mockRejectedValueOnce(new Error('문의 등록 권한이 없습니다.'));
     render(<HelpClient />);
     await openQnaTab(user);
 
     await user.click(screen.getByRole('button', { name: /새로운 문의 작성/ }));
     const form = await askForm();
-    await user.type(form.getByLabelText(/제목/), '질문');
-    await user.type(form.getByLabelText(/내용/), '내용입니다.');
     await user.click(form.getByRole('button', { name: '문의 등록' }));
 
-    // 토스트는 사라진다 — 사용자가 쓴 글이 걸린 실패는 화면에도 남아야 한다.
-    expect(await screen.findByRole('alert')).toHaveTextContent('문의 등록 권한이 없습니다.');
-    expect(form.getByLabelText(/제목/)).toHaveValue('질문');
-    expect(form.getByLabelText(/내용/)).toHaveValue('내용입니다.');
+    expect(await form.findByText('제목을 입력해 주세요.')).toBeVisible();
+    expect(form.getByText('문의 내용을 입력해 주세요.')).toBeVisible();
+    expect(document.querySelector('[data-form-error-summary="true"]')).toHaveTextContent(/입력 오류/);
+    await waitFor(() => expect(titleInput()).toHaveFocus());
+    expect(harness.createQna).not.toHaveBeenCalled();
+  });
+
+  it('구조적 서버 오류는 해당 입력으로 되돌리고 값을 보존한다', async () => {
+    const user = userEvent.setup();
+    const message = '문의 제목에 사용할 수 없는 표현이 있습니다.';
+    harness.createQna.mockRejectedValueOnce({
+      response: { data: { errors: [{ field: 'pstTtl', message }] } },
+    });
+    render(<HelpClient />);
+    await openQnaTab(user);
+
+    await user.click(screen.getByRole('button', { name: /새로운 문의 작성/ }));
+    const form = await askForm();
+    await user.type(titleInput(), '질문');
+    await user.type(contentInput(), '내용입니다.');
+    await user.click(form.getByRole('button', { name: '문의 등록' }));
+
+    expect(await form.findByText(message)).toBeVisible();
+    // 실패가 곧 글 손실이 되면 안 된다.
+    expect(titleInput()).toHaveValue('질문');
+    expect(contentInput()).toHaveValue('내용입니다.');
+    expect(harness.toast).not.toHaveBeenCalledWith(expect.any(String), 'error');
+  });
+
+  it('구조적이지 않은 실패도 침묵하지 않고 입력을 지우지 않는다', async () => {
+    const user = userEvent.setup();
+    harness.createQna.mockRejectedValueOnce(new Error('boom'));
+    render(<HelpClient />);
+    await openQnaTab(user);
+
+    await user.click(screen.getByRole('button', { name: /새로운 문의 작성/ }));
+    const form = await askForm();
+    await user.type(titleInput(), '질문');
+    await user.type(contentInput(), '내용입니다.');
+    await user.click(form.getByRole('button', { name: '문의 등록' }));
+
+    await waitFor(() => expect(harness.toast).toHaveBeenCalledWith(
+      '문의를 등록하지 못했습니다. 입력 내용은 유지됩니다.', 'error'));
+    expect(titleInput()).toHaveValue('질문');
+    expect(contentInput()).toHaveValue('내용입니다.');
   });
 });
 

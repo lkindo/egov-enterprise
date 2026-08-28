@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { helpUserService, isQnaSolved, FAQ, QNA } from '@/services/business/user/help/HelpUserService';
@@ -14,6 +14,18 @@ import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import { EmptyStateDisplay } from '@/app/components/ui/status-displays';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
+import { z } from 'zod';
+import { BoardSaveRequestSchema } from '@/types/generated-zod';
+import { useAppForm } from '@/hooks/useAppForm';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+  FormErrorSummary,
+} from '@/components/ui/form';
 
 const StandardModal = dynamic(
   () => import('@/app/components/ui/standard-modal').then((mod) => mod.StandardModal),
@@ -25,8 +37,31 @@ type FaqDetailState =
   | { status: 'error' }
   | { status: 'success'; answer: string };
 
-const TITLE_MAX = 100;
-const CONTENT_MAX = 4000;
+/**
+ * 문의 등록 스키마.
+ *
+ * Q&A 는 통합 게시판(BBS) 위에 올라가므로 길이 상한의 SSOT 는 `BoardSaveRequest` 다.
+ * 상한을 직접 적으면 서버가 바뀔 때 화면만 낡아, 사용자는 다 쓴 뒤 서버 오류로 되돌아온다.
+ * 그래서 값은 생성 스키마에서 읽고 문구만 화면이 정한다.
+ *
+ * 생성 필드를 그대로 이어 붙이지는 않는다 — `pstTtl` 에는 이미 메시지 없는 `min(1)` 이
+ * 걸려 있어, 빈 값일 때 그 기본 영문 메시지가 먼저 나온다(실측). 필수 안내는 화면의 몫이다.
+ */
+const TITLE_MAX = BoardSaveRequestSchema.shape.pstTtl.maxLength ?? 100;
+const CONTENT_MAX = BoardSaveRequestSchema.shape.pstCn.maxLength ?? 4000;
+
+const askSchema = BoardSaveRequestSchema.pick({ pstTtl: true, pstCn: true }).extend({
+  pstTtl: z.string().trim()
+    .min(1, '제목을 입력해 주세요.')
+    .max(TITLE_MAX, `제목은 ${TITLE_MAX.toLocaleString()}자까지 입력할 수 있습니다.`),
+  pstCn: z.string().trim()
+    .min(1, '문의 내용을 입력해 주세요.')
+    .max(CONTENT_MAX, `문의 내용은 ${CONTENT_MAX.toLocaleString()}자까지 입력할 수 있습니다.`),
+});
+
+type AskFormValues = z.infer<typeof askSchema>;
+
+const ASK_FORM_LABELS = { pstTtl: '제목', pstCn: '내용' };
 
 export default function HelpClient() {
   const { toast } = useToast();
@@ -39,12 +74,11 @@ export default function HelpClient() {
   const [faqDetails, setFaqDetails] = useState<Record<string, FaqDetailState>>({});
 
   const [askOpen, setAskOpen] = useState(false);
-  const [askTitle, setAskTitle] = useState('');
-  const [askContent, setAskContent] = useState('');
-  const [askError, setAskError] = useState<string | null>(null);
   const [asking, setAsking] = useState(false);
   const askingRef = useRef(false);
   const [reloadToken, setReloadToken] = useState(0);
+
+  const askForm = useAppForm(askSchema, { defaultValues: { pstTtl: '', pstCn: '' } });
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -67,50 +101,39 @@ export default function HelpClient() {
   }, [tab, searchKeyword, toast, reloadToken]);
 
   const openAsk = () => {
-    setAskTitle('');
-    setAskContent('');
-    setAskError(null);
+    askForm.reset({ pstTtl: '', pstCn: '' });
     setAskOpen(true);
   };
 
-  const closeAsk = useCallback(() => {
+  const closeAsk = () => {
+    // 제출 중에는 닫지 않는다 — 닫으면 진행 중인 등록의 결과를 사용자가 볼 수 없다.
     if (!askingRef.current) setAskOpen(false);
-  }, []);
+  };
 
-  const submitAsk = async () => {
+  const submitAsk = askForm.handleSubmit(async (values: AskFormValues) => {
+    // 동기 lock — 제출 중 재클릭이 두 번째 문의를 만들지 못하게 한다.
     if (askingRef.current) return;
-    const title = askTitle.trim();
-    const content = askContent.trim();
-    if (!title || !content) {
-      // 서버도 @NotBlank 로 막지만, 먼저 잡지 않으면 사용자는 쓴 뒤에 오류로 되돌아온다.
-      setAskError('제목과 내용을 모두 입력해 주세요.');
-      return;
-    }
-
     askingRef.current = true;
     setAsking(true);
-    setAskError(null);
     try {
-      await helpUserService.createQna({ qstnTtl: title, qstnCn: content });
+      await helpUserService.createQna({ qstnTtl: values.pstTtl, qstnCn: values.pstCn });
       toast('문의를 등록했습니다.', 'success');
       setAskOpen(false);
       // 방금 쓴 글이 목록에 보여야 등록됐다는 것을 사용자가 확인할 수 있다.
       setReloadToken((token) => token + 1);
     } catch (error: unknown) {
       /*
-        토스트는 사라진다. 등록 실패는 사용자가 쓴 글이 걸린 문제이므로 모달 안에도 남긴다.
-        입력값은 지우지 않는다 — 지우면 실패가 곧 글 손실이 된다.
+        구조적 필드 오류는 해당 입력으로 되돌리고, 그 밖의 실패는 토스트로 알린다.
+        어느 쪽이든 입력값은 지우지 않는다 — 지우면 실패가 곧 글 손실이 된다.
       */
-      const message = error instanceof Error && error.message
-        ? error.message
-        : '문의를 등록하지 못했습니다. 입력 내용은 유지됩니다.';
-      setAskError(message);
-      toast(message, 'error');
+      if (!askForm.applyServerErrors(error)) {
+        toast('문의를 등록하지 못했습니다. 입력 내용은 유지됩니다.', 'error');
+      }
     } finally {
       askingRef.current = false;
       setAsking(false);
     }
-  };
+  });
 
   const qnaColumns = [
     {
@@ -285,55 +308,59 @@ export default function HelpClient() {
               />
 
               <StandardModal isOpen={askOpen} onClose={closeAsk} title="1:1 문의 작성" maxWidth="xl">
-                <div className="space-y-6 text-left">
-                  <div className="space-y-2">
-                    <label htmlFor="qna-title" className="text-sm font-bold text-foreground">
-                      제목 <span className="text-destructive" aria-hidden="true">*</span>
-                    </label>
-                    <Input
-                      id="qna-title"
-                      value={askTitle}
-                      maxLength={TITLE_MAX}
+                <Form {...askForm}>
+                  {/* noValidate — 브라우저 기본 말풍선 대신 요약·인라인·첫 오류 포커스가 소유한다. */}
+                  <form onSubmit={submitAsk} noValidate className="space-y-6 text-left">
+                    <FormErrorSummary labels={ASK_FORM_LABELS} onNavigate={askForm.focusError} />
+
+                    <FormField
+                      control={askForm.control}
+                      name="pstTtl"
                       required
-                      aria-required="true"
-                      onChange={(event) => setAskTitle(event.target.value)}
-                      placeholder="무엇을 도와드릴까요?"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-sm font-bold text-foreground">제목</FormLabel>
+                          <FormControl>
+                            <Input {...field} maxLength={TITLE_MAX} placeholder="무엇을 도와드릴까요?" />
+                          </FormControl>
+                          <FormMessage className="text-xs font-bold text-destructive" />
+                        </FormItem>
+                      )}
                     />
-                  </div>
 
-                  <div className="space-y-2">
-                    <label id="qna-content-label" htmlFor="qna-content" className="text-sm font-bold text-foreground">
-                      내용 <span className="text-destructive" aria-hidden="true">*</span>
-                    </label>
-                    <textarea
-                      id="qna-content"
-                      aria-labelledby="qna-content-label"
-                      value={askContent}
-                      maxLength={CONTENT_MAX}
+                    <FormField
+                      control={askForm.control}
+                      name="pstCn"
                       required
-                      aria-required="true"
-                      onChange={(event) => setAskContent(event.target.value)}
-                      placeholder="문의 내용을 입력해 주세요."
-                      className="w-full min-h-[180px] rounded-lg border border-border bg-muted/40 p-4 outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                      render={({ field }) => (
+                        <FormItem className="space-y-2">
+                          <FormLabel className="text-sm font-bold text-foreground">내용</FormLabel>
+                          <FormControl>
+                            <textarea
+                              {...field}
+                              maxLength={CONTENT_MAX}
+                              placeholder="문의 내용을 입력해 주세요."
+                              className="w-full min-h-[180px] rounded-lg border border-border bg-muted/40 p-4 outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                            />
+                          </FormControl>
+                          <p className="text-xs text-muted-foreground">
+                            등록한 문의는 작성자와 관리자만 볼 수 있습니다.
+                          </p>
+                          <FormMessage className="text-xs font-bold text-destructive" />
+                        </FormItem>
+                      )}
                     />
-                    <p className="text-xs text-muted-foreground">
-                      {askContent.length}/{CONTENT_MAX}자 · 등록한 문의는 작성자와 관리자만 볼 수 있습니다.
-                    </p>
-                  </div>
 
-                  {askError ? (
-                    <p role="alert" className="text-sm font-bold text-destructive">{askError}</p>
-                  ) : null}
-
-                  <div className="flex justify-end gap-3 pt-2">
-                    <Button type="button" variant="outline" onClick={closeAsk} disabled={asking}>
-                      취소
-                    </Button>
-                    <Button type="button" onClick={submitAsk} disabled={asking} aria-busy={asking}>
-                      {asking ? '등록 중…' : '문의 등록'}
-                    </Button>
-                  </div>
-                </div>
+                    <div className="flex justify-end gap-3 pt-2">
+                      <Button type="button" variant="outline" onClick={closeAsk} disabled={asking}>
+                        취소
+                      </Button>
+                      <Button type="submit" disabled={asking} aria-busy={asking}>
+                        {asking ? '등록 중…' : '문의 등록'}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
               </StandardModal>
             </motion.div>
           )}
