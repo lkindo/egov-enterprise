@@ -103,7 +103,8 @@ class InstitutionCodeServiceTest {
         // given
         InstitutionCodeRecptnLogId id = new InstitutionCodeRecptnLogId("20240101", "I1", 1L);
         InstitutionCodeRecptnLog entity = InstitutionCodeRecptnLog.builder().id(id).build();
-        when(institutionCodeRecptnLogRepository.findByAllInstNmContaining(any(), any()))
+        when(institutionCodeRecptnLogRepository
+                .findByAllInstNmContainingOrIdInstCdContainingIgnoreCase(any(), any(), any()))
                 .thenReturn(new PageImpl<>(List.of(entity)));
 
         // when
@@ -115,11 +116,21 @@ class InstitutionCodeServiceTest {
         assertThat(result.getContent()).hasSize(1);
         verify(institutionCodeRecptnLogRepository, never()).findAll();
 
-        ArgumentCaptor<String> keyword = ArgumentCaptor.forClass(String.class);
+        /*
+         * 검색어는 기관명과 코드 두 자리에 같은 값으로 실려야 한다. 수신 이력은 목록 탭과
+         * 같은 검색창을 공유하므로, 한쪽만 코드를 찾으면 탭을 옮기는 것만으로 같은 검색어가
+         * 다른 뜻이 된다. 기관명 한정으로 되돌아가면 red 다.
+         */
+        ArgumentCaptor<String> name = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> code = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
-        verify(institutionCodeRecptnLogRepository).findByAllInstNmContaining(keyword.capture(), pageable.capture());
-        assertThat(keyword.getValue()).isEqualTo("서울");
+        verify(institutionCodeRecptnLogRepository)
+                .findByAllInstNmContainingOrIdInstCdContainingIgnoreCase(
+                        name.capture(), code.capture(), pageable.capture());
+        assertThat(name.getValue()).isEqualTo("서울");
+        assertThat(code.getValue()).isEqualTo("서울");
         assertThat(pageable.getValue().getPageSize()).isEqualTo(10);
+        verify(institutionCodeRecptnLogRepository, never()).findByAllInstNmContaining(any(), any());
     }
 
     @Test

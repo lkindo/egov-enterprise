@@ -146,7 +146,9 @@ public class InstitutionCodeService extends BaseAbstractService {
     public Page<InstitutionCodeRecptnDto> selectInstitutionCodeRecptnList(@NonNull BaseSearchDto searchVO) {
         Pageable pageable = required(searchVO.toPageable(), "pageable 는 null 일 수 없습니다");
         String keyword = searchVO.getSearchKeyword() == null ? "" : searchVO.getSearchKeyword();
-        return institutionCodeRecptnLogRepository.findByAllInstNmContaining(keyword, pageable)
+        // 목록 탭과 같은 검색창을 쓰므로 검색 범위도 같아야 한다(기관명 또는 코드).
+        return institutionCodeRecptnLogRepository
+                .findByAllInstNmContainingOrIdInstCdContainingIgnoreCase(keyword, keyword, pageable)
                 .map(this::toLogDto);
     }
 
