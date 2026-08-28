@@ -276,3 +276,91 @@ describe('계측 원천 없는 지표 금지', () => {
     expect(hub).toContain('이 모달은 현재 페이지만 반출하며');
   });
 });
+
+/**
+ * 화면이 **없는 것을 있다고 말하지 않는다.**
+ *
+ * ── 부류 ──────────────────────────────────────────────────────────────────────
+ * 세 가지 얼굴이 있고 셋 다 같은 뿌리다 — 화면 문구가 제품의 실제 상태보다 앞서 나간다.
+ *
+ * ① 도메인에 없는 필드를 조회한다고 말한다 (부서 업무 '기한·처리 상태')
+ * ② 존재하지 않는 대체 경로로 안내한다 (결재 '기존 경로', 레이아웃 '[콘텐츠 운영] 탭')
+ * ③ 서버가 하지 않는 일을 확인 문구가 약속한다 (그룹 삭제 '접근 정책이 함께 사라집니다')
+ *
+ * 어느 쪽이든 사용자는 있지도 않은 것을 찾아 헤매고, 그 시간은 전부 낭비다. ③은 더 나쁘다 —
+ * 파괴적 동작의 범위를 잘못 알려 주면 되돌릴 수 없는 판단을 잘못하게 만든다.
+ */
+describe('없는 것을 있다고 말하지 않는다', () => {
+  it('부서 업무가 도메인에 없는 필드를 조회한다고 말하지 않는다', () => {
+    const entity = stripComments(
+      readRepo('business-core/src/main/java/nuri/business/domain/deptjob/DeptJob.java'),
+    );
+    // 실제로 있는 축 — 이 단언이 계약의 입력이다.
+    for (const field of ['picId', 'prrtyRnk', 'deptTaskBoxSn']) {
+      expect(entity, `DeptJob 에서 ${field} 를 찾지 못했다 — 계약이 vacuous 하다`).toContain(field);
+    }
+    // 없는 축. 컬럼이 생기면(Flyway) 이 단언을 뒤집고 문구를 되살려라.
+    expect(entity).not.toMatch(/dueDt|deadline|sttsCd/);
+
+    const screen = stripComments(readRepo('frontend/src/app/admin/work-hub/WorkHubClient.tsx'));
+    expect(screen).not.toContain('담당·기한·처리 상태');
+    expect(screen).toContain('담당자·우선순위·업무함');
+  });
+
+  it('업무 보고 범위를 실제 스코프보다 넓게 말하지 않는다', () => {
+    /*
+      서버는 비관리자에게 본인 보고만 준다(WorkReportService 가 인증 주체로 scopedId 를
+      덮어쓴다). 그런데 화면은 '조직에서 작성된' 이라 말해, 일반 사용자는 조직 전체를
+      본다고 믿으면서 실제로는 자기 것만 봤다.
+    */
+    const service = stripComments(
+      readRepo('business-app/src/main/java/nuri/business/service/report/WorkReportService.java'),
+    );
+    expect(service).toContain('getCurrentLoginId');
+
+    const screen = stripComments(readRepo('frontend/src/app/admin/work-hub/WorkHubClient.tsx'));
+    expect(screen).not.toContain('조직에서 작성된');
+    expect(screen).toContain('관리자 권한이면 전체 보고가 조회됩니다');
+  });
+
+  it('존재하지 않는 대체 경로로 안내하지 않는다', () => {
+    const draft = stripComments(
+      readRepo('frontend/src/app/approvals/draft/ApprovalDraftHubClient.tsx'),
+    );
+    expect(draft).not.toContain('결재 목록 화면의 기존 경로');
+
+    const layout = stripComments(
+      readRepo('frontend/src/app/admin/system/layout/LayoutManagerClient.tsx'),
+    );
+    // '[콘텐츠 운영]' 이라는 메뉴는 시드에 없다. 실재하는 메뉴는 '배너 및 팝업 관리' 다.
+    expect(layout).not.toContain('콘텐츠 운영');
+    expect(layout).toContain('/admin/system/banner');
+  });
+
+  it('삭제 확인 문구가 서버가 하지 않는 정리를 약속하지 않는다', () => {
+    const service = stripComments(
+      readRepo('business-core/src/main/java/nuri/business/service/group/GroupManageService.java'),
+    );
+    // 서버가 실제로 하는 일: 배정 사용자의 groupId 해제 + 그룹 행 삭제. '접근 정책' 은 없다.
+    expect(service).toContain('clearGroupIdByGroupIdIn');
+    expect(service).not.toMatch(/accessPolicy|정책/);
+
+    const screen = stripComments(
+      readRepo('frontend/src/app/admin/security/group/SecurityGroupClient.tsx'),
+    );
+    expect(screen).not.toContain('연결된 접근 정책이 함께 사라집니다');
+  });
+
+  it('눌러도 아무 일이 없는 버튼을 두지 않는다', () => {
+    /*
+      마이페이지의 '관리' 열은 onClick 없는 ⋮ 버튼이었다. 메뉴가 열릴 것처럼 보이는 아이콘과
+      '위젯 추가 옵션' 이라는 aria-label 까지 달려 있어 스크린리더 사용자에게 더 분명한
+      거짓말이었다.
+    */
+    const screen = stripComments(
+      readRepo('frontend/src/app/admin/workspace/my-page/WorkspaceMyPageClient.tsx'),
+    );
+    expect(screen).not.toContain('위젯 추가 옵션');
+    expect(screen).not.toContain('MoreVertical');
+  });
+});

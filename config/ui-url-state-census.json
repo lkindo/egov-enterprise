@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "2b0890d362566f0359089fe09182ce5c89716edf77f0108efcb2d224eae958e3"
+    "inventoryHash": "651ff3eadf9c337707e37eb454d5a07da72e768a464425fe0a0366cba849bd16"
   },
   "summary": {
     "sourceFileCount": 505,
-    "records": 535,
-    "syntaxOccurrences": 610,
-    "ambiguousRecords": 516,
-    "unverifiedRecords": 535,
+    "records": 536,
+    "syntaxOccurrences": 611,
+    "ambiguousRecords": 517,
+    "unverifiedRecords": 536,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -41,7 +41,7 @@
       "config-redirect": 14,
       "dynamic-segment": 11,
       "form-producer": 47,
-      "navigation-producer": 154,
+      "navigation-producer": 155,
       "page-redirect": 5,
       "query-builder": 22,
       "query-consumer": 57,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 367,
+      "navigation": 368,
       "request-telemetry": 168
     }
   },
@@ -10564,6 +10564,44 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/ism/IsmClient.tsx",
         "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-A3DF59CE53692B",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/layout",
+      "targetCandidate": "/admin/system/banner",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/banner",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
+        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },

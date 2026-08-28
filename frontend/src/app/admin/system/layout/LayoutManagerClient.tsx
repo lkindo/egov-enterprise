@@ -10,6 +10,7 @@ import { Palette,
   RotateCcw,
   Settings2,
   Brush } from 'lucide-react';
+import Link from 'next/link';
 import { motion, AnimatePresence } from 'framer-motion';
 
 import { Card,  CardContent } from '@/components/ui/card';
@@ -358,7 +359,7 @@ export default function LayoutManagerClient() {
             <p className="text-sm font-bold text-muted-foreground leading-relaxed">
               편집 중에는 우측 시뮬레이터에만 반영되며, <b>[이 브라우저에 적용]</b>을 눌러야 화면 전역 토큰에 주입됩니다. <br/>
               <b>설정은 이 브라우저에만 저장됩니다(localStorage).</b> 서버에 저장되지 않으므로 다른 기기·다른 사용자·시크릿 창에는 반영되지 않으며, 브라우저 저장소를 비우면 사라집니다. <br/>
-              <b>프로모션 배너 및 팝업 자산</b> 관리는 전문 메뉴인 <span className="underline decoration-2">[콘텐츠 운영]</span> 탭을 이용해 주세요.
+              <b>프로모션 배너 및 팝업 자산</b> 관리는 <Link href="/admin/system/banner" className="text-primary underline decoration-2">배너 및 팝업 관리</Link> 메뉴를 이용해 주세요.
             </p>
           </div>
         </div>

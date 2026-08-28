@@ -250,7 +250,7 @@ export default function ApprovalDraftHubClient() {
                       <p className="text-sm font-bold text-foreground">상신 기능은 아직 연결되지 않았습니다.</p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         이 화면은 양식 작성까지만 제공하며, 작성한 내용은 서버에 저장되지 않습니다.
-                        실제 결재 상신은 결재 목록 화면의 기존 경로를 이용해 주세요.
+                        현재 이 제품에는 결재를 상신할 수 있는 다른 화면도 없습니다.
                       </p>
                     </div>
                   </div>

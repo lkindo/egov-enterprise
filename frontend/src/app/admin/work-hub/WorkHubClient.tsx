@@ -470,8 +470,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
         activeTab === 'calendar'
           ? '월간 일정을 조회합니다. 날짜를 선택하면 그 날짜의 일정만 표시합니다.'
           : activeTab === 'job'
-            ? '부서 업무의 담당·기한·처리 상태를 조회합니다.'
-            : '조직에서 작성된 업무 보고를 조회합니다.'
+            ? '부서 업무의 담당자·우선순위·업무함을 조회합니다.'
+            : '내가 작성한 업무 보고를 조회합니다. 관리자 권한이면 전체 보고가 조회됩니다.'
       }
       breadcrumbItems={[{ label: '업무관리' }, { label: '워크허브' }]}
       filterStateKey="work-hub"
@@ -558,7 +558,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             ? `${format(currentDate, 'yyyy년 M월', { locale: ko })} 기준`
             : activeTab === 'job'
               ? (jobScope === 'mine' ? '내가 담당인 업무' : '부서 전체 업무')
-              : '전체 업무 보고'}
+              : '내가 작성한 보고(관리자는 전체)'}
         </span>
       }
     >
