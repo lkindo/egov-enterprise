@@ -404,7 +404,7 @@ export default function EventManagementClient() {
             [2026-08-28] 라벨이 '행사 명칭' 이었지만 서버는 명칭과 상세 내용을 함께 찾는다
             (EventInfoRepository: evntCn LIKE … OR evntNm LIKE …). 제목에 없는 검색어로 행이
             섞여 나오는 이유를 화면이 말하지 않았고, 라벨은 오히려 '명칭으로 찾는다'고 단정했다.
-            저장소의 다른 조회 조건 관례(예: 포상 '포상 명칭 · 대상자')와 같은 형태로 맞춘다.
+            라벨은 **서버가 실제로 검색하는 필드만** 적는다(EventInfoRepository 는 evntNm·evntCn 을 본다).
           */}
           <label htmlFor="event-search" className="text-[length:var(--font-size-body)] font-medium">
             행사 명칭 · 상세 내용
