@@ -158,9 +158,9 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     enabled: activeTab === 'SURVEYS'
   });
 
-  const userStats = userQuery.data;
+  // 미수집 축이라 요약 카드는 값을 쓰지 않는다 — 조회는 차트/표가 계속 소비한다.
   const connectStats = connectQuery.data;
-  const dataUsage = dataUsageQuery.data;
+
   const surveys = surveyQuery.data;
 
   // 현재 탭이 실제로 그리는 시계열과 그 쿼리 상태 (로딩/에러 게이트의 단일 근거)
@@ -323,10 +323,18 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             <HubMetricSkeleton />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/*
+                [2026-08-29] 미수집 축의 카드는 0을 측정값처럼 보여 주지 않는다.
+
+                같은 화면의 차트는 이 두 축을 이미 '미수집' 으로 고지하는데(UNINSTRUMENTED_TABS),
+                요약 카드만 합계 0을 숫자로 찍어 자기모순이었다. 사용자는 "활동이 0건" 으로
+                읽는다 — 실제로는 그 표에 쓰는 코드가 저장소에 없어 **아무도 기록하지 않는다**.
+                계측 원천(writer)이 생기면 그때 UNINSTRUMENTED_TABS 에서 빼고 값을 되살린다.
+              */}
               <StatSummaryCard
                 icon={<Activity size={24} />}
                 label="사용자 활동 집계"
-                value={userQuery.isError ? '—' : sumStatsCo(userStats).toLocaleString()}
+                value="미수집"
               />
               <StatSummaryCard
                 icon={<Monitor size={24} />}
@@ -337,7 +345,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
               <StatSummaryCard
                 icon={<Database size={24} />}
                 label="자료 이용 건수"
-                value={dataUsageQuery.isError ? '—' : sumStatsCo(dataUsage).toLocaleString()}
+                value="미수집"
               />
             </div>
           )}

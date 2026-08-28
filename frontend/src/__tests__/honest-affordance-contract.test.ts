@@ -364,3 +364,28 @@ describe('없는 것을 있다고 말하지 않는다', () => {
     expect(screen).not.toContain('MoreVertical');
   });
 });
+
+/**
+ * 같은 화면 안에서 한쪽은 '미수집' 이라 하고 다른 쪽은 0을 측정값으로 보여 주지 않는다.
+ *
+ * 통계 허브의 차트는 사용자·자료이용·보고서 세 축을 이미 '미수집' 으로 고지했다. 그 표에
+ * 쓰는 코드가 저장소에 없어(writer 0건) **아무도 기록하지 않기 때문**이다. 그런데 요약 카드는
+ * 같은 축의 합계 0을 숫자로 찍었다. 사용자는 "활동이 0건" 으로 읽는다 — 없는 것과 세지 않는
+ * 것은 다른데, 화면이 그 차이를 지웠다.
+ */
+describe('미수집 축을 0으로 보여 주지 않는다', () => {
+  const statsHub = stripComments(
+    readRepo('frontend/src/app/admin/stats/IntelligenceHubClient.tsx'),
+  );
+
+  it('미수집으로 고지한 축의 요약 카드가 합계를 숫자로 찍지 않는다', () => {
+    // 고지 목록이 계약의 입력이다 — 여기서 축이 빠지면(writer 신설) 이 검사도 함께 판정한다.
+    expect(statsHub, '미수집 목록을 찾지 못했다 — 계약이 vacuous 하다')
+      .toContain("UNINSTRUMENTED_TABS: readonly StatsTab[] = ['USER_STATS', 'DATA_USAGE', 'REPORTS']");
+
+    expect(statsHub).not.toContain('sumStatsCo(userStats)');
+    expect(statsHub).not.toContain('sumStatsCo(dataUsage)');
+    // 계측 원천이 있는 접속 통계는 그대로 값을 보여 준다 — 금지만 하는 계약이 되지 않게.
+    expect(statsHub).toContain('sumStatsCo(connectStats)');
+  });
+});

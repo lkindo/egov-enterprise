@@ -105,7 +105,7 @@ const SystemLogsWebClient = () => {
             className: 'w-40'
         },
         {
-            header: '등록일시',
+            header: '발생일자',
             sortKey: 'occrYmd',
             accessor: (item: WebLog) => (
                 <div className="font-mono text-xs text-muted-foreground tabular-nums">
