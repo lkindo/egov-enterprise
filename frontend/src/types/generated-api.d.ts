@@ -757,7 +757,7 @@ export interface paths {
         };
         /**
          * 정책 내용 조회
-         * @description 저작권(copyright) 또는 개인정보보호정책(privacy) 내용을 조회합니다.
+         * @description 저작권(copyright) 또는 개인정보보호정책(privacy) 내용을 조회합니다. 등록된 정책이 없으면 404 입니다.
          */
         get: operations["getPolicy"];
         /** 정책 내용 수정 */
