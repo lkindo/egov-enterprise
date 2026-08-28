@@ -31,6 +31,8 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -835,21 +837,47 @@ class BoardServiceTest {
     }
 
     @Test
-    @DisplayName("잘못된 날짜 형식이 포함된 게시글 목록 조회 (예외 처리 확인)")
+    @DisplayName("잘못된 날짜 형식은 조용히 무시하지 않고 거절한다")
     void getBoardPosts_InvalidDates() {
-        // given
+        /*
+         * [2026-08-28] 이 테스트는 종전에 **틀린 동작을 동결하고 있었다** — 파싱 실패 시
+         * 조건을 null 로 두고 그냥 조회하는 것을 정상으로 검증했다.
+         *
+         * 그 결과가 실제 결함이었다. 화면이 ISO 문자열(toISOString())을 보내고 있었으므로
+         * 기간 조건은 **항상** 파싱에 실패해 사라졌고, 사용자는 기간을 골라도 목록이 그대로인
+         * 것을 보며 "해당 기간에 글이 이만큼 있구나" 로 잘못 읽었다. 조건을 못 읽으면 조용히
+         * 넓은 결과를 주는 것보다 거절하는 편이 안전하다.
+         */
+        String bbsId = "BBS_01";
+        Pageable pageable = PageRequest.of(0, 10);
+        BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
+
+        BusinessException thrown = assertThrows(BusinessException.class, () -> boardService.getBoardPosts(
+                bbsId, "0", "word", "regDate", "invalid-date", "invalid-date", null, null, pageable));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, thrown.getErrorCode());
+        assertTrue(thrown.getMessage().contains("yyyy-MM-dd"), "형식을 알려 주지 않으면 고칠 수 없다");
+        // 거절했으므로 조회 자체가 나가지 않는다.
+        verify(boardRepository, never()).searchArticles(any(), any());
+    }
+
+    @Test
+    @DisplayName("yyyy-MM-dd 기간 조건은 그대로 조회 조건이 된다")
+    void getBoardPosts_appliesIsoDateFilter() {
         String bbsId = "BBS_01";
         Pageable pageable = PageRequest.of(0, 10);
         BoardMaster master = BoardMaster.builder().bbsId(bbsId).build();
         given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
         given(boardRepository.searchArticles(any(), any())).willReturn(Page.empty());
 
-        // when
-        boardService.getBoardPosts(bbsId, "0", "word", "regDate", "invalid-date", "invalid-date", null, null, pageable);
+        boardService.getBoardPosts(bbsId, "0", "", "regDate", "2026-08-01", "2026-08-31", null, null, pageable);
 
-        // then
-        verify(boardRepository)
-                .searchArticles(argThat(cond -> cond.getStartDate() == null && cond.getEndDate() == null), any());
+        verify(boardRepository).searchArticles(argThat(cond ->
+                cond.getStartDate() != null
+                        && cond.getStartDate().toLocalDate().equals(java.time.LocalDate.of(2026, 8, 1))
+                        && cond.getEndDate() != null
+                        && cond.getEndDate().toLocalDate().equals(java.time.LocalDate.of(2026, 8, 31))), any());
     }
 
     @Test
@@ -1007,6 +1035,52 @@ class BoardServiceTest {
         // then
         verify(board).update(any(), any(), any(), any(), any(), any(), any(), any(),
                 eq(java.time.LocalDateTime.parse(eventDateStr)), any(), any(), any());
+    }
+
+    /**
+     * 요청에 없던 값을 조용히 지우지 않는다.
+     *
+     * <p>종전 {@code updatePost} 는 같은 호출 안에서 두 규칙이 섞여 있었다 — pswd·qnaSttsCd 만
+     * "안 보내면 기존 값 유지"였고 게시 기간·행사 일자·Q&A 분류·첨부·비밀글 여부는 "안 보내면
+     * null 로 덮어쓰기"였다. {@code Board.update} 는 널 가드가 없어 전달값을 그대로 대입한다.
+     *
+     * <p>수정 화면은 제목·본문 위주의 폼이라 그 값들을 싣지 않는다. 그래서 일정 게시판 글의
+     * 제목 오타 하나를 고치면 evntDt 가 사라져 <b>그 글이 캘린더에서 없어졌다</b>. 저장은
+     * 성공하고 화면도 정상으로 보이므로 아무도 눈치채지 못하는 데이터 손실이다.
+     */
+    @Test
+    @DisplayName("게시글 수정 - 요청에 없는 값은 기존 값을 유지한다 (조용한 손실 방지)")
+    void updatePost_keepsFieldsAbsentFromRequest() {
+        String bbsId = "BBS_01";
+        Long pstSn = 1L;
+        String userId = "user1";
+        java.time.LocalDateTime existingEvent = java.time.LocalDateTime.of(2026, 5, 1, 0, 0);
+
+        Board board = org.mockito.Mockito.spy(Board.builder()
+                .pstSn(pstSn)
+                .userId(userId)
+                .pstBgngYmd("20260101")
+                .pstEndYmd("20261231")
+                .atchFileSn(77L)
+                .evntDt(existingEvent)
+                .qnaCatCd("CAT01")
+                .scrtYn("Y")
+                .build());
+        given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
+
+        // 제목·본문만 담긴 요청 — 수정 화면이 실제로 보내는 형태다.
+        BoardSaveRequest request = new BoardSaveRequest(
+                bbsId, "제목만 고침", "본문만 고침",
+                null, null, null, null, null, null, null, null, null);
+
+        boardService.updatePost(bbsId, pstSn, request);
+
+        verify(board).update(
+                eq("제목만 고침"), eq("본문만 고침"), any(), any(), any(),
+                eq("20260101"), eq("20261231"),
+                eq(77L), eq(existingEvent),
+                any(), eq("CAT01"), eq("Y"));
     }
 
     @Test
