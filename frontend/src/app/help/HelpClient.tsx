@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
-import { helpUserService, FAQ, QNA } from '@/services/business/user/help/HelpUserService';
+import { helpUserService, isQnaSolved, FAQ, QNA } from '@/services/business/user/help/HelpUserService';
 import { useToast } from '@/app/components/ui/toast';
 import { HelpCircle, MessageCircle, ChevronDown, PlusCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -14,10 +15,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { EmptyStateDisplay } from '@/app/components/ui/status-displays';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 
+const StandardModal = dynamic(
+  () => import('@/app/components/ui/standard-modal').then((mod) => mod.StandardModal),
+  { ssr: false },
+);
+
 type FaqDetailState =
   | { status: 'loading' }
   | { status: 'error' }
   | { status: 'success'; answer: string };
+
+const TITLE_MAX = 100;
+const CONTENT_MAX = 4000;
 
 export default function HelpClient() {
   const { toast } = useToast();
@@ -28,6 +37,14 @@ export default function HelpClient() {
   const [searchKeyword, setSearchKeyword] = useState('');
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
   const [faqDetails, setFaqDetails] = useState<Record<string, FaqDetailState>>({});
+
+  const [askOpen, setAskOpen] = useState(false);
+  const [askTitle, setAskTitle] = useState('');
+  const [askContent, setAskContent] = useState('');
+  const [askError, setAskError] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
+  const askingRef = useRef(false);
+  const [reloadToken, setReloadToken] = useState(0);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
@@ -47,7 +64,53 @@ export default function HelpClient() {
       }
     }, 300); // Debounce
     return () => clearTimeout(timer);
-  }, [tab, searchKeyword, toast]);
+  }, [tab, searchKeyword, toast, reloadToken]);
+
+  const openAsk = () => {
+    setAskTitle('');
+    setAskContent('');
+    setAskError(null);
+    setAskOpen(true);
+  };
+
+  const closeAsk = useCallback(() => {
+    if (!askingRef.current) setAskOpen(false);
+  }, []);
+
+  const submitAsk = async () => {
+    if (askingRef.current) return;
+    const title = askTitle.trim();
+    const content = askContent.trim();
+    if (!title || !content) {
+      // 서버도 @NotBlank 로 막지만, 먼저 잡지 않으면 사용자는 쓴 뒤에 오류로 되돌아온다.
+      setAskError('제목과 내용을 모두 입력해 주세요.');
+      return;
+    }
+
+    askingRef.current = true;
+    setAsking(true);
+    setAskError(null);
+    try {
+      await helpUserService.createQna({ qstnTtl: title, qstnCn: content });
+      toast('문의를 등록했습니다.', 'success');
+      setAskOpen(false);
+      // 방금 쓴 글이 목록에 보여야 등록됐다는 것을 사용자가 확인할 수 있다.
+      setReloadToken((token) => token + 1);
+    } catch (error: unknown) {
+      /*
+        토스트는 사라진다. 등록 실패는 사용자가 쓴 글이 걸린 문제이므로 모달 안에도 남긴다.
+        입력값은 지우지 않는다 — 지우면 실패가 곧 글 손실이 된다.
+      */
+      const message = error instanceof Error && error.message
+        ? error.message
+        : '문의를 등록하지 못했습니다. 입력 내용은 유지됩니다.';
+      setAskError(message);
+      toast(message, 'error');
+    } finally {
+      askingRef.current = false;
+      setAsking(false);
+    }
+  };
 
   const qnaColumns = [
     {
@@ -65,7 +128,10 @@ export default function HelpClient() {
     {
       header: '상태',
       accessor: (item: QNA) => (
-        <StatusBadge status={item.qnaProcessSttusCode === '3' ? 'Y' : 'R'} />
+        <StatusBadge
+          status={isQnaSolved(item.qnaSttsCd) ? 'Y' : 'R'}
+          labels={{ Y: '답변완료', R: '답변 대기' }}
+        />
       )
     }
   ];
@@ -192,14 +258,21 @@ export default function HelpClient() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-8 bg-card p-12 rounded-lg border-2 border-border/40 shadow-xl overflow-hidden"
             >
-              <div className="flex justify-between items-center pb-8 border-b border-border/40">
+              <div className="flex justify-between items-center pb-8 border-b border-border/40 gap-6">
                   <div className="space-y-1">
-                      <h3 className="text-2xl font-bold tracking-tight uppercase">_ 나의 문의 내역</h3>
-                      <p className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase">Private Interaction History</p>
+                      {/*
+                        종전 제목은 '나의 문의 내역' 이었다. 목록은 그렇게 좁혀지지 않는다 —
+                        서버는 이 게시판의 공개 글 전체에 내 비밀 글을 더해 돌려준다
+                        (BoardPredicate: scrtYn='N' OR userId=나). 개인 목록으로 부르면
+                        남의 공개 문의가 내 것처럼 읽힌다.
+                      */}
+                      <h3 className="text-2xl font-bold tracking-tight">문의 내역</h3>
+                      <p className="text-xs font-medium text-muted-foreground">
+                        내가 남긴 1:1 문의와 공개된 문의를 함께 보여 줍니다. 1:1 문의는 작성자와 관리자만 볼 수 있습니다.
+                      </p>
                   </div>
-                  {/* onClick 도 대상 라우트도 없던 死버튼이다(카탈로그 G10). 문의 등록 경로가
-                      생기기 전까지 사유를 밝혀 비활성으로 남긴다. */}
-                  <Button size="sm" disabled title="문의 등록 화면이 아직 연결되지 않았습니다" className="gap-2">
+                  {/* 종전에는 onClick 도 대상 라우트도 없는 死버튼이었다(카탈로그 G10). */}
+                  <Button size="sm" onClick={openAsk} className="gap-2 shrink-0">
                       <PlusCircle size={16} aria-hidden="true" /> 새로운 문의 작성
                   </Button>
               </div>
@@ -210,6 +283,58 @@ export default function HelpClient() {
                 emptyMessage={emptyResultMessage(searchKeyword, "등록된 Q&A 문의 내역이 없습니다.")}
                 className="border-none shadow-none rounded-none"
               />
+
+              <StandardModal isOpen={askOpen} onClose={closeAsk} title="1:1 문의 작성" maxWidth="xl">
+                <div className="space-y-6 text-left">
+                  <div className="space-y-2">
+                    <label htmlFor="qna-title" className="text-sm font-bold text-foreground">
+                      제목 <span className="text-destructive" aria-hidden="true">*</span>
+                    </label>
+                    <Input
+                      id="qna-title"
+                      value={askTitle}
+                      maxLength={TITLE_MAX}
+                      required
+                      aria-required="true"
+                      onChange={(event) => setAskTitle(event.target.value)}
+                      placeholder="무엇을 도와드릴까요?"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label id="qna-content-label" htmlFor="qna-content" className="text-sm font-bold text-foreground">
+                      내용 <span className="text-destructive" aria-hidden="true">*</span>
+                    </label>
+                    <textarea
+                      id="qna-content"
+                      aria-labelledby="qna-content-label"
+                      value={askContent}
+                      maxLength={CONTENT_MAX}
+                      required
+                      aria-required="true"
+                      onChange={(event) => setAskContent(event.target.value)}
+                      placeholder="문의 내용을 입력해 주세요."
+                      className="w-full min-h-[180px] rounded-lg border border-border bg-muted/40 p-4 outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {askContent.length}/{CONTENT_MAX}자 · 등록한 문의는 작성자와 관리자만 볼 수 있습니다.
+                    </p>
+                  </div>
+
+                  {askError ? (
+                    <p role="alert" className="text-sm font-bold text-destructive">{askError}</p>
+                  ) : null}
+
+                  <div className="flex justify-end gap-3 pt-2">
+                    <Button type="button" variant="outline" onClick={closeAsk} disabled={asking}>
+                      취소
+                    </Button>
+                    <Button type="button" onClick={submitAsk} disabled={asking} aria-busy={asking}>
+                      {asking ? '등록 중…' : '문의 등록'}
+                    </Button>
+                  </div>
+                </div>
+              </StandardModal>
             </motion.div>
           )}
         </AnimatePresence>
