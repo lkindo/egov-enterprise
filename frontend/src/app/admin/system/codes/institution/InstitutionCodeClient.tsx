@@ -99,12 +99,27 @@ export default function InstitutionCodeClient({
  setPage(1);
  }, []);
 
- /** [P1-9] native confirm 제거 — 대상 기관명을 본문에 노출하는 확인 모달. */
+ /**
+  * 수신 내역을 '처리 완료'로 표시한다.
+  *
+  * [2026-08-28] 종전 문구는 '기관코드 원장에 반영합니다' 였다. **서버는 원장을 건드리지
+  * 않는다** — `InstitutionCodeService.updateInstitutionCodeRecptn` 은 수신 로그 행의
+  * `procSe` 만 완료로 바꾸고, 원장(`tb_inst_cd`)에 쓰는 `institutionCodeRepository.save`
+  * 는 저장소 전체에서 관리자 수기 등록(`insertInstitutionCode`) 한 곳에서만 호출된다.
+  *
+  * 그래서 이 버튼은 "반영했다"고 말하면서 원장을 그대로 두고 대기 신호만 지웠다 — 400 으로
+  * 큰 소리를 내며 실패하던 것이 **조용한 성공**으로 바뀐 형태다. 실제 동작(수신 건을 처리
+  * 완료로 표시)을 그대로 말하고, 원장 반영이 이 화면의 일이 아니라는 사실을 함께 밝힌다.
+  *
+  * 원장 반영 자체를 구현하지 않은 이유는 `chgSeCd`(변경구분) 의 값 도메인이 저장소 어디에도
+  * 확정돼 있지 않기 때문이다 — 이 화면은 1/2/3 으로, 백엔드 테스트는 "I" 로 쓴다. 근거 없이
+  * 해석하면 코어 데이터를 잘못 덮어쓴다(GAP-CODE-001).
+  */
  const handleProcess = async (item: InstitutionCodeRecptn) => {
  const ok = await confirm({
- title: '기관코드 수신 반영',
- message: `‘${item.allInstNm}’(코드 ${item.instCd}) 의 수신 내역을 기관코드 원장에 반영합니다. 반영 후에는 되돌릴 수 없습니다.`,
- confirmText: '반영',
+ title: '수신 내역 처리 완료',
+ message: `‘${item.allInstNm}’(코드 ${item.instCd}) 수신 건을 처리 완료로 표시합니다. 기관코드 원장은 이 동작으로 바뀌지 않으며, 표시 후에는 되돌릴 수 없습니다.`,
+ confirmText: '처리 완료로 표시',
  });
  if (!ok) return;
 
@@ -117,10 +132,10 @@ export default function InstitutionCodeClient({
  instCd: item.instCd,
  jobSn: item.jobSn,
  });
- toast('성공적으로 반영되었습니다.', 'success');
+ toast('수신 내역을 처리 완료로 표시했습니다.', 'success');
  receptionQuery.refetch();
  } catch {
- toast('반영 처리 중 오류가 발생했습니다.', 'error');
+ toast('처리 완료 표시 중 오류가 발생했습니다.', 'error');
  }
  };
 
@@ -215,7 +230,19 @@ export default function InstitutionCodeClient({
  '2': { label: '수정', color: 'bg-amber-500/10 text-amber-600 border-amber-500/20', icon: <RefreshCw size={12} aria-hidden="true" /> },
  '3': { label: '정제', color: 'bg-rose-500/10 text-rose-600 border-rose-500/20', icon: <ShieldCheck size={12} aria-hidden="true" /> }
  };
- const config = typeMap[item.chgSeCd] || typeMap['1'];
+ /*
+   종전에는 알 수 없는 값을 전부 `typeMap['1']`(신규)로 떨어뜨렸다. `chgSeCd` 의 값
+   도메인은 저장소 어디에도 확정돼 있지 않아(이 화면은 1/2/3, 백엔드 테스트는 "I"),
+   그 폴백은 근거 없는 값을 실측값처럼 보이게 만든다. 모르는 값은 원문 그대로 보여 준다.
+ */
+ const config = typeMap[item.chgSeCd];
+ if (!config) {
+ return (
+ <div className="flex items-center gap-1.5 px-3 py-1 rounded-lg border border-border w-fit font-black text-[10px] tracking-widest shadow-sm text-muted-foreground">
+ {item.chgSeCd || '구분 없음'}
+ </div>
+ );
+ }
  return (
  <div className={cn("flex items-center gap-1.5 px-3 py-1 rounded-lg border w-fit font-black text-[10px] tracking-widest uppercase shadow-sm", config.color)}>
  {config.icon}
@@ -246,10 +273,10 @@ export default function InstitutionCodeClient({
  item.procSe !== '1' ? (
  <Button
  onClick={() => handleProcess(item)}
- aria-label={`${item.allInstNm} 수신 코드 반영`}
+ aria-label={`${item.allInstNm} 수신 건 처리 완료로 표시`}
  className="h-9 px-5 rounded-lg bg-surface-inverse border-none text-surface-inverse-foreground font-black text-[10px] tracking-widest uppercase shadow-xl hover:bg-primary transition-all gap-2 active:scale-95"
  >
- <MonitorCheck size={14} aria-hidden="true" /> 반영
+ <MonitorCheck size={14} aria-hidden="true" /> 처리 완료
  </Button>
  ) : null
  ),

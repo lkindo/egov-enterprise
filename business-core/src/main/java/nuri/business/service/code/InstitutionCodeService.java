@@ -112,6 +112,20 @@ public class InstitutionCodeService extends BaseAbstractService {
      *       화면은 "성공적으로 반영되었습니다" 를 띄우는데 아무것도 바뀌지 않는 상태였다.</li>
      * </ul>
      */
+    /**
+     * ⚠ 이 메서드는 <b>원장(tb_inst_cd)에 아무것도 쓰지 않는다.</b>
+     *
+     * <p>[2026-08-28] 이름과 화면 문구가 "원장 반영" 을 뜻하는 것처럼 읽혀 왔지만, 실제로 하는
+     * 일은 수신 로그 한 행의 {@code procSe} 를 완료로 바꾸는 것뿐이다. 원장에 쓰는
+     * {@code institutionCodeRepository.save} 는 저장소 전체에서
+     * {@link #insertInstitutionCode}(관리자 수기 등록) 한 곳에서만 호출된다.
+     *
+     * <p>수신 payload 를 원장에 적용하는 경로를 여기 만들지 않은 이유는 {@code chgSeCd}(변경구분)
+     * 의 값 도메인이 저장소 어디에도 확정돼 있지 않기 때문이다 — 화면은 1/2/3 으로 해석하고
+     * 이 모듈의 테스트는 "I" 를 쓴다. DB 주석은 '변경구분코드' 뿐이고 seed·enum·계약이 없다.
+     * 근거 없이 해석하면 코어 데이터를 잘못 덮어쓰거나 지운다(AGENTS.md H4). 화면 문구는 실제
+     * 동작으로 정정했고, 반영 경로 설계는 GAP-CODE-001 로 남긴다.
+     */
     @Transactional
     public void updateInstitutionCodeRecptn(InstitutionCodeRecptnDto dto) {
         InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = new InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId(

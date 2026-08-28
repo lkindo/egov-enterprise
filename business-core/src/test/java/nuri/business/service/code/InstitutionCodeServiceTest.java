@@ -142,6 +142,31 @@ class InstitutionCodeServiceTest {
         verify(logEntity).updateProcessSe(eq("1"), anyString());
     }
 
+    /**
+     * 이 경로가 원장을 건드리지 않는다는 사실을 계약으로 고정한다.
+     *
+     * <p>화면은 오래 "기관코드 원장에 반영합니다" 라고 말해 왔지만 실제로는 수신 로그의
+     * {@code procSe} 만 바뀐다. 둘 중 하나는 틀린 것이고, 근거상 틀린 쪽은 문구였다 —
+     * {@code chgSeCd}(변경구분)의 값 도메인이 확정돼 있지 않아 payload 를 원장에 적용할
+     * 근거가 없기 때문이다(GAP-CODE-001).
+     *
+     * <p>이 테스트는 <b>두 방향</b>을 모두 막는다. 나중에 누군가 원장 쓰기를 여기에 넣으면
+     * 실패하므로, 값 도메인을 확정하지 않은 채 코어 데이터를 덮어쓰는 변경이 조용히 들어오지
+     * 못한다. 반대로 반영 경로를 정식 설계하면 이 테스트를 그 설계와 함께 고쳐야 한다.
+     */
+    @Test
+    @DisplayName("수신 처리는 원장을 건드리지 않는다 — 화면 문구가 이 사실과 맞아야 한다")
+    void updateInstitutionCodeRecptnDoesNotTouchLedger() {
+        InstitutionCodeRecptnLog logEntity = mock(InstitutionCodeRecptnLog.class);
+        when(institutionCodeRecptnLogRepository.findById(any())).thenReturn(Optional.of(logEntity));
+
+        institutionCodeService.updateInstitutionCodeRecptn(InstitutionCodeRecptnDto.builder()
+                .ocrnYmd("20240101").instCd("I1").jobSn(1L).build());
+
+        verify(institutionCodeRepository, never()).save(any());
+        verify(institutionCodeRepository, never()).deleteById(any());
+    }
+
     @Test
     @DisplayName("기관코드 수신 처리 — 대상이 없으면 조용히 성공하지 않는다")
     void updateInstitutionCodeRecptnMissingTarget() {
