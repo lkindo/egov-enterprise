@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "8f2ab71e2a114907e027d87d738ca69c945fb6a914ff920cb494ea795fada34b"
+    "inventoryHash": "62d02ee8f2f8c13b70500f723cbf3eed4bc2c82722654d90a10ebed13b18410d"
   },
   "summary": {
     "sourceFileCount": 505,
-    "records": 536,
-    "syntaxOccurrences": 610,
-    "ambiguousRecords": 517,
-    "unverifiedRecords": 536,
+    "records": 537,
+    "syntaxOccurrences": 612,
+    "ambiguousRecords": 518,
+    "unverifiedRecords": 537,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -40,7 +40,7 @@
     "byKind": {
       "config-redirect": 14,
       "dynamic-segment": 11,
-      "form-producer": 46,
+      "form-producer": 47,
       "navigation-producer": 155,
       "page-redirect": 5,
       "query-builder": 22,
@@ -50,7 +50,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 369,
+      "navigation": 370,
       "request-telemetry": 167
     }
   },
@@ -7293,6 +7293,45 @@
         "source": "frontend/src/app/admin/operation/external-hr/ExternalHrClient.tsx",
         "detector": "url-search-param-method",
         "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-74F49662D92C7C",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "implicit-or-computed-method",
+      "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
+      "producerFile": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/operation/memo-reports",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "form-method-or-interception-unresolved",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 2
       }
     },
     {

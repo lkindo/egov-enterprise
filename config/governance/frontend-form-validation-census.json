@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 51,
-    "nativeFormFiles": 46,
+    "nativeFormOccurrences": 53,
+    "nativeFormFiles": 47,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
     "secondaryActionBoundaries": 56,
-    "candidateCount": 129
+    "candidateCount": 131
   },
   "entries": [
     {
@@ -696,6 +696,40 @@
       "pendingGuard": "synchronous-submit-lock-and-disabled",
       "testEvidence": [
         "frontend/src/app/admin/operation/__tests__/operation-form-validation.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx#MemoReportManagementClient[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
+      "owner": "MemoReportManagementClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:memoInstructionSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/memo-reports/__tests__/MemoReportDetail.test.tsx",
+        "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx#MemoReportManagementClient[2]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
+      "owner": "MemoReportManagementClient",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useAppForm-zod",
+      "schemaSource": "generated-or-derived:memoComposeSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/operation/memo-reports/__tests__/MemoReportDetail.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
       ]
     },
