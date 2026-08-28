@@ -1019,7 +1019,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                    같은 텍스트가 두 번 잡혀 접근 이름이 모호해진다(CI e2e strict-mode 위반 실측). */}
                <p className="text-xs font-medium text-muted-foreground leading-relaxed">
                   {listConfig
-                    ? `‘${listConfig.label}’ 탭에서 현재 조회된 ${listConfig.data.length}건을 엑셀(CSV · UTF-8 BOM)로 내려받습니다. 서버 전량 반출은 지원하지 않으며, 페이지를 이동한 뒤 다시 실행하면 해당 페이지가 반출됩니다.`
+                    ? `‘${listConfig.label}’ 탭에서 현재 조회된 ${listConfig.data.length}건을 엑셀(CSV · UTF-8 BOM)로 내려받습니다. 이 모달은 현재 페이지만 반출하며, 페이지를 이동한 뒤 다시 실행하면 해당 페이지가 반출됩니다.`
                     : '현재 탭은 목록 데이터가 없어 반출할 수 없습니다. 보안 감사·시스템 로그·접속 이력·서비스 피드백 탭에서 실행해 주세요.'}
                </p>
             </div>

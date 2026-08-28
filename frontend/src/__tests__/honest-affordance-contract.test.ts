@@ -228,3 +228,51 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
     expect(stripComments(controller)).not.toContain('members');
   });
 });
+
+/**
+ * 계측 원천이 없는 값을 지표처럼 보여 주지 않는다.
+ *
+ * ── 부류 ──────────────────────────────────────────────────────────────────────
+ * 소스에 **문자열/숫자로 박힌 상수**를 화면이 '지표'·'실시간'·'측정' 어휘와 함께 렌더하면,
+ * 사용자는 그것을 실행 중인 시스템을 계측한 값으로 읽는다. 관제 화면에서 특히 위험하다 —
+ * 그 화면의 존재 이유가 "지금 상태를 알려 주는 것" 이기 때문이다.
+ *
+ * 문자열 하나를 금지하면 다음 사람이 다른 숫자를 넣는다. 그래서 **원천이 없는데 계측 어휘를
+ * 쓰는 것** 자체를 막는다.
+ */
+describe('계측 원천 없는 지표 금지', () => {
+  const monitoringPanels = stripComments(
+    readRepo('frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx'),
+  );
+
+  it('관제 패널이 하드코딩된 성능 수치를 지표로 보여 주지 않는다', () => {
+    /*
+      종전에는 meta 객체에 "메모리 점유 1.2GB | 스캔 속도 240ms | 정밀도 100%" 같은 문자열이
+      박혀 있었고 화면이 'PERFORMANCE METRICS' 라벨로 그것을 렌더했다. 어떤 계측도 없었다.
+    */
+    for (const fabricated of [
+      '메모리 점유', '스캔 속도', '계약 검증률', '보안 점수', '자가치유율', '평균 복구',
+      'PERFORMANCE METRICS',
+    ]) {
+      expect(monitoringPanels, `계측 원천 없이 '${fabricated}' 를 표시한다`).not.toContain(fabricated);
+    }
+  });
+
+  it("정적 요약을 '실시간'이라 부르지 않는다", () => {
+    // 이 패널의 내용은 저장소 규범 문서를 요약한 정적 텍스트다. 폴링도 구독도 없다.
+    expect(monitoringPanels).not.toMatch(/실시간 (?:DB 호출 스택|JPA)/);
+  });
+
+  it('현재 페이지만 반출하면서 서버 전량 반출이 불가능하다고 말하지 않는다', () => {
+    /*
+      모달은 현재 페이지만 반출한다(scope="page"). 그런데 안내가 "서버 전량 반출은 지원하지
+      않으며" 라고 단정했다 — 이 제품에는 로그 5종의 서버측 전량 export 가 실재한다.
+      할 수 있는 일을 없다고 말하면 사용자는 존재하는 기능을 찾지 않는다.
+    */
+    const hub = stripComments(
+      readRepo('frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx'),
+    );
+    expect(hub).not.toContain('서버 전량 반출은 지원하지 않으며');
+    expect(hub).toContain('이 모달은 현재 페이지만 반출하며');
+  });
+});
