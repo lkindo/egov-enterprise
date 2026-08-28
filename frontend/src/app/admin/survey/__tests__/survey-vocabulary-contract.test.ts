@@ -35,6 +35,16 @@ const stripComments = (source: string) =>
 
 const hub = stripComments(read('admin/survey/hub/SurveyHubClient.tsx'));
 const manage = stripComments(read('admin/survey/manage/SurveyManageClient.tsx'));
+/*
+  [2026-08-28] 허브가 embed 하는 **자식들까지** 계약에 넣는다.
+
+  종전 계약은 hub 와 manage 두 파일만 읽었다. 그래서 허브 문구를 '설문지/여론조사'로
+  갈라 놓고도, 허브가 embed 하는 stats 자식이 poll 을 '설문'이라 부르며 두 번째 총계
+  ('등록된 설문 M건')를 그대로 그렸다 — 한 화면에 '등록된 설문지 N건'(tb_srvy)과
+  '등록된 설문 M건'(poll)이 동시에 뜨고 값이 달랐다. 원 지적의 핵심 사용자 영향이
+  계약 사각에서 그대로 재현되고 있었다.
+*/
+const stats = stripComments(read('admin/survey/stats/SurveyStatsClient.tsx'));
 const detail = stripComments(read('admin/survey/manage/[id]/SurveyManageDetailClient.tsx'));
 const pollTypes = stripComments(read('../types/business/poll.ts'));
 
@@ -63,6 +73,34 @@ describe('설문 허브: 수치와 목록이 서로 다른 표라는 사실이 �
   it('허브에 embed 되는 목록 화면도 같은 이름을 쓴다 — 탭과 패널 제목이 어긋나면 안 된다', () => {
     expect(manage).toContain('여론조사 관리');
     expect(manage).toContain('getPollList');
+  });
+
+  /**
+   * embed 되는 자식이 두 번째 총계를 '설문'으로 그리지 않는다.
+   *
+   * 값을 한쪽으로 통일하면 다른 축의 정보가 사라지므로, 구분은 **값이 아니라 이름**으로
+   * 한다(이 파일 머리말). 그 규율은 허브뿐 아니라 같은 화면에 붙는 자식에도 적용돼야 한다.
+   */
+  it('통계 자식은 poll 축을 여론조사라고 부른다', () => {
+    expect(stats).toContain('getPollList');
+    expect(stats).toContain('여론조사 통계');
+    expect(stats).toContain('등록된 여론조사');
+    // 같은 화면에 '등록된 설문(지)' 총계가 두 개 뜨면 관리자가 두 숫자를 맞출 수 없다.
+    expect(stats).not.toMatch(/등록된 설문(?!지)/);
+  });
+
+  it('poll 축 자식 어디에도 poll 을 "설문"으로 부르는 화면 문구가 없다', () => {
+    /*
+     * 파일 단위 전수 검사다. 개별 문자열만 금지하면 다음 문구가 그대로 들어온다 —
+     * 실제로 허브만 고친 뒤 자식 두 개가 '설문 주제'·'설문 명칭'·'설문 등록'으로 남아 있었다.
+     * breadcrumb 의 '설문관리' 는 메뉴 상위 노드 이름이라 대상이 아니다.
+     */
+    for (const source of [stats, manage]) {
+      const hits = [...source.matchAll(/'[^']*설문[^']*'|"[^"]*설문[^"]*"/g)]
+        .map((match) => match[0])
+        .filter((text) => !text.includes('설문관리') && !text.includes('설문지'));
+      expect(hits).toEqual([]);
+    }
   });
 });
 

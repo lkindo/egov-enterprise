@@ -59,7 +59,7 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
       className: 'w-20 text-center'
     },
     {
-      header: '설문 명칭',
+      header: '여론조사 명칭',
       accessor: (poll) => (
         <div className="flex flex-col gap-1 py-1">
           <span className="text-sm font-bold text-foreground group-hover:text-primary transition-colors tracking-tight">
@@ -72,7 +72,7 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
       )
     },
     {
-      header: '설문 기간',
+      header: '여론조사 기간',
       accessor: (poll) => (
         <span className="text-xs font-bold text-muted-foreground tabular-nums tracking-tighter">
           {toDisplayYmd(poll.pollBgngYmd)} ~ {toDisplayYmd(poll.pollEndYmd)}
@@ -131,7 +131,7 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
       headingLevel={embedded ? 2 : 1}
       showBreadcrumb={!embedded}
       description="조직 내 의견 수렴·투표를 조회하고 등록합니다."
-      breadcrumbItems={[{ label: '설문관리' }, { label: '설문설정' }]}
+      breadcrumbItems={[{ label: '설문관리' }, { label: '여론조사' }]}
       filterStateKey="survey-manage"
       totalCount={isError ? undefined : total}
       actions={
@@ -143,28 +143,28 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
             variant="outline"
             size="sm"
             onClick={() => void refetch()}
-            aria-label="설문 목록 새로고침"
+            aria-label="여론조사 목록 새로고침"
             className="gap-2"
           >
             <RefreshCcw size={16} className={isLoading ? 'animate-spin' : undefined} aria-hidden="true" />
             새로고침
           </Button>
           <Button size="sm" onClick={() => router.push('/admin/survey/manage/create')} className="gap-2">
-            <Plus size={16} aria-hidden="true" /> 설문 등록
+            <Plus size={16} aria-hidden="true" /> 여론조사 등록
           </Button>
         </>
       }
       filter={
         <KeywordFilter
-          label="설문 제목"
-          placeholder="설문 제목으로 검색"
+          label="여론조사 제목"
+          placeholder="여론조사 제목으로 검색"
           value={keyword}
           onSearch={(next) => handleKeywordChange(next)}
         />
       }
     >
       <StandardDataTable
-        accessibleLabel="설문 목록"
+        accessibleLabel="여론조사 목록"
         columns={columns}
         data={polls}
         loading={isLoading}
@@ -172,8 +172,8 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
         error={isError ? error : null}
         onRetry={() => void refetch()}
         onRowClick={(poll) => router.push(`/admin/survey/manage/${poll.pollSn}`)}
-        rowActionLabel={(poll) => `${poll.pollNm || `${poll.pollSn}번`} 설문 관리 열기`}
-        emptyMessage={emptyResultMessage(keyword, '등록된 설문이 없습니다.')}
+        rowActionLabel={(poll) => `${poll.pollNm || `${poll.pollSn}번`} 여론조사 관리 열기`}
+        emptyMessage={emptyResultMessage(keyword, '등록된 여론조사가 없습니다.')}
         pagination={{
           currentPage: page + 1,
           totalPages: Math.ceil(total / pageSize),
