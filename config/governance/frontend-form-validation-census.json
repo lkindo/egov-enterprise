@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
-    "secondaryActionBoundaries": 55,
-    "candidateCount": 128
+    "secondaryActionBoundaries": 56,
+    "candidateCount": 129
   },
   "entries": [
     {
@@ -1968,6 +1968,26 @@
       ],
       "testEvidence": [
         "frontend/src/app/admin/system/common-code/__tests__/CommonCodeClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/system/hpcm/HpcmClient.tsx#HpcmClient.handleDelete[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/system/hpcm/HpcmClient.tsx",
+      "owner": "HpcmClient",
+      "handler": "handleDelete",
+      "writeSinks": [
+        "hpcmAdminService.deleteHpcm"
+      ],
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/hpcm/__tests__/HpcmClient.behavior.test.tsx"
       ]
     },
     {
