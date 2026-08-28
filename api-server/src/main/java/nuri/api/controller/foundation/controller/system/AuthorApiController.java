@@ -15,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import org.springframework.data.domain.Page;
 
 /**
  * 시스템 권한 그룹(Author) 관리 API 컨트롤러
@@ -35,14 +36,11 @@ public class AuthorApiController {
             @ModelAttribute BaseSearchDto searchDto) {
         log.info(">>> [AuthorApiController] getAuthors called with params: {}", searchDto);
 
-        List<AuthorManageDto> list = authorManageService.selectAuthorList(searchDto);
-        int total = authorManageService.selectAuthorListTotCnt(searchDto);
+        // 목록과 총건수를 한 질의에서 얻는다. 종전에는 총건수가 검색을 무시한 전체 count() 였다.
+        Page<AuthorManageDto> page = authorManageService.selectAuthorList(searchDto);
 
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(
-                list,
-                searchDto.getPageIndex(),
-                searchDto.getPageUnit(),
-                total
+                page
         )));
     }
 
