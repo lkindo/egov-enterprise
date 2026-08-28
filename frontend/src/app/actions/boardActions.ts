@@ -31,9 +31,6 @@ interface BoardArticle {
   scrtYn?: string;
   useYn?: string;
   pswd?: string;
-  // extra fields for form logic
-  replyYn?: string;
-  parnts?: string;
 }
 
 function extractTargetId(response: unknown, fallbackId: string): string {
@@ -53,12 +50,10 @@ function extractTargetId(response: unknown, fallbackId: string): string {
 
 export async function saveBoardArticle(prevState: unknown, formData: FormData): Promise<ActionResponse> {
   const pstSn = formData.get('pstSn') as string;
-  const parnts = formData.get('parnts') as string;
   const pstTtl = formData.get('pstTtl') as string;
   const pstCn = formData.get('pstCn') as string;
   const bbsId = formData.get('bbsId') as string;
   const isEdit = !!pstSn && pstSn !== '';
-  const isReply = !!parnts && parnts !== '' && !isEdit;
 
   if (!pstTtl || pstTtl.trim() === '') return { success: false, message: '제목을 입력해주세요.', field: 'pstTtl' };
   if (!pstCn || pstCn.trim() === '') return { success: false, message: '내용을 입력해주세요.', field: 'pstCn' };
@@ -91,11 +86,6 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       useYn: useYn === 'N' ? 'N' : 'Y'
     };
     
-    if (isReply) {
-      articleData.replyYn = 'Y';
-      articleData.parnts = parnts;
-    }
-
     // Extract attached files
     const files = formData.getAll('files') as File[];
     const hasFiles = files.some(file => file && file.size > 0);

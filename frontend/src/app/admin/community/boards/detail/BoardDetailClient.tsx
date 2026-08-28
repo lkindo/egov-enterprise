@@ -8,7 +8,7 @@ import {
   Download,
   Calendar, Eye, User,
   FileText, Quote, AlertTriangle,
-  Package, Plus, ThumbsUp
+  Package, ThumbsUp
 } from 'lucide-react';
 import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
@@ -258,14 +258,21 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
               <Edit3 size={20} className="text-primary" /> 수정
             </Button>
           )}
-          <Button
-            variant="outline"
-            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&parnts=${pstSn}&replyYn=Y`)}
-            className="h-14 px-10 rounded-2xl border-2 border-border bg-card/50 backdrop-blur-md font-black text-[10px] tracking-[0.2em] uppercase gap-4 shadow-xl hover:-translate-y-2 transition-all active:scale-95"
-            aria-label="게시글 답글 작성"
-          >
-            <Plus size={20} className="text-primary" /> 답글
-          </Button>
+          {/*
+            [2026-08-28] '답글' 버튼 제거.
+
+            이 버튼은 등록 화면으로 parnts·replyYn 을 실어 보냈고, 등록 화면은 그 두 값을
+            그대로 요청 본문에 넣었다. 그런데 BoardSaveRequest 에는 두 필드가 없고
+            application.yml 이 fail-on-unknown-properties: true 라 **요청이 항상 400** 이었다.
+            사용자는 제목·본문을 다 쓰고 '등록' 을 눌러도 재시도 안내만 받았고, 몇 번을 눌러도
+            성공하지 않았다.
+
+            엔드포인트를 여는 대신 어포던스를 걷은 이유: BoardService.replyPost 는 실재하지만
+            **화면에 답글 계층 표현이 전혀 없다** — 목록·상세 어디도 upPstSn·ansLv 를 읽지
+            않는다(전수 grep 0건). 지금 엔드포인트만 열면 답글이 일반 글과 구분되지 않는
+            반쪽 기능이 된다. 서버 구현은 남겨 둔다(요청 밖 삭제 금지) — 계층 표현과 함께
+            설계할 때 되살릴 자산이다.
+          */}
           <Button
             variant="outline"
             onClick={handleLike}
