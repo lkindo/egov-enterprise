@@ -4584,6 +4584,7 @@ export interface components {
             rptCn?: string;
             rptSeCd?: string;
             userId?: string;
+            userNm?: string;
             /** Format: int64 */
             atchFileSn?: number;
             rptSttsCd?: string;

@@ -2,6 +2,8 @@ package nuri.business.service.report;
 
 import nuri.business.domain.report.WorkReport;
 import nuri.business.domain.report.WorkReportRepository;
+import nuri.business.domain.user.entity.User;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.security.service.CustomUserDetails;
@@ -23,7 +25,9 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -35,6 +39,9 @@ class WorkReportServiceTest {
 
     @Mock
     private WorkReportRepository workReportRepository;
+
+    @Mock
+    private UserRepository userRepository;
 
     @InjectMocks
     private WorkReportService workReportService;
@@ -189,5 +196,73 @@ class WorkReportServiceTest {
         assertEquals(0, result.getTotalElements());
         verify(workReportRepository, never())
                 .searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
+    }
+
+    // ── 작성자 표시 ──────────────────────────────────────────────────────────────
+    //
+    // 목록의 '작성자' 열이 종전에는 userId 원문(로그인 ID)을 그대로 보여 줬다. 사람 이름이
+    // 아니라 계정 문자열이라 누가 쓴 보고인지 화면만으로는 알 수 없었다.
+    //
+    // ⚠ 축 정합이 이 기능의 유일한 함정이다. WorkReport.userId 는 등록 시 getCurrentLoginId()
+    //   로 고정되므로 tb_user_info.user_id(loginId) 축이다. esntlId 로 join 하면 **조용히
+    //   0건**이 되어 이름이 하나도 안 붙는데, 화면은 그냥 예전처럼 ID 를 보여 주므로 아무도
+    //   눈치채지 못한다. 그래서 loginId 로 조회하는지를 명시적으로 고정한다.
+
+    private static User userNamed(String loginId, String name) {
+        return User.builder().esntlId("ESNTL_" + loginId).userId(loginId).userNm(name).build();
+    }
+
+    @Test
+    @DisplayName("작성자 이름을 로그인 ID 축으로 조회해 한 번에 붙인다")
+    void getWorkReportList_resolvesAuthorNamesByLoginId() {
+        authenticateAs("admin01", "ROLE_ADMIN");
+        Pageable pageable = PageRequest.of(0, 10);
+        WorkReport a = WorkReport.builder().rptpSn(1L).rptTtl("보고 A").userId("user01").build();
+        WorkReport b = WorkReport.builder().rptpSn(2L).rptTtl("보고 B").userId("user02").build();
+        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(a, b), pageable, 2));
+        when(userRepository.findByUserIdIn(any()))
+                .thenReturn(List.of(userNamed("user01", "홍길동"), userNamed("user02", "김철수")));
+
+        Page<WorkReportDto> result = workReportService.getWorkReportList(null, null, "", pageable);
+
+        assertEquals("홍길동", result.getContent().get(0).getUserNm());
+        assertEquals("김철수", result.getContent().get(1).getUserNm());
+        // 로그인 ID 는 그대로 유지한다 — 화면이 이름을 못 찾았을 때 되돌아갈 값이다.
+        assertEquals("user01", result.getContent().get(0).getUserId());
+
+        // 행마다 조회하면 페이지당 N 회다. 한 번에 모아 받는지, 그리고 **loginId** 를 넘기는지 고정한다.
+        // (esntlId 로 조회하면 인자가 ESNTL_* 가 되어 이 단언이 red 다 — 조용한 0건을 여기서 잡는다.)
+        verify(userRepository, times(1)).findByUserIdIn(Set.of("user01", "user02"));
+    }
+
+    @Test
+    @DisplayName("이름을 찾지 못하면 지어내지 않는다 — 화면이 로그인 ID 로 되돌아갈 수 있게 비워 둔다")
+    void getWorkReportList_leavesAuthorNameNullWhenUnknown() {
+        authenticateAs("admin01", "ROLE_ADMIN");
+        Pageable pageable = PageRequest.of(0, 10);
+        WorkReport orphan = WorkReport.builder().rptpSn(3L).rptTtl("탈퇴자 보고").userId("gone01").build();
+        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(orphan), pageable, 1));
+        when(userRepository.findByUserIdIn(any())).thenReturn(List.of());
+
+        Page<WorkReportDto> result = workReportService.getWorkReportList(null, null, "", pageable);
+
+        assertNull(result.getContent().get(0).getUserNm(), "'알 수 없음' 같은 값을 지어내지 않는다");
+        assertEquals("gone01", result.getContent().get(0).getUserId());
+    }
+
+    @Test
+    @DisplayName("작성자가 없는 행만 있으면 사용자 조회를 아예 하지 않는다")
+    void getWorkReportList_skipsLookupWhenNoAuthors() {
+        authenticateAs("admin01", "ROLE_ADMIN");
+        Pageable pageable = PageRequest.of(0, 10);
+        WorkReport blank = WorkReport.builder().rptpSn(4L).rptTtl("작성자 없음").build();
+        when(workReportRepository.searchWorkReports(any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class)))
+                .thenReturn(new PageImpl<>(List.of(blank), pageable, 1));
+
+        workReportService.getWorkReportList(null, null, "", pageable);
+
+        verify(userRepository, never()).findByUserIdIn(any());
     }
 }

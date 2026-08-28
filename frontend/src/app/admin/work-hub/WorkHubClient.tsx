@@ -412,7 +412,18 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     },
     {
       header: '작성자',
-      accessor: (item) => <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.userId}</span>,
+      /*
+        [2026-08-29] 이름을 보여 준다. 종전에는 userId 원문(로그인 ID)만 찍어, 사람 이름이
+        아니라 계정 문자열이라 누가 쓴 보고인지 목록만으로는 알 수 없었다.
+
+        이름을 못 찾으면 **로그인 ID 로 되돌아간다** — 서버가 사전에 없는 작성자(탈퇴 등)에
+        대해 userNm 을 비워 보내므로, '알 수 없음' 같은 값을 여기서 지어내지 않는다.
+      */
+      accessor: (item) => (
+        <span className="text-xs font-bold text-muted-foreground tracking-tight">
+          {item.userNm || item.userId}
+        </span>
+      ),
       className: 'w-32'
     },
     {
