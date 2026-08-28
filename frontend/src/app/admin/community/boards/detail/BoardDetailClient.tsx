@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import DOMPurify from 'isomorphic-dompurify';
 import { cn } from '@/lib/utils';
+import { isAdministrativeRole } from '@/lib/auth/administrative-role';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/app/components/ui/toast';
@@ -37,14 +38,23 @@ interface BoardDetailClientProps {
   }>;
 }
 
-const BOARD_ADMIN_ROLES = new Set(['ADMIN', 'SYSTEM', 'ROLE_ADMIN', 'ROLE_SYSTEM']);
+/*
+  [2026-08-29] 자체 role 집합을 걷고 공용 SSOT 로 판정한다.
+
+  종전 집합은 값은 같았지만 대소문자를 흡수하지 않았다(`has(user.role)` 원문 비교).
+  SSOT 와 proxy 의 라우트 게이트는 둘 다 대문자로 정규화하므로, 서버 표기가 흔들리면
+  **라우트는 열어 주는데 화면에서만 수정·삭제 버튼이 사라지는** 비대칭이 생긴다.
+  DEC-OPS-023 ② 가 기록한 조용히 죽는 결함과 같은 방향이다.
+
+  ⚠ 표시 판정이지 인가가 아니다 — 서버는 assertOwnerOrAdminByEsntlId 로 따로 집행한다.
+*/
 
 export function canManageBoardArticle(
   user: { id: string; esntlId?: string; role?: string } | null | undefined,
   authorId: string | undefined,
 ): boolean {
   if (!user) return false;
-  if (user.role && BOARD_ADMIN_ROLES.has(user.role)) return true;
+  if (isAdministrativeRole(user.role)) return true;
   return Boolean(authorId && user.esntlId && user.esntlId === authorId);
 }
 

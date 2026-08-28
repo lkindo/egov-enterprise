@@ -21,6 +21,50 @@ function proxyAdminRoles(): string[] {
   return [...block.matchAll(/normalizedRole === '([A-Z_]+)'/g)].map((match) => match[1]).sort();
 }
 
+/**
+ * 한 소스가 **자기만의 관리자 역할 집합**을 정의하는가.
+ *
+ * 판정 기준은 "관리자 역할 리터럴이 하나의 배열/Set 리터럴 안에 둘 이상" 이다. 값 하나짜리
+ * fixture 는 판정이 아니라 데이터이므로 걸리지 않는다.
+ */
+export function definesOwnAdministrativeRoleSet(source: string): boolean {
+  /*
+    수집한 리터럴이 **판정에 쓰이는가**를 함께 본다. msw 목 응답처럼 역할 값을 데이터로
+    나르기만 하는 파일까지 잡으면 경로 예외 목록을 만들게 되고, 그 목록이 곧 서랍이 된다.
+    판정의 표식은 role 을 대상으로 한 멤버십 검사다.
+  */
+  const membershipTest = /\.(?:has|includes)\s*\(\s*[^)]*role/i;
+  if (!membershipTest.test(source)) return false;
+
+  const ROLE_TOKEN = /'(?:ROLE_)?(?:ADMIN|SYSTEM)'/g;
+  for (const literal of source.matchAll(/\[[^\][]*\]/g)) {
+    const found = literal[0].match(ROLE_TOKEN);
+    if (found && found.length >= 2) return true;
+  }
+  return false;
+}
+
+describe('자체 역할 집합 탐지기', () => {
+  it('멤버십 검사에 쓰이는 자체 집합을 잡는다', () => {
+    expect(definesOwnAdministrativeRoleSet(
+      "const OWN = new Set(['ADMIN', 'SYSTEM', 'ROLE_ADMIN', 'ROLE_SYSTEM']);"
+      + " if (OWN.has(user.role)) return true;",
+    )).toBe(true);
+  });
+
+  it('역할 값을 데이터로 나르기만 하는 목 응답은 잡지 않는다', () => {
+    expect(definesOwnAdministrativeRoleSet(
+      "const users = [{ id: 'a', role: 'ROLE_ADMIN' }, { id: 'b', role: 'ROLE_SYSTEM' }];",
+    )).toBe(false);
+  });
+
+  it('값이 하나뿐인 집합은 판정 중복이 아니다', () => {
+    expect(definesOwnAdministrativeRoleSet(
+      "const ONLY = ['ADMIN']; if (ONLY.includes(user.role)) return true;",
+    )).toBe(false);
+  });
+});
+
 describe('관리자 판정 parity', () => {
   it('클라이언트 표시 판정이 라우트 게이트와 같은 역할 집합을 쓴다', () => {
     expect(proxyAdminRoles()).toEqual([...ADMINISTRATIVE_ROLES].sort());
@@ -76,6 +120,21 @@ describe('관리자 판정 parity', () => {
           .replace(/\/\*[\s\S]*?\*\//g, ' ')
           .replace(/\/\/.*$/gm, ' ');
         if (/\brole\s*===\s*'[A-Za-z_]+'/.test(source)) {
+          violations.push(full.slice(SRC_DIR.length + 1).replace(/\\/g, '/'));
+          continue;
+        }
+        /*
+          [2026-08-29] 리터럴 === 비교만 보면 **자체 집합을 만든 화면을 놓친다.**
+
+          BoardDetailClient 가 정확히 그랬다 — 관리자 역할 4종을 담은 Set 을 따로 두고
+          원문으로 비교했다. 값은 같았지만 SSOT·proxy 가 흡수하는 대소문자를 흡수하지
+          않아, 서버 표기가 흔들리면 **라우트는 열어 주는데 화면에서만 기능이 사라진다**
+          (DEC-OPS-023 ② 가 기록한 조용히 죽는 결함과 같은 방향).
+
+          그래서 "관리자 역할 리터럴을 둘 이상 모아 둔 컬렉션" 자체를 금지한다. 값 하나를
+          가진 fixture(role: 'ROLE_ADMIN' 같은 목 응답)는 판정이 아니므로 대상이 아니다.
+        */
+        if (definesOwnAdministrativeRoleSet(source)) {
           violations.push(full.slice(SRC_DIR.length + 1).replace(/\\/g, '/'));
         }
       }
