@@ -236,8 +236,8 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
             <MessageSquare className="w-8 h-8 text-surface-inverse-foreground" />
           </motion.div>
           <div>
-            <h3 className="text-3xl font-black text-foreground tracking-tighter uppercase leading-none mb-2">Discussion Hub</h3>
-            <p className="text-[10px] font-black text-muted-foreground tracking-[0.4em] uppercase">{optimisticComments.length} active threads</p>
+            <h3 className="text-3xl font-black text-foreground tracking-tighter leading-none mb-2">댓글</h3>
+            <p className="text-[10px] font-black text-muted-foreground tracking-[0.2em]">댓글 {optimisticComments.length}개</p>
           </div>
         </div>
       </div>
@@ -251,7 +251,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
               animate={{ opacity: 1, y: 0 }}
               className="py-24 text-center border-2 border-dashed border-border rounded-[2rem] bg-muted/50"
             >
-              <p className="text-muted-foreground font-black tracking-widest uppercase text-xs">No entries found. Initiate the thread below.</p>
+              <p className="text-muted-foreground font-black tracking-tight text-xs">아직 등록된 댓글이 없습니다. 아래에서 첫 댓글을 남겨 주세요.</p>
             </motion.div>
           ) : (
             optimisticComments.map((comment) => (
@@ -413,14 +413,14 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
               onNavigate={createValidation.focusError}
             />
             <div className="flex items-center gap-4 mb-2">
-              <Badge className="px-5 py-2 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-black tracking-widest text-[10px] uppercase hover:bg-surface-inverse shadow-xl">Initiate Response</Badge>
+              <Badge className="px-5 py-2 rounded-xl bg-surface-inverse text-surface-inverse-foreground font-black tracking-tight text-[10px] hover:bg-surface-inverse shadow-xl">새 댓글</Badge>
               <div className="h-[2px] flex-1 bg-muted" />
             </div>
             <Textarea
               ref={createInputRef}
               {...createValidation.fieldProps('ansCn')}
               aria-label="새 댓글 작성"
-              placeholder="Inject your thoughts into the collective knowledge..."
+              placeholder="댓글을 입력하세요."
               value={ansCn}
               onChange={(e) => {
                 createValidation.clearError('ansCn');
@@ -438,12 +438,12 @@ export default function CommentSection({ pstSn, bbsId, initialComments }: Commen
                 type="submit"
                 disabled={hasWritePending}
                 aria-busy={createPending}
-                className="h-16 px-12 rounded-[1.5rem] bg-surface-inverse hover:bg-black text-surface-inverse-foreground font-black tracking-widest text-xs uppercase shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex gap-4 active:scale-95 transition-all group"
+                className="h-16 px-12 rounded-[1.5rem] bg-surface-inverse hover:bg-black text-surface-inverse-foreground font-black tracking-tight text-xs shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex gap-4 active:scale-95 transition-all group"
               >
                 {createPending ? (
-                  <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> COMMITTING...</>
+                  <><div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" /> 댓글 등록 중…</>
                 ) : (
-                  <><Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> Commit Response</>
+                  <><Send className="w-5 h-5 group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" /> 댓글 등록</>
                 )}
               </Button>
             </div>

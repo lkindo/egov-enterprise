@@ -82,13 +82,13 @@ describe('CommentSection Component', () => {
 
     expect(screen.getByText('First Comment')).toBeDefined();
     expect(screen.getByText('User One')).toBeDefined();
-    expect(screen.getByText(/Discussion Hub/i)).toBeDefined();
+    expect(screen.getByRole('heading', { name: '댓글' })).toBeDefined();
   });
 
   it('handles empty comment list', async () => {
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
 
-    expect(screen.getByText(/No entries found/i)).toBeDefined();
+    expect(screen.getByText('아직 등록된 댓글이 없습니다. 아래에서 첫 댓글을 남겨 주세요.')).toBeDefined();
   });
 
   it('submits a new comment', async () => {
@@ -96,8 +96,8 @@ describe('CommentSection Component', () => {
 
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
 
-    const textarea = screen.getByPlaceholderText(/Inject your thoughts/i);
-    const submitButton = screen.getByText(/Commit Response/i);
+    const textarea = screen.getByPlaceholderText('댓글을 입력하세요.');
+    const submitButton = screen.getByText(/댓글 등록/);
 
     fireEvent.change(textarea, { target: { value: 'New Test Comment' } });
     fireEvent.click(submitButton);
@@ -113,7 +113,7 @@ describe('CommentSection Component', () => {
     const textarea = screen.getByLabelText('새 댓글 작성');
     fireEvent.change(textarea, { target: { value: '가'.repeat(4001) } });
 
-    fireEvent.click(screen.getByRole('button', { name: /commit response/i }));
+    fireEvent.click(screen.getByRole('button', { name: /댓글 등록/ }));
 
     expect(commentActions.createComment).not.toHaveBeenCalled();
     expect(await screen.findByRole('alert', { name: /입력 오류/ })).toHaveTextContent('최대 4000자');
@@ -131,7 +131,7 @@ describe('CommentSection Component', () => {
     const textarea = screen.getByLabelText('새 댓글 작성');
     fireEvent.change(textarea, { target: { value: '보존할 댓글 원문' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /commit response/i }));
+    fireEvent.click(screen.getByRole('button', { name: /댓글 등록/ }));
 
     expect(await screen.findByText('댓글에 사용할 수 없는 표현이 있습니다.')).toBeVisible();
     expect(textarea).toHaveValue('보존할 댓글 원문');
@@ -146,7 +146,7 @@ describe('CommentSection Component', () => {
     }));
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={[]} />);
     fireEvent.change(screen.getByLabelText('새 댓글 작성'), { target: { value: '중복 방지 댓글' } });
-    const submit = screen.getByRole('button', { name: /commit response/i });
+    const submit = screen.getByRole('button', { name: /댓글 등록/ });
     const form = submit.closest('form');
 
     fireEvent.submit(form!);
@@ -155,7 +155,7 @@ describe('CommentSection Component', () => {
     await waitFor(() => expect(commentActions.createComment).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(submit).toBeDisabled());
     expect(submit).toHaveAttribute('aria-busy', 'true');
-    expect(submit).toHaveTextContent('COMMITTING...');
+    expect(submit).toHaveTextContent('댓글 등록 중…');
 
     await act(async () => resolveCreate({ success: true, message: '성공' }));
     await waitFor(() => expect(submit).not.toBeDisabled());
@@ -301,7 +301,7 @@ describe('CommentSection Component', () => {
 
     const textarea = screen.getByLabelText('새 댓글 작성');
     fireEvent.change(textarea, { target: { value: '사라지면 안 되는 댓글' } });
-    fireEvent.click(screen.getByRole('button', { name: /commit response/i }));
+    fireEvent.click(screen.getByRole('button', { name: /댓글 등록/ }));
 
     await waitFor(() => expect(commentActions.createComment).toHaveBeenCalled());
     await waitFor(() => expect(textarea).toHaveValue('사라지면 안 되는 댓글'));

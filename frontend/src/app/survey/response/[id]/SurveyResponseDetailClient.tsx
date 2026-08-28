@@ -6,7 +6,7 @@ import { getQustnrRespondInfoDetail } from '@/lib/api/survey';
 ;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, User, Calendar, ClipboardCheck, MessageSquare } from 'lucide-react';
+import { Loader2, ArrowLeft, User, Calendar, MessageSquare } from 'lucide-react';
 
 export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsSn: number }) {
     const router = useRouter();
@@ -65,10 +65,13 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
                                 <Calendar className="w-4 h-4 text-primary" />
                                 <span className="text-sm font-medium">{response?.crtDt}</span>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <ClipboardCheck className="w-4 h-4 text-emerald-400" />
-                                <span className="text-sm font-bold underline underline-offset-4 decoration-emerald-500/30">검증된 응답</span>
-                            </div>
+                            {/*
+                              [2026-08-29] '검증된 응답' 배지 제거.
+
+                              조건 없이 모든 응답에 붙던 고정 표시였다. 무엇을 어떻게 검증했다는
+                              것인지 계측 원천이 없고, 서버 DTO 에도 검증 여부 필드가 없다.
+                              초록 체크는 사용자에게 "이 응답은 확인됐다" 는 뜻으로 읽힌다.
+                            */}
                         </div>
                     </CardContent>
                 </Card>

@@ -144,7 +144,7 @@ export default function OnlinePollParticipateClient() {
  <div className="flex items-center gap-3">
  <div className="px-4 py-1 bg-white/10 rounded-lg border border-white/10 flex items-center gap-2">
  <Zap size={14} className="text-primary" />
- <span className="text-xs font-bold tracking-[0.2em] uppercase">Protocol Online</span>
+ <span className="text-xs font-bold tracking-[0.2em]">{POLL_STATUS_LABEL[getPollStatus(selectedPoll, todayStr)]}</span>
  </div>
  <div className="px-4 py-1 bg-primary/20 rounded-lg border border-primary/20 flex items-center gap-2">
  <Calendar size={14} className="text-primary" />
@@ -209,7 +209,11 @@ export default function OnlinePollParticipateClient() {
 function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, todayStr: string, onSelect: () => void }) {
   const status = getPollStatus(poll, todayStr);
   const isLive = status === 'active';
-  const label = isLive ? 'Live Now' : status === 'closed' ? 'Closed' : POLL_STATUS_LABEL[status];
+  /*
+    [2026-08-29] 'Live Now'·'Closed' 하드코딩 제거. 같은 상태를 화면마다 다른 어휘로 부르면
+    사용자는 다른 것으로 읽는다. 판정도 표기도 poll-status SSOT 한 곳에서 온다.
+  */
+  const label = POLL_STATUS_LABEL[status];
 
   return (
     <div 
