@@ -211,6 +211,24 @@ describe('SMS 발송 결과 고지', () => {
     expect(source).toContain('접수했습니다');
   });
 
+  /**
+   * 같은 sendSms 위에 올라탄 소비자가 하나 더 있다. 이 계약이 이 파일만 검사하면 그쪽은
+   * 게이트 밖이라, 한 화면만 고치고 다른 화면은 계속 '성공적으로 전송되었습니다' 를 띄운다.
+   * 지금은 next.config 리다이렉트로 도달 불가지만 리다이렉트는 걷힐 수 있다(DEC-OPS-024).
+   */
+  it('같은 API 를 쓰는 다른 화면도 전달을 단정하지 않는다', () => {
+    const hub = readFileSync(
+      path.resolve(__dirname, '..', '..', '..', '..', '..', 'cop', 'sms', 'selectSmsList', 'SmsHubClient.tsx'),
+      'utf8',
+    )
+      .replace(/\/\*[\s\S]*?\*\//g, ' ')
+      .replace(/\/\/.*$/gm, ' ');
+
+    expect(hub, 'sendSms 소비자가 맞는지 확인').toContain('sendSms');
+    expect(hub).not.toContain('성공적으로 전송되었습니다');
+    expect(hub).toContain('접수했습니다');
+  });
+
   it('수신자별 실제 결과를 볼 경로가 화면에 있다', () => {
     // 결과를 볼 방법이 없으면 '접수했다'는 안내조차 확인할 수 없다.
     expect(source).toContain('getSmsRecipients');
