@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Search, Plus,
  Library, BookOpen, MessageCircleQuestion,
  TrendingUp, Users, ArrowRight, Layers, Zap, History, Hash, ChevronRight,
- User, Eye, ShieldAlert, Settings2, AlertTriangle, RefreshCcw } from 'lucide-react';
+ User, Eye, Settings2, AlertTriangle, RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -90,7 +90,25 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  return NOTICE_BOARD_ID; // DEFAULT/NOTICE
  }, [activeCategory]);
 
- const isAccessRestricted = !isAdmin && (activeCategory === 'WIKI' || activeCategory === 'FAQ');
+ /*
+   [2026-08-29] 비관리자의 WIKI·FAQ 차단(isAccessRestricted)을 제거했다.
+
+   그 차단은 **집행자가 없는 인가 주장**이었다. 서버는 게시판 읽기에 역할 게이트가 한 겹도
+   없고(BoardApiController 는 클래스 레벨 @Authenticated 뿐, secure-paths 에 /api/v1/boards
+   없음), 같은 사용자가 같은 데이터를 세 경로로 이미 받는다 — ① 이 화면 사이드바의 인기 문서·
+   최근 활동 ② /admin/community/board 의 게시판 선택기(비관리자 폴백 목록이 WIKI 게시판을
+   '일정 게시판' 으로 **의도적으로 포함**한다: use-board-options.ts) ③ GET /boards/{bbsId} 직접 호출.
+
+   그래서 화면은 "접근 권한 없음 · 관리자에게 권한을 요청하십시오" 라고 말하면서 바로 옆에서
+   그 게시판의 제목·조회수·작성자를 보여 주고 상세까지 열어 줬다. 요청할 권한도 없다.
+
+   벽을 화면 전체로 넓히는 쪽은 택하지 않았다 — 보호는 그대로 0인데 제품이 명시적으로 부여한
+   접근을 화면에서만 빼앗기 때문이다. 이 파일은 /admin/help·faq·qna 와 /admin/community 네
+   라우트를 렌더하고, 그중 /admin/community 는 일반 사용자의 정상 착지 화면이다.
+
+   실제 board ACL 이 서버에 생기면 그때 정직한 차단을 만든다(authorization-claim-honesty 계약이
+   서버 상태가 바뀌는 순간 재판정을 요구하며 red 가 된다).
+ */
 
  // --- Data Fetching ---
  const {
@@ -263,28 +281,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  <HubSectionCard title="지식 스트림" description="선택한 카테고리의 최신 등록 문서입니다." icon={Layers} id="knowledge-stream-panel">
  <div className="space-y-6">
  <AnimatePresence mode="popLayout">
- {isAccessRestricted ? (
- <motion.div
- initial={{ opacity: 0, scale: 0.95 }}
- animate={{ opacity: 1, scale: 1 }}
- className="flex flex-col items-center justify-center p-16 space-y-8 bg-muted border-2 border-dashed rounded-lg border-primary/20"
- >
- <div className="w-24 h-24 rounded-lg bg-card shadow-2xl flex items-center justify-center text-primary border-2 border-primary/10">
- <ShieldAlert size={48} />
- </div>
- <div className="text-center space-y-4 max-w-sm">
- <h3 className="text-2xl font-bold text-foreground tracking-tighter leading-none">접근 권한 없음</h3>
- <p className="text-sm font-bold text-muted-foreground leading-relaxed">현재 권한으로는 위키·FAQ 데이터셋에 접근할 수 없습니다. 시스템 관리자에게 권한을 요청하십시오.</p>
- </div>
- <Button
- onClick={() => selectCategory('COMMUNITY')}
- variant="outline"
- className="h-11 px-8 rounded-lg border-2 font-bold tracking-tight text-xs gap-3 shadow-xl hover:bg-surface-inverse hover:text-surface-inverse-foreground transition-all"
- >
- <ArrowRight size={16} /> 커뮤니티로 이동
- </Button>
- </motion.div>
- ) : isArticlesError ? (
+ {isArticlesError ? (
  // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
  <div role="alert" className="flex flex-col items-center justify-center gap-4 p-16 border-2 border-dashed rounded-lg border-rose-300 bg-rose-50/50 dark:border-rose-900/40 dark:bg-rose-950/20">
  <AlertTriangle size={32} className="text-rose-500" />

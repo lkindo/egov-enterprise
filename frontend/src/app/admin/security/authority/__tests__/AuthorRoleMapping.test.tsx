@@ -223,14 +223,39 @@ describe('권한 → 롤 할당', () => {
     expect(mocks.saveAuthorRoles).not.toHaveBeenCalled();
   });
 
-  it('저장에 실패하면 침묵하지 않고 서버 상태를 다시 읽는다', async () => {
-    mocks.saveAuthorRoles.mockRejectedValueOnce(new Error('boom'));
+  /**
+   * 저장 동작 자체의 안전 축을 한 흐름으로 확인한다 — **저장이 전체 교체이기 때문이다.**
+   * 요청이 두 번 나가면 두 번 지우고 두 번 다시 넣으며, 그 사이에 다른 요청이 끼면 마지막
+   * 것만 남는다. 그래서 진행 중에는 요청 자체를 막고, 막혀 있다는 사실을 버튼이 드러내며,
+   * 실패하면 침묵하지 않고 서버 상태를 다시 읽어야 한다.
+   */
+  it('진행 중에는 잠기고 한 번만 보내며, 실패를 사용자에게 알린다', async () => {
+    let fail!: () => void;
+    mocks.saveAuthorRoles.mockReturnValueOnce(
+      new Promise<void>((_resolve, reject) => { fail = () => reject(new Error('boom')); }),
+    );
+
     await openRolePanel();
     await screen.findByRole('button', { name: '롤 A 롤 해제' });
 
-    fireEvent.click(screen.getByRole('button', { name: /롤 할당 저장/ }));
+    const save = screen.getByRole('button', { name: '롤 할당 저장' });
+    fireEvent.click(save);
+    await waitFor(() => expect(mocks.saveAuthorRoles).toHaveBeenCalledTimes(1));
 
+    // 진행 중임을 버튼이 드러낸다.
+    const pending = await screen.findByRole('button', { name: '롤 할당 저장 중…' });
+    expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute('aria-busy', 'true');
+
+    // 진행 중 재제출은 요청을 만들지 않는다.
+    fireEvent.click(pending);
+    fireEvent.click(pending);
+    expect(mocks.saveAuthorRoles).toHaveBeenCalledTimes(1);
+
+    // 실패는 조용히 지나가지 않는다.
+    await act(async () => { fail(); });
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
       '롤 할당 저장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error'));
+    await waitFor(() => expect(screen.getByRole('button', { name: '롤 할당 저장' })).toBeEnabled());
   });
 });

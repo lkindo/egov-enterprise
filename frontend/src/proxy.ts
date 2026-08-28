@@ -211,7 +211,7 @@ async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
 const USER_ACCESSIBLE_ADMIN_PATHS = [
   '/admin/work-hub',                  // 개인·부서 업무/보고/일정 (dept-jobs·work-reports). 로그인 기본 착지점
   '/admin/collaboration',             // 쪽지·주소록·스크랩·메일 (notes·address-books·scraps·mails)
-  '/admin/help',                      // 지식/FAQ/Q&A 열람 (WIKI·FAQ 는 화면 내부에서 별도 admin 제한 중)
+  '/admin/help',                      // 지식/FAQ/Q&A 열람 (게시판 읽기는 서버도 인증만 요구한다 — 화면 내 별도 제한 없음)
   '/admin/community',                 // 커뮤니티 게시판 열람·작성 (관리 콘솔은 아래에서 도려낸다)
   '/admin/survey/polls/participate',  // 온라인 여론조사 '참여'(투표). 설문 '관리'는 열지 않는다
 ] as const;
