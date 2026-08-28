@@ -10,7 +10,7 @@ test.describe('Tier 18: Business Extensions & Identity Governance', () => {
     test('ISM: Informal Sanction Lifecycle', async ({ businessPage }) => {
         await businessPage.gotoIsm();
         await businessPage.verifyIsmMetrics();
-        await businessPage.approveFirstPendingSanction('E2E Automated Decision: Operational Validation');
+        await businessPage.approveFirstPendingSanction();
     });
 
     // [2026-07-17] LSM(간부일정) 도메인 제거 — 0행·계약파손·사경화 실측(A그룹 leader b). 케이스 삭제.

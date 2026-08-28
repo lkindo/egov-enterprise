@@ -38,6 +38,18 @@ import {
 
 import { InformalSanctionDtoSchema } from '@/types/generated-zod';
 
+/*
+  사유는 **반려에만** 필수다.
+
+  종전에는 승인·반려 양쪽에 필수였는데, 서버의 승인 경로는 이 값을 받지도 저장하지도
+  않는다 — `InformalSanction.approve()` 는 인자가 없고 `rjctRsnCn` 을 null 로 지운다.
+  반면 `reject(reason)` 은 빈 값이면 예외를 낸다. 즉 화면이 승인자에게 사유를 강제로
+  쓰게 한 뒤 그 글을 버리고 있었다. 컬럼 이름(`rjct_rsn_cn`)이 말하듯 이 값은 애초에
+  '반려 사유' 다.
+
+  그래서 스키마에서는 선택으로 두고, 반려 제출 경로에서만 필수를 집행한다
+  (`submitReject`). 반대로 하면 승인 버튼이 쓰이지도 않을 글을 요구해 계속 막는다.
+*/
 export const ismSchema = InformalSanctionDtoSchema.extend({
  taskSeCd: InformalSanctionDtoSchema.shape.taskSeCd.optional(),
  aplcntId: InformalSanctionDtoSchema.shape.aplcntId.optional(),
@@ -45,12 +57,14 @@ export const ismSchema = InformalSanctionDtoSchema.extend({
  rjctRsnCn: InformalSanctionDtoSchema.shape.rjctRsnCn
  .unwrap()
  .trim()
- .min(1, '결재 또는 반려 사유를 입력해 주세요.')
- .max(4000, '결재 또는 반려 사유는 최대 4,000자까지 입력할 수 있습니다.'),
+ .max(4000, '반려 사유는 최대 4,000자까지 입력할 수 있습니다.')
+ .optional(),
 });
 
+const REJECT_REASON_REQUIRED = '반려 사유를 입력해 주세요.';
+
 const ISM_FORM_LABELS = {
- rjctRsnCn: '결재 또는 반려 사유',
+ rjctRsnCn: '반려 사유',
 };
 
 type IsmFormValues = z.infer<typeof ismSchema>;
@@ -102,7 +116,7 @@ export default function IsmClient({
  try {
  setLoading(true);
  await ismAdminService.confirmInfrmlSanctn(selectedSanctn.ifmlAtrzSn, aprvYn, values.rjctRsnCn);
- toast(`결재 시퀀스가 ${aprvYn === SANCTION_STATUS.APPROVED ? '성공적으로 승인' : '반려'} 처리되었습니다.`, 'success');
+ toast(`결재를 ${aprvYn === SANCTION_STATUS.APPROVED ? '승인' : '반려'} 처리했습니다.`, 'success');
  setIsOpen(false);
  router.refresh();
  } catch (error: unknown) {
@@ -115,6 +129,22 @@ export default function IsmClient({
  }
  };
 
+ /**
+  * 반려 제출 — 사유는 여기서만 필수다.
+  *
+  * 서버가 빈 사유를 예외로 막으므로(`InformalSanction.reject`), 화면이 먼저 잡지 않으면
+  * 사용자는 글을 쓴 뒤 서버 오류로 되돌아온다. 스키마 대신 이 경로에서 집행하는 이유는
+  * 같은 폼의 승인 버튼이 이 값을 쓰지 않기 때문이다.
+  */
+ const submitReject = form.handleSubmit((values: IsmFormValues) => {
+ if (!values.rjctRsnCn?.trim()) {
+ form.setError('rjctRsnCn', { type: 'required', message: REJECT_REASON_REQUIRED });
+ void form.focusError('rjctRsnCn');
+ return;
+ }
+ return onFormSubmit(values, SANCTION_STATUS.REJECTED);
+ });
+
  const closeModal = () => {
  if (!submittingRef.current) setIsOpen(false);
  };
@@ -125,31 +155,36 @@ export default function IsmClient({
 
  const columns: Column<InformalSanctionDto>[] = [
  {
- header: '도메인 및 아키텍처',
+ header: '업무 구분',
  accessor: (item: InformalSanctionDto) => (
  <div className="flex items-center gap-5 py-4">
  <div className="w-12 h-12 rounded-lg bg-surface-inverse flex items-center justify-center text-white/40 shadow-xl group-hover:scale-110 transition-transform">
- <Layers size={18} />
+ <Layers size={18} aria-hidden="true" />
  </div>
  <div className="flex flex-col gap-1 text-left">
+ {item?.taskSeCd ? (
  <span className="px-3 py-1 bg-muted text-foreground rounded-lg text-xs font-bold tracking-tight border border-border w-fit">
- {item?.taskSeCd || 'STATIC_NODE'}
+ {item.taskSeCd}
  </span>
- <span className="font-bold tracking-tighter text-foreground text-md uppercase leading-tight mt-1">{item?.taskSeNm || item?.taskSeCd || 'Untitled Sequence'}</span>
+ ) : null}
+ {/* 값이 없으면 'STATIC_NODE' 같은 의사코드를 지어내지 않고 없다고 말한다(카탈로그 G14). */}
+ <span className="font-bold tracking-tight text-foreground text-md leading-tight mt-1">
+ {item?.taskSeNm || item?.taskSeCd || '업무 구분 없음'}
+ </span>
  </div>
  </div>
  )
  },
  {
- header: '결재 아이덴티티',
+ header: '신청자',
  accessor: (item: InformalSanctionDto) => (
  <div className="flex items-center gap-4">
  <div className="w-10 h-10 rounded-lg bg-muted border border-border flex items-center justify-center text-muted-foreground shadow-inner group-hover:bg-primary/5 group-hover:text-primary transition-colors">
  <Fingerprint size={16} />
  </div>
  <div className="flex flex-col text-left">
- <span className="text-sm font-bold text-foreground tracking-tight">{item?.aplcntNm || item?.aplcntId || 'UNKNOWN'}</span>
- <span className="text-xs font-bold text-muted-foreground/40 tracking-[0.3em] font-mono ">SN: {item?.ifmlAtrzSn ?? 'N/A'}</span>
+ <span className="text-sm font-bold text-foreground tracking-tight">{item?.aplcntNm || item?.aplcntId || '알 수 없음'}</span>
+ <span className="text-xs font-bold text-muted-foreground/60 font-mono">접수번호 {item?.ifmlAtrzSn ?? '-'}</span>
  </div>
  </div>
  ),
@@ -165,14 +200,14 @@ export default function IsmClient({
  return (
  <HubStatusBadge 
  status={status} 
- labels={{ 활성: '승인됨 (CONFIRMED)', DISABLED: '반려됨 (REJECTED)', INACTIVE: '결재 대기 (PENDING)' }} 
+ labels={{ 활성: '승인됨', DISABLED: '반려됨', INACTIVE: '결재 대기' }} 
  />
  );
  },
  className: 'w-48'
  },
  {
- header: '관리 조정',
+ header: '작업',
  className: 'text-right w-48',
  accessor: (item: InformalSanctionDto) => (
  <div className="flex justify-end gap-3 pr-4">
@@ -181,7 +216,8 @@ export default function IsmClient({
  onClick={() => handleOpenConfirm(item)}
  className="h-10 px-6 bg-surface-inverse text-surface-inverse-foreground rounded-lg text-xs font-bold tracking-widest uppercase hover:bg-primary transition-all active:scale-95 shadow-xl flex items-center gap-2 group"
  >
- <ShieldCheck size={16} className="group-hover:rotate-12 transition-transform" /> 승인 실행
+ {/* 이 버튼은 승인·반려를 모두 고를 수 있는 모달을 연다 — '승인 실행' 은 한쪽만 말했다. */}
+ <ShieldCheck size={16} aria-hidden="true" className="group-hover:rotate-12 transition-transform" /> 결재 처리
  </Button>
  ) : (
  <span className="text-xs font-bold text-muted-foreground/50 tracking-widest uppercase">처리 완료</span>
@@ -238,14 +274,14 @@ export default function IsmClient({
  <StandardModal
  isOpen={isModalOpen}
  onClose={closeModal}
- title="결재 시퀀스 실행"
+ title="결재 처리"
  maxWidth="xl"
  footer={
  <div className="flex w-full gap-4">
  <Button variant="outline" type="button" disabled={loading} onClick={closeModal} className="flex-1 h-11 rounded-lg font-bold text-xs tracking-widest uppercase border-2">취소</Button>
  <Button 
  type="button"
- onClick={form.handleSubmit((v) => onFormSubmit(v, SANCTION_STATUS.REJECTED))}
+ onClick={submitReject}
  disabled={loading}
  className="flex-1 h-11 bg-rose-50 text-rose-500 rounded-lg font-bold text-xs tracking-widest uppercase hover:bg-rose-500 hover:text-white transition-all active:scale-95 border-2 border-rose-100 flex items-center justify-center gap-3"
  >
@@ -254,6 +290,7 @@ export default function IsmClient({
  <Button
  type="button"
  onClick={form.handleSubmit((v) => onFormSubmit(v, SANCTION_STATUS.APPROVED))}
+ aria-describedby="ism-approve-note"
  disabled={loading}
  className="flex-[2] h-11 bg-surface-inverse border-none text-surface-inverse-foreground rounded-lg font-bold text-xs tracking-widest uppercase shadow-2xl flex items-center justify-center gap-3 hover:-translate-y-2 hover:bg-primary transition-all active:scale-95 group"
  >
@@ -271,16 +308,16 @@ export default function IsmClient({
  <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center border border-primary/20">
  <Activity size={16} className="text-primary animate-pulse" />
  </div>
- <span className="text-xs text-primary/60 font-bold tracking-[0.4em] uppercase">Target_Sequence_Probe</span>
+ <span className="text-xs text-primary/60 font-bold tracking-[0.2em]">처리 대상</span>
  </div>
- <h4 className="text-3xl font-bold text-surface-inverse-foreground tracking-tighter uppercase leading-tight">{selectedSanctn?.taskSeNm || selectedSanctn?.taskSeCd}</h4>
+ <h4 className="text-3xl font-bold text-surface-inverse-foreground tracking-tight leading-tight">{selectedSanctn?.taskSeNm || selectedSanctn?.taskSeCd || '업무 구분 없음'}</h4>
  <div className="flex items-center gap-6 pt-4 border-t border-white/5">
  <div className="flex items-center gap-3 px-4 py-2 bg-white/5 rounded-lg border border-white/5">
  <User size={14} className="text-muted-foreground" />
- <span className="text-xs font-bold text-surface-inverse-muted uppercase tracking-widest">{selectedSanctn?.aplcntNm || selectedSanctn?.aplcntId}</span>
+ <span className="text-xs font-bold text-surface-inverse-muted tracking-wide">신청자 {selectedSanctn?.aplcntNm || selectedSanctn?.aplcntId || '알 수 없음'}</span>
  </div>
  <div className="flex items-center gap-3">
- <span className="text-xs font-bold text-white/20 tracking-[0.3em] font-mono uppercase ">SN: {selectedSanctn?.ifmlAtrzSn}</span>
+ <span className="text-xs font-bold text-white/30 font-mono">접수번호 {selectedSanctn?.ifmlAtrzSn}</span>
  </div>
  </div>
  </div>
@@ -290,17 +327,16 @@ export default function IsmClient({
  <ShadcnFormField
  control={form.control}
  name="rjctRsnCn"
- required
  render={({ field }) => (
  <FormItem className="space-y-4">
- <FormLabel className="text-xs font-bold tracking-[0.4em] text-muted-foreground uppercase flex items-center gap-3">
- <SearchCode size={14} className="text-primary" aria-hidden="true" /> 결재/반려 의사결정 로그 (Decision Opinion)
+ <FormLabel className="text-xs font-bold tracking-[0.2em] text-muted-foreground flex items-center gap-3">
+ <SearchCode size={14} className="text-primary" aria-hidden="true" /> 반려 사유
  </FormLabel>
  <FormControl>
  <textarea
  {...field}
  maxLength={4000}
- placeholder="결재 또는 반려 사유를 입력하세요..."
+ placeholder="반려하는 경우 사유를 입력하세요."
  className="w-full min-h-[200px] p-10 rounded-lg border-2 bg-muted font-bold text-lg outline-none focus:bg-card focus:ring-[12px] focus:ring-primary/5 focus:border-primary/20 transition-all shadow-inner leading-relaxed resize-none placeholder:text-muted-foreground"
  />
  </FormControl>
@@ -309,11 +345,24 @@ export default function IsmClient({
  )}
  />
 
- <div className="flex items-center gap-3 px-6 py-4 bg-amber-50 border border-amber-100 rounded-lg">
- <AlertCircle size={16} className="text-amber-500" />
- <p className="text-xs font-bold text-amber-700 leading-relaxed uppercase opacity-80">
- * 작성된 의견은 수정이 불가능하며 모든 관계자에게 실시간으로 공유됩니다.
+ {/*
+   종전 문구는 '모든 관계자에게 실시간으로 공유됩니다' 였다. 실측과 어긋난다 —
+   SanctionEventListener 는 **신청자 한 사람**에게만, 그것도 사용자 정보에 휴대전화·
+   메일이 등록돼 있을 때만 보내고, 발송 실패는 로그만 남긴 채 삼킨다. 결재 자체는
+   커밋된 뒤라 알림이 안 가도 처리는 끝난 상태다.
+
+   승인 경로는 사유를 저장하지 않는다는 사실도 여기서 말한다 — 서버의 approve() 가
+   rjct_rsn_cn 을 null 로 지우기 때문이다. 쓰면 어디로 가는지 화면이 밝히지 않으면
+   사용자는 기록이 남는 줄 알고 쓴다.
+ */}
+ <div id="ism-approve-note" className="flex items-start gap-3 px-6 py-4 bg-amber-50 border border-amber-100 rounded-lg">
+ <AlertCircle size={16} className="text-amber-500 mt-0.5 shrink-0" aria-hidden="true" />
+ <div className="text-xs font-bold text-amber-700 leading-relaxed space-y-1">
+ <p>승인할 때는 사유가 저장되지 않습니다. 기록으로 남기려면 반려 사유로만 남길 수 있습니다.</p>
+ <p className="font-normal">
+ 처리 결과는 신청자에게 문자·메일로 알립니다(연락처가 등록된 경우). 처리 후에는 상태를 되돌릴 수 없습니다.
  </p>
+ </div>
  </div>
  </form>
  </Form>
