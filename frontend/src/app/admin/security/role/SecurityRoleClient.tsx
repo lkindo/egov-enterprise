@@ -43,18 +43,30 @@ export const securityRoleFormSchema = RoleManageDtoSchema.extend({
   .min(1, '롤 ID를 입력해 주세요.'),
  roleNm: RoleManageDtoSchema.shape.roleNm.trim()
   .min(1, '롤 명칭을 입력해 주세요.'),
- rolePatrn: RoleManageDtoSchema.shape.rolePatrn.unwrap().trim()
-  .min(1, '적용 대상 표기를 입력해 주세요.'),
+ /*
+   [2026-08-28] 아래 세 값(rolePatrn·roleTypeCd·roleSort)의 필수 강제를 걷어낸다.
+
+   이 화면은 이미 "접근 통제에는 사용되지 않습니다" 라고 밝히고 있다 — 인가 경로
+   (DbUrlAuthorizationManager)는 tb_prgrm_lst.url 과 tb_role_prgrm_map 만 본다. 그런데
+   그렇게 적어 놓고도 **관리자에게 그 무의미한 값을 반드시 지어내게** 만들고 있었다.
+
+   수정 경로가 열리면서(#73) 그 강제가 실동작으로 드러난다 — 시드 롤(ROLE_ADMIN·ROLE_USER)은
+   R__seed_framework.sql 이 role_id·role_nm·role_expln·role_crt_ymd 만 채우므로 세 컬럼이
+   NULL 이다. 명칭 오타 하나를 고치려 해도 세 no-op 값을 채워야 저장된다.
+
+   형식 제약(정수·상한)은 값이 있을 때만 남긴다.
+ */
+ rolePatrn: RoleManageDtoSchema.shape.rolePatrn.unwrap().trim().optional(),
  roleExpln: RoleManageDtoSchema.shape.roleExpln.unwrap().trim(),
- roleTypeCd: RoleManageDtoSchema.shape.roleTypeCd.unwrap().trim()
-  .min(1, '롤 타입을 선택해 주세요.'),
+ roleTypeCd: RoleManageDtoSchema.shape.roleTypeCd.unwrap().trim().optional(),
  roleSort: z.string().trim()
-  .min(1, '정렬 순서를 입력해 주세요.')
-  .regex(/^\d+$/, '정렬 순서는 0 이상의 정수여야 합니다.')
   .refine((value) => {
+   if (value === '') return true;
+   if (!/^\d+$/.test(value)) return false;
    const number = Number(value);
    return Number.isSafeInteger(number) && number <= 2_147_483_647;
-  }, '정렬 순서는 0 이상의 정수여야 합니다.'),
+  }, '정렬 순서는 0 이상의 정수여야 합니다.')
+  .optional(),
 });
 
 export default function SecurityRoleClient() {
@@ -228,11 +240,23 @@ export default function SecurityRoleClient() {
     if (submitPendingRef.current || deletePendingRef.current) return;
     const validated = validation.validate(formData);
     if (!validated) return;
+    /*
+     * 접근 통제에 쓰이지 않는 세 값은 스키마에서 선택으로 풀었지만(위 주석 참조),
+     * RoleManage 계약은 문자열을 요구한다. 캐스팅으로 덮지 않고 빈 문자열로 정규화해
+     * 실제 계약을 맞춘다 — undefined 를 보내면 서버가 기존 값을 지울지 무시할지가
+     * 호출부마다 달라진다.
+     */
+    const payload: RoleManage = {
+      ...validated,
+      rolePatrn: validated.rolePatrn ?? '',
+      roleTypeCd: validated.roleTypeCd ?? '',
+      roleSort: validated.roleSort ?? '',
+    };
     submitPendingRef.current = true;
     if (editingRole) {
-      updateMutation.mutate(validated);
+      updateMutation.mutate(payload);
     } else {
-      createMutation.mutate(validated);
+      createMutation.mutate(payload);
     }
   };
 
@@ -311,7 +335,14 @@ export default function SecurityRoleClient() {
  return (
  <WorkListPage
  title="보안 롤 관리"
- description="리소스·URL 패턴 기준의 보안 롤을 조회·설정합니다."
+ /*
+   [2026-08-28] 종전 설명은 '리소스·URL 패턴 기준의 보안 롤을 조회·설정합니다' 였다.
+   관리자가 폼을 열기 전에 읽는 첫 문장이 "이 롤은 URL 패턴으로 동작한다"고 약속했는데,
+   URL 보호는 tb_prgrm_lst.url ↔ tb_role_prgrm_map 이 결정한다(DbUrlAuthorizationManager).
+   세 필드에 '접근 통제에는 사용되지 않습니다' 라고 적어 두고 제목 밑에서는 반대로 말하면,
+   잘못된 안전 확신이 그대로 남는다.
+ */
+ description="롤을 등록·수정합니다. URL 접근 통제는 시스템 프로그램 관리에서 설정합니다."
  breadcrumbItems={[{ label: '보안 관리' }, { label: '롤 관리' }]}
  filterStateKey="security-role"
  totalCount={error ? undefined : pagination?.totalRecordCount}
@@ -426,7 +457,7 @@ export default function SecurityRoleClient() {
     * "보안 필터 체인에서의 적용 우선순위"라고 적어 **입력하면 접근이 통제된다고 약속**했다.
     * 값이 실제로 하는 일(기록·분류)만 쓴다.
     */}
-  <FormField htmlFor="rolePatrn" label="적용 대상 표기" required error={validation.errors.rolePatrn} description="이 롤이 어떤 자원을 겨냥하는지 적어 두는 메모입니다. 접근 통제에는 사용되지 않습니다.">
+  <FormField htmlFor="rolePatrn" label="적용 대상 표기" error={validation.errors.rolePatrn} description="이 롤이 어떤 자원을 겨냥하는지 적어 두는 메모입니다. 접근 통제에는 사용되지 않아 비워 둘 수 있습니다.">
     <div className="relative group/ptn">
       <Workflow size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/ptn:opacity-100 transition-opacity" />
       <Input
@@ -437,7 +468,6 @@ export default function SecurityRoleClient() {
           validation.clearError('rolePatrn');
           setFormData(prev => ({ ...prev, rolePatrn: e.target.value }));
         }}
-        required
         maxLength={300}
         className="h-11 pl-16 rounded-lg border-2 text-md font-mono font-bold shadow-inner"
         placeholder="예: 게시판 관리 화면"
@@ -446,7 +476,7 @@ export default function SecurityRoleClient() {
   </FormField>
 
  <div className="grid grid-cols-2 gap-10">
-  <FormField htmlFor="roleTypeCd" label="롤 분류" required error={validation.errors.roleTypeCd} description="목록에서 롤을 묶어 보기 위한 분류값입니다. 접근 통제에는 사용되지 않습니다.">
+  <FormField htmlFor="roleTypeCd" label="롤 분류" error={validation.errors.roleTypeCd} description="목록에서 롤을 묶어 보기 위한 분류값입니다. 접근 통제에는 사용되지 않아 비워 둘 수 있습니다.">
     <select
       id="roleTypeCd"
       {...validation.fieldProps('roleTypeCd')}
@@ -455,7 +485,6 @@ export default function SecurityRoleClient() {
         validation.clearError('roleTypeCd');
         setFormData(prev => ({ ...prev, roleTypeCd: e.target.value }));
       }}
-      required
       className="w-full h-11 px-8 rounded-lg border-2 border-border bg-muted/50 text-xs font-bold tracking-widest uppercase focus:ring-8 focus:ring-primary/5 outline-none transition-all shadow-inner cursor-pointer"
     >
       <option value="url">URL 리소스</option>
@@ -463,7 +492,7 @@ export default function SecurityRoleClient() {
       <option value="api">REST 엔드포인트</option>
     </select>
   </FormField>
- <FormField htmlFor="roleSort" label="정렬 순서" required error={validation.errors.roleSort} description="목록에서 보이는 순서입니다. 접근 통제에는 사용되지 않습니다.">
+ <FormField htmlFor="roleSort" label="정렬 순서" error={validation.errors.roleSort} description="목록에서 보이는 순서입니다. 접근 통제에는 사용되지 않아 비워 둘 수 있습니다.">
  <div className="relative group/sort">
  <ListOrdered size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-muted-foreground opacity-30 group-focus-within/sort:opacity-100 transition-opacity" />
  <Input
@@ -475,7 +504,6 @@ export default function SecurityRoleClient() {
   validation.clearError('roleSort');
   setFormData(prev => ({ ...prev, roleSort: e.target.value }));
  }}
- required
  min={0}
  max={2_147_483_647}
  step={1}
