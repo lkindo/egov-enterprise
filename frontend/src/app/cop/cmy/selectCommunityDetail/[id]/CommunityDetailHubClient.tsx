@@ -114,14 +114,15 @@ export default function CommunityDetailHubClient({
         <div className="grid grid-cols-12 gap-[var(--gap-hub-section)]">
           {/* Main Content Area */}
           <div className="col-span-12 lg:col-span-8 space-y-[var(--gap-hub-section)]">
+            {/* [2026-08-28] 영문·의사코드 라벨을 업무 문구로 정정한다(ADR-0002 한국어 우선). */}
             <HubSectionCard
-              title="Overview & Intelligence"
-              description="커뮤니티의 비전과 주요 운영 정보를 확인하세요"
+              title="커뮤니티 소개"
+              description="커뮤니티 소개와 등록 정보입니다"
               icon={Info}
             >
               <div className="space-y-[var(--gap-hub-section)] py-6">
                 <div className="space-y-6">
-                   <h3 className="text-xs font-bold text-primary tracking-tight">_ Introduction_cn</h3>
+                   <h3 className="text-xs font-bold text-primary tracking-tight">소개</h3>
                    <div className="p-10 bg-muted border-2 border-border rounded-[var(--radius-hub-widget)] shadow-inner relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-8 opacity-5 scale-150 rotate-12 transition-transform duration-1000 group-hover:rotate-6 text-primary">
                         <BookOpen size={120} />
@@ -133,22 +134,30 @@ export default function CommunityDetailHubClient({
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <DetailBlock icon={<ShieldCheck size={18} />} label="Operational Manager" value={community.frstRegisterNm || 'System_Admin'} />
-                  <DetailBlock icon={<Calendar size={18} />} label="Initialization Date" value={community.crtDt?.substring(0, 10) || 'Unknown'} />
+                  {/*
+                    [2026-08-28] 'Operational Manager = frstRegisterNm || System_Admin' 을 걷어냈다.
+                    **서버는 frstRegisterNm 을 어떤 경로에서도 채우지 않는다** — CommunityDto.from()
+                    이 frstRgtrId 만 매핑하고 그 필드는 빌더에서 빠져 있다(목록·상세·포틀릿 모두
+                    같은 from() 을 쓴다). 그래서 모든 커뮤니티가 'System_Admin' 으로 보였다 —
+                    바로 옆에서 지운 '42_Active_Entities' 와 정확히 같은 부류의 지어낸 값이다.
+                    서버가 실제로 채우는 등록자 ID(BaseEntity 규약상 loginId)를 그대로 보여 준다.
+                  */}
+                  <DetailBlock icon={<ShieldCheck size={18} />} label="등록자" value={community.frstRgtrId || '알 수 없음'} />
+                  <DetailBlock icon={<Calendar size={18} />} label="등록일" value={community.crtDt?.substring(0, 10) || '알 수 없음'} />
                   {/*
                     [2026-08-28] 'Member Count 42_Active_Entities' 제거.
                     **회원 수를 내려주는 API 가 없다** — /api/v1/communities 는 목록·상세·join 3개뿐이고
                     CommunityDto 에 회원 수 필드가 없다(실측). 고정 문자열을 실측값처럼 보여 주면
                     관리자가 그 숫자를 근거로 판단한다. 값을 지어내는 대신 노출하지 않는다.
                   */}
-                  <DetailBlock icon={<Globe size={18} />} label="Visibility Protocol" value={community.useYn === 'Y' ? 'PUBLIC_ACCESS' : 'PRIVATE_NODE'} />
+                  <DetailBlock icon={<Globe size={18} />} label="사용 여부" value={community.useYn === 'Y' ? '사용' : '미사용'} />
                 </div>
               </div>
             </HubSectionCard>
 
             <HubSectionCard
-              title="Knowledge Stream"
-              description="커뮤니티 내에서 공유된 최신 지식 자산 목록입니다"
+              title="커뮤니티 게시글"
+              description="커뮤니티에서 공유된 게시글 목록입니다"
               icon={MessageSquare}
             >
               <div className="flex flex-col items-center justify-center py-24 text-center border-2 border-dashed border-border rounded-[var(--radius-hub-section)] bg-muted/30">

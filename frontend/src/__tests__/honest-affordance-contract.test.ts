@@ -154,6 +154,43 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
     expect(client).not.toContain('VIEW_ALL_ENTITIES');
   });
 
+  /**
+   * 개별 문자열만 금지하면 다음 지어낸 값이 그대로 들어온다.
+   *
+   * 실제로 그랬다 — '42_Active_Entities' 를 지운 뒤에도 바로 옆 줄에
+   * `frstRegisterNm || 'System_Admin'` 이 남아 있었다. 서버는 그 필드를 **어떤 경로에서도
+   * 채우지 않으므로**(CommunityDto.from() 이 frstRgtrId 만 매핑한다) 모든 커뮤니티가
+   * '운영 담당자 = System_Admin' 으로 보였다. 같은 부류인데 계약이 이름 하나만 봤다.
+   *
+   * 그래서 검사를 **서버가 채우지 않는 필드를 읽지 않는다**는 축으로 넓힌다.
+   */
+  it('서버가 채우지 않는 필드를 읽고 기본값을 지어내지 않는다', () => {
+    const dto = readRepo(
+      'business-app/src/main/java/nuri/business/service/system/content/community/dto/CommunityDto.java',
+    );
+    const builder = dto.slice(dto.indexOf('CommunityDto.builder()'));
+    // 선언만 있고 빌더에서 채우지 않는 필드는 화면이 읽으면 안 된다.
+    expect(builder).not.toContain('.frstRegisterNm(');
+    expect(client).not.toContain('frstRegisterNm');
+    expect(client).not.toContain('System_Admin');
+  });
+
+  /**
+   * ADR-0002 는 UI 한국어 우선을 규정한다. 이 화면은 라벨 자체가 의사코드였다 —
+   * 'Operational Manager'·'Visibility Protocol'·'PUBLIC_ACCESS' 는 데이터의 뜻을 가린다.
+   */
+  it('업무 라벨을 의사코드로 쓰지 않는다', () => {
+    for (const pseudo of [
+      'Operational Manager', 'Initialization Date', 'Visibility Protocol',
+      'PUBLIC_ACCESS', 'PRIVATE_NODE', 'Overview & Intelligence',
+      'Knowledge Stream', 'Introduction_cn',
+    ]) {
+      expect(client).not.toContain(pseudo);
+    }
+    expect(client).toContain('등록자');
+    expect(client).toContain('사용 여부');
+  });
+
   it('조회하지 않은 채 게시글이 없다고 단정하지 않는다', () => {
     // 이 섹션은 어떤 조회도 하지 않는다 — 실제로 글이 있는 커뮤니티에서도 비었다고 말했다.
     expect(client).not.toContain('등록된 게시글이 없습니다');
