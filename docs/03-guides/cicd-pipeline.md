@@ -245,7 +245,22 @@ strategy:
 | 통제 | 트리거·경로 | 집행 의미 |
 |---|---|---|
 | Gradle dependency graph | PR read-only producer → trusted `workflow_run` publisher | write token을 가진 job은 PR 코드를 checkout하거나 실행하지 않는다. |
-| Snapshot readiness | `secret-scan`, backend/frontend 영향 PR | GitHub compare API의 base/head snapshot warning이 사라질 때까지 최대 600초 기다리고, 미완전·비재시도 API 오류·시간 초과를 실패 처리한다. |
+| Snapshot readiness | `secret-scan`, backend/frontend 영향 PR | GitHub compare API의 base/head snapshot warning이 사라질 때까지 최대 600초 기다리고, 미완전·비재시도 API 오류·시간 초과를 실패 처리한다. 실패 시 **어느 쪽 SHA가 비었는지 분류하고 해소 명령을 함께 출력**한다. |
+
+#### 스냅샷이 없을 때 무엇을 해야 하는가
+
+`dependency-review-action`은 단독으로는 이 축을 막지 못한다 — retry timeout이 지나면 `Retry timeout exceeded. Proceeding...`을 찍고 **실패하지 않고 진행한다**. 그래서 fail-closed 판정은 앞 단계의 readiness 스크립트가 전담한다.
+
+readiness가 실패하면 로그에 축과 해소 절차가 함께 나온다. 두 축은 대응이 다르다.
+
+| 축 | 경고 형태 | 기다리면 해소되나 | 해소 |
+|---|---|---|---|
+| base(main) 부재 | `The number of snapshots compared for the base SHA (0) and the head SHA (1) do not match.` | **아니오** | `gh workflow run dependency-submission.yml --ref main` 뒤 `secret-scan` 재실행 |
+| head(PR) 부재 | `No snapshots were found for the head SHA <sha>.` 또는 base(1)/head(0) count 형태 | PR 직후 2분 이내는 정상. 제한 시간까지 남으면 **아니오** | producer 실행 상태를 조회해 원인별로 승인·재실행·재push |
+
+> ⚠ head 부재를 **PR 브랜치 dispatch**로 해소하지 않는다. `submit-trusted-snapshot`은 `contents: write`로 지정한 ref의 Gradle 빌드를 실행하므로, PR 브랜치를 지정하면 "write 토큰 잡은 PR 코드를 실행하지 않는다"는 이 설계의 신뢰 경계가 깨진다. 그 경계는 2026-08-29부터 `github.ref == 'refs/heads/main'` 가드로 집행되며 계약이 양방향 동결한다.
+
+head 부재의 하위 원인(producer 미실행·빌드 실패·concurrency 취소·fork 승인 대기·publisher 실패·artifact 만료)은 **전부 같은 경고 문자열**을 내므로 문자열만으로 갈리지 않는다. 스크립트가 원인을 단정하지 않고 조회 명령을 안내하는 이유이며, 조회에 필요한 `actions: read`를 `secret-scan`에 부여하지 않은 것은 그 잡이 PR 코드를 실행하기 때문이다.
 | Dependency review | readiness 성공 뒤 `actions/dependency-review-action` | 새 runtime 의존성의 High 이상을 required `secret-scan`에서 차단한다. |
 | Frontend audit policy | `frontend-scope` | lockfile을 한 번 조회해 Critical 전체·운영 High를 차단하고 개발 High만 warning으로 남긴다. |
 

@@ -51,8 +51,13 @@ jobs:
           cache-disabled: true
           validate-wrappers: true
 
+  # [2026-08-29] ref 가드를 명시했다. 위 주석은 "trusted ref만 contents:write" 라고 약속했지만
+  # 가드는 이벤트 이름 하나뿐이었고, workflow_dispatch 는 임의 브랜치를 지정할 수 있다 —
+  # 즉 임의 브랜치의 Gradle 빌드가 write 토큰으로 실행될 수 있었고, 계약은 그 약한 조건을
+  # 그대로 동결하고 있었다. 문서가 약속한 경계를 코드가 집행하게 한다.
+  # push 트리거는 이미 main 한정이고, 복구 경로인 `--ref main` dispatch 도 그대로 통과한다.
   submit-trusted-snapshot:
-    if: github.event_name != 'pull_request'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
     permissions:
       contents: write
     runs-on: ubuntu-latest
