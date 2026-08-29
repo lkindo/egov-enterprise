@@ -43530,10 +43530,41 @@
               "type": "string"
             }
           },
+          "storageRoot": {
+            "type": "string"
+          },
+          "storedFilesChecked": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "orphanCandidates": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "undecidable": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "orphanSamples": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "healthy": {
             "type": "boolean"
           }
-        }
+        },
+        "required": [
+          "checked",
+          "missing",
+          "orphanCandidates",
+          "orphanSamples",
+          "samples",
+          "storageRoot",
+          "storedFilesChecked",
+          "undecidable"
+        ]
       },
       "ApiResponseListCommunityDto": {
         "type": "object",

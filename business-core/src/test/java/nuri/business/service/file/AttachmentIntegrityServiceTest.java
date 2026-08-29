@@ -126,4 +126,183 @@ class AttachmentIntegrityServiceTest {
         org.mockito.Mockito.verify(fileDetailRepository, org.mockito.Mockito.never())
                 .deleteAll();
     }
+
+    // ───────────────────────── 역방향(고아) census ─────────────────────────
+    //
+    // [무엇을 지키는가 — 2026-08-29] 종전에는 한 방향만 봤다. 저장소에는 있는데 DB 레코드가
+    // 없는 파일은 디스크만 먹으며 아무에게도 보이지 않았다.
+    //
+    // ⚠ 이 방향의 결과는 사람이 **파일을 지우는** 근거가 된다. 그래서 정방향보다 엄격하다 —
+    //   모르는 것을 고아라고 부르지 않고, 상한에 걸려도 조용히 자르지 않는다.
+
+    /** 저장소 열거를 흉내 낸다. 호출마다 새 스트림을 준다 — 스트림은 한 번만 소비된다. */
+    private void givenStorage(java.util.Map<String, List<String>> tree) {
+        when(fileStorageService.load(eq(""))).thenReturn(java.nio.file.Path.of("/srv/uploads"));
+        when(fileStorageService.loadAll(any())).thenAnswer(invocation -> {
+            String path = invocation.getArgument(0);
+            List<String> entries = tree.get(path);
+            if (entries == null) {
+                // 실제 구현은 없는 경로에서 예외를 던진다.
+                throw new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.INTERNAL_SERVER_ERROR);
+            }
+            return entries.stream().map(java.nio.file.Path::of);
+        });
+    }
+
+    private static nuri.business.service.file.dto.StoredFileKey key(long sn, String path, String name) {
+        return new nuri.business.service.file.dto.StoredFileKey(sn, path, name);
+    }
+
+    @Test
+    @DisplayName("DB 가 아는 실물만 있으면 고아 후보가 없다")
+    void noOrphansWhenEveryStoredFileIsKnown() {
+        givenRecords(List.of());
+        givenStorage(java.util.Map.of(
+                "general", List.of("1"),
+                "general/1", List.of("a.png", "b.png")));
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any()))
+                .thenReturn(List.of(key(1L, "general/1", "a.png"), key(1L, "general/1", "b.png")));
+
+        AttachmentIntegrityReport report = service.scan();
+
+        assertThat(report.storedFilesChecked()).isEqualTo(2);
+        assertThat(report.orphanCandidates()).isZero();
+        assertThat(report.undecidable()).isZero();
+        // 어느 트리를 본 결과인지 없으면 보고서를 해석할 수 없다 — 설정 기본값이 상대 경로다.
+        // 구분자는 플랫폼마다 다르므로 Path 로 정규화해 비교한다(CI 는 리눅스, 개발은 Windows).
+        assertThat(report.storageRoot()).isEqualTo(java.nio.file.Path.of("/srv/uploads").toString());
+    }
+
+    @Test
+    @DisplayName("DB 레코드가 없는 실물을 후보로 세고 위치를 지목한다")
+    void countsStoredFilesWithoutRecords() {
+        givenRecords(List.of());
+        givenStorage(java.util.Map.of(
+                "general", List.of("1"),
+                "general/1", List.of("a.png", "ghost.png")));
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any()))
+                .thenReturn(List.of(key(1L, "general/1", "a.png")));
+
+        AttachmentIntegrityReport report = service.scan();
+
+        assertThat(report.storedFilesChecked()).isEqualTo(2);
+        assertThat(report.orphanCandidates()).isEqualTo(1);
+        assertThat(report.orphanSamples()).anySatisfy(sample ->
+                assertThat(sample).contains("general/1/ghost.png"));
+        // 후보는 건강 판정에 넣지 않는다 — 커밋 전 업로드가 같은 모습이라 정상 운영에도 나온다.
+        assertThat(report.isHealthy()).isTrue();
+    }
+
+    /**
+     * V2_72 가 마스터 PK 를 문자열 {@code atch_file_id} 에서 BIGINT 로 바꾸면서
+     * {@code file_strg_path} 는 갱신하지 않았다. 그래서 그 이전에 저장된 첨부의 디렉터리
+     * 이름은 현재 번호와 무관하다 — <b>고아로 세면 멀쩡한 파일을 지우게 된다</b>.
+     */
+    @Test
+    @DisplayName("구 키 형식 디렉터리는 고아가 아니라 판정 불가로 센다")
+    void legacyKeyDirectoriesAreUndecidableNotOrphans() {
+        givenRecords(List.of());
+        givenStorage(java.util.Map.of(
+                "general", List.of("FILE_000000000001"),
+                "general/FILE_000000000001", List.of("legacy.png")));
+
+        AttachmentIntegrityReport report = service.scan();
+
+        assertThat(report.orphanCandidates()).isZero();
+        assertThat(report.undecidable()).isEqualTo(1);
+        assertThat(report.orphanSamples()).anySatisfy(sample ->
+                assertThat(sample).contains("판정 불가").contains("FILE_000000000001"));
+        // 판정 불가 디렉터리는 파일까지 훑지 않는다 — 셀 수 없는 것을 센 척하지 않는다.
+        assertThat(report.storedFilesChecked()).isZero();
+    }
+
+    /**
+     * 조회 키가 {@code atchFileSn} 이라 경로가 다른 행이 섞여 들어올 수 있다.
+     * 그 행을 그대로 믿으면 <b>다른 디렉터리의 파일</b>이 정상으로 보인다.
+     */
+    @Test
+    @DisplayName("경로가 어긋난 DB 행은 그 디렉터리의 근거로 쓰지 않는다")
+    void ignoresRowsWhosePathDoesNotMatchTheDirectory() {
+        givenRecords(List.of());
+        givenStorage(java.util.Map.of(
+                "general", List.of("1"),
+                "general/1", List.of("a.png")));
+        // 같은 sn 이지만 경로는 구 키 시절 것이다 — general/1 의 a.png 를 설명하지 못한다.
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any()))
+                .thenReturn(List.of(key(1L, "general/FILE_0001", "a.png")));
+
+        AttachmentIntegrityReport report = service.scan();
+
+        assertThat(report.orphanCandidates()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("빈 디렉터리는 정상이다 — 삭제가 파일만 지우고 디렉터리는 남긴다")
+    void emptyDirectoriesAreNormal() {
+        givenRecords(List.of());
+        givenStorage(java.util.Map.of(
+                "general", List.of("1"),
+                "general/1", List.of()));
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any())).thenReturn(List.of());
+
+        AttachmentIntegrityReport report = service.scan();
+
+        assertThat(report.orphanCandidates()).isZero();
+        assertThat(report.undecidable()).isZero();
+    }
+
+    @Test
+    @DisplayName("저장소를 열거하지 못하면 0 건이라 말하지 않고 모른다고 남긴다")
+    void enumerationFailureIsReportedNotSilenced() {
+        givenRecords(List.of());
+        when(fileStorageService.load(eq(""))).thenReturn(java.nio.file.Path.of("/srv/uploads"));
+        when(fileStorageService.loadAll(any())).thenThrow(
+                new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.INTERNAL_SERVER_ERROR));
+
+        AttachmentIntegrityReport report = service.scan();
+
+        assertThat(report.orphanCandidates()).isZero();
+        assertThat(report.undecidable()).isEqualTo(1);
+        assertThat(report.orphanSamples()).anySatisfy(sample ->
+                assertThat(sample).contains("열거 불가"));
+    }
+
+    @Test
+    @DisplayName("열거 스트림을 닫는다 — 닫지 않으면 디렉터리 핸들이 고갈된다")
+    void closesEnumerationStreams() {
+        givenRecords(List.of());
+        java.util.concurrent.atomic.AtomicInteger closed = new java.util.concurrent.atomic.AtomicInteger();
+        when(fileStorageService.load(eq(""))).thenReturn(java.nio.file.Path.of("/srv/uploads"));
+        when(fileStorageService.loadAll(any())).thenAnswer(invocation -> {
+            String path = invocation.getArgument(0);
+            List<String> entries = "general".equals(path) ? List.of("1") : List.of("a.png");
+            return entries.stream().map(java.nio.file.Path::of).onClose(closed::incrementAndGet);
+        });
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any())).thenReturn(List.of());
+
+        service.scan();
+
+        // general 1회 + general/1 1회.
+        assertThat(closed.get()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("역방향 census 도 읽기만 한다 — 실물을 지우지 않는다")
+    void orphanCensusNeverDeletesStoredFiles() {
+        givenRecords(List.of());
+        givenStorage(java.util.Map.of(
+                "general", List.of("1"),
+                "general/1", List.of("ghost.png")));
+        when(fileDetailRepository.findStoredKeysByAtchFileSnIn(any())).thenReturn(List.of());
+
+        service.scan();
+
+        // 후보는 커밋 전 업로드일 수 있다. 자동 삭제는 복구 불가능한 손실을 만든다.
+        org.mockito.Mockito.verify(fileStorageService, org.mockito.Mockito.never())
+                .delete(any(), any());
+        org.mockito.Mockito.verify(fileStorageService, org.mockito.Mockito.never())
+                .delete(any());
+    }
 }

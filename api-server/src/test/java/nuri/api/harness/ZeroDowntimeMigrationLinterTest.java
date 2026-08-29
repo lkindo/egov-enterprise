@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -66,6 +67,21 @@ class ZeroDowntimeMigrationLinterTest {
     private static final Pattern FORBIDDEN_DROP_SEQUENCE = Pattern.compile("(?is)\\bDROP\\s+SEQUENCE\\b");
     private static final Pattern FORBIDDEN_TRUNCATE = Pattern.compile(
             "(?is)\\bTRUNCATE\\s+(?:TABLE\\s+)?\\S+");
+    /**
+     * Contract(축소) 단계의 표식 — 구조를 <b>없애는</b> DDL 이다.
+     *
+     * <p>같은 파괴적 DDL 이라도 타입 변경은 Expand 로 우회할 수 있는 반면, DROP·RENAME 은
+     * 구버전 애플리케이션이 참조하던 것을 실제로 제거한다 — 헌법 제7조의 4단계 중 마지막이다.
+     * 그래서 이 형태의 waiver 에만 선행 Expand 를 요구한다.
+     */
+    private static final Pattern CONTRACT_PHASE_DDL = Pattern.compile(
+            "(?is)\\b(?:DROP\\s+(?:TABLE|SEQUENCE)\\b"
+                    + "|ALTER\\s+TABLE\\s+\\S+\\s+(?:DROP\\s+(?:COLUMN\\s+)?(?!CONSTRAINT\\b)\\w+"
+                    + "|RENAME\\s+(?!CONSTRAINT\\b)))");
+
+    /** Flyway 버전 접두 — {@code V2_72__...} 의 {@code 2_72} 를 뽑는다. */
+    private static final Pattern MIGRATION_VERSION = Pattern.compile("^V(\\d+(?:_\\d+)*)__");
+
     private static final Pattern FORBIDDEN_SEQ_RENAME = Pattern.compile(
             "(?is)\\bALTER\\s+SEQUENCE\\s+\\S+\\s+RENAME\\s+");
 
@@ -109,6 +125,70 @@ class ZeroDowntimeMigrationLinterTest {
         log.info("모든 Flyway SQL과 ZDM waiver registry가 fail-closed 계약을 준수합니다.");
     }
 
+    /**
+     * Contract 단계 waiver 가 <b>선행 Expand 를 지목했는가</b>를 합성 입력으로 검증한다.
+     *
+     * <p>[왜 합성 입력인가] 실제 레지스트리의 {@code waivers} 는 현재 0건이다. 이 규칙을 실물로
+     * 증명하려면 가짜 waiver 와 그것을 가리키는 SQL marker 를 저장소에 넣어야 하는데, 그러면
+     * 증명하려고 만든 예외가 영구히 남는다. 검증 로직이 순수 함수라 JSON 만으로 green 과 red 를
+     * 모두 보일 수 있다.
+     *
+     * <p>[무엇이 red 여야 하는가] ① Contract DDL 인데 expandMigration 이 없다 ② 자기 자신을
+     * 지목한다(같은 마이그레이션에서 Expand 와 Contract 를 함께 하는 것) ③ 지목한 Expand 가
+     * 오히려 뒤 버전이다. 셋 다 무중단을 깨는 형태다.
+     */
+    @Test
+    @DisplayName("Contract waiver는 선행 Expand 마이그레이션을 지목해야 한다")
+    void contractWaiverRequiresPrecedingExpand() {
+        Path repoRoot = HarnessSourceIndex.repoRoot();
+        Path migrationDir = SchemaNamingLinterTest.resolveMigrationDir().toAbsolutePath().normalize();
+        String contractSql = "api-server/src/main/resources/db/migration/"
+                + "V2_16__drop_orphans_align_cross_types.sql";
+        String earlier = "api-server/src/main/resources/db/migration/V2_13__align_ref_column_types.sql";
+        String later = "api-server/src/main/resources/db/migration/V2_18__normalize_column_lengths_finalize.sql";
+
+        // 앞선 Expand 를 지목하면 이 규칙에서 걸리지 않는다.
+        assertThat(expandViolations(repoRoot, migrationDir, contractSql, earlier)).isEmpty();
+
+        // ① 지목이 없다.
+        assertThat(expandViolations(repoRoot, migrationDir, contractSql, null))
+                .anySatisfy(message -> assertThat(message).contains("expandMigration"));
+
+        // ② 자기 자신을 지목한다 — 같은 마이그레이션에서 Expand 와 Contract 를 함께 한 것이다.
+        assertThat(expandViolations(repoRoot, migrationDir, contractSql, contractSql))
+                .anySatisfy(message -> assertThat(message).contains("같습니다"));
+
+        // ③ 지목한 Expand 가 오히려 뒤 버전이다.
+        assertThat(expandViolations(repoRoot, migrationDir, contractSql, later))
+                .anySatisfy(message -> assertThat(message).contains("앞선 버전"));
+
+        // Contract 성격이 아닌 파일에는 이 규칙을 적용하지 않는다 — 과잉 요구를 막는다.
+        String additive = "api-server/src/main/resources/db/migration/V2_10__add_cmnty_user_map_fk.sql";
+        assertThat(expandViolations(repoRoot, migrationDir, additive, null)).isEmpty();
+    }
+
+    /** 버전 비교가 자릿수에 속지 않는지 — 문자열 비교면 V2_9 가 V2_72 보다 뒤로 판정된다. */
+    @Test
+    @DisplayName("Flyway 버전은 문자열이 아니라 세그먼트로 비교한다")
+    void migrationVersionsCompareBySegment() {
+        assertThat(compareMigrationVersions("V2_9__a.sql", "V2_72__b.sql")).isNegative();
+        assertThat(compareMigrationVersions("V2_72__b.sql", "V2_9__a.sql")).isPositive();
+        assertThat(compareMigrationVersions("V2_13__a.sql", "V2_13__b.sql")).isZero();
+        // 버전을 읽지 못하면 통과가 아니라 위반으로 다뤄야 한다(fail-closed).
+        assertThat(compareMigrationVersions("R__repeatable.sql", "V2_1__a.sql"))
+                .isEqualTo(Integer.MIN_VALUE);
+    }
+
+    private static List<String> expandViolations(
+            Path repoRoot, Path migrationDir, String waivedPath, String expandPath) {
+        com.fasterxml.jackson.databind.node.ObjectNode entry = JSON.createObjectNode();
+        if (expandPath != null) {
+            entry.put("expandMigration", expandPath);
+        }
+        List<String> violations = new ArrayList<>();
+        validateExpandPrecedesContract(repoRoot, migrationDir, entry, waivedPath, "waivers[0]", violations);
+        return violations;
+    }
     private static void validateWaiverRegistry(
             Path repoRoot,
             Path migrationDir,
@@ -322,6 +402,7 @@ class ZeroDowntimeMigrationLinterTest {
             }
             resolveRegisteredMigrationPath(repoRoot, migrationDir, path, label, violations);
             validateEvidence(repoRoot, evidence, label, violations);
+            validateExpandPrecedesContract(repoRoot, migrationDir, entry, path, label, violations);
 
             LocalDate approvedAt = parseDate(approvedAtText, label + ".approvedAt", violations);
             LocalDate expiresAt = parseDate(expiresAtText, label + ".expiresAt", violations);
@@ -426,6 +507,91 @@ class ZeroDowntimeMigrationLinterTest {
                 }
             }
         }
+    }
+
+    /**
+     * Contract(축소) waiver 는 <b>선행 Expand 마이그레이션</b>을 지목해야 한다.
+     *
+     * <p>[왜 필요한가] 헌법 제7조는 Expand → Sync → Redirect → Contract 4단계를 예외 없이
+     * 요구한다. 그런데 하네스는 파괴적 DDL 차단과 waiver 메타데이터만 봤기 때문에,
+     * <b>한 파일에서 Expand 와 Contract 를 함께 해도 waiver 만 있으면 통과</b>했다.
+     * 그러면 구버전 애플리케이션이 참조하던 구조가 같은 배포에서 사라져 무중단이 깨진다.
+     *
+     * <p>[무엇을 검사하는가] 버전 순서만 검사한다 — 지목한 Expand 가 실재하고, waiver 대상보다
+     * <b>엄격히 앞선 버전</b>이어야 한다. 같은 파일을 지목하는 자기참조도 막는다.
+     *
+     * <p>[무엇을 검사하지 않는가] 호환 기간(관측 창)과 backfill 완료는 검사하지 않는다 —
+     * 이 저장소에는 release·배포 시점을 나타내는 모델이 없어 "몇 번의 릴리스가 지났는가" 를
+     * 판정할 근거가 없다. 없는 근거로 필드를 만들면 첫 실제 사용에서 맞지 않는다.
+     * 그 축은 GAP-ZDM-001 에 남긴다.
+     */
+    private static void validateExpandPrecedesContract(
+            Path repoRoot, Path migrationDir, JsonNode entry, String waivedPath,
+            String label, List<String> violations) {
+        Path waived = repoRoot.resolve(waivedPath).toAbsolutePath().normalize();
+        String waivedSql;
+        try {
+            waivedSql = Files.isRegularFile(waived) ? normalizeNewlines(HarnessSourceIndex.read(waived)) : "";
+        } catch (IOException failure) {
+            violations.add(label + ": waiver 대상 SQL을 읽지 못했습니다 — " + waivedPath);
+            return;
+        }
+        if (!CONTRACT_PHASE_DDL.matcher(waivedSql).find()) {
+            return; // Contract 성격이 아니면 선행 Expand 를 요구하지 않는다.
+        }
+
+        JsonNode declared = entry.path("expandMigration");
+        if (!declared.isTextual() || declared.asText().isBlank()) {
+            violations.add(label + ": Contract(DROP/RENAME) waiver에는 선행 Expand 마이그레이션을"
+                    + " expandMigration 으로 지목해야 합니다 — " + waivedPath);
+            return;
+        }
+        String expandPath = declared.asText();
+        if (expandPath.equals(waivedPath)) {
+            violations.add(label + ": expandMigration이 waiver 대상과 같습니다 — 같은 마이그레이션에서"
+                    + " Expand 와 Contract 를 함께 하면 무중단이 깨집니다.");
+            return;
+        }
+        Path expand = resolveRegisteredMigrationPath(repoRoot, migrationDir, expandPath, label, violations);
+        if (expand == null) {
+            return;
+        }
+        if (!Files.isRegularFile(expand)) {
+            violations.add(label + ": expandMigration 파일이 없습니다 — " + expandPath);
+            return;
+        }
+        int order = compareMigrationVersions(expand.getFileName().toString(), waived.getFileName().toString());
+        if (order == Integer.MIN_VALUE) {
+            violations.add(label + ": 마이그레이션 버전을 읽지 못했습니다 — " + expandPath + " / " + waivedPath);
+        } else if (order >= 0) {
+            violations.add(label + ": expandMigration은 waiver 대상보다 앞선 버전이어야 합니다 — "
+                    + expandPath + " ≥ " + waivedPath);
+        }
+    }
+
+    /**
+     * Flyway 버전을 세그먼트 단위로 비교한다.
+     *
+     * <p>문자열 비교로는 {@code V2_9} 가 {@code V2_72} 보다 뒤로 판정된다 — 자릿수가 다르기
+     * 때문이다. 읽지 못하면 {@link Integer#MIN_VALUE} 를 돌려 호출부가 <b>통과가 아니라</b>
+     * 위반으로 다루게 한다(fail-closed).
+     */
+    private static int compareMigrationVersions(String left, String right) {
+        Matcher leftMatcher = MIGRATION_VERSION.matcher(left);
+        Matcher rightMatcher = MIGRATION_VERSION.matcher(right);
+        if (!leftMatcher.find() || !rightMatcher.find()) {
+            return Integer.MIN_VALUE;
+        }
+        String[] leftParts = leftMatcher.group(1).split("_");
+        String[] rightParts = rightMatcher.group(1).split("_");
+        for (int index = 0; index < Math.max(leftParts.length, rightParts.length); index++) {
+            int a = index < leftParts.length ? Integer.parseInt(leftParts[index]) : 0;
+            int b = index < rightParts.length ? Integer.parseInt(rightParts[index]) : 0;
+            if (a != b) {
+                return Integer.compare(a, b);
+            }
+        }
+        return 0;
     }
 
     private static Path resolveRegisteredMigrationPath(

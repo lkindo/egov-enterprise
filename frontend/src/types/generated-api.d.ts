@@ -8793,10 +8793,18 @@ export interface components {
         };
         AttachmentIntegrityReport: {
             /** Format: int64 */
-            checked?: number;
+            checked: number;
             /** Format: int64 */
-            missing?: number;
-            samples?: string[];
+            missing: number;
+            samples: string[];
+            storageRoot: string;
+            /** Format: int64 */
+            storedFilesChecked: number;
+            /** Format: int64 */
+            orphanCandidates: number;
+            /** Format: int64 */
+            undecidable: number;
+            orphanSamples: string[];
             healthy?: boolean;
         };
         ApiResponseListCommunityDto: {

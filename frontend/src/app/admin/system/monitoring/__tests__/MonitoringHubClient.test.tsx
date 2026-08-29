@@ -194,7 +194,7 @@ describe('MonitoringHubClient', () => {
     });
     mocks.cpu.mockResolvedValue(12.34);
     mocks.memory.mockResolvedValue(45.67);
-    mocks.integrity.mockResolvedValue({ checked: 0, missing: 0, samples: [] });
+    mocks.integrity.mockResolvedValue({ checked: 0, missing: 0, samples: [], storageRoot: '/srv/uploads', storedFilesChecked: 0, orphanCandidates: 0, undecidable: 0, orphanSamples: [] });
   });
 
   /**
@@ -314,6 +314,11 @@ describe('MonitoringHubClient', () => {
       checked: 120,
       missing: 2,
       samples: ['atchFileSn=7 seq=1 path=general/2026/a.png'],
+      storageRoot: '/srv/uploads',
+      storedFilesChecked: 118,
+      orphanCandidates: 0,
+      undecidable: 0,
+      orphanSamples: [],
     });
     renderHub('tab=observability');
 
@@ -326,8 +331,39 @@ describe('MonitoringHubClient', () => {
     expect(screen.getByText('atchFileSn=7 seq=1 path=general/2026/a.png')).toBeInTheDocument();
   });
 
+  /**
+   * [2026-08-29] 역방향(저장소 → DB) census.
+   *
+   * ⚠ 이 화면의 숫자는 사람이 **파일을 지우는** 근거가 된다. 그래서 두 가지를 고정한다:
+   *   ① 확정이 아니라 **후보**라고 말하는가 — 커밋 전 업로드와 진짜 고아는 저장소에서 같은
+   *      모습이라, 확정처럼 말하면 살아 있는 업로드를 지우게 한다.
+   *   ② **어느 트리를 본 결과인지** 말하는가 — 저장소 경로 기본값이 상대 경로라 프로세스
+   *      작업 디렉터리에 따라 다른 트리를 본다(실제로 이 저장소에 루트가 둘 있다).
+   */
+  it('고아 후보를 확정이 아니라 후보로 말하고 훑은 저장소를 밝힌다', async () => {
+    mocks.integrity.mockResolvedValue({
+      checked: 10,
+      missing: 0,
+      samples: [],
+      storageRoot: '/srv/uploads',
+      storedFilesChecked: 12,
+      orphanCandidates: 2,
+      undecidable: 1,
+      orphanSamples: ['고아 후보: general/7/ghost.png', '판정 불가(구 키 형식 디렉터리): general/FILE_0001'],
+    });
+    renderHub('tab=observability');
+
+    fireEvent.click(screen.getByRole('button', { name: '점검 실행' }));
+
+    expect(await screen.findByText(/커밋되지 않은 파일일 수 있습니다/)).toBeInTheDocument();
+    expect(screen.getByText('/srv/uploads')).toBeInTheDocument();
+    expect(screen.getByText('고아 후보: general/7/ghost.png')).toBeInTheDocument();
+    // 판정 불가를 고아로 합산해 말하면 사람이 지울 대상을 과장해서 읽는다.
+    expect(screen.getByText('판정 불가(구 키 형식 디렉터리): general/FILE_0001')).toBeInTheDocument();
+  });
+
   it('정상이면 정상이라고 말한다 — 침묵으로 대신하지 않는다', async () => {
-    mocks.integrity.mockResolvedValue({ checked: 120, missing: 0, samples: [] });
+    mocks.integrity.mockResolvedValue({ checked: 120, missing: 0, samples: [], storageRoot: '/srv/uploads', storedFilesChecked: 0, orphanCandidates: 0, undecidable: 0, orphanSamples: [] });
     renderHub('tab=observability');
 
     fireEvent.click(screen.getByRole('button', { name: '점검 실행' }));
