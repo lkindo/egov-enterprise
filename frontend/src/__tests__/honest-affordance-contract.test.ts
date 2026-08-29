@@ -437,6 +437,39 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     expect(commentService).not.toContain('BoardMaster');
   });
 
+  /**
+   * 사용자 선택기가 서버에 없는 검색 축을 약속하지 않는다.
+   *
+   * 서버 술어는 `user.userNm.containsIgnoreCase(trimmed)` 하나이고, 특히 로그인 ID 매칭은
+   * 계정 열거 방어를 위해 **의도적으로 배제**돼 있다(UserRepositoryImpl 주석). 화면이 그
+   * 결정을 뒤집어 'ID 로도 찾을 수 있다' 고 말하면, 사용자는 되지 않는 검색을 반복하다
+   * "그런 사람이 없다" 고 잘못 결론 내린다.
+   *
+   * 서버 술어 자체도 함께 본다 — 부서·ID 축이 실제로 생기면 이 계약이 red 가 되어 문구를
+   * 되살릴 시점을 알려 준다.
+   */
+  it('사용자 선택기의 안내가 실제 검색 축(성명)과 일치한다', () => {
+    const picker = stripComments(readRepo('frontend/src/app/components/ui/user-picker.tsx'));
+    expect(picker, '사용자 선택기를 찾지 못했다 — 계약이 vacuous 하다').toContain('사용자 검색어 입력');
+    expect(picker).not.toContain('이름, 부서, ID');
+    expect(picker).not.toContain('부서명');
+
+    const repo = stripComments(
+      readRepo('business-core/src/main/java/nuri/business/domain/user/repository/UserRepositoryImpl.java'),
+    );
+    // ⚠ 파일 전체를 보면 안 된다. 같은 파일의 getPagedUserList(관리자 사용자 목록)는 로그인 ID
+    //   검색을 **정당하게** 쓴다 — 그 메서드까지 묶으면 계약이 엉뚱한 곳을 신고한다.
+    const start = repo.indexOf('searchAssignableUsers');
+    expect(start, 'searchAssignableUsers 를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    // 다음 메서드 선언 직전까지가 이 메서드의 본문이다.
+    const next = repo.indexOf('public ', start);
+    const body = repo.slice(start, next > start ? next : undefined);
+    expect(body, '메서드 본문 추출이 깨졌다 — 계약이 vacuous 하다').toContain('userNm');
+    // 성명 외 축이 이 메서드의 where 에 들어오면 red 다.
+    expect(body).not.toContain('userId.containsIgnoreCase');
+    expect(body).not.toContain('deptNm.containsIgnoreCase');
+  });
+
   it('알림 드로어에 갈 곳 없는 버튼과 지어낸 시스템 이름을 두지 않는다', () => {
     const drawer = stripComments(
       readRepo('frontend/src/app/components/ui/app-notification-drawer.tsx'),
