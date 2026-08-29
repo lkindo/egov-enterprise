@@ -528,6 +528,45 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 라는 머리말로 조직 공유를 약속했다. 두 방향 모두 위험하다 — 공유됐다고 믿고 민감한
    * 연락처를 넣거나, 공유했다고 믿고 상대가 못 보는 것을 모른다.
    */
+  /**
+   * 소비처가 없는 설정을 "대시보드에 배치된다" 고 말하지 않는다.
+   *
+   * 저장은 실제로 되므로 기능을 걷지는 않았다 — 걷어야 할 것은 **약속** 쪽이다.
+   */
+  it('마이페이지 설정이 렌더하는 화면 없이 배치를 약속하지 않는다', () => {
+    const client = stripComments(readSrc('app/admin/workspace/my-page/WorkspaceMyPageClient.tsx'));
+    expect(client, '마이페이지 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('myPageAdminService');
+    expect(client).not.toContain('개인 대시보드에 배치할');
+
+    // 대시보드 위젯 SPI 구현체가 이 값을 읽기 시작하면 red 가 되어 문구를 되살릴 때를 알려 준다.
+    const providers = collectJavaSources(path.join(ROOT, 'business-app', 'src', 'main'))
+      .filter((source) => source.includes('DashboardItemProvider'));
+    expect(providers.length, 'DashboardItemProvider 구현체를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(0);
+    expect(providers.filter((source) => source.includes('MyPage'))).toEqual([]);
+  });
+
+  /**
+   * 설문 응답 상세가 계약에 없는 필드를 읽고 '정보 없음' 으로 위장하지 않는다.
+   *
+   * 읽던 `srvyTtl` 은 응답 DTO 에 아예 없는 필드라 **모든 응답이** '설문 정보 없음' 이었다.
+   * 그 문구는 "이 응답에 한해 비어 있다" 로 읽혀 관리자가 데이터 파손을 의심하게 만든다.
+   */
+  it('설문 응답 상세가 응답 DTO 에 없는 설문 제목을 읽지 않는다', () => {
+    const detail = stripComments(readSrc('app/survey/response/[id]/SurveyResponseDetailClient.tsx'));
+    expect(detail, '응답 상세를 찾지 못했다 — 계약이 vacuous 하다').toContain('srvySn');
+    expect(detail).not.toContain('srvyTtl');
+    expect(detail).not.toContain('설문 정보 없음');
+
+    const dto = stripComments(
+      readRepo('business-app/src/main/java/nuri/business/service/survey/dto/SurveyResultDto.java'),
+    );
+    expect(dto, '응답 DTO 를 찾지 못했다 — 계약이 vacuous 하다').toContain('SurveyResultDto');
+    expect(
+      dto,
+      '응답 DTO 에 설문 제목이 생겼다 — 화면에서 제목을 되살리고 이 계약을 갱신하라.',
+    ).not.toContain('srvyTtl');
+  });
+
   it('주소록이 집행되지 않는 공개 범위로 공유를 약속하지 않는다', () => {
     const list = stripComments(
       readSrc('app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx'),

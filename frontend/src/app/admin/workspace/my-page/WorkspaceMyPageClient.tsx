@@ -120,8 +120,17 @@ export default function WorkspaceMyPage() {
 
   return (
     <WorkListPage
-      title="마이페이지 환경 설정"
-      description="개인 대시보드에 배치할 콘텐츠와 위젯을 관리합니다."
+      title="마이페이지 콘텐츠 등록"
+      /*
+        [2026-08-29] '개인 대시보드에 배치할 콘텐츠와 위젯을 관리합니다.' 를 걷었다.
+        그 배치를 렌더하는 화면이 저장소에 없다 — mypage 소비처는 이 관리 화면과 전용 서비스
+        (MyPageAdminService), 생성 타입뿐이고, 대시보드에 위젯을 공급하는 SPI 구현체
+        (DashboardItemProvider)는 board·informalsanction 둘이며 이 값을 읽지 않는다.
+        즉 여기서 켜고 꺼도 어느 화면에도 나타나지 않는다. 목록은 실제로 저장되므로 기능을
+        걷지는 않고, 화면이 자기가 하는 일(등록·사용 여부 저장)만 말하게 한다.
+        개인 대시보드가 이 목록을 읽게 되면 그때 문구를 되살린다.
+      */
+      description="여기서 등록·저장한 항목은 아직 어느 화면에도 표시되지 않습니다. 개인 대시보드 연결은 준비되지 않았습니다."
       breadcrumbItems={[{ label: '워크스페이스' }, { label: '설정' }]}
       filterStateKey="workspace-my-page"
       totalCount={contents.length}

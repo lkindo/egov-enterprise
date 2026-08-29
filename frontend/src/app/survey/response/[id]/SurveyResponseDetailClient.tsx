@@ -79,7 +79,17 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
                 <Card className="md:col-span-2 border-none shadow-xl">
                     <CardHeader className="border-b bg-muted/20">
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
-                            <MessageSquare className="w-5 h-5 text-primary" /> 설문 제목: {response?.srvyTtl || '설문 정보 없음'}
+                            {/*
+                              [2026-08-29] '설문 제목: … 설문 정보 없음' 을 걷고 실재하는 설문 번호를 쓴다.
+                              읽던 `srvyTtl` 은 이 응답 API 의 계약에 **없는 필드**다 —
+                              SurveyResultDto(record)의 필드는 srvyRspnsSn·srvySn·srvyTmpltSn·
+                              srvyQstnSn·srvyArtclSn·rspdntAnsCn·rspnsNm·etcAnsCn·frstRgtrId·crtDt 뿐이다.
+                              그래서 값은 언제나 undefined 였고 **모든 응답이** '설문 정보 없음' 으로 보였다.
+                              그 문구는 "이 응답에 한해 설문 정보가 비어 있다" 로 읽혀, 관리자는 데이터가
+                              깨진 줄 알고 원인을 찾게 된다. 제목이 필요하면 응답 API 가 설문을 join 해
+                              내려주도록 계약을 넓히는 것이 먼저다.
+                            */}
+                            <MessageSquare className="w-5 h-5 text-primary" /> 설문 번호: {response?.srvySn ?? '-'}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-8 space-y-8">
