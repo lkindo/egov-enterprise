@@ -21,6 +21,7 @@ import {
 } from '@/config/board-ids';
 import { useDebouncedValue } from '@/lib/hooks/use-debounced-value';
 import { isAdministrativeRole } from '@/lib/auth/administrative-role';
+import { isQnaSolved } from '@/services/business/user/help/HelpUserService';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 
@@ -334,10 +335,12 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  </div>
  </div>
  <div className="mt-4 sm:mt-0 flex items-center justify-between sm:justify-end gap-4">
+ {activeCategory === 'QNA' ? (
  <div className="hidden sm:flex flex-col items-end">
  <span className="text-xs font-bold text-muted-foreground tracking-tight leading-none">상태</span>
- <StatusBadge status={item.statusCd} type={activeCategory} />
+ <StatusBadge status={item.qnaSttsCd} type={activeCategory} />
  </div>
+ ) : null}
  <ArrowRight className="text-muted-foreground group-hover:text-primary group-hover:translate-x-2 transition-all w-5 h-5 md:w-6 md:h-6" />
  </div>
  </motion.button>
@@ -443,34 +446,33 @@ function StatsCard({ label, value, desc }: { label: string, value: string, desc:
  );
 }
 
+/**
+ * 문서 상태 배지 — **실제 상태 값이 있는 축에만** 붙인다.
+ *
+ * [2026-08-29] 종전에는 `item.statusCd` 를 읽었는데 그 필드는 이 제품의 백엔드에 없다
+ * (api-server·business-app·business-core·foundation main 소스와 Flyway SQL 전체 grep 0건).
+ * 그래서 값은 언제나 undefined 였고 세 분기가 전부 기본값으로 떨어졌다 — Q&A 는 답변이
+ * 달린 문의도 빨간 '미해결', 위키는 모든 문서가 '초안', FAQ·커뮤니티는 무조건 '공개'.
+ * '상태' 라는 라벨을 달고 고정 문자열을 보여 준 셈이라, 목록만 보면 아무 문의도 처리되지
+ * 않은 것처럼 보였다.
+ *
+ * Q&A 에는 실재하는 상태 컬럼이 있다(`qnaSttsCd` — tb_bbs_item.qna_stts_cd '질의응답상태코드',
+ * 목록 projection 이 이미 싣고 있다). 판정은 값 도메인이 저장소 안에서 갈려 있어
+ * (엔티티 기본값 OPEN · 등록 경로 QA01 · 완료 SOLVED) 이미 있는 SSOT `isQnaSolved` 를 쓴다.
+ *
+ * 위키의 게시/초안과 FAQ·커뮤니티의 공개 여부는 저장할 곳 자체가 없다. 없는 상태를
+ * 지어내지 않으려면 배지를 붙이지 않는 것이 맞다 — 상태 축이 생기면 그때 되살린다.
+ */
 function StatusBadge({ status, type }: { status?: string, type: KnowledgeCategory }) {
- if (type === 'QNA') {
- const isSolved = status === 'SOLVED';
+ if (type !== 'QNA') return null;
+
+ const isSolved = isQnaSolved(status);
  return (
  <span className={cn(
  "text-xs font-bold mt-1",
  isSolved ? "text-emerald-500" : "text-rose-500"
  )}>
- {isSolved ? '해결됨' : '미해결'}
- </span>
- );
- }
-
- if (type === 'WIKI') {
- const isPublished = status === 'PUBLISHED';
- return (
- <span className={cn(
- "text-xs font-bold mt-1",
- isPublished ? "text-primary" : "text-muted-foreground"
- )}>
- {isPublished ? '게시됨' : '초안'}
- </span>
- );
- }
-
- return (
- <span className="text-xs font-bold text-success-emphasis mt-1">
- 공개
+ {isSolved ? '해결됨' : '답변 대기'}
  </span>
  );
 }
