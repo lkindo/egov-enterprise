@@ -36469,16 +36469,24 @@
         "type": "object",
         "properties": {
           "tmpltId": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
           },
           "tmpltNm": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
           },
           "tmpltPath": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 1000,
+            "minLength": 0
           },
           "tmpltSeCd": {
-            "type": "string"
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
           },
           "useYn": {
             "type": "string",
@@ -36494,6 +36502,10 @@
           }
         },
         "required": [
+          "tmpltId",
+          "tmpltNm",
+          "tmpltPath",
+          "tmpltSeCd",
           "useYn"
         ]
       },

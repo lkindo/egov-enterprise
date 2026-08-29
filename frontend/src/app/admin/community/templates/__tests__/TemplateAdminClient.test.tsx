@@ -52,6 +52,8 @@ async function openCreateDialog(user: ReturnType<typeof userEvent.setup>) {
   const scope = within(dialog);
   return {
     dialog,
+    // [2026-08-29] 신설 필수 입력. 종전에는 폼이 이 값을 묻지 않아 등록이 언제나 실패했다.
+    id: scope.getByRole('textbox', { name: '템플릿 ID' }),
     name: scope.getByRole('textbox', { name: '템플릿 명칭' }),
     path: scope.getByRole('textbox', { name: '소스 경로' }),
     cancel: scope.getByRole('button', { name: '취소' }),
@@ -69,6 +71,7 @@ describe('TemplateAdminClient validation', () => {
   it('100자를 넘는 템플릿 명칭을 write sink로 보내지 않고 해당 입력으로 이동한다', async () => {
     const user = userEvent.setup();
     const fields = await openCreateDialog(user);
+    await user.type(fields.id, 'TMPLT_T1');
     fireEvent.change(fields.name, { target: { value: '가'.repeat(101) } });
     await user.type(fields.path, '/templates/default');
 
@@ -86,6 +89,7 @@ describe('TemplateAdminClient validation', () => {
     }));
     const user = userEvent.setup();
     const fields = await openCreateDialog(user);
+    await user.type(fields.id, 'TMPLT_T1');
     await user.type(fields.name, '기본 템플릿');
     await user.type(fields.path, '/templates/default');
 
@@ -119,6 +123,7 @@ describe('TemplateAdminClient validation', () => {
     mocks.createTemplate.mockRejectedValueOnce(new Error('네트워크 연결을 확인해 주세요.'));
     const user = userEvent.setup();
     const fields = await openCreateDialog(user);
+    await user.type(fields.id, 'TMPLT_T1');
     await user.type(fields.name, '보존할 템플릿');
     await user.type(fields.path, '/templates/preserved');
 
@@ -136,6 +141,7 @@ describe('TemplateAdminClient validation', () => {
     }));
     const user = userEvent.setup();
     const fields = await openCreateDialog(user);
+    await user.type(fields.id, 'TMPLT_T1');
     await user.type(fields.name, '중복 방지 템플릿');
     await user.type(fields.path, '/templates/pending');
 
@@ -149,6 +155,7 @@ describe('TemplateAdminClient validation', () => {
 
   it('템플릿 DTO/DB 문자열 경계와 Y/N 형식을 보존한다', () => {
     const valid = {
+      tmpltId: 'T'.repeat(20),
       tmpltNm: '가'.repeat(100),
       tmpltSeCd: 'A'.repeat(12),
       tmpltPath: '/'.repeat(1000),
@@ -164,5 +171,8 @@ describe('TemplateAdminClient validation', () => {
     expect(templateFormSchema.safeParse({ ...valid, tmpltPath: '/'.repeat(1001) }).success).toBe(false);
     expect(templateFormSchema.safeParse({ ...valid, useYn: 'X' }).success).toBe(false);
     expect(templateFormSchema.safeParse({ ...valid, tmpltNm: 123 }).success).toBe(false);
+    // [2026-08-29] tmpltId 는 PK 이자 NOT NULL 이다 — 비었거나 길면 등록이 DB 에서 죽는다.
+    expect(templateFormSchema.safeParse({ ...valid, tmpltId: '   ' }).success).toBe(false);
+    expect(templateFormSchema.safeParse({ ...valid, tmpltId: 'T'.repeat(21) }).success).toBe(false);
   });
 });
