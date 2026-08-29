@@ -211,6 +211,24 @@ describe('커뮤니티 상세: 지어낸 지표와 죽은 버튼을 두지 않�
     expect(builder).not.toContain('.frstRegisterNm(');
     expect(client).not.toContain('frstRegisterNm');
     expect(client).not.toContain('System_Admin');
+
+    /*
+     * [2026-08-29] 검사 범위를 **같은 DTO 를 읽는 화면 전체**로 넓힌다.
+     *
+     * 종전에는 상세 화면 하나만 봤다. 그래서 커뮤니티 **목록**이 같은 필드를 읽어 방패
+     * 아이콘만 있는 빈 '관리자' 배지를 모든 행에 그리고 있던 것을 놓쳤다 — 같은 결함이
+     * 같은 웨이브 안에서 한 화면만 고쳐진 채 남았다. 계약이 파일 하나에 묶여 있으면
+     * 다음 소비자가 생길 때 또 놓친다.
+     */
+    const communityScreens = [
+      'app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx',
+      'app/cop/cmy/selectCommunityList/CommunityHubClient.tsx',
+    ];
+    for (const relative of communityScreens) {
+      const source = stripComments(readSrc(relative));
+      expect(source, `${relative} 을 읽지 못했다 — 계약이 vacuous 하다`).not.toHaveLength(0);
+      expect(source, `${relative} 이 서버가 채우지 않는 frstRegisterNm 을 읽는다`).not.toContain('frstRegisterNm');
+    }
   });
 
   /**
