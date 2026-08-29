@@ -565,6 +565,50 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
             </div>
           )
         )}
+
+        {/*
+          [2026-08-29] 역방향 — 저장소에는 있는데 DB 레코드가 없는 실물.
+          ⚠ '고아' 가 아니라 '후보' 로 부른다. 업로드는 실물을 먼저 쓰고 트랜잭션이 커밋돼야
+            행이 보이므로, 커밋 전 파일과 진짜 고아는 저장소에서 완전히 같은 모습이다.
+            확정처럼 말하면 사람이 살아 있는 업로드를 지운다.
+        */}
+        {integrityReport && !integrityError && (
+          <div className="space-y-2 border-t border-border pt-3">
+            <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">
+              저장소 → DB 역방향
+            </p>
+            <p className="text-xs font-medium text-muted-foreground break-all">
+              훑은 저장소: <span className="font-mono">{integrityReport.storageRoot}</span>
+            </p>
+            {integrityReport.orphanCandidates === 0 && integrityReport.undecidable === 0 ? (
+              <p role="status" className="text-xs font-bold text-success-emphasis">
+                저장소 실물 {integrityReport.storedFilesChecked.toLocaleString()}건 모두 DB 레코드가 있습니다.
+              </p>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs font-bold text-foreground">
+                  저장소 실물 {integrityReport.storedFilesChecked.toLocaleString()}건 중{' '}
+                  <strong>{integrityReport.orphanCandidates.toLocaleString()}건</strong>이 DB 레코드를 찾지 못했고,{' '}
+                  <strong>{integrityReport.undecidable.toLocaleString()}건</strong>은 판정하지 않았습니다.
+                </p>
+                <p className="text-[11px] text-muted-foreground">
+                  후보는 <strong>업로드가 아직 커밋되지 않은 파일일 수 있습니다.</strong> 지우기 전에
+                  시간을 두고 다시 점검해 같은 항목이 남는지 확인해 주세요. 판정하지 않은 항목은
+                  옛 저장 규약이라 이 점검이 대응 레코드를 찾을 수 없는 것이며, 고아라는 뜻이 아닙니다.
+                </p>
+                {integrityReport.orphanSamples.length > 0 && (
+                  <ul className="max-h-48 overflow-y-auto rounded border border-border bg-muted/40 p-3 space-y-1">
+                    {integrityReport.orphanSamples.map((sample) => (
+                      <li key={sample} className="text-[11px] font-mono text-muted-foreground break-all">
+                        {sample}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* 실측(액추에이터) 기반 지표 */}

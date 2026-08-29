@@ -1,14 +1,15 @@
 import { AdminService } from '@/services/core/ApiService';
+import type { components } from '@/types/generated-api';
 
-/** 첨부 정합성 점검 결과. 백엔드 `AttachmentIntegrityReport` 와 같은 모양이다. */
-export interface AttachmentIntegrityReport {
-  /** 확인한 첨부 레코드 수 */
-  checked: number;
-  /** 저장소에 실물이 없는 레코드 수 — 0 이 아니면 DB↔저장소가 어긋난 상태다 */
-  missing: number;
-  /** 조치 대상 예시(저장 경로 단위). 전체가 아니라 상한까지만 담긴다 */
-  samples: string[];
-}
+/**
+ * 첨부 정합성 점검 결과.
+ *
+ * [2026-08-29] 종전에는 같은 모양을 **여기서 다시 선언**했다. 백엔드가 필드를 늘려도 이
+ * 인터페이스는 모르므로 화면이 새 값을 읽을 수 없고, 반대로 백엔드가 필드를 없애도 타입은
+ * 조용히 통과한다. FE 헌법이 금지하는 로컬 재선언이며, 실제로 역방향 census 를 추가할 때
+ * 이 파일이 컴파일 오류의 원인이 됐다. 생성 타입을 SSOT 로 되돌린다.
+ */
+export type AttachmentIntegrityReport = components['schemas']['AttachmentIntegrityReport'];
 
 /**
  * 첨부 정합성 진단.
