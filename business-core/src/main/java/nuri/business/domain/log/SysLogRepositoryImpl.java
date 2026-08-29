@@ -33,7 +33,7 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
                 .leftJoin(commonCode).on(QSysLog.sysLog.prcsSeCd.trim().eq(commonCode.dtlCd)
                         .and(commonCode.cdId.eq("COM033")))
                 .where(
-                        processSeCodeNmLike(searchWrd, commonCode),
+                        searchWordLike(searchWrd),
                         occrrncDeBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -46,7 +46,7 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
                 .leftJoin(commonCode).on(QSysLog.sysLog.prcsSeCd.trim().eq(commonCode.dtlCd)
                         .and(commonCode.cdId.eq("COM033")))
                 .where(
-                        processSeCodeNmLike(searchWrd, commonCode),
+                        searchWordLike(searchWrd),
                         occrrncDeBetween(searchBgnDe, searchEndDe));
 
         return PageableExecutionUtils.getPage(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
@@ -63,8 +63,20 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
                 .executeUpdate();
     }
 
-    private BooleanExpression processSeCodeNmLike(String searchWrd, QCommonCode commonCode) {
-        return StringUtils.hasText(searchWrd) ? commonCode.dtlCdNm.contains(searchWrd) : null;
+    /**
+     * 검색어 술어.
+     *
+     * <p>[2026-08-29] 종전에는 조인한 공통코드의 {@code dtlCdNm}(처리구분 코드명)을 검색했다.
+     * 화면은 '서비스 설명 · 요청ID' 로 검색된다고 안내하고 표에도 같은 이름의 열을 보여 주므로,
+     * 관리자는 그 열의 값을 붙여 넣는다 — 그러면 언제나 0건이다. 두 열이 읽는 필드
+     * ({@code srvcNm}·{@code dmndId})를 그대로 검색한다.
+     *
+     * <p>공통코드 조인은 남긴다 — '처리구분' 열 표시에 여전히 쓰인다.
+     */
+    private BooleanExpression searchWordLike(String searchWrd) {
+        if (!StringUtils.hasText(searchWrd)) return null;
+        return QSysLog.sysLog.srvcNm.contains(searchWrd)
+                .or(QSysLog.sysLog.dmndId.contains(searchWrd));
     }
 
     /**

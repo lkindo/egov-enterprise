@@ -292,7 +292,7 @@ test.describe('Tier 3: Board & Community (Business Flow)', () => {
             const input = page.locator('textarea[name="ansCn"]');
             await expect(input).toBeVisible({ timeout: 15000 });
             await input.fill(original);
-            await page.getByRole('button', { name: /Commit Response|COMMITTING/i }).click();
+            await page.getByRole('button', { name: /댓글 등록/ }).click();
 
             const rendered = page.locator('p.whitespace-pre-wrap').filter({ hasText: original }).first();
             await expect(rendered, '작성한 댓글이 화면에 나타나야 한다').toBeVisible({ timeout: 15000 });

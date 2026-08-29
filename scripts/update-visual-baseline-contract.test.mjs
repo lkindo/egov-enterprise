@@ -52,3 +52,51 @@ test('removing or delaying add-mask is a reproducible red', () => {
     /전에 add-mask/u,
   );
 });
+
+/**
+ * 커밋 스텝의 "변경 없음" 경로가 도달 가능해야 한다.
+ *
+ * [2026-08-29] 종전 가드는 스테이징이 비었을 때 `find frontend/e2e -name '*-linux.png'` 로
+ * 파일 존재를 확인해 오류를 냈다. 그런데 기준선은 **이미 커밋돼 추적되고 있으므로** 체크아웃
+ * 직후부터 언제나 존재한다 — 즉 그 find 는 항상 참이고 아래 notice 에 도달할 수 없었다.
+ * 화면이 그대로여서 기준선이 동일한, 가장 흔한 경우에 워크플로가 실패했다
+ * (run 33235437822 실측: 캡처 4장 전부 성공했는데 커밋 스텝만 red).
+ *
+ * "변경 없음" 과 "add 경로 파손" 을 가르는 것은 파일의 존재가 아니라 **add 전 워킹트리에
+ * 변경이 있었는가** 다. 그 판정 근거를 계약으로 고정한다.
+ */
+function validateNoChangeGuard(source) {
+  const step = source.match(
+    /- name: Commit baselines to current branch([\s\S]*?)(?=\n\s+- name:|$)/u,
+  )?.[1] ?? '';
+  const dirty = 'dirty="$(git status --porcelain -- frontend/e2e)"';
+  const add = 'git add -A -- frontend/e2e';
+
+  return [
+    step ? null : '커밋 step이 없습니다.',
+    step.includes(dirty) ? null : 'add 전 워킹트리 상태를 기록하지 않으면 "변경 없음"과 "add 파손"을 구분할 수 없습니다.',
+    step.indexOf(dirty) >= 0 && step.indexOf(dirty) < step.indexOf(add)
+      ? null : '워킹트리 상태는 git add 보다 먼저 기록해야 합니다(add 후에는 항상 깨끗합니다).',
+    /find frontend\/e2e -name '\*-linux\.png'/u.test(step)
+      ? '추적 중인 기준선은 언제나 존재하므로 파일 존재로는 판정할 수 없습니다("변경 없음" 경로가 영구 차단됩니다).'
+      : null,
+  ].filter(Boolean);
+}
+
+test('기준선이 동일할 때 커밋 스텝이 성공으로 끝날 수 있다', () => {
+  assert.deepEqual(validateNoChangeGuard(readWorkflow()), []);
+});
+
+test('판정 근거를 파일 존재로 되돌리면 재현 가능한 red 다', () => {
+  const source = readWorkflow();
+  assert.match(
+    validateNoChangeGuard(source.replace('dirty="$(git status --porcelain -- frontend/e2e)"', '')).join('\n'),
+    /워킹트리 상태를 기록하지 않으면/u,
+  );
+  assert.match(
+    validateNoChangeGuard(
+      source.replace('if [ -n "$dirty" ]; then', "if find frontend/e2e -name '*-linux.png' | grep -q .; then"),
+    ).join('\n'),
+    /파일 존재로는 판정할 수 없습니다/u,
+  );
+});

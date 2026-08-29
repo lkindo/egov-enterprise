@@ -47,7 +47,13 @@ export default function SurveyResponseClient() {
   //      읽고 있었는데 tsc 가 아무것도 잡지 못했다.
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['survey-responses', pageNo, searchKeyword],
-    queryFn: () => getQustnrRespondInfoList({ page: pageNo, size: 10, keyword: searchKeyword }),
+    // [2026-08-29] Spring Data Pageable 은 0부터 시작한다. 종전에는 1-base 인 pageNo 를 그대로
+    //   실어 보내 **첫 화면이 곧 2페이지 요청**이었다. 응답이 한 페이지뿐이면 표는 비고 페이저는
+    //   '1 / 1'(양쪽 비활성)이 되는데, 머리말만 '총 N건의 응답이 조회되었습니다.' 라고 말해
+    //   사용자는 있는 데이터에 영영 닿지 못한 채 화면을 의심하게 된다.
+    //   저장소의 다른 목록(AddressBookListClient:59, MailHistoryHubClient:81, BoardListServer:56)은
+    //   모두 `page - 1` 로 보정한다 — 이 화면만 어긋나 있었다.
+    queryFn: () => getQustnrRespondInfoList({ page: pageNo - 1, size: 10, keyword: searchKeyword }),
     retry: false,
   });
 

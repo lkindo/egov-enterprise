@@ -336,14 +336,21 @@ export default function MemoReportManagementClient() {
       }
       filter={
         <div className="min-w-60 max-w-xl space-y-1">
+          {/*
+            [2026-08-29] '작성자' 축을 걷는다. 서버의 검색 술어는 제목뿐이다 —
+            관리자 목록은 `rptTtl LIKE`(MemoReportRepository.searchByTitle), 발신함·수신함은
+            이번에 추가한 `findBy…AndRptTtlContaining` 이다. 게다가 MemoReportMapper 가
+            wrterNm·rptrNm 을 ignore 해 DTO 의 작성자명 자체가 null 이라, 작성자 축은 만들
+            데이터도 없다.
+          */}
           <label htmlFor="memo-report-search" className="text-[length:var(--font-size-body)] font-medium">
-            보고 제목 · 작성자
+            보고 제목
           </label>
           <Input
             id="memo-report-search"
             value={searchKeyword}
             onChange={(e) => handleSearchChange(e.target.value)}
-            aria-label="보고 제목 또는 작성자 검색"
+            aria-label="보고 제목 검색"
             placeholder="입력하면 바로 조회됩니다"
           />
         </div>

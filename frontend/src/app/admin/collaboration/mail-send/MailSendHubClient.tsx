@@ -34,6 +34,12 @@ interface Recipient {
   email: string;
 }
 
+/**
+ * 수신자 입력 검증용. 서버가 이 값을 그대로 SMTP 수신 주소로 쓰므로, 주소 형태가 아닌 값은
+ * 애초에 받지 않는다(ID 를 주소로 바꿔 주는 경로가 제품에 없다).
+ */
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 /** SentMail 물리 컬럼 계약: 제목/수신자 100자, 본문 4,000자. */
 export const mailSendSchema = SentMailDtoSchema.pick({
   recptnPerson: true,
@@ -86,12 +92,30 @@ export default function MailSendHubClient() {
   });
   const validation = useManualFormValidation(mailSendSchema, { labels: mailValidationLabels });
 
+  /**
+   * 수신자 추가.
+   *
+   * [2026-08-29] 이메일 주소만 받는다. 종전에는 아무 문자열이나 받아
+   * `email: value.includes('@') ? value : ''` 로 두고, 발송 시
+   * `recipient.email || recipient.id` 로 **원시 ID 를 그대로 실어 보냈다.**
+   * 서버에는 ID → 이메일 변환 경로가 없다 — MailService 가 recptnPerson 을 손대지 않고
+   * MailAsyncProcessor 가 `emailSender.send(..., recptnPerson)` 의 수신 주소로 그대로 쓴다.
+   * 즉 'kim01' 을 넣으면 'kim01' 이라는 주소로 보내려다 실패하는데, 발송은 @Async 라
+   * 화면에는 '발송 요청되었습니다' 만 남는다. 사용자는 갔다고 믿는다.
+   *
+   * 변환 경로가 생기면 그때 ID 입력을 되살린다.
+   */
   const handleAddRecipient = () => {
     const value = recipientSearch.trim();
-    if (!value || selectedRecipients.some((recipient) => recipient.id === value)) return;
+    if (!value) return;
+    if (!EMAIL_PATTERN.test(value)) {
+      validation.setFormErrors({ recptnPerson: '이메일 주소를 입력해 주세요. 이 화면은 ID 로 주소를 찾지 못합니다.' });
+      return;
+    }
+    if (selectedRecipients.some((recipient) => recipient.id === value)) return;
     setSelectedRecipients((previous) => [
       ...previous,
-      { id: value, name: value, email: value.includes('@') ? value : '' },
+      { id: value, name: value, email: value },
     ]);
     validation.clearError('recptnPerson');
     setRecipientSearch('');
@@ -101,7 +125,9 @@ export default function MailSendHubClient() {
     e.preventDefault();
     if (submitPendingRef.current) return;
     const validated = validation.validate({
-      recptnPerson: selectedRecipients.map((recipient) => recipient.email || recipient.id).join(', '),
+      // [2026-08-29] `|| recipient.id` 폴백을 걷었다. 그 폴백이 이메일이 아닌 값을 SMTP 수신
+      //   주소로 실어 보내던 경로다. 이제 추가 시점에 주소 형태를 강제하므로 email 이 늘 있다.
+      recptnPerson: selectedRecipients.map((recipient) => recipient.email).join(', '),
       sj: form.sj,
       emailCn: form.emailCn,
     });
@@ -217,7 +243,7 @@ export default function MailSendHubClient() {
                     id="mail-recipient-search"
                     {...validation.fieldProps('recptnPerson')}
                     data-testid="mail-recipient-input"
-                    placeholder="수신자 ID 또는 이메일을 입력하세요"
+                    placeholder="수신자 이메일 주소를 입력하세요"
                     className="h-11 text-xl font-bold tracking-tight bg-muted border-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
                     value={recipientSearch}
                     onChange={(e) => {

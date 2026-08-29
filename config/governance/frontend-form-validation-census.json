@@ -8,8 +8,8 @@
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 21,
-    "secondaryActionBoundaries": 56,
-    "candidateCount": 131
+    "secondaryActionBoundaries": 57,
+    "candidateCount": 132
   },
   "entries": [
     {
@@ -97,6 +97,7 @@
             "handleAuthorDelete",
             "handleSaveGlobal",
             "handleSaveMenuMapping",
+            "handleSaveRoleMapping",
             "handleSaveUserMapping"
           ],
           "component": "AuthorForm",
@@ -108,6 +109,7 @@
         }
       ],
       "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/AuthorRoleMapping.test.tsx",
         "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx",
         "frontend/src/components/__tests__/shared-form-validation-contract.test.tsx"
       ]
@@ -1716,6 +1718,33 @@
         "selectedAuthorCode"
       ],
       "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/security/authority/SecurityHubClient.tsx#SecurityHubClient.handleSaveRoleMapping[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
+      "owner": "SecurityHubClient",
+      "handler": "handleSaveRoleMapping",
+      "writeSinks": [
+        "authorAdminService.saveAuthorRoles",
+        "saveAuthorRoleMutation.mutate"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "structured-ui-state-validation",
+      "schemaSource": "structured-ui-state:authority-role-assignment-set",
+      "errorNavigation": "structured-state-action-feedback",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "stateInvariant": "The selected authority persists exactly the role assignments represented by tempRoleMappings — the server replaces the whole set, so a partial payload silently deletes the rest.",
+      "structuredPayloads": [
+        "Array.from(tempRoleMappings)",
+        "selectedAuthorCode"
+      ],
+      "testEvidence": [
+        "frontend/src/app/admin/security/authority/__tests__/AuthorRoleMapping.test.tsx",
         "frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx"
       ]
     },

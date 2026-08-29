@@ -28,7 +28,7 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
         List<LoginLog> content = queryFactory
                 .selectFrom(loginLog)
                 .where(
-                        loginMthdLike(searchWrd),
+                        searchWordLike(searchWrd),
                         creatDtBetween(searchBgnDe, searchEndDe))
                 .offset(pageable.getOffset())
                 .limit(pageable.getPageSize())
@@ -39,15 +39,28 @@ public class LoginLogRepositoryImpl implements LoginLogRepositoryCustom {
                 .select(loginLog.count())
                 .from(loginLog)
                 .where(
-                        loginMthdLike(searchWrd),
+                        searchWordLike(searchWrd),
                         creatDtBetween(searchBgnDe, searchEndDe));
 
         return PageableExecutionUtils.getPage(Objects.requireNonNull(content), Objects.requireNonNull(pageable),
                 countQuery::fetchOne);
     }
 
-    private BooleanExpression loginMthdLike(String searchWrd) {
-        return StringUtils.hasText(searchWrd) ? loginLog.cntnMthdCd.contains(searchWrd) : null;
+    /**
+     * 검색어 술어.
+     *
+     * <p>[2026-08-29] 종전에는 {@code cntnMthdCd}(접속 방법 코드)를 검색했다. 그런데 화면은
+     * '사용자ID · 접속IP' 로 검색된다고 안내한다 — 두 축 모두 컬럼이 실재하는데도 어느 쪽도
+     * 걸리지 않아, 관리자가 계정이나 IP 를 넣으면 언제나 0건이 나왔다. 오류가 아니라 빈 결과라
+     * "그 계정의 접속 기록이 없다" 로 잘못 읽힌다 — 보안 조사에서 가장 나쁜 오독이다.
+     *
+     * <p>화면이 약속한 두 축을 그대로 검색한다. 접속 방법 코드는 화면에 검색 축으로 안내된 적이
+     * 없으므로 승계하지 않는다.
+     */
+    private BooleanExpression searchWordLike(String searchWrd) {
+        if (!StringUtils.hasText(searchWrd)) return null;
+        return loginLog.userId.contains(searchWrd)
+                .or(loginLog.lgnIpAddr.contains(searchWrd));
     }
 
     private BooleanExpression creatDtBetween(String searchBgnDe, String searchEndDe) {

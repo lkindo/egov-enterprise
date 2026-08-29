@@ -40,14 +40,31 @@ public class MemoReportService {
                 .map(memoReportMapper::toDto);
     }
 
-    public Page<MemoReportDto> getMyReportList(String writerId, @NonNull Pageable pageable) {
-        return memoReportRepository.findByUserId(writerId, Objects.requireNonNull(pageable))
-                .map(memoReportMapper::toDto);
+    /**
+     * 발신함. 검색어가 있으면 제목으로 좁힌다.
+     *
+     * <p>[2026-08-29] 종전에는 검색어를 받는 경로 자체가 없어 화면의 조회 조건이 무동작이었다.
+     * 소유 스코프(userId)는 그대로 두고 제목 조건만 더한다 — 인가 범위는 넓어지지 않는다.
+     */
+    public Page<MemoReportDto> getMyReportList(String writerId, String keyword, @NonNull Pageable pageable) {
+        Objects.requireNonNull(pageable);
+        Page<MemoReport> page = hasKeyword(keyword)
+                ? memoReportRepository.findByUserIdAndRptTtlContaining(writerId, keyword.trim(), pageable)
+                : memoReportRepository.findByUserId(writerId, pageable);
+        return page.map(memoReportMapper::toDto);
     }
 
-    public Page<MemoReportDto> getReceivedReportList(String rptUserId, @NonNull Pageable pageable) {
-        return memoReportRepository.findByRptrId(rptUserId, Objects.requireNonNull(pageable))
-                .map(memoReportMapper::toDto);
+    /** 수신함. 발신함과 같은 이유로 제목 검색을 지원한다(소유 스코프는 rptrId 로 유지). */
+    public Page<MemoReportDto> getReceivedReportList(String rptUserId, String keyword, @NonNull Pageable pageable) {
+        Objects.requireNonNull(pageable);
+        Page<MemoReport> page = hasKeyword(keyword)
+                ? memoReportRepository.findByRptrIdAndRptTtlContaining(rptUserId, keyword.trim(), pageable)
+                : memoReportRepository.findByRptrId(rptUserId, pageable);
+        return page.map(memoReportMapper::toDto);
+    }
+
+    private static boolean hasKeyword(String keyword) {
+        return keyword != null && !keyword.trim().isEmpty();
     }
 
     public MemoReportDto getMemoReport(@NonNull Long memoRptSn) {

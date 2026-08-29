@@ -108,7 +108,7 @@ export default function ApprovalDraftHubClient() {
             </Button>
             <div>
               <h1 className="text-3xl font-bold text-foreground tracking-tighter leading-none">
-                {step === 'CATALOG' ? 'Draft Center' : 'Document Entry'}
+                {step === 'CATALOG' ? '기안 문서 선택' : '기안 작성'}
               </h1>
               <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">
                 {step === 'CATALOG' ? 'Select Template Node' : `Dispatch: ${selectedForm?.title}`}
@@ -217,7 +217,7 @@ export default function ApprovalDraftHubClient() {
                   <div className="p-10 lg:p-14 space-y-12 flex-1">
                     <div className="space-y-6">
                        <label className="text-xs font-bold text-muted-foreground tracking-tight flex items-center gap-3">
-                          <Plus size={16} className="text-primary" /> Core Subject Header
+                          <Plus size={16} className="text-primary" aria-hidden="true" /> 문서 제목
                        </label>
                        <Input 
                           aria-label="문서 제목"
@@ -230,7 +230,7 @@ export default function ApprovalDraftHubClient() {
 
                     <div className="space-y-6">
                        <label className="text-xs font-bold text-muted-foreground tracking-tight flex items-center gap-3">
-                          <FileText size={16} className="text-primary" /> Intelligent Payload
+                          <FileText size={16} className="text-primary" aria-hidden="true" /> 상세 사유 및 전달 사항
                        </label>
                        <textarea 
                           aria-label="결재 상세 사유 및 전달 사항"
@@ -250,7 +250,7 @@ export default function ApprovalDraftHubClient() {
                       <p className="text-sm font-bold text-foreground">상신 기능은 아직 연결되지 않았습니다.</p>
                       <p className="mt-1 text-sm text-muted-foreground">
                         이 화면은 양식 작성까지만 제공하며, 작성한 내용은 서버에 저장되지 않습니다.
-                        실제 결재 상신은 결재 목록 화면의 기존 경로를 이용해 주세요.
+                        현재 이 제품에는 결재를 상신할 수 있는 다른 화면도 없습니다.
                       </p>
                     </div>
                   </div>

@@ -25,8 +25,10 @@ vi.mock('../BoardPreview', () => ({ BoardPreview: () => null }));
 const validDraft = {
   bbsTtl: '사내 소식',
   bbsExpln: '',
-  ansPsbltyYn: false,
-  fileAtchPsbltyYn: true,
+  // [2026-08-29] 마법사가 두 값을 사용자에게 묻지 않게 되면서 폼 스키마의 boolean 덮어쓰기도
+  //   사라졌다. 이제 생성 DTO 스키마의 'Y'|'N' 이 그대로 적용된다(마법사는 각각 'N'·'Y' 고정 전송).
+  ansPsbltyYn: 'N',
+  fileAtchPsbltyYn: 'Y',
   atchPsbltyFileQty: 3,
   atchPsbltyFileSz: 5_242_880,
   bbsTypeCd: 'BBST01',

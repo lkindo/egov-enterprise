@@ -7,9 +7,7 @@ import { X,
   Activity,  
   Database,  
   Zap,  
-  ArrowRight,
-  AlertTriangle,
-  Trash2 } from 'lucide-react';
+  AlertTriangle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Dialog as DialogPrimitive } from 'radix-ui';
@@ -79,7 +77,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
         >
           {/* 접근성 준수를 위한 타이틀/설명 (화면 비표시) */}
           <DialogPrimitive.Title className="sr-only">알림 센터</DialogPrimitive.Title>
-          <DialogPrimitive.Description className="sr-only">실시간 시스템 무결성 피드 목록입니다.</DialogPrimitive.Description>
+          <DialogPrimitive.Description className="sr-only">받은 알림 목록입니다.</DialogPrimitive.Description>
 
           {/* Header Fabric */}
           <div className="flex h-24 items-center justify-between border-b border-border px-8 bg-card sticky top-0 z-20">
@@ -90,7 +88,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                 </div>
                 알림 센터
               </h2>
-              <p className="text-xs font-bold text-muted-foreground tracking-widest uppercase">실시간 시스템 무결성 피드</p>
+              <p className="text-xs font-bold text-muted-foreground tracking-tight">받은 알림</p>
             </div>
             <div className="flex items-center gap-2">
               {notifications.some(n => !n.isRead) && (
@@ -130,9 +128,13 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                    {f === 'ALL' ? '전체' : f === 'SECURITY' ? '보안' : f === 'SYSTEM' ? '시스템' : '활동'}
                 </button>
              ))}
-             <button aria-label="알림 전체 삭제" className="ml-auto w-10 h-10 rounded-lg bg-background border border-border flex items-center justify-center text-muted-foreground hover:text-rose-500 hover:border-rose-200 transition-all cursor-pointer">
-                <Trash2 size={16} />
-             </button>
+             {/*
+                [2026-08-29] '알림 전체 삭제' 휴지통 버튼을 걷었다.
+                onClick·type·form 이 전혀 없어 눌러도 아무 일이 없었는데, hover 하면 빨갛게
+                변하고 cursor-pointer 라 눌리는 것처럼 보였다. 되살리려면 대상 자체가 필요하다 —
+                서버에는 단건 DELETE /api/v1/notifications/{notiSn} 만 있고 일괄 삭제 경로가 없다.
+                일괄 삭제는 파괴적 작업이라 범위·확인 절차를 정하는 제품 결정이 선행된다.
+             */}
           </div>
 
           {/* Notification Stream */}
@@ -211,9 +213,12 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
 
                     <div className="flex items-center justify-between mt-6 relative z-10 px-1">
                       <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">{notif.time}</span>
-                      <button className="flex items-center gap-2 text-xs font-bold text-primary opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0 tracking-[0.2em] uppercase cursor-pointer">
-                        상세 보기 <ArrowRight size={14} />
-                      </button>
+                      {/*
+                         [2026-08-29] '상세 보기 →' 버튼을 걷었다. onClick·href·router.push 가
+                         전혀 없었고, 갈 곳도 없다 — 알림 라우트는 /admin/notifications 의
+                         page.tsx·NotificationsClient.tsx 둘뿐이고 [id] 세그먼트가 없다.
+                         상세 화면을 만들면 그때 되살린다(서버에는 단건 조회가 이미 있다).
+                      */}
                     </div>
 
                     {/* Background Decoration */}

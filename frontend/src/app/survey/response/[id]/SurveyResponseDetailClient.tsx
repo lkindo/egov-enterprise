@@ -6,7 +6,7 @@ import { getQustnrRespondInfoDetail } from '@/lib/api/survey';
 ;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, ArrowLeft, User, Calendar, ClipboardCheck, MessageSquare } from 'lucide-react';
+import { Loader2, ArrowLeft, User, Calendar, MessageSquare } from 'lucide-react';
 
 export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsSn: number }) {
     const router = useRouter();
@@ -65,10 +65,13 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
                                 <Calendar className="w-4 h-4 text-primary" />
                                 <span className="text-sm font-medium">{response?.crtDt}</span>
                             </div>
-                            <div className="flex items-center gap-3">
-                                <ClipboardCheck className="w-4 h-4 text-emerald-400" />
-                                <span className="text-sm font-bold underline underline-offset-4 decoration-emerald-500/30">검증된 응답</span>
-                            </div>
+                            {/*
+                              [2026-08-29] '검증된 응답' 배지 제거.
+
+                              조건 없이 모든 응답에 붙던 고정 표시였다. 무엇을 어떻게 검증했다는
+                              것인지 계측 원천이 없고, 서버 DTO 에도 검증 여부 필드가 없다.
+                              초록 체크는 사용자에게 "이 응답은 확인됐다" 는 뜻으로 읽힌다.
+                            */}
                         </div>
                     </CardContent>
                 </Card>
@@ -76,7 +79,17 @@ export default function SurveyResponseDetailClient({ srvyRspnsSn }: { srvyRspnsS
                 <Card className="md:col-span-2 border-none shadow-xl">
                     <CardHeader className="border-b bg-muted/20">
                         <CardTitle className="text-lg font-bold flex items-center gap-2">
-                            <MessageSquare className="w-5 h-5 text-primary" /> 설문 제목: {response?.srvyTtl || '설문 정보 없음'}
+                            {/*
+                              [2026-08-29] '설문 제목: … 설문 정보 없음' 을 걷고 실재하는 설문 번호를 쓴다.
+                              읽던 `srvyTtl` 은 이 응답 API 의 계약에 **없는 필드**다 —
+                              SurveyResultDto(record)의 필드는 srvyRspnsSn·srvySn·srvyTmpltSn·
+                              srvyQstnSn·srvyArtclSn·rspdntAnsCn·rspnsNm·etcAnsCn·frstRgtrId·crtDt 뿐이다.
+                              그래서 값은 언제나 undefined 였고 **모든 응답이** '설문 정보 없음' 으로 보였다.
+                              그 문구는 "이 응답에 한해 설문 정보가 비어 있다" 로 읽혀, 관리자는 데이터가
+                              깨진 줄 알고 원인을 찾게 된다. 제목이 필요하면 응답 API 가 설문을 join 해
+                              내려주도록 계약을 넓히는 것이 먼저다.
+                            */}
+                            <MessageSquare className="w-5 h-5 text-primary" /> 설문 번호: {response?.srvySn ?? '-'}
                         </CardTitle>
                     </CardHeader>
                     <CardContent className="pt-8 space-y-8">

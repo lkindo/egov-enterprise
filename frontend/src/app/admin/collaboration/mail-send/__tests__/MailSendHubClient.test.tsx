@@ -41,6 +41,39 @@ describe('MailSendHubClient validation', () => {
     mocks.sendMail.mockResolvedValue(1);
   });
 
+  /**
+   * [2026-08-29] 이메일이 아닌 값을 수신자로 받지 않는다.
+   *
+   * 서버에는 ID 를 메일 주소로 바꿔 주는 경로가 없다 — MailService 가 recptnPerson 을 손대지
+   * 않고 MailAsyncProcessor 가 `emailSender.send(..., recptnPerson)` 의 수신 주소로 그대로
+   * 쓴다. 종전 화면은 아무 문자열이나 받아 `recipient.email || recipient.id` 로 원시 ID 를
+   * 실어 보냈고, 발송이 @Async 라 화면에는 '발송 요청되었습니다' 만 남았다. 사용자는 갔다고
+   * 믿는데 그 주소로는 갈 수 없다.
+   */
+  it('이메일이 아닌 수신자를 추가하지 않고, 주소를 찾아 주지 못한다고 알린다', async () => {
+    const user = userEvent.setup();
+    render(<MailSendHubClient />);
+
+    const recipient = screen.getByRole('textbox', { name: '수신자 선택' });
+    await user.type(recipient, 'kim01');
+    await user.click(screen.getByRole('button', { name: /추가/ }));
+
+    expect(await screen.findAllByText(/ID 로 주소를 찾지 못합니다/)).not.toHaveLength(0);
+    expect(screen.queryByText('1명 선택됨')).toBeNull();
+  });
+
+  it('발송 payload 에 이메일 주소만 싣는다', async () => {
+    const user = userEvent.setup();
+    render(<MailSendHubClient />);
+    await enterValidMail(user);
+
+    await user.click(screen.getByRole('button', { name: /메일 발송/ }));
+
+    await waitFor(() => expect(mocks.sendMail).toHaveBeenCalledWith(
+      expect.objectContaining({ recptnPerson: 'receiver@example.com' }),
+    ));
+  });
+
   it('제목 max+1을 write sink로 보내지 않고 제목 입력으로 이동한다', async () => {
     const user = userEvent.setup();
     render(<MailSendHubClient />);

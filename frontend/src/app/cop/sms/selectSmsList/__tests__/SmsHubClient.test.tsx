@@ -197,6 +197,12 @@ describe('SmsHubClient send validation', () => {
     await waitFor(() => expect(mocks.sendSms).toHaveBeenCalledTimes(1));
     expect(fields.submit).toBeDisabled();
     resolveSend(1);
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('SMS가 성공적으로 전송되었습니다.', 'success'));
+    /*
+      이 테스트의 주제는 중복 제출 차단이므로 토스트는 완료 신호로만 쓴다. 정확한 문구는
+      SmsAdminClient.test.tsx 의 '발송 결과 고지' 계약이 두 소비자 모두에 대해 고정한다 —
+      여기서 문구를 다시 박으면 같은 사실을 두 곳에서 얼려 드리프트가 생긴다.
+    */
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
+      expect.stringContaining('접수했습니다'), 'info'));
   });
 });

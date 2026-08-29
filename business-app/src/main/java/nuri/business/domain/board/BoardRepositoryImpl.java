@@ -104,6 +104,11 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.evntDt,
                                                  QBoard.board.qnaSttsCd,
                                                  QBoard.board.qnaCatCd,
+                                                 // [2026-08-29] cmnt_cnt 를 실제로 가져온다. 컬럼은 BoardEventListener 가
+                                                 //   commentRepository.countBy… → syncCmntCntAtomic 으로 유지하는데,
+                                                 //   목록·상세 projection 이 둘 다 이 필드를 빼고 있어 화면의 '댓글 N' 이
+                                                 //   글마다 언제나 0 이었다. 값이 없는 게 아니라 안 가져온 것이다.
+                                                 QBoard.board.cmntCnt.as("commentCnt"),
                                                  QBoardMaster.boardMaster.bbsTypeCd.as("bbsTypeCd"),
                                                  QBoardMaster.boardMaster.ansPsbltyYn.as("ansPsbltyYn"),
                                                  QBoardMaster.boardMaster.fileAtchPsbltyYn.as("fileAtchPsbltyYn"),
@@ -134,6 +139,15 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 case "date":
                                         orderSpecifier = QBoard.board.crtDt.desc();        
                                         break;
+
+                                // [2026-08-29] 화면의 정렬 선택지 '댓글순'(orderBy=comments)이 여기까지
+                                //   전달되면서도 case 가 없어 default(sortOrdr.desc)로 조용히 떨어졌다.
+                                //   즉 골라도 최신순과 같은 목록이 나왔고, 사용자는 정렬이 된 줄 알았다.
+                                //   cmnt_cnt 는 BoardEventListener 가 실제로 유지하는 값이므로
+                                //   선택지를 걷는 대신 약속대로 정렬한다(views 축과 대칭).
+                                case "comments":
+                                        orderSpecifier = QBoard.board.cmntCnt.desc();
+                                        break;
                         }
                 }
  
@@ -152,7 +166,9 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.scrtYn,
                                                  QBoard.board.evntDt,
                                                  QBoard.board.qnaSttsCd,
-                                                 QBoard.board.qnaCatCd))
+                                                 QBoard.board.qnaCatCd,
+                                                 // [2026-08-29] 상세와 같은 이유로 목록에도 댓글 수를 싣는다.
+                                                 QBoard.board.cmntCnt.as("commentCnt")))
                                 .from(QBoard.board)
                                 .innerJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))

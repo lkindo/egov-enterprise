@@ -118,7 +118,12 @@ export default function LogDashboardClient({
   const columns = useMemo(() => {
     const commonCols: Column<IntegratedLogRow>[] = [
       {
-        header: '발생 시각',
+        /*
+          [2026-08-29] 분류마다 값의 정밀도가 다르다 — 로그인 로그만 creatDt(일시)이고
+          시스템·사용자·웹·개인정보 로그는 yyyyMMdd(날짜)다. 하나의 '발생 시각' 으로
+          부르면 없는 정밀도를 약속한다.
+        */
+        header: activeCategory === 'LGN' ? '발생 일시' : '발생일자',
         accessor: (item: IntegratedLogRow) => (
           <div className="flex items-center gap-3 py-2">
             <div className="w-8 h-8 rounded-xl bg-surface-inverse flex items-center justify-center text-surface-inverse-muted shadow-sm">

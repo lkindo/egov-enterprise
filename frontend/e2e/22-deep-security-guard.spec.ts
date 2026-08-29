@@ -111,7 +111,7 @@ test.describe('Tier 22: Deep Security Guard', () => {
                     //
                     // 근본 원인은 셀렉터가 대상 버튼을 특정하지 못한 것이므로 셀렉터를 좁힌다.
                     // 이는 검증을 약화시키지 않는다 — 오히려 의도한 버튼만 정확히 누른다.
-                    await page.getByRole('button', { name: /Commit Response|COMMITTING/i }).click();
+                    await page.getByRole('button', { name: /댓글 등록/ }).click();
 
                     // 페이로드가 '텍스트'로 이스케이프 렌더링되어야 한다(React {value}는 자동 이스케이프).
                     await expect(

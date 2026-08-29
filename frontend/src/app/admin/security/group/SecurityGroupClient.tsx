@@ -162,7 +162,7 @@ export default function SecurityGroupClient() {
  try {
   const ok = await confirm({
   title: '보안 그룹 삭제',
-  message: `'${group.groupNm || group.groupId}'(${group.groupId}) 그룹을 삭제하시겠습니까? 이 그룹에 연결된 접근 정책이 함께 사라집니다.`,
+  message: `'${group.groupNm || group.groupId}'(${group.groupId}) 그룹을 삭제하시겠습니까? 이 그룹에 배정된 사용자의 그룹 지정이 해제됩니다.`,
   confirmText: '삭제',
   variant: 'destructive',
   });
@@ -256,7 +256,7 @@ export default function SecurityGroupClient() {
  return (
  <WorkListPage
  title="보안 그룹 관리"
- description="시스템 접근 수준을 정의하는 보안 그룹을 조회·설정합니다."
+ description="보안 그룹을 조회·등록·수정·삭제합니다. 그룹 자체는 권한·메뉴 접근을 부여하지 않습니다."
  breadcrumbItems={[{ label: '보안 관리' }, { label: '그룹 관리' }]}
  filterStateKey="security-group"
  totalCount={error ? undefined : pagination?.totalRecordCount}

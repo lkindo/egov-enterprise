@@ -39,12 +39,20 @@ class WebLogRepositoryTest extends PersistenceTestSupport {
                 .build();
         webLogRepository.save(newerLog);
 
-        // when
         Page<WebLog> result = webLogRepository.searchWebLogs("test", "2024-01-01", "2024-01-31", PageRequest.of(0, 10));
-
-        // then
         assertThat(result.getContent()).extracting(WebLog::getWebLogSn)
                 .containsExactly(newerLog.getWebLogSn(), log.getWebLogSn());
+
+        /*
+         * [2026-08-29] 화면은 'URL · IP' 로 두 축을 안내하고 표에 '요청자IP' 열을 함께 보여 주는데,
+         * 종전 술어는 url 만 봤다. 관리자가 IP 를 붙여 넣으면 언제나 0건이라 "그 IP 의 접근 기록이
+         * 없다" 로 잘못 읽힌다. 안내한 IP 축도 함께 검사한다.
+         */
+        assertThat(webLogRepository
+                .searchWebLogs("127.0.0.2", "2024-01-01", "2024-01-31", PageRequest.of(0, 10)).getContent())
+                .as("요청자IP 로 검색되지 않으면 화면 안내가 거짓이 된다")
+                .extracting(WebLog::getWebLogSn)
+                .containsExactly(newerLog.getWebLogSn());
     }
 
     @Test

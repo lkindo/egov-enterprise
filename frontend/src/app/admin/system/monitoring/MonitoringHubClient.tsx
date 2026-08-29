@@ -56,7 +56,7 @@ const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').the
   loading: () => (
     <div className="w-full h-[700px] flex flex-col items-center justify-center bg-surface-inverse rounded-lg space-y-6">
       <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-      <p className="text-xs font-bold tracking-tight text-white/30 animate-pulse">Initializing Topology Stream...</p>
+      <p className="text-xs font-bold tracking-tight text-white/30 animate-pulse">구성도를 불러오는 중입니다…</p>
     </div>
   )
 });
@@ -906,9 +906,19 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       filter={
         /* COMMENTS 탭은 백엔드가 키워드 검색을 지원하지 않아(입력해도 결과 불변) 입력 자체를 노출하지 않는다. */
         listConfig?.searchable ? (
+          /*
+            [2026-08-29] 라벨 하나가 세 탭에 공유되는데 **탭마다 서버 술어가 다르다.**
+            - SECURITY·SYSTEM 탭: 둘 다 /logs/system 을 부르고, 술어는
+              `srvcNm.contains OR dmndId.contains` 다(SysLogRepositoryImpl).
+            - LOGIN 탭: /logs/login 이고 술어는 `userId.contains OR lgnIpAddr.contains` 다
+              (LoginLogRepositoryImpl).
+            종전 '서비스명 · 메서드 · 계정' 은 어느 탭에서도 사실이 아니었다 — 메서드로도
+            계정으로도 걸리지 않고, 로그인 탭에서는 서비스명조차 축이 아니다. 조회 조건이
+            틀려도 오류가 나지 않고 빈 결과만 나오므로 "그 계정 기록이 없다" 로 오독된다.
+          */
           <KeywordFilter
-            label="서비스명 · 메서드 · 계정"
-            placeholder="서비스명·메서드·계정 검색"
+            label={activeTab === 'LOGIN' ? '사용자ID · 접속IP' : '서비스명 · 요청ID'}
+            placeholder={activeTab === 'LOGIN' ? '사용자ID, 접속IP 검색' : '서비스명, 요청ID 검색'}
             value={searchKeyword}
             onSearch={handleSearchKeywordChange}
           >
@@ -1019,7 +1029,7 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
                    같은 텍스트가 두 번 잡혀 접근 이름이 모호해진다(CI e2e strict-mode 위반 실측). */}
                <p className="text-xs font-medium text-muted-foreground leading-relaxed">
                   {listConfig
-                    ? `‘${listConfig.label}’ 탭에서 현재 조회된 ${listConfig.data.length}건을 엑셀(CSV · UTF-8 BOM)로 내려받습니다. 서버 전량 반출은 지원하지 않으며, 페이지를 이동한 뒤 다시 실행하면 해당 페이지가 반출됩니다.`
+                    ? `‘${listConfig.label}’ 탭에서 현재 조회된 ${listConfig.data.length}건을 엑셀(CSV · UTF-8 BOM)로 내려받습니다. 이 모달은 현재 페이지만 반출하며, 페이지를 이동한 뒤 다시 실행하면 해당 페이지가 반출됩니다.`
                     : '현재 탭은 목록 데이터가 없어 반출할 수 없습니다. 보안 감사·시스템 로그·접속 이력·서비스 피드백 탭에서 실행해 주세요.'}
                </p>
             </div>

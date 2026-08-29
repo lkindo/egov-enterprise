@@ -197,14 +197,23 @@ describe('MonitoringHubClient', () => {
     mocks.integrity.mockResolvedValue({ checked: 0, missing: 0, samples: [] });
   });
 
-  /** 조회 조건 입력의 접근 이름(KeywordFilter 의 label). */
-  const LOG_SEARCH_LABEL = '서비스명 · 메서드 · 계정';
+  /**
+   * 조회 조건 입력의 접근 이름(KeywordFilter 의 label).
+   *
+   * [2026-08-29] 라벨이 **탭마다 다르다.** 종전에는 세 탭이 '서비스명 · 메서드 · 계정' 하나를
+   * 공유했는데, 서버 술어는 탭마다 다르다 — SECURITY·SYSTEM 은 /logs/system 의
+   * `srvcNm OR dmndId`, LOGIN 은 /logs/login 의 `userId OR lgnIpAddr` 다. 어느 탭에서도
+   * 메서드·계정으로는 걸리지 않았고, 로그인 탭에서는 서비스명조차 축이 아니었다.
+   * 라벨이 술어와 어긋나면 빈 결과가 "그 계정 기록이 없다" 로 오독된다.
+   */
+  const LOG_SEARCH_LABEL = '서비스명 · 요청ID';
+  const LOGIN_SEARCH_LABEL = '사용자ID · 접속IP';
 
   it.each([
-    ['', mocks.audit, 'authorize'],
-    ['tab=system', mocks.system, 'healthCheck'],
-    ['tab=login', mocks.login, 'PASSWORD'],
-  ])('loads, selects, searches and pages a list tab (%s)', async (query, service, rowText) => {
+    ['', mocks.audit, 'authorize', LOG_SEARCH_LABEL],
+    ['tab=system', mocks.system, 'healthCheck', LOG_SEARCH_LABEL],
+    ['tab=login', mocks.login, 'PASSWORD', LOGIN_SEARCH_LABEL],
+  ])('loads, selects, searches and pages a list tab (%s)', async (query, service, rowText, searchLabel) => {
     renderHub(query);
 
     expect(await screen.findByText(rowText)).toBeInTheDocument();
@@ -213,7 +222,7 @@ describe('MonitoringHubClient', () => {
     expect(screen.getByRole('region', { name: '선택 항목 상세' })).toBeInTheDocument();
 
     // 조회 시점이 타이핑 디바운스에서 `조회` 제출로 바뀌었다 — 입력만으로는 재조회되지 않는다.
-    fireEvent.change(screen.getByRole('textbox', { name: LOG_SEARCH_LABEL }), {
+    fireEvent.change(screen.getByRole('textbox', { name: searchLabel }), {
       target: { value: 'needle' },
     });
     expect(service).toHaveBeenCalledTimes(1);
@@ -233,6 +242,7 @@ describe('MonitoringHubClient', () => {
 
     expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
     expect(screen.queryByRole('textbox', { name: LOG_SEARCH_LABEL })).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: LOGIN_SEARCH_LABEL })).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: '서비스 피드백 관리 44 상세 열기' }));
     expect(document.querySelector('button button')).toBeNull();

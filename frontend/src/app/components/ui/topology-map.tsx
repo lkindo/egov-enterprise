@@ -292,10 +292,11 @@ export const TopologyMap = () => {
          </div>
       </div>
       
-      <div className="absolute bottom-10 right-10 flex items-center gap-4 text-white/20">
-         <Radio size={20} className="animate-pulse" />
-         <span className="text-xs font-bold tracking-[0.5em] uppercase">_ Sentinel Topology Stream</span>
-      </div>
+      {/*
+         [2026-08-29] '_ Sentinel Topology Stream' 서명을 걷었다. 그런 이름의 스트림도, 그것을
+         공급하는 시스템도 저장소에 없다. 맥동하는 무전 아이콘과 함께 붙어 있어 실시간 수집이
+         돌고 있다는 뜻으로 읽혔다.
+      */}
     </div>
   );
 };

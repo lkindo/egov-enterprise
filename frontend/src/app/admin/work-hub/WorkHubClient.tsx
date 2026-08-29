@@ -138,7 +138,11 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     // jobScope 를 queryKey 에 포함해야 토글 시 재조회된다. 빠뜨리면 캐시된 이전 스코프 결과가
     // 그대로 남아 "토글이 먹지 않는" 것처럼 보인다.
     queryKey: ['work-jobs', searchKeyword, jobPage, jobScope, pageUnit],
-    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: searchKeyword, pageIndex: jobPage, pageUnit, scope: jobScope }),
+    // [2026-08-29] searchCondition 을 함께 보낸다. 서버(DeptJobService)는 조건이
+    //   '0'(부서업무명)·'1'(내용)·'2'(담당자ID) 일 때만 술어를 붙이고, 그 밖에는 **아무것도
+    //   거르지 않는다**. 종전에는 조건 없이 키워드만 보내 무엇을 입력해도 전체 목록이 그대로
+    //   나왔고, 화면은 그것을 검색 결과처럼 보여 줬다.
+    queryFn: () => deptJobUserService.getDeptJobList({ searchCondition: '0', searchWrd: searchKeyword, pageIndex: jobPage, pageUnit, scope: jobScope }),
     enabled: activeTab === 'job'
   });
   const jobs = jobData?.list || [];
@@ -412,7 +416,18 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     },
     {
       header: '작성자',
-      accessor: (item) => <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.userId}</span>,
+      /*
+        [2026-08-29] 이름을 보여 준다. 종전에는 userId 원문(로그인 ID)만 찍어, 사람 이름이
+        아니라 계정 문자열이라 누가 쓴 보고인지 목록만으로는 알 수 없었다.
+
+        이름을 못 찾으면 **로그인 ID 로 되돌아간다** — 서버가 사전에 없는 작성자(탈퇴 등)에
+        대해 userNm 을 비워 보내므로, '알 수 없음' 같은 값을 여기서 지어내지 않는다.
+      */
+      accessor: (item) => (
+        <span className="text-xs font-bold text-muted-foreground tracking-tight">
+          {item.userNm || item.userId}
+        </span>
+      ),
       className: 'w-32'
     },
     {
@@ -459,8 +474,8 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
         activeTab === 'calendar'
           ? '월간 일정을 조회합니다. 날짜를 선택하면 그 날짜의 일정만 표시합니다.'
           : activeTab === 'job'
-            ? '부서 업무의 담당·기한·처리 상태를 조회합니다.'
-            : '조직에서 작성된 업무 보고를 조회합니다.'
+            ? '부서 업무의 담당자·우선순위·업무함을 조회합니다.'
+            : '내가 작성한 업무 보고를 조회합니다. 관리자 권한이면 전체 보고가 조회됩니다.'
       }
       breadcrumbItems={[{ label: '업무관리' }, { label: '워크허브' }]}
       filterStateKey="work-hub"
@@ -510,7 +525,15 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
         /* 일정은 월 단위 조회라 키워드 검색 대상이 아니다 — 동작하지 않는 입력을 만들지 않는다. */
         activeTab === 'calendar' ? undefined : (
           <KeywordFilter
-            label={activeTab === 'job' ? '업무명·담당자' : '보고 제목·작성자'}
+            /*
+              [2026-08-29] 라벨을 실제 검색 축으로 고친다.
+              - 업무: 서버가 붙일 수 있는 축은 업무명·내용·담당자ID 셋인데 담당자 축은 이름이
+                아니라 picId(계정 식별자)다. 이름으로 찾으리라 기대하면 계속 0건이 나오므로
+                약속하지 않는다. 지금 보내는 축은 업무명이다.
+              - 업무 보고: WorkReportRepositoryImpl 의 술어는 `rptTtl.contains(searchWrd)`
+                하나뿐이라 작성자로는 좁혀지지 않는다.
+            */
+            label={activeTab === 'job' ? '업무명' : '보고 제목'}
             placeholder="검색어를 입력하십시오..."
             value={searchKeyword}
             onSearch={(keyword) => { setSearchKeyword(keyword); setJobPage(1); setReportPage(1); }}
@@ -547,7 +570,7 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
             ? `${format(currentDate, 'yyyy년 M월', { locale: ko })} 기준`
             : activeTab === 'job'
               ? (jobScope === 'mine' ? '내가 담당인 업무' : '부서 전체 업무')
-              : '전체 업무 보고'}
+              : '내가 작성한 보고(관리자는 전체)'}
         </span>
       }
     >

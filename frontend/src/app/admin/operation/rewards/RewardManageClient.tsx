@@ -184,8 +184,8 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
       }
       filter={
         <KeywordFilter
-          label="포상 명칭 · 대상자"
-          placeholder="포상 명칭 또는 대상자로 검색"
+          label="포상 명칭"
+          placeholder="포상 명칭으로 검색"
           value={searchKeyword}
           onSearch={(keyword) => { setPage(1); setSearchKeyword(keyword); }}
         />

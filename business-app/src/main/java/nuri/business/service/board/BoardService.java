@@ -160,7 +160,12 @@ public class BoardService extends BaseAbstractService {
                 return BoardStatsResponse.builder()
                                 .totalArticles(stats.totalArticles())
                                 .totalViews(stats.totalViews())
-                                .topContributor(stats.topContributor() != null ? stats.topContributor() : "System")
+                                // [2026-08-29] 기여자가 없을 때 "System" 을 지어내지 않는다.
+                                //   글이 한 건도 없거나 작성자를 확정할 수 없는 게시판에서도 화면은
+                                //   '최다 기여자: System' 을 보여 줬다 — 실재하지 않는 계정을 사람처럼
+                                //   내세운 것이라, 관리자는 그런 사용자가 있다고 믿는다.
+                                //   null 을 그대로 내리면 화면이 '-' 로 렌더한다(없음과 있음을 구분).
+                                .topContributor(stats.topContributor())
                                 .intelligenceScore(intelligenceScore)
                                 .build();
         }

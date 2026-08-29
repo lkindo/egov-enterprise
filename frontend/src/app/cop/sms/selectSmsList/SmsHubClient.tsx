@@ -88,7 +88,16 @@ export default function SmsHubClient({
       return smsAdminService.sendSms(payload);
     },
     onSuccess: () => {
-      toast('SMS가 성공적으로 전송되었습니다.', 'success');
+      /*
+        [2026-08-28] 이 응답은 **접수**일 뿐이고 전달은 SmsAsyncProcessor 가 비동기로 한다.
+        게다가 저장소의 SmsSender 구현체는 두 프로필 모두 무조건 실패를 돌려주므로, 초록
+        '전송되었습니다' 는 관리자가 인증 문자가 나갔다고 믿게 만드는 거짓이었다.
+
+        이 화면에는 수신자별 결과를 볼 경로가 없어 '문자 메시지 발송 관리' 로 안내한다.
+        (현재 이 경로는 next.config 리다이렉트로 도달 불가라 사용자 피해는 없지만,
+         DEC-OPS-024 처럼 리다이렉트가 걷히면 그대로 되살아나므로 소스에서 지운다.)
+      */
+      toast('발송 요청을 접수했습니다. 전달 결과는 ‘문자 메시지 발송 관리’에서 확인하세요.', 'info');
       setIsDialogOpen(false);
       setNewSms((current) => ({ ...current, rcptnTelno: '', sndngCn: '' }));
       validation.setFormErrors({}, false);

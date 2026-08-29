@@ -5,7 +5,7 @@ import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { emptyResultMessage } from '@/app/components/patterns/empty-result-message';
 import { myPageAdminService } from '@/services/foundation/workspace/MyPageAdminService';
 import { useToast } from '@/app/components/ui/toast';
-import { RefreshCcw, MoreVertical } from 'lucide-react';
+import { RefreshCcw } from 'lucide-react';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -104,25 +104,33 @@ export default function WorkspaceMyPage() {
       },
       className: 'w-32 text-center'
     },
-    {
-      header: '관리',
-      accessor: () => (
-        <div className="flex justify-end pr-4">
-          <Button variant="ghost" size="icon" aria-label="위젯 추가 옵션" className="h-10 w-10 rounded-lg hover:bg-muted">
-            <MoreVertical size={16} className="text-muted-foreground" />
-          </Button>
-        </div>
-      ),
-      className: 'w-20 text-right'
-    }
+    /*
+      [2026-08-29] '관리' 열 제거.
+
+      그 열의 버튼은 onClick 이 없는 死버튼이었다 — 눌러도 아무 일이 없고, 메뉴가 열릴
+      것처럼 보이는 아이콘(⋮)과 '위젯 추가 옵션' 이라는 aria-label 까지 달고 있어
+      스크린리더 사용자에게는 더 분명한 거짓말이었다.
+
+      등록·수정·삭제 화면을 만드는 것은 요청 밖 신규 기능이므로, 화면을 사실로 줄인다.
+      서비스 계층의 createContent/deleteContent 는 남겨 둔다(요청 밖 삭제 금지).
+    */
   ];
 
   const visibleContents = contents.filter((c) => c.cntntsNm.includes(searchKeyword));
 
   return (
     <WorkListPage
-      title="마이페이지 환경 설정"
-      description="개인 대시보드에 배치할 콘텐츠와 위젯을 관리합니다."
+      title="마이페이지 콘텐츠 등록"
+      /*
+        [2026-08-29] '개인 대시보드에 배치할 콘텐츠와 위젯을 관리합니다.' 를 걷었다.
+        그 배치를 렌더하는 화면이 저장소에 없다 — mypage 소비처는 이 관리 화면과 전용 서비스
+        (MyPageAdminService), 생성 타입뿐이고, 대시보드에 위젯을 공급하는 SPI 구현체
+        (DashboardItemProvider)는 board·informalsanction 둘이며 이 값을 읽지 않는다.
+        즉 여기서 켜고 꺼도 어느 화면에도 나타나지 않는다. 목록은 실제로 저장되므로 기능을
+        걷지는 않고, 화면이 자기가 하는 일(등록·사용 여부 저장)만 말하게 한다.
+        개인 대시보드가 이 목록을 읽게 되면 그때 문구를 되살린다.
+      */
+      description="여기서 등록·저장한 항목은 아직 어느 화면에도 표시되지 않습니다. 개인 대시보드 연결은 준비되지 않았습니다."
       breadcrumbItems={[{ label: '워크스페이스' }, { label: '설정' }]}
       filterStateKey="workspace-my-page"
       totalCount={contents.length}

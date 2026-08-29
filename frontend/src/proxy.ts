@@ -211,7 +211,7 @@ async function verifyAndExtractRole(token: string): Promise<VerifyVerdict> {
 const USER_ACCESSIBLE_ADMIN_PATHS = [
   '/admin/work-hub',                  // 개인·부서 업무/보고/일정 (dept-jobs·work-reports). 로그인 기본 착지점
   '/admin/collaboration',             // 쪽지·주소록·스크랩·메일 (notes·address-books·scraps·mails)
-  '/admin/help',                      // 지식/FAQ/Q&A 열람 (WIKI·FAQ 는 화면 내부에서 별도 admin 제한 중)
+  '/admin/help',                      // 지식/FAQ/Q&A 열람 (게시판 읽기는 서버도 인증만 요구한다 — 화면 내 별도 제한 없음)
   '/admin/community',                 // 커뮤니티 게시판 열람·작성 (관리 콘솔은 아래에서 도려낸다)
   '/admin/survey/polls/participate',  // 온라인 여론조사 '참여'(투표). 설문 '관리'는 열지 않는다
 ] as const;
@@ -281,7 +281,12 @@ function buildAppCsp(nonce: string): string {
   const connectSrc = isProd ? `connect-src 'self'` : `connect-src 'self' ws: wss:`;
   return (
     `default-src 'self'; ${scriptSrc}; script-src-attr 'none'; ` +
-    `style-src 'self' 'unsafe-inline'; img-src 'self' https://images.unsplash.com blob: data:; ` +
+    // [2026-08-29] img-src 에서 외부 호스트(images.unsplash.com)를 걷는다. 이 허용의 유일한
+    //   소비자였던 BoardPreview 의 목 데이터 사진이 사라져 지금은 아무도 쓰지 않는다.
+    //   쓰지 않는 외부 출처를 열어 두면 정책이 실제보다 넓다고 말하는 셈이다.
+    //   ⚠ 이 주석에 스킴(h t t p s ://)을 적지 말 것 — csp-policy 계약의 본문 추출은 주석의
+    //   URL 을 남기므로 외부 호스트 부재 단언이 자기 주석에 걸려 red 가 된다.
+    `style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; ` +
     `font-src 'self'; ${connectSrc}; object-src 'none'; base-uri 'self'; form-action 'self'; ` +
     `frame-ancestors 'none'; report-uri /api/security/csp; report-to csp-endpoint;`
   );

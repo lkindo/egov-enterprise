@@ -166,11 +166,18 @@ public class ReportStatsService {
     }
 
     /**
-     * 날짜별 게시판 활동 통계
+     * 날짜별 게시판 활동 통계.
+     *
+     * <p>[2026-08-28] 종전에는 {@code dtaUseStatsRepository.countByDate} 를 불렀다 —
+     * 바로 위 {@link #getDtaUseStatsByDate} 와 <b>완전히 같은 질의</b>다. 즉 게시물 통계 화면은
+     * 게시글을 하나도 세지 않고 자료이용현황과 같은 숫자를 보여 주고 있었고,
+     * {@code tb_dta_use_stats} 에는 쓰는 코드가 없어(writer 0건) 실제로는 늘 비어 있었다.
+     *
+     * <p>이제 게시글({@code tb_bbs_item})을 실제로 센다. 논리 삭제된 글은 제외한다.
      */
     public List<Object[]> getBbsStatsByDate(String fromDate, String toDate) {
         String from = fromDate + " 00:00:00";
         String to = toDate + " 23:59:59";
-        return dtaUseStatsRepository.countByDate(from, to);
+        return boardRepository.countPostsByDate(from, to);
     }
 }

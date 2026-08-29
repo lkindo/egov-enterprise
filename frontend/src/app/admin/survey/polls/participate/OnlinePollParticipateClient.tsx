@@ -22,6 +22,8 @@ import { toast } from 'sonner';
 
 export default function OnlinePollParticipateClient() {
  const [polls, setPolls] = useState<OnlinePollManageVO[]>([]);
+ /** 조회 실패 사유. null 이면 정상 — 실패와 '없음' 을 같은 화면으로 그리지 않는다. */
+ const [loadError, setLoadError] = useState<string | null>(null);
  const [selectedPoll, setSelectedPoll] = useState<OnlinePollManageVO | null>(null);
  const [pollItems, setPollItems] = useState<OnlinePollItemVO[]>([]);
  const [selectedItemSn, setSelectedItemSn] = useState<number | null>(null);
@@ -38,11 +40,17 @@ export default function OnlinePollParticipateClient() {
 
  const fetchPolls = async () => {
  setLoading(true);
+ // [2026-08-29] 조회 실패를 '없음'으로 그리지 않는다.
+ //   종전 catch 는 토스트만 띄우고 polls 를 [] 로 둔 채 로딩을 내렸다. 실패 상태를 남기는
+ //   state 도 재시도 경로도 없어, 토스트가 사라지면 화면에는 '활성 설문이 없습니다' 라는
+ //   단정만 남았다 — 사용자는 조회가 실패한 줄 모른다.
+ setLoadError(null);
  try {
  const res = await pollUserService.getPollList({ page: 0, size: 100 });
  // Support both Spring Data JPA Page (content) and legacy list format
  setPolls(res.list || []);
  } catch {
+ setLoadError('설문 목록을 불러오지 못했습니다.');
  toast.error('설문 목록을 불러오지 못했습니다.');
  } finally {
  setLoading(false);
@@ -100,7 +108,7 @@ export default function OnlinePollParticipateClient() {
  <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
  <h1 className="sr-only">여론조사 목록을 불러오는 중</h1>
  <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
- <p className="text-muted-foreground font-bold tracking-widest uppercase text-xs">Syncing Matrix Data...</p>
+ <p className="text-muted-foreground font-bold tracking-tight text-xs">설문을 불러오는 중입니다…</p>
  </div>
  );
  }
@@ -115,7 +123,25 @@ export default function OnlinePollParticipateClient() {
  <div className="space-y-8">
  {viewMode === 'list' && (
  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
- {(polls || []).length === 0 ? (
+ {/* 오류를 빈 상태보다 **먼저** 판정한다 — 실패 시 목록이 비는 것이 보통이라 순서를
+     뒤집으면 오류 화면에 영영 도달하지 못한다. */}
+ {loadError ? (
+ <div className="col-span-full p-20 text-center bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-6">
+ <div className="space-y-2">
+ <h3 className="text-xl font-bold tracking-tight text-foreground">{loadError}</h3>
+ <p className="text-muted-foreground font-medium">
+ 설문이 없는 것이 아니라 <strong>조회에 실패</strong>했습니다. 진행 중인 설문이 있을 수 있습니다.
+ </p>
+ </div>
+ <button
+ type="button"
+ onClick={() => { void fetchPolls(); }}
+ className="px-5 py-2 rounded-lg border border-border bg-card text-sm font-bold hover:bg-muted transition-colors"
+ >
+ 다시 시도
+ </button>
+ </div>
+ ) : (polls || []).length === 0 ? (
  <div className="col-span-full p-20 text-center bg-card rounded-lg border-2 border-dashed border-border flex flex-col items-center gap-6">
  <div className="w-20 h-11 bg-muted rounded-lg flex items-center justify-center text-muted-foreground">
  <Target size={40} />
@@ -144,7 +170,7 @@ export default function OnlinePollParticipateClient() {
  <div className="flex items-center gap-3">
  <div className="px-4 py-1 bg-white/10 rounded-lg border border-white/10 flex items-center gap-2">
  <Zap size={14} className="text-primary" />
- <span className="text-xs font-bold tracking-[0.2em] uppercase">Protocol Online</span>
+ <span className="text-xs font-bold tracking-[0.2em]">{POLL_STATUS_LABEL[getPollStatus(selectedPoll, todayStr)]}</span>
  </div>
  <div className="px-4 py-1 bg-primary/20 rounded-lg border border-primary/20 flex items-center gap-2">
  <Calendar size={14} className="text-primary" />
@@ -159,7 +185,7 @@ export default function OnlinePollParticipateClient() {
  <div className="p-12 space-y-10">
  <div className="space-y-4">
  <label className="text-xs font-bold text-muted-foreground tracking-[0.3em] uppercase ml-1 block mb-6">
- {viewMode === 'vote' ? 'SELECT YOUR OPTION' : 'AGGREGATED METRICS'}
+ {viewMode === 'vote' ? '항목을 선택하세요' : '집계 결과'}
  </label>
  
  <div className="space-y-4">
@@ -209,7 +235,11 @@ export default function OnlinePollParticipateClient() {
 function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, todayStr: string, onSelect: () => void }) {
   const status = getPollStatus(poll, todayStr);
   const isLive = status === 'active';
-  const label = isLive ? 'Live Now' : status === 'closed' ? 'Closed' : POLL_STATUS_LABEL[status];
+  /*
+    [2026-08-29] 'Live Now'·'Closed' 하드코딩 제거. 같은 상태를 화면마다 다른 어휘로 부르면
+    사용자는 다른 것으로 읽는다. 판정도 표기도 poll-status SSOT 한 곳에서 온다.
+  */
+  const label = POLL_STATUS_LABEL[status];
 
   return (
     <div 
@@ -248,11 +278,14 @@ function PollCard({ poll, todayStr, onSelect }: { poll: OnlinePollManageVO, toda
         </div>
       </div>
 
-      <div className="mt-10 pt-8 border-t border-border flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-          <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase opacity-60">Ready for Interaction</span>
-        </div>
+      {/*
+        [2026-08-29] 'Ready for Interaction' 배지를 걷었다. 어떤 조건도 보지 않는 상수였고
+        (이 카드는 status 를 상단 배지에만 쓴다) 초록 점의 animate-pulse 까지 붙어 지금
+        참여할 수 있다는 뜻으로 읽혔다 — 같은 카드 상단이 '종료'·'중지' 를 표시하는 순간에도
+        그대로 떴다. 실제로 종료된 설문을 누르면 참여가 아니라 결과 보기로 넘어간다.
+        상태는 상단 배지 하나가 말한다.
+      */}
+      <div className="mt-10 pt-8 border-t border-border flex items-center justify-end">
         <ChevronRight size={18} className="text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
       </div>
 
@@ -301,7 +334,7 @@ function PollItem({ item, totalVotes, isSelected, onSelect, mode, index, testId 
  {mode === 'result' && (
  <div className="text-right">
  <span className="text-2xl font-bold tracking-tighter text-foreground tabular-nums leading-none block">{percentage}%</span>
- <span className="text-xs font-bold text-muted-foreground tracking-widest uppercase">{item.pollIemCo || 0} Votes</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">{item.pollIemCo || 0}표</span>
  </div>
  )}
  </div>

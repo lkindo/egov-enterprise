@@ -33,10 +33,29 @@ public class LoginPolicyManageService {
         return loginPolicyRepository.searchLoginPolicies(searchVO.getSearchKeyword(), pageable)
                 .getContent().stream()
                 .map(res -> {
+                    /*
+                     * [2026-08-29] 보안 필드를 실제로 실어 보낸다.
+                     *
+                     * 종전에는 userId·userNm·regYn 만 채웠다. 그런데 목록 화면은 그 옆에
+                     * '제한 IP'·'허용 시간'·'계정 제한'·'2FA(OTP)' 네 열을 두고 값을 보여 준다 —
+                     * 전부 null 이라 **모든 사용자가 '제한 없음'·'24시간'·'정상'·'DISABLED'** 로
+                     * 보였다. 보안 열이므로 관리자는 그 화면을 보고 "아무도 IP 제한이 없고
+                     * MFA 도 꺼져 있다" 고 결론 내린다.
+                     *
+                     * 값은 이미 projection 이 조회하고 있었다(otpUseYn 만 추가). 상세 조회
+                     * (selectLoginPolicy)는 처음부터 같은 값을 채우고 있었으므로, 목록과 상세가
+                     * 같은 사실을 말하게 되는 것이기도 하다.
+                     */
                     LoginPolicyDto dto = LoginPolicyDto.builder()
                             .userId(res.getUserId())
                             .userNm(res.getUserNm())
                             .regYn(res.getRegYn())
+                            .ipAddr(res.getIpAddr())
+                            .dpcnPrmYn(res.getDpcnPrmYn())
+                            .lmtYn(res.getLmtYn())
+                            .bgngTm(res.getBgngTm())
+                            .endTm(res.getEndTm())
+                            .otpUseYn(res.getOtpUseYn())
                             .build();
                     return dto;
                 }).collect(Collectors.toList());

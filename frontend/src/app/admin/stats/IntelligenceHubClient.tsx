@@ -158,9 +158,9 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     enabled: activeTab === 'SURVEYS'
   });
 
-  const userStats = userQuery.data;
+  // 미수집 축이라 요약 카드는 값을 쓰지 않는다 — 조회는 차트/표가 계속 소비한다.
   const connectStats = connectQuery.data;
-  const dataUsage = dataUsageQuery.data;
+
   const surveys = surveyQuery.data;
 
   // 현재 탭이 실제로 그리는 시계열과 그 쿼리 상태 (로딩/에러 게이트의 단일 근거)
@@ -178,16 +178,24 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
    * 저장소 실측(2026-08-28): 이 탭들이 읽는 저장소에 save 호출이 저장소 전체에 0건이고
    * Flyway 시드에도 INSERT 가 없다.
    *   - USER_STATS   → userLogRepository.countByDate      (UserLog.create 호출자 0, save 0)
-   *   - CONTENT_STATS→ dtaUseStatsRepository.countByDate  (writer 0)
-   *   - DATA_USAGE   → dtaUseStatsRepository.countByDate  (writer 0 · CONTENT_STATS 와 같은 질의다)
+   *   - DATA_USAGE   → dtaUseStatsRepository.countByDate  (writer 0)
    *   - REPORTS      → reprtStatsRepository.countByDate   (writer 0)
-   * 반면 SYSTEM_STATS 가 읽는 loginLog 는 LogService 가 실제로 기록한다 — 그래서 이 탭만 값이 있다.
+   *
+   * 값이 있는 탭은 둘이다.
+   *   - SYSTEM_STATS → loginLog. LogService 가 실제로 기록한다.
+   *   - CONTENT_STATS→ **[2026-08-28] 미수집 목록에서 뺐다.** 종전에는 이 탭도
+   *     `dtaUseStatsRepository.countByDate` 를 불러 DATA_USAGE 와 **완전히 같은 질의**였다.
+   *     이제 `boardRepository.countPostsByDate` 로 게시글을 실제로 센다 — 게시글은 제품이
+   *     `createPost` 로 직접 쓰므로 writer 가 명백히 존재한다.
+   *     ⚠ "지금 그 표에 행이 있는가" 가 아니라 "쓰는 쪽이 있는가" 가 이 목록의 기준이다.
+   *     운영 DB 가 비어 있는 것은 '미수집' 이 아니라 '아직 글이 없음' 이고, 그건 기간을 바꾸면
+   *     달라질 수 있는 사실이라 '선택한 기간에 집계된 통계가 없습니다' 가 맞는 문구다.
    *
    * 이 상태에서 '선택한 기간에 집계된 통계가 없습니다' 라고 하면 **기간을 바꾸면 나온다는 뜻**이
    * 되어, 사용자가 기간만 계속 바꾸게 만든다. 수집 자체가 없다는 사실을 그대로 말한다.
    * (같은 규율의 선례: SearchClient '아직 제공되지 않습니다', observability '아직 연동되지 않았습니다')
    */
-  const UNINSTRUMENTED_TABS: readonly StatsTab[] = ['USER_STATS', 'CONTENT_STATS', 'DATA_USAGE', 'REPORTS'];
+  const UNINSTRUMENTED_TABS: readonly StatsTab[] = ['USER_STATS', 'DATA_USAGE', 'REPORTS'];
   const isUninstrumentedTab = UNINSTRUMENTED_TABS.includes(activeTab);
   const emptyChartMessage = isUninstrumentedTab
     ? '이 지표는 아직 수집되지 않습니다. 기간을 바꿔도 결과는 달라지지 않습니다.'
@@ -315,10 +323,18 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
             <HubMetricSkeleton />
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {/*
+                [2026-08-29] 미수집 축의 카드는 0을 측정값처럼 보여 주지 않는다.
+
+                같은 화면의 차트는 이 두 축을 이미 '미수집' 으로 고지하는데(UNINSTRUMENTED_TABS),
+                요약 카드만 합계 0을 숫자로 찍어 자기모순이었다. 사용자는 "활동이 0건" 으로
+                읽는다 — 실제로는 그 표에 쓰는 코드가 저장소에 없어 **아무도 기록하지 않는다**.
+                계측 원천(writer)이 생기면 그때 UNINSTRUMENTED_TABS 에서 빼고 값을 되살린다.
+              */}
               <StatSummaryCard
                 icon={<Activity size={24} />}
                 label="사용자 활동 집계"
-                value={userQuery.isError ? '—' : sumStatsCo(userStats).toLocaleString()}
+                value="미수집"
               />
               <StatSummaryCard
                 icon={<Monitor size={24} />}
@@ -329,7 +345,7 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
               <StatSummaryCard
                 icon={<Database size={24} />}
                 label="자료 이용 건수"
-                value={dataUsageQuery.isError ? '—' : sumStatsCo(dataUsage).toLocaleString()}
+                value="미수집"
               />
             </div>
           )}
