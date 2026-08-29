@@ -185,7 +185,20 @@ public class AttachmentIntegrityService {
             Map<String, Set<String>> known = knownNamesByDirectory(chunk, numeric);
             for (String directory : chunk) {
                 Set<String> expected = known.getOrDefault(directory, Set.of());
-                for (String file : listNames(GENERAL_ROOT + "/" + directory)) {
+                List<String> entries;
+                try {
+                    entries = listNames(GENERAL_ROOT + "/" + directory);
+                } catch (RuntimeException perDirectoryFailure) {
+                    // 스캔 도중 지워졌거나 권한이 없을 수 있다. 여기서 예외가 밖으로 나가면
+                    // **이미 끝난 정방향 결과까지 통째로 버려진다** — 진단 도구가 진단 대상
+                    // 때문에 죽는 것이다. 모르는 것으로 세고 계속 훑는다.
+                    undecidable++;
+                    if (samples.size() < SAMPLE_LIMIT) {
+                        samples.add("열거 불가(디렉터리): " + GENERAL_ROOT + "/" + directory);
+                    }
+                    continue;
+                }
+                for (String file : entries) {
                     filesChecked++;
                     if (!expected.contains(file)) {
                         candidates++;
@@ -243,10 +256,16 @@ public class AttachmentIntegrityService {
         }
     }
 
-    /** 어느 트리를 본 결과인지 남긴다 — 설정 기본값이 상대 경로라 작업 디렉터리에 따라 달라진다. */
+    /**
+     * <b>실제로 훑은 범위</b>를 남긴다 — 저장소 루트가 아니라 그 아래 {@code general/} 이다.
+     *
+     * <p>루트만 적으면 보고서가 훑지 않은 곳까지 훑었다고 말하는 셈이다. 저장 규약상 첨부는
+     * 전부 {@code general/} 아래에 놓이지만, 루트 직하의 파일은 이 census 가 보지 않는다.
+     * 설정 기본값이 상대 경로라 프로세스 작업 디렉터리에 따라 다른 트리를 보므로 절대 경로로 적는다.
+     */
     private String describeRoot() {
         try {
-            return fileStorageService.load("").toString();
+            return fileStorageService.load(GENERAL_ROOT).toString();
         } catch (RuntimeException unavailable) {
             return "(확인 불가)";
         }
