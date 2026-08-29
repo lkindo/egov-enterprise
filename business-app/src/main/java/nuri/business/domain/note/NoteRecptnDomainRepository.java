@@ -29,6 +29,16 @@ public interface NoteRecptnDomainRepository extends JpaRepository<NoteRecptn, Lo
     /** 특정 발신 건에 딸린 전체 수신 사본(수거 시 일괄 삭제 대상). */
     java.util.List<NoteRecptn> findByNoteDsptchNoteSndngSn(Long noteSndngSn);
 
+    /**
+     * 발신 건 여러 개의 수신자를 한 번에 가져온다.
+     *
+     * <p>[2026-08-29] 보낸 쪽지함이 '수신자' 열을 비워 두던 것을 채우기 위해 추가했다.
+     * 행마다 {@link #findByNoteDsptchNoteSndngSn} 을 부르면 페이지당 N+1 이 되므로,
+     * 페이지의 발신 일련번호를 모아 한 번만 조회한다. 삭제된 수신 사본은 제외한다.
+     */
+    java.util.List<NoteRecptn> findByNoteDsptchNoteSndngSnInAndDelYn(
+            java.util.List<Long> noteSndngSns, String delYn);
+
     /** 특정 쪽지(note)를 참조하는 수신 사본 수(info 물리삭제 안전성 판정용). */
     long countByNoteNoteSn(Long noteSn);
 

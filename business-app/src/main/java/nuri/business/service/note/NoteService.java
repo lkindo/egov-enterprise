@@ -8,6 +8,10 @@ import nuri.business.domain.note.NoteRecptnDomainRepository;
 import nuri.business.domain.note.NoteTrnsmit;
 import nuri.business.domain.note.NoteTrnsmitDomainRepository;
 import nuri.business.service.note.dto.NoteDto;
+import nuri.business.service.note.dto.NoteRecipientDto;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import nuri.foundation.core.exception.BusinessException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,10 +37,44 @@ public class NoteService {
                 .map(this::convertToDto);
     }
 
+    /**
+     * 보낸 쪽지함.
+     *
+     * <p>[2026-08-29] 수신자를 함께 싣는다. 종전에는 {@code convertToDto(NoteTrnsmit)} 이
+     * 수신자 정보를 담지 않아 화면의 '수신자' 열이 **모든 행에서 비어 있었다** — 발신자가
+     * 누구에게 보냈는지 목록에서 알 수 없었다.
+     *
+     * <p>행마다 조회하면 페이지당 N+1 이므로 페이지의 발신 일련번호를 모아 한 번만 조회한다.
+     * 수신자는 발신자 본인의 쪽지에 속한 값이라 추가 인가 판단이 필요 없다(이 메서드는 이미
+     * sndrId = userId 로 스코핑된다).
+     */
     public Page<NoteDto> getSentNotes(String userId, String searchWrd, Pageable pageable) {
-        return noteTrnsmitRepository
-                .searchNoteTrnsmits(null, searchWrd, userId, Objects.requireNonNull(pageable))
-                .map(this::convertToDto);
+        Page<NoteTrnsmit> page = noteTrnsmitRepository
+                .searchNoteTrnsmits(null, searchWrd, userId, Objects.requireNonNull(pageable));
+        if (page.isEmpty()) {
+            return page.map(this::convertToDto);
+        }
+
+        List<Long> sndngSns = page.getContent().stream()
+                .map(NoteTrnsmit::getNoteSndngSn)
+                .filter(Objects::nonNull)
+                .toList();
+        Map<Long, List<NoteRecipientDto>> bySndngSn = noteRecptnRepository
+                .findByNoteDsptchNoteSndngSnInAndDelYn(sndngSns, "N").stream()
+                .filter(r -> r.getNoteDsptch() != null && r.getNoteDsptch().getNoteSndngSn() != null)
+                .collect(Collectors.groupingBy(
+                        r -> r.getNoteDsptch().getNoteSndngSn(),
+                        Collectors.mapping(r -> NoteRecipientDto.builder()
+                                .noteRcptnSn(r.getNoteRcptnSn())
+                                .rcverId(r.getRcvrId())
+                                .recptnSe(r.getRcptnSeCd())
+                                .build(), Collectors.toList())));
+
+        return page.map(entity -> {
+            NoteDto dto = convertToDto(entity);
+            dto.setRecipients(bySndngSn.getOrDefault(entity.getNoteSndngSn(), List.of()));
+            return dto;
+        });
     }
 
     public NoteDto getNoteDetail(Long noteSn, String type, Long relationSn, String currentUserId) {
