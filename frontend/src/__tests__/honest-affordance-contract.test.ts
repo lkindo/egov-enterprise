@@ -470,6 +470,41 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     expect(body).not.toContain('deptNm.containsIgnoreCase');
   });
 
+  /**
+   * 관리자 홈의 감사 타임라인이 하지 않는 일을 알리지 않는다.
+   *
+   * 특히 암호화 축은 **사실과 달랐다** — 화면은 'AES-256 (NIST)' 라고 했지만 이 제품의
+   * 양방향 암호화는 ARIA 다. 관리자가 규제 대응 근거로 읽을 수 있는 문구라, 문구만
+   * 고치면 다음 사람이 되돌린다. 실제 구현과 **함께** 고정한다.
+   */
+  it('감사 타임라인이 죽은 액션과 거짓 시스템 상태를 두지 않는다', () => {
+    const timeline = stripComments(
+      readRepo('frontend/src/app/components/ui/visual-audit-timeline.tsx'),
+    );
+    expect(timeline, '타임라인을 찾지 못했다 — 계약이 vacuous 하다').toContain('VisualAuditTimeline');
+
+    // 되돌릴 API 가 없는 파괴적 어포던스.
+    expect(timeline).not.toContain('스냅샷 롤백');
+    expect(timeline).not.toContain('시각화 검증');
+    expect(timeline).not.toContain('분석 리포트 생성');
+    expect(timeline).not.toContain('필터 설정');
+    // 계측 원천이 없는 시스템 상태.
+    expect(timeline).not.toContain('마스터 저장소');
+    expect(timeline).not.toContain('무결성 검증 완료');
+    // 총계가 아닌 값을 총계라 부르지 않는다(대시보드가 slice(0, 5) 한 최근 5건이다).
+    expect(timeline).not.toContain('Total Audit Records');
+
+    // 암호화 표기는 실제 구현과 함께 본다.
+    expect(timeline).not.toContain('AES-256');
+    const crypto = stripComments(
+      readRepo('foundation/src/main/java/nuri/foundation/core/config/ProjectCryptoConfig.java'),
+    );
+    expect(
+      crypto,
+      '암호화 구현이 ARIA 가 아니게 됐다면 화면 표기 판단도 함께 갱신해야 한다',
+    ).toContain('EgovARIACryptoServiceImpl');
+  });
+
   it('알림 드로어에 갈 곳 없는 버튼과 지어낸 시스템 이름을 두지 않는다', () => {
     const drawer = stripComments(
       readRepo('frontend/src/app/components/ui/app-notification-drawer.tsx'),

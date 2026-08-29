@@ -10,14 +10,11 @@ import {
  ShieldCheck,
  RotateCcw,
  Search,
- Filter,
  ChevronDown,
  ChevronUp,
- Cpu,
- Monitor
+ Cpu
 } from 'lucide-react';
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
 
 export interface AuditLog {
  id: string;
@@ -40,7 +37,7 @@ interface VisualAuditTimelineProps {
  title?: string;
 }
 
-export function VisualAuditTimeline({ logs, className, title = "Security Audit Intelligence" }: VisualAuditTimelineProps) {
+export function VisualAuditTimeline({ logs, className, title = "보안 감사 이력" }: VisualAuditTimelineProps) {
   const [expandedLog, setExpandedLog] = useState<string | null>(logs?.[0]?.id || null);
   const [filter, setFilter] = useState<string>('');
 
@@ -97,7 +94,11 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  onChange={(e) => setFilter(e.target.value)}
  />
  </div>
-  <Button variant="outline" size="icon" className="rounded-lg border-2 h-11 w-11 hover:text-primary hover:bg-primary/5" aria-label="필터 설정"><Filter size={18} /></Button>
+  {/*
+    [2026-08-29] '필터 설정' 아이콘 버튼을 걷었다. onClick 도, 감싸는 Popover/DropdownMenu
+    트리거도 없어 눌러도 아무 일이 없었다. 이 컴포넌트가 가진 조건은 위 검색 입력이 쓰는
+    filter 하나뿐이라 "더 좁힐 조건" 자체가 없다. 조건이 생기면 그때 되살린다.
+  */}
  </div>
  </div>
 
@@ -190,16 +191,15 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
  ))}
  </div>
 
- <div className="flex justify-end gap-3 pt-4 border-t border-primary/5">
- <Button variant="ghost" size="sm" className="rounded-lg font-bold h-10 px-6 gap-2 text-foreground hover:bg-rose-50 hover:text-rose-700">
- 분석 리포트 생성
- </Button>
-  <Button variant="outline" size="sm" className="rounded-lg font-bold h-10 px-6 gap-2 border-2 hover:text-primary hover:bg-primary/5">
-  <Monitor size={16} /> 시각화 검증 </Button>
- <Button size="sm" className="rounded-lg font-bold h-10 px-8 gap-2 bg-rose-500 hover:bg-rose-600 text-white shadow-lg shadow-rose-200">
- <RotateCcw size={16} /> 스냅샷 롤백
- </Button>
- </div>
+ {/*
+   [2026-08-29] 펼친 로그 아래의 액션 3개('분석 리포트 생성'·'시각화 검증'·'스냅샷 롤백')를
+   걷었다. 셋 다 onClick 이 전혀 없어 눌러도 아무 일이 없었다.
+
+   특히 '스냅샷 롤백' 은 빨간 강조로 파괴적 동작을 예고했다. 감사 이력을 되돌리는 API 는
+   저장소에 없다 — 이 화면이 읽는 것은 tb_sys_log 조회 결과이고 롤백 개념 자체가 없다.
+   관리자가 눌러 보고 "롤백이 됐나?" 를 판단할 수 없는 버튼이 가장 위험하다.
+   되살리려면 대상 기능이 먼저 있어야 하고, 롤백은 파괴적이라 사용자 승인 경계다.
+ */}
  </div>
  )}
  </div>
@@ -209,18 +209,23 @@ export function VisualAuditTimeline({ logs, className, title = "Security Audit I
 
  {/* Footer System Stats */}
  <div className="flex flex-col md:flex-row items-center justify-between pt-6 border-t border-primary/5">
- <div className="flex items-center gap-6">
- <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-full bg-emerald-500" />
-   <span className="text-xs font-bold text-foreground tracking-tight">마스터 저장소 동기화됨</span>
- </div>
- <div className="flex items-center gap-2">
- <div className="w-2 h-2 rounded-full bg-hub-blue animate-pulse" />
-   <span className="text-xs font-bold text-foreground tracking-tight">암호화 알고리즘 AES-256 (NIST)</span>
- </div>
- </div>
+ {/*
+   [2026-08-29] 하단의 '시스템 상태' 두 줄을 걷었다.
+   - '마스터 저장소 동기화됨': 그런 저장소도 동기화 상태를 계측하는 곳도 저장소에 없다.
+     초록 점까지 붙어 정상 상태를 알리는 표시로 읽혔다.
+   - '암호화 알고리즘 AES-256 (NIST)': **사실과 다르다.** 이 제품의 양방향 암호화는 ARIA 다
+     (ProjectCryptoConfig 가 EgovARIACryptoServiceImpl 을 빈으로 등록하고 CryptoUtil 이
+     그것으로 암복호화한다). 관리자가 규제 대응 근거로 읽을 수 있는 문구라 특히 위험하다.
+     알고리즘을 화면에 적으려면 설정에서 파생해야 하고, 고정 문자열로 둘 값이 아니다.
+ */}
+ <div />
  <p className="text-xs font-bold text-foreground tracking-tight opacity-100 mt-4 md:mt-0">
- Total Audit Records: {logs?.length || 0} 데이터 무결성 검증 완료
+ {/*
+   'Total Audit Records' 도 총계가 아니었다 — 이 컴포넌트가 받는 logs 는 대시보드가
+   slice(0, 5) 한 최근 5건이다. '데이터 무결성 검증 완료' 역시 그런 검증을 수행하는 코드가
+   없다. 세는 대상을 그대로 말한다.
+ */}
+ 최근 감사 이력 {logs?.length || 0}건
  </p>
  </div>
  </div>

@@ -105,7 +105,12 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   없어 눌러도 아무 일이 없는데 hover 시 빨갛게 변해 파괴적 동작을 예고했다(서버에 일괄 삭제
 //   경로가 없다). 버튼과 함께 rose 리터럴 2건(hover:text-rose-500·hover:border-rose-200)이
 //   사라졌다. 신규 status 리터럴 0건(사전 red 실측: 538 != 540 — 게이트가 직접 538 로 내리라고 지시).
-const BASELINE = 538;
+// [하향 래칫 2026-08-29(3)] 관리자 홈 감사 타임라인의 죽은 액션 3개('분석 리포트 생성'·
+//   '시각화 검증'·'스냅샷 롤백')와 거짓 시스템 상태 2줄 제거 — 넷 다 onClick 이 없었고,
+//   특히 빨간 '스냅샷 롤백' 은 되돌릴 API 가 없는데 파괴적 동작을 예고했다. 함께 사라진
+//   status 리터럴 6건(rose 계열 4·emerald 1·초록 점 1). 신규 status 리터럴 0건
+//   (사전 red 실측: 532 != 538 — 게이트가 직접 532 로 내리라고 지시).
+const BASELINE = 532;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;
