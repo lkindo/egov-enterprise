@@ -483,6 +483,41 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 집행을 켜면 이미 기간이 지난 기존 글이 예고 없이 사라지므로 그 판단은 제품 결정이다.
    * 술어에 두 필드가 들어오는 순간 이 계약이 red 가 되어 문구를 되살릴 시점을 알려 준다.
    */
+  /**
+   * 여론조사 참여 화면 — 조건을 보지 않는 상태 표시와 실패를 삼킨 빈 상태.
+   *
+   * 이 화면에는 상태 판정 SSOT(`getPollStatus`·`isPollActive`)가 이미 있는데 하단 배지만
+   * 그것을 무시하고 상수를 찍었다. 상단이 '종료' 를 표시하는 순간에도 하단은 지금 참여할
+   * 수 있다고 말했다.
+   */
+  it('여론조사 카드가 조건 없는 상태 표시와 실패를 삼킨 빈 상태를 두지 않는다', () => {
+    const client = stripComments(
+      readSrc('app/admin/survey/polls/participate/OnlinePollParticipateClient.tsx'),
+    );
+    expect(client, '참여 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('getPollStatus');
+
+    // 조건을 보지 않는 고정 배지.
+    expect(client).not.toContain('Ready for Interaction');
+    // 영문 의사코드(ADR-0002 한국어 우선).
+    expect(client).not.toContain('Syncing Matrix Data');
+    expect(client).not.toContain('SELECT YOUR OPTION');
+    expect(client).not.toContain('AGGREGATED METRICS');
+
+    // 조회 실패를 '없음' 으로 그리지 않는다 — 실패 상태를 남기고, 빈 상태보다 먼저 판정한다.
+    expect(client, '조회 실패 상태가 사라졌다 — 실패가 다시 빈 목록으로 위장한다').toContain('setLoadError');
+    // ⚠ 빈 상태의 **본문 문구**와 비교하면 안 된다. 조건을 뒤로 밀어도 문구는 여전히 뒤에
+    //   있어 통과한다(이 계약을 만들며 red 실측 중 실제로 그렇게 새어 나갔다).
+    //   두 분기의 **조건끼리** 비교한다.
+    const errorAt = client.indexOf('loadError ?');
+    const emptyAt = client.indexOf('(polls || []).length === 0');
+    expect(errorAt, '오류 분기를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    expect(emptyAt, '빈 상태 분기를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    expect(
+      errorAt,
+      '오류 분기가 빈 상태 뒤로 밀렸다 — 실패 시 목록이 비므로 오류 화면에 도달하지 못한다.',
+    ).toBeLessThan(emptyAt);
+  });
+
   it('게시 기간을 집행하지 않으면서 노출을 제어한다고 말하지 않는다', () => {
     const write = stripComments(
       readSrc('app/admin/community/boards/write/CommunityBoardsWriteClient.tsx'),
