@@ -540,6 +540,37 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 15건이면 100 에 붙어 멈춘다), '최다 기여자' 는 서버가 없을 때 "System" 을 지어냈다.
    * 100 점 만점처럼 보이는 숫자와 사람 이름처럼 보이는 문자열은 관리자가 판단 근거로 쓴다.
    */
+  /**
+   * 저장소에 없는 시스템 이름을 화면에 쓰지 않는다.
+   *
+   * 이 부류는 단순한 영문 표기 문제가 아니다(ADR-0002 는 별개 축이다). 'Security Fabric',
+   * 'Sentinel Topology Stream', 'Topology Stream', '보안 거버넌스 엔진' 은 **존재하지 않는
+   * 구성요소**이고, 맥동 애니메이션·방패 아이콘과 함께 놓여 무언가 돌고 있다는 인상을 준다.
+   * 관리자는 그 이름을 근거로 "그 시스템이 있다"고 믿고, 장애를 그쪽에서 찾는다.
+   *
+   * 'ENFORCE_MFA_AUTHENTICATION' 은 제품 어디에도 없는 식별자인데 한국어 라벨 밑에 초록색으로
+   * 붙어 이미 적용된 설정 이름처럼 읽혔다. 'Core Subject Header'·'Intelligent Payload' 는
+   * 사용자가 채우는 입력 라벨 자리에 놓인 의사코드다.
+   */
+  it('없는 시스템 이름과 의사코드 라벨을 화면에 쓰지 않는다', () => {
+    const cases: Array<[string, string[]]> = [
+      ['app/admin/security/authority/page.tsx', ['Security Fabric']],
+      ['app/components/ui/topology-map.tsx', ['Sentinel Topology Stream']],
+      ['app/admin/system/monitoring/MonitoringHubClient.tsx', ['Initializing Topology Stream']],
+      ['app/admin/security/login-policy/LoginPolicyAdminClient.tsx', ['ENFORCE_MFA_AUTHENTICATION']],
+      ['app/approvals/draft/ApprovalDraftHubClient.tsx', [
+        'Core Subject Header', 'Intelligent Payload', 'Draft Center', 'Document Entry',
+      ]],
+    ];
+    for (const [relative, banned] of cases) {
+      const source = stripComments(readSrc(relative));
+      expect(source, `${relative} 을 읽지 못했다 — 계약이 vacuous 하다`).not.toHaveLength(0);
+      for (const term of banned) {
+        expect(source, `${relative} 에 '${term}' 가 남아 있다`).not.toContain(term);
+      }
+    }
+  });
+
   it('지식 허브가 지어낸 점수와 기여자를 보여 주지 않는다', () => {
     const client = stripComments(readSrc('app/admin/help/KnowledgeHubClient.tsx'));
     expect(client, '지식 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('StatsCard');
@@ -716,6 +747,9 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     // 계측 원천이 없는 시스템 상태.
     expect(timeline).not.toContain('마스터 저장소');
     expect(timeline).not.toContain('무결성 검증 완료');
+    // 헤더 배지도 같은 부류다 — 그런 엔진도, 그런 모니터링도 저장소에 없다.
+    expect(timeline).not.toContain('보안 거버넌스 엔진');
+    expect(timeline).not.toContain('무결성 모니터링');
     // 총계가 아닌 값을 총계라 부르지 않는다(대시보드가 slice(0, 5) 한 최근 5건이다).
     expect(timeline).not.toContain('Total Audit Records');
 

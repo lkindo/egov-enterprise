@@ -12,7 +12,7 @@ export default async function SecurityAuthorityHubPage() {
   const authoritiesPromise = authorAdminService.getAuthorList({ pageIndex: 1, searchKeyword: '' }, axiosConfig);
 
   return (
-    <Suspense fallback={<div className="p-24 text-center font-mono text-xs tracking-widest uppercase animate-pulse text-hub-indigo"><h1 className="sr-only">권한 관리 아키텍처를 불러오는 중</h1>Loading Security Fabric Architecture...</div>}>
+    <Suspense fallback={<div className="p-24 text-center text-xs tracking-tight animate-pulse text-hub-indigo"><h1 className="sr-only">권한 관리를 불러오는 중</h1>권한 관리를 불러오는 중입니다…</div>}>
       <SecurityHubClient authoritiesPromise={authoritiesPromise} />
     </Suspense>
   );

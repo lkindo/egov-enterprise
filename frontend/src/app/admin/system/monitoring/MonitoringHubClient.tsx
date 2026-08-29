@@ -56,7 +56,7 @@ const TopologyMap = dynamic(() => import('@/app/components/ui/topology-map').the
   loading: () => (
     <div className="w-full h-[700px] flex flex-col items-center justify-center bg-surface-inverse rounded-lg space-y-6">
       <div className="w-16 h-11 border-4 border-primary/20 border-t-primary rounded-full animate-spin" />
-      <p className="text-xs font-bold tracking-tight text-white/30 animate-pulse">Initializing Topology Stream...</p>
+      <p className="text-xs font-bold tracking-tight text-white/30 animate-pulse">구성도를 불러오는 중입니다…</p>
     </div>
   )
 });

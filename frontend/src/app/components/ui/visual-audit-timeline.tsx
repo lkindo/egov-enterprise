@@ -73,13 +73,12 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
  </div>
  <div>
  <h2 className="text-2xl font-bold tracking-tighter text-foreground ">{title}</h2>
- <div className="flex items-center gap-3 mt-1">
- <div className="flex items-center gap-1.5 text-xs font-bold text-success-emphasis tracking-tight">
-   <ShieldCheck size={12} /> 보안 거버넌스 엔진 활성
- </div>
- <div className="h-3 w-px bg-muted" />
-   <span className="text-xs font-bold text-foreground tracking-tight leading-none opacity-100">실시간 데이터 무결성 모니터링</span>
- </div>
+ {/*
+   [2026-08-29] 헤더의 상태 배지 두 줄을 걷었다. '보안 거버넌스 엔진' 이라는 구성요소도,
+   '실시간 데이터 무결성 모니터링' 이라는 동작도 저장소에 없다. 방패 아이콘과 초록색까지
+   붙어 보안 장치가 돌고 있다는 뜻으로 읽혔지만, 이 컴포넌트가 하는 일은 tb_sys_log
+   조회 결과를 시간순으로 그리는 것뿐이다.
+ */}
  </div>
  </div>
 

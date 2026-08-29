@@ -115,7 +115,11 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //   제목에 '보안' 이 없는 긴급 알림은 언제나 'low' 로 보였다. 열과 함께 rose 리터럴 2건
 //   (text-rose-600·text-rose-400)이 사라졌다. 신규 status 리터럴 0건
 //   (사전 red 실측: 530 != 532 — 게이트가 직접 530 으로 내리라고 지시).
-const BASELINE = 530;
+// [하향 래칫 2026-08-29(5)] 로그인 정책의 'ENFORCE_MFA_AUTHENTICATION' 문구 제거 — 제품
+//   어디에도 없는 식별자를 한국어 라벨 밑에 초록색으로 붙여 두어 이미 적용된 설정 이름처럼
+//   읽혔다. 문구와 함께 emerald 리터럴 1건(text-emerald-600)이 사라졌다. 신규 status 리터럴 0건
+//   (사전 red 실측: 529 != 530 — 게이트가 직접 529 로 내리라고 지시).
+const BASELINE = 529;
 
 // 게이트 무결성 하한 — 기존 가드와 동일 축(스캔 파손 시 vacuous 통과 차단).
 const MIN_SCANNED_FILES = 50;

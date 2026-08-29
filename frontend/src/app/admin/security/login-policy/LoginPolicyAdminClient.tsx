@@ -394,7 +394,11 @@ export default function LoginPolicyAdminClient() {
                       <FormItem className="flex items-center justify-between space-y-0">
                         <div className="space-y-1">
                           <FormLabel className="text-sm font-bold tracking-tight">2단계 인증 (OTP) 필수 적용</FormLabel>
-                          <p className="text-xs font-bold text-emerald-600 tracking-widest uppercase">ENFORCE_MFA_AUTHENTICATION</p>
+                          {/*
+                            [2026-08-29] 라벨 밑의 'ENFORCE_MFA_AUTHENTICATION' 을 걷었다.
+                            제품 어디에도 없는 식별자를 초록색으로 붙여 두어 이미 적용된 설정
+                            이름처럼 읽혔다(바로 위 한국어 라벨과 중복되기도 한다).
+                          */}
                         </div>
                         <FormControl>
                           <Switch 
