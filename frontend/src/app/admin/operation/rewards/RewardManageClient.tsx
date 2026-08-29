@@ -65,7 +65,14 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
     setIsModalOpen(false);
   };
 
-  const { data, isLoading } = useQuery({
+  /*
+    [2026-08-29] 조회 실패를 '없음' 으로 그리지 않는다.
+    종전에는 useQuery 에서 data·isLoading 만 꺼내 써서, 조회가 실패하면 rewards 가 []가 되고
+    표는 '등록된 포상 기록이 없습니다.', 셸 툴바는 '총 0건' 을 보여 줬다. 실패했다는 사실도
+    다시 시도할 경로도 화면에 없었다 — 사용자는 기록이 정말 없다고 결론 내린다.
+    StandardDataTable 은 error·onRetry 를 이미 지원한다(standard-data-table.tsx:102-103).
+  */
+  const { data, isLoading, isError, error: listError, refetch } = useQuery({
     queryKey: ['admin-rewards', searchKeyword, page, size],
     // 서버 계약: name(포상명 부분일치) + Spring Data Pageable(page 는 0-based)
     queryFn: () => operationAdminService.getRewardList({
@@ -158,13 +165,14 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
     //   열이 존재하는 것 자체가 없는 절차를 약속한다. 승인 기능을 만들 때 함께 되살린다.
   ];
 
+  // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음' 이다 — 숫자를 찍으면 빈 결과와 구분되지 않는다.
   return (
     <WorkListPage
       title="상훈 및 포상 관리 체계"
       description="조직 내 성과 및 공헌에 대한 포상 기록을 조회·등록합니다."
       breadcrumbItems={[{ label: '운영지원' }, { label: '상훈관리' }, { label: '포상관리' }]}
       filterStateKey="operation-rewards"
-      totalCount={totalItems}
+      totalCount={isError ? undefined : totalItems}
       actions={
         <>
           <Button
@@ -196,6 +204,8 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
         columns={columns}
         data={rewards}
         loading={isLoading}
+        error={isError ? listError : null}
+        onRetry={() => { void refetch(); }}
         emptyMessage={emptyResultMessage(searchKeyword, '등록된 포상 기록이 없습니다.')}
         pagination={{
           currentPage: page,

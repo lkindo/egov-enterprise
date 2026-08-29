@@ -98,7 +98,12 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                   onClick={onMarkAllRead}
                   className="text-xs font-bold tracking-widest uppercase hover:text-primary h-8 px-2"
                 >
-                  모두 읽음
+                  {/*
+                    [2026-08-29] '모두 읽음' → '불러온 알림 읽음'.
+                    이 동작은 드로어에 불러온 페이지의 미읽음만 처리한다(use-notifications
+                    markAllAsRead). 서버 전체를 읽음 처리하는 경로는 아직 없다.
+                  */}
+                  불러온 알림 읽음
                 </Button>
               )}
               <button 

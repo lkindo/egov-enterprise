@@ -263,7 +263,7 @@ export default function PolicyAdminClient() {
 
  <DialogFooter className="p-8 bg-muted border-t border-border/50 flex items-center justify-between">
  <div className="text-xs text-muted-foreground font-bold uppercase tracking-wider">
- * 수정 즉시 프론트엔드 인터페이스 및 정책 페이지에 반영됩니다.
+ * 저장하면 정책 본문이 갱신됩니다. 이 본문을 보여 주는 화면은 관리자 전용 정책 열람(/help/policies)뿐입니다.
  </div>
  <div className="flex gap-3">
  <Button variant="ghost" type="button" disabled={form.formState.isSubmitting} onClick={() => setIsEditModalOpen(false)} className="rounded-lg h-12 px-8 font-bold text-xs tracking-widest uppercase">취소</Button>

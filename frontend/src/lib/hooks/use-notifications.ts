@@ -183,6 +183,20 @@ export function useNotifications() {
     }
   };
 
+  /**
+   * 화면에 불러온 알림을 읽음 처리한다.
+   *
+   * ⚠ [2026-08-29] '모두' 가 아니다. `notifications` 는 `GET /notifications` 첫 응답이고
+   * 페이지 파라미터를 주지 않으므로 서버 기본 페이지 크기만큼만 담긴다. 반면 배지의
+   * `unreadCount` 는 `/notifications/unread-count` 로 받는 **서버 전체** 미읽음 수다.
+   *
+   * 종전에는 그 일부만 처리하고 `setUnreadCount(0)` 으로 배지를 덮은 뒤
+   * '모든 알림을 읽음 처리했습니다.' 를 띄웠다 — **미읽음이 남아 있는데 화면은 0 이라고
+   * 말했다.** 헤더 배지가 사라지므로 사용자는 확인할 방법도 없다.
+   *
+   * 진짜 일괄 읽음은 서버 신설(@Modifying UPDATE ... WHERE rcvrId AND readYn='N')이 필요하다.
+   * 그때까지는 처리한 범위를 그대로 말하고, 배지는 0 으로 덮지 않고 처리한 만큼만 뺀다.
+   */
   const markAllAsRead = async () => {
     const unreadIds = notifications.filter(n => n.readYn === 'N').map(n => n.notiSn);
     if (unreadIds.length === 0) return;
@@ -190,8 +204,8 @@ export function useNotifications() {
     try {
       await Promise.all(unreadIds.map(id => client.post(`/notifications/${id}/read`)));
       setNotifications(prev => prev.map(n => ({ ...n, readYn: 'Y' })));
-      setUnreadCount(0);
-      toast('모든 알림을 읽음 처리했습니다.', 'success');
+      setUnreadCount(prev => Math.max(0, prev - unreadIds.length));
+      toast(`불러온 알림 ${unreadIds.length}건을 읽음 처리했습니다.`, 'success');
     } catch {
       // [2026-08-04] 종전에는 조용히 재조회만 했다. 사용자는 '모두 읽음' 을 눌렀는데
       //   아무 반응이 없고 배지가 그대로라 버튼이 고장 난 것으로 읽는다.
