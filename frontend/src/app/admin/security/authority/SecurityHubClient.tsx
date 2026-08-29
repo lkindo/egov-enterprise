@@ -259,7 +259,23 @@ export default function SecurityHubClient({
   useEffect(() => {
     if (usersData?.list) {
       const list = Array.isArray(usersData.list) ? usersData.list : [];
-      const registeredUsers = list.filter(u => u?.regYn === 'Y').map(u => u?.scrtyDcsnTrgtId);
+      /*
+       * [2026-08-29] `regYn` 은 "선택한 역할을 가졌다" 가 아니라 **"아무 권한이나 있다"** 다.
+       * 서버 질의(UserAuthorityRepositoryImpl:42)의 left join 에 authrtId 조건이 없고,
+       * regYn 은 join 행 존재 여부로만 계산된다. 게다가 tb_user_authrt_map 의 PK 는
+       * scrty_dcsn_trgt_id 단일이라 사용자당 권한 행은 하나다 — 즉 다른 역할을 가진 사용자가
+       * 이 패널에서 체크된 것처럼 보였다.
+       *
+       * 그 표시는 그대로 저장의 입력이 된다. 체크를 남기면 upsert 로 그 사용자의 역할이 선택
+       * 역할로 바뀌고(관리자 강등), 체크를 풀면 delete 로 원래 역할이 회수된다. 화면이 틀린
+       * 것을 보여 준 뒤 그 화면을 근거로 권한을 바꾸는 경로였다.
+       *
+       * 응답에 authrtId 가 이미 있으므로(생성 타입 AuthorGroupProjection) 그 값으로 판정한다.
+       * 서버 계약을 바꾸지 않고 표시 의미만 실제와 맞춘다 — 인가 자체는 넓어지지 않는다.
+       */
+      const registeredUsers = list
+        .filter(u => u?.regYn === 'Y' && u?.authrtId === selectedAuthorCode)
+        .map(u => u?.scrtyDcsnTrgtId);
       setTempUserMappings(new Set(registeredUsers));
     }
   }, [usersData, selectedAuthorCode]);
@@ -321,12 +337,18 @@ export default function SecurityHubClient({
   };
 
   /**
-   * 현재 페이지에서 서버가 '부여됨'으로 내려준 사용자 목록.
+   * 현재 페이지에서 **선택한 역할을** 이미 가진 사용자 목록.
    * 회수(delete) 대상 계산의 기준선이며, 페이지 단위로만 판단해 다른 페이지의 할당은 건드리지 않는다.
+   *
+   * <p>[2026-08-29] 종전에는 `regYn === 'Y'` 만 봤는데 그 값은 "아무 권한이나 있다" 를 뜻한다
+   * (서버 join 에 authrtId 조건 없음). 그래서 **다른 역할을 가진 사용자가 회수 대상**이 됐고,
+   * 체크를 풀면 그 사용자의 원래 역할이 삭제됐다. 선택 역할 보유자만 기준선에 넣는다.
    */
   const grantedUserIdsOnPage = useMemo(
-    () => users.filter(u => u?.regYn === 'Y').map(u => u.scrtyDcsnTrgtId),
-    [users]
+    () => users
+      .filter(u => u?.regYn === 'Y' && u?.authrtId === selectedAuthorCode)
+      .map(u => u.scrtyDcsnTrgtId),
+    [users, selectedAuthorCode]
   );
 
   /** 체크 해제된 기존 부여자 = 회수 대상. */
@@ -912,7 +934,7 @@ export default function SecurityHubClient({
             <div className="col-span-12 lg:col-span-4 space-y-8 h-full">
               <HubSectionCard
                 title="사용자 할당"
-                description="선택한 역할에 할당된 개별 식별자들의 실시간 할당 상태입니다."
+                description="선택한 역할을 가진 사용자에 체크가 표시됩니다. 저장해야 반영됩니다."
                 icon={Users}
                 action={
                   <Tooltip>
@@ -954,7 +976,7 @@ export default function SecurityHubClient({
                           </div>
                           <div className="space-y-2">
                             <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">역할을 선택하세요</h4>
-                            <p className="text-xs font-bold text-slate-200 tracking-tight leading-relaxed">보안 역할을 선택하여 식별자 프로브를 활성화하십시오</p>
+                            <p className="text-xs font-bold text-slate-200 tracking-tight leading-relaxed">왼쪽 목록에서 역할을 선택하면 그 역할의 사용자 할당을 볼 수 있습니다</p>
                           </div>
                         </motion.div>
                       ) : (
