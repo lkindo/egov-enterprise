@@ -175,7 +175,18 @@ export default function NotePage() {
             <div className="w-7 h-7 rounded-lg bg-muted flex items-center justify-center text-muted-foreground">
                 <User size={14} />
             </div>
-            <span className="text-sm font-bold text-muted-foreground">{tab === 'received' ? item.dsptchUserId : item.rcverId}</span>
+            {/*
+              [2026-08-29] 보낸 쪽지함의 '수신자' 열이 비어 있던 것을 채운다.
+              발신 DTO 변환이 rcverId 를 설정하지 않아 모든 행이 빈 칸이었다 — 발신자가
+              누구에게 보냈는지 목록에서 알 수 없었다. 한 쪽지에 수신자가 여럿일 수 있으므로
+              (NoteRecptn 다건) 이름 하나가 아니라 인원수로 말한다. 서버는 페이지 단위 배치
+              조회로 recipients 를 채운다(행마다 조회하면 N+1).
+            */}
+            <span className="text-sm font-bold text-muted-foreground">
+              {tab === 'received'
+                ? item.dsptchUserId
+                : (item.recipients?.length ? `${item.recipients.length}명` : '-')}
+            </span>
         </div>
       )
     },

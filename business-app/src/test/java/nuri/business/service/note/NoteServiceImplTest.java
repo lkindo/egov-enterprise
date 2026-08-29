@@ -61,11 +61,32 @@ class NoteServiceImplTest {
 
         given(noteTrnsmitRepository.searchNoteTrnsmits(any(), eq(searchWrd), eq(userId), eq(pageable))).willReturn(page);
 
+        /*
+         * [2026-08-29] 수신자를 함께 싣는지 확인한다.
+         *
+         * 종전에는 convertToDto(NoteTrnsmit) 이 수신자 정보를 담지 않아 보낸 쪽지함의
+         * '수신자' 열이 **모든 행에서 비어 있었다** — 발신자가 누구에게 보냈는지 목록에서
+         * 알 수 없었다. 행마다 조회하면 페이지당 N+1 이므로 페이지의 발신 일련번호를 모아
+         * 한 번만 조회한다(그 배치 호출이 일어나는지도 함께 고정한다).
+         */
+        NoteTrnsmit dsptch = NoteTrnsmit.builder().noteSndngSn(1L).build();
+        given(noteRecptnRepository.findByNoteDsptchNoteSndngSnInAndDelYn(List.of(1L), "N"))
+                .willReturn(List.of(
+                        NoteRecptn.builder().noteRcptnSn(11L).noteDsptch(dsptch).rcvrId("rcv1").build(),
+                        NoteRecptn.builder().noteRcptnSn(12L).noteDsptch(dsptch).rcvrId("rcv2").build()));
+
         // when
         Page<NoteDto> result = noteService.getSentNotes(userId, searchWrd, pageable);
 
         // then
         assertThat(result.getContent()).hasSize(1);
+        assertThat(result.getContent().get(0).getRecipients())
+                .as("수신자가 비면 발신함의 '수신자' 열이 다시 빈 칸이 된다")
+                .hasSize(2)
+                .extracting(r -> r.getRcverId())
+                .containsExactlyInAnyOrder("rcv1", "rcv2");
+        // 행 단위 조회로 되돌아가면(N+1) 이 단언이 잡는다.
+        verify(noteRecptnRepository, never()).findByNoteDsptchNoteSndngSn(any());
     }
 
     @Test
