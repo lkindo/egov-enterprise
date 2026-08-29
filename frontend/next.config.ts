@@ -80,8 +80,8 @@ const nextConfig = {
           //   이 헤더가 없으면 다른 출처가 우리 응답을 <img>/<script> 등으로 끌어가 담을 수 있고,
           //   그것이 Spectre 계열 사이드채널과 XS-Leaks 의 전제가 된다.
           //   `same-origin` 을 고른 이유: 이 앱은 정적 자산까지 전부 동일 출처에서 제공한다
-          //   (CSP 의 `default-src 'self'`·`font-src 'self'` 와 정합. 외부 출처는 img-src 의
-          //   images.unsplash.com 하나뿐인데 그건 **우리가 가져오는** 방향이라 CORP 와 무관하다).
+          //   (CSP 의 `default-src 'self'`·`img-src 'self'`·`font-src 'self'` 와 정합.
+          //   2026-08-29 마지막 외부 출처였던 img-src 의 images.unsplash.com 을 걷어 0이 됐다).
           //   ⚠ 만약 이 앱의 자산을 다른 출처에서 임베드해야 할 일이 생기면 `cross-origin` 으로
           //   완화해야 한다 — 그때는 완화 사유를 여기 남길 것.
           { key: 'Cross-Origin-Resource-Policy', value: 'same-origin' },
@@ -91,9 +91,8 @@ const nextConfig = {
           //
           //   COEP 값 선택 — `require-corp` 가 아니라 `credentialless` 를 쓴다.
           //   `require-corp` 는 CORP 헤더를 안 주는 **모든** 교차출처 리소스를 차단한다.
-          //   이 앱의 교차출처 이미지는 `images.unsplash.com` 하나인데(BoardPreview 의 목 데이터),
-          //   그건 `next/image` 를 거쳐 `/_next/image` 로 프록시되므로 브라우저 입장에선
-          //   동일 출처다 — 즉 지금은 require-corp 여도 깨지지 않는다.
+          //   이 앱에는 지금 교차출처 이미지가 하나도 없다(2026-08-29 BoardPreview 의 목 데이터
+          //   사진을 걷으면서 마지막 항목이 사라졌다) — 즉 지금은 require-corp 여도 깨지지 않는다.
           //   그럼에도 credentialless 를 고르는 이유: **다음에 누가 <img src="https://...">
           //   를 직접 쓰면 require-corp 는 그 이미지를 조용히 깨뜨린다.** credentialless 는
           //   자격증명 없이 로드해 같은 격리 수준(cross-origin isolation)을 얻으면서 그 함정이 없다.
@@ -192,14 +191,10 @@ const nextConfig = {
         pathname: '/api/**',
       },
     ],
-    remotePatterns: [
-      {
-        protocol: 'https' as const,
-        hostname: 'images.unsplash.com',
-        port: '',
-        pathname: '/**',
-      },
-    ],
+    // [2026-08-29] remotePatterns 를 비운다. 유일한 항목이던 images.unsplash.com 은
+    //   BoardPreview 목 데이터 사진의 호스트였고, 그 사진을 걷어내면서 소비자가 0이 됐다.
+    //   외부 이미지가 다시 필요해지면 그때 호스트와 사유를 함께 등록한다.
+    remotePatterns: [],
   },
 };
 

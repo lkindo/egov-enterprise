@@ -389,3 +389,37 @@ describe('미수집 축을 0으로 보여 주지 않는다', () => {
     expect(statsHub).toContain('sumStatsCo(connectStats)');
   });
 });
+
+/**
+ * 생성 마법사가 실제로 만드는 상태를 말한다.
+ *
+ * 게시판 생성 마법사는 메뉴를 `useYn: 'N'`(미사용)으로 만든다. 그런데 안내는 '생성 즉시
+ * 메뉴 시스템에 활성화됩니다', 완료 화면은 '메뉴에 성공적으로 연결되었습니다' 라고 했다.
+ * 관리자는 메뉴가 나타날 것으로 믿고 기다렸고, 나타나지 않는 이유를 알 방법이 없었다.
+ *
+ * 문구만 검사하면 다음 사람이 `useYn` 을 'Y' 로 바꾸면서 문구를 되돌릴 수 있다 — 그건
+ * 권한 축을 우회해 전 관리자에게 즉시 노출되는 제품 결정이다. 그래서 **소스의 실제 값과
+ * 화면 문구를 함께** 고정한다.
+ */
+describe('생성 마법사가 만드는 상태를 사실대로 말한다', () => {
+  const wizard = stripComments(
+    readRepo('frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx'),
+  );
+
+  it('메뉴를 비활성으로 만들면 비활성이라고 말한다', () => {
+    // 실제 값이 계약의 입력이다. 'Y' 로 바꾸는 것은 제품 결정이며, 그때 문구도 함께 바뀐다.
+    expect(wizard, "메뉴 생성의 useYn 을 찾지 못했다 — 계약이 vacuous 하다").toContain("useYn: 'N'");
+    expect(wizard).not.toContain('생성 즉시 메뉴 시스템에 활성화됩니다');
+    expect(wizard).toContain('메뉴 관리에서 활성화');
+  });
+
+  it('예시 데이터로 그린 미리보기를 실시간 시스템이라 부르지 않는다', () => {
+    expect(wizard).not.toContain('LIVE_SYSTEM_PREVIEW');
+    const preview = stripComments(
+      readRepo('frontend/src/app/admin/community/boards/maker/components/BoardPreview.tsx'),
+    );
+    expect(preview).not.toContain('SYSTEM_PREVIEW_GENERATOR');
+    // 미리보기가 외부 호스트로 나가지 않는다 — 레이아웃 확인에 사진이 필요하지 않다.
+    expect(preview).not.toContain('unsplash.com');
+  });
+});

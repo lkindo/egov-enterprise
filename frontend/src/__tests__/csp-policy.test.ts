@@ -27,6 +27,12 @@ describe('CSP nonce 계약', () => {
    * 파일 전체 검색은 주석 문구에 속고(Phase 2 계약이 실제로 그렇게 뚫렸다), 본문 추출도
    * 주석을 안 지우면 '왜 strict-dynamic 을 안 쓰는가' 를 설명하는 주석이 부재 단언을 깨뜨린다
    * (이 파일을 만들며 실제로 발생 — 게이트가 자기 문서를 위반으로 신고).
+   *
+   * [2026-08-29] `//` 를 무조건 주석으로 보던 종전 스트리퍼는 **URL 의 `//` 까지 먹었다**.
+   * `img-src 'self' https://evil.example blob: data:;` 를 넣어도 `https:` 뒤가 통째로
+   * 사라져 외부 호스트 부재 단언이 통과했다(이 계약을 추가하며 red 실측 중 발견). 앞 문자가
+   * `:` 가 아닐 때만 주석으로 본다 — 그래서 주석에 URL 을 쓰면 본문에 남으니, 주석에는
+   * 호스트를 스킴 없이 적는다.
    */
   function extractFunctionBody(name: string): string {
     const start = proxySource.indexOf(`function ${name}(`);
@@ -34,7 +40,7 @@ describe('CSP nonce 계약', () => {
     const end = proxySource.indexOf('\n}', start);
     return proxySource
       .slice(start, end)
-      .replace(/\/\/[^\n]*/g, '')
+      .replace(/(^|[^:])\/\/[^\n]*/gm, '$1')
       .replace(/\/\*[\s\S]*?\*\//g, '');
   }
 
@@ -57,6 +63,33 @@ describe('CSP nonce 계약', () => {
       "script-src 에 'unsafe-inline' 이 되살아났습니다 — nonce 가 있으면 브라우저가 무시하지만, " +
         'nonce 생성이 깨졌을 때 조용한 폴백이 되어 회귀를 숨깁니다.',
     ).not.toContain("'unsafe-inline'");
+  });
+
+  /**
+   * [2026-08-29] img-src 에 외부 호스트를 두지 않는다.
+   *
+   * 종전에는 `https://images.unsplash.com` 이 열려 있었는데, 그 유일한 소비자는 게시판
+   * 생성 마법사 미리보기의 목 데이터 사진이었다. 사진을 걷어내면서 허용도 함께 걷었다.
+   * 쓰지 않는 외부 출처를 CSP·remotePatterns 에 남겨 두면 정책이 실제 사용보다 넓다고
+   * 말하는 셈이고, 다음 사람은 그 흔적을 "이미 승인된 출처"로 읽는다.
+   *
+   * 외부 이미지가 정말 필요해지면 이 계약을 갱신하면서 호스트와 사유를 같은 변경에 남긴다.
+   */
+  it('img-src 와 next/image remotePatterns 에 외부 호스트가 없다', () => {
+    const body = extractFunctionBody('buildAppCsp');
+    const imgSrc = body.slice(body.indexOf('img-src'), body.indexOf('font-src'));
+    expect(imgSrc, "img-src 선언을 찾지 못했습니다 — 추출이 깨지면 이 계약은 vacuous 합니다").toContain('img-src');
+    expect(
+      imgSrc,
+      'img-src 에 외부 호스트가 유입됐습니다 — 소비자와 사유를 같은 변경에서 밝히고 이 계약을 갱신하세요.',
+    ).not.toMatch(/https?:\/\//);
+    // next/image 의 remotePatterns 는 CSP 와 별개의 두 번째 허용 목록이다. 한쪽만 닫으면
+    // 다른 한쪽이 열린 채로 남아 "닫았다"는 판단이 틀리게 된다.
+    const remotePatterns = nextConfig.slice(nextConfig.indexOf('remotePatterns'));
+    expect(
+      remotePatterns.slice(0, remotePatterns.indexOf(']') + 1),
+      'next/image remotePatterns 에 호스트가 등록됐습니다 — img-src 와 함께 판단하세요.',
+    ).not.toContain('hostname');
   });
 
   it("Atlas 예외 정책은 elem inline 을 허용하되 attr 'none' 을 유지하며, 예외 경로는 정확히 하나다", () => {

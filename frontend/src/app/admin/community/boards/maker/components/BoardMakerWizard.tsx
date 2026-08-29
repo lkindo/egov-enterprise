@@ -312,7 +312,7 @@ export function BoardMakerWizard() {
  <div className="space-y-4">
  <h1 className="text-5xl font-bold tracking-tighter text-foreground transition-colors">게시판 생성 완료</h1>
  <p className="text-xl text-muted-foreground dark:text-muted-foreground font-bold leading-relaxed max-w-md mx-auto transition-colors">
- 게시판이 생성되었으며 <span className="text-primary">'{watch('menuNm')}'</span> 메뉴에 성공적으로 연결되었습니다.
+ 게시판이 생성되었으며 <span className="text-primary">'{watch('menuNm')}'</span> 메뉴가 비활성 상태로 만들어졌습니다. 메뉴 관리에서 활성화해 주세요.
  </p>
  </div>
  <div className="flex flex-col gap-4 w-full max-w-sm">
@@ -565,7 +565,7 @@ export function BoardMakerWizard() {
 
  <div className="flex-1 hidden xl:block sticky top-0">
  <div className="space-y-4 mb-4">
- <h4 className="text-xs font-bold text-muted-foreground tracking-[0.4em] uppercase text-right">LIVE_SYSTEM_PREVIEW</h4>
+ <h4 className="text-xs font-bold text-muted-foreground tracking-tight text-right">레이아웃 미리보기 · 예시 데이터</h4>
  </div>
  <BoardPreview
  tmpltId={selectedTemplate || 'TMPLT_HUB'}
@@ -697,7 +697,7 @@ export function BoardMakerWizard() {
  /admin/community/boards/select-board-list?bbsId=AUTO_GEN
  <ExternalLink size={20} className="text-muted-foreground dark:text-muted-foreground" />
  </h5>
- <p className="text-muted-foreground dark:text-muted-foreground text-sm font-bold tracking-tight text-left transition-colors">생성 즉시 메뉴 시스템에 활성화됩니다.</p>
+ <p className="text-muted-foreground dark:text-muted-foreground text-sm font-bold tracking-tight text-left transition-colors">메뉴는 비활성(미사용) 상태로 생성됩니다. 메뉴 관리에서 활성화해야 내비게이션에 나타납니다.</p>
  </div>
  <div className="absolute right-[-20px] top-[-20px] opacity-[0.03] dark:opacity-10 group-hover:scale-110 transition-transform duration-700">
  <Rocket size={200} />
