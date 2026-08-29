@@ -212,6 +212,26 @@ class CommentServiceTest {
         verify(eventPublisher).publishEvent(new PostCommentCountChangedEvent("BBS_01", 10L, 3));
     }
 
+    /**
+     * 대상이 없으면 알리지 않는다.
+     *
+     * <p>{@code bbsId}·{@code pstSn} 은 요청 본문에서 오므로 클라이언트가 빠뜨릴 수 있다.
+     * 그 상태로 개수를 세면 <b>어느 게시글의 수인지 모르는 값</b>을 발행하게 되고, board 쪽
+     * 리스너는 그것을 어디에도 반영할 수 없다. 세지도 알리지도 않는다.
+     */
+    @Test
+    @DisplayName("대상 게시글을 특정할 수 없으면 세지도 알리지도 않는다")
+    void createComment_withoutTarget_doesNotPublish() {
+        CommentDto dto = CommentDto.builder().ansCn("내용").build();
+        given(commentRepository.save(any(Comment.class))).willReturn(Comment.builder().ansSn(1L).build());
+
+        commentService.createComment("ESNTL_01", "홍길동", dto);
+
+        verify(commentRepository, org.mockito.Mockito.never())
+                .countByBbsIdAndPstSnAndUseYn(any(), any(), any());
+        verify(eventPublisher, org.mockito.Mockito.never()).publishEvent(any(Object.class));
+    }
+
     @Test
     @DisplayName("댓글 삭제(논리)도 개수를 다시 세어 알린다")
     void deleteComment_publishesCount() {
