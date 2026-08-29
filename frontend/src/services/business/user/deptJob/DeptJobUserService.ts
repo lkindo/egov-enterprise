@@ -68,7 +68,15 @@ class DeptJobUserService extends UserService {
       /** 페이지당 건수 */
       pageUnit?: number;
       searchWrd?: string;
-      /** '0' 업무명 · '1' 업무내용 · '2' 담당자. 미지정 시 서버가 업무명으로 처리한다. */
+      /**
+       * '0' 업무명 · '1' 업무내용 · '2' 담당자ID.
+       *
+       * ⚠ [2026-08-29 정정] 종전 주석은 "미지정 시 서버가 업무명으로 처리한다" 였는데
+       * **사실이 아니다.** DeptJobService 는 조건이 위 셋 중 하나일 때만 술어를 붙이고,
+       * 미지정이면 아무것도 거르지 않는다 — 즉 검색어를 넣어도 전체 목록이 돌아온다.
+       * 이 잘못된 주석 때문에 호출부가 조건을 생략한 채로 남아 있었다.
+       * 검색을 의도하면 반드시 조건을 함께 보낸다.
+       */
       searchCondition?: string;
       deptTaskBoxSn?: number;
       deptId?: string;

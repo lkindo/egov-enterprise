@@ -34,9 +34,23 @@ function collectJavaSources(dir: string): string[] {
   return out;
 }
 
-/** 주석 안의 문자열을 세면 "주석만 남기면 통과"가 되어 계약이 무력해진다. */
+/**
+ * 주석 안의 문자열을 세면 "주석만 남기면 통과"가 되어 계약이 무력해진다.
+ *
+ * WARNING [2026-08-29] 순서와 URL 가드가 둘 다 필요하다.
+ *
+ * 종전 구현은 블록 주석을 먼저 지웠다. 그런데 줄 주석 안에 블록 주석 여는 기호가 들어 있는
+ * 파일에서(WorkHubClient 의 라우팅 설명 주석이 그렇다) 그 기호가 저 아래 다른 블록 주석의
+ * 닫는 기호까지 이어져 **그 사이의 실제 코드 40여 줄이 통째로 사라졌다.** 그 구간을 검사하던
+ * 단언은 조용히 vacuous 해진다 — 이 계약을 확장하며 실측으로 발견했다(코드에 분명히 있는
+ * 문자열을 계약이 "없다" 고 보고했다).
+ *
+ * 그래서 (1) 줄 주석을 먼저 지우고 (2) 그다음 블록 주석을 지운다. 줄 주석 제거에는 콜론 가드를
+ * 둔다 — 가드가 없으면 URL 의 이중 슬래시를 주석으로 보고 그 줄의 나머지를 먹는다
+ * (csp-policy 계약에서 같은 사각을 이미 고쳤다).
+ */
 const stripComments = (source: string) =>
-  source.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/\/\/.*$/gm, ' ');
+  source.replace(/(^|[^:])\/\/[^\n]*/gm, '$1').replace(/\/\*[\s\S]*?\*\//g, ' ');
 
 describe('포상: 없는 승인 절차를 약속하지 않는다', () => {
   const client = stripComments(readSrc('app/admin/operation/rewards/RewardManageClient.tsx'));
@@ -490,6 +504,43 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 그것을 무시하고 상수를 찍었다. 상단이 '종료' 를 표시하는 순간에도 하단은 지금 참여할
    * 수 있다고 말했다.
    */
+  /**
+   * 조회 조건 라벨이 서버가 실제로 거르는 축과 일치한다.
+   *
+   * 조회 조건은 틀려도 오류가 나지 않는다 — 목록이 그냥 안 좁혀질 뿐이라, 사용자는 검색이
+   * 됐다고 믿고 결과를 잘못 읽는다("그 담당자의 업무가 이만큼"). 그래서 라벨과 **서버 술어**를
+   * 함께 고정한다.
+   */
+  it('업무 허브·게시판 마스터의 조회 조건이 서버 술어와 일치한다', () => {
+    const hub = stripComments(readSrc('app/admin/work-hub/WorkHubClient.tsx'));
+    expect(hub, '업무 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
+    // 담당자·작성자 축은 서버에 없다(업무는 picId, 보고는 rptTtl 단일).
+    expect(hub).not.toContain('업무명·담당자');
+    expect(hub).not.toContain('보고 제목·작성자');
+    // 조건을 보내지 않으면 서버가 아무것도 거르지 않는다.
+    expect(hub, '부서업무 조회가 다시 조건 없이 나간다 — 검색어가 무시된다').toContain("searchCondition: '0'");
+
+    const reportRepo = stripComments(
+      readRepo('business-app/src/main/java/nuri/business/domain/report/WorkReportRepositoryImpl.java'),
+    );
+    expect(reportRepo, '보고 저장소를 찾지 못했다 — 계약이 vacuous 하다').toContain('searchWrd');
+    expect(
+      reportRepo,
+      '보고 검색에 작성자 축이 생겼다 — 라벨을 되살리고 이 계약을 갱신하라.',
+    ).not.toContain('userNm.contains');
+
+    const master = stripComments(
+      readSrc('app/admin/community/boards/master/BoardMasterListClient.tsx'),
+    );
+    expect(master, '게시판 마스터를 찾지 못했다 — 계약이 vacuous 하다').toContain('KeywordFilter');
+    expect(master).not.toContain('시스템 ID');
+    const masterRepo = stripComments(
+      readRepo('business-app/src/main/java/nuri/business/domain/board/BoardMasterRepositoryImpl.java'),
+    );
+    expect(masterRepo, '마스터 저장소를 찾지 못했다 — 계약이 vacuous 하다').toContain('getSearchWrd');
+    expect(masterRepo).not.toContain('bbsId.contains');
+  });
+
   it('여론조사 카드가 조건 없는 상태 표시와 실패를 삼킨 빈 상태를 두지 않는다', () => {
     const client = stripComments(
       readSrc('app/admin/survey/polls/participate/OnlinePollParticipateClient.tsx'),

@@ -456,9 +456,21 @@ export function BoardMasterListClient() {
         )
       }
       filter={
+        /*
+          [2026-08-29] 라벨에서 '시스템 ID' 를 걷는다.
+          표 첫 열이 게시판명 아래에 bbsId 를 함께 보여 주므로 그 ID 를 붙여 넣으면 찾을 수
+          있다고 읽혔지만, 서버가 보는 축은 명칭뿐이다 — BoardMasterRepositoryImpl 은
+          searchCnd '0' 이면 bbsTtl, '1' 이면 게시판 유형명(dtlCdNm)만 걸고 bbsId 축이 없다.
+          게다가 BoardAdminService 는 searchCnd 를 항상 '0' 으로 보낸다.
+
+          라벨을 '게시판 명칭' 이 아니라 '게시판명' 으로 둔 이유: 편집 모달에도 '게시판 명칭'
+          입력이 있어 접근 가능한 이름이 겹치면 두 컨트롤을 구분할 수 없다(실측 — 기존 스펙
+          4건이 "Found multiple elements" 로 red 가 됐다). 조회 조건과 편집 필드는 서로 다른
+          컨트롤이므로 이름도 달라야 한다.
+        */
         <KeywordFilter
-          label="게시판 명칭 · 시스템 ID"
-          placeholder="게시판 명칭, 시스템 ID 검색"
+          label="게시판명"
+          placeholder="게시판명 검색"
           value={searchWrd}
           onSearch={(keyword) => setSearchWrd(keyword)}
         />

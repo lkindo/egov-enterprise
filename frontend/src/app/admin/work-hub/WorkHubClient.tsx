@@ -138,7 +138,11 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
     // jobScope 를 queryKey 에 포함해야 토글 시 재조회된다. 빠뜨리면 캐시된 이전 스코프 결과가
     // 그대로 남아 "토글이 먹지 않는" 것처럼 보인다.
     queryKey: ['work-jobs', searchKeyword, jobPage, jobScope, pageUnit],
-    queryFn: () => deptJobUserService.getDeptJobList({ searchWrd: searchKeyword, pageIndex: jobPage, pageUnit, scope: jobScope }),
+    // [2026-08-29] searchCondition 을 함께 보낸다. 서버(DeptJobService)는 조건이
+    //   '0'(부서업무명)·'1'(내용)·'2'(담당자ID) 일 때만 술어를 붙이고, 그 밖에는 **아무것도
+    //   거르지 않는다**. 종전에는 조건 없이 키워드만 보내 무엇을 입력해도 전체 목록이 그대로
+    //   나왔고, 화면은 그것을 검색 결과처럼 보여 줬다.
+    queryFn: () => deptJobUserService.getDeptJobList({ searchCondition: '0', searchWrd: searchKeyword, pageIndex: jobPage, pageUnit, scope: jobScope }),
     enabled: activeTab === 'job'
   });
   const jobs = jobData?.list || [];
@@ -521,7 +525,15 @@ export default function WorkHubClient({ defaultTab = 'job', initialYmd }: WorkHu
         /* 일정은 월 단위 조회라 키워드 검색 대상이 아니다 — 동작하지 않는 입력을 만들지 않는다. */
         activeTab === 'calendar' ? undefined : (
           <KeywordFilter
-            label={activeTab === 'job' ? '업무명·담당자' : '보고 제목·작성자'}
+            /*
+              [2026-08-29] 라벨을 실제 검색 축으로 고친다.
+              - 업무: 서버가 붙일 수 있는 축은 업무명·내용·담당자ID 셋인데 담당자 축은 이름이
+                아니라 picId(계정 식별자)다. 이름으로 찾으리라 기대하면 계속 0건이 나오므로
+                약속하지 않는다. 지금 보내는 축은 업무명이다.
+              - 업무 보고: WorkReportRepositoryImpl 의 술어는 `rptTtl.contains(searchWrd)`
+                하나뿐이라 작성자로는 좁혀지지 않는다.
+            */
+            label={activeTab === 'job' ? '업무명' : '보고 제목'}
             placeholder="검색어를 입력하십시오..."
             value={searchKeyword}
             onSearch={(keyword) => { setSearchKeyword(keyword); setJobPage(1); setReportPage(1); }}
