@@ -11,6 +11,14 @@ import type { components } from '@/types/generated-api';
  */
 export type Satisfaction = components['schemas']['SatisfactionDto'];
 
+/**
+ * 만족도 평균 응답. `average` 는 **선택 필드**다 — 평가가 하나도 없으면 서버가 값을 싣지 않는다.
+ *
+ * [2026-08-29] 종전에는 `{ average: number }` 로 선언하고 서버가 0 을 주었다. 그래서
+ * "아무도 평가하지 않음" 과 "모두 최하점" 이 타입 수준에서도 구분되지 않았다.
+ */
+export type SatisfactionAverage = components['schemas']['SatisfactionAverageResponse'];
+
 /** 만족도는 게시글에 종속된 자원이라 경로가 조회 범위를 강제한다. */
 const base = (bbsId: string, pstSn: number) =>
   `/boards/${encodeURIComponent(bbsId)}/posts/${encodeURIComponent(pstSn)}/satisfactions`;
@@ -20,9 +28,9 @@ export const satisfactionService = {
   list: (bbsId: string, pstSn: number): Promise<Satisfaction[]> =>
     client.get<Satisfaction[]>(base(bbsId, pstSn)),
 
-  /** 평균 점수. 응답이 없으면 백엔드가 0 을 준다. */
-  average: (bbsId: string, pstSn: number): Promise<{ average: number }> =>
-    client.get<{ average: number }>(`${base(bbsId, pstSn)}/average`),
+  /** 평균 점수. **평가가 없으면 `average` 가 없다** — 0 과 구분해야 한다. */
+  average: (bbsId: string, pstSn: number): Promise<SatisfactionAverage> =>
+    client.get<SatisfactionAverage>(`${base(bbsId, pstSn)}/average`),
 
   /** 등록. 반환값은 생성된 dgstfnSn. */
   create: (bbsId: string, pstSn: number, body: Satisfaction): Promise<number> =>

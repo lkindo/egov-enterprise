@@ -1632,18 +1632,26 @@ export const PageResponseNoteDtoSchema = z.object({
 export type PageResponseNoteDto = z.infer<typeof PageResponseNoteDtoSchema>;
 
 // ==========================================================================
-// ApiResponseMapStringObject Schema
+// ApiResponseMenuListResponse Schema
 // ==========================================================================
-export const ApiResponseMapStringObjectSchema = z.object({
+export const ApiResponseMenuListResponseSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.record(z.string(), z.any()).optional(),
+  data: z.lazy(() => MenuListResponseSchema).optional(),
   timestamp: z.string().optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
-export type ApiResponseMapStringObject = z.infer<typeof ApiResponseMapStringObjectSchema>;
+export type ApiResponseMenuListResponse = z.infer<typeof ApiResponseMenuListResponseSchema>;
+
+// ==========================================================================
+// MenuListResponse Schema
+// ==========================================================================
+export const MenuListResponseSchema = z.object({
+  list: z.array(z.lazy(() => MenuDtoSchema)),
+});
+export type MenuListResponse = z.infer<typeof MenuListResponseSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseMemoReportDto Schema
@@ -1846,6 +1854,30 @@ export const ApiResponseHpcmDtoSchema = z.object({
 export type ApiResponseHpcmDto = z.infer<typeof ApiResponseHpcmDtoSchema>;
 
 // ==========================================================================
+// ApiResponseHealthStatusResponse Schema
+// ==========================================================================
+export const ApiResponseHealthStatusResponseSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => HealthStatusResponseSchema).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseHealthStatusResponse = z.infer<typeof ApiResponseHealthStatusResponseSchema>;
+
+// ==========================================================================
+// HealthStatusResponse Schema
+// ==========================================================================
+export const HealthStatusResponseSchema = z.object({
+  status: z.enum(["UP"]),
+  timestamp: z.number(),
+  version: z.string(),
+});
+export type HealthStatusResponse = z.infer<typeof HealthStatusResponseSchema>;
+
+// ==========================================================================
 // ApiResponseListFileDto Schema
 // ==========================================================================
 export const ApiResponseListFileDtoSchema = z.object({
@@ -1954,6 +1986,20 @@ export const ApiResponseDeptJobBoxDtoSchema = z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseDeptJobBoxDto = z.infer<typeof ApiResponseDeptJobBoxDtoSchema>;
+
+// ==========================================================================
+// ApiResponseMapStringObject Schema
+// ==========================================================================
+export const ApiResponseMapStringObjectSchema = z.object({
+  success: z.boolean().optional(),
+  status: z.number().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.record(z.string(), z.any()).optional(),
+  timestamp: z.string().optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+});
+export type ApiResponseMapStringObject = z.infer<typeof ApiResponseMapStringObjectSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponseCommunityDto Schema
@@ -2121,18 +2167,26 @@ export const ApiResponseListSatisfactionDtoSchema = z.object({
 export type ApiResponseListSatisfactionDto = z.infer<typeof ApiResponseListSatisfactionDtoSchema>;
 
 // ==========================================================================
-// ApiResponseMapStringDouble Schema
+// ApiResponseSatisfactionAverageResponse Schema
 // ==========================================================================
-export const ApiResponseMapStringDoubleSchema = z.object({
+export const ApiResponseSatisfactionAverageResponseSchema = z.object({
   success: z.boolean().optional(),
   status: z.number().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.record(z.string(), z.any()).optional(),
+  data: z.lazy(() => SatisfactionAverageResponseSchema).optional(),
   timestamp: z.string().optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
-export type ApiResponseMapStringDouble = z.infer<typeof ApiResponseMapStringDoubleSchema>;
+export type ApiResponseSatisfactionAverageResponse = z.infer<typeof ApiResponseSatisfactionAverageResponseSchema>;
+
+// ==========================================================================
+// SatisfactionAverageResponse Schema
+// ==========================================================================
+export const SatisfactionAverageResponseSchema = z.object({
+  average: z.number().optional(),
+});
+export type SatisfactionAverageResponse = z.infer<typeof SatisfactionAverageResponseSchema>;
 
 // ==========================================================================
 // ApiResponsePageResponsePublicFaqListItemResponse Schema

@@ -32,7 +32,9 @@ describe('SatisfactionSection', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocked.list.mockResolvedValue([]);
-    mocked.average.mockResolvedValue({ average: 0 });
+    // list 가 비어 있으면 서버는 average 를 싣지 않는다. 종전 fixture 의 { average: 0 } 은
+    // 서버가 만들지 않는 조합이었고, 그래서 화면이 0.0 을 그리는 것이 정상처럼 보였다.
+    mocked.average.mockResolvedValue({});
     mocked.remove.mockResolvedValue(undefined);
   });
 
@@ -209,5 +211,57 @@ describe('SatisfactionSection', () => {
     renderWidget();
 
     expect(await screen.findByText('아직 등록된 만족도가 없습니다.')).toBeInTheDocument();
+  });
+
+  /**
+   * [2026-08-29] 평가가 하나도 없을 때 별점 0개·0.0 을 그리면, 화면이 **측정하지 않은 것을
+   * 측정값으로** 말하는 것이 된다. 백엔드는 이제 average 를 싣지 않는다(Map.of 제약 제거).
+   */
+  it('평가가 하나도 없으면 별점 대신 그 사실을 말한다', async () => {
+    mocked.average.mockResolvedValue({});
+    mocked.list.mockResolvedValue([]);
+
+    renderWidget();
+
+    expect(await screen.findByText('아직 평가가 없습니다')).toBeInTheDocument();
+    // 0.0 을 그리면 "모두 최하점" 과 구분되지 않는다.
+    expect(screen.queryByText('0.0')).not.toBeInTheDocument();
+  });
+
+  /**
+   * [2026-08-29] CI e2e 가 잡은 실제 회귀의 회귀 방지.
+   *
+   * <p>생성 타입은 `average?: number` 로 <b>optional</b> 이라고 선언하지만, springdoc 이
+   * `@Schema(nullable=true)` 를 스펙에 반영하지 않았고 Spring 기본 직렬화는 null 을 그대로
+   * 실었다. 그래서 실제 응답은 `{ average: null }` 이었고 `=== undefined` 검사가 이를 놓쳐
+   * `null.toFixed(1)` 로 터졌다(`Cannot read properties of null`).
+   *
+   * <p>타입이 "올 수 없다" 고 말하는 값을 일부러 넣는다 — <b>선언과 전송이 어긋날 수 있는
+   * 경계</b>이기 때문이다. 서버는 이제 키를 싣지 않지만(NON_NULL), 화면은 둘 다 견뎌야 한다.
+   */
+  it('average 가 null 로 와도 터지지 않고 빈 상태로 말한다', async () => {
+    mocked.average.mockResolvedValue({ average: null } as never);
+    // ⚠ 목록을 비워 두면 **로딩 상태와 빈 상태의 출력이 같아** 쿼리가 해결되기 전에 통과한다
+    //   (실측: `=== undefined` 로 되돌려도 green 이었다 — vacuous). 목록 항목을 로드 완료의
+    //   신호로 삼아, 단언이 실제 응답을 본 뒤에 일어나게 한다.
+    mocked.list.mockResolvedValue([{ dgstfnSn: 1, dgstfnScr: 4, dgstfnCn: '좋아요', useYn: 'Y' }]);
+
+    renderWidget();
+    expect(await screen.findByText('좋아요')).toBeInTheDocument();
+
+    expect(screen.getByText('아직 평가가 없습니다')).toBeInTheDocument();
+    // 이 두 문자열은 has-average 분기에서만 렌더된다 — 남아 있으면 null 을 값으로 취급한 것이다.
+    expect(screen.queryByText('0.0')).not.toBeInTheDocument();
+    expect(screen.queryByText('(1명)')).not.toBeInTheDocument();
+  });
+
+  it('실제로 0점대 평균이면 수치를 그린다 — 빈 상태와 다르다', async () => {
+    mocked.average.mockResolvedValue({ average: 0 });
+    mocked.list.mockResolvedValue([{ dgstfnSn: 1, dgstfnScr: 1, useYn: 'Y' }]);
+
+    renderWidget();
+
+    expect(await screen.findByText('0.0')).toBeInTheDocument();
+    expect(screen.queryByText('아직 평가가 없습니다')).not.toBeInTheDocument();
   });
 });

@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.menu;
 
+import nuri.api.controller.foundation.controller.menu.dto.MenuListResponse;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.business.service.menu.MenuService;
 import nuri.business.service.menu.dto.MenuDto;
@@ -11,9 +12,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/api/v1/menus")
@@ -25,25 +24,21 @@ public class MenuUserApiController {
 
     @Operation(summary = "GNB 메인 메뉴 목록 조회")
     @GetMapping("/head")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getHeadMenu() {
+    public ResponseEntity<ApiResponse<MenuListResponse>> getHeadMenu() {
         log.info("getHeadMenu called");
         List<MenuDto> resultList = menuService.getMenuHierarchy();
         log.info("getHeadMenu returned {} items", resultList.size());
-        Map<String, Object> data = new HashMap<>();
-        data.put("list", resultList);
-        return ResponseEntity.ok(ApiResponse.success(data));
+        return ResponseEntity.ok(ApiResponse.success(MenuListResponse.of(resultList)));
     }
 
     @Operation(summary = "특정 메뉴의 하위 메뉴 목록 조회")
     @GetMapping("/left")
-    public ResponseEntity<ApiResponse<Map<String, Object>>> getLeftMenu(
+    public ResponseEntity<ApiResponse<MenuListResponse>> getLeftMenu(
             @RequestParam("menuNo") Long menuNo) {
         log.info("getLeftMenu called with menuNo={}", menuNo);
         List<MenuDto> resultList = menuService.getSubMenus(menuNo);
         log.info("getLeftMenu returned {} items", resultList.size());
-        Map<String, Object> data = new HashMap<>();
-        data.put("list", resultList);
-        return ResponseEntity.ok(ApiResponse.success(data));
+        return ResponseEntity.ok(ApiResponse.success(MenuListResponse.of(resultList)));
     }
 
     // [보안] 개발 중 임시 추가됐던 디버그 덤프(GET /test/raw, /test/programs)는 제거했다.
