@@ -23,14 +23,14 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "62d02ee8f2f8c13b70500f723cbf3eed4bc2c82722654d90a10ebed13b18410d"
+    "inventoryHash": "651ff3eadf9c337707e37eb454d5a07da72e768a464425fe0a0366cba849bd16"
   },
   "summary": {
     "sourceFileCount": 505,
-    "records": 537,
-    "syntaxOccurrences": 612,
-    "ambiguousRecords": 518,
-    "unverifiedRecords": 537,
+    "records": 536,
+    "syntaxOccurrences": 611,
+    "ambiguousRecords": 517,
+    "unverifiedRecords": 536,
     "exactPopulations": {
       "filesystemRoutes": 120,
       "dynamicRoutePatterns": 11,
@@ -44,14 +44,14 @@
       "navigation-producer": 155,
       "page-redirect": 5,
       "query-builder": 22,
-      "query-consumer": 59,
+      "query-consumer": 57,
       "query-producer": 57,
-      "request-query-producer": 160,
+      "request-query-producer": 161,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 370,
-      "request-telemetry": 167
+      "navigation": 368,
+      "request-telemetry": 168
     }
   },
   "requiredNegativeCases": [
@@ -3060,72 +3060,6 @@
       }
     },
     {
-      "id": "URL-89E62E348B97D5",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "router.push",
-      "source": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
-      "producerFile": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/community/boards/detail",
-      "targetCandidate": "/admin/community/boards/insert-board-article?bbsId=[computed]&parnts=[computed]&replyYn=Y",
-      "stateItems": [
-        {
-          "name": "bbsId",
-          "dataClass": "unverified",
-          "recommendation": "deny",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "record-locator-name-signal"
-          ]
-        },
-        {
-          "name": "parnts",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        },
-        {
-          "name": "replyYn",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/community/boards/insert-board-article",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
-        "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-90045541287B05",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -3616,100 +3550,6 @@
           "riskSignals": [
             "record-locator-name-signal"
           ]
-        }
-      ],
-      "currentBehavior": "Server page reads a named URL search parameter property.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
-        "detector": "server-search-param-property",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-871EAEEE6854D1",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "read",
-      "source": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
-      "routePattern": "/admin/community/boards/insert-board-article",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "parnts",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "Server page reads a named URL search parameter property.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-10-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
-        "detector": "server-search-param-property",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-6CA3790EB95412",
-      "surface": "navigation",
-      "kind": "query-consumer",
-      "operation": "read",
-      "source": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
-      "routePattern": "/admin/community/boards/insert-board-article",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "parntsId",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
         }
       ],
       "currentBehavior": "Server page reads a named URL search parameter property.",
@@ -10724,6 +10564,44 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/ism/IsmClient.tsx",
         "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-A3DF59CE53692B",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/layout",
+      "targetCandidate": "/admin/system/banner",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/banner",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/layout/LayoutManagerClient.tsx",
+        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },
@@ -20891,6 +20769,58 @@
       "resolutionStatus": "ambiguous",
       "canonical": {
         "routeCandidate": "/[computed]/menus",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-10-31"
+      },
+      "evidence": {
+        "source": "frontend/src/services/foundation/system/AuthorAdminService.ts",
+        "detector": "http-client-get-request",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-39CE056388185D",
+      "surface": "request-telemetry",
+      "kind": "request-query-producer",
+      "operation": "client.get",
+      "source": "frontend/src/services/foundation/system/AuthorAdminService.ts",
+      "producerFile": "frontend/src/services/foundation/system/AuthorAdminService.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/[computed]/roles",
+      "stateItems": [
+        {
+          "name": "<computed-request-query>",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": [
+            "computed-or-aggregate-state"
+          ]
+        }
+      ],
+      "currentBehavior": "GET request carries a computed query configuration whose field semantics require domain review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-request-query",
+        "computed-request-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/[computed]/roles",
         "status": "unverified"
       },
       "authorizationBoundary": {

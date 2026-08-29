@@ -83,11 +83,20 @@ class CrossDomainCouplingLinterTest {
     private static final int APP_TO_APP_COUPLING = 5;
 
     /**
-     * app → core 결합 동결(2026-08-20 실측 8건).
+     * app → core 결합 동결(2026-08-29 실측 9건).
      *
      * <p>코어는 삭제 대상이 아니라 허용 가능하지만, '허용' 과 '미탐지' 를 구분하기 위해 동결한다.
+     *
+     * <p>2026-08-29 8 → 9. 신설분은 {@code report/WorkReportService → user (UserRepository)} 하나다.
+     * 업무 보고 목록의 '작성자' 열이 {@code userId} 원문(로그인 ID)을 그대로 보여 주고 있어 누가 쓴
+     * 보고인지 화면만으로 알 수 없었고, 이름을 얻으려면 코어 user 를 읽어야 한다. 이미 동결된
+     * {@code schedule/ScheduleService → user (UserRepository)} 와 같은 패턴이며 행 단위 N+1 대신
+     * {@code findByUserIdIn} 으로 한 번에 모아 받는다.
+     *
+     * <p>⚠ 이 값을 올리는 것은 red 를 지우는 수단이 아니다. 올릴 때는 신설분이 무엇이고 왜 코어를
+     * 읽어야 하는지를 여기 남긴다 — 사유 없는 인상은 H2(신호 은폐) 위반이다.
      */
-    private static final int APP_TO_CORE_COUPLING = 8;
+    private static final int APP_TO_CORE_COUPLING = 9;
 
     /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 74건 대비 여유). */
     private static final int INJECTED_FIELD_FLOOR = 55;

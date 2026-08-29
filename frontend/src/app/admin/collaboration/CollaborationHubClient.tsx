@@ -189,7 +189,7 @@ export default function CollaborationHubClient({ defaultTab = 'MESSAGES' }: { de
         /* 스크랩 API 는 검색 파라미터가 없다 — 동작하지 않는 입력을 만들지 않는다. */
         SERVER_SEARCHABLE[activeTab] ? (
           <KeywordFilter
-            label={`${TAB_LABEL[activeTab]} 제목·발신자`}
+            label={`${TAB_LABEL[activeTab]} 제목·내용`}
             placeholder={`${TAB_LABEL[activeTab]} 검색어를 입력하세요`}
             value={searchKeyword}
             onSearch={(keyword) => setSearchKeyword(keyword)}

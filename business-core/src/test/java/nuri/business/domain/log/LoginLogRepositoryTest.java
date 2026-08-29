@@ -24,12 +24,21 @@ class LoginLogRepositoryTest extends PersistenceTestSupport {
     private EntityManager entityManager;
 
     @Test
-    @DisplayName("로그인 로그 검색")
+    @DisplayName("로그인 로그 검색 — 화면이 안내한 사용자ID·접속IP 로 걸린다")
     void searchLoginLogs() {
-        // given
+        /*
+         * [2026-08-29] 종전 이 테스트는 검색어 "LOG" 가 cntnMthdCd("LOGIN")에 걸리는 것을
+         * 확인했다. 즉 **접속 방법 코드**를 검색 축으로 고정하고 있었다. 그런데 화면은
+         * '사용자ID · 접속IP' 로 검색된다고 안내한다 — 두 축 모두 컬럼이 실재하는데 어느 쪽도
+         * 걸리지 않아, 관리자가 계정이나 IP 를 넣으면 언제나 0건이었다. 오류가 아니라 빈
+         * 결과라 "그 계정의 접속 기록이 없다" 로 잘못 읽힌다.
+         *
+         * 화면이 약속한 두 축을 검사하고, 옛 축이 되살아나면 red 가 되게 함께 고정한다.
+         */
         LoginLog log = LoginLog.builder()
+                .userId("kim01")
                 .cntnMthdCd("LOGIN")
-                .lgnIpAddr("127.0.0.1")
+                .lgnIpAddr("192.168.10.7")
                 .build();
         loginLogRepository.save(log);
         entityManager.flush();
@@ -43,12 +52,22 @@ class LoginLogRepositoryTest extends PersistenceTestSupport {
         entityManager.flush();
         entityManager.clear();
 
-        // when
-        Page<LoginLog> result = loginLogRepository.searchLoginLogs("LOG", "20240101", "20240131", PageRequest.of(0, 10));
+        assertThat(loginLogRepository
+                .searchLoginLogs("kim01", "20240101", "20240131", PageRequest.of(0, 10)).getContent())
+                .as("사용자ID 로 검색되지 않으면 화면 안내가 거짓이 된다")
+                .extracting(LoginLog::getLgnSn)
+                .containsExactly(lgnSn);
 
-        // then
-        assertThat(result.getContent()).hasSize(1);
-        assertThat(result.getContent().get(0).getLgnSn()).isEqualTo(lgnSn);
+        assertThat(loginLogRepository
+                .searchLoginLogs("192.168.10", "20240101", "20240131", PageRequest.of(0, 10)).getContent())
+                .as("접속IP 로 검색되지 않으면 화면 안내가 거짓이 된다")
+                .extracting(LoginLog::getLgnSn)
+                .containsExactly(lgnSn);
+
+        assertThat(loginLogRepository
+                .searchLoginLogs("LOGIN", "20240101", "20240131", PageRequest.of(0, 10)).getContent())
+                .as("접속 방법 코드는 화면에 검색 축으로 안내된 적이 없다 — 되살아나면 안내와 다시 어긋난다")
+                .isEmpty();
     }
 
     @Test

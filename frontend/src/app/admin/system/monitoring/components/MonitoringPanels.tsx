@@ -159,10 +159,10 @@ export function HarnessDashboardOverview() {
         <div className="p-5 bg-hub-indigo/5 border border-hub-indigo/10 rounded-lg text-muted-foreground text-[10px] leading-relaxed space-y-2">
           <h5 className="font-bold text-foreground flex items-center gap-1.5"><Cpu size={12} className="text-primary animate-pulse" /> 지능형 아틀라스 사용법</h5>
           <p className="text-muted-foreground font-medium leading-relaxed">
-            좌측 <strong>에이전트 하네스 아틀라스</strong> 스트림에서 8대 스킬 엔진 카드나 실시간 JPA 쿼리 성능 계측 로그 항목을 클릭하십시오.
+            좌측 <strong>에이전트 하네스 아틀라스</strong> 스트림에서 스킬 엔진 카드나 항목을 클릭하십시오.
           </p>
           <p className="text-muted-foreground font-medium leading-relaxed">
-            선택 시 즉각 상세 아키텍처 정보와 데이터베이스 호출 스택 및 토폴로지가 시각화됩니다.
+            선택 시 저장소 규범 문서를 요약한 상세 설명과 대표 호출 스택 예시가 표시됩니다. 실행 중인 시스템을 계측한 값이 아닙니다.
           </p>
         </div>
       </div>
@@ -173,61 +173,53 @@ export function HarnessDashboardOverview() {
 }
 
 export function SkillDetailView({ skill }: { skill: any }) {
-  const meta: Record<string, { impact: "HIGH" | "MEDIUM", constitution: string, constDesc: string, metrics: string, flow: string[] }> = {
+  const meta: Record<string, { impact: "HIGH" | "MEDIUM", constitution: string, constDesc: string, flow: string[] }> = {
     "SKILL_ENG_01": {
       impact: "HIGH",
       constitution: "DB 헌법 제1조, BE 헌법 제11조",
       constDesc: "물리 테이블 명명 SSOT 및 다중 모듈 간 완벽 격리 아키텍처 검증 보증",
-      metrics: "메모리 점유 1.2GB | 스캔 속도 240ms | 정밀도 100%",
       flow: ["PostgreSQL 물리 스키마 로드", "Gradle 모듈 구조 위상 맵 빌드", "1M+ 토큰 가상 메모리 적재", "상호 참조 락 교차 검증"]
     },
     "SKILL_ENG_02": {
       impact: "HIGH",
       constitution: "BE 헌법 제3조, FE 헌법 제7조",
       constDesc: "DB 제약조건 ➔ BE DTO ➔ FE Zod 스키마의 단방향 연쇄 거울 동기화 강제",
-      metrics: "계약 검증률 100% | 충돌 방어 0건 | 연쇄 지연 12ms",
       flow: ["DB 제약 조건 스캔", "BE DTO OpenAPI 스펙 대조", "FE generated-api TS 타입 추출", "Zod 스키마 런타임 검사"]
     },
     "SKILL_ENG_03": {
       impact: "HIGH",
       constitution: "BE 헌법 제14조, 글로벌 헌법 제5조",
       constDesc: "Spring Security 필터 체인, JWT 권한 토큰, Next.js 미들웨어의 레드팀 침투 자동 감사",
-      metrics: "보안 점수 99.8/100 | 위협 감지 0건 | 무결성 ACTIVE",
       flow: ["Security Filter Chain 가로채기", "JWT 클레임 위변조 인젝션", "Next.js Middleware 권한 우회", "OWASP 취약점 체크리스트 검증"]
     },
     "SKILL_ENG_04": {
       impact: "HIGH",
       constitution: "글로벌 헌법 제4조, BE 헌법 제9조",
       constDesc: "DB Bridge 접속 상태, JVM 포트 충돌, E2E 좀비 프로세스의 실시간 자가 치유",
-      metrics: "자가치유율 100% | 평균 복구 1.8초 | 좀비 포트 차단 4건",
       flow: ["OCI DB Bridge Heartbeat 핑", "포트 5432 / 8080 커넥션 모니터링", "프로세스 락 감지 시 즉각 SIGKILL", "포트 바인딩 락 해제 및 서버 재가동"]
     },
     "SKILL_ENG_05": {
       impact: "HIGH",
       constitution: "DB 헌법 제8조, BE 헌법 제6조",
       constDesc: "데이터베이스 스키마 변경 시 무중단 Expand-and-Contract 계획서 자동 수립",
-      metrics: "배포 가동률 100% | 다운타임 0.00ms | 2단계 롤아웃 계획",
       flow: ["신규 컬럼/테이블 확장 (Expand)", "이중 쓰기 (Dual Write) 동기화", "구 컬럼 참조 프론트엔드 변경 완료", "레거시 컬럼 최종 수축 (Contract)"]
     },
     "SKILL_ENG_06": {
       impact: "MEDIUM",
       constitution: "BE 헌법 제16조 (뮤테이션 85%)",
       constDesc: "비즈니스 소스 코드에 인위적 뮤턴트(미세 버그)를 주입해 단위 테스트 방어력 실증",
-      metrics: "뮤테이션 스코어 88.5% | 생존 뮤턴트 2개 | 검증 속도 4.2s",
       flow: ["소스 코드 AST(구조 분석 트리) 파싱", "인위적인 연산자 반전/널 변환 주입", "해당 영향 범위 단위 테스트 실행", "뮤턴트 킬(Kill) 여부 계측 및 스코어 연산"]
     },
     "SKILL_ENG_07": {
       impact: "HIGH",
       constitution: "FE 헌법 제1조, 제12조",
       constDesc: "Playwright 브라우저를 통한 픽셀 비교 및 HSL/글래스모피즘 에스테틱 준수 검사",
-      metrics: "픽셀 일치율 99.94% | 60FPS 모션 합격 | 반응형 HD 통과",
       flow: ["FHD/HD 듀얼 뷰포트 인스턴스 가동", "HSL 다크 슬레이트 명도 대비 비교", "CSS Framer Motion 가속 체크", "비주얼 회귀 및 UI 찌그러짐 감지"]
     },
     "SKILL_ENG_08": {
       impact: "MEDIUM",
       constitution: "글로벌 헌법 제7조, BE 헌법 제18조",
       constDesc: "API/DB 변경 사항을 감지하여 Markdown 기술 문서 및 Mermaid 다이어그램 동적 갱신",
-      metrics: "문서 불일치율 0% | 다이어그램 일치 100% | 지연 1.1s",
       flow: ["소스/스키마 변경 파일 AST 감시", "Mermaid 마크다운 템플릿 로드", "다이어그램 관계선 신규 매핑", "Git 가이드북 마크다운 파일 자동 기록"]
     }
   };
@@ -236,7 +228,6 @@ export function SkillDetailView({ skill }: { skill: any }) {
     impact: "MEDIUM" as const,
     constitution: "해당 없음",
     constDesc: "지정된 헌법 규정이 존재하지 않습니다.",
-    metrics: "정보 없음",
     flow: ["정의된 프로세스 단계가 없습니다."]
   };
 
@@ -255,7 +246,14 @@ export function SkillDetailView({ skill }: { skill: any }) {
       </div>
 
       {/* Basic Metrics */}
-      <div className="grid grid-cols-2 gap-4">
+      {/*
+        [2026-08-29] 'PERFORMANCE METRICS' 셀 제거.
+
+        그 값(메모리 점유 1.2GB · 스캔 속도 240ms · 보안 점수 99.8/100 …)은 계측 결과가
+        아니라 이 파일 :181~ 의 meta 객체에 **문자열로 박혀 있던 상수**다. 화면은 그것을
+        관제 지표처럼 보여 줬다. 계측 원천이 생기면 그때 값과 함께 되살린다.
+      */}
+      <div className="grid grid-cols-1 gap-4">
         <div className="p-5 rounded-lg bg-muted border border-border space-y-1">
           <span className="text-[9px] font-black text-muted-foreground block uppercase">SYSTEM IMPACT</span>
           <span className={cn("text-xs font-black", currentMeta.impact === "HIGH" ? "text-rose-500" : "text-amber-500")}>
@@ -264,11 +262,6 @@ export function SkillDetailView({ skill }: { skill: any }) {
           <div className="w-full h-1.5 bg-muted rounded-full overflow-hidden mt-2">
             <div className={cn("h-full", currentMeta.impact === "HIGH" ? "bg-rose-500 w-full" : "bg-amber-500 w-2/3")} />
           </div>
-        </div>
-        <div className="p-5 rounded-lg bg-muted border border-border space-y-1">
-          <span className="text-[9px] font-black text-muted-foreground block uppercase font-sans">PERFORMANCE METRICS</span>
-          <span className="text-xs font-bold text-foreground tracking-tight leading-normal block">{currentMeta.metrics.split('|')[0]}</span>
-          <span className="text-[9px] text-muted-foreground block leading-none">{currentMeta.metrics.split('|')[1] || ""}</span>
         </div>
       </div>
 
@@ -380,7 +373,7 @@ export function TestDetailView({ test }: { test: any }) {
 
       {/* SQL Stacks */}
       <div className="space-y-4">
-        <h5 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">실시간 DB 호출 스택 (Database Call Stack)</h5>
+        <h5 className="text-xs font-black text-foreground uppercase tracking-widest leading-none">대표 DB 호출 스택 예시 (Database Call Stack)</h5>
         <div className="space-y-3">
           {currentStack.stacks.map((stack, idx) => (
             <div key={idx} className="p-5 rounded-lg border-2 border-border bg-muted/30 flex flex-col gap-3 relative overflow-hidden group hover:border-primary/20 transition-all">

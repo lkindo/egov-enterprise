@@ -216,7 +216,7 @@ export default function ScheduleDeptClient() {
 
             <div className="flex items-center space-x-2 bg-muted p-4 rounded-lg border border-border">
                 <Input
-                    placeholder="일정명 또는 내용으로 검색하세요"
+                    placeholder="일정명으로 검색하세요"
                     className="max-w-sm rounded-lg"
                     value={params.schdlNm}
                     onChange={(e) => setParams(prev => ({ ...prev, schdlNm: e.target.value }))}

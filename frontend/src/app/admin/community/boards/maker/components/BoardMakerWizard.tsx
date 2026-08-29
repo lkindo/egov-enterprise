@@ -9,7 +9,6 @@ import { Card,  CardContent,  CardHeader,  CardFooter } from "@/components/ui/ca
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import {
  Select,
@@ -124,8 +123,6 @@ export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
    .unwrap()
    .trim()
    .max(4000, '게시판 소개는 최대 4,000자까지 입력할 수 있습니다.'),
- ansPsbltyYn: z.boolean(),
- fileAtchPsbltyYn: z.boolean(),
  atchPsbltyFileQty: z.number().int('첨부 가능 파일 수는 정수여야 합니다.'),
  atchPsbltyFileSz: z.number().int('첨부 가능 파일 크기는 정수여야 합니다.'),
  tmpltId: BoardMasterDtoSchema.shape.tmpltId.unwrap().max(20),
@@ -152,8 +149,6 @@ const BOARD_MAKER_FORM_LABELS: Record<string, string> = {
 const BOARD_MAKER_FIELD_STEPS: Record<string, number> = {
  bbsTtl: 1,
  bbsExpln: 1,
- ansPsbltyYn: 1,
- fileAtchPsbltyYn: 1,
  tmpltId: 2,
  upperMenuNo: 4,
  upMenuSn: 4,
@@ -182,8 +177,6 @@ export function BoardMakerWizard() {
  defaultValues: {
  bbsTtl: '',
  bbsExpln: '',
- ansPsbltyYn: false,
- fileAtchPsbltyYn: true,
  atchPsbltyFileQty: 3,
  atchPsbltyFileSz: 5242880, // 5MB
  bbsTypeCd: 'BBST01',
@@ -250,8 +243,14 @@ export function BoardMakerWizard() {
  bbsExpln: data.bbsExpln,
  bbsTypeCd: data.bbsTypeCd,
  bbsAtrbCd: 'BBSA01', // Missing field causing 500 error
- ansPsbltyYn: data.ansPsbltyYn ? 'Y' : 'N',
- fileAtchPsbltyYn: data.fileAtchPsbltyYn ? 'Y' : 'N',
+ // [2026-08-29] 종전 1단계의 '댓글 사용 여부'·'파일 첨부 여부' 토글을 걷어내고 값을
+ //   기본값으로 고정한다. 두 값은 저장될 뿐 **집행자가 저장소 전체에 없다** — 전량 grep 상
+ //   조건문에 쓰이는 곳이 0건이고, 게시글 상세는 `<CommentSection>` 을 분기 없이 렌더한다.
+ //   즉 관리자가 껐다고 믿은 게시판에도 모든 인증 사용자가 댓글을 쓸 수 있었다.
+ //   ('댓글 사용 여부' 라벨은 필드 의미와도 달랐다 — ans_psblty_yn 은 '답변가능여부'다.)
+ //   집행을 구현하면 그때 토글을 되살린다. 값은 종전 기본값과 같아 생성 결과는 불변이다.
+ ansPsbltyYn: 'N',
+ fileAtchPsbltyYn: 'Y',
  atchPsbltyFileQty: Number(data.atchPsbltyFileQty),
  atchPsbltyFileSz: Number(data.atchPsbltyFileSz),
  tmpltId: data.tmpltId,
@@ -312,7 +311,7 @@ export function BoardMakerWizard() {
  <div className="space-y-4">
  <h1 className="text-5xl font-bold tracking-tighter text-foreground transition-colors">게시판 생성 완료</h1>
  <p className="text-xl text-muted-foreground dark:text-muted-foreground font-bold leading-relaxed max-w-md mx-auto transition-colors">
- 게시판이 생성되었으며 <span className="text-primary">'{watch('menuNm')}'</span> 메뉴에 성공적으로 연결되었습니다.
+ 게시판이 생성되었으며 <span className="text-primary">'{watch('menuNm')}'</span> 메뉴가 비활성 상태로 만들어졌습니다. 메뉴 관리에서 활성화해 주세요.
  </p>
  </div>
  <div className="flex flex-col gap-4 w-full max-w-sm">
@@ -459,41 +458,14 @@ export function BoardMakerWizard() {
  {errors.bbsExpln && <p id="bbsExpln-error" className="text-destructive-emphasis text-sm font-bold ml-2">{errors.bbsExpln.message}</p>}
  </div>
 
- <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
- <div className="flex items-center justify-between p-8 rounded-lg border-2 border-border bg-muted/30 group hover:border-primary/20 transition-all text-left">
- <div className="space-y-1 text-left">
- <Label htmlFor="comments-enabled" className="text-lg font-bold text-foreground flex items-center gap-2">
- 댓글 사용 여부
- <Info className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
- </Label>
- <p id="comments-enabled-description" className="text-xs text-muted-foreground font-bold whitespace-nowrap">게시글에 댓글을 작성할 수 있도록 합니다.</p>
- </div>
- <Switch
- id="comments-enabled"
- aria-describedby="comments-enabled-description"
- checked={watch('ansPsbltyYn')}
- onCheckedChange={(checked) => setValue('ansPsbltyYn', checked)}
- className="data-[state=checked]:bg-primary scale-125"
- />
- </div>
-
- <div className="flex items-center justify-between p-8 rounded-lg border-2 border-border bg-muted/30 group hover:border-primary/20 transition-all text-left">
- <div className="space-y-1 text-left">
- <Label htmlFor="attachments-enabled" className="text-lg font-bold text-foreground flex items-center gap-2 transition-colors">
- 파일 첨부 여부
- <Info className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
- </Label>
- <p id="attachments-enabled-description" className="text-xs text-muted-foreground font-bold whitespace-nowrap text-left transition-colors">문서 및 이미지를 첨부할 수 있게 합니다.</p>
- </div>
- <Switch
- id="attachments-enabled"
- aria-describedby="attachments-enabled-description"
- checked={watch('fileAtchPsbltyYn')}
- onCheckedChange={(checked) => setValue('fileAtchPsbltyYn', checked)}
- className="data-[state=checked]:bg-primary scale-125 transition-colors"
- />
- </div>
- </div>
+ {/*
+   [2026-08-29] '댓글 사용 여부'·'파일 첨부 여부' 토글을 걷어냈다.
+   두 스위치는 값을 저장할 뿐 어떤 동작도 바꾸지 못했다 — 저장소 전량 grep 에서
+   ansPsbltyYn·fileAtchPsbltyYn 을 조건으로 읽는 코드가 0건이고, 게시글 상세는
+   `<CommentSection>` 을 분기 없이 렌더한다. 관리자는 댓글을 막았다고 믿었지만
+   그 게시판에서도 모든 인증 사용자가 댓글을 쓸 수 있었다.
+   집행 경로(서버 검사 + 화면 게이트)를 만들면 그때 되살린다.
+ */}
  </div>
  )}
 
@@ -565,7 +537,7 @@ export function BoardMakerWizard() {
 
  <div className="flex-1 hidden xl:block sticky top-0">
  <div className="space-y-4 mb-4">
- <h4 className="text-xs font-bold text-muted-foreground tracking-[0.4em] uppercase text-right">LIVE_SYSTEM_PREVIEW</h4>
+ <h4 className="text-xs font-bold text-muted-foreground tracking-tight text-right">레이아웃 미리보기 · 예시 데이터</h4>
  </div>
  <BoardPreview
  tmpltId={selectedTemplate || 'TMPLT_HUB'}
@@ -697,7 +669,7 @@ export function BoardMakerWizard() {
  /admin/community/boards/select-board-list?bbsId=AUTO_GEN
  <ExternalLink size={20} className="text-muted-foreground dark:text-muted-foreground" />
  </h5>
- <p className="text-muted-foreground dark:text-muted-foreground text-sm font-bold tracking-tight text-left transition-colors">생성 즉시 메뉴 시스템에 활성화됩니다.</p>
+ <p className="text-muted-foreground dark:text-muted-foreground text-sm font-bold tracking-tight text-left transition-colors">메뉴는 비활성(미사용) 상태로 생성됩니다. 메뉴 관리에서 활성화해야 내비게이션에 나타납니다.</p>
  </div>
  <div className="absolute right-[-20px] top-[-20px] opacity-[0.03] dark:opacity-10 group-hover:scale-110 transition-transform duration-700">
  <Rocket size={200} />

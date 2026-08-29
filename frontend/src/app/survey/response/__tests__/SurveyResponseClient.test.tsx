@@ -52,6 +52,23 @@ describe('SurveyResponseClient destructive boundary', () => {
     });
   });
 
+  /**
+   * [2026-08-29] 첫 화면이 1페이지를 요청한다.
+   *
+   * 종전에는 1-base 인 `pageNo` 를 그대로 실어 `page: 1`(= Spring 기준 두 번째 페이지)을
+   * 보냈다. 응답이 한 페이지뿐이면 표는 '검색 결과가 없습니다.' 인데 머리말은 '총 1건의
+   * 응답이 조회되었습니다.' 라고 말하고, 페이저는 '1 / 1' 로 양쪽이 비활성이라 사용자는
+   * 있는 데이터에 닿을 방법이 없었다.
+   */
+  it('첫 페이지를 0-base 로 요청한다 — 화면의 1페이지가 서버의 1페이지다', async () => {
+    renderSubject();
+    await screen.findByRole('button', { name: '홍길동 응답 삭제' });
+
+    expect(mocks.getResponses).toHaveBeenCalledWith(
+      expect.objectContaining({ page: 0, size: 10 }),
+    );
+  });
+
   it('확인된 삭제는 같은 tick 중복 요청을 막고 pending 상태를 안내한다', async () => {
     const pending = deferred<void>();
     mocks.deleteResponse.mockReturnValueOnce(pending.promise);

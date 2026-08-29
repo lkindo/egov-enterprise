@@ -15,7 +15,7 @@ export class OperationalExtensionPage {
         // [2026-08-24 A1 이행] 조회 조건이 표 내부에서 WorkListPage 조회 조건 영역으로 올라갔고
         //   영문 'ANALYZE' 버튼이 '조회' 로 바뀌었다(카탈로그 G2·G14).
         //   두 문구는 rewards-e2e-contract 단위 계약이 함께 고정한다.
-        const searchInput = this.page.getByPlaceholder('포상 명칭 또는 대상자로 검색');
+        const searchInput = this.page.getByPlaceholder('포상 명칭으로 검색');
         await searchInput.fill(keyword);
         await this.page.getByRole('button', { name: '조회' }).click();
         await this.page.waitForLoadState('networkidle');

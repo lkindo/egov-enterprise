@@ -65,15 +65,34 @@ class MemoReportApiControllerTest {
     @Test
     @DisplayName("나의 메모보고 목록 조회 - 성공")
     void getMyReports_success() throws Exception {
-        when(memoReportService.getMyReportList(anyString(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(memoReportService.getMyReportList(anyString(), any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
         mockMvc.perform(get("/api/v1/memo-reports/my")).andExpect(status().isOk());
     }
 
     @Test
     @DisplayName("수신 메모보고 목록 조회 - 성공")
     void getReceivedReports_success() throws Exception {
-        when(memoReportService.getReceivedReportList(anyString(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(memoReportService.getReceivedReportList(anyString(), any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
         mockMvc.perform(get("/api/v1/memo-reports/received")).andExpect(status().isOk());
+    }
+
+    /**
+     * [2026-08-29] 발신함·수신함이 검색어를 실제로 서비스까지 넘긴다.
+     *
+     * 종전에는 두 엔드포인트가 searchKeyword 를 선언하지 않아 Spring 이 조용히 버렸다 —
+     * 화면의 조회 조건이 기본 탭에서 무동작이었다. 파라미터가 다시 사라지면 여기서 red 다.
+     */
+    @Test
+    @DisplayName("발신함·수신함이 검색어를 서비스로 전달한다")
+    void scopedLists_passSearchKeyword() throws Exception {
+        when(memoReportService.getMyReportList(anyString(), any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+        when(memoReportService.getReceivedReportList(anyString(), any(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        mockMvc.perform(get("/api/v1/memo-reports/my").param("searchKeyword", "보고")).andExpect(status().isOk());
+        mockMvc.perform(get("/api/v1/memo-reports/received").param("searchKeyword", "보고")).andExpect(status().isOk());
+
+        verify(memoReportService).getMyReportList(anyString(), eq("보고"), any());
+        verify(memoReportService).getReceivedReportList(anyString(), eq("보고"), any());
     }
 
     @Test

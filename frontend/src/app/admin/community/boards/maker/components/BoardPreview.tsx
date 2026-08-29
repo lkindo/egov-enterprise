@@ -1,4 +1,3 @@
-import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Search,  
  MessageSquare,  
@@ -22,9 +21,9 @@ interface PreviewProps {
 }
 
 const MOCK_POSTS = [
- { id: 1, title: '전자정부 표준프레임워크 4.x 업데이트 가이드라인', author: '관리자', date: '2024-05-20', views: 1240, comments: 45, image: 'https://images.unsplash.com/photo-1517694712202-14dd9538aa97?w=800&q=80' },
- { id: 2, title: '리액트 서버 컴포넌트(RSC) 도입 시 주의사항 및 모범 사례', author: '기술혁신팀', date: '2024-05-19', views: 856, comments: 23, image: 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?w=800&q=80' },
- { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67, image: 'https://images.unsplash.com/photo-1558494949-ef010958384e?w=800&q=80' },
+ { id: 1, title: '전자정부 표준프레임워크 4.x 업데이트 가이드라인', author: '관리자', date: '2024-05-20', views: 1240, comments: 45 },
+ { id: 2, title: '리액트 서버 컴포넌트(RSC) 도입 시 주의사항 및 모범 사례', author: '기술혁신팀', date: '2024-05-19', views: 856, comments: 23 },
+ { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67 },
 ];
 
 export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
@@ -66,7 +65,7 @@ export function BoardPreview({ tmpltId, bbsTtl, bbsExpln }: PreviewProps) {
  </div>
 
  <div className="h-10 bg-muted flex items-center justify-center border-t border-border">
- <span className="text-xs font-bold text-muted-foreground tracking-[0.4em] uppercase">SYSTEM_PREVIEW_GENERATOR_V1.1_STABLE</span>
+ <span className="text-xs font-bold text-muted-foreground tracking-tight">예시 데이터로 그린 레이아웃 미리보기입니다</span>
  </div>
  </div>
  );
@@ -148,7 +147,11 @@ function GalleryLayout({ posts }: { posts: any[] }) {
  {posts.map(post => (
  <div key={post.id} className="group overflow-hidden rounded-lg bg-card border-2 border-border shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
  <div className="h-48 overflow-hidden relative">
- <Image src={post.image} alt={post.title} fill className="object-cover grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-700 scale-110 group-hover:scale-100" sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" />
+ {/*
+   [2026-08-29] 예시 이미지(unsplash) 제거. 미리보기의 목적은 레이아웃 확인이지 사진이
+   아니고, 관리자 화면이 외부 호스트로 나갈 이유가 없다.
+ */}
+ <div aria-hidden="true" className="absolute inset-0 bg-muted" />
  <div className="absolute top-4 right-4 px-4 py-1.5 bg-surface-inverse/90 backdrop-blur-md rounded-lg text-surface-inverse-foreground text-xs font-bold tracking-widest uppercase">INSIGHT</div>
  </div>
  <div className="p-8 space-y-6">

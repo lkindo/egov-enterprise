@@ -57,6 +57,10 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
         LoginPolicy policy = LoginPolicy.builder()
                 .userId("tester01")
                 .ipAddr("192.168.0.1")
+                .lmtYn("Y")
+                .bgngTm("090000")
+                .endTm("180000")
+                .otpUseYn("Y")
                 .build();
         loginPolicyRepository.save(policy);
 
@@ -71,6 +75,26 @@ class LoginPolicyRepositoryTest extends PersistenceTestSupport {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getUserNm()).isEqualTo("홍길동");
         assertThat(result.getContent().get(0).getRegYn()).isEqualTo("Y");
+
+        /*
+         * [2026-08-29] 목록이 보안 값을 실제로 실어 오는지 확인한다.
+         *
+         * projection 은 bgngTm·endTm 을 이미 select 하고 있었지만 LoginPolicySearchResult 에
+         * 대응 필드가 없어 QueryDSL 이 조용히 버렸고(값이 결과 객체에 도달조차 못 했다),
+         * otpUseYn 은 select 자체가 없었다. 그 결과 목록 화면의 네 보안 열이 **전 사용자에게**
+         * '제한 없음'·'24시간'·'정상'·'DISABLED' 로 보였다 — 관리자는 그 화면을 보고
+         * "아무도 IP 제한이 없고 MFA 도 꺼져 있다" 고 결론 내린다.
+         */
+        LoginPolicySearchResult row = result.getContent().get(0);
+        assertThat(row.getIpAddr()).isEqualTo("192.168.0.1");
+        assertThat(row.getLmtYn()).isEqualTo("Y");
+        assertThat(row.getBgngTm())
+                .as("허용 시간이 결과에 없으면 목록이 전 사용자를 '24시간' 으로 보여 준다")
+                .isEqualTo("090000");
+        assertThat(row.getEndTm()).isEqualTo("180000");
+        assertThat(row.getOtpUseYn())
+                .as("OTP 여부가 결과에 없으면 목록이 전 사용자를 'DISABLED' 로 보여 준다")
+                .isEqualTo("Y");
     }
 
     @Test

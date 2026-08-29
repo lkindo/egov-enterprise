@@ -2,6 +2,7 @@ package nuri.business.service.report;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.business.domain.report.WorkReport;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.domain.report.WorkReportRepository;
 import nuri.business.service.report.dto.WorkReportDto;
 import nuri.foundation.core.exception.BusinessException;
@@ -15,7 +16,12 @@ import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -23,6 +29,7 @@ import java.util.Objects;
 public class WorkReportService extends BaseAbstractService {
 
     private final WorkReportRepository workReportRepository;
+    private final UserRepository userRepository;
 
     @Transactional
     public void createWorkReport(String userId, WorkReportDto dto) {
@@ -87,8 +94,35 @@ public class WorkReportService extends BaseAbstractService {
                 return Page.empty(pageable);
             }
         }
-        return workReportRepository.searchWorkReports(scopedId, null, null, null, null, searchWrd, null, searchSe, Objects.requireNonNull(pageable))
-                .map(this::toDto);
+        Page<WorkReport> page = workReportRepository.searchWorkReports(
+                scopedId, null, null, null, null, searchWrd, null, searchSe, Objects.requireNonNull(pageable));
+        Map<String, String> authorNames = resolveAuthorNames(page.getContent());
+        return page.map(entity -> toDto(entity, lookupName(authorNames, entity.getUserId())));
+    }
+
+    /**
+     * 로그인 ID → 사용자 이름 사전.
+     *
+     * <p>목록의 '작성자' 열이 종전에는 {@code userId} 원문(로그인 ID)을 그대로 보여 줬다. 사람
+     * 이름이 아니라 계정 문자열이라 누가 쓴 보고인지 화면만으로는 알 수 없었다.
+     *
+     * <p>행마다 조회하면 페이지당 N 회 쿼리가 나가므로 한 번에 모아 받는다. 축 정합: 이
+     * {@code userId} 는 등록 시 {@code getCurrentLoginId()} 로 고정되므로
+     * {@code tb_user_info.user_id}(loginId) 와 같은 축이다 — esntlId 로 join 하면 조용히 0건이 된다.
+     */
+    private Map<String, String> resolveAuthorNames(List<WorkReport> entities) {
+        Set<String> loginIds = entities.stream()
+                .map(WorkReport::getUserId)
+                .filter(id -> id != null && !id.isBlank())
+                .collect(Collectors.toSet());
+        if (loginIds.isEmpty()) return Map.of();
+
+        return userRepository.findByUserIdIn(loginIds).stream()
+                .filter(user -> user.getUserId() != null && user.getUserNm() != null)
+                .collect(Collectors.toMap(
+                        user -> user.getUserId(),
+                        user -> user.getUserNm(),
+                        (first, second) -> first));
     }
 
     /**
@@ -102,18 +136,33 @@ public class WorkReportService extends BaseAbstractService {
         return workReportRepository.findById(rptpSn)
                 .map(entity -> {
                     SecurityUtil.assertOwnerOrAdmin(entity.getFrstRgtrId());
-                    return toDto(entity);
+                    return toDto(entity, lookupName(resolveAuthorNames(List.of(entity)), entity.getUserId()));
                 })
                 .orElse(null);
     }
 
-    private WorkReportDto toDto(WorkReport entity) {
+    /**
+     * 사전 조회를 null 키에 안전하게 감싼다.
+     *
+     * <p>{@code Map.of()} 는 불변 맵이라 {@code get(null)} 에서 NPE 를 던진다. 작성자 없는 행이
+     * 하나만 섞여도 목록 조회 전체가 500 으로 죽는다 — 실제로 계약이 이 경로를 red 로 잡았다.
+     */
+    private static String lookupName(Map<String, String> names, String loginId) {
+        return loginId == null ? null : names.get(loginId);
+    }
+
+    /**
+     * @param authorName 사전에서 찾은 작성자 이름. 못 찾으면 {@code null} 로 두고 화면이 로그인 ID 를
+     *                   그대로 보여 준다 — 이름을 지어내거나 '알 수 없음' 으로 덮지 않는다.
+     */
+    private WorkReportDto toDto(WorkReport entity, String authorName) {
         return WorkReportDto.builder()
                 .rptpSn(entity.getRptpSn())
                 .rptTtl(entity.getRptTtl())
                 .rptCn(entity.getRptCn())
                 .rptSeCd(entity.getRptSeCd())
                 .userId(entity.getUserId())
+                .userNm(authorName)
                 .atchFileSn(entity.getAtchFileSn())
                 .build();
     }

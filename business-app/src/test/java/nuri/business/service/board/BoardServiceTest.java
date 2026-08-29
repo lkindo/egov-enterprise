@@ -1173,20 +1173,28 @@ class BoardServiceTest {
     }
 
     @Test
-    @DisplayName("기여자가 없는 경우 시스템으로 게시판 통계 조회")
-    void getBoardStats_SystemContributor() {
-        // given
+    @DisplayName("기여자가 없으면 지어내지 않고 없음을 그대로 내린다")
+    void getBoardStats_NoContributor() {
+        /*
+         * [2026-08-29] 종전 이 테스트는 기여자가 없을 때 "System" 을 내리는 것을 **의도된
+         * 동작으로 고정**하고 있었다. 그러나 화면은 그 값을 '최다 기여자' 로 그대로 보여 준다 —
+         * 글이 한 건도 없는 게시판에서도 '최다 기여자: System' 이 떠서, 관리자는 그런 계정이
+         * 실제로 있다고 믿는다. 같은 웨이브에서 커뮤니티 상세의 'System_Admin' 도 같은 이유로
+         * 걷어냈다(서버가 채우지 않는 값을 화면이 기본값으로 지어내지 않는다).
+         *
+         * null 을 그대로 내리면 화면이 '-' 로 렌더해 '없음' 과 '있음' 이 구분된다.
+         */
         String bbsId = "BBS_01";
         given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(
                 BoardMaster.builder().bbsId(bbsId).useYn("Y").build()));
         given(boardRepository.aggregateVisibleStats(any(BoardSearchCondition.class)))
                 .willReturn(new BoardStatsResult(0L, 0L, null));
 
-        // when
         BoardStatsResponse result = boardService.getBoardStats(bbsId);
 
-        // then
-        assertThat(result.getTopContributor()).isEqualTo("System");
+        assertThat(result.getTopContributor())
+                .as("기여자가 없는데 이름을 지어내면 화면이 없는 사용자를 최다 기여자로 보여 준다")
+                .isNull();
     }
 
     @Test

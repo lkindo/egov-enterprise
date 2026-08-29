@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -66,6 +66,21 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
     queryFn: () => eventService.getEvents({ page: 0, size: 200 }),
   });
   const eventOptions = eventPage?.list ?? [];
+
+  /**
+   * 행사 번호 → 행사명 사전.
+   *
+   * [2026-08-28] 목록에 '소속 행사' 열을 붙이기 위한 조인이다. 새 API 는 없다 — 조인에 필요한
+   * 두 축이 이미 이 화면 안에 있다. 목록 행이 `evntSn` 을 싣고 오고(ExternalHrService 가
+   * convertToDto 에서 채운다), 행사 이름 목록은 위 쿼리가 선택지용으로 이미 들고 있다.
+   *
+   * 종전에는 목록이 성명·소속기관·연락처만 보여 줘서, **어느 행사 소속인지 화면에서 알 수
+   * 없었다** — 등록할 때는 행사를 고르게 해 놓고 목록에서는 그 값을 감춘 셈이다.
+   */
+  const eventNameBySn = useMemo(
+    () => new Map(eventOptions.map((event) => [event.evntSn, event.evntNm])),
+    [eventOptions],
+  );
   const { toast } = useToast();
   const router = useRouter();
   const pathname = usePathname();
@@ -179,6 +194,24 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
           {item.otsdHrNm || '미지정'}
         </span>
       )
+    },
+    {
+      header: '소속 행사',
+      accessor: (item) => {
+        /*
+          폴백을 '미지정' 으로 두면 안 된다. 물리 FK(V2_80)가 행사의 실재를 보장하므로,
+          이름이 안 잡히는 것은 "행사가 없다" 가 아니라 **"이 화면이 아직 이름을 모른다"** 다
+          (선택지 조회가 200건 한 페이지라 그 밖의 행사는 사전에 없다).
+          번호를 그대로 보여 주면 사용자가 행사 관리 화면에서 대조할 수 있다.
+        */
+        if (item.evntSn === undefined || item.evntSn === null) {
+          return <span className="text-xs text-muted-foreground">-</span>;
+        }
+        const name = eventNameBySn.get(item.evntSn);
+        return name
+          ? <span className="text-xs font-bold text-foreground tracking-tight">{name}</span>
+          : <span className="text-xs font-bold text-muted-foreground tabular-nums">행사 #{item.evntSn}</span>;
+      }
     },
     {
       header: '소속기관',

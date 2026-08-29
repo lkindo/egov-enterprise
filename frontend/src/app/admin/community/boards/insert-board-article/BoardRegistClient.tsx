@@ -37,8 +37,6 @@ import { BoardSaveRequestSchema } from '@/types/generated-zod';
 
 const boardSchema = BoardSaveRequestSchema.extend({
   pstSn: z.coerce.number().int().positive().optional(),
-  parnts: z.coerce.number().int().positive().optional(),
-  replyYn: z.string().optional(),
   pstCn: BoardSaveRequestSchema.shape.pstCn
     .min(1, '내용을 입력해 주세요.')
     .refine((value) => !/^<p>(?:<br\s*\/?>)?<\/p>$/i.test(value.trim()), '내용을 입력해 주세요.'),
@@ -54,7 +52,6 @@ interface BoardRegistClientProps {
   initialData?: BoardInitialData | null;
   bbsId: string;
   pstSn?: number;
-  parnts?: number;
 }
 
 function RichTextFieldControl({
@@ -109,7 +106,7 @@ function RichTextFieldControl({
   );
 }
 
-export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRegistClientProps) {
+export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClientProps) {
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -124,8 +121,6 @@ export function BoardRegistClient({ initialData, bbsId, pstSn, parnts }: BoardRe
       pstCn: initialData?.pstCn || '',
       userNm: initialData?.userNm || '관리자',
       pswd: initialData?.pswd || '1',
-      parnts: parnts || initialData?.parnts,
-      replyYn: (parnts || initialData?.replyYn === 'Y') ? 'Y' : 'N',
       // 기존 글에 첨부가 없으면 API는 null을 반환한다. 생성 스키마의 optional()은
       // undefined만 허용하므로 수정 폼 경계에서 null을 제거한다.
       atchFileSn: initialData?.atchFileSn ?? undefined,

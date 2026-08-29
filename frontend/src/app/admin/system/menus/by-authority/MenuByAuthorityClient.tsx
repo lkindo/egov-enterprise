@@ -22,7 +22,9 @@ import {
 } from "lucide-react";
 import { ErrorStateDisplay } from '@/app/components/ui/status-displays';
 import { authorAdminService, AuthorInfo } from '@/services/foundation/system/AuthorAdminService';
+import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 import { MenuByAuthority } from '@/types/foundation/security';
+import type { AuthorMenuAssignment } from '@/services/foundation/system/AuthorAdminService';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { HubSectionCard } from '@/components/ui/hub/HubSectionCard';
 import { HubMetricGrid, HubMetricCard } from '@/components/ui/hub/HubMetrics';
@@ -115,13 +117,57 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  queryFn: async () => {
  const data = await authorAdminService.getAuthorMenus(selectedAuthority);
  if (Array.isArray(data)) return data;
- const envelope = data as unknown as { list?: MenuByAuthority[]; resultList?: MenuByAuthority[] };
+ const envelope = data as unknown as { list?: AuthorMenuAssignment[]; resultList?: AuthorMenuAssignment[] };
  return envelope?.list ?? envelope?.resultList ?? [];
  },
  enabled: !!selectedAuthority,
  });
 
- const menuTree = useMemo(() => buildMenuTree(rawMenus), [rawMenus]);
+ /**
+  * 메뉴 계층은 별도 API 에서 가져온다.
+  *
+  * [2026-08-29] 권한별 메뉴 응답에는 **메뉴 번호도 상위 메뉴도 없다** — MenuCreateDto 는
+  * menuSn·authrtCd·authrtNm·chkYeoBu 만 담는다(서버 projection 에는 menuNm·upperMenuSn 이
+  * 있지만 MenuService.selectMenuCreatList 가 DTO 로 옮기지 않는다). 그래서 종전
+  * buildMenuTree 는 `menu.upperMenuId === 0` 을 `undefined === 0` 으로 비교해 루트를 하나도
+  * 만들지 못했고, **모든 권한에서 트리가 영구히 비어 '할당된 메뉴 없음' 이 떴다** — 지표
+  * 카드가 0 이 아닌 수를 찍는 바로 옆에서.
+  *
+  * 계층·이름은 /menus/all 이 이미 내려주므로(권한 관리 화면이 쓰는 것과 같은 조합) 두 응답을
+  * 합친다. 서버 계약 변경 없이 화면만으로 해소된다.
+  */
+ const {
+   data: allMenus = [],
+ } = useQuery({
+   queryKey: ['admin-menus-all'],
+   queryFn: () => menuAdminService.getAllMenus(),
+ });
+
+ /** 선택 권한에 실제로 부여된 메뉴 번호. 응답은 '메뉴 전체 + 할당 플래그' 라 플래그로 거른다. */
+ const assignedMenuSns = useMemo(
+   () => new Set(
+     rawMenus
+       .filter(m => m.chkYeoBu === 1)
+       .map(m => m.menuSn)
+       .filter((sn): sn is number => typeof sn === 'number'),
+   ),
+   [rawMenus],
+ );
+
+ const menuTree = useMemo(
+   () => buildMenuTree(
+     allMenus
+       .filter(m => assignedMenuSns.has(m.menuNo))
+       .map(m => ({
+         menuNo: m.menuNo,
+         menuNm: m.menuNm,
+         upperMenuId: m.upMenuSn,
+         menuOrdr: m.menuOrdr,
+         prgrmFileNm: m.prgrmFileNm,
+       })),
+   ),
+   [allMenus, assignedMenuSns],
+ );
 
  /** 실제 트리에서 계산한 최대 계층 깊이(선택 전에는 0). */
  const treeDepth = useMemo(() => {
@@ -278,7 +324,9 @@ export default function MenuByAuthorityClient({ authorsPromise }: MenuByAuthorit
  {/* 근거 없는 고정 지표('보안_상태 최적' · '계층_깊이 팩터_준비')는 삭제하고, 실제 트리에서 계산되는 값만 남긴다. */}
  <HubMetricGrid className="lg:grid-cols-3">
  <HubMetricCard title="등록 역할" value={authorities.length} icon={Database} color="primary" />
- <HubMetricCard title="할당 메뉴" value={rawMenus.length} icon={LayoutGrid} color="amber" />
+ {/* [2026-08-29] rawMenus.length 는 '메뉴 전체' 수라 권한과 무관하게 늘 같은 값이었다.
+     서버가 전체 메뉴에 할당 플래그를 붙여 내려주기 때문이다(from(menu) leftJoin). */}
+ <HubMetricCard title="할당 메뉴" value={assignedMenuSns.size} icon={LayoutGrid} color="amber" />
  <HubMetricCard title="계층 깊이" value={treeDepth} icon={Compass} color="indigo" />
  </HubMetricGrid>
 

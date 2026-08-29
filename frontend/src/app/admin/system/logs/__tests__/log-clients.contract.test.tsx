@@ -311,7 +311,7 @@ const CLUSTER_CASES: ClusterCase[] = [
     Component: SystemLogsWebClient,
     row: WEB_ROW,
     method: 'getWebLogs',
-    sortKeys: { 등록일시: 'occrYmd', 요청자: 'dmndUserId', 응답시간: 'prcsTm' },
+    sortKeys: { 발생일자: 'occrYmd', 요청자: 'dmndUserId', 응답시간: 'prcsTm' },
   },
   {
     name: 'PRV',

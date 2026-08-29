@@ -151,6 +151,48 @@ class AddressBookServiceTest {
     }
 
     @Test
+    @DisplayName("주소록 수정 - useYn 을 생략하면 기존 값을 보존한다(목록에서 사라지지 않는다)")
+    void updateAddressBook_PreservesUseYnWhenOmitted() {
+        /*
+         * [2026-08-29] 종전에는 dto.getUseYn() 을 그대로 넘겨 null 로 덮었다.
+         * 목록 질의는 AddressBookRepositoryImpl:37,49 에서 useYn.eq("Y") 로만 거르므로
+         * 이름만 바꾼 주소록이 조용히 목록에서 사라졌다 — 화면은 '주소록이 수정되었습니다.'
+         * 라고 알리고 목록으로 되돌아갔으므로 사용자는 자기가 무엇을 지웠는지 알 수 없었다.
+         * 이 엔드포인트를 부르는 프런트 경로는 useYn 을 보내지 않으므로 모든 수정이 그랬다.
+         */
+        Long adbkSn = 7L;
+        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("Old").useYn("Y").build();
+        given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
+
+        // 화면이 실제로 보내는 본문과 같다 — adbkNm·rlsScopeCd 만 있고 useYn 이 없다.
+        AddressBookDto dto = AddressBookDto.builder()
+                .adbkSn(adbkSn).adbkNm("Renamed").rlsScopeCd("PUB").build();
+
+        addressBookService.updateAddressBook("user", dto);
+
+        assertThat(entity.getAdbkNm()).isEqualTo("Renamed");
+        assertThat(entity.getUseYn())
+                .as("useYn 이 null 이 되면 목록 질의(useYn='Y')에서 빠져 주소록이 조용히 사라진다")
+                .isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("주소록 수정 - useYn 을 명시하면 그 값으로 바꾼다")
+    void updateAddressBook_AppliesUseYnWhenProvided() {
+        // 보존은 '생략됐을 때' 만이다 — 명시적 변경까지 막으면 사용 중지 경로가 죽는다.
+        Long adbkSn = 8L;
+        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("Old").useYn("Y").build();
+        given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
+
+        AddressBookDto dto = AddressBookDto.builder()
+                .adbkSn(adbkSn).adbkNm("Old").rlsScopeCd("PUB").useYn("N").build();
+
+        addressBookService.updateAddressBook("user", dto);
+
+        assertThat(entity.getUseYn()).isEqualTo("N");
+    }
+
+    @Test
     @DisplayName("주소록 수정 - 기존 구성원의 연락 정보를 실제로 갱신한다")
     void updateAddressBook_UpdatesExistingMemberContact() {
         /*

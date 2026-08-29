@@ -1,6 +1,7 @@
 package nuri.business.domain.board;
 
 import org.springframework.lang.NonNull;
+import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -43,6 +44,29 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
         Optional<Board> findByPstSn(@Param("pstSn") Long pstSn);
 
         long countByBbsIdAndUseYn(String bbsId, String useYn);
+
+        /**
+         * 날짜별 게시글 등록 건수.
+         *
+         * <p>[2026-08-28] 게시물 통계 화면이 읽던 {@code getBbsStatsByDate} 는 실제로는
+         * {@code dtaUseStatsRepository.countByDate} 를 불러 <b>자료이용현황과 완전히 같은 응답</b>을
+         *돌려주고 있었다. 게시글을 하나도 세지 않았다는 뜻이다.
+         *
+         * <p>⚠ {@code use_yn = 'Y'} 를 <b>명시</b>한다. {@code Board} 의 삭제는 논리 삭제
+         * ({@code delete()} 가 useYn 을 'N' 으로 바꾼다)이고, 이 네이티브 질의에는 JPA
+         * {@code @Filter} 가 걸리지 않는다. 빠뜨리면 <b>지운 글이 통계를 부풀린다.</b>
+         */
+        @Query(value = """
+                        SELECT TO_CHAR(b.crt_dt, 'YYYY-MM-DD') AS statsDate, COUNT(*) AS cnt
+                        FROM tb_bbs_item b
+                        WHERE b.use_yn = 'Y'
+                          AND b.crt_dt BETWEEN CAST(:fromDate AS TIMESTAMP) AND CAST(:toDate AS TIMESTAMP)
+                        GROUP BY TO_CHAR(b.crt_dt, 'YYYY-MM-DD')
+                        ORDER BY statsDate DESC
+                        """, nativeQuery = true)
+        List<Object[]> countPostsByDate(
+                        @Param("fromDate") String fromDate,
+                        @Param("toDate") String toDate);
 
         @Query("SELECT COUNT(b) FROM Board b WHERE b.bbsId = :bbsId")
         long countAllByBbsId(@Param("bbsId") String bbsId);

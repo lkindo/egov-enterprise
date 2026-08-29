@@ -34,7 +34,6 @@ import { authorAdminService, AuthorInfo } from '@/services/foundation/system/Aut
 import type { PageResponse } from '@/types/foundation/system';
 import { userAuthorityAdminService, AuthorGroupProjection, UserAuthorityDto } from '@/services/foundation/system/UserAuthorityAdminService';
 import { menuAdminService, Menu } from '@/services/foundation/system/MenuAdminService';
-import { MenuByAuthority } from '@/types/foundation/security';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { StandardModal } from '@/app/components/ui/standard-modal';
@@ -90,12 +89,23 @@ export default function SecurityHubClient({
   
   const [tempUserMappings, setTempUserMappings] = useState<Set<string>>(new Set());
   const [tempMenuMappings, setTempMenuMappings] = useState<Set<number>>(new Set());
+  /**
+   * 이 권한에 할당된 롤 코드 집합.
+   *
+   * [2026-08-28] 종전에는 롤을 만들어도 **어떤 권한에도 연결할 수 없었다** — 서버는
+   * GET/POST /authorities/{authrtCd}/roles 를 갖췄는데 프런트 소비자가 0건이었다.
+   *
+   * ⚠ 저장은 **전체 교체**다(AuthorRoleManageService.insertAuthorRole 이 기존 매핑을 전량
+   * 삭제한 뒤 재삽입한다). 그래서 이 집합은 항상 "이 권한이 가질 롤 전체" 여야 하고,
+   * 조회도 한 페이지에 전부 받아야 한다. 부분 집합을 저장하면 나머지가 조용히 사라진다.
+   */
+  const [tempRoleMappings, setTempRoleMappings] = useState<Set<string>>(new Set());
 
   // --- Matrix Mode States ---
   const [globalMappings, setGlobalMappings] = useState<Map<string, Set<number>>>(new Map());
   const [authorDeletePendingCode, setAuthorDeletePendingCode] = useState<string | null>(null);
   const [authorSavePending, setAuthorSavePending] = useState(false);
-  const [mappingPendingAction, setMappingPendingAction] = useState<'user' | 'menu' | 'global' | null>(null);
+  const [mappingPendingAction, setMappingPendingAction] = useState<'user' | 'menu' | 'global' | 'role' | null>(null);
   /**
    * 서버에서 읽어온 시점의 매트릭스. 변경 셀·변경 역할 판정의 기준선이다.
    *
@@ -107,12 +117,14 @@ export default function SecurityHubClient({
   const [isGlobalLoading, setIsGlobalLoading] = useState(false);
   const userMappingRequestRef = useRef(false);
   const menuMappingRequestRef = useRef(false);
+  const roleMappingRequestRef = useRef(false);
   const globalSaveRequestRef = useRef(false);
   const authorDeleteRequestRef = useRef(false);
   const authorSaveRequestRef = useRef(false);
   const hasMappingWriteRequest = () => (
     userMappingRequestRef.current
     || menuMappingRequestRef.current
+    || roleMappingRequestRef.current
     || globalSaveRequestRef.current
   );
 
@@ -173,10 +185,96 @@ export default function SecurityHubClient({
     enabled: !!selectedAuthorCode
   });
 
+  /**
+   * 권한별 롤 목록.
+   *
+   * ⚠ `pageUnit` 을 크게 잡아 **한 페이지에 전부** 받는다. 저장이 전체 교체라, 페이지를
+   * 나눠 받으면 보지 못한 페이지의 롤이 저장 시 지워진다.
+   */
+  const { data: authorRolesData, isLoading: isAuthorRolesLoading, error: authorRolesError, refetch: refetchAuthorRoles } = useQuery({
+    queryKey: ['admin-author-roles', selectedAuthorCode],
+    queryFn: () => authorAdminService.getAuthorRoles(selectedAuthorCode, { pageIndex: 1, pageUnit: 500 }),
+    enabled: !!selectedAuthorCode,
+  });
+  const authorRoles = authorRolesData?.list ?? [];
+
+  useEffect(() => {
+    if (!authorRolesData?.list) return;
+    /*
+      목록에는 이 권한에 **할당되지 않은 롤도 들어 있다** — 서버가 전체 롤에 left join 으로
+      할당 표시를 붙여 내려준다(regYn = 매칭 시 'Y'). 그러니 초기 선택은 목록 전체가 아니라
+      regYn === 'Y' 인 행만이다. 전체를 잡으면 저장만 눌러도 모든 롤이 부여된다.
+    */
+    const assigned = authorRolesData.list
+      .filter((role) => role?.regYn === 'Y')
+      .map((role) => role?.roleId)
+      .filter((roleId): roleId is string => typeof roleId === 'string');
+    setTempRoleMappings(new Set(assigned));
+  }, [authorRolesData]);
+
+  const toggleRoleMapping = (roleId: string) => {
+    setTempRoleMappings((current) => {
+      const next = new Set(current);
+      if (next.has(roleId)) next.delete(roleId);
+      else next.add(roleId);
+      return next;
+    });
+  };
+
+  const saveAuthorRoleMutation = useMutation({
+    // 전체 교체이므로 "지금 선택된 전체 집합" 을 보낸다. 부분 목록은 나머지를 지운다.
+    mutationFn: () => authorAdminService.saveAuthorRoles(selectedAuthorCode, Array.from(tempRoleMappings)),
+    onSuccess: () => {
+      toast('권한에 할당된 롤이 업데이트되었습니다.', 'success');
+      queryClient.invalidateQueries({ queryKey: ['admin-author-roles', selectedAuthorCode] });
+    },
+    onError: () => {
+      toast('롤 할당 저장에 실패했습니다. 잠시 후 다시 시도해주세요.', 'error');
+      queryClient.invalidateQueries({ queryKey: ['admin-author-roles', selectedAuthorCode] });
+    },
+    onSettled: () => {
+      roleMappingRequestRef.current = false;
+      setMappingPendingAction((current) => current === 'role' ? null : current);
+    },
+  });
+
+  const handleSaveRoleMapping = async () => {
+    if (!selectedAuthorCode || authorSaveRequestRef.current || authorDeleteRequestRef.current
+      || hasMappingWriteRequest() || saveAuthorRoleMutation.isPending) return;
+
+    // 전체 교체라 "지금 화면에서 뺀 롤은 실제로 지워진다" 는 사실을 먼저 말한다.
+    const ok = await confirm({
+      title: '롤 할당 저장',
+      message: `권한 '${selectedAuthorCode}' 의 롤 할당을 지금 선택한 ${tempRoleMappings.size}개로 바꿉니다. 선택하지 않은 롤은 이 권한에서 제거됩니다.`,
+      confirmText: '저장',
+    });
+    if (!ok) return;
+
+    roleMappingRequestRef.current = true;
+    setMappingPendingAction('role');
+    saveAuthorRoleMutation.mutate();
+  };
+
   useEffect(() => {
     if (usersData?.list) {
       const list = Array.isArray(usersData.list) ? usersData.list : [];
-      const registeredUsers = list.filter(u => u?.regYn === 'Y').map(u => u?.scrtyDcsnTrgtId);
+      /*
+       * [2026-08-29] `regYn` 은 "선택한 역할을 가졌다" 가 아니라 **"아무 권한이나 있다"** 다.
+       * 서버 질의(UserAuthorityRepositoryImpl:42)의 left join 에 authrtId 조건이 없고,
+       * regYn 은 join 행 존재 여부로만 계산된다. 게다가 tb_user_authrt_map 의 PK 는
+       * scrty_dcsn_trgt_id 단일이라 사용자당 권한 행은 하나다 — 즉 다른 역할을 가진 사용자가
+       * 이 패널에서 체크된 것처럼 보였다.
+       *
+       * 그 표시는 그대로 저장의 입력이 된다. 체크를 남기면 upsert 로 그 사용자의 역할이 선택
+       * 역할로 바뀌고(관리자 강등), 체크를 풀면 delete 로 원래 역할이 회수된다. 화면이 틀린
+       * 것을 보여 준 뒤 그 화면을 근거로 권한을 바꾸는 경로였다.
+       *
+       * 응답에 authrtId 가 이미 있으므로(생성 타입 AuthorGroupProjection) 그 값으로 판정한다.
+       * 서버 계약을 바꾸지 않고 표시 의미만 실제와 맞춘다 — 인가 자체는 넓어지지 않는다.
+       */
+      const registeredUsers = list
+        .filter(u => u?.regYn === 'Y' && u?.authrtId === selectedAuthorCode)
+        .map(u => u?.scrtyDcsnTrgtId);
       setTempUserMappings(new Set(registeredUsers));
     }
   }, [usersData, selectedAuthorCode]);
@@ -184,7 +282,26 @@ export default function SecurityHubClient({
   useEffect(() => {
     if (menusData?.authorMenus) {
       const menus = Array.isArray(menusData.authorMenus) ? menusData.authorMenus : [];
-      const mappedMenuIds = (menus as MenuByAuthority[]).map(m => m.menuNo);
+      /*
+       * [2026-08-29] 기준선을 `m.menuNo` 에서 `chkYeoBu === 1` 인 행의 `menuSn` 으로 바꾼다.
+       *
+       * 이 응답(MenuCreateDto)에는 menuNo 가 **없다** — 서버는 menuSn 과 할당 플래그
+       * chkYeoBu 만 준다(MenuService.selectMenuCreatList). 그래서 종전 기준선은
+       * `Set([undefined])` 였고 모든 메뉴가 '미부여' 로 보였다. 서비스 반환 타입이
+       * MenuByAuthority[] 로 잘못 선언돼 있어 tsc 도 잡지 못했다.
+       *
+       * ⚠ 그 표시가 그대로 저장의 입력이다. 저장은 전체 교체이므로
+       * (MenuService.insertMenuCreatList 가 deleteByIdAuthrtCd 후 재삽입한다) 화면을 열고
+       * 아무것이나 토글해 저장하면 **관리자가 보지도 못한 기존 메뉴 권한이 통째로 지워졌다.**
+       *
+       * 또한 이 응답은 '할당된 메뉴' 가 아니라 '메뉴 전체 + 할당 플래그' 다
+       * (from(menu) leftJoin(menuAuthority)). 플래그로 거르지 않으면 반대로 전 메뉴가
+       * 부여된 것처럼 보인다.
+       */
+      const mappedMenuIds = menus
+        .filter(m => m.chkYeoBu === 1)
+        .map(m => m.menuSn)
+        .filter((sn): sn is number => typeof sn === 'number');
       setTempMenuMappings(new Set(mappedMenuIds));
     }
   }, [menusData, selectedAuthorCode]);
@@ -238,12 +355,18 @@ export default function SecurityHubClient({
   };
 
   /**
-   * 현재 페이지에서 서버가 '부여됨'으로 내려준 사용자 목록.
+   * 현재 페이지에서 **선택한 역할을** 이미 가진 사용자 목록.
    * 회수(delete) 대상 계산의 기준선이며, 페이지 단위로만 판단해 다른 페이지의 할당은 건드리지 않는다.
+   *
+   * <p>[2026-08-29] 종전에는 `regYn === 'Y'` 만 봤는데 그 값은 "아무 권한이나 있다" 를 뜻한다
+   * (서버 join 에 authrtId 조건 없음). 그래서 **다른 역할을 가진 사용자가 회수 대상**이 됐고,
+   * 체크를 풀면 그 사용자의 원래 역할이 삭제됐다. 선택 역할 보유자만 기준선에 넣는다.
    */
   const grantedUserIdsOnPage = useMemo(
-    () => users.filter(u => u?.regYn === 'Y').map(u => u.scrtyDcsnTrgtId),
-    [users]
+    () => users
+      .filter(u => u?.regYn === 'Y' && u?.authrtId === selectedAuthorCode)
+      .map(u => u.scrtyDcsnTrgtId),
+    [users, selectedAuthorCode]
   );
 
   /** 체크 해제된 기존 부여자 = 회수 대상. */
@@ -348,7 +471,13 @@ export default function SecurityHubClient({
       const promises = authorities.map(async (auth) => {
         const menus = await authorAdminService.getAuthorMenus(auth.authrtCd);
         const menuList = Array.isArray(menus) ? menus : [];
-        allMappings.set(auth.authrtCd, new Set(menuList.map(m => m.menuNo)));
+        // 위 기준선과 같은 이유 — menuNo 는 이 응답에 없고, 할당분은 chkYeoBu 로 거른다.
+        allMappings.set(auth.authrtCd, new Set(
+          menuList
+            .filter(m => m.chkYeoBu === 1)
+            .map(m => m.menuSn)
+            .filter((sn): sn is number => typeof sn === 'number'),
+        ));
       });
       await Promise.all(promises);
       setGlobalMappings(allMappings);
@@ -494,7 +623,19 @@ export default function SecurityHubClient({
     try {
       const ok = await confirm({
         title: '권한 삭제',
-        message: `'${auth.authrtNm || code}'(${code}) 권한을 삭제하시겠습니까? 관련 할당 정보가 모두 사라집니다.`,
+        /*
+         * [2026-08-29] '관련 할당 정보가 모두 사라집니다' 를 실제 정리 범위로 고친다.
+         *
+         * AuthorManageService.deleteAuthor 는 롤 매핑(authorityRoleRepository)과 메뉴 매핑
+         * (menuAuthorityRepository)만 지우고 **사용자 할당(tb_user_authrt_map)은 건드리지
+         * 않는다.** 그 테이블에는 tb_authrt_info 로의 FK 도 없어(V2_0 은 PK 만, V2_12 는
+         * 사용자 FK 만 추가) 삭제가 그대로 성공하고, 사용자 행은 없어진 권한을 가리킨 채 남는다.
+         *
+         * ⚠ 같은 코드로 권한을 다시 만들면 그 사용자들이 **아무도 배정하지 않은 새 권한을
+         * 그대로 물려받는다.** 정리 범위를 넓히는 것은 인가 데이터 삭제라 제품 결정이 선행되므로
+         * (known-gaps 기록), 지금은 화면이 하는 일만 말하게 한다.
+         */
+        message: `'${auth.authrtNm || code}'(${code}) 권한을 삭제하시겠습니까? 이 권한의 메뉴·롤 매핑이 함께 삭제됩니다. 사용자 할당 기록은 남으므로, 같은 코드로 권한을 다시 만들면 그 사용자들에게 다시 적용됩니다.`,
         confirmText: '삭제',
         variant: 'destructive',
       });
@@ -829,7 +970,7 @@ export default function SecurityHubClient({
             <div className="col-span-12 lg:col-span-4 space-y-8 h-full">
               <HubSectionCard
                 title="사용자 할당"
-                description="선택한 역할에 할당된 개별 식별자들의 실시간 할당 상태입니다."
+                description="선택한 역할을 가진 사용자에 체크가 표시됩니다. 저장해야 반영됩니다."
                 icon={Users}
                 action={
                   <Tooltip>
@@ -871,7 +1012,7 @@ export default function SecurityHubClient({
                           </div>
                           <div className="space-y-2">
                             <h4 className="text-xl font-bold text-muted-foreground tracking-tighter">역할을 선택하세요</h4>
-                            <p className="text-xs font-bold text-slate-200 tracking-tight leading-relaxed">보안 역할을 선택하여 식별자 프로브를 활성화하십시오</p>
+                            <p className="text-xs font-bold text-slate-200 tracking-tight leading-relaxed">왼쪽 목록에서 역할을 선택하면 그 역할의 사용자 할당을 볼 수 있습니다</p>
                           </div>
                         </motion.div>
                       ) : (
@@ -971,6 +1112,84 @@ export default function SecurityHubClient({
                     </AnimatePresence>
                   </div>
                 </div>
+              </HubSectionCard>
+            </div>
+
+            {/*
+              [2026-08-28] 권한 → 롤 할당.
+
+              종전에는 롤을 만들어도 **어떤 권한에도 연결할 수 없었다** — 서버는
+              GET/POST /authorities/{authrtCd}/roles 를 갖췄는데 프런트 소비자가 0건이었다.
+
+              ⚠ 저장은 전체 교체다. 선택하지 않은 롤은 이 권한에서 제거되므로, 확인 문구가
+              그 사실을 먼저 말하고 조회도 한 페이지에 전부 받는다(위 쿼리 pageUnit 참조).
+            */}
+            <div className="col-span-12 h-full">
+              <HubSectionCard
+                title="롤 할당"
+                description="이 권한이 가질 보안 롤을 선택합니다. 선택하지 않은 롤은 저장 시 제거됩니다."
+                icon={Key}
+                action={
+                  <Button
+                    size="sm"
+                    onClick={() => { void handleSaveRoleMapping(); }}
+                    aria-busy={mappingPendingAction === 'role' || undefined}
+                    disabled={!selectedAuthorCode || authorSavePending || authorDeletePendingCode !== null || mappingPendingAction !== null}
+                    className="h-10 px-6 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold text-xs tracking-tight hover:bg-primary transition-all shadow-xl disabled:opacity-10 gap-2"
+                  >
+                    <RefreshCcw size={14} aria-hidden="true" /> {mappingPendingAction === 'role' ? '롤 할당 저장 중…' : '롤 할당 저장'}
+                  </Button>
+                }
+              >
+                {!selectedAuthorCode ? (
+                  <p className="py-10 text-center text-sm text-muted-foreground">왼쪽에서 권한을 선택하세요.</p>
+                ) : authorRolesError ? (
+                  <div className="py-10 text-center space-y-3">
+                    <p role="alert" className="text-sm font-bold text-destructive">롤 목록을 불러오지 못했습니다.</p>
+                    <Button type="button" variant="outline" size="sm" onClick={() => { void refetchAuthorRoles(); }}>
+                      다시 시도
+                    </Button>
+                  </div>
+                ) : isAuthorRolesLoading ? (
+                  <p className="py-10 text-center text-sm text-muted-foreground">불러오는 중…</p>
+                ) : authorRoles.length === 0 ? (
+                  <p className="py-10 text-center text-sm text-muted-foreground">등록된 롤이 없습니다.</p>
+                ) : (
+                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-2 py-4">
+                    {authorRoles.map((role) => {
+                      const roleId = role?.roleId ?? '';
+                      const selected = tempRoleMappings.has(roleId);
+                      return (
+                        <li key={roleId}>
+                          <button
+                            type="button"
+                            aria-pressed={selected}
+                            aria-label={`${role?.roleNm ?? roleId} 롤 ${selected ? '해제' : '부여'}`}
+                            onClick={() => toggleRoleMapping(roleId)}
+                            className={cn(
+                              'w-full flex items-center gap-3 rounded-lg px-4 py-3 text-left transition-all',
+                              selected
+                                ? 'bg-surface-inverse text-surface-inverse-foreground shadow-xl'
+                                : 'border border-border hover:bg-muted',
+                            )}
+                          >
+                            <span
+                              aria-hidden="true"
+                              className={cn(
+                                'h-4 w-4 shrink-0 rounded border',
+                                selected ? 'bg-primary border-primary' : 'border-border bg-card',
+                              )}
+                            />
+                            <span className="min-w-0">
+                              <span className="block truncate text-sm font-bold">{role?.roleNm ?? roleId}</span>
+                              <span className="block truncate font-mono text-xs opacity-60">{roleId}</span>
+                            </span>
+                          </button>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                )}
               </HubSectionCard>
             </div>
           </motion.div>

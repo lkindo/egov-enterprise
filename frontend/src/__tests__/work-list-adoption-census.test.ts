@@ -102,7 +102,11 @@ describe('A1 archetype 채택 census', () => {
       const source = readFileSync(join(FRONTEND_DIR, relativePath), 'utf8');
       // ⚠ 주석을 먼저 지운다 — 이 규칙을 **설명하는 주석**이 대상 파일에 들어 있어서, 지우지 않으면
       //   계약이 자기 설명을 위반으로 신고한다(dom-identity-invariants 가 남긴 함정과 같은 것).
-      const code = source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\n]*/g, '');
+      // ⚠ [2026-08-29] 지우는 **순서**도 중요하다. 블록 주석을 먼저 지우면 줄 주석 안의 블록
+      //   주석 여는 기호가 저 아래 닫는 기호까지 이어져 그 사이 실행 코드가 통째로 사라진다
+      //   (실측: WorkHubClient.tsx 1,781자 소실). 이 census 는 소스를 전수로 훑으므로 그런
+      //   파일이 하나만 생겨도 조용히 눈이 먼다. 콜론 가드는 URL 오인 방지용이다.
+      const code = source.replace(/(^|[^:])\/\/[^\n]*/gm, '$1').replace(/\/\*[\s\S]*?\*\//g, '');
       // 셸이 총 건수를 소유하므로 표 pagination 에 totalCount 를 다시 넘기면 위아래 이중 표기가 된다.
       // ⚠ 검사는 pagination 블록 **안**으로 한정한다 — 파일 전체를 훑으면 셸에 정상적으로 넘긴
       //   `totalCount={...}` 까지 걸려 오탐이 난다(2026-08-24 실측: 설문 응답자 화면).

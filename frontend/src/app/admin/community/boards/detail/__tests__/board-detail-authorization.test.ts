@@ -9,6 +9,21 @@ describe('board detail mutation affordance', () => {
     },
   );
 
+  /*
+    [2026-08-29] 대소문자 축. 이 화면은 종전에 자체 Set 으로 role 을 **원문 비교**했고,
+    SSOT 와 proxy 의 라우트 게이트는 둘 다 대문자로 정규화한다. 서버 표기가 흔들리면
+    라우트는 열어 주는데 화면에서만 수정·삭제 버튼이 사라지는 비대칭이 생긴다.
+
+    ⚠ 표시 판정이지 인가가 아니다 — 서버가 assertOwnerOrAdminByEsntlId 로 따로 집행하므로
+    여기서 넓혀도 서버 권한은 넓어지지 않는다.
+  */
+  it.each(['role_admin', 'Role_System', 'admin'])(
+    'absorbs server casing drift for %s — the route gate already does',
+    (role) => {
+      expect(canManageBoardArticle({ id: 'admin-login', esntlId: 'ESNTL_admin', role }, 'ESNTL_owner')).toBe(true);
+    },
+  );
+
   it('permits only the article owner on the Board esntlId axis', () => {
     expect(canManageBoardArticle(
       { id: 'owner-login', esntlId: 'ESNTL_owner', role: 'USER' },

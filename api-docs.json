@@ -33252,8 +33252,11 @@
           },
           "userId": {
             "type": "string",
-            "maxLength": 1,
+            "maxLength": 20,
             "minLength": 0
+          },
+          "userNm": {
+            "type": "string"
           },
           "atchFileSn": {
             "type": "integer",
