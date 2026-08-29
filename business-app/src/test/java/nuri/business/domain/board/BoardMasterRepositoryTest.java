@@ -16,6 +16,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
 import java.util.Optional;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -71,6 +72,51 @@ class BoardMasterRepositoryTest {
         // Then
         assertThat(found).isPresent();
         assertThat(found.get().getBbsTtl()).isEqualTo("Test Board");
+    }
+
+    @Test
+    @DisplayName("일괄 영구삭제 조회는 옵션까지 한 번에 적재해 cascade 삭제를 보존한다")
+    void findAllWithOptionByBbsIdIn_supportsSafeBatchDelete() {
+        BoardMaster first = BoardMaster.builder()
+                .bbsId("BBS_BATCH_001")
+                .bbsTtl("Batch Board 1")
+                .bbsTypeCd("COM004")
+                .bbsAtrbCd("COM009")
+                .useYn("N")
+                .build();
+        first.registerOption("N", "N");
+        BoardMaster second = BoardMaster.builder()
+                .bbsId("BBS_BATCH_002")
+                .bbsTtl("Batch Board 2")
+                .bbsTypeCd("COM004")
+                .bbsAtrbCd("COM009")
+                .useYn("N")
+                .build();
+        second.registerOption("N", "N");
+        // assigned String @Id + @MapsId 옵션은 saveAll→merge 시 신규 옵션을 detached로 오판한다.
+        // 프로덕션 BoardMasterService#createBoardMaster와 같은 persist 생명주기로 fixture를 만든다.
+        em.persist(first);
+        em.persist(second);
+        em.flush();
+        em.clear();
+
+        List<BoardMaster> targets = boardMasterRepository.findAllWithOptionByBbsIdIn(
+                List.of("BBS_BATCH_001", "BBS_BATCH_002"));
+
+        assertThat(targets).extracting(BoardMaster::getBbsId)
+                .containsExactlyInAnyOrder("BBS_BATCH_001", "BBS_BATCH_002");
+        assertThat(targets).allSatisfy(master -> {
+            assertThat(master.getOption()).isNotNull();
+            assertThat(org.hibernate.Hibernate.isInitialized(master.getOption())).isTrue();
+        });
+
+        boardMasterRepository.deleteAll(targets);
+        em.flush();
+        em.clear();
+        assertThat(em.find(BoardMaster.class, "BBS_BATCH_001")).isNull();
+        assertThat(em.find(BoardMasterOption.class, "BBS_BATCH_001")).isNull();
+        assertThat(em.find(BoardMaster.class, "BBS_BATCH_002")).isNull();
+        assertThat(em.find(BoardMasterOption.class, "BBS_BATCH_002")).isNull();
     }
 
     @Test

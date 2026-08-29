@@ -18,6 +18,8 @@ import nuri.business.domain.system.content.community.Community;
 import nuri.business.domain.system.content.popup.Popup;
 import nuri.business.domain.user.entity.DeptManage;
 import nuri.business.domain.user.entity.User;
+import nuri.business.domain.sms.Sms;
+import nuri.business.domain.sms.SmsRecptnId;
 import nuri.business.service.auth.dto.AuthorManageDto;
 import nuri.business.service.auth.dto.RoleManageDto;
 import nuri.business.service.board.dto.BoardMasterDto;
@@ -32,6 +34,8 @@ import nuri.business.service.system.content.popup.dto.PopupDto;
 import nuri.business.domain.template.Template;
 import nuri.business.service.template.dto.TemplateDto;
 import nuri.business.service.user.dto.UserDto;
+import nuri.business.service.sms.dto.SmsDto;
+import nuri.business.service.sms.dto.SmsRecptnDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -108,7 +112,9 @@ class InputContractMirrorLinterTest {
             //   없어 클라이언트가 보내야 하는데, 등록 폼이 그 값을 묻지도 않아 **등록이 언제나
             //   실패**했다. 길이·필수를 요청 단계에서 요구하게 하고 그 대응을 여기서 동결한다.
             new LengthBinding(Template.class, TemplateDto.class,
-                    List.of("tmpltId", "tmpltNm", "tmpltSeCd", "tmpltPath", "useYn")));
+                    List.of("tmpltId", "tmpltNm", "tmpltSeCd", "tmpltPath", "useYn")),
+            new LengthBinding(Sms.class, SmsDto.class, List.of("sndngTelno", "sndngCn")),
+            new LengthBinding(SmsRecptnId.class, SmsRecptnDto.class, List.of("rcptnTelno")));
 
     private static final List<EnumBinding> ENUM_BINDINGS = List.of(
             new EnumBinding(BannerDto.class, "rfltYn", List.of("Y", "N")),
@@ -125,7 +131,7 @@ class InputContractMirrorLinterTest {
             new EnumBinding(BoardMasterDto.class, "ansYn", List.of("Y", "N")),
             new EnumBinding(BoardMasterDto.class, "stsfdgYn", List.of("Y", "N")));
 
-    private static final int MIN_LENGTH_FIELDS = 66;
+    private static final int MIN_LENGTH_FIELDS = 69;
     private static final int MIN_ENUM_FIELDS = 13;
 
     @Test

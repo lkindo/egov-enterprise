@@ -18,6 +18,6 @@ public class CommunityUserId implements Serializable {
     @Column(name = "cmnty_sn", nullable = false)
     private Long cmntySn;
 
-    @Column(length = 30, nullable = false)
+    @Column(length = 20, nullable = false)
     private String userId;
 }

@@ -42,7 +42,7 @@ public class LoginPolicyApiController {
     @Operation(summary = "로그인 정책 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<LoginPolicyDto>>> getLoginPolicyList(
-            @ModelAttribute BaseSearchDto searchDto) throws Exception {
+            @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
         List<LoginPolicyDto> list = loginPolicyManageService.selectLoginPolicyList(searchDto);
         int totCnt = loginPolicyManageService.selectLoginPolicyListTotCnt(searchDto);

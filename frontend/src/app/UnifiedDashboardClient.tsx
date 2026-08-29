@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, use } from 'react';
+import { useEffect, use } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { useAuth } from '@/contexts/AuthContext';
@@ -107,20 +107,14 @@ export default function UnifiedDashboardClient({
   const { user, loading } = useAuth();
   const router = useRouter();
 
-  const [isMounted, setIsMounted] = useState(false);
-
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
   // Redirect to login if not authenticated
   useEffect(() => {
-    if (!loading && !user && isMounted) {
-      router.push('/login');
+    if (!loading && !user) {
+      router.replace('/login');
     }
-  }, [user, loading, router, isMounted]);
+  }, [user, loading, router]);
 
-  if (!isMounted || loading || !user) {
+  if (loading || !user) {
     return (
       <>
         <h1 className="sr-only">업무 홈을 불러오는 중</h1>

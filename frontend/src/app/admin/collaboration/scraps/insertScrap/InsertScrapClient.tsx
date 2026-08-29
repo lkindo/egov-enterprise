@@ -2,7 +2,8 @@
 
 import React, { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import axios from '@/lib/api/client';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { scrapMutationOptions } from '@/queries/scrap-query-options';
 import { useToast } from '@/app/components/ui/toast';
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,6 +23,7 @@ import {
 const InsertScrapClient = () => {
   const router = useRouter();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [formData, setFormData] = useState({
     scrapNm: '',
     scrapUrl: '',
@@ -32,6 +34,7 @@ const InsertScrapClient = () => {
   const validation = useManualFormValidation(scrapCreateFormSchema, {
     labels: scrapValidationLabels,
   });
+  const createMutation = useMutation(scrapMutationOptions.create(queryClient));
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,7 +47,7 @@ const InsertScrapClient = () => {
     try {
       // useYn 은 서버 DTO 필수값(@NotBlank)이다 — 누락 시 등록이 100% 400 으로 실패한다.
       // 소유자(userId)는 서버가 인증 주체에서 파생하므로 전송하지 않는다.
-      await axios.post<number>('/scraps', validated);
+      await createMutation.mutateAsync(validated);
       toast('스크랩이 등록되었습니다.', 'success');
       router.push('/admin/collaboration/scraps/selectScrapList');
     } catch (error: unknown) {

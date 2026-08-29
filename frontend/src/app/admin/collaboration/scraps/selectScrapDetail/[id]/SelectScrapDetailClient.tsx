@@ -2,9 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
-import { useQuery } from '@tanstack/react-query';
-import axios from '@/lib/api/client';
-import type { components } from '@/types/generated-api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { scrapMutationOptions, scrapQueryOptions } from '@/queries/scrap-query-options';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
@@ -21,9 +20,6 @@ import {
   scrapEditFormSchema,
   scrapValidationLabels,
 } from '../../scrap-form-validation';
-
-/** 스크랩 계약의 SSOT 는 생성 타입이다(로컬 인터페이스 재선언 금지). */
-type Scrap = components['schemas']['ScrapDto'];
 
 /** 폼이 다루는 필드(서버 응답의 파생 필드 scrapSn/userId/crtDt 는 폼 상태로 끌어오지 않는다). */
 interface ScrapForm {
@@ -42,6 +38,7 @@ const SelectScrapDetailClient = () => {
   const scrapSn = Number(id);
   const { toast } = useToast();
   const confirm = useConfirm();
+  const queryClient = useQueryClient();
 
   const [formData, setFormData] = useState<ScrapForm>({
     scrapNm: '',
@@ -57,11 +54,11 @@ const SelectScrapDetailClient = () => {
     labels: scrapValidationLabels,
   });
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['scrap-detail', scrapSn],
-    queryFn: () => axios.get<Scrap>(`/scraps/${scrapSn}`),
-    enabled: Number.isSafeInteger(scrapSn) && scrapSn > 0,
-  });
+  const { data, isLoading, isError, error, refetch } = useQuery(
+    scrapQueryOptions.detail(scrapSn),
+  );
+  const updateMutation = useMutation(scrapMutationOptions.update(queryClient));
+  const deleteMutation = useMutation(scrapMutationOptions.remove(queryClient));
 
   // [방어] 응답 전면 교체(setFormData(response))는 응답에 없는 키를 undefined 로 만들어
   // 이후 formData.scrapUrl.trim() 에서 TypeError 를 유발했다 → 기존 상태에 병합한다.
@@ -85,7 +82,7 @@ const SelectScrapDetailClient = () => {
     setLoading(true);
     try {
       // useYn 은 서버 DTO 필수값(@NotBlank) — 상태에 항상 보유하고 그대로 전송한다.
-      await axios.put<void>(`/scraps/${scrapSn}`, validated);
+      await updateMutation.mutateAsync({ scrapSn, data: validated });
       toast('스크랩이 수정되었습니다.', 'success');
       router.push(LIST_PATH);
     } catch (err: unknown) {
@@ -112,7 +109,7 @@ const SelectScrapDetailClient = () => {
       });
       if (!ok) return;
 
-      await axios.delete<void>(`/scraps/${scrapSn}`);
+      await deleteMutation.mutateAsync(scrapSn);
       toast('스크랩이 삭제되었습니다.', 'success');
       router.push(LIST_PATH);
     } catch (err: unknown) {

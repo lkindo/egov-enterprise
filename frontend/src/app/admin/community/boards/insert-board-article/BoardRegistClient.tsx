@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   ArrowLeft, Save, Zap,
@@ -27,6 +27,7 @@ import {
   useFormField,
 } from '@/components/ui/form';
 import { motion } from 'framer-motion';
+import { useAuth } from '@/contexts/AuthContext';
 
 const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
   ssr: false,
@@ -110,8 +111,16 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
   const router = useRouter();
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const submittingRef = useRef(false);
+  const activeRecordId = pstSn ?? initialData?.pstSn;
+  const draftScope = useMemo(() => user ? {
+    ownerId: user.esntlId ?? user.id,
+    boardId: bbsId,
+    action: activeRecordId ? 'update' as const : 'create' as const,
+    recordId: activeRecordId ? String(activeRecordId) : 'new',
+  } : null, [activeRecordId, bbsId, user]);
 
   const form = useAppForm(boardSchema, {
     defaultValues: {
@@ -131,7 +140,8 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
 
   // 자동 임시저장 훅 연동
   const { restoreDraft, clearDraft, hasDraft } = useAutoSaveDraft({
-    storageKey: `board_insert_${bbsId}`,
+    scope: draftScope,
+    legacyKeys: [`egov-draft-board_insert_${bbsId}`],
     getData: () => ({
       title: form.getValues('pstTtl'),
       content: form.getValues('pstCn')
@@ -166,7 +176,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
       });
 
       // Props 또는 initialData의 pstSn가 존재하는 경우 확실하게 폼 데이터에 추가하여 수정(PUT) 분기 작동 보장
-      const activePstSn = pstSn || initialData?.pstSn;
+      const activePstSn = activeRecordId;
       if (activePstSn) {
         formData.append('pstSn', activePstSn.toString());
       }

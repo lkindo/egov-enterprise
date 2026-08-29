@@ -27,6 +27,9 @@ public class KeyMapRegistry {
 
     public static final String TABLE = "tb_migration_key_map";
 
+    private final String runId;
+    private final String sourceNamespace;
+
     /** sourceTable(lower) → (legacyKey → newKey). */
     private final Map<String, Map<String, String>> maps = new LinkedHashMap<>();
     /** 아직 현재 target transaction에 동반 기록되지 않은 신규 대응. */
@@ -36,6 +39,18 @@ public class KeyMapRegistry {
     public record Checkpoint(int pendingSize) {}
 
     private record PendingMapping(String sourceTable, String legacyKey, String newKey) {}
+
+    public KeyMapRegistry() {
+        this("legacy", "legacy");
+    }
+
+    public KeyMapRegistry(String runId, String sourceNamespace) {
+        if (runId == null || runId.isBlank() || sourceNamespace == null || sourceNamespace.isBlank()) {
+            throw new IllegalArgumentException("keymap run/source namespace는 비어 있을 수 없습니다");
+        }
+        this.runId = runId;
+        this.sourceNamespace = sourceNamespace;
+    }
 
     /** 부모 PK 채번: 기존 대응이 있으면 재사용(멱등), 없으면 신규 생성·적재. legacyKey null 이면 null. */
     public String mintOrGet(String sourceTable, String legacyKey, String generatorPrefix) {
@@ -69,21 +84,13 @@ public class KeyMapRegistry {
         return m != null && !m.isEmpty();
     }
 
-    /** 타깃에 키맵 테이블을 멱등 생성(H2·PostgreSQL 공통 DDL). */
-    public void ensureTable(JdbcTemplate target) {
-        target.execute("CREATE TABLE IF NOT EXISTS " + TABLE + " ("
-                + "source_table varchar(128) NOT NULL, "
-                + "legacy_key varchar(256) NOT NULL, "
-                + "new_key varchar(256) NOT NULL, "
-                + "CONSTRAINT pk_" + TABLE + " PRIMARY KEY (source_table, legacy_key))");
-    }
-
     /** 기존 대응을 인메모리로 선적재 — 재실행 시 동일 키 재사용(멱등). */
     public void preload(JdbcTemplate target) {
-        target.query("SELECT source_table, legacy_key, new_key FROM " + TABLE, rs -> {
+        target.query("SELECT source_table, legacy_key, new_key FROM " + TABLE
+                + " WHERE run_id=? AND source_namespace=?", rs -> {
             maps.computeIfAbsent(rs.getString(1), k -> new LinkedHashMap<>())
                     .put(rs.getString(2), rs.getString(3));
-        });
+        }, runId, sourceNamespace);
     }
 
     /** 현재 pending suffix를 구분할 checkpoint를 만든다. */
@@ -102,12 +109,15 @@ public class KeyMapRegistry {
             return 0L;
         }
         try (PreparedStatement statement = connection.prepareStatement(
-                "INSERT INTO " + TABLE + " (source_table, legacy_key, new_key) VALUES (?, ?, ?)")) {
+                "INSERT INTO " + TABLE
+                        + " (run_id, source_namespace, source_table, legacy_key, new_key) VALUES (?, ?, ?, ?, ?)")) {
             for (int i = from; i < pending.size(); i++) {
                 PendingMapping mapping = pending.get(i);
-                statement.setString(1, mapping.sourceTable());
-                statement.setString(2, mapping.legacyKey());
-                statement.setString(3, mapping.newKey());
+                statement.setString(1, runId);
+                statement.setString(2, sourceNamespace);
+                statement.setString(3, mapping.sourceTable());
+                statement.setString(4, mapping.legacyKey());
+                statement.setString(5, mapping.newKey());
                 statement.addBatch();
             }
             int[] updateCounts = statement.executeBatch();

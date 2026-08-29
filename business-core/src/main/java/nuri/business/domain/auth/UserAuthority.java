@@ -19,7 +19,7 @@ public class UserAuthority extends BaseEntity implements Serializable {
     @NonNull
     private String scrtyDcsnTrgtId;
 
-    @Column(name = "authrt_id", nullable = false, length = 20)
+    @Column(name = "authrt_id", nullable = false, length = 30)
     @NonNull
     private String authrtId;
 

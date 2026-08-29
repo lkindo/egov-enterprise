@@ -16,7 +16,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import static nuri.business.domain.board.QBoardMaster.boardMaster;
-import static nuri.business.domain.board.QTemplate.template;
+import static nuri.business.domain.template.QTemplate.template;
 import static nuri.business.domain.board.QBoardUse.boardUse;
 import com.querydsl.jpa.JPAExpressions;
 

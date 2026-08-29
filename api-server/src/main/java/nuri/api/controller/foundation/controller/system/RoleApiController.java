@@ -30,7 +30,7 @@ public class RoleApiController {
     @Operation(summary = "롤 목록 조회", description = "시스템에 정의된 전체 권한(Role) 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<RoleManageDto>>> getRoles(
-            @ModelAttribute BaseSearchDto searchDto) {
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
 
         // 목록과 총건수를 한 질의에서 얻는다. 종전에는 검색어를 무시한 전체 count() 가 총건수였다.
         Page<RoleManageDto> page = roleManageService.selectRoleList(searchDto);

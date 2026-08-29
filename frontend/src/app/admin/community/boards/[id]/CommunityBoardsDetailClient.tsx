@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { PageHeader } from '@/app/components/layout/page-header';
 import { StandardEditor } from '@/app/components/ui/standard-editor';
@@ -10,7 +10,6 @@ import { boardUserService } from '@/services/business/user/board/BoardUserServic
 import { fileAdminService } from '@/services/foundation/system/FileAdminService';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
-import { useAutoSave } from '@/lib/hooks/use-auto-save';
 import { Send, X, AlertCircle } from 'lucide-react';
 import { NOTICE_BOARD_ID } from '@/config/board-ids';
 import { useBoardOptions } from '@/hooks/api/use-board-options';
@@ -18,6 +17,8 @@ import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUti
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { BoardSaveRequestSchema } from '@/types/generated-zod';
+import { useAuth } from '@/contexts/AuthContext';
+import { useAutoSaveDraft } from '@/hooks/use-auto-save-draft';
 
 // Generated schema의 pstCn min(0)은 백엔드 BoardSaveRequest @NotBlank보다 약하므로 required만 보강한다.
 export const communityBoardCreateSchema = BoardSaveRequestSchema.pick({
@@ -45,6 +46,7 @@ export default function CommunityBoardsDetailClient() {
     const router = useRouter();
     const { toast } = useToast();
     const confirm = useConfirm();
+    const { user } = useAuth();
     const [isSaving, setIsSaving] = useState(false);
     const savePendingRef = useRef(false);
     const { options: boardOptions } = useBoardOptions();
@@ -54,6 +56,20 @@ export default function CommunityBoardsDetailClient() {
         pstTtl: '',
         pstCn: '',
         scrtYn: 'N' as 'Y' | 'N'
+    });
+    const draftScope = useMemo(() => user ? {
+        ownerId: user.esntlId ?? user.id,
+        boardId: formData.bbsId,
+        action: 'create' as const,
+        recordId: 'new',
+    } : null, [formData.bbsId, user]);
+    const { restoreDraft, clearDraft, hasDraft } = useAutoSaveDraft({
+        scope: draftScope,
+        legacyKeys: ['autosave_bbs_write'],
+        getData: () => ({ title: formData.pstTtl, content: formData.pstCn }),
+        onRestore: ({ title, content }) => {
+            setFormData((current) => ({ ...current, pstTtl: title, pstCn: content }));
+        },
     });
     const validation = useManualFormValidation(communityBoardCreateSchema, {
         labels: boardValidationLabels,
@@ -70,9 +86,6 @@ export default function CommunityBoardsDetailClient() {
     //   같은 업로더를 쓰는 배너 화면(BannerAdminClient)은 저장 시점에 실제로 업로드한다.
     //   **게시글만 배선이 빠져 있었다.**
     const [files, setFiles] = useState<File[]>([]);
-
-    // 자동 저장 훅 연동
-    const { clear } = useAutoSave('bbs_write', formData, (data) => setFormData(data));
 
     const handleSave = async () => {
         if (savePendingRef.current) return;
@@ -101,8 +114,8 @@ export default function CommunityBoardsDetailClient() {
 
                 const res = await boardUserService.createPost({ ...validated, atchFileSn });
                 if (res) {
+                    clearDraft();
                     toast('성공적으로 등록되었습니다.', 'success');
-                    clear(); // 자동 저장 데이터 삭제
                     router.push('/admin/community/boards');
                 }
             }
@@ -138,6 +151,21 @@ export default function CommunityBoardsDetailClient() {
                 labels={boardValidationLabels}
                 onNavigate={validation.focusError}
             />
+
+            {hasDraft ? (
+                <div className="flex items-center justify-between gap-4 rounded-lg border border-border bg-muted/40 px-4 py-3">
+                    <p className="text-sm font-medium text-muted-foreground">이 게시판에 임시저장된 작성 내용이 있습니다.</p>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (restoreDraft()) toast('임시저장 내용을 복원했습니다.', 'success');
+                        }}
+                        className="shrink-0 rounded-md border border-border bg-card px-3 py-2 text-sm font-bold hover:bg-accent"
+                    >
+                        임시저장 복원
+                    </button>
+                </div>
+            ) : null}
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Form (Left) */}

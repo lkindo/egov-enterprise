@@ -403,58 +403,127 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("일괄 상태 변경 - 성공")
-    void updateBoardMasterStatusInBatch_Success() {
+    @DisplayName("일괄 상태 변경 - 마스터를 한 번에 조회해 모두 변경한다")
+    void updateBoardMasterStatusInBatch_usesSingleBatchLookup() {
         BoardMaster master1 = BoardMaster.builder().bbsId("BBS_01").useYn("Y").build();
         BoardMaster master2 = BoardMaster.builder().bbsId("BBS_02").useYn("Y").build();
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master1));
-        given(boardMasterRepository.findById("BBS_02")).willReturn(Optional.of(master2));
+        given(boardMasterRepository.findAllWithOptionByBbsIdIn(List.of("BBS_01", "BBS_02")))
+                .willReturn(List.of(master2, master1));
 
         boardMasterService.updateBoardMasterStatusInBatch("user1", List.of("BBS_01", "BBS_02"), "N");
 
         assertThat(master1.getUseYn()).isEqualTo("N");
         assertThat(master2.getUseYn()).isEqualTo("N");
+        verify(boardMasterRepository).findAllWithOptionByBbsIdIn(List.of("BBS_01", "BBS_02"));
+        verify(boardMasterRepository, never()).findById(anyString());
     }
 
     @Test
-    @DisplayName("일괄 물리 삭제 - 성공")
-    void deleteBoardMastersInBatch_Success() {
+    @DisplayName("일괄 상태 변경 - 중복 ID는 한 번만 처리한다")
+    void updateBoardMasterStatusInBatch_deduplicatesIds() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("Y").build();
+        given(boardMasterRepository.findAllWithOptionByBbsIdIn(List.of("BBS_01")))
+                .willReturn(List.of(master));
+
+        boardMasterService.updateBoardMasterStatusInBatch("user1", List.of("BBS_01", "BBS_01"), "N");
+
+        assertThat(master.getUseYn()).isEqualTo("N");
+        verify(boardMasterRepository).findAllWithOptionByBbsIdIn(List.of("BBS_01"));
+    }
+
+    @Test
+    @DisplayName("일괄 상태 변경 - 누락 ID가 있으면 조회된 엔티티도 변경하지 않는다")
+    void updateBoardMasterStatusInBatch_missingIdDoesNotPartiallyMutate() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("Y").build();
+        given(boardMasterRepository.findAllWithOptionByBbsIdIn(List.of("BBS_01", "BBS_MISSING")))
+                .willReturn(List.of(master));
+
+        assertThrows(BusinessException.class,
+                () -> boardMasterService.updateBoardMasterStatusInBatch(
+                        "user1", List.of("BBS_01", "BBS_MISSING"), "N"));
+
+        assertThat(master.getUseYn()).isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("일괄 물리 삭제 - 마스터와 게시글 존재를 각각 한 번 조회하고 안전한 삭제 경로를 한 번 호출한다")
+    void deleteBoardMastersInBatch_usesSingleBatchQueriesAndDelete() {
         BoardMaster master1 = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
         BoardMaster master2 = BoardMaster.builder().bbsId("BBS_02").useYn("N").build();
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master1));
-        given(boardMasterRepository.findById("BBS_02")).willReturn(Optional.of(master2));
-        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(0L);
-        given(boardRepository.countAllByBbsId("BBS_02")).willReturn(0L);
+        given(boardMasterRepository.findAllWithOptionByBbsIdIn(List.of("BBS_01", "BBS_02")))
+                .willReturn(List.of(master2, master1));
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of("BBS_01", "BBS_02")))
+                .willReturn(List.of());
 
         boardMasterService.deleteBoardMastersInBatch("user1", List.of("BBS_01", "BBS_02"));
 
-        verify(boardMasterRepository).delete(master1);
-        verify(boardMasterRepository).delete(master2);
+        verify(boardMasterRepository).findAllWithOptionByBbsIdIn(List.of("BBS_01", "BBS_02"));
+        verify(boardRepository).findBbsIdsHavingAnyArticles(List.of("BBS_01", "BBS_02"));
+        verify(boardMasterRepository).deleteAll(List.of(master1, master2));
+        verify(boardMasterRepository, never()).findById(anyString());
+        verify(boardRepository, never()).countAllByBbsId(anyString());
+        verify(boardMasterRepository, never()).delete(any(BoardMaster.class));
     }
 
     @Test
-    @DisplayName("일괄 물리 삭제 - 실패 (활성 게시판 포함)")
-    void deleteBoardMastersInBatch_Fail_ActiveBoard() {
+    @DisplayName("일괄 물리 삭제 - 중복 ID는 검증과 삭제 모두 한 번만 수행한다")
+    void deleteBoardMastersInBatch_deduplicatesIds() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
+        given(boardMasterRepository.findAllWithOptionByBbsIdIn(List.of("BBS_01")))
+                .willReturn(List.of(master));
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of("BBS_01"))).willReturn(List.of());
+
+        boardMasterService.deleteBoardMastersInBatch("user1", List.of("BBS_01", "BBS_01"));
+
+        verify(boardMasterRepository).deleteAll(List.of(master));
+    }
+
+    @Test
+    @DisplayName("일괄 물리 삭제 - 활성 게시판이 하나라도 있으면 어느 대상도 삭제하지 않는다")
+    void deleteBoardMastersInBatch_activeBoardDoesNotPartiallyDelete() {
         BoardMaster master1 = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
-        BoardMaster master2 = BoardMaster.builder().bbsId("BBS_02").useYn("Y").build(); // 활성 게시판
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master1));
-        given(boardMasterRepository.findById("BBS_02")).willReturn(Optional.of(master2));
+        BoardMaster master2 = BoardMaster.builder().bbsId("BBS_02").useYn("Y").build();
+        given(boardMasterRepository.findAllWithOptionByBbsIdIn(List.of("BBS_01", "BBS_02")))
+                .willReturn(List.of(master1, master2));
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of("BBS_01", "BBS_02")))
+                .willReturn(List.of());
 
         assertThrows(BusinessException.class,
             () -> boardMasterService.deleteBoardMastersInBatch("user1", List.of("BBS_01", "BBS_02")));
+
+        verify(boardMasterRepository, never()).deleteAll(anyList());
+        verify(boardMasterRepository, never()).delete(any(BoardMaster.class));
     }
 
     @Test
-    @DisplayName("일괄 물리 삭제 - 실패 (게시글 포함)")
-    void deleteBoardMastersInBatch_Fail_HasArticles() {
+    @DisplayName("일괄 물리 삭제 - 게시글 보유 게시판이 하나라도 있으면 어느 대상도 삭제하지 않는다")
+    void deleteBoardMastersInBatch_articlesDoNotPartiallyDelete() {
         BoardMaster master1 = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
         BoardMaster master2 = BoardMaster.builder().bbsId("BBS_02").useYn("N").build();
-        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master1));
-        given(boardMasterRepository.findById("BBS_02")).willReturn(Optional.of(master2));
-        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(0L);
-        given(boardRepository.countAllByBbsId("BBS_02")).willReturn(2L); // 게시글 있음
+        given(boardMasterRepository.findAllWithOptionByBbsIdIn(List.of("BBS_01", "BBS_02")))
+                .willReturn(List.of(master1, master2));
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of("BBS_01", "BBS_02")))
+                .willReturn(List.of("BBS_02"));
 
         assertThrows(BusinessException.class,
             () -> boardMasterService.deleteBoardMastersInBatch("user1", List.of("BBS_01", "BBS_02")));
+
+        verify(boardMasterRepository, never()).deleteAll(anyList());
+        verify(boardMasterRepository, never()).delete(any(BoardMaster.class));
+    }
+
+    @Test
+    @DisplayName("일괄 물리 삭제 - 누락 ID가 있으면 게시글 조회나 삭제를 시작하지 않는다")
+    void deleteBoardMastersInBatch_missingIdDoesNotStartDelete() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
+        given(boardMasterRepository.findAllWithOptionByBbsIdIn(List.of("BBS_01", "BBS_MISSING")))
+                .willReturn(List.of(master));
+
+        assertThrows(BusinessException.class,
+                () -> boardMasterService.deleteBoardMastersInBatch(
+                        "user1", List.of("BBS_01", "BBS_MISSING")));
+
+        verify(boardRepository, never()).findBbsIdsHavingAnyArticles(anyList());
+        verify(boardMasterRepository, never()).deleteAll(anyList());
     }
 }

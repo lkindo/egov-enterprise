@@ -15,8 +15,15 @@ public record MappingSpec(
         DbConfig source,
         DbConfig target,
         List<TableMapping> tables,
-        Map<String, Map<String, String>> codemaps
+        Map<String, Map<String, String>> codemaps,
+        RunContext run
 ) {
+
+    /** 기존 dry-run/단위 테스트 호환 생성자. COMMIT은 명시적 run 계약을 별도로 강제한다. */
+    public MappingSpec(DbConfig source, DbConfig target, List<TableMapping> tables,
+                       Map<String, Map<String, String>> codemaps) {
+        this(source, target, tables, codemaps, null);
+    }
 
     public MappingSpec {
         tables = tables == null ? List.of() : tables;
@@ -26,16 +33,43 @@ public record MappingSpec(
     /** JDBC 접속 정보(소스/타깃 공통). */
     public record DbConfig(String url, String username, String password, String driver) {}
 
+    /** 재시작 가능한 이관 실행의 영속 identity. 두 값 모두 COMMIT에서 필수다. */
+    public record RunContext(String runId, String sourceNamespace) {}
+
     /** 소스 테이블 → 타깃 테이블 매핑. */
     public record TableMapping(
             String source,
             String target,
             String where,
+            String orderBy,
+            List<String> orderByKeys,
+            String targetKey,
             List<ColumnMapping> columns,
             IdStrategy idStrategy
     ) {
+        /** P1 단일키 DSL 호환 생성자. */
+        public TableMapping(String source, String target, String where, String orderBy,
+                            String targetKey, List<ColumnMapping> columns, IdStrategy idStrategy) {
+            this(source, target, where, orderBy, List.of(), targetKey, columns, idStrategy);
+        }
+
+        /** 기존 dry-run/검증 호출부 호환 생성자. COMMIT은 orderBy를 별도로 강제한다. */
+        public TableMapping(String source, String target, String where,
+                            List<ColumnMapping> columns, IdStrategy idStrategy) {
+            this(source, target, where, null, List.of(), null, columns, idStrategy);
+        }
+
         public TableMapping {
+            orderByKeys = orderByKeys == null ? List.of() : List.copyOf(orderByKeys);
             columns = columns == null ? List.of() : columns;
+        }
+
+        /** 새 복합키가 없으면 기존 단일 {@code orderBy}를 그대로 사용한다. */
+        public List<String> effectiveOrderKeys() {
+            if (!orderByKeys.isEmpty()) {
+                return orderByKeys;
+            }
+            return orderBy == null || orderBy.isBlank() ? List.of() : List.of(orderBy);
         }
     }
 

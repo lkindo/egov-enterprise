@@ -3,6 +3,10 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 import { LOGIN_FAILURE_MESSAGE } from '@/lib/auth/login-error';
+import {
+  purgeBoardDraftStorage,
+  purgeLegacyBoardDraftStorage,
+} from '@/lib/drafts/board-draft-storage';
 
 interface AuthContextType {
   user: UserInfo | null;
@@ -69,11 +73,16 @@ export function AuthProvider({
     } catch {
       // 로그아웃 요청이 실패해도 로컬 인증 상태는 반드시 제거한다.
     } finally {
+      // 게시글 본문은 사용자 귀속 데이터다. 원격 로그아웃 성공 여부와 무관하게 현재 브라우저의
+      // scoped/legacy 초안을 함께 지워 다음 로그인 사용자가 복원하지 못하게 한다.
+      if (typeof window !== 'undefined') purgeBoardDraftStorage(window.localStorage);
       setUser(null);
     }
   }, []);
 
   useEffect(() => {
+    // 구 키는 owner를 판별할 수 없어 어느 계정에도 안전하게 귀속할 수 없다. 복원하지 않고 제거한다.
+    purgeLegacyBoardDraftStorage(window.localStorage);
     checkAuth();
   }, [checkAuth]);
 

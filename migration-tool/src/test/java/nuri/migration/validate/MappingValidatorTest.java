@@ -186,6 +186,52 @@ class MappingValidatorTest {
 
             assertThat(r.errors()).anySatisfy(e -> assertThat(e).contains("where", "단일 읽기 조건식"));
         }
+
+        @Test
+        @DisplayName("단일 orderBy와 복합 orderByKeys의 동시 선언 및 복합키 중복은 차단한다")
+        void ambiguousOrDuplicateOrderKeysAreErrors() {
+            TableMapping both = new TableMapping("legacy_user", "tb_user_info", null,
+                    "id", List.of("tenant_id", "id"), null,
+                    List.of(col("name", "user_nm")), null);
+            TableMapping duplicate = new TableMapping("legacy_dept", "tb_ognz_info", null,
+                    null, List.of("id", "ID"), null,
+                    List.of(col("name", "ognz_nm")), null);
+
+            ValidationResult result = withSchema().validate(spec(List.of(both, duplicate)));
+
+            assertThat(result.errors()).anySatisfy(error -> assertThat(error)
+                    .contains("orderBy와 orderByKeys", "함께"));
+            assertThat(result.errors()).anySatisfy(error -> assertThat(error)
+                    .contains("orderByKeys 중복", "ID"));
+        }
+
+        @Test
+        @DisplayName("서로 다른 테이블의 FK 순환은 결정적 실행 순서가 없으므로 차단한다")
+        void crossTableFkCycleIsError() {
+            TableMapping a = new TableMapping("legacy_a", "tb_user_info", null, List.of(
+                    new ColumnMapping("b_id", "ognz_id", null, null, null, "legacy_b", null)),
+                    new IdStrategy("user_id", "A", "a_id"));
+            TableMapping b = new TableMapping("legacy_b", "tb_ognz_info", null, List.of(
+                    new ColumnMapping("a_id", "upper_ognz_id", null, null, null, "legacy_a", null)),
+                    new IdStrategy("ognz_id", "B", "b_id"));
+
+            ValidationResult r = withSchema().validate(spec(List.of(a, b)));
+
+            assertThat(r.errors()).anySatisfy(e -> assertThat(e)
+                    .contains("FK 순환", "legacy_a", "legacy_b"));
+        }
+
+        @Test
+        @DisplayName("자기참조 FK는 교차 테이블 순환과 구분해 2-pass 대상으로 허용한다")
+        void selfReferenceIsAllowed() {
+            TableMapping self = new TableMapping("legacy_user", "tb_user_info", null, List.of(
+                    new ColumnMapping("manager_id", "ognz_id", null, null, null, "legacy_user", null)),
+                    new IdStrategy("user_id", "USR", "user_id"));
+
+            ValidationResult r = withSchema().validate(spec(List.of(self)));
+
+            assertThat(r.errors()).noneMatch(e -> e.contains("FK 순환"));
+        }
     }
 
     @Nested

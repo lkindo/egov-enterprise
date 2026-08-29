@@ -200,7 +200,7 @@ describe('app shell accessibility source contract', () => {
 
   it('client 내부 early-return 로딩·오류 상태도 최종 제목과 교대하는 h1을 보존한다', () => {
     const dashboardClient = readAppSource('UnifiedDashboardClient.tsx');
-    const dashboardLoadingStart = dashboardClient.indexOf('if (!isMounted || loading || !user)');
+    const dashboardLoadingStart = dashboardClient.indexOf('if (loading || !user)');
     const dashboardLoadingEnd = dashboardClient.indexOf('\n  return (', dashboardLoadingStart);
 
     const pollParticipate = readAppSource(

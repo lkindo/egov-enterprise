@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.log;
 
+import jakarta.validation.Valid;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.core.response.ApiResponse;
@@ -61,7 +62,7 @@ public class LoginLogApiController {
     @Operation(summary = "로그인 로그 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<LoginLogDto>>> getLoginLogList(
-            @ModelAttribute BaseSearchDto searchDto) throws Exception {
+            @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
         List<LoginLogDto> list = loginLogManageService.selectLoginLogList(searchDto);
         int totCnt = loginLogManageService.selectLoginLogListTotCnt(searchDto);
@@ -97,7 +98,7 @@ public class LoginLogApiController {
     @AdminOrSystem
     @GetMapping(value = "/export.xlsx", produces = XLSX_MEDIA_TYPE)
     public ResponseEntity<StreamingResponseBody> exportLoginLogs(
-            @ModelAttribute BaseSearchDto searchDto) {
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
 
         int totalCount = loginLogManageService.selectLoginLogListTotCnt(searchDto);
         if (totalCount > MAX_EXPORT_ROWS) {

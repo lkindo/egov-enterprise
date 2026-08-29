@@ -48,14 +48,14 @@ class ServiceReadOnlyTransactionalLinterTest {
      * (1차 census 실행으로 채운다 — 엔티티 단순명 기준)
      */
     private static final Set<String> GRANDFATHERED = new TreeSet<>(Arrays.asList(
-            // [동결 2026-07-18] 린터 최초 실행 census — 클래스레벨 readOnly 누락 @Service 11종.
-            // 성격: 쓰기 전용/카운터(BoardViewCountService·LoginLogManageService·OtpService), 파일 IO(LocalFileStorageService·
-            // 정당한 무-tx), Security UserDetails 조회(CustomUserDetailsService), 쓰기 혼재(BoardService·CommentService),
-            // readOnly 검토 후보(CommonCodeService·InstitutionCodeService·MenuIntegrationService·RealTimeDashboardService).
+            // [동결 2026-07-18, 축소 2026-08-30] 클래스레벨 readOnly 누락 @Service 11종 중
+            // 조회 경계가 명확한 5종(CommonCode·InstitutionCode·LoginLogManage·MenuIntegration·
+            // CustomUserDetails)은 클래스 기본 readOnly + 쓰기 메서드 override로 정렬했다.
+            // 성격: 쓰기 전용/카운터(BoardViewCountService·OtpService), 파일 IO(LocalFileStorageService·
+            // 정당한 무-tx), 쓰기 혼재(BoardService·CommentService), 비-DB 실시간 카운터(RealTimeDashboardService).
             // 신규 추가 금지 — 신규 @Service 는 클래스레벨 readOnly=true 사용.
-            "BoardService", "BoardViewCountService", "CommentService", "CommonCodeService",
-            "CustomUserDetailsService", "InstitutionCodeService", "LocalFileStorageService",
-            "LoginLogManageService", "MenuIntegrationService", "OtpService", "RealTimeDashboardService"
+            "BoardService", "BoardViewCountService", "CommentService", "LocalFileStorageService",
+            "OtpService", "RealTimeDashboardService"
     ));
 
     @Test
@@ -91,14 +91,21 @@ class ServiceReadOnlyTransactionalLinterTest {
                 .filter(name -> !GRANDFATHERED.contains(name))
                 .sorted()
                 .collect(Collectors.toList());
+        List<String> staleGrandfathered = GRANDFATHERED.stream()
+                .filter(name -> !nonReadOnly.contains(name))
+                .sorted()
+                .collect(Collectors.toList());
 
-        if (!violations.isEmpty()) {
+        if (!violations.isEmpty() || !staleGrandfathered.isEmpty()) {
             StringBuilder sb = new StringBuilder();
             sb.append("\n========================================================================\n");
             sb.append("🔗 [SERVICE READONLY GATE] 클래스레벨 @Transactional(readOnly=true) 누락 @Service 감지!\n");
             sb.append("========================================================================\n");
             for (String v : violations) {
                 sb.append("❌ ").append(v).append(" — 클래스레벨 @Transactional(readOnly=true) 부재\n");
+            }
+            for (String stale : staleGrandfathered) {
+                sb.append("❌ ").append(stale).append(" — 이미 정렬됐거나 제거된 stale GRANDFATHERED 항목\n");
             }
             sb.append("\n💡 §2.C: @Service 는 클래스레벨 @Transactional(readOnly=true), 쓰기 메서드만 메서드레벨 오버라이드.\n");
             sb.append("   정당한 예외(파일 IO·쓰기 전용 등)면 사유와 함께 ServiceReadOnlyTransactionalLinterTest.GRANDFATHERED 에 추가.\n");

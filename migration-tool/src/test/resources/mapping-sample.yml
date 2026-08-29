@@ -3,9 +3,13 @@ source:
   username: sa
   password: ""
   driver: org.h2.Driver
+run:
+  runId: sample-run
+  sourceNamespace: fixture-crm
 tables:
   - source: LEGACY_USER
     target: tb_user_info
+    orderBy: USER_ID
     columns:
       - { source: USER_ID, target: user_id }
       - { source: USER_NM, target: user_nm, transform: trim }

@@ -16,6 +16,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.validation.annotation.Validated;
+import jakarta.validation.Valid;
 import java.util.Objects;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -27,6 +29,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Validated
 public class SmsService {
 
     private final SmsRepository smsRepository;
@@ -53,7 +56,7 @@ public class SmsService {
     }
 
     @Transactional
-    public Long sendSms(String userId, SmsDto dto) {
+    public Long sendSms(String userId, @Valid SmsDto dto) {
         log.info("Sending SMS requested by user: {}, sender: {}", userId, nuri.foundation.core.util.PiiMaskUtil.phone(dto.getSndngTelno()));
 
         Sms sms = Sms.builder()

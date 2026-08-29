@@ -13,6 +13,8 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -38,6 +40,8 @@ import static org.junit.jupiter.api.Assertions.fail;
  * <ol>
  *   <li>{@code Math.max(0, ...getPageIndex() - 1)} — 1-based→0-based 변환의 손수 재구현</li>
  *   <li>{@code getPageUnit() > 0 ? ... : 10} — 페이지 크기 기본값 분기의 손수 재구현</li>
+ *   <li>{@code PageRequest.of(search.getPageIndex(), search.getPageUnit())} — import/FQN/static import 를
+ *       불문한 직접 getter 우회</li>
  * </ol>
  * 둘 중 하나라도 나타나면 위반이다. 올바른 형태는 {@code searchVO.toPageable()} 이며,
  * 정렬이 필요하면 {@code searchVO.toPageable(Sort.by(...))} 오버로드를 쓴다.
@@ -47,7 +51,10 @@ import static org.junit.jupiter.api.Assertions.fail;
  * 정당한 용법이고, 그것까지 막으면 헬퍼를 억지로 끼워 넣는 우회를 부른다.
  * 이 게이트가 겨냥하는 것은 <b>BaseSearchDto 로부터의 변환 로직 재구현</b> 하나다.
  *
- * <p>[예외 목록 없음] 도입 시점 위반 0건이다(13개소 전량 치환 완료).
+ * <p>{@link BaseSearchDto} 를 받는 MVC model attribute 는 반드시 {@code @Valid} 로 실제 Bean Validation 을
+ * 집행한다. DTO에 제약만 선언하고 controller가 검증을 호출하지 않는 false-green을 별도 census로 막는다.
+ *
+ * <p>[예외 목록 없음] 도입 시점 위반 0건이다.
  * 예외 목록으로 출발하면 그 목록이 곧 서랍이 된다(AGENTS.md Evidence guardrails H2).
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 텍스트 스캔.
@@ -74,6 +81,51 @@ class PageableConstructionLinterTest {
     private static final Pattern MANUAL_PAGE_UNIT =
             Pattern.compile("\\.getPageUnit\\s*\\(\\s*\\)\\s*>\\s*0\\s*\\?[^;]*?:\\s*\\d+");
 
+    /** import 단순명 또는 inline FQN 으로 호출한 PageRequest.of(...) 안의 BaseSearchDto getter. */
+    private static final Pattern DIRECT_PAGE_REQUEST_GETTER = Pattern.compile(
+            "(?s)(?:\\bPageRequest|org\\.springframework\\.data\\.domain\\.PageRequest)"
+                    + "\\s*\\.\\s*of\\s*\\((?:(?!\\);).)*?"
+                    + "\\.get(?:PageIndex|PageUnit|RecordCountPerPage)\\s*\\(");
+
+    private static final Pattern STATIC_PAGE_REQUEST_OF_IMPORT = Pattern.compile(
+            "^\\s*import\\s+static\\s+org\\.springframework\\.data\\.domain\\.PageRequest\\.of\\s*;",
+            Pattern.MULTILINE);
+
+    private static final Pattern STATIC_OF_GETTER = Pattern.compile(
+            "(?s)\\bof\\s*\\((?:(?!\\);).)*?\\.get(?:PageIndex|PageUnit|RecordCountPerPage)\\s*\\(");
+
+    private static final Pattern BASE_SEARCH_MODEL_ATTRIBUTE = Pattern.compile(
+            "@ModelAttribute(?:\\s*\\([^)]*\\))?\\s+"
+                    + "(?:nuri\\.business\\.domain\\.common\\.)?BaseSearchDto\\b");
+
+    private static final Pattern VALID_BASE_SEARCH_MODEL_ATTRIBUTE = Pattern.compile(
+            "@Valid\\s+@ModelAttribute(?:\\s*\\([^)]*\\))?\\s+"
+                    + "(?:nuri\\.business\\.domain\\.common\\.)?BaseSearchDto\\b");
+
+    private static final int EXPECTED_BASE_SEARCH_MODEL_ATTRIBUTES = 28;
+
+    @Test
+    @DisplayName("red proof: import/FQN/static-import PageRequest 우회와 직접 getter 를 모두 탐지한다")
+    void detectsEveryPageRequestBypassForm() {
+        List<String> fixtures = List.of(
+                "import org.springframework.data.domain.PageRequest; class X { void x(BaseSearchDto s) { PageRequest.of(s.getPageIndex() - 1, s.getPageUnit()); } }",
+                "class X { void x(BaseSearchDto s) { org.springframework.data.domain.PageRequest.of(s.getPageIndex() - 1, s.getPageUnit()); } }",
+                "import static org.springframework.data.domain.PageRequest.of; class X { void x(BaseSearchDto s) { of(s.getPageIndex() - 1, s.getRecordCountPerPage()); } }"
+        );
+
+        for (String fixture : fixtures) {
+            assertEquals(1, findViolations("fixture.java", fixture).size(), fixture);
+        }
+    }
+
+    @Test
+    @DisplayName("red proof: BaseSearchDto 와 무관한 고정 PageRequest 는 허용한다")
+    void allowsFixedPageRequestConstruction() {
+        assertTrue(findViolations("fixture.java",
+                "import org.springframework.data.domain.PageRequest; class X { void x() { PageRequest.of(0, 1); } }")
+                .isEmpty());
+    }
+
     @Test
     @DisplayName("🧨 페이징 변환을 손수 재구현하지 않는가 — BaseSearchDto#toPageable() 우회 차단")
     void auditManualPageableConstruction() throws IOException {
@@ -88,19 +140,7 @@ class PageableConstructionLinterTest {
                 continue;
             }
             scanned++;
-            String src = stripComments(HarnessSourceIndex.read(f));
-
-            Matcher idx = MANUAL_PAGE_INDEX.matcher(src);
-            while (idx.find()) {
-                violations.add(rel + " — 1-based→0-based 변환을 손수 구현: `"
-                        + squeeze(idx.group()) + "`");
-            }
-
-            Matcher unit = MANUAL_PAGE_UNIT.matcher(src);
-            while (unit.find()) {
-                violations.add(rel + " — 페이지 크기 기본값 분기를 손수 구현: `"
-                        + squeeze(unit.group()) + "`");
-            }
+            violations.addAll(findViolations(rel, HarnessSourceIndex.read(f)));
         }
 
         log.info("[PageableConstructionLinter] 생산 소스 {}개 스캔, 위반 {}건", scanned, violations.size());
@@ -121,6 +161,78 @@ class PageableConstructionLinterTest {
             sb.append("\n복제하면 호출부마다 같은 뮤턴트가 따로 살아남는다 — 종전 13개소가 정확히 그 상태였다.\n");
             fail(sb.toString());
         }
+    }
+
+    @Test
+    @DisplayName("BaseSearchDto MVC model attribute 28건이 모두 @Valid 를 집행한다")
+    void auditBaseSearchDtoModelAttributesAreValidated() throws IOException {
+        Path root = HarnessSourceIndex.repoRoot();
+        List<String> violations = new ArrayList<>();
+        int all = 0;
+        int validated = 0;
+
+        for (Path source : HarnessSourceIndex.productionJavaSources("api-server")) {
+            String relative = root.relativize(source).toString().replace('\\', '/');
+            String code = stripComments(HarnessSourceIndex.read(source));
+            int sourceAll = count(BASE_SEARCH_MODEL_ATTRIBUTE, code);
+            int sourceValidated = count(VALID_BASE_SEARCH_MODEL_ATTRIBUTE, code);
+            all += sourceAll;
+            validated += sourceValidated;
+            if (sourceAll != sourceValidated) {
+                violations.add(relative + " — BaseSearchDto model attribute " + sourceAll
+                        + "건 중 @Valid " + sourceValidated + "건");
+            }
+        }
+
+        if (all != EXPECTED_BASE_SEARCH_MODEL_ATTRIBUTES) {
+            violations.add("BaseSearchDto model attribute census가 " + EXPECTED_BASE_SEARCH_MODEL_ATTRIBUTES
+                    + " → " + all + " 로 변했습니다. 추가/삭제된 binding의 validation 의미를 검토하십시오.");
+        }
+        if (validated != all) {
+            violations.add("@Valid 집행 누락: 전체 " + all + "건, validated " + validated + "건");
+        }
+        if (!violations.isEmpty()) {
+            fail(String.join("\n", violations));
+        }
+    }
+
+    static List<String> findViolations(String relative, String source) {
+        String code = stripComments(source);
+        List<String> violations = new ArrayList<>();
+
+        Matcher idx = MANUAL_PAGE_INDEX.matcher(code);
+        while (idx.find()) {
+            violations.add(relative + " — 1-based→0-based 변환을 손수 구현: `"
+                    + squeeze(idx.group()) + "`");
+        }
+
+        Matcher unit = MANUAL_PAGE_UNIT.matcher(code);
+        while (unit.find()) {
+            violations.add(relative + " — 페이지 크기 기본값 분기를 손수 구현: `"
+                    + squeeze(unit.group()) + "`");
+        }
+
+        Matcher direct = DIRECT_PAGE_REQUEST_GETTER.matcher(code);
+        while (direct.find()) {
+            violations.add(relative + " — PageRequest.of 에 BaseSearchDto getter 직접 전달: `"
+                    + squeeze(direct.group()) + "`");
+        }
+
+        if (STATIC_PAGE_REQUEST_OF_IMPORT.matcher(code).find()) {
+            Matcher staticCall = STATIC_OF_GETTER.matcher(code);
+            while (staticCall.find()) {
+                violations.add(relative + " — static PageRequest.of 에 BaseSearchDto getter 직접 전달: `"
+                        + squeeze(staticCall.group()) + "`");
+            }
+        }
+        return violations;
+    }
+
+    private static int count(Pattern pattern, String source) {
+        int count = 0;
+        Matcher matcher = pattern.matcher(source);
+        while (matcher.find()) count++;
+        return count;
     }
 
     /**

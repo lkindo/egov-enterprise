@@ -1,5 +1,6 @@
 package nuri.api.controller.foundation.controller.system.log;
 
+import jakarta.validation.Valid;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -48,7 +49,7 @@ public class UserLogApiController {
     @AdminOrSystem
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<UserLogDto>>> getUserLogList(
-            @ModelAttribute BaseSearchDto searchDto) {
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
         Page<UserLogDto> page = userLogManageService.selectUserLogList(searchDto);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
@@ -78,7 +79,7 @@ public class UserLogApiController {
     @AdminOrSystem
     @GetMapping(value = "/export.xlsx", produces = LogExcelExport.XLSX_MEDIA_TYPE)
     public ResponseEntity<StreamingResponseBody> exportUserLogs(
-            @ModelAttribute BaseSearchDto searchDto) {
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
 
         searchDto.setPageIndex(1);
         searchDto.setPageUnit(1);

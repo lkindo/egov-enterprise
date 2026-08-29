@@ -3,6 +3,7 @@ package nuri.api.controller.foundation.controller.system;
 import jakarta.validation.Valid;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
+import nuri.foundation.security.annotation.AdminOrSystem;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.auth.AuthorManageService;
 import nuri.business.service.auth.dto.AuthorManageDto;
@@ -33,7 +34,7 @@ public class AuthorApiController {
     @Operation(summary = "권한 그룹 목록 조회", description = "시스템에 정의된 권한 그룹(Author) 목록을 조회합니다.")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<AuthorManageDto>>> getAuthors(
-            @ModelAttribute BaseSearchDto searchDto) {
+            @Valid @ModelAttribute BaseSearchDto searchDto) {
         log.info(">>> [AuthorApiController] getAuthors called with params: {}", searchDto);
 
         // 목록과 총건수를 한 질의에서 얻는다. 종전에는 총건수가 검색을 무시한 전체 count() 였다.
@@ -51,6 +52,7 @@ public class AuthorApiController {
     }
 
     @Operation(summary = "권한 그룹 등록", description = "새로운 시스템 권한 그룹을 등록합니다.")
+    @AdminOrSystem
     @PostMapping
     public ResponseEntity<ApiResponse<Void>> createAuthor(@Valid @RequestBody AuthorManageDto dto) {
         authorManageService.insertAuthor(dto);
@@ -58,6 +60,7 @@ public class AuthorApiController {
     }
 
     @Operation(summary = "권한 그룹 수정", description = "기존 시스템 권한 그룹 정보를 수정합니다.")
+    @AdminOrSystem
     @PutMapping("/{authrtCd}")
     public ResponseEntity<ApiResponse<Void>> updateAuthor(
             @PathVariable String authrtCd,
@@ -82,6 +85,7 @@ public class AuthorApiController {
     }
 
     @Operation(summary = "권한 그룹 삭제", description = "시스템 권한 그룹 정보를 삭제합니다.")
+    @AdminOrSystem
     @DeleteMapping("/{authrtCd}")
     public ResponseEntity<ApiResponse<Void>> deleteAuthor(@PathVariable String authrtCd) {
         authorManageService.deleteAuthor(authrtCd);
@@ -89,6 +93,7 @@ public class AuthorApiController {
     }
 
     @Operation(summary = "권한 그룹 다중 삭제", description = "여러 권한 그룹 정보를 한꺼번에 삭제합니다.")
+    @AdminOrSystem
     @DeleteMapping
     public ResponseEntity<ApiResponse<Void>> deleteAuthors(@RequestBody List<String> authorCodes) {
         authorManageService.deleteAuthors(authorCodes.toArray(new String[0]));

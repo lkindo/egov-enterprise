@@ -145,6 +145,18 @@ class WorkReportServiceTest {
     }
 
     @Test
+    @DisplayName("업무보고 상세 — 미존재는 성공 null이 아니라 404 도메인 오류")
+    void getWorkReport_notFound() {
+        when(workReportRepository.findById(404L)).thenReturn(Optional.empty());
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> workReportService.getWorkReport(404L));
+
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND,
+                error.getErrorCode());
+    }
+
+    @Test
     @DisplayName("업무보고 상세 — 타인 보고서는 거부한다 (IDOR 방어)")
     void getWorkReport_deniedForNonOwner() {
         // frstRgtrId 는 감사 컬럼이라 빌더로 설정되지 않는다(null) → 소유자 불일치 상태를 만든다.

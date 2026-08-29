@@ -6,6 +6,7 @@ import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.DbConfig;
 import nuri.migration.model.MappingSpec.IdStrategy;
+import nuri.migration.model.MappingSpec.RunContext;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.transform.TransformerRegistry;
@@ -35,9 +36,10 @@ class EtlAtomicKeyMapIntegrationTest {
         JdbcTemplate target = jdbc(databases.target());
         target.execute("CREATE TABLE tb_item (item_id varchar(20) PRIMARY KEY, item_nm varchar(50))");
         target.execute("CREATE TABLE tb_migration_key_map ("
+                + "run_id varchar(128) NOT NULL, source_namespace varchar(128) NOT NULL, "
                 + "source_table varchar(128) NOT NULL, legacy_key varchar(256) NOT NULL, "
                 + "new_key varchar(256) NOT NULL CHECK (length(new_key) <= 1), "
-                + "PRIMARY KEY (source_table, legacy_key))");
+                + "PRIMARY KEY (run_id, source_namespace, source_table, legacy_key))");
 
         List<EtlExecutor.TableResult> results = executor.execute(
                 singleTableSpec(databases, "LEGACY_ITEM", "tb_item", "ITEM_ID", "item_id", "ITEM_NM", "item_nm"),
@@ -66,13 +68,16 @@ class EtlAtomicKeyMapIntegrationTest {
         target.execute("CREATE TABLE tb_child (child_id varchar(20) PRIMARY KEY, item_id varchar(20))");
 
         TableMapping parent = new TableMapping("LEGACY_ITEM", "tb_item", null,
+                "ITEM_ID", null,
                 List.of(new ColumnMapping("ITEM_NM", "item_nm", null, null, null, null, null)),
                 new IdStrategy("item_id", "ITM", "ITEM_ID"));
         TableMapping child = new TableMapping("LEGACY_CHILD", "tb_child", null,
+                "CHILD_ID", null,
                 List.of(new ColumnMapping("ITEM_ID", "item_id", null, null, null, "LEGACY_ITEM", null)),
                 new IdStrategy("child_id", "CHD", "CHILD_ID"));
         MappingSpec spec = new MappingSpec(
-                databases.source(), databases.target(), List.of(child, parent), Map.of());
+                databases.source(), databases.target(), List.of(child, parent), Map.of(),
+                runContext(databases));
 
         List<EtlExecutor.TableResult> results = executor.execute(spec, MigrationMode.COMMIT);
 
@@ -90,7 +95,7 @@ class EtlAtomicKeyMapIntegrationTest {
     }
 
     @Test
-    void rerunReusesThePersistedKeyIdentityAndFailsExplicitlyOnDuplicateData() {
+    void rerunResumesThePersistedKeyIdentityWithoutDuplicateData() {
         DbPair databases = databases("rerun");
         JdbcTemplate source = jdbc(databases.source());
         source.execute("CREATE TABLE LEGACY_ITEM (ITEM_ID varchar(20), ITEM_NM varchar(50))");
@@ -109,8 +114,8 @@ class EtlAtomicKeyMapIntegrationTest {
 
         assertThat(first).singleElement().satisfies(result -> assertThat(result.errors()).isEmpty());
         assertThat(rerun).singleElement().satisfies(result -> {
-            assertThat(result.written()).isZero();
-            assertThat(result.errors()).isNotEmpty();
+            assertThat(result.written()).isEqualTo(1L);
+            assertThat(result.errors()).isEmpty();
         });
         assertThat(count(target, "tb_item")).isEqualTo(1L);
         assertThat(count(target, "tb_migration_key_map")).isEqualTo(1L);
@@ -125,9 +130,15 @@ class EtlAtomicKeyMapIntegrationTest {
                                                String sourceId, String targetId,
                                                String sourceValue, String targetValue) {
         TableMapping table = new TableMapping(sourceTable, targetTable, null,
+                sourceId, null,
                 List.of(new ColumnMapping(sourceValue, targetValue, null, null, null, null, null)),
                 new IdStrategy(targetId, "ITM", sourceId));
-        return new MappingSpec(databases.source(), databases.target(), List.of(table), Map.of());
+        return new MappingSpec(databases.source(), databases.target(), List.of(table), Map.of(),
+                runContext(databases));
+    }
+
+    private static RunContext runContext(DbPair databases) {
+        return new RunContext("atomic-run", databases.source().url());
     }
 
     private static EtlExecutor.TableResult resultFor(List<EtlExecutor.TableResult> results, String sourceTable) {

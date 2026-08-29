@@ -106,9 +106,10 @@ class DeptJobBoxServiceTest {
     void getDeptJobBox_NotFound() {
         when(deptJobBoxRepository.findById(99L)).thenReturn(Optional.empty());
 
-        DeptJobBoxDto result = deptJobBoxService.getDeptJobBox(99L);
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> deptJobBoxService.getDeptJobBox(99L));
 
-        assertNull(result);
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND, error.getErrorCode());
     }
 
     @Test

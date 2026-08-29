@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
+import React, { useState, use } from 'react';
 import { useTheme } from 'next-themes';
 import {
   Moon,
@@ -78,7 +78,6 @@ export function Header({
     initialData: resolvedMenus.length > 0 ? resolvedMenus : undefined,
     staleTime: 5 * 60 * 1000,
   });
-  const [mounted, setMounted] = useState(false);
 
   const handleLogout = async () => {
     try {
@@ -89,10 +88,6 @@ export function Header({
       router.replace('/login');
     }
   };
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   return (
     <header
@@ -196,7 +191,8 @@ export function Header({
             title="테마 변경"
             aria-label="테마 변경"
           >
-            {mounted ? (resolvedTheme === 'dark' ? <Sun size={20} /> : <Moon size={20} />) : <div className="w-5 h-5" />}
+            <Moon size={20} aria-hidden="true" className="dark:hidden" />
+            <Sun size={20} aria-hidden="true" className="hidden dark:block" />
           </Button>
 
           <Button
@@ -219,8 +215,7 @@ export function Header({
           </Button>
 
           <div className="flex items-center gap-2 pl-2 md:pl-3 border-l ml-1 md:ml-2">
-            {mounted && (
-              user ? (
+            {user ? (
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button variant="ghost" className="flex items-center gap-2.5 pl-2 pr-1.5 h-11 hover:bg-muted rounded-[var(--radius-hub-item)] border border-transparent hover:border-border transition-all" aria-label="사용자 계정 메뉴">
@@ -266,8 +261,7 @@ export function Header({
                 <Link href="/login" aria-label="로그인 이동" className={cn(buttonVariants({ size: "sm" }), "rounded-[var(--radius-hub-item)] h-10 px-6 font-bold text-xs tracking-normal uppercase font-mono bg-surface-inverse text-surface-inverse-foreground shadow-xl hover:bg-primary transition-all")}>
                   로그인
                 </Link>
-              )
-            )}
+              )}
           </div>
         </div>
       </div>

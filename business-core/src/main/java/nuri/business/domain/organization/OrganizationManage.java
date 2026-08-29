@@ -6,9 +6,11 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import lombok.*;
+import org.hibernate.annotations.Immutable;
 
 @Entity
 @Table(name = "tb_ognz_info")
+@Immutable
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class OrganizationManage extends BaseEntity {

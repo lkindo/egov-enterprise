@@ -1,7 +1,7 @@
 package nuri.business.service.dashboard;
 
 import nuri.business.domain.notification.NotificationRepository;
-import nuri.business.service.board.event.PostCreatedEvent;
+import nuri.foundation.core.event.PostCreatedEvent;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;

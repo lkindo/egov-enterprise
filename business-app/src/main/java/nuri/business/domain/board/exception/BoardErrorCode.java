@@ -14,7 +14,6 @@ public enum BoardErrorCode implements ErrorCode {
 
     BOARD_NOT_FOUND(HttpStatus.NOT_FOUND, "B001", "Board Not Found"),
     ARTICLE_NOT_FOUND(HttpStatus.NOT_FOUND, "B002", "Article Not Found"),
-    COMMENT_NOT_FOUND(HttpStatus.NOT_FOUND, "B003", "Comment Not Found"),
     NOT_ARTICLE_OWNER(HttpStatus.FORBIDDEN, "B004", "Not the Owner of the Article"),
     BOARD_HAS_ARTICLES(HttpStatus.BAD_REQUEST, "B005", "Cannot delete board physically. It contains articles."),
     CANNOT_DELETE_ACTIVE_BOARD(HttpStatus.BAD_REQUEST, "B006", "Cannot delete board physically. It must be soft-deleted first.");

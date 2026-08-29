@@ -7,6 +7,7 @@ import nuri.business.domain.auth.MenuAuthorityRepository;
 import nuri.business.domain.auth.UserAuthorityRepository;
 import nuri.business.domain.common.BaseSearchDto;
 import nuri.business.service.auth.dto.AuthorManageDto;
+import nuri.business.security.util.SecurityUtil;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
@@ -58,7 +59,8 @@ public class AuthorManageService {
     public AuthorManageDto selectAuthor(@NonNull String authrtCd) {
         return authorityRepository.findById(Objects.requireNonNull(authrtCd))
                 .map(this::toDto)
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.RESOURCE_NOT_FOUND, "권한을 찾을 수 없습니다: " + authrtCd));
     }
 
     /**
@@ -66,6 +68,7 @@ public class AuthorManageService {
      */
     @Transactional
     public void insertAuthor(@NonNull AuthorManageDto dto) {
+        SecurityUtil.assertAdmin();
         Authority entity = Authority.builder()
                 .authrtCd(Objects.requireNonNull(dto.getAuthrtCd()))
                 .authrtNm(dto.getAuthrtNm())
@@ -79,6 +82,7 @@ public class AuthorManageService {
      */
     @Transactional
     public void updateAuthor(@NonNull AuthorManageDto dto) {
+        SecurityUtil.assertAdmin();
         Authority entity = authorityRepository.findById(Objects.requireNonNull(dto.getAuthrtCd()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "권한을 찾을 수 없습니다: " + dto.getAuthrtCd()));
         entity.update(dto.getAuthrtNm(), dto.getAuthrtExpln());
@@ -103,8 +107,10 @@ public class AuthorManageService {
      */
     @Transactional
     public void deleteAuthor(@NonNull String authrtCd) {
+        SecurityUtil.assertAdmin();
         Objects.requireNonNull(authrtCd);
         assertNoAssignedUsers(authrtCd);
+        assertNoHierarchyReferences(authrtCd);
         // [V2_13 결속] fk_tb_authrt_role_map/fk_tb_menu_crt_dtl → tb_authrt_info (NO ACTION)
         // 매핑을 선정리해야 권한 삭제가 FK 를 통과한다 (V2_12 MenuService 패턴과 동일)
         authorityRoleRepository.deleteByIdAuthrtCd(authrtCd);
@@ -122,17 +128,29 @@ public class AuthorManageService {
         }
     }
 
+    /** 상·하위 역할 계층에 연결된 권한은 의미를 먼저 재편하기 전까지 삭제하지 않는다. */
+    private void assertNoHierarchyReferences(String authrtCd) {
+        long references = authorityRepository.countRoleHierarchyReferences(authrtCd);
+        if (references > 0) {
+            throw new BusinessException(
+                    "이 권한이 역할 계층 " + references + "건에 사용 중입니다. 계층 관계를 먼저 변경해 주세요.",
+                    CommonErrorCode.RESOURCE_IN_USE);
+        }
+    }
+
     /**
      * 권한 일괄 삭제
      */
     @Transactional
     public void deleteAuthors(@NonNull String[] authrtCds) {
+        SecurityUtil.assertAdmin();
         List<String> cds = Arrays.asList(Objects.requireNonNull(authrtCds));
         // [V2_13 결속] 위 deleteAuthor 와 동일 사유의 매핑 선정리
         // 일괄 삭제도 같은 가드를 받는다 — 한 건이라도 보유자가 있으면 전체를 중단한다
         // (일부만 지우면 어느 것이 남았는지 화면이 말할 수 없다).
         for (String cd : cds) {
             assertNoAssignedUsers(cd);
+            assertNoHierarchyReferences(cd);
         }
         for (String cd : cds) {
             authorityRoleRepository.deleteByIdAuthrtCd(cd);

@@ -4,6 +4,8 @@ import nuri.business.core.service.BaseAbstractService;
 import nuri.business.domain.log.LoginLog;
 import nuri.business.domain.log.LoginLogRepository;
 import nuri.business.service.log.dto.LoginLogDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -15,6 +17,7 @@ import nuri.business.domain.common.BaseSearchDto;
 import org.springframework.lang.NonNull;
 
 @Service
+@Transactional(readOnly = true)
 public class LoginLogManageService extends BaseAbstractService {
 
     private final LoginLogRepository loginLogRepository;
@@ -53,7 +56,8 @@ public class LoginLogManageService extends BaseAbstractService {
     public LoginLogDto selectLoginLogDetail(@NonNull Long lgnSn) {
         return loginLogRepository.findById(lgnSn)
                 .map(this::toDto)
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.RESOURCE_NOT_FOUND, "로그인 로그를 찾을 수 없습니다: " + lgnSn));
     }
 
     private LoginLogDto toDto(LoginLog entity) {

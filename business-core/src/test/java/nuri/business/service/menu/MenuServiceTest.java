@@ -10,6 +10,7 @@ import nuri.business.domain.program.Program;
 import nuri.business.domain.program.ProgramRepository;
 import nuri.business.service.menu.dto.MenuDto;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -61,6 +62,14 @@ class MenuServiceTest {
     @BeforeEach
     void setUp() {
         SecurityContextHolder.setContext(securityContext);
+        lenient().when(securityContext.getAuthentication()).thenReturn(authentication);
+        lenient().doReturn(List.of(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                .when(authentication).getAuthorities();
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
     }
 
     @Test

@@ -1,7 +1,9 @@
 package nuri.api.controller.business.admin.content.board;
 
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.Size;
 
 import java.util.List;
 
@@ -14,7 +16,12 @@ import java.util.List;
 @Schema(description = "게시판 마스터 일괄 영구 삭제 요청")
 public record BoardMasterBatchDeleteRequest(
 
-        @Schema(description = "대상 게시판 ID 목록")
+        @ArraySchema(
+                arraySchema = @Schema(description = "대상 게시판 ID 목록"),
+                schema = @Schema(implementation = String.class),
+                minItems = 1,
+                maxItems = 100)
         @NotEmpty(message = "{validation.required}")
+        @Size(min = 1, max = 100, message = "게시판 ID는 한 번에 1개 이상 100개까지 처리할 수 있습니다.")
         List<String> bbsIds) {
 }

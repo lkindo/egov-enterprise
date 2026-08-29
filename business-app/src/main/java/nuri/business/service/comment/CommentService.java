@@ -1,8 +1,8 @@
 package nuri.business.service.comment;
-import nuri.business.domain.board.exception.BoardErrorCode;
 
 import nuri.business.domain.comment.Comment;
 import nuri.business.domain.comment.CommentRepository;
+import nuri.business.domain.comment.exception.CommentErrorCode;
 import nuri.business.service.comment.dto.CommentDto;
 import nuri.foundation.core.event.PostCommentCountChangedEvent;
 import nuri.foundation.core.exception.BusinessException;
@@ -56,7 +56,7 @@ public class CommentService {
     @Transactional
     public void updateComment(Long commentNo, String content) {
         Comment comment = commentRepository.findById(commentNo)
-                .orElseThrow(() -> new BusinessException(BoardErrorCode.COMMENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(comment.getFrstRgtrId()); // [IDOR] 작성자/관리자만 수정
         comment.update(content);
     }
@@ -64,7 +64,7 @@ public class CommentService {
     @Transactional
     public void deleteComment(Long commentNo) {
         Comment comment = commentRepository.findById(commentNo)
-                .orElseThrow(() -> new BusinessException(BoardErrorCode.COMMENT_NOT_FOUND));
+                .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrAdmin(comment.getFrstRgtrId()); // [IDOR] 작성자/관리자만 삭제
         comment.delete();
         publishCountAfterCommit(comment.getBbsId(), comment.getPstSn());

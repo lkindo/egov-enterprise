@@ -1,68 +1,85 @@
 package nuri.api.controller.business.approval;
 
+import nuri.business.security.annotation.WithMockCustomUser;
 import nuri.business.service.informalsanction.InformalSanctionService;
+import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
-import java.util.Map;
-
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
-import nuri.business.support.ControllerTestSupport;
-
-import nuri.foundation.security.service.CustomUserDetails;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.user;
 
 @WebMvcTest(ApprovalApiController.class)
-@DisplayName("ApprovalApiController 테스트")
+@DisplayName("ApprovalApiController 입력 계약")
 class ApprovalApiControllerTest extends ControllerTestSupport {
 
-    @MockitoBean(name = "approvalService")
+    @MockitoBean
     private InformalSanctionService approvalService;
 
-    private CustomUserDetails mockUser() {
-        return CustomUserDetails.builder()
-                .esntlId("user01")
-                .userId("user01")
-                .authorCode("ROLE_USER")
-                .build();
-    }
-
     @Test
-    @DisplayName("대기 중인 결재 목록 조회 테스트")
-    void getPendingApprovalsTest() throws Exception {
-        org.mockito.BDDMockito.given(approvalService.getReceivedInformalSanctionList(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).willReturn(new org.springframework.data.domain.PageImpl<>(java.util.Collections.emptyList()));
-
-        mockMvc.perform(get("/api/v1/approvals/pending")
-                        .with(user(mockUser())))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("나의 결재 이력 조회 테스트")
-    void getMyApprovalHistoryTest() throws Exception {
-        org.mockito.BDDMockito.given(approvalService.getInformalSanctionList(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any())).willReturn(new org.springframework.data.domain.PageImpl<>(java.util.Collections.emptyList()));
-
-        mockMvc.perform(get("/api/v1/approvals/my")
-                        .with(user(mockUser())))
-                .andExpect(status().isOk());
-    }
-
-    @Test
-    @DisplayName("결재 승인/반려 테스트")
-    void confirmApprovalTest() throws Exception {
-        Map<String, String> request = Map.of("status", "C", "reason", "Approved");
-
-        mockMvc.perform(put("/api/v1/approvals/1/confirm")
+    @WithMockCustomUser
+    @DisplayName("승인은 C 상태 코드로 요청할 수 있다")
+    void confirmsApprovalWithTypedStatus() throws Exception {
+        mockMvc.perform(put("/api/v1/approvals/7/confirm")
                         .with(csrf())
-                        .with(user(mockUser()))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(request)))
+                        .content("""
+                                {"status":"C"}
+                                """))
                 .andExpect(status().isOk());
+
+        verify(approvalService).confirmInformalSanction(7L, "C", null);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("상태 코드가 없거나 승인·반려 코드가 아니면 서비스 전에 400")
+    void rejectsMissingOrUnknownStatus() throws Exception {
+        for (String body : new String[]{"{}", "{\"status\":\"A\"}", "{\"status\":\"UNKNOWN\"}"}) {
+            mockMvc.perform(put("/api/v1/approvals/7/confirm")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest());
+        }
+
+        verifyNoInteractions(approvalService);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("반려는 공백이 아닌 사유가 필수다")
+    void rejectsBlankRejectionReason() throws Exception {
+        mockMvc.perform(put("/api/v1/approvals/7/confirm")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"status":"R","reason":"   "}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(approvalService);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("반려 사유는 물리 컬럼 길이 4000자를 넘을 수 없다")
+    void rejectsOversizedRejectionReason() throws Exception {
+        String reason = "가".repeat(4001);
+
+        mockMvc.perform(put("/api/v1/approvals/7/confirm")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(
+                                java.util.Map.of("status", "R", "reason", reason))))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(approvalService);
     }
 }

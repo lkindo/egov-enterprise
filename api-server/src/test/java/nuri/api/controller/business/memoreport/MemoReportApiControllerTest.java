@@ -126,13 +126,40 @@ class MemoReportApiControllerTest {
     }
 
     @Test
-    @DisplayName("지시사항 업데이트 - 성공")
-    void updateDrctMatter_success() throws Exception {
+    @DisplayName("지시사항 typed JSON 업데이트 - 성공")
+    void updateDrctMatter_typedJsonSuccess() throws Exception {
         mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn")
-                .contentType(MediaType.TEXT_PLAIN)
-                .content("Do it now"))
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("""
+                        {"drctnMttr":"Do it now"}
+                        """))
                 .andExpect(status().isOk());
         verify(memoReportService).updateDrctMatter(1L, "Do it now");
+    }
+
+    @Test
+    @DisplayName("지시사항은 공백이 아니고 물리 컬럼 2000자 이하여야 한다")
+    void updateDrctMatter_rejectsInvalidTypedJson() throws Exception {
+        for (String instruction : new String[]{"   ", "가".repeat(2001)}) {
+            mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(
+                                    java.util.Map.of("drctnMttr", instruction))))
+                    .andExpect(status().isBadRequest());
+        }
+
+        verifyNoInteractions(memoReportService);
+    }
+
+    @Test
+    @DisplayName("기존 application/json 문자열 지시사항 요청도 호환한다")
+    void updateDrctMatter_legacyJsonStringCompatibility() throws Exception {
+        mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString("Legacy JSON instruction")))
+                .andExpect(status().isOk());
+
+        verify(memoReportService).updateDrctMatter(1L, "Legacy JSON instruction");
     }
 
     @Test

@@ -90,11 +90,14 @@ class InstitutionCodeServiceTest {
         // given
         when(institutionCodeRepository.findById("NOT_EXIST")).thenReturn(Optional.empty());
 
-        // when
-        InstitutionCodeDto result = institutionCodeService.selectInstitutionCodeDetail(InstitutionCodeDto.builder().instCd("NOT_EXIST").build());
+        nuri.foundation.core.exception.BusinessException error =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        nuri.foundation.core.exception.BusinessException.class,
+                        () -> institutionCodeService.selectInstitutionCodeDetail(
+                                InstitutionCodeDto.builder().instCd("NOT_EXIST").build()));
 
-        // then
-        assertThat(result).isNull();
+        assertThat(error.getErrorCode())
+                .isEqualTo(nuri.business.domain.code.exception.CodeErrorCode.CODE_NOT_FOUND);
     }
 
     @Test

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { X,  
   Bell,  
   ShieldAlert,  
@@ -40,14 +40,7 @@ interface AppNotificationDrawerProps {
 type FilterType = 'ALL' | 'SECURITY' | 'SYSTEM' | 'ACTIVITY';
 
 export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRead, onMarkAllRead, error, onRetry }: AppNotificationDrawerProps) {
-  const [mounted, setMounted] = useState(false);
   const [activeFilter, setActiveFilter] = useState<FilterType>('ALL');
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!mounted) return null;
 
   const filteredNotifications = notifications.filter(n => {
     if (activeFilter === 'ALL') return true;

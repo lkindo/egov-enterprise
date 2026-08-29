@@ -1,5 +1,7 @@
 package nuri.business.domain.common;
 
+import jakarta.validation.Validation;
+import jakarta.validation.Validator;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -22,11 +24,44 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("BaseSearchDto 페이징 변환 테스트")
 class BaseSearchDtoPageableTest {
 
+    private final Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
+
     private static BaseSearchDto dto(int pageIndex, int pageUnit) {
         BaseSearchDto vo = new BaseSearchDto();
         vo.setPageIndex(pageIndex);
         vo.setPageUnit(pageUnit);
         return vo;
+    }
+
+    @Nested
+    @DisplayName("HTTP 입력 경계 검증")
+    class ValidationConstraints {
+
+        @Test
+        @DisplayName("pageIndex 는 1-based 양수만 허용한다")
+        void rejectsNonPositivePageIndex() {
+            assertThat(validator.validate(dto(0, 10)))
+                    .extracting(violation -> violation.getPropertyPath().toString())
+                    .contains("pageIndex");
+        }
+
+        @Test
+        @DisplayName("pageUnit 은 1 이상 안전 상한 이하여야 한다")
+        void rejectsPageUnitOutsideSafeRange() {
+            assertThat(validator.validate(dto(1, 0)))
+                    .extracting(violation -> violation.getPropertyPath().toString())
+                    .contains("pageUnit");
+            assertThat(validator.validate(dto(1, BaseSearchDto.MAX_PAGE_UNIT + 1)))
+                    .extracting(violation -> violation.getPropertyPath().toString())
+                    .contains("pageUnit");
+        }
+
+        @Test
+        @DisplayName("기본값과 안전 상한은 유효하다")
+        void acceptsDefaultAndBoundaryValues() {
+            assertThat(validator.validate(new BaseSearchDto())).isEmpty();
+            assertThat(validator.validate(dto(1, BaseSearchDto.MAX_PAGE_UNIT))).isEmpty();
+        }
     }
 
     @Nested

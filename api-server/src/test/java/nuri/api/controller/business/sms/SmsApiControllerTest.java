@@ -11,14 +11,17 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import nuri.business.security.annotation.WithMockCustomUser;
+import org.springframework.http.MediaType;
 
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import nuri.business.support.ControllerTestSupport;
 
 @WebMvcTest(SmsApiController.class)
@@ -64,6 +67,38 @@ class SmsApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data[0].rcptnTelno").value("01012345678"));
     }
 
-    // sendSms 테스트는 @LoginUser 처리가 필요하므로 일단 주석 처리하거나 단순화
-    // 실제 환경에서는 HandlerMethodArgumentResolver 설정을 테스트에 포함해야 함
+    @Test
+    @WithMockCustomUser(role = "ADMIN")
+    @DisplayName("SMS 발송은 DB 수신번호 길이를 넘으면 400")
+    void sendSmsRejectsRecipientLongerThanPhysicalContract() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/operation/sms")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "sndngTelno": "02-1234-5678",
+                                  "sndngCn": "test",
+                                  "recipients": [{"rcptnTelno": "010-1234-56789"}]
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.errors[0].field").value("recipients[0].rcptnTelno"));
+
+        verifyNoInteractions(smsService);
+    }
+
+    @Test
+    @WithMockCustomUser(role = "ADMIN")
+    @DisplayName("SMS 발송은 발신자·본문·수신자 목록을 필수로 요구")
+    void sendSmsRejectsMissingWriteContract() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/operation/sms")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"sndngTelno": " ", "sndngCn": " ", "recipients": []}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(smsService);
+    }
 }

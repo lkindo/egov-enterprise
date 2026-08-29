@@ -33,8 +33,8 @@ import {
 import { z } from 'zod';
 
 /** 비워 둔 날짜는 아예 보내지 않는다. 빈 문자열을 그대로 실으면 length=8 컬럼에 ''가 저장된다. */
-const optionalYmd = (schema: z.ZodTypeAny) =>
- schema.transform((value: unknown) => (value === '' ? undefined : value));
+const optionalYmd = <T extends z.ZodType<string | undefined>>(schema: T) =>
+ schema.transform((value): string | undefined => (value === '' ? undefined : value));
 
 const communityBoardSchema = boardSchema.extend({
  bbsId: boardSchema.shape.bbsId.min(1, '게시판 식별자를 입력해 주세요.'),

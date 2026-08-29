@@ -3,6 +3,8 @@ package nuri.business.service.isg;
 import nuri.business.domain.isg.InternetSvcGuidance;
 import nuri.business.domain.isg.InternetSvcGuidanceRepository;
 import nuri.business.service.isg.dto.InternetSvcGuidanceDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -21,7 +23,8 @@ public class InternetSvcGuidanceService {
     public InternetSvcGuidanceDto getIntnetSvcGuidance(Long itntSrvcSn) {
         return internetSvcGuidanceRepository.findById(Objects.requireNonNull(itntSrvcSn))
                 .map(this::convertToDto)
-                .orElse(null);
+                .orElseThrow(() -> new BusinessException(
+                        CommonErrorCode.RESOURCE_NOT_FOUND, "인터넷서비스 안내를 찾을 수 없습니다: " + itntSrvcSn));
     }
 
     @Transactional

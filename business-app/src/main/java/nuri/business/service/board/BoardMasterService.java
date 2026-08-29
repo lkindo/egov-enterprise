@@ -21,8 +21,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -154,9 +158,9 @@ public class BoardMasterService extends BaseAbstractService {
         if (bbsIds == null || bbsIds.isEmpty()) {
             return;
         }
-        for (String bbsId : bbsIds) {
-            BoardMaster entity = boardMasterRepository.findById(bbsId)
-                    .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        List<String> distinctBbsIds = bbsIds.stream().distinct().toList();
+        List<BoardMaster> masters = loadBoardMastersInRequestOrder(distinctBbsIds);
+        for (BoardMaster entity : masters) {
             entity.updateUseYn(useYn);
             entity.setLastMdfrId(userId);
         }
@@ -167,21 +171,38 @@ public class BoardMasterService extends BaseAbstractService {
         if (bbsIds == null || bbsIds.isEmpty()) {
             return;
         }
-        for (String bbsId : bbsIds) {
-            BoardMaster master = boardMasterRepository.findById(bbsId)
-                    .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        List<String> distinctBbsIds = bbsIds.stream().distinct().toList();
+        List<BoardMaster> masters = loadBoardMastersInRequestOrder(distinctBbsIds);
+        Set<String> bbsIdsHavingArticles = new HashSet<>(
+                boardRepository.findBbsIdsHavingAnyArticles(distinctBbsIds));
 
+        // 모든 대상을 먼저 검증한 뒤 삭제를 시작해, 뒤쪽 대상의 실패가 앞쪽 엔티티 삭제를
+        // 이미 예약하는 부분 성공 상태를 만들지 않게 한다.
+        for (BoardMaster master : masters) {
             if (!"N".equals(master.getUseYn())) {
                 throw new BusinessException(BoardErrorCode.CANNOT_DELETE_ACTIVE_BOARD);
             }
 
-            long count = boardRepository.countAllByBbsId(bbsId);
-            if (count > 0) {
+            if (bbsIdsHavingArticles.contains(master.getBbsId())) {
                 throw new BusinessException(BoardErrorCode.BOARD_HAS_ARTICLES);
             }
-
-            boardMasterRepository.delete(master);
         }
+
+        // deleteAllInBatch는 JPQL bulk delete라 BoardMaster.option의 cascade/orphanRemoval을 우회하고
+        // 자식 FK를 남긴다. fetch join으로 적재한 옵션의 cascade를 보존하는 deleteAll을 한 번 호출하며,
+        // 실제 DELETE 문은 전역 hibernate.jdbc.batch_size 설정에 따라 JDBC batch로 묶인다.
+        boardMasterRepository.deleteAll(masters);
+    }
+
+    private List<BoardMaster> loadBoardMastersInRequestOrder(List<String> distinctBbsIds) {
+        Map<String, BoardMaster> mastersById = boardMasterRepository
+                .findAllWithOptionByBbsIdIn(distinctBbsIds).stream()
+                .collect(Collectors.toMap(BoardMaster::getBbsId, master -> master, (first, ignored) -> first));
+        if (mastersById.size() != distinctBbsIds.size()
+                || !mastersById.keySet().containsAll(distinctBbsIds)) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+        return distinctBbsIds.stream().map(mastersById::get).toList();
     }
 
     // --- Added back for test compatibility ---

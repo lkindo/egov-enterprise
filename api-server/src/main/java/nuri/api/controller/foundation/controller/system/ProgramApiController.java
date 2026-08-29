@@ -27,7 +27,7 @@ public class ProgramApiController {
     @Operation(summary = "프로그램 목록 조회")
     @GetMapping
     public ResponseEntity<ApiResponse<PageResponse<ProgramDto>>> getProgramList(
-            @ModelAttribute BaseSearchDto searchDto) throws Exception {
+            @Valid @ModelAttribute BaseSearchDto searchDto) throws Exception {
 
         List<ProgramDto> list = programService.selectProgrmList(searchDto);
         int total = programService.selectProgrmListTotCnt(searchDto);

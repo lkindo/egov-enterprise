@@ -60,11 +60,13 @@ class InternetSvcGuidanceServiceTest {
         // given
         given(internetSvcGuidanceRepository.findById(99L)).willReturn(Optional.empty());
 
-        // when
-        InternetSvcGuidanceDto result = internetSvcGuidanceService.getIntnetSvcGuidance(99L);
+        nuri.foundation.core.exception.BusinessException error =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        nuri.foundation.core.exception.BusinessException.class,
+                        () -> internetSvcGuidanceService.getIntnetSvcGuidance(99L));
 
-        // then
-        assertThat(result).isNull();
+        assertThat(error.getErrorCode())
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
     }
 
     @Test

@@ -3,18 +3,14 @@
 import React from 'react';
 import Link from 'next/link';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import axios from '@/lib/api/client';
-import type { components } from '@/types/generated-api';
+import type { Scrap } from '@/services/business/user/ScrapService';
+import { scrapMutationOptions, scrapQueryOptions } from '@/queries/scrap-query-options';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { Button } from "@/components/ui/button";
 import { Plus, Trash2, ExternalLink, RefreshCcw } from "lucide-react";
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
-
-/** 스크랩 계약의 SSOT 는 생성 타입이다(로컬 인터페이스 재선언 금지). */
-type Scrap = components['schemas']['ScrapDto'];
-type ScrapPage = components['schemas']['PageResponseScrapDto'];
 
 const DEFAULT_PAGE_UNIT = 10;
 
@@ -35,22 +31,20 @@ const ScrapListClient = () => {
     const [deletingScrapSn, setDeletingScrapSn] = React.useState<number | null>(null);
 
     // 백엔드(ScrapApiController)는 pageIndex(1-base)/pageUnit 파라미터를 직접 읽는다.
-    const { data, isLoading, isError, error, refetch } = useQuery({
-        queryKey: ['scraps', pageNo, pageUnit],
-        queryFn: () => axios.get<ScrapPage>('/scraps', { params: { pageIndex: pageNo, pageUnit } }),
-    });
+    const { data, isLoading, isError, error, refetch } = useQuery(
+        scrapQueryOptions.list({ pageIndex: pageNo, pageUnit }),
+    );
 
     const list: Scrap[] = data?.list ?? [];
     const totalCount = data?.total ?? 0;
     const totalPages = data?.totalPage ?? 0;
 
     const deleteMutation = useMutation({
-        mutationFn: (scrapSn: number) => axios.delete<void>(`/scraps/${scrapSn}`),
+        ...scrapMutationOptions.remove(queryClient),
         onSuccess: () => {
             toast('스크랩이 삭제되었습니다.', 'success');
-            queryClient.invalidateQueries({ queryKey: ['scraps'] });
         },
-        onError: (error: unknown) => {
+        onError: (error: Error) => {
             toast(error instanceof Error && error.message ? error.message : '삭제에 실패했습니다.', 'error');
         },
     });

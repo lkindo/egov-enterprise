@@ -88,4 +88,18 @@ class LogManageServiceTest {
         assertThat(result.getSysLogSn()).isEqualTo(1L);
         assertThat(result.getDmndId()).isEqualTo("REQ_001");
     }
+
+    @Test
+    @DisplayName("시스템 로그 상세 미존재는 404 도메인 오류")
+    void selectSysLogDetailNotFound() {
+        when(sysLogRepository.findById(404L)).thenReturn(Optional.empty());
+
+        nuri.foundation.core.exception.BusinessException error =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        nuri.foundation.core.exception.BusinessException.class,
+                        () -> logManageService.selectSysLogDetail(404L));
+
+        assertThat(error.getErrorCode())
+                .isEqualTo(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
 }

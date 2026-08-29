@@ -2,6 +2,7 @@ package nuri.business.domain.sms;
 
 import jakarta.persistence.*;
 import lombok.*;
+import nuri.foundation.domain.common.BaseEntity;
 
 /**
  * SMS 수신 정보 엔티티.
@@ -11,7 +12,7 @@ import lombok.*;
 @Table(name = "tb_sms_rcptn")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class SmsRecptn {
+public class SmsRecptn extends BaseEntity {
 
     @EmbeddedId
     private SmsRecptnId id;

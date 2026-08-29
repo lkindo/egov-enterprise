@@ -12,8 +12,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
  * 두 축을 고정한다.
  *  - **값**은 서버 열거형 그대로다(승인 'C', 반려 'R'). 'Y'/'N' 로 되돌리면 서버가 400 을 내고,
  *    서버를 고치는 우회는 DB CHECK 제약이 물리적으로 막는다.
- *  - **키**는 status/reason 이다. 컨트롤러가 Map<String,String> 에서 그 이름으로 조회하므로
- *    DTO 필드명(aprvYn/rjctRsnCn)으로 바꾸면 서버가 값을 못 찾는다.
+ *  - **키**는 generated ApprovalConfirmRequest의 status/reason 이다.
  */
 
 const putMock = vi.fn();
@@ -58,6 +57,14 @@ describe('ApprovalUserService confirm 계약', () => {
     const [url, body] = putMock.mock.calls[0] as [string, Record<string, unknown>];
     expect(url).toBe('/7/confirm');
     expect(body).toEqual({ status: 'R', reason: '예산 코드 누락' });
+  });
+
+  it('generated 요청 경계에서 공백 반려 사유와 4000자 초과를 전송 전에 거부한다', async () => {
+    const { approvalUserService, SANCTION_STATUS } = await import('../ApprovalUserService');
+
+    await expect(approvalUserService.confirm(7, SANCTION_STATUS.REJECTED, '   ')).rejects.toThrow();
+    await expect(approvalUserService.confirm(7, SANCTION_STATUS.REJECTED, '가'.repeat(4001))).rejects.toThrow();
+    expect(putMock).not.toHaveBeenCalled();
   });
 
   it('상태 코드 상수가 서버 SanctionStatus 와 1:1 이다', async () => {

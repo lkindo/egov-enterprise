@@ -121,17 +121,18 @@ class LoginLogManageServiceTest {
         }
 
         @Test
-        @DisplayName("존재하지 않는 로그인 로그 조회 시 null 반환")
+        @DisplayName("존재하지 않는 로그인 로그 조회 시 404 도메인 오류")
         void testSelectLoginLog_NotFound() {
             // Given
             Long lgnSn = 999L;
             when(loginLogRepository.findById(lgnSn)).thenReturn(Optional.empty());
 
-            // When
-            LoginLogDto result = loginLogManageService.selectLoginLogDetail(lgnSn);
+            nuri.foundation.core.exception.BusinessException error =
+                    assertThrows(nuri.foundation.core.exception.BusinessException.class,
+                            () -> loginLogManageService.selectLoginLogDetail(lgnSn));
 
-            // Then
-            assertNull(result);
+            assertEquals(nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND,
+                    error.getErrorCode());
         }
     }
 }

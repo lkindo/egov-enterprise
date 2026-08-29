@@ -6,6 +6,7 @@ import nuri.migration.model.MappingSpec;
 import nuri.migration.model.MappingSpec.ColumnMapping;
 import nuri.migration.model.MappingSpec.DbConfig;
 import nuri.migration.model.MappingSpec.IdStrategy;
+import nuri.migration.model.MappingSpec.RunContext;
 import nuri.migration.model.MappingSpec.TableMapping;
 import nuri.migration.source.SourceIntrospector;
 import nuri.migration.transform.TransformerRegistry;
@@ -94,21 +95,24 @@ class EtlCommitIntegrationTest {
 
     private MappingSpec spec(DbConfig src, DbConfig tgt) {
         // 자식(LEGACY_USER)을 부모(LEGACY_ORG)보다 먼저 선언 → 위상정렬이 재배치해야 한다.
-        TableMapping user = new TableMapping("LEGACY_USER", "tb_user_info", null, List.of(
+        TableMapping user = new TableMapping("LEGACY_USER", "tb_user_info", null,
+                "USER_ID", null, List.of(
                 new ColumnMapping("USER_NM", "user_nm", "trim", null, null, null, null),
                 new ColumnMapping("ORG_ID", "org_id", null, null, null, "LEGACY_ORG", null), // fkRef 부모
                 new ColumnMapping("STAT", "user_stts_cd", null, null, "user_status", null, null),
                 new ColumnMapping(null, "frst_rgtr_id", null, null, null, null, "MIGRATION")
         ), new IdStrategy("user_id", "USR", "USER_ID"));
 
-        TableMapping org = new TableMapping("LEGACY_ORG", "tb_org", null, List.of(
+        TableMapping org = new TableMapping("LEGACY_ORG", "tb_org", null,
+                "ORG_ID", null, List.of(
                 new ColumnMapping("ORG_NM", "org_nm", null, null, null, null, null)
         ), new IdStrategy("org_id", "ORG", "ORG_ID"));
 
         Map<String, Map<String, String>> codemaps = Map.of(
                 "user_status", Map.of("1", "A", "0", "D", "default", "P"));
 
-        return new MappingSpec(src, tgt, List.of(user, org), codemaps);
+        return new MappingSpec(src, tgt, List.of(user, org), codemaps,
+                new RunContext("commit-integration", "legacy-crm"));
     }
 
     private void seedSource(DbConfig cfg, boolean withOrphan) {

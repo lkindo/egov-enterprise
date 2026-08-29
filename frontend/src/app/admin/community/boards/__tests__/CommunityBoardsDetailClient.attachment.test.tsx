@@ -1,4 +1,4 @@
-import { fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render as rtlRender, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 /*
@@ -23,6 +23,9 @@ const mocks = vi.hoisted(() => ({
     confirm: vi.fn(),
     push: vi.fn(),
     toast: vi.fn(),
+    clearDraft: vi.fn(),
+    restoreDraft: vi.fn(),
+    useAutoSaveDraft: vi.fn((options: unknown) => options),
 }));
 
 /**
@@ -67,17 +70,19 @@ vi.mock('@/services/foundation/system/FileAdminService', () => ({
     fileAdminService: { uploadFiles: vi.fn() },
 }));
 
-// 토스트·확인모달·자동저장은 이 테스트의 관심사가 아니다. 확인모달은 항상 승인으로 둔다.
+// 토스트·확인모달은 이 테스트의 관심사가 아니다. 확인모달은 항상 승인으로 둔다.
 vi.mock('@/app/components/ui/toast', () => ({
     useToast: () => ({ toast: mocks.toast }),
 }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({
     useConfirm: () => mocks.confirm,
 }));
-vi.mock('@/lib/hooks/use-auto-save', () => ({
-    useAutoSave: () => ({ clear: vi.fn() }),
+vi.mock('@/contexts/AuthContext', () => ({
+    useAuth: () => ({ user: { id: 'writer-login', esntlId: 'writer-owner' } }),
 }));
-
+vi.mock('@/hooks/use-auto-save-draft', () => ({
+    useAutoSaveDraft: (options: unknown) => mocks.useAutoSaveDraft(options),
+}));
 // 업로더는 **계약대로** 스텁한다: 파일이 선택되면 onFilesChange(File[]) 를 부른다.
 //   검증 대상은 "업로더가 어떻게 그리는가" 가 아니라 "클라이언트가 그 파일을 전송하는가" 다.
 //   (실제 컴포넌트는 jsdom 에서 내부 렌더가 깨진다 — 그 자체는 이 테스트의 관심사가 아니다.)
@@ -115,6 +120,34 @@ describe('게시글 첨부파일 배선', () => {
         mocks.confirm.mockResolvedValue(true);
         mockedBoard.createPost.mockResolvedValue({} as never);
         mockedFile.uploadFiles.mockResolvedValue(101);
+        mocks.useAutoSaveDraft.mockReturnValue({
+            restoreDraft: mocks.restoreDraft,
+            clearDraft: mocks.clearDraft,
+            hasDraft: false,
+            lastSavedAt: null,
+            saveDraft: vi.fn(),
+        });
+    });
+
+    it('초안을 인증 사용자·선택 게시판·create/new 범위로 격리하고 복원 콜백을 폼에 연결한다', () => {
+        render(<CommunityBoardsDetailClient />);
+
+        const options = mocks.useAutoSaveDraft.mock.calls.at(-1)?.[0] as {
+            scope: { ownerId: string; boardId: string; action: string; recordId: string };
+            legacyKeys: string[];
+            onRestore: (data: { title: string; content: string }) => void;
+        };
+        expect(options.scope).toEqual({
+            ownerId: 'writer-owner',
+            boardId: 'BBSMSTR_AAAAAAAAAAAA',
+            action: 'create',
+            recordId: 'new',
+        });
+        expect(options.legacyKeys).toEqual(['autosave_bbs_write']);
+
+        act(() => options.onRestore({ title: '복원 제목', content: '복원 본문' }));
+        expect(screen.getByRole('textbox', { name: /제목/ })).toHaveValue('복원 제목');
+        expect(screen.getByRole('textbox', { name: '에디터 본문 내용' })).toHaveValue('복원 본문');
     });
 
     it('첨부한 파일을 업로드하고 그 식별자를 게시글에 실어 보낸다', async () => {
@@ -135,6 +168,7 @@ describe('게시글 첨부파일 배선', () => {
         expect(request).toMatchObject({ atchFileSn: 101, scrtYn: 'N' });
         expect(request).not.toHaveProperty('noticeAt');
         expect(request).not.toHaveProperty('secretAt');
+        expect(mocks.clearDraft).toHaveBeenCalledTimes(1);
     });
 
     it('첨부가 없으면 업로드를 호출하지 않는다 (빈 업로드 회귀 방어)', async () => {

@@ -14,10 +14,14 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -44,10 +48,9 @@ import static org.junit.jupiter.api.Assertions.fail;
  *       이쪽이 이 게이트의 주된 관심사다.</li>
  * </ul>
  *
- * <p><b>⚠ 구현 주의</b>: 주입 필드의 상당수가 {@code private final nuri.business.domain.log.UserLogRepository x;}
- * 처럼 <b>인라인 FQN</b> 형태다. 타입이 소문자 패키지로 시작하므로 {@code [A-Z]} 앵커만 쓰는 스캔은
- * 이들을 통째로 놓친다 — 실제로 이 census 를 만들 때 1차 스캔이 그렇게 실패했다. 위반 주입 검증도
- * 반드시 FQN 형태로 해야 의미가 있다.
+ * <p><b>⚠ 구현 주의</b>: 주입 필드만 보면 import된 예외·메서드 signature·event listener 타입을 놓친다.
+ * 이 게이트는 일반 import와 인라인 FQN을 실제 소유 모듈의 {@code .java} 파일로 해석하고,
+ * 파일별 owner→target edge를 하나로 합쳐 전수 census한다.
  *
  * <p>Spring 컨텍스트를 띄우지 않는 순수 정적 소스 스캔이다.
  */
@@ -58,54 +61,61 @@ class CrossDomainCouplingLinterTest {
 
     private static final String APP_SERVICE_BASE = "business-app/src/main/java/nuri/business/service";
 
-    /** 주입 필드 — 단순명과 인라인 FQN 을 모두 받는다. */
-    private static final Pattern INJECTED_FIELD = Pattern.compile(
-            "private\\s+final\\s+([\\w.]*[A-Z]\\w*(?:Service|Repository))\\s+\\w+\\s*;");
-
     private static final Pattern IMPORT_DECL = Pattern.compile("^import\\s+(static\\s+)?([\\w.]+);", Pattern.MULTILINE);
+
+    /** import 없이 signature/본문에 직접 쓴 business 타입 후보. 실제 .java 소유 타입으로 역추적해 오탐을 버린다. */
+    private static final Pattern INLINE_BUSINESS_TYPE = Pattern.compile(
+            "(?<![\\w.])(nuri\\.business\\.(?:service|domain|repository)\\.[\\w.]+)");
 
     /** {@code nuri.business.(service|domain|repository).<도메인>...} 에서 도메인 세그먼트를 뽑는다. */
     private static final Pattern BUSINESS_TYPE = Pattern.compile(
             "^nuri\\.business\\.(?:service|domain|repository)\\.(\\w+)");
 
     /**
-     * app → app 결합 동결(2026-08-29 실측 4건).
+     * app → app 결합 동결(2026-08-30 전수 타입 참조 실측 4건).
      *
-     * <p>dashboard→notification, stats→board, informalsanction→sms, informalsanction→mail.
-     *
-     * <p>2026-08-23 {@code BoardUserDeletionCleanupListener} 의 comment 정리를
-     * {@code CommentUserDeletionCleanupListener}(comment 도메인 자체 UserDeletionEvent 구독)로
-     * 역전해 6→5 로 낮췄다.
-     *
-     * <p><b>2026-08-29 5 → 4</b>. {@code BoardEventListener} 의 board→comment 를 역전했다.
-     * comment 가 커밋 이후 {@code PostCommentCountChangedEvent} 를 <b>개수까지 실어</b> 발행하고
-     * board 가 그것만 반영한다. 이벤트를 foundation 에 둔 것이 핵심이다 — 어느 한쪽 도메인
-     * 패키지에 두면 반대편이 import 하게 되어 주입만 사라지고 컴파일 의존은 남는다(숫자만
-     * 내려가는 거짓 진척). 같은 변경에서 <b>댓글 수가 영원히 0 이던 결함</b>도 닫혔다 —
-     * 종전 경로는 게시글 생성 시점에만 돌아 언제나 0 을 썼다.
-     *
-     * <p>이것이 "도메인 통째 삭제" 재사용성을 실제로 깨는 부채다. 늘리지 말고, 역전하면 값을 낮춘다.
+     * <p>전수 scanner 도입 직후 실측은 6건이었다. 주입 scanner가 놓치던 comment→board
+     * ({@code BoardErrorCode})는 comment 소유 오류 계약으로 옮겼고, dashboard→board
+     * ({@code PostCreatedEvent})는 foundation 공용 이벤트로 내려 6→4로 상환했다.
+     * 잔여는 dashboard→notification, stats→board, informalsanction→sms/mail이다.
      */
     private static final int APP_TO_APP_COUPLING = 4;
 
     /**
-     * app → core 결합 동결(2026-08-29 실측 9건).
+     * app → core 결합 동결(2026-08-30 전수 타입 참조 실측 24건).
      *
      * <p>코어는 삭제 대상이 아니라 허용 가능하지만, '허용' 과 '미탐지' 를 구분하기 위해 동결한다.
      *
-     * <p>2026-08-29 8 → 9. 신설분은 {@code report/WorkReportService → user (UserRepository)} 하나다.
-     * 업무 보고 목록의 '작성자' 열이 {@code userId} 원문(로그인 ID)을 그대로 보여 주고 있어 누가 쓴
-     * 보고인지 화면만으로 알 수 없었고, 이름을 얻으려면 코어 user 를 읽어야 한다. 이미 동결된
-     * {@code schedule/ScheduleService → user (UserRepository)} 와 같은 패턴이며 행 단위 N+1 대신
-     * {@code findByUserIdIn} 으로 한 번에 모아 받는다.
-     *
-     * <p>⚠ 이 값을 올리는 것은 red 를 지우는 수단이 아니다. 올릴 때는 신설분이 무엇이고 왜 코어를
-     * 읽어야 하는지를 여기 남긴다 — 사유 없는 인상은 H2(신호 은폐) 위반이다.
+     * <p>종전 9는 주입 필드만 센 값이었다. import/signature/event/FQN까지 넓힌 현재 edge 기준은 24다.
+     * 코어는 삭제 대상이 아니므로 허용 가능하지만 숫자를 올릴 때는 신설 edge와 사유를 함께 남긴다.
      */
-    private static final int APP_TO_CORE_COUPLING = 9;
+    private static final int APP_TO_CORE_COUPLING = 24;
 
-    /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(실측 74건 대비 여유). */
-    private static final int INJECTED_FIELD_FLOOR = 55;
+    /** 스캔 붕괴로 인한 vacuous 통과 차단용 하한(교차 edge 실측 30건 대비 여유). */
+    private static final int CROSS_DOMAIN_REFERENCE_FLOOR = 25;
+
+    @Test
+    @DisplayName("red proof: 주입 필드가 아닌 import/signature/event 및 inline FQN 결합도 탐지한다")
+    void detectsImportedAndInlineTypeReferencesOutsideInjectedFields() {
+        Path root = HarnessSourceIndex.repoRoot();
+        String importedEvent = """
+                package nuri.business.service.dashboard;
+                import nuri.business.service.informalsanction.event.SanctionStatusChangedEvent;
+                class Listener { void handle(SanctionStatusChangedEvent event) {} }
+                """;
+        String inlineRepository = """
+                package nuri.business.service.dashboard;
+                class Listener {
+                    void handle(nuri.business.domain.notification.NotificationRepository repository) {}
+                }
+                """;
+
+        assertEquals(1, scanReferences(root, "dashboard/Listener.java", importedEvent).size());
+        assertEquals(1, scanReferences(root, "dashboard/Listener.java", inlineRepository).size());
+        assertTrue(scanReferences(root, "dashboard/Listener.java",
+                "package nuri.business.service.dashboard; class Local { void x(DashboardStatsUpdatedEvent e) {} }")
+                .isEmpty());
+    }
 
     @Test
     @DisplayName("🔗 business-app 교차 도메인 결합 census 동결 — 서비스 계층 수평 결합 탐지")
@@ -116,7 +126,7 @@ class CrossDomainCouplingLinterTest {
 
         List<String> appToApp = new ArrayList<>();
         List<String> appToCore = new ArrayList<>();
-        int injectedFields = 0;
+        int crossDomainReferences = 0;
 
         for (Path source : sources) {
             String relative = base.relativize(source).toString().replace('\\', '/');
@@ -126,28 +136,13 @@ class CrossDomainCouplingLinterTest {
 
             String code = HarnessBaselineIntegrityTest.stripCommentsPreservingStrings(
                     HarnessSourceIndex.read(source));
-            Map<String, String> imports = collectImports(code);
-
-            Matcher field = INJECTED_FIELD.matcher(code);
-            while (field.find()) {
-                injectedFields++;
-                String declared = field.group(1);
-                String fqn = declared.contains(".") ? declared : imports.get(declared);
-                if (fqn == null) continue; // 같은 패키지 타입 — 동일 도메인이므로 교차 결합이 아니다
-
-                Matcher business = BUSINESS_TYPE.matcher(fqn);
-                if (!business.find()) continue;
-                String targetDomain = business.group(1);
-                if (targetDomain.equals(ownerDomain)) continue;
-
-                // 소스 경로를 포함한다 — 같은 owner→target 이 서로 다른 파일에 있을 때(board→comment 2건)
-                // 경로가 없으면 산출 집합에서 합쳐져 개수와 목록이 어긋난다.
-                String entry = relative + ": " + ownerDomain + " -> " + targetDomain
-                        + " (" + simpleName(fqn) + ")";
-                if (livesInModule(repoRoot, "business-app", fqn)) {
-                    appToApp.add(entry);
-                } else if (livesInModule(repoRoot, "business-core", fqn)) {
-                    appToCore.add(entry);
+            List<CouplingReference> references = scanReferences(repoRoot, relative, code);
+            crossDomainReferences += references.size();
+            for (CouplingReference reference : references) {
+                if (reference.module().equals("business-app")) {
+                    appToApp.add(reference.entry());
+                } else if (reference.module().equals("business-core")) {
+                    appToCore.add(reference.entry());
                 }
             }
         }
@@ -156,9 +151,10 @@ class CrossDomainCouplingLinterTest {
         writeActual(repoRoot, "build/harness/cross-domain-app-to-core.actual.txt", appToCore);
 
         List<String> violations = new ArrayList<>();
-        if (injectedFields < INJECTED_FIELD_FLOOR) {
-            violations.add("주입 필드 스캔 하한 미달: " + injectedFields + " < " + INJECTED_FIELD_FLOOR
-                    + " — 경로/정규식 파손 의심(특히 인라인 FQN 미매칭). 빈 census 로 통과시키지 않습니다.");
+        if (crossDomainReferences < CROSS_DOMAIN_REFERENCE_FLOOR) {
+            violations.add("교차 타입 참조 스캔 하한 미달: " + crossDomainReferences + " < "
+                    + CROSS_DOMAIN_REFERENCE_FLOOR
+                    + " — import/인라인 FQN/signature/event 탐지가 파손됐을 가능성이 있습니다.");
         }
         if (appToApp.size() != APP_TO_APP_COUPLING) {
             violations.add("app→app 교차 도메인 결합이 " + APP_TO_APP_COUPLING + " → " + appToApp.size()
@@ -183,8 +179,41 @@ class CrossDomainCouplingLinterTest {
             fail(sb.toString());
         }
 
-        log.info("✅ 교차 도메인 결합 census 일치 — 주입 {}건, app→app {}건, app→core {}건.",
-                injectedFields, appToApp.size(), appToCore.size());
+        log.info("✅ 교차 도메인 결합 census 일치 — 전수 edge {}건, app→app {}건, app→core {}건.",
+                crossDomainReferences, appToApp.size(), appToCore.size());
+    }
+
+    static List<CouplingReference> scanReferences(Path repoRoot, String relative, String code) {
+        String ownerDomain = relative.contains("/") ? relative.substring(0, relative.indexOf('/')) : "";
+        if (ownerDomain.isEmpty()) return List.of();
+
+        Set<String> candidates = new TreeSet<>(collectImports(code).values());
+        Matcher inline = INLINE_BUSINESS_TYPE.matcher(code);
+        while (inline.find()) candidates.add(inline.group(1));
+
+        Map<String, Set<String>> typesByEdge = new TreeMap<>();
+        Map<String, String> moduleByEdge = new HashMap<>();
+        for (String candidate : candidates) {
+            ResolvedType resolved = resolveType(repoRoot, candidate);
+            if (resolved == null) continue;
+            Matcher business = BUSINESS_TYPE.matcher(resolved.fqn());
+            if (!business.find()) continue;
+            String targetDomain = business.group(1);
+            if (targetDomain.equals(ownerDomain)) continue;
+
+            String edge = ownerDomain + " -> " + targetDomain;
+            String key = resolved.module() + "|" + edge;
+            typesByEdge.computeIfAbsent(key, ignored -> new TreeSet<>()).add(simpleName(resolved.fqn()));
+            moduleByEdge.put(key, resolved.module());
+        }
+
+        List<CouplingReference> references = new ArrayList<>();
+        typesByEdge.forEach((key, types) -> {
+            String edge = key.substring(key.indexOf('|') + 1);
+            references.add(new CouplingReference(moduleByEdge.get(key),
+                    relative + ": " + edge + " (" + String.join(", ", types) + ")"));
+        });
+        return references;
     }
 
     private static Map<String, String> collectImports(String code) {
@@ -203,6 +232,17 @@ class CrossDomainCouplingLinterTest {
         return last < 0 ? fqn : fqn.substring(last + 1);
     }
 
+    private static ResolvedType resolveType(Path repoRoot, String candidate) {
+        String fqn = candidate;
+        while (fqn.contains(".")) {
+            for (String module : List.of("business-app", "business-core")) {
+                if (livesInModule(repoRoot, module, fqn)) return new ResolvedType(module, fqn);
+            }
+            fqn = fqn.substring(0, fqn.lastIndexOf('.'));
+        }
+        return null;
+    }
+
     private static boolean livesInModule(Path repoRoot, String module, String fqn) {
         return Files.isRegularFile(repoRoot.resolve(module).resolve("src/main/java")
                 .resolve(fqn.replace('.', '/') + ".java"));
@@ -213,4 +253,8 @@ class CrossDomainCouplingLinterTest {
         Files.createDirectories(out.getParent());
         Files.write(out, new TreeSet<>(values), StandardCharsets.UTF_8);
     }
+
+    record CouplingReference(String module, String entry) {}
+
+    private record ResolvedType(String module, String fqn) {}
 }

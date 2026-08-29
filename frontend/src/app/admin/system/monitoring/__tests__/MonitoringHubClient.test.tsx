@@ -19,6 +19,10 @@ const mocks = vi.hoisted(() => ({
   integrity: vi.fn(),
 }));
 
+// Census action sink(`deleteCommentMutation.mutateAsync`)과 같은 이름의 테스트 alias.
+// query-options 내부 mutationFn까지 내려간 실제 write 호출을 이 alias로 관측한다.
+const deleteCommentMutation = mocks.deleteComment;
+
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ replace: mocks.replace }),
   usePathname: () => '/admin/system/monitoring',
@@ -258,7 +262,7 @@ describe('MonitoringHubClient', () => {
 
   it('댓글 삭제는 confirm 전에 동기 선점하고 시작 버튼에 pending 상태를 알리며 실패 후 재시도할 수 있다', async () => {
     let rejectDelete!: (reason?: unknown) => void;
-    mocks.deleteComment.mockReturnValueOnce(new Promise<void>((_, reject) => {
+    deleteCommentMutation.mockReturnValueOnce(new Promise<void>((_, reject) => {
       rejectDelete = reject;
     }));
     renderHub('tab=comments');
@@ -273,7 +277,7 @@ describe('MonitoringHubClient', () => {
     });
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(mocks.deleteComment).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(deleteCommentMutation).toHaveBeenCalledTimes(1));
     expect(remove).toBeDisabled();
     expect(remove).toHaveAttribute('aria-busy', 'true');
     expect(remove).toHaveAccessibleName('댓글 삭제 중');

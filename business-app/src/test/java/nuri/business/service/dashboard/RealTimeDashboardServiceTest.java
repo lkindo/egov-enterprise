@@ -1,7 +1,7 @@
 package nuri.business.service.dashboard;
 
 import nuri.business.domain.notification.NotificationRepository;
-import nuri.business.service.board.event.PostCreatedEvent;
+import nuri.foundation.core.event.PostCreatedEvent;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

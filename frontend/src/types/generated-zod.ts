@@ -322,6 +322,15 @@ export const SatisfactionDtoSchema = z.object({
 export type SatisfactionDto = z.infer<typeof SatisfactionDtoSchema>;
 
 // ==========================================================================
+// ApprovalConfirmRequest Schema
+// ==========================================================================
+export const ApprovalConfirmRequestSchema = z.object({
+  status: z.enum(["C","R"]),
+  reason: z.string().min(0).max(4000).optional(),
+});
+export type ApprovalConfirmRequest = z.infer<typeof ApprovalConfirmRequestSchema>;
+
+// ==========================================================================
 // MyPageContentDto Schema
 // ==========================================================================
 export const MyPageContentDtoSchema = z.object({
@@ -1068,12 +1077,12 @@ export type BoardMasterBatchDeleteRequest = z.infer<typeof BoardMasterBatchDelet
 // ==========================================================================
 export const SmsDtoSchema = z.object({
   smsTrsmSn: z.number().optional(),
-  sndngTelno: z.string().optional(),
-  sndngCn: z.string().optional(),
+  sndngTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")),
+  sndngCn: z.string().min(1).max(4000),
   recptnCnt: z.number().optional(),
   frstRgtrId: z.string().optional(),
   crtDt: z.string().optional(),
-  recipients: z.array(z.lazy(() => SmsRecptnDtoSchema)).optional(),
+  recipients: z.array(z.lazy(() => SmsRecptnDtoSchema)),
   searchCondition: z.string().optional(),
   searchWrd: z.string().optional(),
 });
@@ -1084,7 +1093,7 @@ export type SmsDto = z.infer<typeof SmsDtoSchema>;
 // ==========================================================================
 export const SmsRecptnDtoSchema = z.object({
   smsTrsmSn: z.number().optional(),
-  rcptnTelno: z.string().optional(),
+  rcptnTelno: z.string().min(1).max(13).regex(new RegExp("^[0-9-]+$")),
   rsltCd: z.string().optional(),
   rsltMsg: z.string().optional(),
 });
@@ -1176,6 +1185,14 @@ export const ApiResponseCommunityDtoSchema = z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 });
 export type ApiResponseCommunityDto = z.infer<typeof ApiResponseCommunityDtoSchema>;
+
+// ==========================================================================
+// MemoInstructionRequest Schema
+// ==========================================================================
+export const MemoInstructionRequestSchema = z.object({
+  drctnMttr: z.string().min(1).max(2000),
+});
+export type MemoInstructionRequest = z.infer<typeof MemoInstructionRequestSchema>;
 
 // ==========================================================================
 // AdminPasswordChangeRequest Schema

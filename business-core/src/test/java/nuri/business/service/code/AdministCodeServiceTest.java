@@ -79,11 +79,13 @@ class AdministCodeServiceTest {
         // given
         given(administCodeRepository.findById("NOT_FOUND")).willReturn(Optional.empty());
 
-        // when
-        AdministCodeDto result = administCodeService.getAdministCodeDetail("NOT_FOUND");
+        nuri.foundation.core.exception.BusinessException error =
+                org.junit.jupiter.api.Assertions.assertThrows(
+                        nuri.foundation.core.exception.BusinessException.class,
+                        () -> administCodeService.getAdministCodeDetail("NOT_FOUND"));
 
-        // then
-        assertThat(result).isNull();
+        assertThat(error.getErrorCode())
+                .isEqualTo(nuri.business.domain.code.exception.CodeErrorCode.CODE_NOT_FOUND);
     }
 
     @Test

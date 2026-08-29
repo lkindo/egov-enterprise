@@ -24,18 +24,18 @@ public class Template extends BaseEntity {
     @Column(length = 12, nullable = false)
     private String tmpltSeCd;
 
-    @Column(length = 1000)
+    @Column(length = 1000, nullable = false)
     private String tmpltPath;
 
-    @Column(length = 1)
-    private String useYn;
+    @Column(length = 1, nullable = false)
+    private String useYn = "Y";
 
     private Template(String tmpltId, String tmpltNm, String tmpltSeCd, String tmpltPath, String useYn) {
         this.tmpltId = tmpltId;
         this.tmpltNm = tmpltNm;
         this.tmpltSeCd = tmpltSeCd;
         this.tmpltPath = tmpltPath;
-        this.useYn = useYn;
+        this.useYn = useYn != null ? useYn : "Y";
     }
 
     /**
