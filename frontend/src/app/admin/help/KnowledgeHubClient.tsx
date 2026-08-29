@@ -245,10 +245,21 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
  {/* 3. Stats & Insights Matrix — 백엔드 /boards/{bbsId}/stats 실측값만 표기한다.
  종전의 '+12% Critical' 류 증감 배지는 산출 근거가 없어 제거했다. */}
  <motion.div variants={hubItemVariants} className="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 px-2">
+ {/*
+   [2026-08-29] '지식 지수 NN/100 · 게시판 활성도 지표' 를 걷고 실제로 센 값을 보여 준다.
+   그 점수는 측정값이 아니라 게시글 수에 상수를 더한 것이다 —
+   BoardService.getBoardStats: `int intelligenceScore = (int) Math.min(100,
+   (stats.totalArticles() * 2) + 70);` 이고 바로 위 주석이 "Logic derived from frontend"
+   라고 적고 있다(화면이 지어낸 식을 서버로 옮겼을 뿐이다). 글이 하나도 없는 게시판이
+   70/100 이고 15건이면 100 에 붙어 더 이상 움직이지 않는다. 100 점 만점처럼 보이는
+   숫자는 관리자가 게시판 건강도로 읽는다.
+   ⚠ 서버의 intelligenceScore 필드는 이 커밋에서 건드리지 않았다(응답 계약 변경은 별건).
+   이 카드가 유일한 소비처였으므로 지금은 아무도 읽지 않는다.
+ */}
  <StatsCard
- label="지식 지수"
- value={isStatsError ? '조회 실패' : (statsData?.intelligenceScore != null ? `${Math.round(statsData.intelligenceScore)}/100` : '-')}
- desc="게시판 활성도 지표"
+ label="게시글 수"
+ value={isStatsError ? '조회 실패' : (statsData?.totalArticles ?? 0).toLocaleString()}
+ desc="이 게시판에 등록된 글"
  />
  <StatsCard
  label="누적 조회수"

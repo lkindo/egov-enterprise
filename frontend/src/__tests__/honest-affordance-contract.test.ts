@@ -533,6 +533,29 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    *
    * 저장은 실제로 되므로 기능을 걷지는 않았다 — 걷어야 할 것은 **약속** 쪽이다.
    */
+  /**
+   * 지식 허브의 지표 카드가 센 것만 보여 준다.
+   *
+   * '지식 지수 NN/100' 은 측정값이 아니라 게시글 수에 상수를 더한 것이었고(글 0건이면 70점,
+   * 15건이면 100 에 붙어 멈춘다), '최다 기여자' 는 서버가 없을 때 "System" 을 지어냈다.
+   * 100 점 만점처럼 보이는 숫자와 사람 이름처럼 보이는 문자열은 관리자가 판단 근거로 쓴다.
+   */
+  it('지식 허브가 지어낸 점수와 기여자를 보여 주지 않는다', () => {
+    const client = stripComments(readSrc('app/admin/help/KnowledgeHubClient.tsx'));
+    expect(client, '지식 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('StatsCard');
+    expect(client).not.toContain('지식 지수');
+    expect(client).not.toContain('intelligenceScore');
+
+    const service = stripComments(
+      readRepo('business-app/src/main/java/nuri/business/service/board/BoardService.java'),
+    );
+    expect(service, '게시판 통계 서비스를 찾지 못했다 — 계약이 vacuous 하다').toContain('getBoardStats');
+    expect(
+      service,
+      '기여자가 없을 때 이름을 지어내는 폴백이 되살아났다 — 화면이 없는 사용자를 최다 기여자로 보여 준다.',
+    ).not.toContain('"System"');
+  });
+
   it('마이페이지 설정이 렌더하는 화면 없이 배치를 약속하지 않는다', () => {
     const client = stripComments(readSrc('app/admin/workspace/my-page/WorkspaceMyPageClient.tsx'));
     expect(client, '마이페이지 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('myPageAdminService');
