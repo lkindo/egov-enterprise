@@ -562,6 +562,32 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    *
    * 서버 DTO 에 계층이 생기면 이 계약이 red 가 되어 단일 호출로 되돌릴 시점을 알려 준다.
    */
+  /**
+   * 권한 삭제 확인 문구가 서버의 실제 정리 범위와 일치한다.
+   *
+   * `AuthorManageService.deleteAuthor` 는 롤 매핑과 메뉴 매핑만 지우고 사용자 할당
+   * (tb_user_authrt_map)은 건드리지 않는다. 그 테이블에는 권한으로의 FK 도 없어 삭제가 그대로
+   * 성공하고 행이 끊긴 참조로 남는다 — 같은 코드로 권한을 다시 만들면 그 사용자들이 아무도
+   * 배정하지 않은 권한을 물려받는다. 문구가 "모두 사라집니다" 라고 하면 그 위험이 감춰진다.
+   */
+  it('권한 삭제 안내가 서버의 정리 범위를 넘어 약속하지 않는다', () => {
+    const hub = stripComments(readSrc('app/admin/security/authority/SecurityHubClient.tsx'));
+    expect(hub, '권한 허브를 찾지 못했다 — 계약이 vacuous 하다').toContain('권한을 삭제하시겠습니까');
+    expect(hub).not.toContain('관련 할당 정보가 모두 사라집니다');
+
+    const service = stripComments(
+      readRepo('business-core/src/main/java/nuri/business/service/auth/AuthorManageService.java'),
+    );
+    const start = service.indexOf('public void deleteAuthor(');
+    expect(start, 'deleteAuthor 를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    const body = service.slice(start, service.indexOf('public ', start + 1));
+    expect(body, '삭제 본문 추출이 깨졌다 — 계약이 vacuous 하다').toContain('menuAuthorityRepository');
+    expect(
+      body,
+      '사용자 할당까지 정리하게 됐다 — 문구를 되살리고 이 계약을 갱신하라(인가 데이터 삭제이므로 결정 기록도 함께).',
+    ).not.toContain('userAuthority');
+  });
+
   it('권한별 메뉴 화면이 계층을 실제로 가진 API 에서 가져온다', () => {
     const client = stripComments(
       readSrc('app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx'),

@@ -623,7 +623,19 @@ export default function SecurityHubClient({
     try {
       const ok = await confirm({
         title: '권한 삭제',
-        message: `'${auth.authrtNm || code}'(${code}) 권한을 삭제하시겠습니까? 관련 할당 정보가 모두 사라집니다.`,
+        /*
+         * [2026-08-29] '관련 할당 정보가 모두 사라집니다' 를 실제 정리 범위로 고친다.
+         *
+         * AuthorManageService.deleteAuthor 는 롤 매핑(authorityRoleRepository)과 메뉴 매핑
+         * (menuAuthorityRepository)만 지우고 **사용자 할당(tb_user_authrt_map)은 건드리지
+         * 않는다.** 그 테이블에는 tb_authrt_info 로의 FK 도 없어(V2_0 은 PK 만, V2_12 는
+         * 사용자 FK 만 추가) 삭제가 그대로 성공하고, 사용자 행은 없어진 권한을 가리킨 채 남는다.
+         *
+         * ⚠ 같은 코드로 권한을 다시 만들면 그 사용자들이 **아무도 배정하지 않은 새 권한을
+         * 그대로 물려받는다.** 정리 범위를 넓히는 것은 인가 데이터 삭제라 제품 결정이 선행되므로
+         * (known-gaps 기록), 지금은 화면이 하는 일만 말하게 한다.
+         */
+        message: `'${auth.authrtNm || code}'(${code}) 권한을 삭제하시겠습니까? 이 권한의 메뉴·롤 매핑이 함께 삭제됩니다. 사용자 할당 기록은 남으므로, 같은 코드로 권한을 다시 만들면 그 사용자들에게 다시 적용됩니다.`,
         confirmText: '삭제',
         variant: 'destructive',
       });
